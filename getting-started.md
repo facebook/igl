@@ -55,7 +55,7 @@ A basic session showing how to use ImGUI with IGL
 
 6)  [MRTSession](./shell/renderSessions/MRTSession.cpp)
 
-A basic session showing how to use multiple render targtes feature
+A basic session showing how to use multiple render targets feature
 
 ![image](.github/screenshot_MRTSession.png)
 
