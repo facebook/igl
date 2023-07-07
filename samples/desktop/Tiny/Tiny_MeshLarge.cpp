@@ -933,7 +933,8 @@ void initIGL() {
 
 #endif
 #else
-      igl::vulkan::VulkanContextConfig cfg{kMaxTextures, 128, true, true, kEnableValidationLayers};
+      igl::vulkan::VulkanContextConfig cfg{
+          kMaxTextures, 128, true, true, false, kEnableValidationLayers};
       cfg.swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR;
 #ifdef _WIN32
       auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
