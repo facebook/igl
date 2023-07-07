@@ -145,7 +145,7 @@ using namespace igl;
     metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
 
     metalView.delegate = self;
-    metalView.colorspace = nil;
+    metalView.colorspace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
     metalView.colorPixelFormat =
         metal::Texture::convertFormat(shellParams_.defaultColorFramebufferFormat);
     metalView.framebufferOnly = NO;
