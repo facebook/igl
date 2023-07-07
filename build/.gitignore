@@ -1,0 +1,6 @@
+*
+*.*
+!.gitignore
+!android/
+!android/**
+android/.gitignore

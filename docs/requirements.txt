@@ -1,0 +1,7 @@
+sphinx==5.3.0
+myst-parser
+furo
+sphinx-copybutton
+sphinxext-opengraph
+sphinx-favicon
+sphinx-inline-tabs

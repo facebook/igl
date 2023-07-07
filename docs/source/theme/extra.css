@@ -1,0 +1,28 @@
+ul.simple,
+ol.simple {
+    padding-left: 1.6rem;
+}
+
+ul.simple li:not(:last-child),
+ol.simple li:not(:last-child) {
+    margin-bottom: 0.5rem;
+}
+
+body .with-shadow {
+    box-shadow: 0 0 6px 0 rgba(0, 0, 0, 0.25);
+}
+
+@media (prefers-color-scheme: dark) {
+body[data-theme="dark"] .with-shadow,
+body:not([data-theme="light"]) .with-shadow {
+    box-shadow: 0 0 6px 0 rgba(0, 0, 0, 0.7);
+}
+}
+
+figcaption {
+    font-style: italic;
+    font-size: 1.0rem;
+}
+figcaption p {
+    margin-top: 0;
+}

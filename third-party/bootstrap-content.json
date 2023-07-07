@@ -1,0 +1,58 @@
+[
+{
+    "name": "bistro/PropTextures",
+    "source": {
+        "type": "archive",
+        "url": "https://casual-effects.com/g3d/data10/research/model/bistro/PropTextures",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36"
+    }
+},
+{
+    "name": "bistro/OtherTextures",
+    "source": {
+        "type": "archive",
+        "url": "https://casual-effects.com/g3d/data10/research/model/bistro/OtherTextures",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36"
+    }
+},
+{
+    "name": "bistro/BuildingTextures",
+    "source": {
+        "type": "archive",
+        "url": "https://casual-effects.com/g3d/data10/research/model/bistro/BuildingTextures",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36"
+    }
+},
+{
+    "name": "bistro/Interior",
+    "source": {
+        "type": "archive",
+        "url": "https://casual-effects.com/g3d/data10/research/model/bistro/Interior.zip",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36"
+    }
+},
+{
+    "name": "bistro/Exterior",
+    "source": {
+        "type": "archive",
+        "url": "https://casual-effects.com/g3d/data10/research/model/bistro/Exterior.zip",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36"
+    }
+},
+{
+    "name": "skybox_hdr",
+    "source": {
+        "type": "sourcefile",
+        "url": "https://github.com/PacktPublishing/3D-Graphics-Rendering-Cookbook/raw/master/data/immenstadter_horn_2k.hdr",
+        "user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36"
+    }
+},
+{
+    "name": "glTF-Sample-Models",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/KhronosGroup/glTF-Sample-Models.git",
+        "revision": "db9ff67c1116cfe28eb36320916bccd8c4127cc1"
+    }
+}
+]

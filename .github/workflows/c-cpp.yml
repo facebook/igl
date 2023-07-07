@@ -1,0 +1,117 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  build:
+    name: "Android (Ubuntu)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Set up NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r25c
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: 'oracle'
+
+      - name: Assemble APK debug
+        run: |
+          cd build/android
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
+
+  cmake-build:
+      strategy:
+        fail-fast: false
+        matrix:
+          config:
+          - {
+              name: "Windows - MSVC 2022",
+              os: windows-latest,
+              build_type: "Debug",
+              cc: "cl",
+              cxx: "cl",
+              generators: "Visual Studio 17 2022",
+              cmake_args: "-DIGL_WITH_TRACY=ON -DIGL_WITH_TESTS=ON"
+            }
+          - {
+              name: "Ubuntu - Clang",
+              os: ubuntu-latest,
+              build_type: "Debug",
+              cc: "clang",
+              cxx: "clang++",
+              generators: "Unix Makefiles",
+              cmake_args: "-DIGL_WITH_TRACY=ON"
+            }
+          - {
+              name: "Ubuntu - GCC",
+              os: ubuntu-latest,
+              build_type: "Debug",
+              cc: "gcc",
+              cxx: "g++",
+              generators: "Unix Makefiles",
+              # TODO: Fix killing GCC process on Github CI when IGL_WITH_SHELL is ON.
+              cmake_args: "-DIGL_WITH_TRACY=ON -DIGL_WITH_SHELL=OFF"
+            }
+          - {
+              name: "macOS - Clang (Xcode)",
+              os: macos-latest,
+              build_type: "Debug",
+              cc: "clang",
+              cxx: "clang++",
+              generators: "Xcode",
+              cmake_args: "-DIGL_WITH_VULKAN=OFF"
+            }
+          - {
+              name: "macOS - Clang (Unix Makefiles)",
+              os: macos-latest,
+              build_type: "Debug",
+              cc: "clang",
+              cxx: "clang++",
+              generators: "Unix Makefiles",
+              cmake_args: "-DIGL_WITH_VULKAN=OFF"
+            }
+      runs-on: ${{ matrix.config.os }}
+
+      steps:
+        - uses: actions/checkout@v3
+          with:
+            submodules: recursive
+
+        - if: startsWith(matrix.config.os, 'ubuntu')
+          run: |
+            sudo sed -i 's/azure\.//' /etc/apt/sources.list
+            sudo apt-get update
+            sudo apt-get install -y clang xorg-dev libxinerama-dev libxcursor-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev
+
+        - name: Prepare Vulkan SDK
+          uses: humbletim/setup-vulkan-sdk@v1.2.0
+          with:
+            vulkan-query-version: 1.3.204.0
+            vulkan-components: Vulkan-Headers, Vulkan-Loader
+            vulkan-use-cache: true
+
+        - name: Get the number of CPU cores
+          uses: SimenB/github-actions-cpu-cores@v1
+
+        - name: Build
+          shell: bash
+          env:
+            CC:  ${{ matrix.config.cc }}
+            CXX: ${{ matrix.config.cxx }}
+          run: |
+            cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
+            cd build
+            cmake --build . --parallel ${{ steps.cpu-cores.outputs.count }}

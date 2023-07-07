@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+#include <igl/metal/PlatformDevice.h>
+
+#include "../util/Common.h"
+#include "../util/TestDevice.h"
+
+#include <gtest/gtest.h>
+#include <igl/IGL.h>
+
+namespace igl {
+namespace tests {
+
+class PlatformDeviceTest : public ::testing::Test {
+ public:
+  PlatformDeviceTest() = default;
+  ~PlatformDeviceTest() override = default;
+
+  void SetUp() override {
+    setDebugBreakEnabled(false);
+
+    util::createDeviceAndQueue(iglDev_, cmdQueue_);
+
+    ASSERT_NE(iglDev_, nullptr);
+    ASSERT_NE(cmdQueue_, nullptr);
+  }
+  void TearDown() override {}
+
+ public:
+  std::shared_ptr<IDevice> iglDev_;
+  std::shared_ptr<ICommandQueue> cmdQueue_;
+};
+
+// Test Cases
+TEST_F(PlatformDeviceTest, GetPlatformDeviceParentCls) {
+  auto pd = iglDev_.get()->getPlatformDevice<metal::PlatformDevice>();
+  ASSERT_NE(pd, nullptr);
+}
+
+} // namespace tests
+} // namespace igl
