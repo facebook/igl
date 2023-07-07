@@ -18,7 +18,7 @@ endif()
 
 macro(ADD_DEMO app)
   add_executable(${app} "Tiny/${app}.cpp")
-  igl_set_cxxstd(${app} 17)
+  igl_set_cxxstd(${app} 20)
   igl_set_folder(${app} ${PROJECT_NAME})
   target_link_libraries(${app} PUBLIC IGLLibrary)
   target_link_libraries(${app} PRIVATE bc7enc)
