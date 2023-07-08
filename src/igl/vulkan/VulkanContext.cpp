@@ -5,26 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <array>
 #include <cstring>
 #include <set>
 #include <vector>
 
-#include <igl/IGLSafeC.h>
-
-// For vk_mem_alloc.h, define this before including VulkanContext.h in exactly
-// one CPP file
 #define VMA_IMPLEMENTATION
-
-// For volk.h, define this before including volk.h in exactly one CPP file.
-// @fb-only
-#if defined(IGL_CMAKE_BUILD)
 #define VOLK_IMPLEMENTATION
-#endif // IGL_CMAKE_BUILD
 
 #include <igl/vulkan/Device.h>
-#include <igl/vulkan/EnhancedShaderDebuggingStore.h>
-#include <igl/vulkan/SyncManager.h>
+#include <igl/vulkan/ResourcesBinder.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>
@@ -59,6 +48,7 @@ const uint32_t kBinding_Sampler = 4;
 const uint32_t kBinding_SamplerShadow = 5;
 const uint32_t kBinding_StorageImages = 6;
 
+// TODO: Implement VK_EXT_debug_report functions
 #if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
 VKAPI_ATTR VkBool32 VKAPI_CALL
 vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
@@ -72,32 +62,32 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
   const bool isError = (msgSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0;
 
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
-  std::array<char, 128> errorName = {};
+  char errorName[128] = {};
   int object = 0;
   void* handle = nullptr;
-  std::array<char, 128> typeName = {};
+  char typeName[128] = {};
   void* messageID = nullptr;
 
   if (sscanf(cbData->pMessage,
              "Validation Error : [ %127s ] Object %i: handle = %p, type = %127s | MessageID = %p",
-             errorName.data(),
+             errorName,
              &object,
              &handle,
-             typeName.data(),
+             typeName,
              &messageID) >= 2) {
     const char* message = strrchr(cbData->pMessage, '|') + 1;
-    IGL_LOG_INFO(
+    LLOGL(
         "%sValidation layer:\n Validation Error: %s \n Object %i: handle = %p, type = %s\n "
         "MessageID = %p \n%s \n",
         isError ? "\nERROR:\n" : "",
-        errorName.data(),
+        errorName,
         object,
         handle,
-        typeName.data(),
+        typeName,
         messageID,
         message);
   } else {
-    IGL_LOG_INFO("%sValidation layer:\n%s\n", isError ? "\nERROR:\n" : "", cbData->pMessage);
+    LLOGL("%sValidation layer:\n%s\n", isError ? "\nERROR:\n" : "", cbData->pMessage);
   }
 #endif
 
@@ -142,7 +132,7 @@ VkQueueFlagBits getQueueTypeFlag(igl::CommandQueueType type) {
     return VK_QUEUE_COMPUTE_BIT;
   case igl::CommandQueueType::Graphics:
     return VK_QUEUE_GRAPHICS_BIT;
-  case igl::CommandQueueType::MemoryTransfer:
+  case igl::CommandQueueType::Transfer:
     return VK_QUEUE_TRANSFER_BIT;
   }
   IGL_UNREACHABLE_RETURN(VK_QUEUE_GRAPHICS_BIT);
@@ -207,7 +197,7 @@ VulkanContext::VulkanContext(const VulkanContextConfig& config,
   pimpl_ = std::make_unique<VulkanContextImpl>();
 
   if (volkInitialize() != VK_SUCCESS) {
-    IGL_LOG_ERROR("volkInitialize() failed\n");
+    LLOGW("volkInitialize() failed\n");
     exit(255);
   };
 
@@ -226,8 +216,6 @@ VulkanContext::~VulkanContext() {
   if (device_) {
     waitIdle();
   }
-
-  enhancedShaderDebuggingStore_.reset(nullptr);
 
   textures_.clear();
   samplers_.clear();
@@ -275,9 +263,9 @@ VulkanContext::~VulkanContext() {
   glslang_finalize_process();
 
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
-  IGL_LOG_INFO("Vulkan graphics pipelines created: %u\n",
+  LLOGL("Vulkan graphics pipelines created: %u\n",
                VulkanPipelineBuilder::getNumPipelinesCreated());
-  IGL_LOG_INFO("Vulkan compute pipelines created: %u\n",
+  LLOGL("Vulkan compute pipelines created: %u\n",
                VulkanComputePipelineBuilder::getNumPipelinesCreated());
 #endif // IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
 }
@@ -313,10 +301,10 @@ void VulkanContext::createInstance(const size_t numExtraExtensions, const char**
 
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
   // log available instance extensions
-  IGL_LOG_INFO("Vulkan instance extensions:\n");
+  LLOGL("Vulkan instance extensions:\n");
   for (const auto& extension :
        extensions_.allAvailableExtensions(VulkanExtensions::ExtensionType::Instance)) {
-    IGL_LOG_INFO("  %s\n", extension.c_str());
+    LLOGL("  %s\n", extension.c_str());
   }
 #endif
 }
@@ -381,7 +369,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                        size_t numExtraDeviceExtensions,
                                        const char** extraDeviceExtensions) {
   if (desc.guid == 0UL) {
-    IGL_LOG_ERROR("Invalid hardwareGuid(%lu)", desc.guid);
+    LLOGW("Invalid hardwareGuid(%lu)", desc.guid);
     return Result(Result::Code::Unsupported, "Vulkan is not supported");
   }
 
@@ -394,25 +382,25 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   const uint32_t apiVersion = vkPhysicalDeviceProperties2_.properties.apiVersion;
 
-  IGL_LOG_INFO("Vulkan physical device: %s\n", vkPhysicalDeviceProperties2_.properties.deviceName);
-  IGL_LOG_INFO("           API version: %i.%i.%i.%i\n",
+  LLOGL("Vulkan physical device: %s\n", vkPhysicalDeviceProperties2_.properties.deviceName);
+  LLOGL("           API version: %i.%i.%i.%i\n",
                VK_API_VERSION_MAJOR(apiVersion),
                VK_API_VERSION_MINOR(apiVersion),
                VK_API_VERSION_PATCH(apiVersion),
                VK_API_VERSION_VARIANT(apiVersion));
-  IGL_LOG_INFO("           Driver info: %s %s\n",
+  LLOGL("           Driver info: %s %s\n",
                vkPhysicalDeviceDriverProperties_.driverName,
                vkPhysicalDeviceDriverProperties_.driverInfo);
 
   extensions_.enumerate(vkPhysicalDevice_);
 
-  IGL_LOG_INFO("Vulkan physical device extensions:\n");
+  LLOGL("Vulkan physical device extensions:\n");
 
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
   // log available physical device extensions
   for (const auto& extension :
        extensions_.allAvailableExtensions(VulkanExtensions::ExtensionType::Device)) {
-    IGL_LOG_INFO("  %s\n", extension.c_str());
+    LLOGL("  %s\n", extension.c_str());
   }
 #endif
 
@@ -429,12 +417,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   auto computeQueueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_COMPUTE_BIT);
 
   if (!graphicsQueueDescriptor.isValid()) {
-    IGL_LOG_ERROR("VK_QUEUE_GRAPHICS_BIT is not supported");
+    LLOGW("VK_QUEUE_GRAPHICS_BIT is not supported");
     return Result(Result::Code::Unsupported, "VK_QUEUE_GRAPHICS_BIT is not supported");
   }
 
   if (!computeQueueDescriptor.isValid()) {
-    IGL_LOG_ERROR("VK_QUEUE_COMPUTE_BIT is not supported");
+    LLOGW("VK_QUEUE_COMPUTE_BIT is not supported");
     return Result(Result::Code::Unsupported, "VK_QUEUE_COMPUTE_BIT is not supported");
   }
 
@@ -449,7 +437,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   // This reduces the risk of failing reservation due to saturation of compute and graphics queues
   auto sortedUserQueues = config_.userQueues;
   sort(sortedUserQueues.begin(), sortedUserQueues.end(), [](const auto& /*q1*/, const auto& q2) {
-    return q2 == CommandQueueType::MemoryTransfer;
+    return q2 == CommandQueueType::Transfer;
   });
 
   for (const auto& userQueue : sortedUserQueues) {
@@ -457,7 +445,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     if (userQueueDescriptor.isValid()) {
       userQueues_[userQueue] = userQueueDescriptor;
     } else {
-      IGL_LOG_ERROR("User requested queue is not supported");
+      LLOGW("User requested queue is not supported");
       return Result(Result::Code::Unsupported, "User requested queue is not supported");
     }
   }
@@ -478,9 +466,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                       vkPhysicalDeviceMultiviewFeatures_.multiview,
                       vkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16,
                       &device));
-  if (!config_.enableConcurrentVkDevicesSupport) {
-    volkLoadDevice(device);
-  }
+
+  volkLoadDevice(device);
 
   vkGetDeviceQueue(device, deviceQueues_.graphicsQueueFamilyIndex, 0, &deviceQueues_.graphicsQueue);
   vkGetDeviceQueue(device, deviceQueues_.computeQueueFamilyIndex, 0, &deviceQueues_.computeQueue);
@@ -488,7 +475,6 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   device_ = std::make_unique<igl::vulkan::VulkanDevice>(device, "Device: VulkanContext::device_");
   immediate_ = std::make_unique<igl::vulkan::VulkanImmediateCommands>(
       device, deviceQueues_.graphicsQueueFamilyIndex, "VulkanContext::immediate_");
-  syncManager_ = std::make_unique<SyncManager>(*this, config_.maxResourceCount);
 
   // create Vulkan pipeline cache
   {
@@ -553,14 +539,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     const uint32_t pixel = 0xFF000000;
     const VkRect2D imageRegion = ivkGetRect2D(0, 0, 1, 1);
     stagingDevice_->imageData2D(
-        textures_[0]->getVulkanImage(),
-        imageRegion,
-        0,
-        1,
-        0,
-        TextureFormatProperties::fromTextureFormat(vkFormatToTextureFormat(dummyTextureFormat)),
-        dummyTextureFormat,
-        &pixel);
+        textures_[0]->getVulkanImage(), imageRegion, 0, 1, 0, dummyTextureFormat, &pixel);
   }
 
   // default sampler
@@ -581,7 +560,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   if (!IGL_VERIFY(
           config_.maxSamplers <=
           vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers)) {
-    IGL_LOG_ERROR(
+    LLOGW(
         "Max Samplers exceeded %u (max %u)",
         config_.maxSamplers,
         vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers);
@@ -589,7 +568,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   if (!IGL_VERIFY(config_.maxTextures <= vkPhysicalDeviceDescriptorIndexingProperties_
                                              .maxDescriptorSetUpdateAfterBindSampledImages)) {
-    IGL_LOG_ERROR(
+    LLOGW(
         "Max Textures exceeded: %u (max %u)",
         config_.maxTextures,
         vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSampledImages);
@@ -600,32 +579,29 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   {
     constexpr uint32_t numBindings = 1;
-    const std::array<VkDescriptorSetLayoutBinding, numBindings> bindings = {
+    const VkDescriptorSetLayoutBinding bindings[numBindings]{
         ivkGetDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1),
     };
-    const std::array<VkDescriptorBindingFlags, numBindings> bindingFlags = {
+    const VkDescriptorBindingFlags bindingFlags[numBindings] = {
         0,
     };
     dslDynamicUniformBuffer_ = std::make_unique<VulkanDescriptorSetLayout>(
         device,
         numBindings,
-        bindings.data(),
-        bindingFlags.data(),
+        bindings,
+        bindingFlags,
         "Descriptor Set Layout: VulkanContext::dslDynamicUniformBuffer_");
     // create default descriptor pool for dynamic uniform buffers
-    const std::array<VkDescriptorPoolSize, numBindings> poolSizes = {
+    const VkDescriptorPoolSize poolSizes[numBindings] = {
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, kMaxDynamicUniformBuffers},
     };
-    VK_ASSERT_RETURN(ivkCreateDescriptorPool(device,
-                                             kMaxDynamicUniformBuffers,
-                                             static_cast<uint32_t>(poolSizes.size()),
-                                             poolSizes.data(),
-                                             &dpDynamicUniformBuffer_));
+    VK_ASSERT_RETURN(ivkCreateDescriptorPool(
+        device, kMaxDynamicUniformBuffers, numBindings, poolSizes, &dpDynamicUniformBuffer_));
   }
   {
     // create default descriptor set layout which is going to be shared by graphics pipelines
     constexpr uint32_t numBindings = 7;
-    const std::array<VkDescriptorSetLayoutBinding, numBindings> bindings = {
+    const VkDescriptorSetLayoutBinding bindings[numBindings] = {
         ivkGetDescriptorSetLayoutBinding(
             kBinding_Texture2D, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures),
         ivkGetDescriptorSetLayoutBinding(
@@ -644,19 +620,19 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     const uint32_t flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
                            VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
                            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
-    const std::array<VkDescriptorBindingFlags, numBindings> bindingFlags = {
+    const VkDescriptorBindingFlags bindingFlags[numBindings] = {
         flags, flags, flags, flags, flags, flags, flags};
     dslBindless_ = std::make_unique<VulkanDescriptorSetLayout>(
         device,
         numBindings,
-        bindings.data(),
-        bindingFlags.data(),
+        bindings,
+        bindingFlags,
         "Descriptor Set Layout: VulkanContext::dslBindless_");
 
     // create default descriptor pool and allocate 1 descriptor set
     const uint32_t numSets = 1;
     IGL_ASSERT(numSets > 0);
-    const std::array<VkDescriptorPoolSize, numBindings> poolSizes = {
+    const VkDescriptorPoolSize poolSizes[numBindings] {
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, numSets * config_.maxTextures},
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, numSets * config_.maxTextures},
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, numSets * config_.maxTextures},
@@ -667,7 +643,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     };
     bindlessDSets_.resize(numSets);
     VK_ASSERT_RETURN(ivkCreateDescriptorPool(
-        device, numSets, static_cast<uint32_t>(poolSizes.size()), poolSizes.data(), &dpBindless_));
+        device, numSets, numBindings, poolSizes, &dpBindless_));
     for (size_t i = 0; i != numSets; i++) {
       VK_ASSERT_RETURN(ivkAllocateDescriptorSet(
           device, dpBindless_, dslBindless_->getVkDescriptorSetLayout(), &bindlessDSets_[i].ds));
@@ -679,7 +655,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   // Table 32. Required Limits
   const uint32_t kPushConstantsSize = 128;
   if (!IGL_VERIFY(kPushConstantsSize <= limits.maxPushConstantsSize)) {
-    IGL_LOG_ERROR("Push constants size exceeded %u (max %u bytes)",
+    LLOGW("Push constants size exceeded %u (max %u bytes)",
                   kPushConstantsSize,
                   limits.maxPushConstantsSize);
   }
@@ -706,17 +682,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   DUBs_ = std::make_unique<DynamicUniformsBufferSet>(*this);
 
-  // enables/disables enhanced shader debugging
-  if (config_.enhancedShaderDebugging) {
-    enhancedShaderDebuggingStore_ = std::make_unique<EnhancedShaderDebuggingStore>();
-  }
-
   return Result();
 }
 
 igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
   if (!device_ || !immediate_) {
-    IGL_LOG_ERROR("Call initContext() first");
+    LLOGW("Call initContext() first");
     return Result(Result::Code::Unsupported, "Call initContext() first");
   }
 
@@ -1117,8 +1088,6 @@ VulkanContext::RenderPassHandle VulkanContext::findRenderPass(
   IGL_ASSERT(index <= 255);
 
   renderPassesHash_[builder] = uint8_t(index);
-  // @fb-only
-  // @lint-ignore CLANGTIDY
   renderPasses_.push_back(pass);
 
   return RenderPassHandle{pass, uint8_t(index)};
@@ -1191,10 +1160,8 @@ void VulkanContext::DynamicUniformsBufferSet::update(VkCommandBuffer cmdBuf,
   IGL_ASSERT(buf->offset_ + bufferSizeAligned_ <= ctx_.dynamicUniformBufferSize_);
 
   if (data) {
-    checked_memcpy(buf->buffer_->getMappedPtr() + buf->offset_,
-                   ctx_.dynamicUniformBufferSize_ - buf->offset_,
-                   data,
-                   ResourcesBinder::kDUBBufferSize);
+    memcpy(buf->buffer_->getMappedPtr() + buf->offset_, data, ResourcesBinder::kDUBBufferSize);
+
     buf->buffer_->flushMappedMemory(buf->offset_, ResourcesBinder::kDUBBufferSize);
   }
 

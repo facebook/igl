@@ -11,18 +11,11 @@ project(IGLVulkan CXX C)
 file(GLOB SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp *.c)
 file(GLOB HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.h)
 
-if(APPLE)
-  file(GLOB APPLE_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} moltenvk/*.mm)
-  file(GLOB APPLE_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} moltenvk/*.h)
-  list(APPEND SRC_FILES ${APPLE_SRC_FILES})
-  list(APPEND HEADER_FILES ${APPLE_HEADER_FILES})
-endif()
-
 add_library(IGLVulkan ${SRC_FILES} ${HEADER_FILES})
 
 target_link_libraries(IGLVulkan PRIVATE IGLLibrary)
 
-igl_set_cxxstd(IGLVulkan 17)
+igl_set_cxxstd(IGLVulkan 20)
 igl_set_folder(IGLVulkan "IGL")
 
 # glslang
@@ -48,7 +41,6 @@ target_link_libraries(IGLVulkan PUBLIC glslang SPIRV glslang-default-resource-li
 find_package(Vulkan REQUIRED)
 
 target_link_libraries(IGLVulkan PUBLIC Vulkan::Vulkan)
-target_link_libraries(IGLVulkan PUBLIC fmt)
 
 target_include_directories(IGLVulkan PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/volk")
 target_include_directories(IGLVulkan PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/vma/include")
@@ -58,16 +50,8 @@ if(WIN32)
   add_definitions("-DNOMINMAX")
 endif()
 
-if(UNIX AND NOT APPLE AND NOT ANDROID)
+if(UNIX)
   add_definitions("-DVK_USE_PLATFORM_XLIB_KHR=1")
-endif()
-
-if(ANDROID)
-  add_definitions("-DVK_USE_PLATFORM_ANDROID_KHR=1")
-endif()
-
-if(APPLE)
-  add_definitions("-DVK_USE_PLATFORM_METAL_EXT=1")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")

@@ -27,13 +27,8 @@
 #include <igl/Texture.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-#if defined(__cpp_lib_format)
 #include <format>
 #define IGL_FORMAT std::format
-#else
-#include <fmt/core.h>
-#define IGL_FORMAT fmt::format
-#endif // __cpp_lib_format
 
 // Enable to use VulkanMemoryAllocator (VMA)
 #define IGL_VULKAN_USE_VMA 1
@@ -42,7 +37,7 @@
   {                                                                \
     const VkResult vk_assert_result = func;                        \
     if (vk_assert_result != VK_SUCCESS) {                          \
-      IGL_LOG_ERROR("Vulkan API call failed: %s:%i\n  %s\n  %s\n", \
+      LLOGW("Vulkan API call failed: %s:%i\n  %s\n  %s\n", \
                     __FILE__,                                      \
                     __LINE__,                                      \
                     #func,                                         \
@@ -55,7 +50,7 @@
   {                                                                \
     const VkResult vk_assert_result = func;                        \
     if (vk_assert_result != VK_SUCCESS) {                          \
-      IGL_LOG_ERROR("Vulkan API call failed: %s:%i\n  %s\n  %s\n", \
+      LLOGW("Vulkan API call failed: %s:%i\n  %s\n  %s\n", \
                     __FILE__,                                      \
                     __LINE__,                                      \
                     #func,                                         \
@@ -71,9 +66,10 @@ Result getResultFromVkResult(VkResult result);
 void setResultFrom(Result* outResult, VkResult result);
 VkFormat textureFormatToVkFormat(igl::TextureFormat format);
 igl::TextureFormat vkFormatToTextureFormat(VkFormat format);
+uint32_t getBytesPerPixel(VkFormat format);
 igl::ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace);
 VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorage resourceStorage);
-VkCompareOp compareFunctionToVkCompareOp(igl::CompareFunction func);
+VkCompareOp compareOpToVkCompareOp(igl::CompareOp func);
 VkSampleCountFlagBits getVulkanSampleCountFlags(size_t numSamples);
 VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool isBGR = false);
 

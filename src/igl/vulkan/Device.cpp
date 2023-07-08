@@ -13,14 +13,12 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/DepthStencilState.h>
-#include <igl/vulkan/EnhancedShaderDebuggingStore.h>
 #include <igl/vulkan/Framebuffer.h>
 #include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/Texture.h>
-#include <igl/vulkan/VertexInputState.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanHelpers.h>
@@ -42,11 +40,11 @@ bool supportsFormat(VkPhysicalDevice physicalDevice, VkFormat format) {
 
 VkShaderStageFlagBits shaderStageToVkShaderStage(igl::ShaderStage stage) {
   switch (stage) {
-  case igl::ShaderStage::Vertex:
+  case igl::Stage_Vertex:
     return VK_SHADER_STAGE_VERTEX_BIT;
-  case igl::ShaderStage::Fragment:
+  case igl::Stage_Fragment:
     return VK_SHADER_STAGE_FRAGMENT_BIT;
-  case igl::ShaderStage::Compute:
+  case igl::Stage_Compute:
     return VK_SHADER_STAGE_COMPUTE_BIT;
   };
   return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
@@ -57,16 +55,12 @@ VkShaderStageFlagBits shaderStageToVkShaderStage(igl::ShaderStage stage) {
 namespace igl {
 namespace vulkan {
 
-Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)), platformDevice_(*this) {
-  if (ctx_->enhancedShaderDebuggingStore_) {
-    ctx_->enhancedShaderDebuggingStore_->initialize(this);
-  }
-}
+Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)), platformDevice_(*this) {}
 
-std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc& desc,
+std::shared_ptr<ICommandQueue> Device::createCommandQueue(CommandQueueType type,
                                                           Result* outResult) {
+  auto resource = std::make_shared<CommandQueue>(*this, type);
   Result::setOk(outResult);
-  auto resource = std::make_shared<CommandQueue>(*this, desc);
   return resource;
 }
 
@@ -98,22 +92,6 @@ std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
   return std::make_shared<vulkan::DepthStencilState>(desc);
 }
 
-std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc& desc,
-                                                          Result* outResult) const {
-  auto shaderStages = std::make_unique<ShaderStages>(desc);
-  if (shaderStages == nullptr) {
-    Result::setResult(
-        outResult, Result::Code::RuntimeError, "Could not instantiate shader stages.");
-  } else if (!shaderStages->isValid()) {
-    Result::setResult(
-        outResult, Result::Code::ArgumentInvalid, "Missing required shader module(s).");
-  } else {
-    Result::setOk(outResult);
-  }
-
-  return shaderStages;
-}
-
 std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
                                                           Result* outResult) const {
   auto samplerState = std::make_shared<vulkan::SamplerState>(*this);
@@ -136,15 +114,6 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   return res.isOk() ? texture : nullptr;
 }
 
-std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexInputStateDesc& desc,
-                                                                  Result* outResult) const {
-  // VertexInputState is compiled into the RenderPipelineState at a later stage. For now, we just
-  // have to store the description.
-  Result::setOk(outResult);
-
-  return std::make_shared<vulkan::VertexInputState>(desc);
-}
-
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
     Result* outResult) const {
@@ -152,11 +121,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
     return nullptr;
   }
-  if (!IGL_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Compute)) {
-    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader stages not for compute");
-    return nullptr;
-  }
-  if (!IGL_VERIFY(desc.shaderStages->getComputeModule())) {
+  if (!IGL_VERIFY(desc.shaderStages->getModule(Stage_Compute))) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing compute shader");
     return nullptr;
   }
@@ -171,10 +136,6 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
     return nullptr;
   }
-  if (!IGL_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Render)) {
-    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader stages not for render");
-    return nullptr;
-  }
 
   const bool hasColorAttachments = !desc.targetDesc.colorAttachments.empty();
   const bool hasDepthAttachment = desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid;
@@ -184,12 +145,12 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
     return nullptr;
   }
 
-  if (!IGL_VERIFY(desc.shaderStages->getVertexModule())) {
+  if (!IGL_VERIFY(desc.shaderStages->getModule(Stage_Vertex))) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing vertex shader");
     return nullptr;
   }
 
-  if (!IGL_VERIFY(desc.shaderStages->getFragmentModule())) {
+  if (!IGL_VERIFY(desc.shaderStages->getModule(Stage_Fragment))) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing fragment shader");
     return nullptr;
   }
@@ -201,12 +162,12 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
                                                           Result* outResult) const {
   std::shared_ptr<VulkanShaderModule> vulkanShaderModule;
   Result result;
-  if (desc.input.type == ShaderInputType::Binary) {
-    vulkanShaderModule =
-        createShaderModule(desc.input.data, desc.input.length, desc.debugName, &result);
+  if (desc.dataSize) {
+    // binary
+    vulkanShaderModule = createShaderModule(desc.data, desc.dataSize, desc.debugName, &result);
   } else {
-    vulkanShaderModule =
-        createShaderModule(desc.info.stage, desc.input.source, desc.debugName, &result);
+    // text
+    vulkanShaderModule = createShaderModule(desc.stage, desc.data, desc.debugName, &result);
   }
 
   if (!result.isOk()) {
@@ -214,7 +175,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
     return nullptr;
   }
   Result::setResult(outResult, std::move(result));
-  return std::make_shared<ShaderModule>(desc.info, std::move(vulkanShaderModule));
+  return std::make_shared<ShaderModule>(desc, std::move(vulkanShaderModule));
 }
 
 std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
@@ -259,8 +220,6 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
         device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName.c_str()));
   }
 
-  // @fb-only
-  // @lint-ignore CLANGTIDY
   return std::make_shared<VulkanShaderModule>(device, vkShaderModule);
 }
 
@@ -288,14 +247,6 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       extraExtensions += "#extension GL_EXT_debug_printf : enable\n";
     }
 
-    const std::string enhancedShaderDebuggingCode =
-        EnhancedShaderDebuggingStore::recordLineShaderCode(
-            ctx_->enhancedShaderDebuggingStore_ != nullptr, ctx_->extensions_);
-
-    if (ctx_->vkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16 == VK_TRUE) {
-      extraExtensions += "#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require\n";
-    }
-
     // there's no header provided in the shader source, let's insert our own header
     if (vkStage == VK_SHADER_STAGE_VERTEX_BIT || vkStage == VK_SHADER_STAGE_COMPUTE_BIT) {
       sourcePatched += R"(
@@ -305,6 +256,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       #extension GL_EXT_nonuniform_qualifier : require
       #extension GL_EXT_buffer_reference : require
       #extension GL_EXT_buffer_reference_uvec2 : require
+      #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
 
       layout (set = 1, binding = 0) uniform Bindings {
         // has to be tightly packed into `uvec4` because GL_EXT_scalar_block_layout is guaranteed only for Vulkan 1.2+
@@ -314,7 +266,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       uvec2 getBuffer(uint slot) {
         return bindings.slots[slot].zw;
       }
-      )" + enhancedShaderDebuggingCode;
+      )";
     }
     if (vkStage == VK_SHADER_STAGE_FRAGMENT_BIT) {
       sourcePatched += R"(
@@ -323,6 +275,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
                        R"(
       #extension GL_EXT_nonuniform_qualifier : require
       #extension GL_EXT_buffer_reference_uvec2 : require
+      #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
 
       layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
       layout (set = 0, binding = 1) uniform texture2DArray kTextures2DArray[];
@@ -382,7 +335,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
         return textureLod(samplerCube(kTexturesCube[nonuniformEXT(idxTex)],
                                    kSamplers[nonuniformEXT(idxSmp)]), uvw, lod);
       }
-      )" + enhancedShaderDebuggingCode;
+      )";
     }
     sourcePatched += source;
     source = sourcePatched.c_str();
@@ -407,8 +360,6 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
         device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName.c_str()));
   }
 
-  // @fb-only
-  // @lint-ignore CLANGTIDY
   return std::make_shared<VulkanShaderModule>(device, vkShaderModule);
 }
 
@@ -423,46 +374,6 @@ const PlatformDevice& Device::getPlatformDevice() const noexcept {
   return platformDevice_;
 }
 
-size_t Device::getCurrentDrawCount() const {
-  return ctx_->drawCallCount_;
-}
-
-std::unique_ptr<igl::IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& desc,
-                                                                 Result* outResult) const {
-  if (IGL_UNEXPECTED(desc.moduleInfo.empty())) {
-    Result::setResult(outResult, Result::Code::ArgumentInvalid);
-    return nullptr;
-  }
-  Result result;
-  std::shared_ptr<VulkanShaderModule> vulkanShaderModule;
-  if (desc.input.type == ShaderInputType::Binary) {
-    vulkanShaderModule =
-        createShaderModule(desc.input.data, desc.input.length, desc.debugName, &result);
-  } else {
-    if (desc.moduleInfo.size() > 1) {
-      IGL_ASSERT_NOT_IMPLEMENTED();
-      Result::setResult(outResult, Result::Code::Unsupported);
-      return nullptr;
-    }
-    vulkanShaderModule = createShaderModule(
-        desc.moduleInfo.front().stage, desc.input.source, desc.debugName, &result);
-  }
-
-  if (!result.isOk()) {
-    Result::setResult(outResult, std::move(result));
-    return nullptr;
-  }
-
-  std::vector<std::shared_ptr<IShaderModule>> modules;
-  modules.reserve(desc.moduleInfo.size());
-  for (const auto& info : desc.moduleInfo) {
-    modules.emplace_back(std::make_shared<ShaderModule>(info, vulkanShaderModule));
-  }
-
-  Result::setResult(outResult, std::move(result));
-  return std::make_unique<igl::vulkan::ShaderLibrary>(std::move(modules));
-}
-
 bool Device::hasFeature(DeviceFeatures feature) const {
   VkPhysicalDevice physicalDevice = ctx_->vkPhysicalDevice_;
   const VkPhysicalDeviceProperties& deviceProperties = ctx_->getVkPhysicalDeviceProperties();
@@ -473,103 +384,9 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     return deviceProperties.limits.framebufferColorSampleCounts > VK_SAMPLE_COUNT_1_BIT;
   case DeviceFeatures::TextureFilterAnisotropic:
     return deviceProperties.limits.maxSamplerAnisotropy > 1;
-  case DeviceFeatures::MapBufferRange:
-    return true;
-  case DeviceFeatures::MultipleRenderTargets:
-    return deviceProperties.limits.maxColorAttachments > 1;
-  case DeviceFeatures::StandardDerivative:
-    return true;
-  case DeviceFeatures::StandardDerivativeExt:
-    return false;
-  case DeviceFeatures::TextureFormatRG:
-    return supportsFormat(physicalDevice, VK_FORMAT_R8G8_UNORM);
-  case DeviceFeatures::TextureFormatRGB:
-    return supportsFormat(physicalDevice, VK_FORMAT_R8G8B8_SRGB);
-  case DeviceFeatures::ReadWriteFramebuffer:
-    return true;
-  case DeviceFeatures::TextureNotPot:
-    return true;
-  case DeviceFeatures::UniformBlocks:
-    return true;
-  case DeviceFeatures::TextureHalfFloat:
-    return supportsFormat(physicalDevice, VK_FORMAT_R16G16B16A16_SFLOAT) ||
-           supportsFormat(physicalDevice, VK_FORMAT_R16_SFLOAT);
-  case DeviceFeatures::TextureFloat:
-    return supportsFormat(physicalDevice, VK_FORMAT_R32G32B32A32_SFLOAT) ||
-           supportsFormat(physicalDevice, VK_FORMAT_R32_SFLOAT);
-  case DeviceFeatures::Texture2DArray:
-  case DeviceFeatures::Texture3D:
-    return true;
-  case DeviceFeatures::ShaderTextureLod:
-    return true;
-  case DeviceFeatures::ShaderTextureLodExt:
-    return false;
-  case DeviceFeatures::DepthShaderRead:
-    return true;
-  case DeviceFeatures::DepthCompare:
-    return true;
-  case DeviceFeatures::MinMaxBlend:
-    return true;
-  case DeviceFeatures::TextureExternalImage:
-    return false;
-  case DeviceFeatures::Compute:
-    return true;
-  case DeviceFeatures::ExplicitBinding:
-    return true;
-  case DeviceFeatures::ExplicitBindingExt:
-    return false;
-  case DeviceFeatures::TextureBindless:
-    return ctx_->vkPhysicalDeviceDescriptorIndexingProperties_
-               .shaderSampledImageArrayNonUniformIndexingNative == VK_TRUE;
-  case DeviceFeatures::PushConstants:
-    return true;
-  case DeviceFeatures::BufferDeviceAddress:
-    return true;
-  case DeviceFeatures::Multiview:
-    return ctx_->vkPhysicalDeviceMultiviewFeatures_.multiview == VK_TRUE;
-  case DeviceFeatures::BindUniform:
-    return false;
-  case DeviceFeatures::TexturePartialMipChain:
-    return true;
-  case DeviceFeatures::BufferRing:
-    return false;
-  case DeviceFeatures::BufferNoCopy:
-    return false;
-  case DeviceFeatures::ShaderLibrary:
-    return true;
-  case DeviceFeatures::BindBytes:
-    return false;
-  case DeviceFeatures::TextureArrayExt:
-    return false;
-  case DeviceFeatures::SRGB:
-    return true;
-  // on Metal and Vulkan, the framebuffer pixel format dictates sRGB control.
-  case DeviceFeatures::SRGBWriteControl:
-    return false;
-  case DeviceFeatures::SamplerMinMaxLod:
-    return true;
-  case DeviceFeatures::DrawIndexedIndirect:
-    return true;
-  case DeviceFeatures::ValidationLayersEnabled:
-    return ctx_->areValidationLayersEnabled();
   }
 
   IGL_ASSERT_MSG(0, "DeviceFeatures value not handled: %d", (int)feature);
-
-  return false;
-}
-
-bool Device::hasRequirement(DeviceRequirement requirement) const {
-  switch (requirement) {
-  case DeviceRequirement::ExplicitBindingExtReq:
-  case DeviceRequirement::StandardDerivativeExtReq:
-  case DeviceRequirement::TextureArrayExtReq:
-  case DeviceRequirement::TextureFormatRGExtReq:
-  case DeviceRequirement::ShaderTextureLodExtReq:
-    return false;
-  };
-
-  assert(false);
 
   return false;
 }
@@ -578,21 +395,19 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
   const VkPhysicalDeviceLimits& limits = ctx_->getVkPhysicalDeviceProperties().limits;
 
   switch (featureLimits) {
-  case DeviceFeatureLimits::MaxTextureDimension1D2D:
+  case DeviceFeatureLimits::MaxDimension1D2D:
     result = std::min(limits.maxImageDimension1D, limits.maxImageDimension2D);
     return true;
-  case DeviceFeatureLimits::MaxCubeMapDimension:
+  case DeviceFeatureLimits::MaxDimensionCube:
     result = limits.maxImageDimensionCube;
     return true;
-  case DeviceFeatureLimits::MaxVertexUniformVectors:
-  case DeviceFeatureLimits::MaxFragmentUniformVectors:
   case DeviceFeatureLimits::MaxUniformBufferBytes:
     result = limits.maxUniformBufferRange;
     return true;
   case DeviceFeatureLimits::MaxPushConstantBytes:
     result = limits.maxPushConstantsSize;
     return true;
-  case DeviceFeatureLimits::MaxMultisampleCount: {
+  case DeviceFeatureLimits::MaxSamples: {
     const VkSampleCountFlags sampleCounts = limits.framebufferColorSampleCounts;
     if ((sampleCounts & VK_SAMPLE_COUNT_64_BIT) != 0) {
       result = 64;
@@ -611,23 +426,16 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
     }
     return true;
   }
-  case DeviceFeatureLimits::PushConstantsAlignment:
-    result = 4;
-    return true;
-  case DeviceFeatureLimits::BufferAlignment:
-    result = 1;
-    return true;
-  case DeviceFeatureLimits::BufferNoCopyAlignment:
-    result = 0;
-    return true;
-  case DeviceFeatureLimits::MaxBindBytesBytes:
-    result = 0;
-    return true;
   }
 
   IGL_ASSERT_MSG(0, "DeviceFeatureLimits value not handled: %d", (int)featureLimits);
   result = 0;
   return false;
+}
+
+static inline bool contains(ICapabilities::TextureFormatCapabilities value,
+                     ICapabilities::TextureFormatCapabilityBits flag) {
+  return (value & flag) == flag;
 }
 
 ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(
@@ -670,10 +478,6 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(
   }
 
   return caps;
-}
-
-ShaderVersion Device::getShaderVersion() const {
-  return {ShaderFamily::SpirV, 1, 5, 0};
 }
 
 } // namespace vulkan

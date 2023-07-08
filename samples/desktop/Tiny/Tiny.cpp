@@ -22,40 +22,17 @@
 #include <GLFW/glfw3native.h>
 
 #include <cassert>
+#include <format>
 #include <regex>
 #include <stdio.h>
 
 #include <igl/IGL.h>
 
-#define USE_OPENGL_BACKEND 0
-
-#if IGL_BACKEND_OPENGL && !IGL_BACKEND_VULKAN
-// no IGL/Vulkan was compiled in, switch to IGL/OpenGL
-#undef USE_OPENGL_BACKEND
-#define USE_OPENGL_BACKEND 1
-#endif
-
-// clang-format off
-#if USE_OPENGL_BACKEND
-  #if IGL_PLATFORM_WIN
-    #include <igl/opengl/wgl/Context.h>
-    #include <igl/opengl/wgl/Device.h>
-    #include <igl/opengl/wgl/HWDevice.h>
-    #include <igl/opengl/wgl/PlatformDevice.h>
-  #elif IGL_PLATFORM_LINUX
-    #include <igl/opengl/glx/Context.h>
-    #include <igl/opengl/glx/Device.h>
-    #include <igl/opengl/glx/HWDevice.h>
-    #include <igl/opengl/glx/PlatformDevice.h>
-  #endif
-#else
-  #include <igl/vulkan/Common.h>
-  #include <igl/vulkan/Device.h>
-  #include <igl/vulkan/HWDevice.h>
-  #include <igl/vulkan/PlatformDevice.h>
-  #include <igl/vulkan/VulkanContext.h>
-#endif // USE_OPENGL_BACKEND
-// clang-format on
+#include <igl/vulkan/Common.h>
+#include <igl/vulkan/Device.h>
+#include <igl/vulkan/HWDevice.h>
+#include <igl/vulkan/PlatformDevice.h>
+#include <igl/vulkan/VulkanContext.h>
 
 #define ENABLE_MULTIPLE_COLOR_ATTACHMENTS 0
 
@@ -65,15 +42,7 @@ static const uint32_t kNumColorAttachments = 4;
 static const uint32_t kNumColorAttachments = 1;
 #endif
 
-#if defined(__cpp_lib_format)
-#include <format>
-#define IGL_FORMAT std::format
-#else
-#include <fmt/core.h>
-#define IGL_FORMAT fmt::format
-#endif // __cpp_lib_format
-
-std::string codeVS = R"(
+const char* codeVS = R"(
 #version 460
 layout (location=0) out vec3 color;
 const vec2 pos[3] = vec2[3](
@@ -132,26 +101,10 @@ static bool initWindow(GLFWwindow** outWindow) {
     return false;
   }
 
-#if USE_OPENGL_BACKEND
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-  glfwWindowHint(GLFW_VISIBLE, true);
-  glfwWindowHint(GLFW_DOUBLEBUFFER, true);
-  glfwWindowHint(GLFW_SRGB_CAPABLE, true);
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-#else
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-#endif
   glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-#if USE_OPENGL_BACKEND
-  const char* title = "OpenGL Triangle";
-#else
-  const char* title = "Vulkan Triangle";
-#endif
-
-  GLFWwindow* window = glfwCreateWindow(800, 600, title, nullptr, nullptr);
+  GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan Triangle", nullptr, nullptr);
 
   if (!window) {
     glfwTerminate();
@@ -192,21 +145,6 @@ static bool initWindow(GLFWwindow** outWindow) {
 static void initIGL() {
   // create a device
   {
-#if USE_OPENGL_BACKEND
-#if IGL_PLATFORM_WIN
-    auto ctx = std::make_unique<igl::opengl::wgl::Context>(GetDC(glfwGetWin32Window(window_)),
-                                                           glfwGetWGLContext(window_));
-    device_ = std::make_unique<igl::opengl::wgl::Device>(std::move(ctx));
-#elif IGL_PLATFORM_LINUX
-    auto ctx = std::make_unique<igl::opengl::glx::Context>(
-        nullptr,
-        glfwGetX11Display(),
-        (igl::opengl::glx::GLXDrawable)glfwGetX11Window(window_),
-        (igl::opengl::glx::GLXContext)glfwGetGLXContext(window_));
-
-    device_ = std::make_unique<igl::opengl::glx::Device>(std::move(ctx));
-#endif
-#else
     const igl::vulkan::VulkanContextConfig cfg{
         .maxTextures = 8,
         .maxSamplers = 8,
@@ -215,8 +153,6 @@ static void initIGL() {
     };
 #ifdef _WIN32
     auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
-#elif __APPLE__
-    auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetCocoaWindow(window_));
 #elif defined(__linux__)
     auto ctx = vulkan::HWDevice::createContext(
         cfg, (void*)glfwGetX11Window(window_), 0, nullptr, (void*)glfwGetX11Display());
@@ -232,13 +168,11 @@ static void initIGL() {
     }
     device_ =
         vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
-#endif
     IGL_ASSERT(device_);
   }
 
   // Command queue: backed by different types of GPU HW queues
-  CommandQueueDesc desc{CommandQueueType::Graphics};
-  commandQueue_ = device_->createCommandQueue(desc, nullptr);
+  commandQueue_ = device_->createCommandQueue(CommandQueueType::Graphics, nullptr);
 
   // first color attachment
   for (auto i = 0; i < kNumColorAttachments; ++i) {
@@ -266,7 +200,6 @@ static void createRenderPipeline() {
   desc.targetDesc.colorAttachments.resize(kNumColorAttachments);
 
   for (auto i = 0; i < kNumColorAttachments; ++i) {
-    // @fb-only
     if (framebuffer_->getColorAttachment(i)) {
       desc.targetDesc.colorAttachments[i].textureFormat =
           framebuffer_->getColorAttachment(i)->getFormat();
@@ -277,36 +210,20 @@ static void createRenderPipeline() {
     desc.targetDesc.depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat();
   }
 
-#if USE_OPENGL_BACKEND
-  codeVS = std::regex_replace(codeVS, std::regex("gl_VertexIndex"), "gl_VertexID");
-#endif
-
-  desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(
-      *device_, codeVS.c_str(), "main", "", codeFS, "main", "", nullptr);
+  desc.shaderStages = device_->createShaderStages(
+      codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)");
   renderPipelineState_Triangle_ = device_->createRenderPipeline(desc, nullptr);
   IGL_ASSERT(renderPipelineState_Triangle_);
 }
 
 static std::shared_ptr<ITexture> getNativeDrawable() {
-  Result ret;
-  std::shared_ptr<ITexture> drawable;
-#if USE_OPENGL_BACKEND
-#if IGL_PLATFORM_WIN
-  const auto& platformDevice = device_->getPlatformDevice<opengl::wgl::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
-  drawable = platformDevice->createTextureFromNativeDrawable(&ret);
-#elif IGL_PLATFORM_LINUX
-  const auto& platformDevice = device_->getPlatformDevice<opengl::glx::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
-  drawable = platformDevice->createTextureFromNativeDrawable(width_, height_, &ret);
-#endif
-#else
   const auto& platformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
   IGL_ASSERT(platformDevice != nullptr);
-  drawable = platformDevice->createTextureFromNativeDrawable(&ret);
-#endif
-  IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
-  IGL_ASSERT(drawable != nullptr);
+
+  Result ret;
+  std::shared_ptr<ITexture> drawable = platformDevice->createTextureFromNativeDrawable(&ret);
+
+  IGL_ASSERT(ret.isOk());
   return drawable;
 }
 
@@ -324,7 +241,7 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
         nativeDrawable->getDimensions().width,
         nativeDrawable->getDimensions().height,
         TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled,
-        IGL_FORMAT("{}C{}", framebufferDesc.debugName.c_str(), i - 1).c_str());
+        std::format("{}C{}", framebufferDesc.debugName.c_str(), i - 1).c_str());
 
     framebufferDesc.colorAttachments[i].texture = device_->createTexture(desc, nullptr);
   }

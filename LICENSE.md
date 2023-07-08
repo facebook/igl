@@ -1,3 +1,11 @@
+## LightweightVK
+
+MIT License
+
+Copyright (c) Sergey Kosarevsky, 2023
+
+## Based on https://github.com/facebook/igl/
+
 MIT License
 
 Copyright (c) Meta Platforms, Inc. and affiliates.
@@ -64,6 +72,9 @@ https://github.com/KhronosGroup/glslang/blob/main/LICENSE.txt
 
 googletest
 https://github.com/google/googletest/blob/main/LICENSE
+
+IGL
+https://github.com/facebook/igl/blob/main/LICENSE.md
 
 imgui
 https://github.com/ocornut/imgui/blob/master/LICENSE.txt

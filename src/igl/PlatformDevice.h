@@ -18,16 +18,7 @@ namespace igl {
  */
 enum class PlatformDeviceType {
   Unknown = 0,
-  Metal,
-  OpenGL,
-  OpenGLEgl,
-  OpenGLWgl,
-  OpenGLx,
-  OpenGLIOS,
-  OpenGLMacOS,
-  OpenGLWebGL,
   Vulkan,
-  // @fb-only
 };
 
 /**

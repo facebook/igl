@@ -32,7 +32,7 @@ class FPSCounter {
       avgFPS_ = float(frames_ / time_);
 
       if (printToConsole_) {
-        IGL_LOG_INFO("FPS: %.1f\n", avgFPS_);
+        printf("FPS: %.1f\n", avgFPS_);
       }
 
       frames_ = 0;

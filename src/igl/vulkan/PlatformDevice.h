@@ -40,21 +40,6 @@ class PlatformDevice : public IPlatformDevice {
   /// @return pointer to generated Texture or nullptr
   std::shared_ptr<ITexture> createTextureFromNativeDrawable(Result* outResult);
 
-  /// @param handle The handle to the GPU Fence
-  /// @return The Vulkan fence associated with the handle
-  [[nodiscard]] VkFence getVkFenceFromSubmitHandle(SubmitHandle handle) const;
-
-  /// Waits on the GPU Fence associated with the handle
-  /// @param handle The handle to the GPU Fence
-  void waitOnSubmitHandle(SubmitHandle handle) const;
-
-  /// Android only for now - Creates the file descriptor for the underlying VkFence
-  /// @param handle The handle to the GPU Fence
-  /// @return The fd for the Vulkan Fence associated with the handle
-#if defined(IGL_PLATFORM_ANDROID) && defined(VK_KHR_external_fence_fd)
-  [[nodiscard]] int getFenceFdFromSubmitHandle(SubmitHandle handle) const;
-#endif
-
  protected:
   bool isType(PlatformDeviceType t) const noexcept override {
     return t == Type;

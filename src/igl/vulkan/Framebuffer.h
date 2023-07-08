@@ -35,18 +35,18 @@ class Framebuffer final : public IFramebuffer {
   void copyBytesColorAttachment(ICommandQueue& /* Not Used */,
                                 size_t index,
                                 void* pixelBytes,
-                                const TextureRangeDesc& range,
-                                size_t bytesPerRow = 0) const override;
+                                size_t bytesPerRow,
+                                const TextureRangeDesc& range) const override;
 
   void copyBytesDepthAttachment(ICommandQueue& cmdQueue,
                                 void* pixelBytes,
-                                const TextureRangeDesc& range,
-                                size_t bytesPerRow = 0) const override;
+                                size_t bytesPerRow,
+                                const TextureRangeDesc& range) const override;
 
   void copyBytesStencilAttachment(ICommandQueue& cmdQueue,
                                   void* pixelBytes,
-                                  const TextureRangeDesc& range,
-                                  size_t bytesPerRow = 0) const override;
+                                  size_t bytesPerRow,
+                                  const TextureRangeDesc& range) const override;
 
   void copyTextureColorAttachment(ICommandQueue& cmdQueue,
                                   size_t index,

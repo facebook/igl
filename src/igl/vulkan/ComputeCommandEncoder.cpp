@@ -87,12 +87,6 @@ void ComputeCommandEncoder::popDebugGroupLabel() const {
   ivkCmdEndDebugUtilsLabel(cmdBuffer_);
 }
 
-void ComputeCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const void* /*data*/) {
-  // DO NOT IMPLEMENT!
-  // This is only for backends that MUST use single uniforms in some situations.
-  IGL_ASSERT_NOT_IMPLEMENTED();
-}
-
 void ComputeCommandEncoder::bindTexture(size_t index, const std::shared_ptr<ITexture>& texture) {
   IGL_PROFILER_FUNCTION();
 
@@ -145,10 +139,6 @@ void ComputeCommandEncoder::bindBuffer(size_t index,
   binder_.bindBuffer((int)index, buf, offset);
 }
 
-void ComputeCommandEncoder::bindBytes(size_t /*index*/, const void* /*data*/, size_t /*length*/) {
-  IGL_ASSERT_NOT_IMPLEMENTED();
-}
-
 void ComputeCommandEncoder::bindPushConstants(size_t offset, const void* data, size_t length) {
   IGL_PROFILER_FUNCTION();
 
@@ -158,7 +148,7 @@ void ComputeCommandEncoder::bindPushConstants(size_t offset, const void* data, s
   const VkPhysicalDeviceLimits& limits = ctx_.getVkPhysicalDeviceProperties().limits;
   const size_t size = offset + length;
   if (!IGL_VERIFY(size <= limits.maxPushConstantsSize)) {
-    IGL_LOG_ERROR(
+    LLOGW(
         "Push constants size exceeded %u (max %u bytes)", size, limits.maxPushConstantsSize);
   }
 

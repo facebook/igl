@@ -11,7 +11,6 @@
 #include <igl/CommandEncoder.h>
 #include <igl/Common.h>
 #include <igl/Framebuffer.h>
-#include <igl/Uniform.h>
 
 // TODO: Remove this once we move BindTarget from CommandBuffer.h to this header
 #include <igl/CommandBuffer.h>
@@ -22,14 +21,6 @@ class IBuffer;
 class IComputePipelineState;
 class ISamplerState;
 class ITexture;
-
-/**
- * @brief A descriptor struct for IComputeCommandEncoder
- *
- */
-struct ComputeCommandEncoderDesc {
-  // Placeholder
-};
 
 /**
  * @brief Object for encoding commands in a compute pass
@@ -59,14 +50,6 @@ class IComputeCommandEncoder : public ICommandEncoder {
   ~IComputeCommandEncoder() override = default;
 
   /**
-   * @brief Binds an individual uniform.
-   *
-   * @param uniformDesc A descriptor for the uniform.
-   * @param data The uniform data to bind.
-   * Exclusively used when uniform blocks are not supported.
-   */
-  virtual void bindUniform(const UniformDesc& uniformDesc, const void* data) = 0;
-  /**
    * @brief Sets a texture for the compute function
    *
    * @param index An index in the texture argument table.
@@ -81,15 +64,6 @@ class IComputeCommandEncoder : public ICommandEncoder {
    * @param offset Where the data begins in bytes from the start of the buffer.
    */
   virtual void bindBuffer(size_t index, const std::shared_ptr<IBuffer>& buffer, size_t offset) = 0;
-  /**
-   * @brief Sets a block of data for the compute function. A buffer will be created behind the
-   * scenes to hold the input data and bound to the buffer argument table at the specified index.
-   *
-   * @param index An index for the buffer argument table.
-   * @param data The memory address from which to copy the data.
-   * @param length The number of bytes to copy.
-   */
-  virtual void bindBytes(size_t index, const void* data, size_t length) = 0;
   /**
    * @brief Sets a block of data for the compute function.
    *

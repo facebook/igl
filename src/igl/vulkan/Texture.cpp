@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/IGLSafeC.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/Texture.h>
@@ -26,7 +25,7 @@ Result Texture::create(const TextureDesc& desc) {
 
   const VulkanContext& ctx = device_.getVulkanContext();
 
-  const VkFormat vkFormat = getProperties().isDepthOrStencil()
+  const VkFormat vkFormat = isDepthOrStencilFormat(desc_.format)
                                 ? ctx.getClosestDepthStencilFormat(desc_.format)
                                 : textureFormatToVkFormat(desc_.format);
 
@@ -79,7 +78,7 @@ Result Texture::create(const TextureDesc& desc) {
 
   // On M1 Macs, depth texture has to be ResourceStorage::Private.
   if (!ctx.useStaging_ && desc_.storage == ResourceStorage::Private &&
-      !getProperties().isDepthOrStencil()) {
+      !isDepthOrStencilFormat(desc_.format)) {
     desc_.storage = ResourceStorage::Shared;
   }
 
@@ -91,8 +90,8 @@ Result Texture::create(const TextureDesc& desc) {
     usageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
   }
   if (desc_.usage & TextureDesc::TextureUsageBits::Attachment) {
-    usageFlags |= getProperties().isDepthOrStencil() ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
-                                                     : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    usageFlags |= isDepthOrStencilFormat(desc_.format) ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+                                                       : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
   }
 
   // For now, always set this flag so we can read it back
@@ -158,6 +157,7 @@ Result Texture::create(const TextureDesc& desc) {
     return Result(Result::Code::InvalidOperation, "Cannot create VulkanImage");
   }
 
+  // TODO: use multiple image views to allow sampling from the STENCIL buffer
   const VkImageAspectFlags aspect = (usageFlags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
                                         ? VK_IMAGE_ASPECT_DEPTH_BIT
                                         : VK_IMAGE_ASPECT_COLOR_BIT;
@@ -190,23 +190,30 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
   }
 
   const void* uploadData = data;
-  const auto imageRowWidth = getProperties().getBytesPerRow(range);
+  const size_t bytesPerPixel = isCompressedTextureFormat(vkFormatToTextureFormat(getVkFormat()))
+                                   ? toBytesPerBlock(vkFormatToTextureFormat(getVkFormat()))
+                                   : getBytesPerPixel(getVkFormat());
+
+  const size_t imageRowWidth = desc_.width * bytesPerPixel;
 
   std::vector<uint8_t> linearData;
 
-  const bool isAligned = getProperties().isCompressed() || bytesPerRow == 0 ||
-                         imageRowWidth == bytesPerRow;
+  const bool isAligned = isCompressedTextureFormat(vkFormatToTextureFormat(getVkFormat())) ||
+                         bytesPerRow == 0 || imageRowWidth == bytesPerRow;
 
   if (!isAligned) {
-    linearData.resize(getProperties().getBytesPerRange(range.atLayer(0)));
+    linearData.resize(imageRowWidth * desc_.height);
   }
 
   auto numLayers = std::max(range.numLayers, static_cast<size_t>(1));
   auto byteIncrement =
-      numLayers > 1 ? getProperties().getBytesPerLayer(range.width, range.height, range.depth) : 0;
+      numLayers > 1
+          ? getTextureBytesPerSlice(range.width, range.height, range.depth, desc_.format, 0)
+          : 0;
   if (range.numMipLevels > 1) {
     for (auto i = 1; i < range.numMipLevels; ++i) {
-      byteIncrement += getProperties().getBytesPerRange(range.atMipLevel(i));
+      byteIncrement +=
+          getTextureBytesPerSlice(range.width, range.height, range.depth, desc_.format, i);
     }
   }
 
@@ -214,12 +221,10 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
     if (isAligned) {
       uploadData = data;
     } else {
-      const auto rows = getProperties().getRows(range);
-      for (uint32_t h = 0; h < rows; h++) {
-        checked_memcpy(static_cast<uint8_t*>(linearData.data()) + h * imageRowWidth,
-                       linearData.size() - h * imageRowWidth,
-                       static_cast<const uint8_t*>(data) + h * bytesPerRow,
-                       imageRowWidth);
+      for (uint32_t h = 0; h < desc_.height; h++) {
+        memcpy(static_cast<uint8_t*>(linearData.data()) + h * imageRowWidth,
+               static_cast<const uint8_t*>(data) + h * bytesPerRow,
+               imageRowWidth);
       }
 
       uploadData = linearData.data();
@@ -234,7 +239,6 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
           texture_->getVulkanImage(),
           VkOffset3D{(int32_t)range.x, (int32_t)range.y, (int32_t)range.z},
           VkExtent3D{(uint32_t)range.width, (uint32_t)range.height, (uint32_t)range.depth},
-          getProperties(),
           getVkFormat(),
           uploadData);
     } else {
@@ -245,7 +249,6 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
                                       (uint32_t)range.mipLevel,
                                       (uint32_t)range.numMipLevels,
                                       (uint32_t)range.layer + i,
-                                      getProperties(),
                                       getVkFormat(),
                                       uploadData);
     }
@@ -273,7 +276,6 @@ Result Texture::uploadCube(const TextureRangeDesc& range,
                                   (uint32_t)range.mipLevel,
                                   (uint32_t)range.numMipLevels,
                                   (uint32_t)face - (uint32_t)TextureCubeFace::PosX,
-                                  getProperties(),
                                   getVkFormat(),
                                   data);
   return Result();
@@ -296,7 +298,7 @@ TextureType Texture::getType() const {
   return desc_.type;
 }
 
-ulong_t Texture::getUsage() const {
+uint32_t Texture::getUsage() const {
   return desc_.usage;
 }
 
@@ -333,7 +335,7 @@ VkImageView Texture::getVkImageView() const {
   return texture_ ? texture_->getVulkanImageView().vkImageView_ : VK_NULL_HANDLE;
 }
 
-VkImageView Texture::getVkImageViewForFramebuffer(uint32_t level, FramebufferMode mode) const {
+VkImageView Texture::getVkImageViewForFramebuffer(uint32_t level) const {
   if (level < imageViewForFramebuffer_.size() && imageViewForFramebuffer_[level]) {
     return imageViewForFramebuffer_[level]->getVkImageView();
   }
@@ -343,16 +345,9 @@ VkImageView Texture::getVkImageViewForFramebuffer(uint32_t level, FramebufferMod
   }
 
   const VkImageAspectFlags flags = texture_->getVulkanImage().getImageAspectFlags();
-  const bool isStereo = mode == FramebufferMode::Stereo;
 
   imageViewForFramebuffer_[level] = texture_->getVulkanImage().createImageView(
-      isStereo ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D,
-      textureFormatToVkFormat(desc_.format),
-      flags,
-      level,
-      1u,
-      0u,
-      isStereo ? VK_REMAINING_ARRAY_LAYERS : 1u);
+      VK_IMAGE_VIEW_TYPE_2D, textureFormatToVkFormat(desc_.format), flags, level, 1u, 0u, 1u);
 
   return imageViewForFramebuffer_[level]->vkImageView_;
 }

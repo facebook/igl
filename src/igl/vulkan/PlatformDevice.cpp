@@ -121,57 +121,5 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
   return nativeDrawableTextures_[currentImageIndex];
 }
 
-VkFence PlatformDevice::getVkFenceFromSubmitHandle(SubmitHandle handle) const {
-  if (handle == 0) {
-    IGL_LOG_ERROR("Invalid submit handle passed to getVkFenceFromSubmitHandle");
-    return VK_NULL_HANDLE;
-  }
-  const auto& ctx = device_.getVulkanContext();
-  const auto& immediateCommands = ctx.immediate_;
-
-  VkFence vkFence =
-      immediateCommands->getVkFenceFromSubmitHandle(VulkanImmediateCommands::SubmitHandle(handle));
-
-  return vkFence;
-}
-
-void PlatformDevice::waitOnSubmitHandle(SubmitHandle handle) const {
-  if (handle == 0) {
-    IGL_LOG_ERROR("Invalid submit handle passed to waitOnSubmitHandle");
-    return;
-  }
-
-  const auto& ctx = device_.getVulkanContext();
-  const auto& immediateCommands = ctx.immediate_;
-
-  immediateCommands->wait(VulkanImmediateCommands::SubmitHandle(handle));
-}
-
-#if defined(IGL_PLATFORM_ANDROID) && defined(VK_KHR_external_fence_fd)
-int PlatformDevice::getFenceFdFromSubmitHandle(SubmitHandle handle) const {
-  if (handle == 0) {
-    IGL_LOG_ERROR("Invalid submit handle passed to getFenceFDFromSubmitHandle");
-    return -1;
-  }
-
-  VkFence vkFence = getVkFenceFromSubmitHandle(handle);
-  IGL_ASSERT(vkFence != VK_NULL_HANDLE);
-
-  VkFenceGetFdInfoKHR getFdInfo = {};
-  getFdInfo.sType = VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR;
-  getFdInfo.fence = vkFence;
-  getFdInfo.handleType = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
-
-  int fenceFd = -1;
-  VkDevice vkDevice = device_.getVulkanContext().device_->getVkDevice();
-  VkResult result = vkGetFenceFdKHR(vkDevice, &getFdInfo, &fenceFd);
-  if (result != VK_SUCCESS) {
-    IGL_LOG_ERROR("Unable to get fence fd from submit handle: %lu", handle);
-  }
-
-  return fenceFd;
-}
-#endif // defined(IGL_PLATFORM_ANDROID)
-
 } // namespace vulkan
 } // namespace igl

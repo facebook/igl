@@ -17,9 +17,9 @@
 namespace {
 VkFilter samplerMinMagFilterToVkFilter(igl::SamplerMinMagFilter filter) {
   switch (filter) {
-  case igl::SamplerMinMagFilter::Nearest:
+  case igl::SamplerMinMagFilter_Nearest:
     return VK_FILTER_NEAREST;
-  case igl::SamplerMinMagFilter::Linear:
+  case igl::SamplerMinMagFilter_Linear:
     return VK_FILTER_LINEAR;
   }
   IGL_ASSERT_MSG(false, "SamplerMinMagFilter value not handled: %d", (int)filter);
@@ -28,10 +28,10 @@ VkFilter samplerMinMagFilterToVkFilter(igl::SamplerMinMagFilter filter) {
 
 VkSamplerMipmapMode samplerMipFilterToVkSamplerMipmapMode(igl::SamplerMipFilter filter) {
   switch (filter) {
-  case igl::SamplerMipFilter::Disabled:
-  case igl::SamplerMipFilter::Nearest:
+  case igl::SamplerMipFilter_Disabled:
+  case igl::SamplerMipFilter_Nearest:
     return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-  case igl::SamplerMipFilter::Linear:
+  case igl::SamplerMipFilter_Linear:
     return VK_SAMPLER_MIPMAP_MODE_LINEAR;
   }
   IGL_ASSERT_MSG(false, "SamplerMipFilter value not handled: %d", (int)filter);
@@ -40,11 +40,11 @@ VkSamplerMipmapMode samplerMipFilterToVkSamplerMipmapMode(igl::SamplerMipFilter 
 
 static VkSamplerAddressMode samplerAddressModeToVkSamplerAddressMode(igl::SamplerAddressMode mode) {
   switch (mode) {
-  case igl::SamplerAddressMode::Repeat:
+  case igl::SamplerAddressMode_Repeat:
     return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  case igl::SamplerAddressMode::Clamp:
+  case igl::SamplerAddressMode_Clamp:
     return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-  case igl::SamplerAddressMode::MirrorRepeat:
+  case igl::SamplerAddressMode_MirrorRepeat:
     return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
   }
   IGL_ASSERT_MSG(false, "SamplerAddressMode value not handled: %d", (int)mode);
@@ -68,7 +68,7 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
                               desc.mipLodMin,
                               desc.mipLodMax);
 
-  if (desc.mipFilter == igl::SamplerMipFilter::Disabled) {
+  if (desc.mipFilter == igl::SamplerMipFilter_Disabled) {
     ci.maxLod = 0.0f;
   }
 
@@ -80,7 +80,7 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
 
 #ifdef IGL_VULKAN_DEBUG_SAMPLER_STATE
     if (limits.maxSamplerAnisotropy < desc.maxAnisotropic) {
-      IGL_LOG_INFO(
+      LLOGL(
           "Supplied sampler anisotropic value greater than max supported by the device, setting to "
           "%.0f",
           static_cast<double>(limits.maxSamplerAnisotropy));
@@ -91,7 +91,7 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
 
   if (desc.depthCompareEnabled) {
     ci.compareEnable = VK_TRUE;
-    ci.compareOp = igl::vulkan::compareFunctionToVkCompareOp(desc.depthCompareFunction);
+    ci.compareOp = igl::vulkan::compareOpToVkCompareOp(desc.depthCompareOp);
   }
 
   return ci;

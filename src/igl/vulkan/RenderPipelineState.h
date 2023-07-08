@@ -9,7 +9,6 @@
 
 #include <igl/RenderPipelineState.h>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/RenderPipelineReflection.h>
 #include <unordered_map>
 
 namespace igl {
@@ -163,25 +162,15 @@ class RenderPipelineState final : public IRenderPipelineState {
  private:
   friend class Device;
 
-  int getIndexByName(const igl::NameHandle& name, ShaderStage stage) const override;
-  int getIndexByName(const std::string& name, ShaderStage stage) const override;
-
-  std::shared_ptr<IRenderPipelineReflection> renderPipelineReflection() override;
-  void setRenderPipelineReflection(
-      const IRenderPipelineReflection& renderPipelineReflection) override;
-
  private:
   const igl::vulkan::Device& device_;
 
-  std::shared_ptr<IShaderStages> shaderStages_;
+  std::shared_ptr<ShaderStages> shaderStages_;
   RenderPipelineDesc desc_;
   VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo_;
 
   std::vector<VkVertexInputBindingDescription> vkBindings_;
   std::vector<VkVertexInputAttributeDescription> vkAttributes_;
-
-  // This is empty for now.
-  std::shared_ptr<RenderPipelineReflection> reflection_;
 
   mutable std::unordered_map<RenderPipelineDynamicState,
                              VkPipeline,

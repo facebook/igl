@@ -75,7 +75,7 @@ const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::ac
   }
 
   while (!numAvailableCommandBuffers_) {
-    IGL_LOG_INFO("Waiting for command buffers...\n");
+    LLOGL("Waiting for command buffers...\n");
     IGL_PROFILER_ZONE("Waiting for command buffers...", IGL_PROFILER_COLOR_WAIT);
     purge();
     IGL_PROFILER_ZONE_END();
@@ -181,10 +181,8 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
   IGL_ASSERT(wrapper.isEncoding_);
   VK_ASSERT(ivkEndCommandBuffer(wrapper.cmdBuf_));
 
-  // @lint-ignore CLANGTIDY
   const VkPipelineStageFlags waitStageMasks[] = {VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                                                  VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
-  // @lint-ignore CLANGTIDY
   VkSemaphore waitSemaphores[] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
   uint32_t numWaitSemaphores = 0;
   if (waitSemaphore_) {
@@ -199,13 +197,11 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
                                            waitSemaphores,
                                            waitStageMasks,
                                            &wrapper.semaphore_.vkSemaphore_);
-  // @lint-ignore CLANGTIDY
-  const VkFence vkFence = wrapper.fence_.vkFence_;
   IGL_PROFILER_ZONE("vkQueueSubmit()", IGL_PROFILER_COLOR_SUBMIT);
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkQueueSubmit()\n\n", wrapper.cmdBuf_);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-  VK_ASSERT(vkQueueSubmit(queue_, 1u, &si, vkFence));
+  VK_ASSERT(vkQueueSubmit(queue_, 1u, &si, wrapper.fence_.vkFence_));
   IGL_PROFILER_ZONE_END();
 
   lastSubmitSemaphore_ = wrapper.semaphore_.vkSemaphore_;
@@ -236,16 +232,6 @@ VkSemaphore VulkanImmediateCommands::acquireLastSubmitSemaphore() {
 
 VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::getLastSubmitHandle() const {
   return lastSubmitHandle_;
-}
-
-VkFence VulkanImmediateCommands::getVkFenceFromSubmitHandle(SubmitHandle handle) {
-  IGL_ASSERT(handle.bufferIndex_ < buffers_.size());
-
-  if (isReady(handle, true)) {
-    return VK_NULL_HANDLE;
-  }
-
-  return buffers_[handle.bufferIndex_].fence_.vkFence_;
 }
 
 } // namespace vulkan

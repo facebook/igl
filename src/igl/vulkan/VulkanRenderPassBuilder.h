@@ -48,9 +48,6 @@ class VulkanRenderPassBuilder final {
       VkAttachmentStoreOp storeOp,
       VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
       VkImageLayout finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-  VulkanRenderPassBuilder& setMultiviewMasks(const uint32_t viewMask,
-                                             const uint32_t correlationMask);
-
   // comparison operator and a hash function for std::unordered_map<>
   bool operator==(const VulkanRenderPassBuilder& other) const;
 
@@ -72,8 +69,6 @@ class VulkanRenderPassBuilder final {
   std::vector<VkAttachmentReference> refsColorResolve_;
   VkAttachmentReference refDepth_ = {};
   VkAttachmentReference refDepthResolve_ = {};
-  uint32_t viewMask_ = 0;
-  uint32_t correlationMask_ = 0;
 };
 
 } // namespace vulkan

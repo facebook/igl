@@ -7,31 +7,6 @@ on:
     branches: [ "**" ]
 
 jobs:
-  build:
-    name: "Android (Ubuntu)"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: Set up NDK
-        uses: nttld/setup-ndk@v1
-        with:
-          ndk-version: r25c
-
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          java-version: 17
-          distribution: 'oracle'
-
-      - name: Assemble APK debug
-        run: |
-          cd build/android
-          chmod +x ./gradlew
-          ./gradlew assembleDebug
-
   cmake-build:
       strategy:
         fail-fast: false
@@ -44,7 +19,7 @@ jobs:
               cc: "cl",
               cxx: "cl",
               generators: "Visual Studio 17 2022",
-              cmake_args: "-DIGL_WITH_TRACY=ON -DIGL_WITH_TESTS=ON"
+              cmake_args: "-DIGL_WITH_TRACY=ON"
             }
           - {
               name: "Ubuntu - Clang",
@@ -62,26 +37,7 @@ jobs:
               cc: "gcc",
               cxx: "g++",
               generators: "Unix Makefiles",
-              # TODO: Fix killing GCC process on Github CI when IGL_WITH_SHELL is ON.
-              cmake_args: "-DIGL_WITH_TRACY=ON -DIGL_WITH_SHELL=OFF"
-            }
-          - {
-              name: "macOS - Clang (Xcode)",
-              os: macos-latest,
-              build_type: "Debug",
-              cc: "clang",
-              cxx: "clang++",
-              generators: "Xcode",
-              cmake_args: "-DIGL_WITH_VULKAN=OFF"
-            }
-          - {
-              name: "macOS - Clang (Unix Makefiles)",
-              os: macos-latest,
-              build_type: "Debug",
-              cc: "clang",
-              cxx: "clang++",
-              generators: "Unix Makefiles",
-              cmake_args: "-DIGL_WITH_VULKAN=OFF"
+              cmake_args: "-DIGL_WITH_TRACY=ON"
             }
       runs-on: ${{ matrix.config.os }}
 

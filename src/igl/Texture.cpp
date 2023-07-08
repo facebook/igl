@@ -10,11 +10,76 @@
 #include <cmath>
 #include <utility>
 
-size_t std::hash<igl::TextureFormat>::operator()(igl::TextureFormat const& key) const {
-  return std::hash<size_t>()(static_cast<size_t>(key));
+namespace igl {
+
+bool isCompressedTextureFormat(TextureFormat format) {
+  const auto properties = TextureFormatProperties::fromTextureFormat(format);
+  return properties.isCompressed();
 }
 
-namespace igl {
+bool isDepthOrStencilFormat(TextureFormat format) {
+  const auto properties = TextureFormatProperties::fromTextureFormat(format);
+  return properties.isDepthOrStencil();
+}
+
+size_t toBytesPerBlock(TextureFormat format) {
+  const auto properties = TextureFormatProperties::fromTextureFormat(format);
+  if (properties.isCompressed()) {
+    return properties.bytesPerBlock;
+  } else {
+    IGL_ASSERT_NOT_REACHED();
+    return 0;
+  }
+}
+
+TextureBlockSize toBlockSize(TextureFormat format) {
+  const auto properties = TextureFormatProperties::fromTextureFormat(format);
+  if (properties.isCompressed()) {
+    return TextureBlockSize(properties.blockWidth, properties.blockHeight);
+  } else {
+    IGL_ASSERT_NOT_REACHED();
+    return TextureBlockSize(0, 0);
+  }
+}
+
+size_t getTextureBytesPerRow(size_t texWidth, TextureFormat texFormat, size_t mipLevel) {
+  const auto properties = TextureFormatProperties::fromTextureFormat(texFormat);
+  size_t levelWidth = std::max(texWidth >> mipLevel, static_cast<size_t>(1));
+  if (properties.isCompressed()) {
+    return (levelWidth + properties.blockWidth - 1) / properties.blockWidth *
+           properties.bytesPerBlock;
+  } else {
+    return properties.bytesPerBlock * levelWidth;
+  }
+}
+
+size_t getTextureBytesPerSlice(size_t texWidth,
+                               size_t texHeight,
+                               size_t texDepth,
+                               TextureFormat texFormat,
+                               size_t mipLevel) {
+  const auto properties = TextureFormatProperties::fromTextureFormat(texFormat);
+  size_t levelWidth = std::max(texWidth >> mipLevel, static_cast<size_t>(1));
+  size_t levelHeight = std::max(texHeight >> mipLevel, static_cast<size_t>(1));
+  size_t levelDepth = std::max(texDepth >> mipLevel, static_cast<size_t>(1));
+  if (properties.isCompressed()) {
+    if (texDepth > 1) {
+      IGL_ASSERT_NOT_IMPLEMENTED();
+      return 0;
+    }
+    const size_t widthInBlocks = (levelWidth + properties.blockWidth - 1) / properties.blockWidth;
+    const size_t heightInBlocks =
+        (levelHeight + properties.blockHeight - 1) / properties.blockHeight;
+    return widthInBlocks * heightInBlocks * properties.bytesPerBlock;
+  } else {
+    return properties.bytesPerBlock * levelWidth * levelHeight * levelDepth;
+  }
+}
+
+const char* textureFormatToString(TextureFormat format) {
+  const auto properties = TextureFormatProperties::fromTextureFormat(format);
+  return properties.name;
+}
 
 TextureRangeDesc TextureRangeDesc::new1D(size_t x, size_t width, size_t mipLevel) {
   return new3D(x, 0, 0, width, 1, 1, mipLevel);

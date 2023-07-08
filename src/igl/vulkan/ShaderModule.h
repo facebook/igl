@@ -20,24 +20,13 @@ class VulkanShaderModule;
 
 class ShaderModule final : public IShaderModule {
  public:
-  ShaderModule(ShaderModuleInfo info, std::shared_ptr<VulkanShaderModule> shaderModule);
+  ShaderModule(ShaderModuleDesc info, std::shared_ptr<VulkanShaderModule> shaderModule);
   ~ShaderModule() override = default;
 
-  static VkShaderModule getVkShaderModule(const std::shared_ptr<IShaderModule>& shaderModule);
+  static VkShaderModule getVkShaderModule(const IShaderModule* shaderModule);
 
  private:
   std::shared_ptr<VulkanShaderModule> module_;
-};
-
-class ShaderStages final : public IShaderStages {
- public:
-  explicit ShaderStages(ShaderStagesDesc desc);
-  ~ShaderStages() override = default;
-};
-
-class ShaderLibrary : public IShaderLibrary {
- public:
-  explicit ShaderLibrary(std::vector<std::shared_ptr<IShaderModule>> modules);
 };
 
 } // namespace vulkan

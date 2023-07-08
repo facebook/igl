@@ -56,23 +56,23 @@ VkAttachmentStoreOp storeActionToVkAttachmentStoreOp(igl::StoreAction a) {
   return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 }
 
-VkStencilOp stencilOperationToVkStencilOp(igl::StencilOperation op) {
+VkStencilOp stencilOpToVkStencilOp(igl::StencilOp op) {
   switch (op) {
-  case igl::StencilOperation::Keep:
+  case igl::StencilOp_Keep:
     return VK_STENCIL_OP_KEEP;
-  case igl::StencilOperation::Zero:
+  case igl::StencilOp_Zero:
     return VK_STENCIL_OP_ZERO;
-  case igl::StencilOperation::Replace:
+  case igl::StencilOp_Replace:
     return VK_STENCIL_OP_REPLACE;
-  case igl::StencilOperation::IncrementClamp:
+  case igl::StencilOp_IncrementClamp:
     return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
-  case igl::StencilOperation::DecrementClamp:
+  case igl::StencilOp_DecrementClamp:
     return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
-  case igl::StencilOperation::Invert:
+  case igl::StencilOp_Invert:
     return VK_STENCIL_OP_INVERT;
-  case igl::StencilOperation::IncrementWrap:
+  case igl::StencilOp_IncrementWrap:
     return VK_STENCIL_OP_INCREMENT_AND_WRAP;
-  case igl::StencilOperation::DecrementWrap:
+  case igl::StencilOp_DecrementWrap:
     return VK_STENCIL_OP_DECREMENT_AND_WRAP;
   }
   IGL_ASSERT(false);
@@ -144,14 +144,6 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   uint32_t mipLevel = 0;
 
   VulkanRenderPassBuilder builder;
-
-  if (desc.mode != FramebufferMode::Mono) {
-    if (desc.mode == FramebufferMode::Stereo) {
-      builder.setMultiviewMasks(0x00000003, 0x00000003);
-    } else {
-      IGL_ASSERT_MSG(0, "FramebufferMode::Multiview is not implemented.");
-    }
-  }
 
   // All attachments may not valid.  Track active attachments
   size_t largestIndexPlusOne = 0;
@@ -379,8 +371,7 @@ void RenderCommandEncoder::bindRenderPipelineState(
 
   if (hasDepthAttachment != hasDepthAttachment_) {
     IGL_ASSERT(false);
-    IGL_LOG_ERROR(
-        "Make sure your render pass and render pipeline both have matching depth attachments");
+    LLOGW("Make sure your render pass and render pipeline both have matching depth attachments");
   }
 
   binder_.bindPipeline(VK_NULL_HANDLE);
@@ -399,7 +390,7 @@ void RenderCommandEncoder::bindDepthStencilState(
   const igl::DepthStencilStateDesc& desc = state->getDepthStencilStateDesc();
 
   dynamicState_.depthWriteEnable_ = desc.isDepthWriteEnabled;
-  dynamicState_.setDepthCompareOp(compareFunctionToVkCompareOp(desc.compareFunction));
+  dynamicState_.setDepthCompareOp(compareOpToVkCompareOp(desc.compareOp));
 
   auto setStencilState = [this](VkStencilFaceFlagBits faceMask, const igl::StencilStateDesc& desc) {
     if (desc == igl::StencilStateDesc()) {
@@ -407,10 +398,10 @@ void RenderCommandEncoder::bindDepthStencilState(
       return;
     }
     dynamicState_.setStencilStateOps(faceMask,
-                                     stencilOperationToVkStencilOp(desc.stencilFailureOperation),
-                                     stencilOperationToVkStencilOp(desc.depthStencilPassOperation),
-                                     stencilOperationToVkStencilOp(desc.depthFailureOperation),
-                                     compareFunctionToVkCompareOp(desc.stencilCompareFunction));
+                                     stencilOpToVkStencilOp(desc.stencilFailureOp),
+                                     stencilOpToVkStencilOp(desc.depthStencilPassOp),
+                                     stencilOpToVkStencilOp(desc.depthFailureOp),
+                                     compareOpToVkCompareOp(desc.stencilCompareOp));
     // this is what the IGL/OGL backend does with masks
     vkCmdSetStencilReference(cmdBuffer_, faceMask, desc.readMask);
     vkCmdSetStencilCompareMask(cmdBuffer_, faceMask, 0xFF);
@@ -455,10 +446,6 @@ void RenderCommandEncoder::bindBuffer(int index,
     const VkDeviceSize offset = bufferOffset;
     vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
   } else if (isUniformOrStorageBuffer) {
-    if (ctx_.enhancedShaderDebuggingStore_) {
-      IGL_ASSERT_MSG(index < (kMaxBindingSlots - 1),
-                     "The last buffer index is reserved for enhanced debugging features");
-    }
     if (!IGL_VERIFY(target == BindTarget::kAllGraphics)) {
       IGL_ASSERT_MSG(false, "Buffer target should be BindTarget::kAllGraphics");
       return;
@@ -485,7 +472,7 @@ void RenderCommandEncoder::bindPushConstants(size_t offset, const void* data, si
   const VkPhysicalDeviceLimits& limits = ctx_.getVkPhysicalDeviceProperties().limits;
   const size_t size = offset + length;
   if (!IGL_VERIFY(size <= limits.maxPushConstantsSize)) {
-    IGL_LOG_ERROR(
+    LLOGW(
         "Push constants size exceeded %u (max %u bytes)", size, limits.maxPushConstantsSize);
   }
 
@@ -533,12 +520,6 @@ void RenderCommandEncoder::bindTexture(size_t index,
   binder_.bindTexture(index, static_cast<igl::vulkan::Texture*>(texture.get()));
 }
 
-void RenderCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const void* /*data*/) {
-  // DO NOT IMPLEMENT!
-  // This is only for backends that MUST use single uniforms in some situations.
-  IGL_ASSERT_NOT_IMPLEMENTED();
-}
-
 void RenderCommandEncoder::bindPipeline() {
   const igl::vulkan::RenderPipelineState* rps =
       static_cast<igl::vulkan::RenderPipelineState*>(currentPipeline_.get());
@@ -554,8 +535,6 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
                                 size_t vertexStart,
                                 size_t vertexCount) {
   IGL_PROFILER_FUNCTION();
-
-  ctx_.drawCallCount_ += drawCallCountEnabled_;
 
   if (vertexCount == 0) {
     return;
@@ -578,8 +557,6 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
                                        IBuffer& indexBuffer,
                                        size_t indexBufferOffset) {
   IGL_PROFILER_FUNCTION();
-
-  ctx_.drawCallCount_ += drawCallCountEnabled_;
 
   if (indexCount == 0) {
     return;
@@ -625,8 +602,6 @@ void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindPipeline();
 
-  ctx_.drawCallCount_ += drawCallCountEnabled_;
-
   const igl::vulkan::Buffer* bufIndirect = static_cast<igl::vulkan::Buffer*>(&indirectBuffer);
 
   vkCmdDrawIndirect(cmdBuffer_,
@@ -648,8 +623,6 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
   binder_.updateBindings();
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindPipeline();
-
-  ctx_.drawCallCount_ += drawCallCountEnabled_;
 
   const igl::vulkan::Buffer* bufIndex = static_cast<igl::vulkan::Buffer*>(&indexBuffer);
   const igl::vulkan::Buffer* bufIndirect = static_cast<igl::vulkan::Buffer*>(&indirectBuffer);
@@ -680,12 +653,6 @@ void RenderCommandEncoder::setBlendColor(Color color) {
 void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float clamp) {
   dynamicState_.depthBiasEnable_ = true;
   vkCmdSetDepthBias(cmdBuffer_, depthBias, clamp, slopeScale);
-}
-
-bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {
-  const auto returnVal = drawCallCountEnabled_ > 0;
-  drawCallCountEnabled_ = value;
-  return returnVal;
 }
 
 } // namespace vulkan

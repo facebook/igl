@@ -8,7 +8,6 @@
 #pragma once
 
 #include <igl/Common.h>
-#include <igl/ITrackedResource.h>
 #include <unordered_map>
 #include <vector>
 
@@ -17,14 +16,6 @@ namespace igl {
 class ICommandQueue;
 class ITexture;
 struct TextureRangeDesc;
-
-enum class FramebufferMode {
-  Mono, // Default mode
-  Stereo, // Single pass stereo rendering. In this mode, IGL assumes there are two layers for each
-          // attachment. The first layer represents left view and the second layer
-          // represents the right view.
-  Multiview, // Reserved for future use
-};
 
 /**
  * @brief Represents textures associated with the frame buffer including color, depth, and stencil
@@ -44,14 +35,12 @@ struct FramebufferDesc {
   AttachmentDesc stencilAttachment;
 
   std::string debugName;
-
-  FramebufferMode mode = FramebufferMode::Mono;
 };
 
 /**
  * @brief Interface common to all frame buffers across all implementations
  */
-class IFramebuffer : public ITrackedResource<IFramebuffer> {
+class IFramebuffer {
  public:
   virtual ~IFramebuffer() = default;
 
@@ -71,27 +60,24 @@ class IFramebuffer : public ITrackedResource<IFramebuffer> {
 
   // Methods
   /** @brief Copy color data from the color attachment at the specified index into 'pixelBytes'.
-   * Some implementations may only support index 0. If bytesPerRow is 0, it will be
-   * autocalculated assuming now padding. */
+   * Some implementations may only support index 0. */
   virtual void copyBytesColorAttachment(ICommandQueue& cmdQueue,
                                         size_t index,
                                         void* pixelBytes,
-                                        const TextureRangeDesc& range,
-                                        size_t bytesPerRow = 0) const = 0;
+                                        size_t bytesPerRow,
+                                        const TextureRangeDesc& range) const = 0;
 
-  /** @brief Copy depth data from the depth attachment into 'pixelBytes'. If bytesPerRow is 0, it
-   * will be autocalculated assuming now padding. */
+  /** @brief Copy depth data from the depth attachment into 'pixelBytes' */
   virtual void copyBytesDepthAttachment(ICommandQueue& cmdQueue,
                                         void* pixelBytes,
-                                        const TextureRangeDesc& range,
-                                        size_t bytesPerRow = 0) const = 0;
+                                        size_t bytesPerRow,
+                                        const TextureRangeDesc& range) const = 0;
 
-  /** @brief Copy stencil data from stencil attachment into 'pixelBytes'. If bytesPerRow is 0, it
-   * will be autocalculated assuming now padding. */
+  /** @brief Copy stencil data from stencil attachment into 'pixelBytes' */
   virtual void copyBytesStencilAttachment(ICommandQueue& cmdQueue,
                                           void* pixelBytes,
-                                          const TextureRangeDesc& range,
-                                          size_t bytesPerRow = 0) const = 0;
+                                          size_t bytesPerRow,
+                                          const TextureRangeDesc& range) const = 0;
   /** @brief Copy color data from the color attachment at the specified index into 'destTexture'.
    * Some implementations may only support index 0. */
   virtual void copyTextureColorAttachment(ICommandQueue& cmdQueue,

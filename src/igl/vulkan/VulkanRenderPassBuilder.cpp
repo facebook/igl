@@ -37,17 +37,9 @@ VkResult VulkanRenderPassBuilder::build(VkDevice device,
                                refsColorResolve_.data(),
                                hasDepthStencilAttachment ? &refDepth_ : nullptr);
   const VkSubpassDependency dep = ivkGetSubpassDependency();
-  const bool hasViewMask = viewMask_ != 0;
 
-  const VkRenderPassMultiviewCreateInfo ci =
-      ivkGetRenderPassMultiviewCreateInfo(&viewMask_, &correlationMask_);
-  const VkResult result = ivkCreateRenderPass(device,
-                                              (uint32_t)attachments_.size(),
-                                              attachments_.data(),
-                                              &subpass,
-                                              &dep,
-                                              hasViewMask ? &ci : nullptr,
-                                              outRenderPass);
+  const VkResult result = ivkCreateRenderPass(
+      device, (uint32_t)attachments_.size(), attachments_.data(), &subpass, &dep, outRenderPass);
   if (!IGL_VERIFY(result == VK_SUCCESS)) {
     return result;
   }
@@ -120,14 +112,6 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthResolve(VkFormat forma
                                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
   attachments_.push_back(ivkGetAttachmentDescription(
       format, loadOp, storeOp, initialLayout, finalLayout, VK_SAMPLE_COUNT_1_BIT));
-  return *this;
-}
-
-VulkanRenderPassBuilder& VulkanRenderPassBuilder::setMultiviewMasks(
-    const uint32_t viewMask,
-    const uint32_t correlationMask) {
-  viewMask_ = viewMask;
-  correlationMask_ = correlationMask;
   return *this;
 }
 

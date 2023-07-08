@@ -25,15 +25,15 @@ namespace igl {
  * GreaterEqual : Passes if the fragment's value is greater than or equal to the existing value.
  * AlwaysPass   : Always passes.
  */
-enum class CompareFunction : uint8_t {
-  Never = 0,
-  Less,
-  Equal,
-  LessEqual,
-  Greater,
-  NotEqual,
-  GreaterEqual,
-  AlwaysPass
+enum CompareOp : uint8_t {
+  CompareOp_Never = 0,
+  CompareOp_Less,
+  CompareOp_Equal,
+  CompareOp_LessEqual,
+  CompareOp_Greater,
+  CompareOp_NotEqual,
+  CompareOp_GreaterEqual,
+  CompareOp_AlwaysPass
 };
 
 /**
@@ -52,15 +52,15 @@ enum class CompareFunction : uint8_t {
  * IncrementWrap  : The max possible value is set to zero. All other values are incremented by 1.
  * DecrementWrap  : Zero is set to the max possible value. All other values are decremented by 1.
  */
-enum class StencilOperation : uint8_t {
-  Keep = 0,
-  Zero,
-  Replace,
-  IncrementClamp,
-  DecrementClamp,
-  Invert,
-  IncrementWrap,
-  DecrementWrap
+enum StencilOp : uint8_t {
+  StencilOp_Keep = 0,
+  StencilOp_Zero,
+  StencilOp_Replace,
+  StencilOp_IncrementClamp,
+  StencilOp_DecrementClamp,
+  StencilOp_Invert,
+  StencilOp_IncrementWrap,
+  StencilOp_DecrementWrap
 };
 
 /**
@@ -73,19 +73,19 @@ struct StencilStateDesc {
   /**
    * @brief The operation to perform when the stencil test fails.
    */
-  StencilOperation stencilFailureOperation = StencilOperation::Keep;
+  StencilOp stencilFailureOp = StencilOp_Keep;
   /**
    * @brief The operation to perform when the stencil test succeeds but the depth test fails.
    */
-  StencilOperation depthFailureOperation = StencilOperation::Keep;
+  StencilOp depthFailureOp = StencilOp_Keep;
   /**
    * @brief The operation to perform when both the depth and stencil tests functions pass.
    */
-  StencilOperation depthStencilPassOperation = StencilOperation::Keep;
+  StencilOp depthStencilPassOp = StencilOp_Keep;
   /**
    * @brief The comparison operation to use for stencil testing.
    */
-  CompareFunction stencilCompareFunction = CompareFunction::AlwaysPass;
+  CompareOp stencilCompareOp = CompareOp_AlwaysPass;
   /**
    * @brief A bit mask that determines which stencil value bits are compared in the stencil test.
    */
@@ -121,7 +121,7 @@ struct DepthStencilStateDesc {
   /**
    * @brief The comparison operation to use for depth testing.
    */
-  CompareFunction compareFunction = CompareFunction::AlwaysPass;
+  CompareOp compareOp = CompareOp_AlwaysPass;
   /**
    * @brief Determines whether new depth values are written.
    *
@@ -169,35 +169,3 @@ class IDepthStencilState {
 };
 
 } // namespace igl
-
-/// Hashing function declarations
-///
-namespace std {
-
-/**
- * @brief Provides a hash function for igl::DepthStencilStateDesc.
- */
-template<>
-struct hash<igl::DepthStencilStateDesc> {
-  /**
-   * @brief Computes a hash value for igl::DepthStencilStateDesc.
-   *
-   * The hash value is based on all properties in the igl::DepthStencilStateDesc;
-   */
-  size_t operator()(igl::DepthStencilStateDesc const& /*key*/) const;
-};
-
-/**
- * @brief Provides a hash function for igl::StencilStateDesc.
- */
-template<>
-struct hash<igl::StencilStateDesc> {
-  /**
-   * @brief Computes a hash value for igl::StencilStateDesc.
-   *
-   * The hash value is based on all properties in the igl::StencilStateDesc;
-   */
-  size_t operator()(igl::StencilStateDesc const& /*key*/) const;
-};
-
-} // namespace std

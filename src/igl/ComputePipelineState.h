@@ -8,8 +8,6 @@
 #pragma once
 
 #include <igl/Common.h>
-#include <igl/NameHandle.h>
-#include <igl/RenderPipelineReflection.h>
 #include <igl/Shader.h>
 #include <igl/Texture.h>
 #include <map>
@@ -27,20 +25,13 @@ namespace igl {
 struct ComputePipelineDesc {
  public:
   bool operator==(const ComputePipelineDesc& other) const {
-    return shaderStages == other.shaderStages && imagesMap == other.imagesMap &&
-           buffersMap == other.buffersMap && debugName == other.debugName;
+    return shaderStages == other.shaderStages && debugName == other.debugName;
   }
-
-  /*
-   * OpenGL only
-   */
-  std::unordered_map<size_t, igl::NameHandle> imagesMap;
-  std::unordered_map<size_t, igl::NameHandle> buffersMap;
 
   /*
    * @brief The compute kernel the pipeline calls.
    */
-  std::shared_ptr<IShaderStages> shaderStages;
+  std::shared_ptr<ShaderStages> shaderStages;
 
   std::string debugName;
 };
@@ -51,36 +42,7 @@ struct ComputePipelineDesc {
  */
 class IComputePipelineState {
  public:
-  using IComputePipelineReflection = IRenderPipelineReflection;
-  virtual std::shared_ptr<IComputePipelineReflection> computePipelineReflection() = 0;
   virtual ~IComputePipelineState() = default;
-  virtual int getIndexByName(const NameHandle& /* name */) const {
-    return -1;
-  }
 };
 
 } // namespace igl
-
-/// Hashing function declarations
-///
-namespace std {
-
-// ComputePipelineDesc hash
-template<>
-struct hash<igl::ComputePipelineDesc> {
-  size_t operator()(const igl::ComputePipelineDesc& desc) const {
-    size_t hash = std::hash<uintptr_t>()(reinterpret_cast<uintptr_t>(desc.shaderStages.get()));
-    hash ^= std::hash<std::string>()(desc.debugName);
-    for (const auto& p : desc.buffersMap) {
-      hash ^= std::hash<size_t>()(p.first);
-      hash ^= std::hash<std::string>()(p.second.toString());
-    }
-    for (const auto& p : desc.imagesMap) {
-      hash ^= std::hash<size_t>()(p.first);
-      hash ^= std::hash<std::string>()(p.second.toString());
-    }
-    return hash;
-  }
-};
-
-} // namespace std

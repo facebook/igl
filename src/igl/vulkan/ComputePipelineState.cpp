@@ -42,21 +42,20 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
 
   const VulkanContext& ctx = device_.getVulkanContext();
 
-  const auto& shaderModule = desc_.shaderStages->getComputeModule();
+  const IShaderModule* shaderModule = desc_.shaderStages->getModule(Stage_Compute);
 
   igl::vulkan::VulkanComputePipelineBuilder()
       .shaderStage(ivkGetPipelineShaderStageCreateInfo(
           VK_SHADER_STAGE_COMPUTE_BIT,
           igl::vulkan::ShaderModule::getVkShaderModule(shaderModule),
-          shaderModule->info().entryPoint.c_str()))
-      .build(ctx.device_->getVkDevice(),
-             // TODO: use ctx.pipelineCache_
-             // @fb-only
-             // @fb-only
-             VK_NULL_HANDLE,
-             ctx.pipelineLayoutCompute_->getVkPipelineLayout(),
-             &pipeline_,
-             desc_.debugName.c_str());
+          shaderModule->desc().entryPoint.c_str()))
+      .build(
+          ctx.device_->getVkDevice(),
+          // TODO: use ctx.pipelineCache_
+          VK_NULL_HANDLE,
+          ctx.pipelineLayoutCompute_->getVkPipelineLayout(),
+          &pipeline_,
+          desc_.debugName.c_str());
 
   return pipeline_;
 }

@@ -11,7 +11,6 @@
 #include <igl/CommandEncoder.h>
 #include <igl/Common.h>
 #include <igl/Framebuffer.h>
-#include <igl/Uniform.h>
 
 namespace igl {
 
@@ -21,10 +20,6 @@ class IRenderPipelineState;
 class ISamplerState;
 class ITexture;
 struct RenderPassDesc;
-
-struct RenderCommandEncoderDesc {
-  // Placeholder
-};
 
 namespace BindTarget {
 const uint8_t kVertex = 0x0001;
@@ -73,9 +68,6 @@ class IRenderCommandEncoder : public ICommandEncoder {
   virtual void bindTexture(size_t index,
                            uint8_t target,
                            const std::shared_ptr<ITexture>& texture) = 0;
-
-  /// Binds an individual uniform. Exclusively for use when uniform blocks are not supported.
-  virtual void bindUniform(const UniformDesc& uniformDesc, const void* data) = 0;
 
   virtual void draw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) = 0;
   virtual void drawIndexed(PrimitiveType primitiveType,

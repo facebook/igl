@@ -30,7 +30,6 @@ class EnhancedShaderDebuggingStore;
 class CommandQueue;
 class ComputeCommandEncoder;
 class RenderCommandEncoder;
-class SyncManager;
 class VulkanBuffer;
 class VulkanDevice;
 class VulkanDescriptorSetLayout;
@@ -62,12 +61,6 @@ struct VulkanContextConfig {
   uint32_t maxTextures = 512;
   uint32_t maxSamplers = 512;
   bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
-
-  // enable/disable enhanced shader debugging capabilities (line drawing)
-  bool enhancedShaderDebugging = false;
-
-  bool enableConcurrentVkDevicesSupport = false;
-
   bool enableValidation = true;
   bool enableGPUAssistedValidation = true;
   bool enableSynchronizationValidation = false;
@@ -206,8 +199,6 @@ class VulkanContext final {
   VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;
   VkSurfaceKHR vkSurface_ = VK_NULL_HANDLE;
   VkPhysicalDevice vkPhysicalDevice_ = VK_NULL_HANDLE;
-  FOLLY_PUSH_WARNING
-  FOLLY_GNU_DISABLE_WARNING("-Wmissing-field-initializers")
   VkPhysicalDeviceDescriptorIndexingPropertiesEXT vkPhysicalDeviceDescriptorIndexingProperties_ = {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT,
       // Ignore clang-diagnostic-missing-field-initializers
@@ -242,7 +233,6 @@ class VulkanContext final {
   VkPhysicalDeviceFeatures2 vkPhysicalDeviceFeatures2_ = {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
       &vkPhysicalDeviceMultiviewFeatures_};
-  FOLLY_POP_WARNING
 
  public:
   DeviceQueues deviceQueues_;
@@ -289,9 +279,7 @@ class VulkanContext final {
   // a texture/sampler was deleted since the last descriptor set update
   mutable bool awaitingDeletion_ = false;
   mutable uint64_t lastDeletionFrame_ = 0;
-
-  mutable size_t drawCallCount_ = 0;
-
+    
   // stores an index into renderPasses_
   mutable std::
       unordered_map<VulkanRenderPassBuilder, uint8_t, VulkanRenderPassBuilder::HashFunction>
@@ -300,9 +288,6 @@ class VulkanContext final {
 
   VulkanExtensions extensions_;
   VulkanContextConfig config_;
-
-  // Enhanced shader debug: line drawing
-  std::unique_ptr<EnhancedShaderDebuggingStore> enhancedShaderDebuggingStore_;
 
   struct DynamicUniformBuffer {
     SubmitHandle handle_;
@@ -346,8 +331,6 @@ class VulkanContext final {
   };
 
   mutable std::deque<DeferredTask> deferredTasks_;
-
-  std::unique_ptr<SyncManager> syncManager_;
 };
 
 } // namespace vulkan

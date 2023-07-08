@@ -32,14 +32,6 @@
     }
 },
 {
-    "name": "glew",
-    "source": {
-        "type": "archive",
-        "url": "https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0.zip",
-        "sha1": "f1d3f046e44a4cb62d09547cf8f053d5b16b516f"
-    }
-},
-{
     "name": "stb",
     "source": {
         "type": "git",
@@ -92,14 +84,6 @@
     }
 },
 {
-    "name": "fmt",
-    "source": {
-        "type": "git",
-        "url": "https://github.com/fmtlib/fmt.git",
-        "revision": "10.0.0"
-    }
-},
-{
     "name": "imgui",
     "source": {
         "type": "git",
@@ -132,14 +116,6 @@
     }
 },
 {
-    "name": "gtest",
-    "source": {
-        "type": "git",
-        "url": "https://github.com/google/googletest.git",
-        "revision": "v1.13.0"
-    }
-},
-{
     "name": "EGL",
     "source": {
         "type": "git",
@@ -148,11 +124,11 @@
     }
 },
 {
-    "name": "ios-cmake",
+    "name": "minilog",
     "source": {
         "type": "git",
-        "url": "https://github.com/leetal/ios-cmake.git",
-        "revision": "04d91f6675dabb3c97df346a32f6184b0a7ef845"
+        "url": "https://github.com/corporateshark/minilog",
+        "revision": "0040de16cec2d733c49f22645a92e3af36df9ce8"
     }
 }
 ]

@@ -7,9 +7,9 @@
 
 #pragma once
 
-#if !defined(IGL_COMMON_H) && !defined(IGL_COMMON_SKIP_CHECK)
-#error "Please, include <igl/Common.h> instead"
-#endif
+#include <cstdarg>
+
+#include <minilog/minilog.h>
 
 #include <igl/Macros.h>
 
@@ -54,13 +54,11 @@
 //   }
 //
 
-#include <igl/Log.h>
-
 IGL_API void _IGLDebugBreak();
 
 namespace igl {
+
 bool isDebugBreakEnabled();
-void setDebugBreakEnabled(bool enabled);
 
 template<typename T>
 static inline const T& _IGLVerify(const T& cond,
@@ -70,12 +68,11 @@ static inline const T& _IGLVerify(const T& cond,
                                   const char* format,
                                   ...) {
   if (!cond) {
-    IGLLog(IGLLogLevel::LOG_ERROR, "[IGL] Assert failed in '%s' (%s:%d): ", func, file, line);
+    LLOGW("[IGL] Assert failed in '%s' (%s:%d): ", func, file, line);
     va_list ap;
     va_start(ap, format);
-    IGLLogV(IGLLogLevel::LOG_ERROR, format, ap);
+    LLOGW(format, ap);
     va_end(ap);
-    IGLLog(IGLLogLevel::LOG_ERROR, IGL_NEWLINE);
     if (igl::isDebugBreakEnabled()) {
       _IGLDebugBreak();
     }
@@ -103,43 +100,3 @@ static inline const T& _IGLVerify(const T& cond,
 
 #define IGL_ASSERT_NOT_REACHED() IGL_ASSERT_MSG(0, "Code should NOT be reached")
 #define IGL_ASSERT_NOT_IMPLEMENTED() IGL_ASSERT_MSG(0, "Code NOT implemented")
-
-///--------------------------------------
-/// MARK: - Custom
-
-#if IGL_REPORT_ERROR_ENABLED
-
-#define IGL_ERROR_CATEGORY "IGL"
-
-using IGLReportErrorFunc = void (*)(const char* file,
-                                    const char* func,
-                                    int line,
-                                    const char* category,
-                                    const char* format,
-                                    ...);
-IGL_API void IGLReportErrorSetHandler(IGLReportErrorFunc handler);
-IGL_API IGLReportErrorFunc IGLReportErrorGetHandler(void);
-
-#define IGL_REPORT_ERROR(cond)                                                                 \
-  do {                                                                                         \
-    if (!IGL_VERIFY(cond)) {                                                                   \
-      IGLReportErrorGetHandler()(__FILE__, IGL_FUNCTION, __LINE__, IGL_ERROR_CATEGORY, #cond); \
-    }                                                                                          \
-  } while (0)
-
-#define IGL_REPORT_ERROR_MSG(cond, format, ...)                                           \
-  do {                                                                                    \
-    bool cachedCond = (cond);                                                             \
-    IGL_ASSERT_MSG(cachedCond, format, ##__VA_ARGS__);                                    \
-    if (!cachedCond) {                                                                    \
-      IGLReportErrorGetHandler()(                                                         \
-          __FILE__, IGL_FUNCTION, __LINE__, IGL_ERROR_CATEGORY, (format), ##__VA_ARGS__); \
-    }                                                                                     \
-  } while (0)
-
-#else
-
-#define IGL_REPORT_ERROR(condition) static_cast<void>(0)
-#define IGL_REPORT_ERROR_MSG(condition, format, ...) static_cast<void>(0)
-
-#endif // IGL_REPORT_ERROR_ENABLED

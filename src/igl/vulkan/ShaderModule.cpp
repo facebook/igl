@@ -15,24 +15,17 @@ namespace igl {
 
 namespace vulkan {
 
-ShaderModule::ShaderModule(ShaderModuleInfo info,
+ShaderModule::ShaderModule(ShaderModuleDesc desc,
                            std::shared_ptr<VulkanShaderModule> shaderModule) :
-  IShaderModule(std::move(info)), module_(std::move(shaderModule)) {
+  IShaderModule(std::move(desc)), module_(std::move(shaderModule)) {
   IGL_ASSERT(module_);
 }
 
-VkShaderModule ShaderModule::getVkShaderModule(const std::shared_ptr<IShaderModule>& shaderModule) {
-  const ShaderModule* sm = static_cast<ShaderModule*>(shaderModule.get());
+VkShaderModule ShaderModule::getVkShaderModule(const IShaderModule* shaderModule) {
+  const ShaderModule* sm = static_cast<const ShaderModule*>(shaderModule);
 
-  // @fb-only
-  // @lint-ignore CLANGTIDY
   return sm ? sm->module_->getVkShaderModule() : VK_NULL_HANDLE;
 }
-
-ShaderStages::ShaderStages(ShaderStagesDesc desc) : IShaderStages(std::move(desc)) {}
-
-ShaderLibrary::ShaderLibrary(std::vector<std::shared_ptr<IShaderModule>> modules) :
-  IShaderLibrary(std::move(modules)) {}
 
 } // namespace vulkan
 } // namespace igl

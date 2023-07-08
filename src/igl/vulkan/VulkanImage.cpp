@@ -7,8 +7,6 @@
 
 #include "VulkanImage.h"
 
-#include <array>
-#include <cinttypes>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImageView.h>
@@ -31,7 +29,7 @@ uint32_t ivkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memProps,
       }
     }
   }
-  IGL_LOG_ERROR("Memory type %d with properties %d not found.", typeBits, requiredProperties);
+  LLOGW("Memory type %d with properties %d not found.", typeBits, requiredProperties);
   return 0;
 }
 
@@ -137,7 +135,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                                      nullptr);
 
     if (!IGL_VERIFY(result == VK_SUCCESS)) {
-      IGL_LOG_ERROR("failed: error result: %d, memflags: %d,  imageformat: %d\n",
+      LLOGW("failed: error result: %d, memflags: %d,  imageformat: %d\n",
                     result,
                     memFlags,
                     imageFormat_);
@@ -287,7 +285,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                             memoryRequirements.memoryRequirements.memoryTypeBits,
                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)};
 
-  IGL_LOG_INFO("Imported texture has requirements %d, ends up index %d",
+  LLOGL("Imported texture has requirements %d, ends up index %d",
                memoryRequirements.memoryRequirements.memoryTypeBits,
                memoryAllocateInfo.memoryTypeIndex);
 
@@ -378,12 +376,6 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                             memoryRequirements.memoryRequirements.memoryTypeBits,
                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)};
 
-  IGL_LOG_INFO("Imported texture has memoryAllocationSize %" PRIu64
-               ", requirements 0x%08X, ends up index 0x%08X",
-               memoryRequirements.memoryRequirements.size,
-               memoryRequirements.memoryRequirements.memoryTypeBits,
-               memoryAllocateInfo.memoryTypeIndex);
-
   VK_ASSERT(vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_));
   VK_ASSERT(vkBindImageMemory(device_, vkImage_, vkMemory_, 0));
 }
@@ -424,23 +416,11 @@ std::shared_ptr<VulkanImage> VulkanImage::createWithExportMemory(const VulkanCon
   const auto result = vkGetPhysicalDeviceImageFormatProperties2(
       ctx.getVkPhysicalDevice(), &formatInfo2, &imageFormatProperties2);
   if (result != VK_SUCCESS) {
-    IGL_LOG_ERROR(
-        "External memory is not supported. format: %d image_tiling: %d usage: %d flags: %d",
-        format,
-        tiling,
-        usageFlags,
-        createFlags);
     return nullptr;
   }
   const auto& externalFormatProperties = externalImageFormatProperties.externalMemoryProperties;
   if (!(externalFormatProperties.externalMemoryFeatures &
         VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT)) {
-    IGL_LOG_ERROR(
-        "External memory cannot be exported. format: %d image_tiling: %d usage: %d flags: %d",
-        format,
-        tiling,
-        usageFlags,
-        createFlags);
     return nullptr;
   }
   const auto compatibleHandleTypes = externalFormatProperties.compatibleHandleTypes;
@@ -543,12 +523,6 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       memoryRequirements.memoryRequirements.size,
       ivkGetMemoryTypeIndex(
           vulkanMemoryProperties, memoryRequirements.memoryRequirements.memoryTypeBits, memFlags)};
-
-  IGL_LOG_INFO("Creating image to be exported with memoryAllocationSize %" PRIu64
-               ", requirements 0x%08X, ends up index 0x%08X",
-               memoryRequirements.memoryRequirements.size,
-               memoryRequirements.memoryRequirements.memoryTypeBits,
-               memoryAllocateInfo.memoryTypeIndex);
 
   VK_ASSERT(vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_));
   VK_ASSERT(vkBindImageMemory(device_, vkImage_, vkMemory_, 0));
@@ -759,7 +733,7 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
 
   ivkCmdBeginDebugUtilsLabel(
       commandBuffer, "Generate mipmaps", igl::Color(1.f, 0.75f, 0.f).toFloatPtr());
-  IGL_SCOPE_EXIT {
+  SCOPE_EXIT {
     ivkCmdEndDebugUtilsLabel(commandBuffer);
   };
 
@@ -794,11 +768,11 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
       const int32_t nextLevelWidth = mipWidth > 1 ? mipWidth / 2 : 1;
       const int32_t nextLevelHeight = mipHeight > 1 ? mipHeight / 2 : 1;
 
-      const std::array<VkOffset3D, 2> srcOffsets = {
+      const VkOffset3D srcOffsets[2] = {
           VkOffset3D{0, 0, 0},
           VkOffset3D{mipWidth, mipHeight, 1},
       };
-      const std::array<VkOffset3D, 2> dstOffsets = {
+      const VkOffset3D dstOffsets[2] = {
           VkOffset3D{0, 0, 0},
           VkOffset3D{nextLevelWidth, nextLevelHeight, 1},
       };
@@ -813,8 +787,8 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
                       vkImage_,
                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                      srcOffsets.data(),
-                      dstOffsets.data(),
+                      srcOffsets,
+                      dstOffsets,
                       VkImageSubresourceLayers{imageAspectFlags, i - 1, layer, 1},
                       VkImageSubresourceLayers{imageAspectFlags, i, layer, 1},
                       blitFilter);

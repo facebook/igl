@@ -22,9 +22,6 @@ class ComputePipelineState final : public IComputePipelineState {
   // @lint-ignore CLANGTIDY
   ComputePipelineState(const igl::vulkan::Device& device, const ComputePipelineDesc& desc);
   ~ComputePipelineState() override;
-  std::shared_ptr<IComputePipelineReflection> computePipelineReflection() override {
-    return nullptr;
-  }
 
   VkPipeline getVkPipeline() const;
 

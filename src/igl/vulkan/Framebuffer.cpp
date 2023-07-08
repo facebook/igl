@@ -20,7 +20,6 @@
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/Texture.h>
-#include <igl/vulkan/VertexInputState.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanFramebuffer.h>
@@ -70,8 +69,8 @@ std::shared_ptr<igl::ITexture> Framebuffer::getStencilAttachment() const {
 void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
                                            size_t index,
                                            void* pixelBytes,
-                                           const TextureRangeDesc& range,
-                                           size_t bytesPerRow) const {
+                                           size_t bytesPerRow,
+                                           const TextureRangeDesc& range) const {
   IGL_PROFILER_FUNCTION();
   if (!IGL_VERIFY(pixelBytes)) {
     return;
@@ -88,34 +87,30 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
       VkExtent2D{static_cast<uint32_t>(range.width), static_cast<uint32_t>(range.height)},
   };
 
-  if (bytesPerRow == 0) {
-    bytesPerRow = itexture->getProperties().getBytesPerRow(range);
-  }
   const VulkanContext& ctx = device_.getVulkanContext();
   ctx.stagingDevice_->getImageData2D(vkTex.getVkImage(),
                                      static_cast<uint32_t>(range.mipLevel),
                                      static_cast<uint32_t>(range.layer), // layer (or face of a
                                                                          // cubemap)
                                      imageRegion,
-                                     vkTex.getProperties(),
-                                     VK_FORMAT_R8G8B8A8_UNORM,
+                                     textureFormatToVkFormat(vkTex.getFormat()),
                                      vkTex.getVulkanTexture().getVulkanImage().imageLayout_,
                                      pixelBytes,
                                      static_cast<uint32_t>(bytesPerRow),
                                      true); // Flip the image vertically
 }
 
-void Framebuffer::copyBytesDepthAttachment(ICommandQueue& /*cmdQueue*/,
-                                           void* /*pixelBytes*/,
-                                           const TextureRangeDesc& /*range*/,
-                                           size_t /*bytesPerRow*/) const {
+void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
+                                           void* pixelBytes,
+                                           size_t bytesPerRow,
+                                           const TextureRangeDesc& range) const {
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
 
-void Framebuffer::copyBytesStencilAttachment(ICommandQueue& /*cmdQueue*/,
-                                             void* /*pixelBytes*/,
-                                             const TextureRangeDesc& /*range*/,
-                                             size_t /*bytesPerRow*/) const {
+void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
+                                             void* pixelBytes,
+                                             size_t bytesPerRow,
+                                             const TextureRangeDesc& range) const {
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
 
@@ -275,21 +270,19 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel, VkRenderPass pass
     IGL_ASSERT(it->second.texture);
 
     const auto& colorTexture = static_cast<vulkan::Texture&>(*it->second.texture);
-    attachments.attachments_.push_back(
-        colorTexture.getVkImageViewForFramebuffer(mipLevel, desc_.mode));
+    attachments.attachments_.push_back(colorTexture.getVkImageViewForFramebuffer(mipLevel));
     // handle color MSAA
     if (it->second.resolveTexture) {
       IGL_ASSERT(mipLevel == 0);
       const auto& colorResolveTexture = static_cast<vulkan::Texture&>(*it->second.resolveTexture);
-      attachments.attachments_.push_back(
-          colorResolveTexture.getVkImageViewForFramebuffer(0, desc_.mode));
+      attachments.attachments_.push_back(colorResolveTexture.getVkImageViewForFramebuffer(0));
     }
   }
   // depth
   {
     const auto* depthTexture = static_cast<vulkan::Texture*>(desc_.depthAttachment.texture.get());
     if (depthTexture) {
-      attachments.attachments_.push_back(depthTexture->getVkImageViewForFramebuffer(0, desc_.mode));
+      attachments.attachments_.push_back(depthTexture->getVkImageViewForFramebuffer(0));
     }
   }
   // handle depth MSAA
@@ -297,8 +290,7 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel, VkRenderPass pass
     const auto* depthResolveTexture =
         static_cast<vulkan::Texture*>(desc_.depthAttachment.resolveTexture.get());
     if (depthResolveTexture) {
-      attachments.attachments_.push_back(
-          depthResolveTexture->getVkImageViewForFramebuffer(0, desc_.mode));
+      attachments.attachments_.push_back(depthResolveTexture->getVkImageViewForFramebuffer(0));
     }
   }
 

@@ -44,6 +44,25 @@ bool isNativeSwapChainBGR(const std::vector<VkSurfaceFormatKHR>& formats) {
   return false;
 }
 
+namespace {
+
+VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool isBGR) {
+  switch (colorSpace) {
+  case igl::ColorSpace::SRGB_LINEAR:
+    // the closest thing to sRGB linear
+    return VkSurfaceFormatKHR{isBGR ? VK_FORMAT_B8G8R8A8_UNORM : VK_FORMAT_R8G8B8A8_UNORM,
+                              VK_COLOR_SPACE_BT709_LINEAR_EXT};
+  case igl::ColorSpace::SRGB_NONLINEAR:
+    [[fallthrough]];
+  default:
+    // default to normal sRGB non linear.
+    return VkSurfaceFormatKHR{isBGR ? VK_FORMAT_B8G8R8A8_SRGB : VK_FORMAT_R8G8B8A8_SRGB,
+                              VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+  }
+}
+
+} // namespace
+
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats,
                                            igl::ColorSpace colorSpace) {
   IGL_ASSERT(!formats.empty());
@@ -64,7 +83,7 @@ VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>
     }
   }
 
-  IGL_LOG_INFO(
+  LLOGL(
       "The system could not find a native swap chain format that matched our designed swapchain "
       "format. Defaulting to first supported format.");
   // fall back to first supported device color format. On Quest 2 it'll be VK_FORMAT_R8G8B8A8_UNORM
@@ -118,11 +137,6 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
   height_(height) {
   surfaceFormat_ =
       chooseSwapSurfaceFormat(ctx.deviceSurfaceFormats_, ctx.config_.swapChainColorSpace);
-  IGL_DEBUG_LOG(
-      "Swapchain format: %s; colorSpace: %s\n",
-      TextureFormatProperties::fromTextureFormat(vkFormatToTextureFormat(surfaceFormat_.format))
-          .name,
-      colorSpaceToString(vkColorSpaceToColorSpace(surfaceFormat_.colorSpace)));
 
   acquireSemaphore_ =
       std::make_unique<igl::vulkan::VulkanSemaphore>(device_, "Semaphore: swapchain-acquire");

@@ -18,29 +18,21 @@ class CommandBuffer;
 
 class CommandQueue final : public ICommandQueue {
  public:
-  CommandQueue(Device& device, const CommandQueueDesc& desc);
+  CommandQueue(Device& device, CommandQueueType type);
 
   ~CommandQueue() override = default;
 
   std::shared_ptr<ICommandBuffer> createCommandBuffer(const CommandBufferDesc& desc,
                                                       Result* outResult) override;
-  SubmitHandle submit(const ICommandBuffer& commandBuffer, bool endOfFrame = false) override;
-
-  const CommandQueueDesc& getCommandQueueDesc() const {
-    return desc_;
-  }
+  void submit(const ICommandBuffer& commandBuffer, bool endOfFrame = false) override;
 
  private:
-  SubmitHandle endCommandBuffer(const igl::vulkan::VulkanContext& ctx,
-                                igl::vulkan::CommandBuffer* cmdBuffer,
-                                bool present);
-
-  void enhancedShaderDebuggingPass(const igl::vulkan::VulkanContext& ctx,
-                                   const igl::vulkan::CommandBuffer* cmdBuffer);
-
+  void endCommandBuffer(const igl::vulkan::VulkanContext& ctx,
+                        igl::vulkan::CommandBuffer* cmdBuffer,
+                        bool present);
  private:
   igl::vulkan::Device& device_;
-  CommandQueueDesc desc_;
+  CommandQueueType queueType_;
   bool isInsideFrame_ = false;
 };
 

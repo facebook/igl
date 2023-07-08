@@ -22,9 +22,6 @@ class Texture;
 
 constexpr uint32_t kMaxBindingSlots = 16; // check shaders before changing this value
 
-static_assert(kMaxBindingSlots <= igl::IGL_TEXTURE_SAMPLERS_MAX);
-static_assert(kMaxBindingSlots <= igl::IGL_UNIFORM_BLOCKS_BINDING_MAX);
-
 struct Slot {
   uint32_t texture = 0;
   uint32_t sampler = 0;

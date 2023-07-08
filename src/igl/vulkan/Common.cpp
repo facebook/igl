@@ -7,7 +7,6 @@
 
 #include "Common.h"
 
-#include <array>
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
@@ -235,36 +234,6 @@ igl::ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace) {
   switch (colorSpace) {
   case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR:
     return ColorSpace::SRGB_NONLINEAR;
-  case VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT:
-    return ColorSpace::DISPLAY_P3_NONLINEAR;
-  case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
-    return ColorSpace::EXTENDED_SRGB_LINEAR;
-  case VK_COLOR_SPACE_DISPLAY_P3_LINEAR_EXT:
-    return ColorSpace::DISPLAY_P3_LINEAR;
-  case VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT:
-    return ColorSpace::DCI_P3_NONLINEAR;
-  case VK_COLOR_SPACE_BT709_LINEAR_EXT:
-    return ColorSpace::BT709_LINEAR;
-  case VK_COLOR_SPACE_BT709_NONLINEAR_EXT:
-    return ColorSpace::BT709_NONLINEAR;
-  case VK_COLOR_SPACE_BT2020_LINEAR_EXT:
-    return ColorSpace::BT2020_LINEAR;
-  case VK_COLOR_SPACE_HDR10_ST2084_EXT:
-    return ColorSpace::HDR10_ST2084;
-  case VK_COLOR_SPACE_DOLBYVISION_EXT:
-    return ColorSpace::DOLBYVISION;
-  case VK_COLOR_SPACE_HDR10_HLG_EXT:
-    return ColorSpace::HDR10_HLG;
-  case VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT:
-    return ColorSpace::ADOBERGB_LINEAR;
-  case VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT:
-    return ColorSpace::ADOBERGB_NONLINEAR;
-  case VK_COLOR_SPACE_PASS_THROUGH_EXT:
-    return ColorSpace::PASS_THROUGH;
-  case VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT:
-    return ColorSpace::EXTENDED_SRGB_NONLINEAR;
-  case VK_COLOR_SPACE_DISPLAY_NATIVE_AMD:
-    return ColorSpace::DISPLAY_NATIVE_AMD;
   default:
     IGL_ASSERT_NOT_REACHED();
     return ColorSpace::SRGB_NONLINEAR;
@@ -395,6 +364,37 @@ igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
   return TextureFormat::Invalid;
 }
 
+uint32_t getBytesPerPixel(VkFormat format) {
+  switch (format) {
+  case VK_FORMAT_R8_UNORM:
+    return 1;
+  case VK_FORMAT_R16_SFLOAT:
+    return 2;
+  case VK_FORMAT_R8G8B8_UNORM:
+  case VK_FORMAT_B8G8R8_UNORM:
+    return 3;
+  case VK_FORMAT_R8G8B8A8_UNORM:
+  case VK_FORMAT_B8G8R8A8_UNORM:
+  case VK_FORMAT_R8G8B8A8_SRGB:
+  case VK_FORMAT_R16G16_SFLOAT:
+  case VK_FORMAT_R32_SFLOAT:
+    return 4;
+  case VK_FORMAT_R16G16B16_SFLOAT:
+    return 6;
+  case VK_FORMAT_R16G16B16A16_SFLOAT:
+  case VK_FORMAT_R32G32_SFLOAT:
+    return 8;
+  case VK_FORMAT_R32G32B32_SFLOAT:
+    return 12;
+  case VK_FORMAT_R32G32B32A32_SFLOAT:
+    return 16;
+  default:
+    IGL_ASSERT_MSG(false, "VkFormat value not handled: %d", (int)format);
+  }
+
+  return 1;
+}
+
 VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorage resourceStorage) {
   VkMemoryPropertyFlags memFlags{0};
 
@@ -419,23 +419,23 @@ VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorag
   return memFlags;
 }
 
-VkCompareOp compareFunctionToVkCompareOp(igl::CompareFunction func) {
+VkCompareOp compareOpToVkCompareOp(igl::CompareOp func) {
   switch (func) {
-  case igl::CompareFunction::Never:
+  case igl::CompareOp_Never:
     return VK_COMPARE_OP_NEVER;
-  case igl::CompareFunction::Less:
+  case igl::CompareOp_Less:
     return VK_COMPARE_OP_LESS;
-  case igl::CompareFunction::Equal:
+  case igl::CompareOp_Equal:
     return VK_COMPARE_OP_EQUAL;
-  case igl::CompareFunction::LessEqual:
+  case igl::CompareOp_LessEqual:
     return VK_COMPARE_OP_LESS_OR_EQUAL;
-  case igl::CompareFunction::Greater:
+  case igl::CompareOp_Greater:
     return VK_COMPARE_OP_GREATER;
-  case igl::CompareFunction::NotEqual:
+  case igl::CompareOp_NotEqual:
     return VK_COMPARE_OP_NOT_EQUAL;
-  case igl::CompareFunction::GreaterEqual:
+  case igl::CompareOp_GreaterEqual:
     return VK_COMPARE_OP_GREATER_OR_EQUAL;
-  case igl::CompareFunction::AlwaysPass:
+  case igl::CompareOp_AlwaysPass:
     return VK_COMPARE_OP_ALWAYS;
   }
   IGL_ASSERT_MSG(false, "CompareFunction value not handled: %d", (int)func);

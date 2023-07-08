@@ -10,116 +10,42 @@
 ///--------------------------------------
 /// MARK: - Platform
 
-///
-/// Platform conditionals specify which OS the code is being compiled for.
-///
-/// MICROSOFT(WIN)/APPLE/ANDROID/LINUX are mutually exclusive.
-/// MACOS/IOS(_SIMULATOR) are mutually exclusive.
-///
-/// The following set of conditionals exist and currently are supported:
-///
-/// Windows:
-///   IGL_PLATFORM_WIN
-/// Apple:
-///   IGL_PLATFORM_APPLE
-///   IGL_PLATFORM_IOS
-///   IGL_PLATFORM_IOS_SIMULATOR
-///   IGL_PLATFORM_MACCATALYST
-///   IGL_PLATFORM_MACOS
-/// Android:
-///   IGL_PLATFORM_ANDROID
-/// Linux:
-///   IGL_PLATFORM_LINUX
-/// WEBGL:
-///   IGL_PLATFORM_EMSCRIPTEN
-
 // clang-format off
 // Windows
 #if defined(_WIN32)
   #define IGL_PLATFORM_WIN 1
   #define IGL_PLATFORM_APPLE 0
-  #define IGL_PLATFORM_IOS 0
-  #define IGL_PLATFORM_IOS_SIMULATOR 0
-  #define IGL_PLATFORM_MACCATALYST 0
-  #define IGL_PLATFORM_MACOS 0
   #define IGL_PLATFORM_ANDROID 0
   #define IGL_PLATFORM_LINUX 0
-  #define IGL_PLATFORM_EMSCRIPTEN 0
 // Apple
 #elif defined (__APPLE__)
   #define IGL_PLATFORM_WIN 0
   #define IGL_PLATFORM_ANDROID 0
   #define IGL_PLATFORM_LINUX 0
   #define IGL_PLATFORM_APPLE 1
-  #define IGL_PLATFORM_EMSCRIPTEN 0
-
-  #include <TargetConditionals.h>
-  #if TARGET_OS_SIMULATOR
-    #define IGL_PLATFORM_IOS 1 // iOS Simulator is iOS
-    #define IGL_PLATFORM_IOS_SIMULATOR 1
-    #define IGL_PLATFORM_MACCATALYST 0
-    #define IGL_PLATFORM_MACOS 0
-  #elif TARGET_OS_MACCATALYST
-    #define IGL_PLATFORM_IOS 0
-    #define IGL_PLATFORM_IOS_SIMULATOR 0
-    #define IGL_PLATFORM_MACCATALYST 1
-    #define IGL_PLATFORM_MACOS 0
-  #elif TARGET_OS_IPHONE
-    #define IGL_PLATFORM_IOS 1
-    #define IGL_PLATFORM_IOS_SIMULATOR 0
-    #define IGL_PLATFORM_MACCATALYST 0
-    #define IGL_PLATFORM_MACOS 0
-  #elif TARGET_OS_OSX
-    #define IGL_PLATFORM_IOS 0
-    #define IGL_PLATFORM_IOS_SIMULATOR 0
-    #define IGL_PLATFORM_MACCATALYST 0
-    #define IGL_PLATFORM_MACOS 1
-  #else
-    #error "Unknown Apple target"
-  #endif
 // Android
 #elif defined(__ANDROID__)
   #define IGL_PLATFORM_WIN 0
   #define IGL_PLATFORM_APPLE 0
-  #define IGL_PLATFORM_IOS 0
-  #define IGL_PLATFORM_IOS_SIMULATOR 0
-  #define IGL_PLATFORM_MACCATALYST 0
-  #define IGL_PLATFORM_MACOS 0
   #define IGL_PLATFORM_ANDROID 1
   #define IGL_PLATFORM_LINUX 0
-  #define IGL_PLATFORM_EMSCRIPTEN 0
 // Linux
 #elif defined(__linux__)
   #define IGL_PLATFORM_WIN 0
   #define IGL_PLATFORM_APPLE 0
-  #define IGL_PLATFORM_IOS 0
-  #define IGL_PLATFORM_IOS_SIMULATOR 0
-  #define IGL_PLATFORM_MACCATALYST 0
-  #define IGL_PLATFORM_MACOS 0
   #define IGL_PLATFORM_ANDROID 0
   #define IGL_PLATFORM_LINUX 1
-  #define IGL_PLATFORM_EMSCRIPTEN 0
 #elif defined(__EMSCRIPTEN__)
   #define IGL_PLATFORM_WIN 0
   #define IGL_PLATFORM_APPLE 0
-  #define IGL_PLATFORM_IOS 0
-  #define IGL_PLATFORM_IOS_SIMULATOR 0
-  #define IGL_PLATFORM_MACCATALYST 0
-  #define IGL_PLATFORM_MACOS 0
   #define IGL_PLATFORM_ANDROID 0
   #define IGL_PLATFORM_LINUX 0
-  #define IGL_PLATFORM_EMSCRIPTEN 1
 // Rest
 #else
   #define IGL_PLATFORM_WIN 0
   #define IGL_PLATFORM_APPLE 0
-  #define IGL_PLATFORM_IOS 0
-  #define IGL_PLATFORM_IOS_SIMULATOR 0
-  #define IGL_PLATFORM_MACCATALYST 0
-  #define IGL_PLATFORM_MACOS 0
   #define IGL_PLATFORM_ANDROID 0
   #define IGL_PLATFORM_LINUX 0
-  #define IGL_PLATFORM_EMSCRIPTEN 0
 
   #error "Platform not supported"
 #endif
@@ -135,37 +61,10 @@
 //
 // Furthermore, the macros below are provided so that IGL clients can safely wrap backend specific
 // code for conditional compilation.
-#ifdef IGL_BACKEND_ENABLE_METAL
-#define IGL_BACKEND_METAL 1
-#else
-#define IGL_BACKEND_METAL 0
-#endif
-
-#ifdef IGL_BACKEND_ENABLE_OPENGL
-#define IGL_BACKEND_OPENGL 1
-#else
-#define IGL_BACKEND_OPENGL 0
-#endif
-
 #ifdef IGL_BACKEND_ENABLE_VULKAN
 #define IGL_BACKEND_VULKAN 1
 #else
 #define IGL_BACKEND_VULKAN 0
-#endif
-
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-
-///--------------------------------------
-/// MARK: - Angle support
-#if defined(FORCE_USE_ANGLE)
-#define IGL_ANGLE 1
-#define IGL_DISABLE_DEBUG_BUFFER_LABEL 1
-#else
-#define IGL_ANGLE 0
 #endif
 
 //--------------------------------------
@@ -178,21 +77,6 @@
 #define IGL_PLATFORM_LINUX_SWIFTSHADER 1
 #else
 #define IGL_PLATFORM_LINUX_SWIFTSHADER 0
-#endif
-
-//--------------------------------------
-/// MARK: - Linux with EGL
-//
-// IGL_PLATFORM_LINUX_USE_EGL enables EGL context on Linux, otherwise GLX is in use.
-// GLX is used in CMake builds for samples and shell apps to use OpenGL 4.6 on Linux desktops.
-#if IGL_PLATFORM_LINUX
-#ifndef IGL_PLATFORM_LINUX_USE_EGL
-#define IGL_PLATFORM_LINUX_USE_EGL 1
-#endif
-#else
-#ifndef IGL_PLATFORM_LINUX_USE_EGL
-#define IGL_PLATFORM_LINUX_USE_EGL 0
-#endif
 #endif
 
 ///--------------------------------------
@@ -223,17 +107,6 @@
 #else
   #define IGL_DEBUG 0
 #endif
-#endif
-// clang-format on
-
-// clang-format off
-#ifndef IGL_REPORT_ERROR_ENABLED
-  // Either not Apple platform, or we have assertions not blocked.
-  #if IGL_DEBUG || !IGL_PLATFORM_APPLE || !defined(NS_BLOCK_ASSERTIONS)
-    #define IGL_REPORT_ERROR_ENABLED 1
-  #else
-    #define IGL_REPORT_ERROR_ENABLED 0
-  #endif
 #endif
 // clang-format on
 

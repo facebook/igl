@@ -8,7 +8,6 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/ShaderModule.h>
-#include <igl/vulkan/VertexInputState.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
@@ -16,11 +15,11 @@
 
 namespace {
 
-VkPolygonMode polygonFillModeToVkPolygonMode(igl::PolygonFillMode mode) {
+VkPolygonMode polygonModeToVkPolygonMode(igl::PolygonMode mode) {
   switch (mode) {
-  case igl::PolygonFillMode::Fill:
+  case igl::PolygonMode_Fill:
     return VK_POLYGON_MODE_FILL;
-  case igl::PolygonFillMode::Line:
+  case igl::PolygonMode_Line:
     return VK_POLYGON_MODE_LINE;
   }
   IGL_ASSERT_MSG(false, "Implement a missing polygon fill mode");
@@ -29,11 +28,11 @@ VkPolygonMode polygonFillModeToVkPolygonMode(igl::PolygonFillMode mode) {
 
 VkCullModeFlags cullModeToVkCullMode(igl::CullMode mode) {
   switch (mode) {
-  case igl::CullMode::Disabled:
+  case igl::CullMode_None:
     return VK_CULL_MODE_NONE;
-  case igl::CullMode::Front:
+  case igl::CullMode_Front:
     return VK_CULL_MODE_FRONT_BIT;
-  case igl::CullMode::Back:
+  case igl::CullMode_Back:
     return VK_CULL_MODE_BACK_BIT;
   }
   IGL_ASSERT_MSG(false, "Implement a missing cull mode");
@@ -42,10 +41,10 @@ VkCullModeFlags cullModeToVkCullMode(igl::CullMode mode) {
 
 VkFrontFace windingModeToVkFrontFace(igl::WindingMode mode) {
   switch (mode) {
-  case igl::WindingMode::Clockwise:
-    return VK_FRONT_FACE_CLOCKWISE;
-  case igl::WindingMode::CounterClockwise:
+  case igl::WindingMode_CCW:
     return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+  case igl::WindingMode_CW:
+    return VK_FRONT_FACE_CLOCKWISE;
   }
   IGL_ASSERT_MSG(false, "Wrong winding order (cannot be more than 2)");
   return VK_FRONT_FACE_CLOCKWISE;
@@ -145,17 +144,16 @@ VkFormat vertexAttributeFormatToVkFormat(igl::VertexAttributeFormat fmt) {
 }
 
 VkBlendOp blendOpToVkBlendOp(igl::BlendOp value) {
-  using igl::BlendOp;
   switch (value) {
-  case BlendOp::Add:
+  case igl::BlendOp_Add:
     return VK_BLEND_OP_ADD;
-  case BlendOp::Subtract:
+  case igl::BlendOp_Subtract:
     return VK_BLEND_OP_SUBTRACT;
-  case BlendOp::ReverseSubtract:
+  case igl::BlendOp_ReverseSubtract:
     return VK_BLEND_OP_REVERSE_SUBTRACT;
-  case BlendOp::Min:
+  case igl::BlendOp_Min:
     return VK_BLEND_OP_MIN;
-  case BlendOp::Max:
+  case igl::BlendOp_Max:
     return VK_BLEND_OP_MAX;
   }
 
@@ -164,45 +162,44 @@ VkBlendOp blendOpToVkBlendOp(igl::BlendOp value) {
 }
 
 VkBlendFactor blendFactorToVkBlendFactor(igl::BlendFactor value) {
-  using igl::BlendFactor;
   switch (value) {
-  case BlendFactor::Zero:
+  case igl::BlendFactor_Zero:
     return VK_BLEND_FACTOR_ZERO;
-  case BlendFactor::One:
+  case igl::BlendFactor_One:
     return VK_BLEND_FACTOR_ONE;
-  case BlendFactor::SrcColor:
+  case igl::BlendFactor_SrcColor:
     return VK_BLEND_FACTOR_SRC_COLOR;
-  case BlendFactor::OneMinusSrcColor:
+  case igl::BlendFactor_OneMinusSrcColor:
     return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-  case BlendFactor::DstColor:
+  case igl::BlendFactor_DstColor:
     return VK_BLEND_FACTOR_DST_COLOR;
-  case BlendFactor::OneMinusDstColor:
+  case igl::BlendFactor_OneMinusDstColor:
     return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
-  case BlendFactor::SrcAlpha:
+  case igl::BlendFactor_SrcAlpha:
     return VK_BLEND_FACTOR_SRC_ALPHA;
-  case BlendFactor::OneMinusSrcAlpha:
+  case igl::BlendFactor_OneMinusSrcAlpha:
     return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-  case BlendFactor::DstAlpha:
+  case igl::BlendFactor_DstAlpha:
     return VK_BLEND_FACTOR_DST_ALPHA;
-  case BlendFactor::OneMinusDstAlpha:
+  case igl::BlendFactor_OneMinusDstAlpha:
     return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
-  case BlendFactor::BlendColor:
+  case igl::BlendFactor_BlendColor:
     return VK_BLEND_FACTOR_CONSTANT_COLOR;
-  case BlendFactor::OneMinusBlendColor:
+  case igl::BlendFactor_OneMinusBlendColor:
     return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
-  case BlendFactor::BlendAlpha:
+  case igl::BlendFactor_BlendAlpha:
     return VK_BLEND_FACTOR_CONSTANT_ALPHA;
-  case BlendFactor::OneMinusBlendAlpha:
+  case igl::BlendFactor_OneMinusBlendAlpha:
     return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
-  case BlendFactor::SrcAlphaSaturated:
+  case igl::BlendFactor_SrcAlphaSaturated:
     return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
-  case BlendFactor::Src1Color:
+  case igl::BlendFactor_Src1Color:
     return VK_BLEND_FACTOR_SRC1_COLOR;
-  case BlendFactor::OneMinusSrc1Color:
+  case igl::BlendFactor_OneMinusSrc1Color:
     return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
-  case BlendFactor::Src1Alpha:
+  case igl::BlendFactor_Src1Alpha:
     return VK_BLEND_FACTOR_SRC1_ALPHA;
-  case BlendFactor::OneMinusSrc1Alpha:
+  case igl::BlendFactor_OneMinusSrc1Alpha:
     return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
   default:
     IGL_ASSERT(false);
@@ -218,43 +215,37 @@ namespace vulkan {
 
 RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
                                          RenderPipelineDesc desc) :
-  device_(device),
-  desc_(std::move(desc)),
-  reflection_(std::make_shared<RenderPipelineReflection>()) {
+  device_(device), desc_(std::move(desc)) {
   // Iterate and cache vertex input bindings and attributes
-  const igl::vulkan::VertexInputState* vstate =
-      static_cast<igl::vulkan::VertexInputState*>(desc_.vertexInputState.get());
+  const igl::VertexInputStateDesc& vstate = desc_.vertexInputState;
 
   vertexInputStateCreateInfo_ = ivkGetPipelineVertexInputStateCreateInfo_Empty();
 
-  if (vstate) {
-    std::array<bool, IGL_VERTEX_BUFFER_MAX> bufferAlreadyBound{};
+  bool bufferAlreadyBound[IGL_VERTEX_BUFFER_MAX] = {};
 
-    for (size_t i = 0; i != vstate->desc_.numAttributes; i++) {
-      const VertexAttribute& attr = vstate->desc_.attributes[i];
-      const VkFormat format = vertexAttributeFormatToVkFormat(attr.format);
-      const size_t bufferIndex = attr.bufferIndex;
+  for (size_t i = 0; i != vstate.numAttributes; i++) {
+    const VertexAttribute& attr = vstate.attributes[i];
+    const VkFormat format = vertexAttributeFormatToVkFormat(attr.format);
+    const uint32_t bufferIndex = attr.bufferIndex;
 
-      vkAttributes_.push_back(ivkGetVertexInputAttributeDescription(
-          (uint32_t)attr.location, (uint32_t)bufferIndex, format, (uint32_t)attr.offset));
+    vkAttributes_.push_back(ivkGetVertexInputAttributeDescription(
+        attr.location, bufferIndex, format, (uint32_t)attr.offset));
 
-      if (!bufferAlreadyBound[bufferIndex]) {
-        bufferAlreadyBound[bufferIndex] = true;
+    if (!bufferAlreadyBound[bufferIndex]) {
+      bufferAlreadyBound[bufferIndex] = true;
 
-        const VertexInputBinding& binding = vstate->desc_.inputBindings[bufferIndex];
-        const VkVertexInputRate rate = (binding.sampleFunction == VertexSampleFunction::PerVertex)
-                                           ? VK_VERTEX_INPUT_RATE_VERTEX
-                                           : VK_VERTEX_INPUT_RATE_INSTANCE;
-        vkBindings_.push_back(ivkGetVertexInputBindingDescription(
-            (uint32_t)bufferIndex, (uint32_t)binding.stride, rate));
-      }
+      const VertexInputBinding& binding = vstate.inputBindings[bufferIndex];
+      const VkVertexInputRate rate = (binding.sampleFunction == VertexSampleFunction_PerVertex)
+                                         ? VK_VERTEX_INPUT_RATE_VERTEX
+                                         : VK_VERTEX_INPUT_RATE_INSTANCE;
+      vkBindings_.push_back(ivkGetVertexInputBindingDescription(bufferIndex, binding.stride, rate));
     }
 
     vertexInputStateCreateInfo_.vertexBindingDescriptionCount =
-        static_cast<uint32_t>(vstate->desc_.numInputBindings);
+        static_cast<uint32_t>(vstate.numInputBindings);
     vertexInputStateCreateInfo_.pVertexBindingDescriptions = vkBindings_.data();
     vertexInputStateCreateInfo_.vertexAttributeDescriptionCount =
-        static_cast<uint32_t>(vstate->desc_.numAttributes);
+        static_cast<uint32_t>(vstate.numAttributes);
     vertexInputStateCreateInfo_.pVertexAttributeDescriptions = vkAttributes_.data();
   }
 }
@@ -312,8 +303,8 @@ VkPipeline RenderPipelineState::getVkPipeline(
                   }
                 });
 
-  const auto& vertexModule = desc_.shaderStages->getVertexModule();
-  const auto& fragmentModule = desc_.shaderStages->getFragmentModule();
+  const IShaderModule* vertexModule = desc_.shaderStages->getModule(Stage_Vertex);
+  const IShaderModule* fragmentModule = desc_.shaderStages->getModule(Stage_Fragment);
   igl::vulkan::VulkanPipelineBuilder()
       .dynamicStates({
           // from Vulkan 1.0
@@ -330,7 +321,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
       .depthCompareOp(dynamicState.getDepthCompareOp())
       .depthWriteEnable(dynamicState.depthWriteEnable_)
       .rasterizationSamples(getVulkanSampleCountFlags(desc_.sampleCount))
-      .polygonMode(polygonFillModeToVkPolygonMode(desc_.polygonFillMode))
+      .polygonMode(polygonModeToVkPolygonMode(desc_.polygonMode))
       .stencilStateOps(VK_STENCIL_FACE_FRONT_BIT,
                        dynamicState.getStencilStateFailOp(true),
                        dynamicState.getStencilStatePassOp(true),
@@ -345,57 +336,28 @@ VkPipeline RenderPipelineState::getVkPipeline(
           ivkGetPipelineShaderStageCreateInfo(
               VK_SHADER_STAGE_VERTEX_BIT,
               igl::vulkan::ShaderModule::getVkShaderModule(vertexModule),
-              vertexModule->info().entryPoint.c_str()),
+              vertexModule->desc().entryPoint.c_str()),
           ivkGetPipelineShaderStageCreateInfo(
               VK_SHADER_STAGE_FRAGMENT_BIT,
               igl::vulkan::ShaderModule::getVkShaderModule(fragmentModule),
-              fragmentModule->info().entryPoint.c_str()),
+              fragmentModule->desc().entryPoint.c_str()),
       })
       .cullMode(cullModeToVkCullMode(desc_.cullMode))
       .frontFace(windingModeToVkFrontFace(desc_.frontFaceWinding))
       .vertexInputState(vertexInputStateCreateInfo_)
       .colorBlendAttachmentStates(colorBlendAttachmentStates)
-      .build(ctx.device_->getVkDevice(),
-             // TODO: use ctx.pipelineCache_
-             // @fb-only
-             // @fb-only
-             VK_NULL_HANDLE,
-             ctx.pipelineLayoutGraphics_->getVkPipelineLayout(),
-             renderPass,
-             &pipeline,
-             desc_.debugName.toConstChar());
+      .build(
+          ctx.device_->getVkDevice(),
+          // TODO: use ctx.pipelineCache_
+          VK_NULL_HANDLE,
+          ctx.pipelineLayoutGraphics_->getVkPipelineLayout(),
+          renderPass,
+          &pipeline,
+          desc_.debugName.c_str());
 
   pipelines_[dynamicState] = pipeline;
 
-  // @fb-only
-  // @lint-ignore CLANGTIDY
   return pipeline;
-}
-
-int RenderPipelineState::getIndexByName(const igl::NameHandle& name, ShaderStage stage) const {
-  IGL_ASSERT_NOT_IMPLEMENTED();
-  (void)name;
-  (void)stage;
-  return 0;
-}
-
-int RenderPipelineState::getIndexByName(const std::string& name, ShaderStage stage) const {
-  IGL_ASSERT_NOT_IMPLEMENTED();
-  (void)name;
-  (void)stage;
-  return 0;
-}
-
-std::shared_ptr<igl::IRenderPipelineReflection> RenderPipelineState::renderPipelineReflection() {
-  return reflection_;
-}
-
-void RenderPipelineState::setRenderPipelineReflection(
-    const IRenderPipelineReflection& renderPipelineReflection) {
-  auto& vulkanReflection = static_cast<const RenderPipelineReflection&>(renderPipelineReflection);
-  auto copy = RenderPipelineReflection(vulkanReflection);
-
-  reflection_ = std::make_shared<RenderPipelineReflection>(std::move(copy));
 }
 
 } // namespace vulkan

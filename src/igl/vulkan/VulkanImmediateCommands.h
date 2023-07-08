@@ -67,7 +67,6 @@ class VulkanImmediateCommands final {
   bool isReady(SubmitHandle handle, bool fastCheckNoVulkan = false) const;
   void wait(SubmitHandle handle);
   void waitAll();
-  VkFence getVkFenceFromSubmitHandle(SubmitHandle handle);
 
  private:
   void purge();

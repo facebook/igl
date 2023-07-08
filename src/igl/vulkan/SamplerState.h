@@ -8,7 +8,7 @@
 #pragma once
 
 #include <igl/Common.h>
-#include <igl/SamplerState.h>
+#include <igl/Texture.h>
 #include <igl/vulkan/Common.h>
 
 namespace igl {

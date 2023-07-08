@@ -37,19 +37,17 @@ class Texture final : public ITexture {
     desc_ = std::move(desc);
   }
 
-  Result upload(const TextureRangeDesc& range,
-                const void* data,
-                size_t bytesPerRow = 0) const override;
+  Result upload(const TextureRangeDesc& range, const void* data, size_t bytesPerRow) const override;
   Result uploadCube(const TextureRangeDesc& range,
                     TextureCubeFace face,
                     const void* data,
-                    size_t bytesPerRow = 0) const override;
+                    size_t bytesPerRow) const override;
 
   // Accessors
   Dimensions getDimensions() const override;
   size_t getNumLayers() const override;
   TextureType getType() const override;
-  ulong_t getUsage() const override;
+  uint32_t getUsage() const override;
   size_t getSamples() const override;
   size_t getNumMipLevels() const override;
   void generateMipmap(ICommandQueue& cmdQueue) const override;
@@ -58,9 +56,7 @@ class Texture final : public ITexture {
   VkFormat getVkFormat() const;
 
   VkImageView getVkImageView() const;
-  VkImageView getVkImageViewForFramebuffer(uint32_t level,
-                                           FramebufferMode mode) const; // framebuffers can render
-                                                                        // only into 1 mip-level
+  VkImageView getVkImageViewForFramebuffer(uint32_t level) const; // framebuffers can render only into 1 mip-level
   VkImage getVkImage() const;
   VulkanTexture& getVulkanTexture() const {
     IGL_ASSERT(texture_);

@@ -57,8 +57,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
                         const std::shared_ptr<ISamplerState>& samplerState) override;
 
   void bindTexture(size_t index, uint8_t target, const std::shared_ptr<ITexture>& texture) override;
-  void bindUniform(const UniformDesc& uniformDesc, const void* data) override;
-
+  
   void draw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) override;
   void drawIndexed(PrimitiveType primitiveType,
                    size_t indexCount,
@@ -96,8 +95,6 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
     return binder_;
   }
 
-  bool setDrawCallCountEnabled(bool value);
-
  private:
   void bindPipeline();
 
@@ -112,11 +109,6 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
 
   std::shared_ptr<igl::IRenderPipelineState> currentPipeline_ = nullptr;
   RenderPipelineDynamicState dynamicState_;
-
-  /* Used to increment the draw call count. Should either be 0 or 1
-   *  0: When draw call count is disabled during auxiliary draw calls (shader debugging)
-   *  1: All other times */
-  uint32_t drawCallCountEnabled_ = 1u;
 
  private:
   RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer,

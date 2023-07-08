@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/IGLSafeC.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 
@@ -143,7 +142,7 @@ void VulkanBuffer::getBufferSubData(size_t offset, size_t size, void* data) {
   IGL_ASSERT(offset + size <= bufferSize_);
 
   const uint8_t* src = static_cast<uint8_t*>(mappedPtr_) + offset;
-  checked_memcpy(data, size, src, size);
+  memcpy(data, src, size);
 }
 
 void VulkanBuffer::bufferSubData(size_t offset, size_t size, const void* data) {
@@ -159,7 +158,7 @@ void VulkanBuffer::bufferSubData(size_t offset, size_t size, const void* data) {
   IGL_ASSERT(offset + size <= bufferSize_);
 
   if (data) {
-    checked_memcpy((uint8_t*)mappedPtr_ + offset, bufferSize_ - offset, data, size);
+    memcpy((uint8_t*)mappedPtr_ + offset, data, size);
   } else {
     memset((uint8_t*)mappedPtr_ + offset, 0, size);
   }

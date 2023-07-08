@@ -17,8 +17,6 @@
 #ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_EXPOSE_NATIVE_WGL
-#elif __APPLE__
-#define GLFW_EXPOSE_NATIVE_COCOA
 #elif defined(__linux__)
 #define GLFW_EXPOSE_NATIVE_X11
 #else
@@ -30,7 +28,6 @@
 #include <glm/gtc/random.hpp>
 #include <igl/FPSCounter.h>
 #include <igl/IGL.h>
-#include <igl/ShaderCreator.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
@@ -119,7 +116,6 @@ std::shared_ptr<IFramebuffer> framebuffer_;
 std::shared_ptr<IRenderPipelineState> renderPipelineState_Mesh_;
 std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
 std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerObject_;
-std::shared_ptr<IVertexInputState> vertexInput0_;
 std::shared_ptr<IDepthStencilState> depthStencilState_;
 std::shared_ptr<ITexture> texture0_, texture1_;
 std::shared_ptr<ISamplerState> sampler_;
@@ -281,14 +277,12 @@ static void initIGL() {
                                           vertexData0,
                                           sizeof(vertexData0),
                                           ResourceStorage::Private,
-                                          0,
                                           "Buffer: vertex"),
                                nullptr);
   ib0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Index,
                                           indexData,
                                           sizeof(indexData),
                                           ResourceStorage::Private,
-                                          0,
                                           "Buffer: index"),
                                nullptr);
   // create an Uniform buffers to store uniforms for 2 objects
@@ -297,42 +291,20 @@ static void initIGL() {
                                                            &perFrame,
                                                            sizeof(UniformsPerFrame),
                                                            ResourceStorage::Shared,
-                                                           0,
                                                            "Buffer: uniforms (per frame)"),
                                                 nullptr));
     ubPerObject_.push_back(device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
                                                             perObject,
                                                             kNumCubes * sizeof(UniformsPerObject),
                                                             ResourceStorage::Shared,
-                                                            0,
                                                             "Buffer: uniforms (per object)"),
                                                  nullptr));
   }
 
   {
-    VertexInputStateDesc desc;
-    desc.numAttributes = 3;
-    desc.attributes[0].format = VertexAttributeFormat::Float3;
-    desc.attributes[0].offset = offsetof(VertexPosUvw, position);
-    desc.attributes[0].bufferIndex = 0;
-    desc.attributes[0].location = 0;
-    desc.attributes[1].format = VertexAttributeFormat::Float3;
-    desc.attributes[1].offset = offsetof(VertexPosUvw, color);
-    desc.attributes[1].bufferIndex = 0;
-    desc.attributes[1].location = 1;
-    desc.attributes[2].format = VertexAttributeFormat::Float2;
-    desc.attributes[2].offset = offsetof(VertexPosUvw, uv);
-    desc.attributes[2].bufferIndex = 0;
-    desc.attributes[2].location = 2;
-    desc.numInputBindings = 1;
-    desc.inputBindings[0].stride = sizeof(VertexPosUvw);
-    vertexInput0_ = device_->createVertexInputState(desc, nullptr);
-  }
-
-  {
     DepthStencilStateDesc desc;
     desc.isDepthWriteEnabled = true;
-    desc.compareFunction = igl::CompareFunction::Less;
+    desc.compareOp = igl::CompareOp_Less;
     depthStencilState_ = device_->createDepthStencilState(desc, nullptr);
   }
 
@@ -357,10 +329,7 @@ static void initIGL() {
   {
     using namespace std::filesystem;
     path dir = current_path();
-    // find IGLU somewhere above our current directory
-    // @fb-only
     const char* contentFolder = "third-party/content/src/";
-    // @fb-only
     while (dir != current_path().root_path() && !exists(dir / path(contentFolder))) {
       dir = dir.parent_path();
     }
@@ -386,17 +355,11 @@ static void initIGL() {
     texture1_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels);
     stbi_image_free(pixels);
   }
-  {
-    igl::SamplerStateDesc desc = igl::SamplerStateDesc::newLinear();
-    desc.addressModeU = igl::SamplerAddressMode::Repeat;
-    desc.addressModeV = igl::SamplerAddressMode::Repeat;
-    desc.debugName = "Sampler: linear";
-    sampler_ = device_->createSamplerState(desc, nullptr);
-  }
+
+    sampler_ = device_->createSamplerState({.debugName = "Sampler: linear"}, nullptr);
 
   // Command queue: backed by different types of GPU HW queues
-  CommandQueueDesc desc{CommandQueueType::Graphics};
-  commandQueue_ = device_->createCommandQueue(desc, nullptr);
+  commandQueue_ = device_->createCommandQueue(CommandQueueType::Graphics, nullptr);
 
   renderPass_.colorAttachments.push_back(igl::RenderPassDesc::ColorAttachmentDesc{});
   renderPass_.colorAttachments.back().loadAction = LoadAction::Clear;
@@ -424,6 +387,23 @@ static void createRenderPipeline() {
 
   IGL_ASSERT(framebuffer_);
 
+  VertexInputStateDesc vdesc;
+  vdesc.numAttributes = 3;
+  vdesc.attributes[0].format = VertexAttributeFormat::Float3;
+  vdesc.attributes[0].offset = offsetof(VertexPosUvw, position);
+  vdesc.attributes[0].bufferIndex = 0;
+  vdesc.attributes[0].location = 0;
+  vdesc.attributes[1].format = VertexAttributeFormat::Float3;
+  vdesc.attributes[1].offset = offsetof(VertexPosUvw, color);
+  vdesc.attributes[1].bufferIndex = 0;
+  vdesc.attributes[1].location = 1;
+  vdesc.attributes[2].format = VertexAttributeFormat::Float2;
+  vdesc.attributes[2].offset = offsetof(VertexPosUvw, uv);
+  vdesc.attributes[2].bufferIndex = 0;
+  vdesc.attributes[2].location = 2;
+  vdesc.numInputBindings = 1;
+  vdesc.inputBindings[0].stride = sizeof(VertexPosUvw);
+
   RenderPipelineDesc desc;
 
   desc.targetDesc.colorAttachments.resize(1);
@@ -434,16 +414,16 @@ static void createRenderPipeline() {
     desc.targetDesc.depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat();
   }
 
-  desc.vertexInputState = vertexInput0_;
-  desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(
-      *device_, codeVS, "main", "", codeFS, "main", "", nullptr);
+  desc.vertexInputState = vdesc;
+  desc.shaderStages = device_->createShaderStages(
+      codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)");
 
 #if !TINY_TEST_USE_DEPTH_BUFFER
   desc.cullMode = igl::CullMode::Back;
 #endif // TINY_TEST_USE_DEPTH_BUFFER
 
-  desc.frontFaceWinding = igl::WindingMode::Clockwise;
-  desc.debugName = igl::genNameHandle("Pipeline: mesh");
+  desc.frontFaceWinding = igl::WindingMode_CW;
+  desc.debugName = "Pipeline: mesh";
   renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
 }
 

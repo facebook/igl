@@ -11,6 +11,7 @@
 
 namespace igl {
 
+class ICommandBuffer;
 class IDevice;
 
 class ICommandEncoder {

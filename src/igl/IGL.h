@@ -20,9 +20,5 @@
 #include <igl/RenderCommandEncoder.h>
 #include <igl/RenderPass.h>
 #include <igl/RenderPipelineState.h>
-#include <igl/SamplerState.h>
 #include <igl/Shader.h>
-#include <igl/ShaderCreator.h>
 #include <igl/Texture.h>
-#include <igl/Uniform.h>
-#include <igl/VertexInputState.h>

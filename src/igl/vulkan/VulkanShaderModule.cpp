@@ -24,7 +24,7 @@ void logShaderSource(const char* text) {
   while (text && *text) {
     if (*text == '\n') {
       // Write out the line along with the line number, and reset the line
-      IGL_LOG_INFO("(%3u) %s", line++, outputLine.c_str());
+      LLOGL("(%3u) %s", line++, outputLine.c_str());
       outputLine = "";
     } else if (*text == '\r') {
       // skip it
@@ -33,20 +33,20 @@ void logShaderSource(const char* text) {
     }
     text++;
   }
-  IGL_LOG_INFO("");
+  LLOGL("");
 #else
-  IGL_LOG_INFO("\n(%3u) ", line);
+  LLOGL("\n(%3u) ", line);
   while (text && *text) {
     if (*text == '\n') {
-      IGL_LOG_INFO("\n(%3u) ", ++line);
+      LLOGL("\n(%3u) ", ++line);
     } else if (*text == '\r') {
       // skip it to support Windows/UNIX EOLs
     } else {
-      IGL_LOG_INFO("%c", *text);
+      LLOGL("%c", *text);
     }
     text++;
   }
-  IGL_LOG_INFO("\n");
+  LLOGL("\n");
 #endif
 #endif
 }
@@ -70,23 +70,23 @@ Result compileShader(VkDevice device,
   const glslang_input_t input = ivkGetGLSLangInput(stage, glslLangResource, code);
 
   glslang_shader_t* shader = glslang_shader_create(&input);
-  IGL_SCOPE_EXIT {
+  SCOPE_EXIT {
     glslang_shader_delete(shader);
   };
 
   if (!glslang_shader_preprocess(shader, &input)) {
-    IGL_LOG_ERROR("Shader preprocessing failed:\n");
-    IGL_LOG_ERROR("  %s\n", glslang_shader_get_info_log(shader));
-    IGL_LOG_ERROR("  %s\n", glslang_shader_get_info_debug_log(shader));
+    LLOGW("Shader preprocessing failed:\n");
+    LLOGW("  %s\n", glslang_shader_get_info_log(shader));
+    LLOGW("  %s\n", glslang_shader_get_info_debug_log(shader));
     logShaderSource(code);
     assert(false);
     return Result(Result::Code::InvalidOperation, "glslang_shader_preprocess() failed");
   }
 
   if (!glslang_shader_parse(shader, &input)) {
-    IGL_LOG_ERROR("Shader parsing failed:\n");
-    IGL_LOG_ERROR("  %s\n", glslang_shader_get_info_log(shader));
-    IGL_LOG_ERROR("  %s\n", glslang_shader_get_info_debug_log(shader));
+    LLOGW("Shader parsing failed:\n");
+    LLOGW("  %s\n", glslang_shader_get_info_log(shader));
+    LLOGW("  %s\n", glslang_shader_get_info_debug_log(shader));
     logShaderSource(glslang_shader_get_preprocessed_code(shader));
     assert(false);
     return Result(Result::Code::InvalidOperation, "glslang_shader_parse() failed");
@@ -95,14 +95,14 @@ Result compileShader(VkDevice device,
   glslang_program_t* program = glslang_program_create();
   glslang_program_add_shader(program, shader);
 
-  IGL_SCOPE_EXIT {
+  SCOPE_EXIT {
     glslang_program_delete(program);
   };
 
   if (!glslang_program_link(program, GLSLANG_MSG_SPV_RULES_BIT | GLSLANG_MSG_VULKAN_RULES_BIT)) {
-    IGL_LOG_ERROR("Shader linking failed:\n");
-    IGL_LOG_ERROR("  %s\n", glslang_program_get_info_log(program));
-    IGL_LOG_ERROR("  %s\n", glslang_program_get_info_debug_log(program));
+    LLOGW("Shader linking failed:\n");
+    LLOGW("  %s\n", glslang_program_get_info_log(program));
+    LLOGW("  %s\n", glslang_program_get_info_debug_log(program));
     assert(false);
     return Result(Result::Code::InvalidOperation, "glslang_program_link() failed");
   }
@@ -121,7 +121,7 @@ Result compileShader(VkDevice device,
   glslang_program_SPIRV_generate_with_options(program, input.stage, &options);
 
   if (glslang_program_SPIRV_get_messages(program)) {
-    IGL_LOG_ERROR("%s\n", glslang_program_SPIRV_get_messages(program));
+    LLOGW("%s\n", glslang_program_SPIRV_get_messages(program));
   }
 
   VK_ASSERT_RETURN(ivkCreateShaderModule(device, program, outShaderModule));

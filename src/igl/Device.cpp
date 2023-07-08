@@ -13,19 +13,9 @@
 
 namespace igl {
 
-void IDevice::beginScope() {
-  ++scopeDepth_;
-}
-
-void IDevice::endScope() {
-  --scopeDepth_;
-}
-
-bool IDevice::verifyScope() {
-  return scopeDepth_ > 0;
-}
-
-void IDevice::updateSurface(void* nativeWindowType) {}
+// Make sure the structure igl::Color is tightly packed so it can be passed into APIs which expect
+// float[4] RGBA values
+static_assert(sizeof(Color) == 4 * sizeof(float));
 
 TextureDesc IDevice::sanitize(const TextureDesc& desc) const {
   TextureDesc sanitized = desc;
@@ -37,7 +27,7 @@ TextureDesc IDevice::sanitize(const TextureDesc& desc) const {
     sanitized.numLayers = std::max(sanitized.numLayers, static_cast<size_t>(1));
     sanitized.numSamples = std::max(sanitized.numSamples, static_cast<size_t>(1));
     sanitized.numMipLevels = std::max(sanitized.numMipLevels, static_cast<size_t>(1));
-    IGL_LOG_ERROR(
+    LLOGW(
         "width (%d), height (%d), depth (%d), numLayers (%d), numSamples (%d) and numMipLevels "
         "(%d) should be at least 1.\n",
         desc.width,
@@ -51,26 +41,24 @@ TextureDesc IDevice::sanitize(const TextureDesc& desc) const {
   return sanitized;
 }
 
-Color IDevice::backendDebugColor() const noexcept {
-  switch (getBackendType()) {
-  case BackendType::OpenGL:
-    return {1.f, 1.f, 0.f, 1.f};
-  case BackendType::Metal:
-    return {1.f, 0.f, 1.f, 1.f};
-  case BackendType::Vulkan:
-    return {0.f, 1.f, 1.f, 1.f};
-  // @fb-only
-    // @fb-only
-  }
-  IGL_UNREACHABLE_RETURN(Color(0.f, 0.f, 0.f, 0.f))
+std::unique_ptr<ShaderStages> IDevice::createShaderStages(const char* vs,
+                                                           std::string debugNameVS,
+                                                           const char* fs,
+                                                           std::string debugNameFS,
+                                                           Result* outResult) const {
+  auto VS = createShaderModule(igl::ShaderModuleDesc(vs, Stage_Vertex, std::move(debugNameVS)),
+                               outResult);
+  auto FS = createShaderModule(igl::ShaderModuleDesc(fs, Stage_Fragment, std::move(debugNameFS)),
+                               outResult);
+  return std::make_unique<igl::ShaderStages>(VS, FS);
 }
 
-DeviceScope::DeviceScope(IDevice& device) : device_(device) {
-  device_.beginScope();
+std::unique_ptr<ShaderStages> IDevice::createShaderStages(const char* cs,
+                                                          std::string debugName,
+                                                          Result* outResult) const {
+  return std::make_unique<igl::ShaderStages>(
+      createShaderModule(igl::ShaderModuleDesc(cs, Stage_Compute, debugName), outResult));
 }
 
-DeviceScope::~DeviceScope() {
-  device_.endScope();
-}
 
 } // namespace igl

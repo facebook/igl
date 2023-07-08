@@ -132,7 +132,6 @@ VkResult ivkCreateRenderPass(VkDevice device,
                              const VkAttachmentDescription* attachments,
                              const VkSubpassDescription* subpass,
                              const VkSubpassDependency* dependency,
-                             const VkRenderPassMultiviewCreateInfo* renderPassMultiview,
                              VkRenderPass* outRenderPass);
 
 VkResult ivkCreateShaderModule(VkDevice device,
@@ -192,10 +191,6 @@ VkSubpassDescription ivkGetSubpassDescription(uint32_t numColorAttachments,
                                               const VkAttachmentReference* refDepth);
 
 VkSubpassDependency ivkGetSubpassDependency(void);
-
-VkRenderPassMultiviewCreateInfo ivkGetRenderPassMultiviewCreateInfo(
-    const uint32_t* viewMask,
-    const uint32_t* correlationMask);
 
 VkResult ivkAllocateDescriptorSet(VkDevice device,
                                   VkDescriptorPool pool,

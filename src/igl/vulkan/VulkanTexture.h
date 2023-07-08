@@ -9,7 +9,6 @@
 
 #include <memory>
 
-#include <igl/ColorSpace.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 

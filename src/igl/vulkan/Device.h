@@ -26,7 +26,7 @@ class Device final : public IDevice {
   explicit Device(std::unique_ptr<VulkanContext> ctx);
 
   // Command Queue
-  std::shared_ptr<ICommandQueue> createCommandQueue(const CommandQueueDesc& desc,
+  std::shared_ptr<ICommandQueue> createCommandQueue(CommandQueueType type,
                                                     Result* outResult) override;
   // Resources
   std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
@@ -35,16 +35,10 @@ class Device final : public IDevice {
   std::shared_ptr<IDepthStencilState> createDepthStencilState(const DepthStencilStateDesc& desc,
                                                               Result* outResult) const override;
 
-  std::unique_ptr<IShaderStages> createShaderStages(const ShaderStagesDesc& desc,
-                                                    Result* outResult) const override;
-
   std::shared_ptr<ISamplerState> createSamplerState(const SamplerStateDesc& desc,
                                                     Result* outResult) const override;
   std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,
                                           Result* outResult) const noexcept override;
-
-  std::shared_ptr<IVertexInputState> createVertexInputState(const VertexInputStateDesc& desc,
-                                                            Result* outResult) const override;
 
   // Pipelines
   std::shared_ptr<IComputePipelineState> createComputePipeline(const ComputePipelineDesc& desc,
@@ -53,9 +47,6 @@ class Device final : public IDevice {
                                                              Result* outResult) const override;
 
   // Shaders
-  std::unique_ptr<IShaderLibrary> createShaderLibrary(const ShaderLibraryDesc& desc,
-                                                      Result* outResult) const override;
-
   std::shared_ptr<IShaderModule> createShaderModule(const ShaderModuleDesc& desc,
                                                     Result* outResult) const override;
 
@@ -67,15 +58,12 @@ class Device final : public IDevice {
 
   // ICapabilities
   bool hasFeature(DeviceFeatures feature) const override;
-  bool hasRequirement(DeviceRequirement requirement) const override;
   bool getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const override;
   TextureFormatCapabilities getTextureFormatCapabilities(TextureFormat format) const override;
-  ShaderVersion getShaderVersion() const override;
 
   BackendType getBackendType() const override {
     return BackendType::Vulkan;
   }
-  size_t getCurrentDrawCount() const override;
 
   VulkanContext& getVulkanContext() {
     return *ctx_.get();

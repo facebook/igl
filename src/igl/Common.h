@@ -7,48 +7,78 @@
 
 #pragma once
 
-#ifndef IGL_COMMON_H
-#define IGL_COMMON_H
-
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
-#include <igl/Core.h>
 #include <limits>
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 
-using ulong_t = unsigned long;
-using long_t = long;
+#include <igl/Assert.h>
+#include <igl/Macros.h>
 
-#define IGL_NULLABLE FOLLY_NULLABLE
-#define IGL_NONNULL FOLLY_NONNULL
+// Undefine macros that are local to this header
+#if defined(IGL_CORE_H_COMMON_SKIP_CHECK)
+#undef IGL_COMMON_SKIP_CHECK
+#undef IGL_CORE_H_COMMON_SKIP_CHECK
+#endif // defined(IGL_CORE_H_COMMON_SKIP_CHECK)
+
+#include <utility>
+
+/**
+ * FB_ANONYMOUS_VARIABLE(str) introduces an identifier starting with
+ * str and ending with a number that varies with the line.
+ */
+#ifndef FB_ANONYMOUS_VARIABLE
+#define FB_CONCATENATE_IMPL(s1, s2) s1##s2
+#define FB_CONCATENATE(s1, s2) FB_CONCATENATE_IMPL(s1, s2)
+#ifdef __COUNTER__
+#define FB_ANONYMOUS_VARIABLE(str) FB_CONCATENATE(str, __COUNTER__)
+#else
+#define FB_ANONYMOUS_VARIABLE(str) FB_CONCATENATE(str, __LINE__)
+#endif
+#endif // FB_ANONYMOUS_VARIABLE
+
+// a very minimalistic version of folly/ScopeGuard.h
+namespace {
+
+enum class ScopeGuardOnExit {};
+
+template<typename T>
+class ScopeGuard {
+ public:
+  explicit ScopeGuard(const T& fn) : fn_(fn) {}
+  ~ScopeGuard() {
+    fn_();
+  }
+
+ private:
+  T fn_;
+};
+
+template<typename T>
+// Ignore readability-named-parameter
+// @lint-ignore CLANGTIDY
+ScopeGuard<T> operator+(ScopeGuardOnExit, T&& fn) {
+  return ScopeGuard<T>(std::forward<T>(fn));
+}
+
+} // namespace
+
+#define SCOPE_EXIT \
+  auto FB_ANONYMOUS_VARIABLE(SCOPE_EXIT_STATE) = ScopeGuardOnExit() + [&]() noexcept
 
 namespace igl {
 
-// Callback to delete and/or release a pointer
-using Deleter = void (*)(void* IGL_NULLABLE);
-
-/// Device Capabilities or Metal Features
-constexpr size_t IGL_TEXTURE_SAMPLERS_MAX = 16;
-constexpr size_t IGL_VERTEX_ATTRIBUTES_MAX = 31;
-constexpr size_t IGL_VERTEX_BUFFER_MAX =
-    32; // Artificial limit to use arrays instead of unordered_map for performance savings
-constexpr size_t IGL_VERTEX_BINDINGS_MAX = 31;
-constexpr size_t IGL_UNIFORM_BLOCKS_BINDING_MAX = 16;
+constexpr size_t IGL_VERTEX_ATTRIBUTES_MAX = 16;
+constexpr size_t IGL_VERTEX_BUFFER_MAX = 16;
 
 // See GL_MAX_COLOR_ATTACHMENTS in
 // https://www.khronos.org/registry/OpenGL-Refpages/es3.0/html/glGet.xhtml
 // and see maximum number of color render targets in
 // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
 constexpr size_t IGL_COLOR_ATTACHMENTS_MAX = 4;
-
-// See https://www.khronos.org/registry/OpenGL-Refpages/es3.1/html/glDrawElementsIndirect.xhtml,
-// https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/VkDrawIndexedIndirectCommand.html,
-// or https://developer.apple.com/documentation/metal/mtldrawindexedprimitivesindirectarguments.
-constexpr size_t IGL_DRAW_ELEMENTS_INDIRECT_COMMAND_SIZE = 4 * 5;
 
 enum class ResourceStorage {
   Invalid, /// Invalid sharing mode
@@ -59,9 +89,8 @@ enum class ResourceStorage {
              /// pass
 };
 
-enum class CullMode : uint8_t { Disabled, Front, Back };
-enum class WindingMode : uint8_t { Clockwise, CounterClockwise };
-enum class NormalizedZRange : uint8_t { NegOneToOne, ZeroToOne };
+enum CullMode : uint8_t { CullMode_None, CullMode_Front, CullMode_Back };
+enum WindingMode : uint8_t { WindingMode_CCW, WindingMode_CW };
 
 struct Color {
   float r;
@@ -72,7 +101,7 @@ struct Color {
   Color(float r, float g, float b) : r(r), g(g), b(b), a(1.0f) {}
   Color(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
 
-  const float* IGL_NONNULL toFloatPtr() const {
+  const float* toFloatPtr() const {
     return &r;
   }
 };
@@ -102,7 +131,7 @@ struct Result {
   Code code = Code::Ok;
   std::string message;
   explicit Result() = default;
-  explicit Result(Code code, const char* IGL_NULLABLE message = "") :
+  explicit Result(Code code, const char* message = "") :
     code(code), message(message) {}
   explicit Result(Code code, std::string message) : code(code), message(std::move(message)) {}
 
@@ -110,7 +139,7 @@ struct Result {
     return code == Result::Code::Ok;
   }
 
-  static void setResult(Result* IGL_NULLABLE outResult,
+  static void setResult(Result* outResult,
                         Code code,
                         const std::string& message = "") {
     if (outResult != nullptr) {
@@ -119,19 +148,19 @@ struct Result {
     }
   }
 
-  static void setResult(Result* IGL_NULLABLE outResult, const Result& sourceResult) {
+  static void setResult(Result* outResult, const Result& sourceResult) {
     if (outResult != nullptr) {
       *outResult = sourceResult;
     }
   }
 
-  static void setResult(Result* IGL_NULLABLE outResult, Result&& sourceResult) {
+  static void setResult(Result* outResult, Result&& sourceResult) {
     if (outResult != nullptr) {
       *outResult = std::move(sourceResult);
     }
   }
 
-  static void setOk(Result* IGL_NULLABLE outResult) {
+  static void setOk(Result* outResult) {
     if (outResult != nullptr) {
       outResult->code = Code::Ok;
       outResult->message = std::string();
@@ -140,12 +169,8 @@ struct Result {
 };
 
 enum class BackendType {
-  OpenGL,
-  Metal,
   Vulkan,
-  // @fb-only
 };
-std::string BackendTypeToString(BackendType backendType);
 
 ///--------------------------------------
 /// MARK: - Rect<T>
@@ -194,22 +219,6 @@ struct Dimensions {
   size_t depth;
 };
 
-inline bool operator==(const Dimensions& lhs, const Dimensions& rhs) {
-  return (lhs.width == rhs.width && lhs.height == rhs.height && lhs.depth == rhs.depth);
-}
-
-inline bool operator!=(const Dimensions& lhs, const Dimensions& rhs) {
-  return !operator==(lhs, rhs);
-}
-
-inline bool operator==(const Size& lhs, const Size& rhs) {
-  return (lhs.width == rhs.width && lhs.height == rhs.height);
-}
-
-inline bool operator!=(const Size& lhs, const Size& rhs) {
-  return !operator==(lhs, rhs);
-}
-
 ///--------------------------------------
 /// MARK: - Viewport
 
@@ -228,48 +237,4 @@ struct Viewport {
   }
 };
 
-const Viewport kInvalidViewport = {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f};
-
-///--------------------------------------
-/// MARK: - Enum utilities
-
-// Get value of enum by stripping enum class type
-template<typename E>
-constexpr typename std::underlying_type<E>::type EnumToValue(E enumerator) noexcept {
-  return static_cast<typename std::underlying_type<E>::type>(enumerator);
-}
-
-///--------------------------------------
-/// MARK: - ScopeGuard
-
-// a very minimalistic version of folly/ScopeGuard.h
-namespace {
-
-enum class ScopeGuardOnExit {};
-
-template<typename T>
-class ScopeGuard {
- public:
-  explicit ScopeGuard(const T& fn) : fn_(fn) {}
-  ~ScopeGuard() {
-    fn_();
-  }
-
- private:
-  T fn_;
-};
-
-template<typename T>
-// Ignore readability-named-parameter
-// @lint-ignore CLANGTIDY
-ScopeGuard<T> operator+(ScopeGuardOnExit, T&& fn) {
-  return ScopeGuard<T>(std::forward<T>(fn));
-}
-
-} // namespace
-
-#define IGL_SCOPE_EXIT \
-  auto FB_ANONYMOUS_VARIABLE(SCOPE_EXIT_STATE) = ScopeGuardOnExit() + [&]() noexcept
 } // namespace igl
-
-#endif // IGL_COMMON_H

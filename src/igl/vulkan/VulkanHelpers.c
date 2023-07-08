@@ -16,10 +16,6 @@
 
 #include "VulkanHelpers.h"
 
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-#include "moltenvk/MoltenVkHelpers.h"
-#endif
-
 #include <assert.h>
 
 static const char* kDefaultValidationLayers[] = {"VK_LAYER_KHRONOS_validation"};
@@ -638,11 +634,10 @@ VkResult ivkCreateRenderPass(VkDevice device,
                              const VkAttachmentDescription* attachments,
                              const VkSubpassDescription* subpass,
                              const VkSubpassDependency* dependency,
-                             const VkRenderPassMultiviewCreateInfo* renderPassMultiview,
                              VkRenderPass* outRenderPass) {
   const VkRenderPassCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-      .pNext = renderPassMultiview,
+      .pNext = NULL,
       .attachmentCount = numAttachments,
       .pAttachments = attachments,
       .subpassCount = 1,
@@ -720,20 +715,6 @@ VkSubpassDependency ivkGetSubpassDependency(void) {
       .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
   };
   return dep;
-}
-
-VkRenderPassMultiviewCreateInfo ivkGetRenderPassMultiviewCreateInfo(
-    const uint32_t* viewMask,
-    const uint32_t* correlationMask) {
-  const VkRenderPassMultiviewCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO,
-      .subpassCount = 1,
-      .pViewMasks = viewMask,
-      .correlationMaskCount = 1,
-      .pCorrelationMasks = correlationMask,
-  };
-
-  return ci;
 }
 
 VkResult ivkCreateDescriptorSetLayout(VkDevice device,

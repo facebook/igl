@@ -12,7 +12,6 @@
 #include <vector>
 
 namespace igl {
-class IDevice;
 
 /**
  * @brief Represents a type of a physical device for graphics/compute purposes
