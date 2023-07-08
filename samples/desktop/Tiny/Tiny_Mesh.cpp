@@ -549,6 +549,8 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
 }
 
 int main(int argc, char* argv[]) {
+  minilog::initialize(nullptr, {.threadNames = false});
+
   initWindow(&window_);
   initIGL();
 

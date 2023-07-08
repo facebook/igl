@@ -53,15 +53,6 @@ class Device final : public IDevice {
   // Platform-specific extensions
   const PlatformDevice& getPlatformDevice() const noexcept override;
 
-  // ICapabilities
-  bool hasFeature(DeviceFeatures feature) const override;
-  bool getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const override;
-  TextureFormatCapabilities getTextureFormatCapabilities(TextureFormat format) const override;
-
-  BackendType getBackendType() const override {
-    return BackendType::Vulkan;
-  }
-
   VulkanContext& getVulkanContext() {
     return *ctx_.get();
   }

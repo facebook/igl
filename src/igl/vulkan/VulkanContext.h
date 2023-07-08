@@ -199,17 +199,14 @@ class VulkanContext final {
   VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;
   VkSurfaceKHR vkSurface_ = VK_NULL_HANDLE;
   VkPhysicalDevice vkPhysicalDevice_ = VK_NULL_HANDLE;
-  VkPhysicalDeviceDescriptorIndexingPropertiesEXT vkPhysicalDeviceDescriptorIndexingProperties_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT,
-      // Ignore clang-diagnostic-missing-field-initializers
-      // @lint-ignore CLANGTIDY
-      nullptr};
 
-  // Provided by VK_KHR_driver_properties
-  VkPhysicalDeviceDriverPropertiesKHR vkPhysicalDeviceDriverProperties_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES_KHR,
-      // Ignore clang-diagnostic-missing-field-initializers
-      // @lint-ignore CLANGTIDY
+  // Provided by Vulkan 1.2
+  VkPhysicalDeviceDescriptorIndexingProperties vkPhysicalDeviceDescriptorIndexingProperties_ = {
+      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES,
+      nullptr};
+  // Provided by Vulkan 1.2
+  VkPhysicalDeviceDriverProperties vkPhysicalDeviceDriverProperties_ = {
+      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES,
       &vkPhysicalDeviceDescriptorIndexingProperties_};
 
   std::vector<VkFormat> deviceDepthFormats_;
@@ -217,22 +214,14 @@ class VulkanContext final {
   VkSurfaceCapabilitiesKHR deviceSurfaceCaps_;
   std::vector<VkPresentModeKHR> devicePresentModes_;
 
-  // Provided by VK_VERSION_1_2
-  VkPhysicalDeviceShaderFloat16Int8Features vkPhysicalDeviceShaderFloat16Int8Features_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR,
-      nullptr};
-
-  // Provided by VK_VERSION_1_1
+  // Provided by Vulkan 1.1
   VkPhysicalDeviceProperties2 vkPhysicalDeviceProperties2_ = {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
       &vkPhysicalDeviceDriverProperties_,
       VkPhysicalDeviceProperties{}};
-  VkPhysicalDeviceMultiviewFeatures vkPhysicalDeviceMultiviewFeatures_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
-      &vkPhysicalDeviceShaderFloat16Int8Features_};
   VkPhysicalDeviceFeatures2 vkPhysicalDeviceFeatures2_ = {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-      &vkPhysicalDeviceMultiviewFeatures_};
+      nullptr};
 
  public:
   DeviceQueues deviceQueues_;

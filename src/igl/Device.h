@@ -8,7 +8,6 @@
 #pragma once
 
 #include <igl/Common.h>
-#include <igl/DeviceFeatures.h>
 #include <igl/PlatformDevice.h>
 #include <igl/Texture.h>
 #include <utility>
@@ -42,9 +41,9 @@ class IVertexInputState;
 /**
  * @brief Interface to a GPU that is used to draw graphics or do parallel computation.
  */
-class IDevice : public ICapabilities {
+class IDevice {
  public:
-  ~IDevice() override = default;
+  virtual ~IDevice() = default;
 
   /**
    * @brief Creates a command queue.
@@ -174,12 +173,6 @@ class IDevice : public ICapabilities {
    * @return Pointer to the underlying platform-specific device.
    */
   virtual const IPlatformDevice& getPlatformDevice() const noexcept = 0;
-
-  /**
-   * @brief Returns the actual graphics API backing this IGL device (Metal, OpenGL, etc).
-   * @return The type of the underlying backend.
-   */
-  virtual BackendType getBackendType() const = 0;
 
   virtual std::unique_ptr<ShaderStages> createShaderStages(const char* vs,
                                                            std::string debugNameVS,

@@ -25,20 +25,18 @@ jobs:
               name: "Ubuntu - Clang",
               os: ubuntu-latest,
               build_type: "Debug",
-              cc: "clang",
-              cxx: "clang++",
+              cc: "clang-15",
+              cxx: "clang++-15",
               generators: "Unix Makefiles",
-              cmake_args: "-DIGL_WITH_TRACY=ON"
             }
-          - {
-              name: "Ubuntu - GCC",
-              os: ubuntu-latest,
-              build_type: "Debug",
-              cc: "gcc",
-              cxx: "g++",
-              generators: "Unix Makefiles",
-              cmake_args: "-DIGL_WITH_TRACY=ON"
-            }
+#          - {
+#              name: "Ubuntu - GCC",
+#              os: ubuntu-latest,
+#              build_type: "Debug",
+#              cc: "gcc-12",
+#              cxx: "g++-12",
+#              generators: "Unix Makefiles"
+#            }
       runs-on: ${{ matrix.config.os }}
 
       steps:
@@ -50,7 +48,7 @@ jobs:
           run: |
             sudo sed -i 's/azure\.//' /etc/apt/sources.list
             sudo apt-get update
-            sudo apt-get install -y clang xorg-dev libxinerama-dev libxcursor-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev
+            sudo apt-get install -y gcc-12 clang-15 xorg-dev libxinerama-dev libxcursor-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev
 
         - name: Prepare Vulkan SDK
           uses: humbletim/setup-vulkan-sdk@v1.2.0

@@ -281,6 +281,8 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
 }
 
 int main(int argc, char* argv[]) {
+  minilog::initialize(nullptr, {.threadNames = false});
+
   renderPass_.colorAttachments.resize(kNumColorAttachments);
   initWindow(&window_);
   initIGL();

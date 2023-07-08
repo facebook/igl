@@ -13,7 +13,6 @@
 #define VOLK_IMPLEMENTATION
 
 #include <igl/vulkan/Device.h>
-#include <igl/vulkan/ResourcesBinder.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>

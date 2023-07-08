@@ -115,8 +115,7 @@ RenderCommandEncoder::RenderCommandEncoder(const std::shared_ptr<CommandBuffer>&
                                            const VulkanContext& ctx) :
   IRenderCommandEncoder::IRenderCommandEncoder(commandBuffer),
   ctx_(ctx),
-  cmdBuffer_(commandBuffer ? commandBuffer->getVkCommandBuffer() : VK_NULL_HANDLE),
-  binder_(commandBuffer, ctx, VK_PIPELINE_BIND_POINT_GRAPHICS) {
+  cmdBuffer_(commandBuffer ? commandBuffer->getVkCommandBuffer() : VK_NULL_HANDLE) {
   IGL_PROFILER_FUNCTION();
   IGL_ASSERT(commandBuffer);
   IGL_ASSERT(cmdBuffer_ != VK_NULL_HANDLE);
@@ -373,7 +372,7 @@ void RenderCommandEncoder::bindRenderPipelineState(
     LLOGW("Make sure your render pass and render pipeline both have matching depth attachments");
   }
 
-  binder_.bindPipeline(VK_NULL_HANDLE);
+  lastPipelineBound_ = VK_NULL_HANDLE;
 }
 
 void RenderCommandEncoder::bindDepthStencilState(const DepthStencilState& desc) {
@@ -449,7 +448,14 @@ void RenderCommandEncoder::bindPipeline() {
     return;
   }
 
-  binder_.bindPipeline(rps->getVkPipeline(dynamicState_));
+  VkPipeline pipeline = rps->getVkPipeline(dynamicState_);
+
+  if (lastPipelineBound_ != pipeline) {
+    lastPipelineBound_ = pipeline;
+    if (pipeline != VK_NULL_HANDLE) {
+      vkCmdBindPipeline(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    }
+  }
 }
 
 void RenderCommandEncoder::draw(PrimitiveType primitiveType,

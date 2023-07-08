@@ -20,9 +20,7 @@ namespace vulkan {
 
 ComputeCommandEncoder::ComputeCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer,
                                              const VulkanContext& ctx) :
-  ctx_(ctx),
-  cmdBuffer_(commandBuffer ? commandBuffer->getVkCommandBuffer() : VK_NULL_HANDLE),
-  binder_(commandBuffer, ctx_, VK_PIPELINE_BIND_POINT_COMPUTE) {
+  ctx_(ctx), cmdBuffer_(commandBuffer ? commandBuffer->getVkCommandBuffer() : VK_NULL_HANDLE) {
   IGL_PROFILER_FUNCTION();
 
   IGL_ASSERT(commandBuffer);
@@ -56,14 +54,17 @@ void ComputeCommandEncoder::bindComputePipelineState(
 
   IGL_ASSERT(cps);
 
-  binder_.bindPipeline(cps->getVkPipeline());
+  VkPipeline pipeline = cps->getVkPipeline();
+
+  if (lastPipelineBound_ != pipeline) {
+    lastPipelineBound_ = pipeline;
+    if (pipeline != VK_NULL_HANDLE) {
+      vkCmdBindPipeline(cmdBuffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+    }
+  }
 }
 
-void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCount,
-                                                 const Dimensions& /*threadgroupSize*/) {
-  IGL_PROFILER_FUNCTION();
-
-  // threadgroupSize is controlled inside compute shaders
+void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCount) {
   vkCmdDispatch(
       cmdBuffer_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
 }

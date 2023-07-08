@@ -1453,7 +1453,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     };
     commands->bindPushConstants(0, &bindings, sizeof(bindings));
     commands->useTexture(tex);
-    commands->dispatchThreadGroups(igl::Dimensions(width_, height_, 1), igl::Dimensions());
+    commands->dispatchThreadGroups(igl::Dimensions(width_, height_, 1));
     commands->endEncoding();
 
     commandQueue_->submit(*buffer);
@@ -1873,6 +1873,7 @@ void processLoadedMaterials() {
 }
 
 int main(int argc, char* argv[]) {
+  minilog::initialize(nullptr, {.threadNames = false});
   // find the content folder
   {
     using namespace std::filesystem;

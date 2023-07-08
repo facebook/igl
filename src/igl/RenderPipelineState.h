@@ -141,8 +141,6 @@ struct VertexInputBinding {
   uint32_t stride = 0;
   VertexSampleFunction sampleFunction = VertexSampleFunction_PerVertex;
   size_t sampleRate = 1;
-
-  VertexInputBinding() = default;
 };
 
 /**
@@ -160,53 +158,23 @@ struct VertexInputStateDesc {
  */
 struct RenderPipelineDesc {
   struct TargetDesc {
-    /*
-     * @brief Description of render pipeline's color render target
-     */
     struct ColorAttachment {
       TextureFormat textureFormat = TextureFormat::Invalid;
-      /*
-       * @brief Identify which color channels are blended.
-       */
       ColorWriteBits colorWriteBits = ColorWriteMask_All;
       bool blendEnabled = false;
-      /*
-       * @brief Assign the blend operations for RGB and alpha pixel data.
-       */
       BlendOp rgbBlendOp = BlendOp::BlendOp_Add;
       BlendOp alphaBlendOp = BlendOp::BlendOp_Add;
-      /*
-       * @brief Assign the source and destination blend factors.
-       */
       BlendFactor srcRGBBlendFactor = BlendFactor_One;
       BlendFactor srcAlphaBlendFactor = BlendFactor_One;
       BlendFactor dstRGBBlendFactor = BlendFactor_Zero;
       BlendFactor dstAlphaBlendFactor = BlendFactor_Zero;
-      ColorAttachment() = default;
     };
-
-    /*
-     * @brief Array of attachments that store color data
-     */
     std::vector<ColorAttachment> colorAttachments;
-    /*
-     * @brief Pixel format of the attachment that stores depth data
-     */
     TextureFormat depthAttachmentFormat = TextureFormat::Invalid;
-    /*
-     * @brief Pixel format of the attachment that stores stencil data
-     */
     TextureFormat stencilAttachmentFormat = TextureFormat::Invalid;
   };
 
-  /*
-   * @brief Describes the organization of per-vertex input data passed to a vertex shader function
-   */
   igl::VertexInputStateDesc vertexInputState;
-
-  /*
-   * @brief Describes the vertex and fragment functions
-   */
   std::shared_ptr<ShaderStages> shaderStages;
 
   TargetDesc targetDesc;

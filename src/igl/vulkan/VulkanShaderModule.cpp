@@ -143,14 +143,14 @@ Result compileShader(VkDevice device,
   }
 
   glslang_spv_options_t options = {
-      /* .generate_debug_info = */ true,
-      /* .strip_debug_info = */ false,
-      /* .disable_optimizer = */ false,
-      /* .optimize_size = */ true,
-      /* .disassemble = */ false,
-      /* .validate = */ true,
-      /* .emit_nonsemantic_shader_debug_info = */ false,
-      /* .emit_nonsemantic_shader_debug_source = */ false,
+      .generate_debug_info = true,
+      .strip_debug_info = false,
+      .disable_optimizer = false,
+      .optimize_size = true,
+      .disassemble = false,
+      .validate = true,
+      .emit_nonsemantic_shader_debug_info = false,
+      .emit_nonsemantic_shader_debug_source = false,
   };
 
   glslang_program_SPIRV_generate_with_options(program, input.stage, &options);

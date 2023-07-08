@@ -14,7 +14,6 @@
 #include <igl/RenderCommandEncoder.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/RenderPipelineState.h>
-#include <igl/vulkan/ResourcesBinder.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 
 namespace igl {
@@ -78,10 +77,6 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
     return cmdBuffer_;
   }
 
-  igl::vulkan::ResourcesBinder& binder() {
-    return binder_;
-  }
-
  private:
   void bindPipeline();
 
@@ -92,7 +87,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   bool hasDepthAttachment_ = false;
   std::shared_ptr<IFramebuffer> framebuffer_;
 
-  igl::vulkan::ResourcesBinder binder_;
+  VkPipeline lastPipelineBound_ = VK_NULL_HANDLE;
 
   std::shared_ptr<igl::IRenderPipelineState> currentPipeline_ = nullptr;
   RenderPipelineDynamicState dynamicState_;

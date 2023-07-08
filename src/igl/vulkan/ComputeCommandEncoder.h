@@ -10,7 +10,6 @@
 #include <igl/Common.h>
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/vulkan/CommandBuffer.h>
-#include <igl/vulkan/ResourcesBinder.h>
 
 namespace igl {
 
@@ -32,8 +31,7 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
 
   void bindComputePipelineState(
       const std::shared_ptr<IComputePipelineState>& pipelineState) override;
-  void dispatchThreadGroups(const Dimensions& threadgroupCount,
-                            const Dimensions& threadgroupSize) override;
+  void dispatchThreadGroups(const Dimensions& threadgroupCount) override;
   void endEncoding() override;
 
   void pushDebugGroupLabel(const std::string& label, const igl::Color& color) const override;
@@ -51,7 +49,7 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
   bool isEncoding_ = false;
 
-  igl::vulkan::ResourcesBinder binder_;
+  VkPipeline lastPipelineBound_ = VK_NULL_HANDLE;
 };
 
 } // namespace vulkan
