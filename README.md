@@ -13,6 +13,12 @@ Intermediate Graphics Library (IGL) is a cross-platform library that commands th
 common GPU functionality with a low-level cross-platform interface. IGL is designed to support multiple
 backends implemented on top of various graphics APIs (e.g. OpenGL, Metal and Vulkan) with a common interface.
 
+There are a lot of good options for abstracting GPU API's; each making different trade-offs. We designed IGL around the following priorities:
+
+1. *Low-level, forward-looking API.* IGL embraces modern abstractions (command buffers, state containers, bindless, etc) and is designed to give more control than OpenGL's state machine API. As a result, IGL can have leaner backends for modern API's (e.g. Metal, Vulkan).
+2. *Minimal overhead for C++.* IGL supports new or existing native rendering code without overhead of language interop or the need for other language runtimes.
+3. *Reach + scale in production.* IGL has been globally battle-tested for broad device reliability (especially the long-tail of Android devices as well as Quest 2/3/Pro compatibility for OpenGL/Vulkan) *and* performance-tuned on our apps.
+
 ## Supported rendering backends
 
  * Metal 2+
@@ -31,11 +37,11 @@ backends implemented on top of various graphics APIs (e.g. OpenGL, Metal and Vul
  * Windows
  * WebAssembly
 
- ## API Support
+## API Support
 
 |                          | Windows                    | Linux                      | macOS                         | iOS                           | Android                          |
 | ------------------------ | -------------------------- | -------------------------- | ----------------------------- | ----------------------------- | -------------------------------- |
-| Vulkan 1.1               | :heavy_check_mark:         | :heavy_check_mark:         | :heavy_check_mark: (MoltenVK) | :heavy_multiplication_x:      | :heavy_check_mark: (Quest 2/Pro) |
+| Vulkan 1.1               | :heavy_check_mark:         | :heavy_check_mark:         | :heavy_check_mark: (MoltenVK) | :heavy_multiplication_x:      | :heavy_check_mark: (Quest 2/3/Pro) |
 | OpenGL ES 2.0 - 3.0      | :heavy_check_mark: (Angle) | :heavy_check_mark: (Angle) | :heavy_check_mark:            | :heavy_check_mark:            | :heavy_check_mark:               |
 | OpenGL ES 3.1 - 3.2      | :heavy_check_mark: (Angle) | :heavy_check_mark: (Angle) | :heavy_multiplication_x:      | :heavy_multiplication_x:      | :heavy_check_mark:               |
 | OpenGL 3.1 - 4.6         | :heavy_check_mark:         | :heavy_check_mark:         | :heavy_multiplication_x:      | :heavy_multiplication_x:      | :heavy_multiplication_x:         |
