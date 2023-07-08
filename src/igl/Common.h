@@ -80,11 +80,77 @@ constexpr size_t IGL_VERTEX_BUFFER_MAX = 16;
 // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
 constexpr size_t IGL_COLOR_ATTACHMENTS_MAX = 4;
 
+/**
+ * @brief Represents a type of a physical device for graphics/compute purposes
+ */
+enum class HWDeviceType {
+  /// Unknown
+  Unknown = 0,
+  /// HW GPU - Discrete
+  DiscreteGpu = 1,
+  /// HW GPU - External
+  ExternalGpu = 2,
+  /// HW GPU - Integrated
+  IntegratedGpu = 3,
+  /// SW GPU
+  SoftwareGpu = 4,
+};
+
+/**
+ * @brief Represents a query of a physical device to be requested from the underlying IGL
+ * implementation
+ */
+struct HWDeviceQueryDesc {
+  /** @brief Desired hardware type */
+  HWDeviceType hardwareType;
+  /** @brief If set, ignores hardwareType and returns device assigned to displayId */
+  uintptr_t displayId;
+  /** @brief Reserved */
+  uint32_t flags;
+};
+
+/**
+ * @brief PlatformDeviceType represents the platform and graphics backend that a class implementing
+ * the IPlatformDevice interface supports.
+ *
+ */
+enum class PlatformDeviceType {
+  Unknown = 0,
+  Vulkan,
+};
+
+class IPlatformDevice {
+  friend class IDevice;
+
+ protected:
+  IPlatformDevice() = default;
+  /**
+   * @brief Check the type of an IPlatformDevice.
+   * @returns true if the IPlatformDevice is a given PlatformDeviceType t, otherwise false.
+   */
+  virtual bool isType(PlatformDeviceType t) const noexcept = 0;
+
+ public:
+  virtual ~IPlatformDevice() = default;
+};
+
+/**
+ * @brief  Represents a description of a specific physical device installed in the system
+ */
+struct HWDeviceDesc {
+  /** @brief Implementation-specific identifier of a device */
+  uintptr_t guid;
+  /** @brief A type of an actual physical device */
+  HWDeviceType type;
+  /** @brief Implementation-specific name of a device */
+  std::string name;
+  /** @brief Implementation-specific vendor name */
+  std::string vendor;
+};
+
 enum class ResourceStorage {
-  Invalid, /// Invalid sharing mode
   Private, /// Memory private to GPU access (fastest)
   Shared, /// Memory shared between CPU and GPU
-  Managed, /// Memory pair synchronized between CPU and GPU
   Memoryless /// Memory can be accessed only by the GPU and only exist temporarily during a render
              /// pass
 };

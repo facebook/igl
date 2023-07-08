@@ -78,25 +78,10 @@ enum class ColorSpace : uint8_t {
   SRGB_NONLINEAR,
 };
 
-/**
- * @brief TextureType denotes the possible storage components of the underlying surface for the
- * texture. For example, TwoD corresponds to 2-dimensional textures.
- *
- *  Invalid          - Undefined,
- *  TwoD             - Single layer, two dimensonal: (Width, Height)
- *  TwoDArray        - Multiple layers, two dimensional: (Width, Height)
- *  ThreeD           - 3 dimensional textures: (Width, Height, Depth)
- *  Cube             - Special case of 3 dimensional textures: (Width, Height, Depth), along with 6
- *                     cube faces
- *  ExternalImage    - Externally provided images, EXTERNAL_OES on OpenGLES
- */
 enum class TextureType : uint8_t {
-  Invalid,
   TwoD,
-  TwoDArray,
   ThreeD,
   Cube,
-  ExternalImage,
 };
 
 /**
@@ -178,18 +163,6 @@ enum class TextureType : uint8_t {
  *  UInt: Unsigned Integer
  *  SNorm: Signed Normalized Integer/Byte
  *  UNorm: Unsigned Normalized Integer/Byte
- *
- *  ----------    Type C Compression Types: Additional Info ----------
- *  ETC1 - No other information required
- *  ETC2 - No other information required
- *  ASTC - Block size shall be given
- *  PVRTC - Block size shall be given
- *
- *  ----------    Vendor Names: ----------
- *  Apple - Apple
- *  Nv - nVidia
- *  Intel - Intel
- *  Amd - Amd
  */
 
 enum TextureFormat : uint8_t {
@@ -197,9 +170,7 @@ enum TextureFormat : uint8_t {
 
   // 8 bpp
   A_UNorm8,
-  L_UNorm8,
   R_UNorm8,
-
   // 16 bpp
   R_F16,
   R_UInt16,
@@ -207,14 +178,7 @@ enum TextureFormat : uint8_t {
   B5G5R5A1_UNorm,
   B5G6R5_UNorm,
   ABGR_UNorm4, // NA on GLES
-  LA_UNorm8,
-  RG_UNorm8,
-  R4G2B2_UNorm_Apple,
-  R4G2B2_UNorm_Rev_Apple,
-  R5G5B5A1_UNorm,
-
-  // 24 bpp
-  RGBX_UNorm8,
+    RG_UNorm8,
 
   // 32 bpp
   RGBA_UNorm8,
@@ -229,52 +193,12 @@ enum TextureFormat : uint8_t {
   RGB10_A2_Uint_Rev,
   BGR10_A2_Unorm,
   R_F32,
-  // 48 bpp
-  RGB_F16,
-
   // 64 bpp
   RGBA_F16,
-
-  // 96 bpp
-  RGB_F32,
-
   // 128 bpp
   RGBA_UInt32,
   RGBA_F32,
-
   // Compressed
-  RGBA_ASTC_4x4,
-  SRGB8_A8_ASTC_4x4,
-  RGBA_ASTC_5x4,
-  SRGB8_A8_ASTC_5x4,
-  RGBA_ASTC_5x5,
-  SRGB8_A8_ASTC_5x5,
-  RGBA_ASTC_6x5,
-  SRGB8_A8_ASTC_6x5,
-  RGBA_ASTC_6x6,
-  SRGB8_A8_ASTC_6x6,
-  RGBA_ASTC_8x5,
-  SRGB8_A8_ASTC_8x5,
-  RGBA_ASTC_8x6,
-  SRGB8_A8_ASTC_8x6,
-  RGBA_ASTC_8x8,
-  SRGB8_A8_ASTC_8x8,
-  RGBA_ASTC_10x5,
-  SRGB8_A8_ASTC_10x5,
-  RGBA_ASTC_10x6,
-  SRGB8_A8_ASTC_10x6,
-  RGBA_ASTC_10x8,
-  SRGB8_A8_ASTC_10x8,
-  RGBA_ASTC_10x10,
-  SRGB8_A8_ASTC_10x10,
-  RGBA_ASTC_12x10,
-  SRGB8_A8_ASTC_12x10,
-  RGBA_ASTC_12x12,
-  SRGB8_A8_ASTC_12x12,
-  RGBA_PVRTC_2BPPV1,
-  RGB_PVRTC_2BPPV1,
-  RGBA_PVRTC_4BPPV1,
-  RGB_PVRTC_4BPPV1,
   RGB8_ETC1,
   RGB8_ETC2,
   SRGB8_ETC2,
@@ -295,9 +219,6 @@ enum TextureFormat : uint8_t {
   Z_UNorm32, // NA on iOS/GLES but works on iOS Metal. The client has to account for
              // this!
   S8_UInt_Z24_UNorm, // NA on iOS
-  S8_UInt_Z32_UNorm, // NA on iOS/GLES but works on iOS Metal. The client has to
-                     // account for this!
-  S_UInt8
 };
 
 /**
@@ -684,36 +605,22 @@ struct TextureDesc {
 
   using TextureUsage = uint8_t;
 
-  size_t width = 1;
-  size_t height = 1;
-  size_t depth = 1;
-  size_t numLayers = 1;
-  size_t numSamples = 1;
+  uint32_t width = 1;
+  uint32_t height = 1;
+  uint32_t depth = 1;
+  uint32_t numLayers = 1;
+  uint32_t numSamples = 1;
   TextureUsage usage = 0;
-  uint32_t options = 0;
-  size_t numMipLevels = 1;
-  TextureType type = TextureType::Invalid;
+  uint32_t numMipLevels = 1;
+  TextureType type = TextureType::TwoD;
   TextureFormat format = TextureFormat::Invalid;
-  ResourceStorage storage = ResourceStorage::Invalid;
+  ResourceStorage storage = ResourceStorage::Private;
 
   std::string debugName = "";
 
-  bool operator==(const TextureDesc& rhs) const;
-  bool operator!=(const TextureDesc& rhs) const;
-
-  /**
-   * @brief Utility to create a new 2D texture
-   *
-   * @param format The format of the texture
-   * @param width  The width of the texture
-   * @param height The height of the texture
-   * @param usage A combination of TextureUsage flags
-   * @param debugName An optional debug name
-   * @return TextureDesc
-   */
   static TextureDesc new2D(TextureFormat format,
-                           size_t width,
-                           size_t height,
+                           uint32_t width,
+                           uint32_t height,
                            TextureUsage usage,
                            const char* debugName = nullptr) {
     return TextureDesc{width,
@@ -722,45 +629,11 @@ struct TextureDesc {
                        1,
                        1,
                        usage,
-                       0,
                        1,
                        TextureType::TwoD,
                        format,
-                       ResourceStorage::Invalid,
+                       ResourceStorage::Private,
                        debugName ? debugName : ""};
-  }
-
-  /**
-   * @brief Utility to create a new 2D texture array
-   *
-   * @param format The format of the texture
-   * @param width  The width of the texture
-   * @param height The height of the texture
-   * @param numLayers  The number layers of the texture array
-   * @param usage A combination of TextureUsage flags
-   * @param debugName An optional debug name
-   * @return TextureDesc
-   */
-  static TextureDesc new2DArray(TextureFormat format,
-                                size_t width,
-                                size_t height,
-                                size_t numLayers,
-                                TextureUsage usage,
-                                const char* debugName = nullptr) {
-    return TextureDesc{
-        width,
-        height,
-        1,
-        numLayers,
-        1,
-        usage,
-        0,
-        1,
-        TextureType::TwoDArray,
-        format,
-        ResourceStorage::Invalid,
-        debugName ? debugName : "",
-    };
   }
 
   /**
@@ -778,76 +651,16 @@ struct TextureDesc {
                              size_t height,
                              TextureUsage usage,
                              const char* debugName = nullptr) {
-    return TextureDesc{width,
-                       height,
+    return TextureDesc{(uint32_t)width,
+                       (uint32_t)height,
                        1,
                        1,
                        1,
                        usage,
-                       0,
                        1,
                        TextureType::Cube,
                        format,
-                       ResourceStorage::Invalid,
-                       debugName ? debugName : ""};
-  }
-
-  /**
-   * @brief Utility to create a new 3D texture
-   *
-   * @param format The format of the texture
-   * @param width  The width of the texture
-   * @param height The height of the texture
-   * @param depth  The depth of the texture
-   * @param usage A combination of TextureUsage flags
-   * @param debugName An optional debug name
-   * @return TextureDesc
-   */
-  static TextureDesc new3D(TextureFormat format,
-                           size_t width,
-                           size_t height,
-                           size_t depth,
-                           TextureUsage usage,
-                           const char* debugName = nullptr) {
-    return TextureDesc{width,
-                       height,
-                       depth,
-                       1,
-                       1,
-                       usage,
-                       0,
-                       1,
-                       TextureType::ThreeD,
-                       format,
-                       ResourceStorage::Invalid,
-                       debugName ? debugName : ""};
-  }
-
-  /**
-   * @brief Utility to create a new external image texture
-   *
-   * @param format The format of the texture
-   * @param width  The width of the texture
-   * @param height The height of the texture
-   * @param debugName An optional debug name
-   * @return TextureDesc
-   */
-  static TextureDesc newExternalImage(TextureFormat format,
-                                      size_t width,
-                                      size_t height,
-                                      TextureUsage usage,
-                                      const char* debugName = nullptr) {
-    return TextureDesc{width,
-                       height,
-                       1,
-                       1,
-                       1,
-                       usage,
-                       0,
-                       1,
-                       TextureType::ExternalImage,
-                       format,
-                       ResourceStorage::Invalid,
+                       ResourceStorage::Private,
                        debugName ? debugName : ""};
   }
 
@@ -902,15 +715,7 @@ class ITexture {
   virtual Result uploadCube(const TextureRangeDesc& range,
                             TextureCubeFace face,
                             const void* data,
-                            size_t bytesPerRow = 0) const = 0;
-
-  // Texture Accessors Methods
-  /**
-   * @brief Returns the aspect ratio (width / height) of the texture.
-   *
-   * @return float
-   */
-  [[nodiscard]] float getAspectRatio() const;
+                            size_t bytesPerRow) const = 0;
   /**
    * @brief Returns size (width x height) dimension of the texture.
    * For 1D textures, return (width,1)

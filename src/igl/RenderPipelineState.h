@@ -15,8 +15,6 @@
 
 namespace igl {
 
-class IShaderModule;
-
 struct StencilStateDesc {
   StencilOp stencilFailureOp = StencilOp_Keep;
   StencilOp depthFailureOp = StencilOp_Keep;
@@ -106,17 +104,11 @@ enum class VertexAttributeFormat {
   Int_2_10_10_10_REV, // standard format to store normal vectors
 };
 
-/**
- * @brief Controls how vertex attribute streams are consumed, per-vertex or per-instance
- */
 enum VertexSampleFunction {
   VertexSampleFunction_PerVertex,
   VertexSampleFunction_Instance,
 };
 
-/**
- * @brief Generic definition of a vertex attribute stream
- */
 struct VertexAttribute {
   /** @brief A buffer which contains this attribute stream */
   uint32_t bufferIndex = 0;
@@ -134,18 +126,12 @@ struct VertexAttribute {
     bufferIndex(bufferIndex), format(format), offset(offset), location(location) {}
 };
 
-/**
- * @brief Defines a binding point for a vertex stream
- */
 struct VertexInputBinding {
   uint32_t stride = 0;
   VertexSampleFunction sampleFunction = VertexSampleFunction_PerVertex;
   size_t sampleRate = 1;
 };
 
-/**
- * @brief Defines input to a vertex shader
- */
 struct VertexInputStateDesc {
   size_t numAttributes = 0;
   VertexAttribute attributes[IGL_VERTEX_ATTRIBUTES_MAX];

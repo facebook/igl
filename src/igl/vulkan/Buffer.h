@@ -10,6 +10,8 @@
 #include <igl/Buffer.h>
 #include <igl/vulkan/Common.h>
 
+#include <vector>
+
 namespace igl {
 namespace vulkan {
 
@@ -23,12 +25,9 @@ class Buffer final : public igl::IBuffer {
   explicit Buffer(const igl::vulkan::Device& device);
   ~Buffer() override = default;
 
-  Result upload(const void* data, const BufferRange& range) override;
+  Result upload(const void* data, size_t size, size_t offset = 0) override;
 
-  void* map(const BufferRange& range, Result* outResult) override;
-  void unmap() override;
-
-  size_t getSizeInBytes() const override;
+  uint8_t* getMappedPtr() const override;
   uint64_t gpuAddress(size_t offset) const override;
 
   VkBuffer getVkBuffer() const;
@@ -43,10 +42,6 @@ class Buffer final : public igl::IBuffer {
   const igl::vulkan::Device& device_;
   BufferDesc desc_;
   std::shared_ptr<VulkanBuffer> buffer_;
-
-  // Used for map/unmap API for DEVICE_LOCAL buffers
-  std::vector<uint8_t> tmpBuffer_;
-  BufferRange mappedRange_ = {};
 };
 
 } // namespace vulkan

@@ -31,13 +31,7 @@ class CommandBuffer final : public ICommandBuffer,
 
   void present(std::shared_ptr<ITexture> surface) const override;
 
-  void pushDebugGroupLabel(const std::string& label, const igl::Color& color) const override;
-
-  void popDebugGroupLabel() const override;
-
   void waitUntilCompleted() override;
-
-  void waitUntilScheduled() override;
 
   VkCommandBuffer getVkCommandBuffer() const {
     return wrapper_.cmdBuf_;
@@ -46,10 +40,6 @@ class CommandBuffer final : public ICommandBuffer,
   bool isFromSwapchain() const {
     return isFromSwapchain_;
   }
-
-  std::shared_ptr<igl::IFramebuffer> getFramebuffer() const;
-
-  std::shared_ptr<ITexture> getPresentedSurface() const;
 
  private:
   friend class CommandQueue;

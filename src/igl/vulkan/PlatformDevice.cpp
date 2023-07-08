@@ -17,55 +17,6 @@ namespace vulkan {
 
 PlatformDevice::PlatformDevice(Device& device) : device_(device) {}
 
-std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t width,
-                                                                       uint32_t height,
-                                                                       Result* outResult) {
-  IGL_PROFILER_FUNCTION();
-
-  const auto& ctx = device_.getVulkanContext();
-  auto& swapChain = ctx.swapchain_;
-
-  if (!IGL_VERIFY(ctx.hasSwapchain())) {
-    nativeDepthTexture_ = nullptr;
-
-    Result::setResult(outResult, Result::Code::InvalidOperation, "No Swapchain has been allocated");
-    return nullptr;
-  };
-
-  std::shared_ptr<VulkanTexture> vkTex = swapChain->getCurrentDepthTexture();
-
-  if (!IGL_VERIFY(vkTex != nullptr)) {
-    Result::setResult(outResult, Result::Code::InvalidOperation, "Swapchain has no valid texture");
-    return nullptr;
-  }
-
-  IGL_ASSERT_MSG(vkTex->getVulkanImage().imageFormat_ != VK_FORMAT_UNDEFINED,
-                 "Invalid image format");
-
-  const auto iglFormat = vkFormatToTextureFormat(vkTex->getVulkanImage().imageFormat_);
-  if (!IGL_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {
-    Result::setResult(outResult, Result::Code::RuntimeError, "Invalid surface depth format");
-    return nullptr;
-  }
-
-  // allocate new drawable textures if its null or mismatches in size or format
-  if (!nativeDepthTexture_ || width != nativeDepthTexture_->getDimensions().width ||
-      height != nativeDepthTexture_->getDimensions().height ||
-      iglFormat != nativeDepthTexture_->getFormat()) {
-    const TextureDesc desc = TextureDesc::new2D(iglFormat,
-                                                width,
-                                                height,
-                                                TextureDesc::TextureUsageBits::Attachment |
-                                                    TextureDesc::TextureUsageBits::Sampled,
-                                                "SwapChain Texture");
-    nativeDepthTexture_ = std::make_shared<igl::vulkan::Texture>(device_, std::move(vkTex), desc);
-  }
-
-  Result::setResult(outResult, Result::Code::Ok);
-
-  return nativeDepthTexture_;
-}
-
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result* outResult) {
   IGL_PROFILER_FUNCTION();
 

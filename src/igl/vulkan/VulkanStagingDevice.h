@@ -9,7 +9,6 @@
 
 #include <memory>
 #include <unordered_map>
-#include <vector>
 
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>

@@ -9,7 +9,6 @@
 
 #include <igl/Common.h>
 #include <string>
-#include <vector>
 
 namespace igl {
 
@@ -24,12 +23,6 @@ enum class PrimitiveType : uint8_t {
   LineStrip,
   Triangle,
   TriangleStrip,
-};
-
-struct BufferRange {
-  size_t size;
-  uintptr_t offset;
-  BufferRange(size_t size = 0L, uintptr_t offset = 0L) : size(size), offset(offset) {}
 };
 
 /**
@@ -47,7 +40,7 @@ struct BufferDesc {
 
   using BufferType = uint8_t;
 
-    /** @brief Data to upload at the time of creation. Can be nullptr. */
+  /** @brief Data to upload at the time of creation. Can be nullptr. */
   const void* data = nullptr;
 
   /** @brief Total internal store to allocate */
@@ -57,7 +50,7 @@ struct BufferDesc {
    * @brief Storage mode.
    * @See igl::ResourceStorage
    */
-  ResourceStorage storage;
+  ResourceStorage storage = ResourceStorage::Shared;
 
   /**
    * @brief GLES only. Target binding point for this IBuffer
@@ -71,23 +64,18 @@ struct BufferDesc {
   BufferDesc(BufferType type = 0,
              const void* data = nullptr,
              size_t length = 0,
-             ResourceStorage storageIn = ResourceStorage::Invalid,
+             ResourceStorage storageIn = ResourceStorage::Shared,
              const std::string& debugName = std::string()) :
-    data(data), length(length), storage(storageIn), type(type), debugName(debugName) {
-    if (storage == ResourceStorage::Invalid) {
-      storage = ResourceStorage::Shared;
-    }
-  }
+    data(data), length(length), storage(storageIn), type(type), debugName(debugName) {}
 };
 
 class IBuffer {
  public:
   virtual ~IBuffer() = default;
 
-  virtual Result upload(const void* data, const BufferRange& range) = 0;
-  virtual void* map(const BufferRange& range, Result* outResult) = 0;
-  virtual void unmap() = 0;
-  virtual size_t getSizeInBytes() const = 0;
+  virtual Result upload(const void* data, size_t size, size_t offset = 0) = 0;
+
+  virtual uint8_t* getMappedPtr() const = 0;
   virtual uint64_t gpuAddress(size_t offset = 0) const = 0;
 
  protected:

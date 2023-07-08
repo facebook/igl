@@ -15,9 +15,7 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 Buffer::Buffer(const igl::vulkan::Device& device) : device_(device) {}
 
@@ -72,26 +70,21 @@ Result Buffer::create(const BufferDesc& desc) {
   return result;
 }
 
-igl::Result Buffer::upload(const void* data, const BufferRange& range) {
+igl::Result Buffer::upload(const void* data, size_t size, size_t offset) {
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_VERIFY(data)) {
     return igl::Result();
   }
 
-  if (!IGL_VERIFY(range.offset + range.size <= desc_.length)) {
+  if (!IGL_VERIFY(offset + size <= desc_.length)) {
     return igl::Result(Result::Code::ArgumentOutOfRange, "Out of range");
   }
 
   // use staging to upload data to device-local buffers
   const VulkanContext& ctx = device_.getVulkanContext();
-  ctx.stagingDevice_->bufferSubData(*buffer_, range.offset, range.size, data);
-
+  ctx.stagingDevice_->bufferSubData(*buffer_, offset, size, data);
   return igl::Result();
-}
-
-size_t Buffer::getSizeInBytes() const {
-  return desc_.length;
 }
 
 uint64_t Buffer::gpuAddress(size_t offset) const {
@@ -105,47 +98,8 @@ VkBuffer Buffer::getVkBuffer() const {
   return buffer_->getVkBuffer();
 }
 
-void* Buffer::map(const BufferRange& range, igl::Result* outResult) {
-  // Sanity check
-  if ((range.size > desc_.length) || (range.offset > desc_.length - range.size)) {
-    Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Range exceeds buffer length");
-    return nullptr;
-  }
-
-  // If the buffer is currently mapped, then unmap it first
-  if (mappedRange_.size &&
-      (mappedRange_.size != range.size || mappedRange_.offset != range.offset)) {
-    IGL_ASSERT_MSG(false, "Buffer::map() is called more than once without Buffer::unmap()");
-    unmap();
-  }
-
-  mappedRange_ = range;
-
-  Result::setOk(outResult);
-
-  if (!buffer_->isMapped()) {
-    // handle DEVICE_LOCAL buffers
-    tmpBuffer_.resize(range.size);
-    const VulkanContext& ctx = device_.getVulkanContext();
-    ctx.stagingDevice_->getBufferSubData(*buffer_, range.offset, range.size, tmpBuffer_.data());
-    return tmpBuffer_.data();
-  }
-
-  IGL_ASSERT(buffer_->getMemoryPropertyFlags() & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-  // Vulkan mapped buffers are always coherent in our implementation
-  return buffer_->getMappedPtr() + range.offset;
+uint8_t* Buffer::getMappedPtr() const {
+  return buffer_->isMapped() ? buffer_->getMappedPtr() : nullptr;
 }
 
-void Buffer::unmap() {
-  IGL_ASSERT_MSG(mappedRange_.size, "Called Buffer::unmap() without Buffer::map()");
-
-  if (!buffer_->isMapped()) {
-    // handle DEVICE_LOCAL buffers
-    upload(tmpBuffer_.data(), BufferRange(tmpBuffer_.size(), mappedRange_.offset));
-  }
-  mappedRange_.size = 0;
-}
-
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

@@ -8,7 +8,7 @@
 #pragma once
 
 #include <igl/Common.h>
-#include <igl/ComputePipelineState.h>
+#include <igl/Device.h>
 #include <igl/vulkan/Common.h>
 
 namespace igl {

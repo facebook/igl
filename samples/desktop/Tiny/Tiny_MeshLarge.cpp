@@ -439,6 +439,7 @@ constexpr uint32_t kNumBufferedFrames = 3;
 
 std::unique_ptr<IDevice> device_;
 std::shared_ptr<ICommandQueue> commandQueue_;
+std::shared_ptr<ITexture> depthBuffer_;
 std::shared_ptr<IFramebuffer> fbMain_; // swapchain
 std::shared_ptr<IFramebuffer> fbOffscreen_;
 std::shared_ptr<IFramebuffer> fbShadowMap_;
@@ -752,15 +753,30 @@ void initIGL() {
   }
 
   {
-    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
-                                                1,
-                                                1,
-                                                TextureDesc::TextureUsageBits::Sampled,
-                                                "dummy 1x1 (white)");
-    textureDummyWhite_ = device_->createTexture(desc, nullptr);
+    textureDummyWhite_ = device_->createTexture(
+        {
+            .width = 1,
+            .height = 1,
+            .usage = igl::TextureDesc::TextureUsageBits::Sampled,
+            .type = igl::TextureType::TwoD,
+            .format = igl::TextureFormat::RGBA_UNorm8,
+            .debugName = "dummy 1x1 (white)",
+        },
+        nullptr);
     const uint32_t pixel = 0xFFFFFFFF;
     textureDummyWhite_->upload(TextureRangeDesc::new2D(0, 0, 1, 1), &pixel);
   }
+
+  depthBuffer_ = device_->createTexture(
+      {
+          .width = (uint32_t)width_,
+          .height = (uint32_t)height_,
+          .usage = igl::TextureDesc::TextureUsageBits::Attachment,
+          .type = igl::TextureType::TwoD,
+          .format = igl::TextureFormat::Z_UNorm24,
+          .debugName = "depthBuffer",
+      },
+      nullptr);
 
   // create an Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
@@ -1222,15 +1238,19 @@ std::shared_ptr<ITexture> getNativeDrawable() {
 std::shared_ptr<ITexture> getNativeDepthDrawable() {
   IGL_PROFILER_FUNCTION();
 
-  const auto& platformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
+  if (!depthBuffer_) {
+    depthBuffer_ = device_->createTexture(
+        {
+            .width = (uint32_t)width_,
+            .height = (uint32_t)height_,
+            .usage = igl::TextureDesc::TextureUsageBits::Attachment,
+            .type = igl::TextureType::TwoD,
+            .format = igl::TextureFormat::Z_UNorm24,
+        },
+        nullptr);
+  }
 
-  Result ret;
-  std::shared_ptr<ITexture> drawable =
-      platformDevice->createTextureFromNativeDepth(width_, height_, &ret);
-
-  IGL_ASSERT(ret.isOk());
-  return drawable;
+  return depthBuffer_;
 }
 
 void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
@@ -1340,22 +1360,21 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
       .bDebugLines = perFrame_.bDebugLines,
   };
 
-  ubPerFrame_[frameIndex]->upload(&perFrame_, igl::BufferRange(sizeof(perFrame_), 0));
+  ubPerFrame_[frameIndex]->upload(&perFrame_, sizeof(perFrame_));
 
   {
-    UniformsPerFrame perFrameShadow{
+    const UniformsPerFrame perFrameShadow{
         .proj = shadowProj,
         .view = shadowView,
     };
-    ubPerFrameShadow_[frameIndex]->upload(&perFrameShadow,
-                                          igl::BufferRange(sizeof(perFrameShadow), 0));
+    ubPerFrameShadow_[frameIndex]->upload(&perFrameShadow, sizeof(perFrameShadow));
   }
 
   UniformsPerObject perObject;
 
   perObject.model = glm::scale(mat4(1.0f), vec3(0.05f));
 
-  ubPerObject_[frameIndex]->upload(&perObject, igl::BufferRange(sizeof(perObject), 0));
+  ubPerObject_[frameIndex]->upload(&perObject, sizeof(perObject));
 
   // Command buffers (1-N per thread): create, submit and forget
 
@@ -1667,7 +1686,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
       IGL_ASSERT(tex);
     }
 
-    tex->uploadCube(texRefRange, (igl::TextureCubeFace)face, texRef.data(0, face, 0));
+    tex->uploadCube(texRefRange, (igl::TextureCubeFace)face, texRef.data(0, face, 0), 0);
   }
 
   if (!kEnableCompression) {
@@ -1869,7 +1888,7 @@ void processLoadedMaterials() {
   IGL_ASSERT(materials_[mtl.idx].texAmbient >= 0 && materials_[mtl.idx].texAmbient < kMaxTextures);
   IGL_ASSERT(materials_[mtl.idx].texDiffuse >= 0 && materials_[mtl.idx].texDiffuse < kMaxTextures);
   IGL_ASSERT(materials_[mtl.idx].texAlpha >= 0 && materials_[mtl.idx].texAlpha < kMaxTextures);
-  sbMaterials_->upload(materials_.data(), BufferRange(sizeof(GPUMaterial) * materials_.size()));
+  sbMaterials_->upload(materials_.data(), sizeof(GPUMaterial) * materials_.size());
 }
 
 int main(int argc, char* argv[]) {
@@ -2020,6 +2039,7 @@ int main(int argc, char* argv[]) {
   fbMain_ = nullptr;
   fbShadowMap_ = nullptr;
   fbOffscreen_ = nullptr;
+  depthBuffer_ = nullptr;
   device_.reset(nullptr);
 
   glfwDestroyWindow(window_);

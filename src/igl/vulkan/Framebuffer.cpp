@@ -99,20 +99,6 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
                                      true); // Flip the image vertically
 }
 
-void Framebuffer::copyBytesDepthAttachment(ICommandQueue& cmdQueue,
-                                           void* pixelBytes,
-                                           size_t bytesPerRow,
-                                           const TextureRangeDesc& range) const {
-  IGL_ASSERT_NOT_IMPLEMENTED();
-}
-
-void Framebuffer::copyBytesStencilAttachment(ICommandQueue& cmdQueue,
-                                             void* pixelBytes,
-                                             size_t bytesPerRow,
-                                             const TextureRangeDesc& range) const {
-  IGL_ASSERT_NOT_IMPLEMENTED();
-}
-
 void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
                                              size_t index,
                                              std::shared_ptr<ITexture> destTexture,

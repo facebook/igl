@@ -12,10 +12,8 @@
 #include <igl/CommandQueue.h>
 #include <igl/Common.h>
 #include <igl/ComputeCommandEncoder.h>
-#include <igl/ComputePipelineState.h>
 #include <igl/Device.h>
 #include <igl/Framebuffer.h>
-#include <igl/HWDevice.h>
 #include <igl/RenderCommandEncoder.h>
 #include <igl/RenderPass.h>
 #include <igl/RenderPipelineState.h>

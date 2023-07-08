@@ -11,7 +11,6 @@
 #include <vector>
 
 #include <igl/Device.h>
-#include <igl/HWDevice.h>
 
 namespace igl {
 namespace vulkan {

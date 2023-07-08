@@ -7,11 +7,13 @@
 
 #pragma once
 
-#include <igl/PlatformDevice.h>
 #include <igl/Texture.h>
 #include <igl/vulkan/Common.h>
 
+#include <vector>
+
 namespace igl {
+
 class ITexture;
 
 namespace vulkan {
@@ -31,9 +33,9 @@ class PlatformDevice : public IPlatformDevice {
   /// the future;
   /// @param outResult optional result
   /// @return pointer to generated Texture or nullptr
-  std::shared_ptr<ITexture> createTextureFromNativeDepth(uint32_t width,
-                                                         uint32_t height,
-                                                         Result* outResult);
+//  std::shared_ptr<ITexture> createTextureFromNativeDepth(uint32_t width,
+//                                                         uint32_t height,
+//                                                         Result* outResult);
 
   /// Creates a texture from a native drawable surface
   /// @param outResult optional result

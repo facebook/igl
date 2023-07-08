@@ -15,8 +15,7 @@
 #include <igl/vulkan/VulkanTexture.h>
 #include <vector>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanContext;
 class VulkanSemaphore;
@@ -41,15 +40,6 @@ class VulkanSwapchain final {
     }
     return VK_NULL_HANDLE;
   }
-
-  std::shared_ptr<VulkanTexture> getCurrentDepthTexture() {
-    if (!depthTexture_) {
-      lazyAllocateDepthBuffer();
-    }
-
-    return depthTexture_;
-  }
-
   std::shared_ptr<VulkanTexture> getCurrentVulkanTexture() {
     if (getNextImage_) {
       acquireNextImage();
@@ -63,8 +53,6 @@ class VulkanSwapchain final {
     return nullptr;
   }
 
-  VkImage getDepthVkImage() const;
-  VkImageView getDepthVkImageView() const;
   uint32_t getWidth() const {
     return width_;
   }
@@ -91,9 +79,6 @@ class VulkanSwapchain final {
     return frameNumber_;
   }
 
- private:
-  void lazyAllocateDepthBuffer() const;
-
  public:
   std::unique_ptr<igl::vulkan::VulkanSemaphore> acquireSemaphore_;
 
@@ -109,11 +94,7 @@ class VulkanSwapchain final {
   bool getNextImage_ = true;
   VkSwapchainKHR swapchain_;
   std::vector<std::shared_ptr<VulkanTexture>> swapchainTextures_;
-  mutable std::shared_ptr<VulkanImage> depthImage_;
-  mutable std::shared_ptr<VulkanImageView> depthImageView_;
-  mutable std::shared_ptr<VulkanTexture> depthTexture_;
   VkSurfaceFormatKHR surfaceFormat_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

@@ -38,16 +38,6 @@ class Framebuffer final : public IFramebuffer {
                                 size_t bytesPerRow,
                                 const TextureRangeDesc& range) const override;
 
-  void copyBytesDepthAttachment(ICommandQueue& cmdQueue,
-                                void* pixelBytes,
-                                size_t bytesPerRow,
-                                const TextureRangeDesc& range) const override;
-
-  void copyBytesStencilAttachment(ICommandQueue& cmdQueue,
-                                  void* pixelBytes,
-                                  size_t bytesPerRow,
-                                  const TextureRangeDesc& range) const override;
-
   void copyTextureColorAttachment(ICommandQueue& cmdQueue,
                                   size_t index,
                                   std::shared_ptr<ITexture> destTexture,

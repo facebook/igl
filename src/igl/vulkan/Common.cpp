@@ -64,8 +64,6 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
     return VK_FORMAT_UNDEFINED;
   case TextureFormat::A_UNorm8:
     return VK_FORMAT_UNDEFINED;
-  case TextureFormat::L_UNorm8:
-    return VK_FORMAT_UNDEFINED;
   case TextureFormat::R_UNorm8:
     return VK_FORMAT_R8_UNORM;
   case TextureFormat::R_UNorm16:
@@ -80,20 +78,10 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
     return VK_FORMAT_B5G6R5_UNORM_PACK16;
   case TextureFormat::ABGR_UNorm4:
     return VK_FORMAT_B4G4R4A4_UNORM_PACK16;
-  case TextureFormat::LA_UNorm8:
-    return VK_FORMAT_UNDEFINED;
   case TextureFormat::RG_UNorm8:
     return VK_FORMAT_R8G8_UNORM;
   case TextureFormat::RG_UNorm16:
     return VK_FORMAT_R16G16_UNORM;
-  case TextureFormat::R4G2B2_UNorm_Apple:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::R4G2B2_UNorm_Rev_Apple:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::R5G5B5A1_UNorm:
-    return VK_FORMAT_R5G5B5A1_UNORM_PACK16;
-  case TextureFormat::RGBX_UNorm8:
-    return VK_FORMAT_UNDEFINED;
   case TextureFormat::BGRA_UNorm8:
     return VK_FORMAT_B8G8R8A8_UNORM;
   case TextureFormat::BGRA_UNorm8_Rev:
@@ -116,80 +104,12 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
     return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
   case TextureFormat::R_F32:
     return VK_FORMAT_R32_SFLOAT;
-  case TextureFormat::RGB_F16:
-    return VK_FORMAT_R16G16B16_SFLOAT;
   case TextureFormat::RGBA_F16:
     return VK_FORMAT_R16G16B16A16_SFLOAT;
-  case TextureFormat::RGB_F32:
-    return VK_FORMAT_R32G32B32_SFLOAT;
   case TextureFormat::RGBA_UInt32:
     return VK_FORMAT_R32G32B32A32_UINT;
   case TextureFormat::RGBA_F32:
     return VK_FORMAT_R32G32B32A32_SFLOAT;
-  case TextureFormat::RGBA_ASTC_4x4:
-    return VK_FORMAT_ASTC_4x4_SRGB_BLOCK;
-  case TextureFormat::SRGB8_A8_ASTC_4x4:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_ASTC_5x4:
-    return VK_FORMAT_ASTC_5x4_SRGB_BLOCK;
-  case TextureFormat::SRGB8_A8_ASTC_5x4:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_ASTC_5x5:
-    return VK_FORMAT_ASTC_5x5_SRGB_BLOCK;
-  case TextureFormat::SRGB8_A8_ASTC_5x5:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_ASTC_6x5:
-    return VK_FORMAT_ASTC_6x5_SRGB_BLOCK;
-  case TextureFormat::SRGB8_A8_ASTC_6x5:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_ASTC_6x6:
-    return VK_FORMAT_ASTC_6x6_SRGB_BLOCK;
-  case TextureFormat::SRGB8_A8_ASTC_6x6:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_ASTC_8x5:
-    return VK_FORMAT_ASTC_8x5_SRGB_BLOCK;
-  case TextureFormat::SRGB8_A8_ASTC_8x5:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_ASTC_8x6:
-    return VK_FORMAT_ASTC_8x6_SRGB_BLOCK;
-  case TextureFormat::SRGB8_A8_ASTC_8x6:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_ASTC_8x8:
-    return VK_FORMAT_ASTC_8x8_SRGB_BLOCK;
-  case TextureFormat::SRGB8_A8_ASTC_8x8:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_ASTC_10x5:
-    return VK_FORMAT_ASTC_10x5_SRGB_BLOCK;
-  case TextureFormat::SRGB8_A8_ASTC_10x5:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_ASTC_10x6:
-    return VK_FORMAT_ASTC_10x6_SRGB_BLOCK;
-  case TextureFormat::SRGB8_A8_ASTC_10x6:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_ASTC_10x8:
-    return VK_FORMAT_ASTC_10x8_SRGB_BLOCK;
-  case TextureFormat::SRGB8_A8_ASTC_10x8:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_ASTC_10x10:
-    return VK_FORMAT_ASTC_10x10_SRGB_BLOCK;
-  case TextureFormat::SRGB8_A8_ASTC_10x10:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_ASTC_12x10:
-    return VK_FORMAT_ASTC_12x10_SRGB_BLOCK;
-  case TextureFormat::SRGB8_A8_ASTC_12x10:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_ASTC_12x12:
-    return VK_FORMAT_ASTC_12x12_SRGB_BLOCK;
-  case TextureFormat::SRGB8_A8_ASTC_12x12:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_PVRTC_2BPPV1:
-    return VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG;
-  case TextureFormat::RGB_PVRTC_2BPPV1:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::RGBA_PVRTC_4BPPV1:
-    return VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG;
-  case TextureFormat::RGB_PVRTC_4BPPV1:
-    return VK_FORMAT_UNDEFINED;
   case TextureFormat::RGB8_ETC1:
     return VK_FORMAT_UNDEFINED;
   case TextureFormat::RGB8_ETC2:
@@ -222,10 +142,8 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
     return VK_FORMAT_D32_SFLOAT;
   case TextureFormat::S8_UInt_Z24_UNorm:
     return VK_FORMAT_D24_UNORM_S8_UINT;
-  case TextureFormat::S8_UInt_Z32_UNorm:
-    return VK_FORMAT_D32_SFLOAT_S8_UINT;
-  case TextureFormat::S_UInt8:
-    return VK_FORMAT_S8_UINT;
+  default:
+    IGL_ASSERT_MSG(false, "TextureFormat value not handled: %d", (int)format);
   }
   IGL_UNREACHABLE_RETURN(VK_FORMAT_UNDEFINED);
 }
@@ -261,8 +179,6 @@ igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
     return TextureFormat::ABGR_UNorm4;
   case VK_FORMAT_R8G8_UNORM:
     return TextureFormat::RG_UNorm8;
-  case VK_FORMAT_R5G5B5A1_UNORM_PACK16:
-    return TextureFormat::R5G5B5A1_UNorm;
   case VK_FORMAT_B8G8R8A8_UNORM:
     return TextureFormat::BGRA_UNorm8;
   case VK_FORMAT_R8G8B8A8_UNORM:
@@ -285,48 +201,13 @@ igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
     return TextureFormat::BGR10_A2_Unorm;
   case VK_FORMAT_R32_SFLOAT:
     return TextureFormat::R_F32;
-  case VK_FORMAT_R16G16B16_SFLOAT:
-    return TextureFormat::RGB_F16;
   case VK_FORMAT_R16G16B16A16_SFLOAT:
     return TextureFormat::RGBA_F16;
-  case VK_FORMAT_R32G32B32_SFLOAT:
-    return TextureFormat::RGB_F32;
   case VK_FORMAT_R32G32B32A32_UINT:
     return TextureFormat::RGBA_UInt32;
   case VK_FORMAT_R32G32B32A32_SFLOAT:
     return TextureFormat::RGBA_F32;
   case VK_FORMAT_ASTC_4x4_SRGB_BLOCK:
-    return TextureFormat::RGBA_ASTC_4x4;
-  case VK_FORMAT_ASTC_5x4_SRGB_BLOCK:
-    return TextureFormat::RGBA_ASTC_5x4;
-  case VK_FORMAT_ASTC_5x5_SRGB_BLOCK:
-    return TextureFormat::RGBA_ASTC_5x5;
-  case VK_FORMAT_ASTC_6x5_SRGB_BLOCK:
-    return TextureFormat::RGBA_ASTC_6x5;
-  case VK_FORMAT_ASTC_6x6_SRGB_BLOCK:
-    return TextureFormat::RGBA_ASTC_6x6;
-  case VK_FORMAT_ASTC_8x5_SRGB_BLOCK:
-    return TextureFormat::RGBA_ASTC_8x5;
-  case VK_FORMAT_ASTC_8x6_SRGB_BLOCK:
-    return TextureFormat::RGBA_ASTC_8x6;
-  case VK_FORMAT_ASTC_8x8_SRGB_BLOCK:
-    return TextureFormat::RGBA_ASTC_8x8;
-  case VK_FORMAT_ASTC_10x5_SRGB_BLOCK:
-    return TextureFormat::RGBA_ASTC_10x5;
-  case VK_FORMAT_ASTC_10x6_SRGB_BLOCK:
-    return TextureFormat::RGBA_ASTC_10x6;
-  case VK_FORMAT_ASTC_10x8_SRGB_BLOCK:
-    return TextureFormat::RGBA_ASTC_10x8;
-  case VK_FORMAT_ASTC_10x10_SRGB_BLOCK:
-    return TextureFormat::RGBA_ASTC_10x10;
-  case VK_FORMAT_ASTC_12x10_SRGB_BLOCK:
-    return TextureFormat::RGBA_ASTC_12x10;
-  case VK_FORMAT_ASTC_12x12_SRGB_BLOCK:
-    return TextureFormat::RGBA_ASTC_12x12;
-  case VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG:
-    return TextureFormat::RGBA_PVRTC_2BPPV1;
-  case VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG:
-    return TextureFormat::RGBA_PVRTC_4BPPV1;
   case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK:
     return TextureFormat::RGB8_ETC2;
   case VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK:
@@ -351,10 +232,6 @@ igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
     return TextureFormat::Z_UNorm24;
   case VK_FORMAT_D24_UNORM_S8_UINT:
     return TextureFormat::S8_UInt_Z24_UNorm;
-  case VK_FORMAT_S8_UINT:
-    return TextureFormat::S_UInt8;
-  case VK_FORMAT_D32_SFLOAT_S8_UINT:
-    return TextureFormat::S8_UInt_Z32_UNorm;
   case VK_FORMAT_D32_SFLOAT:
     return TextureFormat::Z_UNorm32;
   default:
@@ -399,16 +276,10 @@ VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorag
   VkMemoryPropertyFlags memFlags{0};
 
   switch (resourceStorage) {
-  case ResourceStorage::Invalid:
-    IGL_ASSERT_MSG(false, "Invalid storage type");
-    break;
   case ResourceStorage::Private:
     memFlags |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     break;
   case ResourceStorage::Shared:
-    memFlags |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    break;
-  case ResourceStorage::Managed:
     memFlags |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     break;
   case ResourceStorage::Memoryless:

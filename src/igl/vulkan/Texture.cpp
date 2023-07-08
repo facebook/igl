@@ -29,14 +29,10 @@ Result Texture::create(const TextureDesc& desc) {
                                 ? ctx.getClosestDepthStencilFormat(desc_.format)
                                 : textureFormatToVkFormat(desc_.format);
 
-  if (!IGL_VERIFY(desc_.options == 0)) {
-    IGL_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented);
-  }
   const igl::TextureType type = desc_.type;
-  if (!IGL_VERIFY(type == TextureType::TwoD || type == TextureType::TwoDArray ||
-                  type == TextureType::Cube || type == TextureType::ThreeD)) {
-    IGL_ASSERT_MSG(false, "Only 1D, 1D array, 2D, 2D array, 3D and cubemap textures are supported");
+  if (!IGL_VERIFY(type == TextureType::TwoD || type == TextureType::Cube ||
+                  type == TextureType::ThreeD)) {
+    IGL_ASSERT_MSG(false, "Only 1D, 2D, 3D and Cube textures are supported");
     return Result(Result::Code::Unimplemented);
   }
 
@@ -66,21 +62,10 @@ Result Texture::create(const TextureDesc& desc) {
     IGL_ASSERT_MSG(false, "Texture usage flags are not set");
     desc_.usage = TextureDesc::TextureUsageBits::Sampled;
   }
-  // a simple heuristic to determine proper storage as the storage type is almost never provided by
-  // existing IGL clients
-  if (desc_.storage == ResourceStorage::Invalid) {
-    desc_.storage = ResourceStorage::Private;
-  }
 
   /* Use staging device to transfer data into the image when the storage is private to the device */
   VkImageUsageFlags usageFlags =
       (desc_.storage == ResourceStorage::Private) ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : 0;
-
-  // On M1 Macs, depth texture has to be ResourceStorage::Private.
-  if (!ctx.useStaging_ && desc_.storage == ResourceStorage::Private &&
-      !isDepthOrStencilFormat(desc_.format)) {
-    desc_.storage = ResourceStorage::Shared;
-  }
 
   if (desc_.usage & TextureDesc::TextureUsageBits::Sampled) {
     usageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -126,10 +111,6 @@ Result Texture::create(const TextureDesc& desc) {
     arrayLayerCount *= 6;
     imageType = VK_IMAGE_TYPE_2D;
     createFlags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-    break;
-  case TextureType::TwoDArray:
-    imageType = VK_IMAGE_TYPE_2D;
-    imageViewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     break;
   default:
     IGL_ASSERT_NOT_REACHED();

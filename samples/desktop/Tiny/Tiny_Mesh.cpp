@@ -35,11 +35,9 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <stb/stb_image.h>
 
-#define TINY_TEST_USE_DEPTH_BUFFER 1
-
 constexpr uint32_t kNumCubes = 16;
 
-#if IGL_WITH_IGLU
+#if IGL_WITH_IGLU && 0
 #include <IGLU/imgui/Session.h>
 
 std::unique_ptr<iglu::imgui::Session> imguiSession_;
@@ -231,7 +229,7 @@ static bool initWindow(GLFWwindow** outWindow) {
 #endif
   });
 
-#if IGL_WITH_IGLU
+#if IGL_WITH_IGLU && 0
   glfwSetCursorPosCallback(window, [](auto* window, double x, double y) {
     inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
   });
@@ -317,7 +315,7 @@ static void initIGL() {
                                                  nullptr));
   }
 
-    depthStencilState_ = {.compareOp = igl::CompareOp_Less, .isDepthWriteEnabled = true};
+  depthStencilState_ = {.compareOp = igl::CompareOp_Less, .isDepthWriteEnabled = true};
 
   {
     const uint32_t texWidth = 256;
@@ -367,7 +365,7 @@ static void initIGL() {
     stbi_image_free(pixels);
   }
 
-    sampler_ = device_->createSamplerState({.debugName = "Sampler: linear"}, nullptr);
+  sampler_ = device_->createSamplerState({.debugName = "Sampler: linear"}, nullptr);
 
   // Command queue: backed by different types of GPU HW queues
   commandQueue_ = device_->createCommandQueue(CommandQueueType::Graphics, nullptr);
@@ -376,14 +374,6 @@ static void initIGL() {
   renderPass_.colorAttachments.back().loadAction = LoadAction::Clear;
   renderPass_.colorAttachments.back().storeAction = StoreAction::Store;
   renderPass_.colorAttachments.back().clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
-#if TINY_TEST_USE_DEPTH_BUFFER
-  renderPass_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPass_.depthAttachment.storeAction =
-      StoreAction::Store; // save it so we can display it via ImGui
-  renderPass_.depthAttachment.clearDepth = 1.0;
-#else
-  renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
-#endif // TINY_TEST_USE_DEPTH_BUFFER
 
   // initialize random rotation axes for all cubes
   for (uint32_t i = 0; i != kNumCubes; i++) {
@@ -421,17 +411,11 @@ static void createRenderPipeline() {
   desc.targetDesc.colorAttachments[0].textureFormat =
       framebuffer_->getColorAttachment(0)->getFormat();
 
-  if (framebuffer_->getDepthAttachment()) {
-    desc.targetDesc.depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat();
-  }
-
   desc.vertexInputState = vdesc;
   desc.shaderStages = device_->createShaderStages(
       codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)");
 
-#if !TINY_TEST_USE_DEPTH_BUFFER
-  desc.cullMode = igl::CullMode::Back;
-#endif // TINY_TEST_USE_DEPTH_BUFFER
+  desc.cullMode = igl::CullMode_Back;
 
   desc.frontFaceWinding = igl::WindingMode_CW;
   desc.debugName = "Pipeline: mesh";
@@ -450,25 +434,8 @@ static std::shared_ptr<ITexture> getVulkanNativeDrawable() {
   return drawable;
 }
 
-static std::shared_ptr<ITexture> getVulkanNativeDepth() {
-  const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
-
-  IGL_ASSERT(vkPlatformDevice != nullptr);
-
-  Result ret;
-  std::shared_ptr<ITexture> drawable =
-      vkPlatformDevice->createTextureFromNativeDepth(width_, height_, &ret);
-
-  IGL_ASSERT(ret.isOk());
-  return drawable;
-}
-
 static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   framebufferDesc_.colorAttachments[0].texture = nativeDrawable;
-
-#if TINY_TEST_USE_DEPTH_BUFFER
-  framebufferDesc_.depthAttachment.texture = getVulkanNativeDepth();
-#endif // TINY_TEST_USE_DEPTH_BUFFER
 
   framebuffer_ = device_->createFramebuffer(framebufferDesc_, nullptr);
   IGL_ASSERT(framebuffer_);
@@ -494,7 +461,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
       .texture1 = texture1_ ? texture1_->getTextureId() : 0u,
       .sampler = sampler_->getSamplerId(),
   };
-  ubPerFrame_[frameIndex]->upload(&perFrame, igl::BufferRange(sizeof(perFrame)));
+  ubPerFrame_[frameIndex]->upload(&perFrame, sizeof(perFrame));
 
   // rotate cubes around random axes
   for (uint32_t i = 0; i != kNumCubes; i++) {
@@ -507,7 +474,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
         glm::rotate(glm::translate(mat4(1.0f), offset), direction * (float)glfwGetTime(), axis_[i]);
   }
 
-  ubPerObject_[frameIndex]->upload(&perObject, igl::BufferRange(sizeof(perObject)));
+  ubPerObject_[frameIndex]->upload(&perObject, sizeof(perObject));
 
   // Command buffers (1-N per thread): create, submit and forget
   CommandBufferDesc cbDesc;
@@ -538,7 +505,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
     commands->drawIndexed(PrimitiveType::Triangle, 3 * 6 * 2, IndexFormat::UInt16, *ib0_.get(), 0);
   }
   commands->popDebugGroupLabel();
-#if IGL_WITH_IGLU
+#if IGL_WITH_IGLU && 0
   imguiSession_->endFrame(*device_.get(), *commands);
 #endif // IGL_WITH_IGLU
   commands->endEncoding();
@@ -557,7 +524,7 @@ int main(int argc, char* argv[]) {
   createFramebuffer(getVulkanNativeDrawable());
   createRenderPipeline();
 
-#if IGL_WITH_IGLU
+#if IGL_WITH_IGLU && 0
   imguiSession_ = std::make_unique<iglu::imgui::Session>(*device_.get(), inputDispatcher_);
 #endif // IGL_WITH_IGLU
 
@@ -570,7 +537,7 @@ int main(int argc, char* argv[]) {
     const double newTime = glfwGetTime();
     fps_.updateFPS(newTime - prevTime);
     prevTime = newTime;
-#if IGL_WITH_IGLU
+#if IGL_WITH_IGLU && 0
     imguiSession_->beginFrame(framebufferDesc_, 1.0f);
 
     ImGui::Begin("Texture Viewer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
@@ -584,7 +551,7 @@ int main(int argc, char* argv[]) {
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
   }
 
-#if IGL_WITH_IGLU
+#if IGL_WITH_IGLU && 0
   imguiSession_ = nullptr;
 #endif // IGL_WITH_IGLU
 

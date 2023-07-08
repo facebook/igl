@@ -208,56 +208,6 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
   }
 }
 
-VkImage VulkanSwapchain::getDepthVkImage() const {
-  if (!depthImage_) {
-    lazyAllocateDepthBuffer();
-  }
-  return depthImage_->getVkImage();
-}
-
-VkImageView VulkanSwapchain::getDepthVkImageView() const {
-  if (!depthImageView_) {
-    lazyAllocateDepthBuffer();
-  }
-  return depthImageView_->getVkImageView();
-}
-
-void VulkanSwapchain::lazyAllocateDepthBuffer() const {
-  IGL_ASSERT(!depthImage_);
-  IGL_ASSERT(!depthImageView_);
-
-  const VkFormat depthFormat =
-#if IGL_PLATFORM_APPLE
-      VK_FORMAT_D32_SFLOAT;
-#else
-      VK_FORMAT_D24_UNORM_S8_UINT;
-#endif
-  const VkImageAspectFlags aspectMask =
-#if IGL_PLATFORM_APPLE
-      VK_IMAGE_ASPECT_DEPTH_BIT;
-#else
-      VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-#endif
-
-  depthImage_ = std::make_shared<VulkanImage>(ctx_,
-                                              device_,
-                                              VkExtent3D{width_, height_, 1},
-                                              VK_IMAGE_TYPE_2D,
-                                              depthFormat,
-                                              1,
-                                              1,
-                                              VK_IMAGE_TILING_OPTIMAL,
-                                              VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                              0,
-                                              VK_SAMPLE_COUNT_1_BIT,
-                                              "Image: swapchain depth");
-  depthImageView_ = depthImage_->createImageView(
-      VK_IMAGE_VIEW_TYPE_2D, depthFormat, aspectMask, 0, 1, 0, 1, "Image View: swapchain depth");
-
-  depthTexture_ = std::make_shared<VulkanTexture>(ctx_, depthImage_, depthImageView_);
-}
-
 VulkanSwapchain::~VulkanSwapchain() {
   vkDestroySwapchainKHR(device_, swapchain_, nullptr);
 }

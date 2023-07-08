@@ -8,10 +8,8 @@
 #pragma once
 
 #include <igl/Common.h>
-#include <igl/PlatformDevice.h>
 #include <igl/Texture.h>
 #include <utility>
-#include <vector>
 
 namespace igl {
 
@@ -29,7 +27,6 @@ struct VertexInputStateDesc;
 class IBuffer;
 class ICommandQueue;
 class ICommandBuffer;
-class IComputePipelineState;
 class IDevice;
 class IFramebuffer;
 class IRenderPipelineState;
@@ -37,6 +34,16 @@ class ISamplerState;
 class IShaderModule;
 class ITexture;
 class IVertexInputState;
+
+struct ComputePipelineDesc {
+  std::shared_ptr<ShaderStages> shaderStages;
+  std::string debugName;
+};
+
+class IComputePipelineState {
+ public:
+  virtual ~IComputePipelineState() = default;
+};
 
 /**
  * @brief Interface to a GPU that is used to draw graphics or do parallel computation.

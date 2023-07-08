@@ -9,7 +9,6 @@
 
 #include <igl/Common.h>
 #include <utility>
-#include <vector>
 
 namespace igl {
 

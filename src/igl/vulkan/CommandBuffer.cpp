@@ -146,28 +146,10 @@ void CommandBuffer::present(std::shared_ptr<ITexture> surface) const {
   }
 }
 
-void CommandBuffer::pushDebugGroupLabel(const std::string& label, const igl::Color& color) const {
-  ivkCmdBeginDebugUtilsLabel(wrapper_.cmdBuf_, label.c_str(), color.toFloatPtr());
-}
-
-void CommandBuffer::popDebugGroupLabel() const {
-  ivkCmdEndDebugUtilsLabel(wrapper_.cmdBuf_);
-}
-
 void CommandBuffer::waitUntilCompleted() {
   ctx_.immediate_->wait(lastSubmitHandle_);
 
   lastSubmitHandle_ = VulkanImmediateCommands::SubmitHandle();
-}
-
-void CommandBuffer::waitUntilScheduled() {}
-
-std::shared_ptr<igl::IFramebuffer> CommandBuffer::getFramebuffer() const {
-  return framebuffer_;
-}
-
-std::shared_ptr<ITexture> CommandBuffer::getPresentedSurface() const {
-  return presentedSurface_;
 }
 
 } // namespace vulkan

@@ -183,7 +183,6 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
   switch (format) {
     INVALID(Invalid)
     COLOR(A_UNorm8, 1, 1, 0)
-    COLOR(L_UNorm8, 1, 1, 0)
     COLOR(R_UNorm8, 1, 1, 0)
     COLOR(R_F16, 1, 2, 0)
     COLOR(R_UInt16, 1, 2, 0)
@@ -191,12 +190,7 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     COLOR(B5G5R5A1_UNorm, 4, 2, 0)
     COLOR(B5G6R5_UNorm, 3, 2, 0)
     COLOR(ABGR_UNorm4, 4, 2, 0)
-    COLOR(LA_UNorm8, 2, 2, 0)
     COLOR(RG_UNorm8, 2, 2, 0)
-    COLOR(R4G2B2_UNorm_Apple, 3, 2, 0)
-    COLOR(R4G2B2_UNorm_Rev_Apple, 3, 2, 0)
-    COLOR(R5G5B5A1_UNorm, 4, 2, 0)
-    COLOR(RGBX_UNorm8, 3, 3, 0)
     COLOR(RGBA_UNorm8, 4, 4, 0)
     COLOR(BGRA_UNorm8, 4, 4, 0)
     COLOR(BGRA_UNorm8_Rev, 4, 4, 0)
@@ -209,43 +203,9 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     COLOR(RGB10_A2_Uint_Rev, 4, 4, 0)
     COLOR(BGR10_A2_Unorm, 4, 4, 0)
     COLOR(R_F32, 1, 4, 0)
-    COLOR(RGB_F16, 3, 6, 0)
     COLOR(RGBA_F16, 4, 8, 0)
-    COLOR(RGB_F32, 3, 12, 0)
     COLOR(RGBA_UInt32, 4, 16, 0)
     COLOR(RGBA_F32, 4, 16, 0)
-    COMPRESSED(RGBA_ASTC_4x4, 4, 16, 4, 4, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_ASTC_4x4, 4, 16, 4, 4, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA_ASTC_5x4, 4, 16, 5, 4, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_ASTC_5x4, 4, 16, 5, 4, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA_ASTC_5x5, 4, 16, 5, 5, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_ASTC_5x5, 4, 16, 5, 5, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA_ASTC_6x5, 4, 16, 6, 5, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_ASTC_6x5, 4, 16, 6, 5, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA_ASTC_6x6, 4, 16, 6, 6, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_ASTC_6x6, 4, 16, 6, 6, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA_ASTC_8x5, 4, 16, 8, 5, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_ASTC_8x5, 4, 16, 8, 5, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA_ASTC_8x6, 4, 16, 8, 6, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_ASTC_8x6, 4, 16, 8, 6, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA_ASTC_8x8, 4, 16, 8, 8, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_ASTC_8x8, 4, 16, 8, 8, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA_ASTC_10x5, 4, 16, 10, 5, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_ASTC_10x5, 4, 16, 10, 5, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA_ASTC_10x6, 4, 16, 10, 6, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_ASTC_10x6, 4, 16, 10, 6, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA_ASTC_10x8, 4, 16, 10, 8, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_ASTC_10x8, 4, 16, 10, 8, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA_ASTC_10x10, 4, 16, 10, 10, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_ASTC_10x10, 4, 16, 10, 10, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA_ASTC_12x10, 4, 16, 12, 10, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_ASTC_12x10, 4, 16, 12, 10, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA_ASTC_12x12, 4, 16, 12, 12, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_ASTC_12x12, 4, 16, 12, 12, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA_PVRTC_2BPPV1, 4, 8, 8, 4, 1, 2, 2, 1, 0)
-    COMPRESSED(RGB_PVRTC_2BPPV1, 3, 8, 8, 4, 1, 2, 2, 1, 0)
-    COMPRESSED(RGBA_PVRTC_4BPPV1, 4, 8, 4, 4, 1, 2, 2, 1, 0)
-    COMPRESSED(RGB_PVRTC_4BPPV1, 3, 8, 4, 4, 1, 2, 2, 1, 0)
     COMPRESSED(RGB8_ETC1, 3, 8, 4, 4, 1, 1, 1, 1, 0)
     COMPRESSED(RGB8_ETC2, 3, 8, 4, 4, 1, 1, 1, 1, 0)
     COMPRESSED(SRGB8_ETC2, 3, 8, 4, 4, 1, 1, 1, 1, Flags::sRGB)
@@ -262,12 +222,6 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     DEPTH_STENCIL(Z_UNorm24, 1, 3)
     DEPTH_STENCIL(Z_UNorm32, 1, 4)
     DEPTH(S8_UInt_Z24_UNorm, 2, 4)
-#if IGL_PLATFORM_IOS
-    DEPTH(S8_UInt_Z32_UNorm, 2, 5)
-#else
-    DEPTH(S8_UInt_Z32_UNorm, 2, 8)
-#endif
-    DEPTH(S_UInt8, 1, 1)
   }
   IGL_UNREACHABLE_RETURN(TextureFormatProperties{});
 }
@@ -346,23 +300,6 @@ uint32_t TextureDesc::calcNumMipLevels(size_t width, size_t height) {
   }
 
   return levels;
-}
-
-bool TextureDesc::operator==(const TextureDesc& rhs) const {
-  return (type == rhs.type) && (format == rhs.format) && (width == rhs.width) &&
-         (height == rhs.height) && (depth == rhs.depth) && (numLayers == rhs.numLayers) &&
-         (numSamples == rhs.numSamples) && (usage == rhs.usage) && (options == rhs.options) &&
-         (numMipLevels == rhs.numMipLevels) && (storage == rhs.storage) &&
-         (debugName == rhs.debugName);
-}
-
-bool TextureDesc::operator!=(const TextureDesc& rhs) const {
-  return !operator==(rhs);
-}
-
-float ITexture::getAspectRatio() const {
-  const auto dimensions = getDimensions();
-  return static_cast<float>(dimensions.width) / static_cast<float>(dimensions.height);
 }
 
 Size ITexture::getSize() const {

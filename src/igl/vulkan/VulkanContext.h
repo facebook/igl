@@ -12,7 +12,6 @@
 #include <memory>
 #include <unordered_map>
 
-#include <igl/HWDevice.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanExtensions.h>
