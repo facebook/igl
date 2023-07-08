@@ -6,6 +6,7 @@
  */
 
 #include "stb_image.h"
+#include <cstring>
 #include <filesystem>
 #include <shell/shared/imageLoader/win/ImageLoaderWin.h>
 
