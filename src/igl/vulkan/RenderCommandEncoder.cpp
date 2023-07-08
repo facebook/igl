@@ -13,7 +13,6 @@
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/DepthStencilState.h>
 #include <igl/vulkan/Framebuffer.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/SamplerState.h>
@@ -256,7 +255,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   bindScissorRect(scissor);
 
   ctx_.checkAndUpdateDescriptorSets();
-  ctx_.DUBs_->update(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, nullptr);
+  ctx_.bindDefaultDescriptorSets(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
   vkCmdBeginRenderPass(cmdBuffer_, &bi, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -334,12 +333,12 @@ void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
   More details: https://www.saschawillems.de/blog/2019/03/29/flipping-the-vulkan-viewport/
   **/
   const VkViewport vp = {
-      viewport.x, // float x;
-      viewport.height - viewport.y, // float y;
-      viewport.width, // float width;
-      -viewport.height, // float height;
-      viewport.minDepth, // float minDepth;
-      viewport.maxDepth, // float maxDepth;
+      .x = viewport.x, // float x;
+      .y = viewport.height - viewport.y, // float y;
+      .width = viewport.width, // float width;
+      .height = -viewport.height, // float height;
+      .minDepth = viewport.minDepth, // float minDepth;
+      .maxDepth = viewport.maxDepth, // float maxDepth;
   };
   vkCmdSetViewport(cmdBuffer_, 0, 1, &vp);
 }
@@ -377,32 +376,18 @@ void RenderCommandEncoder::bindRenderPipelineState(
   binder_.bindPipeline(VK_NULL_HANDLE);
 }
 
-void RenderCommandEncoder::bindDepthStencilState(
-    const std::shared_ptr<IDepthStencilState>& depthStencilState) {
+void RenderCommandEncoder::bindDepthStencilState(const DepthStencilState& desc) {
   IGL_PROFILER_FUNCTION();
-
-  if (!IGL_VERIFY(depthStencilState != nullptr)) {
-    return;
-  }
-  const igl::vulkan::DepthStencilState* state =
-      static_cast<igl::vulkan::DepthStencilState*>(depthStencilState.get());
-
-  const igl::DepthStencilStateDesc& desc = state->getDepthStencilStateDesc();
 
   dynamicState_.depthWriteEnable_ = desc.isDepthWriteEnabled;
   dynamicState_.setDepthCompareOp(compareOpToVkCompareOp(desc.compareOp));
 
   auto setStencilState = [this](VkStencilFaceFlagBits faceMask, const igl::StencilStateDesc& desc) {
-    if (desc == igl::StencilStateDesc()) {
-      // do not update anything if we don't have an actual state
-      return;
-    }
     dynamicState_.setStencilStateOps(faceMask,
                                      stencilOpToVkStencilOp(desc.stencilFailureOp),
                                      stencilOpToVkStencilOp(desc.depthStencilPassOp),
                                      stencilOpToVkStencilOp(desc.depthFailureOp),
                                      compareOpToVkCompareOp(desc.stencilCompareOp));
-    // this is what the IGL/OGL backend does with masks
     vkCmdSetStencilReference(cmdBuffer_, faceMask, desc.readMask);
     vkCmdSetStencilCompareMask(cmdBuffer_, faceMask, 0xFF);
     vkCmdSetStencilWriteMask(cmdBuffer_, faceMask, desc.writeMask);
@@ -412,21 +397,13 @@ void RenderCommandEncoder::bindDepthStencilState(
   setStencilState(VK_STENCIL_FACE_BACK_BIT, desc.backFaceStencil);
 }
 
-void RenderCommandEncoder::bindBuffer(int index,
-                                      uint8_t target,
-                                      const std::shared_ptr<IBuffer>& buffer,
-                                      size_t bufferOffset) {
+void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
+                                            const std::shared_ptr<IBuffer>& buffer,
+                                            size_t bufferOffset) {
   IGL_PROFILER_FUNCTION();
 
 #if IGL_VULKAN_PRINT_COMMANDS
-  const char* tgt = target == igl::BindTarget::kVertex ? "kVertex" : "kAllGraphics";
-
-  IGL_LOG_INFO("%p  bindBuffer(%i, %s(%u), %u)\n",
-               cmdBuffer_,
-               index,
-               tgt,
-               (uint32_t)target,
-               (uint32_t)bufferOffset);
+  LLOGL("%p  vkCmdBindVertexBuffers(%u, %u)\n", cmdBuffer_, index, (uint32_t)bufferOffset);
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
   if (!IGL_VERIFY(buffer != nullptr)) {
@@ -437,30 +414,10 @@ void RenderCommandEncoder::bindBuffer(int index,
 
   VkBuffer vkBuf = buf->getVkBuffer();
 
-  const bool isUniformOrStorageBuffer =
-      (buf->getBufferType() &
-       (BufferDesc::BufferTypeBits::Uniform | BufferDesc::BufferTypeBits::Storage)) > 0;
+  IGL_ASSERT(buf->getBufferType() & BufferDesc::BufferTypeBits::Vertex);
 
-  if (buf->getBufferType() & BufferDesc::BufferTypeBits::Vertex) {
-    IGL_ASSERT(target == BindTarget::kVertex);
-    const VkDeviceSize offset = bufferOffset;
-    vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
-  } else if (isUniformOrStorageBuffer) {
-    if (!IGL_VERIFY(target == BindTarget::kAllGraphics)) {
-      IGL_ASSERT_MSG(false, "Buffer target should be BindTarget::kAllGraphics");
-      return;
-    }
-    binder_.bindBuffer(index, buf, bufferOffset);
-  } else {
-    IGL_ASSERT(false);
-  }
-}
-
-void RenderCommandEncoder::bindBytes(size_t /*index*/,
-                                     uint8_t /*target*/,
-                                     const void* /*data*/,
-                                     size_t /*length*/) {
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  const VkDeviceSize offset = bufferOffset;
+  vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
 }
 
 void RenderCommandEncoder::bindPushConstants(size_t offset, const void* data, size_t length) {
@@ -484,42 +441,6 @@ void RenderCommandEncoder::bindPushConstants(size_t offset, const void* data, si
                      data);
 }
 
-void RenderCommandEncoder::bindSamplerState(size_t index,
-                                            uint8_t target,
-                                            const std::shared_ptr<ISamplerState>& samplerState) {
-  IGL_PROFILER_FUNCTION();
-
-#if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p  bindSamplerState(%u, %u)\n", cmdBuffer_, (uint32_t)index, (uint32_t)target);
-#endif // IGL_VULKAN_PRINT_COMMANDS
-
-  if (!IGL_VERIFY(target == igl::BindTarget::kFragment || target == igl::BindTarget::kVertex ||
-                  target == igl::BindTarget::kAllGraphics)) {
-    IGL_ASSERT_MSG(false, "Invalid sampler target");
-    return;
-  }
-
-  binder_.bindSamplerState(index, static_cast<igl::vulkan::SamplerState*>(samplerState.get()));
-}
-
-void RenderCommandEncoder::bindTexture(size_t index,
-                                       uint8_t target,
-                                       const std::shared_ptr<ITexture>& texture) {
-  IGL_PROFILER_FUNCTION();
-
-#if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p  bindTexture(%u, %u)\n", cmdBuffer_, (uint32_t)index, (uint32_t)target);
-#endif // IGL_VULKAN_PRINT_COMMANDS
-
-  if (!IGL_VERIFY(target == igl::BindTarget::kFragment || target == igl::BindTarget::kVertex ||
-                  target == igl::BindTarget::kAllGraphics)) {
-    IGL_ASSERT_MSG(false, "Invalid texture target");
-    return;
-  }
-
-  binder_.bindTexture(index, static_cast<igl::vulkan::Texture*>(texture.get()));
-}
-
 void RenderCommandEncoder::bindPipeline() {
   const igl::vulkan::RenderPipelineState* rps =
       static_cast<igl::vulkan::RenderPipelineState*>(currentPipeline_.get());
@@ -540,12 +461,11 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
     return;
   }
 
-  binder_.updateBindings();
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindPipeline();
 
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkCmdDraw(%u, %u)\n", cmdBuffer_, (uint32_t)vertexCount, (uint32_t)vertexStart);
+  LLOGL("%p vkCmdDraw(%u, %u)\n", cmdBuffer_, (uint32_t)vertexCount, (uint32_t)vertexStart);
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
   vkCmdDraw(cmdBuffer_, (uint32_t)vertexCount, 1, (uint32_t)vertexStart, 0);
@@ -562,7 +482,6 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
     return;
   }
 
-  binder_.updateBindings();
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindPipeline();
 
@@ -570,25 +489,14 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
 
   const VkIndexType type = indexFormatToVkIndexType(indexFormat);
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkCmdBindIndexBuffer(%u)\n", cmdBuffer_, (uint32_t)indexBufferOffset);
+  LLOGL("%p vkCmdBindIndexBuffer(%u)\n", cmdBuffer_, (uint32_t)indexBufferOffset);
 #endif // IGL_VULKAN_PRINT_COMMANDS
   vkCmdBindIndexBuffer(cmdBuffer_, buf->getVkBuffer(), indexBufferOffset, type);
 
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkCmdDrawIndexed(%u)\n", cmdBuffer_, (uint32_t)indexCount);
+  LLOGL("%p vkCmdDrawIndexed(%u)\n", cmdBuffer_, (uint32_t)indexCount);
 #endif // IGL_VULKAN_PRINT_COMMANDS
   vkCmdDrawIndexed(cmdBuffer_, (uint32_t)indexCount, 1, 0, 0, 0);
-}
-
-void RenderCommandEncoder::drawIndexedIndirect(PrimitiveType primitiveType,
-                                               IndexFormat indexFormat,
-                                               IBuffer& indexBuffer,
-                                               IBuffer& indirectBuffer,
-                                               size_t indirectBufferOffset) {
-  IGL_PROFILER_FUNCTION();
-
-  multiDrawIndexedIndirect(
-      primitiveType, indexFormat, indexBuffer, indirectBuffer, indirectBufferOffset, 1, 0);
 }
 
 void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
@@ -598,7 +506,6 @@ void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
                                              uint32_t stride) {
   IGL_PROFILER_FUNCTION();
 
-  binder_.updateBindings();
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindPipeline();
 
@@ -620,7 +527,6 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
                                                     uint32_t stride) {
   IGL_PROFILER_FUNCTION();
 
-  binder_.updateBindings();
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindPipeline();
 
@@ -635,10 +541,6 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
                            indirectBufferOffset,
                            drawCount,
                            stride ? stride : sizeof(VkDrawIndexedIndirectCommand));
-}
-
-void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
-  setStencilReferenceValues(value, value);
 }
 
 void RenderCommandEncoder::setStencilReferenceValues(uint32_t frontValue, uint32_t backValue) {

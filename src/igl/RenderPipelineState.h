@@ -17,34 +17,20 @@ namespace igl {
 
 class IShaderModule;
 
-enum BlendOp : uint8_t {
-  BlendOp_Add = 0,
-  BlendOp_Subtract,
-  BlendOp_ReverseSubtract,
-  BlendOp_Min,
-  BlendOp_Max
+struct StencilStateDesc {
+  StencilOp stencilFailureOp = StencilOp_Keep;
+  StencilOp depthFailureOp = StencilOp_Keep;
+  StencilOp depthStencilPassOp = StencilOp_Keep;
+  CompareOp stencilCompareOp = CompareOp_AlwaysPass;
+  uint32_t readMask = (uint32_t)~0;
+  uint32_t writeMask = (uint32_t)~0;
 };
 
-enum BlendFactor : uint8_t {
-  BlendFactor_Zero = 0,
-  BlendFactor_One,
-  BlendFactor_SrcColor,
-  BlendFactor_OneMinusSrcColor,
-  BlendFactor_SrcAlpha,
-  BlendFactor_OneMinusSrcAlpha,
-  BlendFactor_DstColor,
-  BlendFactor_OneMinusDstColor,
-  BlendFactor_DstAlpha,
-  BlendFactor_OneMinusDstAlpha,
-  BlendFactor_SrcAlphaSaturated,
-  BlendFactor_BlendColor,
-  BlendFactor_OneMinusBlendColor,
-  BlendFactor_BlendAlpha,
-  BlendFactor_OneMinusBlendAlpha,
-  BlendFactor_Src1Color,
-  BlendFactor_OneMinusSrc1Color,
-  BlendFactor_Src1Alpha,
-  BlendFactor_OneMinusSrc1Alpha
+struct DepthStencilState {
+  CompareOp compareOp = CompareOp_AlwaysPass;
+  bool isDepthWriteEnabled = false;
+  StencilStateDesc backFaceStencil;
+  StencilStateDesc frontFaceStencil;
 };
 
 using ColorWriteBits = uint8_t;

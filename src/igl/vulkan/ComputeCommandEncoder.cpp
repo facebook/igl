@@ -28,7 +28,7 @@ ComputeCommandEncoder::ComputeCommandEncoder(const std::shared_ptr<CommandBuffer
   IGL_ASSERT(commandBuffer);
 
   ctx_.checkAndUpdateDescriptorSets();
-  ctx_.DUBs_->update(cmdBuffer_, VK_PIPELINE_BIND_POINT_COMPUTE, nullptr);
+  ctx_.bindDefaultDescriptorSets(cmdBuffer_, VK_PIPELINE_BIND_POINT_COMPUTE);
 
   isEncoding_ = true;
 }
@@ -63,7 +63,6 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
                                                  const Dimensions& /*threadgroupSize*/) {
   IGL_PROFILER_FUNCTION();
 
-  binder_.updateBindings();
   // threadgroupSize is controlled inside compute shaders
   vkCmdDispatch(
       cmdBuffer_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
@@ -87,7 +86,7 @@ void ComputeCommandEncoder::popDebugGroupLabel() const {
   ivkCmdEndDebugUtilsLabel(cmdBuffer_);
 }
 
-void ComputeCommandEncoder::bindTexture(size_t index, const std::shared_ptr<ITexture>& texture) {
+void ComputeCommandEncoder::useTexture(const std::shared_ptr<ITexture>& texture) {
   IGL_PROFILER_FUNCTION();
 
   IGL_ASSERT(texture);
@@ -112,31 +111,6 @@ void ComputeCommandEncoder::bindTexture(size_t index, const std::shared_ptr<ITex
       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
       VkImageSubresourceRange{
           vkImage.getImageAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
-
-  binder_.bindTexture(index, static_cast<igl::vulkan::Texture*>(texture.get()));
-}
-
-void ComputeCommandEncoder::bindBuffer(size_t index,
-                                       const std::shared_ptr<IBuffer>& buffer,
-                                       size_t offset) {
-  IGL_PROFILER_FUNCTION();
-
-  if (!IGL_VERIFY(buffer != nullptr)) {
-    return;
-  }
-
-  auto* buf = static_cast<igl::vulkan::Buffer*>(buffer.get());
-
-  const bool isStorageBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0;
-
-  if (!isStorageBuffer) {
-    IGL_ASSERT_MSG(
-        false,
-        "Did you forget to specify igl::BufferDesc::BufferTypeBits::Storage on your buffer?");
-    return;
-  }
-
-  binder_.bindBuffer((int)index, buf, offset);
 }
 
 void ComputeCommandEncoder::bindPushConstants(size_t offset, const void* data, size_t length) {

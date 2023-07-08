@@ -224,7 +224,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
         region,
         VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, layer, 1});
 #if IGL_VULKAN_PRINT_COMMANDS
-    IGL_LOG_INFO("%p vkCmdCopyBufferToImage()\n", wrapper.cmdBuf_);
+    LLOGL("%p vkCmdCopyBufferToImage()\n", wrapper.cmdBuf_);
 #endif // IGL_VULKAN_PRINT_COMMANDS
     vkCmdCopyBufferToImage(wrapper.cmdBuf_,
                            stagingBuffer_->getVkBuffer(),

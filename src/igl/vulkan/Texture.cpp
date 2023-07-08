@@ -327,7 +327,7 @@ bool Texture::isRequiredGenerateMipmap() const {
   return texture_->getVulkanImage().imageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
-uint64_t Texture::getTextureId() const {
+uint32_t Texture::getTextureId() const {
   return texture_ ? texture_->getTextureId() : 0;
 }
 

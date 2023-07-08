@@ -39,8 +39,7 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   void pushDebugGroupLabel(const std::string& label, const igl::Color& color) const override;
   void insertDebugEventLabel(const std::string& label, const igl::Color& color) const override;
   void popDebugGroupLabel() const override;
-  void bindTexture(size_t index, const std::shared_ptr<ITexture>& texture) override;
-  void bindBuffer(size_t index, const std::shared_ptr<IBuffer>& buffer, size_t offset) override;
+  void useTexture(const std::shared_ptr<ITexture>& texture) override;
   void bindPushConstants(size_t offset, const void* data, size_t length) override;
 
   VkCommandBuffer getVkCommandBuffer() const {

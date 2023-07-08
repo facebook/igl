@@ -23,7 +23,6 @@
 #endif
 
 #include <igl/Common.h>
-#include <igl/DepthStencilState.h>
 #include <igl/Texture.h>
 #include <igl/vulkan/VulkanHelpers.h>
 

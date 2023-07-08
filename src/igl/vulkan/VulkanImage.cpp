@@ -267,7 +267,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, nullptr, vkImage_};
 
   VkMemoryRequirements2 memoryRequirements = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
-  vkGetImageMemoryRequirements2KHR(device_, &memoryRequirementInfo, &memoryRequirements);
+  vkGetImageMemoryRequirements2(device_, &memoryRequirementInfo, &memoryRequirements);
 
   // TODO_VULKAN: Verify the following from the spec:
   // the memory from which fd was exported must have been created on the same physical device
@@ -780,7 +780,7 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
       // 2: Blit the image from the prev mip-level (i-1) (VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) to
       // the current mip level (i) (VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
 #if IGL_VULKAN_PRINT_COMMANDS
-      IGL_LOG_INFO("%p vkCmdBlitImage()\n", commandBuffer);
+      LLOGL("%p vkCmdBlitImage()\n", commandBuffer);
 #endif // IGL_VULKAN_PRINT_COMMANDS
       ivkCmdBlitImage(commandBuffer,
                       vkImage_,

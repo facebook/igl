@@ -65,7 +65,6 @@ void CommandQueue::endCommandBuffer(const igl::vulkan::VulkanContext& ctx,
   if (shouldPresent) {
     ctx.present();
   }
-  ctx.DUBs_->markSubmit(cmdBuffer->lastSubmitHandle_);
   ctx.processDeferredTasks();
 
   isInsideFrame_ = false;

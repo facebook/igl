@@ -54,27 +54,28 @@ layout (location=2) in vec2 st;
 layout (location=0) out vec3 color;
 layout (location=1) out vec2 uv;
 
-struct UniformsPerFrame {
+layout(std430, buffer_reference) readonly buffer PerFrame {
   mat4 proj;
   mat4 view;
-};
-
-struct UniformsPerObject {
-  mat4 model;
-};
-
-layout(std430, buffer_reference) readonly buffer PerFrame {
-  UniformsPerFrame perFrame;
+  uint texture0;
+  uint texture1;
+  uint sampler0;
 };
 
 layout(std430, buffer_reference) readonly buffer PerObject {
-  UniformsPerObject perObject;
+  mat4 model;
 };
 
+layout(push_constant) uniform constants
+{
+	PerFrame perFrame;
+	PerObject perObject;
+} pc;
+
 void main() {
-  mat4 proj = PerFrame(getBuffer(0)).perFrame.proj;
-  mat4 view = PerFrame(getBuffer(0)).perFrame.view;
-  mat4 model = PerObject(getBuffer(1)).perObject.model;
+  mat4 proj = pc.perFrame.proj;
+  mat4 view = pc.perFrame.view;
+  mat4 model = pc.perObject.model;
   gl_Position = proj * view * model * vec4(pos, 1.0);
   color = col;
   uv = st;
@@ -86,9 +87,22 @@ layout (location=0) in vec3 color;
 layout (location=1) in vec2 uv;
 layout (location=0) out vec4 out_FragColor;
 
+layout(std430, buffer_reference) readonly buffer PerFrame {
+  mat4 proj;
+  mat4 view;
+  uint texture0;
+  uint texture1;
+  uint sampler0;
+};
+
+layout(push_constant) uniform constants
+{
+	PerFrame perFrame;
+} pc;
+
 void main() {
-  vec4 t0 = textureSample2D(0, 0, 2.0*uv);
-  vec4 t1 = textureSample2D(1, 0, uv);
+  vec4 t0 = textureBindless2D(pc.perFrame.texture0, pc.perFrame.sampler0, 2.0*uv);
+  vec4 t1 = textureBindless2D(pc.perFrame.texture1, pc.perFrame.sampler0, uv);
   out_FragColor = vec4(color * (t0.rgb + t1.rgb), 1.0);
 };
 )";
@@ -110,15 +124,15 @@ constexpr uint32_t kNumBufferedFrames = 3;
 
 std::unique_ptr<IDevice> device_;
 std::shared_ptr<ICommandQueue> commandQueue_;
-RenderPassDesc renderPass_;
 FramebufferDesc framebufferDesc_;
 std::shared_ptr<IFramebuffer> framebuffer_;
 std::shared_ptr<IRenderPipelineState> renderPipelineState_Mesh_;
 std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
 std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerObject_;
-std::shared_ptr<IDepthStencilState> depthStencilState_;
 std::shared_ptr<ITexture> texture0_, texture1_;
 std::shared_ptr<ISamplerState> sampler_;
+igl::RenderPassDesc renderPass_;
+igl::DepthStencilState depthStencilState_;
 
 struct VertexPosUvw {
   vec3 position;
@@ -129,6 +143,9 @@ struct VertexPosUvw {
 struct UniformsPerFrame {
   mat4 proj;
   mat4 view;
+  uint32_t texture0;
+  uint32_t texture1;
+  uint32_t sampler;
 };
 struct UniformsPerObject {
   mat4 model;
@@ -174,7 +191,6 @@ static uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
                                8,  9,  10, 10, 11, 8,  12, 13, 14, 14, 15, 12,
                                16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
 
-UniformsPerFrame perFrame;
 UniformsPerObject perObject[kNumCubes];
 
 static bool initWindow(GLFWwindow** outWindow) {
@@ -288,25 +304,20 @@ static void initIGL() {
   // create an Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
     ubPerFrame_.push_back(device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
-                                                           &perFrame,
+                                                           nullptr,
                                                            sizeof(UniformsPerFrame),
                                                            ResourceStorage::Shared,
                                                            "Buffer: uniforms (per frame)"),
                                                 nullptr));
     ubPerObject_.push_back(device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
-                                                            perObject,
+                                                            nullptr,
                                                             kNumCubes * sizeof(UniformsPerObject),
                                                             ResourceStorage::Shared,
                                                             "Buffer: uniforms (per object)"),
                                                  nullptr));
   }
 
-  {
-    DepthStencilStateDesc desc;
-    desc.isDepthWriteEnabled = true;
-    desc.compareOp = igl::CompareOp_Less;
-    depthStencilState_ = device_->createDepthStencilState(desc, nullptr);
-  }
+    depthStencilState_ = {.compareOp = igl::CompareOp_Less, .isDepthWriteEnabled = true};
 
   {
     const uint32_t texWidth = 256;
@@ -473,13 +484,16 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
     framebuffer_->updateDrawable(nativeDrawable);
   }
 
-  // from igl/shell/renderSessions/Textured3DCubeSession.cpp
   const float fov = float(45.0f * (M_PI / 180.0f));
   const float aspectRatio = (float)width_ / (float)height_;
-  perFrame.proj = glm::perspectiveLH(fov, aspectRatio, 0.1f, 500.0f);
-  // place a "camera" behind the cubes, the distance depends on the total number of cubes
-  perFrame.view =
-      glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, sqrtf(kNumCubes / 16) * 20.0f * half));
+  const UniformsPerFrame perFrame = {
+      .proj = glm::perspectiveLH(fov, aspectRatio, 0.1f, 500.0f),
+      // place a "camera" behind the cubes, the distance depends on the total number of cubes
+      .view = glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, sqrtf(kNumCubes / 16) * 20.0f * half)),
+      .texture0 = texture0_->getTextureId(),
+      .texture1 = texture1_ ? texture1_->getTextureId() : 0u,
+      .sampler = sampler_->getSamplerId(),
+  };
   ubPerFrame_[frameIndex]->upload(&perFrame, igl::BufferRange(sizeof(perFrame)));
 
   // rotate cubes around random axes
@@ -509,16 +523,18 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   commands->bindViewport(viewport);
   commands->bindScissorRect(scissor);
   commands->pushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
-  commands->bindBuffer(0, BindTarget::kVertex, vb0_, 0);
+  commands->bindVertexBuffer(0, vb0_, 0);
   commands->bindDepthStencilState(depthStencilState_);
-  commands->bindBuffer(0, BindTarget::kAllGraphics, ubPerFrame_[frameIndex], 0);
-  commands->bindTexture(0, igl::BindTarget::kFragment, texture0_);
-  commands->bindTexture(1, igl::BindTarget::kFragment, texture1_);
-  commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_);
   // Draw 2 cubes: we use uniform buffer to update matrices
   for (uint32_t i = 0; i != kNumCubes; i++) {
-    commands->bindBuffer(
-        1, BindTarget::kAllGraphics, ubPerObject_[frameIndex], i * sizeof(UniformsPerObject));
+    struct {
+      uint64_t perFrame;
+      uint64_t perObject;
+    } bindings = {
+        .perFrame = ubPerFrame_[frameIndex]->gpuAddress(),
+        .perObject = ubPerObject_[frameIndex]->gpuAddress(i * sizeof(UniformsPerObject)),
+    };
+    commands->bindPushConstants(0, &bindings, sizeof(bindings));
     commands->drawIndexed(PrimitiveType::Triangle, 3 * 6 * 2, IndexFormat::UInt16, *ib0_.get(), 0);
   }
   commands->popDebugGroupLabel();

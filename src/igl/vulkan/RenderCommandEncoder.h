@@ -44,19 +44,12 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   void bindScissorRect(const ScissorRect& rect) override;
 
   void bindRenderPipelineState(const std::shared_ptr<IRenderPipelineState>& pipelineState) override;
-  void bindDepthStencilState(const std::shared_ptr<IDepthStencilState>& depthStencilState) override;
+  void bindDepthStencilState(const DepthStencilState& state) override;
 
-  void bindBuffer(int index,
-                  uint8_t target,
-                  const std::shared_ptr<IBuffer>& buffer,
-                  size_t bufferOffset) override;
-  void bindBytes(size_t index, uint8_t target, const void* data, size_t length) override;
+  void bindVertexBuffer(uint32_t index,
+                        const std::shared_ptr<IBuffer>& buffer,
+                        size_t bufferOffset) override;
   void bindPushConstants(size_t offset, const void* data, size_t length) override;
-  void bindSamplerState(size_t index,
-                        uint8_t target,
-                        const std::shared_ptr<ISamplerState>& samplerState) override;
-
-  void bindTexture(size_t index, uint8_t target, const std::shared_ptr<ITexture>& texture) override;
   
   void draw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) override;
   void drawIndexed(PrimitiveType primitiveType,
@@ -64,11 +57,6 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
                    IndexFormat indexFormat,
                    IBuffer& indexBuffer,
                    size_t indexBufferOffset) override;
-  void drawIndexedIndirect(PrimitiveType primitiveType,
-                           IndexFormat indexFormat,
-                           IBuffer& indexBuffer,
-                           IBuffer& indirectBuffer,
-                           size_t indirectBufferOffset) override;
   void multiDrawIndirect(PrimitiveType primitiveType,
                          IBuffer& indirectBuffer,
                          size_t indirectBufferOffset,
@@ -82,7 +70,6 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
                                 uint32_t drawCount,
                                 uint32_t stride = 0) override;
 
-  void setStencilReferenceValue(uint32_t value) override;
   void setStencilReferenceValues(uint32_t frontValue, uint32_t backValue) override;
   void setBlendColor(Color color) override;
   void setDepthBias(float depthBias, float slopeScale, float clamp) override;

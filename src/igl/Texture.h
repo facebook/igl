@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <igl/CommandQueue.h>
 #include <igl/Common.h>
-#include <igl/DepthStencilState.h>
 
 namespace igl {
 
@@ -65,6 +64,8 @@ class ISamplerState {
 
  public:
   virtual ~ISamplerState() = default;
+
+  virtual uint32_t getSamplerId() const = 0;
 };
 
 /**
@@ -997,10 +998,8 @@ class ITexture {
   /**
    * @brief Returns a texture id suitable for bindless rendering (descriptor indexing on Vulkan and
    * gpuResourceID on Metal)
-   *
-   * @return uint64_t
    */
-  [[nodiscard]] virtual uint64_t getTextureId() const = 0;
+  [[nodiscard]] virtual uint32_t getTextureId() const = 0;
 
   /**
    * @brief Validates the range against texture dimensions at the range's mip level.

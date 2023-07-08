@@ -12,7 +12,6 @@
 #include <igl/vulkan/CommandQueue.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/ComputePipelineState.h>
-#include <igl/vulkan/DepthStencilState.h>
 #include <igl/vulkan/Framebuffer.h>
 #include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/RenderPipelineState.h>
@@ -83,13 +82,6 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   Result::setResult(outResult, uploadResult);
 
   return buffer;
-}
-
-std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
-    const DepthStencilStateDesc& desc,
-    Result* outResult) const {
-  Result::setOk(outResult);
-  return std::make_shared<vulkan::DepthStencilState>(desc);
 }
 
 std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
@@ -257,15 +249,6 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       #extension GL_EXT_buffer_reference : require
       #extension GL_EXT_buffer_reference_uvec2 : require
       #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
-
-      layout (set = 1, binding = 0) uniform Bindings {
-        // has to be tightly packed into `uvec4` because GL_EXT_scalar_block_layout is guaranteed only for Vulkan 1.2+
-        // texture (x), sampler (y), buffer (zw)
-        uvec4 slots[16]; // see ResourcesBinder::Slot
-      } bindings;
-      uvec2 getBuffer(uint slot) {
-        return bindings.slots[slot].zw;
-      }
       )";
     }
     if (vkStage == VK_SHADER_STAGE_FRAGMENT_BIT) {
@@ -285,55 +268,17 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       layout (set = 0, binding = 5) uniform samplerShadow kSamplersShadow[];
       // binding #6 is reserved for STORAGE_IMAGEs: check VulkanContext.cpp
 
-      layout (set = 1, binding = 0) uniform Bindings {
-        // has to be tightly packed into `uvec4` because GL_EXT_scalar_block_layout is guaranteed only for Vulkan 1.2+
-        // texture (x), sampler (y), buffer (zw)
-        uvec4 slots[16]; // see ResourcesBinder::Slot
-      } bindings;
-      uvec2 getBuffer(uint slot) {
-        return bindings.slots[slot].zw;
+      vec4 textureBindless2D(uint textureid, uint samplerid, vec2 uv) {
+        return texture(sampler2D(kTextures2D[textureid], kSamplers[samplerid]), uv);
       }
-      ivec2 textureSize2D(uint slotTexture, uint slotSampler) {
-        uint idxTex = bindings.slots[slotTexture].x;
-        uint idxSmp = bindings.slots[slotSampler].y;
-        return textureSize(sampler2D(kTextures2D[nonuniformEXT(idxTex)],
-                                     kSamplers[nonuniformEXT(idxSmp)]), 0);
+      float textureBindless2DShadow(uint textureid, uint samplerid, vec3 uvw) {
+        return texture(sampler2DShadow(kTextures2D[textureid], kSamplersShadow[samplerid]), uvw);
       }
-      vec4 textureSample2D(uint slotTexture, uint slotSampler, vec2 uv) {
-        uint idxTex = bindings.slots[slotTexture].x;
-        uint idxSmp = bindings.slots[slotSampler].y;
-        return texture(sampler2D(kTextures2D[nonuniformEXT(idxTex)],
-                                 kSamplers[nonuniformEXT(idxSmp)]), uv);
+      ivec2 textureBindlessSize2D(uint textureid, uint samplerid) {
+        return textureSize(sampler2D(kTextures2D[textureid], kSamplers[samplerid]), 0);
       }
-      float textureSample2DShadow(uint slotTexture, uint slotSampler, vec3 uvw) {
-        uint idxTex = bindings.slots[slotTexture].x;
-        uint idxSmp = bindings.slots[slotSampler].y;
-        return texture(sampler2DShadow(kTextures2D[nonuniformEXT(idxTex)],
-                                       kSamplersShadow[nonuniformEXT(idxSmp)]), uvw);
-      }
-      vec4 textureSample2DArray(uint slotTexture, uint slotSampler, vec3 uvw) {
-        uint idxTex = bindings.slots[slotTexture].x;
-        uint idxSmp = bindings.slots[slotSampler].y;
-        return texture(sampler2DArray(kTextures2DArray[nonuniformEXT(idxTex)],
-                                      kSamplers[nonuniformEXT(idxSmp)]), uvw);
-      }
-      vec4 textureSampleCube(uint slotTexture, uint slotSampler, vec3 uvw) {
-        uint idxTex = bindings.slots[slotTexture].x;
-        uint idxSmp = bindings.slots[slotSampler].y;
-        return texture(samplerCube(kTexturesCube[nonuniformEXT(idxTex)],
-                                   kSamplers[nonuniformEXT(idxSmp)]), uvw);
-      }
-      vec4 textureSample3D(uint slotTexture, uint slotSampler, vec3 uvw) {
-        uint idxTex = bindings.slots[slotTexture].x;
-        uint idxSmp = bindings.slots[slotSampler].y;
-        return texture(sampler3D(kTextures3D[nonuniformEXT(idxTex)],
-                                 kSamplers[nonuniformEXT(idxSmp)]), uvw);
-      }
-      vec4 textureLod2D(uint slotTexture, uint slotSampler, vec3 uvw, float lod) {
-        uint idxTex = bindings.slots[slotTexture].x;
-        uint idxSmp = bindings.slots[slotSampler].y;
-        return textureLod(samplerCube(kTexturesCube[nonuniformEXT(idxTex)],
-                                   kSamplers[nonuniformEXT(idxSmp)]), uvw, lod);
+      vec4 textureBindlessCube(uint textureid, uint samplerid, vec3 uvw) {
+        return texture(samplerCube(kTexturesCube[textureid], kSamplers[samplerid]), uvw);
       }
       )";
     }

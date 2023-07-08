@@ -32,9 +32,6 @@ class Device final : public IDevice {
   std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
                                         Result* outResult) const noexcept override;
 
-  std::shared_ptr<IDepthStencilState> createDepthStencilState(const DepthStencilStateDesc& desc,
-                                                              Result* outResult) const override;
-
   std::shared_ptr<ISamplerState> createSamplerState(const SamplerStateDesc& desc,
                                                     Result* outResult) const override;
   std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,

@@ -12,9 +12,6 @@
 #include <igl/Common.h>
 #include <igl/Framebuffer.h>
 
-// TODO: Remove this once we move BindTarget from CommandBuffer.h to this header
-#include <igl/CommandBuffer.h>
-
 namespace igl {
 
 class IBuffer;
@@ -49,34 +46,8 @@ class IComputeCommandEncoder : public ICommandEncoder {
    */
   ~IComputeCommandEncoder() override = default;
 
-  /**
-   * @brief Sets a texture for the compute function
-   *
-   * @param index An index in the texture argument table.
-   * @param texture The texture to set in the texture argument table.
-   */
-  virtual void bindTexture(size_t index, const std::shared_ptr<ITexture>& texture) = 0;
-  /**
-   * @brief Sets a buffer for the compute function
-   *
-   * @param index An index for the buffer argument table.
-   * @param buffer The buffer to set in the buffer argument table.
-   * @param offset Where the data begins in bytes from the start of the buffer.
-   */
-  virtual void bindBuffer(size_t index, const std::shared_ptr<IBuffer>& buffer, size_t offset) = 0;
-  /**
-   * @brief Sets a block of data for the compute function.
-   *
-   * @param offset An offset bytes into the push constants buffer.
-   * @param data The memory address from which to copy the data.
-   * @param length The number of bytes to copy.
-   */
+  virtual void useTexture(const std::shared_ptr<ITexture>& texture) = 0;
   virtual void bindPushConstants(size_t offset, const void* data, size_t length) = 0;
-  /**
-   * @brief Sets the compute pipeline state object.
-   *
-   * @param pipelineState A pipeline state object to set for the compute function.
-   */
   virtual void bindComputePipelineState(
       const std::shared_ptr<IComputePipelineState>& pipelineState) = 0;
   /**

@@ -31,7 +31,6 @@ class IBuffer;
 class ICommandQueue;
 class ICommandBuffer;
 class IComputePipelineState;
-class IDepthStencilState;
 class IDevice;
 class IFramebuffer;
 class IRenderPipelineState;
@@ -68,18 +67,6 @@ class IDevice : public ICapabilities {
    */
   virtual std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
                                                 Result* outResult) const noexcept = 0;
-
-  /**
-   * @brief Creates a depth stencil state.
-   * @see igl::DepthStencilStateDesc
-   * @param desc Description for the desired resource.
-   * @param outResult Pointer to where the result (success, failure, etc) is written. Can be null if
-   * no reporting is desired.
-   * @return Shared pointer to the created depth stencil state.
-   */
-  virtual std::shared_ptr<IDepthStencilState> createDepthStencilState(
-      const DepthStencilStateDesc& desc,
-      Result* outResult) const = 0;
 
   /**
    * @brief Creates a sampler state.

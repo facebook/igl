@@ -79,10 +79,10 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
   VK_ASSERT(ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_BUFFER, (uint64_t)vkBuffer_, debugName));
 
   // handle shader access
-  if (usageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) {
+  if (usageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
     const VkBufferDeviceAddressInfo ai = {
-        VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR, nullptr, vkBuffer_};
-    vkDeviceAddress_ = vkGetBufferDeviceAddressKHR(device_, &ai);
+        VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, vkBuffer_};
+    vkDeviceAddress_ = vkGetBufferDeviceAddress(device_, &ai);
     IGL_ASSERT(vkDeviceAddress_);
   }
 }

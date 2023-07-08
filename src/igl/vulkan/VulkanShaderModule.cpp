@@ -56,6 +56,27 @@ void logShaderSource(const char* text) {
 namespace igl {
 namespace vulkan {
 
+static glslang_stage_t getGLSLangShaderStage(VkShaderStageFlagBits stage) {
+  switch (stage) {
+  case VK_SHADER_STAGE_VERTEX_BIT:
+    return GLSLANG_STAGE_VERTEX;
+  case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+    return GLSLANG_STAGE_TESSCONTROL;
+  case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+    return GLSLANG_STAGE_TESSEVALUATION;
+  case VK_SHADER_STAGE_GEOMETRY_BIT:
+    return GLSLANG_STAGE_GEOMETRY;
+  case VK_SHADER_STAGE_FRAGMENT_BIT:
+    return GLSLANG_STAGE_FRAGMENT;
+  case VK_SHADER_STAGE_COMPUTE_BIT:
+    return GLSLANG_STAGE_COMPUTE;
+  default:
+    assert(false);
+  };
+  assert(false);
+  return GLSLANG_STAGE_COUNT;
+}
+
 Result compileShader(VkDevice device,
                      VkShaderStageFlagBits stage,
                      const char* code,
@@ -67,7 +88,21 @@ Result compileShader(VkDevice device,
     return Result(Result::Code::ArgumentNull, "outShaderModule is NULL");
   }
 
-  const glslang_input_t input = ivkGetGLSLangInput(stage, glslLangResource, code);
+  const glslang_input_t input = {
+      .language = GLSLANG_SOURCE_GLSL,
+      .stage = getGLSLangShaderStage(stage),
+      .client = GLSLANG_CLIENT_VULKAN,
+      .client_version = GLSLANG_TARGET_VULKAN_1_3,
+      .target_language = GLSLANG_TARGET_SPV,
+      .target_language_version = GLSLANG_TARGET_SPV_1_5,
+      .code = code,
+      .default_version = 100,
+      .default_profile = GLSLANG_NO_PROFILE,
+      .force_default_version_and_profile = false,
+      .forward_compatible = false,
+      .messages = GLSLANG_MSG_DEFAULT_BIT,
+      .resource = glslLangResource,
+  };
 
   glslang_shader_t* shader = glslang_shader_create(&input);
   SCOPE_EXIT {

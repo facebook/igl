@@ -13,7 +13,6 @@
 #include <igl/Common.h>
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/ComputePipelineState.h>
-#include <igl/DepthStencilState.h>
 #include <igl/Device.h>
 #include <igl/Framebuffer.h>
 #include <igl/HWDevice.h>

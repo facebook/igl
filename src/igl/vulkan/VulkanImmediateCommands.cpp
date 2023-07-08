@@ -199,7 +199,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
                                            &wrapper.semaphore_.vkSemaphore_);
   IGL_PROFILER_ZONE("vkQueueSubmit()", IGL_PROFILER_COLOR_SUBMIT);
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkQueueSubmit()\n\n", wrapper.cmdBuf_);
+  LLOGL("%p vkQueueSubmit()\n\n", wrapper.cmdBuf_);
 #endif // IGL_VULKAN_PRINT_COMMANDS
   VK_ASSERT(vkQueueSubmit(queue_, 1u, &si, wrapper.fence_.vkFence_));
   IGL_PROFILER_ZONE_END();

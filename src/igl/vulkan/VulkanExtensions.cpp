@@ -111,16 +111,6 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType, bool 
     // @fb-only
     enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ExtensionType::Instance);
     enable("VK_KHR_xlib_surface", ExtensionType::Instance);
-#elif IGL_PLATFORM_MACOS
-    enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ExtensionType::Instance);
-    enable(VK_EXT_METAL_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
-#endif
-
-#if IGL_PLATFORM_MACOS
-    // https://vulkan.lunarg.com/doc/sdk/1.3.216.0/mac/getting_started.html
-    if (!enable(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, ExtensionType::Instance)) {
-      IGL_LOG_ERROR("VK_KHR_portability_enumeration extension not supported.");
-    }
 #endif
 
 #if !IGL_PLATFORM_ANDROID
@@ -130,29 +120,7 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType, bool 
 #endif
 
   } else if (extensionType == ExtensionType::Device) {
-    IGL_VERIFY(enable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, ExtensionType::Device));
-    enable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, ExtensionType::Device);
-#if defined(VK_KHR_driver_properties)
-    enable(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME, ExtensionType::Device);
-#endif // VK_KHR_driver_properties
-#if defined(VK_KHR_shader_non_semantic_info)
-    enable(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, ExtensionType::Device);
-#endif // VK_KHR_shader_non_semantic_info
     enable(VK_KHR_SWAPCHAIN_EXTENSION_NAME, ExtensionType::Device);
-
-#if IGL_PLATFORM_MACOS
-    IGL_VERIFY(enable("VK_KHR_portability_subset", ExtensionType::Device));
-#endif
-
-#if IGL_PLATFORM_WIN
-    enable(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME, ExtensionType::Device);
-#endif // IGL_PLATFORM_WIN
-
-#if IGL_PLATFORM_LINUX
-    enable(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, ExtensionType::Device);
-    enable(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, ExtensionType::Device);
-#endif // IGL_PLATFORM_LINUX
-
 #if defined(IGL_WITH_TRACY) && defined(VK_EXT_calibrated_timestamps)
     enable(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, ExtensionType::Device);
 #endif
@@ -167,13 +135,13 @@ bool VulkanExtensions::enabled(const char* extensionName) const {
          (enabledExtensions_[(size_t)ExtensionType::Device].count(extensionName) > 0);
 }
 
-std::vector<const char*> VulkanExtensions::allEnabled(ExtensionType extensionType) const {
+const std::vector<const char*>& VulkanExtensions::allEnabled(ExtensionType extensionType) const {
   const size_t vectorIndex = (size_t)extensionType;
-  std::vector<const char*> returnList;
+  returnList_.clear();
   for (const auto& extension : enabledExtensions_[vectorIndex]) {
-    returnList.emplace_back(extension.c_str());
+    returnList_.emplace_back(extension.c_str());
   }
-  return returnList;
+  return returnList_;
 }
 
 } // namespace vulkan

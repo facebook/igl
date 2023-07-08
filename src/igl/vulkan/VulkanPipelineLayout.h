@@ -16,7 +16,7 @@ namespace vulkan {
 class VulkanPipelineLayout final {
  public:
   explicit VulkanPipelineLayout(VkDevice device,
-                                const std::vector<VkDescriptorSetLayout>& layouts,
+                                VkDescriptorSetLayout layout,
                                 const VkPushConstantRange& range,
                                 const char* debugName = nullptr);
   ~VulkanPipelineLayout();

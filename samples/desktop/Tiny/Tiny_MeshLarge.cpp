@@ -91,37 +91,18 @@ igl::shell::InputDispatcher inputDispatcher_;
 const char* kCodeComputeTest = R"(
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
-#ifdef VULKAN
-// kBinding_StorageImages in VulkanContext.cpp
 layout (set = 0, binding = 6, rgba8) uniform readonly  image2D kTextures2Din[];
 layout (set = 0, binding = 6, rgba8) uniform writeonly image2D kTextures2Dout[];
-#else
-layout (binding = 3, rgba8) uniform readonly  image2D kTextures2Din;
-layout (binding = 3, rgba8) uniform writeonly image2D kTextures2Dout;
-#endif
 
-vec4 imageLoad2D(uint slotTexture, ivec2 uv) {
-#ifdef VULKAN
-  uint idxTex = bindings.slots[slotTexture].x;
-  return imageLoad(kTextures2Din[idxTex], uv);
-#else
-  return imageLoad(kTextures2Din, uv);
-#endif
-}
-
-void imageStore2D(uint slotTexture, ivec2 uv, vec4 data) {
-#ifdef VULKAN
-  uint idxTex = bindings.slots[slotTexture].x;
-  imageStore(kTextures2Dout[idxTex], uv, data);
-#else
-  imageStore(kTextures2Dout, uv, data);
-#endif
-}
+layout(push_constant) uniform constants
+{
+	uint tex;
+} pc;
 
 void main() {
-   vec4 pixel = imageLoad2D(0, ivec2(gl_GlobalInvocationID.xy));
+   vec4 pixel = imageLoad(kTextures2Din[pc.tex], ivec2(gl_GlobalInvocationID.xy));
    float luminance = dot(pixel, vec4(0.299, 0.587, 0.114, 0.0)); // https://www.w3.org/TR/AERT/#color-contrast
-   imageStore2D(0, ivec2(gl_GlobalInvocationID.xy), vec4(vec3(luminance), 1.0));
+   imageStore(kTextures2Dout[pc.tex], ivec2(gl_GlobalInvocationID.xy), vec4(vec3(luminance), 1.0));
 }
 )";
 
@@ -130,26 +111,21 @@ layout (location=0) out vec2 uv;
 void main() {
   // generate a triangle covering the entire screen
   uv = vec2((gl_VertexIndex << 1) & 2, gl_VertexIndex & 2);
-#ifdef VULKAN
   gl_Position = vec4(uv * vec2(2, -2) + vec2(-1, 1), 0.0, 1.0);
-#else
-  gl_Position = vec4(uv * vec2(2, 2) + vec2(-1, -1), 0.0, 1.0);
-#endif
 }
 )";
 
 const char* kCodeFullscreenFS = R"(
 layout (location=0) in vec2 uv;
 layout (location=0) out vec4 out_FragColor;
-#ifndef VULKAN
-uniform sampler2D texFullScreen;
-#endif
+
+layout(push_constant) uniform constants
+{
+	uint tex;
+} pc;
+
 void main() {
-#ifdef VULKAN
-  out_FragColor = textureSample2D(0, 0, uv);
-#else
-  out_FragColor = texture(texFullScreen, uv);
-#endif
+  out_FragColor = textureBindless2D(pc.tex, 0, uv);
 }
 )";
 
@@ -158,19 +134,6 @@ layout (location=0) in vec3 pos;
 layout (location=1) in vec3 normal;
 layout (location=2) in vec2 uv;
 layout (location=3) in uint mtlIndex;
-
-struct UniformsPerFrame {
-  mat4 proj;
-  mat4 view;
-  mat4 light;
-  int bDrawNormals;
-  int bDebugLines;
-  vec2 padding;
-};
-
-struct UniformsPerObject {
-  mat4 model;
-};
 
 struct Material {
    vec4 ambient;
@@ -181,29 +144,33 @@ struct Material {
    int padding;
 };
 
-#ifdef VULKAN
 layout(std430, buffer_reference) readonly buffer PerFrame {
-  UniformsPerFrame perFrame;
+  mat4 proj;
+  mat4 view;
+  mat4 light;
+  uint texSkyboxRadiance;
+  uint texSkyboxIrradiance;
+  uint texShadow;
+  uint sampler0;
+  uint samplerShadow0;
+  int bDrawNormals;
+  int bDebugLines;
 };
 
 layout(std430, buffer_reference) readonly buffer PerObject {
-  UniformsPerObject perObject;
+  mat4 model;
 };
 
 layout(std430, buffer_reference) readonly buffer Materials {
   Material mtl[];
 };
-#else
-uniform MeshFrameUniforms {
-  UniformsPerFrame meshPerFrame;
-};
-uniform MeshObjectUniforms{
-  UniformsPerObject meshPerObject;
-};
-uniform MeshMaterials{
-  Material materials[132];
-};
-#endif
+
+layout(push_constant) uniform constants
+{
+	PerFrame perFrame;
+   PerObject perObject;
+   Materials materials;
+} pc;
 
 // output
 struct PerVertex {
@@ -216,19 +183,11 @@ layout (location=5) flat out Material mtl;
 //
 
 void main() {
-#ifdef VULKAN
-  mat4 proj = PerFrame(getBuffer(0)).perFrame.proj;
-  mat4 view = PerFrame(getBuffer(0)).perFrame.view;
-  mat4 model = PerObject(getBuffer(1)).perObject.model;
-  mat4 light = PerFrame(getBuffer(0)).perFrame.light;
-  mtl = Materials(getBuffer(2)).mtl[uint(mtlIndex)];
-#else
-  mat4 proj = meshPerFrame.proj;
-  mat4 view = meshPerFrame.view;
-  mat4 model = meshPerObject.model;
-  mat4 light = meshPerFrame.light;
-  mtl = materials[int(mtlIndex)];
-#endif
+  mat4 proj = pc.perFrame.proj;
+  mat4 view = pc.perFrame.view;
+  mat4 model = pc.perObject.model;
+  mat4 light = pc.perFrame.light;
+  mtl = pc.materials.mtl[mtlIndex];
   gl_Position = proj * view * model * vec4(pos, 1.0);
 
   // Compute the normal in world-space
@@ -242,41 +201,25 @@ void main() {
 const char* kCodeVS_Wireframe = R"(
 layout (location=0) in vec3 pos;
 
-struct UniformsPerFrame {
+layout(std430, buffer_reference) readonly buffer PerFrame {
   mat4 proj;
   mat4 view;
 };
 
-struct UniformsPerObject {
+layout(std430, buffer_reference) readonly buffer PerObject {
   mat4 model;
 };
 
-#ifdef VULKAN
-layout(std430, buffer_reference) readonly buffer PerFrame {
-  UniformsPerFrame perFrame;
-};
-layout(std430, buffer_reference) readonly buffer PerObject {
-  UniformsPerObject perObject;
-};
-#else
-uniform MeshFrameUniforms {
-  UniformsPerFrame meshPerFrame;
-};
-uniform MeshObjectUniforms{
-  UniformsPerObject meshPerObject;
-};
-#endif
+layout(push_constant) uniform constants
+{
+	PerFrame perFrame;
+   PerObject perObject;
+} pc;
 
 void main() {
-#ifdef VULKAN
-  mat4 proj = PerFrame(getBuffer(0)).perFrame.proj;
-  mat4 view = PerFrame(getBuffer(0)).perFrame.view;
-  mat4 model = PerObject(getBuffer(1)).perObject.model;
-#else
-  mat4 proj = meshPerFrame.proj;
-  mat4 view = meshPerFrame.view;
-  mat4 model = meshPerObject.model;
-#endif
+  mat4 proj = pc.perFrame.proj;
+  mat4 view = pc.perFrame.view;
+  mat4 model = pc.perObject.model;
   gl_Position = proj * view * model * vec4(pos, 1.0);
 }
 )";
@@ -290,23 +233,20 @@ void main() {
 )";
 
 const char* kCodeFS = R"(
-struct UniformsPerFrame {
+
+layout(std430, buffer_reference) readonly buffer PerFrame {
   mat4 proj;
   mat4 view;
   mat4 light;
+  uint texSkyboxRadiance;
+  uint texSkyboxIrradiance;
+  uint texShadow;
+  uint sampler0;
+  uint samplerShadow0;
   int bDrawNormals;
   int bDebugLines;
-  vec2 padding;
 };
-#ifdef VULKAN
-layout(std430, buffer_reference) readonly buffer PerFrame {
-  UniformsPerFrame perFrame;
-};
-#else
-uniform MeshFrameUniforms {
-  UniformsPerFrame meshPerFrame;
-};
-#endif
+
 struct Material {
   vec4 ambient;
   vec4 diffuse;
@@ -315,44 +255,30 @@ struct Material {
   int texAlpha;
   int padding;
 };
+
 struct PerVertex {
   vec3 normal;
   vec2 uv;
   vec4 shadowCoords;
 };
 
+layout(push_constant) uniform constants
+{
+	PerFrame perFrame;
+} pc;
+
+
 layout (location=0) in PerVertex vtx;
 layout (location=5) flat in Material mtl;
 
 layout (location=0) out vec4 out_FragColor;
 
-#ifdef VULKAN
-vec4 textureBindless2D(uint textureid, vec2 uv) {
-  return texture(sampler2D(kTextures2D[textureid],
-                           kSamplers[bindings.slots[0].y]), uv);
-}
-#else
-  layout(binding = 0) uniform sampler2D texShadow;
-  layout(binding = 1) uniform sampler2D texAmbient;
-  layout(binding = 2) uniform sampler2D texDiffuse;
-  layout(binding = 3) uniform sampler2D texAlpha;
-  layout(binding = 4) uniform samplerCube texSkyboxIrradiance;
-#endif // VULKAN
-
 float PCF3(vec3 uvw) {
-#ifdef VULKAN
-  float size = 1.0 / textureSize2D(0, 1).x;
-#else
-  float size = 1.0 / float( textureSize(texShadow, 0).x );
-#endif
+  float size = 1.0 / textureBindlessSize2D(pc.perFrame.texShadow, pc.perFrame.samplerShadow0).x;
   float shadow = 0.0;
   for (int v=-1; v<=+1; v++)
     for (int u=-1; u<=+1; u++)
-#ifdef VULKAN
-      shadow += textureSample2DShadow(0, 1, uvw + size * vec3(u, v, 0));
-#else
-      shadow += (uvw.z <= texture(texShadow, uvw.xy + size * vec2(u, v) ).r) ? 1.0 : 0.0;
-#endif
+      shadow += textureBindless2DShadow(pc.perFrame.texShadow, pc.perFrame.samplerShadow0, uvw + size * vec3(u, v, 0));
   return shadow / 9;
 }
 
@@ -360,32 +286,19 @@ float shadow(vec4 s) {
   s = s / s.w;
   if (s.z > -1.0 && s.z < 1.0) {
     float depthBias = -0.00005;
-#ifdef VULKAN
-    s.y = 1.0 - s.y;
-#endif
-    float shadowSample = PCF3(vec3(s.x, s.y, s.z + depthBias));
+    float shadowSample = PCF3(vec3(s.x, 1.0 - s.y, s.z + depthBias));
     return mix(0.3, 1.0, shadowSample);
   }
   return 1.0;
 }
 
 void main() {
-#ifdef VULKAN
-  vec4 alpha = textureBindless2D(mtl.texAlpha, vtx.uv);
+  vec4 alpha = textureBindless2D(mtl.texAlpha, pc.perFrame.sampler0, vtx.uv);
   if (mtl.texAlpha > 0 && alpha.r < 0.5)
     discard;
-  vec4 Ka = mtl.ambient * textureBindless2D(mtl.texAmbient, vtx.uv);
-  vec4 Kd = mtl.diffuse * textureBindless2D(mtl.texDiffuse, vtx.uv);
-  bool drawNormals = PerFrame(getBuffer(0)).perFrame.bDrawNormals > 0;
-#else
-  vec4 alpha = texture(texAlpha, vtx.uv);
-  // check it is not a dummy 1x1 texture
-  if (textureSize(texAlpha, 0).x > 1 && alpha.r < 0.5)
-    discard;
-  vec4 Ka = mtl.ambient * texture(texAmbient, vtx.uv);
-  vec4 Kd = mtl.diffuse * texture(texDiffuse, vtx.uv);
-  bool drawNormals = meshPerFrame.bDrawNormals > 0;
-#endif
+  vec4 Ka = mtl.ambient * textureBindless2D(mtl.texAmbient, pc.perFrame.sampler0, vtx.uv);
+  vec4 Kd = mtl.diffuse * textureBindless2D(mtl.texDiffuse, pc.perFrame.sampler0, vtx.uv);
+  bool drawNormals = pc.perFrame.bDrawNormals > 0;
   if (Kd.a < 0.5)
     discard;
   vec3 n = normalize(vtx.normal);
@@ -394,11 +307,7 @@ void main() {
   float NdotL = 0.5 * (NdotL1+NdotL2);
   // IBL diffuse
   const vec4 f0 = vec4(0.04);
-#ifdef VULKAN
-  vec4 diffuse = textureSampleCube(1, 0, n) * Kd * (vec4(1.0) - f0);
-#else
-  vec4 diffuse = texture(texSkyboxIrradiance, n) * Kd * (vec4(1.0) - f0);
-#endif
+  vec4 diffuse = textureBindlessCube(pc.perFrame.texSkyboxIrradiance, pc.perFrame.sampler0, n) * Kd * (vec4(1.0) - f0);
   out_FragColor = drawNormals ?
     vec4(0.5 * (n+vec3(1.0)), 1.0) :
     Ka + diffuse * shadow(vtx.shadowCoords);
@@ -408,46 +317,33 @@ void main() {
 const char* kShadowVS = R"(
 layout (location=0) in vec3 pos;
 
-struct UniformsPerFrame {
+layout(std430, buffer_reference) readonly buffer PerFrame {
   mat4 proj;
   mat4 view;
   mat4 light;
+  uint texSkyboxRadiance;
+  uint texSkyboxIrradiance;
+  uint texShadow;
+  uint sampler0;
+  uint samplerShadow0;
   int bDrawNormals;
   int bDebugLines;
-  vec2 padding;
-};
-
-struct UniformsPerObject {
-  mat4 model;
-};
-
-#ifdef VULKAN
-layout(std430, buffer_reference) readonly buffer PerFrame {
-  UniformsPerFrame perFrame;
 };
 
 layout(std430, buffer_reference) readonly buffer PerObject {
-  UniformsPerObject perObject;
-};
-#else
-uniform ShadowFrameUniforms {
-   UniformsPerFrame perFrame;
-};
-uniform ShadowObjectUniforms {
-  UniformsPerObject perObject;
+  mat4 model;
 };
 
-#endif
+layout(push_constant) uniform constants
+{
+	PerFrame perFrame;
+	PerObject perObject;
+} pc;
+
 void main() {
-#ifdef VULKAN
-  mat4 proj = PerFrame(getBuffer(0)).perFrame.proj;
-  mat4 view = PerFrame(getBuffer(0)).perFrame.view;
-  mat4 model = PerObject(getBuffer(1)).perObject.model;
-#else
-  mat4 proj = perFrame.proj;
-  mat4 view = perFrame.view;
-  mat4 model = perObject.model;
-#endif
+  mat4 proj = pc.perFrame.proj;
+  mat4 view = pc.perFrame.view;
+  mat4 model = pc.perObject.model;
   gl_Position = proj * view * model * vec4(pos, 1.0);
 }
 )";
@@ -469,33 +365,27 @@ const int indices[36] = int[36](
 	0, 1, 2, 2, 3, 0, 1, 5, 6, 6, 2, 1, 7, 6, 5, 5, 4, 7, 4, 0, 3, 3, 7, 4, 4, 5, 1, 1, 0, 4, 3, 2, 6, 6, 7, 3
 );
 
-struct UniformsPerFrame {
+layout(std430, buffer_reference) readonly buffer PerFrame {
   mat4 proj;
   mat4 view;
   mat4 light;
+  uint texSkyboxRadiance;
+  uint texSkyboxIrradiance;
+  uint texShadow;
+  uint sampler0;
+  uint samplerShadow0;
   int bDrawNormals;
   int bDebugLines;
-  vec2 padding;
 };
 
-#ifdef VULKAN
-layout(std430, buffer_reference) readonly buffer PerFrame {
-  UniformsPerFrame perFrame;
-};
-#else
-uniform SkyboxFrameUniforms {
-UniformsPerFrame uParameters;
-};
+layout(push_constant) uniform constants
+{
+	PerFrame perFrame;
+} pc;
 
-#endif
 void main() {
-#ifdef VULKAN
-  mat4 proj = PerFrame(getBuffer(0)).perFrame.proj;
-  mat4 view = PerFrame(getBuffer(0)).perFrame.view;
-#else
-  mat4 proj = uParameters.proj;
-  mat4 view = uParameters.view;
-#endif
+  mat4 proj = pc.perFrame.proj;
+  mat4 view = pc.perFrame.view;
   // discard translation
   view = mat4(view[0], view[1], view[2], vec4(0, 0, 0, 1));
   mat4 transform = proj * view;
@@ -511,15 +401,26 @@ const char* kSkyboxFS = R"(
 layout (location=0) in vec3 textureCoords;
 layout (location=0) out vec4 out_FragColor;
 
-#ifndef VULKAN
-uniform samplerCube texSkybox;
-#endif
+layout(std430, buffer_reference) readonly buffer PerFrame {
+  mat4 proj;
+  mat4 view;
+  mat4 light;
+  uint texSkyboxRadiance;
+  uint texSkyboxIrradiance;
+  uint texShadow;
+  uint sampler0;
+  uint samplerShadow0;
+  int bDrawNormals;
+  int bDebugLines;
+};
+
+layout(push_constant) uniform constants
+{
+	PerFrame perFrame;
+} pc;
+
 void main() {
-#ifdef VULKAN
-  out_FragColor = textureSampleCube(0, 0, textureCoords);
-#else
-  out_FragColor = texture(texSkybox, textureCoords);
-#endif
+  out_FragColor = textureBindlessCube(pc.perFrame.texSkyboxRadiance, pc.perFrame.sampler0, textureCoords);
 }
 )";
 
@@ -538,9 +439,6 @@ constexpr uint32_t kNumBufferedFrames = 3;
 
 std::unique_ptr<IDevice> device_;
 std::shared_ptr<ICommandQueue> commandQueue_;
-RenderPassDesc renderPassOffscreen_;
-RenderPassDesc renderPassMain_;
-RenderPassDesc renderPassShadow_;
 std::shared_ptr<IFramebuffer> fbMain_; // swapchain
 std::shared_ptr<IFramebuffer> fbOffscreen_;
 std::shared_ptr<IFramebuffer> fbShadowMap_;
@@ -553,13 +451,16 @@ std::shared_ptr<IRenderPipelineState> renderPipelineState_Fullscreen_;
 std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
 std::shared_ptr<IBuffer> sbMaterials_; // storage buffer for materials
 std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerFrameShadow_, ubPerObject_;
-std::shared_ptr<IDepthStencilState> depthStencilState_;
-std::shared_ptr<IDepthStencilState> depthStencilStateLEqual_;
 std::shared_ptr<ISamplerState> sampler_;
 std::shared_ptr<ISamplerState> samplerShadow_;
 std::shared_ptr<ITexture> textureDummyWhite_;
 std::shared_ptr<ITexture> skyboxTextureReference_;
 std::shared_ptr<ITexture> skyboxTextureIrradiance_;
+igl::RenderPassDesc renderPassOffscreen_;
+igl::RenderPassDesc renderPassMain_;
+igl::RenderPassDesc renderPassShadow_;
+igl::DepthStencilState depthStencilState_;
+igl::DepthStencilState depthStencilStateLEqual_;
 
 // scene navigation
 CameraPositioner_FirstPerson positioner_(vec3(-100, 40, -47), vec3(0, 35, 0), vec3(0, 1, 0));
@@ -586,9 +487,14 @@ struct UniformsPerFrame {
   mat4 proj;
   mat4 view;
   mat4 light;
+  uint32_t texSkyboxRadiance = 0;
+  uint32_t texSkyboxIrradiance = 0;
+  uint32_t texShadow = 0;
+  uint32_t sampler = 0;
+  uint32_t samplerShadow = 0;
   int bDrawNormals = 0;
   int bDebugLines = 0;
-  vec2 padding;
+  int padding = 0;
 } perFrame_;
 
 struct UniformsPerObject {
@@ -879,17 +785,10 @@ void initIGL() {
                                                  nullptr));
   }
 
-  {
-    DepthStencilStateDesc desc;
-    desc.isDepthWriteEnabled = true;
-    desc.compareOp = igl::CompareOp_Less;
-    depthStencilState_ = device_->createDepthStencilState(desc, nullptr);
+  depthStencilState_ = {.compareOp = igl::CompareOp_Less, .isDepthWriteEnabled = true};
+  depthStencilStateLEqual_ = {.compareOp = igl::CompareOp_LessEqual, .isDepthWriteEnabled = true};
 
-    desc.compareOp = igl::CompareOp_LessEqual;
-    depthStencilStateLEqual_ = device_->createDepthStencilState(desc, nullptr);
-  }
-
-    sampler_ = device_->createSamplerState(
+  sampler_ = device_->createSamplerState(
       {
           .mipFilter = igl::SamplerMipFilter_Linear,
           .addressModeU = igl::SamplerAddressMode_Repeat,
@@ -1417,7 +1316,6 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
   fbMain_->updateDrawable(nativeDrawable);
 
-  // from igl/shell/renderSessions/Textured3DCubeSession.cpp
   const float fov = float(45.0f * (M_PI / 180.0f));
   const float aspectRatio = (float)width_ / (float)height_;
 
@@ -1429,16 +1327,26 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
   const mat4 scaleBias =
       mat4(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.5, 0.5, 0.0, 1.0);
 
-  perFrame_.proj = glm::perspective(fov, aspectRatio, 0.5f, 500.0f);
-  perFrame_.view = camera_.getViewMatrix();
-  perFrame_.light = scaleBias * shadowProj * shadowView;
+  perFrame_ = UniformsPerFrame{
+      .proj = glm::perspective(fov, aspectRatio, 0.5f, 500.0f),
+      .view = camera_.getViewMatrix(),
+      .light = scaleBias * shadowProj * shadowView,
+      .texSkyboxRadiance = skyboxTextureReference_->getTextureId(),
+      .texSkyboxIrradiance = skyboxTextureIrradiance_->getTextureId(),
+      .texShadow = fbShadowMap_->getDepthAttachment()->getTextureId(),
+      .sampler = sampler_->getSamplerId(),
+      .samplerShadow = samplerShadow_->getSamplerId(),
+      .bDrawNormals = perFrame_.bDrawNormals,
+      .bDebugLines = perFrame_.bDebugLines,
+  };
 
   ubPerFrame_[frameIndex]->upload(&perFrame_, igl::BufferRange(sizeof(perFrame_), 0));
 
   {
-    UniformsPerFrame perFrameShadow;
-    perFrameShadow.proj = shadowProj;
-    perFrameShadow.view = shadowView;
+    UniformsPerFrame perFrameShadow{
+        .proj = shadowProj,
+        .view = shadowView,
+    };
     ubPerFrameShadow_[frameIndex]->upload(&perFrameShadow,
                                           igl::BufferRange(sizeof(perFrameShadow), 0));
   }
@@ -1461,9 +1369,15 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     commands->bindRenderPipelineState(renderPipelineState_Shadow_);
     commands->pushDebugGroupLabel("Render Shadows", igl::Color(1, 0, 0));
     commands->bindDepthStencilState(depthStencilState_);
-    commands->bindBuffer(0, BindTarget::kVertex, vb0_, 0);
-    commands->bindBuffer(0, BindTarget::kAllGraphics, ubPerFrameShadow_[frameIndex], 0);
-    commands->bindBuffer(1, BindTarget::kAllGraphics, ubPerObject_[frameIndex], 0);
+    commands->bindVertexBuffer(0, vb0_, 0);
+    struct {
+      uint64_t perFrame;
+      uint64_t perObject;
+    } bindings = {
+        .perFrame = ubPerFrameShadow_[frameIndex]->gpuAddress(),
+        .perObject = ubPerObject_[frameIndex]->gpuAddress(),
+    };
+    commands->bindPushConstants(0, &bindings, sizeof(bindings));
 
     commands->drawIndexed(
         PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
@@ -1490,20 +1404,18 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     commands->bindRenderPipelineState(renderPipelineState_Mesh_);
     commands->pushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
     commands->bindDepthStencilState(depthStencilState_);
-    commands->bindBuffer(0, BindTarget::kVertex, vb0_, 0);
+    commands->bindVertexBuffer(0, vb0_, 0);
 
-    const int ubPerFrameIdx = 0;
-    const int ubPerObjectIdx = 1;
-    const int sbIdx = 2;
-
-    commands->bindBuffer(ubPerFrameIdx, BindTarget::kAllGraphics, ubPerFrame_[frameIndex], 0);
-    commands->bindBuffer(ubPerObjectIdx, BindTarget::kAllGraphics, ubPerObject_[frameIndex], 0);
-    commands->bindBuffer(sbIdx, BindTarget::kAllGraphics, sbMaterials_, 0);
-
-    commands->bindTexture(0, igl::BindTarget::kFragment, fbShadowMap_->getDepthAttachment());
-    commands->bindTexture(1, igl::BindTarget::kFragment, skyboxTextureIrradiance_);
-    commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_);
-    commands->bindSamplerState(1, igl::BindTarget::kFragment, samplerShadow_);
+    struct {
+      uint64_t perFrame;
+      uint64_t perObject;
+      uint64_t materials;
+    } bindings = {
+        .perFrame = ubPerFrame_[frameIndex]->gpuAddress(),
+        .perObject = ubPerObject_[frameIndex]->gpuAddress(),
+        .materials = sbMaterials_->gpuAddress(),
+    };
+    commands->bindPushConstants(0, &bindings, sizeof(bindings));
     commands->drawIndexed(
         PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
     if (enableWireframe_) {
@@ -1515,7 +1427,6 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
     // Skybox
     commands->bindRenderPipelineState(renderPipelineState_Skybox_);
-    commands->bindTexture(0, igl::BindTarget::kFragment, skyboxTextureReference_);
     commands->pushDebugGroupLabel("Render Skybox", igl::Color(0, 1, 0));
     commands->bindDepthStencilState(depthStencilStateLEqual_);
     commands->draw(PrimitiveType::Triangle, 0, 3 * 6 * 2);
@@ -1533,9 +1444,15 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
     auto commands = buffer->createComputeCommandEncoder();
     commands->bindComputePipelineState(computePipelineState_Grayscale_);
-    commands->bindTexture(0,
-                          kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0)
-                                              : fbOffscreen_->getColorAttachment(0));
+    std::shared_ptr<ITexture> tex = kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0)
+                                                        : fbOffscreen_->getColorAttachment(0);
+    struct {
+      uint32_t texture;
+    } bindings = {
+        .texture = tex->getTextureId(),
+    };
+    commands->bindPushConstants(0, &bindings, sizeof(bindings));
+    commands->useTexture(tex);
     commands->dispatchThreadGroups(igl::Dimensions(width_, height_, 1), igl::Dimensions());
     commands->endEncoding();
 
@@ -1551,10 +1468,13 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     auto commands = buffer->createRenderCommandEncoder(renderPassMain_, fbMain_);
     commands->bindRenderPipelineState(renderPipelineState_Fullscreen_);
     commands->pushDebugGroupLabel("Swapchain Output", igl::Color(1, 0, 0));
-    commands->bindTexture(0,
-                          igl::BindTarget::kFragment,
-                          kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0)
-                                              : fbOffscreen_->getColorAttachment(0));
+    struct {
+      uint32_t texture;
+    } bindings = {
+        .texture = kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0)->getTextureId()
+                                       : fbOffscreen_->getColorAttachment(0)->getTextureId(),
+    };
+    commands->bindPushConstants(0, &bindings, sizeof(bindings));
     commands->draw(PrimitiveType::Triangle, 0, 3);
     commands->popDebugGroupLabel();
 

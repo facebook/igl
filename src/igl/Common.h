@@ -237,4 +237,56 @@ struct Viewport {
   }
 };
 
+enum CompareOp : uint8_t {
+  CompareOp_Never = 0,
+  CompareOp_Less,
+  CompareOp_Equal,
+  CompareOp_LessEqual,
+  CompareOp_Greater,
+  CompareOp_NotEqual,
+  CompareOp_GreaterEqual,
+  CompareOp_AlwaysPass
+};
+
+enum StencilOp : uint8_t {
+  StencilOp_Keep = 0,
+  StencilOp_Zero,
+  StencilOp_Replace,
+  StencilOp_IncrementClamp,
+  StencilOp_DecrementClamp,
+  StencilOp_Invert,
+  StencilOp_IncrementWrap,
+  StencilOp_DecrementWrap
+};
+
+enum BlendOp : uint8_t {
+  BlendOp_Add = 0,
+  BlendOp_Subtract,
+  BlendOp_ReverseSubtract,
+  BlendOp_Min,
+  BlendOp_Max
+};
+
+enum BlendFactor : uint8_t {
+  BlendFactor_Zero = 0,
+  BlendFactor_One,
+  BlendFactor_SrcColor,
+  BlendFactor_OneMinusSrcColor,
+  BlendFactor_SrcAlpha,
+  BlendFactor_OneMinusSrcAlpha,
+  BlendFactor_DstColor,
+  BlendFactor_OneMinusDstColor,
+  BlendFactor_DstAlpha,
+  BlendFactor_OneMinusDstAlpha,
+  BlendFactor_SrcAlphaSaturated,
+  BlendFactor_BlendColor,
+  BlendFactor_OneMinusBlendColor,
+  BlendFactor_BlendAlpha,
+  BlendFactor_OneMinusBlendAlpha,
+  BlendFactor_Src1Color,
+  BlendFactor_OneMinusSrc1Color,
+  BlendFactor_Src1Alpha,
+  BlendFactor_OneMinusSrc1Alpha
+};
+
 } // namespace igl

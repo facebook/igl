@@ -88,7 +88,7 @@ class VulkanExtensions final {
   /// @return A vector of `const char *` with all enabled extensions of type `extensionType`. The
   /// return value must not outlive the instance of this class, as the pointers in the returned
   /// vector point to the strings stored internally in this class
-  std::vector<const char*> allEnabled(ExtensionType extensionType) const;
+  const std::vector<const char*>& allEnabled(ExtensionType extensionType) const;
 
  private:
   static constexpr size_t kNumberOfExtensionTypes = 2;
@@ -101,6 +101,8 @@ class VulkanExtensions final {
   /// object type (instance and device). The inner set is the list of all extensions enabled for the
   /// type
   std::vector<std::unordered_set<std::string>> enabledExtensions_;
+
+  mutable std::vector<const char*> returnList_;
 };
 
 } // namespace vulkan

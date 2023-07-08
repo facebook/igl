@@ -33,8 +33,7 @@
 
 namespace {
 
-const uint32_t kMaxDynamicUniformBuffers = 128;
-const uint32_t kBindPoint_Bindless = 0;
+const char* kDefaultValidationLayers[] = {"VK_LAYER_KHRONOS_validation"};
 
 /*
  These bindings should match GLSL declarations injected into shaders in
@@ -224,14 +223,11 @@ VulkanContext::~VulkanContext() {
   stagingDevice_.reset(nullptr);
 
   VkDevice device = device_ ? device_->getVkDevice() : VK_NULL_HANDLE;
-  if (device_) {
-    for (auto r : renderPasses_) {
-      vkDestroyRenderPass(device, r, nullptr);
-    }
-  }
-  DUBs_.reset();
 
-  dslDynamicUniformBuffer_.reset(nullptr);
+  for (auto r : renderPasses_) {
+    vkDestroyRenderPass(device, r, nullptr);
+  }
+  
   dslBindless_.reset(nullptr);
   pipelineLayoutGraphics_.reset(nullptr);
   pipelineLayoutCompute_.reset(nullptr);
@@ -241,12 +237,8 @@ VulkanContext::~VulkanContext() {
 
   immediate_.reset(nullptr);
 
-  if (device_) {
-    vkDestroyDescriptorPool(device, dpDynamicUniformBuffer_, nullptr);
-    vkDestroyDescriptorPool(device, dpBindless_, nullptr);
-    vkDestroyPipelineCache(device, pipelineCache_, nullptr);
-  }
-
+  vkDestroyDescriptorPool(device, dpBindless_, nullptr);
+  vkDestroyPipelineCache(device, pipelineCache_, nullptr);
   vkDestroySurfaceKHR(vkInstance_, vkSurface_, nullptr);
 
   // Clean up VMA
@@ -282,13 +274,43 @@ void VulkanContext::createInstance(const size_t numExtraExtensions, const char**
   auto instanceExtensions = extensions_.allEnabled(VulkanExtensions::ExtensionType::Instance);
 
   vkInstance_ = VK_NULL_HANDLE;
-  VK_ASSERT(ivkCreateInstance(VK_API_VERSION_1_1,
-                              config_.enableValidation,
-                              config_.enableGPUAssistedValidation,
-                              config_.enableSynchronizationValidation,
-                              instanceExtensions.size(),
-                              instanceExtensions.data(),
-                              &vkInstance_));
+  // Validation Features not available on most Android devices
+#if !IGL_PLATFORM_ANDROID
+  const VkValidationFeatureEnableEXT validationFeaturesEnabled[] = {
+      VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
+  };
+
+  const VkValidationFeaturesEXT features = {
+      .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
+      .pNext = nullptr,
+      .enabledValidationFeatureCount =
+          config_.enableGPUAssistedValidation ? IGL_ARRAY_NUM_ELEMENTS(validationFeaturesEnabled) : 0,
+      .pEnabledValidationFeatures = config_.enableGPUAssistedValidation ? validationFeaturesEnabled : nullptr,
+  };
+#endif // !IGL_PLATFORM_ANDROID
+
+  const VkApplicationInfo appInfo = {
+      .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+      .pNext = nullptr,
+      .pApplicationName = "IGL/Vulkan",
+      .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+      .pEngineName = "IGL/Vulkan",
+      .engineVersion = VK_MAKE_VERSION(1, 0, 0),
+      .apiVersion = VK_API_VERSION_1_3,
+  };
+
+  const VkInstanceCreateInfo ci = {
+    .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+    .pNext = config_.enableValidation ? &features : nullptr,
+    .flags = 0,
+    .pApplicationInfo = &appInfo,
+    .enabledLayerCount = config_.enableValidation ? IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0,
+    .ppEnabledLayerNames = config_.enableValidation ? kDefaultValidationLayers : nullptr,
+    .enabledExtensionCount = (uint32_t)instanceExtensions.size(),
+    .ppEnabledExtensionNames = instanceExtensions.data(),
+  };
+
+  VK_ASSERT(vkCreateInstance(&ci, NULL, &vkInstance_));
 
   volkLoadInstance(vkInstance_);
 
@@ -456,16 +478,61 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   const auto qcis = queuePool.getQueueCreationInfos();
 
+  assert(qcis.size() >= 1);
+
+  VkPhysicalDeviceFeatures deviceFeatures = {
+      .multiDrawIndirect = VK_TRUE,
+      .drawIndirectFirstInstance = VK_TRUE,
+      .depthBiasClamp = VK_TRUE,
+      .fillModeNonSolid = VK_TRUE,
+      .shaderInt16 = VK_TRUE,
+  };
+  VkPhysicalDeviceVulkan11Features deviceFeatures11 = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
+      .storageBuffer16BitAccess = VK_TRUE,
+      .shaderDrawParameters = VK_TRUE,
+  };
+  VkPhysicalDeviceVulkan12Features deviceFeatures12 = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+      .pNext = &deviceFeatures11,
+      .shaderFloat16 = VK_TRUE,
+      .descriptorIndexing = VK_TRUE,
+      .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
+      .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
+      .descriptorBindingStorageImageUpdateAfterBind = VK_TRUE,
+      .descriptorBindingUpdateUnusedWhilePending = VK_TRUE,
+      .descriptorBindingPartiallyBound = VK_TRUE,
+      .descriptorBindingVariableDescriptorCount = VK_TRUE,
+      .runtimeDescriptorArray = VK_TRUE,
+      .uniformBufferStandardLayout = VK_TRUE,
+      .timelineSemaphore = VK_TRUE,
+      .bufferDeviceAddress = VK_TRUE,
+      .bufferDeviceAddressCaptureReplay = VK_TRUE,
+  };
+  VkPhysicalDeviceVulkan13Features deviceFeatures13 = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+      .pNext = &deviceFeatures12,
+      .subgroupSizeControl = VK_TRUE,
+      .synchronization2 = VK_TRUE,
+      .dynamicRendering = VK_TRUE,
+      .maintenance4 = VK_TRUE,
+  };
+  const VkDeviceCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+      .pNext = &deviceFeatures13,
+      .queueCreateInfoCount = (uint32_t)qcis.size(),
+      .pQueueCreateInfos = qcis.data(),
+      .enabledLayerCount = (uint32_t)IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers),
+      .ppEnabledLayerNames = kDefaultValidationLayers,
+      .enabledExtensionCount =
+          (uint32_t)extensions_.allEnabled(VulkanExtensions::ExtensionType::Device).size(),
+      .ppEnabledExtensionNames =
+          extensions_.allEnabled(VulkanExtensions::ExtensionType::Device).data(),
+      .pEnabledFeatures = &deviceFeatures,
+  };
+
   VkDevice device;
-  VK_ASSERT_RETURN(
-      ivkCreateDevice(vkPhysicalDevice_,
-                      qcis.size(),
-                      qcis.data(),
-                      extensions_.allEnabled(VulkanExtensions::ExtensionType::Device).size(),
-                      extensions_.allEnabled(VulkanExtensions::ExtensionType::Device).data(),
-                      vkPhysicalDeviceMultiviewFeatures_.multiview,
-                      vkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16,
-                      &device));
+  VK_ASSERT_RETURN(vkCreateDevice(vkPhysicalDevice_, &ci, NULL, &device));
 
   volkLoadDevice(device);
 
@@ -575,29 +642,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   }
 
   const VkPhysicalDeviceLimits& limits = getVkPhysicalDeviceProperties().limits;
-  dynamicUniformBufferSize_ = std::min(limits.maxUniformBufferRange, 262144u);
 
-  {
-    constexpr uint32_t numBindings = 1;
-    const VkDescriptorSetLayoutBinding bindings[numBindings]{
-        ivkGetDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1),
-    };
-    const VkDescriptorBindingFlags bindingFlags[numBindings] = {
-        0,
-    };
-    dslDynamicUniformBuffer_ = std::make_unique<VulkanDescriptorSetLayout>(
-        device,
-        numBindings,
-        bindings,
-        bindingFlags,
-        "Descriptor Set Layout: VulkanContext::dslDynamicUniformBuffer_");
-    // create default descriptor pool for dynamic uniform buffers
-    const VkDescriptorPoolSize poolSizes[numBindings] = {
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, kMaxDynamicUniformBuffers},
-    };
-    VK_ASSERT_RETURN(ivkCreateDescriptorPool(
-        device, kMaxDynamicUniformBuffers, numBindings, poolSizes, &dpDynamicUniformBuffer_));
-  }
   {
     // create default descriptor set layout which is going to be shared by graphics pipelines
     constexpr uint32_t numBindings = 7;
@@ -660,27 +705,23 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                   limits.maxPushConstantsSize);
   }
 
-  const std::vector<VkDescriptorSetLayout> DSLs = {
-      dslBindless_->getVkDescriptorSetLayout(),
-      dslDynamicUniformBuffer_->getVkDescriptorSetLayout()};
+  VkDescriptorSetLayout dsl = dslBindless_->getVkDescriptorSetLayout();
 
   // create pipeline layout
   pipelineLayoutGraphics_ = std::make_unique<VulkanPipelineLayout>(
       device,
-      DSLs,
+      dsl,
       ivkGetPushConstantRange(
           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, kPushConstantsSize),
       "Pipeline Layout: VulkanContext::pipelineLayoutGraphics_");
 
   pipelineLayoutCompute_ = std::make_unique<VulkanPipelineLayout>(
       device,
-      DSLs,
+      dsl,
       ivkGetPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, kPushConstantsSize),
       "Pipeline Layout: VulkanContext::pipelineLayoutCompute_");
 
   querySurfaceCapabilities();
-
-  DUBs_ = std::make_unique<DynamicUniformsBufferSet>(*this);
 
   return Result();
 }
@@ -816,6 +857,29 @@ std::shared_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
                                        debugName);
 }
 
+void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
+                                              VkPipelineBindPoint bindPoint) const {
+  IGL_PROFILER_FUNCTION();
+
+  const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+  const VkDescriptorSet sets[] = {
+      bindlessDSets_[currentDSetIndex_].ds,
+  };
+#if IGL_DEBUG_DESCRIPTOR_SETS
+  IGL_LOG_INFO("Binding descriptor set %u\n", currentDSetIndex_);
+#endif // IGL_DEBUG_DESCRIPTOR_SETS
+  vkCmdBindDescriptorSets(
+      cmdBuf,
+      bindPoint,
+      (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
+      0,
+      IGL_ARRAY_NUM_ELEMENTS(sets),
+      sets,
+      0,
+      nullptr);
+}
+
 void VulkanContext::checkAndUpdateDescriptorSets() const {
   if (awaitingDeletion_) {
     // Our descriptor set was created with VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT which
@@ -937,7 +1001,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   // do not switch to the next descriptor set if there is nothing to update
   if (!write.empty()) {
 #if IGL_VULKAN_PRINT_COMMANDS
-    IGL_LOG_INFO("Updating descriptor set %u\n", nextDSetIndex);
+    LLOGL("Updating descriptor set %u\n", nextDSetIndex);
 #endif // IGL_VULKAN_PRINT_COMMANDS
     currentDSetIndex_ = nextDSetIndex;
     immediate_->wait(std::exchange(dsetToUpdate.handle, immediate_->getLastSubmitHandle()));
@@ -1110,135 +1174,6 @@ std::vector<uint8_t> VulkanContext::getPipelineCacheData() const {
 
 uint64_t VulkanContext::getFrameNumber() const {
   return swapchain_ ? swapchain_->getFrameNumber() : 0u;
-}
-
-VulkanContext::DynamicUniformsBufferSet::DynamicUniformsBufferSet(VulkanContext& ctx) : ctx_{ctx} {
-  // Respect the hardware dynamic UBO alignment
-  const VkDeviceSize kMinAlignment =
-      ctx_.vkPhysicalDeviceProperties2_.properties.limits.minUniformBufferOffsetAlignment;
-
-  bufferSizeAligned_ = (ResourcesBinder::kDUBBufferSize + kMinAlignment - 1) & ~(kMinAlignment - 1);
-  IGL_ASSERT(bufferSizeAligned_ <= ctx_.dynamicUniformBufferSize_);
-
-  // Pre-allocate all Dynamic Uniform Buffers
-  for (uint32_t index = 0u; index < kMaxDynamicUniformBuffers; ++index) {
-    allocateDynamicUniformsBuffer();
-  }
-
-  currentDUB_ = &DUBs_[currentDUBIndex_];
-}
-
-void VulkanContext::DynamicUniformsBufferSet::acquireNextDUB() {
-  currentDUBIndex_ = (currentDUBIndex_ + 1) % kMaxDynamicUniformBuffers;
-
-  IGL_ASSERT_MSG(currentDUBIndex_ != lastSubmittedDUBIndex_,
-                 "You are trying to re-use a DUB that has not been submitted for processing yet. "
-                 "This means you have too many bindings per submit. "
-                 "Increase the maximum number of DUBs kMaxDynamicUniformBuffers.");
-
-  currentDUB_ = &DUBs_[currentDUBIndex_];
-  // wait for the next DUB to become available
-  ctx_.immediate_->wait(currentDUB_->handle_);
-  currentDUB_->reset();
-}
-
-void VulkanContext::DynamicUniformsBufferSet::update(VkCommandBuffer cmdBuf,
-                                                     VkPipelineBindPoint bindPoint,
-                                                     const Bindings* data) {
-  IGL_ASSERT(currentDUB_);
-
-  const bool canFitIntoCurrentDUB =
-      (currentDUB_->offset_ + bufferSizeAligned_ <= ctx_.dynamicUniformBufferSize_);
-
-  if (!canFitIntoCurrentDUB) {
-    acquireNextDUB();
-  }
-
-  DynamicUniformBuffer* buf = currentDUB_;
-
-  IGL_ASSERT(buf->buffer_->getMappedPtr());
-  IGL_ASSERT(buf->offset_ + bufferSizeAligned_ <= ctx_.dynamicUniformBufferSize_);
-
-  if (data) {
-    memcpy(buf->buffer_->getMappedPtr() + buf->offset_, data, ResourcesBinder::kDUBBufferSize);
-
-    buf->buffer_->flushMappedMemory(buf->offset_, ResourcesBinder::kDUBBufferSize);
-  }
-
-  const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-  // @lint-ignore CLANGTIDY
-  const VkDescriptorSet sets[] = {ctx_.bindlessDSets_[ctx_.currentDSetIndex_].ds, buf->ds_};
-
-#if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u, %llu) - DSet: %u\n",
-               cmdBuf,
-               bindPoint,
-               IGL_ARRAY_NUM_ELEMENTS(sets),
-               ctx_.currentDSetIndex_);
-#endif // IGL_VULKAN_PRINT_COMMANDS
-  vkCmdBindDescriptorSets(cmdBuf,
-                          bindPoint,
-                          (isGraphics ? ctx_.pipelineLayoutGraphics_ : ctx_.pipelineLayoutCompute_)
-                              ->getVkPipelineLayout(),
-                          kBindPoint_Bindless,
-                          IGL_ARRAY_NUM_ELEMENTS(sets),
-                          sets,
-                          1,
-                          &buf->offset_);
-
-  if (data) {
-    buf->offset_ += (uint32_t)bufferSizeAligned_;
-  }
-}
-
-void VulkanContext::DynamicUniformsBufferSet::allocateDynamicUniformsBuffer() {
-  igl::Result result;
-
-  DynamicUniformBuffer buf;
-  buf.buffer_ = ctx_.createBuffer(
-      ctx_.dynamicUniformBufferSize_,
-      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR,
-      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-      &result,
-      IGL_FORMAT("Buffer: bindingsBuffer_ ({})", DUBs_.size()).c_str());
-
-  IGL_ASSERT(result.isOk());
-
-  VK_ASSERT(ivkAllocateDescriptorSet(ctx_.device_->getVkDevice(),
-                                     ctx_.dpDynamicUniformBuffer_,
-                                     ctx_.dslDynamicUniformBuffer_->getVkDescriptorSetLayout(),
-                                     &buf.ds_));
-
-  const VkDescriptorBufferInfo bufferInfo = {
-      buf.buffer_->getVkBuffer(), 0, sizeof(ResourcesBinder::bindings_)};
-  const VkWriteDescriptorSet set = ivkGetWriteDescriptorSet_BufferInfo(
-      buf.ds_, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, &bufferInfo);
-  vkUpdateDescriptorSets(ctx_.device_->getVkDevice(), 1, &set, 0, nullptr);
-
-  DUBs_.push_back(buf);
-}
-
-void VulkanContext::DynamicUniformsBufferSet::markSubmit(
-    const VulkanImmediateCommands::SubmitHandle& handle) {
-  IGL_ASSERT(currentDUB_);
-
-  if (lastSubmittedDUBIndex_ == currentDUBIndex_ && !currentDUB_->offset_) {
-    // the current DUB contains no data, so we can just safely do nothing and reuse the current DUB
-    return;
-  }
-
-  currentDUB_->handle_ = handle;
-
-  // assign this submit handle to all previous DUBs which are a part of this submit
-  while (lastSubmittedDUBIndex_ != currentDUBIndex_) {
-    lastSubmittedDUBIndex_ = (lastSubmittedDUBIndex_ + 1) % kMaxDynamicUniformBuffers;
-    DUBs_[lastSubmittedDUBIndex_].handle_ = handle;
-  }
-
-  // force a move to the next DUB in `udpateDynamicUniforms` - acquire here so that multiple
-  // sequential calls to markSubmit() work as expected
-  acquireNextDUB();
 }
 
 void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) const {

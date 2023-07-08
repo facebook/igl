@@ -18,8 +18,6 @@
 
 #include <assert.h>
 
-static const char* kDefaultValidationLayers[] = {"VK_LAYER_KHRONOS_validation"};
-
 const char* ivkGetVulkanResultString(VkResult result) {
 #define RESULT_CASE(res) \
   case res:              \
@@ -103,62 +101,6 @@ const char* ivkGetVulkanResultString(VkResult result) {
     return "Unknown VkResult Value";
   }
 #undef RESULT_CASE
-}
-
-VkResult ivkCreateInstance(uint32_t apiVersion,
-                           uint32_t enableValidation,
-                           uint32_t enableGPUAssistedValidation,
-                           uint32_t enableSynchronizationValidation,
-                           size_t numExtensions,
-                           const char** extensions,
-                           VkInstance* outInstance) {
-  // Validation Features not available on most Android devices
-#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOS
-  VkValidationFeatureEnableEXT validationFeaturesEnabled[2];
-  int validationFeaturesCount = 0;
-  if (enableGPUAssistedValidation) {
-    validationFeaturesEnabled[validationFeaturesCount++] =
-        VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT;
-  }
-  if (enableSynchronizationValidation) {
-    validationFeaturesEnabled[validationFeaturesCount++] =
-        VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT;
-  }
-
-  const VkValidationFeaturesEXT features = {
-      .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
-      .pNext = NULL,
-      .enabledValidationFeatureCount = validationFeaturesCount,
-      .pEnabledValidationFeatures = validationFeaturesCount > 0 ? validationFeaturesEnabled : NULL,
-  };
-#endif // !IGL_PLATFORM_ANDROID
-
-  const VkApplicationInfo appInfo = {
-      .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-      .pNext = NULL,
-      .pApplicationName = "IGL/Vulkan",
-      .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-      .pEngineName = "IGL/Vulkan",
-      .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-      .apiVersion = apiVersion,
-  };
-
-  const VkInstanceCreateInfo ci = {
-    .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOS
-    .pNext = enableValidation ? &features : NULL,
-#endif
-    .pApplicationInfo = &appInfo,
-    .enabledLayerCount = enableValidation ? IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0,
-    .ppEnabledLayerNames = enableValidation ? kDefaultValidationLayers : NULL,
-    .enabledExtensionCount = (uint32_t)numExtensions,
-    .ppEnabledExtensionNames = extensions,
-#if IGL_PLATFORM_MACOS || IGL_PLATFORM_MACCATALYST
-    .flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
-#endif
-  };
-
-  return vkCreateInstance(&ci, NULL, outInstance);
 }
 
 VkResult ivkCreateCommandPool(VkDevice device,
@@ -281,77 +223,6 @@ static void ivkAddNext(void* node, const void* next) {
   cur->pNext = next;
 }
 
-VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
-                         size_t numQueueCreateInfos,
-                         const VkDeviceQueueCreateInfo* queueCreateInfos,
-                         size_t numDeviceExtensions,
-                         const char** deviceExtensions,
-                         VkBool32 enableMultiview,
-                         VkBool32 enableShaderFloat16,
-                         VkDevice* outDevice) {
-  assert(numQueueCreateInfos >= 1);
-  const VkPhysicalDeviceFeatures deviceFeatures = {
-      .multiDrawIndirect = VK_TRUE,
-      .drawIndirectFirstInstance = VK_TRUE,
-      .depthBiasClamp = VK_TRUE,
-      .fillModeNonSolid = VK_TRUE,
-      .shaderInt16 = VK_TRUE,
-  };
-  VkDeviceCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-      .queueCreateInfoCount = (uint32_t)numQueueCreateInfos,
-      .pQueueCreateInfos = queueCreateInfos,
-      .enabledLayerCount = (uint32_t)IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers),
-      .ppEnabledLayerNames = kDefaultValidationLayers,
-      .enabledExtensionCount = (uint32_t)numDeviceExtensions,
-      .ppEnabledExtensionNames = deviceExtensions,
-      .pEnabledFeatures = &deviceFeatures,
-  };
-  const VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeature = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
-      .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
-      .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
-      .descriptorBindingStorageImageUpdateAfterBind = VK_TRUE,
-      .descriptorBindingUpdateUnusedWhilePending = VK_TRUE,
-      .descriptorBindingPartiallyBound = VK_TRUE,
-      .runtimeDescriptorArray = VK_TRUE,
-  };
-  ivkAddNext(&ci, &descriptorIndexingFeature);
-#if defined(VK_KHR_buffer_device_address)
-  const VkPhysicalDevice16BitStorageFeatures float16StorageBuffersFeature = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,
-      .storageBuffer16BitAccess = VK_TRUE,
-  };
-  const VkPhysicalDeviceShaderFloat16Int8Features float16ArithmeticFeature = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES,
-      .shaderFloat16 = VK_TRUE,
-  };
-  const VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeature = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
-      .bufferDeviceAddress = VK_TRUE,
-  };
-  ivkAddNext(&ci, &float16StorageBuffersFeature);
-  if (enableShaderFloat16 == VK_TRUE) {
-    ivkAddNext(&ci, &float16ArithmeticFeature);
-  }
-  ivkAddNext(&ci, &bufferDeviceAddressFeature);
-#endif // defined(VK_KHR_buffer_device_address)
-
-#if defined(VK_KHR_multiview)
-  // Note this must exist outside of the if statement below
-  // due to scope issues.
-  VkPhysicalDeviceMultiviewFeatures multiviewFeature = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
-      .multiview = VK_TRUE,
-  };
-  if (enableMultiview == VK_TRUE) {
-    ivkAddNext(&ci, &multiviewFeature);
-  }
-#endif // defined(VK_KHR_multiview)
-
-  return vkCreateDevice(physicalDevice, &ci, NULL, outDevice);
-}
-
 #if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACCATALYST
 #define VK_EXT_DEBUG_UTILS_SUPPORTED 1
 #else
@@ -432,15 +303,6 @@ VkResult ivkCreateSurface(VkInstance instance,
       .window = window,
   };
   return vkCreateAndroidSurfaceKHR(instance, &ci, NULL, outSurface);
-#elif defined(VK_USE_PLATFORM_METAL_EXT)
-  void* layer = getCAMetalLayer(window);
-  const VkMetalSurfaceCreateInfoEXT ci = {
-      .sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT,
-      .pNext = NULL,
-      .flags = 0,
-      .pLayer = layer,
-  };
-  return vkCreateMetalSurfaceEXT(instance, &ci, NULL, outSurface);
 #elif defined(VK_USE_PLATFORM_XLIB_KHR)
   const VkXlibSurfaceCreateInfoKHR ci = {
       .sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,
@@ -1145,48 +1007,6 @@ VkRect2D ivkGetRect2D(int32_t x, int32_t y, uint32_t width, uint32_t height) {
       .extent = {.width = width, .height = height},
   };
   return rect;
-}
-
-static glslang_stage_t getGLSLangShaderStage(VkShaderStageFlagBits stage) {
-  switch (stage) {
-  case VK_SHADER_STAGE_VERTEX_BIT:
-    return GLSLANG_STAGE_VERTEX;
-  case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-    return GLSLANG_STAGE_TESSCONTROL;
-  case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-    return GLSLANG_STAGE_TESSEVALUATION;
-  case VK_SHADER_STAGE_GEOMETRY_BIT:
-    return GLSLANG_STAGE_GEOMETRY;
-  case VK_SHADER_STAGE_FRAGMENT_BIT:
-    return GLSLANG_STAGE_FRAGMENT;
-  case VK_SHADER_STAGE_COMPUTE_BIT:
-    return GLSLANG_STAGE_COMPUTE;
-  default:
-    assert(false);
-  };
-  assert(false);
-  return GLSLANG_STAGE_COUNT;
-}
-
-glslang_input_t ivkGetGLSLangInput(VkShaderStageFlagBits stage,
-                                   const glslang_resource_t* resource,
-                                   const char* shaderCode) {
-  const glslang_input_t input = {
-      .language = GLSLANG_SOURCE_GLSL,
-      .stage = getGLSLangShaderStage(stage),
-      .client = GLSLANG_CLIENT_VULKAN,
-      .client_version = GLSLANG_TARGET_VULKAN_1_1,
-      .target_language = GLSLANG_TARGET_SPV,
-      .target_language_version = GLSLANG_TARGET_SPV_1_3,
-      .code = shaderCode,
-      .default_version = 100,
-      .default_profile = GLSLANG_NO_PROFILE,
-      .force_default_version_and_profile = false,
-      .forward_compatible = false,
-      .messages = GLSLANG_MSG_DEFAULT_BIT,
-      .resource = resource,
-  };
-  return input;
 }
 
 VkResult ivkCreateShaderModule(VkDevice device,

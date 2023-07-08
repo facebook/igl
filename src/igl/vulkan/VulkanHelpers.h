@@ -28,14 +28,6 @@ extern "C" {
 
 const char* ivkGetVulkanResultString(VkResult result);
 
-VkResult ivkCreateInstance(uint32_t apiVersion,
-                           uint32_t enableValidation,
-                           uint32_t enableGPUAssistedValidation,
-                           uint32_t enableSynchronizationValidation,
-                           size_t numExtensions,
-                           const char** extensions,
-                           VkInstance* outInstance);
-
 VkResult ivkCreateDebugUtilsMessenger(VkInstance instance,
                                       PFN_vkDebugUtilsMessengerCallbackEXT callback,
                                       void* logUserData,
@@ -56,15 +48,6 @@ VkResult ivkCreateSurface(VkInstance instance,
                           void* window,
                           void* display,
                           VkSurfaceKHR* outSurface);
-
-VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
-                         size_t numQueueCreateInfos,
-                         const VkDeviceQueueCreateInfo* queueCreateInfos,
-                         size_t numDeviceExtensions,
-                         const char** deviceExtensions,
-                         VkBool32 enableMultiview,
-                         VkBool32 enableShaderFloat16,
-                         VkDevice* outDevice);
 
 VkResult ivkCreateHeadlessSurface(VkInstance instance, VkSurfaceKHR* surface);
 
@@ -321,10 +304,6 @@ VkBufferImageCopy ivkGetBufferImageCopy3D(uint32_t bufferOffset,
                                           const VkOffset3D offset,
                                           const VkExtent3D extent,
                                           VkImageSubresourceLayers imageSubresource);
-
-glslang_input_t ivkGetGLSLangInput(VkShaderStageFlagBits stage,
-                                   const glslang_resource_t* resource,
-                                   const char* shaderCode);
 
 void ivkImageMemoryBarrier(VkCommandBuffer buffer,
                            VkImage image,

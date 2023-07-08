@@ -41,7 +41,7 @@ class SamplerState final : public ISamplerState {
    * This ID is intended for bindless rendering. See the ResourcesBinder and VulkanContext classes
    * for more information
    */
-  uint32_t getSamplerId() const;
+  uint32_t getSamplerId() const override;
 
  private:
   /**
