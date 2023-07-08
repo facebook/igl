@@ -9,6 +9,7 @@
 #include <cstring>
 #include <filesystem>
 #include <shell/shared/imageLoader/win/ImageLoaderWin.h>
+#include <stdint.h>
 
 namespace igl::shell {
 
