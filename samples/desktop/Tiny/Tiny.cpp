@@ -207,8 +207,12 @@ static void initIGL() {
     device_ = std::make_unique<igl::opengl::glx::Device>(std::move(ctx));
 #endif
 #else
-    igl::vulkan::VulkanContextConfig cfg{8, 8, true};
-    cfg.swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR;
+    const igl::vulkan::VulkanContextConfig cfg{
+        .maxTextures = 8,
+        .maxSamplers = 8,
+        .terminateOnValidationError = true,
+        .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
+    };
 #ifdef _WIN32
     auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
 #elif __APPLE__

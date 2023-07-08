@@ -138,7 +138,6 @@ struct UniformsPerObject {
   mat4 model;
 };
 
-// from igl/shell/renderSessions/Textured3DCubeSession.cpp
 const float half = 1.0f;
 
 // UV-mapped cube with indices: 24 vertices, 36 indices
@@ -249,8 +248,12 @@ static bool initWindow(GLFWwindow** outWindow) {
 static void initIGL() {
   // create a device
   {
-    igl::vulkan::VulkanContextConfig cfg{128, 128, true};
-    cfg.swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR;
+    const igl::vulkan::VulkanContextConfig cfg = {
+        .maxTextures = 128,
+        .maxSamplers = 128,
+        .terminateOnValidationError = true,
+        .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
+    };
 #ifdef _WIN32
     auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
 #elif __APPLE__
