@@ -7,14 +7,15 @@ cmake_minimum_required(VERSION 3.16)
 
 set(PROJECT_NAME "Mac")
 
-file(GLOB PLATFORM_SHARED_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-     ../shared/fileLoader/mac/*.mm ../shared/imageLoader/mac/*.mm ../shared/imageWriter/mac/*.mm ../shared/imageWriter/stb/*.cpp
-     ../shared/platform/mac/*.cpp)
+file(GLOB PLATFORM_SHARED_SRC_CPP_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+     ../shared/imageWriter/stb/*.cpp ../shared/platform/mac/*.cpp)
+file(GLOB PLATFORM_SHARED_SRC_OBJC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+     ../shared/fileLoader/mac/*.mm ../shared/imageLoader/mac/*.mm ../shared/imageWriter/mac/*.mm)
 file(GLOB PLATFORM_SHARED_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
      ../shared/fileLoader/mac/*.h ../shared/imageLoader/mac/*.h ../shared/imageWriter/mac/*.h ../shared/imageWriter/stb/*.h
      ../shared/platform/mac/*.h)
 
-add_library(IGLShellPlatform ${PLATFORM_SHARED_SRC_FILES} ${PLATFORM_SHARED_HEADER_FILES})
+add_library(IGLShellPlatform ${PLATFORM_SHARED_SRC_CPP_FILES} ${PLATFORM_SHARED_SRC_OBJC_FILES} ${PLATFORM_SHARED_HEADER_FILES})
 target_link_libraries(IGLShellPlatform PUBLIC IGLLibrary)
 
 igl_set_folder(IGLShellPlatform "IGL")
@@ -26,7 +27,7 @@ if(CMAKE_GENERATOR STREQUAL "Xcode")
   set_target_properties(IGLShellPlatform PROPERTIES XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_WEAK YES)
   set_target_properties(IGLShellPlatform PROPERTIES XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES)
 else()
-  set_source_files_properties(${PLATFORM_SHARED_SRC_FILES} PROPERTIES COMPILE_OPTIONS "-fobjc-arc;-fobjc-weak")
+  set_source_files_properties(${PLATFORM_SHARED_SRC_OBJC_FILES} PROPERTIES COMPILE_OPTIONS "-fobjc-arc;-fobjc-weak")
 endif()
 
 function(ADD_SHELL_SESSION_WITH_SRCS target srcs libs)
