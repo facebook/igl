@@ -20,14 +20,6 @@
 #include <igl/opengl/webgl/Context.h>
 #include <igl/opengl/webgl/Device.h>
 
-#define ENABLE_MULTIPLE_COLOR_ATTACHMENTS 0
-
-#if ENABLE_MULTIPLE_COLOR_ATTACHMENTS
-static const uint32_t kNumColorAttachments = 4;
-#else
-static const uint32_t kNumColorAttachments = 1;
-#endif
-
 #if defined(__cpp_lib_format)
 #include <format>
 #define IGL_FORMAT std::format
@@ -141,17 +133,11 @@ static void initIGL() {
   CommandQueueDesc desc{CommandQueueType::Graphics};
   commandQueue_ = device_->createCommandQueue(desc, nullptr);
 
-  // first color attachment
-  for (auto i = 0; i < kNumColorAttachments; ++i) {
-    // Generate sparse color attachments by skipping alternate slots
-    if (i & 0x1) {
-      continue;
-    }
-    renderPass_.colorAttachments[i] = igl::RenderPassDesc::ColorAttachmentDesc{};
-    renderPass_.colorAttachments[i].loadAction = LoadAction::Clear;
-    renderPass_.colorAttachments[i].storeAction = StoreAction::Store;
-    renderPass_.colorAttachments[i].clearColor = {1.0f, 1.0f, 1.0f, 1.0f};
-  }
+  // Color attachment
+  renderPass_.colorAttachments[0] = igl::RenderPassDesc::ColorAttachmentDesc{};
+  renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
+  renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
+  renderPass_.colorAttachments[0].clearColor = {1.0f, 1.0f, 1.0f, 1.0f};
   renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
 }
 
@@ -164,14 +150,12 @@ static void createRenderPipeline() {
 
   RenderPipelineDesc desc;
 
-  desc.targetDesc.colorAttachments.resize(kNumColorAttachments);
+  desc.targetDesc.colorAttachments.resize(1);
 
-  for (auto i = 0; i < kNumColorAttachments; ++i) {
-    // @fb-only
-    if (framebuffer_->getColorAttachment(i)) {
-      desc.targetDesc.colorAttachments[i].textureFormat =
-          framebuffer_->getColorAttachment(i)->getFormat();
-    }
+  // @fb-only
+  if (framebuffer_->getColorAttachment(0)) {
+    desc.targetDesc.colorAttachments[0].textureFormat =
+        framebuffer_->getColorAttachment(0)->getFormat();
   }
 
   if (framebuffer_->getDepthAttachment()) {
@@ -200,20 +184,14 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   FramebufferDesc framebufferDesc;
   framebufferDesc.colorAttachments[0].texture = nativeDrawable;
 
-  for (auto i = 1; i < kNumColorAttachments; ++i) {
-    // Generate sparse color attachments by skipping alternate slots
-    if (i & 0x1) {
-      continue;
-    }
-    const TextureDesc desc = TextureDesc::new2D(
-        nativeDrawable->getFormat(),
-        nativeDrawable->getDimensions().width,
-        nativeDrawable->getDimensions().height,
-        TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled,
-        IGL_FORMAT("{}C{}", framebufferDesc.debugName.c_str(), i - 1).c_str());
+  const TextureDesc desc = TextureDesc::new2D(
+      nativeDrawable->getFormat(),
+      nativeDrawable->getDimensions().width,
+      nativeDrawable->getDimensions().height,
+      TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled,
+      IGL_FORMAT("{}C{}", framebufferDesc.debugName.c_str(), 0).c_str());
 
-    framebufferDesc.colorAttachments[i].texture = device_->createTexture(desc, nullptr);
-  }
+  framebufferDesc.colorAttachments[1].texture = device_->createTexture(desc, nullptr);
   framebuffer_ = device_->createFramebuffer(framebufferDesc, nullptr);
   IGL_ASSERT(framebuffer_);
 }
@@ -255,7 +233,7 @@ void emscriptenMainLoopCallback() {
 }
 
 int main(int argc, char* argv[]) {
-  renderPass_.colorAttachments.resize(kNumColorAttachments);
+  renderPass_.colorAttachments.resize(1);
   initWindow(&window_);
   initIGL();
 
