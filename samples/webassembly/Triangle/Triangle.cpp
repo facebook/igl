@@ -17,9 +17,8 @@
 #include <stdio.h>
 
 #include <igl/IGL.h>
-#include <igl/opengl/webgl/Device.h>
 #include <igl/opengl/webgl/Context.h>
-// clang-format on
+#include <igl/opengl/webgl/Device.h>
 
 #define ENABLE_MULTIPLE_COLOR_ATTACHMENTS 0
 
@@ -131,7 +130,8 @@ static bool initWindow(GLFWwindow** outWindow) {
 static void initIGL() {
   // create a device
   {
-    auto ctx = std::make_unique<igl::opengl::webgl::Context>(igl::opengl::RenderingAPI::GLES3, "#canvas");
+    auto ctx =
+        std::make_unique<igl::opengl::webgl::Context>(igl::opengl::RenderingAPI::GLES3, "#canvas");
     device_ = std::make_unique<igl::opengl::webgl::Device>(std::move(ctx));
 
     IGL_ASSERT(device_);
@@ -249,10 +249,9 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
   commandQueue_->submit(*buffer);
 }
 
-void mainLoop()
-{
-    render(getNativeDrawable());
-    glfwPollEvents();
+void emscriptenMainLoopCallback() {
+  render(getNativeDrawable());
+  glfwPollEvents();
 }
 
 int main(int argc, char* argv[]) {
@@ -264,8 +263,8 @@ int main(int argc, char* argv[]) {
   createRenderPipeline();
 
   // Main loop
-  emscripten_set_main_loop(&mainLoop, 0, 1);
-  
+  emscripten_set_main_loop(&emscriptenMainLoopCallback, 0, 1);
+
   renderPipelineState_Triangle_ = nullptr;
   framebuffer_ = nullptr;
   device_.reset(nullptr);
