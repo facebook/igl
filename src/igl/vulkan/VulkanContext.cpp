@@ -310,7 +310,7 @@ void VulkanContext::createSurface(void* window, void* display) {
   VK_ASSERT(ivkCreateSurface(vkInstance_, window, display, &vkSurface_));
 }
 
-igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
+igl::Result VulkanContext::queryDevices(HWDeviceType deviceType,
                                         std::vector<HWDeviceDesc>& outDevices) {
   outDevices.clear();
 
@@ -335,7 +335,7 @@ igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
     }
   };
 
-  const HWDeviceType desiredDeviceType = desc.hardwareType;
+  const HWDeviceType desiredDeviceType = deviceType;
 
   for (uint32_t i = 0; i < deviceCount; ++i) {
     VkPhysicalDevice physicalDevice = vkDevices[i];
@@ -561,7 +561,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     if (!IGL_VERIFY(result.isOk())) {
       return result;
     }
-    if (!IGL_VERIFY(image)) {
+    if (!IGL_VERIFY(image.get())) {
       return Result(Result::Code::InvalidOperation, "Cannot create VulkanImage");
     }
     auto imageView = image->createImageView(VK_IMAGE_VIEW_TYPE_2D,
@@ -572,7 +572,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                             0,
                                             1,
                                             "Image View: dummy 1x1");
-    if (!IGL_VERIFY(imageView)) {
+    if (!IGL_VERIFY(imageView.get())) {
       return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
     }
     textures_[0] = std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView));
@@ -986,7 +986,7 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
     std::shared_ptr<VulkanImage> image,
     std::shared_ptr<VulkanImageView> imageView) const {
   auto texture = std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView));
-  if (!IGL_VERIFY(texture)) {
+  if (!IGL_VERIFY(texture.get())) {
     return nullptr;
   }
   if (!freeIndicesTextures_.empty()) {
@@ -1010,7 +1010,7 @@ std::shared_ptr<VulkanSampler> VulkanContext::createSampler(const VkSamplerCreat
                                                             igl::Result* outResult,
                                                             const char* debugName) const {
   auto sampler = std::make_shared<VulkanSampler>(*this, device_->getVkDevice(), ci, debugName);
-  if (!IGL_VERIFY(sampler)) {
+  if (!IGL_VERIFY(sampler.get())) {
     Result::setResult(outResult, Result::Code::InvalidOperation);
     return nullptr;
   }

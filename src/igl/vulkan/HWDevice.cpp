@@ -24,11 +24,11 @@ std::unique_ptr<VulkanContext> HWDevice::createContext(const VulkanContextConfig
 }
 
 std::vector<HWDeviceDesc> HWDevice::queryDevices(VulkanContext& ctx,
-                                                 const HWDeviceQueryDesc& desc,
+                                                 HWDeviceType deviceType,
                                                  Result* outResult) {
   std::vector<HWDeviceDesc> outDevices;
 
-  Result::setResult(outResult, ctx.queryDevices(desc, outDevices));
+  Result::setResult(outResult, ctx.queryDevices(deviceType, outDevices));
 
   return outDevices;
 }
@@ -40,7 +40,7 @@ std::unique_ptr<IDevice> HWDevice::create(std::unique_ptr<VulkanContext> ctx,
                                           size_t numExtraDeviceExtensions,
                                           const char** extraDeviceExtensions,
                                           Result* outResult) {
-  IGL_ASSERT(ctx);
+  IGL_ASSERT(ctx.get());
 
   auto result = ctx->initContext(desc, numExtraDeviceExtensions, extraDeviceExtensions);
 

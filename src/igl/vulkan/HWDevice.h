@@ -28,7 +28,7 @@ class HWDevice final {
       void* display = nullptr);
 
   static std::vector<HWDeviceDesc> queryDevices(VulkanContext& ctx,
-                                                const HWDeviceQueryDesc& desc,
+                                                HWDeviceType deviceType,
                                                 Result* outResult = nullptr);
 
   /*

@@ -29,7 +29,7 @@ namespace {
 
 void transitionColorAttachment(VkCommandBuffer buffer, const std::shared_ptr<ITexture>& colorTex) {
   // We really shouldn't get a null here, but just in case.
-  if (!IGL_VERIFY(colorTex)) {
+  if (!IGL_VERIFY(colorTex.get())) {
     return;
   }
 
@@ -135,7 +135,7 @@ VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(igl::PrimitiveType t) {
 void CommandBuffer::present(std::shared_ptr<ITexture> surface) const {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT(surface);
+  IGL_ASSERT(surface.get());
 
   const auto& vkTex = static_cast<Texture&>(*surface);
   const VulkanTexture& tex = vkTex.getVulkanTexture();
@@ -236,7 +236,7 @@ void CommandBuffer::cmdPopDebugGroupLabel() const {
 void CommandBuffer::useComputeTexture(const std::shared_ptr<ITexture>& texture) {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT(texture);
+  IGL_ASSERT(texture.get());
   const igl::vulkan::Texture* tex = static_cast<igl::vulkan::Texture*>(texture.get());
   const igl::vulkan::VulkanTexture& vkTex = tex->getVulkanTexture();
   const igl::vulkan::VulkanImage& vkImage = vkTex.getVulkanImage();
@@ -267,9 +267,9 @@ void CommandBuffer::cmdBeginRenderPass(const RenderPassDesc& renderPass,
 
   isInRenderPass_ = true;
 
-  framebuffer_ = framebuffer;
+  framebuffer_ = static_pointer_cast<Framebuffer>(framebuffer);
 
-  if (!IGL_VERIFY(framebuffer)) {
+  if (!IGL_VERIFY(framebuffer.get())) {
     return;
   }
 
@@ -302,9 +302,9 @@ void CommandBuffer::cmdBeginRenderPass(const RenderPassDesc& renderPass,
         VkImageSubresourceRange{flags, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
   }
 
-  const FramebufferDesc& desc = static_cast<const Framebuffer&>((*framebuffer)).getDesc();
+  const FramebufferDesc& desc = framebuffer_->getDesc();
 
-  IGL_ASSERT(desc.colorAttachments.size() <= IGL_COLOR_ATTACHMENTS_MAX);
+  IGL_ASSERT(desc.colorAttachments.size() <= RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX);
 
   std::vector<VkClearValue> clearValues;
   uint32_t mipLevel = 0;
@@ -327,7 +327,7 @@ void CommandBuffer::cmdBeginRenderPass(const RenderPassDesc& renderPass,
     if (it == desc.colorAttachments.end()) {
       continue;
     }
-    IGL_ASSERT(it->second.texture);
+    IGL_ASSERT(it->second.texture.get());
 
     const auto& colorTexture = static_cast<vulkan::Texture&>(*it->second.texture);
 

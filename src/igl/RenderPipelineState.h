@@ -10,8 +10,6 @@
 #include <igl/Common.h>
 #include <igl/Shader.h>
 #include <igl/Texture.h>
-#include <unordered_map>
-#include <vector>
 
 namespace igl {
 
@@ -133,9 +131,11 @@ struct VertexInputBinding {
 };
 
 struct VertexInputStateDesc {
-  size_t numAttributes = 0;
+  enum { IGL_VERTEX_ATTRIBUTES_MAX = 16 };
+  enum { IGL_VERTEX_BUFFER_MAX = 16 };
+  uint32_t numAttributes = 0;
   VertexAttribute attributes[IGL_VERTEX_ATTRIBUTES_MAX];
-  size_t numInputBindings = 0;
+  uint32_t numInputBindings = 0;
   VertexInputBinding inputBindings[IGL_VERTEX_BUFFER_MAX];
 };
 
@@ -143,6 +143,8 @@ struct VertexInputStateDesc {
  * @brief An argument of options you pass to a device to get a render pipeline state object.
  */
 struct RenderPipelineDesc {
+  enum { IGL_COLOR_ATTACHMENTS_MAX = 4 };
+
   struct TargetDesc {
     struct ColorAttachment {
       TextureFormat textureFormat = TextureFormat::Invalid;

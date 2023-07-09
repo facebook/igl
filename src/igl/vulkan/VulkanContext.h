@@ -79,7 +79,7 @@ class VulkanContext final {
                 void* display = nullptr);
   ~VulkanContext();
 
-  igl::Result queryDevices(const HWDeviceQueryDesc& desc, std::vector<HWDeviceDesc>& outDevices);
+  igl::Result queryDevices(HWDeviceType deviceType, std::vector<HWDeviceDesc>& outDevices);
   igl::Result initContext(const HWDeviceDesc& desc,
                           size_t numExtraDeviceExtensions = 0,
                           const char** extraDeviceExtensions = nullptr);

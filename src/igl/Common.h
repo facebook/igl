@@ -16,16 +16,40 @@
 #include <utility>
 #include <vector>
 
-#include <igl/Assert.h>
 #include <igl/Macros.h>
+
+#include <minilog/minilog.h>
+
+namespace igl {
+
+bool _IGLVerify(bool cond, const char* func, const char* file, int line, const char* format, ...);
+
+} // namespace igl
+
+#if IGL_DEBUG
+
+#define IGL_UNEXPECTED(cond) (!_IGLVerify(0 == !!(cond), IGL_FUNCTION, __FILE__, __LINE__, #cond))
+#define IGL_VERIFY(cond) ::igl::_IGLVerify((cond), IGL_FUNCTION, __FILE__, __LINE__, #cond)
+#define IGL_ASSERT(cond) (void)IGL_VERIFY(cond)
+#define IGL_ASSERT_MSG(cond, format, ...) \
+  (void)::igl::_IGLVerify((cond), IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
+
+#else
+
+#define IGL_UNEXPECTED(cond) (cond)
+#define IGL_VERIFY(cond) (cond)
+#define IGL_ASSERT(cond) static_cast<void>(0)
+#define IGL_ASSERT_MSG(cond, format, ...) static_cast<void>(0)
+
+#endif // IGL_DEBUG
+
+#define IGL_ASSERT_NOT_REACHED() IGL_ASSERT_MSG(0, "Code should NOT be reached")
 
 // Undefine macros that are local to this header
 #if defined(IGL_CORE_H_COMMON_SKIP_CHECK)
 #undef IGL_COMMON_SKIP_CHECK
 #undef IGL_CORE_H_COMMON_SKIP_CHECK
 #endif // defined(IGL_CORE_H_COMMON_SKIP_CHECK)
-
-#include <utility>
 
 /**
  * FB_ANONYMOUS_VARIABLE(str) introduces an identifier starting with
@@ -72,15 +96,6 @@ ScopeGuard<T> operator+(ScopeGuardOnExit, T&& fn) {
 
 namespace igl {
 
-constexpr size_t IGL_VERTEX_ATTRIBUTES_MAX = 16;
-constexpr size_t IGL_VERTEX_BUFFER_MAX = 16;
-
-// See GL_MAX_COLOR_ATTACHMENTS in
-// https://www.khronos.org/registry/OpenGL-Refpages/es3.0/html/glGet.xhtml
-// and see maximum number of color render targets in
-// https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
-constexpr size_t IGL_COLOR_ATTACHMENTS_MAX = 4;
-
 /**
  * @brief Represents a type of a physical device for graphics/compute purposes
  */
@@ -96,23 +111,11 @@ enum class HWDeviceType {
 };
 
 /**
- * @brief Represents a query of a physical device to be requested from the underlying IGL
- * implementation
- */
-struct HWDeviceQueryDesc {
-  /** @brief Desired hardware type */
-  HWDeviceType hardwareType;
-  /** @brief If set, ignores hardwareType and returns device assigned to displayId */
-  uintptr_t displayId;
-};
-
-/**
  * @brief PlatformDeviceType represents the platform and graphics backend that a class implementing
  * the IPlatformDevice interface supports.
  *
  */
 enum class PlatformDeviceType {
-  Unknown = 0,
   Vulkan,
 };
 

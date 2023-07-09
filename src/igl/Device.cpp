@@ -14,33 +14,21 @@
 
 namespace igl {
 
+bool _IGLVerify(bool cond, const char* func, const char* file, int line, const char* format, ...) {
+  if (!cond) {
+    LLOGW("[IGL] Assert failed in '%s' (%s:%d): ", func, file, line);
+    va_list ap;
+    va_start(ap, format);
+    LLOGW(format, ap);
+    va_end(ap);
+    assert(false);
+  }
+  return cond;
+}
+
 // Make sure the structure igl::Color is tightly packed so it can be passed into APIs which expect
 // float[4] RGBA values
 static_assert(sizeof(Color) == 4 * sizeof(float));
-
-TextureDesc IDevice::sanitize(const TextureDesc& desc) const {
-  TextureDesc sanitized = desc;
-  if (desc.width == 0 || desc.height == 0 || desc.depth == 0 || desc.numLayers == 0 ||
-      desc.numSamples == 0 || desc.numMipLevels == 0) {
-    sanitized.width = std::max(sanitized.width, 1u);
-    sanitized.height = std::max(sanitized.height, 1u);
-    sanitized.depth = std::max(sanitized.depth, 1u);
-    sanitized.numLayers = std::max(sanitized.numLayers, 1u);
-    sanitized.numSamples = std::max(sanitized.numSamples, 1u);
-    sanitized.numMipLevels = std::max(sanitized.numMipLevels, 1u);
-    LLOGW(
-        "width (%d), height (%d), depth (%d), numLayers (%d), numSamples (%d) and numMipLevels "
-        "(%d) should be at least 1.\n",
-        desc.width,
-        desc.height,
-        desc.depth,
-        desc.numLayers,
-        desc.numSamples,
-        desc.numMipLevels);
-  }
-
-  return sanitized;
-}
 
 std::unique_ptr<ShaderStages> IDevice::createShaderStages(const char* vs,
                                                            std::string debugNameVS,
@@ -60,6 +48,5 @@ std::unique_ptr<ShaderStages> IDevice::createShaderStages(const char* cs,
   return std::make_unique<igl::ShaderStages>(
       createShaderModule(igl::ShaderModuleDesc(cs, Stage_Compute, debugName), outResult));
 }
-
 
 } // namespace igl

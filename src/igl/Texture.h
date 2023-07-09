@@ -122,7 +122,7 @@ enum TextureFormat : uint8_t {
   RG_EAC_SNorm,
   R_EAC_UNorm,
   R_EAC_SNorm,
-  RGBA_BC7_UNORM_4x4, // block compression
+  RGBA_BC7_UNORM_4x4,
 
   // Depth and Stencil formats
   Z_UNorm16,
@@ -521,13 +521,6 @@ class ITexture {
    * @brief Returns the number of mipmap levels
    */
   [[nodiscard]] virtual size_t getNumMipLevels() const = 0;
-  /**
-   * @brief Returns a flag to indicate mipmap for the texture has been generated.
-   *
-   * @return True  Mipmap has been generated
-   *         False Otherwise
-   */
-  [[nodiscard]] virtual bool isRequiredGenerateMipmap() const = 0;
   /**
    * @brief Returns number of bytes per pixel in the underlying textures
    *

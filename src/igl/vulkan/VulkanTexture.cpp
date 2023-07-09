@@ -21,8 +21,8 @@ VulkanTexture::VulkanTexture(const VulkanContext& ctx,
   ctx_(ctx), image_(std::move(image)), imageView_(std::move(imageView)) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  IGL_ASSERT(image_);
-  IGL_ASSERT(imageView_);
+  IGL_ASSERT(image_.get());
+  IGL_ASSERT(imageView_.get());
 }
 
 VulkanTexture::~VulkanTexture() {

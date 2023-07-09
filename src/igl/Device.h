@@ -13,26 +13,16 @@
 
 namespace igl {
 
-struct BufferDesc;
-struct ComputePipelineDesc;
-struct DepthStencilStateDesc;
-struct FramebufferDesc;
-struct RenderPipelineDesc;
-struct SamplerStateDesc;
-struct ShaderLibraryDesc;
-struct ShaderModuleDesc;
-struct ShaderStages;
-struct TextureDesc;
-struct VertexInputStateDesc;
 class IBuffer;
 class ICommandBuffer;
-class IDevice;
 class IFramebuffer;
 class IRenderPipelineState;
-class ISamplerState;
 class IShaderModule;
-class ITexture;
-class IVertexInputState;
+struct BufferDesc;
+struct FramebufferDesc;
+struct RenderPipelineDesc;
+struct ShaderModuleDesc;
+struct ShaderStages;
 
 struct ComputePipelineDesc {
   std::shared_ptr<ShaderStages> shaderStages;
@@ -129,7 +119,6 @@ class IDevice {
                                                            Result* outResult = nullptr) const;
 
  protected:
-  TextureDesc sanitize(const TextureDesc& desc) const;
   IDevice() = default;
 };
 

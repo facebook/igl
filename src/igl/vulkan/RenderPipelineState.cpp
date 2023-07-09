@@ -221,9 +221,9 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
 
   vertexInputStateCreateInfo_ = ivkGetPipelineVertexInputStateCreateInfo_Empty();
 
-  bool bufferAlreadyBound[IGL_VERTEX_BUFFER_MAX] = {};
+  bool bufferAlreadyBound[VertexInputStateDesc::IGL_VERTEX_BUFFER_MAX] = {};
 
-  for (size_t i = 0; i != vstate.numAttributes; i++) {
+  for (uint32_t i = 0; i != vstate.numAttributes; i++) {
     const VertexAttribute& attr = vstate.attributes[i];
     const VkFormat format = vertexAttributeFormatToVkFormat(attr.format);
     const uint32_t bufferIndex = attr.bufferIndex;

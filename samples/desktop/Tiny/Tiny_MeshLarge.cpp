@@ -740,17 +740,16 @@ void initIGL() {
     const HWDeviceType hardwareType = kPreferIntegratedGPU ? HWDeviceType::IntegratedGpu
                                                            : HWDeviceType::DiscreteGpu;
     std::vector<HWDeviceDesc> devices =
-        vulkan::HWDevice::queryDevices(*ctx.get(), HWDeviceQueryDesc(hardwareType), nullptr);
+        vulkan::HWDevice::queryDevices(*ctx.get(), hardwareType, nullptr);
     if (devices.empty()) {
       const HWDeviceType hardwareType = !kPreferIntegratedGPU ? HWDeviceType::IntegratedGpu
                                                               : HWDeviceType::DiscreteGpu;
-      devices =
-          vulkan::HWDevice::queryDevices(*ctx.get(), HWDeviceQueryDesc(hardwareType), nullptr);
+      devices = vulkan::HWDevice::queryDevices(*ctx.get(), hardwareType, nullptr);
     }
     IGL_ASSERT_MSG(!devices.empty(), "GPU is not found");
     device_ =
         vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
-    IGL_ASSERT(device_);
+    IGL_ASSERT(device_.get());
   }
 
   {
@@ -1108,7 +1107,7 @@ void createRenderPipelines() {
     return;
   }
 
-  IGL_ASSERT(fbMain_);
+  IGL_ASSERT(fbMain_.get());
 
   VertexInputStateDesc vdesc;
   vdesc.numAttributes = 4;
@@ -1207,7 +1206,7 @@ void createRenderPipelineSkybox() {
     return;
   }
 
-  IGL_ASSERT(fbMain_);
+  IGL_ASSERT(fbMain_.get());
 
   RenderPipelineDesc desc;
   desc.targetDesc.colorAttachments.resize(1);
@@ -1262,7 +1261,7 @@ void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   framebufferDesc.colorAttachments[0].texture = nativeDrawable;
   framebufferDesc.depthAttachment.texture = getNativeDepthDrawable();
   fbMain_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(fbMain_);
+  IGL_ASSERT(fbMain_.get());
 }
 
 void createShadowMap() {
@@ -1283,7 +1282,7 @@ void createShadowMap() {
 
   framebufferDesc.depthAttachment.texture = shadowMap;
   fbShadowMap_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(fbShadowMap_);
+  IGL_ASSERT(fbShadowMap_.get());
 }
 
 void createOffscreenFramebuffer() {
@@ -1332,7 +1331,7 @@ void createOffscreenFramebuffer() {
     framebufferDesc.colorAttachments[0].resolveTexture = texResolveColor;
   }
   fbOffscreen_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(fbOffscreen_);
+  IGL_ASSERT(fbOffscreen_.get());
 }
 
 void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
@@ -1693,7 +1692,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
                                        fileNameKTX.c_str());
       desc.numMipLevels = TextureDesc::calcNumMipLevels(texRef.extent().x, texRef.extent().y);
       tex = device_->createTexture(desc, nullptr);
-      IGL_ASSERT(tex);
+      IGL_ASSERT(tex.get());
     }
 
     tex->uploadCube(texRefRange, (igl::TextureCubeFace)face, texRef.data(0, face, 0), 0);

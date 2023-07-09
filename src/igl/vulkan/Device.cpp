@@ -121,11 +121,9 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
 
 std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
                                                 Result* outResult) const noexcept {
-  const auto sanitized = sanitize(desc);
-
   auto texture = std::make_shared<vulkan::Texture>(*this, desc.format);
 
-  const Result res = texture->create(sanitized);
+  const Result res = texture->create(desc);
 
   Result::setResult(outResult, res);
 

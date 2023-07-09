@@ -136,7 +136,7 @@ Result Texture::create(const TextureDesc& desc) {
   if (!IGL_VERIFY(result.isOk())) {
     return result;
   }
-  if (!IGL_VERIFY(image)) {
+  if (!IGL_VERIFY(image.get())) {
     return Result(Result::Code::InvalidOperation, "Cannot create VulkanImage");
   }
 
@@ -154,7 +154,7 @@ Result Texture::create(const TextureDesc& desc) {
                                                                       arrayLayerCount,
                                                                       debugNameImageView.c_str());
 
-  if (!IGL_VERIFY(imageView)) {
+  if (!IGL_VERIFY(imageView.get())) {
     return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
   }
 
@@ -269,7 +269,7 @@ Dimensions Texture::getDimensions() const {
 }
 
 VkFormat Texture::getVkFormat() const {
-  IGL_ASSERT(texture_);
+  IGL_ASSERT(texture_.get());
   return texture_ ? texture_->getVulkanImage().imageFormat_ : VK_FORMAT_UNDEFINED;
 }
 
@@ -295,19 +295,13 @@ size_t Texture::getNumMipLevels() const {
 
 void Texture::generateMipmap() const {
   if (desc_.numMipLevels > 1) {
+    IGL_ASSERT(texture_.get());
+    IGL_ASSERT(texture_->getVulkanImage().imageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED);
     const auto& ctx = device_.getVulkanContext();
     const auto& wrapper = ctx.immediate_->acquire();
     texture_->getVulkanImage().generateMipmap(wrapper.cmdBuf_);
     ctx.immediate_->submit(wrapper);
   }
-}
-
-bool Texture::isRequiredGenerateMipmap() const {
-  if (!texture_ || desc_.numMipLevels <= 1) {
-    return false;
-  }
-
-  return texture_->getVulkanImage().imageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
 uint32_t Texture::getTextureId() const {

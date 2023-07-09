@@ -8,11 +8,11 @@
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#endif
+#endif // VK_USE_PLATFORM_WIN32_KHR
 
 #if defined(VOLK_HEADER_ONLY)
 #define VOLK_IMPLEMENTATION
-#endif
+#endif // VOLK_HEADER_ONLY
 
 #include "VulkanHelpers.h"
 

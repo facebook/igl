@@ -160,15 +160,14 @@ static void initIGL() {
 #error Unsupported OS
 #endif
 
-    std::vector<HWDeviceDesc> devices = vulkan::HWDevice::queryDevices(
-        *ctx.get(), HWDeviceQueryDesc(HWDeviceType::DiscreteGpu), nullptr);
+    std::vector<HWDeviceDesc> devices =
+        vulkan::HWDevice::queryDevices(*ctx.get(), HWDeviceType::DiscreteGpu, nullptr);
     if (devices.empty()) {
-      devices = vulkan::HWDevice::queryDevices(
-          *ctx.get(), HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
+      devices = vulkan::HWDevice::queryDevices(*ctx.get(), HWDeviceType::IntegratedGpu, nullptr);
     }
     device_ =
         vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
-    IGL_ASSERT(device_);
+    IGL_ASSERT(device_.get());
   }
 
   // first color attachment
@@ -194,7 +193,7 @@ static void createRenderPipeline() {
     return;
   }
 
-  IGL_ASSERT(framebuffer_);
+  IGL_ASSERT(framebuffer_.get());
 
   RenderPipelineDesc desc;
 
@@ -214,7 +213,7 @@ static void createRenderPipeline() {
   desc.shaderStages = device_->createShaderStages(
       codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)");
   renderPipelineState_Triangle_ = device_->createRenderPipeline(desc, nullptr);
-  IGL_ASSERT(renderPipelineState_Triangle_);
+  IGL_ASSERT(renderPipelineState_Triangle_.get());
 }
 
 static std::shared_ptr<ITexture> getNativeDrawable() {
@@ -247,7 +246,7 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
     framebufferDesc.colorAttachments[i].texture = device_->createTexture(desc, nullptr);
   }
   framebuffer_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(framebuffer_);
+  IGL_ASSERT(framebuffer_.get());
 }
 
 static void render(const std::shared_ptr<ITexture>& nativeDrawable) {

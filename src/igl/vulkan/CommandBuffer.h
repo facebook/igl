@@ -97,7 +97,7 @@ class CommandBuffer final : public ICommandBuffer,
   // was present() called with a swapchain image?
   mutable bool isFromSwapchain_ = false;
 
-  std::shared_ptr<igl::IFramebuffer> framebuffer_;
+  std::shared_ptr<igl::vulkan::Framebuffer> framebuffer_;
 
   VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
 

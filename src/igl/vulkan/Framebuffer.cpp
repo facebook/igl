@@ -74,7 +74,7 @@ void Framebuffer::copyBytesColorAttachment(size_t index,
   }
 
   const auto& itexture = getColorAttachment(index);
-  if (!IGL_VERIFY(itexture)) {
+  if (!IGL_VERIFY(itexture.get())) {
     return;
   }
 
@@ -112,12 +112,12 @@ void Framebuffer::copyTextureColorAttachment(size_t index,
   VkCommandBuffer cmdBuf = vulkanBuffer.getVkCommandBuffer();
 
   const std::shared_ptr<igl::ITexture>& srcTexture = getColorAttachment(index);
-  if (!IGL_VERIFY(srcTexture)) {
+  if (!IGL_VERIFY(srcTexture.get())) {
     return;
   }
   const igl::vulkan::Texture& srcVkTex = static_cast<Texture&>(*srcTexture);
 
-  if (!IGL_VERIFY(destTexture)) {
+  if (!IGL_VERIFY(destTexture.get())) {
     return;
   }
   const igl::vulkan::Texture& dstVkTex = static_cast<Texture&>(*destTexture);
@@ -248,7 +248,7 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel, VkRenderPass pass
     if (it == desc_.colorAttachments.end()) {
       continue;
     }
-    IGL_ASSERT(it->second.texture);
+    IGL_ASSERT(it->second.texture.get());
 
     const auto& colorTexture = static_cast<vulkan::Texture&>(*it->second.texture);
     attachments.attachments_.push_back(colorTexture.getVkImageViewForFramebuffer(mipLevel));

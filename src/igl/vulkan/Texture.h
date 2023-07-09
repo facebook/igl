@@ -51,7 +51,6 @@ class Texture final : public ITexture {
   size_t getSamples() const override;
   size_t getNumMipLevels() const override;
   void generateMipmap() const override;
-  bool isRequiredGenerateMipmap() const override;
   uint32_t getTextureId() const override;
   VkFormat getVkFormat() const;
 
@@ -59,7 +58,7 @@ class Texture final : public ITexture {
   VkImageView getVkImageViewForFramebuffer(uint32_t level) const; // framebuffers can render only into 1 mip-level
   VkImage getVkImage() const;
   VulkanTexture& getVulkanTexture() const {
-    IGL_ASSERT(texture_);
+    IGL_ASSERT(texture_.get());
     return *texture_.get();
   }
 

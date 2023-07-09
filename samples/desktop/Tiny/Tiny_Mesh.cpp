@@ -278,15 +278,14 @@ static void initIGL() {
 #error Unsupported OS
 #endif
 
-    std::vector<HWDeviceDesc> devices = vulkan::HWDevice::queryDevices(
-        *ctx.get(), HWDeviceQueryDesc(HWDeviceType::DiscreteGpu), nullptr);
+    std::vector<HWDeviceDesc> devices =
+        vulkan::HWDevice::queryDevices(*ctx.get(), HWDeviceType::DiscreteGpu, nullptr);
     if (devices.empty()) {
-      devices = vulkan::HWDevice::queryDevices(
-          *ctx.get(), HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
+      devices = vulkan::HWDevice::queryDevices(*ctx.get(), HWDeviceType::IntegratedGpu, nullptr);
     }
     device_ =
         vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
-    IGL_ASSERT(device_);
+    IGL_ASSERT(device_.get());
   }
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
@@ -399,7 +398,7 @@ static void createRenderPipeline() {
     return;
   }
 
-  IGL_ASSERT(framebuffer_);
+  IGL_ASSERT(framebuffer_.get());
 
   VertexInputStateDesc vdesc;
   vdesc.numAttributes = 3;
@@ -451,7 +450,7 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   framebufferDesc_.colorAttachments[0].texture = nativeDrawable;
 
   framebuffer_ = device_->createFramebuffer(framebufferDesc_, nullptr);
-  IGL_ASSERT(framebuffer_);
+  IGL_ASSERT(framebuffer_.get());
 }
 
 static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
