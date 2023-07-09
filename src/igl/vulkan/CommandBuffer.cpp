@@ -163,7 +163,7 @@ void CommandBuffer::present(std::shared_ptr<ITexture> surface) const {
   if (img.samples_ == VK_SAMPLE_COUNT_1_BIT) {
     const VkImageAspectFlags flags =
         vkTex.getVulkanTexture().getVulkanImage().getImageAspectFlags();
-    const VkPipelineStageFlags srcStage = vkTex.getProperties().isDepthOrStencil()
+    const VkPipelineStageFlags srcStage = igl::isDepthOrStencilFormat(vkTex.getFormat())
                                               ? VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
                                               : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     // set the result of the previous render pass
@@ -216,18 +216,16 @@ void CommandBuffer::cmdDispatchThreadGroups(const Dimensions& threadgroupCount) 
       wrapper_.cmdBuf_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
 }
 
-void CommandBuffer::cmdPushDebugGroupLabel(const std::string& label,
-                                           const igl::Color& color) const {
-  IGL_ASSERT(!label.empty());
+void CommandBuffer::cmdPushDebugGroupLabel(const char* label, const igl::Color& color) const {
+  IGL_ASSERT(label);
 
-  ivkCmdBeginDebugUtilsLabel(wrapper_.cmdBuf_, label.c_str(), color.toFloatPtr());
+  ivkCmdBeginDebugUtilsLabel(wrapper_.cmdBuf_, label, color.toFloatPtr());
 }
 
-void CommandBuffer::cmdInsertDebugEventLabel(const std::string& label,
-                                             const igl::Color& color) const {
-  IGL_ASSERT(!label.empty());
+void CommandBuffer::cmdInsertDebugEventLabel(const char* label, const igl::Color& color) const {
+  IGL_ASSERT(label);
 
-  ivkCmdInsertDebugUtilsLabel(wrapper_.cmdBuf_, label.c_str(), color.toFloatPtr());
+  ivkCmdInsertDebugUtilsLabel(wrapper_.cmdBuf_, label, color.toFloatPtr());
 }
 
 void CommandBuffer::cmdPopDebugGroupLabel() const {

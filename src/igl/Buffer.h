@@ -8,7 +8,6 @@
 #pragma once
 
 #include <igl/Common.h>
-#include <string>
 
 namespace igl {
 
@@ -59,13 +58,13 @@ struct BufferDesc {
   BufferType type; // GLES only
 
   /** @brief Identifier used for debugging */
-  std::string debugName;
+  const char* debugName = "";
 
   BufferDesc(BufferType type = 0,
              const void* data = nullptr,
              size_t length = 0,
              ResourceStorage storageIn = ResourceStorage::Shared,
-             const std::string& debugName = std::string()) :
+             const char* debugName = "") :
     data(data), length(length), storage(storageIn), type(type), debugName(debugName) {}
 };
 

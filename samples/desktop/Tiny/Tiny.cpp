@@ -215,7 +215,7 @@ static void createRenderPipeline() {
 
 static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   Framebuffer Framebuffer = {
-     .numColorAttachments = kNumColorAttachments,
+      .numColorAttachments = kNumColorAttachments,
       .colorAttachments = {{.texture = nativeDrawable}},
   };
 
@@ -224,20 +224,23 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
     if (i & 0x1) {
       continue;
     }
-    const TextureDesc desc = TextureDesc::new2D(
-        nativeDrawable->getFormat(),
-        nativeDrawable->getDimensions().width,
-        nativeDrawable->getDimensions().height,
-        TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled,
-        std::format("{}C{}", Framebuffer.debugName.c_str(), i - 1).c_str());
-
-    Framebuffer.colorAttachments[i].texture = device_->createTexture(desc, nullptr);
+    Framebuffer.colorAttachments[i].texture = device_->createTexture(
+        {
+            .type = TextureType::TwoD,
+            .format = nativeDrawable->getFormat(),
+            .width = nativeDrawable->getDimensions().width,
+            .height = nativeDrawable->getDimensions().height,
+            .usage =
+                TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled,
+            .debugName = std::format("{}C{}", Framebuffer.debugName, i - 1).c_str(),
+        },
+        nullptr);
   }
   framebuffer_ = Framebuffer;
 }
 
 static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
-  const auto size = framebuffer_.colorAttachments[0].texture->getSize();
+  const auto size = framebuffer_.colorAttachments[0].texture->getDimensions();
   if (size.width != width_ || size.height != height_) {
     createFramebuffer(nativeDrawable);
   }

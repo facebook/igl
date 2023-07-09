@@ -26,6 +26,8 @@
 #include <igl/vulkan/VulkanTexture.h>
 #include <igl/vulkan/VulkanVma.h>
 
+static_assert(igl::HWDeviceDesc::IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE <= VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+
 namespace {
 
 const char* kDefaultValidationLayers[] = {"VK_LAYER_KHRONOS_validation"};
@@ -345,10 +347,9 @@ igl::Result VulkanContext::queryDevices(HWDeviceType deviceType,
       continue;
     }
 
-    outDevices.emplace_back((uintptr_t)vkDevices[i],
-                            deviceType,
-                            deviceProperties.deviceName,
-                            std::to_string(deviceProperties.vendorID));
+    outDevices.emplace_back((uintptr_t)vkDevices[i], deviceType);
+    strncpy(
+        outDevices.back().name, deviceProperties.deviceName, strlen(deviceProperties.deviceName));
   }
 
   if (outDevices.empty()) {
@@ -573,9 +574,10 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     }
     textures_[0] = std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView));
     const uint32_t pixel = 0xFF000000;
+    const void* data[] = {&pixel};
     const VkRect2D imageRegion = ivkGetRect2D(0, 0, 1, 1);
     stagingDevice_->imageData2D(
-        textures_[0]->getVulkanImage(), imageRegion, 0, 1, 0, dummyTextureFormat, &pixel);
+        textures_[0]->getVulkanImage(), imageRegion, 0, 1, 0, 1, dummyTextureFormat, data);
   }
 
   // default sampler

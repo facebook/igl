@@ -16,8 +16,7 @@
 
 #include <format>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 Texture::Texture(const igl::vulkan::Device& device, TextureFormat format) :
   ITexture(format), device_(device) {}
@@ -88,10 +87,11 @@ Result Texture::create(const TextureDesc& desc) {
 
   const VkMemoryPropertyFlags memFlags = resourceStorageToVkMemoryPropertyFlags(desc_.storage);
 
-  const std::string debugNameImage =
-      !desc_.debugName.empty() ? std::format("Image: {}", desc_.debugName.c_str()) : "";
+  const bool hasDebugName = desc_.debugName && *desc_.debugName;
+
+  const std::string debugNameImage = hasDebugName ? std::format("Image: {}", desc_.debugName) : "";
   const std::string debugNameImageView =
-      !desc_.debugName.empty() ? std::format("Image View: {}", desc_.debugName.c_str()) : "";
+      hasDebugName ? std::format("Image View: {}", desc_.debugName) : "";
 
   VkImageCreateFlags createFlags = 0;
   uint32_t arrayLayerCount = static_cast<uint32_t>(desc_.numLayers);
@@ -163,104 +163,41 @@ Result Texture::create(const TextureDesc& desc) {
   return Result();
 }
 
-Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t bytesPerRow) const {
+Result Texture::upload(const TextureRangeDesc& range, const void* data[]) const {
   if (!data) {
     return igl::Result();
   }
-  const auto [result, _] = validateRange(range);
-  if (!result.isOk()) {
+  const auto result = validateRange(range);
+  if (!IGL_VERIFY(result.isOk())) {
     return result;
   }
 
-  const void* uploadData = data;
-  const size_t bytesPerPixel = isCompressedTextureFormat(vkFormatToTextureFormat(getVkFormat()))
-                                   ? toBytesPerBlock(vkFormatToTextureFormat(getVkFormat()))
-                                   : igl::vulkan::getBytesPerPixel(getVkFormat());
-
-  const size_t imageRowWidth = desc_.width * bytesPerPixel;
-
-  std::vector<uint8_t> linearData;
-
-  const bool isAligned = isCompressedTextureFormat(vkFormatToTextureFormat(getVkFormat())) ||
-                         bytesPerRow == 0 || imageRowWidth == bytesPerRow;
-
-  if (!isAligned) {
-    linearData.resize(imageRowWidth * desc_.height);
-  }
-
-  auto numLayers = std::max(range.numLayers, static_cast<size_t>(1));
-  auto byteIncrement =
-      numLayers > 1
-          ? getTextureBytesPerSlice(range.width, range.height, range.depth, desc_.format, 0)
-          : 0;
-  if (range.numMipLevels > 1) {
-    for (auto i = 1; i < range.numMipLevels; ++i) {
-      byteIncrement +=
-          getTextureBytesPerSlice(range.width, range.height, range.depth, desc_.format, i);
-    }
-  }
-
-  for (auto i = 0; i < numLayers; ++i) {
-    if (isAligned) {
-      uploadData = data;
-    } else {
-      for (uint32_t h = 0; h < desc_.height; h++) {
-        memcpy(static_cast<uint8_t*>(linearData.data()) + h * imageRowWidth,
-               static_cast<const uint8_t*>(data) + h * bytesPerRow,
-               imageRowWidth);
-      }
-
-      uploadData = linearData.data();
-    }
-
-    const VulkanContext& ctx = device_.getVulkanContext();
-
-    const VkImageType type = texture_->getVulkanImage().type_;
-
-    if (type == VK_IMAGE_TYPE_3D) {
-      ctx.stagingDevice_->imageData3D(
-          texture_->getVulkanImage(),
-          VkOffset3D{(int32_t)range.x, (int32_t)range.y, (int32_t)range.z},
-          VkExtent3D{(uint32_t)range.width, (uint32_t)range.height, (uint32_t)range.depth},
-          getVkFormat(),
-          uploadData);
-    } else {
-      const VkRect2D imageRegion = ivkGetRect2D(
-          (uint32_t)range.x, (uint32_t)range.y, (uint32_t)range.width, (uint32_t)range.height);
-      ctx.stagingDevice_->imageData2D(texture_->getVulkanImage(),
-                                      imageRegion,
-                                      (uint32_t)range.mipLevel,
-                                      (uint32_t)range.numMipLevels,
-                                      (uint32_t)range.layer + i,
-                                      getVkFormat(),
-                                      uploadData);
-    }
-
-    data = static_cast<const uint8_t*>(data) + byteIncrement;
-  }
-
-  return Result();
-}
-
-Result Texture::uploadCube(const TextureRangeDesc& range,
-                           TextureCubeFace face,
-                           const void* data,
-                           size_t bytesPerRow) const {
-  const auto [result, _] = validateRange(range);
-  if (!result.isOk()) {
-    return result;
-  }
+  const uint32_t numLayers = std::max(range.numLayers, 1u);
 
   const VulkanContext& ctx = device_.getVulkanContext();
-  const VkRect2D imageRegion = ivkGetRect2D(
-      (uint32_t)range.x, (uint32_t)range.y, (uint32_t)range.width, (uint32_t)range.height);
-  ctx.stagingDevice_->imageData2D(texture_->getVulkanImage(),
-                                  imageRegion,
-                                  (uint32_t)range.mipLevel,
-                                  (uint32_t)range.numMipLevels,
-                                  (uint32_t)face - (uint32_t)TextureCubeFace::PosX,
-                                  getVkFormat(),
-                                  data);
+  const VkImageType type = texture_->getVulkanImage().type_;
+
+  if (type == VK_IMAGE_TYPE_3D) {
+    const void* uploadData = data[0];
+    ctx.stagingDevice_->imageData3D(
+        texture_->getVulkanImage(),
+        VkOffset3D{(int32_t)range.x, (int32_t)range.y, (int32_t)range.z},
+        VkExtent3D{(uint32_t)range.width, (uint32_t)range.height, (uint32_t)range.depth},
+        getVkFormat(),
+        uploadData);
+  } else {
+    const VkRect2D imageRegion = ivkGetRect2D(
+        (uint32_t)range.x, (uint32_t)range.y, (uint32_t)range.width, (uint32_t)range.height);
+    ctx.stagingDevice_->imageData2D(texture_->getVulkanImage(),
+                                    imageRegion,
+                                    range.mipLevel,
+                                    range.numMipLevels,
+                                    range.layer,
+                                    range.numLayers,
+                                    getVkFormat(),
+                                    data);
+  }
+
   return Result();
 }
 
@@ -271,26 +208,6 @@ Dimensions Texture::getDimensions() const {
 VkFormat Texture::getVkFormat() const {
   IGL_ASSERT(texture_.get());
   return texture_ ? texture_->getVulkanImage().imageFormat_ : VK_FORMAT_UNDEFINED;
-}
-
-size_t Texture::getNumLayers() const {
-  return desc_.numLayers;
-}
-
-TextureType Texture::getType() const {
-  return desc_.type;
-}
-
-uint32_t Texture::getUsage() const {
-  return desc_.usage;
-}
-
-size_t Texture::getSamples() const {
-  return desc_.numSamples;
-}
-
-size_t Texture::getNumMipLevels() const {
-  return desc_.numMipLevels;
 }
 
 void Texture::generateMipmap() const {
@@ -337,5 +254,31 @@ bool Texture::isSwapchainTexture() const {
   return texture_ ? texture_->getVulkanImage().isExternallyManaged_ : false;
 }
 
-} // namespace vulkan
-} // namespace igl
+Result Texture::validateRange(const igl::TextureRangeDesc& range) const {
+  if (IGL_UNEXPECTED(range.width == 0 || range.height == 0 || range.depth == 0 ||
+                     range.numLayers == 0 || range.numMipLevels == 0)) {
+    return Result{Result::Code::ArgumentInvalid,
+                  "width, height, depth numLayers, and numMipLevels must be at least 1."};
+  }
+  if (range.mipLevel > desc_.numMipLevels) {
+    return Result{Result::Code::ArgumentOutOfRange, "range mip-level exceeds texture mip-levels"};
+  }
+
+  const auto dimensions = getDimensions();
+  const auto texWidth = std::max(dimensions.width >> range.mipLevel, 1u);
+  const auto texHeight = std::max(dimensions.height >> range.mipLevel, 1u);
+  const auto texDepth = std::max(dimensions.depth >> range.mipLevel, 1u);
+  const auto texSlices = desc_.numLayers;
+
+  if (range.width > texWidth || range.height > texHeight || range.depth > texDepth) {
+    return Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"};
+  }
+  if (range.x > texWidth - range.width || range.y > texHeight - range.height ||
+      range.z > texDepth - range.depth) {
+    return Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"};
+  }
+
+  return Result{};
+}
+
+} // namespace igl::vulkan

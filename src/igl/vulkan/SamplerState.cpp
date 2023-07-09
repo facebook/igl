@@ -12,42 +12,40 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanSampler.h>
 
-#define IGL_VULKAN_DEBUG_SAMPLER_STATE 1
-
 namespace {
-VkFilter samplerMinMagFilterToVkFilter(igl::SamplerMinMagFilter filter) {
+VkFilter samplerFilterToVkFilter(igl::SamplerFilter filter) {
   switch (filter) {
-  case igl::SamplerMinMagFilter_Nearest:
+  case igl::SamplerFilter_Nearest:
     return VK_FILTER_NEAREST;
-  case igl::SamplerMinMagFilter_Linear:
+  case igl::SamplerFilter_Linear:
     return VK_FILTER_LINEAR;
   }
-  IGL_ASSERT_MSG(false, "SamplerMinMagFilter value not handled: %d", (int)filter);
+  IGL_ASSERT_MSG(false, "SamplerFilter value not handled: %d", (int)filter);
   return VK_FILTER_LINEAR;
 }
 
-VkSamplerMipmapMode samplerMipFilterToVkSamplerMipmapMode(igl::SamplerMipFilter filter) {
+VkSamplerMipmapMode samplerMipMapToVkSamplerMipmapMode(igl::SamplerMipMap filter) {
   switch (filter) {
-  case igl::SamplerMipFilter_Disabled:
-  case igl::SamplerMipFilter_Nearest:
+  case igl::SamplerMipMap_Disabled:
+  case igl::SamplerMipMap_Nearest:
     return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-  case igl::SamplerMipFilter_Linear:
+  case igl::SamplerMipMap_Linear:
     return VK_SAMPLER_MIPMAP_MODE_LINEAR;
   }
-  IGL_ASSERT_MSG(false, "SamplerMipFilter value not handled: %d", (int)filter);
+  IGL_ASSERT_MSG(false, "SamplerMipMap value not handled: %d", (int)filter);
   return VK_SAMPLER_MIPMAP_MODE_NEAREST;
 }
 
-static VkSamplerAddressMode samplerAddressModeToVkSamplerAddressMode(igl::SamplerAddressMode mode) {
+static VkSamplerAddressMode samplerWrapModeToVkSamplerAddressMode(igl::SamplerWrapMode mode) {
   switch (mode) {
-  case igl::SamplerAddressMode_Repeat:
+  case igl::SamplerWrapMode_Repeat:
     return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  case igl::SamplerAddressMode_Clamp:
+  case igl::SamplerWrapMode_Clamp:
     return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-  case igl::SamplerAddressMode_MirrorRepeat:
+  case igl::SamplerWrapMode_MirrorRepeat:
     return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
   }
-  IGL_ASSERT_MSG(false, "SamplerAddressMode value not handled: %d", (int)mode);
+  IGL_ASSERT_MSG(false, "SamplerWrapMode value not handled: %d", (int)mode);
   return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
 
@@ -58,19 +56,26 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
                  (int)desc.mipLodMax,
                  (int)desc.mipLodMin);
 
-  VkSamplerCreateInfo ci =
-      ivkGetSamplerCreateInfo(samplerMinMagFilterToVkFilter(desc.minFilter),
-                              samplerMinMagFilterToVkFilter(desc.magFilter),
-                              samplerMipFilterToVkSamplerMipmapMode(desc.mipFilter),
-                              samplerAddressModeToVkSamplerAddressMode(desc.addressModeU),
-                              samplerAddressModeToVkSamplerAddressMode(desc.addressModeV),
-                              samplerAddressModeToVkSamplerAddressMode(desc.addressModeW),
-                              desc.mipLodMin,
-                              desc.mipLodMax);
-
-  if (desc.mipFilter == igl::SamplerMipFilter_Disabled) {
-    ci.maxLod = 0.0f;
-  }
+  VkSamplerCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .magFilter = samplerFilterToVkFilter(desc.magFilter),
+      .minFilter = samplerFilterToVkFilter(desc.minFilter),
+      .mipmapMode = samplerMipMapToVkSamplerMipmapMode(desc.mipMap),
+      .addressModeU = samplerWrapModeToVkSamplerAddressMode(desc.wrapU),
+      .addressModeV = samplerWrapModeToVkSamplerAddressMode(desc.wrapV),
+      .addressModeW = samplerWrapModeToVkSamplerAddressMode(desc.wrapW),
+      .mipLodBias = 0.0f,
+      .anisotropyEnable = VK_FALSE,
+      .maxAnisotropy = 0.0f,
+      .compareEnable = VK_FALSE,
+      .compareOp = VK_COMPARE_OP_ALWAYS,
+      .minLod = float(desc.mipLodMin),
+      .maxLod = desc.mipMap == igl::SamplerMipMap_Disabled ? 0.0f : float(desc.mipLodMax),
+      .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+      .unnormalizedCoordinates = VK_FALSE,
+  };
 
   if (desc.maxAnisotropic > 1) {
     const bool isAnisotropicFilteringSupported = limits.maxSamplerAnisotropy > 1;
@@ -78,14 +83,12 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
                    "Anisotropic filtering is not supported by the device.");
     ci.anisotropyEnable = isAnisotropicFilteringSupported ? VK_TRUE : VK_FALSE;
 
-#ifdef IGL_VULKAN_DEBUG_SAMPLER_STATE
     if (limits.maxSamplerAnisotropy < desc.maxAnisotropic) {
       LLOGL(
           "Supplied sampler anisotropic value greater than max supported by the device, setting to "
           "%.0f",
           static_cast<double>(limits.maxSamplerAnisotropy));
     }
-#endif
     ci.maxAnisotropy = std::min((float)limits.maxSamplerAnisotropy, (float)desc.maxAnisotropic);
   }
 
@@ -120,7 +123,7 @@ Result SamplerState::create(const SamplerStateDesc& desc) {
   sampler_ = ctx.createSampler(
       samplerStateDescToVkSamplerCreateInfo(desc, ctx.getVkPhysicalDeviceProperties().limits),
       &result,
-      desc_.debugName.c_str());
+      desc_.debugName);
 
   if (!IGL_VERIFY(result.isOk())) {
     return result;

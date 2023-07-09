@@ -319,12 +319,16 @@ static void initIGL() {
   {
     const uint32_t texWidth = 256;
     const uint32_t texHeight = 256;
-    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::BGRA_UNorm8,
-                                                texWidth,
-                                                texHeight,
-                                                TextureDesc::TextureUsageBits::Sampled,
-                                                "XOR pattern");
-    texture0_ = device_->createTexture(desc, nullptr);
+    texture0_ = device_->createTexture(
+        {
+            .type = TextureType::TwoD,
+            .format = igl::TextureFormat::BGRA_UNorm8,
+            .width = texWidth,
+            .height = texHeight,
+            .usage = TextureDesc::TextureUsageBits::Sampled,
+            .debugName = "XOR pattern",
+        },
+        nullptr);
     std::vector<uint32_t> pixels(texWidth * texHeight);
     for (uint32_t y = 0; y != texHeight; y++) {
       for (uint32_t x = 0; x != texWidth; x++) {
@@ -332,8 +336,8 @@ static void initIGL() {
         pixels[y * texWidth + x] = 0xFF000000 + ((x ^ y) << 16) + ((x ^ y) << 8) + (x ^ y);
       }
     }
-    texture0_->upload(
-        {.width = texWidth, .height = texHeight}, pixels.data(), sizeof(uint32_t) * texWidth);
+    const void* data[] = {pixels.data()};
+    texture0_->upload({.width = texWidth, .height = texHeight}, data);
   }
   {
     using namespace std::filesystem;
@@ -355,19 +359,18 @@ static void initIGL() {
         4);
     IGL_ASSERT_MSG(pixels,
                    "Cannot load textures. Run `deploy_content.py` before running this app.");
-    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
-                                                texWidth,
-                                                texHeight,
-                                                TextureDesc::TextureUsageBits::Sampled,
-                                                "wood_polished_01_diff.png");
-    texture1_ = device_->createTexture(desc, nullptr);
-    texture1_->upload(
+    texture1_ = device_->createTexture(
         {
+            .type = TextureType::TwoD,
+            .format = igl::TextureFormat::RGBA_UNorm8,
             .width = (uint32_t)texWidth,
             .height = (uint32_t)texHeight,
+            .usage = TextureDesc::TextureUsageBits::Sampled,
+            .debugName = "wood_polished_01_diff.png",
         },
-        pixels,
-        sizeof(uint32_t) * texWidth);
+        nullptr);
+    const void* data[] = {pixels};
+    texture1_->upload({.width = (uint32_t)texWidth, .height = (uint32_t)texHeight}, data);
     stbi_image_free(pixels);
   }
 

@@ -31,19 +31,17 @@ bool _IGLVerify(bool cond, const char* func, const char* file, int line, const c
 static_assert(sizeof(Color) == 4 * sizeof(float));
 
 std::unique_ptr<ShaderStages> IDevice::createShaderStages(const char* vs,
-                                                           std::string debugNameVS,
-                                                           const char* fs,
-                                                           std::string debugNameFS,
-                                                           Result* outResult) const {
-  auto VS = createShaderModule(igl::ShaderModuleDesc(vs, Stage_Vertex, std::move(debugNameVS)),
-                               outResult);
-  auto FS = createShaderModule(igl::ShaderModuleDesc(fs, Stage_Fragment, std::move(debugNameFS)),
-                               outResult);
+                                                          const char* debugNameVS,
+                                                          const char* fs,
+                                                          const char* debugNameFS,
+                                                          Result* outResult) const {
+  auto VS = createShaderModule(igl::ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult);
+  auto FS = createShaderModule(igl::ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult);
   return std::make_unique<igl::ShaderStages>(VS, FS);
 }
 
 std::unique_ptr<ShaderStages> IDevice::createShaderStages(const char* cs,
-                                                          std::string debugName,
+                                                          const char* debugName,
                                                           Result* outResult) const {
   return std::make_unique<igl::ShaderStages>(
       createShaderModule(igl::ShaderModuleDesc(cs, Stage_Compute, debugName), outResult));

@@ -25,9 +25,9 @@ class ICommandBuffer {
   virtual void waitUntilCompleted() = 0;
   virtual void useComputeTexture(const std::shared_ptr<ITexture>& texture) = 0;
 
-  virtual void cmdPushDebugGroupLabel(const std::string& label,
+  virtual void cmdPushDebugGroupLabel(const char* label,
                                       const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
-  virtual void cmdInsertDebugEventLabel(const std::string& label,
+  virtual void cmdInsertDebugEventLabel(const char* label,
                                         const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
   virtual void cmdPopDebugGroupLabel() const = 0;
 

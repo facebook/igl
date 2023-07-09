@@ -303,8 +303,11 @@ VkPipeline RenderPipelineState::getVkPipeline(
     }
   }
 
-  const IShaderModule* vertexModule = desc_.shaderStages->getModule(Stage_Vertex);
-  const IShaderModule* fragmentModule = desc_.shaderStages->getModule(Stage_Fragment);
+  const ShaderModule* vertexModule =
+      static_cast<const ShaderModule*>(desc_.shaderStages->getModule(Stage_Vertex));
+  const ShaderModule* fragmentModule =
+      static_cast<const ShaderModule*>(desc_.shaderStages->getModule(Stage_Fragment));
+
   igl::vulkan::VulkanPipelineBuilder()
       .dynamicStates({
           // from Vulkan 1.0
@@ -336,11 +339,11 @@ VkPipeline RenderPipelineState::getVkPipeline(
           ivkGetPipelineShaderStageCreateInfo(
               VK_SHADER_STAGE_VERTEX_BIT,
               igl::vulkan::ShaderModule::getVkShaderModule(vertexModule),
-              vertexModule->desc().entryPoint.c_str()),
+              vertexModule->desc().entryPoint),
           ivkGetPipelineShaderStageCreateInfo(
               VK_SHADER_STAGE_FRAGMENT_BIT,
               igl::vulkan::ShaderModule::getVkShaderModule(fragmentModule),
-              fragmentModule->desc().entryPoint.c_str()),
+              fragmentModule->desc().entryPoint),
       })
       .cullMode(cullModeToVkCullMode(desc_.cullMode))
       .frontFace(windingModeToVkFrontFace(desc_.frontFaceWinding))
@@ -355,7 +358,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
           VK_NULL_HANDLE,
           ctx.pipelineLayout_->getVkPipelineLayout(),
           &pipeline,
-          desc_.debugName.c_str());
+          desc_.debugName);
 
   pipelines_[dynamicState] = pipeline;
 

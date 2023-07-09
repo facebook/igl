@@ -10,7 +10,6 @@
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -162,14 +161,13 @@ enum class HWDeviceType {
  * @brief  Represents a description of a specific physical device installed in the system
  */
 struct HWDeviceDesc {
+  enum { IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE = 256 };
   /** @brief Implementation-specific identifier of a device */
-  uintptr_t guid;
+  uintptr_t guid = 0;
   /** @brief A type of an actual physical device */
-  HWDeviceType type;
+  HWDeviceType type = HWDeviceType::SoftwareGpu;
   /** @brief Implementation-specific name of a device */
-  std::string name;
-  /** @brief Implementation-specific vendor name */
-  std::string vendor;
+  char name[IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE] = {};
 };
 
 enum class ResourceStorage {
@@ -200,7 +198,6 @@ struct Result {
   enum class Code {
     // No error
     Ok,
-
     /// Bad argument, e.g. invalid buffer/texture/bind type
     ArgumentInvalid,
     /// nullptr input for non-null argument
@@ -213,100 +210,57 @@ struct Result {
     Unsupported,
     /// Feature has not yet been implemented into IGL
     Unimplemented,
-
     /// Something bad happened internally but we don't know what
     RuntimeError,
   };
 
   Code code = Code::Ok;
-  std::string message;
+  const char* message = "";
   explicit Result() = default;
-  explicit Result(Code code, const char* message = "") :
-    code(code), message(message) {}
-  explicit Result(Code code, std::string message) : code(code), message(std::move(message)) {}
+  explicit Result(Code code, const char* message = "") : code(code), message(message) {}
 
   bool isOk() const {
     return code == Result::Code::Ok;
   }
 
-  static void setResult(Result* outResult,
-                        Code code,
-                        const std::string& message = "") {
-    if (outResult != nullptr) {
+  static void setResult(Result* outResult, Code code, const char* message = "") {
+    if (outResult) {
       outResult->code = code;
       outResult->message = message;
     }
   }
 
   static void setResult(Result* outResult, const Result& sourceResult) {
-    if (outResult != nullptr) {
+    if (outResult) {
       *outResult = sourceResult;
     }
   }
 
   static void setResult(Result* outResult, Result&& sourceResult) {
-    if (outResult != nullptr) {
+    if (outResult) {
       *outResult = std::move(sourceResult);
     }
   }
 
   static void setOk(Result* outResult) {
-    if (outResult != nullptr) {
+    if (outResult) {
       outResult->code = Code::Ok;
-      outResult->message = std::string();
+      outResult->message = "";
     }
   }
 };
 
-enum class BackendType {
-  Vulkan,
-};
-
-///--------------------------------------
-/// MARK: - Rect<T>
-
-/// Use value-initialization (i.e. braces) to 0-initialize: `Rect<float> myRect{};`
-template<typename T>
-struct Rect {
- private:
-  static constexpr T kNullValue = std::numeric_limits<T>::has_infinity
-                                      ? std::numeric_limits<T>::infinity()
-                                      : std::numeric_limits<T>::max();
-
- public:
-  T x = kNullValue;
-  T y = kNullValue;
-  T width{}; // zero-initialize
-  T height{}; // zero-initialize
-
-  bool isNull() const {
-    return kNullValue == x && kNullValue == y;
-  }
-};
-
-using ScissorRect = Rect<uint32_t>;
-
-///--------------------------------------
-/// MARK: - Size
-
-struct Size {
-  float width = 0.0f;
-  float height = 0.0f;
-
-  Size() = default;
-  Size(float width, float height) : width(width), height(height) {}
+struct ScissorRect {
+  uint32_t x = 0;
+  uint32_t y = 0;
+  uint32_t width = 0;
+  uint32_t height = 0;
 };
 
 struct Dimensions {
-  Dimensions() = default;
-  Dimensions(size_t w, size_t h, size_t d) {
-    width = w;
-    height = h;
-    depth = d;
-  }
-  size_t width;
-  size_t height;
-  size_t depth;
+  uint32_t width = 0;
+  uint32_t height = 0;
+  uint32_t depth = 0;
 };
 
 ///--------------------------------------
@@ -522,7 +476,7 @@ struct RenderPipelineDesc {
 
   uint32_t sampleCount = 1u;
 
-  std::string debugName;
+  const char* debugName = "";
 };
 
 class IRenderPipelineState {
@@ -572,7 +526,7 @@ struct Framebuffer {
   AttachmentDesc colorAttachments[RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX] = {};
   AttachmentDesc depthStencilAttachment;
 
-  std::string debugName;
+  const char* debugName = "";
 };
 
 enum class CommandQueueType {

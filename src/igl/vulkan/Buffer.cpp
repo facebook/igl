@@ -63,7 +63,7 @@ Result Buffer::create(const BufferDesc& desc) {
   const VkMemoryPropertyFlags memFlags = resourceStorageToVkMemoryPropertyFlags(desc_.storage);
 
   Result result;
-  buffer_ = ctx.createBuffer(desc_.length, usageFlags, memFlags, &result, desc_.debugName.c_str());
+  buffer_ = ctx.createBuffer(desc_.length, usageFlags, memFlags, &result, desc_.debugName);
 
   IGL_VERIFY(result.isOk());
 

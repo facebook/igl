@@ -9,7 +9,6 @@
 
 #include <igl/Common.h>
 #include <igl/Texture.h>
-#include <utility>
 
 namespace igl {
 
@@ -26,7 +25,7 @@ struct ShaderStages;
 
 struct ComputePipelineDesc {
   std::shared_ptr<ShaderStages> shaderStages;
-  std::string debugName;
+  const char* debugName = "";
 };
 
 class IComputePipelineState {
@@ -69,12 +68,12 @@ class IDevice {
   virtual std::shared_ptr<ITexture> getCurrentSwapchainTexture() = 0;
 
   virtual std::unique_ptr<ShaderStages> createShaderStages(const char* vs,
-                                                           std::string debugNameVS,
+                                                           const char* debugNameVS,
                                                            const char* fs,
-                                                           std::string debugNameFS,
+                                                           const char* debugNameFS,
                                                            Result* outResult = nullptr) const;
   virtual std::unique_ptr<ShaderStages> createShaderStages(const char* cs,
-                                                           std::string debugName,
+                                                           const char* debugName,
                                                            Result* outResult = nullptr) const;
 
  protected:

@@ -62,11 +62,11 @@ class Device final : public IDevice {
  private:
   std::shared_ptr<VulkanShaderModule> createShaderModule(const void* data,
                                                          size_t length,
-                                                         const std::string& debugName,
+                                                         const char* debugName,
                                                          Result* outResult) const;
   std::shared_ptr<VulkanShaderModule> createShaderModule(ShaderStage stage,
                                                          const char* source,
-                                                         const std::string& debugName,
+                                                         const char* debugName,
                                                          Result* outResult) const;
 
   std::unique_ptr<VulkanContext> ctx_;

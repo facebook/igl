@@ -34,24 +34,15 @@ class Texture final : public ITexture {
     desc_ = std::move(desc);
   }
 
-  Result upload(const TextureRangeDesc& range, const void* data, size_t bytesPerRow) const override;
-  Result uploadCube(const TextureRangeDesc& range,
-                    TextureCubeFace face,
-                    const void* data,
-                    size_t bytesPerRow) const override;
+  Result upload(const TextureRangeDesc& range, const void* data[]) const override;
 
   // Accessors
   Dimensions getDimensions() const override;
-  size_t getNumLayers() const override;
-  TextureType getType() const override;
-  uint32_t getUsage() const override;
-  size_t getSamples() const override;
-  size_t getNumMipLevels() const override;
   void generateMipmap() const override;
   uint32_t getTextureId() const override;
-  VkFormat getVkFormat() const;
 
-  VkImageView getVkImageView() const;
+  VkFormat getVkFormat() const;
+  VkImageView getVkImageView() const; // all mip-levels
   VkImageView getVkImageViewForFramebuffer(uint32_t level) const; // framebuffers can render only into 1 mip-level
   VkImage getVkImage() const;
   VulkanTexture& getVulkanTexture() const {
@@ -63,6 +54,7 @@ class Texture final : public ITexture {
 
  private:
   Result create(const TextureDesc& desc);
+  Result validateRange(const igl::TextureRangeDesc& range) const;
 
  protected:
   const igl::vulkan::Device& device_;

@@ -753,16 +753,17 @@ void initIGL() {
   {
     textureDummyWhite_ = device_->createTexture(
         {
+            .type = igl::TextureType::TwoD,
+            .format = igl::TextureFormat::RGBA_UNorm8,
             .width = 1,
             .height = 1,
             .usage = igl::TextureDesc::TextureUsageBits::Sampled,
-            .type = igl::TextureType::TwoD,
-            .format = igl::TextureFormat::RGBA_UNorm8,
             .debugName = "dummy 1x1 (white)",
         },
         nullptr);
     const uint32_t pixel = 0xFFFFFFFF;
-    textureDummyWhite_->upload({.width = 1, .height = 1}, &pixel, sizeof(pixel));
+    const void* data[] = {&pixel};
+    textureDummyWhite_->upload({.width = 1, .height = 1}, data);
   }
 
   // create an Uniform buffers to store uniforms for 2 objects
@@ -793,16 +794,16 @@ void initIGL() {
 
   sampler_ = device_->createSamplerState(
       {
-          .mipFilter = igl::SamplerMipFilter_Linear,
-          .addressModeU = igl::SamplerAddressMode_Repeat,
-          .addressModeV = igl::SamplerAddressMode_Repeat,
+          .mipMap = igl::SamplerMipMap_Linear,
+          .wrapU = igl::SamplerWrapMode_Repeat,
+          .wrapV = igl::SamplerWrapMode_Repeat,
           .debugName = "Sampler: linear",
       },
       nullptr);
   samplerShadow_ = device_->createSamplerState(
       {
-          .addressModeU = igl::SamplerAddressMode_Clamp,
-          .addressModeV = igl::SamplerAddressMode_Clamp,
+          .wrapU = igl::SamplerWrapMode_Clamp,
+          .wrapV = igl::SamplerWrapMode_Clamp,
           .depthCompareOp = igl::CompareOp_LessEqual,
           .depthCompareEnabled = true,
           .debugName = "Sampler: shadow",
@@ -1214,13 +1215,15 @@ void createRenderPipelineSkybox() {
 void createShadowMap() {
   const uint32_t w = 4096;
   const uint32_t h = 4096;
-  auto desc = TextureDesc::new2D(igl::TextureFormat::Z_UNorm16,
-                                 w,
-                                 h,
-                                 TextureDesc::TextureUsageBits::Attachment |
-                                     TextureDesc::TextureUsageBits::Sampled,
-                                 "Shadow map");
-  desc.numMipLevels = TextureDesc::calcNumMipLevels(w, h);
+  const TextureDesc desc = {
+      .type = TextureType::TwoD,
+      .format = igl::TextureFormat::Z_UNorm16,
+      .width = w,
+      .height = h,
+      .usage = TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled,
+      .numMipLevels = TextureDesc::calcNumMipLevels(w, h),
+      .debugName = "Shadow map",
+  };
   Result ret;
   fbShadowMap_ = {
       .depthStencilAttachment = {.texture = device_->createTexture(desc, &ret)},
@@ -1231,19 +1234,21 @@ void createShadowMap() {
 void createOffscreenFramebuffer() {
   const uint32_t w = width_;
   const uint32_t h = height_;
-  Result ret;
-  auto descDepth = TextureDesc::new2D(igl::TextureFormat::Z_UNorm24,
-                                      w,
-                                      h,
-                                      TextureDesc::TextureUsageBits::Attachment |
-                                          TextureDesc::TextureUsageBits::Sampled,
-                                      "Offscreen framebuffer (d)");
-  descDepth.numMipLevels = TextureDesc::calcNumMipLevels(w, h);
+  TextureDesc descDepth = {
+      .type = TextureType::TwoD,
+      .format = igl::TextureFormat::Z_UNorm24,
+      .width = w,
+      .height = h,
+      .usage = TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled,
+      .numMipLevels = TextureDesc::calcNumMipLevels(w, h),
+      .debugName = "Offscreen framebuffer (d)",
+  };
   if (kNumSamplesMSAA > 1) {
     descDepth.usage = TextureDesc::TextureUsageBits::Attachment;
     descDepth.numSamples = kNumSamplesMSAA;
     descDepth.numMipLevels = 1;
   }
+  Result ret;
   std::shared_ptr<ITexture> texDepth = device_->createTexture(descDepth, &ret);
   IGL_ASSERT(ret.isOk());
 
@@ -1252,8 +1257,15 @@ void createOffscreenFramebuffer() {
                                           TextureDesc::TextureUsageBits::Storage;
   const TextureFormat format = igl::TextureFormat::RGBA_UNorm8;
 
-  auto descColor = TextureDesc::new2D(format, w, h, usage, "Offscreen framebuffer (c)");
-  descColor.numMipLevels = TextureDesc::calcNumMipLevels(w, h);
+  TextureDesc descColor = {
+      .type = TextureType::TwoD,
+      .format = format,
+      .width = w,
+      .height = h,
+      .usage = usage,
+      .numMipLevels = TextureDesc::calcNumMipLevels(w, h),
+      .debugName = "Offscreen framebuffer (c)",
+  };
   if (kNumSamplesMSAA > 1) {
     descColor.usage = TextureDesc::TextureUsageBits::Attachment;
     descColor.numSamples = kNumSamplesMSAA;
@@ -1262,22 +1274,27 @@ void createOffscreenFramebuffer() {
   std::shared_ptr<ITexture> texColor = device_->createTexture(descColor, &ret);
   IGL_ASSERT(ret.isOk());
 
-  Framebuffer Framebuffer = {
+  Framebuffer fb = {
       .numColorAttachments = 1,
       .colorAttachments = {{.texture = texColor}},
       .depthStencilAttachment = {.texture = texDepth},
   };
 
   if (kNumSamplesMSAA > 1) {
-    auto descColorResolve =
-        TextureDesc::new2D(format, w, h, usage, "Offscreen framebuffer (c - resolve)");
-    descColorResolve.usage = usage;
-    std::shared_ptr<ITexture> texResolveColor = device_->createTexture(descColorResolve, &ret);
+    fb.colorAttachments[0].resolveTexture = device_->createTexture(
+        {
+            .type = TextureType::TwoD,
+            .format = format,
+            .width = w,
+            .height = h,
+            .usage = usage,
+            .debugName = "Offscreen framebuffer (c - resolve)",
+        },
+        &ret);
     IGL_ASSERT(ret.isOk());
-    Framebuffer.colorAttachments[0].resolveTexture = texResolveColor;
   }
 
-  fbOffscreen_ = Framebuffer;
+  fbOffscreen_ = fb;
 }
 
 void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
@@ -1617,29 +1634,38 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
     return;
   }
 
-  const TextureRangeDesc texRefRange = {
-      .width = (uint32_t)texRef.extent().x,
-      .height = (uint32_t)texRef.extent().y,
-      // If compression is enabled, upload all mip levels
-      .numMipLevels = kEnableCompression
-                          ? TextureDesc::calcNumMipLevels(texRefRange.width, texRefRange.height)
-                          : 1,
-  };
+  const uint32_t width = (uint32_t)texRef.extent().x;
+  const uint32_t height = (uint32_t)texRef.extent().y;
+
+  if (!tex) {
+    tex = device_->createTexture(
+        {
+            .type = TextureType::Cube,
+            .format = gli2iglTextureFormat(texRef.format()),
+            .width = width,
+            .height = height,
+            .usage = TextureDesc::TextureUsageBits::Sampled,
+            .numMipLevels = TextureDesc::calcNumMipLevels(texRef.extent().x, texRef.extent().y),
+            .debugName = fileNameKTX.c_str(),
+        },
+        nullptr);
+    IGL_ASSERT(tex.get());
+  }
+
+  const void* data[6];
 
   for (uint8_t face = 0; face < 6; ++face) {
-    if (!tex) {
-      auto desc = TextureDesc::newCube(gli2iglTextureFormat(texRef.format()),
-                                       texRef.extent().x,
-                                       texRef.extent().y,
-                                       TextureDesc::TextureUsageBits::Sampled,
-                                       fileNameKTX.c_str());
-      desc.numMipLevels = TextureDesc::calcNumMipLevels(texRef.extent().x, texRef.extent().y);
-      tex = device_->createTexture(desc, nullptr);
-      IGL_ASSERT(tex.get());
-    }
-
-    tex->uploadCube(texRefRange, (igl::TextureCubeFace)face, texRef.data(0, face, 0), 0);
+    data[face] = texRef.data(0, face, 0);
   }
+
+  const TextureRangeDesc texRefRange = {
+      .width = width,
+      .height = height,
+      .numLayers = 6,
+      // if compression is enabled, upload all mip-levels
+      .numMipLevels = kEnableCompression ? TextureDesc::calcNumMipLevels(width, height) : 1u,
+  };
+  tex->upload(texRefRange, data);
 
   if (!kEnableCompression) {
     tex->generateMipmap();
@@ -1770,6 +1796,19 @@ void loadSkyboxTexture() {
   loadCubemapTexture(fileNameIrrKTX, skyboxTextureIrradiance_);
 }
 
+igl::TextureFormat formatFromChannels(uint32_t channels) {
+  if (channels == 1) {
+    return igl::TextureFormat::R_UNorm8;
+  }
+
+  if (channels == 4) {
+    return kEnableCompression ? igl::TextureFormat::RGBA_BC7_UNORM_4x4
+                              : igl::TextureFormat::RGBA_UNorm8;
+  }
+
+  return igl::TextureFormat::Invalid;
+}
+
 std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
   if (!img.pixels) {
     return nullptr;
@@ -1781,17 +1820,15 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
     return it->second;
   }
 
-  igl::TextureFormat fmt = igl::TextureFormat::Invalid;
-  if (img.channels == 1) {
-    fmt = igl::TextureFormat::R_UNorm8;
-  } else if (img.channels == 4) {
-    fmt = kEnableCompression ? igl::TextureFormat::RGBA_BC7_UNORM_4x4
-                             : igl::TextureFormat::RGBA_UNorm8;
-  }
-
-  TextureDesc desc = TextureDesc::new2D(
-      fmt, img.w, img.h, TextureDesc::TextureUsageBits::Sampled, img.debugName.c_str());
-  desc.numMipLevels = TextureDesc::calcNumMipLevels(img.w, img.h);
+  const TextureDesc desc = {
+      .type = TextureType::TwoD,
+      .format = formatFromChannels(img.channels),
+      .width = img.w,
+      .height = img.h,
+      .usage = TextureDesc::TextureUsageBits::Sampled,
+      .numMipLevels = TextureDesc::calcNumMipLevels(img.w, img.h),
+      .debugName = img.debugName.c_str(),
+  };
   auto tex = device_->createTexture(desc, nullptr);
 
   if (kEnableCompression && img.channels == 4 &&
@@ -1806,9 +1843,11 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
     if (IGL_UNEXPECTED(gliTex2d.empty())) {
       printf("Failed to load %s\n", img.compressedFileName.c_str());
     }
-    tex->upload(rangeDesc, gliTex2d.data());
+    const void* data[] = {gliTex2d.data()};
+    tex->upload(rangeDesc, data);
   } else {
-    tex->upload({.width = img.w, .height = img.h}, img.pixels, tex->getBytesPerPixel() * img.w);
+    const void* data[] = {img.pixels};
+    tex->upload({.width = img.w, .height = img.h}, data);
     tex->generateMipmap();
   }
   texturesCache_[img.debugName] = tex;
@@ -1899,7 +1938,7 @@ int main(int argc, char* argv[]) {
   while (!glfwWindowShouldClose(window_)) {
     {
 #if IGL_WITH_IGLU
-      imguiSession_->beginFrame(fbMain_, 1.0f);
+      imguiSession_->beginFrame(fbMain_);
       ImGui::ShowDemoWindow();
 
       ImGui::Begin("Keyboard hints:", nullptr, ImGuiWindowFlags_AlwaysAutoResize);

@@ -132,16 +132,6 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
   IGL_UNREACHABLE_RETURN(VK_FORMAT_UNDEFINED);
 }
 
-igl::ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace) {
-  switch (colorSpace) {
-  case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR:
-    return ColorSpace::SRGB_NONLINEAR;
-  default:
-    IGL_ASSERT_NOT_REACHED();
-    return ColorSpace::SRGB_NONLINEAR;
-  }
-}
-
 igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
   using TextureFormat = ::igl::TextureFormat;
   switch (format) {

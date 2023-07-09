@@ -28,20 +28,20 @@ struct ShaderModuleDesc {
   ShaderStage stage = Stage_Fragment;
   const char* data = nullptr;
   size_t dataSize = 0; // if `dataSize` is non-zero, interpret `data` as binary shader data
-  std::string entryPoint = "main";
-  std::string debugName;
+  const char* entryPoint = "main";
+  const char* debugName = "";
 
   ShaderModuleDesc() = default;
-  ShaderModuleDesc(const char* source, igl::ShaderStage stage, std::string debugName) :
-    stage(stage), data(source), debugName(std::move(debugName)) {}
+  ShaderModuleDesc(const char* source, igl::ShaderStage stage, const char* debugName) :
+    stage(stage), data(source), debugName(debugName) {}
   ShaderModuleDesc(const void* data,
                    size_t dataLength,
                    igl::ShaderStage stage,
-                   std::string debugName) :
+                   const char* debugName) :
     stage(stage),
     data(static_cast<const char*>(data)),
     dataSize(dataLength),
-    debugName(std::move(debugName)) {
+    debugName(debugName) {
     IGL_ASSERT(dataSize);
   }
 };
@@ -51,17 +51,8 @@ struct ShaderModuleDesc {
  */
 class IShaderModule {
  protected:
-  explicit IShaderModule(ShaderModuleDesc desc) : desc_(std::move(desc)) {}
+  IShaderModule() = default;
   virtual ~IShaderModule() = default;
-
- public:
-  /** @brief Returns metadata about the shader module */
-  const ShaderModuleDesc& desc() const noexcept {
-    return desc_;
-  }
-
- private:
-  const ShaderModuleDesc desc_;
 };
 
 struct ShaderStages final {

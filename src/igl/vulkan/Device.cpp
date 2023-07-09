@@ -191,7 +191,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
 
 std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
                                                                size_t length,
-                                                               const std::string& debugName,
+                                                               const char* debugName,
                                                                Result* outResult) const {
   VkDevice device = ctx_->device_->getVkDevice();
 
@@ -204,18 +204,15 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
     return nullptr;
   }
 
-  if (!debugName.empty()) {
-    // set debug name
-    VK_ASSERT(ivkSetDebugObjectName(
-        device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName.c_str()));
-  }
+  VK_ASSERT(ivkSetDebugObjectName(
+      device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
   return std::make_shared<VulkanShaderModule>(device, vkShaderModule);
 }
 
 std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage,
                                                                const char* source,
-                                                               const std::string& debugName,
+                                                               const char* debugName,
                                                                Result* outResult) const {
   VkDevice device = ctx_->device_->getVkDevice();
   const VkShaderStageFlagBits vkStage = shaderStageToVkShaderStage(stage);
@@ -297,11 +294,8 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
     return nullptr;
   }
 
-  if (!debugName.empty()) {
-    // set debug name
-    VK_ASSERT(ivkSetDebugObjectName(
-        device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName.c_str()));
-  }
+  VK_ASSERT(ivkSetDebugObjectName(
+      device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
   return std::make_shared<VulkanShaderModule>(device, vkShaderModule);
 }
@@ -333,9 +327,9 @@ std::shared_ptr<ITexture> Device::getCurrentSwapchainTexture() {
     return nullptr;
   }
 
-  const auto width = (size_t)swapChain->getWidth();
-  const auto height = (size_t)swapChain->getHeight();
-  const auto currentImageIndex = swapChain->getCurrentImageIndex();
+  const uint32_t width = swapChain->getWidth();
+  const uint32_t height = swapChain->getHeight();
+  const uint32_t currentImageIndex = swapChain->getCurrentImageIndex();
 
   // resize nativeDrawableTextures_ pushing null pointers
   // null pointers will be allocated later as needed
@@ -348,10 +342,17 @@ std::shared_ptr<ITexture> Device::getCurrentSwapchainTexture() {
   // allocate new drawable textures if its null or mismatches in size or format
   if (!result || width != result->getDimensions().width ||
       height != result->getDimensions().height || iglFormat != result->getFormat()) {
-    const TextureDesc desc = TextureDesc::new2D(
-        iglFormat, width, height, TextureDesc::TextureUsageBits::Attachment, "SwapChain Texture");
-    swapchainTextures_[currentImageIndex] =
-        std::make_shared<igl::vulkan::Texture>(*this, std::move(vkTex), desc);
+    swapchainTextures_[currentImageIndex] = std::make_shared<igl::vulkan::Texture>(
+        *this,
+        std::move(vkTex),
+        TextureDesc{
+            .type = TextureType::TwoD,
+            .format = iglFormat,
+            .width = width,
+            .height = height,
+            .usage = TextureDesc::TextureUsageBits::Attachment,
+            .debugName = "SwapChain Texture",
+        });
   }
 
   return swapchainTextures_[currentImageIndex];

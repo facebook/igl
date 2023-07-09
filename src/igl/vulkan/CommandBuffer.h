@@ -32,8 +32,8 @@ class CommandBuffer final : public ICommandBuffer,
       const std::shared_ptr<IComputePipelineState>& pipelineState) override;
   void cmdDispatchThreadGroups(const Dimensions& threadgroupCount) override;
 
-  void cmdPushDebugGroupLabel(const std::string& label, const igl::Color& color) const override;
-  void cmdInsertDebugEventLabel(const std::string& label, const igl::Color& color) const override;
+  void cmdPushDebugGroupLabel(const char* label, const igl::Color& color) const override;
+  void cmdInsertDebugEventLabel(const char* label, const igl::Color& color) const override;
   void cmdPopDebugGroupLabel() const override;
 
   void cmdBeginRendering(const igl::RenderPass& renderPass,

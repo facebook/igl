@@ -8,11 +8,9 @@
 #include <igl/Texture.h>
 
 #include <cassert>
+#include <algorithm>
 #include <cmath>
 #include <utility>
-
-#define IGL_ENUM_TO_STRING(enum, res) \
-  case enum ::res: return #res;
 
 namespace igl {
 
@@ -24,39 +22,6 @@ bool isCompressedTextureFormat(TextureFormat format) {
 bool isDepthOrStencilFormat(TextureFormat format) {
   const auto properties = TextureFormatProperties::fromTextureFormat(format);
   return properties.isDepthOrStencil();
-}
-
-size_t toBytesPerPixel(TextureFormat format) {
-  const auto properties = TextureFormatProperties::fromTextureFormat(format);
-  if (!properties.isCompressed() && properties.isValid()) {
-    return properties.bytesPerBlock;
-  } else if (properties.isCompressed()) {
-    IGL_ASSERT_NOT_REACHED();
-    return 0;
-  } else {
-    assert(0); // not implemented
-    return 1;
-  }
-}
-
-size_t toBytesPerBlock(TextureFormat format) {
-  const auto properties = TextureFormatProperties::fromTextureFormat(format);
-  if (properties.isCompressed()) {
-    return properties.bytesPerBlock;
-  } else {
-    IGL_ASSERT_NOT_REACHED();
-    return 0;
-  }
-}
-
-TextureBlockSize toBlockSize(TextureFormat format) {
-  const auto properties = TextureFormatProperties::fromTextureFormat(format);
-  if (properties.isCompressed()) {
-    return TextureBlockSize(properties.blockWidth, properties.blockHeight);
-  } else {
-    IGL_ASSERT_NOT_REACHED();
-    return TextureBlockSize(0, 0);
-  }
 }
 
 size_t getTextureBytesPerRow(size_t texWidth, TextureFormat texFormat, size_t mipLevel) {
@@ -93,15 +58,9 @@ uint32_t getTextureBytesPerSlice(size_t texWidth,
   }
 }
 
-const char* textureFormatToString(TextureFormat format) {
-  const auto properties = TextureFormatProperties::fromTextureFormat(format);
-  return properties.name;
-}
-
 #define PROPERTIES(fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs) \
   case TextureFormat::fmt:                                         \
-    return TextureFormatProperties{                                \
-        #fmt, TextureFormat::fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs};
+    return TextureFormatProperties{TextureFormat::fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs};
 
 #define INVALID(fmt) PROPERTIES(fmt, 1, 1, 1, 1, 1, 1, 1, 1, 0)
 #define COLOR(fmt, cpp, bpb, flgs) PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, flgs)
@@ -151,7 +110,35 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
   IGL_UNREACHABLE_RETURN(TextureFormatProperties{});
 }
 
-uint32_t TextureDesc::calcNumMipLevels(size_t width, size_t height) {
+uint32_t getTextureBytesPerLayer(uint32_t texWidth,
+                                 uint32_t texHeight,
+                                 uint32_t texDepth,
+                                 TextureFormat texFormat,
+                                 uint32_t mipLevel) {
+  const uint32_t levelWidth = std::max(texWidth >> mipLevel, 1u);
+  const uint32_t levelHeight = std::max(texHeight >> mipLevel, 1u);
+  const uint32_t levelDepth = std::max(texDepth >> mipLevel, 1u);
+
+  const auto properties = TextureFormatProperties::fromTextureFormat(texFormat);
+
+  if (!isCompressedTextureFormat(texFormat)) {
+    return properties.bytesPerBlock * levelWidth * levelHeight * levelDepth;
+  }
+
+  if (texDepth > 1) {
+    IGL_ASSERT_NOT_REACHED();
+    return 0;
+  }
+
+  const TextureBlockSize blockSize = TextureBlockSize(properties.blockWidth, properties.blockHeight);
+  const uint32_t blockWidth = std::max(blockSize.width, 1u);
+  const uint32_t blockHeight = std::max(blockSize.height, 1u);
+  const uint32_t widthInBlocks = (levelWidth + blockWidth - 1) / blockWidth;
+  const uint32_t heightInBlocks = (levelHeight + blockHeight - 1) / blockHeight;
+  return widthInBlocks * heightInBlocks * properties.bytesPerBlock;
+}
+
+uint32_t TextureDesc::calcNumMipLevels(uint32_t width, uint32_t height) {
   if (width == 0 || height == 0) {
     return 0;
   }
@@ -163,56 +150,6 @@ uint32_t TextureDesc::calcNumMipLevels(size_t width, size_t height) {
   }
 
   return levels;
-}
-
-Size ITexture::getSize() const {
-  const auto dimensions = getDimensions();
-  return Size{static_cast<float>(dimensions.width), static_cast<float>(dimensions.height)};
-}
-
-size_t ITexture::getDepth() const {
-  return getDimensions().depth;
-}
-
-std::pair<Result, bool> ITexture::validateRange(const igl::TextureRangeDesc& range) const noexcept {
-  if (IGL_UNEXPECTED(range.width == 0 || range.height == 0 || range.depth == 0 ||
-                     range.numLayers == 0 || range.numMipLevels == 0)) {
-    return std::make_pair(Result{Result::Code::ArgumentInvalid,
-                                 "width, height, depth numLayers, and "
-                                 "numMipLevels must be at least 1."},
-                          false);
-  }
-  if (range.mipLevel > getNumMipLevels()) {
-    return std::make_pair(
-        Result{Result::Code::ArgumentOutOfRange, "range mip level exceeds texture mip levels"},
-        false);
-  }
-
-  static constexpr size_t one = 1;
-  const auto dimensions = getDimensions();
-  const auto texWidth = std::max(dimensions.width >> range.mipLevel, one);
-  const auto texHeight = std::max(dimensions.height >> range.mipLevel, one);
-  const auto texDepth = std::max(dimensions.depth >> range.mipLevel, one);
-  const auto texLayers = getNumLayers();
-
-  if (range.width > texWidth || range.height > texHeight || range.depth > texDepth ||
-      range.numLayers > texLayers) {
-    return std::make_pair(
-        Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"},
-        false);
-  }
-  if (range.x > texWidth - range.width || range.y > texHeight - range.height ||
-      range.z > texDepth - range.depth || range.layer > texLayers - range.numLayers) {
-    return std::make_pair(
-        Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"},
-        false);
-  }
-
-  const bool fullRange = (range.x == 0 && range.y == 0 && range.z == 0 && range.layer == 0 &&
-                          range.width == texWidth && range.height == texHeight &&
-                          range.depth == texDepth && range.numLayers == texLayers);
-
-  return std::make_pair(Result{}, fullRange);
 }
 
 } // namespace igl

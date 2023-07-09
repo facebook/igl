@@ -1062,6 +1062,9 @@ VkResult ivkSetDebugObjectName(VkDevice device,
 void ivkCmdBeginDebugUtilsLabel(VkCommandBuffer buffer,
                                 const char* name,
                                 const float colorRGBA[4]) {
+  if (!name) {
+    return;
+  }
   const VkDebugUtilsLabelEXT label = {
       .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
       .pNext = NULL,
@@ -1074,6 +1077,9 @@ void ivkCmdBeginDebugUtilsLabel(VkCommandBuffer buffer,
 void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer,
                                  const char* name,
                                  const float colorRGBA[4]) {
+  if (!name) {
+    return;
+  }
   const VkDebugUtilsLabelEXT label = {
       .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
       .pNext = NULL,

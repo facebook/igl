@@ -17,7 +17,7 @@ namespace vulkan {
 
 ShaderModule::ShaderModule(ShaderModuleDesc desc,
                            std::shared_ptr<VulkanShaderModule> shaderModule) :
-  IShaderModule(std::move(desc)), module_(std::move(shaderModule)) {
+  module_(std::move(shaderModule)), desc_(std::move(desc)) {
   IGL_ASSERT(module_.get());
 }
 
