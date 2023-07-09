@@ -18,7 +18,6 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 #include <igl/vulkan/VulkanQueuePool.h>
-#include <igl/vulkan/VulkanRenderPassBuilder.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 
 namespace igl {
@@ -140,15 +139,6 @@ class VulkanContext final {
 
   VkFormat getClosestDepthStencilFormat(igl::TextureFormat desiredFormat) const;
 
-  struct RenderPassHandle {
-    VkRenderPass pass = VK_NULL_HANDLE;
-    uint8_t index = 0;
-  };
-
-  // render passes are owned and managed by the context
-  RenderPassHandle findRenderPass(const VulkanRenderPassBuilder& builder) const;
-  RenderPassHandle getRenderPass(uint8_t index) const;
-
   // OpenXR needs Vulkan instance to find physical device
   VkInstance getVkInstance() const {
     return vkInstance_;
@@ -261,12 +251,6 @@ class VulkanContext final {
   mutable bool awaitingDeletion_ = false;
   mutable uint64_t lastDeletionFrame_ = 0;
     
-  // stores an index into renderPasses_
-  mutable std::
-      unordered_map<VulkanRenderPassBuilder, uint8_t, VulkanRenderPassBuilder::HashFunction>
-          renderPassesHash_;
-  mutable std::vector<VkRenderPass> renderPasses_;
-
   VulkanExtensions extensions_;
   VulkanContextConfig config_;
 

@@ -80,14 +80,6 @@ VkResult ivkCreateImageView(VkDevice device,
                             VkImageSubresourceRange range,
                             VkImageView* outImageView);
 
-VkResult ivkCreateFramebuffer(VkDevice device,
-                              uint32_t width,
-                              uint32_t height,
-                              VkRenderPass renderPass,
-                              size_t numAttachments,
-                              const VkImageView* attachments,
-                              VkFramebuffer* outFramebuffer);
-
 VkResult ivkCreateCommandPool(VkDevice device,
                               VkCommandPoolCreateFlags flags,
                               uint32_t queueFamilyIndex,
@@ -124,23 +116,6 @@ VkResult ivkCreateShaderModuleFromSPIRV(VkDevice device,
                                         const void* dataSPIRV,
                                         size_t size,
                                         VkShaderModule* outShaderModule);
-
-VkResult ivkCreateGraphicsPipeline(VkDevice device,
-                                   VkPipelineCache pipelineCache,
-                                   uint32_t numShaderStages,
-                                   const VkPipelineShaderStageCreateInfo* shaderStages,
-                                   const VkPipelineVertexInputStateCreateInfo* vertexInputState,
-                                   const VkPipelineInputAssemblyStateCreateInfo* inputAssemblyState,
-                                   const VkPipelineTessellationStateCreateInfo* tessellationState,
-                                   const VkPipelineViewportStateCreateInfo* viewportState,
-                                   const VkPipelineRasterizationStateCreateInfo* rasterizationState,
-                                   const VkPipelineMultisampleStateCreateInfo* multisampleState,
-                                   const VkPipelineDepthStencilStateCreateInfo* depthStencilState,
-                                   const VkPipelineColorBlendStateCreateInfo* colorBlendState,
-                                   const VkPipelineDynamicStateCreateInfo* dynamicState,
-                                   VkPipelineLayout pipelineLayout,
-                                   VkRenderPass renderPass,
-                                   VkPipeline* outPipeline);
 
 VkResult ivkCreateComputePipeline(VkDevice device,
                                   VkPipelineCache pipelineCache,

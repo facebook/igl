@@ -52,7 +52,6 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
-#include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
 
@@ -439,10 +438,9 @@ igl::FPSCounter fps_;
 constexpr uint32_t kNumBufferedFrames = 3;
 
 std::unique_ptr<IDevice> device_;
-std::shared_ptr<ITexture> depthBuffer_;
-std::shared_ptr<IFramebuffer> fbMain_; // swapchain
-std::shared_ptr<IFramebuffer> fbOffscreen_;
-std::shared_ptr<IFramebuffer> fbShadowMap_;
+igl::Framebuffer fbMain_; // swapchain
+igl::Framebuffer fbOffscreen_;
+igl::Framebuffer fbShadowMap_;
 std::shared_ptr<IComputePipelineState> computePipelineState_Grayscale_;
 std::shared_ptr<IRenderPipelineState> renderPipelineState_Mesh_;
 std::shared_ptr<IRenderPipelineState> renderPipelineState_MeshWireframe_;
@@ -457,9 +455,9 @@ std::shared_ptr<ISamplerState> samplerShadow_;
 std::shared_ptr<ITexture> textureDummyWhite_;
 std::shared_ptr<ITexture> skyboxTextureReference_;
 std::shared_ptr<ITexture> skyboxTextureIrradiance_;
-igl::RenderPassDesc renderPassOffscreen_;
-igl::RenderPassDesc renderPassMain_;
-igl::RenderPassDesc renderPassShadow_;
+igl::RenderPass renderPassOffscreen_;
+igl::RenderPass renderPassMain_;
+igl::RenderPass renderPassShadow_;
 igl::DepthStencilState depthStencilState_;
 igl::DepthStencilState depthStencilStateLEqual_;
 
@@ -724,6 +722,7 @@ void initIGL() {
         .maxSamplers = 128,
         .terminateOnValidationError = true,
         .enableValidation = kEnableValidationLayers,
+        .enableGPUAssistedValidation = true,
         .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
     };
 #ifdef _WIN32
@@ -766,23 +765,12 @@ void initIGL() {
     textureDummyWhite_->upload({.width = 1, .height = 1}, &pixel, sizeof(pixel));
   }
 
-  depthBuffer_ = device_->createTexture(
-      {
-          .width = (uint32_t)width_,
-          .height = (uint32_t)height_,
-          .usage = igl::TextureDesc::TextureUsageBits::Attachment,
-          .type = igl::TextureType::TwoD,
-          .format = igl::TextureFormat::Z_UNorm24,
-          .debugName = "depthBuffer",
-      },
-      nullptr);
-
   // create an Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
     ubPerFrame_.push_back(device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
                                                            nullptr,
                                                            sizeof(UniformsPerFrame),
-                                                           ResourceStorage::Shared,                                                           
+                                                           ResourceStorage::Shared,
                                                            "Buffer: uniforms (per frame)"),
                                                 nullptr));
     ubPerFrameShadow_.push_back(
@@ -828,9 +816,9 @@ void initIGL() {
           .storeAction = kNumSamplesMSAA > 1 ? StoreAction::MsaaResolve : StoreAction::Store,
           .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
       }},
-      .depthStencilAttachment = {
+      .depthAttachment = {
           .loadAction = LoadAction::Clear,
-          .storeAction = StoreAction::DontCare,
+          .storeAction = StoreAction::Store,
           .clearDepth = 1.0f,
       }};
 
@@ -842,16 +830,11 @@ void initIGL() {
                              .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
                          },
                      }};
-  renderPassMain_.depthStencilAttachment = {
-      .loadAction = LoadAction::Clear,
-      .storeAction = StoreAction::DontCare,
-      .clearDepth = 1.0f,
-  };
-  renderPassShadow_.depthStencilAttachment = {
-      .loadAction = LoadAction::Clear,
-      .storeAction = StoreAction::Store,
-      .clearDepth = 1.0f,
-  };
+  renderPassShadow_ = {.depthAttachment = {
+                           .loadAction = LoadAction::Clear,
+                           .storeAction = StoreAction::Store,
+                           .clearDepth = 1.0f,
+                       }};
 }
 
 namespace {
@@ -1111,9 +1094,7 @@ void createRenderPipelines() {
     return;
   }
 
-  IGL_ASSERT(fbMain_.get());
-
-  VertexInputStateDesc vdesc;
+  VertexInputState vdesc;
   vdesc.numAttributes = 4;
   vdesc.attributes[0].format = VertexAttributeFormat::Float3;
   vdesc.attributes[0].offset = offsetof(VertexData, position);
@@ -1135,7 +1116,7 @@ void createRenderPipelines() {
   vdesc.inputBindings[0].stride = sizeof(VertexData);
 
   // shadow
-  VertexInputStateDesc vdescs;
+  VertexInputState vdescs;
   vdescs.numAttributes = 1;
   vdescs.attributes[0].format = VertexAttributeFormat::Float3;
   vdescs.attributes[0].offset = offsetof(VertexData, position);
@@ -1145,22 +1126,23 @@ void createRenderPipelines() {
   vdescs.inputBindings[0].stride = sizeof(VertexData);
 
   {
-    RenderPipelineDesc desc;
+    RenderPipelineDesc desc = {
+        .vertexInputState = vdesc,
+        .shaderStages = device_->createShaderStages(
+            kCodeVS, "Shader Module: main (vert)", kCodeFS, "Shader Module: main (frag)"),
+        .numColorAttachments = 1,
+        .colorAttachments = {{.textureFormat =
+                                  fbOffscreen_.colorAttachments[0].texture->getFormat()}},
+        .cullMode = igl::CullMode_Back,
+        .frontFaceWinding = igl::WindingMode_CCW,
+        .sampleCount = kNumSamplesMSAA,
+        .debugName = "Pipeline: mesh",
+    };
 
-    desc.numColorAttachments = 1;
-    desc.colorAttachments[0] = {.textureFormat = fbMain_->getColorAttachment(0)->getFormat()};
-
-    if (fbMain_->getDepthAttachment()) {
-      desc.depthAttachmentFormat = fbMain_->getDepthAttachment()->getFormat();
+    if (fbOffscreen_.depthStencilAttachment.texture) {
+      desc.depthAttachmentFormat = fbOffscreen_.depthStencilAttachment.texture->getFormat();
     }
 
-    desc.vertexInputState = vdesc;
-    desc.shaderStages = device_->createShaderStages(
-        kCodeVS, "Shader Module: main (vert)", kCodeFS, "Shader Module: main (frag)");
-    desc.cullMode = igl::CullMode_Back;
-    desc.frontFaceWinding = igl::WindingMode_CCW;
-    desc.sampleCount = kNumSamplesMSAA;
-    desc.debugName = "Pipeline: mesh";
     renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
 
     desc.polygonMode = igl::PolygonMode_Line;
@@ -1169,30 +1151,30 @@ void createRenderPipelines() {
                                                     "Shader Module: main wireframe (vert)",
                                                     kCodeFS_Wireframe,
                                                     "Shader Module: main wireframe (frag)");
+    desc.debugName = "Pipeline: mesh (wireframe)";
     renderPipelineState_MeshWireframe_ = device_->createRenderPipeline(desc, nullptr);
   }
 
   // shadow
-  {
-    RenderPipelineDesc desc;
-    desc.depthAttachmentFormat = fbShadowMap_->getDepthAttachment()->getFormat();
-    desc.vertexInputState = vdescs;
-    desc.shaderStages = device_->createShaderStages(kShadowVS,
-                                                    "Shader Module: shadow (vert)",
-                                                    kShadowFS,
-                                                    "Shader Module: shadow (frag)");
-    desc.cullMode = igl::CullMode_None;
-    desc.debugName = "Pipeline: shadow";
-    renderPipelineState_Shadow_ = device_->createRenderPipeline(desc, nullptr);
-  }
+  renderPipelineState_Shadow_ = device_->createRenderPipeline(
+      {
+          .vertexInputState = vdescs,
+          .shaderStages = device_->createShaderStages(
+              kShadowVS, "Shader Module: shadow (vert)", kShadowFS, "Shader Module: shadow (frag)"),
+          .depthAttachmentFormat = fbShadowMap_.depthStencilAttachment.texture->getFormat(),
+          .cullMode = igl::CullMode_None,
+          .debugName = "Pipeline: shadow",
+      },
+      nullptr);
 
   // fullscreen
   {
     RenderPipelineDesc desc;
     desc.numColorAttachments = 1;
-    desc.colorAttachments[0] = {.textureFormat = fbMain_->getColorAttachment(0)->getFormat()};
-    if (fbMain_->getDepthAttachment()) {
-      desc.depthAttachmentFormat = fbMain_->getDepthAttachment()->getFormat();
+    desc.colorAttachments[0] = {.textureFormat =
+                                    fbMain_.colorAttachments[0].texture->getFormat()};
+    if (fbMain_.depthStencilAttachment.texture) {
+      desc.depthAttachmentFormat = fbMain_.depthStencilAttachment.texture->getFormat();
     }
     desc.shaderStages = device_->createShaderStages(kCodeFullscreenVS,
                                                     "Shader Module: fullscreen (vert)",
@@ -1209,64 +1191,24 @@ void createRenderPipelineSkybox() {
     return;
   }
 
-  IGL_ASSERT(fbMain_.get());
-
-  RenderPipelineDesc desc;
-  desc.numColorAttachments = 1;
-  desc.colorAttachments[0] = {.textureFormat = fbMain_->getColorAttachment(0)->getFormat()};
-
-  if (fbMain_->getDepthAttachment()) {
-    desc.depthAttachmentFormat = fbMain_->getDepthAttachment()->getFormat();
-  }
-
-  desc.shaderStages = device_->createShaderStages(
-      kSkyboxVS, "Shader Module: skybox (vert)", kSkyboxFS, "Shader Module: skybox (frag)");
-  desc.cullMode = igl::CullMode_Front;
-  desc.frontFaceWinding = igl::WindingMode_CCW;
-  desc.sampleCount = kNumSamplesMSAA;
-  desc.debugName = "Pipeline: skybox";
-  renderPipelineState_Skybox_ = device_->createRenderPipeline(desc, nullptr);
-}
-
-std::shared_ptr<ITexture> getNativeDrawable() {
-  IGL_PROFILER_FUNCTION();
-
-  const auto& platformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
-
-  Result ret;
-  std::shared_ptr<ITexture> drawable = platformDevice->createTextureFromNativeDrawable(&ret);
-
-  IGL_ASSERT(ret.isOk());
-  return drawable;
-}
-
-std::shared_ptr<ITexture> getNativeDepthDrawable() {
-  IGL_PROFILER_FUNCTION();
-
-  if (!depthBuffer_) {
-    depthBuffer_ = device_->createTexture(
-        {
-            .width = (uint32_t)width_,
-            .height = (uint32_t)height_,
-            .usage = igl::TextureDesc::TextureUsageBits::Attachment,
-            .type = igl::TextureType::TwoD,
-            .format = igl::TextureFormat::Z_UNorm24,
-        },
-        nullptr);
-  }
-
-  return depthBuffer_;
-}
-
-void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
-  const FramebufferDesc framebufferDesc = {
+  RenderPipelineDesc desc = {
+      .shaderStages = device_->createShaderStages(
+          kSkyboxVS, "Shader Module: skybox (vert)", kSkyboxFS, "Shader Module: skybox (frag)"),
       .numColorAttachments = 1,
-      .colorAttachments = {{.texture = nativeDrawable}},
-      .depthAttachment = {.texture = getNativeDepthDrawable()},
+      .colorAttachments = {{
+          .textureFormat = fbOffscreen_.colorAttachments[0].texture->getFormat(),
+      }},
+      .cullMode = igl::CullMode_Front,
+      .frontFaceWinding = igl::WindingMode_CCW,
+      .sampleCount = kNumSamplesMSAA,
+      .debugName = "Pipeline: skybox",
   };
-  fbMain_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(fbMain_.get());
+
+  if (fbOffscreen_.depthStencilAttachment.texture) {
+    desc.depthAttachmentFormat = fbOffscreen_.depthStencilAttachment.texture->getFormat();
+  }
+
+  renderPipelineState_Skybox_ = device_->createRenderPipeline(desc, nullptr);
 }
 
 void createShadowMap() {
@@ -1280,14 +1222,10 @@ void createShadowMap() {
                                  "Shadow map");
   desc.numMipLevels = TextureDesc::calcNumMipLevels(w, h);
   Result ret;
-  std::shared_ptr<ITexture> shadowMap = device_->createTexture(desc, &ret);
-  IGL_ASSERT(ret.isOk());
-
-  const FramebufferDesc framebufferDesc = {
-      .depthAttachment = {.texture = shadowMap},
+  fbShadowMap_ = {
+      .depthStencilAttachment = {.texture = device_->createTexture(desc, &ret)},
   };
-  fbShadowMap_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(fbShadowMap_.get());
+  IGL_ASSERT(ret.isOk());
 }
 
 void createOffscreenFramebuffer() {
@@ -1324,27 +1262,28 @@ void createOffscreenFramebuffer() {
   std::shared_ptr<ITexture> texColor = device_->createTexture(descColor, &ret);
   IGL_ASSERT(ret.isOk());
 
-  FramebufferDesc framebufferDesc = {
+  Framebuffer Framebuffer = {
       .numColorAttachments = 1,
       .colorAttachments = {{.texture = texColor}},
-      .depthAttachment = {.texture = texDepth},
+      .depthStencilAttachment = {.texture = texDepth},
   };
+
   if (kNumSamplesMSAA > 1) {
     auto descColorResolve =
         TextureDesc::new2D(format, w, h, usage, "Offscreen framebuffer (c - resolve)");
     descColorResolve.usage = usage;
     std::shared_ptr<ITexture> texResolveColor = device_->createTexture(descColorResolve, &ret);
     IGL_ASSERT(ret.isOk());
-    framebufferDesc.colorAttachments[0].resolveTexture = texResolveColor;
+    Framebuffer.colorAttachments[0].resolveTexture = texResolveColor;
   }
-  fbOffscreen_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(fbOffscreen_.get());
+
+  fbOffscreen_ = Framebuffer;
 }
 
 void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
   IGL_PROFILER_FUNCTION();
 
-  fbMain_->updateDrawable(nativeDrawable);
+  fbMain_.colorAttachments[0].texture = nativeDrawable;
 
   const float fov = float(45.0f * (M_PI / 180.0f));
   const float aspectRatio = (float)width_ / (float)height_;
@@ -1363,7 +1302,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
       .light = scaleBias * shadowProj * shadowView,
       .texSkyboxRadiance = skyboxTextureReference_->getTextureId(),
       .texSkyboxIrradiance = skyboxTextureIrradiance_->getTextureId(),
-      .texShadow = fbShadowMap_->getDepthAttachment()->getTextureId(),
+      .texShadow = fbShadowMap_.depthStencilAttachment.texture->getTextureId(),
       .sampler = sampler_->getSamplerId(),
       .samplerShadow = samplerShadow_->getSamplerId(),
       .bDrawNormals = perFrame_.bDrawNormals,
@@ -1392,7 +1331,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
   if (isShadowMapDirty_) {
     std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
-    buffer->cmdBeginRenderPass(renderPassShadow_, fbShadowMap_);
+    buffer->cmdBeginRendering(renderPassShadow_, fbShadowMap_);
     {
       buffer->cmdBindRenderPipelineState(renderPipelineState_Shadow_);
       buffer->cmdPushDebugGroupLabel("Render Shadows", igl::Color(1, 0, 0));
@@ -1411,13 +1350,11 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
           PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
       buffer->cmdPopDebugGroupLabel();
     }
-    buffer->cmdEndRenderPass();
-
-    buffer->present(fbShadowMap_->getDepthAttachment());
-
+    buffer->cmdEndRendering();
+    buffer->present(fbShadowMap_.depthStencilAttachment.texture);
     device_->submit(igl::CommandQueueType::Graphics, *buffer);
 
-    fbShadowMap_->getDepthAttachment()->generateMipmap();
+    fbShadowMap_.depthStencilAttachment.texture->generateMipmap();
 
     isShadowMapDirty_ = false;
   }
@@ -1427,7 +1364,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
     // This will clear the framebuffer
-    buffer->cmdBeginRenderPass(renderPassOffscreen_, fbOffscreen_);
+    buffer->cmdBeginRendering(renderPassOffscreen_, fbOffscreen_);
     {
       // Scene
       buffer->cmdBindRenderPipelineState(renderPipelineState_Mesh_);
@@ -1461,15 +1398,16 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
       buffer->cmdDraw(PrimitiveType::Triangle, 0, 3 * 6 * 2);
       buffer->cmdPopDebugGroupLabel();
     }
-    buffer->cmdEndRenderPass();
-    buffer->present(fbOffscreen_->getColorAttachment(0));
+    buffer->cmdEndRendering();
+    buffer->present(fbOffscreen_.colorAttachments[0].texture);
     device_->submit(CommandQueueType::Graphics, *buffer);
   }
 
   // Pass 3: compute shader post-processing
   if (enableComputePass_) {
-    std::shared_ptr<ITexture> tex = kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0)
-                                                        : fbOffscreen_->getColorAttachment(0);
+    std::shared_ptr<ITexture> tex = kNumSamplesMSAA > 1
+                                        ? fbOffscreen_.colorAttachments[0].resolveTexture
+                                        : fbOffscreen_.colorAttachments[0].texture;
     std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
     buffer->useComputeTexture(tex);
@@ -1491,7 +1429,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
     // This will clear the framebuffer
-    buffer->cmdBeginRenderPass(renderPassMain_, fbMain_);
+    buffer->cmdBeginRendering(renderPassMain_, fbMain_);
     {
       buffer->cmdBindRenderPipelineState(renderPipelineState_Fullscreen_);
       buffer->cmdPushDebugGroupLabel("Swapchain Output", igl::Color(1, 0, 0));
@@ -1499,8 +1437,8 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
         uint32_t texture;
       } bindings = {
           .texture = kNumSamplesMSAA > 1
-                         ? fbOffscreen_->getResolveColorAttachment(0)->getTextureId()
-                         : fbOffscreen_->getColorAttachment(0)->getTextureId(),
+                         ? fbOffscreen_.colorAttachments[0].resolveTexture->getTextureId()
+                         : fbOffscreen_.colorAttachments[0].texture->getTextureId(),
       };
       buffer->cmdPushConstants(0, &bindings, sizeof(bindings));
       buffer->cmdDraw(PrimitiveType::Triangle, 0, 3);
@@ -1510,14 +1448,12 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
       imguiSession_->endFrame(*device_.get(), *buffer);
 #endif // IGL_WITH_IGLU
     }
-    buffer->cmdEndRenderPass();
+    buffer->cmdEndRendering();
 
-    buffer->present(fbMain_->getColorAttachment(0));
+    buffer->present(fbMain_.colorAttachments[0].texture);
 
     device_->submit(CommandQueueType::Graphics, *buffer, true);
   }
-
-  fbMain_->getDepthAttachment()->generateMipmap();
 }
 
 void generateCompressedTexture(LoadedImage img) {
@@ -1941,7 +1877,10 @@ int main(int argc, char* argv[]) {
   loadSkyboxTexture();
   loadMaterials();
 
-  createFramebuffer(getNativeDrawable());
+  fbMain_ = {
+      .numColorAttachments = 1,
+      .colorAttachments = {{.texture = device_->getCurrentSwapchainTexture()}},
+  };
   createShadowMap();
   createOffscreenFramebuffer();
   createRenderPipelines();
@@ -1959,12 +1898,8 @@ int main(int argc, char* argv[]) {
   // Main loop
   while (!glfwWindowShouldClose(window_)) {
     {
-      FramebufferDesc framebufferDesc;
-      framebufferDesc.colorAttachments[0].texture = getNativeDrawable();
-      framebufferDesc.depthAttachment.texture = getNativeDepthDrawable();
-
 #if IGL_WITH_IGLU
-      imguiSession_->beginFrame(framebufferDesc, 1.0f);
+      imguiSession_->beginFrame(fbMain_, 1.0f);
       ImGui::ShowDemoWindow();
 
       ImGui::Begin("Keyboard hints:", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
@@ -2025,7 +1960,7 @@ int main(int argc, char* argv[]) {
 #if IGL_WITH_IGLU
     inputDispatcher_.processEvents();
 #endif // IGL_WITH_IGLU
-    render(getNativeDrawable(), frameIndex);
+    render(device_->getCurrentSwapchainTexture(), frameIndex);
     glfwPollEvents();
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
   }
@@ -2055,10 +1990,9 @@ int main(int argc, char* argv[]) {
   texturesCache_.clear();
   sampler_ = nullptr;
   samplerShadow_ = nullptr;
-  fbMain_ = nullptr;
-  fbShadowMap_ = nullptr;
-  fbOffscreen_ = nullptr;
-  depthBuffer_ = nullptr;
+  fbMain_ = {};
+  fbShadowMap_ = {};
+  fbOffscreen_ = {};
   device_.reset(nullptr);
 
   glfwDestroyWindow(window_);

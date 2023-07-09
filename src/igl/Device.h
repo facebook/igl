@@ -19,7 +19,7 @@ class IFramebuffer;
 class IRenderPipelineState;
 class IShaderModule;
 struct BufferDesc;
-struct FramebufferDesc;
+struct Framebuffer;
 struct RenderPipelineDesc;
 struct ShaderModuleDesc;
 struct ShaderStages;
@@ -66,48 +66,7 @@ class IDevice {
   virtual std::shared_ptr<IShaderModule> createShaderModule(const ShaderModuleDesc& desc,
                                                             Result* outResult) const = 0;
 
-  virtual std::shared_ptr<IFramebuffer> createFramebuffer(const FramebufferDesc& desc,
-                                                          Result* outResult) = 0;
-
-  /**
-   * @brief Returns a platform-specific device. If the requested device type does not match that of
-   * the actual underlying device, then null is returned.
-   * @return Pointer to the underlying platform-specific device.
-   */
-  template<typename T, typename = std::enable_if_t<std::is_base_of<IPlatformDevice, T>::value>>
-  T* getPlatformDevice() noexcept {
-    return const_cast<T*>(static_cast<const IDevice*>(this)->getPlatformDevice<T>());
-  }
-
-  /**
-   * @brief Returns a platform-specific device. If the requested device type does not match that of
-   * the actual underlying device, then null is returned.
-   * @return Pointer to the underlying platform-specific device.
-   */
-  template<typename T, typename = std::enable_if_t<std::is_base_of<IPlatformDevice, T>::value>>
-  const T* getPlatformDevice() const noexcept {
-    const IPlatformDevice& platformDevice = getPlatformDevice();
-    if (platformDevice.isType(T::Type)) {
-      return static_cast<const T*>(&platformDevice);
-    }
-    return nullptr;
-  }
-
-  /**
-   * @brief Returns a platform-specific device. Returned value should not be held longer than the
-   * original `IDevice`.
-   * @return Pointer to the underlying platform-specific device.
-   */
-  IPlatformDevice& getPlatformDevice() noexcept {
-    return const_cast<IPlatformDevice&>(static_cast<const IDevice*>(this)->getPlatformDevice());
-  }
-
-  /**
-   * @brief Returns a platform-specific device. Returned value should not be held longer than the
-   * original `IDevice`.
-   * @return Pointer to the underlying platform-specific device.
-   */
-  virtual const IPlatformDevice& getPlatformDevice() const noexcept = 0;
+  virtual std::shared_ptr<ITexture> getCurrentSwapchainTexture() = 0;
 
   virtual std::unique_ptr<ShaderStages> createShaderStages(const char* vs,
                                                            std::string debugNameVS,

@@ -217,11 +217,11 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
                                          RenderPipelineDesc desc) :
   device_(device), desc_(std::move(desc)) {
   // Iterate and cache vertex input bindings and attributes
-  const igl::VertexInputStateDesc& vstate = desc_.vertexInputState;
+  const igl::VertexInputState& vstate = desc_.vertexInputState;
 
   vertexInputStateCreateInfo_ = ivkGetPipelineVertexInputStateCreateInfo_Empty();
 
-  bool bufferAlreadyBound[VertexInputStateDesc::IGL_VERTEX_BUFFER_MAX] = {};
+  bool bufferAlreadyBound[VertexInputState::IGL_VERTEX_BUFFER_MAX] = {};
 
   for (uint32_t i = 0; i != vstate.numAttributes; i++) {
     const VertexAttribute& attr = vstate.attributes[i];
@@ -273,8 +273,6 @@ VkPipeline RenderPipelineState::getVkPipeline(
 
   const VulkanContext& ctx = device_.getVulkanContext();
 
-  VkRenderPass renderPass = ctx.getRenderPass(dynamicState.renderPassIndex_).pass;
-
   VkPipeline pipeline = VK_NULL_HANDLE;
 
   // Not all attachments are valid. We need to create color blend attachments only for active
@@ -282,9 +280,13 @@ VkPipeline RenderPipelineState::getVkPipeline(
   std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates;
   colorBlendAttachmentStates.resize(desc_.numColorAttachments);
 
+  std::vector<VkFormat> colorAttachmentFormats;
+  colorAttachmentFormats.resize(desc_.numColorAttachments);
+
   for (uint32_t i = 0; i != desc_.numColorAttachments; i++) {
     const auto& attachment = desc_.colorAttachments[i];
     IGL_ASSERT(attachment.textureFormat != TextureFormat::Invalid);
+    colorAttachmentFormats[i] = textureFormatToVkFormat(attachment.textureFormat);
     if (!attachment.blendEnabled) {
       colorBlendAttachmentStates[i] = ivkGetPipelineColorBlendAttachmentState_NoBlending();
     } else {
@@ -344,12 +346,14 @@ VkPipeline RenderPipelineState::getVkPipeline(
       .frontFace(windingModeToVkFrontFace(desc_.frontFaceWinding))
       .vertexInputState(vertexInputStateCreateInfo_)
       .colorBlendAttachmentStates(colorBlendAttachmentStates)
+      .colorAttachmentFormats(colorAttachmentFormats)
+      .depthAttachmentFormat(textureFormatToVkFormat(desc_.depthAttachmentFormat))
+      .stencilAttachmentFormat(textureFormatToVkFormat(desc_.stencilAttachmentFormat))
       .build(
           ctx.device_->getVkDevice(),
           // TODO: use ctx.pipelineCache_
           VK_NULL_HANDLE,
           ctx.pipelineLayout_->getVkPipelineLayout(),
-          renderPass,
           &pipeline,
           desc_.debugName.c_str());
 

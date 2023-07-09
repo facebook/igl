@@ -405,25 +405,6 @@ VkResult ivkCreateImageView(VkDevice device,
   return vkCreateImageView(device, &ci, NULL, outImageView);
 }
 
-VkResult ivkCreateFramebuffer(VkDevice device,
-                              uint32_t width,
-                              uint32_t height,
-                              VkRenderPass renderPass,
-                              size_t numAttachments,
-                              const VkImageView* attachments,
-                              VkFramebuffer* outFramebuffer) {
-  const VkFramebufferCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-      .renderPass = renderPass,
-      .attachmentCount = (uint32_t)numAttachments,
-      .pAttachments = attachments,
-      .width = width,
-      .height = height,
-      .layers = 1,
-  };
-  return vkCreateFramebuffer(device, &ci, NULL, outFramebuffer);
-}
-
 VkAttachmentDescription2 ivkGetAttachmentDescriptionColor(VkFormat format,
                                                           VkAttachmentLoadOp loadOp,
                                                           VkAttachmentStoreOp storeOp,
@@ -451,25 +432,6 @@ VkAttachmentReference2 ivkGetAttachmentReferenceColor(uint32_t idx) {
       .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
   };
   return ref;
-}
-
-VkResult ivkCreateRenderPass(VkDevice device,
-                             uint32_t numAttachments,
-                             const VkAttachmentDescription* attachments,
-                             const VkSubpassDescription* subpass,
-                             const VkSubpassDependency* dependency,
-                             VkRenderPass* outRenderPass) {
-  const VkRenderPassCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-      .pNext = NULL,
-      .attachmentCount = numAttachments,
-      .pAttachments = attachments,
-      .subpassCount = 1,
-      .pSubpasses = subpass,
-      .dependencyCount = 1,
-      .pDependencies = dependency,
-  };
-  return vkCreateRenderPass(device, &ci, NULL, outRenderPass);
 }
 
 VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
@@ -986,46 +948,6 @@ VkResult ivkCreateShaderModuleFromSPIRV(VkDevice device,
       .pCode = dataSPIRV,
   };
   return vkCreateShaderModule(device, &ci, NULL, outShaderModule);
-}
-
-VkResult ivkCreateGraphicsPipeline(VkDevice device,
-                                   VkPipelineCache pipelineCache,
-                                   uint32_t numShaderStages,
-                                   const VkPipelineShaderStageCreateInfo* shaderStages,
-                                   const VkPipelineVertexInputStateCreateInfo* vertexInputState,
-                                   const VkPipelineInputAssemblyStateCreateInfo* inputAssemblyState,
-                                   const VkPipelineTessellationStateCreateInfo* tessellationState,
-                                   const VkPipelineViewportStateCreateInfo* viewportState,
-                                   const VkPipelineRasterizationStateCreateInfo* rasterizationState,
-                                   const VkPipelineMultisampleStateCreateInfo* multisampleState,
-                                   const VkPipelineDepthStencilStateCreateInfo* depthStencilState,
-                                   const VkPipelineColorBlendStateCreateInfo* colorBlendState,
-                                   const VkPipelineDynamicStateCreateInfo* dynamicState,
-                                   VkPipelineLayout pipelineLayout,
-                                   VkRenderPass renderPass,
-                                   VkPipeline* outPipeline) {
-  const VkGraphicsPipelineCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-      .pNext = NULL,
-      .flags = 0,
-      .stageCount = numShaderStages,
-      .pStages = shaderStages,
-      .pVertexInputState = vertexInputState,
-      .pInputAssemblyState = inputAssemblyState,
-      .pTessellationState = tessellationState,
-      .pViewportState = viewportState,
-      .pRasterizationState = rasterizationState,
-      .pMultisampleState = multisampleState,
-      .pDepthStencilState = depthStencilState,
-      .pColorBlendState = colorBlendState,
-      .pDynamicState = dynamicState,
-      .layout = pipelineLayout,
-      .renderPass = renderPass,
-      .subpass = 0,
-      .basePipelineHandle = VK_NULL_HANDLE,
-      .basePipelineIndex = -1,
-  };
-  return vkCreateGraphicsPipelines(device, pipelineCache, 1, &ci, NULL, outPipeline);
 }
 
 VkResult ivkCreateComputePipeline(VkDevice device,

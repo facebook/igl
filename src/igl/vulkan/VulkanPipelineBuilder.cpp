@@ -86,6 +86,22 @@ VulkanPipelineBuilder& VulkanPipelineBuilder::colorBlendAttachmentStates(
   return *this;
 }
 
+VulkanPipelineBuilder& VulkanPipelineBuilder::colorAttachmentFormats(
+    std::vector<VkFormat>& formats) {
+  colorAttachmentFormats_ = std::move(formats);
+  return *this;
+}
+
+VulkanPipelineBuilder& VulkanPipelineBuilder::depthAttachmentFormat(VkFormat format) {
+  depthAttachmentFormat_ = format;
+  return *this;
+}
+
+VulkanPipelineBuilder& VulkanPipelineBuilder::stencilAttachmentFormat(VkFormat format) {
+  stencilAttachmentFormat_ = format;
+  return *this;
+}
+
 VulkanPipelineBuilder& VulkanPipelineBuilder::shaderStage(VkPipelineShaderStageCreateInfo stage) {
   shaderStages_.push_back(stage);
   return *this;
@@ -122,7 +138,6 @@ VulkanPipelineBuilder& VulkanPipelineBuilder::stencilStateOps(VkStencilFaceFlags
 VkResult VulkanPipelineBuilder::build(VkDevice device,
                                       VkPipelineCache pipelineCache,
                                       VkPipelineLayout pipelineLayout,
-                                      VkRenderPass renderPass,
                                       VkPipeline* outPipeline,
                                       const char* debugName) noexcept {
   const VkPipelineDynamicStateCreateInfo dynamicState =
@@ -134,22 +149,41 @@ VkResult VulkanPipelineBuilder::build(VkDevice device,
       ivkGetPipelineColorBlendStateCreateInfo(uint32_t(colorBlendAttachmentStates_.size()),
                                               colorBlendAttachmentStates_.data());
 
-  const auto result = ivkCreateGraphicsPipeline(device,
-                                                pipelineCache,
-                                                (uint32_t)shaderStages_.size(),
-                                                shaderStages_.data(),
-                                                &vertexInputState_,
-                                                &inputAssembly_,
-                                                nullptr,
-                                                &viewportState,
-                                                &rasterizationState_,
-                                                &multisampleState_,
-                                                &depthStencilState_,
-                                                &colorBlendState,
-                                                &dynamicState,
-                                                pipelineLayout,
-                                                renderPass,
-                                                outPipeline);
+  IGL_ASSERT(colorAttachmentFormats_.size() == colorBlendAttachmentStates_.size());
+
+  const VkPipelineRenderingCreateInfo renderingInfo = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
+      .pNext = nullptr,
+      .colorAttachmentCount = (uint32_t)colorAttachmentFormats_.size(),
+      .pColorAttachmentFormats = colorAttachmentFormats_.data(),
+      .depthAttachmentFormat = depthAttachmentFormat_,
+      .stencilAttachmentFormat = stencilAttachmentFormat_,
+  };
+
+  const VkGraphicsPipelineCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+      .pNext = &renderingInfo,
+      .flags = 0,
+      .stageCount = (uint32_t)shaderStages_.size(),
+      .pStages = shaderStages_.data(),
+      .pVertexInputState = &vertexInputState_,
+      .pInputAssemblyState = &inputAssembly_,
+      .pTessellationState = nullptr,
+      .pViewportState = &viewportState,
+      .pRasterizationState = &rasterizationState_,
+      .pMultisampleState = &multisampleState_,
+      .pDepthStencilState = &depthStencilState_,
+      .pColorBlendState = &colorBlendState,
+      .pDynamicState = &dynamicState,
+      .layout = pipelineLayout,
+      .renderPass = VK_NULL_HANDLE,
+      .subpass = 0,
+      .basePipelineHandle = VK_NULL_HANDLE,
+      .basePipelineIndex = -1,
+  };
+
+  const auto result =
+      vkCreateGraphicsPipelines(device, pipelineCache, 1, &ci, nullptr, outPipeline);
 
   if (!IGL_VERIFY(result == VK_SUCCESS)) {
     return result;

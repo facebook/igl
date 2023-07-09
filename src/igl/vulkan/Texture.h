@@ -8,7 +8,6 @@
 #pragma once
 
 #include <igl/Common.h>
-#include <igl/Framebuffer.h>
 #include <igl/Texture.h>
 #include <igl/vulkan/Common.h>
 
@@ -21,11 +20,9 @@ class Device;
 class VulkanImage;
 class VulkanImageView;
 class VulkanTexture;
-class PlatformDevice;
 
 class Texture final : public ITexture {
   friend class Device;
-  friend class PlatformDevice;
 
  public:
   Texture(const igl::vulkan::Device& device, TextureFormat format);

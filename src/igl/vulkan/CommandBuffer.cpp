@@ -9,7 +9,6 @@
 
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/ComputePipelineState.h>
-#include <igl/vulkan/Framebuffer.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
@@ -22,7 +21,7 @@ CommandBuffer::CommandBuffer(VulkanContext& ctx) :
   ctx_(ctx), wrapper_(ctx_.immediate_->acquire()) {}
 
 CommandBuffer::~CommandBuffer() {
-  IGL_ASSERT(!isInRenderPass_); // did you forget to call cmdEndRenderPass()?
+  IGL_ASSERT(!isRendering_); // did you forget to call cmdEndRendering()?
 }
 
 namespace {
@@ -208,6 +207,8 @@ void CommandBuffer::cmdBindComputePipelineState(
 }
 
 void CommandBuffer::cmdDispatchThreadGroups(const Dimensions& threadgroupCount) {
+  IGL_ASSERT(!isRendering_);
+
   ctx_.checkAndUpdateDescriptorSets();
   ctx_.bindDefaultDescriptorSets(wrapper_.cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE);
 
@@ -259,34 +260,32 @@ void CommandBuffer::useComputeTexture(const std::shared_ptr<ITexture>& texture) 
           vkImage.getImageAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
 }
 
-void CommandBuffer::cmdBeginRenderPass(const RenderPassDesc& renderPass,
-                                       const std::shared_ptr<IFramebuffer>& framebuffer) {
+void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
+                                      const igl::Framebuffer& desc) {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT(!isInRenderPass_);
+  IGL_ASSERT(!isRendering_);
 
-  isInRenderPass_ = true;
+  isRendering_ = true;
 
-  framebuffer_ = static_pointer_cast<Framebuffer>(framebuffer);
+  IGL_ASSERT(desc.numColorAttachments < RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX);
+  IGL_ASSERT(renderPass.numColorAttachments == desc.numColorAttachments);
 
-  if (!IGL_VERIFY(framebuffer.get())) {
-    return;
-  }
+  Framebuffer_ = desc;
 
-  // prepare all the color attachments
-  const uint32_t numColorAttachments = framebuffer->getNumColorAttachments();
-  for (uint32_t i = 0; i != numColorAttachments; i++) {
-    const auto colorTex = framebuffer->getColorAttachment(i);
+  // transition all the color attachments
+  for (uint32_t i = 0; i != desc.numColorAttachments; i++) {
+    const auto colorTex = desc.colorAttachments[i].texture;
     transitionColorAttachment(wrapper_.cmdBuf_, colorTex);
     // handle MSAA
-    const auto colorResolveTex = framebuffer->getResolveColorAttachment(i);
+    const auto colorResolveTex = desc.colorAttachments[i].resolveTexture;
     if (colorResolveTex) {
       transitionColorAttachment(wrapper_.cmdBuf_, colorResolveTex);
     }
   }
 
-  // prepare depth attachment
-  const auto depthTex = framebuffer->getDepthAttachment();
+  // transition depth-stencil attachment
+  const auto depthTex = desc.depthStencilAttachment.texture;
   if (depthTex) {
     const auto& vkDepthTex = static_cast<Texture&>(*depthTex);
     const auto& depthImg = vkDepthTex.getVulkanTexture().getVulkanImage();
@@ -302,104 +301,116 @@ void CommandBuffer::cmdBeginRenderPass(const RenderPassDesc& renderPass,
         VkImageSubresourceRange{flags, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
   }
 
-  const FramebufferDesc& desc = framebuffer_->getDesc();
-
-  IGL_ASSERT(desc.numColorAttachments <= RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX);
-
-  std::vector<VkClearValue> clearValues;
-  uint32_t mipLevel = 0;
-
-  VulkanRenderPassBuilder builder;
-
   VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
+  uint32_t mipLevel = 0;
+  uint32_t fbWidth = 0;
+  uint32_t fbHeight = 0;
+
+  // Process depth attachment
+  dynamicState_.depthBiasEnable_ = false;
+
+  VkRenderingAttachmentInfo colorAttachments[RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX];
 
   for (uint32_t i = 0; i != desc.numColorAttachments; i++) {
     auto& attachment = desc.colorAttachments[i];
     IGL_ASSERT(attachment.texture.get());
 
     const auto& colorTexture = static_cast<vulkan::Texture&>(*attachment.texture);
-
-    // Specifically using renderPass.colorAttachments.size() in case we somehow
-    // get into this loop even when renderPass.colorAttachments.empty() == true
-    if (i >= renderPass.numColorAttachments) {
-      IGL_ASSERT_MSG(
-          false,
-          "Framebuffer color attachment count larger than renderPass color attachment count");
-      return;
-    }
-
     const auto& descColor = renderPass.colorAttachments[i];
-    clearValues.push_back(ivkGetClearColorValue(descColor.clearColor.r,
-                                                descColor.clearColor.g,
-                                                descColor.clearColor.b,
-                                                descColor.clearColor.a));
-    if (descColor.mipmapLevel && mipLevel) {
+    if (mipLevel && descColor.mipmapLevel) {
       IGL_ASSERT_MSG(descColor.mipmapLevel == mipLevel,
                      "All color attachments should have the same mip-level");
     }
+    const igl::Dimensions dim = colorTexture.getDimensions();
+    if (fbWidth) {
+      IGL_ASSERT_MSG(dim.width == fbWidth, "All attachments should have the save width");
+    }
+    if (fbHeight) {
+      IGL_ASSERT_MSG(dim.height == fbHeight, "All attachments should have the save width");
+    }
     mipLevel = descColor.mipmapLevel;
-    const auto initialLayout = descColor.loadAction == igl::LoadAction::Load
-                                   ? colorTexture.getVulkanTexture().getVulkanImage().imageLayout_
-                                   : VK_IMAGE_LAYOUT_UNDEFINED;
-    builder.addColor(textureFormatToVkFormat(colorTexture.getFormat()),
-                     loadActionToVkAttachmentLoadOp(descColor.loadAction),
-                     storeActionToVkAttachmentStoreOp(descColor.storeAction),
-                     initialLayout,
-                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                     colorTexture.getVulkanTexture().getVulkanImage().samples_);
-    // RenderPassBuilder ensures that all non-resolve attachments have the same number of samples
+    fbWidth = dim.width;
+    fbHeight = dim.height;
     samples = colorTexture.getVulkanTexture().getVulkanImage().samples_;
+    colorAttachments[i] = {
+        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+        .pNext = nullptr,
+        .imageView = colorTexture.getVkImageViewForFramebuffer(0),
+        .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .resolveMode = (samples > 1) ? VK_RESOLVE_MODE_AVERAGE_BIT : VK_RESOLVE_MODE_NONE,
+        .resolveImageView = VK_NULL_HANDLE,
+        .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .loadOp = loadActionToVkAttachmentLoadOp(descColor.loadAction),
+        .storeOp = storeActionToVkAttachmentStoreOp(descColor.storeAction),
+        .clearValue = ivkGetClearColorValue(descColor.clearColor.r,
+                                            descColor.clearColor.g,
+                                            descColor.clearColor.b,
+                                            descColor.clearColor.a),
+    };
     // handle MSAA
     if (descColor.storeAction == StoreAction::MsaaResolve) {
+      IGL_ASSERT(samples > 1);
       IGL_ASSERT_MSG(attachment.resolveTexture != nullptr,
                      "Framebuffer attachment should contain a resolve texture");
       const auto& colorResolveTexture = static_cast<vulkan::Texture&>(*attachment.resolveTexture);
-      builder.addColorResolve(textureFormatToVkFormat(colorResolveTexture.getFormat()),
-                              VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                              VK_ATTACHMENT_STORE_OP_STORE);
-      clearValues.push_back(ivkGetClearColorValue(descColor.clearColor.r,
-                                                  descColor.clearColor.g,
-                                                  descColor.clearColor.b,
-                                                  descColor.clearColor.a));
+      colorAttachments[i].resolveImageView = colorResolveTexture.getVkImageViewForFramebuffer(0);
+      colorAttachments[i].resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
   }
 
-  // Process depth attachment
-  const igl::AttachmentDesc descDepth = renderPass.depthStencilAttachment;
+  VkRenderingAttachmentInfo depthAttachment = {};
 
-  if (framebuffer->getDepthAttachment()) {
-    const auto& depthTexture = static_cast<vulkan::Texture&>(*(framebuffer->getDepthAttachment()));
+  if (desc.depthStencilAttachment.texture) {
+    const auto& depthTexture = static_cast<vulkan::Texture&>(*desc.depthStencilAttachment.texture);
+    const auto& descDepth = renderPass.depthAttachment;
     IGL_ASSERT_MSG(descDepth.mipmapLevel == mipLevel,
                    "Depth attachment should have the same mip-level as color attachments");
-    clearValues.push_back(
-        ivkGetClearDepthStencilValue(descDepth.clearDepth, descDepth.clearStencil));
-    const auto initialLayout = descDepth.loadAction == igl::LoadAction::Load
-                                   ? depthTexture.getVulkanTexture().getVulkanImage().imageLayout_
-                                   : VK_IMAGE_LAYOUT_UNDEFINED;
-    builder.addDepth(depthTexture.getVkFormat(),
-                     loadActionToVkAttachmentLoadOp(descDepth.loadAction),
-                     storeActionToVkAttachmentStoreOp(descDepth.storeAction),
-                     initialLayout,
-                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                     depthTexture.getVulkanTexture().getVulkanImage().samples_);
-    // RenderPassBuilder ensures that all non-resolve attachments have the same number of samples
-    samples = depthTexture.getVulkanTexture().getVulkanImage().samples_;
+    depthAttachment = {
+        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+        .pNext = nullptr,
+        .imageView = depthTexture.getVkImageViewForFramebuffer(0),
+        .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+        .resolveMode = VK_RESOLVE_MODE_NONE,
+        .resolveImageView = VK_NULL_HANDLE,
+        .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .loadOp = loadActionToVkAttachmentLoadOp(descDepth.loadAction),
+        .storeOp = storeActionToVkAttachmentStoreOp(descDepth.storeAction),
+        .clearValue = ivkGetClearDepthStencilValue(descDepth.clearDepth, descDepth.clearStencil),
+    };
+    const igl::Dimensions dim = depthTexture.getDimensions();
+    if (fbWidth) {
+      IGL_ASSERT_MSG(dim.width == fbWidth, "All attachments should have the save width");
+    }
+    if (fbHeight) {
+      IGL_ASSERT_MSG(dim.height == fbHeight, "All attachments should have the save width");
+    }
+    mipLevel = descDepth.mipmapLevel;
+    fbWidth = dim.width;
+    fbHeight = dim.height;
   }
 
-  const auto& fb = static_cast<vulkan::Framebuffer&>(*framebuffer);
-
-  auto renderPassHandle = ctx_.findRenderPass(builder);
-
-  dynamicState_.renderPassIndex_ = renderPassHandle.index;
-  dynamicState_.depthBiasEnable_ = false;
-
-  const VkRenderPassBeginInfo bi = fb.getRenderPassBeginInfo(
-      renderPassHandle.pass, mipLevel, (uint32_t)clearValues.size(), clearValues.data());
-
-  const uint32_t width = std::max(fb.getWidth() >> mipLevel, 1u);
-  const uint32_t height = std::max(fb.getHeight() >> mipLevel, 1u);
+  const uint32_t width = std::max(fbWidth >> mipLevel, 1u);
+  const uint32_t height = std::max(fbHeight >> mipLevel, 1u);
   const igl::Viewport viewport = {0.0f, 0.0f, (float)width, (float)height, 0.0f, +1.0f};
   const igl::ScissorRect scissor = {0, 0, width, height};
+
+  VkRenderingAttachmentInfo stencilAttachment = depthAttachment;
+
+  const bool isStencilFormat = renderPass.stencilAttachment.loadAction != igl::LoadAction::DontCare;
+
+  const VkRenderingInfo renderingInfo = {
+      .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .renderArea = {VkOffset2D{(int32_t)scissor.x, (int32_t)scissor.y},
+                     VkExtent2D{scissor.width, scissor.height}},
+      .layerCount = 1,
+      .viewMask = 0,
+      .colorAttachmentCount = desc.numColorAttachments,
+      .pColorAttachments = colorAttachments,
+      .pDepthAttachment = depthTex ? &depthAttachment : nullptr,
+      .pStencilAttachment = isStencilFormat ? &stencilAttachment : nullptr,
+  };
 
   cmdBindViewport(viewport);
   cmdBindScissorRect(scissor);
@@ -407,43 +418,37 @@ void CommandBuffer::cmdBeginRenderPass(const RenderPassDesc& renderPass,
   ctx_.checkAndUpdateDescriptorSets();
   ctx_.bindDefaultDescriptorSets(wrapper_.cmdBuf_, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-  vkCmdBeginRenderPass(wrapper_.cmdBuf_, &bi, VK_SUBPASS_CONTENTS_INLINE);
+  vkCmdBeginRendering(wrapper_.cmdBuf_, &renderingInfo);
 }
 
-void CommandBuffer::cmdEndRenderPass() {
-  IGL_ASSERT(isInRenderPass_);
+void CommandBuffer::cmdEndRendering() {
+  IGL_ASSERT(isRendering_);
 
-  isInRenderPass_ = false;
+  isRendering_ = false;
 
-  vkCmdEndRenderPass(wrapper_.cmdBuf_);
+  vkCmdEndRendering(wrapper_.cmdBuf_);
 
   // set image layouts after the render pass
-  const FramebufferDesc& desc = static_cast<const Framebuffer&>((*framebuffer_)).getDesc();
-
-  for (uint32_t i = 0; i != desc.numColorAttachments; i++) {
-    const auto& attachment = desc.colorAttachments[i];
+  for (uint32_t i = 0; i != Framebuffer_.numColorAttachments; i++) {
+    const auto& attachment = Framebuffer_.colorAttachments[i];
     const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*attachment.texture.get());
     // this must match the final layout of the render pass
     tex.getVulkanTexture().getVulkanImage().imageLayout_ = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
   }
 
-  if (desc.depthAttachment.texture) {
-    const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*desc.depthAttachment.texture.get());
+  if (Framebuffer_.depthStencilAttachment.texture) {
+    const vulkan::Texture& tex =
+        static_cast<vulkan::Texture&>(*Framebuffer_.depthStencilAttachment.texture.get());
     // this must match the final layout of the render pass
     tex.getVulkanTexture().getVulkanImage().imageLayout_ =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
   }
+
+  Framebuffer_ = {};
 }
 
 void CommandBuffer::cmdBindViewport(const Viewport& viewport) {
-  /**
-    Using the negative viewport height Vulkan feature, we make the Vulkan "top-left" coordinate
-  system to be "bottom-left" as in OpenGL. This way VK_FRONT_FACE_COUNTER_CLOCKWISE and
-  VK_FRONT_FACE_CLOCKWISE use the same winding as in OpenGL. Part of VK_KHR_maintenance1 which is
-  promoted to Vulkan 1.1.
-
-  More details: https://www.saschawillems.de/blog/2019/03/29/flipping-the-vulkan-viewport/
-  **/
+  // https://www.saschawillems.de/blog/2019/03/29/flipping-the-vulkan-viewport/
   const VkViewport vp = {
       .x = viewport.x, // float x;
       .y = viewport.height - viewport.y, // float y;
@@ -479,8 +484,7 @@ void CommandBuffer::cmdBindRenderPipelineState(
   const RenderPipelineDesc& desc = rps->getRenderPipelineDesc();
 
   const bool hasDepthAttachmentPipeline = desc.depthAttachmentFormat != TextureFormat::Invalid;
-  const bool hasDepthAttachmentPass = framebuffer_ ? (framebuffer_->getDepthAttachment() != nullptr)
-                                                   : false;
+  const bool hasDepthAttachmentPass = Framebuffer_.depthStencilAttachment.texture != nullptr;
 
   if (hasDepthAttachmentPipeline != hasDepthAttachmentPass) {
     IGL_ASSERT(false);

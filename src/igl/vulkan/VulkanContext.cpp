@@ -208,10 +208,6 @@ VulkanContext::~VulkanContext() {
   stagingDevice_.reset(nullptr);
 
   VkDevice device = device_ ? device_->getVkDevice() : VK_NULL_HANDLE;
-
-  for (auto r : renderPasses_) {
-    vkDestroyRenderPass(device, r, nullptr);
-  }
   
   dslBindless_.reset(nullptr);
   pipelineLayout_.reset(nullptr);
@@ -1095,33 +1091,6 @@ VkFormat VulkanContext::getClosestDepthStencilFormat(igl::TextureFormat desiredF
 
   // no matching found, choose the first supported format
   return !deviceDepthFormats_.empty() ? deviceDepthFormats_[0] : VK_FORMAT_D24_UNORM_S8_UINT;
-}
-
-VulkanContext::RenderPassHandle VulkanContext::getRenderPass(uint8_t index) const {
-  return RenderPassHandle{renderPasses_[index], index};
-}
-
-VulkanContext::RenderPassHandle VulkanContext::findRenderPass(
-    const VulkanRenderPassBuilder& builder) const {
-  IGL_PROFILER_FUNCTION();
-
-  auto it = renderPassesHash_.find(builder);
-
-  if (it != renderPassesHash_.end()) {
-    return RenderPassHandle{renderPasses_[it->second], it->second};
-  }
-
-  VkRenderPass pass = VK_NULL_HANDLE;
-  builder.build(device_->getVkDevice(), &pass);
-
-  const size_t index = renderPasses_.size();
-
-  IGL_ASSERT(index <= 255);
-
-  renderPassesHash_[builder] = uint8_t(index);
-  renderPasses_.push_back(pass);
-
-  return RenderPassHandle{pass, uint8_t(index)};
 }
 
 std::vector<uint8_t> VulkanContext::getPipelineCacheData() const {

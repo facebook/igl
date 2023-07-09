@@ -21,6 +21,7 @@
 
 namespace igl {
 
+class ITexture;
 struct ShaderStages;
 
 bool _IGLVerify(bool cond, const char* func, const char* file, int line, const char* format, ...);
@@ -155,30 +156,6 @@ enum class HWDeviceType {
   IntegratedGpu = 3,
   /// SW GPU
   SoftwareGpu = 4,
-};
-
-/**
- * @brief PlatformDeviceType represents the platform and graphics backend that a class implementing
- * the IPlatformDevice interface supports.
- *
- */
-enum class PlatformDeviceType {
-  Vulkan,
-};
-
-class IPlatformDevice {
-  friend class IDevice;
-
- protected:
-  IPlatformDevice() = default;
-  /**
-   * @brief Check the type of an IPlatformDevice.
-   * @returns true if the IPlatformDevice is a given PlatformDeviceType t, otherwise false.
-   */
-  virtual bool isType(PlatformDeviceType t) const noexcept = 0;
-
- public:
-  virtual ~IPlatformDevice() = default;
 };
 
 /**
@@ -499,13 +476,6 @@ struct VertexAttribute {
   /** @brief An offset where the first element of this attribute stream starts */
   uintptr_t offset = 0;
   uint32_t location = 0;
-
-  VertexAttribute() = default;
-  VertexAttribute(size_t bufferIndex,
-                  VertexAttributeFormat format,
-                  uintptr_t offset,
-                  uint32_t location) :
-    bufferIndex(bufferIndex), format(format), offset(offset), location(location) {}
 };
 
 struct VertexInputBinding {
@@ -514,7 +484,7 @@ struct VertexInputBinding {
   size_t sampleRate = 1;
 };
 
-struct VertexInputStateDesc {
+struct VertexInputState {
   enum { IGL_VERTEX_ATTRIBUTES_MAX = 16 };
   enum { IGL_VERTEX_BUFFER_MAX = 16 };
   uint32_t numAttributes = 0;
@@ -538,7 +508,7 @@ struct ColorAttachment {
 struct RenderPipelineDesc {
   enum { IGL_COLOR_ATTACHMENTS_MAX = 4 };
 
-  igl::VertexInputStateDesc vertexInputState;
+  igl::VertexInputState vertexInputState;
   std::shared_ptr<ShaderStages> shaderStages;
 
   uint32_t numColorAttachments = 0;
@@ -583,10 +553,26 @@ struct AttachmentDesc {
   uint32_t clearStencil = 0;
 };
 
-struct RenderPassDesc {
+struct RenderPass {
   uint32_t numColorAttachments = 0;
-  AttachmentDesc colorAttachments[RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX];
+  AttachmentDesc colorAttachments[RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX] = {};
+  AttachmentDesc depthAttachment = {.loadAction = LoadAction::DontCare,
+                                    .storeAction = StoreAction::DontCare};
+  AttachmentDesc stencilAttachment = {.loadAction = LoadAction::DontCare,
+                                      .storeAction = StoreAction::DontCare};
+};
+
+struct Framebuffer {
+  struct AttachmentDesc {
+    std::shared_ptr<ITexture> texture;
+    std::shared_ptr<ITexture> resolveTexture;
+  };
+
+  uint32_t numColorAttachments = 0;
+  AttachmentDesc colorAttachments[RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX] = {};
   AttachmentDesc depthStencilAttachment;
+
+  std::string debugName;
 };
 
 enum class CommandQueueType {

@@ -10,9 +10,9 @@
 #include <igl/Device.h>
 #include <igl/Shader.h>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/VulkanSemaphore.h>
 #include <memory>
+#include <vector>
 
 namespace igl {
 namespace vulkan {
@@ -50,11 +50,7 @@ class Device final : public IDevice {
   std::shared_ptr<IShaderModule> createShaderModule(const ShaderModuleDesc& desc,
                                                     Result* outResult) const override;
 
-  std::shared_ptr<IFramebuffer> createFramebuffer(const FramebufferDesc& desc,
-                                                  Result* outResult) override;
-
-  // Platform-specific extensions
-  const PlatformDevice& getPlatformDevice() const noexcept override;
+  std::shared_ptr<ITexture> getCurrentSwapchainTexture() override;
 
   VulkanContext& getVulkanContext() {
     return *ctx_.get();
@@ -75,7 +71,7 @@ class Device final : public IDevice {
 
   std::unique_ptr<VulkanContext> ctx_;
 
-  PlatformDevice platformDevice_;
+  std::vector<std::shared_ptr<ITexture>> swapchainTextures_;
 };
 
 } // namespace vulkan

@@ -31,7 +31,6 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
-#include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 
 #define ENABLE_MULTIPLE_COLOR_ATTACHMENTS 0
@@ -91,8 +90,8 @@ int width_ = 0;
 int height_ = 0;
 
 std::unique_ptr<IDevice> device_;
-RenderPassDesc renderPass_;
-std::shared_ptr<IFramebuffer> framebuffer_;
+igl::RenderPass renderPass_;
+igl::Framebuffer framebuffer_;
 std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
 
 static bool initWindow(GLFWwindow** outWindow) {
@@ -183,7 +182,7 @@ static void initIGL() {
         .clearColor = {1.0f, 1.0f, 1.0f, 1.0f},
     };
   }
-  renderPass_.depthStencilAttachment = {
+  renderPass_.depthAttachment = {
       .loadAction = LoadAction::DontCare,
       .storeAction = StoreAction::DontCare,
   };
@@ -194,21 +193,18 @@ static void createRenderPipeline() {
     return;
   }
 
-  IGL_ASSERT(framebuffer_.get());
-
-  RenderPipelineDesc desc;
-
-  desc.numColorAttachments = kNumColorAttachments;
+  RenderPipelineDesc desc = {
+      .numColorAttachments = kNumColorAttachments,
+  };
 
   for (auto i = 0; i < kNumColorAttachments; ++i) {
-    if (framebuffer_->getColorAttachment(i)) {
-      desc.colorAttachments[i].textureFormat =
-          framebuffer_->getColorAttachment(i)->getFormat();
+    if (framebuffer_.colorAttachments[i].texture) {
+      desc.colorAttachments[i].textureFormat = framebuffer_.colorAttachments[i].texture->getFormat();
     }
   }
 
-  if (framebuffer_->getDepthAttachment()) {
-    desc.depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat();
+  if (framebuffer_.depthStencilAttachment.texture) {
+    desc.depthAttachmentFormat = framebuffer_.depthStencilAttachment.texture->getFormat();
   }
 
   desc.shaderStages = device_->createShaderStages(
@@ -217,19 +213,8 @@ static void createRenderPipeline() {
   IGL_ASSERT(renderPipelineState_Triangle_.get());
 }
 
-static std::shared_ptr<ITexture> getNativeDrawable() {
-  const auto& platformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
-
-  Result ret;
-  std::shared_ptr<ITexture> drawable = platformDevice->createTextureFromNativeDrawable(&ret);
-
-  IGL_ASSERT(ret.isOk());
-  return drawable;
-}
-
 static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
-  FramebufferDesc framebufferDesc = {
+  Framebuffer Framebuffer = {
      .numColorAttachments = kNumColorAttachments,
       .colorAttachments = {{.texture = nativeDrawable}},
   };
@@ -244,21 +229,19 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
         nativeDrawable->getDimensions().width,
         nativeDrawable->getDimensions().height,
         TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled,
-        std::format("{}C{}", framebufferDesc.debugName.c_str(), i - 1).c_str());
+        std::format("{}C{}", Framebuffer.debugName.c_str(), i - 1).c_str());
 
-    framebufferDesc.colorAttachments[i].texture = device_->createTexture(desc, nullptr);
+    Framebuffer.colorAttachments[i].texture = device_->createTexture(desc, nullptr);
   }
-  framebuffer_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(framebuffer_.get());
+  framebuffer_ = Framebuffer;
 }
 
 static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
-  const auto size = framebuffer_->getColorAttachment(0)->getSize();
+  const auto size = framebuffer_.colorAttachments[0].texture->getSize();
   if (size.width != width_ || size.height != height_) {
     createFramebuffer(nativeDrawable);
-  } else {
-    framebuffer_->updateDrawable(nativeDrawable);
   }
+  framebuffer_.colorAttachments[0].texture = nativeDrawable;
 
   // Command buffers (1-N per thread): create, submit and forget
   std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
@@ -267,7 +250,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
   const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
 
   // This will clear the framebuffer
-  buffer->cmdBeginRenderPass(renderPass_, framebuffer_);
+  buffer->cmdBeginRendering(renderPass_, framebuffer_);
   {
     buffer->cmdBindRenderPipelineState(renderPipelineState_Triangle_);
     buffer->cmdBindViewport(viewport);
@@ -276,7 +259,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
     buffer->cmdDraw(PrimitiveType::Triangle, 0, 3);
     buffer->cmdPopDebugGroupLabel();
   }
-  buffer->cmdEndRenderPass();
+  buffer->cmdEndRendering();
 
   buffer->present(nativeDrawable);
 
@@ -289,18 +272,18 @@ int main(int argc, char* argv[]) {
   initWindow(&window_);
   initIGL();
 
-  createFramebuffer(getNativeDrawable());
+  createFramebuffer(device_->getCurrentSwapchainTexture());
   createRenderPipeline();
 
   // Main loop
   while (!glfwWindowShouldClose(window_)) {
-    render(getNativeDrawable());
+    render(device_->getCurrentSwapchainTexture());
     glfwPollEvents();
   }
 
   // destroy all the Vulkan stuff before closing the window
   renderPipelineState_Triangle_ = nullptr;
-  framebuffer_ = nullptr;
+  framebuffer_ = {};
   device_.reset(nullptr);
 
   glfwDestroyWindow(window_);

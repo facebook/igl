@@ -34,7 +34,6 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
-#include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <stb/stb_image.h>
 
@@ -124,14 +123,13 @@ igl::FPSCounter fps_;
 constexpr uint32_t kNumBufferedFrames = 3;
 
 std::unique_ptr<IDevice> device_;
-FramebufferDesc framebufferDesc_;
-std::shared_ptr<IFramebuffer> framebuffer_;
+igl::Framebuffer framebuffer_;
 std::shared_ptr<IRenderPipelineState> renderPipelineState_Mesh_;
 std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
 std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerObject_;
 std::shared_ptr<ITexture> texture0_, texture1_;
 std::shared_ptr<ISamplerState> sampler_;
-igl::RenderPassDesc renderPass_;
+igl::RenderPass renderPass_;
 igl::DepthStencilState depthStencilState_;
 
 struct VertexPosUvw {
@@ -382,9 +380,9 @@ static void initIGL() {
                      .clearColor = {1.0f, 0.0f, 0.0f, 1.0f},
                  }}};
 #if TINY_TEST_USE_DEPTH_BUFFER
-  renderPass_.depthStencilAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0};
+  renderPass_.depthAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0};
 #else
-  renderPass_.depthStencilAttachment = {.loadAction = LoadAction::DontCare};
+  renderPass_.depthAttachment = {.loadAction = LoadAction::DontCare};
 #endif // TINY_TEST_USE_DEPTH_BUFFER
 
   // initialize random rotation axes for all cubes
@@ -393,81 +391,68 @@ static void initIGL() {
   }
 }
 
-static void createRenderPipeline() {
+static void initObjects() {
   if (renderPipelineState_Mesh_) {
     return;
   }
 
-  IGL_ASSERT(framebuffer_.get());
-
-  VertexInputStateDesc vdesc;
-  vdesc.numAttributes = 3;
-  vdesc.attributes[0].format = VertexAttributeFormat::Float3;
-  vdesc.attributes[0].offset = offsetof(VertexPosUvw, position);
-  vdesc.attributes[0].bufferIndex = 0;
-  vdesc.attributes[0].location = 0;
-  vdesc.attributes[1].format = VertexAttributeFormat::Float3;
-  vdesc.attributes[1].offset = offsetof(VertexPosUvw, color);
-  vdesc.attributes[1].bufferIndex = 0;
-  vdesc.attributes[1].location = 1;
-  vdesc.attributes[2].format = VertexAttributeFormat::Float2;
-  vdesc.attributes[2].offset = offsetof(VertexPosUvw, uv);
-  vdesc.attributes[2].bufferIndex = 0;
-  vdesc.attributes[2].location = 2;
-  vdesc.numInputBindings = 1;
-  vdesc.inputBindings[0].stride = sizeof(VertexPosUvw);
-
-  RenderPipelineDesc desc;
-
-  desc.numColorAttachments = 1;
-  desc.colorAttachments[0] = {.textureFormat = framebuffer_->getColorAttachment(0)->getFormat()};
-
-  if (framebuffer_->getDepthAttachment()) {
-    desc.depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat();
-  }
-
-  desc.vertexInputState = vdesc;
-  desc.shaderStages = device_->createShaderStages(
-      codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)");
-
-  desc.cullMode = igl::CullMode_Back;
-
-  desc.frontFaceWinding = igl::WindingMode_CW;
-  desc.debugName = "Pipeline: mesh";
-  renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
-}
-
-static std::shared_ptr<ITexture> getVulkanNativeDrawable() {
-  const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
-
-  IGL_ASSERT(vkPlatformDevice != nullptr);
-
-  Result ret;
-  std::shared_ptr<ITexture> drawable = vkPlatformDevice->createTextureFromNativeDrawable(&ret);
-
-  IGL_ASSERT(ret.isOk());
-  return drawable;
-}
-
-static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
-  framebufferDesc_ = {
+  framebuffer_ = {
       .numColorAttachments = 1,
-      .colorAttachments = {{.texture = nativeDrawable}},
+      .colorAttachments = {{.texture = device_->getCurrentSwapchainTexture()}},
   };
 
-  framebuffer_ = device_->createFramebuffer(framebufferDesc_, nullptr);
-  IGL_ASSERT(framebuffer_.get());
+  const VertexInputState vdesc = {
+      .numAttributes = 3,
+      .attributes =
+          {
+              {
+                  .bufferIndex = 0,
+                  .format = VertexAttributeFormat::Float3,
+                  .offset = offsetof(VertexPosUvw, position),
+                  .location = 0,
+              },
+              {
+                  .bufferIndex = 0,
+                  .format = VertexAttributeFormat::Float3,
+                  .offset = offsetof(VertexPosUvw, color),
+                  .location = 1,
+              },
+              {.bufferIndex = 0,
+               .format = VertexAttributeFormat::Float2,
+               .offset = offsetof(VertexPosUvw, uv),
+               .location = 2},
+          },
+      .numInputBindings = 1,
+      .inputBindings = {{.stride = sizeof(VertexPosUvw)}},
+  };
+
+  RenderPipelineDesc desc = {
+      .vertexInputState = vdesc,
+      .shaderStages = device_->createShaderStages(
+          codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
+      .numColorAttachments = 1,
+      .colorAttachments =
+          {
+              {
+                  .textureFormat = framebuffer_.colorAttachments[0].texture->getFormat(),
+              },
+          },
+      .cullMode = igl::CullMode_Back,
+      .frontFaceWinding = igl::WindingMode_CW,
+      .debugName = "Pipeline: mesh",
+  };
+
+  if (framebuffer_.depthStencilAttachment.texture) {
+    desc.depthAttachmentFormat = framebuffer_.depthStencilAttachment.texture->getFormat();
+  }
+
+  renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
 }
 
 static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
   IGL_PROFILER_FUNCTION();
 
-  const auto size = framebuffer_->getColorAttachment(0)->getSize();
-  if (size.width != width_ || size.height != height_) {
-    createFramebuffer(nativeDrawable);
-  } else {
-    framebuffer_->updateDrawable(nativeDrawable);
-  }
+  framebuffer_.colorAttachments[0].texture = nativeDrawable;
 
   const float fov = float(45.0f * (M_PI / 180.0f));
   const float aspectRatio = (float)width_ / (float)height_;
@@ -501,7 +486,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
 
   // This will clear the framebuffer
-  buffer->cmdBeginRenderPass(renderPass_, framebuffer_);
+  buffer->cmdBeginRendering(renderPass_, framebuffer_);
   {
     buffer->cmdBindRenderPipelineState(renderPipelineState_Mesh_);
     buffer->cmdBindViewport(viewport);
@@ -526,7 +511,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
 #if IGL_WITH_IGLU && 0
   imguiSession_->endFrame(*device_.get(), *commands);
 #endif // IGL_WITH_IGLU
-  buffer->cmdEndRenderPass();
+  buffer->cmdEndRendering();
 
   buffer->present(nativeDrawable);
 
@@ -539,8 +524,7 @@ int main(int argc, char* argv[]) {
   initWindow(&window_);
   initIGL();
 
-  createFramebuffer(getVulkanNativeDrawable());
-  createRenderPipeline();
+  initObjects();
 
 #if IGL_WITH_IGLU && 0
   imguiSession_ = std::make_unique<iglu::imgui::Session>(*device_.get(), inputDispatcher_);
@@ -564,7 +548,7 @@ int main(int argc, char* argv[]) {
 
     inputDispatcher_.processEvents();
 #endif // IGL_WITH_IGLU
-    render(getVulkanNativeDrawable(), frameIndex);
+    render(device_->getCurrentSwapchainTexture(), frameIndex);
     glfwPollEvents();
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
   }
@@ -582,8 +566,7 @@ int main(int argc, char* argv[]) {
   texture0_ = nullptr;
   texture1_ = nullptr;
   sampler_ = nullptr;
-  framebufferDesc_ = {};
-  framebuffer_ = nullptr;
+  framebuffer_ = {};
   device_.reset(nullptr);
 
   glfwDestroyWindow(window_);

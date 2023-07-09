@@ -9,14 +9,13 @@
 
 #include <igl/Buffer.h>
 #include <igl/Common.h>
-#include <igl/Framebuffer.h>
 
 namespace igl {
 
 class IComputePipelineState;
 class ISamplerState;
 class ITexture;
-struct RenderPassDesc;
+struct RenderPass;
 
 class ICommandBuffer {
  public:
@@ -36,9 +35,9 @@ class ICommandBuffer {
       const std::shared_ptr<IComputePipelineState>& pipelineState) = 0;
   virtual void cmdDispatchThreadGroups(const Dimensions& threadgroupCount) = 0;
 
-  virtual void cmdBeginRenderPass(const RenderPassDesc& renderPass,
-                                  const std::shared_ptr<IFramebuffer>& framebuffer) = 0;
-  virtual void cmdEndRenderPass() = 0;
+  virtual void cmdBeginRendering(const igl::RenderPass& renderPass,
+                                 const igl::Framebuffer& desc) = 0;
+  virtual void cmdEndRendering() = 0;
 
   virtual void cmdBindViewport(const Viewport& viewport) = 0;
   virtual void cmdBindScissorRect(const ScissorRect& rect) = 0;

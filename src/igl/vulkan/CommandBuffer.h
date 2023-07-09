@@ -8,9 +8,7 @@
 #pragma once
 
 #include <igl/CommandBuffer.h>
-#include <igl/Framebuffer.h>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/Framebuffer.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 
@@ -38,9 +36,9 @@ class CommandBuffer final : public ICommandBuffer,
   void cmdInsertDebugEventLabel(const std::string& label, const igl::Color& color) const override;
   void cmdPopDebugGroupLabel() const override;
 
-  void cmdBeginRenderPass(const RenderPassDesc& renderPass,
-                          const std::shared_ptr<IFramebuffer>& framebuffer) override;
-  void cmdEndRenderPass() override;
+  void cmdBeginRendering(const igl::RenderPass& renderPass,
+                         const igl::Framebuffer& desc) override;
+  void cmdEndRendering() override;
 
   void cmdBindViewport(const Viewport& viewport) override;
   void cmdBindScissorRect(const ScissorRect& rect) override;
@@ -96,13 +94,13 @@ class CommandBuffer final : public ICommandBuffer,
   // was present() called with a swapchain image?
   mutable bool isFromSwapchain_ = false;
 
-  std::shared_ptr<igl::vulkan::Framebuffer> framebuffer_;
+  igl::Framebuffer Framebuffer_ = {};
 
   VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
 
   VkPipeline lastPipelineBound_ = VK_NULL_HANDLE;
 
-  bool isInRenderPass_ = false;
+  bool isRendering_ = false;
 
   std::shared_ptr<igl::IRenderPipelineState> currentPipeline_ = nullptr;
   RenderPipelineDynamicState dynamicState_;

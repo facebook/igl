@@ -48,9 +48,6 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
  public:
   // Ignore modernize-use-default-member-init
   // @lint-ignore CLANGTIDY
-  uint32_t renderPassIndex_ : 8;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
   uint32_t depthBiasEnable_ : 1;
   // Ignore modernize-use-default-member-init
   // @lint-ignore CLANGTIDY
@@ -71,7 +68,6 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
     stencilBackPassOp_ = VK_STENCIL_OP_KEEP;
     stencilBackDepthFailOp_ = VK_STENCIL_OP_KEEP;
     stencilBackCompareOp_ = VK_COMPARE_OP_ALWAYS;
-    renderPassIndex_ = 0;
     depthBiasEnable_ = false;
     depthWriteEnable_ = false;
   }

@@ -12,8 +12,6 @@
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/ComputePipelineState.h>
-#include <igl/vulkan/Framebuffer.h>
-#include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/ShaderModule.h>
@@ -31,7 +29,7 @@ bool supportsFormat(VkPhysicalDevice physicalDevice, VkFormat format) {
   vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &properties);
   return properties.bufferFeatures != 0 || properties.linearTilingFeatures != 0 ||
          properties.optimalTilingFeatures != 0;
-}
+} // namespace
 
 VkShaderStageFlagBits shaderStageToVkShaderStage(igl::ShaderStage stage) {
   switch (stage) {
@@ -47,10 +45,9 @@ VkShaderStageFlagBits shaderStageToVkShaderStage(igl::ShaderStage stage) {
 
 } // namespace
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
-Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)), platformDevice_(*this) {}
+Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)) {}
 
 std::shared_ptr<ICommandBuffer> Device::createCommandBuffer() {
   IGL_PROFILER_FUNCTION();
@@ -309,16 +306,55 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
   return std::make_shared<VulkanShaderModule>(device, vkShaderModule);
 }
 
-std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,
-                                                        Result* outResult) {
-  auto resource = std::make_shared<Framebuffer>(*this, desc);
-  Result::setOk(outResult);
-  return resource;
+std::shared_ptr<ITexture> Device::getCurrentSwapchainTexture() {
+  IGL_PROFILER_FUNCTION();
+
+  if (!IGL_VERIFY(ctx_->hasSwapchain())) {
+    swapchainTextures_.clear();
+    IGL_ASSERT_MSG(false, "No Swapchain has been allocated");
+    return nullptr;
+  };
+
+  auto& swapChain = ctx_->swapchain_;
+
+  std::shared_ptr<VulkanTexture> vkTex = swapChain->getCurrentVulkanTexture();
+
+  if (!IGL_VERIFY(vkTex != nullptr)) {
+    IGL_ASSERT_MSG(false, "Swapchain has no valid texture");
+    return nullptr;
+  }
+
+  IGL_ASSERT_MSG(vkTex->getVulkanImage().imageFormat_ != VK_FORMAT_UNDEFINED,
+                 "Invalid image format");
+
+  const auto iglFormat = vkFormatToTextureFormat(vkTex->getVulkanImage().imageFormat_);
+  if (!IGL_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {
+    IGL_ASSERT_MSG(false, "Invalid surface color format");
+    return nullptr;
+  }
+
+  const auto width = (size_t)swapChain->getWidth();
+  const auto height = (size_t)swapChain->getHeight();
+  const auto currentImageIndex = swapChain->getCurrentImageIndex();
+
+  // resize nativeDrawableTextures_ pushing null pointers
+  // null pointers will be allocated later as needed
+  if (currentImageIndex >= swapchainTextures_.size()) {
+    swapchainTextures_.resize((size_t)currentImageIndex + 1, nullptr);
+  }
+
+  const auto result = swapchainTextures_[currentImageIndex];
+
+  // allocate new drawable textures if its null or mismatches in size or format
+  if (!result || width != result->getDimensions().width ||
+      height != result->getDimensions().height || iglFormat != result->getFormat()) {
+    const TextureDesc desc = TextureDesc::new2D(
+        iglFormat, width, height, TextureDesc::TextureUsageBits::Attachment, "SwapChain Texture");
+    swapchainTextures_[currentImageIndex] =
+        std::make_shared<igl::vulkan::Texture>(*this, std::move(vkTex), desc);
+  }
+
+  return swapchainTextures_[currentImageIndex];
 }
 
-const PlatformDevice& Device::getPlatformDevice() const noexcept {
-  return platformDevice_;
-}
-
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan
