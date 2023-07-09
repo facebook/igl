@@ -8,10 +8,11 @@
 #pragma once
 
 #include <algorithm>
-#include <igl/CommandQueue.h>
 #include <igl/Common.h>
 
 namespace igl {
+
+class IDevice;
 
 enum SamplerMinMagFilter : uint8_t { SamplerMinMagFilter_Nearest = 0, SamplerMinMagFilter_Linear };
 
@@ -84,106 +85,20 @@ enum class TextureType : uint8_t {
   Cube,
 };
 
-/**
- *
- * The IGL format name specification is as follows:
- *
- *  There shall be 3 naming format base types: those for component array
- *  formats (type A); those for compressed formats (type C); and those for
- *  packed component formats (type P). With type A formats, color component
- *  order does not change with endianness. Each format name shall begin with
- *  TextureFormat::, followed by a component label (from the Component Label
- *  list below) for each component in the order that the component(s) occur
- *  in the format, except for non-linear color formats where the first
- *  letter shall be 'S'. For type P formats, each component label is
- *  followed by the number of bits that represent it in the fundamental
- *  data type used by the format.
- *
- *  Following the listing of the component labels shall be an underscore; a
- *  compression type followed by an underscore for Type C formats only; a
- *  storage type from the list below; and a bit width for type A formats,
- *  which is the bit width for each array element.
- *
- *  If a format is vendor-specific, then a "_vendor" post fix may be
- *  added to the type
- *
- *
- *  ----------    Format Base Type A: Array ----------
- *  TextureFormat::[component list]_[storage type][array element bit width][_vendor]
- *
- *  Examples:
- *  TextureFormat::A_SNorm8 - uchar[i] = A
- *  TextureFormat::RGBA_SNorm16 - ushort[i * 4 + 0] = R, ushort[i * 4 + 1] = G,
- *                                ushort[i * 4 + 2] = B, ushort[i * 4 + 3] = A
- *  TextureFormat::Z_UNorm32 - int32[i] = Z
- *
- *
- *  ----------    Format Base Type C: Compressed ----------
- *  TextureFormat::[component list#][_*][compression type][_*][block size][_*][storage type#]
- *    # where required
- *
- *  Examples:
- *  TextureFormat::RGB_ETC1
- *  TextureFormat::RGBA_ASTC_4x4
- *  TextureFormat::RGB_PVRTC_2BPPV1
- *
- *
- *  ----------    Format Base Type P: Packed  ----------
- *  TextureFormat::[[component list,bit width][storage type#][_]][_][storage type##][_storage
- * order###][_vendor#]
- *    # when type differs between component
- *    ## when type applies to all components
- *    ### when storage order is hardware independent
- *
- *  Examples:
- *  TextureFormat::A8B8G8R8_UNorm
- *  TextureFormat::R5G6B5_UNorm
- *  TextureFormat::B4G4R4X4_UNorm
- *  TextureFormat::Z32_F_S8X24_UInt
- *  TextureFormat::R10G10B10A2_UInt
- *  TextureFormat::R9G9B9E5_F
- *  TextureFormat::BGRA_UNorm8_Rev
- *
- *
- *  ----------    Component Labels: ----------
- *  A - Alpha
- *  B - Blue
- *  G - Green
- *  I - Intensity
- *  L - Luminance
- *  R - Red
- *  S - Stencil (when not followed by RGB or RGBA)
- *  S - non-linear types (when followed by RGB or RGBA)
- *  X - Packing bits
- *  Z - Depth
- *
- *  ----------    Storage Types: ----------
- *  F: float
- *  SInt: Signed Integer
- *  UInt: Unsigned Integer
- *  SNorm: Signed Normalized Integer/Byte
- *  UNorm: Unsigned Normalized Integer/Byte
- */
-
 enum TextureFormat : uint8_t {
   Invalid = 0,
 
   // 8 bpp
-  A_UNorm8,
   R_UNorm8,
   // 16 bpp
   R_F16,
   R_UInt16,
   R_UNorm16,
-  B5G5R5A1_UNorm,
-  B5G6R5_UNorm,
-  ABGR_UNorm4, // NA on GLES
-    RG_UNorm8,
+  RG_UNorm8,
 
   // 32 bpp
   RGBA_UNorm8,
   BGRA_UNorm8,
-  BGRA_UNorm8_Rev,
   RGBA_SRGB,
   BGRA_SRGB,
   RG_F16,
@@ -199,13 +114,10 @@ enum TextureFormat : uint8_t {
   RGBA_UInt32,
   RGBA_F32,
   // Compressed
-  RGB8_ETC1,
   RGB8_ETC2,
   SRGB8_ETC2,
   RGB8_Punchthrough_A1_ETC2,
   SRGB8_Punchthrough_A1_ETC2,
-  RGBA8_EAC_ETC2,
-  SRGB8_A8_EAC_ETC2,
   RG_EAC_UNorm,
   RG_EAC_SNorm,
   R_EAC_UNorm,
@@ -213,30 +125,13 @@ enum TextureFormat : uint8_t {
   RGBA_BC7_UNORM_4x4, // block compression
 
   // Depth and Stencil formats
-  Z_UNorm16, // NA on iOS/Metal but works on iOS GLES. The client has to account for
-             // this!
+  Z_UNorm16,
   Z_UNorm24,
-  Z_UNorm32, // NA on iOS/GLES but works on iOS Metal. The client has to account for
-             // this!
-  S8_UInt_Z24_UNorm, // NA on iOS
+  Z_UNorm32,
+  S8_UInt_Z24_UNorm,
 };
 
-/**
- * @brief Compares the texture format given and returns a flag if it is compressed
- *
- * @param format Format of the texture
- * @return True  TextureFormat is compressed.
- *         False TextureFormat is uncompressed.
- */
 bool isCompressedTextureFormat(TextureFormat format);
-
-/**
- * @brief Compares the texture format given and returns a flag if it is depth or stencil format
- *
- * @param format Format of the texture
- * @return True  TextureFormat is depth or stencil format.
- *         False Otherwise.
- */
 bool isDepthOrStencilFormat(TextureFormat format);
 
 /**
@@ -256,21 +151,6 @@ const char* textureFormatToString(TextureFormat format);
 size_t toBytesPerPixel(TextureFormat format);
 
 /**
- * @brief Converts color space to literal string
- *
- * @param colorSpace ColorSpace of the texture/framebuffer.
- * @return Literal C-style string containing the color space name
- */
-inline const char* colorSpaceToString(ColorSpace colorSpace) {
-  switch (colorSpace) {
-    IGL_ENUM_TO_STRING(ColorSpace, SRGB_LINEAR)
-    IGL_ENUM_TO_STRING(ColorSpace, SRGB_NONLINEAR)
-  }
-
-  IGL_UNREACHABLE_RETURN("unknown color space");
-}
-
-/**
  * @brief Converts texture format to bytes per block (Compressed Usage)
  *
  * @param format Format of the texture
@@ -282,21 +162,15 @@ size_t toBytesPerBlock(TextureFormat format);
  * @brief POD for texture block size
  */
 struct TextureBlockSize {
-  size_t width = 0;
-  size_t height = 0;
+  uint32_t width = 0;
+  uint32_t height = 0;
 
-  TextureBlockSize(size_t w, size_t h) {
+  TextureBlockSize(uint32_t w, uint32_t h) {
     width = w;
     height = h;
   }
 };
 
-/**
- * @brief Converts texture format to block size (Compressed Usage)
- *
- * @param format Format of the texture
- * @return Size of block contained in compressed formats
- */
 TextureBlockSize toBlockSize(TextureFormat format);
 
 /**
@@ -319,41 +193,12 @@ size_t getTextureBytesPerRow(size_t texWidth, TextureFormat texFormat, size_t mi
  * @param mipLevel  Mipmap level of the texture to calculate the bytes per slice for.
  * @return Calculated total size in bytes of each row in the given texture format.
  */
-size_t getTextureBytesPerSlice(size_t texWidth,
-                               size_t texHeight,
-                               size_t texDepth,
-                               TextureFormat texFormat,
-                               size_t mipLevel);
+uint32_t getTextureBytesPerSlice(size_t texWidth,
+                                 size_t texHeight,
+                                 size_t texDepth,
+                                 TextureFormat texFormat,
+                                 size_t mipLevel);
 
-/**
- * @brief Utility function to retrieve size in bytes per slice in a given texture
- *
- * @param texWidth  The width of mip level 0 in the texture
- * @param texHeight The height of mip level 0 in the texture
- * @param texFormat Format of the texture
- * @param mipLevel  Mipmap level of the texture to calculate the bytes per slice for.
- * @return Calculated total size in bytes of each row in the given texture format.
- */
-inline size_t getTextureBytesPerSlice(size_t texWidth,
-                                      size_t texHeight,
-                                      TextureFormat texFormat,
-                                      size_t mipLevel) {
-  return getTextureBytesPerSlice(texWidth, texHeight, 1, texFormat, mipLevel);
-}
-
-/**
- * @brief Descriptor for texture dimensions
- *
- *  x         - offset position in width
- *  y         - offset position in height
- *  z         - offset position in depth
- *  width     - width of the range
- *  height    - height of the range
- *  depth     - depth of the range
- *  layer     - layer offset for 1D/2D array textures. Not used for cube textures faces.
- *  numLayers - number of layers in the range
- *  mipLevel  - mipmap level of the range
- */
 struct TextureRangeDesc {
   size_t x = 0;
   size_t y = 0;
@@ -364,49 +209,7 @@ struct TextureRangeDesc {
   size_t layer = 0;
   size_t numLayers = 1;
   size_t mipLevel = 0;
-  // number of mip levels to update
   size_t numMipLevels = 1;
-
-  static TextureRangeDesc new1D(size_t x, size_t width, size_t mipLevel = 0);
-  static TextureRangeDesc new1DArray(size_t x,
-                                     size_t width,
-                                     size_t layer,
-                                     size_t numLayers,
-                                     size_t mipLevel = 0);
-  static TextureRangeDesc new2D(size_t x,
-                                size_t y,
-                                size_t width,
-                                size_t height,
-                                size_t mipLevel = 0);
-  static TextureRangeDesc new2DArray(size_t x,
-                                     size_t y,
-                                     size_t width,
-                                     size_t height,
-                                     size_t layer,
-                                     size_t numLayers,
-                                     size_t mipLevel = 0);
-  static TextureRangeDesc new3D(size_t x,
-                                size_t y,
-                                size_t z,
-                                size_t width,
-                                size_t height,
-                                size_t depth,
-                                size_t mipLevel = 0);
-
-  /**
-   * @brief Returns a new TextureRangeDesc based on this one but reduced to the specified mipLevel.
-   *
-   * @param newMipLevel The mip level of the returned range.
-   * @remark The returned range only has 1 mip level.
-   */
-  [[nodiscard]] TextureRangeDesc atMipLevel(size_t newMipLevel) const noexcept;
-  /**
-   * @brief Returns a new TextureRangeDesc based on this one but reduced to the specified layer.
-   *
-   * @param newLayer The layer of the returned range.
-   * @remark The returned range only has 1 layer.
-   */
-  [[nodiscard]] TextureRangeDesc atLayer(size_t newLayer) const noexcept;
 };
 
 /**
@@ -488,40 +291,7 @@ struct TextureFormatProperties {
   }
 
   /**
-   * @brief Utility function to calculate the number of rows in the range for the texture format.
-   * For uncompressed textures, this will be range.height. For compressed textures, range.height
-   * rounded up to the nearest multiple of blockHeight.
-   *
-   * @param range  range.width, range.height, and range.depth should be the actual dimensions of the
-   * range to calculate for. For subranges and mip levels other than 0, these should be the
-   * dimensions of the subrange and/or mip level, which may be be less than the full texture
-   * dimensions.
-   * @return Calculated number of rows of texture data for the texture format.
-   */
-  size_t getRows(TextureRangeDesc range) const noexcept;
-
-  /**
-   * @brief Utility function to calculate the size in bytes per row for a texture format.
-   *
-   * @param texWidth  The width, in pixels, of the texture data. This should be the row width to
-   * calculate for. For subranges and mip levels other than 0, this should be the width of the
-   * subrange and/or mip level, which may be be less than the full texture width.
-   * @return Calculated total size in bytes of a row of texture data for the texture format.
-   */
-  [[nodiscard]] size_t getBytesPerRow(size_t texWidth) const noexcept;
-
-  /**
-   * @brief Utility function to calculate the size in bytes per row for a texture format.
-   *
-   * @param range  The range, in pixels, of the texture data row. range.width be the row width to
-   * calculate for. For subranges and mip levels other than 0, this should be the width of the
-   * subrange and/or mip level, which may be be less than the full texture width.
-   * @return Calculated total size in bytes of a row of texture data for the texture format.
-   */
-  [[nodiscard]] size_t getBytesPerRow(TextureRangeDesc range) const noexcept;
-
-  /**
-   * @brief Utility function to calculate the size in bytes per texture layer for a texture format.
+   * @brief Utility function to calculate the size in bytes per texture slice for a texture format.
    *
    * @param texWidth  The width of the texture layer.
    * @param texHeight  The height of the texture layer.
@@ -563,32 +333,17 @@ struct TextureFormatProperties {
 
 /**
  * @brief TextureCubeFace denotes side of the face in a cubemap setting.
-   Based on https://www.khronos.org/opengl/wiki/Cubemap_Texture
-
-  PosX            - The U coordinate is going behind the viewer, with the V coordinate going down.
-  NegX            - The U coordinate is going forward, with the V coordinate going down.
-  PosY            - The U coordinate goes to the right, with the V coordinate going forward.
-  NegY            - The U coordinate goes to the right, with the V coordinate going backward.
-  PosZ            - The U coordinate goes to the right, with the V coordinate going down.
-  NegZ            - The U coordinate goes to the left (relative to us facing forwards), with the V
- coordinate going down.
+ * Based on https://www.khronos.org/opengl/wiki/Cubemap_Texture
  */
-enum class TextureCubeFace : uint8_t { PosX = 0, NegX, PosY, NegY, PosZ, NegZ };
+enum class TextureCubeFace : uint8_t {
+  PosX = 0,
+  NegX,
+  PosY,
+  NegY,
+  PosZ,
+  NegZ,
+};
 
-/**
- * @brief Descriptor for internal texture creation methods used in IGL
- *
- *  width              - width of the texture
- *  height             - height of the texture
- *  depth              - depth of the texture
- *  numLayers          - Number of layers for array texture
- *  numSamples         - Number of samples for multisampling
- *  usage              - Bitwise flag for containing a mask of TextureUsageBits
- *  options            - Bitwise flag for containing other options
- *  numMipLevels       - Number of mipmaps to generate
- *  format             - Internal texture format type
- *  storage            - Internal resource storage type
- */
 struct TextureDesc {
   /**
    * @brief Bitwise flags for texture usage
@@ -636,16 +391,6 @@ struct TextureDesc {
                        debugName ? debugName : ""};
   }
 
-  /**
-   * @brief Utility to create a new cube texture
-   *
-   * @param format The format of the texture
-   * @param width  The width of the texture
-   * @param height The height of the texture
-   * @param usage A combination of TextureUsage flags
-   * @param debugName An optional debug name
-   * @return TextureDesc
-   */
   static TextureDesc newCube(TextureFormat format,
                              size_t width,
                              size_t height,
@@ -664,13 +409,6 @@ struct TextureDesc {
                        debugName ? debugName : ""};
   }
 
-  /**
-   * @brief Utility to calculate maximum mipmap level support
-   *
-   * @param width  The width of the texture
-   * @param height The height of the texture
-   * @return uint32_t
-   */
   static uint32_t calcNumMipLevels(size_t width, size_t height);
 };
 
@@ -777,10 +515,8 @@ class ITexture {
   [[nodiscard]] virtual size_t getSamples() const = 0;
   /**
    * @brief Generates mipmap command using the command queue
-   *
-   * @param cmdQueue The command queue that is generated from the graphics device.
    */
-  virtual void generateMipmap(ICommandQueue& cmdQueue) const = 0;
+  virtual void generateMipmap() const = 0;
   /**
    * @brief Returns the number of mipmap levels
    */
@@ -793,13 +529,13 @@ class ITexture {
    */
   [[nodiscard]] virtual bool isRequiredGenerateMipmap() const = 0;
   /**
-   * @brief Attempts to calculate how much memory this texture uses. There are many factors that
-   * make this calculation difficult and we can't be confident about driver implementations, so this
-   * number can't be fully trusted.
+   * @brief Returns number of bytes per pixel in the underlying textures
    *
-   * @return The estimated size of this texture, in bytes.
+   * @return size_t
    */
-  [[nodiscard]] size_t getEstimatedSizeInBytes() const;
+  [[nodiscard]] inline size_t getBytesPerPixel() const {
+    return properties_.bytesPerBlock;
+  }
   /**
    * @brief Returns a texture id suitable for bindless rendering (descriptor indexing on Vulkan and
    * gpuResourceID on Metal)
@@ -814,13 +550,7 @@ class ITexture {
    */
   [[nodiscard]] std::pair<Result, bool> validateRange(
       const igl::TextureRangeDesc& range) const noexcept;
-  /**
-   * @brief Returns a TextureRangeDesc for the texture's full range at the specified mip level.
-   *
-   * @return TextureRangeDesc.
-   */
-  [[nodiscard]] TextureRangeDesc getFullRange(size_t mipLevel = 0,
-                                              size_t numMipLevels = 1) const noexcept;
+
  private:
   const TextureFormatProperties properties_;
 };

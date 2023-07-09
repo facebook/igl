@@ -27,7 +27,6 @@
 #include <thread>
 
 #include <igl/FPSCounter.h>
-#include <igl/IGL.h>
 
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
@@ -47,7 +46,10 @@
 #include <taskflow/taskflow.hpp>
 #include <tiny_obj_loader.h>
 
-#include <igl/IGL.h>
+#include <igl/CommandBuffer.h>
+#include <igl/Device.h>
+#include <igl/RenderPipelineState.h>
+
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
@@ -438,7 +440,6 @@ igl::FPSCounter fps_;
 constexpr uint32_t kNumBufferedFrames = 3;
 
 std::unique_ptr<IDevice> device_;
-std::shared_ptr<ICommandQueue> commandQueue_;
 std::shared_ptr<ITexture> depthBuffer_;
 std::shared_ptr<IFramebuffer> fbMain_; // swapchain
 std::shared_ptr<IFramebuffer> fbOffscreen_;
@@ -536,10 +537,10 @@ struct MaterialTextures {
 std::vector<MaterialTextures> textures_; // same indexing as in materials_
 
 struct LoadedImage {
-  int w = 0;
-  int h = 0;
+  uint32_t w = 0;
+  uint32_t h = 0;
+  uint32_t channels = 0;
   uint8_t* pixels = nullptr;
-  int channels = 0;
   std::string debugName;
   std::string compressedFileName;
 };
@@ -637,7 +638,7 @@ bool initWindow(GLFWwindow** outWindow) {
 
   glfwSetMouseButtonCallback(window, [](auto* window, int button, int action, int mods) {
 #if IGL_WITH_IGLU
-    if (!ImGui::GetIO().WantCaptureMouse) {
+     if (!ImGui::GetIO().WantCaptureMouse) {
 #endif // IGL_WITH_IGLU
       if (button == GLFW_MOUSE_BUTTON_LEFT) {
         mousePressed_ = (action == GLFW_PRESS);
@@ -764,7 +765,7 @@ void initIGL() {
         },
         nullptr);
     const uint32_t pixel = 0xFFFFFFFF;
-    textureDummyWhite_->upload(TextureRangeDesc::new2D(0, 0, 1, 1), &pixel);
+    textureDummyWhite_->upload({.width = 1, .height = 1}, &pixel, sizeof(pixel));
   }
 
   depthBuffer_ = device_->createTexture(
@@ -822,29 +823,32 @@ void initIGL() {
       },
       nullptr);
 
-  // Command queue: backed by different types of GPU HW queues
-  commandQueue_ = device_->createCommandQueue(CommandQueueType::Graphics, nullptr);
+  renderPassOffscreen_.colorAttachments.push_back({
+      .loadAction = LoadAction::Clear,
+      .storeAction = kNumSamplesMSAA > 1 ? StoreAction::MsaaResolve : StoreAction::Store,
+      .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
+  });
+  renderPassOffscreen_.depthStencilAttachment = {
+      .loadAction = LoadAction::Clear,
+      .storeAction = StoreAction::DontCare,
+      .clearDepth = 1.0f,
+  };
 
-  renderPassOffscreen_.colorAttachments.push_back(igl::RenderPassDesc::ColorAttachmentDesc{});
-  renderPassOffscreen_.colorAttachments.back().loadAction = LoadAction::Clear;
-  renderPassOffscreen_.colorAttachments.back().storeAction =
-      kNumSamplesMSAA > 1 ? StoreAction::MsaaResolve : StoreAction::Store;
-  renderPassOffscreen_.colorAttachments.back().clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
-  renderPassOffscreen_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPassOffscreen_.depthAttachment.storeAction = StoreAction::DontCare;
-  renderPassOffscreen_.depthAttachment.clearDepth = 1.0f;
-
-  renderPassMain_.colorAttachments.push_back(igl::RenderPassDesc::ColorAttachmentDesc{});
-  renderPassMain_.colorAttachments.back().loadAction = LoadAction::Clear;
-  renderPassMain_.colorAttachments.back().storeAction = StoreAction::Store;
-  renderPassMain_.colorAttachments.back().clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
-  renderPassMain_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPassMain_.depthAttachment.storeAction = StoreAction::DontCare;
-  renderPassMain_.depthAttachment.clearDepth = 1.0f;
-
-  renderPassShadow_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPassShadow_.depthAttachment.storeAction = StoreAction::Store;
-  renderPassShadow_.depthAttachment.clearDepth = 1.0f;
+  renderPassMain_.colorAttachments.push_back({
+      .loadAction = LoadAction::Clear,
+      .storeAction = StoreAction::Store,
+      .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
+  });
+  renderPassMain_.depthStencilAttachment = {
+      .loadAction = LoadAction::Clear,
+      .storeAction = StoreAction::DontCare,
+      .clearDepth = 1.0f,
+  };
+  renderPassShadow_.depthStencilAttachment = {
+      .loadAction = LoadAction::Clear,
+      .storeAction = StoreAction::Store,
+      .clearDepth = 1.0f,
+  };
 }
 
 namespace {
@@ -1380,8 +1384,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
   // Pass 1: shadows
   if (isShadowMapDirty_) {
-    std::shared_ptr<ICommandBuffer> buffer =
-        commandQueue_->createCommandBuffer(CommandBufferDesc(), nullptr);
+    std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
     auto commands = buffer->createRenderCommandEncoder(renderPassShadow_, fbShadowMap_);
 
@@ -1405,17 +1408,16 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
     buffer->present(fbShadowMap_->getDepthAttachment());
 
-    commandQueue_->submit(*buffer);
+    device_->submit(igl::CommandQueueType::Graphics, *buffer);
 
-    fbShadowMap_->getDepthAttachment()->generateMipmap(*commandQueue_.get());
+    fbShadowMap_->getDepthAttachment()->generateMipmap();
 
     isShadowMapDirty_ = false;
   }
 
   // Pass 2: mesh
   {
-    std::shared_ptr<ICommandBuffer> buffer =
-        commandQueue_->createCommandBuffer(CommandBufferDesc(), nullptr);
+    std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
     // This will clear the framebuffer
     auto commands = buffer->createRenderCommandEncoder(renderPassOffscreen_, fbOffscreen_);
@@ -1453,16 +1455,14 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     commands->endEncoding();
 
     buffer->present(fbOffscreen_->getColorAttachment(0));
-    commandQueue_->submit(*buffer);
+    device_->submit(CommandQueueType::Graphics, *buffer);
   }
 
   // Pass 3: compute shader post-processing
   if (enableComputePass_) {
-    std::shared_ptr<ICommandBuffer> buffer =
-        commandQueue_->createCommandBuffer(CommandBufferDesc{"computeBuffer"}, nullptr);
+    std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
-    auto commands = buffer->createComputeCommandEncoder();
-    commands->bindComputePipelineState(computePipelineState_Grayscale_);
+    buffer->bindComputePipelineState(computePipelineState_Grayscale_);
     std::shared_ptr<ITexture> tex = kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0)
                                                         : fbOffscreen_->getColorAttachment(0);
     struct {
@@ -1470,18 +1470,16 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     } bindings = {
         .texture = tex->getTextureId(),
     };
-    commands->bindPushConstants(0, &bindings, sizeof(bindings));
-    commands->useTexture(tex);
-    commands->dispatchThreadGroups(igl::Dimensions(width_, height_, 1));
-    commands->endEncoding();
+    buffer->bindPushConstants(0, &bindings, sizeof(bindings));
+    buffer->useComputeTexture(tex);
+    buffer->dispatchThreadGroups(igl::Dimensions(width_, height_, 1));
 
-    commandQueue_->submit(*buffer);
+    device_->submit(CommandQueueType::Compute, *buffer);
   }
 
   // Pass 4: render into the swapchain image
   {
-    std::shared_ptr<ICommandBuffer> buffer =
-        commandQueue_->createCommandBuffer(CommandBufferDesc(), nullptr);
+    std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
     // This will clear the framebuffer
     auto commands = buffer->createRenderCommandEncoder(renderPassMain_, fbMain_);
@@ -1505,10 +1503,10 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
     buffer->present(fbMain_->getColorAttachment(0));
 
-    commandQueue_->submit(*buffer);
+    device_->submit(CommandQueueType::Graphics, *buffer, true);
   }
 
-  fbMain_->getDepthAttachment()->generateMipmap(*commandQueue_.get());
+  fbMain_->getDepthAttachment()->generateMipmap();
 }
 
 void generateCompressedTexture(LoadedImage img) {
@@ -1595,11 +1593,17 @@ LoadedImage loadImage(const char* fileName, int channels) {
     }
   }
 
-  LoadedImage img;
-  img.compressedFileName = convertFileName(fileName);
-  img.pixels = stbi_load(fileName, &img.w, &img.h, nullptr, channels);
-  img.channels = channels;
-  img.debugName = debugName;
+  int w, h;
+  uint8_t* pixels = stbi_load(fileName, &w, &h, nullptr, channels);
+
+  const LoadedImage img = {
+      .w = (uint32_t)w,
+      .h = (uint32_t)h,
+      .channels = (uint32_t)channels,
+      .pixels = pixels,
+      .debugName = debugName,
+      .compressedFileName = convertFileName(fileName),
+  };
 
   if (img.pixels && kEnableCompression && (channels != 1) &&
       !std::filesystem::exists(img.compressedFileName.c_str())) {
@@ -1666,13 +1670,14 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
     return;
   }
 
-  auto texRefRange =
-      TextureRangeDesc::new2D(0, 0, (size_t)texRef.extent().x, (size_t)texRef.extent().y);
-
-  // If compression is enabled, upload all mip levels
-  if (kEnableCompression) {
-    texRefRange.numMipLevels = TextureDesc::calcNumMipLevels(texRefRange.width, texRefRange.height);
-  }
+  const TextureRangeDesc texRefRange = {
+      .width = (uint32_t)texRef.extent().x,
+      .height = (uint32_t)texRef.extent().y,
+      // If compression is enabled, upload all mip levels
+      .numMipLevels = kEnableCompression
+                          ? TextureDesc::calcNumMipLevels(texRefRange.width, texRefRange.height)
+                          : 1,
+  };
 
   for (uint8_t face = 0; face < 6; ++face) {
     if (!tex) {
@@ -1690,7 +1695,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
   }
 
   if (!kEnableCompression) {
-    tex->generateMipmap(*commandQueue_);
+    tex->generateMipmap();
   }
 }
 
@@ -1845,16 +1850,19 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
   if (kEnableCompression && img.channels == 4 &&
       std::filesystem::exists(img.compressedFileName.c_str())) {
     // Uploading the texture
-    auto rangeDesc = TextureRangeDesc::new2D(0, 0, img.w, img.h);
-    rangeDesc.numMipLevels = desc.numMipLevels;
+    const TextureRangeDesc rangeDesc = {
+        .width = img.w,
+        .height = img.h,
+        .numMipLevels = desc.numMipLevels,
+    };
     auto gliTex2d = gli::load_ktx(img.compressedFileName.c_str());
     if (IGL_UNEXPECTED(gliTex2d.empty())) {
       printf("Failed to load %s\n", img.compressedFileName.c_str());
     }
     tex->upload(rangeDesc, gliTex2d.data());
   } else {
-    tex->upload(TextureRangeDesc::new2D(0, 0, img.w, img.h), img.pixels);
-    tex->generateMipmap(*commandQueue_.get());
+    tex->upload({.width = img.w, .height = img.h}, img.pixels, tex->getBytesPerPixel() * img.w);
+    tex->generateMipmap();
   }
   texturesCache_[img.debugName] = tex;
   return tex;
@@ -1943,6 +1951,7 @@ int main(int argc, char* argv[]) {
       FramebufferDesc framebufferDesc;
       framebufferDesc.colorAttachments[0].texture = getNativeDrawable();
       framebufferDesc.depthAttachment.texture = getNativeDepthDrawable();
+
 #if IGL_WITH_IGLU
       imguiSession_->beginFrame(framebufferDesc, 1.0f);
       ImGui::ShowDemoWindow();
@@ -1993,7 +2002,6 @@ int main(int argc, char* argv[]) {
         }
         ImGui::End();
       }
-
 #endif // IGL_WITH_IGLU
     }
 

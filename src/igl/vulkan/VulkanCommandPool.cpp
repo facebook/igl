@@ -8,6 +8,8 @@
 #include <igl/vulkan/VulkanCommandPool.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
+#include <format>
+
 namespace igl {
 namespace vulkan {
 
@@ -23,7 +25,7 @@ VulkanCommandPool::VulkanCommandPool(VkDevice device,
   ivkSetDebugObjectName(device,
                         VK_OBJECT_TYPE_COMMAND_POOL,
                         (uint64_t)commandPool_,
-                        IGL_FORMAT("Command Pool: {}", debugName).c_str());
+                        std::format("Command Pool: {}", debugName).c_str());
 }
 
 VulkanCommandPool ::~VulkanCommandPool() {

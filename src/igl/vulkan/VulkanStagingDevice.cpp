@@ -164,7 +164,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
   uint32_t storageSize = 0;
   for (size_t i = 0; i < numMipLevels; ++i) {
     const uint32_t mipSize = static_cast<uint32_t>(
-        getTextureBytesPerSlice(image.extent_.width, image.extent_.height, texFormat, i));
+        getTextureBytesPerSlice(image.extent_.width, image.extent_.height, 1, texFormat, i));
 
     storageSize += mipSize;
     mipSizes.push_back(mipSize);

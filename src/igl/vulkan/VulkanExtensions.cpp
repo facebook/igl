@@ -19,10 +19,6 @@ VulkanExtensions::VulkanExtensions() {
 }
 
 void VulkanExtensions::enumerate() {
-  // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are enabled
-  // (validation layers are only enabled for DEBUG builds)
-  // https://issuetracker.google.com/issues/209835779?pli=1
-#if !IGL_PLATFORM_ANDROID || !IGL_DEBUG
   uint32_t count;
   VK_ASSERT(vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
 
@@ -37,14 +33,9 @@ void VulkanExtensions::enumerate() {
                  [](const VkExtensionProperties& extensionProperties) {
                    return extensionProperties.extensionName;
                  });
-#endif // !IGL_PLATFORM_ANDROID || !IGL_DEBUG
 }
 
 void VulkanExtensions::enumerate(VkPhysicalDevice device) {
-  // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are enabled
-  // (validation layers are only enabled for DEBUG builds)
-  // https://issuetracker.google.com/issues/209835779?pli=1
-#if !IGL_PLATFORM_ANDROID || !IGL_DEBUG
   uint32_t count;
   VK_ASSERT(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr));
 
@@ -59,7 +50,6 @@ void VulkanExtensions::enumerate(VkPhysicalDevice device) {
                  [](const VkExtensionProperties& extensionProperties) {
                    return extensionProperties.extensionName;
                  });
-#endif // !IGL_PLATFORM_ANDROID || !IGL_DEBUG
 }
 
 const std::vector<std::string>& VulkanExtensions::allAvailableExtensions(
@@ -81,40 +71,29 @@ bool VulkanExtensions::available(const char* extensionName, ExtensionType extens
 
 bool VulkanExtensions::enable(const char* extensionName, ExtensionType extensionType) {
   const size_t vectorIndex = (size_t)extensionType;
-  // Since VK on Android currently crashes with Validation layers,
-  // enable the extension by default.
-#if IGL_DEBUG && IGL_PLATFORM_ANDROID
-  enabledExtensions_[vectorIndex].insert(extensionName);
-  return true;
-#else
+
   if (available(extensionName, extensionType)) {
     enabledExtensions_[vectorIndex].insert(extensionName);
     return true;
   }
+
   return false;
-#endif
 }
 
 void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType, bool validationEnabled) {
   if (extensionType == ExtensionType::Instance) {
     enable(VK_KHR_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
     enable(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, ExtensionType::Instance);
-#if IGL_PLATFORM_WIN
+#if defined(_WIN32)
     enable(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
     enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ExtensionType::Instance);
-#elif IGL_PLATFORM_ANDROID
-    enable("VK_KHR_android_surface", ExtensionType::Instance);
-    enable(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, ExtensionType::Instance);
-#elif IGL_PLATFORM_LINUX
+#elif defined(__linux__)
     enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ExtensionType::Instance);
     enable("VK_KHR_xlib_surface", ExtensionType::Instance);
 #endif
-
-#if !IGL_PLATFORM_ANDROID
     if (validationEnabled) {
       enable(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, ExtensionType::Instance);
     }
-#endif
 
   } else if (extensionType == ExtensionType::Device) {
     enable(VK_KHR_SWAPCHAIN_EXTENSION_NAME, ExtensionType::Device);

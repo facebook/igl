@@ -28,15 +28,6 @@ class PlatformDevice : public IPlatformDevice {
   explicit PlatformDevice(Device& device);
   ~PlatformDevice() override = default;
 
-  /// Creates a Depth Texture through the underlying VulkanSwapChain
-  /// This currently is for development purposes only and will be removed in
-  /// the future;
-  /// @param outResult optional result
-  /// @return pointer to generated Texture or nullptr
-//  std::shared_ptr<ITexture> createTextureFromNativeDepth(uint32_t width,
-//                                                         uint32_t height,
-//                                                         Result* outResult);
-
   /// Creates a texture from a native drawable surface
   /// @param outResult optional result
   /// @return pointer to generated Texture or nullptr

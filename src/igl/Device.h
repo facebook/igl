@@ -25,7 +25,6 @@ struct ShaderStages;
 struct TextureDesc;
 struct VertexInputStateDesc;
 class IBuffer;
-class ICommandQueue;
 class ICommandBuffer;
 class IDevice;
 class IFramebuffer;
@@ -52,92 +51,31 @@ class IDevice {
  public:
   virtual ~IDevice() = default;
 
-  /**
-   * @brief Creates a command queue.
-   * @see igl::CommandQueueDesc
-   * @param desc Description for the desired resource.
-   * @param outResult Pointer to where the result (success, failure, etc) is written. Can be null if
-   * no reporting is desired.
-   * @return Shared pointer to the created queue.
-   */
-  virtual std::shared_ptr<ICommandQueue> createCommandQueue(CommandQueueType type,
-                                                            Result* outResult) = 0;
+  virtual std::shared_ptr<ICommandBuffer> createCommandBuffer() = 0;
 
-  /**
-   * @brief Creates a buffer resource.
-   * @see igl::BufferDesc
-   * @param desc Description for the desired resource.
-   * @param outResult Pointer to where the result (success, failure, etc) is written. Can be null if
-   * no reporting is desired.
-   * @return Unique pointer to the created buffer.
-   */
+  virtual void submit(igl::CommandQueueType queueType,
+                      const ICommandBuffer& commandBuffer,
+                      bool present = false) const = 0;
+
   virtual std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
                                                 Result* outResult) const noexcept = 0;
 
-  /**
-   * @brief Creates a sampler state.
-   * @see igl::SamplerStateDesc
-   * @param desc Description for the desired resource.
-   * @param outResult Pointer to where the result (success, failure, etc) is written. Can be null if
-   * no reporting is desired.
-   * @return Shared pointer to the created sampler state.
-   */
   virtual std::shared_ptr<ISamplerState> createSamplerState(const SamplerStateDesc& desc,
                                                             Result* outResult) const = 0;
 
-  /**
-   * @brief Creates a texture resource.
-   * @see igl::TextureDesc
-   * @param desc Description for the desired resource.
-   * @param outResult Pointer to where the result (success, failure, etc) is written. Can be null if
-   * no reporting is desired.
-   * @return Shared pointer to the created texture.
-   */
   virtual std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,
                                                   Result* outResult) const noexcept = 0;
 
-  /**
-   * @brief Creates a compute pipeline state.
-   * @see igl::ComputePipelineDesc
-   * @param desc Description for the desired resource.
-   * @param outResult Pointer to where the result (success, failure, etc) is written. Can be null if
-   * no reporting is desired.
-   * @return Shared pointer to the created compute pipeline state.
-   */
   virtual std::shared_ptr<IComputePipelineState> createComputePipeline(
       const ComputePipelineDesc& desc,
       Result* outResult) const = 0;
 
-  /**
-   * @brief Creates a render pipeline state.
-   * @see igl::RenderPipelineDesc
-   * @param desc Description for the desired resource.
-   * @param outResult Pointer to where the result (success, failure, etc) is written. Can be null if
-   * no reporting is desired.
-   * @return Shared pointer to the created render pipeline state.
-   */
   virtual std::shared_ptr<IRenderPipelineState> createRenderPipeline(const RenderPipelineDesc& desc,
                                                                      Result* outResult) const = 0;
 
-  /**
-   * @brief Creates a shader module from either source code or pre-compiled data.
-   * @see igl::ShaderModuleDesc
-   * @param desc Description for the desired resource.
-   * @param outResult Pointer to where the result (success, failure, etc) is written. Can be null if
-   * no reporting is desired.
-   * @return Shared pointer to the created shader module.
-   */
   virtual std::shared_ptr<IShaderModule> createShaderModule(const ShaderModuleDesc& desc,
                                                             Result* outResult) const = 0;
 
-  /**
-   * @brief Creates a frame buffer object.
-   * @see igl::FramebufferDesc
-   * @param desc Description for the desired resource.
-   * @param outResult Pointer to where the result (success, failure, etc) is written. Can be null if
-   * no reporting is desired.
-   * @return Shared pointer to the created frame buffer.
-   */
   virtual std::shared_ptr<IFramebuffer> createFramebuffer(const FramebufferDesc& desc,
                                                           Result* outResult) = 0;
 

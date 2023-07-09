@@ -7,8 +7,12 @@
 
 #include <igl/Texture.h>
 
+#include <cassert>
 #include <cmath>
 #include <utility>
+
+#define IGL_ENUM_TO_STRING(enum, res) \
+  case enum ::res: return #res;
 
 namespace igl {
 
@@ -20,6 +24,19 @@ bool isCompressedTextureFormat(TextureFormat format) {
 bool isDepthOrStencilFormat(TextureFormat format) {
   const auto properties = TextureFormatProperties::fromTextureFormat(format);
   return properties.isDepthOrStencil();
+}
+
+size_t toBytesPerPixel(TextureFormat format) {
+  const auto properties = TextureFormatProperties::fromTextureFormat(format);
+  if (!properties.isCompressed() && properties.isValid()) {
+    return properties.bytesPerBlock;
+  } else if (properties.isCompressed()) {
+    IGL_ASSERT_NOT_REACHED();
+    return 0;
+  } else {
+    assert(0); // not implemented
+    return 1;
+  }
 }
 
 size_t toBytesPerBlock(TextureFormat format) {
@@ -53,18 +70,18 @@ size_t getTextureBytesPerRow(size_t texWidth, TextureFormat texFormat, size_t mi
   }
 }
 
-size_t getTextureBytesPerSlice(size_t texWidth,
-                               size_t texHeight,
-                               size_t texDepth,
-                               TextureFormat texFormat,
-                               size_t mipLevel) {
+uint32_t getTextureBytesPerSlice(size_t texWidth,
+                                 size_t texHeight,
+                                 size_t texDepth,
+                                 TextureFormat texFormat,
+                                 size_t mipLevel) {
   const auto properties = TextureFormatProperties::fromTextureFormat(texFormat);
   size_t levelWidth = std::max(texWidth >> mipLevel, static_cast<size_t>(1));
   size_t levelHeight = std::max(texHeight >> mipLevel, static_cast<size_t>(1));
   size_t levelDepth = std::max(texDepth >> mipLevel, static_cast<size_t>(1));
   if (properties.isCompressed()) {
     if (texDepth > 1) {
-      IGL_ASSERT_NOT_IMPLEMENTED();
+      assert(0);
       return 0;
     }
     const size_t widthInBlocks = (levelWidth + properties.blockWidth - 1) / properties.blockWidth;
@@ -81,94 +98,10 @@ const char* textureFormatToString(TextureFormat format) {
   return properties.name;
 }
 
-TextureRangeDesc TextureRangeDesc::new1D(size_t x, size_t width, size_t mipLevel) {
-  return new3D(x, 0, 0, width, 1, 1, mipLevel);
-}
-
-TextureRangeDesc TextureRangeDesc::new1DArray(size_t x,
-                                              size_t width,
-                                              size_t layer,
-                                              size_t numLayers,
-                                              size_t mipLevel) {
-  return new2DArray(x, 0, width, 1, layer, numLayers, mipLevel);
-}
-
-TextureRangeDesc TextureRangeDesc::new2D(size_t x,
-                                         size_t y,
-                                         size_t width,
-                                         size_t height,
-                                         size_t mipLevel) {
-  return new3D(x, y, 0, width, height, 1, mipLevel);
-}
-
-TextureRangeDesc TextureRangeDesc::new2DArray(size_t x,
-                                              size_t y,
-                                              size_t width,
-                                              size_t height,
-                                              size_t layer,
-                                              size_t numLayers,
-                                              size_t mipLevel) {
-  auto desc = new3D(x, y, 0, width, height, 1, mipLevel);
-  desc.layer = layer;
-  desc.numLayers = numLayers;
-  return desc;
-}
-
-TextureRangeDesc TextureRangeDesc::new3D(size_t x,
-                                         size_t y,
-                                         size_t z,
-                                         size_t width,
-                                         size_t height,
-                                         size_t depth,
-                                         size_t mipLevel) {
-  TextureRangeDesc desc;
-  desc.x = x;
-  desc.y = y;
-  desc.z = z;
-  desc.width = width;
-  desc.height = height;
-  desc.depth = depth;
-  desc.mipLevel = mipLevel;
-  return desc;
-}
-
-TextureRangeDesc TextureRangeDesc::atMipLevel(size_t newMipLevel) const noexcept {
-  if (newMipLevel == mipLevel) {
-    return *this;
-  } else if (IGL_VERIFY(newMipLevel > mipLevel)) {
-    const auto delta = newMipLevel - mipLevel;
-    TextureRangeDesc newRange;
-    newRange.x = x >> delta;
-    newRange.y = y >> delta;
-    newRange.z = z >> delta;
-    newRange.width = std::max(width >> delta, static_cast<size_t>(1));
-    newRange.height = std::max(height >> delta, static_cast<size_t>(1));
-    newRange.depth = std::max(depth >> delta, static_cast<size_t>(1));
-
-    newRange.layer = layer;
-    newRange.numLayers = numLayers;
-
-    newRange.mipLevel = newMipLevel;
-    newRange.numMipLevels = 1;
-
-    return newRange;
-  }
-
-  return *this;
-}
-
-TextureRangeDesc TextureRangeDesc::atLayer(size_t newLayer) const noexcept {
-  TextureRangeDesc newRange = *this;
-  newRange.layer = newLayer;
-  newRange.numLayers = 1;
-
-  return newRange;
-}
-
 #define PROPERTIES(fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs) \
   case TextureFormat::fmt:                                         \
     return TextureFormatProperties{                                \
-        IGL_TO_STRING(fmt), TextureFormat::fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs};
+        #fmt, TextureFormat::fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs};
 
 #define INVALID(fmt) PROPERTIES(fmt, 1, 1, 1, 1, 1, 1, 1, 1, 0)
 #define COLOR(fmt, cpp, bpb, flgs) PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, flgs)
@@ -182,18 +115,13 @@ TextureRangeDesc TextureRangeDesc::atLayer(size_t newLayer) const noexcept {
 TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat format) {
   switch (format) {
     INVALID(Invalid)
-    COLOR(A_UNorm8, 1, 1, 0)
     COLOR(R_UNorm8, 1, 1, 0)
     COLOR(R_F16, 1, 2, 0)
     COLOR(R_UInt16, 1, 2, 0)
     COLOR(R_UNorm16, 1, 2, 0)
-    COLOR(B5G5R5A1_UNorm, 4, 2, 0)
-    COLOR(B5G6R5_UNorm, 3, 2, 0)
-    COLOR(ABGR_UNorm4, 4, 2, 0)
     COLOR(RG_UNorm8, 2, 2, 0)
     COLOR(RGBA_UNorm8, 4, 4, 0)
     COLOR(BGRA_UNorm8, 4, 4, 0)
-    COLOR(BGRA_UNorm8_Rev, 4, 4, 0)
     COLOR(RGBA_SRGB, 4, 4, Flags::sRGB)
     COLOR(BGRA_SRGB, 4, 4, Flags::sRGB)
     COLOR(RG_F16, 2, 4, 0)
@@ -206,13 +134,10 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     COLOR(RGBA_F16, 4, 8, 0)
     COLOR(RGBA_UInt32, 4, 16, 0)
     COLOR(RGBA_F32, 4, 16, 0)
-    COMPRESSED(RGB8_ETC1, 3, 8, 4, 4, 1, 1, 1, 1, 0)
     COMPRESSED(RGB8_ETC2, 3, 8, 4, 4, 1, 1, 1, 1, 0)
     COMPRESSED(SRGB8_ETC2, 3, 8, 4, 4, 1, 1, 1, 1, Flags::sRGB)
     COMPRESSED(RGB8_Punchthrough_A1_ETC2, 3, 8, 4, 4, 1, 1, 1, 1, 0)
     COMPRESSED(SRGB8_Punchthrough_A1_ETC2, 3, 8, 4, 4, 1, 1, 1, 1, Flags::sRGB)
-    COMPRESSED(RGBA8_EAC_ETC2, 4, 16, 4, 4, 1, 1, 1, 1, 0)
-    COMPRESSED(SRGB8_A8_EAC_ETC2, 4, 16, 4, 4, 1, 1, 1, 1, Flags::sRGB)
     COMPRESSED(RG_EAC_UNorm, 2, 16, 4, 4, 1, 1, 1, 1, 0)
     COMPRESSED(RG_EAC_SNorm, 2, 16, 4, 4, 1, 1, 1, 1, 0)
     COMPRESSED(R_EAC_UNorm, 1, 8, 4, 4, 1, 1, 1, 1, 0)
@@ -224,68 +149,6 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     DEPTH(S8_UInt_Z24_UNorm, 2, 4)
   }
   IGL_UNREACHABLE_RETURN(TextureFormatProperties{});
-}
-
-size_t TextureFormatProperties::getRows(TextureRangeDesc range) const noexcept {
-  const auto texHeight = std::max(range.height, static_cast<size_t>(1));
-  if (isCompressed()) {
-    const size_t heightInBlocks =
-        std::max((texHeight + blockHeight - 1) / blockHeight, static_cast<size_t>(minBlocksY));
-    return heightInBlocks;
-  } else {
-    return texHeight;
-  }
-}
-
-size_t TextureFormatProperties::getBytesPerRow(size_t texWidth) const noexcept {
-  return getBytesPerRow(TextureRangeDesc::new1D(0, texWidth));
-}
-
-size_t TextureFormatProperties::getBytesPerRow(TextureRangeDesc range) const noexcept {
-  const auto texWidth = std::max(range.width, static_cast<size_t>(1));
-  if (isCompressed()) {
-    const size_t widthInBlocks =
-        std::max((texWidth + blockWidth - 1) / blockWidth, static_cast<size_t>(minBlocksX));
-    return widthInBlocks * bytesPerBlock;
-  } else {
-    return texWidth * bytesPerBlock;
-  }
-}
-
-size_t TextureFormatProperties::getBytesPerLayer(size_t texWidth,
-                                                 size_t texHeight,
-                                                 size_t texDepth) const noexcept {
-  return getBytesPerLayer(TextureRangeDesc::new3D(0, 0, 0, texWidth, texHeight, texDepth));
-}
-
-size_t TextureFormatProperties::getBytesPerLayer(TextureRangeDesc range) const noexcept {
-  const auto texWidth = std::max(range.width, static_cast<size_t>(1));
-  const auto texHeight = std::max(range.height, static_cast<size_t>(1));
-  const auto texDepth = std::max(range.depth, static_cast<size_t>(1));
-  if (isCompressed()) {
-    const size_t widthInBlocks =
-        std::max((texWidth + blockWidth - 1) / blockWidth, static_cast<size_t>(minBlocksX));
-    const size_t heightInBlocks =
-        std::max((texHeight + blockHeight - 1) / blockHeight, static_cast<size_t>(minBlocksY));
-    const size_t depthInBlocks =
-        std::max((texDepth + blockDepth - 1) / blockDepth, static_cast<size_t>(minBlocksZ));
-    return widthInBlocks * heightInBlocks * depthInBlocks * bytesPerBlock;
-  } else {
-    return texWidth * texHeight * texDepth * bytesPerBlock;
-  }
-}
-
-size_t TextureFormatProperties::getBytesPerRange(TextureRangeDesc range) const noexcept {
-  IGL_ASSERT(range.x % blockWidth == 0);
-  IGL_ASSERT(range.y % blockHeight == 0);
-  IGL_ASSERT(range.z % blockDepth == 0);
-
-  size_t bytes = 0;
-  for (size_t i = 0; i < range.numMipLevels; ++i) {
-    bytes += getBytesPerLayer(range.atMipLevel(range.mipLevel + i)) * range.numLayers;
-  }
-
-  return bytes;
 }
 
 uint32_t TextureDesc::calcNumMipLevels(size_t width, size_t height) {
@@ -309,17 +172,6 @@ Size ITexture::getSize() const {
 
 size_t ITexture::getDepth() const {
   return getDimensions().depth;
-}
-
-size_t ITexture::getEstimatedSizeInBytes() const {
-  const auto range = getFullRange(0, isRequiredGenerateMipmap() ? getNumMipLevels() : 1);
-  auto totalBytes = properties_.getBytesPerRange(range);
-
-  if (getType() == igl::TextureType::Cube) {
-    totalBytes *= 6;
-  }
-
-  return totalBytes;
 }
 
 std::pair<Result, bool> ITexture::validateRange(const igl::TextureRangeDesc& range) const noexcept {
@@ -361,21 +213,6 @@ std::pair<Result, bool> ITexture::validateRange(const igl::TextureRangeDesc& ran
                           range.depth == texDepth && range.numLayers == texLayers);
 
   return std::make_pair(Result{}, fullRange);
-}
-
-TextureRangeDesc ITexture::getFullRange(size_t mipLevel, size_t numMipLevels) const noexcept {
-  const auto dimensions = getDimensions();
-
-  static constexpr size_t one = 1;
-  const auto texWidth = std::max(dimensions.width >> mipLevel, one);
-  const auto texHeight = std::max(dimensions.height >> mipLevel, one);
-  const auto texDepth = std::max(dimensions.depth >> mipLevel, one);
-
-  auto desc = TextureRangeDesc::new3D(0, 0, 0, texWidth, texHeight, texDepth, mipLevel);
-  desc.numLayers = getNumLayers();
-  desc.numMipLevels = numMipLevels;
-
-  return desc;
 }
 
 } // namespace igl

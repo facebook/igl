@@ -18,16 +18,10 @@
 
 #include <igl/Macros.h>
 #include <volk.h>
-#if IGL_PLATFORM_MACOS
-#include <vulkan/vulkan_metal.h>
-#endif
 
 #include <igl/Common.h>
 #include <igl/Texture.h>
 #include <igl/vulkan/VulkanHelpers.h>
-
-#include <format>
-#define IGL_FORMAT std::format
 
 // Enable to use VulkanMemoryAllocator (VMA)
 #define IGL_VULKAN_USE_VMA 1

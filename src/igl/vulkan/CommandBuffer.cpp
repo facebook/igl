@@ -8,25 +8,20 @@
 #include <igl/vulkan/CommandBuffer.h>
 
 #include <igl/vulkan/Buffer.h>
-#include <igl/vulkan/ComputeCommandEncoder.h>
+#include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/Framebuffer.h>
 #include <igl/vulkan/RenderCommandEncoder.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
+#include <igl/vulkan/VulkanPipelineLayout.h>
 #include <igl/vulkan/VulkanTexture.h>
 
 namespace igl {
 namespace vulkan {
 
-CommandBuffer::CommandBuffer(VulkanContext& ctx, CommandBufferDesc desc) :
-  ctx_(ctx), wrapper_(ctx_.immediate_->acquire()), desc_(std::move(desc)) {
-  IGL_ASSERT(wrapper_.cmdBuf_ != VK_NULL_HANDLE);
-}
-
-std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {
-  return std::make_unique<ComputeCommandEncoder>(shared_from_this(), ctx_);
-}
+CommandBuffer::CommandBuffer(VulkanContext& ctx) :
+  ctx_(ctx), wrapper_(ctx_.immediate_->acquire()) {}
 
 namespace {
 
@@ -103,8 +98,6 @@ void CommandBuffer::present(std::shared_ptr<ITexture> surface) const {
 
   IGL_ASSERT(surface);
 
-  presentedSurface_ = surface;
-
   const auto& vkTex = static_cast<Texture&>(*surface);
   const VulkanTexture& tex = vkTex.getVulkanTexture();
   const VulkanImage& img = tex.getVulkanImage();
@@ -150,6 +143,102 @@ void CommandBuffer::waitUntilCompleted() {
   ctx_.immediate_->wait(lastSubmitHandle_);
 
   lastSubmitHandle_ = VulkanImmediateCommands::SubmitHandle();
+}
+
+void CommandBuffer::bindComputePipelineState(
+    const std::shared_ptr<IComputePipelineState>& pipelineState) {
+  IGL_PROFILER_FUNCTION();
+
+  if (!IGL_VERIFY(pipelineState != nullptr)) {
+    return;
+  }
+
+  const igl::vulkan::ComputePipelineState* cps =
+      static_cast<igl::vulkan::ComputePipelineState*>(pipelineState.get());
+
+  IGL_ASSERT(cps);
+
+  VkPipeline pipeline = cps->getVkPipeline();
+
+  if (lastPipelineBound_ != pipeline) {
+    lastPipelineBound_ = pipeline;
+    if (pipeline != VK_NULL_HANDLE) {
+      vkCmdBindPipeline(wrapper_.cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+    }
+  }
+}
+
+void CommandBuffer::dispatchThreadGroups(const Dimensions& threadgroupCount) {
+  ctx_.checkAndUpdateDescriptorSets();
+  ctx_.bindDefaultDescriptorSets(wrapper_.cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE);
+
+  vkCmdDispatch(
+      wrapper_.cmdBuf_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
+}
+
+void CommandBuffer::pushDebugGroupLabel(const std::string& label,
+                                                const igl::Color& color) const {
+  IGL_ASSERT(!label.empty());
+
+  ivkCmdBeginDebugUtilsLabel(wrapper_.cmdBuf_, label.c_str(), color.toFloatPtr());
+}
+
+void CommandBuffer::insertDebugEventLabel(const std::string& label,
+                                                  const igl::Color& color) const {
+  IGL_ASSERT(!label.empty());
+
+  ivkCmdInsertDebugUtilsLabel(wrapper_.cmdBuf_, label.c_str(), color.toFloatPtr());
+}
+
+void CommandBuffer::popDebugGroupLabel() const {
+  ivkCmdEndDebugUtilsLabel(wrapper_.cmdBuf_);
+}
+
+void CommandBuffer::useComputeTexture(const std::shared_ptr<ITexture>& texture) {
+  IGL_PROFILER_FUNCTION();
+
+  IGL_ASSERT(texture);
+  const igl::vulkan::Texture* tex = static_cast<igl::vulkan::Texture*>(texture.get());
+  const igl::vulkan::VulkanTexture& vkTex = tex->getVulkanTexture();
+  const igl::vulkan::VulkanImage& vkImage = vkTex.getVulkanImage();
+  if (!vkImage.isStorageImage()) {
+    IGL_ASSERT_MSG(false, "Did you forget to specify TextureUsageBits::Storage on your texture?");
+    return;
+  }
+
+  // "frame graph" heuristics: if we are already in VK_IMAGE_LAYOUT_GENERAL, wait for the previous
+  // compute shader
+  const VkPipelineStageFlags srcStage = (vkImage.imageLayout_ == VK_IMAGE_LAYOUT_GENERAL)
+                                            ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+                                            : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+  vkImage.transitionLayout(
+      wrapper_.cmdBuf_,
+      VK_IMAGE_LAYOUT_GENERAL,
+      srcStage,
+      VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+      VkImageSubresourceRange{
+          vkImage.getImageAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+}
+
+void CommandBuffer::bindPushConstants(size_t offset, const void* data, size_t length) {
+  IGL_PROFILER_FUNCTION();
+
+  IGL_ASSERT(length % 4 == 0); // VUID-vkCmdPushConstants-size-00369: size must be a multiple of 4
+
+  // check push constant size is within max size
+  const VkPhysicalDeviceLimits& limits = ctx_.getVkPhysicalDeviceProperties().limits;
+  const size_t size = offset + length;
+  if (!IGL_VERIFY(size <= limits.maxPushConstantsSize)) {
+    LLOGW(
+        "Push constants size exceeded %u (max %u bytes)", size, limits.maxPushConstantsSize);
+  }
+
+  vkCmdPushConstants(wrapper_.cmdBuf_,
+                     ctx_.pipelineLayoutCompute_->getVkPipelineLayout(),
+                     VK_SHADER_STAGE_COMPUTE_BIT,
+                     (uint32_t)offset,
+                     (uint32_t)length,
+                     data);
 }
 
 } // namespace vulkan

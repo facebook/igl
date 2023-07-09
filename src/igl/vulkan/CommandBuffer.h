@@ -20,9 +20,7 @@ class VulkanContext;
 class CommandBuffer final : public ICommandBuffer,
                             public std::enable_shared_from_this<CommandBuffer> {
  public:
-  CommandBuffer(VulkanContext& ctx, CommandBufferDesc desc);
-
-  std::unique_ptr<IComputeCommandEncoder> createComputeCommandEncoder() override;
+  explicit CommandBuffer(VulkanContext& ctx);
 
   virtual std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
       const RenderPassDesc& renderPass,
@@ -33,6 +31,16 @@ class CommandBuffer final : public ICommandBuffer,
 
   void waitUntilCompleted() override;
 
+  void bindComputePipelineState(
+      const std::shared_ptr<IComputePipelineState>& pipelineState) override;
+  void dispatchThreadGroups(const Dimensions& threadgroupCount) override;
+
+  void pushDebugGroupLabel(const std::string& label, const igl::Color& color) const override;
+  void insertDebugEventLabel(const std::string& label, const igl::Color& color) const override;
+  void popDebugGroupLabel() const override;
+  void useComputeTexture(const std::shared_ptr<ITexture>& texture) override;
+  void bindPushConstants(size_t offset, const void* data, size_t length) override;
+
   VkCommandBuffer getVkCommandBuffer() const {
     return wrapper_.cmdBuf_;
   }
@@ -42,18 +50,18 @@ class CommandBuffer final : public ICommandBuffer,
   }
 
  private:
-  friend class CommandQueue;
+  friend class Device;
 
   VulkanContext& ctx_;
   const VulkanImmediateCommands::CommandBufferWrapper& wrapper_;
-  CommandBufferDesc desc_;
   // was present() called with a swapchain image?
   mutable bool isFromSwapchain_ = false;
 
   std::shared_ptr<igl::IFramebuffer> framebuffer_;
-  mutable std::shared_ptr<ITexture> presentedSurface_;
 
   VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
+
+  VkPipeline lastPipelineBound_ = VK_NULL_HANDLE;
 };
 
 } // namespace vulkan

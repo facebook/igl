@@ -26,10 +26,6 @@
 #include <igl/vulkan/VulkanTexture.h>
 #include <igl/vulkan/VulkanVma.h>
 
-#if IGL_PLATFORM_MACOS
-#include <dlfcn.h>
-#endif
-
 namespace {
 
 const char* kDefaultValidationLayers[] = {"VK_LAYER_KHRONOS_validation"};
@@ -46,8 +42,6 @@ const uint32_t kBinding_Sampler = 4;
 const uint32_t kBinding_SamplerShadow = 5;
 const uint32_t kBinding_StorageImages = 6;
 
-// TODO: Implement VK_EXT_debug_report functions
-#if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
 VKAPI_ATTR VkBool32 VKAPI_CALL
 vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
                     [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT msgType,
@@ -59,7 +53,6 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
 
   const bool isError = (msgSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0;
 
-#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
   char errorName[128] = {};
   int object = 0;
   void* handle = nullptr;
@@ -87,7 +80,6 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
   } else {
     LLOGL("%sValidation layer:\n%s\n", isError ? "\nERROR:\n" : "", cbData->pMessage);
   }
-#endif
 
   if (isError) {
     igl::vulkan::VulkanContext* ctx = static_cast<igl::vulkan::VulkanContext*>(userData);
@@ -99,7 +91,6 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
 
   return VK_FALSE;
 }
-#endif // defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID
 
 std::vector<VkFormat> getCompatibleDepthStencilFormats(igl::TextureFormat format) {
   switch (format) {
@@ -241,19 +232,16 @@ VulkanContext::~VulkanContext() {
   }
 
   device_.reset(nullptr); // Device has to be destroyed prior to Instance
-#if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID
+
   vkDestroyDebugUtilsMessengerEXT(vkInstance_, vkDebugUtilsMessenger_, nullptr);
-#endif // defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID
   vkDestroyInstance(vkInstance_, nullptr);
 
   glslang_finalize_process();
 
-#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
   LLOGL("Vulkan graphics pipelines created: %u\n",
                VulkanPipelineBuilder::getNumPipelinesCreated());
   LLOGL("Vulkan compute pipelines created: %u\n",
                VulkanComputePipelineBuilder::getNumPipelinesCreated());
-#endif // IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
 }
 
 void VulkanContext::createInstance(const size_t numExtraExtensions, const char** extraExtensions) {
@@ -268,8 +256,7 @@ void VulkanContext::createInstance(const size_t numExtraExtensions, const char**
   auto instanceExtensions = extensions_.allEnabled(VulkanExtensions::ExtensionType::Instance);
 
   vkInstance_ = VK_NULL_HANDLE;
-  // Validation Features not available on most Android devices
-#if !IGL_PLATFORM_ANDROID
+
   const VkValidationFeatureEnableEXT validationFeaturesEnabled[] = {
       VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
   };
@@ -281,7 +268,6 @@ void VulkanContext::createInstance(const size_t numExtraExtensions, const char**
           config_.enableGPUAssistedValidation ? IGL_ARRAY_NUM_ELEMENTS(validationFeaturesEnabled) : 0,
       .pEnabledValidationFeatures = config_.enableGPUAssistedValidation ? validationFeaturesEnabled : nullptr,
   };
-#endif // !IGL_PLATFORM_ANDROID
 
   const VkApplicationInfo appInfo = {
       .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -308,21 +294,17 @@ void VulkanContext::createInstance(const size_t numExtraExtensions, const char**
 
   volkLoadInstance(vkInstance_);
 
-#if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
   if (extensions_.enabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
     VK_ASSERT(ivkCreateDebugUtilsMessenger(
         vkInstance_, &vulkanDebugCallback, this, &vkDebugUtilsMessenger_));
   }
-#endif // if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
 
-#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
   // log available instance extensions
   LLOGL("Vulkan instance extensions:\n");
   for (const auto& extension :
        extensions_.allAvailableExtensions(VulkanExtensions::ExtensionType::Instance)) {
     LLOGL("  %s\n", extension.c_str());
   }
-#endif
 }
 
 void VulkanContext::createSurface(void* window, void* display) {
@@ -350,7 +332,7 @@ igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
     case VK_PHYSICAL_DEVICE_TYPE_CPU:
       return HWDeviceType::SoftwareGpu;
     default:
-      return HWDeviceType::Unknown;
+      return HWDeviceType::SoftwareGpu;
     }
   };
 
@@ -364,7 +346,7 @@ igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
     const HWDeviceType deviceType = convertVulkanDeviceTypeToIGL(deviceProperties.deviceType);
 
     // filter non-suitable hardware devices
-    if (desiredDeviceType != HWDeviceType::Unknown && deviceType != desiredDeviceType) {
+    if (desiredDeviceType != HWDeviceType::SoftwareGpu && deviceType != desiredDeviceType) {
       continue;
     }
 
@@ -412,13 +394,11 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   LLOGL("Vulkan physical device extensions:\n");
 
-#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
   // log available physical device extensions
   for (const auto& extension :
        extensions_.allAvailableExtensions(VulkanExtensions::ExtensionType::Device)) {
     LLOGL("  %s\n", extension.c_str());
   }
-#endif
 
   extensions_.enableCommonExtensions(VulkanExtensions::ExtensionType::Device);
   // Enable extra device extensions

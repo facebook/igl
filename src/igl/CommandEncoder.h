@@ -29,32 +29,10 @@ class ICommandEncoder {
    */
   virtual void endEncoding() = 0;
 
-  /**
-   * Pushes a debug label onto a stack of debug string labels into the captured frame data.
-   *
-   * If supported by the backend GPU driver, this allows you to easily associate subsequent
-   * commands in the captured call stack with this label.
-   *
-   * When all commands for this label have been sent to the encoder, call popDebugGroupLabel()
-   * to pop the label off the stack.
-   */
   virtual void pushDebugGroupLabel(const std::string& label,
                                    const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
-
-  /**
-   * Inserts a debug label into the captured frame data.
-   *
-   * If supported by the backend GPU driver, this allows you to easily insert a label into the
-   * call stack of the captured frame data.
-   */
   virtual void insertDebugEventLabel(const std::string& label,
                                      const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
-
-  /**
-   * Pops a most recent debug label off a stack of debug string labels.
-   *
-   * This should be preceded by pushDebugGroupLabel().
-   */
   virtual void popDebugGroupLabel() const = 0;
 
   ICommandBuffer& getCommandBuffer() {
@@ -67,13 +45,3 @@ class ICommandEncoder {
 };
 
 } // namespace igl
-
-#if IGL_DEBUG && !defined(IGL_DISABLE_DEBUG_ENCODER_LABEL)
-#define IGL_DEBUG_ENCODER_LABEL_START(encoder, x) encoder.pushDebugGroupLabel(#x)
-#define IGL_DEBUG_ENCODER_LABEL_EVENT(encoder, x) encoder.insertDebugEventLabel(#x)
-#define IGL_DEBUG_ENCODER_LABEL_END(encoder) encoder.popDebugGroupLabel()
-#else
-#define IGL_DEBUG_ENCODER_LABEL_START(encoder, x)
-#define IGL_DEBUG_ENCODER_LABEL_EVENT(encoder, x)
-#define IGL_DEBUG_ENCODER_LABEL_END(encoder)
-#endif // IGL_DEBUG && !defined(IGL_DISABLE_DEBUG_ENCODER_LABEL)

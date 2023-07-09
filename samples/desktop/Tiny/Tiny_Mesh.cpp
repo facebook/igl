@@ -26,8 +26,13 @@
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
+
+#include <igl/CommandBuffer.h>
+#include <igl/Device.h>
 #include <igl/FPSCounter.h>
-#include <igl/IGL.h>
+#include <igl/RenderCommandEncoder.h>
+#include <igl/RenderPipelineState.h>
+
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
@@ -121,7 +126,6 @@ igl::FPSCounter fps_;
 constexpr uint32_t kNumBufferedFrames = 3;
 
 std::unique_ptr<IDevice> device_;
-std::shared_ptr<ICommandQueue> commandQueue_;
 FramebufferDesc framebufferDesc_;
 std::shared_ptr<IFramebuffer> framebuffer_;
 std::shared_ptr<IRenderPipelineState> renderPipelineState_Mesh_;
@@ -333,7 +337,8 @@ static void initIGL() {
         pixels[y * texWidth + x] = 0xFF000000 + ((x ^ y) << 16) + ((x ^ y) << 8) + (x ^ y);
       }
     }
-    texture0_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels.data());
+    texture0_->upload(
+        {.width = texWidth, .height = texHeight}, pixels.data(), sizeof(uint32_t) * texWidth);
   }
   {
     using namespace std::filesystem;
@@ -361,19 +366,28 @@ static void initIGL() {
                                                 TextureDesc::TextureUsageBits::Sampled,
                                                 "wood_polished_01_diff.png");
     texture1_ = device_->createTexture(desc, nullptr);
-    texture1_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels);
+    texture1_->upload(
+        {
+            .width = (uint32_t)texWidth,
+            .height = (uint32_t)texHeight,
+        },
+        pixels,
+        sizeof(uint32_t) * texWidth);
     stbi_image_free(pixels);
   }
 
   sampler_ = device_->createSamplerState({.debugName = "Sampler: linear"}, nullptr);
 
-  // Command queue: backed by different types of GPU HW queues
-  commandQueue_ = device_->createCommandQueue(CommandQueueType::Graphics, nullptr);
-
-  renderPass_.colorAttachments.push_back(igl::RenderPassDesc::ColorAttachmentDesc{});
-  renderPass_.colorAttachments.back().loadAction = LoadAction::Clear;
-  renderPass_.colorAttachments.back().storeAction = StoreAction::Store;
-  renderPass_.colorAttachments.back().clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
+  renderPass_.colorAttachments.push_back({
+      .loadAction = LoadAction::Clear,
+      .storeAction = StoreAction::Store,
+      .clearColor = {1.0f, 0.0f, 0.0f, 1.0f},
+  });
+#if TINY_TEST_USE_DEPTH_BUFFER
+  renderPass_.depthStencilAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0};
+#else
+  renderPass_.depthStencilAttachment = {.loadAction = LoadAction::DontCare};
+#endif // TINY_TEST_USE_DEPTH_BUFFER
 
   // initialize random rotation axes for all cubes
   for (uint32_t i = 0; i != kNumCubes; i++) {
@@ -477,8 +491,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   ubPerObject_[frameIndex]->upload(&perObject, sizeof(perObject));
 
   // Command buffers (1-N per thread): create, submit and forget
-  CommandBufferDesc cbDesc;
-  std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
   const igl::Viewport viewport = {0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f};
   const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
@@ -512,7 +525,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
 
   buffer->present(nativeDrawable);
 
-  commandQueue_->submit(*buffer);
+  device_->submit(CommandQueueType::Graphics, *buffer, true);
 }
 
 int main(int argc, char* argv[]) {

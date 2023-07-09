@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <igl/Assert.h>
 #include <igl/Macros.h>
@@ -84,8 +85,6 @@ constexpr size_t IGL_COLOR_ATTACHMENTS_MAX = 4;
  * @brief Represents a type of a physical device for graphics/compute purposes
  */
 enum class HWDeviceType {
-  /// Unknown
-  Unknown = 0,
   /// HW GPU - Discrete
   DiscreteGpu = 1,
   /// HW GPU - External
@@ -105,8 +104,6 @@ struct HWDeviceQueryDesc {
   HWDeviceType hardwareType;
   /** @brief If set, ignores hardwareType and returns device assigned to displayId */
   uintptr_t displayId;
-  /** @brief Reserved */
-  uint32_t flags;
 };
 
 /**
@@ -296,11 +293,6 @@ struct Viewport {
   float height = 1.0f;
   float minDepth = 0.0f;
   float maxDepth = 1.0f;
-
-  bool operator!=(const Viewport other) const {
-    return x != other.x || y != other.y || width != other.width || height != other.height ||
-           minDepth != other.minDepth || maxDepth != other.maxDepth;
-  }
 };
 
 enum CompareOp : uint8_t {
@@ -353,6 +345,39 @@ enum BlendFactor : uint8_t {
   BlendFactor_OneMinusSrc1Color,
   BlendFactor_Src1Alpha,
   BlendFactor_OneMinusSrc1Alpha
+};
+
+enum class LoadAction : uint8_t {
+  DontCare,
+  Load,
+  Clear,
+};
+
+enum class StoreAction : uint8_t {
+  DontCare,
+  Store,
+  MsaaResolve,
+};
+
+struct AttachmentDesc {
+  LoadAction loadAction = LoadAction::Clear;
+  StoreAction storeAction = StoreAction::Store;
+  uint8_t slice = 0;
+  uint8_t mipmapLevel = 0;
+  Color clearColor = {0.0f, 0.0f, 0.0f, 0.0f};
+  float clearDepth = 1.0f;
+  uint32_t clearStencil = 0;
+};
+
+struct RenderPassDesc {
+  std::vector<AttachmentDesc> colorAttachments;
+  AttachmentDesc depthStencilAttachment;
+};
+
+enum class CommandQueueType {
+  Compute, /// Supports Compute commands
+  Graphics, /// Supports Graphics commands
+  Transfer, /// Supports Memory commands
 };
 
 } // namespace igl

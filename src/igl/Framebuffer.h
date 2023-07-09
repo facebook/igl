@@ -13,7 +13,6 @@
 
 namespace igl {
 
-class ICommandQueue;
 class ITexture;
 struct TextureRangeDesc;
 
@@ -61,16 +60,14 @@ class IFramebuffer {
   // Methods
   /** @brief Copy color data from the color attachment at the specified index into 'pixelBytes'.
    * Some implementations may only support index 0. */
-  virtual void copyBytesColorAttachment(ICommandQueue& cmdQueue,
-                                        size_t index,
+  virtual void copyBytesColorAttachment(size_t index,
                                         void* pixelBytes,
                                         size_t bytesPerRow,
                                         const TextureRangeDesc& range) const = 0;
 
   /** @brief Copy color data from the color attachment at the specified index into 'destTexture'.
    * Some implementations may only support index 0. */
-  virtual void copyTextureColorAttachment(ICommandQueue& cmdQueue,
-                                          size_t index,
+  virtual void copyTextureColorAttachment(size_t index,
                                           std::shared_ptr<ITexture> destTexture,
                                           const TextureRangeDesc& range) const = 0;
 

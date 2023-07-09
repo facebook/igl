@@ -25,9 +25,12 @@ class Device final : public IDevice {
  public:
   explicit Device(std::unique_ptr<VulkanContext> ctx);
 
-  // Command Queue
-  std::shared_ptr<ICommandQueue> createCommandQueue(CommandQueueType type,
-                                                    Result* outResult) override;
+  std::shared_ptr<ICommandBuffer> createCommandBuffer() override;
+
+  void submit(igl::CommandQueueType queueType,
+              const igl::ICommandBuffer& commandBuffer,
+              bool present = false) const override;
+
   // Resources
   std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
                                         Result* outResult) const noexcept override;

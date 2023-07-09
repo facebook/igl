@@ -8,6 +8,7 @@
 #include <igl/Device.h>
 #include <igl/Shader.h>
 
+#include <assert.h>
 #include <algorithm>
 #include <utility>
 

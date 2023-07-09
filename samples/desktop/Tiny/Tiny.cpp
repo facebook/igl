@@ -26,8 +26,10 @@
 #include <regex>
 #include <stdio.h>
 
-#include <igl/IGL.h>
-
+#include <igl/CommandBuffer.h>
+#include <igl/Device.h>
+#include <igl/RenderCommandEncoder.h>
+#include <igl/RenderPipelineState.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
@@ -91,7 +93,6 @@ int width_ = 0;
 int height_ = 0;
 
 std::unique_ptr<IDevice> device_;
-std::shared_ptr<ICommandQueue> commandQueue_;
 RenderPassDesc renderPass_;
 std::shared_ptr<IFramebuffer> framebuffer_;
 std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
@@ -171,21 +172,22 @@ static void initIGL() {
     IGL_ASSERT(device_);
   }
 
-  // Command queue: backed by different types of GPU HW queues
-  commandQueue_ = device_->createCommandQueue(CommandQueueType::Graphics, nullptr);
-
   // first color attachment
   for (auto i = 0; i < kNumColorAttachments; ++i) {
     // Generate sparse color attachments by skipping alternate slots
     if (i & 0x1) {
       continue;
     }
-    renderPass_.colorAttachments[i] = igl::RenderPassDesc::ColorAttachmentDesc{};
-    renderPass_.colorAttachments[i].loadAction = LoadAction::Clear;
-    renderPass_.colorAttachments[i].storeAction = StoreAction::Store;
-    renderPass_.colorAttachments[i].clearColor = {1.0f, 1.0f, 1.0f, 1.0f};
+    renderPass_.colorAttachments[i] = igl::AttachmentDesc{
+        .loadAction = LoadAction::Clear,
+        .storeAction = StoreAction::Store,
+        .clearColor = {1.0f, 1.0f, 1.0f, 1.0f},
+    };
   }
-  renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
+  renderPass_.depthStencilAttachment = {
+      .loadAction = LoadAction::DontCare,
+      .storeAction = StoreAction::DontCare,
+  };
 }
 
 static void createRenderPipeline() {
@@ -258,8 +260,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
   }
 
   // Command buffers (1-N per thread): create, submit and forget
-  CommandBufferDesc cbDesc;
-  std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
   const igl::Viewport viewport = {0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f};
   const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
@@ -277,7 +278,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
 
   buffer->present(nativeDrawable);
 
-  commandQueue_->submit(*buffer);
+  device_->submit(igl::CommandQueueType::Graphics, *buffer, true);
 }
 
 int main(int argc, char* argv[]) {

@@ -20,7 +20,7 @@ class VulkanFramebuffer;
 
 class Framebuffer final : public IFramebuffer {
  public:
-  Framebuffer(const Device& device, FramebufferDesc desc);
+  Framebuffer(Device& device, FramebufferDesc desc);
   ~Framebuffer() override = default;
 
   // Accessors
@@ -32,14 +32,12 @@ class Framebuffer final : public IFramebuffer {
   std::shared_ptr<ITexture> getStencilAttachment() const override;
 
   // Methods
-  void copyBytesColorAttachment(ICommandQueue& /* Not Used */,
-                                size_t index,
+  void copyBytesColorAttachment(size_t index,
                                 void* pixelBytes,
                                 size_t bytesPerRow,
                                 const TextureRangeDesc& range) const override;
 
-  void copyTextureColorAttachment(ICommandQueue& cmdQueue,
-                                  size_t index,
+  void copyTextureColorAttachment(size_t index,
                                   std::shared_ptr<ITexture> destTexture,
                                   const TextureRangeDesc& range) const override;
 
@@ -54,7 +52,7 @@ class Framebuffer final : public IFramebuffer {
     return height_;
   }
 
-  IGL_INLINE const FramebufferDesc& getDesc() const {
+  const FramebufferDesc& getDesc() const {
     return desc_;
   }
 
@@ -75,7 +73,7 @@ class Framebuffer final : public IFramebuffer {
   };
 
  private:
-  const igl::vulkan::Device& device_;
+  igl::vulkan::Device& device_;
   FramebufferDesc desc_; // attachments
 
   uint32_t width_ = 0;

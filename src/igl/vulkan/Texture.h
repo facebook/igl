@@ -50,7 +50,7 @@ class Texture final : public ITexture {
   uint32_t getUsage() const override;
   size_t getSamples() const override;
   size_t getNumMipLevels() const override;
-  void generateMipmap(ICommandQueue& cmdQueue) const override;
+  void generateMipmap() const override;
   bool isRequiredGenerateMipmap() const override;
   uint32_t getTextureId() const override;
   VkFormat getVkFormat() const;

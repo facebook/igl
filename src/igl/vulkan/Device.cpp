@@ -9,7 +9,7 @@
 
 #include <cstring>
 #include <igl/vulkan/Buffer.h>
-#include <igl/vulkan/CommandQueue.h>
+#include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/Framebuffer.h>
@@ -22,11 +22,7 @@
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanShaderModule.h>
-
-#if IGL_SHADER_DUMP && IGL_DEBUG
-#include <filesystem>
-#include <fstream>
-#endif // IGL_SHADER_DUMP && IGL_DEBUG
+#include <igl/vulkan/VulkanSwapchain.h>
 
 namespace {
 
@@ -56,11 +52,41 @@ namespace vulkan {
 
 Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)), platformDevice_(*this) {}
 
-std::shared_ptr<ICommandQueue> Device::createCommandQueue(CommandQueueType type,
-                                                          Result* outResult) {
-  auto resource = std::make_shared<CommandQueue>(*this, type);
-  Result::setOk(outResult);
-  return resource;
+std::shared_ptr<ICommandBuffer> Device::createCommandBuffer() {
+  IGL_PROFILER_FUNCTION();
+
+  return std::make_shared<CommandBuffer>(getVulkanContext());
+}
+
+void Device::submit(igl::CommandQueueType queueType,
+                    const igl::ICommandBuffer& commandBuffer,
+                    bool present) const {
+  IGL_PROFILER_FUNCTION();
+
+  const VulkanContext& ctx = getVulkanContext();
+
+  auto* vkCmdBuffer =
+      const_cast<vulkan::CommandBuffer*>(static_cast<const vulkan::CommandBuffer*>(&commandBuffer));
+
+  // endCommandBuffer(ctx, vkCmdBuffer, true);
+  const bool isGraphicsQueue = queueType == CommandQueueType::Graphics;
+
+  // Submit to the graphics queue.
+  const bool shouldPresent = isGraphicsQueue && ctx.hasSwapchain() &&
+                             vkCmdBuffer->isFromSwapchain() && present;
+  if (shouldPresent) {
+    ctx.immediate_->waitSemaphore(ctx.swapchain_->acquireSemaphore_->vkSemaphore_);
+  }
+
+  vkCmdBuffer->lastSubmitHandle_ = ctx.immediate_->submit(vkCmdBuffer->wrapper_);
+
+  if (shouldPresent) {
+    ctx.present();
+  } else {
+    ctx.waitIdle();
+  }
+
+  ctx.processDeferredTasks();
 }
 
 std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
@@ -175,27 +201,6 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
                                                                const std::string& debugName,
                                                                Result* outResult) const {
   VkDevice device = ctx_->device_->getVkDevice();
-
-#if IGL_SHADER_DUMP && IGL_DEBUG
-  uint64_t hash = 0;
-  IGL_ASSERT(length % sizeof(uint32_t) == 0);
-  auto words = reinterpret_cast<const uint32_t*>(data);
-  for (int i = 0; i < (length / sizeof(uint32_t)); i++) {
-    hash ^= std::hash<uint32_t>()(words[i]);
-  }
-  // Replace filename with your own path according to the platform and recompile.
-  // Ex. for Android your filepath should be specific to the package name:
-  // /sdcard/Android/data/<packageName>/files/
-  std::string filename = fmt::format("{}{}{}.spv", PATH_HERE, debugName, std::to_string(hash));
-  if (!std::filesystem::exists(filename)) {
-    std::ofstream spirvFile;
-    spirvFile.open(filename, std::ios::out | std::ios::binary);
-    for (int i = 0; i < length / (int)sizeof(uint32_t); i++) {
-      spirvFile.write(reinterpret_cast<const char*>(&words[i]), sizeof(uint32_t));
-    }
-    spirvFile.close();
-  }
-#endif // IGL_SHADER_DUMP && IGL_DEBUG
 
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
   const VkResult result = ivkCreateShaderModuleFromSPIRV(device, data, length, &vkShaderModule);

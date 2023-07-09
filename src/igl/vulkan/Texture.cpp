@@ -14,6 +14,8 @@
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <igl/vulkan/VulkanTexture.h>
 
+#include <format>
+
 namespace igl {
 namespace vulkan {
 
@@ -87,9 +89,9 @@ Result Texture::create(const TextureDesc& desc) {
   const VkMemoryPropertyFlags memFlags = resourceStorageToVkMemoryPropertyFlags(desc_.storage);
 
   const std::string debugNameImage =
-      !desc_.debugName.empty() ? IGL_FORMAT("Image: {}", desc_.debugName.c_str()) : "";
+      !desc_.debugName.empty() ? std::format("Image: {}", desc_.debugName.c_str()) : "";
   const std::string debugNameImageView =
-      !desc_.debugName.empty() ? IGL_FORMAT("Image View: {}", desc_.debugName.c_str()) : "";
+      !desc_.debugName.empty() ? std::format("Image View: {}", desc_.debugName.c_str()) : "";
 
   VkImageCreateFlags createFlags = 0;
   uint32_t arrayLayerCount = static_cast<uint32_t>(desc_.numLayers);
@@ -173,7 +175,7 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
   const void* uploadData = data;
   const size_t bytesPerPixel = isCompressedTextureFormat(vkFormatToTextureFormat(getVkFormat()))
                                    ? toBytesPerBlock(vkFormatToTextureFormat(getVkFormat()))
-                                   : getBytesPerPixel(getVkFormat());
+                                   : igl::vulkan::getBytesPerPixel(getVkFormat());
 
   const size_t imageRowWidth = desc_.width * bytesPerPixel;
 
@@ -291,7 +293,7 @@ size_t Texture::getNumMipLevels() const {
   return desc_.numMipLevels;
 }
 
-void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/) const {
+void Texture::generateMipmap() const {
   if (desc_.numMipLevels > 1) {
     const auto& ctx = device_.getVulkanContext();
     const auto& wrapper = ctx.immediate_->acquire();

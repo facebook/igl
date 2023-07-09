@@ -8,10 +8,9 @@
 #include "Framebuffer.h"
 
 #include <igl/CommandBuffer.h>
-#include <igl/RenderPass.h>
+#include <igl/Common.h>
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
-#include <igl/vulkan/CommandQueue.h>
 #include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/PlatformDevice.h>
@@ -65,8 +64,7 @@ std::shared_ptr<igl::ITexture> Framebuffer::getStencilAttachment() const {
   return desc_.stencilAttachment.texture;
 }
 
-void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
-                                           size_t index,
+void Framebuffer::copyBytesColorAttachment(size_t index,
                                            void* pixelBytes,
                                            size_t bytesPerRow,
                                            const TextureRangeDesc& range) const {
@@ -99,8 +97,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
                                      true); // Flip the image vertically
 }
 
-void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
-                                             size_t index,
+void Framebuffer::copyTextureColorAttachment(size_t index,
                                              std::shared_ptr<ITexture> destTexture,
                                              const TextureRangeDesc& range) const {
   IGL_PROFILER_FUNCTION();
@@ -110,8 +107,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   }
 
   // Extract the underlying VkCommandBuffer
-  CommandBufferDesc cbDesc;
-  std::shared_ptr<ICommandBuffer> buffer = cmdQueue.createCommandBuffer(cbDesc, nullptr);
+  std::shared_ptr<ICommandBuffer> buffer = device_.createCommandBuffer();
   CommandBuffer& vulkanBuffer = static_cast<CommandBuffer&>(*buffer);
   VkCommandBuffer cmdBuf = vulkanBuffer.getVkCommandBuffer();
 
@@ -176,7 +172,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
                                          // done
       VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
 
-  cmdQueue.submit(*buffer);
+  device_.submit(igl::CommandQueueType::Graphics, *buffer);
 }
 
 std::shared_ptr<igl::ITexture> Framebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
@@ -193,7 +189,7 @@ std::shared_ptr<igl::ITexture> Framebuffer::updateDrawable(std::shared_ptr<IText
   return texture;
 }
 
-Framebuffer::Framebuffer(const Device& device, FramebufferDesc desc) :
+Framebuffer::Framebuffer(Device& device, FramebufferDesc desc) :
   device_(device), desc_(std::move(desc)) {
   IGL_PROFILER_FUNCTION();
   auto ensureSize = [this](const vulkan::Texture& tex) {

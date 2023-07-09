@@ -223,13 +223,6 @@ static void ivkAddNext(void* node, const void* next) {
   cur->pNext = next;
 }
 
-#if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACCATALYST
-#define VK_EXT_DEBUG_UTILS_SUPPORTED 1
-#else
-#define VK_EXT_DEBUG_UTILS_SUPPORTED 0
-#endif
-
-#if VK_EXT_DEBUG_UTILS_SUPPORTED
 VkResult ivkCreateDebugUtilsMessenger(VkInstance instance,
                                       PFN_vkDebugUtilsMessengerCallbackEXT callback,
                                       void* logUserData,
@@ -249,17 +242,7 @@ VkResult ivkCreateDebugUtilsMessenger(VkInstance instance,
 
   return vkCreateDebugUtilsMessengerEXT(instance, &ci, NULL, outMessenger);
 }
-#else // VK_EXT_DEBUG_UTILS_SUPPORTED
-// Stub version
-VkResult ivkCreateDebugUtilsMessenger(VkInstance instance,
-                                      PFN_vkDebugUtilsMessengerCallbackEXT callback,
-                                      void* logUserData,
-                                      VkDebugUtilsMessengerEXT* outMessenger) {
-  return VK_SUCCESS;
-}
-#endif // VK_EXT_DEBUG_UTILS_SUPPORTED
 
-#if defined(VK_EXT_debug_report)
 VkResult ivkCreateDebugReportMessenger(VkInstance instance,
                                        PFN_vkDebugReportCallbackEXT callback,
                                        void* logUserData,
@@ -274,15 +257,6 @@ VkResult ivkCreateDebugReportMessenger(VkInstance instance,
 
   return vkCreateDebugReportCallbackEXT(instance, &ci, NULL, outMessenger);
 }
-#else // defined(VK_EXT_debug_report)
-// Stub version
-VkResult ivkCreateDebugReportMessenger(VkInstance instance,
-                                       PFN_vkDebugReportCallbackEXT callback,
-                                       void* logUserData,
-                                       VkDebugReportCallbackEXT* outMessenger) {
-  return VK_SUCCESS;
-}
-#endif // defined(VK_EXT_debug_report)
 
 VkResult ivkCreateSurface(VkInstance instance,
                           void* window,
@@ -295,14 +269,6 @@ VkResult ivkCreateSurface(VkInstance instance,
       .hwnd = (HWND)window,
   };
   return vkCreateWin32SurfaceKHR(instance, &ci, NULL, outSurface);
-#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
-  const VkAndroidSurfaceCreateInfoKHR ci = {
-      .sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
-      .pNext = NULL,
-      .flags = 0,
-      .window = window,
-  };
-  return vkCreateAndroidSurfaceKHR(instance, &ci, NULL, outSurface);
 #elif defined(VK_USE_PLATFORM_XLIB_KHR)
   const VkXlibSurfaceCreateInfoKHR ci = {
       .sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,
@@ -313,11 +279,7 @@ VkResult ivkCreateSurface(VkInstance instance,
   };
   return vkCreateXlibSurfaceKHR(instance, &ci, NULL, outSurface);
 #else
-  (void)instance;
-  (void)window;
-  (void)outSurface;
-  // TODO: implement for other platforms
-  return VK_NOT_READY;
+#error Implement for other platforms
 #endif
 }
 
@@ -584,22 +546,16 @@ VkResult ivkCreateDescriptorSetLayout(VkDevice device,
                                       const VkDescriptorSetLayoutBinding* bindings,
                                       const VkDescriptorBindingFlags* bindingFlags,
                                       VkDescriptorSetLayout* outLayout) {
-  // Do not enable VK_EXT_descriptor_indexing for Android until
-  // we fix the extension enumeration crash when the validation layer is enabled
-#if !IGL_PLATFORM_ANDROID
   const VkDescriptorSetLayoutBindingFlagsCreateInfo setLayoutBindingFlagsCI = {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
       .bindingCount = numBindings,
       .pBindingFlags = bindingFlags,
   };
-#endif // !IGL_PLATFORM_ANDROID
 
   const VkDescriptorSetLayoutCreateInfo ci = {
     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-#if !IGL_PLATFORM_ANDROID
     .pNext = &setLayoutBindingFlagsCI,
     .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
-#endif
     .bindingCount = numBindings,
     .pBindings = bindings,
   };
@@ -1172,25 +1128,18 @@ VkResult ivkSetDebugObjectName(VkDevice device,
   if (!name || !*name) {
     return VK_SUCCESS;
   }
-
-#if VK_EXT_DEBUG_UTILS_SUPPORTED
   const VkDebugUtilsObjectNameInfoEXT ni = {
       .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
       .objectType = type,
       .objectHandle = handle,
       .pObjectName = name,
   };
-
   return vkSetDebugUtilsObjectNameEXT(device, &ni);
-#else
-  return VK_SUCCESS;
-#endif // VK_EXT_DEBUG_UTILS_SUPPORTED
 }
 
 void ivkCmdBeginDebugUtilsLabel(VkCommandBuffer buffer,
                                 const char* name,
                                 const float colorRGBA[4]) {
-#if VK_EXT_DEBUG_UTILS_SUPPORTED
   const VkDebugUtilsLabelEXT label = {
       .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
       .pNext = NULL,
@@ -1198,13 +1147,11 @@ void ivkCmdBeginDebugUtilsLabel(VkCommandBuffer buffer,
       .color = {colorRGBA[0], colorRGBA[1], colorRGBA[2], colorRGBA[3]},
   };
   vkCmdBeginDebugUtilsLabelEXT(buffer, &label);
-#endif // VK_EXT_DEBUG_UTILS_SUPPORTED
 }
 
 void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer,
                                  const char* name,
                                  const float colorRGBA[4]) {
-#if VK_EXT_DEBUG_UTILS_SUPPORTED
   const VkDebugUtilsLabelEXT label = {
       .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
       .pNext = NULL,
@@ -1212,13 +1159,10 @@ void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer,
       .color = {colorRGBA[0], colorRGBA[1], colorRGBA[2], colorRGBA[3]},
   };
   vkCmdInsertDebugUtilsLabelEXT(buffer, &label);
-#endif // VK_EXT_DEBUG_UTILS_SUPPORTED
 }
 
 void ivkCmdEndDebugUtilsLabel(VkCommandBuffer buffer) {
-#if VK_EXT_DEBUG_UTILS_SUPPORTED
   vkCmdEndDebugUtilsLabelEXT(buffer);
-#endif // VK_EXT_DEBUG_UTILS_SUPPORTED
 }
 
 VkVertexInputBindingDescription ivkGetVertexInputBindingDescription(uint32_t binding,

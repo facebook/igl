@@ -18,7 +18,6 @@ target_include_directories(IGLLibrary PUBLIC "${IGL_ROOT_DIR}/third-party/deps/s
 igl_set_cxxstd(IGLLibrary 20)
 igl_set_folder(IGLLibrary "IGL")
 
-if(IGL_WITH_VULKAN)
-  add_subdirectory(vulkan)
-  target_link_libraries(IGLLibrary PUBLIC IGLVulkan)
-endif()
+add_subdirectory(vulkan)
+
+target_link_libraries(IGLLibrary PUBLIC IGLVulkan)

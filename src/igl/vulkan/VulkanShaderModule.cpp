@@ -14,28 +14,10 @@ namespace {
 
 // Logs GLSL shaders with line numbers annotation
 void logShaderSource(const char* text) {
-#if IGL_DEBUG
   uint32_t line = 1;
 
-  // IGLLog on Android also writes a new line,
-  // so to make things easier to read separate out the Android logging
-#if IGL_PLATFORM_ANDROID
-  std::string outputLine = "";
-  while (text && *text) {
-    if (*text == '\n') {
-      // Write out the line along with the line number, and reset the line
-      LLOGL("(%3u) %s", line++, outputLine.c_str());
-      outputLine = "";
-    } else if (*text == '\r') {
-      // skip it
-    } else {
-      outputLine += *text;
-    }
-    text++;
-  }
-  LLOGL("");
-#else
   LLOGL("\n(%3u) ", line);
+
   while (text && *text) {
     if (*text == '\n') {
       LLOGL("\n(%3u) ", ++line);
@@ -47,8 +29,6 @@ void logShaderSource(const char* text) {
     text++;
   }
   LLOGL("\n");
-#endif
-#endif
 }
 
 } // namespace

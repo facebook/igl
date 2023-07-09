@@ -8,11 +8,9 @@ cmake_minimum_required(VERSION 3.16)
 project("IGL" CXX C)
 
 # cmake-format: off
-option(IGL_WITH_SAMPLES   "Enable sample demo apps"  ON)
-option(IGL_WITH_VULKAN    "Enable IGL/Vulkan"        ON)
-option(IGL_WITH_TRACY     "Enable Tracy profiler"    OFF)
-option(IGL_ENFORCE_LOGS   "Enable logs in Release builds" ON)
-option(IGL_DEPLOY_DEPS    "Deploy dependencies via CMake" ON)
+option(IGL_WITH_SAMPLES "Enable sample demo apps"  ON)
+option(IGL_WITH_TRACY   "Enable Tracy profiler"    OFF)
+option(IGL_DEPLOY_DEPS  "Deploy dependencies via CMake" ON)
 # cmake-format: on
 
 if(DEFINED ENV{VULKAN_SDK})
@@ -34,26 +32,10 @@ endfunction()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # cmake-format: off
-message(STATUS "IGL_WITH_SAMPLES  = ${IGL_WITH_SAMPLES}")
-message(STATUS "IGL_WITH_VULKAN   = ${IGL_WITH_VULKAN}")
-
-message(STATUS "IGL_WITH_TRACY    = ${IGL_WITH_TRACY}")
-message(STATUS "IGL_ENFORCE_LOGS  = ${IGL_ENFORCE_LOGS}")
-
-message(STATUS "IGL_DEPLOY_DEPS   = ${IGL_DEPLOY_DEPS}")
+message(STATUS "IGL_WITH_SAMPLES = ${IGL_WITH_SAMPLES}")
+message(STATUS "IGL_WITH_TRACY   = ${IGL_WITH_TRACY}")
+message(STATUS "IGL_DEPLOY_DEPS  = ${IGL_DEPLOY_DEPS}")
 # cmake-format: on
-
-if(IGL_ENFORCE_LOGS)
-  add_definitions("-DIGL_FORCE_ENABLE_LOGS=1")
-endif()
-
-if(NOT IGL_WITH_VULKAN)
-  message(FATAL_ERROR "At least one rendering backend should be defined.")
-endif()
-
-if(IGL_WITH_VULKAN)
-  add_definitions("-DIGL_BACKEND_ENABLE_VULKAN=1")
-endif()
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Debug")
@@ -98,6 +80,7 @@ if(IGL_DEPLOY_DEPS)
 endif()
 
 include_directories(.)
+include_directories("third-party/deps/src/imgui")
 
 add_library(IGLstb third-party/deps/patches/stb_impl/stb_image.c third-party/deps/patches/stb_impl/stb_image_resize.c
                    third-party/deps/patches/stb_impl/stb_image_write.c)

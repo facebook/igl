@@ -13,6 +13,8 @@
 #include <igl/vulkan/VulkanRenderPassBuilder.h>
 #include <igl/vulkan/VulkanSemaphore.h>
 
+#include <format>
+
 namespace {
 
 struct SwapchainCapabilities {
@@ -91,15 +93,14 @@ VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>
 }
 
 VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& modes) {
+#if defined(__linux__)
   if (std::find(modes.cbegin(), modes.cend(), VK_PRESENT_MODE_IMMEDIATE_KHR) != modes.cend()) {
     return VK_PRESENT_MODE_IMMEDIATE_KHR;
   }
-  // On Android (Quest 2), FIFO prevents VK_ERROR_OUT_OF_DATE_KHR
-#if !IGL_PLATFORM_ANDROID
+#endif // __linux__
   if (std::find(modes.cbegin(), modes.cend(), VK_PRESENT_MODE_MAILBOX_KHR) != modes.cend()) {
     return VK_PRESENT_MODE_MAILBOX_KHR;
   }
-#endif // !IGL_PLATFORM_ANDROID
   return VK_PRESENT_MODE_FIFO_KHR;
 }
 
@@ -190,7 +191,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
   swapchainTextures_.reserve(numSwapchainImages_);
   for (uint32_t i = 0; i < numSwapchainImages_; i++) {
     auto image = std::make_shared<VulkanImage>(
-        ctx_, device_, swapchainImages[i], IGL_FORMAT("Image: swapchain #{}", i).c_str());
+        ctx_, device_, swapchainImages[i], std::format("Image: swapchain #{}", i).c_str());
     // set usage flags for retrieved images
     image->usageFlags_ = usageFlags;
     image->imageFormat_ = surfaceFormat_.format;
@@ -202,7 +203,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
                                             VK_REMAINING_MIP_LEVELS,
                                             0,
                                             1,
-                                            IGL_FORMAT("Image View: swapchain #{}", i).c_str());
+                                            std::format("Image View: swapchain #{}", i).c_str());
     swapchainTextures_.emplace_back(
         std::make_shared<VulkanTexture>(ctx_, std::move(image), std::move(imageView)));
   }

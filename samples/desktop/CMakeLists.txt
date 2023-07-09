@@ -31,14 +31,9 @@ macro(ADD_DEMO app)
   target_link_libraries(${app} PRIVATE IGLstb)
 endmacro()
 
-add_demo("Tiny")
-
-if(IGL_WITH_VULKAN)
-  # this demo app does not work without Vulkan (yet)
-  add_demo("Tiny_Mesh")
-endif()
-
-add_demo("Tiny_MeshLarge")
+ADD_DEMO("Tiny")
+ADD_DEMO("Tiny_Mesh")
+ADD_DEMO("Tiny_MeshLarge")
 
 target_sources(Tiny_MeshLarge
                PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/3D-Graphics-Rendering-Cookbook/shared/UtilsCubemap.cpp")

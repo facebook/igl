@@ -48,9 +48,7 @@ target_include_directories(IGLVulkan PUBLIC "${IGL_ROOT_DIR}/third-party/deps/sr
 if(WIN32)
   add_definitions("-DVK_USE_PLATFORM_WIN32_KHR=1")
   add_definitions("-DNOMINMAX")
-endif()
-
-if(UNIX)
+elseif(UNIX)
   add_definitions("-DVK_USE_PLATFORM_XLIB_KHR=1")
 endif()
 

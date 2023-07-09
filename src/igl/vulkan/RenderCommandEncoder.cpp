@@ -9,7 +9,6 @@
 
 #include <algorithm>
 
-#include <igl/RenderPass.h>
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Common.h>
@@ -211,8 +210,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   }
 
   // Process depth attachment
-  const RenderPassDesc::DepthAttachmentDesc descDepth = renderPass.depthAttachment;
-  const RenderPassDesc::StencilAttachmentDesc descStencil = renderPass.stencilAttachment;
+  const igl::AttachmentDesc descDepth = renderPass.depthStencilAttachment;
   hasDepthAttachment_ = false;
 
   if (framebuffer->getDepthAttachment()) {
@@ -220,8 +218,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
     hasDepthAttachment_ = true;
     IGL_ASSERT_MSG(descDepth.mipmapLevel == mipLevel,
                    "Depth attachment should have the same mip-level as color attachments");
-    clearValues.push_back(
-        ivkGetClearDepthStencilValue(descDepth.clearDepth, descStencil.clearStencil));
+    clearValues.push_back(ivkGetClearDepthStencilValue(descDepth.clearDepth, descDepth.clearStencil));
     const auto initialLayout = descDepth.loadAction == igl::LoadAction::Load
                                    ? depthTexture.getVulkanTexture().getVulkanImage().imageLayout_
                                    : VK_IMAGE_LAYOUT_UNDEFINED;

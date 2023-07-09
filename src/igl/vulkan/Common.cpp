@@ -62,8 +62,6 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
   switch (format) {
   case TextureFormat::Invalid:
     return VK_FORMAT_UNDEFINED;
-  case TextureFormat::A_UNorm8:
-    return VK_FORMAT_UNDEFINED;
   case TextureFormat::R_UNorm8:
     return VK_FORMAT_R8_UNORM;
   case TextureFormat::R_UNorm16:
@@ -72,20 +70,12 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
     return VK_FORMAT_R16_SFLOAT;
   case TextureFormat::R_UInt16:
     return VK_FORMAT_R16_UINT;
-  case TextureFormat::B5G5R5A1_UNorm:
-    return VK_FORMAT_B5G5R5A1_UNORM_PACK16;
-  case TextureFormat::B5G6R5_UNorm:
-    return VK_FORMAT_B5G6R5_UNORM_PACK16;
-  case TextureFormat::ABGR_UNorm4:
-    return VK_FORMAT_B4G4R4A4_UNORM_PACK16;
   case TextureFormat::RG_UNorm8:
     return VK_FORMAT_R8G8_UNORM;
   case TextureFormat::RG_UNorm16:
     return VK_FORMAT_R16G16_UNORM;
   case TextureFormat::BGRA_UNorm8:
     return VK_FORMAT_B8G8R8A8_UNORM;
-  case TextureFormat::BGRA_UNorm8_Rev:
-    return VK_FORMAT_UNDEFINED;
   case TextureFormat::RGBA_UNorm8:
     return VK_FORMAT_R8G8B8A8_UNORM;
   case TextureFormat::RGBA_SRGB:
@@ -110,8 +100,6 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
     return VK_FORMAT_R32G32B32A32_UINT;
   case TextureFormat::RGBA_F32:
     return VK_FORMAT_R32G32B32A32_SFLOAT;
-  case TextureFormat::RGB8_ETC1:
-    return VK_FORMAT_UNDEFINED;
   case TextureFormat::RGB8_ETC2:
     return VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK;
   case TextureFormat::SRGB8_ETC2:
@@ -120,10 +108,6 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
     return VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK;
   case TextureFormat::SRGB8_Punchthrough_A1_ETC2:
     return VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK;
-  case TextureFormat::RGBA8_EAC_ETC2:
-    return VK_FORMAT_UNDEFINED;
-  case TextureFormat::SRGB8_A8_EAC_ETC2:
-    return VK_FORMAT_UNDEFINED;
   case TextureFormat::RG_EAC_UNorm:
     return VK_FORMAT_EAC_R11G11_UNORM_BLOCK;
   case TextureFormat::RG_EAC_SNorm:
@@ -171,12 +155,6 @@ igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
     return TextureFormat::R_F16;
   case VK_FORMAT_R16_UINT:
     return TextureFormat::R_UInt16;
-  case VK_FORMAT_B5G5R5A1_UNORM_PACK16:
-    return TextureFormat::B5G5R5A1_UNorm;
-  case VK_FORMAT_B5G6R5_UNORM_PACK16:
-    return TextureFormat::B5G6R5_UNorm;
-  case VK_FORMAT_B4G4R4A4_UNORM_PACK16:
-    return TextureFormat::ABGR_UNorm4;
   case VK_FORMAT_R8G8_UNORM:
     return TextureFormat::RG_UNorm8;
   case VK_FORMAT_B8G8R8A8_UNORM:

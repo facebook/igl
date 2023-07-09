@@ -26,8 +26,8 @@ namespace vulkan {
 
 class Device;
 class EnhancedShaderDebuggingStore;
+class CommandBuffer;
 class CommandQueue;
-class ComputeCommandEncoder;
 class RenderCommandEncoder;
 class VulkanBuffer;
 class VulkanDevice;
@@ -55,8 +55,6 @@ struct DeviceQueues {
 };
 
 struct VulkanContextConfig {
-  // small default values are used to speed up debugging via RenderDoc and Validation Layers
-  // macOS: MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS is required when using this with MoltenVK
   uint32_t maxTextures = 512;
   uint32_t maxSamplers = 512;
   bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
@@ -65,9 +63,7 @@ struct VulkanContextConfig {
   bool enableSynchronizationValidation = false;
   igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
 
-  std::vector<CommandQueueType> userQueues;
-
-  uint32_t maxResourceCount = 3u;
+  std::vector<igl::CommandQueueType> userQueues;
 
   // owned by the application - should be alive until initContext() returns
   const void* pipelineCacheData = nullptr;
@@ -191,7 +187,7 @@ class VulkanContext final {
   friend class igl::vulkan::Device;
   friend class igl::vulkan::VulkanSwapchain;
   friend class igl::vulkan::CommandQueue;
-  friend class igl::vulkan::ComputeCommandEncoder;
+  friend class igl::vulkan::CommandBuffer;
   friend class igl::vulkan::RenderCommandEncoder;
 
   VkInstance vkInstance_ = VK_NULL_HANDLE;
@@ -224,7 +220,7 @@ class VulkanContext final {
 
  public:
   DeviceQueues deviceQueues_;
-  std::unordered_map<CommandQueueType, VulkanQueueDescriptor> userQueues_;
+  std::unordered_map<igl::CommandQueueType, VulkanQueueDescriptor> userQueues_;
   std::unique_ptr<igl::vulkan::VulkanDevice> device_;
   std::unique_ptr<igl::vulkan::VulkanSwapchain> swapchain_;
   std::unique_ptr<igl::vulkan::VulkanImmediateCommands> immediate_;
