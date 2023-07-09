@@ -24,9 +24,9 @@ class Framebuffer final : public IFramebuffer {
   ~Framebuffer() override = default;
 
   // Accessors
-  std::vector<size_t> getColorAttachmentIndices() const override;
-  std::shared_ptr<ITexture> getColorAttachment(size_t index) const override;
-  std::shared_ptr<ITexture> getResolveColorAttachment(size_t index) const override;
+  uint32_t getNumColorAttachments() const override;
+  std::shared_ptr<ITexture> getColorAttachment(uint32_t index) const override;
+  std::shared_ptr<ITexture> getResolveColorAttachment(uint32_t index) const override;
   std::shared_ptr<ITexture> getDepthAttachment() const override;
   std::shared_ptr<ITexture> getResolveDepthAttachment() const override;
   std::shared_ptr<ITexture> getStencilAttachment() const override;

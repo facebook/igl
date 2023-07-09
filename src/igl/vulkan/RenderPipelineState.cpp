@@ -280,28 +280,26 @@ VkPipeline RenderPipelineState::getVkPipeline(
   // Not all attachments are valid. We need to create color blend attachments only for active
   // attachments
   std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates;
-  colorBlendAttachmentStates.reserve(desc_.targetDesc.colorAttachments.size());
-  std::for_each(desc_.targetDesc.colorAttachments.begin(),
-                desc_.targetDesc.colorAttachments.end(),
-                [&colorBlendAttachmentStates](auto attachment) mutable {
-                  if (attachment.textureFormat != TextureFormat::Invalid) {
-                    if (!attachment.blendEnabled) {
-                      colorBlendAttachmentStates.push_back(
-                          ivkGetPipelineColorBlendAttachmentState_NoBlending());
-                    } else {
-                      colorBlendAttachmentStates.push_back(ivkGetPipelineColorBlendAttachmentState(
-                          attachment.blendEnabled,
-                          blendFactorToVkBlendFactor(attachment.srcRGBBlendFactor),
-                          blendFactorToVkBlendFactor(attachment.dstRGBBlendFactor),
-                          blendOpToVkBlendOp(attachment.rgbBlendOp),
-                          blendFactorToVkBlendFactor(attachment.srcAlphaBlendFactor),
-                          blendFactorToVkBlendFactor(attachment.dstAlphaBlendFactor),
-                          blendOpToVkBlendOp(attachment.alphaBlendOp),
-                          VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                              VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT));
-                    }
-                  }
-                });
+  colorBlendAttachmentStates.resize(desc_.numColorAttachments);
+
+  for (uint32_t i = 0; i != desc_.numColorAttachments; i++) {
+    const auto& attachment = desc_.colorAttachments[i];
+    IGL_ASSERT(attachment.textureFormat != TextureFormat::Invalid);
+    if (!attachment.blendEnabled) {
+      colorBlendAttachmentStates[i] = ivkGetPipelineColorBlendAttachmentState_NoBlending();
+    } else {
+      colorBlendAttachmentStates[i] = ivkGetPipelineColorBlendAttachmentState(
+          attachment.blendEnabled,
+          blendFactorToVkBlendFactor(attachment.srcRGBBlendFactor),
+          blendFactorToVkBlendFactor(attachment.dstRGBBlendFactor),
+          blendOpToVkBlendOp(attachment.rgbBlendOp),
+          blendFactorToVkBlendFactor(attachment.srcAlphaBlendFactor),
+          blendFactorToVkBlendFactor(attachment.dstAlphaBlendFactor),
+          blendOpToVkBlendOp(attachment.alphaBlendOp),
+          VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+              VK_COLOR_COMPONENT_A_BIT);
+    }
+  }
 
   const IShaderModule* vertexModule = desc_.shaderStages->getModule(Stage_Vertex);
   const IShaderModule* fragmentModule = desc_.shaderStages->getModule(Stage_Fragment);

@@ -48,7 +48,6 @@
 
 #include <igl/CommandBuffer.h>
 #include <igl/Device.h>
-#include <igl/RenderPipelineState.h>
 
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
@@ -822,22 +821,27 @@ void initIGL() {
       },
       nullptr);
 
-  renderPassOffscreen_.colorAttachments.push_back({
-      .loadAction = LoadAction::Clear,
-      .storeAction = kNumSamplesMSAA > 1 ? StoreAction::MsaaResolve : StoreAction::Store,
-      .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
-  });
-  renderPassOffscreen_.depthStencilAttachment = {
-      .loadAction = LoadAction::Clear,
-      .storeAction = StoreAction::DontCare,
-      .clearDepth = 1.0f,
-  };
+  renderPassOffscreen_ = {
+      .numColorAttachments = 1,
+      .colorAttachments = {{
+          .loadAction = LoadAction::Clear,
+          .storeAction = kNumSamplesMSAA > 1 ? StoreAction::MsaaResolve : StoreAction::Store,
+          .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
+      }},
+      .depthStencilAttachment = {
+          .loadAction = LoadAction::Clear,
+          .storeAction = StoreAction::DontCare,
+          .clearDepth = 1.0f,
+      }};
 
-  renderPassMain_.colorAttachments.push_back({
-      .loadAction = LoadAction::Clear,
-      .storeAction = StoreAction::Store,
-      .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
-  });
+  renderPassMain_ = {.numColorAttachments = 1,
+                     .colorAttachments = {
+                         {
+                             .loadAction = LoadAction::Clear,
+                             .storeAction = StoreAction::Store,
+                             .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
+                         },
+                     }};
   renderPassMain_.depthStencilAttachment = {
       .loadAction = LoadAction::Clear,
       .storeAction = StoreAction::DontCare,
@@ -1143,11 +1147,11 @@ void createRenderPipelines() {
   {
     RenderPipelineDesc desc;
 
-    desc.targetDesc.colorAttachments.resize(1);
-    desc.targetDesc.colorAttachments[0].textureFormat = fbMain_->getColorAttachment(0)->getFormat();
+    desc.numColorAttachments = 1;
+    desc.colorAttachments[0] = {.textureFormat = fbMain_->getColorAttachment(0)->getFormat()};
 
     if (fbMain_->getDepthAttachment()) {
-      desc.targetDesc.depthAttachmentFormat = fbMain_->getDepthAttachment()->getFormat();
+      desc.depthAttachmentFormat = fbMain_->getDepthAttachment()->getFormat();
     }
 
     desc.vertexInputState = vdesc;
@@ -1171,8 +1175,7 @@ void createRenderPipelines() {
   // shadow
   {
     RenderPipelineDesc desc;
-    desc.targetDesc.colorAttachments.clear();
-    desc.targetDesc.depthAttachmentFormat = fbShadowMap_->getDepthAttachment()->getFormat();
+    desc.depthAttachmentFormat = fbShadowMap_->getDepthAttachment()->getFormat();
     desc.vertexInputState = vdescs;
     desc.shaderStages = device_->createShaderStages(kShadowVS,
                                                     "Shader Module: shadow (vert)",
@@ -1186,10 +1189,10 @@ void createRenderPipelines() {
   // fullscreen
   {
     RenderPipelineDesc desc;
-    desc.targetDesc.colorAttachments.resize(1);
-    desc.targetDesc.colorAttachments[0].textureFormat = fbMain_->getColorAttachment(0)->getFormat();
+    desc.numColorAttachments = 1;
+    desc.colorAttachments[0] = {.textureFormat = fbMain_->getColorAttachment(0)->getFormat()};
     if (fbMain_->getDepthAttachment()) {
-      desc.targetDesc.depthAttachmentFormat = fbMain_->getDepthAttachment()->getFormat();
+      desc.depthAttachmentFormat = fbMain_->getDepthAttachment()->getFormat();
     }
     desc.shaderStages = device_->createShaderStages(kCodeFullscreenVS,
                                                     "Shader Module: fullscreen (vert)",
@@ -1209,11 +1212,11 @@ void createRenderPipelineSkybox() {
   IGL_ASSERT(fbMain_.get());
 
   RenderPipelineDesc desc;
-  desc.targetDesc.colorAttachments.resize(1);
-  desc.targetDesc.colorAttachments[0].textureFormat = fbMain_->getColorAttachment(0)->getFormat();
+  desc.numColorAttachments = 1;
+  desc.colorAttachments[0] = {.textureFormat = fbMain_->getColorAttachment(0)->getFormat()};
 
   if (fbMain_->getDepthAttachment()) {
-    desc.targetDesc.depthAttachmentFormat = fbMain_->getDepthAttachment()->getFormat();
+    desc.depthAttachmentFormat = fbMain_->getDepthAttachment()->getFormat();
   }
 
   desc.shaderStages = device_->createShaderStages(
@@ -1257,9 +1260,11 @@ std::shared_ptr<ITexture> getNativeDepthDrawable() {
 }
 
 void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = nativeDrawable;
-  framebufferDesc.depthAttachment.texture = getNativeDepthDrawable();
+  const FramebufferDesc framebufferDesc = {
+      .numColorAttachments = 1,
+      .colorAttachments = {{.texture = nativeDrawable}},
+      .depthAttachment = {.texture = getNativeDepthDrawable()},
+  };
   fbMain_ = device_->createFramebuffer(framebufferDesc, nullptr);
   IGL_ASSERT(fbMain_.get());
 }
@@ -1278,9 +1283,9 @@ void createShadowMap() {
   std::shared_ptr<ITexture> shadowMap = device_->createTexture(desc, &ret);
   IGL_ASSERT(ret.isOk());
 
-  FramebufferDesc framebufferDesc;
-
-  framebufferDesc.depthAttachment.texture = shadowMap;
+  const FramebufferDesc framebufferDesc = {
+      .depthAttachment = {.texture = shadowMap},
+  };
   fbShadowMap_ = device_->createFramebuffer(framebufferDesc, nullptr);
   IGL_ASSERT(fbShadowMap_.get());
 }
@@ -1319,9 +1324,11 @@ void createOffscreenFramebuffer() {
   std::shared_ptr<ITexture> texColor = device_->createTexture(descColor, &ret);
   IGL_ASSERT(ret.isOk());
 
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = texColor;
-  framebufferDesc.depthAttachment.texture = texDepth;
+  FramebufferDesc framebufferDesc = {
+      .numColorAttachments = 1,
+      .colorAttachments = {{.texture = texColor}},
+      .depthAttachment = {.texture = texDepth},
+  };
   if (kNumSamplesMSAA > 1) {
     auto descColorResolve =
         TextureDesc::new2D(format, w, h, usage, "Offscreen framebuffer (c - resolve)");

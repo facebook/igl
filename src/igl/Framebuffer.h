@@ -8,8 +8,6 @@
 #pragma once
 
 #include <igl/Common.h>
-#include <unordered_map>
-#include <vector>
 
 namespace igl {
 
@@ -27,7 +25,8 @@ struct FramebufferDesc {
   };
 
   /** @brief Mapping of index to specific color texture attachments */
-  std::unordered_map<size_t, AttachmentDesc> colorAttachments;
+  uint32_t numColorAttachments = 0;
+  AttachmentDesc colorAttachments[RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX];
   /** @brief The depth texture attachment */
   AttachmentDesc depthAttachment;
   /** @brief The stencil texture attachment */
@@ -44,12 +43,11 @@ class IFramebuffer {
   virtual ~IFramebuffer() = default;
 
   // Accessors
-  /** @brief Retrieve array of all valid color and resolve color attachment indices */
-  virtual std::vector<size_t> getColorAttachmentIndices() const = 0;
+  virtual uint32_t getNumColorAttachments() const = 0;
   /** @brief Retrieve a specific color attachment by index */
-  virtual std::shared_ptr<ITexture> getColorAttachment(size_t index) const = 0;
+  virtual std::shared_ptr<ITexture> getColorAttachment(uint32_t index) const = 0;
   /** @brief Retrieve a specific resolve color attachment by index */
-  virtual std::shared_ptr<ITexture> getResolveColorAttachment(size_t index) const = 0;
+  virtual std::shared_ptr<ITexture> getResolveColorAttachment(uint32_t index) const = 0;
   /** @brief Retrieve depth attachment */
   virtual std::shared_ptr<ITexture> getDepthAttachment() const = 0;
   /** @brief Retrieve resolve depth attachment */

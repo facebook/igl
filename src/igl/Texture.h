@@ -85,52 +85,6 @@ enum class TextureType : uint8_t {
   Cube,
 };
 
-enum TextureFormat : uint8_t {
-  Invalid = 0,
-
-  // 8 bpp
-  R_UNorm8,
-  // 16 bpp
-  R_F16,
-  R_UInt16,
-  R_UNorm16,
-  RG_UNorm8,
-
-  // 32 bpp
-  RGBA_UNorm8,
-  BGRA_UNorm8,
-  RGBA_SRGB,
-  BGRA_SRGB,
-  RG_F16,
-  RG_UInt16,
-  RG_UNorm16,
-  RGB10_A2_UNorm_Rev,
-  RGB10_A2_Uint_Rev,
-  BGR10_A2_Unorm,
-  R_F32,
-  // 64 bpp
-  RGBA_F16,
-  // 128 bpp
-  RGBA_UInt32,
-  RGBA_F32,
-  // Compressed
-  RGB8_ETC2,
-  SRGB8_ETC2,
-  RGB8_Punchthrough_A1_ETC2,
-  SRGB8_Punchthrough_A1_ETC2,
-  RG_EAC_UNorm,
-  RG_EAC_SNorm,
-  R_EAC_UNorm,
-  R_EAC_SNorm,
-  RGBA_BC7_UNORM_4x4,
-
-  // Depth and Stencil formats
-  Z_UNorm16,
-  Z_UNorm24,
-  Z_UNorm32,
-  S8_UInt_Z24_UNorm,
-};
-
 bool isCompressedTextureFormat(TextureFormat format);
 bool isDepthOrStencilFormat(TextureFormat format);
 

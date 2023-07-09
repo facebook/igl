@@ -28,7 +28,6 @@
 
 #include <igl/CommandBuffer.h>
 #include <igl/Device.h>
-#include <igl/RenderPipelineState.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
@@ -170,6 +169,8 @@ static void initIGL() {
     IGL_ASSERT(device_.get());
   }
 
+  renderPass_.numColorAttachments = kNumColorAttachments;
+
   // first color attachment
   for (auto i = 0; i < kNumColorAttachments; ++i) {
     // Generate sparse color attachments by skipping alternate slots
@@ -197,17 +198,17 @@ static void createRenderPipeline() {
 
   RenderPipelineDesc desc;
 
-  desc.targetDesc.colorAttachments.resize(kNumColorAttachments);
+  desc.numColorAttachments = kNumColorAttachments;
 
   for (auto i = 0; i < kNumColorAttachments; ++i) {
     if (framebuffer_->getColorAttachment(i)) {
-      desc.targetDesc.colorAttachments[i].textureFormat =
+      desc.colorAttachments[i].textureFormat =
           framebuffer_->getColorAttachment(i)->getFormat();
     }
   }
 
   if (framebuffer_->getDepthAttachment()) {
-    desc.targetDesc.depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat();
+    desc.depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat();
   }
 
   desc.shaderStages = device_->createShaderStages(
@@ -228,8 +229,10 @@ static std::shared_ptr<ITexture> getNativeDrawable() {
 }
 
 static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = nativeDrawable;
+  FramebufferDesc framebufferDesc = {
+     .numColorAttachments = kNumColorAttachments,
+      .colorAttachments = {{.texture = nativeDrawable}},
+  };
 
   for (auto i = 1; i < kNumColorAttachments; ++i) {
     // Generate sparse color attachments by skipping alternate slots
@@ -283,7 +286,6 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
 int main(int argc, char* argv[]) {
   minilog::initialize(nullptr, {.threadNames = false});
 
-  renderPass_.colorAttachments.resize(kNumColorAttachments);
   initWindow(&window_);
   initIGL();
 

@@ -30,7 +30,6 @@
 #include <igl/CommandBuffer.h>
 #include <igl/Device.h>
 #include <igl/FPSCounter.h>
-#include <igl/RenderPipelineState.h>
 
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
@@ -376,11 +375,12 @@ static void initIGL() {
 
   sampler_ = device_->createSamplerState({.debugName = "Sampler: linear"}, nullptr);
 
-  renderPass_.colorAttachments.push_back({
-      .loadAction = LoadAction::Clear,
-      .storeAction = StoreAction::Store,
-      .clearColor = {1.0f, 0.0f, 0.0f, 1.0f},
-  });
+  renderPass_ = {.numColorAttachments = 1,
+                 .colorAttachments = {{
+                     .loadAction = LoadAction::Clear,
+                     .storeAction = StoreAction::Store,
+                     .clearColor = {1.0f, 0.0f, 0.0f, 1.0f},
+                 }}};
 #if TINY_TEST_USE_DEPTH_BUFFER
   renderPass_.depthStencilAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0};
 #else
@@ -419,9 +419,12 @@ static void createRenderPipeline() {
 
   RenderPipelineDesc desc;
 
-  desc.targetDesc.colorAttachments.resize(1);
-  desc.targetDesc.colorAttachments[0].textureFormat =
-      framebuffer_->getColorAttachment(0)->getFormat();
+  desc.numColorAttachments = 1;
+  desc.colorAttachments[0] = {.textureFormat = framebuffer_->getColorAttachment(0)->getFormat()};
+
+  if (framebuffer_->getDepthAttachment()) {
+    desc.depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat();
+  }
 
   desc.vertexInputState = vdesc;
   desc.shaderStages = device_->createShaderStages(
@@ -447,7 +450,10 @@ static std::shared_ptr<ITexture> getVulkanNativeDrawable() {
 }
 
 static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
-  framebufferDesc_.colorAttachments[0].texture = nativeDrawable;
+  framebufferDesc_ = {
+      .numColorAttachments = 1,
+      .colorAttachments = {{.texture = nativeDrawable}},
+  };
 
   framebuffer_ = device_->createFramebuffer(framebufferDesc_, nullptr);
   IGL_ASSERT(framebuffer_.get());

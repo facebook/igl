@@ -10,7 +10,6 @@
 #include <igl/Buffer.h>
 #include <igl/Common.h>
 #include <igl/Framebuffer.h>
-#include <igl/RenderPipelineState.h>
 
 namespace igl {
 

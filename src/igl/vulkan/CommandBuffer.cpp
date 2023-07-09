@@ -274,8 +274,8 @@ void CommandBuffer::cmdBeginRenderPass(const RenderPassDesc& renderPass,
   }
 
   // prepare all the color attachments
-  const auto& indices = framebuffer->getColorAttachmentIndices();
-  for (auto i : indices) {
+  const uint32_t numColorAttachments = framebuffer->getNumColorAttachments();
+  for (uint32_t i = 0; i != numColorAttachments; i++) {
     const auto colorTex = framebuffer->getColorAttachment(i);
     transitionColorAttachment(wrapper_.cmdBuf_, colorTex);
     // handle MSAA
@@ -304,36 +304,24 @@ void CommandBuffer::cmdBeginRenderPass(const RenderPassDesc& renderPass,
 
   const FramebufferDesc& desc = framebuffer_->getDesc();
 
-  IGL_ASSERT(desc.colorAttachments.size() <= RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX);
+  IGL_ASSERT(desc.numColorAttachments <= RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX);
 
   std::vector<VkClearValue> clearValues;
   uint32_t mipLevel = 0;
 
   VulkanRenderPassBuilder builder;
 
-  // All attachments may not valid.  Track active attachments
-  size_t largestIndexPlusOne = 0;
-  for (const auto& attachment : desc.colorAttachments) {
-    largestIndexPlusOne = largestIndexPlusOne < attachment.first ? attachment.first
-                                                                 : largestIndexPlusOne;
-  }
-
-  largestIndexPlusOne += 1;
-
   VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
 
-  for (size_t i = 0; i < largestIndexPlusOne; ++i) {
-    auto it = desc.colorAttachments.find(i);
-    if (it == desc.colorAttachments.end()) {
-      continue;
-    }
-    IGL_ASSERT(it->second.texture.get());
+  for (uint32_t i = 0; i != desc.numColorAttachments; i++) {
+    auto& attachment = desc.colorAttachments[i];
+    IGL_ASSERT(attachment.texture.get());
 
-    const auto& colorTexture = static_cast<vulkan::Texture&>(*it->second.texture);
+    const auto& colorTexture = static_cast<vulkan::Texture&>(*attachment.texture);
 
     // Specifically using renderPass.colorAttachments.size() in case we somehow
     // get into this loop even when renderPass.colorAttachments.empty() == true
-    if (i >= renderPass.colorAttachments.size()) {
+    if (i >= renderPass.numColorAttachments) {
       IGL_ASSERT_MSG(
           false,
           "Framebuffer color attachment count larger than renderPass color attachment count");
@@ -363,9 +351,9 @@ void CommandBuffer::cmdBeginRenderPass(const RenderPassDesc& renderPass,
     samples = colorTexture.getVulkanTexture().getVulkanImage().samples_;
     // handle MSAA
     if (descColor.storeAction == StoreAction::MsaaResolve) {
-      IGL_ASSERT_MSG(it->second.resolveTexture != nullptr,
+      IGL_ASSERT_MSG(attachment.resolveTexture != nullptr,
                      "Framebuffer attachment should contain a resolve texture");
-      const auto& colorResolveTexture = static_cast<vulkan::Texture&>(*it->second.resolveTexture);
+      const auto& colorResolveTexture = static_cast<vulkan::Texture&>(*attachment.resolveTexture);
       builder.addColorResolve(textureFormatToVkFormat(colorResolveTexture.getFormat()),
                               VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                               VK_ATTACHMENT_STORE_OP_STORE);
@@ -432,8 +420,9 @@ void CommandBuffer::cmdEndRenderPass() {
   // set image layouts after the render pass
   const FramebufferDesc& desc = static_cast<const Framebuffer&>((*framebuffer_)).getDesc();
 
-  for (const auto& attachment : desc.colorAttachments) {
-    const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*attachment.second.texture.get());
+  for (uint32_t i = 0; i != desc.numColorAttachments; i++) {
+    const auto& attachment = desc.colorAttachments[i];
+    const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*attachment.texture.get());
     // this must match the final layout of the render pass
     tex.getVulkanTexture().getVulkanImage().imageLayout_ = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
   }
@@ -489,8 +478,7 @@ void CommandBuffer::cmdBindRenderPipelineState(
 
   const RenderPipelineDesc& desc = rps->getRenderPipelineDesc();
 
-  const bool hasDepthAttachmentPipeline =
-      desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid;
+  const bool hasDepthAttachmentPipeline = desc.depthAttachmentFormat != TextureFormat::Invalid;
   const bool hasDepthAttachmentPass = framebuffer_ ? (framebuffer_->getDepthAttachment() != nullptr)
                                                    : false;
 

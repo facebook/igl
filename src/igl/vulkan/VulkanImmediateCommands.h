@@ -22,7 +22,7 @@ class VulkanImmediateCommands final {
  public:
   // the maximum number of command buffers which can similtaneously exist in the system; when we run
   // out of buffers, we stall and wait until an existing buffer becomes available
-  static constexpr uint32_t kMaxCommandBuffers = 16;
+  static constexpr uint32_t kMaxCommandBuffers = 64;
 
   VulkanImmediateCommands(VkDevice device, uint32_t queueFamilyIndex, const char* debugName);
   ~VulkanImmediateCommands();

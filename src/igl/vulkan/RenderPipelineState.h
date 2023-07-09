@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <igl/RenderPipelineState.h>
 #include <igl/vulkan/Common.h>
+
 #include <unordered_map>
 
 namespace igl {

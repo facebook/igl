@@ -28,28 +28,20 @@
 namespace igl {
 namespace vulkan {
 
-std::vector<size_t> Framebuffer::getColorAttachmentIndices() const {
-  std::vector<size_t> indices;
-
-  indices.reserve(desc_.colorAttachments.size());
-
-  for (const auto& attachment : desc_.colorAttachments) {
-    indices.push_back(attachment.first);
-  }
-
-  return indices;
+uint32_t Framebuffer::getNumColorAttachments() const {
+  return desc_.numColorAttachments;
 }
 
-std::shared_ptr<igl::ITexture> Framebuffer::getColorAttachment(size_t index) const {
-  const auto it = desc_.colorAttachments.find(index);
+std::shared_ptr<igl::ITexture> Framebuffer::getColorAttachment(uint32_t index) const {
+  IGL_ASSERT(index < desc_.numColorAttachments);
 
-  return it != desc_.colorAttachments.end() ? it->second.texture : nullptr;
+  return desc_.colorAttachments[index].texture;
 }
 
-std::shared_ptr<ITexture> Framebuffer::getResolveColorAttachment(size_t index) const {
-  const auto it = desc_.colorAttachments.find(index);
+std::shared_ptr<ITexture> Framebuffer::getResolveColorAttachment(uint32_t index) const {
+  IGL_ASSERT(index < desc_.numColorAttachments);
 
-  return it != desc_.colorAttachments.end() ? it->second.resolveTexture : nullptr;
+  return desc_.colorAttachments[index].resolveTexture;
 }
 
 std::shared_ptr<igl::ITexture> Framebuffer::getDepthAttachment() const {
@@ -179,7 +171,8 @@ std::shared_ptr<igl::ITexture> Framebuffer::updateDrawable(std::shared_ptr<IText
   IGL_PROFILER_FUNCTION();
 
   if (!texture && getColorAttachment(0)) {
-    desc_.colorAttachments.erase(0);
+    desc_.colorAttachments[0].texture = nullptr;
+    desc_.colorAttachments[0].resolveTexture = nullptr;
   }
 
   if (texture && getColorAttachment(0) != texture) {
@@ -212,8 +205,8 @@ Framebuffer::Framebuffer(Device& device, FramebufferDesc desc) :
     IGL_ASSERT_MSG(tex.getVkFormat() != VK_FORMAT_UNDEFINED, "Invalid texture format");
   };
 
-  for (const auto& attachment : desc_.colorAttachments) {
-    const auto& colorTexture = static_cast<vulkan::Texture&>(*attachment.second.texture);
+  for (uint32_t i = 0; i != desc_.numColorAttachments; i++) {
+    const auto& colorTexture = static_cast<vulkan::Texture&>(*desc_.colorAttachments[i].texture);
     ensureSize(colorTexture);
   }
 
@@ -234,28 +227,16 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel, VkRenderPass pass
   // VulkanFramebuffer via unordered_map. The vector of attachments is a key in the hash table.
   Attachments attachments;
 
-  size_t largestIndexPlusOne = 0;
-  for (const auto& attachment : desc_.colorAttachments) {
-    largestIndexPlusOne = largestIndexPlusOne < attachment.first ? attachment.first
-                                                                 : largestIndexPlusOne;
-  }
+  for (uint32_t i = 0; i != desc_.numColorAttachments; i++) {
+    auto& attachment = desc_.colorAttachments[i];
+    IGL_ASSERT(attachment.texture.get());
 
-  largestIndexPlusOne += 1;
-
-  for (size_t i = 0; i < largestIndexPlusOne; ++i) {
-    auto it = desc_.colorAttachments.find(i);
-    // skip invalid attachments
-    if (it == desc_.colorAttachments.end()) {
-      continue;
-    }
-    IGL_ASSERT(it->second.texture.get());
-
-    const auto& colorTexture = static_cast<vulkan::Texture&>(*it->second.texture);
+    const auto& colorTexture = static_cast<vulkan::Texture&>(*attachment.texture);
     attachments.attachments_.push_back(colorTexture.getVkImageViewForFramebuffer(mipLevel));
     // handle color MSAA
-    if (it->second.resolveTexture) {
+    if (attachment.resolveTexture) {
       IGL_ASSERT(mipLevel == 0);
-      const auto& colorResolveTexture = static_cast<vulkan::Texture&>(*it->second.resolveTexture);
+      const auto& colorResolveTexture = static_cast<vulkan::Texture&>(*attachment.resolveTexture);
       attachments.attachments_.push_back(colorResolveTexture.getVkImageViewForFramebuffer(0));
     }
   }

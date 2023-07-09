@@ -82,8 +82,6 @@ void Device::submit(igl::CommandQueueType queueType,
 
   if (shouldPresent) {
     ctx.present();
-  } else {
-    ctx.waitIdle();
   }
 
   ctx.processDeferredTasks();
@@ -153,8 +151,8 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
     return nullptr;
   }
 
-  const bool hasColorAttachments = !desc.targetDesc.colorAttachments.empty();
-  const bool hasDepthAttachment = desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid;
+  const bool hasColorAttachments = desc.numColorAttachments > 0;
+  const bool hasDepthAttachment = desc.depthAttachmentFormat != TextureFormat::Invalid;
   const bool hasAnyAttachments = hasColorAttachments || hasDepthAttachment;
   if (!IGL_VERIFY(hasAnyAttachments)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Need at least one attachment");

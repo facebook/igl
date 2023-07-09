@@ -9,7 +9,6 @@
 
 #include <igl/CommandBuffer.h>
 #include <igl/Framebuffer.h>
-#include <igl/RenderPipelineState.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Framebuffer.h>
 #include <igl/vulkan/RenderPipelineState.h>

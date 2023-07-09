@@ -14,13 +14,14 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include <igl/Macros.h>
 
 #include <minilog/minilog.h>
 
 namespace igl {
+
+struct ShaderStages;
 
 bool _IGLVerify(bool cond, const char* func, const char* file, int line, const char* format, ...);
 
@@ -95,6 +96,52 @@ ScopeGuard<T> operator+(ScopeGuardOnExit, T&& fn) {
   auto FB_ANONYMOUS_VARIABLE(SCOPE_EXIT_STATE) = ScopeGuardOnExit() + [&]() noexcept
 
 namespace igl {
+
+enum TextureFormat : uint8_t {
+  Invalid = 0,
+
+  // 8 bpp
+  R_UNorm8,
+  // 16 bpp
+  R_F16,
+  R_UInt16,
+  R_UNorm16,
+  RG_UNorm8,
+
+  // 32 bpp
+  RGBA_UNorm8,
+  BGRA_UNorm8,
+  RGBA_SRGB,
+  BGRA_SRGB,
+  RG_F16,
+  RG_UInt16,
+  RG_UNorm16,
+  RGB10_A2_UNorm_Rev,
+  RGB10_A2_Uint_Rev,
+  BGR10_A2_Unorm,
+  R_F32,
+  // 64 bpp
+  RGBA_F16,
+  // 128 bpp
+  RGBA_UInt32,
+  RGBA_F32,
+  // Compressed
+  RGB8_ETC2,
+  SRGB8_ETC2,
+  RGB8_Punchthrough_A1_ETC2,
+  SRGB8_Punchthrough_A1_ETC2,
+  RG_EAC_UNorm,
+  RG_EAC_SNorm,
+  R_EAC_UNorm,
+  R_EAC_SNorm,
+  RGBA_BC7_UNORM_4x4,
+
+  // Depth and Stencil formats
+  Z_UNorm16,
+  Z_UNorm24,
+  Z_UNorm32,
+  S8_UInt_Z24_UNorm,
+};
 
 /**
  * @brief Represents a type of a physical device for graphics/compute purposes
@@ -350,6 +397,170 @@ enum BlendFactor : uint8_t {
   BlendFactor_OneMinusSrc1Alpha
 };
 
+struct StencilStateDesc {
+  StencilOp stencilFailureOp = StencilOp_Keep;
+  StencilOp depthFailureOp = StencilOp_Keep;
+  StencilOp depthStencilPassOp = StencilOp_Keep;
+  CompareOp stencilCompareOp = CompareOp_AlwaysPass;
+  uint32_t readMask = (uint32_t)~0;
+  uint32_t writeMask = (uint32_t)~0;
+};
+
+struct DepthStencilState {
+  CompareOp compareOp = CompareOp_AlwaysPass;
+  bool isDepthWriteEnabled = false;
+  StencilStateDesc backFaceStencil;
+  StencilStateDesc frontFaceStencil;
+};
+
+using ColorWriteBits = uint8_t;
+
+enum ColorWriteMask : ColorWriteBits {
+  ColorWriteMask_Disabled = 0,
+  ColorWriteMask_Red = 1 << 0,
+  ColorWriteMask_Green = 1 << 1,
+  ColorWriteMask_Blue = 1 << 2,
+  ColorWriteMask_Alpha = 1 << 3,
+  ColorWriteMask_All =
+      ColorWriteMask_Red | ColorWriteMask_Green | ColorWriteMask_Blue | ColorWriteMask_Alpha,
+};
+
+enum PolygonMode : uint8_t {
+  PolygonMode_Fill = 0,
+  PolygonMode_Line = 1,
+};
+
+enum class VertexAttributeFormat {
+  Float1 = 0,
+  Float2,
+  Float3,
+  Float4,
+
+  Byte1,
+  Byte2,
+  Byte3,
+  Byte4,
+
+  UByte1,
+  UByte2,
+  UByte3,
+  UByte4,
+
+  Short1,
+  Short2,
+  Short3,
+  Short4,
+
+  UShort1,
+  UShort2,
+  UShort3,
+  UShort4,
+
+  Byte2Norm,
+  Byte4Norm,
+
+  UByte2Norm,
+  UByte4Norm,
+
+  Short2Norm,
+  Short4Norm,
+
+  UShort2Norm,
+  UShort4Norm,
+
+  Int1,
+  Int2,
+  Int3,
+  Int4,
+
+  UInt1,
+  UInt2,
+  UInt3,
+  UInt4,
+
+  HalfFloat1,
+  HalfFloat2,
+  HalfFloat3,
+  HalfFloat4,
+
+  Int_2_10_10_10_REV, // standard format to store normal vectors
+};
+
+enum VertexSampleFunction {
+  VertexSampleFunction_PerVertex,
+  VertexSampleFunction_Instance,
+};
+
+struct VertexAttribute {
+  /** @brief A buffer which contains this attribute stream */
+  uint32_t bufferIndex = 0;
+  /** @brief Per-element format */
+  VertexAttributeFormat format = VertexAttributeFormat::Float1;
+  /** @brief An offset where the first element of this attribute stream starts */
+  uintptr_t offset = 0;
+  uint32_t location = 0;
+
+  VertexAttribute() = default;
+  VertexAttribute(size_t bufferIndex,
+                  VertexAttributeFormat format,
+                  uintptr_t offset,
+                  uint32_t location) :
+    bufferIndex(bufferIndex), format(format), offset(offset), location(location) {}
+};
+
+struct VertexInputBinding {
+  uint32_t stride = 0;
+  VertexSampleFunction sampleFunction = VertexSampleFunction_PerVertex;
+  size_t sampleRate = 1;
+};
+
+struct VertexInputStateDesc {
+  enum { IGL_VERTEX_ATTRIBUTES_MAX = 16 };
+  enum { IGL_VERTEX_BUFFER_MAX = 16 };
+  uint32_t numAttributes = 0;
+  VertexAttribute attributes[IGL_VERTEX_ATTRIBUTES_MAX];
+  uint32_t numInputBindings = 0;
+  VertexInputBinding inputBindings[IGL_VERTEX_BUFFER_MAX];
+};
+
+struct ColorAttachment {
+  TextureFormat textureFormat = TextureFormat::Invalid;
+  ColorWriteBits colorWriteBits = ColorWriteMask_All;
+  bool blendEnabled = false;
+  BlendOp rgbBlendOp = BlendOp::BlendOp_Add;
+  BlendOp alphaBlendOp = BlendOp::BlendOp_Add;
+  BlendFactor srcRGBBlendFactor = BlendFactor_One;
+  BlendFactor srcAlphaBlendFactor = BlendFactor_One;
+  BlendFactor dstRGBBlendFactor = BlendFactor_Zero;
+  BlendFactor dstAlphaBlendFactor = BlendFactor_Zero;
+};
+
+struct RenderPipelineDesc {
+  enum { IGL_COLOR_ATTACHMENTS_MAX = 4 };
+
+  igl::VertexInputStateDesc vertexInputState;
+  std::shared_ptr<ShaderStages> shaderStages;
+
+  uint32_t numColorAttachments = 0;
+  ColorAttachment colorAttachments[IGL_COLOR_ATTACHMENTS_MAX] = {};
+  TextureFormat depthAttachmentFormat = TextureFormat::Invalid;
+  TextureFormat stencilAttachmentFormat = TextureFormat::Invalid;
+
+  CullMode cullMode = igl::CullMode_None;
+  WindingMode frontFaceWinding = igl::WindingMode_CCW;
+  PolygonMode polygonMode = igl::PolygonMode_Fill;
+
+  uint32_t sampleCount = 1u;
+
+  std::string debugName;
+};
+
+class IRenderPipelineState {
+ public:
+  IRenderPipelineState() = default;
+  virtual ~IRenderPipelineState() = default;
+};
+
 enum class LoadAction : uint8_t {
   DontCare,
   Load,
@@ -373,7 +584,8 @@ struct AttachmentDesc {
 };
 
 struct RenderPassDesc {
-  std::vector<AttachmentDesc> colorAttachments;
+  uint32_t numColorAttachments = 0;
+  AttachmentDesc colorAttachments[RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX];
   AttachmentDesc depthStencilAttachment;
 };
 
