@@ -10,7 +10,7 @@
 #include <igl/Buffer.h>
 #include <igl/Common.h>
 #include <igl/Framebuffer.h>
-#include <igl/RenderCommandEncoder.h>
+#include <igl/RenderPipelineState.h>
 
 namespace igl {
 
@@ -23,31 +23,58 @@ class ICommandBuffer {
  public:
   virtual ~ICommandBuffer() = default;
 
-  virtual std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
-      const RenderPassDesc& renderPass,
-      std::shared_ptr<IFramebuffer> framebuffer,
-      Result* outResult) = 0;
-  // Use an overload here instead of a default parameter in a pure virtual function.
-  std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
-      const RenderPassDesc& renderPass,
-      std::shared_ptr<IFramebuffer> framebuffer) {
-    return createRenderCommandEncoder(renderPass, std::move(framebuffer), nullptr);
-  }
-
   virtual void present(std::shared_ptr<ITexture> surface) const = 0;
   virtual void waitUntilCompleted() = 0;
-
-  virtual void pushDebugGroupLabel(const std::string& label,
-                                   const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
-  virtual void insertDebugEventLabel(const std::string& label,
-                                     const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
-  virtual void popDebugGroupLabel() const = 0;
-
   virtual void useComputeTexture(const std::shared_ptr<ITexture>& texture) = 0;
-  virtual void bindPushConstants(size_t offset, const void* data, size_t length) = 0;
-  virtual void bindComputePipelineState(
+
+  virtual void cmdPushDebugGroupLabel(const std::string& label,
+                                      const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
+  virtual void cmdInsertDebugEventLabel(const std::string& label,
+                                        const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
+  virtual void cmdPopDebugGroupLabel() const = 0;
+
+  virtual void cmdBindComputePipelineState(
       const std::shared_ptr<IComputePipelineState>& pipelineState) = 0;
-  virtual void dispatchThreadGroups(const Dimensions& threadgroupCount) = 0;
+  virtual void cmdDispatchThreadGroups(const Dimensions& threadgroupCount) = 0;
+
+  virtual void cmdBeginRenderPass(const RenderPassDesc& renderPass,
+                                  const std::shared_ptr<IFramebuffer>& framebuffer) = 0;
+  virtual void cmdEndRenderPass() = 0;
+
+  virtual void cmdBindViewport(const Viewport& viewport) = 0;
+  virtual void cmdBindScissorRect(const ScissorRect& rect) = 0;
+
+  virtual void cmdBindRenderPipelineState(
+      const std::shared_ptr<IRenderPipelineState>& pipelineState) = 0;
+  virtual void cmdBindDepthStencilState(const DepthStencilState& state) = 0;
+
+  virtual void cmdBindVertexBuffer(uint32_t index,
+                                   const std::shared_ptr<IBuffer>& buffer,
+                                   size_t bufferOffset) = 0;
+  virtual void cmdPushConstants(size_t offset, const void* data, size_t length) = 0;
+
+  virtual void cmdDraw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) = 0;
+  virtual void cmdDrawIndexed(PrimitiveType primitiveType,
+                              size_t indexCount,
+                              IndexFormat indexFormat,
+                              IBuffer& indexBuffer,
+                              size_t indexBufferOffset) = 0;
+  virtual void cmdDrawIndirect(PrimitiveType primitiveType,
+                               IBuffer& indirectBuffer,
+                               size_t indirectBufferOffset,
+                               uint32_t drawCount,
+                               uint32_t stride = 0) = 0;
+  virtual void cmdDrawIndexedIndirect(PrimitiveType primitiveType,
+                                      IndexFormat indexFormat,
+                                      IBuffer& indexBuffer,
+                                      IBuffer& indirectBuffer,
+                                      size_t indirectBufferOffset,
+                                      uint32_t drawCount,
+                                      uint32_t stride = 0) = 0;
+
+  virtual void cmdSetStencilReferenceValues(uint32_t frontValue, uint32_t backValue) = 0;
+  virtual void cmdSetBlendColor(Color color) = 0;
+  virtual void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) = 0;
 };
 
 } // namespace igl

@@ -214,8 +214,7 @@ VulkanContext::~VulkanContext() {
   }
   
   dslBindless_.reset(nullptr);
-  pipelineLayoutGraphics_.reset(nullptr);
-  pipelineLayoutCompute_.reset(nullptr);
+  pipelineLayout_.reset(nullptr);
   swapchain_.reset(nullptr); // Swapchain has to be destroyed prior to Surface
 
   waitDeferredTasks();
@@ -382,13 +381,13 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   LLOGL("Vulkan physical device: %s\n", vkPhysicalDeviceProperties2_.properties.deviceName);
   LLOGL("           API version: %i.%i.%i.%i\n",
-               VK_API_VERSION_MAJOR(apiVersion),
-               VK_API_VERSION_MINOR(apiVersion),
-               VK_API_VERSION_PATCH(apiVersion),
-               VK_API_VERSION_VARIANT(apiVersion));
+        VK_API_VERSION_MAJOR(apiVersion),
+        VK_API_VERSION_MINOR(apiVersion),
+        VK_API_VERSION_PATCH(apiVersion),
+        VK_API_VERSION_VARIANT(apiVersion));
   LLOGL("           Driver info: %s %s\n",
-               vkPhysicalDeviceDriverProperties_.driverName,
-               vkPhysicalDeviceDriverProperties_.driverInfo);
+        vkPhysicalDeviceDriverProperties_.driverName,
+        vkPhysicalDeviceDriverProperties_.driverInfo);
 
   extensions_.enumerate(vkPhysicalDevice_);
 
@@ -601,10 +600,9 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   if (!IGL_VERIFY(
           config_.maxSamplers <=
           vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers)) {
-    LLOGW(
-        "Max Samplers exceeded %u (max %u)",
-        config_.maxSamplers,
-        vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers);
+    LLOGW("Max Samplers exceeded %u (max %u)",
+          config_.maxSamplers,
+          vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers);
   }
 
   if (!IGL_VERIFY(config_.maxTextures <= vkPhysicalDeviceDescriptorIndexingProperties_
@@ -675,25 +673,21 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   const uint32_t kPushConstantsSize = 128;
   if (!IGL_VERIFY(kPushConstantsSize <= limits.maxPushConstantsSize)) {
     LLOGW("Push constants size exceeded %u (max %u bytes)",
-                  kPushConstantsSize,
-                  limits.maxPushConstantsSize);
+          kPushConstantsSize,
+          limits.maxPushConstantsSize);
   }
 
   VkDescriptorSetLayout dsl = dslBindless_->getVkDescriptorSetLayout();
 
   // create pipeline layout
-  pipelineLayoutGraphics_ = std::make_unique<VulkanPipelineLayout>(
+  pipelineLayout_ = std::make_unique<VulkanPipelineLayout>(
       device,
       dsl,
-      ivkGetPushConstantRange(
-          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, kPushConstantsSize),
-      "Pipeline Layout: VulkanContext::pipelineLayoutGraphics_");
-
-  pipelineLayoutCompute_ = std::make_unique<VulkanPipelineLayout>(
-      device,
-      dsl,
-      ivkGetPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, kPushConstantsSize),
-      "Pipeline Layout: VulkanContext::pipelineLayoutCompute_");
+      ivkGetPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
+                                  VK_SHADER_STAGE_COMPUTE_BIT,
+                              0,
+                              kPushConstantsSize),
+      "Pipeline Layout: VulkanContext::pipelineLayout_");
 
   querySurfaceCapabilities();
 
@@ -835,23 +829,22 @@ void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
                                               VkPipelineBindPoint bindPoint) const {
   IGL_PROFILER_FUNCTION();
 
-  const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
-
   const VkDescriptorSet sets[] = {
       bindlessDSets_[currentDSetIndex_].ds,
   };
+
 #if IGL_DEBUG_DESCRIPTOR_SETS
   IGL_LOG_INFO("Binding descriptor set %u\n", currentDSetIndex_);
 #endif // IGL_DEBUG_DESCRIPTOR_SETS
-  vkCmdBindDescriptorSets(
-      cmdBuf,
-      bindPoint,
-      (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
-      0,
-      IGL_ARRAY_NUM_ELEMENTS(sets),
-      sets,
-      0,
-      nullptr);
+
+  vkCmdBindDescriptorSets(cmdBuf,
+                          bindPoint,
+                          pipelineLayout_->getVkPipelineLayout(),
+                          0,
+                          IGL_ARRAY_NUM_ELEMENTS(sets),
+                          sets,
+                          0,
+                          nullptr);
 }
 
 void VulkanContext::checkAndUpdateDescriptorSets() const {

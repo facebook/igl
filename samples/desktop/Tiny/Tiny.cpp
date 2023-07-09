@@ -28,7 +28,6 @@
 
 #include <igl/CommandBuffer.h>
 #include <igl/Device.h>
-#include <igl/RenderCommandEncoder.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
@@ -266,15 +265,16 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
   const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
 
   // This will clear the framebuffer
-  auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
-
-  commands->bindRenderPipelineState(renderPipelineState_Triangle_);
-  commands->bindViewport(viewport);
-  commands->bindScissorRect(scissor);
-  commands->pushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
-  commands->draw(PrimitiveType::Triangle, 0, 3);
-  commands->popDebugGroupLabel();
-  commands->endEncoding();
+  buffer->cmdBeginRenderPass(renderPass_, framebuffer_);
+  {
+    buffer->cmdBindRenderPipelineState(renderPipelineState_Triangle_);
+    buffer->cmdBindViewport(viewport);
+    buffer->cmdBindScissorRect(scissor);
+    buffer->cmdPushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
+    buffer->cmdDraw(PrimitiveType::Triangle, 0, 3);
+    buffer->cmdPopDebugGroupLabel();
+  }
+  buffer->cmdEndRenderPass();
 
   buffer->present(nativeDrawable);
 

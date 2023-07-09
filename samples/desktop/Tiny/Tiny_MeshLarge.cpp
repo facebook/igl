@@ -1386,25 +1386,26 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
   if (isShadowMapDirty_) {
     std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
-    auto commands = buffer->createRenderCommandEncoder(renderPassShadow_, fbShadowMap_);
+    buffer->cmdBeginRenderPass(renderPassShadow_, fbShadowMap_);
+    {
+      buffer->cmdBindRenderPipelineState(renderPipelineState_Shadow_);
+      buffer->cmdPushDebugGroupLabel("Render Shadows", igl::Color(1, 0, 0));
+      buffer->cmdBindDepthStencilState(depthStencilState_);
+      buffer->cmdBindVertexBuffer(0, vb0_, 0);
+      struct {
+        uint64_t perFrame;
+        uint64_t perObject;
+      } bindings = {
+          .perFrame = ubPerFrameShadow_[frameIndex]->gpuAddress(),
+          .perObject = ubPerObject_[frameIndex]->gpuAddress(),
+      };
+      buffer->cmdPushConstants(0, &bindings, sizeof(bindings));
 
-    commands->bindRenderPipelineState(renderPipelineState_Shadow_);
-    commands->pushDebugGroupLabel("Render Shadows", igl::Color(1, 0, 0));
-    commands->bindDepthStencilState(depthStencilState_);
-    commands->bindVertexBuffer(0, vb0_, 0);
-    struct {
-      uint64_t perFrame;
-      uint64_t perObject;
-    } bindings = {
-        .perFrame = ubPerFrameShadow_[frameIndex]->gpuAddress(),
-        .perObject = ubPerObject_[frameIndex]->gpuAddress(),
-    };
-    commands->bindPushConstants(0, &bindings, sizeof(bindings));
-
-    commands->drawIndexed(
-        PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
-    commands->popDebugGroupLabel();
-    commands->endEncoding();
+      buffer->cmdDrawIndexed(
+          PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
+      buffer->cmdPopDebugGroupLabel();
+    }
+    buffer->cmdEndRenderPass();
 
     buffer->present(fbShadowMap_->getDepthAttachment());
 
@@ -1420,59 +1421,61 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
     // This will clear the framebuffer
-    auto commands = buffer->createRenderCommandEncoder(renderPassOffscreen_, fbOffscreen_);
-    // Scene
-    commands->bindRenderPipelineState(renderPipelineState_Mesh_);
-    commands->pushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
-    commands->bindDepthStencilState(depthStencilState_);
-    commands->bindVertexBuffer(0, vb0_, 0);
+    buffer->cmdBeginRenderPass(renderPassOffscreen_, fbOffscreen_);
+    {
+      // Scene
+      buffer->cmdBindRenderPipelineState(renderPipelineState_Mesh_);
+      buffer->cmdPushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
+      buffer->cmdBindDepthStencilState(depthStencilState_);
+      buffer->cmdBindVertexBuffer(0, vb0_, 0);
 
-    struct {
-      uint64_t perFrame;
-      uint64_t perObject;
-      uint64_t materials;
-    } bindings = {
-        .perFrame = ubPerFrame_[frameIndex]->gpuAddress(),
-        .perObject = ubPerObject_[frameIndex]->gpuAddress(),
-        .materials = sbMaterials_->gpuAddress(),
-    };
-    commands->bindPushConstants(0, &bindings, sizeof(bindings));
-    commands->drawIndexed(
-        PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
-    if (enableWireframe_) {
-      commands->bindRenderPipelineState(renderPipelineState_MeshWireframe_);
-      commands->drawIndexed(
+      struct {
+        uint64_t perFrame;
+        uint64_t perObject;
+        uint64_t materials;
+      } bindings = {
+          .perFrame = ubPerFrame_[frameIndex]->gpuAddress(),
+          .perObject = ubPerObject_[frameIndex]->gpuAddress(),
+          .materials = sbMaterials_->gpuAddress(),
+      };
+      buffer->cmdPushConstants(0, &bindings, sizeof(bindings));
+      buffer->cmdDrawIndexed(
           PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
+      if (enableWireframe_) {
+        buffer->cmdBindRenderPipelineState(renderPipelineState_MeshWireframe_);
+        buffer->cmdDrawIndexed(
+            PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
+      }
+      buffer->cmdPopDebugGroupLabel();
+
+      // Skybox
+      buffer->cmdBindRenderPipelineState(renderPipelineState_Skybox_);
+      buffer->cmdPushDebugGroupLabel("Render Skybox", igl::Color(0, 1, 0));
+      buffer->cmdBindDepthStencilState(depthStencilStateLEqual_);
+      buffer->cmdDraw(PrimitiveType::Triangle, 0, 3 * 6 * 2);
+      buffer->cmdPopDebugGroupLabel();
     }
-    commands->popDebugGroupLabel();
-
-    // Skybox
-    commands->bindRenderPipelineState(renderPipelineState_Skybox_);
-    commands->pushDebugGroupLabel("Render Skybox", igl::Color(0, 1, 0));
-    commands->bindDepthStencilState(depthStencilStateLEqual_);
-    commands->draw(PrimitiveType::Triangle, 0, 3 * 6 * 2);
-    commands->popDebugGroupLabel();
-    commands->endEncoding();
-
+    buffer->cmdEndRenderPass();
     buffer->present(fbOffscreen_->getColorAttachment(0));
     device_->submit(CommandQueueType::Graphics, *buffer);
   }
 
   // Pass 3: compute shader post-processing
   if (enableComputePass_) {
-    std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
-
-    buffer->bindComputePipelineState(computePipelineState_Grayscale_);
     std::shared_ptr<ITexture> tex = kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0)
                                                         : fbOffscreen_->getColorAttachment(0);
+    std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
+
+    buffer->useComputeTexture(tex);
+    buffer->cmdBindComputePipelineState(computePipelineState_Grayscale_);
+
     struct {
       uint32_t texture;
     } bindings = {
         .texture = tex->getTextureId(),
     };
-    buffer->bindPushConstants(0, &bindings, sizeof(bindings));
-    buffer->useComputeTexture(tex);
-    buffer->dispatchThreadGroups(igl::Dimensions(width_, height_, 1));
+    buffer->cmdPushConstants(0, &bindings, sizeof(bindings));
+    buffer->cmdDispatchThreadGroups(igl::Dimensions(width_, height_, 1));
 
     device_->submit(CommandQueueType::Compute, *buffer);
   }
@@ -1482,24 +1485,26 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
     // This will clear the framebuffer
-    auto commands = buffer->createRenderCommandEncoder(renderPassMain_, fbMain_);
-    commands->bindRenderPipelineState(renderPipelineState_Fullscreen_);
-    commands->pushDebugGroupLabel("Swapchain Output", igl::Color(1, 0, 0));
-    struct {
-      uint32_t texture;
-    } bindings = {
-        .texture = kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0)->getTextureId()
-                                       : fbOffscreen_->getColorAttachment(0)->getTextureId(),
-    };
-    commands->bindPushConstants(0, &bindings, sizeof(bindings));
-    commands->draw(PrimitiveType::Triangle, 0, 3);
-    commands->popDebugGroupLabel();
+    buffer->cmdBeginRenderPass(renderPassMain_, fbMain_);
+    {
+      buffer->cmdBindRenderPipelineState(renderPipelineState_Fullscreen_);
+      buffer->cmdPushDebugGroupLabel("Swapchain Output", igl::Color(1, 0, 0));
+      struct {
+        uint32_t texture;
+      } bindings = {
+          .texture = kNumSamplesMSAA > 1
+                         ? fbOffscreen_->getResolveColorAttachment(0)->getTextureId()
+                         : fbOffscreen_->getColorAttachment(0)->getTextureId(),
+      };
+      buffer->cmdPushConstants(0, &bindings, sizeof(bindings));
+      buffer->cmdDraw(PrimitiveType::Triangle, 0, 3);
+      buffer->cmdPopDebugGroupLabel();
 
 #if IGL_WITH_IGLU
-    imguiSession_->endFrame(*device_.get(), *commands);
+      imguiSession_->endFrame(*device_.get(), *buffer);
 #endif // IGL_WITH_IGLU
-
-    commands->endEncoding();
+    }
+    buffer->cmdEndRenderPass();
 
     buffer->present(fbMain_->getColorAttachment(0));
 
@@ -1939,7 +1944,7 @@ int main(int argc, char* argv[]) {
 
 #if IGL_WITH_IGLU
   imguiSession_ = std::make_unique<iglu::imgui::Session>(*device_.get(), inputDispatcher_);
-#endif // IGL_WITH_IGLU
+#endif IGL_WITH_IGLU
 
   double prevTime = glfwGetTime();
 
@@ -2023,7 +2028,7 @@ int main(int argc, char* argv[]) {
 
 #if IGL_WITH_IGLU
   imguiSession_ = nullptr;
-#endif // IGL_WITH_IGLU
+#endif IGL_WITH_IGLU
   // destroy all the Vulkan stuff before closing the window
   vb0_ = nullptr;
   ib0_ = nullptr;

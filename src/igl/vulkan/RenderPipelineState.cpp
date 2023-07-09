@@ -350,7 +350,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
           ctx.device_->getVkDevice(),
           // TODO: use ctx.pipelineCache_
           VK_NULL_HANDLE,
-          ctx.pipelineLayoutGraphics_->getVkPipelineLayout(),
+          ctx.pipelineLayout_->getVkPipelineLayout(),
           renderPass,
           &pipeline,
           desc_.debugName.c_str());

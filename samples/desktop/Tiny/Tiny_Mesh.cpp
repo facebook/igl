@@ -30,7 +30,6 @@
 #include <igl/CommandBuffer.h>
 #include <igl/Device.h>
 #include <igl/FPSCounter.h>
-#include <igl/RenderCommandEncoder.h>
 #include <igl/RenderPipelineState.h>
 
 #include <igl/vulkan/Common.h>
@@ -497,31 +496,32 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
 
   // This will clear the framebuffer
-  auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
-
-  commands->bindRenderPipelineState(renderPipelineState_Mesh_);
-  commands->bindViewport(viewport);
-  commands->bindScissorRect(scissor);
-  commands->pushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
-  commands->bindVertexBuffer(0, vb0_, 0);
-  commands->bindDepthStencilState(depthStencilState_);
-  // Draw 2 cubes: we use uniform buffer to update matrices
-  for (uint32_t i = 0; i != kNumCubes; i++) {
-    struct {
-      uint64_t perFrame;
-      uint64_t perObject;
-    } bindings = {
-        .perFrame = ubPerFrame_[frameIndex]->gpuAddress(),
-        .perObject = ubPerObject_[frameIndex]->gpuAddress(i * sizeof(UniformsPerObject)),
-    };
-    commands->bindPushConstants(0, &bindings, sizeof(bindings));
-    commands->drawIndexed(PrimitiveType::Triangle, 3 * 6 * 2, IndexFormat::UInt16, *ib0_.get(), 0);
+  buffer->cmdBeginRenderPass(renderPass_, framebuffer_);
+  {
+    buffer->cmdBindRenderPipelineState(renderPipelineState_Mesh_);
+    buffer->cmdBindViewport(viewport);
+    buffer->cmdBindScissorRect(scissor);
+    buffer->cmdPushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
+    buffer->cmdBindVertexBuffer(0, vb0_, 0);
+    buffer->cmdBindDepthStencilState(depthStencilState_);
+    // Draw 2 cubes: we use uniform buffer to update matrices
+    for (uint32_t i = 0; i != kNumCubes; i++) {
+      struct {
+        uint64_t perFrame;
+        uint64_t perObject;
+      } bindings = {
+          .perFrame = ubPerFrame_[frameIndex]->gpuAddress(),
+          .perObject = ubPerObject_[frameIndex]->gpuAddress(i * sizeof(UniformsPerObject)),
+      };
+      buffer->cmdPushConstants(0, &bindings, sizeof(bindings));
+      buffer->cmdDrawIndexed(PrimitiveType::Triangle, 3 * 6 * 2, IndexFormat::UInt16, *ib0_.get(), 0);
+    }
+    buffer->cmdPopDebugGroupLabel();
   }
-  commands->popDebugGroupLabel();
 #if IGL_WITH_IGLU && 0
   imguiSession_->endFrame(*device_.get(), *commands);
 #endif // IGL_WITH_IGLU
-  commands->endEncoding();
+  buffer->cmdEndRenderPass();
 
   buffer->present(nativeDrawable);
 

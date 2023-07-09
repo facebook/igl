@@ -53,7 +53,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
           ctx.device_->getVkDevice(),
           // TODO: use ctx.pipelineCache_
           VK_NULL_HANDLE,
-          ctx.pipelineLayoutCompute_->getVkPipelineLayout(),
+          ctx.pipelineLayout_->getVkPipelineLayout(),
           &pipeline_,
           desc_.debugName.c_str());
 

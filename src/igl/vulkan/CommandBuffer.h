@@ -8,7 +8,11 @@
 #pragma once
 
 #include <igl/CommandBuffer.h>
+#include <igl/Framebuffer.h>
+#include <igl/RenderPipelineState.h>
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/Framebuffer.h>
+#include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 
 namespace igl {
@@ -21,25 +25,58 @@ class CommandBuffer final : public ICommandBuffer,
                             public std::enable_shared_from_this<CommandBuffer> {
  public:
   explicit CommandBuffer(VulkanContext& ctx);
-
-  virtual std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
-      const RenderPassDesc& renderPass,
-      std::shared_ptr<IFramebuffer> framebuffer,
-      Result* outResult) override;
+  ~CommandBuffer() override;
 
   void present(std::shared_ptr<ITexture> surface) const override;
-
   void waitUntilCompleted() override;
-
-  void bindComputePipelineState(
-      const std::shared_ptr<IComputePipelineState>& pipelineState) override;
-  void dispatchThreadGroups(const Dimensions& threadgroupCount) override;
-
-  void pushDebugGroupLabel(const std::string& label, const igl::Color& color) const override;
-  void insertDebugEventLabel(const std::string& label, const igl::Color& color) const override;
-  void popDebugGroupLabel() const override;
   void useComputeTexture(const std::shared_ptr<ITexture>& texture) override;
-  void bindPushConstants(size_t offset, const void* data, size_t length) override;
+
+  void cmdBindComputePipelineState(
+      const std::shared_ptr<IComputePipelineState>& pipelineState) override;
+  void cmdDispatchThreadGroups(const Dimensions& threadgroupCount) override;
+
+  void cmdPushDebugGroupLabel(const std::string& label, const igl::Color& color) const override;
+  void cmdInsertDebugEventLabel(const std::string& label, const igl::Color& color) const override;
+  void cmdPopDebugGroupLabel() const override;
+
+  void cmdBeginRenderPass(const RenderPassDesc& renderPass,
+                          const std::shared_ptr<IFramebuffer>& framebuffer) override;
+  void cmdEndRenderPass() override;
+
+  void cmdBindViewport(const Viewport& viewport) override;
+  void cmdBindScissorRect(const ScissorRect& rect) override;
+
+  void cmdBindRenderPipelineState(
+      const std::shared_ptr<IRenderPipelineState>& pipelineState) override;
+  void cmdBindDepthStencilState(const DepthStencilState& state) override;
+
+  void cmdBindVertexBuffer(uint32_t index,
+                           const std::shared_ptr<IBuffer>& buffer,
+                           size_t bufferOffset) override;
+  void cmdPushConstants(size_t offset, const void* data, size_t length) override;
+
+  void cmdDraw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) override;
+  void cmdDrawIndexed(PrimitiveType primitiveType,
+                      size_t indexCount,
+                      IndexFormat indexFormat,
+                      IBuffer& indexBuffer,
+                      size_t indexBufferOffset) override;
+  void cmdDrawIndirect(PrimitiveType primitiveType,
+                       IBuffer& indirectBuffer,
+                       size_t indirectBufferOffset,
+                       uint32_t drawCount,
+                       uint32_t stride = 0) override;
+  void cmdDrawIndexedIndirect(PrimitiveType primitiveType,
+                              IndexFormat indexFormat,
+                              IBuffer& indexBuffer,
+                              IBuffer& indirectBuffer,
+                              size_t indirectBufferOffset,
+                              uint32_t drawCount,
+                              uint32_t stride = 0) override;
+
+  void cmdSetStencilReferenceValues(uint32_t frontValue, uint32_t backValue) override;
+  void cmdSetBlendColor(Color color) override;
+  void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) override;
 
   VkCommandBuffer getVkCommandBuffer() const {
     return wrapper_.cmdBuf_;
@@ -48,6 +85,9 @@ class CommandBuffer final : public ICommandBuffer,
   bool isFromSwapchain() const {
     return isFromSwapchain_;
   }
+
+ private:
+  void bindGraphicsPipeline();
 
  private:
   friend class Device;
@@ -62,6 +102,11 @@ class CommandBuffer final : public ICommandBuffer,
   VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
 
   VkPipeline lastPipelineBound_ = VK_NULL_HANDLE;
+
+  bool isInRenderPass_ = false;
+
+  std::shared_ptr<igl::IRenderPipelineState> currentPipeline_ = nullptr;
+  RenderPipelineDynamicState dynamicState_;
 };
 
 } // namespace vulkan
