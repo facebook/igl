@@ -266,7 +266,6 @@ int main(int argc, char* argv[]) {
   // Main loop
   emscripten_set_main_loop(&mainLoop, 0, 1);
   
-  // destroy all the Vulkan stuff before closing the window
   renderPipelineState_Triangle_ = nullptr;
   framebuffer_ = nullptr;
   device_.reset(nullptr);
