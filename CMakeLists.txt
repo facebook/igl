@@ -58,10 +58,10 @@ endif()
 if(EMSCRIPTEN)
   set(IGL_WITH_OPENGL OFF)
   set(IGL_WITH_OPENGLES ON)
-
   set(IGL_WITH_VULKAN OFF)
-  set(IGL_WITH_SHELL OFF)
+  set(IGL_WITH_METAL OFF)
 
+  set(IGL_WITH_SHELL OFF)
 endif()
 
 include(cmake/helpers.cmake)
