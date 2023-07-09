@@ -75,7 +75,7 @@ class VulkanImmediateCommands final {
   VkDevice device_ = VK_NULL_HANDLE;
   VkQueue queue_ = VK_NULL_HANDLE;
   VulkanCommandPool commandPool_;
-  std::string debugName_;
+  const char* debugName_ = "";
   std::vector<CommandBufferWrapper> buffers_;
   SubmitHandle lastSubmitHandle_ = SubmitHandle();
   VkSemaphore lastSubmitSemaphore_ = VK_NULL_HANDLE;

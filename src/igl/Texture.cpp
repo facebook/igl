@@ -14,6 +14,11 @@
 
 namespace igl {
 
+struct TextureBlockSize {
+  uint32_t width = 0;
+  uint32_t height = 0;
+};
+
 bool isCompressedTextureFormat(TextureFormat format) {
   const auto properties = TextureFormatProperties::fromTextureFormat(format);
   return properties.isCompressed();

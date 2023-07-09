@@ -8,6 +8,7 @@
 #pragma once
 
 #include <igl/Common.h>
+#include <igl/Shader.h>
 #include <igl/Texture.h>
 
 namespace igl {

@@ -217,16 +217,12 @@ static bool initWindow(GLFWwindow** outWindow) {
     }
   });
 
-  // @lint-ignore CLANGTIDY
-  glfwSetWindowSizeCallback(window, [](GLFWwindow* /*window*/, int width, int height) {
+  glfwSetWindowSizeCallback(window, [](GLFWwindow*, int width, int height) {
     printf("Window resized! width=%d, height=%d\n", width, height);
     width_ = width;
     height_ = height;
-#if !USE_OPENGL_BACKEND
     auto* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
-    auto& ctx = vulkanDevice->getVulkanContext();
-    ctx.initSwapchain(width_, height_);
-#endif
+    vulkanDevice->getVulkanContext().initSwapchain(width_, height_);
   });
 
 #if IGL_WITH_IGLU && 0

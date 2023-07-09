@@ -266,22 +266,21 @@ void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
 
   isRendering_ = true;
 
-  IGL_ASSERT(desc.numColorAttachments < RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX);
+  IGL_ASSERT(desc.numColorAttachments <= RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX);
   IGL_ASSERT(renderPass.numColorAttachments == desc.numColorAttachments);
 
   Framebuffer_ = desc;
 
   // transition all the color attachments
   for (uint32_t i = 0; i != desc.numColorAttachments; i++) {
-    const auto colorTex = desc.colorAttachments[i].texture;
-    transitionColorAttachment(wrapper_.cmdBuf_, colorTex);
+    if (const auto colorTex = desc.colorAttachments[i].texture) {
+      transitionColorAttachment(wrapper_.cmdBuf_, colorTex);
+    }
     // handle MSAA
-    const auto colorResolveTex = desc.colorAttachments[i].resolveTexture;
-    if (colorResolveTex) {
+    if (const auto colorResolveTex = desc.colorAttachments[i].resolveTexture) {
       transitionColorAttachment(wrapper_.cmdBuf_, colorResolveTex);
     }
   }
-
   // transition depth-stencil attachment
   const auto depthTex = desc.depthStencilAttachment.texture;
   if (depthTex) {

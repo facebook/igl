@@ -80,20 +80,14 @@ class ISamplerState {
 bool isCompressedTextureFormat(TextureFormat format);
 bool isDepthOrStencilFormat(TextureFormat format);
 
-struct TextureBlockSize {
-  uint32_t width = 0;
-  uint32_t height = 0;
-};
-
 /**
- * @brief Utility function to retrieve size in bytes per row in a given texture
- *
- * @param texWidth  The width of mip level 0 in the texture
- * @param texFormat Format of the texture
- * @param mipLevel  Mipmap level of the texture to calculate the bytes per row for.
- * @return Calculated total size in bytes of each row in the given texture format.
+ * @brief Utility function to retrieve size in bytes per layer with a given format and dimensions
  */
-size_t getTextureBytesPerRow(size_t texWidth, TextureFormat texFormat, size_t mipLevel);
+uint32_t getTextureBytesPerLayer(uint32_t texWidth,
+                                 uint32_t texHeight,
+                                 uint32_t texDepth,
+                                 TextureFormat texFormat,
+                                 uint32_t mipLevel);
 
 struct TextureRangeDesc {
   uint32_t x = 0;

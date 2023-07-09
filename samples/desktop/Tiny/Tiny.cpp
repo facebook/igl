@@ -21,25 +21,16 @@
 
 #include <GLFW/glfw3native.h>
 
-#include <cassert>
 #include <format>
-#include <regex>
-#include <stdio.h>
 
 #include <igl/CommandBuffer.h>
 #include <igl/Device.h>
-#include <igl/vulkan/Common.h>
+#include <igl/FPSCounter.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 
-#define ENABLE_MULTIPLE_COLOR_ATTACHMENTS 0
-
-#if ENABLE_MULTIPLE_COLOR_ATTACHMENTS
-static const uint32_t kNumColorAttachments = 4;
-#else
-static const uint32_t kNumColorAttachments = 1;
-#endif
+constexpr uint32_t kNumColorAttachments = 4;
 
 const char* codeVS = R"(
 #version 460
@@ -60,43 +51,37 @@ void main() {
 }
 )";
 
-#if ENABLE_MULTIPLE_COLOR_ATTACHMENTS
 const char* codeFS = R"(
 #version 460
 layout (location=0) in vec3 color;
-layout (location=0) out vec4 out_FragColor;
+layout (location=0) out vec4 out_FragColor0;
 layout (location=1) out vec4 out_FragColor1;
 
 void main() {
-	out_FragColor = vec4(color, 1.0);
-	out_FragColor1 = vec4(1.0, 0.0, 0.0, 1.0);
+	out_FragColor0 = vec4(color, 1.0);
+	out_FragColor1 = vec4(1.0, 1.0, 0.0, 1.0);
 };
 )";
-#else
-const char* codeFS = R"(
-#version 460
-layout (location=0) in vec3 color;
-layout (location=0) out vec4 out_FragColor;
-void main() {
-	out_FragColor = vec4(color, 1.0);
-};
-)";
-#endif
 
 using namespace igl;
 
 GLFWwindow* window_ = nullptr;
 int width_ = 0;
 int height_ = 0;
+igl::FPSCounter fps_;
 
-std::unique_ptr<IDevice> device_;
-igl::RenderPass renderPass_;
-igl::Framebuffer framebuffer_;
-std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
+struct VulkanObjects {
+  void init();
+  void render();
+  igl::RenderPass renderPass_ = {};
+  igl::Framebuffer framebuffer_ = {};
+  std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
+  std::unique_ptr<IDevice> device_;
+} vk;
 
-static bool initWindow(GLFWwindow** outWindow) {
+GLFWwindow* initWindow() {
   if (!glfwInit()) {
-    return false;
+    return nullptr;
   }
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -106,7 +91,7 @@ static bool initWindow(GLFWwindow** outWindow) {
 
   if (!window) {
     glfwTerminate();
-    return false;
+    return nullptr;
   }
 
   glfwSetErrorCallback([](int error, const char* description) {
@@ -119,29 +104,20 @@ static bool initWindow(GLFWwindow** outWindow) {
     }
   });
 
-  // @lint-ignore CLANGTIDY
-  glfwSetWindowSizeCallback(window, [](GLFWwindow* /*window*/, int width, int height) {
+  glfwSetWindowSizeCallback(window, [](GLFWwindow*, int width, int height) {
     printf("Window resized! width=%d, height=%d\n", width, height);
     width_ = width;
     height_ = height;
-#if !USE_OPENGL_BACKEND
-    auto* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
-    auto& ctx = vulkanDevice->getVulkanContext();
-    ctx.initSwapchain(width_, height_);
-#endif
+    vulkan::Device* vulkanDevice = static_cast<vulkan::Device*>(vk.device_.get());
+    vulkanDevice->getVulkanContext().initSwapchain(width_, height_);
   });
 
   glfwGetWindowSize(window, &width_, &height_);
 
-  if (outWindow) {
-    *outWindow = window;
-  }
-
-  return true;
+  return window;
 }
 
-static void initIGL() {
-  // create a device
+void VulkanObjects::init() {
   {
     const igl::vulkan::VulkanContextConfig cfg{
         .maxTextures = 8,
@@ -168,83 +144,71 @@ static void initIGL() {
     IGL_ASSERT(device_.get());
   }
 
-  renderPass_.numColorAttachments = kNumColorAttachments;
+  renderPass_ = {
+      .numColorAttachments = kNumColorAttachments,
+      .depthAttachment =
+          {
+              .loadAction = LoadAction::DontCare,
+              .storeAction = StoreAction::DontCare,
+          },
+  };
+
+  const Color colors[4] = {
+      {1.0f, 1.0f, 1.0f, 1.0f},
+      {1.0f, 0.0f, 0.0f, 1.0f},
+      {0.0f, 1.0f, 0.0f, 1.0f},
+      {0.0f, 0.0f, 1.0f, 1.0f},
+  };
 
   // first color attachment
-  for (auto i = 0; i < kNumColorAttachments; ++i) {
-    // Generate sparse color attachments by skipping alternate slots
-    if (i & 0x1) {
-      continue;
-    }
+  for (uint32_t i = 0; i < kNumColorAttachments; ++i) {
     renderPass_.colorAttachments[i] = igl::AttachmentDesc{
         .loadAction = LoadAction::Clear,
         .storeAction = StoreAction::Store,
-        .clearColor = {1.0f, 1.0f, 1.0f, 1.0f},
+        .clearColor = colors[i],
     };
   }
-  renderPass_.depthAttachment = {
-      .loadAction = LoadAction::DontCare,
-      .storeAction = StoreAction::DontCare,
-  };
-}
 
-static void createRenderPipeline() {
-  if (renderPipelineState_Triangle_) {
-    return;
-  }
+  auto texSwapchain = device_->getCurrentSwapchainTexture();
 
-  RenderPipelineDesc desc = {
+  Framebuffer fb = {
       .numColorAttachments = kNumColorAttachments,
+      .colorAttachments = {{.texture = texSwapchain}},
   };
 
-  for (auto i = 0; i < kNumColorAttachments; ++i) {
-    if (framebuffer_.colorAttachments[i].texture) {
-      desc.colorAttachments[i].textureFormat = framebuffer_.colorAttachments[i].texture->getFormat();
-    }
-  }
-
-  if (framebuffer_.depthStencilAttachment.texture) {
-    desc.depthAttachmentFormat = framebuffer_.depthStencilAttachment.texture->getFormat();
-  }
-
-  desc.shaderStages = device_->createShaderStages(
-      codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)");
-  renderPipelineState_Triangle_ = device_->createRenderPipeline(desc, nullptr);
-  IGL_ASSERT(renderPipelineState_Triangle_.get());
-}
-
-static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
-  Framebuffer Framebuffer = {
-      .numColorAttachments = kNumColorAttachments,
-      .colorAttachments = {{.texture = nativeDrawable}},
-  };
-
-  for (auto i = 1; i < kNumColorAttachments; ++i) {
-    // Generate sparse color attachments by skipping alternate slots
-    if (i & 0x1) {
-      continue;
-    }
-    Framebuffer.colorAttachments[i].texture = device_->createTexture(
+  for (uint32_t i = 1; i < kNumColorAttachments; i++) {
+    fb.colorAttachments[i].texture = device_->createTexture(
         {
             .type = TextureType::TwoD,
-            .format = nativeDrawable->getFormat(),
-            .width = nativeDrawable->getDimensions().width,
-            .height = nativeDrawable->getDimensions().height,
+            .format = texSwapchain->getFormat(),
+            .width = texSwapchain->getDimensions().width,
+            .height = texSwapchain->getDimensions().height,
             .usage =
                 TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled,
-            .debugName = std::format("{}C{}", Framebuffer.debugName, i - 1).c_str(),
+            .debugName = std::format("{}C{}", fb.debugName, i - 1).c_str(),
         },
         nullptr);
   }
-  framebuffer_ = Framebuffer;
+  framebuffer_ = fb;
+
+  const RenderPipelineDesc desc = {
+      .shaderStages = device_->createShaderStages(
+          codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
+      .numColorAttachments = kNumColorAttachments,
+      .colorAttachments = {
+          {fb.colorAttachments[0].texture->getFormat()},
+          {fb.colorAttachments[1].texture->getFormat()},
+          {fb.colorAttachments[2].texture->getFormat()},
+          {fb.colorAttachments[3].texture->getFormat()},
+      }};
+
+  renderPipelineState_Triangle_ = device_->createRenderPipeline(desc, nullptr);
+
+  IGL_ASSERT(renderPipelineState_Triangle_.get());
 }
 
-static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
-  const auto size = framebuffer_.colorAttachments[0].texture->getDimensions();
-  if (size.width != width_ || size.height != height_) {
-    createFramebuffer(nativeDrawable);
-  }
-  framebuffer_.colorAttachments[0].texture = nativeDrawable;
+void VulkanObjects::render() {
+  framebuffer_.colorAttachments[0].texture = device_->getCurrentSwapchainTexture();
 
   // Command buffers (1-N per thread): create, submit and forget
   std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
@@ -264,7 +228,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
   }
   buffer->cmdEndRendering();
 
-  buffer->present(nativeDrawable);
+  buffer->present(framebuffer_.colorAttachments[0].texture);
 
   device_->submit(igl::CommandQueueType::Graphics, *buffer, true);
 }
@@ -272,22 +236,22 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
 int main(int argc, char* argv[]) {
   minilog::initialize(nullptr, {.threadNames = false});
 
-  initWindow(&window_);
-  initIGL();
+  window_ = initWindow();
+  vk.init();
 
-  createFramebuffer(device_->getCurrentSwapchainTexture());
-  createRenderPipeline();
+  double prevTime = glfwGetTime();
 
   // Main loop
   while (!glfwWindowShouldClose(window_)) {
-    render(device_->getCurrentSwapchainTexture());
+    const double newTime = glfwGetTime();
+    fps_.updateFPS(newTime - prevTime);
+    prevTime = newTime;
+    vk.render();
     glfwPollEvents();
   }
 
   // destroy all the Vulkan stuff before closing the window
-  renderPipelineState_Triangle_ = nullptr;
-  framebuffer_ = {};
-  device_.reset(nullptr);
+  vk = {};
 
   glfwDestroyWindow(window_);
   glfwTerminate();
