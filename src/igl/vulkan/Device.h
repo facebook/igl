@@ -35,7 +35,9 @@ class Device final : public IDevice {
 
   std::shared_ptr<ISamplerState> createSamplerState(const SamplerStateDesc& desc,
                                                     Result* outResult) override;
-  std::shared_ptr<ITexture> createTexture(const TextureDesc& desc, Result* outResult) override;
+  std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,
+                                          const char* debugName,
+                                          Result* outResult) override;
 
   // Pipelines
   std::shared_ptr<IComputePipelineState> createComputePipeline(const ComputePipelineDesc& desc,

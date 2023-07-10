@@ -128,7 +128,7 @@ static_assert(alignof(RenderPipelineDynamicState) == sizeof(uint64_t));
 
 class RenderPipelineState final : public IRenderPipelineState {
  public:
-  RenderPipelineState(const igl::vulkan::Device& device, RenderPipelineDesc desc);
+  RenderPipelineState(const igl::vulkan::Device& device, const RenderPipelineDesc& desc);
   ~RenderPipelineState() override;
 
   VkPipeline getVkPipeline(const RenderPipelineDynamicState& dynamicState) const;

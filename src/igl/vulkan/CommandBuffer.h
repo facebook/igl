@@ -92,7 +92,7 @@ class CommandBuffer final : public ICommandBuffer {
   // was present() called with a swapchain image?
   mutable bool isFromSwapchain_ = false;
 
-  igl::Framebuffer Framebuffer_ = {};
+  igl::Framebuffer framebuffer_ = {};
 
   VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
 

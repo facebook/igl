@@ -113,10 +113,18 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
   return samplerState;
 }
 
-std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc, Result* outResult) {
-  auto texture = std::make_shared<vulkan::Texture>(*this, desc.format);
+std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
+                                                const char* debugName,
+                                                Result* outResult) {
+  TextureDesc patchedDesc(desc);
 
-  const Result res = texture->create(desc);
+  if (debugName && *debugName) {
+    patchedDesc.debugName = debugName;
+  }
+
+  auto texture = std::make_shared<vulkan::Texture>(*this, patchedDesc.format);
+
+  const Result res = texture->create(patchedDesc);
 
   Result::setResult(outResult, res);
 
@@ -137,7 +145,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 
 std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderPipelineDesc& desc,
                                                                    Result* outResult) {
-  const bool hasColorAttachments = desc.numColorAttachments > 0;
+  const bool hasColorAttachments = desc.getNumColorAttachments() > 0;
   const bool hasDepthAttachment = desc.depthAttachmentFormat != TextureFormat::Invalid;
   const bool hasAnyAttachments = hasColorAttachments || hasDepthAttachment;
   if (!IGL_VERIFY(hasAnyAttachments)) {

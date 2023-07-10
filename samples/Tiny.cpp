@@ -68,7 +68,6 @@ void VulkanObjects::init() {
   const RenderPipelineDesc desc = {
       .shaderStages = device_->createShaderStages(
           codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
-      .numColorAttachments = kNumColorAttachments,
       .colorAttachments = {
           {fb_.colorAttachments[0].texture->getFormat()},
           {fb_.colorAttachments[1].texture->getFormat()},
@@ -84,24 +83,21 @@ void VulkanObjects::init() {
 void VulkanObjects::createFramebuffer() {
   auto texSwapchain = device_->getCurrentSwapchainTexture();
 
-  fb_ = {
-      .numColorAttachments = kNumColorAttachments,
-      .colorAttachments = {{.texture = texSwapchain}},
-  };
+  {
+    const igl::TextureDesc desc = {
+        .type = TextureType::TwoD,
+        .format = texSwapchain->getFormat(),
+        .width = texSwapchain->getDimensions().width,
+        .height = texSwapchain->getDimensions().height,
+        .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
+    };
 
-  for (uint32_t i = 1; i < kNumColorAttachments; i++) {
-    char attachmentName[256] = {0};
-    snprintf(attachmentName, sizeof(attachmentName) - 1, "%s C%u", fb_.debugName, i - 1);
-    fb_.colorAttachments[i].texture = device_->createTexture(
-        {
-            .type = TextureType::TwoD,
-            .format = texSwapchain->getFormat(),
-            .width = texSwapchain->getDimensions().width,
-            .height = texSwapchain->getDimensions().height,
-            .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
-            .debugName = attachmentName,
-        },
-        nullptr);
+    fb_ = {.colorAttachments = {
+               {.texture = texSwapchain},
+               {.texture = device_->createTexture(desc, "Framebuffer C1")},
+               {.texture = device_->createTexture(desc, "Framebuffer C2")},
+               {.texture = device_->createTexture(desc, "Framebuffer C3")},
+           }};
   }
 }
 
@@ -113,11 +109,10 @@ void VulkanObjects::render() {
   // This will clear the framebuffer
   buffer->cmdBeginRendering(
       {
-          .numColorAttachments = kNumColorAttachments,
-          .colorAttachments = {{.clearColor = {1.0f, 1.0f, 1.0f, 1.0f}},
-                               {.clearColor = {1.0f, 0.0f, 0.0f, 1.0f}},
-                               {.clearColor = {0.0f, 1.0f, 0.0f, 1.0f}},
-                               {.clearColor = {0.0f, 0.0f, 1.0f, 1.0f}}},
+          .colorAttachments = {{.loadOp = LoadOp_Clear, .clearColor = {1.0f, 1.0f, 1.0f, 1.0f}},
+                               {.loadOp = LoadOp_Clear, .clearColor = {1.0f, 0.0f, 0.0f, 1.0f}},
+                               {.loadOp = LoadOp_Clear, .clearColor = {0.0f, 1.0f, 0.0f, 1.0f}},
+                               {.loadOp = LoadOp_Clear, .clearColor = {0.0f, 0.0f, 1.0f, 1.0f}}},
       },
       fb_);
   {

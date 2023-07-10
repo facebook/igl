@@ -49,30 +49,34 @@ void transitionColorAttachment(VkCommandBuffer buffer, const std::shared_ptr<ITe
           VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
 }
 
-VkAttachmentLoadOp loadActionToVkAttachmentLoadOp(igl::LoadAction a) {
-  using igl::LoadAction;
+VkAttachmentLoadOp loadOpToVkAttachmentLoadOp(igl::LoadOp a) {
+  using igl::LoadOp;
   switch (a) {
-  case LoadAction::DontCare:
+  case LoadOp_DontCare:
     return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-  case LoadAction::Load:
+  case LoadOp_Load:
     return VK_ATTACHMENT_LOAD_OP_LOAD;
-  case LoadAction::Clear:
+  case LoadOp_Clear:
     return VK_ATTACHMENT_LOAD_OP_CLEAR;
+  case LoadOp_None:
+    return VK_ATTACHMENT_LOAD_OP_NONE_EXT;
   }
   IGL_ASSERT(false);
   return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 }
 
-VkAttachmentStoreOp storeActionToVkAttachmentStoreOp(igl::StoreAction a) {
-  using igl::StoreAction;
+VkAttachmentStoreOp storeOpToVkAttachmentStoreOp(igl::StoreOp a) {
+  using igl::StoreOp;
   switch (a) {
-  case StoreAction::DontCare:
+  case StoreOp_DontCare:
     return VK_ATTACHMENT_STORE_OP_DONT_CARE;
-  case StoreAction::Store:
+  case StoreOp_Store:
     return VK_ATTACHMENT_STORE_OP_STORE;
-  case StoreAction::MsaaResolve:
+  case StoreOp_MsaaResolve:
     // for MSAA resolve, we have to store data into a special "resolve" attachment
     return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  case StoreOp_None:
+    return VK_ATTACHMENT_STORE_OP_NONE;
   }
   IGL_ASSERT(false);
   return VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -259,30 +263,32 @@ void CommandBuffer::useComputeTexture(const std::shared_ptr<ITexture>& texture) 
 }
 
 void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
-                                      const igl::Framebuffer& desc) {
+                                      const igl::Framebuffer& fb) {
   IGL_PROFILER_FUNCTION();
 
   IGL_ASSERT(!isRendering_);
 
   isRendering_ = true;
 
-  IGL_ASSERT(desc.numColorAttachments <= RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX);
-  IGL_ASSERT(renderPass.numColorAttachments == desc.numColorAttachments);
+  const uint32_t numFbColorAttachments = fb.getNumColorAttachments();
+  const uint32_t numPassColorAttachments = renderPass.getNumColorAttachments();
 
-  Framebuffer_ = desc;
+  IGL_ASSERT(numPassColorAttachments == numFbColorAttachments);
+
+  framebuffer_ = fb;
 
   // transition all the color attachments
-  for (uint32_t i = 0; i != desc.numColorAttachments; i++) {
-    if (const auto colorTex = desc.colorAttachments[i].texture) {
+  for (uint32_t i = 0; i != numFbColorAttachments; i++) {
+    if (const auto colorTex = fb.colorAttachments[i].texture) {
       transitionColorAttachment(wrapper_.cmdBuf_, colorTex);
     }
     // handle MSAA
-    if (const auto colorResolveTex = desc.colorAttachments[i].resolveTexture) {
+    if (const auto colorResolveTex = fb.colorAttachments[i].resolveTexture) {
       transitionColorAttachment(wrapper_.cmdBuf_, colorResolveTex);
     }
   }
   // transition depth-stencil attachment
-  const auto depthTex = desc.depthStencilAttachment.texture;
+  const auto depthTex = fb.depthStencilAttachment.texture;
   if (depthTex) {
     const auto& vkDepthTex = static_cast<Texture&>(*depthTex);
     const auto& depthImg = vkDepthTex.getVulkanTexture().getVulkanImage();
@@ -306,16 +312,16 @@ void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
   // Process depth attachment
   dynamicState_.depthBiasEnable_ = false;
 
-  VkRenderingAttachmentInfo colorAttachments[RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX];
+  VkRenderingAttachmentInfo colorAttachments[IGL_COLOR_ATTACHMENTS_MAX];
 
-  for (uint32_t i = 0; i != desc.numColorAttachments; i++) {
-    auto& attachment = desc.colorAttachments[i];
+  for (uint32_t i = 0; i != numFbColorAttachments; i++) {
+    auto& attachment = fb.colorAttachments[i];
     IGL_ASSERT(attachment.texture.get());
 
     const auto& colorTexture = static_cast<vulkan::Texture&>(*attachment.texture);
     const auto& descColor = renderPass.colorAttachments[i];
-    if (mipLevel && descColor.mipmapLevel) {
-      IGL_ASSERT_MSG(descColor.mipmapLevel == mipLevel,
+    if (mipLevel && descColor.level) {
+      IGL_ASSERT_MSG(descColor.level == mipLevel,
                      "All color attachments should have the same mip-level");
     }
     const igl::Dimensions dim = colorTexture.getDimensions();
@@ -325,7 +331,7 @@ void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
     if (fbHeight) {
       IGL_ASSERT_MSG(dim.height == fbHeight, "All attachments should have the save width");
     }
-    mipLevel = descColor.mipmapLevel;
+    mipLevel = descColor.level;
     fbWidth = dim.width;
     fbHeight = dim.height;
     samples = colorTexture.getVulkanTexture().getVulkanImage().samples_;
@@ -337,15 +343,15 @@ void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
         .resolveMode = (samples > 1) ? VK_RESOLVE_MODE_AVERAGE_BIT : VK_RESOLVE_MODE_NONE,
         .resolveImageView = VK_NULL_HANDLE,
         .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .loadOp = loadActionToVkAttachmentLoadOp(descColor.loadAction),
-        .storeOp = storeActionToVkAttachmentStoreOp(descColor.storeAction),
+        .loadOp = loadOpToVkAttachmentLoadOp(descColor.loadOp),
+        .storeOp = storeOpToVkAttachmentStoreOp(descColor.storeOp),
         .clearValue = ivkGetClearColorValue(descColor.clearColor.r,
                                             descColor.clearColor.g,
                                             descColor.clearColor.b,
                                             descColor.clearColor.a),
     };
     // handle MSAA
-    if (descColor.storeAction == StoreAction::MsaaResolve) {
+    if (descColor.storeOp == StoreOp_MsaaResolve) {
       IGL_ASSERT(samples > 1);
       IGL_ASSERT_MSG(attachment.resolveTexture != nullptr,
                      "Framebuffer attachment should contain a resolve texture");
@@ -357,10 +363,10 @@ void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
 
   VkRenderingAttachmentInfo depthAttachment = {};
 
-  if (desc.depthStencilAttachment.texture) {
-    const auto& depthTexture = static_cast<vulkan::Texture&>(*desc.depthStencilAttachment.texture);
+  if (fb.depthStencilAttachment.texture) {
+    const auto& depthTexture = static_cast<vulkan::Texture&>(*fb.depthStencilAttachment.texture);
     const auto& descDepth = renderPass.depthAttachment;
-    IGL_ASSERT_MSG(descDepth.mipmapLevel == mipLevel,
+    IGL_ASSERT_MSG(descDepth.level == mipLevel,
                    "Depth attachment should have the same mip-level as color attachments");
     depthAttachment = {
         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -370,8 +376,8 @@ void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
         .resolveMode = VK_RESOLVE_MODE_NONE,
         .resolveImageView = VK_NULL_HANDLE,
         .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .loadOp = loadActionToVkAttachmentLoadOp(descDepth.loadAction),
-        .storeOp = storeActionToVkAttachmentStoreOp(descDepth.storeAction),
+        .loadOp = loadOpToVkAttachmentLoadOp(descDepth.loadOp),
+        .storeOp = storeOpToVkAttachmentStoreOp(descDepth.storeOp),
         .clearValue = ivkGetClearDepthStencilValue(descDepth.clearDepth, descDepth.clearStencil),
     };
     const igl::Dimensions dim = depthTexture.getDimensions();
@@ -381,7 +387,7 @@ void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
     if (fbHeight) {
       IGL_ASSERT_MSG(dim.height == fbHeight, "All attachments should have the save width");
     }
-    mipLevel = descDepth.mipmapLevel;
+    mipLevel = descDepth.level;
     fbWidth = dim.width;
     fbHeight = dim.height;
   }
@@ -393,7 +399,7 @@ void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
 
   VkRenderingAttachmentInfo stencilAttachment = depthAttachment;
 
-  const bool isStencilFormat = renderPass.stencilAttachment.loadAction != igl::LoadAction::DontCare;
+  const bool isStencilFormat = renderPass.stencilAttachment.loadOp != igl::LoadOp_Invalid;
 
   const VkRenderingInfo renderingInfo = {
       .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
@@ -403,7 +409,7 @@ void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
                      VkExtent2D{scissor.width, scissor.height}},
       .layerCount = 1,
       .viewMask = 0,
-      .colorAttachmentCount = desc.numColorAttachments,
+      .colorAttachmentCount = numFbColorAttachments,
       .pColorAttachments = colorAttachments,
       .pDepthAttachment = depthTex ? &depthAttachment : nullptr,
       .pStencilAttachment = isStencilFormat ? &stencilAttachment : nullptr,
@@ -425,23 +431,25 @@ void CommandBuffer::cmdEndRendering() {
 
   vkCmdEndRendering(wrapper_.cmdBuf_);
 
+  const uint32_t numFbColorAttachments = framebuffer_.getNumColorAttachments();
+
   // set image layouts after the render pass
-  for (uint32_t i = 0; i != Framebuffer_.numColorAttachments; i++) {
-    const auto& attachment = Framebuffer_.colorAttachments[i];
+  for (uint32_t i = 0; i != numFbColorAttachments; i++) {
+    const auto& attachment = framebuffer_.colorAttachments[i];
     const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*attachment.texture.get());
     // this must match the final layout of the render pass
     tex.getVulkanTexture().getVulkanImage().imageLayout_ = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
   }
 
-  if (Framebuffer_.depthStencilAttachment.texture) {
+  if (framebuffer_.depthStencilAttachment.texture) {
     const vulkan::Texture& tex =
-        static_cast<vulkan::Texture&>(*Framebuffer_.depthStencilAttachment.texture.get());
+        static_cast<vulkan::Texture&>(*framebuffer_.depthStencilAttachment.texture.get());
     // this must match the final layout of the render pass
     tex.getVulkanTexture().getVulkanImage().imageLayout_ =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
   }
 
-  Framebuffer_ = {};
+  framebuffer_ = {};
 }
 
 void CommandBuffer::cmdBindViewport(const Viewport& viewport) {
@@ -481,7 +489,7 @@ void CommandBuffer::cmdBindRenderPipelineState(
   const RenderPipelineDesc& desc = rps->getRenderPipelineDesc();
 
   const bool hasDepthAttachmentPipeline = desc.depthAttachmentFormat != TextureFormat::Invalid;
-  const bool hasDepthAttachmentPass = Framebuffer_.depthStencilAttachment.texture != nullptr;
+  const bool hasDepthAttachmentPass = framebuffer_.depthStencilAttachment.texture != nullptr;
 
   if (hasDepthAttachmentPipeline != hasDepthAttachmentPass) {
     IGL_ASSERT(false);

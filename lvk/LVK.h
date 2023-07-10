@@ -104,6 +104,8 @@ namespace igl {
 
 class ITexture;
 
+enum { IGL_COLOR_ATTACHMENTS_MAX = 4 };
+
 enum class IndexFormat : uint8_t {
   UInt16,
   UInt32,
@@ -130,17 +132,9 @@ enum class TextureType : uint8_t {
 
 enum SamplerFilter : uint8_t { SamplerFilter_Nearest = 0, SamplerFilter_Linear };
 
-enum SamplerMip : uint8_t {
-  SamplerMip_Disabled = 0,
-  SamplerMip_Nearest,
-  SamplerMip_Linear
-};
+enum SamplerMip : uint8_t { SamplerMip_Disabled = 0, SamplerMip_Nearest, SamplerMip_Linear };
 
-enum SamplerWrap : uint8_t {
-  SamplerWrap_Repeat = 0,
-  SamplerWrap_Clamp,
-  SamplerWrap_MirrorRepeat
-};
+enum SamplerWrap : uint8_t { SamplerWrap_Repeat = 0, SamplerWrap_Clamp, SamplerWrap_MirrorRepeat };
 
 enum class HWDeviceType {
   DiscreteGpu = 1,
@@ -345,8 +339,10 @@ enum PolygonMode : uint8_t {
   PolygonMode_Line = 1,
 };
 
-enum class VertexAttributeFormat {
-  Float1 = 0,
+enum class VertexFormat {
+  Invalid = 0,
+
+  Float1,
   Float2,
   Float3,
   Float4,
@@ -450,16 +446,19 @@ enum TextureFormat : uint8_t {
   S8_UInt_Z24_UNorm,
 };
 
-enum class LoadAction : uint8_t {
-  DontCare,
-  Load,
-  Clear,
+enum LoadOp : uint8_t {
+  LoadOp_Invalid = 0,
+  LoadOp_DontCare,
+  LoadOp_Load,
+  LoadOp_Clear,
+  LoadOp_None,
 };
 
-enum class StoreAction : uint8_t {
-  DontCare,
-  Store,
-  MsaaResolve,
+enum StoreOp : uint8_t {
+  StoreOp_DontCare,
+  StoreOp_Store,
+  StoreOp_MsaaResolve,
+  StoreOp_None,
 };
 
 enum class CommandQueueType {
@@ -475,26 +474,39 @@ enum ShaderStage : uint8_t {
   kNumShaderStages,
 };
 
-struct VertexAttribute {
-  uint32_t bufferIndex = 0; // a buffer which contains this attribute stream
-  VertexAttributeFormat format = VertexAttributeFormat::Float1; // per-element format
-  uintptr_t offset = 0; // an offset where the first element of this attribute stream starts
+struct VertexAttribute final {
   uint32_t location = 0;
+  uint32_t bufferIndex = 0; // a buffer which contains this attribute stream
+  VertexFormat format = VertexFormat::Invalid; // per-element format
+  uintptr_t offset = 0; // an offset where the first element of this attribute stream starts
 };
 
-struct VertexInputBinding {
+struct VertexInputBinding final {
   uint32_t stride = 0;
   VertexSampleFunction sampleFunction = VertexSampleFunction_PerVertex;
   size_t sampleRate = 1;
 };
 
-struct VertexInputState {
+struct VertexInput final {
   enum { IGL_VERTEX_ATTRIBUTES_MAX = 16 };
   enum { IGL_VERTEX_BUFFER_MAX = 16 };
-  uint32_t numAttributes = 0;
   VertexAttribute attributes[IGL_VERTEX_ATTRIBUTES_MAX];
-  uint32_t numInputBindings = 0;
   VertexInputBinding inputBindings[IGL_VERTEX_BUFFER_MAX];
+
+  uint32_t getNumAttributes() const {
+    uint32_t n = 0;
+    while (n < IGL_VERTEX_ATTRIBUTES_MAX && attributes[n].format != VertexFormat::Invalid) {
+      n++;
+    }
+    return n;
+  }
+  uint32_t getNumInputBindings() const {
+    uint32_t n = 0;
+    while (n < IGL_VERTEX_BUFFER_MAX && inputBindings[n].stride) {
+      n++;
+    }
+    return n;
+  }
 };
 
 struct ColorAttachment {
@@ -524,18 +536,14 @@ struct ShaderModuleDesc {
                    size_t dataLength,
                    igl::ShaderStage stage,
                    const char* debugName) :
-    stage(stage),
-    data(static_cast<const char*>(data)),
-    dataSize(dataLength),
-    debugName(debugName) {
+    stage(stage), data(static_cast<const char*>(data)), dataSize(dataLength), debugName(debugName) {
     IGL_ASSERT(dataSize);
   }
 };
 
 struct ShaderStages final {
   ShaderStages() = default;
-  ShaderStages(ShaderModuleHandle vertexModule,
-               ShaderModuleHandle fragmentModule) {
+  ShaderStages(ShaderModuleHandle vertexModule, ShaderModuleHandle fragmentModule) {
     modules_[Stage_Vertex] = vertexModule;
     modules_[Stage_Fragment] = fragmentModule;
   }
@@ -553,12 +561,9 @@ struct ShaderStages final {
 };
 
 struct RenderPipelineDesc final {
-  enum { IGL_COLOR_ATTACHMENTS_MAX = 4 };
-
-  igl::VertexInputState vertexInputState;
+  igl::VertexInput vertexInput;
   igl::ShaderStages shaderStages;
 
-  uint32_t numColorAttachments = 0;
   ColorAttachment colorAttachments[IGL_COLOR_ATTACHMENTS_MAX] = {};
   TextureFormat depthAttachmentFormat = TextureFormat::Invalid;
   TextureFormat stencilAttachmentFormat = TextureFormat::Invalid;
@@ -567,9 +572,18 @@ struct RenderPipelineDesc final {
   WindingMode frontFaceWinding = igl::WindingMode_CCW;
   PolygonMode polygonMode = igl::PolygonMode_Fill;
 
-  uint32_t sampleCount = 1u;
+  uint32_t samplesCount = 1u;
 
   const char* debugName = "";
+
+  uint32_t getNumColorAttachments() const {
+    uint32_t n = 0;
+    while (n < IGL_COLOR_ATTACHMENTS_MAX &&
+           colorAttachments[n].textureFormat != TextureFormat::Invalid) {
+      n++;
+    }
+    return n;
+  }
 };
 
 struct ComputePipelineDesc final {
@@ -577,36 +591,48 @@ struct ComputePipelineDesc final {
   const char* debugName = "";
 };
 
-struct AttachmentDesc {
-  LoadAction loadAction = LoadAction::Clear;
-  StoreAction storeAction = StoreAction::Store;
-  uint8_t slice = 0;
-  uint8_t mipmapLevel = 0;
+struct AttachmentDesc final {
+  LoadOp loadOp = LoadOp_Invalid;
+  StoreOp storeOp = StoreOp_Store;
+  uint8_t layer = 0;
+  uint8_t level = 0;
   Color clearColor = {0.0f, 0.0f, 0.0f, 0.0f};
   float clearDepth = 1.0f;
   uint32_t clearStencil = 0;
 };
 
-struct RenderPass {
-  uint32_t numColorAttachments = 0;
-  AttachmentDesc colorAttachments[RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX] = {};
-  AttachmentDesc depthAttachment = {.loadAction = LoadAction::DontCare,
-                                    .storeAction = StoreAction::DontCare};
-  AttachmentDesc stencilAttachment = {.loadAction = LoadAction::DontCare,
-                                      .storeAction = StoreAction::DontCare};
+struct RenderPass final {
+  AttachmentDesc colorAttachments[IGL_COLOR_ATTACHMENTS_MAX] = {};
+  AttachmentDesc depthAttachment = {.loadOp = LoadOp_DontCare, .storeOp = StoreOp_DontCare};
+  AttachmentDesc stencilAttachment = {.loadOp = LoadOp_Invalid, .storeOp = StoreOp_DontCare};
+
+  uint32_t getNumColorAttachments() const {
+    uint32_t n = 0;
+    while (n < IGL_COLOR_ATTACHMENTS_MAX && colorAttachments[n].loadOp != LoadOp_Invalid) {
+      n++;
+    }
+    return n;
+  }
 };
 
-struct Framebuffer {
+struct Framebuffer final {
   struct AttachmentDesc {
     std::shared_ptr<ITexture> texture;
     std::shared_ptr<ITexture> resolveTexture;
   };
 
-  uint32_t numColorAttachments = 0;
-  AttachmentDesc colorAttachments[RenderPipelineDesc::IGL_COLOR_ATTACHMENTS_MAX] = {};
+  AttachmentDesc colorAttachments[IGL_COLOR_ATTACHMENTS_MAX] = {};
   AttachmentDesc depthStencilAttachment;
 
   const char* debugName = "";
+
+  uint32_t getNumColorAttachments() const {
+    uint32_t n = 0;
+    while (n < IGL_COLOR_ATTACHMENTS_MAX && colorAttachments[n].texture) {
+      n++;
+    }
+    return n;
+  }
 };
 
 enum BufferUsageBits : uint8_t {
@@ -617,7 +643,7 @@ enum BufferUsageBits : uint8_t {
   BufferUsageBits_Indirect = 1 << 4,
 };
 
-struct BufferDesc {
+struct BufferDesc final {
   uint8_t usage = 0;
   StorageType storage = StorageType_HostVisible;
   const void* data = nullptr;
@@ -780,23 +806,25 @@ class IDevice {
                       bool present = false) = 0;
 
   virtual std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
-                                                Result* outResult) = 0;
+                                                Result* outResult = nullptr) = 0;
 
   virtual std::shared_ptr<ISamplerState> createSamplerState(const SamplerStateDesc& desc,
-                                                            Result* outResult) = 0;
+                                                            Result* outResult = nullptr) = 0;
 
   virtual std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,
-                                                  Result* outResult) = 0;
+                                                  const char* debugName = nullptr,
+                                                  Result* outResult = nullptr) = 0;
 
   virtual std::shared_ptr<IComputePipelineState> createComputePipeline(
       const ComputePipelineDesc& desc,
-      Result* outResult) = 0;
+      Result* outResult = nullptr) = 0;
 
-  virtual std::shared_ptr<IRenderPipelineState> createRenderPipeline(const RenderPipelineDesc& desc,
-                                                                     Result* outResult) = 0;
+  virtual std::shared_ptr<IRenderPipelineState> createRenderPipeline(
+      const RenderPipelineDesc& desc,
+      Result* outResult = nullptr) = 0;
 
   virtual ShaderModuleHandle createShaderModule(const ShaderModuleDesc& desc,
-                                                Result* outResult) = 0;
+                                                Result* outResult = nullptr) = 0;
 
   virtual std::shared_ptr<ITexture> getCurrentSwapchainTexture() = 0;
 

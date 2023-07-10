@@ -116,7 +116,7 @@ igl::RenderPass renderPass_;
 igl::DepthStencilState depthStencilState_;
 
 struct VertexPosUvw {
-  vec3 position;
+  vec3 pos;
   vec3 color;
   vec2 uv;
 };
@@ -251,8 +251,8 @@ static void initIGL() {
     IGL_ASSERT_MSG(pixels,
                    "Cannot load textures. Run `deploy_content.py` before running this app.");
     if (!pixels) {
-        printf("Cannot load textures. Run `deploy_content.py` before running this app.");
-        std::terminate();
+      printf("Cannot load textures. Run `deploy_content.py` before running this app.");
+      std::terminate();
     }
     texture1_ = device_->createTexture(
         {
@@ -271,16 +271,15 @@ static void initIGL() {
 
   sampler_ = device_->createSamplerState({.debugName = "Sampler: linear"}, nullptr);
 
-  renderPass_ = {.numColorAttachments = 1,
-                 .colorAttachments = {{
-                     .loadAction = LoadAction::Clear,
-                     .storeAction = StoreAction::Store,
+  renderPass_ = {.colorAttachments = {{
+                     .loadOp = LoadOp_Clear,
+                     .storeOp = StoreOp_Store,
                      .clearColor = {1.0f, 0.0f, 0.0f, 1.0f},
                  }}};
 #if TINY_TEST_USE_DEPTH_BUFFER
-  renderPass_.depthAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0};
+  renderPass_.depthAttachment = {.loadOp = LoadOp_Clear, .clearDepth = 1.0};
 #else
-  renderPass_.depthAttachment = {.loadAction = LoadAction::DontCare};
+  renderPass_.depthAttachment = {.loadOp = LoadOp_DontCare};
 #endif // TINY_TEST_USE_DEPTH_BUFFER
 
   // initialize random rotation axes for all cubes
@@ -295,45 +294,24 @@ static void initObjects() {
   }
 
   framebuffer_ = {
-      .numColorAttachments = 1,
       .colorAttachments = {{.texture = device_->getCurrentSwapchainTexture()}},
   };
 
-  const VertexInputState vdesc = {
-      .numAttributes = 3,
+  const VertexInput vdesc = {
       .attributes =
-          {
-              {
-                  .bufferIndex = 0,
-                  .format = VertexAttributeFormat::Float3,
-                  .offset = offsetof(VertexPosUvw, position),
-                  .location = 0,
-              },
-              {
-                  .bufferIndex = 0,
-                  .format = VertexAttributeFormat::Float3,
-                  .offset = offsetof(VertexPosUvw, color),
-                  .location = 1,
-              },
-              {.bufferIndex = 0,
-               .format = VertexAttributeFormat::Float2,
-               .offset = offsetof(VertexPosUvw, uv),
-               .location = 2},
-          },
-      .numInputBindings = 1,
+          {{.location = 0, .format = VertexFormat::Float3, .offset = offsetof(VertexPosUvw, pos)},
+           {.location = 1, .format = VertexFormat::Float3, .offset = offsetof(VertexPosUvw, color)},
+           {.location = 2, .format = VertexFormat::Float2, .offset = offsetof(VertexPosUvw, uv)}},
       .inputBindings = {{.stride = sizeof(VertexPosUvw)}},
   };
 
   RenderPipelineDesc desc = {
-      .vertexInputState = vdesc,
+      .vertexInput = vdesc,
       .shaderStages = device_->createShaderStages(
           codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
-      .numColorAttachments = 1,
       .colorAttachments =
           {
-              {
-                  .textureFormat = framebuffer_.colorAttachments[0].texture->getFormat(),
-              },
+              {.textureFormat = framebuffer_.colorAttachments[0].texture->getFormat()},
           },
       .cullMode = igl::CullMode_Back,
       .frontFaceWinding = igl::WindingMode_CW,

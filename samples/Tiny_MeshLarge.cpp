@@ -637,32 +637,25 @@ void initIGL() {
       },
       nullptr);
 
-  renderPassOffscreen_ = {
-      .numColorAttachments = 1,
-      .colorAttachments = {{
-          .loadAction = LoadAction::Clear,
-          .storeAction = kNumSamplesMSAA > 1 ? StoreAction::MsaaResolve : StoreAction::Store,
-          .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
-      }},
-      .depthAttachment = {
-          .loadAction = LoadAction::Clear,
-          .storeAction = StoreAction::Store,
-          .clearDepth = 1.0f,
-      }};
+  renderPassOffscreen_ = {.colorAttachments = {{
+                              .loadOp = LoadOp_Clear,
+                              .storeOp = kNumSamplesMSAA > 1 ? StoreOp_MsaaResolve : StoreOp_Store,
+                              .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
+                          }},
+                          .depthAttachment = {
+                              .loadOp = LoadOp_Clear,
+                              .storeOp = StoreOp_Store,
+                              .clearDepth = 1.0f,
+                          }};
 
-  renderPassMain_ = RenderPass{.numColorAttachments = 1,
-                     .colorAttachments = {
-                         {
-                             .loadAction = LoadAction::Clear,
-                             .storeAction = StoreAction::Store,
-                             .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
-                         },
-                     }};
-  renderPassShadow_ = RenderPass{.depthAttachment = {
-                           .loadAction = LoadAction::Clear,
-                           .storeAction = StoreAction::Store,
-                           .clearDepth = 1.0f,
-                       }};
+  renderPassMain_ = {
+      .colorAttachments = {{.loadOp = LoadOp_Clear,
+                            .storeOp = StoreOp_Store,
+                            .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}},
+  };
+  renderPassShadow_ = {
+      .depthAttachment = {.loadOp = LoadOp_Clear, .storeOp = StoreOp_Store, .clearDepth = 1.0f},
+  };
 }
 
 void normalizeName(std::string& name) {
@@ -927,48 +920,41 @@ void createRenderPipelines() {
     return;
   }
 
-  VertexInputState vdesc;
-  vdesc.numAttributes = 4;
-  vdesc.attributes[0].format = VertexAttributeFormat::Float3;
-  vdesc.attributes[0].offset = offsetof(VertexData, position);
-  vdesc.attributes[0].bufferIndex = 0;
-  vdesc.attributes[0].location = 0;
-  vdesc.attributes[1].format = VertexAttributeFormat::Int_2_10_10_10_REV;
-  vdesc.attributes[1].offset = offsetof(VertexData, normal);
-  vdesc.attributes[1].bufferIndex = 0;
-  vdesc.attributes[1].location = 1;
-  vdesc.attributes[2].format = VertexAttributeFormat::HalfFloat2;
-  vdesc.attributes[2].offset = offsetof(VertexData, uv);
-  vdesc.attributes[2].bufferIndex = 0;
-  vdesc.attributes[2].location = 2;
-  vdesc.attributes[3].format = VertexAttributeFormat::UInt1;
-  vdesc.attributes[3].offset = offsetof(VertexData, mtlIndex);
-  vdesc.attributes[3].bufferIndex = 0;
-  vdesc.attributes[3].location = 3;
-  vdesc.numInputBindings = 1;
-  vdesc.inputBindings[0].stride = sizeof(VertexData);
+  const VertexInput vdesc = {
+      .attributes =
+          {
+              {.location = 0,
+               .format = VertexFormat::Float3,
+               .offset = offsetof(VertexData, position)},
+              {.location = 1,
+               .format = VertexFormat::Int_2_10_10_10_REV,
+               .offset = offsetof(VertexData, normal)},
+              {.location = 2,
+               .format = VertexFormat::HalfFloat2,
+               .offset = offsetof(VertexData, uv)},
+              {.location = 3,
+               .format = VertexFormat::UInt1,
+               .offset = offsetof(VertexData, mtlIndex)},
+          },
+      .inputBindings = {{.stride = sizeof(VertexData)}},
+  };
 
   // shadow
-  VertexInputState vdescs;
-  vdescs.numAttributes = 1;
-  vdescs.attributes[0].format = VertexAttributeFormat::Float3;
-  vdescs.attributes[0].offset = offsetof(VertexData, position);
-  vdescs.attributes[0].bufferIndex = 0;
-  vdescs.attributes[0].location = 0;
-  vdescs.numInputBindings = 1;
-  vdescs.inputBindings[0].stride = sizeof(VertexData);
+  const VertexInput vdescs = {
+      .attributes = {{.format = VertexFormat::Float3, .offset = offsetof(VertexData, position)}},
+      .inputBindings = {{.stride = sizeof(VertexData)}},
+  };
 
   {
     RenderPipelineDesc desc = {
-        .vertexInputState = vdesc,
+        .vertexInput = vdesc,
         .shaderStages = device_->createShaderStages(
             kCodeVS, "Shader Module: main (vert)", kCodeFS, "Shader Module: main (frag)"),
-        .numColorAttachments = 1,
         .colorAttachments = {{.textureFormat =
                                   fbOffscreen_.colorAttachments[0].texture->getFormat()}},
         .cullMode = igl::CullMode_Back,
         .frontFaceWinding = igl::WindingMode_CCW,
-        .sampleCount = kNumSamplesMSAA,
+        .samplesCount = kNumSamplesMSAA,
         .debugName = "Pipeline: mesh",
     };
 
@@ -979,7 +965,7 @@ void createRenderPipelines() {
     renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
 
     desc.polygonMode = igl::PolygonMode_Line;
-    desc.vertexInputState = vdescs; // positions-only
+    desc.vertexInput = vdescs; // positions-only
     desc.shaderStages = device_->createShaderStages(kCodeVS_Wireframe,
                                                     "Shader Module: main wireframe (vert)",
                                                     kCodeFS_Wireframe,
@@ -991,7 +977,7 @@ void createRenderPipelines() {
   // shadow
   renderPipelineState_Shadow_ = device_->createRenderPipeline(RenderPipelineDesc
       {
-          .vertexInputState = vdescs,
+          .vertexInput = vdescs,
           .shaderStages = device_->createShaderStages(
               kShadowVS, "Shader Module: shadow (vert)", kShadowFS, "Shader Module: shadow (frag)"),
           .depthAttachmentFormat = fbShadowMap_.depthStencilAttachment.texture->getFormat(),
@@ -1002,10 +988,9 @@ void createRenderPipelines() {
 
   // fullscreen
   {
-    RenderPipelineDesc desc;
-    desc.numColorAttachments = 1;
-    desc.colorAttachments[0] = {.textureFormat =
-                                    fbMain_.colorAttachments[0].texture->getFormat()};
+    RenderPipelineDesc desc = {
+        .colorAttachments = {{.textureFormat = fbMain_.colorAttachments[0].texture->getFormat()}},
+    };
     if (fbMain_.depthStencilAttachment.texture) {
       desc.depthAttachmentFormat = fbMain_.depthStencilAttachment.texture->getFormat();
     }
@@ -1027,13 +1012,12 @@ void createRenderPipelineSkybox() {
   RenderPipelineDesc desc = {
       .shaderStages = device_->createShaderStages(
           kSkyboxVS, "Shader Module: skybox (vert)", kSkyboxFS, "Shader Module: skybox (frag)"),
-      .numColorAttachments = 1,
       .colorAttachments = {{
           .textureFormat = fbOffscreen_.colorAttachments[0].texture->getFormat(),
       }},
       .cullMode = igl::CullMode_Front,
       .frontFaceWinding = igl::WindingMode_CCW,
-      .sampleCount = kNumSamplesMSAA,
+      .samplesCount = kNumSamplesMSAA,
       .debugName = "Pipeline: skybox",
   };
 
@@ -1056,11 +1040,9 @@ void createShadowMap() {
       .numMipLevels = igl::calcNumMipLevels(w, h),
       .debugName = "Shadow map",
   };
-  Result ret;
   fbShadowMap_ = {
-      .depthStencilAttachment = {.texture = device_->createTexture(desc, &ret)},
+      .depthStencilAttachment = {.texture = device_->createTexture(desc)},
   };
-  IGL_ASSERT(ret.isOk());
 }
 
 void createOffscreenFramebuffer() {
@@ -1080,9 +1062,7 @@ void createOffscreenFramebuffer() {
     descDepth.numSamples = kNumSamplesMSAA;
     descDepth.numMipLevels = 1;
   }
-  Result ret;
-  std::shared_ptr<ITexture> texDepth = device_->createTexture(descDepth, &ret);
-  IGL_ASSERT(ret.isOk());
+  std::shared_ptr<ITexture> texDepth = device_->createTexture(descDepth);
 
   const uint8_t usage =
       TextureUsageBits_Attachment | TextureUsageBits_Sampled | TextureUsageBits_Storage;
@@ -1102,27 +1082,22 @@ void createOffscreenFramebuffer() {
     descColor.numSamples = kNumSamplesMSAA;
     descColor.numMipLevels = 1;
   }
-  std::shared_ptr<ITexture> texColor = device_->createTexture(descColor, &ret);
-  IGL_ASSERT(ret.isOk());
+  std::shared_ptr<ITexture> texColor = device_->createTexture(descColor);
 
   Framebuffer fb = {
-      .numColorAttachments = 1,
       .colorAttachments = {{.texture = texColor}},
       .depthStencilAttachment = {.texture = texDepth},
   };
 
   if (kNumSamplesMSAA > 1) {
-    fb.colorAttachments[0].resolveTexture = device_->createTexture(
-        {
-            .type = TextureType::TwoD,
-            .format = format,
-            .width = w,
-            .height = h,
-            .usage = usage,
-            .debugName = "Offscreen framebuffer (c - resolve)",
-        },
-        &ret);
-    IGL_ASSERT(ret.isOk());
+    fb.colorAttachments[0].resolveTexture = device_->createTexture({
+        .type = TextureType::TwoD,
+        .format = format,
+        .width = w,
+        .height = h,
+        .usage = usage,
+        .debugName = "Offscreen framebuffer (c - resolve)",
+    });
   }
 
   fbOffscreen_ = fb;
@@ -1850,7 +1825,6 @@ int main(int argc, char* argv[]) {
   loadMaterials();
 
   fbMain_ = {
-      .numColorAttachments = 1,
       .colorAttachments = {{.texture = device_->getCurrentSwapchainTexture()}},
   };
   createShadowMap();

@@ -49,93 +49,91 @@ VkFrontFace windingModeToVkFrontFace(igl::WindingMode mode) {
   return VK_FRONT_FACE_CLOCKWISE;
 }
 
-VkFormat vertexAttributeFormatToVkFormat(igl::VertexAttributeFormat fmt) {
-  using igl::VertexAttributeFormat;
+VkFormat vertexFormatToVkFormat(igl::VertexFormat fmt) {
+  using igl::VertexFormat;
   switch (fmt) {
-  case VertexAttributeFormat::Float1:
+  case VertexFormat::Float1:
     return VK_FORMAT_R32_SFLOAT;
-  case VertexAttributeFormat::Float2:
+  case VertexFormat::Float2:
     return VK_FORMAT_R32G32_SFLOAT;
-  case VertexAttributeFormat::Float3:
+  case VertexFormat::Float3:
     return VK_FORMAT_R32G32B32_SFLOAT;
-  case VertexAttributeFormat::Float4:
+  case VertexFormat::Float4:
     return VK_FORMAT_R32G32B32A32_SFLOAT;
-  case VertexAttributeFormat::Byte1:
+  case VertexFormat::Byte1:
     return VK_FORMAT_R8_SINT;
-  case VertexAttributeFormat::Byte2:
+  case VertexFormat::Byte2:
     return VK_FORMAT_R8G8_SINT;
-  case VertexAttributeFormat::Byte3:
+  case VertexFormat::Byte3:
     return VK_FORMAT_R8G8B8_SINT;
-  case VertexAttributeFormat::Byte4:
+  case VertexFormat::Byte4:
     return VK_FORMAT_R8G8B8A8_SINT;
-  case VertexAttributeFormat::UByte1:
+  case VertexFormat::UByte1:
     return VK_FORMAT_R8_UINT;
-  case VertexAttributeFormat::UByte2:
+  case VertexFormat::UByte2:
     return VK_FORMAT_R8G8_UINT;
-  case VertexAttributeFormat::UByte3:
+  case VertexFormat::UByte3:
     return VK_FORMAT_R8G8B8_UINT;
-  case VertexAttributeFormat::UByte4:
+  case VertexFormat::UByte4:
     return VK_FORMAT_R8G8B8A8_UINT;
-  case VertexAttributeFormat::Short1:
+  case VertexFormat::Short1:
     return VK_FORMAT_R16_SINT;
-  case VertexAttributeFormat::Short2:
+  case VertexFormat::Short2:
     return VK_FORMAT_R16G16_SINT;
-  case VertexAttributeFormat::Short3:
+  case VertexFormat::Short3:
     return VK_FORMAT_R16G16B16_SINT;
-  case VertexAttributeFormat::Short4:
+  case VertexFormat::Short4:
     return VK_FORMAT_R16G16B16A16_SINT;
-  case VertexAttributeFormat::UShort1:
+  case VertexFormat::UShort1:
     return VK_FORMAT_R16_UINT;
-  case VertexAttributeFormat::UShort2:
+  case VertexFormat::UShort2:
     return VK_FORMAT_R16G16_UINT;
-  case VertexAttributeFormat::UShort3:
+  case VertexFormat::UShort3:
     return VK_FORMAT_R16G16B16_UINT;
-  case VertexAttributeFormat::UShort4:
+  case VertexFormat::UShort4:
     return VK_FORMAT_R16G16B16A16_UINT;
     // Normalized variants
-  case VertexAttributeFormat::Byte2Norm:
+  case VertexFormat::Byte2Norm:
     return VK_FORMAT_R8G8_SNORM;
-  case VertexAttributeFormat::Byte4Norm:
+  case VertexFormat::Byte4Norm:
     return VK_FORMAT_R8G8B8A8_SNORM;
-  case VertexAttributeFormat::UByte2Norm:
+  case VertexFormat::UByte2Norm:
     return VK_FORMAT_R8G8_UNORM;
-  case VertexAttributeFormat::UByte4Norm:
+  case VertexFormat::UByte4Norm:
     return VK_FORMAT_R8G8B8A8_UNORM;
-  case VertexAttributeFormat::Short2Norm:
+  case VertexFormat::Short2Norm:
     return VK_FORMAT_R16G16_SNORM;
-  case VertexAttributeFormat::Short4Norm:
+  case VertexFormat::Short4Norm:
     return VK_FORMAT_R16G16B16A16_SNORM;
-  case VertexAttributeFormat::UShort2Norm:
+  case VertexFormat::UShort2Norm:
     return VK_FORMAT_R16G16_UNORM;
-  case VertexAttributeFormat::UShort4Norm:
+  case VertexFormat::UShort4Norm:
     return VK_FORMAT_R16G16B16A16_UNORM;
-  // Integer formats
-  case VertexAttributeFormat::Int1:
+  case VertexFormat::Int1:
     return VK_FORMAT_R32_SINT;
-  case VertexAttributeFormat::Int2:
+  case VertexFormat::Int2:
     return VK_FORMAT_R32G32_SINT;
-  case VertexAttributeFormat::Int3:
+  case VertexFormat::Int3:
     return VK_FORMAT_R32G32B32_SINT;
-  case VertexAttributeFormat::Int4:
+  case VertexFormat::Int4:
     return VK_FORMAT_R32G32B32A32_SINT;
-  case VertexAttributeFormat::UInt1:
+  case VertexFormat::UInt1:
     return VK_FORMAT_R32_UINT;
-  case VertexAttributeFormat::UInt2:
+  case VertexFormat::UInt2:
     return VK_FORMAT_R32G32_UINT;
-  case VertexAttributeFormat::UInt3:
+  case VertexFormat::UInt3:
     return VK_FORMAT_R32G32B32_UINT;
-  case VertexAttributeFormat::UInt4:
+  case VertexFormat::UInt4:
     return VK_FORMAT_R32G32B32A32_UINT;
-  // Half-float
-  case VertexAttributeFormat::HalfFloat1:
+  case VertexFormat::HalfFloat1:
     return VK_FORMAT_R16_SFLOAT;
-  case VertexAttributeFormat::HalfFloat2:
+  case VertexFormat::HalfFloat2:
     return VK_FORMAT_R16G16_SFLOAT;
-  case VertexAttributeFormat::HalfFloat3:
+  case VertexFormat::HalfFloat3:
     return VK_FORMAT_R16G16B16_SFLOAT;
-  case VertexAttributeFormat::HalfFloat4:
+  case VertexFormat::HalfFloat4:
     return VK_FORMAT_R16G16B16A16_SFLOAT;
-  case VertexAttributeFormat::Int_2_10_10_10_REV:
+  case VertexFormat::Int_2_10_10_10_REV:
     return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
   }
   IGL_ASSERT(false);
@@ -208,23 +206,23 @@ VkBlendFactor blendFactorToVkBlendFactor(igl::BlendFactor value) {
 
 } // namespace
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
-                                         RenderPipelineDesc desc) :
-  device_(device), desc_(std::move(desc)) {
+                                         const RenderPipelineDesc& desc) :
+  device_(device), desc_(desc) {
   // Iterate and cache vertex input bindings and attributes
-  const igl::VertexInputState& vstate = desc_.vertexInputState;
+  const igl::VertexInput& vstate = desc_.vertexInput;
 
   vertexInputStateCreateInfo_ = ivkGetPipelineVertexInputStateCreateInfo_Empty();
 
-  bool bufferAlreadyBound[VertexInputState::IGL_VERTEX_BUFFER_MAX] = {};
+  bool bufferAlreadyBound[VertexInput::IGL_VERTEX_BUFFER_MAX] = {};
 
-  for (uint32_t i = 0; i != vstate.numAttributes; i++) {
+  const uint32_t numAttributes = vstate.getNumAttributes();
+
+  for (uint32_t i = 0; i != numAttributes; i++) {
     const VertexAttribute& attr = vstate.attributes[i];
-    const VkFormat format = vertexAttributeFormatToVkFormat(attr.format);
+    const VkFormat format = vertexFormatToVkFormat(attr.format);
     const uint32_t bufferIndex = attr.bufferIndex;
 
     vkAttributes_.push_back(ivkGetVertexInputAttributeDescription(
@@ -240,11 +238,9 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
       vkBindings_.push_back(ivkGetVertexInputBindingDescription(bufferIndex, binding.stride, rate));
     }
 
-    vertexInputStateCreateInfo_.vertexBindingDescriptionCount =
-        static_cast<uint32_t>(vstate.numInputBindings);
+    vertexInputStateCreateInfo_.vertexBindingDescriptionCount = vstate.getNumInputBindings();
     vertexInputStateCreateInfo_.pVertexBindingDescriptions = vkBindings_.data();
-    vertexInputStateCreateInfo_.vertexAttributeDescriptionCount =
-        static_cast<uint32_t>(vstate.numAttributes);
+    vertexInputStateCreateInfo_.vertexAttributeDescriptionCount = vstate.getNumAttributes();
     vertexInputStateCreateInfo_.pVertexAttributeDescriptions = vkAttributes_.data();
   }
 }
@@ -274,15 +270,17 @@ VkPipeline RenderPipelineState::getVkPipeline(
 
   VkPipeline pipeline = VK_NULL_HANDLE;
 
+  const uint32_t numColorAttachments = desc_.getNumColorAttachments();
+
   // Not all attachments are valid. We need to create color blend attachments only for active
   // attachments
   std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates;
-  colorBlendAttachmentStates.resize(desc_.numColorAttachments);
+  colorBlendAttachmentStates.resize(numColorAttachments);
 
   std::vector<VkFormat> colorAttachmentFormats;
-  colorAttachmentFormats.resize(desc_.numColorAttachments);
+  colorAttachmentFormats.resize(numColorAttachments);
 
-  for (uint32_t i = 0; i != desc_.numColorAttachments; i++) {
+  for (uint32_t i = 0; i != numColorAttachments; i++) {
     const auto& attachment = desc_.colorAttachments[i];
     IGL_ASSERT(attachment.textureFormat != TextureFormat::Invalid);
     colorAttachmentFormats[i] = textureFormatToVkFormat(attachment.textureFormat);
@@ -325,7 +323,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
       .depthBiasEnable(dynamicState.depthBiasEnable_)
       .depthCompareOp(dynamicState.getDepthCompareOp())
       .depthWriteEnable(dynamicState.depthWriteEnable_)
-      .rasterizationSamples(getVulkanSampleCountFlags(desc_.sampleCount))
+      .rasterizationSamples(getVulkanSampleCountFlags(desc_.samplesCount))
       .polygonMode(polygonModeToVkPolygonMode(desc_.polygonMode))
       .stencilStateOps(VK_STENCIL_FACE_FRONT_BIT,
                        dynamicState.getStencilStateFailOp(true),
@@ -364,5 +362,4 @@ VkPipeline RenderPipelineState::getVkPipeline(
   return pipeline;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

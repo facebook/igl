@@ -72,16 +72,17 @@ std::shared_ptr<igl::IRenderPipelineState> ImGuiRenderer::createNewPipelineState
     const igl::Framebuffer& desc) {
   return device_.createRenderPipeline(
       {
-          .vertexInputState =
-              {.numAttributes = 3,
-               .attributes =
-                   {{0, igl::VertexAttributeFormat::Float2, offsetof(ImDrawVert, pos), 0},
-                    {0, igl::VertexAttributeFormat::Float2, offsetof(ImDrawVert, uv), 1},
-                    {0, igl::VertexAttributeFormat::UByte4Norm, offsetof(ImDrawVert, col), 2}},
-               .numInputBindings = 1,
-               .inputBindings = {{.stride = sizeof(ImDrawVert)}}},
+          .vertexInput = {.attributes = {{.location = 0,
+                                          .format = igl::VertexFormat::Float2,
+                                          .offset = offsetof(ImDrawVert, pos)},
+                                         {.location = 1,
+                                          .format = igl::VertexFormat::Float2,
+                                          .offset = offsetof(ImDrawVert, uv)},
+                                         {.location = 2,
+                                          .format = igl::VertexFormat::UByte4Norm,
+                                          .offset = offsetof(ImDrawVert, col)}},
+                          .inputBindings = {{.stride = sizeof(ImDrawVert)}}},
           .shaderStages = shaderStages_,
-          .numColorAttachments = 1,
           .colorAttachments = {{
               .textureFormat = desc.colorAttachments[0].texture->getFormat(),
               .blendEnabled = true,
