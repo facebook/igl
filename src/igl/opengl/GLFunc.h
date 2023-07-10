@@ -32,6 +32,8 @@ IGL_EXTERN_BEGIN
 // defined by other OpenGL loaders. These definitions also omit any extension-specific suffix (e.g.,
 // EXT) unless it is needed to disambiguate them.
 using PFNIGLBINDBUFFERBASEPROC = void (*)(GLenum target, GLuint index, GLuint buffer);
+using PFNIGLBINDBUFFERRANGEPROC =
+    void (*)(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
 using PFNIGLBINDFRAMEBUFFERPROC = void (*)(GLenum target, GLuint framebuffer);
 using PFNIGLBINDIMAGETEXTUREPROC = void (*)(GLuint unit,
                                             GLuint texture,
@@ -470,6 +472,11 @@ void iglTexStorage3D(GLenum target,
 /// MARK: - GL_ARB_uniform_buffer_object
 
 void iglBindBufferBase(GLenum target, GLuint index, GLuint buffer);
+void iglBindBufferRange(GLenum target,
+                        GLuint index,
+                        GLuint buffer,
+                        GLintptr offset,
+                        GLsizeiptr size);
 void iglGetActiveUniformsiv(GLuint program,
                             GLsizei uniformCount,
                             const GLuint* uniformIndices,

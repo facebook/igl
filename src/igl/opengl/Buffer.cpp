@@ -191,5 +191,26 @@ void UniformBlockBuffer::bindBase(size_t index, Result* outResult) {
   }
 }
 
+void UniformBlockBuffer::bindRange(size_t index, size_t offset, Result* outResult) {
+  if (getContext().deviceFeatures().hasFeature(DeviceFeatures::UniformBlocks)) {
+    if (target_ != GL_UNIFORM_BUFFER) {
+      static const char* kErrorMsg = "Buffer should be GL_UNIFORM_BUFFER";
+      IGL_REPORT_ERROR_MSG(1, kErrorMsg);
+      Result::setResult(outResult, Result::Code::InvalidOperation, kErrorMsg);
+      return;
+    }
+    getContext().bindBuffer(target_, iD_);
+    IGL_ASSERT_MSG(
+        offset < getSizeInBytes(), "Offset is invalid! (%d %d)", offset, getSizeInBytes());
+    getContext().bindBufferRange(
+        target_, (GLuint)index, iD_, (GLintptr)offset, getSizeInBytes() - offset);
+    Result::setOk(outResult);
+  } else {
+    static const char* kErrorMsg = "Uniform Blocks are not supported";
+    IGL_REPORT_ERROR_MSG(1, kErrorMsg);
+    Result::setResult(outResult, Result::Code::Unimplemented, kErrorMsg);
+  }
+}
+
 } // namespace opengl
 } // namespace igl

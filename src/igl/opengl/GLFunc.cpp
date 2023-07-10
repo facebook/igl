@@ -941,6 +941,7 @@ void iglTexStorage3D(GLenum target,
 
 #if defined(GL_VERSION_3_1) || defined(GL_ES_VERSION_3_0) || defined(GL_ARB_uniform_buffer_object)
 #define CAN_CALL_glBindBufferBase CAN_CALL
+#define CAN_CALL_glBindBufferRange CAN_CALL
 #define CAN_CALL_glGetActiveUniformsiv CAN_CALL
 #define CAN_CALL_glGetActiveUniformBlockiv CAN_CALL
 #define CAN_CALL_glGetActiveUniformBlockName CAN_CALL
@@ -948,6 +949,7 @@ void iglTexStorage3D(GLenum target,
 #define CAN_CALL_glUniformBlockBinding CAN_CALL
 #else
 #define CAN_CALL_glBindBufferBase 0
+#define CAN_CALL_glBindBufferRange 0
 #define CAN_CALL_glGetActiveUniformsiv 0
 #define CAN_CALL_glGetActiveUniformBlockiv 0
 #define CAN_CALL_glGetActiveUniformBlockName 0
@@ -958,6 +960,21 @@ void iglTexStorage3D(GLenum target,
 void iglBindBufferBase(GLenum target, GLuint index, GLuint buffer) {
   GLEXTENSION_METHOD_BODY(
       CAN_CALL_glBindBufferBase, glBindBufferBase, PFNIGLBINDBUFFERBASEPROC, target, index, buffer);
+}
+
+void iglBindBufferRange(GLenum target,
+                        GLuint index,
+                        GLuint buffer,
+                        GLintptr offset,
+                        GLsizeiptr size) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glBindBufferRange,
+                          glBindBufferRange,
+                          PFNIGLBINDBUFFERRANGEPROC,
+                          target,
+                          index,
+                          buffer,
+                          offset,
+                          size);
 }
 
 void iglGetActiveUniformsiv(GLuint program,

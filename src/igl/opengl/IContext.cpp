@@ -626,6 +626,16 @@ void IContext::bindBufferBase(GLenum target, GLuint index, GLuint buffer) {
   GLCHECK_ERRORS();
 }
 
+void IContext::bindBufferRange(GLenum target,
+                               GLuint index,
+                               GLuint buffer,
+                               GLintptr offset,
+                               GLsizeiptr size) {
+  IGLCALL(BindBufferRange)(target, index, buffer, offset, size);
+  APILOG("glBindBufferRange(%s, %u, %u)\n", GL_ENUM_TO_STRING(target), index, buffer);
+  GLCHECK_ERRORS();
+}
+
 void IContext::bindFramebuffer(GLenum target, GLuint framebuffer) {
   IGLCALL(BindFramebuffer)(target, framebuffer);
   APILOG("glBindFramebuffer(%s, %u)\n", GL_ENUM_TO_STRING(target), framebuffer);

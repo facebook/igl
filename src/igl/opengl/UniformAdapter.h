@@ -55,7 +55,7 @@ class UniformAdapter {
   uint32_t maxUniforms_ = 1024;
 
   // map for uniform binding indices to the buffers
-  std::unordered_map<int, std::shared_ptr<IBuffer>> uniformBufferBindingMap_;
+  std::unordered_map<int, std::pair<std::shared_ptr<IBuffer>, size_t>> uniformBufferBindingMap_;
   uint32_t uniformBuffersDirtyMask_ = 0;
   static_assert(sizeof(uniformBuffersDirtyMask_) * 8 >= IGL_UNIFORM_BLOCKS_BINDING_MAX,
                 "uniformBuffersDirtyMask size is not enough to fit the flags");
