@@ -32,8 +32,10 @@ if(DEFINED ENV{VULKAN_SDK})
 endif()
 
 if(IOS)
+  if(IGL_WITH_OPENGL)
+    set(IGL_WITH_OPENGLES ON)
+  endif()
   set(IGL_WITH_OPENGL OFF)
-  set(IGL_WITH_OPENGLES OFF)
   set(IGL_WITH_VULKAN OFF)
 endif()
 
@@ -42,8 +44,10 @@ if(NOT APPLE)
 endif()
 
 if(ANDROID)
+  if(IGL_WITH_OPENGL)
+    set(IGL_WITH_OPENGLES ON)
+  endif()
   set(IGL_WITH_OPENGL OFF)
-  set(IGL_WITH_OPENGLES ON)
   set(IGL_WITH_VULKAN ON)
 endif()
 
