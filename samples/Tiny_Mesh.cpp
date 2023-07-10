@@ -263,8 +263,7 @@ static void initIGL() {
 #elif __APPLE__
     auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetCocoaWindow(window_));
 #elif defined(__linux__)
-    auto ctx = vulkan::Device::createContext(
-        cfg, (void*)glfwGetX11Window(window_), 0, nullptr, (void*)glfwGetX11Display());
+    auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetX11Window(window_), (void*)glfwGetX11Display());
 #else
 #error Unsupported OS
 #endif

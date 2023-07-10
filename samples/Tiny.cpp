@@ -126,8 +126,7 @@ void VulkanObjects::init() {
 #ifdef _WIN32
     auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetWin32Window(window_));
 #elif defined(__linux__)
-    auto ctx = vulkan::Device::createContext(
-        cfg, (void*)glfwGetX11Window(window_), 0, nullptr, (void*)glfwGetX11Display());
+    auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetX11Window(window_), (void*)glfwGetX11Display());
 #else
 #error Unsupported OS
 #endif
@@ -142,7 +141,7 @@ void VulkanObjects::init() {
     IGL_ASSERT(device_.get());
   }
 
-  renderPass_ = {
+  renderPass_ = RenderPass{
       .numColorAttachments = kNumColorAttachments,
       .depthAttachment =
           {

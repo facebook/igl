@@ -784,41 +784,6 @@ std::shared_ptr<VulkanImage> VulkanContext::createImage(VkImageType imageType,
                                        debugName);
 }
 
-std::shared_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
-    int32_t fileDescriptor,
-    uint64_t memoryAllocationSize,
-    VkImageType imageType,
-    VkExtent3D extent,
-    VkFormat format,
-    uint32_t mipLevels,
-    uint32_t arrayLayers,
-    VkImageTiling tiling,
-    VkImageUsageFlags usageFlags,
-    VkImageCreateFlags flags,
-    VkSampleCountFlagBits samples,
-    igl::Result* outResult,
-    const char* debugName) const {
-  if (!validateImageLimits(
-          imageType, samples, extent, getVkPhysicalDeviceProperties().limits, outResult)) {
-    return nullptr;
-  }
-
-  return std::make_shared<VulkanImage>(*this,
-                                       fileDescriptor,
-                                       memoryAllocationSize,
-                                       vkDevice_,
-                                       extent,
-                                       imageType,
-                                       format,
-                                       mipLevels,
-                                       arrayLayers,
-                                       tiling,
-                                       usageFlags,
-                                       flags,
-                                       samples,
-                                       debugName);
-}
-
 void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
                                               VkPipelineBindPoint bindPoint) const {
   IGL_PROFILER_FUNCTION();

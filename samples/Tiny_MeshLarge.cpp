@@ -721,9 +721,7 @@ void initIGL() {
 #ifdef _WIN32
     auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetWin32Window(window_));
 #elif defined(__linux__)
-    auto ctx = vulkan::Device::createContext(
-        cfg, (void*)glfwGetX11Window(window_), 0, nullptr, (void*)glfwGetX11Display());
-
+    auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetX11Window(window_), (void*)glfwGetX11Display());
 #else
 #error Unsupported OS
 #endif
@@ -812,7 +810,7 @@ void initIGL() {
           .clearDepth = 1.0f,
       }};
 
-  renderPassMain_ = {.numColorAttachments = 1,
+  renderPassMain_ = RenderPass{.numColorAttachments = 1,
                      .colorAttachments = {
                          {
                              .loadAction = LoadAction::Clear,
@@ -820,7 +818,7 @@ void initIGL() {
                              .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
                          },
                      }};
-  renderPassShadow_ = {.depthAttachment = {
+  renderPassShadow_ = RenderPass{.depthAttachment = {
                            .loadAction = LoadAction::Clear,
                            .storeAction = StoreAction::Store,
                            .clearDepth = 1.0f,
@@ -1149,7 +1147,7 @@ void createRenderPipelines() {
   }
 
   // shadow
-  renderPipelineState_Shadow_ = device_->createRenderPipeline(
+  renderPipelineState_Shadow_ = device_->createRenderPipeline(RenderPipelineDesc
       {
           .vertexInputState = vdescs,
           .shaderStages = device_->createShaderStages(
@@ -1926,7 +1924,7 @@ int main(int argc, char* argv[]) {
 
 #if IGL_WITH_IGLU
   imguiSession_ = std::make_unique<iglu::imgui::Session>(*device_.get(), inputDispatcher_);
-#endif IGL_WITH_IGLU
+#endif // IGL_WITH_IGLU
 
   double prevTime = glfwGetTime();
 
@@ -2006,7 +2004,7 @@ int main(int argc, char* argv[]) {
 
 #if IGL_WITH_IGLU
   imguiSession_ = nullptr;
-#endif IGL_WITH_IGLU
+#endif // IGL_WITH_IGLU
   // destroy all the Vulkan stuff before closing the window
   vb0_ = nullptr;
   ib0_ = nullptr;

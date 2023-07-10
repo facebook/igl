@@ -199,8 +199,8 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
     for (uint32_t mipLevel = 0; mipLevel < numMipLevels; ++mipLevel) {
       const auto currentMipLevel = baseMipLevel + mipLevel;
 
-      IGL_ASSERT(currentMipLevel < image.mipLevels_);
-      IGL_ASSERT(mipLevel < image.mipLevels_);
+      IGL_ASSERT(currentMipLevel < image.levels_);
+      IGL_ASSERT(mipLevel < image.levels_);
 
       // 1. Transition initial image layout into TRANSFER_DST_OPTIMAL
       ivkImageMemoryBarrier(
@@ -265,7 +265,7 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
                                       VkFormat format,
                                       const void* data) {
   IGL_PROFILER_FUNCTION();
-  IGL_ASSERT_MSG(image.mipLevels_ == 1, "Can handle only 3D images with exactly 1 mip-level");
+  IGL_ASSERT_MSG(image.levels_ == 1, "Can handle only 3D images with exactly 1 mip-level");
   IGL_ASSERT_MSG((offset.x == 0) && (offset.y == 0) && (offset.z == 0),
                  "Can upload only full-size 3D images");
   const uint32_t storageSize =

@@ -184,15 +184,18 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
   // create images, image views and framebuffers
   swapchainTextures_.reserve(numSwapchainImages_);
   for (uint32_t i = 0; i < numSwapchainImages_; i++) {
-    char imageName[256] = {0};
-    char imageViewName[256] = {0};
-    snprintf(imageName, sizeof(imageName) - 1, "Image: swapchain %u", i);
-    snprintf(imageViewName, sizeof(imageName) - 1, "Image View: swapchain %u", i);
-    auto image = std::make_shared<VulkanImage>(ctx_, device_, swapchainImages[i], imageName);
-    // set usage flags for retrieved images
-    image->usageFlags_ = usageFlags;
-    image->imageFormat_ = surfaceFormat_.format;
-
+    char debugNameImage[256] = {0};
+    char debugNameImageView[256] = {0};
+    snprintf(debugNameImage, sizeof(debugNameImage) - 1, "Image: swapchain %u", i);
+    snprintf(debugNameImageView, sizeof(debugNameImageView) - 1, "Image View: swapchain %u", i);
+    auto image =
+        std::make_shared<VulkanImage>(ctx_,
+                                      device_,
+                                      swapchainImages[i],
+                                      usageFlags,
+                                      surfaceFormat_.format,
+                                      VkExtent3D{.width = width_, .height = height_, .depth = 1},
+                                      debugNameImage);
     auto imageView = image->createImageView(VK_IMAGE_VIEW_TYPE_2D,
                                             surfaceFormat_.format,
                                             VK_IMAGE_ASPECT_COLOR_BIT,
@@ -200,7 +203,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
                                             VK_REMAINING_MIP_LEVELS,
                                             0,
                                             1,
-                                            imageViewName);
+                                            debugNameImageView);
     swapchainTextures_.emplace_back(
         std::make_shared<VulkanTexture>(ctx_, std::move(image), std::move(imageView)));
   }
