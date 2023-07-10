@@ -169,11 +169,11 @@ static void createRenderPipeline() {
 }
 
 static std::shared_ptr<ITexture> getNativeDrawable() {
-  Result ret;
-  std::shared_ptr<ITexture> drawable;
   const auto& platformDevice = device_->getPlatformDevice<opengl::webgl::PlatformDevice>();
   IGL_ASSERT(platformDevice != nullptr);
-  drawable = platformDevice->createTextureFromNativeDrawable(&ret);
+
+  Result ret;
+  std::shared_ptr<ITexture> drawable = platformDevice->createTextureFromNativeDrawable(&ret);
 
   IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
   IGL_ASSERT(drawable != nullptr);
