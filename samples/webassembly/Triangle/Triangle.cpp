@@ -163,7 +163,7 @@ static void createRenderPipeline() {
   }
 
   desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(
-      *device_, codeVS.c_str(), "main", "", codeFS, "main", "", nullptr);
+      *device_, codeVS, "main", "", codeFS, "main", "", nullptr);
   renderPipelineState_Triangle_ = device_->createRenderPipeline(desc, nullptr);
   IGL_ASSERT(renderPipelineState_Triangle_);
 }
@@ -243,8 +243,9 @@ int main(int argc, char* argv[]) {
   // Main loop
   emscripten_set_main_loop(&emscriptenMainLoopCallback, 0, 1);
 
-  renderPipelineState_Triangle_ = nullptr;
-  framebuffer_ = nullptr;
+  renderPipelineState_Triangle_.reset();
+  framebuffer_.reset();
+  commandQueue_.reset();
   device_.reset(nullptr);
 
   glfwDestroyWindow(window_);
