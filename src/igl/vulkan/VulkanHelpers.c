@@ -1161,61 +1161,6 @@ VkImageCopy ivkGetImageCopy2D(VkOffset2D srcDstOffset,
   return copy;
 }
 
-VkResult ivkVmaCreateAllocator(VkPhysicalDevice physDev,
-                               VkDevice device,
-                               VkInstance instance,
-                               uint32_t apiVersion,
-                               VmaAllocator* outVma) {
-  const VmaVulkanFunctions funcs = {
-    .vkGetInstanceProcAddr = vkGetInstanceProcAddr,
-    .vkGetDeviceProcAddr = vkGetDeviceProcAddr,
-    .vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties,
-    .vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties,
-    .vkAllocateMemory = vkAllocateMemory,
-    .vkFreeMemory = vkFreeMemory,
-    .vkMapMemory = vkMapMemory,
-    .vkUnmapMemory = vkUnmapMemory,
-    .vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges,
-    .vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges,
-    .vkBindBufferMemory = vkBindBufferMemory,
-    .vkBindImageMemory = vkBindImageMemory,
-    .vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements,
-    .vkGetImageMemoryRequirements = vkGetImageMemoryRequirements,
-    .vkCreateBuffer = vkCreateBuffer,
-    .vkDestroyBuffer = vkDestroyBuffer,
-    .vkCreateImage = vkCreateImage,
-    .vkDestroyImage = vkDestroyImage,
-    .vkCmdCopyBuffer = vkCmdCopyBuffer,
-
-#if VMA_VULKAN_VERSION >= 1001000
-    .vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2,
-    .vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2,
-    .vkBindBufferMemory2KHR = vkBindBufferMemory2,
-    .vkBindImageMemory2KHR = vkBindImageMemory2,
-    .vkGetPhysicalDeviceMemoryProperties2KHR = vkGetPhysicalDeviceMemoryProperties2,
-#endif
-
-#if VMA_VULKAN_VERSION >= 1003000
-    .vkGetDeviceBufferMemoryRequirements = vkGetDeviceBufferMemoryRequirements,
-    .vkGetDeviceImageMemoryRequirements = vkGetDeviceImageMemoryRequirements,
-#endif
-  };
-
-  const VmaAllocatorCreateInfo ci = {
-      .flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
-      .physicalDevice = physDev,
-      .device = device,
-      .preferredLargeHeapBlockSize = 0,
-      .pAllocationCallbacks = NULL,
-      .pDeviceMemoryCallbacks = NULL,
-      .pHeapSizeLimit = NULL,
-      .pVulkanFunctions = &funcs,
-      .instance = instance,
-      .vulkanApiVersion = apiVersion,
-  };
-  return vmaCreateAllocator(&ci, outVma);
-}
-
 void ivkGlslangResource(glslang_resource_t* glslangResource,
                         const VkPhysicalDeviceProperties* deviceProperties) {
   const VkPhysicalDeviceLimits* limits = deviceProperties ? &deviceProperties->limits : NULL;

@@ -17,7 +17,6 @@
 #include <igl/vulkan/VulkanExtensions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
-#include <igl/vulkan/VulkanQueuePool.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 
 namespace igl {
@@ -61,8 +60,6 @@ struct VulkanContextConfig {
   bool enableGPUAssistedValidation = true;
   bool enableSynchronizationValidation = false;
   igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
-
-  std::vector<igl::CommandQueueType> userQueues;
 
   // owned by the application - should be alive until initContext() returns
   const void* pipelineCacheData = nullptr;
@@ -210,7 +207,6 @@ class VulkanContext final {
 
  public:
   DeviceQueues deviceQueues_;
-  std::unordered_map<igl::CommandQueueType, VulkanQueueDescriptor> userQueues_;
   std::unique_ptr<igl::vulkan::VulkanDevice> device_;
   std::unique_ptr<igl::vulkan::VulkanSwapchain> swapchain_;
   std::unique_ptr<igl::vulkan::VulkanImmediateCommands> immediate_;

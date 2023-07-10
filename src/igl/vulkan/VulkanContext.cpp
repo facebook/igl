@@ -24,7 +24,7 @@
 #include <igl/vulkan/VulkanSemaphore.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/VulkanTexture.h>
-#include <igl/vulkan/VulkanVma.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 static_assert(igl::HWDeviceDesc::IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE <= VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
 
@@ -405,53 +405,38 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     extensions_.enable(extraDeviceExtensions[i], VulkanExtensions::ExtensionType::Device);
   }
 
-  VulkanQueuePool queuePool(vkPhysicalDevice_);
+  deviceQueues_.graphicsQueueFamilyIndex =
+      lvk::findQueueFamilyIndex(vkPhysicalDevice_, VK_QUEUE_GRAPHICS_BIT);
+  deviceQueues_.computeQueueFamilyIndex =
+      lvk::findQueueFamilyIndex(vkPhysicalDevice_, VK_QUEUE_COMPUTE_BIT);
 
-  // Reserve IGL Vulkan queues
-  auto graphicsQueueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_GRAPHICS_BIT);
-  auto computeQueueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_COMPUTE_BIT);
-
-  if (!graphicsQueueDescriptor.isValid()) {
+  if (deviceQueues_.graphicsQueueFamilyIndex == DeviceQueues::INVALID) {
     LLOGW("VK_QUEUE_GRAPHICS_BIT is not supported");
     return Result(Result::Code::Unsupported, "VK_QUEUE_GRAPHICS_BIT is not supported");
   }
 
-  if (!computeQueueDescriptor.isValid()) {
+  if (deviceQueues_.computeQueueFamilyIndex == DeviceQueues::INVALID) {
     LLOGW("VK_QUEUE_COMPUTE_BIT is not supported");
     return Result(Result::Code::Unsupported, "VK_QUEUE_COMPUTE_BIT is not supported");
   }
 
-  deviceQueues_.graphicsQueueFamilyIndex = graphicsQueueDescriptor.familyIndex;
-  deviceQueues_.computeQueueFamilyIndex = computeQueueDescriptor.familyIndex;
+  const float queuePriority = 1.0f;
 
-  queuePool.reserveQueue(graphicsQueueDescriptor);
-  queuePool.reserveQueue(computeQueueDescriptor);
-
-  // Reserve queues requested by user
-  // Reserve transfer types at the end, since those can fallback to compute and graphics queues.
-  // This reduces the risk of failing reservation due to saturation of compute and graphics queues
-  auto sortedUserQueues = config_.userQueues;
-  sort(sortedUserQueues.begin(), sortedUserQueues.end(), [](const auto& /*q1*/, const auto& q2) {
-    return q2 == CommandQueueType::Transfer;
-  });
-
-  for (const auto& userQueue : sortedUserQueues) {
-    auto userQueueDescriptor = queuePool.findQueueDescriptor(getQueueTypeFlag(userQueue));
-    if (userQueueDescriptor.isValid()) {
-      userQueues_[userQueue] = userQueueDescriptor;
-    } else {
-      LLOGW("User requested queue is not supported");
-      return Result(Result::Code::Unsupported, "User requested queue is not supported");
-    }
-  }
-
-  for (const auto& [_, descriptor] : userQueues_) {
-    queuePool.reserveQueue(descriptor);
-  }
-
-  const auto qcis = queuePool.getQueueCreationInfos();
-
-  assert(qcis.size() >= 1);
+  const VkDeviceQueueCreateInfo ciQueue[2] = {
+      {
+          .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+          .queueFamilyIndex = deviceQueues_.graphicsQueueFamilyIndex,
+          .queueCount = 1,
+          .pQueuePriorities = &queuePriority,
+      },
+      {
+          .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+          .queueFamilyIndex = deviceQueues_.computeQueueFamilyIndex,
+          .queueCount = 1,
+          .pQueuePriorities = &queuePriority,
+      },
+  };
+  const uint32_t numQueues = ciQueue[0].queueFamilyIndex == ciQueue[1].queueFamilyIndex ? 1 : 2;
 
   VkPhysicalDeviceFeatures deviceFeatures = {
       .multiDrawIndirect = VK_TRUE,
@@ -493,8 +478,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   const VkDeviceCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
       .pNext = &deviceFeatures13,
-      .queueCreateInfoCount = (uint32_t)qcis.size(),
-      .pQueueCreateInfos = qcis.data(),
+      .queueCreateInfoCount = numQueues,
+      .pQueueCreateInfos = ciQueue,
       .enabledLayerCount = (uint32_t)IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers),
       .ppEnabledLayerNames = kDefaultValidationLayers,
       .enabledExtensionCount =
@@ -505,7 +490,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   };
 
   VkDevice device;
-  VK_ASSERT_RETURN(vkCreateDevice(vkPhysicalDevice_, &ci, NULL, &device));
+  VK_ASSERT_RETURN(vkCreateDevice(vkPhysicalDevice_, &ci, nullptr, &device));
 
   volkLoadDevice(device);
 
@@ -530,8 +515,9 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   // Create Vulkan Memory Allocator
   if (IGL_VULKAN_USE_VMA) {
-    VK_ASSERT_RETURN(ivkVmaCreateAllocator(
-        vkPhysicalDevice_, device_->getVkDevice(), vkInstance_, apiVersion, &pimpl_->vma_));
+    pimpl_->vma_ =
+        lvk::createVmaAllocator(vkPhysicalDevice_, device_->getVkDevice(), vkInstance_, apiVersion);
+     IGL_ASSERT(pimpl_->vma_ != VK_NULL_HANDLE);
   }
 
   // The staging device will use VMA to allocate a buffer, so this needs

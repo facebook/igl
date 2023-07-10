@@ -17,8 +17,6 @@
 
 #include <volk.h>
 
-#include <igl/vulkan/VulkanVma.h>
-
 #define IGL_ARRAY_NUM_ELEMENTS(x) (sizeof(x) / sizeof((x)[0]))
 
 #ifdef __cplusplus
@@ -334,12 +332,6 @@ VkVertexInputAttributeDescription ivkGetVertexInputAttributeDescription(uint32_t
                                                                         uint32_t binding,
                                                                         VkFormat format,
                                                                         uint32_t offset);
-
-VkResult ivkVmaCreateAllocator(VkPhysicalDevice physDev,
-                               VkDevice device,
-                               VkInstance instance,
-                               uint32_t apiVersion,
-                               VmaAllocator* outVma);
 
 void ivkGlslangResource(glslang_resource_t* glslangResource,
                         const VkPhysicalDeviceProperties* deviceProperties);
