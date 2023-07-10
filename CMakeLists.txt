@@ -73,13 +73,15 @@ if(IGL_WITH_TRACY)
   igl_set_folder(TracyClient "third-party")
 endif()
 
+include_directories(.)
+
 add_subdirectory(src/igl)
+add_subdirectory(lvk)
 
 if(IGL_DEPLOY_DEPS)
   add_dependencies(IGLLibrary IGLDependencies)
 endif()
 
-include_directories(.)
 include_directories("third-party/deps/src/imgui")
 
 add_library(IGLstb third-party/deps/patches/stb_impl/stb_image.c third-party/deps/patches/stb_impl/stb_image_resize.c
@@ -121,14 +123,12 @@ if(IGL_WITH_SAMPLES)
   igl_set_cxxstd(bc7enc 17)
   add_subdirectory(third-party/deps/src/meshoptimizer)
   add_subdirectory(third-party/deps/src/tinyobjloader)
-  igl_set_folder(bc7enc "third-party")
-  igl_set_folder(meshoptimizer "third-party")
-  igl_set_folder(tinyobjloader "third-party/tinyobjloader")
-  igl_set_folder(uninstall "third-party/tinyobjloader")
-  if(NOT APPLE AND NOT ANDROID)
-    add_subdirectory(samples/desktop)
-    igl_set_folder(glfw "third-party/GLFW3")
-  endif()
+  add_subdirectory(samples)
+  igl_set_folder(bc7enc          "third-party")
+  igl_set_folder(meshoptimizer   "third-party")
+  igl_set_folder(tinyobjloader   "third-party/tinyobjloader")
+  igl_set_folder(uninstall       "third-party/tinyobjloader")
+  igl_set_folder(glfw            "third-party/GLFW3")
 endif()
 
 if(IGL_WITH_TRACY)

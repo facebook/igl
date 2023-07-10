@@ -53,29 +53,29 @@ Result Texture::create(const TextureDesc& desc) {
     return Result(Result::Code::ArgumentOutOfRange, "Multisampled 3D images are not supported");
   }
 
-  if (!IGL_VERIFY(desc_.numMipLevels <= TextureDesc::calcNumMipLevels(desc_.width, desc_.height))) {
+  if (!IGL_VERIFY(desc_.numMipLevels <= igl::calcNumMipLevels(desc_.width, desc_.height))) {
     return Result(Result::Code::ArgumentOutOfRange,
-                  "The number of specified mip levels is greater than the maximum possible "
-                  "number of mip levels.");
+                  "The number of specified mip-levels is greater than the maximum possible "
+                  "number of mip-levels.");
   }
 
   if (desc_.usage == 0) {
     IGL_ASSERT_MSG(false, "Texture usage flags are not set");
-    desc_.usage = TextureDesc::TextureUsageBits::Sampled;
+    desc_.usage = igl::TextureUsageBits_Sampled;
   }
 
   /* Use staging device to transfer data into the image when the storage is private to the device */
   VkImageUsageFlags usageFlags =
-      (desc_.storage == ResourceStorage::Private) ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : 0;
+      (desc_.storage == StorageType_Device) ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : 0;
 
-  if (desc_.usage & TextureDesc::TextureUsageBits::Sampled) {
+  if (desc_.usage & igl::TextureUsageBits_Sampled) {
     usageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
   }
-  if (desc_.usage & TextureDesc::TextureUsageBits::Storage) {
+  if (desc_.usage & igl::TextureUsageBits_Storage) {
     IGL_ASSERT_MSG(desc_.numSamples <= 1, "Storage images cannot be multisampled");
     usageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
   }
-  if (desc_.usage & TextureDesc::TextureUsageBits::Attachment) {
+  if (desc_.usage & igl::TextureUsageBits_Attachment) {
     usageFlags |= isDepthOrStencilFormat(desc_.format) ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
                                                        : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
   }
@@ -85,7 +85,7 @@ Result Texture::create(const TextureDesc& desc) {
 
   IGL_ASSERT_MSG(usageFlags != 0, "Invalid usage flags");
 
-  const VkMemoryPropertyFlags memFlags = resourceStorageToVkMemoryPropertyFlags(desc_.storage);
+  const VkMemoryPropertyFlags memFlags = storageTypeToVkMemoryPropertyFlags(desc_.storage);
 
   const bool hasDebugName = desc_.debugName && *desc_.debugName;
 

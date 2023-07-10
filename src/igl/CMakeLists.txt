@@ -13,7 +13,6 @@ file(GLOB HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DI
 add_library(IGLLibrary ${SRC_FILES} ${HEADER_FILES})
 
 target_include_directories(IGLLibrary PUBLIC "${IGL_ROOT_DIR}/src")
-target_include_directories(IGLLibrary PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/glm")
 
 igl_set_cxxstd(IGLLibrary 20)
 igl_set_folder(IGLLibrary "IGL")

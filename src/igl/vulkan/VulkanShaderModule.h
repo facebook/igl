@@ -27,17 +27,21 @@ Result compileShader(VkDevice device,
 class VulkanShaderModule final {
  public:
   /** @brief Instantiates a shader module wrapper with the module and the device that owns it */
-  VulkanShaderModule(VkDevice device, VkShaderModule shaderModule);
+  VulkanShaderModule(VkDevice device, VkShaderModule shaderModule, const char* entryPoint);
   ~VulkanShaderModule();
 
-  /** @brief Returns the underlying Vulkan shader module */
   VkShaderModule getVkShaderModule() const {
     return vkShaderModule_;
+  }
+
+  const char* getEntryPoint() const {
+    return entryPoint_;
   }
 
  private:
   VkDevice device_ = VK_NULL_HANDLE;
   VkShaderModule vkShaderModule_ = VK_NULL_HANDLE;
+  const char* entryPoint_ = nullptr;
 };
 
 } // namespace vulkan

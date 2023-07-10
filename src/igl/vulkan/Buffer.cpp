@@ -24,46 +24,45 @@ Result Buffer::create(const BufferDesc& desc) {
 
   const VulkanContext& ctx = device_.getVulkanContext();
 
-  if (!ctx.useStaging_ && (desc_.storage == ResourceStorage::Private)) {
-    desc_.storage = ResourceStorage::Shared;
+  if (!ctx.useStaging_ && (desc_.storage == StorageType_Device)) {
+    desc_.storage = StorageType_HostVisible;
   }
 
-  /* Use staging device to transfer data into the buffer when the storage is private to the device
-   */
+  // Use staging device to transfer data into the buffer when the storage is private to the device
   VkBufferUsageFlags usageFlags =
-      (desc_.storage == ResourceStorage::Private)
+      (desc_.storage == StorageType_Device)
           ? VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT
           : 0;
 
-  if (desc_.type == 0) {
-    return Result(Result::Code::InvalidOperation, "Invalid buffer type");
+  if (desc_.usage == 0) {
+    return Result(Result::Code::InvalidOperation, "Invalid buffer usage");
   }
 
-  if (desc_.type & BufferDesc::BufferTypeBits::Index) {
+  if (desc_.usage & BufferUsageBits_Index) {
     usageFlags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
   }
-  if (desc_.type & BufferDesc::BufferTypeBits::Vertex) {
+  if (desc_.usage & BufferUsageBits_Vertex) {
     usageFlags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
   }
-  if (desc_.type & BufferDesc::BufferTypeBits::Uniform) {
+  if (desc_.usage & BufferUsageBits_Uniform) {
     usageFlags |=
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
   }
 
-  if (desc_.type & BufferDesc::BufferTypeBits::Storage) {
+  if (desc_.usage & BufferUsageBits_Storage) {
     usageFlags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                   VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
   }
 
-  if (desc_.type & BufferDesc::BufferTypeBits::Indirect) {
+  if (desc_.usage & BufferUsageBits_Indirect) {
     usageFlags |=
         VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
   }
 
-  const VkMemoryPropertyFlags memFlags = resourceStorageToVkMemoryPropertyFlags(desc_.storage);
+  const VkMemoryPropertyFlags memFlags = storageTypeToVkMemoryPropertyFlags(desc_.storage);
 
   Result result;
-  buffer_ = ctx.createBuffer(desc_.length, usageFlags, memFlags, &result, desc_.debugName);
+  buffer_ = ctx.createBuffer(desc_.size, usageFlags, memFlags, &result, desc_.debugName);
 
   IGL_VERIFY(result.isOk());
 
@@ -77,7 +76,7 @@ igl::Result Buffer::upload(const void* data, size_t size, size_t offset) {
     return igl::Result();
   }
 
-  if (!IGL_VERIFY(offset + size <= desc_.length)) {
+  if (!IGL_VERIFY(offset + size <= desc_.size)) {
     return igl::Result(Result::Code::ArgumentOutOfRange, "Out of range");
   }
 

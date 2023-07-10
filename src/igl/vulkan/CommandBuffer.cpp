@@ -525,7 +525,7 @@ void CommandBuffer::cmdBindVertexBuffer(uint32_t index,
 
   VkBuffer vkBuf = buf->getVkBuffer();
 
-  IGL_ASSERT(buf->getBufferType() & BufferDesc::BufferTypeBits::Vertex);
+  IGL_ASSERT(buf->desc_.usage & BufferUsageBits_Vertex);
 
   const VkDeviceSize offset = bufferOffset;
   vkCmdBindVertexBuffers(wrapper_.cmdBuf_, index, 1, &vkBuf, &offset);

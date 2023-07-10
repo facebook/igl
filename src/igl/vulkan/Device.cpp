@@ -14,7 +14,6 @@
 #include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/SamplerState.h>
-#include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
@@ -57,7 +56,7 @@ std::shared_ptr<ICommandBuffer> Device::createCommandBuffer() {
 
 void Device::submit(igl::CommandQueueType queueType,
                     const igl::ICommandBuffer& commandBuffer,
-                    bool present) const {
+                    bool present) {
   IGL_PROFILER_FUNCTION();
 
   const VulkanContext& ctx = getVulkanContext();
@@ -84,8 +83,7 @@ void Device::submit(igl::CommandQueueType queueType,
   ctx.processDeferredTasks();
 }
 
-std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
-                                              Result* outResult) const noexcept {
+std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc, Result* outResult) {
   auto buffer = std::make_unique<vulkan::Buffer>(*this);
 
   const auto result = buffer->create(desc);
@@ -98,7 +96,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
     return buffer;
   }
 
-  const auto uploadResult = buffer->upload(desc.data, desc.length);
+  const auto uploadResult = buffer->upload(desc.data, desc.size);
   IGL_VERIFY(uploadResult.isOk());
   Result::setResult(outResult, uploadResult);
 
@@ -106,7 +104,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
 }
 
 std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
-                                                          Result* outResult) const {
+                                                          Result* outResult) {
   auto samplerState = std::make_shared<vulkan::SamplerState>(*this);
 
   Result::setResult(outResult, samplerState->create(desc));
@@ -114,8 +112,7 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
   return samplerState;
 }
 
-std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
-                                                Result* outResult) const noexcept {
+std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc, Result* outResult) {
   auto texture = std::make_shared<vulkan::Texture>(*this, desc.format);
 
   const Result res = texture->create(desc);
@@ -127,12 +124,8 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
-    Result* outResult) const {
-  if (IGL_UNEXPECTED(desc.shaderStages == nullptr)) {
-    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
-    return nullptr;
-  }
-  if (!IGL_VERIFY(desc.shaderStages->getModule(Stage_Compute))) {
+    Result* outResult) {
+  if (!IGL_VERIFY(desc.computeShaderModule)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing compute shader");
     return nullptr;
   }
@@ -142,12 +135,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 }
 
 std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderPipelineDesc& desc,
-                                                                   Result* outResult) const {
-  if (IGL_UNEXPECTED(desc.shaderStages == nullptr)) {
-    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
-    return nullptr;
-  }
-
+                                                                   Result* outResult) {
   const bool hasColorAttachments = desc.numColorAttachments > 0;
   const bool hasDepthAttachment = desc.depthAttachmentFormat != TextureFormat::Invalid;
   const bool hasAnyAttachments = hasColorAttachments || hasDepthAttachment;
@@ -156,12 +144,12 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
     return nullptr;
   }
 
-  if (!IGL_VERIFY(desc.shaderStages->getModule(Stage_Vertex))) {
+  if (!IGL_VERIFY(desc.shaderStages.getModule(Stage_Vertex))) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing vertex shader");
     return nullptr;
   }
 
-  if (!IGL_VERIFY(desc.shaderStages->getModule(Stage_Fragment))) {
+  if (!IGL_VERIFY(desc.shaderStages.getModule(Stage_Fragment))) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing fragment shader");
     return nullptr;
   }
@@ -169,28 +157,33 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
   return std::make_shared<RenderPipelineState>(*this, desc);
 }
 
-std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
-                                                          Result* outResult) const {
+ShaderModuleHandle Device::createShaderModule(const ShaderModuleDesc& desc, Result* outResult) {
   std::shared_ptr<VulkanShaderModule> vulkanShaderModule;
   Result result;
   if (desc.dataSize) {
     // binary
-    vulkanShaderModule = createShaderModule(desc.data, desc.dataSize, desc.debugName, &result);
+    vulkanShaderModule =
+        createShaderModule(desc.data, desc.dataSize, desc.entryPoint, desc.debugName, &result);
   } else {
     // text
-    vulkanShaderModule = createShaderModule(desc.stage, desc.data, desc.debugName, &result);
+    vulkanShaderModule =
+        createShaderModule(desc.stage, desc.data, desc.entryPoint, desc.debugName, &result);
   }
 
   if (!result.isOk()) {
     Result::setResult(outResult, std::move(result));
-    return nullptr;
+    return ShaderModuleHandle();
   }
   Result::setResult(outResult, std::move(result));
-  return std::make_shared<ShaderModule>(desc, std::move(vulkanShaderModule));
+
+  shaderModules_.push_back(vulkanShaderModule);
+
+  return static_cast<uint32_t>(shaderModules_.size() - 1);
 }
 
 std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
                                                                size_t length,
+                                                               const char* entryPoint,
                                                                const char* debugName,
                                                                Result* outResult) const {
   VkDevice device = ctx_->device_->getVkDevice();
@@ -207,11 +200,12 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
   VK_ASSERT(ivkSetDebugObjectName(
       device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
-  return std::make_shared<VulkanShaderModule>(device, vkShaderModule);
+  return std::make_shared<VulkanShaderModule>(device, vkShaderModule, entryPoint);
 }
 
 std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage,
                                                                const char* source,
+                                                               const char* entryPoint,
                                                                const char* debugName,
                                                                Result* outResult) const {
   VkDevice device = ctx_->device_->getVkDevice();
@@ -297,7 +291,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
   VK_ASSERT(ivkSetDebugObjectName(
       device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
-  return std::make_shared<VulkanShaderModule>(device, vkShaderModule);
+  return std::make_shared<VulkanShaderModule>(device, vkShaderModule, entryPoint);
 }
 
 std::shared_ptr<ITexture> Device::getCurrentSwapchainTexture() {
@@ -350,12 +344,17 @@ std::shared_ptr<ITexture> Device::getCurrentSwapchainTexture() {
             .format = iglFormat,
             .width = width,
             .height = height,
-            .usage = TextureDesc::TextureUsageBits::Attachment,
+            .usage = igl::TextureUsageBits_Attachment,
             .debugName = "SwapChain Texture",
         });
   }
 
   return swapchainTextures_[currentImageIndex];
+}
+
+VulkanShaderModule* Device::getShaderModule(ShaderModuleHandle handle) const {
+  IGL_ASSERT(handle < shaderModules_.size());
+  return shaderModules_[handle].get();
 }
 
 } // namespace igl::vulkan

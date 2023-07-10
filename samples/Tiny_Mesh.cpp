@@ -27,15 +27,14 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
 
-#include <igl/CommandBuffer.h>
-#include <igl/Device.h>
-#include <igl/FPSCounter.h>
+#include <lvk/LVK.h>
 
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <stb/stb_image.h>
+#include <shared/UtilsFPS.h>
 
 constexpr uint32_t kNumCubes = 16;
 
@@ -118,7 +117,7 @@ vec3 axis_[kNumCubes];
 GLFWwindow* window_ = nullptr;
 int width_ = 0;
 int height_ = 0;
-igl::FPSCounter fps_;
+FramesPerSecondCounter fps_;
 
 constexpr uint32_t kNumBufferedFrames = 3;
 
@@ -282,31 +281,29 @@ static void initIGL() {
   }
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
-  vb0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Vertex,
-                                          vertexData0,
-                                          sizeof(vertexData0),
-                                          ResourceStorage::Private,
-                                          "Buffer: vertex"),
+  vb0_ = device_->createBuffer({.usage = BufferUsageBits_Vertex,
+                                .storage = StorageType_Device,
+                                .data = vertexData0,
+                                .size = sizeof(vertexData0),
+                                .debugName = "Buffer: vertex"},
                                nullptr);
-  ib0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Index,
-                                          indexData,
-                                          sizeof(indexData),
-                                          ResourceStorage::Private,
-                                          "Buffer: index"),
+  ib0_ = device_->createBuffer({.usage = BufferUsageBits_Index,
+                                .storage = StorageType_Device,
+                                .data = indexData,
+                                .size = sizeof(indexData),
+                                .debugName = "Buffer: index"},
                                nullptr);
   // create an Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
-    ubPerFrame_.push_back(device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
-                                                           nullptr,
-                                                           sizeof(UniformsPerFrame),
-                                                           ResourceStorage::Shared,
-                                                           "Buffer: uniforms (per frame)"),
+    ubPerFrame_.push_back(device_->createBuffer({.usage = BufferUsageBits_Uniform,
+                                                 .storage = StorageType_HostVisible,
+                                                 .size = sizeof(UniformsPerFrame),
+                                                 .debugName = "Buffer: uniforms (per frame)"},
                                                 nullptr));
-    ubPerObject_.push_back(device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
-                                                            nullptr,
-                                                            kNumCubes * sizeof(UniformsPerObject),
-                                                            ResourceStorage::Shared,
-                                                            "Buffer: uniforms (per object)"),
+    ubPerObject_.push_back(device_->createBuffer({.usage = BufferUsageBits_Uniform,
+                                                  .storage = StorageType_HostVisible,
+                                                  .size = kNumCubes * sizeof(UniformsPerObject),
+                                                  .debugName = "Buffer: uniforms (per object)"},
                                                  nullptr));
   }
 
@@ -321,7 +318,7 @@ static void initIGL() {
             .format = igl::TextureFormat::BGRA_UNorm8,
             .width = texWidth,
             .height = texHeight,
-            .usage = TextureDesc::TextureUsageBits::Sampled,
+            .usage = igl::TextureUsageBits_Sampled,
             .debugName = "XOR pattern",
         },
         nullptr);
@@ -361,7 +358,7 @@ static void initIGL() {
             .format = igl::TextureFormat::RGBA_UNorm8,
             .width = (uint32_t)texWidth,
             .height = (uint32_t)texHeight,
-            .usage = TextureDesc::TextureUsageBits::Sampled,
+            .usage = igl::TextureUsageBits_Sampled,
             .debugName = "wood_polished_01_diff.png",
         },
         nullptr);
@@ -536,7 +533,7 @@ int main(int argc, char* argv[]) {
   // Main loop
   while (!glfwWindowShouldClose(window_)) {
     const double newTime = glfwGetTime();
-    fps_.updateFPS(newTime - prevTime);
+    fps_.tick(newTime - prevTime);
     prevTime = newTime;
 #if IGL_WITH_IGLU && 0
     imguiSession_->beginFrame(framebufferDesc_, 1.0f);

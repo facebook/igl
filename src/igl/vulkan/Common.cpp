@@ -129,7 +129,10 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
   default:
     IGL_ASSERT_MSG(false, "TextureFormat value not handled: %d", (int)format);
   }
-  IGL_UNREACHABLE_RETURN(VK_FORMAT_UNDEFINED);
+#if defined(_MSC_VER)
+  IGL_ASSERT_NOT_REACHED();           \
+  return VK_FORMAT_UNDEFINED;
+#endif // _MSC_VER
 }
 
 igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
@@ -240,17 +243,17 @@ uint32_t getBytesPerPixel(VkFormat format) {
   return 1;
 }
 
-VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorage resourceStorage) {
+VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(igl::StorageType storage) {
   VkMemoryPropertyFlags memFlags{0};
 
-  switch (resourceStorage) {
-  case ResourceStorage::Private:
+  switch (storage) {
+  case StorageType_Device:
     memFlags |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     break;
-  case ResourceStorage::Shared:
+  case StorageType_HostVisible:
     memFlags |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     break;
-  case ResourceStorage::Memoryless:
+  case StorageType_Memoryless:
     memFlags |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
     break;
   }

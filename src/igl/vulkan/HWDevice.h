@@ -10,7 +10,7 @@
 #include <memory>
 #include <vector>
 
-#include <igl/Device.h>
+#include <lvk/LVK.h>
 
 namespace igl {
 namespace vulkan {

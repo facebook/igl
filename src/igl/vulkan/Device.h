@@ -7,8 +7,7 @@
 
 #pragma once
 
-#include <igl/Device.h>
-#include <igl/Shader.h>
+#include <lvk/LVK.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanSemaphore.h>
 #include <memory>
@@ -29,26 +28,23 @@ class Device final : public IDevice {
 
   void submit(igl::CommandQueueType queueType,
               const igl::ICommandBuffer& commandBuffer,
-              bool present = false) const override;
+              bool present = false) override;
 
   // Resources
-  std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
-                                        Result* outResult) const noexcept override;
+  std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc, Result* outResult) override;
 
   std::shared_ptr<ISamplerState> createSamplerState(const SamplerStateDesc& desc,
-                                                    Result* outResult) const override;
-  std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,
-                                          Result* outResult) const noexcept override;
+                                                    Result* outResult) override;
+  std::shared_ptr<ITexture> createTexture(const TextureDesc& desc, Result* outResult) override;
 
   // Pipelines
   std::shared_ptr<IComputePipelineState> createComputePipeline(const ComputePipelineDesc& desc,
-                                                               Result* outResult) const override;
+                                                               Result* outResult) override;
   std::shared_ptr<IRenderPipelineState> createRenderPipeline(const RenderPipelineDesc& desc,
-                                                             Result* outResult) const override;
+                                                             Result* outResult) override;
 
   // Shaders
-  std::shared_ptr<IShaderModule> createShaderModule(const ShaderModuleDesc& desc,
-                                                    Result* outResult) const override;
+  ShaderModuleHandle createShaderModule(const ShaderModuleDesc& desc, Result* outResult) override;
 
   std::shared_ptr<ITexture> getCurrentSwapchainTexture() override;
 
@@ -60,17 +56,24 @@ class Device final : public IDevice {
   }
 
  private:
+  friend class ComputePipelineState;
+  friend class RenderPipelineState;
+
+  VulkanShaderModule* getShaderModule(ShaderModuleHandle handle) const;
   std::shared_ptr<VulkanShaderModule> createShaderModule(const void* data,
                                                          size_t length,
+                                                         const char* entryPoint,
                                                          const char* debugName,
                                                          Result* outResult) const;
   std::shared_ptr<VulkanShaderModule> createShaderModule(ShaderStage stage,
                                                          const char* source,
+                                                         const char* entryPoint,
                                                          const char* debugName,
                                                          Result* outResult) const;
 
   std::unique_ptr<VulkanContext> ctx_;
 
+  std::vector<std::shared_ptr<VulkanShaderModule>> shaderModules_ = { nullptr };
   std::vector<std::shared_ptr<ITexture>> swapchainTextures_;
 };
 

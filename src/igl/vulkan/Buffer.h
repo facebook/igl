@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <igl/Buffer.h>
 #include <igl/vulkan/Common.h>
 
 #include <vector>
@@ -20,6 +19,7 @@ class VulkanBuffer;
 
 class Buffer final : public igl::IBuffer {
   friend class Device;
+  friend class CommandBuffer;
 
  public:
   explicit Buffer(const igl::vulkan::Device& device);
@@ -31,9 +31,6 @@ class Buffer final : public igl::IBuffer {
   uint64_t gpuAddress(size_t offset) const override;
 
   VkBuffer getVkBuffer() const;
-  BufferDesc::BufferType getBufferType() const {
-    return desc_.type;
-  }
 
  private:
   Result create(const BufferDesc& desc);

@@ -144,8 +144,10 @@ Result compileShader(VkDevice device,
   return Result();
 }
 
-VulkanShaderModule::VulkanShaderModule(VkDevice device, VkShaderModule shaderModule) :
-  device_(device), vkShaderModule_(shaderModule) {}
+VulkanShaderModule::VulkanShaderModule(VkDevice device, VkShaderModule shaderModule, const char* entryPoint) :
+  device_(device), vkShaderModule_(shaderModule), entryPoint_(entryPoint) {
+  IGL_ASSERT(entryPoint);
+}
 
 VulkanShaderModule::~VulkanShaderModule() {
   vkDestroyShaderModule(device_, vkShaderModule_, nullptr);

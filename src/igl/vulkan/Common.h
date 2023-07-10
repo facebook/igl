@@ -16,11 +16,9 @@
 #define VK_NO_PROTOTYPES 1
 #endif // !defined(VK_NO_PROTOTYPES)
 
-#include <igl/Macros.h>
 #include <volk.h>
 
-#include <igl/Common.h>
-#include <igl/Texture.h>
+#include <lvk/LVK.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
 // Enable to use VulkanMemoryAllocator (VMA)
@@ -60,8 +58,7 @@ void setResultFrom(Result* outResult, VkResult result);
 VkFormat textureFormatToVkFormat(igl::TextureFormat format);
 igl::TextureFormat vkFormatToTextureFormat(VkFormat format);
 uint32_t getBytesPerPixel(VkFormat format);
-igl::ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace);
-VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorage resourceStorage);
+VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(igl::StorageType storage);
 VkCompareOp compareOpToVkCompareOp(igl::CompareOp func);
 VkSampleCountFlagBits getVulkanSampleCountFlags(size_t numSamples);
 VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool isBGR = false);

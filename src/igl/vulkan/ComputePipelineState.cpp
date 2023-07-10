@@ -7,23 +7,19 @@
 
 #include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/Device.h>
-#include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
 #include <igl/vulkan/VulkanPipelineLayout.h>
+#include <igl/vulkan/VulkanShaderModule.h>
 #include <utility>
 
 namespace igl {
 namespace vulkan {
 
 ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
-                                           // Ignore modernize-pass-by-value
-                                           // @lint-ignore CLANGTIDY
                                            const ComputePipelineDesc& desc) :
   device_(device),
-  // Ignore modernize-pass-by-value
-  // @lint-ignore CLANGTIDY
   desc_(desc) {}
 
 ComputePipelineState ::~ComputePipelineState() {
@@ -42,14 +38,13 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
 
   const VulkanContext& ctx = device_.getVulkanContext();
 
-  const ShaderModule* shaderModule =
-      static_cast<const ShaderModule*>(desc_.shaderStages->getModule(Stage_Compute));
+  const VulkanShaderModule* sm = device_.getShaderModule(desc_.computeShaderModule);
+
+  VkShaderModule vkShaderModule = sm ? sm->getVkShaderModule() : VK_NULL_HANDLE;
 
   igl::vulkan::VulkanComputePipelineBuilder()
       .shaderStage(ivkGetPipelineShaderStageCreateInfo(
-          VK_SHADER_STAGE_COMPUTE_BIT,
-          igl::vulkan::ShaderModule::getVkShaderModule(shaderModule),
-          shaderModule->desc().entryPoint))
+          VK_SHADER_STAGE_COMPUTE_BIT, vkShaderModule, sm->getEntryPoint()))
       .build(
           ctx.device_->getVkDevice(),
           // TODO: use ctx.pipelineCache_

@@ -26,8 +26,6 @@
 #include <stdio.h>
 #include <thread>
 
-#include <igl/FPSCounter.h>
-
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
@@ -41,18 +39,17 @@
 #include <meshoptimizer.h>
 #include <shared/Camera.h>
 #include <shared/UtilsCubemap.h>
+#include <shared/UtilsFPS.h>
 #include <stb/stb_image.h>
 #include <stb/stb_image_resize.h>
 #include <taskflow/taskflow.hpp>
 #include <tiny_obj_loader.h>
 
-#include <igl/CommandBuffer.h>
-#include <igl/Device.h>
+#include <lvk/LVK.h>
 
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
-#include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
 
 #ifdef _WIN32
@@ -433,7 +430,7 @@ using glm::vec4;
 GLFWwindow* window_ = nullptr;
 int width_ = 0;
 int height_ = 0;
-igl::FPSCounter fps_;
+FramesPerSecondCounter fps_;
 
 constexpr uint32_t kNumBufferedFrames = 3;
 
@@ -757,7 +754,7 @@ void initIGL() {
             .format = igl::TextureFormat::RGBA_UNorm8,
             .width = 1,
             .height = 1,
-            .usage = igl::TextureDesc::TextureUsageBits::Sampled,
+            .usage = igl::TextureUsageBits_Sampled,
             .debugName = "dummy 1x1 (white)",
         },
         nullptr);
@@ -768,24 +765,21 @@ void initIGL() {
 
   // create an Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
-    ubPerFrame_.push_back(device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
-                                                           nullptr,
-                                                           sizeof(UniformsPerFrame),
-                                                           ResourceStorage::Shared,
-                                                           "Buffer: uniforms (per frame)"),
+    ubPerFrame_.push_back(device_->createBuffer({.usage = BufferUsageBits_Uniform,
+                                                 .storage = StorageType_HostVisible,
+                                                 .size = sizeof(UniformsPerFrame),
+                                                 .debugName = "Buffer: uniforms (per frame)"},
                                                 nullptr));
     ubPerFrameShadow_.push_back(
-        device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
-                                         nullptr,
-                                         sizeof(UniformsPerFrame),
-                                         ResourceStorage::Shared,
-                                         "Buffer: uniforms (per frame shadow)"),
+        device_->createBuffer({.usage = BufferUsageBits_Uniform,
+                               .storage = StorageType_HostVisible,
+                               .size = sizeof(UniformsPerFrame),
+                               .debugName = "Buffer: uniforms (per frame shadow)"},
                               nullptr));
-    ubPerObject_.push_back(device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
-                                                            nullptr,
-                                                            sizeof(UniformsPerObject),
-                                                            ResourceStorage::Shared,
-                                                            "Buffer: uniforms (per object)"),
+    ubPerObject_.push_back(device_->createBuffer({.usage = BufferUsageBits_Uniform,
+                                                  .storage = StorageType_HostVisible,
+                                                  .size = sizeof(UniformsPerObject),
+                                                  .debugName = "Buffer: uniforms (per object)"},
                                                  nullptr));
   }
 
@@ -794,16 +788,16 @@ void initIGL() {
 
   sampler_ = device_->createSamplerState(
       {
-          .mipMap = igl::SamplerMipMap_Linear,
-          .wrapU = igl::SamplerWrapMode_Repeat,
-          .wrapV = igl::SamplerWrapMode_Repeat,
+          .mipMap = igl::SamplerMip_Linear,
+          .wrapU = igl::SamplerWrap_Repeat,
+          .wrapV = igl::SamplerWrap_Repeat,
           .debugName = "Sampler: linear",
       },
       nullptr);
   samplerShadow_ = device_->createSamplerState(
       {
-          .wrapU = igl::SamplerWrapMode_Clamp,
-          .wrapV = igl::SamplerWrapMode_Clamp,
+          .wrapU = igl::SamplerWrap_Clamp,
+          .wrapV = igl::SamplerWrap_Clamp,
           .depthCompareOp = igl::CompareOp_LessEqual,
           .depthCompareEnabled = true,
           .debugName = "Sampler: shadow",
@@ -1058,24 +1052,24 @@ void initModel() {
   for (const auto& mtl : cachedMaterials_) {
     materials_.push_back(GPUMaterial{vec4(mtl.ambient, 1.0f), vec4(mtl.diffuse, 1.0f), id, id});
   }
-  sbMaterials_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Storage,
-                                                  materials_.data(),
-                                                  sizeof(GPUMaterial) * materials_.size(),
-                                                  ResourceStorage::Private,
-                                                  "Buffer: materials"),
+  sbMaterials_ = device_->createBuffer({.usage = BufferUsageBits_Storage,
+                                        .storage = StorageType_Device,
+                                        .data = materials_.data(),
+                                        .size = sizeof(GPUMaterial) * materials_.size(),
+                                        .debugName = "Buffer: materials"},
                                        nullptr);
 
-  vb0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Vertex,
-                                          vertexData_.data(),
-                                          sizeof(VertexData) * vertexData_.size(),
-                                          ResourceStorage::Private,
-                                          "Buffer: vertex"),
+  vb0_ = device_->createBuffer({.usage = BufferUsageBits_Vertex,
+                                .storage = StorageType_Device,
+                                .data = vertexData_.data(),
+                                .size = sizeof(VertexData) * vertexData_.size(),
+                                .debugName = "Buffer: vertex"},
                                nullptr);
-  ib0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Index,
-                                          indexData_.data(),
-                                          sizeof(uint32_t) * indexData_.size(),
-                                          ResourceStorage::Private,
-                                          "Buffer: index"),
+  ib0_ = device_->createBuffer({.usage = BufferUsageBits_Index,
+                                .storage = StorageType_Device,
+                                .data = indexData_.data(),
+                                .size = sizeof(uint32_t) * indexData_.size(),
+                                .debugName = "Buffer: index"},
                                nullptr);
 }
 
@@ -1084,10 +1078,15 @@ void createComputePipeline() {
     return;
   }
 
-  ComputePipelineDesc desc;
-  desc.shaderStages = 
-     device_->createShaderStages(kCodeComputeTest, "Shader Module: grayscale (comp)");
-  computePipelineState_Grayscale_ = device_->createComputePipeline(desc, nullptr);
+  computePipelineState_Grayscale_ =
+      device_->createComputePipeline({.computeShaderModule = device_->createShaderModule(
+                                          {
+                                              kCodeComputeTest,
+                                              Stage_Compute,
+                                              "Shader Module: grayscale (comp)",
+                                          },
+                                          nullptr)},
+                                     nullptr);
 }
 
 void createRenderPipelines() {
@@ -1220,8 +1219,8 @@ void createShadowMap() {
       .format = igl::TextureFormat::Z_UNorm16,
       .width = w,
       .height = h,
-      .usage = TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled,
-      .numMipLevels = TextureDesc::calcNumMipLevels(w, h),
+      .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
+      .numMipLevels = igl::calcNumMipLevels(w, h),
       .debugName = "Shadow map",
   };
   Result ret;
@@ -1239,12 +1238,12 @@ void createOffscreenFramebuffer() {
       .format = igl::TextureFormat::Z_UNorm24,
       .width = w,
       .height = h,
-      .usage = TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled,
-      .numMipLevels = TextureDesc::calcNumMipLevels(w, h),
+      .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
+      .numMipLevels = igl::calcNumMipLevels(w, h),
       .debugName = "Offscreen framebuffer (d)",
   };
   if (kNumSamplesMSAA > 1) {
-    descDepth.usage = TextureDesc::TextureUsageBits::Attachment;
+    descDepth.usage = TextureUsageBits_Attachment;
     descDepth.numSamples = kNumSamplesMSAA;
     descDepth.numMipLevels = 1;
   }
@@ -1252,9 +1251,8 @@ void createOffscreenFramebuffer() {
   std::shared_ptr<ITexture> texDepth = device_->createTexture(descDepth, &ret);
   IGL_ASSERT(ret.isOk());
 
-  const TextureDesc::TextureUsage usage = TextureDesc::TextureUsageBits::Attachment |
-                                          TextureDesc::TextureUsageBits::Sampled |
-                                          TextureDesc::TextureUsageBits::Storage;
+  const uint8_t usage =
+      TextureUsageBits_Attachment | TextureUsageBits_Sampled | TextureUsageBits_Storage;
   const TextureFormat format = igl::TextureFormat::RGBA_UNorm8;
 
   TextureDesc descColor = {
@@ -1263,11 +1261,11 @@ void createOffscreenFramebuffer() {
       .width = w,
       .height = h,
       .usage = usage,
-      .numMipLevels = TextureDesc::calcNumMipLevels(w, h),
+      .numMipLevels = igl::calcNumMipLevels(w, h),
       .debugName = "Offscreen framebuffer (c)",
   };
   if (kNumSamplesMSAA > 1) {
-    descColor.usage = TextureDesc::TextureUsageBits::Attachment;
+    descColor.usage = igl::TextureUsageBits_Attachment;
     descColor.numSamples = kNumSamplesMSAA;
     descColor.numMipLevels = 1;
   }
@@ -1480,7 +1478,7 @@ void generateCompressedTexture(LoadedImage img) {
 
   printf("...compressing texture to %s\n", img.compressedFileName.c_str());
 
-  const auto mipmapLevelCount = TextureDesc::calcNumMipLevels(img.w, img.h);
+  const auto mipmapLevelCount = igl::calcNumMipLevels(img.w, img.h);
 
   // Go over all generated mipmap and create a compressed texture
   gli::texture2d::extent_type extents;
@@ -1644,8 +1642,8 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
             .format = gli2iglTextureFormat(texRef.format()),
             .width = width,
             .height = height,
-            .usage = TextureDesc::TextureUsageBits::Sampled,
-            .numMipLevels = TextureDesc::calcNumMipLevels(texRef.extent().x, texRef.extent().y),
+            .usage = igl::TextureUsageBits_Sampled,
+            .numMipLevels = igl::calcNumMipLevels(texRef.extent().x, texRef.extent().y),
             .debugName = fileNameKTX.c_str(),
         },
         nullptr);
@@ -1663,7 +1661,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
       .height = height,
       .numLayers = 6,
       // if compression is enabled, upload all mip-levels
-      .numMipLevels = kEnableCompression ? TextureDesc::calcNumMipLevels(width, height) : 1u,
+      .numMipLevels = kEnableCompression ? igl::calcNumMipLevels(width, height) : 1u,
   };
   tex->upload(texRefRange, data);
 
@@ -1682,7 +1680,7 @@ gli::texture_cube gliToCube(Bitmap& bmp) {
 
   const gli::texture_cube::extent_type extents{w, h};
 
-  const auto miplevels = igl::TextureDesc::calcNumMipLevels(w, h);
+  const auto miplevels = igl::calcNumMipLevels(w, h);
 
   gli::texture_cube gliTexCube =
       gli::texture_cube(gli::FORMAT_RGBA32_SFLOAT_PACK32, extents, miplevels);
@@ -1825,8 +1823,8 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
       .format = formatFromChannels(img.channels),
       .width = img.w,
       .height = img.h,
-      .usage = TextureDesc::TextureUsageBits::Sampled,
-      .numMipLevels = TextureDesc::calcNumMipLevels(img.w, img.h),
+      .usage = igl::TextureUsageBits_Sampled,
+      .numMipLevels = igl::calcNumMipLevels(img.w, img.h),
       .debugName = img.debugName.c_str(),
   };
   auto tex = device_->createTexture(desc, nullptr);
@@ -1982,8 +1980,8 @@ int main(int argc, char* argv[]) {
         ImGui::SetNextWindowBgAlpha(0.30f);
         ImGui::SetNextWindowSize(ImVec2(ImGui::CalcTextSize("FPS : _______").x, 0));
         if (ImGui::Begin("##FPS", nullptr, flags)) {
-          ImGui::Text("FPS : %i", (int)fps_.getAverageFPS());
-          ImGui::Text("Ms  : %.1f", 1000.0 / fps_.getAverageFPS());
+          ImGui::Text("FPS : %i", (int)fps_.getFPS());
+          ImGui::Text("Ms  : %.1f", 1000.0 / fps_.getFPS());
         }
         ImGui::End();
       }
@@ -1993,7 +1991,7 @@ int main(int argc, char* argv[]) {
     processLoadedMaterials();
     const double newTime = glfwGetTime();
     const double delta = newTime - prevTime;
-    fps_.updateFPS(delta);
+    fps_.tick(delta);
     positioner_.update(delta, mousePos_, mousePressed_);
     prevTime = newTime;
 #if IGL_WITH_IGLU

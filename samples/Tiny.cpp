@@ -20,12 +20,11 @@
 #endif
 
 #include <GLFW/glfw3native.h>
+#include <shared/UtilsFPS.h>
 
 #include <format>
 
-#include <igl/CommandBuffer.h>
-#include <igl/Device.h>
-#include <igl/FPSCounter.h>
+#include <lvk/LVK.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
@@ -68,7 +67,7 @@ using namespace igl;
 GLFWwindow* window_ = nullptr;
 int width_ = 0;
 int height_ = 0;
-igl::FPSCounter fps_;
+FramesPerSecondCounter fps_;
 
 struct VulkanObjects {
   void init();
@@ -183,8 +182,7 @@ void VulkanObjects::init() {
             .format = texSwapchain->getFormat(),
             .width = texSwapchain->getDimensions().width,
             .height = texSwapchain->getDimensions().height,
-            .usage =
-                TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled,
+            .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
             .debugName = std::format("{}C{}", fb.debugName, i - 1).c_str(),
         },
         nullptr);
@@ -244,7 +242,7 @@ int main(int argc, char* argv[]) {
   // Main loop
   while (!glfwWindowShouldClose(window_)) {
     const double newTime = glfwGetTime();
-    fps_.updateFPS(newTime - prevTime);
+    fps_.tick(newTime - prevTime);
     prevTime = newTime;
     vk.render();
     glfwPollEvents();

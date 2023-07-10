@@ -7,8 +7,7 @@
 
 #pragma once
 
-#include <igl/Common.h>
-#include <igl/Device.h>
+#include <lvk/LVK.h>
 #include <igl/vulkan/Common.h>
 
 namespace igl {

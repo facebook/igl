@@ -24,25 +24,25 @@ VkFilter samplerFilterToVkFilter(igl::SamplerFilter filter) {
   return VK_FILTER_LINEAR;
 }
 
-VkSamplerMipmapMode samplerMipMapToVkSamplerMipmapMode(igl::SamplerMipMap filter) {
+VkSamplerMipmapMode samplerMipMapToVkSamplerMipmapMode(igl::SamplerMip filter) {
   switch (filter) {
-  case igl::SamplerMipMap_Disabled:
-  case igl::SamplerMipMap_Nearest:
+  case igl::SamplerMip_Disabled:
+  case igl::SamplerMip_Nearest:
     return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-  case igl::SamplerMipMap_Linear:
+  case igl::SamplerMip_Linear:
     return VK_SAMPLER_MIPMAP_MODE_LINEAR;
   }
   IGL_ASSERT_MSG(false, "SamplerMipMap value not handled: %d", (int)filter);
   return VK_SAMPLER_MIPMAP_MODE_NEAREST;
 }
 
-static VkSamplerAddressMode samplerWrapModeToVkSamplerAddressMode(igl::SamplerWrapMode mode) {
+static VkSamplerAddressMode samplerWrapModeToVkSamplerAddressMode(igl::SamplerWrap mode) {
   switch (mode) {
-  case igl::SamplerWrapMode_Repeat:
+  case igl::SamplerWrap_Repeat:
     return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  case igl::SamplerWrapMode_Clamp:
+  case igl::SamplerWrap_Clamp:
     return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-  case igl::SamplerWrapMode_MirrorRepeat:
+  case igl::SamplerWrap_MirrorRepeat:
     return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
   }
   IGL_ASSERT_MSG(false, "SamplerWrapMode value not handled: %d", (int)mode);
@@ -72,7 +72,7 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
       .compareEnable = VK_FALSE,
       .compareOp = VK_COMPARE_OP_ALWAYS,
       .minLod = float(desc.mipLodMin),
-      .maxLod = desc.mipMap == igl::SamplerMipMap_Disabled ? 0.0f : float(desc.mipLodMax),
+      .maxLod = desc.mipMap == igl::SamplerMip_Disabled ? 0.0f : float(desc.mipLodMax),
       .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
       .unnormalizedCoordinates = VK_FALSE,
   };

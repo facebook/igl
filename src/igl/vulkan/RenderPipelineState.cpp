@@ -7,11 +7,11 @@
 
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/RenderPipelineState.h>
-#include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
 #include <igl/vulkan/VulkanPipelineLayout.h>
+#include <igl/vulkan/VulkanShaderModule.h>
 
 namespace {
 
@@ -303,10 +303,11 @@ VkPipeline RenderPipelineState::getVkPipeline(
     }
   }
 
-  const ShaderModule* vertexModule =
-      static_cast<const ShaderModule*>(desc_.shaderStages->getModule(Stage_Vertex));
-  const ShaderModule* fragmentModule =
-      static_cast<const ShaderModule*>(desc_.shaderStages->getModule(Stage_Fragment));
+  VulkanShaderModule* vertexModule = device_.getShaderModule(desc_.shaderStages.getModule(Stage_Vertex));
+  VulkanShaderModule* fragmentModule = device_.getShaderModule(desc_.shaderStages.getModule(Stage_Fragment));
+
+  IGL_ASSERT(vertexModule);
+  IGL_ASSERT(fragmentModule);
 
   igl::vulkan::VulkanPipelineBuilder()
       .dynamicStates({
@@ -336,14 +337,12 @@ VkPipeline RenderPipelineState::getVkPipeline(
                        dynamicState.getStencilStateDepthFailOp(false),
                        dynamicState.getStencilStateComapreOp(false))
       .shaderStages({
-          ivkGetPipelineShaderStageCreateInfo(
-              VK_SHADER_STAGE_VERTEX_BIT,
-              igl::vulkan::ShaderModule::getVkShaderModule(vertexModule),
-              vertexModule->desc().entryPoint),
-          ivkGetPipelineShaderStageCreateInfo(
-              VK_SHADER_STAGE_FRAGMENT_BIT,
-              igl::vulkan::ShaderModule::getVkShaderModule(fragmentModule),
-              fragmentModule->desc().entryPoint),
+          ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT,
+                                              vertexModule->getVkShaderModule(),
+                                              vertexModule->getEntryPoint()),
+          ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT,
+                                              fragmentModule->getVkShaderModule(),
+                                              fragmentModule->getEntryPoint()),
       })
       .cullMode(cullModeToVkCullMode(desc_.cullMode))
       .frontFace(windingModeToVkFrontFace(desc_.frontFaceWinding))
