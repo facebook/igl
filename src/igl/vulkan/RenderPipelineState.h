@@ -10,7 +10,9 @@
 #include <lvk/LVK.h>
 #include <igl/vulkan/Common.h>
 
+#include <string.h>
 #include <unordered_map>
+#include <vector>
 
 namespace igl {
 namespace vulkan {
@@ -20,43 +22,22 @@ class Device;
 class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
   uint32_t topology_ : 4;
   uint32_t depthCompareOp_ : 3;
-
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
   uint32_t stencilFrontFailOp_ : 3;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
   uint32_t stencilFrontPassOp_ : 3;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
   uint32_t stencilFrontDepthFailOp_ : 3;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
   uint32_t stencilFrontCompareOp_ : 3;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
   uint32_t stencilBackFailOp_ : 3;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
   uint32_t stencilBackPassOp_ : 3;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
   uint32_t stencilBackDepthFailOp_ : 3;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
   uint32_t stencilBackCompareOp_ : 3;
 
  public:
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
   uint32_t depthBiasEnable_ : 1;
-  // Ignore modernize-use-default-member-init
-  // @lint-ignore CLANGTIDY
   uint32_t depthWriteEnable_ : 1;
 
   RenderPipelineDynamicState() {
     // memset makes sure all padding bits are zero
-    std::memset(this, 0, sizeof(*this));
+    memset(this, 0, sizeof(*this));
     topology_ = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     // depth and stencil default state values should be based on DepthStencilStateDesc and
     // StencilStateDesc in graphics/igl/src/igl/DepthStencilState.h

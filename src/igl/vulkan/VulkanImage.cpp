@@ -15,8 +15,6 @@
 #include <unistd.h>
 #endif
 
-#include <format>
-
 namespace {
 uint32_t ivkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memProps,
                                const uint32_t typeBits,
@@ -708,10 +706,7 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
         ((formatProperties_.optimalTilingFeatures & formatFeatureMask) == formatFeatureMask);
 
     if (!IGL_VERIFY(hardwareDownscalingSupported)) {
-      IGL_ASSERT_MSG(false,
-                     std::format("Doesn't support hardware downscaling of this image format: {}",
-                                 uint32_t(imageFormat_))
-                         .c_str());
+      IGL_ASSERT_MSG(false, "Doesn't support hardware downscaling of this image format: {}");
       return;
     }
   }

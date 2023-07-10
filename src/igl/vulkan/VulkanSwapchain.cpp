@@ -12,7 +12,7 @@
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanSemaphore.h>
 
-#include <format>
+#include <algorithm>
 
 namespace {
 
@@ -189,8 +189,11 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
   // create images, image views and framebuffers
   swapchainTextures_.reserve(numSwapchainImages_);
   for (uint32_t i = 0; i < numSwapchainImages_; i++) {
-    auto image = std::make_shared<VulkanImage>(
-        ctx_, device_, swapchainImages[i], std::format("Image: swapchain #{}", i).c_str());
+    char imageName[256] = {0};
+    char imageViewName[256] = {0};
+    snprintf(imageName, sizeof(imageName) - 1, "Image: swapchain %u", i);
+    snprintf(imageViewName, sizeof(imageName) - 1, "Image View: swapchain %u", i);
+    auto image = std::make_shared<VulkanImage>(ctx_, device_, swapchainImages[i], imageName);
     // set usage flags for retrieved images
     image->usageFlags_ = usageFlags;
     image->imageFormat_ = surfaceFormat_.format;
@@ -202,7 +205,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
                                             VK_REMAINING_MIP_LEVELS,
                                             0,
                                             1,
-                                            std::format("Image View: swapchain #{}", i).c_str());
+                                            imageViewName);
     swapchainTextures_.emplace_back(
         std::make_shared<VulkanTexture>(ctx_, std::move(image), std::move(imageView)));
   }

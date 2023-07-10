@@ -17,8 +17,7 @@ namespace vulkan {
 class Buffer;
 class VulkanContext;
 
-class CommandBuffer final : public ICommandBuffer,
-                            public std::enable_shared_from_this<CommandBuffer> {
+class CommandBuffer final : public ICommandBuffer {
  public:
   explicit CommandBuffer(VulkanContext& ctx);
   ~CommandBuffer() override;

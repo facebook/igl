@@ -17,8 +17,6 @@ class Device;
 
 class ComputePipelineState final : public IComputePipelineState {
  public:
-  // Ignore modernize-pass-by-value
-  // @lint-ignore CLANGTIDY
   ComputePipelineState(const igl::vulkan::Device& device, const ComputePipelineDesc& desc);
   ~ComputePipelineState() override;
 

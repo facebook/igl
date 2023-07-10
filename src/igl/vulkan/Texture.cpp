@@ -14,8 +14,6 @@
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <igl/vulkan/VulkanTexture.h>
 
-#include <format>
-
 namespace igl::vulkan {
 
 Texture::Texture(const igl::vulkan::Device& device, TextureFormat format) :
@@ -89,9 +87,13 @@ Result Texture::create(const TextureDesc& desc) {
 
   const bool hasDebugName = desc_.debugName && *desc_.debugName;
 
-  const std::string debugNameImage = hasDebugName ? std::format("Image: {}", desc_.debugName) : "";
-  const std::string debugNameImageView =
-      hasDebugName ? std::format("Image View: {}", desc_.debugName) : "";
+  char debugNameImage[256] = {0};
+  char debugNameImageView[256] = {0};
+
+  if (hasDebugName) {
+    snprintf(debugNameImage, sizeof(debugNameImage) - 1, "Image: %s", desc_.debugName);
+    snprintf(debugNameImageView, sizeof(debugNameImageView) - 1, "Image View: %s", desc_.debugName);
+  }
 
   VkImageCreateFlags createFlags = 0;
   uint32_t arrayLayerCount = static_cast<uint32_t>(desc_.numLayers);
@@ -115,7 +117,7 @@ Result Texture::create(const TextureDesc& desc) {
     createFlags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     break;
   default:
-    IGL_ASSERT_NOT_REACHED();
+    IGL_ASSERT_MSG(false, "Code should NOT be reached");
     return Result(Result::Code::Unimplemented, "Unimplemented or unsupported texture type.");
   }
 
@@ -132,7 +134,7 @@ Result Texture::create(const TextureDesc& desc) {
       createFlags,
       samples,
       &result,
-      debugNameImage.c_str());
+      debugNameImage);
   if (!IGL_VERIFY(result.isOk())) {
     return result;
   }
@@ -152,7 +154,7 @@ Result Texture::create(const TextureDesc& desc) {
                                                                       VK_REMAINING_MIP_LEVELS,
                                                                       0,
                                                                       arrayLayerCount,
-                                                                      debugNameImageView.c_str());
+                                                                      debugNameImageView);
 
   if (!IGL_VERIFY(imageView.get())) {
     return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");

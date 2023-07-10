@@ -10,6 +10,8 @@
 
 #include "VulkanBuffer.h"
 
+#include <string.h>
+
 namespace igl {
 namespace vulkan {
 

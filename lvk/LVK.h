@@ -11,17 +11,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <utility>
 
 #include <minilog/minilog.h>
-
-// clang-format off
-#if defined(_MSC_VER)
-#  define LVK_FUNCTION __FUNCTION__
-#else
-#  define LVK_FUNCTION __PRETTY_FUNCTION__
-#endif
-// clang-format on
 
 #if defined(IGL_WITH_TRACY) && defined(__cplusplus)
 #include "tracy/Tracy.hpp"
@@ -53,25 +44,22 @@
 
 namespace igl {
 
-bool _IGLVerify(bool cond, const char* func, const char* file, int line, const char* format, ...);
+bool _IGLVerify(bool cond, const char* file, int line, const char* format, ...);
 
 } // namespace igl
 
 // clang-format off
-#if !defined(NDEBUG) && (defined DEBUG || defined _DEBUG || defined __DEBUG)
-# define IGL_UNEXPECTED(cond) (!_IGLVerify(0 == !!(cond), LVK_FUNCTION, __FILE__, __LINE__, #cond))
-# define IGL_VERIFY(cond) ::igl::_IGLVerify((cond), LVK_FUNCTION, __FILE__, __LINE__, #cond)
-# define IGL_ASSERT(cond) (void)IGL_VERIFY(cond)
-# define IGL_ASSERT_MSG(cond, format, ...) \
-   (void)::igl::_IGLVerify((cond), LVK_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
+#if !defined(NDEBUG) && (defined(DEBUG) || defined(_DEBUG) || defined(__DEBUG))
+  #define IGL_UNEXPECTED(cond) (!_IGLVerify(0 == !!(cond), __FILE__, __LINE__, #cond))
+  #define IGL_VERIFY(cond) ::igl::_IGLVerify((cond), __FILE__, __LINE__, #cond)
+  #define IGL_ASSERT(cond) (void)IGL_VERIFY(cond)
+  #define IGL_ASSERT_MSG(cond, format, ...) (void)::igl::_IGLVerify((cond), __FILE__, __LINE__, (format), ##__VA_ARGS__)
 #else
-# define IGL_UNEXPECTED(cond) (cond)
-# define IGL_VERIFY(cond) (cond)
-# define IGL_ASSERT(cond) static_cast<void>(0)
-# define IGL_ASSERT_MSG(cond, format, ...) static_cast<void>(0)
+  #define IGL_UNEXPECTED(cond) (cond)
+  #define IGL_VERIFY(cond) (cond)
+  #define IGL_ASSERT(cond)
+  #define IGL_ASSERT_MSG(cond, format, ...)
 #endif
-
-#define IGL_ASSERT_NOT_REACHED() IGL_ASSERT_MSG(0, "Code should NOT be reached")
 
 #ifndef FB_ANONYMOUS_VARIABLE
 # define FB_CONCATENATE_IMPL(s1, s2) s1##s2
@@ -96,7 +84,6 @@ class ScopeGuard {
   ~ScopeGuard() {
     fn_();
   }
-
  private:
   T fn_;
 };
@@ -164,7 +151,7 @@ struct HWDeviceDesc {
   enum { IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE = 256 };
   uintptr_t guid = 0;
   HWDeviceType type = HWDeviceType::SoftwareGpu;
-  char name[IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE] = {};
+  char name[IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE] = { 0 };
 };
 
 enum StorageType {
@@ -786,8 +773,8 @@ class IDevice {
 
   virtual std::shared_ptr<ICommandBuffer> createCommandBuffer() = 0;
 
-  virtual void submit(igl::CommandQueueType queueType,
-                      const ICommandBuffer& commandBuffer,
+  virtual void submit(const ICommandBuffer& commandBuffer,
+                      igl::CommandQueueType queueType,
                       bool present = false) = 0;
 
   virtual std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,

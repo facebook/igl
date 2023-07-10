@@ -130,7 +130,6 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
     IGL_ASSERT_MSG(false, "TextureFormat value not handled: %d", (int)format);
   }
 #if defined(_MSC_VER)
-  IGL_ASSERT_NOT_REACHED();           \
   return VK_FORMAT_UNDEFINED;
 #endif // _MSC_VER
 }
@@ -208,8 +207,9 @@ igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
   default:
     IGL_ASSERT_MSG(false, "VkFormat value not handled: %d", (int)format);
   }
-
+#if defined(_MSC_VER)
   return TextureFormat::Invalid;
+#endif // _MSC_VER
 }
 
 uint32_t getBytesPerPixel(VkFormat format) {
@@ -239,8 +239,9 @@ uint32_t getBytesPerPixel(VkFormat format) {
   default:
     IGL_ASSERT_MSG(false, "VkFormat value not handled: %d", (int)format);
   }
-
+#if defined(_MSC_VER)
   return 1;
+#endif // _MSC_VER
 }
 
 VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(igl::StorageType storage) {

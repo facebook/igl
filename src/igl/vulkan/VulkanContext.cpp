@@ -110,6 +110,7 @@ std::vector<VkFormat> getCompatibleDepthStencilFormats(igl::TextureFormat format
   default:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT};
   }
+  return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT};
 }
 
 VkQueueFlagBits getQueueTypeFlag(igl::CommandQueueType type) {
@@ -122,7 +123,6 @@ VkQueueFlagBits getQueueTypeFlag(igl::CommandQueueType type) {
     return VK_QUEUE_TRANSFER_BIT;
   }
 #if defined(_MSC_VER)
-  IGL_ASSERT_NOT_REACHED();
   return VK_QUEUE_GRAPHICS_BIT;
 #endif // _MSC_VER
 }
@@ -265,7 +265,7 @@ void VulkanContext::createInstance(const size_t numExtraExtensions, const char**
       .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
       .pNext = nullptr,
       .enabledValidationFeatureCount =
-          config_.enableGPUAssistedValidation ? IGL_ARRAY_NUM_ELEMENTS(validationFeaturesEnabled) : 0,
+          config_.enableGPUAssistedValidation ? (uint32_t)IGL_ARRAY_NUM_ELEMENTS(validationFeaturesEnabled) : 0,
       .pEnabledValidationFeatures = config_.enableGPUAssistedValidation ? validationFeaturesEnabled : nullptr,
   };
 
@@ -284,7 +284,7 @@ void VulkanContext::createInstance(const size_t numExtraExtensions, const char**
     .pNext = config_.enableValidation ? &features : nullptr,
     .flags = 0,
     .pApplicationInfo = &appInfo,
-    .enabledLayerCount = config_.enableValidation ? IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0,
+    .enabledLayerCount = config_.enableValidation ? (uint32_t)IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0,
     .ppEnabledLayerNames = config_.enableValidation ? kDefaultValidationLayers : nullptr,
     .enabledExtensionCount = (uint32_t)instanceExtensions.size(),
     .ppEnabledExtensionNames = instanceExtensions.data(),
@@ -350,7 +350,7 @@ igl::Result VulkanContext::queryDevices(HWDeviceType deviceType,
       continue;
     }
 
-    outDevices.emplace_back((uintptr_t)vkDevices[i], deviceType);
+    outDevices.push_back({.guid = (uintptr_t)vkDevices[i], .type = deviceType});
     strncpy(
         outDevices.back().name, deviceProperties.deviceName, strlen(deviceProperties.deviceName));
   }

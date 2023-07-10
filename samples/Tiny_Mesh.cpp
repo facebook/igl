@@ -31,7 +31,6 @@
 
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
-#include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <stb/stb_image.h>
 #include <shared/UtilsFPS.h>
@@ -260,23 +259,23 @@ static void initIGL() {
         .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
     };
 #ifdef _WIN32
-    auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
+    auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetWin32Window(window_));
 #elif __APPLE__
-    auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetCocoaWindow(window_));
+    auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetCocoaWindow(window_));
 #elif defined(__linux__)
-    auto ctx = vulkan::HWDevice::createContext(
+    auto ctx = vulkan::Device::createContext(
         cfg, (void*)glfwGetX11Window(window_), 0, nullptr, (void*)glfwGetX11Display());
 #else
 #error Unsupported OS
 #endif
 
     std::vector<HWDeviceDesc> devices =
-        vulkan::HWDevice::queryDevices(*ctx.get(), HWDeviceType::DiscreteGpu, nullptr);
+        vulkan::Device::queryDevices(*ctx.get(), HWDeviceType::DiscreteGpu, nullptr);
     if (devices.empty()) {
-      devices = vulkan::HWDevice::queryDevices(*ctx.get(), HWDeviceType::IntegratedGpu, nullptr);
+      devices = vulkan::Device::queryDevices(*ctx.get(), HWDeviceType::IntegratedGpu, nullptr);
     }
     device_ =
-        vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
+        vulkan::Device::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
     IGL_ASSERT(device_.get());
   }
 
@@ -511,7 +510,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
 
   buffer->present(nativeDrawable);
 
-  device_->submit(CommandQueueType::Graphics, *buffer, true);
+  device_->submit(*buffer, CommandQueueType::Graphics, true);
 }
 
 int main(int argc, char* argv[]) {

@@ -22,11 +22,8 @@
 #include <GLFW/glfw3native.h>
 #include <shared/UtilsFPS.h>
 
-#include <format>
-
 #include <lvk/LVK.h>
 #include <igl/vulkan/Device.h>
-#include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 
 constexpr uint32_t kNumColorAttachments = 4;
@@ -71,6 +68,7 @@ FramesPerSecondCounter fps_;
 
 struct VulkanObjects {
   void init();
+  void createFramebuffer();
   void render();
   igl::RenderPass renderPass_ = {};
   igl::Framebuffer framebuffer_ = {};
@@ -109,6 +107,7 @@ GLFWwindow* initWindow() {
     height_ = height;
     vulkan::Device* vulkanDevice = static_cast<vulkan::Device*>(vk.device_.get());
     vulkanDevice->getVulkanContext().initSwapchain(width_, height_);
+    vk.createFramebuffer();
   });
 
   glfwGetWindowSize(window, &width_, &height_);
@@ -125,21 +124,21 @@ void VulkanObjects::init() {
         .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
     };
 #ifdef _WIN32
-    auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
+    auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetWin32Window(window_));
 #elif defined(__linux__)
-    auto ctx = vulkan::HWDevice::createContext(
+    auto ctx = vulkan::Device::createContext(
         cfg, (void*)glfwGetX11Window(window_), 0, nullptr, (void*)glfwGetX11Display());
 #else
 #error Unsupported OS
 #endif
 
     std::vector<HWDeviceDesc> devices =
-        vulkan::HWDevice::queryDevices(*ctx.get(), HWDeviceType::DiscreteGpu, nullptr);
+        vulkan::Device::queryDevices(*ctx.get(), HWDeviceType::DiscreteGpu, nullptr);
     if (devices.empty()) {
-      devices = vulkan::HWDevice::queryDevices(*ctx.get(), HWDeviceType::IntegratedGpu, nullptr);
+      devices = vulkan::Device::queryDevices(*ctx.get(), HWDeviceType::IntegratedGpu, nullptr);
     }
     device_ =
-        vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
+        vulkan::Device::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
     IGL_ASSERT(device_.get());
   }
 
@@ -170,12 +169,35 @@ void VulkanObjects::init() {
 
   auto texSwapchain = device_->getCurrentSwapchainTexture();
 
+  createFramebuffer();
+
+  const RenderPipelineDesc desc = {
+      .shaderStages = device_->createShaderStages(
+          codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
+      .numColorAttachments = kNumColorAttachments,
+      .colorAttachments = {
+          {framebuffer_.colorAttachments[0].texture->getFormat()},
+          {framebuffer_.colorAttachments[1].texture->getFormat()},
+          {framebuffer_.colorAttachments[2].texture->getFormat()},
+          {framebuffer_.colorAttachments[3].texture->getFormat()},
+      }};
+
+  renderPipelineState_Triangle_ = device_->createRenderPipeline(desc, nullptr);
+
+  IGL_ASSERT(renderPipelineState_Triangle_.get());
+}
+
+void VulkanObjects::createFramebuffer() {
+  auto texSwapchain = device_->getCurrentSwapchainTexture();
+
   Framebuffer fb = {
       .numColorAttachments = kNumColorAttachments,
       .colorAttachments = {{.texture = texSwapchain}},
   };
 
   for (uint32_t i = 1; i < kNumColorAttachments; i++) {
+    char attachmentName[256] = {0};
+    snprintf(attachmentName, sizeof(attachmentName) - 1, "%s C%u", fb.debugName, i - 1);
     fb.colorAttachments[i].texture = device_->createTexture(
         {
             .type = TextureType::TwoD,
@@ -183,26 +205,11 @@ void VulkanObjects::init() {
             .width = texSwapchain->getDimensions().width,
             .height = texSwapchain->getDimensions().height,
             .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
-            .debugName = std::format("{}C{}", fb.debugName, i - 1).c_str(),
+            .debugName = attachmentName,
         },
         nullptr);
   }
   framebuffer_ = fb;
-
-  const RenderPipelineDesc desc = {
-      .shaderStages = device_->createShaderStages(
-          codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
-      .numColorAttachments = kNumColorAttachments,
-      .colorAttachments = {
-          {fb.colorAttachments[0].texture->getFormat()},
-          {fb.colorAttachments[1].texture->getFormat()},
-          {fb.colorAttachments[2].texture->getFormat()},
-          {fb.colorAttachments[3].texture->getFormat()},
-      }};
-
-  renderPipelineState_Triangle_ = device_->createRenderPipeline(desc, nullptr);
-
-  IGL_ASSERT(renderPipelineState_Triangle_.get());
 }
 
 void VulkanObjects::render() {
@@ -228,7 +235,7 @@ void VulkanObjects::render() {
 
   buffer->present(framebuffer_.colorAttachments[0].texture);
 
-  device_->submit(igl::CommandQueueType::Graphics, *buffer, true);
+  device_->submit(*buffer, igl::CommandQueueType::Graphics, true);
 }
 
 int main(int argc, char* argv[]) {

@@ -13,9 +13,9 @@
 
 namespace igl {
 
-bool _IGLVerify(bool cond, const char* func, const char* file, int line, const char* format, ...) {
+bool _IGLVerify(bool cond, const char* file, int line, const char* format, ...) {
   if (!cond) {
-    LLOGW("[IGL] Assert failed in '%s' (%s:%d): ", func, file, line);
+    LLOGW("[IGL] Assert failed in %s:%d: ", file, line);
     va_list ap;
     va_start(ap, format);
     LLOGW(format, ap);
@@ -24,11 +24,6 @@ bool _IGLVerify(bool cond, const char* func, const char* file, int line, const c
   }
   return cond;
 }
-
-struct TextureBlockSize {
-  uint32_t width = 0;
-  uint32_t height = 0;
-};
 
 struct TextureFormatProperties {
   static TextureFormatProperties fromTextureFormat(TextureFormat format);
@@ -123,7 +118,6 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     DEPTH_STENCIL(S8_UInt_Z24_UNorm, 4)
   }
 #if defined(_MSC_VER)
-  IGL_ASSERT_NOT_REACHED();
   return TextureFormatProperties{};
 #endif // _MSC_VER
 }
@@ -137,29 +131,27 @@ uint32_t getTextureBytesPerLayer(uint32_t texWidth,
   const uint32_t levelHeight = std::max(texHeight >> mipLevel, 1u);
   const uint32_t levelDepth = std::max(texDepth >> mipLevel, 1u);
 
-  const auto properties = TextureFormatProperties::fromTextureFormat(texFormat);
+  const auto props = TextureFormatProperties::fromTextureFormat(texFormat);
 
-  if (!properties.isCompressed()) {
-    return properties.bytesPerBlock * levelWidth * levelHeight * levelDepth;
+  if (!props.isCompressed()) {
+    return props.bytesPerBlock * levelWidth * levelHeight * levelDepth;
   }
 
   if (texDepth > 1) {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_ASSERT_MSG(false, "Code should NOT be reached");
     return 0;
   }
 
-  const TextureBlockSize blockSize = TextureBlockSize(properties.blockWidth, properties.blockHeight);
-  const uint32_t blockWidth = std::max(blockSize.width, 1u);
-  const uint32_t blockHeight = std::max(blockSize.height, 1u);
-  const uint32_t widthInBlocks = (levelWidth + blockWidth - 1) / blockWidth;
-  const uint32_t heightInBlocks = (levelHeight + blockHeight - 1) / blockHeight;
-  return widthInBlocks * heightInBlocks * properties.bytesPerBlock;
+  const uint32_t blockWidth = std::max((uint32_t)props.blockWidth, 1u);
+  const uint32_t blockHeight = std::max((uint32_t)props.blockHeight, 1u);
+  const uint32_t widthInBlocks = (levelWidth + props.blockWidth - 1) / props.blockWidth;
+  const uint32_t heightInBlocks = (levelHeight + props.blockHeight - 1) / props.blockHeight;
+  return widthInBlocks * heightInBlocks * props.bytesPerBlock;
 }
 
 uint32_t calcNumMipLevels(uint32_t width, uint32_t height) {
-  if (width == 0 || height == 0) {
-    return 0;
-  }
+  IGL_ASSERT(width > 0);
+  IGL_ASSERT(height > 0);
 
   uint32_t levels = 1;
 

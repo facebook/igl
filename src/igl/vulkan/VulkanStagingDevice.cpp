@@ -14,6 +14,9 @@
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 
+#include <string.h>
+#include <algorithm>
+
 #define IGL_VULKAN_DEBUG_STAGING_DEVICE 0
 
 using SubmitHandle = igl::vulkan::VulkanImmediateCommands::SubmitHandle;

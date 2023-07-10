@@ -9,7 +9,6 @@
 
 #include <igl/vulkan/Common.h>
 
-#include <format>
 #include <utility>
 
 namespace igl {
@@ -32,10 +31,14 @@ VulkanImmediateCommands::VulkanImmediateCommands(VkDevice device,
   buffers_.reserve(kMaxCommandBuffers);
 
   for (uint32_t i = 0; i != kMaxCommandBuffers; i++) {
-    buffers_.emplace_back(
-        VulkanFence(
-            device_, VkFenceCreateFlagBits{}, std::format("Fence: commandBuffer #{}", i).c_str()),
-        VulkanSemaphore(device, std::format("Semaphore: {} ({})", debugName, i).c_str()));
+    char fenceName[256] = {0};
+    char semaphoreName[256] = {0};
+    if (debugName) {
+      snprintf(fenceName, sizeof(fenceName) - 1, "Fence: %s (cmdbuf %u)", debugName, i);
+      snprintf(semaphoreName, sizeof(semaphoreName) - 1, "Semaphore: %s (cmdbuf %u)", debugName, i);
+    }
+    buffers_.emplace_back(VulkanFence(device_, VkFenceCreateFlagBits{}, fenceName),
+                          VulkanSemaphore(device, semaphoreName));
     VK_ASSERT(ivkAllocateCommandBuffer(
         device_, commandPool_.getVkCommandPool(), &buffers_[i].cmdBufAllocated_));
     buffers_[i].handle_.bufferIndex_ = i;

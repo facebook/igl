@@ -17,8 +17,8 @@ namespace igl {
 namespace vulkan {
 
 class VulkanContext;
+class VulkanContextConfig;
 class VulkanShaderModule;
-struct DeviceQueues;
 
 class Device final : public IDevice {
  public:
@@ -26,8 +26,8 @@ class Device final : public IDevice {
 
   std::shared_ptr<ICommandBuffer> createCommandBuffer() override;
 
-  void submit(igl::CommandQueueType queueType,
-              const igl::ICommandBuffer& commandBuffer,
+  void submit(const igl::ICommandBuffer& commandBuffer,
+              igl::CommandQueueType queueType,
               bool present = false) override;
 
   // Resources
@@ -54,6 +54,25 @@ class Device final : public IDevice {
   const VulkanContext& getVulkanContext() const {
     return *ctx_.get();
   }
+
+  static std::unique_ptr<VulkanContext> createContext(
+      const VulkanContextConfig& config,
+      void* window,
+      size_t numExtraInstanceExtensions = 0,
+      const char** extraInstanceExtensions = nullptr,
+      void* display = nullptr);
+
+  static std::vector<HWDeviceDesc> queryDevices(VulkanContext& ctx,
+                                                HWDeviceType deviceType,
+                                                Result* outResult = nullptr);
+
+  static std::unique_ptr<IDevice> create(std::unique_ptr<VulkanContext> ctx,
+                                         const HWDeviceDesc& desc,
+                                         uint32_t width,
+                                         uint32_t height,
+                                         size_t numExtraDeviceExtensions = 0,
+                                         const char** extraDeviceExtensions = nullptr,
+                                         Result* outResult = nullptr);
 
  private:
   friend class ComputePipelineState;

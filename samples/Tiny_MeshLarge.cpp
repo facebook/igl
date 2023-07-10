@@ -21,7 +21,6 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
-#include <format>
 #include <mutex>
 #include <stdio.h>
 #include <thread>
@@ -47,9 +46,7 @@
 
 #include <lvk/LVK.h>
 
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
-#include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 
 #ifdef _WIN32
@@ -723,10 +720,9 @@ void initIGL() {
         .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
     };
 #ifdef _WIN32
-    auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
-
+    auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetWin32Window(window_));
 #elif defined(__linux__)
-    auto ctx = vulkan::HWDevice::createContext(
+    auto ctx = vulkan::Device::createContext(
         cfg, (void*)glfwGetX11Window(window_), 0, nullptr, (void*)glfwGetX11Display());
 
 #else
@@ -735,15 +731,15 @@ void initIGL() {
     const HWDeviceType hardwareType = kPreferIntegratedGPU ? HWDeviceType::IntegratedGpu
                                                            : HWDeviceType::DiscreteGpu;
     std::vector<HWDeviceDesc> devices =
-        vulkan::HWDevice::queryDevices(*ctx.get(), hardwareType, nullptr);
+        vulkan::Device::queryDevices(*ctx.get(), hardwareType, nullptr);
     if (devices.empty()) {
       const HWDeviceType hardwareType = !kPreferIntegratedGPU ? HWDeviceType::IntegratedGpu
                                                               : HWDeviceType::DiscreteGpu;
-      devices = vulkan::HWDevice::queryDevices(*ctx.get(), hardwareType, nullptr);
+      devices = vulkan::Device::queryDevices(*ctx.get(), hardwareType, nullptr);
     }
     IGL_ASSERT_MSG(!devices.empty(), "GPU is not found");
     device_ =
-        vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
+        vulkan::Device::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
     IGL_ASSERT(device_.get());
   }
 
@@ -832,13 +828,11 @@ void initIGL() {
                        }};
 }
 
-namespace {
 void normalizeName(std::string& name) {
 #if defined(__linux__)
   std::replace(name.begin(), name.end(), '\\', '/');
 #endif
 }
-} // namespace
 
 bool loadAndCache(const char* cacheFileName) {
   // load 3D model and cache it
@@ -1367,7 +1361,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     }
     buffer->cmdEndRendering();
     buffer->present(fbShadowMap_.depthStencilAttachment.texture);
-    device_->submit(igl::CommandQueueType::Graphics, *buffer);
+    device_->submit(*buffer, igl::CommandQueueType::Graphics);
 
     fbShadowMap_.depthStencilAttachment.texture->generateMipmap();
 
@@ -1415,7 +1409,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     }
     buffer->cmdEndRendering();
     buffer->present(fbOffscreen_.colorAttachments[0].texture);
-    device_->submit(CommandQueueType::Graphics, *buffer);
+    device_->submit(*buffer, CommandQueueType::Graphics);
   }
 
   // Pass 3: compute shader post-processing
@@ -1434,9 +1428,13 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
         .texture = tex->getTextureId(),
     };
     buffer->cmdPushConstants(0, &bindings, sizeof(bindings));
-    buffer->cmdDispatchThreadGroups(igl::Dimensions(width_, height_, 1));
+    buffer->cmdDispatchThreadGroups({
+        .width = (uint32_t)width_,
+        .height = (uint32_t)height_,
+        .depth = 1u,
+    });
 
-    device_->submit(CommandQueueType::Compute, *buffer);
+    device_->submit(*buffer, CommandQueueType::Compute);
   }
 
   // Pass 4: render into the swapchain image
@@ -1467,7 +1465,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
     buffer->present(fbMain_.colorAttachments[0].texture);
 
-    device_->submit(CommandQueueType::Graphics, *buffer, true);
+    device_->submit(*buffer, CommandQueueType::Graphics, true);
   }
 }
 
@@ -1532,8 +1530,7 @@ igl::TextureFormat gli2iglTextureFormat(gli::texture2d::format_type format) {
   case gli::FORMAT_RG16_SFLOAT_PACK16:
     return igl::TextureFormat::RG_F16;
   }
-
-  IGL_ASSERT_NOT_REACHED();
+  IGL_ASSERT_MSG(false, "Code should NOT be reached");
   return igl::TextureFormat::RGBA_UNorm8;
 }
 
@@ -1542,7 +1539,11 @@ LoadedImage loadImage(const char* fileName, int channels) {
     return LoadedImage();
   }
 
-  const std::string debugName = std::format("{} ({})", fileName, channels).c_str();
+  char debugStr[512] = { 0 };
+
+  snprintf(debugStr, sizeof(debugStr)-1, "%s (%i)", fileName, channels);
+
+  const std::string debugName(debugStr);
 
   {
     std::lock_guard lock(imagesCacheMutex_);
@@ -1896,7 +1897,7 @@ int main(int argc, char* argv[]) {
     }
     if (!exists(dir / subdir)) {
       printf("Cannot find the content directory. Run `deploy_content.py` before running this app.");
-      IGL_ASSERT_NOT_REACHED();
+      IGL_ASSERT(false);
       return EXIT_FAILURE;
     }
     contentRootFolder = (dir / subdir).string();

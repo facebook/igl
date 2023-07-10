@@ -38,6 +38,8 @@ VkShaderStageFlagBits shaderStageToVkShaderStage(igl::ShaderStage stage) {
     return VK_SHADER_STAGE_FRAGMENT_BIT;
   case igl::Stage_Compute:
     return VK_SHADER_STAGE_COMPUTE_BIT;
+  case igl::kNumShaderStages:
+    return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
   };
   return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
 }
@@ -54,8 +56,8 @@ std::shared_ptr<ICommandBuffer> Device::createCommandBuffer() {
   return std::make_shared<CommandBuffer>(getVulkanContext());
 }
 
-void Device::submit(igl::CommandQueueType queueType,
-                    const igl::ICommandBuffer& commandBuffer,
+void Device::submit(const igl::ICommandBuffer& commandBuffer,
+                    igl::CommandQueueType queueType,
                     bool present) {
   IGL_PROFILER_FUNCTION();
 
@@ -336,17 +338,17 @@ std::shared_ptr<ITexture> Device::getCurrentSwapchainTexture() {
   // allocate new drawable textures if its null or mismatches in size or format
   if (!result || width != result->getDimensions().width ||
       height != result->getDimensions().height || iglFormat != result->getFormat()) {
-    swapchainTextures_[currentImageIndex] = std::make_shared<igl::vulkan::Texture>(
-        *this,
-        std::move(vkTex),
-        TextureDesc{
-            .type = TextureType::TwoD,
-            .format = iglFormat,
-            .width = width,
-            .height = height,
-            .usage = igl::TextureUsageBits_Attachment,
-            .debugName = "SwapChain Texture",
-        });
+    swapchainTextures_[currentImageIndex] =
+        std::make_shared<igl::vulkan::Texture>(*this,
+                                               std::move(vkTex),
+                                               TextureDesc{
+                                                   .type = TextureType::TwoD,
+                                                   .format = iglFormat,
+                                                   .width = width,
+                                                   .height = height,
+                                                   .usage = igl::TextureUsageBits_Attachment,
+                                                   .debugName = "SwapChain Texture",
+                                               });
   }
 
   return swapchainTextures_[currentImageIndex];
@@ -355,6 +357,51 @@ std::shared_ptr<ITexture> Device::getCurrentSwapchainTexture() {
 VulkanShaderModule* Device::getShaderModule(ShaderModuleHandle handle) const {
   IGL_ASSERT(handle < shaderModules_.size());
   return shaderModules_[handle].get();
+}
+
+std::unique_ptr<VulkanContext> Device::createContext(const VulkanContextConfig& config,
+                                                     void* window,
+                                                     size_t numExtraInstanceExtensions,
+                                                     const char** extraInstanceExtensions,
+                                                     void* display) {
+  return std::make_unique<VulkanContext>(
+      config, window, numExtraInstanceExtensions, extraInstanceExtensions, display);
+}
+
+std::vector<HWDeviceDesc> Device::queryDevices(VulkanContext& ctx,
+                                               HWDeviceType deviceType,
+                                               Result* outResult) {
+  std::vector<HWDeviceDesc> outDevices;
+
+  Result::setResult(outResult, ctx.queryDevices(deviceType, outDevices));
+
+  return outDevices;
+}
+
+std::unique_ptr<IDevice> Device::create(std::unique_ptr<VulkanContext> ctx,
+                                        const HWDeviceDesc& desc,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        size_t numExtraDeviceExtensions,
+                                        const char** extraDeviceExtensions,
+                                        Result* outResult) {
+  IGL_ASSERT(ctx.get());
+
+  auto result = ctx->initContext(desc, numExtraDeviceExtensions, extraDeviceExtensions);
+
+  Result::setResult(outResult, result);
+
+  if (!result.isOk()) {
+    return nullptr;
+  }
+
+  if (width > 0 && height > 0) {
+    result = ctx->initSwapchain(width, height);
+
+    Result::setResult(outResult, result);
+  }
+
+  return result.isOk() ? std::make_unique<igl::vulkan::Device>(std::move(ctx)) : nullptr;
 }
 
 } // namespace igl::vulkan
