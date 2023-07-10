@@ -61,8 +61,8 @@ class Texture final : public ITexture {
   static ulong_t toTextureUsage(MTLTextureUsage usage);
   static MTLTextureUsage toMTLTextureUsage(ulong_t usage);
 
-  static MTLPixelFormat convertFormat(TextureFormat value);
-  static TextureFormat convertFormat(MTLPixelFormat value);
+  static MTLPixelFormat textureFormatToMTLPixelFormat(TextureFormat value);
+  static TextureFormat mtlPixelFormatToTextureFormat(MTLPixelFormat value);
   static MTLTextureType convertType(TextureType value, size_t numSamples);
   static TextureType convertType(MTLTextureType value);
 

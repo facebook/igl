@@ -369,7 +369,8 @@ TEST_F(TextureMTLTest, ConvertTextureFormats) {
   };
 
   for (auto format : invalidTextureFormats) {
-    ASSERT_EQ(true, igl::metal::Texture::convertFormat(format) == MTLPixelFormatInvalid);
+    ASSERT_EQ(true,
+              igl::metal::Texture::textureFormatToMTLPixelFormat(format) == MTLPixelFormatInvalid);
   }
 }
 

@@ -92,10 +92,14 @@ namespace igl {
 namespace metal {
 
 Texture::Texture(id<MTLTexture> texture) :
-  ITexture(convertFormat([texture pixelFormat])), value_(texture), drawable_(nullptr) {}
+  ITexture(mtlPixelFormatToTextureFormat([texture pixelFormat])),
+  value_(texture),
+  drawable_(nullptr) {}
 
 Texture::Texture(id<CAMetalDrawable> drawable) :
-  ITexture(convertFormat([drawable.texture pixelFormat])), value_(nullptr), drawable_(drawable) {}
+  ITexture(mtlPixelFormatToTextureFormat([drawable.texture pixelFormat])),
+  value_(nullptr),
+  drawable_(drawable) {}
 
 Texture::~Texture() {
   value_ = nil;
@@ -348,7 +352,7 @@ TextureType Texture::convertType(MTLTextureType value) {
   }
 }
 
-MTLPixelFormat Texture::convertFormat(TextureFormat value) {
+MTLPixelFormat Texture::textureFormatToMTLPixelFormat(TextureFormat value) {
   switch (value) {
   case TextureFormat::Invalid:
     return MTLPixelFormatInvalid;
@@ -749,7 +753,7 @@ MTLPixelFormat Texture::convertFormat(TextureFormat value) {
   }
 }
 
-TextureFormat Texture::convertFormat(MTLPixelFormat value) {
+TextureFormat Texture::mtlPixelFormatToTextureFormat(MTLPixelFormat value) {
 // Some fbsource targets don't allow enum default, this makes sure all of them compile
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wswitch-enum"
