@@ -189,7 +189,7 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
       nativeDrawable->getDimensions().width,
       nativeDrawable->getDimensions().height,
       TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled,
-      IGL_FORMAT("{}C{}", framebufferDesc.debugName.c_str(), 0).c_str());
+      framebufferDesc.debugName.c_str());
 
   framebufferDesc.colorAttachments[1].texture = device_->createTexture(desc, nullptr);
   framebuffer_ = device_->createFramebuffer(framebufferDesc, nullptr);
