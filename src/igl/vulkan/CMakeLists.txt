@@ -13,8 +13,6 @@ file(GLOB HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DI
 
 add_library(IGLVulkan ${SRC_FILES} ${HEADER_FILES})
 
-target_link_libraries(IGLVulkan PRIVATE IGLLibrary)
-
 igl_set_cxxstd(IGLVulkan 20)
 igl_set_folder(IGLVulkan "IGL")
 
@@ -36,11 +34,11 @@ igl_set_folder(SPIRV              "third-party/glslang")
 igl_set_folder(glslang-default-resource-limits "third-party/glslang")
 # cmake-format: on
 
-target_link_libraries(IGLVulkan PUBLIC glslang SPIRV glslang-default-resource-limits)
-
 find_package(Vulkan REQUIRED)
 
-target_link_libraries(IGLVulkan PUBLIC Vulkan::Vulkan)
+target_link_libraries(IGLVulkan PRIVATE IGLLibrary)
+target_link_libraries(IGLVulkan PUBLIC  glslang SPIRV glslang-default-resource-limits)
+target_link_libraries(IGLVulkan PUBLIC  Vulkan::Vulkan)
 
 target_include_directories(IGLVulkan PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/volk")
 target_include_directories(IGLVulkan PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/vma/include")

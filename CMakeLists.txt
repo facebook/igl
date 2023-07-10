@@ -9,7 +9,7 @@ project("IGL" CXX C)
 
 # cmake-format: off
 option(IGL_WITH_SAMPLES "Enable sample demo apps"  ON)
-option(IGL_WITH_TRACY   "Enable Tracy profiler"    OFF)
+option(IGL_WITH_TRACY   "Enable Tracy profiler"    ON)
 option(IGL_DEPLOY_DEPS  "Deploy dependencies via CMake" ON)
 # cmake-format: on
 
@@ -82,8 +82,6 @@ if(IGL_DEPLOY_DEPS)
   add_dependencies(IGLLibrary IGLDependencies)
 endif()
 
-include_directories("third-party/deps/src/imgui")
-
 add_library(IGLstb third-party/deps/patches/stb_impl/stb_image.c third-party/deps/patches/stb_impl/stb_image_resize.c
                    third-party/deps/patches/stb_impl/stb_image_write.c)
 target_include_directories(IGLstb PUBLIC "third-party/deps/src/stb")
@@ -134,3 +132,11 @@ endif()
 if(IGL_WITH_TRACY)
   target_link_libraries(IGLLibrary PUBLIC TracyClient)
 endif()
+
+# ImGui
+target_sources(IGLLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui.cpp")
+target_sources(IGLLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_demo.cpp")
+target_sources(IGLLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_draw.cpp")
+target_sources(IGLLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_tables.cpp")
+target_sources(IGLLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_widgets.cpp")
+target_include_directories(IGLLibrary PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/imgui")

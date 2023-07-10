@@ -46,6 +46,7 @@
 
 #include <lvk/LVK.h>
 #include <lvk/HelpersGLFW.h>
+#include <lvk/HelpersImGui.h>
 
 constexpr uint32_t kMeshCacheVersion = 0xC0DE0009;
 constexpr uint32_t kMaxTextures = 512;
@@ -58,15 +59,10 @@ constexpr bool kEnableValidationLayers = false;
 constexpr bool kEnableValidationLayers = true;
 #endif // NDEBUG
 
-std::string contentRootFolder;
+std::string folderThirdParty;
+std::string folderContentRoot;
 
-#if IGL_WITH_IGLU
-#include <IGLU/imgui/Session.h>
-
-std::unique_ptr<iglu::imgui::Session> imguiSession_;
-
-igl::shell::InputDispatcher inputDispatcher_;
-#endif // IGL_WITH_IGLU
+std::unique_ptr<lvk::ImGuiRenderer> imgui_;
 
 const char* kCodeComputeTest = R"(
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -549,7 +545,7 @@ static bool endsWith(const std::string& str, const std::string& suffix) {
 
 static std::string convertFileName(std::string fileName) {
   // generate compressed filename
-  const std::string compressedPathPrefix = contentRootFolder;
+  const std::string compressedPathPrefix = folderContentRoot;
 
   if (fileName.find(compressedPathPrefix) == 0) {
     // remove leading path
@@ -676,6 +672,8 @@ void normalizeName(std::string& name) {
 }
 
 bool loadAndCache(const char* cacheFileName) {
+  IGL_PROFILER_FUNCTION();
+
   // load 3D model and cache it
   LLOGL("Loading `exterior.obj`... It can take a while in debug builds...\n");
 
@@ -692,8 +690,8 @@ bool loadAndCache(const char* cacheFileName) {
                        &materials,
                        &warn,
                        &err,
-                       (contentRootFolder + "src/bistro/Exterior/exterior.obj").c_str(),
-                       (contentRootFolder + "src/bistro/Exterior/").c_str());
+                       (folderContentRoot + "src/bistro/Exterior/exterior.obj").c_str(),
+                       (folderContentRoot + "src/bistro/Exterior/").c_str());
 
   if (!IGL_VERIFY(ret)) {
     IGL_ASSERT_MSG(ret, "Did you read the tutorial at the top of this file?");
@@ -874,7 +872,7 @@ bool loadFromCache(const char* cacheFileName) {
 }
 
 void initModel() {
-  const std::string cacheFileName = contentRootFolder + "cache.data";
+  const std::string cacheFileName = folderContentRoot + "cache.data";
 
   if (!loadFromCache(cacheFileName.c_str())) {
     if (!IGL_VERIFY(loadAndCache(cacheFileName.c_str()))) {
@@ -1298,9 +1296,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
       buffer->cmdDraw(PrimitiveType::Triangle, 0, 3);
       buffer->cmdPopDebugGroupLabel();
 
-#if IGL_WITH_IGLU
-      imguiSession_->endFrame(*device_.get(), *buffer);
-#endif // IGL_WITH_IGLU
+      imgui_->endFrame(*device_.get(), *buffer);
     }
     buffer->cmdEndRendering();
 
@@ -1311,6 +1307,8 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 }
 
 void generateCompressedTexture(LoadedImage img) {
+  IGL_PROFILER_FUNCTION();
+
   if (loaderShouldExit_.load(std::memory_order_acquire)) {
     return;
   }
@@ -1376,6 +1374,8 @@ igl::TextureFormat gli2iglTextureFormat(gli::texture2d::format_type format) {
 }
 
 LoadedImage loadImage(const char* fileName, int channels) {
+  IGL_PROFILER_FUNCTION();
+
   if (!fileName || !*fileName) {
     return LoadedImage();
   }
@@ -1422,7 +1422,9 @@ LoadedImage loadImage(const char* fileName, int channels) {
 }
 
 void loadMaterial(size_t i) {
-  static const std::string pathPrefix = contentRootFolder + "src/bistro/Exterior/";
+  IGL_PROFILER_FUNCTION();
+
+  static const std::string pathPrefix = folderContentRoot + "src/bistro/Exterior/";
 
   SCOPE_EXIT {
     remainingMaterialsToLoad_.fetch_sub(1u, std::memory_order_release);
@@ -1467,6 +1469,8 @@ void loadMaterials() {
 }
 
 void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture>& tex) {
+  IGL_PROFILER_FUNCTION();
+
   auto texRef = gli::load_ktx(fileNameKTX);
 
   if (!IGL_VERIFY(texRef.format() == gli::FORMAT_RGBA32_SFLOAT_PACK32)) {
@@ -1492,11 +1496,14 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
     IGL_ASSERT(tex.get());
   }
 
-  const void* data[6];
-
-  for (uint8_t face = 0; face < 6; ++face) {
-    data[face] = texRef.data(0, face, 0);
-  }
+  const void* data[6] = {
+      texRef.data(0, 0, 0),
+      texRef.data(0, 1, 0),
+      texRef.data(0, 2, 0),
+      texRef.data(0, 3, 0),
+      texRef.data(0, 4, 0),
+      texRef.data(0, 5, 0),
+  };
 
   const TextureRangeDesc texRefRange = {
       .width = width,
@@ -1544,6 +1551,8 @@ gli::texture_cube gliToCube(Bitmap& bmp) {
 }
 
 void generateMipmaps(const std::string& outFilename, gli::texture_cube& cubemap) {
+  IGL_PROFILER_FUNCTION();
+
   LLOGL("Generating mipmaps");
 
   auto prevWidth = cubemap.extent().x;
@@ -1579,6 +1588,8 @@ void generateMipmaps(const std::string& outFilename, gli::texture_cube& cubemap)
 void processCubemap(const std::string& inFilename,
                     const std::string& outFilenameEnv,
                     const std::string& outFilenameIrr) {
+  IGL_PROFILER_FUNCTION();
+
   int sourceWidth, sourceHeight;
   float* pxs = stbi_loadf(inFilename.c_str(), &sourceWidth, &sourceHeight, nullptr, 3);
   SCOPE_EXIT {
@@ -1616,18 +1627,17 @@ void processCubemap(const std::string& inFilename,
 }
 
 void loadSkyboxTexture() {
-  static const std::string skyboxFileName{"immenstadter_horn_2k"};
-  static const std::string skyboxSubdir{"src/skybox_hdr/"};
+  IGL_PROFILER_FUNCTION();
 
-  static const std::string fileNameRefKTX =
-      contentRootFolder + skyboxFileName + "_ReferenceMap.ktx";
-  static const std::string fileNameIrrKTX =
-      contentRootFolder + skyboxFileName + "_IrradianceMap.ktx";
+  const std::string skyboxFileName{"immenstadter_horn_2k"};
+  const std::string skyboxSubdir{"src/skybox_hdr/"};
+
+  const std::string fileNameRefKTX = folderContentRoot + skyboxFileName + "_ReferenceMap.ktx";
+  const std::string fileNameIrrKTX = folderContentRoot + skyboxFileName + "_IrradianceMap.ktx";
 
   if (!std::filesystem::exists(fileNameRefKTX) || !std::filesystem::exists(fileNameIrrKTX)) {
-    LLOGL("Cubemap in KTX format not found. Extracting from HDR file...\n");
-    static const std::string inFilename =
-        contentRootFolder + skyboxSubdir + skyboxFileName + ".hdr";
+    const std::string inFilename = folderContentRoot + skyboxSubdir + skyboxFileName + ".hdr";
+    LLOGL("Cubemap in KTX format not found. Extracting from HDR file `%s`...\n", inFilename.c_str());
 
     processCubemap(inFilename, fileNameRefKTX, fileNameIrrKTX);
   }
@@ -1741,7 +1751,8 @@ int main(int argc, char* argv[]) {
       IGL_ASSERT(false);
       return EXIT_FAILURE;
     }
-    contentRootFolder = (dir / subdir).string();
+    folderThirdParty = (dir / path("third-party/deps/src/")).string();
+    folderContentRoot = (dir / subdir).string();
   }
 
   window_ = lvk::initWindow("Vulkan Bistro", width_, height_);
@@ -1752,33 +1763,34 @@ int main(int argc, char* argv[]) {
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     mousePos_ = vec2(x / width, 1.0f - y / height);
-#if IGL_WITH_IGLU
-    inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
-#endif // IGL_WITH_IGLU
+    ImGui::GetIO().MousePos = ImVec2(x, y);
   });
 
   glfwSetMouseButtonCallback(window_, [](auto* window, int button, int action, int mods) {
-#if IGL_WITH_IGLU
     if (!ImGui::GetIO().WantCaptureMouse) {
-#endif // IGL_WITH_IGLU
       if (button == GLFW_MOUSE_BUTTON_LEFT) {
         mousePressed_ = (action == GLFW_PRESS);
       }
-#if IGL_WITH_IGLU
     } else {
       // release the mouse
       mousePressed_ = false;
     }
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
-    using igl::shell::MouseButton;
-    const MouseButton iglButton =
+    const ImGuiMouseButton_ imguiButton =
         (button == GLFW_MOUSE_BUTTON_LEFT)
-            ? MouseButton::Left
-            : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
-    inputDispatcher_.queueEvent(
-        igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
-#endif // IGL_WITH_IGLU
+            ? ImGuiMouseButton_Left
+            : (button == GLFW_MOUSE_BUTTON_RIGHT ? ImGuiMouseButton_Right
+                                                 : ImGuiMouseButton_Middle);
+    ImGuiIO& io = ImGui::GetIO();
+    io.MousePos = ImVec2((float)xpos, (float)ypos);
+    io.MouseDown[imguiButton] = action == GLFW_PRESS;
+  });
+
+  glfwSetScrollCallback(window_, [](GLFWwindow* window, double dx, double dy) {
+    ImGuiIO& io = ImGui::GetIO();
+    io.MouseWheelH = (float)dx;
+    io.MouseWheel = (float)dy;
   });
 
   glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int, int action, int mods) {
@@ -1847,9 +1859,10 @@ int main(int argc, char* argv[]) {
   createRenderPipelineSkybox();
   createComputePipeline();
 
-#if IGL_WITH_IGLU
-  imguiSession_ = std::make_unique<iglu::imgui::Session>(*device_.get(), inputDispatcher_);
-#endif // IGL_WITH_IGLU
+  imgui_ = std::make_unique<lvk::ImGuiRenderer>(
+      *device_,
+      (folderThirdParty + "3D-Graphics-Rendering-Cookbook/data/OpenSans-Light.ttf").c_str(),
+     float(height_) / 70.0f );
 
   double prevTime = glfwGetTime();
 
@@ -1858,8 +1871,7 @@ int main(int argc, char* argv[]) {
   // Main loop
   while (!glfwWindowShouldClose(window_)) {
     {
-#if IGL_WITH_IGLU
-      imguiSession_->beginFrame(fbMain_);
+      imgui_->beginFrame(fbMain_);
       ImGui::ShowDemoWindow();
 
       ImGui::Begin("Keyboard hints:", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
@@ -1908,7 +1920,6 @@ int main(int argc, char* argv[]) {
         }
         ImGui::End();
       }
-#endif // IGL_WITH_IGLU
     }
 
     processLoadedMaterials();
@@ -1917,9 +1928,6 @@ int main(int argc, char* argv[]) {
     fps_.tick(delta);
     positioner_.update(delta, mousePos_, mousePressed_);
     prevTime = newTime;
-#if IGL_WITH_IGLU
-    inputDispatcher_.processEvents();
-#endif // IGL_WITH_IGLU
     render(device_->getCurrentSwapchainTexture(), frameIndex);
     glfwPollEvents();
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
@@ -1927,9 +1935,7 @@ int main(int argc, char* argv[]) {
 
   loaderShouldExit_.store(true, std::memory_order_release);
 
-#if IGL_WITH_IGLU
-  imguiSession_ = nullptr;
-#endif // IGL_WITH_IGLU
+  imgui_ = nullptr;
   // destroy all the Vulkan stuff before closing the window
   vb0_ = nullptr;
   ib0_ = nullptr;
@@ -1953,7 +1959,7 @@ int main(int argc, char* argv[]) {
   fbMain_ = {};
   fbShadowMap_ = {};
   fbOffscreen_ = {};
-  device_.reset(nullptr);
+  device_ = nullptr;
 
   glfwDestroyWindow(window_);
   glfwTerminate();

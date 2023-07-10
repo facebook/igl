@@ -42,6 +42,8 @@
 #define IGL_PROFILER_FRAME(name)
 #endif // IGL_WITH_TRACY
 
+#define IGL_ARRAY_NUM_ELEMENTS(x) (sizeof(x) / sizeof((x)[0]))
+
 namespace igl {
 
 bool _IGLVerify(bool cond, const char* file, int line, const char* format, ...);

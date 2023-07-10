@@ -20,4 +20,4 @@ igl_set_folder(IGLLibrary "IGL")
 add_subdirectory(vulkan)
 
 target_link_libraries(IGLLibrary PUBLIC IGLVulkan)
-target_link_libraries(IGLLibrary PUBLIC LVKVulkan)
+target_link_libraries(IGLLibrary PRIVATE LVKLibrary)

@@ -20,6 +20,7 @@
 
 #include <lvk/LVK.h>
 #include <lvk/HelpersGLFW.h>
+#include <lvk/HelpersImGui.h>
 
 #include <stb/stb_image.h>
 
@@ -27,13 +28,7 @@
 
 constexpr uint32_t kNumCubes = 16;
 
-#if IGL_WITH_IGLU && 0
-#include <IGLU/imgui/Session.h>
-
-std::unique_ptr<iglu::imgui::Session> imguiSession_;
-
-igl::shell::InputDispatcher inputDispatcher_;
-#endif // IGL_WITH_IGLU
+std::unique_ptr<lvk::ImGuiRenderer> imgui_;
 
 const char* codeVS = R"(
 layout (location=0) in vec3 pos;
@@ -255,6 +250,10 @@ static void initIGL() {
         4);
     IGL_ASSERT_MSG(pixels,
                    "Cannot load textures. Run `deploy_content.py` before running this app.");
+    if (!pixels) {
+        printf("Cannot load textures. Run `deploy_content.py` before running this app.");
+        std::terminate();
+    }
     texture1_ = device_->createTexture(
         {
             .type = TextureType::TwoD,
@@ -407,9 +406,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
     }
     buffer->cmdPopDebugGroupLabel();
   }
-#if IGL_WITH_IGLU && 0
-  imguiSession_->endFrame(*device_.get(), *commands);
-#endif // IGL_WITH_IGLU
+  imgui_->endFrame(*device_.get(), *buffer);
   buffer->cmdEndRendering();
 
   buffer->present(nativeDrawable);
@@ -425,24 +422,22 @@ int main(int argc, char* argv[]) {
 
   initObjects();
 
-#if IGL_WITH_IGLU && 0
-  imguiSession_ = std::make_unique<iglu::imgui::Session>(*device_.get(), inputDispatcher_);
+  imgui_ = std::make_unique<lvk::ImGuiRenderer>(*device_);
 
-  glfwSetCursorPosCallback(window, [](auto* window, double x, double y) {
-    inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
-  });
-  glfwSetMouseButtonCallback(window, [](auto* window, int button, int action, int mods) {
+  glfwSetCursorPosCallback(
+      window_, [](auto* window, double x, double y) { ImGui::GetIO().MousePos = ImVec2(x, y); });
+  glfwSetMouseButtonCallback(window_, [](auto* window, int button, int action, int mods) {
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
-    using igl::shell::MouseButton;
-    const MouseButton iglButton =
+    const ImGuiMouseButton_ imguiButton =
         (button == GLFW_MOUSE_BUTTON_LEFT)
-            ? MouseButton::Left
-            : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
-    inputDispatcher_.queueEvent(
-        igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
+            ? ImGuiMouseButton_Left
+            : (button == GLFW_MOUSE_BUTTON_RIGHT ? ImGuiMouseButton_Right
+                                                 : ImGuiMouseButton_Middle);
+    ImGuiIO& io = ImGui::GetIO();
+    io.MousePos = ImVec2((float)xpos, (float)ypos);
+    io.MouseDown[imguiButton] = action == GLFW_PRESS;
   });
-#endif // IGL_WITH_IGLU
 
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     printf("Window resized! width=%d, height=%d\n", width, height);
@@ -470,23 +465,18 @@ int main(int argc, char* argv[]) {
     const double newTime = glfwGetTime();
     fps_.tick(newTime - prevTime);
     prevTime = newTime;
-#if IGL_WITH_IGLU && 0
-    imguiSession_->beginFrame(framebufferDesc_, 1.0f);
+    imgui_->beginFrame(framebuffer_);
 
     ImGui::Begin("Texture Viewer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::Image(ImTextureID(texture1_.get()), ImVec2(512, 512));
     ImGui::End();
 
-    inputDispatcher_.processEvents();
-#endif // IGL_WITH_IGLU
     render(device_->getCurrentSwapchainTexture(), frameIndex);
     glfwPollEvents();
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
   }
 
-#if IGL_WITH_IGLU && 0
-  imguiSession_ = nullptr;
-#endif // IGL_WITH_IGLU
+  imgui_ = nullptr;
 
   // destroy all the Vulkan stuff before closing the window
   vb0_ = nullptr;
