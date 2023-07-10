@@ -28,7 +28,7 @@
 #define IGL_FORMAT fmt::format
 #endif // __cpp_lib_format
 
-std::string codeVS = R"(#version 300 es
+constexpr const char* codeVS = R"(#version 300 es
 
 precision highp float;
 
@@ -49,7 +49,7 @@ void main() {
 }
 )";
 
-const char* codeFS = R"(#version 300 es
+constexpr const char* codeFS = R"(#version 300 es
 
 precision highp float;
 
