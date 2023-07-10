@@ -8,7 +8,6 @@
 #include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
 #include <igl/vulkan/VulkanPipelineLayout.h>
 #include <igl/vulkan/VulkanShaderModule.h>
@@ -25,7 +24,7 @@ ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
 ComputePipelineState ::~ComputePipelineState() {
   if (pipeline_ != VK_NULL_HANDLE) {
     device_.getVulkanContext().deferredTask(std::packaged_task<void()>(
-        [device = device_.getVulkanContext().device_->getVkDevice(), pipeline = pipeline_]() {
+        [device = device_.getVulkanContext().getVkDevice(), pipeline = pipeline_]() {
           vkDestroyPipeline(device, pipeline, nullptr);
         }));
   }
@@ -42,16 +41,17 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
 
   VkShaderModule vkShaderModule = sm ? sm->getVkShaderModule() : VK_NULL_HANDLE;
 
-  igl::vulkan::VulkanComputePipelineBuilder()
-      .shaderStage(ivkGetPipelineShaderStageCreateInfo(
-          VK_SHADER_STAGE_COMPUTE_BIT, vkShaderModule, sm->getEntryPoint()))
-      .build(
-          ctx.device_->getVkDevice(),
-          // TODO: use ctx.pipelineCache_
-          VK_NULL_HANDLE,
-          ctx.pipelineLayout_->getVkPipelineLayout(),
-          &pipeline_,
-          desc_.debugName);
+  const VkPipelineShaderStageCreateInfo ci = ivkGetPipelineShaderStageCreateInfo(
+      VK_SHADER_STAGE_COMPUTE_BIT, vkShaderModule, sm->getEntryPoint());
+
+  VK_ASSERT(ivkCreateComputePipeline(ctx.getVkDevice(),
+                                     // TODO: use ctx.pipelineCache_
+                                     VK_NULL_HANDLE,
+                                     &ci,
+                                     ctx.pipelineLayout_->getVkPipelineLayout(),
+                                     &pipeline_));
+  VK_ASSERT(ivkSetDebugObjectName(
+      ctx.getVkDevice(), VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline_, desc_.debugName));
 
   return pipeline_;
 }

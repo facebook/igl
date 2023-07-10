@@ -9,7 +9,6 @@
 
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanSemaphore.h>
 
 #include <algorithm>
@@ -131,7 +130,7 @@ namespace vulkan {
 
 VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint32_t height) :
   ctx_(ctx),
-  device_(ctx.device_->getVkDevice()),
+  device_(ctx.vkDevice_),
   graphicsQueue_(ctx.deviceQueues_.graphicsQueue),
   width_(width),
   height_(height) {
@@ -147,17 +146,13 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
       "create an offscreen rendering context? If so, set 'width' and 'height' to 0 when you "
       "create your igl::IDevice");
 
-#if defined(VK_KHR_surface)
-  if (ctx.extensions_.enabled(VK_KHR_SURFACE_EXTENSION_NAME)) {
-    VkBool32 queueFamilySupportsPresentation = VK_FALSE;
-    VK_ASSERT(vkGetPhysicalDeviceSurfaceSupportKHR(ctx.getVkPhysicalDevice(),
-                                                   ctx.deviceQueues_.graphicsQueueFamilyIndex,
-                                                   ctx.vkSurface_,
-                                                   &queueFamilySupportsPresentation));
-    IGL_ASSERT_MSG(queueFamilySupportsPresentation == VK_TRUE,
-                   "The queue family used with the swapchain does not support presentation");
-  }
-#endif
+  VkBool32 queueFamilySupportsPresentation = VK_FALSE;
+  VK_ASSERT(vkGetPhysicalDeviceSurfaceSupportKHR(ctx.getVkPhysicalDevice(),
+                                                 ctx.deviceQueues_.graphicsQueueFamilyIndex,
+                                                 ctx.vkSurface_,
+                                                 &queueFamilySupportsPresentation));
+  IGL_ASSERT_MSG(queueFamilySupportsPresentation == VK_TRUE,
+                 "The queue family used with the swapchain does not support presentation");
 
   const VkImageUsageFlags usageFlags =
       chooseUsageFlags(ctx.getVkPhysicalDevice(), ctx.vkSurface_, surfaceFormat_.format);

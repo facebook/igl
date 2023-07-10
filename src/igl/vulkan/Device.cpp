@@ -16,7 +16,6 @@
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanShaderModule.h>
 #include <igl/vulkan/VulkanSwapchain.h>
@@ -188,10 +187,9 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
                                                                const char* entryPoint,
                                                                const char* debugName,
                                                                Result* outResult) const {
-  VkDevice device = ctx_->device_->getVkDevice();
-
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
-  const VkResult result = ivkCreateShaderModuleFromSPIRV(device, data, length, &vkShaderModule);
+  const VkResult result =
+      ivkCreateShaderModuleFromSPIRV(ctx_->vkDevice_, data, length, &vkShaderModule);
 
   setResultFrom(outResult, result);
 
@@ -200,9 +198,9 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
   }
 
   VK_ASSERT(ivkSetDebugObjectName(
-      device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
+      ctx_->vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
-  return std::make_shared<VulkanShaderModule>(device, vkShaderModule, entryPoint);
+  return std::make_shared<VulkanShaderModule>(ctx_->vkDevice_, vkShaderModule, entryPoint);
 }
 
 std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage,
@@ -210,7 +208,6 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
                                                                const char* entryPoint,
                                                                const char* debugName,
                                                                Result* outResult) const {
-  VkDevice device = ctx_->device_->getVkDevice();
   const VkShaderStageFlagBits vkStage = shaderStageToVkShaderStage(stage);
   IGL_ASSERT(vkStage != VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM);
   IGL_ASSERT(source);
@@ -223,19 +220,11 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
   }
 
   if (strstr(source, "#version ") == nullptr) {
-    std::string extraExtensions;
-
-    // GL_EXT_debug_printf extension
-    if (ctx_->extensions_.enabled(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
-      extraExtensions += "#extension GL_EXT_debug_printf : enable\n";
-    }
-
     // there's no header provided in the shader source, let's insert our own header
     if (vkStage == VK_SHADER_STAGE_VERTEX_BIT || vkStage == VK_SHADER_STAGE_COMPUTE_BIT) {
       sourcePatched += R"(
       #version 460
-      )" + extraExtensions +
-                       R"(
+      #extension GL_EXT_debug_printf : enable
       #extension GL_EXT_nonuniform_qualifier : require
       #extension GL_EXT_buffer_reference : require
       #extension GL_EXT_buffer_reference_uvec2 : require
@@ -245,8 +234,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
     if (vkStage == VK_SHADER_STAGE_FRAGMENT_BIT) {
       sourcePatched += R"(
       #version 460
-      )" + extraExtensions +
-                       R"(
+      #extension GL_EXT_debug_printf : enable
       #extension GL_EXT_nonuniform_qualifier : require
       #extension GL_EXT_buffer_reference_uvec2 : require
       #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
@@ -282,7 +270,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
 
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
   const Result result =
-      igl::vulkan::compileShader(device, vkStage, source, &vkShaderModule, &glslangResource);
+      igl::vulkan::compileShader(ctx_->vkDevice_, vkStage, source, &vkShaderModule, &glslangResource);
 
   Result::setResult(outResult, result);
 
@@ -291,9 +279,9 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
   }
 
   VK_ASSERT(ivkSetDebugObjectName(
-      device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
+      ctx_->vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
-  return std::make_shared<VulkanShaderModule>(device, vkShaderModule, entryPoint);
+  return std::make_shared<VulkanShaderModule>(ctx_->vkDevice_, vkShaderModule, entryPoint);
 }
 
 std::shared_ptr<ITexture> Device::getCurrentSwapchainTexture() {
@@ -361,11 +349,8 @@ VulkanShaderModule* Device::getShaderModule(ShaderModuleHandle handle) const {
 
 std::unique_ptr<VulkanContext> Device::createContext(const VulkanContextConfig& config,
                                                      void* window,
-                                                     size_t numExtraInstanceExtensions,
-                                                     const char** extraInstanceExtensions,
                                                      void* display) {
-  return std::make_unique<VulkanContext>(
-      config, window, numExtraInstanceExtensions, extraInstanceExtensions, display);
+  return std::make_unique<VulkanContext>(config, window, display);
 }
 
 std::vector<HWDeviceDesc> Device::queryDevices(VulkanContext& ctx,
@@ -382,12 +367,10 @@ std::unique_ptr<IDevice> Device::create(std::unique_ptr<VulkanContext> ctx,
                                         const HWDeviceDesc& desc,
                                         uint32_t width,
                                         uint32_t height,
-                                        size_t numExtraDeviceExtensions,
-                                        const char** extraDeviceExtensions,
                                         Result* outResult) {
   IGL_ASSERT(ctx.get());
 
-  auto result = ctx->initContext(desc, numExtraDeviceExtensions, extraDeviceExtensions);
+  auto result = ctx->initContext(desc);
 
   Result::setResult(outResult, result);
 

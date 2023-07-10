@@ -11,7 +11,6 @@ namespace igl {
 namespace vulkan {
 
 uint32_t VulkanPipelineBuilder::numPipelinesCreated_ = 0;
-uint32_t VulkanComputePipelineBuilder::numPipelinesCreated_ = 0;
 
 VulkanPipelineBuilder::VulkanPipelineBuilder() :
   vertexInputState_(ivkGetPipelineVertexInputStateCreateInfo_Empty()),
@@ -184,30 +183,6 @@ VkResult VulkanPipelineBuilder::build(VkDevice device,
 
   const auto result =
       vkCreateGraphicsPipelines(device, pipelineCache, 1, &ci, nullptr, outPipeline);
-
-  if (!IGL_VERIFY(result == VK_SUCCESS)) {
-    return result;
-  }
-
-  numPipelinesCreated_++;
-
-  // set debug name
-  return ivkSetDebugObjectName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)*outPipeline, debugName);
-}
-
-VulkanComputePipelineBuilder& VulkanComputePipelineBuilder::shaderStage(
-    VkPipelineShaderStageCreateInfo stage) {
-  shaderStage_ = stage;
-  return *this;
-}
-
-VkResult VulkanComputePipelineBuilder::build(VkDevice device,
-                                             VkPipelineCache pipelineCache,
-                                             VkPipelineLayout pipelineLayout,
-                                             VkPipeline* outPipeline,
-                                             const char* debugName) noexcept {
-  const VkResult result =
-      ivkCreateComputePipeline(device, pipelineCache, &shaderStage_, pipelineLayout, outPipeline);
 
   if (!IGL_VERIFY(result == VK_SUCCESS)) {
     return result;

@@ -10,7 +10,6 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 
@@ -56,10 +55,9 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
   IGL_ASSERT(stagingBuffer_.get());
 
   immediate_ = std::make_unique<igl::vulkan::VulkanImmediateCommands>(
-      ctx_.device_->getVkDevice(),
+      ctx_.getVkDevice(),
       ctx_.deviceQueues_.graphicsQueueFamilyIndex,
       "VulkanStagingDevice::immediate_");
-  IGL_ASSERT(immediate_.get());
 }
 
 void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,

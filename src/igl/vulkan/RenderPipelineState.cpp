@@ -8,7 +8,6 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
 #include <igl/vulkan/VulkanPipelineLayout.h>
 #include <igl/vulkan/VulkanShaderModule.h>
@@ -251,12 +250,12 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
 }
 
 RenderPipelineState::~RenderPipelineState() {
-  VkDevice device = device_.getVulkanContext().device_->getVkDevice();
-
   for (auto p : pipelines_) {
     if (p.second != VK_NULL_HANDLE) {
       device_.getVulkanContext().deferredTask(std::packaged_task<void()>(
-          [device, pipeline = p.second]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+          [device = device_.getVulkanContext().getVkDevice(), pipeline = p.second]() {
+            vkDestroyPipeline(device, pipeline, nullptr);
+          }));
     }
   }
 }
@@ -303,8 +302,10 @@ VkPipeline RenderPipelineState::getVkPipeline(
     }
   }
 
-  VulkanShaderModule* vertexModule = device_.getShaderModule(desc_.shaderStages.getModule(Stage_Vertex));
-  VulkanShaderModule* fragmentModule = device_.getShaderModule(desc_.shaderStages.getModule(Stage_Fragment));
+  VulkanShaderModule* vertexModule =
+      device_.getShaderModule(desc_.shaderStages.getModule(Stage_Vertex));
+  VulkanShaderModule* fragmentModule =
+      device_.getShaderModule(desc_.shaderStages.getModule(Stage_Fragment));
 
   IGL_ASSERT(vertexModule);
   IGL_ASSERT(fragmentModule);
@@ -351,13 +352,12 @@ VkPipeline RenderPipelineState::getVkPipeline(
       .colorAttachmentFormats(colorAttachmentFormats)
       .depthAttachmentFormat(textureFormatToVkFormat(desc_.depthAttachmentFormat))
       .stencilAttachmentFormat(textureFormatToVkFormat(desc_.stencilAttachmentFormat))
-      .build(
-          ctx.device_->getVkDevice(),
-          // TODO: use ctx.pipelineCache_
-          VK_NULL_HANDLE,
-          ctx.pipelineLayout_->getVkPipelineLayout(),
-          &pipeline,
-          desc_.debugName);
+      .build(ctx.getVkDevice(),
+             // TODO: use ctx.pipelineCache_
+             VK_NULL_HANDLE,
+             ctx.pipelineLayout_->getVkPipelineLayout(),
+             &pipeline,
+             desc_.debugName);
 
   pipelines_[dynamicState] = pipeline;
 

@@ -13,8 +13,6 @@
 #include <unordered_map>
 
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/VulkanDevice.h>
-#include <igl/vulkan/VulkanExtensions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
@@ -28,7 +26,6 @@ class CommandBuffer;
 class CommandQueue;
 class RenderCommandEncoder;
 class VulkanBuffer;
-class VulkanDevice;
 class VulkanDescriptorSetLayout;
 class VulkanImage;
 class VulkanImageView;
@@ -57,8 +54,6 @@ struct VulkanContextConfig {
   uint32_t maxSamplers = 512;
   bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
   bool enableValidation = true;
-  bool enableGPUAssistedValidation = true;
-  bool enableSynchronizationValidation = false;
   igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
 
   // owned by the application - should be alive until initContext() returns
@@ -70,15 +65,11 @@ class VulkanContext final {
  public:
   VulkanContext(const VulkanContextConfig& config,
                 void* window,
-                size_t numExtraInstanceExtensions,
-                const char** extraInstanceExtensions,
                 void* display = nullptr);
   ~VulkanContext();
 
   igl::Result queryDevices(HWDeviceType deviceType, std::vector<HWDeviceDesc>& outDevices);
-  igl::Result initContext(const HWDeviceDesc& desc,
-                          size_t numExtraDeviceExtensions = 0,
-                          const char** extraDeviceExtensions = nullptr);
+  igl::Result initContext(const HWDeviceDesc& desc);
 
   igl::Result initSwapchain(uint32_t width, uint32_t height);
   VkExtent2D getSwapchainExtent() const;
@@ -141,7 +132,7 @@ class VulkanContext final {
     return vkInstance_;
   }
   VkDevice getVkDevice() const {
-    return device_->getVkDevice();
+    return vkDevice_;
   }
   VkPhysicalDevice getVkPhysicalDevice() const {
     return vkPhysicalDevice_;
@@ -161,7 +152,7 @@ class VulkanContext final {
   void* getVmaAllocator() const;
 
  private:
-  void createInstance(const size_t numExtraExtensions, const char** extraExtensions);
+  void createInstance();
   void createSurface(void* window, void* display);
   void checkAndUpdateDescriptorSets() const;
   void bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
@@ -181,6 +172,7 @@ class VulkanContext final {
   VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;
   VkSurfaceKHR vkSurface_ = VK_NULL_HANDLE;
   VkPhysicalDevice vkPhysicalDevice_ = VK_NULL_HANDLE;
+  VkDevice vkDevice_ = VK_NULL_HANDLE;
 
   // Provided by Vulkan 1.2
   VkPhysicalDeviceDescriptorIndexingProperties vkPhysicalDeviceDescriptorIndexingProperties_ = {
@@ -207,7 +199,6 @@ class VulkanContext final {
 
  public:
   DeviceQueues deviceQueues_;
-  std::unique_ptr<igl::vulkan::VulkanDevice> device_;
   std::unique_ptr<igl::vulkan::VulkanSwapchain> swapchain_;
   std::unique_ptr<igl::vulkan::VulkanImmediateCommands> immediate_;
   std::unique_ptr<igl::vulkan::VulkanStagingDevice> stagingDevice_;
@@ -247,7 +238,6 @@ class VulkanContext final {
   mutable bool awaitingDeletion_ = false;
   mutable uint64_t lastDeletionFrame_ = 0;
     
-  VulkanExtensions extensions_;
   VulkanContextConfig config_;
 
   struct DeferredTask {

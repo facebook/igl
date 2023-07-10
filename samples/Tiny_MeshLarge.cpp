@@ -716,7 +716,6 @@ void initIGL() {
         .maxSamplers = 128,
         .terminateOnValidationError = true,
         .enableValidation = kEnableValidationLayers,
-        .enableGPUAssistedValidation = true,
         .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
     };
 #ifdef _WIN32

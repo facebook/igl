@@ -11,8 +11,7 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <vector>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanPipelineBuilder final {
  public:
@@ -70,27 +69,4 @@ class VulkanPipelineBuilder final {
   static uint32_t numPipelinesCreated_;
 };
 
-class VulkanComputePipelineBuilder final {
- public:
-  VulkanComputePipelineBuilder() = default;
-  ~VulkanComputePipelineBuilder() = default;
-
-  VulkanComputePipelineBuilder& shaderStage(VkPipelineShaderStageCreateInfo stage);
-
-  VkResult build(VkDevice device,
-                 VkPipelineCache pipelineCache,
-                 VkPipelineLayout pipelineLayout,
-                 VkPipeline* outPipeline,
-                 const char* debugName = nullptr) noexcept;
-
-  static uint32_t getNumPipelinesCreated() {
-    return numPipelinesCreated_;
-  }
-
- private:
-  VkPipelineShaderStageCreateInfo shaderStage_;
-  static uint32_t numPipelinesCreated_;
-};
-
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan
