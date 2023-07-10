@@ -48,7 +48,6 @@ function(ADD_SHELL_SESSION_WITH_SRCS target srcs libs)
            "-framework Foundation"
            "-framework Metal"
            "-framework MetalKit"
-           # "-framework OpenGL"
            "-framework QuartzCore"
            "-framework UIKit")
   set_target_properties(

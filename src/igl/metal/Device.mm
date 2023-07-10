@@ -136,7 +136,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 
   MTLTextureDescriptor* metalDesc = [MTLTextureDescriptor new];
   metalDesc.textureType = Texture::convertType(sanitized.type, sanitized.numSamples);
-  metalDesc.pixelFormat = Texture::convertFormat(sanitized.format);
+  metalDesc.pixelFormat = Texture::textureFormatToMTLPixelFormat(sanitized.format);
   if (metalDesc.pixelFormat == MTLPixelFormatInvalid) {
     Result::setResult(
         outResult,
@@ -402,7 +402,7 @@ std::shared_ptr<igl::IRenderPipelineState> Device::createRenderPipeline(
   for (uint32_t i = 0; i < desc.targetDesc.colorAttachments.size(); ++i) {
     auto& src = desc.targetDesc.colorAttachments[i];
     MTLRenderPipelineColorAttachmentDescriptor* dst = metalDesc.colorAttachments[i];
-    dst.pixelFormat = Texture::convertFormat(src.textureFormat);
+    dst.pixelFormat = Texture::textureFormatToMTLPixelFormat(src.textureFormat);
     dst.writeMask = RenderPipelineState::convertColorWriteMask(src.colorWriteBits);
     dst.blendingEnabled = src.blendEnabled;
     dst.rgbBlendOperation = MTLBlendOperation(src.rgbBlendOp);
@@ -415,9 +415,9 @@ std::shared_ptr<igl::IRenderPipelineState> Device::createRenderPipeline(
 
   // Depth and Stencil
   metalDesc.depthAttachmentPixelFormat =
-      Texture::convertFormat(desc.targetDesc.depthAttachmentFormat);
+      Texture::textureFormatToMTLPixelFormat(desc.targetDesc.depthAttachmentFormat);
   metalDesc.stencilAttachmentPixelFormat =
-      Texture::convertFormat(desc.targetDesc.stencilAttachmentFormat);
+      Texture::textureFormatToMTLPixelFormat(desc.targetDesc.stencilAttachmentFormat);
 
   MTLRenderPipelineReflection* reflection = nil;
 

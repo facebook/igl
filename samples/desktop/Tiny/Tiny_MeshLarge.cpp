@@ -1492,13 +1492,12 @@ void createRenderPipelines() {
                                                                    nullptr);
 // @fb-only
 #if USE_OPENGL_BACKEND
-    size_t bindingPoint = 0;
     desc.uniformBlockBindingMap.emplace(
-        bindingPoint++, std::make_pair(IGL_NAMEHANDLE("MeshFrameUniforms"), igl::NameHandle{}));
+        0, std::make_pair(IGL_NAMEHANDLE("MeshFrameUniforms"), igl::NameHandle{}));
     desc.uniformBlockBindingMap.emplace(
-        bindingPoint++, std::make_pair(IGL_NAMEHANDLE("MeshObjectUniforms"), igl::NameHandle{}));
+        1, std::make_pair(IGL_NAMEHANDLE("MeshObjectUniforms"), igl::NameHandle{}));
     desc.uniformBlockBindingMap.emplace(
-        bindingPoint++, std::make_pair(IGL_NAMEHANDLE("MeshMaterials"), igl::NameHandle{}));
+        2, std::make_pair(IGL_NAMEHANDLE("MeshMaterials"), igl::NameHandle{}));
 #endif
     desc.cullMode = igl::CullMode::Back;
     desc.frontFaceWinding = igl::WindingMode::CounterClockwise;
@@ -1519,6 +1518,12 @@ void createRenderPipelines() {
     kCodeVS_Wireframe = vsCodeWireframe.c_str();
     const std::string fsCodeWireframe = std::string("#version 460") + kCodeFS_Wireframe;
     kCodeFS_Wireframe = fsCodeWireframe.c_str();
+    desc.fragmentUnitSamplerMap.clear();
+    desc.uniformBlockBindingMap.clear();
+    desc.uniformBlockBindingMap.emplace(
+        0, std::make_pair(IGL_NAMEHANDLE("MeshFrameUniforms"), igl::NameHandle{}));
+    desc.uniformBlockBindingMap.emplace(
+        1, std::make_pair(IGL_NAMEHANDLE("MeshObjectUniforms"), igl::NameHandle{}));
 #endif
     desc.shaderStages =
         ShaderStagesCreator::fromModuleStringInput(*device_,

@@ -147,7 +147,7 @@ using namespace igl;
     metalView.delegate = self;
     metalView.colorspace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
     metalView.colorPixelFormat =
-        metal::Texture::convertFormat(shellParams_.defaultColorFramebufferFormat);
+        metal::Texture::textureFormatToMTLPixelFormat(shellParams_.defaultColorFramebufferFormat);
     metalView.framebufferOnly = NO;
     self.view = metalView;
     shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(std::move(device));

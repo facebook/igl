@@ -139,7 +139,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
   CVMetalTextureCacheRef textureCache = getTextureCache();
   if (textureCache) {
     // Use the user provided texture instead
-    MTLPixelFormat metalFormat = Texture::convertFormat(format);
+    MTLPixelFormat const metalFormat = Texture::textureFormatToMTLPixelFormat(format);
     if (metalFormat == MTLPixelFormatInvalid) {
       Result::setResult(outResult,
                         Result::Code::Unsupported,
@@ -199,7 +199,7 @@ TextureFormat PlatformDevice::getNativeDrawableTextureFormat(CALayer* nativeDraw
 #if (!TARGET_OS_SIMULATOR || __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000)
   if ([nativeDrawable isKindOfClass:[CAMetalLayer class]]) {
     auto metalLayer = (CAMetalLayer*)nativeDrawable;
-    formatResult = Texture::convertFormat(metalLayer.pixelFormat);
+    formatResult = Texture::mtlPixelFormatToTextureFormat(metalLayer.pixelFormat);
     Result::setOk(outResult);
   } else {
     // Layer is not CAMetalLayer
