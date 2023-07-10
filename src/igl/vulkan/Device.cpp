@@ -614,6 +614,9 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
   case DeviceFeatureLimits::PushConstantsAlignment:
     result = 4;
     return true;
+  case DeviceFeatureLimits::ShaderStorageBufferOffsetAlignment:
+    result = 8;
+    return true;
   case DeviceFeatureLimits::BufferAlignment:
     result = 1;
     return true;

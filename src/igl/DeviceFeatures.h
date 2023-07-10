@@ -157,6 +157,7 @@ enum class DeviceFeatureLimits {
   MaxUniformBufferBytes,
   MaxVertexUniformVectors,
   PushConstantsAlignment,
+  ShaderStorageBufferOffsetAlignment,
 };
 
 /**

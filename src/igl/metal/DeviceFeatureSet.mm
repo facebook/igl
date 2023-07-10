@@ -239,6 +239,7 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
   case DeviceFeatureLimits::PushConstantsAlignment:
     result = 16;
     return true;
+  case DeviceFeatureLimits::ShaderStorageBufferOffsetAlignment:
   case DeviceFeatureLimits::BufferAlignment:
     result = 16;
     return true;
