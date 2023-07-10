@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <GLFW/glfw3.h>
 #include <cassert>
 #if !defined(_USE_MATH_DEFINES)
 #define _USE_MATH_DEFINES
@@ -14,25 +13,16 @@
 #include <cstddef>
 #include <filesystem>
 #include <stdio.h>
-#ifdef _WIN32
-#define GLFW_EXPOSE_NATIVE_WIN32
-#define GLFW_EXPOSE_NATIVE_WGL
-#elif defined(__linux__)
-#define GLFW_EXPOSE_NATIVE_X11
-#else
-#error Unsupported OS
-#endif
-#include <GLFW/glfw3native.h>
+
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
 
 #include <lvk/LVK.h>
+#include <lvk/HelpersGLFW.h>
 
-#include <igl/vulkan/Common.h>
-#include <igl/vulkan/Device.h>
-#include <igl/vulkan/VulkanContext.h>
 #include <stb/stb_image.h>
+
 #include <shared/UtilsFPS.h>
 
 constexpr uint32_t kNumCubes = 16;
@@ -114,8 +104,8 @@ using glm::vec4;
 vec3 axis_[kNumCubes];
 
 GLFWwindow* window_ = nullptr;
-int width_ = 0;
-int height_ = 0;
+uint32_t width_ = 1280;
+uint32_t height_ = 1024;
 FramesPerSecondCounter fps_;
 
 constexpr uint32_t kNumBufferedFrames = 3;
@@ -189,94 +179,9 @@ static uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
 
 UniformsPerObject perObject[kNumCubes];
 
-static bool initWindow(GLFWwindow** outWindow) {
-  if (!glfwInit())
-    return false;
-
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-  GLFWwindow* window = glfwCreateWindow(1280, 1024, "Vulkan Mesh", nullptr, nullptr);
-
-  if (!window) {
-    glfwTerminate();
-    return false;
-  }
-
-  glfwSetErrorCallback([](int error, const char* description) {
-    printf("GLFW Error (%i): %s\n", error, description);
-  });
-
-  glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-      glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-    if (key == GLFW_KEY_T && action == GLFW_PRESS) {
-      texture1_.reset();
-    }
-  });
-
-  glfwSetWindowSizeCallback(window, [](GLFWwindow*, int width, int height) {
-    printf("Window resized! width=%d, height=%d\n", width, height);
-    width_ = width;
-    height_ = height;
-    auto* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
-    vulkanDevice->getVulkanContext().initSwapchain(width_, height_);
-  });
-
-#if IGL_WITH_IGLU && 0
-  glfwSetCursorPosCallback(window, [](auto* window, double x, double y) {
-    inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
-  });
-  glfwSetMouseButtonCallback(window, [](auto* window, int button, int action, int mods) {
-    double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
-    using igl::shell::MouseButton;
-    const MouseButton iglButton =
-        (button == GLFW_MOUSE_BUTTON_LEFT)
-            ? MouseButton::Left
-            : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
-    inputDispatcher_.queueEvent(
-        igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
-  });
-#endif // IGL_WITH_IGLU
-
-  glfwGetWindowSize(window, &width_, &height_);
-
-  if (outWindow) {
-    *outWindow = window;
-  }
-
-  return true;
-}
-
 static void initIGL() {
-  // create a device
-  {
-    const igl::vulkan::VulkanContextConfig cfg = {
-        .maxTextures = 128,
-        .maxSamplers = 128,
-        .terminateOnValidationError = true,
-        .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
-    };
-#ifdef _WIN32
-    auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetWin32Window(window_));
-#elif __APPLE__
-    auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetCocoaWindow(window_));
-#elif defined(__linux__)
-    auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetX11Window(window_), (void*)glfwGetX11Display());
-#else
-#error Unsupported OS
-#endif
-
-    std::vector<HWDeviceDesc> devices =
-        vulkan::Device::queryDevices(*ctx.get(), HWDeviceType::DiscreteGpu, nullptr);
-    if (devices.empty()) {
-      devices = vulkan::Device::queryDevices(*ctx.get(), HWDeviceType::IntegratedGpu, nullptr);
-    }
-    device_ =
-        vulkan::Device::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
-    IGL_ASSERT(device_.get());
-  }
+  device_ = lvk::createVulkanDeviceWithSwapchain(
+      window_, width_, height_, {.maxTextures = 128, .maxSamplers = 128});
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
   vb0_ = device_->createBuffer({.usage = BufferUsageBits_Vertex,
@@ -515,14 +420,46 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
 int main(int argc, char* argv[]) {
   minilog::initialize(nullptr, {.threadNames = false});
 
-  initWindow(&window_);
+  window_ = lvk::initWindow("Vulkan Mesh", width_, height_);
   initIGL();
 
   initObjects();
 
 #if IGL_WITH_IGLU && 0
   imguiSession_ = std::make_unique<iglu::imgui::Session>(*device_.get(), inputDispatcher_);
+
+  glfwSetCursorPosCallback(window, [](auto* window, double x, double y) {
+    inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
+  });
+  glfwSetMouseButtonCallback(window, [](auto* window, int button, int action, int mods) {
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+    using igl::shell::MouseButton;
+    const MouseButton iglButton =
+        (button == GLFW_MOUSE_BUTTON_LEFT)
+            ? MouseButton::Left
+            : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
+    inputDispatcher_.queueEvent(
+        igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
+  });
 #endif // IGL_WITH_IGLU
+
+  glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
+    printf("Window resized! width=%d, height=%d\n", width, height);
+    width_ = width;
+    height_ = height;
+    auto* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
+    vulkanDevice->getVulkanContext().initSwapchain(width_, height_);
+  });
+
+  glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int, int action, int) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+      glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+    if (key == GLFW_KEY_T && action == GLFW_PRESS) {
+      texture1_.reset();
+    }
+  });
 
   double prevTime = glfwGetTime();
 

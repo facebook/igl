@@ -695,7 +695,7 @@ igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
   }
 
   if (swapchain_) {
-    vkDeviceWaitIdle(vkDevice_);
+    waitIdle();
     swapchain_ = nullptr; // Destroy old swapchain first
   }
 

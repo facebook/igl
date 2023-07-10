@@ -54,8 +54,7 @@ struct VulkanContextConfig {
   uint32_t maxSamplers = 512;
   bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
   bool enableValidation = true;
-  igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
-
+  igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR;
   // owned by the application - should be alive until initContext() returns
   const void* pipelineCacheData = nullptr;
   size_t pipelineCacheDataSize = 0;

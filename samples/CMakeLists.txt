@@ -9,15 +9,13 @@ set(PROJECT_NAME "IGL Samples")
 
 if(MSVC)
   add_definitions(-D_CONSOLE)
+else()
+  add_compile_options(-Wno-deprecated-volatile)
 endif()
 
 if(WIN32)
   add_definitions("-DVK_USE_PLATFORM_WIN32_KHR=1")
   add_definitions("-DNOMINMAX")
-endif()
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-  add_compile_options(-Wno-volatile)
 endif()
 
 macro(ADD_DEMO app)

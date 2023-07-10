@@ -45,21 +45,7 @@
 #include <tiny_obj_loader.h>
 
 #include <lvk/LVK.h>
-
-#include <igl/vulkan/Device.h>
-#include <igl/vulkan/VulkanContext.h>
-
-#ifdef _WIN32
-#define GLFW_EXPOSE_NATIVE_WIN32
-#define GLFW_EXPOSE_NATIVE_WGL
-#elif defined(__linux__)
-#define GLFW_EXPOSE_NATIVE_X11
-#define GLFW_EXPOSE_NATIVE_GLX
-#else
-#error Unsupported OS
-#endif
-#include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
+#include <lvk/HelpersGLFW.h>
 
 constexpr uint32_t kMeshCacheVersion = 0xC0DE0009;
 constexpr uint32_t kMaxTextures = 512;
@@ -425,8 +411,8 @@ using glm::vec3;
 using glm::vec4;
 
 GLFWwindow* window_ = nullptr;
-int width_ = 0;
-int height_ = 0;
+uint32_t width_ = 0;
+uint32_t height_ = 0;
 FramesPerSecondCounter fps_;
 
 constexpr uint32_t kNumBufferedFrames = 3;
@@ -587,159 +573,17 @@ static void stringReplaceAll(std::string& s,
   }
 }
 
-bool initWindow(GLFWwindow** outWindow) {
-  if (!glfwInit())
-    return false;
-
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-  // render full screen without overlapping taskbar
-  GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-  const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-
-  int posX = 0;
-  int posY = 0;
-  int width = mode->width;
-  int height = mode->height;
-
-  glfwGetMonitorWorkarea(monitor, &posX, &posY, &width, &height);
-
-  GLFWwindow* window = glfwCreateWindow(width, height, "Vulkan Mesh", nullptr, nullptr);
-
-  if (!window) {
-    glfwTerminate();
-    return false;
-  }
-
-  glfwSetWindowPos(window, posX, posY);
-
-  glfwSetErrorCallback([](int error, const char* description) {
-    printf("GLFW Error (%i): %s\n", error, description);
-  });
-
-  glfwSetCursorPosCallback(window, [](auto* window, double x, double y) {
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    mousePos_ = vec2(x / width, 1.0f - y / height);
-#if IGL_WITH_IGLU
-    inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
-#endif // IGL_WITH_IGLU
-  });
-
-  glfwSetMouseButtonCallback(window, [](auto* window, int button, int action, int mods) {
-#if IGL_WITH_IGLU
-     if (!ImGui::GetIO().WantCaptureMouse) {
-#endif // IGL_WITH_IGLU
-      if (button == GLFW_MOUSE_BUTTON_LEFT) {
-        mousePressed_ = (action == GLFW_PRESS);
-      }
-#if IGL_WITH_IGLU
-    } else {
-      // release the mouse
-      mousePressed_ = false;
-    }
-    double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
-    using igl::shell::MouseButton;
-    const MouseButton iglButton =
-        (button == GLFW_MOUSE_BUTTON_LEFT)
-            ? MouseButton::Left
-            : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
-    inputDispatcher_.queueEvent(
-        igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
-#endif // IGL_WITH_IGLU
-  });
-
-  glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int mods) {
-    const bool pressed = action != GLFW_RELEASE;
-    if (key == GLFW_KEY_ESCAPE && pressed) {
-      glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-    if (key == GLFW_KEY_N && pressed) {
-      perFrame_.bDrawNormals = (perFrame_.bDrawNormals + 1) % 2;
-    }
-    if (key == GLFW_KEY_C && pressed) {
-      enableComputePass_ = !enableComputePass_;
-    }
-    if (key == GLFW_KEY_T && pressed) {
-      enableWireframe_ = !enableWireframe_;
-    }
-    if (key == GLFW_KEY_ESCAPE && pressed)
-      glfwSetWindowShouldClose(window, GLFW_TRUE);
-    if (key == GLFW_KEY_W) {
-      positioner_.movement_.forward_ = pressed;
-    }
-    if (key == GLFW_KEY_S) {
-      positioner_.movement_.backward_ = pressed;
-    }
-    if (key == GLFW_KEY_A) {
-      positioner_.movement_.left_ = pressed;
-    }
-    if (key == GLFW_KEY_D) {
-      positioner_.movement_.right_ = pressed;
-    }
-    if (key == GLFW_KEY_1) {
-      positioner_.movement_.up_ = pressed;
-    }
-    if (key == GLFW_KEY_2) {
-      positioner_.movement_.down_ = pressed;
-    }
-    if (mods & GLFW_MOD_SHIFT) {
-      positioner_.movement_.fastSpeed_ = pressed;
-    }
-    if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
-      positioner_.movement_.fastSpeed_ = pressed;
-    }
-    if (key == GLFW_KEY_SPACE) {
-      positioner_.setUpVector(vec3(0.0f, 1.0f, 0.0f));
-    }
-    if (key == GLFW_KEY_L && pressed) {
-      perFrame_.bDebugLines = (perFrame_.bDebugLines + 1) % 2;
-    }
-  });
-
-  glfwGetWindowSize(window, &width_, &height_);
-
-  if (outWindow) {
-    *outWindow = window;
-  }
-
-  return true;
-}
-
 void initIGL() {
-  // create a device
-  {
-    const igl::vulkan::VulkanContextConfig cfg = {
-        .maxTextures = kMaxTextures,
-        .maxSamplers = 128,
-        .terminateOnValidationError = true,
-        .enableValidation = kEnableValidationLayers,
-        .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
-    };
-#ifdef _WIN32
-    auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetWin32Window(window_));
-#elif defined(__linux__)
-    auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetX11Window(window_), (void*)glfwGetX11Display());
-#else
-#error Unsupported OS
-#endif
-    const HWDeviceType hardwareType = kPreferIntegratedGPU ? HWDeviceType::IntegratedGpu
-                                                           : HWDeviceType::DiscreteGpu;
-    std::vector<HWDeviceDesc> devices =
-        vulkan::Device::queryDevices(*ctx.get(), hardwareType, nullptr);
-    if (devices.empty()) {
-      const HWDeviceType hardwareType = !kPreferIntegratedGPU ? HWDeviceType::IntegratedGpu
-                                                              : HWDeviceType::DiscreteGpu;
-      devices = vulkan::Device::queryDevices(*ctx.get(), hardwareType, nullptr);
-    }
-    IGL_ASSERT_MSG(!devices.empty(), "GPU is not found");
-    device_ =
-        vulkan::Device::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
-    IGL_ASSERT(device_.get());
-  }
-
+  device_ = lvk::createVulkanDeviceWithSwapchain(window_,
+                                                 width_,
+                                                 height_,
+                                                 {
+                                                     .maxTextures = kMaxTextures,
+                                                     .maxSamplers = 128,
+                                                     .enableValidation = kEnableValidationLayers,
+                                                 },
+                                                 kPreferIntegratedGPU ? HWDeviceType::IntegratedGpu
+                                                                      : HWDeviceType::DiscreteGpu);
   {
     textureDummyWhite_ = device_->createTexture(
         {
@@ -1900,9 +1744,90 @@ int main(int argc, char* argv[]) {
     contentRootFolder = (dir / subdir).string();
   }
 
-  initWindow(&window_);
+  window_ = lvk::initWindow("Vulkan Bistro", width_, height_);
   initIGL();
   initModel();
+
+  glfwSetCursorPosCallback(window_, [](auto* window, double x, double y) {
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    mousePos_ = vec2(x / width, 1.0f - y / height);
+#if IGL_WITH_IGLU
+    inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
+#endif // IGL_WITH_IGLU
+  });
+
+  glfwSetMouseButtonCallback(window_, [](auto* window, int button, int action, int mods) {
+#if IGL_WITH_IGLU
+    if (!ImGui::GetIO().WantCaptureMouse) {
+#endif // IGL_WITH_IGLU
+      if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        mousePressed_ = (action == GLFW_PRESS);
+      }
+#if IGL_WITH_IGLU
+    } else {
+      // release the mouse
+      mousePressed_ = false;
+    }
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+    using igl::shell::MouseButton;
+    const MouseButton iglButton =
+        (button == GLFW_MOUSE_BUTTON_LEFT)
+            ? MouseButton::Left
+            : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
+    inputDispatcher_.queueEvent(
+        igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
+#endif // IGL_WITH_IGLU
+  });
+
+  glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int, int action, int mods) {
+    const bool pressed = action != GLFW_RELEASE;
+    if (key == GLFW_KEY_ESCAPE && pressed) {
+      glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+    if (key == GLFW_KEY_N && pressed) {
+      perFrame_.bDrawNormals = (perFrame_.bDrawNormals + 1) % 2;
+    }
+    if (key == GLFW_KEY_C && pressed) {
+      enableComputePass_ = !enableComputePass_;
+    }
+    if (key == GLFW_KEY_T && pressed) {
+      enableWireframe_ = !enableWireframe_;
+    }
+    if (key == GLFW_KEY_ESCAPE && pressed)
+      glfwSetWindowShouldClose(window, GLFW_TRUE);
+    if (key == GLFW_KEY_W) {
+      positioner_.movement_.forward_ = pressed;
+    }
+    if (key == GLFW_KEY_S) {
+      positioner_.movement_.backward_ = pressed;
+    }
+    if (key == GLFW_KEY_A) {
+      positioner_.movement_.left_ = pressed;
+    }
+    if (key == GLFW_KEY_D) {
+      positioner_.movement_.right_ = pressed;
+    }
+    if (key == GLFW_KEY_1) {
+      positioner_.movement_.up_ = pressed;
+    }
+    if (key == GLFW_KEY_2) {
+      positioner_.movement_.down_ = pressed;
+    }
+    if (mods & GLFW_MOD_SHIFT) {
+      positioner_.movement_.fastSpeed_ = pressed;
+    }
+    if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
+      positioner_.movement_.fastSpeed_ = pressed;
+    }
+    if (key == GLFW_KEY_SPACE) {
+      positioner_.setUpVector(vec3(0.0f, 1.0f, 0.0f));
+    }
+    if (key == GLFW_KEY_L && pressed) {
+      perFrame_.bDebugLines = (perFrame_.bDebugLines + 1) % 2;
+    }
+  });
 
   if (kEnableCompression) {
     printf(
