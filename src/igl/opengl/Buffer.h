@@ -107,6 +107,7 @@ class UniformBlockBuffer : public ArrayBuffer {
 
   void setBlockBinding(GLuint pid, GLuint blockIndex, GLuint bindingPoint);
   void bindBase(size_t index, Result* outResult);
+  void bindRange(size_t index, size_t offset, Result* outResult);
 
   BufferDesc::BufferAPIHint acceptedApiHints() const noexcept override {
     return BufferDesc::BufferAPIHintBits::UniformBlock;

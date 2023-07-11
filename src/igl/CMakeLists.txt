@@ -29,7 +29,7 @@ igl_set_cxxstd(IGLLibrary 17)
 igl_set_folder(IGLLibrary "IGL")
 igl_set_folder(fmt "third-party")
 
-if(IGL_WITH_OPENGL OR IGL_WITH_OPENGLES)
+if(IGL_WITH_OPENGL OR IGL_WITH_OPENGLES OR IGL_WITH_WEBGL)
   add_subdirectory(opengl)
   target_link_libraries(IGLLibrary PUBLIC IGLOpenGL)
 endif()

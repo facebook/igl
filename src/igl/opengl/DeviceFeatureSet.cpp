@@ -976,6 +976,15 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
   case DeviceFeatureLimits::PushConstantsAlignment:
     result = 0;
     return true;
+  case DeviceFeatureLimits::ShaderStorageBufferOffsetAlignment:
+    tsize = 256;
+#ifdef GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT
+    if (hasFeature(DeviceFeatures::UniformBlocks)) {
+      glContext_.getIntegerv(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT, &tsize);
+    }
+#endif
+    result = (size_t)tsize;
+    return true;
   case DeviceFeatureLimits::BufferAlignment:
     result = 16;
     return true;
