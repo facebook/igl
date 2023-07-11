@@ -10,8 +10,6 @@
 #include <lvk/LVK.h>
 #include <lvk/HelpersGLFW.h>
 
-constexpr uint32_t kNumColorAttachments = 4;
-
 const char* codeVS = R"(
 #version 460
 layout (location=0) out vec3 color;

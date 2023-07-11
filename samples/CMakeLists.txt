@@ -33,6 +33,7 @@ macro(ADD_DEMO app)
   target_link_libraries(${app} PRIVATE IGLstb)
 endmacro()
 
+ADD_DEMO("HelloTriangle")
 ADD_DEMO("Tiny")
 ADD_DEMO("Tiny_Mesh")
 ADD_DEMO("Tiny_MeshLarge")
