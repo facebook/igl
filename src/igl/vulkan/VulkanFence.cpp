@@ -16,7 +16,11 @@ namespace vulkan {
 VulkanFence::VulkanFence(VkDevice device, VkFlags flags, const char* debugName) : device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  VK_ASSERT(ivkCreateFence(device_, flags, &vkFence_));
+  const VkFenceCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+      .flags = flags,
+  };
+  VK_ASSERT(vkCreateFence(device_, &ci, nullptr, &vkFence_));
   VK_ASSERT(ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_FENCE, (uint64_t)vkFence_, debugName));
 }
 

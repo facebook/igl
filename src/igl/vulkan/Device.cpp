@@ -196,8 +196,13 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
                                                                const char* debugName,
                                                                Result* outResult) const {
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
-  const VkResult result =
-      ivkCreateShaderModuleFromSPIRV(ctx_->vkDevice_, data, length, &vkShaderModule);
+
+  const VkShaderModuleCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+      .codeSize = length,
+      .pCode = (const uint32_t*)data,
+  };
+  const VkResult result = vkCreateShaderModule(ctx_->vkDevice_, &ci, nullptr, &vkShaderModule);
 
   setResultFrom(outResult, result);
 

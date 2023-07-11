@@ -14,7 +14,11 @@ namespace igl::vulkan {
 VulkanSemaphore::VulkanSemaphore(VkDevice device, const char* debugName) : device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  VK_ASSERT(ivkCreateSemaphore(device_, &vkSemaphore_));
+  const VkSemaphoreCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+      .flags = 0,
+  };
+  VK_ASSERT(vkCreateSemaphore(device, &ci, nullptr, &vkSemaphore_));
   VK_ASSERT(
       ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)vkSemaphore_, debugName));
 }

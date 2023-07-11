@@ -23,29 +23,6 @@ extern "C" {
 
 const char* ivkGetVulkanResultString(VkResult result);
 
-VkResult ivkCreateDebugUtilsMessenger(VkInstance instance,
-                                      PFN_vkDebugUtilsMessengerCallbackEXT callback,
-                                      void* logUserData,
-                                      VkDebugUtilsMessengerEXT* outMessenger);
-
-// This function uses VK_EXT_debug_report extension, which is deprecated by VK_EXT_debug_utils.
-// However, it is available on some Android devices where VK_EXT_debug_utils is not available.
-VkResult ivkCreateDebugReportMessenger(VkInstance instance,
-                                       PFN_vkDebugReportCallbackEXT callback,
-                                       void* logUserData,
-                                       VkDebugReportCallbackEXT* outMessenger);
-
-VkResult ivkCreateSemaphore(VkDevice device, VkSemaphore* outSemaphore);
-
-VkResult ivkCreateFence(VkDevice device, VkFlags flags, VkFence* outFence);
-
-VkResult ivkCreateSurface(VkInstance instance,
-                          void* window,
-                          void* display,
-                          VkSurfaceKHR* outSurface);
-
-VkResult ivkCreateHeadlessSurface(VkInstance instance, VkSurfaceKHR* surface);
-
 VkResult ivkCreateSwapchain(VkDevice device,
                             VkSurfaceKHR surface,
                             uint32_t minImageCount,
@@ -97,28 +74,6 @@ uint32_t ivkFindMemoryType(VkPhysicalDevice physDev,
                            uint32_t memoryTypeBits,
                            VkMemoryPropertyFlags flags);
 
-VkResult ivkCreateRenderPass(VkDevice device,
-                             uint32_t numAttachments,
-                             const VkAttachmentDescription* attachments,
-                             const VkSubpassDescription* subpass,
-                             const VkSubpassDependency* dependency,
-                             VkRenderPass* outRenderPass);
-
-VkResult ivkCreateShaderModule(VkDevice device,
-                               glslang_program_t* program,
-                               VkShaderModule* outShaderModule);
-
-VkResult ivkCreateShaderModuleFromSPIRV(VkDevice device,
-                                        const void* dataSPIRV,
-                                        size_t size,
-                                        VkShaderModule* outShaderModule);
-
-VkResult ivkCreateComputePipeline(VkDevice device,
-                                  VkPipelineCache pipelineCache,
-                                  const VkPipelineShaderStageCreateInfo* shaderStage,
-                                  VkPipelineLayout pipelineLayout,
-                                  VkPipeline* outPipeline);
-
 VkResult ivkCreateDescriptorSetLayout(VkDevice device,
                                       uint32_t numBindings,
                                       const VkDescriptorSetLayoutBinding* bindings,
@@ -138,13 +93,6 @@ VkAttachmentDescription ivkGetAttachmentDescription(VkFormat format,
 
 VkAttachmentReference ivkGetAttachmentReference(uint32_t attachment, VkImageLayout layout);
 
-VkSubpassDescription ivkGetSubpassDescription(uint32_t numColorAttachments,
-                                              const VkAttachmentReference* refsColor,
-                                              const VkAttachmentReference* refsColorResolve,
-                                              const VkAttachmentReference* refDepth);
-
-VkSubpassDependency ivkGetSubpassDependency(void);
-
 VkResult ivkAllocateDescriptorSet(VkDevice device,
                                   VkDescriptorPool pool,
                                   VkDescriptorSetLayout layout,
@@ -155,16 +103,6 @@ VkResult ivkCreateDescriptorPool(VkDevice device,
                                  uint32_t numPoolSizes,
                                  const VkDescriptorPoolSize* poolSizes,
                                  VkDescriptorPool* outDescriptorPool);
-
-VkResult ivkBeginCommandBuffer(VkCommandBuffer buffer);
-
-VkResult ivkEndCommandBuffer(VkCommandBuffer buffer);
-
-VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,
-                              uint32_t numWaitSemaphores,
-                              const VkSemaphore* waitSemaphores,
-                              const VkPipelineStageFlags* waitStageMasks,
-                              const VkSemaphore* releaseSemaphore);
 
 VkAttachmentDescription2 ivkGetAttachmentDescriptionColor(VkFormat format,
                                                           VkAttachmentLoadOp loadOp,
@@ -251,12 +189,6 @@ VkPipelineLayoutCreateInfo ivkGetPipelineLayoutCreateInfo(uint32_t numLayouts,
                                                           const VkDescriptorSetLayout* layouts,
                                                           const VkPushConstantRange* range);
 
-VkPushConstantRange ivkGetPushConstantRange(VkShaderStageFlags stageFlags,
-                                            size_t offset,
-                                            size_t size);
-
-VkViewport ivkGetViewport(float x, float y, float width, float height);
-
 VkRect2D ivkGetRect2D(int32_t x, int32_t y, uint32_t width, uint32_t height);
 
 VkPipelineShaderStageCreateInfo ivkGetPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
@@ -305,11 +237,6 @@ void ivkCmdBlitImage(VkCommandBuffer buffer,
                      VkImageSubresourceLayers dstSubresourceRange,
                      VkFilter filter);
 
-VkResult ivkQueuePresent(VkQueue graphicsQueue,
-                         VkSemaphore waitSemaphore,
-                         VkSwapchainKHR swapchain,
-                         uint32_t currentSwapchainImageIndex);
-
 VkResult ivkSetDebugObjectName(VkDevice device,
                                VkObjectType type,
                                uint64_t handle,
@@ -322,14 +249,6 @@ void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer,
                                  const float colorRGBA[4]);
 
 void ivkCmdEndDebugUtilsLabel(VkCommandBuffer buffer);
-
-VkVertexInputBindingDescription ivkGetVertexInputBindingDescription(uint32_t binding,
-                                                                    uint32_t stride,
-                                                                    VkVertexInputRate inputRate);
-VkVertexInputAttributeDescription ivkGetVertexInputAttributeDescription(uint32_t location,
-                                                                        uint32_t binding,
-                                                                        VkFormat format,
-                                                                        uint32_t offset);
 
 void ivkGlslangResource(glslang_resource_t* glslangResource,
                         const VkPhysicalDeviceProperties* deviceProperties);

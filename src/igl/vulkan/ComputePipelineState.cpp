@@ -41,15 +41,19 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
 
   VkShaderModule vkShaderModule = sm ? sm->getVkShaderModule() : VK_NULL_HANDLE;
 
-  const VkPipelineShaderStageCreateInfo ci = ivkGetPipelineShaderStageCreateInfo(
-      VK_SHADER_STAGE_COMPUTE_BIT, vkShaderModule, sm->getEntryPoint());
+  const VkComputePipelineCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .flags = 0,
+      .stage = ivkGetPipelineShaderStageCreateInfo(
+          VK_SHADER_STAGE_COMPUTE_BIT, vkShaderModule, sm->getEntryPoint()),
+      .layout = ctx.pipelineLayout_->getVkPipelineLayout(),
+      .basePipelineHandle = VK_NULL_HANDLE,
+      .basePipelineIndex = -1,
+  };
+  // TODO: use ctx.pipelineCache_
+  VK_ASSERT(
+      vkCreateComputePipelines(ctx.getVkDevice(), VK_NULL_HANDLE, 1, &ci, nullptr, &pipeline_));
 
-  VK_ASSERT(ivkCreateComputePipeline(ctx.getVkDevice(),
-                                     // TODO: use ctx.pipelineCache_
-                                     VK_NULL_HANDLE,
-                                     &ci,
-                                     ctx.pipelineLayout_->getVkPipelineLayout(),
-                                     &pipeline_));
   VK_ASSERT(ivkSetDebugObjectName(
       ctx.getVkDevice(), VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline_, desc_.debugName));
 

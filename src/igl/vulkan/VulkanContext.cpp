@@ -287,13 +287,26 @@ void VulkanContext::createInstance() {
       .enabledExtensionCount = (uint32_t)instanceExtensionNames.size(),
       .ppEnabledExtensionNames = instanceExtensionNames.data(),
   };
-
   VK_ASSERT(vkCreateInstance(&ci, nullptr, &vkInstance_));
 
   volkLoadInstance(vkInstance_);
 
-  VK_ASSERT(ivkCreateDebugUtilsMessenger(
-      vkInstance_, &vulkanDebugCallback, this, &vkDebugUtilsMessenger_));
+  // debug messenger
+  {
+    const VkDebugUtilsMessengerCreateInfoEXT ci = {
+        .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+        .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                           VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+                           VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                           VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+        .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                       VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                       VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
+        .pfnUserCallback = &vulkanDebugCallback,
+        .pUserData = this,
+    };
+    VK_ASSERT(vkCreateDebugUtilsMessengerEXT(vkInstance_, &ci, nullptr, &vkDebugUtilsMessenger_));
+  }
 
   uint32_t count = 0;
   VK_ASSERT(vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
@@ -311,7 +324,24 @@ void VulkanContext::createInstance() {
 }
 
 void VulkanContext::createSurface(void* window, void* display) {
-  VK_ASSERT(ivkCreateSurface(vkInstance_, window, display, &vkSurface_));
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+  const VkWin32SurfaceCreateInfoKHR ci = {
+      .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
+      .hinstance = GetModuleHandle(nullptr),
+      .hwnd = (HWND)window,
+  };
+  VK_ASSERT(vkCreateWin32SurfaceKHR(vkInstance_, &ci, nullptr, &vkSurface_));
+#elif defined(VK_USE_PLATFORM_XLIB_KHR)
+  const VkXlibSurfaceCreateInfoKHR ci = {
+      .sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,
+      .flags = 0,
+      .dpy = (Display*)display,
+      .window = (Window)window,
+  };
+  VK_ASSERT(vkCreateXlibSurfaceKHR(vkInstance_, &ci, nullptr, &vkSurface_));
+#else
+#error Implement for other platforms
+#endif
 }
 
 igl::Result VulkanContext::queryDevices(HWDeviceType deviceType,
@@ -677,10 +707,10 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
   pipelineLayout_ = std::make_unique<VulkanPipelineLayout>(
       vkDevice_,
       dsl,
-      ivkGetPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
-                                  VK_SHADER_STAGE_COMPUTE_BIT,
-                              0,
-                              kPushConstantsSize),
+      VkPushConstantRange{.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
+                                        VK_SHADER_STAGE_COMPUTE_BIT,
+                          .offset = 0,
+                          .size = kPushConstantsSize},
       "Pipeline Layout: VulkanContext::pipelineLayout_");
 
   querySurfaceCapabilities();

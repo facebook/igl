@@ -397,11 +397,6 @@ enum class VertexFormat {
   Int_2_10_10_10_REV,
 };
 
-enum VertexSampleFunction {
-  VertexSampleFunction_PerVertex,
-  VertexSampleFunction_Instance,
-};
-
 enum TextureFormat : uint8_t {
   Invalid = 0,
 
@@ -474,24 +469,18 @@ enum ShaderStage : uint8_t {
   kNumShaderStages,
 };
 
-struct VertexAttribute final {
-  uint32_t location = 0;
-  uint32_t bufferIndex = 0; // a buffer which contains this attribute stream
-  VertexFormat format = VertexFormat::Invalid; // per-element format
-  uintptr_t offset = 0; // an offset where the first element of this attribute stream starts
-};
-
-struct VertexInputBinding final {
-  uint32_t stride = 0;
-  VertexSampleFunction sampleFunction = VertexSampleFunction_PerVertex;
-  size_t sampleRate = 1;
-};
-
 struct VertexInput final {
   enum { IGL_VERTEX_ATTRIBUTES_MAX = 16 };
   enum { IGL_VERTEX_BUFFER_MAX = 16 };
-  VertexAttribute attributes[IGL_VERTEX_ATTRIBUTES_MAX];
-  VertexInputBinding inputBindings[IGL_VERTEX_BUFFER_MAX];
+  struct VertexAttribute final {
+    uint32_t location = 0; // a buffer which contains this attribute stream
+    uint32_t binding = 0;
+    VertexFormat format = VertexFormat::Invalid; // per-element format
+    uintptr_t offset = 0; // an offset where the first element of this attribute stream starts
+  } attributes[IGL_VERTEX_ATTRIBUTES_MAX];
+  struct VertexInputBinding final {
+    uint32_t stride = 0;
+  } inputBindings[IGL_VERTEX_BUFFER_MAX];
 
   uint32_t getNumAttributes() const {
     uint32_t n = 0;

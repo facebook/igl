@@ -223,25 +223,41 @@ VulkanSwapchain::~VulkanSwapchain() {
   vkDestroySwapchainKHR(device_, swapchain_, nullptr);
 }
 
-Result VulkanSwapchain::acquireNextImage() {
+std::shared_ptr<Texture> VulkanSwapchain::getCurrentTexture() {
   IGL_PROFILER_FUNCTION();
-  // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
-  VK_ASSERT_RETURN(vkAcquireNextImageKHR(device_,
-                                         swapchain_,
-                                         UINT64_MAX,
-                                         acquireSemaphore_->vkSemaphore_,
-                                         VK_NULL_HANDLE,
-                                         &currentImageIndex_));
-  // increase the frame number every time we acquire a new swapchain image
-  frameNumber_++;
-  return Result();
+  if (getNextImage_) {
+    // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
+    VK_ASSERT(vkAcquireNextImageKHR(device_,
+                                    swapchain_,
+                                    UINT64_MAX,
+                                    acquireSemaphore_->vkSemaphore_,
+                                    VK_NULL_HANDLE,
+                                    &currentImageIndex_));
+    // increase the frame number every time we acquire a new swapchain image
+    frameNumber_++;
+    getNextImage_ = false;
+  }
+
+  if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
+    return swapchainTextures_[currentImageIndex_];
+  }
+
+  return nullptr;
 }
 
 Result VulkanSwapchain::present(VkSemaphore waitSemaphore) {
   IGL_PROFILER_FUNCTION();
 
   IGL_PROFILER_ZONE("vkQueuePresent()", IGL_PROFILER_COLOR_PRESENT);
-  VK_ASSERT_RETURN(ivkQueuePresent(graphicsQueue_, waitSemaphore, swapchain_, currentImageIndex_));
+  const VkPresentInfoKHR pi = {
+      .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+      .waitSemaphoreCount = 1,
+      .pWaitSemaphores = &waitSemaphore,
+      .swapchainCount = 1u,
+      .pSwapchains = &swapchain_,
+      .pImageIndices = &currentImageIndex_,
+  };
+  VK_ASSERT_RETURN(vkQueuePresentKHR(graphicsQueue_, &pi));
   IGL_PROFILER_ZONE_END();
 
   // Ready to call acquireNextImage() on the next getCurrentVulkanTexture();

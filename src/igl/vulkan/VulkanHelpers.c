@@ -191,24 +191,6 @@ uint32_t ivkFindMemoryType(VkPhysicalDevice physDev,
   return 0;
 }
 
-VkResult ivkCreateSemaphore(VkDevice device, VkSemaphore* outSemaphore) {
-  const VkSemaphoreCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-      .pNext = NULL,
-      .flags = 0,
-  };
-  return vkCreateSemaphore(device, &ci, NULL, outSemaphore);
-}
-
-VkResult ivkCreateFence(VkDevice device, VkFlags flags, VkFence* outFence) {
-  const VkFenceCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-      .pNext = NULL,
-      .flags = flags,
-  };
-  return vkCreateFence(device, &ci, NULL, outFence);
-}
-
 static void ivkAddNext(void* node, const void* next) {
   if (!node || !next) {
     return;
@@ -221,66 +203,6 @@ static void ivkAddNext(void* node, const void* next) {
   }
 
   cur->pNext = next;
-}
-
-VkResult ivkCreateDebugUtilsMessenger(VkInstance instance,
-                                      PFN_vkDebugUtilsMessengerCallbackEXT callback,
-                                      void* logUserData,
-                                      VkDebugUtilsMessengerEXT* outMessenger) {
-  const VkDebugUtilsMessengerCreateInfoEXT ci = {
-      .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-      .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
-      .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-                     VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                     VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
-      .pfnUserCallback = callback,
-      .pUserData = logUserData,
-  };
-
-  return vkCreateDebugUtilsMessengerEXT(instance, &ci, NULL, outMessenger);
-}
-
-VkResult ivkCreateDebugReportMessenger(VkInstance instance,
-                                       PFN_vkDebugReportCallbackEXT callback,
-                                       void* logUserData,
-                                       VkDebugReportCallbackEXT* outMessenger) {
-  VkDebugReportCallbackCreateInfoEXT ci = {
-      .sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT,
-      .flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT |
-               VK_DEBUG_REPORT_DEBUG_BIT_EXT,
-      .pfnCallback = callback,
-      .pUserData = logUserData,
-  };
-
-  return vkCreateDebugReportCallbackEXT(instance, &ci, NULL, outMessenger);
-}
-
-VkResult ivkCreateSurface(VkInstance instance,
-                          void* window,
-                          void* display,
-                          VkSurfaceKHR* outSurface) {
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-  const VkWin32SurfaceCreateInfoKHR ci = {
-      .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
-      .hinstance = GetModuleHandle(NULL),
-      .hwnd = (HWND)window,
-  };
-  return vkCreateWin32SurfaceKHR(instance, &ci, NULL, outSurface);
-#elif defined(VK_USE_PLATFORM_XLIB_KHR)
-  const VkXlibSurfaceCreateInfoKHR ci = {
-      .sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,
-      .pNext = NULL,
-      .flags = 0,
-      .dpy = (Display*)display,
-      .window = (Window)window,
-  };
-  return vkCreateXlibSurfaceKHR(instance, &ci, NULL, outSurface);
-#else
-#error Implement for other platforms
-#endif
 }
 
 VkResult ivkCreateSwapchain(VkDevice device,
@@ -317,16 +239,6 @@ VkResult ivkCreateSwapchain(VkDevice device,
       .oldSwapchain = VK_NULL_HANDLE,
   };
   return vkCreateSwapchainKHR(device, &ci, NULL, outSwapchain);
-}
-
-VkResult ivkCreateHeadlessSurface(VkInstance instance, VkSurfaceKHR* outSurface) {
-  const VkHeadlessSurfaceCreateInfoEXT ci = {
-      .sType = VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT,
-      .pNext = NULL,
-      .flags = 0,
-  };
-
-  return vkCreateHeadlessSurfaceEXT(instance, &ci, NULL, outSurface);
 }
 
 VkResult ivkCreateSampler(VkDevice device, VkSampler* outSampler) {
@@ -476,33 +388,6 @@ VkAttachmentReference ivkGetAttachmentReference(uint32_t attachment, VkImageLayo
   return ref;
 }
 
-VkSubpassDescription ivkGetSubpassDescription(uint32_t numColorAttachments,
-                                              const VkAttachmentReference* refsColor,
-                                              const VkAttachmentReference* refsColorResolve,
-                                              const VkAttachmentReference* refDepth) {
-  const VkSubpassDescription desc = {
-      .flags = 0,
-      .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-      .colorAttachmentCount = numColorAttachments,
-      .pColorAttachments = refsColor,
-      .pResolveAttachments = refsColorResolve,
-      .pDepthStencilAttachment = refDepth,
-  };
-  return desc;
-}
-
-VkSubpassDependency ivkGetSubpassDependency(void) {
-  const VkSubpassDependency dep = {
-      .srcSubpass = 0,
-      .dstSubpass = VK_SUBPASS_EXTERNAL,
-      .srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-      .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-      .srcAccessMask = VK_ACCESS_SHADER_READ_BIT,
-      .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-  };
-  return dep;
-}
-
 VkResult ivkCreateDescriptorSetLayout(VkDevice device,
                                       uint32_t numBindings,
                                       const VkDescriptorSetLayoutBinding* bindings,
@@ -551,37 +436,6 @@ VkResult ivkCreateDescriptorPool(VkDevice device,
       .pPoolSizes = poolSizes,
   };
   return vkCreateDescriptorPool(device, &ci, NULL, outDescriptorPool);
-}
-
-VkResult ivkBeginCommandBuffer(VkCommandBuffer buffer) {
-  const VkCommandBufferBeginInfo bi = {
-      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-      .pNext = NULL,
-      .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-  };
-  return vkBeginCommandBuffer(buffer, &bi);
-}
-
-VkResult ivkEndCommandBuffer(VkCommandBuffer buffer) {
-  return vkEndCommandBuffer(buffer);
-}
-
-VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,
-                              uint32_t numWaitSemaphores,
-                              const VkSemaphore* waitSemaphores,
-                              const VkPipelineStageFlags* waitStageMasks,
-                              const VkSemaphore* releaseSemaphore) {
-  const VkSubmitInfo si = {
-      .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-      .waitSemaphoreCount = numWaitSemaphores,
-      .pWaitSemaphores = waitSemaphores,
-      .pWaitDstStageMask = waitStageMasks,
-      .commandBufferCount = 1,
-      .pCommandBuffers = buffer,
-      .signalSemaphoreCount = releaseSemaphore ? 1 : 0,
-      .pSignalSemaphores = releaseSemaphore,
-  };
-  return si;
 }
 
 VkClearValue ivkGetClearColorValue(float r, float g, float b, float a) {
@@ -882,17 +736,6 @@ VkPipelineLayoutCreateInfo ivkGetPipelineLayoutCreateInfo(uint32_t numLayouts,
   return ci;
 }
 
-VkPushConstantRange ivkGetPushConstantRange(VkShaderStageFlags stageFlags,
-                                            size_t offset,
-                                            size_t size) {
-  const VkPushConstantRange range = {
-      .stageFlags = stageFlags,
-      .offset = (uint32_t)offset,
-      .size = (uint32_t)size,
-  };
-  return range;
-}
-
 VkPipelineShaderStageCreateInfo ivkGetPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
                                                                     VkShaderModule shaderModule,
                                                                     const char* entryPoint) {
@@ -907,64 +750,12 @@ VkPipelineShaderStageCreateInfo ivkGetPipelineShaderStageCreateInfo(VkShaderStag
   return ci;
 }
 
-VkViewport ivkGetViewport(float x, float y, float width, float height) {
-  const VkViewport viewport = {
-      .x = x,
-      .y = y,
-      .width = width,
-      .height = height,
-      .minDepth = 0.0f,
-      .maxDepth = +1.0f,
-  };
-  return viewport;
-}
-
 VkRect2D ivkGetRect2D(int32_t x, int32_t y, uint32_t width, uint32_t height) {
   const VkRect2D rect = {
       .offset = {.x = x, .y = y},
       .extent = {.width = width, .height = height},
   };
   return rect;
-}
-
-VkResult ivkCreateShaderModule(VkDevice device,
-                               glslang_program_t* program,
-                               VkShaderModule* outShaderModule) {
-  const VkShaderModuleCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-      .codeSize = glslang_program_SPIRV_get_size(program) * sizeof(uint32_t),
-      .pCode = glslang_program_SPIRV_get_ptr(program),
-  };
-  return vkCreateShaderModule(device, &ci, NULL, outShaderModule);
-}
-
-VkResult ivkCreateShaderModuleFromSPIRV(VkDevice device,
-                                        const void* dataSPIRV,
-                                        size_t size,
-                                        VkShaderModule* outShaderModule) {
-  const VkShaderModuleCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-      .codeSize = size,
-      .pCode = dataSPIRV,
-  };
-  return vkCreateShaderModule(device, &ci, NULL, outShaderModule);
-}
-
-VkResult ivkCreateComputePipeline(VkDevice device,
-                                  VkPipelineCache pipelineCache,
-                                  const VkPipelineShaderStageCreateInfo* shaderStage,
-                                  VkPipelineLayout pipelineLayout,
-                                  VkPipeline* outPipeline) {
-  const VkComputePipelineCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-      .pNext = NULL,
-      .flags = 0,
-      .stage = *shaderStage,
-      .layout = pipelineLayout,
-      .basePipelineHandle = VK_NULL_HANDLE,
-      .basePipelineIndex = -1,
-  };
-  return vkCreateComputePipelines(device, pipelineCache, 1, &ci, NULL, outPipeline);
 }
 
 void ivkImageMemoryBarrier(VkCommandBuffer buffer,
@@ -1028,21 +819,6 @@ void ivkCmdBlitImage(VkCommandBuffer buffer,
   vkCmdBlitImage(buffer, srcImage, srcImageLayout, dstImage, dstImageLayout, 1, &blit, filter);
 }
 
-VkResult ivkQueuePresent(VkQueue graphicsQueue,
-                         VkSemaphore waitSemaphore,
-                         VkSwapchainKHR swapchain,
-                         uint32_t currentSwapchainImageIndex) {
-  const VkPresentInfoKHR pi = {
-      .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-      .waitSemaphoreCount = 1,
-      .pWaitSemaphores = &waitSemaphore,
-      .swapchainCount = 1,
-      .pSwapchains = &swapchain,
-      .pImageIndices = &currentSwapchainImageIndex,
-  };
-  return vkQueuePresentKHR(graphicsQueue, &pi);
-}
-
 VkResult ivkSetDebugObjectName(VkDevice device,
                                VkObjectType type,
                                uint64_t handle,
@@ -1091,30 +867,6 @@ void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer,
 
 void ivkCmdEndDebugUtilsLabel(VkCommandBuffer buffer) {
   vkCmdEndDebugUtilsLabelEXT(buffer);
-}
-
-VkVertexInputBindingDescription ivkGetVertexInputBindingDescription(uint32_t binding,
-                                                                    uint32_t stride,
-                                                                    VkVertexInputRate inputRate) {
-  const VkVertexInputBindingDescription desc = {
-      .binding = binding,
-      .stride = stride,
-      .inputRate = inputRate,
-  };
-  return desc;
-}
-
-VkVertexInputAttributeDescription ivkGetVertexInputAttributeDescription(uint32_t location,
-                                                                        uint32_t binding,
-                                                                        VkFormat format,
-                                                                        uint32_t offset) {
-  const VkVertexInputAttributeDescription desc = {
-      .location = location,
-      .binding = binding,
-      .format = format,
-      .offset = offset,
-  };
-  return desc;
 }
 
 VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset,

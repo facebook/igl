@@ -139,7 +139,12 @@ Result compileShader(VkDevice device,
     LLOGW("%s\n", glslang_program_SPIRV_get_messages(program));
   }
 
-  VK_ASSERT_RETURN(ivkCreateShaderModule(device, program, outShaderModule));
+  const VkShaderModuleCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+      .codeSize = glslang_program_SPIRV_get_size(program) * sizeof(uint32_t),
+      .pCode = glslang_program_SPIRV_get_ptr(program),
+  };
+  VK_ASSERT_RETURN(vkCreateShaderModule(device, &ci, nullptr, outShaderModule));
 
   return Result();
 }

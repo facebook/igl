@@ -26,7 +26,6 @@ class VulkanSwapchain final {
   VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height);
   ~VulkanSwapchain();
 
-  Result acquireNextImage();
   Result present(VkSemaphore waitSemaphore);
   VkImage getCurrentVkImage() const {
     if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
@@ -46,18 +45,7 @@ class VulkanSwapchain final {
     }
     return VK_NULL_HANDLE;
   }
-  std::shared_ptr<Texture> getCurrentTexture() {
-    if (getNextImage_) {
-      acquireNextImage();
-      getNextImage_ = false;
-    }
-
-    if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
-      return swapchainTextures_[currentImageIndex_];
-    }
-
-    return nullptr;
-  }
+  std::shared_ptr<Texture> getCurrentTexture();
 
   uint32_t getWidth() const {
     return width_;

@@ -221,21 +221,18 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
   const uint32_t numAttributes = vstate.getNumAttributes();
 
   for (uint32_t i = 0; i != numAttributes; i++) {
-    const VertexAttribute& attr = vstate.attributes[i];
-    const VkFormat format = vertexFormatToVkFormat(attr.format);
-    const uint32_t bufferIndex = attr.bufferIndex;
+    const auto& attr = vstate.attributes[i];
 
-    vkAttributes_.push_back(ivkGetVertexInputAttributeDescription(
-        attr.location, bufferIndex, format, (uint32_t)attr.offset));
+    vkAttributes_.push_back({.location = attr.location,
+                             .binding = attr.binding,
+                             .format = vertexFormatToVkFormat(attr.format),
+                             .offset = (uint32_t)attr.offset});
 
-    if (!bufferAlreadyBound[bufferIndex]) {
-      bufferAlreadyBound[bufferIndex] = true;
-
-      const VertexInputBinding& binding = vstate.inputBindings[bufferIndex];
-      const VkVertexInputRate rate = (binding.sampleFunction == VertexSampleFunction_PerVertex)
-                                         ? VK_VERTEX_INPUT_RATE_VERTEX
-                                         : VK_VERTEX_INPUT_RATE_INSTANCE;
-      vkBindings_.push_back(ivkGetVertexInputBindingDescription(bufferIndex, binding.stride, rate));
+    if (!bufferAlreadyBound[attr.binding]) {
+      bufferAlreadyBound[attr.binding] = true;
+      vkBindings_.push_back({.binding = attr.binding,
+                             .stride = vstate.inputBindings[attr.binding].stride,
+                             .inputRate = VK_VERTEX_INPUT_RATE_VERTEX});
     }
 
     vertexInputStateCreateInfo_.vertexBindingDescriptionCount = vstate.getNumInputBindings();

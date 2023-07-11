@@ -108,7 +108,11 @@ const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::ac
 
   current->cmdBuf_ = current->cmdBufAllocated_;
   current->isEncoding_ = true;
-  VK_ASSERT(ivkBeginCommandBuffer(current->cmdBuf_));
+  const VkCommandBufferBeginInfo bi = {
+      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+      .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+  };
+  VK_ASSERT(vkBeginCommandBuffer(current->cmdBuf_, &bi));
 
   return *current;
 }
@@ -184,7 +188,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     const CommandBufferWrapper& wrapper) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
   IGL_ASSERT(wrapper.isEncoding_);
-  VK_ASSERT(ivkEndCommandBuffer(wrapper.cmdBuf_));
+  VK_ASSERT(vkEndCommandBuffer(wrapper.cmdBuf_));
 
   const VkPipelineStageFlags waitStageMasks[] = {VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                                                  VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
@@ -197,15 +201,20 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     waitSemaphores[numWaitSemaphores++] = lastSubmitSemaphore_;
   }
 
-  const VkSubmitInfo si = ivkGetSubmitInfo(&wrapper.cmdBuf_,
-                                           numWaitSemaphores,
-                                           waitSemaphores,
-                                           waitStageMasks,
-                                           &wrapper.semaphore_.vkSemaphore_);
   IGL_PROFILER_ZONE("vkQueueSubmit()", IGL_PROFILER_COLOR_SUBMIT);
 #if IGL_VULKAN_PRINT_COMMANDS
   LLOGL("%p vkQueueSubmit()\n\n", wrapper.cmdBuf_);
 #endif // IGL_VULKAN_PRINT_COMMANDS
+  const VkSubmitInfo si = {
+      .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+      .waitSemaphoreCount = numWaitSemaphores,
+      .pWaitSemaphores = waitSemaphores,
+      .pWaitDstStageMask = waitStageMasks,
+      .commandBufferCount = 1u,
+      .pCommandBuffers = &wrapper.cmdBuf_,
+      .signalSemaphoreCount = 1u,
+      .pSignalSemaphores = &wrapper.semaphore_.vkSemaphore_,
+  };
   VK_ASSERT(vkQueueSubmit(queue_, 1u, &si, wrapper.fence_.vkFence_));
   IGL_PROFILER_ZONE_END();
 
