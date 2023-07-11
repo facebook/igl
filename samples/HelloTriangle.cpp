@@ -65,8 +65,7 @@ void render() {
   buffer->cmdDraw(PrimitiveType::Triangle, 0, 3);
   buffer->cmdPopDebugGroupLabel();
   buffer->cmdEndRendering();
-  buffer->present(device_->getCurrentSwapchainTexture());
-  device_->submit(*buffer, igl::CommandQueueType::Graphics, true);
+  device_->submit(*buffer, igl::CommandQueueType::Graphics, device_->getCurrentSwapchainTexture().get());
 }
 
 int main(int argc, char* argv[]) {

@@ -726,13 +726,17 @@ class IRenderPipelineState {
   virtual ~IRenderPipelineState() = default;
 };
 
+struct Dependencies {
+  enum { IGL_MAX_SUBMIT_DEPENDENCIES = 4 };
+  ITexture* textures[IGL_MAX_SUBMIT_DEPENDENCIES] = {};
+};
+
 class ICommandBuffer {
  public:
   virtual ~ICommandBuffer() = default;
 
-  virtual void present(std::shared_ptr<ITexture> surface) const = 0;
+  virtual void transitionToShaderReadOnly(const std::shared_ptr<ITexture>& surface) const = 0;
   virtual void waitUntilCompleted() = 0;
-  virtual void useComputeTexture(const std::shared_ptr<ITexture>& texture) = 0;
 
   virtual void cmdPushDebugGroupLabel(const char* label,
                                       const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
@@ -742,7 +746,8 @@ class ICommandBuffer {
 
   virtual void cmdBindComputePipelineState(
       const std::shared_ptr<IComputePipelineState>& pipelineState) = 0;
-  virtual void cmdDispatchThreadGroups(const Dimensions& threadgroupCount) = 0;
+  virtual void cmdDispatchThreadGroups(const Dimensions& threadgroupCount,
+                                       const Dependencies& deps = Dependencies()) = 0;
 
   virtual void cmdBeginRendering(const igl::RenderPass& renderPass,
                                  const igl::Framebuffer& desc) = 0;
@@ -792,7 +797,7 @@ class IDevice {
 
   virtual void submit(const ICommandBuffer& commandBuffer,
                       igl::CommandQueueType queueType,
-                      bool present = false) = 0;
+                      ITexture* present = nullptr) = 0;
 
   virtual std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
                                                 Result* outResult = nullptr) = 0;

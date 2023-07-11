@@ -391,9 +391,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   imgui_->endFrame(*device_.get(), *buffer);
   buffer->cmdEndRendering();
 
-  buffer->present(nativeDrawable);
-
-  device_->submit(*buffer, CommandQueueType::Graphics, true);
+  device_->submit(*buffer, CommandQueueType::Graphics, nativeDrawable.get());
 }
 
 int main(int argc, char* argv[]) {

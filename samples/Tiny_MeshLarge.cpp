@@ -1174,7 +1174,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
       buffer->cmdPopDebugGroupLabel();
     }
     buffer->cmdEndRendering();
-    buffer->present(fbShadowMap_.depthStencilAttachment.texture);
+    buffer->transitionToShaderReadOnly(fbShadowMap_.depthStencilAttachment.texture);
     device_->submit(*buffer, igl::CommandQueueType::Graphics);
 
     fbShadowMap_.depthStencilAttachment.texture->generateMipmap();
@@ -1222,7 +1222,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
       buffer->cmdPopDebugGroupLabel();
     }
     buffer->cmdEndRendering();
-    buffer->present(fbOffscreen_.colorAttachments[0].texture);
+    buffer->transitionToShaderReadOnly(fbOffscreen_.colorAttachments[0].texture);
     device_->submit(*buffer, CommandQueueType::Graphics);
   }
 
@@ -1233,7 +1233,6 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
                                         : fbOffscreen_.colorAttachments[0].texture;
     std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
-    buffer->useComputeTexture(tex);
     buffer->cmdBindComputePipelineState(computePipelineState_Grayscale_);
 
     struct {
@@ -1242,11 +1241,13 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
         .texture = tex->getTextureId(),
     };
     buffer->cmdPushConstants(0, &bindings, sizeof(bindings));
-    buffer->cmdDispatchThreadGroups({
-        .width = (uint32_t)width_,
-        .height = (uint32_t)height_,
-        .depth = 1u,
-    });
+    buffer->cmdDispatchThreadGroups(
+        {
+            .width = (uint32_t)width_,
+            .height = (uint32_t)height_,
+            .depth = 1u,
+        },
+        {.textures = {tex.get()}});
 
     device_->submit(*buffer, CommandQueueType::Compute);
   }
@@ -1275,9 +1276,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     }
     buffer->cmdEndRendering();
 
-    buffer->present(fbMain_.colorAttachments[0].texture);
-
-    device_->submit(*buffer, CommandQueueType::Graphics, true);
+    device_->submit(*buffer, CommandQueueType::Graphics, fbMain_.colorAttachments[0].texture.get());
   }
 }
 

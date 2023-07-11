@@ -126,10 +126,7 @@ void VulkanObjects::render() {
     buffer->cmdPopDebugGroupLabel();
   }
   buffer->cmdEndRendering();
-
-  buffer->present(fb_.colorAttachments[0].texture);
-
-  device_->submit(*buffer, igl::CommandQueueType::Graphics, true);
+  device_->submit(*buffer, igl::CommandQueueType::Graphics, fb_.colorAttachments[0].texture.get());
 }
 
 int main(int argc, char* argv[]) {

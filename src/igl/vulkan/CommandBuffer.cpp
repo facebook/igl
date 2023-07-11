@@ -135,7 +135,7 @@ VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(igl::PrimitiveType t) {
 
 } // namespace
 
-void CommandBuffer::present(std::shared_ptr<ITexture> surface) const {
+void CommandBuffer ::transitionToShaderReadOnly(const std::shared_ptr<ITexture>& surface) const {
   IGL_PROFILER_FUNCTION();
 
   IGL_ASSERT(surface.get());
@@ -144,24 +144,7 @@ void CommandBuffer::present(std::shared_ptr<ITexture> surface) const {
   const VulkanTexture& tex = vkTex.getVulkanTexture();
   const VulkanImage& img = tex.getVulkanImage();
 
-  // prepare image for presentation
-  if (vkTex.isSwapchainTexture()) {
-    isFromSwapchain_ = true;
-    // the image might be coming from a compute shader
-    const VkPipelineStageFlagBits srcStage = (img.imageLayout_ == VK_IMAGE_LAYOUT_GENERAL)
-                                                 ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-                                                 : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    img.transitionLayout(
-        wrapper_.cmdBuf_,
-        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        srcStage,
-        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // wait for all subsequent operations
-        VkImageSubresourceRange{
-            VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
-    return;
-  }
-
-  isFromSwapchain_ = false;
+  IGL_ASSERT(!vkTex.isSwapchainTexture());
 
   // transition only non-multisampled images - MSAA images cannot be accessed from shaders
   if (img.samples_ == VK_SAMPLE_COUNT_1_BIT) {
@@ -210,8 +193,13 @@ void CommandBuffer::cmdBindComputePipelineState(
   }
 }
 
-void CommandBuffer::cmdDispatchThreadGroups(const Dimensions& threadgroupCount) {
+void CommandBuffer::cmdDispatchThreadGroups(const Dimensions& threadgroupCount,
+                                            const Dependencies& deps) {
   IGL_ASSERT(!isRendering_);
+
+  for (uint32_t i = 0; i != Dependencies::IGL_MAX_SUBMIT_DEPENDENCIES && deps.textures[i]; i++) {
+    useComputeTexture(deps.textures[i]);
+  }
 
   ctx_.checkAndUpdateDescriptorSets();
   ctx_.bindDefaultDescriptorSets(wrapper_.cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE);
@@ -236,11 +224,11 @@ void CommandBuffer::cmdPopDebugGroupLabel() const {
   ivkCmdEndDebugUtilsLabel(wrapper_.cmdBuf_);
 }
 
-void CommandBuffer::useComputeTexture(const std::shared_ptr<ITexture>& texture) {
+void CommandBuffer::useComputeTexture(ITexture* texture) {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT(texture.get());
-  const igl::vulkan::Texture* tex = static_cast<igl::vulkan::Texture*>(texture.get());
+  IGL_ASSERT(texture);
+  const igl::vulkan::Texture* tex = static_cast<igl::vulkan::Texture*>(texture);
   const igl::vulkan::VulkanTexture& vkTex = tex->getVulkanTexture();
   const igl::vulkan::VulkanImage& vkImage = vkTex.getVulkanImage();
   if (!vkImage.isStorageImage()) {

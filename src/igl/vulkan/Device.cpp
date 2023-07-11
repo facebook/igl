@@ -57,20 +57,38 @@ std::shared_ptr<ICommandBuffer> Device::createCommandBuffer() {
 
 void Device::submit(const igl::ICommandBuffer& commandBuffer,
                     igl::CommandQueueType queueType,
-                    bool present) {
+                    ITexture* present) {
   IGL_PROFILER_FUNCTION();
 
   const VulkanContext& ctx = getVulkanContext();
 
-  auto* vkCmdBuffer =
+  vulkan::CommandBuffer* vkCmdBuffer =
       const_cast<vulkan::CommandBuffer*>(static_cast<const vulkan::CommandBuffer*>(&commandBuffer));
 
-  // endCommandBuffer(ctx, vkCmdBuffer, true);
   const bool isGraphicsQueue = queueType == CommandQueueType::Graphics;
 
+  if (present) {
+    const auto& vkTex = static_cast<Texture&>(*present);
+    const VulkanTexture& tex = vkTex.getVulkanTexture();
+    const VulkanImage& img = tex.getVulkanImage();
+
+    IGL_ASSERT(vkTex.isSwapchainTexture());
+
+    // prepare image for presentation the image might be coming from a compute shader
+    const VkPipelineStageFlagBits srcStage = (img.imageLayout_ == VK_IMAGE_LAYOUT_GENERAL)
+                                                 ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+                                                 : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    img.transitionLayout(
+        vkCmdBuffer->wrapper_.cmdBuf_,
+        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        srcStage,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // wait for all subsequent operations
+        VkImageSubresourceRange{
+            VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+  }
+
   // Submit to the graphics queue.
-  const bool shouldPresent = isGraphicsQueue && ctx.hasSwapchain() &&
-                             vkCmdBuffer->isFromSwapchain() && present;
+  const bool shouldPresent = isGraphicsQueue && ctx.hasSwapchain() && present;
   if (shouldPresent) {
     ctx.immediate_->waitSemaphore(ctx.swapchain_->acquireSemaphore_->vkSemaphore_);
   }

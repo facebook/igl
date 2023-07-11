@@ -22,13 +22,13 @@ class CommandBuffer final : public ICommandBuffer {
   explicit CommandBuffer(VulkanContext& ctx);
   ~CommandBuffer() override;
 
-  void present(std::shared_ptr<ITexture> surface) const override;
+  void transitionToShaderReadOnly(const std::shared_ptr<ITexture>& surface) const override;
   void waitUntilCompleted() override;
-  void useComputeTexture(const std::shared_ptr<ITexture>& texture) override;
 
   void cmdBindComputePipelineState(
       const std::shared_ptr<IComputePipelineState>& pipelineState) override;
-  void cmdDispatchThreadGroups(const Dimensions& threadgroupCount) override;
+  void cmdDispatchThreadGroups(const Dimensions& threadgroupCount,
+                               const Dependencies& deps) override;
 
   void cmdPushDebugGroupLabel(const char* label, const igl::Color& color) const override;
   void cmdInsertDebugEventLabel(const char* label, const igl::Color& color) const override;
@@ -77,11 +77,8 @@ class CommandBuffer final : public ICommandBuffer {
     return wrapper_.cmdBuf_;
   }
 
-  bool isFromSwapchain() const {
-    return isFromSwapchain_;
-  }
-
  private:
+  void useComputeTexture(ITexture* texture);
   void bindGraphicsPipeline();
 
  private:
@@ -89,8 +86,6 @@ class CommandBuffer final : public ICommandBuffer {
 
   VulkanContext& ctx_;
   const VulkanImmediateCommands::CommandBufferWrapper& wrapper_;
-  // was present() called with a swapchain image?
-  mutable bool isFromSwapchain_ = false;
 
   igl::Framebuffer framebuffer_ = {};
 

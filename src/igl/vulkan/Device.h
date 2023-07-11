@@ -27,8 +27,8 @@ class Device final : public IDevice {
   std::shared_ptr<ICommandBuffer> createCommandBuffer() override;
 
   void submit(const igl::ICommandBuffer& commandBuffer,
-              igl::CommandQueueType queueType,
-              bool present = false) override;
+              igl::CommandQueueType queueTyp,
+              ITexture* present) override;
 
   // Resources
   std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc, Result* outResult) override;
