@@ -5,7 +5,6 @@ Our plans encompass the following projects:
 ## IGL Open Source effort:
 * Support SparkSL CLI tools to utilize SparkSL shaders in RenderSessions.
 * Develop new RenderSession examples.
-* Create WebAssembly examples.
 * Add OpenXR Android project.
 
 ## IGL evolution:

@@ -88,10 +88,19 @@ cd build
 cmake .. -G Xcode -DCMAKE_TOOLCHAIN_FILE=../third-party/deps/src/ios-cmake/ios.toolchain.cmake -DPLATFORM=SIMULATOR64
 ```
 
-
 * Android
 
 The Gradle project is located within the [build/android](./build/android/) folder.
+
+* WebAssembly
+
+Please install [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) and [Ninja](https://ninja-build.org/).
+
+```
+cd build
+emcmake cmake .. -G Ninja
+cmake --build .
+```
 
 ## Screenshots
 
