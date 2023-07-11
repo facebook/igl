@@ -27,7 +27,7 @@
 IGL_EXTERN_BEGIN
 
 // Definitions for IGL extension method function pointers.
-// These are defined to accomodate platforms where the pointer types are not pre-defined. These
+// These are defined to accommodate platforms where the pointer types are not pre-defined. These
 // definitions use a PFNIGL prefix to ensure they don't collide with function pointer types
 // defined by other OpenGL loaders. These definitions also omit any extension-specific suffix (e.g.,
 // EXT) unless it is needed to disambiguate them.
