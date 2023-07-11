@@ -8,6 +8,7 @@
 #pragma once
 
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImageView.h>
@@ -22,24 +23,30 @@ class VulktanTexture;
 
 class VulkanSwapchain final {
  public:
-  VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint32_t height);
+  VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height);
   ~VulkanSwapchain();
 
   Result acquireNextImage();
   Result present(VkSemaphore waitSemaphore);
   VkImage getCurrentVkImage() const {
     if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
-      return swapchainTextures_[currentImageIndex_]->getVulkanImage().getVkImage();
+      return swapchainTextures_[currentImageIndex_]
+          ->getVulkanTexture()
+          .getVulkanImage()
+          .getVkImage();
     }
     return VK_NULL_HANDLE;
   }
   VkImageView getCurrentVkImageView() const {
     if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
-      return swapchainTextures_[currentImageIndex_]->getVulkanImageView().getVkImageView();
+      return swapchainTextures_[currentImageIndex_]
+          ->getVulkanTexture()
+          .getVulkanImageView()
+          .getVkImageView();
     }
     return VK_NULL_HANDLE;
   }
-  std::shared_ptr<VulkanTexture> getCurrentVulkanTexture() {
+  std::shared_ptr<Texture> getCurrentTexture() {
     if (getNextImage_) {
       acquireNextImage();
       getNextImage_ = false;
@@ -82,7 +89,7 @@ class VulkanSwapchain final {
   std::unique_ptr<igl::vulkan::VulkanSemaphore> acquireSemaphore_;
 
  private:
-  const VulkanContext& ctx_;
+  VulkanContext& ctx_;
   VkDevice device_;
   VkQueue graphicsQueue_;
   uint32_t width_ = 0;
@@ -92,7 +99,7 @@ class VulkanSwapchain final {
   uint64_t frameNumber_ = 0;
   bool getNextImage_ = true;
   VkSwapchainKHR swapchain_;
-  std::vector<std::shared_ptr<VulkanTexture>> swapchainTextures_;
+  std::vector<std::shared_ptr<Texture>> swapchainTextures_;
   VkSurfaceFormatKHR surfaceFormat_;
 };
 

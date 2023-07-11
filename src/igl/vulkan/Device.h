@@ -90,7 +90,6 @@ class Device final : public IDevice {
   std::unique_ptr<VulkanContext> ctx_;
 
   std::vector<std::shared_ptr<VulkanShaderModule>> shaderModules_ = { nullptr };
-  std::vector<std::shared_ptr<ITexture>> swapchainTextures_;
 };
 
 } // namespace vulkan

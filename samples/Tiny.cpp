@@ -139,12 +139,13 @@ int main(int argc, char* argv[]) {
   vk.init();
 
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
-    printf("Window resized! width=%d, height=%d\n", width, height);
     width_ = width;
     height_ = height;
     vulkan::Device* vulkanDevice = static_cast<vulkan::Device*>(vk.device_.get());
     vulkanDevice->getVulkanContext().initSwapchain(width_, height_);
-    vk.createFramebuffer();
+    if (width && height) {
+      vk.createFramebuffer();
+    }
   });
 
   double prevTime = glfwGetTime();

@@ -15,7 +15,7 @@
 namespace igl {
 namespace vulkan {
 
-class Device;
+class VulkanContext;
 class VulkanImage;
 class VulkanImageView;
 class VulkanTexture;
@@ -24,11 +24,9 @@ class Texture final : public ITexture {
   friend class Device;
 
  public:
-  Texture(const igl::vulkan::Device& device, TextureFormat format);
-  Texture(const igl::vulkan::Device& device,
-          std::shared_ptr<VulkanTexture> vkTexture,
-          TextureDesc desc) :
-    Texture(device, desc.format) {
+  Texture(VulkanContext& ctx, TextureFormat format);
+  Texture(VulkanContext& ctx, std::shared_ptr<VulkanTexture> vkTexture, TextureDesc desc) :
+    Texture(ctx, desc.format) {
     texture_ = std::move(vkTexture);
     desc_ = std::move(desc);
   }
@@ -56,7 +54,7 @@ class Texture final : public ITexture {
   Result validateRange(const igl::TextureRangeDesc& range) const;
 
  protected:
-  const igl::vulkan::Device& device_;
+  VulkanContext& ctx_;
   TextureDesc desc_;
 
   std::shared_ptr<VulkanTexture> texture_;

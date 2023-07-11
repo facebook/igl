@@ -16,16 +16,14 @@
 
 namespace igl::vulkan {
 
-Texture::Texture(const igl::vulkan::Device& device, TextureFormat format) :
-  ITexture(format), device_(device) {}
+Texture::Texture(VulkanContext& ctx, TextureFormat format) :
+  ITexture(format), ctx_(ctx) {}
 
 Result Texture::create(const TextureDesc& desc) {
   desc_ = desc;
 
-  const VulkanContext& ctx = device_.getVulkanContext();
-
   const VkFormat vkFormat = isDepthOrStencilFormat(desc_.format)
-                                ? ctx.getClosestDepthStencilFormat(desc_.format)
+                                ? ctx_.getClosestDepthStencilFormat(desc_.format)
                                 : textureFormatToVkFormat(desc_.format);
 
   const igl::TextureType type = desc_.type;
@@ -122,7 +120,7 @@ Result Texture::create(const TextureDesc& desc) {
   }
 
   Result result;
-  auto image = ctx.createImage(
+  auto image = ctx_.createImage(
       imageType,
       VkExtent3D{(uint32_t)desc_.width, (uint32_t)desc_.height, (uint32_t)desc_.depth},
       vkFormat,
@@ -160,7 +158,7 @@ Result Texture::create(const TextureDesc& desc) {
     return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
   }
 
-  texture_ = ctx.createTexture(std::move(image), std::move(imageView));
+  texture_ = ctx_.createTexture(std::move(image), std::move(imageView));
 
   return Result();
 }
@@ -176,12 +174,11 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data[]) const 
 
   const uint32_t numLayers = std::max(range.numLayers, 1u);
 
-  const VulkanContext& ctx = device_.getVulkanContext();
   const VkImageType type = texture_->getVulkanImage().type_;
 
   if (type == VK_IMAGE_TYPE_3D) {
     const void* uploadData = data[0];
-    ctx.stagingDevice_->imageData3D(
+    ctx_.stagingDevice_->imageData3D(
         texture_->getVulkanImage(),
         VkOffset3D{(int32_t)range.x, (int32_t)range.y, (int32_t)range.z},
         VkExtent3D{(uint32_t)range.width, (uint32_t)range.height, (uint32_t)range.depth},
@@ -190,14 +187,14 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data[]) const 
   } else {
     const VkRect2D imageRegion = ivkGetRect2D(
         (uint32_t)range.x, (uint32_t)range.y, (uint32_t)range.width, (uint32_t)range.height);
-    ctx.stagingDevice_->imageData2D(texture_->getVulkanImage(),
-                                    imageRegion,
-                                    range.mipLevel,
-                                    range.numMipLevels,
-                                    range.layer,
-                                    range.numLayers,
-                                    getVkFormat(),
-                                    data);
+    ctx_.stagingDevice_->imageData2D(texture_->getVulkanImage(),
+                                     imageRegion,
+                                     range.mipLevel,
+                                     range.numMipLevels,
+                                     range.layer,
+                                     range.numLayers,
+                                     getVkFormat(),
+                                     data);
   }
 
   return Result();
@@ -216,10 +213,9 @@ void Texture::generateMipmap() const {
   if (desc_.numMipLevels > 1) {
     IGL_ASSERT(texture_.get());
     IGL_ASSERT(texture_->getVulkanImage().imageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED);
-    const auto& ctx = device_.getVulkanContext();
-    const auto& wrapper = ctx.immediate_->acquire();
+    const auto& wrapper = ctx_.immediate_->acquire();
     texture_->getVulkanImage().generateMipmap(wrapper.cmdBuf_);
-    ctx.immediate_->submit(wrapper);
+    ctx_.immediate_->submit(wrapper);
   }
 }
 

@@ -695,13 +695,18 @@ igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
   }
 
   if (swapchain_) {
+    // destroy the old swapchain first
     waitIdle();
-    swapchain_ = nullptr; // Destroy old swapchain first
+    swapchain_ = nullptr;
+  }
+
+  if (!width || !height) {
+    return Result();
   }
 
   swapchain_ = std::make_unique<igl::vulkan::VulkanSwapchain>(*this, width, height);
 
-  return swapchain_ ? Result() : Result(Result::Code::RuntimeError, "Failed to create Swapchain");
+  return swapchain_ ? Result() : Result(Result::Code::RuntimeError, "Failed to create swapchain");
 }
 
 VkExtent2D VulkanContext::getSwapchainExtent() const {

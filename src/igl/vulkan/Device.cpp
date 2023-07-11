@@ -122,7 +122,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     patchedDesc.debugName = debugName;
   }
 
-  auto texture = std::make_shared<vulkan::Texture>(*this, patchedDesc.format);
+  auto texture = std::make_shared<vulkan::Texture>(*ctx_.get(), patchedDesc.format);
 
   const Result res = texture->create(patchedDesc);
 
@@ -295,59 +295,21 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
 std::shared_ptr<ITexture> Device::getCurrentSwapchainTexture() {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(ctx_->hasSwapchain())) {
-    swapchainTextures_.clear();
-    IGL_ASSERT_MSG(false, "No Swapchain has been allocated");
+  if (!ctx_->hasSwapchain()) {
     return nullptr;
   };
 
-  auto& swapChain = ctx_->swapchain_;
+  std::shared_ptr<Texture> tex = ctx_->swapchain_->getCurrentTexture();
 
-  std::shared_ptr<VulkanTexture> vkTex = swapChain->getCurrentVulkanTexture();
-
-  if (!IGL_VERIFY(vkTex != nullptr)) {
+  if (!IGL_VERIFY(tex != nullptr)) {
     IGL_ASSERT_MSG(false, "Swapchain has no valid texture");
     return nullptr;
   }
 
-  IGL_ASSERT_MSG(vkTex->getVulkanImage().imageFormat_ != VK_FORMAT_UNDEFINED,
+  IGL_ASSERT_MSG(tex->getVulkanTexture().getVulkanImage().imageFormat_ != VK_FORMAT_UNDEFINED,
                  "Invalid image format");
 
-  const auto iglFormat = vkFormatToTextureFormat(vkTex->getVulkanImage().imageFormat_);
-  if (!IGL_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {
-    IGL_ASSERT_MSG(false, "Invalid surface color format");
-    return nullptr;
-  }
-
-  const uint32_t width = swapChain->getWidth();
-  const uint32_t height = swapChain->getHeight();
-  const uint32_t currentImageIndex = swapChain->getCurrentImageIndex();
-
-  // resize nativeDrawableTextures_ pushing null pointers
-  // null pointers will be allocated later as needed
-  if (currentImageIndex >= swapchainTextures_.size()) {
-    swapchainTextures_.resize((size_t)currentImageIndex + 1, nullptr);
-  }
-
-  const auto result = swapchainTextures_[currentImageIndex];
-
-  // allocate new drawable textures if its null or mismatches in size or format
-  if (!result || width != result->getDimensions().width ||
-      height != result->getDimensions().height || iglFormat != result->getFormat()) {
-    swapchainTextures_[currentImageIndex] =
-        std::make_shared<igl::vulkan::Texture>(*this,
-                                               std::move(vkTex),
-                                               TextureDesc{
-                                                   .type = TextureType::TwoD,
-                                                   .format = iglFormat,
-                                                   .width = width,
-                                                   .height = height,
-                                                   .usage = igl::TextureUsageBits_Attachment,
-                                                   .debugName = "SwapChain Texture",
-                                               });
-  }
-
-  return swapchainTextures_[currentImageIndex];
+  return tex;
 }
 
 VulkanShaderModule* Device::getShaderModule(ShaderModuleHandle handle) const {

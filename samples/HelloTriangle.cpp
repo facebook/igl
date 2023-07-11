@@ -46,25 +46,10 @@ uint32_t width_ = 800;
 uint32_t height_ = 600;
 FramesPerSecondCounter fps_;
 
-struct VulkanObjects {
-  void init();
-  void render();
-  std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
-  std::unique_ptr<IDevice> device_;
-} vk;
+std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
+std::unique_ptr<IDevice> device_;
 
-void VulkanObjects::init() {
-  device_ = lvk::createVulkanDeviceWithSwapchain(window_, width_, height_, {});
-  renderPipelineState_Triangle_ = device_->createRenderPipeline(
-      {.shaderStages = device_->createShaderStages(
-           codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
-       .colorAttachments = {{.textureFormat = device_->getCurrentSwapchainTexture()->getFormat()}}},
-      nullptr);
-
-  IGL_ASSERT(renderPipelineState_Triangle_.get());
-}
-
-void VulkanObjects::render() {
+void render() {
   if (!width_ || !height_) {
     return;
   }
@@ -73,12 +58,8 @@ void VulkanObjects::render() {
 
   // This will clear the framebuffer
   buffer->cmdBeginRendering(
-      {
-          .colorAttachments = {{.loadOp = LoadOp_Clear, .clearColor = {1.0f, 1.0f, 1.0f, 1.0f}}},
-      },
-      {
-          .colorAttachments = {{.texture = device_->getCurrentSwapchainTexture()}},
-      });
+      {.colorAttachments = {{.loadOp = LoadOp_Clear, .clearColor = {1.0f, 1.0f, 1.0f, 1.0f}}}},
+      {.colorAttachments = {{.texture = device_->getCurrentSwapchainTexture()}}});
   buffer->cmdBindRenderPipelineState(renderPipelineState_Triangle_);
   buffer->cmdPushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
   buffer->cmdDraw(PrimitiveType::Triangle, 0, 3);
@@ -92,13 +73,20 @@ int main(int argc, char* argv[]) {
   minilog::initialize(nullptr, {.threadNames = false});
 
   window_ = lvk::initWindow("Vulkan Hello Triangle", width_, height_);
-  vk.init();
+
+  device_ = lvk::createVulkanDeviceWithSwapchain(window_, width_, height_, {});
+  renderPipelineState_Triangle_ = device_->createRenderPipeline(
+      {.shaderStages = device_->createShaderStages(
+           codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
+       .colorAttachments = {{.textureFormat = device_->getCurrentSwapchainTexture()->getFormat()}}},
+      nullptr);
+
+  IGL_ASSERT(renderPipelineState_Triangle_.get());
 
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
-    printf("Window resized! width=%d, height=%d\n", width, height);
     width_ = width;
     height_ = height;
-    vulkan::Device* vulkanDevice = static_cast<vulkan::Device*>(vk.device_.get());
+    vulkan::Device* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
     vulkanDevice->getVulkanContext().initSwapchain(width_, height_);
   });
 
@@ -109,12 +97,13 @@ int main(int argc, char* argv[]) {
     const double newTime = glfwGetTime();
     fps_.tick(newTime - prevTime);
     prevTime = newTime;
-    vk.render();
+    render();
     glfwPollEvents();
   }
 
   // destroy all the Vulkan stuff before closing the window
-  vk = {};
+  renderPipelineState_Triangle_ = nullptr;
+  device_ = nullptr;
 
   glfwDestroyWindow(window_);
   glfwTerminate();

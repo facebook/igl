@@ -128,7 +128,7 @@ VkImageUsageFlags chooseUsageFlags(VkPhysicalDevice pd, VkSurfaceKHR surface, Vk
 namespace igl {
 namespace vulkan {
 
-VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint32_t height) :
+VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height) :
   ctx_(ctx),
   device_(ctx.vkDevice_),
   graphicsQueue_(ctx.deviceQueues_.graphicsQueue),
@@ -204,8 +204,18 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
                                             0,
                                             1,
                                             debugNameImageView);
-    swapchainTextures_.emplace_back(
-        std::make_shared<VulkanTexture>(ctx_, std::move(image), std::move(imageView)));
+    auto texture = std::make_shared<Texture>(
+        ctx_,
+        std::make_shared<VulkanTexture>(ctx_, std::move(image), std::move(imageView)),
+        TextureDesc{
+            .type = TextureType::TwoD,
+            .format = vkFormatToTextureFormat(surfaceFormat_.format),
+            .width = width,
+            .height = height,
+            .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
+            .debugName = "Swapchain Texture",
+        });
+    swapchainTextures_.push_back(texture);
   }
 }
 

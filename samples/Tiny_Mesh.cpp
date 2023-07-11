@@ -422,7 +422,6 @@ int main(int argc, char* argv[]) {
   });
 
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
-    printf("Window resized! width=%d, height=%d\n", width, height);
     width_ = width;
     height_ = height;
     auto* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
@@ -447,11 +446,13 @@ int main(int argc, char* argv[]) {
     const double newTime = glfwGetTime();
     fps_.tick(newTime - prevTime);
     prevTime = newTime;
-    imgui_->beginFrame(framebuffer_);
+    if (width_ && height_) {
+      imgui_->beginFrame(framebuffer_);
 
-    ImGui::Begin("Texture Viewer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::Image(ImTextureID(texture1_.get()), ImVec2(512, 512));
-    ImGui::End();
+      ImGui::Begin("Texture Viewer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+      ImGui::Image(ImTextureID(texture1_.get()), ImVec2(512, 512));
+      ImGui::End();
+    }
 
     render(device_->getCurrentSwapchainTexture(), frameIndex);
     glfwPollEvents();
