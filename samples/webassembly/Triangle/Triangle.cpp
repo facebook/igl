@@ -4,29 +4,17 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
-
 #ifndef __EMSCRIPTEN__
 #error Unsupported OS
 #endif
 #include <emscripten.h>
 
-#include <cassert>
-#include <regex>
-#include <stdio.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 #include <igl/IGL.h>
 #include <igl/opengl/webgl/Context.h>
 #include <igl/opengl/webgl/Device.h>
-
-#if defined(__cpp_lib_format)
-#include <format>
-#define IGL_FORMAT std::format
-#else
-#include <fmt/core.h>
-#define IGL_FORMAT fmt::format
-#endif // __cpp_lib_format
 
 constexpr const char* codeVS = R"(#version 300 es
 
