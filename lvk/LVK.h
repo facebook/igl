@@ -308,18 +308,6 @@ struct DepthStencilState {
   StencilStateDesc frontFaceStencil;
 };
 
-using ColorWriteBits = uint8_t;
-
-enum ColorWriteMask : ColorWriteBits {
-  ColorWriteMask_Disabled = 0,
-  ColorWriteMask_Red = 1 << 0,
-  ColorWriteMask_Green = 1 << 1,
-  ColorWriteMask_Blue = 1 << 2,
-  ColorWriteMask_Alpha = 1 << 3,
-  ColorWriteMask_All =
-      ColorWriteMask_Red | ColorWriteMask_Green | ColorWriteMask_Blue | ColorWriteMask_Alpha,
-};
-
 enum PolygonMode : uint8_t {
   PolygonMode_Fill = 0,
   PolygonMode_Line = 1,
@@ -486,7 +474,6 @@ struct VertexInput final {
 
 struct ColorAttachment {
   TextureFormat textureFormat = TextureFormat::Invalid;
-  ColorWriteBits colorWriteBits = ColorWriteMask_All;
   bool blendEnabled = false;
   BlendOp rgbBlendOp = BlendOp::BlendOp_Add;
   BlendOp alphaBlendOp = BlendOp::BlendOp_Add;
