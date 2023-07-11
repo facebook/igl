@@ -100,6 +100,10 @@ void VulkanObjects::createFramebuffer() {
 }
 
 void VulkanObjects::render() {
+  if (!width_ || !height_) {
+    return;
+  }
+
   fb_.colorAttachments[0].texture = device_->getCurrentSwapchainTexture();
 
   std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();

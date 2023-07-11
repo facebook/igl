@@ -328,6 +328,10 @@ static void initObjects() {
 static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
   IGL_PROFILER_FUNCTION();
 
+  if (!width_ || !height_) {
+    return;
+  }
+
   framebuffer_.colorAttachments[0].texture = nativeDrawable;
 
   const float fov = float(45.0f * (M_PI / 180.0f));
