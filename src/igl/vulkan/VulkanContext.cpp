@@ -135,30 +135,23 @@ bool validateImageLimits(VkImageType imageType,
   if (samples != VK_SAMPLE_COUNT_1_BIT && !IGL_VERIFY(imageType == VK_IMAGE_TYPE_2D)) {
     Result::setResult(
         outResult,
-        Result(Result::Code::InvalidOperation, "Multisampling is supported only for 2D images"));
+        Result(Result::Code::ArgumentOutOfRange, "Multisampling is supported only for 2D images"));
     return false;
   }
 
-  if (imageType == VK_IMAGE_TYPE_1D && !IGL_VERIFY(extent.width <= limits.maxImageDimension1D)) {
+  if (imageType == VK_IMAGE_TYPE_2D && !IGL_VERIFY(extent.width <= limits.maxImageDimension2D &&
+                                                   extent.height <= limits.maxImageDimension2D)) {
     Result::setResult(outResult,
-                      Result(Result::Code::InvalidOperation, "1D texture size exceeded"));
-    return false;
-  } else if (imageType == VK_IMAGE_TYPE_2D &&
-             !IGL_VERIFY(extent.width <= limits.maxImageDimension2D &&
-                         extent.height <= limits.maxImageDimension2D)) {
-    Result::setResult(outResult,
-                      Result(Result::Code::InvalidOperation, "2D texture size exceeded"));
-    return false;
-  } else if (imageType == VK_IMAGE_TYPE_3D &&
-             !IGL_VERIFY(extent.width <= limits.maxImageDimension3D &&
-                         extent.height <= limits.maxImageDimension3D &&
-                         extent.depth <= limits.maxImageDimension3D)) {
-    Result::setResult(outResult,
-                      Result(Result::Code::InvalidOperation, "3D texture size exceeded"));
+                      Result(Result::Code::ArgumentOutOfRange, "2D texture size exceeded"));
     return false;
   }
-
-  Result::setOk(outResult);
+  if (imageType == VK_IMAGE_TYPE_3D && !IGL_VERIFY(extent.width <= limits.maxImageDimension3D &&
+                                                   extent.height <= limits.maxImageDimension3D &&
+                                                   extent.depth <= limits.maxImageDimension3D)) {
+    Result::setResult(outResult,
+                      Result(Result::Code::ArgumentOutOfRange, "3D texture size exceeded"));
+    return false;
+  }
 
   return true;
 }
@@ -389,7 +382,7 @@ igl::Result VulkanContext::queryDevices(HWDeviceType deviceType,
   }
 
   if (outDevices.empty()) {
-    return Result(Result::Code::Unsupported, "No Vulkan devices matching your criteria");
+    return Result(Result::Code::RuntimeError, "No Vulkan devices matching your criteria");
   }
 
   return Result();
@@ -398,7 +391,7 @@ igl::Result VulkanContext::queryDevices(HWDeviceType deviceType,
 igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
   if (desc.guid == 0UL) {
     LLOGW("Invalid hardwareGuid(%lu)", desc.guid);
-    return Result(Result::Code::Unsupported, "Vulkan is not supported");
+    return Result(Result::Code::RuntimeError, "Vulkan is not supported");
   }
 
   vkPhysicalDevice_ = (VkPhysicalDevice)desc.guid;
@@ -442,12 +435,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 
   if (deviceQueues_.graphicsQueueFamilyIndex == DeviceQueues::INVALID) {
     LLOGW("VK_QUEUE_GRAPHICS_BIT is not supported");
-    return Result(Result::Code::Unsupported, "VK_QUEUE_GRAPHICS_BIT is not supported");
+    return Result(Result::Code::RuntimeError, "VK_QUEUE_GRAPHICS_BIT is not supported");
   }
 
   if (deviceQueues_.computeQueueFamilyIndex == DeviceQueues::INVALID) {
     LLOGW("VK_QUEUE_COMPUTE_BIT is not supported");
-    return Result(Result::Code::Unsupported, "VK_QUEUE_COMPUTE_BIT is not supported");
+    return Result(Result::Code::RuntimeError, "VK_QUEUE_COMPUTE_BIT is not supported");
   }
 
   const float queuePriority = 1.0f;
@@ -585,7 +578,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
       return result;
     }
     if (!IGL_VERIFY(image.get())) {
-      return Result(Result::Code::InvalidOperation, "Cannot create VulkanImage");
+      return Result(Result::Code::RuntimeError, "Cannot create VulkanImage");
     }
     auto imageView = image->createImageView(VK_IMAGE_VIEW_TYPE_2D,
                                             dummyTextureFormat,
@@ -596,7 +589,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
                                             1,
                                             "Image View: dummy 1x1");
     if (!IGL_VERIFY(imageView.get())) {
-      return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
+      return Result(Result::Code::RuntimeError, "Cannot create VulkanImageView");
     }
     textures_[0] = std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView));
     const uint32_t pixel = 0xFF000000;
@@ -721,7 +714,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
   if (!vkDevice_ || !immediate_) {
     LLOGW("Call initContext() first");
-    return Result(Result::Code::Unsupported, "Call initContext() first");
+    return Result(Result::Code::RuntimeError, "Call initContext() first");
   }
 
   if (swapchain_) {
@@ -755,7 +748,7 @@ Result VulkanContext::waitIdle() const {
 
 Result VulkanContext::present() const {
   if (!hasSwapchain()) {
-    return Result(Result::Code::InvalidOperation, "No swapchain available");
+    return Result(Result::Code::ArgumentOutOfRange, "No swapchain available");
   }
 
   return swapchain_->present(immediate_->acquireLastSubmitSemaphore());
@@ -766,13 +759,13 @@ std::shared_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSiz
                                                           VkMemoryPropertyFlags memFlags,
                                                           igl::Result* outResult,
                                                           const char* debugName) const {
-#define ENSURE_BUFFER_SIZE(flag, maxSize)                                                      \
-  if (usageFlags & flag) {                                                                     \
-    if (!IGL_VERIFY(bufferSize <= maxSize)) {                                                  \
-      Result::setResult(outResult,                                                             \
-                        Result(Result::Code::InvalidOperation, "Buffer size exceeded" #flag)); \
-      return nullptr;                                                                          \
-    }                                                                                          \
+#define ENSURE_BUFFER_SIZE(flag, maxSize)                                                  \
+  if (usageFlags & flag) {                                                                 \
+    if (!IGL_VERIFY(bufferSize <= maxSize)) {                                              \
+      Result::setResult(outResult,                                                         \
+                        Result(Result::Code::RuntimeError, "Buffer size exceeded" #flag)); \
+      return nullptr;                                                                      \
+    }                                                                                      \
   }
 
   const VkPhysicalDeviceLimits& limits = getVkPhysicalDeviceProperties().limits;
@@ -782,7 +775,6 @@ std::shared_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSiz
   ENSURE_BUFFER_SIZE(VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM, limits.maxStorageBufferRange);
 #undef ENSURE_BUFFER_SIZE
 
-  Result::setOk(outResult);
   return std::make_shared<VulkanBuffer>(
       *this, vkDevice_, bufferSize, usageFlags, memFlags, debugName);
 }
@@ -1005,7 +997,7 @@ std::shared_ptr<VulkanSampler> VulkanContext::createSampler(const VkSamplerCreat
                                                             const char* debugName) const {
   auto sampler = std::make_shared<VulkanSampler>(*this, vkDevice_, ci, debugName);
   if (!IGL_VERIFY(sampler.get())) {
-    Result::setResult(outResult, Result::Code::InvalidOperation);
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange);
     return nullptr;
   }
   if (!freeIndicesSamplers_.empty()) {

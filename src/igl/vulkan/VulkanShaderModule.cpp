@@ -65,7 +65,7 @@ Result compileShader(VkDevice device,
   IGL_PROFILER_FUNCTION();
 
   if (!outShaderModule) {
-    return Result(Result::Code::ArgumentNull, "outShaderModule is NULL");
+    return Result(Result::Code::ArgumentOutOfRange, "outShaderModule is NULL");
   }
 
   const glslang_input_t input = {
@@ -95,7 +95,7 @@ Result compileShader(VkDevice device,
     LLOGW("  %s\n", glslang_shader_get_info_debug_log(shader));
     logShaderSource(code);
     assert(false);
-    return Result(Result::Code::InvalidOperation, "glslang_shader_preprocess() failed");
+    return Result(Result::Code::RuntimeError, "glslang_shader_preprocess() failed");
   }
 
   if (!glslang_shader_parse(shader, &input)) {
@@ -104,7 +104,7 @@ Result compileShader(VkDevice device,
     LLOGW("  %s\n", glslang_shader_get_info_debug_log(shader));
     logShaderSource(glslang_shader_get_preprocessed_code(shader));
     assert(false);
-    return Result(Result::Code::InvalidOperation, "glslang_shader_parse() failed");
+    return Result(Result::Code::RuntimeError, "glslang_shader_parse() failed");
   }
 
   glslang_program_t* program = glslang_program_create();
@@ -119,7 +119,7 @@ Result compileShader(VkDevice device,
     LLOGW("  %s\n", glslang_program_get_info_log(program));
     LLOGW("  %s\n", glslang_program_get_info_debug_log(program));
     assert(false);
-    return Result(Result::Code::InvalidOperation, "glslang_program_link() failed");
+    return Result(Result::Code::RuntimeError, "glslang_program_link() failed");
   }
 
   glslang_spv_options_t options = {

@@ -28,15 +28,6 @@ Result getResultFromVkResult(VkResult result) {
   Result res(Result::Code::RuntimeError, ivkGetVulkanResultString(result));
 
   switch (result) {
-  case VK_ERROR_LAYER_NOT_PRESENT:
-  case VK_ERROR_EXTENSION_NOT_PRESENT:
-  case VK_ERROR_FEATURE_NOT_PRESENT:
-    res.code = Result::Code::Unimplemented;
-    return res;
-  case VK_ERROR_INCOMPATIBLE_DRIVER:
-  case VK_ERROR_FORMAT_NOT_SUPPORTED:
-    res.code = Result::Code::Unsupported;
-    return res;
   case VK_ERROR_OUT_OF_HOST_MEMORY:
   case VK_ERROR_OUT_OF_DEVICE_MEMORY:
   case VK_ERROR_OUT_OF_POOL_MEMORY:

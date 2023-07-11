@@ -34,7 +34,7 @@ Result Buffer::create(const BufferDesc& desc) {
           : 0;
 
   if (desc_.usage == 0) {
-    return Result(Result::Code::InvalidOperation, "Invalid buffer usage");
+    return Result(Result::Code::ArgumentOutOfRange, "Invalid buffer usage");
   }
 
   if (desc_.usage & BufferUsageBits_Index) {

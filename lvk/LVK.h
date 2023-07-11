@@ -131,9 +131,7 @@ enum class TextureType : uint8_t {
 };
 
 enum SamplerFilter : uint8_t { SamplerFilter_Nearest = 0, SamplerFilter_Linear };
-
 enum SamplerMip : uint8_t { SamplerMip_Disabled = 0, SamplerMip_Nearest, SamplerMip_Linear };
-
 enum SamplerWrap : uint8_t { SamplerWrap_Repeat = 0, SamplerWrap_Clamp, SamplerWrap_MirrorRepeat };
 
 enum class HWDeviceType {
@@ -178,12 +176,7 @@ static_assert(sizeof(Color) == 4 * sizeof(float));
 struct Result {
   enum class Code {
     Ok,
-    ArgumentInvalid,
-    ArgumentNull,
     ArgumentOutOfRange,
-    InvalidOperation,
-    Unsupported,
-    Unimplemented,
     RuntimeError,
   };
 
@@ -206,13 +199,6 @@ struct Result {
   static void setResult(Result* outResult, const Result& sourceResult) {
     if (outResult) {
       *outResult = sourceResult;
-    }
-  }
-
-  static void setOk(Result* outResult) {
-    if (outResult) {
-      outResult->code = Code::Ok;
-      outResult->message = "";
     }
   }
 };

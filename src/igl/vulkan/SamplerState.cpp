@@ -128,8 +128,7 @@ Result SamplerState::create(const SamplerStateDesc& desc) {
     return result;
   }
 
-  return sampler_ ? Result()
-                  : Result(Result::Code::InvalidOperation, "Cannot create VulkanSampler");
+  return sampler_ ? Result() : Result(Result::Code::RuntimeError, "Cannot create VulkanSampler");
 }
 
 uint32_t SamplerState::getSamplerId() const {

@@ -29,8 +29,8 @@ Result Texture::create(const TextureDesc& desc) {
   const igl::TextureType type = desc_.type;
   if (!IGL_VERIFY(type == TextureType::TwoD || type == TextureType::Cube ||
                   type == TextureType::ThreeD)) {
-    IGL_ASSERT_MSG(false, "Only 1D, 2D, 3D and Cube textures are supported");
-    return Result(Result::Code::Unimplemented);
+    IGL_ASSERT_MSG(false, "Only 2D, 3D and Cube textures are supported");
+    return Result(Result::Code::RuntimeError);
   }
 
   if (desc_.numMipLevels == 0) {
@@ -41,7 +41,7 @@ Result Texture::create(const TextureDesc& desc) {
   if (desc.numSamples > 1 && desc_.numMipLevels != 1) {
     IGL_ASSERT_MSG(false, "The number of mip levels for multisampled images should be 1");
     return Result(Result::Code::ArgumentOutOfRange,
-                  "The number of mip levels for multisampled images should be 1");
+                  "The number of mip-levels for multisampled images should be 1");
   }
 
   if (desc.numSamples > 1 && type == TextureType::ThreeD) {
@@ -116,7 +116,7 @@ Result Texture::create(const TextureDesc& desc) {
     break;
   default:
     IGL_ASSERT_MSG(false, "Code should NOT be reached");
-    return Result(Result::Code::Unimplemented, "Unimplemented or unsupported texture type.");
+    return Result(Result::Code::RuntimeError, "Unsupported texture type");
   }
 
   Result result;
@@ -137,7 +137,7 @@ Result Texture::create(const TextureDesc& desc) {
     return result;
   }
   if (!IGL_VERIFY(image.get())) {
-    return Result(Result::Code::InvalidOperation, "Cannot create VulkanImage");
+    return Result(Result::Code::RuntimeError, "Cannot create VulkanImage");
   }
 
   // TODO: use multiple image views to allow sampling from the STENCIL buffer
@@ -155,7 +155,7 @@ Result Texture::create(const TextureDesc& desc) {
                                                                       debugNameImageView);
 
   if (!IGL_VERIFY(imageView.get())) {
-    return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
+    return Result(Result::Code::RuntimeError, "Cannot create VulkanImageView");
   }
 
   texture_ = ctx_.createTexture(std::move(image), std::move(imageView));
@@ -255,11 +255,11 @@ bool Texture::isSwapchainTexture() const {
 Result Texture::validateRange(const igl::TextureRangeDesc& range) const {
   if (IGL_UNEXPECTED(range.width == 0 || range.height == 0 || range.depth == 0 ||
                      range.numLayers == 0 || range.numMipLevels == 0)) {
-    return Result{Result::Code::ArgumentInvalid,
+    return Result{Result::Code::ArgumentOutOfRange,
                   "width, height, depth numLayers, and numMipLevels must be at least 1."};
   }
   if (range.mipLevel > desc_.numMipLevels) {
-    return Result{Result::Code::ArgumentOutOfRange, "range mip-level exceeds texture mip-levels"};
+    return Result{Result::Code::ArgumentOutOfRange, "range.mipLevel exceeds texture mip-levels"};
   }
 
   const auto dimensions = getDimensions();

@@ -153,11 +153,10 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
     Result* outResult) {
   if (!IGL_VERIFY(desc.computeShaderModule)) {
-    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing compute shader");
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing compute shader");
     return nullptr;
   }
 
-  Result::setOk(outResult);
   return std::make_shared<ComputePipelineState>(*this, desc);
 }
 
@@ -167,17 +166,17 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
   const bool hasDepthAttachment = desc.depthAttachmentFormat != TextureFormat::Invalid;
   const bool hasAnyAttachments = hasColorAttachments || hasDepthAttachment;
   if (!IGL_VERIFY(hasAnyAttachments)) {
-    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Need at least one attachment");
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Need at least one attachment");
     return nullptr;
   }
 
   if (!IGL_VERIFY(desc.shaderStages.getModule(Stage_Vertex))) {
-    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing vertex shader");
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing vertex shader");
     return nullptr;
   }
 
   if (!IGL_VERIFY(desc.shaderStages.getModule(Stage_Fragment))) {
-    Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing fragment shader");
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing fragment shader");
     return nullptr;
   }
 
@@ -246,7 +245,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
   std::string sourcePatched;
 
   if (!source || !*source) {
-    Result::setResult(outResult, Result::Code::ArgumentNull, "Shader source is empty");
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Shader source is empty");
     return nullptr;
   }
 
