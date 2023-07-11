@@ -60,12 +60,6 @@ if(ANDROID)
   target_link_libraries(IGLOpenGL PUBLIC log GLESv3 EGL)
 endif()
 
-if(ANDROID)
-  add_definitions("-DSUPPORT_ES31_IGL_OPENGL_ANDROID")
-  add_definitions("-DGL_GLEXT_PROTOTYPES")
-  target_link_libraries(IGLOpenGL PUBLIC log GLESv3 EGL)
-endif()
-
 if(APPLE)
   if(IOS)
     set(PLATFORM_FRAMEWORKS "-framework OpenGLES" "-framework CoreVideo")
