@@ -106,9 +106,6 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType, bool 
     enable("VK_KHR_android_surface", ExtensionType::Instance);
     enable(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, ExtensionType::Instance);
 #elif IGL_PLATFORM_LINUX
-    // @fb-only
-    // @fb-only
-    // @fb-only
     enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ExtensionType::Instance);
     enable("VK_KHR_xlib_surface", ExtensionType::Instance);
 #elif IGL_PLATFORM_MACOS
