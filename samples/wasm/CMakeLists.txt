@@ -17,9 +17,10 @@ macro(ADD_DEMO app shellHTML)
     ${app}
     PROPERTIES
       LINK_FLAGS
-      "-s USE_WEBGL2=1 -s GL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=1 -s GL_EMULATE_GLES_VERSION_STRING_FORMAT=1 -s ALLOW_MEMORY_GROWTH=1 -s SINGLE_FILE=1 -s LLD_REPORT_UNDEFINED --shell-file ${shellHTML}"
+      "-s USE_WEBGL2=1 -s USE_GLFW=3 -s GL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=1 -s GL_EMULATE_GLES_VERSION_STRING_FORMAT=1 -s ALLOW_MEMORY_GROWTH=1 -s SINGLE_FILE=1 -s LLD_REPORT_UNDEFINED --shell-file ${shellHTML}"
   )
 
 endmacro()
 
 add_demo("tiny" "../samples/wasm/igl.html")
+add_demo("Triangle" "../samples/wasm/igl.html")
