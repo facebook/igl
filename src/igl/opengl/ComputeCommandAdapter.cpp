@@ -36,7 +36,7 @@ ComputeCommandAdapter::ComputeCommandAdapter(IContext& context) :
 
 void ComputeCommandAdapter::clearTextures() {}
 
-void ComputeCommandAdapter::setTexture(const std::shared_ptr<ITexture>& texture, size_t index) {
+void ComputeCommandAdapter::setTexture(ITexture* texture, size_t index) {
   if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     return;
   }
@@ -131,7 +131,7 @@ void ComputeCommandAdapter::willDispatch() {
       continue;
     }
     auto& textureState = textureStates_[index];
-    if (auto texture = static_cast<Texture*>(textureState.get())) {
+    if (auto* texture = static_cast<Texture*>(textureState)) {
       ret = pipelineState->bindTextureUnit(index, texture);
       CLEAR_DIRTY(textureStatesDirty_, index);
       if (!ret.isOk()) {

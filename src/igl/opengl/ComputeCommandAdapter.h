@@ -36,14 +36,14 @@ class ComputeCommandAdapter final : public WithContext {
     size_t offset;
   };
 
-  using TextureState = std::shared_ptr<ITexture>;
+  using TextureState = ITexture*;
   using TextureStates = std::array<TextureState, IGL_TEXTURE_SAMPLERS_MAX>;
 
  public:
   ComputeCommandAdapter(IContext& context);
 
   void clearTextures();
-  void setTexture(const std::shared_ptr<ITexture>& texture, size_t index);
+  void setTexture(ITexture* texture, size_t index);
 
   void clearBuffers();
   void setBuffer(std::shared_ptr<Buffer> buffer, size_t offset, int index);

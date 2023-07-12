@@ -257,9 +257,7 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
   }
 }
 
-void RenderCommandEncoder::bindTexture(size_t index,
-                                       uint8_t bindTarget,
-                                       const std::shared_ptr<ITexture>& texture) {
+void RenderCommandEncoder::bindTexture(size_t index, uint8_t bindTarget, ITexture* texture) {
   if (IGL_VERIFY(adapter_)) {
     if ((bindTarget & BindTarget::kVertex) != 0) {
       adapter_->setVertexTexture(texture, index);

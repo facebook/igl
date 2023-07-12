@@ -66,7 +66,7 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
   void bindSamplerState(size_t index,
                         uint8_t target,
                         const std::shared_ptr<ISamplerState>& samplerState) override;
-  void bindTexture(size_t index, uint8_t target, const std::shared_ptr<ITexture>& texture) override;
+  void bindTexture(size_t index, uint8_t target, ITexture* texture) override;
 
   void draw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) override;
   void drawIndexed(PrimitiveType primitiveType,

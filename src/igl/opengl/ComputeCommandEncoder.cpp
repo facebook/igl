@@ -91,7 +91,7 @@ void ComputeCommandEncoder::bindUniform(const UniformDesc& uniformDesc, const vo
   }
 }
 
-void ComputeCommandEncoder::bindTexture(size_t index, const std::shared_ptr<ITexture>& texture) {
+void ComputeCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   if (IGL_VERIFY(adapter_)) {
     adapter_->setTexture(texture, index);
   }

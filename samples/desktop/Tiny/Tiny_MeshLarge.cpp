@@ -2039,8 +2039,8 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     auto commands = buffer->createComputeCommandEncoder();
     commands->bindComputePipelineState(computePipelineState_Grayscale_);
     commands->bindTexture(0,
-                          kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0)
-                                              : fbOffscreen_->getColorAttachment(0));
+                          kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0).get()
+                                              : fbOffscreen_->getColorAttachment(0).get());
     commands->dispatchThreadGroups(igl::Dimensions(width_, height_, 1), igl::Dimensions());
     commands->endEncoding();
 

@@ -515,9 +515,7 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
   binder_.bindSamplerState(index, static_cast<igl::vulkan::SamplerState*>(samplerState.get()));
 }
 
-void RenderCommandEncoder::bindTexture(size_t index,
-                                       uint8_t target,
-                                       const std::shared_ptr<ITexture>& texture) {
+void RenderCommandEncoder::bindTexture(size_t index, uint8_t target, ITexture* texture) {
   IGL_PROFILER_FUNCTION();
 
 #if IGL_VULKAN_PRINT_COMMANDS
@@ -530,7 +528,7 @@ void RenderCommandEncoder::bindTexture(size_t index,
     return;
   }
 
-  binder_.bindTexture(index, static_cast<igl::vulkan::Texture*>(texture.get()));
+  binder_.bindTexture(index, static_cast<igl::vulkan::Texture*>(texture));
 }
 
 void RenderCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const void* /*data*/) {

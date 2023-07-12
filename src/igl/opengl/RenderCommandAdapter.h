@@ -40,7 +40,7 @@ class RenderCommandAdapter final : public WithContext {
     size_t offset;
   };
 
-  using TextureState = std::pair<std::shared_ptr<ITexture>, std::shared_ptr<ISamplerState>>;
+  using TextureState = std::pair<ITexture*, std::shared_ptr<ISamplerState>>;
   using TextureStates = std::array<TextureState, IGL_TEXTURE_SAMPLERS_MAX>;
 
  public:
@@ -76,17 +76,13 @@ class RenderCommandAdapter final : public WithContext {
   void setUniform(const UniformDesc& uniformDesc, const void* data, Result* outResult = nullptr);
 
   void clearVertexTexture();
-  void setVertexTexture(const std::shared_ptr<ITexture>& texture,
-                        size_t index,
-                        Result* outResult = nullptr);
+  void setVertexTexture(ITexture* texture, size_t index, Result* outResult = nullptr);
   void setVertexSamplerState(const std::shared_ptr<ISamplerState>& samplerState,
                              size_t index,
                              Result* outResult = nullptr);
 
   void clearFragmentTexture();
-  void setFragmentTexture(const std::shared_ptr<ITexture>& texture,
-                          size_t index,
-                          Result* outResult = nullptr);
+  void setFragmentTexture(ITexture* texture, size_t index, Result* outResult = nullptr);
   void setFragmentSamplerState(const std::shared_ptr<ISamplerState>& samplerState,
                                size_t index,
                                Result* outResult = nullptr);

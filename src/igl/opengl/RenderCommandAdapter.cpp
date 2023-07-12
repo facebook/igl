@@ -166,9 +166,7 @@ void RenderCommandAdapter::clearVertexTexture() {
   vertexTextureStatesDirty_.reset();
 }
 
-void RenderCommandAdapter::setVertexTexture(const std::shared_ptr<ITexture>& texture,
-                                            size_t index,
-                                            Result* outResult) {
+void RenderCommandAdapter::setVertexTexture(ITexture* texture, size_t index, Result* outResult) {
   if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     return;
@@ -195,9 +193,7 @@ void RenderCommandAdapter::clearFragmentTexture() {
   fragmentTextureStatesDirty_.reset();
 }
 
-void RenderCommandAdapter::setFragmentTexture(const std::shared_ptr<ITexture>& texture,
-                                              size_t index,
-                                              Result* outResult) {
+void RenderCommandAdapter::setFragmentTexture(ITexture* texture, size_t index, Result* outResult) {
   if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     return;
@@ -367,7 +363,7 @@ void RenderCommandAdapter::willDraw() {
         continue;
       }
       auto& textureState = vertexTextureStates_[index];
-      if (auto texture = static_cast<Texture*>(textureState.first.get())) {
+      if (auto* texture = static_cast<Texture*>(textureState.first)) {
         ret = pipelineState->bindTextureUnit(index, igl::BindTarget::kVertex);
 
         if (!ret.isOk()) {
@@ -388,7 +384,7 @@ void RenderCommandAdapter::willDraw() {
         continue;
       }
       auto& textureState = fragmentTextureStates_[index];
-      if (auto texture = static_cast<Texture*>(textureState.first.get())) {
+      if (auto* texture = static_cast<Texture*>(textureState.first)) {
         ret = pipelineState->bindTextureUnit(index, igl::BindTarget::kFragment);
 
         if (!ret.isOk()) {
@@ -409,7 +405,7 @@ void RenderCommandAdapter::willDraw() {
 void RenderCommandAdapter::unbindTexture(IContext& context,
                                          size_t textureUnit,
                                          TextureState& textureState) {
-  if (auto texture = static_cast<Texture*>(textureState.first.get())) {
+  if (auto* texture = static_cast<Texture*>(textureState.first)) {
     context.activeTexture(static_cast<GLenum>(GL_TEXTURE0 + textureUnit));
     texture->unbind();
   }

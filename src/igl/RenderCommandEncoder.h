@@ -70,9 +70,11 @@ class IRenderCommandEncoder : public ICommandEncoder {
   // For metal, the index parameter is the index in the texture argument table,
   // by the "texture" attribute specified in the shader.
   // For OpenGL, 'index' is the texture unit
-  virtual void bindTexture(size_t index,
-                           uint8_t target,
-                           const std::shared_ptr<ITexture>& texture) = 0;
+  virtual void bindTexture(size_t index, uint8_t target, ITexture* texture) = 0;
+  // TODO: keep it here until all the client apps are migrated to the new syntax
+  void bindTexture(size_t index, uint8_t target, const std::shared_ptr<ITexture>& texture) {
+    bindTexture(index, target, texture.get());
+  }
 
   /// Binds an individual uniform. Exclusively for use when uniform blocks are not supported.
   virtual void bindUniform(const UniformDesc& uniformDesc, const void* data) = 0;

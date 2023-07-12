@@ -292,16 +292,14 @@ void RenderCommandEncoder::bindPushConstants(size_t /*offset*/,
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
 
-void RenderCommandEncoder::bindTexture(size_t index,
-                                       uint8_t bindTarget,
-                                       const std::shared_ptr<ITexture>& texture) {
+void RenderCommandEncoder::bindTexture(size_t index, uint8_t bindTarget, ITexture* texture) {
   IGL_ASSERT(encoder_);
   IGL_ASSERT_MSG(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
                      bindTarget == BindTarget::kAllGraphics,
                  "Bind target is not valid: %d",
                  bindTarget);
 
-  auto iglTexture = static_cast<Texture*>(texture.get());
+  auto* iglTexture = static_cast<Texture*>(texture);
   auto metalTexture = iglTexture ? iglTexture->get() : nil;
 
   if ((bindTarget & BindTarget::kVertex) != 0) {

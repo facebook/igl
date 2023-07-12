@@ -93,11 +93,11 @@ void ComputeCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, cons
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
 
-void ComputeCommandEncoder::bindTexture(size_t index, const std::shared_ptr<ITexture>& texture) {
+void ComputeCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   IGL_PROFILER_FUNCTION();
 
   IGL_ASSERT(texture);
-  const igl::vulkan::Texture* tex = static_cast<igl::vulkan::Texture*>(texture.get());
+  const igl::vulkan::Texture* tex = static_cast<igl::vulkan::Texture*>(texture);
   const igl::vulkan::VulkanTexture& vkTex = tex->getVulkanTexture();
   const igl::vulkan::VulkanImage& vkImage = vkTex.getVulkanImage();
   if (!vkImage.isStorageImage()) {
@@ -119,7 +119,7 @@ void ComputeCommandEncoder::bindTexture(size_t index, const std::shared_ptr<ITex
       VkImageSubresourceRange{
           vkImage.getImageAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
 
-  binder_.bindTexture(index, static_cast<igl::vulkan::Texture*>(texture.get()));
+  binder_.bindTexture(index, static_cast<igl::vulkan::Texture*>(texture));
 }
 
 void ComputeCommandEncoder::bindBuffer(size_t index,

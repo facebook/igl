@@ -77,7 +77,7 @@ void ComputeCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, cons
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
 
-void ComputeCommandEncoder::bindTexture(size_t index, const std::shared_ptr<ITexture>& texture) {
+void ComputeCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   IGL_ASSERT(encoder_);
 
   if (texture) {
