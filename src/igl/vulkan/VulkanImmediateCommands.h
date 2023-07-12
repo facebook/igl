@@ -7,13 +7,9 @@
 
 #pragma once
 
-#include <vector>
-
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanCommandPool.h>
-#include <igl/vulkan/VulkanFence.h>
 #include <igl/vulkan/VulkanHelpers.h>
-#include <igl/vulkan/VulkanSemaphore.h>
 
 namespace igl {
 namespace vulkan {
@@ -48,13 +44,11 @@ class VulkanImmediateCommands final {
   static_assert(sizeof(SubmitHandle) == sizeof(uint64_t));
 
   struct CommandBufferWrapper {
-    CommandBufferWrapper(VulkanFence&& fence, VulkanSemaphore&& semaphore) :
-      fence_(std::move(fence)), semaphore_(std::move(semaphore)) {}
     VkCommandBuffer cmdBuf_ = VK_NULL_HANDLE;
     VkCommandBuffer cmdBufAllocated_ = VK_NULL_HANDLE;
     SubmitHandle handle_ = {};
-    VulkanFence fence_;
-    VulkanSemaphore semaphore_;
+    VkFence fence_ = VK_NULL_HANDLE;
+    VkSemaphore semaphore_ = VK_NULL_HANDLE;
     bool isEncoding_ = false;
   };
 
@@ -76,7 +70,7 @@ class VulkanImmediateCommands final {
   VkQueue queue_ = VK_NULL_HANDLE;
   VulkanCommandPool commandPool_;
   const char* debugName_ = "";
-  std::vector<CommandBufferWrapper> buffers_;
+  CommandBufferWrapper buffers_[kMaxCommandBuffers];
   SubmitHandle lastSubmitHandle_ = SubmitHandle();
   VkSemaphore lastSubmitSemaphore_ = VK_NULL_HANDLE;
   VkSemaphore waitSemaphore_ = VK_NULL_HANDLE;

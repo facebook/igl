@@ -9,7 +9,6 @@
 
 #include <lvk/LVK.h>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/VulkanSemaphore.h>
 #include <memory>
 #include <vector>
 

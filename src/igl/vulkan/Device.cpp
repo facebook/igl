@@ -90,7 +90,7 @@ void Device::submit(const igl::ICommandBuffer& commandBuffer,
   // Submit to the graphics queue.
   const bool shouldPresent = isGraphicsQueue && ctx.hasSwapchain() && present;
   if (shouldPresent) {
-    ctx.immediate_->waitSemaphore(ctx.swapchain_->acquireSemaphore_->vkSemaphore_);
+    ctx.immediate_->waitSemaphore(ctx.swapchain_->acquireSemaphore_);
   }
 
   vkCmdBuffer->lastSubmitHandle_ = ctx.immediate_->submit(vkCmdBuffer->wrapper_);
@@ -293,8 +293,8 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
     source = sourcePatched.c_str();
   }
 
-  glslang_resource_t glslangResource;
-  ivkGlslangResource(&glslangResource, &ctx_->getVkPhysicalDeviceProperties());
+  const glslang_resource_t glslangResource =
+      lvk::getGlslangResource(ctx_->getVkPhysicalDeviceProperties().limits);
 
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
   const Result result =

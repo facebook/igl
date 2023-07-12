@@ -18,7 +18,6 @@
 namespace igl::vulkan {
 
 class VulkanContext;
-class VulkanSemaphore;
 class VulktanTexture;
 
 class VulkanSwapchain final {
@@ -74,7 +73,7 @@ class VulkanSwapchain final {
   }
 
  public:
-  std::unique_ptr<igl::vulkan::VulkanSemaphore> acquireSemaphore_;
+  VkSemaphore acquireSemaphore_ = VK_NULL_HANDLE;
 
  private:
   VulkanContext& ctx_;

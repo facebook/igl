@@ -15,6 +15,7 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 namespace igl {
 namespace vulkan {
@@ -30,7 +31,6 @@ class VulkanImage;
 class VulkanImageView;
 class VulkanPipelineLayout;
 class VulkanSampler;
-class VulkanSemaphore;
 class VulkanSwapchain;
 class VulkanTexture;
 

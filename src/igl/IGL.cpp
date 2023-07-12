@@ -155,14 +155,4 @@ uint32_t calcNumMipLevels(uint32_t width, uint32_t height) {
   return levels;
 }
 
-ShaderStages IDevice::createShaderStages(const char* vs,
-                                         const char* debugNameVS,
-                                         const char* fs,
-                                         const char* debugNameFS,
-                                         Result* outResult) {
-  auto VS = createShaderModule(igl::ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult);
-  auto FS = createShaderModule(igl::ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult);
-  return igl::ShaderStages(VS, FS);
-}
-
 } // namespace igl

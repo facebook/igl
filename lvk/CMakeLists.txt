@@ -12,10 +12,13 @@ file(GLOB HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DI
 
 add_library(LVKLibrary ${SRC_FILES} ${HEADER_FILES})
 
+lvk_setup_groups("${SRC_FILES}")
+lvk_setup_groups("${HEADER_FILES}")
+
 target_include_directories(LVKLibrary PUBLIC "${IGL_ROOT_DIR}/lvk")
 
-igl_set_cxxstd(LVKLibrary 20)
-igl_set_folder(LVKLibrary "LVK")
+lvk_setup_target(LVKLibrary)
+lvk_set_folder(LVKLibrary "LVK")
 
 add_subdirectory(vulkan)
 

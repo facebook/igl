@@ -8,6 +8,7 @@
 #include "VulkanImmediateCommands.h"
 
 #include <igl/vulkan/Common.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 #include <utility>
 
@@ -28,25 +29,31 @@ VulkanImmediateCommands::VulkanImmediateCommands(VkDevice device,
 
   vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue_);
 
-  buffers_.reserve(kMaxCommandBuffers);
-
   for (uint32_t i = 0; i != kMaxCommandBuffers; i++) {
+    auto& buf = buffers_[i];
     char fenceName[256] = {0};
     char semaphoreName[256] = {0};
     if (debugName) {
       snprintf(fenceName, sizeof(fenceName) - 1, "Fence: %s (cmdbuf %u)", debugName, i);
       snprintf(semaphoreName, sizeof(semaphoreName) - 1, "Semaphore: %s (cmdbuf %u)", debugName, i);
     }
-    buffers_.emplace_back(VulkanFence(device_, VkFenceCreateFlagBits{}, fenceName),
-                          VulkanSemaphore(device, semaphoreName));
-    VK_ASSERT(ivkAllocateCommandBuffer(
-        device_, commandPool_.getVkCommandPool(), &buffers_[i].cmdBufAllocated_));
+    buf.semaphore_ = lvk::createSemaphore(device, semaphoreName);
+    buf.fence_ = lvk::createFence(device, fenceName);
+    VK_ASSERT(
+        ivkAllocateCommandBuffer(device_, commandPool_.getVkCommandPool(), &buf.cmdBufAllocated_));
     buffers_[i].handle_.bufferIndex_ = i;
   }
 }
 
 VulkanImmediateCommands::~VulkanImmediateCommands() {
   waitAll();
+
+  for (auto& buf : buffers_) {
+    // lifetimes of all VkFence objects are managed explicitly
+    // we do not use deferredTask() for them
+    vkDestroyFence(device_, buf.fence_, nullptr);
+    vkDestroySemaphore(device_, buf.semaphore_, nullptr);
+  }
 }
 
 void VulkanImmediateCommands::purge() {
@@ -57,11 +64,11 @@ void VulkanImmediateCommands::purge() {
       continue;
     }
 
-    const VkResult result = vkWaitForFences(device_, 1, &buf.fence_.vkFence_, VK_TRUE, 0);
+    const VkResult result = vkWaitForFences(device_, 1, &buf.fence_, VK_TRUE, 0);
 
     if (result == VK_SUCCESS) {
       VK_ASSERT(vkResetCommandBuffer(buf.cmdBuf_, VkCommandBufferResetFlags{0}));
-      VK_ASSERT(vkResetFences(device_, 1, &buf.fence_.vkFence_));
+      VK_ASSERT(vkResetFences(device_, 1, &buf.fence_));
       buf.cmdBuf_ = VK_NULL_HANDLE;
       numAvailableCommandBuffers_++;
     } else {
@@ -128,8 +135,8 @@ void VulkanImmediateCommands::wait(const SubmitHandle handle) {
     return;
   }
 
-  VK_ASSERT(vkWaitForFences(
-      device_, 1, &buffers_[handle.bufferIndex_].fence_.vkFence_, VK_TRUE, UINT64_MAX));
+  VK_ASSERT(
+      vkWaitForFences(device_, 1, &buffers_[handle.bufferIndex_].fence_, VK_TRUE, UINT64_MAX));
 
   purge();
 }
@@ -144,7 +151,7 @@ void VulkanImmediateCommands::waitAll() {
 
   for (const auto& buf : buffers_) {
     if (buf.cmdBuf_ != VK_NULL_HANDLE && !buf.isEncoding_) {
-      fences[numFences++] = buf.fence_.vkFence_;
+      fences[numFences++] = buf.fence_;
     }
   }
 
@@ -181,7 +188,7 @@ bool VulkanImmediateCommands::isReady(const SubmitHandle handle, bool fastCheckN
     return false;
   }
 
-  return vkWaitForFences(device_, 1, &buf.fence_.vkFence_, VK_TRUE, 0) == VK_SUCCESS;
+  return vkWaitForFences(device_, 1, &buf.fence_, VK_TRUE, 0) == VK_SUCCESS;
 }
 
 VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
@@ -213,12 +220,12 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
       .commandBufferCount = 1u,
       .pCommandBuffers = &wrapper.cmdBuf_,
       .signalSemaphoreCount = 1u,
-      .pSignalSemaphores = &wrapper.semaphore_.vkSemaphore_,
+      .pSignalSemaphores = &wrapper.semaphore_,
   };
-  VK_ASSERT(vkQueueSubmit(queue_, 1u, &si, wrapper.fence_.vkFence_));
+  VK_ASSERT(vkQueueSubmit(queue_, 1u, &si, wrapper.fence_));
   IGL_PROFILER_ZONE_END();
 
-  lastSubmitSemaphore_ = wrapper.semaphore_.vkSemaphore_;
+  lastSubmitSemaphore_ = wrapper.semaphore_;
   lastSubmitHandle_ = wrapper.handle_;
   waitSemaphore_ = VK_NULL_HANDLE;
 

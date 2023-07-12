@@ -12,6 +12,8 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
+#include <glslang/Include/glslang_c_interface.h>
+
 namespace igl {
 namespace vulkan {
 

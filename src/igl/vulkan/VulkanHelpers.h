@@ -250,9 +250,6 @@ void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer,
 
 void ivkCmdEndDebugUtilsLabel(VkCommandBuffer buffer);
 
-void ivkGlslangResource(glslang_resource_t* glslangResource,
-                        const VkPhysicalDeviceProperties* deviceProperties);
-
 #ifdef __cplusplus
 }
 #endif

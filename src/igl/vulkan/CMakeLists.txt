@@ -16,32 +16,15 @@ add_library(IGLVulkan ${SRC_FILES} ${HEADER_FILES})
 igl_set_cxxstd(IGLVulkan 20)
 igl_set_folder(IGLVulkan "IGL")
 
-# glslang
-# cmake-format: off
-set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "")
-set(ENABLE_HLSL             OFF CACHE BOOL "")
-set(ENABLE_CTEST            OFF CACHE BOOL "")
-set(ENABLE_OPT              OFF CACHE BOOL "")
-set(ENABLE_SPVREMAPPER      OFF CACHE BOOL "")
-set(SKIP_GLSLANG_INSTALL    ON  CACHE BOOL "")
-add_subdirectory(${IGL_ROOT_DIR}/third-party/deps/src/glslang "glslang")
-igl_set_folder(GenericCodeGen     "third-party/glslang")
-igl_set_folder(glslang            "third-party/glslang")
-igl_set_folder(MachineIndependent "third-party/glslang")
-igl_set_folder(OGLCompiler        "third-party/glslang")
-igl_set_folder(OSDependent        "third-party/glslang")
-igl_set_folder(SPIRV              "third-party/glslang")
-igl_set_folder(glslang-default-resource-limits "third-party/glslang")
-# cmake-format: on
-
-find_package(Vulkan REQUIRED)
-
 target_link_libraries(IGLVulkan PRIVATE IGLLibrary)
 target_link_libraries(IGLVulkan PUBLIC  glslang SPIRV glslang-default-resource-limits)
 target_link_libraries(IGLVulkan PUBLIC  Vulkan::Vulkan)
 
 target_include_directories(IGLVulkan PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/volk")
 target_include_directories(IGLVulkan PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/vma/include")
+
+target_link_libraries(IGLVulkan PRIVATE LVKLibrary)
+target_link_libraries(IGLVulkan PRIVATE LVKVulkan)
 
 if(WIN32)
   add_definitions("-DVK_USE_PLATFORM_WIN32_KHR=1")

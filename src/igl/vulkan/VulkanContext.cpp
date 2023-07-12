@@ -19,7 +19,6 @@
 #include <igl/vulkan/VulkanPipelineBuilder.h>
 #include <igl/vulkan/VulkanPipelineLayout.h>
 #include <igl/vulkan/VulkanSampler.h>
-#include <igl/vulkan/VulkanSemaphore.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/VulkanTexture.h>
 #include <lvk/vulkan/VulkanUtils.h>
@@ -530,9 +529,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 
   // Create Vulkan Memory Allocator
   if (IGL_VULKAN_USE_VMA) {
-    pimpl_->vma_ =
-        lvk::createVmaAllocator(vkPhysicalDevice_, vkDevice_, vkInstance_, apiVersion);
-     IGL_ASSERT(pimpl_->vma_ != VK_NULL_HANDLE);
+    pimpl_->vma_ = lvk::createVmaAllocator(vkPhysicalDevice_, vkDevice_, vkInstance_, apiVersion);
+    IGL_ASSERT(pimpl_->vma_ != VK_NULL_HANDLE);
   }
 
   // The staging device will use VMA to allocate a buffer, so this needs

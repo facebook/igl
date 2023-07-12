@@ -9,7 +9,7 @@
 
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanSemaphore.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 #include <algorithm>
 
@@ -137,8 +137,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
   surfaceFormat_ =
       chooseSwapSurfaceFormat(ctx.deviceSurfaceFormats_, ctx.config_.swapChainColorSpace);
 
-  acquireSemaphore_ =
-      std::make_unique<igl::vulkan::VulkanSemaphore>(device_, "Semaphore: swapchain-acquire");
+  acquireSemaphore_ = lvk::createSemaphore(device_, "Semaphore: swapchain-acquire");
 
   IGL_ASSERT_MSG(
       ctx.vkSurface_ != VK_NULL_HANDLE,
@@ -221,18 +220,15 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
 
 VulkanSwapchain::~VulkanSwapchain() {
   vkDestroySwapchainKHR(device_, swapchain_, nullptr);
+  vkDestroySemaphore(device_, acquireSemaphore_, nullptr);
 }
 
 std::shared_ptr<Texture> VulkanSwapchain::getCurrentTexture() {
   IGL_PROFILER_FUNCTION();
   if (getNextImage_) {
     // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
-    VK_ASSERT(vkAcquireNextImageKHR(device_,
-                                    swapchain_,
-                                    UINT64_MAX,
-                                    acquireSemaphore_->vkSemaphore_,
-                                    VK_NULL_HANDLE,
-                                    &currentImageIndex_));
+    VK_ASSERT(vkAcquireNextImageKHR(
+        device_, swapchain_, UINT64_MAX, acquireSemaphore_, VK_NULL_HANDLE, &currentImageIndex_));
     // increase the frame number every time we acquire a new swapchain image
     frameNumber_++;
     getNextImage_ = false;

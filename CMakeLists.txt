@@ -13,6 +13,8 @@ option(IGL_WITH_TRACY   "Enable Tracy profiler"    ON)
 option(IGL_DEPLOY_DEPS  "Deploy dependencies via CMake" ON)
 # cmake-format: on
 
+include(cmake/CommonMacros.txt)
+
 if(DEFINED ENV{VULKAN_SDK})
   message(STATUS "VULKAN_SDK=$ENV{VULKAN_SDK}")
   if(NOT EXISTS $ENV{VULKAN_SDK})
@@ -72,6 +74,9 @@ if(IGL_WITH_TRACY)
   add_subdirectory(third-party/deps/src/tracy)
   igl_set_folder(TracyClient "third-party")
 endif()
+
+# temporary
+find_package(Vulkan REQUIRED)
 
 include_directories(.)
 

@@ -747,11 +747,15 @@ class IDevice {
 
   virtual std::shared_ptr<ITexture> getCurrentSwapchainTexture() = 0;
 
-  virtual ShaderStages createShaderStages(const char* vs,
-                                          const char* debugNameVS,
-                                          const char* fs,
-                                          const char* debugNameFS,
-                                          Result* outResult = nullptr);
+  ShaderStages createShaderStages(const char* vs,
+                                  const char* debugNameVS,
+                                  const char* fs,
+                                  const char* debugNameFS,
+                                  Result* outResult = nullptr) {
+    auto VS = createShaderModule(igl::ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult);
+    auto FS = createShaderModule(igl::ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult);
+    return igl::ShaderStages(VS, FS);
+  }
 
  protected:
   IDevice() = default;
