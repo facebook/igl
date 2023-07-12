@@ -33,10 +33,9 @@ using Deleter = void (*)(void* IGL_NULLABLE);
 
 /// Device Capabilities or Metal Features
 constexpr size_t IGL_TEXTURE_SAMPLERS_MAX = 16;
-constexpr size_t IGL_VERTEX_ATTRIBUTES_MAX = 31;
-constexpr size_t IGL_VERTEX_BUFFER_MAX =
-    32; // Artificial limit to use arrays instead of unordered_map for performance savings
-constexpr size_t IGL_VERTEX_BINDINGS_MAX = 31;
+constexpr size_t IGL_VERTEX_ATTRIBUTES_MAX = 24;
+constexpr size_t IGL_VERTEX_BUFFER_MAX = 24;
+constexpr size_t IGL_VERTEX_BINDINGS_MAX = 24;
 constexpr size_t IGL_UNIFORM_BLOCKS_BINDING_MAX = 16;
 
 // See GL_MAX_COLOR_ATTACHMENTS in
