@@ -82,6 +82,9 @@ https://github.com/ocornut/imgui/blob/master/LICENSE.txt
 ios-cmake
 https://github.com/leetal/ios-cmake/blob/master/LICENSE.md
 
+ldrutils
+https://github.com/corporateshark/ldrutils/blob/master/LICENSE.md
+
 Meshoptimizer
 https://github.com/zeux/meshoptimizer/blob/master/LICENSE.md
 

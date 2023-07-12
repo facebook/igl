@@ -253,10 +253,10 @@ bool Texture::isSwapchainTexture() const {
 }
 
 Result Texture::validateRange(const igl::TextureRangeDesc& range) const {
-  if (IGL_UNEXPECTED(range.width == 0 || range.height == 0 || range.depth == 0 ||
-                     range.numLayers == 0 || range.numMipLevels == 0)) {
+  if (!IGL_VERIFY(range.width > 0 && range.height > 0 || range.depth > 0 || range.numLayers > 0 ||
+                  range.numMipLevels > 0)) {
     return Result{Result::Code::ArgumentOutOfRange,
-                  "width, height, depth numLayers, and numMipLevels must be at least 1."};
+                  "width, height, depth numLayers, and numMipLevels must be > 0"};
   }
   if (range.mipLevel > desc_.numMipLevels) {
     return Result{Result::Code::ArgumentOutOfRange, "range.mipLevel exceeds texture mip-levels"};

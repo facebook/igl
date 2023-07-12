@@ -34,7 +34,7 @@ void transitionColorAttachment(VkCommandBuffer buffer, const std::shared_ptr<ITe
 
   const auto& vkTex = static_cast<Texture&>(*colorTex);
   const auto& colorImg = vkTex.getVulkanTexture().getVulkanImage();
-  if (IGL_UNEXPECTED(colorImg.isDepthFormat_ || colorImg.isStencilFormat_)) {
+  if (!IGL_VERIFY(!colorImg.isDepthFormat_ && !colorImg.isStencilFormat_)) {
     IGL_ASSERT_MSG(false, "Color attachments cannot have depth/stencil formats");
     return;
   }

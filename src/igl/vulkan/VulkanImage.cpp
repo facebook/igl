@@ -331,9 +331,6 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
 
   ivkCmdBeginDebugUtilsLabel(
       commandBuffer, "Generate mipmaps", igl::Color(1.f, 0.75f, 0.f).toFloatPtr());
-  SCOPE_EXIT {
-    ivkCmdEndDebugUtilsLabel(commandBuffer);
-  };
 
   const VkImageLayout originalImageLayout = imageLayout_;
 
@@ -419,6 +416,7 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
                         VK_PIPELINE_STAGE_TRANSFER_BIT, // srcStageMask
                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // dstStageMask
                         VkImageSubresourceRange{imageAspectFlags, 0, levels_, 0, layers_});
+  ivkCmdEndDebugUtilsLabel(commandBuffer);
 
   imageLayout_ = originalImageLayout;
 }

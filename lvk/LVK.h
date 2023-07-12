@@ -52,53 +52,15 @@ bool _IGLVerify(bool cond, const char* file, int line, const char* format, ...);
 
 // clang-format off
 #if !defined(NDEBUG) && (defined(DEBUG) || defined(_DEBUG) || defined(__DEBUG))
-  #define IGL_UNEXPECTED(cond) (!_IGLVerify(0 == !!(cond), __FILE__, __LINE__, #cond))
   #define IGL_VERIFY(cond) ::igl::_IGLVerify((cond), __FILE__, __LINE__, #cond)
   #define IGL_ASSERT(cond) (void)IGL_VERIFY(cond)
   #define IGL_ASSERT_MSG(cond, format, ...) (void)::igl::_IGLVerify((cond), __FILE__, __LINE__, (format), ##__VA_ARGS__)
 #else
-  #define IGL_UNEXPECTED(cond) (cond)
   #define IGL_VERIFY(cond) (cond)
   #define IGL_ASSERT(cond)
   #define IGL_ASSERT_MSG(cond, format, ...)
 #endif
-
-#ifndef FB_ANONYMOUS_VARIABLE
-# define FB_CONCATENATE_IMPL(s1, s2) s1##s2
-# define FB_CONCATENATE(s1, s2) FB_CONCATENATE_IMPL(s1, s2)
-# ifdef __COUNTER__
-#  define FB_ANONYMOUS_VARIABLE(str) FB_CONCATENATE(str, __COUNTER__)
-# else
-#  define FB_ANONYMOUS_VARIABLE(str) FB_CONCATENATE(str, __LINE__)
-# endif
-#endif // FB_ANONYMOUS_VARIABLE
 // clang-format on
-
-// a very minimalistic version of folly/ScopeGuard.h
-namespace {
-
-enum class ScopeGuardOnExit {};
-
-template<typename T>
-class ScopeGuard {
- public:
-  explicit ScopeGuard(const T& fn) : fn_(fn) {}
-  ~ScopeGuard() {
-    fn_();
-  }
- private:
-  T fn_;
-};
-
-template<typename T>
-ScopeGuard<T> operator+(ScopeGuardOnExit, T&& fn) {
-  return ScopeGuard<T>(std::forward<T>(fn));
-}
-
-} // namespace
-
-#define SCOPE_EXIT \
-  auto FB_ANONYMOUS_VARIABLE(SCOPE_EXIT_STATE) = ScopeGuardOnExit() + [&]() noexcept
 
 namespace igl {
 

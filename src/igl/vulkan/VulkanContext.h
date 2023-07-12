@@ -10,7 +10,6 @@
 #include <deque>
 #include <future>
 #include <memory>
-#include <unordered_map>
 
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>

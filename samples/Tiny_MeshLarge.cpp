@@ -33,6 +33,7 @@
 #include <gli/save_ktx.hpp>
 #include <gli/texture2d.hpp>
 #include <gli/texture_cube.hpp>
+#include <ldrutils/lutils/ScopeExit.h>
 
 #include <Compress.h>
 #include <meshoptimizer.h>
@@ -1663,8 +1664,9 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
         .numMipLevels = desc.numMipLevels,
     };
     auto gliTex2d = gli::load_ktx(img.compressedFileName.c_str());
-    if (IGL_UNEXPECTED(gliTex2d.empty())) {
+    if (gliTex2d.empty()) {
       printf("Failed to load %s\n", img.compressedFileName.c_str());
+      assert(0);
     }
     const void* data[] = {gliTex2d.data()};
     tex->upload(rangeDesc, data);

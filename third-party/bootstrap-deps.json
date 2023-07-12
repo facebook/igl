@@ -130,5 +130,13 @@
         "url": "https://github.com/corporateshark/minilog",
         "revision": "0040de16cec2d733c49f22645a92e3af36df9ce8"
     }
+},
+{
+    "name": "ldrutils",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/corporateshark/ldrutils",
+        "revision": "b5edab4b02e35f2fdc3944acdd9b55bd9da86e51"
+    }
 }
 ]

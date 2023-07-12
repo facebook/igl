@@ -6,9 +6,10 @@
  */
 
 #include <igl/vulkan/VulkanShaderModule.h>
+#include <igl/vulkan/Common.h>
 
 #include <glslang/Include/glslang_c_interface.h>
-#include <igl/vulkan/Common.h>
+#include <ldrutils/lutils/ScopeExit.h>
 
 namespace {
 
