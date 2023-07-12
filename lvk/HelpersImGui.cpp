@@ -124,7 +124,7 @@ ImGuiRenderer::ImGuiRenderer(igl::IDevice& device, const char* defaultFontTTF, f
   int width, height;
   io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
   fontTexture_ = device.createTexture({.type = igl::TextureType::TwoD,
-                                       .format = igl::TextureFormat::RGBA_UNorm8,
+                                       .format = igl::TextureFormat::RGBA_UN8,
                                        .width = (uint32_t)width,
                                        .height = (uint32_t)height,
                                        .usage = igl::TextureUsageBits_Sampled},

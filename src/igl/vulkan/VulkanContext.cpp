@@ -94,35 +94,21 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
 
 std::vector<VkFormat> getCompatibleDepthStencilFormats(igl::TextureFormat format) {
   switch (format) {
-  case igl::TextureFormat::Z_UNorm16:
+  case igl::TextureFormat::Z_UN16:
     return {VK_FORMAT_D16_UNORM,
             VK_FORMAT_D16_UNORM_S8_UINT,
             VK_FORMAT_D24_UNORM_S8_UINT,
             VK_FORMAT_D32_SFLOAT};
-  case igl::TextureFormat::Z_UNorm24:
+  case igl::TextureFormat::Z_UN24:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D16_UNORM_S8_UINT};
-  case igl::TextureFormat::Z_UNorm32:
+  case igl::TextureFormat::Z_F32:
     return {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
-  case igl::TextureFormat::S8_UInt_Z24_UNorm:
+  case igl::TextureFormat::Z_UN24_S_UI8:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT};
   default:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT};
   }
   return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT};
-}
-
-VkQueueFlagBits getQueueTypeFlag(igl::CommandQueueType type) {
-  switch (type) {
-  case igl::CommandQueueType::Compute:
-    return VK_QUEUE_COMPUTE_BIT;
-  case igl::CommandQueueType::Graphics:
-    return VK_QUEUE_GRAPHICS_BIT;
-  case igl::CommandQueueType::Transfer:
-    return VK_QUEUE_TRANSFER_BIT;
-  }
-#if defined(_MSC_VER)
-  return VK_QUEUE_GRAPHICS_BIT;
-#endif // _MSC_VER
 }
 
 bool validateImageLimits(VkImageType imageType,

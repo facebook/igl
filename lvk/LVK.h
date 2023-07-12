@@ -374,45 +374,35 @@ enum class VertexFormat {
 enum TextureFormat : uint8_t {
   Invalid = 0,
 
-
-  R_UNorm8,
-
+  R_UN8,
+  R_UI16,
+  R_UN16,
   R_F16,
-  R_UInt16,
-  R_UNorm16,
-  RG_UNorm8,
-
-  RGBA_UNorm8,
-  BGRA_UNorm8,
-  RGBA_SRGB,
-  BGRA_SRGB,
-  RG_F16,
-  RG_UInt16,
-  RG_UNorm16,
-  RGB10_A2_UNorm_Rev,
-  RGB10_A2_Uint_Rev,
-  BGR10_A2_Unorm,
   R_F32,
 
+  RG_UN8,
+  RG_UI16,
+  RG_UN16,
+  RG_F16,
+  RG_F32,
+
+  RGBA_UN8,
+  RGBA_UI32,
   RGBA_F16,
-
-  RGBA_UInt32,
   RGBA_F32,
+  RGBA_SRGB8,
 
-  RGB8_ETC2,
-  SRGB8_ETC2,
-  RGB8_Punchthrough_A1_ETC2,
-  SRGB8_Punchthrough_A1_ETC2,
-  RG_EAC_UNorm,
-  RG_EAC_SNorm,
-  R_EAC_UNorm,
-  R_EAC_SNorm,
-  RGBA_BC7_UNORM_4x4,
+  BGRA_UN8,
+  BGRA_SRGB8,
 
-  Z_UNorm16,
-  Z_UNorm24,
-  Z_UNorm32,
-  S8_UInt_Z24_UNorm,
+  ETC2_RGB8,
+  ETC2_SRGB8,
+  BC7_RGBA,
+
+  Z_UN16,
+  Z_UN24,
+  Z_F32,
+  Z_UN24_S_UI8,
 };
 
 enum LoadOp : uint8_t {

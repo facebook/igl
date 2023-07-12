@@ -213,7 +213,7 @@ static void initIGL() {
     texture0_ = device_->createTexture(
         {
             .type = TextureType::TwoD,
-            .format = igl::TextureFormat::BGRA_UNorm8,
+            .format = igl::TextureFormat::BGRA_UN8,
             .width = texWidth,
             .height = texHeight,
             .usage = igl::TextureUsageBits_Sampled,
@@ -257,7 +257,7 @@ static void initIGL() {
     texture1_ = device_->createTexture(
         {
             .type = TextureType::TwoD,
-            .format = igl::TextureFormat::RGBA_UNorm8,
+            .format = igl::TextureFormat::RGBA_UN8,
             .width = (uint32_t)texWidth,
             .height = (uint32_t)texHeight,
             .usage = igl::TextureUsageBits_Sampled,

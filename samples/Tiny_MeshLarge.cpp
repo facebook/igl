@@ -584,7 +584,7 @@ void initIGL() {
     textureDummyWhite_ = device_->createTexture(
         {
             .type = igl::TextureType::TwoD,
-            .format = igl::TextureFormat::RGBA_UNorm8,
+            .format = igl::TextureFormat::RGBA_UN8,
             .width = 1,
             .height = 1,
             .usage = igl::TextureUsageBits_Sampled,
@@ -1033,7 +1033,7 @@ void createShadowMap() {
   const uint32_t h = 4096;
   const TextureDesc desc = {
       .type = TextureType::TwoD,
-      .format = igl::TextureFormat::Z_UNorm16,
+      .format = igl::TextureFormat::Z_UN16,
       .width = w,
       .height = h,
       .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
@@ -1050,7 +1050,7 @@ void createOffscreenFramebuffer() {
   const uint32_t h = height_;
   TextureDesc descDepth = {
       .type = TextureType::TwoD,
-      .format = igl::TextureFormat::Z_UNorm24,
+      .format = igl::TextureFormat::Z_UN24,
       .width = w,
       .height = h,
       .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
@@ -1066,7 +1066,7 @@ void createOffscreenFramebuffer() {
 
   const uint8_t usage =
       TextureUsageBits_Attachment | TextureUsageBits_Sampled | TextureUsageBits_Storage;
-  const TextureFormat format = igl::TextureFormat::RGBA_UNorm8;
+  const TextureFormat format = igl::TextureFormat::RGBA_UN8;
 
   TextureDesc descColor = {
       .type = TextureType::TwoD,
@@ -1344,7 +1344,7 @@ igl::TextureFormat gli2iglTextureFormat(gli::texture2d::format_type format) {
     return igl::TextureFormat::RG_F16;
   }
   IGL_ASSERT_MSG(false, "Code should NOT be reached");
-  return igl::TextureFormat::RGBA_UNorm8;
+  return igl::TextureFormat::RGBA_UN8;
 }
 
 LoadedImage loadImage(const char* fileName, int channels) {
@@ -1622,12 +1622,11 @@ void loadSkyboxTexture() {
 
 igl::TextureFormat formatFromChannels(uint32_t channels) {
   if (channels == 1) {
-    return igl::TextureFormat::R_UNorm8;
+    return igl::TextureFormat::R_UN8;
   }
 
   if (channels == 4) {
-    return kEnableCompression ? igl::TextureFormat::RGBA_BC7_UNORM_4x4
-                              : igl::TextureFormat::RGBA_UNorm8;
+    return kEnableCompression ? igl::TextureFormat::BC7_RGBA : igl::TextureFormat::RGBA_UN8;
   }
 
   return igl::TextureFormat::Invalid;
