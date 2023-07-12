@@ -67,8 +67,8 @@ std::unique_ptr<lvk::ImGuiRenderer> imgui_;
 const char* kCodeComputeTest = R"(
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
-layout (set = 0, binding = 6, rgba8) uniform readonly  image2D kTextures2Din[];
-layout (set = 0, binding = 6, rgba8) uniform writeonly image2D kTextures2Dout[];
+layout (set = 0, binding = 2, rgba8) uniform readonly  image2D kTextures2Din[];
+layout (set = 0, binding = 2, rgba8) uniform writeonly image2D kTextures2Dout[];
 
 layout(push_constant) uniform constants
 {

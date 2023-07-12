@@ -270,12 +270,10 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
 
       layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
-      layout (set = 0, binding = 1) uniform texture2DArray kTextures2DArray[];
-      layout (set = 0, binding = 2) uniform texture3D kTextures3D[];
-      layout (set = 0, binding = 3) uniform textureCube kTexturesCube[];
-      layout (set = 0, binding = 4) uniform sampler kSamplers[];
-      layout (set = 0, binding = 5) uniform samplerShadow kSamplersShadow[];
-      // binding #6 is reserved for STORAGE_IMAGEs: check VulkanContext.cpp
+      layout (set = 0, binding = 0) uniform texture3D kTextures3D[];
+      layout (set = 0, binding = 0) uniform textureCube kTexturesCube[];
+      layout (set = 0, binding = 1) uniform sampler kSamplers[];
+      layout (set = 0, binding = 1) uniform samplerShadow kSamplersShadow[];
 
       vec4 textureBindless2D(uint textureid, uint samplerid, vec2 uv) {
         return texture(sampler2D(kTextures2D[textureid], kSamplers[samplerid]), uv);

@@ -34,13 +34,12 @@ const char* kDefaultValidationLayers[] = {"VK_LAYER_KHRONOS_validation"};
  These bindings should match GLSL declarations injected into shaders in
  Device::compileShaderModule(). Same with SparkSL.
  */
-const uint32_t kBinding_Texture2D = 0;
-const uint32_t kBinding_Texture2DArray = 1;
-const uint32_t kBinding_Texture3D = 2;
-const uint32_t kBinding_TextureCube = 3;
-const uint32_t kBinding_Sampler = 4;
-const uint32_t kBinding_SamplerShadow = 5;
-const uint32_t kBinding_StorageImages = 6;
+enum Bindings {
+  kBinding_Textures = 0,
+  kBinding_Samplers = 1,
+  kBinding_StorageImages = 2,
+  kBinding_NumBindins = 3,
+};
 
 VKAPI_ATTR VkBool32 VKAPI_CALL
 vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
@@ -620,28 +619,19 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 
   {
     // create default descriptor set layout which is going to be shared by graphics pipelines
-    constexpr uint32_t numBindings = 7;
+    constexpr uint32_t numBindings = 3;
     const VkDescriptorSetLayoutBinding bindings[numBindings] = {
         ivkGetDescriptorSetLayoutBinding(
-            kBinding_Texture2D, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures),
+            kBinding_Textures, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures),
         ivkGetDescriptorSetLayoutBinding(
-            kBinding_Texture2DArray, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures),
-        ivkGetDescriptorSetLayoutBinding(
-            kBinding_Texture3D, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures),
-        ivkGetDescriptorSetLayoutBinding(
-            kBinding_TextureCube, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures),
-        ivkGetDescriptorSetLayoutBinding(
-            kBinding_Sampler, VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers),
-        ivkGetDescriptorSetLayoutBinding(
-            kBinding_SamplerShadow, VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers),
+            kBinding_Samplers, VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers),
         ivkGetDescriptorSetLayoutBinding(
             kBinding_StorageImages, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, config_.maxTextures),
     };
     const uint32_t flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
                            VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
                            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
-    const VkDescriptorBindingFlags bindingFlags[numBindings] = {
-        flags, flags, flags, flags, flags, flags, flags};
+    const VkDescriptorBindingFlags bindingFlags[numBindings] = {flags, flags, flags};
     dslBindless_ = std::make_unique<VulkanDescriptorSetLayout>(
         vkDevice_,
         numBindings,
@@ -654,10 +644,6 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     IGL_ASSERT(numSets > 0);
     const VkDescriptorPoolSize poolSizes[numBindings] {
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, numSets * config_.maxTextures},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, numSets * config_.maxTextures},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, numSets * config_.maxTextures},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, numSets * config_.maxTextures},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, numSets * config_.maxSamplers},
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, numSets * config_.maxSamplers},
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, numSets * config_.maxTextures},
     };
@@ -902,50 +888,45 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
                             VK_IMAGE_LAYOUT_UNDEFINED});
   }
 
-  std::vector<VkWriteDescriptorSet> write;
+  VkWriteDescriptorSet write[kBinding_NumBindins] = {};
+  uint32_t numBindings = 0;
 
   // we want to update the next available descriptor set
   const uint32_t nextDSetIndex = (currentDSetIndex_ + 1) % bindlessDSets_.size();
   auto& dsetToUpdate = bindlessDSets_[nextDSetIndex];
 
   if (!infoSampledImages.empty()) {
-    // use the same indexing for every texture type
-    for (uint32_t i = kBinding_Texture2D; i != kBinding_TextureCube + 1; i++) {
-      write.push_back(ivkGetWriteDescriptorSet_ImageInfo(dsetToUpdate.ds,
-                                                         i,
-                                                         VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                                         (uint32_t)infoSampledImages.size(),
-                                                         infoSampledImages.data()));
-    }
+    write[numBindings++] = ivkGetWriteDescriptorSet_ImageInfo(dsetToUpdate.ds,
+                                                              kBinding_Textures,
+                                                              VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                                              (uint32_t)infoSampledImages.size(),
+                                                              infoSampledImages.data());
   };
 
   if (!infoSamplers.empty()) {
-    for (uint32_t i = kBinding_Sampler; i != kBinding_SamplerShadow + 1; i++) {
-      write.push_back(ivkGetWriteDescriptorSet_ImageInfo(dsetToUpdate.ds,
-                                                         i,
-                                                         VK_DESCRIPTOR_TYPE_SAMPLER,
-                                                         (uint32_t)infoSamplers.size(),
-                                                         infoSamplers.data()));
-    }
+    write[numBindings++] = ivkGetWriteDescriptorSet_ImageInfo(dsetToUpdate.ds,
+                                                              kBinding_Samplers,
+                                                              VK_DESCRIPTOR_TYPE_SAMPLER,
+                                                              (uint32_t)infoSamplers.size(),
+                                                              infoSamplers.data());
   }
 
   if (!infoStorageImages.empty()) {
-    write.push_back(ivkGetWriteDescriptorSet_ImageInfo(dsetToUpdate.ds,
-                                                       kBinding_StorageImages,
-                                                       VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                       (uint32_t)infoStorageImages.size(),
-                                                       infoStorageImages.data()));
-  };
+    write[numBindings++] = ivkGetWriteDescriptorSet_ImageInfo(dsetToUpdate.ds,
+                                                              kBinding_StorageImages,
+                                                              VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                              (uint32_t)infoStorageImages.size(),
+                                                              infoStorageImages.data());
+  }
 
   // do not switch to the next descriptor set if there is nothing to update
-  if (!write.empty()) {
+  if (numBindings) {
 #if IGL_VULKAN_PRINT_COMMANDS
     LLOGL("Updating descriptor set %u\n", nextDSetIndex);
 #endif // IGL_VULKAN_PRINT_COMMANDS
     currentDSetIndex_ = nextDSetIndex;
     immediate_->wait(std::exchange(dsetToUpdate.handle, immediate_->getLastSubmitHandle()));
-    vkUpdateDescriptorSets(
-        vkDevice_, static_cast<uint32_t>(write.size()), write.data(), 0, nullptr);
+    vkUpdateDescriptorSets(vkDevice_, numBindings, write, 0, nullptr);
   }
 
   awaitingCreation_ = false;
