@@ -35,8 +35,6 @@ VkResult ivkCreateSwapchain(VkDevice device,
                             uint32_t height,
                             VkSwapchainKHR* outSwapchain);
 
-VkResult ivkCreateSampler(VkDevice device, VkSampler* outSampler);
-
 VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
                                             VkFilter magFilter,
                                             VkSamplerMipmapMode mipmapMode,
@@ -52,15 +50,6 @@ VkResult ivkCreateImageView(VkDevice device,
                             VkFormat imageFormat,
                             VkImageSubresourceRange range,
                             VkImageView* outImageView);
-
-VkResult ivkCreateCommandPool(VkDevice device,
-                              VkCommandPoolCreateFlags flags,
-                              uint32_t queueFamilyIndex,
-                              VkCommandPool* outCommandPool);
-
-VkResult ivkAllocateCommandBuffer(VkDevice device,
-                                  VkCommandPool commandPool,
-                                  VkCommandBuffer* outCommandBuffer);
 
 VkResult ivkAllocateMemory(VkPhysicalDevice physDev,
                            VkDevice device,

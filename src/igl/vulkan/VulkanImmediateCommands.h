@@ -8,7 +8,6 @@
 #pragma once
 
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/VulkanCommandPool.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
 namespace igl {
@@ -68,7 +67,8 @@ class VulkanImmediateCommands final {
  private:
   VkDevice device_ = VK_NULL_HANDLE;
   VkQueue queue_ = VK_NULL_HANDLE;
-  VulkanCommandPool commandPool_;
+  VkCommandPool commandPool_ = VK_NULL_HANDLE;
+  uint32_t queueFamilyIndex_ = 0;
   const char* debugName_ = "";
   CommandBufferWrapper buffers_[kMaxCommandBuffers];
   SubmitHandle lastSubmitHandle_ = SubmitHandle();

@@ -18,16 +18,26 @@ namespace vulkan {
 VulkanImmediateCommands::VulkanImmediateCommands(VkDevice device,
                                                  uint32_t queueFamilyIndex,
                                                  const char* debugName) :
-  device_(device),
-  commandPool_(device_,
-               VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT |
-                   VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
-               queueFamilyIndex,
-               debugName),
-  debugName_(debugName) {
-  IGL_PROFILER_FUNCTION();
+  device_(device), queueFamilyIndex_(queueFamilyIndex), debugName_(debugName) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue_);
+
+  const VkCommandPoolCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+      .flags =
+          VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
+      .queueFamilyIndex = queueFamilyIndex,
+  };
+  VK_ASSERT(vkCreateCommandPool(device, &ci, nullptr, &commandPool_));
+  ivkSetDebugObjectName(device, VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)commandPool_, debugName);
+
+  const VkCommandBufferAllocateInfo ai = {
+      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+      .commandPool = commandPool_,
+      .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+      .commandBufferCount = 1,
+  };
 
   for (uint32_t i = 0; i != kMaxCommandBuffers; i++) {
     auto& buf = buffers_[i];
@@ -39,13 +49,14 @@ VulkanImmediateCommands::VulkanImmediateCommands(VkDevice device,
     }
     buf.semaphore_ = lvk::createSemaphore(device, semaphoreName);
     buf.fence_ = lvk::createFence(device, fenceName);
-    VK_ASSERT(
-        ivkAllocateCommandBuffer(device_, commandPool_.getVkCommandPool(), &buf.cmdBufAllocated_));
+    VK_ASSERT(vkAllocateCommandBuffers(device, &ai, &buf.cmdBufAllocated_));
     buffers_[i].handle_.bufferIndex_ = i;
   }
 }
 
 VulkanImmediateCommands::~VulkanImmediateCommands() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+
   waitAll();
 
   for (auto& buf : buffers_) {
@@ -54,6 +65,8 @@ VulkanImmediateCommands::~VulkanImmediateCommands() {
     vkDestroyFence(device_, buf.fence_, nullptr);
     vkDestroySemaphore(device_, buf.semaphore_, nullptr);
   }
+
+  vkDestroyCommandPool(device_, commandPool_, nullptr);
 }
 
 void VulkanImmediateCommands::purge() {
