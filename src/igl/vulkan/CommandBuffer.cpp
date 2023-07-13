@@ -164,12 +164,6 @@ void CommandBuffer ::transitionToShaderReadOnly(const std::shared_ptr<ITexture>&
   }
 }
 
-void CommandBuffer::waitUntilCompleted() {
-  ctx_.immediate_->wait(lastSubmitHandle_);
-
-  lastSubmitHandle_ = VulkanImmediateCommands::SubmitHandle();
-}
-
 void CommandBuffer::cmdBindComputePipelineState(
     const std::shared_ptr<IComputePipelineState>& pipelineState) {
   IGL_PROFILER_FUNCTION();

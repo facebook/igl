@@ -10,6 +10,7 @@
 #include <deque>
 #include <future>
 #include <memory>
+#include <vector>
 
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
@@ -70,7 +71,6 @@ class VulkanContext final {
   igl::Result initContext(const HWDeviceDesc& desc);
 
   igl::Result initSwapchain(uint32_t width, uint32_t height);
-  VkExtent2D getSwapchainExtent() const;
 
   std::shared_ptr<VulkanImage> createImage(VkImageType imageType,
                                            VkExtent3D extent,
@@ -99,7 +99,6 @@ class VulkanContext final {
     return swapchain_ != nullptr;
   }
 
-  Result waitIdle() const;
   Result present() const;
 
   const VkPhysicalDeviceProperties& getVkPhysicalDeviceProperties() const {
@@ -221,7 +220,6 @@ class VulkanContext final {
   mutable bool awaitingCreation_ = false;
   // a texture/sampler was deleted since the last descriptor set update
   mutable bool awaitingDeletion_ = false;
-  mutable uint64_t lastDeletionFrame_ = 0;
     
   VulkanContextConfig config_;
 

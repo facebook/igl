@@ -175,7 +175,7 @@ VulkanContext::VulkanContext(const VulkanContextConfig& config,
 VulkanContext::~VulkanContext() {
   IGL_PROFILER_FUNCTION();
 
-  waitIdle();
+  VK_ASSERT(vkDeviceWaitIdle(vkDevice_));
 
   textures_.clear();
   samplers_.clear();
@@ -689,7 +689,7 @@ igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
 
   if (swapchain_) {
     // destroy the old swapchain first
-    waitIdle();
+    VK_ASSERT(vkDeviceWaitIdle(vkDevice_));
     swapchain_ = nullptr;
   }
 
@@ -700,20 +700,6 @@ igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
   swapchain_ = std::make_unique<igl::vulkan::VulkanSwapchain>(*this, width, height);
 
   return swapchain_ ? Result() : Result(Result::Code::RuntimeError, "Failed to create swapchain");
-}
-
-VkExtent2D VulkanContext::getSwapchainExtent() const {
-  return hasSwapchain() ? swapchain_->getExtent() : VkExtent2D{0, 0};
-}
-
-Result VulkanContext::waitIdle() const {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
-
-  for (auto queue : {deviceQueues_.graphicsQueue, deviceQueues_.computeQueue}) {
-    VK_ASSERT_RETURN(vkQueueWaitIdle(queue));
-  }
-
-  return getResultFromVkResult(VK_SUCCESS);
 }
 
 Result VulkanContext::present() const {
@@ -929,8 +915,6 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
 
   awaitingCreation_ = false;
   awaitingDeletion_ = false;
-
-  lastDeletionFrame_ = getFrameNumber();
 }
 
 std::shared_ptr<VulkanTexture> VulkanContext::createTexture(

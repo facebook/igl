@@ -23,7 +23,6 @@ class CommandBuffer final : public ICommandBuffer {
   ~CommandBuffer() override;
 
   void transitionToShaderReadOnly(const std::shared_ptr<ITexture>& surface) const override;
-  void waitUntilCompleted() override;
 
   void cmdBindComputePipelineState(
       const std::shared_ptr<IComputePipelineState>& pipelineState) override;

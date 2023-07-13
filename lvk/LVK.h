@@ -661,7 +661,6 @@ class ICommandBuffer {
   virtual ~ICommandBuffer() = default;
 
   virtual void transitionToShaderReadOnly(const std::shared_ptr<ITexture>& surface) const = 0;
-  virtual void waitUntilCompleted() = 0;
 
   virtual void cmdPushDebugGroupLabel(const char* label,
                                       const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
