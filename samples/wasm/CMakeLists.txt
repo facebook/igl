@@ -22,5 +22,5 @@ macro(ADD_DEMO app shellHTML)
 
 endmacro()
 
-add_demo("tiny" "../samples/wasm/igl.html")
-add_demo("Triangle" "../samples/wasm/igl.html")
+add_demo("Tiny" "${IGL_ROOT_DIR}/samples/wasm/igl.html")
+add_demo("Triangle" "${IGL_ROOT_DIR}/samples/wasm/igl.html")
