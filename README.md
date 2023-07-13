@@ -56,9 +56,7 @@ cmake .. -G "Unix Makefiles"
 
 ## Screenshots
 
-![image](.github/screenshot01.png)
-
-![image](.github/screenshot02.png)
+![image](.github/screenshot01.jpg)
 
 ## License
 
