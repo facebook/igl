@@ -16,15 +16,13 @@ add_library(IGLVulkan ${SRC_FILES} ${HEADER_FILES})
 igl_set_cxxstd(IGLVulkan 20)
 igl_set_folder(IGLVulkan "IGL")
 
-target_link_libraries(IGLVulkan PRIVATE IGLLibrary)
+target_link_libraries(IGLVulkan PRIVATE LVKLibrary)
+target_link_libraries(IGLVulkan PRIVATE LVKVulkan)
 target_link_libraries(IGLVulkan PUBLIC  glslang SPIRV glslang-default-resource-limits)
 target_link_libraries(IGLVulkan PUBLIC  Vulkan::Vulkan)
 
 target_include_directories(IGLVulkan PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/volk")
 target_include_directories(IGLVulkan PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/vma/include")
-
-target_link_libraries(IGLVulkan PRIVATE LVKLibrary)
-target_link_libraries(IGLVulkan PRIVATE LVKVulkan)
 
 if(WIN32)
   add_definitions("-DVK_USE_PLATFORM_WIN32_KHR=1")

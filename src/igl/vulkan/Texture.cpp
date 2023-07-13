@@ -22,7 +22,7 @@ Texture::Texture(VulkanContext& ctx, TextureFormat format) :
 Result Texture::create(const TextureDesc& desc) {
   desc_ = desc;
 
-  const VkFormat vkFormat = isDepthOrStencilFormat(desc_.format)
+  const VkFormat vkFormat = lvk::isDepthOrStencilFormat(desc_.format)
                                 ? ctx_.getClosestDepthStencilFormat(desc_.format)
                                 : textureFormatToVkFormat(desc_.format);
 
@@ -49,7 +49,7 @@ Result Texture::create(const TextureDesc& desc) {
     return Result(Result::Code::ArgumentOutOfRange, "Multisampled 3D images are not supported");
   }
 
-  if (!IGL_VERIFY(desc_.numMipLevels <= igl::calcNumMipLevels(desc_.width, desc_.height))) {
+  if (!IGL_VERIFY(desc_.numMipLevels <= lvk::calcNumMipLevels(desc_.width, desc_.height))) {
     return Result(Result::Code::ArgumentOutOfRange,
                   "The number of specified mip-levels is greater than the maximum possible "
                   "number of mip-levels.");
@@ -72,8 +72,9 @@ Result Texture::create(const TextureDesc& desc) {
     usageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
   }
   if (desc_.usage & igl::TextureUsageBits_Attachment) {
-    usageFlags |= isDepthOrStencilFormat(desc_.format) ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
-                                                       : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    usageFlags |= lvk::isDepthOrStencilFormat(desc_.format)
+                      ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+                      : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
   }
 
   // For now, always set this flag so we can read it back

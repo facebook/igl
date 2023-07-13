@@ -1038,7 +1038,7 @@ void createShadowMap() {
       .width = w,
       .height = h,
       .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
-      .numMipLevels = igl::calcNumMipLevels(w, h),
+      .numMipLevels = lvk::calcNumMipLevels(w, h),
       .debugName = "Shadow map",
   };
   fbShadowMap_ = {
@@ -1055,7 +1055,7 @@ void createOffscreenFramebuffer() {
       .width = w,
       .height = h,
       .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
-      .numMipLevels = igl::calcNumMipLevels(w, h),
+      .numMipLevels = lvk::calcNumMipLevels(w, h),
       .debugName = "Offscreen framebuffer (d)",
   };
   if (kNumSamplesMSAA > 1) {
@@ -1075,7 +1075,7 @@ void createOffscreenFramebuffer() {
       .width = w,
       .height = h,
       .usage = usage,
-      .numMipLevels = igl::calcNumMipLevels(w, h),
+      .numMipLevels = lvk::calcNumMipLevels(w, h),
       .debugName = "Offscreen framebuffer (c)",
   };
   if (kNumSamplesMSAA > 1) {
@@ -1290,7 +1290,7 @@ void generateCompressedTexture(LoadedImage img) {
 
   printf("...compressing texture to %s\n", img.compressedFileName.c_str());
 
-  const auto mipmapLevelCount = igl::calcNumMipLevels(img.w, img.h);
+  const auto mipmapLevelCount = lvk::calcNumMipLevels(img.w, img.h);
 
   // Go over all generated mipmap and create a compressed texture
   gli::texture2d::extent_type extents;
@@ -1464,7 +1464,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
             .width = width,
             .height = height,
             .usage = igl::TextureUsageBits_Sampled,
-            .numMipLevels = igl::calcNumMipLevels(texRef.extent().x, texRef.extent().y),
+            .numMipLevels = lvk::calcNumMipLevels(texRef.extent().x, texRef.extent().y),
             .debugName = fileNameKTX.c_str(),
         },
         nullptr);
@@ -1485,7 +1485,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
       .height = height,
       .numLayers = 6,
       // if compression is enabled, upload all mip-levels
-      .numMipLevels = kEnableCompression ? igl::calcNumMipLevels(width, height) : 1u,
+      .numMipLevels = kEnableCompression ? lvk::calcNumMipLevels(width, height) : 1u,
   };
   tex->upload(texRefRange, data);
 
@@ -1504,7 +1504,7 @@ gli::texture_cube gliToCube(Bitmap& bmp) {
 
   const gli::texture_cube::extent_type extents{w, h};
 
-  const auto miplevels = igl::calcNumMipLevels(w, h);
+  const uint32_t miplevels = lvk::calcNumMipLevels(w, h);
 
   gli::texture_cube gliTexCube =
       gli::texture_cube(gli::FORMAT_RGBA32_SFLOAT_PACK32, extents, miplevels);
@@ -1650,7 +1650,7 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
       .width = img.w,
       .height = img.h,
       .usage = igl::TextureUsageBits_Sampled,
-      .numMipLevels = igl::calcNumMipLevels(img.w, img.h),
+      .numMipLevels = lvk::calcNumMipLevels(img.w, img.h),
       .debugName = img.debugName.c_str(),
   };
   auto tex = device_->createTexture(desc, nullptr);

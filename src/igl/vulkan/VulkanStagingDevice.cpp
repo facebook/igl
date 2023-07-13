@@ -164,9 +164,9 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
 
   // find the storage size for all mip-levels being uploaded
   uint32_t layarStorageSize = 0;
-  for (size_t i = 0; i < numMipLevels; ++i) {
-    const uint32_t mipSize = static_cast<uint32_t>(
-        getTextureBytesPerLayer(image.extent_.width, image.extent_.height, 1, texFormat, i));
+  for (uint32_t i = 0; i < numMipLevels; ++i) {
+    const uint32_t mipSize =
+        lvk::getTextureBytesPerLayer(image.extent_.width, image.extent_.height, texFormat, i);
 
     layarStorageSize += mipSize;
     mipSizes.push_back(mipSize);

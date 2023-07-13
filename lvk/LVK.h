@@ -44,17 +44,17 @@
 
 #define IGL_ARRAY_NUM_ELEMENTS(x) (sizeof(x) / sizeof((x)[0]))
 
-namespace igl {
+namespace lvk {
 
-bool _IGLVerify(bool cond, const char* file, int line, const char* format, ...);
+bool Assert(bool cond, const char* file, int line, const char* format, ...);
 
-} // namespace igl
+} // namespace lvk
 
 // clang-format off
 #if !defined(NDEBUG) && (defined(DEBUG) || defined(_DEBUG) || defined(__DEBUG))
-  #define IGL_VERIFY(cond) ::igl::_IGLVerify((cond), __FILE__, __LINE__, #cond)
+  #define IGL_VERIFY(cond) ::lvk::Assert((cond), __FILE__, __LINE__, #cond)
   #define IGL_ASSERT(cond) (void)IGL_VERIFY(cond)
-  #define IGL_ASSERT_MSG(cond, format, ...) (void)::igl::_IGLVerify((cond), __FILE__, __LINE__, (format), ##__VA_ARGS__)
+  #define IGL_ASSERT_MSG(cond, format, ...) (void)::lvk::Assert((cond), __FILE__, __LINE__, (format), ##__VA_ARGS__)
 #else
   #define IGL_VERIFY(cond) (cond)
   #define IGL_ASSERT(cond)
@@ -751,21 +751,24 @@ class IDevice {
                                   const char* fs,
                                   const char* debugNameFS,
                                   Result* outResult = nullptr) {
-    auto VS = createShaderModule(igl::ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult);
-    auto FS = createShaderModule(igl::ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult);
-    return igl::ShaderStages(VS, FS);
+    auto VS = createShaderModule(ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult);
+    auto FS = createShaderModule(ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult);
+    return ShaderStages(VS, FS);
   }
 
  protected:
   IDevice() = default;
 };
 
-bool isDepthOrStencilFormat(TextureFormat format);
-uint32_t calcNumMipLevels(uint32_t width, uint32_t height);
-uint32_t getTextureBytesPerLayer(uint32_t texWidth,
-                                 uint32_t texHeight,
-                                 uint32_t texDepth,
-                                 TextureFormat texFormat,
-                                 uint32_t mipLevel);
-
 } // namespace igl
+
+namespace lvk {
+
+bool isDepthOrStencilFormat(igl::TextureFormat format);
+uint32_t calcNumMipLevels(uint32_t width, uint32_t height);
+uint32_t getTextureBytesPerLayer(uint32_t width,
+                                 uint32_t height,
+                                 igl::TextureFormat format,
+                                 uint32_t level);
+
+} // namespace lvk

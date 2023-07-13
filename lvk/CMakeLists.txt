@@ -25,4 +25,4 @@ add_subdirectory(vulkan)
 target_link_libraries(LVKLibrary PUBLIC LVKVulkan)
 
 # temporary
-target_link_libraries(LVKLibrary PUBLIC IGLLibrary)
+target_link_libraries(LVKLibrary PUBLIC IGLVulkan)

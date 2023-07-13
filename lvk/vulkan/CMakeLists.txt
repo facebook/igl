@@ -38,7 +38,7 @@ lvk_set_folder(glslang-default-resource-limits "third-party/glslang")
 
 find_package(Vulkan REQUIRED)
 
-target_link_libraries(LVKVulkan PRIVATE IGLLibrary)
+target_link_libraries(LVKVulkan PRIVATE LVKLibrary)
 target_link_libraries(LVKVulkan PUBLIC  glslang SPIRV glslang-default-resource-limits)
 target_link_libraries(LVKVulkan PUBLIC  Vulkan::Vulkan)
 

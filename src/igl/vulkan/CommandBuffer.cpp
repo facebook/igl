@@ -150,7 +150,7 @@ void CommandBuffer ::transitionToShaderReadOnly(const std::shared_ptr<ITexture>&
   if (img.samples_ == VK_SAMPLE_COUNT_1_BIT) {
     const VkImageAspectFlags flags =
         vkTex.getVulkanTexture().getVulkanImage().getImageAspectFlags();
-    const VkPipelineStageFlags srcStage = igl::isDepthOrStencilFormat(vkTex.getFormat())
+    const VkPipelineStageFlags srcStage = lvk::isDepthOrStencilFormat(vkTex.getFormat())
                                               ? VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
                                               : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     // set the result of the previous render pass

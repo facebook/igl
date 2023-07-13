@@ -79,12 +79,13 @@ endif()
 find_package(Vulkan REQUIRED)
 
 include_directories(.)
+include_directories(src)
 
 add_subdirectory(src/igl)
 add_subdirectory(lvk)
 
 if(IGL_DEPLOY_DEPS)
-  add_dependencies(IGLLibrary IGLDependencies)
+  add_dependencies(LVKLibrary IGLDependencies)
 endif()
 
 add_library(IGLstb third-party/deps/patches/stb_impl/stb_image.c third-party/deps/patches/stb_impl/stb_image_resize.c
@@ -97,8 +98,8 @@ set(MINILOG_RAW_OUTPUT    ON  CACHE BOOL "")
 add_subdirectory(third-party/deps/src/minilog)
 igl_set_folder(minilog "third-party")
 
-target_link_libraries(IGLLibrary PUBLIC minilog)
-target_include_directories(IGLLibrary PUBLIC "third-party/deps/src")
+target_link_libraries(LVKLibrary PUBLIC minilog)
+target_include_directories(LVKLibrary PUBLIC "third-party/deps/src")
 
 if(IGL_WITH_SAMPLES)
   include_directories("third-party/deps/src")
@@ -135,13 +136,13 @@ if(IGL_WITH_SAMPLES)
 endif()
 
 if(IGL_WITH_TRACY)
-  target_link_libraries(IGLLibrary PUBLIC TracyClient)
+  target_link_libraries(LVKLibrary PUBLIC TracyClient)
 endif()
 
 # ImGui
-target_sources(IGLLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui.cpp")
-target_sources(IGLLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_demo.cpp")
-target_sources(IGLLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_draw.cpp")
-target_sources(IGLLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_tables.cpp")
-target_sources(IGLLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_widgets.cpp")
-target_include_directories(IGLLibrary PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/imgui")
+target_sources(LVKLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui.cpp")
+target_sources(LVKLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_demo.cpp")
+target_sources(LVKLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_draw.cpp")
+target_sources(LVKLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_tables.cpp")
+target_sources(LVKLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_widgets.cpp")
+target_include_directories(LVKLibrary PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/imgui")
