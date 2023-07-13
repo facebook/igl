@@ -21,8 +21,14 @@ NSImage* imageForFileName(const std::string& fileName) {
   if ([nsFileName length] == 0) {
     return nil;
   }
+  NSArray * parts = [nsFileName componentsSeparatedByString: @"."];
+  NSString *name = parts[0];
+  NSString *suffix = parts[1];
+  NSString* path = [@"images/" stringByAppendingString:name];
+
   for (NSBundle* bundle in [NSBundle allBundles]) {
-    NSImage* image = [bundle imageForResource:nsFileName];
+    NSString* imageName = [bundle pathForResource:path ofType:suffix];
+    NSImage* image = [[NSImage alloc] initWithContentsOfFile:imageName];
     if (image) {
       return image;
     }
