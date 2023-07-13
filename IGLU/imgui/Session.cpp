@@ -224,11 +224,14 @@ class Session::Renderer {
 
   igl::RenderPipelineDesc _renderPipelineDesc;
   std::shared_ptr<igl::ITexture> _fontTexture;
+  std::shared_ptr<igl::ISamplerState> _linearSampler;
 };
 
 Session::Renderer::Renderer(igl::IDevice& device) {
   ImGuiIO& io = ImGui::GetIO();
   io.BackendRendererName = "imgui_impl_igl";
+
+  _linearSampler = device.createSamplerState(igl::SamplerStateDesc::newLinear(), nullptr);
 
   { // init fonts
     unsigned char* pixels;
@@ -270,10 +273,7 @@ Session::Renderer::Renderer(igl::IDevice& device) {
 
     // do not set texture this way for Vulkan, since it uses pre defined texture arrays
     if (device.getBackendType() != igl::BackendType::Vulkan) {
-      _material->shaderUniforms().setTexture(
-          "texture",
-          _fontTexture,
-          device.createSamplerState(igl::SamplerStateDesc::newLinear(), nullptr));
+      _material->shaderUniforms().setTexture("texture", _fontTexture.get(), _linearSampler);
     }
   }
 }
@@ -400,10 +400,8 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
           bindData.textureId = tex ? uint32_t(tex->getTextureId()) : 0u;
           cmdEncoder.bindPushConstants(0, &bindData, sizeof(bindData));
         } else {
-          // @fb-only
-          // not implemented because bindTexture() wants std::shared_ptr
-          //   cmdEncoder.bindTexture(0, igl::BindTarget::kFragment,
-          //                          std::shared_ptr<igl::ITexture>(tex));
+          _material->shaderUniforms().setTexture(
+              "texture", tex ? tex : _fontTexture.get(), _linearSampler);
         }
       }
 

@@ -138,7 +138,7 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
                    "Texture names must be unique across all shader stages: %s",
                    iglDesc.name.c_str());
     _textureDescs.push_back(iglDesc);
-    _allTexturesByName[iglDesc.name] = nullptr;
+    _allTexturesByName[iglDesc.name] = TextureSlot{nullptr, nullptr};
   }
 }
 
@@ -422,7 +422,19 @@ void ShaderUniforms::setTexture(const std::string& name,
     IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid texture name: %s\n", name.c_str());
     return;
   }
-  _allTexturesByName[name] = value;
+  _allTexturesByName[name] = TextureSlot{value, value.get()};
+  _allSamplersByName[name] = sampler;
+}
+
+void ShaderUniforms::setTexture(const std::string& name,
+                                igl::ITexture* value,
+                                const std::shared_ptr<igl::ISamplerState>& sampler) {
+  auto it = _allTexturesByName.find(name);
+  if (it == _allTexturesByName.end()) {
+    IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid texture name: %s\n", name.c_str());
+    return;
+  }
+  _allTexturesByName[name] = TextureSlot{nullptr, value}; // non-owning
   _allSamplersByName[name] = sampler;
 }
 
@@ -546,7 +558,8 @@ void ShaderUniforms::bind(igl::IDevice& device,
     }
     encoder.bindTexture(_textureDesc.textureIndex,
                         bindTargetForShaderStage(_textureDesc.shaderStage),
-                        textureIt->second);
+                        textureIt->second.rawTexture ? textureIt->second.rawTexture
+                                                     : textureIt->second.texture.get());
 
     // Assumption: each texture has an associated sampler at the same index in Metal
     encoder.bindSamplerState(_textureDesc.textureIndex,
