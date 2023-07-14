@@ -128,7 +128,7 @@ static_assert(alignof(RenderPipelineDynamicState) == sizeof(uint64_t));
 
 class RenderPipelineState final : public IRenderPipelineState {
  public:
-  RenderPipelineState(const igl::vulkan::Device& device, const RenderPipelineDesc& desc);
+  RenderPipelineState(igl::vulkan::Device& device, const RenderPipelineDesc& desc);
   ~RenderPipelineState() override;
 
   VkPipeline getVkPipeline(const RenderPipelineDynamicState& dynamicState) const;
@@ -138,10 +138,7 @@ class RenderPipelineState final : public IRenderPipelineState {
   }
 
  private:
-  friend class Device;
-
- private:
-  const igl::vulkan::Device& device_;
+  igl::vulkan::Device& device_;
 
   std::shared_ptr<ShaderStages> shaderStages_;
   RenderPipelineDesc desc_;

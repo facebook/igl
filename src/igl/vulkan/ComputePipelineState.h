@@ -17,15 +17,13 @@ class Device;
 
 class ComputePipelineState final : public IComputePipelineState {
  public:
-  ComputePipelineState(const igl::vulkan::Device& device, const ComputePipelineDesc& desc);
+  ComputePipelineState(igl::vulkan::Device& device, const ComputePipelineDesc& desc);
   ~ComputePipelineState() override;
 
   VkPipeline getVkPipeline() const;
 
  private:
-  friend class Device;
-
-  const igl::vulkan::Device& device_;
+  igl::vulkan::Device& device_;
   ComputePipelineDesc desc_;
 
   mutable VkPipeline pipeline_ = VK_NULL_HANDLE;

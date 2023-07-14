@@ -208,7 +208,7 @@ VkBlendFactor blendFactorToVkBlendFactor(igl::BlendFactor value) {
 
 namespace igl::vulkan {
 
-RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
+RenderPipelineState::RenderPipelineState(igl::vulkan::Device& device,
                                          const RenderPipelineDesc& desc) :
   device_(device), desc_(desc) {
   // Iterate and cache vertex input bindings and attributes
@@ -243,6 +243,10 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
 }
 
 RenderPipelineState::~RenderPipelineState() {
+  for (ShaderModuleHandle m : desc_.shaderStages.modules_) {
+    device_.destroyShaderModule(m);
+  }
+
   for (auto p : pipelines_) {
     if (p.second != VK_NULL_HANDLE) {
       device_.getVulkanContext().deferredTask(std::packaged_task<void()>(
@@ -297,9 +301,9 @@ VkPipeline RenderPipelineState::getVkPipeline(
     }
   }
 
-  VulkanShaderModule* vertexModule =
+  const VulkanShaderModule* vertexModule =
       device_.getShaderModule(desc_.shaderStages.getModule(Stage_Vertex));
-  VulkanShaderModule* fragmentModule =
+  const VulkanShaderModule* fragmentModule =
       device_.getShaderModule(desc_.shaderStages.getModule(Stage_Fragment));
 
   IGL_ASSERT(vertexModule);

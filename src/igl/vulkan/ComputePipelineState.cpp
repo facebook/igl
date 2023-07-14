@@ -16,12 +16,13 @@
 namespace igl {
 namespace vulkan {
 
-ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
+ComputePipelineState::ComputePipelineState(igl::vulkan::Device& device,
                                            const ComputePipelineDesc& desc) :
-  device_(device),
-  desc_(desc) {}
+  device_(device), desc_(desc) {}
 
 ComputePipelineState ::~ComputePipelineState() {
+  device_.destroyShaderModule(desc_.computeShaderModule);
+
   if (pipeline_ != VK_NULL_HANDLE) {
     device_.getVulkanContext().deferredTask(std::packaged_task<void()>(
         [device = device_.getVulkanContext().getVkDevice(), pipeline = pipeline_]() {

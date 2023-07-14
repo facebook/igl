@@ -12,8 +12,6 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-#include <glslang/Include/glslang_c_interface.h>
-
 namespace igl {
 namespace vulkan {
 
@@ -23,14 +21,26 @@ Result compileShader(VkDevice device,
                      VkShaderModule* outShaderModule,
                      const glslang_resource_t* glslLangResource = nullptr);
 
-/**
- * @brief RAII wrapper for a Vulkan shader module.
- */
 class VulkanShaderModule final {
  public:
-  /** @brief Instantiates a shader module wrapper with the module and the device that owns it */
+  VulkanShaderModule() = default;
   VulkanShaderModule(VkDevice device, VkShaderModule shaderModule, const char* entryPoint);
   ~VulkanShaderModule();
+
+  VulkanShaderModule(const VulkanShaderModule&) = delete;
+  VulkanShaderModule& operator=(const VulkanShaderModule&) = delete;
+
+  VulkanShaderModule(VulkanShaderModule&& other) :
+    device_(other.device_), entryPoint_(other.entryPoint_) {
+    std::swap(vkShaderModule_, other.vkShaderModule_);
+  }
+
+  VulkanShaderModule& operator=(VulkanShaderModule&& other) noexcept {
+    VulkanShaderModule tmp(std::move(other));
+    std::swap(device_, tmp.device_);
+    std::swap(vkShaderModule_, tmp.vkShaderModule_);
+    return *this;
+  }
 
   VkShaderModule getVkShaderModule() const {
     return vkShaderModule_;

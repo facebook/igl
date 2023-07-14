@@ -49,6 +49,12 @@ namespace igl::vulkan {
 
 Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)) {}
 
+Device::~Device() {
+  if (shaderModulesPool_.numObjects()) {
+    LLOGW("Leaked %u shader modules\n", shaderModulesPool_.numObjects());
+  }
+}
+
 std::shared_ptr<ICommandBuffer> Device::createCommandBuffer() {
   IGL_PROFILER_FUNCTION();
 
@@ -152,7 +158,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
     Result* outResult) {
-  if (!IGL_VERIFY(desc.computeShaderModule)) {
+  if (!IGL_VERIFY(desc.computeShaderModule.valid())) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing compute shader");
     return nullptr;
   }
@@ -170,12 +176,12 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
     return nullptr;
   }
 
-  if (!IGL_VERIFY(desc.shaderStages.getModule(Stage_Vertex))) {
+  if (!IGL_VERIFY(desc.shaderStages.getModule(Stage_Vertex).valid())) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing vertex shader");
     return nullptr;
   }
 
-  if (!IGL_VERIFY(desc.shaderStages.getModule(Stage_Fragment))) {
+  if (!IGL_VERIFY(desc.shaderStages.getModule(Stage_Fragment).valid())) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing fragment shader");
     return nullptr;
   }
@@ -183,18 +189,21 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
   return std::make_shared<RenderPipelineState>(*this, desc);
 }
 
+void Device::destroyShaderModule(ShaderModuleHandle handle) {
+  shaderModulesPool_.destroy(handle);
+}
+
 ShaderModuleHandle Device::createShaderModule(const ShaderModuleDesc& desc, Result* outResult) {
-  std::shared_ptr<VulkanShaderModule> vulkanShaderModule;
   Result result;
-  if (desc.dataSize) {
-    // binary
-    vulkanShaderModule =
-        createShaderModule(desc.data, desc.dataSize, desc.entryPoint, desc.debugName, &result);
-  } else {
-    // text
-    vulkanShaderModule =
-        createShaderModule(desc.stage, desc.data, desc.entryPoint, desc.debugName, &result);
-  }
+  VulkanShaderModule vulkanShaderModule =
+      desc.dataSize ? std::move(
+                          // binary
+                          createShaderModule(
+                              desc.data, desc.dataSize, desc.entryPoint, desc.debugName, &result))
+                    : std::move(
+                          // text
+                          createShaderModule(
+                              desc.stage, desc.data, desc.entryPoint, desc.debugName, &result));
 
   if (!result.isOk()) {
     Result::setResult(outResult, std::move(result));
@@ -202,16 +211,14 @@ ShaderModuleHandle Device::createShaderModule(const ShaderModuleDesc& desc, Resu
   }
   Result::setResult(outResult, std::move(result));
 
-  shaderModules_.push_back(vulkanShaderModule);
-
-  return static_cast<uint32_t>(shaderModules_.size() - 1);
+  return shaderModulesPool_.create(std::move(vulkanShaderModule));
 }
 
-std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
-                                                               size_t length,
-                                                               const char* entryPoint,
-                                                               const char* debugName,
-                                                               Result* outResult) const {
+VulkanShaderModule Device::createShaderModule(const void* data,
+                                              size_t length,
+                                              const char* entryPoint,
+                                              const char* debugName,
+                                              Result* outResult) const {
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
 
   const VkShaderModuleCreateInfo ci = {
@@ -224,20 +231,20 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
   setResultFrom(outResult, result);
 
   if (result != VK_SUCCESS) {
-    return nullptr;
+    return VulkanShaderModule();
   }
 
   VK_ASSERT(ivkSetDebugObjectName(
       ctx_->vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
-  return std::make_shared<VulkanShaderModule>(ctx_->vkDevice_, vkShaderModule, entryPoint);
+  return VulkanShaderModule(ctx_->vkDevice_, vkShaderModule, entryPoint);
 }
 
-std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage,
-                                                               const char* source,
-                                                               const char* entryPoint,
-                                                               const char* debugName,
-                                                               Result* outResult) const {
+VulkanShaderModule Device::createShaderModule(ShaderStage stage,
+                                              const char* source,
+                                              const char* entryPoint,
+                                              const char* debugName,
+                                              Result* outResult) const {
   const VkShaderStageFlagBits vkStage = shaderStageToVkShaderStage(stage);
   IGL_ASSERT(vkStage != VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM);
   IGL_ASSERT(source);
@@ -246,7 +253,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
 
   if (!source || !*source) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Shader source is empty");
-    return nullptr;
+    return VulkanShaderModule();
   }
 
   if (strstr(source, "#version ") == nullptr) {
@@ -297,19 +304,19 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       lvk::getGlslangResource(ctx_->getVkPhysicalDeviceProperties().limits);
 
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
-  const Result result =
-      igl::vulkan::compileShader(ctx_->vkDevice_, vkStage, source, &vkShaderModule, &glslangResource);
+  const Result result = igl::vulkan::compileShader(
+      ctx_->vkDevice_, vkStage, source, &vkShaderModule, &glslangResource);
 
   Result::setResult(outResult, result);
 
   if (!result.isOk()) {
-    return nullptr;
+    return VulkanShaderModule();
   }
 
   VK_ASSERT(ivkSetDebugObjectName(
       ctx_->vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
-  return std::make_shared<VulkanShaderModule>(ctx_->vkDevice_, vkShaderModule, entryPoint);
+  return VulkanShaderModule(ctx_->vkDevice_, vkShaderModule, entryPoint);
 }
 
 std::shared_ptr<ITexture> Device::getCurrentSwapchainTexture() {
@@ -332,9 +339,8 @@ std::shared_ptr<ITexture> Device::getCurrentSwapchainTexture() {
   return tex;
 }
 
-VulkanShaderModule* Device::getShaderModule(ShaderModuleHandle handle) const {
-  IGL_ASSERT(handle < shaderModules_.size());
-  return shaderModules_[handle].get();
+const VulkanShaderModule* Device::getShaderModule(ShaderModuleHandle handle) const {
+  return shaderModulesPool_.get(handle);
 }
 
 std::unique_ptr<VulkanContext> Device::createContext(const VulkanContextConfig& config,

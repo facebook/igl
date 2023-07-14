@@ -48,6 +48,44 @@ namespace lvk {
 
 bool Assert(bool cond, const char* file, int line, const char* format, ...);
 
+// Non-ref counted handles; based on:
+// https://enginearchitecture.realtimerendering.com/downloads/reac2023_modern_mobile_rendering_at_hypehype.pdf
+template<typename ObjectType>
+class Handle final {
+ public:
+  Handle() = default;
+
+  bool empty() const {
+    return gen_ == 0;
+  }
+  bool valid() const {
+    return gen_ != 0;
+  }
+  uint32_t index() const {
+    return index_;
+  }
+  uint32_t gen() const {
+    return gen_;
+  }
+  bool operator==(const Handle<ObjectType>& other) const {
+    return index_ == other.index_ && gen_ == other.gen_;
+  }
+  bool operator!=(const Handle<ObjectType>& other) const {
+    return index_ != other.index_ || gen_ != other.gen_;
+  }
+
+ private:
+  Handle(uint32_t index, uint32_t gen) : index_(index), gen_(gen){};
+
+  template<typename U, typename V>
+  friend class Pool;
+
+  uint32_t index_ = 0;
+  uint32_t gen_ = 0;
+};
+
+static_assert(sizeof(Handle<class Foo>) == sizeof(uint64_t));
+
 } // namespace lvk
 
 // clang-format off
@@ -435,7 +473,8 @@ struct ColorAttachment {
   BlendFactor dstAlphaBlendFactor = BlendFactor_Zero;
 };
 
-using ShaderModuleHandle = uint32_t;
+// dummy
+using ShaderModuleHandle = lvk::Handle<struct ShaderModule>;
 
 struct ShaderModuleDesc {
   ShaderStage stage = Stage_Fragment;
@@ -743,6 +782,7 @@ class IDevice {
 
   virtual ShaderModuleHandle createShaderModule(const ShaderModuleDesc& desc,
                                                 Result* outResult = nullptr) = 0;
+  virtual void destroyShaderModule(ShaderModuleHandle handle) = 0;
 
   virtual std::shared_ptr<ITexture> getCurrentSwapchainTexture() = 0;
 

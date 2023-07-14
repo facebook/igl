@@ -8,6 +8,7 @@
 #pragma once
 
 #include <lvk/LVK.h>
+#include <lvk/Pool.h>
 #include <igl/vulkan/Common.h>
 #include <memory>
 #include <vector>
@@ -22,6 +23,7 @@ class VulkanShaderModule;
 class Device final : public IDevice {
  public:
   explicit Device(std::unique_ptr<VulkanContext> ctx);
+  virtual ~Device();
 
   std::shared_ptr<ICommandBuffer> createCommandBuffer() override;
 
@@ -46,6 +48,7 @@ class Device final : public IDevice {
 
   // Shaders
   ShaderModuleHandle createShaderModule(const ShaderModuleDesc& desc, Result* outResult) override;
+  void destroyShaderModule(ShaderModuleHandle handle) override;
 
   std::shared_ptr<ITexture> getCurrentSwapchainTexture() override;
 
@@ -74,21 +77,21 @@ class Device final : public IDevice {
   friend class ComputePipelineState;
   friend class RenderPipelineState;
 
-  VulkanShaderModule* getShaderModule(ShaderModuleHandle handle) const;
-  std::shared_ptr<VulkanShaderModule> createShaderModule(const void* data,
-                                                         size_t length,
-                                                         const char* entryPoint,
-                                                         const char* debugName,
-                                                         Result* outResult) const;
-  std::shared_ptr<VulkanShaderModule> createShaderModule(ShaderStage stage,
-                                                         const char* source,
-                                                         const char* entryPoint,
-                                                         const char* debugName,
-                                                         Result* outResult) const;
+  const VulkanShaderModule* getShaderModule(ShaderModuleHandle handle) const;
+  VulkanShaderModule createShaderModule(const void* data,
+                                        size_t length,
+                                        const char* entryPoint,
+                                        const char* debugName,
+                                        Result* outResult) const;
+  VulkanShaderModule createShaderModule(ShaderStage stage,
+                                        const char* source,
+                                        const char* entryPoint,
+                                        const char* debugName,
+                                        Result* outResult) const;
 
   std::unique_ptr<VulkanContext> ctx_;
 
-  std::vector<std::shared_ptr<VulkanShaderModule>> shaderModules_ = { nullptr };
+  lvk::Pool<ShaderModule, VulkanShaderModule> shaderModulesPool_;
 };
 
 } // namespace vulkan
