@@ -239,12 +239,12 @@ TEST_F(BlendingTest, RGBASrcAndDstAddTest) {
   cmds->bindRenderPipelineState(pipelineState1);
 
   // Draw half red texture
-  cmds->bindTexture(textureUnit_, BindTarget::kFragment, inputTexture1_);
+  cmds->bindTexture(textureUnit_, BindTarget::kFragment, inputTexture1_.get());
   cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_);
   cmds->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib_, 0);
 
   // Draw half blue texture
-  cmds->bindTexture(textureUnit_, BindTarget::kFragment, inputTexture2_);
+  cmds->bindTexture(textureUnit_, BindTarget::kFragment, inputTexture2_.get());
   cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_);
   cmds->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib_, 0);
 

@@ -325,7 +325,7 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
       IGL_ASSERT_NOT_REACHED();
     }
 
-    commands->bindTexture(_textureUnit, BindTarget::kFragment, tex0_);
+    commands->bindTexture(_textureUnit, BindTarget::kFragment, tex0_.get());
     commands->bindSamplerState(_textureUnit, BindTarget::kFragment, samp0_);
     commands->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib0_, 0);
 

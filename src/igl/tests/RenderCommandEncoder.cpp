@@ -188,7 +188,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
     ASSERT_TRUE(cmdBuffer != nullptr);
 
     auto encoder = cmdBuffer->createRenderCommandEncoder(renderPass_, framebuffer_);
-    encoder->bindTexture(textureUnit_, BindTarget::kFragment, texture_);
+    encoder->bindTexture(textureUnit_, BindTarget::kFragment, texture_.get());
     encoder->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_);
 
     encoder->bindBuffer(data::shader::simplePosIndex, BindTarget::kVertex, vb_, 0);

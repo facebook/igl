@@ -203,7 +203,7 @@ void TextureFormatTestBase::render(std::shared_ptr<ITexture> sampledTexture,
 
   cmds->bindRenderPipelineState(pipelineState);
 
-  cmds->bindTexture(textureUnit_, BindTarget::kFragment, sampledTexture);
+  cmds->bindTexture(textureUnit_, BindTarget::kFragment, sampledTexture.get());
   // Choose appropriate sampler.
   cmds->bindSamplerState(
       textureUnit_, BindTarget::kFragment, linearSampling ? linearSampler_ : nearestSampler_);

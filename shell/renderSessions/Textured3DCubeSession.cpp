@@ -418,7 +418,7 @@ void Textured3DCubeSession::update(igl::SurfaceTextures surfaceTextures) noexcep
   *static_cast<VertexFormat*>(vertUniformBuffer->getData()) = vertexParameters_;
   vertUniformBuffer->bind(device, *pipelineState_, *commands);
 
-  commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_);
+  commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());
   commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_);
 
   commands->bindRenderPipelineState(pipelineState_);

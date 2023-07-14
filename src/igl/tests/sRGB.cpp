@@ -252,7 +252,7 @@ TEST_F(sRGBTest, Passthrough) {
 
   cmds->bindRenderPipelineState(pipelineState);
 
-  cmds->bindTexture(textureUnit_, BindTarget::kFragment, inputTexture_);
+  cmds->bindTexture(textureUnit_, BindTarget::kFragment, inputTexture_.get());
   cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_);
 
   cmds->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib_, 0);

@@ -310,7 +310,7 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
       IGL_ASSERT_NOT_REACHED();
     }
 
-    commands->bindTexture(_textureUnit, BindTarget::kFragment, _tex0);
+    commands->bindTexture(_textureUnit, BindTarget::kFragment, _tex0.get());
     commands->bindSamplerState(_textureUnit, BindTarget::kFragment, _samp0);
     commands->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *_ib0, 0);
 

@@ -1968,11 +1968,12 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
                                          : textures_[imageIdx].alpha ? textures_[imageIdx].alpha
                                                                      : textureDummyBlack_;
 
-      commands->bindTexture(0, igl::BindTarget::kFragment, fbShadowMap_->getDepthAttachment());
-      commands->bindTexture(1, igl::BindTarget::kFragment, ambientTextureReference);
-      commands->bindTexture(2, igl::BindTarget::kFragment, diffuseTextureReference);
-      commands->bindTexture(3, igl::BindTarget::kFragment, alphaTextureReference);
-      commands->bindTexture(4, igl::BindTarget::kFragment, skyboxTextureIrradiance_);
+      commands->bindTexture(
+          0, igl::BindTarget::kFragment, fbShadowMap_->getDepthAttachment().get());
+      commands->bindTexture(1, igl::BindTarget::kFragment, ambientTextureReference.get());
+      commands->bindTexture(2, igl::BindTarget::kFragment, diffuseTextureReference.get());
+      commands->bindTexture(3, igl::BindTarget::kFragment, alphaTextureReference.get());
+      commands->bindTexture(4, igl::BindTarget::kFragment, skyboxTextureIrradiance_.get());
       commands->bindSamplerState(0, igl::BindTarget::kFragment, samplerShadow_);
       commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_);
       commands->bindSamplerState(2, igl::BindTarget::kFragment, sampler_);
@@ -1992,8 +1993,8 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
       shapeStart += numVertices;
     }
 #else
-    commands->bindTexture(0, igl::BindTarget::kFragment, fbShadowMap_->getDepthAttachment());
-    commands->bindTexture(1, igl::BindTarget::kFragment, skyboxTextureIrradiance_);
+    commands->bindTexture(0, igl::BindTarget::kFragment, fbShadowMap_->getDepthAttachment().get());
+    commands->bindTexture(1, igl::BindTarget::kFragment, skyboxTextureIrradiance_.get());
     commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_);
     commands->bindSamplerState(1, igl::BindTarget::kFragment, samplerShadow_);
     commands->drawIndexed(
@@ -2009,10 +2010,10 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     // Skybox
     commands->bindRenderPipelineState(renderPipelineState_Skybox_);
 #if USE_OPENGL_BACKEND
-    commands->bindTexture(1, igl::BindTarget::kFragment, skyboxTextureReference_);
+    commands->bindTexture(1, igl::BindTarget::kFragment, skyboxTextureReference_.get());
     commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_);
 #else
-    commands->bindTexture(0, igl::BindTarget::kFragment, skyboxTextureReference_);
+    commands->bindTexture(0, igl::BindTarget::kFragment, skyboxTextureReference_.get());
 #endif
     commands->pushDebugGroupLabel("Render Skybox", igl::Color(0, 1, 0));
     commands->bindDepthStencilState(depthStencilStateLEqual_);
@@ -2058,8 +2059,8 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     commands->pushDebugGroupLabel("Swapchain Output", igl::Color(1, 0, 0));
     commands->bindTexture(0,
                           igl::BindTarget::kFragment,
-                          kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0)
-                                              : fbOffscreen_->getColorAttachment(0));
+                          kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0).get()
+                                              : fbOffscreen_->getColorAttachment(0).get());
 #if USE_OPENGL_BACKEND
     commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_);
 #endif
