@@ -111,4 +111,4 @@ cmake --build .
 ## License
 
 IGL is released under the MIT license, see [LICENSE.md](./LICENSE.md) for the full text as well as third-party library
-acknowledgements. SparkSL Compiler is released under the SparkSL Compiler License, see LICENSE.md for full text.
+acknowledgements. SparkSL Compiler is released under the SparkSL Compiler License, see [LICENSE](https://github.com/facebook/igl/releases/download/SparkSL/SparkSL.LICENSE) for full text.

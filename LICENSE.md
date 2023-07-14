@@ -74,6 +74,9 @@ https://github.com/leetal/ios-cmake/blob/master/LICENSE.md
 Meshoptimizer
 https://github.com/zeux/meshoptimizer/blob/master/LICENSE.md
 
+Spark SL
+https://github.com/facebook/igl/releases/download/SparkSL/SparkSL.LICENSE
+
 stb
 https://github.com/nothings/stb/blob/master/LICENSE
 

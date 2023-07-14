@@ -154,5 +154,13 @@
         "url": "https://github.com/leetal/ios-cmake.git",
         "revision": "04d91f6675dabb3c97df346a32f6184b0a7ef845"
     }
+},
+{
+    "name": "spark-sl",
+    "source": {
+        "type": "archive",
+        "url": "https://github.com/facebook/igl/releases/download/SparkSL/SparkSL_Compiler-v0.0.1.zip",
+        "sha1": "d636517b5fd3103f7aeca2ed6d4c9ad3e2e97964"
+    }
 }
 ]
