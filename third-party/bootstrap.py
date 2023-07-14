@@ -429,7 +429,7 @@ def runPythonScript(script_name):
     log("Running Python script " + script_name)
     patch_dir = os.path.join(BASE_DIR, "patches")
     filename = os.path.join(patch_dir, script_name)
-    dieIfNonZero(executeCommand(TOOL_COMMAND_PYTHON + " " + filename, False));
+    dieIfNonZero(executeCommand(TOOL_COMMAND_PYTHON + " " + escapifyPath(filename), False));
 
 
 def findToolCommand(command, paths_to_search, required = False):
