@@ -5,12 +5,12 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-project("IGL" CXX C)
+project("LVK" CXX C)
 
 # cmake-format: off
-option(IGL_WITH_SAMPLES "Enable sample demo apps"  ON)
-option(IGL_WITH_TRACY   "Enable Tracy profiler"    ON)
-option(IGL_DEPLOY_DEPS  "Deploy dependencies via CMake" ON)
+option(LVK_WITH_SAMPLES "Enable sample demo apps"  ON)
+option(LVK_WITH_TRACY   "Enable Tracy profiler"    ON)
+option(LVK_DEPLOY_DEPS  "Deploy dependencies via CMake" ON)
 # cmake-format: on
 
 include(cmake/CommonMacros.txt)
@@ -34,27 +34,27 @@ endfunction()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # cmake-format: off
-message(STATUS "IGL_WITH_SAMPLES = ${IGL_WITH_SAMPLES}")
-message(STATUS "IGL_WITH_TRACY   = ${IGL_WITH_TRACY}")
-message(STATUS "IGL_DEPLOY_DEPS  = ${IGL_DEPLOY_DEPS}")
+message(STATUS "LVK_WITH_SAMPLES = ${LVK_WITH_SAMPLES}")
+message(STATUS "LVK_WITH_TRACY   = ${LVK_WITH_TRACY}")
+message(STATUS "LVK_DEPLOY_DEPS  = ${LVK_DEPLOY_DEPS}")
 # cmake-format: on
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
-message(STATUS "IGL generator : " ${CMAKE_GENERATOR})
-message(STATUS "IGL build type: " ${CMAKE_BUILD_TYPE})
+message(STATUS "Generator : " ${CMAKE_GENERATOR})
+message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 
-set(IGL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(IGL_DEPS_CACHE_FILE "${IGL_ROOT_DIR}/third-party/.bootstrap-deps.json")
+set(LVK_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(IGL_DEPS_CACHE_FILE "${LVK_ROOT_DIR}/third-party/.bootstrap-deps.json")
 find_package(Python3 COMPONENTS Interpreter)
 
-message(STATUS "IGL_ROOT_DIR = " ${IGL_ROOT_DIR})
+message(STATUS "LVK_ROOT_DIR = " ${LVK_ROOT_DIR})
 
-if(IGL_DEPLOY_DEPS)
+if(LVK_DEPLOY_DEPS)
   # deploy dependencies during configuration
-  execute_process(COMMAND ${Python3_EXECUTABLE} deploy_deps.py WORKING_DIRECTORY ${IGL_ROOT_DIR} COMMAND_ERROR_IS_FATAL ANY)
+  execute_process(COMMAND ${Python3_EXECUTABLE} deploy_deps.py WORKING_DIRECTORY ${LVK_ROOT_DIR} COMMAND_ERROR_IS_FATAL ANY)
 
   if(NOT EXISTS ${IGL_DEPS_CACHE_FILE})
     message(FATAL_ERROR "Cannot deploy dependencies.")
@@ -62,14 +62,14 @@ if(IGL_DEPLOY_DEPS)
 
   # regenerate dependencies when .bootstrap-deps.json is older than bootstrap-deps.json
   add_custom_command(COMMAND ${Python3_EXECUTABLE} deploy_deps.py OUTPUT ${IGL_DEPS_CACHE_FILE}
-                     DEPENDS "${IGL_ROOT_DIR}/third-party/bootstrap-deps.json" WORKING_DIRECTORY ${IGL_ROOT_DIR})
+                     DEPENDS "${LVK_ROOT_DIR}/third-party/bootstrap-deps.json" WORKING_DIRECTORY ${LVK_ROOT_DIR})
   add_custom_target(IGLDependencies DEPENDS ${IGL_DEPS_CACHE_FILE})
 
   igl_set_folder(IGLDependencies "IGL")
 endif()
 
-if(IGL_WITH_TRACY)
-  add_definitions("-DIGL_WITH_TRACY=1")
+if(LVK_WITH_TRACY)
+  add_definitions("-DLVK_WITH_TRACY=1")
   add_definitions("-DTRACY_ENABLE=1")
   add_subdirectory(third-party/deps/src/tracy)
   igl_set_folder(TracyClient "third-party")
@@ -84,7 +84,7 @@ include_directories(src)
 add_subdirectory(src/igl)
 add_subdirectory(lvk)
 
-if(IGL_DEPLOY_DEPS)
+if(LVK_DEPLOY_DEPS)
   add_dependencies(LVKLibrary IGLDependencies)
 endif()
 
@@ -101,7 +101,7 @@ igl_set_folder(minilog "third-party")
 target_link_libraries(LVKLibrary PUBLIC minilog)
 target_include_directories(LVKLibrary PUBLIC "third-party/deps/src")
 
-if(IGL_WITH_SAMPLES)
+if(LVK_WITH_SAMPLES)
   include_directories("third-party/deps/src")
   include_directories("third-party/deps/src/bc7enc")
   include_directories("third-party/deps/src/gli")
@@ -135,14 +135,14 @@ if(IGL_WITH_SAMPLES)
   igl_set_folder(glfw          "third-party/GLFW3")
 endif()
 
-if(IGL_WITH_TRACY)
+if(LVK_WITH_TRACY)
   target_link_libraries(LVKLibrary PUBLIC TracyClient)
 endif()
 
 # ImGui
-target_sources(LVKLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui.cpp")
-target_sources(LVKLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_demo.cpp")
-target_sources(LVKLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_draw.cpp")
-target_sources(LVKLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_tables.cpp")
-target_sources(LVKLibrary PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_widgets.cpp")
-target_include_directories(LVKLibrary PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/imgui")
+target_sources(LVKLibrary PRIVATE "${LVK_ROOT_DIR}/third-party/deps/src/imgui/imgui.cpp")
+target_sources(LVKLibrary PRIVATE "${LVK_ROOT_DIR}/third-party/deps/src/imgui/imgui_demo.cpp")
+target_sources(LVKLibrary PRIVATE "${LVK_ROOT_DIR}/third-party/deps/src/imgui/imgui_draw.cpp")
+target_sources(LVKLibrary PRIVATE "${LVK_ROOT_DIR}/third-party/deps/src/imgui/imgui_tables.cpp")
+target_sources(LVKLibrary PRIVATE "${LVK_ROOT_DIR}/third-party/deps/src/imgui/imgui_widgets.cpp")
+target_include_directories(LVKLibrary PUBLIC "${LVK_ROOT_DIR}/third-party/deps/src/imgui")

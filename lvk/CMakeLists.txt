@@ -15,7 +15,7 @@ add_library(LVKLibrary ${SRC_FILES} ${HEADER_FILES})
 lvk_setup_groups("${SRC_FILES}")
 lvk_setup_groups("${HEADER_FILES}")
 
-target_include_directories(LVKLibrary PUBLIC "${IGL_ROOT_DIR}/lvk")
+target_include_directories(LVKLibrary PUBLIC "${LVK_ROOT_DIR}/lvk")
 
 lvk_setup_target(LVKLibrary)
 lvk_set_folder(LVKLibrary "LVK")

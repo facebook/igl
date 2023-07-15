@@ -57,7 +57,7 @@ static constexpr TextureFormatProperties properties[] = {
 } // namespace
 
 static_assert(sizeof(TextureFormatProperties) <= sizeof(uint32_t));
-static_assert(IGL_ARRAY_NUM_ELEMENTS(properties) == igl::TextureFormat::Z_UN24_S_UI8 + 1);
+static_assert(LVK_ARRAY_NUM_ELEMENTS(properties) == igl::TextureFormat::Z_UN24_S_UI8 + 1);
 
 bool lvk::isDepthOrStencilFormat(igl::TextureFormat format) {
   return properties[format].depth || properties[format].stencil;

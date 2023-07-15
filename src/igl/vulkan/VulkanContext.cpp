@@ -238,7 +238,7 @@ void VulkanContext::createInstance() {
       .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
       .pNext = nullptr,
       .enabledValidationFeatureCount =
-          config_.enableValidation ? (uint32_t)IGL_ARRAY_NUM_ELEMENTS(validationFeaturesEnabled)
+          config_.enableValidation ? (uint32_t)LVK_ARRAY_NUM_ELEMENTS(validationFeaturesEnabled)
                                    : 0u,
       .pEnabledValidationFeatures = config_.enableValidation ? validationFeaturesEnabled : nullptr,
   };
@@ -259,7 +259,7 @@ void VulkanContext::createInstance() {
       .flags = 0,
       .pApplicationInfo = &appInfo,
       .enabledLayerCount =
-          config_.enableValidation ? (uint32_t)IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0,
+          config_.enableValidation ? (uint32_t)LVK_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0,
       .ppEnabledLayerNames = config_.enableValidation ? kDefaultValidationLayers : nullptr,
       .enabledExtensionCount = (uint32_t)instanceExtensionNames.size(),
       .ppEnabledExtensionNames = instanceExtensionNames.data(),
@@ -448,7 +448,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
   const char* deviceExtensionNames[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
-#if defined(IGL_WITH_TRACY)
+#if defined(LVK_WITH_TRACY)
     VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
 #endif
   };
@@ -495,9 +495,9 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
       .pNext = &deviceFeatures13,
       .queueCreateInfoCount = numQueues,
       .pQueueCreateInfos = ciQueue,
-      .enabledLayerCount = (uint32_t)IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers),
+      .enabledLayerCount = (uint32_t)LVK_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers),
       .ppEnabledLayerNames = kDefaultValidationLayers,
-      .enabledExtensionCount = (uint32_t)IGL_ARRAY_NUM_ELEMENTS(deviceExtensionNames),
+      .enabledExtensionCount = (uint32_t)LVK_ARRAY_NUM_ELEMENTS(deviceExtensionNames),
       .ppEnabledExtensionNames = deviceExtensionNames,
       .pEnabledFeatures = &deviceFeatures,
   };
@@ -783,7 +783,7 @@ void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
                           bindPoint,
                           pipelineLayout_->getVkPipelineLayout(),
                           0,
-                          IGL_ARRAY_NUM_ELEMENTS(sets),
+                          LVK_ARRAY_NUM_ELEMENTS(sets),
                           sets,
                           0,
                           nullptr);

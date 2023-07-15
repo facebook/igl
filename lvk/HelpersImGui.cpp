@@ -194,7 +194,7 @@ void ImGuiRenderer::endFrame(igl::IDevice& device, igl::ICommandBuffer& cmdBuffe
   const ImVec2 clip_scale = drawData->FramebufferScale;
 
   std::vector<DrawableData>& curFrameDrawables = drawables_[frameIndex_];
-  frameIndex_ = (frameIndex_ + 1) % IGL_ARRAY_NUM_ELEMENTS(drawables_);
+  frameIndex_ = (frameIndex_ + 1) % LVK_ARRAY_NUM_ELEMENTS(drawables_);
 
   cmdBuffer.cmdPushConstants(0, &bindData, sizeof(bindData));
 
