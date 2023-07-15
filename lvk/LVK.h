@@ -93,15 +93,23 @@ class Handle final {
 
 static_assert(sizeof(Handle<class Foo>) == sizeof(uint64_t));
 
+// specialized with dummy structs for type safety
+using ComputePipelineHandle = lvk::Handle<struct ComputePipeline>;
+using RenderPipelineHandle = lvk::Handle<struct RenderPipeline>;
+using ShaderModuleHandle = lvk::Handle<struct ShaderModule>;
+
+// forward declarations to access incomplete type IDevice
+void destroy(igl::IDevice* device, lvk::ComputePipelineHandle handle);
+void destroy(igl::IDevice* device, lvk::RenderPipelineHandle handle);
+void destroy(igl::IDevice* device, lvk::ShaderModuleHandle handle);
+
 template<typename HandleType>
 class Holder final {
  public:
   Holder() = default;
   Holder(igl::IDevice* device, HandleType handle) : device_(device), handle_(handle) {}
   ~Holder() {
-    if (device_) {
-      device_->destroy(handle_);
-    }
+    lvk::destroy(device_, handle_);
   }
   Holder(const Holder&) = delete;
   Holder(Holder&& other) : device_(other.device_), handle_(other.handle_) {
@@ -132,9 +140,7 @@ class Holder final {
   }
 
   void reset() {
-    if (device_) {
-      device_->destroy(handle_);
-    }
+    lvk::destroy(device_, handle_);
     device_ = nullptr;
     handle_ = HandleType{};
   }
@@ -148,11 +154,6 @@ class Holder final {
   igl::IDevice* device_ = nullptr;
   HandleType handle_;
 };
-
-// specialized with dummy structs for type safety
-using ComputePipelineHandle = lvk::Handle<struct ComputePipeline>;
-using RenderPipelineHandle = lvk::Handle<struct RenderPipeline>;
-using ShaderModuleHandle = lvk::Handle<struct ShaderModule>;
 
 } // namespace lvk
 

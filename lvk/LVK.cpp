@@ -107,3 +107,21 @@ bool lvk::Assert(bool cond, const char* file, int line, const char* format, ...)
   }
   return cond;
 }
+
+void lvk::destroy(igl::IDevice* device, lvk::ComputePipelineHandle handle) {
+  if (device) {
+    device->destroy(handle);
+  }
+}
+
+void lvk::destroy(igl::IDevice* device, lvk::RenderPipelineHandle handle) {
+  if (device) {
+    device->destroy(handle);
+  }
+}
+
+void lvk::destroy(igl::IDevice* device, lvk::ShaderModuleHandle handle) {
+  if (device) {
+    device->destroy(handle);
+  }
+}
