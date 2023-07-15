@@ -16,7 +16,7 @@ std::vector<HWDeviceDesc> HWDevice::queryDevices(const HWDeviceQueryDesc& /*desc
                                                  Result* outResult) {
   std::vector<HWDeviceDesc> devices;
 
-  HWDeviceDesc defaultDevice(1L, HWDeviceType::DiscreteGpu, "Default");
+  HWDeviceDesc defaultDevice(1L, HWDeviceType::DiscreteGpu, 0, "Default");
   devices.push_back(defaultDevice);
 
   Result::setOk(outResult);

@@ -366,6 +366,7 @@ igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
 
     outDevices.emplace_back((uintptr_t)vkDevices[i],
                             deviceType,
+                            deviceProperties.vendorID,
                             deviceProperties.deviceName,
                             std::to_string(deviceProperties.vendorID));
   }

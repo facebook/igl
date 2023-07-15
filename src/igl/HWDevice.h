@@ -58,9 +58,15 @@ struct HWDeviceDesc {
   std::string name;
   /** @brief Implementation-specific vendor name */
   std::string vendor;
+  /** @brief Unique identifier of a vendor */
+  uint32_t vendorId;
 
-  HWDeviceDesc(uintptr_t guid, HWDeviceType type, std::string name = "", std::string vendor = "") :
-    guid(guid), type(type), name(std::move(name)), vendor(std::move(vendor)) {}
+  HWDeviceDesc(uintptr_t guid,
+               HWDeviceType type,
+               uint32_t vendorId = 0,
+               std::string name = "",
+               std::string vendor = "") :
+    guid(guid), type(type), name(std::move(name)), vendor(std::move(vendor)), vendorId(vendorId) {}
 };
 
 } // namespace igl
