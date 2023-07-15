@@ -11,29 +11,6 @@
 #include <glslang/Include/glslang_c_interface.h>
 #include <ldrutils/lutils/ScopeExit.h>
 
-namespace {
-
-// Logs GLSL shaders with line numbers annotation
-void logShaderSource(const char* text) {
-  uint32_t line = 1;
-
-  LLOGL("\n(%3u) ", line);
-
-  while (text && *text) {
-    if (*text == '\n') {
-      LLOGL("\n(%3u) ", ++line);
-    } else if (*text == '\r') {
-      // skip it to support Windows/UNIX EOLs
-    } else {
-      LLOGL("%c", *text);
-    }
-    text++;
-  }
-  LLOGL("\n");
-}
-
-} // namespace
-
 namespace igl {
 namespace vulkan {
 
@@ -94,7 +71,7 @@ Result compileShader(VkDevice device,
     LLOGW("Shader preprocessing failed:\n");
     LLOGW("  %s\n", glslang_shader_get_info_log(shader));
     LLOGW("  %s\n", glslang_shader_get_info_debug_log(shader));
-    logShaderSource(code);
+    lvk::logShaderSource(code);
     assert(false);
     return Result(Result::Code::RuntimeError, "glslang_shader_preprocess() failed");
   }
@@ -103,7 +80,7 @@ Result compileShader(VkDevice device,
     LLOGW("Shader parsing failed:\n");
     LLOGW("  %s\n", glslang_shader_get_info_log(shader));
     LLOGW("  %s\n", glslang_shader_get_info_debug_log(shader));
-    logShaderSource(glslang_shader_get_preprocessed_code(shader));
+    lvk::logShaderSource(glslang_shader_get_preprocessed_code(shader));
     assert(false);
     return Result(Result::Code::RuntimeError, "glslang_shader_parse() failed");
   }

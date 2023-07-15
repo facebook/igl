@@ -9,6 +9,8 @@
 
 #include "LVK.h"
 
+#include <assert.h>
+
 namespace {
 
 struct TextureFormatProperties {
@@ -124,4 +126,23 @@ void lvk::destroy(igl::IDevice* device, lvk::ShaderModuleHandle handle) {
   if (device) {
     device->destroy(handle);
   }
+}
+
+// Logs GLSL shaders with line numbers annotation
+void lvk::logShaderSource(const char* text) {
+  uint32_t line = 1;
+
+  LLOGL("\n(%3u) ", line);
+
+  while (text && *text) {
+    if (*text == '\n') {
+      LLOGL("\n(%3u) ", ++line);
+    } else if (*text == '\r') {
+      // skip it to support Windows/UNIX EOLs
+    } else {
+      LLOGL("%c", *text);
+    }
+    text++;
+  }
+  LLOGL("\n");
 }

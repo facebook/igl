@@ -873,5 +873,6 @@ uint32_t getTextureBytesPerLayer(uint32_t width,
                                  uint32_t height,
                                  igl::TextureFormat format,
                                  uint32_t level);
+void logShaderSource(const char* text);
 
 } // namespace lvk
