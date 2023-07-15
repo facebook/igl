@@ -418,12 +418,12 @@ std::unique_ptr<IDevice> device_;
 igl::Framebuffer fbMain_; // swapchain
 igl::Framebuffer fbOffscreen_;
 igl::Framebuffer fbShadowMap_;
-std::shared_ptr<IComputePipelineState> computePipelineState_Grayscale_;
-std::shared_ptr<IRenderPipelineState> renderPipelineState_Mesh_;
-std::shared_ptr<IRenderPipelineState> renderPipelineState_MeshWireframe_;
-std::shared_ptr<IRenderPipelineState> renderPipelineState_Shadow_;
-std::shared_ptr<IRenderPipelineState> renderPipelineState_Skybox_;
-std::shared_ptr<IRenderPipelineState> renderPipelineState_Fullscreen_;
+lvk::Holder<lvk::ComputePipelineHandle> computePipelineState_Grayscale_;
+lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Mesh_;
+lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_MeshWireframe_;
+lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Shadow_;
+lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Skybox_;
+lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Fullscreen_;
 std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
 std::shared_ptr<IBuffer> sbMaterials_; // storage buffer for materials
 std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerFrameShadow_, ubPerObject_;
@@ -901,23 +901,18 @@ void initModel() {
 }
 
 void createComputePipeline() {
-  if (computePipelineState_Grayscale_) {
+  if (computePipelineState_Grayscale_.valid()) {
     return;
   }
 
   computePipelineState_Grayscale_ =
-      device_->createComputePipeline({.computeShaderModule = device_->createShaderModule(
-                                          {
-                                              kCodeComputeTest,
-                                              Stage_Compute,
-                                              "Shader Module: grayscale (comp)",
-                                          },
-                                          nullptr)},
+      device_->createComputePipeline({.shaderStages = device_->createShaderStages(
+                                          kCodeComputeTest, "Shader Module: grayscale (comp)")},
                                      nullptr);
 }
 
 void createRenderPipelines() {
-  if (renderPipelineState_Mesh_) {
+  if (renderPipelineState_Mesh_.valid()) {
     return;
   }
 
@@ -953,15 +948,14 @@ void createRenderPipelines() {
             kCodeVS, "Shader Module: main (vert)", kCodeFS, "Shader Module: main (frag)"),
         .colorAttachments = {{.textureFormat =
                                   fbOffscreen_.colorAttachments[0].texture->getFormat()}},
+        .depthAttachmentFormat = fbOffscreen_.depthStencilAttachment.texture
+                                     ? fbOffscreen_.depthStencilAttachment.texture->getFormat()
+                                     : igl::TextureFormat::Invalid,
         .cullMode = igl::CullMode_Back,
         .frontFaceWinding = igl::WindingMode_CCW,
         .samplesCount = kNumSamplesMSAA,
         .debugName = "Pipeline: mesh",
     };
-
-    if (fbOffscreen_.depthStencilAttachment.texture) {
-      desc.depthAttachmentFormat = fbOffscreen_.depthStencilAttachment.texture->getFormat();
-    }
 
     renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
 
@@ -1006,7 +1000,7 @@ void createRenderPipelines() {
 }
 
 void createRenderPipelineSkybox() {
-  if (renderPipelineState_Skybox_) {
+  if (renderPipelineState_Skybox_.valid()) {
     return;
   }
 
@@ -1157,7 +1151,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
     buffer->cmdBeginRendering(renderPassShadow_, fbShadowMap_);
     {
-      buffer->cmdBindRenderPipelineState(renderPipelineState_Shadow_);
+      buffer->cmdBindRenderPipeline(renderPipelineState_Shadow_);
       buffer->cmdPushDebugGroupLabel("Render Shadows", igl::Color(1, 0, 0));
       buffer->cmdBindDepthStencilState(depthStencilState_);
       buffer->cmdBindVertexBuffer(0, vb0_, 0);
@@ -1175,7 +1169,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
       buffer->cmdPopDebugGroupLabel();
     }
     buffer->cmdEndRendering();
-    buffer->transitionToShaderReadOnly(fbShadowMap_.depthStencilAttachment.texture);
+    buffer->transitionToShaderReadOnly(*fbShadowMap_.depthStencilAttachment.texture);
     device_->submit(*buffer, igl::CommandQueueType::Graphics);
 
     fbShadowMap_.depthStencilAttachment.texture->generateMipmap();
@@ -1191,7 +1185,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     buffer->cmdBeginRendering(renderPassOffscreen_, fbOffscreen_);
     {
       // Scene
-      buffer->cmdBindRenderPipelineState(renderPipelineState_Mesh_);
+      buffer->cmdBindRenderPipeline(renderPipelineState_Mesh_);
       buffer->cmdPushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
       buffer->cmdBindDepthStencilState(depthStencilState_);
       buffer->cmdBindVertexBuffer(0, vb0_, 0);
@@ -1209,21 +1203,21 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
       buffer->cmdDrawIndexed(
           PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
       if (enableWireframe_) {
-        buffer->cmdBindRenderPipelineState(renderPipelineState_MeshWireframe_);
+        buffer->cmdBindRenderPipeline(renderPipelineState_MeshWireframe_);
         buffer->cmdDrawIndexed(
             PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
       }
       buffer->cmdPopDebugGroupLabel();
 
       // Skybox
-      buffer->cmdBindRenderPipelineState(renderPipelineState_Skybox_);
+      buffer->cmdBindRenderPipeline(renderPipelineState_Skybox_);
       buffer->cmdPushDebugGroupLabel("Render Skybox", igl::Color(0, 1, 0));
       buffer->cmdBindDepthStencilState(depthStencilStateLEqual_);
       buffer->cmdDraw(PrimitiveType::Triangle, 0, 3 * 6 * 2);
       buffer->cmdPopDebugGroupLabel();
     }
     buffer->cmdEndRendering();
-    buffer->transitionToShaderReadOnly(fbOffscreen_.colorAttachments[0].texture);
+    buffer->transitionToShaderReadOnly(*fbOffscreen_.colorAttachments[0].texture);
     device_->submit(*buffer, CommandQueueType::Graphics);
   }
 
@@ -1234,7 +1228,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
                                         : fbOffscreen_.colorAttachments[0].texture;
     std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
 
-    buffer->cmdBindComputePipelineState(computePipelineState_Grayscale_);
+    buffer->cmdBindComputePipeline(computePipelineState_Grayscale_);
 
     struct {
       uint32_t texture;
@@ -1260,7 +1254,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     // This will clear the framebuffer
     buffer->cmdBeginRendering(renderPassMain_, fbMain_);
     {
-      buffer->cmdBindRenderPipelineState(renderPipelineState_Fullscreen_);
+      buffer->cmdBindRenderPipeline(renderPipelineState_Fullscreen_);
       buffer->cmdPushDebugGroupLabel("Swapchain Output", igl::Color(1, 0, 0));
       struct {
         uint32_t texture;

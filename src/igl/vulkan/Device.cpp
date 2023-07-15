@@ -49,12 +49,6 @@ namespace igl::vulkan {
 
 Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)) {}
 
-Device::~Device() {
-  if (shaderModulesPool_.numObjects()) {
-    LLOGW("Leaked %u shader modules\n", shaderModulesPool_.numObjects());
-  }
-}
-
 std::shared_ptr<ICommandBuffer> Device::createCommandBuffer() {
   IGL_PROFILER_FUNCTION();
 
@@ -155,45 +149,53 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   return res.isOk() ? texture : nullptr;
 }
 
-std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
+lvk::Holder<lvk::ComputePipelineHandle> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
     Result* outResult) {
-  if (!IGL_VERIFY(desc.computeShaderModule.valid())) {
+  if (!IGL_VERIFY(desc.shaderStages.getModule(Stage_Compute).valid())) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing compute shader");
-    return nullptr;
+    return {};
   }
 
-  return std::make_shared<ComputePipelineState>(*this, desc);
+  return {this, ctx_->computePipelinesPool_.create(ComputePipelineState(this, desc))};
 }
 
-std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderPipelineDesc& desc,
-                                                                   Result* outResult) {
+lvk::Holder<lvk::RenderPipelineHandle> Device::createRenderPipeline(const RenderPipelineDesc& desc,
+                                                                    Result* outResult) {
   const bool hasColorAttachments = desc.getNumColorAttachments() > 0;
   const bool hasDepthAttachment = desc.depthAttachmentFormat != TextureFormat::Invalid;
   const bool hasAnyAttachments = hasColorAttachments || hasDepthAttachment;
   if (!IGL_VERIFY(hasAnyAttachments)) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Need at least one attachment");
-    return nullptr;
+    return {};
   }
 
   if (!IGL_VERIFY(desc.shaderStages.getModule(Stage_Vertex).valid())) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing vertex shader");
-    return nullptr;
+    return {};
   }
 
   if (!IGL_VERIFY(desc.shaderStages.getModule(Stage_Fragment).valid())) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing fragment shader");
-    return nullptr;
+    return {};
   }
 
-  return std::make_shared<RenderPipelineState>(*this, desc);
+  return {this, ctx_->renderPipelinesPool_.create(RenderPipelineState(this, desc))};
 }
 
-void Device::destroyShaderModule(ShaderModuleHandle handle) {
-  shaderModulesPool_.destroy(handle);
+void Device::destroy(lvk::ComputePipelineHandle handle) {
+  ctx_->computePipelinesPool_.destroy(handle);
 }
 
-ShaderModuleHandle Device::createShaderModule(const ShaderModuleDesc& desc, Result* outResult) {
+void Device::destroy(lvk::RenderPipelineHandle handle){
+  ctx_->renderPipelinesPool_.destroy(handle);
+}
+
+void Device::destroy(lvk::ShaderModuleHandle handle) {
+  ctx_->shaderModulesPool_.destroy(handle);
+}
+
+lvk::Holder<lvk::ShaderModuleHandle> Device::createShaderModule(const ShaderModuleDesc& desc, Result* outResult) {
   Result result;
   VulkanShaderModule vulkanShaderModule =
       desc.dataSize ? std::move(
@@ -207,11 +209,11 @@ ShaderModuleHandle Device::createShaderModule(const ShaderModuleDesc& desc, Resu
 
   if (!result.isOk()) {
     Result::setResult(outResult, std::move(result));
-    return ShaderModuleHandle();
+    return {};
   }
   Result::setResult(outResult, std::move(result));
 
-  return shaderModulesPool_.create(std::move(vulkanShaderModule));
+  return {this, ctx_->shaderModulesPool_.create(std::move(vulkanShaderModule))};
 }
 
 VulkanShaderModule Device::createShaderModule(const void* data,
@@ -337,10 +339,6 @@ std::shared_ptr<ITexture> Device::getCurrentSwapchainTexture() {
                  "Invalid image format");
 
   return tex;
-}
-
-const VulkanShaderModule* Device::getShaderModule(ShaderModuleHandle handle) const {
-  return shaderModulesPool_.get(handle);
 }
 
 std::unique_ptr<VulkanContext> Device::createContext(const VulkanContextConfig& config,

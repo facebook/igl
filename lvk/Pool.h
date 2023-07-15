@@ -42,7 +42,7 @@ class Pool {
     assert(numObjects_ > 0);
     const uint32_t index = handle.index();
     assert(index < objects_.size());
-    assert(handle.gen() == objects_[index].gen_); // already deleted
+    assert(handle.gen() == objects_[index].gen_); // double deletion
     objects_[index].obj_ = ImplObjectType{};
     objects_[index].gen_++;
     objects_[index].nextFree_ = freeListHead_;
@@ -55,7 +55,7 @@ class Pool {
 
     const uint32_t index = handle.index();
     assert(index < objects_.size());
-    assert(handle.gen() == objects_[index].gen_);
+    assert(handle.gen() == objects_[index].gen_); // accessing deleted object
     return &objects_[index].obj_;
   }
   ImplObjectType* get(Handle<ObjectType> handle) {
@@ -66,6 +66,11 @@ class Pool {
     assert(index < objects_.size());
     assert(handle.gen() == objects_[index].gen_);
     return &objects_[index].obj_;
+  }
+  void clear() {
+    objects_.clear();
+    freeListHead_ = kListEndSentinel;
+    numObjects_ = 0;
   }
   uint32_t numObjects() const {
     return numObjects_;

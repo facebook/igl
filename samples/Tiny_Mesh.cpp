@@ -107,7 +107,7 @@ constexpr uint32_t kNumBufferedFrames = 3;
 
 std::unique_ptr<IDevice> device_;
 igl::Framebuffer framebuffer_;
-std::shared_ptr<IRenderPipelineState> renderPipelineState_Mesh_;
+lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Mesh_;
 std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
 std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerObject_;
 std::shared_ptr<ITexture> texture0_, texture1_;
@@ -289,7 +289,7 @@ static void initIGL() {
 }
 
 static void initObjects() {
-  if (renderPipelineState_Mesh_) {
+  if (renderPipelineState_Mesh_.valid()) {
     return;
   }
 
@@ -305,24 +305,23 @@ static void initObjects() {
       .inputBindings = {{.stride = sizeof(VertexPosUvw)}},
   };
 
-  RenderPipelineDesc desc = {
-      .vertexInput = vdesc,
-      .shaderStages = device_->createShaderStages(
-          codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
-      .colorAttachments =
-          {
-              {.textureFormat = framebuffer_.colorAttachments[0].texture->getFormat()},
-          },
-      .cullMode = igl::CullMode_Back,
-      .frontFaceWinding = igl::WindingMode_CW,
-      .debugName = "Pipeline: mesh",
-  };
-
-  if (framebuffer_.depthStencilAttachment.texture) {
-    desc.depthAttachmentFormat = framebuffer_.depthStencilAttachment.texture->getFormat();
-  }
-
-  renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
+  renderPipelineState_Mesh_ = device_->createRenderPipeline(
+      {
+          .vertexInput = vdesc,
+          .shaderStages = device_->createShaderStages(
+              codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
+          .colorAttachments =
+              {
+                  {.textureFormat = framebuffer_.colorAttachments[0].texture->getFormat()},
+              },
+          .depthAttachmentFormat = framebuffer_.depthStencilAttachment.texture
+                                       ? framebuffer_.depthStencilAttachment.texture->getFormat()
+                                       : igl::TextureFormat::Invalid,
+          .cullMode = igl::CullMode_Back,
+          .frontFaceWinding = igl::WindingMode_CW,
+          .debugName = "Pipeline: mesh",
+      },
+      nullptr);
 }
 
 static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
@@ -368,7 +367,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   // This will clear the framebuffer
   buffer->cmdBeginRendering(renderPass_, framebuffer_);
   {
-    buffer->cmdBindRenderPipelineState(renderPipelineState_Mesh_);
+    buffer->cmdBindRenderPipeline(renderPipelineState_Mesh_);
     buffer->cmdBindViewport(viewport);
     buffer->cmdBindScissorRect(scissor);
     buffer->cmdPushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));

@@ -13,9 +13,13 @@
 #include <vector>
 
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/ComputePipelineState.h>
+#include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
+#include <igl/vulkan/VulkanShaderModule.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
+#include <lvk/Pool.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
 namespace igl {
@@ -222,6 +226,10 @@ class VulkanContext final {
   mutable bool awaitingDeletion_ = false;
     
   VulkanContextConfig config_;
+
+  lvk::Pool<lvk::ShaderModule, igl::vulkan::VulkanShaderModule> shaderModulesPool_;
+  lvk::Pool<lvk::RenderPipeline, igl::vulkan::RenderPipelineState> renderPipelinesPool_;
+  lvk::Pool<lvk::ComputePipeline, igl::vulkan::ComputePipelineState> computePipelinesPool_;
 
   struct DeferredTask {
     DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) :

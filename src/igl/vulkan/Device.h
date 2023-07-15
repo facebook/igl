@@ -23,7 +23,6 @@ class VulkanShaderModule;
 class Device final : public IDevice {
  public:
   explicit Device(std::unique_ptr<VulkanContext> ctx);
-  virtual ~Device();
 
   std::shared_ptr<ICommandBuffer> createCommandBuffer() override;
 
@@ -31,24 +30,23 @@ class Device final : public IDevice {
               igl::CommandQueueType queueTyp,
               ITexture* present) override;
 
-  // Resources
   std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc, Result* outResult) override;
-
   std::shared_ptr<ISamplerState> createSamplerState(const SamplerStateDesc& desc,
                                                     Result* outResult) override;
   std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,
                                           const char* debugName,
                                           Result* outResult) override;
 
-  // Pipelines
-  std::shared_ptr<IComputePipelineState> createComputePipeline(const ComputePipelineDesc& desc,
-                                                               Result* outResult) override;
-  std::shared_ptr<IRenderPipelineState> createRenderPipeline(const RenderPipelineDesc& desc,
-                                                             Result* outResult) override;
+  lvk::Holder<lvk::ComputePipelineHandle> createComputePipeline(const ComputePipelineDesc& desc,
+                                                                Result* outResult) override;
+  lvk::Holder<lvk::RenderPipelineHandle> createRenderPipeline(const RenderPipelineDesc& desc,
+                                                              Result* outResult) override;
+  lvk::Holder<lvk::ShaderModuleHandle> createShaderModule(const ShaderModuleDesc& desc,
+                                                          Result* outResult) override;
 
-  // Shaders
-  ShaderModuleHandle createShaderModule(const ShaderModuleDesc& desc, Result* outResult) override;
-  void destroyShaderModule(ShaderModuleHandle handle) override;
+  void destroy(lvk::ComputePipelineHandle handle) override;
+  void destroy(lvk::RenderPipelineHandle handle) override;
+  void destroy(lvk::ShaderModuleHandle handle) override;
 
   std::shared_ptr<ITexture> getCurrentSwapchainTexture() override;
 
@@ -77,7 +75,6 @@ class Device final : public IDevice {
   friend class ComputePipelineState;
   friend class RenderPipelineState;
 
-  const VulkanShaderModule* getShaderModule(ShaderModuleHandle handle) const;
   VulkanShaderModule createShaderModule(const void* data,
                                         size_t length,
                                         const char* entryPoint,
@@ -90,8 +87,6 @@ class Device final : public IDevice {
                                         Result* outResult) const;
 
   std::unique_ptr<VulkanContext> ctx_;
-
-  lvk::Pool<ShaderModule, VulkanShaderModule> shaderModulesPool_;
 };
 
 } // namespace vulkan

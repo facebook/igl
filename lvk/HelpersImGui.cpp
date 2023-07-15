@@ -68,8 +68,7 @@ ImGuiRenderer::DrawableData::DrawableData(igl::IDevice& device) {
   ib_ = device.createBuffer(ibDesc, nullptr);
 }
 
-std::shared_ptr<igl::IRenderPipelineState> ImGuiRenderer::createNewPipelineState(
-    const igl::Framebuffer& desc) {
+lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(const igl::Framebuffer& desc) {
   return device_.createRenderPipeline(
       {
           .vertexInput = {.attributes = {{.location = 0,
@@ -82,7 +81,11 @@ std::shared_ptr<igl::IRenderPipelineState> ImGuiRenderer::createNewPipelineState
                                           .format = igl::VertexFormat::UByte4Norm,
                                           .offset = offsetof(ImDrawVert, col)}},
                           .inputBindings = {{.stride = sizeof(ImDrawVert)}}},
-          .shaderStages = shaderStages_,
+          .shaderStages = device_.createShaderStages(codeVS,
+                                                     "Shader Module: imgui (vert)",
+                                                     codeFS,
+                                                     "Shader Module: imgui (frag)",
+                                                     nullptr),
           .colorAttachments = {{
               .textureFormat = desc.colorAttachments[0].texture->getFormat(),
               .blendEnabled = true,
@@ -98,9 +101,6 @@ std::shared_ptr<igl::IRenderPipelineState> ImGuiRenderer::createNewPipelineState
 }
 
 ImGuiRenderer::ImGuiRenderer(igl::IDevice& device, const char* defaultFontTTF, float fontSizePixels) : device_(device) {
-  shaderStages_ = device_.createShaderStages(
-      codeVS, "Shader Module: imgui (vert)", codeFS, "Shader Module: imgui (frag)", nullptr);
-
   ImGui::CreateContext();
 
   ImGuiIO& io = ImGui::GetIO();
@@ -153,8 +153,8 @@ void ImGuiRenderer::beginFrame(const igl::Framebuffer& desc) {
   io.DisplayFramebufferScale = ImVec2(displayScale, displayScale);
   io.IniFilename = nullptr;
 
-  if (!pipelineState_) {
-    pipelineState_ = createNewPipelineState(desc);
+  if (pipeline_.empty()) {
+    pipeline_ = createNewPipelineState(desc);
   }
   ImGui::NewFrame();
 }
@@ -239,7 +239,7 @@ void ImGuiRenderer::endFrame(igl::IDevice& device, igl::ICommandBuffer& cmdBuffe
         cmdBuffer.cmdPushConstants(0, &bindData, sizeof(bindData));
       }
 
-      cmdBuffer.cmdBindRenderPipelineState(pipelineState_);
+      cmdBuffer.cmdBindRenderPipeline(pipeline_);
       cmdBuffer.cmdBindVertexBuffer(0, drawableData.vb_, 0);
       cmdBuffer.cmdDrawIndexed(igl::PrimitiveType::Triangle,
                                cmd.ElemCount,

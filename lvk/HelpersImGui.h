@@ -25,12 +25,11 @@ class ImGuiRenderer {
   void endFrame(igl::IDevice& device, igl::ICommandBuffer& cmdBuffer);
 
  private:
-  std::shared_ptr<igl::IRenderPipelineState> createNewPipelineState(const igl::Framebuffer& desc);
+  lvk::Holder<lvk::RenderPipelineHandle> createNewPipelineState(const igl::Framebuffer& desc);
 
  private:
   igl::IDevice& device_;
-  igl::ShaderStages shaderStages_;
-  std::shared_ptr<igl::IRenderPipelineState> pipelineState_;
+  lvk::Holder<lvk::RenderPipelineHandle> pipeline_;
   std::shared_ptr<igl::ITexture> fontTexture_;
 
   uint32_t frameIndex_ = 0;

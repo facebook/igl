@@ -22,10 +22,9 @@ class CommandBuffer final : public ICommandBuffer {
   explicit CommandBuffer(VulkanContext& ctx);
   ~CommandBuffer() override;
 
-  void transitionToShaderReadOnly(const std::shared_ptr<ITexture>& surface) const override;
+  void transitionToShaderReadOnly(ITexture& surface) const override;
 
-  void cmdBindComputePipelineState(
-      const std::shared_ptr<IComputePipelineState>& pipelineState) override;
+  void cmdBindComputePipeline(lvk::ComputePipelineHandle handle) override;
   void cmdDispatchThreadGroups(const Dimensions& threadgroupCount,
                                const Dependencies& deps) override;
 
@@ -40,8 +39,7 @@ class CommandBuffer final : public ICommandBuffer {
   void cmdBindViewport(const Viewport& viewport) override;
   void cmdBindScissorRect(const ScissorRect& rect) override;
 
-  void cmdBindRenderPipelineState(
-      const std::shared_ptr<IRenderPipelineState>& pipelineState) override;
+  void cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) override;
   void cmdBindDepthStencilState(const DepthStencilState& state) override;
 
   void cmdBindVertexBuffer(uint32_t index,
@@ -94,7 +92,7 @@ class CommandBuffer final : public ICommandBuffer {
 
   bool isRendering_ = false;
 
-  std::shared_ptr<igl::IRenderPipelineState> currentPipeline_ = nullptr;
+  lvk::RenderPipelineHandle currentPipeline_;
   RenderPipelineDynamicState dynamicState_;
 };
 

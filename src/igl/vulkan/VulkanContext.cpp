@@ -175,7 +175,21 @@ VulkanContext::VulkanContext(const VulkanContextConfig& config,
 VulkanContext::~VulkanContext() {
   IGL_PROFILER_FUNCTION();
 
+  if (shaderModulesPool_.numObjects()) {
+    LLOGW("Leaked %u shader modules\n", shaderModulesPool_.numObjects());
+  }
+  if (renderPipelinesPool_.numObjects()) {
+    LLOGW("Leaked %u render pipelines\n", renderPipelinesPool_.numObjects());
+  }
+  if (computePipelinesPool_.numObjects()) {
+    LLOGW("Leaked %u compute pipelines\n", computePipelinesPool_.numObjects());
+  }
+
   VK_ASSERT(vkDeviceWaitIdle(vkDevice_));
+
+  computePipelinesPool_.clear();
+  renderPipelinesPool_.clear();
+  shaderModulesPool_.clear();
 
   textures_.clear();
   samplers_.clear();

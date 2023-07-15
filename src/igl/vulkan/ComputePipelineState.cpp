@@ -13,32 +13,55 @@
 #include <igl/vulkan/VulkanShaderModule.h>
 #include <utility>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
-ComputePipelineState::ComputePipelineState(igl::vulkan::Device& device,
+ComputePipelineState::ComputePipelineState(igl::vulkan::Device* device,
                                            const ComputePipelineDesc& desc) :
   device_(device), desc_(desc) {}
 
+ComputePipelineState::ComputePipelineState(ComputePipelineState&& other) :
+  device_(other.device_), desc_(std::move(other.desc_)), pipeline_(other.pipeline_) {
+  other.device_ = nullptr;
+  other.pipeline_ = VK_NULL_HANDLE;
+}
+
+ComputePipelineState& ComputePipelineState::operator=(ComputePipelineState&& other) {
+  std::swap(device_, other.device_);
+  std::swap(desc_, other.desc_);
+  std::swap(pipeline_, other.pipeline_);
+  return *this;
+}
+
 ComputePipelineState ::~ComputePipelineState() {
-  device_.destroyShaderModule(desc_.computeShaderModule);
+  if (!device_) {
+    return;
+  }
+
+  device_->destroy(desc_.shaderStages.getModule(Stage_Compute));
 
   if (pipeline_ != VK_NULL_HANDLE) {
-    device_.getVulkanContext().deferredTask(std::packaged_task<void()>(
-        [device = device_.getVulkanContext().getVkDevice(), pipeline = pipeline_]() {
+    device_->getVulkanContext().deferredTask(std::packaged_task<void()>(
+        [device = device_->getVulkanContext().getVkDevice(), pipeline = pipeline_]() {
           vkDestroyPipeline(device, pipeline, nullptr);
         }));
   }
 }
 
 VkPipeline ComputePipelineState::getVkPipeline() const {
+  assert(device_);
+
+  if (!device_) {
+    return VK_NULL_HANDLE;
+  }
+
   if (pipeline_ != VK_NULL_HANDLE) {
     return pipeline_;
   }
 
-  const VulkanContext& ctx = device_.getVulkanContext();
+  const VulkanContext& ctx = device_->getVulkanContext();
 
-  const VulkanShaderModule* sm = device_.getShaderModule(desc_.computeShaderModule);
+  const VulkanShaderModule* sm =
+      ctx.shaderModulesPool_.get(desc_.shaderStages.getModule(Stage_Compute));
 
   VkShaderModule vkShaderModule = sm ? sm->getVkShaderModule() : VK_NULL_HANDLE;
 
@@ -61,5 +84,4 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
   return pipeline_;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <utility>
 
 #include <minilog/minilog.h>
 
@@ -45,6 +46,10 @@
 // clang-format on
 
 #define LVK_ARRAY_NUM_ELEMENTS(x) (sizeof(x) / sizeof((x)[0]))
+
+namespace igl {
+class IDevice;
+} // namespace igl
 
 namespace lvk {
 
@@ -87,6 +92,67 @@ class Handle final {
 };
 
 static_assert(sizeof(Handle<class Foo>) == sizeof(uint64_t));
+
+template<typename HandleType>
+class Holder final {
+ public:
+  Holder() = default;
+  Holder(igl::IDevice* device, HandleType handle) : device_(device), handle_(handle) {}
+  ~Holder() {
+    if (device_) {
+      device_->destroy(handle_);
+    }
+  }
+  Holder(const Holder&) = delete;
+  Holder(Holder&& other) : device_(other.device_), handle_(other.handle_) {
+    other.device_ = nullptr;
+    other.handle_ = HandleType{};
+  }
+  Holder& operator=(const Holder&) = delete;
+  Holder& operator=(Holder&& other) {
+    std::swap(device_, other.device_);
+    std::swap(handle_, other.handle_);
+    return *this;
+  }
+  Holder& operator=(std::nullptr_t) {
+    this->reset();
+    return *this;
+  }
+
+  inline operator HandleType() const {
+    return handle_;
+  }
+
+  bool valid() const {
+    return handle_.valid();
+  }
+
+  bool empty() const {
+    return handle_.empty();
+  }
+
+  void reset() {
+    if (device_) {
+      device_->destroy(handle_);
+    }
+    device_ = nullptr;
+    handle_ = HandleType{};
+  }
+
+  HandleType release() {
+    device_ = nullptr;
+    return std::exchange(handle_, HandleType{});
+  }
+
+ private:
+  igl::IDevice* device_ = nullptr;
+  HandleType handle_;
+};
+
+// specialized with dummy structs for type safety
+using ComputePipelineHandle = lvk::Handle<struct ComputePipeline>;
+using RenderPipelineHandle = lvk::Handle<struct RenderPipeline>;
+using ShaderModuleHandle = lvk::Handle<struct ShaderModule>;
 
 } // namespace lvk
 
@@ -475,9 +541,6 @@ struct ColorAttachment {
   BlendFactor dstAlphaBlendFactor = BlendFactor_Zero;
 };
 
-// dummy
-using ShaderModuleHandle = lvk::Handle<struct ShaderModule>;
-
 struct ShaderModuleDesc {
   ShaderStage stage = Stage_Fragment;
   const char* data = nullptr;
@@ -498,21 +561,21 @@ struct ShaderModuleDesc {
 
 struct ShaderStages final {
   ShaderStages() = default;
-  ShaderStages(ShaderModuleHandle vertexModule, ShaderModuleHandle fragmentModule) {
+  ShaderStages(lvk::ShaderModuleHandle vertexModule, lvk::ShaderModuleHandle fragmentModule) {
     modules_[Stage_Vertex] = vertexModule;
     modules_[Stage_Fragment] = fragmentModule;
   }
 
-  explicit ShaderStages(ShaderModuleHandle computeModule) {
-    modules_[Stage_Compute] = computeModule;
+  explicit ShaderStages(lvk::ShaderModuleHandle computeModule) {
+    modules_[Stage_Compute] = std::move(computeModule);
   }
 
-  ShaderModuleHandle getModule(ShaderStage stage) const {
+  lvk::ShaderModuleHandle getModule(ShaderStage stage) const {
     IGL_ASSERT(stage < kNumShaderStages);
     return modules_[stage];
   }
 
-  ShaderModuleHandle modules_[kNumShaderStages] = {};
+  lvk::ShaderModuleHandle modules_[kNumShaderStages] = {};
 };
 
 struct RenderPipelineDesc final {
@@ -542,7 +605,7 @@ struct RenderPipelineDesc final {
 };
 
 struct ComputePipelineDesc final {
-  ShaderModuleHandle computeShaderModule;
+  igl::ShaderStages shaderStages;
   const char* debugName = "";
 };
 
@@ -681,17 +744,6 @@ class ITexture {
   TextureFormat format_;
 };
 
-class IComputePipelineState {
- public:
-  virtual ~IComputePipelineState() = default;
-};
-
-class IRenderPipelineState {
- public:
-  IRenderPipelineState() = default;
-  virtual ~IRenderPipelineState() = default;
-};
-
 struct Dependencies {
   enum { IGL_MAX_SUBMIT_DEPENDENCIES = 4 };
   ITexture* textures[IGL_MAX_SUBMIT_DEPENDENCIES] = {};
@@ -701,7 +753,7 @@ class ICommandBuffer {
  public:
   virtual ~ICommandBuffer() = default;
 
-  virtual void transitionToShaderReadOnly(const std::shared_ptr<ITexture>& surface) const = 0;
+  virtual void transitionToShaderReadOnly(ITexture& surface) const = 0;
 
   virtual void cmdPushDebugGroupLabel(const char* label,
                                       const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
@@ -709,8 +761,7 @@ class ICommandBuffer {
                                         const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
   virtual void cmdPopDebugGroupLabel() const = 0;
 
-  virtual void cmdBindComputePipelineState(
-      const std::shared_ptr<IComputePipelineState>& pipelineState) = 0;
+  virtual void cmdBindComputePipeline(lvk::ComputePipelineHandle handle) = 0;
   virtual void cmdDispatchThreadGroups(const Dimensions& threadgroupCount,
                                        const Dependencies& deps = Dependencies()) = 0;
 
@@ -721,8 +772,7 @@ class ICommandBuffer {
   virtual void cmdBindViewport(const Viewport& viewport) = 0;
   virtual void cmdBindScissorRect(const ScissorRect& rect) = 0;
 
-  virtual void cmdBindRenderPipelineState(
-      const std::shared_ptr<IRenderPipelineState>& pipelineState) = 0;
+  virtual void cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) = 0;
   virtual void cmdBindDepthStencilState(const DepthStencilState& state) = 0;
 
   virtual void cmdBindVertexBuffer(uint32_t index,
@@ -774,19 +824,29 @@ class IDevice {
                                                   const char* debugName = nullptr,
                                                   Result* outResult = nullptr) = 0;
 
-  virtual std::shared_ptr<IComputePipelineState> createComputePipeline(
+  virtual lvk::Holder<lvk::ComputePipelineHandle> createComputePipeline(
       const ComputePipelineDesc& desc,
       Result* outResult = nullptr) = 0;
 
-  virtual std::shared_ptr<IRenderPipelineState> createRenderPipeline(
+  virtual lvk::Holder<lvk::RenderPipelineHandle> createRenderPipeline(
       const RenderPipelineDesc& desc,
       Result* outResult = nullptr) = 0;
 
-  virtual ShaderModuleHandle createShaderModule(const ShaderModuleDesc& desc,
-                                                Result* outResult = nullptr) = 0;
-  virtual void destroyShaderModule(ShaderModuleHandle handle) = 0;
+  virtual lvk::Holder<lvk::ShaderModuleHandle> createShaderModule(const ShaderModuleDesc& desc,
+                                                                  Result* outResult = nullptr) = 0;
+
+  virtual void destroy(lvk::ComputePipelineHandle handle) = 0;
+  virtual void destroy(lvk::RenderPipelineHandle handle) = 0;
+  virtual void destroy(lvk::ShaderModuleHandle handle) = 0;
 
   virtual std::shared_ptr<ITexture> getCurrentSwapchainTexture() = 0;
+
+  ShaderStages createShaderStages(const char* cs,
+                                  const char* debugName,
+                                  Result* outResult = nullptr) {
+    return ShaderStages(
+        createShaderModule(ShaderModuleDesc(cs, Stage_Compute, debugName), outResult).release());
+  }
 
   ShaderStages createShaderStages(const char* vs,
                                   const char* debugNameVS,
@@ -795,7 +855,7 @@ class IDevice {
                                   Result* outResult = nullptr) {
     auto VS = createShaderModule(ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult);
     auto FS = createShaderModule(ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult);
-    return ShaderStages(VS, FS);
+    return ShaderStages(VS.release(), FS.release());
   }
 
  protected:

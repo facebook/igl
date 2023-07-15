@@ -48,13 +48,14 @@ uint32_t width_ = 800;
 uint32_t height_ = 600;
 FramesPerSecondCounter fps_;
 
+std::unique_ptr<IDevice> device_;
+
 struct VulkanObjects {
   void init();
   void createFramebuffer();
   void render();
   igl::Framebuffer fb_ = {};
-  std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
-  std::unique_ptr<IDevice> device_;
+  lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Triangle_;
 } vk;
 
 void VulkanObjects::init() {
@@ -63,19 +64,19 @@ void VulkanObjects::init() {
 
   createFramebuffer();
 
-  const RenderPipelineDesc desc = {
-      .shaderStages = device_->createShaderStages(
-          codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
-      .colorAttachments = {
-          {fb_.colorAttachments[0].texture->getFormat()},
-          {fb_.colorAttachments[1].texture->getFormat()},
-          {fb_.colorAttachments[2].texture->getFormat()},
-          {fb_.colorAttachments[3].texture->getFormat()},
-      }};
+  renderPipelineState_Triangle_ = device_->createRenderPipeline(
+      {.shaderStages = device_->createShaderStages(
+           codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
+       .colorAttachments =
+           {
+               {fb_.colorAttachments[0].texture->getFormat()},
+               {fb_.colorAttachments[1].texture->getFormat()},
+               {fb_.colorAttachments[2].texture->getFormat()},
+               {fb_.colorAttachments[3].texture->getFormat()},
+           }},
+      nullptr);
 
-  renderPipelineState_Triangle_ = device_->createRenderPipeline(desc, nullptr);
-
-  IGL_ASSERT(renderPipelineState_Triangle_.get());
+  IGL_ASSERT(renderPipelineState_Triangle_.valid());
 }
 
 void VulkanObjects::createFramebuffer() {
@@ -118,7 +119,7 @@ void VulkanObjects::render() {
       },
       fb_);
   {
-    buffer->cmdBindRenderPipelineState(renderPipelineState_Triangle_);
+    buffer->cmdBindRenderPipeline(renderPipelineState_Triangle_);
     buffer->cmdBindViewport({0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f});
     buffer->cmdBindScissorRect({0, 0, width_, height_});
     buffer->cmdPushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
@@ -138,7 +139,7 @@ int main(int argc, char* argv[]) {
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     width_ = width;
     height_ = height;
-    vulkan::Device* vulkanDevice = static_cast<vulkan::Device*>(vk.device_.get());
+    vulkan::Device* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
     vulkanDevice->getVulkanContext().initSwapchain(width_, height_);
     if (width && height) {
       vk.createFramebuffer();
@@ -158,6 +159,8 @@ int main(int argc, char* argv[]) {
 
   // destroy all the Vulkan stuff before closing the window
   vk = {};
+
+  device_ = nullptr;
 
   glfwDestroyWindow(window_);
   glfwTerminate();

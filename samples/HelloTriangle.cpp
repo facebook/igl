@@ -46,7 +46,7 @@ uint32_t width_ = 800;
 uint32_t height_ = 600;
 FramesPerSecondCounter fps_;
 
-std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
+lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Triangle_;
 std::unique_ptr<IDevice> device_;
 
 void render() {
@@ -60,7 +60,7 @@ void render() {
   buffer->cmdBeginRendering(
       {.colorAttachments = {{.loadOp = LoadOp_Clear, .clearColor = {1.0f, 1.0f, 1.0f, 1.0f}}}},
       {.colorAttachments = {{.texture = device_->getCurrentSwapchainTexture()}}});
-  buffer->cmdBindRenderPipelineState(renderPipelineState_Triangle_);
+  buffer->cmdBindRenderPipeline(renderPipelineState_Triangle_);
   buffer->cmdPushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
   buffer->cmdDraw(PrimitiveType::Triangle, 0, 3);
   buffer->cmdPopDebugGroupLabel();
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
        .colorAttachments = {{.textureFormat = device_->getCurrentSwapchainTexture()->getFormat()}}},
       nullptr);
 
-  IGL_ASSERT(renderPipelineState_Triangle_.get());
+  IGL_ASSERT(renderPipelineState_Triangle_.valid());
 
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     width_ = width;

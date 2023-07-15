@@ -126,10 +126,17 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
 static_assert(sizeof(RenderPipelineDynamicState) == sizeof(uint64_t));
 static_assert(alignof(RenderPipelineDynamicState) == sizeof(uint64_t));
 
-class RenderPipelineState final : public IRenderPipelineState {
+class RenderPipelineState final {
  public:
-  RenderPipelineState(igl::vulkan::Device& device, const RenderPipelineDesc& desc);
-  ~RenderPipelineState() override;
+  RenderPipelineState() = default;
+  RenderPipelineState(igl::vulkan::Device* device, const RenderPipelineDesc& desc);
+  ~RenderPipelineState();
+
+  RenderPipelineState(const RenderPipelineState&) = delete;
+  RenderPipelineState& operator=(const RenderPipelineState&) = delete;
+
+  RenderPipelineState(RenderPipelineState&& other);
+  RenderPipelineState& operator=(RenderPipelineState&& other);
 
   VkPipeline getVkPipeline(const RenderPipelineDynamicState& dynamicState) const;
 
@@ -138,7 +145,7 @@ class RenderPipelineState final : public IRenderPipelineState {
   }
 
  private:
-  igl::vulkan::Device& device_;
+  igl::vulkan::Device* device_ = nullptr;
 
   std::shared_ptr<ShaderStages> shaderStages_;
   RenderPipelineDesc desc_;

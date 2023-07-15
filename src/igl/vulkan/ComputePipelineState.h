@@ -15,15 +15,22 @@ namespace vulkan {
 
 class Device;
 
-class ComputePipelineState final : public IComputePipelineState {
+class ComputePipelineState final {
  public:
-  ComputePipelineState(igl::vulkan::Device& device, const ComputePipelineDesc& desc);
-  ~ComputePipelineState() override;
+  ComputePipelineState() = default;
+  ComputePipelineState(igl::vulkan::Device* device, const ComputePipelineDesc& desc);
+  ~ComputePipelineState();
+
+  ComputePipelineState(const ComputePipelineState&) = delete;
+  ComputePipelineState& operator=(const ComputePipelineState&) = delete;
+
+  ComputePipelineState(ComputePipelineState&& other);
+  ComputePipelineState& operator=(ComputePipelineState&& other);
 
   VkPipeline getVkPipeline() const;
 
  private:
-  igl::vulkan::Device& device_;
+  igl::vulkan::Device* device_ = nullptr;
   ComputePipelineDesc desc_;
 
   mutable VkPipeline pipeline_ = VK_NULL_HANDLE;

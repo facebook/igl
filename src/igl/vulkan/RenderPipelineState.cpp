@@ -208,7 +208,7 @@ VkBlendFactor blendFactorToVkBlendFactor(igl::BlendFactor value) {
 
 namespace igl::vulkan {
 
-RenderPipelineState::RenderPipelineState(igl::vulkan::Device& device,
+RenderPipelineState::RenderPipelineState(igl::vulkan::Device* device,
                                          const RenderPipelineDesc& desc) :
   device_(device), desc_(desc) {
   // Iterate and cache vertex input bindings and attributes
@@ -243,18 +243,43 @@ RenderPipelineState::RenderPipelineState(igl::vulkan::Device& device,
 }
 
 RenderPipelineState::~RenderPipelineState() {
-  for (ShaderModuleHandle m : desc_.shaderStages.modules_) {
-    device_.destroyShaderModule(m);
+  if (!device_) {
+    return;
+  }
+
+  for (lvk::ShaderModuleHandle m : desc_.shaderStages.modules_) {
+    device_->destroy(m);
   }
 
   for (auto p : pipelines_) {
     if (p.second != VK_NULL_HANDLE) {
-      device_.getVulkanContext().deferredTask(std::packaged_task<void()>(
-          [device = device_.getVulkanContext().getVkDevice(), pipeline = p.second]() {
+      device_->getVulkanContext().deferredTask(std::packaged_task<void()>(
+          [device = device_->getVulkanContext().getVkDevice(), pipeline = p.second]() {
             vkDestroyPipeline(device, pipeline, nullptr);
           }));
     }
   }
+}
+
+RenderPipelineState::RenderPipelineState(RenderPipelineState&& other) :
+  device_(other.device_), vertexInputStateCreateInfo_(other.vertexInputStateCreateInfo_) {
+  std::swap(shaderStages_, other.shaderStages_);
+  std::swap(desc_, other.desc_);
+  std::swap(vkBindings_, other.vkBindings_);
+  std::swap(vkAttributes_, other.vkAttributes_);
+  std::swap(pipelines_, other.pipelines_);
+  other.device_ = nullptr;
+}
+
+RenderPipelineState& RenderPipelineState::operator=(RenderPipelineState&& other) {
+  std::swap(device_, other.device_);
+  std::swap(shaderStages_, other.shaderStages_);
+  std::swap(desc_, other.desc_);
+  std::swap(vertexInputStateCreateInfo_, other.vertexInputStateCreateInfo_);
+  std::swap(vkBindings_, other.vkBindings_);
+  std::swap(vkAttributes_, other.vkAttributes_);
+  std::swap(pipelines_, other.pipelines_);
+  return *this;
 }
 
 VkPipeline RenderPipelineState::getVkPipeline(
@@ -267,7 +292,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
 
   // build a new Vulkan pipeline
 
-  const VulkanContext& ctx = device_.getVulkanContext();
+  const VulkanContext& ctx = device_->getVulkanContext();
 
   VkPipeline pipeline = VK_NULL_HANDLE;
 
@@ -302,9 +327,9 @@ VkPipeline RenderPipelineState::getVkPipeline(
   }
 
   const VulkanShaderModule* vertexModule =
-      device_.getShaderModule(desc_.shaderStages.getModule(Stage_Vertex));
+      ctx.shaderModulesPool_.get(desc_.shaderStages.getModule(Stage_Vertex));
   const VulkanShaderModule* fragmentModule =
-      device_.getShaderModule(desc_.shaderStages.getModule(Stage_Fragment));
+      ctx.shaderModulesPool_.get(desc_.shaderStages.getModule(Stage_Fragment));
 
   IGL_ASSERT(vertexModule);
   IGL_ASSERT(fragmentModule);

@@ -135,12 +135,10 @@ VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(igl::PrimitiveType t) {
 
 } // namespace
 
-void CommandBuffer ::transitionToShaderReadOnly(const std::shared_ptr<ITexture>& surface) const {
+void CommandBuffer ::transitionToShaderReadOnly(ITexture& surface) const {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT(surface.get());
-
-  const auto& vkTex = static_cast<Texture&>(*surface);
+  const auto& vkTex = static_cast<Texture&>(surface);
   const VulkanTexture& tex = vkTex.getVulkanTexture();
   const VulkanImage& img = tex.getVulkanImage();
 
@@ -164,16 +162,14 @@ void CommandBuffer ::transitionToShaderReadOnly(const std::shared_ptr<ITexture>&
   }
 }
 
-void CommandBuffer::cmdBindComputePipelineState(
-    const std::shared_ptr<IComputePipelineState>& pipelineState) {
+void CommandBuffer::cmdBindComputePipeline(lvk::ComputePipelineHandle handle) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(pipelineState != nullptr)) {
+  if (!IGL_VERIFY(!handle.empty())) {
     return;
   }
 
-  const igl::vulkan::ComputePipelineState* cps =
-      static_cast<igl::vulkan::ComputePipelineState*>(pipelineState.get());
+  const igl::vulkan::ComputePipelineState* cps = ctx_.computePipelinesPool_.get(handle);
 
   IGL_ASSERT(cps);
 
@@ -455,16 +451,14 @@ void CommandBuffer::cmdBindScissorRect(const ScissorRect& rect) {
   vkCmdSetScissor(wrapper_.cmdBuf_, 0, 1, &scissor);
 }
 
-void CommandBuffer::cmdBindRenderPipelineState(
-    const std::shared_ptr<IRenderPipelineState>& pipelineState) {
-  if (!IGL_VERIFY(pipelineState != nullptr)) {
+void CommandBuffer::cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) {
+  if (!IGL_VERIFY(!handle.empty())) {
     return;
   }
 
-  currentPipeline_ = pipelineState;
+  currentPipeline_ = handle;
 
-  const igl::vulkan::RenderPipelineState* rps =
-      static_cast<igl::vulkan::RenderPipelineState*>(pipelineState.get());
+  const igl::vulkan::RenderPipelineState* rps = ctx_.renderPipelinesPool_.get(handle);
 
   IGL_ASSERT(rps);
 
@@ -543,8 +537,7 @@ void CommandBuffer::cmdPushConstants(size_t offset, const void* data, size_t len
 }
 
 void CommandBuffer::bindGraphicsPipeline() {
-  const igl::vulkan::RenderPipelineState* rps =
-      static_cast<igl::vulkan::RenderPipelineState*>(currentPipeline_.get());
+  const igl::vulkan::RenderPipelineState* rps = ctx_.renderPipelinesPool_.get(currentPipeline_);
 
   if (!IGL_VERIFY(rps)) {
     return;
