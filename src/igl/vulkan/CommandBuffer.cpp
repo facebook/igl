@@ -515,16 +515,17 @@ void CommandBuffer::cmdBindVertexBuffer(uint32_t index,
   vkCmdBindVertexBuffers(wrapper_.cmdBuf_, index, 1, &vkBuf, &offset);
 }
 
-void CommandBuffer::cmdPushConstants(size_t offset, const void* data, size_t length) {
+void CommandBuffer::cmdPushConstants(const void* data, size_t size, size_t offset) {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT(length % 4 == 0); // VUID-vkCmdPushConstants-size-00369: size must be a multiple of 4
+  IGL_ASSERT(size % 4 == 0); // VUID-vkCmdPushConstants-size-00369: size must be a multiple of 4
 
   // check push constant size is within max size
   const VkPhysicalDeviceLimits& limits = ctx_.getVkPhysicalDeviceProperties().limits;
-  const size_t size = offset + length;
-  if (!IGL_VERIFY(size <= limits.maxPushConstantsSize)) {
-    LLOGW("Push constants size exceeded %u (max %u bytes)", size, limits.maxPushConstantsSize);
+  if (!IGL_VERIFY(size + offset <= limits.maxPushConstantsSize)) {
+    LLOGW("Push constants size exceeded %u (max %u bytes)",
+          size + offset,
+          limits.maxPushConstantsSize);
   }
 
   vkCmdPushConstants(wrapper_.cmdBuf_,
@@ -532,7 +533,7 @@ void CommandBuffer::cmdPushConstants(size_t offset, const void* data, size_t len
                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
                          VK_SHADER_STAGE_COMPUTE_BIT,
                      (uint32_t)offset,
-                     (uint32_t)length,
+                     (uint32_t)size,
                      data);
 }
 

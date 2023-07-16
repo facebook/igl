@@ -382,7 +382,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
           .perFrame = ubPerFrame_[frameIndex]->gpuAddress(),
           .perObject = ubPerObject_[frameIndex]->gpuAddress(i * sizeof(UniformsPerObject)),
       };
-      buffer->cmdPushConstants(0, &bindings, sizeof(bindings));
+      buffer->cmdPushConstants(bindings);
       buffer->cmdDrawIndexed(PrimitiveType::Triangle, 3 * 6 * 2, IndexFormat::UInt16, *ib0_.get(), 0);
     }
     buffer->cmdPopDebugGroupLabel();

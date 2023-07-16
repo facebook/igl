@@ -779,7 +779,11 @@ class ICommandBuffer {
   virtual void cmdBindVertexBuffer(uint32_t index,
                                    const std::shared_ptr<IBuffer>& buffer,
                                    size_t bufferOffset) = 0;
-  virtual void cmdPushConstants(size_t offset, const void* data, size_t length) = 0;
+  virtual void cmdPushConstants(const void* data, size_t size, size_t offset = 0) = 0;
+  template<typename Struct>
+  void cmdPushConstants(const Struct& data) {
+    this->cmdPushConstants(&data, sizeof(Struct), 0);
+  }
 
   virtual void cmdDraw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) = 0;
   virtual void cmdDrawIndexed(PrimitiveType primitiveType,

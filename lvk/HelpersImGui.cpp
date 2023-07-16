@@ -196,7 +196,7 @@ void ImGuiRenderer::endFrame(igl::IDevice& device, igl::ICommandBuffer& cmdBuffe
   std::vector<DrawableData>& curFrameDrawables = drawables_[frameIndex_];
   frameIndex_ = (frameIndex_ + 1) % LVK_ARRAY_NUM_ELEMENTS(drawables_);
 
-  cmdBuffer.cmdPushConstants(0, &bindData, sizeof(bindData));
+  cmdBuffer.cmdPushConstants(&bindData, sizeof(bindData));
 
   ImTextureID lastBoundTextureId = nullptr;
 
@@ -236,7 +236,7 @@ void ImGuiRenderer::endFrame(igl::IDevice& device, igl::ICommandBuffer& cmdBuffe
       if (cmd.TextureId != lastBoundTextureId) {
         lastBoundTextureId = cmd.TextureId;
         bindData.textureId = cmd.TextureId ? reinterpret_cast<igl::ITexture*>(cmd.TextureId)->getTextureId() : 0u;
-        cmdBuffer.cmdPushConstants(0, &bindData, sizeof(bindData));
+        cmdBuffer.cmdPushConstants(bindData);
       }
 
       cmdBuffer.cmdBindRenderPipeline(pipeline_);

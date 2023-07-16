@@ -1162,7 +1162,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
           .perFrame = ubPerFrameShadow_[frameIndex]->gpuAddress(),
           .perObject = ubPerObject_[frameIndex]->gpuAddress(),
       };
-      buffer->cmdPushConstants(0, &bindings, sizeof(bindings));
+      buffer->cmdPushConstants(bindings);
 
       buffer->cmdDrawIndexed(
           PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
@@ -1199,7 +1199,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
           .perObject = ubPerObject_[frameIndex]->gpuAddress(),
           .materials = sbMaterials_->gpuAddress(),
       };
-      buffer->cmdPushConstants(0, &bindings, sizeof(bindings));
+      buffer->cmdPushConstants(bindings);
       buffer->cmdDrawIndexed(
           PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
       if (enableWireframe_) {
@@ -1235,7 +1235,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     } bindings = {
         .texture = tex->getTextureId(),
     };
-    buffer->cmdPushConstants(0, &bindings, sizeof(bindings));
+    buffer->cmdPushConstants(bindings);
     buffer->cmdDispatchThreadGroups(
         {
             .width = (uint32_t)width_,
@@ -1263,7 +1263,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
                          ? fbOffscreen_.colorAttachments[0].resolveTexture->getTextureId()
                          : fbOffscreen_.colorAttachments[0].texture->getTextureId(),
       };
-      buffer->cmdPushConstants(0, &bindings, sizeof(bindings));
+      buffer->cmdPushConstants(bindings);
       buffer->cmdDraw(PrimitiveType::Triangle, 0, 3);
       buffer->cmdPopDebugGroupLabel();
 

@@ -45,7 +45,7 @@ class CommandBuffer final : public ICommandBuffer {
   void cmdBindVertexBuffer(uint32_t index,
                            const std::shared_ptr<IBuffer>& buffer,
                            size_t bufferOffset) override;
-  void cmdPushConstants(size_t offset, const void* data, size_t length) override;
+  void cmdPushConstants(const void* data, size_t size, size_t offset) override;
 
   void cmdDraw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) override;
   void cmdDrawIndexed(PrimitiveType primitiveType,
