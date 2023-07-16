@@ -84,7 +84,8 @@ include_directories(src)
 add_subdirectory(src/igl)
 add_subdirectory(lvk)
 
-target_include_directories(LVKLibrary PUBLIC .)
+target_include_directories(LVKLibrary PUBLIC ${LVK_ROOT_DIR})
+target_include_directories(LVKLibrary PUBLIC ${LVK_ROOT_DIR}/src)
 
 if(LVK_DEPLOY_DEPS)
   add_dependencies(LVKLibrary IGLDependencies)
