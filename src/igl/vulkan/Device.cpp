@@ -142,7 +142,23 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 
   auto texture = std::make_shared<vulkan::Texture>(*ctx_.get(), patchedDesc.format);
 
-  const Result res = texture->create(patchedDesc);
+  Result res = texture->create(patchedDesc);
+
+  if (!res.isOk()) {
+    return nullptr;
+  }
+
+  if (patchedDesc.initialData) {
+    IGL_ASSERT(patchedDesc.type == TextureType::TwoD);
+    const void* mipMaps[] = {patchedDesc.initialData};
+    res = texture->upload(
+        {
+            .width = desc.width,
+            .height = desc.height,
+            .numMipLevels = 1,
+        },
+        mipMaps);
+  }
 
   Result::setResult(outResult, res);
 

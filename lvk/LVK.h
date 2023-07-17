@@ -715,6 +715,8 @@ struct TextureDesc {
   uint32_t numMipLevels = 1;
   StorageType storage = StorageType_Device;
   const char* debugName = "";
+
+  const void* initialData = nullptr;
 };
 
 class ISamplerState {
