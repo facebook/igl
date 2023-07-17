@@ -62,14 +62,6 @@ if(EMSCRIPTEN)
   set(IGL_WITH_SHELL OFF) # shell doesn't supported yet
 endif()
 
-if(UNIX AND NOT APPLE AND NOT ANDROID AND NOT EMSCRIPTEN)
-  if(IGL_WITH_SAMPLES OR IGL_WITH_SHELL)
-    add_definitions("-DIGL_PLATFORM_LINUX_USE_EGL=0")
-  else()
-    add_definitions("-DIGL_PLATFORM_LINUX_USE_EGL=1")
-  endif()
-endif()
-
 include(cmake/helpers.cmake)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -92,10 +84,6 @@ message(STATUS "IGL_ENFORCE_LOGS  = ${IGL_ENFORCE_LOGS}")
 message(STATUS "IGL_DEPLOY_DEPS   = ${IGL_DEPLOY_DEPS}")
 # cmake-format: on
 
-if(IGL_ENFORCE_LOGS)
-  add_definitions("-DIGL_FORCE_ENABLE_LOGS=1")
-endif()
-
 if(APPLE)
   if(NOT (IGL_WITH_OPENGL OR IGL_WITH_VULKAN OR IGL_WITH_OPENGLES OR IGL_WITH_METAL OR IGL_WITH_WEBGL))
     message(FATAL_ERROR "At least one rendering backend should be defined (OpenGL, Vulkan or Metal).")
@@ -114,24 +102,6 @@ if(APPLE)
   enable_language(OBJC)
   enable_language(OBJCXX)
 endif()
-
-if(IGL_WITH_OPENGL)
-  add_definitions("-DIGL_BACKEND_ENABLE_OPENGL=1")
-endif()
-if(IGL_WITH_OPENGLES OR IGL_WITH_WEBGL)
-  add_definitions("-DIGL_BACKEND_ENABLE_OPENGL=1")
-endif()
-if(IGL_WITH_VULKAN)
-  add_definitions("-DIGL_BACKEND_ENABLE_VULKAN=1")
-endif()
-if(IGL_WITH_IGLU)
-  add_definitions("-DIGL_WITH_IGLU=1")
-endif()
-if(APPLE AND IGL_WITH_METAL)
-  add_definitions("-DIGL_BACKEND_ENABLE_METAL=1")
-endif()
-
-add_definitions("-DIGL_CMAKE_BUILD=1")
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Debug")
@@ -174,6 +144,37 @@ add_subdirectory(src/igl)
 if(IGL_DEPLOY_DEPS)
   add_dependencies(IGLLibrary IGLDependencies)
 endif()
+
+if(IGL_ENFORCE_LOGS)
+  target_compile_definitions(IGLLibrary PUBLIC "IGL_FORCE_ENABLE_LOGS=1")
+endif()
+
+if(UNIX AND NOT APPLE AND NOT ANDROID AND NOT EMSCRIPTEN)
+  if(IGL_WITH_SAMPLES OR IGL_WITH_SHELL)
+    target_compile_definitions(IGLLibrary PUBLIC "IGL_PLATFORM_LINUX_USE_EGL=0")
+  else()
+    target_compile_definitions(IGLLibrary PUBLIC "IGL_PLATFORM_LINUX_USE_EGL=1")
+  endif()
+endif()
+
+# in the client code, use IGL_BACKEND_* macros instead of IGL_BACKEND_ENABLE_*
+if(IGL_WITH_OPENGL)
+  target_compile_definitions(IGLLibrary PUBLIC "IGL_BACKEND_ENABLE_OPENGL=1")
+endif()
+if(IGL_WITH_OPENGLES OR IGL_WITH_WEBGL)
+  target_compile_definitions(IGLLibrary PUBLIC "IGL_BACKEND_ENABLE_OPENGL=1")
+endif()
+if(IGL_WITH_VULKAN)
+  target_compile_definitions(IGLLibrary PUBLIC "IGL_BACKEND_ENABLE_VULKAN=1")
+endif()
+if(IGL_WITH_IGLU)
+  target_compile_definitions(IGLLibrary PUBLIC "IGL_WITH_IGLU=1")
+endif()
+if(APPLE AND IGL_WITH_METAL)
+  target_compile_definitions(IGLLibrary PUBLIC "IGL_BACKEND_ENABLE_METAL=1")
+endif()
+
+target_compile_definitions(IGLLibrary PUBLIC "IGL_CMAKE_BUILD=1")
 
 include_directories(.)
 
