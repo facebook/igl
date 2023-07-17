@@ -15,6 +15,10 @@
 #include <igl/vulkan/VulkanImage.h>
 #include <memory>
 
+#ifdef __ANDROID__
+#include <vulkan/vulkan_android.h>
+#endif
+
 #if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
 
 namespace igl::tests {
@@ -47,13 +51,26 @@ class VulkanImageTest : public ::testing::Test {
  protected:
   std::unique_ptr<igl::IDevice> createDevice() {
     igl::vulkan::VulkanContextConfig config;
+#if IGL_DEBUG
     config.enableValidation = true;
     config.terminateOnValidationError = true;
+#else
+    config.enableValidation = false;
+    config.terminateOnValidationError = false;
+#endif // IGL_DEBUG
+
 #if IGL_PLATFORM_WIN
     config.enableGPUAssistedValidation = true;
 #else // !IGL_PLATFORM_WIN
     config.enableGPUAssistedValidation = false;
 #endif // IGL_PLATFORM_WIN
+
+    std::vector<const char*> deviceExtensions;
+#if IGL_PLATFORM_ANDROID
+    deviceExtensions.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+#endif // IGL_PLATFORM_ANDROID
 
     auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
 
@@ -65,7 +82,8 @@ class VulkanImageTest : public ::testing::Test {
           *ctx, igl::HWDeviceQueryDesc(igl::HWDeviceType::IntegratedGpu), nullptr);
     }
 
-    return igl::vulkan::HWDevice::create(std::move(ctx), devices[0], 0, 0);
+    return igl::vulkan::HWDevice::create(
+        std::move(ctx), devices[0], 0, 0, deviceExtensions.size(), deviceExtensions.data());
   }
 
   std::unique_ptr<IDevice> device_;

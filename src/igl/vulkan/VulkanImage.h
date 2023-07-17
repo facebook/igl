@@ -265,8 +265,7 @@ class VulkanImage final {
               VkMemoryPropertyFlags memFlags,
               VkImageCreateFlags createFlags,
               VkSampleCountFlagBits samples,
-              const VkExternalMemoryImageCreateInfoKHR& externalImageCreateInfo,
-              const VkExportMemoryAllocateInfoKHR& externalMemoryAllocateInfo,
+              VkExternalMemoryHandleTypeFlags compatibleHandleTypes,
               const char* debugName);
 #endif // IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
 };

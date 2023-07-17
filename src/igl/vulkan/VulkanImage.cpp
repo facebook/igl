@@ -445,16 +445,6 @@ std::shared_ptr<VulkanImage> VulkanImage::createWithExportMemory(const VulkanCon
   }
   const auto compatibleHandleTypes = externalFormatProperties.compatibleHandleTypes;
   IGL_ASSERT(compatibleHandleTypes & kHandleType);
-  const VkExternalMemoryImageCreateInfoKHR externalImageCreateInfo = {
-      VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_KHR,
-      nullptr,
-      compatibleHandleTypes,
-  };
-  const VkExportMemoryAllocateInfoKHR externalMemoryAllocateInfo = {
-      VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR,
-      nullptr,
-      compatibleHandleTypes,
-  };
   return std::shared_ptr<VulkanImage>(new VulkanImage(ctx,
                                                       device,
                                                       extent,
@@ -467,8 +457,7 @@ std::shared_ptr<VulkanImage> VulkanImage::createWithExportMemory(const VulkanCon
                                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                                       createFlags,
                                                       samples,
-                                                      externalImageCreateInfo,
-                                                      externalMemoryAllocateInfo,
+                                                      compatibleHandleTypes,
                                                       debugName));
 }
 
@@ -484,8 +473,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                          VkMemoryPropertyFlags memFlags,
                          VkImageCreateFlags createFlags,
                          VkSampleCountFlagBits samples,
-                         const VkExternalMemoryImageCreateInfoKHR& externalImageCreateInfo,
-                         const VkExportMemoryAllocateInfoKHR& externalMemoryAllocateInfo,
+                         const VkExternalMemoryHandleTypeFlags compatibleHandleTypes,
                          const char* debugName) :
   ctx_(ctx),
   physicalDevice_(ctx.getVkPhysicalDevice()),
@@ -507,6 +495,12 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   IGL_ASSERT_MSG(arrayLayers_ > 0, "The image must contain at least one layer");
   IGL_ASSERT_MSG(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
   IGL_ASSERT_MSG(samples_ > 0, "The image must contain at least one sample");
+
+  const VkExternalMemoryImageCreateInfoKHR externalImageCreateInfo = {
+      VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_KHR,
+      nullptr,
+      compatibleHandleTypes,
+  };
 
   VkImageCreateInfo ci = ivkGetImageCreateInfo(type,
                                                imageFormat_,
@@ -530,6 +524,23 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   // create image.. importing external memory cannot use VMA
   VK_ASSERT(vkCreateImage(device_, &ci, nullptr, &vkImage_));
   VK_ASSERT(ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_IMAGE, (uint64_t)vkImage_, debugName));
+
+  // For Android we need a dedicated allocation for exporting the image, otherwise
+  // the exported handle is not generated properly.
+#if IGL_PLATFORM_ANDROID
+  VkMemoryDedicatedAllocateInfoKHR dedicatedAllocateInfo = {
+      VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR, nullptr, vkImage_, VK_NULL_HANDLE};
+#endif // IGL_PLATFORM_ANDROID
+
+  const VkExportMemoryAllocateInfoKHR externalMemoryAllocateInfo = {
+    VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR,
+#if IGL_PLATFORM_ANDROID
+    &dedicatedAllocateInfo,
+#else
+    nullptr,
+#endif // IGL_PLATFORM_ANDROID
+    compatibleHandleTypes,
+  };
 
   const VkImageMemoryRequirementsInfo2 memoryRequirementInfo = {
       VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, nullptr, vkImage_};
