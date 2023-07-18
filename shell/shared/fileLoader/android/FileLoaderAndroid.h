@@ -21,6 +21,8 @@ class FileLoaderAndroid final : public FileLoader {
   ~FileLoaderAndroid() override = default;
   std::vector<uint8_t> loadBinaryData(const std::string& fileName) override;
   bool fileExists(const std::string& fileName) const override;
+  std::string basePath() const override;
+  std::string fullPath(const std::string& fileName) const override;
 
   void setAssetManager(AAssetManager* mgr) {
     assetManager_ = mgr;

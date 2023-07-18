@@ -17,6 +17,7 @@
 #include <igl/opengl/egl/HWDevice.h>
 #include <igl/opengl/egl/PlatformDevice.h>
 #endif
+#include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/imageLoader/android/ImageLoaderAndroid.h>
 #include <shell/shared/renderSession/DefaultSession.h>
 #if IGL_BACKEND_VULKAN
@@ -90,6 +91,7 @@ void TinyRenderer::init(AAssetManager* mgr,
     platform_ = std::make_shared<igl::shell::PlatformAndroid>(std::move(d));
     IGL_ASSERT(platform_ != nullptr);
     static_cast<igl::shell::ImageLoaderAndroid&>(platform_->getImageLoader()).setAssetManager(mgr);
+    static_cast<igl::shell::FileLoaderAndroid&>(platform_->getFileLoader()).setAssetManager(mgr);
     session_ = igl::shell::createDefaultRenderSession(platform_);
     IGL_ASSERT(session_ != nullptr);
     session_->initialize();
