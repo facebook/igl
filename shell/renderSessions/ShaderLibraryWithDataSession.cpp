@@ -275,7 +275,7 @@ void ShaderLibraryWithDataSession::update(igl::SurfaceTextures surfaceTextures) 
   vertUniformBuffer->bind(device, *pipelineState_, *commands);
 
   commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());
-  commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_);
+  commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
 
   commands->bindRenderPipelineState(pipelineState_);
 

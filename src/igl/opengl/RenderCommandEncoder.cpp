@@ -246,7 +246,7 @@ void RenderCommandEncoder::bindPushConstants(size_t /*offset*/,
 
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t bindTarget,
-                                            const std::shared_ptr<ISamplerState>& samplerState) {
+                                            ISamplerState* samplerState) {
   if (IGL_VERIFY(adapter_)) {
     if ((bindTarget & BindTarget::kVertex) != 0) {
       adapter_->setVertexSamplerState(samplerState, index);

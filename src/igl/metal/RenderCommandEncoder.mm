@@ -318,14 +318,14 @@ void RenderCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const
 
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t bindTarget,
-                                            const std::shared_ptr<ISamplerState>& samplerState) {
+                                            ISamplerState* samplerState) {
   IGL_ASSERT(encoder_);
   IGL_ASSERT_MSG(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
                      bindTarget == BindTarget::kAllGraphics,
                  "Bind target is not valid: %d",
                  bindTarget);
 
-  auto* metalSamplerState = static_cast<SamplerState*>(samplerState.get());
+  auto* metalSamplerState = static_cast<SamplerState*>(samplerState);
 
   if ((bindTarget & BindTarget::kVertex) != 0) {
     [encoder_ setVertexSamplerState:metalSamplerState->get() atIndex:index];

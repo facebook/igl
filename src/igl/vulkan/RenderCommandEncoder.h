@@ -52,9 +52,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
                   size_t bufferOffset) override;
   void bindBytes(size_t index, uint8_t target, const void* data, size_t length) override;
   void bindPushConstants(size_t offset, const void* data, size_t length) override;
-  void bindSamplerState(size_t index,
-                        uint8_t target,
-                        const std::shared_ptr<ISamplerState>& samplerState) override;
+  void bindSamplerState(size_t index, uint8_t target, ISamplerState* samplerState) override;
 
   void bindTexture(size_t index, uint8_t target, ITexture* texture) override;
   void bindUniform(const UniformDesc& uniformDesc, const void* data) override;

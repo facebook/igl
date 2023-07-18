@@ -499,7 +499,7 @@ void RenderCommandEncoder::bindPushConstants(size_t offset, const void* data, si
 
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t target,
-                                            const std::shared_ptr<ISamplerState>& samplerState) {
+                                            ISamplerState* samplerState) {
   IGL_PROFILER_FUNCTION();
 
 #if IGL_VULKAN_PRINT_COMMANDS
@@ -512,7 +512,7 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
     return;
   }
 
-  binder_.bindSamplerState(index, static_cast<igl::vulkan::SamplerState*>(samplerState.get()));
+  binder_.bindSamplerState(index, static_cast<igl::vulkan::SamplerState*>(samplerState));
 }
 
 void RenderCommandEncoder::bindTexture(size_t index, uint8_t target, ITexture* texture) {

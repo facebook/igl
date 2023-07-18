@@ -155,7 +155,7 @@ static void render(std::shared_ptr<ICommandBuffer>& buffer,
     }
   }
   commands->bindTexture(textureUnit_, BindTarget::kFragment, inputTexture.get());
-  commands->bindSamplerState(textureUnit_, BindTarget::kFragment, samplerState);
+  commands->bindSamplerState(textureUnit_, BindTarget::kFragment, samplerState.get());
   commands->bindBuffer(0, BindTarget::kVertex, vertexBuffer, 0);
   commands->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib, 0);
   commands->endEncoding();

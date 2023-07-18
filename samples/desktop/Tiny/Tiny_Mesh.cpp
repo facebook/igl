@@ -534,7 +534,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   commands->bindBuffer(0, BindTarget::kAllGraphics, ubPerFrame_[frameIndex], 0);
   commands->bindTexture(0, igl::BindTarget::kFragment, texture0_.get());
   commands->bindTexture(1, igl::BindTarget::kFragment, texture1_.get());
-  commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_);
+  commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
   // Draw 2 cubes: we use uniform buffer to update matrices
   for (uint32_t i = 0; i != kNumCubes; i++) {
     commands->bindBuffer(

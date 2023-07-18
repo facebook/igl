@@ -326,7 +326,7 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     }
 
     commands->bindTexture(_textureUnit, BindTarget::kFragment, tex0_.get());
-    commands->bindSamplerState(_textureUnit, BindTarget::kFragment, samp0_);
+    commands->bindSamplerState(_textureUnit, BindTarget::kFragment, samp0_.get());
     commands->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib0_, 0);
 
     commands->endEncoding();

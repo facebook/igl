@@ -189,7 +189,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
 
     auto encoder = cmdBuffer->createRenderCommandEncoder(renderPass_, framebuffer_);
     encoder->bindTexture(textureUnit_, BindTarget::kFragment, texture_.get());
-    encoder->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_);
+    encoder->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
 
     encoder->bindBuffer(data::shader::simplePosIndex, BindTarget::kVertex, vb_, 0);
     encoder->bindBuffer(data::shader::simpleUvIndex, BindTarget::kVertex, uv_, 0);

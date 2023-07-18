@@ -63,9 +63,7 @@ class IRenderCommandEncoder : public ICommandEncoder {
   virtual void bindBytes(size_t index, uint8_t target, const void* data, size_t length) = 0;
   /// Binds push constant data to the current encoder.
   virtual void bindPushConstants(size_t offset, const void* data, size_t length) = 0;
-  virtual void bindSamplerState(size_t index,
-                                uint8_t target,
-                                const std::shared_ptr<ISamplerState>& samplerState) = 0;
+  virtual void bindSamplerState(size_t index, uint8_t target, ISamplerState* samplerState) = 0;
 
   // For metal, the index parameter is the index in the texture argument table,
   // by the "texture" attribute specified in the shader.

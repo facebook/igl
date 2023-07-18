@@ -1974,11 +1974,11 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
       commands->bindTexture(2, igl::BindTarget::kFragment, diffuseTextureReference.get());
       commands->bindTexture(3, igl::BindTarget::kFragment, alphaTextureReference.get());
       commands->bindTexture(4, igl::BindTarget::kFragment, skyboxTextureIrradiance_.get());
-      commands->bindSamplerState(0, igl::BindTarget::kFragment, samplerShadow_);
-      commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_);
-      commands->bindSamplerState(2, igl::BindTarget::kFragment, sampler_);
-      commands->bindSamplerState(3, igl::BindTarget::kFragment, sampler_);
-      commands->bindSamplerState(4, igl::BindTarget::kFragment, sampler_);
+      commands->bindSamplerState(0, igl::BindTarget::kFragment, samplerShadow_.get());
+      commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
+      commands->bindSamplerState(2, igl::BindTarget::kFragment, sampler_.get());
+      commands->bindSamplerState(3, igl::BindTarget::kFragment, sampler_.get());
+      commands->bindSamplerState(4, igl::BindTarget::kFragment, sampler_.get());
       commands->draw(PrimitiveType::Triangle, shapeStart, numVertices);
       if (enableWireframe_) {
         commands->bindRenderPipelineState(renderPipelineState_MeshWireframe_);
@@ -1995,8 +1995,8 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 #else
     commands->bindTexture(0, igl::BindTarget::kFragment, fbShadowMap_->getDepthAttachment().get());
     commands->bindTexture(1, igl::BindTarget::kFragment, skyboxTextureIrradiance_.get());
-    commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_);
-    commands->bindSamplerState(1, igl::BindTarget::kFragment, samplerShadow_);
+    commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
+    commands->bindSamplerState(1, igl::BindTarget::kFragment, samplerShadow_.get());
     commands->drawIndexed(
         PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
     if (enableWireframe_) {
@@ -2011,7 +2011,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     commands->bindRenderPipelineState(renderPipelineState_Skybox_);
 #if USE_OPENGL_BACKEND
     commands->bindTexture(1, igl::BindTarget::kFragment, skyboxTextureReference_.get());
-    commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_);
+    commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
 #else
     commands->bindTexture(0, igl::BindTarget::kFragment, skyboxTextureReference_.get());
 #endif
@@ -2062,7 +2062,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
                           kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0).get()
                                               : fbOffscreen_->getColorAttachment(0).get());
 #if USE_OPENGL_BACKEND
-    commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_);
+    commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
 #endif
     commands->draw(PrimitiveType::Triangle, 0, 3);
     commands->popDebugGroupLabel();

@@ -114,6 +114,8 @@ class ShaderUniforms final {
                   igl::ITexture* value,
                   const std::shared_ptr<igl::ISamplerState>& sampler);
 
+  void setTexture(const std::string& name, igl::ITexture* value, igl::ISamplerState* sampler);
+
   /// Binds all relevant states in 'encoder' in preparation for drawing.
   void bind(igl::IDevice& device,
             const igl::IRenderPipelineState& pipelineState,
@@ -185,10 +187,14 @@ class ShaderUniforms final {
     igl::ITexture* rawTexture = nullptr;
   };
 
+  struct SamplerSlot {
+    std::shared_ptr<igl::ISamplerState> sampler;
+    igl::ISamplerState* rawSampler = nullptr;
+  };
+
   std::vector<igl::TextureArgDesc> _textureDescs;
   std::unordered_map<std::string, TextureSlot> _allTexturesByName;
-
-  std::unordered_map<std::string, std::shared_ptr<igl::ISamplerState>> _allSamplersByName;
+  std::unordered_map<std::string, SamplerSlot> _allSamplersByName;
   const igl::BackendType _backend;
 
   void setUniformBytes(const igl::NameHandle& name,

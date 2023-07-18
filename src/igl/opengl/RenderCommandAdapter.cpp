@@ -176,7 +176,7 @@ void RenderCommandAdapter::setVertexTexture(ITexture* texture, size_t index, Res
   Result::setOk(outResult);
 }
 
-void RenderCommandAdapter::setVertexSamplerState(const std::shared_ptr<ISamplerState>& samplerState,
+void RenderCommandAdapter::setVertexSamplerState(ISamplerState* samplerState,
                                                  size_t index,
                                                  Result* outResult) {
   if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
@@ -203,10 +203,9 @@ void RenderCommandAdapter::setFragmentTexture(ITexture* texture, size_t index, R
   Result::setOk(outResult);
 }
 
-void RenderCommandAdapter::setFragmentSamplerState(
-    const std::shared_ptr<ISamplerState>& samplerState,
-    size_t index,
-    Result* outResult) {
+void RenderCommandAdapter::setFragmentSamplerState(ISamplerState* samplerState,
+                                                   size_t index,
+                                                   Result* outResult) {
   if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     return;
@@ -373,7 +372,7 @@ void RenderCommandAdapter::willDraw() {
 
         texture->bind();
 
-        if (auto samplerState = static_cast<SamplerState*>(textureState.second.get())) {
+        if (auto* samplerState = static_cast<SamplerState*>(textureState.second)) {
           samplerState->bind(texture);
         }
         CLEAR_DIRTY(vertexTextureStatesDirty_, index);
@@ -393,7 +392,7 @@ void RenderCommandAdapter::willDraw() {
         }
         texture->bind();
 
-        if (auto samplerState = static_cast<SamplerState*>(textureState.second.get())) {
+        if (auto* samplerState = static_cast<SamplerState*>(textureState.second)) {
           samplerState->bind(texture);
         }
         CLEAR_DIRTY(fragmentTextureStatesDirty_, index);

@@ -311,7 +311,7 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     }
 
     commands->bindTexture(_textureUnit, BindTarget::kFragment, _tex0.get());
-    commands->bindSamplerState(_textureUnit, BindTarget::kFragment, _samp0);
+    commands->bindSamplerState(_textureUnit, BindTarget::kFragment, _samp0.get());
     commands->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *_ib0, 0);
 
     commands->endEncoding();

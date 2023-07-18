@@ -294,7 +294,7 @@ TEST_F(TextureCubeTest, Passthrough) {
     cmds->bindRenderPipelineState(pipelineState);
 
     cmds->bindTexture(textureUnit_, BindTarget::kFragment, inputTexture_.get());
-    cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_);
+    cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
 
     Result result{};
     auto vertUniformBuffer = createVertexUniformBuffer(*iglDev_.get(), &result);

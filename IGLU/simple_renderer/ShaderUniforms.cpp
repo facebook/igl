@@ -423,7 +423,7 @@ void ShaderUniforms::setTexture(const std::string& name,
     return;
   }
   _allTexturesByName[name] = TextureSlot{value, value.get()};
-  _allSamplersByName[name] = sampler;
+  _allSamplersByName[name] = SamplerSlot{sampler, sampler.get()};
 }
 
 void ShaderUniforms::setTexture(const std::string& name,
@@ -435,7 +435,19 @@ void ShaderUniforms::setTexture(const std::string& name,
     return;
   }
   _allTexturesByName[name] = TextureSlot{nullptr, value}; // non-owning
-  _allSamplersByName[name] = sampler;
+  _allSamplersByName[name] = SamplerSlot{sampler, sampler.get()}; // owning
+}
+
+void ShaderUniforms::setTexture(const std::string& name,
+                                igl::ITexture* value,
+                                igl::ISamplerState* sampler) {
+  auto it = _allTexturesByName.find(name);
+  if (it == _allTexturesByName.end()) {
+    IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid texture name: %s\n", name.c_str());
+    return;
+  }
+  _allTexturesByName[name] = TextureSlot{nullptr, value}; // non-owning
+  _allSamplersByName[name] = SamplerSlot{nullptr, sampler}; // non-owning
 }
 
 #if IGL_BACKEND_OPENGL
@@ -564,7 +576,8 @@ void ShaderUniforms::bind(igl::IDevice& device,
     // Assumption: each texture has an associated sampler at the same index in Metal
     encoder.bindSamplerState(_textureDesc.textureIndex,
                              bindTargetForShaderStage(_textureDesc.shaderStage),
-                             samplerIt->second);
+                             samplerIt->second.rawSampler ? samplerIt->second.rawSampler
+                                                          : samplerIt->second.sampler.get());
   }
 }
 
