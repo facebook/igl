@@ -35,7 +35,12 @@ const ImageWriter& PlatformWin::getImageWriter() const noexcept {
   return *imageWriter_;
 };
 
-FileLoader& PlatformWin::getFileLoader() noexcept {
+FileLoader& PlatformWin::getFileLoader() const noexcept {
   return *fileLoader_;
-};
+}
+
+std::shared_ptr<FileLoader> PlatformWin::getFileLoaderPtr() const noexcept {
+  return fileLoader_;
+}
+
 } // namespace igl::shell

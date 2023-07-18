@@ -35,7 +35,12 @@ const ImageWriter& PlatformMac::getImageWriter() const noexcept {
   return *imageWriter_;
 };
 
-FileLoader& PlatformMac::getFileLoader() noexcept {
+FileLoader& PlatformMac::getFileLoader() const noexcept {
   return *fileLoader_;
-};
+}
+
+std::shared_ptr<FileLoader> PlatformMac::getFileLoaderPtr() const noexcept {
+  return fileLoader_;
+}
+
 } // namespace igl::shell

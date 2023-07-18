@@ -21,7 +21,8 @@ class PlatformAndroid : public Platform {
   virtual std::shared_ptr<igl::IDevice> getDevicePtr() const noexcept override;
   ImageLoader& getImageLoader() noexcept override;
   const ImageWriter& getImageWriter() const noexcept override;
-  FileLoader& getFileLoader() noexcept override;
+  FileLoader& getFileLoader() const noexcept override;
+  std::shared_ptr<FileLoader> getFileLoaderPtr() const noexcept override;
 
  private:
   std::shared_ptr<igl::IDevice> device_;

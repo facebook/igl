@@ -41,7 +41,12 @@ const ImageWriter& PlatformAndroid::getImageWriter() const noexcept {
   return *imageWriter_;
 };
 
-FileLoader& PlatformAndroid::getFileLoader() noexcept {
+FileLoader& PlatformAndroid::getFileLoader() const noexcept {
   return *fileLoader_;
-};
+}
+
+std::shared_ptr<FileLoader> PlatformAndroid::getFileLoaderPtr() const noexcept {
+  return fileLoader_;
+}
+
 } // namespace igl::shell

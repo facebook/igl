@@ -35,7 +35,8 @@ class Platform {
   virtual std::shared_ptr<igl::IDevice> getDevicePtr() const noexcept = 0;
   virtual ImageLoader& getImageLoader() noexcept = 0;
   [[nodiscard]] virtual const ImageWriter& getImageWriter() const noexcept = 0;
-  virtual FileLoader& getFileLoader() noexcept = 0;
+  virtual FileLoader& getFileLoader() const noexcept = 0;
+  virtual std::shared_ptr<FileLoader> getFileLoaderPtr() const noexcept = 0;
   virtual InputDispatcher& getInputDispatcher() noexcept;
 
   virtual DisplayContext& getDisplayContext() noexcept {
