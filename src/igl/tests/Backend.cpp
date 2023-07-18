@@ -71,10 +71,10 @@ class BackendTest : public ::testing::Test {
     ASSERT_TRUE(offscreenTexture_ != nullptr);
 
     // Create framebuffer using the offscreen texture
-    FramebufferDesc frambufferDesc;
+    FramebufferDesc framebufferDesc;
 
-    frambufferDesc.colorAttachments[0].texture = offscreenTexture_;
-    framebuffer_ = iglDev_->createFramebuffer(frambufferDesc, &ret);
+    framebufferDesc.colorAttachments[0].texture = offscreenTexture_;
+    framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(framebuffer_ != nullptr);
 
@@ -172,7 +172,7 @@ class BackendTest : public ::testing::Test {
   std::shared_ptr<ITexture> offscreenTexture_;
   std::shared_ptr<IFramebuffer> framebuffer_;
 
-  // Currently it is left to individial tests to initialize this
+  // Currently it is left to individual tests to initialize this
   std::shared_ptr<ITexture> inputTexture_;
 
   std::shared_ptr<IShaderStages> shaderStages_;

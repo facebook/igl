@@ -21,7 +21,7 @@ namespace igl {
  * texture. For example, TwoD corresponds to 2-dimensional textures.
  *
  *  Invalid          - Undefined,
- *  TwoD             - Single layer, two dimensonal: (Width, Height)
+ *  TwoD             - Single layer, two dimensional: (Width, Height)
  *  TwoDArray        - Multiple layers, two dimensional: (Width, Height)
  *  ThreeD           - 3 dimensional textures: (Width, Height, Depth)
  *  Cube             - Special case of 3 dimensional textures: (Width, Height, Depth), along with 6

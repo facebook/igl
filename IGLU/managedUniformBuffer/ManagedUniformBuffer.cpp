@@ -107,7 +107,7 @@ ManagedUniformBuffer::ManagedUniformBuffer(igl::IDevice& device,
 ManagedUniformBuffer::~ManagedUniformBuffer() {
 #if IGL_PLATFORM_IOS_SIMULATOR
   if (vmAllocLength_) {
-    // if vmAllocLength_ is nonzero it implies we uesd vm_alloc to allocate the memory
+    // if vmAllocLength_ is nonzero it implies we used vm_alloc to allocate the memory
     vm_deallocate((vm_map_t)mach_task_self(), (vm_address_t)data_, vmAllocLength_);
   } else {
 #endif

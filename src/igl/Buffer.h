@@ -123,7 +123,7 @@ class IBuffer : public ITrackedResource<IBuffer> {
   virtual Result upload(const void* IGL_NULLABLE data, const BufferRange& range) = 0;
 
   /**
-   * @brief Map a portion of the contents of a GPU Buffer into memory. Not efficient; intented
+   * @brief Map a portion of the contents of a GPU Buffer into memory. Not efficient; intended
    * primarily for debug and test use. unmap() must be called before the buffer is used again in any
    * GPU operations.
    *

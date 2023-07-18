@@ -55,7 +55,7 @@ class SamplerStateOGLTest : public ::testing::Test {
 //
 // convertGLMinFilter tests
 //
-// This tests convertions from glMinFilter to
+// This tests conversions from glMinFilter to
 // SamplerMinMagFilter
 //
 TEST_F(SamplerStateOGLTest, SamplerStateConvertGLMinFilter) {

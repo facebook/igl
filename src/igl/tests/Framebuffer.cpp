@@ -268,7 +268,7 @@ TEST_F(FramebufferTest, Clear) {
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
   ASSERT_EQ(pixels[0], 0x80808080);
 
-  // TODO: copyBytesDepthAttatchment is not functioning property under Metal
+  // TODO: copyBytesDepthAttachment is not functioning property under Metal
   // due to unimplemented blitting
   // Refer to igl/metal/Framebuffer.mm
   framebuffer_->copyBytesDepthAttachment(*cmdQueue_, pixels_depth.data(), rangeDesc);
@@ -319,7 +319,7 @@ TEST_F(FramebufferTest, Clear) {
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
   ASSERT_EQ(pixels[0], 0);
 
-  // TODO: copyBytesDepthAttatchment is not functioning property under Metal
+  // TODO: copyBytesDepthAttachment is not functioning property under Metal
   // due to unimplemented blitting
   // Refer to igl/metal/Framebuffer.mm
   framebuffer_->copyBytesDepthAttachment(*cmdQueue_, pixels_depth.data(), rangeDesc);
@@ -404,10 +404,10 @@ TEST_F(FramebufferTest, blitFramebufferColor) {
     //-------------------------------------------------------------
     // Create second IFramebuffer framebuffer2 by offscreenTexture2
     //-------------------------------------------------------------
-    FramebufferDesc frambufferDesc;
+    FramebufferDesc framebufferDesc;
 
-    frambufferDesc.colorAttachments[0].texture = offscreenTexture2;
-    std::shared_ptr<IFramebuffer> framebuffer2 = iglDev_->createFramebuffer(frambufferDesc, &ret);
+    framebufferDesc.colorAttachments[0].texture = offscreenTexture2;
+    std::shared_ptr<IFramebuffer> framebuffer2 = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_TRUE(ret.isOk());
     ASSERT_TRUE(framebuffer2 != nullptr);
 

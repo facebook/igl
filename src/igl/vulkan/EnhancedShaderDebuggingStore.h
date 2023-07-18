@@ -79,7 +79,7 @@ class EnhancedShaderDebuggingStore {
   /** @brief Returns the shader code that stores the line vertices in the buffer. This code can be
    * injected into all shaders compiled by the device.
    * @param[in] includeFunctionBody a flag that determines if the returned code should include the
-   * funtion's code in the body of the function. If false the function returns a function with an
+   * function's code in the body of the function. If false the function returns a function with an
    * empty body
    * @param[in] extensions the extensions available for the device.
    */

@@ -70,10 +70,10 @@ class TextureTest : public ::testing::Test {
     ASSERT_TRUE(offscreenTexture_ != nullptr);
 
     // Create framebuffer using the offscreen texture
-    FramebufferDesc frambufferDesc;
+    FramebufferDesc framebufferDesc;
 
-    frambufferDesc.colorAttachments[0].texture = offscreenTexture_;
-    framebuffer_ = iglDev_->createFramebuffer(frambufferDesc, &ret);
+    framebufferDesc.colorAttachments[0].texture = offscreenTexture_;
+    framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(framebuffer_ != nullptr);
 
@@ -172,7 +172,7 @@ class TextureTest : public ::testing::Test {
   std::shared_ptr<ITexture> offscreenTexture_;
   std::shared_ptr<IFramebuffer> framebuffer_;
 
-  // Currently it is left to individial tests to initialize this
+  // Currently it is left to individual tests to initialize this
   std::shared_ptr<ITexture> inputTexture_;
 
   std::shared_ptr<IShaderStages> shaderStages_;
@@ -548,7 +548,7 @@ TEST_F(TextureTest, PassthroughSubTexture) {
 // This test will exercise the copy functionality via the following steps:
 //   1. clear FB to (0.5, 0.5, 0.5, 0.5)
 //   2. Copy content to a texture
-//   3. clear FB to (0, 0, 0, 0) and verfy it is cleared
+//   3. clear FB to (0, 0, 0, 0) and verify it is cleared
 //   4. Copy texture content to FB
 //   5. Verify that the FB is back to (0.5, 0.5, 0.5, 0.5)
 //
@@ -703,9 +703,9 @@ TEST_F(TextureTest, PIXEL_UPLOAD_ALIGNMENT) {
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(customOffscreenTexture != nullptr);
 
-  FramebufferDesc frambufferDesc;
-  frambufferDesc.colorAttachments[0].texture = customOffscreenTexture;
-  auto customFramebuffer = iglDev_->createFramebuffer(frambufferDesc, &ret);
+  FramebufferDesc framebufferDesc;
+  framebufferDesc.colorAttachments[0].texture = customOffscreenTexture;
+  auto customFramebuffer = iglDev_->createFramebuffer(framebufferDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(customFramebuffer != nullptr);
 
@@ -863,10 +863,10 @@ TEST_F(TextureTest, Resize) {
   ASSERT_TRUE(outputTex != nullptr);
 
   // Create framebuffer using the output texture
-  FramebufferDesc frambufferDesc;
+  FramebufferDesc framebufferDesc;
 
-  frambufferDesc.colorAttachments[0].texture = outputTex;
-  auto fb = iglDev_->createFramebuffer(frambufferDesc, &ret);
+  framebufferDesc.colorAttachments[0].texture = outputTex;
+  auto fb = iglDev_->createFramebuffer(framebufferDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(fb != nullptr);
 

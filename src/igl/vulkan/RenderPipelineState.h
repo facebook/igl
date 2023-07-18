@@ -107,7 +107,7 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
     return static_cast<VkStencilOp>(front ? stencilFrontDepthFailOp_ : stencilBackDepthFailOp_);
   }
 
-  VkCompareOp getStencilStateComapreOp(bool front) const {
+  VkCompareOp getStencilStateCompareOp(bool front) const {
     return static_cast<VkCompareOp>(front ? stencilFrontCompareOp_ : stencilBackCompareOp_);
   }
 

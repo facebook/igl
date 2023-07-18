@@ -49,7 +49,7 @@ class IRenderCommandEncoder : public ICommandEncoder {
   // Binds the buffer to a shader
   //
   // For metal, the index parameter is the buffer index specified in the shader, for opengl index
-  // referes to the location of uniform. The index value can be found by using
+  // refers to the location of uniform. The index value can be found by using
   // igl::RenderPipelineState::getIndexByName
   //
   // target is the igl::BindTarget type

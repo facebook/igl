@@ -172,7 +172,7 @@ GLenum Texture::toGLTarget(TextureType type, size_t samples) const {
   return 0;
 }
 
-// Whenver possible the caller should have the incoming format in
+// Whenever possible the caller should have the incoming format in
 // igl::TextureFormat thus not use this function. For the cases when this
 // is not possible, e.g. dictated by a file header, then this function
 // can convert GL Texture format into IGL Texture Format

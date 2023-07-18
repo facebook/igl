@@ -46,7 +46,7 @@ class UniformBuffer final : public Buffer {
     return Type::Uniform;
   }
 
-  // For openGL, additional infomation required to bind the uniform is provided when the buffer is
+  // For openGL, additional information required to bind the uniform is provided when the buffer is
   // created within the igl::BufferDesc and igl::UniformBufferEntry (eg. offset, type, elementStride
   // and number of elements).
   //

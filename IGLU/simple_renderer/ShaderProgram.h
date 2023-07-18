@@ -23,7 +23,7 @@ class ShaderProgram final {
   /// layout of the uniforms within a shader.
   const igl::IRenderPipelineReflection& renderPipelineReflection() const;
 
-  /// Populates a pipeline decriptor for drawing using this shader program.
+  /// Populates a pipeline descriptor for drawing using this shader program.
   void populatePipelineDescriptor(igl::RenderPipelineDesc& pipelineDesc) const;
 
   ShaderProgram(igl::IDevice& device,

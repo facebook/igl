@@ -94,7 +94,7 @@ class Material final {
   DepthTestConfig depthTestConfig() const;
   void setDepthTestConfig(igl::IDevice& device, const DepthTestConfig& config);
 
-  /// Populates a pipeline decriptor for drawing using this Material.
+  /// Populates a pipeline descriptor for drawing using this Material.
   void populatePipelineDescriptor(igl::RenderPipelineDesc& pipelineDesc) const;
 
   /// Binds all relevant states in 'encoder' in preparation for drawing.

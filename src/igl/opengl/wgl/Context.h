@@ -27,7 +27,7 @@ class Context : public IContext {
   Context(HDC deviceContext, HGLRC renderContext);
   /// Create a new context with existing HGLRC and share contexts the share context's
   /// must be setup ahead of calling this constructor. (eg. via QOpenGLContext->setShareContext) and
-  /// should not be modified during the existance of this IContext
+  /// should not be modified during the existence of this IContext
   Context(HDC deviceContext, HGLRC renderContext, std::vector<HGLRC> shareContexts);
 
   ~Context() override;

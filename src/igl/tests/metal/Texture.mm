@@ -121,7 +121,7 @@ TEST_F(TextureMTLTest, GetMipmapsCount) {
 
 // Test conversion from MTLTextureType to IGL TextureType
 TEST_F(TextureMTLTest, ToTextureType) {
-  std::vector<std::pair<MTLTextureType, TextureType>> inputAndExpectdList = {
+  std::vector<std::pair<MTLTextureType, TextureType>> inputAndExpectedList = {
       std::make_pair(MTLTextureType2D, TextureType::TwoD),
       std::make_pair(MTLTextureType2DMultisample, TextureType::TwoD),
       std::make_pair(MTLTextureType2DArray, TextureType::TwoDArray),
@@ -130,12 +130,12 @@ TEST_F(TextureMTLTest, ToTextureType) {
       std::make_pair(MTLTextureTypeCubeArray, TextureType::Invalid),
   };
   if (@available(macOS 10.14, iOS 14.0, *)) {
-    inputAndExpectdList.emplace_back(MTLTextureType2DMultisampleArray, TextureType::TwoDArray);
+    inputAndExpectedList.emplace_back(MTLTextureType2DMultisampleArray, TextureType::TwoDArray);
   }
 
-  for (auto inputAndExpectd : inputAndExpectdList) {
-    auto input = inputAndExpectd.first;
-    auto expected = inputAndExpectd.second;
+  for (auto inputAndExpected : inputAndExpectedList) {
+    auto input = inputAndExpected.first;
+    auto expected = inputAndExpected.second;
     auto result = igl::metal::Texture::convertType(input);
     ASSERT_EQ(expected, result);
   }
@@ -145,7 +145,7 @@ TEST_F(TextureMTLTest, ToTextureType) {
 // Current IGL makes the following assumptions, which may not be valid in the future
 //   * Falls back to MTLTextureType1D for TextureType::Invalid
 TEST_F(TextureMTLTest, ToMTLTextureType) {
-  std::vector<std::tuple<TextureType, size_t, MTLTextureType>> inputAndExpectdList = {
+  std::vector<std::tuple<TextureType, size_t, MTLTextureType>> inputAndExpectedList = {
       std::make_tuple(TextureType::Invalid, 1, MTLTextureType1D),
       std::make_tuple(TextureType::TwoD, 1, MTLTextureType2D),
       std::make_tuple(TextureType::TwoD, 2, MTLTextureType2DMultisample),
@@ -153,13 +153,13 @@ TEST_F(TextureMTLTest, ToMTLTextureType) {
       std::make_tuple(TextureType::ThreeD, 1, MTLTextureType3D),
       std::make_tuple(TextureType::Cube, 1, MTLTextureTypeCube)};
   if (@available(macOS 10.14, iOS 14.0, *)) {
-    inputAndExpectdList.emplace_back(TextureType::TwoDArray, 2, MTLTextureType2DMultisampleArray);
+    inputAndExpectedList.emplace_back(TextureType::TwoDArray, 2, MTLTextureType2DMultisampleArray);
   }
 
-  for (auto inputAndExpectd : inputAndExpectdList) {
-    auto input = std::get<0>(inputAndExpectd);
-    auto numSamples = std::get<1>(inputAndExpectd);
-    auto expected = std::get<2>(inputAndExpectd);
+  for (auto inputAndExpected : inputAndExpectedList) {
+    auto input = std::get<0>(inputAndExpected);
+    auto numSamples = std::get<1>(inputAndExpected);
+    auto expected = std::get<2>(inputAndExpected);
     auto result = igl::metal::Texture::convertType(input, numSamples);
     ASSERT_EQ(expected, result);
   }

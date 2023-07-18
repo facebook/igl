@@ -35,7 +35,7 @@ class HWDevice final {
   /*
    * @brief Create a new vulkan::Device
    *        Only 1 device can be created for Vulkan. The new device will take ownership of
-   * VulkanContext. If the process failes, the provided VulkanContext is destroyed.
+   * VulkanContext. If the process fails, the provided VulkanContext is destroyed.
    */
 
   static std::unique_ptr<IDevice> create(std::unique_ptr<VulkanContext> ctx,
