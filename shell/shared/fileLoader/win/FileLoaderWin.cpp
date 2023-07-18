@@ -41,4 +41,14 @@ bool FileLoaderWin::fileExists(const std::string& fileName) const {
   return exists;
 }
 
+std::string FileLoaderWin::basePath() const {
+  // passthrough, since there are no bundles on Windows
+  return FileLoader::basePath();
+}
+
+std::string FileLoaderWin::fullPath(const std::string& fileName) const {
+  // passthrough, since there are no bundles on Windows
+  return fileName;
+}
+
 } // namespace igl::shell
