@@ -181,7 +181,6 @@ void UniformBlockBuffer::bindBase(size_t index, Result* outResult) {
       Result::setResult(outResult, Result::Code::InvalidOperation, kErrorMsg);
       return;
     }
-    getContext().bindBuffer(target_, iD_);
     getContext().bindBufferBase(target_, (GLuint)index, iD_);
     Result::setOk(outResult);
   } else {
