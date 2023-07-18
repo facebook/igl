@@ -25,6 +25,9 @@ class FileLoader {
   virtual std::string basePath() const {
     return ".";
   }
+  virtual std::string fullPath(const std::string& /* filename */) const {
+    return "";
+  }
 };
 
 } // namespace igl::shell

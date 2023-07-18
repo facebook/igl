@@ -11,21 +11,37 @@
 #include <fstream>
 #include <string>
 
+// returns the NSString version of the full path of fileName within the main bundle
+// it'll first attempt to find the bundle path using the full fileName
+// if not found, it'll attempt to find the bundle path using just the root of the fileName
+// a return value of nil indicates that the fileName wasn't found within the main bundle
+static NSString* getBundleFilePath(const std::string& fileName) {
+  NSString* nsFileName = [NSString stringWithUTF8String:fileName.c_str()];
+  if (nsFileName == nil || [nsFileName length] == 0) {
+    return nil;
+  }
+
+  // first search for the full file name, which may include a path
+  NSString* nsPath = [[NSBundle mainBundle] pathForResource:nsFileName ofType:nil];
+  if (nsPath == nil) {
+    // next search for the root file name without the path
+    // since the bundle path may be different and flattened within the bundle
+    NSString* nsRootFileName = [nsFileName lastPathComponent];
+    nsPath = [[NSBundle mainBundle] pathForResource:nsRootFileName ofType:nil];
+  }
+
+  return nsPath;
+}
+
 namespace igl::shell {
 
 std::vector<uint8_t> FileLoaderMac::loadBinaryData(const std::string& fileName) {
   std::vector<uint8_t> data;
-  if (fileName.length() == 0) {
+  if (fileName.empty()) {
     return data;
   }
 
-  NSString* nsFileName = [NSString stringWithUTF8String:fileName.c_str()];
-  if ([nsFileName length] == 0) {
-    return data;
-  }
-
-  NSString* nsPath = [[NSBundle mainBundle] pathForResource:nsFileName ofType:nil];
-  std::string path = std::string([nsPath UTF8String]);
+  const std::string path = fullPath(fileName);
 
   std::ifstream file(path, std::ios::binary);
   if ((file.rdstate() & std::ifstream::failbit) != 0) {
@@ -44,23 +60,29 @@ std::vector<uint8_t> FileLoaderMac::loadBinaryData(const std::string& fileName) 
 }
 
 bool FileLoaderMac::fileExists(const std::string& fileName) const {
-  NSString* nsFileName = [NSString stringWithUTF8String:fileName.c_str()];
-  if (nsFileName == nil || [nsFileName length] == 0) {
-    return false;
-  }
-  NSString* nsPath = [[NSBundle mainBundle] pathForResource:nsFileName ofType:nil];
-  if (nsPath == nil || [nsPath length] == 0) {
+  NSString* nsPath = getBundleFilePath(fileName);
+  if (nsPath == nil) {
     return false;
   }
   return [[NSFileManager defaultManager] fileExistsAtPath:nsPath];
 }
 
 std::string FileLoaderMac::basePath() const {
+  std::string basePath;
   const char* cstr = [[NSBundle mainBundle] resourcePath].UTF8String;
-  if (cstr != nullptr) {
-    return std::string{cstr};
+  if (cstr != nil) {
+    basePath = std::string{cstr};
   }
-  return FileLoader::basePath();
+  return basePath;
+}
+
+std::string FileLoaderMac::fullPath(const std::string& fileName) const {
+  std::string fullPath;
+  NSString* nsPath = getBundleFilePath(fileName);
+  if (nsPath != nil) {
+    fullPath = std::string([nsPath UTF8String]);
+  }
+  return fullPath;
 }
 
 } // namespace igl::shell
