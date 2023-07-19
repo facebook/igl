@@ -474,10 +474,10 @@ void MRTSession::createOrUpdateFramebufferDisplayLast(const igl::SurfaceTextures
   }
 
   // Framebuffer & Texture
-  FramebufferDesc frambufferDesc;
-  frambufferDesc.colorAttachments[0].texture = surfaceTextures.color;
+  FramebufferDesc framebufferDesc;
+  framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
 
-  framebufferDisplayLast_ = getPlatform().getDevice().createFramebuffer(frambufferDesc, nullptr);
+  framebufferDisplayLast_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, nullptr);
 }
 
 void MRTSession::createOrUpdateFramebufferMRT(const igl::SurfaceTextures& surfaceTextures) {
@@ -492,12 +492,12 @@ void MRTSession::createOrUpdateFramebufferMRT(const igl::SurfaceTextures& surfac
     tex2_ = createTexture2D(surfaceTextures.color);
   }
   // Framebuffer & Texture
-  FramebufferDesc frambufferDesc;
+  FramebufferDesc framebufferDesc;
 
-  frambufferDesc.colorAttachments[0].texture = tex1_;
-  frambufferDesc.colorAttachments[1].texture = tex2_;
+  framebufferDesc.colorAttachments[0].texture = tex1_;
+  framebufferDesc.colorAttachments[1].texture = tex2_;
 
-  framebufferMRT_ = getPlatform().getDevice().createFramebuffer(frambufferDesc, nullptr);
+  framebufferMRT_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, nullptr);
 }
 
 } // namespace shell

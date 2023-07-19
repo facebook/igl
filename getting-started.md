@@ -20,7 +20,7 @@ A complex example demonstrating most of IGL features and rendering the Lumberyar
 
 # RenderSessions
 
-RenderSessions use iglshell functionality that provides platfrom abstraction and basic application functionality.
+RenderSessions use iglshell functionality that provides platform abstraction and basic application functionality.
 We provide some basic examples that you can use in your projects
 
 1)  [EmptySession](./shell/renderSessions/EmptySession.cpp)

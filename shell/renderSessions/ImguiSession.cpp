@@ -28,12 +28,12 @@ void ImguiSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   auto cmdBuffer = _commandQueue->createCommandBuffer(igl::CommandBufferDesc(), nullptr);
 
-  igl::FramebufferDesc frambufferDesc;
-  frambufferDesc.colorAttachments[0].texture = surfaceTextures.color;
+  igl::FramebufferDesc framebufferDesc;
+  framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
   if (_outputFramebuffer) {
     _outputFramebuffer->updateDrawable(surfaceTextures.color);
   } else {
-    _outputFramebuffer = getPlatform().getDevice().createFramebuffer(frambufferDesc, nullptr);
+    _outputFramebuffer = getPlatform().getDevice().createFramebuffer(framebufferDesc, nullptr);
   }
 
   igl::RenderPassDesc renderPassDesc;
@@ -44,7 +44,7 @@ void ImguiSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   auto encoder = cmdBuffer->createRenderCommandEncoder(renderPassDesc, _outputFramebuffer);
 
   { // Draw using ImGui every frame
-    _imguiSession->beginFrame(frambufferDesc, getPlatform().getDisplayContext().scale);
+    _imguiSession->beginFrame(framebufferDesc, getPlatform().getDisplayContext().scale);
     ImGui::ShowDemoWindow();
     _imguiSession->endFrame(getPlatform().getDevice(), *encoder);
   }

@@ -109,7 +109,7 @@ enum class DeviceFeatures {
  * @brief DeviceRequirement denotes capturing specific requirements for a feature to be enabled.
  * These should be used in combination with DeviceFeatures to understand how to take advantage of
  * the feature.
- * For example, using the StandardDerivate feature with an OpenGL ES 2.0 device requires using an
+ * For example, using the StandardDerivative feature with an OpenGL ES 2.0 device requires using an
  * extension whereas it can be used without an extension for an OpenGL or OpenGL ES 3+ device.
  * If a device returns true for hasFeature(DeviceFeatures::ShaderTextureLod) and returns true for
  * hasRequirement(DeviceRequirement::ShaderTextureLodExtReq), then shader code wishing to use the

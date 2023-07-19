@@ -64,7 +64,7 @@ TEST_F(ShaderLibraryTest, CreateFromSource) {
   ASSERT_TRUE(vertShaderModule);
 }
 
-TEST_F(ShaderLibraryTest, CreateFromSoureReturnNullWithNullInput) {
+TEST_F(ShaderLibraryTest, CreateFromSourceReturnNullWithNullInput) {
   Result ret;
   if (!iglDev_->hasFeature(DeviceFeatures::ShaderLibrary)) {
     GTEST_SKIP() << "Shader Libraries are unsupported for this platform.";

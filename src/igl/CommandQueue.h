@@ -37,7 +37,7 @@ struct CommandQueueDesc {
 /**
  * Contains the current frame's draw count and last frame's draw count.
  * ICommandQueue controls these values and moves current draw count to last frame draw count through
- * the endFrame funcion.
+ * the endFrame function.
  */
 struct CommandQueueStatistics {
   uint32_t currentDrawCount = 0;

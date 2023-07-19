@@ -416,10 +416,10 @@ class UniformBufferTest : public ::testing::Test {
     ASSERT_TRUE(inputTexture_ != nullptr);
 
     // Create framebuffer using the offscreen texture
-    FramebufferDesc frambufferDesc;
+    FramebufferDesc framebufferDesc;
 
-    frambufferDesc.colorAttachments[0].texture = offscreenTexture_;
-    framebuffer_ = iglDev_->createFramebuffer(frambufferDesc, &ret);
+    framebufferDesc.colorAttachments[0].texture = offscreenTexture_;
+    framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_TRUE(ret.isOk());
     ASSERT_TRUE(framebuffer_ != nullptr);
 

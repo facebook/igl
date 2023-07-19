@@ -28,7 +28,7 @@ BufferSynchronizationManager::BufferSynchronizationManager(size_t maxInFlightBuf
 
 void BufferSynchronizationManager::markCommandBufferAsEndOfFrame(
     const igl::ICommandBuffer& commandBuffer) {
-  // Set a completetion handler for this cmd buffer
+  // Set a completion handler for this cmd buffer
   __weak dispatch_semaphore_t semaphore = frameBoundarySemaphore_;
   [static_cast<const CommandBuffer&>(commandBuffer).get()
       addCompletedHandler:^(id<MTLCommandBuffer> mtlCommandBuffer) {

@@ -294,7 +294,7 @@ void Session::Renderer::newFrame(const igl::FramebufferDesc& desc) {
 }
 
 namespace {
-// push constant structure for Vulkan, containing all the relavent data
+// push constant structure for Vulkan, containing all the relevant data
 struct VulkanImguiBindData {
   iglu::simdtypes::float4x4 proj;
   uint32_t textureId;

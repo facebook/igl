@@ -1270,7 +1270,7 @@ void VulkanContext::DynamicUniformsBufferSet::markSubmit(
     DUBs_[lastSubmittedDUBIndex_].handle_ = handle;
   }
 
-  // force a move to the next DUB in `udpateDynamicUniforms` - acquire here so that multiple
+  // force a move to the next DUB in `updateDynamicUniforms` - acquire here so that multiple
   // sequential calls to markSubmit() work as expected
   acquireNextDUB();
 }

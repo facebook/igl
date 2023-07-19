@@ -91,7 +91,7 @@ class ComputeCommandEncoderTest : public ::testing::Test {
   }
 
   /**
-   * @brief This function binds bufferIn and bufferOut to a new computePiplineState and encodes the
+   * @brief This function binds bufferIn and bufferOut to a new computePipelineState and encodes the
    * computePipelineState to a new computeCommandEncoder.
    */
   void encodeCompute(const std::shared_ptr<igl::ICommandBuffer>& cmdBuffer,

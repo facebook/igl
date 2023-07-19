@@ -82,7 +82,7 @@ enum class VertexSampleFunction {
   PerVertex,
   Instance,
 
-  // Missing Tesselation support
+  // Missing Tessellation support
 };
 
 /**

@@ -33,7 +33,7 @@ class XrApp {
   XrApp(std::unique_ptr<impl::XrAppImpl>&& impl);
   ~XrApp();
 
-  inline bool intialized() const {
+  inline bool initialized() const {
     return initialized_;
   }
   bool initialize(const struct android_app* app);

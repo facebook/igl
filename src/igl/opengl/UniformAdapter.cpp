@@ -19,8 +19,8 @@ UniformAdapter::UniformAdapter(const IContext& context, PipelineType type) : pip
 
   // NOTE: 32 "feels" right and yielded good results in MobileLab. Goal here is to minimize
   // number of resize's in the vector but not be unreasonably large.
-  constexpr size_t kLikelyMaxiumNumUniforms = 32;
-  uniforms_.reserve(kLikelyMaxiumNumUniforms);
+  constexpr size_t kLikelyMaximumNumUniforms = 32;
+  uniforms_.reserve(kLikelyMaximumNumUniforms);
 
   if (pipelineType_ == Render) {
     maxUniforms_ = deviceFeatures.getMaxVertexUniforms() + deviceFeatures.getMaxFragmentUniforms();

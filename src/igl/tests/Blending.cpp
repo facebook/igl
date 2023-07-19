@@ -66,10 +66,10 @@ class BlendingTest : public ::testing::Test {
     ASSERT_TRUE(offscreenTexture_ != nullptr);
 
     // Create framebuffer using the offscreen texture
-    FramebufferDesc frambufferDesc;
+    FramebufferDesc framebufferDesc;
 
-    frambufferDesc.colorAttachments[0].texture = offscreenTexture_;
-    framebuffer_ = iglDev_->createFramebuffer(frambufferDesc, &ret);
+    framebufferDesc.colorAttachments[0].texture = offscreenTexture_;
+    framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(framebuffer_ != nullptr);
 

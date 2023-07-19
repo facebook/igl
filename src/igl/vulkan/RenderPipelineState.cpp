@@ -335,12 +335,12 @@ VkPipeline RenderPipelineState::getVkPipeline(
                        dynamicState.getStencilStateFailOp(true),
                        dynamicState.getStencilStatePassOp(true),
                        dynamicState.getStencilStateDepthFailOp(true),
-                       dynamicState.getStencilStateComapreOp(true))
+                       dynamicState.getStencilStateCompareOp(true))
       .stencilStateOps(VK_STENCIL_FACE_BACK_BIT,
                        dynamicState.getStencilStateFailOp(false),
                        dynamicState.getStencilStatePassOp(false),
                        dynamicState.getStencilStateDepthFailOp(false),
-                       dynamicState.getStencilStateComapreOp(false))
+                       dynamicState.getStencilStateCompareOp(false))
       .shaderStages({
           ivkGetPipelineShaderStageCreateInfo(
               VK_SHADER_STAGE_VERTEX_BIT,

@@ -76,7 +76,7 @@ TEST_F(DeviceOGLTest, EndScope) {
     DeviceScope deviceScope(*iglDev_);
     ASSERT_TRUE(iglDev_->verifyScope());
 
-    // Artifically set values that will be restored when endScope is called
+    // Artificially set values that will be restored when endScope is called
     context_->colorMask(false, false, false, false);
     context_->blendFunc(GL_SRC_COLOR, GL_DST_COLOR);
 
@@ -231,9 +231,9 @@ TEST_F(DeviceOGLTest, DeletionTest) {
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(texture != nullptr);
 
-    FramebufferDesc frambufferDesc;
-    frambufferDesc.colorAttachments[0].texture = texture;
-    framebuffer = iglDev_->createFramebuffer(frambufferDesc, &ret);
+    FramebufferDesc framebufferDesc;
+    framebufferDesc.colorAttachments[0].texture = texture;
+    framebuffer = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(framebuffer != nullptr);
 

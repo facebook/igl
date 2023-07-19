@@ -25,7 +25,7 @@ struct VulkanQueueDescriptor {
     return queueIndex != INVALID && familyIndex != INVALID;
   }
 
-  /* familyIndex and queueIndex are sufficent to uniquely identify a VulkanQueueDescriptor. */
+  /* familyIndex and queueIndex are sufficient to uniquely identify a VulkanQueueDescriptor. */
   bool operator==(const VulkanQueueDescriptor& other) const {
     return (familyIndex == other.familyIndex && queueIndex == other.queueIndex);
   }
