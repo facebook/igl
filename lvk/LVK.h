@@ -173,28 +173,28 @@ class ITexture;
 
 enum { IGL_COLOR_ATTACHMENTS_MAX = 4 };
 
-enum class IndexFormat : uint8_t {
-  UInt16,
-  UInt32,
+enum IndexFormat : uint8_t {
+  IndexFormat_UI16,
+  IndexFormat_UI32,
 };
 
-enum class PrimitiveType : uint8_t {
-  Point,
-  Line,
-  LineStrip,
-  Triangle,
-  TriangleStrip,
+enum PrimitiveType : uint8_t {
+  Primitive_Point,
+  Primitive_Line,
+  Primitive_LineStrip,
+  Primitive_Triangle,
+  Primitive_TriangleStrip,
 };
 
-enum class ColorSpace : uint8_t {
-  SRGB_LINEAR,
-  SRGB_NONLINEAR,
+enum ColorSpace : uint8_t {
+  ColorSpace_SRGB_LINEAR,
+  ColorSpace_SRGB_NONLINEAR,
 };
 
-enum class TextureType : uint8_t {
-  TwoD,
-  ThreeD,
-  Cube,
+enum TextureType : uint8_t {
+  TextureType_2D,
+  TextureType_3D,
+  TextureType_Cube,
 };
 
 enum SamplerFilter : uint8_t { SamplerFilter_Nearest = 0, SamplerFilter_Linear };
@@ -481,16 +481,16 @@ enum LoadOp : uint8_t {
 };
 
 enum StoreOp : uint8_t {
-  StoreOp_DontCare,
+  StoreOp_DontCare = 0,
   StoreOp_Store,
   StoreOp_MsaaResolve,
   StoreOp_None,
 };
 
-enum class CommandQueueType {
-  Compute,
-  Graphics,
-  Transfer,
+enum QueueType : uint8_t {
+  QueueType_Compute = 0,
+  QueueType_Graphics,
+  QueueType_Transfer,
 };
 
 enum ShaderStage : uint8_t {
@@ -701,7 +701,7 @@ enum TextureUsageBits : uint8_t {
 };
 
 struct TextureDesc {
-  TextureType type = TextureType::TwoD;
+  TextureType type = TextureType_2D;
   TextureFormat format = TextureFormat::Invalid;
 
   uint32_t width = 1;
@@ -816,7 +816,7 @@ class IDevice {
   virtual std::shared_ptr<ICommandBuffer> createCommandBuffer() = 0;
 
   virtual void submit(const ICommandBuffer& commandBuffer,
-                      lvk::CommandQueueType queueType,
+                      lvk::QueueType queueType = lvk::QueueType_Graphics,
                       ITexture* present = nullptr) = 0;
 
   virtual std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,

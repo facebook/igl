@@ -123,7 +123,7 @@ ImGuiRenderer::ImGuiRenderer(lvk::IDevice& device, const char* defaultFontTTF, f
   unsigned char* pixels;
   int width, height;
   io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-  fontTexture_ = device.createTexture({.type = lvk::TextureType::TwoD,
+  fontTexture_ = device.createTexture({.type = lvk::TextureType_2D,
                                        .format = lvk::TextureFormat::RGBA_UN8,
                                        .width = (uint32_t)width,
                                        .height = (uint32_t)height,
@@ -241,10 +241,10 @@ void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffe
 
       cmdBuffer.cmdBindRenderPipeline(pipeline_);
       cmdBuffer.cmdBindVertexBuffer(0, drawableData.vb_, 0);
-      cmdBuffer.cmdDrawIndexed(lvk::PrimitiveType::Triangle,
+      cmdBuffer.cmdDrawIndexed(lvk::Primitive_Triangle,
                                cmd.ElemCount,
-                               sizeof(ImDrawIdx) == sizeof(uint16_t) ? lvk::IndexFormat::UInt16
-                                                                     : lvk::IndexFormat::UInt32,
+                               sizeof(ImDrawIdx) == sizeof(uint16_t) ? lvk::IndexFormat_UI16
+                                                                     : lvk::IndexFormat_UI32,
                                *drawableData.ib_,
                                cmd.IdxOffset * sizeof(ImDrawIdx));
     }

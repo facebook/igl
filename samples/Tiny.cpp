@@ -82,7 +82,7 @@ void VulkanObjects::createFramebuffer() {
 
   {
     const lvk::TextureDesc desc = {
-        .type = lvk::TextureType::TwoD,
+        .type = lvk::TextureType_2D,
         .format = texSwapchain->getFormat(),
         .width = texSwapchain->getDimensions().width,
         .height = texSwapchain->getDimensions().height,
@@ -122,11 +122,11 @@ void VulkanObjects::render() {
     buffer->cmdBindViewport({0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f});
     buffer->cmdBindScissorRect({0, 0, width_, height_});
     buffer->cmdPushDebugGroupLabel("Render Triangle", lvk::Color(1, 0, 0));
-    buffer->cmdDraw(lvk::PrimitiveType::Triangle, 0, 3);
+    buffer->cmdDraw(lvk::Primitive_Triangle, 0, 3);
     buffer->cmdPopDebugGroupLabel();
   }
   buffer->cmdEndRendering();
-  device_->submit(*buffer, lvk::CommandQueueType::Graphics, fb_.colorAttachments[0].texture.get());
+  device_->submit(*buffer, lvk::QueueType_Graphics, fb_.colorAttachments[0].texture.get());
 }
 
 int main(int argc, char* argv[]) {

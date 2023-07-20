@@ -56,7 +56,7 @@ std::shared_ptr<ICommandBuffer> Device::createCommandBuffer() {
 }
 
 void Device::submit(const lvk::ICommandBuffer& commandBuffer,
-                    lvk::CommandQueueType queueType,
+                    lvk::QueueType queueType,
                     ITexture* present) {
   IGL_PROFILER_FUNCTION();
 
@@ -65,7 +65,7 @@ void Device::submit(const lvk::ICommandBuffer& commandBuffer,
   vulkan::CommandBuffer* vkCmdBuffer =
       const_cast<vulkan::CommandBuffer*>(static_cast<const vulkan::CommandBuffer*>(&commandBuffer));
 
-  const bool isGraphicsQueue = queueType == CommandQueueType::Graphics;
+  const bool isGraphicsQueue = queueType == QueueType_Graphics;
 
   if (present) {
     const auto& vkTex = static_cast<Texture&>(*present);
@@ -149,7 +149,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   }
 
   if (patchedDesc.initialData) {
-    IGL_ASSERT(patchedDesc.type == TextureType::TwoD);
+    IGL_ASSERT(patchedDesc.type == TextureType_2D);
     const void* mipMaps[] = {patchedDesc.initialData};
     res = texture->upload(
         {

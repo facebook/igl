@@ -581,7 +581,7 @@ void initIGL() {
   {
     textureDummyWhite_ = device_->createTexture(
         {
-            .type = lvk::TextureType::TwoD,
+            .type = lvk::TextureType_2D,
             .format = lvk::TextureFormat::RGBA_UN8,
             .width = 1,
             .height = 1,
@@ -1028,7 +1028,7 @@ void createShadowMap() {
   const uint32_t w = 4096;
   const uint32_t h = 4096;
   const lvk::TextureDesc desc = {
-      .type = lvk::TextureType::TwoD,
+      .type = lvk::TextureType_2D,
       .format = lvk::TextureFormat::Z_UN16,
       .width = w,
       .height = h,
@@ -1045,7 +1045,7 @@ void createOffscreenFramebuffer() {
   const uint32_t w = width_;
   const uint32_t h = height_;
   lvk::TextureDesc descDepth = {
-      .type = lvk::TextureType::TwoD,
+      .type = lvk::TextureType_2D,
       .format = lvk::TextureFormat::Z_UN24,
       .width = w,
       .height = h,
@@ -1065,7 +1065,7 @@ void createOffscreenFramebuffer() {
   const lvk::TextureFormat format = lvk::TextureFormat::RGBA_UN8;
 
   lvk::TextureDesc descColor = {
-      .type = lvk::TextureType::TwoD,
+      .type = lvk::TextureType_2D,
       .format = format,
       .width = w,
       .height = h,
@@ -1087,7 +1087,7 @@ void createOffscreenFramebuffer() {
 
   if (kNumSamplesMSAA > 1) {
     fb.colorAttachments[0].resolveTexture = device_->createTexture({
-        .type = lvk::TextureType::TwoD,
+        .type = lvk::TextureType_2D,
         .format = format,
         .width = w,
         .height = h,
@@ -1165,16 +1165,13 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
       };
       buffer->cmdPushConstants(bindings);
 
-      buffer->cmdDrawIndexed(lvk::PrimitiveType::Triangle,
-                             indexData_.size(),
-                             lvk::IndexFormat::UInt32,
-                             *ib0_.get(),
-                             0);
+      buffer->cmdDrawIndexed(
+          lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, *ib0_.get(), 0);
       buffer->cmdPopDebugGroupLabel();
     }
     buffer->cmdEndRendering();
     buffer->transitionToShaderReadOnly(*fbShadowMap_.depthStencilAttachment.texture);
-    device_->submit(*buffer, lvk::CommandQueueType::Graphics);
+    device_->submit(*buffer, lvk::QueueType_Graphics);
 
     fbShadowMap_.depthStencilAttachment.texture->generateMipmap();
 
@@ -1204,18 +1201,12 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
           .materials = sbMaterials_->gpuAddress(),
       };
       buffer->cmdPushConstants(bindings);
-      buffer->cmdDrawIndexed(lvk::PrimitiveType::Triangle,
-                             indexData_.size(),
-                             lvk::IndexFormat::UInt32,
-                             *ib0_.get(),
-                             0);
+      buffer->cmdDrawIndexed(
+          lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, *ib0_.get(), 0);
       if (enableWireframe_) {
         buffer->cmdBindRenderPipeline(renderPipelineState_MeshWireframe_);
-        buffer->cmdDrawIndexed(lvk::PrimitiveType::Triangle,
-                               indexData_.size(),
-                               lvk::IndexFormat::UInt32,
-                               *ib0_.get(),
-                               0);
+        buffer->cmdDrawIndexed(
+            lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, *ib0_.get(), 0);
       }
       buffer->cmdPopDebugGroupLabel();
 
@@ -1223,12 +1214,12 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
       buffer->cmdBindRenderPipeline(renderPipelineState_Skybox_);
       buffer->cmdPushDebugGroupLabel("Render Skybox", lvk::Color(0, 1, 0));
       buffer->cmdBindDepthStencilState(depthStencilStateLEqual_);
-      buffer->cmdDraw(lvk::PrimitiveType::Triangle, 0, 3 * 6 * 2);
+      buffer->cmdDraw(lvk::Primitive_Triangle, 0, 3 * 6 * 2);
       buffer->cmdPopDebugGroupLabel();
     }
     buffer->cmdEndRendering();
     buffer->transitionToShaderReadOnly(*fbOffscreen_.colorAttachments[0].texture);
-    device_->submit(*buffer, lvk::CommandQueueType::Graphics);
+    device_->submit(*buffer, lvk::QueueType_Graphics);
   }
 
   // Pass 3: compute shader post-processing
@@ -1254,7 +1245,7 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
         },
         {.textures = {tex.get()}});
 
-    device_->submit(*buffer, lvk::CommandQueueType::Compute);
+    device_->submit(*buffer, lvk::QueueType_Compute);
   }
 
   // Pass 4: render into the swapchain image
@@ -1274,15 +1265,14 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
                          : fbOffscreen_.colorAttachments[0].texture->getTextureId(),
       };
       buffer->cmdPushConstants(bindings);
-      buffer->cmdDraw(lvk::PrimitiveType::Triangle, 0, 3);
+      buffer->cmdDraw(lvk::Primitive_Triangle, 0, 3);
       buffer->cmdPopDebugGroupLabel();
 
       imgui_->endFrame(*device_.get(), *buffer);
     }
     buffer->cmdEndRendering();
 
-    device_->submit(
-        *buffer, lvk::CommandQueueType::Graphics, fbMain_.colorAttachments[0].texture.get());
+    device_->submit(*buffer, lvk::QueueType_Graphics, fbMain_.colorAttachments[0].texture.get());
   }
 }
 
@@ -1464,7 +1454,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<lvk::ITe
   if (!tex) {
     tex = device_->createTexture(
         {
-            .type = lvk::TextureType::Cube,
+            .type = lvk::TextureType_Cube,
             .format = gli2iglTextureFormat(texRef.format()),
             .width = width,
             .height = height,
@@ -1650,7 +1640,7 @@ std::shared_ptr<lvk::ITexture> createTexture(const LoadedImage& img) {
   }
 
   const lvk::TextureDesc desc = {
-      .type = lvk::TextureType::TwoD,
+      .type = lvk::TextureType_2D,
       .format = formatFromChannels(img.channels),
       .width = img.w,
       .height = img.h,

@@ -209,7 +209,7 @@ static void initIGL() {
     const uint32_t texHeight = 256;
     texture0_ = device_->createTexture(
         {
-            .type = lvk::TextureType::TwoD,
+            .type = lvk::TextureType_2D,
             .format = lvk::TextureFormat::BGRA_UN8,
             .width = texWidth,
             .height = texHeight,
@@ -253,7 +253,7 @@ static void initIGL() {
     }
     texture1_ = device_->createTexture(
         {
-            .type = lvk::TextureType::TwoD,
+            .type = lvk::TextureType_2D,
             .format = lvk::TextureFormat::RGBA_UN8,
             .width = (uint32_t)texWidth,
             .height = (uint32_t)texHeight,
@@ -386,14 +386,14 @@ static void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_
       };
       buffer->cmdPushConstants(bindings);
       buffer->cmdDrawIndexed(
-          lvk::PrimitiveType::Triangle, 3 * 6 * 2, lvk::IndexFormat::UInt16, *ib0_.get(), 0);
+          lvk::Primitive_Triangle, 3 * 6 * 2, lvk::IndexFormat_UI16, *ib0_.get(), 0);
     }
     buffer->cmdPopDebugGroupLabel();
   }
   imgui_->endFrame(*device_.get(), *buffer);
   buffer->cmdEndRendering();
 
-  device_->submit(*buffer, lvk::CommandQueueType::Graphics, nativeDrawable.get());
+  device_->submit(*buffer, lvk::QueueType_Graphics, nativeDrawable.get());
 }
 
 int main(int argc, char* argv[]) {

@@ -107,9 +107,9 @@ VkStencilOp stencilOpToVkStencilOp(lvk::StencilOp op) {
 
 VkIndexType indexFormatToVkIndexType(lvk::IndexFormat fmt) {
   switch (fmt) {
-  case lvk::IndexFormat::UInt16:
+  case lvk::IndexFormat_UI16:
     return VK_INDEX_TYPE_UINT16;
-  case lvk::IndexFormat::UInt32:
+  case lvk::IndexFormat_UI32:
     return VK_INDEX_TYPE_UINT32;
   };
   IGL_ASSERT(false);
@@ -118,15 +118,15 @@ VkIndexType indexFormatToVkIndexType(lvk::IndexFormat fmt) {
 
 VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(lvk::PrimitiveType t) {
   switch (t) {
-  case lvk::PrimitiveType::Point:
+  case lvk::Primitive_Point:
     return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-  case lvk::PrimitiveType::Line:
+  case lvk::Primitive_Line:
     return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-  case lvk::PrimitiveType::LineStrip:
+  case lvk::Primitive_LineStrip:
     return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-  case lvk::PrimitiveType::Triangle:
+  case lvk::Primitive_Triangle:
     return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-  case lvk::PrimitiveType::TriangleStrip:
+  case lvk::Primitive_TriangleStrip:
     return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
   }
   IGL_ASSERT_MSG(false, "Implement PrimitiveType = %u", (uint32_t)t);

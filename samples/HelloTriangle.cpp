@@ -60,11 +60,10 @@ void render() {
       {.colorAttachments = {{.texture = device_->getCurrentSwapchainTexture()}}});
   buffer->cmdBindRenderPipeline(renderPipelineState_Triangle_);
   buffer->cmdPushDebugGroupLabel("Render Triangle", lvk::Color(1, 0, 0));
-  buffer->cmdDraw(lvk::PrimitiveType::Triangle, 0, 3);
+  buffer->cmdDraw(lvk::Primitive_Triangle, 0, 3);
   buffer->cmdPopDebugGroupLabel();
   buffer->cmdEndRendering();
-  device_->submit(
-      *buffer, lvk::CommandQueueType::Graphics, device_->getCurrentSwapchainTexture().get());
+  device_->submit(*buffer, lvk::QueueType_Graphics, device_->getCurrentSwapchainTexture().get());
 }
 
 int main(int argc, char* argv[]) {

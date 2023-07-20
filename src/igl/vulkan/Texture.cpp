@@ -27,8 +27,7 @@ Result Texture::create(const TextureDesc& desc) {
                                 : textureFormatToVkFormat(desc_.format);
 
   const lvk::TextureType type = desc_.type;
-  if (!IGL_VERIFY(type == TextureType::TwoD || type == TextureType::Cube ||
-                  type == TextureType::ThreeD)) {
+  if (!IGL_VERIFY(type == TextureType_2D || type == TextureType_Cube || type == TextureType_3D)) {
     IGL_ASSERT_MSG(false, "Only 2D, 3D and Cube textures are supported");
     return Result(Result::Code::RuntimeError);
   }
@@ -44,7 +43,7 @@ Result Texture::create(const TextureDesc& desc) {
                   "The number of mip-levels for multisampled images should be 1");
   }
 
-  if (desc.numSamples > 1 && type == TextureType::ThreeD) {
+  if (desc.numSamples > 1 && type == TextureType_3D) {
     IGL_ASSERT_MSG(false, "Multisampled 3D images are not supported");
     return Result(Result::Code::ArgumentOutOfRange, "Multisampled 3D images are not supported");
   }
@@ -100,16 +99,16 @@ Result Texture::create(const TextureDesc& desc) {
   VkImageType imageType;
   VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
   switch (desc_.type) {
-  case TextureType::TwoD:
+  case TextureType_2D:
     imageViewType = VK_IMAGE_VIEW_TYPE_2D;
     imageType = VK_IMAGE_TYPE_2D;
     samples = getVulkanSampleCountFlags(desc_.numSamples);
     break;
-  case TextureType::ThreeD:
+  case TextureType_3D:
     imageViewType = VK_IMAGE_VIEW_TYPE_3D;
     imageType = VK_IMAGE_TYPE_3D;
     break;
-  case TextureType::Cube:
+  case TextureType_Cube:
     imageViewType = VK_IMAGE_VIEW_TYPE_CUBE;
     arrayLayerCount *= 6;
     imageType = VK_IMAGE_TYPE_2D;
