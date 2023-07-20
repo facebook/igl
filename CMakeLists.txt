@@ -69,7 +69,6 @@ if(LVK_DEPLOY_DEPS)
 endif()
 
 if(LVK_WITH_TRACY)
-  add_definitions("-DLVK_WITH_TRACY=1")
   add_definitions("-DTRACY_ENABLE=1")
   add_subdirectory(third-party/deps/src/tracy)
   igl_set_folder(TracyClient "third-party")
@@ -86,6 +85,10 @@ add_subdirectory(lvk)
 
 target_include_directories(LVKLibrary PUBLIC ${LVK_ROOT_DIR})
 target_include_directories(LVKLibrary PUBLIC ${LVK_ROOT_DIR}/src)
+
+if(LVK_WITH_TRACY)
+  target_compile_definitions(LVKLibrary PUBLIC "LVK_WITH_TRACY=1")
+endif()
 
 if(LVK_DEPLOY_DEPS)
   add_dependencies(LVKLibrary IGLDependencies)
