@@ -193,6 +193,10 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
         outResult, Result::Code::Unsupported, "Unknown/unsupported texture usage bits.");
   }
 
+  // sanity check to ensure that the Result value and the returned object are in sync
+  // i.e. we never have a valid Result with a nullptr return value, or vice versa
+  IGL_ASSERT(outResult == nullptr || (outResult->isOk() == (texture != nullptr)));
+
   return texture;
 }
 
