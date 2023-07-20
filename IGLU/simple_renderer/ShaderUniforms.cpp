@@ -367,7 +367,7 @@ void ShaderUniforms::setFloat3x3Array(const igl::NameHandle& uniformName,
         paddedMatrixPtr++; // skip over padded float
       }
     }
-    setUniformBytes(uniformName, packedMatrix, sizeof(float) * 9 * count, 1, arrayIndex);
+    setUniformBytes(uniformName, packedMatrix, sizeof(float) * 9, count, arrayIndex);
     delete[] packedMatrix;
   }
 }
