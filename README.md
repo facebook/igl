@@ -6,7 +6,7 @@ LightweightVK is a deeply refactored fork of [IGL](https://github.com/facebook/i
 The main goals of LightweightVK:
 
 1. **Lean.** Minimalistic API without bloat (no `std::vector`, `std::unordered_map` etc in the API).
-2. **Bindless.** Utilize Vulkan 1.3+ descriptor indexing features for modern API design.
+2. **Bindless.** Utilize Vulkan 1.3+ dynamic rendering, descriptor indexing, and buffer device address features for modern API design.
 3. **Agile.** A playground for experiments to enable quick exploration of ideas and adoption of Vulkan API changes.
 Designed for rapid prototyping of Vulkan-based renderers.
 
