@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 class Device;
@@ -129,7 +129,7 @@ static_assert(alignof(RenderPipelineDynamicState) == sizeof(uint64_t));
 class RenderPipelineState final {
  public:
   RenderPipelineState() = default;
-  RenderPipelineState(igl::vulkan::Device* device, const RenderPipelineDesc& desc);
+  RenderPipelineState(lvk::vulkan::Device* device, const RenderPipelineDesc& desc);
   ~RenderPipelineState();
 
   RenderPipelineState(const RenderPipelineState&) = delete;
@@ -145,7 +145,7 @@ class RenderPipelineState final {
   }
 
  private:
-  igl::vulkan::Device* device_ = nullptr;
+  lvk::vulkan::Device* device_ = nullptr;
 
   std::shared_ptr<ShaderStages> shaderStages_;
   RenderPipelineDesc desc_;
@@ -161,4 +161,4 @@ class RenderPipelineState final {
 };
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

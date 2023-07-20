@@ -7,7 +7,7 @@
 
 #include "VulkanPipelineBuilder.h"
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 uint32_t VulkanPipelineBuilder::numPipelinesCreated_ = 0;
@@ -195,4 +195,4 @@ VkResult VulkanPipelineBuilder::build(VkDevice device,
 }
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

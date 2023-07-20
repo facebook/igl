@@ -42,7 +42,7 @@ constexpr auto kHandleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
 } // namespace
 
-namespace igl::vulkan {
+namespace lvk::vulkan {
 
 VulkanImage::VulkanImage(const VulkanContext& ctx,
                          VkDevice device,
@@ -330,7 +330,7 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
   const VkImageAspectFlags imageAspectFlags = getImageAspectFlags();
 
   ivkCmdBeginDebugUtilsLabel(
-      commandBuffer, "Generate mipmaps", igl::Color(1.f, 0.75f, 0.f).toFloatPtr());
+      commandBuffer, "Generate mipmaps", lvk::Color(1.f, 0.75f, 0.f).toFloatPtr());
 
   const VkImageLayout originalImageLayout = imageLayout_;
 
@@ -432,4 +432,4 @@ bool VulkanImage::isStencilFormat(VkFormat format) {
          (format == VK_FORMAT_D24_UNORM_S8_UINT) || (format == VK_FORMAT_D32_SFLOAT_S8_UINT);
 }
 
-} // namespace igl::vulkan
+} // namespace lvk::vulkan

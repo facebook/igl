@@ -51,16 +51,16 @@
     }                                                              \
   }
 
-namespace igl::vulkan {
+namespace lvk::vulkan {
 
 Result getResultFromVkResult(VkResult result);
 void setResultFrom(Result* outResult, VkResult result);
-VkFormat textureFormatToVkFormat(igl::TextureFormat format);
-igl::TextureFormat vkFormatToTextureFormat(VkFormat format);
+VkFormat textureFormatToVkFormat(lvk::TextureFormat format);
+lvk::TextureFormat vkFormatToTextureFormat(VkFormat format);
 uint32_t getBytesPerPixel(VkFormat format);
-VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(igl::StorageType storage);
-VkCompareOp compareOpToVkCompareOp(igl::CompareOp func);
+VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(lvk::StorageType storage);
+VkCompareOp compareOpToVkCompareOp(lvk::CompareOp func);
 VkSampleCountFlagBits getVulkanSampleCountFlags(size_t numSamples);
-VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool isBGR = false);
+VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(lvk::ColorSpace colorSpace, bool isBGR = false);
 
-} // namespace igl::vulkan
+} // namespace lvk::vulkan

@@ -13,9 +13,9 @@
 #include <igl/vulkan/VulkanShaderModule.h>
 #include <utility>
 
-namespace igl::vulkan {
+namespace lvk::vulkan {
 
-ComputePipelineState::ComputePipelineState(igl::vulkan::Device* device,
+ComputePipelineState::ComputePipelineState(lvk::vulkan::Device* device,
                                            const ComputePipelineDesc& desc) :
   device_(device), desc_(desc) {}
 
@@ -84,4 +84,4 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
   return pipeline_;
 }
 
-} // namespace igl::vulkan
+} // namespace lvk::vulkan

@@ -17,7 +17,7 @@
 
 #include <igl/vulkan/VulkanHelpers.h>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 Result getResultFromVkResult(VkResult result) {
@@ -48,8 +48,8 @@ void setResultFrom(Result* outResult, VkResult result) {
   *outResult = getResultFromVkResult(result);
 }
 
-VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
-  using TextureFormat = ::igl::TextureFormat;
+VkFormat textureFormatToVkFormat(lvk::TextureFormat format) {
+  using TextureFormat = ::lvk::TextureFormat;
   switch (format) {
   case TextureFormat::Invalid:
     return VK_FORMAT_UNDEFINED;
@@ -109,8 +109,8 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
 #endif // _MSC_VER
 }
 
-igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
-  using TextureFormat = ::igl::TextureFormat;
+lvk::TextureFormat vkFormatToTextureFormat(VkFormat format) {
+  using TextureFormat = ::lvk::TextureFormat;
   switch (format) {
   case VK_FORMAT_UNDEFINED:
     return TextureFormat::Invalid;
@@ -203,7 +203,7 @@ uint32_t getBytesPerPixel(VkFormat format) {
 #endif // _MSC_VER
 }
 
-VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(igl::StorageType storage) {
+VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(lvk::StorageType storage) {
   VkMemoryPropertyFlags memFlags{0};
 
   switch (storage) {
@@ -221,23 +221,23 @@ VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(igl::StorageType storag
   return memFlags;
 }
 
-VkCompareOp compareOpToVkCompareOp(igl::CompareOp func) {
+VkCompareOp compareOpToVkCompareOp(lvk::CompareOp func) {
   switch (func) {
-  case igl::CompareOp_Never:
+  case lvk::CompareOp_Never:
     return VK_COMPARE_OP_NEVER;
-  case igl::CompareOp_Less:
+  case lvk::CompareOp_Less:
     return VK_COMPARE_OP_LESS;
-  case igl::CompareOp_Equal:
+  case lvk::CompareOp_Equal:
     return VK_COMPARE_OP_EQUAL;
-  case igl::CompareOp_LessEqual:
+  case lvk::CompareOp_LessEqual:
     return VK_COMPARE_OP_LESS_OR_EQUAL;
-  case igl::CompareOp_Greater:
+  case lvk::CompareOp_Greater:
     return VK_COMPARE_OP_GREATER;
-  case igl::CompareOp_NotEqual:
+  case lvk::CompareOp_NotEqual:
     return VK_COMPARE_OP_NOT_EQUAL;
-  case igl::CompareOp_GreaterEqual:
+  case lvk::CompareOp_GreaterEqual:
     return VK_COMPARE_OP_GREATER_OR_EQUAL;
-  case igl::CompareOp_AlwaysPass:
+  case lvk::CompareOp_AlwaysPass:
     return VK_COMPARE_OP_ALWAYS;
   }
   IGL_ASSERT_MSG(false, "CompareFunction value not handled: %d", (int)func);
@@ -266,13 +266,13 @@ VkSampleCountFlagBits getVulkanSampleCountFlags(size_t numSamples) {
   return VK_SAMPLE_COUNT_64_BIT;
 }
 
-VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool isBGR) {
+VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(lvk::ColorSpace colorSpace, bool isBGR) {
   switch (colorSpace) {
-  case igl::ColorSpace::SRGB_LINEAR:
+  case lvk::ColorSpace::SRGB_LINEAR:
     // the closest thing to sRGB linear
     return VkSurfaceFormatKHR{isBGR ? VK_FORMAT_B8G8R8A8_UNORM : VK_FORMAT_R8G8B8A8_UNORM,
                               VK_COLOR_SPACE_BT709_LINEAR_EXT};
-  case igl::ColorSpace::SRGB_NONLINEAR:
+  case lvk::ColorSpace::SRGB_NONLINEAR:
     [[fallthrough]];
   default:
     // default to normal sRGB non linear.
@@ -282,4 +282,4 @@ VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool 
 }
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

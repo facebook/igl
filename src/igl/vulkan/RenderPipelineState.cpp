@@ -14,43 +14,43 @@
 
 namespace {
 
-VkPolygonMode polygonModeToVkPolygonMode(igl::PolygonMode mode) {
+VkPolygonMode polygonModeToVkPolygonMode(lvk::PolygonMode mode) {
   switch (mode) {
-  case igl::PolygonMode_Fill:
+  case lvk::PolygonMode_Fill:
     return VK_POLYGON_MODE_FILL;
-  case igl::PolygonMode_Line:
+  case lvk::PolygonMode_Line:
     return VK_POLYGON_MODE_LINE;
   }
   IGL_ASSERT_MSG(false, "Implement a missing polygon fill mode");
   return VK_POLYGON_MODE_FILL;
 }
 
-VkCullModeFlags cullModeToVkCullMode(igl::CullMode mode) {
+VkCullModeFlags cullModeToVkCullMode(lvk::CullMode mode) {
   switch (mode) {
-  case igl::CullMode_None:
+  case lvk::CullMode_None:
     return VK_CULL_MODE_NONE;
-  case igl::CullMode_Front:
+  case lvk::CullMode_Front:
     return VK_CULL_MODE_FRONT_BIT;
-  case igl::CullMode_Back:
+  case lvk::CullMode_Back:
     return VK_CULL_MODE_BACK_BIT;
   }
   IGL_ASSERT_MSG(false, "Implement a missing cull mode");
   return VK_CULL_MODE_NONE;
 }
 
-VkFrontFace windingModeToVkFrontFace(igl::WindingMode mode) {
+VkFrontFace windingModeToVkFrontFace(lvk::WindingMode mode) {
   switch (mode) {
-  case igl::WindingMode_CCW:
+  case lvk::WindingMode_CCW:
     return VK_FRONT_FACE_COUNTER_CLOCKWISE;
-  case igl::WindingMode_CW:
+  case lvk::WindingMode_CW:
     return VK_FRONT_FACE_CLOCKWISE;
   }
   IGL_ASSERT_MSG(false, "Wrong winding order (cannot be more than 2)");
   return VK_FRONT_FACE_CLOCKWISE;
 }
 
-VkFormat vertexFormatToVkFormat(igl::VertexFormat fmt) {
-  using igl::VertexFormat;
+VkFormat vertexFormatToVkFormat(lvk::VertexFormat fmt) {
+  using lvk::VertexFormat;
   switch (fmt) {
   case VertexFormat::Float1:
     return VK_FORMAT_R32_SFLOAT;
@@ -140,17 +140,17 @@ VkFormat vertexFormatToVkFormat(igl::VertexFormat fmt) {
   return VK_FORMAT_UNDEFINED;
 }
 
-VkBlendOp blendOpToVkBlendOp(igl::BlendOp value) {
+VkBlendOp blendOpToVkBlendOp(lvk::BlendOp value) {
   switch (value) {
-  case igl::BlendOp_Add:
+  case lvk::BlendOp_Add:
     return VK_BLEND_OP_ADD;
-  case igl::BlendOp_Subtract:
+  case lvk::BlendOp_Subtract:
     return VK_BLEND_OP_SUBTRACT;
-  case igl::BlendOp_ReverseSubtract:
+  case lvk::BlendOp_ReverseSubtract:
     return VK_BLEND_OP_REVERSE_SUBTRACT;
-  case igl::BlendOp_Min:
+  case lvk::BlendOp_Min:
     return VK_BLEND_OP_MIN;
-  case igl::BlendOp_Max:
+  case lvk::BlendOp_Max:
     return VK_BLEND_OP_MAX;
   }
 
@@ -158,45 +158,45 @@ VkBlendOp blendOpToVkBlendOp(igl::BlendOp value) {
   return VK_BLEND_OP_ADD;
 }
 
-VkBlendFactor blendFactorToVkBlendFactor(igl::BlendFactor value) {
+VkBlendFactor blendFactorToVkBlendFactor(lvk::BlendFactor value) {
   switch (value) {
-  case igl::BlendFactor_Zero:
+  case lvk::BlendFactor_Zero:
     return VK_BLEND_FACTOR_ZERO;
-  case igl::BlendFactor_One:
+  case lvk::BlendFactor_One:
     return VK_BLEND_FACTOR_ONE;
-  case igl::BlendFactor_SrcColor:
+  case lvk::BlendFactor_SrcColor:
     return VK_BLEND_FACTOR_SRC_COLOR;
-  case igl::BlendFactor_OneMinusSrcColor:
+  case lvk::BlendFactor_OneMinusSrcColor:
     return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-  case igl::BlendFactor_DstColor:
+  case lvk::BlendFactor_DstColor:
     return VK_BLEND_FACTOR_DST_COLOR;
-  case igl::BlendFactor_OneMinusDstColor:
+  case lvk::BlendFactor_OneMinusDstColor:
     return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
-  case igl::BlendFactor_SrcAlpha:
+  case lvk::BlendFactor_SrcAlpha:
     return VK_BLEND_FACTOR_SRC_ALPHA;
-  case igl::BlendFactor_OneMinusSrcAlpha:
+  case lvk::BlendFactor_OneMinusSrcAlpha:
     return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-  case igl::BlendFactor_DstAlpha:
+  case lvk::BlendFactor_DstAlpha:
     return VK_BLEND_FACTOR_DST_ALPHA;
-  case igl::BlendFactor_OneMinusDstAlpha:
+  case lvk::BlendFactor_OneMinusDstAlpha:
     return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
-  case igl::BlendFactor_BlendColor:
+  case lvk::BlendFactor_BlendColor:
     return VK_BLEND_FACTOR_CONSTANT_COLOR;
-  case igl::BlendFactor_OneMinusBlendColor:
+  case lvk::BlendFactor_OneMinusBlendColor:
     return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
-  case igl::BlendFactor_BlendAlpha:
+  case lvk::BlendFactor_BlendAlpha:
     return VK_BLEND_FACTOR_CONSTANT_ALPHA;
-  case igl::BlendFactor_OneMinusBlendAlpha:
+  case lvk::BlendFactor_OneMinusBlendAlpha:
     return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
-  case igl::BlendFactor_SrcAlphaSaturated:
+  case lvk::BlendFactor_SrcAlphaSaturated:
     return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
-  case igl::BlendFactor_Src1Color:
+  case lvk::BlendFactor_Src1Color:
     return VK_BLEND_FACTOR_SRC1_COLOR;
-  case igl::BlendFactor_OneMinusSrc1Color:
+  case lvk::BlendFactor_OneMinusSrc1Color:
     return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
-  case igl::BlendFactor_Src1Alpha:
+  case lvk::BlendFactor_Src1Alpha:
     return VK_BLEND_FACTOR_SRC1_ALPHA;
-  case igl::BlendFactor_OneMinusSrc1Alpha:
+  case lvk::BlendFactor_OneMinusSrc1Alpha:
     return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
   default:
     IGL_ASSERT(false);
@@ -206,13 +206,13 @@ VkBlendFactor blendFactorToVkBlendFactor(igl::BlendFactor value) {
 
 } // namespace
 
-namespace igl::vulkan {
+namespace lvk::vulkan {
 
-RenderPipelineState::RenderPipelineState(igl::vulkan::Device* device,
+RenderPipelineState::RenderPipelineState(lvk::vulkan::Device* device,
                                          const RenderPipelineDesc& desc) :
   device_(device), desc_(desc) {
   // Iterate and cache vertex input bindings and attributes
-  const igl::VertexInput& vstate = desc_.vertexInput;
+  const lvk::VertexInput& vstate = desc_.vertexInput;
 
   vertexInputStateCreateInfo_ = ivkGetPipelineVertexInputStateCreateInfo_Empty();
 
@@ -334,7 +334,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
   IGL_ASSERT(vertexModule);
   IGL_ASSERT(fragmentModule);
 
-  igl::vulkan::VulkanPipelineBuilder()
+  lvk::vulkan::VulkanPipelineBuilder()
       .dynamicStates({
           // from Vulkan 1.0
           VK_DYNAMIC_STATE_VIEWPORT,
@@ -388,4 +388,4 @@ VkPipeline RenderPipelineState::getVkPipeline(
   return pipeline;
 }
 
-} // namespace igl::vulkan
+} // namespace lvk::vulkan

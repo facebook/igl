@@ -11,7 +11,7 @@
 #include <glslang/Include/glslang_c_interface.h>
 #include <ldrutils/lutils/ScopeExit.h>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 static glslang_stage_t getGLSLangShaderStage(VkShaderStageFlagBits stage) {
@@ -140,4 +140,4 @@ VulkanShaderModule::~VulkanShaderModule() {
 }
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

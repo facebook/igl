@@ -41,20 +41,18 @@ void main() {
 };
 )";
 
-using namespace igl;
-
 GLFWwindow* window_ = nullptr;
 uint32_t width_ = 800;
 uint32_t height_ = 600;
 FramesPerSecondCounter fps_;
 
-std::unique_ptr<IDevice> device_;
+std::unique_ptr<lvk::IDevice> device_;
 
 struct VulkanObjects {
   void init();
   void createFramebuffer();
   void render();
-  igl::Framebuffer fb_ = {};
+  lvk::Framebuffer fb_ = {};
   lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Triangle_;
 } vk;
 
@@ -83,12 +81,12 @@ void VulkanObjects::createFramebuffer() {
   auto texSwapchain = device_->getCurrentSwapchainTexture();
 
   {
-    const igl::TextureDesc desc = {
-        .type = TextureType::TwoD,
+    const lvk::TextureDesc desc = {
+        .type = lvk::TextureType::TwoD,
         .format = texSwapchain->getFormat(),
         .width = texSwapchain->getDimensions().width,
         .height = texSwapchain->getDimensions().height,
-        .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
+        .usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled,
     };
 
     fb_ = {.colorAttachments = {
@@ -107,27 +105,28 @@ void VulkanObjects::render() {
 
   fb_.colorAttachments[0].texture = device_->getCurrentSwapchainTexture();
 
-  std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
+  std::shared_ptr<lvk::ICommandBuffer> buffer = device_->createCommandBuffer();
 
   // This will clear the framebuffer
   buffer->cmdBeginRendering(
       {
-          .colorAttachments = {{.loadOp = LoadOp_Clear, .clearColor = {1.0f, 1.0f, 1.0f, 1.0f}},
-                               {.loadOp = LoadOp_Clear, .clearColor = {1.0f, 0.0f, 0.0f, 1.0f}},
-                               {.loadOp = LoadOp_Clear, .clearColor = {0.0f, 1.0f, 0.0f, 1.0f}},
-                               {.loadOp = LoadOp_Clear, .clearColor = {0.0f, 0.0f, 1.0f, 1.0f}}},
+          .colorAttachments =
+              {{.loadOp = lvk::LoadOp_Clear, .clearColor = {1.0f, 1.0f, 1.0f, 1.0f}},
+               {.loadOp = lvk::LoadOp_Clear, .clearColor = {1.0f, 0.0f, 0.0f, 1.0f}},
+               {.loadOp = lvk::LoadOp_Clear, .clearColor = {0.0f, 1.0f, 0.0f, 1.0f}},
+               {.loadOp = lvk::LoadOp_Clear, .clearColor = {0.0f, 0.0f, 1.0f, 1.0f}}},
       },
       fb_);
   {
     buffer->cmdBindRenderPipeline(renderPipelineState_Triangle_);
     buffer->cmdBindViewport({0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f});
     buffer->cmdBindScissorRect({0, 0, width_, height_});
-    buffer->cmdPushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
-    buffer->cmdDraw(PrimitiveType::Triangle, 0, 3);
+    buffer->cmdPushDebugGroupLabel("Render Triangle", lvk::Color(1, 0, 0));
+    buffer->cmdDraw(lvk::PrimitiveType::Triangle, 0, 3);
     buffer->cmdPopDebugGroupLabel();
   }
   buffer->cmdEndRendering();
-  device_->submit(*buffer, igl::CommandQueueType::Graphics, fb_.colorAttachments[0].texture.get());
+  device_->submit(*buffer, lvk::CommandQueueType::Graphics, fb_.colorAttachments[0].texture.get());
 }
 
 int main(int argc, char* argv[]) {
@@ -139,7 +138,7 @@ int main(int argc, char* argv[]) {
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     width_ = width;
     height_ = height;
-    vulkan::Device* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
+    lvk::vulkan::Device* vulkanDevice = static_cast<lvk::vulkan::Device*>(device_.get());
     vulkanDevice->getVulkanContext().initSwapchain(width_, height_);
     if (width && height) {
       vk.createFramebuffer();

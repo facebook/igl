@@ -401,7 +401,6 @@ void main() {
 }
 )";
 
-using namespace igl;
 using glm::mat4;
 using glm::vec2;
 using glm::vec3;
@@ -414,29 +413,29 @@ FramesPerSecondCounter fps_;
 
 constexpr uint32_t kNumBufferedFrames = 3;
 
-std::unique_ptr<IDevice> device_;
-igl::Framebuffer fbMain_; // swapchain
-igl::Framebuffer fbOffscreen_;
-igl::Framebuffer fbShadowMap_;
+std::unique_ptr<lvk::IDevice> device_;
+lvk::Framebuffer fbMain_; // swapchain
+lvk::Framebuffer fbOffscreen_;
+lvk::Framebuffer fbShadowMap_;
 lvk::Holder<lvk::ComputePipelineHandle> computePipelineState_Grayscale_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Mesh_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_MeshWireframe_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Shadow_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Skybox_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Fullscreen_;
-std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
-std::shared_ptr<IBuffer> sbMaterials_; // storage buffer for materials
-std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerFrameShadow_, ubPerObject_;
-std::shared_ptr<ISamplerState> sampler_;
-std::shared_ptr<ISamplerState> samplerShadow_;
-std::shared_ptr<ITexture> textureDummyWhite_;
-std::shared_ptr<ITexture> skyboxTextureReference_;
-std::shared_ptr<ITexture> skyboxTextureIrradiance_;
-igl::RenderPass renderPassOffscreen_;
-igl::RenderPass renderPassMain_;
-igl::RenderPass renderPassShadow_;
-igl::DepthStencilState depthStencilState_;
-igl::DepthStencilState depthStencilStateLEqual_;
+std::shared_ptr<lvk::IBuffer> vb0_, ib0_; // buffers for vertices and indices
+std::shared_ptr<lvk::IBuffer> sbMaterials_; // storage buffer for materials
+std::vector<std::shared_ptr<lvk::IBuffer>> ubPerFrame_, ubPerFrameShadow_, ubPerObject_;
+std::shared_ptr<lvk::ISamplerState> sampler_;
+std::shared_ptr<lvk::ISamplerState> samplerShadow_;
+std::shared_ptr<lvk::ITexture> textureDummyWhite_;
+std::shared_ptr<lvk::ITexture> skyboxTextureReference_;
+std::shared_ptr<lvk::ITexture> skyboxTextureIrradiance_;
+lvk::RenderPass renderPassOffscreen_;
+lvk::RenderPass renderPassMain_;
+lvk::RenderPass renderPassShadow_;
+lvk::DepthStencilState depthStencilState_;
+lvk::DepthStencilState depthStencilStateLEqual_;
 
 // scene navigation
 CameraPositioner_FirstPerson positioner_(vec3(-100, 40, -47), vec3(0, 35, 0), vec3(0, 1, 0));
@@ -503,9 +502,9 @@ std::vector<CachedMaterial> cachedMaterials_;
 std::vector<GPUMaterial> materials_;
 
 struct MaterialTextures {
-  std::shared_ptr<ITexture> ambient;
-  std::shared_ptr<ITexture> diffuse;
-  std::shared_ptr<ITexture> alpha;
+  std::shared_ptr<lvk::ITexture> ambient;
+  std::shared_ptr<lvk::ITexture> diffuse;
+  std::shared_ptr<lvk::ITexture> alpha;
 };
 
 std::vector<MaterialTextures> textures_; // same indexing as in materials_
@@ -528,10 +527,8 @@ struct LoadedMaterial {
 
 // file name -> LoadedImage
 std::mutex imagesCacheMutex_;
-std::unordered_map<std::string, LoadedImage> imagesCache_; // accessible only from the loader thread
-                                                           // pool (multiple threads)
-std::unordered_map<std::string, std::shared_ptr<ITexture>> texturesCache_; // accessible only from
-                                                                           // the main thread
+std::unordered_map<std::string, LoadedImage> imagesCache_; // accessible only from the loader pool (multiple threads)
+std::unordered_map<std::string, std::shared_ptr<lvk::ITexture>> texturesCache_; // accessible the main thread
 std::vector<LoadedMaterial> loadedMaterials_;
 std::mutex loadedMaterialsMutex_;
 std::atomic<bool> loaderShouldExit_ = false;
@@ -571,24 +568,24 @@ static void stringReplaceAll(std::string& s,
 }
 
 void initIGL() {
-  device_ = lvk::createVulkanDeviceWithSwapchain(window_,
-                                                 width_,
-                                                 height_,
-                                                 {
-                                                     .maxTextures = kMaxTextures,
-                                                     .maxSamplers = 128,
-                                                     .enableValidation = kEnableValidationLayers,
-                                                 },
-                                                 kPreferIntegratedGPU ? HWDeviceType::IntegratedGpu
-                                                                      : HWDeviceType::DiscreteGpu);
+  device_ = lvk::createVulkanDeviceWithSwapchain(
+      window_,
+      width_,
+      height_,
+      {
+          .maxTextures = kMaxTextures,
+          .maxSamplers = 128,
+          .enableValidation = kEnableValidationLayers,
+      },
+      kPreferIntegratedGPU ? lvk::HWDeviceType::IntegratedGpu : lvk::HWDeviceType::DiscreteGpu);
   {
     textureDummyWhite_ = device_->createTexture(
         {
-            .type = igl::TextureType::TwoD,
-            .format = igl::TextureFormat::RGBA_UN8,
+            .type = lvk::TextureType::TwoD,
+            .format = lvk::TextureFormat::RGBA_UN8,
             .width = 1,
             .height = 1,
-            .usage = igl::TextureUsageBits_Sampled,
+            .usage = lvk::TextureUsageBits_Sampled,
             .debugName = "dummy 1x1 (white)",
         },
         nullptr);
@@ -599,63 +596,66 @@ void initIGL() {
 
   // create an Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
-    ubPerFrame_.push_back(device_->createBuffer({.usage = BufferUsageBits_Uniform,
-                                                 .storage = StorageType_HostVisible,
+    ubPerFrame_.push_back(device_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
+                                                 .storage = lvk::StorageType_HostVisible,
                                                  .size = sizeof(UniformsPerFrame),
                                                  .debugName = "Buffer: uniforms (per frame)"},
                                                 nullptr));
     ubPerFrameShadow_.push_back(
-        device_->createBuffer({.usage = BufferUsageBits_Uniform,
-                               .storage = StorageType_HostVisible,
+        device_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
+                               .storage = lvk::StorageType_HostVisible,
                                .size = sizeof(UniformsPerFrame),
                                .debugName = "Buffer: uniforms (per frame shadow)"},
                               nullptr));
-    ubPerObject_.push_back(device_->createBuffer({.usage = BufferUsageBits_Uniform,
-                                                  .storage = StorageType_HostVisible,
+    ubPerObject_.push_back(device_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
+                                                  .storage = lvk::StorageType_HostVisible,
                                                   .size = sizeof(UniformsPerObject),
                                                   .debugName = "Buffer: uniforms (per object)"},
                                                  nullptr));
   }
 
-  depthStencilState_ = {.compareOp = igl::CompareOp_Less, .isDepthWriteEnabled = true};
-  depthStencilStateLEqual_ = {.compareOp = igl::CompareOp_LessEqual, .isDepthWriteEnabled = true};
+  depthStencilState_ = {.compareOp = lvk::CompareOp_Less, .isDepthWriteEnabled = true};
+  depthStencilStateLEqual_ = {.compareOp = lvk::CompareOp_LessEqual, .isDepthWriteEnabled = true};
 
   sampler_ = device_->createSamplerState(
       {
-          .mipMap = igl::SamplerMip_Linear,
-          .wrapU = igl::SamplerWrap_Repeat,
-          .wrapV = igl::SamplerWrap_Repeat,
+          .mipMap = lvk::SamplerMip_Linear,
+          .wrapU = lvk::SamplerWrap_Repeat,
+          .wrapV = lvk::SamplerWrap_Repeat,
           .debugName = "Sampler: linear",
       },
       nullptr);
   samplerShadow_ = device_->createSamplerState(
       {
-          .wrapU = igl::SamplerWrap_Clamp,
-          .wrapV = igl::SamplerWrap_Clamp,
-          .depthCompareOp = igl::CompareOp_LessEqual,
+          .wrapU = lvk::SamplerWrap_Clamp,
+          .wrapV = lvk::SamplerWrap_Clamp,
+          .depthCompareOp = lvk::CompareOp_LessEqual,
           .depthCompareEnabled = true,
           .debugName = "Sampler: shadow",
       },
       nullptr);
 
-  renderPassOffscreen_ = {.colorAttachments = {{
-                              .loadOp = LoadOp_Clear,
-                              .storeOp = kNumSamplesMSAA > 1 ? StoreOp_MsaaResolve : StoreOp_Store,
-                              .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
-                          }},
-                          .depthAttachment = {
-                              .loadOp = LoadOp_Clear,
-                              .storeOp = StoreOp_Store,
-                              .clearDepth = 1.0f,
-                          }};
+  renderPassOffscreen_ = {
+      .colorAttachments = {{
+          .loadOp = lvk::LoadOp_Clear,
+          .storeOp = kNumSamplesMSAA > 1 ? lvk::StoreOp_MsaaResolve : lvk::StoreOp_Store,
+          .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
+      }},
+      .depthAttachment = {
+          .loadOp = lvk::LoadOp_Clear,
+          .storeOp = lvk::StoreOp_Store,
+          .clearDepth = 1.0f,
+      }};
 
   renderPassMain_ = {
-      .colorAttachments = {{.loadOp = LoadOp_Clear,
-                            .storeOp = StoreOp_Store,
+      .colorAttachments = {{.loadOp = lvk::LoadOp_Clear,
+                            .storeOp = lvk::StoreOp_Store,
                             .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}},
   };
   renderPassShadow_ = {
-      .depthAttachment = {.loadOp = LoadOp_Clear, .storeOp = StoreOp_Store, .clearDepth = 1.0f},
+      .depthAttachment = {.loadOp = lvk::LoadOp_Clear,
+                          .storeOp = lvk::StoreOp_Store,
+                          .clearDepth = 1.0f},
   };
 }
 
@@ -879,21 +879,21 @@ void initModel() {
   for (const auto& mtl : cachedMaterials_) {
     materials_.push_back(GPUMaterial{vec4(mtl.ambient, 1.0f), vec4(mtl.diffuse, 1.0f), id, id});
   }
-  sbMaterials_ = device_->createBuffer({.usage = BufferUsageBits_Storage,
-                                        .storage = StorageType_Device,
+  sbMaterials_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Storage,
+                                        .storage = lvk::StorageType_Device,
                                         .data = materials_.data(),
                                         .size = sizeof(GPUMaterial) * materials_.size(),
                                         .debugName = "Buffer: materials"},
                                        nullptr);
 
-  vb0_ = device_->createBuffer({.usage = BufferUsageBits_Vertex,
-                                .storage = StorageType_Device,
+  vb0_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Vertex,
+                                .storage = lvk::StorageType_Device,
                                 .data = vertexData_.data(),
                                 .size = sizeof(VertexData) * vertexData_.size(),
                                 .debugName = "Buffer: vertex"},
                                nullptr);
-  ib0_ = device_->createBuffer({.usage = BufferUsageBits_Index,
-                                .storage = StorageType_Device,
+  ib0_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Index,
+                                .storage = lvk::StorageType_Device,
                                 .data = indexData_.data(),
                                 .size = sizeof(uint32_t) * indexData_.size(),
                                 .debugName = "Buffer: index"},
@@ -916,33 +916,34 @@ void createRenderPipelines() {
     return;
   }
 
-  const VertexInput vdesc = {
+  const lvk::VertexInput vdesc = {
       .attributes =
           {
               {.location = 0,
-               .format = VertexFormat::Float3,
+               .format = lvk::VertexFormat::Float3,
                .offset = offsetof(VertexData, position)},
               {.location = 1,
-               .format = VertexFormat::Int_2_10_10_10_REV,
+               .format = lvk::VertexFormat::Int_2_10_10_10_REV,
                .offset = offsetof(VertexData, normal)},
               {.location = 2,
-               .format = VertexFormat::HalfFloat2,
+               .format = lvk::VertexFormat::HalfFloat2,
                .offset = offsetof(VertexData, uv)},
               {.location = 3,
-               .format = VertexFormat::UInt1,
+               .format = lvk::VertexFormat::UInt1,
                .offset = offsetof(VertexData, mtlIndex)},
           },
       .inputBindings = {{.stride = sizeof(VertexData)}},
   };
 
   // shadow
-  const VertexInput vdescs = {
-      .attributes = {{.format = VertexFormat::Float3, .offset = offsetof(VertexData, position)}},
+  const lvk::VertexInput vdescs = {
+      .attributes = {{.format = lvk::VertexFormat::Float3,
+                      .offset = offsetof(VertexData, position)}},
       .inputBindings = {{.stride = sizeof(VertexData)}},
   };
 
   {
-    RenderPipelineDesc desc = {
+    lvk::RenderPipelineDesc desc = {
         .vertexInput = vdesc,
         .shaderStages = device_->createShaderStages(
             kCodeVS, "Shader Module: main (vert)", kCodeFS, "Shader Module: main (frag)"),
@@ -950,16 +951,16 @@ void createRenderPipelines() {
                                   fbOffscreen_.colorAttachments[0].texture->getFormat()}},
         .depthAttachmentFormat = fbOffscreen_.depthStencilAttachment.texture
                                      ? fbOffscreen_.depthStencilAttachment.texture->getFormat()
-                                     : igl::TextureFormat::Invalid,
-        .cullMode = igl::CullMode_Back,
-        .frontFaceWinding = igl::WindingMode_CCW,
+                                     : lvk::TextureFormat::Invalid,
+        .cullMode = lvk::CullMode_Back,
+        .frontFaceWinding = lvk::WindingMode_CCW,
         .samplesCount = kNumSamplesMSAA,
         .debugName = "Pipeline: mesh",
     };
 
     renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
 
-    desc.polygonMode = igl::PolygonMode_Line;
+    desc.polygonMode = lvk::PolygonMode_Line;
     desc.vertexInput = vdescs; // positions-only
     desc.shaderStages = device_->createShaderStages(kCodeVS_Wireframe,
                                                     "Shader Module: main wireframe (vert)",
@@ -970,20 +971,20 @@ void createRenderPipelines() {
   }
 
   // shadow
-  renderPipelineState_Shadow_ = device_->createRenderPipeline(RenderPipelineDesc
-      {
+  renderPipelineState_Shadow_ = device_->createRenderPipeline(
+      lvk::RenderPipelineDesc{
           .vertexInput = vdescs,
           .shaderStages = device_->createShaderStages(
               kShadowVS, "Shader Module: shadow (vert)", kShadowFS, "Shader Module: shadow (frag)"),
           .depthAttachmentFormat = fbShadowMap_.depthStencilAttachment.texture->getFormat(),
-          .cullMode = igl::CullMode_None,
+          .cullMode = lvk::CullMode_None,
           .debugName = "Pipeline: shadow",
       },
       nullptr);
 
   // fullscreen
   {
-    RenderPipelineDesc desc = {
+    lvk::RenderPipelineDesc desc = {
         .colorAttachments = {{.textureFormat = fbMain_.colorAttachments[0].texture->getFormat()}},
     };
     if (fbMain_.depthStencilAttachment.texture) {
@@ -993,7 +994,7 @@ void createRenderPipelines() {
                                                     "Shader Module: fullscreen (vert)",
                                                     kCodeFullscreenFS,
                                                     "Shader Module: fullscreen (frag)");
-    desc.cullMode = igl::CullMode_None;
+    desc.cullMode = lvk::CullMode_None;
     desc.debugName = "Pipeline: fullscreen";
     renderPipelineState_Fullscreen_ = device_->createRenderPipeline(desc, nullptr);
   }
@@ -1004,14 +1005,14 @@ void createRenderPipelineSkybox() {
     return;
   }
 
-  RenderPipelineDesc desc = {
+  lvk::RenderPipelineDesc desc = {
       .shaderStages = device_->createShaderStages(
           kSkyboxVS, "Shader Module: skybox (vert)", kSkyboxFS, "Shader Module: skybox (frag)"),
       .colorAttachments = {{
           .textureFormat = fbOffscreen_.colorAttachments[0].texture->getFormat(),
       }},
-      .cullMode = igl::CullMode_Front,
-      .frontFaceWinding = igl::WindingMode_CCW,
+      .cullMode = lvk::CullMode_Front,
+      .frontFaceWinding = lvk::WindingMode_CCW,
       .samplesCount = kNumSamplesMSAA,
       .debugName = "Pipeline: skybox",
   };
@@ -1026,12 +1027,12 @@ void createRenderPipelineSkybox() {
 void createShadowMap() {
   const uint32_t w = 4096;
   const uint32_t h = 4096;
-  const TextureDesc desc = {
-      .type = TextureType::TwoD,
-      .format = igl::TextureFormat::Z_UN16,
+  const lvk::TextureDesc desc = {
+      .type = lvk::TextureType::TwoD,
+      .format = lvk::TextureFormat::Z_UN16,
       .width = w,
       .height = h,
-      .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
+      .usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled,
       .numMipLevels = lvk::calcNumMipLevels(w, h),
       .debugName = "Shadow map",
   };
@@ -1043,28 +1044,28 @@ void createShadowMap() {
 void createOffscreenFramebuffer() {
   const uint32_t w = width_;
   const uint32_t h = height_;
-  TextureDesc descDepth = {
-      .type = TextureType::TwoD,
-      .format = igl::TextureFormat::Z_UN24,
+  lvk::TextureDesc descDepth = {
+      .type = lvk::TextureType::TwoD,
+      .format = lvk::TextureFormat::Z_UN24,
       .width = w,
       .height = h,
-      .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
+      .usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled,
       .numMipLevels = lvk::calcNumMipLevels(w, h),
       .debugName = "Offscreen framebuffer (d)",
   };
   if (kNumSamplesMSAA > 1) {
-    descDepth.usage = TextureUsageBits_Attachment;
+    descDepth.usage = lvk::TextureUsageBits_Attachment;
     descDepth.numSamples = kNumSamplesMSAA;
     descDepth.numMipLevels = 1;
   }
-  std::shared_ptr<ITexture> texDepth = device_->createTexture(descDepth);
+  std::shared_ptr<lvk::ITexture> texDepth = device_->createTexture(descDepth);
 
-  const uint8_t usage =
-      TextureUsageBits_Attachment | TextureUsageBits_Sampled | TextureUsageBits_Storage;
-  const TextureFormat format = igl::TextureFormat::RGBA_UN8;
+  const uint8_t usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled |
+                        lvk::TextureUsageBits_Storage;
+  const lvk::TextureFormat format = lvk::TextureFormat::RGBA_UN8;
 
-  TextureDesc descColor = {
-      .type = TextureType::TwoD,
+  lvk::TextureDesc descColor = {
+      .type = lvk::TextureType::TwoD,
       .format = format,
       .width = w,
       .height = h,
@@ -1073,20 +1074,20 @@ void createOffscreenFramebuffer() {
       .debugName = "Offscreen framebuffer (c)",
   };
   if (kNumSamplesMSAA > 1) {
-    descColor.usage = igl::TextureUsageBits_Attachment;
+    descColor.usage = lvk::TextureUsageBits_Attachment;
     descColor.numSamples = kNumSamplesMSAA;
     descColor.numMipLevels = 1;
   }
-  std::shared_ptr<ITexture> texColor = device_->createTexture(descColor);
+  std::shared_ptr<lvk::ITexture> texColor = device_->createTexture(descColor);
 
-  Framebuffer fb = {
+  lvk::Framebuffer fb = {
       .colorAttachments = {{.texture = texColor}},
       .depthStencilAttachment = {.texture = texDepth},
   };
 
   if (kNumSamplesMSAA > 1) {
     fb.colorAttachments[0].resolveTexture = device_->createTexture({
-        .type = TextureType::TwoD,
+        .type = lvk::TextureType::TwoD,
         .format = format,
         .width = w,
         .height = h,
@@ -1098,7 +1099,7 @@ void createOffscreenFramebuffer() {
   fbOffscreen_ = fb;
 }
 
-void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
+void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frameIndex) {
   IGL_PROFILER_FUNCTION();
 
   fbMain_.colorAttachments[0].texture = nativeDrawable;
@@ -1147,12 +1148,12 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
   // Pass 1: shadows
   if (isShadowMapDirty_) {
-    std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
+    std::shared_ptr<lvk::ICommandBuffer> buffer = device_->createCommandBuffer();
 
     buffer->cmdBeginRendering(renderPassShadow_, fbShadowMap_);
     {
       buffer->cmdBindRenderPipeline(renderPipelineState_Shadow_);
-      buffer->cmdPushDebugGroupLabel("Render Shadows", igl::Color(1, 0, 0));
+      buffer->cmdPushDebugGroupLabel("Render Shadows", lvk::Color(1, 0, 0));
       buffer->cmdBindDepthStencilState(depthStencilState_);
       buffer->cmdBindVertexBuffer(0, vb0_, 0);
       struct {
@@ -1164,13 +1165,16 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
       };
       buffer->cmdPushConstants(bindings);
 
-      buffer->cmdDrawIndexed(
-          PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
+      buffer->cmdDrawIndexed(lvk::PrimitiveType::Triangle,
+                             indexData_.size(),
+                             lvk::IndexFormat::UInt32,
+                             *ib0_.get(),
+                             0);
       buffer->cmdPopDebugGroupLabel();
     }
     buffer->cmdEndRendering();
     buffer->transitionToShaderReadOnly(*fbShadowMap_.depthStencilAttachment.texture);
-    device_->submit(*buffer, igl::CommandQueueType::Graphics);
+    device_->submit(*buffer, lvk::CommandQueueType::Graphics);
 
     fbShadowMap_.depthStencilAttachment.texture->generateMipmap();
 
@@ -1179,14 +1183,14 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
   // Pass 2: mesh
   {
-    std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
+    std::shared_ptr<lvk::ICommandBuffer> buffer = device_->createCommandBuffer();
 
     // This will clear the framebuffer
     buffer->cmdBeginRendering(renderPassOffscreen_, fbOffscreen_);
     {
       // Scene
       buffer->cmdBindRenderPipeline(renderPipelineState_Mesh_);
-      buffer->cmdPushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
+      buffer->cmdPushDebugGroupLabel("Render Mesh", lvk::Color(1, 0, 0));
       buffer->cmdBindDepthStencilState(depthStencilState_);
       buffer->cmdBindVertexBuffer(0, vb0_, 0);
 
@@ -1200,33 +1204,39 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
           .materials = sbMaterials_->gpuAddress(),
       };
       buffer->cmdPushConstants(bindings);
-      buffer->cmdDrawIndexed(
-          PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
+      buffer->cmdDrawIndexed(lvk::PrimitiveType::Triangle,
+                             indexData_.size(),
+                             lvk::IndexFormat::UInt32,
+                             *ib0_.get(),
+                             0);
       if (enableWireframe_) {
         buffer->cmdBindRenderPipeline(renderPipelineState_MeshWireframe_);
-        buffer->cmdDrawIndexed(
-            PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
+        buffer->cmdDrawIndexed(lvk::PrimitiveType::Triangle,
+                               indexData_.size(),
+                               lvk::IndexFormat::UInt32,
+                               *ib0_.get(),
+                               0);
       }
       buffer->cmdPopDebugGroupLabel();
 
       // Skybox
       buffer->cmdBindRenderPipeline(renderPipelineState_Skybox_);
-      buffer->cmdPushDebugGroupLabel("Render Skybox", igl::Color(0, 1, 0));
+      buffer->cmdPushDebugGroupLabel("Render Skybox", lvk::Color(0, 1, 0));
       buffer->cmdBindDepthStencilState(depthStencilStateLEqual_);
-      buffer->cmdDraw(PrimitiveType::Triangle, 0, 3 * 6 * 2);
+      buffer->cmdDraw(lvk::PrimitiveType::Triangle, 0, 3 * 6 * 2);
       buffer->cmdPopDebugGroupLabel();
     }
     buffer->cmdEndRendering();
     buffer->transitionToShaderReadOnly(*fbOffscreen_.colorAttachments[0].texture);
-    device_->submit(*buffer, CommandQueueType::Graphics);
+    device_->submit(*buffer, lvk::CommandQueueType::Graphics);
   }
 
   // Pass 3: compute shader post-processing
   if (enableComputePass_) {
-    std::shared_ptr<ITexture> tex = kNumSamplesMSAA > 1
-                                        ? fbOffscreen_.colorAttachments[0].resolveTexture
-                                        : fbOffscreen_.colorAttachments[0].texture;
-    std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
+    std::shared_ptr<lvk::ITexture> tex = kNumSamplesMSAA > 1
+                                             ? fbOffscreen_.colorAttachments[0].resolveTexture
+                                             : fbOffscreen_.colorAttachments[0].texture;
+    std::shared_ptr<lvk::ICommandBuffer> buffer = device_->createCommandBuffer();
 
     buffer->cmdBindComputePipeline(computePipelineState_Grayscale_);
 
@@ -1244,18 +1254,18 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
         },
         {.textures = {tex.get()}});
 
-    device_->submit(*buffer, CommandQueueType::Compute);
+    device_->submit(*buffer, lvk::CommandQueueType::Compute);
   }
 
   // Pass 4: render into the swapchain image
   {
-    std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
+    std::shared_ptr<lvk::ICommandBuffer> buffer = device_->createCommandBuffer();
 
     // This will clear the framebuffer
     buffer->cmdBeginRendering(renderPassMain_, fbMain_);
     {
       buffer->cmdBindRenderPipeline(renderPipelineState_Fullscreen_);
-      buffer->cmdPushDebugGroupLabel("Swapchain Output", igl::Color(1, 0, 0));
+      buffer->cmdPushDebugGroupLabel("Swapchain Output", lvk::Color(1, 0, 0));
       struct {
         uint32_t texture;
       } bindings = {
@@ -1264,14 +1274,15 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
                          : fbOffscreen_.colorAttachments[0].texture->getTextureId(),
       };
       buffer->cmdPushConstants(bindings);
-      buffer->cmdDraw(PrimitiveType::Triangle, 0, 3);
+      buffer->cmdDraw(lvk::PrimitiveType::Triangle, 0, 3);
       buffer->cmdPopDebugGroupLabel();
 
       imgui_->endFrame(*device_.get(), *buffer);
     }
     buffer->cmdEndRendering();
 
-    device_->submit(*buffer, CommandQueueType::Graphics, fbMain_.colorAttachments[0].texture.get());
+    device_->submit(
+        *buffer, lvk::CommandQueueType::Graphics, fbMain_.colorAttachments[0].texture.get());
   }
 }
 
@@ -1331,15 +1342,15 @@ void generateCompressedTexture(LoadedImage img) {
   gli::save_ktx(gliTex2d, img.compressedFileName.c_str());
 }
 
-igl::TextureFormat gli2iglTextureFormat(gli::texture2d::format_type format) {
+lvk::TextureFormat gli2iglTextureFormat(gli::texture2d::format_type format) {
   switch (format) {
   case gli::FORMAT_RGBA32_SFLOAT_PACK32:
-    return igl::TextureFormat::RGBA_F32;
+    return lvk::TextureFormat::RGBA_F32;
   case gli::FORMAT_RG16_SFLOAT_PACK16:
-    return igl::TextureFormat::RG_F16;
+    return lvk::TextureFormat::RG_F16;
   }
   IGL_ASSERT_MSG(false, "Code should NOT be reached");
-  return igl::TextureFormat::RGBA_UN8;
+  return lvk::TextureFormat::RGBA_UN8;
 }
 
 LoadedImage loadImage(const char* fileName, int channels) {
@@ -1437,7 +1448,7 @@ void loadMaterials() {
   }
 }
 
-void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture>& tex) {
+void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<lvk::ITexture>& tex) {
   IGL_PROFILER_FUNCTION();
 
   auto texRef = gli::load_ktx(fileNameKTX);
@@ -1453,11 +1464,11 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
   if (!tex) {
     tex = device_->createTexture(
         {
-            .type = TextureType::Cube,
+            .type = lvk::TextureType::Cube,
             .format = gli2iglTextureFormat(texRef.format()),
             .width = width,
             .height = height,
-            .usage = igl::TextureUsageBits_Sampled,
+            .usage = lvk::TextureUsageBits_Sampled,
             .numMipLevels = lvk::calcNumMipLevels(texRef.extent().x, texRef.extent().y),
             .debugName = fileNameKTX.c_str(),
         },
@@ -1474,7 +1485,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
       texRef.data(0, 5, 0),
   };
 
-  const TextureRangeDesc texRefRange = {
+  const lvk::TextureRangeDesc texRefRange = {
       .width = width,
       .height = height,
       .numLayers = 6,
@@ -1615,19 +1626,19 @@ void loadSkyboxTexture() {
   loadCubemapTexture(fileNameIrrKTX, skyboxTextureIrradiance_);
 }
 
-igl::TextureFormat formatFromChannels(uint32_t channels) {
+lvk::TextureFormat formatFromChannels(uint32_t channels) {
   if (channels == 1) {
-    return igl::TextureFormat::R_UN8;
+    return lvk::TextureFormat::R_UN8;
   }
 
   if (channels == 4) {
-    return kEnableCompression ? igl::TextureFormat::BC7_RGBA : igl::TextureFormat::RGBA_UN8;
+    return kEnableCompression ? lvk::TextureFormat::BC7_RGBA : lvk::TextureFormat::RGBA_UN8;
   }
 
-  return igl::TextureFormat::Invalid;
+  return lvk::TextureFormat::Invalid;
 }
 
-std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
+std::shared_ptr<lvk::ITexture> createTexture(const LoadedImage& img) {
   if (!img.pixels) {
     return nullptr;
   }
@@ -1638,12 +1649,12 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
     return it->second;
   }
 
-  const TextureDesc desc = {
-      .type = TextureType::TwoD,
+  const lvk::TextureDesc desc = {
+      .type = lvk::TextureType::TwoD,
       .format = formatFromChannels(img.channels),
       .width = img.w,
       .height = img.h,
-      .usage = igl::TextureUsageBits_Sampled,
+      .usage = lvk::TextureUsageBits_Sampled,
       .numMipLevels = lvk::calcNumMipLevels(img.w, img.h),
       .debugName = img.debugName.c_str(),
   };
@@ -1652,7 +1663,7 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
   if (kEnableCompression && img.channels == 4 &&
       std::filesystem::exists(img.compressedFileName.c_str())) {
     // Uploading the texture
-    const TextureRangeDesc rangeDesc = {
+    const lvk::TextureRangeDesc rangeDesc = {
         .width = img.w,
         .height = img.h,
         .numMipLevels = desc.numMipLevels,

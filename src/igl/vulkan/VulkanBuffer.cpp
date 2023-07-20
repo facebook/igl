@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
@@ -167,4 +167,4 @@ void VulkanBuffer::bufferSubData(size_t offset, size_t size, const void* data) {
 }
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

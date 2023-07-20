@@ -29,15 +29,15 @@ bool supportsFormat(VkPhysicalDevice physicalDevice, VkFormat format) {
          properties.optimalTilingFeatures != 0;
 } // namespace
 
-VkShaderStageFlagBits shaderStageToVkShaderStage(igl::ShaderStage stage) {
+VkShaderStageFlagBits shaderStageToVkShaderStage(lvk::ShaderStage stage) {
   switch (stage) {
-  case igl::Stage_Vertex:
+  case lvk::Stage_Vertex:
     return VK_SHADER_STAGE_VERTEX_BIT;
-  case igl::Stage_Fragment:
+  case lvk::Stage_Fragment:
     return VK_SHADER_STAGE_FRAGMENT_BIT;
-  case igl::Stage_Compute:
+  case lvk::Stage_Compute:
     return VK_SHADER_STAGE_COMPUTE_BIT;
-  case igl::kNumShaderStages:
+  case lvk::kNumShaderStages:
     return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
   };
   return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
@@ -45,7 +45,7 @@ VkShaderStageFlagBits shaderStageToVkShaderStage(igl::ShaderStage stage) {
 
 } // namespace
 
-namespace igl::vulkan {
+namespace lvk::vulkan {
 
 Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)) {}
 
@@ -55,8 +55,8 @@ std::shared_ptr<ICommandBuffer> Device::createCommandBuffer() {
   return std::make_shared<CommandBuffer>(getVulkanContext());
 }
 
-void Device::submit(const igl::ICommandBuffer& commandBuffer,
-                    igl::CommandQueueType queueType,
+void Device::submit(const lvk::ICommandBuffer& commandBuffer,
+                    lvk::CommandQueueType queueType,
                     ITexture* present) {
   IGL_PROFILER_FUNCTION();
 
@@ -322,7 +322,7 @@ VulkanShaderModule Device::createShaderModule(ShaderStage stage,
       lvk::getGlslangResource(ctx_->getVkPhysicalDeviceProperties().limits);
 
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
-  const Result result = igl::vulkan::compileShader(
+  const Result result = lvk::vulkan::compileShader(
       ctx_->vkDevice_, vkStage, source, &vkShaderModule, &glslangResource);
 
   Result::setResult(outResult, result);
@@ -394,7 +394,7 @@ std::unique_ptr<IDevice> Device::create(std::unique_ptr<VulkanContext> ctx,
     Result::setResult(outResult, result);
   }
 
-  return result.isOk() ? std::make_unique<igl::vulkan::Device>(std::move(ctx)) : nullptr;
+  return result.isOk() ? std::make_unique<lvk::vulkan::Device>(std::move(ctx)) : nullptr;
 }
 
-} // namespace igl::vulkan
+} // namespace lvk::vulkan

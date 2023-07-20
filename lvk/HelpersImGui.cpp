@@ -52,33 +52,33 @@ void main() {
 
 namespace lvk {
 
-ImGuiRenderer::DrawableData::DrawableData(igl::IDevice& device) {
+ImGuiRenderer::DrawableData::DrawableData(lvk::IDevice& device) {
   IGL_ASSERT_MSG(sizeof(ImDrawIdx) == 2, "The constants below may not work with the ImGui data.");
   const size_t kMaxVertices = 65536u;
   const size_t kMaxVertexBufferSize = kMaxVertices * sizeof(ImDrawVert);
   const size_t kMaxIndexBufferSize = kMaxVertices * sizeof(ImDrawIdx);
 
-  const igl::BufferDesc vbDesc = {.usage = igl::BufferUsageBits_Vertex,
-                                  .storage = igl::StorageType_HostVisible,
+  const lvk::BufferDesc vbDesc = {.usage = lvk::BufferUsageBits_Vertex,
+                                  .storage = lvk::StorageType_HostVisible,
                                   .size = kMaxVertexBufferSize};
-  const igl::BufferDesc ibDesc = {.usage = igl::BufferUsageBits_Index,
-                                  .storage = igl::StorageType_HostVisible,
+  const lvk::BufferDesc ibDesc = {.usage = lvk::BufferUsageBits_Index,
+                                  .storage = lvk::StorageType_HostVisible,
                                   .size = kMaxIndexBufferSize};
   vb_ = device.createBuffer(vbDesc, nullptr);
   ib_ = device.createBuffer(ibDesc, nullptr);
 }
 
-lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(const igl::Framebuffer& desc) {
+lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(const lvk::Framebuffer& desc) {
   return device_.createRenderPipeline(
       {
           .vertexInput = {.attributes = {{.location = 0,
-                                          .format = igl::VertexFormat::Float2,
+                                          .format = lvk::VertexFormat::Float2,
                                           .offset = offsetof(ImDrawVert, pos)},
                                          {.location = 1,
-                                          .format = igl::VertexFormat::Float2,
+                                          .format = lvk::VertexFormat::Float2,
                                           .offset = offsetof(ImDrawVert, uv)},
                                          {.location = 2,
-                                          .format = igl::VertexFormat::UByte4Norm,
+                                          .format = lvk::VertexFormat::UByte4Norm,
                                           .offset = offsetof(ImDrawVert, col)}},
                           .inputBindings = {{.stride = sizeof(ImDrawVert)}}},
           .shaderStages = device_.createShaderStages(codeVS,
@@ -89,18 +89,18 @@ lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(con
           .colorAttachments = {{
               .textureFormat = desc.colorAttachments[0].texture->getFormat(),
               .blendEnabled = true,
-              .srcRGBBlendFactor = igl::BlendFactor_SrcAlpha,
-              .dstRGBBlendFactor = igl::BlendFactor_OneMinusSrcAlpha,
+              .srcRGBBlendFactor = lvk::BlendFactor_SrcAlpha,
+              .dstRGBBlendFactor = lvk::BlendFactor_OneMinusSrcAlpha,
           }},
           .depthAttachmentFormat = desc.depthStencilAttachment.texture
                                        ? desc.depthStencilAttachment.texture->getFormat()
-                                       : igl::TextureFormat::Invalid,
-          .cullMode = igl::CullMode_None,
+                                       : lvk::TextureFormat::Invalid,
+          .cullMode = lvk::CullMode_None,
       },
       nullptr);
 }
 
-ImGuiRenderer::ImGuiRenderer(igl::IDevice& device, const char* defaultFontTTF, float fontSizePixels) : device_(device) {
+ImGuiRenderer::ImGuiRenderer(lvk::IDevice& device, const char* defaultFontTTF, float fontSizePixels) : device_(device) {
   ImGui::CreateContext();
 
   ImGuiIO& io = ImGui::GetIO();
@@ -123,16 +123,16 @@ ImGuiRenderer::ImGuiRenderer(igl::IDevice& device, const char* defaultFontTTF, f
   unsigned char* pixels;
   int width, height;
   io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-  fontTexture_ = device.createTexture({.type = igl::TextureType::TwoD,
-                                       .format = igl::TextureFormat::RGBA_UN8,
+  fontTexture_ = device.createTexture({.type = lvk::TextureType::TwoD,
+                                       .format = lvk::TextureFormat::RGBA_UN8,
                                        .width = (uint32_t)width,
                                        .height = (uint32_t)height,
-                                       .usage = igl::TextureUsageBits_Sampled},
+                                       .usage = lvk::TextureUsageBits_Sampled},
                                       nullptr);
   const void* data[] = {pixels};
   fontTexture_->upload({.width = (uint32_t)width, .height = (uint32_t)height}, data);
 
-  io.BackendRendererName = "imgui-igl-next";
+  io.BackendRendererName = "imgui-lvk";
   io.Fonts->TexID = ImTextureID(fontTexture_.get());
   io.FontDefault = font;
 }
@@ -143,10 +143,10 @@ ImGuiRenderer::~ImGuiRenderer() {
   ImGui::DestroyContext();
 }
 
-void ImGuiRenderer::beginFrame(const igl::Framebuffer& desc) {
+void ImGuiRenderer::beginFrame(const lvk::Framebuffer& desc) {
   const float displayScale = 1.0f;
 
-  const igl::Dimensions dim = desc.colorAttachments[0].texture->getDimensions();
+  const lvk::Dimensions dim = desc.colorAttachments[0].texture->getDimensions();
 
   ImGuiIO& io = ImGui::GetIO();
   io.DisplaySize = ImVec2(dim.width / displayScale, dim.height / displayScale);
@@ -159,7 +159,7 @@ void ImGuiRenderer::beginFrame(const igl::Framebuffer& desc) {
   ImGui::NewFrame();
 }
 
-void ImGuiRenderer::endFrame(igl::IDevice& device, igl::ICommandBuffer& cmdBuffer) {
+void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffer) {
   ImGui::EndFrame();
   ImGui::Render();
 
@@ -227,7 +227,7 @@ void ImGuiRenderer::endFrame(igl::IDevice& device, igl::ICommandBuffer& cmdBuffe
         continue;
       }
 
-      const igl::ScissorRect rect{uint32_t(clipMin.x),
+      const lvk::ScissorRect rect{uint32_t(clipMin.x),
                                   uint32_t(clipMin.y),
                                   uint32_t(clipMax.x - clipMin.x),
                                   uint32_t(clipMax.y - clipMin.y)};
@@ -235,16 +235,16 @@ void ImGuiRenderer::endFrame(igl::IDevice& device, igl::ICommandBuffer& cmdBuffe
 
       if (cmd.TextureId != lastBoundTextureId) {
         lastBoundTextureId = cmd.TextureId;
-        bindData.textureId = cmd.TextureId ? reinterpret_cast<igl::ITexture*>(cmd.TextureId)->getTextureId() : 0u;
+        bindData.textureId = cmd.TextureId ? reinterpret_cast<lvk::ITexture*>(cmd.TextureId)->getTextureId() : 0u;
         cmdBuffer.cmdPushConstants(bindData);
       }
 
       cmdBuffer.cmdBindRenderPipeline(pipeline_);
       cmdBuffer.cmdBindVertexBuffer(0, drawableData.vb_, 0);
-      cmdBuffer.cmdDrawIndexed(igl::PrimitiveType::Triangle,
+      cmdBuffer.cmdDrawIndexed(lvk::PrimitiveType::Triangle,
                                cmd.ElemCount,
-                               sizeof(ImDrawIdx) == sizeof(uint16_t) ? igl::IndexFormat::UInt16
-                                                                     : igl::IndexFormat::UInt32,
+                               sizeof(ImDrawIdx) == sizeof(uint16_t) ? lvk::IndexFormat::UInt16
+                                                                     : lvk::IndexFormat::UInt32,
                                *drawableData.ib_,
                                cmd.IdxOffset * sizeof(ImDrawIdx));
     }

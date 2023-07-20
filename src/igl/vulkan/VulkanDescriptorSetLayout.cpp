@@ -10,7 +10,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanPipelineLayout.h>
 
-namespace igl {
+namespace lvk {
 
 namespace vulkan {
 
@@ -36,4 +36,4 @@ VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout() {
 
 } // namespace vulkan
 
-} // namespace igl
+} // namespace lvk

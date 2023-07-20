@@ -13,7 +13,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 class VulkanBuffer;
@@ -76,4 +76,4 @@ class VulkanStagingDevice final {
 };
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

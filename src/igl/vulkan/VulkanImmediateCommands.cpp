@@ -12,7 +12,7 @@
 
 #include <utility>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 VulkanImmediateCommands::VulkanImmediateCommands(VkDevice device,
@@ -269,4 +269,4 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::getLastSubmitHand
 }
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

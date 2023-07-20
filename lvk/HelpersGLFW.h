@@ -79,13 +79,13 @@ static GLFWwindow* initWindow(const char* windowTitle, uint32_t& outWidth, uint3
   return window;
 }
 
-static std::unique_ptr<igl::IDevice> createVulkanDeviceWithSwapchain(
+static std::unique_ptr<lvk::IDevice> createVulkanDeviceWithSwapchain(
     GLFWwindow* window,
     uint32_t width,
     uint32_t height,
-    const igl::vulkan::VulkanContextConfig& cfg,
-    igl::HWDeviceType preferredDeviceType = igl::HWDeviceType::DiscreteGpu) {
-   using namespace igl;
+    const lvk::vulkan::VulkanContextConfig& cfg,
+    lvk::HWDeviceType preferredDeviceType = lvk::HWDeviceType::DiscreteGpu) {
+   using namespace lvk;
 #if defined(_WIN32)
   auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetWin32Window(window));
 #elif defined(__linux__)

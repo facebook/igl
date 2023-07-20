@@ -11,7 +11,7 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
 
-namespace igl {
+namespace lvk {
 
 namespace vulkan {
 
@@ -34,4 +34,4 @@ VulkanTexture::~VulkanTexture() {
 
 } // namespace vulkan
 
-} // namespace igl
+} // namespace lvk

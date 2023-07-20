@@ -10,7 +10,7 @@
 #include <lvk/LVK.h>
 #include <igl/vulkan/Common.h>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 class VulkanSampler;
@@ -30,7 +30,7 @@ class SamplerState final : public ISamplerState {
    * After instantiation, the object contains a reference to the device for creating the resource,
    * which can be done by calling the create() method with the desired configuration
    */
-  explicit SamplerState(const igl::vulkan::Device& device);
+  explicit SamplerState(const lvk::vulkan::Device& device);
   ~SamplerState() override;
 
   /**
@@ -50,7 +50,7 @@ class SamplerState final : public ISamplerState {
 
  private:
   /** @brief The device used to create the resource */
-  const igl::vulkan::Device& device_;
+  const lvk::vulkan::Device& device_;
   /** @brief The texture sampling configuration for accessing a texture */
   SamplerStateDesc desc_;
   /** @brief The VulkanSampler instance associated with this sampler */
@@ -58,4 +58,4 @@ class SamplerState final : public ISamplerState {
 };
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

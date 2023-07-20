@@ -10,7 +10,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 
-namespace igl {
+namespace lvk {
 
 namespace vulkan {
 
@@ -35,4 +35,4 @@ VulkanSampler::~VulkanSampler() {
 
 } // namespace vulkan
 
-} // namespace igl
+} // namespace lvk

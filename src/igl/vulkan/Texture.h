@@ -12,7 +12,7 @@
 
 #include <vector>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 class VulkanContext;
@@ -51,7 +51,7 @@ class Texture final : public ITexture {
 
  private:
   Result create(const TextureDesc& desc);
-  Result validateRange(const igl::TextureRangeDesc& range) const;
+  Result validateRange(const lvk::TextureRangeDesc& range) const;
 
  protected:
   VulkanContext& ctx_;
@@ -62,4 +62,4 @@ class Texture final : public ITexture {
 };
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

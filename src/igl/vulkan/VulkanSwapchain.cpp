@@ -46,13 +46,13 @@ bool isNativeSwapChainBGR(const std::vector<VkSurfaceFormatKHR>& formats) {
 
 namespace {
 
-VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool isBGR) {
+VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(lvk::ColorSpace colorSpace, bool isBGR) {
   switch (colorSpace) {
-  case igl::ColorSpace::SRGB_LINEAR:
+  case lvk::ColorSpace::SRGB_LINEAR:
     // the closest thing to sRGB linear
     return VkSurfaceFormatKHR{isBGR ? VK_FORMAT_B8G8R8A8_UNORM : VK_FORMAT_R8G8B8A8_UNORM,
                               VK_COLOR_SPACE_BT709_LINEAR_EXT};
-  case igl::ColorSpace::SRGB_NONLINEAR:
+  case lvk::ColorSpace::SRGB_NONLINEAR:
     [[fallthrough]];
   default:
     // default to normal sRGB non linear.
@@ -64,11 +64,11 @@ VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool 
 } // namespace
 
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats,
-                                           igl::ColorSpace colorSpace) {
+                                           lvk::ColorSpace colorSpace) {
   IGL_ASSERT(!formats.empty());
 
   const VkSurfaceFormatKHR preferred =
-      igl::vulkan::colorSpaceToVkSurfaceFormat(colorSpace, isNativeSwapChainBGR(formats));
+      lvk::vulkan::colorSpaceToVkSurfaceFormat(colorSpace, isNativeSwapChainBGR(formats));
 
   for (const auto& curFormat : formats) {
     if (curFormat.format == preferred.format && curFormat.colorSpace == preferred.colorSpace) {
@@ -125,7 +125,7 @@ VkImageUsageFlags chooseUsageFlags(VkPhysicalDevice pd, VkSurfaceKHR surface, Vk
 
 } // namespace
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height) :
@@ -143,7 +143,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
       ctx.vkSurface_ != VK_NULL_HANDLE,
       "You are trying to create a swapchain but your OS surface is empty. Did you want to "
       "create an offscreen rendering context? If so, set 'width' and 'height' to 0 when you "
-      "create your igl::IDevice");
+      "create your lvk::IDevice");
 
   VkBool32 queueFamilySupportsPresentation = VK_FALSE;
   VK_ASSERT(vkGetPhysicalDeviceSurfaceSupportKHR(ctx.getVkPhysicalDevice(),
@@ -211,7 +211,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
             .format = vkFormatToTextureFormat(surfaceFormat_.format),
             .width = width,
             .height = height,
-            .usage = igl::TextureUsageBits_Attachment | igl::TextureUsageBits_Sampled,
+            .usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled,
             .debugName = "Swapchain Texture",
         });
     swapchainTextures_.push_back(texture);
@@ -265,4 +265,4 @@ Result VulkanSwapchain::present(VkSemaphore waitSemaphore) {
 }
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

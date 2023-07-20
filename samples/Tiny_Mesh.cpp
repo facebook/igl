@@ -49,8 +49,7 @@ layout(std430, buffer_reference) readonly buffer PerObject {
   mat4 model;
 };
 
-layout(push_constant) uniform constants
-{
+layout(push_constant) uniform constants {
 	PerFrame perFrame;
 	PerObject perObject;
 } pc;
@@ -78,8 +77,7 @@ layout(std430, buffer_reference) readonly buffer PerFrame {
   uint sampler0;
 };
 
-layout(push_constant) uniform constants
-{
+layout(push_constant) uniform constants {
 	PerFrame perFrame;
 } pc;
 
@@ -90,7 +88,6 @@ void main() {
 };
 )";
 
-using namespace igl;
 using glm::mat4;
 using glm::vec2;
 using glm::vec3;
@@ -105,15 +102,15 @@ FramesPerSecondCounter fps_;
 
 constexpr uint32_t kNumBufferedFrames = 3;
 
-std::unique_ptr<IDevice> device_;
-igl::Framebuffer framebuffer_;
+std::unique_ptr<lvk::IDevice> device_;
+lvk::Framebuffer framebuffer_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Mesh_;
-std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
-std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerObject_;
-std::shared_ptr<ITexture> texture0_, texture1_;
-std::shared_ptr<ISamplerState> sampler_;
-igl::RenderPass renderPass_;
-igl::DepthStencilState depthStencilState_;
+std::shared_ptr<lvk::IBuffer> vb0_, ib0_; // buffers for vertices and indices
+std::vector<std::shared_ptr<lvk::IBuffer>> ubPerFrame_, ubPerObject_;
+std::shared_ptr<lvk::ITexture> texture0_, texture1_;
+std::shared_ptr<lvk::ISamplerState> sampler_;
+lvk::RenderPass renderPass_;
+lvk::DepthStencilState depthStencilState_;
 
 struct VertexPosUvw {
   vec3 pos;
@@ -179,44 +176,44 @@ static void initIGL() {
       window_, width_, height_, {.maxTextures = 128, .maxSamplers = 128});
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
-  vb0_ = device_->createBuffer({.usage = BufferUsageBits_Vertex,
-                                .storage = StorageType_Device,
+  vb0_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Vertex,
+                                .storage = lvk::StorageType_Device,
                                 .data = vertexData0,
                                 .size = sizeof(vertexData0),
                                 .debugName = "Buffer: vertex"},
                                nullptr);
-  ib0_ = device_->createBuffer({.usage = BufferUsageBits_Index,
-                                .storage = StorageType_Device,
+  ib0_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Index,
+                                .storage = lvk::StorageType_Device,
                                 .data = indexData,
                                 .size = sizeof(indexData),
                                 .debugName = "Buffer: index"},
                                nullptr);
   // create an Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
-    ubPerFrame_.push_back(device_->createBuffer({.usage = BufferUsageBits_Uniform,
-                                                 .storage = StorageType_HostVisible,
+    ubPerFrame_.push_back(device_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
+                                                 .storage = lvk::StorageType_HostVisible,
                                                  .size = sizeof(UniformsPerFrame),
                                                  .debugName = "Buffer: uniforms (per frame)"},
                                                 nullptr));
-    ubPerObject_.push_back(device_->createBuffer({.usage = BufferUsageBits_Uniform,
-                                                  .storage = StorageType_HostVisible,
+    ubPerObject_.push_back(device_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
+                                                  .storage = lvk::StorageType_HostVisible,
                                                   .size = kNumCubes * sizeof(UniformsPerObject),
                                                   .debugName = "Buffer: uniforms (per object)"},
                                                  nullptr));
   }
 
-  depthStencilState_ = {.compareOp = igl::CompareOp_Less, .isDepthWriteEnabled = true};
+  depthStencilState_ = {.compareOp = lvk::CompareOp_Less, .isDepthWriteEnabled = true};
 
   {
     const uint32_t texWidth = 256;
     const uint32_t texHeight = 256;
     texture0_ = device_->createTexture(
         {
-            .type = TextureType::TwoD,
-            .format = igl::TextureFormat::BGRA_UN8,
+            .type = lvk::TextureType::TwoD,
+            .format = lvk::TextureFormat::BGRA_UN8,
             .width = texWidth,
             .height = texHeight,
-            .usage = igl::TextureUsageBits_Sampled,
+            .usage = lvk::TextureUsageBits_Sampled,
             .debugName = "XOR pattern",
         },
         nullptr);
@@ -256,11 +253,11 @@ static void initIGL() {
     }
     texture1_ = device_->createTexture(
         {
-            .type = TextureType::TwoD,
-            .format = igl::TextureFormat::RGBA_UN8,
+            .type = lvk::TextureType::TwoD,
+            .format = lvk::TextureFormat::RGBA_UN8,
             .width = (uint32_t)texWidth,
             .height = (uint32_t)texHeight,
-            .usage = igl::TextureUsageBits_Sampled,
+            .usage = lvk::TextureUsageBits_Sampled,
             .debugName = "wood_polished_01_diff.png",
         },
         nullptr);
@@ -272,14 +269,14 @@ static void initIGL() {
   sampler_ = device_->createSamplerState({.debugName = "Sampler: linear"}, nullptr);
 
   renderPass_ = {.colorAttachments = {{
-                     .loadOp = LoadOp_Clear,
-                     .storeOp = StoreOp_Store,
+                     .loadOp = lvk::LoadOp_Clear,
+                     .storeOp = lvk::StoreOp_Store,
                      .clearColor = {1.0f, 0.0f, 0.0f, 1.0f},
                  }}};
 #if TINY_TEST_USE_DEPTH_BUFFER
-  renderPass_.depthAttachment = {.loadOp = LoadOp_Clear, .clearDepth = 1.0};
+  renderPass_.depthAttachment = {.loadOp = lvk::LoadOp_Clear, .clearDepth = 1.0};
 #else
-  renderPass_.depthAttachment = {.loadOp = LoadOp_DontCare};
+  renderPass_.depthAttachment = {.loadOp = lvk::LoadOp_DontCare};
 #endif // TINY_TEST_USE_DEPTH_BUFFER
 
   // initialize random rotation axes for all cubes
@@ -297,11 +294,16 @@ static void initObjects() {
       .colorAttachments = {{.texture = device_->getCurrentSwapchainTexture()}},
   };
 
-  const VertexInput vdesc = {
-      .attributes =
-          {{.location = 0, .format = VertexFormat::Float3, .offset = offsetof(VertexPosUvw, pos)},
-           {.location = 1, .format = VertexFormat::Float3, .offset = offsetof(VertexPosUvw, color)},
-           {.location = 2, .format = VertexFormat::Float2, .offset = offsetof(VertexPosUvw, uv)}},
+  const lvk::VertexInput vdesc = {
+      .attributes = {{.location = 0,
+                      .format = lvk::VertexFormat::Float3,
+                      .offset = offsetof(VertexPosUvw, pos)},
+                     {.location = 1,
+                      .format = lvk::VertexFormat::Float3,
+                      .offset = offsetof(VertexPosUvw, color)},
+                     {.location = 2,
+                      .format = lvk::VertexFormat::Float2,
+                      .offset = offsetof(VertexPosUvw, uv)}},
       .inputBindings = {{.stride = sizeof(VertexPosUvw)}},
   };
 
@@ -316,15 +318,15 @@ static void initObjects() {
               },
           .depthAttachmentFormat = framebuffer_.depthStencilAttachment.texture
                                        ? framebuffer_.depthStencilAttachment.texture->getFormat()
-                                       : igl::TextureFormat::Invalid,
-          .cullMode = igl::CullMode_Back,
-          .frontFaceWinding = igl::WindingMode_CW,
+                                       : lvk::TextureFormat::Invalid,
+          .cullMode = lvk::CullMode_Back,
+          .frontFaceWinding = lvk::WindingMode_CW,
           .debugName = "Pipeline: mesh",
       },
       nullptr);
 }
 
-static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
+static void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frameIndex) {
   IGL_PROFILER_FUNCTION();
 
   if (!width_ || !height_) {
@@ -359,10 +361,10 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   ubPerObject_[frameIndex]->upload(&perObject, sizeof(perObject));
 
   // Command buffers (1-N per thread): create, submit and forget
-  std::shared_ptr<ICommandBuffer> buffer = device_->createCommandBuffer();
+  std::shared_ptr<lvk::ICommandBuffer> buffer = device_->createCommandBuffer();
 
-  const igl::Viewport viewport = {0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f};
-  const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
+  const lvk::Viewport viewport = {0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f};
+  const lvk::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
 
   // This will clear the framebuffer
   buffer->cmdBeginRendering(renderPass_, framebuffer_);
@@ -370,7 +372,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
     buffer->cmdBindRenderPipeline(renderPipelineState_Mesh_);
     buffer->cmdBindViewport(viewport);
     buffer->cmdBindScissorRect(scissor);
-    buffer->cmdPushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
+    buffer->cmdPushDebugGroupLabel("Render Mesh", lvk::Color(1, 0, 0));
     buffer->cmdBindVertexBuffer(0, vb0_, 0);
     buffer->cmdBindDepthStencilState(depthStencilState_);
     // Draw 2 cubes: we use uniform buffer to update matrices
@@ -383,14 +385,15 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
           .perObject = ubPerObject_[frameIndex]->gpuAddress(i * sizeof(UniformsPerObject)),
       };
       buffer->cmdPushConstants(bindings);
-      buffer->cmdDrawIndexed(PrimitiveType::Triangle, 3 * 6 * 2, IndexFormat::UInt16, *ib0_.get(), 0);
+      buffer->cmdDrawIndexed(
+          lvk::PrimitiveType::Triangle, 3 * 6 * 2, lvk::IndexFormat::UInt16, *ib0_.get(), 0);
     }
     buffer->cmdPopDebugGroupLabel();
   }
   imgui_->endFrame(*device_.get(), *buffer);
   buffer->cmdEndRendering();
 
-  device_->submit(*buffer, CommandQueueType::Graphics, nativeDrawable.get());
+  device_->submit(*buffer, lvk::CommandQueueType::Graphics, nativeDrawable.get());
 }
 
 int main(int argc, char* argv[]) {
@@ -421,7 +424,7 @@ int main(int argc, char* argv[]) {
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     width_ = width;
     height_ = height;
-    auto* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
+    auto* vulkanDevice = static_cast<lvk::vulkan::Device*>(device_.get());
     vulkanDevice->getVulkanContext().initSwapchain(width_, height_);
   });
 

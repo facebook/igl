@@ -9,7 +9,7 @@
 
 #include <igl/vulkan/Common.h>
 
-namespace igl {
+namespace lvk {
 
 namespace vulkan {
 
@@ -35,4 +35,4 @@ VulkanPipelineLayout::~VulkanPipelineLayout() {
 
 } // namespace vulkan
 
-} // namespace igl
+} // namespace lvk

@@ -23,7 +23,7 @@
 #include <igl/vulkan/VulkanTexture.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
-static_assert(igl::HWDeviceDesc::IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE <= VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+static_assert(lvk::HWDeviceDesc::IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE <= VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
 
 namespace {
 
@@ -80,7 +80,7 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
   }
 
   if (isError) {
-    igl::vulkan::VulkanContext* ctx = static_cast<igl::vulkan::VulkanContext*>(userData);
+    lvk::vulkan::VulkanContext* ctx = static_cast<lvk::vulkan::VulkanContext*>(userData);
     if (ctx->config_.terminateOnValidationError) {
       IGL_ASSERT(false);
       std::terminate();
@@ -90,18 +90,18 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
   return VK_FALSE;
 }
 
-std::vector<VkFormat> getCompatibleDepthStencilFormats(igl::TextureFormat format) {
+std::vector<VkFormat> getCompatibleDepthStencilFormats(lvk::TextureFormat format) {
   switch (format) {
-  case igl::TextureFormat::Z_UN16:
+  case lvk::TextureFormat::Z_UN16:
     return {VK_FORMAT_D16_UNORM,
             VK_FORMAT_D16_UNORM_S8_UINT,
             VK_FORMAT_D24_UNORM_S8_UINT,
             VK_FORMAT_D32_SFLOAT};
-  case igl::TextureFormat::Z_UN24:
+  case lvk::TextureFormat::Z_UN24:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D16_UNORM_S8_UINT};
-  case igl::TextureFormat::Z_F32:
+  case lvk::TextureFormat::Z_F32:
     return {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
-  case igl::TextureFormat::Z_UN24_S_UI8:
+  case lvk::TextureFormat::Z_UN24_S_UI8:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT};
   default:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT};
@@ -113,8 +113,8 @@ bool validateImageLimits(VkImageType imageType,
                          VkSampleCountFlagBits samples,
                          const VkExtent3D& extent,
                          const VkPhysicalDeviceLimits& limits,
-                         igl::Result* outResult) {
-  using igl::Result;
+                         lvk::Result* outResult) {
+  using lvk::Result;
 
   if (samples != VK_SAMPLE_COUNT_1_BIT && !IGL_VERIFY(imageType == VK_IMAGE_TYPE_2D)) {
     Result::setResult(
@@ -142,7 +142,7 @@ bool validateImageLimits(VkImageType imageType,
 
 } // namespace
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 struct VulkanContextImpl final {
@@ -335,7 +335,7 @@ void VulkanContext::createSurface(void* window, void* display) {
 #endif
 }
 
-igl::Result VulkanContext::queryDevices(HWDeviceType deviceType,
+lvk::Result VulkanContext::queryDevices(HWDeviceType deviceType,
                                         std::vector<HWDeviceDesc>& outDevices) {
   outDevices.clear();
 
@@ -386,7 +386,7 @@ igl::Result VulkanContext::queryDevices(HWDeviceType deviceType,
   return Result();
 }
 
-igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
+lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
   if (desc.guid == 0UL) {
     LLOGW("Invalid hardwareGuid(%lu)", desc.guid);
     return Result(Result::Code::RuntimeError, "Vulkan is not supported");
@@ -526,7 +526,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
   VK_ASSERT(ivkSetDebugObjectName(
       vkDevice_, VK_OBJECT_TYPE_DEVICE, (uint64_t)vkDevice_, "Device: VulkanContext::vkDevice_"));
 
-  immediate_ = std::make_unique<igl::vulkan::VulkanImmediateCommands>(
+  immediate_ = std::make_unique<lvk::vulkan::VulkanImmediateCommands>(
       vkDevice_, deviceQueues_.graphicsQueueFamilyIndex, "VulkanContext::immediate_");
 
   // create Vulkan pipeline cache
@@ -549,7 +549,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 
   // The staging device will use VMA to allocate a buffer, so this needs
   // to happen after VMA has been initialized.
-  stagingDevice_ = std::make_unique<igl::vulkan::VulkanStagingDevice>(*this);
+  stagingDevice_ = std::make_unique<lvk::vulkan::VulkanStagingDevice>(*this);
 
   // default texture
   IGL_ASSERT(textures_.size() == 1);
@@ -695,7 +695,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
   return Result();
 }
 
-igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
+lvk::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
   if (!vkDevice_ || !immediate_) {
     LLOGW("Call initContext() first");
     return Result(Result::Code::RuntimeError, "Call initContext() first");
@@ -711,7 +711,7 @@ igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
     return Result();
   }
 
-  swapchain_ = std::make_unique<igl::vulkan::VulkanSwapchain>(*this, width, height);
+  swapchain_ = std::make_unique<lvk::vulkan::VulkanSwapchain>(*this, width, height);
 
   return swapchain_ ? Result() : Result(Result::Code::RuntimeError, "Failed to create swapchain");
 }
@@ -727,7 +727,7 @@ Result VulkanContext::present() const {
 std::shared_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSize,
                                                           VkBufferUsageFlags usageFlags,
                                                           VkMemoryPropertyFlags memFlags,
-                                                          igl::Result* outResult,
+                                                          lvk::Result* outResult,
                                                           const char* debugName) const {
 #define ENSURE_BUFFER_SIZE(flag, maxSize)                                                  \
   if (usageFlags & flag) {                                                                 \
@@ -759,7 +759,7 @@ std::shared_ptr<VulkanImage> VulkanContext::createImage(VkImageType imageType,
                                                         VkMemoryPropertyFlags memFlags,
                                                         VkImageCreateFlags flags,
                                                         VkSampleCountFlagBits samples,
-                                                        igl::Result* outResult,
+                                                        lvk::Result* outResult,
                                                         const char* debugName) const {
   if (!validateImageLimits(
           imageType, samples, extent, getVkPhysicalDeviceProperties().limits, outResult)) {
@@ -956,7 +956,7 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
 }
 
 std::shared_ptr<VulkanSampler> VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
-                                                            igl::Result* outResult,
+                                                            lvk::Result* outResult,
                                                             const char* debugName) const {
   auto sampler = std::make_shared<VulkanSampler>(*this, vkDevice_, ci, debugName);
   if (!IGL_VERIFY(sampler.get())) {
@@ -1023,7 +1023,7 @@ void VulkanContext::querySurfaceCapabilities() {
   }
 }
 
-VkFormat VulkanContext::getClosestDepthStencilFormat(igl::TextureFormat desiredFormat) const {
+VkFormat VulkanContext::getClosestDepthStencilFormat(lvk::TextureFormat desiredFormat) const {
   // get a list of compatible depth formats for a given desired format
   // The list will contain depth format that are ordered from most to least closest
   const std::vector<VkFormat> compatibleDepthStencilFormatList =
@@ -1094,4 +1094,4 @@ void VulkanContext::waitDeferredTasks() {
 }
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

@@ -15,7 +15,7 @@
 #include <igl/vulkan/VulkanTexture.h>
 #include <vector>
 
-namespace igl::vulkan {
+namespace lvk::vulkan {
 
 class VulkanContext;
 class VulktanTexture;
@@ -90,4 +90,4 @@ class VulkanSwapchain final {
   VkSurfaceFormatKHR surfaceFormat_;
 };
 
-} // namespace igl::vulkan
+} // namespace lvk::vulkan

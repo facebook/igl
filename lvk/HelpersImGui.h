@@ -16,28 +16,28 @@ namespace lvk {
 
 class ImGuiRenderer {
  public:
-  explicit ImGuiRenderer(igl::IDevice& device,
+  explicit ImGuiRenderer(lvk::IDevice& device,
                          const char* defaultFontTTF = nullptr,
                          float fontSizePixels = 24.0f);
   ~ImGuiRenderer();
 
-  void beginFrame(const igl::Framebuffer& desc);
-  void endFrame(igl::IDevice& device, igl::ICommandBuffer& cmdBuffer);
+  void beginFrame(const lvk::Framebuffer& desc);
+  void endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffer);
 
  private:
-  lvk::Holder<lvk::RenderPipelineHandle> createNewPipelineState(const igl::Framebuffer& desc);
+  lvk::Holder<lvk::RenderPipelineHandle> createNewPipelineState(const lvk::Framebuffer& desc);
 
  private:
-  igl::IDevice& device_;
+  lvk::IDevice& device_;
   lvk::Holder<lvk::RenderPipelineHandle> pipeline_;
-  std::shared_ptr<igl::ITexture> fontTexture_;
+  std::shared_ptr<lvk::ITexture> fontTexture_;
 
   uint32_t frameIndex_ = 0;
 
   struct DrawableData {
-    std::shared_ptr<igl::IBuffer> vb_;
-    std::shared_ptr<igl::IBuffer> ib_;
-    explicit DrawableData(igl::IDevice& device);
+    std::shared_ptr<lvk::IBuffer> vb_;
+    std::shared_ptr<lvk::IBuffer> ib_;
+    explicit DrawableData(lvk::IDevice& device);
   };
 
   std::vector<DrawableData> drawables_[3] = {};

@@ -34,7 +34,7 @@ VkFence lvk::createFence(VkDevice device, const char* debugName) {
 }
 
 uint32_t lvk::findQueueFamilyIndex(VkPhysicalDevice physDev, VkQueueFlags flags) {
-  using igl::vulkan::DeviceQueues;
+  using lvk::vulkan::DeviceQueues;
 
   uint32_t queueFamilyCount = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(physDev, &queueFamilyCount, nullptr);

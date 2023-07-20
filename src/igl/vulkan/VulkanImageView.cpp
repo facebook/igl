@@ -10,7 +10,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 
-namespace igl {
+namespace lvk {
 
 namespace vulkan {
 
@@ -50,4 +50,4 @@ VulkanImageView::~VulkanImageView() {
 
 } // namespace vulkan
 
-} // namespace igl
+} // namespace lvk

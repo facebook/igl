@@ -13,7 +13,7 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 class VulkanContext;
@@ -130,4 +130,4 @@ class VulkanImage final {
 };
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

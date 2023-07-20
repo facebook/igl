@@ -13,7 +13,7 @@
 #include <memory>
 #include <vector>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 class VulkanContext;
@@ -26,8 +26,8 @@ class Device final : public IDevice {
 
   std::shared_ptr<ICommandBuffer> createCommandBuffer() override;
 
-  void submit(const igl::ICommandBuffer& commandBuffer,
-              igl::CommandQueueType queueTyp,
+  void submit(const lvk::ICommandBuffer& commandBuffer,
+              lvk::CommandQueueType queueTyp,
               ITexture* present) override;
 
   std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc, Result* outResult) override;
@@ -90,4 +90,4 @@ class Device final : public IDevice {
 };
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

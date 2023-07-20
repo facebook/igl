@@ -15,7 +15,7 @@
 #include <igl/vulkan/VulkanPipelineLayout.h>
 #include <igl/vulkan/VulkanTexture.h>
 
-namespace igl::vulkan {
+namespace lvk::vulkan {
 
 CommandBuffer::CommandBuffer(VulkanContext& ctx) :
   ctx_(ctx), wrapper_(ctx_.immediate_->acquire()) {}
@@ -49,8 +49,8 @@ void transitionColorAttachment(VkCommandBuffer buffer, const std::shared_ptr<ITe
           VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
 }
 
-VkAttachmentLoadOp loadOpToVkAttachmentLoadOp(igl::LoadOp a) {
-  using igl::LoadOp;
+VkAttachmentLoadOp loadOpToVkAttachmentLoadOp(lvk::LoadOp a) {
+  using lvk::LoadOp;
   switch (a) {
   case LoadOp_DontCare:
     return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -65,8 +65,8 @@ VkAttachmentLoadOp loadOpToVkAttachmentLoadOp(igl::LoadOp a) {
   return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 }
 
-VkAttachmentStoreOp storeOpToVkAttachmentStoreOp(igl::StoreOp a) {
-  using igl::StoreOp;
+VkAttachmentStoreOp storeOpToVkAttachmentStoreOp(lvk::StoreOp a) {
+  using lvk::StoreOp;
   switch (a) {
   case StoreOp_DontCare:
     return VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -82,51 +82,51 @@ VkAttachmentStoreOp storeOpToVkAttachmentStoreOp(igl::StoreOp a) {
   return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 }
 
-VkStencilOp stencilOpToVkStencilOp(igl::StencilOp op) {
+VkStencilOp stencilOpToVkStencilOp(lvk::StencilOp op) {
   switch (op) {
-  case igl::StencilOp_Keep:
+  case lvk::StencilOp_Keep:
     return VK_STENCIL_OP_KEEP;
-  case igl::StencilOp_Zero:
+  case lvk::StencilOp_Zero:
     return VK_STENCIL_OP_ZERO;
-  case igl::StencilOp_Replace:
+  case lvk::StencilOp_Replace:
     return VK_STENCIL_OP_REPLACE;
-  case igl::StencilOp_IncrementClamp:
+  case lvk::StencilOp_IncrementClamp:
     return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
-  case igl::StencilOp_DecrementClamp:
+  case lvk::StencilOp_DecrementClamp:
     return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
-  case igl::StencilOp_Invert:
+  case lvk::StencilOp_Invert:
     return VK_STENCIL_OP_INVERT;
-  case igl::StencilOp_IncrementWrap:
+  case lvk::StencilOp_IncrementWrap:
     return VK_STENCIL_OP_INCREMENT_AND_WRAP;
-  case igl::StencilOp_DecrementWrap:
+  case lvk::StencilOp_DecrementWrap:
     return VK_STENCIL_OP_DECREMENT_AND_WRAP;
   }
   IGL_ASSERT(false);
   return VK_STENCIL_OP_KEEP;
 }
 
-VkIndexType indexFormatToVkIndexType(igl::IndexFormat fmt) {
+VkIndexType indexFormatToVkIndexType(lvk::IndexFormat fmt) {
   switch (fmt) {
-  case igl::IndexFormat::UInt16:
+  case lvk::IndexFormat::UInt16:
     return VK_INDEX_TYPE_UINT16;
-  case igl::IndexFormat::UInt32:
+  case lvk::IndexFormat::UInt32:
     return VK_INDEX_TYPE_UINT32;
   };
   IGL_ASSERT(false);
   return VK_INDEX_TYPE_NONE_KHR;
 }
 
-VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(igl::PrimitiveType t) {
+VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(lvk::PrimitiveType t) {
   switch (t) {
-  case igl::PrimitiveType::Point:
+  case lvk::PrimitiveType::Point:
     return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-  case igl::PrimitiveType::Line:
+  case lvk::PrimitiveType::Line:
     return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-  case igl::PrimitiveType::LineStrip:
+  case lvk::PrimitiveType::LineStrip:
     return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-  case igl::PrimitiveType::Triangle:
+  case lvk::PrimitiveType::Triangle:
     return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-  case igl::PrimitiveType::TriangleStrip:
+  case lvk::PrimitiveType::TriangleStrip:
     return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
   }
   IGL_ASSERT_MSG(false, "Implement PrimitiveType = %u", (uint32_t)t);
@@ -169,7 +169,7 @@ void CommandBuffer::cmdBindComputePipeline(lvk::ComputePipelineHandle handle) {
     return;
   }
 
-  const igl::vulkan::ComputePipelineState* cps = ctx_.computePipelinesPool_.get(handle);
+  const lvk::vulkan::ComputePipelineState* cps = ctx_.computePipelinesPool_.get(handle);
 
   IGL_ASSERT(cps);
 
@@ -198,13 +198,13 @@ void CommandBuffer::cmdDispatchThreadGroups(const Dimensions& threadgroupCount,
       wrapper_.cmdBuf_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
 }
 
-void CommandBuffer::cmdPushDebugGroupLabel(const char* label, const igl::Color& color) const {
+void CommandBuffer::cmdPushDebugGroupLabel(const char* label, const lvk::Color& color) const {
   IGL_ASSERT(label);
 
   ivkCmdBeginDebugUtilsLabel(wrapper_.cmdBuf_, label, color.toFloatPtr());
 }
 
-void CommandBuffer::cmdInsertDebugEventLabel(const char* label, const igl::Color& color) const {
+void CommandBuffer::cmdInsertDebugEventLabel(const char* label, const lvk::Color& color) const {
   IGL_ASSERT(label);
 
   ivkCmdInsertDebugUtilsLabel(wrapper_.cmdBuf_, label, color.toFloatPtr());
@@ -218,9 +218,9 @@ void CommandBuffer::useComputeTexture(ITexture* texture) {
   IGL_PROFILER_FUNCTION();
 
   IGL_ASSERT(texture);
-  const igl::vulkan::Texture* tex = static_cast<igl::vulkan::Texture*>(texture);
-  const igl::vulkan::VulkanTexture& vkTex = tex->getVulkanTexture();
-  const igl::vulkan::VulkanImage& vkImage = vkTex.getVulkanImage();
+  const lvk::vulkan::Texture* tex = static_cast<lvk::vulkan::Texture*>(texture);
+  const lvk::vulkan::VulkanTexture& vkTex = tex->getVulkanTexture();
+  const lvk::vulkan::VulkanImage& vkImage = vkTex.getVulkanImage();
   if (!vkImage.isStorageImage()) {
     IGL_ASSERT_MSG(false, "Did you forget to specify TextureUsageBits::Storage on your texture?");
     return;
@@ -240,8 +240,8 @@ void CommandBuffer::useComputeTexture(ITexture* texture) {
           vkImage.getImageAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
 }
 
-void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
-                                      const igl::Framebuffer& fb) {
+void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
+                                      const lvk::Framebuffer& fb) {
   IGL_PROFILER_FUNCTION();
 
   IGL_ASSERT(!isRendering_);
@@ -302,7 +302,7 @@ void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
       IGL_ASSERT_MSG(descColor.level == mipLevel,
                      "All color attachments should have the same mip-level");
     }
-    const igl::Dimensions dim = colorTexture.getDimensions();
+    const lvk::Dimensions dim = colorTexture.getDimensions();
     if (fbWidth) {
       IGL_ASSERT_MSG(dim.width == fbWidth, "All attachments should have the save width");
     }
@@ -358,7 +358,7 @@ void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
         .storeOp = storeOpToVkAttachmentStoreOp(descDepth.storeOp),
         .clearValue = ivkGetClearDepthStencilValue(descDepth.clearDepth, descDepth.clearStencil),
     };
-    const igl::Dimensions dim = depthTexture.getDimensions();
+    const lvk::Dimensions dim = depthTexture.getDimensions();
     if (fbWidth) {
       IGL_ASSERT_MSG(dim.width == fbWidth, "All attachments should have the save width");
     }
@@ -372,12 +372,12 @@ void CommandBuffer::cmdBeginRendering(const igl::RenderPass& renderPass,
 
   const uint32_t width = std::max(fbWidth >> mipLevel, 1u);
   const uint32_t height = std::max(fbHeight >> mipLevel, 1u);
-  const igl::Viewport viewport = {0.0f, 0.0f, (float)width, (float)height, 0.0f, +1.0f};
-  const igl::ScissorRect scissor = {0, 0, width, height};
+  const lvk::Viewport viewport = {0.0f, 0.0f, (float)width, (float)height, 0.0f, +1.0f};
+  const lvk::ScissorRect scissor = {0, 0, width, height};
 
   VkRenderingAttachmentInfo stencilAttachment = depthAttachment;
 
-  const bool isStencilFormat = renderPass.stencilAttachment.loadOp != igl::LoadOp_Invalid;
+  const bool isStencilFormat = renderPass.stencilAttachment.loadOp != lvk::LoadOp_Invalid;
 
   const VkRenderingInfo renderingInfo = {
       .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
@@ -458,7 +458,7 @@ void CommandBuffer::cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) {
 
   currentPipeline_ = handle;
 
-  const igl::vulkan::RenderPipelineState* rps = ctx_.renderPipelinesPool_.get(handle);
+  const lvk::vulkan::RenderPipelineState* rps = ctx_.renderPipelinesPool_.get(handle);
 
   IGL_ASSERT(rps);
 
@@ -481,7 +481,7 @@ void CommandBuffer::cmdBindDepthStencilState(const DepthStencilState& desc) {
   dynamicState_.depthWriteEnable_ = desc.isDepthWriteEnabled;
   dynamicState_.setDepthCompareOp(compareOpToVkCompareOp(desc.compareOp));
 
-  auto setStencilState = [this](VkStencilFaceFlagBits faceMask, const igl::StencilStateDesc& desc) {
+  auto setStencilState = [this](VkStencilFaceFlagBits faceMask, const lvk::StencilStateDesc& desc) {
     dynamicState_.setStencilStateOps(faceMask,
                                      stencilOpToVkStencilOp(desc.stencilFailureOp),
                                      stencilOpToVkStencilOp(desc.depthStencilPassOp),
@@ -505,7 +505,7 @@ void CommandBuffer::cmdBindVertexBuffer(uint32_t index,
     return;
   }
 
-  auto* buf = static_cast<igl::vulkan::Buffer*>(buffer.get());
+  auto* buf = static_cast<lvk::vulkan::Buffer*>(buffer.get());
 
   VkBuffer vkBuf = buf->getVkBuffer();
 
@@ -538,7 +538,7 @@ void CommandBuffer::cmdPushConstants(const void* data, size_t size, size_t offse
 }
 
 void CommandBuffer::bindGraphicsPipeline() {
-  const igl::vulkan::RenderPipelineState* rps = ctx_.renderPipelinesPool_.get(currentPipeline_);
+  const lvk::vulkan::RenderPipelineState* rps = ctx_.renderPipelinesPool_.get(currentPipeline_);
 
   if (!IGL_VERIFY(rps)) {
     return;
@@ -581,7 +581,7 @@ void CommandBuffer::cmdDrawIndexed(PrimitiveType primitiveType,
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
 
-  const igl::vulkan::Buffer* buf = static_cast<igl::vulkan::Buffer*>(&indexBuffer);
+  const lvk::vulkan::Buffer* buf = static_cast<lvk::vulkan::Buffer*>(&indexBuffer);
 
   const VkIndexType type = indexFormatToVkIndexType(indexFormat);
   vkCmdBindIndexBuffer(wrapper_.cmdBuf_, buf->getVkBuffer(), indexBufferOffset, type);
@@ -599,7 +599,7 @@ void CommandBuffer::cmdDrawIndirect(PrimitiveType primitiveType,
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
 
-  const igl::vulkan::Buffer* bufIndirect = static_cast<igl::vulkan::Buffer*>(&indirectBuffer);
+  const lvk::vulkan::Buffer* bufIndirect = static_cast<lvk::vulkan::Buffer*>(&indirectBuffer);
 
   vkCmdDrawIndirect(wrapper_.cmdBuf_,
                     bufIndirect->getVkBuffer(),
@@ -620,8 +620,8 @@ void CommandBuffer::cmdDrawIndexedIndirect(PrimitiveType primitiveType,
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
 
-  const igl::vulkan::Buffer* bufIndex = static_cast<igl::vulkan::Buffer*>(&indexBuffer);
-  const igl::vulkan::Buffer* bufIndirect = static_cast<igl::vulkan::Buffer*>(&indirectBuffer);
+  const lvk::vulkan::Buffer* bufIndex = static_cast<lvk::vulkan::Buffer*>(&indexBuffer);
+  const lvk::vulkan::Buffer* bufIndirect = static_cast<lvk::vulkan::Buffer*>(&indirectBuffer);
 
   const VkIndexType type = indexFormatToVkIndexType(indexFormat);
   vkCmdBindIndexBuffer(wrapper_.cmdBuf_, bufIndex->getVkBuffer(), 0, type);
@@ -647,4 +647,4 @@ void CommandBuffer::cmdSetDepthBias(float depthBias, float slopeScale, float cla
   vkCmdSetDepthBias(wrapper_.cmdBuf_, depthBias, clamp, slopeScale);
 }
 
-} // namespace igl::vulkan
+} // namespace lvk::vulkan

@@ -18,7 +18,7 @@
 
 #define IGL_VULKAN_DEBUG_STAGING_DEVICE 0
 
-using SubmitHandle = igl::vulkan::VulkanImmediateCommands::SubmitHandle;
+using SubmitHandle = lvk::vulkan::VulkanImmediateCommands::SubmitHandle;
 
 namespace {
 
@@ -32,7 +32,7 @@ void flipBMP(uint8_t* dstImg, const uint8_t* srcImg, size_t height, size_t bytes
 
 } // namespace
 
-namespace igl {
+namespace lvk {
 
 namespace vulkan {
 
@@ -54,7 +54,7 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
                         "Buffer: staging buffer");
   IGL_ASSERT(stagingBuffer_.get());
 
-  immediate_ = std::make_unique<igl::vulkan::VulkanImmediateCommands>(
+  immediate_ = std::make_unique<lvk::vulkan::VulkanImmediateCommands>(
       ctx_.getVkDevice(),
       ctx_.deviceQueues_.graphicsQueueFamilyIndex,
       "VulkanStagingDevice::immediate_");
@@ -495,4 +495,4 @@ void VulkanStagingDevice::flushOutstandingFences() {
 }
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

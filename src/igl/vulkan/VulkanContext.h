@@ -22,7 +22,7 @@
 #include <lvk/Pool.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 class Device;
@@ -58,7 +58,7 @@ struct VulkanContextConfig {
   uint32_t maxSamplers = 512;
   bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
   bool enableValidation = true;
-  igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR;
+  lvk::ColorSpace swapChainColorSpace = lvk::ColorSpace::SRGB_LINEAR;
   // owned by the application - should be alive until initContext() returns
   const void* pipelineCacheData = nullptr;
   size_t pipelineCacheDataSize = 0;
@@ -71,10 +71,10 @@ class VulkanContext final {
                 void* display = nullptr);
   ~VulkanContext();
 
-  igl::Result queryDevices(HWDeviceType deviceType, std::vector<HWDeviceDesc>& outDevices);
-  igl::Result initContext(const HWDeviceDesc& desc);
+  lvk::Result queryDevices(HWDeviceType deviceType, std::vector<HWDeviceDesc>& outDevices);
+  lvk::Result initContext(const HWDeviceDesc& desc);
 
-  igl::Result initSwapchain(uint32_t width, uint32_t height);
+  lvk::Result initSwapchain(uint32_t width, uint32_t height);
 
   std::shared_ptr<VulkanImage> createImage(VkImageType imageType,
                                            VkExtent3D extent,
@@ -86,17 +86,17 @@ class VulkanContext final {
                                            VkMemoryPropertyFlags memFlags,
                                            VkImageCreateFlags flags,
                                            VkSampleCountFlagBits samples,
-                                           igl::Result* outResult,
+                                           lvk::Result* outResult,
                                            const char* debugName = nullptr) const;
   std::shared_ptr<VulkanBuffer> createBuffer(VkDeviceSize bufferSize,
                                              VkBufferUsageFlags usageFlags,
                                              VkMemoryPropertyFlags memFlags,
-                                             igl::Result* outResult,
+                                             lvk::Result* outResult,
                                              const char* debugName = nullptr) const;
   std::shared_ptr<VulkanTexture> createTexture(std::shared_ptr<VulkanImage> image,
                                                std::shared_ptr<VulkanImageView> imageView) const;
   std::shared_ptr<VulkanSampler> createSampler(const VkSamplerCreateInfo& ci,
-                                               igl::Result* outResult,
+                                               lvk::Result* outResult,
                                                const char* debugName = nullptr) const;
 
   bool hasSwapchain() const noexcept {
@@ -113,7 +113,7 @@ class VulkanContext final {
     return vkPhysicalDeviceFeatures2_;
   }
 
-  VkFormat getClosestDepthStencilFormat(igl::TextureFormat desiredFormat) const;
+  VkFormat getClosestDepthStencilFormat(lvk::TextureFormat desiredFormat) const;
 
   // OpenXR needs Vulkan instance to find physical device
   VkInstance getVkInstance() const {
@@ -150,11 +150,11 @@ class VulkanContext final {
   void waitDeferredTasks();
 
  private:
-  friend class igl::vulkan::Device;
-  friend class igl::vulkan::VulkanSwapchain;
-  friend class igl::vulkan::CommandQueue;
-  friend class igl::vulkan::CommandBuffer;
-  friend class igl::vulkan::RenderCommandEncoder;
+  friend class lvk::vulkan::Device;
+  friend class lvk::vulkan::VulkanSwapchain;
+  friend class lvk::vulkan::CommandQueue;
+  friend class lvk::vulkan::CommandBuffer;
+  friend class lvk::vulkan::RenderCommandEncoder;
 
   VkInstance vkInstance_ = VK_NULL_HANDLE;
   VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;
@@ -187,10 +187,10 @@ class VulkanContext final {
 
  public:
   DeviceQueues deviceQueues_;
-  std::unique_ptr<igl::vulkan::VulkanSwapchain> swapchain_;
-  std::unique_ptr<igl::vulkan::VulkanImmediateCommands> immediate_;
-  std::unique_ptr<igl::vulkan::VulkanStagingDevice> stagingDevice_;
-  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBindless_;
+  std::unique_ptr<lvk::vulkan::VulkanSwapchain> swapchain_;
+  std::unique_ptr<lvk::vulkan::VulkanImmediateCommands> immediate_;
+  std::unique_ptr<lvk::vulkan::VulkanStagingDevice> stagingDevice_;
+  std::unique_ptr<lvk::vulkan::VulkanDescriptorSetLayout> dslBindless_;
   VkDescriptorPool dpBindless_ = VK_NULL_HANDLE;
   struct BindlessDescriptorSet {
     VkDescriptorSet ds = VK_NULL_HANDLE;
@@ -199,7 +199,7 @@ class VulkanContext final {
   };
   mutable std::vector<BindlessDescriptorSet> bindlessDSets_;
   mutable uint32_t currentDSetIndex_ = 0;
-  std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayout_;
+  std::unique_ptr<lvk::vulkan::VulkanPipelineLayout> pipelineLayout_;
   // don't use staging on devices with shared host-visible memory
   bool useStaging_ = true;
 
@@ -227,9 +227,9 @@ class VulkanContext final {
     
   VulkanContextConfig config_;
 
-  lvk::Pool<lvk::ShaderModule, igl::vulkan::VulkanShaderModule> shaderModulesPool_;
-  lvk::Pool<lvk::RenderPipeline, igl::vulkan::RenderPipelineState> renderPipelinesPool_;
-  lvk::Pool<lvk::ComputePipeline, igl::vulkan::ComputePipelineState> computePipelinesPool_;
+  lvk::Pool<lvk::ShaderModule, lvk::vulkan::VulkanShaderModule> shaderModulesPool_;
+  lvk::Pool<lvk::RenderPipeline, lvk::vulkan::RenderPipelineState> renderPipelinesPool_;
+  lvk::Pool<lvk::ComputePipeline, lvk::vulkan::ComputePipelineState> computePipelinesPool_;
 
   struct DeferredTask {
     DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) :
@@ -242,4 +242,4 @@ class VulkanContext final {
 };
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

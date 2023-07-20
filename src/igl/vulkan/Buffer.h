@@ -11,18 +11,18 @@
 
 #include <vector>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 class Device;
 class VulkanBuffer;
 
-class Buffer final : public igl::IBuffer {
+class Buffer final : public lvk::IBuffer {
   friend class Device;
   friend class CommandBuffer;
 
  public:
-  explicit Buffer(const igl::vulkan::Device& device);
+  explicit Buffer(const lvk::vulkan::Device& device);
   ~Buffer() override = default;
 
   Result upload(const void* data, size_t size, size_t offset = 0) override;
@@ -36,10 +36,10 @@ class Buffer final : public igl::IBuffer {
   Result create(const BufferDesc& desc);
 
  private:
-  const igl::vulkan::Device& device_;
+  const lvk::vulkan::Device& device_;
   BufferDesc desc_;
   std::shared_ptr<VulkanBuffer> buffer_;
 };
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

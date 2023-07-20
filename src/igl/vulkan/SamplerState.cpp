@@ -12,43 +12,43 @@
 #include <igl/vulkan/VulkanSampler.h>
 
 namespace {
-VkFilter samplerFilterToVkFilter(igl::SamplerFilter filter) {
+VkFilter samplerFilterToVkFilter(lvk::SamplerFilter filter) {
   switch (filter) {
-  case igl::SamplerFilter_Nearest:
+  case lvk::SamplerFilter_Nearest:
     return VK_FILTER_NEAREST;
-  case igl::SamplerFilter_Linear:
+  case lvk::SamplerFilter_Linear:
     return VK_FILTER_LINEAR;
   }
   IGL_ASSERT_MSG(false, "SamplerFilter value not handled: %d", (int)filter);
   return VK_FILTER_LINEAR;
 }
 
-VkSamplerMipmapMode samplerMipMapToVkSamplerMipmapMode(igl::SamplerMip filter) {
+VkSamplerMipmapMode samplerMipMapToVkSamplerMipmapMode(lvk::SamplerMip filter) {
   switch (filter) {
-  case igl::SamplerMip_Disabled:
-  case igl::SamplerMip_Nearest:
+  case lvk::SamplerMip_Disabled:
+  case lvk::SamplerMip_Nearest:
     return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-  case igl::SamplerMip_Linear:
+  case lvk::SamplerMip_Linear:
     return VK_SAMPLER_MIPMAP_MODE_LINEAR;
   }
   IGL_ASSERT_MSG(false, "SamplerMipMap value not handled: %d", (int)filter);
   return VK_SAMPLER_MIPMAP_MODE_NEAREST;
 }
 
-static VkSamplerAddressMode samplerWrapModeToVkSamplerAddressMode(igl::SamplerWrap mode) {
+static VkSamplerAddressMode samplerWrapModeToVkSamplerAddressMode(lvk::SamplerWrap mode) {
   switch (mode) {
-  case igl::SamplerWrap_Repeat:
+  case lvk::SamplerWrap_Repeat:
     return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  case igl::SamplerWrap_Clamp:
+  case lvk::SamplerWrap_Clamp:
     return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-  case igl::SamplerWrap_MirrorRepeat:
+  case lvk::SamplerWrap_MirrorRepeat:
     return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
   }
   IGL_ASSERT_MSG(false, "SamplerWrapMode value not handled: %d", (int)mode);
   return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
 
-VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStateDesc& desc,
+VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const lvk::SamplerStateDesc& desc,
                                                           const VkPhysicalDeviceLimits& limits) {
   IGL_ASSERT_MSG(desc.mipLodMax >= desc.mipLodMin,
                  "mipLodMax (%d) must be greater than or equal to mipLodMin (%d)",
@@ -71,7 +71,7 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
       .compareEnable = VK_FALSE,
       .compareOp = VK_COMPARE_OP_ALWAYS,
       .minLod = float(desc.mipLodMin),
-      .maxLod = desc.mipMap == igl::SamplerMip_Disabled ? 0.0f : float(desc.mipLodMax),
+      .maxLod = desc.mipMap == lvk::SamplerMip_Disabled ? 0.0f : float(desc.mipLodMax),
       .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
       .unnormalizedCoordinates = VK_FALSE,
   };
@@ -93,18 +93,18 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
 
   if (desc.depthCompareEnabled) {
     ci.compareEnable = VK_TRUE;
-    ci.compareOp = igl::vulkan::compareOpToVkCompareOp(desc.depthCompareOp);
+    ci.compareOp = lvk::vulkan::compareOpToVkCompareOp(desc.depthCompareOp);
   }
 
   return ci;
 }
 } // namespace
 
-namespace igl {
+namespace lvk {
 
 namespace vulkan {
 
-SamplerState::SamplerState(const igl::vulkan::Device& device) : device_(device) {}
+SamplerState::SamplerState(const lvk::vulkan::Device& device) : device_(device) {}
 
 SamplerState::~SamplerState() {
   // inform the context it should prune the samplers
@@ -137,4 +137,4 @@ uint32_t SamplerState::getSamplerId() const {
 
 } // namespace vulkan
 
-} // namespace igl
+} // namespace lvk

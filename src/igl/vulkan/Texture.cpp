@@ -14,7 +14,7 @@
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <igl/vulkan/VulkanTexture.h>
 
-namespace igl::vulkan {
+namespace lvk::vulkan {
 
 Texture::Texture(VulkanContext& ctx, TextureFormat format) :
   ITexture(format), ctx_(ctx) {}
@@ -26,7 +26,7 @@ Result Texture::create(const TextureDesc& desc) {
                                 ? ctx_.getClosestDepthStencilFormat(desc_.format)
                                 : textureFormatToVkFormat(desc_.format);
 
-  const igl::TextureType type = desc_.type;
+  const lvk::TextureType type = desc_.type;
   if (!IGL_VERIFY(type == TextureType::TwoD || type == TextureType::Cube ||
                   type == TextureType::ThreeD)) {
     IGL_ASSERT_MSG(false, "Only 2D, 3D and Cube textures are supported");
@@ -57,21 +57,21 @@ Result Texture::create(const TextureDesc& desc) {
 
   if (desc_.usage == 0) {
     IGL_ASSERT_MSG(false, "Texture usage flags are not set");
-    desc_.usage = igl::TextureUsageBits_Sampled;
+    desc_.usage = lvk::TextureUsageBits_Sampled;
   }
 
   /* Use staging device to transfer data into the image when the storage is private to the device */
   VkImageUsageFlags usageFlags =
       (desc_.storage == StorageType_Device) ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : 0;
 
-  if (desc_.usage & igl::TextureUsageBits_Sampled) {
+  if (desc_.usage & lvk::TextureUsageBits_Sampled) {
     usageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
   }
-  if (desc_.usage & igl::TextureUsageBits_Storage) {
+  if (desc_.usage & lvk::TextureUsageBits_Storage) {
     IGL_ASSERT_MSG(desc_.numSamples <= 1, "Storage images cannot be multisampled");
     usageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
   }
-  if (desc_.usage & igl::TextureUsageBits_Attachment) {
+  if (desc_.usage & lvk::TextureUsageBits_Attachment) {
     usageFlags |= lvk::isDepthOrStencilFormat(desc_.format)
                       ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
                       : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -166,7 +166,7 @@ Result Texture::create(const TextureDesc& desc) {
 
 Result Texture::upload(const TextureRangeDesc& range, const void* data[]) const {
   if (!data) {
-    return igl::Result();
+    return lvk::Result();
   }
   const auto result = validateRange(range);
   if (!IGL_VERIFY(result.isOk())) {
@@ -253,7 +253,7 @@ bool Texture::isSwapchainTexture() const {
   return texture_ ? texture_->getVulkanImage().isExternallyManaged_ : false;
 }
 
-Result Texture::validateRange(const igl::TextureRangeDesc& range) const {
+Result Texture::validateRange(const lvk::TextureRangeDesc& range) const {
   if (!IGL_VERIFY(range.width > 0 && range.height > 0 || range.depth > 0 || range.numLayers > 0 ||
                   range.numMipLevels > 0)) {
     return Result{Result::Code::ArgumentOutOfRange,
@@ -280,4 +280,4 @@ Result Texture::validateRange(const igl::TextureRangeDesc& range) const {
   return Result{};
 }
 
-} // namespace igl::vulkan
+} // namespace lvk::vulkan

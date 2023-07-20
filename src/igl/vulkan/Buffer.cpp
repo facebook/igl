@@ -14,9 +14,9 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 
-namespace igl::vulkan {
+namespace lvk::vulkan {
 
-Buffer::Buffer(const igl::vulkan::Device& device) : device_(device) {}
+Buffer::Buffer(const lvk::vulkan::Device& device) : device_(device) {}
 
 Result Buffer::create(const BufferDesc& desc) {
   desc_ = desc;
@@ -68,21 +68,21 @@ Result Buffer::create(const BufferDesc& desc) {
   return result;
 }
 
-igl::Result Buffer::upload(const void* data, size_t size, size_t offset) {
+lvk::Result Buffer::upload(const void* data, size_t size, size_t offset) {
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_VERIFY(data)) {
-    return igl::Result();
+    return lvk::Result();
   }
 
   if (!IGL_VERIFY(offset + size <= desc_.size)) {
-    return igl::Result(Result::Code::ArgumentOutOfRange, "Out of range");
+    return lvk::Result(Result::Code::ArgumentOutOfRange, "Out of range");
   }
 
   // use staging to upload data to device-local buffers
   const VulkanContext& ctx = device_.getVulkanContext();
   ctx.stagingDevice_->bufferSubData(*buffer_, offset, size, data);
-  return igl::Result();
+  return lvk::Result();
 }
 
 uint64_t Buffer::gpuAddress(size_t offset) const {
@@ -100,4 +100,4 @@ uint8_t* Buffer::getMappedPtr() const {
   return buffer_->isMapped() ? buffer_->getMappedPtr() : nullptr;
 }
 
-} // namespace igl::vulkan
+} // namespace lvk::vulkan

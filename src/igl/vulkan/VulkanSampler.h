@@ -9,7 +9,7 @@
 
 #include <igl/vulkan/VulkanHelpers.h>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 class VulkanContext;
@@ -55,4 +55,4 @@ class VulkanSampler final {
 };
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

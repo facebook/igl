@@ -14,7 +14,7 @@
 namespace {
 
 struct TextureFormatProperties {
-  const igl::TextureFormat format = igl::TextureFormat::Invalid;
+  const lvk::TextureFormat format = lvk::TextureFormat::Invalid;
   const uint8_t bytesPerBlock : 5 = 1;
   const uint8_t blockWidth : 4 = 1;
   const uint8_t blockHeight : 4 = 1;
@@ -26,7 +26,7 @@ struct TextureFormatProperties {
 };
 
 #define PROPS(fmt, bpb, ...) \
-  TextureFormatProperties{ .format = igl::TextureFormat::fmt, .bytesPerBlock = bpb, ##__VA_ARGS__ }
+  TextureFormatProperties{ .format = lvk::TextureFormat::fmt, .bytesPerBlock = bpb, ##__VA_ARGS__ }
 
 static constexpr TextureFormatProperties properties[] = {
     PROPS(Invalid, 1),
@@ -59,15 +59,15 @@ static constexpr TextureFormatProperties properties[] = {
 } // namespace
 
 static_assert(sizeof(TextureFormatProperties) <= sizeof(uint32_t));
-static_assert(LVK_ARRAY_NUM_ELEMENTS(properties) == igl::TextureFormat::Z_UN24_S_UI8 + 1);
+static_assert(LVK_ARRAY_NUM_ELEMENTS(properties) == lvk::TextureFormat::Z_UN24_S_UI8 + 1);
 
-bool lvk::isDepthOrStencilFormat(igl::TextureFormat format) {
+bool lvk::isDepthOrStencilFormat(lvk::TextureFormat format) {
   return properties[format].depth || properties[format].stencil;
 }
 
 uint32_t lvk::getTextureBytesPerLayer(uint32_t width,
                                       uint32_t height,
-                                      igl::TextureFormat format,
+                                      lvk::TextureFormat format,
                                       uint32_t level) {
   const uint32_t levelWidth = std::max(width >> level, 1u);
   const uint32_t levelHeight = std::max(height >> level, 1u);
@@ -110,19 +110,19 @@ bool lvk::Assert(bool cond, const char* file, int line, const char* format, ...)
   return cond;
 }
 
-void lvk::destroy(igl::IDevice* device, lvk::ComputePipelineHandle handle) {
+void lvk::destroy(lvk::IDevice* device, lvk::ComputePipelineHandle handle) {
   if (device) {
     device->destroy(handle);
   }
 }
 
-void lvk::destroy(igl::IDevice* device, lvk::RenderPipelineHandle handle) {
+void lvk::destroy(lvk::IDevice* device, lvk::RenderPipelineHandle handle) {
   if (device) {
     device->destroy(handle);
   }
 }
 
-void lvk::destroy(igl::IDevice* device, lvk::ShaderModuleHandle handle) {
+void lvk::destroy(lvk::IDevice* device, lvk::ShaderModuleHandle handle) {
   if (device) {
     device->destroy(handle);
   }

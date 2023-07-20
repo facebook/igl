@@ -11,7 +11,7 @@
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 class Buffer;
@@ -28,12 +28,12 @@ class CommandBuffer final : public ICommandBuffer {
   void cmdDispatchThreadGroups(const Dimensions& threadgroupCount,
                                const Dependencies& deps) override;
 
-  void cmdPushDebugGroupLabel(const char* label, const igl::Color& color) const override;
-  void cmdInsertDebugEventLabel(const char* label, const igl::Color& color) const override;
+  void cmdPushDebugGroupLabel(const char* label, const lvk::Color& color) const override;
+  void cmdInsertDebugEventLabel(const char* label, const lvk::Color& color) const override;
   void cmdPopDebugGroupLabel() const override;
 
-  void cmdBeginRendering(const igl::RenderPass& renderPass,
-                         const igl::Framebuffer& desc) override;
+  void cmdBeginRendering(const lvk::RenderPass& renderPass,
+                         const lvk::Framebuffer& desc) override;
   void cmdEndRendering() override;
 
   void cmdBindViewport(const Viewport& viewport) override;
@@ -84,7 +84,7 @@ class CommandBuffer final : public ICommandBuffer {
   VulkanContext& ctx_;
   const VulkanImmediateCommands::CommandBufferWrapper& wrapper_;
 
-  igl::Framebuffer framebuffer_ = {};
+  lvk::Framebuffer framebuffer_ = {};
 
   VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
 
@@ -97,4 +97,4 @@ class CommandBuffer final : public ICommandBuffer {
 };
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

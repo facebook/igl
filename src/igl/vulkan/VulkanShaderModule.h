@@ -12,7 +12,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 Result compileShader(VkDevice device,
@@ -57,4 +57,4 @@ class VulkanShaderModule final {
 };
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

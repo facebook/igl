@@ -10,7 +10,7 @@
 #include <lvk/LVK.h>
 #include <igl/vulkan/Common.h>
 
-namespace igl {
+namespace lvk {
 namespace vulkan {
 
 class Device;
@@ -18,7 +18,7 @@ class Device;
 class ComputePipelineState final {
  public:
   ComputePipelineState() = default;
-  ComputePipelineState(igl::vulkan::Device* device, const ComputePipelineDesc& desc);
+  ComputePipelineState(lvk::vulkan::Device* device, const ComputePipelineDesc& desc);
   ~ComputePipelineState();
 
   ComputePipelineState(const ComputePipelineState&) = delete;
@@ -30,11 +30,11 @@ class ComputePipelineState final {
   VkPipeline getVkPipeline() const;
 
  private:
-  igl::vulkan::Device* device_ = nullptr;
+  lvk::vulkan::Device* device_ = nullptr;
   ComputePipelineDesc desc_;
 
   mutable VkPipeline pipeline_ = VK_NULL_HANDLE;
 };
 
 } // namespace vulkan
-} // namespace igl
+} // namespace lvk

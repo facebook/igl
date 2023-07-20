@@ -47,11 +47,9 @@
 
 #define LVK_ARRAY_NUM_ELEMENTS(x) (sizeof(x) / sizeof((x)[0]))
 
-namespace igl {
-class IDevice;
-} // namespace igl
-
 namespace lvk {
+
+class IDevice;
 
 bool Assert(bool cond, const char* file, int line, const char* format, ...);
 
@@ -99,15 +97,15 @@ using RenderPipelineHandle = lvk::Handle<struct RenderPipeline>;
 using ShaderModuleHandle = lvk::Handle<struct ShaderModule>;
 
 // forward declarations to access incomplete type IDevice
-void destroy(igl::IDevice* device, lvk::ComputePipelineHandle handle);
-void destroy(igl::IDevice* device, lvk::RenderPipelineHandle handle);
-void destroy(igl::IDevice* device, lvk::ShaderModuleHandle handle);
+void destroy(lvk::IDevice* device, lvk::ComputePipelineHandle handle);
+void destroy(lvk::IDevice* device, lvk::RenderPipelineHandle handle);
+void destroy(lvk::IDevice* device, lvk::ShaderModuleHandle handle);
 
 template<typename HandleType>
 class Holder final {
  public:
   Holder() = default;
-  Holder(igl::IDevice* device, HandleType handle) : device_(device), handle_(handle) {}
+  Holder(lvk::IDevice* device, HandleType handle) : device_(device), handle_(handle) {}
   ~Holder() {
     lvk::destroy(device_, handle_);
   }
@@ -151,7 +149,7 @@ class Holder final {
   }
 
  private:
-  igl::IDevice* device_ = nullptr;
+  lvk::IDevice* device_ = nullptr;
   HandleType handle_;
 };
 
@@ -169,7 +167,7 @@ class Holder final {
 #endif
 // clang-format on
 
-namespace igl {
+namespace lvk {
 
 class ITexture;
 
@@ -549,11 +547,11 @@ struct ShaderModuleDesc {
   const char* entryPoint = "main";
   const char* debugName = "";
 
-  ShaderModuleDesc(const char* source, igl::ShaderStage stage, const char* debugName) :
+  ShaderModuleDesc(const char* source, lvk::ShaderStage stage, const char* debugName) :
     stage(stage), data(source), debugName(debugName) {}
   ShaderModuleDesc(const void* data,
                    size_t dataLength,
-                   igl::ShaderStage stage,
+                   lvk::ShaderStage stage,
                    const char* debugName) :
     stage(stage), data(static_cast<const char*>(data)), dataSize(dataLength), debugName(debugName) {
     IGL_ASSERT(dataSize);
@@ -580,16 +578,16 @@ struct ShaderStages final {
 };
 
 struct RenderPipelineDesc final {
-  igl::VertexInput vertexInput;
-  igl::ShaderStages shaderStages;
+  lvk::VertexInput vertexInput;
+  lvk::ShaderStages shaderStages;
 
   ColorAttachment colorAttachments[IGL_COLOR_ATTACHMENTS_MAX] = {};
   TextureFormat depthAttachmentFormat = TextureFormat::Invalid;
   TextureFormat stencilAttachmentFormat = TextureFormat::Invalid;
 
-  CullMode cullMode = igl::CullMode_None;
-  WindingMode frontFaceWinding = igl::WindingMode_CCW;
-  PolygonMode polygonMode = igl::PolygonMode_Fill;
+  CullMode cullMode = lvk::CullMode_None;
+  WindingMode frontFaceWinding = lvk::WindingMode_CCW;
+  PolygonMode polygonMode = lvk::PolygonMode_Fill;
 
   uint32_t samplesCount = 1u;
 
@@ -606,7 +604,7 @@ struct RenderPipelineDesc final {
 };
 
 struct ComputePipelineDesc final {
-  igl::ShaderStages shaderStages;
+  lvk::ShaderStages shaderStages;
   const char* debugName = "";
 };
 
@@ -759,17 +757,17 @@ class ICommandBuffer {
   virtual void transitionToShaderReadOnly(ITexture& surface) const = 0;
 
   virtual void cmdPushDebugGroupLabel(const char* label,
-                                      const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
+                                      const lvk::Color& color = lvk::Color(1, 1, 1, 1)) const = 0;
   virtual void cmdInsertDebugEventLabel(const char* label,
-                                        const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
+                                        const lvk::Color& color = lvk::Color(1, 1, 1, 1)) const = 0;
   virtual void cmdPopDebugGroupLabel() const = 0;
 
   virtual void cmdBindComputePipeline(lvk::ComputePipelineHandle handle) = 0;
   virtual void cmdDispatchThreadGroups(const Dimensions& threadgroupCount,
                                        const Dependencies& deps = Dependencies()) = 0;
 
-  virtual void cmdBeginRendering(const igl::RenderPass& renderPass,
-                                 const igl::Framebuffer& desc) = 0;
+  virtual void cmdBeginRendering(const lvk::RenderPass& renderPass,
+                                 const lvk::Framebuffer& desc) = 0;
   virtual void cmdEndRendering() = 0;
 
   virtual void cmdBindViewport(const Viewport& viewport) = 0;
@@ -818,7 +816,7 @@ class IDevice {
   virtual std::shared_ptr<ICommandBuffer> createCommandBuffer() = 0;
 
   virtual void submit(const ICommandBuffer& commandBuffer,
-                      igl::CommandQueueType queueType,
+                      lvk::CommandQueueType queueType,
                       ITexture* present = nullptr) = 0;
 
   virtual std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
@@ -869,15 +867,15 @@ class IDevice {
   IDevice() = default;
 };
 
-} // namespace igl
+} // namespace lvk
 
 namespace lvk {
 
-bool isDepthOrStencilFormat(igl::TextureFormat format);
+bool isDepthOrStencilFormat(lvk::TextureFormat format);
 uint32_t calcNumMipLevels(uint32_t width, uint32_t height);
 uint32_t getTextureBytesPerLayer(uint32_t width,
                                  uint32_t height,
-                                 igl::TextureFormat format,
+                                 lvk::TextureFormat format,
                                  uint32_t level);
 void logShaderSource(const char* text);
 
