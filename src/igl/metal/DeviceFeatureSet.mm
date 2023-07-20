@@ -94,6 +94,11 @@ void DeviceFeatureSet::getFeatureSet(id<MTLDevice> device) {
 
   // get max buffer length
   maxBufferLength_ = [device maxBufferLength];
+
+  if (@available(macOS 11.0, iOS 14.0, *)) {
+    // this API became available as of iOS 14 and macOS 11
+    supports32BitFloatFiltering_ = device.supports32BitFloatFiltering;
+  }
 }
 
 bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
@@ -342,7 +347,8 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
   case TextureFormat::RGBA_UInt32:
     return sampled | storage | attachment | sampledAttachment;
   case TextureFormat::RGBA_F32:
-    return sampled | storage | attachment | sampledAttachment;
+    return sampled | storage | attachment | sampledAttachment |
+           (supports32BitFloatFiltering_ ? sampledFiltered : 0);
     // Compressed formats
 
   case TextureFormat::RGBA_ASTC_4x4:

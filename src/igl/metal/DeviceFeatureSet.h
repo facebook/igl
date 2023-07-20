@@ -49,6 +49,7 @@ class DeviceFeatureSet final {
   DeviceFeatureDesc deviceFeatureDesc_;
   size_t maxMultisampleCount_;
   size_t maxBufferLength_;
+  bool supports32BitFloatFiltering_ = false;
 };
 
 } // namespace metal
