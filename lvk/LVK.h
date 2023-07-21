@@ -495,6 +495,7 @@ enum QueueType : uint8_t {
 
 enum ShaderStage : uint8_t {
   Stage_Vertex = 0,
+  Stage_Geometry,
   Stage_Fragment,
   Stage_Compute,
   kNumShaderStages,
@@ -564,7 +565,13 @@ struct ShaderStages final {
     modules_[Stage_Vertex] = vertexModule;
     modules_[Stage_Fragment] = fragmentModule;
   }
-
+  ShaderStages(lvk::ShaderModuleHandle vertexModule,
+               lvk::ShaderModuleHandle geometryModule,
+               lvk::ShaderModuleHandle fragmentModule) {
+    modules_[Stage_Vertex] = vertexModule;
+    modules_[Stage_Geometry] = geometryModule;
+    modules_[Stage_Fragment] = fragmentModule;
+  }
   explicit ShaderStages(lvk::ShaderModuleHandle computeModule) {
     modules_[Stage_Compute] = std::move(computeModule);
   }
@@ -861,6 +868,18 @@ class IDevice {
     auto VS = createShaderModule(ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult);
     auto FS = createShaderModule(ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult);
     return ShaderStages(VS.release(), FS.release());
+  }
+  ShaderStages createShaderStages(const char* vs,
+                                  const char* debugNameVS,
+                                  const char* gs,
+                                  const char* debugNameGS,
+                                  const char* fs,
+                                  const char* debugNameFS,
+                                  Result* outResult = nullptr) {
+    auto VS = createShaderModule(ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult);
+    auto GS = createShaderModule(ShaderModuleDesc(gs, Stage_Geometry, debugNameGS), outResult);
+    auto FS = createShaderModule(ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult);
+    return ShaderStages(VS.release(), GS.release(), FS.release());
   }
 
  protected:

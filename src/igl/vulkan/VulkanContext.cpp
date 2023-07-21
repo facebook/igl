@@ -468,6 +468,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
   };
 
   VkPhysicalDeviceFeatures deviceFeatures = {
+      .geometryShader = VK_TRUE,
       .multiDrawIndirect = VK_TRUE,
       .drawIndirectFirstInstance = VK_TRUE,
       .depthBiasClamp = VK_TRUE,

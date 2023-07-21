@@ -33,6 +33,8 @@ VkShaderStageFlagBits shaderStageToVkShaderStage(lvk::ShaderStage stage) {
   switch (stage) {
   case lvk::Stage_Vertex:
     return VK_SHADER_STAGE_VERTEX_BIT;
+  case lvk::Stage_Geometry:
+    return VK_SHADER_STAGE_GEOMETRY_BIT;
   case lvk::Stage_Fragment:
     return VK_SHADER_STAGE_FRAGMENT_BIT;
   case lvk::Stage_Compute:
