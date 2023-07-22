@@ -34,7 +34,7 @@ using Deleter = void (*)(void* IGL_NULLABLE);
 /// Device Capabilities or Metal Features
 constexpr size_t IGL_TEXTURE_SAMPLERS_MAX = 16;
 constexpr size_t IGL_VERTEX_ATTRIBUTES_MAX = 24;
-constexpr size_t IGL_VERTEX_BUFFER_MAX = 24;
+constexpr size_t IGL_VERTEX_BUFFER_MAX = 128;
 constexpr size_t IGL_VERTEX_BINDINGS_MAX = 24;
 constexpr size_t IGL_UNIFORM_BLOCKS_BINDING_MAX = 16;
 
