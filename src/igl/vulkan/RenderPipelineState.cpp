@@ -9,7 +9,6 @@
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
-#include <igl/vulkan/VulkanPipelineLayout.h>
 #include <igl/vulkan/VulkanShaderModule.h>
 
 namespace {
@@ -389,7 +388,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
       .build(ctx.getVkDevice(),
              // TODO: use ctx.pipelineCache_
              VK_NULL_HANDLE,
-             ctx.pipelineLayout_->getVkPipelineLayout(),
+             ctx.vkPipelineLayout_,
              &pipeline,
              desc_.debugName);
 

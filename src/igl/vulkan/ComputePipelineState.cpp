@@ -9,7 +9,6 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
-#include <igl/vulkan/VulkanPipelineLayout.h>
 #include <igl/vulkan/VulkanShaderModule.h>
 #include <utility>
 
@@ -70,7 +69,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
       .flags = 0,
       .stage = ivkGetPipelineShaderStageCreateInfo(
           VK_SHADER_STAGE_COMPUTE_BIT, vkShaderModule, sm->getEntryPoint()),
-      .layout = ctx.pipelineLayout_->getVkPipelineLayout(),
+      .layout = ctx.vkPipelineLayout_,
       .basePipelineHandle = VK_NULL_HANDLE,
       .basePipelineIndex = -1,
   };

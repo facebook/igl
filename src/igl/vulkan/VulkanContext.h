@@ -34,7 +34,6 @@ class VulkanBuffer;
 class VulkanDescriptorSetLayout;
 class VulkanImage;
 class VulkanImageView;
-class VulkanPipelineLayout;
 class VulkanSampler;
 class VulkanSwapchain;
 class VulkanTexture;
@@ -199,7 +198,7 @@ class VulkanContext final {
   };
   mutable std::vector<BindlessDescriptorSet> bindlessDSets_;
   mutable uint32_t currentDSetIndex_ = 0;
-  std::unique_ptr<lvk::vulkan::VulkanPipelineLayout> pipelineLayout_;
+  VkPipelineLayout vkPipelineLayout_ = VK_NULL_HANDLE;
   // don't use staging on devices with shared host-visible memory
   bool useStaging_ = true;
 

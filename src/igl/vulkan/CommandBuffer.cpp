@@ -12,7 +12,6 @@
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
-#include <igl/vulkan/VulkanPipelineLayout.h>
 #include <igl/vulkan/VulkanTexture.h>
 
 namespace lvk::vulkan {
@@ -529,7 +528,7 @@ void CommandBuffer::cmdPushConstants(const void* data, size_t size, size_t offse
   }
 
   vkCmdPushConstants(wrapper_.cmdBuf_,
-                     ctx_.pipelineLayout_->getVkPipelineLayout(),
+                     ctx_.vkPipelineLayout_,
                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
                          VK_SHADER_STAGE_COMPUTE_BIT,
                      (uint32_t)offset,

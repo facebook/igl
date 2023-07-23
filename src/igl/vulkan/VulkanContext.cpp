@@ -17,7 +17,6 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
-#include <igl/vulkan/VulkanPipelineLayout.h>
 #include <igl/vulkan/VulkanSampler.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/VulkanTexture.h>
@@ -198,13 +197,13 @@ VulkanContext::~VulkanContext() {
   stagingDevice_.reset(nullptr);
 
   dslBindless_.reset(nullptr);
-  pipelineLayout_.reset(nullptr);
   swapchain_.reset(nullptr); // Swapchain has to be destroyed prior to Surface
 
   waitDeferredTasks();
 
   immediate_.reset(nullptr);
 
+  vkDestroyPipelineLayout(vkDevice_, vkPipelineLayout_, nullptr);
   vkDestroyDescriptorPool(vkDevice_, dpBindless_, nullptr);
   vkDestroySurfaceKHR(vkInstance_, vkSurface_, nullptr);
   vkDestroyPipelineCache(vkDevice_, pipelineCache_, nullptr);
@@ -679,17 +678,23 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
           limits.maxPushConstantsSize);
   }
 
-  VkDescriptorSetLayout dsl = dslBindless_->getVkDescriptorSetLayout();
-
   // create pipeline layout
-  pipelineLayout_ = std::make_unique<VulkanPipelineLayout>(
-      vkDevice_,
-      dsl,
-      VkPushConstantRange{.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
-                                        VK_SHADER_STAGE_COMPUTE_BIT,
-                          .offset = 0,
-                          .size = kPushConstantsSize},
-      "Pipeline Layout: VulkanContext::pipelineLayout_");
+  {
+    VkDescriptorSetLayout dsl = dslBindless_->getVkDescriptorSetLayout();
+    const VkPushConstantRange range = {
+        .stageFlags =
+            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+        .offset = 0,
+        .size = kPushConstantsSize,
+    };
+    const VkPipelineLayoutCreateInfo ci = ivkGetPipelineLayoutCreateInfo(1, &dsl, &range);
+
+    VK_ASSERT(vkCreatePipelineLayout(vkDevice_, &ci, nullptr, &vkPipelineLayout_));
+    VK_ASSERT(ivkSetDebugObjectName(vkDevice_,
+                                    VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+                                    (uint64_t)vkPipelineLayout_,
+                                    "Pipeline Layout: VulkanContext::pipelineLayout_"));
+  }
 
   querySurfaceCapabilities();
 
@@ -786,20 +791,16 @@ void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
                                               VkPipelineBindPoint bindPoint) const {
   IGL_PROFILER_FUNCTION();
 
-  const VkDescriptorSet sets[] = {
-      bindlessDSets_[currentDSetIndex_].ds,
-  };
-
 #if IGL_DEBUG_DESCRIPTOR_SETS
   IGL_LOG_INFO("Binding descriptor set %u\n", currentDSetIndex_);
 #endif // IGL_DEBUG_DESCRIPTOR_SETS
 
   vkCmdBindDescriptorSets(cmdBuf,
                           bindPoint,
-                          pipelineLayout_->getVkPipelineLayout(),
+                          vkPipelineLayout_,
                           0,
-                          LVK_ARRAY_NUM_ELEMENTS(sets),
-                          sets,
+                          1,
+                          &bindlessDSets_[currentDSetIndex_].ds,
                           0,
                           nullptr);
 }
