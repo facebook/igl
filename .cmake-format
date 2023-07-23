@@ -39,7 +39,7 @@
     "_help_line_width": [
       "How wide to allow formatted cmake files"
     ],
-    "line_width": 130,
+    "line_width": 140,
     "_help_tab_size": [
       "How many spaces to tab for indent"
     ],

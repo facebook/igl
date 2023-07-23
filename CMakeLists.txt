@@ -99,8 +99,10 @@ add_library(IGLstb third-party/deps/patches/stb_impl/stb_image.c third-party/dep
 target_include_directories(IGLstb PUBLIC "third-party/deps/src/stb")
 igl_set_folder(IGLstb "IGL")
 
+# cmake-format: off
 set(MINILOG_BUILD_EXAMPLE OFF CACHE BOOL "")
-set(MINILOG_RAW_OUTPUT    ON  CACHE BOOL "")
+set(MINILOG_RAW_OUTPUT     ON CACHE BOOL "")
+# cmake-format: on
 add_subdirectory(third-party/deps/src/minilog)
 igl_set_folder(minilog "third-party")
 
@@ -134,11 +136,13 @@ if(LVK_WITH_SAMPLES)
   add_subdirectory(third-party/deps/src/meshoptimizer)
   add_subdirectory(third-party/deps/src/tinyobjloader)
   add_subdirectory(samples)
+  # cmake-format: off
   igl_set_folder(bc7enc        "third-party")
   igl_set_folder(meshoptimizer "third-party")
   igl_set_folder(tinyobjloader "third-party/tinyobjloader")
   igl_set_folder(uninstall     "third-party/tinyobjloader")
   igl_set_folder(glfw          "third-party/GLFW3")
+  # cmake-format: on
 endif()
 
 if(LVK_WITH_TRACY)
