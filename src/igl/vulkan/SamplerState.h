@@ -50,6 +50,8 @@ class SamplerState final : public ISamplerState {
   Result create(const SamplerStateDesc& desc);
 
  private:
+  friend class ResourcesBinder;
+
   /** @brief The device used to create the resource */
   const igl::vulkan::Device& device_;
   /** @brief The texture sampling configuration for accessing a texture */

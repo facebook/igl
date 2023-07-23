@@ -28,7 +28,8 @@ ComputeCommandEncoder::ComputeCommandEncoder(const std::shared_ptr<CommandBuffer
   IGL_ASSERT(commandBuffer);
 
   ctx_.checkAndUpdateDescriptorSets();
-  ctx_.DUBs_->update(cmdBuffer_, VK_PIPELINE_BIND_POINT_COMPUTE, nullptr);
+
+  binder_.updateBindings();
 
   isEncoding_ = true;
 }

@@ -65,7 +65,7 @@ class EnhancedShaderDebuggingStore {
   };
 
   /* Parameters */
-  static constexpr uint32_t kBufferIndex = kMaxBindingSlots - 1;
+  static constexpr uint32_t kBufferIndex = IGL_UNIFORM_BLOCKS_BINDING_MAX - 1;
   static constexpr uint32_t kNumberOfLines = 16'384;
   static constexpr bool kDepthWriteEnabled = false;
   static constexpr igl::CompareFunction kDepthCompareFunction = igl::CompareFunction::AlwaysPass;

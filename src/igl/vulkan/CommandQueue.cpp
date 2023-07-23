@@ -79,7 +79,7 @@ SubmitHandle CommandQueue::endCommandBuffer(const igl::vulkan::VulkanContext& ct
   if (shouldPresent) {
     ctx.present();
   }
-  ctx.DUBs_->markSubmit(cmdBuffer->lastSubmitHandle_);
+  ctx.markSubmit(cmdBuffer->lastSubmitHandle_);
   ctx.syncManager_->markSubmit(cmdBuffer->lastSubmitHandle_);
   ctx.processDeferredTasks();
 

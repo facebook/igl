@@ -57,27 +57,19 @@ layout (location=2) in vec2 st;
 layout (location=0) out vec3 color;
 layout (location=1) out vec2 uv;
 
-struct UniformsPerFrame {
+layout (set = 2, binding = 0, std140) uniform UniformsPerFrame {
   mat4 proj;
   mat4 view;
-};
+} perFrame;
 
-struct UniformsPerObject {
+layout (set = 2, binding = 1, std140) uniform UniformsPerObject {
   mat4 model;
-};
-
-layout(std430, buffer_reference) readonly buffer PerFrame {
-  UniformsPerFrame perFrame;
-};
-
-layout(std430, buffer_reference) readonly buffer PerObject {
-  UniformsPerObject perObject;
-};
+} perObject;
 
 void main() {
-  mat4 proj = PerFrame(getBuffer(0)).perFrame.proj;
-  mat4 view = PerFrame(getBuffer(0)).perFrame.view;
-  mat4 model = PerObject(getBuffer(1)).perObject.model;
+  mat4 proj = perFrame.proj;
+  mat4 view = perFrame.view;
+  mat4 model = perObject.model;
   gl_Position = proj * view * model * vec4(pos, 1.0);
   color = col;
   uv = st;

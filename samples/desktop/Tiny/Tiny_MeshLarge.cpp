@@ -152,33 +152,35 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 // kBinding_StorageImages in VulkanContext.cpp
 layout (set = 0, binding = 6, rgba8) uniform readonly  image2D kTextures2Din[];
 layout (set = 0, binding = 6, rgba8) uniform writeonly image2D kTextures2Dout[];
+
+layout(push_constant) uniform PushConstants {
+  uint textureId;
+} pc;
 #else
 layout (binding = 3, rgba8) uniform readonly  image2D kTextures2Din;
 layout (binding = 3, rgba8) uniform writeonly image2D kTextures2Dout;
 #endif
 
-vec4 imageLoad2D(uint slotTexture, ivec2 uv) {
+vec4 imageLoad2D(ivec2 uv) {
 #ifdef VULKAN
-  uint idxTex = bindings.slots[slotTexture].x;
-  return imageLoad(kTextures2Din[idxTex], uv);
+  return imageLoad(kTextures2Din[pc.textureId], uv);
 #else
   return imageLoad(kTextures2Din, uv);
 #endif
 }
 
-void imageStore2D(uint slotTexture, ivec2 uv, vec4 data) {
+void imageStore2D(ivec2 uv, vec4 data) {
 #ifdef VULKAN
-  uint idxTex = bindings.slots[slotTexture].x;
-  imageStore(kTextures2Dout[idxTex], uv, data);
+  imageStore(kTextures2Dout[pc.textureId], uv, data);
 #else
   imageStore(kTextures2Dout, uv, data);
 #endif
 }
 
 void main() {
-   vec4 pixel = imageLoad2D(0, ivec2(gl_GlobalInvocationID.xy));
+   vec4 pixel = imageLoad2D(ivec2(gl_GlobalInvocationID.xy));
    float luminance = dot(pixel, vec4(0.299, 0.587, 0.114, 0.0)); // https://www.w3.org/TR/AERT/#color-contrast
-   imageStore2D(0, ivec2(gl_GlobalInvocationID.xy), vec4(vec3(luminance), 1.0));
+   imageStore2D(ivec2(gl_GlobalInvocationID.xy), vec4(vec3(luminance), 1.0));
 }
 )";
 
@@ -243,25 +245,25 @@ struct Material {
 };
 
 #ifdef VULKAN
-layout(std430, buffer_reference) readonly buffer PerFrame {
+layout(set = 2, binding = 0, std140) uniform PerFrame {
   UniformsPerFrame perFrame;
 };
 
-layout(std430, buffer_reference) readonly buffer PerObject {
+layout(set = 2, binding = 1, std140) uniform PerObject {
   UniformsPerObject perObject;
 };
 
-layout(std430, buffer_reference) readonly buffer Materials {
+layout(set = 3, binding = 2, std430) readonly buffer Materials {
   Material mtl[];
-};
+} mat;
 #else
-uniform MeshFrameUniforms {
-  UniformsPerFrame meshPerFrame;
+uniform PerFrame  {
+  UniformsPerFrame perFrame;
 };
-uniform MeshObjectUniforms{
-  UniformsPerObject meshPerObject;
+uniform PerObject {
+  UniformsPerObject perObject;
 };
-uniform MeshMaterials{
+uniform MeshMaterials {
   Material materials[132];
 };
 #endif
@@ -277,17 +279,13 @@ layout (location=5) flat out Material mtl;
 //
 
 void main() {
+  mat4 proj = perFrame.proj;
+  mat4 view = perFrame.view;
+  mat4 model = perObject.model;
+  mat4 light = perFrame.light;
 #ifdef VULKAN
-  mat4 proj = PerFrame(getBuffer(0)).perFrame.proj;
-  mat4 view = PerFrame(getBuffer(0)).perFrame.view;
-  mat4 model = PerObject(getBuffer(1)).perObject.model;
-  mat4 light = PerFrame(getBuffer(0)).perFrame.light;
-  mtl = Materials(getBuffer(2)).mtl[uint(mtlIndex)];
+  mtl = mat.mtl[uint(mtlIndex)];
 #else
-  mat4 proj = meshPerFrame.proj;
-  mat4 view = meshPerFrame.view;
-  mat4 model = meshPerObject.model;
-  mat4 light = meshPerFrame.light;
   mtl = materials[int(mtlIndex)];
 #endif
   gl_Position = proj * view * model * vec4(pos, 1.0);
@@ -313,31 +311,30 @@ struct UniformsPerObject {
 };
 
 #ifdef VULKAN
-layout(std430, buffer_reference) readonly buffer PerFrame {
+layout(set = 2, binding = 0, std140)
+#endif
+uniform PerFrame {
   UniformsPerFrame perFrame;
 };
-layout(std430, buffer_reference) readonly buffer PerObject {
+#ifdef VULKAN
+layout(set = 2, binding = 1, std140)
+#endif
+uniform PerObject{
   UniformsPerObject perObject;
 };
 #else
 uniform MeshFrameUniforms {
-  UniformsPerFrame meshPerFrame;
+  UniformsPerFrame perFrame;
 };
 uniform MeshObjectUniforms{
-  UniformsPerObject meshPerObject;
+  UniformsPerObject perObject;
 };
 #endif
 
 void main() {
-#ifdef VULKAN
-  mat4 proj = PerFrame(getBuffer(0)).perFrame.proj;
-  mat4 view = PerFrame(getBuffer(0)).perFrame.view;
-  mat4 model = PerObject(getBuffer(1)).perObject.model;
-#else
-  mat4 proj = meshPerFrame.proj;
-  mat4 view = meshPerFrame.view;
-  mat4 model = meshPerObject.model;
-#endif
+  mat4 proj = perFrame.proj;
+  mat4 view = perFrame.view;
+  mat4 model = perObject.model;
   gl_Position = proj * view * model * vec4(pos, 1.0);
 }
 )";
@@ -360,14 +357,12 @@ struct UniformsPerFrame {
   vec2 padding;
 };
 #ifdef VULKAN
-layout(std430, buffer_reference) readonly buffer PerFrame {
+layout(set = 2, binding = 0, std140)
+#endif
+uniform PerFrame {
   UniformsPerFrame perFrame;
 };
-#else
-uniform MeshFrameUniforms {
-  UniformsPerFrame meshPerFrame;
-};
-#endif
+
 struct Material {
   vec4 ambient;
   vec4 diffuse;
@@ -389,8 +384,7 @@ layout (location=0) out vec4 out_FragColor;
 
 #ifdef VULKAN
 vec4 textureBindless2D(uint textureid, vec2 uv) {
-  return texture(sampler2D(kTextures2D[textureid],
-                           kSamplers[bindings.slots[0].y]), uv);
+  return texture(sampler2D(kTextures2D[textureid], sSamplers[0]), uv);
 }
 #else
   layout(binding = 0) uniform sampler2D texShadow;
@@ -437,7 +431,6 @@ void main() {
     discard;
   vec4 Ka = mtl.ambient * textureBindless2D(mtl.texAmbient, vtx.uv);
   vec4 Kd = mtl.diffuse * textureBindless2D(mtl.texDiffuse, vtx.uv);
-  bool drawNormals = PerFrame(getBuffer(0)).perFrame.bDrawNormals > 0;
 #else
   vec4 alpha = texture(texAlpha, vtx.uv);
   // check it is not a dummy 1x1 texture
@@ -445,8 +438,8 @@ void main() {
     discard;
   vec4 Ka = mtl.ambient * texture(texAmbient, vtx.uv);
   vec4 Kd = mtl.diffuse * texture(texDiffuse, vtx.uv);
-  bool drawNormals = meshPerFrame.bDrawNormals > 0;
 #endif
+  bool drawNormals = perFrame.bDrawNormals > 0;
   if (Kd.a < 0.5)
     discard;
   vec3 n = normalize(vtx.normal);
@@ -483,11 +476,10 @@ struct UniformsPerObject {
 };
 
 #ifdef VULKAN
-layout(std430, buffer_reference) readonly buffer PerFrame {
+layout(set = 2, binding = 0, std140) uniform PerFrame {
   UniformsPerFrame perFrame;
 };
-
-layout(std430, buffer_reference) readonly buffer PerObject {
+layout(set = 2, binding = 1, std140) uniform PerObject {
   UniformsPerObject perObject;
 };
 #else
@@ -500,15 +492,9 @@ uniform ShadowObjectUniforms {
 
 #endif
 void main() {
-#ifdef VULKAN
-  mat4 proj = PerFrame(getBuffer(0)).perFrame.proj;
-  mat4 view = PerFrame(getBuffer(0)).perFrame.view;
-  mat4 model = PerObject(getBuffer(1)).perObject.model;
-#else
   mat4 proj = perFrame.proj;
   mat4 view = perFrame.view;
   mat4 model = perObject.model;
-#endif
   gl_Position = proj * view * model * vec4(pos, 1.0);
 }
 )";
@@ -540,23 +526,18 @@ struct UniformsPerFrame {
 };
 
 #ifdef VULKAN
-layout(std430, buffer_reference) readonly buffer PerFrame {
+layout(set = 2, binding = 0, std140) uniform PerFrame {
   UniformsPerFrame perFrame;
 };
 #else
 uniform SkyboxFrameUniforms {
-UniformsPerFrame uParameters;
+  UniformsPerFrame perFrame;
 };
 
 #endif
 void main() {
-#ifdef VULKAN
-  mat4 proj = PerFrame(getBuffer(0)).perFrame.proj;
-  mat4 view = PerFrame(getBuffer(0)).perFrame.view;
-#else
-  mat4 proj = uParameters.proj;
-  mat4 view = uParameters.view;
-#endif
+  mat4 proj = perFrame.proj;
+  mat4 view = perFrame.view;
   // discard translation
   view = mat4(view[0], view[1], view[2], vec4(0, 0, 0, 1));
   mat4 transform = proj * view;
@@ -567,7 +548,7 @@ void main() {
   textureCoords = pos;
 #ifdef VULKAN
   // Draws the skybox edges. One color per edge
-  const bool drawDebugLines = PerFrame(getBuffer(0)).perFrame.bDebugLines > 0;
+  const bool drawDebugLines = perFrame.bDebugLines > 0;
   if (drawDebugLines) {
       const int[12][2] edgeIndices = {
           {0,1}, {1,2}, {2,3}, {3,0}, {4,5}, {5,6}, {6,7}, {7,4}, {0,4}, {1,5}, {2,6}, {3,7}
@@ -937,7 +918,7 @@ void initIGL() {
           .maxTextures = kMaxTextures,
           .maxSamplers = 128,
           .terminateOnValidationError = true,
-          .enhancedShaderDebugging = true,
+          .enhancedShaderDebugging = false,
           .enableValidation = kEnableValidationLayers,
           .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
       };
@@ -1493,9 +1474,9 @@ void createRenderPipelines() {
 // @fb-only
 #if USE_OPENGL_BACKEND
     desc.uniformBlockBindingMap.emplace(
-        0, std::make_pair(IGL_NAMEHANDLE("MeshFrameUniforms"), igl::NameHandle{}));
+        0, std::make_pair(IGL_NAMEHANDLE("PerFrame"), igl::NameHandle{}));
     desc.uniformBlockBindingMap.emplace(
-        1, std::make_pair(IGL_NAMEHANDLE("MeshObjectUniforms"), igl::NameHandle{}));
+        1, std::make_pair(IGL_NAMEHANDLE("PerObject"), igl::NameHandle{}));
     desc.uniformBlockBindingMap.emplace(
         2, std::make_pair(IGL_NAMEHANDLE("MeshMaterials"), igl::NameHandle{}));
 #endif
@@ -1521,9 +1502,9 @@ void createRenderPipelines() {
     desc.fragmentUnitSamplerMap.clear();
     desc.uniformBlockBindingMap.clear();
     desc.uniformBlockBindingMap.emplace(
-        0, std::make_pair(IGL_NAMEHANDLE("MeshFrameUniforms"), igl::NameHandle{}));
+        0, std::make_pair(IGL_NAMEHANDLE("PerFrame"), igl::NameHandle{}));
     desc.uniformBlockBindingMap.emplace(
-        1, std::make_pair(IGL_NAMEHANDLE("MeshObjectUniforms"), igl::NameHandle{}));
+        1, std::make_pair(IGL_NAMEHANDLE("PerObject"), igl::NameHandle{}));
 #endif
     desc.shaderStages =
         ShaderStagesCreator::fromModuleStringInput(*device_,
@@ -1934,10 +1915,10 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     const auto& glPipelineState =
         static_cast<const igl::opengl::RenderPipelineState*>(renderPipelineState_Mesh_.get());
     const int ubPerFrameIdx =
-        glPipelineState->getUniformBlockBindingPoint(IGL_NAMEHANDLE(("MeshFrameUniforms")));
+        glPipelineState->getUniformBlockBindingPoint(IGL_NAMEHANDLE(("PerFrame")));
 
     const int ubPerObjectIdx =
-        glPipelineState->getUniformBlockBindingPoint(IGL_NAMEHANDLE(("MeshObjectUniforms")));
+        glPipelineState->getUniformBlockBindingPoint(IGL_NAMEHANDLE(("PerObject")));
 
     const int sbIdx =
         glPipelineState->getUniformBlockBindingPoint(IGL_NAMEHANDLE(("MeshMaterials")));
@@ -2039,9 +2020,13 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
     auto commands = buffer->createComputeCommandEncoder();
     commands->bindComputePipelineState(computePipelineState_Grayscale_);
-    commands->bindTexture(0,
-                          kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0).get()
-                                              : fbOffscreen_->getColorAttachment(0).get());
+    ITexture* tex = kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0).get()
+                                        : fbOffscreen_->getColorAttachment(0).get();
+#if !USE_OPENGL_BACKEND
+    const uint32_t textureId = tex->getTextureId();
+    commands->bindPushConstants(0, &textureId, sizeof(textureId));
+#endif
+    commands->bindTexture(0, tex);
     commands->dispatchThreadGroups(igl::Dimensions(width_, height_, 1), igl::Dimensions());
     commands->endEncoding();
 

@@ -24,24 +24,24 @@ ResourcesBinder::ResourcesBinder(const std::shared_ptr<CommandBuffer>& commandBu
 void ResourcesBinder::bindBuffer(uint32_t index, igl::vulkan::Buffer* buffer, size_t bufferOffset) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(index < kMaxBindingSlots)) {
+  if (!IGL_VERIFY(index < IGL_UNIFORM_BLOCKS_BINDING_MAX)) {
     IGL_ASSERT_MSG(false, "Buffer index should not exceed kMaxBindingSlots");
     return;
   }
 
-  bindings_.slots[index].buffer = buffer->gpuAddress(bufferOffset);
+  bindings_.buffers[index] = {buffer, bufferOffset};
   isBindingsUpdateRequired_ = true;
 }
 
 void ResourcesBinder::bindSamplerState(uint32_t index, igl::vulkan::SamplerState* samplerState) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(index < kMaxBindingSlots)) {
+  if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     IGL_ASSERT_MSG(false, "Invalid sampler index");
     return;
   }
 
-  bindings_.slots[index].sampler = samplerState ? samplerState->getSamplerId() : 0;
+  bindings_.samplers[index] = samplerState ? samplerState->sampler_.get() : nullptr;
 
   isBindingsUpdateRequired_ = true;
 }
@@ -49,7 +49,7 @@ void ResourcesBinder::bindSamplerState(uint32_t index, igl::vulkan::SamplerState
 void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(index < kMaxBindingSlots)) {
+  if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     IGL_ASSERT_MSG(false, "Invalid texture index");
     return;
   }
@@ -75,8 +75,7 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
     }
   }
 
-  // texture id is always within the range of `uint32_t` on our Vulkan implementation
-  bindings_.slots[index].texture = tex ? (uint32_t)tex->getTextureId() : 0;
+  bindings_.textures[index] = tex ? &tex->getVulkanTexture() : nullptr;
 
   isBindingsUpdateRequired_ = true;
 }
@@ -86,7 +85,7 @@ void ResourcesBinder::updateBindings() {
     return;
   }
 
-  ctx_.DUBs_->update(cmdBuffer_, bindPoint_, &bindings_);
+  ctx_.updateBindings(cmdBuffer_, bindPoint_, bindings_);
 
   isBindingsUpdateRequired_ = false;
 }

@@ -264,7 +264,8 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   bindScissorRect(scissor);
 
   ctx_.checkAndUpdateDescriptorSets();
-  ctx_.DUBs_->update(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, nullptr);
+
+  binder_.updateBindings();
 
   vkCmdBeginRenderPass(cmdBuffer_, &bi, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -449,14 +450,17 @@ void RenderCommandEncoder::bindBuffer(int index,
   const bool isUniformOrStorageBuffer =
       (buf->getBufferType() &
        (BufferDesc::BufferTypeBits::Uniform | BufferDesc::BufferTypeBits::Storage)) > 0;
+  const bool isVertexBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Vertex) != 0;
 
-  if (buf->getBufferType() & BufferDesc::BufferTypeBits::Vertex) {
+  if (isVertexBuffer) {
     IGL_ASSERT(target == BindTarget::kVertex);
+    IGL_ASSERT(!isUniformOrStorageBuffer);
     const VkDeviceSize offset = bufferOffset;
     vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
   } else if (isUniformOrStorageBuffer) {
+    IGL_LOG_INFO("Uniform storage buffer: %d %d", index, bufferOffset);
     if (ctx_.enhancedShaderDebuggingStore_) {
-      IGL_ASSERT_MSG(index < (kMaxBindingSlots - 1),
+      IGL_ASSERT_MSG(index < (IGL_UNIFORM_BLOCKS_BINDING_MAX - 1),
                      "The last buffer index is reserved for enhanced debugging features");
     }
     if (!IGL_VERIFY(target == BindTarget::kAllGraphics)) {

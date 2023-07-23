@@ -502,14 +502,14 @@ IGL_TO_STRING(
       int layer;
     };
 
-    layout(std430, buffer_reference) readonly buffer PerFrame {
+    layout(set = 2, binding = 2, std140) uniform PerFrame {
       VertexUniforms perFrame;
     };
 
     void main() {
       gl_Position = position_in;
       uv_out = uv_in;
-      layer_out = PerFrame(getBuffer(2)).perFrame.layer;
+      layer_out = perFrame.layer;
     });
 
 const char VULKAN_SIMPLE_FRAG_SHADER_TEX_1DARRAY[] =
@@ -540,13 +540,13 @@ const char VULKAN_SIMPLE_VERT_SHADER_CUBE[] =
                     vec4 view;
                   };
 
-                  layout(std430, buffer_reference) readonly buffer PerFrame {
+                  layout(set = 2, binding = 1, std140) uniform PerFrame {
                      VertexUniforms perFrame;
                   };
 
                void main() {
                  gl_Position = position_in;
-                 view = PerFrame(getBuffer(1)).perFrame.view.xyz;
+                 view = perFrame.view.xyz;
                });
 
 const char VULKAN_SIMPLE_FRAG_SHADER_CUBE[] =
@@ -565,13 +565,13 @@ const char VULKAN_SIMPLE_VERT_SHADER_MULTIVIEW[] =
       layout (location = 0) in vec4 position_in;
       layout (location = 0) out vec4 color_out;
 
-      layout(std430, buffer_reference) readonly buffer PerFrame {
+      layout(set = 2, binding = 1, std140) uniform PerFrame {
         vec4 colors[2];
       };
 
       void main() {
         gl_Position = position_in;
-        color_out = PerFrame(getBuffer(1)).colors[gl_ViewIndex];
+        color_out = colors[gl_ViewIndex];
       });
 
 // Simple Vulkan Fragment shader for multiview

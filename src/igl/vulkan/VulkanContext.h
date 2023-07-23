@@ -43,6 +43,7 @@ class VulkanSwapchain;
 class VulkanTexture;
 
 struct Bindings;
+struct TextureBindings;
 struct VulkanContextImpl;
 
 struct DeviceQueues {
@@ -190,7 +191,6 @@ class VulkanContext final {
   void createSurface(void* window, void* display);
   void checkAndUpdateDescriptorSets() const;
   void querySurfaceCapabilities();
-  void allocateDynamicUniformsBuffer() const;
   void processDeferredTasks() const;
   void waitDeferredTasks();
 
@@ -201,7 +201,6 @@ class VulkanContext final {
   friend class igl::vulkan::ComputeCommandEncoder;
   friend class igl::vulkan::RenderCommandEncoder;
 
-  uint32_t dynamicUniformBufferSize_ = 65535;
   VkInstance vkInstance_ = VK_NULL_HANDLE;
   VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;
   VkSurfaceKHR vkSurface_ = VK_NULL_HANDLE;
@@ -251,17 +250,30 @@ class VulkanContext final {
   std::unique_ptr<igl::vulkan::VulkanSwapchain> swapchain_;
   std::unique_ptr<igl::vulkan::VulkanImmediateCommands> immediate_;
   std::unique_ptr<igl::vulkan::VulkanStagingDevice> stagingDevice_;
-  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslDynamicUniformBuffer_;
-  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBindless_;
-  VkDescriptorPool dpDynamicUniformBuffer_ = VK_NULL_HANDLE;
+  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBindless_; // everything
+  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslTextures_; // texture/sampler slots for
+                                                                        // the current drawcall
+  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBuffersUniform_; // buffer binding
+                                                                              // slots for the
+                                                                              // current drawcall
+  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBuffersStorage_; // buffer binding
+                                                                              // slots for the
+                                                                              // current drawcall
   VkDescriptorPool dpBindless_ = VK_NULL_HANDLE;
-  struct BindlessDescriptorSet {
+  VkDescriptorPool dpTextures_ = VK_NULL_HANDLE;
+  VkDescriptorPool dpBuffersUniform_ = VK_NULL_HANDLE;
+  VkDescriptorPool dpBuffersStorage_ = VK_NULL_HANDLE;
+  struct DescriptorSet {
     VkDescriptorSet ds = VK_NULL_HANDLE;
     SubmitHandle handle =
         SubmitHandle(); // a handle of the last submit this descriptor set was a part of
   };
-  mutable std::vector<BindlessDescriptorSet> bindlessDSets_;
+  mutable DescriptorSet bindlessDSet_;
+  mutable std::vector<DescriptorSet> textureDSets_;
+  mutable std::vector<DescriptorSet> bufferUniformDSets_;
+  mutable std::vector<DescriptorSet> bufferStorageDSets_;
   mutable uint32_t currentDSetIndex_ = 0;
+  mutable uint32_t prevSubmitIndex_ = 0;
   std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutGraphics_;
   std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutCompute_;
   // don't use staging on devices with shared host-visible memory
@@ -304,39 +316,10 @@ class VulkanContext final {
   // Enhanced shader debug: line drawing
   std::unique_ptr<EnhancedShaderDebuggingStore> enhancedShaderDebuggingStore_;
 
-  struct DynamicUniformBuffer {
-    SubmitHandle handle_;
-    uint32_t offset_ = 0;
-    VkDescriptorSet ds_ = VK_NULL_HANDLE;
-    std::shared_ptr<VulkanBuffer> buffer_;
-    void reset() {
-      handle_ = SubmitHandle();
-      offset_ = 0;
-    }
-  };
-
-  /// @brief Manages a circular buffer of Dynamic Uniforms Buffers (DUBs)
-  class DynamicUniformsBufferSet {
-   public:
-    explicit DynamicUniformsBufferSet(VulkanContext& ctx);
-
-    void update(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPoint, const Bindings* data);
-    void markSubmit(const SubmitHandle& handle);
-
-   private:
-    void allocateDynamicUniformsBuffer();
-    void acquireNextDUB();
-
-    std::vector<DynamicUniformBuffer> DUBs_;
-    DynamicUniformBuffer* currentDUB_ = nullptr;
-
-    VulkanContext& ctx_;
-    VkDeviceSize bufferSizeAligned_ = 0;
-    size_t currentDUBIndex_ = 0;
-    size_t lastSubmittedDUBIndex_ = 0;
-  };
-
-  mutable std::unique_ptr<DynamicUniformsBufferSet> DUBs_;
+  void updateBindings(VkCommandBuffer cmdBuf,
+                      VkPipelineBindPoint bindPoint,
+                      const Bindings& data) const;
+  void markSubmit(const SubmitHandle& handle) const;
 
   struct DeferredTask {
     DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) :

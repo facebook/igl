@@ -305,15 +305,6 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       #extension GL_EXT_nonuniform_qualifier : require
       #extension GL_EXT_buffer_reference : require
       #extension GL_EXT_buffer_reference_uvec2 : require
-
-      layout (set = 1, binding = 0) uniform Bindings {
-        // has to be tightly packed into `uvec4` because GL_EXT_scalar_block_layout is guaranteed only for Vulkan 1.2+
-        // texture (x), sampler (y), buffer (zw)
-        uvec4 slots[16]; // see ResourcesBinder::Slot
-      } bindings;
-      uvec2 getBuffer(uint slot) {
-        return bindings.slots[slot].zw;
-      }
       )" + enhancedShaderDebuggingCode;
     }
     if (vkStage == VK_SHADER_STAGE_FRAGMENT_BIT) {
@@ -324,6 +315,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       #extension GL_EXT_nonuniform_qualifier : require
       #extension GL_EXT_buffer_reference_uvec2 : require
 
+      // everything - indexed by global texure/sampler id
       layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
       layout (set = 0, binding = 1) uniform texture2DArray kTextures2DArray[];
       layout (set = 0, binding = 2) uniform texture3D kTextures3D[];
@@ -332,55 +324,34 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       layout (set = 0, binding = 5) uniform samplerShadow kSamplersShadow[];
       // binding #6 is reserved for STORAGE_IMAGEs: check VulkanContext.cpp
 
-      layout (set = 1, binding = 0) uniform Bindings {
-        // has to be tightly packed into `uvec4` because GL_EXT_scalar_block_layout is guaranteed only for Vulkan 1.2+
-        // texture (x), sampler (y), buffer (zw)
-        uvec4 slots[16]; // see ResourcesBinder::Slot
-      } bindings;
-      uvec2 getBuffer(uint slot) {
-        return bindings.slots[slot].zw;
-      }
+      // indexed by texture/sampler slot id
+      layout (set = 1, binding = 0) uniform texture2D sTextures2D[];
+      layout (set = 1, binding = 1) uniform texture2DArray sTextures2DArray[];
+      layout (set = 1, binding = 2) uniform texture3D sTextures3D[];
+      layout (set = 1, binding = 3) uniform textureCube sTexturesCube[];
+      layout (set = 1, binding = 4) uniform sampler sSamplers[];
+      layout (set = 1, binding = 5) uniform samplerShadow sSamplersShadow[];
+
       ivec2 textureSize2D(uint slotTexture, uint slotSampler) {
-        uint idxTex = bindings.slots[slotTexture].x;
-        uint idxSmp = bindings.slots[slotSampler].y;
-        return textureSize(sampler2D(kTextures2D[nonuniformEXT(idxTex)],
-                                     kSamplers[nonuniformEXT(idxSmp)]), 0);
+        return textureSize(sampler2D(sTextures2D[slotTexture], sSamplers[slotSampler]), 0);
       }
       vec4 textureSample2D(uint slotTexture, uint slotSampler, vec2 uv) {
-        uint idxTex = bindings.slots[slotTexture].x;
-        uint idxSmp = bindings.slots[slotSampler].y;
-        return texture(sampler2D(kTextures2D[nonuniformEXT(idxTex)],
-                                 kSamplers[nonuniformEXT(idxSmp)]), uv);
+        return texture(sampler2D(sTextures2D[slotTexture], sSamplers[slotSampler]), uv);
       }
       float textureSample2DShadow(uint slotTexture, uint slotSampler, vec3 uvw) {
-        uint idxTex = bindings.slots[slotTexture].x;
-        uint idxSmp = bindings.slots[slotSampler].y;
-        return texture(sampler2DShadow(kTextures2D[nonuniformEXT(idxTex)],
-                                       kSamplersShadow[nonuniformEXT(idxSmp)]), uvw);
+        return texture(sampler2DShadow(sTextures2D[slotTexture], sSamplersShadow[slotSampler]), uvw);
       }
       vec4 textureSample2DArray(uint slotTexture, uint slotSampler, vec3 uvw) {
-        uint idxTex = bindings.slots[slotTexture].x;
-        uint idxSmp = bindings.slots[slotSampler].y;
-        return texture(sampler2DArray(kTextures2DArray[nonuniformEXT(idxTex)],
-                                      kSamplers[nonuniformEXT(idxSmp)]), uvw);
+        return texture(sampler2DArray(sTextures2DArray[slotTexture], sSamplers[slotSampler]), uvw);
       }
       vec4 textureSampleCube(uint slotTexture, uint slotSampler, vec3 uvw) {
-        uint idxTex = bindings.slots[slotTexture].x;
-        uint idxSmp = bindings.slots[slotSampler].y;
-        return texture(samplerCube(kTexturesCube[nonuniformEXT(idxTex)],
-                                   kSamplers[nonuniformEXT(idxSmp)]), uvw);
+        return texture(samplerCube(sTexturesCube[slotTexture], sSamplers[slotSampler]), uvw);
       }
       vec4 textureSample3D(uint slotTexture, uint slotSampler, vec3 uvw) {
-        uint idxTex = bindings.slots[slotTexture].x;
-        uint idxSmp = bindings.slots[slotSampler].y;
-        return texture(sampler3D(kTextures3D[nonuniformEXT(idxTex)],
-                                 kSamplers[nonuniformEXT(idxSmp)]), uvw);
+        return texture(sampler3D(sTextures3D[slotTexture], sSamplers[slotSampler]), uvw);
       }
       vec4 textureLod2D(uint slotTexture, uint slotSampler, vec3 uvw, float lod) {
-        uint idxTex = bindings.slots[slotTexture].x;
-        uint idxSmp = bindings.slots[slotSampler].y;
-        return textureLod(samplerCube(kTexturesCube[nonuniformEXT(idxTex)],
-                                   kSamplers[nonuniformEXT(idxSmp)]), uvw, lod);
+        return textureLod(samplerCube(sTexturesCube[slotTexture], sSamplers[slotSampler]), uvw, lod);
       }
       )" + enhancedShaderDebuggingCode;
     }
