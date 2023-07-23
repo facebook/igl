@@ -10,6 +10,7 @@
 #include <lvk/LVK.h>
 #include <lvk/Pool.h>
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/CommandBuffer.h>
 #include <memory>
 #include <vector>
 
@@ -24,7 +25,7 @@ class Device final : public IDevice {
  public:
   explicit Device(std::unique_ptr<VulkanContext> ctx);
 
-  std::shared_ptr<ICommandBuffer> createCommandBuffer() override;
+  ICommandBuffer& acquireCommandBuffer() override;
 
   void submit(const lvk::ICommandBuffer& commandBuffer,
               lvk::QueueType queueType,
@@ -87,6 +88,8 @@ class Device final : public IDevice {
                                         Result* outResult) const;
 
   std::unique_ptr<VulkanContext> ctx_;
+
+  lvk::vulkan::CommandBuffer currentCommandBuffer_;
 };
 
 } // namespace vulkan

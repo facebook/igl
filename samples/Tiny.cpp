@@ -105,10 +105,10 @@ void VulkanObjects::render() {
 
   fb_.colorAttachments[0].texture = device_->getCurrentSwapchainTexture();
 
-  std::shared_ptr<lvk::ICommandBuffer> buffer = device_->createCommandBuffer();
+  lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
 
   // This will clear the framebuffer
-  buffer->cmdBeginRendering(
+  buffer.cmdBeginRendering(
       {
           .colorAttachments =
               {{.loadOp = lvk::LoadOp_Clear, .clearColor = {1.0f, 1.0f, 1.0f, 1.0f}},
@@ -118,15 +118,15 @@ void VulkanObjects::render() {
       },
       fb_);
   {
-    buffer->cmdBindRenderPipeline(renderPipelineState_Triangle_);
-    buffer->cmdBindViewport({0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f});
-    buffer->cmdBindScissorRect({0, 0, width_, height_});
-    buffer->cmdPushDebugGroupLabel("Render Triangle", lvk::Color(1, 0, 0));
-    buffer->cmdDraw(lvk::Primitive_Triangle, 0, 3);
-    buffer->cmdPopDebugGroupLabel();
+    buffer.cmdBindRenderPipeline(renderPipelineState_Triangle_);
+    buffer.cmdBindViewport({0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f});
+    buffer.cmdBindScissorRect({0, 0, width_, height_});
+    buffer.cmdPushDebugGroupLabel("Render Triangle", lvk::Color(1, 0, 0));
+    buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3);
+    buffer.cmdPopDebugGroupLabel();
   }
-  buffer->cmdEndRendering();
-  device_->submit(*buffer, lvk::QueueType_Graphics, fb_.colorAttachments[0].texture.get());
+  buffer.cmdEndRendering();
+  device_->submit(buffer, lvk::QueueType_Graphics, fb_.colorAttachments[0].texture.get());
 }
 
 int main(int argc, char* argv[]) {

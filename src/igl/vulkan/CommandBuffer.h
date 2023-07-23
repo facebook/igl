@@ -19,8 +19,11 @@ class VulkanContext;
 
 class CommandBuffer final : public ICommandBuffer {
  public:
-  explicit CommandBuffer(VulkanContext& ctx);
+  CommandBuffer() = default;
+  explicit CommandBuffer(VulkanContext* ctx);
   ~CommandBuffer() override;
+
+  CommandBuffer& operator=(CommandBuffer&& other) = default;
 
   void transitionToShaderReadOnly(ITexture& surface) const override;
 
@@ -70,10 +73,6 @@ class CommandBuffer final : public ICommandBuffer {
   void cmdSetBlendColor(Color color) override;
   void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) override;
 
-  VkCommandBuffer getVkCommandBuffer() const {
-    return wrapper_.cmdBuf_;
-  }
-
  private:
   void useComputeTexture(ITexture* texture);
   void bindGraphicsPipeline();
@@ -81,8 +80,8 @@ class CommandBuffer final : public ICommandBuffer {
  private:
   friend class Device;
 
-  VulkanContext& ctx_;
-  const VulkanImmediateCommands::CommandBufferWrapper& wrapper_;
+  VulkanContext* ctx_ = nullptr;
+  const VulkanImmediateCommands::CommandBufferWrapper* wrapper_ = nullptr;
 
   lvk::Framebuffer framebuffer_ = {};
 
@@ -92,8 +91,8 @@ class CommandBuffer final : public ICommandBuffer {
 
   bool isRendering_ = false;
 
-  lvk::RenderPipelineHandle currentPipeline_;
-  RenderPipelineDynamicState dynamicState_;
+  lvk::RenderPipelineHandle currentPipeline_ = {};
+  RenderPipelineDynamicState dynamicState_ = {};
 };
 
 } // namespace vulkan

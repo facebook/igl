@@ -52,18 +52,18 @@ void render() {
     return;
   }
 
-  std::shared_ptr<lvk::ICommandBuffer> buffer = device_->createCommandBuffer();
+  lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
 
   // This will clear the framebuffer
-  buffer->cmdBeginRendering(
+  buffer.cmdBeginRendering(
       {.colorAttachments = {{.loadOp = lvk::LoadOp_Clear, .clearColor = {1.0f, 1.0f, 1.0f, 1.0f}}}},
       {.colorAttachments = {{.texture = device_->getCurrentSwapchainTexture()}}});
-  buffer->cmdBindRenderPipeline(renderPipelineState_Triangle_);
-  buffer->cmdPushDebugGroupLabel("Render Triangle", lvk::Color(1, 0, 0));
-  buffer->cmdDraw(lvk::Primitive_Triangle, 0, 3);
-  buffer->cmdPopDebugGroupLabel();
-  buffer->cmdEndRendering();
-  device_->submit(*buffer, lvk::QueueType_Graphics, device_->getCurrentSwapchainTexture().get());
+  buffer.cmdBindRenderPipeline(renderPipelineState_Triangle_);
+  buffer.cmdPushDebugGroupLabel("Render Triangle", lvk::Color(1, 0, 0));
+  buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3);
+  buffer.cmdPopDebugGroupLabel();
+  buffer.cmdEndRendering();
+  device_->submit(buffer, lvk::QueueType_Graphics, device_->getCurrentSwapchainTexture().get());
 }
 
 int main(int argc, char* argv[]) {

@@ -361,20 +361,20 @@ static void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_
   ubPerObject_[frameIndex]->upload(&perObject, sizeof(perObject));
 
   // Command buffers (1-N per thread): create, submit and forget
-  std::shared_ptr<lvk::ICommandBuffer> buffer = device_->createCommandBuffer();
+  lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
 
   const lvk::Viewport viewport = {0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f};
   const lvk::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
 
   // This will clear the framebuffer
-  buffer->cmdBeginRendering(renderPass_, framebuffer_);
+  buffer.cmdBeginRendering(renderPass_, framebuffer_);
   {
-    buffer->cmdBindRenderPipeline(renderPipelineState_Mesh_);
-    buffer->cmdBindViewport(viewport);
-    buffer->cmdBindScissorRect(scissor);
-    buffer->cmdPushDebugGroupLabel("Render Mesh", lvk::Color(1, 0, 0));
-    buffer->cmdBindVertexBuffer(0, vb0_, 0);
-    buffer->cmdBindDepthStencilState(depthStencilState_);
+    buffer.cmdBindRenderPipeline(renderPipelineState_Mesh_);
+    buffer.cmdBindViewport(viewport);
+    buffer.cmdBindScissorRect(scissor);
+    buffer.cmdPushDebugGroupLabel("Render Mesh", lvk::Color(1, 0, 0));
+    buffer.cmdBindVertexBuffer(0, vb0_, 0);
+    buffer.cmdBindDepthStencilState(depthStencilState_);
     // Draw 2 cubes: we use uniform buffer to update matrices
     for (uint32_t i = 0; i != kNumCubes; i++) {
       struct {
@@ -384,16 +384,16 @@ static void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_
           .perFrame = ubPerFrame_[frameIndex]->gpuAddress(),
           .perObject = ubPerObject_[frameIndex]->gpuAddress(i * sizeof(UniformsPerObject)),
       };
-      buffer->cmdPushConstants(bindings);
-      buffer->cmdDrawIndexed(
+      buffer.cmdPushConstants(bindings);
+      buffer.cmdDrawIndexed(
           lvk::Primitive_Triangle, 3 * 6 * 2, lvk::IndexFormat_UI16, *ib0_.get(), 0);
     }
-    buffer->cmdPopDebugGroupLabel();
+    buffer.cmdPopDebugGroupLabel();
   }
-  imgui_->endFrame(*device_.get(), *buffer);
-  buffer->cmdEndRendering();
+  imgui_->endFrame(*device_.get(), buffer);
+  buffer.cmdEndRendering();
 
-  device_->submit(*buffer, lvk::QueueType_Graphics, nativeDrawable.get());
+  device_->submit(buffer, lvk::QueueType_Graphics, nativeDrawable.get());
 }
 
 int main(int argc, char* argv[]) {

@@ -16,8 +16,8 @@
 
 namespace lvk::vulkan {
 
-CommandBuffer::CommandBuffer(VulkanContext& ctx) :
-  ctx_(ctx), wrapper_(ctx_.immediate_->acquire()) {}
+CommandBuffer::CommandBuffer(VulkanContext* ctx) :
+  ctx_(ctx), wrapper_(&ctx_->immediate_->acquire()) {}
 
 CommandBuffer::~CommandBuffer() {
   IGL_ASSERT(!isRendering_); // did you forget to call cmdEndRendering()?
@@ -152,7 +152,7 @@ void CommandBuffer ::transitionToShaderReadOnly(ITexture& surface) const {
                                               : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     // set the result of the previous render pass
     img.transitionLayout(
-        wrapper_.cmdBuf_,
+        wrapper_->cmdBuf_,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         srcStage,
         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
@@ -168,7 +168,7 @@ void CommandBuffer::cmdBindComputePipeline(lvk::ComputePipelineHandle handle) {
     return;
   }
 
-  const lvk::vulkan::ComputePipelineState* cps = ctx_.computePipelinesPool_.get(handle);
+  const lvk::vulkan::ComputePipelineState* cps = ctx_->computePipelinesPool_.get(handle);
 
   IGL_ASSERT(cps);
 
@@ -177,7 +177,7 @@ void CommandBuffer::cmdBindComputePipeline(lvk::ComputePipelineHandle handle) {
   if (lastPipelineBound_ != pipeline) {
     lastPipelineBound_ = pipeline;
     if (pipeline != VK_NULL_HANDLE) {
-      vkCmdBindPipeline(wrapper_.cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+      vkCmdBindPipeline(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     }
   }
 }
@@ -190,27 +190,27 @@ void CommandBuffer::cmdDispatchThreadGroups(const Dimensions& threadgroupCount,
     useComputeTexture(deps.textures[i]);
   }
 
-  ctx_.checkAndUpdateDescriptorSets();
-  ctx_.bindDefaultDescriptorSets(wrapper_.cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE);
+  ctx_->checkAndUpdateDescriptorSets();
+  ctx_->bindDefaultDescriptorSets(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE);
 
   vkCmdDispatch(
-      wrapper_.cmdBuf_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
+      wrapper_->cmdBuf_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
 }
 
 void CommandBuffer::cmdPushDebugGroupLabel(const char* label, const lvk::Color& color) const {
   IGL_ASSERT(label);
 
-  ivkCmdBeginDebugUtilsLabel(wrapper_.cmdBuf_, label, color.toFloatPtr());
+  ivkCmdBeginDebugUtilsLabel(wrapper_->cmdBuf_, label, color.toFloatPtr());
 }
 
 void CommandBuffer::cmdInsertDebugEventLabel(const char* label, const lvk::Color& color) const {
   IGL_ASSERT(label);
 
-  ivkCmdInsertDebugUtilsLabel(wrapper_.cmdBuf_, label, color.toFloatPtr());
+  ivkCmdInsertDebugUtilsLabel(wrapper_->cmdBuf_, label, color.toFloatPtr());
 }
 
 void CommandBuffer::cmdPopDebugGroupLabel() const {
-  ivkCmdEndDebugUtilsLabel(wrapper_.cmdBuf_);
+  ivkCmdEndDebugUtilsLabel(wrapper_->cmdBuf_);
 }
 
 void CommandBuffer::useComputeTexture(ITexture* texture) {
@@ -231,7 +231,7 @@ void CommandBuffer::useComputeTexture(ITexture* texture) {
                                             ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
                                             : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
   vkImage.transitionLayout(
-      wrapper_.cmdBuf_,
+      wrapper_->cmdBuf_,
       VK_IMAGE_LAYOUT_GENERAL,
       srcStage,
       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
@@ -257,11 +257,11 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
   // transition all the color attachments
   for (uint32_t i = 0; i != numFbColorAttachments; i++) {
     if (const auto colorTex = fb.colorAttachments[i].texture) {
-      transitionColorAttachment(wrapper_.cmdBuf_, colorTex);
+      transitionColorAttachment(wrapper_->cmdBuf_, colorTex);
     }
     // handle MSAA
     if (const auto colorResolveTex = fb.colorAttachments[i].resolveTexture) {
-      transitionColorAttachment(wrapper_.cmdBuf_, colorResolveTex);
+      transitionColorAttachment(wrapper_->cmdBuf_, colorResolveTex);
     }
   }
   // transition depth-stencil attachment
@@ -273,7 +273,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
     const VkImageAspectFlags flags =
         vkDepthTex.getVulkanTexture().getVulkanImage().getImageAspectFlags();
     depthImg.transitionLayout(
-        wrapper_.cmdBuf_,
+        wrapper_->cmdBuf_,
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // wait for all subsequent
@@ -395,10 +395,10 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
   cmdBindViewport(viewport);
   cmdBindScissorRect(scissor);
 
-  ctx_.checkAndUpdateDescriptorSets();
-  ctx_.bindDefaultDescriptorSets(wrapper_.cmdBuf_, VK_PIPELINE_BIND_POINT_GRAPHICS);
+  ctx_->checkAndUpdateDescriptorSets();
+  ctx_->bindDefaultDescriptorSets(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-  vkCmdBeginRendering(wrapper_.cmdBuf_, &renderingInfo);
+  vkCmdBeginRendering(wrapper_->cmdBuf_, &renderingInfo);
 }
 
 void CommandBuffer::cmdEndRendering() {
@@ -406,7 +406,7 @@ void CommandBuffer::cmdEndRendering() {
 
   isRendering_ = false;
 
-  vkCmdEndRendering(wrapper_.cmdBuf_);
+  vkCmdEndRendering(wrapper_->cmdBuf_);
 
   const uint32_t numFbColorAttachments = framebuffer_.getNumColorAttachments();
 
@@ -439,7 +439,7 @@ void CommandBuffer::cmdBindViewport(const Viewport& viewport) {
       .minDepth = viewport.minDepth, // float minDepth;
       .maxDepth = viewport.maxDepth, // float maxDepth;
   };
-  vkCmdSetViewport(wrapper_.cmdBuf_, 0, 1, &vp);
+  vkCmdSetViewport(wrapper_->cmdBuf_, 0, 1, &vp);
 }
 
 void CommandBuffer::cmdBindScissorRect(const ScissorRect& rect) {
@@ -447,7 +447,7 @@ void CommandBuffer::cmdBindScissorRect(const ScissorRect& rect) {
       VkOffset2D{(int32_t)rect.x, (int32_t)rect.y},
       VkExtent2D{rect.width, rect.height},
   };
-  vkCmdSetScissor(wrapper_.cmdBuf_, 0, 1, &scissor);
+  vkCmdSetScissor(wrapper_->cmdBuf_, 0, 1, &scissor);
 }
 
 void CommandBuffer::cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) {
@@ -457,7 +457,7 @@ void CommandBuffer::cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) {
 
   currentPipeline_ = handle;
 
-  const lvk::vulkan::RenderPipelineState* rps = ctx_.renderPipelinesPool_.get(handle);
+  const lvk::vulkan::RenderPipelineState* rps = ctx_->renderPipelinesPool_.get(handle);
 
   IGL_ASSERT(rps);
 
@@ -486,9 +486,9 @@ void CommandBuffer::cmdBindDepthStencilState(const DepthStencilState& desc) {
                                      stencilOpToVkStencilOp(desc.depthStencilPassOp),
                                      stencilOpToVkStencilOp(desc.depthFailureOp),
                                      compareOpToVkCompareOp(desc.stencilCompareOp));
-    vkCmdSetStencilReference(wrapper_.cmdBuf_, faceMask, desc.readMask);
-    vkCmdSetStencilCompareMask(wrapper_.cmdBuf_, faceMask, 0xFF);
-    vkCmdSetStencilWriteMask(wrapper_.cmdBuf_, faceMask, desc.writeMask);
+    vkCmdSetStencilReference(wrapper_->cmdBuf_, faceMask, desc.readMask);
+    vkCmdSetStencilCompareMask(wrapper_->cmdBuf_, faceMask, 0xFF);
+    vkCmdSetStencilWriteMask(wrapper_->cmdBuf_, faceMask, desc.writeMask);
   };
 
   setStencilState(VK_STENCIL_FACE_FRONT_BIT, desc.frontFaceStencil);
@@ -511,7 +511,7 @@ void CommandBuffer::cmdBindVertexBuffer(uint32_t index,
   IGL_ASSERT(buf->desc_.usage & BufferUsageBits_Vertex);
 
   const VkDeviceSize offset = bufferOffset;
-  vkCmdBindVertexBuffers(wrapper_.cmdBuf_, index, 1, &vkBuf, &offset);
+  vkCmdBindVertexBuffers(wrapper_->cmdBuf_, index, 1, &vkBuf, &offset);
 }
 
 void CommandBuffer::cmdPushConstants(const void* data, size_t size, size_t offset) {
@@ -520,15 +520,15 @@ void CommandBuffer::cmdPushConstants(const void* data, size_t size, size_t offse
   IGL_ASSERT(size % 4 == 0); // VUID-vkCmdPushConstants-size-00369: size must be a multiple of 4
 
   // check push constant size is within max size
-  const VkPhysicalDeviceLimits& limits = ctx_.getVkPhysicalDeviceProperties().limits;
+  const VkPhysicalDeviceLimits& limits = ctx_->getVkPhysicalDeviceProperties().limits;
   if (!IGL_VERIFY(size + offset <= limits.maxPushConstantsSize)) {
     LLOGW("Push constants size exceeded %u (max %u bytes)",
           size + offset,
           limits.maxPushConstantsSize);
   }
 
-  vkCmdPushConstants(wrapper_.cmdBuf_,
-                     ctx_.vkPipelineLayout_,
+  vkCmdPushConstants(wrapper_->cmdBuf_,
+                     ctx_->vkPipelineLayout_,
                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
                          VK_SHADER_STAGE_COMPUTE_BIT,
                      (uint32_t)offset,
@@ -537,7 +537,7 @@ void CommandBuffer::cmdPushConstants(const void* data, size_t size, size_t offse
 }
 
 void CommandBuffer::bindGraphicsPipeline() {
-  const lvk::vulkan::RenderPipelineState* rps = ctx_.renderPipelinesPool_.get(currentPipeline_);
+  const lvk::vulkan::RenderPipelineState* rps = ctx_->renderPipelinesPool_.get(currentPipeline_);
 
   if (!IGL_VERIFY(rps)) {
     return;
@@ -548,7 +548,7 @@ void CommandBuffer::bindGraphicsPipeline() {
   if (lastPipelineBound_ != pipeline) {
     lastPipelineBound_ = pipeline;
     if (pipeline != VK_NULL_HANDLE) {
-      vkCmdBindPipeline(wrapper_.cmdBuf_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+      vkCmdBindPipeline(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     }
   }
 }
@@ -563,7 +563,7 @@ void CommandBuffer::cmdDraw(PrimitiveType primitiveType, size_t vertexStart, siz
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
 
-  vkCmdDraw(wrapper_.cmdBuf_, (uint32_t)vertexCount, 1, (uint32_t)vertexStart, 0);
+  vkCmdDraw(wrapper_->cmdBuf_, (uint32_t)vertexCount, 1, (uint32_t)vertexStart, 0);
 }
 
 void CommandBuffer::cmdDrawIndexed(PrimitiveType primitiveType,
@@ -583,9 +583,9 @@ void CommandBuffer::cmdDrawIndexed(PrimitiveType primitiveType,
   const lvk::vulkan::Buffer* buf = static_cast<lvk::vulkan::Buffer*>(&indexBuffer);
 
   const VkIndexType type = indexFormatToVkIndexType(indexFormat);
-  vkCmdBindIndexBuffer(wrapper_.cmdBuf_, buf->getVkBuffer(), indexBufferOffset, type);
+  vkCmdBindIndexBuffer(wrapper_->cmdBuf_, buf->getVkBuffer(), indexBufferOffset, type);
 
-  vkCmdDrawIndexed(wrapper_.cmdBuf_, (uint32_t)indexCount, 1, 0, 0, 0);
+  vkCmdDrawIndexed(wrapper_->cmdBuf_, (uint32_t)indexCount, 1, 0, 0, 0);
 }
 
 void CommandBuffer::cmdDrawIndirect(PrimitiveType primitiveType,
@@ -600,7 +600,7 @@ void CommandBuffer::cmdDrawIndirect(PrimitiveType primitiveType,
 
   const lvk::vulkan::Buffer* bufIndirect = static_cast<lvk::vulkan::Buffer*>(&indirectBuffer);
 
-  vkCmdDrawIndirect(wrapper_.cmdBuf_,
+  vkCmdDrawIndirect(wrapper_->cmdBuf_,
                     bufIndirect->getVkBuffer(),
                     indirectBufferOffset,
                     drawCount,
@@ -623,9 +623,9 @@ void CommandBuffer::cmdDrawIndexedIndirect(PrimitiveType primitiveType,
   const lvk::vulkan::Buffer* bufIndirect = static_cast<lvk::vulkan::Buffer*>(&indirectBuffer);
 
   const VkIndexType type = indexFormatToVkIndexType(indexFormat);
-  vkCmdBindIndexBuffer(wrapper_.cmdBuf_, bufIndex->getVkBuffer(), 0, type);
+  vkCmdBindIndexBuffer(wrapper_->cmdBuf_, bufIndex->getVkBuffer(), 0, type);
 
-  vkCmdDrawIndexedIndirect(wrapper_.cmdBuf_,
+  vkCmdDrawIndexedIndirect(wrapper_->cmdBuf_,
                            bufIndirect->getVkBuffer(),
                            indirectBufferOffset,
                            drawCount,
@@ -633,17 +633,17 @@ void CommandBuffer::cmdDrawIndexedIndirect(PrimitiveType primitiveType,
 }
 
 void CommandBuffer::cmdSetStencilReferenceValues(uint32_t frontValue, uint32_t backValue) {
-  vkCmdSetStencilReference(wrapper_.cmdBuf_, VK_STENCIL_FACE_FRONT_BIT, frontValue);
-  vkCmdSetStencilReference(wrapper_.cmdBuf_, VK_STENCIL_FACE_BACK_BIT, backValue);
+  vkCmdSetStencilReference(wrapper_->cmdBuf_, VK_STENCIL_FACE_FRONT_BIT, frontValue);
+  vkCmdSetStencilReference(wrapper_->cmdBuf_, VK_STENCIL_FACE_BACK_BIT, backValue);
 }
 
 void CommandBuffer::cmdSetBlendColor(Color color) {
-  vkCmdSetBlendConstants(wrapper_.cmdBuf_, color.toFloatPtr());
+  vkCmdSetBlendConstants(wrapper_->cmdBuf_, color.toFloatPtr());
 }
 
 void CommandBuffer::cmdSetDepthBias(float depthBias, float slopeScale, float clamp) {
   dynamicState_.depthBiasEnable_ = true;
-  vkCmdSetDepthBias(wrapper_.cmdBuf_, depthBias, clamp, slopeScale);
+  vkCmdSetDepthBias(wrapper_->cmdBuf_, depthBias, clamp, slopeScale);
 }
 
 } // namespace lvk::vulkan

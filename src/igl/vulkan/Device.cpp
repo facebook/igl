@@ -51,10 +51,15 @@ namespace lvk::vulkan {
 
 Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)) {}
 
-std::shared_ptr<ICommandBuffer> Device::createCommandBuffer() {
+ICommandBuffer& Device::acquireCommandBuffer() {
   IGL_PROFILER_FUNCTION();
 
-  return std::make_shared<CommandBuffer>(getVulkanContext());
+  IGL_ASSERT_MSG(!currentCommandBuffer_.ctx_,
+                 "Cannot acquire more than 1 command buffer simultaneously");
+
+  currentCommandBuffer_ = CommandBuffer(ctx_.get());
+
+  return currentCommandBuffer_;
 }
 
 void Device::submit(const lvk::ICommandBuffer& commandBuffer,
@@ -66,6 +71,10 @@ void Device::submit(const lvk::ICommandBuffer& commandBuffer,
 
   vulkan::CommandBuffer* vkCmdBuffer =
       const_cast<vulkan::CommandBuffer*>(static_cast<const vulkan::CommandBuffer*>(&commandBuffer));
+
+  IGL_ASSERT(vkCmdBuffer);
+  IGL_ASSERT(vkCmdBuffer->ctx_);
+  IGL_ASSERT(vkCmdBuffer->wrapper_);
 
   const bool isGraphicsQueue = queueType == QueueType_Graphics;
 
@@ -81,7 +90,7 @@ void Device::submit(const lvk::ICommandBuffer& commandBuffer,
                                                  ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
                                                  : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     img.transitionLayout(
-        vkCmdBuffer->wrapper_.cmdBuf_,
+        vkCmdBuffer->wrapper_->cmdBuf_,
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
         srcStage,
         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // wait for all subsequent operations
@@ -89,19 +98,21 @@ void Device::submit(const lvk::ICommandBuffer& commandBuffer,
             VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
   }
 
-  // Submit to the graphics queue.
   const bool shouldPresent = isGraphicsQueue && ctx.hasSwapchain() && present;
   if (shouldPresent) {
     ctx.immediate_->waitSemaphore(ctx.swapchain_->acquireSemaphore_);
   }
 
-  vkCmdBuffer->lastSubmitHandle_ = ctx.immediate_->submit(vkCmdBuffer->wrapper_);
+  vkCmdBuffer->lastSubmitHandle_ = ctx.immediate_->submit(*vkCmdBuffer->wrapper_);
 
   if (shouldPresent) {
     ctx.present();
   }
 
   ctx.processDeferredTasks();
+
+  // reset
+  currentCommandBuffer_ = {};
 }
 
 std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc, Result* outResult) {

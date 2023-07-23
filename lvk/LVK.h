@@ -820,7 +820,7 @@ class IDevice {
  public:
   virtual ~IDevice() = default;
 
-  virtual std::shared_ptr<ICommandBuffer> createCommandBuffer() = 0;
+  virtual ICommandBuffer& acquireCommandBuffer() = 0;
 
   virtual void submit(const ICommandBuffer& commandBuffer,
                       lvk::QueueType queueType = lvk::QueueType_Graphics,

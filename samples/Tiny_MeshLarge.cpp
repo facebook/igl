@@ -1148,14 +1148,14 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
 
   // Pass 1: shadows
   if (isShadowMapDirty_) {
-    std::shared_ptr<lvk::ICommandBuffer> buffer = device_->createCommandBuffer();
+    lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
 
-    buffer->cmdBeginRendering(renderPassShadow_, fbShadowMap_);
+    buffer.cmdBeginRendering(renderPassShadow_, fbShadowMap_);
     {
-      buffer->cmdBindRenderPipeline(renderPipelineState_Shadow_);
-      buffer->cmdPushDebugGroupLabel("Render Shadows", lvk::Color(1, 0, 0));
-      buffer->cmdBindDepthStencilState(depthStencilState_);
-      buffer->cmdBindVertexBuffer(0, vb0_, 0);
+      buffer.cmdBindRenderPipeline(renderPipelineState_Shadow_);
+      buffer.cmdPushDebugGroupLabel("Render Shadows", lvk::Color(1, 0, 0));
+      buffer.cmdBindDepthStencilState(depthStencilState_);
+      buffer.cmdBindVertexBuffer(0, vb0_, 0);
       struct {
         uint64_t perFrame;
         uint64_t perObject;
@@ -1163,15 +1163,14 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
           .perFrame = ubPerFrameShadow_[frameIndex]->gpuAddress(),
           .perObject = ubPerObject_[frameIndex]->gpuAddress(),
       };
-      buffer->cmdPushConstants(bindings);
-
-      buffer->cmdDrawIndexed(
+      buffer.cmdPushConstants(bindings);
+      buffer.cmdDrawIndexed(
           lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, *ib0_.get(), 0);
-      buffer->cmdPopDebugGroupLabel();
+      buffer.cmdPopDebugGroupLabel();
     }
-    buffer->cmdEndRendering();
-    buffer->transitionToShaderReadOnly(*fbShadowMap_.depthStencilAttachment.texture);
-    device_->submit(*buffer, lvk::QueueType_Graphics);
+    buffer.cmdEndRendering();
+    buffer.transitionToShaderReadOnly(*fbShadowMap_.depthStencilAttachment.texture);
+    device_->submit(buffer, lvk::QueueType_Graphics);
 
     fbShadowMap_.depthStencilAttachment.texture->generateMipmap();
 
@@ -1180,16 +1179,16 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
 
   // Pass 2: mesh
   {
-    std::shared_ptr<lvk::ICommandBuffer> buffer = device_->createCommandBuffer();
+    lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
 
     // This will clear the framebuffer
-    buffer->cmdBeginRendering(renderPassOffscreen_, fbOffscreen_);
+    buffer.cmdBeginRendering(renderPassOffscreen_, fbOffscreen_);
     {
       // Scene
-      buffer->cmdBindRenderPipeline(renderPipelineState_Mesh_);
-      buffer->cmdPushDebugGroupLabel("Render Mesh", lvk::Color(1, 0, 0));
-      buffer->cmdBindDepthStencilState(depthStencilState_);
-      buffer->cmdBindVertexBuffer(0, vb0_, 0);
+      buffer.cmdBindRenderPipeline(renderPipelineState_Mesh_);
+      buffer.cmdPushDebugGroupLabel("Render Mesh", lvk::Color(1, 0, 0));
+      buffer.cmdBindDepthStencilState(depthStencilState_);
+      buffer.cmdBindVertexBuffer(0, vb0_, 0);
 
       struct {
         uint64_t perFrame;
@@ -1200,26 +1199,26 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
           .perObject = ubPerObject_[frameIndex]->gpuAddress(),
           .materials = sbMaterials_->gpuAddress(),
       };
-      buffer->cmdPushConstants(bindings);
-      buffer->cmdDrawIndexed(
+      buffer.cmdPushConstants(bindings);
+      buffer.cmdDrawIndexed(
           lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, *ib0_.get(), 0);
       if (enableWireframe_) {
-        buffer->cmdBindRenderPipeline(renderPipelineState_MeshWireframe_);
-        buffer->cmdDrawIndexed(
+        buffer.cmdBindRenderPipeline(renderPipelineState_MeshWireframe_);
+        buffer.cmdDrawIndexed(
             lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, *ib0_.get(), 0);
       }
-      buffer->cmdPopDebugGroupLabel();
+      buffer.cmdPopDebugGroupLabel();
 
       // Skybox
-      buffer->cmdBindRenderPipeline(renderPipelineState_Skybox_);
-      buffer->cmdPushDebugGroupLabel("Render Skybox", lvk::Color(0, 1, 0));
-      buffer->cmdBindDepthStencilState(depthStencilStateLEqual_);
-      buffer->cmdDraw(lvk::Primitive_Triangle, 0, 3 * 6 * 2);
-      buffer->cmdPopDebugGroupLabel();
+      buffer.cmdBindRenderPipeline(renderPipelineState_Skybox_);
+      buffer.cmdPushDebugGroupLabel("Render Skybox", lvk::Color(0, 1, 0));
+      buffer.cmdBindDepthStencilState(depthStencilStateLEqual_);
+      buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3 * 6 * 2);
+      buffer.cmdPopDebugGroupLabel();
     }
-    buffer->cmdEndRendering();
-    buffer->transitionToShaderReadOnly(*fbOffscreen_.colorAttachments[0].texture);
-    device_->submit(*buffer, lvk::QueueType_Graphics);
+    buffer.cmdEndRendering();
+    buffer.transitionToShaderReadOnly(*fbOffscreen_.colorAttachments[0].texture);
+    device_->submit(buffer, lvk::QueueType_Graphics);
   }
 
   // Pass 3: compute shader post-processing
@@ -1227,17 +1226,17 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
     std::shared_ptr<lvk::ITexture> tex = kNumSamplesMSAA > 1
                                              ? fbOffscreen_.colorAttachments[0].resolveTexture
                                              : fbOffscreen_.colorAttachments[0].texture;
-    std::shared_ptr<lvk::ICommandBuffer> buffer = device_->createCommandBuffer();
+    lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
 
-    buffer->cmdBindComputePipeline(computePipelineState_Grayscale_);
+    buffer.cmdBindComputePipeline(computePipelineState_Grayscale_);
 
     struct {
       uint32_t texture;
     } bindings = {
         .texture = tex->getTextureId(),
     };
-    buffer->cmdPushConstants(bindings);
-    buffer->cmdDispatchThreadGroups(
+    buffer.cmdPushConstants(bindings);
+    buffer.cmdDispatchThreadGroups(
         {
             .width = (uint32_t)width_,
             .height = (uint32_t)height_,
@@ -1245,18 +1244,18 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
         },
         {.textures = {tex.get()}});
 
-    device_->submit(*buffer, lvk::QueueType_Compute);
+    device_->submit(buffer, lvk::QueueType_Compute);
   }
 
   // Pass 4: render into the swapchain image
   {
-    std::shared_ptr<lvk::ICommandBuffer> buffer = device_->createCommandBuffer();
+    lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
 
     // This will clear the framebuffer
-    buffer->cmdBeginRendering(renderPassMain_, fbMain_);
+    buffer.cmdBeginRendering(renderPassMain_, fbMain_);
     {
-      buffer->cmdBindRenderPipeline(renderPipelineState_Fullscreen_);
-      buffer->cmdPushDebugGroupLabel("Swapchain Output", lvk::Color(1, 0, 0));
+      buffer.cmdBindRenderPipeline(renderPipelineState_Fullscreen_);
+      buffer.cmdPushDebugGroupLabel("Swapchain Output", lvk::Color(1, 0, 0));
       struct {
         uint32_t texture;
       } bindings = {
@@ -1264,15 +1263,15 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
                          ? fbOffscreen_.colorAttachments[0].resolveTexture->getTextureId()
                          : fbOffscreen_.colorAttachments[0].texture->getTextureId(),
       };
-      buffer->cmdPushConstants(bindings);
-      buffer->cmdDraw(lvk::Primitive_Triangle, 0, 3);
-      buffer->cmdPopDebugGroupLabel();
+      buffer.cmdPushConstants(bindings);
+      buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3);
+      buffer.cmdPopDebugGroupLabel();
 
-      imgui_->endFrame(*device_.get(), *buffer);
+      imgui_->endFrame(*device_.get(), buffer);
     }
-    buffer->cmdEndRendering();
+    buffer.cmdEndRendering();
 
-    device_->submit(*buffer, lvk::QueueType_Graphics, fbMain_.colorAttachments[0].texture.get());
+    device_->submit(buffer, lvk::QueueType_Graphics, fbMain_.colorAttachments[0].texture.get());
   }
 }
 
