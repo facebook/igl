@@ -145,9 +145,11 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
                                       VkFormat format,
                                       const void* data[]) {
   IGL_PROFILER_FUNCTION();
+
   // cache the dimensions of each mip level for later
-  std::vector<uint32_t> mipSizes;
-  mipSizes.reserve(numMipLevels);
+  uint32_t mipSizes[32];
+
+  IGL_ASSERT(numMipLevels <= 32);
 
   // divide the width and height by 2 until we get to the size of level 'baseMipLevel'
   auto width = image.extent_.width >> baseMipLevel;
@@ -169,7 +171,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
         lvk::getTextureBytesPerLayer(image.extent_.width, image.extent_.height, texFormat, i);
 
     layarStorageSize += mipSize;
-    mipSizes.push_back(mipSize);
+    mipSizes[i] = mipSize;
     width = width <= 1 ? 1 : width >> 1; // divide the width by 2
     height = height <= 1 ? 1 : height >> 1; // divide the height by 2
   }
