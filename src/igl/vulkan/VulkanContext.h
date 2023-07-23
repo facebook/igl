@@ -31,7 +31,6 @@ class CommandBuffer;
 class CommandQueue;
 class RenderCommandEncoder;
 class VulkanBuffer;
-class VulkanDescriptorSetLayout;
 class VulkanImage;
 class VulkanImageView;
 class VulkanSampler;
@@ -189,8 +188,9 @@ class VulkanContext final {
   std::unique_ptr<lvk::vulkan::VulkanSwapchain> swapchain_;
   std::unique_ptr<lvk::vulkan::VulkanImmediateCommands> immediate_;
   std::unique_ptr<lvk::vulkan::VulkanStagingDevice> stagingDevice_;
-  std::unique_ptr<lvk::vulkan::VulkanDescriptorSetLayout> dslBindless_;
-  VkDescriptorPool dpBindless_ = VK_NULL_HANDLE;
+  VkPipelineLayout vkPipelineLayout_ = VK_NULL_HANDLE;
+  VkDescriptorSetLayout vkDSLBindless_ = VK_NULL_HANDLE;
+  VkDescriptorPool vkDPBindless_ = VK_NULL_HANDLE;
   struct BindlessDescriptorSet {
     VkDescriptorSet ds = VK_NULL_HANDLE;
     SubmitHandle handle =
@@ -198,7 +198,6 @@ class VulkanContext final {
   };
   mutable std::vector<BindlessDescriptorSet> bindlessDSets_;
   mutable uint32_t currentDSetIndex_ = 0;
-  VkPipelineLayout vkPipelineLayout_ = VK_NULL_HANDLE;
   // don't use staging on devices with shared host-visible memory
   bool useStaging_ = true;
 

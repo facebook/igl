@@ -15,7 +15,6 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDescriptorSetLayout.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
 #include <igl/vulkan/VulkanSampler.h>
 #include <igl/vulkan/VulkanSwapchain.h>
@@ -195,16 +194,15 @@ VulkanContext::~VulkanContext() {
 
   // This will free an internal buffer that was allocated by VMA
   stagingDevice_.reset(nullptr);
-
-  dslBindless_.reset(nullptr);
   swapchain_.reset(nullptr); // Swapchain has to be destroyed prior to Surface
 
   waitDeferredTasks();
 
   immediate_.reset(nullptr);
 
+  vkDestroyDescriptorSetLayout(vkDevice_, vkDSLBindless_, nullptr);
   vkDestroyPipelineLayout(vkDevice_, vkPipelineLayout_, nullptr);
-  vkDestroyDescriptorPool(vkDevice_, dpBindless_, nullptr);
+  vkDestroyDescriptorPool(vkDevice_, vkDPBindless_, nullptr);
   vkDestroySurfaceKHR(vkInstance_, vkSurface_, nullptr);
   vkDestroyPipelineCache(vkDevice_, pipelineCache_, nullptr);
 
@@ -644,12 +642,12 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
                            VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
                            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
     const VkDescriptorBindingFlags bindingFlags[numBindings] = {flags, flags, flags};
-    dslBindless_ = std::make_unique<VulkanDescriptorSetLayout>(
-        vkDevice_,
-        numBindings,
-        bindings,
-        bindingFlags,
-        "Descriptor Set Layout: VulkanContext::dslBindless_");
+    VK_ASSERT(ivkCreateDescriptorSetLayout(
+        vkDevice_, numBindings, bindings, bindingFlags, &vkDSLBindless_));
+    VK_ASSERT(ivkSetDebugObjectName(vkDevice_,
+                                    VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
+                                    (uint64_t)vkDSLBindless_,
+                                    "Descriptor Set Layout: VulkanContext::dslBindless_"));
 
     // create default descriptor pool and allocate 1 descriptor set
     const uint32_t numSets = 1;
@@ -661,10 +659,10 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     };
     bindlessDSets_.resize(numSets);
     VK_ASSERT_RETURN(
-        ivkCreateDescriptorPool(vkDevice_, numSets, numBindings, poolSizes, &dpBindless_));
+        ivkCreateDescriptorPool(vkDevice_, numSets, numBindings, poolSizes, &vkDPBindless_));
     for (size_t i = 0; i != numSets; i++) {
       VK_ASSERT_RETURN(ivkAllocateDescriptorSet(
-          vkDevice_, dpBindless_, dslBindless_->getVkDescriptorSetLayout(), &bindlessDSets_[i].ds));
+          vkDevice_, vkDPBindless_, vkDSLBindless_, &bindlessDSets_[i].ds));
     }
   }
 
@@ -680,14 +678,13 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 
   // create pipeline layout
   {
-    VkDescriptorSetLayout dsl = dslBindless_->getVkDescriptorSetLayout();
     const VkPushConstantRange range = {
         .stageFlags =
             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
         .offset = 0,
         .size = kPushConstantsSize,
     };
-    const VkPipelineLayoutCreateInfo ci = ivkGetPipelineLayoutCreateInfo(1, &dsl, &range);
+    const VkPipelineLayoutCreateInfo ci = ivkGetPipelineLayoutCreateInfo(1, &vkDSLBindless_, &range);
 
     VK_ASSERT(vkCreatePipelineLayout(vkDevice_, &ci, nullptr, &vkPipelineLayout_));
     VK_ASSERT(ivkSetDebugObjectName(vkDevice_,
