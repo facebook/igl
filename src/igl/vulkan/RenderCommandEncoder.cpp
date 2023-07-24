@@ -458,7 +458,6 @@ void RenderCommandEncoder::bindBuffer(int index,
     const VkDeviceSize offset = bufferOffset;
     vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
   } else if (isUniformOrStorageBuffer) {
-    IGL_LOG_INFO("Uniform storage buffer: %d %d", index, bufferOffset);
     if (ctx_.enhancedShaderDebuggingStore_) {
       IGL_ASSERT_MSG(index < (IGL_UNIFORM_BLOCKS_BINDING_MAX - 1),
                      "The last buffer index is reserved for enhanced debugging features");
