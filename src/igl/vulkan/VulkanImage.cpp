@@ -162,8 +162,12 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       VkMemoryRequirements memRequirements;
       vkGetImageMemoryRequirements(device, vkImage_, &memRequirements);
 
-      VK_ASSERT(
-          ivkAllocateMemory(physicalDevice_, device_, &memRequirements, memFlags, &vkMemory_));
+      VK_ASSERT(ivkAllocateMemory(physicalDevice_,
+                                  device_,
+                                  &memRequirements,
+                                  memFlags,
+                                  ctx.config_.enableBufferDeviceAddress,
+                                  &vkMemory_));
       VK_ASSERT(vkBindImageMemory(device_, vkImage_, vkMemory_, 0));
 
       allocatedSize = memRequirements.size;

@@ -197,12 +197,13 @@ VkResult ivkAllocateMemory(VkPhysicalDevice physDev,
                            VkDevice device,
                            const VkMemoryRequirements* memRequirements,
                            VkMemoryPropertyFlags props,
+                           bool enableBufferDeviceAddress,
                            VkDeviceMemory* outMemory) {
   assert(memRequirements);
 
   const VkMemoryAllocateFlagsInfo memoryAllocateFlagsInfo = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
-      .flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR,
+      .flags = enableBufferDeviceAddress ? VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR : 0,
   };
 
   const VkMemoryAllocateInfo ai = {
@@ -292,6 +293,7 @@ VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
                          const char** deviceExtensions,
                          VkBool32 enableMultiview,
                          VkBool32 enableShaderFloat16,
+                         VkBool32 enableBufferDeviceAddress,
                          VkDevice* outDevice) {
   assert(numQueueCreateInfos >= 1);
   const VkPhysicalDeviceFeatures deviceFeatures = {
@@ -323,7 +325,7 @@ VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
       .runtimeDescriptorArray = VK_TRUE,
   };
   ivkAddNext(&ci, &descriptorIndexingFeature);
-#if defined(VK_KHR_buffer_device_address)
+
   const VkPhysicalDevice16BitStorageFeatures float16StorageBuffersFeature = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,
       .storageBuffer16BitAccess = VK_TRUE,
@@ -332,15 +334,19 @@ VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES,
       .shaderFloat16 = VK_TRUE,
   };
+  if (enableShaderFloat16 == VK_TRUE) {
+    ivkAddNext(&ci, &float16ArithmeticFeature);
+    ivkAddNext(&ci, &float16StorageBuffersFeature);
+  }
+
+#if defined(VK_KHR_buffer_device_address)
   const VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeature = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
       .bufferDeviceAddress = VK_TRUE,
   };
-  ivkAddNext(&ci, &float16StorageBuffersFeature);
-  if (enableShaderFloat16 == VK_TRUE) {
-    ivkAddNext(&ci, &float16ArithmeticFeature);
+  if (enableBufferDeviceAddress) {
+    ivkAddNext(&ci, &bufferDeviceAddressFeature);
   }
-  ivkAddNext(&ci, &bufferDeviceAddressFeature);
 #endif // defined(VK_KHR_buffer_device_address)
 
 #if defined(VK_KHR_multiview)
@@ -1494,6 +1500,7 @@ VkResult ivkVmaCreateAllocator(VkPhysicalDevice physDev,
                                VkDevice device,
                                VkInstance instance,
                                uint32_t apiVersion,
+                               bool enableBufferDeviceAddress,
                                VmaAllocator* outVma) {
   const VmaVulkanFunctions funcs = {
     .vkGetInstanceProcAddr = vkGetInstanceProcAddr,
@@ -1531,7 +1538,7 @@ VkResult ivkVmaCreateAllocator(VkPhysicalDevice physDev,
   };
 
   const VmaAllocatorCreateInfo ci = {
-      .flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
+      .flags = enableBufferDeviceAddress ? VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT : 0,
       .physicalDevice = physDev,
       .device = device,
       .preferredLargeHeapBlockSize = 0,

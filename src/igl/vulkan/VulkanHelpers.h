@@ -64,6 +64,7 @@ VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
                          const char** deviceExtensions,
                          VkBool32 enableMultiview,
                          VkBool32 enableShaderFloat16,
+                         VkBool32 enableBufferDeviceAddress,
                          VkDevice* outDevice);
 
 VkResult ivkCreateHeadlessSurface(VkInstance instance, VkSurfaceKHR* surface);
@@ -119,6 +120,7 @@ VkResult ivkAllocateMemory(VkPhysicalDevice physDev,
                            VkDevice device,
                            const VkMemoryRequirements* memRequirements,
                            VkMemoryPropertyFlags props,
+                           bool enableBufferDeviceAddress,
                            VkDeviceMemory* outMemory);
 
 bool ivkIsHostVisibleSingleHeapMemory(VkPhysicalDevice physDev);
@@ -391,6 +393,7 @@ VkResult ivkVmaCreateAllocator(VkPhysicalDevice physDev,
                                VkDevice device,
                                VkInstance instance,
                                uint32_t apiVersion,
+                               bool enableBufferDeviceAddress,
                                VmaAllocator* outVma);
 
 void ivkGlslangResource(glslang_resource_t* glslangResource,

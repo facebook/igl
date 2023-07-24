@@ -41,6 +41,9 @@ Result Buffer::create(const BufferDesc& desc) {
           ? VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT
           : 0;
 
+  const VkBufferUsageFlags optionalBDA =
+      ctx.config_.enableBufferDeviceAddress ? VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR : 0;
+
   if (desc_.type == 0) {
     return Result(Result::Code::InvalidOperation, "Invalid buffer type");
   }
@@ -52,18 +55,16 @@ Result Buffer::create(const BufferDesc& desc) {
     usageFlags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
   }
   if (desc_.type & BufferDesc::BufferTypeBits::Uniform) {
-    usageFlags |=
-        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
+    usageFlags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | optionalBDA;
   }
 
   if (desc_.type & BufferDesc::BufferTypeBits::Storage) {
-    usageFlags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                  VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
+    usageFlags |=
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | optionalBDA;
   }
 
   if (desc_.type & BufferDesc::BufferTypeBits::Indirect) {
-    usageFlags |=
-        VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
+    usageFlags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | optionalBDA;
   }
 
   const VkMemoryPropertyFlags memFlags = resourceStorageToVkMemoryPropertyFlags(desc_.storage);

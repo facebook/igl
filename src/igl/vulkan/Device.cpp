@@ -296,6 +296,11 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       extraExtensions += "#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require\n";
     }
 
+    if (ctx_->config_.enableBufferDeviceAddress) {
+      extraExtensions += "#extension GL_EXT_buffer_reference : require\n";
+      extraExtensions += "#extension GL_EXT_buffer_reference_uvec2 : require\n";
+    }
+
     // there's no header provided in the shader source, let's insert our own header
     if (vkStage == VK_SHADER_STAGE_VERTEX_BIT || vkStage == VK_SHADER_STAGE_COMPUTE_BIT) {
       sourcePatched += R"(
@@ -303,8 +308,6 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       )" + extraExtensions +
                        R"(
       #extension GL_EXT_nonuniform_qualifier : require
-      #extension GL_EXT_buffer_reference : require
-      #extension GL_EXT_buffer_reference_uvec2 : require
       )" + enhancedShaderDebuggingCode;
     }
     if (vkStage == VK_SHADER_STAGE_FRAGMENT_BIT) {
@@ -313,7 +316,6 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       )" + extraExtensions +
                        R"(
       #extension GL_EXT_nonuniform_qualifier : require
-      #extension GL_EXT_buffer_reference_uvec2 : require
 
       // everything - indexed by global texure/sampler id
       layout (set = 0, binding = 0) uniform texture2D kTextures2D[];

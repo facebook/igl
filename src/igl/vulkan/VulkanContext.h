@@ -72,6 +72,8 @@ struct VulkanContextConfig {
   bool enableValidation = true;
   bool enableGPUAssistedValidation = true;
   bool enableSynchronizationValidation = false;
+  bool enableBufferDeviceAddress = false;
+
   igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
 
   std::vector<CommandQueueType> userQueues;

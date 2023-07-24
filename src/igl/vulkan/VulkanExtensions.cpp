@@ -127,7 +127,6 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType, bool 
 #endif
 
   } else if (extensionType == ExtensionType::Device) {
-    IGL_VERIFY(enable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, ExtensionType::Device));
     enable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, ExtensionType::Device);
 #if defined(VK_KHR_driver_properties)
     enable(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME, ExtensionType::Device);

@@ -425,6 +425,10 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   for (size_t i = 0; i < numExtraDeviceExtensions; i++) {
     extensions_.enable(extraDeviceExtensions[i], VulkanExtensions::ExtensionType::Device);
   }
+  if (config_.enableBufferDeviceAddress) {
+    IGL_ASSERT(extensions_.enable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+                                  VulkanExtensions::ExtensionType::Device));
+  }
 
   VulkanQueuePool queuePool(vkPhysicalDevice_);
 
@@ -481,6 +485,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                       extensions_.allEnabled(VulkanExtensions::ExtensionType::Device).data(),
                       vkPhysicalDeviceMultiviewFeatures_.multiview,
                       vkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16,
+                      config_.enableBufferDeviceAddress,
                       &device));
   if (!config_.enableConcurrentVkDevicesSupport) {
     volkLoadDevice(device);
@@ -508,8 +513,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   // Create Vulkan Memory Allocator
   if (IGL_VULKAN_USE_VMA) {
-    VK_ASSERT_RETURN(ivkVmaCreateAllocator(
-        vkPhysicalDevice_, device_->getVkDevice(), vkInstance_, apiVersion, &pimpl_->vma_));
+    VK_ASSERT_RETURN(ivkVmaCreateAllocator(vkPhysicalDevice_,
+                                           device_->getVkDevice(),
+                                           vkInstance_,
+                                           apiVersion,
+                                           config_.enableBufferDeviceAddress,
+                                           &pimpl_->vma_));
   }
 
   // The staging device will use VMA to allocate a buffer, so this needs

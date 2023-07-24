@@ -63,8 +63,12 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
       VkMemoryRequirements requirements = {};
       vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
 
-      VK_ASSERT(ivkAllocateMemory(
-          ctx_.getVkPhysicalDevice(), device_, &requirements, memFlags, &vkMemory_));
+      VK_ASSERT(ivkAllocateMemory(ctx_.getVkPhysicalDevice(),
+                                  device_,
+                                  &requirements,
+                                  memFlags,
+                                  ctx.config_.enableBufferDeviceAddress,
+                                  &vkMemory_));
       VK_ASSERT(vkBindBufferMemory(device_, vkBuffer_, vkMemory_, 0));
     }
 
