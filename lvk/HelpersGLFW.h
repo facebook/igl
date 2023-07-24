@@ -28,12 +28,18 @@
 
 namespace lvk {
 
-static GLFWwindow* initWindow(const char* windowTitle, uint32_t& outWidth, uint32_t& outHeight, bool resizable = false) {
+/*
+ * width/height  > 0: window size in pixels
+ * width/height == 0: take the whole monitor work area
+ * width/height  < 0: take a percentage of the monitor work area, for example (-95, -90)
+ *   The actual values in pixels are returned in parameters.
+ */
+static GLFWwindow* initWindow(const char* windowTitle, int& outWidth, int& outHeight, bool resizable = false) {
   if (!glfwInit()) {
     return nullptr;
   }
 
-  const bool wantsWholeArea = !outWidth || !outHeight;
+  const bool wantsWholeArea = outWidth <= 0 || outHeight <= 0;
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   glfwWindowHint(GLFW_RESIZABLE, wantsWholeArea || !resizable ? GLFW_FALSE : GLFW_TRUE);
@@ -47,7 +53,25 @@ static GLFWwindow* initWindow(const char* windowTitle, uint32_t& outWidth, uint3
   int h = (int)outHeight;
 
   if (wantsWholeArea) {
-    glfwGetMonitorWorkarea(monitor, &x, &y, &w, &h);
+    int areaW = 0;
+    int areaH = 0;
+    glfwGetMonitorWorkarea(monitor, &x, &y, &areaW, &areaH);
+    auto getPercent = [](int value, int percent) {
+      assert(percent > 0 && percent <= 100);
+      return static_cast<int>(static_cast<float>(value) * static_cast<float>(percent) / 100.0f);
+    };
+    if (outWidth < 0) {
+      w = getPercent(areaW, -outWidth);
+      x = (areaW - w) / 2;
+    } else {
+      w = areaW;
+    }
+    if (outHeight < 0) {
+      h = getPercent(areaH, -outHeight);
+      y = (areaH - h) / 2;
+    } else {
+      h = areaH;
+    }
   }
 
   GLFWwindow* window = glfwCreateWindow(w, h, windowTitle, nullptr, nullptr);
