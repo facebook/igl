@@ -322,14 +322,6 @@ layout(set = 2, binding = 1, std140)
 uniform PerObject{
   UniformsPerObject perObject;
 };
-#else
-uniform MeshFrameUniforms {
-  UniformsPerFrame perFrame;
-};
-uniform MeshObjectUniforms{
-  UniformsPerObject perObject;
-};
-#endif
 
 void main() {
   mat4 proj = perFrame.proj;
