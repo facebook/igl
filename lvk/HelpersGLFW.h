@@ -28,7 +28,7 @@
 
 namespace lvk {
 
-static GLFWwindow* initWindow(const char* windowTitle, uint32_t& outWidth, uint32_t& outHeight) {
+static GLFWwindow* initWindow(const char* windowTitle, uint32_t& outWidth, uint32_t& outHeight, bool resizable = false) {
   if (!glfwInit()) {
     return nullptr;
   }
@@ -36,7 +36,7 @@ static GLFWwindow* initWindow(const char* windowTitle, uint32_t& outWidth, uint3
   const bool wantsWholeArea = !outWidth || !outHeight;
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  glfwWindowHint(GLFW_RESIZABLE, wantsWholeArea ? GLFW_FALSE : GLFW_TRUE);
+  glfwWindowHint(GLFW_RESIZABLE, wantsWholeArea || !resizable ? GLFW_FALSE : GLFW_TRUE);
 
   // render full screen without overlapping taskbar
   GLFWmonitor* monitor = glfwGetPrimaryMonitor();
