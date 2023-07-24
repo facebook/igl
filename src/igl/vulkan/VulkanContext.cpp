@@ -138,6 +138,33 @@ bool validateImageLimits(VkImageType imageType,
   return true;
 }
 
+void getInstanceExtensionProps(std::vector<VkExtensionProperties>& props,
+                               const char* validationLayer = nullptr) {
+  uint32_t numExtensions = 0;
+  vkEnumerateInstanceExtensionProperties(validationLayer, &numExtensions, nullptr);
+  std::vector<VkExtensionProperties> p(numExtensions);
+  vkEnumerateInstanceExtensionProperties(validationLayer, &numExtensions, p.data());
+  props.insert(props.end(), p.begin(), p.end());
+}
+
+void getDeviceExtensionProps(VkPhysicalDevice dev,
+                             std::vector<VkExtensionProperties>& props,
+                             const char* validationLayer = nullptr) {
+  uint32_t numExtensions = 0;
+  vkEnumerateDeviceExtensionProperties(dev, validationLayer, &numExtensions, nullptr);
+  std::vector<VkExtensionProperties> p(numExtensions);
+  vkEnumerateDeviceExtensionProperties(dev, validationLayer, &numExtensions, p.data());
+  props.insert(props.end(), p.begin(), p.end());
+}
+
+bool hasExtension(const char* ext, const std::vector<VkExtensionProperties>& props) {
+  for (const VkExtensionProperties& p : props) {
+    if (strcmp(ext, p.extensionName) == 0)
+      return true;
+  }
+  return false;
+}
+
 } // namespace
 
 namespace lvk {
@@ -393,7 +420,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 
   useStaging_ = !ivkIsHostVisibleSingleHeapMemory(vkPhysicalDevice_);
 
-  vkGetPhysicalDeviceFeatures2(vkPhysicalDevice_, &vkPhysicalDeviceFeatures2_);
+  vkGetPhysicalDeviceFeatures2(vkPhysicalDevice_, &vkFeatures10_);
   vkGetPhysicalDeviceProperties2(vkPhysicalDevice_, &vkPhysicalDeviceProperties2_);
 
   const uint32_t apiVersion = vkPhysicalDeviceProperties2_.properties.apiVersion;
@@ -464,12 +491,13 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 #endif
   };
 
-  VkPhysicalDeviceFeatures deviceFeatures = {
+  VkPhysicalDeviceFeatures deviceFeatures10 = {
       .geometryShader = VK_TRUE,
       .multiDrawIndirect = VK_TRUE,
       .drawIndirectFirstInstance = VK_TRUE,
       .depthBiasClamp = VK_TRUE,
       .fillModeNonSolid = VK_TRUE,
+      .textureCompressionBC = VK_TRUE,
       .shaderInt16 = VK_TRUE,
   };
   VkPhysicalDeviceVulkan11Features deviceFeatures11 = {
@@ -511,15 +539,192 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
       .ppEnabledLayerNames = kDefaultValidationLayers,
       .enabledExtensionCount = (uint32_t)LVK_ARRAY_NUM_ELEMENTS(deviceExtensionNames),
       .ppEnabledExtensionNames = deviceExtensionNames,
-      .pEnabledFeatures = &deviceFeatures,
+      .pEnabledFeatures = &deviceFeatures10,
   };
+
+  // check extensions
+  {
+    std::vector<VkExtensionProperties> props;
+    getDeviceExtensionProps(vkPhysicalDevice_, props);
+    for (const char* layer : kDefaultValidationLayers) {
+      getDeviceExtensionProps(vkPhysicalDevice_, props, layer);
+    }
+    std::string missingExtensions;
+    for (const char* ext : deviceExtensionNames) {
+      if (!hasExtension(ext, props))
+        missingExtensions += "\n   " + std::string(ext);
+    }
+    if (!missingExtensions.empty()) {
+      MINILOG_LOG_PROC(
+          minilog::FatalError, "Missing Vulkan device extensions: %s\n", missingExtensions.c_str());
+      assert(false);
+      return Result(Result::Code::RuntimeError);
+    }
+  }
+
+  // check features
+  {
+    std::string missingFeatures;
+#define CHECK_VULKAN_FEATURE(reqFeatures, availFeatures, feature, version)     \
+  if ((reqFeatures.feature == VK_TRUE) && (availFeatures.feature == VK_FALSE)) \
+    missingFeatures.append("\n   " version " ." #feature);
+#define CHECK_FEATURE_1_0(feature) \
+  CHECK_VULKAN_FEATURE(deviceFeatures10, vkFeatures10_.features, feature, "1.0 ");
+    CHECK_FEATURE_1_0(robustBufferAccess);
+    CHECK_FEATURE_1_0(fullDrawIndexUint32);
+    CHECK_FEATURE_1_0(imageCubeArray);
+    CHECK_FEATURE_1_0(independentBlend);
+    CHECK_FEATURE_1_0(geometryShader);
+    CHECK_FEATURE_1_0(tessellationShader);
+    CHECK_FEATURE_1_0(sampleRateShading);
+    CHECK_FEATURE_1_0(dualSrcBlend);
+    CHECK_FEATURE_1_0(logicOp);
+    CHECK_FEATURE_1_0(multiDrawIndirect);
+    CHECK_FEATURE_1_0(drawIndirectFirstInstance);
+    CHECK_FEATURE_1_0(depthClamp);
+    CHECK_FEATURE_1_0(depthBiasClamp);
+    CHECK_FEATURE_1_0(fillModeNonSolid);
+    CHECK_FEATURE_1_0(depthBounds);
+    CHECK_FEATURE_1_0(wideLines);
+    CHECK_FEATURE_1_0(largePoints);
+    CHECK_FEATURE_1_0(alphaToOne);
+    CHECK_FEATURE_1_0(multiViewport);
+    CHECK_FEATURE_1_0(samplerAnisotropy);
+    CHECK_FEATURE_1_0(textureCompressionETC2);
+    CHECK_FEATURE_1_0(textureCompressionASTC_LDR);
+    CHECK_FEATURE_1_0(textureCompressionBC);
+    CHECK_FEATURE_1_0(occlusionQueryPrecise);
+    CHECK_FEATURE_1_0(pipelineStatisticsQuery);
+    CHECK_FEATURE_1_0(vertexPipelineStoresAndAtomics);
+    CHECK_FEATURE_1_0(fragmentStoresAndAtomics);
+    CHECK_FEATURE_1_0(shaderTessellationAndGeometryPointSize);
+    CHECK_FEATURE_1_0(shaderImageGatherExtended);
+    CHECK_FEATURE_1_0(shaderStorageImageExtendedFormats);
+    CHECK_FEATURE_1_0(shaderStorageImageMultisample);
+    CHECK_FEATURE_1_0(shaderStorageImageReadWithoutFormat);
+    CHECK_FEATURE_1_0(shaderStorageImageWriteWithoutFormat);
+    CHECK_FEATURE_1_0(shaderUniformBufferArrayDynamicIndexing);
+    CHECK_FEATURE_1_0(shaderSampledImageArrayDynamicIndexing);
+    CHECK_FEATURE_1_0(shaderStorageBufferArrayDynamicIndexing);
+    CHECK_FEATURE_1_0(shaderStorageImageArrayDynamicIndexing);
+    CHECK_FEATURE_1_0(shaderClipDistance);
+    CHECK_FEATURE_1_0(shaderCullDistance);
+    CHECK_FEATURE_1_0(shaderFloat64);
+    CHECK_FEATURE_1_0(shaderInt64);
+    CHECK_FEATURE_1_0(shaderInt16);
+    CHECK_FEATURE_1_0(shaderResourceResidency);
+    CHECK_FEATURE_1_0(shaderResourceMinLod);
+    CHECK_FEATURE_1_0(sparseBinding);
+    CHECK_FEATURE_1_0(sparseResidencyBuffer);
+    CHECK_FEATURE_1_0(sparseResidencyImage2D);
+    CHECK_FEATURE_1_0(sparseResidencyImage3D);
+    CHECK_FEATURE_1_0(sparseResidency2Samples);
+    CHECK_FEATURE_1_0(sparseResidency4Samples);
+    CHECK_FEATURE_1_0(sparseResidency8Samples);
+    CHECK_FEATURE_1_0(sparseResidency16Samples);
+    CHECK_FEATURE_1_0(sparseResidencyAliased);
+    CHECK_FEATURE_1_0(variableMultisampleRate);
+    CHECK_FEATURE_1_0(inheritedQueries);
+#undef CHECK_FEATURE_1_0
+#define CHECK_FEATURE_1_1(feature) \
+  CHECK_VULKAN_FEATURE(deviceFeatures11, vkFeatures11_, feature, "1.1 ");
+    CHECK_FEATURE_1_1(storageBuffer16BitAccess);
+    CHECK_FEATURE_1_1(uniformAndStorageBuffer16BitAccess);
+    CHECK_FEATURE_1_1(storagePushConstant16);
+    CHECK_FEATURE_1_1(storageInputOutput16);
+    CHECK_FEATURE_1_1(multiview);
+    CHECK_FEATURE_1_1(multiviewGeometryShader);
+    CHECK_FEATURE_1_1(multiviewTessellationShader);
+    CHECK_FEATURE_1_1(variablePointersStorageBuffer);
+    CHECK_FEATURE_1_1(variablePointers);
+    CHECK_FEATURE_1_1(protectedMemory);
+    CHECK_FEATURE_1_1(samplerYcbcrConversion);
+    CHECK_FEATURE_1_1(shaderDrawParameters);
+#undef CHECK_FEATURE_1_1
+#define CHECK_FEATURE_1_2(feature) \
+  CHECK_VULKAN_FEATURE(deviceFeatures12, vkFeatures12_, feature, "1.2 ");
+    CHECK_FEATURE_1_2(samplerMirrorClampToEdge);
+    CHECK_FEATURE_1_2(drawIndirectCount);
+    CHECK_FEATURE_1_2(storageBuffer8BitAccess);
+    CHECK_FEATURE_1_2(uniformAndStorageBuffer8BitAccess);
+    CHECK_FEATURE_1_2(storagePushConstant8);
+    CHECK_FEATURE_1_2(shaderBufferInt64Atomics);
+    CHECK_FEATURE_1_2(shaderSharedInt64Atomics);
+    CHECK_FEATURE_1_2(shaderFloat16);
+    CHECK_FEATURE_1_2(shaderInt8);
+    CHECK_FEATURE_1_2(descriptorIndexing);
+    CHECK_FEATURE_1_2(shaderInputAttachmentArrayDynamicIndexing);
+    CHECK_FEATURE_1_2(shaderUniformTexelBufferArrayDynamicIndexing);
+    CHECK_FEATURE_1_2(shaderStorageTexelBufferArrayDynamicIndexing);
+    CHECK_FEATURE_1_2(shaderUniformBufferArrayNonUniformIndexing);
+    CHECK_FEATURE_1_2(shaderSampledImageArrayNonUniformIndexing);
+    CHECK_FEATURE_1_2(shaderStorageBufferArrayNonUniformIndexing);
+    CHECK_FEATURE_1_2(shaderStorageImageArrayNonUniformIndexing);
+    CHECK_FEATURE_1_2(shaderInputAttachmentArrayNonUniformIndexing);
+    CHECK_FEATURE_1_2(shaderUniformTexelBufferArrayNonUniformIndexing);
+    CHECK_FEATURE_1_2(shaderStorageTexelBufferArrayNonUniformIndexing);
+    CHECK_FEATURE_1_2(descriptorBindingUniformBufferUpdateAfterBind);
+    CHECK_FEATURE_1_2(descriptorBindingSampledImageUpdateAfterBind);
+    CHECK_FEATURE_1_2(descriptorBindingStorageImageUpdateAfterBind);
+    CHECK_FEATURE_1_2(descriptorBindingStorageBufferUpdateAfterBind);
+    CHECK_FEATURE_1_2(descriptorBindingUniformTexelBufferUpdateAfterBind);
+    CHECK_FEATURE_1_2(descriptorBindingStorageTexelBufferUpdateAfterBind);
+    CHECK_FEATURE_1_2(descriptorBindingUpdateUnusedWhilePending);
+    CHECK_FEATURE_1_2(descriptorBindingPartiallyBound);
+    CHECK_FEATURE_1_2(descriptorBindingVariableDescriptorCount);
+    CHECK_FEATURE_1_2(runtimeDescriptorArray);
+    CHECK_FEATURE_1_2(samplerFilterMinmax);
+    CHECK_FEATURE_1_2(scalarBlockLayout);
+    CHECK_FEATURE_1_2(imagelessFramebuffer);
+    CHECK_FEATURE_1_2(uniformBufferStandardLayout);
+    CHECK_FEATURE_1_2(shaderSubgroupExtendedTypes);
+    CHECK_FEATURE_1_2(separateDepthStencilLayouts);
+    CHECK_FEATURE_1_2(hostQueryReset);
+    CHECK_FEATURE_1_2(timelineSemaphore);
+    CHECK_FEATURE_1_2(bufferDeviceAddress);
+    CHECK_FEATURE_1_2(bufferDeviceAddressCaptureReplay);
+    CHECK_FEATURE_1_2(bufferDeviceAddressMultiDevice);
+    CHECK_FEATURE_1_2(vulkanMemoryModel);
+    CHECK_FEATURE_1_2(vulkanMemoryModelDeviceScope);
+    CHECK_FEATURE_1_2(vulkanMemoryModelAvailabilityVisibilityChains);
+    CHECK_FEATURE_1_2(shaderOutputViewportIndex);
+    CHECK_FEATURE_1_2(shaderOutputLayer);
+    CHECK_FEATURE_1_2(subgroupBroadcastDynamicId);
+#undef CHECK_FEATURE_1_2
+#define CHECK_FEATURE_1_3(feature) \
+  CHECK_VULKAN_FEATURE(deviceFeatures13, vkFeatures13_, feature, "1.3 ");
+    CHECK_FEATURE_1_3(robustImageAccess);
+    CHECK_FEATURE_1_3(inlineUniformBlock);
+    CHECK_FEATURE_1_3(descriptorBindingInlineUniformBlockUpdateAfterBind);
+    CHECK_FEATURE_1_3(pipelineCreationCacheControl);
+    CHECK_FEATURE_1_3(privateData);
+    CHECK_FEATURE_1_3(shaderDemoteToHelperInvocation);
+    CHECK_FEATURE_1_3(shaderTerminateInvocation);
+    CHECK_FEATURE_1_3(subgroupSizeControl);
+    CHECK_FEATURE_1_3(computeFullSubgroups);
+    CHECK_FEATURE_1_3(synchronization2);
+    CHECK_FEATURE_1_3(textureCompressionASTC_HDR);
+    CHECK_FEATURE_1_3(shaderZeroInitializeWorkgroupMemory);
+    CHECK_FEATURE_1_3(dynamicRendering);
+    CHECK_FEATURE_1_3(shaderIntegerDotProduct);
+    CHECK_FEATURE_1_3(maintenance4);
+#undef CHECK_FEATURE_1_3
+    if (!missingFeatures.empty()) {
+      MINILOG_LOG_PROC(
+          minilog::FatalError, "Missing Vulkan features: %s\n", missingFeatures.c_str());
+      assert(false);
+      return Result(Result::Code::RuntimeError);
+    }
+  }
 
   VK_ASSERT_RETURN(vkCreateDevice(vkPhysicalDevice_, &ci, nullptr, &vkDevice_));
 
   volkLoadDevice(vkDevice_);
 
-  vkGetDeviceQueue(vkDevice_, deviceQueues_.graphicsQueueFamilyIndex, 0, &deviceQueues_.graphicsQueue);
-  vkGetDeviceQueue(vkDevice_, deviceQueues_.computeQueueFamilyIndex, 0, &deviceQueues_.computeQueue);
+  vkGetDeviceQueue(
+      vkDevice_, deviceQueues_.graphicsQueueFamilyIndex, 0, &deviceQueues_.graphicsQueue);
+  vkGetDeviceQueue(
+      vkDevice_, deviceQueues_.computeQueueFamilyIndex, 0, &deviceQueues_.computeQueue);
 
   VK_ASSERT(ivkSetDebugObjectName(
       vkDevice_, VK_OBJECT_TYPE_DEVICE, (uint64_t)vkDevice_, "Device: VulkanContext::vkDevice_"));
@@ -539,14 +744,11 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     vkCreatePipelineCache(vkDevice_, &ci, nullptr, &pipelineCache_);
   }
 
-  // Create Vulkan Memory Allocator
   if (IGL_VULKAN_USE_VMA) {
     pimpl_->vma_ = lvk::createVmaAllocator(vkPhysicalDevice_, vkDevice_, vkInstance_, apiVersion);
     IGL_ASSERT(pimpl_->vma_ != VK_NULL_HANDLE);
   }
 
-  // The staging device will use VMA to allocate a buffer, so this needs
-  // to happen after VMA has been initialized.
   stagingDevice_ = std::make_unique<lvk::vulkan::VulkanStagingDevice>(*this);
 
   // default texture
@@ -609,20 +811,19 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
                                                               0.0f),
                                       "Sampler: default");
 
-  if (!IGL_VERIFY(
-          config_.maxSamplers <=
-          vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers)) {
+  if (!IGL_VERIFY(config_.maxSamplers <=
+                  vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSamplers)) {
     LLOGW("Max Samplers exceeded %u (max %u)",
           config_.maxSamplers,
-          vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers);
+          vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSamplers);
   }
 
-  if (!IGL_VERIFY(config_.maxTextures <= vkPhysicalDeviceDescriptorIndexingProperties_
-                                             .maxDescriptorSetUpdateAfterBindSampledImages)) {
-    LLOGW(
-        "Max Textures exceeded: %u (max %u)",
-        config_.maxTextures,
-        vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSampledImages);
+  if (!IGL_VERIFY(
+          config_.maxTextures <=
+          vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSampledImages)) {
+    LLOGW("Max Textures exceeded: %u (max %u)",
+          config_.maxTextures,
+          vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSampledImages);
   }
 
   const VkPhysicalDeviceLimits& limits = getVkPhysicalDeviceProperties().limits;
@@ -652,7 +853,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     // create default descriptor pool and allocate 1 descriptor set
     const uint32_t numSets = 1;
     IGL_ASSERT(numSets > 0);
-    const VkDescriptorPoolSize poolSizes[numBindings] {
+    const VkDescriptorPoolSize poolSizes[numBindings]{
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, numSets * config_.maxTextures},
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, numSets * config_.maxSamplers},
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, numSets * config_.maxTextures},
@@ -684,7 +885,8 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
         .offset = 0,
         .size = kPushConstantsSize,
     };
-    const VkPipelineLayoutCreateInfo ci = ivkGetPipelineLayoutCreateInfo(1, &vkDSLBindless_, &range);
+    const VkPipelineLayoutCreateInfo ci =
+        ivkGetPipelineLayoutCreateInfo(1, &vkDSLBindless_, &range);
 
     VK_ASSERT(vkCreatePipelineLayout(vkDevice_, &ci, nullptr, &vkPipelineLayout_));
     VK_ASSERT(ivkSetDebugObjectName(vkDevice_,

@@ -108,7 +108,7 @@ class VulkanContext final {
   }
 
   const VkPhysicalDeviceFeatures2& getVkPhysicalDeviceFeatures2() const {
-    return vkPhysicalDeviceFeatures2_;
+    return vkFeatures10_;
   }
 
   VkFormat getClosestDepthStencilFormat(lvk::TextureFormat desiredFormat) const;
@@ -160,28 +160,29 @@ class VulkanContext final {
   VkPhysicalDevice vkPhysicalDevice_ = VK_NULL_HANDLE;
   VkDevice vkDevice_ = VK_NULL_HANDLE;
 
-  // Provided by Vulkan 1.2
-  VkPhysicalDeviceDescriptorIndexingProperties vkPhysicalDeviceDescriptorIndexingProperties_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES,
-      nullptr};
-  // Provided by Vulkan 1.2
+  VkPhysicalDeviceVulkan13Features vkFeatures13_ = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };
+  VkPhysicalDeviceVulkan12Features vkFeatures12_ = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, .pNext = &vkFeatures13_ };
+  VkPhysicalDeviceVulkan11Features vkFeatures11_ = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &vkFeatures12_ };
+  VkPhysicalDeviceFeatures2 vkFeatures10_ = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &vkFeatures11_ };
+
+  // provided by Vulkan 1.2
   VkPhysicalDeviceDriverProperties vkPhysicalDeviceDriverProperties_ = {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES,
-      &vkPhysicalDeviceDescriptorIndexingProperties_};
+      nullptr};
+  VkPhysicalDeviceVulkan12Properties vkPhysicalDeviceVulkan12Properties_ = {
+      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES,
+      &vkPhysicalDeviceDriverProperties_,
+  };
+  // provided by Vulkan 1.1
+  VkPhysicalDeviceProperties2 vkPhysicalDeviceProperties2_ = {
+      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+      &vkPhysicalDeviceVulkan12Properties_,
+      VkPhysicalDeviceProperties{}};
 
   std::vector<VkFormat> deviceDepthFormats_;
   std::vector<VkSurfaceFormatKHR> deviceSurfaceFormats_;
   VkSurfaceCapabilitiesKHR deviceSurfaceCaps_;
   std::vector<VkPresentModeKHR> devicePresentModes_;
-
-  // Provided by Vulkan 1.1
-  VkPhysicalDeviceProperties2 vkPhysicalDeviceProperties2_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
-      &vkPhysicalDeviceDriverProperties_,
-      VkPhysicalDeviceProperties{}};
-  VkPhysicalDeviceFeatures2 vkPhysicalDeviceFeatures2_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-      nullptr};
 
  public:
   DeviceQueues deviceQueues_;
