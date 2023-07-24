@@ -178,9 +178,9 @@ GLenum Texture::toGLTarget(TextureType type, size_t samples) const {
 // can convert GL Texture format into IGL Texture Format
 // This method assumes no swizzling is required (eg. GL_RED results in R_UNorm8 but it could be
 // A_UNorm8 with swizzling)
-TextureFormat Texture::toTextureFormat(GLuint glTexInternalFormat,
-                                       GLuint glTexFormat,
-                                       GLuint glTexType) {
+TextureFormat Texture::glInternalFormatToTextureFormat(GLuint glTexInternalFormat,
+                                                       GLuint glTexFormat,
+                                                       GLuint glTexType) {
   switch (glTexInternalFormat) {
   case GL_COMPRESSED_RGBA_ASTC_4x4_KHR:
     return TextureFormat::RGBA_ASTC_4x4;

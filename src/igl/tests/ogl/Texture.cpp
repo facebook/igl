@@ -264,7 +264,7 @@ TEST_F(TextureOGLTest, TextureFormats) {
   };
 
   for (auto data : texFormats) {
-    TextureFormat output = igl::opengl::Texture::toTextureFormat(
+    TextureFormat const output = igl::opengl::Texture::glInternalFormatToTextureFormat(
         data.glTexInternalFormat, data.glTexFormat, data.glTexType);
     ASSERT_EQ(output, data.texFormatOutput)
         << "IGL Format: "
