@@ -40,8 +40,8 @@ void main() {
 )";
 
 GLFWwindow* window_ = nullptr;
-uint32_t width_ = 800;
-uint32_t height_ = 600;
+int width_ = 800;
+int height_ = 600;
 FramesPerSecondCounter fps_;
 
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Triangle_;

@@ -96,8 +96,8 @@ using glm::vec4;
 vec3 axis_[kNumCubes];
 
 GLFWwindow* window_ = nullptr;
-uint32_t width_ = 1280;
-uint32_t height_ = 1024;
+int width_ = 1280;
+int height_ = 1024;
 FramesPerSecondCounter fps_;
 
 constexpr uint32_t kNumBufferedFrames = 3;

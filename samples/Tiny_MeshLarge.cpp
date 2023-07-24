@@ -407,8 +407,8 @@ using glm::vec3;
 using glm::vec4;
 
 GLFWwindow* window_ = nullptr;
-uint32_t width_ = 0;
-uint32_t height_ = 0;
+int width_ = 0;
+int height_ = 0;
 FramesPerSecondCounter fps_;
 
 constexpr uint32_t kNumBufferedFrames = 3;
