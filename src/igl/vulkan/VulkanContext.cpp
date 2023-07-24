@@ -498,7 +498,6 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
       .depthBiasClamp = VK_TRUE,
       .fillModeNonSolid = VK_TRUE,
       .textureCompressionBC = VK_TRUE,
-      .shaderInt16 = VK_TRUE,
   };
   VkPhysicalDeviceVulkan11Features deviceFeatures11 = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
@@ -508,7 +507,6 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
   VkPhysicalDeviceVulkan12Features deviceFeatures12 = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
       .pNext = &deviceFeatures11,
-      .shaderFloat16 = VK_TRUE,
       .descriptorIndexing = VK_TRUE,
       .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
       .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
@@ -520,7 +518,6 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
       .uniformBufferStandardLayout = VK_TRUE,
       .timelineSemaphore = VK_TRUE,
       .bufferDeviceAddress = VK_TRUE,
-      .bufferDeviceAddressCaptureReplay = VK_TRUE,
   };
   VkPhysicalDeviceVulkan13Features deviceFeatures13 = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
