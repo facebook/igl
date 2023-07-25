@@ -22,7 +22,7 @@
       </div>
       <div class="flex flex-col justify-end w-96 h-full form-control ml-8">
         <label for="resize-canvas" class="label cursor-pointer justify-start">
-          <input id="resize-canvas" type="checkbox" class="checkbox checkbox-primary" />
+          <input id="resize-canvas" type="checkbox" class="checkbox checkbox-primary" disabled />
           <span class="label-text ml-4">Resize Canvas</span>
         </label>
         <label for="hide-pointer" class="label cursor-pointer justify-start">
@@ -31,8 +31,7 @@
           <span class="label-text ml-4">Lock/Hide Mouse Pointer</span>
         </label>
         <label for="full-screen" class="label cursor-pointer justify-start">
-          <input id="full-screen" type="checkbox" class="checkbox checkbox-primary" />
-          <span class="label-text ml-4">Full Screen</span>
+          <button class="btn btn-primary btn-outline" onclick="handleFullscreen(this)">Enter fullscreen</button>
         </label>
         <label for="output" class="block mt-4 text-sm font-medium text-gray-900 dark:text-white">Output</label>
         <textarea id="output" rows="8" readonly class="textarea textarea-primary rounded-md mt-2 text-xs resize-none"
@@ -44,6 +43,7 @@
   <script type='text/javascript'>
     var canvasElement = document.getElementById('canvas-container');
     var spinnerElement = document.getElementById('spinner-container');
+    var hideMousePointerElement = document.getElementById('hide-pointer');
     var outputElement = document.getElementById('output');
 
     function output(text) {
@@ -101,6 +101,14 @@
       canvasElement.classList.add("hidden");
     };
 
+    window.addEventListener("fullscreenchange", (event) => {
+      if (document.fullscreenElement) {
+        Module.print("Enter fullscreen");
+      } else {
+        Module.print("Exit fullscreen");
+      }
+    });
+
     function handleHideMousePointer(checkElement) {
       Module.print('Hide Mouse Pointer: ' + checkElement.checked);
       if (checkElement.checked) {
@@ -108,6 +116,10 @@
       } else {
         canvasElement.classList.remove("cursor-none");
       }
+    }
+
+    function handleFullscreen() {
+      canvasElement.requestFullscreen();
     }
   </script>
   {{{ SCRIPT }}}
