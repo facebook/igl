@@ -38,10 +38,7 @@ VulkanSampler::~VulkanSampler() {
 }
 
 VulkanSampler::VulkanSampler(VulkanSampler&& other) :
-  ctx_(other.ctx_),
-  device_(other.device_),
-  vkSampler_(other.vkSampler_),
-  samplerId_(other.samplerId_) {
+  ctx_(other.ctx_), device_(other.device_), vkSampler_(other.vkSampler_) {
   other.ctx_ = nullptr;
 }
 
@@ -49,7 +46,6 @@ VulkanSampler& VulkanSampler::operator=(VulkanSampler&& other) {
   std::swap(ctx_, other.ctx_);
   std::swap(device_, other.device_);
   std::swap(vkSampler_, other.vkSampler_);
-  std::swap(samplerId_, other.samplerId_);
   return *this;
 }
 

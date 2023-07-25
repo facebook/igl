@@ -37,12 +37,6 @@ class VulkanSampler final {
   VulkanContext* ctx_ = nullptr;
   VkDevice device_ = VK_NULL_HANDLE;
   VkSampler vkSampler_ = VK_NULL_HANDLE;
-  /**
-   * @brief The index into VulkanContext::samplers_. This index is intended to be used with bindless
-   * rendering. Its value is set by the context when the resource is created and added to the vector
-   * of samplers maintained by the VulkanContext.
-   */
-  uint32_t samplerId_ = 0;
 };
 
 } // namespace vulkan

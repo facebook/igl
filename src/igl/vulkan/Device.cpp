@@ -245,9 +245,7 @@ void Device::destroy(SamplerHandle handle) {
 }
 
 uint32_t Device::gpuId(SamplerHandle handle) const {
-  VulkanSampler* sampler = ctx_->samplersPool_.get(handle);
-
-  return sampler ? sampler->samplerId_ : 0;
+  return handle.index();
 }
 
 lvk::Holder<lvk::ShaderModuleHandle> Device::createShaderModule(const ShaderModuleDesc& desc, Result* outResult) {

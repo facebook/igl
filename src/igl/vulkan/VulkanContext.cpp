@@ -1157,8 +1157,6 @@ SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
 
   IGL_ASSERT(samplersPool_.numObjects() <= config_.maxSamplers);
 
-  samplersPool_.get(handle)->samplerId_ = handle.index();
-
   awaitingCreation_ = true;
 
   return handle;
