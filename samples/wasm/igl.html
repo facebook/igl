@@ -11,18 +11,18 @@
 
 <body>
   <div class="flex justify-center items-center h-screen">
-    <div class="flex justify-center items-center h-[768px]">
+    <div class="flex justify-center items-center">
       <div id="spinner-container"
-        class="flex flex-col w-[768px] h-full  justify-center items-center border-2 rounded-md">
+        class="flex flex-col w-[768px] h-[768px] justify-center items-center border-2 rounded-md">
         <span class="loading loading-ring loading-lg"></span>
         <h5 class="text-xl font-medium leading-tight mt-2">Loading</h5>
       </div>
-      <div id="canvas-container" class="hidden flex flex-col w-[768px] h-full justify-center items-center">
+      <div id="canvas-container" class="hidden flex flex-col justify-center items-center">
         <canvas id="canvas" class="w-[768px] h-[768px]" oncontextmenu="event.preventDefault()" tabindex=-1 />
       </div>
-      <div class="flex flex-col justify-end w-96 h-full form-control ml-8">
+      <div class="flex flex-col justify-end w-96 h-[768px] form-control ml-8">
         <label for="resize-canvas" class="label cursor-pointer justify-start">
-          <input id="resize-canvas" type="checkbox" class="checkbox checkbox-primary" disabled />
+          <input id="resize-canvas" type="checkbox" class="checkbox checkbox-primary" />
           <span class="label-text ml-4">Resize Canvas</span>
         </label>
         <label for="hide-pointer" class="label cursor-pointer justify-start">
@@ -41,7 +41,9 @@
   </div>
 
   <script type='text/javascript'>
-    var canvasElement = document.getElementById('canvas-container');
+    var canvasContainerElement = document.getElementById('canvas-container');
+    var canvasElement = document.getElementById('canvas');
+    var resizeCanvasCheckbox = document.getElementById('resize-canvas');
     var spinnerElement = document.getElementById('spinner-container');
     var hideMousePointerElement = document.getElementById('hide-pointer');
     var outputElement = document.getElementById('output');
@@ -72,7 +74,7 @@
       })(),
       onRuntimeInitialized: function () {
         output("WASM runtime has been initialized.");
-        canvasElement.classList.remove("hidden");
+        canvasContainerElement.classList.remove("hidden");
         spinnerElement.classList.add("hidden");
       },
       canvas: (() => {
@@ -98,28 +100,46 @@
     window.onerror = () => {
       Module.print('Exception thrown, see JavaScript console');
       spinnerElement.classList.add("hidden");
-      canvasElement.classList.add("hidden");
+      canvasContainerElement.classList.add("hidden");
     };
 
     window.addEventListener("fullscreenchange", (event) => {
+      if (!resizeCanvasCheckbox.checked) {
+        return;
+      }
+
+      let classNamesToRemove = [];
+      canvasElement.classList.forEach((value, key, listObj) => {
+        if (value.match(/[w|h]-[[0-9]+px]/)) {
+          classNamesToRemove.push(value);
+        }
+      });
+      for (let className of classNamesToRemove) {
+        canvasElement.classList.remove(className);
+      }
+
       if (document.fullscreenElement) {
-        Module.print("Enter fullscreen");
+        Module.print(`Enter fullscreen width=${window.screen.width} height=${window.screen.height}`);
+        canvasElement.classList.add(`w-[${window.screen.width}px]`);
+        canvasElement.classList.add(`h-[${window.screen.height}px]`);
       } else {
         Module.print("Exit fullscreen");
+        canvasElement.classList.add("w-[768px]");
+        canvasElement.classList.add("h-[768px]");
       }
     });
 
     function handleHideMousePointer(checkElement) {
       Module.print('Hide Mouse Pointer: ' + checkElement.checked);
       if (checkElement.checked) {
-        canvasElement.classList.add("cursor-none");
+        canvasContainerElement.classList.add("cursor-none");
       } else {
-        canvasElement.classList.remove("cursor-none");
+        canvasContainerElement.classList.remove("cursor-none");
       }
     }
 
     function handleFullscreen() {
-      canvasElement.requestFullscreen();
+      canvasContainerElement.requestFullscreen();
     }
   </script>
   {{{ SCRIPT }}}
