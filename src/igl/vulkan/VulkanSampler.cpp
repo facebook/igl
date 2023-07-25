@@ -14,7 +14,7 @@ namespace lvk {
 
 namespace vulkan {
 
-VulkanSampler::VulkanSampler(const VulkanContext& ctx,
+VulkanSampler::VulkanSampler(VulkanContext* ctx,
                              VkDevice device,
                              const VkSamplerCreateInfo& ci,
                              const char* debugName) :
@@ -29,8 +29,28 @@ VulkanSampler::VulkanSampler(const VulkanContext& ctx,
 VulkanSampler::~VulkanSampler() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
-  ctx_.deferredTask(std::packaged_task<void()>(
+  if (!ctx_) {
+    return;
+  }
+
+  ctx_->deferredTask(std::packaged_task<void()>(
       [device = device_, sampler = vkSampler_]() { vkDestroySampler(device, sampler, nullptr); }));
+}
+
+VulkanSampler::VulkanSampler(VulkanSampler&& other) :
+  ctx_(other.ctx_),
+  device_(other.device_),
+  vkSampler_(other.vkSampler_),
+  samplerId_(other.samplerId_) {
+  other.ctx_ = nullptr;
+}
+
+VulkanSampler& VulkanSampler::operator=(VulkanSampler&& other) {
+  std::swap(ctx_, other.ctx_);
+  std::swap(device_, other.device_);
+  std::swap(vkSampler_, other.vkSampler_);
+  std::swap(samplerId_, other.samplerId_);
+  return *this;
 }
 
 } // namespace vulkan

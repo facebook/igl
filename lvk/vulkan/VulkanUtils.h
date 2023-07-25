@@ -18,6 +18,7 @@
 #include <volk.h>
 #include <vk_mem_alloc.h>
 #include <glslang/Include/glslang_c_interface.h>
+#include <lvk/LVK.h>
 
 namespace lvk {
 
@@ -30,5 +31,8 @@ VmaAllocator createVmaAllocator(VkPhysicalDevice physDev,
 uint32_t findQueueFamilyIndex(VkPhysicalDevice physDev, VkQueueFlags flags);
 
 glslang_resource_t getGlslangResource(const VkPhysicalDeviceLimits& limits);
+
+VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const lvk::SamplerStateDesc& desc,
+                                                          const VkPhysicalDeviceLimits& limits);
 
 } // namespace lvk

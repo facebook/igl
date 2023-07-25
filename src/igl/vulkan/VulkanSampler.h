@@ -14,19 +14,10 @@ namespace vulkan {
 
 class VulkanContext;
 
-/**
- * @brief Encapsulates a handle to a VkSampler and VkDevice used to create the resource. The class
- * also stores the sampler id, which is used for bindless rendering (see the ResourcesBinder and
- * VulkanContext classes for more information)
- */
 class VulkanSampler final {
  public:
-  /**
-   * @brief Creates the VulkanSampler object and stores the opaque handler to it. The sampler is
-   * created from the device based on the configuration passed as a parameter with a name that can
-   * be used for debugging
-   */
-  VulkanSampler(const VulkanContext& ctx,
+  VulkanSampler() = default;
+  VulkanSampler(VulkanContext* ctx,
                 VkDevice device,
                 const VkSamplerCreateInfo& ci,
                 const char* debugName = nullptr);
@@ -35,15 +26,15 @@ class VulkanSampler final {
   VulkanSampler(const VulkanSampler&) = delete;
   VulkanSampler& operator=(const VulkanSampler&) = delete;
 
-  /**
-   * @brief Returns Vulkan's opaque handle to the sampler object
-   */
+  VulkanSampler(VulkanSampler&& other);
+  VulkanSampler& operator=(VulkanSampler&& other);
+
   VkSampler getVkSampler() const {
     return vkSampler_;
   }
 
  public:
-  const VulkanContext& ctx_;
+  VulkanContext* ctx_ = nullptr;
   VkDevice device_ = VK_NULL_HANDLE;
   VkSampler vkSampler_ = VK_NULL_HANDLE;
   /**

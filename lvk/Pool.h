@@ -18,11 +18,12 @@ class Pool {
     uint32_t gen_ = 1;
     uint32_t nextFree_ = kListEndSentinel;
   };
-  std::vector<PoolEntry> objects_;
   uint32_t freeListHead_ = kListEndSentinel;
   uint32_t numObjects_ = 0;
 
  public:
+  std::vector<PoolEntry> objects_;
+
   Handle<ObjectType> create(ImplObjectType&& obj) {
     uint32_t idx = 0;
     if (freeListHead_ != kListEndSentinel) {

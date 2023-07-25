@@ -426,8 +426,8 @@ lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Fullscreen_;
 std::shared_ptr<lvk::IBuffer> vb0_, ib0_; // buffers for vertices and indices
 std::shared_ptr<lvk::IBuffer> sbMaterials_; // storage buffer for materials
 std::vector<std::shared_ptr<lvk::IBuffer>> ubPerFrame_, ubPerFrameShadow_, ubPerObject_;
-std::shared_ptr<lvk::ISamplerState> sampler_;
-std::shared_ptr<lvk::ISamplerState> samplerShadow_;
+lvk::Holder<lvk::SamplerHandle> sampler_;
+lvk::Holder<lvk::SamplerHandle> samplerShadow_;
 std::shared_ptr<lvk::ITexture> textureDummyWhite_;
 std::shared_ptr<lvk::ITexture> skyboxTextureReference_;
 std::shared_ptr<lvk::ITexture> skyboxTextureIrradiance_;
@@ -617,7 +617,7 @@ void initIGL() {
   depthStencilState_ = {.compareOp = lvk::CompareOp_Less, .isDepthWriteEnabled = true};
   depthStencilStateLEqual_ = {.compareOp = lvk::CompareOp_LessEqual, .isDepthWriteEnabled = true};
 
-  sampler_ = device_->createSamplerState(
+  sampler_ = device_->createSampler(
       {
           .mipMap = lvk::SamplerMip_Linear,
           .wrapU = lvk::SamplerWrap_Repeat,
@@ -625,7 +625,7 @@ void initIGL() {
           .debugName = "Sampler: linear",
       },
       nullptr);
-  samplerShadow_ = device_->createSamplerState(
+  samplerShadow_ = device_->createSampler(
       {
           .wrapU = lvk::SamplerWrap_Clamp,
           .wrapV = lvk::SamplerWrap_Clamp,
@@ -1122,8 +1122,8 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
       .texSkyboxRadiance = skyboxTextureReference_->getTextureId(),
       .texSkyboxIrradiance = skyboxTextureIrradiance_->getTextureId(),
       .texShadow = fbShadowMap_.depthStencilAttachment.texture->getTextureId(),
-      .sampler = sampler_->getSamplerId(),
-      .samplerShadow = samplerShadow_->getSamplerId(),
+      .sampler = device_->gpuId(sampler_),
+      .samplerShadow = device_->gpuId(samplerShadow_),
       .bDrawNormals = perFrame_.bDrawNormals,
       .bDebugLines = perFrame_.bDebugLines,
   };

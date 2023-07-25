@@ -108,7 +108,7 @@ lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Mesh_;
 std::shared_ptr<lvk::IBuffer> vb0_, ib0_; // buffers for vertices and indices
 std::vector<std::shared_ptr<lvk::IBuffer>> ubPerFrame_, ubPerObject_;
 std::shared_ptr<lvk::ITexture> texture0_, texture1_;
-std::shared_ptr<lvk::ISamplerState> sampler_;
+lvk::Holder<lvk::SamplerHandle> sampler_;
 lvk::RenderPass renderPass_;
 lvk::DepthStencilState depthStencilState_;
 
@@ -266,7 +266,7 @@ static void initIGL() {
     stbi_image_free(pixels);
   }
 
-  sampler_ = device_->createSamplerState({.debugName = "Sampler: linear"}, nullptr);
+  sampler_ = device_->createSampler({.debugName = "Sampler: linear"}, nullptr);
 
   renderPass_ = {.colorAttachments = {{
                      .loadOp = lvk::LoadOp_Clear,
@@ -343,7 +343,7 @@ static void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_
       .view = glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, sqrtf(kNumCubes / 16) * 20.0f * half)),
       .texture0 = texture0_->getTextureId(),
       .texture1 = texture1_ ? texture1_->getTextureId() : 0u,
-      .sampler = sampler_->getSamplerId(),
+      .sampler = device_->gpuId(sampler_),
   };
   ubPerFrame_[frameIndex]->upload(&perFrame, sizeof(perFrame));
 

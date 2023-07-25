@@ -209,15 +209,19 @@ VulkanContext::~VulkanContext() {
   if (computePipelinesPool_.numObjects()) {
     LLOGW("Leaked %u compute pipelines\n", computePipelinesPool_.numObjects());
   }
+  if (samplersPool_.numObjects() > 1) {
+    // the dummy value is owned by the context
+    LLOGW("Leaked %u samplers\n", samplersPool_.numObjects() - 1);
+  }
 
   VK_ASSERT(vkDeviceWaitIdle(vkDevice_));
 
   computePipelinesPool_.clear();
   renderPipelinesPool_.clear();
   shaderModulesPool_.clear();
+  samplersPool_.clear();
 
   textures_.clear();
-  samplers_.clear();
 
   // This will free an internal buffer that was allocated by VMA
   stagingDevice_.reset(nullptr);
@@ -794,19 +798,18 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
   }
 
   // default sampler
-  IGL_ASSERT(samplers_.size() == 1);
-  samplers_[0] =
-      std::make_shared<VulkanSampler>(*this,
-                                      vkDevice_,
-                                      ivkGetSamplerCreateInfo(VK_FILTER_LINEAR,
-                                                              VK_FILTER_LINEAR,
-                                                              VK_SAMPLER_MIPMAP_MODE_NEAREST,
-                                                              VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                                              VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                                              VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                                              0.0f,
-                                                              0.0f),
-                                      "Sampler: default");
+  IGL_ASSERT(samplersPool_.numObjects() == 0);
+  samplersPool_.create(VulkanSampler(this,
+                                     vkDevice_,
+                                     ivkGetSamplerCreateInfo(VK_FILTER_LINEAR,
+                                                             VK_FILTER_LINEAR,
+                                                             VK_SAMPLER_MIPMAP_MODE_NEAREST,
+                                                             VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                                             VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                                             VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                                             0.0f,
+                                                             0.0f),
+                                     "Sampler: default"));
 
   if (!IGL_VERIFY(config_.maxSamplers <=
                   vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSamplers)) {
@@ -1033,23 +1036,17 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
       }
     }
   }
-  for (uint32_t i = 1; i < (uint32_t)samplers_.size(); i++) {
-    if (samplers_[i] && samplers_[i].use_count() == 1) {
-      if (i == samplers_.size() - 1) {
-        samplers_.pop_back();
-      } else {
-        samplers_[i].reset();
-        freeIndicesSamplers_.push_back(i);
-      }
-    }
-  }
 
   // update Vulkan descriptor set here
+
+  // make sure the guard values are always there
+  IGL_ASSERT(textures_.size() >= 1); 
+  IGL_ASSERT(samplersPool_.numObjects() >= 1);
 
   // 1. Sampled and storage images
   std::vector<VkDescriptorImageInfo> infoSampledImages;
   std::vector<VkDescriptorImageInfo> infoStorageImages;
-  IGL_ASSERT(textures_.size() >= 1); // make sure the guard value is always there
+  
   infoSampledImages.reserve(textures_.size());
   infoStorageImages.reserve(textures_.size());
 
@@ -1063,7 +1060,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
     const bool isSampledImage = isTextureAvailable && texture->image_->isSampledImage();
     const bool isStorageImage = isTextureAvailable && texture->image_->isStorageImage();
     infoSampledImages.push_back(
-        {samplers_[0]->getVkSampler(),
+        {samplersPool_.objects_[0].obj_.getVkSampler(),
          isSampledImage ? texture->imageView_->getVkImageView() : dummyImageView,
          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
     IGL_ASSERT(infoSampledImages.back().imageView != VK_NULL_HANDLE);
@@ -1075,13 +1072,13 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
 
   // 2. Samplers
   std::vector<VkDescriptorImageInfo> infoSamplers;
-  IGL_ASSERT(samplers_.size() >= 1); // make sure the guard value is always there
-  infoSamplers.reserve(samplers_.size());
+  infoSamplers.reserve(samplersPool_.objects_.size());
 
-  for (const auto& sampler : samplers_) {
-    infoSamplers.push_back({(sampler ? sampler : samplers_[0])->getVkSampler(),
-                            VK_NULL_HANDLE,
-                            VK_IMAGE_LAYOUT_UNDEFINED});
+  for (const auto& sampler : samplersPool_.objects_) {
+    infoSamplers.push_back(
+        {(sampler.obj_.ctx_ ? sampler.obj_ : samplersPool_.objects_[0].obj_).getVkSampler(),
+         VK_NULL_HANDLE,
+         VK_IMAGE_LAYOUT_UNDEFINED});
   }
 
   VkWriteDescriptorSet write[kBinding_NumBindins] = {};
@@ -1153,29 +1150,18 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
   return texture;
 }
 
-std::shared_ptr<VulkanSampler> VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
-                                                            lvk::Result* outResult,
-                                                            const char* debugName) const {
-  auto sampler = std::make_shared<VulkanSampler>(*this, vkDevice_, ci, debugName);
-  if (!IGL_VERIFY(sampler.get())) {
-    Result::setResult(outResult, Result::Code::ArgumentOutOfRange);
-    return nullptr;
-  }
-  if (!freeIndicesSamplers_.empty()) {
-    // reuse an empty slot
-    sampler->samplerId_ = freeIndicesSamplers_.back();
-    freeIndicesSamplers_.pop_back();
-    samplers_[sampler->samplerId_] = sampler;
-  } else {
-    sampler->samplerId_ = uint32_t(samplers_.size());
-    samplers_.emplace_back(sampler);
-  }
+SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
+                                           lvk::Result* outResult,
+                                           const char* debugName) {
+  SamplerHandle handle = samplersPool_.create(VulkanSampler(this, vkDevice_, ci, debugName));
 
-  IGL_ASSERT(samplers_.size() <= config_.maxSamplers);
+  IGL_ASSERT(samplersPool_.numObjects() <= config_.maxSamplers);
+
+  samplersPool_.get(handle)->samplerId_ = handle.index();
 
   awaitingCreation_ = true;
 
-  return sampler;
+  return handle;
 }
 
 void VulkanContext::querySurfaceCapabilities() {

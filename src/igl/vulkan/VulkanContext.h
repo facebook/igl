@@ -30,6 +30,7 @@ class EnhancedShaderDebuggingStore;
 class CommandBuffer;
 class CommandQueue;
 class RenderCommandEncoder;
+class SamplerState;
 class VulkanBuffer;
 class VulkanImage;
 class VulkanImageView;
@@ -93,9 +94,9 @@ class VulkanContext final {
                                              const char* debugName = nullptr) const;
   std::shared_ptr<VulkanTexture> createTexture(std::shared_ptr<VulkanImage> image,
                                                std::shared_ptr<VulkanImageView> imageView) const;
-  std::shared_ptr<VulkanSampler> createSampler(const VkSamplerCreateInfo& ci,
-                                               lvk::Result* outResult,
-                                               const char* debugName = nullptr) const;
+  SamplerHandle createSampler(const VkSamplerCreateInfo& ci,
+                              lvk::Result* outResult,
+                              const char* debugName = nullptr);
 
   bool hasSwapchain() const noexcept {
     return swapchain_ != nullptr;
@@ -208,17 +209,13 @@ class VulkanContext final {
 
   // 1. Textures can be safely deleted once they are not in use by GPU, hence our Vulkan context
   // owns all allocated textures (images+image views). The IGL interface vulkan::Texture does not
-  // delete the underylying VulkanTexture but instead informs the context that it should be
+  // delete the underlying VulkanTexture but instead informs the context that it should be
   // deallocated. The context deallocates textures in a deferred way when it is safe to do so.
   // 2. Descriptor sets can be updated when they are not in use.
   mutable std::vector<std::shared_ptr<VulkanTexture>> textures_ = {nullptr}; // the guard element
                                                                              // [0] is always there
-  mutable std::vector<std::shared_ptr<VulkanSampler>> samplers_ = {nullptr}; // the guard element
-                                                                             // [0] is always there
   // contains a list of free indices inside the sparse array `textures_`
   mutable std::vector<uint32_t> freeIndicesTextures_;
-  // contains a list of free indices inside the sparse array `samplers_`
-  mutable std::vector<uint32_t> freeIndicesSamplers_;
   // a texture/sampler was created since the last descriptor set update
   mutable bool awaitingCreation_ = false;
   // a texture/sampler was deleted since the last descriptor set update
@@ -229,6 +226,7 @@ class VulkanContext final {
   lvk::Pool<lvk::ShaderModule, lvk::vulkan::VulkanShaderModule> shaderModulesPool_;
   lvk::Pool<lvk::RenderPipeline, lvk::vulkan::RenderPipelineState> renderPipelinesPool_;
   lvk::Pool<lvk::ComputePipeline, lvk::vulkan::ComputePipelineState> computePipelinesPool_;
+  lvk::Pool<lvk::Sampler, lvk::vulkan::VulkanSampler> samplersPool_;
 
   struct DeferredTask {
     DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) :

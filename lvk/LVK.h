@@ -95,11 +95,13 @@ static_assert(sizeof(Handle<class Foo>) == sizeof(uint64_t));
 using ComputePipelineHandle = lvk::Handle<struct ComputePipeline>;
 using RenderPipelineHandle = lvk::Handle<struct RenderPipeline>;
 using ShaderModuleHandle = lvk::Handle<struct ShaderModule>;
+using SamplerHandle = lvk::Handle<struct Sampler>;
 
 // forward declarations to access incomplete type IDevice
 void destroy(lvk::IDevice* device, lvk::ComputePipelineHandle handle);
 void destroy(lvk::IDevice* device, lvk::RenderPipelineHandle handle);
 void destroy(lvk::IDevice* device, lvk::ShaderModuleHandle handle);
+void destroy(lvk::IDevice* device, lvk::SamplerHandle handle);
 
 template<typename HandleType>
 class Holder final {
@@ -829,27 +831,30 @@ class IDevice {
   virtual std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
                                                 Result* outResult = nullptr) = 0;
 
-  virtual std::shared_ptr<ISamplerState> createSamplerState(const SamplerStateDesc& desc,
-                                                            Result* outResult = nullptr) = 0;
+  virtual Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc,
+                                              Result* outResult = nullptr) = 0;
 
   virtual std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,
                                                   const char* debugName = nullptr,
                                                   Result* outResult = nullptr) = 0;
 
-  virtual lvk::Holder<lvk::ComputePipelineHandle> createComputePipeline(
+  virtual Holder<ComputePipelineHandle> createComputePipeline(
       const ComputePipelineDesc& desc,
       Result* outResult = nullptr) = 0;
 
-  virtual lvk::Holder<lvk::RenderPipelineHandle> createRenderPipeline(
+  virtual Holder<RenderPipelineHandle> createRenderPipeline(
       const RenderPipelineDesc& desc,
       Result* outResult = nullptr) = 0;
 
-  virtual lvk::Holder<lvk::ShaderModuleHandle> createShaderModule(const ShaderModuleDesc& desc,
-                                                                  Result* outResult = nullptr) = 0;
+  virtual Holder<ShaderModuleHandle> createShaderModule(const ShaderModuleDesc& desc,
+                                                        Result* outResult = nullptr) = 0;
 
-  virtual void destroy(lvk::ComputePipelineHandle handle) = 0;
-  virtual void destroy(lvk::RenderPipelineHandle handle) = 0;
-  virtual void destroy(lvk::ShaderModuleHandle handle) = 0;
+  virtual void destroy(ComputePipelineHandle handle) = 0;
+  virtual void destroy(RenderPipelineHandle handle) = 0;
+  virtual void destroy(ShaderModuleHandle handle) = 0;
+  virtual void destroy(SamplerHandle handle) = 0;
+
+  virtual uint32_t gpuId(SamplerHandle handle) const = 0;
 
   virtual std::shared_ptr<ITexture> getCurrentSwapchainTexture() = 0;
 

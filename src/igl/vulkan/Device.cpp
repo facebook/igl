@@ -13,10 +13,10 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/RenderPipelineState.h>
-#include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanHelpers.h>
+#include <igl/vulkan/VulkanSampler.h>
 #include <igl/vulkan/VulkanShaderModule.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 
@@ -135,13 +135,26 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc, Result* ou
   return buffer;
 }
 
-std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
-                                                          Result* outResult) {
-  auto samplerState = std::make_shared<vulkan::SamplerState>(*this);
+Holder<SamplerHandle> Device::createSampler(const SamplerStateDesc& desc, Result* outResult) {
+  IGL_PROFILER_FUNCTION();
 
-  Result::setResult(outResult, samplerState->create(desc));
+  Result result;
 
-  return samplerState;
+  SamplerHandle handle = ctx_->createSampler(
+      samplerStateDescToVkSamplerCreateInfo(desc, ctx_->getVkPhysicalDeviceProperties().limits),
+      &result,
+      desc.debugName);
+
+  if (!IGL_VERIFY(result.isOk())) {
+    Result::setResult(outResult, Result(Result::Code::RuntimeError, "Cannot create VulkanSampler"));
+    return {};
+  }
+
+  Holder<SamplerHandle> holder = {this, handle};
+
+  Result::setResult(outResult, result);
+
+  return holder;
 }
 
 std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
@@ -222,6 +235,19 @@ void Device::destroy(lvk::RenderPipelineHandle handle){
 
 void Device::destroy(lvk::ShaderModuleHandle handle) {
   ctx_->shaderModulesPool_.destroy(handle);
+}
+
+void Device::destroy(SamplerHandle handle) {
+  ctx_->samplersPool_.destroy(handle);
+
+  // inform the context it should prune the samplers
+  ctx_->awaitingDeletion_ = true;
+}
+
+uint32_t Device::gpuId(SamplerHandle handle) const {
+  VulkanSampler* sampler = ctx_->samplersPool_.get(handle);
+
+  return sampler ? sampler->samplerId_ : 0;
 }
 
 lvk::Holder<lvk::ShaderModuleHandle> Device::createShaderModule(const ShaderModuleDesc& desc, Result* outResult) {

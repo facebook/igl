@@ -32,22 +32,24 @@ class Device final : public IDevice {
               ITexture* present) override;
 
   std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc, Result* outResult) override;
-  std::shared_ptr<ISamplerState> createSamplerState(const SamplerStateDesc& desc,
-                                                    Result* outResult) override;
+  Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc, Result* outResult) override;
   std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,
                                           const char* debugName,
                                           Result* outResult) override;
 
-  lvk::Holder<lvk::ComputePipelineHandle> createComputePipeline(const ComputePipelineDesc& desc,
-                                                                Result* outResult) override;
-  lvk::Holder<lvk::RenderPipelineHandle> createRenderPipeline(const RenderPipelineDesc& desc,
-                                                              Result* outResult) override;
-  lvk::Holder<lvk::ShaderModuleHandle> createShaderModule(const ShaderModuleDesc& desc,
-                                                          Result* outResult) override;
+  Holder<ComputePipelineHandle> createComputePipeline(const ComputePipelineDesc& desc,
+                                                      Result* outResult) override;
+  Holder<RenderPipelineHandle> createRenderPipeline(const RenderPipelineDesc& desc,
+                                                    Result* outResult) override;
+  Holder<ShaderModuleHandle> createShaderModule(const ShaderModuleDesc& desc,
+                                                Result* outResult) override;
 
-  void destroy(lvk::ComputePipelineHandle handle) override;
-  void destroy(lvk::RenderPipelineHandle handle) override;
-  void destroy(lvk::ShaderModuleHandle handle) override;
+  void destroy(ComputePipelineHandle handle) override;
+  void destroy(RenderPipelineHandle handle) override;
+  void destroy(ShaderModuleHandle handle) override;
+  void destroy(SamplerHandle handle) override;
+
+  uint32_t gpuId(SamplerHandle handle) const override;
 
   std::shared_ptr<ITexture> getCurrentSwapchainTexture() override;
 
