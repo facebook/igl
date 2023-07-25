@@ -110,9 +110,9 @@ void ComputeCommandEncoder::bindBytes(size_t /*index*/, const void* /*data*/, si
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
 
-void ComputeCommandEncoder::bindPushConstants(size_t /*offset*/,
-                                              const void* /*data*/,
-                                              size_t /*length*/) {
+void ComputeCommandEncoder::bindPushConstants(const void* /*data*/,
+                                              size_t /*length*/,
+                                              size_t /*offset*/) {
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
 

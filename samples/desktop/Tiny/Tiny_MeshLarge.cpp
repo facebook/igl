@@ -2016,7 +2016,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
                                         : fbOffscreen_->getColorAttachment(0).get();
 #if !USE_OPENGL_BACKEND
     const uint32_t textureId = tex->getTextureId();
-    commands->bindPushConstants(0, &textureId, sizeof(textureId));
+    commands->bindPushConstants(&textureId, sizeof(textureId));
 #endif
     commands->bindTexture(0, tex);
     commands->dispatchThreadGroups(igl::Dimensions(width_, height_, 1), igl::Dimensions());

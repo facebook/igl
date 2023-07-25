@@ -93,11 +93,11 @@ class IComputeCommandEncoder : public ICommandEncoder {
   /**
    * @brief Sets a block of data for the compute function.
    *
-   * @param offset An offset bytes into the push constants buffer.
    * @param data The memory address from which to copy the data.
    * @param length The number of bytes to copy.
+   * @param offset An offset bytes into the push constants buffer.
    */
-  virtual void bindPushConstants(size_t offset, const void* data, size_t length) = 0;
+  virtual void bindPushConstants(const void* data, size_t length, size_t offset = 0) = 0;
   /**
    * @brief Sets the compute pipeline state object.
    *

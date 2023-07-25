@@ -352,7 +352,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
   VulkanImguiBindData bindData = {orthoProjection, 0};
 
   if (isVulkan) {
-    cmdEncoder.bindPushConstants(0, &bindData, sizeof(bindData));
+    cmdEncoder.bindPushConstants(&bindData, sizeof(bindData));
   }
 
   ImTextureID lastBoundTextureId = nullptr;
@@ -398,7 +398,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
         auto* tex = reinterpret_cast<igl::ITexture*>(cmd.TextureId);
         if (isVulkan) {
           bindData.textureId = tex ? uint32_t(tex->getTextureId()) : 0u;
-          cmdEncoder.bindPushConstants(0, &bindData, sizeof(bindData));
+          cmdEncoder.bindPushConstants(&bindData, sizeof(bindData));
         } else {
           _material->shaderUniforms().setTexture(
               "texture", tex ? tex : _fontTexture.get(), _linearSampler);

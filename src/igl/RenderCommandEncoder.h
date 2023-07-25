@@ -62,7 +62,7 @@ class IRenderCommandEncoder : public ICommandEncoder {
   /// Creates and binds a temporary buffer to the specified buffer index.
   virtual void bindBytes(size_t index, uint8_t target, const void* data, size_t length) = 0;
   /// Binds push constant data to the current encoder.
-  virtual void bindPushConstants(size_t offset, const void* data, size_t length) = 0;
+  virtual void bindPushConstants(const void* data, size_t length, size_t offset = 0) = 0;
   virtual void bindSamplerState(size_t index, uint8_t target, ISamplerState* samplerState) = 0;
 
   // For metal, the index parameter is the index in the texture argument table,

@@ -238,9 +238,9 @@ void RenderCommandEncoder::bindBytes(size_t /*index*/,
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
 
-void RenderCommandEncoder::bindPushConstants(size_t /*offset*/,
-                                             const void* /*data*/,
-                                             size_t /*length*/) {
+void RenderCommandEncoder::bindPushConstants(const void* /*data*/,
+                                             size_t /*length*/,
+                                             size_t /*offset*/) {
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
 
