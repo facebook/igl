@@ -75,7 +75,19 @@ static bool initWindow(GLFWwindow** outWindow) {
   glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
   glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-  GLFWwindow* window = glfwCreateWindow(800, 600, "WebGL Triangle", nullptr, nullptr);
+  double cssWidth = 800;
+  double cssHeight = 600;
+  emscripten_get_element_css_size("#canvas", &cssWidth, &cssHeight);
+  printf("Canvas css width=%f, height=%f\n", cssWidth, cssHeight);
+
+  double devicePixelRatio = 1.0;
+  devicePixelRatio = emscripten_get_device_pixel_ratio();
+  printf("devicePixelRatio=%f\n", devicePixelRatio);
+
+  int width = cssWidth * devicePixelRatio;
+  int height = cssHeight * devicePixelRatio;
+
+  GLFWwindow* window = glfwCreateWindow(width, height, "WebGL Triangle", nullptr, nullptr);
 
   if (!window) {
     glfwTerminate();

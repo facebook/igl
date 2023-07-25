@@ -182,9 +182,17 @@ bool initialize() {
   device_ = std::make_unique<igl::opengl::webgl::Device>(
       std::make_unique<::igl::opengl::webgl::Context>(attrs, canvas, width_, height_));
 
-  auto webGLcontext =
-      reinterpret_cast<igl::opengl::webgl::Context*>(&device_->getContext())->getWebGLContext();
-  emscripten_webgl_get_drawing_buffer_size(webGLcontext, &width_, &height_);
+  double cssWidth = 800;
+  double cssHeight = 600;
+  emscripten_get_element_css_size("#canvas", &cssWidth, &cssHeight);
+  printf("Canvas css width=%f, height=%f\n", cssWidth, cssHeight);
+
+  double devicePixelRatio = 1.0;
+  devicePixelRatio = emscripten_get_device_pixel_ratio();
+  printf("devicePixelRatio=%f\n", devicePixelRatio);
+
+  width_ = cssWidth * devicePixelRatio;
+  height_ = cssHeight * devicePixelRatio;
 
   auto platformDevice = static_cast<igl::IDevice*>(device_.get())
                             ->getPlatformDevice<igl::opengl::webgl::PlatformDevice>();
