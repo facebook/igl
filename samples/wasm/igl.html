@@ -26,7 +26,8 @@
           <span class="label-text ml-4">Resize Canvas</span>
         </label>
         <label for="hide-pointer" class="label cursor-pointer justify-start">
-          <input id="hide-pointer" type="checkbox" class="checkbox checkbox-primary" />
+          <input id="hide-pointer" type="checkbox" class="checkbox checkbox-primary"
+            onchange="handleHideMousePointer(this)" />
           <span class="label-text ml-4">Lock/Hide Mouse Pointer</span>
         </label>
         <label for="full-screen" class="label cursor-pointer justify-start">
@@ -99,6 +100,15 @@
       spinnerElement.classList.add("hidden");
       canvasElement.classList.add("hidden");
     };
+
+    function handleHideMousePointer(checkElement) {
+      Module.print('Hide Mouse Pointer: ' + checkElement.checked);
+      if (checkElement.checked) {
+        canvasElement.classList.add("cursor-none");
+      } else {
+        canvasElement.classList.remove("cursor-none");
+      }
+    }
   </script>
   {{{ SCRIPT }}}
 </body>
