@@ -10,7 +10,7 @@
 
 namespace igl::opengl::webgl {
 
-Context::Context(RenderingAPI api, const char* canvasName) {
+Context::Context(RenderingAPI api, const char* canvasName) : canvasName_(canvasName) {
   EmscriptenWebGLContextAttributes attrs;
   emscripten_webgl_init_context_attributes(&attrs);
   attrs.majorVersion = api == RenderingAPI::GLES3 ? 2 : 1;
@@ -24,7 +24,8 @@ Context::Context(RenderingAPI api, const char* canvasName) {
 Context::Context(EmscriptenWebGLContextAttributes& attributes,
                  const char* canvasName,
                  int width,
-                 int height) {
+                 int height) :
+  canvasName_(canvasName) {
   initialize(attributes, canvasName, width, height);
 }
 
@@ -33,8 +34,8 @@ void Context::initialize(EmscriptenWebGLContextAttributes& attributes,
                          int width,
                          int height) {
   context_ = emscripten_webgl_create_context(canvasName, &attributes);
-  if (width != -1 && height != -1) {
-    emscripten_set_canvas_element_size(canvasName, width, height);
+  if (width > 0 && height > 0) {
+    setCanvasBufferSize(width, height);
   }
   if (context_) {
     IContext::registerContext((void*)context_, this);
@@ -67,6 +68,13 @@ bool Context::isCurrentContext() const {
 
 bool Context::isCurrentSharegroup() const {
   return true;
+}
+
+void Context::setCanvasBufferSize(int width, int height) {
+  auto result = emscripten_set_canvas_element_size(canvasName_.c_str(), width, height);
+  if (result != EMSCRIPTEN_RESULT_SUCCESS) {
+    printf("emscripten_set_canvas_element_size failed: %d\n", result);
+  }
 }
 
 void Context::present(std::shared_ptr<ITexture> surface) const {

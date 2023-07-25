@@ -33,6 +33,8 @@ class Context final : public ::igl::opengl::IContext {
   bool isCurrentSharegroup() const override;
   void present(std::shared_ptr<ITexture> surface) const override;
 
+  void setCanvasBufferSize(int width, int height);
+
   EMSCRIPTEN_WEBGL_CONTEXT_HANDLE getWebGLContext() const {
     return context_;
   }
@@ -44,6 +46,7 @@ class Context final : public ::igl::opengl::IContext {
                   int height = -1);
 
   EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context_;
+  std::string canvasName_;
 };
 
 } // namespace opengl::webgl

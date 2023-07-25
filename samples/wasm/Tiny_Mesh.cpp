@@ -434,7 +434,8 @@ void onDraw(void*) {
 int main(int argc, char* argv[]) {
   if (initialize()) {
     createRenderPipeline();
-    emscripten_set_canvas_element_size(canvas, width_, height_);
+    auto context = static_cast<igl::opengl::webgl::Context*>(&device_->getContext());
+    context->setCanvasBufferSize(width_, height_);
     emscripten_set_main_loop_arg(onDraw, 0, 0, 1);
     while (1) {
       onDraw(0);

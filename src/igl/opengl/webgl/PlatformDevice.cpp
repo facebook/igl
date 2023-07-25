@@ -24,6 +24,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
   auto webGLcontext =
       reinterpret_cast<igl::opengl::webgl::Context*>(&getContext())->getWebGLContext();
   emscripten_webgl_get_drawing_buffer_size(webGLcontext, &width, &height);
+  auto context = static_cast<igl::opengl::webgl::Context*>(&getContext());
+  context->setCanvasBufferSize(width, height);
 
   TextureDesc desc = {static_cast<size_t>(width),
                       static_cast<size_t>(height),
