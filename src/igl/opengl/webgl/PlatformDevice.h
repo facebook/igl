@@ -32,7 +32,9 @@ class PlatformDevice : public opengl::PlatformDevice {
   ~PlatformDevice() override = default;
 
   /// Returns a texture representing the EGL Surface associated with this device's context.
-  std::shared_ptr<ITexture> createTextureFromNativeDrawable(Result* outResult);
+  std::shared_ptr<ITexture> createTextureFromNativeDrawable(int width,
+                                                            int height,
+                                                            Result* outResult);
 
  protected:
   bool isType(PlatformDeviceType t) const noexcept override;

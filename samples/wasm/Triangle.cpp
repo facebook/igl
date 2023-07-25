@@ -8,7 +8,7 @@
 #ifndef __EMSCRIPTEN__
 #error Unsupported OS
 #endif
-#include <emscripten.h>
+#include <emscripten/html5.h>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -16,6 +16,7 @@
 #include <igl/IGL.h>
 #include <igl/opengl/webgl/Context.h>
 #include <igl/opengl/webgl/Device.h>
+#include <samples/wasm/Common.h>
 
 constexpr const char* codeVS = R"(#version 300 es
 
@@ -75,19 +76,8 @@ static bool initWindow(GLFWwindow** outWindow) {
   glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
   glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-  double cssWidth = 800;
-  double cssHeight = 600;
-  emscripten_get_element_css_size("#canvas", &cssWidth, &cssHeight);
-  printf("Canvas css width=%f, height=%f\n", cssWidth, cssHeight);
-
-  double devicePixelRatio = 1.0;
-  devicePixelRatio = emscripten_get_device_pixel_ratio();
-  printf("devicePixelRatio=%f\n", devicePixelRatio);
-
-  int width = cssWidth * devicePixelRatio;
-  int height = cssHeight * devicePixelRatio;
-
-  GLFWwindow* window = glfwCreateWindow(width, height, "WebGL Triangle", nullptr, nullptr);
+  getRenderingBufferSize(width_, height_);
+  GLFWwindow* window = glfwCreateWindow(width_, height_, "WebGL Triangle", nullptr, nullptr);
 
   if (!window) {
     glfwTerminate();
@@ -107,11 +97,7 @@ static bool initWindow(GLFWwindow** outWindow) {
   // @lint-ignore CLANGTIDY
   glfwSetWindowSizeCallback(window, [](GLFWwindow* /*window*/, int width, int height) {
     printf("Window resized! width=%d, height=%d\n", width, height);
-    width_ = width;
-    height_ = height;
   });
-
-  glfwGetWindowSize(window, &width_, &height_);
 
   if (outWindow) {
     *outWindow = window;
@@ -173,8 +159,11 @@ static std::shared_ptr<ITexture> getNativeDrawable() {
   const auto& platformDevice = device_->getPlatformDevice<opengl::webgl::PlatformDevice>();
   IGL_ASSERT(platformDevice != nullptr);
 
+  getRenderingBufferSize(width_, height_);
+
   Result ret;
-  std::shared_ptr<ITexture> drawable = platformDevice->createTextureFromNativeDrawable(&ret);
+  std::shared_ptr<ITexture> drawable =
+      platformDevice->createTextureFromNativeDrawable(width_, height_, &ret);
 
   IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
   IGL_ASSERT(drawable != nullptr);

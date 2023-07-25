@@ -15,15 +15,14 @@ namespace igl::opengl::webgl {
 
 PlatformDevice::PlatformDevice(Device& owner) : opengl::PlatformDevice(owner) {}
 
-std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result* outResult) {
-  if (drawableTexture_) {
+std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(int width,
+                                                                          int height,
+                                                                          Result* outResult) {
+  if (drawableTexture_ && drawableTexture_->getWidth() == width &&
+      drawableTexture_->getHeight() == height) {
     return drawableTexture_;
   }
 
-  int width = 0, height = 0;
-  auto webGLcontext =
-      reinterpret_cast<igl::opengl::webgl::Context*>(&getContext())->getWebGLContext();
-  emscripten_webgl_get_drawing_buffer_size(webGLcontext, &width, &height);
   auto context = static_cast<igl::opengl::webgl::Context*>(&getContext());
   context->setCanvasBufferSize(width, height);
 

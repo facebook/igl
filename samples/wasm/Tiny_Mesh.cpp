@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <emscripten.h>
+#include <emscripten/html5.h>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
@@ -17,6 +17,7 @@
 #include <igl/opengl/webgl/Context.h>
 #include <igl/opengl/webgl/Device.h>
 #include <igl/opengl/webgl/PlatformDevice.h>
+#include <samples/wasm/Common.h>
 
 using namespace igl;
 using glm::mat4;
@@ -155,7 +156,9 @@ static std::shared_ptr<ITexture> getNativeDrawable() {
 
   IGL_ASSERT(platformDevice != nullptr);
 
-  std::shared_ptr<ITexture> drawable = platformDevice->createTextureFromNativeDrawable(&ret);
+  getRenderingBufferSize(width_, height_);
+  std::shared_ptr<ITexture> drawable =
+      platformDevice->createTextureFromNativeDrawable(width_, height_, &ret);
 
   IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
   IGL_ASSERT(drawable != nullptr);
@@ -180,23 +183,12 @@ bool initialize() {
   attrs.alpha = false;
   attrs.powerPreference = EM_WEBGL_POWER_PREFERENCE_DEFAULT;
   device_ = std::make_unique<igl::opengl::webgl::Device>(
-      std::make_unique<::igl::opengl::webgl::Context>(attrs, canvas, width_, height_));
-
-  double cssWidth = 800;
-  double cssHeight = 600;
-  emscripten_get_element_css_size("#canvas", &cssWidth, &cssHeight);
-  printf("Canvas css width=%f, height=%f\n", cssWidth, cssHeight);
-
-  double devicePixelRatio = 1.0;
-  devicePixelRatio = emscripten_get_device_pixel_ratio();
-  printf("devicePixelRatio=%f\n", devicePixelRatio);
-
-  width_ = cssWidth * devicePixelRatio;
-  height_ = cssHeight * devicePixelRatio;
+      std::make_unique<::igl::opengl::webgl::Context>(attrs, canvas));
 
   auto platformDevice = static_cast<igl::IDevice*>(device_.get())
                             ->getPlatformDevice<igl::opengl::webgl::PlatformDevice>();
-  auto nativeDrawable = platformDevice->createTextureFromNativeDrawable(nullptr);
+
+  getRenderingBufferSize(width_, height_);
 
   igl::TextureDesc depthDesc =
       igl::TextureDesc::new2D(igl::TextureFormat::Z_UNorm24, width_, height_, 0);
