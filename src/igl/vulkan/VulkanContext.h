@@ -30,11 +30,9 @@ class EnhancedShaderDebuggingStore;
 class CommandBuffer;
 class CommandQueue;
 class RenderCommandEncoder;
-class SamplerState;
 class VulkanBuffer;
 class VulkanImage;
 class VulkanImageView;
-class VulkanSampler;
 class VulkanSwapchain;
 class VulkanTexture;
 
@@ -226,7 +224,7 @@ class VulkanContext final {
   lvk::Pool<lvk::ShaderModule, lvk::vulkan::VulkanShaderModule> shaderModulesPool_;
   lvk::Pool<lvk::RenderPipeline, lvk::vulkan::RenderPipelineState> renderPipelinesPool_;
   lvk::Pool<lvk::ComputePipeline, lvk::vulkan::ComputePipelineState> computePipelinesPool_;
-  lvk::Pool<lvk::Sampler, lvk::vulkan::VulkanSampler> samplersPool_;
+  lvk::Pool<lvk::Sampler, VkSampler> samplersPool_;
 
   struct DeferredTask {
     DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) :

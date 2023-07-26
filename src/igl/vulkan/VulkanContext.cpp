@@ -16,7 +16,6 @@
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
-#include <igl/vulkan/VulkanSampler.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/VulkanTexture.h>
 #include <lvk/vulkan/VulkanUtils.h>
@@ -219,6 +218,9 @@ VulkanContext::~VulkanContext() {
   computePipelinesPool_.clear();
   renderPipelinesPool_.clear();
   shaderModulesPool_.clear();
+
+  // manually destroy the dummy sampler
+  vkDestroySampler(vkDevice_, samplersPool_.objects_.front().obj_, nullptr);
   samplersPool_.clear();
 
   textures_.clear();
@@ -799,17 +801,16 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 
   // default sampler
   IGL_ASSERT(samplersPool_.numObjects() == 0);
-  samplersPool_.create(VulkanSampler(this,
-                                     vkDevice_,
-                                     ivkGetSamplerCreateInfo(VK_FILTER_LINEAR,
-                                                             VK_FILTER_LINEAR,
-                                                             VK_SAMPLER_MIPMAP_MODE_NEAREST,
-                                                             VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                                             VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                                             VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                                             0.0f,
-                                                             0.0f),
-                                     "Sampler: default"));
+  createSampler(ivkGetSamplerCreateInfo(VK_FILTER_LINEAR,
+                                        VK_FILTER_LINEAR,
+                                        VK_SAMPLER_MIPMAP_MODE_NEAREST,
+                                        VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                        VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                        VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                        0.0f,
+                                        0.0f),
+                nullptr,
+                "Sampler: default");
 
   if (!IGL_VERIFY(config_.maxSamplers <=
                   vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSamplers)) {
@@ -1060,7 +1061,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
     const bool isSampledImage = isTextureAvailable && texture->image_->isSampledImage();
     const bool isStorageImage = isTextureAvailable && texture->image_->isStorageImage();
     infoSampledImages.push_back(
-        {samplersPool_.objects_[0].obj_.getVkSampler(),
+        {samplersPool_.objects_[0].obj_,
          isSampledImage ? texture->imageView_->getVkImageView() : dummyImageView,
          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
     IGL_ASSERT(infoSampledImages.back().imageView != VK_NULL_HANDLE);
@@ -1075,10 +1076,9 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   infoSamplers.reserve(samplersPool_.objects_.size());
 
   for (const auto& sampler : samplersPool_.objects_) {
-    infoSamplers.push_back(
-        {(sampler.obj_.ctx_ ? sampler.obj_ : samplersPool_.objects_[0].obj_).getVkSampler(),
-         VK_NULL_HANDLE,
-         VK_IMAGE_LAYOUT_UNDEFINED});
+    infoSamplers.push_back({sampler.obj_ ? sampler.obj_ : samplersPool_.objects_[0].obj_,
+                            VK_NULL_HANDLE,
+                            VK_IMAGE_LAYOUT_UNDEFINED});
   }
 
   VkWriteDescriptorSet write[kBinding_NumBindins] = {};
@@ -1153,7 +1153,14 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
 SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
                                            lvk::Result* outResult,
                                            const char* debugName) {
-  SamplerHandle handle = samplersPool_.create(VulkanSampler(this, vkDevice_, ci, debugName));
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  VkSampler sampler = VK_NULL_HANDLE;
+
+  VK_ASSERT(vkCreateSampler(vkDevice_, &ci, nullptr, &sampler));
+  VK_ASSERT(ivkSetDebugObjectName(vkDevice_, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, debugName));
+
+  SamplerHandle handle = samplersPool_.create(VkSampler(sampler));
 
   IGL_ASSERT(samplersPool_.numObjects() <= config_.maxSamplers);
 

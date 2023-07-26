@@ -16,7 +16,6 @@
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanHelpers.h>
-#include <igl/vulkan/VulkanSampler.h>
 #include <igl/vulkan/VulkanShaderModule.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 
@@ -146,7 +145,7 @@ Holder<SamplerHandle> Device::createSampler(const SamplerStateDesc& desc, Result
       desc.debugName);
 
   if (!IGL_VERIFY(result.isOk())) {
-    Result::setResult(outResult, Result(Result::Code::RuntimeError, "Cannot create VulkanSampler"));
+    Result::setResult(outResult, Result(Result::Code::RuntimeError, "Cannot create Sampler"));
     return {};
   }
 
@@ -238,7 +237,15 @@ void Device::destroy(lvk::ShaderModuleHandle handle) {
 }
 
 void Device::destroy(SamplerHandle handle) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+
+  VkSampler sampler = *ctx_->samplersPool_.get(handle);
+
   ctx_->samplersPool_.destroy(handle);
+
+  ctx_->deferredTask(std::packaged_task<void()>([device = ctx_->vkDevice_, sampler = sampler]() {
+    vkDestroySampler(device, sampler, nullptr);
+  }));
 
   // inform the context it should prune the samplers
   ctx_->awaitingDeletion_ = true;
