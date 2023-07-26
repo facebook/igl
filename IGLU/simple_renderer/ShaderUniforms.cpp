@@ -61,9 +61,8 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
   size_t uniformBufferLimit = 0;
   device.getFeatureLimits(igl::DeviceFeatureLimits::MaxUniformBufferBytes, uniformBufferLimit);
 
+  const bool isSuballocated = _backend == igl::BackendType::Vulkan;
   for (const igl::BufferArgDesc& iglDesc : reflection.allUniformBuffers()) {
-    bool isSuballocated = (_backend == igl::BackendType::Vulkan) ? true : false;
-
     size_t length = iglDesc.bufferDataSize;
     IGL_ASSERT_MSG(length > 0, "unexpected buffer with size 0");
     IGL_ASSERT_MSG(length <= MAX_SUBALLOCATED_BUFFER_SIZE_BYTES &&
