@@ -134,6 +134,12 @@ void lvk::destroy(lvk::IDevice* device, lvk::SamplerHandle handle) {
   }
 }
 
+void lvk::destroy(lvk::IDevice* device, lvk::BufferHandle handle) {
+  if (device) {
+    device->destroy(handle);
+  }
+}
+
 // Logs GLSL shaders with line numbers annotation
 void lvk::logShaderSource(const char* text) {
   uint32_t line = 1;

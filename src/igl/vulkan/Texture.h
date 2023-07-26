@@ -53,7 +53,7 @@ class Texture final : public ITexture {
   Result create(const TextureDesc& desc);
   Result validateRange(const lvk::TextureRangeDesc& range) const;
 
- protected:
+ private:
   VulkanContext& ctx_;
   TextureDesc desc_;
 

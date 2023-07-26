@@ -80,7 +80,7 @@ find_package(Vulkan REQUIRED)
 include_directories(.)
 include_directories(src)
 
-add_subdirectory(src/igl)
+add_subdirectory(src/igl/vulkan)
 add_subdirectory(lvk)
 
 target_include_directories(LVKLibrary PUBLIC ${LVK_ROOT_DIR})

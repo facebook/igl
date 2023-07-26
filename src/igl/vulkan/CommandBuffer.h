@@ -14,7 +14,6 @@
 namespace lvk {
 namespace vulkan {
 
-class Buffer;
 class VulkanContext;
 
 class CommandBuffer final : public ICommandBuffer {
@@ -45,26 +44,24 @@ class CommandBuffer final : public ICommandBuffer {
   void cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) override;
   void cmdBindDepthStencilState(const DepthStencilState& state) override;
 
-  void cmdBindVertexBuffer(uint32_t index,
-                           const std::shared_ptr<IBuffer>& buffer,
-                           size_t bufferOffset) override;
+  void cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, size_t bufferOffset) override;
   void cmdPushConstants(const void* data, size_t size, size_t offset) override;
 
   void cmdDraw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) override;
   void cmdDrawIndexed(PrimitiveType primitiveType,
                       size_t indexCount,
                       IndexFormat indexFormat,
-                      IBuffer& indexBuffer,
+                      BufferHandle indexBuffer,
                       size_t indexBufferOffset) override;
   void cmdDrawIndirect(PrimitiveType primitiveType,
-                       IBuffer& indirectBuffer,
+                       BufferHandle indirectBuffer,
                        size_t indirectBufferOffset,
                        uint32_t drawCount,
                        uint32_t stride = 0) override;
   void cmdDrawIndexedIndirect(PrimitiveType primitiveType,
                               IndexFormat indexFormat,
-                              IBuffer& indexBuffer,
-                              IBuffer& indirectBuffer,
+                              BufferHandle indexBuffer,
+                              BufferHandle indirectBuffer,
                               size_t indirectBufferOffset,
                               uint32_t drawCount,
                               uint32_t stride = 0) override;

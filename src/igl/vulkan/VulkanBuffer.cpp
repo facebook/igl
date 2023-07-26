@@ -12,18 +12,18 @@
 
 #include <string.h>
 
-namespace lvk {
-namespace vulkan {
+namespace lvk::vulkan {
 
-VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
+VulkanBuffer::VulkanBuffer(VulkanContext* ctx,
                            VkDevice device,
                            VkDeviceSize bufferSize,
                            VkBufferUsageFlags usageFlags,
                            VkMemoryPropertyFlags memFlags,
                            const char* debugName) :
-  ctx_(ctx), device_(device), bufferSize_(bufferSize), memFlags_(memFlags) {
+  ctx_(ctx), device_(device), bufferSize_(bufferSize), usageFlags_(usageFlags), memFlags_(memFlags) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
+  IGL_ASSERT(ctx);
   IGL_ASSERT(bufferSize > 0);
 
   // Initialize Buffer Info
@@ -44,7 +44,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
 
     vmaAllocInfo_.usage = VMA_MEMORY_USAGE_AUTO;
 
-    vmaCreateBuffer((VmaAllocator)ctx_.getVmaAllocator(),
+    vmaCreateBuffer((VmaAllocator)ctx_->getVmaAllocator(),
                     &ci,
                     &vmaAllocInfo_,
                     &vkBuffer_,
@@ -53,7 +53,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
 
     // handle memory-mapped buffers
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-      vmaMapMemory((VmaAllocator)ctx_.getVmaAllocator(), vmaAllocation_, &mappedPtr_);
+      vmaMapMemory((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, &mappedPtr_);
     }
   } else {
     // create buffer
@@ -65,7 +65,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
       vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
 
       VK_ASSERT(ivkAllocateMemory(
-          ctx_.getVkPhysicalDevice(), device_, &requirements, memFlags, &vkMemory_));
+          ctx_->getVkPhysicalDevice(), device_, &requirements, memFlags, &vkMemory_));
       VK_ASSERT(vkBindBufferMemory(device_, vkBuffer_, vkMemory_, 0));
     }
 
@@ -92,24 +92,58 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
 VulkanBuffer::~VulkanBuffer() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
+  if (!ctx_) {
+    return;
+  }
+
   if (IGL_VULKAN_USE_VMA) {
     if (mappedPtr_) {
-      vmaUnmapMemory((VmaAllocator)ctx_.getVmaAllocator(), vmaAllocation_);
+      vmaUnmapMemory((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_);
     }
-    ctx_.deferredTask(std::packaged_task<void()>(
-        [vma = ctx_.getVmaAllocator(), buffer = vkBuffer_, allocation = vmaAllocation_]() {
+    ctx_->deferredTask(std::packaged_task<void()>(
+        [vma = ctx_->getVmaAllocator(), buffer = vkBuffer_, allocation = vmaAllocation_]() {
           vmaDestroyBuffer((VmaAllocator)vma, buffer, allocation);
         }));
   } else {
     if (mappedPtr_) {
       vkUnmapMemory(device_, vkMemory_);
     }
-    ctx_.deferredTask(
+    ctx_->deferredTask(
         std::packaged_task<void()>([device = device_, buffer = vkBuffer_, memory = vkMemory_]() {
           vkDestroyBuffer(device, buffer, nullptr);
           vkFreeMemory(device, memory, nullptr);
         }));
   }
+}
+
+VulkanBuffer::VulkanBuffer(VulkanBuffer&& other) :
+  ctx_(other.ctx_),
+  device_(other.device_),
+  vkBuffer_(other.vkBuffer_),
+  vkMemory_(other.vkMemory_),
+  vmaAllocInfo_(other.vmaAllocInfo_),
+  vmaAllocation_(other.vmaAllocation_),
+  vkDeviceAddress_(other.vkDeviceAddress_),
+  bufferSize_(other.bufferSize_),
+  usageFlags_(other.usageFlags_),
+  memFlags_(other.memFlags_),
+  mappedPtr_(other.mappedPtr_) {
+  other.ctx_ = nullptr;
+}
+
+VulkanBuffer& VulkanBuffer::operator=(VulkanBuffer&& other) {
+  std::swap(ctx_, other.ctx_);
+  std::swap(device_, other.device_);
+  std::swap(vkBuffer_, other.vkBuffer_);
+  std::swap(vkMemory_, other.vkMemory_);
+  std::swap(vmaAllocInfo_, other.vmaAllocInfo_);
+  std::swap(vmaAllocation_, other.vmaAllocation_);
+  std::swap(vkDeviceAddress_, other.vkDeviceAddress_);
+  std::swap(bufferSize_, other.bufferSize_);
+  std::swap(usageFlags_, other.usageFlags_);
+  std::swap(memFlags_, other.memFlags_);
+  std::swap(mappedPtr_, other.mappedPtr_);
+  return *this;
 }
 
 void VulkanBuffer::flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) const {
@@ -118,7 +152,7 @@ void VulkanBuffer::flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) con
   }
 
   if (IGL_VULKAN_USE_VMA) {
-    vmaFlushAllocation((VmaAllocator)ctx_.getVmaAllocator(), vmaAllocation_, offset, size);
+    vmaFlushAllocation((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, offset, size);
   } else {
     const VkMappedMemoryRange memoryRange = {
         VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
@@ -166,5 +200,4 @@ void VulkanBuffer::bufferSubData(size_t offset, size_t size, const void* data) {
   }
 }
 
-} // namespace vulkan
-} // namespace lvk
+} // namespace lvk::vulkan

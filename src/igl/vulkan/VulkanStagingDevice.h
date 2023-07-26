@@ -24,7 +24,7 @@ class VulkanImmediateCommands;
 class VulkanStagingDevice final {
  public:
   explicit VulkanStagingDevice(VulkanContext& ctx);
-  ~VulkanStagingDevice() = default;
+  ~VulkanStagingDevice();
 
   VulkanStagingDevice(const VulkanStagingDevice&) = delete;
   VulkanStagingDevice& operator=(const VulkanStagingDevice&) = delete;
@@ -66,7 +66,7 @@ class VulkanStagingDevice final {
 
  private:
   VulkanContext& ctx_;
-  std::shared_ptr<VulkanBuffer> stagingBuffer_;
+  BufferHandle stagingBuffer_;
   std::unique_ptr<VulkanImmediateCommands> immediate_;
   uint32_t stagingBufferFrontOffset_ = 0;
   uint32_t stagingBufferAlignment_ = 16; // updated to support BC7 compressed image

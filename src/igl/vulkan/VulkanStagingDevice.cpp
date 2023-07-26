@@ -52,12 +52,16 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
                         nullptr,
                         "Buffer: staging buffer");
-  IGL_ASSERT(stagingBuffer_.get());
+  IGL_ASSERT(!stagingBuffer_.empty());
 
   immediate_ = std::make_unique<lvk::vulkan::VulkanImmediateCommands>(
       ctx_.getVkDevice(),
       ctx_.deviceQueues_.graphicsQueueFamilyIndex,
       "VulkanStagingDevice::immediate_");
+}
+
+VulkanStagingDevice::~VulkanStagingDevice() {
+  ctx_.buffersPool_.destroy(stagingBuffer_);
 }
 
 void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
@@ -73,19 +77,21 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
   size_t chunkDstOffset = dstOffset;
   void* copyData = const_cast<void*>(data);
 
+  lvk::vulkan::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
+
   while (size) {
     // get next staging buffer free offset
     const MemoryRegionDesc desc = getNextFreeOffset((uint32_t)size);
     const uint32_t chunkSize = std::min((uint32_t)size, desc.alignedSize_);
 
     // copy data into staging buffer
-    stagingBuffer_->bufferSubData(desc.srcOffset_, chunkSize, copyData);
+    stagingBuffer->bufferSubData(desc.srcOffset_, chunkSize, copyData);
 
     // do the transfer
     const VkBufferCopy copy = {desc.srcOffset_, chunkDstOffset, chunkSize};
 
     auto& wrapper = immediate_->acquire();
-    vkCmdCopyBuffer(wrapper.cmdBuf_, stagingBuffer_->getVkBuffer(), buffer.getVkBuffer(), 1, &copy);
+    vkCmdCopyBuffer(wrapper.cmdBuf_, stagingBuffer->getVkBuffer(), buffer.getVkBuffer(), 1, &copy);
     const SubmitHandle fenceId = immediate_->submit(wrapper);
     outstandingFences_[fenceId.handle()] = desc;
 
@@ -108,6 +114,8 @@ void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
   size_t chunkSrcOffset = srcOffset;
   auto* dstData = static_cast<uint8_t*>(data);
 
+  lvk::vulkan::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
+
   while (size) {
     // get next staging buffer free offset
     const MemoryRegionDesc desc = getNextFreeOffset((uint32_t)size);
@@ -118,7 +126,7 @@ void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
 
     auto& wrapper = immediate_->acquire();
 
-    vkCmdCopyBuffer(wrapper.cmdBuf_, buffer.getVkBuffer(), stagingBuffer_->getVkBuffer(), 1, &copy);
+    vkCmdCopyBuffer(wrapper.cmdBuf_, buffer.getVkBuffer(), stagingBuffer->getVkBuffer(), 1, &copy);
 
     SubmitHandle fenceId = immediate_->submit(wrapper);
     outstandingFences_[fenceId.handle()] = desc;
@@ -127,7 +135,7 @@ void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
     flushOutstandingFences();
 
     // copy data into data
-    const uint8_t* src = stagingBuffer_->getMappedPtr() + desc.srcOffset_;
+    const uint8_t* src = stagingBuffer->getMappedPtr() + desc.srcOffset_;
     memcpy(dstData, src, chunkSize);
 
     size -= chunkSize;
@@ -191,9 +199,11 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
 
   auto& wrapper = immediate_->acquire();
 
+  lvk::vulkan::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
+
   for (uint32_t layer = 0; layer != numLayers; layer++) {
     // copy the pixel data into the host visible staging buffer
-    stagingBuffer_->bufferSubData(
+    stagingBuffer->bufferSubData(
         desc.srcOffset_ + layer * layarStorageSize, layarStorageSize, data[layer]);
 
     uint32_t mipLevelOffset = 0;
@@ -232,7 +242,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
           region,
           VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, layer, 1});
       vkCmdCopyBufferToImage(wrapper.cmdBuf_,
-                             stagingBuffer_->getVkBuffer(),
+                             stagingBuffer->getVkBuffer(),
                              image.getVkImage(),
                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                              1,
@@ -287,8 +297,10 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
 
   IGL_ASSERT(desc.alignedSize_ >= storageSize);
 
+  lvk::vulkan::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
+
   // 1. Copy the pixel data into the host visible staging buffer
-  stagingBuffer_->bufferSubData(desc.srcOffset_, storageSize, data);
+  stagingBuffer->bufferSubData(desc.srcOffset_, storageSize, data);
 
   auto& wrapper = immediate_->acquire();
 
@@ -310,7 +322,7 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
                               extent,
                               VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1});
   vkCmdCopyBufferToImage(wrapper.cmdBuf_,
-                         stagingBuffer_->getVkBuffer(),
+                         stagingBuffer->getVkBuffer(),
                          image.getVkImage(),
                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                          1,
@@ -363,6 +375,8 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
 
   auto& wrapper1 = immediate_->acquire();
 
+  lvk::vulkan::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
+
   // 1. Transition to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
   ivkImageMemoryBarrier(wrapper1.cmdBuf_,
                         srcImage,
@@ -382,7 +396,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   vkCmdCopyImageToBuffer(wrapper1.cmdBuf_,
                          srcImage,
                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                         stagingBuffer_->getVkBuffer(),
+                         stagingBuffer->getVkBuffer(),
                          1,
                          &copy);
 
@@ -392,11 +406,11 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   flushOutstandingFences();
 
   // 3. Copy data from staging buffer into data
-  if (!IGL_VERIFY(stagingBuffer_->getMappedPtr())) {
+  if (!IGL_VERIFY(stagingBuffer->getMappedPtr())) {
     return;
   }
 
-  const uint8_t* src = stagingBuffer_->getMappedPtr() + desc.srcOffset_;
+  const uint8_t* src = stagingBuffer->getMappedPtr() + desc.srcOffset_;
   uint8_t* dst = static_cast<uint8_t*>(data);
 
   if (flipImageVertical) {

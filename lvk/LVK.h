@@ -96,12 +96,14 @@ using ComputePipelineHandle = lvk::Handle<struct ComputePipeline>;
 using RenderPipelineHandle = lvk::Handle<struct RenderPipeline>;
 using ShaderModuleHandle = lvk::Handle<struct ShaderModule>;
 using SamplerHandle = lvk::Handle<struct Sampler>;
+using BufferHandle = lvk::Handle<struct Buffer>;
 
 // forward declarations to access incomplete type IDevice
 void destroy(lvk::IDevice* device, lvk::ComputePipelineHandle handle);
 void destroy(lvk::IDevice* device, lvk::RenderPipelineHandle handle);
 void destroy(lvk::IDevice* device, lvk::ShaderModuleHandle handle);
 void destroy(lvk::IDevice* device, lvk::SamplerHandle handle);
+void destroy(lvk::IDevice* device, lvk::BufferHandle handle);
 
 template<typename HandleType>
 class Holder final {
@@ -677,19 +679,6 @@ struct BufferDesc final {
   const char* debugName = "";
 };
 
-class IBuffer {
- public:
-  virtual ~IBuffer() = default;
-
-  virtual Result upload(const void* data, size_t size, size_t offset = 0) = 0;
-
-  virtual uint8_t* getMappedPtr() const = 0;
-  virtual uint64_t gpuAddress(size_t offset = 0) const = 0;
-
- protected:
-  IBuffer() = default;
-};
-
 struct TextureRangeDesc {
   uint32_t x = 0;
   uint32_t y = 0;
@@ -777,7 +766,7 @@ class ICommandBuffer {
   virtual void cmdBindDepthStencilState(const DepthStencilState& state) = 0;
 
   virtual void cmdBindVertexBuffer(uint32_t index,
-                                   const std::shared_ptr<IBuffer>& buffer,
+                                   BufferHandle buffer,
                                    size_t bufferOffset) = 0;
   virtual void cmdPushConstants(const void* data, size_t size, size_t offset = 0) = 0;
   template<typename Struct>
@@ -789,17 +778,17 @@ class ICommandBuffer {
   virtual void cmdDrawIndexed(PrimitiveType primitiveType,
                               size_t indexCount,
                               IndexFormat indexFormat,
-                              IBuffer& indexBuffer,
+                              BufferHandle indexBuffer,
                               size_t indexBufferOffset) = 0;
   virtual void cmdDrawIndirect(PrimitiveType primitiveType,
-                               IBuffer& indirectBuffer,
+                               BufferHandle indirectBuffer,
                                size_t indirectBufferOffset,
                                uint32_t drawCount,
                                uint32_t stride = 0) = 0;
   virtual void cmdDrawIndexedIndirect(PrimitiveType primitiveType,
                                       IndexFormat indexFormat,
-                                      IBuffer& indexBuffer,
-                                      IBuffer& indirectBuffer,
+                                      BufferHandle indexBuffer,
+                                      BufferHandle indirectBuffer,
                                       size_t indirectBufferOffset,
                                       uint32_t drawCount,
                                       uint32_t stride = 0) = 0;
@@ -819,8 +808,8 @@ class IDevice {
                       lvk::QueueType queueType = lvk::QueueType_Graphics,
                       ITexture* present = nullptr) = 0;
 
-  virtual std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
-                                                Result* outResult = nullptr) = 0;
+  virtual Holder<BufferHandle> createBuffer(const BufferDesc& desc,
+                                            Result* outResult = nullptr) = 0;
 
   virtual Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc,
                                               Result* outResult = nullptr) = 0;
@@ -844,8 +833,12 @@ class IDevice {
   virtual void destroy(RenderPipelineHandle handle) = 0;
   virtual void destroy(ShaderModuleHandle handle) = 0;
   virtual void destroy(SamplerHandle handle) = 0;
+  virtual void destroy(BufferHandle handle) = 0;
 
   virtual uint32_t gpuId(SamplerHandle handle) const = 0;
+  virtual Result upload(BufferHandle handle, const void* data, size_t size, size_t offset = 0) = 0;
+  virtual uint8_t* getMappedPtr(BufferHandle handle) const = 0;
+  virtual uint64_t gpuAddress(BufferHandle handle, size_t offset = 0) const = 0;
 
   virtual std::shared_ptr<ITexture> getCurrentSwapchainTexture() = 0;
 

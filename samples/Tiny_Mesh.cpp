@@ -105,8 +105,8 @@ constexpr uint32_t kNumBufferedFrames = 3;
 std::unique_ptr<lvk::IDevice> device_;
 lvk::Framebuffer framebuffer_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Mesh_;
-std::shared_ptr<lvk::IBuffer> vb0_, ib0_; // buffers for vertices and indices
-std::vector<std::shared_ptr<lvk::IBuffer>> ubPerFrame_, ubPerObject_;
+lvk::Holder<lvk::BufferHandle> vb0_, ib0_; // buffers for vertices and indices
+std::vector<lvk::Holder<lvk::BufferHandle>> ubPerFrame_, ubPerObject_;
 std::shared_ptr<lvk::ITexture> texture0_, texture1_;
 lvk::Holder<lvk::SamplerHandle> sampler_;
 lvk::RenderPass renderPass_;
@@ -345,7 +345,7 @@ static void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_
       .texture1 = texture1_ ? texture1_->getTextureId() : 0u,
       .sampler = device_->gpuId(sampler_),
   };
-  ubPerFrame_[frameIndex]->upload(&perFrame, sizeof(perFrame));
+  device_->upload(ubPerFrame_[frameIndex], &perFrame, sizeof(perFrame));
 
   // rotate cubes around random axes
   for (uint32_t i = 0; i != kNumCubes; i++) {
@@ -358,7 +358,7 @@ static void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_
         glm::rotate(glm::translate(mat4(1.0f), offset), direction * (float)glfwGetTime(), axis_[i]);
   }
 
-  ubPerObject_[frameIndex]->upload(&perObject, sizeof(perObject));
+  device_->upload(ubPerObject_[frameIndex], &perObject, sizeof(perObject));
 
   // Command buffers (1-N per thread): create, submit and forget
   lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
@@ -381,12 +381,11 @@ static void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_
         uint64_t perFrame;
         uint64_t perObject;
       } bindings = {
-          .perFrame = ubPerFrame_[frameIndex]->gpuAddress(),
-          .perObject = ubPerObject_[frameIndex]->gpuAddress(i * sizeof(UniformsPerObject)),
+          .perFrame = device_->gpuAddress(ubPerFrame_[frameIndex]),
+          .perObject = device_->gpuAddress(ubPerObject_[frameIndex], i * sizeof(UniformsPerObject)),
       };
       buffer.cmdPushConstants(bindings);
-      buffer.cmdDrawIndexed(
-          lvk::Primitive_Triangle, 3 * 6 * 2, lvk::IndexFormat_UI16, *ib0_.get(), 0);
+      buffer.cmdDrawIndexed(lvk::Primitive_Triangle, 3 * 6 * 2, lvk::IndexFormat_UI16, ib0_, 0);
     }
     buffer.cmdPopDebugGroupLabel();
   }

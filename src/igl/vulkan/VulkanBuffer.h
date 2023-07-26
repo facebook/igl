@@ -18,9 +18,10 @@ namespace vulkan {
 
 class VulkanContext;
 
-class VulkanBuffer {
+class VulkanBuffer final {
  public:
-  VulkanBuffer(const VulkanContext& ctx,
+  VulkanBuffer() = default;
+  VulkanBuffer(VulkanContext* ctx,
                VkDevice device,
                VkDeviceSize bufferSize,
                VkBufferUsageFlags usageFlags,
@@ -30,6 +31,9 @@ class VulkanBuffer {
 
   VulkanBuffer(const VulkanBuffer&) = delete;
   VulkanBuffer& operator=(const VulkanBuffer&) = delete;
+
+  VulkanBuffer(VulkanBuffer&& other);
+  VulkanBuffer& operator=(VulkanBuffer&& other);
 
   void bufferSubData(size_t offset, size_t size, const void* data);
   void getBufferSubData(size_t offset, size_t size, void* data);
@@ -49,12 +53,12 @@ class VulkanBuffer {
   VkDeviceSize getSize() const {
     return bufferSize_;
   }
-  VkMemoryPropertyFlags getMemoryPropertyFlags() const {
-    return memFlags_;
+  VkBufferUsageFlags getUsageFlags() const {
+    return usageFlags_;
   }
 
  private:
-  const VulkanContext& ctx_;
+  VulkanContext* ctx_ = nullptr;
   VkDevice device_ = VK_NULL_HANDLE;
   VkBuffer vkBuffer_ = VK_NULL_HANDLE;
   VkDeviceMemory vkMemory_ = VK_NULL_HANDLE;
@@ -62,6 +66,7 @@ class VulkanBuffer {
   VmaAllocation vmaAllocation_ = VK_NULL_HANDLE;
   VkDeviceAddress vkDeviceAddress_ = 0;
   VkDeviceSize bufferSize_ = 0;
+  VkBufferUsageFlags usageFlags_ = 0;
   VkMemoryPropertyFlags memFlags_ = 0;
   void* mappedPtr_ = nullptr;
 };

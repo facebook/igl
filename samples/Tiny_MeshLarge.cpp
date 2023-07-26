@@ -423,9 +423,9 @@ lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_MeshWireframe_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Shadow_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Skybox_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Fullscreen_;
-std::shared_ptr<lvk::IBuffer> vb0_, ib0_; // buffers for vertices and indices
-std::shared_ptr<lvk::IBuffer> sbMaterials_; // storage buffer for materials
-std::vector<std::shared_ptr<lvk::IBuffer>> ubPerFrame_, ubPerFrameShadow_, ubPerObject_;
+lvk::Holder<lvk::BufferHandle> vb0_, ib0_; // buffers for vertices and indices
+lvk::Holder<lvk::BufferHandle> sbMaterials_; // storage buffer for materials
+std::vector<lvk::Holder<lvk::BufferHandle>> ubPerFrame_, ubPerFrameShadow_, ubPerObject_;
 lvk::Holder<lvk::SamplerHandle> sampler_;
 lvk::Holder<lvk::SamplerHandle> samplerShadow_;
 std::shared_ptr<lvk::ITexture> textureDummyWhite_;
@@ -1127,22 +1127,21 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
       .bDrawNormals = perFrame_.bDrawNormals,
       .bDebugLines = perFrame_.bDebugLines,
   };
-
-  ubPerFrame_[frameIndex]->upload(&perFrame_, sizeof(perFrame_));
+  device_->upload(ubPerFrame_[frameIndex], &perFrame_, sizeof(perFrame_));
 
   {
     const UniformsPerFrame perFrameShadow{
         .proj = shadowProj,
         .view = shadowView,
     };
-    ubPerFrameShadow_[frameIndex]->upload(&perFrameShadow, sizeof(perFrameShadow));
+    device_->upload(ubPerFrameShadow_[frameIndex], &perFrameShadow, sizeof(perFrameShadow));
   }
 
   UniformsPerObject perObject;
 
   perObject.model = glm::scale(mat4(1.0f), vec3(0.05f));
 
-  ubPerObject_[frameIndex]->upload(&perObject, sizeof(perObject));
+  device_->upload(ubPerObject_[frameIndex], &perObject, sizeof(perObject));
 
   // Command buffers (1-N per thread): create, submit and forget
 
@@ -1160,12 +1159,12 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
         uint64_t perFrame;
         uint64_t perObject;
       } bindings = {
-          .perFrame = ubPerFrameShadow_[frameIndex]->gpuAddress(),
-          .perObject = ubPerObject_[frameIndex]->gpuAddress(),
+          .perFrame = device_->gpuAddress(ubPerFrameShadow_[frameIndex]),
+          .perObject = device_->gpuAddress(ubPerObject_[frameIndex]),
       };
       buffer.cmdPushConstants(bindings);
       buffer.cmdDrawIndexed(
-          lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, *ib0_.get(), 0);
+          lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, ib0_, 0);
       buffer.cmdPopDebugGroupLabel();
     }
     buffer.cmdEndRendering();
@@ -1195,17 +1194,17 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
         uint64_t perObject;
         uint64_t materials;
       } bindings = {
-          .perFrame = ubPerFrame_[frameIndex]->gpuAddress(),
-          .perObject = ubPerObject_[frameIndex]->gpuAddress(),
-          .materials = sbMaterials_->gpuAddress(),
+          .perFrame = device_->gpuAddress(ubPerFrame_[frameIndex]),
+          .perObject = device_->gpuAddress(ubPerObject_[frameIndex]),
+          .materials = device_->gpuAddress(sbMaterials_),
       };
       buffer.cmdPushConstants(bindings);
       buffer.cmdDrawIndexed(
-          lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, *ib0_.get(), 0);
+          lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, ib0_, 0);
       if (enableWireframe_) {
         buffer.cmdBindRenderPipeline(renderPipelineState_MeshWireframe_);
         buffer.cmdDrawIndexed(
-            lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, *ib0_.get(), 0);
+            lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, ib0_, 0);
       }
       buffer.cmdPopDebugGroupLabel();
 
@@ -1701,7 +1700,7 @@ void processLoadedMaterials() {
   IGL_ASSERT(materials_[mtl.idx].texAmbient >= 0 && materials_[mtl.idx].texAmbient < kMaxTextures);
   IGL_ASSERT(materials_[mtl.idx].texDiffuse >= 0 && materials_[mtl.idx].texDiffuse < kMaxTextures);
   IGL_ASSERT(materials_[mtl.idx].texAlpha >= 0 && materials_[mtl.idx].texAlpha < kMaxTextures);
-  sbMaterials_->upload(materials_.data(), sizeof(GPUMaterial) * materials_.size());
+  device_->upload(sbMaterials_, materials_.data(), sizeof(GPUMaterial) * materials_.size());
 }
 
 int main(int argc, char* argv[]) {

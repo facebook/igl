@@ -7,9 +7,9 @@
 
 #include <igl/vulkan/CommandBuffer.h>
 
-#include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/Texture.h>
+#include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanTexture.h>
@@ -495,20 +495,18 @@ void CommandBuffer::cmdBindDepthStencilState(const DepthStencilState& desc) {
   setStencilState(VK_STENCIL_FACE_BACK_BIT, desc.backFaceStencil);
 }
 
-void CommandBuffer::cmdBindVertexBuffer(uint32_t index,
-                                        const std::shared_ptr<IBuffer>& buffer,
-                                        size_t bufferOffset) {
+void CommandBuffer::cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, size_t bufferOffset) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(buffer != nullptr)) {
+  if (!IGL_VERIFY(!buffer.empty())) {
     return;
   }
 
-  auto* buf = static_cast<lvk::vulkan::Buffer*>(buffer.get());
+  lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(buffer);
 
   VkBuffer vkBuf = buf->getVkBuffer();
 
-  IGL_ASSERT(buf->desc_.usage & BufferUsageBits_Vertex);
+  IGL_ASSERT(buf->getUsageFlags() & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
   const VkDeviceSize offset = bufferOffset;
   vkCmdBindVertexBuffers(wrapper_->cmdBuf_, index, 1, &vkBuf, &offset);
@@ -569,7 +567,7 @@ void CommandBuffer::cmdDraw(PrimitiveType primitiveType, size_t vertexStart, siz
 void CommandBuffer::cmdDrawIndexed(PrimitiveType primitiveType,
                                    size_t indexCount,
                                    IndexFormat indexFormat,
-                                   IBuffer& indexBuffer,
+                                   BufferHandle indexBuffer,
                                    size_t indexBufferOffset) {
   IGL_PROFILER_FUNCTION();
 
@@ -580,7 +578,7 @@ void CommandBuffer::cmdDrawIndexed(PrimitiveType primitiveType,
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
 
-  const lvk::vulkan::Buffer* buf = static_cast<lvk::vulkan::Buffer*>(&indexBuffer);
+  lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(indexBuffer);
 
   const VkIndexType type = indexFormatToVkIndexType(indexFormat);
   vkCmdBindIndexBuffer(wrapper_->cmdBuf_, buf->getVkBuffer(), indexBufferOffset, type);
@@ -589,7 +587,7 @@ void CommandBuffer::cmdDrawIndexed(PrimitiveType primitiveType,
 }
 
 void CommandBuffer::cmdDrawIndirect(PrimitiveType primitiveType,
-                                    IBuffer& indirectBuffer,
+                                    BufferHandle indirectBuffer,
                                     size_t indirectBufferOffset,
                                     uint32_t drawCount,
                                     uint32_t stride) {
@@ -598,7 +596,7 @@ void CommandBuffer::cmdDrawIndirect(PrimitiveType primitiveType,
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
 
-  const lvk::vulkan::Buffer* bufIndirect = static_cast<lvk::vulkan::Buffer*>(&indirectBuffer);
+  lvk::vulkan::VulkanBuffer* bufIndirect = ctx_->buffersPool_.get(indirectBuffer);
 
   vkCmdDrawIndirect(wrapper_->cmdBuf_,
                     bufIndirect->getVkBuffer(),
@@ -609,8 +607,8 @@ void CommandBuffer::cmdDrawIndirect(PrimitiveType primitiveType,
 
 void CommandBuffer::cmdDrawIndexedIndirect(PrimitiveType primitiveType,
                                            IndexFormat indexFormat,
-                                           IBuffer& indexBuffer,
-                                           IBuffer& indirectBuffer,
+                                           BufferHandle indexBuffer,
+                                           BufferHandle indirectBuffer,
                                            size_t indirectBufferOffset,
                                            uint32_t drawCount,
                                            uint32_t stride) {
@@ -619,8 +617,8 @@ void CommandBuffer::cmdDrawIndexedIndirect(PrimitiveType primitiveType,
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
 
-  const lvk::vulkan::Buffer* bufIndex = static_cast<lvk::vulkan::Buffer*>(&indexBuffer);
-  const lvk::vulkan::Buffer* bufIndirect = static_cast<lvk::vulkan::Buffer*>(&indirectBuffer);
+  lvk::vulkan::VulkanBuffer* bufIndex = ctx_->buffersPool_.get(indexBuffer);
+  lvk::vulkan::VulkanBuffer* bufIndirect = ctx_->buffersPool_.get(indirectBuffer);
 
   const VkIndexType type = indexFormatToVkIndexType(indexFormat);
   vkCmdBindIndexBuffer(wrapper_->cmdBuf_, bufIndex->getVkBuffer(), 0, type);

@@ -31,7 +31,7 @@ class Device final : public IDevice {
               lvk::QueueType queueType,
               ITexture* present) override;
 
-  std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc, Result* outResult) override;
+  Holder<BufferHandle> createBuffer(const BufferDesc& desc, Result* outResult) override;
   Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc, Result* outResult) override;
   std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,
                                           const char* debugName,
@@ -48,8 +48,12 @@ class Device final : public IDevice {
   void destroy(RenderPipelineHandle handle) override;
   void destroy(ShaderModuleHandle handle) override;
   void destroy(SamplerHandle handle) override;
+  void destroy(BufferHandle handle) override;
 
   uint32_t gpuId(SamplerHandle handle) const override;
+  Result upload(BufferHandle handle, const void* data, size_t size, size_t offset = 0) override;
+  uint8_t* getMappedPtr(BufferHandle handle) const override;
+  uint64_t gpuAddress(BufferHandle handle, size_t offset = 0) const override;
 
   std::shared_ptr<ITexture> getCurrentSwapchainTexture() override;
 

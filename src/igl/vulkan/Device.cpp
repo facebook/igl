@@ -8,12 +8,12 @@
 #include <igl/vulkan/Device.h>
 
 #include <cstring>
-#include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/Texture.h>
+#include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanShaderModule.h>
@@ -114,24 +114,65 @@ void Device::submit(const lvk::ICommandBuffer& commandBuffer,
   currentCommandBuffer_ = {};
 }
 
-std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc, Result* outResult) {
-  auto buffer = std::make_unique<vulkan::Buffer>(*this);
+Holder<BufferHandle> Device::createBuffer(const BufferDesc& requestedDesc, Result* outResult) {
+  BufferDesc desc = requestedDesc;
 
-  const auto result = buffer->create(desc);
+  if (!ctx_->useStaging_ && (desc.storage == StorageType_Device)) {
+    desc.storage = StorageType_HostVisible;
+  }
+
+  // Use staging device to transfer data into the buffer when the storage is private to the device
+  VkBufferUsageFlags usageFlags =
+      (desc.storage == StorageType_Device)
+          ? VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+          : 0;
+
+  if (desc.usage == 0) {
+    Result::setResult(outResult, Result(Result::Code::ArgumentOutOfRange, "Invalid buffer usage"));
+    return {};
+  }
+
+  if (desc.usage & BufferUsageBits_Index) {
+    usageFlags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+  }
+  if (desc.usage & BufferUsageBits_Vertex) {
+    usageFlags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+  }
+  if (desc.usage & BufferUsageBits_Uniform) {
+    usageFlags |=
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
+  }
+
+  if (desc.usage & BufferUsageBits_Storage) {
+    usageFlags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                  VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
+  }
+
+  if (desc.usage & BufferUsageBits_Indirect) {
+    usageFlags |=
+        VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
+  }
+
+  const VkMemoryPropertyFlags memFlags = storageTypeToVkMemoryPropertyFlags(desc.storage);
+
+  Result result;
+  BufferHandle handle =
+      ctx_->createBuffer(desc.size, usageFlags, memFlags, &result, desc.debugName);
 
   if (!IGL_VERIFY(result.isOk())) {
-    return nullptr;
+    Result::setResult(outResult, result);
+    return {};
   }
 
-  if (!desc.data) {
-    return buffer;
+  if (desc.data) {
+    upload(handle, desc.data, desc.size);
   }
 
-  const auto uploadResult = buffer->upload(desc.data, desc.size);
-  IGL_VERIFY(uploadResult.isOk());
-  Result::setResult(outResult, uploadResult);
+  Result::setResult(outResult, Result());
 
-  return buffer;
+  Holder<BufferHandle> holder = {this, handle};
+
+  return holder;
 }
 
 Holder<SamplerHandle> Device::createSampler(const SamplerStateDesc& desc, Result* outResult) {
@@ -251,8 +292,53 @@ void Device::destroy(SamplerHandle handle) {
   ctx_->awaitingDeletion_ = true;
 }
 
+void Device::destroy(BufferHandle handle) {
+  ctx_->buffersPool_.destroy(handle);
+}
+
 uint32_t Device::gpuId(SamplerHandle handle) const {
   return handle.index();
+}
+
+Result Device::upload(BufferHandle handle, const void* data, size_t size, size_t offset) {
+  IGL_PROFILER_FUNCTION();
+
+  if (!IGL_VERIFY(data)) {
+    return lvk::Result();
+  }
+
+  lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
+
+  if (!IGL_VERIFY(buf)) {
+    return lvk::Result();
+  }
+
+  if (!IGL_VERIFY(offset + size <= buf->getSize())) {
+    return lvk::Result(Result::Code::ArgumentOutOfRange, "Out of range");
+  }
+
+  ctx_->stagingDevice_->bufferSubData(*buf, offset, size, data);
+
+  return lvk::Result();
+}
+
+uint8_t* Device::getMappedPtr(BufferHandle handle) const {
+  lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
+
+  IGL_ASSERT(buf);
+
+  return buf->isMapped() ? buf->getMappedPtr() : nullptr;
+}
+
+uint64_t Device::gpuAddress(BufferHandle handle, size_t offset) const {
+  IGL_ASSERT_MSG((offset & 7) == 0,
+                 "Buffer offset must be 8 bytes aligned as per GLSL_EXT_buffer_reference spec.");
+
+  lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
+
+  IGL_ASSERT(buf);
+
+  return buf ? (uint64_t)buf->getVkDeviceAddress() + offset : 0u;
 }
 
 lvk::Holder<lvk::ShaderModuleHandle> Device::createShaderModule(const ShaderModuleDesc& desc, Result* outResult) {

@@ -199,6 +199,10 @@ VulkanContext::VulkanContext(const VulkanContextConfig& config,
 VulkanContext::~VulkanContext() {
   IGL_PROFILER_FUNCTION();
 
+  VK_ASSERT(vkDeviceWaitIdle(vkDevice_));
+
+  stagingDevice_.reset(nullptr);
+
   if (shaderModulesPool_.numObjects()) {
     LLOGW("Leaked %u shader modules\n", shaderModulesPool_.numObjects());
   }
@@ -212,21 +216,19 @@ VulkanContext::~VulkanContext() {
     // the dummy value is owned by the context
     LLOGW("Leaked %u samplers\n", samplersPool_.numObjects() - 1);
   }
-
-  VK_ASSERT(vkDeviceWaitIdle(vkDevice_));
-
-  computePipelinesPool_.clear();
-  renderPipelinesPool_.clear();
-  shaderModulesPool_.clear();
+  if (buffersPool_.numObjects()) {
+    LLOGW("Leaked %u buffers\n", buffersPool_.numObjects());
+  }
 
   // manually destroy the dummy sampler
   vkDestroySampler(vkDevice_, samplersPool_.objects_.front().obj_, nullptr);
   samplersPool_.clear();
+  computePipelinesPool_.clear();
+  renderPipelinesPool_.clear();
+  shaderModulesPool_.clear();
 
   textures_.clear();
 
-  // This will free an internal buffer that was allocated by VMA
-  stagingDevice_.reset(nullptr);
   swapchain_.reset(nullptr); // Swapchain has to be destroyed prior to Surface
 
   waitDeferredTasks();
@@ -930,17 +932,17 @@ Result VulkanContext::present() const {
   return swapchain_->present(immediate_->acquireLastSubmitSemaphore());
 }
 
-std::shared_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSize,
-                                                          VkBufferUsageFlags usageFlags,
-                                                          VkMemoryPropertyFlags memFlags,
-                                                          lvk::Result* outResult,
-                                                          const char* debugName) const {
+BufferHandle VulkanContext::createBuffer(VkDeviceSize bufferSize,
+                                         VkBufferUsageFlags usageFlags,
+                                         VkMemoryPropertyFlags memFlags,
+                                         lvk::Result* outResult,
+                                         const char* debugName) {
 #define ENSURE_BUFFER_SIZE(flag, maxSize)                                                  \
   if (usageFlags & flag) {                                                                 \
     if (!IGL_VERIFY(bufferSize <= maxSize)) {                                              \
       Result::setResult(outResult,                                                         \
                         Result(Result::Code::RuntimeError, "Buffer size exceeded" #flag)); \
-      return nullptr;                                                                      \
+      return {};                                                                           \
     }                                                                                      \
   }
 
@@ -951,8 +953,8 @@ std::shared_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSiz
   ENSURE_BUFFER_SIZE(VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM, limits.maxStorageBufferRange);
 #undef ENSURE_BUFFER_SIZE
 
-  return std::make_shared<VulkanBuffer>(
-      *this, vkDevice_, bufferSize, usageFlags, memFlags, debugName);
+  return buffersPool_.create(
+      VulkanBuffer(this, vkDevice_, bufferSize, usageFlags, memFlags, debugName));
 }
 
 std::shared_ptr<VulkanImage> VulkanContext::createImage(VkImageType imageType,

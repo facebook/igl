@@ -15,6 +15,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/RenderPipelineState.h>
+#include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 #include <igl/vulkan/VulkanShaderModule.h>
@@ -26,10 +27,7 @@ namespace lvk {
 namespace vulkan {
 
 class Device;
-class EnhancedShaderDebuggingStore;
 class CommandBuffer;
-class CommandQueue;
-class RenderCommandEncoder;
 class VulkanBuffer;
 class VulkanImage;
 class VulkanImageView;
@@ -85,11 +83,11 @@ class VulkanContext final {
                                            VkSampleCountFlagBits samples,
                                            lvk::Result* outResult,
                                            const char* debugName = nullptr) const;
-  std::shared_ptr<VulkanBuffer> createBuffer(VkDeviceSize bufferSize,
-                                             VkBufferUsageFlags usageFlags,
-                                             VkMemoryPropertyFlags memFlags,
-                                             lvk::Result* outResult,
-                                             const char* debugName = nullptr) const;
+  BufferHandle createBuffer(VkDeviceSize bufferSize,
+                            VkBufferUsageFlags usageFlags,
+                            VkMemoryPropertyFlags memFlags,
+                            lvk::Result* outResult,
+                            const char* debugName = nullptr);
   std::shared_ptr<VulkanTexture> createTexture(std::shared_ptr<VulkanImage> image,
                                                std::shared_ptr<VulkanImageView> imageView) const;
   SamplerHandle createSampler(const VkSamplerCreateInfo& ci,
@@ -149,9 +147,7 @@ class VulkanContext final {
  private:
   friend class lvk::vulkan::Device;
   friend class lvk::vulkan::VulkanSwapchain;
-  friend class lvk::vulkan::CommandQueue;
   friend class lvk::vulkan::CommandBuffer;
-  friend class lvk::vulkan::RenderCommandEncoder;
 
   VkInstance vkInstance_ = VK_NULL_HANDLE;
   VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;
@@ -225,6 +221,7 @@ class VulkanContext final {
   lvk::Pool<lvk::RenderPipeline, lvk::vulkan::RenderPipelineState> renderPipelinesPool_;
   lvk::Pool<lvk::ComputePipeline, lvk::vulkan::ComputePipelineState> computePipelinesPool_;
   lvk::Pool<lvk::Sampler, VkSampler> samplersPool_;
+  lvk::Pool<lvk::Buffer, lvk::vulkan::VulkanBuffer> buffersPool_;
 
   struct DeferredTask {
     DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) :

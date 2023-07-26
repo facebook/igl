@@ -209,10 +209,10 @@ void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffe
     DrawableData& drawableData = curFrameDrawables[n];
 
     // Upload vertex/index buffers
-    drawableData.vb_->upload(cmd_list->VtxBuffer.Data,
-                             cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-    drawableData.ib_->upload(cmd_list->IdxBuffer.Data,
-                             cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+    device.upload(
+        drawableData.vb_, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+    device.upload(
+        drawableData.ib_, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
 
     for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++) {
       const ImDrawCmd cmd = cmd_list->CmdBuffer[cmd_i];
@@ -245,7 +245,7 @@ void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffe
                                cmd.ElemCount,
                                sizeof(ImDrawIdx) == sizeof(uint16_t) ? lvk::IndexFormat_UI16
                                                                      : lvk::IndexFormat_UI32,
-                               *drawableData.ib_,
+                               drawableData.ib_,
                                cmd.IdxOffset * sizeof(ImDrawIdx));
     }
   }

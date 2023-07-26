@@ -35,8 +35,8 @@ class ImGuiRenderer {
   uint32_t frameIndex_ = 0;
 
   struct DrawableData {
-    std::shared_ptr<lvk::IBuffer> vb_;
-    std::shared_ptr<lvk::IBuffer> ib_;
+    lvk::Holder<BufferHandle> vb_;
+    lvk::Holder<BufferHandle> ib_;
     explicit DrawableData(lvk::IDevice& device);
   };
 
