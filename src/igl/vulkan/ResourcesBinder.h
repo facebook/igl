@@ -28,9 +28,12 @@ struct BufferInfo {
   size_t offset = 0;
 };
 
-struct Bindings {
+struct BindingsTextures {
   igl::vulkan::VulkanTexture* textures[IGL_TEXTURE_SAMPLERS_MAX] = {};
   igl::vulkan::VulkanSampler* samplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
+};
+
+struct BindingsBuffers {
   BufferInfo buffers[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
 };
 
@@ -58,8 +61,10 @@ class ResourcesBinder final {
   const VulkanContext& ctx_;
   VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
   VkPipeline lastPipelineBound_ = VK_NULL_HANDLE;
-  bool isBindingsUpdateRequired_ = true;
-  Bindings bindings_;
+  bool isDirtyTextures_ = true;
+  bool isDirtyBuffers_ = true;
+  BindingsTextures bindingsTextures_;
+  BindingsBuffers bindingsBuffers_;
   VkPipelineBindPoint bindPoint_ = VK_PIPELINE_BIND_POINT_GRAPHICS;
 };
 

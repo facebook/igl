@@ -29,8 +29,11 @@ void ResourcesBinder::bindBuffer(uint32_t index, igl::vulkan::Buffer* buffer, si
     return;
   }
 
-  bindings_.buffers[index] = {buffer, bufferOffset};
-  isBindingsUpdateRequired_ = true;
+  if (bindingsBuffers_.buffers[index].buf != buffer ||
+      bindingsBuffers_.buffers[index].offset != bufferOffset) {
+    bindingsBuffers_.buffers[index] = {buffer, bufferOffset};
+    isDirtyBuffers_ = true;
+  }
 }
 
 void ResourcesBinder::bindSamplerState(uint32_t index, igl::vulkan::SamplerState* samplerState) {
@@ -41,9 +44,12 @@ void ResourcesBinder::bindSamplerState(uint32_t index, igl::vulkan::SamplerState
     return;
   }
 
-  bindings_.samplers[index] = samplerState ? samplerState->sampler_.get() : nullptr;
+  igl::vulkan::VulkanSampler* newSampler = samplerState ? samplerState->sampler_.get() : nullptr;
 
-  isBindingsUpdateRequired_ = true;
+  if (bindingsTextures_.samplers[index] != newSampler) {
+    bindingsTextures_.samplers[index] = newSampler;
+    isDirtyTextures_ = true;
+  }
 }
 
 void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
@@ -75,19 +81,23 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
     }
   }
 
-  bindings_.textures[index] = tex ? &tex->getVulkanTexture() : nullptr;
+  igl::vulkan::VulkanTexture* newTexture = tex ? &tex->getVulkanTexture() : nullptr;
 
-  isBindingsUpdateRequired_ = true;
+  if (bindingsTextures_.textures[index] != newTexture) {
+    bindingsTextures_.textures[index] = newTexture;
+    isDirtyTextures_ = true;
+  }
 }
 
 void ResourcesBinder::updateBindings() {
-  if (!isBindingsUpdateRequired_) {
-    return;
+  if (isDirtyTextures_) {
+    ctx_.updateBindingsTextures(cmdBuffer_, bindPoint_, bindingsTextures_);
+    isDirtyTextures_ = false;
   }
-
-  ctx_.updateBindings(cmdBuffer_, bindPoint_, bindings_);
-
-  isBindingsUpdateRequired_ = false;
+  if (isDirtyBuffers_) {
+    ctx_.updateBindingsBuffers(cmdBuffer_, bindPoint_, bindingsBuffers_);
+    isDirtyBuffers_ = false;
+  }
 }
 
 void ResourcesBinder::bindPipeline(VkPipeline pipeline) {

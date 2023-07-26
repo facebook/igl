@@ -264,8 +264,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   bindScissorRect(scissor);
 
   ctx_.checkAndUpdateDescriptorSets();
-
-  binder_.updateBindings();
+  ctx_.bindDefaultDescriptorSets(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
   vkCmdBeginRenderPass(cmdBuffer_, &bi, VK_SUBPASS_CONTENTS_INLINE);
 

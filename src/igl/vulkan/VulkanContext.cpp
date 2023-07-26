@@ -45,7 +45,15 @@
 
 namespace {
 
+/*
+ *  0 - bindless textures/samplers
+ *  1 - textures/samplers
+ *  2 - uniform buffers
+ *  3 - storage buffers
+ */
 const uint32_t kBindPoint_Bindless = 0;
+const uint32_t kBindPoint_Textures = 1;
+const uint32_t kBindPoint_Buffers = 2;
 
 /*
  These bindings should match GLSL declarations injected into shaders in
@@ -1235,19 +1243,30 @@ uint64_t VulkanContext::getFrameNumber() const {
   return swapchain_ ? swapchain_->getFrameNumber() : 0u;
 }
 
-void VulkanContext::updateBindings(VkCommandBuffer cmdBuf,
-                                   VkPipelineBindPoint bindPoint,
-                                   const Bindings& data) const {
+void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
+                                              VkPipelineBindPoint bindPoint) const {
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-  VkDescriptorSet dsetTex = textureDSets_[currentDSetIndex_].ds;
-  VkDescriptorSet dsetBufUniform = bufferUniformDSets_[currentDSetIndex_].ds;
-  VkDescriptorSet dsetBufStorage = bufferStorageDSets_[currentDSetIndex_].ds;
-  // they all have the same handle, so we wait only once
-  immediate_->wait(std::exchange(textureDSets_[currentDSetIndex_].handle, {}));
-  bufferUniformDSets_[currentDSetIndex_].handle = {};
-  bufferStorageDSets_[currentDSetIndex_].handle = {};
-  currentDSetIndex_ = (currentDSetIndex_ + 1) % textureDSets_.size();
+#if IGL_VULKAN_PRINT_COMMANDS
+  IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - bindless\n", cmdBuf, bindPoint);
+#endif // IGL_VULKAN_PRINT_COMMANDS
+  vkCmdBindDescriptorSets(
+      cmdBuf,
+      bindPoint,
+      (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
+      kBindPoint_Bindless,
+      1,
+      &bindlessDSet_.ds,
+      0,
+      nullptr);
+}
+
+void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
+                                           VkPipelineBindPoint bindPoint,
+                                           const BindingsTextures& data) const {
+  VkDescriptorSet dsetTex = textureDSets_[currentDSetIndexTextures_].ds;
+  immediate_->wait(std::exchange(textureDSets_[currentDSetIndexTextures_].handle, {}));
+  currentDSetIndexTextures_ = (currentDSetIndexTextures_ + 1) % textureDSets_.size();
 
   // 1. Sampled and storage images
 
@@ -1278,7 +1297,7 @@ void VulkanContext::updateBindings(VkCommandBuffer cmdBuf,
                                    VK_NULL_HANDLE,
                                    VK_IMAGE_LAYOUT_UNDEFINED};
   }
-  std::array<VkWriteDescriptorSet, IGL_TEXTURE_SAMPLERS_MAX + IGL_UNIFORM_BLOCKS_BINDING_MAX> write;
+  std::array<VkWriteDescriptorSet, 6> write{}; // 2D, 2D array, 3D, Cube, Sampler, SamplerShadow
   uint32_t numWrites = 0;
 
   // use the same indexing for every texture type
@@ -1290,8 +1309,40 @@ void VulkanContext::updateBindings(VkCommandBuffer cmdBuf,
     write[numWrites++] = ivkGetWriteDescriptorSet_ImageInfo(
         dsetTex, i, VK_DESCRIPTOR_TYPE_SAMPLER, numSamplers, infoSamplers.data());
   }
+  IGL_ASSERT(numWrites == write.size());
 
-  // 3. Uniform/storage buffers
+  vkUpdateDescriptorSets(device_->getVkDevice(), numWrites, write.data(), 0, nullptr);
+
+  const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+#if IGL_VULKAN_PRINT_COMMANDS
+  IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - textures\n", cmdBuf, bindPoint);
+#endif // IGL_VULKAN_PRINT_COMMANDS
+  vkCmdBindDescriptorSets(
+      cmdBuf,
+      bindPoint,
+      (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
+      kBindPoint_Textures,
+      1,
+      &dsetTex,
+      0,
+      nullptr);
+}
+
+void VulkanContext::updateBindingsBuffers(VkCommandBuffer cmdBuf,
+                                          VkPipelineBindPoint bindPoint,
+                                          const BindingsBuffers& data) const {
+  VkDescriptorSet dsetBufUniform = bufferUniformDSets_[currentDSetIndexBuffers_].ds;
+  VkDescriptorSet dsetBufStorage = bufferStorageDSets_[currentDSetIndexBuffers_].ds;
+  // both buffer types reuse the same handle, so we wait only once
+  immediate_->wait(std::exchange(bufferUniformDSets_[currentDSetIndexBuffers_].handle, {}));
+  bufferStorageDSets_[currentDSetIndexBuffers_].handle = {};
+  currentDSetIndexBuffers_ = (currentDSetIndexBuffers_ + 1) % bufferUniformDSets_.size();
+
+  // Update uniform/storage buffers
+
+  std::array<VkWriteDescriptorSet, IGL_UNIFORM_BLOCKS_BINDING_MAX> write;
+  uint32_t numWrites = 0;
 
   std::array<VkDescriptorBufferInfo, IGL_UNIFORM_BLOCKS_BINDING_MAX> infoBuffers{};
   uint32_t numBuffers = 0;
@@ -1320,24 +1371,24 @@ void VulkanContext::updateBindings(VkCommandBuffer cmdBuf,
         1,
         &infoBuffers[numBuffers]);
     numBuffers++;
-    IGL_ASSERT(numWrites < IGL_TEXTURE_SAMPLERS_MAX + IGL_UNIFORM_BLOCKS_BINDING_MAX);
+    IGL_ASSERT(numWrites <= IGL_UNIFORM_BLOCKS_BINDING_MAX);
   }
 
   vkUpdateDescriptorSets(device_->getVkDevice(), numWrites, write.data(), 0, nullptr);
 
+  const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
+
   // @lint-ignore CLANGTIDY
-  const VkDescriptorSet sets[] = {
-      bindlessDSet_.ds, dsetTex, dsetBufUniform, dsetBufStorage}; // 0, 1, 2, 3
+  const VkDescriptorSet sets[] = {dsetBufUniform, dsetBufStorage}; // 2, 3
 
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO(
-      "%p vkCmdBindDescriptorSets(%u, %zu)\n", cmdBuf, bindPoint, IGL_ARRAY_NUM_ELEMENTS(sets));
+  IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - buffers\n", cmdBuf, bindPoint);
 #endif // IGL_VULKAN_PRINT_COMMANDS
   vkCmdBindDescriptorSets(
       cmdBuf,
       bindPoint,
       (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
-      kBindPoint_Bindless,
+      kBindPoint_Buffers,
       IGL_ARRAY_NUM_ELEMENTS(sets),
       sets,
       0,
@@ -1347,19 +1398,23 @@ void VulkanContext::updateBindings(VkCommandBuffer cmdBuf,
 void VulkanContext::markSubmit(const VulkanImmediateCommands::SubmitHandle& handle) const {
   bindlessDSet_.handle = handle;
 
-  // they all should have the same number of elements
-  const uint32_t num = static_cast<uint32_t>(textureDSets_.size());
-
-  IGL_ASSERT(bufferUniformDSets_.size() == num);
-  IGL_ASSERT(bufferStorageDSets_.size() == num);
-
-  for (uint32_t i = prevSubmitIndex_; i != currentDSetIndex_; i = (i + 1) % num) {
+  for (uint32_t i = prevSubmitIndexTextures_; i != currentDSetIndexTextures_;
+       i = (i + 1) % textureDSets_.size()) {
     textureDSets_[i].handle = handle;
+  }
+
+  // they all should have the same number of elements
+  const uint32_t num = static_cast<uint32_t>(bufferUniformDSets_.size());
+
+  IGL_ASSERT(bufferUniformDSets_.size() == bufferStorageDSets_.size());
+
+  for (uint32_t i = prevSubmitIndexBuffers_; i != currentDSetIndexBuffers_; i = (i + 1) % num) {
     bufferUniformDSets_[i].handle = handle;
     bufferStorageDSets_[i].handle = handle;
   }
 
-  prevSubmitIndex_ = currentDSetIndex_;
+  prevSubmitIndexTextures_ = currentDSetIndexTextures_;
+  prevSubmitIndexBuffers_ = currentDSetIndexBuffers_;
 }
 
 void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) const {

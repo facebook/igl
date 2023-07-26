@@ -42,8 +42,8 @@ class VulkanSemaphore;
 class VulkanSwapchain;
 class VulkanTexture;
 
-struct Bindings;
-struct TextureBindings;
+struct BindingsBuffers;
+struct BindingsTextures;
 struct VulkanContextImpl;
 
 struct DeviceQueues {
@@ -192,6 +192,7 @@ class VulkanContext final {
   void createInstance(const size_t numExtraExtensions, const char** extraExtensions);
   void createSurface(void* window, void* display);
   void checkAndUpdateDescriptorSets() const;
+  void bindDefaultDescriptorSets(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPointa) const;
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void waitDeferredTasks();
@@ -274,8 +275,10 @@ class VulkanContext final {
   mutable std::vector<DescriptorSet> textureDSets_;
   mutable std::vector<DescriptorSet> bufferUniformDSets_;
   mutable std::vector<DescriptorSet> bufferStorageDSets_;
-  mutable uint32_t currentDSetIndex_ = 0;
-  mutable uint32_t prevSubmitIndex_ = 0;
+  mutable uint32_t currentDSetIndexTextures_ = 0;
+  mutable uint32_t currentDSetIndexBuffers_ = 0;
+  mutable uint32_t prevSubmitIndexTextures_ = 0;
+  mutable uint32_t prevSubmitIndexBuffers_ = 0;
   std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutGraphics_;
   std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutCompute_;
   // don't use staging on devices with shared host-visible memory
@@ -318,9 +321,12 @@ class VulkanContext final {
   // Enhanced shader debug: line drawing
   std::unique_ptr<EnhancedShaderDebuggingStore> enhancedShaderDebuggingStore_;
 
-  void updateBindings(VkCommandBuffer cmdBuf,
-                      VkPipelineBindPoint bindPoint,
-                      const Bindings& data) const;
+  void updateBindingsTextures(VkCommandBuffer cmdBuf,
+                              VkPipelineBindPoint bindPoint,
+                              const BindingsTextures& data) const;
+  void updateBindingsBuffers(VkCommandBuffer cmdBuf,
+                             VkPipelineBindPoint bindPoint,
+                             const BindingsBuffers& data) const;
   void markSubmit(const SubmitHandle& handle) const;
 
   struct DeferredTask {
