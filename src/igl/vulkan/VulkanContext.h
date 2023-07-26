@@ -60,8 +60,8 @@ struct DeviceQueues {
 struct VulkanContextConfig {
   // small default values are used to speed up debugging via RenderDoc and Validation Layers
   // macOS: MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS is required when using this with MoltenVK
-  uint32_t maxTextures = 512;
-  uint32_t maxSamplers = 512;
+  uint32_t maxTextures = 256;
+  uint32_t maxSamplers = 256;
   bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
 
   // enable/disable enhanced shader debugging capabilities (line drawing)
