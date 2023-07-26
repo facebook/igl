@@ -726,15 +726,6 @@ struct TextureDesc {
   const void* initialData = nullptr;
 };
 
-class ISamplerState {
- protected:
-  ISamplerState() = default;
-
- public:
-  virtual ~ISamplerState() = default;
-  virtual uint32_t getSamplerId() const = 0;
-};
-
 class ITexture {
  public:
   explicit ITexture(TextureFormat format) : format_(format) {}
