@@ -346,6 +346,10 @@ using namespace igl;
 }
 
 - (void)mtkView:(nonnull MTKView*)view drawableSizeWillChange:(CGSize)size {
+  frame_.size = size;
+}
+
+- (void)mtkView:(nonnull MTKView*)view drawableSizeDidChange:(CGSize)size {
 }
 
 - (std::shared_ptr<igl::ITexture>)createTextureFromNativeDrawable {
