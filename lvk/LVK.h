@@ -72,11 +72,18 @@ class Handle final {
   uint32_t gen() const {
     return gen_;
   }
+  void* indexAsVoid() const {
+    return reinterpret_cast<void*>(static_cast<ptrdiff_t>(index_));
+  }
   bool operator==(const Handle<ObjectType>& other) const {
     return index_ == other.index_ && gen_ == other.gen_;
   }
   bool operator!=(const Handle<ObjectType>& other) const {
     return index_ != other.index_ || gen_ != other.gen_;
+  }
+  // allow conditions 'if (handle)'
+  explicit operator bool() const {
+    return gen_ != 0;
   }
 
  private:
@@ -97,6 +104,7 @@ using RenderPipelineHandle = lvk::Handle<struct RenderPipeline>;
 using ShaderModuleHandle = lvk::Handle<struct ShaderModule>;
 using SamplerHandle = lvk::Handle<struct Sampler>;
 using BufferHandle = lvk::Handle<struct Buffer>;
+using TextureHandle = lvk::Handle<struct Texture>;
 
 // forward declarations to access incomplete type IDevice
 void destroy(lvk::IDevice* device, lvk::ComputePipelineHandle handle);
@@ -104,6 +112,7 @@ void destroy(lvk::IDevice* device, lvk::RenderPipelineHandle handle);
 void destroy(lvk::IDevice* device, lvk::ShaderModuleHandle handle);
 void destroy(lvk::IDevice* device, lvk::SamplerHandle handle);
 void destroy(lvk::IDevice* device, lvk::BufferHandle handle);
+void destroy(lvk::IDevice* device, lvk::TextureHandle handle);
 
 template<typename HandleType>
 class Holder final {
@@ -152,6 +161,13 @@ class Holder final {
     return std::exchange(handle_, HandleType{});
   }
 
+  uint32_t index() const {
+    return handle_.index();
+  }
+  void* indexAsVoid() const {
+    return handle_.indexAsVoid();
+  }
+
  private:
   lvk::IDevice* device_ = nullptr;
   HandleType handle_;
@@ -172,8 +188,6 @@ class Holder final {
 // clang-format on
 
 namespace lvk {
-
-class ITexture;
 
 enum { IGL_COLOR_ATTACHMENTS_MAX = 4 };
 
@@ -535,7 +549,7 @@ struct VertexInput final {
 };
 
 struct ColorAttachment {
-  TextureFormat textureFormat = TextureFormat::Invalid;
+  TextureFormat format = TextureFormat::Invalid;
   bool blendEnabled = false;
   BlendOp rgbBlendOp = BlendOp::BlendOp_Add;
   BlendOp alphaBlendOp = BlendOp::BlendOp_Add;
@@ -606,8 +620,7 @@ struct RenderPipelineDesc final {
 
   uint32_t getNumColorAttachments() const {
     uint32_t n = 0;
-    while (n < IGL_COLOR_ATTACHMENTS_MAX &&
-           colorAttachments[n].textureFormat != TextureFormat::Invalid) {
+    while (n < IGL_COLOR_ATTACHMENTS_MAX && colorAttachments[n].format != TextureFormat::Invalid) {
       n++;
     }
     return n;
@@ -645,8 +658,8 @@ struct RenderPass final {
 
 struct Framebuffer final {
   struct AttachmentDesc {
-    std::shared_ptr<ITexture> texture;
-    std::shared_ptr<ITexture> resolveTexture;
+    TextureHandle texture;
+    TextureHandle resolveTexture;
   };
 
   AttachmentDesc colorAttachments[IGL_COLOR_ATTACHMENTS_MAX] = {};
@@ -715,35 +728,16 @@ struct TextureDesc {
   const void* initialData = nullptr;
 };
 
-class ITexture {
- public:
-  explicit ITexture(TextureFormat format) : format_(format) {}
-  virtual ~ITexture() = default;
-
-  // data[] contains per-layer mip-stacks
-  virtual Result upload(const TextureRangeDesc& range, const void* data[]) const = 0;
-  virtual Dimensions getDimensions() const = 0;
-  virtual void generateMipmap() const = 0;
-  virtual uint32_t getTextureId() const = 0;
-
-  TextureFormat getFormat() const {
-    return format_;
-  };
-
- private:
-  TextureFormat format_;
-};
-
 struct Dependencies {
   enum { IGL_MAX_SUBMIT_DEPENDENCIES = 4 };
-  ITexture* textures[IGL_MAX_SUBMIT_DEPENDENCIES] = {};
+  TextureHandle textures[IGL_MAX_SUBMIT_DEPENDENCIES] = {};
 };
 
 class ICommandBuffer {
  public:
   virtual ~ICommandBuffer() = default;
 
-  virtual void transitionToShaderReadOnly(ITexture& surface) const = 0;
+  virtual void transitionToShaderReadOnly(TextureHandle surface) const = 0;
 
   virtual void cmdPushDebugGroupLabel(const char* label,
                                       const lvk::Color& color = lvk::Color(1, 1, 1, 1)) const = 0;
@@ -806,22 +800,19 @@ class IDevice {
 
   virtual void submit(const ICommandBuffer& commandBuffer,
                       lvk::QueueType queueType = lvk::QueueType_Graphics,
-                      ITexture* present = nullptr) = 0;
+                      TextureHandle present = {}) = 0;
 
   virtual Holder<BufferHandle> createBuffer(const BufferDesc& desc,
                                             Result* outResult = nullptr) = 0;
-
   virtual Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc,
                                               Result* outResult = nullptr) = 0;
-
-  virtual std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,
-                                                  const char* debugName = nullptr,
-                                                  Result* outResult = nullptr) = 0;
+  virtual Holder<TextureHandle> createTexture(const TextureDesc& desc,
+                                              const char* debugName = nullptr,
+                                              Result* outResult = nullptr) = 0;
 
   virtual Holder<ComputePipelineHandle> createComputePipeline(
       const ComputePipelineDesc& desc,
       Result* outResult = nullptr) = 0;
-
   virtual Holder<RenderPipelineHandle> createRenderPipeline(
       const RenderPipelineDesc& desc,
       Result* outResult = nullptr) = 0;
@@ -834,13 +825,25 @@ class IDevice {
   virtual void destroy(ShaderModuleHandle handle) = 0;
   virtual void destroy(SamplerHandle handle) = 0;
   virtual void destroy(BufferHandle handle) = 0;
+  virtual void destroy(TextureHandle handle) = 0;
+  virtual void destroy(Framebuffer& fb) = 0;
 
-  virtual uint32_t gpuId(SamplerHandle handle) const = 0;
+#pragma region Buffer functions
   virtual Result upload(BufferHandle handle, const void* data, size_t size, size_t offset = 0) = 0;
   virtual uint8_t* getMappedPtr(BufferHandle handle) const = 0;
   virtual uint64_t gpuAddress(BufferHandle handle, size_t offset = 0) const = 0;
+#pragma endregion
 
-  virtual std::shared_ptr<ITexture> getCurrentSwapchainTexture() = 0;
+#pragma region Texture functions
+  // data[] contains per-layer mip-stacks
+  virtual Result upload(TextureHandle handle, const TextureRangeDesc& range, const void* data[]) const = 0;
+  virtual Dimensions getDimensions(TextureHandle handle) const = 0;
+  virtual void generateMipmap(TextureHandle handle) const = 0;
+  virtual TextureFormat getFormat(TextureHandle handle) const = 0;
+#pragma endregion
+
+  virtual TextureHandle getCurrentSwapchainTexture() = 0;
+  virtual TextureFormat getSwapchainFormat() const = 0;
 
   ShaderStages createShaderStages(const char* cs,
                                   const char* debugName,

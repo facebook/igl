@@ -428,9 +428,9 @@ lvk::Holder<lvk::BufferHandle> sbMaterials_; // storage buffer for materials
 std::vector<lvk::Holder<lvk::BufferHandle>> ubPerFrame_, ubPerFrameShadow_, ubPerObject_;
 lvk::Holder<lvk::SamplerHandle> sampler_;
 lvk::Holder<lvk::SamplerHandle> samplerShadow_;
-std::shared_ptr<lvk::ITexture> textureDummyWhite_;
-std::shared_ptr<lvk::ITexture> skyboxTextureReference_;
-std::shared_ptr<lvk::ITexture> skyboxTextureIrradiance_;
+lvk::Holder<lvk::TextureHandle> textureDummyWhite_;
+lvk::Holder<lvk::TextureHandle> skyboxTextureReference_;
+lvk::Holder<lvk::TextureHandle> skyboxTextureIrradiance_;
 lvk::RenderPass renderPassOffscreen_;
 lvk::RenderPass renderPassMain_;
 lvk::RenderPass renderPassShadow_;
@@ -502,9 +502,9 @@ std::vector<CachedMaterial> cachedMaterials_;
 std::vector<GPUMaterial> materials_;
 
 struct MaterialTextures {
-  std::shared_ptr<lvk::ITexture> ambient;
-  std::shared_ptr<lvk::ITexture> diffuse;
-  std::shared_ptr<lvk::ITexture> alpha;
+  lvk::TextureHandle ambient;
+  lvk::TextureHandle diffuse;
+  lvk::TextureHandle alpha;
 };
 
 std::vector<MaterialTextures> textures_; // same indexing as in materials_
@@ -528,7 +528,7 @@ struct LoadedMaterial {
 // file name -> LoadedImage
 std::mutex imagesCacheMutex_;
 std::unordered_map<std::string, LoadedImage> imagesCache_; // accessible only from the loader pool (multiple threads)
-std::unordered_map<std::string, std::shared_ptr<lvk::ITexture>> texturesCache_; // accessible the main thread
+std::unordered_map<std::string, lvk::Holder<lvk::TextureHandle>> texturesCache_; // accessible the main thread
 std::vector<LoadedMaterial> loadedMaterials_;
 std::mutex loadedMaterialsMutex_;
 std::atomic<bool> loaderShouldExit_ = false;
@@ -579,6 +579,7 @@ void initIGL() {
       },
       kPreferIntegratedGPU ? lvk::HWDeviceType::IntegratedGpu : lvk::HWDeviceType::DiscreteGpu);
   {
+    const uint32_t pixel = 0xFFFFFFFF;
     textureDummyWhite_ = device_->createTexture(
         {
             .type = lvk::TextureType_2D,
@@ -587,11 +588,9 @@ void initIGL() {
             .height = 1,
             .usage = lvk::TextureUsageBits_Sampled,
             .debugName = "dummy 1x1 (white)",
+            .initialData = &pixel,
         },
         nullptr);
-    const uint32_t pixel = 0xFFFFFFFF;
-    const void* data[] = {&pixel};
-    textureDummyWhite_->upload({.width = 1, .height = 1}, data);
   }
 
   // create an Uniform buffers to store uniforms for 2 objects
@@ -874,10 +873,11 @@ void initModel() {
     }
   }
 
-  const uint32_t id = (uint32_t)textureDummyWhite_->getTextureId();
-
   for (const auto& mtl : cachedMaterials_) {
-    materials_.push_back(GPUMaterial{vec4(mtl.ambient, 1.0f), vec4(mtl.diffuse, 1.0f), id, id});
+    materials_.push_back(GPUMaterial{vec4(mtl.ambient, 1.0f),
+                                     vec4(mtl.diffuse, 1.0f),
+                                     textureDummyWhite_.index(),
+                                     textureDummyWhite_.index()});
   }
   sbMaterials_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Storage,
                                         .storage = lvk::StorageType_Device,
@@ -947,11 +947,9 @@ void createRenderPipelines() {
         .vertexInput = vdesc,
         .shaderStages = device_->createShaderStages(
             kCodeVS, "Shader Module: main (vert)", kCodeFS, "Shader Module: main (frag)"),
-        .colorAttachments = {{.textureFormat =
-                                  fbOffscreen_.colorAttachments[0].texture->getFormat()}},
-        .depthAttachmentFormat = fbOffscreen_.depthStencilAttachment.texture
-                                     ? fbOffscreen_.depthStencilAttachment.texture->getFormat()
-                                     : lvk::TextureFormat::Invalid,
+        .colorAttachments = {{.format =
+                                  device_->getFormat(fbOffscreen_.colorAttachments[0].texture)}},
+        .depthAttachmentFormat = device_->getFormat(fbOffscreen_.depthStencilAttachment.texture),
         .cullMode = lvk::CullMode_Back,
         .frontFaceWinding = lvk::WindingMode_CCW,
         .samplesCount = kNumSamplesMSAA,
@@ -976,7 +974,7 @@ void createRenderPipelines() {
           .vertexInput = vdescs,
           .shaderStages = device_->createShaderStages(
               kShadowVS, "Shader Module: shadow (vert)", kShadowFS, "Shader Module: shadow (frag)"),
-          .depthAttachmentFormat = fbShadowMap_.depthStencilAttachment.texture->getFormat(),
+          .depthAttachmentFormat = device_->getFormat(fbShadowMap_.depthStencilAttachment.texture),
           .cullMode = lvk::CullMode_None,
           .debugName = "Pipeline: shadow",
       },
@@ -985,10 +983,10 @@ void createRenderPipelines() {
   // fullscreen
   {
     lvk::RenderPipelineDesc desc = {
-        .colorAttachments = {{.textureFormat = fbMain_.colorAttachments[0].texture->getFormat()}},
+        .colorAttachments = {{.format = device_->getFormat(fbMain_.colorAttachments[0].texture)}},
     };
     if (fbMain_.depthStencilAttachment.texture) {
-      desc.depthAttachmentFormat = fbMain_.depthStencilAttachment.texture->getFormat();
+      desc.depthAttachmentFormat = device_->getFormat(fbMain_.depthStencilAttachment.texture);
     }
     desc.shaderStages = device_->createShaderStages(kCodeFullscreenVS,
                                                     "Shader Module: fullscreen (vert)",
@@ -1005,21 +1003,18 @@ void createRenderPipelineSkybox() {
     return;
   }
 
-  lvk::RenderPipelineDesc desc = {
+  const lvk::RenderPipelineDesc desc = {
       .shaderStages = device_->createShaderStages(
           kSkyboxVS, "Shader Module: skybox (vert)", kSkyboxFS, "Shader Module: skybox (frag)"),
       .colorAttachments = {{
-          .textureFormat = fbOffscreen_.colorAttachments[0].texture->getFormat(),
+          .format = device_->getFormat(fbOffscreen_.colorAttachments[0].texture),
       }},
+      .depthAttachmentFormat = device_->getFormat(fbOffscreen_.depthStencilAttachment.texture),
       .cullMode = lvk::CullMode_Front,
       .frontFaceWinding = lvk::WindingMode_CCW,
       .samplesCount = kNumSamplesMSAA,
       .debugName = "Pipeline: skybox",
   };
-
-  if (fbOffscreen_.depthStencilAttachment.texture) {
-    desc.depthAttachmentFormat = fbOffscreen_.depthStencilAttachment.texture->getFormat();
-  }
 
   renderPipelineState_Skybox_ = device_->createRenderPipeline(desc, nullptr);
 }
@@ -1037,7 +1032,7 @@ void createShadowMap() {
       .debugName = "Shadow map",
   };
   fbShadowMap_ = {
-      .depthStencilAttachment = {.texture = device_->createTexture(desc)},
+      .depthStencilAttachment = {.texture = device_->createTexture(desc).release()},
   };
 }
 
@@ -1058,7 +1053,6 @@ void createOffscreenFramebuffer() {
     descDepth.numSamples = kNumSamplesMSAA;
     descDepth.numMipLevels = 1;
   }
-  std::shared_ptr<lvk::ITexture> texDepth = device_->createTexture(descDepth);
 
   const uint8_t usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled |
                         lvk::TextureUsageBits_Storage;
@@ -1078,11 +1072,10 @@ void createOffscreenFramebuffer() {
     descColor.numSamples = kNumSamplesMSAA;
     descColor.numMipLevels = 1;
   }
-  std::shared_ptr<lvk::ITexture> texColor = device_->createTexture(descColor);
 
   lvk::Framebuffer fb = {
-      .colorAttachments = {{.texture = texColor}},
-      .depthStencilAttachment = {.texture = texDepth},
+      .colorAttachments = {{.texture = device_->createTexture(descColor).release()}},
+      .depthStencilAttachment = {.texture = device_->createTexture(descDepth).release()},
   };
 
   if (kNumSamplesMSAA > 1) {
@@ -1093,13 +1086,13 @@ void createOffscreenFramebuffer() {
         .height = h,
         .usage = usage,
         .debugName = "Offscreen framebuffer (c - resolve)",
-    });
+    }).release();
   }
 
   fbOffscreen_ = fb;
 }
 
-void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frameIndex) {
+void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
   IGL_PROFILER_FUNCTION();
 
   fbMain_.colorAttachments[0].texture = nativeDrawable;
@@ -1119,11 +1112,11 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
       .proj = glm::perspective(fov, aspectRatio, 0.5f, 500.0f),
       .view = camera_.getViewMatrix(),
       .light = scaleBias * shadowProj * shadowView,
-      .texSkyboxRadiance = skyboxTextureReference_->getTextureId(),
-      .texSkyboxIrradiance = skyboxTextureIrradiance_->getTextureId(),
-      .texShadow = fbShadowMap_.depthStencilAttachment.texture->getTextureId(),
-      .sampler = device_->gpuId(sampler_),
-      .samplerShadow = device_->gpuId(samplerShadow_),
+      .texSkyboxRadiance = skyboxTextureReference_.index(),
+      .texSkyboxIrradiance = skyboxTextureIrradiance_.index(),
+      .texShadow = fbShadowMap_.depthStencilAttachment.texture.index(),
+      .sampler = sampler_.index(),
+      .samplerShadow = samplerShadow_.index(),
       .bDrawNormals = perFrame_.bDrawNormals,
       .bDebugLines = perFrame_.bDebugLines,
   };
@@ -1168,10 +1161,9 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
       buffer.cmdPopDebugGroupLabel();
     }
     buffer.cmdEndRendering();
-    buffer.transitionToShaderReadOnly(*fbShadowMap_.depthStencilAttachment.texture);
+    buffer.transitionToShaderReadOnly(fbShadowMap_.depthStencilAttachment.texture);
     device_->submit(buffer, lvk::QueueType_Graphics);
-
-    fbShadowMap_.depthStencilAttachment.texture->generateMipmap();
+    device_->generateMipmap(fbShadowMap_.depthStencilAttachment.texture);
 
     isShadowMapDirty_ = false;
   }
@@ -1216,15 +1208,14 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
       buffer.cmdPopDebugGroupLabel();
     }
     buffer.cmdEndRendering();
-    buffer.transitionToShaderReadOnly(*fbOffscreen_.colorAttachments[0].texture);
+    buffer.transitionToShaderReadOnly(fbOffscreen_.colorAttachments[0].texture);
     device_->submit(buffer, lvk::QueueType_Graphics);
   }
 
   // Pass 3: compute shader post-processing
   if (enableComputePass_) {
-    std::shared_ptr<lvk::ITexture> tex = kNumSamplesMSAA > 1
-                                             ? fbOffscreen_.colorAttachments[0].resolveTexture
-                                             : fbOffscreen_.colorAttachments[0].texture;
+    lvk::TextureHandle tex = kNumSamplesMSAA > 1 ? fbOffscreen_.colorAttachments[0].resolveTexture
+                                                 : fbOffscreen_.colorAttachments[0].texture;
     lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
 
     buffer.cmdBindComputePipeline(computePipelineState_Grayscale_);
@@ -1232,7 +1223,7 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
     struct {
       uint32_t texture;
     } bindings = {
-        .texture = tex->getTextureId(),
+        .texture = tex.index(),
     };
     buffer.cmdPushConstants(bindings);
     buffer.cmdDispatchThreadGroups(
@@ -1241,7 +1232,9 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
             .height = (uint32_t)height_,
             .depth = 1u,
         },
-        {.textures = {tex.get()}});
+        {
+            .textures = {tex},
+        });
 
     device_->submit(buffer, lvk::QueueType_Compute);
   }
@@ -1258,9 +1251,8 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
       struct {
         uint32_t texture;
       } bindings = {
-          .texture = kNumSamplesMSAA > 1
-                         ? fbOffscreen_.colorAttachments[0].resolveTexture->getTextureId()
-                         : fbOffscreen_.colorAttachments[0].texture->getTextureId(),
+          .texture = kNumSamplesMSAA > 1 ? fbOffscreen_.colorAttachments[0].resolveTexture.index()
+                                         : fbOffscreen_.colorAttachments[0].texture.index(),
       };
       buffer.cmdPushConstants(bindings);
       buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3);
@@ -1270,7 +1262,7 @@ void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frame
     }
     buffer.cmdEndRendering();
 
-    device_->submit(buffer, lvk::QueueType_Graphics, fbMain_.colorAttachments[0].texture.get());
+    device_->submit(buffer, lvk::QueueType_Graphics, fbMain_.colorAttachments[0].texture);
   }
 }
 
@@ -1436,7 +1428,7 @@ void loadMaterials() {
   }
 }
 
-void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<lvk::ITexture>& tex) {
+void loadCubemapTexture(const std::string& fileNameKTX, lvk::Holder<lvk::TextureHandle>& tex) {
   IGL_PROFILER_FUNCTION();
 
   auto texRef = gli::load_ktx(fileNameKTX);
@@ -1449,7 +1441,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<lvk::ITe
   const uint32_t width = (uint32_t)texRef.extent().x;
   const uint32_t height = (uint32_t)texRef.extent().y;
 
-  if (!tex) {
+  if (tex.empty()) {
     tex = device_->createTexture(
         {
             .type = lvk::TextureType_Cube,
@@ -1461,7 +1453,6 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<lvk::ITe
             .debugName = fileNameKTX.c_str(),
         },
         nullptr);
-    IGL_ASSERT(tex.get());
   }
 
   const void* data[6] = {
@@ -1480,10 +1471,10 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<lvk::ITe
       // if compression is enabled, upload all mip-levels
       .numMipLevels = kEnableCompression ? lvk::calcNumMipLevels(width, height) : 1u,
   };
-  tex->upload(texRefRange, data);
+  device_->upload(tex, texRefRange, data);
 
   if (!kEnableCompression) {
-    tex->generateMipmap();
+     device_->generateMipmap(tex);
   }
 }
 
@@ -1626,9 +1617,9 @@ lvk::TextureFormat formatFromChannels(uint32_t channels) {
   return lvk::TextureFormat::Invalid;
 }
 
-std::shared_ptr<lvk::ITexture> createTexture(const LoadedImage& img) {
+lvk::TextureHandle createTexture(const LoadedImage& img) {
   if (!img.pixels) {
-    return nullptr;
+    return {};
   }
 
   const auto it = texturesCache_.find(img.debugName);
@@ -1646,7 +1637,8 @@ std::shared_ptr<lvk::ITexture> createTexture(const LoadedImage& img) {
       .numMipLevels = lvk::calcNumMipLevels(img.w, img.h),
       .debugName = img.debugName.c_str(),
   };
-  auto tex = device_->createTexture(desc, nullptr);
+
+  lvk::Holder<lvk::TextureHandle> tex = device_->createTexture(desc, nullptr);
 
   if (kEnableCompression && img.channels == 4 &&
       std::filesystem::exists(img.compressedFileName.c_str())) {
@@ -1662,14 +1654,18 @@ std::shared_ptr<lvk::ITexture> createTexture(const LoadedImage& img) {
       assert(0);
     }
     const void* data[] = {gliTex2d.data()};
-    tex->upload(rangeDesc, data);
+    device_->upload(tex, rangeDesc, data);
   } else {
     const void* data[] = {img.pixels};
-    tex->upload({.width = img.w, .height = img.h}, data);
-    tex->generateMipmap();
+    device_->upload(tex, {.width = img.w, .height = img.h}, data);
+    device_->generateMipmap(tex);
   }
-  texturesCache_[img.debugName] = tex;
-  return tex;
+
+  lvk::TextureHandle handle = tex;
+
+  texturesCache_[img.debugName] = std::move(tex);
+
+  return handle;
 }
 
 void processLoadedMaterials() {
@@ -1686,17 +1682,19 @@ void processLoadedMaterials() {
     }
   }
 
-  MaterialTextures tex;
+  {
+    MaterialTextures tex;
 
-  tex.ambient = createTexture(mtl.ambient);
-  tex.diffuse = createTexture(mtl.diffuse);
-  tex.alpha = createTexture(mtl.alpha);
+    tex.ambient = createTexture(mtl.ambient);
+    tex.diffuse = createTexture(mtl.diffuse);
+    tex.alpha = createTexture(mtl.alpha);
 
-  // update GPU materials
-  textures_[mtl.idx] = tex;
-  materials_[mtl.idx].texAmbient = tex.ambient ? (uint32_t)tex.ambient->getTextureId() : 0;
-  materials_[mtl.idx].texDiffuse = tex.diffuse ? (uint32_t)tex.diffuse->getTextureId() : 0;
-  materials_[mtl.idx].texAlpha = tex.alpha ? (uint32_t)tex.alpha->getTextureId() : 0;
+    // update GPU materials
+    materials_[mtl.idx].texAmbient = tex.ambient.index();
+    materials_[mtl.idx].texDiffuse = tex.diffuse.index();
+    materials_[mtl.idx].texAlpha = tex.alpha.index();
+    textures_[mtl.idx] = std::move(tex);
+  }
   IGL_ASSERT(materials_[mtl.idx].texAmbient >= 0 && materials_[mtl.idx].texAmbient < kMaxTextures);
   IGL_ASSERT(materials_[mtl.idx].texDiffuse >= 0 && materials_[mtl.idx].texDiffuse < kMaxTextures);
   IGL_ASSERT(materials_[mtl.idx].texAlpha >= 0 && materials_[mtl.idx].texAlpha < kMaxTextures);
@@ -1850,9 +1848,9 @@ int main(int argc, char* argv[]) {
       ImGui::Text("T - toggle wireframe");
       ImGui::End();
 
-      if (textures_[1].diffuse) {
+      if (!textures_[1].diffuse.empty()) {
         ImGui::Begin("Texture Viewer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-        ImGui::Image(ImTextureID(textures_[1].diffuse.get()), ImVec2(256, 256));
+        ImGui::Image(ImTextureID(textures_[1].diffuse.indexAsVoid()), ImVec2(256, 256));
         ImGui::End();
       }
 
@@ -1923,9 +1921,9 @@ int main(int argc, char* argv[]) {
   texturesCache_.clear();
   sampler_ = nullptr;
   samplerShadow_ = nullptr;
-  fbMain_ = {};
-  fbShadowMap_ = {};
-  fbOffscreen_ = {};
+  device_->destroy(fbMain_);
+  device_->destroy(fbShadowMap_);
+  device_->destroy(fbOffscreen_);
   device_ = nullptr;
 
   glfwDestroyWindow(window_);

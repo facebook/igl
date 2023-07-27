@@ -107,7 +107,7 @@ lvk::Framebuffer framebuffer_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Mesh_;
 lvk::Holder<lvk::BufferHandle> vb0_, ib0_; // buffers for vertices and indices
 std::vector<lvk::Holder<lvk::BufferHandle>> ubPerFrame_, ubPerObject_;
-std::shared_ptr<lvk::ITexture> texture0_, texture1_;
+lvk::Holder<lvk::TextureHandle> texture0_, texture1_;
 lvk::Holder<lvk::SamplerHandle> sampler_;
 lvk::RenderPass renderPass_;
 lvk::DepthStencilState depthStencilState_;
@@ -207,6 +207,13 @@ static void initIGL() {
   {
     const uint32_t texWidth = 256;
     const uint32_t texHeight = 256;
+    std::vector<uint32_t> pixels(texWidth * texHeight);
+    for (uint32_t y = 0; y != texHeight; y++) {
+      for (uint32_t x = 0; x != texWidth; x++) {
+        // create a XOR pattern
+        pixels[y * texWidth + x] = 0xFF000000 + ((x ^ y) << 16) + ((x ^ y) << 8) + (x ^ y);
+      }
+    }
     texture0_ = device_->createTexture(
         {
             .type = lvk::TextureType_2D,
@@ -215,17 +222,9 @@ static void initIGL() {
             .height = texHeight,
             .usage = lvk::TextureUsageBits_Sampled,
             .debugName = "XOR pattern",
+            .initialData = pixels.data(),
         },
         nullptr);
-    std::vector<uint32_t> pixels(texWidth * texHeight);
-    for (uint32_t y = 0; y != texHeight; y++) {
-      for (uint32_t x = 0; x != texWidth; x++) {
-        // create a XOR pattern
-        pixels[y * texWidth + x] = 0xFF000000 + ((x ^ y) << 16) + ((x ^ y) << 8) + (x ^ y);
-      }
-    }
-    const void* data[] = {pixels.data()};
-    texture0_->upload({.width = texWidth, .height = texHeight}, data);
   }
   {
     using namespace std::filesystem;
@@ -259,10 +258,9 @@ static void initIGL() {
             .height = (uint32_t)texHeight,
             .usage = lvk::TextureUsageBits_Sampled,
             .debugName = "wood_polished_01_diff.png",
+            .initialData = pixels,
         },
         nullptr);
-    const void* data[] = {pixels};
-    texture1_->upload({.width = (uint32_t)texWidth, .height = (uint32_t)texHeight}, data);
     stbi_image_free(pixels);
   }
 
@@ -314,11 +312,12 @@ static void initObjects() {
               codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
           .colorAttachments =
               {
-                  {.textureFormat = framebuffer_.colorAttachments[0].texture->getFormat()},
+                  {.format = device_->getFormat(framebuffer_.colorAttachments[0].texture)},
               },
-          .depthAttachmentFormat = framebuffer_.depthStencilAttachment.texture
-                                       ? framebuffer_.depthStencilAttachment.texture->getFormat()
-                                       : lvk::TextureFormat::Invalid,
+          .depthAttachmentFormat =
+              framebuffer_.depthStencilAttachment.texture
+                  ? device_->getFormat(framebuffer_.depthStencilAttachment.texture)
+                  : lvk::TextureFormat::Invalid,
           .cullMode = lvk::CullMode_Back,
           .frontFaceWinding = lvk::WindingMode_CW,
           .debugName = "Pipeline: mesh",
@@ -326,7 +325,7 @@ static void initObjects() {
       nullptr);
 }
 
-static void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_t frameIndex) {
+void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
   IGL_PROFILER_FUNCTION();
 
   if (!width_ || !height_) {
@@ -341,9 +340,9 @@ static void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_
       .proj = glm::perspectiveLH(fov, aspectRatio, 0.1f, 500.0f),
       // place a "camera" behind the cubes, the distance depends on the total number of cubes
       .view = glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, sqrtf(kNumCubes / 16) * 20.0f * half)),
-      .texture0 = texture0_->getTextureId(),
-      .texture1 = texture1_ ? texture1_->getTextureId() : 0u,
-      .sampler = device_->gpuId(sampler_),
+      .texture0 = texture0_.index(),
+      .texture1 = texture1_.index(),
+      .sampler = sampler_.index(),
   };
   device_->upload(ubPerFrame_[frameIndex], &perFrame, sizeof(perFrame));
 
@@ -392,7 +391,7 @@ static void render(const std::shared_ptr<lvk::ITexture>& nativeDrawable, uint32_
   imgui_->endFrame(*device_.get(), buffer);
   buffer.cmdEndRendering();
 
-  device_->submit(buffer, lvk::QueueType_Graphics, nativeDrawable.get());
+  device_->submit(buffer, lvk::QueueType_Graphics, nativeDrawable);
 }
 
 int main(int argc, char* argv[]) {
@@ -449,7 +448,7 @@ int main(int argc, char* argv[]) {
       imgui_->beginFrame(framebuffer_);
 
       ImGui::Begin("Texture Viewer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-      ImGui::Image(ImTextureID(texture1_.get()), ImVec2(512, 512));
+      ImGui::Image(ImTextureID(texture1_.indexAsVoid()), ImVec2(512, 512));
       ImGui::End();
     }
 

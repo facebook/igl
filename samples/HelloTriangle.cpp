@@ -63,7 +63,7 @@ void render() {
   buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3);
   buffer.cmdPopDebugGroupLabel();
   buffer.cmdEndRendering();
-  device_->submit(buffer, lvk::QueueType_Graphics, device_->getCurrentSwapchainTexture().get());
+  device_->submit(buffer, lvk::QueueType_Graphics, device_->getCurrentSwapchainTexture());
 }
 
 int main(int argc, char* argv[]) {
@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
   renderPipelineState_Triangle_ = device_->createRenderPipeline(
       {.shaderStages = device_->createShaderStages(
            codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
-       .colorAttachments = {{.textureFormat = device_->getCurrentSwapchainTexture()->getFormat()}}},
+       .colorAttachments = {{.format = device_->getSwapchainFormat()}}},
       nullptr);
 
   IGL_ASSERT(renderPipelineState_Triangle_.valid());

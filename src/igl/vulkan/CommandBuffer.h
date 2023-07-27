@@ -24,7 +24,7 @@ class CommandBuffer final : public ICommandBuffer {
 
   CommandBuffer& operator=(CommandBuffer&& other) = default;
 
-  void transitionToShaderReadOnly(ITexture& surface) const override;
+  void transitionToShaderReadOnly(TextureHandle surface) const override;
 
   void cmdBindComputePipeline(lvk::ComputePipelineHandle handle) override;
   void cmdDispatchThreadGroups(const Dimensions& threadgroupCount,
@@ -71,7 +71,7 @@ class CommandBuffer final : public ICommandBuffer {
   void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) override;
 
  private:
-  void useComputeTexture(ITexture* texture);
+  void useComputeTexture(TextureHandle texture);
   void bindGraphicsPipeline();
 
  private:

@@ -203,28 +203,40 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
                                             0,
                                             1,
                                             debugNameImageView);
-    auto texture = std::make_shared<Texture>(
-        ctx_,
-        std::make_shared<VulkanTexture>(ctx_, std::move(image), std::move(imageView)),
-        TextureDesc{
-            .type = TextureType_2D,
-            .format = vkFormatToTextureFormat(surfaceFormat_.format),
-            .width = width,
-            .height = height,
-            .usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled,
-            .debugName = "Swapchain Texture",
-        });
-    swapchainTextures_.push_back(texture);
+    auto texture = std::make_shared<VulkanTexture>(std::move(image), std::move(imageView));
+    swapchainTextures_.push_back(ctx_.texturesPool_.create(std::move(texture)));
   }
 }
 
 VulkanSwapchain::~VulkanSwapchain() {
+  for (TextureHandle handle : swapchainTextures_) {
+    ctx_.texturesPool_.destroy(handle);
+  }
   vkDestroySwapchainKHR(device_, swapchain_, nullptr);
   vkDestroySemaphore(device_, acquireSemaphore_, nullptr);
 }
 
-std::shared_ptr<Texture> VulkanSwapchain::getCurrentTexture() {
+VkImage VulkanSwapchain::getCurrentVkImage() const {
+  if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
+    lvk::vulkan::VulkanTexture* tex =
+        ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_])->get();
+    return tex->image_->getVkImage();
+  }
+  return VK_NULL_HANDLE;
+}
+
+VkImageView VulkanSwapchain::getCurrentVkImageView() const {
+  if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
+    lvk::vulkan::VulkanTexture* tex =
+        ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_])->get();
+    return tex->imageView_->getVkImageView();
+  }
+  return VK_NULL_HANDLE;
+}
+
+TextureHandle VulkanSwapchain::getCurrentTexture() {
   IGL_PROFILER_FUNCTION();
+
   if (getNextImage_) {
     // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
     VK_ASSERT(vkAcquireNextImageKHR(
@@ -238,7 +250,7 @@ std::shared_ptr<Texture> VulkanSwapchain::getCurrentTexture() {
     return swapchainTextures_[currentImageIndex_];
   }
 
-  return nullptr;
+  return {};
 }
 
 Result VulkanSwapchain::present(VkSemaphore waitSemaphore) {

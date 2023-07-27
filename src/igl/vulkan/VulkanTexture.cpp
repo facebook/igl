@@ -10,28 +10,50 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
+#include <igl/vulkan/VulkanImageView.h>
 
-namespace lvk {
+namespace lvk::vulkan {
 
-namespace vulkan {
-
-VulkanTexture::VulkanTexture(const VulkanContext& ctx,
-                             std::shared_ptr<VulkanImage> image,
+VulkanTexture::VulkanTexture(std::shared_ptr<VulkanImage> image,
                              std::shared_ptr<VulkanImageView> imageView) :
-  ctx_(ctx), image_(std::move(image)), imageView_(std::move(imageView)) {
+  image_(std::move(image)), imageView_(std::move(imageView)) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ASSERT(image_.get());
   IGL_ASSERT(imageView_.get());
 }
 
-VulkanTexture::~VulkanTexture() {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
-
-  // inform the context it should prune the textures
-  ctx_.awaitingDeletion_ = true;
+bool VulkanTexture::isSwapchainTexture() const {
+  return image_->isExternallyManaged_;
 }
 
-} // namespace vulkan
+VkImageView VulkanTexture::getVkImageView() const {
+  return imageView_->vkImageView_;
+}
 
-} // namespace lvk
+VkImageView VulkanTexture::getVkImageViewForFramebuffer(uint32_t level) const {
+  if (level < imageViewForFramebuffer_.size() && imageViewForFramebuffer_[level]) {
+    return imageViewForFramebuffer_[level]->getVkImageView();
+  }
+
+  if (level >= imageViewForFramebuffer_.size()) {
+    imageViewForFramebuffer_.resize(level + 1);
+  }
+
+  const VkImageAspectFlags flags = image_->getImageAspectFlags();
+
+  imageViewForFramebuffer_[level] = image_->createImageView(
+      VK_IMAGE_VIEW_TYPE_2D, image_->imageFormat_, flags, level, 1u, 0u, 1u);
+
+  return imageViewForFramebuffer_[level]->vkImageView_;
+}
+
+Dimensions VulkanTexture::getDimensions() const {
+  return {
+      .width = image_->extent_.width,
+      .height = image_->extent_.height,
+      .depth = image_->extent_.depth,
+  };
+}
+
+} // namespace lvk::vulkan

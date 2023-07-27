@@ -29,13 +29,13 @@ class Device final : public IDevice {
 
   void submit(const lvk::ICommandBuffer& commandBuffer,
               lvk::QueueType queueType,
-              ITexture* present) override;
+              TextureHandle present) override;
 
   Holder<BufferHandle> createBuffer(const BufferDesc& desc, Result* outResult) override;
   Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc, Result* outResult) override;
-  std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,
-                                          const char* debugName,
-                                          Result* outResult) override;
+  Holder<TextureHandle> createTexture(const TextureDesc& desc,
+                                      const char* debugName,
+                                      Result* outResult) override;
 
   Holder<ComputePipelineHandle> createComputePipeline(const ComputePipelineDesc& desc,
                                                       Result* outResult) override;
@@ -49,13 +49,20 @@ class Device final : public IDevice {
   void destroy(ShaderModuleHandle handle) override;
   void destroy(SamplerHandle handle) override;
   void destroy(BufferHandle handle) override;
+  void destroy(TextureHandle handle) override;
+  void destroy(Framebuffer& fb) override;
 
-  uint32_t gpuId(SamplerHandle handle) const override;
-  Result upload(BufferHandle handle, const void* data, size_t size, size_t offset = 0) override;
+  Result upload(BufferHandle handle, const void* data, size_t size, size_t offset) override;
   uint8_t* getMappedPtr(BufferHandle handle) const override;
-  uint64_t gpuAddress(BufferHandle handle, size_t offset = 0) const override;
+  uint64_t gpuAddress(BufferHandle handle, size_t offset) const override;
 
-  std::shared_ptr<ITexture> getCurrentSwapchainTexture() override;
+  Result upload(TextureHandle handle, const TextureRangeDesc& range, const void* data[]) const override;
+  Dimensions getDimensions(TextureHandle handle) const override;
+  void generateMipmap(TextureHandle handle) const override;
+  TextureFormat getFormat(TextureHandle handle) const override;
+
+  TextureHandle getCurrentSwapchainTexture() override;
+  TextureFormat getSwapchainFormat() const override;
 
   VulkanContext& getVulkanContext() {
     return *ctx_.get();

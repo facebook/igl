@@ -202,6 +202,7 @@ VulkanContext::~VulkanContext() {
   VK_ASSERT(vkDeviceWaitIdle(vkDevice_));
 
   stagingDevice_.reset(nullptr);
+  swapchain_.reset(nullptr); // swapchain has to be destroyed prior to Surface
 
   if (shaderModulesPool_.numObjects()) {
     LLOGW("Leaked %u shader modules\n", shaderModulesPool_.numObjects());
@@ -216,6 +217,10 @@ VulkanContext::~VulkanContext() {
     // the dummy value is owned by the context
     LLOGW("Leaked %u samplers\n", samplersPool_.numObjects() - 1);
   }
+  if (texturesPool_.numObjects() > 1) {
+    // the dummy value is owned by the context
+    LLOGW("Leaked %u textures\n", texturesPool_.numObjects() - 1);
+  }
   if (buffersPool_.numObjects()) {
     LLOGW("Leaked %u buffers\n", buffersPool_.numObjects());
   }
@@ -226,10 +231,7 @@ VulkanContext::~VulkanContext() {
   computePipelinesPool_.clear();
   renderPipelinesPool_.clear();
   shaderModulesPool_.clear();
-
-  textures_.clear();
-
-  swapchain_.reset(nullptr); // Swapchain has to be destroyed prior to Surface
+  texturesPool_.clear();
 
   waitDeferredTasks();
 
@@ -757,7 +759,6 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
   stagingDevice_ = std::make_unique<lvk::vulkan::VulkanStagingDevice>(*this);
 
   // default texture
-  IGL_ASSERT(textures_.size() == 1);
   {
     const VkFormat dummyTextureFormat = VK_FORMAT_R8G8B8A8_UNORM;
     const VkMemoryPropertyFlags memFlags = useStaging_ ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
@@ -793,12 +794,14 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     if (!IGL_VERIFY(imageView.get())) {
       return Result(Result::Code::RuntimeError, "Cannot create VulkanImageView");
     }
-    textures_[0] = std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView));
+    auto dummyTexture = std::make_shared<VulkanTexture>(std::move(image), std::move(imageView));
     const uint32_t pixel = 0xFF000000;
     const void* data[] = {&pixel};
     const VkRect2D imageRegion = ivkGetRect2D(0, 0, 1, 1);
     stagingDevice_->imageData2D(
-        textures_[0]->getVulkanImage(), imageRegion, 0, 1, 0, 1, dummyTextureFormat, data);
+        *dummyTexture->image_.get(), imageRegion, 0, 1, 0, 1, dummyTextureFormat, data);
+    texturesPool_.create(std::move(dummyTexture));
+    IGL_ASSERT(texturesPool_.numObjects() == 1);
   }
 
   // default sampler
@@ -1027,36 +1030,25 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   // newly created resources can be used immediately - make sure they are put into descriptor sets
   IGL_PROFILER_FUNCTION();
 
-  // here we remove deleted textures - everything which has only 1 reference is owned by this
-  // context and can be released safely
-  for (uint32_t i = 1; i < (uint32_t)textures_.size(); i++) {
-    if (textures_[i] && textures_[i].use_count() == 1) {
-      if (i == textures_.size() - 1) {
-        textures_.pop_back();
-      } else {
-        textures_[i].reset();
-        freeIndicesTextures_.push_back(i);
-      }
-    }
-  }
-
   // update Vulkan descriptor set here
 
   // make sure the guard values are always there
-  IGL_ASSERT(textures_.size() >= 1); 
+  IGL_ASSERT(texturesPool_.numObjects() >= 1); 
   IGL_ASSERT(samplersPool_.numObjects() >= 1);
 
   // 1. Sampled and storage images
   std::vector<VkDescriptorImageInfo> infoSampledImages;
   std::vector<VkDescriptorImageInfo> infoStorageImages;
   
-  infoSampledImages.reserve(textures_.size());
-  infoStorageImages.reserve(textures_.size());
+  infoSampledImages.reserve(texturesPool_.numObjects());
+  infoStorageImages.reserve(texturesPool_.numObjects());
 
   // use the dummy texture to avoid sparse array
-  VkImageView dummyImageView = textures_[0]->imageView_->getVkImageView();
+  VkImageView dummyImageView =
+      texturesPool_.objects_[0].obj_->imageView_->getVkImageView();
 
-  for (const auto& texture : textures_) {
+  for (const auto& obj : texturesPool_.objects_) {
+    const VulkanTexture* texture = obj.obj_.get();
     // multisampled images cannot be directly accessed from shaders
     const bool isTextureAvailable =
         texture && ((texture->image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
@@ -1126,30 +1118,6 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
 
   awaitingCreation_ = false;
   awaitingDeletion_ = false;
-}
-
-std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
-    std::shared_ptr<VulkanImage> image,
-    std::shared_ptr<VulkanImageView> imageView) const {
-  auto texture = std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView));
-  if (!IGL_VERIFY(texture.get())) {
-    return nullptr;
-  }
-  if (!freeIndicesTextures_.empty()) {
-    // reuse an empty slot
-    texture->textureId_ = freeIndicesTextures_.back();
-    freeIndicesTextures_.pop_back();
-    textures_[texture->textureId_] = texture;
-  } else {
-    texture->textureId_ = uint32_t(textures_.size());
-    textures_.emplace_back(texture);
-  }
-
-  IGL_ASSERT(textures_.size() <= config_.maxTextures);
-
-  awaitingCreation_ = true;
-
-  return texture;
 }
 
 SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,

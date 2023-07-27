@@ -67,10 +67,10 @@ void VulkanObjects::init() {
            codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
        .colorAttachments =
            {
-               {fb_.colorAttachments[0].texture->getFormat()},
-               {fb_.colorAttachments[1].texture->getFormat()},
-               {fb_.colorAttachments[2].texture->getFormat()},
-               {fb_.colorAttachments[3].texture->getFormat()},
+               {device_->getFormat(fb_.colorAttachments[0].texture)},
+               {device_->getFormat(fb_.colorAttachments[1].texture)},
+               {device_->getFormat(fb_.colorAttachments[2].texture)},
+               {device_->getFormat(fb_.colorAttachments[3].texture)},
            }},
       nullptr);
 
@@ -78,22 +78,22 @@ void VulkanObjects::init() {
 }
 
 void VulkanObjects::createFramebuffer() {
-  auto texSwapchain = device_->getCurrentSwapchainTexture();
+  lvk::TextureHandle texSwapchain = device_->getCurrentSwapchainTexture();
 
   {
     const lvk::TextureDesc desc = {
         .type = lvk::TextureType_2D,
-        .format = texSwapchain->getFormat(),
-        .width = texSwapchain->getDimensions().width,
-        .height = texSwapchain->getDimensions().height,
+        .format = device_->getFormat(texSwapchain),
+        .width = device_->getDimensions(texSwapchain).width,
+        .height = device_->getDimensions(texSwapchain).height,
         .usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled,
     };
 
     fb_ = {.colorAttachments = {
                {.texture = texSwapchain},
-               {.texture = device_->createTexture(desc, "Framebuffer C1")},
-               {.texture = device_->createTexture(desc, "Framebuffer C2")},
-               {.texture = device_->createTexture(desc, "Framebuffer C3")},
+               {.texture = device_->createTexture(desc, "Framebuffer C1").release()},
+               {.texture = device_->createTexture(desc, "Framebuffer C2").release()},
+               {.texture = device_->createTexture(desc, "Framebuffer C3").release()},
            }};
   }
 }
@@ -126,7 +126,7 @@ void VulkanObjects::render() {
     buffer.cmdPopDebugGroupLabel();
   }
   buffer.cmdEndRendering();
-  device_->submit(buffer, lvk::QueueType_Graphics, fb_.colorAttachments[0].texture.get());
+  device_->submit(buffer, lvk::QueueType_Graphics, fb_.colorAttachments[0].texture);
 }
 
 int main(int argc, char* argv[]) {
@@ -157,6 +157,9 @@ int main(int argc, char* argv[]) {
   }
 
   // destroy all the Vulkan stuff before closing the window
+  device_->destroy(vk.fb_.colorAttachments[1].texture);
+  device_->destroy(vk.fb_.colorAttachments[2].texture);
+  device_->destroy(vk.fb_.colorAttachments[3].texture);
   vk = {};
 
   device_ = nullptr;

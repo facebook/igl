@@ -307,8 +307,8 @@ VkPipeline RenderPipelineState::getVkPipeline(
 
   for (uint32_t i = 0; i != numColorAttachments; i++) {
     const auto& attachment = desc_.colorAttachments[i];
-    IGL_ASSERT(attachment.textureFormat != TextureFormat::Invalid);
-    colorAttachmentFormats[i] = textureFormatToVkFormat(attachment.textureFormat);
+    IGL_ASSERT(attachment.format != TextureFormat::Invalid);
+    colorAttachmentFormats[i] = textureFormatToVkFormat(attachment.format);
     if (!attachment.blendEnabled) {
       colorBlendAttachmentStates[i] = ivkGetPipelineColorBlendAttachmentState_NoBlending();
     } else {

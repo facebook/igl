@@ -57,6 +57,7 @@ Result getResultFromVkResult(VkResult result);
 void setResultFrom(Result* outResult, VkResult result);
 VkFormat textureFormatToVkFormat(lvk::TextureFormat format);
 lvk::TextureFormat vkFormatToTextureFormat(VkFormat format);
+bool isDepthOrStencilVkFormat(VkFormat format);
 uint32_t getBytesPerPixel(VkFormat format);
 VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(lvk::StorageType storage);
 VkCompareOp compareOpToVkCompareOp(lvk::CompareOp func);

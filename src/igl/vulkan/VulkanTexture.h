@@ -8,51 +8,34 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-namespace lvk {
-namespace vulkan {
+namespace lvk::vulkan {
 
-class VulkanContext;
 class VulkanImage;
 class VulkanImageView;
 
 class VulkanTexture final {
  public:
-  VulkanTexture(const VulkanContext& ctx,
-                std::shared_ptr<VulkanImage> image,
-                std::shared_ptr<VulkanImageView> imageView);
-  ~VulkanTexture();
+  VulkanTexture(std::shared_ptr<VulkanImage> image, std::shared_ptr<VulkanImageView> imageView);
+  ~VulkanTexture() = default;
 
   VulkanTexture(const VulkanTexture&) = delete;
   VulkanTexture& operator=(const VulkanTexture&) = delete;
 
-  VulkanImage& getVulkanImage() {
-    return *image_.get();
-  }
-  const VulkanImage& getVulkanImage() const {
-    return *image_.get();
-  }
-  VulkanImageView& getVulkanImageView() {
-    return *imageView_.get();
-  }
-  const VulkanImageView& getVulkanImageView() const {
-    return *imageView_.get();
-  }
-  uint32_t getTextureId() const {
-    return textureId_;
-  }
+  Dimensions getDimensions() const;
+  VkImageView getVkImageView() const; // all mip-levels
+  VkImageView getVkImageViewForFramebuffer(uint32_t level) const; // framebuffers can render only
+                                                                  // into 1 mip-level
+  bool isSwapchainTexture() const;
 
- private:
-  friend class VulkanContext;
-  const VulkanContext& ctx_;
+ public:
   std::shared_ptr<VulkanImage> image_;
   std::shared_ptr<VulkanImageView> imageView_;
-  // an index into VulkanContext::textures_
-  uint32_t textureId_ = 0;
+  mutable std::vector<std::shared_ptr<VulkanImageView>> imageViewForFramebuffer_;
 };
 
-} // namespace vulkan
-} // namespace lvk
+} // namespace lvk::vulkan

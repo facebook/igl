@@ -8,7 +8,6 @@
 #pragma once
 
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImageView.h>
@@ -26,25 +25,9 @@ class VulkanSwapchain final {
   ~VulkanSwapchain();
 
   Result present(VkSemaphore waitSemaphore);
-  VkImage getCurrentVkImage() const {
-    if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
-      return swapchainTextures_[currentImageIndex_]
-          ->getVulkanTexture()
-          .getVulkanImage()
-          .getVkImage();
-    }
-    return VK_NULL_HANDLE;
-  }
-  VkImageView getCurrentVkImageView() const {
-    if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
-      return swapchainTextures_[currentImageIndex_]
-          ->getVulkanTexture()
-          .getVulkanImageView()
-          .getVkImageView();
-    }
-    return VK_NULL_HANDLE;
-  }
-  std::shared_ptr<Texture> getCurrentTexture();
+  VkImage getCurrentVkImage() const;
+  VkImageView getCurrentVkImageView() const;
+  TextureHandle getCurrentTexture();
 
   uint32_t getWidth() const {
     return width_;
@@ -86,7 +69,7 @@ class VulkanSwapchain final {
   uint64_t frameNumber_ = 0;
   bool getNextImage_ = true;
   VkSwapchainKHR swapchain_;
-  std::vector<std::shared_ptr<Texture>> swapchainTextures_;
+  std::vector<TextureHandle> swapchainTextures_;
   VkSurfaceFormatKHR surfaceFormat_;
 };
 

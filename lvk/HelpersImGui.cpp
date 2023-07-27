@@ -87,13 +87,13 @@ lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(con
                                                      "Shader Module: imgui (frag)",
                                                      nullptr),
           .colorAttachments = {{
-              .textureFormat = desc.colorAttachments[0].texture->getFormat(),
+              .format = device_.getFormat(desc.colorAttachments[0].texture),
               .blendEnabled = true,
               .srcRGBBlendFactor = lvk::BlendFactor_SrcAlpha,
               .dstRGBBlendFactor = lvk::BlendFactor_OneMinusSrcAlpha,
           }},
           .depthAttachmentFormat = desc.depthStencilAttachment.texture
-                                       ? desc.depthStencilAttachment.texture->getFormat()
+                                       ? device_.getFormat(desc.depthStencilAttachment.texture)
                                        : lvk::TextureFormat::Invalid,
           .cullMode = lvk::CullMode_None,
       },
@@ -127,13 +127,11 @@ ImGuiRenderer::ImGuiRenderer(lvk::IDevice& device, const char* defaultFontTTF, f
                                        .format = lvk::TextureFormat::RGBA_UN8,
                                        .width = (uint32_t)width,
                                        .height = (uint32_t)height,
-                                       .usage = lvk::TextureUsageBits_Sampled},
+                                       .usage = lvk::TextureUsageBits_Sampled,
+                                       .initialData = pixels},
                                       nullptr);
-  const void* data[] = {pixels};
-  fontTexture_->upload({.width = (uint32_t)width, .height = (uint32_t)height}, data);
-
   io.BackendRendererName = "imgui-lvk";
-  io.Fonts->TexID = ImTextureID(fontTexture_.get());
+  io.Fonts->TexID = ImTextureID(fontTexture_.indexAsVoid());
   io.FontDefault = font;
 }
 
@@ -146,7 +144,7 @@ ImGuiRenderer::~ImGuiRenderer() {
 void ImGuiRenderer::beginFrame(const lvk::Framebuffer& desc) {
   const float displayScale = 1.0f;
 
-  const lvk::Dimensions dim = desc.colorAttachments[0].texture->getDimensions();
+  const lvk::Dimensions dim = device_.getDimensions(desc.colorAttachments[0].texture);
 
   ImGuiIO& io = ImGui::GetIO();
   io.DisplaySize = ImVec2(dim.width / displayScale, dim.height / displayScale);
@@ -235,7 +233,7 @@ void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffe
 
       if (cmd.TextureId != lastBoundTextureId) {
         lastBoundTextureId = cmd.TextureId;
-        bindData.textureId = cmd.TextureId ? reinterpret_cast<lvk::ITexture*>(cmd.TextureId)->getTextureId() : 0u;
+        bindData.textureId = static_cast<uint32_t>(reinterpret_cast<ptrdiff_t>(cmd.TextureId));
         cmdBuffer.cmdPushConstants(bindData);
       }
 

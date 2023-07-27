@@ -65,7 +65,7 @@ class Pool {
 
     const uint32_t index = handle.index();
     assert(index < objects_.size());
-    assert(handle.gen() == objects_[index].gen_);
+    assert(handle.gen() == objects_[index].gen_); // accessing deleted object
     return &objects_[index].obj_;
   }
   void clear() {

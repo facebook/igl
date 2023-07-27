@@ -30,7 +30,7 @@ class ImGuiRenderer {
  private:
   lvk::IDevice& device_;
   lvk::Holder<lvk::RenderPipelineHandle> pipeline_;
-  std::shared_ptr<lvk::ITexture> fontTexture_;
+  lvk::Holder<lvk::TextureHandle> fontTexture_;
 
   uint32_t frameIndex_ = 0;
 

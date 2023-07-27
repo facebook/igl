@@ -20,6 +20,7 @@
 #include <igl/vulkan/VulkanImmediateCommands.h>
 #include <igl/vulkan/VulkanShaderModule.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
+#include <igl/vulkan/VulkanTexture.h>
 #include <lvk/Pool.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
@@ -88,8 +89,6 @@ class VulkanContext final {
                             VkMemoryPropertyFlags memFlags,
                             lvk::Result* outResult,
                             const char* debugName = nullptr);
-  std::shared_ptr<VulkanTexture> createTexture(std::shared_ptr<VulkanImage> image,
-                                               std::shared_ptr<VulkanImageView> imageView) const;
   SamplerHandle createSampler(const VkSamplerCreateInfo& ci,
                               lvk::Result* outResult,
                               const char* debugName = nullptr);
@@ -201,15 +200,6 @@ class VulkanContext final {
 
   VkPipelineCache pipelineCache_ = VK_NULL_HANDLE;
 
-  // 1. Textures can be safely deleted once they are not in use by GPU, hence our Vulkan context
-  // owns all allocated textures (images+image views). The IGL interface vulkan::Texture does not
-  // delete the underlying VulkanTexture but instead informs the context that it should be
-  // deallocated. The context deallocates textures in a deferred way when it is safe to do so.
-  // 2. Descriptor sets can be updated when they are not in use.
-  mutable std::vector<std::shared_ptr<VulkanTexture>> textures_ = {nullptr}; // the guard element
-                                                                             // [0] is always there
-  // contains a list of free indices inside the sparse array `textures_`
-  mutable std::vector<uint32_t> freeIndicesTextures_;
   // a texture/sampler was created since the last descriptor set update
   mutable bool awaitingCreation_ = false;
   // a texture/sampler was deleted since the last descriptor set update
@@ -222,6 +212,7 @@ class VulkanContext final {
   lvk::Pool<lvk::ComputePipeline, lvk::vulkan::ComputePipelineState> computePipelinesPool_;
   lvk::Pool<lvk::Sampler, VkSampler> samplersPool_;
   lvk::Pool<lvk::Buffer, lvk::vulkan::VulkanBuffer> buffersPool_;
+  lvk::Pool<lvk::Texture, std::shared_ptr<lvk::vulkan::VulkanTexture>> texturesPool_;
 
   struct DeferredTask {
     DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) :
