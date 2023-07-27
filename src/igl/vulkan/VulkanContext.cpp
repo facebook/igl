@@ -660,12 +660,14 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, kNumSets * IGL_TEXTURE_SAMPLERS_MAX},
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, kNumSets * IGL_TEXTURE_SAMPLERS_MAX},
     };
-    textureDSets_.resize(kNumSets);
+    textureDSets_.dsets.resize(kNumSets);
     VK_ASSERT_RETURN(ivkCreateDescriptorPool(
         device, kNumSets, static_cast<uint32_t>(poolSizes.size()), poolSizes.data(), &dpTextures_));
     for (uint32_t i = 0; i != kNumSets; i++) {
-      VK_ASSERT_RETURN(ivkAllocateDescriptorSet(
-          device, dpTextures_, dslTextures_->getVkDescriptorSetLayout(), &textureDSets_[i].ds));
+      VK_ASSERT_RETURN(ivkAllocateDescriptorSet(device,
+                                                dpTextures_,
+                                                dslTextures_->getVkDescriptorSetLayout(),
+                                                &textureDSets_.dsets[i].ds));
     }
   }
   {
@@ -691,12 +693,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
         "Descriptor Set Layout: VulkanContext::dslBuffersUniform_");
     VK_ASSERT_RETURN(ivkCreateDescriptorPool(
         device, kNumSets, kNumBindings, poolSizes.data(), &dpBuffersUniform_));
-    bufferUniformDSets_.resize(kNumSets);
+    bufferUniformDSets_.dsets.resize(kNumSets);
     for (size_t i = 0; i != kNumSets; i++) {
       VK_ASSERT_RETURN(ivkAllocateDescriptorSet(device,
                                                 dpBuffersUniform_,
                                                 dslBuffersUniform_->getVkDescriptorSetLayout(),
-                                                &bufferUniformDSets_[i].ds));
+                                                &bufferUniformDSets_.dsets[i].ds));
     }
   }
   {
@@ -722,12 +724,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
         "Descriptor Set Layout: VulkanContext::dslBuffersStorage_");
     VK_ASSERT_RETURN(ivkCreateDescriptorPool(
         device, kNumSets, kNumBindings, poolSizes.data(), &dpBuffersStorage_));
-    bufferStorageDSets_.resize(kNumSets);
+    bufferStorageDSets_.dsets.resize(kNumSets);
     for (size_t i = 0; i != kNumSets; i++) {
       VK_ASSERT_RETURN(ivkAllocateDescriptorSet(device,
                                                 dpBuffersStorage_,
                                                 dslBuffersStorage_->getVkDescriptorSetLayout(),
-                                                &bufferStorageDSets_[i].ds));
+                                                &bufferStorageDSets_.dsets[i].ds));
     }
   }
   {
@@ -1266,9 +1268,7 @@ void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
 void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
                                            VkPipelineBindPoint bindPoint,
                                            const BindingsTextures& data) const {
-  VkDescriptorSet dsetTex = textureDSets_[currentDSetIndexTextures_].ds;
-  immediate_->wait(std::exchange(textureDSets_[currentDSetIndexTextures_].handle, {}));
-  currentDSetIndexTextures_ = (currentDSetIndexTextures_ + 1) % textureDSets_.size();
+  VkDescriptorSet dsetTex = textureDSets_.acquireNext(*immediate_);
 
   // 1. Sampled and storage images
 
@@ -1334,10 +1334,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
 void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
                                                  VkPipelineBindPoint bindPoint,
                                                  const BindingsBuffers& data) const {
-  VkDescriptorSet dsetBufUniform = bufferUniformDSets_[currentDSetIndexUniformBuffers_].ds;
-  immediate_->wait(std::exchange(bufferUniformDSets_[currentDSetIndexUniformBuffers_].handle, {}));
-  currentDSetIndexUniformBuffers_ =
-      (currentDSetIndexUniformBuffers_ + 1) % bufferUniformDSets_.size();
+  VkDescriptorSet dsetBufUniform = bufferUniformDSets_.acquireNext(*immediate_);
 
   std::array<VkWriteDescriptorSet, IGL_UNIFORM_BLOCKS_BINDING_MAX> write;
   uint32_t numWrites = 0;
@@ -1383,10 +1380,7 @@ void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
 void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
                                                  VkPipelineBindPoint bindPoint,
                                                  const BindingsBuffers& data) const {
-  VkDescriptorSet dsetBufStorage = bufferStorageDSets_[currentDSetIndexStorageBuffers_].ds;
-  immediate_->wait(std::exchange(bufferStorageDSets_[currentDSetIndexStorageBuffers_].handle, {}));
-  currentDSetIndexStorageBuffers_ =
-      (currentDSetIndexStorageBuffers_ + 1) % bufferStorageDSets_.size();
+  VkDescriptorSet dsetBufStorage = bufferStorageDSets_.acquireNext(*immediate_);
 
   std::array<VkWriteDescriptorSet, IGL_UNIFORM_BLOCKS_BINDING_MAX> write{};
   uint32_t numWrites = 0;
@@ -1432,23 +1426,9 @@ void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
 void VulkanContext::markSubmit(const VulkanImmediateCommands::SubmitHandle& handle) const {
   bindlessDSet_.handle = handle;
 
-  for (uint32_t i = prevSubmitIndexTextures_; i != currentDSetIndexTextures_;
-       i = (i + 1) % textureDSets_.size()) {
-    textureDSets_[i].handle = handle;
-  }
-
-  for (uint32_t i = prevSubmitIndexUniformBuffers_; i != currentDSetIndexUniformBuffers_;
-       i = (i + 1) % bufferUniformDSets_.size()) {
-    bufferUniformDSets_[i].handle = handle;
-  }
-  for (uint32_t i = prevSubmitIndexStorageBuffers_; i != currentDSetIndexStorageBuffers_;
-       i = (i + 1) % bufferStorageDSets_.size()) {
-    bufferStorageDSets_[i].handle = handle;
-  }
-
-  prevSubmitIndexTextures_ = currentDSetIndexTextures_;
-  prevSubmitIndexUniformBuffers_ = currentDSetIndexUniformBuffers_;
-  prevSubmitIndexStorageBuffers_ = currentDSetIndexStorageBuffers_;
+  textureDSets_.updateHandles(handle);
+  bufferUniformDSets_.updateHandles(handle);
+  bufferStorageDSets_.updateHandles(handle);
 }
 
 void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) const {
