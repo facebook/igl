@@ -134,7 +134,7 @@ VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(lvk::PrimitiveType t) {
 void CommandBuffer ::transitionToShaderReadOnly(TextureHandle handle) const {
   IGL_PROFILER_FUNCTION();
 
-  const lvk::vulkan::VulkanTexture& tex = *ctx_->texturesPool_.get(handle)->get();
+  const lvk::vulkan::VulkanTexture& tex = *ctx_->texturesPool_.get(handle);
   const VulkanImage* img = tex.image_.get();
 
   IGL_ASSERT(!tex.isSwapchainTexture());
@@ -213,7 +213,7 @@ void CommandBuffer::useComputeTexture(TextureHandle handle) {
   IGL_PROFILER_FUNCTION();
 
   IGL_ASSERT(!handle.empty());
-  lvk::vulkan::VulkanTexture* tex = (*ctx_->texturesPool_.get(handle)).get();
+  lvk::vulkan::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
   const lvk::vulkan::VulkanImage& vkImage = *tex->image_.get();
   if (!vkImage.isStorageImage()) {
     IGL_ASSERT_MSG(false, "Did you forget to specify TextureUsageBits::Storage on your texture?");
@@ -252,19 +252,19 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
   // transition all the color attachments
   for (uint32_t i = 0; i != numFbColorAttachments; i++) {
     if (const auto handle = fb.colorAttachments[i].texture) {
-      lvk::vulkan::VulkanTexture* colorTex = ctx_->texturesPool_.get(handle)->get();
+      lvk::vulkan::VulkanTexture* colorTex = ctx_->texturesPool_.get(handle);
       transitionColorAttachment(wrapper_->cmdBuf_, colorTex);
     }
     // handle MSAA
     if (TextureHandle handle = fb.colorAttachments[i].resolveTexture) {
-      lvk::vulkan::VulkanTexture* colorResolveTex = ctx_->texturesPool_.get(handle)->get();
+      lvk::vulkan::VulkanTexture* colorResolveTex = ctx_->texturesPool_.get(handle);
       transitionColorAttachment(wrapper_->cmdBuf_, colorResolveTex);
     }
   }
   // transition depth-stencil attachment
   TextureHandle depthTex = fb.depthStencilAttachment.texture;
   if (depthTex) {
-    const lvk::vulkan::VulkanTexture& vkDepthTex = *ctx_->texturesPool_.get(depthTex)->get();
+    const lvk::vulkan::VulkanTexture& vkDepthTex = *ctx_->texturesPool_.get(depthTex);
     const lvk::vulkan::VulkanImage* depthImg = vkDepthTex.image_.get();
     IGL_ASSERT_MSG(depthImg->imageFormat_ != VK_FORMAT_UNDEFINED,
                    "Invalid depth attachment format");
@@ -292,7 +292,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
     const lvk::Framebuffer::AttachmentDesc& attachment = fb.colorAttachments[i];
     IGL_ASSERT(!attachment.texture.empty());
 
-    const lvk::vulkan::VulkanTexture& colorTexture = *ctx_->texturesPool_.get(attachment.texture)->get();
+    const lvk::vulkan::VulkanTexture& colorTexture = *ctx_->texturesPool_.get(attachment.texture);
     const auto& descColor = renderPass.colorAttachments[i];
     if (mipLevel && descColor.level) {
       IGL_ASSERT_MSG(descColor.level == mipLevel,
@@ -330,7 +330,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
       IGL_ASSERT_MSG(!attachment.resolveTexture.empty(),
                      "Framebuffer attachment should contain a resolve texture");
       const lvk::vulkan::VulkanTexture& colorResolveTexture =
-          *ctx_->texturesPool_.get(attachment.resolveTexture)->get();
+          *ctx_->texturesPool_.get(attachment.resolveTexture);
       colorAttachments[i].resolveImageView = colorResolveTexture.getVkImageViewForFramebuffer(0);
       colorAttachments[i].resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
@@ -339,7 +339,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
   VkRenderingAttachmentInfo depthAttachment = {};
 
   if (fb.depthStencilAttachment.texture) {
-    const auto& depthTexture = *ctx_->texturesPool_.get(fb.depthStencilAttachment.texture)->get();
+    const auto& depthTexture = *ctx_->texturesPool_.get(fb.depthStencilAttachment.texture);
     const auto& descDepth = renderPass.depthAttachment;
     IGL_ASSERT_MSG(descDepth.level == mipLevel,
                    "Depth attachment should have the same mip-level as color attachments");
@@ -411,14 +411,14 @@ void CommandBuffer::cmdEndRendering() {
   // set image layouts after the render pass
   for (uint32_t i = 0; i != numFbColorAttachments; i++) {
     const auto& attachment = framebuffer_.colorAttachments[i];
-    const vulkan::VulkanTexture& tex = *ctx_->texturesPool_.get(attachment.texture)->get();
+    const vulkan::VulkanTexture& tex = *ctx_->texturesPool_.get(attachment.texture);
     // this must match the final layout of the render pass
     tex.image_->imageLayout_ = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
   }
 
   if (framebuffer_.depthStencilAttachment.texture) {
     const vulkan::VulkanTexture& tex =
-        *ctx_->texturesPool_.get(framebuffer_.depthStencilAttachment.texture)->get();
+        *ctx_->texturesPool_.get(framebuffer_.depthStencilAttachment.texture);
     // this must match the final layout of the render pass
     tex.image_->imageLayout_ = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
   }

@@ -794,12 +794,12 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     if (!IGL_VERIFY(imageView.get())) {
       return Result(Result::Code::RuntimeError, "Cannot create VulkanImageView");
     }
-    auto dummyTexture = std::make_shared<VulkanTexture>(std::move(image), std::move(imageView));
+    VulkanTexture dummyTexture(std::move(image), std::move(imageView));
     const uint32_t pixel = 0xFF000000;
     const void* data[] = {&pixel};
     const VkRect2D imageRegion = ivkGetRect2D(0, 0, 1, 1);
     stagingDevice_->imageData2D(
-        *dummyTexture->image_.get(), imageRegion, 0, 1, 0, 1, dummyTextureFormat, data);
+        *dummyTexture.image_.get(), imageRegion, 0, 1, 0, 1, dummyTextureFormat, data);
     texturesPool_.create(std::move(dummyTexture));
     IGL_ASSERT(texturesPool_.numObjects() == 1);
   }
@@ -1044,24 +1044,23 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   infoStorageImages.reserve(texturesPool_.numObjects());
 
   // use the dummy texture to avoid sparse array
-  VkImageView dummyImageView =
-      texturesPool_.objects_[0].obj_->imageView_->getVkImageView();
+  VkImageView dummyImageView = texturesPool_.objects_[0].obj_.imageView_->getVkImageView();
 
   for (const auto& obj : texturesPool_.objects_) {
-    const VulkanTexture* texture = obj.obj_.get();
+    const VulkanTexture& texture = obj.obj_;
     // multisampled images cannot be directly accessed from shaders
     const bool isTextureAvailable =
-        texture && ((texture->image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
-    const bool isSampledImage = isTextureAvailable && texture->image_->isSampledImage();
-    const bool isStorageImage = isTextureAvailable && texture->image_->isStorageImage();
+        (texture.image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
+    const bool isSampledImage = isTextureAvailable && texture.image_->isSampledImage();
+    const bool isStorageImage = isTextureAvailable && texture.image_->isStorageImage();
     infoSampledImages.push_back(
         {samplersPool_.objects_[0].obj_,
-         isSampledImage ? texture->imageView_->getVkImageView() : dummyImageView,
+         isSampledImage ? texture.imageView_->getVkImageView() : dummyImageView,
          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
     IGL_ASSERT(infoSampledImages.back().imageView != VK_NULL_HANDLE);
     infoStorageImages.push_back(VkDescriptorImageInfo{
         VK_NULL_HANDLE,
-        isStorageImage ? texture->imageView_->getVkImageView() : dummyImageView,
+        isStorageImage ? texture.imageView_->getVkImageView() : dummyImageView,
         VK_IMAGE_LAYOUT_GENERAL});
   }
 

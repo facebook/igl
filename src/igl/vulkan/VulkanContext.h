@@ -212,7 +212,7 @@ class VulkanContext final {
   lvk::Pool<lvk::ComputePipeline, lvk::vulkan::ComputePipelineState> computePipelinesPool_;
   lvk::Pool<lvk::Sampler, VkSampler> samplersPool_;
   lvk::Pool<lvk::Buffer, lvk::vulkan::VulkanBuffer> buffersPool_;
-  lvk::Pool<lvk::Texture, std::shared_ptr<lvk::vulkan::VulkanTexture>> texturesPool_;
+  lvk::Pool<lvk::Texture, lvk::vulkan::VulkanTexture> texturesPool_;
 
   struct DeferredTask {
     DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) :

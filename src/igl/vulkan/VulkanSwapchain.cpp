@@ -203,8 +203,8 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
                                             0,
                                             1,
                                             debugNameImageView);
-    auto texture = std::make_shared<VulkanTexture>(std::move(image), std::move(imageView));
-    swapchainTextures_.push_back(ctx_.texturesPool_.create(std::move(texture)));
+    swapchainTextures_.push_back(
+        ctx_.texturesPool_.create(VulkanTexture(std::move(image), std::move(imageView))));
   }
 }
 
@@ -219,7 +219,7 @@ VulkanSwapchain::~VulkanSwapchain() {
 VkImage VulkanSwapchain::getCurrentVkImage() const {
   if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
     lvk::vulkan::VulkanTexture* tex =
-        ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_])->get();
+        ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_]);
     return tex->image_->getVkImage();
   }
   return VK_NULL_HANDLE;
@@ -228,7 +228,7 @@ VkImage VulkanSwapchain::getCurrentVkImage() const {
 VkImageView VulkanSwapchain::getCurrentVkImageView() const {
   if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
     lvk::vulkan::VulkanTexture* tex =
-        ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_])->get();
+        ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_]);
     return tex->imageView_->getVkImageView();
   }
   return VK_NULL_HANDLE;

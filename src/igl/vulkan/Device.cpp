@@ -78,7 +78,7 @@ void Device::submit(const lvk::ICommandBuffer& commandBuffer,
   const bool isGraphicsQueue = queueType == QueueType_Graphics;
 
   if (present) {
-    const lvk::vulkan::VulkanTexture& tex = *ctx.texturesPool_.get(present)->get();
+    const lvk::vulkan::VulkanTexture& tex = *ctx.texturesPool_.get(present);
 
     IGL_ASSERT(tex.isSwapchainTexture());
 
@@ -349,10 +349,8 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc,
     return {};
   }
 
-  std::shared_ptr<vulkan::VulkanTexture> texture =
-      std::make_shared<VulkanTexture>(std::move(image), std::move(imageView));
-
-  TextureHandle handle = ctx_->texturesPool_.create(std::move(texture));
+  TextureHandle handle =
+      ctx_->texturesPool_.create(vulkan::VulkanTexture(std::move(image), std::move(imageView)));
 
   IGL_ASSERT(ctx_->texturesPool_.numObjects() <= ctx_->config_.maxTextures);
 
@@ -457,7 +455,7 @@ void Device::destroy(Framebuffer& fb) {
     {
       if (handle.empty())
         return;
-      lvk::vulkan::VulkanTexture* tex = ctx_->texturesPool_.get(handle)->get();
+      lvk::vulkan::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
       if (!tex || tex->isSwapchainTexture())
         return;
       destroy(handle);
@@ -548,7 +546,7 @@ Result Device::upload(TextureHandle handle,
     return lvk::Result();
   }
 
-  lvk::vulkan::VulkanTexture* texture = ctx_->texturesPool_.get(handle)->get();
+  lvk::vulkan::VulkanTexture* texture = ctx_->texturesPool_.get(handle);
 
   const auto result = validateRange(texture->getDimensions(), texture->image_->levels_, range);
 
@@ -590,7 +588,7 @@ Dimensions Device::getDimensions(TextureHandle handle) const {
     return {};
   }
 
-  return (*ctx_->texturesPool_.get(handle))->getDimensions();
+  return ctx_->texturesPool_.get(handle)->getDimensions();
 }
 
 void Device::generateMipmap(TextureHandle handle) const {
@@ -598,7 +596,7 @@ void Device::generateMipmap(TextureHandle handle) const {
     return;
   }
 
-  lvk::vulkan::VulkanTexture* tex = ctx_->texturesPool_.get(handle)->get();
+  lvk::vulkan::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
 
   if (tex->image_->levels_ > 1) {
     IGL_ASSERT(tex->image_->imageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED);
@@ -613,7 +611,7 @@ TextureFormat Device::getFormat(TextureHandle handle) const {
     return TextureFormat::Invalid;
   }
 
-  return vkFormatToTextureFormat((*ctx_->texturesPool_.get(handle))->image_->imageFormat_);
+  return vkFormatToTextureFormat(ctx_->texturesPool_.get(handle)->image_->imageFormat_);
 }
 
 lvk::Holder<lvk::ShaderModuleHandle> Device::createShaderModule(const ShaderModuleDesc& desc, Result* outResult) {
@@ -765,8 +763,7 @@ TextureHandle Device::getCurrentSwapchainTexture() {
     return {};
   }
 
-  // a chain of possibilities...
-  IGL_ASSERT_MSG((*ctx_->texturesPool_.get(tex))->image_->imageFormat_ != VK_FORMAT_UNDEFINED,
+  IGL_ASSERT_MSG(ctx_->texturesPool_.get(tex)->image_->imageFormat_ != VK_FORMAT_UNDEFINED,
                  "Invalid image format");
 
   return tex;

@@ -20,11 +20,14 @@ class VulkanImageView;
 
 class VulkanTexture final {
  public:
+  VulkanTexture() = default;
   VulkanTexture(std::shared_ptr<VulkanImage> image, std::shared_ptr<VulkanImageView> imageView);
-  ~VulkanTexture() = default;
 
   VulkanTexture(const VulkanTexture&) = delete;
   VulkanTexture& operator=(const VulkanTexture&) = delete;
+
+  VulkanTexture(VulkanTexture&& other) = default;
+  VulkanTexture& operator=(VulkanTexture&& other) = default;
 
   Dimensions getDimensions() const;
   VkImageView getVkImageView() const; // all mip-levels
