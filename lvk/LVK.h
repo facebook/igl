@@ -296,9 +296,9 @@ struct ScissorRect {
 };
 
 struct Dimensions {
-  uint32_t width = 0;
-  uint32_t height = 0;
-  uint32_t depth = 0;
+  uint32_t width = 1;
+  uint32_t height = 1;
+  uint32_t depth = 1;
 };
 
 struct Viewport {
@@ -696,9 +696,7 @@ struct TextureRangeDesc {
   uint32_t x = 0;
   uint32_t y = 0;
   uint32_t z = 0;
-  uint32_t width = 1;
-  uint32_t height = 1;
-  uint32_t depth = 1;
+  Dimensions dimensions = {1, 1, 1};
   uint32_t layer = 0;
   uint32_t numLayers = 1;
   uint32_t mipLevel = 0;
@@ -715,9 +713,7 @@ struct TextureDesc {
   TextureType type = TextureType_2D;
   TextureFormat format = TextureFormat::Invalid;
 
-  uint32_t width = 1;
-  uint32_t height = 1;
-  uint32_t depth = 1;
+  Dimensions dimensions = {1, 1, 1};
   uint32_t numLayers = 1;
   uint32_t numSamples = 1;
   uint8_t usage = TextureUsageBits_Sampled;

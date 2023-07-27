@@ -218,8 +218,7 @@ static void initIGL() {
         {
             .type = lvk::TextureType_2D,
             .format = lvk::TextureFormat::BGRA_UN8,
-            .width = texWidth,
-            .height = texHeight,
+            .dimensions = {texWidth, texHeight},
             .usage = lvk::TextureUsageBits_Sampled,
             .debugName = "XOR pattern",
             .initialData = pixels.data(),
@@ -254,8 +253,7 @@ static void initIGL() {
         {
             .type = lvk::TextureType_2D,
             .format = lvk::TextureFormat::RGBA_UN8,
-            .width = (uint32_t)texWidth,
-            .height = (uint32_t)texHeight,
+            .dimensions = {(uint32_t)texWidth, (uint32_t)texHeight},
             .usage = lvk::TextureUsageBits_Sampled,
             .debugName = "wood_polished_01_diff.png",
             .initialData = pixels,

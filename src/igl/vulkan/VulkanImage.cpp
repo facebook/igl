@@ -96,6 +96,9 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   IGL_ASSERT_MSG(layers_ > 0, "The image must contain at least one layer");
   IGL_ASSERT_MSG(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
   IGL_ASSERT_MSG(samples_ > 0, "The image must contain at least one sample");
+  IGL_ASSERT(extent.width > 0);
+  IGL_ASSERT(extent.height > 0);
+  IGL_ASSERT(extent.depth > 0);
 
   const VkImageCreateInfo ci = ivkGetImageCreateInfo(
       type, imageFormat_, tiling, usageFlags, extent_, levels_, layers_, createFlags, samples);

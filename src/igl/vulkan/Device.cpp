@@ -233,7 +233,8 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc,
     return {};
   }
 
-  if (!IGL_VERIFY(desc.numMipLevels <= lvk::calcNumMipLevels(desc.width, desc.height))) {
+  if (!IGL_VERIFY(desc.numMipLevels <=
+                  lvk::calcNumMipLevels(desc.dimensions.width, desc.dimensions.height))) {
     Result::setResult(outResult,
                       Result::Code::ArgumentOutOfRange,
                       "The number of specified mip-levels is greater than the maximum possible "
@@ -310,9 +311,9 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc,
   Result result;
   auto image = ctx_->createImage(
       imageType,
-      VkExtent3D{(uint32_t)desc.width, (uint32_t)desc.height, (uint32_t)desc.depth},
+      VkExtent3D{desc.dimensions.width, desc.dimensions.height, desc.dimensions.depth},
       vkFormat,
-      (uint32_t)desc.numMipLevels,
+      desc.numMipLevels,
       arrayLayerCount,
       VK_IMAGE_TILING_OPTIMAL,
       usageFlags,
@@ -359,13 +360,7 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc,
   if (desc.initialData) {
     IGL_ASSERT(desc.type == TextureType_2D);
     const void* mipMaps[] = {desc.initialData};
-    Result res = upload(handle,
-                        {
-                            .width = desc.width,
-                            .height = desc.height,
-                            .numMipLevels = 1,
-                        },
-                        mipMaps);
+    Result res = upload(handle, {.dimensions = desc.dimensions, .numMipLevels = 1}, mipMaps);
     if (!res.isOk()) {
       Result::setResult(outResult, res);
       return {};
@@ -515,8 +510,8 @@ uint64_t Device::gpuAddress(BufferHandle handle, size_t offset) const {
 static Result validateRange(const lvk::Dimensions& dimensions,
                             uint32_t numLevels,
                             const lvk::TextureRangeDesc& range) {
-  if (!IGL_VERIFY(range.width > 0 && range.height > 0 || range.depth > 0 || range.numLayers > 0 ||
-                  range.numMipLevels > 0)) {
+  if (!IGL_VERIFY(range.dimensions.width > 0 && range.dimensions.height > 0 ||
+                  range.dimensions.depth > 0 || range.numLayers > 0 || range.numMipLevels > 0)) {
     return Result{Result::Code::ArgumentOutOfRange,
                   "width, height, depth numLayers, and numMipLevels must be > 0"};
   }
@@ -528,11 +523,13 @@ static Result validateRange(const lvk::Dimensions& dimensions,
   const auto texHeight = std::max(dimensions.height >> range.mipLevel, 1u);
   const auto texDepth = std::max(dimensions.depth >> range.mipLevel, 1u);
 
-  if (range.width > texWidth || range.height > texHeight || range.depth > texDepth) {
+  if (range.dimensions.width > texWidth || range.dimensions.height > texHeight ||
+      range.dimensions.depth > texDepth) {
     return Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"};
   }
-  if (range.x > texWidth - range.width || range.y > texHeight - range.height ||
-      range.z > texDepth - range.depth) {
+  if (range.x > texWidth - range.dimensions.width ||
+      range.y > texHeight - range.dimensions.height ||
+      range.z > texDepth - range.dimensions.depth) {
     return Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"};
   }
 
@@ -564,12 +561,12 @@ Result Device::upload(TextureHandle handle,
     ctx_->stagingDevice_->imageData3D(
         *texture->image_.get(),
         VkOffset3D{(int32_t)range.x, (int32_t)range.y, (int32_t)range.z},
-        VkExtent3D{(uint32_t)range.width, (uint32_t)range.height, (uint32_t)range.depth},
+        VkExtent3D{range.dimensions.width, range.dimensions.height, range.dimensions.depth},
         vkFormat,
         uploadData);
   } else {
-    const VkRect2D imageRegion = ivkGetRect2D(
-        (uint32_t)range.x, (uint32_t)range.y, (uint32_t)range.width, (uint32_t)range.height);
+    const VkRect2D imageRegion =
+        ivkGetRect2D(range.x, range.y, range.dimensions.width, range.dimensions.height);
     ctx_->stagingDevice_->imageData2D(*texture->image_.get(),
                                       imageRegion,
                                       range.mipLevel,

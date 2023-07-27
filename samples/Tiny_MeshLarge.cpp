@@ -584,8 +584,7 @@ void initIGL() {
         {
             .type = lvk::TextureType_2D,
             .format = lvk::TextureFormat::RGBA_UN8,
-            .width = 1,
-            .height = 1,
+            .dimensions = {1, 1},
             .usage = lvk::TextureUsageBits_Sampled,
             .debugName = "dummy 1x1 (white)",
             .initialData = &pixel,
@@ -1025,8 +1024,7 @@ void createShadowMap() {
   const lvk::TextureDesc desc = {
       .type = lvk::TextureType_2D,
       .format = lvk::TextureFormat::Z_UN16,
-      .width = w,
-      .height = h,
+      .dimensions = {w, h},
       .usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled,
       .numMipLevels = lvk::calcNumMipLevels(w, h),
       .debugName = "Shadow map",
@@ -1042,8 +1040,7 @@ void createOffscreenFramebuffer() {
   lvk::TextureDesc descDepth = {
       .type = lvk::TextureType_2D,
       .format = lvk::TextureFormat::Z_UN24,
-      .width = w,
-      .height = h,
+      .dimensions = {w, h},
       .usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled,
       .numMipLevels = lvk::calcNumMipLevels(w, h),
       .debugName = "Offscreen framebuffer (d)",
@@ -1061,11 +1058,10 @@ void createOffscreenFramebuffer() {
   lvk::TextureDesc descColor = {
       .type = lvk::TextureType_2D,
       .format = format,
-      .width = w,
-      .height = h,
+      .dimensions = {w, h},
       .usage = usage,
       .numMipLevels = lvk::calcNumMipLevels(w, h),
-      .debugName = "Offscreen framebuffer (c)",
+      .debugName = "Offscreen framebuffer (color)",
   };
   if (kNumSamplesMSAA > 1) {
     descColor.usage = lvk::TextureUsageBits_Attachment;
@@ -1079,14 +1075,16 @@ void createOffscreenFramebuffer() {
   };
 
   if (kNumSamplesMSAA > 1) {
-    fb.colorAttachments[0].resolveTexture = device_->createTexture({
-        .type = lvk::TextureType_2D,
-        .format = format,
-        .width = w,
-        .height = h,
-        .usage = usage,
-        .debugName = "Offscreen framebuffer (c - resolve)",
-    }).release();
+    fb.colorAttachments[0].resolveTexture =
+        device_
+            ->createTexture({
+                .type = lvk::TextureType_2D,
+                .format = format,
+                .dimensions = {w, h},
+                .usage = usage,
+                .debugName = "Offscreen framebuffer (color resolve)",
+            })
+            .release();
   }
 
   fbOffscreen_ = fb;
@@ -1446,8 +1444,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, lvk::Holder<lvk::Texture
         {
             .type = lvk::TextureType_Cube,
             .format = gli2iglTextureFormat(texRef.format()),
-            .width = width,
-            .height = height,
+            .dimensions = {width, height},
             .usage = lvk::TextureUsageBits_Sampled,
             .numMipLevels = lvk::calcNumMipLevels(texRef.extent().x, texRef.extent().y),
             .debugName = fileNameKTX.c_str(),
@@ -1465,8 +1462,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, lvk::Holder<lvk::Texture
   };
 
   const lvk::TextureRangeDesc texRefRange = {
-      .width = width,
-      .height = height,
+      .dimensions = {width, height},
       .numLayers = 6,
       // if compression is enabled, upload all mip-levels
       .numMipLevels = kEnableCompression ? lvk::calcNumMipLevels(width, height) : 1u,
@@ -1631,8 +1627,7 @@ lvk::TextureHandle createTexture(const LoadedImage& img) {
   const lvk::TextureDesc desc = {
       .type = lvk::TextureType_2D,
       .format = formatFromChannels(img.channels),
-      .width = img.w,
-      .height = img.h,
+      .dimensions = {img.w, img.h},
       .usage = lvk::TextureUsageBits_Sampled,
       .numMipLevels = lvk::calcNumMipLevels(img.w, img.h),
       .debugName = img.debugName.c_str(),
@@ -1642,22 +1637,17 @@ lvk::TextureHandle createTexture(const LoadedImage& img) {
 
   if (kEnableCompression && img.channels == 4 &&
       std::filesystem::exists(img.compressedFileName.c_str())) {
-    // Uploading the texture
-    const lvk::TextureRangeDesc rangeDesc = {
-        .width = img.w,
-        .height = img.h,
-        .numMipLevels = desc.numMipLevels,
-    };
+    // uploading the texture
     auto gliTex2d = gli::load_ktx(img.compressedFileName.c_str());
     if (gliTex2d.empty()) {
       printf("Failed to load %s\n", img.compressedFileName.c_str());
       assert(0);
     }
     const void* data[] = {gliTex2d.data()};
-    device_->upload(tex, rangeDesc, data);
+    device_->upload(tex, {.dimensions = {img.w, img.h}, .numMipLevels = desc.numMipLevels}, data);
   } else {
     const void* data[] = {img.pixels};
-    device_->upload(tex, {.width = img.w, .height = img.h}, data);
+    device_->upload(tex, {.dimensions = {img.w, img.h}}, data);
     device_->generateMipmap(tex);
   }
 

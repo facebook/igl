@@ -84,8 +84,7 @@ void VulkanObjects::createFramebuffer() {
     const lvk::TextureDesc desc = {
         .type = lvk::TextureType_2D,
         .format = device_->getFormat(texSwapchain),
-        .width = device_->getDimensions(texSwapchain).width,
-        .height = device_->getDimensions(texSwapchain).height,
+        .dimensions = device_->getDimensions(texSwapchain),
         .usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled,
     };
 

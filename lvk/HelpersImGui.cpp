@@ -125,8 +125,7 @@ ImGuiRenderer::ImGuiRenderer(lvk::IDevice& device, const char* defaultFontTTF, f
   io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
   fontTexture_ = device.createTexture({.type = lvk::TextureType_2D,
                                        .format = lvk::TextureFormat::RGBA_UN8,
-                                       .width = (uint32_t)width,
-                                       .height = (uint32_t)height,
+                                       .dimensions = {(uint32_t)width, (uint32_t)height},
                                        .usage = lvk::TextureUsageBits_Sampled,
                                        .initialData = pixels},
                                       nullptr);
