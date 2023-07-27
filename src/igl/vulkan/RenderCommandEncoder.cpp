@@ -446,9 +446,9 @@ void RenderCommandEncoder::bindBuffer(int index,
 
   VkBuffer vkBuf = buf->getVkBuffer();
 
-  const bool isUniformOrStorageBuffer =
-      (buf->getBufferType() &
-       (BufferDesc::BufferTypeBits::Uniform | BufferDesc::BufferTypeBits::Storage)) > 0;
+  const bool isUniformBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) > 0;
+  const bool isStorageBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) > 0;
+  const bool isUniformOrStorageBuffer = isUniformBuffer || isStorageBuffer;
   const bool isVertexBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Vertex) != 0;
 
   if (isVertexBuffer) {
@@ -457,15 +457,20 @@ void RenderCommandEncoder::bindBuffer(int index,
     const VkDeviceSize offset = bufferOffset;
     vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
   } else if (isUniformOrStorageBuffer) {
-    if (ctx_.enhancedShaderDebuggingStore_) {
-      IGL_ASSERT_MSG(index < (IGL_UNIFORM_BLOCKS_BINDING_MAX - 1),
-                     "The last buffer index is reserved for enhanced debugging features");
-    }
     if (!IGL_VERIFY(target == BindTarget::kAllGraphics)) {
       IGL_ASSERT_MSG(false, "Buffer target should be BindTarget::kAllGraphics");
       return;
     }
-    binder_.bindBuffer(index, buf, bufferOffset);
+    if (isUniformBuffer) {
+      binder_.bindUniformBuffer(index, buf, bufferOffset);
+    }
+    if (isStorageBuffer) {
+      if (ctx_.enhancedShaderDebuggingStore_) {
+        IGL_ASSERT_MSG(index < (IGL_UNIFORM_BLOCKS_BINDING_MAX - 1),
+                       "The last buffer index is reserved for enhanced debugging features");
+      }
+      binder_.bindStorageBuffer(index, buf, bufferOffset);
+    }
   } else {
     IGL_ASSERT(false);
   }

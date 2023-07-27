@@ -97,7 +97,7 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
       RenderCommandEncoder::create(shared_from_this(), ctx_, renderPass, framebuffer, outResult);
 
   if (ctx_.enhancedShaderDebuggingStore_) {
-    encoder->binder().bindBuffer(
+    encoder->binder().bindStorageBuffer(
         EnhancedShaderDebuggingStore::kBufferIndex,
         static_cast<igl::vulkan::Buffer*>(ctx_.enhancedShaderDebuggingStore_->vertexBuffer().get()),
         0);

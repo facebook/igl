@@ -276,9 +276,11 @@ class VulkanContext final {
   mutable std::vector<DescriptorSet> bufferUniformDSets_;
   mutable std::vector<DescriptorSet> bufferStorageDSets_;
   mutable uint32_t currentDSetIndexTextures_ = 0;
-  mutable uint32_t currentDSetIndexBuffers_ = 0;
+  mutable uint32_t currentDSetIndexUniformBuffers_ = 0;
+  mutable uint32_t currentDSetIndexStorageBuffers_ = 0;
   mutable uint32_t prevSubmitIndexTextures_ = 0;
-  mutable uint32_t prevSubmitIndexBuffers_ = 0;
+  mutable uint32_t prevSubmitIndexUniformBuffers_ = 0;
+  mutable uint32_t prevSubmitIndexStorageBuffers_ = 0;
   std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutGraphics_;
   std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutCompute_;
   // don't use staging on devices with shared host-visible memory
@@ -324,9 +326,12 @@ class VulkanContext final {
   void updateBindingsTextures(VkCommandBuffer cmdBuf,
                               VkPipelineBindPoint bindPoint,
                               const BindingsTextures& data) const;
-  void updateBindingsBuffers(VkCommandBuffer cmdBuf,
-                             VkPipelineBindPoint bindPoint,
-                             const BindingsBuffers& data) const;
+  void updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
+                                    VkPipelineBindPoint bindPoint,
+                                    const BindingsBuffers& data) const;
+  void updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
+                                    VkPipelineBindPoint bindPoint,
+                                    const BindingsBuffers& data) const;
   void markSubmit(const SubmitHandle& handle) const;
 
   struct DeferredTask {

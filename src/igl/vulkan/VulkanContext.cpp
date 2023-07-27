@@ -46,6 +46,7 @@
 namespace {
 
 /*
+ * Descriptor sets:
  *  0 - bindless textures/samplers
  *  1 - textures/samplers
  *  2 - uniform buffers
@@ -53,7 +54,8 @@ namespace {
  */
 const uint32_t kBindPoint_Bindless = 0;
 const uint32_t kBindPoint_Textures = 1;
-const uint32_t kBindPoint_Buffers = 2;
+const uint32_t kBindPoint_BuffersUniform = 2;
+const uint32_t kBindPoint_BuffersStorage = 3;
 
 /*
  These bindings should match GLSL declarations injected into shaders in
@@ -1329,17 +1331,13 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
       nullptr);
 }
 
-void VulkanContext::updateBindingsBuffers(VkCommandBuffer cmdBuf,
-                                          VkPipelineBindPoint bindPoint,
-                                          const BindingsBuffers& data) const {
-  VkDescriptorSet dsetBufUniform = bufferUniformDSets_[currentDSetIndexBuffers_].ds;
-  VkDescriptorSet dsetBufStorage = bufferStorageDSets_[currentDSetIndexBuffers_].ds;
-  // both buffer types reuse the same handle, so we wait only once
-  immediate_->wait(std::exchange(bufferUniformDSets_[currentDSetIndexBuffers_].handle, {}));
-  bufferStorageDSets_[currentDSetIndexBuffers_].handle = {};
-  currentDSetIndexBuffers_ = (currentDSetIndexBuffers_ + 1) % bufferUniformDSets_.size();
-
-  // Update uniform/storage buffers
+void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
+                                                 VkPipelineBindPoint bindPoint,
+                                                 const BindingsBuffers& data) const {
+  VkDescriptorSet dsetBufUniform = bufferUniformDSets_[currentDSetIndexUniformBuffers_].ds;
+  immediate_->wait(std::exchange(bufferUniformDSets_[currentDSetIndexUniformBuffers_].handle, {}));
+  currentDSetIndexUniformBuffers_ =
+      (currentDSetIndexUniformBuffers_ + 1) % bufferUniformDSets_.size();
 
   std::array<VkWriteDescriptorSet, IGL_UNIFORM_BLOCKS_BINDING_MAX> write;
   uint32_t numWrites = 0;
@@ -1351,25 +1349,15 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer cmdBuf,
     if (!bi.buf) {
       continue;
     }
-    const bool isUniformBuffer =
-        (bi.buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0;
-    [[maybe_unused]] const bool isStorageBuffer =
-        (bi.buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0;
-    IGL_ASSERT_MSG(!(isUniformBuffer && isStorageBuffer),
-                   "Buffer type MUST have either the Uniform or Storage type bit set");
-    IGL_ASSERT_MSG(isUniformBuffer || isStorageBuffer,
-                   "Buffer type MUST NOT have both the Uniform and Storage type bits set");
+    IGL_ASSERT_MSG((bi.buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0,
+                   "The buffer must be a uniform buffer");
     infoBuffers[numBuffers] = {
         bi.buf ? bi.buf->getVkBuffer() : VK_NULL_HANDLE,
         bi.offset,
         VK_WHOLE_SIZE,
     };
     write[numWrites++] = ivkGetWriteDescriptorSet_BufferInfo(
-        isUniformBuffer ? dsetBufUniform : dsetBufStorage,
-        i,
-        isUniformBuffer ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        1,
-        &infoBuffers[numBuffers]);
+        dsetBufUniform, i, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &infoBuffers[numBuffers]);
     numBuffers++;
     IGL_ASSERT(numWrites <= IGL_UNIFORM_BLOCKS_BINDING_MAX);
   }
@@ -1378,19 +1366,65 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer cmdBuf,
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-  // @lint-ignore CLANGTIDY
-  const VkDescriptorSet sets[] = {dsetBufUniform, dsetBufStorage}; // 2, 3
-
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - buffers\n", cmdBuf, bindPoint);
+  IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - uniform buffers\n", cmdBuf, bindPoint);
 #endif // IGL_VULKAN_PRINT_COMMANDS
   vkCmdBindDescriptorSets(
       cmdBuf,
       bindPoint,
       (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
-      kBindPoint_Buffers,
-      IGL_ARRAY_NUM_ELEMENTS(sets),
-      sets,
+      kBindPoint_BuffersUniform,
+      1,
+      &dsetBufUniform,
+      0,
+      nullptr);
+}
+
+void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
+                                                 VkPipelineBindPoint bindPoint,
+                                                 const BindingsBuffers& data) const {
+  VkDescriptorSet dsetBufStorage = bufferStorageDSets_[currentDSetIndexStorageBuffers_].ds;
+  immediate_->wait(std::exchange(bufferStorageDSets_[currentDSetIndexStorageBuffers_].handle, {}));
+  currentDSetIndexStorageBuffers_ =
+      (currentDSetIndexStorageBuffers_ + 1) % bufferStorageDSets_.size();
+
+  std::array<VkWriteDescriptorSet, IGL_UNIFORM_BLOCKS_BINDING_MAX> write{};
+  uint32_t numWrites = 0;
+
+  std::array<VkDescriptorBufferInfo, IGL_UNIFORM_BLOCKS_BINDING_MAX> infoBuffers{};
+  uint32_t numBuffers = 0;
+  for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
+    const BufferInfo& bi = data.buffers[i];
+    if (!bi.buf) {
+      continue;
+    }
+    IGL_ASSERT_MSG((bi.buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0,
+                   "The buffer must be a storage buffer");
+    infoBuffers[numBuffers] = {
+        bi.buf ? bi.buf->getVkBuffer() : VK_NULL_HANDLE,
+        bi.offset,
+        VK_WHOLE_SIZE,
+    };
+    write[numWrites++] = ivkGetWriteDescriptorSet_BufferInfo(
+        dsetBufStorage, i, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, &infoBuffers[numBuffers]);
+    numBuffers++;
+    IGL_ASSERT(numWrites <= IGL_UNIFORM_BLOCKS_BINDING_MAX);
+  }
+
+  vkUpdateDescriptorSets(device_->getVkDevice(), numWrites, write.data(), 0, nullptr);
+
+  const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+#if IGL_VULKAN_PRINT_COMMANDS
+  IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - storage buffers\n", cmdBuf, bindPoint);
+#endif // IGL_VULKAN_PRINT_COMMANDS
+  vkCmdBindDescriptorSets(
+      cmdBuf,
+      bindPoint,
+      (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
+      kBindPoint_BuffersStorage,
+      1,
+      &dsetBufStorage,
       0,
       nullptr);
 }
@@ -1403,18 +1437,18 @@ void VulkanContext::markSubmit(const VulkanImmediateCommands::SubmitHandle& hand
     textureDSets_[i].handle = handle;
   }
 
-  // they all should have the same number of elements
-  const uint32_t num = static_cast<uint32_t>(bufferUniformDSets_.size());
-
-  IGL_ASSERT(bufferUniformDSets_.size() == bufferStorageDSets_.size());
-
-  for (uint32_t i = prevSubmitIndexBuffers_; i != currentDSetIndexBuffers_; i = (i + 1) % num) {
+  for (uint32_t i = prevSubmitIndexUniformBuffers_; i != currentDSetIndexUniformBuffers_;
+       i = (i + 1) % bufferUniformDSets_.size()) {
     bufferUniformDSets_[i].handle = handle;
+  }
+  for (uint32_t i = prevSubmitIndexStorageBuffers_; i != currentDSetIndexStorageBuffers_;
+       i = (i + 1) % bufferStorageDSets_.size()) {
     bufferStorageDSets_[i].handle = handle;
   }
 
   prevSubmitIndexTextures_ = currentDSetIndexTextures_;
-  prevSubmitIndexBuffers_ = currentDSetIndexBuffers_;
+  prevSubmitIndexUniformBuffers_ = currentDSetIndexUniformBuffers_;
+  prevSubmitIndexStorageBuffers_ = currentDSetIndexStorageBuffers_;
 }
 
 void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) const {

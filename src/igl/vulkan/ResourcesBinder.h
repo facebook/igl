@@ -28,13 +28,13 @@ struct BufferInfo {
   size_t offset = 0;
 };
 
+struct BindingsBuffers {
+  BufferInfo buffers[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
+};
+
 struct BindingsTextures {
   igl::vulkan::VulkanTexture* textures[IGL_TEXTURE_SAMPLERS_MAX] = {};
   igl::vulkan::VulkanSampler* samplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
-};
-
-struct BindingsBuffers {
-  BufferInfo buffers[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
 };
 
 class ResourcesBinder final {
@@ -43,7 +43,8 @@ class ResourcesBinder final {
                   const VulkanContext& ctx,
                   VkPipelineBindPoint bindPoint);
 
-  void bindBuffer(uint32_t index, igl::vulkan::Buffer* buffer, size_t bufferOffset);
+  void bindUniformBuffer(uint32_t index, igl::vulkan::Buffer* buffer, size_t bufferOffset);
+  void bindStorageBuffer(uint32_t index, igl::vulkan::Buffer* buffer, size_t bufferOffset);
   void bindSamplerState(uint32_t index, igl::vulkan::SamplerState* samplerState);
   void bindTexture(uint32_t index, igl::vulkan::Texture* tex);
 
@@ -62,9 +63,11 @@ class ResourcesBinder final {
   VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
   VkPipeline lastPipelineBound_ = VK_NULL_HANDLE;
   bool isDirtyTextures_ = true;
-  bool isDirtyBuffers_ = true;
+  bool isDirtyUniformBuffers_ = true;
+  bool isDirtyStorageBuffers_ = true;
   BindingsTextures bindingsTextures_;
-  BindingsBuffers bindingsBuffers_;
+  BindingsBuffers bindingsUniformBuffers_;
+  BindingsBuffers bindingsStorageBuffers_;
   VkPipelineBindPoint bindPoint_ = VK_PIPELINE_BIND_POINT_GRAPHICS;
 };
 

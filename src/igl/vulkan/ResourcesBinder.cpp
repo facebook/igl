@@ -21,7 +21,9 @@ ResourcesBinder::ResourcesBinder(const std::shared_ptr<CommandBuffer>& commandBu
                                  VkPipelineBindPoint bindPoint) :
   ctx_(ctx), cmdBuffer_(commandBuffer->getVkCommandBuffer()), bindPoint_(bindPoint) {}
 
-void ResourcesBinder::bindBuffer(uint32_t index, igl::vulkan::Buffer* buffer, size_t bufferOffset) {
+void ResourcesBinder::bindUniformBuffer(uint32_t index,
+                                        igl::vulkan::Buffer* buffer,
+                                        size_t bufferOffset) {
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_VERIFY(index < IGL_UNIFORM_BLOCKS_BINDING_MAX)) {
@@ -29,10 +31,33 @@ void ResourcesBinder::bindBuffer(uint32_t index, igl::vulkan::Buffer* buffer, si
     return;
   }
 
-  if (bindingsBuffers_.buffers[index].buf != buffer ||
-      bindingsBuffers_.buffers[index].offset != bufferOffset) {
-    bindingsBuffers_.buffers[index] = {buffer, bufferOffset};
-    isDirtyBuffers_ = true;
+  IGL_ASSERT((buffer->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0);
+
+  BufferInfo& slot = bindingsUniformBuffers_.buffers[index];
+
+  if (slot.buf != buffer || slot.offset != bufferOffset) {
+    slot = {buffer, bufferOffset};
+    isDirtyUniformBuffers_ = true;
+  }
+}
+
+void ResourcesBinder::bindStorageBuffer(uint32_t index,
+                                        igl::vulkan::Buffer* buffer,
+                                        size_t bufferOffset) {
+  IGL_PROFILER_FUNCTION();
+
+  if (!IGL_VERIFY(index < IGL_UNIFORM_BLOCKS_BINDING_MAX)) {
+    IGL_ASSERT_MSG(false, "Buffer index should not exceed kMaxBindingSlots");
+    return;
+  }
+
+  IGL_ASSERT((buffer->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0);
+
+  BufferInfo& slot = bindingsStorageBuffers_.buffers[index];
+
+  if (slot.buf != buffer || slot.offset != bufferOffset) {
+    slot = {buffer, bufferOffset};
+    isDirtyStorageBuffers_ = true;
   }
 }
 
@@ -94,9 +119,13 @@ void ResourcesBinder::updateBindings() {
     ctx_.updateBindingsTextures(cmdBuffer_, bindPoint_, bindingsTextures_);
     isDirtyTextures_ = false;
   }
-  if (isDirtyBuffers_) {
-    ctx_.updateBindingsBuffers(cmdBuffer_, bindPoint_, bindingsBuffers_);
-    isDirtyBuffers_ = false;
+  if (isDirtyUniformBuffers_) {
+    ctx_.updateBindingsUniformBuffers(cmdBuffer_, bindPoint_, bindingsUniformBuffers_);
+    isDirtyUniformBuffers_ = false;
+  }
+  if (isDirtyStorageBuffers_) {
+    ctx_.updateBindingsStorageBuffers(cmdBuffer_, bindPoint_, bindingsStorageBuffers_);
+    isDirtyStorageBuffers_ = false;
   }
 }
 

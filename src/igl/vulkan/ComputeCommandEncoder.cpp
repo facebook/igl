@@ -142,7 +142,7 @@ void ComputeCommandEncoder::bindBuffer(size_t index,
     return;
   }
 
-  binder_.bindBuffer((int)index, buf, offset);
+  binder_.bindStorageBuffer((int)index, buf, offset);
 }
 
 void ComputeCommandEncoder::bindBytes(size_t /*index*/, const void* /*data*/, size_t /*length*/) {
