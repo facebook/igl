@@ -239,6 +239,8 @@ VulkanContext::~VulkanContext() {
 
   enhancedShaderDebuggingStore_.reset(nullptr);
 
+  dummyStorageBuffer_.reset();
+  dummyUniformBuffer_.reset();
   textures_.clear();
   samplers_.clear();
 
@@ -535,6 +537,20 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   // to happen after VMA has been initialized.
   stagingDevice_ = std::make_unique<igl::vulkan::VulkanStagingDevice>(*this);
 
+  // Unextended Vulkan 1.1 does not allow sparse (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT)
+  // bindings. Our descriptor set layout emulates OpenGL binding slots but we cannot put
+  // VK_NULL_HANDLE into empty slots. We use dummy buffers to stick them into those empty slots.
+  dummyUniformBuffer_ = createBuffer(256,
+                                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                                     nullptr,
+                                     "Buffer: dummy uniform");
+  dummyStorageBuffer_ = createBuffer(256,
+                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                                     nullptr,
+                                     "Buffer: dummy storage");
+
   // default texture
   IGL_ASSERT(textures_.size() == 1);
   {
@@ -676,12 +692,10 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     std::array<VkDescriptorSetLayoutBinding, kNumBindings> bindings;
     std::array<VkDescriptorBindingFlags, kNumBindings> bindingFlags;
     std::array<VkDescriptorPoolSize, kNumBindings> poolSizes;
-    const uint32_t flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
-                           VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
-                           VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
     for (uint32_t i = 0; i != kNumBindings; i++) {
       bindings[i] = ivkGetDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
-      bindingFlags[i] = flags;
+      bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+                        VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
       poolSizes[i] = VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                           kNumSets * IGL_UNIFORM_BLOCKS_BINDING_MAX};
     }
@@ -707,12 +721,10 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     std::array<VkDescriptorSetLayoutBinding, kNumBindings> bindings{};
     std::array<VkDescriptorBindingFlags, kNumBindings> bindingFlags{};
     std::array<VkDescriptorPoolSize, kNumBindings> poolSizes{};
-    const uint32_t flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
-                           VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
-                           VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
     for (uint32_t i = 0; i != kNumBindings; i++) {
       bindings[i] = ivkGetDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
-      bindingFlags[i] = flags;
+      bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+                        VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
       poolSizes[i] = VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                           kNumSets * IGL_UNIFORM_BLOCKS_BINDING_MAX};
     }
@@ -1336,30 +1348,31 @@ void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
                                                  const BindingsBuffers& data) const {
   VkDescriptorSet dsetBufUniform = bufferUniformDSets_.acquireNext(*immediate_);
 
-  std::array<VkWriteDescriptorSet, IGL_UNIFORM_BLOCKS_BINDING_MAX> write;
-  uint32_t numWrites = 0;
+  // leave them uninitialized
+  // @lint-ignore CLANGTIDY
+  std::array<VkDescriptorBufferInfo, IGL_UNIFORM_BLOCKS_BINDING_MAX> infoBuffers;
 
-  std::array<VkDescriptorBufferInfo, IGL_UNIFORM_BLOCKS_BINDING_MAX> infoBuffers{};
-  uint32_t numBuffers = 0;
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
     const BufferInfo& bi = data.buffers[i];
-    if (!bi.buf) {
-      continue;
+    if (bi.buf) {
+      IGL_ASSERT_MSG((bi.buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0,
+                     "The buffer must be a uniform buffer");
     }
-    IGL_ASSERT_MSG((bi.buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0,
-                   "The buffer must be a uniform buffer");
-    infoBuffers[numBuffers] = {
-        bi.buf ? bi.buf->getVkBuffer() : VK_NULL_HANDLE,
+    infoBuffers[i] = {
+        bi.buf ? bi.buf->getVkBuffer() : dummyUniformBuffer_->getVkBuffer(),
         bi.offset,
         VK_WHOLE_SIZE,
     };
-    write[numWrites++] = ivkGetWriteDescriptorSet_BufferInfo(
-        dsetBufUniform, i, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &infoBuffers[numBuffers]);
-    numBuffers++;
-    IGL_ASSERT(numWrites <= IGL_UNIFORM_BLOCKS_BINDING_MAX);
   }
 
-  vkUpdateDescriptorSets(device_->getVkDevice(), numWrites, write.data(), 0, nullptr);
+  VkWriteDescriptorSet write =
+      ivkGetWriteDescriptorSet_BufferInfo(dsetBufUniform,
+                                          0,
+                                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                          IGL_UNIFORM_BLOCKS_BINDING_MAX,
+                                          infoBuffers.data());
+
+  vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
@@ -1382,30 +1395,31 @@ void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
                                                  const BindingsBuffers& data) const {
   VkDescriptorSet dsetBufStorage = bufferStorageDSets_.acquireNext(*immediate_);
 
-  std::array<VkWriteDescriptorSet, IGL_UNIFORM_BLOCKS_BINDING_MAX> write{};
-  uint32_t numWrites = 0;
+  // leave them uninitialized
+  // @lint-ignore CLANGTIDY
+  std::array<VkDescriptorBufferInfo, IGL_UNIFORM_BLOCKS_BINDING_MAX> infoBuffers;
 
-  std::array<VkDescriptorBufferInfo, IGL_UNIFORM_BLOCKS_BINDING_MAX> infoBuffers{};
-  uint32_t numBuffers = 0;
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
     const BufferInfo& bi = data.buffers[i];
-    if (!bi.buf) {
-      continue;
+    if (bi.buf) {
+      IGL_ASSERT_MSG((bi.buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0,
+                     "The buffer must be a storage buffer");
     }
-    IGL_ASSERT_MSG((bi.buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0,
-                   "The buffer must be a storage buffer");
-    infoBuffers[numBuffers] = {
-        bi.buf ? bi.buf->getVkBuffer() : VK_NULL_HANDLE,
+    infoBuffers[i] = {
+        bi.buf ? bi.buf->getVkBuffer() : dummyStorageBuffer_->getVkBuffer(),
         bi.offset,
         VK_WHOLE_SIZE,
     };
-    write[numWrites++] = ivkGetWriteDescriptorSet_BufferInfo(
-        dsetBufStorage, i, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, &infoBuffers[numBuffers]);
-    numBuffers++;
-    IGL_ASSERT(numWrites <= IGL_UNIFORM_BLOCKS_BINDING_MAX);
   }
 
-  vkUpdateDescriptorSets(device_->getVkDevice(), numWrites, write.data(), 0, nullptr);
+  VkWriteDescriptorSet write =
+      ivkGetWriteDescriptorSet_BufferInfo(dsetBufStorage,
+                                          0,
+                                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                          IGL_UNIFORM_BLOCKS_BINDING_MAX,
+                                          infoBuffers.data());
+
+  vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 

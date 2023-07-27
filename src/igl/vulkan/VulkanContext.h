@@ -296,6 +296,8 @@ class VulkanContext final {
   mutable DescriptorSetArray bufferStorageDSets_;
   std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutGraphics_;
   std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutCompute_;
+  std::shared_ptr<igl::vulkan::VulkanBuffer> dummyUniformBuffer_;
+  std::shared_ptr<igl::vulkan::VulkanBuffer> dummyStorageBuffer_;
   // don't use staging on devices with shared host-visible memory
   bool useStaging_ = true;
 
