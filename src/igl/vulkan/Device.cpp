@@ -409,19 +409,20 @@ VulkanShaderModule Device::createShaderModule(ShaderStage stage,
     if (vkStage == VK_SHADER_STAGE_VERTEX_BIT || vkStage == VK_SHADER_STAGE_COMPUTE_BIT) {
       sourcePatched += R"(
       #version 460
-      #extension GL_EXT_debug_printf : enable
-      #extension GL_EXT_nonuniform_qualifier : require
       #extension GL_EXT_buffer_reference : require
       #extension GL_EXT_buffer_reference_uvec2 : require
+      #extension GL_EXT_debug_printf : enable
+      #extension GL_EXT_nonuniform_qualifier : require
       #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
       )";
     }
     if (vkStage == VK_SHADER_STAGE_FRAGMENT_BIT) {
       sourcePatched += R"(
       #version 460
+      #extension GL_EXT_buffer_reference_uvec2 : require
       #extension GL_EXT_debug_printf : enable
       #extension GL_EXT_nonuniform_qualifier : require
-      #extension GL_EXT_buffer_reference_uvec2 : require
+      #extension GL_EXT_samplerless_texture_functions : require
       #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
 
       layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
@@ -436,8 +437,8 @@ VulkanShaderModule Device::createShaderModule(ShaderStage stage,
       float textureBindless2DShadow(uint textureid, uint samplerid, vec3 uvw) {
         return texture(sampler2DShadow(kTextures2D[textureid], kSamplersShadow[samplerid]), uvw);
       }
-      ivec2 textureBindlessSize2D(uint textureid, uint samplerid) {
-        return textureSize(sampler2D(kTextures2D[textureid], kSamplers[samplerid]), 0);
+      ivec2 textureBindlessSize2D(uint textureid) {
+        return textureSize(kTextures2D[textureid], 0);
       }
       vec4 textureBindlessCube(uint textureid, uint samplerid, vec3 uvw) {
         return texture(samplerCube(kTexturesCube[textureid], kSamplers[samplerid]), uvw);

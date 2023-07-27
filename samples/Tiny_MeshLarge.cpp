@@ -251,7 +251,7 @@ layout (location=5) flat in Material mtl;
 layout (location=0) out vec4 out_FragColor;
 
 float PCF3(vec3 uvw) {
-  float size = 1.0 / textureBindlessSize2D(pc.perFrame.texShadow, pc.perFrame.samplerShadow0).x;
+  float size = 1.0 / textureBindlessSize2D(pc.perFrame.texShadow).x;
   float shadow = 0.0;
   for (int v=-1; v<=+1; v++)
     for (int u=-1; u<=+1; u++)
