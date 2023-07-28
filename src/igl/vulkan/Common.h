@@ -27,7 +27,9 @@
 #include <igl/Texture.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-#if defined(__cpp_lib_format)
+// libc++'s implementation of std::format has a large binary size impact
+// (https://github.com/llvm/llvm-project/issues/64180), so avoid it on Android.
+#if defined(__cpp_lib_format) && !defined(__ANDROID__)
 #include <format>
 #define IGL_FORMAT std::format
 #else
