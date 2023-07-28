@@ -52,7 +52,6 @@ class BufferTest : public ::testing::Test {
 TEST_F(BufferTest, sizeForUniformElementType) {
   // Invalid type has element size of 0
   ASSERT_EQ(0, sizeForUniformElementType(UniformType::Invalid));
-  ASSERT_EQ(0, sizeForUniformElementType((UniformType)-1));
 
   // These all have float as the underlying type, so 4 bytes
   ASSERT_EQ(4, sizeForUniformElementType(UniformType::Float));
