@@ -343,10 +343,10 @@ class VulkanContext final {
                               const BindingsTextures& data) const;
   void updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
                                     VkPipelineBindPoint bindPoint,
-                                    const BindingsBuffers& data) const;
+                                    BindingsBuffers& data) const;
   void updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
                                     VkPipelineBindPoint bindPoint,
-                                    const BindingsBuffers& data) const;
+                                    BindingsBuffers& data) const;
   void markSubmit(const SubmitHandle& handle) const;
 
   struct DeferredTask {

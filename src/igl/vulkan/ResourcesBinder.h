@@ -23,13 +23,8 @@ class VulkanBuffer;
 class VulkanSampler;
 class VulkanTexture;
 
-struct BufferInfo {
-  igl::vulkan::Buffer* buf = nullptr;
-  size_t offset = 0;
-};
-
 struct BindingsBuffers {
-  BufferInfo buffers[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
+  VkDescriptorBufferInfo buffers[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
 };
 
 struct BindingsTextures {

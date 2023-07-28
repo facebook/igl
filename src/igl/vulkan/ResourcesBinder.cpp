@@ -9,6 +9,7 @@
 #include <igl/vulkan/ResourcesBinder.h>
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/Texture.h>
+#include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanPipelineLayout.h>
 
@@ -31,12 +32,14 @@ void ResourcesBinder::bindUniformBuffer(uint32_t index,
     return;
   }
 
-  IGL_ASSERT((buffer->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0);
+  IGL_ASSERT_MSG((buffer->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0,
+                 "The buffer must be a uniform buffer");
 
-  BufferInfo& slot = bindingsUniformBuffers_.buffers[index];
+  VkBuffer buf = buffer ? buffer->getVkBuffer() : ctx_.dummyUniformBuffer_->getVkBuffer();
+  VkDescriptorBufferInfo& slot = bindingsUniformBuffers_.buffers[index];
 
-  if (slot.buf != buffer || slot.offset != bufferOffset) {
-    slot = {buffer, bufferOffset};
+  if (slot.buffer != buf || slot.offset != bufferOffset) {
+    slot = {buf, bufferOffset, VK_WHOLE_SIZE};
     isDirtyUniformBuffers_ = true;
   }
 }
@@ -51,12 +54,14 @@ void ResourcesBinder::bindStorageBuffer(uint32_t index,
     return;
   }
 
-  IGL_ASSERT((buffer->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0);
+  IGL_ASSERT_MSG((buffer->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0,
+                 "The buffer must be a storage buffer");
 
-  BufferInfo& slot = bindingsStorageBuffers_.buffers[index];
+  VkBuffer buf = buffer ? buffer->getVkBuffer() : ctx_.dummyStorageBuffer_->getVkBuffer();
+  VkDescriptorBufferInfo& slot = bindingsStorageBuffers_.buffers[index];
 
-  if (slot.buf != buffer || slot.offset != bufferOffset) {
-    slot = {buffer, bufferOffset};
+  if (slot.buffer != buf || slot.offset != bufferOffset) {
+    slot = {buf, bufferOffset, VK_WHOLE_SIZE};
     isDirtyStorageBuffers_ = true;
   }
 }

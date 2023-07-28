@@ -1345,24 +1345,14 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
 
 void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
                                                  VkPipelineBindPoint bindPoint,
-                                                 const BindingsBuffers& data) const {
+                                                 BindingsBuffers& data) const {
   VkDescriptorSet dsetBufUniform = bufferUniformDSets_.acquireNext(*immediate_);
 
-  // leave them uninitialized
-  // @lint-ignore CLANGTIDY
-  std::array<VkDescriptorBufferInfo, IGL_UNIFORM_BLOCKS_BINDING_MAX> infoBuffers;
-
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
-    const BufferInfo& bi = data.buffers[i];
-    if (bi.buf) {
-      IGL_ASSERT_MSG((bi.buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0,
-                     "The buffer must be a uniform buffer");
+    VkDescriptorBufferInfo& bi = data.buffers[i];
+    if (bi.buffer == VK_NULL_HANDLE) {
+      bi = {dummyUniformBuffer_->getVkBuffer(), 0, VK_WHOLE_SIZE};
     }
-    infoBuffers[i] = {
-        bi.buf ? bi.buf->getVkBuffer() : dummyUniformBuffer_->getVkBuffer(),
-        bi.offset,
-        VK_WHOLE_SIZE,
-    };
   }
 
   VkWriteDescriptorSet write =
@@ -1370,7 +1360,7 @@ void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
                                           0,
                                           VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                           IGL_UNIFORM_BLOCKS_BINDING_MAX,
-                                          infoBuffers.data());
+                                          data.buffers);
 
   vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
 
@@ -1392,24 +1382,14 @@ void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
 
 void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
                                                  VkPipelineBindPoint bindPoint,
-                                                 const BindingsBuffers& data) const {
+                                                 BindingsBuffers& data) const {
   VkDescriptorSet dsetBufStorage = bufferStorageDSets_.acquireNext(*immediate_);
 
-  // leave them uninitialized
-  // @lint-ignore CLANGTIDY
-  std::array<VkDescriptorBufferInfo, IGL_UNIFORM_BLOCKS_BINDING_MAX> infoBuffers;
-
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
-    const BufferInfo& bi = data.buffers[i];
-    if (bi.buf) {
-      IGL_ASSERT_MSG((bi.buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0,
-                     "The buffer must be a storage buffer");
+    VkDescriptorBufferInfo& bi = data.buffers[i];
+    if (bi.buffer == VK_NULL_HANDLE) {
+      bi = {dummyStorageBuffer_->getVkBuffer(), 0, VK_WHOLE_SIZE};
     }
-    infoBuffers[i] = {
-        bi.buf ? bi.buf->getVkBuffer() : dummyStorageBuffer_->getVkBuffer(),
-        bi.offset,
-        VK_WHOLE_SIZE,
-    };
   }
 
   VkWriteDescriptorSet write =
@@ -1417,7 +1397,7 @@ void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
                                           0,
                                           VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                           IGL_UNIFORM_BLOCKS_BINDING_MAX,
-                                          infoBuffers.data());
+                                          data.buffers);
 
   vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
 
