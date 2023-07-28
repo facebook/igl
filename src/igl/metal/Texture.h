@@ -51,10 +51,10 @@ class Texture final : public ITexture {
   bool isRequiredGenerateMipmap() const override;
   uint64_t getTextureId() const override;
 
-  IGL_INLINE id<MTLTexture> get() const {
+  IGL_INLINE id<MTLTexture> _Nullable get() const {
     return (drawable_) ? drawable_.texture : value_;
   }
-  IGL_INLINE id<CAMetalDrawable> getDrawable() const {
+  IGL_INLINE id<CAMetalDrawable> _Nullable getDrawable() const {
     return drawable_;
   }
 
