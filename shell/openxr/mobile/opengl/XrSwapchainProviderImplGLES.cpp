@@ -106,12 +106,12 @@ igl::SurfaceTextures XrSwapchainProviderImplGLES::getSurfaceTextures(
     const XrViewConfigurationView& viewport,
     uint32_t numViews) {
   // Assume sized format so format / type are not needed.
-  auto iglColorFormat =
-      igl::opengl::Texture::toTextureFormat(static_cast<GLuint>(selectedColorFormat), 0, 0);
+  auto iglColorFormat = igl::opengl::Texture::glInternalFormatToTextureFormat(
+      static_cast<GLuint>(selectedColorFormat), 0, 0);
   auto colorTexture = getSurfaceTexture(
       device, colorSwapchain, viewport, numViews, colorImages_, iglColorFormat, colorTextures_);
-  auto iglDepthFormat =
-      igl::opengl::Texture::toTextureFormat(static_cast<GLuint>(selectedDepthFormat), 0, 0);
+  auto iglDepthFormat = igl::opengl::Texture::glInternalFormatToTextureFormat(
+      static_cast<GLuint>(selectedDepthFormat), 0, 0);
   auto depthTexture = getSurfaceTexture(
       device, depthSwapchain, viewport, numViews, depthImages_, iglDepthFormat, depthTextures_);
 
