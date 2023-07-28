@@ -123,6 +123,8 @@ using namespace igl;
           : igl::SurfaceTextures{[self createTextureFromNativeDrawable],
                                  [self createTextureFromNativeDepth]};
   IGL_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
+  const auto& dims = surfaceTextures.color->getDimensions();
+  shellParams_.nativeSurfaceDimensions = glm::ivec2{dims.width, dims.height};
   session_->update(std::move(surfaceTextures));
   if (session_->appParams().exitRequested)
     [[NSApplication sharedApplication] terminate:nil];
@@ -316,6 +318,8 @@ using namespace igl;
 
   session_ = igl::shell::createDefaultRenderSession(shellPlatform_);
   IGL_ASSERT_MSG(session_, "createDefaultRenderSession() must return a valid session");
+  // Get initial native surface dimensions
+  shellParams_.nativeSurfaceDimensions = glm::ivec2(2048, 1536);
   session_->initialize();
 }
 
