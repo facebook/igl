@@ -48,6 +48,7 @@ std::shared_ptr<::igl::IDevice> createTestDevice() {
   config.terminateOnValidationError = false;
 #endif
   config.swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
+  config.enableExtraLogs = true;
 
   auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
 

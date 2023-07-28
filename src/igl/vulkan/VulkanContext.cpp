@@ -81,6 +81,8 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
 
   const bool isError = (msgSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0;
 
+  igl::vulkan::VulkanContext* ctx = static_cast<igl::vulkan::VulkanContext*>(userData);
+
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
   std::array<char, 128> errorName = {};
   int object = 0;
@@ -107,12 +109,15 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
         messageID,
         message);
   } else {
-    IGL_LOG_INFO("%sValidation layer:\n%s\n", isError ? "\nERROR:\n" : "", cbData->pMessage);
+    const bool isWarning = (msgSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0;
+
+    if (isError || isWarning || ctx->config_.enableExtraLogs) {
+      IGL_LOG_INFO("%sValidation layer:\n%s\n", isError ? "\nERROR:\n" : "", cbData->pMessage);
+    }
   }
 #endif
 
   if (isError) {
-    igl::vulkan::VulkanContext* ctx = static_cast<igl::vulkan::VulkanContext*>(userData);
     if (ctx->config_.terminateOnValidationError) {
       IGL_ASSERT(false);
       std::terminate();
@@ -290,10 +295,12 @@ VulkanContext::~VulkanContext() {
   glslang_finalize_process();
 
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
-  IGL_LOG_INFO("Vulkan graphics pipelines created: %u\n",
-               VulkanPipelineBuilder::getNumPipelinesCreated());
-  IGL_LOG_INFO("Vulkan compute pipelines created: %u\n",
-               VulkanComputePipelineBuilder::getNumPipelinesCreated());
+  if (config_.enableExtraLogs) {
+    IGL_LOG_INFO("Vulkan graphics pipelines created: %u\n",
+                 VulkanPipelineBuilder::getNumPipelinesCreated());
+    IGL_LOG_INFO("Vulkan compute pipelines created: %u\n",
+                 VulkanComputePipelineBuilder::getNumPipelinesCreated());
+  }
 #endif // IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
 }
 
@@ -327,11 +334,13 @@ void VulkanContext::createInstance(const size_t numExtraExtensions, const char**
 #endif // if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
 
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
-  // log available instance extensions
-  IGL_LOG_INFO("Vulkan instance extensions:\n");
-  for (const auto& extension :
-       extensions_.allAvailableExtensions(VulkanExtensions::ExtensionType::Instance)) {
-    IGL_LOG_INFO("  %s\n", extension.c_str());
+  if (config_.enableExtraLogs) {
+    // log available instance extensions
+    IGL_LOG_INFO("Vulkan instance extensions:\n");
+    for (const auto& extension :
+         extensions_.allAvailableExtensions(VulkanExtensions::ExtensionType::Instance)) {
+      IGL_LOG_INFO("  %s\n", extension.c_str());
+    }
   }
 #endif
 }
@@ -410,25 +419,29 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   const uint32_t apiVersion = vkPhysicalDeviceProperties2_.properties.apiVersion;
 
-  IGL_LOG_INFO("Vulkan physical device: %s\n", vkPhysicalDeviceProperties2_.properties.deviceName);
-  IGL_LOG_INFO("           API version: %i.%i.%i.%i\n",
-               VK_API_VERSION_MAJOR(apiVersion),
-               VK_API_VERSION_MINOR(apiVersion),
-               VK_API_VERSION_PATCH(apiVersion),
-               VK_API_VERSION_VARIANT(apiVersion));
-  IGL_LOG_INFO("           Driver info: %s %s\n",
-               vkPhysicalDeviceDriverProperties_.driverName,
-               vkPhysicalDeviceDriverProperties_.driverInfo);
+  if (config_.enableExtraLogs) {
+    IGL_LOG_INFO("Vulkan physical device: %s\n",
+                 vkPhysicalDeviceProperties2_.properties.deviceName);
+    IGL_LOG_INFO("           API version: %i.%i.%i.%i\n",
+                 VK_API_VERSION_MAJOR(apiVersion),
+                 VK_API_VERSION_MINOR(apiVersion),
+                 VK_API_VERSION_PATCH(apiVersion),
+                 VK_API_VERSION_VARIANT(apiVersion));
+    IGL_LOG_INFO("           Driver info: %s %s\n",
+                 vkPhysicalDeviceDriverProperties_.driverName,
+                 vkPhysicalDeviceDriverProperties_.driverInfo);
+  }
 
   extensions_.enumerate(vkPhysicalDevice_);
 
-  IGL_LOG_INFO("Vulkan physical device extensions:\n");
-
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
-  // log available physical device extensions
-  for (const auto& extension :
-       extensions_.allAvailableExtensions(VulkanExtensions::ExtensionType::Device)) {
-    IGL_LOG_INFO("  %s\n", extension.c_str());
+  if (config_.enableExtraLogs) {
+    IGL_LOG_INFO("Vulkan physical device extensions:\n");
+    // log available physical device extensions
+    for (const auto& extension :
+         extensions_.allAvailableExtensions(VulkanExtensions::ExtensionType::Device)) {
+      IGL_LOG_INFO("  %s\n", extension.c_str());
+    }
   }
 #endif
 

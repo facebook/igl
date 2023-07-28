@@ -73,6 +73,7 @@ struct VulkanContextConfig {
   bool enableGPUAssistedValidation = true;
   bool enableSynchronizationValidation = false;
   bool enableBufferDeviceAddress = false;
+  bool enableExtraLogs = true;
 
   igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
 
