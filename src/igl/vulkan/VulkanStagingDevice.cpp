@@ -426,6 +426,8 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
 
   fenceId = immediate_->submit(wrapper2);
   outstandingFences_[fenceId.handle()] = desc;
+  // the data should be available as we get out of this function
+  immediate_->wait(fenceId);
 }
 
 uint32_t VulkanStagingDevice::getAlignedSize(uint32_t size) const {
