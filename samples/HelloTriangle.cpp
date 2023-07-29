@@ -56,8 +56,8 @@ void render() {
 
   // This will clear the framebuffer
   buffer.cmdBeginRendering(
-      {.colorAttachments = {{.loadOp = lvk::LoadOp_Clear, .clearColor = {1.0f, 1.0f, 1.0f, 1.0f}}}},
-      {.colorAttachments = {{.texture = device_->getCurrentSwapchainTexture()}}});
+      {.color = {{.loadOp = lvk::LoadOp_Clear, .clearColor = {1.0f, 1.0f, 1.0f, 1.0f}}}},
+      {.color = {{.texture = device_->getCurrentSwapchainTexture()}}});
   buffer.cmdBindRenderPipeline(renderPipelineState_Triangle_);
   buffer.cmdPushDebugGroupLabel("Render Triangle", lvk::Color(1, 0, 0));
   buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3);
@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
   renderPipelineState_Triangle_ = device_->createRenderPipeline(
       {.shaderStages = device_->createShaderStages(
            codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
-       .colorAttachments = {{.format = device_->getSwapchainFormat()}}},
+       .color = {{.format = device_->getSwapchainFormat()}}},
       nullptr);
 
   IGL_ASSERT(renderPipelineState_Triangle_.valid());

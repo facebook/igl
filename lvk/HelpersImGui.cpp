@@ -86,15 +86,14 @@ lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(con
                                                      codeFS,
                                                      "Shader Module: imgui (frag)",
                                                      nullptr),
-          .colorAttachments = {{
-              .format = device_.getFormat(desc.colorAttachments[0].texture),
+          .color = {{
+              .format = device_.getFormat(desc.color[0].texture),
               .blendEnabled = true,
               .srcRGBBlendFactor = lvk::BlendFactor_SrcAlpha,
               .dstRGBBlendFactor = lvk::BlendFactor_OneMinusSrcAlpha,
           }},
-          .depthAttachmentFormat = desc.depthStencilAttachment.texture
-                                       ? device_.getFormat(desc.depthStencilAttachment.texture)
-                                       : lvk::TextureFormat::Invalid,
+          .depthFormat = desc.depthStencil.texture ? device_.getFormat(desc.depthStencil.texture)
+                                                   : lvk::TextureFormat::Invalid,
           .cullMode = lvk::CullMode_None,
       },
       nullptr);
@@ -143,7 +142,7 @@ ImGuiRenderer::~ImGuiRenderer() {
 void ImGuiRenderer::beginFrame(const lvk::Framebuffer& desc) {
   const float displayScale = 1.0f;
 
-  const lvk::Dimensions dim = device_.getDimensions(desc.colorAttachments[0].texture);
+  const lvk::Dimensions dim = device_.getDimensions(desc.color[0].texture);
 
   ImGuiIO& io = ImGui::GetIO();
   io.DisplaySize = ImVec2(dim.width / displayScale, dim.height / displayScale);

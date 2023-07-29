@@ -634,26 +634,24 @@ void initIGL() {
       nullptr);
 
   renderPassOffscreen_ = {
-      .colorAttachments = {{
+      .color = {{
           .loadOp = lvk::LoadOp_Clear,
           .storeOp = kNumSamplesMSAA > 1 ? lvk::StoreOp_MsaaResolve : lvk::StoreOp_Store,
           .clearColor = {0.0f, 0.0f, 0.0f, 1.0f},
       }},
-      .depthAttachment = {
+      .depth = {
           .loadOp = lvk::LoadOp_Clear,
           .storeOp = lvk::StoreOp_Store,
           .clearDepth = 1.0f,
       }};
 
   renderPassMain_ = {
-      .colorAttachments = {{.loadOp = lvk::LoadOp_Clear,
-                            .storeOp = lvk::StoreOp_Store,
-                            .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}},
+      .color = {{.loadOp = lvk::LoadOp_Clear,
+                 .storeOp = lvk::StoreOp_Store,
+                 .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}},
   };
   renderPassShadow_ = {
-      .depthAttachment = {.loadOp = lvk::LoadOp_Clear,
-                          .storeOp = lvk::StoreOp_Store,
-                          .clearDepth = 1.0f},
+      .depth = {.loadOp = lvk::LoadOp_Clear, .storeOp = lvk::StoreOp_Store, .clearDepth = 1.0f},
   };
 }
 
@@ -946,9 +944,8 @@ void createRenderPipelines() {
         .vertexInput = vdesc,
         .shaderStages = device_->createShaderStages(
             kCodeVS, "Shader Module: main (vert)", kCodeFS, "Shader Module: main (frag)"),
-        .colorAttachments = {{.format =
-                                  device_->getFormat(fbOffscreen_.colorAttachments[0].texture)}},
-        .depthAttachmentFormat = device_->getFormat(fbOffscreen_.depthStencilAttachment.texture),
+        .color = {{.format = device_->getFormat(fbOffscreen_.color[0].texture)}},
+        .depthFormat = device_->getFormat(fbOffscreen_.depthStencil.texture),
         .cullMode = lvk::CullMode_Back,
         .frontFaceWinding = lvk::WindingMode_CCW,
         .samplesCount = kNumSamplesMSAA,
@@ -973,7 +970,7 @@ void createRenderPipelines() {
           .vertexInput = vdescs,
           .shaderStages = device_->createShaderStages(
               kShadowVS, "Shader Module: shadow (vert)", kShadowFS, "Shader Module: shadow (frag)"),
-          .depthAttachmentFormat = device_->getFormat(fbShadowMap_.depthStencilAttachment.texture),
+          .depthFormat = device_->getFormat(fbShadowMap_.depthStencil.texture),
           .cullMode = lvk::CullMode_None,
           .debugName = "Pipeline: shadow",
       },
@@ -981,18 +978,16 @@ void createRenderPipelines() {
 
   // fullscreen
   {
-    lvk::RenderPipelineDesc desc = {
-        .colorAttachments = {{.format = device_->getFormat(fbMain_.colorAttachments[0].texture)}},
-    };
-    if (fbMain_.depthStencilAttachment.texture) {
-      desc.depthAttachmentFormat = device_->getFormat(fbMain_.depthStencilAttachment.texture);
-    }
-    desc.shaderStages = device_->createShaderStages(kCodeFullscreenVS,
+    const lvk::RenderPipelineDesc desc = {
+        .shaderStages = device_->createShaderStages(kCodeFullscreenVS,
                                                     "Shader Module: fullscreen (vert)",
                                                     kCodeFullscreenFS,
-                                                    "Shader Module: fullscreen (frag)");
-    desc.cullMode = lvk::CullMode_None;
-    desc.debugName = "Pipeline: fullscreen";
+                                                    "Shader Module: fullscreen (frag)"),
+        .color = {{.format = device_->getFormat(fbMain_.color[0].texture)}},
+        .depthFormat = device_->getFormat(fbMain_.depthStencil.texture),
+        .cullMode = lvk::CullMode_None,
+        .debugName = "Pipeline: fullscreen",
+    };
     renderPipelineState_Fullscreen_ = device_->createRenderPipeline(desc, nullptr);
   }
 }
@@ -1005,10 +1000,10 @@ void createRenderPipelineSkybox() {
   const lvk::RenderPipelineDesc desc = {
       .shaderStages = device_->createShaderStages(
           kSkyboxVS, "Shader Module: skybox (vert)", kSkyboxFS, "Shader Module: skybox (frag)"),
-      .colorAttachments = {{
-          .format = device_->getFormat(fbOffscreen_.colorAttachments[0].texture),
+      .color = {{
+          .format = device_->getFormat(fbOffscreen_.color[0].texture),
       }},
-      .depthAttachmentFormat = device_->getFormat(fbOffscreen_.depthStencilAttachment.texture),
+      .depthFormat = device_->getFormat(fbOffscreen_.depthStencil.texture),
       .cullMode = lvk::CullMode_Front,
       .frontFaceWinding = lvk::WindingMode_CCW,
       .samplesCount = kNumSamplesMSAA,
@@ -1030,7 +1025,7 @@ void createShadowMap() {
       .debugName = "Shadow map",
   };
   fbShadowMap_ = {
-      .depthStencilAttachment = {.texture = device_->createTexture(desc).release()},
+      .depthStencil = {.texture = device_->createTexture(desc).release()},
   };
 }
 
@@ -1070,20 +1065,18 @@ void createOffscreenFramebuffer() {
   }
 
   lvk::Framebuffer fb = {
-      .colorAttachments = {{.texture = device_->createTexture(descColor).release()}},
-      .depthStencilAttachment = {.texture = device_->createTexture(descDepth).release()},
+      .color = {{.texture = device_->createTexture(descColor).release()}},
+      .depthStencil = {.texture = device_->createTexture(descDepth).release()},
   };
 
   if (kNumSamplesMSAA > 1) {
-    fb.colorAttachments[0].resolveTexture =
+    fb.color[0].resolveTexture =
         device_
-            ->createTexture({
-                .type = lvk::TextureType_2D,
-                .format = format,
-                .dimensions = {w, h},
-                .usage = usage,
-                .debugName = "Offscreen framebuffer (color resolve)",
-            })
+            ->createTexture({.type = lvk::TextureType_2D,
+                             .format = format,
+                             .dimensions = {w, h},
+                             .usage = usage,
+                             .debugName = "Offscreen framebuffer (color resolve)"})
             .release();
   }
 
@@ -1093,7 +1086,7 @@ void createOffscreenFramebuffer() {
 void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
   IGL_PROFILER_FUNCTION();
 
-  fbMain_.colorAttachments[0].texture = nativeDrawable;
+  fbMain_.color[0].texture = nativeDrawable;
 
   const float fov = float(45.0f * (M_PI / 180.0f));
   const float aspectRatio = (float)width_ / (float)height_;
@@ -1112,7 +1105,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       .light = scaleBias * shadowProj * shadowView,
       .texSkyboxRadiance = skyboxTextureReference_.index(),
       .texSkyboxIrradiance = skyboxTextureIrradiance_.index(),
-      .texShadow = fbShadowMap_.depthStencilAttachment.texture.index(),
+      .texShadow = fbShadowMap_.depthStencil.texture.index(),
       .sampler = sampler_.index(),
       .samplerShadow = samplerShadow_.index(),
       .bDrawNormals = perFrame_.bDrawNormals,
@@ -1159,9 +1152,9 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       buffer.cmdPopDebugGroupLabel();
     }
     buffer.cmdEndRendering();
-    buffer.transitionToShaderReadOnly(fbShadowMap_.depthStencilAttachment.texture);
+    buffer.transitionToShaderReadOnly(fbShadowMap_.depthStencil.texture);
     device_->submit(buffer, lvk::QueueType_Graphics);
-    device_->generateMipmap(fbShadowMap_.depthStencilAttachment.texture);
+    device_->generateMipmap(fbShadowMap_.depthStencil.texture);
 
     isShadowMapDirty_ = false;
   }
@@ -1206,14 +1199,14 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       buffer.cmdPopDebugGroupLabel();
     }
     buffer.cmdEndRendering();
-    buffer.transitionToShaderReadOnly(fbOffscreen_.colorAttachments[0].texture);
+    buffer.transitionToShaderReadOnly(fbOffscreen_.color[0].texture);
     device_->submit(buffer, lvk::QueueType_Graphics);
   }
 
   // Pass 3: compute shader post-processing
   if (enableComputePass_) {
-    lvk::TextureHandle tex = kNumSamplesMSAA > 1 ? fbOffscreen_.colorAttachments[0].resolveTexture
-                                                 : fbOffscreen_.colorAttachments[0].texture;
+    lvk::TextureHandle tex = kNumSamplesMSAA > 1 ? fbOffscreen_.color[0].resolveTexture
+                                                 : fbOffscreen_.color[0].texture;
     lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
 
     buffer.cmdBindComputePipeline(computePipelineState_Grayscale_);
@@ -1249,8 +1242,8 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       struct {
         uint32_t texture;
       } bindings = {
-          .texture = kNumSamplesMSAA > 1 ? fbOffscreen_.colorAttachments[0].resolveTexture.index()
-                                         : fbOffscreen_.colorAttachments[0].texture.index(),
+          .texture = kNumSamplesMSAA > 1 ? fbOffscreen_.color[0].resolveTexture.index()
+                                         : fbOffscreen_.color[0].texture.index(),
       };
       buffer.cmdPushConstants(bindings);
       buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3);
@@ -1260,7 +1253,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     }
     buffer.cmdEndRendering();
 
-    device_->submit(buffer, lvk::QueueType_Graphics, fbMain_.colorAttachments[0].texture);
+    device_->submit(buffer, lvk::QueueType_Graphics, fbMain_.color[0].texture);
   }
 }
 
@@ -1806,7 +1799,7 @@ int main(int argc, char* argv[]) {
   loadMaterials();
 
   fbMain_ = {
-      .colorAttachments = {{.texture = device_->getCurrentSwapchainTexture()}},
+      .color = {{.texture = device_->getCurrentSwapchainTexture()}},
   };
   createShadowMap();
   createOffscreenFramebuffer();

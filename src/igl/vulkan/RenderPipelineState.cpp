@@ -306,7 +306,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
   colorAttachmentFormats.resize(numColorAttachments);
 
   for (uint32_t i = 0; i != numColorAttachments; i++) {
-    const auto& attachment = desc_.colorAttachments[i];
+    const auto& attachment = desc_.color[i];
     IGL_ASSERT(attachment.format != TextureFormat::Invalid);
     colorAttachmentFormats[i] = textureFormatToVkFormat(attachment.format);
     if (!attachment.blendEnabled) {
@@ -383,8 +383,8 @@ VkPipeline RenderPipelineState::getVkPipeline(
       .vertexInputState(vertexInputStateCreateInfo_)
       .colorBlendAttachmentStates(colorBlendAttachmentStates)
       .colorAttachmentFormats(colorAttachmentFormats)
-      .depthAttachmentFormat(textureFormatToVkFormat(desc_.depthAttachmentFormat))
-      .stencilAttachmentFormat(textureFormatToVkFormat(desc_.stencilAttachmentFormat))
+      .depthAttachmentFormat(textureFormatToVkFormat(desc_.depthFormat))
+      .stencilAttachmentFormat(textureFormatToVkFormat(desc_.stencilFormat))
       .build(ctx.getVkDevice(),
              // TODO: use ctx.pipelineCache_
              VK_NULL_HANDLE,

@@ -65,13 +65,10 @@ void VulkanObjects::init() {
   renderPipelineState_Triangle_ = device_->createRenderPipeline(
       {.shaderStages = device_->createShaderStages(
            codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
-       .colorAttachments =
-           {
-               {device_->getFormat(fb_.colorAttachments[0].texture)},
-               {device_->getFormat(fb_.colorAttachments[1].texture)},
-               {device_->getFormat(fb_.colorAttachments[2].texture)},
-               {device_->getFormat(fb_.colorAttachments[3].texture)},
-           }},
+       .color = {{device_->getFormat(fb_.color[0].texture)},
+                 {device_->getFormat(fb_.color[1].texture)},
+                 {device_->getFormat(fb_.color[2].texture)},
+                 {device_->getFormat(fb_.color[3].texture)}}},
       nullptr);
 
   IGL_ASSERT(renderPipelineState_Triangle_.valid());
@@ -88,12 +85,10 @@ void VulkanObjects::createFramebuffer() {
         .usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled,
     };
 
-    fb_ = {.colorAttachments = {
-               {.texture = texSwapchain},
-               {.texture = device_->createTexture(desc, "Framebuffer C1").release()},
-               {.texture = device_->createTexture(desc, "Framebuffer C2").release()},
-               {.texture = device_->createTexture(desc, "Framebuffer C3").release()},
-           }};
+    fb_ = {.color = {{.texture = texSwapchain},
+                     {.texture = device_->createTexture(desc, "Framebuffer C1").release()},
+                     {.texture = device_->createTexture(desc, "Framebuffer C2").release()},
+                     {.texture = device_->createTexture(desc, "Framebuffer C3").release()}}};
   }
 }
 
@@ -102,19 +97,16 @@ void VulkanObjects::render() {
     return;
   }
 
-  fb_.colorAttachments[0].texture = device_->getCurrentSwapchainTexture();
+  fb_.color[0].texture = device_->getCurrentSwapchainTexture();
 
   lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
 
   // This will clear the framebuffer
   buffer.cmdBeginRendering(
-      {
-          .colorAttachments =
-              {{.loadOp = lvk::LoadOp_Clear, .clearColor = {1.0f, 1.0f, 1.0f, 1.0f}},
-               {.loadOp = lvk::LoadOp_Clear, .clearColor = {1.0f, 0.0f, 0.0f, 1.0f}},
-               {.loadOp = lvk::LoadOp_Clear, .clearColor = {0.0f, 1.0f, 0.0f, 1.0f}},
-               {.loadOp = lvk::LoadOp_Clear, .clearColor = {0.0f, 0.0f, 1.0f, 1.0f}}},
-      },
+      {.color = {{.loadOp = lvk::LoadOp_Clear, .clearColor = {1.0f, 1.0f, 1.0f, 1.0f}},
+                 {.loadOp = lvk::LoadOp_Clear, .clearColor = {1.0f, 0.0f, 0.0f, 1.0f}},
+                 {.loadOp = lvk::LoadOp_Clear, .clearColor = {0.0f, 1.0f, 0.0f, 1.0f}},
+                 {.loadOp = lvk::LoadOp_Clear, .clearColor = {0.0f, 0.0f, 1.0f, 1.0f}}}},
       fb_);
   {
     buffer.cmdBindRenderPipeline(renderPipelineState_Triangle_);
@@ -125,7 +117,7 @@ void VulkanObjects::render() {
     buffer.cmdPopDebugGroupLabel();
   }
   buffer.cmdEndRendering();
-  device_->submit(buffer, lvk::QueueType_Graphics, fb_.colorAttachments[0].texture);
+  device_->submit(buffer, lvk::QueueType_Graphics, fb_.color[0].texture);
 }
 
 int main(int argc, char* argv[]) {
@@ -156,9 +148,9 @@ int main(int argc, char* argv[]) {
   }
 
   // destroy all the Vulkan stuff before closing the window
-  device_->destroy(vk.fb_.colorAttachments[1].texture);
-  device_->destroy(vk.fb_.colorAttachments[2].texture);
-  device_->destroy(vk.fb_.colorAttachments[3].texture);
+  device_->destroy(vk.fb_.color[1].texture);
+  device_->destroy(vk.fb_.color[2].texture);
+  device_->destroy(vk.fb_.color[3].texture);
   vk = {};
 
   device_ = nullptr;

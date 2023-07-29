@@ -251,18 +251,18 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
 
   // transition all the color attachments
   for (uint32_t i = 0; i != numFbColorAttachments; i++) {
-    if (const auto handle = fb.colorAttachments[i].texture) {
+    if (const auto handle = fb.color[i].texture) {
       lvk::vulkan::VulkanTexture* colorTex = ctx_->texturesPool_.get(handle);
       transitionColorAttachment(wrapper_->cmdBuf_, colorTex);
     }
     // handle MSAA
-    if (TextureHandle handle = fb.colorAttachments[i].resolveTexture) {
+    if (TextureHandle handle = fb.color[i].resolveTexture) {
       lvk::vulkan::VulkanTexture* colorResolveTex = ctx_->texturesPool_.get(handle);
       transitionColorAttachment(wrapper_->cmdBuf_, colorResolveTex);
     }
   }
   // transition depth-stencil attachment
-  TextureHandle depthTex = fb.depthStencilAttachment.texture;
+  TextureHandle depthTex = fb.depthStencil.texture;
   if (depthTex) {
     const lvk::vulkan::VulkanTexture& vkDepthTex = *ctx_->texturesPool_.get(depthTex);
     const lvk::vulkan::VulkanImage* depthImg = vkDepthTex.image_.get();
@@ -286,14 +286,14 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
   // Process depth attachment
   dynamicState_.depthBiasEnable_ = false;
 
-  VkRenderingAttachmentInfo colorAttachments[IGL_COLOR_ATTACHMENTS_MAX];
+  VkRenderingAttachmentInfo colorAttachments[LVK_MAX_COLOR_ATTACHMENTS];
 
   for (uint32_t i = 0; i != numFbColorAttachments; i++) {
-    const lvk::Framebuffer::AttachmentDesc& attachment = fb.colorAttachments[i];
+    const lvk::Framebuffer::AttachmentDesc& attachment = fb.color[i];
     IGL_ASSERT(!attachment.texture.empty());
 
     const lvk::vulkan::VulkanTexture& colorTexture = *ctx_->texturesPool_.get(attachment.texture);
-    const auto& descColor = renderPass.colorAttachments[i];
+    const auto& descColor = renderPass.color[i];
     if (mipLevel && descColor.level) {
       IGL_ASSERT_MSG(descColor.level == mipLevel,
                      "All color attachments should have the same mip-level");
@@ -338,9 +338,9 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
 
   VkRenderingAttachmentInfo depthAttachment = {};
 
-  if (fb.depthStencilAttachment.texture) {
-    const auto& depthTexture = *ctx_->texturesPool_.get(fb.depthStencilAttachment.texture);
-    const auto& descDepth = renderPass.depthAttachment;
+  if (fb.depthStencil.texture) {
+    const auto& depthTexture = *ctx_->texturesPool_.get(fb.depthStencil.texture);
+    const auto& descDepth = renderPass.depth;
     IGL_ASSERT_MSG(descDepth.level == mipLevel,
                    "Depth attachment should have the same mip-level as color attachments");
     depthAttachment = {
@@ -374,7 +374,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
 
   VkRenderingAttachmentInfo stencilAttachment = depthAttachment;
 
-  const bool isStencilFormat = renderPass.stencilAttachment.loadOp != lvk::LoadOp_Invalid;
+  const bool isStencilFormat = renderPass.stencil.loadOp != lvk::LoadOp_Invalid;
 
   const VkRenderingInfo renderingInfo = {
       .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
@@ -410,15 +410,14 @@ void CommandBuffer::cmdEndRendering() {
 
   // set image layouts after the render pass
   for (uint32_t i = 0; i != numFbColorAttachments; i++) {
-    const auto& attachment = framebuffer_.colorAttachments[i];
+    const auto& attachment = framebuffer_.color[i];
     const vulkan::VulkanTexture& tex = *ctx_->texturesPool_.get(attachment.texture);
     // this must match the final layout of the render pass
     tex.image_->imageLayout_ = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
   }
 
-  if (framebuffer_.depthStencilAttachment.texture) {
-    const vulkan::VulkanTexture& tex =
-        *ctx_->texturesPool_.get(framebuffer_.depthStencilAttachment.texture);
+  if (framebuffer_.depthStencil.texture) {
+    const vulkan::VulkanTexture& tex = *ctx_->texturesPool_.get(framebuffer_.depthStencil.texture);
     // this must match the final layout of the render pass
     tex.image_->imageLayout_ = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
   }
@@ -460,8 +459,8 @@ void CommandBuffer::cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) {
 
   const RenderPipelineDesc& desc = rps->getRenderPipelineDesc();
 
-  const bool hasDepthAttachmentPipeline = desc.depthAttachmentFormat != TextureFormat::Invalid;
-  const bool hasDepthAttachmentPass = !framebuffer_.depthStencilAttachment.texture.empty();
+  const bool hasDepthAttachmentPipeline = desc.depthFormat != TextureFormat::Invalid;
+  const bool hasDepthAttachmentPass = !framebuffer_.depthStencil.texture.empty();
 
   if (hasDepthAttachmentPipeline != hasDepthAttachmentPass) {
     IGL_ASSERT(false);

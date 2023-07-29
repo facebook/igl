@@ -264,15 +264,15 @@ static void initIGL() {
 
   sampler_ = device_->createSampler({.debugName = "Sampler: linear"}, nullptr);
 
-  renderPass_ = {.colorAttachments = {{
+  renderPass_ = {.color = {{
                      .loadOp = lvk::LoadOp_Clear,
                      .storeOp = lvk::StoreOp_Store,
                      .clearColor = {1.0f, 0.0f, 0.0f, 1.0f},
                  }}};
 #if TINY_TEST_USE_DEPTH_BUFFER
-  renderPass_.depthAttachment = {.loadOp = lvk::LoadOp_Clear, .clearDepth = 1.0};
+  renderPass_.depth = {.loadOp = lvk::LoadOp_Clear, .clearDepth = 1.0};
 #else
-  renderPass_.depthAttachment = {.loadOp = lvk::LoadOp_DontCare};
+  renderPass_.depth = {.loadOp = lvk::LoadOp_DontCare};
 #endif // TINY_TEST_USE_DEPTH_BUFFER
 
   // initialize random rotation axes for all cubes
@@ -287,7 +287,7 @@ static void initObjects() {
   }
 
   framebuffer_ = {
-      .colorAttachments = {{.texture = device_->getCurrentSwapchainTexture()}},
+      .color = {{.texture = device_->getCurrentSwapchainTexture()}},
   };
 
   const lvk::VertexInput vdesc = {
@@ -308,14 +308,13 @@ static void initObjects() {
           .vertexInput = vdesc,
           .shaderStages = device_->createShaderStages(
               codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
-          .colorAttachments =
+          .color =
               {
-                  {.format = device_->getFormat(framebuffer_.colorAttachments[0].texture)},
+                  {.format = device_->getFormat(framebuffer_.color[0].texture)},
               },
-          .depthAttachmentFormat =
-              framebuffer_.depthStencilAttachment.texture
-                  ? device_->getFormat(framebuffer_.depthStencilAttachment.texture)
-                  : lvk::TextureFormat::Invalid,
+          .depthFormat = framebuffer_.depthStencil.texture
+                             ? device_->getFormat(framebuffer_.depthStencil.texture)
+                             : lvk::TextureFormat::Invalid,
           .cullMode = lvk::CullMode_Back,
           .frontFaceWinding = lvk::WindingMode_CW,
           .debugName = "Pipeline: mesh",
@@ -330,7 +329,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     return;
   }
 
-  framebuffer_.colorAttachments[0].texture = nativeDrawable;
+  framebuffer_.color[0].texture = nativeDrawable;
 
   const float fov = float(45.0f * (M_PI / 180.0f));
   const float aspectRatio = (float)width_ / (float)height_;

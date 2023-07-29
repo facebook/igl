@@ -189,7 +189,7 @@ class Holder final {
 
 namespace lvk {
 
-enum { IGL_COLOR_ATTACHMENTS_MAX = 4 };
+enum { LVK_MAX_COLOR_ATTACHMENTS = 4 };
 
 enum IndexFormat : uint8_t {
   IndexFormat_UI16,
@@ -606,9 +606,9 @@ struct RenderPipelineDesc final {
   lvk::VertexInput vertexInput;
   lvk::ShaderStages shaderStages;
 
-  ColorAttachment colorAttachments[IGL_COLOR_ATTACHMENTS_MAX] = {};
-  TextureFormat depthAttachmentFormat = TextureFormat::Invalid;
-  TextureFormat stencilAttachmentFormat = TextureFormat::Invalid;
+  ColorAttachment color[LVK_MAX_COLOR_ATTACHMENTS] = {};
+  TextureFormat depthFormat = TextureFormat::Invalid;
+  TextureFormat stencilFormat = TextureFormat::Invalid;
 
   CullMode cullMode = lvk::CullMode_None;
   WindingMode frontFaceWinding = lvk::WindingMode_CCW;
@@ -620,7 +620,7 @@ struct RenderPipelineDesc final {
 
   uint32_t getNumColorAttachments() const {
     uint32_t n = 0;
-    while (n < IGL_COLOR_ATTACHMENTS_MAX && colorAttachments[n].format != TextureFormat::Invalid) {
+    while (n < LVK_MAX_COLOR_ATTACHMENTS && color[n].format != TextureFormat::Invalid) {
       n++;
     }
     return n;
@@ -632,24 +632,24 @@ struct ComputePipelineDesc final {
   const char* debugName = "";
 };
 
-struct AttachmentDesc final {
-  LoadOp loadOp = LoadOp_Invalid;
-  StoreOp storeOp = StoreOp_Store;
-  uint8_t layer = 0;
-  uint8_t level = 0;
-  Color clearColor = {0.0f, 0.0f, 0.0f, 0.0f};
-  float clearDepth = 1.0f;
-  uint32_t clearStencil = 0;
-};
-
 struct RenderPass final {
-  AttachmentDesc colorAttachments[IGL_COLOR_ATTACHMENTS_MAX] = {};
-  AttachmentDesc depthAttachment = {.loadOp = LoadOp_DontCare, .storeOp = StoreOp_DontCare};
-  AttachmentDesc stencilAttachment = {.loadOp = LoadOp_Invalid, .storeOp = StoreOp_DontCare};
+  struct AttachmentDesc final {
+    LoadOp loadOp = LoadOp_Invalid;
+    StoreOp storeOp = StoreOp_Store;
+    uint8_t layer = 0;
+    uint8_t level = 0;
+    Color clearColor = {0.0f, 0.0f, 0.0f, 0.0f};
+    float clearDepth = 1.0f;
+    uint32_t clearStencil = 0;
+  };
+
+  AttachmentDesc color[LVK_MAX_COLOR_ATTACHMENTS] = {};
+  AttachmentDesc depth = {.loadOp = LoadOp_DontCare, .storeOp = StoreOp_DontCare};
+  AttachmentDesc stencil = {.loadOp = LoadOp_Invalid, .storeOp = StoreOp_DontCare};
 
   uint32_t getNumColorAttachments() const {
     uint32_t n = 0;
-    while (n < IGL_COLOR_ATTACHMENTS_MAX && colorAttachments[n].loadOp != LoadOp_Invalid) {
+    while (n < LVK_MAX_COLOR_ATTACHMENTS && color[n].loadOp != LoadOp_Invalid) {
       n++;
     }
     return n;
@@ -662,14 +662,14 @@ struct Framebuffer final {
     TextureHandle resolveTexture;
   };
 
-  AttachmentDesc colorAttachments[IGL_COLOR_ATTACHMENTS_MAX] = {};
-  AttachmentDesc depthStencilAttachment;
+  AttachmentDesc color[LVK_MAX_COLOR_ATTACHMENTS] = {};
+  AttachmentDesc depthStencil;
 
   const char* debugName = "";
 
   uint32_t getNumColorAttachments() const {
     uint32_t n = 0;
-    while (n < IGL_COLOR_ATTACHMENTS_MAX && colorAttachments[n].texture) {
+    while (n < LVK_MAX_COLOR_ATTACHMENTS && color[n].texture) {
       n++;
     }
     return n;

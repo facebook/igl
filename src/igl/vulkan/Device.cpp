@@ -386,7 +386,7 @@ lvk::Holder<lvk::ComputePipelineHandle> Device::createComputePipeline(
 lvk::Holder<lvk::RenderPipelineHandle> Device::createRenderPipeline(const RenderPipelineDesc& desc,
                                                                     Result* outResult) {
   const bool hasColorAttachments = desc.getNumColorAttachments() > 0;
-  const bool hasDepthAttachment = desc.depthAttachmentFormat != TextureFormat::Invalid;
+  const bool hasDepthAttachment = desc.depthFormat != TextureFormat::Invalid;
   const bool hasAnyAttachments = hasColorAttachments || hasDepthAttachment;
   if (!IGL_VERIFY(hasAnyAttachments)) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Need at least one attachment");
@@ -458,12 +458,12 @@ void Device::destroy(Framebuffer& fb) {
     }
   };
 
-  for (Framebuffer::AttachmentDesc& a : fb.colorAttachments) {
+  for (Framebuffer::AttachmentDesc& a : fb.color) {
     destroyFbTexture(a.texture);
     destroyFbTexture(a.resolveTexture);
   }
-  destroyFbTexture(fb.depthStencilAttachment.texture);
-  destroyFbTexture(fb.depthStencilAttachment.resolveTexture);
+  destroyFbTexture(fb.depthStencil.texture);
+  destroyFbTexture(fb.depthStencil.resolveTexture);
 }
 
 Result Device::upload(BufferHandle handle, const void* data, size_t size, size_t offset) {
