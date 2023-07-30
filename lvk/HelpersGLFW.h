@@ -49,8 +49,8 @@ static GLFWwindow* initWindow(const char* windowTitle, int& outWidth, int& outHe
 
   int x = 0;
   int y = 0;
-  int w = (int)outWidth;
-  int h = (int)outHeight;
+  int w = outWidth;
+  int h = outHeight;
 
   if (wantsWholeArea) {
     int areaW = 0;
@@ -85,7 +85,7 @@ static GLFWwindow* initWindow(const char* windowTitle, int& outWidth, int& outHe
     glfwSetWindowPos(window, x, y);
   }
 
-  glfwGetWindowSize(window, &w, &h);
+  glfwGetWindowSize(window, &outWidth, &outHeight);
 
   glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -96,9 +96,6 @@ static GLFWwindow* initWindow(const char* windowTitle, int& outWidth, int& outHe
   glfwSetErrorCallback([](int error, const char* description) {
     printf("GLFW Error (%i): %s\n", error, description);
   });
-
-  outWidth = (uint32_t)w;
-  outHeight = (uint32_t)h;
 
   return window;
 }
@@ -119,14 +116,14 @@ static std::unique_ptr<lvk::IDevice> createVulkanDeviceWithSwapchain(
 #endif
 
   std::vector<HWDeviceDesc> devices =
-      vulkan::Device::queryDevices(*ctx.get(), preferredDeviceType, nullptr);
+      vulkan::Device::queryDevices(*ctx, preferredDeviceType, nullptr);
   
   if (devices.empty()) {
     if (preferredDeviceType == HWDeviceType::DiscreteGpu) {
-      devices = vulkan::Device::queryDevices(*ctx.get(), HWDeviceType::IntegratedGpu, nullptr);
+      devices = vulkan::Device::queryDevices(*ctx, HWDeviceType::IntegratedGpu, nullptr);
     }
     if (preferredDeviceType == HWDeviceType::IntegratedGpu) {
-      devices = vulkan::Device::queryDevices(*ctx.get(), HWDeviceType::DiscreteGpu, nullptr);
+      devices = vulkan::Device::queryDevices(*ctx, HWDeviceType::DiscreteGpu, nullptr);
     }
   }
 
