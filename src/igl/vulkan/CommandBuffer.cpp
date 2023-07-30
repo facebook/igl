@@ -459,7 +459,7 @@ void CommandBuffer::cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) {
 
   const RenderPipelineDesc& desc = rps->getRenderPipelineDesc();
 
-  const bool hasDepthAttachmentPipeline = desc.depthFormat != TextureFormat::Invalid;
+  const bool hasDepthAttachmentPipeline = desc.depthFormat != Format_Invalid;
   const bool hasDepthAttachmentPass = !framebuffer_.depthStencil.texture.empty();
 
   if (hasDepthAttachmentPipeline != hasDepthAttachmentPass) {

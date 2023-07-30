@@ -48,58 +48,58 @@ void setResultFrom(Result* outResult, VkResult result) {
   *outResult = getResultFromVkResult(result);
 }
 
-VkFormat textureFormatToVkFormat(lvk::TextureFormat format) {
-  using TextureFormat = ::lvk::TextureFormat;
+VkFormat textureFormatToVkFormat(lvk::Format format) {
+  using TextureFormat = ::lvk::Format;
   switch (format) {
-  case TextureFormat::Invalid:
+  case Format_Invalid:
     return VK_FORMAT_UNDEFINED;
-  case TextureFormat::R_UN8:
+  case Format_R_UN8:
     return VK_FORMAT_R8_UNORM;
-  case TextureFormat::R_UN16:
+  case Format_R_UN16:
     return VK_FORMAT_R16_UNORM;
-  case TextureFormat::R_F16:
+  case Format_R_F16:
     return VK_FORMAT_R16_SFLOAT;
-  case TextureFormat::R_UI16:
+  case Format_R_UI16:
     return VK_FORMAT_R16_UINT;
-  case TextureFormat::RG_UN8:
+  case Format_RG_UN8:
     return VK_FORMAT_R8G8_UNORM;
-  case TextureFormat::RG_UN16:
+  case Format_RG_UN16:
     return VK_FORMAT_R16G16_UNORM;
-  case TextureFormat::BGRA_UN8:
+  case Format_BGRA_UN8:
     return VK_FORMAT_B8G8R8A8_UNORM;
-  case TextureFormat::RGBA_UN8:
+  case Format_RGBA_UN8:
     return VK_FORMAT_R8G8B8A8_UNORM;
-  case TextureFormat::RGBA_SRGB8:
+  case Format_RGBA_SRGB8:
     return VK_FORMAT_R8G8B8A8_SRGB;
-  case TextureFormat::BGRA_SRGB8:
+  case Format_BGRA_SRGB8:
     return VK_FORMAT_B8G8R8A8_SRGB;
-  case TextureFormat::RG_F16:
+  case Format_RG_F16:
     return VK_FORMAT_R16G16_SFLOAT;
-  case TextureFormat::RG_F32:
+  case Format_RG_F32:
     return VK_FORMAT_R32G32_SFLOAT;
-  case TextureFormat::RG_UI16:
+  case Format_RG_UI16:
     return VK_FORMAT_R16G16_UINT;
-  case TextureFormat::R_F32:
+  case Format_R_F32:
     return VK_FORMAT_R32_SFLOAT;
-  case TextureFormat::RGBA_F16:
+  case Format_RGBA_F16:
     return VK_FORMAT_R16G16B16A16_SFLOAT;
-  case TextureFormat::RGBA_UI32:
+  case Format_RGBA_UI32:
     return VK_FORMAT_R32G32B32A32_UINT;
-  case TextureFormat::RGBA_F32:
+  case Format_RGBA_F32:
     return VK_FORMAT_R32G32B32A32_SFLOAT;
-  case TextureFormat::ETC2_RGB8:
+  case Format_ETC2_RGB8:
     return VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK;
-  case TextureFormat::ETC2_SRGB8:
+  case Format_ETC2_SRGB8:
     return VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK;
-  case TextureFormat::BC7_RGBA:
+  case Format_BC7_RGBA:
     return VK_FORMAT_BC7_UNORM_BLOCK;
-  case TextureFormat::Z_UN16:
+  case Format_Z_UN16:
     return VK_FORMAT_D16_UNORM;
-  case TextureFormat::Z_UN24:
+  case Format_Z_UN24:
     return VK_FORMAT_D24_UNORM_S8_UINT;
-  case TextureFormat::Z_F32:
+  case Format_Z_F32:
     return VK_FORMAT_D32_SFLOAT;
-  case TextureFormat::Z_UN24_S_UI8:
+  case Format_Z_UN24_S_UI8:
     return VK_FORMAT_D24_UNORM_S8_UINT;
   default:
     IGL_ASSERT_MSG(false, "TextureFormat value not handled: %d", (int)format);
@@ -109,65 +109,63 @@ VkFormat textureFormatToVkFormat(lvk::TextureFormat format) {
 #endif // _MSC_VER
 }
 
-lvk::TextureFormat vkFormatToTextureFormat(VkFormat format) {
-  using TextureFormat = ::lvk::TextureFormat;
+lvk::Format vkFormatToTextureFormat(VkFormat format) {
   switch (format) {
   case VK_FORMAT_UNDEFINED:
-    return TextureFormat::Invalid;
+    return Format_Invalid;
   case VK_FORMAT_R8_UNORM:
-    return TextureFormat::R_UN8;
+    return Format_R_UN8;
   case VK_FORMAT_R16_UNORM:
-    return TextureFormat::R_UN16;
+    return Format_R_UN16;
   case VK_FORMAT_R16_SFLOAT:
-    return TextureFormat::R_F16;
+    return Format_R_F16;
   case VK_FORMAT_R16_UINT:
-    return TextureFormat::R_UI16;
+    return Format_R_UI16;
   case VK_FORMAT_R8G8_UNORM:
-    return TextureFormat::RG_UN8;
+    return Format_RG_UN8;
   case VK_FORMAT_B8G8R8A8_UNORM:
-    return TextureFormat::BGRA_UN8;
+    return Format_BGRA_UN8;
   case VK_FORMAT_R8G8B8A8_UNORM:
-    return TextureFormat::RGBA_UN8;
+    return Format_RGBA_UN8;
   case VK_FORMAT_R8G8B8A8_SRGB:
-    return TextureFormat::RGBA_SRGB8;
+    return Format_RGBA_SRGB8;
   case VK_FORMAT_B8G8R8A8_SRGB:
-    return TextureFormat::BGRA_SRGB8;
+    return Format_BGRA_SRGB8;
   case VK_FORMAT_R16G16_UNORM:
-    return TextureFormat::RG_UN16;
+    return Format_RG_UN16;
   case VK_FORMAT_R16G16_SFLOAT:
-    return TextureFormat::RG_F16;
+    return Format_RG_F16;
   case VK_FORMAT_R32G32_SFLOAT:
-    return TextureFormat::RG_F32;
+    return Format_RG_F32;
   case VK_FORMAT_R16G16_UINT:
-    return TextureFormat::RG_UI16;
+    return Format_RG_UI16;
   case VK_FORMAT_R32_SFLOAT:
-    return TextureFormat::R_F32;
+    return Format_R_F32;
   case VK_FORMAT_R16G16B16A16_SFLOAT:
-    return TextureFormat::RGBA_F16;
+    return Format_RGBA_F16;
   case VK_FORMAT_R32G32B32A32_UINT:
-    return TextureFormat::RGBA_UI32;
+    return Format_RGBA_UI32;
   case VK_FORMAT_R32G32B32A32_SFLOAT:
-    return TextureFormat::RGBA_F32;
-  case VK_FORMAT_ASTC_4x4_SRGB_BLOCK:
+    return Format_RGBA_F32;
   case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK:
-    return TextureFormat::ETC2_RGB8;
+    return Format_ETC2_RGB8;
   case VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK:
-    return TextureFormat::ETC2_SRGB8;
+    return Format_ETC2_SRGB8;
   case VK_FORMAT_D16_UNORM:
-    return TextureFormat::Z_UN16;
+    return Format_Z_UN16;
   case VK_FORMAT_BC7_UNORM_BLOCK:
-    return TextureFormat::BC7_RGBA;
+    return Format_BC7_RGBA;
   case VK_FORMAT_X8_D24_UNORM_PACK32:
-    return TextureFormat::Z_UN24;
+    return Format_Z_UN24;
   case VK_FORMAT_D24_UNORM_S8_UINT:
-    return TextureFormat::Z_UN24_S_UI8;
+    return Format_Z_UN24_S_UI8;
   case VK_FORMAT_D32_SFLOAT:
-    return TextureFormat::Z_F32;
+    return Format_Z_F32;
   default:
     IGL_ASSERT_MSG(false, "VkFormat value not handled: %d", (int)format);
   }
 #if defined(_MSC_VER)
-  return TextureFormat::Invalid;
+  return Format_Invalid;
 #endif // _MSC_VER
 }
 

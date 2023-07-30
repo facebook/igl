@@ -163,7 +163,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
   auto width = image.extent_.width >> baseMipLevel;
   auto height = image.extent_.height >> baseMipLevel;
 
-  const TextureFormat texFormat(vkFormatToTextureFormat(format));
+  const Format texFormat(vkFormatToTextureFormat(format));
 
   IGL_ASSERT_MSG(
       imageRegion.offset.x == 0 && imageRegion.offset.y == 0 && imageRegion.extent.width == width &&

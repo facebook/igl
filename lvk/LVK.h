@@ -219,18 +219,18 @@ enum SamplerFilter : uint8_t { SamplerFilter_Nearest = 0, SamplerFilter_Linear }
 enum SamplerMip : uint8_t { SamplerMip_Disabled = 0, SamplerMip_Nearest, SamplerMip_Linear };
 enum SamplerWrap : uint8_t { SamplerWrap_Repeat = 0, SamplerWrap_Clamp, SamplerWrap_MirrorRepeat };
 
-enum class HWDeviceType {
-  DiscreteGpu = 1,
-  ExternalGpu = 2,
-  IntegratedGpu = 3,
-  SoftwareGpu = 4,
+enum HWDeviceType {
+  HWDeviceType_Discrete = 1,
+  HWDeviceType_External = 2,
+  HWDeviceType_Integrated = 3,
+  HWDeviceType_Software = 4,
 };
 
 struct HWDeviceDesc {
   enum { IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE = 256 };
   uintptr_t guid = 0;
-  HWDeviceType type = HWDeviceType::SoftwareGpu;
-  char name[IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE] = { 0 };
+  HWDeviceType type = HWDeviceType_Software;
+  char name[IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE] = {0};
 };
 
 enum StorageType {
@@ -456,38 +456,38 @@ enum class VertexFormat {
   Int_2_10_10_10_REV,
 };
 
-enum TextureFormat : uint8_t {
-  Invalid = 0,
+enum Format : uint8_t {
+  Format_Invalid = 0,
 
-  R_UN8,
-  R_UI16,
-  R_UN16,
-  R_F16,
-  R_F32,
+  Format_R_UN8,
+  Format_R_UI16,
+  Format_R_UN16,
+  Format_R_F16,
+  Format_R_F32,
 
-  RG_UN8,
-  RG_UI16,
-  RG_UN16,
-  RG_F16,
-  RG_F32,
+  Format_RG_UN8,
+  Format_RG_UI16,
+  Format_RG_UN16,
+  Format_RG_F16,
+  Format_RG_F32,
 
-  RGBA_UN8,
-  RGBA_UI32,
-  RGBA_F16,
-  RGBA_F32,
-  RGBA_SRGB8,
+  Format_RGBA_UN8,
+  Format_RGBA_UI32,
+  Format_RGBA_F16,
+  Format_RGBA_F32,
+  Format_RGBA_SRGB8,
 
-  BGRA_UN8,
-  BGRA_SRGB8,
+  Format_BGRA_UN8,
+  Format_BGRA_SRGB8,
 
-  ETC2_RGB8,
-  ETC2_SRGB8,
-  BC7_RGBA,
+  Format_ETC2_RGB8,
+  Format_ETC2_SRGB8,
+  Format_BC7_RGBA,
 
-  Z_UN16,
-  Z_UN24,
-  Z_F32,
-  Z_UN24_S_UI8,
+  Format_Z_UN16,
+  Format_Z_UN24,
+  Format_Z_F32,
+  Format_Z_UN24_S_UI8,
 };
 
 enum LoadOp : uint8_t {
@@ -549,7 +549,7 @@ struct VertexInput final {
 };
 
 struct ColorAttachment {
-  TextureFormat format = TextureFormat::Invalid;
+  Format format = Format_Invalid;
   bool blendEnabled = false;
   BlendOp rgbBlendOp = BlendOp::BlendOp_Add;
   BlendOp alphaBlendOp = BlendOp::BlendOp_Add;
@@ -607,8 +607,8 @@ struct RenderPipelineDesc final {
   lvk::ShaderStages shaderStages;
 
   ColorAttachment color[LVK_MAX_COLOR_ATTACHMENTS] = {};
-  TextureFormat depthFormat = TextureFormat::Invalid;
-  TextureFormat stencilFormat = TextureFormat::Invalid;
+  Format depthFormat = Format_Invalid;
+  Format stencilFormat = Format_Invalid;
 
   CullMode cullMode = lvk::CullMode_None;
   WindingMode frontFaceWinding = lvk::WindingMode_CCW;
@@ -620,7 +620,7 @@ struct RenderPipelineDesc final {
 
   uint32_t getNumColorAttachments() const {
     uint32_t n = 0;
-    while (n < LVK_MAX_COLOR_ATTACHMENTS && color[n].format != TextureFormat::Invalid) {
+    while (n < LVK_MAX_COLOR_ATTACHMENTS && color[n].format != Format_Invalid) {
       n++;
     }
     return n;
@@ -687,8 +687,8 @@ enum BufferUsageBits : uint8_t {
 struct BufferDesc final {
   uint8_t usage = 0;
   StorageType storage = StorageType_HostVisible;
-  const void* data = nullptr;
   size_t size = 0;
+  const void* data = nullptr;
   const char* debugName = "";
 };
 
@@ -711,7 +711,7 @@ enum TextureUsageBits : uint8_t {
 
 struct TextureDesc {
   TextureType type = TextureType_2D;
-  TextureFormat format = TextureFormat::Invalid;
+  Format format = Format_Invalid;
 
   Dimensions dimensions = {1, 1, 1};
   uint32_t numLayers = 1;
@@ -719,9 +719,8 @@ struct TextureDesc {
   uint8_t usage = TextureUsageBits_Sampled;
   uint32_t numMipLevels = 1;
   StorageType storage = StorageType_Device;
+  const void* data = nullptr;
   const char* debugName = "";
-
-  const void* initialData = nullptr;
 };
 
 struct Dependencies {
@@ -835,11 +834,11 @@ class IDevice {
   virtual Result upload(TextureHandle handle, const TextureRangeDesc& range, const void* data[]) const = 0;
   virtual Dimensions getDimensions(TextureHandle handle) const = 0;
   virtual void generateMipmap(TextureHandle handle) const = 0;
-  virtual TextureFormat getFormat(TextureHandle handle) const = 0;
+  virtual Format getFormat(TextureHandle handle) const = 0;
 #pragma endregion
 
   virtual TextureHandle getCurrentSwapchainTexture() = 0;
-  virtual TextureFormat getSwapchainFormat() const = 0;
+  virtual Format getSwapchainFormat() const = 0;
 
   ShaderStages createShaderStages(const char* cs,
                                   const char* debugName,
@@ -878,11 +877,11 @@ class IDevice {
 
 namespace lvk {
 
-bool isDepthOrStencilFormat(lvk::TextureFormat format);
+bool isDepthOrStencilFormat(lvk::Format format);
 uint32_t calcNumMipLevels(uint32_t width, uint32_t height);
 uint32_t getTextureBytesPerLayer(uint32_t width,
                                  uint32_t height,
-                                 lvk::TextureFormat format,
+                                 lvk::Format format,
                                  uint32_t level);
 void logShaderSource(const char* text);
 

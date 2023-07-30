@@ -55,10 +55,10 @@ namespace lvk::vulkan {
 
 Result getResultFromVkResult(VkResult result);
 void setResultFrom(Result* outResult, VkResult result);
-VkFormat textureFormatToVkFormat(lvk::TextureFormat format);
-lvk::TextureFormat vkFormatToTextureFormat(VkFormat format);
+lvk::Format vkFormatToTextureFormat(VkFormat format);
 bool isDepthOrStencilVkFormat(VkFormat format);
 uint32_t getBytesPerPixel(VkFormat format);
+VkFormat textureFormatToVkFormat(lvk::Format format);
 VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(lvk::StorageType storage);
 VkCompareOp compareOpToVkCompareOp(lvk::CompareOp func);
 VkSampleCountFlagBits getVulkanSampleCountFlags(size_t numSamples);

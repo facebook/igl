@@ -93,7 +93,7 @@ lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(con
               .dstRGBBlendFactor = lvk::BlendFactor_OneMinusSrcAlpha,
           }},
           .depthFormat = desc.depthStencil.texture ? device_.getFormat(desc.depthStencil.texture)
-                                                   : lvk::TextureFormat::Invalid,
+                                                   : lvk::Format_Invalid,
           .cullMode = lvk::CullMode_None,
       },
       nullptr);
@@ -123,10 +123,10 @@ ImGuiRenderer::ImGuiRenderer(lvk::IDevice& device, const char* defaultFontTTF, f
   int width, height;
   io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
   fontTexture_ = device.createTexture({.type = lvk::TextureType_2D,
-                                       .format = lvk::TextureFormat::RGBA_UN8,
+                                       .format = lvk::Format_RGBA_UN8,
                                        .dimensions = {(uint32_t)width, (uint32_t)height},
                                        .usage = lvk::TextureUsageBits_Sampled,
-                                       .initialData = pixels},
+                                       .data = pixels},
                                       nullptr);
   io.BackendRendererName = "imgui-lvk";
   io.Fonts->TexID = ImTextureID(fontTexture_.indexAsVoid());

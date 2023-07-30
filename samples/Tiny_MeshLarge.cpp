@@ -577,17 +577,17 @@ void initIGL() {
           .maxSamplers = 128,
           .enableValidation = kEnableValidationLayers,
       },
-      kPreferIntegratedGPU ? lvk::HWDeviceType::IntegratedGpu : lvk::HWDeviceType::DiscreteGpu);
+      kPreferIntegratedGPU ? lvk::HWDeviceType_Integrated : lvk::HWDeviceType_Discrete);
   {
     const uint32_t pixel = 0xFFFFFFFF;
     textureDummyWhite_ = device_->createTexture(
         {
             .type = lvk::TextureType_2D,
-            .format = lvk::TextureFormat::RGBA_UN8,
+            .format = lvk::Format_RGBA_UN8,
             .dimensions = {1, 1},
             .usage = lvk::TextureUsageBits_Sampled,
+            .data = &pixel,
             .debugName = "dummy 1x1 (white)",
-            .initialData = &pixel,
         },
         nullptr);
   }
@@ -878,21 +878,21 @@ void initModel() {
   }
   sbMaterials_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Storage,
                                         .storage = lvk::StorageType_Device,
-                                        .data = materials_.data(),
                                         .size = sizeof(GPUMaterial) * materials_.size(),
+                                        .data = materials_.data(),
                                         .debugName = "Buffer: materials"},
                                        nullptr);
 
   vb0_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Vertex,
                                 .storage = lvk::StorageType_Device,
-                                .data = vertexData_.data(),
                                 .size = sizeof(VertexData) * vertexData_.size(),
+                                .data = vertexData_.data(),
                                 .debugName = "Buffer: vertex"},
                                nullptr);
   ib0_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Index,
                                 .storage = lvk::StorageType_Device,
-                                .data = indexData_.data(),
                                 .size = sizeof(uint32_t) * indexData_.size(),
+                                .data = indexData_.data(),
                                 .debugName = "Buffer: index"},
                                nullptr);
 }
@@ -1018,7 +1018,7 @@ void createShadowMap() {
   const uint32_t h = 4096;
   const lvk::TextureDesc desc = {
       .type = lvk::TextureType_2D,
-      .format = lvk::TextureFormat::Z_UN16,
+      .format = lvk::Format_Z_UN16,
       .dimensions = {w, h},
       .usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled,
       .numMipLevels = lvk::calcNumMipLevels(w, h),
@@ -1034,7 +1034,7 @@ void createOffscreenFramebuffer() {
   const uint32_t h = height_;
   lvk::TextureDesc descDepth = {
       .type = lvk::TextureType_2D,
-      .format = lvk::TextureFormat::Z_UN24,
+      .format = lvk::Format_Z_UN24,
       .dimensions = {w, h},
       .usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled,
       .numMipLevels = lvk::calcNumMipLevels(w, h),
@@ -1048,7 +1048,7 @@ void createOffscreenFramebuffer() {
 
   const uint8_t usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled |
                         lvk::TextureUsageBits_Storage;
-  const lvk::TextureFormat format = lvk::TextureFormat::RGBA_UN8;
+  const lvk::Format format = lvk::Format_RGBA_UN8;
 
   lvk::TextureDesc descColor = {
       .type = lvk::TextureType_2D,
@@ -1313,15 +1313,15 @@ void generateCompressedTexture(LoadedImage img) {
   gli::save_ktx(gliTex2d, img.compressedFileName.c_str());
 }
 
-lvk::TextureFormat gli2iglTextureFormat(gli::texture2d::format_type format) {
+lvk::Format gli2iglTextureFormat(gli::texture2d::format_type format) {
   switch (format) {
   case gli::FORMAT_RGBA32_SFLOAT_PACK32:
-    return lvk::TextureFormat::RGBA_F32;
+    return lvk::Format_RGBA_F32;
   case gli::FORMAT_RG16_SFLOAT_PACK16:
-    return lvk::TextureFormat::RG_F16;
+    return lvk::Format_RG_F16;
   }
   IGL_ASSERT_MSG(false, "Code should NOT be reached");
-  return lvk::TextureFormat::RGBA_UN8;
+  return lvk::Format_RGBA_UN8;
 }
 
 LoadedImage loadImage(const char* fileName, int channels) {
@@ -1594,16 +1594,16 @@ void loadSkyboxTexture() {
   loadCubemapTexture(fileNameIrrKTX, skyboxTextureIrradiance_);
 }
 
-lvk::TextureFormat formatFromChannels(uint32_t channels) {
+lvk::Format formatFromChannels(uint32_t channels) {
   if (channels == 1) {
-    return lvk::TextureFormat::R_UN8;
+    return lvk::Format_R_UN8;
   }
 
   if (channels == 4) {
-    return kEnableCompression ? lvk::TextureFormat::BC7_RGBA : lvk::TextureFormat::RGBA_UN8;
+    return kEnableCompression ? lvk::Format_BC7_RGBA : lvk::Format_RGBA_UN8;
   }
 
-  return lvk::TextureFormat::Invalid;
+  return lvk::Format_Invalid;
 }
 
 lvk::TextureHandle createTexture(const LoadedImage& img) {

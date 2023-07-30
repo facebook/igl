@@ -87,18 +87,18 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
   return VK_FALSE;
 }
 
-std::vector<VkFormat> getCompatibleDepthStencilFormats(lvk::TextureFormat format) {
+std::vector<VkFormat> getCompatibleDepthStencilFormats(lvk::Format format) {
   switch (format) {
-  case lvk::TextureFormat::Z_UN16:
+  case lvk::Format_Z_UN16:
     return {VK_FORMAT_D16_UNORM,
             VK_FORMAT_D16_UNORM_S8_UINT,
             VK_FORMAT_D24_UNORM_S8_UINT,
             VK_FORMAT_D32_SFLOAT};
-  case lvk::TextureFormat::Z_UN24:
+  case lvk::Format_Z_UN24:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D16_UNORM_S8_UINT};
-  case lvk::TextureFormat::Z_F32:
+  case lvk::Format_Z_F32:
     return {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
-  case lvk::TextureFormat::Z_UN24_S_UI8:
+  case lvk::Format_Z_UN24_S_UI8:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT};
   default:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT};
@@ -382,15 +382,15 @@ lvk::Result VulkanContext::queryDevices(HWDeviceType deviceType,
   auto convertVulkanDeviceTypeToIGL = [](VkPhysicalDeviceType vkDeviceType) -> HWDeviceType {
     switch (vkDeviceType) {
     case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-      return HWDeviceType::IntegratedGpu;
+      return HWDeviceType_Integrated;
     case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-      return HWDeviceType::DiscreteGpu;
+      return HWDeviceType_Discrete;
     case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
-      return HWDeviceType::ExternalGpu;
+      return HWDeviceType_External;
     case VK_PHYSICAL_DEVICE_TYPE_CPU:
-      return HWDeviceType::SoftwareGpu;
+      return HWDeviceType_Software;
     default:
-      return HWDeviceType::SoftwareGpu;
+      return HWDeviceType_Software;
     }
   };
 
@@ -404,7 +404,7 @@ lvk::Result VulkanContext::queryDevices(HWDeviceType deviceType,
     const HWDeviceType deviceType = convertVulkanDeviceTypeToIGL(deviceProperties.deviceType);
 
     // filter non-suitable hardware devices
-    if (desiredDeviceType != HWDeviceType::SoftwareGpu && deviceType != desiredDeviceType) {
+    if (desiredDeviceType != HWDeviceType_Software && deviceType != desiredDeviceType) {
       continue;
     }
 
@@ -1181,7 +1181,7 @@ void VulkanContext::querySurfaceCapabilities() {
   }
 }
 
-VkFormat VulkanContext::getClosestDepthStencilFormat(lvk::TextureFormat desiredFormat) const {
+VkFormat VulkanContext::getClosestDepthStencilFormat(lvk::Format desiredFormat) const {
   // get a list of compatible depth formats for a given desired format
   // The list will contain depth format that are ordered from most to least closest
   const std::vector<VkFormat> compatibleDepthStencilFormatList =

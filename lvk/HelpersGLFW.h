@@ -105,7 +105,7 @@ static std::unique_ptr<lvk::IDevice> createVulkanDeviceWithSwapchain(
     uint32_t width,
     uint32_t height,
     const lvk::vulkan::VulkanContextConfig& cfg,
-    lvk::HWDeviceType preferredDeviceType = lvk::HWDeviceType::DiscreteGpu) {
+    lvk::HWDeviceType preferredDeviceType = lvk::HWDeviceType_Discrete) {
    using namespace lvk;
 #if defined(_WIN32)
   auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetWin32Window(window));
@@ -119,11 +119,11 @@ static std::unique_ptr<lvk::IDevice> createVulkanDeviceWithSwapchain(
       vulkan::Device::queryDevices(*ctx, preferredDeviceType, nullptr);
   
   if (devices.empty()) {
-    if (preferredDeviceType == HWDeviceType::DiscreteGpu) {
-      devices = vulkan::Device::queryDevices(*ctx, HWDeviceType::IntegratedGpu, nullptr);
+    if (preferredDeviceType == HWDeviceType_Discrete) {
+      devices = vulkan::Device::queryDevices(*ctx, HWDeviceType_Integrated, nullptr);
     }
-    if (preferredDeviceType == HWDeviceType::IntegratedGpu) {
-      devices = vulkan::Device::queryDevices(*ctx, HWDeviceType::DiscreteGpu, nullptr);
+    if (preferredDeviceType == HWDeviceType_Integrated) {
+      devices = vulkan::Device::queryDevices(*ctx, HWDeviceType_Discrete, nullptr);
     }
   }
 

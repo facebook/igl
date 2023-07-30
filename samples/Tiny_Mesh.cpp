@@ -178,14 +178,14 @@ static void initIGL() {
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
   vb0_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Vertex,
                                 .storage = lvk::StorageType_Device,
-                                .data = vertexData0,
                                 .size = sizeof(vertexData0),
+                                .data = vertexData0,
                                 .debugName = "Buffer: vertex"},
                                nullptr);
   ib0_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Index,
                                 .storage = lvk::StorageType_Device,
-                                .data = indexData,
                                 .size = sizeof(indexData),
+                                .data = indexData,
                                 .debugName = "Buffer: index"},
                                nullptr);
   // create an Uniform buffers to store uniforms for 2 objects
@@ -217,11 +217,11 @@ static void initIGL() {
     texture0_ = device_->createTexture(
         {
             .type = lvk::TextureType_2D,
-            .format = lvk::TextureFormat::BGRA_UN8,
+            .format = lvk::Format_BGRA_UN8,
             .dimensions = {texWidth, texHeight},
             .usage = lvk::TextureUsageBits_Sampled,
+            .data = pixels.data(),
             .debugName = "XOR pattern",
-            .initialData = pixels.data(),
         },
         nullptr);
   }
@@ -252,11 +252,11 @@ static void initIGL() {
     texture1_ = device_->createTexture(
         {
             .type = lvk::TextureType_2D,
-            .format = lvk::TextureFormat::RGBA_UN8,
+            .format = lvk::Format_RGBA_UN8,
             .dimensions = {(uint32_t)texWidth, (uint32_t)texHeight},
             .usage = lvk::TextureUsageBits_Sampled,
+            .data = pixels,
             .debugName = "wood_polished_01_diff.png",
-            .initialData = pixels,
         },
         nullptr);
     stbi_image_free(pixels);
@@ -314,7 +314,7 @@ static void initObjects() {
               },
           .depthFormat = framebuffer_.depthStencil.texture
                              ? device_->getFormat(framebuffer_.depthStencil.texture)
-                             : lvk::TextureFormat::Invalid,
+                             : lvk::Format_Invalid,
           .cullMode = lvk::CullMode_Back,
           .frontFaceWinding = lvk::WindingMode_CW,
           .debugName = "Pipeline: mesh",

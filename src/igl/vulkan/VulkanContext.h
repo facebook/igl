@@ -107,7 +107,7 @@ class VulkanContext final {
     return vkFeatures10_;
   }
 
-  VkFormat getClosestDepthStencilFormat(lvk::TextureFormat desiredFormat) const;
+  VkFormat getClosestDepthStencilFormat(lvk::Format desiredFormat) const;
 
   // OpenXR needs Vulkan instance to find physical device
   VkInstance getVkInstance() const {

@@ -357,9 +357,9 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc,
 
   ctx_->awaitingCreation_ = true;
 
-  if (desc.initialData) {
+  if (desc.data) {
     IGL_ASSERT(desc.type == TextureType_2D);
-    const void* mipMaps[] = {desc.initialData};
+    const void* mipMaps[] = {desc.data};
     Result res = upload(handle, {.dimensions = desc.dimensions, .numMipLevels = 1}, mipMaps);
     if (!res.isOk()) {
       Result::setResult(outResult, res);
@@ -386,7 +386,7 @@ lvk::Holder<lvk::ComputePipelineHandle> Device::createComputePipeline(
 lvk::Holder<lvk::RenderPipelineHandle> Device::createRenderPipeline(const RenderPipelineDesc& desc,
                                                                     Result* outResult) {
   const bool hasColorAttachments = desc.getNumColorAttachments() > 0;
-  const bool hasDepthAttachment = desc.depthFormat != TextureFormat::Invalid;
+  const bool hasDepthAttachment = desc.depthFormat != Format_Invalid;
   const bool hasAnyAttachments = hasColorAttachments || hasDepthAttachment;
   if (!IGL_VERIFY(hasAnyAttachments)) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Need at least one attachment");
@@ -603,9 +603,9 @@ void Device::generateMipmap(TextureHandle handle) const {
   }
 }
 
-TextureFormat Device::getFormat(TextureHandle handle) const {
+Format Device::getFormat(TextureHandle handle) const {
   if (handle.empty()) {
-    return TextureFormat::Invalid;
+    return Format_Invalid;
   }
 
   return vkFormatToTextureFormat(ctx_->texturesPool_.get(handle)->image_->imageFormat_);
@@ -738,9 +738,9 @@ VulkanShaderModule Device::createShaderModule(ShaderStage stage,
   return VulkanShaderModule(ctx_->vkDevice_, vkShaderModule, entryPoint);
 }
 
-TextureFormat Device::getSwapchainFormat() const {
+Format Device::getSwapchainFormat() const {
   if (!ctx_->hasSwapchain()) {
-    return TextureFormat::Invalid;
+    return Format_Invalid;
   }
 
   return getFormat(ctx_->swapchain_->getCurrentTexture());

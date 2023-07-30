@@ -59,10 +59,10 @@ class Device final : public IDevice {
   Result upload(TextureHandle handle, const TextureRangeDesc& range, const void* data[]) const override;
   Dimensions getDimensions(TextureHandle handle) const override;
   void generateMipmap(TextureHandle handle) const override;
-  TextureFormat getFormat(TextureHandle handle) const override;
+  Format getFormat(TextureHandle handle) const override;
 
   TextureHandle getCurrentSwapchainTexture() override;
-  TextureFormat getSwapchainFormat() const override;
+  Format getSwapchainFormat() const override;
 
   VulkanContext& getVulkanContext() {
     return *ctx_.get();
