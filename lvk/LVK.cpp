@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#pragma once
-
 #include "LVK.h"
 
 #include <assert.h>
