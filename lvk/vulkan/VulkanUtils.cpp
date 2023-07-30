@@ -45,7 +45,7 @@ uint32_t lvk::findQueueFamilyIndex(VkPhysicalDevice physDev, VkQueueFlags flags)
   auto findDedicatedQueueFamilyIndex = [&props](VkQueueFlags require,
                                                 VkQueueFlags avoid) -> uint32_t {
     for (uint32_t i = 0; i != props.size(); i++) {
-      const bool isSuitable = props[i].queueFlags & require == require;
+      const bool isSuitable = (props[i].queueFlags & require) == require;
       const bool isDedicated = (props[i].queueFlags & avoid) == 0;
       if (props[i].queueCount && isSuitable && isDedicated)
         return i;
