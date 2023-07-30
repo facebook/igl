@@ -62,9 +62,7 @@ struct VulkanContextConfig {
 
 class VulkanContext final {
  public:
-  VulkanContext(const VulkanContextConfig& config,
-                void* window,
-                void* display = nullptr);
+  VulkanContext(const VulkanContextConfig& config, void* window, void* display = nullptr);
   ~VulkanContext();
 
   lvk::Result queryDevices(HWDeviceType deviceType, std::vector<HWDeviceDesc>& outDevices);
@@ -89,9 +87,7 @@ class VulkanContext final {
                             VkMemoryPropertyFlags memFlags,
                             lvk::Result* outResult,
                             const char* debugName = nullptr);
-  SamplerHandle createSampler(const VkSamplerCreateInfo& ci,
-                              lvk::Result* outResult,
-                              const char* debugName = nullptr);
+  SamplerHandle createSampler(const VkSamplerCreateInfo& ci, lvk::Result* outResult, const char* debugName = nullptr);
 
   bool hasSwapchain() const noexcept {
     return swapchain_ != nullptr;
@@ -137,8 +133,7 @@ class VulkanContext final {
   void createInstance();
   void createSurface(void* window, void* display);
   void checkAndUpdateDescriptorSets() const;
-  void bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
-                                 VkPipelineBindPoint bindPoint) const;
+  void bindDefaultDescriptorSets(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPoint) const;
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void waitDeferredTasks();
@@ -154,24 +149,23 @@ class VulkanContext final {
   VkPhysicalDevice vkPhysicalDevice_ = VK_NULL_HANDLE;
   VkDevice vkDevice_ = VK_NULL_HANDLE;
 
-  VkPhysicalDeviceVulkan13Features vkFeatures13_ = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };
-  VkPhysicalDeviceVulkan12Features vkFeatures12_ = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, .pNext = &vkFeatures13_ };
-  VkPhysicalDeviceVulkan11Features vkFeatures11_ = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &vkFeatures12_ };
-  VkPhysicalDeviceFeatures2 vkFeatures10_ = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &vkFeatures11_ };
+  VkPhysicalDeviceVulkan13Features vkFeatures13_ = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
+  VkPhysicalDeviceVulkan12Features vkFeatures12_ = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+                                                    .pNext = &vkFeatures13_};
+  VkPhysicalDeviceVulkan11Features vkFeatures11_ = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
+                                                    .pNext = &vkFeatures12_};
+  VkPhysicalDeviceFeatures2 vkFeatures10_ = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &vkFeatures11_};
 
   // provided by Vulkan 1.2
-  VkPhysicalDeviceDriverProperties vkPhysicalDeviceDriverProperties_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES,
-      nullptr};
+  VkPhysicalDeviceDriverProperties vkPhysicalDeviceDriverProperties_ = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES, nullptr};
   VkPhysicalDeviceVulkan12Properties vkPhysicalDeviceVulkan12Properties_ = {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES,
       &vkPhysicalDeviceDriverProperties_,
   };
   // provided by Vulkan 1.1
-  VkPhysicalDeviceProperties2 vkPhysicalDeviceProperties2_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
-      &vkPhysicalDeviceVulkan12Properties_,
-      VkPhysicalDeviceProperties{}};
+  VkPhysicalDeviceProperties2 vkPhysicalDeviceProperties2_ = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+                                                              &vkPhysicalDeviceVulkan12Properties_,
+                                                              VkPhysicalDeviceProperties{}};
 
   std::vector<VkFormat> deviceDepthFormats_;
   std::vector<VkSurfaceFormatKHR> deviceSurfaceFormats_;
@@ -188,8 +182,7 @@ class VulkanContext final {
   VkDescriptorPool vkDPBindless_ = VK_NULL_HANDLE;
   struct BindlessDescriptorSet {
     VkDescriptorSet ds = VK_NULL_HANDLE;
-    SubmitHandle handle =
-        SubmitHandle(); // a handle of the last submit this descriptor set was a part of
+    SubmitHandle handle = SubmitHandle(); // a handle of the last submit this descriptor set was a part of
   };
   mutable std::vector<BindlessDescriptorSet> bindlessDSets_;
   mutable uint32_t currentDSetIndex_ = 0;
@@ -204,7 +197,7 @@ class VulkanContext final {
   mutable bool awaitingCreation_ = false;
   // a texture/sampler was deleted since the last descriptor set update
   mutable bool awaitingDeletion_ = false;
-    
+
   VulkanContextConfig config_;
 
   lvk::Pool<lvk::ShaderModule, lvk::vulkan::VulkanShaderModule> shaderModulesPool_;
@@ -215,8 +208,7 @@ class VulkanContext final {
   lvk::Pool<lvk::Texture, lvk::vulkan::VulkanTexture> texturesPool_;
 
   struct DeferredTask {
-    DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) :
-      task_(std::move(task)), handle_(handle) {}
+    DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) : task_(std::move(task)), handle_(handle) {}
     std::packaged_task<void()> task_;
     SubmitHandle handle_;
   };

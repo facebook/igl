@@ -14,10 +14,8 @@ uint32_t VulkanPipelineBuilder::numPipelinesCreated_ = 0;
 
 VulkanPipelineBuilder::VulkanPipelineBuilder() :
   vertexInputState_(ivkGetPipelineVertexInputStateCreateInfo_Empty()),
-  inputAssembly_(
-      ivkGetPipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE)),
-  rasterizationState_(
-      ivkGetPipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE)),
+  inputAssembly_(ivkGetPipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE)),
+  rasterizationState_(ivkGetPipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE)),
   multisampleState_(ivkGetPipelineMultisampleStateCreateInfo_Empty()),
   depthStencilState_(ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests()) {}
 
@@ -42,8 +40,7 @@ VulkanPipelineBuilder& VulkanPipelineBuilder::dynamicState(VkDynamicState state)
   return *this;
 }
 
-VulkanPipelineBuilder& VulkanPipelineBuilder::dynamicStates(
-    const std::vector<VkDynamicState>& states) {
+VulkanPipelineBuilder& VulkanPipelineBuilder::dynamicStates(const std::vector<VkDynamicState>& states) {
   dynamicStates_.insert(std::end(dynamicStates_), std::begin(states), std::end(states));
   return *this;
 }
@@ -73,20 +70,17 @@ VulkanPipelineBuilder& VulkanPipelineBuilder::polygonMode(VkPolygonMode mode) {
   return *this;
 }
 
-VulkanPipelineBuilder& VulkanPipelineBuilder::vertexInputState(
-    const VkPipelineVertexInputStateCreateInfo& state) {
+VulkanPipelineBuilder& VulkanPipelineBuilder::vertexInputState(const VkPipelineVertexInputStateCreateInfo& state) {
   vertexInputState_ = state;
   return *this;
 }
 
-VulkanPipelineBuilder& VulkanPipelineBuilder::colorBlendAttachmentStates(
-    std::vector<VkPipelineColorBlendAttachmentState>& states) {
+VulkanPipelineBuilder& VulkanPipelineBuilder::colorBlendAttachmentStates(std::vector<VkPipelineColorBlendAttachmentState>& states) {
   colorBlendAttachmentStates_ = std::move(states);
   return *this;
 }
 
-VulkanPipelineBuilder& VulkanPipelineBuilder::colorAttachmentFormats(
-    std::vector<VkFormat>& formats) {
+VulkanPipelineBuilder& VulkanPipelineBuilder::colorAttachmentFormats(std::vector<VkFormat>& formats) {
   colorAttachmentFormats_ = std::move(formats);
   return *this;
 }
@@ -106,8 +100,7 @@ VulkanPipelineBuilder& VulkanPipelineBuilder::shaderStage(VkPipelineShaderStageC
   return *this;
 }
 
-VulkanPipelineBuilder& VulkanPipelineBuilder::shaderStages(
-    const std::vector<VkPipelineShaderStageCreateInfo>& stages) {
+VulkanPipelineBuilder& VulkanPipelineBuilder::shaderStages(const std::vector<VkPipelineShaderStageCreateInfo>& stages) {
   shaderStages_.insert(std::end(shaderStages_), std::begin(stages), std::end(stages));
   return *this;
 }
@@ -142,11 +135,9 @@ VkResult VulkanPipelineBuilder::build(VkDevice device,
   const VkPipelineDynamicStateCreateInfo dynamicState =
       ivkGetPipelineDynamicStateCreateInfo((uint32_t)dynamicStates_.size(), dynamicStates_.data());
   // viewport and scissor are always dynamic
-  const VkPipelineViewportStateCreateInfo viewportState =
-      ivkGetPipelineViewportStateCreateInfo(nullptr, nullptr);
+  const VkPipelineViewportStateCreateInfo viewportState = ivkGetPipelineViewportStateCreateInfo(nullptr, nullptr);
   const VkPipelineColorBlendStateCreateInfo colorBlendState =
-      ivkGetPipelineColorBlendStateCreateInfo(uint32_t(colorBlendAttachmentStates_.size()),
-                                              colorBlendAttachmentStates_.data());
+      ivkGetPipelineColorBlendStateCreateInfo(uint32_t(colorBlendAttachmentStates_.size()), colorBlendAttachmentStates_.data());
 
   IGL_ASSERT(colorAttachmentFormats_.size() == colorBlendAttachmentStates_.size());
 
@@ -181,8 +172,7 @@ VkResult VulkanPipelineBuilder::build(VkDevice device,
       .basePipelineIndex = -1,
   };
 
-  const auto result =
-      vkCreateGraphicsPipelines(device, pipelineCache, 1, &ci, nullptr, outPipeline);
+  const auto result = vkCreateGraphicsPipelines(device, pipelineCache, 1, &ci, nullptr, outPipeline);
 
   if (!IGL_VERIFY(result == VK_SUCCESS)) {
     return result;

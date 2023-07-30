@@ -15,8 +15,7 @@
 
 namespace lvk::vulkan {
 
-CommandBuffer::CommandBuffer(VulkanContext* ctx) :
-  ctx_(ctx), wrapper_(&ctx_->immediate_->acquire()) {}
+CommandBuffer::CommandBuffer(VulkanContext* ctx) : ctx_(ctx), wrapper_(&ctx_->immediate_->acquire()) {}
 
 CommandBuffer::~CommandBuffer() {
   IGL_ASSERT(!isRendering_); // did you forget to call cmdEndRendering()?
@@ -35,14 +34,12 @@ void transitionColorAttachment(VkCommandBuffer buffer, lvk::vulkan::VulkanTextur
     return;
   }
   IGL_ASSERT_MSG(colorImg.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
-  colorImg.transitionLayout(
-      buffer,
-      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for all subsequent fragment/compute shaders
-      VkImageSubresourceRange{
-          VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+  colorImg.transitionLayout(buffer,
+                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for all subsequent
+                                                                                                          // fragment/compute shaders
+                            VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
 }
 
 VkAttachmentLoadOp loadOpToVkAttachmentLoadOp(lvk::LoadOp a) {
@@ -142,18 +139,16 @@ void CommandBuffer ::transitionToShaderReadOnly(TextureHandle handle) const {
   // transition only non-multisampled images - MSAA images cannot be accessed from shaders
   if (img->samples_ == VK_SAMPLE_COUNT_1_BIT) {
     const VkImageAspectFlags flags = tex.image_->getImageAspectFlags();
-    const VkPipelineStageFlags srcStage =
-        lvk::vulkan::isDepthOrStencilVkFormat(tex.image_->imageFormat_)
-            ? VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
-            : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    const VkPipelineStageFlags srcStage = lvk::vulkan::isDepthOrStencilVkFormat(tex.image_->imageFormat_)
+                                              ? VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
+                                              : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     // set the result of the previous render pass
-    img->transitionLayout(
-        wrapper_->cmdBuf_,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        srcStage,
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for subsequent fragment/compute shaders
-        VkImageSubresourceRange{flags, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+    img->transitionLayout(wrapper_->cmdBuf_,
+                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                          srcStage,
+                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for subsequent
+                                                                                                        // fragment/compute shaders
+                          VkImageSubresourceRange{flags, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
   }
 }
 
@@ -178,8 +173,7 @@ void CommandBuffer::cmdBindComputePipeline(lvk::ComputePipelineHandle handle) {
   }
 }
 
-void CommandBuffer::cmdDispatchThreadGroups(const Dimensions& threadgroupCount,
-                                            const Dependencies& deps) {
+void CommandBuffer::cmdDispatchThreadGroups(const Dimensions& threadgroupCount, const Dependencies& deps) {
   IGL_ASSERT(!isRendering_);
 
   for (uint32_t i = 0; i != Dependencies::IGL_MAX_SUBMIT_DEPENDENCIES && deps.textures[i]; i++) {
@@ -189,8 +183,7 @@ void CommandBuffer::cmdDispatchThreadGroups(const Dimensions& threadgroupCount,
   ctx_->checkAndUpdateDescriptorSets();
   ctx_->bindDefaultDescriptorSets(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE);
 
-  vkCmdDispatch(
-      wrapper_->cmdBuf_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
+  vkCmdDispatch(wrapper_->cmdBuf_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
 }
 
 void CommandBuffer::cmdPushDebugGroupLabel(const char* label, const lvk::Color& color) const {
@@ -222,20 +215,17 @@ void CommandBuffer::useComputeTexture(TextureHandle handle) {
 
   // "frame graph" heuristics: if we are already in VK_IMAGE_LAYOUT_GENERAL, wait for the previous
   // compute shader
-  const VkPipelineStageFlags srcStage = (vkImage.imageLayout_ == VK_IMAGE_LAYOUT_GENERAL)
-                                            ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-                                            : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+  const VkPipelineStageFlags srcStage = (vkImage.imageLayout_ == VK_IMAGE_LAYOUT_GENERAL) ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+                                                                                          : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
   vkImage.transitionLayout(
       wrapper_->cmdBuf_,
       VK_IMAGE_LAYOUT_GENERAL,
       srcStage,
       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-      VkImageSubresourceRange{
-          vkImage.getImageAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+      VkImageSubresourceRange{vkImage.getImageAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
 }
 
-void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
-                                      const lvk::Framebuffer& fb) {
+void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const lvk::Framebuffer& fb) {
   IGL_PROFILER_FUNCTION();
 
   IGL_ASSERT(!isRendering_);
@@ -266,16 +256,14 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
   if (depthTex) {
     const lvk::vulkan::VulkanTexture& vkDepthTex = *ctx_->texturesPool_.get(depthTex);
     const lvk::vulkan::VulkanImage* depthImg = vkDepthTex.image_.get();
-    IGL_ASSERT_MSG(depthImg->imageFormat_ != VK_FORMAT_UNDEFINED,
-                   "Invalid depth attachment format");
+    IGL_ASSERT_MSG(depthImg->imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid depth attachment format");
     const VkImageAspectFlags flags = vkDepthTex.image_->getImageAspectFlags();
-    depthImg->transitionLayout(
-        wrapper_->cmdBuf_,
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // wait for all subsequent
-                                           // operations
-        VkImageSubresourceRange{flags, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+    depthImg->transitionLayout(wrapper_->cmdBuf_,
+                               VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                               VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // wait for all subsequent
+                                                                  // operations
+                               VkImageSubresourceRange{flags, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
   }
 
   VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
@@ -295,8 +283,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
     const lvk::vulkan::VulkanTexture& colorTexture = *ctx_->texturesPool_.get(attachment.texture);
     const auto& descColor = renderPass.color[i];
     if (mipLevel && descColor.level) {
-      IGL_ASSERT_MSG(descColor.level == mipLevel,
-                     "All color attachments should have the same mip-level");
+      IGL_ASSERT_MSG(descColor.level == mipLevel, "All color attachments should have the same mip-level");
     }
     const lvk::Dimensions dim = colorTexture.getDimensions();
     if (fbWidth) {
@@ -319,18 +306,13 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
         .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .loadOp = loadOpToVkAttachmentLoadOp(descColor.loadOp),
         .storeOp = storeOpToVkAttachmentStoreOp(descColor.storeOp),
-        .clearValue = ivkGetClearColorValue(descColor.clearColor.r,
-                                            descColor.clearColor.g,
-                                            descColor.clearColor.b,
-                                            descColor.clearColor.a),
+        .clearValue = ivkGetClearColorValue(descColor.clearColor.r, descColor.clearColor.g, descColor.clearColor.b, descColor.clearColor.a),
     };
     // handle MSAA
     if (descColor.storeOp == StoreOp_MsaaResolve) {
       IGL_ASSERT(samples > 1);
-      IGL_ASSERT_MSG(!attachment.resolveTexture.empty(),
-                     "Framebuffer attachment should contain a resolve texture");
-      const lvk::vulkan::VulkanTexture& colorResolveTexture =
-          *ctx_->texturesPool_.get(attachment.resolveTexture);
+      IGL_ASSERT_MSG(!attachment.resolveTexture.empty(), "Framebuffer attachment should contain a resolve texture");
+      const lvk::vulkan::VulkanTexture& colorResolveTexture = *ctx_->texturesPool_.get(attachment.resolveTexture);
       colorAttachments[i].resolveImageView = colorResolveTexture.getVkImageViewForFramebuffer(0);
       colorAttachments[i].resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
@@ -341,8 +323,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
   if (fb.depthStencil.texture) {
     const auto& depthTexture = *ctx_->texturesPool_.get(fb.depthStencil.texture);
     const auto& descDepth = renderPass.depth;
-    IGL_ASSERT_MSG(descDepth.level == mipLevel,
-                   "Depth attachment should have the same mip-level as color attachments");
+    IGL_ASSERT_MSG(descDepth.level == mipLevel, "Depth attachment should have the same mip-level as color attachments");
     depthAttachment = {
         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .pNext = nullptr,
@@ -380,8 +361,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass,
       .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
       .pNext = nullptr,
       .flags = 0,
-      .renderArea = {VkOffset2D{(int32_t)scissor.x, (int32_t)scissor.y},
-                     VkExtent2D{scissor.width, scissor.height}},
+      .renderArea = {VkOffset2D{(int32_t)scissor.x, (int32_t)scissor.y}, VkExtent2D{scissor.width, scissor.height}},
       .layerCount = 1,
       .viewMask = 0,
       .colorAttachmentCount = numFbColorAttachments,
@@ -516,15 +496,12 @@ void CommandBuffer::cmdPushConstants(const void* data, size_t size, size_t offse
   // check push constant size is within max size
   const VkPhysicalDeviceLimits& limits = ctx_->getVkPhysicalDeviceProperties().limits;
   if (!IGL_VERIFY(size + offset <= limits.maxPushConstantsSize)) {
-    LLOGW("Push constants size exceeded %u (max %u bytes)",
-          size + offset,
-          limits.maxPushConstantsSize);
+    LLOGW("Push constants size exceeded %u (max %u bytes)", size + offset, limits.maxPushConstantsSize);
   }
 
   vkCmdPushConstants(wrapper_->cmdBuf_,
                      ctx_->vkPipelineLayout_,
-                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
-                         VK_SHADER_STAGE_COMPUTE_BIT,
+                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
                      (uint32_t)offset,
                      (uint32_t)size,
                      data);
@@ -594,11 +571,8 @@ void CommandBuffer::cmdDrawIndirect(PrimitiveType primitiveType,
 
   lvk::vulkan::VulkanBuffer* bufIndirect = ctx_->buffersPool_.get(indirectBuffer);
 
-  vkCmdDrawIndirect(wrapper_->cmdBuf_,
-                    bufIndirect->getVkBuffer(),
-                    indirectBufferOffset,
-                    drawCount,
-                    stride ? stride : sizeof(VkDrawIndirectCommand));
+  vkCmdDrawIndirect(
+      wrapper_->cmdBuf_, bufIndirect->getVkBuffer(), indirectBufferOffset, drawCount, stride ? stride : sizeof(VkDrawIndirectCommand));
 }
 
 void CommandBuffer::cmdDrawIndexedIndirect(PrimitiveType primitiveType,

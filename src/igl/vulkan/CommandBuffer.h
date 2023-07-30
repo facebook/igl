@@ -27,15 +27,13 @@ class CommandBuffer final : public ICommandBuffer {
   void transitionToShaderReadOnly(TextureHandle surface) const override;
 
   void cmdBindComputePipeline(lvk::ComputePipelineHandle handle) override;
-  void cmdDispatchThreadGroups(const Dimensions& threadgroupCount,
-                               const Dependencies& deps) override;
+  void cmdDispatchThreadGroups(const Dimensions& threadgroupCount, const Dependencies& deps) override;
 
   void cmdPushDebugGroupLabel(const char* label, const lvk::Color& color) const override;
   void cmdInsertDebugEventLabel(const char* label, const lvk::Color& color) const override;
   void cmdPopDebugGroupLabel() const override;
 
-  void cmdBeginRendering(const lvk::RenderPass& renderPass,
-                         const lvk::Framebuffer& desc) override;
+  void cmdBeginRendering(const lvk::RenderPass& renderPass, const lvk::Framebuffer& desc) override;
   void cmdEndRendering() override;
 
   void cmdBindViewport(const Viewport& viewport) override;

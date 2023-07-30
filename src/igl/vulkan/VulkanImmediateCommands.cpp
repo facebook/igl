@@ -15,9 +15,7 @@
 namespace lvk {
 namespace vulkan {
 
-VulkanImmediateCommands::VulkanImmediateCommands(VkDevice device,
-                                                 uint32_t queueFamilyIndex,
-                                                 const char* debugName) :
+VulkanImmediateCommands::VulkanImmediateCommands(VkDevice device, uint32_t queueFamilyIndex, const char* debugName) :
   device_(device), queueFamilyIndex_(queueFamilyIndex), debugName_(debugName) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
@@ -25,8 +23,7 @@ VulkanImmediateCommands::VulkanImmediateCommands(VkDevice device,
 
   const VkCommandPoolCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-      .flags =
-          VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
+      .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
       .queueFamilyIndex = queueFamilyIndex,
   };
   VK_ASSERT(vkCreateCommandPool(device, &ci, nullptr, &commandPool_));
@@ -148,8 +145,7 @@ void VulkanImmediateCommands::wait(const SubmitHandle handle) {
     return;
   }
 
-  VK_ASSERT(
-      vkWaitForFences(device_, 1, &buffers_[handle.bufferIndex_].fence_, VK_TRUE, UINT64_MAX));
+  VK_ASSERT(vkWaitForFences(device_, 1, &buffers_[handle.bufferIndex_].fence_, VK_TRUE, UINT64_MAX));
 
   purge();
 }
@@ -204,14 +200,12 @@ bool VulkanImmediateCommands::isReady(const SubmitHandle handle, bool fastCheckN
   return vkWaitForFences(device_, 1, &buf.fence_, VK_TRUE, 0) == VK_SUCCESS;
 }
 
-VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
-    const CommandBufferWrapper& wrapper) {
+VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(const CommandBufferWrapper& wrapper) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
   IGL_ASSERT(wrapper.isEncoding_);
   VK_ASSERT(vkEndCommandBuffer(wrapper.cmdBuf_));
 
-  const VkPipelineStageFlags waitStageMasks[] = {VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                                 VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
+  const VkPipelineStageFlags waitStageMasks[] = {VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
   VkSemaphore waitSemaphores[] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
   uint32_t numWaitSemaphores = 0;
   if (waitSemaphore_) {

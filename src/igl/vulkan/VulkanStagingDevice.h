@@ -39,11 +39,7 @@ class VulkanStagingDevice final {
                    uint32_t numLayers,
                    VkFormat format,
                    const void* data[]);
-  void imageData3D(VulkanImage& image,
-                   const VkOffset3D& offset,
-                   const VkExtent3D& extent,
-                   VkFormat format,
-                   const void* data);
+  void imageData3D(VulkanImage& image, const VkOffset3D& offset, const VkExtent3D& extent, VkFormat format, const void* data);
   void getImageData2D(VkImage srcImage,
                       const uint32_t level,
                       const uint32_t layer,

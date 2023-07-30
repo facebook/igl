@@ -100,25 +100,15 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   IGL_ASSERT(extent.height > 0);
   IGL_ASSERT(extent.depth > 0);
 
-  const VkImageCreateInfo ci = ivkGetImageCreateInfo(
-      type, imageFormat_, tiling, usageFlags, extent_, levels_, layers_, createFlags, samples);
+  const VkImageCreateInfo ci =
+      ivkGetImageCreateInfo(type, imageFormat_, tiling, usageFlags, extent_, levels_, layers_, createFlags, samples);
 
   if (IGL_VULKAN_USE_VMA) {
-    vmaAllocInfo_.usage = memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
-                              ? VMA_MEMORY_USAGE_CPU_TO_GPU
-                              : VMA_MEMORY_USAGE_AUTO;
-    VkResult result = vmaCreateImage((VmaAllocator)ctx_.getVmaAllocator(),
-                                     &ci,
-                                     &vmaAllocInfo_,
-                                     &vkImage_,
-                                     &vmaAllocation_,
-                                     nullptr);
+    vmaAllocInfo_.usage = memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT ? VMA_MEMORY_USAGE_CPU_TO_GPU : VMA_MEMORY_USAGE_AUTO;
+    VkResult result = vmaCreateImage((VmaAllocator)ctx_.getVmaAllocator(), &ci, &vmaAllocInfo_, &vkImage_, &vmaAllocation_, nullptr);
 
     if (!IGL_VERIFY(result == VK_SUCCESS)) {
-      LLOGW("failed: error result: %d, memflags: %d,  imageformat: %d\n",
-            result,
-            memFlags,
-            imageFormat_);
+      LLOGW("failed: error result: %d, memflags: %d,  imageformat: %d\n", result, memFlags, imageFormat_);
     }
 
     // handle memory-mapped buffers
@@ -134,8 +124,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       VkMemoryRequirements memRequirements;
       vkGetImageMemoryRequirements(device, vkImage_, &memRequirements);
 
-      VK_ASSERT(
-          ivkAllocateMemory(physicalDevice_, device_, &memRequirements, memFlags, &vkMemory_));
+      VK_ASSERT(ivkAllocateMemory(physicalDevice_, device_, &memRequirements, memFlags, &vkMemory_));
       VK_ASSERT(vkBindImageMemory(device_, vkImage_, vkMemory_, 0));
     }
 
@@ -159,21 +148,19 @@ VulkanImage::~VulkanImage() {
       if (mappedPtr_) {
         vmaUnmapMemory((VmaAllocator)ctx_.getVmaAllocator(), vmaAllocation_);
       }
-      ctx_.deferredTask(std::packaged_task<void()>(
-          [vma = ctx_.getVmaAllocator(), image = vkImage_, allocation = vmaAllocation_]() {
-            vmaDestroyImage((VmaAllocator)vma, image, allocation);
-          }));
+      ctx_.deferredTask(std::packaged_task<void()>([vma = ctx_.getVmaAllocator(), image = vkImage_, allocation = vmaAllocation_]() {
+        vmaDestroyImage((VmaAllocator)vma, image, allocation);
+      }));
     } else {
       if (mappedPtr_) {
         vkUnmapMemory(device_, vkMemory_);
       }
-      ctx_.deferredTask(
-          std::packaged_task<void()>([device = device_, image = vkImage_, memory = vkMemory_]() {
-            vkDestroyImage(device, image, nullptr);
-            if (memory != VK_NULL_HANDLE) {
-              vkFreeMemory(device, memory, nullptr);
-            }
-          }));
+      ctx_.deferredTask(std::packaged_task<void()>([device = device_, image = vkImage_, memory = vkMemory_]() {
+        vkDestroyImage(device, image, nullptr);
+        if (memory != VK_NULL_HANDLE) {
+          vkFreeMemory(device, memory, nullptr);
+        }
+      }));
     }
   }
 }
@@ -186,17 +173,8 @@ std::shared_ptr<VulkanImageView> VulkanImage::createImageView(VkImageViewType ty
                                                               uint32_t baseLayer,
                                                               uint32_t numLayers,
                                                               const char* debugName) const {
-  return std::make_shared<VulkanImageView>(ctx_,
-                                           device_,
-                                           vkImage_,
-                                           type,
-                                           format,
-                                           aspectMask,
-                                           baseLevel,
-                                           numLevels ? numLevels : levels_,
-                                           baseLayer,
-                                           numLayers,
-                                           debugName);
+  return std::make_shared<VulkanImageView>(
+      ctx_, device_, vkImage_, type, format, aspectMask, baseLevel, numLevels ? numLevels : levels_, baseLayer, numLayers, debugName);
 }
 
 void VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,
@@ -224,8 +202,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,
   case VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT:
     break;
   default:
-    IGL_ASSERT_MSG(
-        false, "Automatic access mask deduction is not implemented (yet) for this srcStageMask");
+    IGL_ASSERT_MSG(false, "Automatic access mask deduction is not implemented (yet) for this srcStageMask");
     break;
   }
 
@@ -253,8 +230,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,
   case VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT:
     break;
   default:
-    IGL_ASSERT_MSG(
-        false, "Automatic access mask deduction is not implemented (yet) for this dstStageMask");
+    IGL_ASSERT_MSG(false, "Automatic access mask deduction is not implemented (yet) for this dstStageMask");
     break;
   }
 
@@ -275,15 +251,8 @@ void VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,
     dstAccessMask |= VK_ACCESS_TRANSFER_READ_BIT;
   }
 
-  ivkImageMemoryBarrier(commandBuffer,
-                        vkImage_,
-                        srcAccessMask,
-                        dstAccessMask,
-                        imageLayout_,
-                        newImageLayout,
-                        srcStageMask,
-                        dstStageMask,
-                        subresourceRange);
+  ivkImageMemoryBarrier(
+      commandBuffer, vkImage_, srcAccessMask, dstAccessMask, imageLayout_, newImageLayout, srcStageMask, dstStageMask, subresourceRange);
 
   imageLayout_ = newImageLayout;
 }
@@ -303,11 +272,9 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
 
   // Check if device supports downscaling for color or depth/stencil buffer based on image format
   {
-    const uint32_t formatFeatureMask =
-        (VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT);
+    const uint32_t formatFeatureMask = (VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT);
 
-    const bool hardwareDownscalingSupported =
-        ((formatProperties_.optimalTilingFeatures & formatFeatureMask) == formatFeatureMask);
+    const bool hardwareDownscalingSupported = ((formatProperties_.optimalTilingFeatures & formatFeatureMask) == formatFeatureMask);
 
     if (!IGL_VERIFY(hardwareDownscalingSupported)) {
       IGL_ASSERT_MSG(false, "Doesn't support hardware downscaling of this image format: {}");
@@ -317,23 +284,19 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
 
   // Choose linear filter for color formats if supported by the device, else use nearest filter
   // Choose nearest filter by default for depth/stencil formats
-  const VkFilter blitFilter =
-      [](bool isDepthOrStencilFormat, bool imageFilterLinear) {
-        if (isDepthOrStencilFormat) {
-          return VK_FILTER_NEAREST;
-        }
-        if (imageFilterLinear) {
-          return VK_FILTER_LINEAR;
-        }
-        return VK_FILTER_NEAREST;
-      }(isDepthFormat_ || isStencilFormat_,
-        formatProperties_.optimalTilingFeatures &
-            VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT);
+  const VkFilter blitFilter = [](bool isDepthOrStencilFormat, bool imageFilterLinear) {
+    if (isDepthOrStencilFormat) {
+      return VK_FILTER_NEAREST;
+    }
+    if (imageFilterLinear) {
+      return VK_FILTER_LINEAR;
+    }
+    return VK_FILTER_NEAREST;
+  }(isDepthFormat_ || isStencilFormat_, formatProperties_.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT);
 
   const VkImageAspectFlags imageAspectFlags = getImageAspectFlags();
 
-  ivkCmdBeginDebugUtilsLabel(
-      commandBuffer, "Generate mipmaps", lvk::Color(1.f, 0.75f, 0.f).toFloatPtr());
+  ivkCmdBeginDebugUtilsLabel(commandBuffer, "Generate mipmaps", lvk::Color(1.f, 0.75f, 0.f).toFloatPtr());
 
   const VkImageLayout originalImageLayout = imageLayout_;
 
@@ -425,14 +388,13 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
 }
 
 bool VulkanImage::isDepthFormat(VkFormat format) {
-  return (format == VK_FORMAT_D16_UNORM) || (format == VK_FORMAT_X8_D24_UNORM_PACK32) ||
-         (format == VK_FORMAT_D32_SFLOAT) || (format == VK_FORMAT_D16_UNORM_S8_UINT) ||
-         (format == VK_FORMAT_D24_UNORM_S8_UINT) || (format == VK_FORMAT_D32_SFLOAT_S8_UINT);
+  return (format == VK_FORMAT_D16_UNORM) || (format == VK_FORMAT_X8_D24_UNORM_PACK32) || (format == VK_FORMAT_D32_SFLOAT) ||
+         (format == VK_FORMAT_D16_UNORM_S8_UINT) || (format == VK_FORMAT_D24_UNORM_S8_UINT) || (format == VK_FORMAT_D32_SFLOAT_S8_UINT);
 }
 
 bool VulkanImage::isStencilFormat(VkFormat format) {
-  return (format == VK_FORMAT_S8_UINT) || (format == VK_FORMAT_D16_UNORM_S8_UINT) ||
-         (format == VK_FORMAT_D24_UNORM_S8_UINT) || (format == VK_FORMAT_D32_SFLOAT_S8_UINT);
+  return (format == VK_FORMAT_S8_UINT) || (format == VK_FORMAT_D16_UNORM_S8_UINT) || (format == VK_FORMAT_D24_UNORM_S8_UINT) ||
+         (format == VK_FORMAT_D32_SFLOAT_S8_UINT);
 }
 
 } // namespace lvk::vulkan

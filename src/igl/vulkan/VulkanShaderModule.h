@@ -32,8 +32,7 @@ class VulkanShaderModule final {
   VulkanShaderModule(const VulkanShaderModule&) = delete;
   VulkanShaderModule& operator=(const VulkanShaderModule&) = delete;
 
-  VulkanShaderModule(VulkanShaderModule&& other) :
-    device_(other.device_), entryPoint_(other.entryPoint_) {
+  VulkanShaderModule(VulkanShaderModule&& other) : device_(other.device_), entryPoint_(other.entryPoint_) {
     std::swap(vkShaderModule_, other.vkShaderModule_);
   }
 

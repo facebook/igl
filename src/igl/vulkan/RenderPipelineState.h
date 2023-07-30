@@ -88,11 +88,7 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
     return static_cast<VkCompareOp>(front ? stencilFrontCompareOp_ : stencilBackCompareOp_);
   }
 
-  void setStencilStateOps(bool front,
-                          VkStencilOp failOp,
-                          VkStencilOp passOp,
-                          VkStencilOp depthFailOp,
-                          VkCompareOp compareOp) {
+  void setStencilStateOps(bool front, VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) {
     IGL_ASSERT_MSG((failOp & 0x7) == failOp, "Invalid VkStencilOp for stencil fail.");
     IGL_ASSERT_MSG((passOp & 0x7) == passOp, "Invalid VkStencilOp for stencil pass.");
     IGL_ASSERT_MSG((depthFailOp & 0x7) == depthFailOp, "Invalid VkStencilOp for depth fail.");
@@ -154,10 +150,7 @@ class RenderPipelineState final {
   std::vector<VkVertexInputBindingDescription> vkBindings_;
   std::vector<VkVertexInputAttributeDescription> vkAttributes_;
 
-  mutable std::unordered_map<RenderPipelineDynamicState,
-                             VkPipeline,
-                             RenderPipelineDynamicState::HashFunction>
-      pipelines_;
+  mutable std::unordered_map<RenderPipelineDynamicState, VkPipeline, RenderPipelineDynamicState::HashFunction> pipelines_;
 };
 
 } // namespace vulkan

@@ -28,8 +28,7 @@ class VulkanImmediateCommands final {
     uint32_t bufferIndex_ = 0;
     uint32_t submitId_ = 0;
     SubmitHandle() = default;
-    explicit SubmitHandle(uint64_t handle) :
-      bufferIndex_(uint32_t(handle & 0xffffffff)), submitId_(uint32_t(handle >> 32)) {
+    explicit SubmitHandle(uint64_t handle) : bufferIndex_(uint32_t(handle & 0xffffffff)), submitId_(uint32_t(handle >> 32)) {
       IGL_ASSERT(submitId_);
     }
     bool empty() const {

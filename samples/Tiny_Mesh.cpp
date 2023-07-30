@@ -401,16 +401,13 @@ int main(int argc, char* argv[]) {
 
   imgui_ = std::make_unique<lvk::ImGuiRenderer>(*device_);
 
-  glfwSetCursorPosCallback(
-      window_, [](auto* window, double x, double y) { ImGui::GetIO().MousePos = ImVec2(x, y); });
+  glfwSetCursorPosCallback(window_, [](auto* window, double x, double y) { ImGui::GetIO().MousePos = ImVec2(x, y); });
   glfwSetMouseButtonCallback(window_, [](auto* window, int button, int action, int mods) {
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
-    const ImGuiMouseButton_ imguiButton =
-        (button == GLFW_MOUSE_BUTTON_LEFT)
-            ? ImGuiMouseButton_Left
-            : (button == GLFW_MOUSE_BUTTON_RIGHT ? ImGuiMouseButton_Right
-                                                 : ImGuiMouseButton_Middle);
+    const ImGuiMouseButton_ imguiButton = (button == GLFW_MOUSE_BUTTON_LEFT)
+                                              ? ImGuiMouseButton_Left
+                                              : (button == GLFW_MOUSE_BUTTON_RIGHT ? ImGuiMouseButton_Right : ImGuiMouseButton_Middle);
     ImGuiIO& io = ImGui::GetIO();
     io.MousePos = ImVec2((float)xpos, (float)ypos);
     io.MouseDown[imguiButton] = action == GLFW_PRESS;

@@ -33,10 +33,8 @@ VulkanBuffer::VulkanBuffer(VulkanContext* ctx,
     // Initialize VmaAllocation Info
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
       vmaAllocInfo_.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-      vmaAllocInfo_.preferredFlags =
-          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-      vmaAllocInfo_.flags =
-          VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+      vmaAllocInfo_.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+      vmaAllocInfo_.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
     }
     if (memFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
       vmaAllocInfo_.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -44,12 +42,7 @@ VulkanBuffer::VulkanBuffer(VulkanContext* ctx,
 
     vmaAllocInfo_.usage = VMA_MEMORY_USAGE_AUTO;
 
-    vmaCreateBuffer((VmaAllocator)ctx_->getVmaAllocator(),
-                    &ci,
-                    &vmaAllocInfo_,
-                    &vkBuffer_,
-                    &vmaAllocation_,
-                    nullptr);
+    vmaCreateBuffer((VmaAllocator)ctx_->getVmaAllocator(), &ci, &vmaAllocInfo_, &vkBuffer_, &vmaAllocation_, nullptr);
 
     // handle memory-mapped buffers
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
@@ -64,8 +57,7 @@ VulkanBuffer::VulkanBuffer(VulkanContext* ctx,
       VkMemoryRequirements requirements = {};
       vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
 
-      VK_ASSERT(ivkAllocateMemory(
-          ctx_->getVkPhysicalDevice(), device_, &requirements, memFlags, &vkMemory_));
+      VK_ASSERT(ivkAllocateMemory(ctx_->getVkPhysicalDevice(), device_, &requirements, memFlags, &vkMemory_));
       VK_ASSERT(vkBindBufferMemory(device_, vkBuffer_, vkMemory_, 0));
     }
 
@@ -82,8 +74,7 @@ VulkanBuffer::VulkanBuffer(VulkanContext* ctx,
 
   // handle shader access
   if (usageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
-    const VkBufferDeviceAddressInfo ai = {
-        VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, vkBuffer_};
+    const VkBufferDeviceAddressInfo ai = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, vkBuffer_};
     vkDeviceAddress_ = vkGetBufferDeviceAddress(device_, &ai);
     IGL_ASSERT(vkDeviceAddress_);
   }
@@ -100,19 +91,17 @@ VulkanBuffer::~VulkanBuffer() {
     if (mappedPtr_) {
       vmaUnmapMemory((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_);
     }
-    ctx_->deferredTask(std::packaged_task<void()>(
-        [vma = ctx_->getVmaAllocator(), buffer = vkBuffer_, allocation = vmaAllocation_]() {
-          vmaDestroyBuffer((VmaAllocator)vma, buffer, allocation);
-        }));
+    ctx_->deferredTask(std::packaged_task<void()>([vma = ctx_->getVmaAllocator(), buffer = vkBuffer_, allocation = vmaAllocation_]() {
+      vmaDestroyBuffer((VmaAllocator)vma, buffer, allocation);
+    }));
   } else {
     if (mappedPtr_) {
       vkUnmapMemory(device_, vkMemory_);
     }
-    ctx_->deferredTask(
-        std::packaged_task<void()>([device = device_, buffer = vkBuffer_, memory = vkMemory_]() {
-          vkDestroyBuffer(device, buffer, nullptr);
-          vkFreeMemory(device, memory, nullptr);
-        }));
+    ctx_->deferredTask(std::packaged_task<void()>([device = device_, buffer = vkBuffer_, memory = vkMemory_]() {
+      vkDestroyBuffer(device, buffer, nullptr);
+      vkFreeMemory(device, memory, nullptr);
+    }));
   }
 }
 
@@ -182,8 +171,7 @@ void VulkanBuffer::getBufferSubData(size_t offset, size_t size, void* data) {
 }
 
 void VulkanBuffer::bufferSubData(size_t offset, size_t size, const void* data) {
-  // Only mapped host-visible buffers can be uploaded this way. All other GPU buffers should use a
-  // temporary staging buffer
+  // Only mapped host-visible buffers can be uploaded this way. All other GPU buffers should use a temporary staging buffer
 
   IGL_ASSERT(mappedPtr_);
 

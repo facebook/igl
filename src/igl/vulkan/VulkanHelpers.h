@@ -58,9 +58,7 @@ VkResult ivkAllocateMemory(VkPhysicalDevice physDev,
 
 bool ivkIsHostVisibleSingleHeapMemory(VkPhysicalDevice physDev);
 
-uint32_t ivkFindMemoryType(VkPhysicalDevice physDev,
-                           uint32_t memoryTypeBits,
-                           VkMemoryPropertyFlags flags);
+uint32_t ivkFindMemoryType(VkPhysicalDevice physDev, uint32_t memoryTypeBits, VkMemoryPropertyFlags flags);
 
 VkResult ivkCreateDescriptorSetLayout(VkDevice device,
                                       uint32_t numBindings,
@@ -68,9 +66,7 @@ VkResult ivkCreateDescriptorSetLayout(VkDevice device,
                                       const VkDescriptorBindingFlags* bindingFlags,
                                       VkDescriptorSetLayout* outLayout);
 
-VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
-                                                              VkDescriptorType descriptorType,
-                                                              uint32_t descriptorCount);
+VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding, VkDescriptorType descriptorType, uint32_t descriptorCount);
 
 VkAttachmentDescription ivkGetAttachmentDescription(VkFormat format,
                                                     VkAttachmentLoadOp loadOp,
@@ -81,10 +77,7 @@ VkAttachmentDescription ivkGetAttachmentDescription(VkFormat format,
 
 VkAttachmentReference ivkGetAttachmentReference(uint32_t attachment, VkImageLayout layout);
 
-VkResult ivkAllocateDescriptorSet(VkDevice device,
-                                  VkDescriptorPool pool,
-                                  VkDescriptorSetLayout layout,
-                                  VkDescriptorSet* outDescriptorSet);
+VkResult ivkAllocateDescriptorSet(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout layout, VkDescriptorSet* outDescriptorSet);
 
 VkResult ivkCreateDescriptorPool(VkDevice device,
                                  uint32_t maxDescriptorSets,
@@ -117,47 +110,38 @@ VkImageCreateInfo ivkGetImageCreateInfo(VkImageType type,
 
 VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfo_Empty(void);
 
-VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfo(
-    uint32_t vbCount,
-    const VkVertexInputBindingDescription* bindings,
-    uint32_t vaCount,
-    const VkVertexInputAttributeDescription* attributes);
+VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfo(uint32_t vbCount,
+                                                                              const VkVertexInputBindingDescription* bindings,
+                                                                              uint32_t vaCount,
+                                                                              const VkVertexInputAttributeDescription* attributes);
 
-VkPipelineInputAssemblyStateCreateInfo ivkGetPipelineInputAssemblyStateCreateInfo(
-    VkPrimitiveTopology topology,
-    VkBool32 enablePrimitiveRestart);
+VkPipelineInputAssemblyStateCreateInfo ivkGetPipelineInputAssemblyStateCreateInfo(VkPrimitiveTopology topology,
+                                                                                  VkBool32 enablePrimitiveRestart);
 
-VkPipelineDynamicStateCreateInfo ivkGetPipelineDynamicStateCreateInfo(
-    uint32_t numDynamicStates,
-    const VkDynamicState* dynamicStates);
+VkPipelineDynamicStateCreateInfo ivkGetPipelineDynamicStateCreateInfo(uint32_t numDynamicStates, const VkDynamicState* dynamicStates);
 
-VkPipelineRasterizationStateCreateInfo ivkGetPipelineRasterizationStateCreateInfo(
-    VkPolygonMode polygonMode,
-    VkCullModeFlags cullMode);
+VkPipelineRasterizationStateCreateInfo ivkGetPipelineRasterizationStateCreateInfo(VkPolygonMode polygonMode, VkCullModeFlags cullMode);
 
 VkPipelineMultisampleStateCreateInfo ivkGetPipelineMultisampleStateCreateInfo_Empty(void);
 
-VkPipelineDepthStencilStateCreateInfo ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests(
-    void);
+VkPipelineDepthStencilStateCreateInfo ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests(void);
 
 VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentState_NoBlending(void);
 
-VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentState(
-    bool blendEnable,
-    VkBlendFactor srcColorBlendFactor,
-    VkBlendFactor dstColorBlendFactor,
-    VkBlendOp colorBlendOp,
-    VkBlendFactor srcAlphaBlendFactor,
-    VkBlendFactor dstAlphaBlendFactor,
-    VkBlendOp alphaBlendOp,
-    VkColorComponentFlags colorWriteMask);
+VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentState(bool blendEnable,
+                                                                            VkBlendFactor srcColorBlendFactor,
+                                                                            VkBlendFactor dstColorBlendFactor,
+                                                                            VkBlendOp colorBlendOp,
+                                                                            VkBlendFactor srcAlphaBlendFactor,
+                                                                            VkBlendFactor dstAlphaBlendFactor,
+                                                                            VkBlendOp alphaBlendOp,
+                                                                            VkColorComponentFlags colorWriteMask);
 
 VkPipelineColorBlendStateCreateInfo ivkGetPipelineColorBlendStateCreateInfo(
     uint32_t numAttachments,
     const VkPipelineColorBlendAttachmentState* colorBlendAttachmentStates);
 
-VkPipelineViewportStateCreateInfo ivkGetPipelineViewportStateCreateInfo(const VkViewport* viewport,
-                                                                        const VkRect2D* scissor);
+VkPipelineViewportStateCreateInfo ivkGetPipelineViewportStateCreateInfo(const VkViewport* viewport, const VkRect2D* scissor);
 
 VkImageSubresourceRange ivkGetImageSubresourceRange(VkImageAspectFlags aspectMask);
 
@@ -183,13 +167,9 @@ VkPipelineShaderStageCreateInfo ivkGetPipelineShaderStageCreateInfo(VkShaderStag
                                                                     VkShaderModule shaderModule,
                                                                     const char* entryPoint);
 
-VkImageCopy ivkGetImageCopy2D(VkOffset2D srcDstOffset,
-                              VkImageSubresourceLayers srcDstImageSubresource,
-                              const VkExtent2D imageRegion);
+VkImageCopy ivkGetImageCopy2D(VkOffset2D srcDstOffset, VkImageSubresourceLayers srcDstImageSubresource, const VkExtent2D imageRegion);
 
-VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset,
-                                          const VkRect2D imageRegion,
-                                          VkImageSubresourceLayers imageSubresource);
+VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset, const VkRect2D imageRegion, VkImageSubresourceLayers imageSubresource);
 VkBufferImageCopy ivkGetBufferImageCopy3D(uint32_t bufferOffset,
                                           const VkOffset3D offset,
                                           const VkExtent3D extent,
@@ -225,16 +205,11 @@ void ivkCmdBlitImage(VkCommandBuffer buffer,
                      VkImageSubresourceLayers dstSubresourceRange,
                      VkFilter filter);
 
-VkResult ivkSetDebugObjectName(VkDevice device,
-                               VkObjectType type,
-                               uint64_t handle,
-                               const char* name);
+VkResult ivkSetDebugObjectName(VkDevice device, VkObjectType type, uint64_t handle, const char* name);
 
 void ivkCmdBeginDebugUtilsLabel(VkCommandBuffer buffer, const char* name, const float colorRGBA[4]);
 
-void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer,
-                                 const char* name,
-                                 const float colorRGBA[4]);
+void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer, const char* name, const float colorRGBA[4]);
 
 void ivkCmdEndDebugUtilsLabel(VkCommandBuffer buffer);
 

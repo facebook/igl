@@ -14,9 +14,7 @@
 
 namespace lvk::vulkan {
 
-ComputePipelineState::ComputePipelineState(lvk::vulkan::Device* device,
-                                           const ComputePipelineDesc& desc) :
-  device_(device), desc_(desc) {}
+ComputePipelineState::ComputePipelineState(lvk::vulkan::Device* device, const ComputePipelineDesc& desc) : device_(device), desc_(desc) {}
 
 ComputePipelineState::ComputePipelineState(ComputePipelineState&& other) :
   device_(other.device_), desc_(std::move(other.desc_)), pipeline_(other.pipeline_) {
@@ -40,9 +38,7 @@ ComputePipelineState ::~ComputePipelineState() {
 
   if (pipeline_ != VK_NULL_HANDLE) {
     device_->getVulkanContext().deferredTask(std::packaged_task<void()>(
-        [device = device_->getVulkanContext().getVkDevice(), pipeline = pipeline_]() {
-          vkDestroyPipeline(device, pipeline, nullptr);
-        }));
+        [device = device_->getVulkanContext().getVkDevice(), pipeline = pipeline_]() { vkDestroyPipeline(device, pipeline, nullptr); }));
   }
 }
 
@@ -59,25 +55,21 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
 
   const VulkanContext& ctx = device_->getVulkanContext();
 
-  const VulkanShaderModule* sm =
-      ctx.shaderModulesPool_.get(desc_.shaderStages.getModule(Stage_Compute));
+  const VulkanShaderModule* sm = ctx.shaderModulesPool_.get(desc_.shaderStages.getModule(Stage_Compute));
 
   VkShaderModule vkShaderModule = sm ? sm->getVkShaderModule() : VK_NULL_HANDLE;
 
   const VkComputePipelineCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
       .flags = 0,
-      .stage = ivkGetPipelineShaderStageCreateInfo(
-          VK_SHADER_STAGE_COMPUTE_BIT, vkShaderModule, sm->getEntryPoint()),
+      .stage = ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, vkShaderModule, sm->getEntryPoint()),
       .layout = ctx.vkPipelineLayout_,
       .basePipelineHandle = VK_NULL_HANDLE,
       .basePipelineIndex = -1,
   };
-  VK_ASSERT(
-      vkCreateComputePipelines(ctx.getVkDevice(), ctx.pipelineCache_, 1, &ci, nullptr, &pipeline_));
+  VK_ASSERT(vkCreateComputePipelines(ctx.getVkDevice(), ctx.pipelineCache_, 1, &ci, nullptr, &pipeline_));
 
-  VK_ASSERT(ivkSetDebugObjectName(
-      ctx.getVkDevice(), VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline_, desc_.debugName));
+  VK_ASSERT(ivkSetDebugObjectName(ctx.getVkDevice(), VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline_, desc_.debugName));
 
   return pipeline_;
 }

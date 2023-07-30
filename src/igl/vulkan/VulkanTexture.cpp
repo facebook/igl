@@ -14,8 +14,7 @@
 
 namespace lvk::vulkan {
 
-VulkanTexture::VulkanTexture(std::shared_ptr<VulkanImage> image,
-                             std::shared_ptr<VulkanImageView> imageView) :
+VulkanTexture::VulkanTexture(std::shared_ptr<VulkanImage> image, std::shared_ptr<VulkanImageView> imageView) :
   image_(std::move(image)), imageView_(std::move(imageView)) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
@@ -42,8 +41,7 @@ VkImageView VulkanTexture::getVkImageViewForFramebuffer(uint32_t level) const {
 
   const VkImageAspectFlags flags = image_->getImageAspectFlags();
 
-  imageViewForFramebuffer_[level] = image_->createImageView(
-      VK_IMAGE_VIEW_TYPE_2D, image_->imageFormat_, flags, level, 1u, 0u, 1u);
+  imageViewForFramebuffer_[level] = image_->createImageView(VK_IMAGE_VIEW_TYPE_2D, image_->imageFormat_, flags, level, 1u, 0u, 1u);
 
   return imageViewForFramebuffer_[level]->vkImageView_;
 }

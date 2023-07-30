@@ -276,8 +276,7 @@ VkSamplerAddressMode samplerWrapModeToVkSamplerAddressMode(lvk::SamplerWrap mode
 
 } // namespace 
 
-VkSamplerCreateInfo lvk::samplerStateDescToVkSamplerCreateInfo(const lvk::SamplerStateDesc& desc,
-                                                          const VkPhysicalDeviceLimits& limits) {
+VkSamplerCreateInfo lvk::samplerStateDescToVkSamplerCreateInfo(const lvk::SamplerStateDesc& desc, const VkPhysicalDeviceLimits& limits) {
   IGL_ASSERT_MSG(desc.mipLodMax >= desc.mipLodMin,
                  "mipLodMax (%d) must be greater than or equal to mipLodMin (%d)",
                  (int)desc.mipLodMax,
@@ -306,8 +305,7 @@ VkSamplerCreateInfo lvk::samplerStateDescToVkSamplerCreateInfo(const lvk::Sample
 
   if (desc.maxAnisotropic > 1) {
     const bool isAnisotropicFilteringSupported = limits.maxSamplerAnisotropy > 1;
-    IGL_ASSERT_MSG(isAnisotropicFilteringSupported,
-                   "Anisotropic filtering is not supported by the device.");
+    IGL_ASSERT_MSG(isAnisotropicFilteringSupported, "Anisotropic filtering is not supported by the device.");
     ci.anisotropyEnable = isAnisotropicFilteringSupported ? VK_TRUE : VK_FALSE;
 
     if (limits.maxSamplerAnisotropy < desc.maxAnisotropic) {

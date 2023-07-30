@@ -31,8 +31,7 @@ class VulkanTexture final {
 
   Dimensions getDimensions() const;
   VkImageView getVkImageView() const; // all mip-levels
-  VkImageView getVkImageViewForFramebuffer(uint32_t level) const; // framebuffers can render only
-                                                                  // into 1 mip-level
+  VkImageView getVkImageViewForFramebuffer(uint32_t level) const; // framebuffers can render only into 1 mip-level
   bool isSwapchainTexture() const;
 
  public:

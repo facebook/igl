@@ -16,9 +16,7 @@ namespace lvk {
 
 class ImGuiRenderer {
  public:
-  explicit ImGuiRenderer(lvk::IDevice& device,
-                         const char* defaultFontTTF = nullptr,
-                         float fontSizePixels = 24.0f);
+  explicit ImGuiRenderer(lvk::IDevice& device, const char* defaultFontTTF = nullptr, float fontSizePixels = 24.0f);
   ~ImGuiRenderer();
 
   void beginFrame(const lvk::Framebuffer& desc);

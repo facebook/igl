@@ -1726,11 +1726,9 @@ int main(int argc, char* argv[]) {
     }
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
-    const ImGuiMouseButton_ imguiButton =
-        (button == GLFW_MOUSE_BUTTON_LEFT)
-            ? ImGuiMouseButton_Left
-            : (button == GLFW_MOUSE_BUTTON_RIGHT ? ImGuiMouseButton_Right
-                                                 : ImGuiMouseButton_Middle);
+    const ImGuiMouseButton_ imguiButton = (button == GLFW_MOUSE_BUTTON_LEFT)
+                                              ? ImGuiMouseButton_Left
+                                              : (button == GLFW_MOUSE_BUTTON_RIGHT ? ImGuiMouseButton_Right : ImGuiMouseButton_Middle);
     ImGuiIO& io = ImGui::GetIO();
     io.MousePos = ImVec2((float)xpos, (float)ypos);
     io.MouseDown[imguiButton] = action == GLFW_PRESS;
@@ -1791,8 +1789,7 @@ int main(int argc, char* argv[]) {
   });
 
   if (kEnableCompression) {
-    printf(
-        "Compressing textures... It can take a while in debug builds...(needs to be done once)\n");
+    printf("Compressing textures... It can take a while in debug builds...(needs to be done once)\n");
   }
 
   loadSkyboxTexture();
@@ -1808,9 +1805,7 @@ int main(int argc, char* argv[]) {
   createComputePipeline();
 
   imgui_ = std::make_unique<lvk::ImGuiRenderer>(
-      *device_,
-      (folderThirdParty + "3D-Graphics-Rendering-Cookbook/data/OpenSans-Light.ttf").c_str(),
-     float(height_) / 70.0f );
+      *device_, (folderThirdParty + "3D-Graphics-Rendering-Cookbook/data/OpenSans-Light.ttf").c_str(), float(height_) / 70.0f);
 
   double prevTime = glfwGetTime();
 
@@ -1839,18 +1834,15 @@ int main(int argc, char* argv[]) {
 
       if (uint32_t num = remainingMaterialsToLoad_.load(std::memory_order_acquire)) {
         ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::Begin(
-            "Loading...", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoInputs);
-        ImGui::ProgressBar(1.0f - float(num) / cachedMaterials_.size(),
-                           ImVec2(ImGui::GetIO().DisplaySize.x, 32));
+        ImGui::Begin("Loading...", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoInputs);
+        ImGui::ProgressBar(1.0f - float(num) / cachedMaterials_.size(), ImVec2(ImGui::GetIO().DisplaySize.x, 32));
         ImGui::End();
       }
       // a nice FPS counter
       {
-        const ImGuiWindowFlags flags =
-            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
-            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
-            ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove;
+        const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+                                       ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
+                                       ImGuiWindowFlags_NoMove;
         const ImGuiViewport* v = ImGui::GetMainViewport();
         IGL_ASSERT(v);
         ImGui::SetNextWindowPos(

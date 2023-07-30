@@ -36,10 +36,8 @@ class VulkanPipelineBuilder final {
   VulkanPipelineBuilder& frontFace(VkFrontFace mode);
   VulkanPipelineBuilder& polygonMode(VkPolygonMode mode);
   VulkanPipelineBuilder& vertexInputState(const VkPipelineVertexInputStateCreateInfo& state);
-  VulkanPipelineBuilder& colorBlendAttachmentStates(
-      std::vector<VkPipelineColorBlendAttachmentState>& states);
-  VulkanPipelineBuilder& colorAttachmentFormats(
-      std::vector<VkFormat>& formats);
+  VulkanPipelineBuilder& colorBlendAttachmentStates(std::vector<VkPipelineColorBlendAttachmentState>& states);
+  VulkanPipelineBuilder& colorAttachmentFormats(std::vector<VkFormat>& formats);
   VulkanPipelineBuilder& depthAttachmentFormat(VkFormat format);
   VulkanPipelineBuilder& stencilAttachmentFormat(VkFormat format);
 
@@ -56,7 +54,7 @@ class VulkanPipelineBuilder final {
  private:
   std::vector<VkDynamicState> dynamicStates_;
   std::vector<VkPipelineShaderStageCreateInfo> shaderStages_;
-  
+
   VkPipelineVertexInputStateCreateInfo vertexInputState_;
   VkPipelineInputAssemblyStateCreateInfo inputAssembly_;
   VkPipelineRasterizationStateCreateInfo rasterizationState_;

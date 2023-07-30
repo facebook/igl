@@ -29,23 +29,16 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   VK_ASSERT(ivkCreateImageView(
-      device_,
-      image,
-      type,
-      format,
-      VkImageSubresourceRange{aspectMask, baseLevel, numLevels, baseLayer, numLayers},
-      &vkImageView_));
+      device_, image, type, format, VkImageSubresourceRange{aspectMask, baseLevel, numLevels, baseLayer, numLayers}, &vkImageView_));
 
-  VK_ASSERT(
-      ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vkImageView_, debugName));
+  VK_ASSERT(ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vkImageView_, debugName));
 }
 
 VulkanImageView::~VulkanImageView() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
-  ctx_.deferredTask(std::packaged_task<void()>([device = device_, imageView = vkImageView_]() {
-    vkDestroyImageView(device, imageView, nullptr);
-  }));
+  ctx_.deferredTask(
+      std::packaged_task<void()>([device = device_, imageView = vkImageView_]() { vkDestroyImageView(device, imageView, nullptr); }));
 }
 
 } // namespace vulkan

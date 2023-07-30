@@ -46,28 +46,22 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
 
   bufferCapacity_ = stagingBufferSize_;
 
-  stagingBuffer_ =
-      ctx_.createBuffer(stagingBufferSize_,
-                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                        nullptr,
-                        "Buffer: staging buffer");
+  stagingBuffer_ = ctx_.createBuffer(stagingBufferSize_,
+                                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                                     nullptr,
+                                     "Buffer: staging buffer");
   IGL_ASSERT(!stagingBuffer_.empty());
 
   immediate_ = std::make_unique<lvk::vulkan::VulkanImmediateCommands>(
-      ctx_.getVkDevice(),
-      ctx_.deviceQueues_.graphicsQueueFamilyIndex,
-      "VulkanStagingDevice::immediate_");
+      ctx_.getVkDevice(), ctx_.deviceQueues_.graphicsQueueFamilyIndex, "VulkanStagingDevice::immediate_");
 }
 
 VulkanStagingDevice::~VulkanStagingDevice() {
   ctx_.buffersPool_.destroy(stagingBuffer_);
 }
 
-void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
-                                        size_t dstOffset,
-                                        size_t size,
-                                        const void* data) {
+void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer, size_t dstOffset, size_t size, const void* data) {
   IGL_PROFILER_FUNCTION();
   if (buffer.isMapped()) {
     buffer.bufferSubData(dstOffset, size, data);
@@ -101,10 +95,7 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
   }
 }
 
-void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
-                                           size_t srcOffset,
-                                           size_t size,
-                                           void* data) {
+void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer, size_t srcOffset, size_t size, void* data) {
   IGL_PROFILER_FUNCTION();
   if (buffer.isMapped()) {
     buffer.getBufferSubData(srcOffset, size, data);
@@ -165,18 +156,16 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
 
   const Format texFormat(vkFormatToTextureFormat(format));
 
-  IGL_ASSERT_MSG(
-      imageRegion.offset.x == 0 && imageRegion.offset.y == 0 && imageRegion.extent.width == width &&
-          imageRegion.extent.height == height,
+  IGL_ASSERT_MSG(imageRegion.offset.x == 0 && imageRegion.offset.y == 0 && imageRegion.extent.width == width &&
+                     imageRegion.extent.height == height,
 
-      "Uploading mip levels with an image region that is smaller than the base mip level is "
-      "not supported");
+                 "Uploading mip levels with an image region that is smaller than the base mip level is "
+                 "not supported");
 
   // find the storage size for all mip-levels being uploaded
   uint32_t layarStorageSize = 0;
   for (uint32_t i = 0; i < numMipLevels; ++i) {
-    const uint32_t mipSize =
-        lvk::getTextureBytesPerLayer(image.extent_.width, image.extent_.height, texFormat, i);
+    const uint32_t mipSize = lvk::getTextureBytesPerLayer(image.extent_.width, image.extent_.height, texFormat, i);
 
     layarStorageSize += mipSize;
     mipSizes[i] = mipSize;
@@ -203,8 +192,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
 
   for (uint32_t layer = 0; layer != numLayers; layer++) {
     // copy the pixel data into the host visible staging buffer
-    stagingBuffer->bufferSubData(
-        desc.srcOffset_ + layer * layarStorageSize, layarStorageSize, data[layer]);
+    stagingBuffer->bufferSubData(desc.srcOffset_ + layer * layarStorageSize, layarStorageSize, data[layer]);
 
     uint32_t mipLevelOffset = 0;
 
@@ -215,16 +203,15 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
       IGL_ASSERT(mipLevel < image.levels_);
 
       // 1. Transition initial image layout into TRANSFER_DST_OPTIMAL
-      ivkImageMemoryBarrier(
-          wrapper.cmdBuf_,
-          image.getVkImage(),
-          0,
-          VK_ACCESS_TRANSFER_WRITE_BIT,
-          VK_IMAGE_LAYOUT_UNDEFINED,
-          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-          VK_PIPELINE_STAGE_TRANSFER_BIT,
-          VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, 1, layer, 1});
+      ivkImageMemoryBarrier(wrapper.cmdBuf_,
+                            image.getVkImage(),
+                            0,
+                            VK_ACCESS_TRANSFER_WRITE_BIT,
+                            VK_IMAGE_LAYOUT_UNDEFINED,
+                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                            VK_PIPELINE_STAGE_TRANSFER_BIT,
+                            VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, 1, layer, 1});
 
 #if IGL_VULKAN_PRINT_COMMANDS
       LLOGL("%p vkCmdCopyBufferToImage()\n", wrapper.cmdBuf_);
@@ -241,24 +228,19 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
           desc.srcOffset_ + layer * layarStorageSize + mipLevelOffset,
           region,
           VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, layer, 1});
-      vkCmdCopyBufferToImage(wrapper.cmdBuf_,
-                             stagingBuffer->getVkBuffer(),
-                             image.getVkImage(),
-                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                             1,
-                             &copy);
+      vkCmdCopyBufferToImage(
+          wrapper.cmdBuf_, stagingBuffer->getVkBuffer(), image.getVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
 
       // 3. Transition TRANSFER_DST_OPTIMAL into SHADER_READ_ONLY_OPTIMAL
-      ivkImageMemoryBarrier(
-          wrapper.cmdBuf_,
-          image.getVkImage(),
-          VK_ACCESS_TRANSFER_READ_BIT, // VK_ACCESS_TRANSFER_WRITE_BIT,
-          VK_ACCESS_SHADER_READ_BIT,
-          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-          VK_PIPELINE_STAGE_TRANSFER_BIT,
-          VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-          VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, 1, layer, 1});
+      ivkImageMemoryBarrier(wrapper.cmdBuf_,
+                            image.getVkImage(),
+                            VK_ACCESS_TRANSFER_READ_BIT, // VK_ACCESS_TRANSFER_WRITE_BIT,
+                            VK_ACCESS_SHADER_READ_BIT,
+                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                            VK_PIPELINE_STAGE_TRANSFER_BIT,
+                            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                            VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, 1, layer, 1});
 
       // Compute the offset for the next level
       mipLevelOffset += mipSizes[mipLevel];
@@ -278,10 +260,8 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
                                       const void* data) {
   IGL_PROFILER_FUNCTION();
   IGL_ASSERT_MSG(image.levels_ == 1, "Can handle only 3D images with exactly 1 mip-level");
-  IGL_ASSERT_MSG((offset.x == 0) && (offset.y == 0) && (offset.z == 0),
-                 "Can upload only full-size 3D images");
-  const uint32_t storageSize =
-      extent.width * extent.height * extent.depth * getBytesPerPixel(format);
+  IGL_ASSERT_MSG((offset.x == 0) && (offset.y == 0) && (offset.z == 0), "Can upload only full-size 3D images");
+  const uint32_t storageSize = extent.width * extent.height * extent.depth * getBytesPerPixel(format);
 
   IGL_ASSERT(storageSize <= stagingBufferSize_);
 
@@ -317,16 +297,8 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
 
   // 2. Copy the pixel data from the staging buffer into the image
   const VkBufferImageCopy copy =
-      ivkGetBufferImageCopy3D(desc.srcOffset_,
-                              offset,
-                              extent,
-                              VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1});
-  vkCmdCopyBufferToImage(wrapper.cmdBuf_,
-                         stagingBuffer->getVkBuffer(),
-                         image.getVkImage(),
-                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                         1,
-                         &copy);
+      ivkGetBufferImageCopy3D(desc.srcOffset_, offset, extent, VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1});
+  vkCmdCopyBufferToImage(wrapper.cmdBuf_, stagingBuffer->getVkBuffer(), image.getVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
 
   // 3. Transition TRANSFER_DST_OPTIMAL into SHADER_READ_ONLY_OPTIMAL
   ivkImageMemoryBarrier(wrapper.cmdBuf_,
@@ -357,8 +329,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   IGL_PROFILER_FUNCTION();
   IGL_ASSERT(layout != VK_IMAGE_LAYOUT_UNDEFINED);
 
-  const uint32_t storageSize =
-      imageRegion.extent.width * imageRegion.extent.height * getBytesPerPixel(format);
+  const uint32_t storageSize = imageRegion.extent.width * imageRegion.extent.height * getBytesPerPixel(format);
   IGL_ASSERT(storageSize <= stagingBufferSize_);
 
   // get next staging buffer free offset
@@ -390,15 +361,8 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
 
   // 2.  Copy the pixel data from the image into the staging buffer
   const VkBufferImageCopy copy =
-      ivkGetBufferImageCopy2D(desc.srcOffset_,
-                              imageRegion,
-                              VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, level, layer, 1});
-  vkCmdCopyImageToBuffer(wrapper1.cmdBuf_,
-                         srcImage,
-                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                         stagingBuffer->getVkBuffer(),
-                         1,
-                         &copy);
+      ivkGetBufferImageCopy2D(desc.srcOffset_, imageRegion, VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, level, layer, 1});
+  vkCmdCopyImageToBuffer(wrapper1.cmdBuf_, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, stagingBuffer->getVkBuffer(), 1, &copy);
 
   SubmitHandle fenceId = immediate_->submit(wrapper1);
   outstandingFences_[fenceId.handle()] = desc;
@@ -414,8 +378,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   uint8_t* dst = static_cast<uint8_t*>(data);
 
   if (flipImageVertical) {
-    flipBMP(
-        dst, src, imageRegion.extent.height, imageRegion.extent.width * getBytesPerPixel(format));
+    flipBMP(dst, src, imageRegion.extent.height, imageRegion.extent.width * getBytesPerPixel(format));
   } else {
     memcpy(dst, src, storageSize);
   }
@@ -499,11 +462,9 @@ void VulkanStagingDevice::flushOutstandingFences() {
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
   LLOGL("StagingDevice - Wait for Idle\n");
 #endif
-  std::for_each(outstandingFences_.begin(),
-                outstandingFences_.end(),
-                [this](std::pair<uint64_t, MemoryRegionDesc> const& pair) {
-                  immediate_->wait(SubmitHandle(pair.first));
-                });
+  std::for_each(outstandingFences_.begin(), outstandingFences_.end(), [this](std::pair<uint64_t, MemoryRegionDesc> const& pair) {
+    immediate_->wait(SubmitHandle(pair.first));
+  });
 
   outstandingFences_.clear();
   stagingBufferFrontOffset_ = 0;

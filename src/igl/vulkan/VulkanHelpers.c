@@ -145,9 +145,7 @@ bool ivkIsHostVisibleSingleHeapMemory(VkPhysicalDevice physDev) {
   return false;
 }
 
-uint32_t ivkFindMemoryType(VkPhysicalDevice physDev,
-                           uint32_t memoryTypeBits,
-                           VkMemoryPropertyFlags flags) {
+uint32_t ivkFindMemoryType(VkPhysicalDevice physDev, uint32_t memoryTypeBits, VkMemoryPropertyFlags flags) {
   VkPhysicalDeviceMemoryProperties memProperties;
   vkGetPhysicalDeviceMemoryProperties(physDev, &memProperties);
 
@@ -189,8 +187,7 @@ VkResult ivkCreateSwapchain(VkDevice device,
                             uint32_t height,
                             VkSwapchainKHR* outSwapchain) {
   assert(caps);
-  const bool isCompositeAlphaOpaqueSupported =
-      (caps->supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR) != 0;
+  const bool isCompositeAlphaOpaqueSupported = (caps->supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR) != 0;
   const VkSwapchainCreateInfoKHR ci = {
       .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
       .surface = surface,
@@ -204,8 +201,7 @@ VkResult ivkCreateSwapchain(VkDevice device,
       .queueFamilyIndexCount = 1,
       .pQueueFamilyIndices = &queueFamilyIndex,
       .preTransform = caps->currentTransform,
-      .compositeAlpha = isCompositeAlphaOpaqueSupported ? VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
-                                                        : VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
+      .compositeAlpha = isCompositeAlphaOpaqueSupported ? VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR : VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
       .presentMode = presentMode,
       .clipped = VK_TRUE,
       .oldSwapchain = VK_NULL_HANDLE,
@@ -294,15 +290,12 @@ VkAttachmentReference2 ivkGetAttachmentReferenceColor(uint32_t idx) {
   return ref;
 }
 
-VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
-                                                              VkDescriptorType descriptorType,
-                                                              uint32_t descriptorCount) {
+VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding, VkDescriptorType descriptorType, uint32_t descriptorCount) {
   const VkDescriptorSetLayoutBinding bind = {
       .binding = binding,
       .descriptorType = descriptorType,
       .descriptorCount = descriptorCount,
-      .stageFlags =
-          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+      .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
       .pImmutableSamplers = NULL,
   };
   return bind;
@@ -348,19 +341,16 @@ VkResult ivkCreateDescriptorSetLayout(VkDevice device,
   };
 
   const VkDescriptorSetLayoutCreateInfo ci = {
-    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-    .pNext = &setLayoutBindingFlagsCI,
-    .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
-    .bindingCount = numBindings,
-    .pBindings = bindings,
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .pNext = &setLayoutBindingFlagsCI,
+      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
+      .bindingCount = numBindings,
+      .pBindings = bindings,
   };
   return vkCreateDescriptorSetLayout(device, &ci, NULL, outLayout);
 }
 
-VkResult ivkAllocateDescriptorSet(VkDevice device,
-                                  VkDescriptorPool pool,
-                                  VkDescriptorSetLayout layout,
-                                  VkDescriptorSet* outDescriptorSet) {
+VkResult ivkAllocateDescriptorSet(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout layout, VkDescriptorSet* outDescriptorSet) {
   const VkDescriptorSetAllocateInfo ai = {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
       .descriptorPool = pool,
@@ -447,23 +437,20 @@ VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfo_Em
   return ivkGetPipelineVertexInputStateCreateInfo(0, NULL, 0, NULL);
 }
 
-VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfo(
-    uint32_t vbCount,
-    const VkVertexInputBindingDescription* bindings,
-    uint32_t vaCount,
-    const VkVertexInputAttributeDescription* attributes) {
-  const VkPipelineVertexInputStateCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-      .vertexBindingDescriptionCount = vbCount,
-      .pVertexBindingDescriptions = bindings,
-      .vertexAttributeDescriptionCount = vaCount,
-      .pVertexAttributeDescriptions = attributes};
+VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfo(uint32_t vbCount,
+                                                                              const VkVertexInputBindingDescription* bindings,
+                                                                              uint32_t vaCount,
+                                                                              const VkVertexInputAttributeDescription* attributes) {
+  const VkPipelineVertexInputStateCreateInfo ci = {.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+                                                   .vertexBindingDescriptionCount = vbCount,
+                                                   .pVertexBindingDescriptions = bindings,
+                                                   .vertexAttributeDescriptionCount = vaCount,
+                                                   .pVertexAttributeDescriptions = attributes};
   return ci;
 }
 
-VkPipelineInputAssemblyStateCreateInfo ivkGetPipelineInputAssemblyStateCreateInfo(
-    VkPrimitiveTopology topology,
-    VkBool32 enablePrimitiveRestart) {
+VkPipelineInputAssemblyStateCreateInfo ivkGetPipelineInputAssemblyStateCreateInfo(VkPrimitiveTopology topology,
+                                                                                  VkBool32 enablePrimitiveRestart) {
   const VkPipelineInputAssemblyStateCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
       .flags = 0,
@@ -473,9 +460,7 @@ VkPipelineInputAssemblyStateCreateInfo ivkGetPipelineInputAssemblyStateCreateInf
   return ci;
 }
 
-VkPipelineDynamicStateCreateInfo ivkGetPipelineDynamicStateCreateInfo(
-    uint32_t numDynamicStates,
-    const VkDynamicState* dynamicStates) {
+VkPipelineDynamicStateCreateInfo ivkGetPipelineDynamicStateCreateInfo(uint32_t numDynamicStates, const VkDynamicState* dynamicStates) {
   const VkPipelineDynamicStateCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
       .dynamicStateCount = numDynamicStates,
@@ -484,8 +469,7 @@ VkPipelineDynamicStateCreateInfo ivkGetPipelineDynamicStateCreateInfo(
   return ci;
 }
 
-VkPipelineViewportStateCreateInfo ivkGetPipelineViewportStateCreateInfo(const VkViewport* viewport,
-                                                                        const VkRect2D* scissor) {
+VkPipelineViewportStateCreateInfo ivkGetPipelineViewportStateCreateInfo(const VkViewport* viewport, const VkRect2D* scissor) {
   // viewport and scissor can be NULL if the viewport state is dynamic
   // https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/VkPipelineViewportStateCreateInfo.html
   const VkPipelineViewportStateCreateInfo ci = {
@@ -498,9 +482,8 @@ VkPipelineViewportStateCreateInfo ivkGetPipelineViewportStateCreateInfo(const Vk
   return ci;
 }
 
-VkPipelineRasterizationStateCreateInfo ivkGetPipelineRasterizationStateCreateInfo(
-    VkPolygonMode polygonMode,
-    VkCullModeFlags cullModeFlags) {
+VkPipelineRasterizationStateCreateInfo ivkGetPipelineRasterizationStateCreateInfo(VkPolygonMode polygonMode,
+                                                                                  VkCullModeFlags cullModeFlags) {
   const VkPipelineRasterizationStateCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
       .flags = 0,
@@ -532,8 +515,7 @@ VkPipelineMultisampleStateCreateInfo ivkGetPipelineMultisampleStateCreateInfo_Em
   return ci;
 }
 
-VkPipelineDepthStencilStateCreateInfo ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests(
-    void) {
+VkPipelineDepthStencilStateCreateInfo ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests(void) {
   const VkPipelineDepthStencilStateCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
       .pNext = NULL,
@@ -578,21 +560,19 @@ VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentState_NoBl
       .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
       .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
       .alphaBlendOp = VK_BLEND_OP_ADD,
-      .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+      .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
   };
   return state;
 }
 
-VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentState(
-    bool blendEnable,
-    VkBlendFactor srcColorBlendFactor,
-    VkBlendFactor dstColorBlendFactor,
-    VkBlendOp colorBlendOp,
-    VkBlendFactor srcAlphaBlendFactor,
-    VkBlendFactor dstAlphaBlendFactor,
-    VkBlendOp alphaBlendOp,
-    VkColorComponentFlags colorWriteMask) {
+VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentState(bool blendEnable,
+                                                                            VkBlendFactor srcColorBlendFactor,
+                                                                            VkBlendFactor dstColorBlendFactor,
+                                                                            VkBlendOp colorBlendOp,
+                                                                            VkBlendFactor srcAlphaBlendFactor,
+                                                                            VkBlendFactor dstAlphaBlendFactor,
+                                                                            VkBlendOp alphaBlendOp,
+                                                                            VkColorComponentFlags colorWriteMask) {
   const VkPipelineColorBlendAttachmentState state = {
       .blendEnable = blendEnable,
       .srcColorBlendFactor = srcColorBlendFactor,
@@ -650,12 +630,11 @@ VkWriteDescriptorSet ivkGetWriteDescriptorSet_ImageInfo(VkDescriptorSet dstSet,
   return set;
 }
 
-VkWriteDescriptorSet ivkGetWriteDescriptorSet_BufferInfo(
-    VkDescriptorSet dstSet,
-    uint32_t dstBinding,
-    VkDescriptorType descriptorType,
-    uint32_t numDescriptors,
-    const VkDescriptorBufferInfo* pBufferInfo) {
+VkWriteDescriptorSet ivkGetWriteDescriptorSet_BufferInfo(VkDescriptorSet dstSet,
+                                                         uint32_t dstBinding,
+                                                         VkDescriptorType descriptorType,
+                                                         uint32_t numDescriptors,
+                                                         const VkDescriptorBufferInfo* pBufferInfo) {
   const VkWriteDescriptorSet set = {
       .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
       .pNext = NULL,
@@ -767,10 +746,7 @@ void ivkCmdBlitImage(VkCommandBuffer buffer,
   vkCmdBlitImage(buffer, srcImage, srcImageLayout, dstImage, dstImageLayout, 1, &blit, filter);
 }
 
-VkResult ivkSetDebugObjectName(VkDevice device,
-                               VkObjectType type,
-                               uint64_t handle,
-                               const char* name) {
+VkResult ivkSetDebugObjectName(VkDevice device, VkObjectType type, uint64_t handle, const char* name) {
   if (!name || !*name) {
     return VK_SUCCESS;
   }
@@ -783,9 +759,7 @@ VkResult ivkSetDebugObjectName(VkDevice device,
   return vkSetDebugUtilsObjectNameEXT(device, &ni);
 }
 
-void ivkCmdBeginDebugUtilsLabel(VkCommandBuffer buffer,
-                                const char* name,
-                                const float colorRGBA[4]) {
+void ivkCmdBeginDebugUtilsLabel(VkCommandBuffer buffer, const char* name, const float colorRGBA[4]) {
   if (!name) {
     return;
   }
@@ -798,9 +772,7 @@ void ivkCmdBeginDebugUtilsLabel(VkCommandBuffer buffer,
   vkCmdBeginDebugUtilsLabelEXT(buffer, &label);
 }
 
-void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer,
-                                 const char* name,
-                                 const float colorRGBA[4]) {
+void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer, const char* name, const float colorRGBA[4]) {
   if (!name) {
     return;
   }
@@ -817,18 +789,14 @@ void ivkCmdEndDebugUtilsLabel(VkCommandBuffer buffer) {
   vkCmdEndDebugUtilsLabelEXT(buffer);
 }
 
-VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset,
-                                          const VkRect2D imageRegion,
-                                          VkImageSubresourceLayers imageSubresource) {
+VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset, const VkRect2D imageRegion, VkImageSubresourceLayers imageSubresource) {
   const VkBufferImageCopy copy = {
       .bufferOffset = bufferOffset,
       .bufferRowLength = 0,
       .bufferImageHeight = 0,
       .imageSubresource = imageSubresource,
       .imageOffset = {.x = imageRegion.offset.x, .y = imageRegion.offset.y, .z = 0},
-      .imageExtent = {.width = imageRegion.extent.width,
-                      .height = imageRegion.extent.height,
-                      .depth = 1u},
+      .imageExtent = {.width = imageRegion.extent.width, .height = imageRegion.extent.height, .depth = 1u},
   };
   return copy;
 }
@@ -848,9 +816,7 @@ VkBufferImageCopy ivkGetBufferImageCopy3D(uint32_t bufferOffset,
   return copy;
 }
 
-VkImageCopy ivkGetImageCopy2D(VkOffset2D srcDstOffset,
-                              VkImageSubresourceLayers srcDstImageSubresource,
-                              const VkExtent2D imageRegion) {
+VkImageCopy ivkGetImageCopy2D(VkOffset2D srcDstOffset, VkImageSubresourceLayers srcDstImageSubresource, const VkExtent2D imageRegion) {
   const VkImageCopy copy = {
       .srcSubresource = srcDstImageSubresource,
       .srcOffset = {.x = srcDstOffset.x, .y = srcDstOffset.y, .z = 0},

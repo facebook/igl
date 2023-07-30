@@ -268,14 +268,12 @@ VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(lvk::ColorSpace colorSpace, bool 
   switch (colorSpace) {
   case lvk::ColorSpace_SRGB_LINEAR:
     // the closest thing to sRGB linear
-    return VkSurfaceFormatKHR{isBGR ? VK_FORMAT_B8G8R8A8_UNORM : VK_FORMAT_R8G8B8A8_UNORM,
-                              VK_COLOR_SPACE_BT709_LINEAR_EXT};
+    return VkSurfaceFormatKHR{isBGR ? VK_FORMAT_B8G8R8A8_UNORM : VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_BT709_LINEAR_EXT};
   case lvk::ColorSpace_SRGB_NONLINEAR:
     [[fallthrough]];
   default:
     // default to normal sRGB non linear.
-    return VkSurfaceFormatKHR{isBGR ? VK_FORMAT_B8G8R8A8_SRGB : VK_FORMAT_R8G8B8A8_SRGB,
-                              VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+    return VkSurfaceFormatKHR{isBGR ? VK_FORMAT_B8G8R8A8_SRGB : VK_FORMAT_R8G8B8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
   }
 }
 

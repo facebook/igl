@@ -58,12 +58,10 @@ ImGuiRenderer::DrawableData::DrawableData(lvk::IDevice& device) {
   const size_t kMaxVertexBufferSize = kMaxVertices * sizeof(ImDrawVert);
   const size_t kMaxIndexBufferSize = kMaxVertices * sizeof(ImDrawIdx);
 
-  const lvk::BufferDesc vbDesc = {.usage = lvk::BufferUsageBits_Vertex,
-                                  .storage = lvk::StorageType_HostVisible,
-                                  .size = kMaxVertexBufferSize};
-  const lvk::BufferDesc ibDesc = {.usage = lvk::BufferUsageBits_Index,
-                                  .storage = lvk::StorageType_HostVisible,
-                                  .size = kMaxIndexBufferSize};
+  const lvk::BufferDesc vbDesc = {
+      .usage = lvk::BufferUsageBits_Vertex, .storage = lvk::StorageType_HostVisible, .size = kMaxVertexBufferSize};
+  const lvk::BufferDesc ibDesc = {
+      .usage = lvk::BufferUsageBits_Index, .storage = lvk::StorageType_HostVisible, .size = kMaxIndexBufferSize};
   vb_ = device.createBuffer(vbDesc, nullptr);
   ib_ = device.createBuffer(ibDesc, nullptr);
 }
@@ -71,29 +69,18 @@ ImGuiRenderer::DrawableData::DrawableData(lvk::IDevice& device) {
 lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(const lvk::Framebuffer& desc) {
   return device_.createRenderPipeline(
       {
-          .vertexInput = {.attributes = {{.location = 0,
-                                          .format = lvk::VertexFormat::Float2,
-                                          .offset = offsetof(ImDrawVert, pos)},
-                                         {.location = 1,
-                                          .format = lvk::VertexFormat::Float2,
-                                          .offset = offsetof(ImDrawVert, uv)},
-                                         {.location = 2,
-                                          .format = lvk::VertexFormat::UByte4Norm,
-                                          .offset = offsetof(ImDrawVert, col)}},
+          .vertexInput = {.attributes = {{.location = 0, .format = lvk::VertexFormat::Float2, .offset = offsetof(ImDrawVert, pos)},
+                                         {.location = 1, .format = lvk::VertexFormat::Float2, .offset = offsetof(ImDrawVert, uv)},
+                                         {.location = 2, .format = lvk::VertexFormat::UByte4Norm, .offset = offsetof(ImDrawVert, col)}},
                           .inputBindings = {{.stride = sizeof(ImDrawVert)}}},
-          .shaderStages = device_.createShaderStages(codeVS,
-                                                     "Shader Module: imgui (vert)",
-                                                     codeFS,
-                                                     "Shader Module: imgui (frag)",
-                                                     nullptr),
+          .shaderStages = device_.createShaderStages(codeVS, "Shader Module: imgui (vert)", codeFS, "Shader Module: imgui (frag)", nullptr),
           .color = {{
               .format = device_.getFormat(desc.color[0].texture),
               .blendEnabled = true,
               .srcRGBBlendFactor = lvk::BlendFactor_SrcAlpha,
               .dstRGBBlendFactor = lvk::BlendFactor_OneMinusSrcAlpha,
           }},
-          .depthFormat = desc.depthStencil.texture ? device_.getFormat(desc.depthStencil.texture)
-                                                   : lvk::Format_Invalid,
+          .depthFormat = desc.depthStencil.texture ? device_.getFormat(desc.depthStencil.texture) : lvk::Format_Invalid,
           .cullMode = lvk::CullMode_None,
       },
       nullptr);
@@ -205,28 +192,22 @@ void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffe
     DrawableData& drawableData = curFrameDrawables[n];
 
     // Upload vertex/index buffers
-    device.upload(
-        drawableData.vb_, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-    device.upload(
-        drawableData.ib_, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+    device.upload(drawableData.vb_, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+    device.upload(drawableData.ib_, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
 
     for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++) {
       const ImDrawCmd cmd = cmd_list->CmdBuffer[cmd_i];
       IGL_ASSERT(cmd.UserCallback == nullptr);
 
-      const ImVec2 clipMin((cmd.ClipRect.x - clip_off.x) * clip_scale.x,
-                           (cmd.ClipRect.y - clip_off.y) * clip_scale.y);
-      const ImVec2 clipMax((cmd.ClipRect.z - clip_off.x) * clip_scale.x,
-                           (cmd.ClipRect.w - clip_off.y) * clip_scale.y);
+      const ImVec2 clipMin((cmd.ClipRect.x - clip_off.x) * clip_scale.x, (cmd.ClipRect.y - clip_off.y) * clip_scale.y);
+      const ImVec2 clipMax((cmd.ClipRect.z - clip_off.x) * clip_scale.x, (cmd.ClipRect.w - clip_off.y) * clip_scale.y);
 
       if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y) {
         continue;
       }
 
-      const lvk::ScissorRect rect{uint32_t(clipMin.x),
-                                  uint32_t(clipMin.y),
-                                  uint32_t(clipMax.x - clipMin.x),
-                                  uint32_t(clipMax.y - clipMin.y)};
+      const lvk::ScissorRect rect{
+          uint32_t(clipMin.x), uint32_t(clipMin.y), uint32_t(clipMax.x - clipMin.x), uint32_t(clipMax.y - clipMin.y)};
       cmdBuffer.cmdBindScissorRect(rect);
 
       if (cmd.TextureId != lastBoundTextureId) {
@@ -239,8 +220,7 @@ void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffe
       cmdBuffer.cmdBindVertexBuffer(0, drawableData.vb_, 0);
       cmdBuffer.cmdDrawIndexed(lvk::Primitive_Triangle,
                                cmd.ElemCount,
-                               sizeof(ImDrawIdx) == sizeof(uint16_t) ? lvk::IndexFormat_UI16
-                                                                     : lvk::IndexFormat_UI32,
+                               sizeof(ImDrawIdx) == sizeof(uint16_t) ? lvk::IndexFormat_UI16 : lvk::IndexFormat_UI32,
                                drawableData.ib_,
                                cmd.IdxOffset * sizeof(ImDrawIdx));
     }

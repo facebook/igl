@@ -25,15 +25,11 @@ namespace lvk {
 
 VkSemaphore createSemaphore(VkDevice device, const char* debugName);
 VkFence createFence(VkDevice device, const char* debugName);
-VmaAllocator createVmaAllocator(VkPhysicalDevice physDev,
-                                VkDevice device,
-                                VkInstance instance,
-                                uint32_t apiVersion);
+VmaAllocator createVmaAllocator(VkPhysicalDevice physDev, VkDevice device, VkInstance instance, uint32_t apiVersion);
 uint32_t findQueueFamilyIndex(VkPhysicalDevice physDev, VkQueueFlags flags);
 
 glslang_resource_t getGlslangResource(const VkPhysicalDeviceLimits& limits);
 
-VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const lvk::SamplerStateDesc& desc,
-                                                          const VkPhysicalDeviceLimits& limits);
+VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const lvk::SamplerStateDesc& desc, const VkPhysicalDeviceLimits& limits);
 
 } // namespace lvk

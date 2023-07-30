@@ -93,20 +93,17 @@ static GLFWwindow* initWindow(const char* windowTitle, int& outWidth, int& outHe
     }
   });
 
-  glfwSetErrorCallback([](int error, const char* description) {
-    printf("GLFW Error (%i): %s\n", error, description);
-  });
+  glfwSetErrorCallback([](int error, const char* description) { printf("GLFW Error (%i): %s\n", error, description); });
 
   return window;
 }
 
-static std::unique_ptr<lvk::IDevice> createVulkanDeviceWithSwapchain(
-    GLFWwindow* window,
-    uint32_t width,
-    uint32_t height,
-    const lvk::vulkan::VulkanContextConfig& cfg,
-    lvk::HWDeviceType preferredDeviceType = lvk::HWDeviceType_Discrete) {
-   using namespace lvk;
+static std::unique_ptr<lvk::IDevice> createVulkanDeviceWithSwapchain(GLFWwindow* window,
+                                                                     uint32_t width,
+                                                                     uint32_t height,
+                                                                     const lvk::vulkan::VulkanContextConfig& cfg,
+                                                                     lvk::HWDeviceType preferredDeviceType = lvk::HWDeviceType_Discrete) {
+  using namespace lvk;
 #if defined(_WIN32)
   auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetWin32Window(window));
 #elif defined(__linux__)
@@ -115,9 +112,8 @@ static std::unique_ptr<lvk::IDevice> createVulkanDeviceWithSwapchain(
 #error Unsupported OS
 #endif
 
-  std::vector<HWDeviceDesc> devices =
-      vulkan::Device::queryDevices(*ctx, preferredDeviceType, nullptr);
-  
+  std::vector<HWDeviceDesc> devices = vulkan::Device::queryDevices(*ctx, preferredDeviceType, nullptr);
+
   if (devices.empty()) {
     if (preferredDeviceType == HWDeviceType_Discrete) {
       devices = vulkan::Device::queryDevices(*ctx, HWDeviceType_Integrated, nullptr);

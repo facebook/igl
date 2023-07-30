@@ -27,22 +27,15 @@ class Device final : public IDevice {
 
   ICommandBuffer& acquireCommandBuffer() override;
 
-  void submit(const lvk::ICommandBuffer& commandBuffer,
-              lvk::QueueType queueType,
-              TextureHandle present) override;
+  void submit(const lvk::ICommandBuffer& commandBuffer, lvk::QueueType queueType, TextureHandle present) override;
 
   Holder<BufferHandle> createBuffer(const BufferDesc& desc, Result* outResult) override;
   Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc, Result* outResult) override;
-  Holder<TextureHandle> createTexture(const TextureDesc& desc,
-                                      const char* debugName,
-                                      Result* outResult) override;
+  Holder<TextureHandle> createTexture(const TextureDesc& desc, const char* debugName, Result* outResult) override;
 
-  Holder<ComputePipelineHandle> createComputePipeline(const ComputePipelineDesc& desc,
-                                                      Result* outResult) override;
-  Holder<RenderPipelineHandle> createRenderPipeline(const RenderPipelineDesc& desc,
-                                                    Result* outResult) override;
-  Holder<ShaderModuleHandle> createShaderModule(const ShaderModuleDesc& desc,
-                                                Result* outResult) override;
+  Holder<ComputePipelineHandle> createComputePipeline(const ComputePipelineDesc& desc, Result* outResult) override;
+  Holder<RenderPipelineHandle> createRenderPipeline(const RenderPipelineDesc& desc, Result* outResult) override;
+  Holder<ShaderModuleHandle> createShaderModule(const ShaderModuleDesc& desc, Result* outResult) override;
 
   void destroy(ComputePipelineHandle handle) override;
   void destroy(RenderPipelineHandle handle) override;
@@ -71,13 +64,9 @@ class Device final : public IDevice {
     return *ctx_.get();
   }
 
-  static std::unique_ptr<VulkanContext> createContext(const VulkanContextConfig& config,
-                                                      void* window,
-                                                      void* display = nullptr);
+  static std::unique_ptr<VulkanContext> createContext(const VulkanContextConfig& config, void* window, void* display = nullptr);
 
-  static std::vector<HWDeviceDesc> queryDevices(VulkanContext& ctx,
-                                                HWDeviceType deviceType,
-                                                Result* outResult = nullptr);
+  static std::vector<HWDeviceDesc> queryDevices(VulkanContext& ctx, HWDeviceType deviceType, Result* outResult = nullptr);
 
   static std::unique_ptr<IDevice> create(std::unique_ptr<VulkanContext> ctx,
                                          const HWDeviceDesc& desc,

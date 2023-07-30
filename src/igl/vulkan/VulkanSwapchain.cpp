@@ -129,32 +129,22 @@ namespace lvk {
 namespace vulkan {
 
 VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height) :
-  ctx_(ctx),
-  device_(ctx.vkDevice_),
-  graphicsQueue_(ctx.deviceQueues_.graphicsQueue),
-  width_(width),
-  height_(height) {
-  surfaceFormat_ =
-      chooseSwapSurfaceFormat(ctx.deviceSurfaceFormats_, ctx.config_.swapChainColorSpace);
+  ctx_(ctx), device_(ctx.vkDevice_), graphicsQueue_(ctx.deviceQueues_.graphicsQueue), width_(width), height_(height) {
+  surfaceFormat_ = chooseSwapSurfaceFormat(ctx.deviceSurfaceFormats_, ctx.config_.swapChainColorSpace);
 
   acquireSemaphore_ = lvk::createSemaphore(device_, "Semaphore: swapchain-acquire");
 
-  IGL_ASSERT_MSG(
-      ctx.vkSurface_ != VK_NULL_HANDLE,
-      "You are trying to create a swapchain but your OS surface is empty. Did you want to "
-      "create an offscreen rendering context? If so, set 'width' and 'height' to 0 when you "
-      "create your lvk::IDevice");
+  IGL_ASSERT_MSG(ctx.vkSurface_ != VK_NULL_HANDLE,
+                 "You are trying to create a swapchain but your OS surface is empty. Did you want to "
+                 "create an offscreen rendering context? If so, set 'width' and 'height' to 0 when you "
+                 "create your lvk::IDevice");
 
   VkBool32 queueFamilySupportsPresentation = VK_FALSE;
-  VK_ASSERT(vkGetPhysicalDeviceSurfaceSupportKHR(ctx.getVkPhysicalDevice(),
-                                                 ctx.deviceQueues_.graphicsQueueFamilyIndex,
-                                                 ctx.vkSurface_,
-                                                 &queueFamilySupportsPresentation));
-  IGL_ASSERT_MSG(queueFamilySupportsPresentation == VK_TRUE,
-                 "The queue family used with the swapchain does not support presentation");
+  VK_ASSERT(vkGetPhysicalDeviceSurfaceSupportKHR(
+      ctx.getVkPhysicalDevice(), ctx.deviceQueues_.graphicsQueueFamilyIndex, ctx.vkSurface_, &queueFamilySupportsPresentation));
+  IGL_ASSERT_MSG(queueFamilySupportsPresentation == VK_TRUE, "The queue family used with the swapchain does not support presentation");
 
-  const VkImageUsageFlags usageFlags =
-      chooseUsageFlags(ctx.getVkPhysicalDevice(), ctx.vkSurface_, surfaceFormat_.format);
+  const VkImageUsageFlags usageFlags = chooseUsageFlags(ctx.getVkPhysicalDevice(), ctx.vkSurface_, surfaceFormat_.format);
 
   VK_ASSERT(ivkCreateSwapchain(device_,
                                ctx.vkSurface_,
@@ -170,8 +160,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
   VK_ASSERT(vkGetSwapchainImagesKHR(device_, swapchain_, &numSwapchainImages_, nullptr));
   std::vector<VkImage> swapchainImages(numSwapchainImages_);
   swapchainImages.resize(numSwapchainImages_);
-  VK_ASSERT(
-      vkGetSwapchainImagesKHR(device_, swapchain_, &numSwapchainImages_, swapchainImages.data()));
+  VK_ASSERT(vkGetSwapchainImagesKHR(device_, swapchain_, &numSwapchainImages_, swapchainImages.data()));
 
   IGL_ASSERT(numSwapchainImages_ > 0);
 
@@ -187,24 +176,16 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
     char debugNameImageView[256] = {0};
     snprintf(debugNameImage, sizeof(debugNameImage) - 1, "Image: swapchain %u", i);
     snprintf(debugNameImageView, sizeof(debugNameImageView) - 1, "Image View: swapchain %u", i);
-    auto image =
-        std::make_shared<VulkanImage>(ctx_,
-                                      device_,
-                                      swapchainImages[i],
-                                      usageFlags,
-                                      surfaceFormat_.format,
-                                      VkExtent3D{.width = width_, .height = height_, .depth = 1},
-                                      debugNameImage);
-    auto imageView = image->createImageView(VK_IMAGE_VIEW_TYPE_2D,
-                                            surfaceFormat_.format,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            0,
-                                            VK_REMAINING_MIP_LEVELS,
-                                            0,
-                                            1,
-                                            debugNameImageView);
-    swapchainTextures_.push_back(
-        ctx_.texturesPool_.create(VulkanTexture(std::move(image), std::move(imageView))));
+    auto image = std::make_shared<VulkanImage>(ctx_,
+                                               device_,
+                                               swapchainImages[i],
+                                               usageFlags,
+                                               surfaceFormat_.format,
+                                               VkExtent3D{.width = width_, .height = height_, .depth = 1},
+                                               debugNameImage);
+    auto imageView = image->createImageView(
+        VK_IMAGE_VIEW_TYPE_2D, surfaceFormat_.format, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 1, debugNameImageView);
+    swapchainTextures_.push_back(ctx_.texturesPool_.create(VulkanTexture(std::move(image), std::move(imageView))));
   }
 }
 
@@ -218,8 +199,7 @@ VulkanSwapchain::~VulkanSwapchain() {
 
 VkImage VulkanSwapchain::getCurrentVkImage() const {
   if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
-    lvk::vulkan::VulkanTexture* tex =
-        ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_]);
+    lvk::vulkan::VulkanTexture* tex = ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_]);
     return tex->image_->getVkImage();
   }
   return VK_NULL_HANDLE;
@@ -227,8 +207,7 @@ VkImage VulkanSwapchain::getCurrentVkImage() const {
 
 VkImageView VulkanSwapchain::getCurrentVkImageView() const {
   if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
-    lvk::vulkan::VulkanTexture* tex =
-        ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_]);
+    lvk::vulkan::VulkanTexture* tex = ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_]);
     return tex->imageView_->getVkImageView();
   }
   return VK_NULL_HANDLE;
@@ -239,8 +218,7 @@ TextureHandle VulkanSwapchain::getCurrentTexture() {
 
   if (getNextImage_) {
     // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
-    VK_ASSERT(vkAcquireNextImageKHR(
-        device_, swapchain_, UINT64_MAX, acquireSemaphore_, VK_NULL_HANDLE, &currentImageIndex_));
+    VK_ASSERT(vkAcquireNextImageKHR(device_, swapchain_, UINT64_MAX, acquireSemaphore_, VK_NULL_HANDLE, &currentImageIndex_));
     // increase the frame number every time we acquire a new swapchain image
     frameNumber_++;
     getNextImage_ = false;
