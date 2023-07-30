@@ -12,6 +12,8 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
+typedef struct glslang_resource_s glslang_resource_t;
+
 namespace lvk {
 namespace vulkan {
 

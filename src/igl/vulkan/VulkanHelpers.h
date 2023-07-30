@@ -9,12 +9,11 @@
 
 #pragma once
 
-#include <glslang/Include/glslang_c_interface.h>
-
 #if !defined(VK_NO_PROTOTYPES)
 #define VK_NO_PROTOTYPES
 #endif // !defined(VK_NO_PROTOTYPES)
 
+#include <stdbool.h>
 #include <volk.h>
 
 #ifdef __cplusplus

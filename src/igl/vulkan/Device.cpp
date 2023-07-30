@@ -19,6 +19,8 @@
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/VulkanTexture.h>
 
+#include <glslang/Include/glslang_c_interface.h>
+
 namespace {
 
 bool supportsFormat(VkPhysicalDevice physicalDevice, VkFormat format) {

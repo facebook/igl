@@ -18,7 +18,7 @@ igl_set_folder(IGLVulkan "IGL")
 
 target_link_libraries(IGLVulkan PRIVATE LVKLibrary)
 target_link_libraries(IGLVulkan PRIVATE LVKVulkan)
-target_link_libraries(IGLVulkan PUBLIC glslang SPIRV glslang-default-resource-limits)
+target_link_libraries(IGLVulkan PRIVATE glslang SPIRV glslang-default-resource-limits)
 target_link_libraries(IGLVulkan PUBLIC Vulkan::Vulkan)
 
 target_include_directories(IGLVulkan PUBLIC "${LVK_ROOT_DIR}/third-party/deps/src/volk")

@@ -17,8 +17,9 @@
 
 #include <volk.h>
 #include <vk_mem_alloc.h>
-#include <glslang/Include/glslang_c_interface.h>
 #include <lvk/LVK.h>
+
+typedef struct glslang_resource_s glslang_resource_t;
 
 namespace lvk {
 
