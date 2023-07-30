@@ -5,6 +5,10 @@
         "type": "git",
         "url": "https://github.com/zeux/meshoptimizer.git",
         "revision": "v0.19"
+    },
+    "postprocess": {
+       "type": "script",
+       "file": "meshoptimizer.py"
     }
 },
 {
@@ -21,6 +25,10 @@
         "type": "git",
         "url": "https://github.com/tinyobjloader/tinyobjloader.git",
         "revision": "0fc802cf468d23b9d205890b76b268f61b948e6d"
+    },
+    "postprocess": {
+       "type": "script",
+       "file": "tinyobjloader.py"
     }
 },
 {
