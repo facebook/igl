@@ -73,9 +73,8 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
       .basePipelineHandle = VK_NULL_HANDLE,
       .basePipelineIndex = -1,
   };
-  // TODO: use ctx.pipelineCache_
   VK_ASSERT(
-      vkCreateComputePipelines(ctx.getVkDevice(), VK_NULL_HANDLE, 1, &ci, nullptr, &pipeline_));
+      vkCreateComputePipelines(ctx.getVkDevice(), ctx.pipelineCache_, 1, &ci, nullptr, &pipeline_));
 
   VK_ASSERT(ivkSetDebugObjectName(
       ctx.getVkDevice(), VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline_, desc_.debugName));

@@ -386,8 +386,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
       .depthAttachmentFormat(textureFormatToVkFormat(desc_.depthFormat))
       .stencilAttachmentFormat(textureFormatToVkFormat(desc_.stencilFormat))
       .build(ctx.getVkDevice(),
-             // TODO: use ctx.pipelineCache_
-             VK_NULL_HANDLE,
+             ctx.pipelineCache_,
              ctx.vkPipelineLayout_,
              &pipeline,
              desc_.debugName);
