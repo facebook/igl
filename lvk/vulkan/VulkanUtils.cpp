@@ -10,6 +10,8 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 
+#include <glslang/Include/glslang_c_interface.h>
+
 VkSemaphore lvk::createSemaphore(VkDevice device, const char* debugName) {
   const VkSemaphoreCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,

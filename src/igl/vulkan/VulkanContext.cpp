@@ -20,6 +20,8 @@
 #include <igl/vulkan/VulkanTexture.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
+#include <glslang/Include/glslang_c_interface.h>
+
 static_assert(lvk::HWDeviceDesc::IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE <= VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
 
 namespace {
