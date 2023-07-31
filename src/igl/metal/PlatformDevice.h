@@ -47,6 +47,13 @@ class PlatformDevice final : public IPlatformDevice {
   std::unique_ptr<ITexture> createTextureFromNativeDrawable(id<CAMetalDrawable> nativeDrawable,
                                                             Result* outResult);
 
+  /// Creates a texture from a native drawable
+  /// @param nativeDrawable drawable. For Metal is MUST be MTLTexture
+  /// @param outResult optional result
+  /// @return pointer to generated Texture or nullptr
+  std::unique_ptr<ITexture> createTextureFromNativeDrawable(id<MTLTexture> nativeDrawable,
+                                                            Result* outResult);
+
   /// Creates a texture from a native drawable surface
   /// @param nativeDrawable drawable surface. For Metal is MUST be CAMetalLayer
   /// @param outResult optional result
