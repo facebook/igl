@@ -73,6 +73,17 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
   return iglObject;
 }
 
+std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
+    id<MTLTexture> nativeDrawable,
+    Result* outResult) {
+  auto iglObject = std::make_unique<Texture>(nativeDrawable);
+  if (auto resourceTracker = device_.getResourceTracker()) {
+    iglObject->initResourceTracker(resourceTracker);
+  }
+  Result::setOk(outResult);
+  return iglObject;
+}
+
 std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(CALayer* nativeDrawable,
                                                                           Result* outResult) {
   if (!nativeDrawable) {
