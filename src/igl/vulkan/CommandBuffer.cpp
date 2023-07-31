@@ -7,7 +7,6 @@
 
 #include <igl/vulkan/CommandBuffer.h>
 
-#include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
@@ -159,16 +158,15 @@ void CommandBuffer::cmdBindComputePipeline(lvk::ComputePipelineHandle handle) {
     return;
   }
 
-  const lvk::vulkan::ComputePipelineState* cps = ctx_->computePipelinesPool_.get(handle);
+  VkPipeline* pipeline = ctx_->computePipelinesPool_.get(handle);
 
-  IGL_ASSERT(cps);
+  IGL_ASSERT(pipeline);
+  IGL_ASSERT(*pipeline != VK_NULL_HANDLE);
 
-  VkPipeline pipeline = cps->getVkPipeline();
-
-  if (lastPipelineBound_ != pipeline) {
-    lastPipelineBound_ = pipeline;
+  if (lastPipelineBound_ != *pipeline) {
+    lastPipelineBound_ = *pipeline;
     if (pipeline != VK_NULL_HANDLE) {
-      vkCmdBindPipeline(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+      vkCmdBindPipeline(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);
     }
   }
 }

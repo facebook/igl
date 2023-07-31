@@ -13,7 +13,6 @@
 #include <vector>
 
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanHelpers.h>
@@ -202,7 +201,7 @@ class VulkanContext final {
 
   lvk::Pool<lvk::ShaderModule, lvk::vulkan::VulkanShaderModule> shaderModulesPool_;
   lvk::Pool<lvk::RenderPipeline, lvk::vulkan::RenderPipelineState> renderPipelinesPool_;
-  lvk::Pool<lvk::ComputePipeline, lvk::vulkan::ComputePipelineState> computePipelinesPool_;
+  lvk::Pool<lvk::ComputePipeline, VkPipeline> computePipelinesPool_;
   lvk::Pool<lvk::Sampler, VkSampler> samplersPool_;
   lvk::Pool<lvk::Buffer, lvk::vulkan::VulkanBuffer> buffersPool_;
   lvk::Pool<lvk::Texture, lvk::vulkan::VulkanTexture> texturesPool_;

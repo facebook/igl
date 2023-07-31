@@ -10,7 +10,6 @@
 #include <cstring>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
@@ -349,7 +348,29 @@ lvk::Holder<lvk::ComputePipelineHandle> Device::createComputePipeline(const Comp
     return {};
   }
 
-  return {this, ctx_->computePipelinesPool_.create(ComputePipelineState(this, desc))};
+  const VulkanShaderModule* sm = ctx_->shaderModulesPool_.get(desc.shaderStages.getModule(Stage_Compute));
+
+  IGL_ASSERT(sm);
+
+  VkShaderModule vkShaderModule = sm ? sm->getVkShaderModule() : VK_NULL_HANDLE;
+
+  const VkComputePipelineCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .flags = 0,
+      .stage = ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, vkShaderModule, sm->getEntryPoint()),
+      .layout = ctx_->vkPipelineLayout_,
+      .basePipelineHandle = VK_NULL_HANDLE,
+      .basePipelineIndex = -1,
+  };
+  VkPipeline pipeline = VK_NULL_HANDLE;
+  VK_ASSERT(vkCreateComputePipelines(ctx_->getVkDevice(), ctx_->pipelineCache_, 1, &ci, nullptr, &pipeline));
+  VK_ASSERT(ivkSetDebugObjectName(ctx_->getVkDevice(), VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline, desc.debugName));
+
+  // a shader module can be destroyed while pipelines created using its shaders are still in use
+  // https://registry.khronos.org/vulkan/specs/1.3/html/chap9.html#vkDestroyShaderModule
+  destroy(desc.shaderStages.getModule(Stage_Compute));
+
+  return {this, ctx_->computePipelinesPool_.create(std::move(pipeline))};
 }
 
 lvk::Holder<lvk::RenderPipelineHandle> Device::createRenderPipeline(const RenderPipelineDesc& desc, Result* outResult) {
@@ -375,6 +396,14 @@ lvk::Holder<lvk::RenderPipelineHandle> Device::createRenderPipeline(const Render
 }
 
 void Device::destroy(lvk::ComputePipelineHandle handle) {
+  VkPipeline* pipeline = ctx_->computePipelinesPool_.get(handle);
+
+  IGL_ASSERT(pipeline);
+  IGL_ASSERT(*pipeline != VK_NULL_HANDLE);
+
+  ctx_->deferredTask(
+      std::packaged_task<void()>([device = ctx_->getVkDevice(), pipeline = *pipeline]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+
   ctx_->computePipelinesPool_.destroy(handle);
 }
 
