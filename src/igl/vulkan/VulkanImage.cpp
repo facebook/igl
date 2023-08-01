@@ -33,13 +33,6 @@ uint32_t ivkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memProps,
   return 0;
 }
 
-// VkImage export and import is only implemented on Windows, Linux and Android platforms.
-#if IGL_PLATFORM_WIN
-constexpr auto kHandleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT;
-#elif IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
-constexpr auto kHandleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-#endif
-
 } // namespace
 
 namespace lvk::vulkan {
