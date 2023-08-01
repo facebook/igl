@@ -408,6 +408,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
 #endif
 
   case TextureFormat::RGBA_BC7_UNORM_4x4:
+  case TextureFormat::RGBA_BC7_SRGB_4x4:
 
 #if IGL_PLATFORM_MACOS || IGL_PLATFORM_MACCATALYST
     return sampled;

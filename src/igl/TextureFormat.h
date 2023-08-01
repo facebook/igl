@@ -192,6 +192,7 @@ enum class TextureFormat : uint8_t {
   R_EAC_UNorm,
   R_EAC_SNorm,
   RGBA_BC7_UNORM_4x4, // block compression
+  RGBA_BC7_SRGB_4x4, // block compression
 
   // Depth and Stencil formats
   Z_UNorm16, // NA on iOS/Metal but works on iOS GLES. The client has to account for

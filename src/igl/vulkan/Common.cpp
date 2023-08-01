@@ -215,6 +215,8 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
     return VK_FORMAT_EAC_R11_SNORM_BLOCK;
   case TextureFormat::RGBA_BC7_UNORM_4x4:
     return VK_FORMAT_BC7_UNORM_BLOCK;
+  case TextureFormat::RGBA_BC7_SRGB_4x4:
+    return VK_FORMAT_BC7_SRGB_BLOCK;
   case TextureFormat::Z_UNorm16:
     return VK_FORMAT_D16_UNORM;
   case TextureFormat::Z_UNorm24:
@@ -378,6 +380,8 @@ igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
     return TextureFormat::Z_UNorm16;
   case VK_FORMAT_BC7_UNORM_BLOCK:
     return TextureFormat::RGBA_BC7_UNORM_4x4;
+  case VK_FORMAT_BC7_SRGB_BLOCK:
+    return TextureFormat::RGBA_BC7_SRGB_4x4;
   case VK_FORMAT_X8_D24_UNORM_PACK32:
     return TextureFormat::Z_UNorm24;
   case VK_FORMAT_D24_UNORM_S8_UINT:

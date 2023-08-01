@@ -1400,6 +1400,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
     }
     break;
   case TextureFormat::RGBA_BC7_UNORM_4x4:
+  case TextureFormat::RGBA_BC7_SRGB_4x4:
     if (hasTextureFeature(TextureFeatures::TextureCompressionBptc)) {
       capabilities |= compressed;
     }

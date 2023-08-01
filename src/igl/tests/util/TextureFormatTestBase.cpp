@@ -324,6 +324,7 @@ std::vector<std::pair<TextureFormat, bool>> TextureFormatTestBase::getFormatSupp
   formatSupport.emplace_back(checkSupport(TextureFormat::R_EAC_UNorm, usage));
   formatSupport.emplace_back(checkSupport(TextureFormat::R_EAC_SNorm, usage));
   formatSupport.emplace_back(checkSupport(TextureFormat::RGBA_BC7_UNORM_4x4, usage));
+  formatSupport.emplace_back(checkSupport(TextureFormat::RGBA_BC7_SRGB_4x4, usage));
   formatSupport.emplace_back(checkSupport(TextureFormat::Z_UNorm16, usage));
   formatSupport.emplace_back(checkSupport(TextureFormat::Z_UNorm24, usage));
   formatSupport.emplace_back(checkSupport(TextureFormat::Z_UNorm32, usage));

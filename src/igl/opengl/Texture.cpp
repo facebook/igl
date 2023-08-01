@@ -269,6 +269,9 @@ TextureFormat Texture::glInternalFormatToTextureFormat(GLuint glTexInternalForma
   case GL_COMPRESSED_RGBA_BPTC_UNORM:
     return TextureFormat::RGBA_BC7_UNORM_4x4;
 
+  case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM:
+    return TextureFormat::RGBA_BC7_SRGB_4x4;
+
   case GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG:
     return TextureFormat::RGBA_PVRTC_2BPPV1;
 
@@ -1103,6 +1106,12 @@ bool Texture::toFormatDescGL(IContext& ctx,
 
   case TextureFormat::RGBA_BC7_UNORM_4x4:
     internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM;
+    format = 0;
+    type = 0;
+    return compressedValid;
+
+  case TextureFormat::RGBA_BC7_SRGB_4x4:
+    internalFormat = GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM;
     format = 0;
     type = 0;
     return compressedValid;

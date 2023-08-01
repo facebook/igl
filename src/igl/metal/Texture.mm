@@ -736,6 +736,12 @@ MTLPixelFormat Texture::textureFormatToMTLPixelFormat(TextureFormat value) {
 #else
     return MTLPixelFormatInvalid;
 #endif
+  case TextureFormat::RGBA_BC7_SRGB_4x4:
+#if IGL_PLATFORM_MACOS || IGL_PLATFORM_MACCATALYST
+    return MTLPixelFormatBC7_RGBAUnorm_sRGB;
+#else
+    return MTLPixelFormatInvalid;
+#endif
 
     // Depth & Stencil
   case TextureFormat::Z_UNorm16:

@@ -193,6 +193,7 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     COMPRESSED(R_EAC_UNorm, 1, 8, 4, 4, 1, 1, 1, 1, 0)
     COMPRESSED(R_EAC_SNorm, 1, 8, 4, 4, 1, 1, 1, 1, 0)
     COMPRESSED(RGBA_BC7_UNORM_4x4, 4, 16, 4, 4, 1, 1, 1, 1, 0)
+    COMPRESSED(RGBA_BC7_SRGB_4x4, 4, 16, 4, 4, 1, 1, 1, 1, Flags::sRGB)
     DEPTH_STENCIL(Z_UNorm16, 1, 2)
     DEPTH_STENCIL(Z_UNorm24, 1, 3)
     DEPTH_STENCIL(Z_UNorm32, 1, 4)
