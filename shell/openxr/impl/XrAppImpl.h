@@ -14,7 +14,7 @@
 
 #include <igl/Device.h>
 
-namespace igl::shell::openxr::mobile::impl {
+namespace igl::shell::openxr::impl {
 class XrSwapchainProviderImpl;
 class XrAppImpl {
  public:
@@ -26,4 +26,4 @@ class XrAppImpl {
                                   igl::IDevice& device) = 0;
   virtual std::unique_ptr<impl::XrSwapchainProviderImpl> createSwapchainProviderImpl() const = 0;
 };
-} // namespace igl::shell::openxr::mobile::impl
+} // namespace igl::shell::openxr::impl

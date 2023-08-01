@@ -15,7 +15,7 @@
 #include <igl/Device.h>
 #include <igl/Texture.h>
 
-namespace igl::shell::openxr::mobile::impl {
+namespace igl::shell::openxr::impl {
 class XrSwapchainProviderImpl {
  public:
   virtual ~XrSwapchainProviderImpl() = default;
@@ -40,4 +40,4 @@ class XrSwapchainProviderImpl {
   std::vector<std::shared_ptr<igl::ITexture>> colorTextures_;
   std::vector<std::shared_ptr<igl::ITexture>> depthTextures_;
 };
-} // namespace igl::shell::openxr::mobile::impl
+} // namespace igl::shell::openxr::impl

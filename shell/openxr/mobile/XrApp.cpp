@@ -29,8 +29,8 @@
 
 #include "XrLog.h"
 #include "XrSwapchainProvider.h"
-#include "impl/XrAppImpl.h"
-#include "impl/XrSwapchainProviderImpl.h"
+#include <shell/openxr/impl/XrAppImpl.h>
+#include <shell/openxr/impl/XrSwapchainProviderImpl.h>
 
 namespace igl::shell::openxr::mobile {
 constexpr auto kAppName = "IGL Shell OpenXR";

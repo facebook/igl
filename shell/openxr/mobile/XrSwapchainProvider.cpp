@@ -9,7 +9,7 @@
 
 #include "XrLog.h"
 #include "XrSwapchainProvider.h"
-#include "impl/XrSwapchainProviderImpl.h"
+#include <shell/openxr/impl/XrSwapchainProviderImpl.h>
 
 namespace igl::shell::openxr::mobile {
 XrSwapchainProvider::XrSwapchainProvider(

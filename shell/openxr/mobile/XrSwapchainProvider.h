@@ -17,11 +17,12 @@
 #include <igl/Texture.h>
 #include <shell/shared/platform/android/PlatformAndroid.h>
 
-namespace igl::shell::openxr::mobile {
 // forward declarations
-namespace impl {
+namespace igl::shell::openxr::impl {
 class XrSwapchainProviderImpl;
 }
+
+namespace igl::shell::openxr::mobile {
 
 class XrSwapchainProvider {
  public:
