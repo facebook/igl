@@ -158,9 +158,16 @@ Result Texture::create(const TextureDesc& desc) {
     return Result(Result::Code::InvalidOperation, "Cannot create VulkanImage");
   }
 
-  const VkImageAspectFlags aspect = (usageFlags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
-                                        ? VK_IMAGE_ASPECT_DEPTH_BIT
-                                        : VK_IMAGE_ASPECT_COLOR_BIT;
+  VkImageAspectFlags aspect = 0;
+  if (image->isDepthOrStencilFormat_) {
+    if (image->isDepthFormat_) {
+      aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
+    } else if (image->isStencilFormat_) {
+      aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+  } else {
+    aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+  }
 
   std::shared_ptr<VulkanImageView> imageView = image->createImageView(imageViewType,
                                                                       vkFormat,
