@@ -19,6 +19,33 @@
 #include <vk_mem_alloc.h>
 #include <lvk/LVK.h>
 
+#define VK_ASSERT(func)                                            \
+  {                                                                \
+    const VkResult vk_assert_result = func;                        \
+    if (vk_assert_result != VK_SUCCESS) {                          \
+      LLOGW("Vulkan API call failed: %s:%i\n  %s\n  %s\n", \
+                    __FILE__,                                      \
+                    __LINE__,                                      \
+                    #func,                                         \
+                    ivkGetVulkanResultString(vk_assert_result));   \
+      assert(false);                                               \
+    }                                                              \
+  }
+
+#define VK_ASSERT_RETURN(func)                                     \
+  {                                                                \
+    const VkResult vk_assert_result = func;                        \
+    if (vk_assert_result != VK_SUCCESS) {                          \
+      LLOGW("Vulkan API call failed: %s:%i\n  %s\n  %s\n", \
+                    __FILE__,                                      \
+                    __LINE__,                                      \
+                    #func,                                         \
+                    ivkGetVulkanResultString(vk_assert_result));   \
+      assert(false);                                               \
+      return getResultFromVkResult(vk_assert_result);              \
+    }                                                              \
+  }
+
 typedef struct glslang_resource_s glslang_resource_t;
 
 namespace lvk {
@@ -29,7 +56,16 @@ VmaAllocator createVmaAllocator(VkPhysicalDevice physDev, VkDevice device, VkIns
 uint32_t findQueueFamilyIndex(VkPhysicalDevice physDev, VkQueueFlags flags);
 
 glslang_resource_t getGlslangResource(const VkPhysicalDeviceLimits& limits);
+Result compileShader(VkDevice device,
+                     VkShaderStageFlagBits stage,
+                     const char* code,
+                     VkShaderModule* outShaderModule,
+                     const glslang_resource_t* glslLangResource = nullptr);
 
 VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const lvk::SamplerStateDesc& desc, const VkPhysicalDeviceLimits& limits);
+
+Result getResultFromVkResult(VkResult result);
+lvk::Format vkFormatToFormat(VkFormat format);
+VkFormat formatToVkFormat(lvk::Format format);
 
 } // namespace lvk

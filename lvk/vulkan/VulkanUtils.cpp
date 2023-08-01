@@ -11,6 +11,146 @@
 #include <igl/vulkan/VulkanContext.h>
 
 #include <glslang/Include/glslang_c_interface.h>
+#include <ldrutils/lutils/ScopeExit.h>
+
+lvk::Result lvk::getResultFromVkResult(VkResult result) {
+  if (result == VK_SUCCESS) {
+    return Result();
+  }
+
+  Result res(Result::Code::RuntimeError, ivkGetVulkanResultString(result));
+
+  switch (result) {
+  case VK_ERROR_OUT_OF_HOST_MEMORY:
+  case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+  case VK_ERROR_OUT_OF_POOL_MEMORY:
+  case VK_ERROR_TOO_MANY_OBJECTS:
+    res.code = Result::Code::ArgumentOutOfRange;
+    return res;
+  default:;
+    // skip other Vulkan error codes
+  }
+  return res;
+}
+
+VkFormat lvk::formatToVkFormat(lvk::Format format) {
+  using TextureFormat = ::lvk::Format;
+  switch (format) {
+  case lvk::Format_Invalid:
+    return VK_FORMAT_UNDEFINED;
+  case lvk::Format_R_UN8:
+    return VK_FORMAT_R8_UNORM;
+  case lvk::Format_R_UN16:
+    return VK_FORMAT_R16_UNORM;
+  case lvk::Format_R_F16:
+    return VK_FORMAT_R16_SFLOAT;
+  case lvk::Format_R_UI16:
+    return VK_FORMAT_R16_UINT;
+  case lvk::Format_RG_UN8:
+    return VK_FORMAT_R8G8_UNORM;
+  case lvk::Format_RG_UN16:
+    return VK_FORMAT_R16G16_UNORM;
+  case lvk::Format_BGRA_UN8:
+    return VK_FORMAT_B8G8R8A8_UNORM;
+  case lvk::Format_RGBA_UN8:
+    return VK_FORMAT_R8G8B8A8_UNORM;
+  case lvk::Format_RGBA_SRGB8:
+    return VK_FORMAT_R8G8B8A8_SRGB;
+  case lvk::Format_BGRA_SRGB8:
+    return VK_FORMAT_B8G8R8A8_SRGB;
+  case lvk::Format_RG_F16:
+    return VK_FORMAT_R16G16_SFLOAT;
+  case lvk::Format_RG_F32:
+    return VK_FORMAT_R32G32_SFLOAT;
+  case lvk::Format_RG_UI16:
+    return VK_FORMAT_R16G16_UINT;
+  case lvk::Format_R_F32:
+    return VK_FORMAT_R32_SFLOAT;
+  case lvk::Format_RGBA_F16:
+    return VK_FORMAT_R16G16B16A16_SFLOAT;
+  case lvk::Format_RGBA_UI32:
+    return VK_FORMAT_R32G32B32A32_UINT;
+  case lvk::Format_RGBA_F32:
+    return VK_FORMAT_R32G32B32A32_SFLOAT;
+  case lvk::Format_ETC2_RGB8:
+    return VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK;
+  case lvk::Format_ETC2_SRGB8:
+    return VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK;
+  case lvk::Format_BC7_RGBA:
+    return VK_FORMAT_BC7_UNORM_BLOCK;
+  case lvk::Format_Z_UN16:
+    return VK_FORMAT_D16_UNORM;
+  case lvk::Format_Z_UN24:
+    return VK_FORMAT_D24_UNORM_S8_UINT;
+  case lvk::Format_Z_F32:
+    return VK_FORMAT_D32_SFLOAT;
+  case lvk::Format_Z_UN24_S_UI8:
+    return VK_FORMAT_D24_UNORM_S8_UINT;
+  }
+#if defined(_MSC_VER)
+  IGL_ASSERT_MSG(false, "TextureFormat value not handled: %d", (int)format);
+  return VK_FORMAT_UNDEFINED;
+#endif // _MSC_VER
+}
+
+lvk::Format lvk::vkFormatToFormat(VkFormat format) {
+  switch (format) {
+  case VK_FORMAT_UNDEFINED:
+    return Format_Invalid;
+  case VK_FORMAT_R8_UNORM:
+    return Format_R_UN8;
+  case VK_FORMAT_R16_UNORM:
+    return Format_R_UN16;
+  case VK_FORMAT_R16_SFLOAT:
+    return Format_R_F16;
+  case VK_FORMAT_R16_UINT:
+    return Format_R_UI16;
+  case VK_FORMAT_R8G8_UNORM:
+    return Format_RG_UN8;
+  case VK_FORMAT_B8G8R8A8_UNORM:
+    return Format_BGRA_UN8;
+  case VK_FORMAT_R8G8B8A8_UNORM:
+    return Format_RGBA_UN8;
+  case VK_FORMAT_R8G8B8A8_SRGB:
+    return Format_RGBA_SRGB8;
+  case VK_FORMAT_B8G8R8A8_SRGB:
+    return Format_BGRA_SRGB8;
+  case VK_FORMAT_R16G16_UNORM:
+    return Format_RG_UN16;
+  case VK_FORMAT_R16G16_SFLOAT:
+    return Format_RG_F16;
+  case VK_FORMAT_R32G32_SFLOAT:
+    return Format_RG_F32;
+  case VK_FORMAT_R16G16_UINT:
+    return Format_RG_UI16;
+  case VK_FORMAT_R32_SFLOAT:
+    return Format_R_F32;
+  case VK_FORMAT_R16G16B16A16_SFLOAT:
+    return Format_RGBA_F16;
+  case VK_FORMAT_R32G32B32A32_UINT:
+    return Format_RGBA_UI32;
+  case VK_FORMAT_R32G32B32A32_SFLOAT:
+    return Format_RGBA_F32;
+  case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK:
+    return Format_ETC2_RGB8;
+  case VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK:
+    return Format_ETC2_SRGB8;
+  case VK_FORMAT_D16_UNORM:
+    return Format_Z_UN16;
+  case VK_FORMAT_BC7_UNORM_BLOCK:
+    return Format_BC7_RGBA;
+  case VK_FORMAT_X8_D24_UNORM_PACK32:
+    return Format_Z_UN24;
+  case VK_FORMAT_D24_UNORM_S8_UINT:
+    return Format_Z_UN24_S_UI8;
+  case VK_FORMAT_D32_SFLOAT:
+    return Format_Z_F32;
+  }
+#if defined(_MSC_VER)
+  IGL_ASSERT_MSG(false, "VkFormat value not handled: %d", (int)format);
+  return Format_Invalid;
+#endif // _MSC_VER
+}
 
 VkSemaphore lvk::createSemaphore(VkDevice device, const char* debugName) {
   const VkSemaphoreCreateInfo ci = {
@@ -318,4 +458,117 @@ VkSamplerCreateInfo lvk::samplerStateDescToVkSamplerCreateInfo(const lvk::Sample
   }
 
   return ci;
+}
+
+static glslang_stage_t getGLSLangShaderStage(VkShaderStageFlagBits stage) {
+  switch (stage) {
+  case VK_SHADER_STAGE_VERTEX_BIT:
+    return GLSLANG_STAGE_VERTEX;
+  case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+    return GLSLANG_STAGE_TESSCONTROL;
+  case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+    return GLSLANG_STAGE_TESSEVALUATION;
+  case VK_SHADER_STAGE_GEOMETRY_BIT:
+    return GLSLANG_STAGE_GEOMETRY;
+  case VK_SHADER_STAGE_FRAGMENT_BIT:
+    return GLSLANG_STAGE_FRAGMENT;
+  case VK_SHADER_STAGE_COMPUTE_BIT:
+    return GLSLANG_STAGE_COMPUTE;
+  default:
+    assert(false);
+  };
+  assert(false);
+  return GLSLANG_STAGE_COUNT;
+}
+
+lvk::Result lvk::compileShader(VkDevice device,
+                               VkShaderStageFlagBits stage,
+                               const char* code,
+                               VkShaderModule* outShaderModule,
+                               const glslang_resource_t* glslLangResource) {
+  IGL_PROFILER_FUNCTION();
+
+  if (!outShaderModule) {
+    return Result(Result::Code::ArgumentOutOfRange, "outShaderModule is NULL");
+  }
+
+  const glslang_input_t input = {
+      .language = GLSLANG_SOURCE_GLSL,
+      .stage = getGLSLangShaderStage(stage),
+      .client = GLSLANG_CLIENT_VULKAN,
+      .client_version = GLSLANG_TARGET_VULKAN_1_3,
+      .target_language = GLSLANG_TARGET_SPV,
+      .target_language_version = GLSLANG_TARGET_SPV_1_6,
+      .code = code,
+      .default_version = 100,
+      .default_profile = GLSLANG_NO_PROFILE,
+      .force_default_version_and_profile = false,
+      .forward_compatible = false,
+      .messages = GLSLANG_MSG_DEFAULT_BIT,
+      .resource = glslLangResource,
+  };
+
+  glslang_shader_t* shader = glslang_shader_create(&input);
+  SCOPE_EXIT {
+    glslang_shader_delete(shader);
+  };
+
+  if (!glslang_shader_preprocess(shader, &input)) {
+    LLOGW("Shader preprocessing failed:\n");
+    LLOGW("  %s\n", glslang_shader_get_info_log(shader));
+    LLOGW("  %s\n", glslang_shader_get_info_debug_log(shader));
+    lvk::logShaderSource(code);
+    assert(false);
+    return Result(Result::Code::RuntimeError, "glslang_shader_preprocess() failed");
+  }
+
+  if (!glslang_shader_parse(shader, &input)) {
+    LLOGW("Shader parsing failed:\n");
+    LLOGW("  %s\n", glslang_shader_get_info_log(shader));
+    LLOGW("  %s\n", glslang_shader_get_info_debug_log(shader));
+    lvk::logShaderSource(glslang_shader_get_preprocessed_code(shader));
+    assert(false);
+    return Result(Result::Code::RuntimeError, "glslang_shader_parse() failed");
+  }
+
+  glslang_program_t* program = glslang_program_create();
+  glslang_program_add_shader(program, shader);
+
+  SCOPE_EXIT {
+    glslang_program_delete(program);
+  };
+
+  if (!glslang_program_link(program, GLSLANG_MSG_SPV_RULES_BIT | GLSLANG_MSG_VULKAN_RULES_BIT)) {
+    LLOGW("Shader linking failed:\n");
+    LLOGW("  %s\n", glslang_program_get_info_log(program));
+    LLOGW("  %s\n", glslang_program_get_info_debug_log(program));
+    assert(false);
+    return Result(Result::Code::RuntimeError, "glslang_program_link() failed");
+  }
+
+  glslang_spv_options_t options = {
+      .generate_debug_info = true,
+      .strip_debug_info = false,
+      .disable_optimizer = false,
+      .optimize_size = true,
+      .disassemble = false,
+      .validate = true,
+      .emit_nonsemantic_shader_debug_info = false,
+      .emit_nonsemantic_shader_debug_source = false,
+  };
+
+  glslang_program_SPIRV_generate_with_options(program, input.stage, &options);
+
+  if (glslang_program_SPIRV_get_messages(program)) {
+    LLOGW("%s\n", glslang_program_SPIRV_get_messages(program));
+  }
+
+  const VkShaderModuleCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+      .codeSize = glslang_program_SPIRV_get_size(program) * sizeof(uint32_t),
+      .pCode = glslang_program_SPIRV_get_ptr(program),
+  };
+  VK_ASSERT_RETURN(vkCreateShaderModule(device, &ci, nullptr, outShaderModule));
+
+  return Result();
 }

@@ -145,7 +145,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
                                       const void* data[]) {
   IGL_PROFILER_FUNCTION();
 
-  // cache the dimensions of each mip level for later
+  // cache the dimensions of each mip-level for later
   uint32_t mipSizes[32];
 
   IGL_ASSERT(numMipLevels <= 32);
@@ -154,7 +154,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
   auto width = image.extent_.width >> baseMipLevel;
   auto height = image.extent_.height >> baseMipLevel;
 
-  const Format texFormat(vkFormatToTextureFormat(format));
+  const Format texFormat(vkFormatToFormat(format));
 
   IGL_ASSERT_MSG(imageRegion.offset.x == 0 && imageRegion.offset.y == 0 && imageRegion.extent.width == width &&
                      imageRegion.extent.height == height,

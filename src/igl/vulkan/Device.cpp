@@ -14,7 +14,6 @@
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanHelpers.h>
-#include <igl/vulkan/VulkanShaderModule.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/VulkanTexture.h>
 
@@ -174,11 +173,9 @@ Holder<SamplerHandle> Device::createSampler(const SamplerStateDesc& desc, Result
     return {};
   }
 
-  Holder<SamplerHandle> holder = {this, handle};
-
   Result::setResult(outResult, result);
 
-  return holder;
+  return {this, handle};
 }
 
 Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, const char* debugName, Result* outResult) {
@@ -189,7 +186,7 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, co
   }
 
   const VkFormat vkFormat = lvk::isDepthOrStencilFormat(desc.format) ? ctx_->getClosestDepthStencilFormat(desc.format)
-                                                                     : textureFormatToVkFormat(desc.format);
+                                                                     : formatToVkFormat(desc.format);
 
   const lvk::TextureType type = desc.type;
   if (!IGL_VERIFY(type == TextureType_2D || type == TextureType_Cube || type == TextureType_3D)) {
@@ -352,12 +349,10 @@ lvk::Holder<lvk::ComputePipelineHandle> Device::createComputePipeline(const Comp
 
   IGL_ASSERT(sm);
 
-  VkShaderModule vkShaderModule = sm ? sm->getVkShaderModule() : VK_NULL_HANDLE;
-
   const VkComputePipelineCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
       .flags = 0,
-      .stage = ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, vkShaderModule, sm->getEntryPoint()),
+      .stage = ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, sm->vkShaderModule_, sm->entryPoint_),
       .layout = ctx_->vkPipelineLayout_,
       .basePipelineHandle = VK_NULL_HANDLE,
       .basePipelineIndex = -1,
@@ -412,6 +407,14 @@ void Device::destroy(lvk::RenderPipelineHandle handle) {
 }
 
 void Device::destroy(lvk::ShaderModuleHandle handle) {
+  const VulkanShaderModule* sm = ctx_->shaderModulesPool_.get(handle);
+
+  IGL_ASSERT(sm);
+
+  if (sm->vkShaderModule_ != VK_NULL_HANDLE) {
+    vkDestroyShaderModule(ctx_->getVkDevice(), sm->vkShaderModule_, nullptr);
+  }
+
   ctx_->shaderModulesPool_.destroy(handle);
 }
 
@@ -587,7 +590,7 @@ Format Device::getFormat(TextureHandle handle) const {
     return Format_Invalid;
   }
 
-  return vkFormatToTextureFormat(ctx_->texturesPool_.get(handle)->image_->imageFormat_);
+  return vkFormatToFormat(ctx_->texturesPool_.get(handle)->image_->imageFormat_);
 }
 
 lvk::Holder<lvk::ShaderModuleHandle> Device::createShaderModule(const ShaderModuleDesc& desc, Result* outResult) {
@@ -631,7 +634,10 @@ VulkanShaderModule Device::createShaderModule(const void* data,
 
   VK_ASSERT(ivkSetDebugObjectName(ctx_->vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
-  return VulkanShaderModule(ctx_->vkDevice_, vkShaderModule, entryPoint);
+  IGL_ASSERT(vkShaderModule != VK_NULL_HANDLE);
+  IGL_ASSERT(entryPoint);
+
+  return VulkanShaderModule{vkShaderModule, entryPoint};
 }
 
 VulkanShaderModule Device::createShaderModule(ShaderStage stage,
@@ -698,7 +704,7 @@ VulkanShaderModule Device::createShaderModule(ShaderStage stage,
   const glslang_resource_t glslangResource = lvk::getGlslangResource(ctx_->getVkPhysicalDeviceProperties().limits);
 
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
-  const Result result = lvk::vulkan::compileShader(ctx_->vkDevice_, vkStage, source, &vkShaderModule, &glslangResource);
+  const Result result = lvk::compileShader(ctx_->vkDevice_, vkStage, source, &vkShaderModule, &glslangResource);
 
   Result::setResult(outResult, result);
 
@@ -708,7 +714,10 @@ VulkanShaderModule Device::createShaderModule(ShaderStage stage,
 
   VK_ASSERT(ivkSetDebugObjectName(ctx_->vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
-  return VulkanShaderModule(ctx_->vkDevice_, vkShaderModule, entryPoint);
+  IGL_ASSERT(vkShaderModule != VK_NULL_HANDLE);
+  IGL_ASSERT(entryPoint);
+
+  return VulkanShaderModule{.vkShaderModule_ = vkShaderModule, .entryPoint_ = entryPoint};
 }
 
 Format Device::getSwapchainFormat() const {

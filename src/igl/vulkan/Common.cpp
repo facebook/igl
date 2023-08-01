@@ -15,30 +15,11 @@
 #include <windows.h>
 #endif
 
+#include <lvk/vulkan/VulkanUtils.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
 namespace lvk {
 namespace vulkan {
-
-Result getResultFromVkResult(VkResult result) {
-  if (result == VK_SUCCESS) {
-    return Result();
-  }
-
-  Result res(Result::Code::RuntimeError, ivkGetVulkanResultString(result));
-
-  switch (result) {
-  case VK_ERROR_OUT_OF_HOST_MEMORY:
-  case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-  case VK_ERROR_OUT_OF_POOL_MEMORY:
-  case VK_ERROR_TOO_MANY_OBJECTS:
-    res.code = Result::Code::ArgumentOutOfRange;
-    return res;
-  default:;
-    // skip other Vulkan error codes
-  }
-  return res;
-}
 
 void setResultFrom(Result* outResult, VkResult result) {
   if (!outResult) {
@@ -46,127 +27,6 @@ void setResultFrom(Result* outResult, VkResult result) {
   }
 
   *outResult = getResultFromVkResult(result);
-}
-
-VkFormat textureFormatToVkFormat(lvk::Format format) {
-  using TextureFormat = ::lvk::Format;
-  switch (format) {
-  case Format_Invalid:
-    return VK_FORMAT_UNDEFINED;
-  case Format_R_UN8:
-    return VK_FORMAT_R8_UNORM;
-  case Format_R_UN16:
-    return VK_FORMAT_R16_UNORM;
-  case Format_R_F16:
-    return VK_FORMAT_R16_SFLOAT;
-  case Format_R_UI16:
-    return VK_FORMAT_R16_UINT;
-  case Format_RG_UN8:
-    return VK_FORMAT_R8G8_UNORM;
-  case Format_RG_UN16:
-    return VK_FORMAT_R16G16_UNORM;
-  case Format_BGRA_UN8:
-    return VK_FORMAT_B8G8R8A8_UNORM;
-  case Format_RGBA_UN8:
-    return VK_FORMAT_R8G8B8A8_UNORM;
-  case Format_RGBA_SRGB8:
-    return VK_FORMAT_R8G8B8A8_SRGB;
-  case Format_BGRA_SRGB8:
-    return VK_FORMAT_B8G8R8A8_SRGB;
-  case Format_RG_F16:
-    return VK_FORMAT_R16G16_SFLOAT;
-  case Format_RG_F32:
-    return VK_FORMAT_R32G32_SFLOAT;
-  case Format_RG_UI16:
-    return VK_FORMAT_R16G16_UINT;
-  case Format_R_F32:
-    return VK_FORMAT_R32_SFLOAT;
-  case Format_RGBA_F16:
-    return VK_FORMAT_R16G16B16A16_SFLOAT;
-  case Format_RGBA_UI32:
-    return VK_FORMAT_R32G32B32A32_UINT;
-  case Format_RGBA_F32:
-    return VK_FORMAT_R32G32B32A32_SFLOAT;
-  case Format_ETC2_RGB8:
-    return VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK;
-  case Format_ETC2_SRGB8:
-    return VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK;
-  case Format_BC7_RGBA:
-    return VK_FORMAT_BC7_UNORM_BLOCK;
-  case Format_Z_UN16:
-    return VK_FORMAT_D16_UNORM;
-  case Format_Z_UN24:
-    return VK_FORMAT_D24_UNORM_S8_UINT;
-  case Format_Z_F32:
-    return VK_FORMAT_D32_SFLOAT;
-  case Format_Z_UN24_S_UI8:
-    return VK_FORMAT_D24_UNORM_S8_UINT;
-  default:
-    IGL_ASSERT_MSG(false, "TextureFormat value not handled: %d", (int)format);
-  }
-#if defined(_MSC_VER)
-  return VK_FORMAT_UNDEFINED;
-#endif // _MSC_VER
-}
-
-lvk::Format vkFormatToTextureFormat(VkFormat format) {
-  switch (format) {
-  case VK_FORMAT_UNDEFINED:
-    return Format_Invalid;
-  case VK_FORMAT_R8_UNORM:
-    return Format_R_UN8;
-  case VK_FORMAT_R16_UNORM:
-    return Format_R_UN16;
-  case VK_FORMAT_R16_SFLOAT:
-    return Format_R_F16;
-  case VK_FORMAT_R16_UINT:
-    return Format_R_UI16;
-  case VK_FORMAT_R8G8_UNORM:
-    return Format_RG_UN8;
-  case VK_FORMAT_B8G8R8A8_UNORM:
-    return Format_BGRA_UN8;
-  case VK_FORMAT_R8G8B8A8_UNORM:
-    return Format_RGBA_UN8;
-  case VK_FORMAT_R8G8B8A8_SRGB:
-    return Format_RGBA_SRGB8;
-  case VK_FORMAT_B8G8R8A8_SRGB:
-    return Format_BGRA_SRGB8;
-  case VK_FORMAT_R16G16_UNORM:
-    return Format_RG_UN16;
-  case VK_FORMAT_R16G16_SFLOAT:
-    return Format_RG_F16;
-  case VK_FORMAT_R32G32_SFLOAT:
-    return Format_RG_F32;
-  case VK_FORMAT_R16G16_UINT:
-    return Format_RG_UI16;
-  case VK_FORMAT_R32_SFLOAT:
-    return Format_R_F32;
-  case VK_FORMAT_R16G16B16A16_SFLOAT:
-    return Format_RGBA_F16;
-  case VK_FORMAT_R32G32B32A32_UINT:
-    return Format_RGBA_UI32;
-  case VK_FORMAT_R32G32B32A32_SFLOAT:
-    return Format_RGBA_F32;
-  case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK:
-    return Format_ETC2_RGB8;
-  case VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK:
-    return Format_ETC2_SRGB8;
-  case VK_FORMAT_D16_UNORM:
-    return Format_Z_UN16;
-  case VK_FORMAT_BC7_UNORM_BLOCK:
-    return Format_BC7_RGBA;
-  case VK_FORMAT_X8_D24_UNORM_PACK32:
-    return Format_Z_UN24;
-  case VK_FORMAT_D24_UNORM_S8_UINT:
-    return Format_Z_UN24_S_UI8;
-  case VK_FORMAT_D32_SFLOAT:
-    return Format_Z_F32;
-  default:
-    IGL_ASSERT_MSG(false, "VkFormat value not handled: %d", (int)format);
-  }
-#if defined(_MSC_VER)
-  return Format_Invalid;
-#endif // _MSC_VER
 }
 
 uint32_t getBytesPerPixel(VkFormat format) {

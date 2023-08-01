@@ -9,7 +9,6 @@
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
-#include <igl/vulkan/VulkanShaderModule.h>
 
 namespace {
 
@@ -244,7 +243,9 @@ RenderPipelineState::~RenderPipelineState() {
   }
 
   for (lvk::ShaderModuleHandle m : desc_.shaderStages.modules_) {
-    device_->destroy(m);
+    if (!m.empty()) {
+      device_->destroy(m);
+    }
   }
 
   for (auto p : pipelines_) {
@@ -302,7 +303,7 @@ VkPipeline RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& 
   for (uint32_t i = 0; i != numColorAttachments; i++) {
     const auto& attachment = desc_.color[i];
     IGL_ASSERT(attachment.format != Format_Invalid);
-    colorAttachmentFormats[i] = textureFormatToVkFormat(attachment.format);
+    colorAttachmentFormats[i] = formatToVkFormat(attachment.format);
     if (!attachment.blendEnabled) {
       colorBlendAttachmentStates[i] = ivkGetPipelineColorBlendAttachmentState_NoBlending();
     } else {
@@ -326,14 +327,13 @@ VkPipeline RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& 
   IGL_ASSERT(fragmentModule);
 
   std::vector<VkPipelineShaderStageCreateInfo> stages = {
-      ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertexModule->getVkShaderModule(), vertexModule->getEntryPoint()),
-      ivkGetPipelineShaderStageCreateInfo(
-          VK_SHADER_STAGE_FRAGMENT_BIT, fragmentModule->getVkShaderModule(), fragmentModule->getEntryPoint()),
+      ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertexModule->vkShaderModule_, vertexModule->entryPoint_),
+      ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragmentModule->vkShaderModule_, fragmentModule->entryPoint_),
   };
 
   if (geometryModule) {
-    stages.push_back(ivkGetPipelineShaderStageCreateInfo(
-        VK_SHADER_STAGE_GEOMETRY_BIT, geometryModule->getVkShaderModule(), geometryModule->getEntryPoint()));
+    stages.push_back(
+        ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_GEOMETRY_BIT, geometryModule->vkShaderModule_, geometryModule->entryPoint_));
   }
 
   lvk::vulkan::VulkanPipelineBuilder()
@@ -369,8 +369,8 @@ VkPipeline RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& 
       .vertexInputState(vertexInputStateCreateInfo_)
       .colorBlendAttachmentStates(colorBlendAttachmentStates)
       .colorAttachmentFormats(colorAttachmentFormats)
-      .depthAttachmentFormat(textureFormatToVkFormat(desc_.depthFormat))
-      .stencilAttachmentFormat(textureFormatToVkFormat(desc_.stencilFormat))
+      .depthAttachmentFormat(formatToVkFormat(desc_.depthFormat))
+      .stencilAttachmentFormat(formatToVkFormat(desc_.stencilFormat))
       .build(ctx.getVkDevice(), ctx.pipelineCache_, ctx.vkPipelineLayout_, &pipeline, desc_.debugName);
 
   pipelines_[dynamicState] = pipeline;

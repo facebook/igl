@@ -24,41 +24,11 @@
 // Enable to use VulkanMemoryAllocator (VMA)
 #define IGL_VULKAN_USE_VMA 1
 
-#define VK_ASSERT(func)                                            \
-  {                                                                \
-    const VkResult vk_assert_result = func;                        \
-    if (vk_assert_result != VK_SUCCESS) {                          \
-      LLOGW("Vulkan API call failed: %s:%i\n  %s\n  %s\n", \
-                    __FILE__,                                      \
-                    __LINE__,                                      \
-                    #func,                                         \
-                    ivkGetVulkanResultString(vk_assert_result));   \
-      assert(false);                                               \
-    }                                                              \
-  }
-
-#define VK_ASSERT_RETURN(func)                                     \
-  {                                                                \
-    const VkResult vk_assert_result = func;                        \
-    if (vk_assert_result != VK_SUCCESS) {                          \
-      LLOGW("Vulkan API call failed: %s:%i\n  %s\n  %s\n", \
-                    __FILE__,                                      \
-                    __LINE__,                                      \
-                    #func,                                         \
-                    ivkGetVulkanResultString(vk_assert_result));   \
-      assert(false);                                               \
-      return getResultFromVkResult(vk_assert_result);              \
-    }                                                              \
-  }
-
 namespace lvk::vulkan {
 
-Result getResultFromVkResult(VkResult result);
 void setResultFrom(Result* outResult, VkResult result);
-lvk::Format vkFormatToTextureFormat(VkFormat format);
 bool isDepthOrStencilVkFormat(VkFormat format);
 uint32_t getBytesPerPixel(VkFormat format);
-VkFormat textureFormatToVkFormat(lvk::Format format);
 VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(lvk::StorageType storage);
 VkCompareOp compareOpToVkCompareOp(lvk::CompareOp func);
 VkSampleCountFlagBits getVulkanSampleCountFlags(size_t numSamples);

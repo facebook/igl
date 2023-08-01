@@ -17,7 +17,6 @@
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
-#include <igl/vulkan/VulkanShaderModule.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <igl/vulkan/VulkanTexture.h>
 #include <lvk/Pool.h>
@@ -57,6 +56,11 @@ struct VulkanContextConfig {
   // owned by the application - should be alive until initContext() returns
   const void* pipelineCacheData = nullptr;
   size_t pipelineCacheDataSize = 0;
+};
+
+struct VulkanShaderModule final {
+  VkShaderModule vkShaderModule_ = VK_NULL_HANDLE;
+  const char* entryPoint_ = nullptr;
 };
 
 class VulkanContext final {
