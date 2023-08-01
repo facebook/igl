@@ -19,7 +19,7 @@ jobs:
               cc: "cl",
               cxx: "cl",
               generators: "Visual Studio 17 2022",
-              cmake_args: "-DIGL_WITH_TRACY=ON"
+              cmake_args: "-DLVK_WITH_TRACY=ON"
             }
           - {
               name: "Ubuntu - Clang",
