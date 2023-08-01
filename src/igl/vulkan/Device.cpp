@@ -306,9 +306,16 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, co
     return {};
   }
 
-  // TODO: use multiple image views to allow sampling from the STENCIL buffer
-  const VkImageAspectFlags aspect = (usageFlags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) ? VK_IMAGE_ASPECT_DEPTH_BIT
-                                                                                               : VK_IMAGE_ASPECT_COLOR_BIT;
+  VkImageAspectFlags aspect = 0;
+  if (image->isDepthFormat_ || image->isStencilFormat_) {
+    if (image->isDepthFormat_) {
+      aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
+    } else if (image->isStencilFormat_) {
+      aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+  } else {
+    aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+  }
 
   std::shared_ptr<VulkanImageView> imageView =
       image->createImageView(imageViewType, vkFormat, aspect, 0, VK_REMAINING_MIP_LEVELS, 0, arrayLayerCount, debugNameImageView);
