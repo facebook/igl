@@ -261,7 +261,6 @@ RenderPipelineState::~RenderPipelineState() {
 
 RenderPipelineState::RenderPipelineState(RenderPipelineState&& other) :
   device_(other.device_), vertexInputStateCreateInfo_(other.vertexInputStateCreateInfo_) {
-  std::swap(shaderStages_, other.shaderStages_);
   std::swap(desc_, other.desc_);
   std::swap(vkBindings_, other.vkBindings_);
   std::swap(vkAttributes_, other.vkAttributes_);
@@ -271,7 +270,6 @@ RenderPipelineState::RenderPipelineState(RenderPipelineState&& other) :
 
 RenderPipelineState& RenderPipelineState::operator=(RenderPipelineState&& other) {
   std::swap(device_, other.device_);
-  std::swap(shaderStages_, other.shaderStages_);
   std::swap(desc_, other.desc_);
   std::swap(vertexInputStateCreateInfo_, other.vertexInputStateCreateInfo_);
   std::swap(vkBindings_, other.vkBindings_);

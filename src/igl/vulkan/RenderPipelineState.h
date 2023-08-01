@@ -143,7 +143,6 @@ class RenderPipelineState final {
  private:
   lvk::vulkan::Device* device_ = nullptr;
 
-  std::shared_ptr<ShaderStages> shaderStages_;
   RenderPipelineDesc desc_;
   VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo_;
 
