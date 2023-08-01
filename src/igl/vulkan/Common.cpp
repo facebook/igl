@@ -53,12 +53,10 @@ uint32_t getBytesPerPixel(VkFormat format) {
     return 12;
   case VK_FORMAT_R32G32B32A32_SFLOAT:
     return 16;
-  default:
-    IGL_ASSERT_MSG(false, "VkFormat value not handled: %d", (int)format);
+  default:;
   }
-#if defined(_MSC_VER)
+  IGL_ASSERT_MSG(false, "VkFormat value not handled: %d", (int)format);
   return 1;
-#endif // _MSC_VER
 }
 
 VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(lvk::StorageType storage) {

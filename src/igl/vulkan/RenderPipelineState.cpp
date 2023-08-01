@@ -50,6 +50,9 @@ VkFrontFace windingModeToVkFrontFace(lvk::WindingMode mode) {
 VkFormat vertexFormatToVkFormat(lvk::VertexFormat fmt) {
   using lvk::VertexFormat;
   switch (fmt) {
+  case VertexFormat::Invalid:
+    IGL_ASSERT(false);
+    return VK_FORMAT_UNDEFINED;
   case VertexFormat::Float1:
     return VK_FORMAT_R32_SFLOAT;
   case VertexFormat::Float2:

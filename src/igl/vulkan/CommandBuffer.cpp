@@ -44,6 +44,9 @@ void transitionColorAttachment(VkCommandBuffer buffer, lvk::vulkan::VulkanTextur
 VkAttachmentLoadOp loadOpToVkAttachmentLoadOp(lvk::LoadOp a) {
   using lvk::LoadOp;
   switch (a) {
+  case LoadOp_Invalid:
+    IGL_ASSERT(false);
+    return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
   case LoadOp_DontCare:
     return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
   case LoadOp_Load:

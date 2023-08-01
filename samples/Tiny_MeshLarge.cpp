@@ -1320,6 +1320,7 @@ lvk::Format gli2iglTextureFormat(gli::texture2d::format_type format) {
     return lvk::Format_RGBA_F32;
   case gli::FORMAT_RG16_SFLOAT_PACK16:
     return lvk::Format_RG_F16;
+  default:;
   }
   IGL_ASSERT_MSG(false, "Code should NOT be reached");
   return lvk::Format_RGBA_UN8;
