@@ -617,9 +617,7 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(
   VkFormatProperties properties;
   vkGetPhysicalDeviceFormatProperties(ctx_->vkPhysicalDevice_, vkFormat, &properties);
 
-  const VkFormatFeatureFlags features = properties.bufferFeatures |
-                                        properties.linearTilingFeatures |
-                                        properties.optimalTilingFeatures;
+  const VkFormatFeatureFlags features = properties.optimalTilingFeatures;
 
   TextureFormatCapabilities caps = TextureFormatCapabilityBits::Unsupported;
 
