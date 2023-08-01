@@ -11,14 +11,14 @@
 
 #include <igl/Common.h>
 
-namespace igl::shell::openxr::mobile {
+namespace igl::shell::openxr {
 #if IGL_DEBUG
 void checkXRErrors(XrResult result, const char* function);
 #endif
-} // namespace igl::shell::openxr::mobile
+} // namespace igl::shell::openxr
 
 #if IGL_DEBUG
-#define XR_CHECK(func) igl::shell::openxr::mobile::checkXRErrors(func, #func)
+#define XR_CHECK(func) igl::shell::openxr::checkXRErrors(func, #func)
 #else
 #define XR_CHECK(func) func
 #endif

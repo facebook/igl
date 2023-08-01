@@ -7,7 +7,7 @@
 
 #include "XrAppImplVulkan.h"
 
-#include <shell/openxr/mobile/XrLog.h>
+#include <shell/openxr/XrLog.h>
 
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>

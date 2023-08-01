@@ -6,12 +6,11 @@
  */
 
 #include "XrLog.h"
-#include "XrApp.h"
 
 #include <igl/Common.h>
 
 extern XrInstance getXrInstance();
-namespace igl::shell::openxr::mobile {
+namespace igl::shell::openxr {
 #if IGL_DEBUG
 void checkXRErrors(XrResult result, const char* function) {
   if (XR_FAILED(result)) {
@@ -21,4 +20,4 @@ void checkXRErrors(XrResult result, const char* function) {
   }
 }
 #endif
-} // namespace igl::shell::openxr::mobile
+} // namespace igl::shell::openxr
