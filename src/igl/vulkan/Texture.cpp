@@ -324,6 +324,17 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/) const {
   }
 }
 
+size_t Texture::getEstimatedSizeInBytes() const {
+  const auto range = getFullRange(0, getNumMipLevels());
+  auto totalBytes = properties_.getBytesPerRange(range);
+
+  if (getType() == igl::TextureType::Cube) {
+    totalBytes *= 6;
+  }
+
+  return totalBytes;
+}
+
 bool Texture::isRequiredGenerateMipmap() const {
   if (!texture_ || desc_.numMipLevels <= 1) {
     return false;
