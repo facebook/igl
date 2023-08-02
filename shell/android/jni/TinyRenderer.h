@@ -30,8 +30,9 @@ class TinyRenderer final {
 
  private:
   BackendTypeID backendTypeID_;
-  std::unique_ptr<igl::shell::RenderSession> session_;
   std::shared_ptr<igl::shell::PlatformAndroid> platform_;
+  std::unique_ptr<igl::shell::RenderSession> session_;
+
   uint32_t width_ = 0;
   uint32_t height_ = 0;
 };
