@@ -11,7 +11,7 @@
 #include <igl/opengl/Device.h>
 #include <igl/opengl/egl/Context.h>
 #include <igl/opengl/egl/HWDevice.h>
-#include <shell/openxr/mobile/XrLog.h>
+#include <shell/openxr/src/XrLog.h>
 
 #include "XrSwapchainProviderImplGLES.h"
 

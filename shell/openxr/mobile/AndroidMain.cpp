@@ -7,6 +7,11 @@
 
 #include <android_native_app_glue.h>
 #include <igl/Common.h>
+//#define ATTACH_DEBUGGER
+
+#ifdef ATTACH_DEBUGGER
+#include <unistd.h>
+#endif
 
 #include "XrApp.h"
 using namespace igl::shell::openxr::mobile;
@@ -87,6 +92,10 @@ XrInstance getXrInstance() {
 void android_main(struct android_app* app) {
   JNIEnv* Env;
   app->activity->vm->AttachCurrentThread(&Env, nullptr);
+
+#ifdef ATTACH_DEBUGGER
+  sleep(20);
+#endif
 
 #if defined(USE_VULKAN_BACKEND)
   auto xrApp = std::make_unique<XrApp>(std::make_unique<XrAppImplVulkan>());

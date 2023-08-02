@@ -18,7 +18,7 @@
 #define XR_USE_PLATFORM_ANDROID
 #include <openxr/openxr_platform.h>
 
-#include <shell/openxr/mobile/impl/XrSwapchainProviderImpl.h>
+#include <shell/openxr/impl/XrSwapchainProviderImpl.h>
 
 namespace igl::shell::openxr::mobile {
 class XrSwapchainProviderImplGLES final : public impl::XrSwapchainProviderImpl {
