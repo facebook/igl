@@ -89,7 +89,6 @@ layout (location = 1) out vec2 uv;
 
 layout(push_constant) uniform PushConstants {
     mat4 proj;
-    uint textureId;
 } pc;
 
 out gl_PerVertex { vec4 gl_Position; };
@@ -121,18 +120,9 @@ layout(location = 0) out vec4 fColor;
 layout(location = 0) in vec4 color;
 layout(location = 1) in vec2 uv;
 
-layout(push_constant) uniform PushConstants {
-    mat4 proj;
-    uint textureId;
-} pc;
-
-vec4 textureBindless2D(vec2 uv) {
-  return texture(sampler2D(kTextures2D[pc.textureId], kSamplers[0]), uv);
-}
-
 void main()
 {
-    fColor = color * textureBindless2D(uv);
+    fColor = color * textureSample2D(0, 0, uv);
 })";
 }
 
@@ -271,7 +261,7 @@ Session::Renderer::Renderer(igl::IDevice& device) {
     _material->cullMode = igl::CullMode::Disabled;
     _material->blendMode = iglu::material::BlendMode::Translucent();
 
-    // do not set texture this way for Vulkan, since it uses pre defined texture arrays
+    // @fb-only
     if (device.getBackendType() != igl::BackendType::Vulkan) {
       _material->shaderUniforms().setTexture("texture", _fontTexture.get(), _linearSampler);
     }
@@ -292,14 +282,6 @@ void Session::Renderer::newFrame(const igl::FramebufferDesc& desc) {
       desc.depthAttachment.texture ? desc.depthAttachment.texture->getFormat()
                                    : igl::TextureFormat::Invalid;
 }
-
-namespace {
-// push constant structure for Vulkan, containing all the relevant data
-struct VulkanImguiBindData {
-  iglu::simdtypes::float4x4 proj;
-  uint32_t textureId;
-};
-} // namespace
 
 void Session::Renderer::renderDrawData(igl::IDevice& device,
                                        igl::IRenderCommandEncoder& cmdEncoder,
@@ -349,10 +331,8 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
   const bool isOpenGL = device.getBackendType() == igl::BackendType::OpenGL;
   const bool isVulkan = device.getBackendType() == igl::BackendType::Vulkan;
 
-  VulkanImguiBindData bindData = {orthoProjection, 0};
-
   if (isVulkan) {
-    cmdEncoder.bindPushConstants(&bindData, sizeof(bindData));
+    cmdEncoder.bindPushConstants(&orthoProjection, sizeof(orthoProjection));
   }
 
   ImTextureID lastBoundTextureId = nullptr;
@@ -397,8 +377,12 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
         lastBoundTextureId = cmd.TextureId;
         auto* tex = reinterpret_cast<igl::ITexture*>(cmd.TextureId);
         if (isVulkan) {
-          bindData.textureId = tex ? uint32_t(tex->getTextureId()) : 0u;
-          cmdEncoder.bindPushConstants(&bindData, sizeof(bindData));
+          cmdEncoder.bindPushConstants(&orthoProjection, sizeof(orthoProjection));
+          // @fb-only
+          // Add Vulkan support for texture reflection info in ShaderUniforms so we don't need to
+          // bind the texture directly
+          cmdEncoder.bindTexture(0, igl::BindTarget::kFragment, tex);
+
         } else {
           _material->shaderUniforms().setTexture(
               "texture", tex ? tex : _fontTexture.get(), _linearSampler);
