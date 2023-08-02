@@ -222,9 +222,6 @@ void* Buffer::map(const BufferRange& range, igl::Result* outResult) {
     return tmpBuffer_.data();
   }
 
-  IGL_ASSERT(buffer->getMemoryPropertyFlags() & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-  // Vulkan mapped buffers are always coherent in our implementation
   return buffer->getMappedPtr() + range.offset;
 }
 
@@ -232,9 +229,13 @@ void Buffer::unmap() {
   IGL_ASSERT_MSG(!isRingBuffer_, "Buffer::unmap() operation not supported for ring buffer");
   IGL_ASSERT_MSG(mappedRange_.size, "Called Buffer::unmap() without Buffer::map()");
 
-  if (!currentVulkanBuffer()->isMapped()) {
+  const auto& buffer = currentVulkanBuffer();
+  BufferRange range(tmpBuffer_.size(), mappedRange_.offset);
+  if (!buffer->isMapped()) {
     // handle DEVICE_LOCAL buffers
-    upload(tmpBuffer_.data(), BufferRange(tmpBuffer_.size(), mappedRange_.offset));
+    upload(tmpBuffer_.data(), range);
+  } else if (buffer->needFlushAfterUpdate()) {
+    buffer->flushMappedMemory(range.offset, range.size);
   }
   mappedRange_.size = 0;
 }

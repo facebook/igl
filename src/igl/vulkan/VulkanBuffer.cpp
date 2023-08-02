@@ -37,8 +37,20 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
       vmaAllocInfo_.flags =
           VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
     }
-    if (memFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
-      vmaAllocInfo_.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+      // Check if coherent buffer is available.
+      VK_ASSERT(vkCreateBuffer(device_, &ci, nullptr, &vkBuffer_));
+      VkMemoryRequirements memReq;
+      vkGetBufferMemoryRequirements(device_, vkBuffer_, &memReq);
+      vkDestroyBuffer(device, vkBuffer_, nullptr);
+      vkBuffer_ = VK_NULL_HANDLE;
+
+      if (memReq.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+        vmaAllocInfo_.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+      } else {
+        needFlushAfterUpdate_ = true;
+      }
     }
 
     vmaAllocInfo_.usage = VMA_MEMORY_USAGE_AUTO;
@@ -49,6 +61,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
                     &vkBuffer_,
                     &vmaAllocation_,
                     nullptr);
+    IGL_ASSERT(vmaAllocation_ != nullptr);
 
     // handle memory-mapped buffers
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
@@ -166,6 +179,9 @@ void VulkanBuffer::bufferSubData(size_t offset, size_t size, const void* data) {
     checked_memcpy((uint8_t*)mappedPtr_ + offset, bufferSize_ - offset, data, size);
   } else {
     memset((uint8_t*)mappedPtr_ + offset, 0, size);
+  }
+  if (needFlushAfterUpdate_) {
+    flushMappedMemory(offset, size);
   }
 }
 
