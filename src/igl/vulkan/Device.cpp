@@ -281,7 +281,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
   }
 
   if (strstr(source, "#version ") == nullptr) {
-    std::string extraExtensions;
+    std::string extraExtensions = "#extension GL_EXT_nonuniform_qualifier : require\n";
 
     // GL_EXT_debug_printf extension
     if (ctx_->extensions_.enabled(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
@@ -301,6 +301,19 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       extraExtensions += "#extension GL_EXT_buffer_reference_uvec2 : require\n";
     }
 
+    const std::string bindlessTexturesSource = ctx_->config_.enableDescriptorIndexing ?
+                                                                                      R"(
+      // everything - indexed by global texture/sampler id
+      layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
+      layout (set = 0, binding = 1) uniform texture2DArray kTextures2DArray[];
+      layout (set = 0, binding = 2) uniform texture3D kTextures3D[];
+      layout (set = 0, binding = 3) uniform textureCube kTexturesCube[];
+      layout (set = 0, binding = 4) uniform sampler kSamplers[];
+      layout (set = 0, binding = 5) uniform samplerShadow kSamplersShadow[];
+      // binding #6 is reserved for STORAGE_IMAGEs: check VulkanContext.cpp
+      )"
+                                                                                      : "";
+
     // there's no header provided in the shader source, let's insert our own header
     if (vkStage == VK_SHADER_STAGE_VERTEX_BIT || vkStage == VK_SHADER_STAGE_COMPUTE_BIT) {
       sourcePatched += R"(
@@ -314,18 +327,8 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       sourcePatched += R"(
       #version 460
       )" + extraExtensions +
+                       bindlessTexturesSource +
                        R"(
-      #extension GL_EXT_nonuniform_qualifier : require
-
-      // everything - indexed by global texure/sampler id
-      layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
-      layout (set = 0, binding = 1) uniform texture2DArray kTextures2DArray[];
-      layout (set = 0, binding = 2) uniform texture3D kTextures3D[];
-      layout (set = 0, binding = 3) uniform textureCube kTexturesCube[];
-      layout (set = 0, binding = 4) uniform sampler kSamplers[];
-      layout (set = 0, binding = 5) uniform samplerShadow kSamplersShadow[];
-      // binding #6 is reserved for STORAGE_IMAGEs: check VulkanContext.cpp
-
       // indexed by texture/sampler slot id
       layout (set = 1, binding = 0) uniform texture2D sTextures2D[];
       layout (set = 1, binding = 1) uniform texture2DArray sTextures2DArray[];

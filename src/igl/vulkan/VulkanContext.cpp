@@ -259,7 +259,9 @@ VulkanContext::~VulkanContext() {
     }
   }
 
-  dslBindless_.reset(nullptr);
+  if (dslBindless_) {
+    dslBindless_.reset(nullptr);
+  }
   dslTextures_.reset(nullptr);
   dslBuffersUniform_.reset(nullptr);
   dslBuffersStorage_.reset(nullptr);
@@ -272,7 +274,9 @@ VulkanContext::~VulkanContext() {
   immediate_.reset(nullptr);
 
   if (device_) {
-    vkDestroyDescriptorPool(device, dpBindless_, nullptr);
+    if (dpBindless_ != VK_NULL_HANDLE) {
+      vkDestroyDescriptorPool(device, dpBindless_, nullptr);
+    }
     vkDestroyDescriptorPool(device, dpTextures_, nullptr);
     vkDestroyDescriptorPool(device, dpBuffersUniform_, nullptr);
     vkDestroyDescriptorPool(device, dpBuffersStorage_, nullptr);
@@ -788,20 +792,23 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
         bindingFlags.data(),
         "Descriptor Set Layout: VulkanContext::dslBindless_");
 
-    // create default descriptor pool and allocate 1 descriptor set
-    const std::array<VkDescriptorPoolSize, kNumBindings> poolSizes = {
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, config_.maxTextures},
-    };
-    VK_ASSERT_RETURN(ivkCreateDescriptorPool(
-        device, 1, static_cast<uint32_t>(poolSizes.size()), poolSizes.data(), &dpBindless_));
-    VK_ASSERT_RETURN(ivkAllocateDescriptorSet(
-        device, dpBindless_, dslBindless_->getVkDescriptorSetLayout(), &bindlessDSet_.ds));
+    // only do allocations if actually enabled
+    if (config_.enableDescriptorIndexing) {
+      // create default descriptor pool and allocate 1 descriptor set
+      const std::array<VkDescriptorPoolSize, kNumBindings> poolSizes = {
+          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
+          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
+          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
+          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
+          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers},
+          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers},
+          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, config_.maxTextures},
+      };
+      VK_ASSERT_RETURN(ivkCreateDescriptorPool(
+          device, 1, static_cast<uint32_t>(poolSizes.size()), poolSizes.data(), &dpBindless_));
+      VK_ASSERT_RETURN(ivkAllocateDescriptorSet(
+          device, dpBindless_, dslBindless_->getVkDescriptorSetLayout(), &bindlessDSet_.ds));
+    }
   }
 
   // maxPushConstantsSize is guaranteed to be at least 128 bytes
@@ -977,6 +984,9 @@ std::shared_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
 }
 
 void VulkanContext::checkAndUpdateDescriptorSets() const {
+  if (!config_.enableDescriptorIndexing) {
+    return;
+  }
   if (awaitingDeletion_) {
     // Our descriptor set was created with VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT which
     // indicates that descriptors in this binding that are not dynamically used need not contain
@@ -1274,6 +1284,10 @@ uint64_t VulkanContext::getFrameNumber() const {
 
 void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
                                               VkPipelineBindPoint bindPoint) const {
+  if (!config_.enableDescriptorIndexing) {
+    return;
+  }
+
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 #if IGL_VULKAN_PRINT_COMMANDS
@@ -1431,8 +1445,9 @@ void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
 }
 
 void VulkanContext::markSubmit(const VulkanImmediateCommands::SubmitHandle& handle) const {
-  bindlessDSet_.handle = handle;
-
+  if (config_.enableDescriptorIndexing) {
+    bindlessDSet_.handle = handle;
+  }
   textureDSets_.updateHandles(handle);
   bufferUniformDSets_.updateHandles(handle);
   bufferStorageDSets_.updateHandles(handle);

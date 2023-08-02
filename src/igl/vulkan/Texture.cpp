@@ -344,7 +344,10 @@ bool Texture::isRequiredGenerateMipmap() const {
 }
 
 uint64_t Texture::getTextureId() const {
-  return texture_ ? texture_->getTextureId() : 0;
+  const auto& config = device_.getVulkanContext().config_;
+  IGL_ASSERT_MSG(config.enableDescriptorIndexing,
+                 "Make sure config.enableDescriptorIndexing is enabled.");
+  return texture_ && config.enableDescriptorIndexing ? texture_->getTextureId() : 0;
 }
 
 VkImageView Texture::getVkImageView() const {
