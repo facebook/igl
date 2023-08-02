@@ -13,23 +13,12 @@
 #include <igl/Framebuffer.h>
 #include <igl/Uniform.h>
 
-// TODO: Remove this once we move BindTarget from CommandBuffer.h to this header
-#include <igl/CommandBuffer.h>
-
 namespace igl {
 
 class IBuffer;
 class IComputePipelineState;
 class ISamplerState;
 class ITexture;
-
-/**
- * @brief A descriptor struct for IComputeCommandEncoder
- *
- */
-struct ComputeCommandEncoderDesc {
-  // Placeholder
-};
 
 /**
  * @brief Object for encoding commands in a compute pass

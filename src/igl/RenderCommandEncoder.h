@@ -22,10 +22,6 @@ class ISamplerState;
 class ITexture;
 struct RenderPassDesc;
 
-struct RenderCommandEncoderDesc {
-  // Placeholder
-};
-
 namespace BindTarget {
 const uint8_t kVertex = 0x0001;
 const uint8_t kFragment = 0x0002;
