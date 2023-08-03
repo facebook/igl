@@ -49,6 +49,9 @@ android {
 
     sourceSets {
         main.assets.srcDirs += '../../../shell/resources/images'
+        debug {
+            main.jniLibs.srcDirs += '../../../third-party/deps/src/vulkan-android-validation-layers-binaries'
+        }
     }
 
     ndkVersion '25.2.9519653'

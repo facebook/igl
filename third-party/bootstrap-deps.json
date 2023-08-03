@@ -162,5 +162,13 @@
         "url": "https://github.com/facebook/igl/releases/download/SparkSL/SparkSL_Compiler-v0.0.1.zip",
         "sha1": "d636517b5fd3103f7aeca2ed6d4c9ad3e2e97964"
     }
+},
+{
+    "name": "vulkan-android-validation-layers-binaries",
+    "source": {
+        "type": "archive",
+        "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/releases/download/sdk-1.3.250.1/android-binaries-1.3.250.1.zip",
+        "sha1": "c4da896c0a77b2958f5a92ec5660667f0901f450"
+    }
 }
 ]

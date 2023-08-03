@@ -6,7 +6,9 @@
  */
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #endif
 
@@ -21,8 +23,12 @@
 #endif
 
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
 static const char* kDefaultValidationLayers[] = {"VK_LAYER_KHRONOS_validation"};
+
+int compareVkLayerProperties(const void* p1, const void* p2);
 
 const char* ivkGetVulkanResultString(VkResult result) {
 #define RESULT_CASE(res) \
@@ -109,6 +115,45 @@ const char* ivkGetVulkanResultString(VkResult result) {
 #undef RESULT_CASE
 }
 
+int compareVkLayerProperties(const void* p1, const void* p2) {
+  return strncmp(((const VkLayerProperties*)p1)->layerName,
+                 ((const VkLayerProperties*)p2)->layerName,
+                 VK_MAX_EXTENSION_NAME_SIZE);
+}
+
+bool ivkIsValidationAvailable(void) {
+  uint32_t instLayerCount = 0;
+  if (vkEnumerateInstanceLayerProperties(&instLayerCount, NULL) != VK_SUCCESS ||
+      instLayerCount == 0) {
+    return false;
+  }
+
+  VkLayerProperties* layerProperties =
+      (VkLayerProperties*)malloc(instLayerCount * sizeof(VkLayerProperties));
+  if (layerProperties != NULL) {
+    if (vkEnumerateInstanceLayerProperties(&instLayerCount, layerProperties) == VK_SUCCESS) {
+      qsort(layerProperties, instLayerCount, sizeof(VkLayerProperties), compareVkLayerProperties);
+      for (uint32_t i = 0; i < IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers); ++i) {
+        int len = strlen(kDefaultValidationLayers[i]) + 1;
+        assert(len <= VK_MAX_EXTENSION_NAME_SIZE);
+        VkLayerProperties prop;
+        memcpy(prop.layerName, kDefaultValidationLayers[i], len);
+        if (!bsearch(&prop,
+                     layerProperties,
+                     instLayerCount,
+                     sizeof(VkLayerProperties),
+                     compareVkLayerProperties)) {
+          free(layerProperties);
+          return false;
+        }
+      }
+    }
+    free(layerProperties);
+    return true;
+  }
+  return false;
+}
+
 VkResult ivkCreateInstance(uint32_t apiVersion,
                            uint32_t enableValidation,
                            uint32_t enableGPUAssistedValidation,
@@ -117,7 +162,13 @@ VkResult ivkCreateInstance(uint32_t apiVersion,
                            const char** extensions,
                            VkInstance* outInstance) {
   // Validation Features not available on most Android devices
-#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOS
+#if !IGL_PLATFORM_MACOS
+  if (!ivkIsValidationAvailable()) {
+    enableValidation = false;
+    enableGPUAssistedValidation = false;
+    enableSynchronizationValidation = false;
+  }
+
   VkValidationFeatureEnableEXT validationFeaturesEnabled[2];
   int validationFeaturesCount = 0;
   if (enableGPUAssistedValidation) {
@@ -135,7 +186,7 @@ VkResult ivkCreateInstance(uint32_t apiVersion,
       .enabledValidationFeatureCount = validationFeaturesCount,
       .pEnabledValidationFeatures = validationFeaturesCount > 0 ? validationFeaturesEnabled : NULL,
   };
-#endif // !IGL_PLATFORM_ANDROID
+#endif // !IGL_PLATFORM_MACOS
 
   const VkApplicationInfo appInfo = {
       .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -149,11 +200,11 @@ VkResult ivkCreateInstance(uint32_t apiVersion,
 
   const VkInstanceCreateInfo ci = {
     .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOS
+#if !IGL_PLATFORM_MACOS
     .pNext = enableValidation ? &features : NULL,
 #endif
     .pApplicationInfo = &appInfo,
-#if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOS
+#if !IGL_PLATFORM_MACOS
     .enabledLayerCount = enableValidation ? IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0,
     .ppEnabledLayerNames = enableValidation ? kDefaultValidationLayers : NULL,
 #endif
