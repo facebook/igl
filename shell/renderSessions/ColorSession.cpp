@@ -109,18 +109,14 @@ static std::string getVulkanVertexShaderSource() {
                 layout(location = 0) out vec2 uv;
                 layout(location = 1) out vec3 color;
 
-                struct UniformsPerObject {
+                layout (set = 2, binding = 0, std140) uniform UniformsPerObject {
                   vec3 color;
-                };
-
-                layout(std430, buffer_reference) readonly buffer PerObject {
-                  UniformsPerObject perObject;
-                };
+                } perObject;
 
                 void main() {
                   gl_Position = vec4(position, 1.0);
                   uv = uv_in;
-                  color = PerObject(getBuffer(0)).perObject.color;
+                  color = perObject.color;
                 }
                 )";
 }

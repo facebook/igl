@@ -75,6 +75,7 @@ void TinyRenderer::init(AAssetManager* mgr,
                                  0,
                                  nullptr,
                                  &result);
+    break;
   }
 #endif
 
