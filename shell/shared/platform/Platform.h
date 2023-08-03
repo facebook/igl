@@ -45,6 +45,7 @@ class Platform {
 
   std::shared_ptr<ITexture> loadTexture(
       const char* filename,
+      bool calculateMipmapLevels = true,
       igl::TextureFormat format = igl::TextureFormat::RGBA_SRGB,
       igl::TextureDesc::TextureUsageBits usage = igl::TextureDesc::TextureUsageBits::Sampled);
 

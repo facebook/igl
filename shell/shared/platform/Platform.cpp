@@ -23,12 +23,14 @@ InputDispatcher& Platform::getInputDispatcher() noexcept {
 }
 
 std::shared_ptr<ITexture> Platform::loadTexture(const char* filename,
+                                                bool calculateMipmapLevels,
                                                 igl::TextureFormat format,
                                                 igl::TextureDesc::TextureUsageBits usage) {
   auto imageData = getImageLoader().loadImageData(filename);
   igl::TextureDesc texDesc =
       igl::TextureDesc::new2D(format, imageData.width, imageData.height, usage);
-  texDesc.numMipLevels = igl::TextureDesc::calcNumMipLevels(texDesc.width, texDesc.height);
+  texDesc.numMipLevels =
+      calculateMipmapLevels ? igl::TextureDesc::calcNumMipLevels(texDesc.width, texDesc.height) : 1;
 
   Result res;
   auto tex = getDevice().createTexture(texDesc, &res);
