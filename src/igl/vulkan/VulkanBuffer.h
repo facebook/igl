@@ -52,6 +52,9 @@ class VulkanBuffer {
   VkMemoryPropertyFlags getMemoryPropertyFlags() const {
     return memFlags_;
   }
+  [[nodiscard]] bool isCoherentMemory() const {
+    return isCoherentMemory_;
+  }
 
  private:
   const VulkanContext& ctx_;
@@ -64,6 +67,7 @@ class VulkanBuffer {
   VkDeviceSize bufferSize_ = 0;
   VkMemoryPropertyFlags memFlags_ = 0;
   void* mappedPtr_ = nullptr;
+  bool isCoherentMemory_ = false;
 };
 
 } // namespace vulkan
