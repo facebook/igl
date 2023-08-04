@@ -28,8 +28,6 @@ extern "C" {
 
 const char* ivkGetVulkanResultString(VkResult result);
 
-bool ivkIsValidationAvailable(void);
-
 VkResult ivkCreateInstance(uint32_t apiVersion,
                            uint32_t enableValidation,
                            uint32_t enableGPUAssistedValidation,
