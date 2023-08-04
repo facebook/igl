@@ -27,8 +27,8 @@
 #include <shell/shared/renderSession/DefaultSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
-#include "XrSwapchainProvider.h"
 #include <shell/openxr/XrLog.h>
+#include <shell/openxr/XrSwapchainProvider.h>
 #include <shell/openxr/impl/XrAppImpl.h>
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
 

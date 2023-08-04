@@ -23,12 +23,14 @@ struct android_app;
 class AAssetManager;
 
 // forward declarations
-namespace igl::shell::openxr::impl {
+namespace igl::shell::openxr {
+class XrSwapchainProvider;
+namespace impl {
 class XrAppImpl;
 }
+} // namespace igl::shell::openxr
 
 namespace igl::shell::openxr::mobile {
-class XrSwapchainProvider;
 
 class XrApp {
  public:

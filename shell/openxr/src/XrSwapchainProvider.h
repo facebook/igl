@@ -15,19 +15,19 @@
 
 #include <igl/Device.h>
 #include <igl/Texture.h>
-#include <shell/shared/platform/android/PlatformAndroid.h>
+#include <shell/shared/platform/Platform.h>
 
 // forward declarations
 namespace igl::shell::openxr::impl {
 class XrSwapchainProviderImpl;
 }
 
-namespace igl::shell::openxr::mobile {
+namespace igl::shell::openxr {
 
 class XrSwapchainProvider {
  public:
   XrSwapchainProvider(std::unique_ptr<impl::XrSwapchainProviderImpl>&& impl,
-                      const std::shared_ptr<igl::shell::PlatformAndroid>& platform,
+                      const std::shared_ptr<igl::shell::Platform>& platform,
                       const XrSession& session,
                       const XrViewConfigurationView& viewport,
                       uint32_t numViews);
@@ -54,7 +54,7 @@ class XrSwapchainProvider {
 
  private:
   std::unique_ptr<impl::XrSwapchainProviderImpl> impl_;
-  std::shared_ptr<igl::shell::PlatformAndroid> platform_;
+  std::shared_ptr<igl::shell::Platform> platform_;
   const XrSession& session_;
   const XrViewConfigurationView& viewport_;
 
@@ -66,4 +66,4 @@ class XrSwapchainProvider {
   const uint32_t numViews_ =
       1; // The number of layers of the underlying swapchain image would match numViews_.
 };
-} // namespace igl::shell::openxr::mobile
+} // namespace igl::shell::openxr

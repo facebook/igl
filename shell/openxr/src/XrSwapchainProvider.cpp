@@ -11,13 +11,12 @@
 #include <shell/openxr/XrLog.h>
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
 
-namespace igl::shell::openxr::mobile {
-XrSwapchainProvider::XrSwapchainProvider(
-    std::unique_ptr<impl::XrSwapchainProviderImpl>&& impl,
-    const std::shared_ptr<igl::shell::PlatformAndroid>& platform,
-    const XrSession& session,
-    const XrViewConfigurationView& viewport,
-    uint32_t numViews) :
+namespace igl::shell::openxr {
+XrSwapchainProvider::XrSwapchainProvider(std::unique_ptr<impl::XrSwapchainProviderImpl>&& impl,
+                                         const std::shared_ptr<igl::shell::Platform>& platform,
+                                         const XrSession& session,
+                                         const XrViewConfigurationView& viewport,
+                                         uint32_t numViews) :
   impl_(std::move(impl)),
   platform_(platform),
   session_(session),
@@ -102,4 +101,4 @@ void XrSwapchainProvider::releaseSwapchainImages() const {
   XR_CHECK(xrReleaseSwapchainImage(colorSwapchain_, &releaseInfo));
   XR_CHECK(xrReleaseSwapchainImage(depthSwapchain_, &releaseInfo));
 }
-} // namespace igl::shell::openxr::mobile
+} // namespace igl::shell::openxr
