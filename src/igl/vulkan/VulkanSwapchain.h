@@ -50,11 +50,6 @@ class VulkanSwapchain final {
   uint32_t getCurrentImageIndex() const {
     return currentImageIndex_;
   }
-
-  uint64_t getFrameNumber() const {
-    return frameNumber_;
-  }
-
  public:
   VkSemaphore acquireSemaphore_ = VK_NULL_HANDLE;
 
@@ -66,7 +61,6 @@ class VulkanSwapchain final {
   uint32_t height_ = 0;
   uint32_t numSwapchainImages_ = 0;
   uint32_t currentImageIndex_ = 0;
-  uint64_t frameNumber_ = 0;
   bool getNextImage_ = true;
   VkSwapchainKHR swapchain_;
   std::vector<TextureHandle> swapchainTextures_;

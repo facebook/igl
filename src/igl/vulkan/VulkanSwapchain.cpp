@@ -158,11 +158,6 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
 
   IGL_ASSERT(numSwapchainImages_ > 0);
 
-  // Prevent underflow when doing (frameNumber_ - numSwapchainImages_).
-  // Every resource submitted in the frame (frameNumber_ - numSwapchainImages_) or earlier is
-  // guaranteed to be processed by the GPU in the frame (frameNumber_).
-  frameNumber_ = numSwapchainImages_;
-
   // create images, image views and framebuffers
   swapchainTextures_.reserve(numSwapchainImages_);
   for (uint32_t i = 0; i < numSwapchainImages_; i++) {
@@ -213,8 +208,6 @@ TextureHandle VulkanSwapchain::getCurrentTexture() {
   if (getNextImage_) {
     // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
     VK_ASSERT(vkAcquireNextImageKHR(device_, swapchain_, UINT64_MAX, acquireSemaphore_, VK_NULL_HANDLE, &currentImageIndex_));
-    // increase the frame number every time we acquire a new swapchain image
-    frameNumber_++;
     getNextImage_ = false;
   }
 

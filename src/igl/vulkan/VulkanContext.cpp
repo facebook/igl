@@ -1216,10 +1216,6 @@ std::vector<uint8_t> VulkanContext::getPipelineCacheData() const {
   return data;
 }
 
-uint64_t VulkanContext::getFrameNumber() const {
-  return swapchain_ ? swapchain_->getFrameNumber() : 0u;
-}
-
 void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) const {
   if (handle.empty()) {
     handle = immediate_->getLastSubmitHandle();

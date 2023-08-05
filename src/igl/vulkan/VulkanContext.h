@@ -121,8 +121,6 @@ class VulkanContext final {
 
   std::vector<uint8_t> getPipelineCacheData() const;
 
-  uint64_t getFrameNumber() const;
-
   using SubmitHandle = VulkanImmediateCommands::SubmitHandle;
 
   // execute a task some time in the future after the submit handle finished processing
