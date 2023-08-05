@@ -1138,45 +1138,38 @@ SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
 }
 
 void VulkanContext::querySurfaceCapabilities() {
-  // This is not an exhaustive list. It's only formats that we are using.
-  std::vector<VkFormat> depthFormats = {VK_FORMAT_D32_SFLOAT_S8_UINT,
-                                        VK_FORMAT_D24_UNORM_S8_UINT,
-                                        VK_FORMAT_D16_UNORM_S8_UINT,
-                                        VK_FORMAT_D32_SFLOAT,
-                                        VK_FORMAT_D16_UNORM,
-                                        VK_FORMAT_S8_UINT};
+  // enumerate only the formats we are using
+  const VkFormat depthFormats[] = {
+      VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D16_UNORM};
   for (const auto& depthFormat : depthFormats) {
     VkFormatProperties formatProps;
     vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice_, depthFormat, &formatProps);
 
-    if (formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT ||
-        formatProps.bufferFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT ||
-        formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+    if (formatProps.optimalTilingFeatures) {
       deviceDepthFormats_.push_back(depthFormat);
     }
   }
 
-  if (vkSurface_ != VK_NULL_HANDLE) {
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice_, vkSurface_, &deviceSurfaceCaps_);
+  if (vkSurface_ == VK_NULL_HANDLE) {
+    return;
+  }
 
-    uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice_, vkSurface_, &formatCount, nullptr);
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice_, vkSurface_, &deviceSurfaceCaps_);
 
-    if (formatCount) {
-      deviceSurfaceFormats_.resize(formatCount);
-      vkGetPhysicalDeviceSurfaceFormatsKHR(
-          vkPhysicalDevice_, vkSurface_, &formatCount, deviceSurfaceFormats_.data());
-    }
+  uint32_t formatCount;
+  vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice_, vkSurface_, &formatCount, nullptr);
 
-    uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(
-        vkPhysicalDevice_, vkSurface_, &presentModeCount, nullptr);
+  if (formatCount) {
+    deviceSurfaceFormats_.resize(formatCount);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice_, vkSurface_, &formatCount, deviceSurfaceFormats_.data());
+  }
 
-    if (presentModeCount) {
-      devicePresentModes_.resize(presentModeCount);
-      vkGetPhysicalDeviceSurfacePresentModesKHR(
-          vkPhysicalDevice_, vkSurface_, &presentModeCount, devicePresentModes_.data());
-    }
+  uint32_t presentModeCount;
+  vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice_, vkSurface_, &presentModeCount, nullptr);
+
+  if (presentModeCount) {
+    devicePresentModes_.resize(presentModeCount);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice_, vkSurface_, &presentModeCount, devicePresentModes_.data());
   }
 }
 
