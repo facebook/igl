@@ -41,6 +41,9 @@ bool XrSwapchainProvider::initialize() {
                   [&](const auto& format) { return format == colorFormat; })) {
     selectedColorFormat_ = colorFormat;
   }
+#if defined(__APPLE__)
+  selectedColorFormat_ = impl_->preferredColorFormat();
+#endif
 
   colorSwapchain_ =
       createXrSwapchain(XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT, selectedColorFormat_);
@@ -51,6 +54,9 @@ bool XrSwapchainProvider::initialize() {
                   [&](const auto& format) { return format == depthFormat; })) {
     selectedDepthFormat_ = depthFormat;
   }
+#if defined(__APPLE__)
+  selectedDepthFormat_ = impl_->preferredDepthFormat();
+#endif
 
   depthSwapchain_ =
       createXrSwapchain(XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, selectedDepthFormat_);
