@@ -265,20 +265,19 @@ VulkanContext::~VulkanContext() {
 void VulkanContext::createInstance() {
   vkInstance_ = VK_NULL_HANDLE;
 
-  std::vector<const char*> instanceExtensionNames = {
+  const char* instanceExtensionNames[] = {
     VK_KHR_SURFACE_EXTENSION_NAME,
-    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
     VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
 #if defined(_WIN32)
     VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 #elif defined(__linux__)
     VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
 #endif
+    VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME // enabled only for validation
   };
 
-  if (config_.enableValidation) {
-    instanceExtensionNames.push_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
-  }
+  const uint32_t numInstanceExtensions = config_.enableValidation ? (uint32_t)LVK_ARRAY_NUM_ELEMENTS(instanceExtensionNames)
+                                                                  : (uint32_t)LVK_ARRAY_NUM_ELEMENTS(instanceExtensionNames) - 1;
 
   const VkValidationFeatureEnableEXT validationFeaturesEnabled[] = {
       VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
@@ -308,11 +307,10 @@ void VulkanContext::createInstance() {
       .pNext = config_.enableValidation ? &features : nullptr,
       .flags = 0,
       .pApplicationInfo = &appInfo,
-      .enabledLayerCount =
-          config_.enableValidation ? (uint32_t)LVK_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0,
+      .enabledLayerCount = config_.enableValidation ? (uint32_t)LVK_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0,
       .ppEnabledLayerNames = config_.enableValidation ? kDefaultValidationLayers : nullptr,
-      .enabledExtensionCount = (uint32_t)instanceExtensionNames.size(),
-      .ppEnabledExtensionNames = instanceExtensionNames.data(),
+      .enabledExtensionCount = numInstanceExtensions,
+      .ppEnabledExtensionNames = instanceExtensionNames,
   };
   VK_ASSERT(vkCreateInstance(&ci, nullptr, &vkInstance_));
 
@@ -497,7 +495,6 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 
   const char* deviceExtensionNames[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
 #if defined(LVK_WITH_TRACY)
     VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
 #endif

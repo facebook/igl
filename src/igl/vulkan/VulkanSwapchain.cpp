@@ -15,12 +15,6 @@
 
 namespace {
 
-struct SwapchainCapabilities {
-  VkSurfaceCapabilitiesKHR caps = {};
-  std::vector<VkSurfaceFormatKHR> formats;
-  std::vector<VkPresentModeKHR> modes;
-};
-
 uint32_t chooseSwapImageCount(const VkSurfaceCapabilitiesKHR& caps) {
   const uint32_t desired = caps.minImageCount + 1;
   const bool exceeded = caps.maxImageCount > 0 && desired > caps.maxImageCount;
