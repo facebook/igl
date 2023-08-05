@@ -47,6 +47,14 @@ igl::UniformType toIGLUniformType(GLenum type) {
 igl::TextureType toIGLTextureType(GLenum type) {
   switch (type) {
   case GL_SAMPLER_2D:
+
+#if (defined(GL_VERSION_2_0) && GL_VERSION_2_0) || (defined(GL_ES_VERSION_3_0) && GL_ES_VERSION_3_0)
+  case GL_SAMPLER_2D_SHADOW:
+#elif defined(GL_ES_VERSION_2_0) && GL_ES_VERSION_2_0
+  case GL_SAMPLER_2D_SHADOW_EXT:
+#elif defined(GL_ARB_shader_objects) && GL_ARB_shader_objects
+  case GL_SAMPLER_2D_SHADOW_ARB:
+#endif
   case GL_IMAGE_2D:
   case GL_IMAGE_2D_MULTISAMPLE:
     return igl::TextureType::TwoD;
