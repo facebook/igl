@@ -175,40 +175,6 @@ static void ivkAddNext(void* node, const void* next) {
   cur->pNext = next;
 }
 
-VkResult ivkCreateSwapchain(VkDevice device,
-                            VkSurfaceKHR surface,
-                            uint32_t minImageCount,
-                            VkSurfaceFormatKHR surfaceFormat,
-                            VkPresentModeKHR presentMode,
-                            const VkSurfaceCapabilitiesKHR* caps,
-                            VkImageUsageFlags imageUsage,
-                            uint32_t queueFamilyIndex,
-                            uint32_t width,
-                            uint32_t height,
-                            VkSwapchainKHR* outSwapchain) {
-  assert(caps);
-  const bool isCompositeAlphaOpaqueSupported = (caps->supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR) != 0;
-  const VkSwapchainCreateInfoKHR ci = {
-      .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-      .surface = surface,
-      .minImageCount = minImageCount,
-      .imageFormat = surfaceFormat.format,
-      .imageColorSpace = surfaceFormat.colorSpace,
-      .imageExtent = {.width = width, .height = height},
-      .imageArrayLayers = 1,
-      .imageUsage = imageUsage,
-      .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
-      .queueFamilyIndexCount = 1,
-      .pQueueFamilyIndices = &queueFamilyIndex,
-      .preTransform = caps->currentTransform,
-      .compositeAlpha = isCompositeAlphaOpaqueSupported ? VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR : VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
-      .presentMode = presentMode,
-      .clipped = VK_TRUE,
-      .oldSwapchain = VK_NULL_HANDLE,
-  };
-  return vkCreateSwapchainKHR(device, &ci, NULL, outSwapchain);
-}
-
 VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
                                             VkFilter magFilter,
                                             VkSamplerMipmapMode mipmapMode,

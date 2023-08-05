@@ -22,18 +22,6 @@ extern "C" {
 
 const char* ivkGetVulkanResultString(VkResult result);
 
-VkResult ivkCreateSwapchain(VkDevice device,
-                            VkSurfaceKHR surface,
-                            uint32_t minImageCount,
-                            VkSurfaceFormatKHR surfaceFormat,
-                            VkPresentModeKHR presentMode,
-                            const VkSurfaceCapabilitiesKHR* caps,
-                            VkImageUsageFlags imageUsage,
-                            uint32_t queueFamilyIndex,
-                            uint32_t width,
-                            uint32_t height,
-                            VkSwapchainKHR* outSwapchain);
-
 VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
                                             VkFilter magFilter,
                                             VkSamplerMipmapMode mipmapMode,

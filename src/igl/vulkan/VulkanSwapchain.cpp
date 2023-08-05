@@ -139,18 +139,26 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
   IGL_ASSERT_MSG(queueFamilySupportsPresentation == VK_TRUE, "The queue family used with the swapchain does not support presentation");
 
   const VkImageUsageFlags usageFlags = chooseUsageFlags(ctx.getVkPhysicalDevice(), ctx.vkSurface_, surfaceFormat_.format);
-
-  VK_ASSERT(ivkCreateSwapchain(device_,
-                               ctx.vkSurface_,
-                               chooseSwapImageCount(ctx.deviceSurfaceCaps_),
-                               surfaceFormat_,
-                               chooseSwapPresentMode(ctx.devicePresentModes_),
-                               &ctx.deviceSurfaceCaps_,
-                               usageFlags,
-                               ctx.deviceQueues_.graphicsQueueFamilyIndex,
-                               width,
-                               height,
-                               &swapchain_));
+  const bool isCompositeAlphaOpaqueSupported = (ctx.deviceSurfaceCaps_.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR) != 0;
+  const VkSwapchainCreateInfoKHR ci = {
+      .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+      .surface = ctx.vkSurface_,
+      .minImageCount = chooseSwapImageCount(ctx.deviceSurfaceCaps_),
+      .imageFormat = surfaceFormat_.format,
+      .imageColorSpace = surfaceFormat_.colorSpace,
+      .imageExtent = {.width = width, .height = height},
+      .imageArrayLayers = 1,
+      .imageUsage = usageFlags,
+      .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .queueFamilyIndexCount = 1,
+      .pQueueFamilyIndices = &ctx.deviceQueues_.graphicsQueueFamilyIndex,
+      .preTransform = ctx.deviceSurfaceCaps_.currentTransform,
+      .compositeAlpha = isCompositeAlphaOpaqueSupported ? VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR : VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
+      .presentMode = chooseSwapPresentMode(ctx.devicePresentModes_),
+      .clipped = VK_TRUE,
+      .oldSwapchain = VK_NULL_HANDLE,
+  };
+  VK_ASSERT(vkCreateSwapchainKHR(device_, &ci, nullptr, &swapchain_));
   VK_ASSERT(vkGetSwapchainImagesKHR(device_, swapchain_, &numSwapchainImages_, nullptr));
   std::vector<VkImage> swapchainImages(numSwapchainImages_);
   swapchainImages.resize(numSwapchainImages_);
