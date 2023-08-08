@@ -10,13 +10,13 @@
 #include <array>
 #include <string>
 #include <vector>
-#define XR_USE_PLATFORM_ANDROID
+
 #include <openxr/openxr.h>
 
 #include <glm/glm.hpp>
 
 #include <igl/IGL.h>
-#include <shell/shared/platform/android/PlatformAndroid.h>
+#include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
 
 struct android_app;
@@ -30,7 +30,7 @@ class XrAppImpl;
 }
 } // namespace igl::shell::openxr
 
-namespace igl::shell::openxr::mobile {
+namespace igl::shell::openxr {
 
 class XrApp {
  public:
@@ -89,7 +89,9 @@ class XrApp {
 
   std::vector<XrExtensionProperties> extensions_;
   std::vector<const char*> requiredExtensions_ = {
+#ifndef XR_USE_PLATFORM_MACOS
       XR_FB_SWAPCHAIN_UPDATE_STATE_EXTENSION_NAME,
+#endif
   };
 
   XrInstanceProperties instanceProps_ = {
@@ -128,9 +130,9 @@ class XrApp {
 
   bool initialized_ = false;
 
-  std::shared_ptr<igl::shell::PlatformAndroid> platform_;
+  std::shared_ptr<igl::shell::Platform> platform_;
   std::unique_ptr<igl::shell::RenderSession> renderSession_;
 
   std::unique_ptr<igl::shell::ShellParams> shellParams_;
 };
-} // namespace igl::shell::openxr::mobile
+} // namespace igl::shell::openxr

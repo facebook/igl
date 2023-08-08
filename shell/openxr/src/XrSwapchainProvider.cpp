@@ -24,7 +24,9 @@ XrSwapchainProvider::XrSwapchainProvider(std::unique_ptr<impl::XrSwapchainProvid
   numViews_(numViews) {}
 XrSwapchainProvider::~XrSwapchainProvider() {
   xrDestroySwapchain(colorSwapchain_);
+// @fb-only
   xrDestroySwapchain(depthSwapchain_);
+// @fb-only
 }
 
 bool XrSwapchainProvider::initialize() {
@@ -48,6 +50,7 @@ bool XrSwapchainProvider::initialize() {
   colorSwapchain_ =
       createXrSwapchain(XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT, selectedColorFormat_);
 
+// @fb-only
   auto depthFormat = impl_->preferredDepthFormat();
   if (std::any_of(std::begin(swapchainFormats),
                   std::end(swapchainFormats),
@@ -60,6 +63,7 @@ bool XrSwapchainProvider::initialize() {
 
   depthSwapchain_ =
       createXrSwapchain(XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, selectedDepthFormat_);
+// @fb-only
 
   impl_->enumerateImages(platform_->getDevice(),
                          colorSwapchain_,
@@ -105,6 +109,8 @@ igl::SurfaceTextures XrSwapchainProvider::getSurfaceTextures() const {
 void XrSwapchainProvider::releaseSwapchainImages() const {
   XrSwapchainImageReleaseInfo releaseInfo = {XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
   XR_CHECK(xrReleaseSwapchainImage(colorSwapchain_, &releaseInfo));
+// @fb-only
   XR_CHECK(xrReleaseSwapchainImage(depthSwapchain_, &releaseInfo));
+// @fb-only
 }
 } // namespace igl::shell::openxr

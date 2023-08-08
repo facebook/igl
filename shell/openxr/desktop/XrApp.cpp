@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "XrApp.h"
+#include <shell/openxr/XrApp.h>
 
 #include <algorithm>
 #include <array>
@@ -18,6 +18,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include <shell/shared/platform/mac/PlatformMac.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/DefaultSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
@@ -27,7 +28,7 @@
 #include <shell/openxr/impl/XrAppImpl.h>
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
 
-namespace igl::shell::openxr::desktop {
+namespace igl::shell::openxr {
 constexpr auto kAppName = "IGL Shell OpenXR";
 constexpr auto kEngineName = "IGL";
 constexpr auto kSupportedViewConfigType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
@@ -136,7 +137,7 @@ bool XrApp::createInstance() {
                XR_VERSION_MINOR(instanceProps_.runtimeVersion),
                XR_VERSION_PATCH(instanceProps_.runtimeVersion));
   return true;
-} // namespace igl::shell::openxr::desktop
+} // namespace igl::shell::openxr
 
 bool XrApp::createSystem() {
   XrSystemGetInfo systemGetInfo = {
@@ -584,4 +585,4 @@ void XrApp::update() {
   render();
   endFrame(frameState);
 }
-} // namespace igl::shell::openxr::desktop
+} // namespace igl::shell::openxr

@@ -16,7 +16,6 @@
 #include <igl/vulkan/VulkanTexture.h>
 
 #define XR_USE_GRAPHICS_API_VULKAN
-#define XR_USE_PLATFORM_ANDROID
 #include <openxr/openxr_platform.h>
 
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>

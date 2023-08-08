@@ -13,38 +13,39 @@
 #include <unistd.h>
 #endif
 
-#include "XrApp.h"
-using namespace igl::shell::openxr::mobile;
+#include <shell/openxr/XrApp.h>
+
+using namespace igl::shell::openxr;
 
 void handleInitWindow(const struct android_app* app) {
-  auto xrApp = static_cast<igl::shell::openxr::mobile::XrApp*>(app->userData);
+  auto xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setNativeWindow(app->window);
   }
 }
 void handleTermWindow(const struct android_app* app) {
-  auto xrApp = static_cast<igl::shell::openxr::mobile::XrApp*>(app->userData);
+  auto xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setNativeWindow(nullptr);
   }
 }
 
 void handleResume(const struct android_app* app) {
-  auto xrApp = static_cast<igl::shell::openxr::mobile::XrApp*>(app->userData);
+  auto xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setResumed(true);
   }
 }
 
 void handlePause(const struct android_app* app) {
-  auto xrApp = static_cast<igl::shell::openxr::mobile::XrApp*>(app->userData);
+  auto xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setResumed(false);
   }
 }
 
 void handleDestroy(const struct android_app* app) {
-  auto xrApp = static_cast<igl::shell::openxr::mobile::XrApp*>(app->userData);
+  auto xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setNativeWindow(nullptr);
   }
@@ -98,9 +99,9 @@ void android_main(struct android_app* app) {
 #endif
 
 #if defined(USE_VULKAN_BACKEND)
-  auto xrApp = std::make_unique<XrApp>(std::make_unique<XrAppImplVulkan>());
+  auto xrApp = std::make_unique<XrApp>(std::make_unique<mobile::XrAppImplVulkan>());
 #elif defined(USE_OPENGL_BACKEND)
-  auto xrApp = std::make_unique<XrApp>(std::make_unique<XrAppImplGLES>());
+  auto xrApp = std::make_unique<XrApp>(std::make_unique<mobile::XrAppImplGLES>());
 #endif
   if (!xrApp->initialize(app)) {
     return;

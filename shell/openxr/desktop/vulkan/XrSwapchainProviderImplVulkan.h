@@ -12,7 +12,6 @@
 #include <vector>
 
 #define XR_USE_GRAPHICS_API_VULKAN
-#define XR_USE_PLATFORM_MACOS
 #include <openxr/openxr_platform.h>
 
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>

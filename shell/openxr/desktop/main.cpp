@@ -7,11 +7,14 @@
 
 #include <igl/Common.h>
 
-#include "XrApp.h"
-using namespace igl::shell::openxr::desktop;
+#include <shell/openxr/XrApp.h>
+
+using namespace igl::shell::openxr;
 
 #if defined(USE_VULKAN_BACKEND)
 #include "vulkan/XrAppImplVulkan.h"
+// @fb-only
+// @fb-only
 #endif
 
 XrInstance gInstance_;
@@ -23,7 +26,9 @@ XrInstance getXrInstance() {
 
 int main(int argc, const char* argv[]) {
 #if defined(USE_VULKAN_BACKEND)
-  auto xrApp = std::make_unique<XrApp>(std::make_unique<XrAppImplVulkan>());
+  auto xrApp = std::make_unique<XrApp>(std::make_unique<desktop::XrAppImplVulkan>());
+// @fb-only
+  // @fb-only
 #endif
   if (!xrApp->initialize(nullptr)) {
     return 1;
