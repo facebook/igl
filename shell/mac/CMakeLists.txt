@@ -35,9 +35,10 @@ function(ADD_SHELL_SESSION_WITH_SRCS target srcs libs)
   file(GLOB SHELL_SESSION_SRC_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/*.mm
                                                            ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/*.m)
   file(GLOB SHELL_SESSION_HEADER_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/*.h)
+  file(GLOB RESOURCES LIST_DIRECTORIES false ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../resources/images/*.png)
 
   add_executable(${target} MACOSX_BUNDLE ${srcs} "${SHELL_SESSION_SRC_FILES}" "${SHELL_SESSION_SHELL_HEADER_FILES}"
-                                         "${XIBFILE}")
+                                         "${XIBFILE}" "${RESOURCES}")
   igl_set_folder(${target} "IGL Shell Sessions")
   igl_set_cxxstd(${target} 17)
   target_compile_definitions(${target} PRIVATE "IGL_SHELL_SESSION=${target}")
@@ -61,4 +62,5 @@ function(ADD_SHELL_SESSION_WITH_SRCS target srcs libs)
     ${target} PUBLIC "-framework AVFoundation" "-framework CoreGraphics" "-framework CoreMotion" "-framework AppKit"
                      "-framework Metal" "-framework MetalKit" "-framework OpenGL" "-framework QuartzCore")
   set_target_properties(${target} PROPERTIES MACOSX_BUNDLE TRUE RESOURCE "${XIBFILE}")
+  set_source_files_properties(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 endfunction()
