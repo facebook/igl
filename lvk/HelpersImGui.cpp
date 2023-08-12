@@ -10,17 +10,24 @@
 #include <math.h>
 
 static const char* codeVS = R"(
-layout(location = 0) in vec2 in_pos;
-layout(location = 1) in vec2 in_uv;
-layout(location = 2) in vec4 in_color;
-
 layout (location = 0) out vec4 out_color;
 layout (location = 1) out vec2 out_uv;
 layout (location = 2) out flat uint out_textureId;
 
+struct Vertex {
+  float x, y;
+  float u, v;
+  uint rgba;
+};
+
+layout(std430, buffer_reference) readonly buffer VertexBuffer {
+  Vertex vertices[];
+};
+
 layout(push_constant) uniform PushConstants {
-    vec4 LRTB;
-    uint textureId;
+  vec4 LRTB;
+  VertexBuffer vb;
+  uint textureId;
 } pc;
 
 void main() {
@@ -33,10 +40,11 @@ void main() {
     0.0,                   2.0 / (T - B),  0.0, 0.0,
     0.0,                             0.0, -1.0, 0.0,
     (R + L) / (L - R), (T + B) / (B - T),  0.0, 1.0);
-  out_color = in_color;
-  out_uv = in_uv;
+  Vertex v = pc.vb.vertices[gl_VertexIndex];
+  out_color = unpackUnorm4x8(v.rgba);
+  out_uv = vec2(v.u, v.v);
   out_textureId = pc.textureId;
-  gl_Position = proj * vec4(in_pos, 0, 1);
+  gl_Position = proj * vec4(v.x, v.y, 0, 1);
 })";
 
 static const char* codeFS = R"(
@@ -59,7 +67,7 @@ ImGuiRenderer::DrawableData::DrawableData(lvk::IDevice& device) {
   const size_t kMaxIndexBufferSize = kMaxVertices * sizeof(ImDrawIdx);
 
   const lvk::BufferDesc vbDesc = {
-      .usage = lvk::BufferUsageBits_Vertex, .storage = lvk::StorageType_HostVisible, .size = kMaxVertexBufferSize};
+      .usage = lvk::BufferUsageBits_Storage, .storage = lvk::StorageType_HostVisible, .size = kMaxVertexBufferSize};
   const lvk::BufferDesc ibDesc = {
       .usage = lvk::BufferUsageBits_Index, .storage = lvk::StorageType_HostVisible, .size = kMaxIndexBufferSize};
   vb_ = device.createBuffer(vbDesc, nullptr);
@@ -69,10 +77,6 @@ ImGuiRenderer::DrawableData::DrawableData(lvk::IDevice& device) {
 lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(const lvk::Framebuffer& desc) {
   return device_.createRenderPipeline(
       {
-          .vertexInput = {.attributes = {{.location = 0, .format = lvk::VertexFormat::Float2, .offset = offsetof(ImDrawVert, pos)},
-                                         {.location = 1, .format = lvk::VertexFormat::Float2, .offset = offsetof(ImDrawVert, uv)},
-                                         {.location = 2, .format = lvk::VertexFormat::UByte4Norm, .offset = offsetof(ImDrawVert, col)}},
-                          .inputBindings = {{.stride = sizeof(ImDrawVert)}}},
           .shaderStages = device_.createShaderStages(codeVS, "Shader Module: imgui (vert)", codeFS, "Shader Module: imgui (frag)", nullptr),
           .color = {{
               .format = device_.getFormat(desc.color[0].texture),
@@ -168,6 +172,7 @@ void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffe
 
   struct VulkanImguiBindData {
     float LRTB[4]; // ortho projection: left, right, top, bottom
+    uint64_t vb = 0;
     uint32_t textureId = 0;
   } bindData = {
       .LRTB = {L, R, T, B},
@@ -178,10 +183,6 @@ void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffe
 
   std::vector<DrawableData>& curFrameDrawables = drawables_[frameIndex_];
   frameIndex_ = (frameIndex_ + 1) % LVK_ARRAY_NUM_ELEMENTS(drawables_);
-
-  cmdBuffer.cmdPushConstants(&bindData, sizeof(bindData));
-
-  ImTextureID lastBoundTextureId = nullptr;
 
   for (int n = 0; n < drawData->CmdListsCount; n++) {
     const ImDrawList* cmd_list = drawData->CmdLists[n];
@@ -206,18 +207,13 @@ void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffe
         continue;
       }
 
-      const lvk::ScissorRect rect{
-          uint32_t(clipMin.x), uint32_t(clipMin.y), uint32_t(clipMax.x - clipMin.x), uint32_t(clipMax.y - clipMin.y)};
-      cmdBuffer.cmdBindScissorRect(rect);
+      cmdBuffer.cmdBindScissorRect(
+          {uint32_t(clipMin.x), uint32_t(clipMin.y), uint32_t(clipMax.x - clipMin.x), uint32_t(clipMax.y - clipMin.y)});
 
-      if (cmd.TextureId != lastBoundTextureId) {
-        lastBoundTextureId = cmd.TextureId;
-        bindData.textureId = static_cast<uint32_t>(reinterpret_cast<ptrdiff_t>(cmd.TextureId));
-        cmdBuffer.cmdPushConstants(bindData);
-      }
-
+      bindData.vb = device_.gpuAddress(drawableData.vb_);
+      bindData.textureId = static_cast<uint32_t>(reinterpret_cast<ptrdiff_t>(cmd.TextureId));
+      cmdBuffer.cmdPushConstants(bindData);
       cmdBuffer.cmdBindRenderPipeline(pipeline_);
-      cmdBuffer.cmdBindVertexBuffer(0, drawableData.vb_, 0);
       cmdBuffer.cmdDrawIndexed(lvk::Primitive_Triangle,
                                cmd.ElemCount,
                                sizeof(ImDrawIdx) == sizeof(uint16_t) ? lvk::IndexFormat_UI16 : lvk::IndexFormat_UI32,

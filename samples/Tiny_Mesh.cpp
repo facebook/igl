@@ -31,11 +31,18 @@ constexpr uint32_t kNumCubes = 16;
 std::unique_ptr<lvk::ImGuiRenderer> imgui_;
 
 const char* codeVS = R"(
-layout (location=0) in vec3 pos;
-layout (location=1) in vec3 col;
-layout (location=2) in vec2 st;
 layout (location=0) out vec3 color;
 layout (location=1) out vec2 uv;
+
+struct Vertex {
+  float x, y, z;
+  float r, g, b;
+  vec2 uv;
+};
+
+layout(std430, buffer_reference) readonly buffer VertexBuffer {
+  Vertex vertices[];
+};
 
 layout(std430, buffer_reference) readonly buffer PerFrame {
   mat4 proj;
@@ -52,15 +59,17 @@ layout(std430, buffer_reference) readonly buffer PerObject {
 layout(push_constant) uniform constants {
 	PerFrame perFrame;
 	PerObject perObject;
+   VertexBuffer vb;
 } pc;
 
 void main() {
   mat4 proj = pc.perFrame.proj;
   mat4 view = pc.perFrame.view;
   mat4 model = pc.perObject.model;
-  gl_Position = proj * view * model * vec4(pos, 1.0);
-  color = col;
-  uv = st;
+  Vertex v = pc.vb.vertices[gl_VertexIndex];
+  gl_Position = proj * view * model * vec4(v.x, v.y, v.z, 1.0);
+  color = vec3(v.r, v.g, v.b);
+  uv = v.uv;
 }
 )";
 
@@ -176,7 +185,7 @@ static void initIGL() {
       window_, width_, height_, {.maxTextures = 128, .maxSamplers = 128});
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
-  vb0_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Vertex,
+  vb0_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Storage,
                                 .storage = lvk::StorageType_Device,
                                 .size = sizeof(vertexData0),
                                 .data = vertexData0,
@@ -286,31 +295,14 @@ static void initObjects() {
       .color = {{.texture = device_->getCurrentSwapchainTexture()}},
   };
 
-  const lvk::VertexInput vdesc = {
-      .attributes = {{.location = 0,
-                      .format = lvk::VertexFormat::Float3,
-                      .offset = offsetof(VertexPosUvw, pos)},
-                     {.location = 1,
-                      .format = lvk::VertexFormat::Float3,
-                      .offset = offsetof(VertexPosUvw, color)},
-                     {.location = 2,
-                      .format = lvk::VertexFormat::Float2,
-                      .offset = offsetof(VertexPosUvw, uv)}},
-      .inputBindings = {{.stride = sizeof(VertexPosUvw)}},
-  };
-
   renderPipelineState_Mesh_ = device_->createRenderPipeline(
       {
-          .vertexInput = vdesc,
-          .shaderStages = device_->createShaderStages(
-              codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
+          .shaderStages = device_->createShaderStages(codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
           .color =
               {
                   {.format = device_->getFormat(framebuffer_.color[0].texture)},
               },
-          .depthFormat = framebuffer_.depthStencil.texture
-                             ? device_->getFormat(framebuffer_.depthStencil.texture)
-                             : lvk::Format_Invalid,
+          .depthFormat = framebuffer_.depthStencil.texture ? device_->getFormat(framebuffer_.depthStencil.texture) : lvk::Format_Invalid,
           .cullMode = lvk::CullMode_Back,
           .frontFaceWinding = lvk::WindingMode_CW,
           .debugName = "Pipeline: mesh",
@@ -365,16 +357,17 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     buffer.cmdBindViewport(viewport);
     buffer.cmdBindScissorRect(scissor);
     buffer.cmdPushDebugGroupLabel("Render Mesh", lvk::Color(1, 0, 0));
-    buffer.cmdBindVertexBuffer(0, vb0_, 0);
     buffer.cmdBindDepthStencilState(depthStencilState_);
     // Draw 2 cubes: we use uniform buffer to update matrices
     for (uint32_t i = 0; i != kNumCubes; i++) {
       struct {
         uint64_t perFrame;
         uint64_t perObject;
+        uint64_t vb;
       } bindings = {
           .perFrame = device_->gpuAddress(ubPerFrame_[frameIndex]),
           .perObject = device_->gpuAddress(ubPerObject_[frameIndex], i * sizeof(UniformsPerObject)),
+          .vb = device_->gpuAddress(vb0_),
       };
       buffer.cmdPushConstants(bindings);
       buffer.cmdDrawIndexed(lvk::Primitive_Triangle, 3 * 6 * 2, lvk::IndexFormat_UI16, ib0_, 0);
