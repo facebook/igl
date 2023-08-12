@@ -1104,7 +1104,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     buffer.cmdBeginRendering(renderPassShadow_, fbShadowMap_);
     {
       buffer.cmdBindRenderPipeline(renderPipelineState_Shadow_);
-      buffer.cmdPushDebugGroupLabel("Render Shadows", lvk::Color(1, 0, 0));
+      buffer.cmdPushDebugGroupLabel("Render Shadows", 0xff0000ff);
       buffer.cmdBindDepthStencilState(depthStencilState_);
       buffer.cmdBindVertexBuffer(0, vb0_, 0);
       struct {
@@ -1136,7 +1136,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     {
       // Scene
       buffer.cmdBindRenderPipeline(renderPipelineState_Mesh_);
-      buffer.cmdPushDebugGroupLabel("Render Mesh", lvk::Color(1, 0, 0));
+      buffer.cmdPushDebugGroupLabel("Render Mesh", 0xff0000ff);
       buffer.cmdBindDepthStencilState(depthStencilState_);
       buffer.cmdBindVertexBuffer(0, vb0_, 0);
 
@@ -1161,7 +1161,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
 
       // Skybox
       buffer.cmdBindRenderPipeline(renderPipelineState_Skybox_);
-      buffer.cmdPushDebugGroupLabel("Render Skybox", lvk::Color(0, 1, 0));
+      buffer.cmdPushDebugGroupLabel("Render Skybox", 0x00ff00ff);
       buffer.cmdBindDepthStencilState(depthStencilStateLEqual_);
       buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3 * 6 * 2);
       buffer.cmdPopDebugGroupLabel();
@@ -1206,7 +1206,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     buffer.cmdBeginRendering(renderPassMain_, fbMain_);
     {
       buffer.cmdBindRenderPipeline(renderPipelineState_Fullscreen_);
-      buffer.cmdPushDebugGroupLabel("Swapchain Output", lvk::Color(1, 0, 0));
+      buffer.cmdPushDebugGroupLabel("Swapchain Output", 0xff0000ff);
       struct {
         uint32_t texture;
       } bindings = {

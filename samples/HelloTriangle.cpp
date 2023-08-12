@@ -59,7 +59,7 @@ void render() {
       {.color = {{.loadOp = lvk::LoadOp_Clear, .clearColor = {1.0f, 1.0f, 1.0f, 1.0f}}}},
       {.color = {{.texture = device_->getCurrentSwapchainTexture()}}});
   buffer.cmdBindRenderPipeline(renderPipelineState_Triangle_);
-  buffer.cmdPushDebugGroupLabel("Render Triangle", lvk::Color(1, 0, 0));
+  buffer.cmdPushDebugGroupLabel("Render Triangle", 0xff0000ff);
   buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3);
   buffer.cmdPopDebugGroupLabel();
   buffer.cmdEndRendering();

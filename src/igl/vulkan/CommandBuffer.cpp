@@ -187,20 +187,44 @@ void CommandBuffer::cmdDispatchThreadGroups(const Dimensions& threadgroupCount, 
   vkCmdDispatch(wrapper_->cmdBuf_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
 }
 
-void CommandBuffer::cmdPushDebugGroupLabel(const char* label, const lvk::Color& color) const {
+void CommandBuffer::cmdPushDebugGroupLabel(const char* label, uint32_t colorRGBA) const {
   LVK_ASSERT(label);
 
-  ivkCmdBeginDebugUtilsLabel(wrapper_->cmdBuf_, label, color.toFloatPtr());
+  if (!label) {
+    return;
+  }
+  const VkDebugUtilsLabelEXT utilsLabel = {
+      .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
+      .pNext = nullptr,
+      .pLabelName = label,
+      .color = {float((colorRGBA >> 0) & 0xff) / 255.0f,
+                float((colorRGBA >> 8) & 0xff) / 255.0f,
+                float((colorRGBA >> 16) & 0xff) / 255.0f,
+                float((colorRGBA >> 24) & 0xff) / 255.0f},
+  };
+  vkCmdBeginDebugUtilsLabelEXT(wrapper_->cmdBuf_, &utilsLabel);
 }
 
-void CommandBuffer::cmdInsertDebugEventLabel(const char* label, const lvk::Color& color) const {
+void CommandBuffer::cmdInsertDebugEventLabel(const char* label, uint32_t colorRGBA) const {
   LVK_ASSERT(label);
 
-  ivkCmdInsertDebugUtilsLabel(wrapper_->cmdBuf_, label, color.toFloatPtr());
+  if (!label) {
+    return;
+  }
+  const VkDebugUtilsLabelEXT utilsLabel = {
+      .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
+      .pNext = nullptr,
+      .pLabelName = label,
+      .color = {float((colorRGBA >> 0) & 0xff) / 255.0f,
+                float((colorRGBA >> 8) & 0xff) / 255.0f,
+                float((colorRGBA >> 16) & 0xff) / 255.0f,
+                float((colorRGBA >> 24) & 0xff) / 255.0f},
+  };
+  vkCmdInsertDebugUtilsLabelEXT(wrapper_->cmdBuf_, &utilsLabel);
 }
 
 void CommandBuffer::cmdPopDebugGroupLabel() const {
-  ivkCmdEndDebugUtilsLabel(wrapper_->cmdBuf_);
+  vkCmdEndDebugUtilsLabelEXT(wrapper_->cmdBuf_);
 }
 
 void CommandBuffer::useComputeTexture(TextureHandle handle) {
@@ -307,7 +331,8 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
         .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .loadOp = loadOpToVkAttachmentLoadOp(descColor.loadOp),
         .storeOp = storeOpToVkAttachmentStoreOp(descColor.storeOp),
-        .clearValue = ivkGetClearColorValue(descColor.clearColor.r, descColor.clearColor.g, descColor.clearColor.b, descColor.clearColor.a),
+        .clearValue =
+            ivkGetClearColorValue(descColor.clearColor[0], descColor.clearColor[1], descColor.clearColor[2], descColor.clearColor[3]),
     };
     // handle MSAA
     if (descColor.storeOp == StoreOp_MsaaResolve) {
@@ -606,8 +631,8 @@ void CommandBuffer::cmdSetStencilReferenceValues(uint32_t frontValue, uint32_t b
   vkCmdSetStencilReference(wrapper_->cmdBuf_, VK_STENCIL_FACE_BACK_BIT, backValue);
 }
 
-void CommandBuffer::cmdSetBlendColor(Color color) {
-  vkCmdSetBlendConstants(wrapper_->cmdBuf_, color.toFloatPtr());
+void CommandBuffer::cmdSetBlendColor(const float color[4]) {
+  vkCmdSetBlendConstants(wrapper_->cmdBuf_, color);
 }
 
 void CommandBuffer::cmdSetDepthBias(float depthBias, float slopeScale, float clamp) {

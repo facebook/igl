@@ -725,36 +725,6 @@ VkResult ivkSetDebugObjectName(VkDevice device, VkObjectType type, uint64_t hand
   return vkSetDebugUtilsObjectNameEXT(device, &ni);
 }
 
-void ivkCmdBeginDebugUtilsLabel(VkCommandBuffer buffer, const char* name, const float colorRGBA[4]) {
-  if (!name) {
-    return;
-  }
-  const VkDebugUtilsLabelEXT label = {
-      .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
-      .pNext = NULL,
-      .pLabelName = name,
-      .color = {colorRGBA[0], colorRGBA[1], colorRGBA[2], colorRGBA[3]},
-  };
-  vkCmdBeginDebugUtilsLabelEXT(buffer, &label);
-}
-
-void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer, const char* name, const float colorRGBA[4]) {
-  if (!name) {
-    return;
-  }
-  const VkDebugUtilsLabelEXT label = {
-      .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
-      .pNext = NULL,
-      .pLabelName = name,
-      .color = {colorRGBA[0], colorRGBA[1], colorRGBA[2], colorRGBA[3]},
-  };
-  vkCmdInsertDebugUtilsLabelEXT(buffer, &label);
-}
-
-void ivkCmdEndDebugUtilsLabel(VkCommandBuffer buffer) {
-  vkCmdEndDebugUtilsLabelEXT(buffer);
-}
-
 VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset, const VkRect2D imageRegion, VkImageSubresourceLayers imageSubresource) {
   const VkBufferImageCopy copy = {
       .bufferOffset = bufferOffset,

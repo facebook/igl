@@ -357,7 +357,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     buffer.cmdBindRenderPipeline(renderPipelineState_Mesh_);
     buffer.cmdBindViewport(viewport);
     buffer.cmdBindScissorRect(scissor);
-    buffer.cmdPushDebugGroupLabel("Render Mesh", lvk::Color(1, 0, 0));
+    buffer.cmdPushDebugGroupLabel("Render Mesh", 0xff0000ff);
     buffer.cmdBindDepthStencilState(depthStencilState_);
     // Draw 2 cubes: we use uniform buffer to update matrices
     for (uint32_t i = 0; i != kNumCubes; i++) {

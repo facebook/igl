@@ -242,22 +242,6 @@ enum StorageType {
 enum CullMode : uint8_t { CullMode_None, CullMode_Front, CullMode_Back };
 enum WindingMode : uint8_t { WindingMode_CCW, WindingMode_CW };
 
-struct Color {
-  float r;
-  float g;
-  float b;
-  float a;
-
-  Color(float r, float g, float b) : r(r), g(g), b(b), a(1.0f) {}
-  Color(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
-
-  const float* toFloatPtr() const {
-    return &r;
-  }
-};
-
-static_assert(sizeof(Color) == 4 * sizeof(float));
-
 struct Result {
   enum class Code {
     Ok,
@@ -609,7 +593,7 @@ struct RenderPass final {
     StoreOp storeOp = StoreOp_Store;
     uint8_t layer = 0;
     uint8_t level = 0;
-    Color clearColor = {0.0f, 0.0f, 0.0f, 0.0f};
+    float clearColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     float clearDepth = 1.0f;
     uint32_t clearStencil = 0;
   };
@@ -705,10 +689,8 @@ class ICommandBuffer {
 
   virtual void transitionToShaderReadOnly(TextureHandle surface) const = 0;
 
-  virtual void cmdPushDebugGroupLabel(const char* label,
-                                      const lvk::Color& color = lvk::Color(1, 1, 1, 1)) const = 0;
-  virtual void cmdInsertDebugEventLabel(const char* label,
-                                        const lvk::Color& color = lvk::Color(1, 1, 1, 1)) const = 0;
+  virtual void cmdPushDebugGroupLabel(const char* label, uint32_t colorRGBA = 0xffffffff) const = 0;
+  virtual void cmdInsertDebugEventLabel(const char* label, uint32_t colorRGBA = 0xffffffff) const = 0;
   virtual void cmdPopDebugGroupLabel() const = 0;
 
   virtual void cmdBindComputePipeline(lvk::ComputePipelineHandle handle) = 0;
@@ -754,7 +736,7 @@ class ICommandBuffer {
                                       uint32_t stride = 0) = 0;
 
   virtual void cmdSetStencilReferenceValues(uint32_t frontValue, uint32_t backValue) = 0;
-  virtual void cmdSetBlendColor(Color color) = 0;
+  virtual void cmdSetBlendColor(const float color[4]) = 0;
   virtual void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) = 0;
 };
 
@@ -800,37 +782,6 @@ class IDevice {
 
   virtual TextureHandle getCurrentSwapchainTexture() = 0;
   virtual Format getSwapchainFormat() const = 0;
-  /*
-  [[nodiscard]] ShaderStages createShaderStages(const char* cs, const char* debugName, Result* outResult = nullptr) {
-    ShaderStages stages;
-    stages.modules_[Stage_Compute] = createShaderModule(ShaderModuleDesc(cs, Stage_Compute, debugName), outResult).release();
-    return stages;
-  }
-
-  [[nodiscard]] ShaderStages createShaderStages(const char* vs,
-                                                const char* debugNameVS,
-                                                const char* fs,
-                                                const char* debugNameFS,
-                                                Result* outResult = nullptr) {
-    ShaderStages stages;
-    stages.modules_[Stage_Vertex] = createShaderModule(ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult).release();
-    stages.modules_[Stage_Fragment] = createShaderModule(ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult).release();
-    return stages;
-  }
-  [[nodiscard]] ShaderStages createShaderStages(const char* vs,
-                                                const char* debugNameVS,
-                                                const char* gs,
-                                                const char* debugNameGS,
-                                                const char* fs,
-                                                const char* debugNameFS,
-                                                Result* outResult = nullptr) {
-    ShaderStages stages;
-    stages.modules_[Stage_Vertex] = createShaderModule(ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult).release();
-    stages.modules_[Stage_Geometry] = createShaderModule(ShaderModuleDesc(gs, Stage_Geometry, debugNameGS), outResult).release();
-    stages.modules_[Stage_Fragment] = createShaderModule(ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult).release();
-    return stages;
-  }
-  */
  protected:
   IDevice() = default;
 };

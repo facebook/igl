@@ -195,12 +195,6 @@ void ivkCmdBlitImage(VkCommandBuffer buffer,
 
 VkResult ivkSetDebugObjectName(VkDevice device, VkObjectType type, uint64_t handle, const char* name);
 
-void ivkCmdBeginDebugUtilsLabel(VkCommandBuffer buffer, const char* name, const float colorRGBA[4]);
-
-void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer, const char* name, const float colorRGBA[4]);
-
-void ivkCmdEndDebugUtilsLabel(VkCommandBuffer buffer);
-
 #ifdef __cplusplus
 }
 #endif

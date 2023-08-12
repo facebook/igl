@@ -29,8 +29,8 @@ class CommandBuffer final : public ICommandBuffer {
   void cmdBindComputePipeline(lvk::ComputePipelineHandle handle) override;
   void cmdDispatchThreadGroups(const Dimensions& threadgroupCount, const Dependencies& deps) override;
 
-  void cmdPushDebugGroupLabel(const char* label, const lvk::Color& color) const override;
-  void cmdInsertDebugEventLabel(const char* label, const lvk::Color& color) const override;
+  void cmdPushDebugGroupLabel(const char* label, uint32_t colorRGBA) const override;
+  void cmdInsertDebugEventLabel(const char* label, uint32_t colorRGBA) const override;
   void cmdPopDebugGroupLabel() const override;
 
   void cmdBeginRendering(const lvk::RenderPass& renderPass, const lvk::Framebuffer& desc) override;
@@ -65,7 +65,7 @@ class CommandBuffer final : public ICommandBuffer {
                               uint32_t stride = 0) override;
 
   void cmdSetStencilReferenceValues(uint32_t frontValue, uint32_t backValue) override;
-  void cmdSetBlendColor(Color color) override;
+  void cmdSetBlendColor(const float color[4]) override;
   void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) override;
 
  private:
