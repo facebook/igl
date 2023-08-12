@@ -797,23 +797,15 @@ class IDevice {
                       lvk::QueueType queueType = lvk::QueueType_Graphics,
                       TextureHandle present = {}) = 0;
 
-  virtual Holder<BufferHandle> createBuffer(const BufferDesc& desc,
-                                            Result* outResult = nullptr) = 0;
-  virtual Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc,
-                                              Result* outResult = nullptr) = 0;
-  virtual Holder<TextureHandle> createTexture(const TextureDesc& desc,
-                                              const char* debugName = nullptr,
-                                              Result* outResult = nullptr) = 0;
-
-  virtual Holder<ComputePipelineHandle> createComputePipeline(
-      const ComputePipelineDesc& desc,
-      Result* outResult = nullptr) = 0;
-  virtual Holder<RenderPipelineHandle> createRenderPipeline(
-      const RenderPipelineDesc& desc,
-      Result* outResult = nullptr) = 0;
-
-  virtual Holder<ShaderModuleHandle> createShaderModule(const ShaderModuleDesc& desc,
-                                                        Result* outResult = nullptr) = 0;
+  [[nodiscard]] virtual Holder<BufferHandle> createBuffer(const BufferDesc& desc, Result* outResult = nullptr) = 0;
+  [[nodiscard]] virtual Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc, Result* outResult = nullptr) = 0;
+  [[nodiscard]] virtual Holder<TextureHandle> createTexture(const TextureDesc& desc,
+                                                            const char* debugName = nullptr,
+                                                            Result* outResult = nullptr) = 0;
+  [[nodiscard]] virtual Holder<ComputePipelineHandle> createComputePipeline(const ComputePipelineDesc& desc,
+                                                                            Result* outResult = nullptr) = 0;
+  [[nodiscard]] virtual Holder<RenderPipelineHandle> createRenderPipeline(const RenderPipelineDesc& desc, Result* outResult = nullptr) = 0;
+  [[nodiscard]] virtual Holder<ShaderModuleHandle> createShaderModule(const ShaderModuleDesc& desc, Result* outResult = nullptr) = 0;
 
   virtual void destroy(ComputePipelineHandle handle) = 0;
   virtual void destroy(RenderPipelineHandle handle) = 0;
@@ -825,44 +817,41 @@ class IDevice {
 
 #pragma region Buffer functions
   virtual Result upload(BufferHandle handle, const void* data, size_t size, size_t offset = 0) = 0;
-  virtual uint8_t* getMappedPtr(BufferHandle handle) const = 0;
-  virtual uint64_t gpuAddress(BufferHandle handle, size_t offset = 0) const = 0;
+  [[nodiscard]] virtual uint8_t* getMappedPtr(BufferHandle handle) const = 0;
+  [[nodiscard]] virtual uint64_t gpuAddress(BufferHandle handle, size_t offset = 0) const = 0;
 #pragma endregion
 
 #pragma region Texture functions
   // data[] contains per-layer mip-stacks
   virtual Result upload(TextureHandle handle, const TextureRangeDesc& range, const void* data[]) const = 0;
-  virtual Dimensions getDimensions(TextureHandle handle) const = 0;
   virtual void generateMipmap(TextureHandle handle) const = 0;
-  virtual Format getFormat(TextureHandle handle) const = 0;
+  [[nodiscard]] virtual Dimensions getDimensions(TextureHandle handle) const = 0;
+  [[nodiscard]] virtual Format getFormat(TextureHandle handle) const = 0;
 #pragma endregion
 
   virtual TextureHandle getCurrentSwapchainTexture() = 0;
   virtual Format getSwapchainFormat() const = 0;
 
-  ShaderStages createShaderStages(const char* cs,
-                                  const char* debugName,
-                                  Result* outResult = nullptr) {
-    return ShaderStages(
-        createShaderModule(ShaderModuleDesc(cs, Stage_Compute, debugName), outResult).release());
+  [[nodiscard]] ShaderStages createShaderStages(const char* cs, const char* debugName, Result* outResult = nullptr) {
+    return ShaderStages(createShaderModule(ShaderModuleDesc(cs, Stage_Compute, debugName), outResult).release());
   }
 
-  ShaderStages createShaderStages(const char* vs,
-                                  const char* debugNameVS,
-                                  const char* fs,
-                                  const char* debugNameFS,
-                                  Result* outResult = nullptr) {
+  [[nodiscard]] ShaderStages createShaderStages(const char* vs,
+                                                const char* debugNameVS,
+                                                const char* fs,
+                                                const char* debugNameFS,
+                                                Result* outResult = nullptr) {
     auto VS = createShaderModule(ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult);
     auto FS = createShaderModule(ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult);
     return ShaderStages(VS.release(), FS.release());
   }
-  ShaderStages createShaderStages(const char* vs,
-                                  const char* debugNameVS,
-                                  const char* gs,
-                                  const char* debugNameGS,
-                                  const char* fs,
-                                  const char* debugNameFS,
-                                  Result* outResult = nullptr) {
+  [[nodiscard]] ShaderStages createShaderStages(const char* vs,
+                                                const char* debugNameVS,
+                                                const char* gs,
+                                                const char* debugNameGS,
+                                                const char* fs,
+                                                const char* debugNameFS,
+                                                Result* outResult = nullptr) {
     auto VS = createShaderModule(ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult);
     auto GS = createShaderModule(ShaderModuleDesc(gs, Stage_Geometry, debugNameGS), outResult);
     auto FS = createShaderModule(ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult);
@@ -877,9 +866,9 @@ class IDevice {
 
 namespace lvk {
 
-bool isDepthOrStencilFormat(lvk::Format format);
-uint32_t calcNumMipLevels(uint32_t width, uint32_t height);
-uint32_t getTextureBytesPerLayer(uint32_t width, uint32_t height, lvk::Format format, uint32_t level);
+[[nodiscard]] bool isDepthOrStencilFormat(lvk::Format format);
+[[nodiscard]] uint32_t calcNumMipLevels(uint32_t width, uint32_t height);
+[[nodiscard]] uint32_t getTextureBytesPerLayer(uint32_t width, uint32_t height, lvk::Format format, uint32_t level);
 void logShaderSource(const char* text);
 
 } // namespace lvk
