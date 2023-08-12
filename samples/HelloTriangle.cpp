@@ -73,8 +73,11 @@ int main(int argc, char* argv[]) {
 
   device_ = lvk::createVulkanDeviceWithSwapchain(window_, width_, height_, {});
   renderPipelineState_Triangle_ = device_->createRenderPipeline(
-      {.shaderStages = device_->createShaderStages(codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
-       .color = {{.format = device_->getSwapchainFormat()}}},
+      {
+          .smVert = device_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
+          .smFrag = device_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
+          .color = {{.format = device_->getSwapchainFormat()}},
+      },
       nullptr);
 
   LVK_ASSERT(renderPipelineState_Triangle_.valid());

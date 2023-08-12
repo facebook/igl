@@ -62,13 +62,15 @@ void VulkanObjects::init() {
   createFramebuffer();
 
   renderPipelineState_Triangle_ = device_->createRenderPipeline(
-      {.shaderStages = device_->createShaderStages(codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
-       .color = {{device_->getFormat(fb_.color[0].texture)},
-                 {device_->getFormat(fb_.color[1].texture)},
-                 {device_->getFormat(fb_.color[2].texture)},
-                 {device_->getFormat(fb_.color[3].texture)}}},
+      {
+          .smVert = device_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
+          .smFrag = device_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
+          .color = {{device_->getFormat(fb_.color[0].texture)},
+                    {device_->getFormat(fb_.color[1].texture)},
+                    {device_->getFormat(fb_.color[2].texture)},
+                    {device_->getFormat(fb_.color[3].texture)}},
+      },
       nullptr);
-
   LVK_ASSERT(renderPipelineState_Triangle_.valid());
 }
 

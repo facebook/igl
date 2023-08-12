@@ -506,11 +506,10 @@ enum StoreOp : uint8_t {
 };
 
 enum ShaderStage : uint8_t {
-  Stage_Vertex = 0,
-  Stage_Geometry,
-  Stage_Fragment,
-  Stage_Compute,
-  kNumShaderStages,
+  Stage_Vert,
+  Stage_Geom,
+  Stage_Frag,
+  Stage_Comp,
 };
 
 struct VertexInput final {
@@ -554,7 +553,7 @@ struct ColorAttachment {
 };
 
 struct ShaderModuleDesc {
-  ShaderStage stage = Stage_Fragment;
+  ShaderStage stage = Stage_Frag;
   const char* data = nullptr;
   size_t dataSize = 0; // if `dataSize` is non-zero, interpret `data` as binary shader data
   const char* entryPoint = "main";
@@ -571,34 +570,12 @@ struct ShaderModuleDesc {
   }
 };
 
-struct ShaderStages final {
-  ShaderStages() = default;
-  ShaderStages(lvk::ShaderModuleHandle vertexModule, lvk::ShaderModuleHandle fragmentModule) {
-    modules_[Stage_Vertex] = vertexModule;
-    modules_[Stage_Fragment] = fragmentModule;
-  }
-  ShaderStages(lvk::ShaderModuleHandle vertexModule,
-               lvk::ShaderModuleHandle geometryModule,
-               lvk::ShaderModuleHandle fragmentModule) {
-    modules_[Stage_Vertex] = vertexModule;
-    modules_[Stage_Geometry] = geometryModule;
-    modules_[Stage_Fragment] = fragmentModule;
-  }
-  explicit ShaderStages(lvk::ShaderModuleHandle computeModule) {
-    modules_[Stage_Compute] = std::move(computeModule);
-  }
-
-  lvk::ShaderModuleHandle getModule(ShaderStage stage) const {
-    LVK_ASSERT(stage < kNumShaderStages);
-    return modules_[stage];
-  }
-
-  lvk::ShaderModuleHandle modules_[kNumShaderStages] = {};
-};
-
 struct RenderPipelineDesc final {
   lvk::VertexInput vertexInput;
-  lvk::ShaderStages shaderStages;
+
+  ShaderModuleHandle smVert;
+  ShaderModuleHandle smGeom;
+  ShaderModuleHandle smFrag;
 
   ColorAttachment color[LVK_MAX_COLOR_ATTACHMENTS] = {};
   Format depthFormat = Format_Invalid;
@@ -622,7 +599,7 @@ struct RenderPipelineDesc final {
 };
 
 struct ComputePipelineDesc final {
-  lvk::ShaderStages shaderStages;
+  ShaderModuleHandle shaderModule;
   const char* debugName = "";
 };
 
@@ -823,9 +800,11 @@ class IDevice {
 
   virtual TextureHandle getCurrentSwapchainTexture() = 0;
   virtual Format getSwapchainFormat() const = 0;
-
+  /*
   [[nodiscard]] ShaderStages createShaderStages(const char* cs, const char* debugName, Result* outResult = nullptr) {
-    return ShaderStages(createShaderModule(ShaderModuleDesc(cs, Stage_Compute, debugName), outResult).release());
+    ShaderStages stages;
+    stages.modules_[Stage_Compute] = createShaderModule(ShaderModuleDesc(cs, Stage_Compute, debugName), outResult).release();
+    return stages;
   }
 
   [[nodiscard]] ShaderStages createShaderStages(const char* vs,
@@ -833,9 +812,10 @@ class IDevice {
                                                 const char* fs,
                                                 const char* debugNameFS,
                                                 Result* outResult = nullptr) {
-    auto VS = createShaderModule(ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult);
-    auto FS = createShaderModule(ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult);
-    return ShaderStages(VS.release(), FS.release());
+    ShaderStages stages;
+    stages.modules_[Stage_Vertex] = createShaderModule(ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult).release();
+    stages.modules_[Stage_Fragment] = createShaderModule(ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult).release();
+    return stages;
   }
   [[nodiscard]] ShaderStages createShaderStages(const char* vs,
                                                 const char* debugNameVS,
@@ -844,12 +824,13 @@ class IDevice {
                                                 const char* fs,
                                                 const char* debugNameFS,
                                                 Result* outResult = nullptr) {
-    auto VS = createShaderModule(ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult);
-    auto GS = createShaderModule(ShaderModuleDesc(gs, Stage_Geometry, debugNameGS), outResult);
-    auto FS = createShaderModule(ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult);
-    return ShaderStages(VS.release(), GS.release(), FS.release());
+    ShaderStages stages;
+    stages.modules_[Stage_Vertex] = createShaderModule(ShaderModuleDesc(vs, Stage_Vertex, debugNameVS), outResult).release();
+    stages.modules_[Stage_Geometry] = createShaderModule(ShaderModuleDesc(gs, Stage_Geometry, debugNameGS), outResult).release();
+    stages.modules_[Stage_Fragment] = createShaderModule(ShaderModuleDesc(fs, Stage_Fragment, debugNameFS), outResult).release();
+    return stages;
   }
-
+  */
  protected:
   IDevice() = default;
 };

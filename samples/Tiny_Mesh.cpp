@@ -297,7 +297,8 @@ static void initObjects() {
 
   renderPipelineState_Mesh_ = device_->createRenderPipeline(
       {
-          .shaderStages = device_->createShaderStages(codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
+          .smVert = device_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
+          .smFrag = device_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
           .color =
               {
                   {.format = device_->getFormat(framebuffer_.color[0].texture)},

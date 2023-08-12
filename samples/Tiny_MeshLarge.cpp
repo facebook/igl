@@ -882,10 +882,11 @@ void createComputePipeline() {
     return;
   }
 
-  computePipelineState_Grayscale_ =
-      device_->createComputePipeline({.shaderStages = device_->createShaderStages(
-                                          kCodeComputeTest, "Shader Module: grayscale (comp)")},
-                                     nullptr);
+  computePipelineState_Grayscale_ = device_->createComputePipeline(
+      {
+          .shaderModule = device_->createShaderModule({kCodeComputeTest, lvk::Stage_Comp, "Shader Module: grayscale (comp)"}).release(),
+      },
+      nullptr);
 }
 
 void createRenderPipelines() {
@@ -896,34 +897,25 @@ void createRenderPipelines() {
   const lvk::VertexInput vdesc = {
       .attributes =
           {
-              {.location = 0,
-               .format = lvk::VertexFormat::Float3,
-               .offset = offsetof(VertexData, position)},
-              {.location = 1,
-               .format = lvk::VertexFormat::Int_2_10_10_10_REV,
-               .offset = offsetof(VertexData, normal)},
-              {.location = 2,
-               .format = lvk::VertexFormat::HalfFloat2,
-               .offset = offsetof(VertexData, uv)},
-              {.location = 3,
-               .format = lvk::VertexFormat::UInt1,
-               .offset = offsetof(VertexData, mtlIndex)},
+              {.location = 0, .format = lvk::VertexFormat::Float3, .offset = offsetof(VertexData, position)},
+              {.location = 1, .format = lvk::VertexFormat::Int_2_10_10_10_REV, .offset = offsetof(VertexData, normal)},
+              {.location = 2, .format = lvk::VertexFormat::HalfFloat2, .offset = offsetof(VertexData, uv)},
+              {.location = 3, .format = lvk::VertexFormat::UInt1, .offset = offsetof(VertexData, mtlIndex)},
           },
       .inputBindings = {{.stride = sizeof(VertexData)}},
   };
 
   // shadow
   const lvk::VertexInput vdescs = {
-      .attributes = {{.format = lvk::VertexFormat::Float3,
-                      .offset = offsetof(VertexData, position)}},
+      .attributes = {{.format = lvk::VertexFormat::Float3, .offset = offsetof(VertexData, position)}},
       .inputBindings = {{.stride = sizeof(VertexData)}},
   };
 
   {
     lvk::RenderPipelineDesc desc = {
         .vertexInput = vdesc,
-        .shaderStages = device_->createShaderStages(
-            kCodeVS, "Shader Module: main (vert)", kCodeFS, "Shader Module: main (frag)"),
+        .smVert = device_->createShaderModule({kCodeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
+        .smFrag = device_->createShaderModule({kCodeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
         .color = {{.format = device_->getFormat(fbOffscreen_.color[0].texture)}},
         .depthFormat = device_->getFormat(fbOffscreen_.depthStencil.texture),
         .cullMode = lvk::CullMode_Back,
@@ -936,10 +928,8 @@ void createRenderPipelines() {
 
     desc.polygonMode = lvk::PolygonMode_Line;
     desc.vertexInput = vdescs; // positions-only
-    desc.shaderStages = device_->createShaderStages(kCodeVS_Wireframe,
-                                                    "Shader Module: main wireframe (vert)",
-                                                    kCodeFS_Wireframe,
-                                                    "Shader Module: main wireframe (frag)");
+    desc.smVert = device_->createShaderModule({kCodeVS_Wireframe, lvk::Stage_Vert, "Shader Module: main wireframe (vert)"}).release(),
+    desc.smFrag = device_->createShaderModule({kCodeFS_Wireframe, lvk::Stage_Frag, "Shader Module: main wireframe (frag)"}).release(),
     desc.debugName = "Pipeline: mesh (wireframe)";
     renderPipelineState_MeshWireframe_ = device_->createRenderPipeline(desc, nullptr);
   }
@@ -948,8 +938,8 @@ void createRenderPipelines() {
   renderPipelineState_Shadow_ = device_->createRenderPipeline(
       lvk::RenderPipelineDesc{
           .vertexInput = vdescs,
-          .shaderStages = device_->createShaderStages(
-              kShadowVS, "Shader Module: shadow (vert)", kShadowFS, "Shader Module: shadow (frag)"),
+          .smVert = device_->createShaderModule({kShadowVS, lvk::Stage_Vert, "Shader Module: shadow (vert)"}).release(),
+          .smFrag = device_->createShaderModule({kShadowFS, lvk::Stage_Frag, "Shader Module: shadow (frag)"}).release(),
           .depthFormat = device_->getFormat(fbShadowMap_.depthStencil.texture),
           .cullMode = lvk::CullMode_None,
           .debugName = "Pipeline: shadow",
@@ -959,10 +949,8 @@ void createRenderPipelines() {
   // fullscreen
   {
     const lvk::RenderPipelineDesc desc = {
-        .shaderStages = device_->createShaderStages(kCodeFullscreenVS,
-                                                    "Shader Module: fullscreen (vert)",
-                                                    kCodeFullscreenFS,
-                                                    "Shader Module: fullscreen (frag)"),
+        .smVert = device_->createShaderModule({kCodeFullscreenVS, lvk::Stage_Vert, "Shader Module: fullscreen (vert)"}).release(),
+        .smFrag = device_->createShaderModule({kCodeFullscreenFS, lvk::Stage_Frag, "Shader Module: fullscreen (frag)"}).release(),
         .color = {{.format = device_->getFormat(fbMain_.color[0].texture)}},
         .depthFormat = device_->getFormat(fbMain_.depthStencil.texture),
         .cullMode = lvk::CullMode_None,
@@ -978,8 +966,8 @@ void createRenderPipelineSkybox() {
   }
 
   const lvk::RenderPipelineDesc desc = {
-      .shaderStages = device_->createShaderStages(
-          kSkyboxVS, "Shader Module: skybox (vert)", kSkyboxFS, "Shader Module: skybox (frag)"),
+      .smVert = device_->createShaderModule({kSkyboxVS, lvk::Stage_Vert, "Shader Module: skybox (vert)"}).release(),
+      .smFrag = device_->createShaderModule({kSkyboxFS, lvk::Stage_Frag, "Shader Module: skybox (frag)"}).release(),
       .color = {{
           .format = device_->getFormat(fbOffscreen_.color[0].texture),
       }},

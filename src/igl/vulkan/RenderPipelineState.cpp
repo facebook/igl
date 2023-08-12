@@ -245,10 +245,14 @@ RenderPipelineState::~RenderPipelineState() {
     return;
   }
 
-  for (lvk::ShaderModuleHandle m : desc_.shaderStages.modules_) {
-    if (!m.empty()) {
-      device_->destroy(m);
-    }
+  if (!desc_.smVert.empty()) {
+    device_->destroy(desc_.smVert);
+  }
+  if (!desc_.smGeom.empty()) {
+    device_->destroy(desc_.smGeom);
+  }
+  if (!desc_.smFrag.empty()) {
+    device_->destroy(desc_.smFrag);
   }
 
   for (auto p : pipelines_) {
@@ -320,21 +324,21 @@ VkPipeline RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& 
     }
   }
 
-  const VulkanShaderModule* vertexModule = ctx.shaderModulesPool_.get(desc_.shaderStages.getModule(Stage_Vertex));
-  const VulkanShaderModule* geometryModule = ctx.shaderModulesPool_.get(desc_.shaderStages.getModule(Stage_Geometry));
-  const VulkanShaderModule* fragmentModule = ctx.shaderModulesPool_.get(desc_.shaderStages.getModule(Stage_Fragment));
+  const VulkanShaderModule* vertModule = ctx.shaderModulesPool_.get(desc_.smVert);
+  const VulkanShaderModule* geomModule = ctx.shaderModulesPool_.get(desc_.smGeom);
+  const VulkanShaderModule* fragModule = ctx.shaderModulesPool_.get(desc_.smFrag);
 
-  LVK_ASSERT(vertexModule);
-  LVK_ASSERT(fragmentModule);
+  LVK_ASSERT(vertModule);
+  LVK_ASSERT(fragModule);
 
   std::vector<VkPipelineShaderStageCreateInfo> stages = {
-      ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertexModule->vkShaderModule_, vertexModule->entryPoint_),
-      ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragmentModule->vkShaderModule_, fragmentModule->entryPoint_),
+      ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertModule->vkShaderModule_, vertModule->entryPoint_),
+      ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragModule->vkShaderModule_, fragModule->entryPoint_),
   };
 
-  if (geometryModule) {
+  if (geomModule) {
     stages.push_back(
-        ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_GEOMETRY_BIT, geometryModule->vkShaderModule_, geometryModule->entryPoint_));
+        ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_GEOMETRY_BIT, geomModule->vkShaderModule_, geomModule->entryPoint_));
   }
 
   lvk::vulkan::VulkanPipelineBuilder()

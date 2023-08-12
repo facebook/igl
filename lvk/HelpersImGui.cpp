@@ -77,7 +77,8 @@ ImGuiRenderer::DrawableData::DrawableData(lvk::IDevice& device) {
 lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(const lvk::Framebuffer& desc) {
   return device_.createRenderPipeline(
       {
-          .shaderStages = device_.createShaderStages(codeVS, "Shader Module: imgui (vert)", codeFS, "Shader Module: imgui (frag)", nullptr),
+          .smVert = device_.createShaderModule({codeVS, Stage_Vert, "Shader Module: imgui (vert)"}).release(),
+          .smFrag = device_.createShaderModule({codeFS, Stage_Frag, "Shader Module: imgui (frag)"}).release(),
           .color = {{
               .format = device_.getFormat(desc.color[0].texture),
               .blendEnabled = true,

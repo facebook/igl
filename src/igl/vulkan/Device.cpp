@@ -30,16 +30,14 @@ bool supportsFormat(VkPhysicalDevice physicalDevice, VkFormat format) {
 
 VkShaderStageFlagBits shaderStageToVkShaderStage(lvk::ShaderStage stage) {
   switch (stage) {
-  case lvk::Stage_Vertex:
+  case lvk::Stage_Vert:
     return VK_SHADER_STAGE_VERTEX_BIT;
-  case lvk::Stage_Geometry:
+  case lvk::Stage_Geom:
     return VK_SHADER_STAGE_GEOMETRY_BIT;
-  case lvk::Stage_Fragment:
+  case lvk::Stage_Frag:
     return VK_SHADER_STAGE_FRAGMENT_BIT;
-  case lvk::Stage_Compute:
+  case lvk::Stage_Comp:
     return VK_SHADER_STAGE_COMPUTE_BIT;
-  case lvk::kNumShaderStages:
-    return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
   };
   return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
 }
@@ -346,12 +344,12 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, co
 }
 
 lvk::Holder<lvk::ComputePipelineHandle> Device::createComputePipeline(const ComputePipelineDesc& desc, Result* outResult) {
-  if (!LVK_VERIFY(desc.shaderStages.getModule(Stage_Compute).valid())) {
+  if (!LVK_VERIFY(desc.shaderModule.valid())) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing compute shader");
     return {};
   }
 
-  const VulkanShaderModule* sm = ctx_->shaderModulesPool_.get(desc.shaderStages.getModule(Stage_Compute));
+  const VulkanShaderModule* sm = ctx_->shaderModulesPool_.get(desc.shaderModule);
 
   LVK_ASSERT(sm);
 
@@ -369,7 +367,7 @@ lvk::Holder<lvk::ComputePipelineHandle> Device::createComputePipeline(const Comp
 
   // a shader module can be destroyed while pipelines created using its shaders are still in use
   // https://registry.khronos.org/vulkan/specs/1.3/html/chap9.html#vkDestroyShaderModule
-  destroy(desc.shaderStages.getModule(Stage_Compute));
+  destroy(desc.shaderModule);
 
   return {this, ctx_->computePipelinesPool_.create(std::move(pipeline))};
 }
@@ -383,12 +381,12 @@ lvk::Holder<lvk::RenderPipelineHandle> Device::createRenderPipeline(const Render
     return {};
   }
 
-  if (!LVK_VERIFY(desc.shaderStages.getModule(Stage_Vertex).valid())) {
+  if (!LVK_VERIFY(desc.smVert.valid())) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing vertex shader");
     return {};
   }
 
-  if (!LVK_VERIFY(desc.shaderStages.getModule(Stage_Fragment).valid())) {
+  if (!LVK_VERIFY(desc.smFrag.valid())) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing fragment shader");
     return {};
   }
