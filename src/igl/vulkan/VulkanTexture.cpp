@@ -18,8 +18,8 @@ VulkanTexture::VulkanTexture(std::shared_ptr<VulkanImage> image, std::shared_ptr
   image_(std::move(image)), imageView_(std::move(imageView)) {
   LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_CREATE);
 
-  IGL_ASSERT(image_.get());
-  IGL_ASSERT(imageView_.get());
+  LVK_ASSERT(image_.get());
+  LVK_ASSERT(imageView_.get());
 }
 
 bool VulkanTexture::isSwapchainTexture() const {

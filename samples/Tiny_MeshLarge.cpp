@@ -675,17 +675,16 @@ bool loadAndCache(const char* cacheFileName) {
   std::string warn;
   std::string err;
 
-  const bool ret =
-      tinyobj::LoadObj(&attrib,
-                       &shapes,
-                       &materials,
-                       &warn,
-                       &err,
-                       (folderContentRoot + "src/bistro/Exterior/exterior.obj").c_str(),
-                       (folderContentRoot + "src/bistro/Exterior/").c_str());
+  const bool ret = tinyobj::LoadObj(&attrib,
+                                    &shapes,
+                                    &materials,
+                                    &warn,
+                                    &err,
+                                    (folderContentRoot + "src/bistro/Exterior/exterior.obj").c_str(),
+                                    (folderContentRoot + "src/bistro/Exterior/").c_str());
 
-  if (!IGL_VERIFY(ret)) {
-    IGL_ASSERT_MSG(ret, "Did you read the tutorial at the top of this file?");
+  if (!LVK_VERIFY(ret)) {
+    LVK_ASSERT_MSG(ret, "Did you read the tutorial at the top of this file?");
     return false;
   }
 
@@ -697,7 +696,7 @@ bool loadAndCache(const char* cacheFileName) {
   for (size_t s = 0; s < shapes.size(); s++) {
     size_t index_offset = 0;
     for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
-      IGL_ASSERT(shapes[s].mesh.num_face_vertices[f] == 3);
+      LVK_ASSERT(shapes[s].mesh.num_face_vertices[f] == 3);
 
       for (size_t v = 0; v < 3; v++) {
         tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
@@ -715,34 +714,26 @@ bool loadAndCache(const char* cacheFileName) {
 
         const bool hasUV = (idx.texcoord_index >= 0);
 
-        const vec2 uv = hasUV ? vec2(attrib.texcoords[2 * size_t(idx.texcoord_index) + 0],
-                                     attrib.texcoords[2 * size_t(idx.texcoord_index) + 1])
-                              : vec2(0);
+        const vec2 uv =
+            hasUV ? vec2(attrib.texcoords[2 * size_t(idx.texcoord_index) + 0], attrib.texcoords[2 * size_t(idx.texcoord_index) + 1])
+                  : vec2(0);
 
         const int mtlIndex = shapes[s].mesh.material_ids[f];
 
-        IGL_ASSERT(mtlIndex >= 0 && mtlIndex < materials.size());
+        LVK_ASSERT(mtlIndex >= 0 && mtlIndex < materials.size());
 
         if (prevIndex != mtlIndex) {
-          resplitShapes[prevIndex].insert(
-              resplitShapes[prevIndex].end(), shapeData.begin(), shapeData.end());
+          resplitShapes[prevIndex].insert(resplitShapes[prevIndex].end(), shapeData.begin(), shapeData.end());
           shapeData.clear();
           prevIndex = mtlIndex;
         }
-        vertexData_.push_back({pos,
-                               glm::packSnorm3x10_1x2(vec4(normal, 0)),
-                               glm::packHalf2x16(uv),
-                               (uint32_t)mtlIndex});
-        shapeData.push_back({pos,
-                             glm::packSnorm3x10_1x2(vec4(normal, 0)),
-                             glm::packHalf2x16(uv),
-                             (uint32_t)mtlIndex});
+        vertexData_.push_back({pos, glm::packSnorm3x10_1x2(vec4(normal, 0)), glm::packHalf2x16(uv), (uint32_t)mtlIndex});
+        shapeData.push_back({pos, glm::packSnorm3x10_1x2(vec4(normal, 0)), glm::packHalf2x16(uv), (uint32_t)mtlIndex});
       }
       index_offset += 3;
     }
   }
-  resplitShapes[prevIndex].insert(
-      resplitShapes[prevIndex].end(), shapeData.begin(), shapeData.end());
+  resplitShapes[prevIndex].insert(resplitShapes[prevIndex].end(), shapeData.begin(), shapeData.end());
   shapeData.clear();
   for (auto shape : resplitShapes) {
     shapeData.insert(shapeData.end(), shape.begin(), shape.end());
@@ -754,31 +745,20 @@ bool loadAndCache(const char* cacheFileName) {
     // 1. Generate an index buffer
     const size_t indexCount = vertexData_.size();
     std::vector<uint32_t> remap(indexCount);
-    const size_t vertexCount = meshopt_generateVertexRemap(
-        remap.data(), nullptr, indexCount, vertexData_.data(), indexCount, sizeof(VertexData));
+    const size_t vertexCount =
+        meshopt_generateVertexRemap(remap.data(), nullptr, indexCount, vertexData_.data(), indexCount, sizeof(VertexData));
     // 2. Remap vertices
     std::vector<VertexData> remappedVertices;
     indexData_.resize(indexCount);
     remappedVertices.resize(vertexCount);
     meshopt_remapIndexBuffer(indexData_.data(), nullptr, indexCount, &remap[0]);
-    meshopt_remapVertexBuffer(
-        remappedVertices.data(), vertexData_.data(), indexCount, sizeof(VertexData), remap.data());
+    meshopt_remapVertexBuffer(remappedVertices.data(), vertexData_.data(), indexCount, sizeof(VertexData), remap.data());
     vertexData_ = remappedVertices;
     // 3. Optimize for the GPU vertex cache reuse and overdraw
     meshopt_optimizeVertexCache(indexData_.data(), indexData_.data(), indexCount, vertexCount);
-    meshopt_optimizeOverdraw(indexData_.data(),
-                             indexData_.data(),
-                             indexCount,
-                             &vertexData_[0].position.x,
-                             vertexCount,
-                             sizeof(VertexData),
-                             1.05f);
-    meshopt_optimizeVertexFetch(vertexData_.data(),
-                                indexData_.data(),
-                                indexCount,
-                                vertexData_.data(),
-                                vertexCount,
-                                sizeof(VertexData));
+    meshopt_optimizeOverdraw(
+        indexData_.data(), indexData_.data(), indexCount, &vertexData_[0].position.x, vertexCount, sizeof(VertexData), 1.05f);
+    meshopt_optimizeVertexFetch(vertexData_.data(), indexData_.data(), indexCount, vertexData_.data(), vertexCount, sizeof(VertexData));
   }
 
   // loop over materials
@@ -786,10 +766,10 @@ bool loadAndCache(const char* cacheFileName) {
     CachedMaterial mtl;
     mtl.ambient = vec3(m.ambient[0], m.ambient[1], m.ambient[2]);
     mtl.diffuse = vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
-    IGL_ASSERT(m.name.length() < MAX_MATERIAL_NAME);
-    IGL_ASSERT(m.ambient_texname.length() < MAX_MATERIAL_NAME);
-    IGL_ASSERT(m.diffuse_texname.length() < MAX_MATERIAL_NAME);
-    IGL_ASSERT(m.alpha_texname.length() < MAX_MATERIAL_NAME);
+    LVK_ASSERT(m.name.length() < MAX_MATERIAL_NAME);
+    LVK_ASSERT(m.ambient_texname.length() < MAX_MATERIAL_NAME);
+    LVK_ASSERT(m.diffuse_texname.length() < MAX_MATERIAL_NAME);
+    LVK_ASSERT(m.alpha_texname.length() < MAX_MATERIAL_NAME);
     strcat(mtl.name, m.name.c_str());
     normalizeName(m.ambient_texname);
     normalizeName(m.diffuse_texname);
@@ -854,8 +834,7 @@ bool loadFromCache(const char* cacheFileName) {
   cachedMaterials_.resize(numMaterials);
   vertexData_.resize(numVertices);
   indexData_.resize(numIndices);
-  CHECK_READ(numMaterials,
-             fread(cachedMaterials_.data(), sizeof(CachedMaterial), numMaterials, cacheFile));
+  CHECK_READ(numMaterials, fread(cachedMaterials_.data(), sizeof(CachedMaterial), numMaterials, cacheFile));
   CHECK_READ(numVertices, fread(vertexData_.data(), sizeof(VertexData), numVertices, cacheFile));
   CHECK_READ(numIndices, fread(indexData_.data(), sizeof(uint32_t), numIndices, cacheFile));
 #undef CHECK_READ
@@ -866,8 +845,8 @@ void initModel() {
   const std::string cacheFileName = folderContentRoot + "cache.data";
 
   if (!loadFromCache(cacheFileName.c_str())) {
-    if (!IGL_VERIFY(loadAndCache(cacheFileName.c_str()))) {
-      IGL_ASSERT_MSG(false, "Cannot load 3D model");
+    if (!LVK_VERIFY(loadAndCache(cacheFileName.c_str()))) {
+      LVK_ASSERT_MSG(false, "Cannot load 3D model");
     }
   }
 
@@ -1322,7 +1301,7 @@ lvk::Format gli2iglTextureFormat(gli::texture2d::format_type format) {
     return lvk::Format_RG_F16;
   default:;
   }
-  IGL_ASSERT_MSG(false, "Code should NOT be reached");
+  LVK_ASSERT_MSG(false, "Code should NOT be reached");
   return lvk::Format_RGBA_UN8;
 }
 
@@ -1345,7 +1324,7 @@ LoadedImage loadImage(const char* fileName, int channels) {
     const auto it = imagesCache_.find(debugName);
 
     if (it != imagesCache_.end()) {
-      IGL_ASSERT(channels == it->second.channels);
+      LVK_ASSERT(channels == it->second.channels);
       return it->second;
     }
   }
@@ -1426,8 +1405,8 @@ void loadCubemapTexture(const std::string& fileNameKTX, lvk::Holder<lvk::Texture
 
   auto texRef = gli::load_ktx(fileNameKTX);
 
-  if (!IGL_VERIFY(texRef.format() == gli::FORMAT_RGBA32_SFLOAT_PACK32)) {
-    IGL_ASSERT_MSG(false, "Texture format not supported");
+  if (!LVK_VERIFY(texRef.format() == gli::FORMAT_RGBA32_SFLOAT_PACK32)) {
+    LVK_ASSERT_MSG(false, "Texture format not supported");
     return;
   }
 
@@ -1470,9 +1449,9 @@ void loadCubemapTexture(const std::string& fileNameKTX, lvk::Holder<lvk::Texture
 }
 
 gli::texture_cube gliToCube(Bitmap& bmp) {
-  IGL_ASSERT(bmp.comp_ == 3); // RGB
-  IGL_ASSERT(bmp.type_ == eBitmapType_Cube);
-  IGL_ASSERT(bmp.fmt_ == eBitmapFormat_Float);
+  LVK_ASSERT(bmp.comp_ == 3); // RGB
+  LVK_ASSERT(bmp.type_ == eBitmapType_Cube);
+  LVK_ASSERT(bmp.fmt_ == eBitmapFormat_Float);
 
   const int w = bmp.w_;
   const int h = bmp.h_;
@@ -1481,20 +1460,19 @@ gli::texture_cube gliToCube(Bitmap& bmp) {
 
   const uint32_t miplevels = lvk::calcNumMipLevels(w, h);
 
-  gli::texture_cube gliTexCube =
-      gli::texture_cube(gli::FORMAT_RGBA32_SFLOAT_PACK32, extents, miplevels);
+  gli::texture_cube gliTexCube = gli::texture_cube(gli::FORMAT_RGBA32_SFLOAT_PACK32, extents, miplevels);
 
   const int numFacePixels = w * h;
 
   for (size_t face = 0; face != 6; face++) {
-    const vec3* src = reinterpret_cast<vec3*>(bmp.data_.data()) + face * numFacePixels;
-    float* dst = (float*)gliTexCube[face].data();
-    for (int y = 0; y != h; y++) {
+     const vec3* src = reinterpret_cast<vec3*>(bmp.data_.data()) + face * numFacePixels;
+     float* dst = (float*)gliTexCube[face].data();
+     for (int y = 0; y != h; y++) {
       for (int x = 0; x != w; x++) {
         const vec3& rgb = src[x + y * w];
         gliTexCube[face].store(gli::texture2d::extent_type{x, y}, 0, vec4(rgb, 0.0f));
       }
-    }
+     }
   }
 
   return gliTexCube;
@@ -1535,9 +1513,7 @@ void generateMipmaps(const std::string& outFilename, gli::texture_cube& cubemap)
   gli::save_ktx(cubemap, outFilename);
 }
 
-void processCubemap(const std::string& inFilename,
-                    const std::string& outFilenameEnv,
-                    const std::string& outFilenameIrr) {
+void processCubemap(const std::string& inFilename, const std::string& outFilenameEnv, const std::string& outFilenameIrr) {
   LVK_PROFILER_FUNCTION();
 
   int sourceWidth, sourceHeight;
@@ -1548,15 +1524,14 @@ void processCubemap(const std::string& inFilename,
     }
   };
 
-  if (!IGL_VERIFY(pxs != nullptr)) {
-    IGL_ASSERT_MSG(false, "Did you read the tutorial at the top of Tiny_MeshLarge.cpp?");
+  if (!LVK_VERIFY(pxs != nullptr)) {
+    LVK_ASSERT_MSG(false, "Did you read the tutorial at the top of Tiny_MeshLarge.cpp?");
     return;
   }
 
   // Environment map
   {
-    Bitmap bmp = convertEquirectangularMapToCubeMapFaces(
-        Bitmap(sourceWidth, sourceHeight, 3, eBitmapFormat_Float, pxs));
+    Bitmap bmp = convertEquirectangularMapToCubeMapFaces(Bitmap(sourceWidth, sourceHeight, 3, eBitmapFormat_Float, pxs));
     gli::texture_cube cube = gliToCube(bmp);
     generateMipmaps(outFilenameEnv, cube);
   }
@@ -1569,8 +1544,7 @@ void processCubemap(const std::string& inFilename,
     std::vector<vec3> out(dstW * dstH);
     convolveDiffuse((vec3*)pxs, sourceWidth, sourceHeight, dstW, dstH, out.data(), 1024);
 
-    Bitmap bmp = convertEquirectangularMapToCubeMapFaces(
-        Bitmap(dstW, dstH, 3, eBitmapFormat_Float, out.data()));
+    Bitmap bmp = convertEquirectangularMapToCubeMapFaces(Bitmap(dstW, dstH, 3, eBitmapFormat_Float, out.data()));
     gli::texture_cube cube = gliToCube(bmp);
     generateMipmaps(outFilenameIrr, cube);
   }
@@ -1630,8 +1604,7 @@ lvk::TextureHandle createTexture(const LoadedImage& img) {
 
   lvk::Holder<lvk::TextureHandle> tex = device_->createTexture(desc, nullptr);
 
-  if (kEnableCompression && img.channels == 4 &&
-      std::filesystem::exists(img.compressedFileName.c_str())) {
+  if (kEnableCompression && img.channels == 4 && std::filesystem::exists(img.compressedFileName.c_str())) {
     // uploading the texture
     auto gliTex2d = gli::load_ktx(img.compressedFileName.c_str());
     if (gliTex2d.empty()) {
@@ -1680,9 +1653,9 @@ void processLoadedMaterials() {
     materials_[mtl.idx].texAlpha = tex.alpha.index();
     textures_[mtl.idx] = std::move(tex);
   }
-  IGL_ASSERT(materials_[mtl.idx].texAmbient >= 0 && materials_[mtl.idx].texAmbient < kMaxTextures);
-  IGL_ASSERT(materials_[mtl.idx].texDiffuse >= 0 && materials_[mtl.idx].texDiffuse < kMaxTextures);
-  IGL_ASSERT(materials_[mtl.idx].texAlpha >= 0 && materials_[mtl.idx].texAlpha < kMaxTextures);
+  LVK_ASSERT(materials_[mtl.idx].texAmbient >= 0 && materials_[mtl.idx].texAmbient < kMaxTextures);
+  LVK_ASSERT(materials_[mtl.idx].texDiffuse >= 0 && materials_[mtl.idx].texDiffuse < kMaxTextures);
+  LVK_ASSERT(materials_[mtl.idx].texAlpha >= 0 && materials_[mtl.idx].texAlpha < kMaxTextures);
   device_->upload(sbMaterials_, materials_.data(), sizeof(GPUMaterial) * materials_.size());
 }
 
@@ -1699,7 +1672,7 @@ int main(int argc, char* argv[]) {
     }
     if (!exists(dir / subdir)) {
       printf("Cannot find the content directory. Run `deploy_content.py` before running this app.");
-      IGL_ASSERT(false);
+      LVK_ASSERT(false);
       return EXIT_FAILURE;
     }
     folderThirdParty = (dir / path("third-party/deps/src/")).string();
@@ -1846,7 +1819,7 @@ int main(int argc, char* argv[]) {
                                        ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
                                        ImGuiWindowFlags_NoMove;
         const ImGuiViewport* v = ImGui::GetMainViewport();
-        IGL_ASSERT(v);
+        LVK_ASSERT(v);
         ImGui::SetNextWindowPos(
             {
                 v->WorkPos.x + v->WorkSize.x - 15.0f,

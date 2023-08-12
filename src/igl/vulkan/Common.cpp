@@ -55,7 +55,7 @@ uint32_t getBytesPerPixel(VkFormat format) {
     return 16;
   default:;
   }
-  IGL_ASSERT_MSG(false, "VkFormat value not handled: %d", (int)format);
+  LVK_ASSERT_MSG(false, "VkFormat value not handled: %d", (int)format);
   return 1;
 }
 
@@ -96,7 +96,7 @@ VkCompareOp compareOpToVkCompareOp(lvk::CompareOp func) {
   case lvk::CompareOp_AlwaysPass:
     return VK_COMPARE_OP_ALWAYS;
   }
-  IGL_ASSERT_MSG(false, "CompareFunction value not handled: %d", (int)func);
+  LVK_ASSERT_MSG(false, "CompareFunction value not handled: %d", (int)func);
   return VK_COMPARE_OP_ALWAYS;
 }
 

@@ -7,8 +7,7 @@
 
 #include "VulkanPipelineBuilder.h"
 
-namespace lvk {
-namespace vulkan {
+namespace lvk::vulkan {
 
 uint32_t VulkanPipelineBuilder::numPipelinesCreated_ = 0;
 
@@ -139,7 +138,7 @@ VkResult VulkanPipelineBuilder::build(VkDevice device,
   const VkPipelineColorBlendStateCreateInfo colorBlendState =
       ivkGetPipelineColorBlendStateCreateInfo(uint32_t(colorBlendAttachmentStates_.size()), colorBlendAttachmentStates_.data());
 
-  IGL_ASSERT(colorAttachmentFormats_.size() == colorBlendAttachmentStates_.size());
+  LVK_ASSERT(colorAttachmentFormats_.size() == colorBlendAttachmentStates_.size());
 
   const VkPipelineRenderingCreateInfo renderingInfo = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
@@ -174,7 +173,7 @@ VkResult VulkanPipelineBuilder::build(VkDevice device,
 
   const auto result = vkCreateGraphicsPipelines(device, pipelineCache, 1, &ci, nullptr, outPipeline);
 
-  if (!IGL_VERIFY(result == VK_SUCCESS)) {
+  if (!LVK_VERIFY(result == VK_SUCCESS)) {
     return result;
   }
 
@@ -184,5 +183,4 @@ VkResult VulkanPipelineBuilder::build(VkDevice device,
   return ivkSetDebugObjectName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)*outPipeline, debugName);
 }
 
-} // namespace vulkan
-} // namespace lvk
+} // namespace lvk::vulkan

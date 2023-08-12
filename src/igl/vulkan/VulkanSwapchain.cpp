@@ -59,7 +59,7 @@ VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(lvk::ColorSpace colorSpace, bool 
 
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats,
                                            lvk::ColorSpace colorSpace) {
-  IGL_ASSERT(!formats.empty());
+  LVK_ASSERT(!formats.empty());
 
   const VkSurfaceFormatKHR preferred =
       lvk::vulkan::colorSpaceToVkSurfaceFormat(colorSpace, isNativeSwapChainBGR(formats));
@@ -128,7 +128,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
 
   acquireSemaphore_ = lvk::createSemaphore(device_, "Semaphore: swapchain-acquire");
 
-  IGL_ASSERT_MSG(ctx.vkSurface_ != VK_NULL_HANDLE,
+  LVK_ASSERT_MSG(ctx.vkSurface_ != VK_NULL_HANDLE,
                  "You are trying to create a swapchain but your OS surface is empty. Did you want to "
                  "create an offscreen rendering context? If so, set 'width' and 'height' to 0 when you "
                  "create your lvk::IDevice");
@@ -136,7 +136,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
   VkBool32 queueFamilySupportsPresentation = VK_FALSE;
   VK_ASSERT(vkGetPhysicalDeviceSurfaceSupportKHR(
       ctx.getVkPhysicalDevice(), ctx.deviceQueues_.graphicsQueueFamilyIndex, ctx.vkSurface_, &queueFamilySupportsPresentation));
-  IGL_ASSERT_MSG(queueFamilySupportsPresentation == VK_TRUE, "The queue family used with the swapchain does not support presentation");
+  LVK_ASSERT_MSG(queueFamilySupportsPresentation == VK_TRUE, "The queue family used with the swapchain does not support presentation");
 
   const VkImageUsageFlags usageFlags = chooseUsageFlags(ctx.getVkPhysicalDevice(), ctx.vkSurface_, surfaceFormat_.format);
   const bool isCompositeAlphaOpaqueSupported = (ctx.deviceSurfaceCaps_.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR) != 0;
@@ -164,7 +164,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
   swapchainImages.resize(numSwapchainImages_);
   VK_ASSERT(vkGetSwapchainImagesKHR(device_, swapchain_, &numSwapchainImages_, swapchainImages.data()));
 
-  IGL_ASSERT(numSwapchainImages_ > 0);
+  LVK_ASSERT(numSwapchainImages_ > 0);
 
   // create images, image views and framebuffers
   swapchainTextures_.reserve(numSwapchainImages_);
@@ -195,7 +195,7 @@ VulkanSwapchain::~VulkanSwapchain() {
 }
 
 VkImage VulkanSwapchain::getCurrentVkImage() const {
-  if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
+  if (LVK_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
     lvk::vulkan::VulkanTexture* tex = ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_]);
     return tex->image_->getVkImage();
   }
@@ -203,7 +203,7 @@ VkImage VulkanSwapchain::getCurrentVkImage() const {
 }
 
 VkImageView VulkanSwapchain::getCurrentVkImageView() const {
-  if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
+  if (LVK_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
     lvk::vulkan::VulkanTexture* tex = ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_]);
     return tex->imageView_->getVkImageView();
   }
@@ -219,7 +219,7 @@ TextureHandle VulkanSwapchain::getCurrentTexture() {
     getNextImage_ = false;
   }
 
-  if (IGL_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
+  if (LVK_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
     return swapchainTextures_[currentImageIndex_];
   }
 

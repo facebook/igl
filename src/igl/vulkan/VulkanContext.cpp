@@ -22,7 +22,7 @@
 
 #include <glslang/Include/glslang_c_interface.h>
 
-static_assert(lvk::HWDeviceDesc::IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE <= VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+static_assert(lvk::HWDeviceDesc::LVK_MAX_PHYSICAL_DEVICE_NAME_SIZE <= VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
 
 namespace {
 
@@ -81,7 +81,7 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
   if (isError) {
     lvk::vulkan::VulkanContext* ctx = static_cast<lvk::vulkan::VulkanContext*>(userData);
     if (ctx->config_.terminateOnValidationError) {
-      IGL_ASSERT(false);
+      LVK_ASSERT(false);
       std::terminate();
     }
   }
@@ -115,24 +115,20 @@ bool validateImageLimits(VkImageType imageType,
                          lvk::Result* outResult) {
   using lvk::Result;
 
-  if (samples != VK_SAMPLE_COUNT_1_BIT && !IGL_VERIFY(imageType == VK_IMAGE_TYPE_2D)) {
-    Result::setResult(
-        outResult,
-        Result(Result::Code::ArgumentOutOfRange, "Multisampling is supported only for 2D images"));
+  if (samples != VK_SAMPLE_COUNT_1_BIT && !LVK_VERIFY(imageType == VK_IMAGE_TYPE_2D)) {
+    Result::setResult(outResult, Result(Result::Code::ArgumentOutOfRange, "Multisampling is supported only for 2D images"));
     return false;
   }
 
-  if (imageType == VK_IMAGE_TYPE_2D && !IGL_VERIFY(extent.width <= limits.maxImageDimension2D &&
-                                                   extent.height <= limits.maxImageDimension2D)) {
-    Result::setResult(outResult,
-                      Result(Result::Code::ArgumentOutOfRange, "2D texture size exceeded"));
+  if (imageType == VK_IMAGE_TYPE_2D &&
+      !LVK_VERIFY(extent.width <= limits.maxImageDimension2D && extent.height <= limits.maxImageDimension2D)) {
+    Result::setResult(outResult, Result(Result::Code::ArgumentOutOfRange, "2D texture size exceeded"));
     return false;
   }
-  if (imageType == VK_IMAGE_TYPE_3D && !IGL_VERIFY(extent.width <= limits.maxImageDimension3D &&
-                                                   extent.height <= limits.maxImageDimension3D &&
-                                                   extent.depth <= limits.maxImageDimension3D)) {
-    Result::setResult(outResult,
-                      Result(Result::Code::ArgumentOutOfRange, "3D texture size exceeded"));
+  if (imageType == VK_IMAGE_TYPE_3D &&
+      !LVK_VERIFY(extent.width <= limits.maxImageDimension3D && extent.height <= limits.maxImageDimension3D &&
+                  extent.depth <= limits.maxImageDimension3D)) {
+    Result::setResult(outResult, Result(Result::Code::ArgumentOutOfRange, "3D texture size exceeded"));
     return false;
   }
 
@@ -246,7 +242,7 @@ VulkanContext::~VulkanContext() {
   vkDestroyPipelineCache(vkDevice_, pipelineCache_, nullptr);
 
   // Clean up VMA
-  if (IGL_VULKAN_USE_VMA) {
+  if (LVK_VULKAN_USE_VMA) {
     vmaDestroyAllocator(pimpl_->vma_);
   }
 
@@ -441,17 +437,14 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
         VK_API_VERSION_MINOR(apiVersion),
         VK_API_VERSION_PATCH(apiVersion),
         VK_API_VERSION_VARIANT(apiVersion));
-  LLOGL("           Driver info: %s %s\n",
-        vkPhysicalDeviceDriverProperties_.driverName,
-        vkPhysicalDeviceDriverProperties_.driverInfo);
+  LLOGL("           Driver info: %s %s\n", vkPhysicalDeviceDriverProperties_.driverName, vkPhysicalDeviceDriverProperties_.driverInfo);
 
   uint32_t count = 0;
   VK_ASSERT(vkEnumerateDeviceExtensionProperties(vkPhysicalDevice_, nullptr, &count, nullptr));
 
   std::vector<VkExtensionProperties> allPhysicalDeviceExtensions(count);
 
-  VK_ASSERT(vkEnumerateDeviceExtensionProperties(
-      vkPhysicalDevice_, nullptr, &count, allPhysicalDeviceExtensions.data()));
+  VK_ASSERT(vkEnumerateDeviceExtensionProperties(vkPhysicalDevice_, nullptr, &count, allPhysicalDeviceExtensions.data()));
 
   LLOGL("Vulkan physical device extensions:\n");
 
@@ -460,10 +453,8 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     LLOGL("  %s\n", ext.extensionName);
   }
 
-  deviceQueues_.graphicsQueueFamilyIndex =
-      lvk::findQueueFamilyIndex(vkPhysicalDevice_, VK_QUEUE_GRAPHICS_BIT);
-  deviceQueues_.computeQueueFamilyIndex =
-      lvk::findQueueFamilyIndex(vkPhysicalDevice_, VK_QUEUE_COMPUTE_BIT);
+  deviceQueues_.graphicsQueueFamilyIndex = lvk::findQueueFamilyIndex(vkPhysicalDevice_, VK_QUEUE_GRAPHICS_BIT);
+  deviceQueues_.computeQueueFamilyIndex = lvk::findQueueFamilyIndex(vkPhysicalDevice_, VK_QUEUE_COMPUTE_BIT);
 
   if (deviceQueues_.graphicsQueueFamilyIndex == DeviceQueues::INVALID) {
     LLOGW("VK_QUEUE_GRAPHICS_BIT is not supported");
@@ -561,8 +552,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
         missingExtensions += "\n   " + std::string(ext);
     }
     if (!missingExtensions.empty()) {
-      MINILOG_LOG_PROC(
-          minilog::FatalError, "Missing Vulkan device extensions: %s\n", missingExtensions.c_str());
+      MINILOG_LOG_PROC(minilog::FatalError, "Missing Vulkan device extensions: %s\n", missingExtensions.c_str());
       assert(false);
       return Result(Result::Code::RuntimeError);
     }
@@ -574,8 +564,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 #define CHECK_VULKAN_FEATURE(reqFeatures, availFeatures, feature, version)     \
   if ((reqFeatures.feature == VK_TRUE) && (availFeatures.feature == VK_FALSE)) \
     missingFeatures.append("\n   " version " ." #feature);
-#define CHECK_FEATURE_1_0(feature) \
-  CHECK_VULKAN_FEATURE(deviceFeatures10, vkFeatures10_.features, feature, "1.0 ");
+#define CHECK_FEATURE_1_0(feature) CHECK_VULKAN_FEATURE(deviceFeatures10, vkFeatures10_.features, feature, "1.0 ");
     CHECK_FEATURE_1_0(robustBufferAccess);
     CHECK_FEATURE_1_0(fullDrawIndexUint32);
     CHECK_FEATURE_1_0(imageCubeArray);
@@ -632,8 +621,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     CHECK_FEATURE_1_0(variableMultisampleRate);
     CHECK_FEATURE_1_0(inheritedQueries);
 #undef CHECK_FEATURE_1_0
-#define CHECK_FEATURE_1_1(feature) \
-  CHECK_VULKAN_FEATURE(deviceFeatures11, vkFeatures11_, feature, "1.1 ");
+#define CHECK_FEATURE_1_1(feature) CHECK_VULKAN_FEATURE(deviceFeatures11, vkFeatures11_, feature, "1.1 ");
     CHECK_FEATURE_1_1(storageBuffer16BitAccess);
     CHECK_FEATURE_1_1(uniformAndStorageBuffer16BitAccess);
     CHECK_FEATURE_1_1(storagePushConstant16);
@@ -647,8 +635,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     CHECK_FEATURE_1_1(samplerYcbcrConversion);
     CHECK_FEATURE_1_1(shaderDrawParameters);
 #undef CHECK_FEATURE_1_1
-#define CHECK_FEATURE_1_2(feature) \
-  CHECK_VULKAN_FEATURE(deviceFeatures12, vkFeatures12_, feature, "1.2 ");
+#define CHECK_FEATURE_1_2(feature) CHECK_VULKAN_FEATURE(deviceFeatures12, vkFeatures12_, feature, "1.2 ");
     CHECK_FEATURE_1_2(samplerMirrorClampToEdge);
     CHECK_FEATURE_1_2(drawIndirectCount);
     CHECK_FEATURE_1_2(storageBuffer8BitAccess);
@@ -697,8 +684,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     CHECK_FEATURE_1_2(shaderOutputLayer);
     CHECK_FEATURE_1_2(subgroupBroadcastDynamicId);
 #undef CHECK_FEATURE_1_2
-#define CHECK_FEATURE_1_3(feature) \
-  CHECK_VULKAN_FEATURE(deviceFeatures13, vkFeatures13_, feature, "1.3 ");
+#define CHECK_FEATURE_1_3(feature) CHECK_VULKAN_FEATURE(deviceFeatures13, vkFeatures13_, feature, "1.3 ");
     CHECK_FEATURE_1_3(robustImageAccess);
     CHECK_FEATURE_1_3(inlineUniformBlock);
     CHECK_FEATURE_1_3(descriptorBindingInlineUniformBlockUpdateAfterBind);
@@ -716,8 +702,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     CHECK_FEATURE_1_3(maintenance4);
 #undef CHECK_FEATURE_1_3
     if (!missingFeatures.empty()) {
-      MINILOG_LOG_PROC(
-          minilog::FatalError, "Missing Vulkan features: %s\n", missingFeatures.c_str());
+      MINILOG_LOG_PROC(minilog::FatalError, "Missing Vulkan features: %s\n", missingFeatures.c_str());
       assert(false);
       return Result(Result::Code::RuntimeError);
     }
@@ -727,13 +712,10 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 
   volkLoadDevice(vkDevice_);
 
-  vkGetDeviceQueue(
-      vkDevice_, deviceQueues_.graphicsQueueFamilyIndex, 0, &deviceQueues_.graphicsQueue);
-  vkGetDeviceQueue(
-      vkDevice_, deviceQueues_.computeQueueFamilyIndex, 0, &deviceQueues_.computeQueue);
+  vkGetDeviceQueue(vkDevice_, deviceQueues_.graphicsQueueFamilyIndex, 0, &deviceQueues_.graphicsQueue);
+  vkGetDeviceQueue(vkDevice_, deviceQueues_.computeQueueFamilyIndex, 0, &deviceQueues_.computeQueue);
 
-  VK_ASSERT(ivkSetDebugObjectName(
-      vkDevice_, VK_OBJECT_TYPE_DEVICE, (uint64_t)vkDevice_, "Device: VulkanContext::vkDevice_"));
+  VK_ASSERT(ivkSetDebugObjectName(vkDevice_, VK_OBJECT_TYPE_DEVICE, (uint64_t)vkDevice_, "Device: VulkanContext::vkDevice_"));
 
   immediate_ = std::make_unique<lvk::vulkan::VulkanImmediateCommands>(
       vkDevice_, deviceQueues_.graphicsQueueFamilyIndex, "VulkanContext::immediate_");
@@ -750,9 +732,9 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     vkCreatePipelineCache(vkDevice_, &ci, nullptr, &pipelineCache_);
   }
 
-  if (IGL_VULKAN_USE_VMA) {
+  if (LVK_VULKAN_USE_VMA) {
     pimpl_->vma_ = lvk::createVmaAllocator(vkPhysicalDevice_, vkDevice_, vkInstance_, apiVersion);
-    IGL_ASSERT(pimpl_->vma_ != VK_NULL_HANDLE);
+    LVK_ASSERT(pimpl_->vma_ != VK_NULL_HANDLE);
   }
 
   stagingDevice_ = std::make_unique<lvk::vulkan::VulkanStagingDevice>(*this);
@@ -760,8 +742,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
   // default texture
   {
     const VkFormat dummyTextureFormat = VK_FORMAT_R8G8B8A8_UNORM;
-    const VkMemoryPropertyFlags memFlags = useStaging_ ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-                                                       : VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    const VkMemoryPropertyFlags memFlags = useStaging_ ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT : VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     Result result;
     auto image = createImage(VK_IMAGE_TYPE_2D,
                              VkExtent3D{1, 1, 1},
@@ -769,42 +750,34 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
                              1,
                              1,
                              VK_IMAGE_TILING_OPTIMAL,
-                             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-                                 VK_IMAGE_USAGE_STORAGE_BIT,
+                             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
                              memFlags,
                              0,
                              VK_SAMPLE_COUNT_1_BIT,
                              &result,
                              "Image: dummy 1x1");
-    if (!IGL_VERIFY(result.isOk())) {
+    if (!LVK_VERIFY(result.isOk())) {
       return result;
     }
-    if (!IGL_VERIFY(image.get())) {
+    if (!LVK_VERIFY(image.get())) {
       return Result(Result::Code::RuntimeError, "Cannot create VulkanImage");
     }
-    auto imageView = image->createImageView(VK_IMAGE_VIEW_TYPE_2D,
-                                            dummyTextureFormat,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            0,
-                                            VK_REMAINING_MIP_LEVELS,
-                                            0,
-                                            1,
-                                            "Image View: dummy 1x1");
-    if (!IGL_VERIFY(imageView.get())) {
+    auto imageView = image->createImageView(
+        VK_IMAGE_VIEW_TYPE_2D, dummyTextureFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 1, "Image View: dummy 1x1");
+    if (!LVK_VERIFY(imageView.get())) {
       return Result(Result::Code::RuntimeError, "Cannot create VulkanImageView");
     }
     VulkanTexture dummyTexture(std::move(image), std::move(imageView));
     const uint32_t pixel = 0xFF000000;
     const void* data[] = {&pixel};
     const VkRect2D imageRegion = ivkGetRect2D(0, 0, 1, 1);
-    stagingDevice_->imageData2D(
-        *dummyTexture.image_.get(), imageRegion, 0, 1, 0, 1, dummyTextureFormat, data);
+    stagingDevice_->imageData2D(*dummyTexture.image_.get(), imageRegion, 0, 1, 0, 1, dummyTextureFormat, data);
     texturesPool_.create(std::move(dummyTexture));
-    IGL_ASSERT(texturesPool_.numObjects() == 1);
+    LVK_ASSERT(texturesPool_.numObjects() == 1);
   }
 
   // default sampler
-  IGL_ASSERT(samplersPool_.numObjects() == 0);
+  LVK_ASSERT(samplersPool_.numObjects() == 0);
   createSampler(ivkGetSamplerCreateInfo(VK_FILTER_LINEAR,
                                         VK_FILTER_LINEAR,
                                         VK_SAMPLER_MIPMAP_MODE_NEAREST,
@@ -816,16 +789,13 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
                 nullptr,
                 "Sampler: default");
 
-  if (!IGL_VERIFY(config_.maxSamplers <=
-                  vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSamplers)) {
+  if (!LVK_VERIFY(config_.maxSamplers <= vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSamplers)) {
     LLOGW("Max Samplers exceeded %u (max %u)",
           config_.maxSamplers,
           vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSamplers);
   }
 
-  if (!IGL_VERIFY(
-          config_.maxTextures <=
-          vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSampledImages)) {
+  if (!LVK_VERIFY(config_.maxTextures <= vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSampledImages)) {
     LLOGW("Max Textures exceeded: %u (max %u)",
           config_.maxTextures,
           vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSampledImages);
@@ -837,38 +807,29 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     // create default descriptor set layout which is going to be shared by graphics pipelines
     constexpr uint32_t numBindings = 3;
     const VkDescriptorSetLayoutBinding bindings[numBindings] = {
-        ivkGetDescriptorSetLayoutBinding(
-            kBinding_Textures, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures),
-        ivkGetDescriptorSetLayoutBinding(
-            kBinding_Samplers, VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers),
-        ivkGetDescriptorSetLayoutBinding(
-            kBinding_StorageImages, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, config_.maxTextures),
+        ivkGetDescriptorSetLayoutBinding(kBinding_Textures, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures),
+        ivkGetDescriptorSetLayoutBinding(kBinding_Samplers, VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers),
+        ivkGetDescriptorSetLayoutBinding(kBinding_StorageImages, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, config_.maxTextures),
     };
-    const uint32_t flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
-                           VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
+    const uint32_t flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
                            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
     const VkDescriptorBindingFlags bindingFlags[numBindings] = {flags, flags, flags};
-    VK_ASSERT(ivkCreateDescriptorSetLayout(
-        vkDevice_, numBindings, bindings, bindingFlags, &vkDSLBindless_));
-    VK_ASSERT(ivkSetDebugObjectName(vkDevice_,
-                                    VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
-                                    (uint64_t)vkDSLBindless_,
-                                    "Descriptor Set Layout: VulkanContext::dslBindless_"));
+    VK_ASSERT(ivkCreateDescriptorSetLayout(vkDevice_, numBindings, bindings, bindingFlags, &vkDSLBindless_));
+    VK_ASSERT(ivkSetDebugObjectName(
+        vkDevice_, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)vkDSLBindless_, "Descriptor Set Layout: VulkanContext::dslBindless_"));
 
     // create default descriptor pool and allocate 1 descriptor set
     const uint32_t numSets = 1;
-    IGL_ASSERT(numSets > 0);
+    LVK_ASSERT(numSets > 0);
     const VkDescriptorPoolSize poolSizes[numBindings]{
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, numSets * config_.maxTextures},
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, numSets * config_.maxSamplers},
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, numSets * config_.maxTextures},
     };
     bindlessDSets_.resize(numSets);
-    VK_ASSERT_RETURN(
-        ivkCreateDescriptorPool(vkDevice_, numSets, numBindings, poolSizes, &vkDPBindless_));
+    VK_ASSERT_RETURN(ivkCreateDescriptorPool(vkDevice_, numSets, numBindings, poolSizes, &vkDPBindless_));
     for (size_t i = 0; i != numSets; i++) {
-      VK_ASSERT_RETURN(ivkAllocateDescriptorSet(
-          vkDevice_, vkDPBindless_, vkDSLBindless_, &bindlessDSets_[i].ds));
+      VK_ASSERT_RETURN(ivkAllocateDescriptorSet(vkDevice_, vkDPBindless_, vkDSLBindless_, &bindlessDSets_[i].ds));
     }
   }
 
@@ -876,28 +837,22 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
   // https://www.khronos.org/registry/vulkan/specs/1.3/html/vkspec.html#features-limits
   // Table 32. Required Limits
   const uint32_t kPushConstantsSize = 128;
-  if (!IGL_VERIFY(kPushConstantsSize <= limits.maxPushConstantsSize)) {
-    LLOGW("Push constants size exceeded %u (max %u bytes)",
-          kPushConstantsSize,
-          limits.maxPushConstantsSize);
+  if (!LVK_VERIFY(kPushConstantsSize <= limits.maxPushConstantsSize)) {
+    LLOGW("Push constants size exceeded %u (max %u bytes)", kPushConstantsSize, limits.maxPushConstantsSize);
   }
 
   // create pipeline layout
   {
     const VkPushConstantRange range = {
-        .stageFlags =
-            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
         .offset = 0,
         .size = kPushConstantsSize,
     };
-    const VkPipelineLayoutCreateInfo ci =
-        ivkGetPipelineLayoutCreateInfo(1, &vkDSLBindless_, &range);
+    const VkPipelineLayoutCreateInfo ci = ivkGetPipelineLayoutCreateInfo(1, &vkDSLBindless_, &range);
 
     VK_ASSERT(vkCreatePipelineLayout(vkDevice_, &ci, nullptr, &vkPipelineLayout_));
-    VK_ASSERT(ivkSetDebugObjectName(vkDevice_,
-                                    VK_OBJECT_TYPE_PIPELINE_LAYOUT,
-                                    (uint64_t)vkPipelineLayout_,
-                                    "Pipeline Layout: VulkanContext::pipelineLayout_"));
+    VK_ASSERT(ivkSetDebugObjectName(
+        vkDevice_, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)vkPipelineLayout_, "Pipeline Layout: VulkanContext::pipelineLayout_"));
   }
 
   querySurfaceCapabilities();
@@ -941,7 +896,7 @@ BufferHandle VulkanContext::createBuffer(VkDeviceSize bufferSize,
                                          const char* debugName) {
 #define ENSURE_BUFFER_SIZE(flag, maxSize)                                                  \
   if (usageFlags & flag) {                                                                 \
-    if (!IGL_VERIFY(bufferSize <= maxSize)) {                                              \
+    if (!LVK_VERIFY(bufferSize <= maxSize)) {                                              \
       Result::setResult(outResult,                                                         \
                         Result(Result::Code::RuntimeError, "Buffer size exceeded" #flag)); \
       return {};                                                                           \
@@ -1028,13 +983,13 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   // update Vulkan descriptor set here
 
   // make sure the guard values are always there
-  IGL_ASSERT(texturesPool_.numObjects() >= 1); 
-  IGL_ASSERT(samplersPool_.numObjects() >= 1);
+  LVK_ASSERT(texturesPool_.numObjects() >= 1);
+  LVK_ASSERT(samplersPool_.numObjects() >= 1);
 
   // 1. Sampled and storage images
   std::vector<VkDescriptorImageInfo> infoSampledImages;
   std::vector<VkDescriptorImageInfo> infoStorageImages;
-  
+
   infoSampledImages.reserve(texturesPool_.numObjects());
   infoStorageImages.reserve(texturesPool_.numObjects());
 
@@ -1044,19 +999,15 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   for (const auto& obj : texturesPool_.objects_) {
     const VulkanTexture& texture = obj.obj_;
     // multisampled images cannot be directly accessed from shaders
-    const bool isTextureAvailable =
-        (texture.image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
+    const bool isTextureAvailable = (texture.image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
     const bool isSampledImage = isTextureAvailable && texture.image_->isSampledImage();
     const bool isStorageImage = isTextureAvailable && texture.image_->isStorageImage();
-    infoSampledImages.push_back(
-        {samplersPool_.objects_[0].obj_,
-         isSampledImage ? texture.imageView_->getVkImageView() : dummyImageView,
-         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
-    IGL_ASSERT(infoSampledImages.back().imageView != VK_NULL_HANDLE);
+    infoSampledImages.push_back({samplersPool_.objects_[0].obj_,
+                                 isSampledImage ? texture.imageView_->getVkImageView() : dummyImageView,
+                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+    LVK_ASSERT(infoSampledImages.back().imageView != VK_NULL_HANDLE);
     infoStorageImages.push_back(VkDescriptorImageInfo{
-        VK_NULL_HANDLE,
-        isStorageImage ? texture.imageView_->getVkImageView() : dummyImageView,
-        VK_IMAGE_LAYOUT_GENERAL});
+        VK_NULL_HANDLE, isStorageImage ? texture.imageView_->getVkImageView() : dummyImageView, VK_IMAGE_LAYOUT_GENERAL});
   }
 
   // 2. Samplers
@@ -1064,9 +1015,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   infoSamplers.reserve(samplersPool_.objects_.size());
 
   for (const auto& sampler : samplersPool_.objects_) {
-    infoSamplers.push_back({sampler.obj_ ? sampler.obj_ : samplersPool_.objects_[0].obj_,
-                            VK_NULL_HANDLE,
-                            VK_IMAGE_LAYOUT_UNDEFINED});
+    infoSamplers.push_back({sampler.obj_ ? sampler.obj_ : samplersPool_.objects_[0].obj_, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED});
   }
 
   VkWriteDescriptorSet write[kBinding_NumBindins] = {};
@@ -1077,19 +1026,13 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   auto& dsetToUpdate = bindlessDSets_[nextDSetIndex];
 
   if (!infoSampledImages.empty()) {
-    write[numBindings++] = ivkGetWriteDescriptorSet_ImageInfo(dsetToUpdate.ds,
-                                                              kBinding_Textures,
-                                                              VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                                              (uint32_t)infoSampledImages.size(),
-                                                              infoSampledImages.data());
+    write[numBindings++] = ivkGetWriteDescriptorSet_ImageInfo(
+        dsetToUpdate.ds, kBinding_Textures, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, (uint32_t)infoSampledImages.size(), infoSampledImages.data());
   };
 
   if (!infoSamplers.empty()) {
-    write[numBindings++] = ivkGetWriteDescriptorSet_ImageInfo(dsetToUpdate.ds,
-                                                              kBinding_Samplers,
-                                                              VK_DESCRIPTOR_TYPE_SAMPLER,
-                                                              (uint32_t)infoSamplers.size(),
-                                                              infoSamplers.data());
+    write[numBindings++] = ivkGetWriteDescriptorSet_ImageInfo(
+        dsetToUpdate.ds, kBinding_Samplers, VK_DESCRIPTOR_TYPE_SAMPLER, (uint32_t)infoSamplers.size(), infoSamplers.data());
   }
 
   if (!infoStorageImages.empty()) {
@@ -1102,9 +1045,9 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
 
   // do not switch to the next descriptor set if there is nothing to update
   if (numBindings) {
-#if IGL_VULKAN_PRINT_COMMANDS
+#if LVK_VULKAN_PRINT_COMMANDS
     LLOGL("Updating descriptor set %u\n", nextDSetIndex);
-#endif // IGL_VULKAN_PRINT_COMMANDS
+#endif // LVK_VULKAN_PRINT_COMMANDS
     currentDSetIndex_ = nextDSetIndex;
     immediate_->wait(std::exchange(dsetToUpdate.handle, immediate_->getLastSubmitHandle()));
     vkUpdateDescriptorSets(vkDevice_, numBindings, write, 0, nullptr);
@@ -1114,9 +1057,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   awaitingDeletion_ = false;
 }
 
-SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
-                                           lvk::Result* outResult,
-                                           const char* debugName) {
+SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci, lvk::Result* outResult, const char* debugName) {
   LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_CREATE);
 
   VkSampler sampler = VK_NULL_HANDLE;
@@ -1126,7 +1067,7 @@ SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
 
   SamplerHandle handle = samplersPool_.create(VkSampler(sampler));
 
-  IGL_ASSERT(samplersPool_.numObjects() <= config_.maxSamplers);
+  LVK_ASSERT(samplersPool_.numObjects() <= config_.maxSamplers);
 
   awaitingCreation_ = true;
 

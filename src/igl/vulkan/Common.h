@@ -10,7 +10,7 @@
 #include <cassert>
 
 // set to 1 to see very verbose debug console logs with Vulkan commands
-#define IGL_VULKAN_PRINT_COMMANDS 0
+#define LVK_VULKAN_PRINT_COMMANDS 0
 
 #if !defined(VK_NO_PROTOTYPES)
 #define VK_NO_PROTOTYPES 1
@@ -22,7 +22,7 @@
 #include <igl/vulkan/VulkanHelpers.h>
 
 // Enable to use VulkanMemoryAllocator (VMA)
-#define IGL_VULKAN_USE_VMA 1
+#define LVK_VULKAN_USE_VMA 1
 
 namespace lvk::vulkan {
 

@@ -53,7 +53,7 @@ Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)) {}
 ICommandBuffer& Device::acquireCommandBuffer() {
   LVK_PROFILER_FUNCTION();
 
-  IGL_ASSERT_MSG(!currentCommandBuffer_.ctx_, "Cannot acquire more than 1 command buffer simultaneously");
+  LVK_ASSERT_MSG(!currentCommandBuffer_.ctx_, "Cannot acquire more than 1 command buffer simultaneously");
 
   currentCommandBuffer_ = CommandBuffer(ctx_.get());
 
@@ -67,14 +67,14 @@ void Device::submit(const lvk::ICommandBuffer& commandBuffer, TextureHandle pres
 
   vulkan::CommandBuffer* vkCmdBuffer = const_cast<vulkan::CommandBuffer*>(static_cast<const vulkan::CommandBuffer*>(&commandBuffer));
 
-  IGL_ASSERT(vkCmdBuffer);
-  IGL_ASSERT(vkCmdBuffer->ctx_);
-  IGL_ASSERT(vkCmdBuffer->wrapper_);
+  LVK_ASSERT(vkCmdBuffer);
+  LVK_ASSERT(vkCmdBuffer->ctx_);
+  LVK_ASSERT(vkCmdBuffer->wrapper_);
 
   if (present) {
     const lvk::vulkan::VulkanTexture& tex = *ctx.texturesPool_.get(present);
 
-    IGL_ASSERT(tex.isSwapchainTexture());
+    LVK_ASSERT(tex.isSwapchainTexture());
 
     // prepare image for presentation the image might be coming from a compute shader
     const VkPipelineStageFlagBits srcStage = (tex.image_->imageLayout_ == VK_IMAGE_LAYOUT_GENERAL)
@@ -145,7 +145,7 @@ Holder<BufferHandle> Device::createBuffer(const BufferDesc& requestedDesc, Resul
   Result result;
   BufferHandle handle = ctx_->createBuffer(desc.size, usageFlags, memFlags, &result, desc.debugName);
 
-  if (!IGL_VERIFY(result.isOk())) {
+  if (!LVK_VERIFY(result.isOk())) {
     Result::setResult(outResult, result);
     return {};
   }
@@ -167,7 +167,7 @@ Holder<SamplerHandle> Device::createSampler(const SamplerStateDesc& desc, Result
   SamplerHandle handle = ctx_->createSampler(
       samplerStateDescToVkSamplerCreateInfo(desc, ctx_->getVkPhysicalDeviceProperties().limits), &result, desc.debugName);
 
-  if (!IGL_VERIFY(result.isOk())) {
+  if (!LVK_VERIFY(result.isOk())) {
     Result::setResult(outResult, Result(Result::Code::RuntimeError, "Cannot create Sampler"));
     return {};
   }
@@ -188,30 +188,30 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, co
                                                                      : formatToVkFormat(desc.format);
 
   const lvk::TextureType type = desc.type;
-  if (!IGL_VERIFY(type == TextureType_2D || type == TextureType_Cube || type == TextureType_3D)) {
-    IGL_ASSERT_MSG(false, "Only 2D, 3D and Cube textures are supported");
+  if (!LVK_VERIFY(type == TextureType_2D || type == TextureType_Cube || type == TextureType_3D)) {
+    LVK_ASSERT_MSG(false, "Only 2D, 3D and Cube textures are supported");
     Result::setResult(outResult, Result::Code::RuntimeError);
     return {};
   }
 
   if (desc.numMipLevels == 0) {
-    IGL_ASSERT_MSG(false, "The number of mip levels specified must be greater than 0");
+    LVK_ASSERT_MSG(false, "The number of mip levels specified must be greater than 0");
     desc.numMipLevels = 1;
   }
 
   if (desc.numSamples > 1 && desc.numMipLevels != 1) {
-    IGL_ASSERT_MSG(false, "The number of mip levels for multisampled images should be 1");
+    LVK_ASSERT_MSG(false, "The number of mip levels for multisampled images should be 1");
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "The number of mip-levels for multisampled images should be 1");
     return {};
   }
 
   if (desc.numSamples > 1 && type == TextureType_3D) {
-    IGL_ASSERT_MSG(false, "Multisampled 3D images are not supported");
+    LVK_ASSERT_MSG(false, "Multisampled 3D images are not supported");
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Multisampled 3D images are not supported");
     return {};
   }
 
-  if (!IGL_VERIFY(desc.numMipLevels <= lvk::calcNumMipLevels(desc.dimensions.width, desc.dimensions.height))) {
+  if (!LVK_VERIFY(desc.numMipLevels <= lvk::calcNumMipLevels(desc.dimensions.width, desc.dimensions.height))) {
     Result::setResult(outResult,
                       Result::Code::ArgumentOutOfRange,
                       "The number of specified mip-levels is greater than the maximum possible "
@@ -220,7 +220,7 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, co
   }
 
   if (desc.usage == 0) {
-    IGL_ASSERT_MSG(false, "Texture usage flags are not set");
+    LVK_ASSERT_MSG(false, "Texture usage flags are not set");
     desc.usage = lvk::TextureUsageBits_Sampled;
   }
 
@@ -231,7 +231,7 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, co
     usageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
   }
   if (desc.usage & lvk::TextureUsageBits_Storage) {
-    IGL_ASSERT_MSG(desc.numSamples <= 1, "Storage images cannot be multisampled");
+    LVK_ASSERT_MSG(desc.numSamples <= 1, "Storage images cannot be multisampled");
     usageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
   }
   if (desc.usage & lvk::TextureUsageBits_Attachment) {
@@ -242,7 +242,7 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, co
   // For now, always set this flag so we can read it back
   usageFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
-  IGL_ASSERT_MSG(usageFlags != 0, "Invalid usage flags");
+  LVK_ASSERT_MSG(usageFlags != 0, "Invalid usage flags");
 
   const VkMemoryPropertyFlags memFlags = storageTypeToVkMemoryPropertyFlags(desc.storage);
 
@@ -278,7 +278,7 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, co
     createFlags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     break;
   default:
-    IGL_ASSERT_MSG(false, "Code should NOT be reached");
+    LVK_ASSERT_MSG(false, "Code should NOT be reached");
     Result::setResult(outResult, Result::Code::RuntimeError, "Unsupported texture type");
     return {};
   }
@@ -296,11 +296,11 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, co
                                  samples,
                                  &result,
                                  debugNameImage);
-  if (!IGL_VERIFY(result.isOk())) {
+  if (!LVK_VERIFY(result.isOk())) {
     Result::setResult(outResult, result);
     return {};
   }
-  if (!IGL_VERIFY(image.get())) {
+  if (!LVK_VERIFY(image.get())) {
     Result::setResult(outResult, Result::Code::RuntimeError, "Cannot create VulkanImage");
     return {};
   }
@@ -319,19 +319,19 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, co
   std::shared_ptr<VulkanImageView> imageView =
       image->createImageView(imageViewType, vkFormat, aspect, 0, VK_REMAINING_MIP_LEVELS, 0, arrayLayerCount, debugNameImageView);
 
-  if (!IGL_VERIFY(imageView.get())) {
+  if (!LVK_VERIFY(imageView.get())) {
     Result::setResult(outResult, Result::Code::RuntimeError, "Cannot create VulkanImageView");
     return {};
   }
 
   TextureHandle handle = ctx_->texturesPool_.create(vulkan::VulkanTexture(std::move(image), std::move(imageView)));
 
-  IGL_ASSERT(ctx_->texturesPool_.numObjects() <= ctx_->config_.maxTextures);
+  LVK_ASSERT(ctx_->texturesPool_.numObjects() <= ctx_->config_.maxTextures);
 
   ctx_->awaitingCreation_ = true;
 
   if (desc.data) {
-    IGL_ASSERT(desc.type == TextureType_2D);
+    LVK_ASSERT(desc.type == TextureType_2D);
     const void* mipMaps[] = {desc.data};
     Result res = upload(handle, {.dimensions = desc.dimensions, .numMipLevels = 1}, mipMaps);
     if (!res.isOk()) {
@@ -346,14 +346,14 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, co
 }
 
 lvk::Holder<lvk::ComputePipelineHandle> Device::createComputePipeline(const ComputePipelineDesc& desc, Result* outResult) {
-  if (!IGL_VERIFY(desc.shaderStages.getModule(Stage_Compute).valid())) {
+  if (!LVK_VERIFY(desc.shaderStages.getModule(Stage_Compute).valid())) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing compute shader");
     return {};
   }
 
   const VulkanShaderModule* sm = ctx_->shaderModulesPool_.get(desc.shaderStages.getModule(Stage_Compute));
 
-  IGL_ASSERT(sm);
+  LVK_ASSERT(sm);
 
   const VkComputePipelineCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
@@ -378,17 +378,17 @@ lvk::Holder<lvk::RenderPipelineHandle> Device::createRenderPipeline(const Render
   const bool hasColorAttachments = desc.getNumColorAttachments() > 0;
   const bool hasDepthAttachment = desc.depthFormat != Format_Invalid;
   const bool hasAnyAttachments = hasColorAttachments || hasDepthAttachment;
-  if (!IGL_VERIFY(hasAnyAttachments)) {
+  if (!LVK_VERIFY(hasAnyAttachments)) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Need at least one attachment");
     return {};
   }
 
-  if (!IGL_VERIFY(desc.shaderStages.getModule(Stage_Vertex).valid())) {
+  if (!LVK_VERIFY(desc.shaderStages.getModule(Stage_Vertex).valid())) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing vertex shader");
     return {};
   }
 
-  if (!IGL_VERIFY(desc.shaderStages.getModule(Stage_Fragment).valid())) {
+  if (!LVK_VERIFY(desc.shaderStages.getModule(Stage_Fragment).valid())) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing fragment shader");
     return {};
   }
@@ -399,8 +399,8 @@ lvk::Holder<lvk::RenderPipelineHandle> Device::createRenderPipeline(const Render
 void Device::destroy(lvk::ComputePipelineHandle handle) {
   VkPipeline* pipeline = ctx_->computePipelinesPool_.get(handle);
 
-  IGL_ASSERT(pipeline);
-  IGL_ASSERT(*pipeline != VK_NULL_HANDLE);
+  LVK_ASSERT(pipeline);
+  LVK_ASSERT(*pipeline != VK_NULL_HANDLE);
 
   ctx_->deferredTask(
       std::packaged_task<void()>([device = ctx_->getVkDevice(), pipeline = *pipeline]() { vkDestroyPipeline(device, pipeline, nullptr); }));
@@ -415,7 +415,7 @@ void Device::destroy(lvk::RenderPipelineHandle handle) {
 void Device::destroy(lvk::ShaderModuleHandle handle) {
   const VulkanShaderModule* sm = ctx_->shaderModulesPool_.get(handle);
 
-  IGL_ASSERT(sm);
+  LVK_ASSERT(sm);
 
   if (sm->vkShaderModule_ != VK_NULL_HANDLE) {
     vkDestroyShaderModule(ctx_->getVkDevice(), sm->vkShaderModule_, nullptr);
@@ -473,17 +473,17 @@ void Device::destroy(Framebuffer& fb) {
 Result Device::upload(BufferHandle handle, const void* data, size_t size, size_t offset) {
   LVK_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(data)) {
+  if (!LVK_VERIFY(data)) {
     return lvk::Result();
   }
 
   lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
 
-  if (!IGL_VERIFY(buf)) {
+  if (!LVK_VERIFY(buf)) {
     return lvk::Result();
   }
 
-  if (!IGL_VERIFY(offset + size <= buf->getSize())) {
+  if (!LVK_VERIFY(offset + size <= buf->getSize())) {
     return lvk::Result(Result::Code::ArgumentOutOfRange, "Out of range");
   }
 
@@ -495,23 +495,23 @@ Result Device::upload(BufferHandle handle, const void* data, size_t size, size_t
 uint8_t* Device::getMappedPtr(BufferHandle handle) const {
   lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
 
-  IGL_ASSERT(buf);
+  LVK_ASSERT(buf);
 
   return buf->isMapped() ? buf->getMappedPtr() : nullptr;
 }
 
 uint64_t Device::gpuAddress(BufferHandle handle, size_t offset) const {
-  IGL_ASSERT_MSG((offset & 7) == 0, "Buffer offset must be 8 bytes aligned as per GLSL_EXT_buffer_reference spec.");
+  LVK_ASSERT_MSG((offset & 7) == 0, "Buffer offset must be 8 bytes aligned as per GLSL_EXT_buffer_reference spec.");
 
   lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
 
-  IGL_ASSERT(buf);
+  LVK_ASSERT(buf);
 
   return buf ? (uint64_t)buf->getVkDeviceAddress() + offset : 0u;
 }
 
 static Result validateRange(const lvk::Dimensions& dimensions, uint32_t numLevels, const lvk::TextureRangeDesc& range) {
-  if (!IGL_VERIFY(range.dimensions.width > 0 && range.dimensions.height > 0 || range.dimensions.depth > 0 || range.numLayers > 0 ||
+  if (!LVK_VERIFY(range.dimensions.width > 0 && range.dimensions.height > 0 || range.dimensions.depth > 0 || range.numLayers > 0 ||
                   range.numMipLevels > 0)) {
     return Result{Result::Code::ArgumentOutOfRange, "width, height, depth numLayers, and numMipLevels must be > 0"};
   }
@@ -543,7 +543,7 @@ Result Device::upload(TextureHandle handle, const TextureRangeDesc& range, const
 
   const auto result = validateRange(texture->getDimensions(), texture->image_->levels_, range);
 
-  if (!IGL_VERIFY(result.isOk())) {
+  if (!LVK_VERIFY(result.isOk())) {
     return result;
   }
 
@@ -584,7 +584,7 @@ void Device::generateMipmap(TextureHandle handle) const {
   lvk::vulkan::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
 
   if (tex->image_->levels_ > 1) {
-    IGL_ASSERT(tex->image_->imageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED);
+    LVK_ASSERT(tex->image_->imageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED);
     const auto& wrapper = ctx_->immediate_->acquire();
     tex->image_->generateMipmap(wrapper.cmdBuf_);
     ctx_->immediate_->submit(wrapper);
@@ -640,8 +640,8 @@ VulkanShaderModule Device::createShaderModule(const void* data,
 
   VK_ASSERT(ivkSetDebugObjectName(ctx_->vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
-  IGL_ASSERT(vkShaderModule != VK_NULL_HANDLE);
-  IGL_ASSERT(entryPoint);
+  LVK_ASSERT(vkShaderModule != VK_NULL_HANDLE);
+  LVK_ASSERT(entryPoint);
 
   return VulkanShaderModule{vkShaderModule, entryPoint};
 }
@@ -652,8 +652,8 @@ VulkanShaderModule Device::createShaderModule(ShaderStage stage,
                                               const char* debugName,
                                               Result* outResult) const {
   const VkShaderStageFlagBits vkStage = shaderStageToVkShaderStage(stage);
-  IGL_ASSERT(vkStage != VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM);
-  IGL_ASSERT(source);
+  LVK_ASSERT(vkStage != VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM);
+  LVK_ASSERT(source);
 
   std::string sourcePatched;
 
@@ -720,8 +720,8 @@ VulkanShaderModule Device::createShaderModule(ShaderStage stage,
 
   VK_ASSERT(ivkSetDebugObjectName(ctx_->vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
-  IGL_ASSERT(vkShaderModule != VK_NULL_HANDLE);
-  IGL_ASSERT(entryPoint);
+  LVK_ASSERT(vkShaderModule != VK_NULL_HANDLE);
+  LVK_ASSERT(entryPoint);
 
   return VulkanShaderModule{.vkShaderModule_ = vkShaderModule, .entryPoint_ = entryPoint};
 }
@@ -743,12 +743,12 @@ TextureHandle Device::getCurrentSwapchainTexture() {
 
   TextureHandle tex = ctx_->swapchain_->getCurrentTexture();
 
-  if (!IGL_VERIFY(tex.valid())) {
-    IGL_ASSERT_MSG(false, "Swapchain has no valid texture");
+  if (!LVK_VERIFY(tex.valid())) {
+    LVK_ASSERT_MSG(false, "Swapchain has no valid texture");
     return {};
   }
 
-  IGL_ASSERT_MSG(ctx_->texturesPool_.get(tex)->image_->imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid image format");
+  LVK_ASSERT_MSG(ctx_->texturesPool_.get(tex)->image_->imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid image format");
 
   return tex;
 }
@@ -770,7 +770,7 @@ std::unique_ptr<IDevice> Device::create(std::unique_ptr<VulkanContext> ctx,
                                         uint32_t width,
                                         uint32_t height,
                                         Result* outResult) {
-  IGL_ASSERT(ctx.get());
+  LVK_ASSERT(ctx.get());
 
   auto result = ctx->initContext(desc);
 

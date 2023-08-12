@@ -59,7 +59,7 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
   }
 
   void setTopology(VkPrimitiveTopology topology) {
-    IGL_ASSERT_MSG((topology & 0xF) == topology, "Invalid VkPrimitiveTopology.");
+    LVK_ASSERT_MSG((topology & 0xF) == topology, "Invalid VkPrimitiveTopology.");
     topology_ = topology & 0xF;
   }
 
@@ -68,7 +68,7 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
   }
 
   void setDepthCompareOp(VkCompareOp depthCompareOp) {
-    IGL_ASSERT_MSG((depthCompareOp & 0x7) == depthCompareOp, "Invalid VkCompareOp for depth.");
+    LVK_ASSERT_MSG((depthCompareOp & 0x7) == depthCompareOp, "Invalid VkCompareOp for depth.");
     depthCompareOp_ = depthCompareOp & 0x7;
   }
 
@@ -89,10 +89,10 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
   }
 
   void setStencilStateOps(bool front, VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) {
-    IGL_ASSERT_MSG((failOp & 0x7) == failOp, "Invalid VkStencilOp for stencil fail.");
-    IGL_ASSERT_MSG((passOp & 0x7) == passOp, "Invalid VkStencilOp for stencil pass.");
-    IGL_ASSERT_MSG((depthFailOp & 0x7) == depthFailOp, "Invalid VkStencilOp for depth fail.");
-    IGL_ASSERT_MSG((compareOp & 0x7) == compareOp, "Invalid VkCompareOp for stencil compare.");
+    LVK_ASSERT_MSG((failOp & 0x7) == failOp, "Invalid VkStencilOp for stencil fail.");
+    LVK_ASSERT_MSG((passOp & 0x7) == passOp, "Invalid VkStencilOp for stencil pass.");
+    LVK_ASSERT_MSG((depthFailOp & 0x7) == depthFailOp, "Invalid VkStencilOp for depth fail.");
+    LVK_ASSERT_MSG((compareOp & 0x7) == compareOp, "Invalid VkCompareOp for stencil compare.");
 
     if (front) {
       stencilFrontFailOp_ = failOp & 0x7;

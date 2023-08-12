@@ -19,7 +19,7 @@ VkPolygonMode polygonModeToVkPolygonMode(lvk::PolygonMode mode) {
   case lvk::PolygonMode_Line:
     return VK_POLYGON_MODE_LINE;
   }
-  IGL_ASSERT_MSG(false, "Implement a missing polygon fill mode");
+  LVK_ASSERT_MSG(false, "Implement a missing polygon fill mode");
   return VK_POLYGON_MODE_FILL;
 }
 
@@ -32,7 +32,7 @@ VkCullModeFlags cullModeToVkCullMode(lvk::CullMode mode) {
   case lvk::CullMode_Back:
     return VK_CULL_MODE_BACK_BIT;
   }
-  IGL_ASSERT_MSG(false, "Implement a missing cull mode");
+  LVK_ASSERT_MSG(false, "Implement a missing cull mode");
   return VK_CULL_MODE_NONE;
 }
 
@@ -43,7 +43,7 @@ VkFrontFace windingModeToVkFrontFace(lvk::WindingMode mode) {
   case lvk::WindingMode_CW:
     return VK_FRONT_FACE_CLOCKWISE;
   }
-  IGL_ASSERT_MSG(false, "Wrong winding order (cannot be more than 2)");
+  LVK_ASSERT_MSG(false, "Wrong winding order (cannot be more than 2)");
   return VK_FRONT_FACE_CLOCKWISE;
 }
 
@@ -51,7 +51,7 @@ VkFormat vertexFormatToVkFormat(lvk::VertexFormat fmt) {
   using lvk::VertexFormat;
   switch (fmt) {
   case VertexFormat::Invalid:
-    IGL_ASSERT(false);
+    LVK_ASSERT(false);
     return VK_FORMAT_UNDEFINED;
   case VertexFormat::Float1:
     return VK_FORMAT_R32_SFLOAT;
@@ -137,7 +137,7 @@ VkFormat vertexFormatToVkFormat(lvk::VertexFormat fmt) {
   case VertexFormat::Int_2_10_10_10_REV:
     return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
   }
-  IGL_ASSERT(false);
+  LVK_ASSERT(false);
   return VK_FORMAT_UNDEFINED;
 }
 
@@ -155,7 +155,7 @@ VkBlendOp blendOpToVkBlendOp(lvk::BlendOp value) {
     return VK_BLEND_OP_MAX;
   }
 
-  IGL_ASSERT(false);
+  LVK_ASSERT(false);
   return VK_BLEND_OP_ADD;
 }
 
@@ -200,7 +200,7 @@ VkBlendFactor blendFactorToVkBlendFactor(lvk::BlendFactor value) {
   case lvk::BlendFactor_OneMinusSrc1Alpha:
     return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
   default:
-    IGL_ASSERT(false);
+    LVK_ASSERT(false);
     return VK_BLEND_FACTOR_ONE; // default for unsupported values
   }
 }
@@ -215,7 +215,7 @@ RenderPipelineState::RenderPipelineState(lvk::vulkan::Device* device, const Rend
 
   vertexInputStateCreateInfo_ = ivkGetPipelineVertexInputStateCreateInfo_Empty();
 
-  bool bufferAlreadyBound[VertexInput::IGL_VERTEX_BUFFER_MAX] = {};
+  bool bufferAlreadyBound[VertexInput::LVK_VERTEX_BUFFER_MAX] = {};
 
   const uint32_t numAttributes = vstate.getNumAttributes();
 
@@ -303,7 +303,7 @@ VkPipeline RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& 
 
   for (uint32_t i = 0; i != numColorAttachments; i++) {
     const auto& attachment = desc_.color[i];
-    IGL_ASSERT(attachment.format != Format_Invalid);
+    LVK_ASSERT(attachment.format != Format_Invalid);
     colorAttachmentFormats[i] = formatToVkFormat(attachment.format);
     if (!attachment.blendEnabled) {
       colorBlendAttachmentStates[i] = ivkGetPipelineColorBlendAttachmentState_NoBlending();
@@ -324,8 +324,8 @@ VkPipeline RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& 
   const VulkanShaderModule* geometryModule = ctx.shaderModulesPool_.get(desc_.shaderStages.getModule(Stage_Geometry));
   const VulkanShaderModule* fragmentModule = ctx.shaderModulesPool_.get(desc_.shaderStages.getModule(Stage_Fragment));
 
-  IGL_ASSERT(vertexModule);
-  IGL_ASSERT(fragmentModule);
+  LVK_ASSERT(vertexModule);
+  LVK_ASSERT(fragmentModule);
 
   std::vector<VkPipelineShaderStageCreateInfo> stages = {
       ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertexModule->vkShaderModule_, vertexModule->entryPoint_),

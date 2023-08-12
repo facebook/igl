@@ -235,16 +235,12 @@ static void initIGL() {
     int32_t texWidth = 0;
     int32_t texHeight = 0;
     int32_t channels = 0;
-    uint8_t* pixels = stbi_load(
-        (dir / path(contentFolder) / path("bistro/BuildingTextures/wood_polished_01_diff.png"))
-            .string()
-            .c_str(),
-        &texWidth,
-        &texHeight,
-        &channels,
-        4);
-    IGL_ASSERT_MSG(pixels,
-                   "Cannot load textures. Run `deploy_content.py` before running this app.");
+    uint8_t* pixels = stbi_load((dir / path(contentFolder) / path("bistro/BuildingTextures/wood_polished_01_diff.png")).string().c_str(),
+                                &texWidth,
+                                &texHeight,
+                                &channels,
+                                4);
+    LVK_ASSERT_MSG(pixels, "Cannot load textures. Run `deploy_content.py` before running this app.");
     if (!pixels) {
       printf("Cannot load textures. Run `deploy_content.py` before running this app.");
       std::terminate();

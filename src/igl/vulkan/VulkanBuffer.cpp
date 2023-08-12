@@ -23,13 +23,13 @@ VulkanBuffer::VulkanBuffer(VulkanContext* ctx,
   ctx_(ctx), device_(device), bufferSize_(bufferSize), usageFlags_(usageFlags), memFlags_(memFlags) {
   LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_CREATE);
 
-  IGL_ASSERT(ctx);
-  IGL_ASSERT(bufferSize > 0);
+  LVK_ASSERT(ctx);
+  LVK_ASSERT(bufferSize > 0);
 
   // Initialize Buffer Info
   const VkBufferCreateInfo ci = ivkGetBufferCreateInfo(bufferSize, usageFlags);
 
-  if (IGL_VULKAN_USE_VMA) {
+  if (LVK_VULKAN_USE_VMA) {
     // Initialize VmaAllocation Info
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
       vmaAllocInfo_.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
@@ -67,7 +67,7 @@ VulkanBuffer::VulkanBuffer(VulkanContext* ctx,
     }
   }
 
-  IGL_ASSERT(vkBuffer_ != VK_NULL_HANDLE);
+  LVK_ASSERT(vkBuffer_ != VK_NULL_HANDLE);
 
   // set debug name
   VK_ASSERT(ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_BUFFER, (uint64_t)vkBuffer_, debugName));
@@ -76,7 +76,7 @@ VulkanBuffer::VulkanBuffer(VulkanContext* ctx,
   if (usageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
     const VkBufferDeviceAddressInfo ai = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, vkBuffer_};
     vkDeviceAddress_ = vkGetBufferDeviceAddress(device_, &ai);
-    IGL_ASSERT(vkDeviceAddress_);
+    LVK_ASSERT(vkDeviceAddress_);
   }
 }
 
@@ -87,7 +87,7 @@ VulkanBuffer::~VulkanBuffer() {
     return;
   }
 
-  if (IGL_VULKAN_USE_VMA) {
+  if (LVK_VULKAN_USE_VMA) {
     if (mappedPtr_) {
       vmaUnmapMemory((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_);
     }
@@ -136,11 +136,11 @@ VulkanBuffer& VulkanBuffer::operator=(VulkanBuffer&& other) {
 }
 
 void VulkanBuffer::flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) const {
-  if (!IGL_VERIFY(isMapped())) {
+  if (!LVK_VERIFY(isMapped())) {
     return;
   }
 
-  if (IGL_VULKAN_USE_VMA) {
+  if (LVK_VULKAN_USE_VMA) {
     vmaFlushAllocation((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, offset, size);
   } else {
     const VkMappedMemoryRange memoryRange = {
@@ -158,13 +158,13 @@ void VulkanBuffer::getBufferSubData(size_t offset, size_t size, void* data) {
   // Only mapped host-visible buffers can be downloaded this way. All other
   // GPU buffers should use a temporary staging buffer
 
-  IGL_ASSERT(mappedPtr_);
+  LVK_ASSERT(mappedPtr_);
 
   if (!mappedPtr_) {
     return;
   }
 
-  IGL_ASSERT(offset + size <= bufferSize_);
+  LVK_ASSERT(offset + size <= bufferSize_);
 
   const uint8_t* src = static_cast<uint8_t*>(mappedPtr_) + offset;
   memcpy(data, src, size);
@@ -173,13 +173,13 @@ void VulkanBuffer::getBufferSubData(size_t offset, size_t size, void* data) {
 void VulkanBuffer::bufferSubData(size_t offset, size_t size, const void* data) {
   // Only mapped host-visible buffers can be uploaded this way. All other GPU buffers should use a temporary staging buffer
 
-  IGL_ASSERT(mappedPtr_);
+  LVK_ASSERT(mappedPtr_);
 
   if (!mappedPtr_) {
     return;
   }
 
-  IGL_ASSERT(offset + size <= bufferSize_);
+  LVK_ASSERT(offset + size <= bufferSize_);
 
   if (data) {
     memcpy((uint8_t*)mappedPtr_ + offset, data, size);

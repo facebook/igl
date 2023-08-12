@@ -177,13 +177,13 @@ class Holder final {
 
 // clang-format off
 #if !defined(NDEBUG) && (defined(DEBUG) || defined(_DEBUG) || defined(__DEBUG))
-  #define IGL_VERIFY(cond) ::lvk::Assert((cond), __FILE__, __LINE__, #cond)
-  #define IGL_ASSERT(cond) (void)IGL_VERIFY(cond)
-  #define IGL_ASSERT_MSG(cond, format, ...) (void)::lvk::Assert((cond), __FILE__, __LINE__, (format), ##__VA_ARGS__)
+  #define LVK_VERIFY(cond) ::lvk::Assert((cond), __FILE__, __LINE__, #cond)
+  #define LVK_ASSERT(cond) (void)LVK_VERIFY(cond)
+  #define LVK_ASSERT_MSG(cond, format, ...) (void)::lvk::Assert((cond), __FILE__, __LINE__, (format), ##__VA_ARGS__)
 #else
-  #define IGL_VERIFY(cond) (cond)
-  #define IGL_ASSERT(cond)
-  #define IGL_ASSERT_MSG(cond, format, ...)
+  #define LVK_VERIFY(cond) (cond)
+  #define LVK_ASSERT(cond)
+  #define LVK_ASSERT_MSG(cond, format, ...)
 #endif
 // clang-format on
 
@@ -227,10 +227,10 @@ enum HWDeviceType {
 };
 
 struct HWDeviceDesc {
-  enum { IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE = 256 };
+  enum { LVK_MAX_PHYSICAL_DEVICE_NAME_SIZE = 256 };
   uintptr_t guid = 0;
   HWDeviceType type = HWDeviceType_Software;
-  char name[IGL_MAX_PHYSICAL_DEVICE_NAME_SIZE] = {0};
+  char name[LVK_MAX_PHYSICAL_DEVICE_NAME_SIZE] = {0};
 };
 
 enum StorageType {
@@ -514,28 +514,28 @@ enum ShaderStage : uint8_t {
 };
 
 struct VertexInput final {
-  enum { IGL_VERTEX_ATTRIBUTES_MAX = 16 };
-  enum { IGL_VERTEX_BUFFER_MAX = 16 };
+  enum { LVK_VERTEX_ATTRIBUTES_MAX = 16 };
+  enum { LVK_VERTEX_BUFFER_MAX = 16 };
   struct VertexAttribute final {
     uint32_t location = 0; // a buffer which contains this attribute stream
     uint32_t binding = 0;
     VertexFormat format = VertexFormat::Invalid; // per-element format
     uintptr_t offset = 0; // an offset where the first element of this attribute stream starts
-  } attributes[IGL_VERTEX_ATTRIBUTES_MAX];
+  } attributes[LVK_VERTEX_ATTRIBUTES_MAX];
   struct VertexInputBinding final {
     uint32_t stride = 0;
-  } inputBindings[IGL_VERTEX_BUFFER_MAX];
+  } inputBindings[LVK_VERTEX_BUFFER_MAX];
 
   uint32_t getNumAttributes() const {
     uint32_t n = 0;
-    while (n < IGL_VERTEX_ATTRIBUTES_MAX && attributes[n].format != VertexFormat::Invalid) {
+    while (n < LVK_VERTEX_ATTRIBUTES_MAX && attributes[n].format != VertexFormat::Invalid) {
       n++;
     }
     return n;
   }
   uint32_t getNumInputBindings() const {
     uint32_t n = 0;
-    while (n < IGL_VERTEX_BUFFER_MAX && inputBindings[n].stride) {
+    while (n < LVK_VERTEX_BUFFER_MAX && inputBindings[n].stride) {
       n++;
     }
     return n;
@@ -567,7 +567,7 @@ struct ShaderModuleDesc {
                    lvk::ShaderStage stage,
                    const char* debugName) :
     stage(stage), data(static_cast<const char*>(data)), dataSize(dataLength), debugName(debugName) {
-    IGL_ASSERT(dataSize);
+    LVK_ASSERT(dataSize);
   }
 };
 
@@ -589,7 +589,7 @@ struct ShaderStages final {
   }
 
   lvk::ShaderModuleHandle getModule(ShaderStage stage) const {
-    IGL_ASSERT(stage < kNumShaderStages);
+    LVK_ASSERT(stage < kNumShaderStages);
     return modules_[stage];
   }
 
@@ -718,8 +718,8 @@ struct TextureDesc {
 };
 
 struct Dependencies {
-  enum { IGL_MAX_SUBMIT_DEPENDENCIES = 4 };
-  TextureHandle textures[IGL_MAX_SUBMIT_DEPENDENCIES] = {};
+  enum { LVK_MAX_SUBMIT_DEPENDENCIES = 4 };
+  TextureHandle textures[LVK_MAX_SUBMIT_DEPENDENCIES] = {};
 };
 
 class ICommandBuffer {

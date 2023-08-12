@@ -116,9 +116,9 @@ const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::ac
   // make clang happy
   assert(current);
 
-  IGL_ASSERT_MSG(numAvailableCommandBuffers_, "No available command buffers");
-  IGL_ASSERT_MSG(current, "No available command buffers");
-  IGL_ASSERT(current->cmdBufAllocated_ != VK_NULL_HANDLE);
+  LVK_ASSERT_MSG(numAvailableCommandBuffers_, "No available command buffers");
+  LVK_ASSERT_MSG(current, "No available command buffers");
+  LVK_ASSERT(current->cmdBufAllocated_ != VK_NULL_HANDLE);
 
   current->handle_.submitId_ = submitCounter_;
   numAvailableCommandBuffers_--;
@@ -139,7 +139,7 @@ void VulkanImmediateCommands::wait(const SubmitHandle handle) {
     return;
   }
 
-  if (!IGL_VERIFY(!buffers_[handle.bufferIndex_].isEncoding_)) {
+  if (!LVK_VERIFY(!buffers_[handle.bufferIndex_].isEncoding_)) {
     // we are waiting for a buffer which has not been submitted - this is probably a logic error
     // somewhere in the calling code
     return;
@@ -172,7 +172,7 @@ void VulkanImmediateCommands::waitAll() {
 }
 
 bool VulkanImmediateCommands::isReady(const SubmitHandle handle, bool fastCheckNoVulkan) const {
-  IGL_ASSERT(handle.bufferIndex_ < kMaxCommandBuffers);
+  LVK_ASSERT(handle.bufferIndex_ < kMaxCommandBuffers);
 
   if (handle.empty()) {
     // a null handle
@@ -202,7 +202,7 @@ bool VulkanImmediateCommands::isReady(const SubmitHandle handle, bool fastCheckN
 
 VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(const CommandBufferWrapper& wrapper) {
   LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_SUBMIT);
-  IGL_ASSERT(wrapper.isEncoding_);
+  LVK_ASSERT(wrapper.isEncoding_);
   VK_ASSERT(vkEndCommandBuffer(wrapper.cmdBuf_));
 
   const VkPipelineStageFlags waitStageMasks[] = {VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
@@ -216,9 +216,9 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(const Comm
   }
 
   LVK_PROFILER_ZONE("vkQueueSubmit()", LVK_PROFILER_COLOR_SUBMIT);
-#if IGL_VULKAN_PRINT_COMMANDS
+#if LVK_VULKAN_PRINT_COMMANDS
   LLOGL("%p vkQueueSubmit()\n\n", wrapper.cmdBuf_);
-#endif // IGL_VULKAN_PRINT_COMMANDS
+#endif // LVK_VULKAN_PRINT_COMMANDS
   const VkSubmitInfo si = {
       .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
       .waitSemaphoreCount = numWaitSemaphores,
@@ -249,7 +249,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(const Comm
 }
 
 void VulkanImmediateCommands::waitSemaphore(VkSemaphore semaphore) {
-  IGL_ASSERT(waitSemaphore_ == VK_NULL_HANDLE);
+  LVK_ASSERT(waitSemaphore_ == VK_NULL_HANDLE);
 
   waitSemaphore_ = semaphore;
 }

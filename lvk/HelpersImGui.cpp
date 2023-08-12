@@ -53,7 +53,7 @@ void main() {
 namespace lvk {
 
 ImGuiRenderer::DrawableData::DrawableData(lvk::IDevice& device) {
-  IGL_ASSERT_MSG(sizeof(ImDrawIdx) == 2, "The constants below may not work with the ImGui data.");
+  LVK_ASSERT_MSG(sizeof(ImDrawIdx) == 2, "The constants below may not work with the ImGui data.");
   const size_t kMaxVertices = 65536u;
   const size_t kMaxVertexBufferSize = kMaxVertices * sizeof(ImDrawVert);
   const size_t kMaxIndexBufferSize = kMaxVertices * sizeof(ImDrawIdx);
@@ -197,7 +197,7 @@ void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffe
 
     for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++) {
       const ImDrawCmd cmd = cmd_list->CmdBuffer[cmd_i];
-      IGL_ASSERT(cmd.UserCallback == nullptr);
+      LVK_ASSERT(cmd.UserCallback == nullptr);
 
       const ImVec2 clipMin((cmd.ClipRect.x - clip_off.x) * clip_scale.x, (cmd.ClipRect.y - clip_off.y) * clip_scale.y);
       const ImVec2 clipMax((cmd.ClipRect.z - clip_off.x) * clip_scale.x, (cmd.ClipRect.w - clip_off.y) * clip_scale.y);

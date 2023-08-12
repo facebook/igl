@@ -16,7 +16,7 @@
 #include <string.h>
 #include <algorithm>
 
-#define IGL_VULKAN_DEBUG_STAGING_DEVICE 0
+#define LVK_VULKAN_DEBUG_STAGING_DEVICE 0
 
 using SubmitHandle = lvk::vulkan::VulkanImmediateCommands::SubmitHandle;
 
@@ -51,7 +51,7 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
                                      nullptr,
                                      "Buffer: staging buffer");
-  IGL_ASSERT(!stagingBuffer_.empty());
+  LVK_ASSERT(!stagingBuffer_.empty());
 
   immediate_ = std::make_unique<lvk::vulkan::VulkanImmediateCommands>(
       ctx_.getVkDevice(), ctx_.deviceQueues_.graphicsQueueFamilyIndex, "VulkanStagingDevice::immediate_");
@@ -148,7 +148,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
   // cache the dimensions of each mip-level for later
   uint32_t mipSizes[32];
 
-  IGL_ASSERT(numMipLevels <= 32);
+  LVK_ASSERT(numMipLevels <= 32);
 
   // divide the width and height by 2 until we get to the size of level 'baseMipLevel'
   auto width = image.extent_.width >> baseMipLevel;
@@ -156,9 +156,8 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
 
   const Format texFormat(vkFormatToFormat(format));
 
-  IGL_ASSERT_MSG(imageRegion.offset.x == 0 && imageRegion.offset.y == 0 && imageRegion.extent.width == width &&
+  LVK_ASSERT_MSG(imageRegion.offset.x == 0 && imageRegion.offset.y == 0 && imageRegion.extent.width == width &&
                      imageRegion.extent.height == height,
-
                  "Uploading mip levels with an image region that is smaller than the base mip level is "
                  "not supported");
 
@@ -174,7 +173,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
   }
   const uint32_t storageSize = layarStorageSize * numLayers;
 
-  IGL_ASSERT(storageSize <= stagingBufferSize_);
+  LVK_ASSERT(storageSize <= stagingBufferSize_);
 
   // get next staging buffer free offset
   MemoryRegionDesc desc = getNextFreeOffset(layarStorageSize);
@@ -184,7 +183,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
     flushOutstandingFences();
     desc = getNextFreeOffset(storageSize);
   }
-  IGL_ASSERT(desc.alignedSize_ >= storageSize);
+  LVK_ASSERT(desc.alignedSize_ >= storageSize);
 
   auto& wrapper = immediate_->acquire();
 
@@ -199,8 +198,8 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
     for (uint32_t mipLevel = 0; mipLevel < numMipLevels; ++mipLevel) {
       const auto currentMipLevel = baseMipLevel + mipLevel;
 
-      IGL_ASSERT(currentMipLevel < image.levels_);
-      IGL_ASSERT(mipLevel < image.levels_);
+      LVK_ASSERT(currentMipLevel < image.levels_);
+      LVK_ASSERT(mipLevel < image.levels_);
 
       // 1. Transition initial image layout into TRANSFER_DST_OPTIMAL
       ivkImageMemoryBarrier(wrapper.cmdBuf_,
@@ -213,9 +212,9 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
                             VK_PIPELINE_STAGE_TRANSFER_BIT,
                             VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, 1, layer, 1});
 
-#if IGL_VULKAN_PRINT_COMMANDS
+#if LVK_VULKAN_PRINT_COMMANDS
       LLOGL("%p vkCmdCopyBufferToImage()\n", wrapper.cmdBuf_);
-#endif // IGL_VULKAN_PRINT_COMMANDS
+#endif // LVK_VULKAN_PRINT_COMMANDS
       // 2. Copy the pixel data from the staging buffer into the image
       const VkRect2D region = ivkGetRect2D(imageRegion.offset.x >> mipLevel,
                                            imageRegion.offset.y >> mipLevel,
@@ -259,11 +258,11 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
                                       VkFormat format,
                                       const void* data) {
   LVK_PROFILER_FUNCTION();
-  IGL_ASSERT_MSG(image.levels_ == 1, "Can handle only 3D images with exactly 1 mip-level");
-  IGL_ASSERT_MSG((offset.x == 0) && (offset.y == 0) && (offset.z == 0), "Can upload only full-size 3D images");
+  LVK_ASSERT_MSG(image.levels_ == 1, "Can handle only 3D images with exactly 1 mip-level");
+  LVK_ASSERT_MSG((offset.x == 0) && (offset.y == 0) && (offset.z == 0), "Can upload only full-size 3D images");
   const uint32_t storageSize = extent.width * extent.height * extent.depth * getBytesPerPixel(format);
 
-  IGL_ASSERT(storageSize <= stagingBufferSize_);
+  LVK_ASSERT(storageSize <= stagingBufferSize_);
 
   // get next staging buffer free offset
   MemoryRegionDesc desc = getNextFreeOffset(storageSize);
@@ -275,7 +274,7 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
     desc = getNextFreeOffset(storageSize);
   }
 
-  IGL_ASSERT(desc.alignedSize_ >= storageSize);
+  LVK_ASSERT(desc.alignedSize_ >= storageSize);
 
   lvk::vulkan::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
 
@@ -327,10 +326,10 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                                          uint32_t dataBytesPerRow,
                                          bool flipImageVertical) {
   LVK_PROFILER_FUNCTION();
-  IGL_ASSERT(layout != VK_IMAGE_LAYOUT_UNDEFINED);
+  LVK_ASSERT(layout != VK_IMAGE_LAYOUT_UNDEFINED);
 
   const uint32_t storageSize = imageRegion.extent.width * imageRegion.extent.height * getBytesPerPixel(format);
-  IGL_ASSERT(storageSize <= stagingBufferSize_);
+  LVK_ASSERT(storageSize <= stagingBufferSize_);
 
   // get next staging buffer free offset
   MemoryRegionDesc desc = getNextFreeOffset(storageSize);
@@ -342,7 +341,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
     desc = getNextFreeOffset(storageSize);
   }
 
-  IGL_ASSERT(desc.alignedSize_ >= storageSize);
+  LVK_ASSERT(desc.alignedSize_ >= storageSize);
 
   auto& wrapper1 = immediate_->acquire();
 
@@ -370,7 +369,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   flushOutstandingFences();
 
   // 3. Copy data from staging buffer into data
-  if (!IGL_VERIFY(stagingBuffer->getMappedPtr())) {
+  if (!LVK_VERIFY(stagingBuffer->getMappedPtr())) {
     return;
   }
 
@@ -417,7 +416,7 @@ VulkanStagingDevice::MemoryRegionDesc VulkanStagingDevice::getNextFreeOffset(uin
     if (immediate_->isReady(SubmitHandle(handle))) {
       if (desc.alignedSize_ >= alignedSize) {
         outstandingFences_.erase(handle);
-#if IGL_VULKAN_DEBUG_STAGING_DEVICE
+#if LVK_VULKAN_DEBUG_STAGING_DEVICE
         LLOGL("Reusing memory region %u bytes\n", desc.alignedSize_);
 #endif
         return desc;
@@ -432,7 +431,7 @@ VulkanStagingDevice::MemoryRegionDesc VulkanStagingDevice::getNextFreeOffset(uin
 
   if (!maxRegionFence.empty() && bufferCapacity_ < maxRegionDesc.alignedSize_) {
     outstandingFences_.erase(maxRegionFence.handle());
-#if IGL_VULKAN_DEBUG_STAGING_DEVICE
+#if LVK_VULKAN_DEBUG_STAGING_DEVICE
     LLOGL("Reusing memory region %u bytes\n", maxRegionDesc.alignedSize_);
 #endif
     return maxRegionDesc;
@@ -449,7 +448,7 @@ VulkanStagingDevice::MemoryRegionDesc VulkanStagingDevice::getNextFreeOffset(uin
   stagingBufferFrontOffset_ = (stagingBufferFrontOffset_ + alignedSize) % stagingBufferSize_;
   bufferCapacity_ -= alignedSize;
 
-#if IGL_VULKAN_DEBUG_STAGING_DEVICE
+#if LVK_VULKAN_DEBUG_STAGING_DEVICE
   LLOGL("Allocating new memory region: %u bytes\n", alignedSize);
 #endif
 
@@ -459,7 +458,7 @@ VulkanStagingDevice::MemoryRegionDesc VulkanStagingDevice::getNextFreeOffset(uin
 void VulkanStagingDevice::flushOutstandingFences() {
   LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_WAIT);
 
-#if IGL_VULKAN_DEBUG_STAGING_DEVICE
+#if LVK_VULKAN_DEBUG_STAGING_DEVICE
   LLOGL("StagingDevice - Wait for Idle\n");
 #endif
   std::for_each(outstandingFences_.begin(), outstandingFences_.end(), [this](std::pair<uint64_t, MemoryRegionDesc> const& pair) {

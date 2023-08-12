@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
        .color = {{.format = device_->getSwapchainFormat()}}},
       nullptr);
 
-  IGL_ASSERT(renderPipelineState_Triangle_.valid());
+  LVK_ASSERT(renderPipelineState_Triangle_.valid());
 
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     width_ = width;

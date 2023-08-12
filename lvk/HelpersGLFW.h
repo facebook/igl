@@ -124,14 +124,11 @@ static std::unique_ptr<lvk::IDevice> createVulkanDeviceWithSwapchain(GLFWwindow*
   }
 
   if (devices.empty()) {
-    IGL_ASSERT_MSG(false, "GPU is not found");
+    LVK_ASSERT_MSG(false, "GPU is not found");
     return nullptr;
   }
 
-  auto device = vulkan::Device::create(std::move(ctx), devices[0], width, height);
-  IGL_ASSERT(device.get());
-
-  return device;
+  return vulkan::Device::create(std::move(ctx), devices[0], width, height);
 }
 
 } // namespace lvk

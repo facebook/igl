@@ -85,22 +85,22 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   isStencilFormat_(isStencilFormat(format)) {
   LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_CREATE);
 
-  IGL_ASSERT_MSG(levels_ > 0, "The image must contain at least one mip-level");
-  IGL_ASSERT_MSG(layers_ > 0, "The image must contain at least one layer");
-  IGL_ASSERT_MSG(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
-  IGL_ASSERT_MSG(samples_ > 0, "The image must contain at least one sample");
-  IGL_ASSERT(extent.width > 0);
-  IGL_ASSERT(extent.height > 0);
-  IGL_ASSERT(extent.depth > 0);
+  LVK_ASSERT_MSG(levels_ > 0, "The image must contain at least one mip-level");
+  LVK_ASSERT_MSG(layers_ > 0, "The image must contain at least one layer");
+  LVK_ASSERT_MSG(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
+  LVK_ASSERT_MSG(samples_ > 0, "The image must contain at least one sample");
+  LVK_ASSERT(extent.width > 0);
+  LVK_ASSERT(extent.height > 0);
+  LVK_ASSERT(extent.depth > 0);
 
   const VkImageCreateInfo ci =
       ivkGetImageCreateInfo(type, imageFormat_, tiling, usageFlags, extent_, levels_, layers_, createFlags, samples);
 
-  if (IGL_VULKAN_USE_VMA) {
+  if (LVK_VULKAN_USE_VMA) {
     vmaAllocInfo_.usage = memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT ? VMA_MEMORY_USAGE_CPU_TO_GPU : VMA_MEMORY_USAGE_AUTO;
     VkResult result = vmaCreateImage((VmaAllocator)ctx_.getVmaAllocator(), &ci, &vmaAllocInfo_, &vkImage_, &vmaAllocation_, nullptr);
 
-    if (!IGL_VERIFY(result == VK_SUCCESS)) {
+    if (!LVK_VERIFY(result == VK_SUCCESS)) {
       LLOGW("failed: error result: %d, memflags: %d,  imageformat: %d\n", result, memFlags, imageFormat_);
     }
 
@@ -137,7 +137,7 @@ VulkanImage::~VulkanImage() {
   LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_DESTROY);
 
   if (!isExternallyManaged_) {
-    if (IGL_VULKAN_USE_VMA) {
+    if (LVK_VULKAN_USE_VMA) {
       if (mappedPtr_) {
         vmaUnmapMemory((VmaAllocator)ctx_.getVmaAllocator(), vmaAllocation_);
       }
@@ -195,7 +195,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,
   case VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT:
     break;
   default:
-    IGL_ASSERT_MSG(false, "Automatic access mask deduction is not implemented (yet) for this srcStageMask");
+    LVK_ASSERT_MSG(false, "Automatic access mask deduction is not implemented (yet) for this srcStageMask");
     break;
   }
 
@@ -223,7 +223,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,
   case VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT:
     break;
   default:
-    IGL_ASSERT_MSG(false, "Automatic access mask deduction is not implemented (yet) for this dstStageMask");
+    LVK_ASSERT_MSG(false, "Automatic access mask deduction is not implemented (yet) for this dstStageMask");
     break;
   }
 
@@ -269,8 +269,8 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
 
     const bool hardwareDownscalingSupported = ((formatProperties_.optimalTilingFeatures & formatFeatureMask) == formatFeatureMask);
 
-    if (!IGL_VERIFY(hardwareDownscalingSupported)) {
-      IGL_ASSERT_MSG(false, "Doesn't support hardware downscaling of this image format: {}");
+    if (!LVK_VERIFY(hardwareDownscalingSupported)) {
+      LVK_ASSERT_MSG(false, "Doesn't support hardware downscaling of this image format: {}");
       return;
     }
   }
@@ -293,7 +293,7 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
 
   const VkImageLayout originalImageLayout = imageLayout_;
 
-  IGL_ASSERT(originalImageLayout != VK_IMAGE_LAYOUT_UNDEFINED);
+  LVK_ASSERT(originalImageLayout != VK_IMAGE_LAYOUT_UNDEFINED);
 
   // 0: Transition the first mip-level - all layers - to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
   transitionLayout(commandBuffer,
@@ -333,9 +333,9 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
 
       // 2: Blit the image from the prev mip-level (i-1) (VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) to
       // the current mip level (i) (VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-#if IGL_VULKAN_PRINT_COMMANDS
+#if LVK_VULKAN_PRINT_COMMANDS
       LLOGL("%p vkCmdBlitImage()\n", commandBuffer);
-#endif // IGL_VULKAN_PRINT_COMMANDS
+#endif // LVK_VULKAN_PRINT_COMMANDS
       ivkCmdBlitImage(commandBuffer,
                       vkImage_,
                       vkImage_,

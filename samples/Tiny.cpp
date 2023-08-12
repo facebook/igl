@@ -57,21 +57,19 @@ struct VulkanObjects {
 } vk;
 
 void VulkanObjects::init() {
-  device_ = lvk::createVulkanDeviceWithSwapchain(
-      window_, width_, height_, {.maxTextures = 8, .maxSamplers = 8});
+  device_ = lvk::createVulkanDeviceWithSwapchain(window_, width_, height_, {.maxTextures = 8, .maxSamplers = 8});
 
   createFramebuffer();
 
   renderPipelineState_Triangle_ = device_->createRenderPipeline(
-      {.shaderStages = device_->createShaderStages(
-           codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
+      {.shaderStages = device_->createShaderStages(codeVS, "Shader Module: main (vert)", codeFS, "Shader Module: main (frag)"),
        .color = {{device_->getFormat(fb_.color[0].texture)},
                  {device_->getFormat(fb_.color[1].texture)},
                  {device_->getFormat(fb_.color[2].texture)},
                  {device_->getFormat(fb_.color[3].texture)}}},
       nullptr);
 
-  IGL_ASSERT(renderPipelineState_Triangle_.valid());
+  LVK_ASSERT(renderPipelineState_Triangle_.valid());
 }
 
 void VulkanObjects::createFramebuffer() {

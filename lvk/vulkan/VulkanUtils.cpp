@@ -88,7 +88,7 @@ VkFormat lvk::formatToVkFormat(lvk::Format format) {
     return VK_FORMAT_D24_UNORM_S8_UINT;
   }
 #if defined(_MSC_VER)
-  IGL_ASSERT_MSG(false, "TextureFormat value not handled: %d", (int)format);
+  LVK_ASSERT_MSG(false, "TextureFormat value not handled: %d", (int)format);
   return VK_FORMAT_UNDEFINED;
 #endif // _MSC_VER
 }
@@ -147,7 +147,7 @@ lvk::Format lvk::vkFormatToFormat(VkFormat format) {
     return Format_Z_F32;
   default:;
   }
-  IGL_ASSERT_MSG(false, "VkFormat value not handled: %d", (int)format);
+  LVK_ASSERT_MSG(false, "VkFormat value not handled: %d", (int)format);
   return Format_Invalid;
 }
 
@@ -384,7 +384,7 @@ VkFilter samplerFilterToVkFilter(lvk::SamplerFilter filter) {
   case lvk::SamplerFilter_Linear:
     return VK_FILTER_LINEAR;
   }
-  IGL_ASSERT_MSG(false, "SamplerFilter value not handled: %d", (int)filter);
+  LVK_ASSERT_MSG(false, "SamplerFilter value not handled: %d", (int)filter);
   return VK_FILTER_LINEAR;
 }
 
@@ -396,7 +396,7 @@ VkSamplerMipmapMode samplerMipMapToVkSamplerMipmapMode(lvk::SamplerMip filter) {
   case lvk::SamplerMip_Linear:
     return VK_SAMPLER_MIPMAP_MODE_LINEAR;
   }
-  IGL_ASSERT_MSG(false, "SamplerMipMap value not handled: %d", (int)filter);
+  LVK_ASSERT_MSG(false, "SamplerMipMap value not handled: %d", (int)filter);
   return VK_SAMPLER_MIPMAP_MODE_NEAREST;
 }
 
@@ -409,14 +409,14 @@ VkSamplerAddressMode samplerWrapModeToVkSamplerAddressMode(lvk::SamplerWrap mode
   case lvk::SamplerWrap_MirrorRepeat:
     return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
   }
-  IGL_ASSERT_MSG(false, "SamplerWrapMode value not handled: %d", (int)mode);
+  LVK_ASSERT_MSG(false, "SamplerWrapMode value not handled: %d", (int)mode);
   return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
 
 } // namespace 
 
 VkSamplerCreateInfo lvk::samplerStateDescToVkSamplerCreateInfo(const lvk::SamplerStateDesc& desc, const VkPhysicalDeviceLimits& limits) {
-  IGL_ASSERT_MSG(desc.mipLodMax >= desc.mipLodMin,
+  LVK_ASSERT_MSG(desc.mipLodMax >= desc.mipLodMin,
                  "mipLodMax (%d) must be greater than or equal to mipLodMin (%d)",
                  (int)desc.mipLodMax,
                  (int)desc.mipLodMin);
@@ -444,7 +444,7 @@ VkSamplerCreateInfo lvk::samplerStateDescToVkSamplerCreateInfo(const lvk::Sample
 
   if (desc.maxAnisotropic > 1) {
     const bool isAnisotropicFilteringSupported = limits.maxSamplerAnisotropy > 1;
-    IGL_ASSERT_MSG(isAnisotropicFilteringSupported, "Anisotropic filtering is not supported by the device.");
+    LVK_ASSERT_MSG(isAnisotropicFilteringSupported, "Anisotropic filtering is not supported by the device.");
     ci.anisotropyEnable = isAnisotropicFilteringSupported ? VK_TRUE : VK_FALSE;
 
     if (limits.maxSamplerAnisotropy < desc.maxAnisotropic) {
