@@ -21,7 +21,7 @@ VulkanBuffer::VulkanBuffer(VulkanContext* ctx,
                            VkMemoryPropertyFlags memFlags,
                            const char* debugName) :
   ctx_(ctx), device_(device), bufferSize_(bufferSize), usageFlags_(usageFlags), memFlags_(memFlags) {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_CREATE);
 
   IGL_ASSERT(ctx);
   IGL_ASSERT(bufferSize > 0);
@@ -81,7 +81,7 @@ VulkanBuffer::VulkanBuffer(VulkanContext* ctx,
 }
 
 VulkanBuffer::~VulkanBuffer() {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_DESTROY);
 
   if (!ctx_) {
     return;

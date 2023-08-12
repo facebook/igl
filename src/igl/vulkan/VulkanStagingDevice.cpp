@@ -37,7 +37,7 @@ namespace lvk {
 namespace vulkan {
 
 VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   const auto& limits = ctx_.getVkPhysicalDeviceProperties().limits;
 
@@ -62,7 +62,7 @@ VulkanStagingDevice::~VulkanStagingDevice() {
 }
 
 void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer, size_t dstOffset, size_t size, const void* data) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
   if (buffer.isMapped()) {
     buffer.bufferSubData(dstOffset, size, data);
     return;
@@ -96,7 +96,7 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer, size_t dstOffset, 
 }
 
 void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer, size_t srcOffset, size_t size, void* data) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
   if (buffer.isMapped()) {
     buffer.getBufferSubData(srcOffset, size, data);
     return;
@@ -143,7 +143,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
                                       uint32_t numLayers,
                                       VkFormat format,
                                       const void* data[]) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   // cache the dimensions of each mip-level for later
   uint32_t mipSizes[32];
@@ -258,7 +258,7 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
                                       const VkExtent3D& extent,
                                       VkFormat format,
                                       const void* data) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
   IGL_ASSERT_MSG(image.levels_ == 1, "Can handle only 3D images with exactly 1 mip-level");
   IGL_ASSERT_MSG((offset.x == 0) && (offset.y == 0) && (offset.z == 0), "Can upload only full-size 3D images");
   const uint32_t storageSize = extent.width * extent.height * extent.depth * getBytesPerPixel(format);
@@ -326,7 +326,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                                          void* data,
                                          uint32_t dataBytesPerRow,
                                          bool flipImageVertical) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
   IGL_ASSERT(layout != VK_IMAGE_LAYOUT_UNDEFINED);
 
   const uint32_t storageSize = imageRegion.extent.width * imageRegion.extent.height * getBytesPerPixel(format);
@@ -405,7 +405,7 @@ uint32_t VulkanStagingDevice::getAlignedSize(uint32_t size) const {
 }
 
 VulkanStagingDevice::MemoryRegionDesc VulkanStagingDevice::getNextFreeOffset(uint32_t size) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
   uint32_t alignedSize = getAlignedSize(size);
 
   // track maximum previously used region
@@ -457,7 +457,7 @@ VulkanStagingDevice::MemoryRegionDesc VulkanStagingDevice::getNextFreeOffset(uin
 }
 
 void VulkanStagingDevice::flushOutstandingFences() {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_WAIT);
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
   LLOGL("StagingDevice - Wait for Idle\n");

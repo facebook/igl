@@ -26,7 +26,7 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
                                  uint32_t numLayers,
                                  const char* debugName) :
   ctx_(ctx), device_(device) {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_CREATE);
 
   VK_ASSERT(ivkCreateImageView(
       device_, image, type, format, VkImageSubresourceRange{aspectMask, baseLevel, numLevels, baseLayer, numLayers}, &vkImageView_));
@@ -35,7 +35,7 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
 }
 
 VulkanImageView::~VulkanImageView() {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_DESTROY);
 
   ctx_.deferredTask(
       std::packaged_task<void()>([device = device_, imageView = vkImageView_]() { vkDestroyImageView(device, imageView, nullptr); }));

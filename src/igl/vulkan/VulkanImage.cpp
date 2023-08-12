@@ -83,7 +83,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   samples_(samples),
   isDepthFormat_(isDepthFormat(format)),
   isStencilFormat_(isStencilFormat(format)) {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_CREATE);
 
   IGL_ASSERT_MSG(levels_ > 0, "The image must contain at least one mip-level");
   IGL_ASSERT_MSG(layers_ > 0, "The image must contain at least one layer");
@@ -134,7 +134,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 }
 
 VulkanImage::~VulkanImage() {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_DESTROY);
 
   if (!isExternallyManaged_) {
     if (IGL_VULKAN_USE_VMA) {
@@ -175,7 +175,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,
                                    VkPipelineStageFlags srcStageMask,
                                    VkPipelineStageFlags dstStageMask,
                                    const VkImageSubresourceRange& subresourceRange) const {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_TRANSITION);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_TRANSITION);
 
   VkAccessFlags srcAccessMask = 0;
   VkAccessFlags dstAccessMask = 0;
@@ -261,7 +261,7 @@ VkImageAspectFlags VulkanImage::getImageAspectFlags() const {
 }
 
 void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   // Check if device supports downscaling for color or depth/stencil buffer based on image format
   {

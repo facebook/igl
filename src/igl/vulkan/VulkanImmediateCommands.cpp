@@ -17,7 +17,7 @@ namespace vulkan {
 
 VulkanImmediateCommands::VulkanImmediateCommands(VkDevice device, uint32_t queueFamilyIndex, const char* debugName) :
   device_(device), queueFamilyIndex_(queueFamilyIndex), debugName_(debugName) {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_CREATE);
 
   vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue_);
 
@@ -52,7 +52,7 @@ VulkanImmediateCommands::VulkanImmediateCommands(VkDevice device, uint32_t queue
 }
 
 VulkanImmediateCommands::~VulkanImmediateCommands() {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_DESTROY);
 
   waitAll();
 
@@ -67,7 +67,7 @@ VulkanImmediateCommands::~VulkanImmediateCommands() {
 }
 
 void VulkanImmediateCommands::purge() {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   for (auto& buf : buffers_) {
     if (buf.cmdBuf_ == VK_NULL_HANDLE || buf.isEncoding_) {
@@ -90,7 +90,7 @@ void VulkanImmediateCommands::purge() {
 }
 
 const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::acquire() {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   if (!numAvailableCommandBuffers_) {
     purge();
@@ -98,9 +98,9 @@ const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::ac
 
   while (!numAvailableCommandBuffers_) {
     LLOGL("Waiting for command buffers...\n");
-    IGL_PROFILER_ZONE("Waiting for command buffers...", IGL_PROFILER_COLOR_WAIT);
+    LVK_PROFILER_ZONE("Waiting for command buffers...", LVK_PROFILER_COLOR_WAIT);
     purge();
-    IGL_PROFILER_ZONE_END();
+    LVK_PROFILER_ZONE_END();
   }
 
   VulkanImmediateCommands::CommandBufferWrapper* current = nullptr;
@@ -151,7 +151,7 @@ void VulkanImmediateCommands::wait(const SubmitHandle handle) {
 }
 
 void VulkanImmediateCommands::waitAll() {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_WAIT);
 
   // @lint-ignore CLANGTIDY
   VkFence fences[kMaxCommandBuffers];
@@ -201,7 +201,7 @@ bool VulkanImmediateCommands::isReady(const SubmitHandle handle, bool fastCheckN
 }
 
 VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(const CommandBufferWrapper& wrapper) {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_SUBMIT);
   IGL_ASSERT(wrapper.isEncoding_);
   VK_ASSERT(vkEndCommandBuffer(wrapper.cmdBuf_));
 
@@ -215,7 +215,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(const Comm
     waitSemaphores[numWaitSemaphores++] = lastSubmitSemaphore_;
   }
 
-  IGL_PROFILER_ZONE("vkQueueSubmit()", IGL_PROFILER_COLOR_SUBMIT);
+  LVK_PROFILER_ZONE("vkQueueSubmit()", LVK_PROFILER_COLOR_SUBMIT);
 #if IGL_VULKAN_PRINT_COMMANDS
   LLOGL("%p vkQueueSubmit()\n\n", wrapper.cmdBuf_);
 #endif // IGL_VULKAN_PRINT_COMMANDS
@@ -230,7 +230,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(const Comm
       .pSignalSemaphores = &wrapper.semaphore_,
   };
   VK_ASSERT(vkQueueSubmit(queue_, 1u, &si, wrapper.fence_));
-  IGL_PROFILER_ZONE_END();
+  LVK_PROFILER_ZONE_END();
 
   lastSubmitSemaphore_ = wrapper.semaphore_;
   lastSubmitHandle_ = wrapper.handle_;

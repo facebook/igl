@@ -51,7 +51,7 @@ namespace lvk::vulkan {
 Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)) {}
 
 ICommandBuffer& Device::acquireCommandBuffer() {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   IGL_ASSERT_MSG(!currentCommandBuffer_.ctx_, "Cannot acquire more than 1 command buffer simultaneously");
 
@@ -61,7 +61,7 @@ ICommandBuffer& Device::acquireCommandBuffer() {
 }
 
 void Device::submit(const lvk::ICommandBuffer& commandBuffer, lvk::QueueType queueType, TextureHandle present) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   const VulkanContext& ctx = getVulkanContext();
 
@@ -161,7 +161,7 @@ Holder<BufferHandle> Device::createBuffer(const BufferDesc& requestedDesc, Resul
 }
 
 Holder<SamplerHandle> Device::createSampler(const SamplerStateDesc& desc, Result* outResult) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   Result result;
 
@@ -426,7 +426,7 @@ void Device::destroy(lvk::ShaderModuleHandle handle) {
 }
 
 void Device::destroy(SamplerHandle handle) {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_DESTROY);
 
   VkSampler sampler = *ctx_->samplersPool_.get(handle);
 
@@ -472,7 +472,7 @@ void Device::destroy(Framebuffer& fb) {
 }
 
 Result Device::upload(BufferHandle handle, const void* data, size_t size, size_t offset) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   if (!IGL_VERIFY(data)) {
     return lvk::Result();
@@ -736,7 +736,7 @@ Format Device::getSwapchainFormat() const {
 }
 
 TextureHandle Device::getCurrentSwapchainTexture() {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   if (!ctx_->hasSwapchain()) {
     return {};

@@ -131,7 +131,7 @@ VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(lvk::PrimitiveType t) {
 } // namespace
 
 void CommandBuffer ::transitionToShaderReadOnly(TextureHandle handle) const {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   const lvk::vulkan::VulkanTexture& tex = *ctx_->texturesPool_.get(handle);
   const VulkanImage* img = tex.image_.get();
@@ -155,7 +155,7 @@ void CommandBuffer ::transitionToShaderReadOnly(TextureHandle handle) const {
 }
 
 void CommandBuffer::cmdBindComputePipeline(lvk::ComputePipelineHandle handle) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   if (!IGL_VERIFY(!handle.empty())) {
     return;
@@ -204,7 +204,7 @@ void CommandBuffer::cmdPopDebugGroupLabel() const {
 }
 
 void CommandBuffer::useComputeTexture(TextureHandle handle) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   IGL_ASSERT(!handle.empty());
   lvk::vulkan::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
@@ -227,7 +227,7 @@ void CommandBuffer::useComputeTexture(TextureHandle handle) {
 }
 
 void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const lvk::Framebuffer& fb) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   IGL_ASSERT(!isRendering_);
 
@@ -452,7 +452,7 @@ void CommandBuffer::cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) {
 }
 
 void CommandBuffer::cmdBindDepthStencilState(const DepthStencilState& desc) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   dynamicState_.depthWriteEnable_ = desc.isDepthWriteEnabled;
   dynamicState_.setDepthCompareOp(compareOpToVkCompareOp(desc.compareOp));
@@ -473,7 +473,7 @@ void CommandBuffer::cmdBindDepthStencilState(const DepthStencilState& desc) {
 }
 
 void CommandBuffer::cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, size_t bufferOffset) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   if (!IGL_VERIFY(!buffer.empty())) {
     return;
@@ -490,7 +490,7 @@ void CommandBuffer::cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, siz
 }
 
 void CommandBuffer::cmdPushConstants(const void* data, size_t size, size_t offset) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   IGL_ASSERT(size % 4 == 0); // VUID-vkCmdPushConstants-size-00369: size must be a multiple of 4
 
@@ -526,7 +526,7 @@ void CommandBuffer::bindGraphicsPipeline() {
 }
 
 void CommandBuffer::cmdDraw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   if (vertexCount == 0) {
     return;
@@ -543,7 +543,7 @@ void CommandBuffer::cmdDrawIndexed(PrimitiveType primitiveType,
                                    IndexFormat indexFormat,
                                    BufferHandle indexBuffer,
                                    size_t indexBufferOffset) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   if (indexCount == 0) {
     return;
@@ -565,7 +565,7 @@ void CommandBuffer::cmdDrawIndirect(PrimitiveType primitiveType,
                                     size_t indirectBufferOffset,
                                     uint32_t drawCount,
                                     uint32_t stride) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
@@ -583,7 +583,7 @@ void CommandBuffer::cmdDrawIndexedIndirect(PrimitiveType primitiveType,
                                            size_t indirectBufferOffset,
                                            uint32_t drawCount,
                                            uint32_t stride) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();

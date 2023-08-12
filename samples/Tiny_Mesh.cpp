@@ -323,7 +323,7 @@ static void initObjects() {
 }
 
 void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   if (!width_ || !height_) {
     return;

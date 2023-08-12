@@ -19,29 +19,29 @@
 #if defined(LVK_WITH_TRACY)
   #include "tracy/Tracy.hpp"
   // predefined RGB colors for "heavy" point-of-interest operations
-  #define IGL_PROFILER_COLOR_WAIT 0xff0000
-  #define IGL_PROFILER_COLOR_SUBMIT 0x0000ff
-  #define IGL_PROFILER_COLOR_PRESENT 0x00ff00
-  #define IGL_PROFILER_COLOR_CREATE 0xff6600
-  #define IGL_PROFILER_COLOR_DESTROY 0xffa500
-  #define IGL_PROFILER_COLOR_TRANSITION 0xffffff
+  #define LVK_PROFILER_COLOR_WAIT 0xff0000
+  #define LVK_PROFILER_COLOR_SUBMIT 0x0000ff
+  #define LVK_PROFILER_COLOR_PRESENT 0x00ff00
+  #define LVK_PROFILER_COLOR_CREATE 0xff6600
+  #define LVK_PROFILER_COLOR_DESTROY 0xffa500
+  #define LVK_PROFILER_COLOR_TRANSITION 0xffffff
   //
-  #define IGL_PROFILER_FUNCTION() ZoneScoped
-  #define IGL_PROFILER_FUNCTION_COLOR(color) ZoneScopedC(color)
-  #define IGL_PROFILER_ZONE(name, color) \
+  #define LVK_PROFILER_FUNCTION() ZoneScoped
+  #define LVK_PROFILER_FUNCTION_COLOR(color) ZoneScopedC(color)
+  #define LVK_PROFILER_ZONE(name, color) \
     {                                    \
       ZoneScopedC(color);                \
       ZoneName(name, strlen(name))
-  #define IGL_PROFILER_ZONE_END() }
-  #define IGL_PROFILER_THREAD(name) tracy::SetThreadName(name)
-  #define IGL_PROFILER_FRAME(name) FrameMarkNamed(name)
+  #define LVK_PROFILER_ZONE_END() }
+  #define LVK_PROFILER_THREAD(name) tracy::SetThreadName(name)
+  #define LVK_PROFILER_FRAME(name) FrameMarkNamed(name)
 #else
-  #define IGL_PROFILER_FUNCTION()
-  #define IGL_PROFILER_FUNCTION_COLOR(color)
-  #define IGL_PROFILER_ZONE(name, color) {
-  #define IGL_PROFILER_ZONE_END() }
-  #define IGL_PROFILER_THREAD(name)
-  #define IGL_PROFILER_FRAME(name)
+  #define LVK_PROFILER_FUNCTION()
+  #define LVK_PROFILER_FUNCTION_COLOR(color)
+  #define LVK_PROFILER_ZONE(name, color) {
+  #define LVK_PROFILER_ZONE_END() }
+  #define LVK_PROFILER_THREAD(name)
+  #define LVK_PROFILER_FRAME(name)
 #endif // LVK_WITH_TRACY
 // clang-format on
 

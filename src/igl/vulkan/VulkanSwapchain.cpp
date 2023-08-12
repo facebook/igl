@@ -211,7 +211,7 @@ VkImageView VulkanSwapchain::getCurrentVkImageView() const {
 }
 
 TextureHandle VulkanSwapchain::getCurrentTexture() {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   if (getNextImage_) {
     // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
@@ -227,9 +227,9 @@ TextureHandle VulkanSwapchain::getCurrentTexture() {
 }
 
 Result VulkanSwapchain::present(VkSemaphore waitSemaphore) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
-  IGL_PROFILER_ZONE("vkQueuePresent()", IGL_PROFILER_COLOR_PRESENT);
+  LVK_PROFILER_ZONE("vkQueuePresent()", LVK_PROFILER_COLOR_PRESENT);
   const VkPresentInfoKHR pi = {
       .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
       .waitSemaphoreCount = 1,
@@ -239,12 +239,12 @@ Result VulkanSwapchain::present(VkSemaphore waitSemaphore) {
       .pImageIndices = &currentImageIndex_,
   };
   VK_ASSERT_RETURN(vkQueuePresentKHR(graphicsQueue_, &pi));
-  IGL_PROFILER_ZONE_END();
+  LVK_PROFILER_ZONE_END();
 
   // Ready to call acquireNextImage() on the next getCurrentVulkanTexture();
   getNextImage_ = true;
 
-  IGL_PROFILER_FRAME(nullptr);
+  LVK_PROFILER_FRAME(nullptr);
 
   return Result();
 }

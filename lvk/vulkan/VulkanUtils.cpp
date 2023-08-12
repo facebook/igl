@@ -485,7 +485,7 @@ lvk::Result lvk::compileShader(VkDevice device,
                                const char* code,
                                VkShaderModule* outShaderModule,
                                const glslang_resource_t* glslLangResource) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   if (!outShaderModule) {
     return Result(Result::Code::ArgumentOutOfRange, "outShaderModule is NULL");

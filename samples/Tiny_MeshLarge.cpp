@@ -663,7 +663,7 @@ void normalizeName(std::string& name) {
 }
 
 bool loadAndCache(const char* cacheFileName) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   // load 3D model and cache it
   LLOGL("Loading `exterior.obj`... It can take a while in debug builds...\n");
@@ -1085,7 +1085,7 @@ void createOffscreenFramebuffer() {
 }
 
 void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   fbMain_.color[0].texture = nativeDrawable;
 
@@ -1259,7 +1259,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
 }
 
 void generateCompressedTexture(LoadedImage img) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   if (loaderShouldExit_.load(std::memory_order_acquire)) {
     return;
@@ -1327,7 +1327,7 @@ lvk::Format gli2iglTextureFormat(gli::texture2d::format_type format) {
 }
 
 LoadedImage loadImage(const char* fileName, int channels) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   if (!fileName || !*fileName) {
     return LoadedImage();
@@ -1375,7 +1375,7 @@ LoadedImage loadImage(const char* fileName, int channels) {
 }
 
 void loadMaterial(size_t i) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   static const std::string pathPrefix = folderContentRoot + "src/bistro/Exterior/";
 
@@ -1422,7 +1422,7 @@ void loadMaterials() {
 }
 
 void loadCubemapTexture(const std::string& fileNameKTX, lvk::Holder<lvk::TextureHandle>& tex) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   auto texRef = gli::load_ktx(fileNameKTX);
 
@@ -1501,7 +1501,7 @@ gli::texture_cube gliToCube(Bitmap& bmp) {
 }
 
 void generateMipmaps(const std::string& outFilename, gli::texture_cube& cubemap) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   LLOGL("Generating mipmaps");
 
@@ -1538,7 +1538,7 @@ void generateMipmaps(const std::string& outFilename, gli::texture_cube& cubemap)
 void processCubemap(const std::string& inFilename,
                     const std::string& outFilenameEnv,
                     const std::string& outFilenameIrr) {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   int sourceWidth, sourceHeight;
   float* pxs = stbi_loadf(inFilename.c_str(), &sourceWidth, &sourceHeight, nullptr, 3);
@@ -1577,7 +1577,7 @@ void processCubemap(const std::string& inFilename,
 }
 
 void loadSkyboxTexture() {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   const std::string skyboxFileName{"immenstadter_horn_2k"};
   const std::string skyboxSubdir{"src/skybox_hdr/"};

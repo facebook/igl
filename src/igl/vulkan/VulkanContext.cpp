@@ -180,7 +180,7 @@ VulkanContext::VulkanContext(const VulkanContextConfig& config,
                              void* window,
                              void* display) :
   config_(config) {
-  IGL_PROFILER_THREAD("MainThread");
+  LVK_PROFILER_THREAD("MainThread");
 
   pimpl_ = std::make_unique<VulkanContextImpl>();
 
@@ -199,7 +199,7 @@ VulkanContext::VulkanContext(const VulkanContextConfig& config,
 }
 
 VulkanContext::~VulkanContext() {
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   VK_ASSERT(vkDeviceWaitIdle(vkDevice_));
 
@@ -993,11 +993,7 @@ std::shared_ptr<VulkanImage> VulkanContext::createImage(VkImageType imageType,
 
 void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
                                               VkPipelineBindPoint bindPoint) const {
-  IGL_PROFILER_FUNCTION();
-
-#if IGL_DEBUG_DESCRIPTOR_SETS
-  IGL_LOG_INFO("Binding descriptor set %u\n", currentDSetIndex_);
-#endif // IGL_DEBUG_DESCRIPTOR_SETS
+  LVK_PROFILER_FUNCTION();
 
   vkCmdBindDescriptorSets(cmdBuf,
                           bindPoint,
@@ -1027,7 +1023,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   }
 
   // newly created resources can be used immediately - make sure they are put into descriptor sets
-  IGL_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION();
 
   // update Vulkan descriptor set here
 
@@ -1121,7 +1117,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
 SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
                                            lvk::Result* outResult,
                                            const char* debugName) {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_CREATE);
 
   VkSampler sampler = VK_NULL_HANDLE;
 
