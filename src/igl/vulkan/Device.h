@@ -27,7 +27,7 @@ class Device final : public IDevice {
 
   ICommandBuffer& acquireCommandBuffer() override;
 
-  void submit(const lvk::ICommandBuffer& commandBuffer, lvk::QueueType queueType, TextureHandle present) override;
+  void submit(const lvk::ICommandBuffer& commandBuffer, TextureHandle present) override;
 
   Holder<BufferHandle> createBuffer(const BufferDesc& desc, Result* outResult) override;
   Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc, Result* outResult) override;

@@ -388,7 +388,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
   imgui_->endFrame(*device_.get(), buffer);
   buffer.cmdEndRendering();
 
-  device_->submit(buffer, lvk::QueueType_Graphics, nativeDrawable);
+  device_->submit(buffer, nativeDrawable);
 }
 
 int main(int argc, char* argv[]) {

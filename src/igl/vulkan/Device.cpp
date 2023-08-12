@@ -60,7 +60,7 @@ ICommandBuffer& Device::acquireCommandBuffer() {
   return currentCommandBuffer_;
 }
 
-void Device::submit(const lvk::ICommandBuffer& commandBuffer, lvk::QueueType queueType, TextureHandle present) {
+void Device::submit(const lvk::ICommandBuffer& commandBuffer, TextureHandle present) {
   LVK_PROFILER_FUNCTION();
 
   const VulkanContext& ctx = getVulkanContext();
@@ -70,8 +70,6 @@ void Device::submit(const lvk::ICommandBuffer& commandBuffer, lvk::QueueType que
   IGL_ASSERT(vkCmdBuffer);
   IGL_ASSERT(vkCmdBuffer->ctx_);
   IGL_ASSERT(vkCmdBuffer->wrapper_);
-
-  const bool isGraphicsQueue = queueType == QueueType_Graphics;
 
   if (present) {
     const lvk::vulkan::VulkanTexture& tex = *ctx.texturesPool_.get(present);
@@ -90,7 +88,8 @@ void Device::submit(const lvk::ICommandBuffer& commandBuffer, lvk::QueueType que
         VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
   }
 
-  const bool shouldPresent = isGraphicsQueue && ctx.hasSwapchain() && present;
+  const bool shouldPresent = ctx.hasSwapchain() && present;
+
   if (shouldPresent) {
     ctx.immediate_->waitSemaphore(ctx.swapchain_->acquireSemaphore_);
   }

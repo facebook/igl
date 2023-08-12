@@ -117,7 +117,7 @@ void VulkanObjects::render() {
     buffer.cmdPopDebugGroupLabel();
   }
   buffer.cmdEndRendering();
-  device_->submit(buffer, lvk::QueueType_Graphics, fb_.color[0].texture);
+  device_->submit(buffer, fb_.color[0].texture);
 }
 
 int main(int argc, char* argv[]) {

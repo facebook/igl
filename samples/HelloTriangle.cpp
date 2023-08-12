@@ -63,7 +63,7 @@ void render() {
   buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3);
   buffer.cmdPopDebugGroupLabel();
   buffer.cmdEndRendering();
-  device_->submit(buffer, lvk::QueueType_Graphics, device_->getCurrentSwapchainTexture());
+  device_->submit(buffer, device_->getCurrentSwapchainTexture());
 }
 
 int main(int argc, char* argv[]) {

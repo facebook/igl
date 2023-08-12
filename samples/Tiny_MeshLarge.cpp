@@ -1154,7 +1154,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     }
     buffer.cmdEndRendering();
     buffer.transitionToShaderReadOnly(fbShadowMap_.depthStencil.texture);
-    device_->submit(buffer, lvk::QueueType_Graphics);
+    device_->submit(buffer);
     device_->generateMipmap(fbShadowMap_.depthStencil.texture);
 
     isShadowMapDirty_ = false;
@@ -1201,7 +1201,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     }
     buffer.cmdEndRendering();
     buffer.transitionToShaderReadOnly(fbOffscreen_.color[0].texture);
-    device_->submit(buffer, lvk::QueueType_Graphics);
+    device_->submit(buffer);
   }
 
   // Pass 3: compute shader post-processing
@@ -1228,7 +1228,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
             .textures = {tex},
         });
 
-    device_->submit(buffer, lvk::QueueType_Compute);
+    device_->submit(buffer);
   }
 
   // Pass 4: render into the swapchain image
@@ -1254,7 +1254,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     }
     buffer.cmdEndRendering();
 
-    device_->submit(buffer, lvk::QueueType_Graphics, fbMain_.color[0].texture);
+    device_->submit(buffer, fbMain_.color[0].texture);
   }
 }
 

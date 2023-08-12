@@ -505,12 +505,6 @@ enum StoreOp : uint8_t {
   StoreOp_None,
 };
 
-enum QueueType : uint8_t {
-  QueueType_Compute = 0,
-  QueueType_Graphics,
-  QueueType_Transfer,
-};
-
 enum ShaderStage : uint8_t {
   Stage_Vertex = 0,
   Stage_Geometry,
@@ -793,9 +787,7 @@ class IDevice {
 
   virtual ICommandBuffer& acquireCommandBuffer() = 0;
 
-  virtual void submit(const ICommandBuffer& commandBuffer,
-                      lvk::QueueType queueType = lvk::QueueType_Graphics,
-                      TextureHandle present = {}) = 0;
+  virtual void submit(const ICommandBuffer& commandBuffer, TextureHandle present = {}) = 0;
 
   [[nodiscard]] virtual Holder<BufferHandle> createBuffer(const BufferDesc& desc, Result* outResult = nullptr) = 0;
   [[nodiscard]] virtual Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc, Result* outResult = nullptr) = 0;
