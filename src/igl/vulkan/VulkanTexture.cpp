@@ -8,7 +8,7 @@
 #include "VulkanTexture.h"
 
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanImage.h>
+#include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
 namespace lvk::vulkan {
@@ -49,7 +49,7 @@ VulkanTexture& VulkanTexture::operator=(VulkanTexture&& other) {
 }
 
 bool VulkanTexture::isSwapchainTexture() const {
-  return image_->isExternallyManaged_;
+  return image_->isSwapchainImage_;
 }
 
 VkImageView VulkanTexture::getVkImageView() const {
@@ -68,7 +68,7 @@ VkImageView VulkanTexture::getVkImageViewForFramebuffer(uint8_t level) {
   }
 
   imageViewForFramebuffer_[level] =
-      image_->createImageView(VK_IMAGE_VIEW_TYPE_2D, image_->imageFormat_, image_->getImageAspectFlags(), level, 1u, 0u, 1u);
+      image_->createImageView(VK_IMAGE_VIEW_TYPE_2D, image_->vkImageFormat_, image_->getImageAspectFlags(), level, 1u, 0u, 1u);
 
   return imageViewForFramebuffer_[level];
 }
@@ -77,9 +77,9 @@ Dimensions VulkanTexture::getDimensions() const {
   LVK_ASSERT(image_.get());
 
   return {
-      .width = image_->extent_.width,
-      .height = image_->extent_.height,
-      .depth = image_->extent_.depth,
+      .width = image_->vkExtent_.width,
+      .height = image_->vkExtent_.height,
+      .depth = image_->vkExtent_.depth,
   };
 }
 

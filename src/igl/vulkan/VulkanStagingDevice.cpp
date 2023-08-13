@@ -7,10 +7,9 @@
 
 #include <igl/vulkan/VulkanStagingDevice.h>
 
-#include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
+#include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
 #include <string.h>
@@ -71,7 +70,7 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer, size_t dstOffset, 
   size_t chunkDstOffset = dstOffset;
   void* copyData = const_cast<void*>(data);
 
-  lvk::vulkan::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
+  lvk::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
 
   while (size) {
     // get next staging buffer free offset
@@ -85,7 +84,7 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer, size_t dstOffset, 
     const VkBufferCopy copy = {desc.srcOffset_, chunkDstOffset, chunkSize};
 
     auto& wrapper = immediate_->acquire();
-    vkCmdCopyBuffer(wrapper.cmdBuf_, stagingBuffer->getVkBuffer(), buffer.getVkBuffer(), 1, &copy);
+    vkCmdCopyBuffer(wrapper.cmdBuf_, stagingBuffer->vkBuffer_, buffer.vkBuffer_, 1, &copy);
     const SubmitHandle fenceId = immediate_->submit(wrapper);
     outstandingFences_[fenceId.handle()] = desc;
 
@@ -105,7 +104,7 @@ void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer, size_t srcOffse
   size_t chunkSrcOffset = srcOffset;
   auto* dstData = static_cast<uint8_t*>(data);
 
-  lvk::vulkan::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
+  lvk::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
 
   while (size) {
     // get next staging buffer free offset
@@ -117,7 +116,7 @@ void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer, size_t srcOffse
 
     auto& wrapper = immediate_->acquire();
 
-    vkCmdCopyBuffer(wrapper.cmdBuf_, buffer.getVkBuffer(), stagingBuffer->getVkBuffer(), 1, &copy);
+    vkCmdCopyBuffer(wrapper.cmdBuf_, buffer.vkBuffer_, stagingBuffer->vkBuffer_, 1, &copy);
 
     SubmitHandle fenceId = immediate_->submit(wrapper);
     outstandingFences_[fenceId.handle()] = desc;
@@ -151,8 +150,8 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
   LVK_ASSERT(numMipLevels <= 32);
 
   // divide the width and height by 2 until we get to the size of level 'baseMipLevel'
-  auto width = image.extent_.width >> baseMipLevel;
-  auto height = image.extent_.height >> baseMipLevel;
+  uint32_t width = image.vkExtent_.width >> baseMipLevel;
+  uint32_t height = image.vkExtent_.height >> baseMipLevel;
 
   const Format texFormat(vkFormatToFormat(format));
 
@@ -164,7 +163,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
   // find the storage size for all mip-levels being uploaded
   uint32_t layarStorageSize = 0;
   for (uint32_t i = 0; i < numMipLevels; ++i) {
-    const uint32_t mipSize = lvk::getTextureBytesPerLayer(image.extent_.width, image.extent_.height, texFormat, i);
+    const uint32_t mipSize = lvk::getTextureBytesPerLayer(image.vkExtent_.width, image.vkExtent_.height, texFormat, i);
     layarStorageSize += mipSize;
     mipSizes[i] = mipSize;
     width = width <= 1 ? 1 : width >> 1;
@@ -186,7 +185,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
 
   auto& wrapper = immediate_->acquire();
 
-  lvk::vulkan::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
+  lvk::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
 
   for (uint32_t layer = 0; layer != numLayers; layer++) {
     // copy the pixel data into the host visible staging buffer
@@ -197,12 +196,12 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
     for (uint32_t mipLevel = 0; mipLevel < numMipLevels; ++mipLevel) {
       const auto currentMipLevel = baseMipLevel + mipLevel;
 
-      LVK_ASSERT(currentMipLevel < image.levels_);
-      LVK_ASSERT(mipLevel < image.levels_);
+      LVK_ASSERT(currentMipLevel < image.numLevels_);
+      LVK_ASSERT(mipLevel < image.numLevels_);
 
       // 1. Transition initial image layout into TRANSFER_DST_OPTIMAL
       lvk::imageMemoryBarrier(wrapper.cmdBuf_,
-                              image.getVkImage(),
+                              image.vkImage_,
                               0,
                               VK_ACCESS_TRANSFER_WRITE_BIT,
                               VK_IMAGE_LAYOUT_UNDEFINED,
@@ -230,11 +229,11 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
           .imageExtent = {.width = region.extent.width, .height = region.extent.height, .depth = 1u},
       };
       vkCmdCopyBufferToImage(
-          wrapper.cmdBuf_, stagingBuffer->getVkBuffer(), image.getVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+          wrapper.cmdBuf_, stagingBuffer->vkBuffer_, image.vkImage_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
 
       // 3. Transition TRANSFER_DST_OPTIMAL into SHADER_READ_ONLY_OPTIMAL
       lvk::imageMemoryBarrier(wrapper.cmdBuf_,
-                              image.getVkImage(),
+                              image.vkImage_,
                               VK_ACCESS_TRANSFER_READ_BIT, // VK_ACCESS_TRANSFER_WRITE_BIT,
                               VK_ACCESS_SHADER_READ_BIT,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -248,7 +247,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
     }
   }
 
-  image.imageLayout_ = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  image.vkImageLayout_ = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
   SubmitHandle fenceId = immediate_->submit(wrapper);
   outstandingFences_[fenceId.handle()] = desc;
@@ -260,7 +259,7 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
                                       VkFormat format,
                                       const void* data) {
   LVK_PROFILER_FUNCTION();
-  LVK_ASSERT_MSG(image.levels_ == 1, "Can handle only 3D images with exactly 1 mip-level");
+  LVK_ASSERT_MSG(image.numLevels_ == 1, "Can handle only 3D images with exactly 1 mip-level");
   LVK_ASSERT_MSG((offset.x == 0) && (offset.y == 0) && (offset.z == 0), "Can upload only full-size 3D images");
   const uint32_t storageSize = extent.width * extent.height * extent.depth * getBytesPerPixel(format);
 
@@ -269,8 +268,8 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
   // get next staging buffer free offset
   MemoryRegionDesc desc = getNextFreeOffset(storageSize);
 
-  // currently, no support for copying image in multiple smaller chunk sizes.
-  // If we get smaller buffer size than storageSize, we will wait for gpu idle and get bigger chunk.
+  // No support for copying image in multiple smaller chunk sizes.
+  // If we get smaller buffer size than storageSize, we will wait for GPU idle and get a bigger chunk.
   if (desc.alignedSize_ < storageSize) {
     flushOutstandingFences();
     desc = getNextFreeOffset(storageSize);
@@ -278,7 +277,7 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
 
   LVK_ASSERT(desc.alignedSize_ >= storageSize);
 
-  lvk::vulkan::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
+  lvk::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
 
   // 1. Copy the pixel data into the host visible staging buffer
   stagingBuffer->bufferSubData(desc.srcOffset_, storageSize, data);
@@ -287,7 +286,7 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
 
   // 1. Transition initial image layout into TRANSFER_DST_OPTIMAL
   lvk::imageMemoryBarrier(wrapper.cmdBuf_,
-                          image.getVkImage(),
+                          image.vkImage_,
                           0,
                           VK_ACCESS_TRANSFER_WRITE_BIT,
                           VK_IMAGE_LAYOUT_UNDEFINED,
@@ -305,11 +304,11 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
       .imageOffset = offset,
       .imageExtent = extent,
   };
-  vkCmdCopyBufferToImage(wrapper.cmdBuf_, stagingBuffer->getVkBuffer(), image.getVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+  vkCmdCopyBufferToImage(wrapper.cmdBuf_, stagingBuffer->vkBuffer_, image.vkImage_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
 
   // 3. Transition TRANSFER_DST_OPTIMAL into SHADER_READ_ONLY_OPTIMAL
   lvk::imageMemoryBarrier(wrapper.cmdBuf_,
-                          image.getVkImage(),
+                          image.vkImage_,
                           VK_ACCESS_TRANSFER_READ_BIT, // VK_ACCESS_TRANSFER_WRITE_BIT,
                           VK_ACCESS_SHADER_READ_BIT,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -318,7 +317,7 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                           VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
 
-  image.imageLayout_ = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  image.vkImageLayout_ = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
   SubmitHandle fenceId = immediate_->submit(wrapper);
   outstandingFences_[fenceId.handle()] = desc;
@@ -353,7 +352,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
 
   auto& wrapper1 = immediate_->acquire();
 
-  lvk::vulkan::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
+  lvk::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
 
   // 1. Transition to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
   lvk::imageMemoryBarrier(wrapper1.cmdBuf_,
@@ -375,7 +374,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
       .imageOffset = {.x = imageRegion.offset.x, .y = imageRegion.offset.y, .z = 0},
       .imageExtent = {.width = imageRegion.extent.width, .height = imageRegion.extent.height, .depth = 1u},
   };
-  vkCmdCopyImageToBuffer(wrapper1.cmdBuf_, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, stagingBuffer->getVkBuffer(), 1, &copy);
+  vkCmdCopyImageToBuffer(wrapper1.cmdBuf_, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, stagingBuffer->vkBuffer_, 1, &copy);
 
   SubmitHandle fenceId = immediate_->submit(wrapper1);
   outstandingFences_[fenceId.handle()] = desc;

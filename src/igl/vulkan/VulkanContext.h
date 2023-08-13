@@ -13,7 +13,6 @@
 #include <vector>
 
 #include <igl/vulkan/RenderPipelineState.h>
-#include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <igl/vulkan/VulkanTexture.h>
@@ -21,12 +20,14 @@
 #include <lvk/Pool.h>
 
 namespace lvk {
+
+class VulkanBuffer;
+class VulkanImage;
+
 namespace vulkan {
 
 class Device;
 class CommandBuffer;
-class VulkanBuffer;
-class VulkanImage;
 class VulkanSwapchain;
 class VulkanTexture;
 
@@ -73,15 +74,15 @@ class VulkanContext final {
   std::shared_ptr<VulkanImage> createImage(VkImageType imageType,
                                            VkExtent3D extent,
                                            VkFormat format,
-                                           uint32_t mipLevels,
-                                           uint32_t arrayLayers,
+                                           uint32_t numLevels,
+                                           uint32_t numLayers,
                                            VkImageTiling tiling,
                                            VkImageUsageFlags usageFlags,
                                            VkMemoryPropertyFlags memFlags,
                                            VkImageCreateFlags flags,
                                            VkSampleCountFlagBits samples,
                                            lvk::Result* outResult,
-                                           const char* debugName = nullptr) const;
+                                           const char* debugName = nullptr);
   BufferHandle createBuffer(VkDeviceSize bufferSize,
                             VkBufferUsageFlags usageFlags,
                             VkMemoryPropertyFlags memFlags,
@@ -202,7 +203,7 @@ class VulkanContext final {
   lvk::Pool<lvk::RenderPipeline, lvk::vulkan::RenderPipelineState> renderPipelinesPool_;
   lvk::Pool<lvk::ComputePipeline, VkPipeline> computePipelinesPool_;
   lvk::Pool<lvk::Sampler, VkSampler> samplersPool_;
-  lvk::Pool<lvk::Buffer, lvk::vulkan::VulkanBuffer> buffersPool_;
+  lvk::Pool<lvk::Buffer, lvk::VulkanBuffer> buffersPool_;
   lvk::Pool<lvk::Texture, lvk::vulkan::VulkanTexture> texturesPool_;
 
   struct DeferredTask {

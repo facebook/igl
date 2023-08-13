@@ -194,7 +194,7 @@ VulkanSwapchain::~VulkanSwapchain() {
 VkImage VulkanSwapchain::getCurrentVkImage() const {
   if (LVK_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
     lvk::vulkan::VulkanTexture* tex = ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_]);
-    return tex->image_->getVkImage();
+    return tex->image_->vkImage_;
   }
   return VK_NULL_HANDLE;
 }

@@ -13,11 +13,13 @@
 #include <lvk/vulkan/VulkanUtils.h>
 
 namespace lvk {
-namespace vulkan {
 
 class VulkanBuffer;
-class VulkanContext;
 class VulkanImage;
+
+namespace vulkan {
+
+class VulkanContext;
 class VulkanImmediateCommands;
 
 class VulkanStagingDevice final {

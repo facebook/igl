@@ -7,9 +7,8 @@
 
 #include <igl/vulkan/CommandBuffer.h>
 
-#include <igl/vulkan/VulkanBuffer.h>
+#include <lvk/vulkan/VulkanClasses.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanTexture.h>
 
 static bool isDepthOrStencilVkFormat(VkFormat format) {
@@ -43,12 +42,12 @@ void transitionColorAttachment(VkCommandBuffer buffer, lvk::vulkan::VulkanTextur
     return;
   }
 
-  const VulkanImage& colorImg = *colorTex->image_.get();
+  const lvk::VulkanImage& colorImg = *colorTex->image_.get();
   if (!LVK_VERIFY(!colorImg.isDepthFormat_ && !colorImg.isStencilFormat_)) {
     LVK_ASSERT_MSG(false, "Color attachments cannot have depth/stencil formats");
     return;
   }
-  LVK_ASSERT_MSG(colorImg.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
+  LVK_ASSERT_MSG(colorImg.vkImageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
   colorImg.transitionLayout(buffer,
                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -150,14 +149,14 @@ void CommandBuffer ::transitionToShaderReadOnly(TextureHandle handle) const {
   LVK_PROFILER_FUNCTION();
 
   const lvk::vulkan::VulkanTexture& tex = *ctx_->texturesPool_.get(handle);
-  const VulkanImage* img = tex.image_.get();
+  const lvk::VulkanImage* img = tex.image_.get();
 
   LVK_ASSERT(!tex.isSwapchainTexture());
 
   // transition only non-multisampled images - MSAA images cannot be accessed from shaders
-  if (img->samples_ == VK_SAMPLE_COUNT_1_BIT) {
+  if (img->vkSamples_ == VK_SAMPLE_COUNT_1_BIT) {
     const VkImageAspectFlags flags = tex.image_->getImageAspectFlags();
-    const VkPipelineStageFlags srcStage = isDepthOrStencilVkFormat(tex.image_->imageFormat_)
+    const VkPipelineStageFlags srcStage = isDepthOrStencilVkFormat(tex.image_->vkImageFormat_)
                                               ? VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
                                               : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     // set the result of the previous render pass
@@ -248,7 +247,7 @@ void CommandBuffer::useComputeTexture(TextureHandle handle) {
 
   LVK_ASSERT(!handle.empty());
   lvk::vulkan::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
-  const lvk::vulkan::VulkanImage& vkImage = *tex->image_.get();
+  const lvk::VulkanImage& vkImage = *tex->image_.get();
   if (!vkImage.isStorageImage()) {
     LVK_ASSERT_MSG(false, "Did you forget to specify TextureUsageBits::Storage on your texture?");
     return;
@@ -256,8 +255,8 @@ void CommandBuffer::useComputeTexture(TextureHandle handle) {
 
   // "frame graph" heuristics: if we are already in VK_IMAGE_LAYOUT_GENERAL, wait for the previous
   // compute shader
-  const VkPipelineStageFlags srcStage = (vkImage.imageLayout_ == VK_IMAGE_LAYOUT_GENERAL) ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-                                                                                          : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+  const VkPipelineStageFlags srcStage = (vkImage.vkImageLayout_ == VK_IMAGE_LAYOUT_GENERAL) ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+                                                                                            : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
   vkImage.transitionLayout(
       wrapper_->cmdBuf_,
       VK_IMAGE_LAYOUT_GENERAL,
@@ -296,8 +295,8 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
   TextureHandle depthTex = fb.depthStencil.texture;
   if (depthTex) {
     lvk::vulkan::VulkanTexture& vkDepthTex = *ctx_->texturesPool_.get(depthTex);
-    const lvk::vulkan::VulkanImage* depthImg = vkDepthTex.image_.get();
-    LVK_ASSERT_MSG(depthImg->imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid depth attachment format");
+    const lvk::VulkanImage* depthImg = vkDepthTex.image_.get();
+    LVK_ASSERT_MSG(depthImg->vkImageFormat_ != VK_FORMAT_UNDEFINED, "Invalid depth attachment format");
     const VkImageAspectFlags flags = vkDepthTex.image_->getImageAspectFlags();
     depthImg->transitionLayout(wrapper_->cmdBuf_,
                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -336,7 +335,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
     mipLevel = descColor.level;
     fbWidth = dim.width;
     fbHeight = dim.height;
-    samples = colorTexture.image_->samples_;
+    samples = colorTexture.image_->vkSamples_;
     colorAttachments[i] = {
         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .pNext = nullptr,
@@ -435,13 +434,13 @@ void CommandBuffer::cmdEndRendering() {
     const auto& attachment = framebuffer_.color[i];
     const vulkan::VulkanTexture& tex = *ctx_->texturesPool_.get(attachment.texture);
     // this must match the final layout of the render pass
-    tex.image_->imageLayout_ = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    tex.image_->vkImageLayout_ = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
   }
 
   if (framebuffer_.depthStencil.texture) {
     const vulkan::VulkanTexture& tex = *ctx_->texturesPool_.get(framebuffer_.depthStencil.texture);
     // this must match the final layout of the render pass
-    tex.image_->imageLayout_ = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    tex.image_->vkImageLayout_ = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
   }
 
   framebuffer_ = {};
@@ -520,21 +519,21 @@ void CommandBuffer::cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, siz
     return;
   }
 
-  lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(buffer);
+  lvk::VulkanBuffer* buf = ctx_->buffersPool_.get(buffer);
 
-  VkBuffer vkBuf = buf->getVkBuffer();
+  VkBuffer vkBuf = buf->vkBuffer_;
 
-  LVK_ASSERT(buf->getUsageFlags() & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+  LVK_ASSERT(buf->vkUsageFlags_ & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
   const VkDeviceSize offset = bufferOffset;
   vkCmdBindVertexBuffers(wrapper_->cmdBuf_, index, 1, &vkBuf, &offset);
 }
 
 void CommandBuffer::cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, size_t indexBufferOffset) {
-  lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(indexBuffer);
+  lvk::VulkanBuffer* buf = ctx_->buffersPool_.get(indexBuffer);
 
   const VkIndexType type = indexFormatToVkIndexType(indexFormat);
-  vkCmdBindIndexBuffer(wrapper_->cmdBuf_, buf->getVkBuffer(), indexBufferOffset, type);
+  vkCmdBindIndexBuffer(wrapper_->cmdBuf_, buf->vkBuffer_, indexBufferOffset, type);
 }
 
 void CommandBuffer::cmdPushConstants(const void* data, size_t size, size_t offset) {
@@ -614,10 +613,10 @@ void CommandBuffer::cmdDrawIndirect(PrimitiveType primitiveType,
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
 
-  lvk::vulkan::VulkanBuffer* bufIndirect = ctx_->buffersPool_.get(indirectBuffer);
+  lvk::VulkanBuffer* bufIndirect = ctx_->buffersPool_.get(indirectBuffer);
 
   vkCmdDrawIndirect(
-      wrapper_->cmdBuf_, bufIndirect->getVkBuffer(), indirectBufferOffset, drawCount, stride ? stride : sizeof(VkDrawIndirectCommand));
+      wrapper_->cmdBuf_, bufIndirect->vkBuffer_, indirectBufferOffset, drawCount, stride ? stride : sizeof(VkDrawIndirectCommand));
 }
 
 void CommandBuffer::cmdDrawIndexedIndirect(PrimitiveType primitiveType,
@@ -630,10 +629,10 @@ void CommandBuffer::cmdDrawIndexedIndirect(PrimitiveType primitiveType,
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
 
-  lvk::vulkan::VulkanBuffer* bufIndirect = ctx_->buffersPool_.get(indirectBuffer);
+  lvk::VulkanBuffer* bufIndirect = ctx_->buffersPool_.get(indirectBuffer);
 
   vkCmdDrawIndexedIndirect(wrapper_->cmdBuf_,
-                           bufIndirect->getVkBuffer(),
+                           bufIndirect->vkBuffer_,
                            indirectBufferOffset,
                            drawCount,
                            stride ? stride : sizeof(VkDrawIndexedIndirectCommand));

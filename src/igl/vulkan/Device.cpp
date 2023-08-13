@@ -10,10 +10,10 @@
 #include <cstring>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/RenderPipelineState.h>
-#include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/VulkanTexture.h>
+#include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
 #include <glslang/Include/glslang_c_interface.h>
@@ -91,7 +91,7 @@ void Device::submit(const lvk::ICommandBuffer& commandBuffer, TextureHandle pres
     LVK_ASSERT(tex.isSwapchainTexture());
 
     // prepare image for presentation the image might be coming from a compute shader
-    const VkPipelineStageFlagBits srcStage = (tex.image_->imageLayout_ == VK_IMAGE_LAYOUT_GENERAL)
+    const VkPipelineStageFlagBits srcStage = (tex.image_->vkImageLayout_ == VK_IMAGE_LAYOUT_GENERAL)
                                                  ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
                                                  : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     tex.image_->transitionLayout(
@@ -491,13 +491,13 @@ Result Device::upload(BufferHandle handle, const void* data, size_t size, size_t
     return lvk::Result();
   }
 
-  lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
+  lvk::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
 
   if (!LVK_VERIFY(buf)) {
     return lvk::Result();
   }
 
-  if (!LVK_VERIFY(offset + size <= buf->getSize())) {
+  if (!LVK_VERIFY(offset + size <= buf->bufferSize_)) {
     return lvk::Result(Result::Code::ArgumentOutOfRange, "Out of range");
   }
 
@@ -507,7 +507,7 @@ Result Device::upload(BufferHandle handle, const void* data, size_t size, size_t
 }
 
 uint8_t* Device::getMappedPtr(BufferHandle handle) const {
-  lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
+  lvk::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
 
   LVK_ASSERT(buf);
 
@@ -517,15 +517,15 @@ uint8_t* Device::getMappedPtr(BufferHandle handle) const {
 uint64_t Device::gpuAddress(BufferHandle handle, size_t offset) const {
   LVK_ASSERT_MSG((offset & 7) == 0, "Buffer offset must be 8 bytes aligned as per GLSL_EXT_buffer_reference spec.");
 
-  lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
+  lvk::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
 
   LVK_ASSERT(buf);
 
-  return buf ? (uint64_t)buf->getVkDeviceAddress() + offset : 0u;
+  return buf ? (uint64_t)buf->vkDeviceAddress_ + offset : 0u;
 }
 
 void Device::flushMappedMemory(BufferHandle handle, size_t offset, size_t size) const {
-  lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
+  lvk::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
 
   LVK_ASSERT(buf);
 
@@ -563,7 +563,7 @@ Result Device::upload(TextureHandle handle, const TextureRangeDesc& range, const
 
   lvk::vulkan::VulkanTexture* texture = ctx_->texturesPool_.get(handle);
 
-  const auto result = validateRange(texture->getDimensions(), texture->image_->levels_, range);
+  const auto result = validateRange(texture->getDimensions(), texture->image_->numLevels_, range);
 
   if (!LVK_VERIFY(result.isOk())) {
     return result;
@@ -571,8 +571,8 @@ Result Device::upload(TextureHandle handle, const TextureRangeDesc& range, const
 
   const uint32_t numLayers = std::max(range.numLayers, 1u);
 
-  const VkImageType type = texture->image_->type_;
-  VkFormat vkFormat = texture->image_->imageFormat_;
+  const VkImageType type = texture->image_->vkType_;
+  VkFormat vkFormat = texture->image_->vkImageFormat_;
 
   if (type == VK_IMAGE_TYPE_3D) {
     const void* uploadData = data[0];
@@ -608,8 +608,8 @@ void Device::generateMipmap(TextureHandle handle) const {
 
   lvk::vulkan::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
 
-  if (tex->image_->levels_ > 1) {
-    LVK_ASSERT(tex->image_->imageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED);
+  if (tex->image_->numLevels_ > 1) {
+    LVK_ASSERT(tex->image_->vkImageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED);
     const auto& wrapper = ctx_->immediate_->acquire();
     tex->image_->generateMipmap(wrapper.cmdBuf_);
     ctx_->immediate_->submit(wrapper);
@@ -621,7 +621,7 @@ Format Device::getFormat(TextureHandle handle) const {
     return Format_Invalid;
   }
 
-  return vkFormatToFormat(ctx_->texturesPool_.get(handle)->image_->imageFormat_);
+  return vkFormatToFormat(ctx_->texturesPool_.get(handle)->image_->vkImageFormat_);
 }
 
 lvk::Holder<lvk::ShaderModuleHandle> Device::createShaderModule(const ShaderModuleDesc& desc, Result* outResult) {
@@ -773,7 +773,7 @@ TextureHandle Device::getCurrentSwapchainTexture() {
     return {};
   }
 
-  LVK_ASSERT_MSG(ctx_->texturesPool_.get(tex)->image_->imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid image format");
+  LVK_ASSERT_MSG(ctx_->texturesPool_.get(tex)->image_->vkImageFormat_ != VK_FORMAT_UNDEFINED, "Invalid image format");
 
   return tex;
 }

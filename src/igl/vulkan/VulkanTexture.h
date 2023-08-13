@@ -11,14 +11,16 @@
 
 #include <lvk/vulkan/VulkanUtils.h>
 
-namespace lvk::vulkan {
-
+namespace lvk {
 class VulkanImage;
+} // namespace lvk
+
+namespace lvk::vulkan {
 
 class VulkanTexture final {
  public:
   VulkanTexture() = default;
-  VulkanTexture(std::shared_ptr<VulkanImage> image, VkImageView imageView);
+  VulkanTexture(std::shared_ptr<lvk::VulkanImage> image, VkImageView imageView);
   ~VulkanTexture();
 
 
@@ -34,7 +36,7 @@ class VulkanTexture final {
   bool isSwapchainTexture() const;
 
  public:
-  std::shared_ptr<VulkanImage> image_;
+  std::shared_ptr<lvk::VulkanImage> image_;
   VkImageView imageView_ = VK_NULL_HANDLE;
   VkImageView imageViewForFramebuffer_[LVK_MAX_MIP_LEVELS] = {};
 };

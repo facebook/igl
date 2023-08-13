@@ -13,16 +13,15 @@
 #define VOLK_IMPLEMENTATION
 
 #include <igl/vulkan/Device.h>
-#include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanPipelineBuilder.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/VulkanTexture.h>
+#include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
 #include <glslang/Include/glslang_c_interface.h>
 
-static_assert(lvk::HWDeviceDesc::LVK_MAX_PHYSICAL_DEVICE_NAME_SIZE <= VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+static_assert(lvk::HWDeviceDesc::LVK_MAX_PHYSICAL_DEVICE_NAME_SIZE == VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
 
 namespace {
 
@@ -980,33 +979,21 @@ BufferHandle VulkanContext::createBuffer(VkDeviceSize bufferSize,
 std::shared_ptr<VulkanImage> VulkanContext::createImage(VkImageType imageType,
                                                         VkExtent3D extent,
                                                         VkFormat format,
-                                                        uint32_t mipLevels,
-                                                        uint32_t arrayLayers,
+                                                        uint32_t numLevels,
+                                                        uint32_t numLayers,
                                                         VkImageTiling tiling,
                                                         VkImageUsageFlags usageFlags,
                                                         VkMemoryPropertyFlags memFlags,
                                                         VkImageCreateFlags flags,
                                                         VkSampleCountFlagBits samples,
                                                         lvk::Result* outResult,
-                                                        const char* debugName) const {
-  if (!validateImageLimits(
-          imageType, samples, extent, getVkPhysicalDeviceProperties().limits, outResult)) {
+                                                        const char* debugName) {
+  if (!validateImageLimits(imageType, samples, extent, getVkPhysicalDeviceProperties().limits, outResult)) {
     return nullptr;
   }
 
-  return std::make_shared<VulkanImage>(*this,
-                                       vkDevice_,
-                                       extent,
-                                       imageType,
-                                       format,
-                                       mipLevels,
-                                       arrayLayers,
-                                       tiling,
-                                       usageFlags,
-                                       memFlags,
-                                       flags,
-                                       samples,
-                                       debugName);
+  return std::make_shared<VulkanImage>(
+      *this, vkDevice_, extent, imageType, format, numLevels, numLayers, tiling, usageFlags, memFlags, flags, samples, debugName);
 }
 
 void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
@@ -1062,7 +1049,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   for (const auto& obj : texturesPool_.objects_) {
     const VulkanTexture& texture = obj.obj_;
     // multisampled images cannot be directly accessed from shaders
-    const bool isTextureAvailable = (texture.image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
+    const bool isTextureAvailable = (texture.image_->vkSamples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
     const bool isSampledImage = isTextureAvailable && texture.image_->isSampledImage();
     const bool isStorageImage = isTextureAvailable && texture.image_->isStorageImage();
     infoSampledImages.push_back(
