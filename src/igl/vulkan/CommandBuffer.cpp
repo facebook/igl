@@ -295,7 +295,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
   // transition depth-stencil attachment
   TextureHandle depthTex = fb.depthStencil.texture;
   if (depthTex) {
-    const lvk::vulkan::VulkanTexture& vkDepthTex = *ctx_->texturesPool_.get(depthTex);
+    lvk::vulkan::VulkanTexture& vkDepthTex = *ctx_->texturesPool_.get(depthTex);
     const lvk::vulkan::VulkanImage* depthImg = vkDepthTex.image_.get();
     LVK_ASSERT_MSG(depthImg->imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid depth attachment format");
     const VkImageAspectFlags flags = vkDepthTex.image_->getImageAspectFlags();
@@ -321,7 +321,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
     const lvk::Framebuffer::AttachmentDesc& attachment = fb.color[i];
     LVK_ASSERT(!attachment.texture.empty());
 
-    const lvk::vulkan::VulkanTexture& colorTexture = *ctx_->texturesPool_.get(attachment.texture);
+    lvk::vulkan::VulkanTexture& colorTexture = *ctx_->texturesPool_.get(attachment.texture);
     const auto& descColor = renderPass.color[i];
     if (mipLevel && descColor.level) {
       LVK_ASSERT_MSG(descColor.level == mipLevel, "All color attachments should have the same mip-level");
@@ -354,7 +354,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
     if (descColor.storeOp == StoreOp_MsaaResolve) {
       LVK_ASSERT(samples > 1);
       LVK_ASSERT_MSG(!attachment.resolveTexture.empty(), "Framebuffer attachment should contain a resolve texture");
-      const lvk::vulkan::VulkanTexture& colorResolveTexture = *ctx_->texturesPool_.get(attachment.resolveTexture);
+      lvk::vulkan::VulkanTexture& colorResolveTexture = *ctx_->texturesPool_.get(attachment.resolveTexture);
       colorAttachments[i].resolveImageView = colorResolveTexture.getVkImageViewForFramebuffer(0);
       colorAttachments[i].resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
@@ -363,7 +363,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
   VkRenderingAttachmentInfo depthAttachment = {};
 
   if (fb.depthStencil.texture) {
-    const auto& depthTexture = *ctx_->texturesPool_.get(fb.depthStencil.texture);
+    auto& depthTexture = *ctx_->texturesPool_.get(fb.depthStencil.texture);
     const auto& descDepth = renderPass.depth;
     LVK_ASSERT_MSG(descDepth.level == mipLevel, "Depth attachment should have the same mip-level as color attachments");
     depthAttachment = {

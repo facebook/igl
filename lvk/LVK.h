@@ -190,6 +190,7 @@ class Holder final {
 namespace lvk {
 
 enum { LVK_MAX_COLOR_ATTACHMENTS = 4 };
+enum { LVK_MAX_MIP_LEVELS = 16 };
 
 enum IndexFormat : uint8_t {
   IndexFormat_UI16,

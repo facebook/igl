@@ -782,12 +782,12 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     if (!LVK_VERIFY(image.get())) {
       return Result(Result::Code::RuntimeError, "Cannot create VulkanImage");
     }
-    auto imageView = image->createImageView(
+    VkImageView imageView = image->createImageView(
         VK_IMAGE_VIEW_TYPE_2D, dummyTextureFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 1, "Image View: dummy 1x1");
-    if (!LVK_VERIFY(imageView.get())) {
-      return Result(Result::Code::RuntimeError, "Cannot create VulkanImageView");
+    if (!LVK_VERIFY(imageView != VK_NULL_HANDLE)) {
+      return Result(Result::Code::RuntimeError, "Cannot create VkImageView");
     }
-    VulkanTexture dummyTexture(std::move(image), std::move(imageView));
+    VulkanTexture dummyTexture(std::move(image), imageView);
     const uint32_t pixel = 0xFF000000;
     const void* data[] = {&pixel};
     const VkRect2D imageRegion = {.offset = {.x = 0, .y = 0}, .extent = {.width = 1, .height = 1}};
@@ -1057,7 +1057,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   infoStorageImages.reserve(texturesPool_.numObjects());
 
   // use the dummy texture to avoid sparse array
-  VkImageView dummyImageView = texturesPool_.objects_[0].obj_.imageView_->getVkImageView();
+  VkImageView dummyImageView = texturesPool_.objects_[0].obj_.imageView_;
 
   for (const auto& obj : texturesPool_.objects_) {
     const VulkanTexture& texture = obj.obj_;
@@ -1065,12 +1065,11 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
     const bool isTextureAvailable = (texture.image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
     const bool isSampledImage = isTextureAvailable && texture.image_->isSampledImage();
     const bool isStorageImage = isTextureAvailable && texture.image_->isStorageImage();
-    infoSampledImages.push_back({samplersPool_.objects_[0].obj_,
-                                 isSampledImage ? texture.imageView_->getVkImageView() : dummyImageView,
-                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+    infoSampledImages.push_back(
+        {samplersPool_.objects_[0].obj_, isSampledImage ? texture.imageView_ : dummyImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
     LVK_ASSERT(infoSampledImages.back().imageView != VK_NULL_HANDLE);
-    infoStorageImages.push_back(VkDescriptorImageInfo{
-        VK_NULL_HANDLE, isStorageImage ? texture.imageView_->getVkImageView() : dummyImageView, VK_IMAGE_LAYOUT_GENERAL});
+    infoStorageImages.push_back(
+        VkDescriptorImageInfo{VK_NULL_HANDLE, isStorageImage ? texture.imageView_ : dummyImageView, VK_IMAGE_LAYOUT_GENERAL});
   }
 
   // 2. Samplers

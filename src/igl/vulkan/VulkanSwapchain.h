@@ -8,7 +8,6 @@
 #pragma once
 
 #include <igl/vulkan/VulkanImage.h>
-#include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanTexture.h>
 #include <lvk/vulkan/VulkanUtils.h>
 #include <vector>

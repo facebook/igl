@@ -27,7 +27,6 @@ class Device;
 class CommandBuffer;
 class VulkanBuffer;
 class VulkanImage;
-class VulkanImageView;
 class VulkanSwapchain;
 class VulkanTexture;
 

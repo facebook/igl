@@ -330,15 +330,15 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, co
     aspect = VK_IMAGE_ASPECT_COLOR_BIT;
   }
 
-  std::shared_ptr<VulkanImageView> imageView =
+  VkImageView view =
       image->createImageView(imageViewType, vkFormat, aspect, 0, VK_REMAINING_MIP_LEVELS, 0, arrayLayerCount, debugNameImageView);
 
-  if (!LVK_VERIFY(imageView.get())) {
-    Result::setResult(outResult, Result::Code::RuntimeError, "Cannot create VulkanImageView");
+  if (!LVK_VERIFY(view != VK_NULL_HANDLE)) {
+    Result::setResult(outResult, Result::Code::RuntimeError, "Cannot create VkImageView");
     return {};
   }
 
-  TextureHandle handle = ctx_->texturesPool_.create(vulkan::VulkanTexture(std::move(image), std::move(imageView)));
+  TextureHandle handle = ctx_->texturesPool_.create(vulkan::VulkanTexture(std::move(image), view));
 
   LVK_ASSERT(ctx_->texturesPool_.numObjects() <= ctx_->config_.maxTextures);
 

@@ -8,7 +8,6 @@
 #include "VulkanImage.h"
 
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanImageView.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR
@@ -173,16 +172,32 @@ VulkanImage::~VulkanImage() {
   }
 }
 
-std::shared_ptr<VulkanImageView> VulkanImage::createImageView(VkImageViewType type,
-                                                              VkFormat format,
-                                                              VkImageAspectFlags aspectMask,
-                                                              uint32_t baseLevel,
-                                                              uint32_t numLevels,
-                                                              uint32_t baseLayer,
-                                                              uint32_t numLayers,
-                                                              const char* debugName) const {
-  return std::make_shared<VulkanImageView>(
-      ctx_, device_, vkImage_, type, format, aspectMask, baseLevel, numLevels ? numLevels : levels_, baseLayer, numLayers, debugName);
+VkImageView VulkanImage::createImageView(VkImageViewType type,
+                                         VkFormat format,
+                                         VkImageAspectFlags aspectMask,
+                                         uint32_t baseLevel,
+                                         uint32_t numLevels,
+                                         uint32_t baseLayer,
+                                         uint32_t numLayers,
+                                         const char* debugName) const {
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_CREATE);
+
+  const VkImageViewCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+      .image = vkImage_,
+      .viewType = type,
+      .format = format,
+      .components = {.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                     .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                     .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                     .a = VK_COMPONENT_SWIZZLE_IDENTITY},
+      .subresourceRange = {aspectMask, baseLevel, numLevels ? numLevels : levels_, baseLayer, numLayers},
+  };
+  VkImageView view = VK_NULL_HANDLE;
+  VK_ASSERT(vkCreateImageView(device_, &ci, nullptr, &view));
+  VK_ASSERT(lvk::setDebugObjectName(device_, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)view, debugName));
+
+  return view;
 }
 
 void VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,

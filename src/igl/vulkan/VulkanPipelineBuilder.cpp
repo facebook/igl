@@ -105,6 +105,7 @@ VulkanPipelineBuilder& VulkanPipelineBuilder::dynamicState(VkDynamicState state)
 }
 
 VulkanPipelineBuilder& VulkanPipelineBuilder::dynamicStates(const std::vector<VkDynamicState>& states) {
+  dynamicStates_.reserve(dynamicStates_.size() + states.size());
   dynamicStates_.insert(std::end(dynamicStates_), std::begin(states), std::end(states));
   return *this;
 }

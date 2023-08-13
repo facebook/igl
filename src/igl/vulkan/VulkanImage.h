@@ -15,7 +15,6 @@ namespace lvk {
 namespace vulkan {
 
 class VulkanContext;
-class VulkanImageView;
 
 /**
  * @brief Encapsulates a Vulkan Image object (`VkImage`) along with some of its properties
@@ -68,31 +67,17 @@ class VulkanImage final {
     return (usageFlags_ & VK_IMAGE_USAGE_STORAGE_BIT) > 0;
   }
 
-  /**
-   * @brief Creates a `VkImageView` object from the `VkImage` stored in the object.
-   *
-   * Setting `numLevels` to a non-zero value will override `mipLevels_` value from the original
-   * vulkan image, and can be used to create image views with different number of levels
-   */
-  std::shared_ptr<VulkanImageView> createImageView(VkImageViewType type,
-                                                   VkFormat format,
-                                                   VkImageAspectFlags aspectMask,
-                                                   uint32_t baseLevel,
-                                                   uint32_t numLevels = VK_REMAINING_MIP_LEVELS,
-                                                   uint32_t baseLayer = 0,
-                                                   uint32_t numLayers = 1,
-                                                   const char* debugName = nullptr) const;
+  VkImageView createImageView(VkImageViewType type,
+                              VkFormat format,
+                              VkImageAspectFlags aspectMask,
+                              uint32_t baseLevel,
+                              uint32_t numLevels = VK_REMAINING_MIP_LEVELS,
+                              uint32_t baseLayer = 0,
+                              uint32_t numLayers = 1,
+                              const char* debugName = nullptr) const;
 
   void generateMipmap(VkCommandBuffer commandBuffer) const;
 
-  /**
-   * @brief Transitions the `VkImage`'s layout from the current layout (stored in the object) to the
-   * `newImageLayout` by recording an Image Memory Barrier into the commandBuffer.
-   *
-   * The source and destination access masks for the transition are automatically deduced based on
-   * the `srcStageMask` and the `dstStageMask` parameters. Not not all `VkPipelineStageFlags` are
-   * supported.
-   */
   void transitionLayout(VkCommandBuffer commandBuffer,
                         VkImageLayout newImageLayout,
                         VkPipelineStageFlags srcStageMask,

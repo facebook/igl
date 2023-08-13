@@ -170,14 +170,14 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
     char debugNameImageView[256] = {0};
     snprintf(debugNameImage, sizeof(debugNameImage) - 1, "Image: swapchain %u", i);
     snprintf(debugNameImageView, sizeof(debugNameImageView) - 1, "Image View: swapchain %u", i);
-    auto image = std::make_shared<VulkanImage>(ctx_,
-                                               device_,
-                                               swapchainImages[i],
-                                               usageFlags,
-                                               surfaceFormat_.format,
-                                               VkExtent3D{.width = width_, .height = height_, .depth = 1},
-                                               debugNameImage);
-    auto imageView = image->createImageView(
+    std::shared_ptr<VulkanImage> image = std::make_shared<VulkanImage>(ctx_,
+                                                                       device_,
+                                                                       swapchainImages[i],
+                                                                       usageFlags,
+                                                                       surfaceFormat_.format,
+                                                                       VkExtent3D{.width = width_, .height = height_, .depth = 1},
+                                                                       debugNameImage);
+    VkImageView imageView = image->createImageView(
         VK_IMAGE_VIEW_TYPE_2D, surfaceFormat_.format, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 1, debugNameImageView);
     swapchainTextures_.push_back(ctx_.texturesPool_.create(VulkanTexture(std::move(image), std::move(imageView))));
   }
@@ -202,7 +202,7 @@ VkImage VulkanSwapchain::getCurrentVkImage() const {
 VkImageView VulkanSwapchain::getCurrentVkImageView() const {
   if (LVK_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
     lvk::vulkan::VulkanTexture* tex = ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_]);
-    return tex->imageView_->getVkImageView();
+    return tex->imageView_;
   }
   return VK_NULL_HANDLE;
 }
