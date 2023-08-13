@@ -93,6 +93,29 @@ void StreamAdapterApple::open() noexcept {
   [stream_ scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
 }
 
+Stream::Status StreamAdapterApple::status() const noexcept {
+  auto appleStatus = [stream_ streamStatus];
+  switch (appleStatus) {
+  case NSStreamStatusAtEnd:
+    return Stream::Status::AtEnd;
+  case NSStreamStatusClosed:
+    return Stream::Status::Closed;
+  case NSStreamStatusError:
+    return Stream::Status::Error;
+  case NSStreamStatusNotOpen:
+    return Stream::Status::NotOpen;
+  case NSStreamStatusOpen:
+    return Stream::Status::Open;
+  case NSStreamStatusOpening:
+    return Stream::Status::Opening;
+  case NSStreamStatusReading:
+    return Stream::Status::Reading;
+  case NSStreamStatusWriting:
+    return Stream::Status::Writing;
+  }
+  IGL_UNREACHABLE_RETURN(Stream::Status::Error);
+}
+
 void StreamAdapterApple::close() noexcept {
   [stream_ removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
   [stream_ close];

@@ -21,6 +21,7 @@ struct StreamAdapterApple final {
   bool initialize(Stream* owner, NSStream* stream) noexcept;
 
   void open() noexcept;
+  [[nodiscard]] Stream::Status status() const noexcept;
   void close() noexcept;
 
   Stream* stream() const noexcept {
@@ -42,6 +43,10 @@ struct StreamAdapterApple final {
 struct InputStreamApple final : InputStream {
   void open() noexcept final {
     streamAdapter_.open();
+  }
+
+  [[nodiscard]] Status status() const noexcept final {
+    return streamAdapter_.status();
   }
 
   void close() noexcept final {
@@ -69,6 +74,10 @@ struct InputStreamApple final : InputStream {
 struct OutputStreamApple final : OutputStream {
   void open() noexcept final {
     streamAdapter_.open();
+  }
+
+  [[nodiscard]] Status status() const noexcept final {
+    return streamAdapter_.status();
   }
 
   void close() noexcept final {

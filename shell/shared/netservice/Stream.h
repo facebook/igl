@@ -24,11 +24,23 @@ struct Stream {
     EndEncountered,
   };
 
+  enum class Status : uint8_t {
+    AtEnd,
+    Closed,
+    Error,
+    NotOpen,
+    Open,
+    Opening,
+    Reading,
+    Writing,
+  };
+
   using Observer = std::function<void(Stream& sender, Event event)>;
 
   virtual ~Stream() = default;
 
   virtual void open() noexcept = 0;
+  [[nodiscard]] virtual Status status() const noexcept = 0;
   virtual void close() noexcept = 0;
 
   [[nodiscard]] const Observer& observer() const noexcept {
