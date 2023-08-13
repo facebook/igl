@@ -60,20 +60,6 @@ void main() {
 
 namespace lvk {
 
-ImGuiRenderer::DrawableData::DrawableData(lvk::IDevice& device) {
-  LVK_ASSERT_MSG(sizeof(ImDrawIdx) == 2, "The constants below may not work with the ImGui data.");
-  const size_t kMaxVertices = 65536u;
-  const size_t kMaxVertexBufferSize = kMaxVertices * sizeof(ImDrawVert);
-  const size_t kMaxIndexBufferSize = kMaxVertices * sizeof(ImDrawIdx);
-
-  const lvk::BufferDesc vbDesc = {
-      .usage = lvk::BufferUsageBits_Storage, .storage = lvk::StorageType_HostVisible, .size = kMaxVertexBufferSize};
-  const lvk::BufferDesc ibDesc = {
-      .usage = lvk::BufferUsageBits_Index, .storage = lvk::StorageType_HostVisible, .size = kMaxIndexBufferSize};
-  vb_ = device.createBuffer(vbDesc, nullptr);
-  ib_ = device.createBuffer(ibDesc, nullptr);
-}
-
 lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(const lvk::Framebuffer& desc) {
   return device_.createRenderPipeline(
       {
@@ -123,6 +109,7 @@ ImGuiRenderer::ImGuiRenderer(lvk::IDevice& device, const char* defaultFontTTF, f
   io.BackendRendererName = "imgui-lvk";
   io.Fonts->TexID = ImTextureID(fontTexture_.indexAsVoid());
   io.FontDefault = font;
+  io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
 }
 
 ImGuiRenderer::~ImGuiRenderer() {
@@ -148,79 +135,103 @@ void ImGuiRenderer::beginFrame(const lvk::Framebuffer& desc) {
 }
 
 void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffer) {
+  static_assert(sizeof(ImDrawIdx) == 2);
+  LVK_ASSERT_MSG(sizeof(ImDrawIdx) == 2, "The constants below may not work with the ImGui data.");
+
   ImGui::EndFrame();
   ImGui::Render();
 
-  ImDrawData* drawData = ImGui::GetDrawData();
+  ImDrawData* dd = ImGui::GetDrawData();
 
-  int fb_width = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
-  int fb_height = (int)(drawData->DisplaySize.y * drawData->FramebufferScale.y);
-  if (fb_width <= 0 || fb_height <= 0 || drawData->CmdListsCount == 0) {
+  int fb_width = (int)(dd->DisplaySize.x * dd->FramebufferScale.x);
+  int fb_height = (int)(dd->DisplaySize.y * dd->FramebufferScale.y);
+  if (fb_width <= 0 || fb_height <= 0 || dd->CmdListsCount == 0) {
     return;
   }
 
   cmdBuffer.cmdBindViewport({
       .x = 0.0f,
       .y = 0.0f,
-      .width = (drawData->DisplaySize.x * drawData->FramebufferScale.x),
-      .height = (drawData->DisplaySize.y * drawData->FramebufferScale.y),
+      .width = (dd->DisplaySize.x * dd->FramebufferScale.x),
+      .height = (dd->DisplaySize.y * dd->FramebufferScale.y),
   });
 
-  const float L = drawData->DisplayPos.x;
-  const float R = drawData->DisplayPos.x + drawData->DisplaySize.x;
-  const float T = drawData->DisplayPos.y;
-  const float B = drawData->DisplayPos.y + drawData->DisplaySize.y;
+  const float L = dd->DisplayPos.x;
+  const float R = dd->DisplayPos.x + dd->DisplaySize.x;
+  const float T = dd->DisplayPos.y;
+  const float B = dd->DisplayPos.y + dd->DisplaySize.y;
 
-  struct VulkanImguiBindData {
-    float LRTB[4]; // ortho projection: left, right, top, bottom
-    uint64_t vb = 0;
-    uint32_t textureId = 0;
-  } bindData = {
-      .LRTB = {L, R, T, B},
-  };
+  const ImVec2 clip_off = dd->DisplayPos;
+  const ImVec2 clip_scale = dd->FramebufferScale;
 
-  const ImVec2 clip_off = drawData->DisplayPos;
-  const ImVec2 clip_scale = drawData->FramebufferScale;
-
-  std::vector<DrawableData>& curFrameDrawables = drawables_[frameIndex_];
+  DrawableData& drawableData = drawables_[frameIndex_];
   frameIndex_ = (frameIndex_ + 1) % LVK_ARRAY_NUM_ELEMENTS(drawables_);
 
-  for (int n = 0; n < drawData->CmdListsCount; n++) {
-    const ImDrawList* cmd_list = drawData->CmdLists[n];
+  if (drawableData.numAllocatedIndices_ < dd->TotalIdxCount) {
+    drawableData.ib_ = device.createBuffer(
+        {.usage = lvk::BufferUsageBits_Index, .storage = lvk::StorageType_HostVisible, .size = dd->TotalIdxCount * sizeof(ImDrawIdx)});
+    drawableData.numAllocatedIndices_ = dd->TotalIdxCount;
+  }
+  if (drawableData.numAllocatedVerteices_ < dd->TotalVtxCount) {
+    drawableData.vb_ = device.createBuffer(
+        {.usage = lvk::BufferUsageBits_Storage, .storage = lvk::StorageType_HostVisible, .size = dd->TotalVtxCount * sizeof(ImDrawVert)});
+    drawableData.numAllocatedVerteices_ = dd->TotalVtxCount;
+  }
 
-    if (n >= curFrameDrawables.size()) {
-      curFrameDrawables.emplace_back(device);
+  // upload vertex/index buffers
+  {
+    ImDrawVert* vtx = (ImDrawVert*)device_.getMappedPtr(drawableData.vb_);
+    uint16_t* idx = (uint16_t*)device_.getMappedPtr(drawableData.ib_);
+    for (int n = 0; n < dd->CmdListsCount; n++) {
+      const ImDrawList* cmdList = dd->CmdLists[n];
+      memcpy(vtx, cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
+      memcpy(idx, cmdList->IdxBuffer.Data, cmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
+      vtx += cmdList->VtxBuffer.Size;
+      idx += cmdList->IdxBuffer.Size;
     }
-    DrawableData& drawableData = curFrameDrawables[n];
+    device_.flushMappedMemory(drawableData.vb_, 0, dd->TotalVtxCount * sizeof(ImDrawVert));
+    device_.flushMappedMemory(drawableData.ib_, 0, dd->TotalIdxCount * sizeof(ImDrawIdx));
+  }
 
-    // Upload vertex/index buffers
-    device.upload(drawableData.vb_, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-    device.upload(drawableData.ib_, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+  uint32_t idxOffset = 0;
+  uint32_t vtxOffset = 0;
 
-    for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++) {
-      const ImDrawCmd cmd = cmd_list->CmdBuffer[cmd_i];
+  cmdBuffer.cmdBindIndexBuffer(drawableData.ib_, lvk::IndexFormat_UI16);
+  cmdBuffer.cmdBindRenderPipeline(pipeline_);
+
+  for (int n = 0; n < dd->CmdListsCount; n++) {
+    const ImDrawList* cmdList = dd->CmdLists[n];
+
+    for (int cmd_i = 0; cmd_i < cmdList->CmdBuffer.Size; cmd_i++) {
+      const ImDrawCmd cmd = cmdList->CmdBuffer[cmd_i];
       LVK_ASSERT(cmd.UserCallback == nullptr);
 
-      const ImVec2 clipMin((cmd.ClipRect.x - clip_off.x) * clip_scale.x, (cmd.ClipRect.y - clip_off.y) * clip_scale.y);
-      const ImVec2 clipMax((cmd.ClipRect.z - clip_off.x) * clip_scale.x, (cmd.ClipRect.w - clip_off.y) * clip_scale.y);
-
-      if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y) {
-        continue;
-      }
-
+      ImVec2 clipMin((cmd.ClipRect.x - clip_off.x) * clip_scale.x, (cmd.ClipRect.y - clip_off.y) * clip_scale.y);
+      ImVec2 clipMax((cmd.ClipRect.z - clip_off.x) * clip_scale.x, (cmd.ClipRect.w - clip_off.y) * clip_scale.y);
+// clang-format off
+      if (clipMin.x < 0.0f) clipMin.x = 0.0f;
+      if (clipMin.y < 0.0f) clipMin.y = 0.0f;
+      if (clipMax.x > fb_width ) clipMax.x = (float)fb_width;
+      if (clipMax.y > fb_height) clipMax.y = (float)fb_height;
+      if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y)
+         continue;
+// clang-format on
+      struct VulkanImguiBindData {
+         float LRTB[4]; // ortho projection: left, right, top, bottom
+         uint64_t vb = 0;
+         uint32_t textureId = 0;
+      } bindData = {
+          .LRTB = {L, R, T, B},
+          .vb = device_.gpuAddress(drawableData.vb_),
+          .textureId = static_cast<uint32_t>(reinterpret_cast<ptrdiff_t>(cmd.TextureId)),
+      };
+      cmdBuffer.cmdPushConstants(bindData);
       cmdBuffer.cmdBindScissorRect(
           {uint32_t(clipMin.x), uint32_t(clipMin.y), uint32_t(clipMax.x - clipMin.x), uint32_t(clipMax.y - clipMin.y)});
-
-      bindData.vb = device_.gpuAddress(drawableData.vb_);
-      bindData.textureId = static_cast<uint32_t>(reinterpret_cast<ptrdiff_t>(cmd.TextureId));
-      cmdBuffer.cmdPushConstants(bindData);
-      cmdBuffer.cmdBindRenderPipeline(pipeline_);
-      cmdBuffer.cmdDrawIndexed(lvk::Primitive_Triangle,
-                               cmd.ElemCount,
-                               sizeof(ImDrawIdx) == sizeof(uint16_t) ? lvk::IndexFormat_UI16 : lvk::IndexFormat_UI32,
-                               drawableData.ib_,
-                               cmd.IdxOffset * sizeof(ImDrawIdx));
+      cmdBuffer.cmdDrawIndexed(lvk::Primitive_Triangle, cmd.ElemCount, 1u, idxOffset + cmd.IdxOffset, int32_t(vtxOffset + cmd.VtxOffset));
     }
+	 idxOffset += cmdList->IdxBuffer.Size;
+    vtxOffset += cmdList->VtxBuffer.Size;
   }
 }
 

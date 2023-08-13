@@ -43,22 +43,22 @@ class CommandBuffer final : public ICommandBuffer {
   void cmdBindDepthStencilState(const DepthStencilState& state) override;
 
   void cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, size_t bufferOffset) override;
+  void cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, size_t indexBufferOffset) override;
   void cmdPushConstants(const void* data, size_t size, size_t offset) override;
 
   void cmdDraw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) override;
   void cmdDrawIndexed(PrimitiveType primitiveType,
-                      size_t indexCount,
-                      IndexFormat indexFormat,
-                      BufferHandle indexBuffer,
-                      size_t indexBufferOffset) override;
+                      uint32_t indexCount,
+                      uint32_t instanceCount,
+                      uint32_t firstIndex,
+                      int32_t vertexOffset,
+                      uint32_t baseInstance) override;
   void cmdDrawIndirect(PrimitiveType primitiveType,
                        BufferHandle indirectBuffer,
                        size_t indirectBufferOffset,
                        uint32_t drawCount,
                        uint32_t stride = 0) override;
   void cmdDrawIndexedIndirect(PrimitiveType primitiveType,
-                              IndexFormat indexFormat,
-                              BufferHandle indexBuffer,
                               BufferHandle indirectBuffer,
                               size_t indirectBufferOffset,
                               uint32_t drawCount,

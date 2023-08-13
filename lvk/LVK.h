@@ -707,9 +707,8 @@ class ICommandBuffer {
   virtual void cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) = 0;
   virtual void cmdBindDepthStencilState(const DepthStencilState& state) = 0;
 
-  virtual void cmdBindVertexBuffer(uint32_t index,
-                                   BufferHandle buffer,
-                                   size_t bufferOffset) = 0;
+  virtual void cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, size_t bufferOffset = 0) = 0;
+  virtual void cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, size_t indexBufferOffset = 0) = 0;
   virtual void cmdPushConstants(const void* data, size_t size, size_t offset = 0) = 0;
   template<typename Struct>
   void cmdPushConstants(const Struct& data) {
@@ -718,18 +717,17 @@ class ICommandBuffer {
 
   virtual void cmdDraw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) = 0;
   virtual void cmdDrawIndexed(PrimitiveType primitiveType,
-                              size_t indexCount,
-                              IndexFormat indexFormat,
-                              BufferHandle indexBuffer,
-                              size_t indexBufferOffset) = 0;
+                              uint32_t indexCount,
+                              uint32_t instanceCount = 1,
+                              uint32_t firstIndex = 0,
+                              int32_t vertexOffset = 0,
+                              uint32_t baseInstance = 0) = 0;
   virtual void cmdDrawIndirect(PrimitiveType primitiveType,
                                BufferHandle indirectBuffer,
                                size_t indirectBufferOffset,
                                uint32_t drawCount,
                                uint32_t stride = 0) = 0;
   virtual void cmdDrawIndexedIndirect(PrimitiveType primitiveType,
-                                      IndexFormat indexFormat,
-                                      BufferHandle indexBuffer,
                                       BufferHandle indirectBuffer,
                                       size_t indirectBufferOffset,
                                       uint32_t drawCount,

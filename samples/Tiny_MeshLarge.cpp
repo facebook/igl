@@ -1115,8 +1115,8 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
           .perObject = device_->gpuAddress(ubPerObject_[frameIndex]),
       };
       buffer.cmdPushConstants(bindings);
-      buffer.cmdDrawIndexed(
-          lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, ib0_, 0);
+      buffer.cmdBindIndexBuffer(ib0_, lvk::IndexFormat_UI32);
+      buffer.cmdDrawIndexed(lvk::Primitive_Triangle, indexData_.size());
       buffer.cmdPopDebugGroupLabel();
     }
     buffer.cmdEndRendering();
@@ -1150,12 +1150,11 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
           .materials = device_->gpuAddress(sbMaterials_),
       };
       buffer.cmdPushConstants(bindings);
-      buffer.cmdDrawIndexed(
-          lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, ib0_, 0);
+      buffer.cmdBindIndexBuffer(ib0_, lvk::IndexFormat_UI32);
+      buffer.cmdDrawIndexed(lvk::Primitive_Triangle, indexData_.size());
       if (enableWireframe_) {
         buffer.cmdBindRenderPipeline(renderPipelineState_MeshWireframe_);
-        buffer.cmdDrawIndexed(
-            lvk::Primitive_Triangle, indexData_.size(), lvk::IndexFormat_UI32, ib0_, 0);
+        buffer.cmdDrawIndexed(lvk::Primitive_Triangle, indexData_.size());
       }
       buffer.cmdPopDebugGroupLabel();
 

@@ -359,6 +359,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     buffer.cmdBindScissorRect(scissor);
     buffer.cmdPushDebugGroupLabel("Render Mesh", 0xff0000ff);
     buffer.cmdBindDepthStencilState(depthStencilState_);
+    buffer.cmdBindIndexBuffer(ib0_, lvk::IndexFormat_UI16);
     // Draw 2 cubes: we use uniform buffer to update matrices
     for (uint32_t i = 0; i != kNumCubes; i++) {
       struct {
@@ -371,7 +372,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
           .vb = device_->gpuAddress(vb0_),
       };
       buffer.cmdPushConstants(bindings);
-      buffer.cmdDrawIndexed(lvk::Primitive_Triangle, 3 * 6 * 2, lvk::IndexFormat_UI16, ib0_, 0);
+      buffer.cmdDrawIndexed(lvk::Primitive_Triangle, 3 * 6 * 2);
     }
     buffer.cmdPopDebugGroupLabel();
   }

@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <vector>
-
 #include <lvk/LVK.h>
 #include <imgui/imgui.h>
 
@@ -35,10 +33,11 @@ class ImGuiRenderer {
   struct DrawableData {
     lvk::Holder<BufferHandle> vb_;
     lvk::Holder<BufferHandle> ib_;
-    explicit DrawableData(lvk::IDevice& device);
+    uint32_t numAllocatedIndices_ = 0;
+    uint32_t numAllocatedVerteices_ = 0;
   };
 
-  std::vector<DrawableData> drawables_[3] = {};
+  DrawableData drawables_[18] = {};
 };
 
 } // namespace lvk
