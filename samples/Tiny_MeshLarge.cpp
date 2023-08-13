@@ -66,20 +66,25 @@ std::string folderContentRoot;
 std::unique_ptr<lvk::ImGuiRenderer> imgui_;
 
 const char* kCodeComputeTest = R"(
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 layout (set = 0, binding = 2, rgba8) uniform readonly  image2D kTextures2Din[];
 layout (set = 0, binding = 2, rgba8) uniform writeonly image2D kTextures2Dout[];
 
-layout(push_constant) uniform constants
-{
-	uint tex;
+layout(push_constant) uniform constants {
+   uint tex;
+   uint width;
+   uint height;
 } pc;
 
 void main() {
-   vec4 pixel = imageLoad(kTextures2Din[pc.tex], ivec2(gl_GlobalInvocationID.xy));
-   float luminance = dot(pixel, vec4(0.299, 0.587, 0.114, 0.0)); // https://www.w3.org/TR/AERT/#color-contrast
-   imageStore(kTextures2Dout[pc.tex], ivec2(gl_GlobalInvocationID.xy), vec4(vec3(luminance), 1.0));
+   ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
+
+   if (pos.x < pc.width && pos.y < pc.height) {
+     vec4 pixel = imageLoad(kTextures2Din[pc.tex], pos);
+     float luminance = dot(pixel, vec4(0.299, 0.587, 0.114, 0.0)); // https://www.w3.org/TR/AERT/#color-contrast
+     imageStore(kTextures2Dout[pc.tex], pos, vec4(vec3(luminance), 1.0));
+   }
 }
 )";
 
@@ -96,8 +101,7 @@ const char* kCodeFullscreenFS = R"(
 layout (location=0) in vec2 uv;
 layout (location=0) out vec4 out_FragColor;
 
-layout(push_constant) uniform constants
-{
+layout(push_constant) uniform constants {
 	uint tex;
 } pc;
 
@@ -1180,14 +1184,18 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
 
     struct {
       uint32_t texture;
+      uint32_t width;
+      uint32_t height;
     } bindings = {
         .texture = tex.index(),
+        .width = (uint32_t)width_,
+        .height = (uint32_t)height_,
     };
     buffer.cmdPushConstants(bindings);
     buffer.cmdDispatchThreadGroups(
         {
-            .width = (uint32_t)width_,
-            .height = (uint32_t)height_,
+            .width = 1 + (uint32_t)width_ / 16,
+            .height = 1 + (uint32_t)height_ / 16,
             .depth = 1u,
         },
         {
