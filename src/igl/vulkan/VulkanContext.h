@@ -45,17 +45,6 @@ struct DeviceQueues {
   DeviceQueues() = default;
 };
 
-struct VulkanContextConfig {
-  uint32_t maxTextures = 512;
-  uint32_t maxSamplers = 512;
-  bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
-  bool enableValidation = true;
-  lvk::ColorSpace swapChainColorSpace = lvk::ColorSpace_SRGB_LINEAR;
-  // owned by the application - should be alive until initContext() returns
-  const void* pipelineCacheData = nullptr;
-  size_t pipelineCacheDataSize = 0;
-};
-
 struct VulkanShaderModule final {
   VkShaderModule vkShaderModule_ = VK_NULL_HANDLE;
   const char* entryPoint_ = nullptr;
@@ -63,7 +52,7 @@ struct VulkanShaderModule final {
 
 class VulkanContext final {
  public:
-  VulkanContext(const VulkanContextConfig& config, void* window, void* display = nullptr);
+  VulkanContext(const lvk::VulkanContextConfig& config, void* window, void* display = nullptr);
   ~VulkanContext();
 
   lvk::Result queryDevices(HWDeviceType deviceType, std::vector<HWDeviceDesc>& outDevices);
@@ -197,7 +186,7 @@ class VulkanContext final {
   // a texture/sampler was deleted since the last descriptor set update
   mutable bool awaitingDeletion_ = false;
 
-  VulkanContextConfig config_;
+  lvk::VulkanContextConfig config_;
 
   lvk::Pool<lvk::ShaderModule, lvk::vulkan::VulkanShaderModule> shaderModulesPool_;
   lvk::Pool<lvk::RenderPipeline, lvk::vulkan::RenderPipelineState> renderPipelinesPool_;

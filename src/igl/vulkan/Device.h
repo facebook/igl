@@ -18,7 +18,6 @@ namespace lvk {
 namespace vulkan {
 
 class VulkanContext;
-class VulkanContextConfig;
 class VulkanShaderModule;
 
 class Device final : public IDevice {
@@ -57,6 +56,7 @@ class Device final : public IDevice {
 
   TextureHandle getCurrentSwapchainTexture() override;
   Format getSwapchainFormat() const override;
+  void recreateSwapchain(int newWidth, int newHeight) override;
 
   VulkanContext& getVulkanContext() {
     return *ctx_.get();
@@ -76,9 +76,6 @@ class Device final : public IDevice {
                                          Result* outResult = nullptr);
 
  private:
-  friend class ComputePipelineState;
-  friend class RenderPipelineState;
-
   VulkanShaderModule createShaderModule(const void* data,
                                         size_t length,
                                         const char* entryPoint,

@@ -291,17 +291,13 @@ static void initObjects() {
     return;
   }
 
-  framebuffer_ = {
-      .color = {{.texture = device_->getCurrentSwapchainTexture()}},
-  };
-
   renderPipelineState_Mesh_ = device_->createRenderPipeline(
       {
           .smVert = device_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
           .smFrag = device_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
           .color =
               {
-                  {.format = device_->getFormat(framebuffer_.color[0].texture)},
+                  {.format = device_->getSwapchainFormat()},
               },
           .depthFormat = framebuffer_.depthStencil.texture ? device_->getFormat(framebuffer_.depthStencil.texture) : lvk::Format_Invalid,
           .cullMode = lvk::CullMode_Back,
@@ -385,7 +381,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
 int main(int argc, char* argv[]) {
   minilog::initialize(nullptr, {.threadNames = false});
 
-  window_ = lvk::initWindow("Vulkan Mesh", width_, height_);
+  window_ = lvk::initWindow("Vulkan Mesh", width_, height_, true);
   initIGL();
 
   initObjects();
@@ -407,8 +403,7 @@ int main(int argc, char* argv[]) {
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     width_ = width;
     height_ = height;
-    auto* vulkanDevice = static_cast<lvk::vulkan::Device*>(device_.get());
-    vulkanDevice->getVulkanContext().initSwapchain(width_, height_);
+    device_->recreateSwapchain(width_, height_);
   });
 
   glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int, int action, int) {
@@ -430,6 +425,10 @@ int main(int argc, char* argv[]) {
     fps_.tick(newTime - prevTime);
     prevTime = newTime;
     if (width_ && height_) {
+      framebuffer_ = {
+          .color = {{.texture = device_->getCurrentSwapchainTexture()}},
+      };
+
       imgui_->beginFrame(framebuffer_);
 
       ImGui::Begin("Texture Viewer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);

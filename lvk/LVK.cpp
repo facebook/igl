@@ -9,6 +9,27 @@
 
 #include <assert.h>
 
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+
+// clang-format off
+#ifdef _WIN32
+#  define GLFW_EXPOSE_NATIVE_WIN32
+#elif defined(__linux__)
+#  define GLFW_EXPOSE_NATIVE_X11
+#else
+#  error Unsupported OS
+#endif
+// clang-format on
+
+#include <GLFW/glfw3native.h>
+
+#include <igl/vulkan/Device.h>
+#include <igl/vulkan/VulkanContext.h>
+
 namespace {
 
 struct TextureFormatProperties {
@@ -161,4 +182,101 @@ void lvk::logShaderSource(const char* text) {
     text++;
   }
   LLOGL("\n");
+}
+
+GLFWwindow* lvk::initWindow(const char* windowTitle, int& outWidth, int& outHeight, bool resizable) {
+  if (!glfwInit()) {
+    return nullptr;
+  }
+
+  const bool wantsWholeArea = outWidth <= 0 || outHeight <= 0;
+
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+  glfwWindowHint(GLFW_RESIZABLE, wantsWholeArea || !resizable ? GLFW_FALSE : GLFW_TRUE);
+
+  // render full screen without overlapping taskbar
+  GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+
+  int x = 0;
+  int y = 0;
+  int w = outWidth;
+  int h = outHeight;
+
+  if (wantsWholeArea) {
+    int areaW = 0;
+    int areaH = 0;
+    glfwGetMonitorWorkarea(monitor, &x, &y, &areaW, &areaH);
+    auto getPercent = [](int value, int percent) {
+      assert(percent > 0 && percent <= 100);
+      return static_cast<int>(static_cast<float>(value) * static_cast<float>(percent) / 100.0f);
+    };
+    if (outWidth < 0) {
+      w = getPercent(areaW, -outWidth);
+      x = (areaW - w) / 2;
+    } else {
+      w = areaW;
+    }
+    if (outHeight < 0) {
+      h = getPercent(areaH, -outHeight);
+      y = (areaH - h) / 2;
+    } else {
+      h = areaH;
+    }
+  }
+
+  GLFWwindow* window = glfwCreateWindow(w, h, windowTitle, nullptr, nullptr);
+
+  if (!window) {
+    glfwTerminate();
+    return nullptr;
+  }
+
+  if (wantsWholeArea) {
+    glfwSetWindowPos(window, x, y);
+  }
+
+  glfwGetWindowSize(window, &outWidth, &outHeight);
+
+  glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+      glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+  });
+
+  glfwSetErrorCallback([](int error, const char* description) { printf("GLFW Error (%i): %s\n", error, description); });
+
+  return window;
+}
+
+std::unique_ptr<lvk::IDevice> lvk::createVulkanDeviceWithSwapchain(GLFWwindow* window,
+                                                                   uint32_t width,
+                                                                   uint32_t height,
+                                                                   const lvk::VulkanContextConfig& cfg,
+                                                                   lvk::HWDeviceType preferredDeviceType) {
+  using namespace lvk;
+#if defined(_WIN32)
+  auto ctx = lvk::vulkan::Device::createContext(cfg, (void*)glfwGetWin32Window(window));
+#elif defined(__linux__)
+  auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetX11Window(window), (void*)glfwGetX11Display());
+#else
+#error Unsupported OS
+#endif
+
+  std::vector<HWDeviceDesc> devices = vulkan::Device::queryDevices(*ctx, preferredDeviceType, nullptr);
+
+  if (devices.empty()) {
+    if (preferredDeviceType == HWDeviceType_Discrete) {
+      devices = vulkan::Device::queryDevices(*ctx, HWDeviceType_Integrated, nullptr);
+    }
+    if (preferredDeviceType == HWDeviceType_Integrated) {
+      devices = vulkan::Device::queryDevices(*ctx, HWDeviceType_Discrete, nullptr);
+    }
+  }
+
+  if (devices.empty()) {
+    LVK_ASSERT_MSG(false, "GPU is not found");
+    return nullptr;
+  }
+
+  return vulkan::Device::create(std::move(ctx), devices[0], width, height);
 }

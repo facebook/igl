@@ -57,7 +57,7 @@ struct VulkanObjects {
 } vk;
 
 void VulkanObjects::init() {
-  device_ = lvk::createVulkanDeviceWithSwapchain(window_, width_, height_, {.maxTextures = 8, .maxSamplers = 8});
+  device_ = lvk::createVulkanDeviceWithSwapchain(window_, width_, height_, {});
 
   createFramebuffer();
 
@@ -123,14 +123,13 @@ void VulkanObjects::render() {
 int main(int argc, char* argv[]) {
   minilog::initialize(nullptr, {.threadNames = false});
 
-  window_ = lvk::initWindow("Vulkan Triangle", width_, height_);
+  window_ = lvk::initWindow("Vulkan Triangle", width_, height_, true);
   vk.init();
 
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     width_ = width;
     height_ = height;
-    lvk::vulkan::Device* vulkanDevice = static_cast<lvk::vulkan::Device*>(device_.get());
-    vulkanDevice->getVulkanContext().initSwapchain(width_, height_);
+    device_->recreateSwapchain(width_, height_);
     if (width && height) {
       vk.createFramebuffer();
     }

@@ -778,7 +778,11 @@ TextureHandle Device::getCurrentSwapchainTexture() {
   return tex;
 }
 
-std::unique_ptr<VulkanContext> Device::createContext(const VulkanContextConfig& config, void* window, void* display) {
+void Device::recreateSwapchain(int newWidth, int newHeight) {
+  ctx_->initSwapchain(newWidth, newHeight);
+}
+
+std::unique_ptr<VulkanContext> Device::createContext(const lvk::VulkanContextConfig& config, void* window, void* display) {
   return std::make_unique<VulkanContext>(config, window, display);
 }
 

@@ -782,17 +782,44 @@ class IDevice {
 
   virtual TextureHandle getCurrentSwapchainTexture() = 0;
   virtual Format getSwapchainFormat() const = 0;
+  virtual void recreateSwapchain(int newWidth, int newHeight) = 0;
  protected:
   IDevice() = default;
 };
 
 } // namespace lvk
 
+typedef struct GLFWwindow GLFWwindow;
+
 namespace lvk {
+
+struct VulkanContextConfig {
+  uint32_t maxTextures = 512;
+  uint32_t maxSamplers = 512;
+  bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
+  bool enableValidation = true;
+  lvk::ColorSpace swapChainColorSpace = lvk::ColorSpace_SRGB_LINEAR;
+  // owned by the application - should be alive until initContext() returns
+  const void* pipelineCacheData = nullptr;
+  size_t pipelineCacheDataSize = 0;
+};
 
 [[nodiscard]] bool isDepthOrStencilFormat(lvk::Format format);
 [[nodiscard]] uint32_t calcNumMipLevels(uint32_t width, uint32_t height);
 [[nodiscard]] uint32_t getTextureBytesPerLayer(uint32_t width, uint32_t height, lvk::Format format, uint32_t level);
 void logShaderSource(const char* text);
+
+/*
+ * width/height  > 0: window size in pixels
+ * width/height == 0: take the whole monitor work area
+ * width/height  < 0: take a percentage of the monitor work area, for example (-95, -90)
+ *   The actual values in pixels are returned in parameters.
+ */
+GLFWwindow* initWindow(const char* windowTitle, int& outWidth, int& outHeight, bool resizable = false);
+std::unique_ptr<lvk::IDevice> createVulkanDeviceWithSwapchain(GLFWwindow* window,
+                                                              uint32_t width,
+                                                              uint32_t height,
+                                                              const lvk::VulkanContextConfig& cfg,
+                                                              lvk::HWDeviceType preferredDeviceType = lvk::HWDeviceType_Discrete);
 
 } // namespace lvk

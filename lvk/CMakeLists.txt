@@ -22,7 +22,7 @@ lvk_set_folder(LVKLibrary "LVK")
 
 add_subdirectory(vulkan)
 
-target_link_libraries(LVKLibrary PUBLIC LVKVulkan)
+target_link_libraries(LVKLibrary PUBLIC LVKVulkan glfw)
 
 # temporary
 target_link_libraries(LVKLibrary PUBLIC IGLVulkan)

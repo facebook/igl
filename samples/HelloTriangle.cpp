@@ -69,7 +69,7 @@ void render() {
 int main(int argc, char* argv[]) {
   minilog::initialize(nullptr, {.threadNames = false});
 
-  window_ = lvk::initWindow("Vulkan Hello Triangle", width_, height_);
+  window_ = lvk::initWindow("Vulkan Hello Triangle", width_, height_, true);
 
   device_ = lvk::createVulkanDeviceWithSwapchain(window_, width_, height_, {});
   renderPipelineState_Triangle_ = device_->createRenderPipeline(
@@ -85,8 +85,7 @@ int main(int argc, char* argv[]) {
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     width_ = width;
     height_ = height;
-    lvk::vulkan::Device* vulkanDevice = static_cast<lvk::vulkan::Device*>(device_.get());
-    vulkanDevice->getVulkanContext().initSwapchain(width_, height_);
+    device_->recreateSwapchain(width_, height_);
   });
 
   double prevTime = glfwGetTime();
