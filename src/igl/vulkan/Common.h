@@ -19,7 +19,7 @@
 #include <volk.h>
 
 #include <lvk/LVK.h>
-#include <igl/vulkan/VulkanHelpers.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 // Enable to use VulkanMemoryAllocator (VMA)
 #define LVK_VULKAN_USE_VMA 1

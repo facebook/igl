@@ -213,7 +213,13 @@ RenderPipelineState::RenderPipelineState(lvk::vulkan::Device* device, const Rend
   // Iterate and cache vertex input bindings and attributes
   const lvk::VertexInput& vstate = desc_.vertexInput;
 
-  vertexInputStateCreateInfo_ = ivkGetPipelineVertexInputStateCreateInfo_Empty();
+  vertexInputStateCreateInfo_ = VkPipelineVertexInputStateCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+      .vertexBindingDescriptionCount = 0,
+      .pVertexBindingDescriptions = nullptr,
+      .vertexAttributeDescriptionCount = 0,
+      .pVertexAttributeDescriptions = nullptr,
+  };
 
   bool bufferAlreadyBound[VertexInput::LVK_VERTEX_BUFFER_MAX] = {};
 
@@ -310,17 +316,27 @@ VkPipeline RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& 
     LVK_ASSERT(attachment.format != Format_Invalid);
     colorAttachmentFormats[i] = formatToVkFormat(attachment.format);
     if (!attachment.blendEnabled) {
-      colorBlendAttachmentStates[i] = ivkGetPipelineColorBlendAttachmentState_NoBlending();
+      colorBlendAttachmentStates[i] = VkPipelineColorBlendAttachmentState{
+          .blendEnable = VK_FALSE,
+          .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+          .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
+          .colorBlendOp = VK_BLEND_OP_ADD,
+          .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+          .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+          .alphaBlendOp = VK_BLEND_OP_ADD,
+          .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+      };
     } else {
-      colorBlendAttachmentStates[i] = ivkGetPipelineColorBlendAttachmentState(attachment.blendEnabled,
-                                                                              blendFactorToVkBlendFactor(attachment.srcRGBBlendFactor),
-                                                                              blendFactorToVkBlendFactor(attachment.dstRGBBlendFactor),
-                                                                              blendOpToVkBlendOp(attachment.rgbBlendOp),
-                                                                              blendFactorToVkBlendFactor(attachment.srcAlphaBlendFactor),
-                                                                              blendFactorToVkBlendFactor(attachment.dstAlphaBlendFactor),
-                                                                              blendOpToVkBlendOp(attachment.alphaBlendOp),
-                                                                              VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                                                                                  VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT);
+      colorBlendAttachmentStates[i] = VkPipelineColorBlendAttachmentState{
+          .blendEnable = VK_TRUE,
+          .srcColorBlendFactor = blendFactorToVkBlendFactor(attachment.srcRGBBlendFactor),
+          .dstColorBlendFactor = blendFactorToVkBlendFactor(attachment.dstRGBBlendFactor),
+          .colorBlendOp = blendOpToVkBlendOp(attachment.rgbBlendOp),
+          .srcAlphaBlendFactor = blendFactorToVkBlendFactor(attachment.srcAlphaBlendFactor),
+          .dstAlphaBlendFactor = blendFactorToVkBlendFactor(attachment.dstAlphaBlendFactor),
+          .alphaBlendOp = blendOpToVkBlendOp(attachment.alphaBlendOp),
+          .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+      };
     }
   }
 
@@ -332,13 +348,13 @@ VkPipeline RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& 
   LVK_ASSERT(fragModule);
 
   std::vector<VkPipelineShaderStageCreateInfo> stages = {
-      ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertModule->vkShaderModule_, vertModule->entryPoint_),
-      ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragModule->vkShaderModule_, fragModule->entryPoint_),
+      lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertModule->vkShaderModule_, vertModule->entryPoint_),
+      lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragModule->vkShaderModule_, fragModule->entryPoint_),
   };
 
   if (geomModule) {
     stages.push_back(
-        ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_GEOMETRY_BIT, geomModule->vkShaderModule_, geomModule->entryPoint_));
+        lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_GEOMETRY_BIT, geomModule->vkShaderModule_, geomModule->entryPoint_));
   }
 
   lvk::vulkan::VulkanPipelineBuilder()

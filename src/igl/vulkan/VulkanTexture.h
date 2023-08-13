@@ -11,7 +11,7 @@
 #include <vector>
 
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/VulkanHelpers.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 namespace lvk::vulkan {
 

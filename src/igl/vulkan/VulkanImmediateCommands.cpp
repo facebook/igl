@@ -27,7 +27,7 @@ VulkanImmediateCommands::VulkanImmediateCommands(VkDevice device, uint32_t queue
       .queueFamilyIndex = queueFamilyIndex,
   };
   VK_ASSERT(vkCreateCommandPool(device, &ci, nullptr, &commandPool_));
-  ivkSetDebugObjectName(device, VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)commandPool_, debugName);
+  lvk::setDebugObjectName(device, VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)commandPool_, debugName);
 
   const VkCommandBufferAllocateInfo ai = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,

@@ -12,11 +12,10 @@
 #include <cstdlib>
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-#include <windows.h>
+#  include <windows.h>
 #endif
 
 #include <lvk/vulkan/VulkanUtils.h>
-#include <igl/vulkan/VulkanHelpers.h>
 
 namespace lvk {
 namespace vulkan {

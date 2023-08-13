@@ -13,7 +13,6 @@
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/VulkanTexture.h>
 
@@ -356,14 +355,14 @@ lvk::Holder<lvk::ComputePipelineHandle> Device::createComputePipeline(const Comp
   const VkComputePipelineCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
       .flags = 0,
-      .stage = ivkGetPipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, sm->vkShaderModule_, sm->entryPoint_),
+      .stage = lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, sm->vkShaderModule_, sm->entryPoint_),
       .layout = ctx_->vkPipelineLayout_,
       .basePipelineHandle = VK_NULL_HANDLE,
       .basePipelineIndex = -1,
   };
   VkPipeline pipeline = VK_NULL_HANDLE;
   VK_ASSERT(vkCreateComputePipelines(ctx_->getVkDevice(), ctx_->pipelineCache_, 1, &ci, nullptr, &pipeline));
-  VK_ASSERT(ivkSetDebugObjectName(ctx_->getVkDevice(), VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline, desc.debugName));
+  VK_ASSERT(lvk::setDebugObjectName(ctx_->getVkDevice(), VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline, desc.debugName));
 
   // a shader module can be destroyed while pipelines created using its shaders are still in use
   // https://registry.khronos.org/vulkan/specs/1.3/html/chap9.html#vkDestroyShaderModule
@@ -558,7 +557,10 @@ Result Device::upload(TextureHandle handle, const TextureRangeDesc& range, const
                                       vkFormat,
                                       uploadData);
   } else {
-    const VkRect2D imageRegion = ivkGetRect2D(range.x, range.y, range.dimensions.width, range.dimensions.height);
+    const VkRect2D imageRegion = {
+        .offset = {.x = (int)range.x, .y = (int)range.y},
+        .extent = {.width = range.dimensions.width, .height = range.dimensions.height},
+    };
     ctx_->stagingDevice_->imageData2D(
         *texture->image_.get(), imageRegion, range.mipLevel, range.numMipLevels, range.layer, range.numLayers, vkFormat, data);
   }
@@ -636,7 +638,7 @@ VulkanShaderModule Device::createShaderModule(const void* data,
     return VulkanShaderModule();
   }
 
-  VK_ASSERT(ivkSetDebugObjectName(ctx_->vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
+  VK_ASSERT(lvk::setDebugObjectName(ctx_->vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
   LVK_ASSERT(vkShaderModule != VK_NULL_HANDLE);
   LVK_ASSERT(entryPoint);
@@ -716,7 +718,7 @@ VulkanShaderModule Device::createShaderModule(ShaderStage stage,
     return VulkanShaderModule();
   }
 
-  VK_ASSERT(ivkSetDebugObjectName(ctx_->vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
+  VK_ASSERT(lvk::setDebugObjectName(ctx_->vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
   LVK_ASSERT(vkShaderModule != VK_NULL_HANDLE);
   LVK_ASSERT(entryPoint);

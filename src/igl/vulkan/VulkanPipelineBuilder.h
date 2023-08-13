@@ -8,7 +8,8 @@
 #pragma once
 
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/VulkanHelpers.h>
+#include <lvk/vulkan/VulkanUtils.h>
+
 #include <vector>
 
 namespace lvk::vulkan {

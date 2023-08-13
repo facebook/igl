@@ -332,7 +332,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
         .loadOp = loadOpToVkAttachmentLoadOp(descColor.loadOp),
         .storeOp = storeOpToVkAttachmentStoreOp(descColor.storeOp),
         .clearValue =
-            ivkGetClearColorValue(descColor.clearColor[0], descColor.clearColor[1], descColor.clearColor[2], descColor.clearColor[3]),
+            {.color = {.float32 = {descColor.clearColor[0], descColor.clearColor[1], descColor.clearColor[2], descColor.clearColor[3]}}},
     };
     // handle MSAA
     if (descColor.storeOp == StoreOp_MsaaResolve) {
@@ -360,7 +360,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
         .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .loadOp = loadOpToVkAttachmentLoadOp(descDepth.loadOp),
         .storeOp = storeOpToVkAttachmentStoreOp(descDepth.storeOp),
-        .clearValue = ivkGetClearDepthStencilValue(descDepth.clearDepth, descDepth.clearStencil),
+        .clearValue = {.depthStencil = {.depth = descDepth.clearDepth, .stencil = descDepth.clearStencil}},
     };
     const lvk::Dimensions dim = depthTexture.getDimensions();
     if (fbWidth) {

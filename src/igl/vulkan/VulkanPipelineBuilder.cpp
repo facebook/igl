@@ -7,16 +7,81 @@
 
 #include "VulkanPipelineBuilder.h"
 
+#include "lvk/vulkan/VulkanUtils.h"
+
 namespace lvk::vulkan {
 
 uint32_t VulkanPipelineBuilder::numPipelinesCreated_ = 0;
 
 VulkanPipelineBuilder::VulkanPipelineBuilder() :
-  vertexInputState_(ivkGetPipelineVertexInputStateCreateInfo_Empty()),
-  inputAssembly_(ivkGetPipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE)),
-  rasterizationState_(ivkGetPipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE)),
-  multisampleState_(ivkGetPipelineMultisampleStateCreateInfo_Empty()),
-  depthStencilState_(ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests()) {}
+  vertexInputState_(VkPipelineVertexInputStateCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+      .vertexBindingDescriptionCount = 0,
+      .pVertexBindingDescriptions = nullptr,
+      .vertexAttributeDescriptionCount = 0,
+      .pVertexAttributeDescriptions = nullptr,
+  }),
+  inputAssembly_({
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+      .flags = 0,
+      .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      .primitiveRestartEnable = VK_FALSE,
+  }),
+  rasterizationState_({
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+      .flags = 0,
+      .depthClampEnable = VK_FALSE,
+      .rasterizerDiscardEnable = VK_FALSE,
+      .polygonMode = VK_POLYGON_MODE_FILL,
+      .cullMode = VK_CULL_MODE_NONE,
+      .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+      .depthBiasEnable = VK_FALSE,
+      .depthBiasConstantFactor = 0.0f,
+      .depthBiasClamp = 0.0f,
+      .depthBiasSlopeFactor = 0.0f,
+      .lineWidth = 1.0f,
+  }),
+  multisampleState_({
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+      .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+      .sampleShadingEnable = VK_FALSE,
+      .minSampleShading = 1.0f,
+      .pSampleMask = nullptr,
+      .alphaToCoverageEnable = VK_FALSE,
+      .alphaToOneEnable = VK_FALSE,
+  }),
+  depthStencilState_({
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+      .pNext = NULL,
+      .flags = 0,
+      .depthTestEnable = VK_FALSE,
+      .depthWriteEnable = VK_FALSE,
+      .depthCompareOp = VK_COMPARE_OP_LESS,
+      .depthBoundsTestEnable = VK_FALSE,
+      .stencilTestEnable = VK_FALSE,
+      .front =
+          {
+              .failOp = VK_STENCIL_OP_KEEP,
+              .passOp = VK_STENCIL_OP_KEEP,
+              .depthFailOp = VK_STENCIL_OP_KEEP,
+              .compareOp = VK_COMPARE_OP_NEVER,
+              .compareMask = 0,
+              .writeMask = 0,
+              .reference = 0,
+          },
+      .back =
+          {
+              .failOp = VK_STENCIL_OP_KEEP,
+              .passOp = VK_STENCIL_OP_KEEP,
+              .depthFailOp = VK_STENCIL_OP_KEEP,
+              .compareOp = VK_COMPARE_OP_NEVER,
+              .compareMask = 0,
+              .writeMask = 0,
+              .reference = 0,
+          },
+      .minDepthBounds = 0.0f,
+      .maxDepthBounds = 1.0f,
+  }) {}
 
 VulkanPipelineBuilder& VulkanPipelineBuilder::depthBiasEnable(bool enable) {
   rasterizationState_.depthBiasEnable = enable ? VK_TRUE : VK_FALSE;
@@ -131,13 +196,27 @@ VkResult VulkanPipelineBuilder::build(VkDevice device,
                                       VkPipelineLayout pipelineLayout,
                                       VkPipeline* outPipeline,
                                       const char* debugName) noexcept {
-  const VkPipelineDynamicStateCreateInfo dynamicState =
-      ivkGetPipelineDynamicStateCreateInfo((uint32_t)dynamicStates_.size(), dynamicStates_.data());
-  // viewport and scissor are always dynamic
-  const VkPipelineViewportStateCreateInfo viewportState = ivkGetPipelineViewportStateCreateInfo(nullptr, nullptr);
-  const VkPipelineColorBlendStateCreateInfo colorBlendState =
-      ivkGetPipelineColorBlendStateCreateInfo(uint32_t(colorBlendAttachmentStates_.size()), colorBlendAttachmentStates_.data());
-
+  const VkPipelineDynamicStateCreateInfo dynamicState = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+      .dynamicStateCount = (uint32_t)dynamicStates_.size(),
+      .pDynamicStates = dynamicStates_.data(),
+  };
+  // viewport and scissor can be NULL if the viewport state is dynamic
+  // https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/VkPipelineViewportStateCreateInfo.html
+  const VkPipelineViewportStateCreateInfo viewportState = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+      .viewportCount = 1,
+      .pViewports = nullptr,
+      .scissorCount = 1,
+      .pScissors = nullptr,
+  };
+  const VkPipelineColorBlendStateCreateInfo colorBlendState = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+      .logicOpEnable = VK_FALSE,
+      .logicOp = VK_LOGIC_OP_COPY,
+      .attachmentCount = uint32_t(colorBlendAttachmentStates_.size()),
+      .pAttachments = colorBlendAttachmentStates_.data(),
+  };
   LVK_ASSERT(colorAttachmentFormats_.size() == colorBlendAttachmentStates_.size());
 
   const VkPipelineRenderingCreateInfo renderingInfo = {
@@ -180,7 +259,7 @@ VkResult VulkanPipelineBuilder::build(VkDevice device,
   numPipelinesCreated_++;
 
   // set debug name
-  return ivkSetDebugObjectName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)*outPipeline, debugName);
+  return lvk::setDebugObjectName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)*outPipeline, debugName);
 }
 
 } // namespace lvk::vulkan

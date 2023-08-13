@@ -135,6 +135,26 @@ bool validateImageLimits(VkImageType imageType,
   return true;
 }
 
+bool isHostVisibleSingleHeapMemory(VkPhysicalDevice physDev) {
+  VkPhysicalDeviceMemoryProperties memProperties;
+
+  vkGetPhysicalDeviceMemoryProperties(physDev, &memProperties);
+
+  if (memProperties.memoryHeapCount != 1) {
+    return false;
+  }
+
+  const uint32_t flag = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+  for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+    if ((memProperties.memoryTypes[i].propertyFlags & flag) == flag) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void getInstanceExtensionProps(std::vector<VkExtensionProperties>& props,
                                const char* validationLayer = nullptr) {
   uint32_t numExtensions = 0;
@@ -424,7 +444,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 
   vkPhysicalDevice_ = (VkPhysicalDevice)desc.guid;
 
-  useStaging_ = !ivkIsHostVisibleSingleHeapMemory(vkPhysicalDevice_);
+  useStaging_ = !isHostVisibleSingleHeapMemory(vkPhysicalDevice_);
 
   vkGetPhysicalDeviceFeatures2(vkPhysicalDevice_, &vkFeatures10_);
   vkGetPhysicalDeviceProperties2(vkPhysicalDevice_, &vkPhysicalDeviceProperties2_);
@@ -715,7 +735,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
   vkGetDeviceQueue(vkDevice_, deviceQueues_.graphicsQueueFamilyIndex, 0, &deviceQueues_.graphicsQueue);
   vkGetDeviceQueue(vkDevice_, deviceQueues_.computeQueueFamilyIndex, 0, &deviceQueues_.computeQueue);
 
-  VK_ASSERT(ivkSetDebugObjectName(vkDevice_, VK_OBJECT_TYPE_DEVICE, (uint64_t)vkDevice_, "Device: VulkanContext::vkDevice_"));
+  VK_ASSERT(lvk::setDebugObjectName(vkDevice_, VK_OBJECT_TYPE_DEVICE, (uint64_t)vkDevice_, "Device: VulkanContext::vkDevice_"));
 
   immediate_ = std::make_unique<lvk::vulkan::VulkanImmediateCommands>(
       vkDevice_, deviceQueues_.graphicsQueueFamilyIndex, "VulkanContext::immediate_");
@@ -770,7 +790,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     VulkanTexture dummyTexture(std::move(image), std::move(imageView));
     const uint32_t pixel = 0xFF000000;
     const void* data[] = {&pixel};
-    const VkRect2D imageRegion = ivkGetRect2D(0, 0, 1, 1);
+    const VkRect2D imageRegion = {.offset = {.x = 0, .y = 0}, .extent = {.width = 1, .height = 1}};
     stagingDevice_->imageData2D(*dummyTexture.image_.get(), imageRegion, 0, 1, 0, 1, dummyTextureFormat, data);
     texturesPool_.create(std::move(dummyTexture));
     LVK_ASSERT(texturesPool_.numObjects() == 1);
@@ -778,16 +798,29 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 
   // default sampler
   LVK_ASSERT(samplersPool_.numObjects() == 0);
-  createSampler(ivkGetSamplerCreateInfo(VK_FILTER_LINEAR,
-                                        VK_FILTER_LINEAR,
-                                        VK_SAMPLER_MIPMAP_MODE_NEAREST,
-                                        VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                        VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                        VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                        0.0f,
-                                        0.0f),
-                nullptr,
-                "Sampler: default");
+  createSampler(
+      {
+          .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+          .pNext = nullptr,
+          .flags = 0,
+          .magFilter = VK_FILTER_LINEAR,
+          .minFilter = VK_FILTER_LINEAR,
+          .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+          .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+          .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+          .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+          .mipLodBias = 0.0f,
+          .anisotropyEnable = VK_FALSE,
+          .maxAnisotropy = 0.0f,
+          .compareEnable = VK_FALSE,
+          .compareOp = VK_COMPARE_OP_ALWAYS,
+          .minLod = 0.0f,
+          .maxLod = 0.0f,
+          .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+          .unnormalizedCoordinates = VK_FALSE,
+      },
+      nullptr,
+      "Sampler: default");
 
   if (!LVK_VERIFY(config_.maxSamplers <= vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSamplers)) {
     LLOGW("Max Samplers exceeded %u (max %u)",
@@ -807,16 +840,28 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     // create default descriptor set layout which is going to be shared by graphics pipelines
     constexpr uint32_t numBindings = 3;
     const VkDescriptorSetLayoutBinding bindings[numBindings] = {
-        ivkGetDescriptorSetLayoutBinding(kBinding_Textures, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures),
-        ivkGetDescriptorSetLayoutBinding(kBinding_Samplers, VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers),
-        ivkGetDescriptorSetLayoutBinding(kBinding_StorageImages, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, config_.maxTextures),
+        lvk::getDSLBinding(kBinding_Textures, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures),
+        lvk::getDSLBinding(kBinding_Samplers, VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers),
+        lvk::getDSLBinding(kBinding_StorageImages, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, config_.maxTextures),
     };
     const uint32_t flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
                            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
     const VkDescriptorBindingFlags bindingFlags[numBindings] = {flags, flags, flags};
-    VK_ASSERT(ivkCreateDescriptorSetLayout(vkDevice_, numBindings, bindings, bindingFlags, &vkDSLBindless_));
-    VK_ASSERT(ivkSetDebugObjectName(
-        vkDevice_, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)vkDSLBindless_, "Descriptor Set Layout: VulkanContext::dslBindless_"));
+    const VkDescriptorSetLayoutBindingFlagsCreateInfo setLayoutBindingFlagsCI = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
+        .bindingCount = numBindings,
+        .pBindingFlags = bindingFlags,
+    };
+    const VkDescriptorSetLayoutCreateInfo dslci = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .pNext = &setLayoutBindingFlagsCI,
+        .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
+        .bindingCount = numBindings,
+        .pBindings = bindings,
+    };
+    VK_ASSERT(vkCreateDescriptorSetLayout(vkDevice_, &dslci, nullptr, &vkDSLBindless_));
+    VK_ASSERT(lvk::setDebugObjectName(
+        vkDevice_, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)vkDSLBindless_, "Descriptor Set Layout: VulkanContext::vkDSLBindless_"));
 
     // create default descriptor pool and allocate 1 descriptor set
     const uint32_t numSets = 1;
@@ -827,9 +872,22 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, numSets * config_.maxTextures},
     };
     bindlessDSets_.resize(numSets);
-    VK_ASSERT_RETURN(ivkCreateDescriptorPool(vkDevice_, numSets, numBindings, poolSizes, &vkDPBindless_));
+    const VkDescriptorPoolCreateInfo ci = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+        .maxSets = numSets,
+        .poolSizeCount = numBindings,
+        .pPoolSizes = poolSizes,
+    };
+    VK_ASSERT_RETURN(vkCreateDescriptorPool(vkDevice_, &ci, nullptr, &vkDPBindless_));
     for (size_t i = 0; i != numSets; i++) {
-      VK_ASSERT_RETURN(ivkAllocateDescriptorSet(vkDevice_, vkDPBindless_, vkDSLBindless_, &bindlessDSets_[i].ds));
+      const VkDescriptorSetAllocateInfo ai = {
+          .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+          .descriptorPool = vkDPBindless_,
+          .descriptorSetCount = 1,
+          .pSetLayouts = &vkDSLBindless_,
+      };
+      VK_ASSERT_RETURN(vkAllocateDescriptorSets(vkDevice_, &ai, &bindlessDSets_[i].ds));
     }
   }
 
@@ -848,10 +906,15 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
         .offset = 0,
         .size = kPushConstantsSize,
     };
-    const VkPipelineLayoutCreateInfo ci = ivkGetPipelineLayoutCreateInfo(1, &vkDSLBindless_, &range);
-
+    const VkPipelineLayoutCreateInfo ci = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        .setLayoutCount = 1,
+        .pSetLayouts = &vkDSLBindless_,
+        .pushConstantRangeCount = 1,
+        .pPushConstantRanges = &range,
+    };
     VK_ASSERT(vkCreatePipelineLayout(vkDevice_, &ci, nullptr, &vkPipelineLayout_));
-    VK_ASSERT(ivkSetDebugObjectName(
+    VK_ASSERT(lvk::setDebugObjectName(
         vkDevice_, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)vkPipelineLayout_, "Pipeline Layout: VulkanContext::pipelineLayout_"));
   }
 
@@ -1026,21 +1089,39 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   auto& dsetToUpdate = bindlessDSets_[nextDSetIndex];
 
   if (!infoSampledImages.empty()) {
-    write[numBindings++] = ivkGetWriteDescriptorSet_ImageInfo(
-        dsetToUpdate.ds, kBinding_Textures, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, (uint32_t)infoSampledImages.size(), infoSampledImages.data());
-  };
+    write[numBindings++] = VkWriteDescriptorSet{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = dsetToUpdate.ds,
+        .dstBinding = kBinding_Textures,
+        .dstArrayElement = 0,
+        .descriptorCount = (uint32_t)infoSampledImages.size(),
+        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+        .pImageInfo = infoSampledImages.data(),
+    };
+  }
 
   if (!infoSamplers.empty()) {
-    write[numBindings++] = ivkGetWriteDescriptorSet_ImageInfo(
-        dsetToUpdate.ds, kBinding_Samplers, VK_DESCRIPTOR_TYPE_SAMPLER, (uint32_t)infoSamplers.size(), infoSamplers.data());
+    write[numBindings++] = VkWriteDescriptorSet{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = dsetToUpdate.ds,
+        .dstBinding = kBinding_Samplers,
+        .dstArrayElement = 0,
+        .descriptorCount = (uint32_t)infoSamplers.size(),
+        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+        .pImageInfo = infoSamplers.data(),
+    };
   }
 
   if (!infoStorageImages.empty()) {
-    write[numBindings++] = ivkGetWriteDescriptorSet_ImageInfo(dsetToUpdate.ds,
-                                                              kBinding_StorageImages,
-                                                              VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                              (uint32_t)infoStorageImages.size(),
-                                                              infoStorageImages.data());
+    write[numBindings++] = VkWriteDescriptorSet{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = dsetToUpdate.ds,
+        .dstBinding = kBinding_StorageImages,
+        .dstArrayElement = 0,
+        .descriptorCount = (uint32_t)infoStorageImages.size(),
+        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        .pImageInfo = infoStorageImages.data(),
+    };
   }
 
   // do not switch to the next descriptor set if there is nothing to update
@@ -1063,7 +1144,7 @@ SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci, lvk::R
   VkSampler sampler = VK_NULL_HANDLE;
 
   VK_ASSERT(vkCreateSampler(vkDevice_, &ci, nullptr, &sampler));
-  VK_ASSERT(ivkSetDebugObjectName(vkDevice_, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, debugName));
+  VK_ASSERT(lvk::setDebugObjectName(vkDevice_, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, debugName));
 
   SamplerHandle handle = samplersPool_.create(VkSampler(sampler));
 

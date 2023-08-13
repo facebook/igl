@@ -28,10 +28,19 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
   ctx_(ctx), device_(device) {
   LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_CREATE);
 
-  VK_ASSERT(ivkCreateImageView(
-      device_, image, type, format, VkImageSubresourceRange{aspectMask, baseLevel, numLevels, baseLayer, numLayers}, &vkImageView_));
-
-  VK_ASSERT(ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vkImageView_, debugName));
+  const VkImageViewCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+      .image = image,
+      .viewType = type,
+      .format = format,
+      .components = {.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                     .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                     .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                     .a = VK_COMPONENT_SWIZZLE_IDENTITY},
+      .subresourceRange = {aspectMask, baseLevel, numLevels, baseLayer, numLayers},
+  };
+  VK_ASSERT(vkCreateImageView(device, &ci, nullptr, &vkImageView_));
+  VK_ASSERT(lvk::setDebugObjectName(device_, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vkImageView_, debugName));
 }
 
 VulkanImageView::~VulkanImageView() {

@@ -55,7 +55,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   imageFormat_(imageFormat),
   isDepthFormat_(isDepthFormat(imageFormat)),
   isStencilFormat_(isStencilFormat(imageFormat)) {
-  VK_ASSERT(ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_IMAGE, (uint64_t)vkImage_, debugName));
+  VK_ASSERT(lvk::setDebugObjectName(device_, VK_OBJECT_TYPE_IMAGE, (uint64_t)vkImage_, debugName));
 }
 
 VulkanImage::VulkanImage(const VulkanContext& ctx,
@@ -93,8 +93,23 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   LVK_ASSERT(extent.height > 0);
   LVK_ASSERT(extent.depth > 0);
 
-  const VkImageCreateInfo ci =
-      ivkGetImageCreateInfo(type, imageFormat_, tiling, usageFlags, extent_, levels_, layers_, createFlags, samples);
+  const VkImageCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = createFlags,
+      .imageType = type,
+      .format = imageFormat_,
+      .extent = extent_,
+      .mipLevels = levels_,
+      .arrayLayers = layers_,
+      .samples = samples,
+      .tiling = tiling,
+      .usage = usageFlags,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .queueFamilyIndexCount = 0,
+      .pQueueFamilyIndices = nullptr,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+  };
 
   if (LVK_VULKAN_USE_VMA) {
     vmaAllocInfo_.usage = memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT ? VMA_MEMORY_USAGE_CPU_TO_GPU : VMA_MEMORY_USAGE_AUTO;
@@ -117,7 +132,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       VkMemoryRequirements memRequirements;
       vkGetImageMemoryRequirements(device, vkImage_, &memRequirements);
 
-      VK_ASSERT(ivkAllocateMemory(physicalDevice_, device_, &memRequirements, memFlags, &vkMemory_));
+      VK_ASSERT(lvk::allocateMemory(physicalDevice_, device_, &memRequirements, memFlags, &vkMemory_));
       VK_ASSERT(vkBindImageMemory(device_, vkImage_, vkMemory_, 0));
     }
 
@@ -127,7 +142,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
     }
   }
 
-  VK_ASSERT(ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_IMAGE, (uint64_t)vkImage_, debugName));
+  VK_ASSERT(lvk::setDebugObjectName(device_, VK_OBJECT_TYPE_IMAGE, (uint64_t)vkImage_, debugName));
 
   // Get physical device's properties for the image's format
   vkGetPhysicalDeviceFormatProperties(physicalDevice_, imageFormat_, &formatProperties_);
@@ -244,7 +259,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,
     dstAccessMask |= VK_ACCESS_TRANSFER_READ_BIT;
   }
 
-  ivkImageMemoryBarrier(
+  lvk::imageMemoryBarrier(
       commandBuffer, vkImage_, srcAccessMask, dstAccessMask, imageLayout_, newImageLayout, srcStageMask, dstStageMask, subresourceRange);
 
   imageLayout_ = newImageLayout;
@@ -314,15 +329,15 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
     for (uint32_t i = 1; i < levels_; ++i) {
       // 1: Transition the i-th level to VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
       //    It will be copied into from the (i-1)-th layer
-      ivkImageMemoryBarrier(commandBuffer,
-                            vkImage_,
-                            0, /* srcAccessMask */
-                            VK_ACCESS_TRANSFER_WRITE_BIT, /* dstAccessMask */
-                            VK_IMAGE_LAYOUT_UNDEFINED, /* oldImageLayout */
-                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, /* newImageLayout */
-                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, /* srcStageMask */
-                            VK_PIPELINE_STAGE_TRANSFER_BIT, /* dstStageMask */
-                            VkImageSubresourceRange{imageAspectFlags, i, 1, layer, 1});
+      lvk::imageMemoryBarrier(commandBuffer,
+                              vkImage_,
+                              0, /* srcAccessMask */
+                              VK_ACCESS_TRANSFER_WRITE_BIT, /* dstAccessMask */
+                              VK_IMAGE_LAYOUT_UNDEFINED, /* oldImageLayout */
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, /* newImageLayout */
+                              VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, /* srcStageMask */
+                              VK_PIPELINE_STAGE_TRANSFER_BIT, /* dstStageMask */
+                              VkImageSubresourceRange{imageAspectFlags, i, 1, layer, 1});
 
       const int32_t nextLevelWidth = mipWidth > 1 ? mipWidth / 2 : 1;
       const int32_t nextLevelHeight = mipHeight > 1 ? mipHeight / 2 : 1;
@@ -341,28 +356,31 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
 #if LVK_VULKAN_PRINT_COMMANDS
       LLOGL("%p vkCmdBlitImage()\n", commandBuffer);
 #endif // LVK_VULKAN_PRINT_COMMANDS
-      ivkCmdBlitImage(commandBuffer,
-                      vkImage_,
-                      vkImage_,
-                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                      srcOffsets,
-                      dstOffsets,
-                      VkImageSubresourceLayers{imageAspectFlags, i - 1, layer, 1},
-                      VkImageSubresourceLayers{imageAspectFlags, i, layer, 1},
-                      blitFilter);
-
+      const VkImageBlit blit = {
+          .srcSubresource = VkImageSubresourceLayers{imageAspectFlags, i - 1, layer, 1},
+          .srcOffsets = {srcOffsets[0], srcOffsets[1]},
+          .dstSubresource = VkImageSubresourceLayers{imageAspectFlags, i, layer, 1},
+          .dstOffsets = {dstOffsets[0], dstOffsets[1]},
+      };
+      vkCmdBlitImage(commandBuffer,
+                     vkImage_,
+                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                     vkImage_,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                     1,
+                     &blit,
+                     blitFilter);
       // 3: Transition i-th level to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL as it will be read from in
       // the next iteration
-      ivkImageMemoryBarrier(commandBuffer,
-                            vkImage_,
-                            VK_ACCESS_TRANSFER_WRITE_BIT, /* srcAccessMask */
-                            VK_ACCESS_TRANSFER_READ_BIT, /* dstAccessMask */
-                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, /* oldImageLayout */
-                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, /* newImageLayout */
-                            VK_PIPELINE_STAGE_TRANSFER_BIT, /* srcStageMask */
-                            VK_PIPELINE_STAGE_TRANSFER_BIT /* dstStageMask */,
-                            VkImageSubresourceRange{imageAspectFlags, i, 1, layer, 1});
+      lvk::imageMemoryBarrier(commandBuffer,
+                              vkImage_,
+                              VK_ACCESS_TRANSFER_WRITE_BIT, /* srcAccessMask */
+                              VK_ACCESS_TRANSFER_READ_BIT, /* dstAccessMask */
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, /* oldImageLayout */
+                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, /* newImageLayout */
+                              VK_PIPELINE_STAGE_TRANSFER_BIT, /* srcStageMask */
+                              VK_PIPELINE_STAGE_TRANSFER_BIT /* dstStageMask */,
+                              VkImageSubresourceRange{imageAspectFlags, i, 1, layer, 1});
 
       // Compute the size of the next mip level
       mipWidth = nextLevelWidth;
@@ -371,15 +389,15 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
   }
 
   // 4: Transition all levels and layers/faces to their final layout
-  ivkImageMemoryBarrier(commandBuffer,
-                        vkImage_,
-                        VK_ACCESS_TRANSFER_WRITE_BIT, // srcAccessMask
-                        0, // dstAccessMask
-                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, // oldImageLayout
-                        originalImageLayout, // newImageLayout
-                        VK_PIPELINE_STAGE_TRANSFER_BIT, // srcStageMask
-                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // dstStageMask
-                        VkImageSubresourceRange{imageAspectFlags, 0, levels_, 0, layers_});
+  lvk::imageMemoryBarrier(commandBuffer,
+                          vkImage_,
+                          VK_ACCESS_TRANSFER_WRITE_BIT, // srcAccessMask
+                          0, // dstAccessMask
+                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, // oldImageLayout
+                          originalImageLayout, // newImageLayout
+                          VK_PIPELINE_STAGE_TRANSFER_BIT, // srcStageMask
+                          VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // dstStageMask
+                          VkImageSubresourceRange{imageAspectFlags, 0, levels_, 0, layers_});
   vkCmdEndDebugUtilsLabelEXT(commandBuffer);
 
   imageLayout_ = originalImageLayout;

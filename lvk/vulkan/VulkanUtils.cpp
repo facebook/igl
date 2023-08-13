@@ -13,12 +13,97 @@
 #include <glslang/Include/glslang_c_interface.h>
 #include <ldrutils/lutils/ScopeExit.h>
 
+const char* lvk::getVulkanResultString(VkResult result) {
+#define RESULT_CASE(res) \
+  case res:              \
+    return #res
+  switch (result) {
+    RESULT_CASE(VK_SUCCESS);
+    RESULT_CASE(VK_NOT_READY);
+    RESULT_CASE(VK_TIMEOUT);
+    RESULT_CASE(VK_EVENT_SET);
+    RESULT_CASE(VK_EVENT_RESET);
+    RESULT_CASE(VK_INCOMPLETE);
+    RESULT_CASE(VK_ERROR_OUT_OF_HOST_MEMORY);
+    RESULT_CASE(VK_ERROR_OUT_OF_DEVICE_MEMORY);
+    RESULT_CASE(VK_ERROR_INITIALIZATION_FAILED);
+    RESULT_CASE(VK_ERROR_DEVICE_LOST);
+    RESULT_CASE(VK_ERROR_MEMORY_MAP_FAILED);
+    RESULT_CASE(VK_ERROR_LAYER_NOT_PRESENT);
+    RESULT_CASE(VK_ERROR_EXTENSION_NOT_PRESENT);
+    RESULT_CASE(VK_ERROR_FEATURE_NOT_PRESENT);
+    RESULT_CASE(VK_ERROR_INCOMPATIBLE_DRIVER);
+    RESULT_CASE(VK_ERROR_TOO_MANY_OBJECTS);
+    RESULT_CASE(VK_ERROR_FORMAT_NOT_SUPPORTED);
+    RESULT_CASE(VK_ERROR_SURFACE_LOST_KHR);
+    RESULT_CASE(VK_ERROR_OUT_OF_DATE_KHR);
+    RESULT_CASE(VK_ERROR_INCOMPATIBLE_DISPLAY_KHR);
+    RESULT_CASE(VK_ERROR_NATIVE_WINDOW_IN_USE_KHR);
+    RESULT_CASE(VK_ERROR_VALIDATION_FAILED_EXT);
+    RESULT_CASE(VK_ERROR_FRAGMENTED_POOL);
+    RESULT_CASE(VK_ERROR_UNKNOWN);
+    // Provided by VK_VERSION_1_1
+    RESULT_CASE(VK_ERROR_OUT_OF_POOL_MEMORY);
+    // Provided by VK_VERSION_1_1
+    RESULT_CASE(VK_ERROR_INVALID_EXTERNAL_HANDLE);
+    // Provided by VK_VERSION_1_2
+    RESULT_CASE(VK_ERROR_FRAGMENTATION);
+    // Provided by VK_VERSION_1_2
+    RESULT_CASE(VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS);
+    // Provided by VK_KHR_swapchain
+    RESULT_CASE(VK_SUBOPTIMAL_KHR);
+    // Provided by VK_NV_glsl_shader
+    RESULT_CASE(VK_ERROR_INVALID_SHADER_NV);
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    // Provided by VK_KHR_video_queue
+    RESULT_CASE(VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    // Provided by VK_KHR_video_queue
+    RESULT_CASE(VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    // Provided by VK_KHR_video_queue
+    RESULT_CASE(VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    // Provided by VK_KHR_video_queue
+    RESULT_CASE(VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    // Provided by VK_KHR_video_queue
+    RESULT_CASE(VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    // Provided by VK_KHR_video_queue
+    RESULT_CASE(VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR);
+#endif
+    // Provided by VK_EXT_image_drm_format_modifier
+    RESULT_CASE(VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT);
+    // Provided by VK_KHR_global_priority
+    RESULT_CASE(VK_ERROR_NOT_PERMITTED_KHR);
+    // Provided by VK_EXT_full_screen_exclusive
+    RESULT_CASE(VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT);
+    // Provided by VK_KHR_deferred_host_operations
+    RESULT_CASE(VK_THREAD_IDLE_KHR);
+    // Provided by VK_KHR_deferred_host_operations
+    RESULT_CASE(VK_THREAD_DONE_KHR);
+    // Provided by VK_KHR_deferred_host_operations
+    RESULT_CASE(VK_OPERATION_DEFERRED_KHR);
+    // Provided by VK_KHR_deferred_host_operations
+    RESULT_CASE(VK_OPERATION_NOT_DEFERRED_KHR);
+  default:
+    return "Unknown VkResult Value";
+  }
+#undef RESULT_CASE
+}
+
 lvk::Result lvk::getResultFromVkResult(VkResult result) {
   if (result == VK_SUCCESS) {
     return Result();
   }
 
-  Result res(Result::Code::RuntimeError, ivkGetVulkanResultString(result));
+  Result res(Result::Code::RuntimeError, lvk::getVulkanResultString(result));
 
   switch (result) {
   case VK_ERROR_OUT_OF_HOST_MEMORY:
@@ -158,8 +243,7 @@ VkSemaphore lvk::createSemaphore(VkDevice device, const char* debugName) {
   };
   VkSemaphore semaphore = VK_NULL_HANDLE;
   VK_ASSERT(vkCreateSemaphore(device, &ci, nullptr, &semaphore));
-  VK_ASSERT(
-      ivkSetDebugObjectName(device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore, debugName));
+  VK_ASSERT(lvk::setDebugObjectName(device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore, debugName));
   return semaphore;
 }
 
@@ -170,7 +254,7 @@ VkFence lvk::createFence(VkDevice device, const char* debugName) {
   };
   VkFence fence = VK_NULL_HANDLE;
   VK_ASSERT(vkCreateFence(device, &ci, nullptr, &fence));
-  VK_ASSERT(ivkSetDebugObjectName(device, VK_OBJECT_TYPE_FENCE, (uint64_t)fence, debugName));
+  VK_ASSERT(lvk::setDebugObjectName(device, VK_OBJECT_TYPE_FENCE, (uint64_t)fence, debugName));
   return fence;
 }
 
@@ -570,4 +654,97 @@ lvk::Result lvk::compileShader(VkDevice device,
   VK_ASSERT_RETURN(vkCreateShaderModule(device, &ci, nullptr, outShaderModule));
 
   return Result();
+}
+
+VkResult lvk::setDebugObjectName(VkDevice device, VkObjectType type, uint64_t handle, const char* name) {
+  if (!name || !*name) {
+    return VK_SUCCESS;
+  }
+  const VkDebugUtilsObjectNameInfoEXT ni = {
+      .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+      .objectType = type,
+      .objectHandle = handle,
+      .pObjectName = name,
+  };
+  return vkSetDebugUtilsObjectNameEXT(device, &ni);
+}
+
+VkPipelineShaderStageCreateInfo lvk::getPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
+                                                                      VkShaderModule shaderModule,
+                                                                      const char* entryPoint) {
+  return VkPipelineShaderStageCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .flags = 0,
+      .stage = stage,
+      .module = shaderModule,
+      .pName = entryPoint ? entryPoint : "main",
+      .pSpecializationInfo = NULL,
+  };
+}
+
+static uint32_t findMemoryType(VkPhysicalDevice physDev, uint32_t memoryTypeBits, VkMemoryPropertyFlags flags) {
+  VkPhysicalDeviceMemoryProperties memProperties;
+  vkGetPhysicalDeviceMemoryProperties(physDev, &memProperties);
+
+  for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+    const bool hasProperties = (memProperties.memoryTypes[i].propertyFlags & flags) == flags;
+    if ((memoryTypeBits & (1 << i)) && hasProperties) {
+      return i;
+    }
+  }
+
+  assert(false);
+
+  return 0;
+}
+
+VkResult lvk::allocateMemory(VkPhysicalDevice physDev,
+                             VkDevice device,
+                             const VkMemoryRequirements* memRequirements,
+                             VkMemoryPropertyFlags props,
+                             VkDeviceMemory* outMemory) {
+  assert(memRequirements);
+
+  const VkMemoryAllocateFlagsInfo memoryAllocateFlagsInfo = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
+      .flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR,
+  };
+  const VkMemoryAllocateInfo ai = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+      .pNext = &memoryAllocateFlagsInfo,
+      .allocationSize = memRequirements->size,
+      .memoryTypeIndex = findMemoryType(physDev, memRequirements->memoryTypeBits, props),
+  };
+  return vkAllocateMemory(device, &ai, nullptr, outMemory);
+}
+
+VkDescriptorSetLayoutBinding lvk::getDSLBinding(uint32_t binding, VkDescriptorType descriptorType, uint32_t descriptorCount) {
+  return VkDescriptorSetLayoutBinding{
+      .binding = binding,
+      .descriptorType = descriptorType,
+      .descriptorCount = descriptorCount,
+      .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+      .pImmutableSamplers = nullptr,
+  };
+}
+
+void lvk::imageMemoryBarrier(VkCommandBuffer buffer,
+                             VkImage image,
+                             VkAccessFlags srcAccessMask,
+                             VkAccessFlags dstAccessMask,
+                             VkImageLayout oldImageLayout,
+                             VkImageLayout newImageLayout,
+                             VkPipelineStageFlags srcStageMask,
+                             VkPipelineStageFlags dstStageMask,
+                             VkImageSubresourceRange subresourceRange) {
+  const VkImageMemoryBarrier barrier = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+      .srcAccessMask = srcAccessMask,
+      .dstAccessMask = dstAccessMask,
+      .oldLayout = oldImageLayout,
+      .newLayout = newImageLayout,
+      .image = image,
+      .subresourceRange = subresourceRange,
+  };
+  vkCmdPipelineBarrier(buffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 }

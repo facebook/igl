@@ -26,8 +26,16 @@ VulkanBuffer::VulkanBuffer(VulkanContext* ctx,
   LVK_ASSERT(ctx);
   LVK_ASSERT(bufferSize > 0);
 
-  // Initialize Buffer Info
-  const VkBufferCreateInfo ci = ivkGetBufferCreateInfo(bufferSize, usageFlags);
+  const VkBufferCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .size = bufferSize,
+      .usage = usageFlags,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .queueFamilyIndexCount = 0,
+      .pQueueFamilyIndices = nullptr,
+  };
 
   if (LVK_VULKAN_USE_VMA) {
     // Initialize VmaAllocation Info
@@ -57,7 +65,7 @@ VulkanBuffer::VulkanBuffer(VulkanContext* ctx,
       VkMemoryRequirements requirements = {};
       vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
 
-      VK_ASSERT(ivkAllocateMemory(ctx_->getVkPhysicalDevice(), device_, &requirements, memFlags, &vkMemory_));
+      VK_ASSERT(lvk::allocateMemory(ctx_->getVkPhysicalDevice(), device_, &requirements, memFlags, &vkMemory_));
       VK_ASSERT(vkBindBufferMemory(device_, vkBuffer_, vkMemory_, 0));
     }
 
@@ -70,7 +78,7 @@ VulkanBuffer::VulkanBuffer(VulkanContext* ctx,
   LVK_ASSERT(vkBuffer_ != VK_NULL_HANDLE);
 
   // set debug name
-  VK_ASSERT(ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_BUFFER, (uint64_t)vkBuffer_, debugName));
+  VK_ASSERT(lvk::setDebugObjectName(device_, VK_OBJECT_TYPE_BUFFER, (uint64_t)vkBuffer_, debugName));
 
   // handle shader access
   if (usageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {

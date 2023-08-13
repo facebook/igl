@@ -27,7 +27,7 @@
                     __FILE__,                                      \
                     __LINE__,                                      \
                     #func,                                         \
-                    ivkGetVulkanResultString(vk_assert_result));   \
+                    lvk::getVulkanResultString(vk_assert_result)); \
       assert(false);                                               \
     }                                                              \
   }
@@ -40,7 +40,7 @@
                     __FILE__,                                      \
                     __LINE__,                                      \
                     #func,                                         \
-                    ivkGetVulkanResultString(vk_assert_result));   \
+                    lvk::getVulkanResultString(vk_assert_result)); \
       assert(false);                                               \
       return getResultFromVkResult(vk_assert_result);              \
     }                                                              \
@@ -54,6 +54,12 @@ VkSemaphore createSemaphore(VkDevice device, const char* debugName);
 VkFence createFence(VkDevice device, const char* debugName);
 VmaAllocator createVmaAllocator(VkPhysicalDevice physDev, VkDevice device, VkInstance instance, uint32_t apiVersion);
 uint32_t findQueueFamilyIndex(VkPhysicalDevice physDev, VkQueueFlags flags);
+VkResult setDebugObjectName(VkDevice device, VkObjectType type, uint64_t handle, const char* name);
+VkResult allocateMemory(VkPhysicalDevice physDev,
+                        VkDevice device,
+                        const VkMemoryRequirements* memRequirements,
+                        VkMemoryPropertyFlags props,
+                        VkDeviceMemory* outMemory);
 
 glslang_resource_t getGlslangResource(const VkPhysicalDeviceLimits& limits);
 Result compileShader(VkDevice device,
@@ -63,8 +69,22 @@ Result compileShader(VkDevice device,
                      const glslang_resource_t* glslLangResource = nullptr);
 
 VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const lvk::SamplerStateDesc& desc, const VkPhysicalDeviceLimits& limits);
+VkDescriptorSetLayoutBinding getDSLBinding(uint32_t binding, VkDescriptorType descriptorType, uint32_t descriptorCount);
+VkPipelineShaderStageCreateInfo getPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
+                                                                 VkShaderModule shaderModule,
+                                                                 const char* entryPoint);
+void imageMemoryBarrier(VkCommandBuffer buffer,
+                        VkImage image,
+                        VkAccessFlags srcAccessMask,
+                        VkAccessFlags dstAccessMask,
+                        VkImageLayout oldImageLayout,
+                        VkImageLayout newImageLayout,
+                        VkPipelineStageFlags srcStageMask,
+                        VkPipelineStageFlags dstStageMask,
+                        VkImageSubresourceRange subresourceRange);
 
 Result getResultFromVkResult(VkResult result);
+const char* getVulkanResultString(VkResult result);
 lvk::Format vkFormatToFormat(VkFormat format);
 VkFormat formatToVkFormat(lvk::Format format);
 

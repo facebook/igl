@@ -10,7 +10,7 @@
 #include <memory>
 
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/VulkanHelpers.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 namespace lvk {
 namespace vulkan {
