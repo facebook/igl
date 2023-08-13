@@ -12,6 +12,8 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
+#include <vector>
+
 #include <stdio.h>
 
 #include <glm/ext.hpp>
