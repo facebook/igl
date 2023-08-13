@@ -26,8 +26,6 @@
 }
 
 - (void)netServiceBrowserDidStopSearch:(NSNetServiceBrowser*)browser {
-  IGL_ASSERT(owner_);
-  owner_->stopSearch();
 }
 
 - (void)netServiceBrowser:(NSNetServiceBrowser*)browser didNotSearch:(NSDictionary*)errorDict {
@@ -40,9 +38,13 @@
                moreComing:(BOOL)moreComing {
   IGL_ASSERT(owner_);
   auto& delegate = owner_->delegate();
+  bool keepSearching = moreComing;
   if (delegate) {
     auto service = std::make_unique<igl::shell::netservice::NetServiceApple>(netService);
-    delegate(*owner_, std::move(service), moreComing);
+    keepSearching = delegate(*owner_, std::move(service), moreComing);
+  }
+  if (!keepSearching) {
+    owner_->stopSearch();
   }
 }
 

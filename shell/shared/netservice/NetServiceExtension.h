@@ -18,8 +18,9 @@ class NetServiceExtension : public igl::shell::Extension {
  public:
   static const char* Name() noexcept;
 
+  // Return true to keep searching or false to stop searching.
   using DidFindService = std::function<
-      void(NetServiceExtension& sender, std::unique_ptr<NetService> service, bool moreComing)>;
+      bool(NetServiceExtension& sender, std::unique_ptr<NetService> service, bool moreComing)>;
 
   virtual std::unique_ptr<NetService> create(std::string_view domain,
                                              std::string_view type,
