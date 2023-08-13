@@ -7,8 +7,8 @@
 
 #include "VulkanImageView.h"
 
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 namespace lvk {
 

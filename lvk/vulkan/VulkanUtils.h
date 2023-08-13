@@ -11,10 +11,17 @@
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
 
+// set to 1 to see very verbose debug console logs with Vulkan commands
+#define LVK_VULKAN_PRINT_COMMANDS 0
+
 #if !defined(VK_NO_PROTOTYPES)
-#define VK_NO_PROTOTYPES
+#define VK_NO_PROTOTYPES 1
 #endif // !defined(VK_NO_PROTOTYPES)
 
+// enable to use VulkanMemoryAllocator (VMA)
+#define LVK_VULKAN_USE_VMA 1
+
+#include <cassert>
 #include <volk.h>
 #include <vk_mem_alloc.h>
 #include <lvk/LVK.h>
@@ -83,9 +90,14 @@ void imageMemoryBarrier(VkCommandBuffer buffer,
                         VkPipelineStageFlags dstStageMask,
                         VkImageSubresourceRange subresourceRange);
 
+VkSampleCountFlagBits getVulkanSampleCountFlags(uint32_t numSamples);
+
+void setResultFrom(Result* outResult, VkResult result);
 Result getResultFromVkResult(VkResult result);
 const char* getVulkanResultString(VkResult result);
+uint32_t getBytesPerPixel(VkFormat format);
 lvk::Format vkFormatToFormat(VkFormat format);
 VkFormat formatToVkFormat(lvk::Format format);
+VkCompareOp compareOpToVkCompareOp(lvk::CompareOp func);
 
 } // namespace lvk

@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 namespace lvk {
 namespace vulkan {

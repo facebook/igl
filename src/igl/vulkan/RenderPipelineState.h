@@ -7,8 +7,7 @@
 
 #pragma once
 
-#include <lvk/LVK.h>
-#include <igl/vulkan/Common.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 #include <string.h>
 #include <unordered_map>

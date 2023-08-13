@@ -9,12 +9,12 @@
 
 #include <cstring>
 #include <igl/vulkan/CommandBuffer.h>
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/VulkanTexture.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 #include <glslang/Include/glslang_c_interface.h>
 
@@ -39,6 +39,23 @@ VkShaderStageFlagBits shaderStageToVkShaderStage(lvk::ShaderStage stage) {
     return VK_SHADER_STAGE_COMPUTE_BIT;
   };
   return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
+}
+
+VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(lvk::StorageType storage) {
+  VkMemoryPropertyFlags memFlags{0};
+
+  switch (storage) {
+  case lvk::StorageType_Device:
+    memFlags |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    break;
+  case lvk::StorageType_HostVisible:
+    memFlags |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    break;
+  case lvk::StorageType_Memoryless:
+    memFlags |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+    break;
+  }
+  return memFlags;
 }
 
 } // namespace
@@ -262,7 +279,7 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, co
   case TextureType_2D:
     imageViewType = VK_IMAGE_VIEW_TYPE_2D;
     imageType = VK_IMAGE_TYPE_2D;
-    samples = getVulkanSampleCountFlags(desc.numSamples);
+    samples = lvk::getVulkanSampleCountFlags(desc.numSamples);
     break;
   case TextureType_3D:
     imageViewType = VK_IMAGE_VIEW_TYPE_3D;
@@ -640,7 +657,7 @@ VulkanShaderModule Device::createShaderModule(const void* data,
   };
   const VkResult result = vkCreateShaderModule(ctx_->vkDevice_, &ci, nullptr, &vkShaderModule);
 
-  setResultFrom(outResult, result);
+  lvk::setResultFrom(outResult, result);
 
   if (result != VK_SUCCESS) {
     return VulkanShaderModule();

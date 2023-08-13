@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 #include "VulkanBuffer.h"
 

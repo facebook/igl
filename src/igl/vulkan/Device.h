@@ -9,8 +9,8 @@
 
 #include <lvk/LVK.h>
 #include <lvk/Pool.h>
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/CommandBuffer.h>
+#include <lvk/vulkan/VulkanUtils.h>
 #include <memory>
 #include <vector>
 

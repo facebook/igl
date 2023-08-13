@@ -7,11 +7,11 @@
 
 #include <igl/vulkan/VulkanStagingDevice.h>
 
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 #include <string.h>
 #include <algorithm>

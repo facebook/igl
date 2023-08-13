@@ -7,10 +7,10 @@
 
 #include "VulkanTexture.h"
 
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImageView.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 namespace lvk::vulkan {
 

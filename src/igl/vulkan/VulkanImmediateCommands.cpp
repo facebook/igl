@@ -7,7 +7,6 @@
 
 #include "VulkanImmediateCommands.h"
 
-#include <igl/vulkan/Common.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
 #include <utility>

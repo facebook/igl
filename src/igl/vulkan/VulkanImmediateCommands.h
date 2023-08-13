@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <igl/vulkan/Common.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
 namespace lvk {

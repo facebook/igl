@@ -7,9 +7,9 @@
 
 #include "VulkanImage.h"
 
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImageView.h>
+#include <lvk/vulkan/VulkanUtils.h>
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #include <unistd.h>

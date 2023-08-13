@@ -12,7 +12,6 @@
 #include <memory>
 #include <vector>
 
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>

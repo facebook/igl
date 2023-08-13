@@ -12,6 +12,22 @@
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanTexture.h>
 
+static bool isDepthOrStencilVkFormat(VkFormat format) {
+  switch (format) {
+  case VK_FORMAT_D16_UNORM:
+  case VK_FORMAT_X8_D24_UNORM_PACK32:
+  case VK_FORMAT_D32_SFLOAT:
+  case VK_FORMAT_S8_UINT:
+  case VK_FORMAT_D16_UNORM_S8_UINT:
+  case VK_FORMAT_D24_UNORM_S8_UINT:
+  case VK_FORMAT_D32_SFLOAT_S8_UINT:
+    return true;
+  default:
+    return false;
+  }
+  return false;
+}
+
 namespace lvk::vulkan {
 
 CommandBuffer::CommandBuffer(VulkanContext* ctx) : ctx_(ctx), wrapper_(&ctx_->immediate_->acquire()) {}
@@ -141,7 +157,7 @@ void CommandBuffer ::transitionToShaderReadOnly(TextureHandle handle) const {
   // transition only non-multisampled images - MSAA images cannot be accessed from shaders
   if (img->samples_ == VK_SAMPLE_COUNT_1_BIT) {
     const VkImageAspectFlags flags = tex.image_->getImageAspectFlags();
-    const VkPipelineStageFlags srcStage = lvk::vulkan::isDepthOrStencilVkFormat(tex.image_->imageFormat_)
+    const VkPipelineStageFlags srcStage = isDepthOrStencilVkFormat(tex.image_->imageFormat_)
                                               ? VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
                                               : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     // set the result of the previous render pass
