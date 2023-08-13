@@ -507,6 +507,14 @@ uint64_t Device::gpuAddress(BufferHandle handle, size_t offset) const {
   return buf ? (uint64_t)buf->getVkDeviceAddress() + offset : 0u;
 }
 
+void Device::flushMappedMemory(BufferHandle handle, size_t offset, size_t size) const {
+  lvk::vulkan::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
+
+  LVK_ASSERT(buf);
+
+  buf->flushMappedMemory(offset, size);
+}
+
 static Result validateRange(const lvk::Dimensions& dimensions, uint32_t numLevels, const lvk::TextureRangeDesc& range) {
   if (!LVK_VERIFY(range.dimensions.width > 0 && range.dimensions.height > 0 || range.dimensions.depth > 0 || range.numLayers > 0 ||
                   range.numMipLevels > 0)) {

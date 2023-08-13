@@ -48,6 +48,7 @@ class Device final : public IDevice {
   Result upload(BufferHandle handle, const void* data, size_t size, size_t offset) override;
   uint8_t* getMappedPtr(BufferHandle handle) const override;
   uint64_t gpuAddress(BufferHandle handle, size_t offset) const override;
+  void flushMappedMemory(BufferHandle handle, size_t offset, size_t size) const override;
 
   Result upload(TextureHandle handle, const TextureRangeDesc& range, const void* data[]) const override;
   Dimensions getDimensions(TextureHandle handle) const override;
