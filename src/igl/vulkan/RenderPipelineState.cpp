@@ -13,6 +13,29 @@ uint32_t lvk::vulkan::VulkanPipelineBuilder::numPipelinesCreated_ = 0;
 
 namespace {
 
+VkStencilOp stencilOpToVkStencilOp(lvk::StencilOp op) {
+  switch (op) {
+  case lvk::StencilOp_Keep:
+    return VK_STENCIL_OP_KEEP;
+  case lvk::StencilOp_Zero:
+    return VK_STENCIL_OP_ZERO;
+  case lvk::StencilOp_Replace:
+    return VK_STENCIL_OP_REPLACE;
+  case lvk::StencilOp_IncrementClamp:
+    return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+  case lvk::StencilOp_DecrementClamp:
+    return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+  case lvk::StencilOp_Invert:
+    return VK_STENCIL_OP_INVERT;
+  case lvk::StencilOp_IncrementWrap:
+    return VK_STENCIL_OP_INCREMENT_AND_WRAP;
+  case lvk::StencilOp_DecrementWrap:
+    return VK_STENCIL_OP_DECREMENT_AND_WRAP;
+  }
+  LVK_ASSERT(false);
+  return VK_STENCIL_OP_KEEP;
+}
+
 VkPolygonMode polygonModeToVkPolygonMode(lvk::PolygonMode mode) {
   switch (mode) {
   case lvk::PolygonMode_Fill:
@@ -365,9 +388,6 @@ VkPipeline RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& 
           VK_DYNAMIC_STATE_SCISSOR,
           VK_DYNAMIC_STATE_DEPTH_BIAS,
           VK_DYNAMIC_STATE_BLEND_CONSTANTS,
-          VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
-          VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
-          VK_DYNAMIC_STATE_STENCIL_REFERENCE,
       })
       .primitiveTopology(dynamicState.getTopology())
       .depthBiasEnable(dynamicState.depthBiasEnable_)
@@ -376,15 +396,17 @@ VkPipeline RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& 
       .rasterizationSamples(getVulkanSampleCountFlags(desc_.samplesCount))
       .polygonMode(polygonModeToVkPolygonMode(desc_.polygonMode))
       .stencilStateOps(VK_STENCIL_FACE_FRONT_BIT,
-                       dynamicState.getStencilStateFailOp(true),
-                       dynamicState.getStencilStatePassOp(true),
-                       dynamicState.getStencilStateDepthFailOp(true),
-                       dynamicState.getStencilStateComapreOp(true))
+                       stencilOpToVkStencilOp(desc_.frontFaceStencil.stencilFailureOp),
+                       stencilOpToVkStencilOp(desc_.frontFaceStencil.depthStencilPassOp),
+                       stencilOpToVkStencilOp(desc_.frontFaceStencil.depthFailureOp),
+                       compareOpToVkCompareOp(desc_.frontFaceStencil.stencilCompareOp))
       .stencilStateOps(VK_STENCIL_FACE_BACK_BIT,
-                       dynamicState.getStencilStateFailOp(false),
-                       dynamicState.getStencilStatePassOp(false),
-                       dynamicState.getStencilStateDepthFailOp(false),
-                       dynamicState.getStencilStateComapreOp(false))
+                       stencilOpToVkStencilOp(desc_.backFaceStencil.stencilFailureOp),
+                       stencilOpToVkStencilOp(desc_.backFaceStencil.depthStencilPassOp),
+                       stencilOpToVkStencilOp(desc_.backFaceStencil.depthFailureOp),
+                       compareOpToVkCompareOp(desc_.backFaceStencil.stencilCompareOp))
+      .stencilMasks(VK_STENCIL_FACE_FRONT_BIT, 0xFF, desc_.frontFaceStencil.writeMask, desc_.frontFaceStencil.readMask)
+      .stencilMasks(VK_STENCIL_FACE_BACK_BIT, 0xFF, desc_.backFaceStencil.writeMask, desc_.backFaceStencil.readMask)
       .shaderStages(stages)
       .cullMode(cullModeToVkCullMode(desc_.cullMode))
       .frontFace(windingModeToVkFrontFace(desc_.frontFaceWinding))
@@ -563,18 +585,39 @@ VulkanPipelineBuilder& VulkanPipelineBuilder::stencilStateOps(VkStencilFaceFlags
                                                               VkStencilOp depthFailOp,
                                                               VkCompareOp compareOp) {
   if (faceMask & VK_STENCIL_FACE_FRONT_BIT) {
-    VkStencilOpState& front = depthStencilState_.front;
-    front.failOp = failOp;
-    front.passOp = passOp;
-    front.depthFailOp = depthFailOp;
-    front.compareOp = compareOp;
+    VkStencilOpState& s = depthStencilState_.front;
+    s.failOp = failOp;
+    s.passOp = passOp;
+    s.depthFailOp = depthFailOp;
+    s.compareOp = compareOp;
   }
+
   if (faceMask & VK_STENCIL_FACE_BACK_BIT) {
-    VkStencilOpState& back = depthStencilState_.back;
-    back.failOp = failOp;
-    back.passOp = passOp;
-    back.depthFailOp = depthFailOp;
-    back.compareOp = compareOp;
+    VkStencilOpState& s = depthStencilState_.back;
+    s.failOp = failOp;
+    s.passOp = passOp;
+    s.depthFailOp = depthFailOp;
+    s.compareOp = compareOp;
+  }
+  return *this;
+}
+
+VulkanPipelineBuilder& VulkanPipelineBuilder::stencilMasks(VkStencilFaceFlags faceMask,
+                                                           uint32_t compareMask,
+                                                           uint32_t writeMask,
+                                                           uint32_t reference) {
+  if (faceMask & VK_STENCIL_FACE_FRONT_BIT) {
+    VkStencilOpState& s = depthStencilState_.front;
+    s.compareMask = compareMask;
+    s.writeMask = writeMask;
+    s.reference = reference;
+  }
+
+  if (faceMask & VK_STENCIL_FACE_BACK_BIT) {
+    VkStencilOpState& s = depthStencilState_.back;
+    s.compareMask = compareMask;
+    s.writeMask = writeMask;
+    s.reference = reference;
   }
   return *this;
 }

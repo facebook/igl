@@ -8,7 +8,7 @@
 #include <shared/UtilsFPS.h>
 
 #include <lvk/LVK.h>
-#include <lvk/HelpersGLFW.h>
+#include <GLFW/glfw3.h>
 
 const char* codeVS = R"(
 #version 460

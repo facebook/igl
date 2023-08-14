@@ -21,9 +21,9 @@
 #include <glm/gtc/random.hpp>
 
 #include <lvk/LVK.h>
-#include <lvk/HelpersGLFW.h>
 #include <lvk/HelpersImGui.h>
 
+#include <GLFW/glfw3.h>
 #include <stb/stb_image.h>
 
 #include <shared/UtilsFPS.h>
@@ -121,7 +121,7 @@ std::vector<lvk::Holder<lvk::BufferHandle>> ubPerFrame_, ubPerObject_;
 lvk::Holder<lvk::TextureHandle> texture0_, texture1_;
 lvk::Holder<lvk::SamplerHandle> sampler_;
 lvk::RenderPass renderPass_;
-lvk::DepthStencilState depthStencilState_;
+lvk::DepthState depthState_;
 
 struct VertexPosUvw {
   vec3 pos;
@@ -213,7 +213,7 @@ static void initIGL() {
                                                  nullptr));
   }
 
-  depthStencilState_ = {.compareOp = lvk::CompareOp_Less, .isDepthWriteEnabled = true};
+  depthState_ = {.compareOp = lvk::CompareOp_Less, .isDepthWriteEnabled = true};
 
   {
     const uint32_t texWidth = 256;
@@ -356,7 +356,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     buffer.cmdBindViewport(viewport);
     buffer.cmdBindScissorRect(scissor);
     buffer.cmdPushDebugGroupLabel("Render Mesh", 0xff0000ff);
-    buffer.cmdBindDepthStencilState(depthStencilState_);
+    buffer.cmdBindDepthState(depthState_);
     buffer.cmdBindIndexBuffer(ib0_, lvk::IndexFormat_UI16);
     // Draw 2 cubes: we use uniform buffer to update matrices
     for (uint32_t i = 0; i != kNumCubes; i++) {

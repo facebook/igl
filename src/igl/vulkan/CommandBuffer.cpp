@@ -92,29 +92,6 @@ VkAttachmentStoreOp storeOpToVkAttachmentStoreOp(lvk::StoreOp a) {
   return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 }
 
-VkStencilOp stencilOpToVkStencilOp(lvk::StencilOp op) {
-  switch (op) {
-  case lvk::StencilOp_Keep:
-    return VK_STENCIL_OP_KEEP;
-  case lvk::StencilOp_Zero:
-    return VK_STENCIL_OP_ZERO;
-  case lvk::StencilOp_Replace:
-    return VK_STENCIL_OP_REPLACE;
-  case lvk::StencilOp_IncrementClamp:
-    return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
-  case lvk::StencilOp_DecrementClamp:
-    return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
-  case lvk::StencilOp_Invert:
-    return VK_STENCIL_OP_INVERT;
-  case lvk::StencilOp_IncrementWrap:
-    return VK_STENCIL_OP_INCREMENT_AND_WRAP;
-  case lvk::StencilOp_DecrementWrap:
-    return VK_STENCIL_OP_DECREMENT_AND_WRAP;
-  }
-  LVK_ASSERT(false);
-  return VK_STENCIL_OP_KEEP;
-}
-
 VkIndexType indexFormatToVkIndexType(lvk::IndexFormat fmt) {
   switch (fmt) {
   case lvk::IndexFormat_UI16:
@@ -491,25 +468,11 @@ void CommandBuffer::cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) {
   lastPipelineBound_ = VK_NULL_HANDLE;
 }
 
-void CommandBuffer::cmdBindDepthStencilState(const DepthStencilState& desc) {
+void CommandBuffer::cmdBindDepthState(const DepthState& desc) {
   LVK_PROFILER_FUNCTION();
 
   dynamicState_.depthWriteEnable_ = desc.isDepthWriteEnabled;
   dynamicState_.setDepthCompareOp(compareOpToVkCompareOp(desc.compareOp));
-
-  auto setStencilState = [this](VkStencilFaceFlagBits faceMask, const lvk::StencilStateDesc& desc) {
-    dynamicState_.setStencilStateOps(faceMask,
-                                     stencilOpToVkStencilOp(desc.stencilFailureOp),
-                                     stencilOpToVkStencilOp(desc.depthStencilPassOp),
-                                     stencilOpToVkStencilOp(desc.depthFailureOp),
-                                     compareOpToVkCompareOp(desc.stencilCompareOp));
-    vkCmdSetStencilReference(wrapper_->cmdBuf_, faceMask, desc.readMask);
-    vkCmdSetStencilCompareMask(wrapper_->cmdBuf_, faceMask, 0xFF);
-    vkCmdSetStencilWriteMask(wrapper_->cmdBuf_, faceMask, desc.writeMask);
-  };
-
-  setStencilState(VK_STENCIL_FACE_FRONT_BIT, desc.frontFaceStencil);
-  setStencilState(VK_STENCIL_FACE_BACK_BIT, desc.backFaceStencil);
 }
 
 void CommandBuffer::cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, size_t bufferOffset) {
@@ -636,11 +599,6 @@ void CommandBuffer::cmdDrawIndexedIndirect(PrimitiveType primitiveType,
                            indirectBufferOffset,
                            drawCount,
                            stride ? stride : sizeof(VkDrawIndexedIndirectCommand));
-}
-
-void CommandBuffer::cmdSetStencilReferenceValues(uint32_t frontValue, uint32_t backValue) {
-  vkCmdSetStencilReference(wrapper_->cmdBuf_, VK_STENCIL_FACE_FRONT_BIT, frontValue);
-  vkCmdSetStencilReference(wrapper_->cmdBuf_, VK_STENCIL_FACE_BACK_BIT, backValue);
 }
 
 void CommandBuffer::cmdSetBlendColor(const float color[4]) {

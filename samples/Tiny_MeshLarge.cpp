@@ -46,8 +46,9 @@
 #include <tiny_obj_loader.h>
 
 #include <lvk/LVK.h>
-#include <lvk/HelpersGLFW.h>
 #include <lvk/HelpersImGui.h>
+
+#include <GLFW/glfw3.h>
 
 constexpr uint32_t kMeshCacheVersion = 0xC0DE0009;
 constexpr uint32_t kMaxTextures = 512;
@@ -438,8 +439,8 @@ lvk::Holder<lvk::TextureHandle> skyboxTextureIrradiance_;
 lvk::RenderPass renderPassOffscreen_;
 lvk::RenderPass renderPassMain_;
 lvk::RenderPass renderPassShadow_;
-lvk::DepthStencilState depthStencilState_;
-lvk::DepthStencilState depthStencilStateLEqual_;
+lvk::DepthState depthState_;
+lvk::DepthState depthStateLEqual_;
 
 // scene navigation
 CameraPositioner_FirstPerson positioner_(vec3(-100, 40, -47), vec3(0, 35, 0), vec3(0, 1, 0));
@@ -616,8 +617,8 @@ void initIGL() {
                                                  nullptr));
   }
 
-  depthStencilState_ = {.compareOp = lvk::CompareOp_Less, .isDepthWriteEnabled = true};
-  depthStencilStateLEqual_ = {.compareOp = lvk::CompareOp_LessEqual, .isDepthWriteEnabled = true};
+  depthState_ = {.compareOp = lvk::CompareOp_Less, .isDepthWriteEnabled = true};
+  depthStateLEqual_ = {.compareOp = lvk::CompareOp_LessEqual, .isDepthWriteEnabled = true};
 
   sampler_ = device_->createSampler(
       {
@@ -1109,7 +1110,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     {
       buffer.cmdBindRenderPipeline(renderPipelineState_Shadow_);
       buffer.cmdPushDebugGroupLabel("Render Shadows", 0xff0000ff);
-      buffer.cmdBindDepthStencilState(depthStencilState_);
+      buffer.cmdBindDepthState(depthState_);
       buffer.cmdBindVertexBuffer(0, vb0_, 0);
       struct {
         uint64_t perFrame;
@@ -1141,7 +1142,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       // Scene
       buffer.cmdBindRenderPipeline(renderPipelineState_Mesh_);
       buffer.cmdPushDebugGroupLabel("Render Mesh", 0xff0000ff);
-      buffer.cmdBindDepthStencilState(depthStencilState_);
+      buffer.cmdBindDepthState(depthState_);
       buffer.cmdBindVertexBuffer(0, vb0_, 0);
 
       struct {
@@ -1165,7 +1166,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       // Skybox
       buffer.cmdBindRenderPipeline(renderPipelineState_Skybox_);
       buffer.cmdPushDebugGroupLabel("Render Skybox", 0x00ff00ff);
-      buffer.cmdBindDepthStencilState(depthStencilStateLEqual_);
+      buffer.cmdBindDepthState(depthStateLEqual_);
       buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3 * 6 * 2);
       buffer.cmdPopDebugGroupLabel();
     }

@@ -41,7 +41,7 @@ class CommandBuffer final : public ICommandBuffer {
   void cmdBindScissorRect(const ScissorRect& rect) override;
 
   void cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) override;
-  void cmdBindDepthStencilState(const DepthStencilState& state) override;
+  void cmdBindDepthState(const DepthState& state) override;
 
   void cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, size_t bufferOffset) override;
   void cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, size_t indexBufferOffset) override;
@@ -65,7 +65,6 @@ class CommandBuffer final : public ICommandBuffer {
                               uint32_t drawCount,
                               uint32_t stride = 0) override;
 
-  void cmdSetStencilReferenceValues(uint32_t frontValue, uint32_t backValue) override;
   void cmdSetBlendColor(const float color[4]) override;
   void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) override;
 

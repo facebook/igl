@@ -362,7 +362,7 @@ struct SamplerStateDesc {
   const char* debugName = "";
 };
 
-struct StencilStateDesc {
+struct StencilState {
   StencilOp stencilFailureOp = StencilOp_Keep;
   StencilOp depthFailureOp = StencilOp_Keep;
   StencilOp depthStencilPassOp = StencilOp_Keep;
@@ -371,11 +371,9 @@ struct StencilStateDesc {
   uint32_t writeMask = (uint32_t)~0;
 };
 
-struct DepthStencilState {
+struct DepthState {
   CompareOp compareOp = CompareOp_AlwaysPass;
   bool isDepthWriteEnabled = false;
-  StencilStateDesc backFaceStencil;
-  StencilStateDesc frontFaceStencil;
 };
 
 enum PolygonMode : uint8_t {
@@ -570,6 +568,9 @@ struct RenderPipelineDesc final {
   WindingMode frontFaceWinding = lvk::WindingMode_CCW;
   PolygonMode polygonMode = lvk::PolygonMode_Fill;
 
+  StencilState backFaceStencil = {};
+  StencilState frontFaceStencil = {};
+
   uint32_t samplesCount = 1u;
 
   const char* debugName = "";
@@ -706,7 +707,7 @@ class ICommandBuffer {
   virtual void cmdBindScissorRect(const ScissorRect& rect) = 0;
 
   virtual void cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) = 0;
-  virtual void cmdBindDepthStencilState(const DepthStencilState& state) = 0;
+  virtual void cmdBindDepthState(const DepthState& state) = 0;
 
   virtual void cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, size_t bufferOffset = 0) = 0;
   virtual void cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, size_t indexBufferOffset = 0) = 0;
@@ -734,7 +735,6 @@ class ICommandBuffer {
                                       uint32_t drawCount,
                                       uint32_t stride = 0) = 0;
 
-  virtual void cmdSetStencilReferenceValues(uint32_t frontValue, uint32_t backValue) = 0;
   virtual void cmdSetBlendColor(const float color[4]) = 0;
   virtual void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) = 0;
 };
