@@ -185,7 +185,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     IGL_ASSERT_MSG(0, outResult->message.c_str());
     return nullptr;
   }
-  auto iglObject = std::make_shared<Texture>(metalObject);
+  auto iglObject = std::make_shared<Texture>(metalObject, *this);
   if (getResourceTracker()) {
     iglObject->initResourceTracker(getResourceTracker());
   }

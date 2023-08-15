@@ -26,8 +26,8 @@ class Texture final : public ITexture {
   friend class PlatformDevice;
 
  public:
-  Texture(id<MTLTexture> texture);
-  Texture(id<CAMetalDrawable> drawable);
+  Texture(id<MTLTexture> texture, const ICapabilities& capabilities);
+  Texture(id<CAMetalDrawable> drawable, const ICapabilities& capabilities);
   ~Texture() override;
 
   Result upload(const TextureRangeDesc& range,
@@ -73,6 +73,7 @@ class Texture final : public ITexture {
 
   id<MTLTexture> _Nullable value_;
   id<CAMetalDrawable> _Nullable drawable_;
+  const ICapabilities& capabilities_;
 };
 
 } // namespace metal

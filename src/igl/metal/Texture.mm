@@ -27,79 +27,22 @@ void bgrToRgb(unsigned char* dstImg, size_t width, size_t height, size_t bytesPe
     }
   }
 }
-
-/// returns true if the GPU can filter a texture with the given format during sampling
-/// referenced from table "Texture capabilities by pixel format" in:
-/// https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
-///
-/// no filtering for:
-///   - int textures: 8/16/32 UInt/SInt
-///   - 32-bit float textures: 32Float (unless device supports it)
-///   - depth/stencil (except for Depth16Unorm)
-bool isFilterable(MTLPixelFormat format, bool supports32BitFloatFiltering) {
-  switch (format) {
-  // int textures: 8/16/32 UInt/SInt
-  case MTLPixelFormatR8Uint:
-  case MTLPixelFormatR8Sint:
-  case MTLPixelFormatRG8Uint:
-  case MTLPixelFormatRG8Sint:
-  case MTLPixelFormatRGBA8Uint:
-  case MTLPixelFormatRGBA8Sint:
-
-  case MTLPixelFormatR16Uint:
-  case MTLPixelFormatR16Sint:
-  case MTLPixelFormatRG16Uint:
-  case MTLPixelFormatRG16Sint:
-  case MTLPixelFormatRGBA16Uint:
-  case MTLPixelFormatRGBA16Sint:
-
-  case MTLPixelFormatR32Uint:
-  case MTLPixelFormatR32Sint:
-  case MTLPixelFormatRG32Uint:
-  case MTLPixelFormatRG32Sint:
-  case MTLPixelFormatRGBA32Uint:
-  case MTLPixelFormatRGBA32Sint:
-    return false;
-
-  // 32-bit float textures: 32Float (unless device supports it)
-  case MTLPixelFormatR32Float:
-  case MTLPixelFormatRG32Float:
-  case MTLPixelFormatRGBA32Float:
-    return supports32BitFloatFiltering;
-
-  // depth/stencil (except for Depth16Unorm)
-  case MTLPixelFormatStencil8:
-  case MTLPixelFormatDepth32Float_Stencil8:
-  case MTLPixelFormatX32_Stencil8:
-#if IGL_PLATFORM_MACOS || IGL_PLATFORM_MACCATALYST
-  case MTLPixelFormatDepth24Unorm_Stencil8:
-  case MTLPixelFormatX24_Stencil8:
-#endif
-    return false;
-
-  // misc
-  case MTLPixelFormatInvalid:
-    return false;
-
-  default:
-    // all other formats support filtering
-    return true;
-  }
-}
 } // namespace
 
 namespace igl {
 namespace metal {
 
-Texture::Texture(id<MTLTexture> texture) :
+Texture::Texture(id<MTLTexture> texture, const ICapabilities& capabilities) :
   ITexture(mtlPixelFormatToTextureFormat([texture pixelFormat])),
   value_(texture),
-  drawable_(nullptr) {}
+  drawable_(nullptr),
+  capabilities_(capabilities) {}
 
-Texture::Texture(id<CAMetalDrawable> drawable) :
+Texture::Texture(id<CAMetalDrawable> drawable, const ICapabilities& capabilities) :
   ITexture(mtlPixelFormatToTextureFormat([drawable.texture pixelFormat])),
   value_(nullptr),
-  drawable_(drawable) {}
+  drawable_(drawable),
+  capabilities_(capabilities) {}
 
 Texture::~Texture() {
   value_ = nil;
@@ -260,12 +203,9 @@ void Texture::generateMipmap(ICommandQueue& cmdQueue) const {
     auto mtlCmdQueue = static_cast<CommandQueue&>(cmdQueue).get();
 
     // we can only generate mipmaps for filterable texture formats via the blit encoder
-    bool supports32BitFloatFiltering = false;
-    if (@available(macOS 11.0, iOS 14.0, *)) {
-      // this API became available as of iOS 14 and macOS 11
-      supports32BitFloatFiltering = mtlCmdQueue.device.supports32BitFloatFiltering;
-    }
-    if (!isFilterable(value_.pixelFormat, supports32BitFloatFiltering)) {
+    const bool isFilterable = (capabilities_.getTextureFormatCapabilities(getFormat()) &
+                               ICapabilities::TextureFormatCapabilityBits::SampledFiltered) != 0;
+    if (!isFilterable) {
       // TODO: implement manual mip generation for required formats (e.g. RGBA32Float)
       IGL_ASSERT_NOT_IMPLEMENTED();
       return;
