@@ -461,14 +461,16 @@ const char VULKAN_SIMPLE_VERT_SHADER[] =
       });
 
 // Simple Vulkan Fragment shader
-#define VULKAN_SIMPLE_FRAG_SHADER_DEF(returnType, swizzle) \
-    IGL_TO_STRING(                                         \
-      layout (location=0) in vec2 uv;                      \
-      layout (location=0) out returnType out_FragColor;    \
-                                                           \
-      void main() {                                        \
-        vec4 tex = textureSample2D(0, 0, uv);              \
-        out_FragColor = returnType(tex.swizzle);           \
+#define VULKAN_SIMPLE_FRAG_SHADER_DEF(returnType, swizzle)  \
+    IGL_TO_STRING(                                          \
+      layout (location=0) in vec2 uv;                       \
+      layout (location=0) out returnType out_FragColor;     \
+                                                            \
+      layout (set = 0, binding = 0) uniform sampler2D uTex; \
+                                                            \
+      void main() {                                         \
+        vec4 tex = texture(uTex, uv);                       \
+        out_FragColor = returnType(tex.swizzle);            \
       });
 
 const char VULKAN_SIMPLE_FRAG_SHADER[] = VULKAN_SIMPLE_FRAG_SHADER_DEF(vec4, rgba);
@@ -481,16 +483,6 @@ const char VULKAN_SIMPLE_FRAG_SHADER_UINT[] = VULKAN_SIMPLE_FRAG_SHADER_DEF(uint
 const char VULKAN_SIMPLE_FRAG_SHADER_UINT2[] = VULKAN_SIMPLE_FRAG_SHADER_DEF(uvec2, rg);
 const char VULKAN_SIMPLE_FRAG_SHADER_UINT4[] = VULKAN_SIMPLE_FRAG_SHADER_DEF(uvec4, rgba);
 
-// 1D Texture Vulkan Fragment shader
-const char VULKAN_SIMPLE_FRAG_SHADER_1DTEX[] =
-IGL_TO_STRING(
-    layout(location = 0) in vec2 uv;
-    layout(location = 0) out vec4 out_FragColor;
-
-    void main() {
-        out_FragColor = textureSample1D(0, 0, uv.x);
-    });
-
 const char VULKAN_SIMPLE_VERT_SHADER_TEX_2DARRAY[] =
 IGL_TO_STRING(
     layout(location = 0) in vec4 position_in;
@@ -502,7 +494,7 @@ IGL_TO_STRING(
       int layer;
     };
 
-    layout(set = 2, binding = 2, std140) uniform PerFrame {
+    layout(set = 1, binding = 2, std140) uniform PerFrame {
       VertexUniforms perFrame;
     };
 
@@ -518,8 +510,10 @@ IGL_TO_STRING(
     layout(location = 1) in flat uint layer;
     layout(location = 0) out vec4 out_FragColor;
 
+    layout (set = 0, binding = 0) uniform sampler1DArray uTex;
+
     void main() {
-        out_FragColor = textureSample1DArray(0, 0, vec2(uv.x, layer));
+        out_FragColor = texture(uTex, vec2(uv.x, layer));
     });
 
 const char VULKAN_SIMPLE_FRAG_SHADER_TEX_2DARRAY[] =
@@ -528,8 +522,10 @@ IGL_TO_STRING(
     layout(location = 1) in flat uint layer;
     layout(location = 0) out vec4 out_FragColor;
 
+    layout (set = 0, binding = 0) uniform sampler2DArray uTex;
+
     void main() {
-      out_FragColor = textureSample2DArray(0, 0, vec3(uv.xy, layer));
+      out_FragColor = texture(uTex, vec3(uv.xy, layer));
     });
 
 const char VULKAN_SIMPLE_VERT_SHADER_CUBE[] =
@@ -540,7 +536,7 @@ const char VULKAN_SIMPLE_VERT_SHADER_CUBE[] =
                     vec4 view;
                   };
 
-                  layout(set = 2, binding = 1, std140) uniform PerFrame {
+                  layout(set = 1, binding = 1, std140) uniform PerFrame {
                      VertexUniforms perFrame;
                   };
 
@@ -554,8 +550,10 @@ const char VULKAN_SIMPLE_FRAG_SHADER_CUBE[] =
                layout(location = 0) in vec3 view;
                layout(location = 0) out vec4 out_FragColor;
 
+               layout (set = 0, binding = 0) uniform samplerCube uTex;
+
                void main() {
-                   out_FragColor = textureSampleCube(0, 0, view);
+                   out_FragColor = texture(uTex, view);
                });
 
 // Simple Vulkan Vertex shader for multiview
@@ -565,7 +563,7 @@ const char VULKAN_SIMPLE_VERT_SHADER_MULTIVIEW[] =
       layout (location = 0) in vec4 position_in;
       layout (location = 0) out vec4 color_out;
 
-      layout(set = 2, binding = 1, std140) uniform PerFrame {
+      layout(set = 1, binding = 1, std140) uniform PerFrame {
         vec4 colors[2];
       };
 

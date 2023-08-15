@@ -57,12 +57,12 @@ layout (location=2) in vec2 st;
 layout (location=0) out vec3 color;
 layout (location=1) out vec2 uv;
 
-layout (set = 2, binding = 0, std140) uniform UniformsPerFrame {
+layout (set = 1, binding = 0, std140) uniform UniformsPerFrame {
   mat4 proj;
   mat4 view;
 } perFrame;
 
-layout (set = 2, binding = 1, std140) uniform UniformsPerObject {
+layout (set = 1, binding = 1, std140) uniform UniformsPerObject {
   mat4 model;
 } perObject;
 
@@ -81,9 +81,12 @@ layout (location=0) in vec3 color;
 layout (location=1) in vec2 uv;
 layout (location=0) out vec4 out_FragColor;
 
+layout (set = 0, binding = 0) uniform sampler2D uTex0;
+layout (set = 0, binding = 1) uniform sampler2D uTex1;
+
 void main() {
-  vec4 t0 = textureSample2D(0, 0, 2.0*uv);
-  vec4 t1 = textureSample2D(1, 0, uv);
+  vec4 t0 = texture(uTex0, 2.0 * uv);
+  vec4 t1 = texture(uTex1,  uv);
   out_FragColor = vec4(color * (t0.rgb + t1.rgb), 1.0);
 };
 )";
@@ -527,6 +530,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   commands->bindTexture(0, igl::BindTarget::kFragment, texture0_.get());
   commands->bindTexture(1, igl::BindTarget::kFragment, texture1_.get());
   commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
+  commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
   // Draw 2 cubes: we use uniform buffer to update matrices
   for (uint32_t i = 0; i != kNumCubes; i++) {
     commands->bindBuffer(

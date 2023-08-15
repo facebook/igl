@@ -150,8 +150,8 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 #ifdef VULKAN
 // kBinding_StorageImages in VulkanContext.cpp
-layout (set = 0, binding = 6, rgba8) uniform readonly  image2D kTextures2Din[];
-layout (set = 0, binding = 6, rgba8) uniform writeonly image2D kTextures2Dout[];
+layout (set = 3, binding = 6, rgba8) uniform readonly  image2D kTextures2Din[];
+layout (set = 3, binding = 6, rgba8) uniform writeonly image2D kTextures2Dout[];
 
 layout(push_constant) uniform PushConstants {
   uint textureId;
@@ -200,15 +200,15 @@ void main() {
 const char* kCodeFullscreenFS = R"(
 layout (location=0) in vec2 uv;
 layout (location=0) out vec4 out_FragColor;
-#ifndef VULKAN
+
+#ifdef VULKAN
+layout(set = 0, binding = 0) uniform sampler2D texFullScreen;
+#else
 uniform sampler2D texFullScreen;
 #endif
+
 void main() {
-#ifdef VULKAN
-  out_FragColor = textureSample2D(0, 0, uv);
-#else
   out_FragColor = texture(texFullScreen, uv);
-#endif
 }
 )";
 
@@ -245,15 +245,15 @@ struct Material {
 };
 
 #ifdef VULKAN
-layout(set = 2, binding = 0, std140) uniform PerFrame {
+layout(set = 1, binding = 0, std140) uniform PerFrame {
   UniformsPerFrame perFrame;
 };
 
-layout(set = 2, binding = 1, std140) uniform PerObject {
+layout(set = 1, binding = 1, std140) uniform PerObject {
   UniformsPerObject perObject;
 };
 
-layout(set = 3, binding = 2, std430) readonly buffer Materials {
+layout(set = 2, binding = 2, std430) readonly buffer Materials {
   Material mtl[];
 } mat;
 #else
@@ -311,13 +311,13 @@ struct UniformsPerObject {
 };
 
 #ifdef VULKAN
-layout(set = 2, binding = 0, std140)
+layout(set = 1, binding = 0, std140)
 #endif
 uniform PerFrame {
   UniformsPerFrame perFrame;
 };
 #ifdef VULKAN
-layout(set = 2, binding = 1, std140)
+layout(set = 1, binding = 1, std140)
 #endif
 uniform PerObject{
   UniformsPerObject perObject;
@@ -349,7 +349,7 @@ struct UniformsPerFrame {
   vec2 padding;
 };
 #ifdef VULKAN
-layout(set = 2, binding = 0, std140)
+layout(set = 1, binding = 0, std140)
 #endif
 uniform PerFrame {
   UniformsPerFrame perFrame;
@@ -375,8 +375,11 @@ layout (location=5) flat in Material mtl;
 layout (location=0) out vec4 out_FragColor;
 
 #ifdef VULKAN
+layout(set = 0, binding = 0) uniform sampler2DShadow texShadow;
+layout(set = 0, binding = 4) uniform samplerCube texSkyboxIrradiance;
+
 vec4 textureBindless2D(uint textureid, vec2 uv) {
-  return texture(sampler2D(kTextures2D[textureid], sSamplers[0]), uv);
+  return texture(sampler2D(kTextures2D[textureid], kSamplers[0]), uv);
 }
 #else
   layout(binding = 0) uniform sampler2D texShadow;
@@ -387,16 +390,12 @@ vec4 textureBindless2D(uint textureid, vec2 uv) {
 #endif // VULKAN
 
 float PCF3(vec3 uvw) {
-#ifdef VULKAN
-  float size = 1.0 / textureSize2D(0, 1).x;
-#else
   float size = 1.0 / float( textureSize(texShadow, 0).x );
-#endif
   float shadow = 0.0;
   for (int v=-1; v<=+1; v++)
     for (int u=-1; u<=+1; u++)
 #ifdef VULKAN
-      shadow += textureSample2DShadow(0, 1, uvw + size * vec3(u, v, 0));
+      shadow += texture(texShadow, uvw + size * vec3(u, v, 0));
 #else
       shadow += (uvw.z <= texture(texShadow, uvw.xy + size * vec2(u, v) ).r) ? 1.0 : 0.0;
 #endif
@@ -440,11 +439,7 @@ void main() {
   float NdotL = 0.5 * (NdotL1+NdotL2);
   // IBL diffuse
   const vec4 f0 = vec4(0.04);
-#ifdef VULKAN
-  vec4 diffuse = textureSampleCube(1, 0, n) * Kd * (vec4(1.0) - f0);
-#else
   vec4 diffuse = texture(texSkyboxIrradiance, n) * Kd * (vec4(1.0) - f0);
-#endif
   out_FragColor = drawNormals ?
     vec4(0.5 * (n+vec3(1.0)), 1.0) :
     Ka + diffuse * shadow(vtx.shadowCoords);
@@ -468,10 +463,10 @@ struct UniformsPerObject {
 };
 
 #ifdef VULKAN
-layout(set = 2, binding = 0, std140) uniform PerFrame {
+layout(set = 1, binding = 0, std140) uniform PerFrame {
   UniformsPerFrame perFrame;
 };
-layout(set = 2, binding = 1, std140) uniform PerObject {
+layout(set = 1, binding = 1, std140) uniform PerObject {
   UniformsPerObject perObject;
 };
 #else
@@ -518,7 +513,7 @@ struct UniformsPerFrame {
 };
 
 #ifdef VULKAN
-layout(set = 2, binding = 0, std140) uniform PerFrame {
+layout(set = 1, binding = 0, std140) uniform PerFrame {
   UniformsPerFrame perFrame;
 };
 #else
@@ -567,15 +562,14 @@ const char* kSkyboxFS = R"(
 layout (location=0) in vec3 textureCoords;
 layout (location=0) out vec4 out_FragColor;
 
-#ifndef VULKAN
+#ifdef VULKAN
+layout(set = 0, binding = 1) uniform samplerCube texSkybox;
+#else
 uniform samplerCube texSkybox;
 #endif
+
 void main() {
-#ifdef VULKAN
-  out_FragColor = textureSampleCube(0, 0, textureCoords);
-#else
   out_FragColor = texture(texSkybox, textureCoords);
-#endif
 }
 )";
 
@@ -1922,6 +1916,13 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     commands->bindBuffer(ubPerFrameIdx, BindTarget::kAllGraphics, ubPerFrame_[frameIndex], 0);
     commands->bindBuffer(ubPerObjectIdx, BindTarget::kAllGraphics, ubPerObject_[frameIndex], 0);
     commands->bindBuffer(sbIdx, BindTarget::kAllGraphics, sbMaterials_, 0);
+    commands->bindTexture(0, igl::BindTarget::kFragment, fbShadowMap_->getDepthAttachment().get());
+    commands->bindTexture(4, igl::BindTarget::kFragment, skyboxTextureIrradiance_.get());
+    commands->bindSamplerState(0, igl::BindTarget::kFragment, samplerShadow_.get());
+    commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
+    commands->bindSamplerState(2, igl::BindTarget::kFragment, sampler_.get());
+    commands->bindSamplerState(3, igl::BindTarget::kFragment, sampler_.get());
+    commands->bindSamplerState(4, igl::BindTarget::kFragment, sampler_.get());
 
 #if USE_OPENGL_BACKEND
     commands->bindBuffer(0, BindTarget::kVertex, vb0_, 0);
@@ -1941,17 +1942,9 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
                                          : textures_[imageIdx].alpha ? textures_[imageIdx].alpha
                                                                      : textureDummyBlack_;
 
-      commands->bindTexture(
-          0, igl::BindTarget::kFragment, fbShadowMap_->getDepthAttachment().get());
       commands->bindTexture(1, igl::BindTarget::kFragment, ambientTextureReference.get());
       commands->bindTexture(2, igl::BindTarget::kFragment, diffuseTextureReference.get());
       commands->bindTexture(3, igl::BindTarget::kFragment, alphaTextureReference.get());
-      commands->bindTexture(4, igl::BindTarget::kFragment, skyboxTextureIrradiance_.get());
-      commands->bindSamplerState(0, igl::BindTarget::kFragment, samplerShadow_.get());
-      commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
-      commands->bindSamplerState(2, igl::BindTarget::kFragment, sampler_.get());
-      commands->bindSamplerState(3, igl::BindTarget::kFragment, sampler_.get());
-      commands->bindSamplerState(4, igl::BindTarget::kFragment, sampler_.get());
       commands->draw(PrimitiveType::Triangle, shapeStart, numVertices);
       if (enableWireframe_) {
         commands->bindRenderPipelineState(renderPipelineState_MeshWireframe_);
@@ -1968,8 +1961,8 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 #else
     commands->bindTexture(0, igl::BindTarget::kFragment, fbShadowMap_->getDepthAttachment().get());
     commands->bindTexture(1, igl::BindTarget::kFragment, skyboxTextureIrradiance_.get());
-    commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
-    commands->bindSamplerState(1, igl::BindTarget::kFragment, samplerShadow_.get());
+    commands->bindSamplerState(0, igl::BindTarget::kFragment, samplerShadow_.get());
+    commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
     commands->drawIndexed(
         PrimitiveType::Triangle, indexData_.size(), igl::IndexFormat::UInt32, *ib0_.get(), 0);
     if (enableWireframe_) {
@@ -1982,12 +1975,8 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
 
     // Skybox
     commands->bindRenderPipelineState(renderPipelineState_Skybox_);
-#if USE_OPENGL_BACKEND
     commands->bindTexture(1, igl::BindTarget::kFragment, skyboxTextureReference_.get());
     commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
-#else
-    commands->bindTexture(0, igl::BindTarget::kFragment, skyboxTextureReference_.get());
-#endif
     commands->pushDebugGroupLabel("Render Skybox", igl::Color(0, 1, 0));
     commands->bindDepthStencilState(depthStencilStateLEqual_);
     commands->draw(PrimitiveType::Triangle, 0, 3 * 6 * 2);
@@ -2038,9 +2027,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
                           igl::BindTarget::kFragment,
                           kNumSamplesMSAA > 1 ? fbOffscreen_->getResolveColorAttachment(0).get()
                                               : fbOffscreen_->getColorAttachment(0).get());
-#if USE_OPENGL_BACKEND
     commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
-#endif
     commands->draw(PrimitiveType::Triangle, 0, 3);
     commands->popDebugGroupLabel();
 

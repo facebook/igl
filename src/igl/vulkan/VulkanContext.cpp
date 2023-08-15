@@ -47,18 +47,18 @@ namespace {
 
 /*
  * Descriptor sets:
- *  0 - bindless textures/samplers
- *  1 - textures/samplers
- *  2 - uniform buffers
- *  3 - storage buffers
+ *  0 - combined image samplers
+ *  1 - uniform buffers
+ *  2 - storage buffers
+ *  3 - bindless textures/samplers  <--  optional
  */
-const uint32_t kBindPoint_Bindless = 0;
-const uint32_t kBindPoint_Textures = 1;
-const uint32_t kBindPoint_BuffersUniform = 2;
-const uint32_t kBindPoint_BuffersStorage = 3;
+const uint32_t kBindPoint_CombinedImageSamplers = 0;
+const uint32_t kBindPoint_BuffersUniform = 1;
+const uint32_t kBindPoint_BuffersStorage = 2;
+const uint32_t kBindPoint_Bindless = 3;
 
 /*
- These bindings should match GLSL declarations injected into shaders in
+ BINDLESS ONLY: these bindings should match GLSL declarations injected into shaders in
  Device::compileShaderModule(). Same with SparkSL.
  */
 const uint32_t kBinding_Texture2D = 0;
@@ -259,12 +259,11 @@ VulkanContext::~VulkanContext() {
     }
   }
 
-  if (dslBindless_) {
-    dslBindless_.reset(nullptr);
-  }
-  dslTextures_.reset(nullptr);
+  dslCombinedImageSamplers_.reset(nullptr);
   dslBuffersUniform_.reset(nullptr);
   dslBuffersStorage_.reset(nullptr);
+  dslBindless_.reset(nullptr);
+
   pipelineLayoutGraphics_.reset(nullptr);
   pipelineLayoutCompute_.reset(nullptr);
   swapchain_.reset(nullptr); // Swapchain has to be destroyed prior to Surface
@@ -277,7 +276,7 @@ VulkanContext::~VulkanContext() {
     if (dpBindless_ != VK_NULL_HANDLE) {
       vkDestroyDescriptorPool(device, dpBindless_, nullptr);
     }
-    vkDestroyDescriptorPool(device, dpTextures_, nullptr);
+    vkDestroyDescriptorPool(device, dpCombinedImageSamplers_, nullptr);
     vkDestroyDescriptorPool(device, dpBuffersUniform_, nullptr);
     vkDestroyDescriptorPool(device, dpBuffersStorage_, nullptr);
     vkDestroyPipelineCache(device, pipelineCache_, nullptr);
@@ -656,59 +655,52 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   // TODO: make this more manageable (dynamic) once we migrate all apps to use descriptor sets
   constexpr uint32_t kNumSets = 1024;
   {
-    // create default descriptor set layout for textures/samplers bindings
-    constexpr uint32_t kNumBindings = 6;
-    const std::array<VkDescriptorSetLayoutBinding, kNumBindings> bindings = {
-        ivkGetDescriptorSetLayoutBinding(
-            kBinding_Texture2D, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, IGL_TEXTURE_SAMPLERS_MAX),
-        ivkGetDescriptorSetLayoutBinding(
-            kBinding_Texture2DArray, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, IGL_TEXTURE_SAMPLERS_MAX),
-        ivkGetDescriptorSetLayoutBinding(
-            kBinding_Texture3D, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, IGL_TEXTURE_SAMPLERS_MAX),
-        ivkGetDescriptorSetLayoutBinding(
-            kBinding_TextureCube, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, IGL_TEXTURE_SAMPLERS_MAX),
-        ivkGetDescriptorSetLayoutBinding(
-            kBinding_Sampler, VK_DESCRIPTOR_TYPE_SAMPLER, IGL_TEXTURE_SAMPLERS_MAX),
-        ivkGetDescriptorSetLayoutBinding(
-            kBinding_SamplerShadow, VK_DESCRIPTOR_TYPE_SAMPLER, IGL_TEXTURE_SAMPLERS_MAX),
-    };
-    const uint32_t flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
-                           VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
-                           VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
-    const std::array<VkDescriptorBindingFlags, kNumBindings> bindingFlags = {
-        flags, flags, flags, flags, flags, flags};
-    dslTextures_ = std::make_unique<VulkanDescriptorSetLayout>(
+    // create default descriptor set layout for texture bindings
+    constexpr uint32_t kNumBindings = IGL_TEXTURE_SAMPLERS_MAX;
+    // NOTE: we really want these arrays to be uninitialized
+    // @lint-ignore CLANGTIDY
+    VkDescriptorSetLayoutBinding bindings[kNumBindings];
+    // @lint-ignore CLANGTIDY
+    VkDescriptorBindingFlags bindingFlags[kNumBindings];
+    // @lint-ignore CLANGTIDY
+    VkDescriptorPoolSize poolSizes[kNumBindings];
+    for (uint32_t i = 0; i != kNumBindings; i++) {
+      bindings[i] =
+          ivkGetDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1);
+      bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+                        VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
+                        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+      poolSizes[i] =
+          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, kNumSets * kNumBindings};
+    }
+    dslCombinedImageSamplers_ = std::make_unique<VulkanDescriptorSetLayout>(
         device,
         kNumBindings,
-        bindings.data(),
-        bindingFlags.data(),
-        "Descriptor Set Layout: VulkanContext::dslTextures_");
-
+        bindings,
+        bindingFlags,
+        "Descriptor Set Layout: VulkanContext::dslCombinedImageSamplers_");
     // create default descriptor pool and allocate descriptor sets
-    const std::array<VkDescriptorPoolSize, kNumBindings> poolSizes = {
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, kNumSets * IGL_TEXTURE_SAMPLERS_MAX},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, kNumSets * IGL_TEXTURE_SAMPLERS_MAX},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, kNumSets * IGL_TEXTURE_SAMPLERS_MAX},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, kNumSets * IGL_TEXTURE_SAMPLERS_MAX},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, kNumSets * IGL_TEXTURE_SAMPLERS_MAX},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, kNumSets * IGL_TEXTURE_SAMPLERS_MAX},
-    };
-    textureDSets_.dsets.resize(kNumSets);
+    combinedImageSamplerDSets_.dsets.resize(kNumSets);
     VK_ASSERT_RETURN(ivkCreateDescriptorPool(
-        device, kNumSets, static_cast<uint32_t>(poolSizes.size()), poolSizes.data(), &dpTextures_));
+        device, kNumSets, kNumBindings, poolSizes, &dpCombinedImageSamplers_));
     for (uint32_t i = 0; i != kNumSets; i++) {
-      VK_ASSERT_RETURN(ivkAllocateDescriptorSet(device,
-                                                dpTextures_,
-                                                dslTextures_->getVkDescriptorSetLayout(),
-                                                &textureDSets_.dsets[i].ds));
+      VK_ASSERT_RETURN(
+          ivkAllocateDescriptorSet(device,
+                                   dpCombinedImageSamplers_,
+                                   dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
+                                   &combinedImageSamplerDSets_.dsets[i].ds));
     }
   }
   {
     // create default descriptor set layout for uniform buffers
     constexpr uint32_t kNumBindings = IGL_UNIFORM_BLOCKS_BINDING_MAX;
-    std::array<VkDescriptorSetLayoutBinding, kNumBindings> bindings;
-    std::array<VkDescriptorBindingFlags, kNumBindings> bindingFlags;
-    std::array<VkDescriptorPoolSize, kNumBindings> poolSizes;
+    // NOTE: we really want these arrays to be uninitialized
+    // @lint-ignore CLANGTIDY
+    VkDescriptorSetLayoutBinding bindings[kNumBindings];
+    // @lint-ignore CLANGTIDY
+    VkDescriptorBindingFlags bindingFlags[kNumBindings];
+    // @lint-ignore CLANGTIDY
+    VkDescriptorPoolSize poolSizes[kNumBindings];
     for (uint32_t i = 0; i != kNumBindings; i++) {
       bindings[i] = ivkGetDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
       bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
@@ -719,11 +711,11 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     dslBuffersUniform_ = std::make_unique<VulkanDescriptorSetLayout>(
         device,
         kNumBindings,
-        bindings.data(),
-        bindingFlags.data(),
+        bindings,
+        bindingFlags,
         "Descriptor Set Layout: VulkanContext::dslBuffersUniform_");
-    VK_ASSERT_RETURN(ivkCreateDescriptorPool(
-        device, kNumSets, kNumBindings, poolSizes.data(), &dpBuffersUniform_));
+    VK_ASSERT_RETURN(
+        ivkCreateDescriptorPool(device, kNumSets, kNumBindings, poolSizes, &dpBuffersUniform_));
     bufferUniformDSets_.dsets.resize(kNumSets);
     for (size_t i = 0; i != kNumSets; i++) {
       VK_ASSERT_RETURN(ivkAllocateDescriptorSet(device,
@@ -735,9 +727,13 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   {
     // create default descriptor set layout for storage buffers
     constexpr uint32_t kNumBindings = IGL_UNIFORM_BLOCKS_BINDING_MAX;
-    std::array<VkDescriptorSetLayoutBinding, kNumBindings> bindings{};
-    std::array<VkDescriptorBindingFlags, kNumBindings> bindingFlags{};
-    std::array<VkDescriptorPoolSize, kNumBindings> poolSizes{};
+    // NOTE: we really want these arrays to be uninitialized
+    // @lint-ignore CLANGTIDY
+    VkDescriptorSetLayoutBinding bindings[kNumBindings];
+    // @lint-ignore CLANGTIDY
+    VkDescriptorBindingFlags bindingFlags[kNumBindings];
+    // @lint-ignore CLANGTIDY
+    VkDescriptorPoolSize poolSizes[kNumBindings];
     for (uint32_t i = 0; i != kNumBindings; i++) {
       bindings[i] = ivkGetDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
       bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
@@ -748,11 +744,11 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     dslBuffersStorage_ = std::make_unique<VulkanDescriptorSetLayout>(
         device,
         kNumBindings,
-        bindings.data(),
-        bindingFlags.data(),
+        bindings,
+        bindingFlags,
         "Descriptor Set Layout: VulkanContext::dslBuffersStorage_");
-    VK_ASSERT_RETURN(ivkCreateDescriptorPool(
-        device, kNumSets, kNumBindings, poolSizes.data(), &dpBuffersStorage_));
+    VK_ASSERT_RETURN(
+        ivkCreateDescriptorPool(device, kNumSets, kNumBindings, poolSizes, &dpBuffersStorage_));
     bufferStorageDSets_.dsets.resize(kNumSets);
     for (size_t i = 0; i != kNumSets; i++) {
       VK_ASSERT_RETURN(ivkAllocateDescriptorSet(device,
@@ -822,10 +818,10 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   }
 
   const std::vector<VkDescriptorSetLayout> DSLs = {
-      dslBindless_->getVkDescriptorSetLayout(),
-      dslTextures_->getVkDescriptorSetLayout(),
+      dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
       dslBuffersUniform_->getVkDescriptorSetLayout(),
       dslBuffersStorage_->getVkDescriptorSetLayout(),
+      dslBindless_->getVkDescriptorSetLayout(),
   };
 
   // create pipeline layout
@@ -1307,9 +1303,7 @@ void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
 void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
                                            VkPipelineBindPoint bindPoint,
                                            const BindingsTextures& data) const {
-  VkDescriptorSet dsetTex = textureDSets_.acquireNext(*immediate_);
-
-  // 1. Sampled and storage images
+  VkDescriptorSet dset = combinedImageSamplerDSets_.acquireNext(*immediate_);
 
   std::array<VkDescriptorImageInfo, IGL_TEXTURE_SAMPLERS_MAX> infoSampledImages{};
   uint32_t numImages = 0;
@@ -1318,41 +1312,27 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
   VkImageView dummyImageView = textures_[0]->imageView_->getVkImageView();
   VkSampler dummySampler = samplers_[0]->getVkSampler();
 
-  for (igl::vulkan::VulkanTexture* texture : data.textures) {
+  for (size_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
+    igl::vulkan::VulkanTexture* texture = data.textures[i];
+    if (texture) {
+      IGL_ASSERT_MSG(data.samplers[i], "A sampler should be bound to every bound texture slot");
+      (void)IGL_VERIFY(data.samplers[i]);
+    }
+    VkSampler sampler = data.samplers[i] ? data.samplers[i]->getVkSampler() : dummySampler;
     // multisampled images cannot be directly accessed from shaders
     const bool isTextureAvailable =
         texture && ((texture->image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
     const bool isSampledImage = isTextureAvailable && texture->image_->isSampledImage();
-    infoSampledImages[numImages++] = {samplers_[0]->getVkSampler(),
+    infoSampledImages[numImages++] = {isSampledImage ? sampler : dummySampler,
                                       isSampledImage ? texture->imageView_->getVkImageView()
                                                      : dummyImageView,
                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
   }
 
-  // 2. Samplers
+  VkWriteDescriptorSet write = ivkGetWriteDescriptorSet_ImageInfo(
+      dset, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numImages, infoSampledImages.data());
 
-  std::array<VkDescriptorImageInfo, IGL_TEXTURE_SAMPLERS_MAX> infoSamplers{};
-  uint32_t numSamplers = 0;
-  for (igl::vulkan::VulkanSampler* sampler : data.samplers) {
-    infoSamplers[numSamplers++] = {sampler ? sampler->getVkSampler() : dummySampler,
-                                   VK_NULL_HANDLE,
-                                   VK_IMAGE_LAYOUT_UNDEFINED};
-  }
-  std::array<VkWriteDescriptorSet, 6> write{}; // 2D, 2D array, 3D, Cube, Sampler, SamplerShadow
-  uint32_t numWrites = 0;
-
-  // use the same indexing for every texture type
-  for (uint32_t i = kBinding_Texture2D; i != kBinding_TextureCube + 1; i++) {
-    write[numWrites++] = ivkGetWriteDescriptorSet_ImageInfo(
-        dsetTex, i, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, numImages, infoSampledImages.data());
-  }
-  for (uint32_t i = kBinding_Sampler; i != kBinding_SamplerShadow + 1; i++) {
-    write[numWrites++] = ivkGetWriteDescriptorSet_ImageInfo(
-        dsetTex, i, VK_DESCRIPTOR_TYPE_SAMPLER, numSamplers, infoSamplers.data());
-  }
-  IGL_ASSERT(numWrites == write.size());
-
-  vkUpdateDescriptorSets(device_->getVkDevice(), numWrites, write.data(), 0, nullptr);
+  vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
@@ -1363,9 +1343,9 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
       cmdBuf,
       bindPoint,
       (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
-      kBindPoint_Textures,
+      kBindPoint_CombinedImageSamplers,
       1,
-      &dsetTex,
+      &dset,
       0,
       nullptr);
 }
@@ -1448,7 +1428,7 @@ void VulkanContext::markSubmit(const VulkanImmediateCommands::SubmitHandle& hand
   if (config_.enableDescriptorIndexing) {
     bindlessDSet_.handle = handle;
   }
-  textureDSets_.updateHandles(handle);
+  combinedImageSamplerDSets_.updateHandles(handle);
   bufferUniformDSets_.updateHandles(handle);
   bufferStorageDSets_.updateHandles(handle);
 }

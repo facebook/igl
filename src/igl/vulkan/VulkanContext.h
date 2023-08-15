@@ -259,19 +259,17 @@ class VulkanContext final {
   std::unique_ptr<igl::vulkan::VulkanSwapchain> swapchain_;
   std::unique_ptr<igl::vulkan::VulkanImmediateCommands> immediate_;
   std::unique_ptr<igl::vulkan::VulkanStagingDevice> stagingDevice_;
+  // combined image sampler slots for the current drawcall
+  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslCombinedImageSamplers_;
+  // uniform buffer slots for the current drawcall
+  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBuffersUniform_;
+  // storage buffer slots for the current drawcall
+  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBuffersStorage_;
   std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBindless_; // everything
-  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslTextures_; // texture/sampler slots for
-                                                                        // the current drawcall
-  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBuffersUniform_; // buffer binding
-                                                                              // slots for the
-                                                                              // current drawcall
-  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBuffersStorage_; // buffer binding
-                                                                              // slots for the
-                                                                              // current drawcall
-  VkDescriptorPool dpBindless_ = VK_NULL_HANDLE;
-  VkDescriptorPool dpTextures_ = VK_NULL_HANDLE;
+  VkDescriptorPool dpCombinedImageSamplers_ = VK_NULL_HANDLE;
   VkDescriptorPool dpBuffersUniform_ = VK_NULL_HANDLE;
   VkDescriptorPool dpBuffersStorage_ = VK_NULL_HANDLE;
+  VkDescriptorPool dpBindless_ = VK_NULL_HANDLE;
   struct DescriptorSet {
     VkDescriptorSet ds = VK_NULL_HANDLE;
     SubmitHandle handle =
@@ -297,7 +295,7 @@ class VulkanContext final {
     }
   };
   mutable DescriptorSet bindlessDSet_;
-  mutable DescriptorSetArray textureDSets_;
+  mutable DescriptorSetArray combinedImageSamplerDSets_;
   mutable DescriptorSetArray bufferUniformDSets_;
   mutable DescriptorSetArray bufferStorageDSets_;
   std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutGraphics_;
