@@ -334,7 +334,8 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
   case TextureFormat::RG_UNorm16:
     return all;
   case TextureFormat::R_F32:
-    return all;
+    return sampled | storage | attachment | sampledAttachment |
+           (supports32BitFloatFiltering_ ? sampledFiltered : 0);
 
     // 64 bpp
   case TextureFormat::RGBA_F16:
