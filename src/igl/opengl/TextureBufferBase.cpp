@@ -56,30 +56,30 @@ void TextureBufferBase::unbind() {
   getContext().bindTexture(target_, 0);
 }
 
-void TextureBufferBase::attachAsColor(uint32_t index, uint32_t face, uint32_t mipmapLevel) {
+void TextureBufferBase::attachAsColor(uint32_t index, uint32_t face, uint32_t mipLevel) {
   IGL_ASSERT(getUsage() & TextureDesc::TextureUsageBits::Attachment);
   if (IGL_VERIFY(textureID_)) {
-    attachAsColor(index, face, mipmapLevel, textureID_);
+    attachAsColor(index, face, mipLevel, textureID_);
   }
 }
 
 void TextureBufferBase::attachAsColor(uint32_t index,
                                       uint32_t face,
-                                      uint32_t mipmapLevel,
+                                      uint32_t mipLevel,
                                       GLuint textureID) {
   GLenum target = target_ == GL_TEXTURE_CUBE_MAP ? GL_TEXTURE_CUBE_MAP_POSITIVE_X + face : target_;
   if (getSamples() > 1) {
     IGL_ASSERT_MSG(index == 0, "Multisample framebuffer can only use GL_COLOR_ATTACHMENT0");
     getContext().framebufferTexture2DMultisample(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, target, textureID, mipmapLevel, getSamples());
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, target, textureID, mipLevel, getSamples());
   } else {
     getContext().framebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, target, textureID, mipmapLevel);
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, target, textureID, mipLevel);
   }
 }
 
-void TextureBufferBase::detachAsColor(uint32_t index, uint32_t face, uint32_t mipmapLevel) {
-  attachAsColor(index, face, mipmapLevel, 0);
+void TextureBufferBase::detachAsColor(uint32_t index, uint32_t face, uint32_t mipLevel) {
+  attachAsColor(index, face, mipLevel, 0);
 }
 
 void TextureBufferBase::attachAsDepth() {

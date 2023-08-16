@@ -84,14 +84,14 @@ void TextureTarget::bindImage(size_t /*unit*/) {
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
 
-void TextureTarget::attachAsColor(uint32_t index, uint32_t /*face*/, uint32_t /*mipmapLevel*/) {
+void TextureTarget::attachAsColor(uint32_t index, uint32_t /*face*/, uint32_t /*mipLevel*/) {
   if (IGL_VERIFY(renderBufferID_)) {
     getContext().framebufferRenderbuffer(
         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_RENDERBUFFER, renderBufferID_);
   }
 }
 
-void TextureTarget::detachAsColor(uint32_t /*index*/, uint32_t /*face*/, uint32_t /*mipmapLevel*/) {
+void TextureTarget::detachAsColor(uint32_t /*index*/, uint32_t /*face*/, uint32_t /*mipLevel*/) {
   // Binding to render buffer ID 0 is undefined in iOS, and currently we don't
   // have a need to unbind for this texture type
   IGL_ASSERT_NOT_IMPLEMENTED();

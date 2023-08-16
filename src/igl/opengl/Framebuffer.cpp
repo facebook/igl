@@ -484,7 +484,7 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
       attachAsColor(colorAttachmentTexture,
                     (uint32_t)index,
                     (uint32_t)renderPass.colorAttachments[index].layer,
-                    (uint32_t)renderPass.colorAttachments[index].mipmapLevel);
+                    (uint32_t)renderPass.colorAttachments[index].mipLevel);
     }
   }
   // clear the buffers if we're not loading previous contents
@@ -554,10 +554,10 @@ void CustomFramebuffer::unbind() const {
 void CustomFramebuffer::attachAsColor(const std::shared_ptr<ITexture>& texture,
                                       uint32_t index,
                                       uint32_t face,
-                                      uint32_t mipmapLevel) const {
+                                      uint32_t mipLevel) const {
   auto& glTex = static_cast<Texture&>(*texture);
   if (renderTarget_.mode == FramebufferMode::Mono) {
-    glTex.attachAsColor(index, face, mipmapLevel);
+    glTex.attachAsColor(index, face, mipLevel);
   } else if (renderTarget_.mode == FramebufferMode::Stereo) {
     auto numSamples = texture->getSamples();
     if (numSamples > 1) {

@@ -45,7 +45,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
       1, // numSamples
       TextureDesc::TextureUsageBits::Attachment,
       0, // options
-      1, // mipmapLevelCount
+      1, // numMipLevels
       TextureType::TwoD,
       TextureFormat::RGBA_UNorm8,
       ResourceStorage::Private,
@@ -86,7 +86,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(int wi
       1, // numSamples
       TextureDesc::TextureUsageBits::Attachment,
       0, // options
-      1, // mipmapLevelCount
+      1, // numMipLevels
       TextureType::TwoD,
       TextureFormat::RGBA_UNorm8,
       ResourceStorage::Private,
@@ -127,7 +127,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(Result* o
       1, // numSamples
       TextureDesc::TextureUsageBits::Attachment,
       0, // options
-      1, // mipmapLevelCount
+      1, // numMipLevels
       TextureType::TwoD,
       TextureFormat::Z_UNorm24,
       ResourceStorage::Private,

@@ -2054,7 +2054,7 @@ void generateCompressedTexture(LoadedImage img) {
 
   printf("...compressing texture to %s\n", img.compressedFileName.c_str());
 
-  const auto mipmapLevelCount = TextureDesc::calcNumMipLevels(img.w, img.h);
+  const auto numMipLevels = TextureDesc::calcNumMipLevels(img.w, img.h);
 
   // Go over all generated mipmap and create a compressed texture
   gli::texture2d::extent_type extents;
@@ -2064,12 +2064,12 @@ void generateCompressedTexture(LoadedImage img) {
   // Create gli texture
   // hard coded and support only BC7 format
   gli::texture2d gliTex2d =
-      gli::texture2d(gli::FORMAT_RGBA_BP_UNORM_BLOCK16, extents, mipmapLevelCount);
+      gli::texture2d(gli::FORMAT_RGBA_BP_UNORM_BLOCK16, extents, numMipLevels);
 
   uint32_t w = img.w;
   uint32_t h = img.h;
   size_t imgsize = 0;
-  for (uint32_t i = 0; i < mipmapLevelCount; ++i) {
+  for (uint32_t i = 0; i < numMipLevels; ++i) {
     // mipi level
     gli::image gliImage = gliTex2d[i];
 

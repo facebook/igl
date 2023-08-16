@@ -33,7 +33,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(int wi
                       1, // numSamples
                       TextureDesc::TextureUsageBits::Attachment,
                       0, // options
-                      1, // mipmapLevelCount
+                      1, // numMipLevels
                       TextureType::TwoD,
                       TextureFormat::RGBA_UNorm8};
   drawableTexture_ = std::make_shared<ViewTextureTarget>(getContext(), desc.format);

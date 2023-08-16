@@ -189,11 +189,11 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                                                 descColor.clearColor.g,
                                                 descColor.clearColor.b,
                                                 descColor.clearColor.a));
-    if (descColor.mipmapLevel && mipLevel) {
-      IGL_ASSERT_MSG(descColor.mipmapLevel == mipLevel,
+    if (descColor.mipLevel && mipLevel) {
+      IGL_ASSERT_MSG(descColor.mipLevel == mipLevel,
                      "All color attachments should have the same mip-level");
     }
-    mipLevel = descColor.mipmapLevel;
+    mipLevel = descColor.mipLevel;
     const auto initialLayout = descColor.loadAction == igl::LoadAction::Load
                                    ? colorTexture.getVulkanTexture().getVulkanImage().imageLayout_
                                    : VK_IMAGE_LAYOUT_UNDEFINED;
@@ -228,7 +228,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   if (framebuffer->getDepthAttachment()) {
     const auto& depthTexture = static_cast<vulkan::Texture&>(*(framebuffer->getDepthAttachment()));
     hasDepthAttachment_ = true;
-    IGL_ASSERT_MSG(descDepth.mipmapLevel == mipLevel,
+    IGL_ASSERT_MSG(descDepth.mipLevel == mipLevel,
                    "Depth attachment should have the same mip-level as color attachments");
     clearValues.push_back(
         ivkGetClearDepthStencilValue(descDepth.clearDepth, descStencil.clearStencil));

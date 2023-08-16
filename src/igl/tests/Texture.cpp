@@ -1085,7 +1085,7 @@ TEST_F(TextureTest, RenderToMip) {
     ASSERT_TRUE(cmdBuf_ != nullptr);
 
     // Modify render pass to only draw to nth mip level
-    renderPass_.colorAttachments[0].mipmapLevel = mipLevel;
+    renderPass_.colorAttachments[0].mipLevel = mipLevel;
 
     auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, fb);
     cmds->bindBuffer(data::shader::simplePosIndex, BindTarget::kVertex, vb_, 0);
@@ -1192,7 +1192,7 @@ TEST_F(TextureTest, GetEstimatedSizeInBytes) {
   ASSERT_EQ(calcSize(16, 1, format, 5), bytes);
   if (iglDev_->hasFeature(DeviceFeatures::TextureNotPot)) {
     if (!iglDev_->hasFeature(DeviceFeatures::TexturePartialMipChain)) {
-      // ES 2.0 generates maximum mipmapLevelCount
+      // ES 2.0 generates maximum mip levels
       bytes = static_cast<size_t>(
           (128 * 333 + 64 * 166 + 32 * 83 + 16 * 41 + 8 * 20 + 4 * 10 + 2 * 5 + 1 * 2 + 1 * 1) *
           formatBytes);
@@ -1208,7 +1208,7 @@ TEST_F(TextureTest, GetEstimatedSizeInBytes) {
       bytes = static_cast<size_t>((16 + 8 + 4 + 2 + 1) * rBytes);
       ASSERT_EQ(calcSize(16, 1, TextureFormat::R_UNorm8, 5), bytes);
       if (!iglDev_->hasFeature(DeviceFeatures::TexturePartialMipChain)) {
-        // ES 2.0 generates maximum mipmapLevelCount
+        // ES 2.0 generates maximum mip levels
         bytes = static_cast<size_t>(
             (128 * 333 + 64 * 166 + 32 * 83 + 16 * 41 + 8 * 20 + 4 * 10 + 2 * 5 + 1 * 2 + 1 * 1) *
             rgBytes);

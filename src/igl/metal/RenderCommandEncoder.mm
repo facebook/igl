@@ -71,7 +71,7 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
     metalColorAttachment.storeAction = convertStoreAction(iglColorAttachment.storeAction);
     metalColorAttachment.clearColor = convertClearColor(iglColorAttachment.clearColor);
     metalColorAttachment.slice = iglColorAttachment.layer;
-    metalColorAttachment.level = iglColorAttachment.mipmapLevel;
+    metalColorAttachment.level = iglColorAttachment.mipLevel;
   }
 
   // Depth

@@ -32,13 +32,13 @@ void ViewTextureTarget::unbind() {
 
 void ViewTextureTarget::attachAsColor(uint32_t /* index: not used */,
                                       uint32_t /*face*/,
-                                      uint32_t /*mipmapLevel*/) {
+                                      uint32_t /*mipLevel*/) {
   // No-op. This texture is already attached to view's implicit framebuffer
 }
 
 void ViewTextureTarget::detachAsColor(uint32_t /* index: not used */,
                                       uint32_t /*face*/,
-                                      uint32_t /*mipmapLevel*/) {
+                                      uint32_t /*mipLevel*/) {
   // No-op. This cannot be done for this texture type.
 }
 

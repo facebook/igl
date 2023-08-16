@@ -73,7 +73,7 @@ struct RenderPassDesc {
     LoadAction loadAction = LoadAction::Clear; // default load action for depth and stencil
     StoreAction storeAction = StoreAction::DontCare; // default store action for depth and stencil
     uint8_t layer = 0;
-    uint8_t mipmapLevel = 0;
+    uint8_t mipLevel = 0;
   };
 
  public:

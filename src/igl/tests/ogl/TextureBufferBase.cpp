@@ -260,7 +260,7 @@ TEST_F(TextureBufferBaseOGLTest, TextureMipmapGen) {
                                                MIPMAP_TEX_HEIGHT_1023,
                                                TextureDesc::TextureUsageBits::Sampled);
 
-  // By default mipmapLevelCount = 1, which is the base texture
+  // By default numMipLevels = 1, which is the base texture
   // 16x16
   size_t maxDim = std::max<size_t>(texDesc16.width, texDesc16.height);
   int targetlevel = std::floor(log2(maxDim)) + 1;
