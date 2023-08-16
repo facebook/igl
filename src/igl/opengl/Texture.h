@@ -47,8 +47,14 @@ class Texture : public WithContext, public ITexture {
   virtual void unbind() = 0;
 
   // frame buffer attachments
-  virtual void attachAsColor(uint32_t index, uint32_t face = 0, uint32_t mipLevel = 0) = 0;
-  virtual void detachAsColor(uint32_t index, uint32_t face = 0, uint32_t mipLevel = 0) = 0;
+  virtual void attachAsColor(uint32_t index,
+                             uint32_t face = 0,
+                             uint32_t mipLevel = 0,
+                             bool read = false) = 0;
+  virtual void detachAsColor(uint32_t index,
+                             uint32_t face = 0,
+                             uint32_t mipLevel = 0,
+                             bool read = false) = 0;
   virtual void attachAsDepth() = 0;
   virtual void attachAsStencil() = 0;
 

@@ -30,8 +30,14 @@ class TextureTarget final : public Texture {
   void bind() override;
   void unbind() override;
   void bindImage(size_t unit) override;
-  void attachAsColor(uint32_t index, uint32_t face = 0, uint32_t mipLevel = 0) override;
-  void detachAsColor(uint32_t index, uint32_t face = 0, uint32_t mipLevel = 0) override;
+  void attachAsColor(uint32_t index,
+                     uint32_t face = 0,
+                     uint32_t mipLevel = 0,
+                     bool read = false) override;
+  void detachAsColor(uint32_t index,
+                     uint32_t face = 0,
+                     uint32_t mipLevel = 0,
+                     bool read = false) override;
   void attachAsDepth() override;
   void attachAsStencil() override;
 

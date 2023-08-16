@@ -40,12 +40,15 @@ namespace opengl {
 
 namespace {
 
-Result checkFramebufferStatus(IContext& context) {
+Result checkFramebufferStatus(IContext& context, bool read) {
   auto code = Result::Code::Ok;
   std::string message;
-
+  GLenum framebufferTarget = GL_FRAMEBUFFER;
+  if (context.deviceFeatures().hasFeature(DeviceFeatures::ReadWriteFramebuffer)) {
+    framebufferTarget = read ? GL_READ_FRAMEBUFFER : GL_DRAW_FRAMEBUFFER;
+  }
   // check that we've created a proper frame buffer
-  GLenum status = context.checkFramebufferStatus(GL_FRAMEBUFFER);
+  GLenum status = context.checkFramebufferStatus(framebufferTarget);
   if (status != GL_FRAMEBUFFER_COMPLETE) {
     code = Result::Code::RuntimeError;
 
@@ -82,14 +85,17 @@ FramebufferBindingGuard::FramebufferBindingGuard(IContext& context) :
   context_.getIntegerv(GL_RENDERBUFFER_BINDING, reinterpret_cast<GLint*>(&currentRenderbuffer_));
 
   // Only restore currently bound framebuffer if it's valid
-  Result result = checkFramebufferStatus(context_);
-  if (result.isOk()) {
-    if (context_.deviceFeatures().hasFeature(DeviceFeatures::ReadWriteFramebuffer)) {
+  if (context.deviceFeatures().hasFeature(DeviceFeatures::ReadWriteFramebuffer)) {
+    if (checkFramebufferStatus(context, true).isOk()) {
       context_.getIntegerv(GL_READ_FRAMEBUFFER_BINDING,
                            reinterpret_cast<GLint*>(&currentReadFramebuffer_));
+    }
+    if (checkFramebufferStatus(context, false).isOk()) {
       context_.getIntegerv(GL_DRAW_FRAMEBUFFER_BINDING,
                            reinterpret_cast<GLint*>(&currentDrawFramebuffer_));
-    } else {
+    }
+  } else {
+    if (checkFramebufferStatus(context, false).isOk()) {
       context_.getIntegerv(GL_FRAMEBUFFER_BINDING, reinterpret_cast<GLint*>(&currentFramebuffer_));
     }
   }
@@ -134,21 +140,33 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
     IGL_ASSERT_MSG(0, "Invalid index: %d", index);
     return;
   }
+  IGL_ASSERT_MSG(range.numLayers == 1, "range.numLayers MUST be 1");
+  IGL_ASSERT_MSG(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
 
   auto itexture = getColorAttachment(index);
   if (itexture != nullptr) {
     FramebufferBindingGuard guard(getContext());
 
+    CustomFramebuffer extraFramebuffer(getContext());
+
     auto& texture = static_cast<igl::opengl::Texture&>(*itexture);
-    GLuint extraFramebufferId = 0;
+
+    Result ret;
+    FramebufferDesc desc;
+    desc.colorAttachments[0].texture = itexture;
+    extraFramebuffer.initialize(desc, &ret);
+    IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
+
+    extraFramebuffer.bindBufferForRead();
     if (texture.getNumLayers() > 1) {
-      getContext().genFramebuffers(1, &extraFramebufferId);
-      getContext().bindFramebuffer(GL_READ_FRAMEBUFFER, extraFramebufferId);
-      attachAsColorLayer(itexture, (uint32_t)range.layer);
-      checkFramebufferStatus(getContext());
+      extraFramebuffer.attachAsColorLayer(itexture,
+                                          static_cast<uint32_t>(range.mipLevel),
+                                          static_cast<uint32_t>(range.layer),
+                                          true);
     } else {
-      bindBufferForRead();
+      extraFramebuffer.attachAsColor(itexture, 0, 0, static_cast<uint32_t>(range.mipLevel), true);
     }
+    checkFramebufferStatus(getContext(), true);
 
     if (bytesPerRow == 0) {
       bytesPerRow = itexture->getProperties().getBytesPerRow(range);
@@ -185,15 +203,9 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
                               GL_UNSIGNED_BYTE,
                               pixelBytes);
     }
-
-    if (texture.getNumLayers() > 1) {
-      attachAsColorLayer(nullptr, 0);
-      checkFramebufferStatus(getContext());
-      if (extraFramebufferId > 0) {
-        getContext().deleteFramebuffers(1, &extraFramebufferId);
-        extraFramebufferId = 0;
-      }
-    }
+    getContext().checkForErrors(nullptr, 0);
+    auto error = getContext().getLastError();
+    IGL_ASSERT_MSG(error.isOk(), error.message.c_str());
   } else {
     IGL_ASSERT_NOT_IMPLEMENTED();
   }
@@ -238,17 +250,6 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& /*cmdQueue*/,
                                  static_cast<GLint>(range.y),
                                  static_cast<GLsizei>(range.width),
                                  static_cast<GLsizei>(range.height));
-}
-
-void Framebuffer::attachAsColorLayer(const std::shared_ptr<ITexture>& texture,
-                                     uint32_t layer) const {
-  if (texture) {
-    auto& glTex = static_cast<Texture&>(*texture);
-    getContext().framebufferTextureLayer(
-        GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, glTex.getId(), 0, layer);
-  } else {
-    getContext().framebufferTextureLayer(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 0, 0, 0);
-  }
 }
 
 ///--------------------------------------
@@ -318,7 +319,7 @@ std::shared_ptr<ITexture> CustomFramebuffer::updateDrawable(std::shared_ptr<ITex
   if (texture != nullptr && getColorAttachment(0) != texture) {
     FramebufferBindingGuard guard(getContext());
     bindBuffer();
-    attachAsColor(texture, 0);
+    attachAsColor(texture, 0, 0, 0, false);
     renderTarget_.colorAttachments[0].texture = texture;
   }
 
@@ -374,7 +375,7 @@ void CustomFramebuffer::prepareResource(Result* outResult) {
     auto const colorAttachmentTexture = colorAttachment.second.texture;
     if (colorAttachmentTexture != nullptr) {
       size_t index = colorAttachment.first;
-      attachAsColor(colorAttachmentTexture, static_cast<uint32_t>(index));
+      attachAsColor(colorAttachmentTexture, static_cast<uint32_t>(index), 0, 0, false);
       drawBuffers.push_back(static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + index));
     }
   }
@@ -393,7 +394,7 @@ void CustomFramebuffer::prepareResource(Result* outResult) {
     attachAsStencil(renderTarget_.stencilAttachment.texture);
   }
 
-  Result result = checkFramebufferStatus(getContext());
+  Result result = checkFramebufferStatus(getContext(), false);
   IGL_ASSERT_MSG(result.isOk(), result.message.c_str());
   if (outResult) {
     *outResult = result;
@@ -478,13 +479,16 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
       }
     }
 #endif
-    if (colorAttachmentTexture->getType() == igl::TextureType::Cube) {
-      const size_t index = colorAttachment.first;
-      IGL_ASSERT(index >= 0 && index < renderPass.colorAttachments.size());
+    const size_t index = colorAttachment.first;
+    IGL_ASSERT(index >= 0 && index < renderPass.colorAttachments.size());
+    const auto& renderPassAttachment = renderPass.colorAttachments[index];
+    if (colorAttachmentTexture->getType() == igl::TextureType::Cube ||
+        renderPassAttachment.layer > 0 || renderPassAttachment.mipLevel > 0) {
       attachAsColor(colorAttachmentTexture,
-                    (uint32_t)index,
-                    (uint32_t)renderPass.colorAttachments[index].layer,
-                    (uint32_t)renderPass.colorAttachments[index].mipLevel);
+                    static_cast<uint32_t>(index),
+                    static_cast<uint32_t>(renderPass.colorAttachments[index].layer),
+                    static_cast<uint32_t>(renderPass.colorAttachments[index].mipLevel),
+                    false);
     }
   }
   // clear the buffers if we're not loading previous contents
@@ -554,23 +558,51 @@ void CustomFramebuffer::unbind() const {
 void CustomFramebuffer::attachAsColor(const std::shared_ptr<ITexture>& texture,
                                       uint32_t index,
                                       uint32_t face,
-                                      uint32_t mipLevel) const {
+                                      uint32_t mipLevel,
+                                      bool read) const {
   auto& glTex = static_cast<Texture&>(*texture);
   if (renderTarget_.mode == FramebufferMode::Mono) {
-    glTex.attachAsColor(index, face, mipLevel);
+    glTex.attachAsColor(index, face, mipLevel, read);
   } else if (renderTarget_.mode == FramebufferMode::Stereo) {
+    GLenum framebufferTarget = GL_FRAMEBUFFER;
+    if (getContext().deviceFeatures().hasFeature(DeviceFeatures::ReadWriteFramebuffer)) {
+      framebufferTarget = read ? GL_READ_FRAMEBUFFER : GL_DRAW_FRAMEBUFFER;
+    }
     auto numSamples = texture->getSamples();
     if (numSamples > 1) {
       IGL_ASSERT_MSG(index == 0, "Multisample framebuffer can only use GL_COLOR_ATTACHMENT0");
       getContext().framebufferTextureMultisampleMultiview(
-          GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, glTex.getId(), 0, (GLsizei)numSamples, 0, 2);
+          framebufferTarget, GL_COLOR_ATTACHMENT0, glTex.getId(), 0, (GLsizei)numSamples, 0, 2);
     } else {
       getContext().framebufferTextureMultiview(
-          GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, glTex.getId(), 0, 0, 2);
+          framebufferTarget, GL_COLOR_ATTACHMENT0 + index, glTex.getId(), 0, 0, 2);
     }
   } else {
     IGL_ASSERT_MSG(0, "MultiviewMode::Multiview not implemented.");
   }
+}
+
+void CustomFramebuffer::attachAsColorLayer(const std::shared_ptr<ITexture>& texture,
+                                           uint32_t mipLevel,
+                                           uint32_t layer,
+                                           bool read) const {
+  auto& glTex = static_cast<Texture&>(*texture);
+  getContext().framebufferTextureLayer(read ? GL_READ_FRAMEBUFFER : GL_DRAW_FRAMEBUFFER,
+                                       GL_COLOR_ATTACHMENT0,
+                                       glTex.getId(),
+                                       mipLevel,
+                                       layer);
+}
+
+void CustomFramebuffer::detachAsColorLayer(uint32_t index,
+                                           uint32_t mipLevel,
+                                           uint32_t layer,
+                                           bool read) const {
+  getContext().framebufferTextureLayer(read ? GL_READ_FRAMEBUFFER : GL_DRAW_FRAMEBUFFER,
+                                       GL_COLOR_ATTACHMENT0 + index,
+                                       0,
+                                       mipLevel,
+                                       layer);
 }
 
 void CustomFramebuffer::attachAsDepth(const std::shared_ptr<ITexture>& texture) const {
@@ -599,10 +631,10 @@ void CustomFramebuffer::attachAsStencil(const std::shared_ptr<ITexture>& texture
     auto numSamples = texture->getSamples();
     if (numSamples > 1) {
       getContext().framebufferTextureMultisampleMultiview(
-          GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, glTex.getId(), 0, (GLsizei)numSamples, 0, 2);
+          GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, glTex.getId(), 0, (GLsizei)numSamples, 0, 2);
     } else {
       getContext().framebufferTextureMultiview(
-          GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, glTex.getId(), 0, 0, 2);
+          GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, glTex.getId(), 0, 0, 2);
     }
   } else {
     IGL_ASSERT_MSG(0, "MultiviewMode::Multiview not implemented.");

@@ -1064,7 +1064,7 @@ TEST_F(TextureTest, RenderToMip) {
   //-------------------------
   // Render to each mip level
   //-------------------------
-  for (uint8_t mipLevel = 0; mipLevel < NUM_MIPS; mipLevel++) {
+  for (auto mipLevel = 0; mipLevel < NUM_MIPS; mipLevel++) {
     //---------------------
     // Create input texture
     //---------------------
@@ -1103,16 +1103,19 @@ TEST_F(TextureTest, RenderToMip) {
     cmdQueue_->submit(*cmdBuf_);
 
     cmdBuf_->waitUntilCompleted();
+  }
 
+  // Do readback in a separate loop to ensure all mip levels have been rendered.
+  for (size_t mipLevel = 0; mipLevel < NUM_MIPS; mipLevel++) {
     //--------------------------------------------------------
     // Read back and verify the written mip of the framebuffer
     //--------------------------------------------------------
-    auto pixels = std::vector<uint32_t>(inTexWidth * inTexWidth);
-    rangeDesc = TextureRangeDesc::new2D(0, 0, inTexWidth, inTexWidth, mipLevel);
+    auto rangeDesc = outputTex->getFullRange(mipLevel);
+    auto pixels = std::vector<uint32_t>(rangeDesc.width * rangeDesc.height);
     fb->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
 
     for (const auto& pixel : pixels) {
-      ASSERT_EQ(pixel, colors[mipLevel]);
+      ASSERT_EQ(pixel, colors[mipLevel]) << "mip level " << mipLevel;
     }
   }
 }
