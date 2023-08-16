@@ -668,8 +668,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
       bindings[i] =
           ivkGetDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1);
       bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
-                        VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
-                        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+                        VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
       poolSizes[i] =
           VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, kNumSets * kNumBindings};
     }
