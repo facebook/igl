@@ -38,6 +38,7 @@ class TextureBufferBase : public Texture {
   void attachAsStencil() override;
   size_t getNumMipLevels() const override;
   void generateMipmap(ICommandQueue& cmdQueue) const override;
+  void generateMipmap(ICommandBuffer& cmdBuffer) const override;
   bool isRequiredGenerateMipmap() const override;
 
   GLuint getId() const override {
@@ -62,6 +63,8 @@ class TextureBufferBase : public Texture {
   void setMaxMipLevel() const;
 
  private:
+  void generateMipmap() const;
+
   // the GL ID for this texture
   GLuint textureID_ = 0;
   // target depends on usage and texture type

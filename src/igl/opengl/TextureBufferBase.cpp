@@ -112,6 +112,14 @@ void TextureBufferBase::setMaxMipLevel() const {
 }
 
 void TextureBufferBase::generateMipmap(ICommandQueue& /* unused */) const {
+  generateMipmap();
+}
+
+void TextureBufferBase::generateMipmap(ICommandBuffer& /* unused */) const {
+  generateMipmap();
+}
+
+void TextureBufferBase::generateMipmap() const {
   getContext().bindTexture(getTarget(), getId());
   setMaxMipLevel();
   getContext().generateMipmap(getTarget());

@@ -1158,15 +1158,8 @@ void validateMipLevels(IDevice& device,
     ASSERT_EQ(mip1Pixels[i], mip1Color) << msg;
   }
 }
-} // namespace
 
-//
-// Test generating mipmaps
-//
-// Create a texture and upload a solid color into the base mip level, verify the base and 1st mip
-// level colors. Then generate mipmaps and verify again.
-//
-TEST_F(TextureTest, GenerateMipmap) {
+void testGenerateMipmap(IDevice& device, ICommandQueue& cmdQueue, bool withCommandQueue) {
   Result ret;
 
   // Use a square output texture with mips
@@ -1187,7 +1180,7 @@ TEST_F(TextureTest, GenerateMipmap) {
                                            TextureDesc::TextureUsageBits::Sampled |
                                                TextureDesc::TextureUsageBits::Attachment);
   texDesc.numMipLevels = TEX_MIP_COUNT;
-  auto tex = iglDev_->createTexture(texDesc, &ret);
+  auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
   ASSERT_TRUE(tex != nullptr);
 
@@ -1200,18 +1193,41 @@ TEST_F(TextureTest, GenerateMipmap) {
   ret = tex->upload(tex->getFullRange(1), initialMip1Data.data());
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
 
-  validateMipLevels<TEX_WIDTH>(*iglDev_, *cmdQueue_, tex, color, 0, "Initial Upload");
+  validateMipLevels<TEX_WIDTH>(device, cmdQueue, tex, color, 0, "Initial Upload");
 
-  tex->generateMipmap(*cmdQueue_);
+  if (withCommandQueue) {
+    tex->generateMipmap(cmdQueue);
 
-  // Dummy command buffer to wait for completion.
-  cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
-  ASSERT_EQ(ret.code, Result::Code::Ok);
-  ASSERT_TRUE(cmdBuf_ != nullptr);
-  cmdQueue_->submit(*cmdBuf_);
-  cmdBuf_->waitUntilCompleted();
+    // Dummy command buffer to wait for completion.
+    auto cmdBuf = cmdQueue.createCommandBuffer({}, &ret);
+    ASSERT_EQ(ret.code, Result::Code::Ok);
+    ASSERT_TRUE(cmdBuf != nullptr);
+    cmdQueue.submit(*cmdBuf);
+    cmdBuf->waitUntilCompleted();
+  } else {
+    auto cmdBuffer = cmdQueue.createCommandBuffer({}, &ret);
+    ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+    tex->generateMipmap(*cmdBuffer);
+    cmdQueue.submit(*cmdBuffer);
+    cmdBuffer->waitUntilCompleted();
+  }
 
-  validateMipLevels<TEX_WIDTH>(*iglDev_, *cmdQueue_, tex, color, color, "After Generation");
+  validateMipLevels<TEX_WIDTH>(device, cmdQueue, tex, color, color, "After Generation");
+}
+} // namespace
+
+//
+// Test generating mipmaps
+//
+// Create a texture and upload a solid color into the base mip level, verify the base and 1st mip
+// level colors. Then generate mipmaps and verify again.
+//
+TEST_F(TextureTest, GenerateMipmapWithCommandQueue) {
+  testGenerateMipmap(*iglDev_, *cmdQueue_, true);
+}
+
+TEST_F(TextureTest, GenerateMipmapWithCommandBuffer) {
+  testGenerateMipmap(*iglDev_, *cmdQueue_, false);
 }
 
 TEST_F(TextureTest, GetTextureBytesPerRow) {

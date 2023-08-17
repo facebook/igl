@@ -35,6 +35,7 @@ class Texture : public WithContext, public ITexture {
   size_t getNumLayers() const override;
   size_t getSamples() const override;
   void generateMipmap(ICommandQueue& cmdQueue) const override;
+  void generateMipmap(ICommandBuffer& cmdBuffer) const override;
   size_t getNumMipLevels() const override;
   bool isRequiredGenerateMipmap() const override;
   uint64_t getTextureId() const override;

@@ -590,6 +590,12 @@ class ITexture : public ITrackedResource<ITexture> {
    */
   virtual void generateMipmap(ICommandQueue& cmdQueue) const = 0;
   /**
+   * @brief Generates mipmap command using an existing command buffer
+   *
+   * @param cmdBuffer A command buffer that is generated from an ICommandQueue.
+   */
+  virtual void generateMipmap(ICommandBuffer& cmdBuffer) const = 0;
+  /**
    * @brief Returns the number of mipmap levels
    */
   [[nodiscard]] virtual size_t getNumMipLevels() const = 0;

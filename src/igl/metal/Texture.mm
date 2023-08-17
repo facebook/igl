@@ -7,6 +7,7 @@
 
 #include <igl/metal/Texture.h>
 
+#include <igl/metal/CommandBuffer.h>
 #include <vector>
 
 namespace {
@@ -202,21 +203,34 @@ void Texture::generateMipmap(ICommandQueue& cmdQueue) const {
   if (value_.mipmapLevelCount > 1) {
     auto mtlCmdQueue = static_cast<CommandQueue&>(cmdQueue).get();
 
-    // we can only generate mipmaps for filterable texture formats via the blit encoder
-    const bool isFilterable = (capabilities_.getTextureFormatCapabilities(getFormat()) &
-                               ICapabilities::TextureFormatCapabilityBits::SampledFiltered) != 0;
-    if (!isFilterable) {
-      // TODO: implement manual mip generation for required formats (e.g. RGBA32Float)
-      IGL_ASSERT_NOT_IMPLEMENTED();
-      return;
+    const id<MTLCommandBuffer> mtlCmdBuffer = [mtlCmdQueue commandBuffer];
+    if (mtlCmdBuffer) {
+      generateMipmap(mtlCmdBuffer);
+      [mtlCmdBuffer commit];
     }
-
-    id<MTLCommandBuffer> buffer = [mtlCmdQueue commandBuffer];
-    id<MTLBlitCommandEncoder> encoder = [buffer blitCommandEncoder];
-    [encoder generateMipmapsForTexture:value_];
-    [encoder endEncoding];
-    [buffer commit];
   }
+}
+
+void Texture::generateMipmap(ICommandBuffer& cmdBuffer) const {
+  if (value_.mipmapLevelCount > 1) {
+    auto mtlCmdBuffer = static_cast<CommandBuffer&>(cmdBuffer).get();
+    generateMipmap(mtlCmdBuffer);
+  }
+}
+
+void Texture::generateMipmap(id<MTLCommandBuffer> cmdBuffer) const {
+  // we can only generate mipmaps for filterable texture formats via the blit encoder
+  const bool isFilterable = (capabilities_.getTextureFormatCapabilities(getFormat()) &
+                             ICapabilities::TextureFormatCapabilityBits::SampledFiltered) != 0;
+  if (!isFilterable) {
+    // TODO: implement manual mip generation for required formats (e.g. RGBA32Float)
+    IGL_ASSERT_NOT_IMPLEMENTED();
+    return;
+  }
+
+  const id<MTLBlitCommandEncoder> encoder = [cmdBuffer blitCommandEncoder];
+  [encoder generateMipmapsForTexture:value_];
+  [encoder endEncoding];
 }
 
 bool Texture::isRequiredGenerateMipmap() const {

@@ -48,6 +48,7 @@ class Texture final : public ITexture {
   size_t getSamples() const override;
   size_t getNumMipLevels() const override;
   void generateMipmap(ICommandQueue& cmdQueue) const override;
+  void generateMipmap(ICommandBuffer& cmdBuffer) const override;
   bool isRequiredGenerateMipmap() const override;
   uint64_t getTextureId() const override;
 
@@ -67,6 +68,8 @@ class Texture final : public ITexture {
   static TextureType convertType(MTLTextureType value);
 
  private:
+  void generateMipmap(id<MTLCommandBuffer> cmdBuffer) const;
+
   // Given bytes per row of an input texture, return bytesPerRow value
   // accepted by Texture::upload and MTL replaceRegion.
   size_t toMetalBytesPerRow(size_t bytesPerRow) const;

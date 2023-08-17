@@ -6,6 +6,7 @@
  */
 
 #include <igl/IGLSafeC.h>
+#include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/Texture.h>
@@ -322,6 +323,11 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/) const {
     texture_->getVulkanImage().generateMipmap(wrapper.cmdBuf_);
     ctx.immediate_->submit(wrapper);
   }
+}
+
+void Texture::generateMipmap(ICommandBuffer& cmdBuffer) const {
+  auto& vkCmdBuffer = static_cast<vulkan::CommandBuffer&>(cmdBuffer);
+  texture_->getVulkanImage().generateMipmap(vkCmdBuffer.getVkCommandBuffer());
 }
 
 size_t Texture::getEstimatedSizeInBytes() const {

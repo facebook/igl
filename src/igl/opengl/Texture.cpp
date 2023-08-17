@@ -33,6 +33,10 @@ void Texture::generateMipmap(ICommandQueue& /* unused */) const {
   IGL_ASSERT_MSG(0, "Can only generate mipmap for R/W texture (eg. TextureBuffer).");
 }
 
+void Texture::generateMipmap(ICommandBuffer& /* unused */) const {
+  IGL_ASSERT_MSG(0, "Can only generate mipmap for R/W texture (eg. TextureBuffer).");
+}
+
 size_t Texture::getNumMipLevels() const {
   IGL_ASSERT_MSG(0, "Can only query mipmap for R/W texture (eg. TextureBuffer).");
   return numMipLevels_;

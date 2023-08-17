@@ -51,6 +51,9 @@ class DummyTexture : public ITexture {
   void generateMipmap(ICommandQueue& /* unused */) const override {
     IGL_ASSERT_NOT_REACHED();
   }
+  void generateMipmap(ICommandBuffer& /* unused */) const override {
+    IGL_ASSERT_NOT_REACHED();
+  }
   size_t getNumMipLevels() const override {
     IGL_ASSERT_NOT_REACHED();
     return 1;
