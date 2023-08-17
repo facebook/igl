@@ -1311,9 +1311,11 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
   VkImageView dummyImageView = textures_[0]->imageView_->getVkImageView();
   VkSampler dummySampler = samplers_[0]->getVkSampler();
 
+  const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
+
   for (size_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
     igl::vulkan::VulkanTexture* texture = data.textures[i];
-    if (texture) {
+    if (texture && isGraphics) {
       IGL_ASSERT_MSG(data.samplers[i], "A sampler should be bound to every bound texture slot");
       (void)IGL_VERIFY(data.samplers[i]);
     }
@@ -1332,8 +1334,6 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
       dset, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numImages, infoSampledImages.data());
 
   vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
-
-  const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - textures\n", cmdBuf, bindPoint);
