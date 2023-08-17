@@ -519,6 +519,10 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     volkLoadDevice(device);
   }
 
+  if (config_.enableBufferDeviceAddress && vkGetBufferDeviceAddressKHR == nullptr) {
+    return Result(Result::Code::InvalidOperation, "Cannot initialize VK_KHR_buffer_device_address");
+  }
+
   vkGetDeviceQueue(device, deviceQueues_.graphicsQueueFamilyIndex, 0, &deviceQueues_.graphicsQueue);
   vkGetDeviceQueue(device, deviceQueues_.computeQueueFamilyIndex, 0, &deviceQueues_.computeQueue);
 
