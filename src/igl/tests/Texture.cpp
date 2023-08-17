@@ -1120,6 +1120,100 @@ TEST_F(TextureTest, RenderToMip) {
   }
 }
 
+namespace {
+void readMipLevel(IDevice& device,
+                  ICommandQueue& cmdQueue,
+                  std::shared_ptr<ITexture>& tex,
+                  size_t mipLevel,
+                  void* data) {
+  Result ret;
+  FramebufferDesc framebufferDesc;
+  framebufferDesc.colorAttachments[0].texture = tex;
+  auto fb = device.createFramebuffer(framebufferDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(fb != nullptr);
+
+  auto rangeDesc = tex->getFullRange(mipLevel);
+  fb->copyBytesColorAttachment(cmdQueue, 0, data, rangeDesc);
+}
+
+template<size_t TEX_WIDTH>
+void validateMipLevels(IDevice& device,
+                       ICommandQueue& cmdQueue,
+                       std::shared_ptr<ITexture>& tex,
+                       // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+                       uint32_t baseMipColor,
+                       uint32_t mip1Color,
+                       const char* msg) {
+  std::array<uint32_t, TEX_WIDTH* TEX_WIDTH> baseMipPixels = {};
+  std::array<uint32_t, (TEX_WIDTH >> 1) * (TEX_WIDTH >> 1)> mip1Pixels = {};
+
+  readMipLevel(device, cmdQueue, tex, 0, baseMipPixels.data());
+  for (size_t i = 0; i < baseMipPixels.size(); ++i) {
+    ASSERT_EQ(baseMipPixels[i], baseMipColor) << msg;
+  }
+
+  readMipLevel(device, cmdQueue, tex, 1, mip1Pixels.data());
+  for (size_t i = 0; i < mip1Pixels.size(); ++i) {
+    ASSERT_EQ(mip1Pixels[i], mip1Color) << msg;
+  }
+}
+} // namespace
+
+//
+// Test generating mipmaps
+//
+// Create a texture and upload a solid color into the base mip level, verify the base and 1st mip
+// level colors. Then generate mipmaps and verify again.
+//
+TEST_F(TextureTest, GenerateMipmap) {
+  Result ret;
+
+  // Use a square output texture with mips
+  static constexpr size_t TEX_WIDTH = 2;
+  const size_t TEX_MIP_COUNT = TextureDesc::calcNumMipLevels(TEX_WIDTH, TEX_WIDTH);
+  static_assert(TEX_WIDTH > 1);
+
+  static constexpr uint32_t color = 0xdeadbeef;
+  static constexpr std::array<uint32_t, 4> initialBaseMipData = {color, color, color, color};
+  static constexpr std::array<uint32_t, 1> initialMip1Data = {0};
+
+  //---------------------------------------------------------------------
+  // Create texture with mip levels and attach it to a framebuffer
+  //---------------------------------------------------------------------
+  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                           TEX_WIDTH,
+                                           TEX_WIDTH,
+                                           TextureDesc::TextureUsageBits::Sampled |
+                                               TextureDesc::TextureUsageBits::Attachment);
+  texDesc.numMipLevels = TEX_MIP_COUNT;
+  auto tex = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+  ASSERT_TRUE(tex != nullptr);
+
+  //---------------------------------------------------------------------
+  // Validate initial state, upload pixel data, and generate mipmaps
+  //---------------------------------------------------------------------
+  ret = tex->upload(tex->getFullRange(0), initialBaseMipData.data());
+  ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+
+  ret = tex->upload(tex->getFullRange(1), initialMip1Data.data());
+  ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+
+  validateMipLevels<TEX_WIDTH>(*iglDev_, *cmdQueue_, tex, color, 0, "Initial Upload");
+
+  tex->generateMipmap(*cmdQueue_);
+
+  // Dummy command buffer to wait for completion.
+  cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(cmdBuf_ != nullptr);
+  cmdQueue_->submit(*cmdBuf_);
+  cmdBuf_->waitUntilCompleted();
+
+  validateMipLevels<TEX_WIDTH>(*iglDev_, *cmdQueue_, tex, color, color, "After Generation");
+}
+
 TEST_F(TextureTest, GetTextureBytesPerRow) {
   const auto properties = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
   const auto range = TextureRangeDesc::new2D(0, 0, 10, 10);
