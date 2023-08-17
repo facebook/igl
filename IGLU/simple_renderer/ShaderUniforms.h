@@ -24,10 +24,6 @@ namespace material {
 /// information to generate the underlying data and provides a simple API to manipulate it.
 class ShaderUniforms final {
  public:
-  // Use this to retrieve information about the underlying data.
-  const igl::BufferArgDesc& bufferDescriptor(const igl::NameHandle& bufferName,
-                                             igl::ShaderStage stage) const;
-
   // Setters: use these to update uniforms, individually or in bulk.
   void setBool(const igl::NameHandle& uniformName, const bool& value, size_t arrayIndex = 0);
   void setBoolArray(const igl::NameHandle& uniformName,
@@ -98,12 +94,6 @@ class ShaderUniforms final {
                    iglu::simdtypes::int1* value,
                    size_t count = 1,
                    size_t arrayIndex = 0);
-
-  void setBytes(const igl::NameHandle& bufferName,
-                void* data,
-                size_t size,
-                igl::ShaderStage stage,
-                size_t arrayIndex = 0);
 
   void setTexture(const std::string& name,
                   const std::shared_ptr<igl::ITexture>& value,
@@ -178,8 +168,7 @@ class ShaderUniforms final {
   std::vector<std::shared_ptr<BufferAllocation>> _allocations;
 
   std::vector<std::shared_ptr<BufferDesc>> _bufferDescs;
-  std::map<std::pair<igl::NameHandle, igl::ShaderStage>, std::shared_ptr<BufferDesc>>
-      _allBuffersByName;
+
   std::unordered_multimap<igl::NameHandle, UniformDesc> _allUniformsByName;
 
   struct TextureSlot {

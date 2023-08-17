@@ -128,7 +128,6 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
       bufferDesc->uniforms.push_back(uniform);
     }
 
-    _allBuffersByName[{iglDesc.name, iglDesc.shaderStage}] = bufferDesc;
     _bufferDescs.push_back(std::move(bufferDesc));
   }
 
@@ -145,18 +144,6 @@ ShaderUniforms::~ShaderUniforms() {
   for (auto& allocation : _allocations) {
     free(allocation->ptr);
   }
-}
-
-const igl::BufferArgDesc& ShaderUniforms::bufferDescriptor(const igl::NameHandle& bufferName,
-                                                           igl::ShaderStage stage) const {
-  auto it = _allBuffersByName.find({bufferName, stage});
-  if (it != _allBuffersByName.end()) {
-    return it->second->iglBufferDesc;
-  }
-  IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid buffer name for shader stage: %s",
-                     bufferName.toConstChar());
-  static igl::BufferArgDesc invalid;
-  return invalid;
 }
 
 namespace {
@@ -395,20 +382,6 @@ void ShaderUniforms::setIntArray(const igl::NameHandle& uniformName,
                                  size_t count,
                                  size_t arrayIndex) {
   setUniformBytes(uniformName, value, sizeof(iglu::simdtypes::int1), count, arrayIndex);
-}
-
-void ShaderUniforms::setBytes(const igl::NameHandle& bufferName,
-                              void* data,
-                              size_t size,
-                              igl::ShaderStage stage,
-                              IGL_MAYBE_UNUSED size_t arrayIndex) {
-  IGL_ASSERT_MSG(arrayIndex == 0, "buffer arrays not supported");
-  auto it = _allBuffersByName.find({bufferName, stage});
-  if (it == _allBuffersByName.end()) {
-    IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid buffer name: %s\n", bufferName.toConstChar());
-    return;
-  }
-  it->second->allocation->iglBuffer->upload(data, igl::BufferRange(size, 0));
 }
 
 void ShaderUniforms::setTexture(const std::string& name,
