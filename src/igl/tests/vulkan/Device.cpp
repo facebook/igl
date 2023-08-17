@@ -10,6 +10,11 @@
 
 #include "../util/TestDevice.h"
 
+#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOS || IGL_PLATFORM_LINUX
+#include <igl/vulkan/HWDevice.h>
+#include <igl/vulkan/VulkanContext.h>
+#endif
+
 namespace igl {
 namespace tests {
 
@@ -47,6 +52,66 @@ TEST_F(DeviceVulkanTest, CreateCommandQueue) {
   ASSERT_TRUE(ret.isOk());
   ASSERT_NE(cmdQueue, nullptr);
 }
+
+#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOS || IGL_PLATFORM_LINUX
+GTEST_TEST(VulkanContext, BufferDeviceAddress) {
+  std::shared_ptr<igl::IDevice> iglDev = nullptr;
+
+  igl::vulkan::VulkanContextConfig config;
+#if IGL_PLATFORM_MACOS
+  config.terminateOnValidationError = false;
+#elif IGL_DEBUG
+  config.enableValidation = true;
+  config.terminateOnValidationError = true;
+#else
+  config.enableValidation = true;
+  config.terminateOnValidationError = true;
+#endif
+  config.enableExtraLogs = true;
+  config.enableBufferDeviceAddress = true;
+
+  auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
+
+  Result ret;
+
+  std::vector<HWDeviceDesc> devices = igl::vulkan::HWDevice::queryDevices(
+      *ctx.get(), HWDeviceQueryDesc(HWDeviceType::Unknown), &ret);
+
+  ASSERT_TRUE(!devices.empty());
+
+  if (ret.isOk()) {
+    std::vector<const char*> extraDeviceExtensions;
+    iglDev = igl::vulkan::HWDevice::create(std::move(ctx),
+                                           devices[0],
+                                           0, // width
+                                           0, // height,
+                                           0,
+                                           nullptr,
+                                           &ret);
+
+    if (!ret.isOk()) {
+      iglDev = nullptr;
+    }
+  }
+
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(iglDev, nullptr);
+
+  if (!iglDev)
+    return;
+
+  auto buffer = iglDev->createBuffer(
+      BufferDesc(BufferDesc::BufferTypeBits::Uniform, nullptr, 256, ResourceStorage::Shared), &ret);
+
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(buffer, nullptr);
+
+  if (!buffer)
+    return;
+
+  ASSERT_NE(buffer->gpuAddress(), 0u);
+}
+#endif
 
 } // namespace tests
 } // namespace igl
