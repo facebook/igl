@@ -481,6 +481,20 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
 static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
   IGL_PROFILER_FUNCTION();
 
+  if (!nativeDrawable) {
+    return;
+  }
+
+#if IGL_WITH_IGLU
+  imguiSession_->beginFrame(framebufferDesc_, 1.0f);
+
+  ImGui::Begin("Texture Viewer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+  ImGui::Image(ImTextureID(texture1_.get()), ImVec2(512, 512));
+  ImGui::End();
+
+  inputDispatcher_.processEvents();
+#endif // IGL_WITH_IGLU
+
   const auto size = framebuffer_->getColorAttachment(0)->getSize();
   if (size.width != width_ || size.height != height_) {
     createFramebuffer(nativeDrawable);
@@ -568,15 +582,6 @@ int main(int argc, char* argv[]) {
     const double newTime = glfwGetTime();
     fps_.updateFPS(newTime - prevTime);
     prevTime = newTime;
-#if IGL_WITH_IGLU
-    imguiSession_->beginFrame(framebufferDesc_, 1.0f);
-
-    ImGui::Begin("Texture Viewer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::Image(ImTextureID(texture1_.get()), ImVec2(512, 512));
-    ImGui::End();
-
-    inputDispatcher_.processEvents();
-#endif // IGL_WITH_IGLU
     render(getVulkanNativeDrawable(), frameIndex);
     glfwPollEvents();
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;

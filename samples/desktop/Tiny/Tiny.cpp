@@ -306,7 +306,6 @@ static std::shared_ptr<ITexture> getNativeDrawable() {
   drawable = platformDevice->createTextureFromNativeDrawable(&ret);
 #endif
   IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
-  IGL_ASSERT(drawable != nullptr);
   return drawable;
 }
 
@@ -333,6 +332,10 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
 }
 
 static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
+  if (!nativeDrawable) {
+    return;
+  }
+
   const auto size = framebuffer_->getColorAttachment(0)->getSize();
   if (size.width != width_ || size.height != height_) {
     createFramebuffer(nativeDrawable);

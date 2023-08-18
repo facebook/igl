@@ -25,10 +25,9 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t 
   const auto& ctx = device_.getVulkanContext();
   auto& swapChain = ctx.swapchain_;
 
-  if (!IGL_VERIFY(ctx.hasSwapchain())) {
+  if (!ctx.hasSwapchain()) {
     nativeDepthTexture_ = nullptr;
-
-    Result::setResult(outResult, Result::Code::InvalidOperation, "No Swapchain has been allocated");
+    Result::setResult(outResult, Result::Code::Ok);
     return nullptr;
   };
 
@@ -70,14 +69,14 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
   IGL_PROFILER_FUNCTION();
 
   const auto& ctx = device_.getVulkanContext();
-  auto& swapChain = ctx.swapchain_;
 
-  if (!IGL_VERIFY(ctx.hasSwapchain())) {
+  if (!ctx.hasSwapchain()) {
     nativeDrawableTextures_.clear();
-
-    Result::setResult(outResult, Result::Code::InvalidOperation, "No Swapchain has been allocated");
+    Result::setResult(outResult, Result::Code::Ok);
     return nullptr;
   };
+
+  auto& swapChain = ctx.swapchain_;
 
   std::shared_ptr<VulkanTexture> vkTex = swapChain->getCurrentVulkanTexture();
 
