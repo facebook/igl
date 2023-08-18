@@ -671,8 +671,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     for (uint32_t i = 0; i != kNumBindings; i++) {
       bindings[i] =
           ivkGetDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1);
-      bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
-                        VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
+      bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
       poolSizes[i] =
           VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, kNumSets * kNumBindings};
     }
@@ -706,8 +705,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     VkDescriptorPoolSize poolSizes[kNumBindings];
     for (uint32_t i = 0; i != kNumBindings; i++) {
       bindings[i] = ivkGetDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
-      bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
-                        VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
+      bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
       poolSizes[i] = VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                           kNumSets * IGL_UNIFORM_BLOCKS_BINDING_MAX};
     }
@@ -739,8 +737,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     VkDescriptorPoolSize poolSizes[kNumBindings];
     for (uint32_t i = 0; i != kNumBindings; i++) {
       bindings[i] = ivkGetDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
-      bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
-                        VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
+      bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
       poolSizes[i] = VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                           kNumSets * IGL_UNIFORM_BLOCKS_BINDING_MAX};
     }
