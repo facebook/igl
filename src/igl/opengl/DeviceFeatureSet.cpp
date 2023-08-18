@@ -199,6 +199,8 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
     return hasESExtension(*this, "GL_EXT_texture_type_2_10_10_10_REV");
   case Extensions::VertexArrayObject:
     return hasESExtension(*this, "GL_OES_vertex_array_object");
+  case Extensions::VertexAttribDivisor:
+    return hasESExtension(*this, "GL_NV_instanced_arrays");
   }
   IGL_UNREACHABLE_RETURN(false);
 }
@@ -442,8 +444,11 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
     // @fb-only
     // @fb-only
     return hasDesktopVersionOrExtension(*this, GLVersion::v3_0, "GL_ARB_vertex_array_object");
-  }
 
+  case InternalFeatures::VertexAttribDivisor:
+    return hasDesktopOrESVersion(*this, GLVersion::v3_3, GLVersion::v3_0_ES) ||
+           hasExtension(Extensions::VertexAttribDivisor);
+  }
   return false;
 }
 
@@ -925,6 +930,9 @@ bool DeviceFeatureSet::hasInternalRequirement(InternalRequirement requirement) c
 
   case InternalRequirement::VertexArrayObjectExtReq:
     return usesOpenGLES() && !hasESVersion(*this, GLVersion::v3_0_ES);
+
+  case InternalRequirement::VertexAttribDivisorExtReq:
+    return !hasDesktopOrESVersion(*this, GLVersion::v3_3, GLVersion::v3_0_ES);
   }
   return false;
 }

@@ -169,6 +169,11 @@ IGL_EXTERN_BEGIN
 #define CAN_CALL_glPopDebugGroup 0
 #define CAN_CALL_glPushDebugGroup 0
 #endif
+#if defined(GL_VERSION_3_3) || defined(GL_ES_VERSION_3_0)
+#define CAN_CALL_glVertexAttribDivisor CAN_CALL
+#else
+#define CAN_CALL_glVertexAttribDivisor 0
+#endif
 
 void iglDebugMessageInsert(GLenum source,
                            GLenum type,
@@ -323,6 +328,14 @@ void iglTexSubImage3D(GLenum target,
 
 void iglUnmapBuffer(GLenum target) {
   GLEXTENSION_METHOD_BODY(CAN_CALL_glUnmapBuffer, glUnmapBuffer, PFNIGLUNMAPBUFFERPROC, target);
+}
+
+void iglVertexAttribDivisor(GLuint index, GLuint divisor) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glVertexAttribDivisor,
+                          glVertexAttribDivisor,
+                          PFNIGLVERTEXATTRIBDIVISORPROC,
+                          index,
+                          divisor);
 }
 
 ///--------------------------------------
@@ -1550,6 +1563,23 @@ void iglMakeTextureHandleNonResidentNV(GLuint64 handle) {
                           glMakeTextureHandleNonResidentNV,
                           PFNIGLMAKETEXTUREHANDLENONRESIDENTPROC,
                           handle);
+}
+
+///--------------------------------------
+/// MARK: - GL_NV_instanced_arrays
+
+#if defined(GL_NV_instanced_arrays)
+#define CAN_CALL_glVertexAttribDivisorNV CAN_CALL_OPENGL_ES
+#else
+#define CAN_CALL_glVertexAttribDivisorNV 0
+#endif
+
+void iglVertexAttribDivisorNV(GLuint index, GLuint divisor) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glVertexAttribDivisorNV,
+                          glVertexAttribDivisorNV,
+                          PFNIGLVERTEXATTRIBDIVISORPROC,
+                          index,
+                          divisor);
 }
 
 ///--------------------------------------

@@ -55,6 +55,7 @@ enum class Extensions {
   TextureSrgb,                // GL_EXT_texture_sRGB is supported
   TextureType2_10_10_10_Rev,  // GL_EXT_texture_type_2_10_10_10_REV is supporteds
   VertexArrayObject,          // GL_OES_vertex_array_object is supported
+  VertexAttribDivisor,        // GL_NV_instanced_arrays is supported
 };
 // clang-format on
 
@@ -77,6 +78,7 @@ enum class InternalFeatures {
   TextureCompare,            // GL_TEXTURE_COMPARE_MODE and GL_TEXTURE_COMPARE_FUNC are supported
   UnmapBuffer,               // glUnmapBuffer is supported
   VertexArrayObject,         // VAOS are available
+  VertexAttribDivisor,       // glVertexAttribDivisor is supported
 };
 // clang-format on
 
@@ -167,6 +169,7 @@ enum class InternalRequirement {
   TextureHalfFloatExtReq,
   UnmapBufferExtReq,
   VertexArrayObjectExtReq,
+  VertexAttribDivisorExtReq,
 };
 
 class DeviceFeatureSet final {

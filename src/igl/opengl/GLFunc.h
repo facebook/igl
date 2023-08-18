@@ -258,6 +258,8 @@ using PFNIGLUNIFORMBLOCKBINDINGPROC = void (*)(GLuint pid,
                                                GLuint uniformBlockBinding);
 using PFNIGLUNMAPBUFFERPROC = void (*)(GLenum target);
 
+using PFNIGLVERTEXATTRIBDIVISORPROC = void (*)(GLuint index, GLuint divisor);
+
 ///--------------------------------------
 /// MARK: - OpenGL ES / OpenGL
 
@@ -316,6 +318,7 @@ void iglTexSubImage3D(GLenum target,
                       GLenum type,
                       const GLvoid* pixels);
 void iglUnmapBuffer(GLenum target);
+void iglVertexAttribDivisor(GLuint index, GLuint divisor);
 
 ///--------------------------------------
 /// MARK: - GL_APPLE_framebuffer_multisample
@@ -644,6 +647,11 @@ void iglPushDebugGroupKHR(GLenum source, GLuint id, GLsizei length, const GLchar
 GLuint64 iglGetTextureHandleNV(GLuint texture);
 void iglMakeTextureHandleResidentNV(GLuint64 handle);
 void iglMakeTextureHandleNonResidentNV(GLuint64 handle);
+
+///--------------------------------------
+/// MARK: - GL_NV_instanced_arrays
+
+void iglVertexAttribDivisorNV(GLuint index, GLuint divisor);
 
 ///--------------------------------------
 /// MARK: - GL_OVR_multiview

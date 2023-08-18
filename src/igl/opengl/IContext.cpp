@@ -3139,6 +3139,22 @@ void IContext::vertexAttribPointer(GLuint indx,
   GLCHECK_ERRORS();
 }
 
+void IContext::vertexAttribDivisor(GLuint index, GLuint divisor) {
+  if (vertexAttribDivisorProc_ == nullptr) {
+    if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::VertexAttribDivisorExtReq)) {
+      if (deviceFeatureSet_.hasExtension(Extensions::VertexAttribDivisor)) {
+        vertexAttribDivisorProc_ = iglVertexAttribDivisorNV;
+      }
+    } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::VertexAttribDivisor)) {
+      vertexAttribDivisorProc_ = iglVertexAttribDivisor;
+    }
+  }
+
+  GLCALL_PROC(vertexAttribDivisorProc_, index, divisor);
+  APILOG("glVertexAttribDivisor(%u, %u)\n", index, divisor);
+  GLCHECK_ERRORS();
+}
+
 Result IContext::getLastError() const {
   return GL_ERROR_TO_RESULT(lastError_);
 }

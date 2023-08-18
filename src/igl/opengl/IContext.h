@@ -493,6 +493,7 @@ class IContext {
                            GLboolean normalized,
                            GLsizei stride,
                            const GLvoid* ptr);
+  void vertexAttribDivisor(GLuint index, GLuint divisor);
   void viewport(GLint x, GLint y, GLsizei width, GLsizei height);
 
   void dispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z);
@@ -629,6 +630,7 @@ class IContext {
   PFNIGLTEXSTORAGE3DPROC texStorage3DProc_ = nullptr;
   PFNIGLTEXSUBIMAGE3DPROC texSubImage3DProc_ = nullptr;
   PFNIGLUNMAPBUFFERPROC unmapBufferProc_ = nullptr;
+  PFNIGLVERTEXATTRIBDIVISORPROC vertexAttribDivisorProc_ = nullptr;
 
   /// Responsible for holding onto operations queued for deletion when not in context.
   /// All operations to non-scratch queues are suyncronized by one mutex

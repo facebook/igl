@@ -291,6 +291,10 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
         attribute.normalized,
         attribute.stride,
         reinterpret_cast<const char*>(attribute.bufferOffset) + bufferOffset);
+
+    if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::VertexAttribDivisor)) {
+      getContext().vertexAttribDivisor(location, 0);
+    }
   }
 }
 
