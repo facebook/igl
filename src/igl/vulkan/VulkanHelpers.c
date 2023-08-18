@@ -296,6 +296,7 @@ VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
                          VkBool32 enableMultiview,
                          VkBool32 enableShaderFloat16,
                          VkBool32 enableBufferDeviceAddress,
+                         VkBool32 enableDescriptorIndexing,
                          VkDevice* outDevice) {
   assert(numQueueCreateInfos >= 1);
   const VkPhysicalDeviceFeatures deviceFeatures = {
@@ -317,15 +318,17 @@ VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
   };
   const VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeature = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
-      .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
+      .shaderSampledImageArrayNonUniformIndexing = enableDescriptorIndexing ? VK_TRUE : VK_FALSE,
       .descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE,
       .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
       .descriptorBindingStorageImageUpdateAfterBind = VK_TRUE,
       .descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE,
-      .descriptorBindingUpdateUnusedWhilePending = VK_TRUE,
-      .descriptorBindingPartiallyBound = VK_TRUE,
-      .runtimeDescriptorArray = VK_TRUE,
+      .descriptorBindingUpdateUnusedWhilePending = enableDescriptorIndexing ? VK_TRUE : VK_FALSE,
+      .descriptorBindingPartiallyBound = enableDescriptorIndexing ? VK_TRUE : VK_FALSE,
+      .runtimeDescriptorArray = enableDescriptorIndexing ? VK_TRUE : VK_FALSE,
   };
+  // TODO: make it completely optional
+  // @fb-only
   ivkAddNext(&ci, &descriptorIndexingFeature);
 
   const VkPhysicalDevice16BitStorageFeatures float16StorageBuffersFeature = {

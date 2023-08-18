@@ -514,6 +514,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                       vkPhysicalDeviceMultiviewFeatures_.multiview,
                       vkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16,
                       config_.enableBufferDeviceAddress,
+                      config_.enableDescriptorIndexing,
                       &device));
   if (!config_.enableConcurrentVkDevicesSupport) {
     volkLoadDevice(device);

@@ -65,6 +65,7 @@ VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
                          VkBool32 enableMultiview,
                          VkBool32 enableShaderFloat16,
                          VkBool32 enableBufferDeviceAddress,
+                         VkBool32 enableDescriptorIndexing,
                          VkDevice* outDevice);
 
 VkResult ivkCreateHeadlessSurface(VkInstance instance, VkSurfaceKHR* surface);
