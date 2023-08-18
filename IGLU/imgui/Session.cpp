@@ -383,7 +383,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
           // Add Vulkan support for texture reflection info in ShaderUniforms so we don't need to
           // bind the texture directly
           cmdEncoder.bindTexture(0, igl::BindTarget::kFragment, tex);
-
+          cmdEncoder.bindSamplerState(0, igl::BindTarget::kFragment, _linearSampler.get());
         } else {
           _material->shaderUniforms().setTexture(
               "texture", tex ? tex : _fontTexture.get(), _linearSampler);
