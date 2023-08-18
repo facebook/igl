@@ -74,11 +74,7 @@ struct VulkanContextConfig {
   bool enableSynchronizationValidation = false;
   bool enableBufferDeviceAddress = false;
   bool enableExtraLogs = true;
-#if IGL_PLATFORM_MACOS
   bool enableDescriptorIndexing = false;
-#else
-  bool enableDescriptorIndexing = true;
-#endif // IGL_PLATFORM_MACOS
 
   igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
 

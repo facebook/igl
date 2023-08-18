@@ -760,7 +760,9 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                                 &bufferStorageDSets_.dsets[i].ds));
     }
   }
-  {
+
+  // only do allocations if actually enabled
+  if (config_.enableDescriptorIndexing) {
     // create default descriptor set layout which is going to be shared by graphics pipelines
     constexpr uint32_t kNumBindings = 7;
     const std::array<VkDescriptorSetLayoutBinding, kNumBindings> bindings = {
@@ -790,24 +792,20 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
         bindings.data(),
         bindingFlags.data(),
         "Descriptor Set Layout: VulkanContext::dslBindless_");
-
-    // only do allocations if actually enabled
-    if (config_.enableDescriptorIndexing) {
-      // create default descriptor pool and allocate 1 descriptor set
-      const std::array<VkDescriptorPoolSize, kNumBindings> poolSizes = {
-          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
-          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
-          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
-          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
-          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers},
-          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers},
-          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, config_.maxTextures},
-      };
-      VK_ASSERT_RETURN(ivkCreateDescriptorPool(
-          device, 1, static_cast<uint32_t>(poolSizes.size()), poolSizes.data(), &dpBindless_));
-      VK_ASSERT_RETURN(ivkAllocateDescriptorSet(
-          device, dpBindless_, dslBindless_->getVkDescriptorSetLayout(), &bindlessDSet_.ds));
-    }
+    // create default descriptor pool and allocate 1 descriptor set
+    const std::array<VkDescriptorPoolSize, kNumBindings> poolSizes = {
+        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
+        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
+        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
+        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures},
+        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers},
+        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers},
+        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, config_.maxTextures},
+    };
+    VK_ASSERT_RETURN(ivkCreateDescriptorPool(
+        device, 1, static_cast<uint32_t>(poolSizes.size()), poolSizes.data(), &dpBindless_));
+    VK_ASSERT_RETURN(ivkAllocateDescriptorSet(
+        device, dpBindless_, dslBindless_->getVkDescriptorSetLayout(), &bindlessDSet_.ds));
   }
 
   // maxPushConstantsSize is guaranteed to be at least 128 bytes
@@ -820,12 +818,15 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                   limits.maxPushConstantsSize);
   }
 
-  const std::vector<VkDescriptorSetLayout> DSLs = {
+  std::vector<VkDescriptorSetLayout> DSLs = {
       dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
       dslBuffersUniform_->getVkDescriptorSetLayout(),
       dslBuffersStorage_->getVkDescriptorSetLayout(),
-      dslBindless_->getVkDescriptorSetLayout(),
   };
+
+  if (config_.enableDescriptorIndexing) {
+    DSLs.push_back(dslBindless_->getVkDescriptorSetLayout());
+  }
 
   // create pipeline layout
   pipelineLayoutGraphics_ = std::make_unique<VulkanPipelineLayout>(

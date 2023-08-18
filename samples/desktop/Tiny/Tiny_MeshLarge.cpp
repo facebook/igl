@@ -906,6 +906,7 @@ void initIGL() {
           .terminateOnValidationError = true,
           .enhancedShaderDebugging = false,
           .enableValidation = kEnableValidationLayers,
+          .enableDescriptorIndexing = true,
           .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
       };
 #ifdef _WIN32
