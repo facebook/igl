@@ -193,7 +193,7 @@ VulkanSwapchain::~VulkanSwapchain() {
 
 VkImage VulkanSwapchain::getCurrentVkImage() const {
   if (LVK_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
-    lvk::vulkan::VulkanTexture* tex = ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_]);
+    lvk::VulkanTexture* tex = ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_]);
     return tex->image_->vkImage_;
   }
   return VK_NULL_HANDLE;
@@ -201,7 +201,7 @@ VkImage VulkanSwapchain::getCurrentVkImage() const {
 
 VkImageView VulkanSwapchain::getCurrentVkImageView() const {
   if (LVK_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
-    lvk::vulkan::VulkanTexture* tex = ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_]);
+    lvk::VulkanTexture* tex = ctx_.texturesPool_.get(swapchainTextures_[currentImageIndex_]);
     return tex->imageView_;
   }
   return VK_NULL_HANDLE;

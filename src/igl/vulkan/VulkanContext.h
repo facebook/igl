@@ -15,7 +15,6 @@
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
-#include <igl/vulkan/VulkanTexture.h>
 #include <lvk/vulkan/VulkanUtils.h>
 #include <lvk/Pool.h>
 
@@ -23,13 +22,13 @@ namespace lvk {
 
 class VulkanBuffer;
 class VulkanImage;
+class VulkanTexture;
 
 namespace vulkan {
 
 class Device;
 class CommandBuffer;
 class VulkanSwapchain;
-class VulkanTexture;
 
 struct Bindings;
 struct VulkanContextImpl;
@@ -186,7 +185,7 @@ class VulkanContext final {
   lvk::Pool<lvk::ComputePipeline, VkPipeline> computePipelinesPool_;
   lvk::Pool<lvk::Sampler, VkSampler> samplersPool_;
   lvk::Pool<lvk::Buffer, lvk::VulkanBuffer> buffersPool_;
-  lvk::Pool<lvk::Texture, lvk::vulkan::VulkanTexture> texturesPool_;
+  lvk::Pool<lvk::Texture, lvk::VulkanTexture> texturesPool_;
 
   struct DeferredTask {
     DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) : task_(std::move(task)), handle_(handle) {}

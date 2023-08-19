@@ -583,3 +583,60 @@ bool lvk::VulkanImage::isStencilFormat(VkFormat format) {
   return (format == VK_FORMAT_S8_UINT) || (format == VK_FORMAT_D16_UNORM_S8_UINT) || (format == VK_FORMAT_D24_UNORM_S8_UINT) ||
          (format == VK_FORMAT_D32_SFLOAT_S8_UINT);
 }
+
+lvk::VulkanTexture::VulkanTexture(std::shared_ptr<VulkanImage> image, VkImageView imageView) : image_(std::move(image)), imageView_(imageView) {
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_CREATE);
+
+  LVK_ASSERT(image_.get());
+  LVK_ASSERT(imageView_ != VK_NULL_HANDLE);
+}
+
+lvk::VulkanTexture::~VulkanTexture() {
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_DESTROY);
+
+  if (image_) {
+    image_->ctx_.deferredTask(std::packaged_task<void()>(
+        [device = image_->ctx_.getVkDevice(), imageView = imageView_]() { vkDestroyImageView(device, imageView, nullptr); }));
+    for (VkImageView v : imageViewForFramebuffer_) {
+      if (v != VK_NULL_HANDLE) {
+        image_->ctx_.deferredTask(std::packaged_task<void()>(
+            [device = image_->ctx_.getVkDevice(), imageView = v]() { vkDestroyImageView(device, imageView, nullptr); }));
+      }
+    }
+  }
+}
+
+lvk::VulkanTexture::VulkanTexture(VulkanTexture&& other) {
+  std::swap(image_, other.image_);
+  std::swap(imageView_, other.imageView_);
+  for (size_t i = 0; i != LVK_MAX_MIP_LEVELS; i++) {
+    std::swap(imageViewForFramebuffer_[i], other.imageViewForFramebuffer_[i]);
+  }
+}
+
+lvk::VulkanTexture& lvk::VulkanTexture::operator=(VulkanTexture&& other) {
+  std::swap(image_, other.image_);
+  std::swap(imageView_, other.imageView_);
+  for (size_t i = 0; i != LVK_MAX_MIP_LEVELS; i++) {
+    std::swap(imageViewForFramebuffer_[i], other.imageViewForFramebuffer_[i]);
+  }
+  return *this;
+}
+
+VkImageView lvk::VulkanTexture::getOrCreateVkImageViewForFramebuffer(uint8_t level) {
+  LVK_ASSERT(image_ != nullptr);
+  LVK_ASSERT(level < LVK_MAX_MIP_LEVELS);
+
+  if (!image_ || level >= LVK_MAX_MIP_LEVELS) {
+    return VK_NULL_HANDLE;
+  }
+
+  if (imageViewForFramebuffer_[level] != VK_NULL_HANDLE) {
+    return imageViewForFramebuffer_[level];
+  }
+
+  imageViewForFramebuffer_[level] =
+      image_->createImageView(VK_IMAGE_VIEW_TYPE_2D, image_->vkImageFormat_, image_->getImageAspectFlags(), level, 1u, 0u, 1u);
+
+  return imageViewForFramebuffer_[level];
+}

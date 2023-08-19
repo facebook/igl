@@ -12,7 +12,6 @@
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSwapchain.h>
-#include <igl/vulkan/VulkanTexture.h>
 #include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
@@ -86,9 +85,9 @@ void Device::submit(const lvk::ICommandBuffer& commandBuffer, TextureHandle pres
   LVK_ASSERT(vkCmdBuffer->wrapper_);
 
   if (present) {
-    const lvk::vulkan::VulkanTexture& tex = *ctx.texturesPool_.get(present);
+    const lvk::VulkanTexture& tex = *ctx.texturesPool_.get(present);
 
-    LVK_ASSERT(tex.isSwapchainTexture());
+    LVK_ASSERT(tex.image_->isSwapchainImage_);
 
     // prepare image for presentation the image might be coming from a compute shader
     const VkPipelineStageFlagBits srcStage = (tex.image_->vkImageLayout_ == VK_IMAGE_LAYOUT_GENERAL)
@@ -338,7 +337,7 @@ Holder<TextureHandle> Device::createTexture(const TextureDesc& requestedDesc, co
     return {};
   }
 
-  TextureHandle handle = ctx_->texturesPool_.create(vulkan::VulkanTexture(std::move(image), view));
+  TextureHandle handle = ctx_->texturesPool_.create(lvk::VulkanTexture(std::move(image), view));
 
   LVK_ASSERT(ctx_->texturesPool_.numObjects() <= ctx_->config_.maxTextures);
 
@@ -466,8 +465,8 @@ void Device::destroy(Framebuffer& fb) {
     {
       if (handle.empty())
         return;
-      lvk::vulkan::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
-      if (!tex || tex->isSwapchainTexture())
+      lvk::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
+      if (!tex || tex->image_->isSwapchainImage_)
         return;
       destroy(handle);
       handle = {};
@@ -530,7 +529,7 @@ void Device::flushMappedMemory(BufferHandle handle, size_t offset, size_t size) 
   buf->flushMappedMemory(offset, size);
 }
 
-static Result validateRange(const lvk::Dimensions& dimensions, uint32_t numLevels, const lvk::TextureRangeDesc& range) {
+static Result validateRange(const VkExtent3D& ext, uint32_t numLevels, const lvk::TextureRangeDesc& range) {
   if (!LVK_VERIFY(range.dimensions.width > 0 && range.dimensions.height > 0 || range.dimensions.depth > 0 || range.numLayers > 0 ||
                   range.numMipLevels > 0)) {
     return Result{Result::Code::ArgumentOutOfRange, "width, height, depth numLayers, and numMipLevels must be > 0"};
@@ -539,9 +538,9 @@ static Result validateRange(const lvk::Dimensions& dimensions, uint32_t numLevel
     return Result{Result::Code::ArgumentOutOfRange, "range.mipLevel exceeds texture mip-levels"};
   }
 
-  const auto texWidth = std::max(dimensions.width >> range.mipLevel, 1u);
-  const auto texHeight = std::max(dimensions.height >> range.mipLevel, 1u);
-  const auto texDepth = std::max(dimensions.depth >> range.mipLevel, 1u);
+  const auto texWidth = std::max(ext.width >> range.mipLevel, 1u);
+  const auto texHeight = std::max(ext.height >> range.mipLevel, 1u);
+  const auto texDepth = std::max(ext.depth >> range.mipLevel, 1u);
 
   if (range.dimensions.width > texWidth || range.dimensions.height > texHeight || range.dimensions.depth > texDepth) {
     return Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"};
@@ -556,12 +555,12 @@ static Result validateRange(const lvk::Dimensions& dimensions, uint32_t numLevel
 
 Result Device::upload(TextureHandle handle, const TextureRangeDesc& range, const void* data[]) const {
   if (!data) {
-    return lvk::Result();
+    return Result();
   }
 
-  lvk::vulkan::VulkanTexture* texture = ctx_->texturesPool_.get(handle);
+  lvk::VulkanTexture* texture = ctx_->texturesPool_.get(handle);
 
-  const auto result = validateRange(texture->getDimensions(), texture->image_->numLevels_, range);
+  const Result result = validateRange(texture->getExtent(), texture->image_->numLevels_, range);
 
   if (!LVK_VERIFY(result.isOk())) {
     return result;
@@ -596,7 +595,17 @@ Dimensions Device::getDimensions(TextureHandle handle) const {
     return {};
   }
 
-  return ctx_->texturesPool_.get(handle)->getDimensions();
+  const lvk::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
+
+  if (!tex || tex->image_) {
+    return {};
+  }
+
+  return {
+      .width = tex->image_->vkExtent_.width,
+      .height = tex->image_->vkExtent_.height,
+      .depth = tex->image_->vkExtent_.depth,
+  };
 }
 
 void Device::generateMipmap(TextureHandle handle) const {
@@ -604,7 +613,7 @@ void Device::generateMipmap(TextureHandle handle) const {
     return;
   }
 
-  lvk::vulkan::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
+  lvk::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
 
   if (tex->image_->numLevels_ > 1) {
     LVK_ASSERT(tex->image_->vkImageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED);

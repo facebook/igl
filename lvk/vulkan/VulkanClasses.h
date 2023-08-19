@@ -140,4 +140,28 @@ class VulkanImage final {
   mutable VkImageLayout vkImageLayout_ = VK_IMAGE_LAYOUT_UNDEFINED;
 };
 
+struct VulkanTexture final {
+  VulkanTexture() = default;
+  VulkanTexture(std::shared_ptr<lvk::VulkanImage> image, VkImageView imageView);
+  ~VulkanTexture();
+
+  VulkanTexture(const VulkanTexture&) = delete;
+  VulkanTexture& operator=(const VulkanTexture&) = delete;
+
+  VulkanTexture(VulkanTexture&& other);
+  VulkanTexture& operator=(VulkanTexture&& other);
+
+  VkExtent3D getExtent() const {
+    LVK_ASSERT(image_.get());
+    return image_->vkExtent_;
+  }
+
+  // framebuffers can render only into one level/layer
+  VkImageView getOrCreateVkImageViewForFramebuffer(uint8_t level);
+
+  std::shared_ptr<lvk::VulkanImage> image_;
+  VkImageView imageView_ = VK_NULL_HANDLE; // all mip-levels
+  VkImageView imageViewForFramebuffer_[LVK_MAX_MIP_LEVELS] = {};
+};
+
 } // namespace lvk

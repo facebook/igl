@@ -9,7 +9,6 @@
 
 #include <lvk/vulkan/VulkanClasses.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanTexture.h>
 
 static bool isDepthOrStencilVkFormat(VkFormat format) {
   switch (format) {
@@ -37,7 +36,7 @@ CommandBuffer::~CommandBuffer() {
 
 namespace {
 
-void transitionColorAttachment(VkCommandBuffer buffer, lvk::vulkan::VulkanTexture* colorTex) {
+void transitionColorAttachment(VkCommandBuffer buffer, lvk::VulkanTexture* colorTex) {
   if (!LVK_VERIFY(colorTex)) {
     return;
   }
@@ -125,10 +124,10 @@ VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(lvk::PrimitiveType t) {
 void CommandBuffer ::transitionToShaderReadOnly(TextureHandle handle) const {
   LVK_PROFILER_FUNCTION();
 
-  const lvk::vulkan::VulkanTexture& tex = *ctx_->texturesPool_.get(handle);
+  const lvk::VulkanTexture& tex = *ctx_->texturesPool_.get(handle);
   const lvk::VulkanImage* img = tex.image_.get();
 
-  LVK_ASSERT(!tex.isSwapchainTexture());
+  LVK_ASSERT(!img->isSwapchainImage_);
 
   // transition only non-multisampled images - MSAA images cannot be accessed from shaders
   if (img->vkSamples_ == VK_SAMPLE_COUNT_1_BIT) {
@@ -223,7 +222,7 @@ void CommandBuffer::useComputeTexture(TextureHandle handle) {
   LVK_PROFILER_FUNCTION();
 
   LVK_ASSERT(!handle.empty());
-  lvk::vulkan::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
+  lvk::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
   const lvk::VulkanImage& vkImage = *tex->image_.get();
   if (!vkImage.isStorageImage()) {
     LVK_ASSERT_MSG(false, "Did you forget to specify TextureUsageBits::Storage on your texture?");
@@ -259,19 +258,19 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
   // transition all the color attachments
   for (uint32_t i = 0; i != numFbColorAttachments; i++) {
     if (const auto handle = fb.color[i].texture) {
-      lvk::vulkan::VulkanTexture* colorTex = ctx_->texturesPool_.get(handle);
+      lvk::VulkanTexture* colorTex = ctx_->texturesPool_.get(handle);
       transitionColorAttachment(wrapper_->cmdBuf_, colorTex);
     }
     // handle MSAA
     if (TextureHandle handle = fb.color[i].resolveTexture) {
-      lvk::vulkan::VulkanTexture* colorResolveTex = ctx_->texturesPool_.get(handle);
+      lvk::VulkanTexture* colorResolveTex = ctx_->texturesPool_.get(handle);
       transitionColorAttachment(wrapper_->cmdBuf_, colorResolveTex);
     }
   }
   // transition depth-stencil attachment
   TextureHandle depthTex = fb.depthStencil.texture;
   if (depthTex) {
-    lvk::vulkan::VulkanTexture& vkDepthTex = *ctx_->texturesPool_.get(depthTex);
+    lvk::VulkanTexture& vkDepthTex = *ctx_->texturesPool_.get(depthTex);
     const lvk::VulkanImage* depthImg = vkDepthTex.image_.get();
     LVK_ASSERT_MSG(depthImg->vkImageFormat_ != VK_FORMAT_UNDEFINED, "Invalid depth attachment format");
     const VkImageAspectFlags flags = vkDepthTex.image_->getImageAspectFlags();
@@ -297,12 +296,12 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
     const lvk::Framebuffer::AttachmentDesc& attachment = fb.color[i];
     LVK_ASSERT(!attachment.texture.empty());
 
-    lvk::vulkan::VulkanTexture& colorTexture = *ctx_->texturesPool_.get(attachment.texture);
+    lvk::VulkanTexture& colorTexture = *ctx_->texturesPool_.get(attachment.texture);
     const auto& descColor = renderPass.color[i];
     if (mipLevel && descColor.level) {
       LVK_ASSERT_MSG(descColor.level == mipLevel, "All color attachments should have the same mip-level");
     }
-    const lvk::Dimensions dim = colorTexture.getDimensions();
+    const VkExtent3D dim = colorTexture.getExtent();
     if (fbWidth) {
       LVK_ASSERT_MSG(dim.width == fbWidth, "All attachments should have the save width");
     }
@@ -316,7 +315,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
     colorAttachments[i] = {
         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .pNext = nullptr,
-        .imageView = colorTexture.getVkImageViewForFramebuffer(0),
+        .imageView = colorTexture.getOrCreateVkImageViewForFramebuffer(descColor.level),
         .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         .resolveMode = (samples > 1) ? VK_RESOLVE_MODE_AVERAGE_BIT : VK_RESOLVE_MODE_NONE,
         .resolveImageView = VK_NULL_HANDLE,
@@ -330,8 +329,8 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
     if (descColor.storeOp == StoreOp_MsaaResolve) {
       LVK_ASSERT(samples > 1);
       LVK_ASSERT_MSG(!attachment.resolveTexture.empty(), "Framebuffer attachment should contain a resolve texture");
-      lvk::vulkan::VulkanTexture& colorResolveTexture = *ctx_->texturesPool_.get(attachment.resolveTexture);
-      colorAttachments[i].resolveImageView = colorResolveTexture.getVkImageViewForFramebuffer(0);
+      lvk::VulkanTexture& colorResolveTexture = *ctx_->texturesPool_.get(attachment.resolveTexture);
+      colorAttachments[i].resolveImageView = colorResolveTexture.getOrCreateVkImageViewForFramebuffer(descColor.level);
       colorAttachments[i].resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
   }
@@ -345,7 +344,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
     depthAttachment = {
         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .pNext = nullptr,
-        .imageView = depthTexture.getVkImageViewForFramebuffer(0),
+        .imageView = depthTexture.getOrCreateVkImageViewForFramebuffer(descDepth.level),
         .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         .resolveMode = VK_RESOLVE_MODE_NONE,
         .resolveImageView = VK_NULL_HANDLE,
@@ -354,7 +353,7 @@ void CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const l
         .storeOp = storeOpToVkAttachmentStoreOp(descDepth.storeOp),
         .clearValue = {.depthStencil = {.depth = descDepth.clearDepth, .stencil = descDepth.clearStencil}},
     };
-    const lvk::Dimensions dim = depthTexture.getDimensions();
+    const VkExtent3D dim = depthTexture.getExtent();
     if (fbWidth) {
       LVK_ASSERT_MSG(dim.width == fbWidth, "All attachments should have the save width");
     }
@@ -409,13 +408,13 @@ void CommandBuffer::cmdEndRendering() {
   // set image layouts after the render pass
   for (uint32_t i = 0; i != numFbColorAttachments; i++) {
     const auto& attachment = framebuffer_.color[i];
-    const vulkan::VulkanTexture& tex = *ctx_->texturesPool_.get(attachment.texture);
+    const VulkanTexture& tex = *ctx_->texturesPool_.get(attachment.texture);
     // this must match the final layout of the render pass
     tex.image_->vkImageLayout_ = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
   }
 
   if (framebuffer_.depthStencil.texture) {
-    const vulkan::VulkanTexture& tex = *ctx_->texturesPool_.get(framebuffer_.depthStencil.texture);
+    const VulkanTexture& tex = *ctx_->texturesPool_.get(framebuffer_.depthStencil.texture);
     // this must match the final layout of the render pass
     tex.image_->vkImageLayout_ = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
   }

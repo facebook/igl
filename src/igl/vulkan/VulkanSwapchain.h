@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <igl/vulkan/VulkanTexture.h>
 #include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
 #include <vector>
@@ -15,7 +14,6 @@
 namespace lvk::vulkan {
 
 class VulkanContext;
-class VulktanTexture;
 
 class VulkanSwapchain final {
  public:
