@@ -47,17 +47,19 @@ class Texture : public WithContext, public ITexture {
   virtual void bindImage(size_t unit) = 0;
   virtual void unbind() = 0;
 
+  struct AttachmentParams {
+    uint32_t face; // Cube map texture face
+    uint32_t mipLevel; // Mipmap level
+    uint32_t layer; // Array texture layer
+    bool read;
+    bool stereo;
+  };
+
   // frame buffer attachments
-  virtual void attachAsColor(uint32_t index,
-                             uint32_t face = 0,
-                             uint32_t mipLevel = 0,
-                             bool read = false) = 0;
-  virtual void detachAsColor(uint32_t index,
-                             uint32_t face = 0,
-                             uint32_t mipLevel = 0,
-                             bool read = false) = 0;
-  virtual void attachAsDepth() = 0;
-  virtual void attachAsStencil() = 0;
+  virtual void attachAsColor(uint32_t index, const AttachmentParams& params) = 0;
+  virtual void detachAsColor(uint32_t index, bool read) = 0;
+  virtual void attachAsDepth(const AttachmentParams& params) = 0;
+  virtual void attachAsStencil(const AttachmentParams& params) = 0;
 
   virtual bool isImplicitStorage() const;
 

@@ -66,14 +66,15 @@ enum class MsaaDepthResolveFilter : uint8_t {
 struct RenderPassDesc {
  private:
   /**
-   * @brief BaseAttachmentDesc sets default load action, store action, layer, and mipmaplevel for
-   * the attachments of a RenderPassDesc
+   * @brief BaseAttachmentDesc sets default load action, store action, cube face , mip level, and
+   * array layer for the attachments of a RenderPassDesc
    */
   struct BaseAttachmentDesc {
     LoadAction loadAction = LoadAction::Clear; // default load action for depth and stencil
     StoreAction storeAction = StoreAction::DontCare; // default store action for depth and stencil
-    uint8_t layer = 0;
-    uint8_t mipLevel = 0;
+    uint8_t face = 0; // Cube texture face
+    uint8_t mipLevel = 0; // Texture mip level
+    uint8_t layer = 0; // Texture array layer
   };
 
  public:

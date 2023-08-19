@@ -120,18 +120,6 @@ class CustomFramebuffer final : public Framebuffer {
 
  private:
   void prepareResource(Result* outResult);
-  void attachAsColor(const std::shared_ptr<ITexture>& texture,
-                     uint32_t index,
-                     uint32_t face,
-                     uint32_t mipLevel,
-                     bool read) const;
-  void attachAsColorLayer(const std::shared_ptr<ITexture>& texture,
-                          uint32_t mipLevel,
-                          uint32_t layer,
-                          bool read) const;
-  void detachAsColorLayer(uint32_t index, uint32_t mipLevel, uint32_t layer, bool read) const;
-  void attachAsDepth(const std::shared_ptr<ITexture>& texture) const;
-  void attachAsStencil(const std::shared_ptr<ITexture>& texture) const;
 
   bool initialized_ = false;
 

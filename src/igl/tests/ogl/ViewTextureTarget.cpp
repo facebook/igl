@@ -70,10 +70,10 @@ TEST_F(ViewTextureTargetOGLTest, NoOpFunctions) {
       std::make_unique<igl::opengl::ViewTextureTarget>(*context_, TextureFormat::RGBA_UNorm8);
   viewTextureTarget->bind();
   viewTextureTarget->unbind();
-  viewTextureTarget->attachAsColor(0);
-  viewTextureTarget->detachAsColor(0);
-  viewTextureTarget->attachAsDepth();
-  viewTextureTarget->attachAsStencil();
+  viewTextureTarget->attachAsColor(0, opengl::Texture::AttachmentParams{});
+  viewTextureTarget->detachAsColor(0, false);
+  viewTextureTarget->attachAsDepth(opengl::Texture::AttachmentParams{});
+  viewTextureTarget->attachAsStencil(opengl::Texture::AttachmentParams{});
 }
 
 } // namespace tests

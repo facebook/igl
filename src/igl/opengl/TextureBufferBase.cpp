@@ -56,48 +56,71 @@ void TextureBufferBase::unbind() {
   getContext().bindTexture(target_, 0);
 }
 
-void TextureBufferBase::attachAsColor(uint32_t index, uint32_t face, uint32_t mipLevel, bool read) {
+void TextureBufferBase::attachAsColor(uint32_t index, const AttachmentParams& params) {
   IGL_ASSERT(getUsage() & TextureDesc::TextureUsageBits::Attachment);
   if (IGL_VERIFY(textureID_)) {
-    attachAsColor(index, face, mipLevel, read, textureID_);
+    attach(GL_COLOR_ATTACHMENT0 + index, params, textureID_);
   }
 }
 
-void TextureBufferBase::attachAsColor(uint32_t index,
-                                      uint32_t face,
-                                      uint32_t mipLevel,
-                                      bool read,
-                                      GLuint textureID) {
-  GLenum target = target_ == GL_TEXTURE_CUBE_MAP ? GL_TEXTURE_CUBE_MAP_POSITIVE_X + face : target_;
+void TextureBufferBase::attach(GLenum attachment,
+                               const AttachmentParams& params,
+                               GLuint textureID) {
+  GLenum target = target_ == GL_TEXTURE_CUBE_MAP ? GL_TEXTURE_CUBE_MAP_POSITIVE_X + params.face
+                                                 : target_;
   GLenum framebufferTarget = GL_FRAMEBUFFER;
   if (getContext().deviceFeatures().hasFeature(DeviceFeatures::ReadWriteFramebuffer)) {
-    framebufferTarget = read ? GL_READ_FRAMEBUFFER : GL_DRAW_FRAMEBUFFER;
+    framebufferTarget = params.read ? GL_READ_FRAMEBUFFER : GL_DRAW_FRAMEBUFFER;
   }
-  if (getSamples() > 1) {
-    IGL_ASSERT_MSG(index == 0, "Multisample framebuffer can only use GL_COLOR_ATTACHMENT0");
-    getContext().framebufferTexture2DMultisample(
-        framebufferTarget, GL_COLOR_ATTACHMENT0 + index, target, textureID, mipLevel, getSamples());
+  const auto numSamples = getSamples();
+  const auto numLayers = getNumLayers();
+
+  if (numSamples > 1) {
+    IGL_ASSERT_MSG(attachment == GL_COLOR_ATTACHMENT0 || attachment == GL_DEPTH_ATTACHMENT ||
+                       attachment == GL_STENCIL_ATTACHMENT,
+                   "Multisample framebuffer can only use GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT "
+                   "or GL_STENCIL_ATTACHMENT");
+    if (params.stereo) {
+      getContext().framebufferTextureMultisampleMultiview(framebufferTarget,
+                                                          attachment,
+                                                          textureID,
+                                                          params.mipLevel,
+                                                          static_cast<GLsizei>(numSamples),
+                                                          0,
+                                                          2);
+    } else {
+      getContext().framebufferTexture2DMultisample(
+          framebufferTarget, attachment, target, textureID, params.mipLevel, getSamples());
+    }
   } else {
-    getContext().framebufferTexture2D(
-        framebufferTarget, GL_COLOR_ATTACHMENT0 + index, target, textureID, mipLevel);
+    if (params.stereo) {
+      getContext().framebufferTextureMultiview(
+          framebufferTarget, attachment, textureID, params.mipLevel, 0, 2);
+    } else if (numLayers > 1) {
+      getContext().framebufferTextureLayer(
+          framebufferTarget, attachment, textureID, params.mipLevel, params.layer);
+    } else {
+      getContext().framebufferTexture2D(
+          framebufferTarget, attachment, target, textureID, params.mipLevel);
+    }
   }
 }
 
-void TextureBufferBase::detachAsColor(uint32_t index, uint32_t face, uint32_t mipLevel, bool read) {
-  attachAsColor(index, face, mipLevel, read, 0);
+void TextureBufferBase::detachAsColor(uint32_t index, bool read) {
+  AttachmentParams params{};
+  params.read = read;
+  attach(GL_COLOR_ATTACHMENT0 + index, params, 0);
 }
 
-void TextureBufferBase::attachAsDepth() {
+void TextureBufferBase::attachAsDepth(const AttachmentParams& params) {
   if (IGL_VERIFY(textureID_)) {
-    getContext().framebufferTexture2D(
-        GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, textureID_, 0);
+    attach(GL_DEPTH_ATTACHMENT, params, textureID_);
   }
 }
 
-void TextureBufferBase::attachAsStencil() {
+void TextureBufferBase::attachAsStencil(const AttachmentParams& params) {
   if (IGL_VERIFY(textureID_)) {
-    getContext().framebufferTexture2D(
-        GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, textureID_, 0);
+    attach(GL_STENCIL_ATTACHMENT, params, textureID_);
   }
 }
 

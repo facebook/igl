@@ -158,15 +158,15 @@ TEST_F(TextureBufferBaseOGLTest, TextureAttach) {
 
   GLint type = -1234;
   // === No target texture, nothing happens ===
-  textureBufferBase_->attachAsColor(0);
+  textureBufferBase_->attachAsColor(0, opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
   ASSERT_EQ(type, GL_NONE);
-  textureBufferBase_->attachAsDepth();
+  textureBufferBase_->attachAsDepth(opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
   ASSERT_EQ(type, GL_NONE);
-  textureBufferBase_->attachAsStencil();
+  textureBufferBase_->attachAsStencil(opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
   ASSERT_EQ(type, GL_NONE);
@@ -174,7 +174,7 @@ TEST_F(TextureBufferBaseOGLTest, TextureAttach) {
   // === With target texture ===
   textureBufferBase_->setTextureBufferProperties(textureID, GL_TEXTURE_2D);
   textureBufferBase_->bind();
-  textureBufferBase_->attachAsColor(0);
+  textureBufferBase_->attachAsColor(0, opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
   ASSERT_EQ(0, context_->getError());
@@ -183,20 +183,20 @@ TEST_F(TextureBufferBaseOGLTest, TextureAttach) {
   // Multiple Render Targets
   if (context_->deviceFeatures().hasFeature(DeviceFeatures::MultipleRenderTargets)) {
     GLuint colorAttachment1 = GL_COLOR_ATTACHMENT1;
-    textureBufferBase_->attachAsColor(1);
+    textureBufferBase_->attachAsColor(1, opengl::Texture::AttachmentParams{});
     context_->getFramebufferAttachmentParameteriv(
         GL_FRAMEBUFFER, colorAttachment1, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
     ASSERT_EQ(type, GL_TEXTURE);
     ASSERT_EQ(0, context_->getError());
   }
 
-  textureBufferBase_->attachAsDepth();
+  textureBufferBase_->attachAsDepth(opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
   ASSERT_EQ(0, context_->getError());
   ASSERT_EQ(type, GL_TEXTURE);
 
-  textureBufferBase_->attachAsStencil();
+  textureBufferBase_->attachAsStencil(opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
   ASSERT_EQ(type, GL_TEXTURE);
@@ -223,7 +223,7 @@ TEST_F(TextureBufferBaseOGLTest, TextureAttach) {
                        nullptr);
 
   textureBufferBase_->num_samples = 123;
-  textureBufferBase_->attachAsColor(0);
+  textureBufferBase_->attachAsColor(0, opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
   ASSERT_EQ(0, context_->getError());

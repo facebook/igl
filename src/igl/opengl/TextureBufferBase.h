@@ -26,16 +26,10 @@ class TextureBufferBase : public Texture {
   void bind() override;
   void bindImage(size_t unit) override {}
   void unbind() override;
-  void attachAsColor(uint32_t index,
-                     uint32_t face = 0,
-                     uint32_t mipLevel = 0,
-                     bool read = false) override;
-  void detachAsColor(uint32_t index,
-                     uint32_t face = 0,
-                     uint32_t mipLevel = 0,
-                     bool read = false) override;
-  void attachAsDepth() override;
-  void attachAsStencil() override;
+  void attachAsColor(uint32_t index, const AttachmentParams& params) override;
+  void detachAsColor(uint32_t index, bool read) override;
+  void attachAsDepth(const AttachmentParams& params) override;
+  void attachAsStencil(const AttachmentParams& params) override;
   size_t getNumMipLevels() const override;
   void generateMipmap(ICommandQueue& cmdQueue) const override;
   void generateMipmap(ICommandBuffer& cmdBuffer) const override;
@@ -59,7 +53,7 @@ class TextureBufferBase : public Texture {
     usage_ = usage;
   }
 
-  void attachAsColor(uint32_t index, uint32_t face, uint32_t mipLevel, bool read, GLuint textureID);
+  void attach(GLenum attachment, const AttachmentParams& params, GLuint textureID);
   void setMaxMipLevel() const;
 
  private:

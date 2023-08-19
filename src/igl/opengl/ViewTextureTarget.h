@@ -45,16 +45,10 @@ class ViewTextureTarget final : public Texture {
   void bind() override;
   void bindImage(size_t /*unit*/) override;
   void unbind() override;
-  void attachAsColor(uint32_t index,
-                     uint32_t face = 0,
-                     uint32_t mip = 0,
-                     bool read = false) override;
-  void detachAsColor(uint32_t index,
-                     uint32_t face = 0,
-                     uint32_t mip = 0,
-                     bool read = false) override;
-  void attachAsDepth() override;
-  void attachAsStencil() override;
+  void attachAsColor(uint32_t index, const AttachmentParams& params) override;
+  void detachAsColor(uint32_t index, bool read) override;
+  void attachAsDepth(const AttachmentParams& params) override;
+  void attachAsStencil(const AttachmentParams& params) override;
 
   bool isImplicitStorage() const override;
 

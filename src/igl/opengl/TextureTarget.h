@@ -30,16 +30,10 @@ class TextureTarget final : public Texture {
   void bind() override;
   void unbind() override;
   void bindImage(size_t unit) override;
-  void attachAsColor(uint32_t index,
-                     uint32_t face = 0,
-                     uint32_t mipLevel = 0,
-                     bool read = false) override;
-  void detachAsColor(uint32_t index,
-                     uint32_t face = 0,
-                     uint32_t mipLevel = 0,
-                     bool read = false) override;
-  void attachAsDepth() override;
-  void attachAsStencil() override;
+  void attachAsColor(uint32_t index, const AttachmentParams& params) override;
+  void detachAsColor(uint32_t index, bool read) override;
+  void attachAsDepth(const AttachmentParams& params) override;
+  void attachAsStencil(const AttachmentParams& params) override;
 
   // @fb-only
   GLuint getId() const override {
@@ -48,6 +42,8 @@ class TextureTarget final : public Texture {
   }
 
  private:
+  void attach(GLenum attachment, const AttachmentParams& params);
+
   /// @returns false if an unknown format is specified
   bool toRenderBufferFormatGL(TextureDesc::TextureUsage usage, GLenum& formatGL) const;
 

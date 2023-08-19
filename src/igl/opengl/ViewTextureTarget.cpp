@@ -30,25 +30,19 @@ void ViewTextureTarget::unbind() {
   IGL_ASSERT_NOT_REACHED();
 }
 
-void ViewTextureTarget::attachAsColor(uint32_t /* index: not used */,
-                                      uint32_t /*face*/,
-                                      uint32_t /*mipLevel*/,
-                                      bool /*read*/) {
+void ViewTextureTarget::attachAsColor(uint32_t /*index*/, const AttachmentParams& /*params*/) {
   // No-op. This texture is already attached to view's implicit framebuffer
 }
 
-void ViewTextureTarget::detachAsColor(uint32_t /* index: not used */,
-                                      uint32_t /*face*/,
-                                      uint32_t /*mipLevel*/,
-                                      bool /*read*/) {
+void ViewTextureTarget::detachAsColor(uint32_t /*index*/, bool /*read*/) {
   // No-op. This cannot be done for this texture type.
 }
 
-void ViewTextureTarget::attachAsDepth() {
+void ViewTextureTarget::attachAsDepth(const AttachmentParams& /*params*/) {
   // No-op. This texture is already attached to view's implicit framebuffer
 }
 
-void ViewTextureTarget::attachAsStencil() {
+void ViewTextureTarget::attachAsStencil(const AttachmentParams& /*params*/) {
   // No-op. This texture is already attached to view's implicit framebuffer
 }
 

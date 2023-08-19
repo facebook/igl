@@ -161,7 +161,7 @@ TEST_F(TextureTargetOGLTest, TextureBindAndAttachAndDetach) {
   //--------------------------------------------------------------------------
   GLint colorType = -1, colorRid = -1;
 
-  colorTarget_->attachAsColor(0);
+  colorTarget_->attachAsColor(0, opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &colorType);
   // Check here that colorType is GL_RENDERBUFFER
@@ -172,7 +172,7 @@ TEST_F(TextureTargetOGLTest, TextureBindAndAttachAndDetach) {
   // Check here that colorRid is anything other than -1
   ASSERT_NE(colorRid, -1);
 
-  colorTarget_->detachAsColor(0);
+  colorTarget_->detachAsColor(0, false);
   // Nothing to test
 
   //--------------------------------------------------------------------------
@@ -180,7 +180,7 @@ TEST_F(TextureTargetOGLTest, TextureBindAndAttachAndDetach) {
   //--------------------------------------------------------------------------
   GLint depthType = -1, depthRid = -1;
 
-  depthTarget_->attachAsDepth();
+  depthTarget_->attachAsDepth(opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &depthType);
   // Check here that depthType is GL_RENDERBUFFER
@@ -197,7 +197,7 @@ TEST_F(TextureTargetOGLTest, TextureBindAndAttachAndDetach) {
   //--------------------------------------------------------------------------
   GLint stencilType = -1, stencilRid = -1;
 
-  stencilTarget_->attachAsStencil();
+  stencilTarget_->attachAsStencil(opengl::Texture::AttachmentParams{});
   context_->getFramebufferAttachmentParameteriv(
       GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &stencilType);
   // Check here that stencilType is GL_RENDERBUFFER
