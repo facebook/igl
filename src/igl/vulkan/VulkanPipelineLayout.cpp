@@ -14,14 +14,14 @@ namespace igl {
 namespace vulkan {
 
 VulkanPipelineLayout::VulkanPipelineLayout(VkDevice device,
-                                           const std::vector<VkDescriptorSetLayout>& layouts,
+                                           const VkDescriptorSetLayout* layouts,
+                                           uint32_t numLayouts,
                                            const VkPushConstantRange& range,
                                            const char* debugName) :
   device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  const VkPipelineLayoutCreateInfo ci =
-      ivkGetPipelineLayoutCreateInfo((uint32_t)layouts.size(), layouts.data(), &range);
+  const VkPipelineLayoutCreateInfo ci = ivkGetPipelineLayoutCreateInfo(numLayouts, layouts, &range);
 
   VK_ASSERT(vkCreatePipelineLayout(device, &ci, nullptr, &vkPipelineLayout_));
   VK_ASSERT(ivkSetDebugObjectName(

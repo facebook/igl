@@ -816,20 +816,20 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                   limits.maxPushConstantsSize);
   }
 
-  std::vector<VkDescriptorSetLayout> DSLs = {
+  // @lint-ignore CLANGTIDY
+  const VkDescriptorSetLayout DSLs[] = {
       dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
       dslBuffersUniform_->getVkDescriptorSetLayout(),
       dslBuffersStorage_->getVkDescriptorSetLayout(),
+      config_.enableDescriptorIndexing ? dslBindless_->getVkDescriptorSetLayout() : VK_NULL_HANDLE,
   };
-
-  if (config_.enableDescriptorIndexing) {
-    DSLs.push_back(dslBindless_->getVkDescriptorSetLayout());
-  }
 
   // create pipeline layout
   pipelineLayoutGraphics_ = std::make_unique<VulkanPipelineLayout>(
       device,
       DSLs,
+      static_cast<uint32_t>(config_.enableDescriptorIndexing ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
+                                                             : IGL_ARRAY_NUM_ELEMENTS(DSLs) - 1),
       ivkGetPushConstantRange(
           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, kPushConstantsSize),
       "Pipeline Layout: VulkanContext::pipelineLayoutGraphics_");
@@ -837,6 +837,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   pipelineLayoutCompute_ = std::make_unique<VulkanPipelineLayout>(
       device,
       DSLs,
+      static_cast<uint32_t>(config_.enableDescriptorIndexing ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
+                                                             : IGL_ARRAY_NUM_ELEMENTS(DSLs) - 1),
       ivkGetPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, kPushConstantsSize),
       "Pipeline Layout: VulkanContext::pipelineLayoutCompute_");
 

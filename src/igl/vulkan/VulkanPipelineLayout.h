@@ -8,7 +8,6 @@
 #pragma once
 
 #include <igl/vulkan/VulkanHelpers.h>
-#include <vector>
 
 namespace igl {
 namespace vulkan {
@@ -16,7 +15,8 @@ namespace vulkan {
 class VulkanPipelineLayout final {
  public:
   explicit VulkanPipelineLayout(VkDevice device,
-                                const std::vector<VkDescriptorSetLayout>& layouts,
+                                const VkDescriptorSetLayout* layouts,
+                                uint32_t numLayouts,
                                 const VkPushConstantRange& range,
                                 const char* debugName = nullptr);
   ~VulkanPipelineLayout();
