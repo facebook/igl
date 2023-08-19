@@ -178,8 +178,6 @@ class VulkanContext final {
 
   // a texture/sampler was created since the last descriptor set update
   mutable bool awaitingCreation_ = false;
-  // a texture/sampler was deleted since the last descriptor set update
-  mutable bool awaitingDeletion_ = false;
 
   lvk::VulkanContextConfig config_;
 

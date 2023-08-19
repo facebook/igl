@@ -432,6 +432,8 @@ void Device::destroy(lvk::ShaderModuleHandle handle) {
   LVK_ASSERT(sm);
 
   if (*sm != VK_NULL_HANDLE) {
+    // a shader module can be destroyed while pipelines created using its shaders are still in use
+    // https://registry.khronos.org/vulkan/specs/1.3/html/chap9.html#vkDestroyShaderModule
     vkDestroyShaderModule(ctx_->getVkDevice(), *sm, nullptr);
   }
 
@@ -447,20 +449,16 @@ void Device::destroy(SamplerHandle handle) {
 
   ctx_->deferredTask(
       std::packaged_task<void()>([device = ctx_->vkDevice_, sampler = sampler]() { vkDestroySampler(device, sampler, nullptr); }));
-
-  // inform the context it should prune the samplers
-  ctx_->awaitingDeletion_ = true;
 }
 
 void Device::destroy(BufferHandle handle) {
+	// deferred deletion handled in VulkanBuffer
   ctx_->buffersPool_.destroy(handle);
 }
 
 void Device::destroy(lvk::TextureHandle handle) {
+  // deferred deletion handled in VulkanTexture
   ctx_->texturesPool_.destroy(handle);
-
-  // inform the context it should prune the textures
-  ctx_->awaitingDeletion_ = true;
 }
 
 void Device::destroy(Framebuffer& fb) {

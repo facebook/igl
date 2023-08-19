@@ -1011,17 +1011,6 @@ void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
 }
 
 void VulkanContext::checkAndUpdateDescriptorSets() const {
-  if (awaitingDeletion_) {
-    // Our descriptor set was created with VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT which
-    // indicates that descriptors in this binding that are not dynamically used need not contain
-    // valid descriptors at the time the descriptors are consumed. A descriptor is dynamically used
-    // if any shader invocation executes an instruction that performs any memory access using the
-    // descriptor. If a descriptor is not dynamically used, any resource referenced by the
-    // descriptor is not considered to be referenced during command execution.
-    // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkDescriptorBindingFlagBits.html
-    awaitingDeletion_ = false;
-  }
-
   if (!awaitingCreation_) {
     // nothing to update here
     return;
@@ -1121,7 +1110,6 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   }
 
   awaitingCreation_ = false;
-  awaitingDeletion_ = false;
 }
 
 SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci, lvk::Result* outResult, const char* debugName) {
