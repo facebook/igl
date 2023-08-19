@@ -16,7 +16,7 @@
 namespace lvk {
 namespace vulkan {
 
-class Device;
+class VulkanContext;
 
 class alignas(sizeof(uint32_t)) RenderPipelineDynamicState {
   uint32_t topology_ : 4;
@@ -71,7 +71,7 @@ static_assert(alignof(RenderPipelineDynamicState) == sizeof(uint32_t));
 class RenderPipelineState final {
  public:
   RenderPipelineState() = default;
-  RenderPipelineState(lvk::vulkan::Device* device, const RenderPipelineDesc& desc);
+  RenderPipelineState(lvk::vulkan::VulkanContext* ctx, const RenderPipelineDesc& desc);
   ~RenderPipelineState();
 
   RenderPipelineState(const RenderPipelineState&) = delete;
@@ -87,7 +87,7 @@ class RenderPipelineState final {
   }
 
  private:
-  lvk::vulkan::Device* device_ = nullptr;
+  lvk::vulkan::VulkanContext* ctx_ = nullptr;
 
   RenderPipelineDesc desc_;
   VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo_;

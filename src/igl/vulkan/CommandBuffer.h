@@ -73,7 +73,7 @@ class CommandBuffer final : public ICommandBuffer {
   void bindGraphicsPipeline();
 
  private:
-  friend class Device;
+  friend class VulkanContext;
 
   VulkanContext* ctx_ = nullptr;
   const VulkanImmediateCommands::CommandBufferWrapper* wrapper_ = nullptr;

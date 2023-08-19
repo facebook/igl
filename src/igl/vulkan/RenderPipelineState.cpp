@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/vulkan/Device.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanContext.h>
 
@@ -233,7 +232,7 @@ VkBlendFactor blendFactorToVkBlendFactor(lvk::BlendFactor value) {
 
 namespace lvk::vulkan {
 
-RenderPipelineState::RenderPipelineState(lvk::vulkan::Device* device, const RenderPipelineDesc& desc) : device_(device), desc_(desc) {
+RenderPipelineState::RenderPipelineState(lvk::vulkan::VulkanContext* ctx, const RenderPipelineDesc& desc) : ctx_(ctx), desc_(desc) {
   // Iterate and cache vertex input bindings and attributes
   const lvk::VertexInput& vstate = desc_.vertexInput;
 
@@ -271,39 +270,39 @@ RenderPipelineState::RenderPipelineState(lvk::vulkan::Device* device, const Rend
 }
 
 RenderPipelineState::~RenderPipelineState() {
-  if (!device_) {
+  if (!ctx_) {
     return;
   }
 
   if (!desc_.smVert.empty()) {
-    device_->destroy(desc_.smVert);
+    ctx_->destroy(desc_.smVert);
   }
   if (!desc_.smGeom.empty()) {
-    device_->destroy(desc_.smGeom);
+    ctx_->destroy(desc_.smGeom);
   }
   if (!desc_.smFrag.empty()) {
-    device_->destroy(desc_.smFrag);
+    ctx_->destroy(desc_.smFrag);
   }
 
   for (auto p : pipelines_) {
     if (p.second != VK_NULL_HANDLE) {
-      device_->getVulkanContext().deferredTask(std::packaged_task<void()>(
-          [device = device_->getVulkanContext().getVkDevice(), pipeline = p.second]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+      ctx_->deferredTask(std::packaged_task<void()>(
+          [device = ctx_->getVkDevice(), pipeline = p.second]() { vkDestroyPipeline(device, pipeline, nullptr); }));
     }
   }
 }
 
 RenderPipelineState::RenderPipelineState(RenderPipelineState&& other) :
-  device_(other.device_), vertexInputStateCreateInfo_(other.vertexInputStateCreateInfo_) {
+  ctx_(other.ctx_), vertexInputStateCreateInfo_(other.vertexInputStateCreateInfo_) {
   std::swap(desc_, other.desc_);
   std::swap(vkBindings_, other.vkBindings_);
   std::swap(vkAttributes_, other.vkAttributes_);
   std::swap(pipelines_, other.pipelines_);
-  other.device_ = nullptr;
+  other.ctx_ = nullptr;
 }
 
 RenderPipelineState& RenderPipelineState::operator=(RenderPipelineState&& other) {
-  std::swap(device_, other.device_);
+  std::swap(ctx_, other.ctx_);
   std::swap(desc_, other.desc_);
   std::swap(vertexInputStateCreateInfo_, other.vertexInputStateCreateInfo_);
   std::swap(vkBindings_, other.vkBindings_);
@@ -320,8 +319,6 @@ VkPipeline RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& 
   }
 
   // build a new Vulkan pipeline
-
-  const VulkanContext& ctx = device_->getVulkanContext();
 
   VkPipeline pipeline = VK_NULL_HANDLE;
 
@@ -364,9 +361,9 @@ VkPipeline RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& 
     }
   }
 
-  const VkShaderModule* vertModule = ctx.shaderModulesPool_.get(desc_.smVert);
-  const VkShaderModule* geomModule = ctx.shaderModulesPool_.get(desc_.smGeom);
-  const VkShaderModule* fragModule = ctx.shaderModulesPool_.get(desc_.smFrag);
+  const VkShaderModule* vertModule = ctx_->shaderModulesPool_.get(desc_.smVert);
+  const VkShaderModule* geomModule = ctx_->shaderModulesPool_.get(desc_.smGeom);
+  const VkShaderModule* fragModule = ctx_->shaderModulesPool_.get(desc_.smFrag);
 
   LVK_ASSERT(vertModule);
   LVK_ASSERT(fragModule);
@@ -414,7 +411,7 @@ VkPipeline RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& 
       .colorAttachmentFormats(colorAttachmentFormats)
       .depthAttachmentFormat(formatToVkFormat(desc_.depthFormat))
       .stencilAttachmentFormat(formatToVkFormat(desc_.stencilFormat))
-      .build(ctx.getVkDevice(), ctx.pipelineCache_, ctx.vkPipelineLayout_, &pipeline, desc_.debugName);
+      .build(ctx_->getVkDevice(), ctx_->pipelineCache_, ctx_->vkPipelineLayout_, &pipeline, desc_.debugName);
 
   pipelines_[dynamicState] = pipeline;
 

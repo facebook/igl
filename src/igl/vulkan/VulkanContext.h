@@ -15,22 +15,15 @@
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
+#include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
 #include <lvk/Pool.h>
 
-namespace lvk {
+namespace lvk::vulkan {
 
-class VulkanBuffer;
-class VulkanImage;
-class VulkanTexture;
-
-namespace vulkan {
-
-class Device;
 class CommandBuffer;
 class VulkanSwapchain;
 
-struct Bindings;
 struct VulkanContextImpl;
 
 struct DeviceQueues {
@@ -44,14 +37,49 @@ struct DeviceQueues {
   DeviceQueues() = default;
 };
 
-class VulkanContext final {
+class VulkanContext final : public IContext {
  public:
   VulkanContext(const lvk::ContextConfig& config, void* window, void* display = nullptr);
   ~VulkanContext();
 
+  ICommandBuffer& acquireCommandBuffer() override;
+
+  void submit(const lvk::ICommandBuffer& commandBuffer, TextureHandle present) override;
+
+  Holder<BufferHandle> createBuffer(const BufferDesc& desc, Result* outResult) override;
+  Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc, Result* outResult) override;
+  Holder<TextureHandle> createTexture(const TextureDesc& desc, const char* debugName, Result* outResult) override;
+
+  Holder<ComputePipelineHandle> createComputePipeline(const ComputePipelineDesc& desc, Result* outResult) override;
+  Holder<RenderPipelineHandle> createRenderPipeline(const RenderPipelineDesc& desc, Result* outResult) override;
+  Holder<ShaderModuleHandle> createShaderModule(const ShaderModuleDesc& desc, Result* outResult) override;
+
+  void destroy(ComputePipelineHandle handle) override;
+  void destroy(RenderPipelineHandle handle) override;
+  void destroy(ShaderModuleHandle handle) override;
+  void destroy(SamplerHandle handle) override;
+  void destroy(BufferHandle handle) override;
+  void destroy(TextureHandle handle) override;
+  void destroy(Framebuffer& fb) override;
+
+  Result upload(BufferHandle handle, const void* data, size_t size, size_t offset) override;
+  uint8_t* getMappedPtr(BufferHandle handle) const override;
+  uint64_t gpuAddress(BufferHandle handle, size_t offset) const override;
+  void flushMappedMemory(BufferHandle handle, size_t offset, size_t size) const override;
+
+  Result upload(TextureHandle handle, const TextureRangeDesc& range, const void* data[]) override;
+  Dimensions getDimensions(TextureHandle handle) const override;
+  void generateMipmap(TextureHandle handle) const override;
+  Format getFormat(TextureHandle handle) const override;
+
+  TextureHandle getCurrentSwapchainTexture() override;
+  Format getSwapchainFormat() const override;
+  void recreateSwapchain(int newWidth, int newHeight) override;
+
+  ///////////////
+
   lvk::Result queryDevices(HWDeviceType deviceType, std::vector<HWDeviceDesc>& outDevices);
   lvk::Result initContext(const HWDeviceDesc& desc);
-
   lvk::Result initSwapchain(uint32_t width, uint32_t height);
 
   std::shared_ptr<VulkanImage> createImage(VkImageType imageType,
@@ -76,8 +104,6 @@ class VulkanContext final {
   bool hasSwapchain() const noexcept {
     return swapchain_ != nullptr;
   }
-
-  Result present() const;
 
   const VkPhysicalDeviceProperties& getVkPhysicalDeviceProperties() const {
     return vkPhysicalDeviceProperties2_.properties;
@@ -119,9 +145,10 @@ class VulkanContext final {
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void waitDeferredTasks();
+  VkShaderModule createShaderModule(const void* data, size_t length, const char* debugName, Result* outResult) const;
+  VkShaderModule createShaderModule(ShaderStage stage, const char* source, const char* debugName, Result* outResult) const;
 
  private:
-  friend class lvk::vulkan::Device;
   friend class lvk::vulkan::VulkanSwapchain;
   friend class lvk::vulkan::CommandBuffer;
 
@@ -196,5 +223,4 @@ class VulkanContext final {
   mutable std::deque<DeferredTask> deferredTasks_;
 };
 
-} // namespace vulkan
-} // namespace lvk
+} // namespace lvk::vulkan

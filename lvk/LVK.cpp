@@ -27,7 +27,6 @@
 
 #include <GLFW/glfw3native.h>
 
-#include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 
 namespace {
@@ -249,34 +248,58 @@ GLFWwindow* lvk::initWindow(const char* windowTitle, int& outWidth, int& outHeig
 }
 
 std::unique_ptr<lvk::IContext> lvk::createVulkanContextWithSwapchain(GLFWwindow* window,
-                                                                   uint32_t width,
-                                                                   uint32_t height,
-                                                                   const lvk::ContextConfig& cfg,
-                                                                   lvk::HWDeviceType preferredDeviceType) {
+                                                                     uint32_t width,
+                                                                     uint32_t height,
+                                                                     const lvk::ContextConfig& cfg,
+                                                                     lvk::HWDeviceType preferredDeviceType) {
   using namespace lvk;
+
+  std::unique_ptr<vulkan::VulkanContext> ctx;
+
 #if defined(_WIN32)
-  auto ctx = lvk::vulkan::Device::createContext(cfg, (void*)glfwGetWin32Window(window));
+  ctx = std::make_unique<vulkan::VulkanContext>(cfg, (void*)glfwGetWin32Window(window));
 #elif defined(__linux__)
-  auto ctx = vulkan::Device::createContext(cfg, (void*)glfwGetX11Window(window), (void*)glfwGetX11Display());
+  ctx = std::make_unique<vulkan::VulkanContext>(cfg, (void*)glfwGetX11Window(window), (void*)glfwGetX11Display());
 #else
 #error Unsupported OS
 #endif
 
-  std::vector<HWDeviceDesc> devices = vulkan::Device::queryDevices(*ctx, preferredDeviceType, nullptr);
+  std::vector<HWDeviceDesc> devices;
+  Result res = ctx->queryDevices(preferredDeviceType, devices);
 
-  if (devices.empty()) {
-    if (preferredDeviceType == HWDeviceType_Discrete) {
-      devices = vulkan::Device::queryDevices(*ctx, HWDeviceType_Integrated, nullptr);
-    }
-    if (preferredDeviceType == HWDeviceType_Integrated) {
-      devices = vulkan::Device::queryDevices(*ctx, HWDeviceType_Discrete, nullptr);
-    }
-  }
-
-  if (devices.empty()) {
+  if (!res.isOk()) {
     LVK_ASSERT_MSG(false, "GPU is not found");
     return nullptr;
   }
 
-  return vulkan::Device::create(std::move(ctx), devices[0], width, height);
+  if (devices.empty()) {
+    if (preferredDeviceType == HWDeviceType_Discrete) {
+      res = ctx->queryDevices(HWDeviceType_Integrated, devices);
+    }
+    if (preferredDeviceType == HWDeviceType_Integrated) {
+      res = ctx->queryDevices(HWDeviceType_Discrete, devices);
+    }
+  }
+
+  if (!res.isOk() || devices.empty()) {
+    LVK_ASSERT_MSG(false, "GPU is not found");
+    return nullptr;
+  }
+
+  res = ctx->initContext(devices[0]);
+
+  if (!res.isOk()) {
+    LVK_ASSERT_MSG(false, "Failed initContext()");
+    return nullptr;
+  }
+
+  if (width > 0 && height > 0) {
+    res = ctx->initSwapchain(width, height);
+    if (!res.isOk()) {
+      LVK_ASSERT_MSG(false, "Failed to create swapchain");
+      return nullptr;
+    }
+  }
+
+  return std::move(ctx);
 }

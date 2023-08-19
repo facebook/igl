@@ -7,7 +7,6 @@
 
 #include "VulkanSwapchain.h"
 
-#include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <lvk/vulkan/VulkanUtils.h>
 

@@ -12,7 +12,7 @@
 #define VMA_IMPLEMENTATION
 #define VOLK_IMPLEMENTATION
 
-#include <igl/vulkan/Device.h>
+#include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <lvk/vulkan/VulkanClasses.h>
@@ -26,10 +26,7 @@ namespace {
 
 const char* kDefaultValidationLayers[] = {"VK_LAYER_KHRONOS_validation"};
 
-/*
- These bindings should match GLSL declarations injected into shaders in
- Device::compileShaderModule(). Same with SparkSL.
- */
+// These bindings should match GLSL declarations injected into shaders in VulkanContext::createShaderModule().
 enum Bindings {
   kBinding_Textures = 0,
   kBinding_Samplers = 1,
@@ -85,6 +82,44 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
   }
 
   return VK_FALSE;
+}
+
+bool supportsFormat(VkPhysicalDevice physicalDevice, VkFormat format) {
+  VkFormatProperties properties;
+  vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &properties);
+  return properties.bufferFeatures != 0 || properties.linearTilingFeatures != 0 ||
+         properties.optimalTilingFeatures != 0;
+}
+
+VkShaderStageFlagBits shaderStageToVkShaderStage(lvk::ShaderStage stage) {
+  switch (stage) {
+  case lvk::Stage_Vert:
+    return VK_SHADER_STAGE_VERTEX_BIT;
+  case lvk::Stage_Geom:
+    return VK_SHADER_STAGE_GEOMETRY_BIT;
+  case lvk::Stage_Frag:
+    return VK_SHADER_STAGE_FRAGMENT_BIT;
+  case lvk::Stage_Comp:
+    return VK_SHADER_STAGE_COMPUTE_BIT;
+  };
+  return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
+}
+
+VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(lvk::StorageType storage) {
+  VkMemoryPropertyFlags memFlags{0};
+
+  switch (storage) {
+  case lvk::StorageType_Device:
+    memFlags |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    break;
+  case lvk::StorageType_HostVisible:
+    memFlags |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    break;
+  case lvk::StorageType_Memoryless:
+    memFlags |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+    break;
+  }
+  return memFlags;
 }
 
 std::vector<VkFormat> getCompatibleDepthStencilFormats(lvk::Format format) {
@@ -188,6 +223,8 @@ namespace vulkan {
 struct VulkanContextImpl final {
   // Vulkan Memory Allocator
   VmaAllocator vma_ = VK_NULL_HANDLE;
+
+  lvk::vulkan::CommandBuffer currentCommandBuffer_;
 };
 
 VulkanContext::VulkanContext(const lvk::ContextConfig& config,
@@ -274,6 +311,720 @@ VulkanContext::~VulkanContext() {
 
   LLOGL("Vulkan graphics pipelines created: %u\n",
                VulkanPipelineBuilder::getNumPipelinesCreated());
+}
+
+ICommandBuffer& VulkanContext::acquireCommandBuffer() {
+  LVK_PROFILER_FUNCTION();
+
+  LVK_ASSERT_MSG(!pimpl_->currentCommandBuffer_.ctx_, "Cannot acquire more than 1 command buffer simultaneously");
+
+  pimpl_->currentCommandBuffer_ = CommandBuffer(this);
+
+  return pimpl_->currentCommandBuffer_;
+}
+
+void VulkanContext::submit(const lvk::ICommandBuffer& commandBuffer, TextureHandle present) {
+  LVK_PROFILER_FUNCTION();
+
+  vulkan::CommandBuffer* vkCmdBuffer = const_cast<vulkan::CommandBuffer*>(static_cast<const vulkan::CommandBuffer*>(&commandBuffer));
+
+  LVK_ASSERT(vkCmdBuffer);
+  LVK_ASSERT(vkCmdBuffer->ctx_);
+  LVK_ASSERT(vkCmdBuffer->wrapper_);
+
+  if (present) {
+    const lvk::VulkanTexture& tex = *texturesPool_.get(present);
+
+    LVK_ASSERT(tex.image_->isSwapchainImage_);
+
+    // prepare image for presentation the image might be coming from a compute shader
+    const VkPipelineStageFlagBits srcStage = (tex.image_->vkImageLayout_ == VK_IMAGE_LAYOUT_GENERAL)
+                                                 ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+                                                 : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    tex.image_->transitionLayout(
+        vkCmdBuffer->wrapper_->cmdBuf_,
+        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        srcStage,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // wait for all subsequent operations
+        VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+  }
+
+  const bool shouldPresent = hasSwapchain() && present;
+
+  if (shouldPresent) {
+    immediate_->waitSemaphore(swapchain_->acquireSemaphore_);
+  }
+
+  vkCmdBuffer->lastSubmitHandle_ = immediate_->submit(*vkCmdBuffer->wrapper_);
+
+  if (shouldPresent) {
+    swapchain_->present(immediate_->acquireLastSubmitSemaphore());
+  }
+
+  processDeferredTasks();
+
+  // reset
+  pimpl_->currentCommandBuffer_ = {};
+}
+
+Holder<BufferHandle> VulkanContext::createBuffer(const BufferDesc& requestedDesc, Result* outResult) {
+  BufferDesc desc = requestedDesc;
+
+  if (!useStaging_ && (desc.storage == StorageType_Device)) {
+    desc.storage = StorageType_HostVisible;
+  }
+
+  // Use staging device to transfer data into the buffer when the storage is private to the device
+  VkBufferUsageFlags usageFlags = (desc.storage == StorageType_Device) ? VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+                                                                       : 0;
+
+  if (desc.usage == 0) {
+    Result::setResult(outResult, Result(Result::Code::ArgumentOutOfRange, "Invalid buffer usage"));
+    return {};
+  }
+
+  if (desc.usage & BufferUsageBits_Index) {
+    usageFlags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+  }
+  if (desc.usage & BufferUsageBits_Vertex) {
+    usageFlags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+  }
+  if (desc.usage & BufferUsageBits_Uniform) {
+    usageFlags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
+  }
+
+  if (desc.usage & BufferUsageBits_Storage) {
+    usageFlags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
+  }
+
+  if (desc.usage & BufferUsageBits_Indirect) {
+    usageFlags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
+  }
+
+  const VkMemoryPropertyFlags memFlags = storageTypeToVkMemoryPropertyFlags(desc.storage);
+
+  Result result;
+  BufferHandle handle = createBuffer(desc.size, usageFlags, memFlags, &result, desc.debugName);
+
+  if (!LVK_VERIFY(result.isOk())) {
+    Result::setResult(outResult, result);
+    return {};
+  }
+
+  if (desc.data) {
+    upload(handle, desc.data, desc.size, 0);
+  }
+
+  Result::setResult(outResult, Result());
+
+  return {this, handle};
+}
+
+Holder<SamplerHandle> VulkanContext::createSampler(const SamplerStateDesc& desc, Result* outResult) {
+  LVK_PROFILER_FUNCTION();
+
+  Result result;
+
+  SamplerHandle handle = createSampler(
+      samplerStateDescToVkSamplerCreateInfo(desc, getVkPhysicalDeviceProperties().limits), &result, desc.debugName);
+
+  if (!LVK_VERIFY(result.isOk())) {
+    Result::setResult(outResult, Result(Result::Code::RuntimeError, "Cannot create Sampler"));
+    return {};
+  }
+
+  Result::setResult(outResult, result);
+
+  return {this, handle};
+}
+
+Holder<TextureHandle> VulkanContext::createTexture(const TextureDesc& requestedDesc, const char* debugName, Result* outResult) {
+  TextureDesc desc(requestedDesc);
+
+  if (debugName && *debugName) {
+    desc.debugName = debugName;
+  }
+
+  const VkFormat vkFormat = lvk::isDepthOrStencilFormat(desc.format) ? getClosestDepthStencilFormat(desc.format)
+                                                                     : formatToVkFormat(desc.format);
+
+  const lvk::TextureType type = desc.type;
+  if (!LVK_VERIFY(type == TextureType_2D || type == TextureType_Cube || type == TextureType_3D)) {
+    LVK_ASSERT_MSG(false, "Only 2D, 3D and Cube textures are supported");
+    Result::setResult(outResult, Result::Code::RuntimeError);
+    return {};
+  }
+
+  if (desc.numMipLevels == 0) {
+    LVK_ASSERT_MSG(false, "The number of mip levels specified must be greater than 0");
+    desc.numMipLevels = 1;
+  }
+
+  if (desc.numSamples > 1 && desc.numMipLevels != 1) {
+    LVK_ASSERT_MSG(false, "The number of mip levels for multisampled images should be 1");
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "The number of mip-levels for multisampled images should be 1");
+    return {};
+  }
+
+  if (desc.numSamples > 1 && type == TextureType_3D) {
+    LVK_ASSERT_MSG(false, "Multisampled 3D images are not supported");
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Multisampled 3D images are not supported");
+    return {};
+  }
+
+  if (!LVK_VERIFY(desc.numMipLevels <= lvk::calcNumMipLevels(desc.dimensions.width, desc.dimensions.height))) {
+    Result::setResult(outResult,
+                      Result::Code::ArgumentOutOfRange,
+                      "The number of specified mip-levels is greater than the maximum possible "
+                      "number of mip-levels.");
+    return {};
+  }
+
+  if (desc.usage == 0) {
+    LVK_ASSERT_MSG(false, "Texture usage flags are not set");
+    desc.usage = lvk::TextureUsageBits_Sampled;
+  }
+
+  /* Use staging device to transfer data into the image when the storage is private to the device */
+  VkImageUsageFlags usageFlags = (desc.storage == StorageType_Device) ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : 0;
+
+  if (desc.usage & lvk::TextureUsageBits_Sampled) {
+    usageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+  }
+  if (desc.usage & lvk::TextureUsageBits_Storage) {
+    LVK_ASSERT_MSG(desc.numSamples <= 1, "Storage images cannot be multisampled");
+    usageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
+  }
+  if (desc.usage & lvk::TextureUsageBits_Attachment) {
+    usageFlags |= lvk::isDepthOrStencilFormat(desc.format) ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+                                                           : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+  }
+
+  // For now, always set this flag so we can read it back
+  usageFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+  LVK_ASSERT_MSG(usageFlags != 0, "Invalid usage flags");
+
+  const VkMemoryPropertyFlags memFlags = storageTypeToVkMemoryPropertyFlags(desc.storage);
+
+  const bool hasDebugName = desc.debugName && *desc.debugName;
+
+  char debugNameImage[256] = {0};
+  char debugNameImageView[256] = {0};
+
+  if (hasDebugName) {
+    snprintf(debugNameImage, sizeof(debugNameImage) - 1, "Image: %s", desc.debugName);
+    snprintf(debugNameImageView, sizeof(debugNameImageView) - 1, "Image View: %s", desc.debugName);
+  }
+
+  VkImageCreateFlags createFlags = 0;
+  uint32_t arrayLayerCount = static_cast<uint32_t>(desc.numLayers);
+  VkImageViewType imageViewType;
+  VkImageType imageType;
+  VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
+  switch (desc.type) {
+  case TextureType_2D:
+    imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+    imageType = VK_IMAGE_TYPE_2D;
+    samples = lvk::getVulkanSampleCountFlags(desc.numSamples);
+    break;
+  case TextureType_3D:
+    imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+    imageType = VK_IMAGE_TYPE_3D;
+    break;
+  case TextureType_Cube:
+    imageViewType = VK_IMAGE_VIEW_TYPE_CUBE;
+    arrayLayerCount *= 6;
+    imageType = VK_IMAGE_TYPE_2D;
+    createFlags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    break;
+  default:
+    LVK_ASSERT_MSG(false, "Code should NOT be reached");
+    Result::setResult(outResult, Result::Code::RuntimeError, "Unsupported texture type");
+    return {};
+  }
+
+  Result result;
+  auto image = createImage(imageType,
+                                 VkExtent3D{desc.dimensions.width, desc.dimensions.height, desc.dimensions.depth},
+                                 vkFormat,
+                                 desc.numMipLevels,
+                                 arrayLayerCount,
+                                 VK_IMAGE_TILING_OPTIMAL,
+                                 usageFlags,
+                                 memFlags,
+                                 createFlags,
+                                 samples,
+                                 &result,
+                                 debugNameImage);
+  if (!LVK_VERIFY(result.isOk())) {
+    Result::setResult(outResult, result);
+    return {};
+  }
+  if (!LVK_VERIFY(image.get())) {
+    Result::setResult(outResult, Result::Code::RuntimeError, "Cannot create VulkanImage");
+    return {};
+  }
+
+  VkImageAspectFlags aspect = 0;
+  if (image->isDepthFormat_ || image->isStencilFormat_) {
+    if (image->isDepthFormat_) {
+      aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
+    } else if (image->isStencilFormat_) {
+      aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+  } else {
+    aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+  }
+
+  VkImageView view =
+      image->createImageView(imageViewType, vkFormat, aspect, 0, VK_REMAINING_MIP_LEVELS, 0, arrayLayerCount, debugNameImageView);
+
+  if (!LVK_VERIFY(view != VK_NULL_HANDLE)) {
+    Result::setResult(outResult, Result::Code::RuntimeError, "Cannot create VkImageView");
+    return {};
+  }
+
+  TextureHandle handle = texturesPool_.create(lvk::VulkanTexture(std::move(image), view));
+
+  LVK_ASSERT(texturesPool_.numObjects() <= config_.maxTextures);
+
+  awaitingCreation_ = true;
+
+  if (desc.data) {
+    LVK_ASSERT(desc.type == TextureType_2D);
+    const void* mipMaps[] = {desc.data};
+    Result res = upload(handle, {.dimensions = desc.dimensions, .numMipLevels = 1}, mipMaps);
+    if (!res.isOk()) {
+      Result::setResult(outResult, res);
+      return {};
+    }
+  }
+
+  Result::setResult(outResult, Result());
+
+  return {this, handle};
+}
+
+lvk::Holder<lvk::ComputePipelineHandle> VulkanContext::createComputePipeline(const ComputePipelineDesc& desc, Result* outResult) {
+  if (!LVK_VERIFY(desc.shaderModule.valid())) {
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing compute shader");
+    return {};
+  }
+
+  const VkShaderModule* sm = shaderModulesPool_.get(desc.shaderModule);
+
+  LVK_ASSERT(sm);
+
+  const VkComputePipelineCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .flags = 0,
+      .stage = lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, *sm, desc.entryPoint),
+      .layout = vkPipelineLayout_,
+      .basePipelineHandle = VK_NULL_HANDLE,
+      .basePipelineIndex = -1,
+  };
+  VkPipeline pipeline = VK_NULL_HANDLE;
+  VK_ASSERT(vkCreateComputePipelines(getVkDevice(), pipelineCache_, 1, &ci, nullptr, &pipeline));
+  VK_ASSERT(lvk::setDebugObjectName(getVkDevice(), VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline, desc.debugName));
+
+  // a shader module can be destroyed while pipelines created using its shaders are still in use
+  // https://registry.khronos.org/vulkan/specs/1.3/html/chap9.html#vkDestroyShaderModule
+  destroy(desc.shaderModule);
+
+  return {this, computePipelinesPool_.create(std::move(pipeline))};
+}
+
+lvk::Holder<lvk::RenderPipelineHandle> VulkanContext::createRenderPipeline(const RenderPipelineDesc& desc, Result* outResult) {
+  const bool hasColorAttachments = desc.getNumColorAttachments() > 0;
+  const bool hasDepthAttachment = desc.depthFormat != Format_Invalid;
+  const bool hasAnyAttachments = hasColorAttachments || hasDepthAttachment;
+  if (!LVK_VERIFY(hasAnyAttachments)) {
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Need at least one attachment");
+    return {};
+  }
+
+  if (!LVK_VERIFY(desc.smVert.valid())) {
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing vertex shader");
+    return {};
+  }
+
+  if (!LVK_VERIFY(desc.smFrag.valid())) {
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing fragment shader");
+    return {};
+  }
+
+  return {this, renderPipelinesPool_.create(RenderPipelineState(this, desc))};
+}
+
+void VulkanContext::destroy(lvk::ComputePipelineHandle handle) {
+  VkPipeline* pipeline = computePipelinesPool_.get(handle);
+
+  LVK_ASSERT(pipeline);
+  LVK_ASSERT(*pipeline != VK_NULL_HANDLE);
+
+  deferredTask(
+      std::packaged_task<void()>([device = getVkDevice(), pipeline = *pipeline]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+
+  computePipelinesPool_.destroy(handle);
+}
+
+void VulkanContext::destroy(lvk::RenderPipelineHandle handle) {
+  renderPipelinesPool_.destroy(handle);
+}
+
+void VulkanContext::destroy(lvk::ShaderModuleHandle handle) {
+  const VkShaderModule* sm = shaderModulesPool_.get(handle);
+
+  LVK_ASSERT(sm);
+
+  if (*sm != VK_NULL_HANDLE) {
+    // a shader module can be destroyed while pipelines created using its shaders are still in use
+    // https://registry.khronos.org/vulkan/specs/1.3/html/chap9.html#vkDestroyShaderModule
+    vkDestroyShaderModule(getVkDevice(), *sm, nullptr);
+  }
+
+  shaderModulesPool_.destroy(handle);
+}
+
+void VulkanContext::destroy(SamplerHandle handle) {
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_DESTROY);
+
+  VkSampler sampler = *samplersPool_.get(handle);
+
+  samplersPool_.destroy(handle);
+
+  deferredTask(
+      std::packaged_task<void()>([device = vkDevice_, sampler = sampler]() { vkDestroySampler(device, sampler, nullptr); }));
+}
+
+void VulkanContext::destroy(BufferHandle handle) {
+	// deferred deletion handled in VulkanBuffer
+  buffersPool_.destroy(handle);
+}
+
+void VulkanContext::destroy(lvk::TextureHandle handle) {
+  // deferred deletion handled in VulkanTexture
+  texturesPool_.destroy(handle);
+}
+
+void VulkanContext::destroy(Framebuffer& fb) {
+  auto destroyFbTexture = [this](TextureHandle& handle) {
+    {
+      if (handle.empty())
+        return;
+      lvk::VulkanTexture* tex = texturesPool_.get(handle);
+      if (!tex || tex->image_->isSwapchainImage_)
+        return;
+      destroy(handle);
+      handle = {};
+    }
+  };
+
+  for (Framebuffer::AttachmentDesc& a : fb.color) {
+    destroyFbTexture(a.texture);
+    destroyFbTexture(a.resolveTexture);
+  }
+  destroyFbTexture(fb.depthStencil.texture);
+  destroyFbTexture(fb.depthStencil.resolveTexture);
+}
+
+Result VulkanContext::upload(BufferHandle handle, const void* data, size_t size, size_t offset) {
+  LVK_PROFILER_FUNCTION();
+
+  if (!LVK_VERIFY(data)) {
+    return lvk::Result();
+  }
+
+  lvk::VulkanBuffer* buf = buffersPool_.get(handle);
+
+  if (!LVK_VERIFY(buf)) {
+    return lvk::Result();
+  }
+
+  if (!LVK_VERIFY(offset + size <= buf->bufferSize_)) {
+    return lvk::Result(Result::Code::ArgumentOutOfRange, "Out of range");
+  }
+
+  stagingDevice_->bufferSubData(*buf, offset, size, data);
+
+  return lvk::Result();
+}
+
+uint8_t* VulkanContext::getMappedPtr(BufferHandle handle) const {
+  const lvk::VulkanBuffer* buf = buffersPool_.get(handle);
+
+  LVK_ASSERT(buf);
+
+  return buf->isMapped() ? buf->getMappedPtr() : nullptr;
+}
+
+uint64_t VulkanContext::gpuAddress(BufferHandle handle, size_t offset) const {
+  LVK_ASSERT_MSG((offset & 7) == 0, "Buffer offset must be 8 bytes aligned as per GLSL_EXT_buffer_reference spec.");
+
+  const lvk::VulkanBuffer* buf = buffersPool_.get(handle);
+
+  LVK_ASSERT(buf);
+
+  return buf ? (uint64_t)buf->vkDeviceAddress_ + offset : 0u;
+}
+
+void VulkanContext::flushMappedMemory(BufferHandle handle, size_t offset, size_t size) const {
+  const lvk::VulkanBuffer* buf = buffersPool_.get(handle);
+
+  LVK_ASSERT(buf);
+
+  buf->flushMappedMemory(offset, size);
+}
+
+static Result validateRange(const VkExtent3D& ext, uint32_t numLevels, const lvk::TextureRangeDesc& range) {
+  if (!LVK_VERIFY(range.dimensions.width > 0 && range.dimensions.height > 0 || range.dimensions.depth > 0 || range.numLayers > 0 ||
+                  range.numMipLevels > 0)) {
+    return Result{Result::Code::ArgumentOutOfRange, "width, height, depth numLayers, and numMipLevels must be > 0"};
+  }
+  if (range.mipLevel > numLevels) {
+    return Result{Result::Code::ArgumentOutOfRange, "range.mipLevel exceeds texture mip-levels"};
+  }
+
+  const auto texWidth = std::max(ext.width >> range.mipLevel, 1u);
+  const auto texHeight = std::max(ext.height >> range.mipLevel, 1u);
+  const auto texDepth = std::max(ext.depth >> range.mipLevel, 1u);
+
+  if (range.dimensions.width > texWidth || range.dimensions.height > texHeight || range.dimensions.depth > texDepth) {
+    return Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"};
+  }
+  if (range.x > texWidth - range.dimensions.width || range.y > texHeight - range.dimensions.height ||
+      range.z > texDepth - range.dimensions.depth) {
+    return Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"};
+  }
+
+  return Result{};
+}
+
+Result VulkanContext::upload(TextureHandle handle, const TextureRangeDesc& range, const void* data[]) {
+  if (!data) {
+    return Result();
+  }
+
+  lvk::VulkanTexture* texture = texturesPool_.get(handle);
+
+  const Result result = validateRange(texture->getExtent(), texture->image_->numLevels_, range);
+
+  if (!LVK_VERIFY(result.isOk())) {
+    return result;
+  }
+
+  const uint32_t numLayers = std::max(range.numLayers, 1u);
+
+  const VkImageType type = texture->image_->vkType_;
+  VkFormat vkFormat = texture->image_->vkImageFormat_;
+
+  if (type == VK_IMAGE_TYPE_3D) {
+    const void* uploadData = data[0];
+    stagingDevice_->imageData3D(*texture->image_.get(),
+                                      VkOffset3D{(int32_t)range.x, (int32_t)range.y, (int32_t)range.z},
+                                      VkExtent3D{range.dimensions.width, range.dimensions.height, range.dimensions.depth},
+                                      vkFormat,
+                                      uploadData);
+  } else {
+    const VkRect2D imageRegion = {
+        .offset = {.x = (int)range.x, .y = (int)range.y},
+        .extent = {.width = range.dimensions.width, .height = range.dimensions.height},
+    };
+    stagingDevice_->imageData2D(
+        *texture->image_.get(), imageRegion, range.mipLevel, range.numMipLevels, range.layer, range.numLayers, vkFormat, data);
+  }
+
+  return Result();
+}
+
+Dimensions VulkanContext::getDimensions(TextureHandle handle) const {
+  if (!handle) {
+    return {};
+  }
+
+  const lvk::VulkanTexture* tex = texturesPool_.get(handle);
+
+  LVK_ASSERT(tex);
+
+  if (!tex || !tex->image_) {
+    return {};
+  }
+
+  return {
+      .width = tex->image_->vkExtent_.width,
+      .height = tex->image_->vkExtent_.height,
+      .depth = tex->image_->vkExtent_.depth,
+  };
+}
+
+void VulkanContext::generateMipmap(TextureHandle handle) const {
+  if (handle.empty()) {
+    return;
+  }
+
+  const lvk::VulkanTexture* tex = texturesPool_.get(handle);
+
+  if (tex->image_->numLevels_ > 1) {
+    LVK_ASSERT(tex->image_->vkImageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED);
+    const auto& wrapper = immediate_->acquire();
+    tex->image_->generateMipmap(wrapper.cmdBuf_);
+    immediate_->submit(wrapper);
+  }
+}
+
+Format VulkanContext::getFormat(TextureHandle handle) const {
+  if (handle.empty()) {
+    return Format_Invalid;
+  }
+
+  return vkFormatToFormat(texturesPool_.get(handle)->image_->vkImageFormat_);
+}
+
+lvk::Holder<lvk::ShaderModuleHandle> VulkanContext::createShaderModule(const ShaderModuleDesc& desc, Result* outResult) {
+  Result result;
+  VkShaderModule sm = desc.dataSize ?
+                                    // binary
+                          createShaderModule(desc.data, desc.dataSize, desc.debugName, &result)
+                                    :
+                                    // text
+                          createShaderModule(desc.stage, desc.data, desc.debugName, &result);
+
+  if (!result.isOk()) {
+    Result::setResult(outResult, result);
+    return {};
+  }
+  Result::setResult(outResult, result);
+
+  return {this, shaderModulesPool_.create(std::move(sm))};
+}
+
+VkShaderModule VulkanContext::createShaderModule(const void* data, size_t length, const char* debugName, Result* outResult) const {
+  VkShaderModule vkShaderModule = VK_NULL_HANDLE;
+
+  const VkShaderModuleCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+      .codeSize = length,
+      .pCode = (const uint32_t*)data,
+  };
+  const VkResult result = vkCreateShaderModule(vkDevice_, &ci, nullptr, &vkShaderModule);
+
+  lvk::setResultFrom(outResult, result);
+
+  if (result != VK_SUCCESS) {
+    return VK_NULL_HANDLE;
+  }
+
+  VK_ASSERT(lvk::setDebugObjectName(vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
+
+  LVK_ASSERT(vkShaderModule != VK_NULL_HANDLE);
+
+  return vkShaderModule;
+}
+
+VkShaderModule VulkanContext::createShaderModule(ShaderStage stage, const char* source, const char* debugName, Result* outResult) const {
+  const VkShaderStageFlagBits vkStage = shaderStageToVkShaderStage(stage);
+  LVK_ASSERT(vkStage != VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM);
+  LVK_ASSERT(source);
+
+  std::string sourcePatched;
+
+  if (!source || !*source) {
+    Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Shader source is empty");
+    return VK_NULL_HANDLE;
+  }
+
+  if (strstr(source, "#version ") == nullptr) {
+    if (vkStage == VK_SHADER_STAGE_VERTEX_BIT || vkStage == VK_SHADER_STAGE_COMPUTE_BIT) {
+      sourcePatched += R"(
+      #version 460
+      #extension GL_EXT_buffer_reference : require
+      #extension GL_EXT_buffer_reference_uvec2 : require
+      #extension GL_EXT_debug_printf : enable
+      #extension GL_EXT_nonuniform_qualifier : require
+      #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
+      )";
+    }
+    if (vkStage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+      sourcePatched += R"(
+      #version 460
+      #extension GL_EXT_buffer_reference_uvec2 : require
+      #extension GL_EXT_debug_printf : enable
+      #extension GL_EXT_nonuniform_qualifier : require
+      #extension GL_EXT_samplerless_texture_functions : require
+      #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
+
+      layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
+      layout (set = 0, binding = 0) uniform texture3D kTextures3D[];
+      layout (set = 0, binding = 0) uniform textureCube kTexturesCube[];
+      layout (set = 0, binding = 1) uniform sampler kSamplers[];
+      layout (set = 0, binding = 1) uniform samplerShadow kSamplersShadow[];
+
+      vec4 textureBindless2D(uint textureid, uint samplerid, vec2 uv) {
+        return texture(sampler2D(kTextures2D[textureid], kSamplers[samplerid]), uv);
+      }
+      float textureBindless2DShadow(uint textureid, uint samplerid, vec3 uvw) {
+        return texture(sampler2DShadow(kTextures2D[textureid], kSamplersShadow[samplerid]), uvw);
+      }
+      ivec2 textureBindlessSize2D(uint textureid) {
+        return textureSize(kTextures2D[textureid], 0);
+      }
+      vec4 textureBindlessCube(uint textureid, uint samplerid, vec3 uvw) {
+        return texture(samplerCube(kTexturesCube[textureid], kSamplers[samplerid]), uvw);
+      }
+      )";
+    }
+    sourcePatched += source;
+    source = sourcePatched.c_str();
+  }
+
+  const glslang_resource_t glslangResource = lvk::getGlslangResource(getVkPhysicalDeviceProperties().limits);
+
+  VkShaderModule vkShaderModule = VK_NULL_HANDLE;
+  const Result result = lvk::compileShader(vkDevice_, vkStage, source, &vkShaderModule, &glslangResource);
+
+  Result::setResult(outResult, result);
+
+  if (!result.isOk()) {
+    return VK_NULL_HANDLE;
+  }
+
+  VK_ASSERT(lvk::setDebugObjectName(vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
+
+  LVK_ASSERT(vkShaderModule != VK_NULL_HANDLE);
+
+  return vkShaderModule;
+}
+
+Format VulkanContext::getSwapchainFormat() const {
+  if (!hasSwapchain()) {
+    return Format_Invalid;
+  }
+
+  return getFormat(swapchain_->getCurrentTexture());
+}
+
+TextureHandle VulkanContext::getCurrentSwapchainTexture() {
+  LVK_PROFILER_FUNCTION();
+
+  if (!hasSwapchain()) {
+    return {};
+  }
+
+  TextureHandle tex = swapchain_->getCurrentTexture();
+
+  if (!LVK_VERIFY(tex.valid())) {
+    LVK_ASSERT_MSG(false, "Swapchain has no valid texture");
+    return {};
+  }
+
+  LVK_ASSERT_MSG(texturesPool_.get(tex)->image_->vkImageFormat_ != VK_FORMAT_UNDEFINED, "Invalid image format");
+
+  return tex;
+}
+
+void VulkanContext::recreateSwapchain(int newWidth, int newHeight) {
+  initSwapchain(newWidth, newHeight);
 }
 
 void VulkanContext::createInstance() {
@@ -940,14 +1691,6 @@ lvk::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
   swapchain_ = std::make_unique<lvk::vulkan::VulkanSwapchain>(*this, width, height);
 
   return swapchain_ ? Result() : Result(Result::Code::RuntimeError, "Failed to create swapchain");
-}
-
-Result VulkanContext::present() const {
-  if (!hasSwapchain()) {
-    return Result(Result::Code::ArgumentOutOfRange, "No swapchain available");
-  }
-
-  return swapchain_->present(immediate_->acquireLastSubmitSemaphore());
 }
 
 BufferHandle VulkanContext::createBuffer(VkDeviceSize bufferSize,
