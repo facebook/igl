@@ -539,15 +539,10 @@ struct ShaderModuleDesc {
   ShaderStage stage = Stage_Frag;
   const char* data = nullptr;
   size_t dataSize = 0; // if `dataSize` is non-zero, interpret `data` as binary shader data
-  const char* entryPoint = "main";
   const char* debugName = "";
 
-  ShaderModuleDesc(const char* source, lvk::ShaderStage stage, const char* debugName) :
-    stage(stage), data(source), debugName(debugName) {}
-  ShaderModuleDesc(const void* data,
-                   size_t dataLength,
-                   lvk::ShaderStage stage,
-                   const char* debugName) :
+  ShaderModuleDesc(const char* source, lvk::ShaderStage stage, const char* debugName) : stage(stage), data(source), debugName(debugName) {}
+  ShaderModuleDesc(const void* data, size_t dataLength, lvk::ShaderStage stage, const char* debugName) :
     stage(stage), data(static_cast<const char*>(data)), dataSize(dataLength), debugName(debugName) {
     LVK_ASSERT(dataSize);
   }
@@ -559,6 +554,10 @@ struct RenderPipelineDesc final {
   ShaderModuleHandle smVert;
   ShaderModuleHandle smGeom;
   ShaderModuleHandle smFrag;
+
+  const char* entryPointVert = "main";
+  const char* entryPointFrag = "main";
+  const char* entryPointGeom = "main";
 
   ColorAttachment color[LVK_MAX_COLOR_ATTACHMENTS] = {};
   Format depthFormat = Format_Invalid;
@@ -586,6 +585,7 @@ struct RenderPipelineDesc final {
 
 struct ComputePipelineDesc final {
   ShaderModuleHandle shaderModule;
+  const char* entryPoint = "main";
   const char* debugName = "";
 };
 

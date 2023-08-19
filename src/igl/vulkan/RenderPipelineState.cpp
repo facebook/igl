@@ -364,21 +364,20 @@ VkPipeline RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& 
     }
   }
 
-  const VulkanShaderModule* vertModule = ctx.shaderModulesPool_.get(desc_.smVert);
-  const VulkanShaderModule* geomModule = ctx.shaderModulesPool_.get(desc_.smGeom);
-  const VulkanShaderModule* fragModule = ctx.shaderModulesPool_.get(desc_.smFrag);
+  const VkShaderModule* vertModule = ctx.shaderModulesPool_.get(desc_.smVert);
+  const VkShaderModule* geomModule = ctx.shaderModulesPool_.get(desc_.smGeom);
+  const VkShaderModule* fragModule = ctx.shaderModulesPool_.get(desc_.smFrag);
 
   LVK_ASSERT(vertModule);
   LVK_ASSERT(fragModule);
 
   std::vector<VkPipelineShaderStageCreateInfo> stages = {
-      lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertModule->vkShaderModule_, vertModule->entryPoint_),
-      lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragModule->vkShaderModule_, fragModule->entryPoint_),
+      lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, *vertModule, desc_.entryPointVert),
+      lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, *fragModule, desc_.entryPointFrag),
   };
 
   if (geomModule) {
-    stages.push_back(
-        lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_GEOMETRY_BIT, geomModule->vkShaderModule_, geomModule->entryPoint_));
+    stages.push_back(lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_GEOMETRY_BIT, *geomModule, desc_.entryPointGeom));
   }
 
   lvk::vulkan::VulkanPipelineBuilder()

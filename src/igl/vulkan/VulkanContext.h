@@ -45,11 +45,6 @@ struct DeviceQueues {
   DeviceQueues() = default;
 };
 
-struct VulkanShaderModule final {
-  VkShaderModule vkShaderModule_ = VK_NULL_HANDLE;
-  const char* entryPoint_ = nullptr;
-};
-
 class VulkanContext final {
  public:
   VulkanContext(const lvk::VulkanContextConfig& config, void* window, void* display = nullptr);
@@ -188,7 +183,7 @@ class VulkanContext final {
 
   lvk::VulkanContextConfig config_;
 
-  lvk::Pool<lvk::ShaderModule, lvk::vulkan::VulkanShaderModule> shaderModulesPool_;
+  lvk::Pool<lvk::ShaderModule, VkShaderModule> shaderModulesPool_;
   lvk::Pool<lvk::RenderPipeline, lvk::vulkan::RenderPipelineState> renderPipelinesPool_;
   lvk::Pool<lvk::ComputePipeline, VkPipeline> computePipelinesPool_;
   lvk::Pool<lvk::Sampler, VkSampler> samplersPool_;

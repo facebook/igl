@@ -365,14 +365,14 @@ lvk::Holder<lvk::ComputePipelineHandle> Device::createComputePipeline(const Comp
     return {};
   }
 
-  const VulkanShaderModule* sm = ctx_->shaderModulesPool_.get(desc.shaderModule);
+  const VkShaderModule* sm = ctx_->shaderModulesPool_.get(desc.shaderModule);
 
   LVK_ASSERT(sm);
 
   const VkComputePipelineCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
       .flags = 0,
-      .stage = lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, sm->vkShaderModule_, sm->entryPoint_),
+      .stage = lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, *sm, desc.entryPoint),
       .layout = ctx_->vkPipelineLayout_,
       .basePipelineHandle = VK_NULL_HANDLE,
       .basePipelineIndex = -1,
@@ -427,12 +427,12 @@ void Device::destroy(lvk::RenderPipelineHandle handle) {
 }
 
 void Device::destroy(lvk::ShaderModuleHandle handle) {
-  const VulkanShaderModule* sm = ctx_->shaderModulesPool_.get(handle);
+  const VkShaderModule* sm = ctx_->shaderModulesPool_.get(handle);
 
   LVK_ASSERT(sm);
 
-  if (sm->vkShaderModule_ != VK_NULL_HANDLE) {
-    vkDestroyShaderModule(ctx_->getVkDevice(), sm->vkShaderModule_, nullptr);
+  if (*sm != VK_NULL_HANDLE) {
+    vkDestroyShaderModule(ctx_->getVkDevice(), *sm, nullptr);
   }
 
   ctx_->shaderModulesPool_.destroy(handle);
@@ -626,28 +626,23 @@ Format Device::getFormat(TextureHandle handle) const {
 
 lvk::Holder<lvk::ShaderModuleHandle> Device::createShaderModule(const ShaderModuleDesc& desc, Result* outResult) {
   Result result;
-  VulkanShaderModule vulkanShaderModule = desc.dataSize
-                                              ? std::move(
-                                                    // binary
-                                                    createShaderModule(desc.data, desc.dataSize, desc.entryPoint, desc.debugName, &result))
-                                              : std::move(
-                                                    // text
-                                                    createShaderModule(desc.stage, desc.data, desc.entryPoint, desc.debugName, &result));
+  VkShaderModule sm = desc.dataSize ?
+                                    // binary
+                          createShaderModule(desc.data, desc.dataSize, desc.debugName, &result)
+                                    :
+                                    // text
+                          createShaderModule(desc.stage, desc.data, desc.debugName, &result);
 
   if (!result.isOk()) {
-    Result::setResult(outResult, std::move(result));
+    Result::setResult(outResult, result);
     return {};
   }
-  Result::setResult(outResult, std::move(result));
+  Result::setResult(outResult, result);
 
-  return {this, ctx_->shaderModulesPool_.create(std::move(vulkanShaderModule))};
+  return {this, ctx_->shaderModulesPool_.create(std::move(sm))};
 }
 
-VulkanShaderModule Device::createShaderModule(const void* data,
-                                              size_t length,
-                                              const char* entryPoint,
-                                              const char* debugName,
-                                              Result* outResult) const {
+VkShaderModule Device::createShaderModule(const void* data, size_t length, const char* debugName, Result* outResult) const {
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
 
   const VkShaderModuleCreateInfo ci = {
@@ -660,22 +655,17 @@ VulkanShaderModule Device::createShaderModule(const void* data,
   lvk::setResultFrom(outResult, result);
 
   if (result != VK_SUCCESS) {
-    return VulkanShaderModule();
+    return VK_NULL_HANDLE;
   }
 
   VK_ASSERT(lvk::setDebugObjectName(ctx_->vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
   LVK_ASSERT(vkShaderModule != VK_NULL_HANDLE);
-  LVK_ASSERT(entryPoint);
 
-  return VulkanShaderModule{vkShaderModule, entryPoint};
+  return vkShaderModule;
 }
 
-VulkanShaderModule Device::createShaderModule(ShaderStage stage,
-                                              const char* source,
-                                              const char* entryPoint,
-                                              const char* debugName,
-                                              Result* outResult) const {
+VkShaderModule Device::createShaderModule(ShaderStage stage, const char* source, const char* debugName, Result* outResult) const {
   const VkShaderStageFlagBits vkStage = shaderStageToVkShaderStage(stage);
   LVK_ASSERT(vkStage != VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM);
   LVK_ASSERT(source);
@@ -684,11 +674,10 @@ VulkanShaderModule Device::createShaderModule(ShaderStage stage,
 
   if (!source || !*source) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Shader source is empty");
-    return VulkanShaderModule();
+    return VK_NULL_HANDLE;
   }
 
   if (strstr(source, "#version ") == nullptr) {
-    // there's no header provided in the shader source, let's insert our own header
     if (vkStage == VK_SHADER_STAGE_VERTEX_BIT || vkStage == VK_SHADER_STAGE_COMPUTE_BIT) {
       sourcePatched += R"(
       #version 460
@@ -740,15 +729,14 @@ VulkanShaderModule Device::createShaderModule(ShaderStage stage,
   Result::setResult(outResult, result);
 
   if (!result.isOk()) {
-    return VulkanShaderModule();
+    return VK_NULL_HANDLE;
   }
 
   VK_ASSERT(lvk::setDebugObjectName(ctx_->vkDevice_, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName));
 
   LVK_ASSERT(vkShaderModule != VK_NULL_HANDLE);
-  LVK_ASSERT(entryPoint);
 
-  return VulkanShaderModule{.vkShaderModule_ = vkShaderModule, .entryPoint_ = entryPoint};
+  return vkShaderModule;
 }
 
 Format Device::getSwapchainFormat() const {

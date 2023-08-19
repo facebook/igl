@@ -18,7 +18,6 @@ namespace lvk {
 namespace vulkan {
 
 class VulkanContext;
-class VulkanShaderModule;
 
 class Device final : public IDevice {
  public:
@@ -76,14 +75,12 @@ class Device final : public IDevice {
                                          Result* outResult = nullptr);
 
  private:
-  VulkanShaderModule createShaderModule(const void* data,
+  VkShaderModule createShaderModule(const void* data,
                                         size_t length,
-                                        const char* entryPoint,
                                         const char* debugName,
                                         Result* outResult) const;
-  VulkanShaderModule createShaderModule(ShaderStage stage,
+  VkShaderModule createShaderModule(ShaderStage stage,
                                         const char* source,
-                                        const char* entryPoint,
                                         const char* debugName,
                                         Result* outResult) const;
 
