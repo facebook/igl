@@ -61,23 +61,23 @@ void main() {
 namespace lvk {
 
 lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(const lvk::Framebuffer& desc) {
-  return device_.createRenderPipeline(
+  return ctx_.createRenderPipeline(
       {
-          .smVert = device_.createShaderModule({codeVS, Stage_Vert, "Shader Module: imgui (vert)"}).release(),
-          .smFrag = device_.createShaderModule({codeFS, Stage_Frag, "Shader Module: imgui (frag)"}).release(),
+          .smVert = ctx_.createShaderModule({codeVS, Stage_Vert, "Shader Module: imgui (vert)"}).release(),
+          .smFrag = ctx_.createShaderModule({codeFS, Stage_Frag, "Shader Module: imgui (frag)"}).release(),
           .color = {{
-              .format = device_.getFormat(desc.color[0].texture),
+              .format = ctx_.getFormat(desc.color[0].texture),
               .blendEnabled = true,
               .srcRGBBlendFactor = lvk::BlendFactor_SrcAlpha,
               .dstRGBBlendFactor = lvk::BlendFactor_OneMinusSrcAlpha,
           }},
-          .depthFormat = desc.depthStencil.texture ? device_.getFormat(desc.depthStencil.texture) : lvk::Format_Invalid,
+          .depthFormat = desc.depthStencil.texture ? ctx_.getFormat(desc.depthStencil.texture) : lvk::Format_Invalid,
           .cullMode = lvk::CullMode_None,
       },
       nullptr);
 }
 
-ImGuiRenderer::ImGuiRenderer(lvk::IDevice& device, const char* defaultFontTTF, float fontSizePixels) : device_(device) {
+ImGuiRenderer::ImGuiRenderer(lvk::IContext& device, const char* defaultFontTTF, float fontSizePixels) : ctx_(device) {
   ImGui::CreateContext();
 
   ImGuiIO& io = ImGui::GetIO();
@@ -121,7 +121,7 @@ ImGuiRenderer::~ImGuiRenderer() {
 void ImGuiRenderer::beginFrame(const lvk::Framebuffer& desc) {
   const float displayScale = 1.0f;
 
-  const lvk::Dimensions dim = device_.getDimensions(desc.color[0].texture);
+  const lvk::Dimensions dim = ctx_.getDimensions(desc.color[0].texture);
 
   ImGuiIO& io = ImGui::GetIO();
   io.DisplaySize = ImVec2(dim.width / displayScale, dim.height / displayScale);
@@ -134,7 +134,7 @@ void ImGuiRenderer::beginFrame(const lvk::Framebuffer& desc) {
   ImGui::NewFrame();
 }
 
-void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffer) {
+void ImGuiRenderer::endFrame(lvk::IContext& device, lvk::ICommandBuffer& cmdBuffer) {
   static_assert(sizeof(ImDrawIdx) == 2);
   LVK_ASSERT_MSG(sizeof(ImDrawIdx) == 2, "The constants below may not work with the ImGui data.");
 
@@ -180,8 +180,8 @@ void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffe
 
   // upload vertex/index buffers
   {
-    ImDrawVert* vtx = (ImDrawVert*)device_.getMappedPtr(drawableData.vb_);
-    uint16_t* idx = (uint16_t*)device_.getMappedPtr(drawableData.ib_);
+    ImDrawVert* vtx = (ImDrawVert*)ctx_.getMappedPtr(drawableData.vb_);
+    uint16_t* idx = (uint16_t*)ctx_.getMappedPtr(drawableData.ib_);
     for (int n = 0; n < dd->CmdListsCount; n++) {
       const ImDrawList* cmdList = dd->CmdLists[n];
       memcpy(vtx, cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
@@ -189,8 +189,8 @@ void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffe
       vtx += cmdList->VtxBuffer.Size;
       idx += cmdList->IdxBuffer.Size;
     }
-    device_.flushMappedMemory(drawableData.vb_, 0, dd->TotalVtxCount * sizeof(ImDrawVert));
-    device_.flushMappedMemory(drawableData.ib_, 0, dd->TotalIdxCount * sizeof(ImDrawIdx));
+    ctx_.flushMappedMemory(drawableData.vb_, 0, dd->TotalVtxCount * sizeof(ImDrawVert));
+    ctx_.flushMappedMemory(drawableData.ib_, 0, dd->TotalIdxCount * sizeof(ImDrawIdx));
   }
 
   uint32_t idxOffset = 0;
@@ -208,21 +208,21 @@ void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffe
 
       ImVec2 clipMin((cmd.ClipRect.x - clip_off.x) * clip_scale.x, (cmd.ClipRect.y - clip_off.y) * clip_scale.y);
       ImVec2 clipMax((cmd.ClipRect.z - clip_off.x) * clip_scale.x, (cmd.ClipRect.w - clip_off.y) * clip_scale.y);
-// clang-format off
+      // clang-format off
       if (clipMin.x < 0.0f) clipMin.x = 0.0f;
       if (clipMin.y < 0.0f) clipMin.y = 0.0f;
       if (clipMax.x > fb_width ) clipMax.x = (float)fb_width;
       if (clipMax.y > fb_height) clipMax.y = (float)fb_height;
       if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y)
          continue;
-// clang-format on
+      // clang-format on
       struct VulkanImguiBindData {
-         float LRTB[4]; // ortho projection: left, right, top, bottom
-         uint64_t vb = 0;
-         uint32_t textureId = 0;
+        float LRTB[4]; // ortho projection: left, right, top, bottom
+        uint64_t vb = 0;
+        uint32_t textureId = 0;
       } bindData = {
           .LRTB = {L, R, T, B},
-          .vb = device_.gpuAddress(drawableData.vb_),
+          .vb = ctx_.gpuAddress(drawableData.vb_),
           .textureId = static_cast<uint32_t>(reinterpret_cast<ptrdiff_t>(cmd.TextureId)),
       };
       cmdBuffer.cmdPushConstants(bindData);
@@ -230,7 +230,7 @@ void ImGuiRenderer::endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffe
           {uint32_t(clipMin.x), uint32_t(clipMin.y), uint32_t(clipMax.x - clipMin.x), uint32_t(clipMax.y - clipMin.y)});
       cmdBuffer.cmdDrawIndexed(lvk::Primitive_Triangle, cmd.ElemCount, 1u, idxOffset + cmd.IdxOffset, int32_t(vtxOffset + cmd.VtxOffset));
     }
-	 idxOffset += cmdList->IdxBuffer.Size;
+    idxOffset += cmdList->IdxBuffer.Size;
     vtxOffset += cmdList->VtxBuffer.Size;
   }
 }

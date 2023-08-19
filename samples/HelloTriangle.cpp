@@ -45,25 +45,25 @@ int height_ = 600;
 FramesPerSecondCounter fps_;
 
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Triangle_;
-std::unique_ptr<lvk::IDevice> device_;
+std::unique_ptr<lvk::IContext> ctx_;
 
 void render() {
   if (!width_ || !height_) {
     return;
   }
 
-  lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
+  lvk::ICommandBuffer& buffer = ctx_->acquireCommandBuffer();
 
   // This will clear the framebuffer
   buffer.cmdBeginRendering(
       {.color = {{.loadOp = lvk::LoadOp_Clear, .clearColor = {1.0f, 1.0f, 1.0f, 1.0f}}}},
-      {.color = {{.texture = device_->getCurrentSwapchainTexture()}}});
+      {.color = {{.texture = ctx_->getCurrentSwapchainTexture()}}});
   buffer.cmdBindRenderPipeline(renderPipelineState_Triangle_);
   buffer.cmdPushDebugGroupLabel("Render Triangle", 0xff0000ff);
   buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3);
   buffer.cmdPopDebugGroupLabel();
   buffer.cmdEndRendering();
-  device_->submit(buffer, device_->getCurrentSwapchainTexture());
+  ctx_->submit(buffer, ctx_->getCurrentSwapchainTexture());
 }
 
 int main(int argc, char* argv[]) {
@@ -71,12 +71,12 @@ int main(int argc, char* argv[]) {
 
   window_ = lvk::initWindow("Vulkan Hello Triangle", width_, height_, true);
 
-  device_ = lvk::createVulkanDeviceWithSwapchain(window_, width_, height_, {});
-  renderPipelineState_Triangle_ = device_->createRenderPipeline(
+  ctx_ = lvk::createVulkanContextWithSwapchain(window_, width_, height_, {});
+  renderPipelineState_Triangle_ = ctx_->createRenderPipeline(
       {
-          .smVert = device_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
-          .smFrag = device_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
-          .color = {{.format = device_->getSwapchainFormat()}},
+          .smVert = ctx_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
+          .smFrag = ctx_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
+          .color = {{.format = ctx_->getSwapchainFormat()}},
       },
       nullptr);
 
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     width_ = width;
     height_ = height;
-    device_->recreateSwapchain(width_, height_);
+    ctx_->recreateSwapchain(width_, height_);
   });
 
   double prevTime = glfwGetTime();
@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
 
   // destroy all the Vulkan stuff before closing the window
   renderPipelineState_Triangle_ = nullptr;
-  device_ = nullptr;
+  ctx_ = nullptr;
 
   glfwDestroyWindow(window_);
   glfwTerminate();

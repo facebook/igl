@@ -113,7 +113,7 @@ FramesPerSecondCounter fps_;
 
 constexpr uint32_t kNumBufferedFrames = 3;
 
-std::unique_ptr<lvk::IDevice> device_;
+std::unique_ptr<lvk::IContext> ctx_;
 lvk::Framebuffer framebuffer_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Mesh_;
 lvk::Holder<lvk::BufferHandle> vb0_, ib0_; // buffers for vertices and indices
@@ -183,17 +183,16 @@ static uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
 UniformsPerObject perObject[kNumCubes];
 
 static void initIGL() {
-  device_ = lvk::createVulkanDeviceWithSwapchain(
-      window_, width_, height_, {.maxTextures = 128, .maxSamplers = 128});
+  ctx_ = lvk::createVulkanContextWithSwapchain(window_, width_, height_, {.maxTextures = 128, .maxSamplers = 128});
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
-  vb0_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Storage,
+  vb0_ = ctx_->createBuffer({.usage = lvk::BufferUsageBits_Storage,
                                 .storage = lvk::StorageType_Device,
                                 .size = sizeof(vertexData0),
                                 .data = vertexData0,
                                 .debugName = "Buffer: vertex"},
                                nullptr);
-  ib0_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Index,
+  ib0_ = ctx_->createBuffer({.usage = lvk::BufferUsageBits_Index,
                                 .storage = lvk::StorageType_Device,
                                 .size = sizeof(indexData),
                                 .data = indexData,
@@ -201,12 +200,12 @@ static void initIGL() {
                                nullptr);
   // create an Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
-    ubPerFrame_.push_back(device_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
+    ubPerFrame_.push_back(ctx_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
                                                  .storage = lvk::StorageType_HostVisible,
                                                  .size = sizeof(UniformsPerFrame),
                                                  .debugName = "Buffer: uniforms (per frame)"},
                                                 nullptr));
-    ubPerObject_.push_back(device_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
+    ubPerObject_.push_back(ctx_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
                                                   .storage = lvk::StorageType_HostVisible,
                                                   .size = kNumCubes * sizeof(UniformsPerObject),
                                                   .debugName = "Buffer: uniforms (per object)"},
@@ -225,7 +224,7 @@ static void initIGL() {
         pixels[y * texWidth + x] = 0xFF000000 + ((x ^ y) << 16) + ((x ^ y) << 8) + (x ^ y);
       }
     }
-    texture0_ = device_->createTexture(
+    texture0_ = ctx_->createTexture(
         {
             .type = lvk::TextureType_2D,
             .format = lvk::Format_BGRA_UN8,
@@ -256,7 +255,7 @@ static void initIGL() {
       printf("Cannot load textures. Run `deploy_content.py` before running this app.");
       std::terminate();
     }
-    texture1_ = device_->createTexture(
+    texture1_ = ctx_->createTexture(
         {
             .type = lvk::TextureType_2D,
             .format = lvk::Format_RGBA_UN8,
@@ -269,7 +268,7 @@ static void initIGL() {
     stbi_image_free(pixels);
   }
 
-  sampler_ = device_->createSampler({.debugName = "Sampler: linear"}, nullptr);
+  sampler_ = ctx_->createSampler({.debugName = "Sampler: linear"}, nullptr);
 
   renderPass_ = {.color = {{
                      .loadOp = lvk::LoadOp_Clear,
@@ -293,15 +292,15 @@ static void initObjects() {
     return;
   }
 
-  renderPipelineState_Mesh_ = device_->createRenderPipeline(
+  renderPipelineState_Mesh_ = ctx_->createRenderPipeline(
       {
-          .smVert = device_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
-          .smFrag = device_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
+          .smVert = ctx_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
+          .smFrag = ctx_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
           .color =
               {
-                  {.format = device_->getSwapchainFormat()},
+                  {.format = ctx_->getSwapchainFormat()},
               },
-          .depthFormat = framebuffer_.depthStencil.texture ? device_->getFormat(framebuffer_.depthStencil.texture) : lvk::Format_Invalid,
+          .depthFormat = framebuffer_.depthStencil.texture ? ctx_->getFormat(framebuffer_.depthStencil.texture) : lvk::Format_Invalid,
           .cullMode = lvk::CullMode_Back,
           .frontFaceWinding = lvk::WindingMode_CW,
           .debugName = "Pipeline: mesh",
@@ -328,7 +327,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       .texture1 = texture1_.index(),
       .sampler = sampler_.index(),
   };
-  device_->upload(ubPerFrame_[frameIndex], &perFrame, sizeof(perFrame));
+  ctx_->upload(ubPerFrame_[frameIndex], &perFrame, sizeof(perFrame));
 
   // rotate cubes around random axes
   for (uint32_t i = 0; i != kNumCubes; i++) {
@@ -341,10 +340,10 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
         glm::rotate(glm::translate(mat4(1.0f), offset), direction * (float)glfwGetTime(), axis_[i]);
   }
 
-  device_->upload(ubPerObject_[frameIndex], &perObject, sizeof(perObject));
+  ctx_->upload(ubPerObject_[frameIndex], &perObject, sizeof(perObject));
 
   // Command buffers (1-N per thread): create, submit and forget
-  lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
+  lvk::ICommandBuffer& buffer = ctx_->acquireCommandBuffer();
 
   const lvk::Viewport viewport = {0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f};
   const lvk::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
@@ -365,19 +364,19 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
         uint64_t perObject;
         uint64_t vb;
       } bindings = {
-          .perFrame = device_->gpuAddress(ubPerFrame_[frameIndex]),
-          .perObject = device_->gpuAddress(ubPerObject_[frameIndex], i * sizeof(UniformsPerObject)),
-          .vb = device_->gpuAddress(vb0_),
+          .perFrame = ctx_->gpuAddress(ubPerFrame_[frameIndex]),
+          .perObject = ctx_->gpuAddress(ubPerObject_[frameIndex], i * sizeof(UniformsPerObject)),
+          .vb = ctx_->gpuAddress(vb0_),
       };
       buffer.cmdPushConstants(bindings);
       buffer.cmdDrawIndexed(lvk::Primitive_Triangle, 3 * 6 * 2);
     }
     buffer.cmdPopDebugGroupLabel();
   }
-  imgui_->endFrame(*device_.get(), buffer);
+  imgui_->endFrame(*ctx_.get(), buffer);
   buffer.cmdEndRendering();
 
-  device_->submit(buffer, nativeDrawable);
+  ctx_->submit(buffer, nativeDrawable);
 }
 
 int main(int argc, char* argv[]) {
@@ -388,7 +387,7 @@ int main(int argc, char* argv[]) {
 
   initObjects();
 
-  imgui_ = std::make_unique<lvk::ImGuiRenderer>(*device_);
+  imgui_ = std::make_unique<lvk::ImGuiRenderer>(*ctx_);
 
   glfwSetCursorPosCallback(window_, [](auto* window, double x, double y) { ImGui::GetIO().MousePos = ImVec2(x, y); });
   glfwSetMouseButtonCallback(window_, [](auto* window, int button, int action, int mods) {
@@ -405,7 +404,7 @@ int main(int argc, char* argv[]) {
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     width_ = width;
     height_ = height;
-    device_->recreateSwapchain(width_, height_);
+    ctx_->recreateSwapchain(width_, height_);
   });
 
   glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int, int action, int) {
@@ -428,7 +427,7 @@ int main(int argc, char* argv[]) {
     prevTime = newTime;
     if (width_ && height_) {
       framebuffer_ = {
-          .color = {{.texture = device_->getCurrentSwapchainTexture()}},
+          .color = {{.texture = ctx_->getCurrentSwapchainTexture()}},
       };
 
       imgui_->beginFrame(framebuffer_);
@@ -438,7 +437,7 @@ int main(int argc, char* argv[]) {
       ImGui::End();
     }
 
-    render(device_->getCurrentSwapchainTexture(), frameIndex);
+    render(ctx_->getCurrentSwapchainTexture(), frameIndex);
     glfwPollEvents();
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
   }
@@ -455,7 +454,7 @@ int main(int argc, char* argv[]) {
   texture1_ = nullptr;
   sampler_ = nullptr;
   framebuffer_ = {};
-  device_.reset(nullptr);
+  ctx_ = nullptr;
 
   glfwDestroyWindow(window_);
   glfwTerminate();

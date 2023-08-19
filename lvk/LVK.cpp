@@ -129,39 +129,39 @@ bool lvk::Assert(bool cond, const char* file, int line, const char* format, ...)
   return cond;
 }
 
-void lvk::destroy(lvk::IDevice* device, lvk::ComputePipelineHandle handle) {
-  if (device) {
-    device->destroy(handle);
+void lvk::destroy(lvk::IContext* ctx, lvk::ComputePipelineHandle handle) {
+  if (ctx) {
+    ctx->destroy(handle);
   }
 }
 
-void lvk::destroy(lvk::IDevice* device, lvk::RenderPipelineHandle handle) {
-  if (device) {
-    device->destroy(handle);
+void lvk::destroy(lvk::IContext* ctx, lvk::RenderPipelineHandle handle) {
+  if (ctx) {
+    ctx->destroy(handle);
   }
 }
 
-void lvk::destroy(lvk::IDevice* device, lvk::ShaderModuleHandle handle) {
-  if (device) {
-    device->destroy(handle);
+void lvk::destroy(lvk::IContext* ctx, lvk::ShaderModuleHandle handle) {
+  if (ctx) {
+    ctx->destroy(handle);
   }
 }
 
-void lvk::destroy(lvk::IDevice* device, lvk::SamplerHandle handle) {
-  if (device) {
-    device->destroy(handle);
+void lvk::destroy(lvk::IContext* ctx, lvk::SamplerHandle handle) {
+  if (ctx) {
+    ctx->destroy(handle);
   }
 }
 
-void lvk::destroy(lvk::IDevice* device, lvk::BufferHandle handle) {
-  if (device) {
-    device->destroy(handle);
+void lvk::destroy(lvk::IContext* ctx, lvk::BufferHandle handle) {
+  if (ctx) {
+    ctx->destroy(handle);
   }
 }
 
-void lvk::destroy(lvk::IDevice* device, lvk::TextureHandle handle) {
-  if (device) {
-    device->destroy(handle);
+void lvk::destroy(lvk::IContext* ctx, lvk::TextureHandle handle) {
+  if (ctx) {
+    ctx->destroy(handle);
   }
 }
 
@@ -248,10 +248,10 @@ GLFWwindow* lvk::initWindow(const char* windowTitle, int& outWidth, int& outHeig
   return window;
 }
 
-std::unique_ptr<lvk::IDevice> lvk::createVulkanDeviceWithSwapchain(GLFWwindow* window,
+std::unique_ptr<lvk::IContext> lvk::createVulkanContextWithSwapchain(GLFWwindow* window,
                                                                    uint32_t width,
                                                                    uint32_t height,
-                                                                   const lvk::VulkanContextConfig& cfg,
+                                                                   const lvk::ContextConfig& cfg,
                                                                    lvk::HWDeviceType preferredDeviceType) {
   using namespace lvk;
 #if defined(_WIN32)

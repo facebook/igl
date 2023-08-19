@@ -19,7 +19,7 @@ namespace vulkan {
 
 class VulkanContext;
 
-class Device final : public IDevice {
+class Device final : public IContext {
  public:
   explicit Device(std::unique_ptr<VulkanContext> ctx);
 
@@ -64,15 +64,15 @@ class Device final : public IDevice {
     return *ctx_.get();
   }
 
-  static std::unique_ptr<VulkanContext> createContext(const VulkanContextConfig& config, void* window, void* display = nullptr);
+  static std::unique_ptr<VulkanContext> createContext(const ContextConfig& config, void* window, void* display = nullptr);
 
   static std::vector<HWDeviceDesc> queryDevices(VulkanContext& ctx, HWDeviceType deviceType, Result* outResult = nullptr);
 
-  static std::unique_ptr<IDevice> create(std::unique_ptr<VulkanContext> ctx,
-                                         const HWDeviceDesc& desc,
-                                         uint32_t width,
-                                         uint32_t height,
-                                         Result* outResult = nullptr);
+  static std::unique_ptr<IContext> create(std::unique_ptr<VulkanContext> ctx,
+                                          const HWDeviceDesc& desc,
+                                          uint32_t width,
+                                          uint32_t height,
+                                          Result* outResult = nullptr);
 
  private:
   VkShaderModule createShaderModule(const void* data,

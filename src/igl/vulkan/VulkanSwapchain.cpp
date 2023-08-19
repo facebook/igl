@@ -128,7 +128,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
   LVK_ASSERT_MSG(ctx.vkSurface_ != VK_NULL_HANDLE,
                  "You are trying to create a swapchain but your OS surface is empty. Did you want to "
                  "create an offscreen rendering context? If so, set 'width' and 'height' to 0 when you "
-                 "create your lvk::IDevice");
+                 "create your lvk::IContext");
 
   VkBool32 queueFamilySupportsPresentation = VK_FALSE;
   VK_ASSERT(vkGetPhysicalDeviceSurfaceSupportKHR(

@@ -190,7 +190,7 @@ struct VulkanContextImpl final {
   VmaAllocator vma_ = VK_NULL_HANDLE;
 };
 
-VulkanContext::VulkanContext(const lvk::VulkanContextConfig& config,
+VulkanContext::VulkanContext(const lvk::ContextConfig& config,
                              void* window,
                              void* display) :
   config_(config) {

@@ -418,7 +418,7 @@ FramesPerSecondCounter fps_;
 
 constexpr uint32_t kNumBufferedFrames = 3;
 
-std::unique_ptr<lvk::IDevice> device_;
+std::unique_ptr<lvk::IContext> ctx_;
 lvk::Framebuffer fbMain_; // swapchain
 lvk::Framebuffer fbOffscreen_;
 lvk::Framebuffer fbShadowMap_;
@@ -573,19 +573,18 @@ static void stringReplaceAll(std::string& s,
 }
 
 void initIGL() {
-  device_ = lvk::createVulkanDeviceWithSwapchain(
-      window_,
-      width_,
-      height_,
-      {
-          .maxTextures = kMaxTextures,
-          .maxSamplers = 128,
-          .enableValidation = kEnableValidationLayers,
-      },
-      kPreferIntegratedGPU ? lvk::HWDeviceType_Integrated : lvk::HWDeviceType_Discrete);
+  ctx_ = lvk::createVulkanContextWithSwapchain(window_,
+                                               width_,
+                                               height_,
+                                               {
+                                                   .maxTextures = kMaxTextures,
+                                                   .maxSamplers = 128,
+                                                   .enableValidation = kEnableValidationLayers,
+                                               },
+                                               kPreferIntegratedGPU ? lvk::HWDeviceType_Integrated : lvk::HWDeviceType_Discrete);
   {
     const uint32_t pixel = 0xFFFFFFFF;
-    textureDummyWhite_ = device_->createTexture(
+    textureDummyWhite_ = ctx_->createTexture(
         {
             .type = lvk::TextureType_2D,
             .format = lvk::Format_RGBA_UN8,
@@ -599,18 +598,18 @@ void initIGL() {
 
   // create an Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
-    ubPerFrame_.push_back(device_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
+    ubPerFrame_.push_back(ctx_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
                                                  .storage = lvk::StorageType_HostVisible,
                                                  .size = sizeof(UniformsPerFrame),
                                                  .debugName = "Buffer: uniforms (per frame)"},
                                                 nullptr));
     ubPerFrameShadow_.push_back(
-        device_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
+        ctx_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
                                .storage = lvk::StorageType_HostVisible,
                                .size = sizeof(UniformsPerFrame),
                                .debugName = "Buffer: uniforms (per frame shadow)"},
                               nullptr));
-    ubPerObject_.push_back(device_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
+    ubPerObject_.push_back(ctx_->createBuffer({.usage = lvk::BufferUsageBits_Uniform,
                                                   .storage = lvk::StorageType_HostVisible,
                                                   .size = sizeof(UniformsPerObject),
                                                   .debugName = "Buffer: uniforms (per object)"},
@@ -620,7 +619,7 @@ void initIGL() {
   depthState_ = {.compareOp = lvk::CompareOp_Less, .isDepthWriteEnabled = true};
   depthStateLEqual_ = {.compareOp = lvk::CompareOp_LessEqual, .isDepthWriteEnabled = true};
 
-  sampler_ = device_->createSampler(
+  sampler_ = ctx_->createSampler(
       {
           .mipMap = lvk::SamplerMip_Linear,
           .wrapU = lvk::SamplerWrap_Repeat,
@@ -628,7 +627,7 @@ void initIGL() {
           .debugName = "Sampler: linear",
       },
       nullptr);
-  samplerShadow_ = device_->createSampler(
+  samplerShadow_ = ctx_->createSampler(
       {
           .wrapU = lvk::SamplerWrap_Clamp,
           .wrapV = lvk::SamplerWrap_Clamp,
@@ -861,20 +860,20 @@ void initModel() {
                                      textureDummyWhite_.index(),
                                      textureDummyWhite_.index()});
   }
-  sbMaterials_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Storage,
+  sbMaterials_ = ctx_->createBuffer({.usage = lvk::BufferUsageBits_Storage,
                                         .storage = lvk::StorageType_Device,
                                         .size = sizeof(GPUMaterial) * materials_.size(),
                                         .data = materials_.data(),
                                         .debugName = "Buffer: materials"},
                                        nullptr);
 
-  vb0_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Vertex,
+  vb0_ = ctx_->createBuffer({.usage = lvk::BufferUsageBits_Vertex,
                                 .storage = lvk::StorageType_Device,
                                 .size = sizeof(VertexData) * vertexData_.size(),
                                 .data = vertexData_.data(),
                                 .debugName = "Buffer: vertex"},
                                nullptr);
-  ib0_ = device_->createBuffer({.usage = lvk::BufferUsageBits_Index,
+  ib0_ = ctx_->createBuffer({.usage = lvk::BufferUsageBits_Index,
                                 .storage = lvk::StorageType_Device,
                                 .size = sizeof(uint32_t) * indexData_.size(),
                                 .data = indexData_.data(),
@@ -887,9 +886,9 @@ void createComputePipeline() {
     return;
   }
 
-  computePipelineState_Grayscale_ = device_->createComputePipeline(
+  computePipelineState_Grayscale_ = ctx_->createComputePipeline(
       {
-          .shaderModule = device_->createShaderModule({kCodeComputeTest, lvk::Stage_Comp, "Shader Module: grayscale (comp)"}).release(),
+          .shaderModule = ctx_->createShaderModule({kCodeComputeTest, lvk::Stage_Comp, "Shader Module: grayscale (comp)"}).release(),
       },
       nullptr);
 }
@@ -919,33 +918,33 @@ void createRenderPipelines() {
   {
     lvk::RenderPipelineDesc desc = {
         .vertexInput = vdesc,
-        .smVert = device_->createShaderModule({kCodeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
-        .smFrag = device_->createShaderModule({kCodeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
-        .color = {{.format = device_->getFormat(fbOffscreen_.color[0].texture)}},
-        .depthFormat = device_->getFormat(fbOffscreen_.depthStencil.texture),
+        .smVert = ctx_->createShaderModule({kCodeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
+        .smFrag = ctx_->createShaderModule({kCodeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
+        .color = {{.format = ctx_->getFormat(fbOffscreen_.color[0].texture)}},
+        .depthFormat = ctx_->getFormat(fbOffscreen_.depthStencil.texture),
         .cullMode = lvk::CullMode_Back,
         .frontFaceWinding = lvk::WindingMode_CCW,
         .samplesCount = kNumSamplesMSAA,
         .debugName = "Pipeline: mesh",
     };
 
-    renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
+    renderPipelineState_Mesh_ = ctx_->createRenderPipeline(desc, nullptr);
 
     desc.polygonMode = lvk::PolygonMode_Line;
     desc.vertexInput = vdescs; // positions-only
-    desc.smVert = device_->createShaderModule({kCodeVS_Wireframe, lvk::Stage_Vert, "Shader Module: main wireframe (vert)"}).release(),
-    desc.smFrag = device_->createShaderModule({kCodeFS_Wireframe, lvk::Stage_Frag, "Shader Module: main wireframe (frag)"}).release(),
+    desc.smVert = ctx_->createShaderModule({kCodeVS_Wireframe, lvk::Stage_Vert, "Shader Module: main wireframe (vert)"}).release(),
+    desc.smFrag = ctx_->createShaderModule({kCodeFS_Wireframe, lvk::Stage_Frag, "Shader Module: main wireframe (frag)"}).release(),
     desc.debugName = "Pipeline: mesh (wireframe)";
-    renderPipelineState_MeshWireframe_ = device_->createRenderPipeline(desc, nullptr);
+    renderPipelineState_MeshWireframe_ = ctx_->createRenderPipeline(desc, nullptr);
   }
 
   // shadow
-  renderPipelineState_Shadow_ = device_->createRenderPipeline(
+  renderPipelineState_Shadow_ = ctx_->createRenderPipeline(
       lvk::RenderPipelineDesc{
           .vertexInput = vdescs,
-          .smVert = device_->createShaderModule({kShadowVS, lvk::Stage_Vert, "Shader Module: shadow (vert)"}).release(),
-          .smFrag = device_->createShaderModule({kShadowFS, lvk::Stage_Frag, "Shader Module: shadow (frag)"}).release(),
-          .depthFormat = device_->getFormat(fbShadowMap_.depthStencil.texture),
+          .smVert = ctx_->createShaderModule({kShadowVS, lvk::Stage_Vert, "Shader Module: shadow (vert)"}).release(),
+          .smFrag = ctx_->createShaderModule({kShadowFS, lvk::Stage_Frag, "Shader Module: shadow (frag)"}).release(),
+          .depthFormat = ctx_->getFormat(fbShadowMap_.depthStencil.texture),
           .cullMode = lvk::CullMode_None,
           .debugName = "Pipeline: shadow",
       },
@@ -954,14 +953,14 @@ void createRenderPipelines() {
   // fullscreen
   {
     const lvk::RenderPipelineDesc desc = {
-        .smVert = device_->createShaderModule({kCodeFullscreenVS, lvk::Stage_Vert, "Shader Module: fullscreen (vert)"}).release(),
-        .smFrag = device_->createShaderModule({kCodeFullscreenFS, lvk::Stage_Frag, "Shader Module: fullscreen (frag)"}).release(),
-        .color = {{.format = device_->getFormat(fbMain_.color[0].texture)}},
-        .depthFormat = device_->getFormat(fbMain_.depthStencil.texture),
+        .smVert = ctx_->createShaderModule({kCodeFullscreenVS, lvk::Stage_Vert, "Shader Module: fullscreen (vert)"}).release(),
+        .smFrag = ctx_->createShaderModule({kCodeFullscreenFS, lvk::Stage_Frag, "Shader Module: fullscreen (frag)"}).release(),
+        .color = {{.format = ctx_->getFormat(fbMain_.color[0].texture)}},
+        .depthFormat = ctx_->getFormat(fbMain_.depthStencil.texture),
         .cullMode = lvk::CullMode_None,
         .debugName = "Pipeline: fullscreen",
     };
-    renderPipelineState_Fullscreen_ = device_->createRenderPipeline(desc, nullptr);
+    renderPipelineState_Fullscreen_ = ctx_->createRenderPipeline(desc, nullptr);
   }
 }
 
@@ -971,19 +970,19 @@ void createRenderPipelineSkybox() {
   }
 
   const lvk::RenderPipelineDesc desc = {
-      .smVert = device_->createShaderModule({kSkyboxVS, lvk::Stage_Vert, "Shader Module: skybox (vert)"}).release(),
-      .smFrag = device_->createShaderModule({kSkyboxFS, lvk::Stage_Frag, "Shader Module: skybox (frag)"}).release(),
+      .smVert = ctx_->createShaderModule({kSkyboxVS, lvk::Stage_Vert, "Shader Module: skybox (vert)"}).release(),
+      .smFrag = ctx_->createShaderModule({kSkyboxFS, lvk::Stage_Frag, "Shader Module: skybox (frag)"}).release(),
       .color = {{
-          .format = device_->getFormat(fbOffscreen_.color[0].texture),
+          .format = ctx_->getFormat(fbOffscreen_.color[0].texture),
       }},
-      .depthFormat = device_->getFormat(fbOffscreen_.depthStencil.texture),
+      .depthFormat = ctx_->getFormat(fbOffscreen_.depthStencil.texture),
       .cullMode = lvk::CullMode_Front,
       .frontFaceWinding = lvk::WindingMode_CCW,
       .samplesCount = kNumSamplesMSAA,
       .debugName = "Pipeline: skybox",
   };
 
-  renderPipelineState_Skybox_ = device_->createRenderPipeline(desc, nullptr);
+  renderPipelineState_Skybox_ = ctx_->createRenderPipeline(desc, nullptr);
 }
 
 void createShadowMap() {
@@ -998,7 +997,7 @@ void createShadowMap() {
       .debugName = "Shadow map",
   };
   fbShadowMap_ = {
-      .depthStencil = {.texture = device_->createTexture(desc).release()},
+      .depthStencil = {.texture = ctx_->createTexture(desc).release()},
   };
 }
 
@@ -1038,19 +1037,17 @@ void createOffscreenFramebuffer() {
   }
 
   lvk::Framebuffer fb = {
-      .color = {{.texture = device_->createTexture(descColor).release()}},
-      .depthStencil = {.texture = device_->createTexture(descDepth).release()},
+      .color = {{.texture = ctx_->createTexture(descColor).release()}},
+      .depthStencil = {.texture = ctx_->createTexture(descDepth).release()},
   };
 
   if (kNumSamplesMSAA > 1) {
-    fb.color[0].resolveTexture =
-        device_
-            ->createTexture({.type = lvk::TextureType_2D,
-                             .format = format,
-                             .dimensions = {w, h},
-                             .usage = usage,
-                             .debugName = "Offscreen framebuffer (color resolve)"})
-            .release();
+    fb.color[0].resolveTexture = ctx_->createTexture({.type = lvk::TextureType_2D,
+                                                      .format = format,
+                                                      .dimensions = {w, h},
+                                                      .usage = usage,
+                                                      .debugName = "Offscreen framebuffer (color resolve)"})
+                                     .release();
   }
 
   fbOffscreen_ = fb;
@@ -1084,27 +1081,27 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       .bDrawNormals = perFrame_.bDrawNormals,
       .bDebugLines = perFrame_.bDebugLines,
   };
-  device_->upload(ubPerFrame_[frameIndex], &perFrame_, sizeof(perFrame_));
+  ctx_->upload(ubPerFrame_[frameIndex], &perFrame_, sizeof(perFrame_));
 
   {
     const UniformsPerFrame perFrameShadow{
         .proj = shadowProj,
         .view = shadowView,
     };
-    device_->upload(ubPerFrameShadow_[frameIndex], &perFrameShadow, sizeof(perFrameShadow));
+    ctx_->upload(ubPerFrameShadow_[frameIndex], &perFrameShadow, sizeof(perFrameShadow));
   }
 
   UniformsPerObject perObject;
 
   perObject.model = glm::scale(mat4(1.0f), vec3(0.05f));
 
-  device_->upload(ubPerObject_[frameIndex], &perObject, sizeof(perObject));
+  ctx_->upload(ubPerObject_[frameIndex], &perObject, sizeof(perObject));
 
   // Command buffers (1-N per thread): create, submit and forget
 
   // Pass 1: shadows
   if (isShadowMapDirty_) {
-    lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
+    lvk::ICommandBuffer& buffer = ctx_->acquireCommandBuffer();
 
     buffer.cmdBeginRendering(renderPassShadow_, fbShadowMap_);
     {
@@ -1116,8 +1113,8 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
         uint64_t perFrame;
         uint64_t perObject;
       } bindings = {
-          .perFrame = device_->gpuAddress(ubPerFrameShadow_[frameIndex]),
-          .perObject = device_->gpuAddress(ubPerObject_[frameIndex]),
+          .perFrame = ctx_->gpuAddress(ubPerFrameShadow_[frameIndex]),
+          .perObject = ctx_->gpuAddress(ubPerObject_[frameIndex]),
       };
       buffer.cmdPushConstants(bindings);
       buffer.cmdBindIndexBuffer(ib0_, lvk::IndexFormat_UI32);
@@ -1126,15 +1123,15 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     }
     buffer.cmdEndRendering();
     buffer.transitionToShaderReadOnly(fbShadowMap_.depthStencil.texture);
-    device_->submit(buffer);
-    device_->generateMipmap(fbShadowMap_.depthStencil.texture);
+    ctx_->submit(buffer);
+    ctx_->generateMipmap(fbShadowMap_.depthStencil.texture);
 
     isShadowMapDirty_ = false;
   }
 
   // Pass 2: mesh
   {
-    lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
+    lvk::ICommandBuffer& buffer = ctx_->acquireCommandBuffer();
 
     // This will clear the framebuffer
     buffer.cmdBeginRendering(renderPassOffscreen_, fbOffscreen_);
@@ -1150,9 +1147,9 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
         uint64_t perObject;
         uint64_t materials;
       } bindings = {
-          .perFrame = device_->gpuAddress(ubPerFrame_[frameIndex]),
-          .perObject = device_->gpuAddress(ubPerObject_[frameIndex]),
-          .materials = device_->gpuAddress(sbMaterials_),
+          .perFrame = ctx_->gpuAddress(ubPerFrame_[frameIndex]),
+          .perObject = ctx_->gpuAddress(ubPerObject_[frameIndex]),
+          .materials = ctx_->gpuAddress(sbMaterials_),
       };
       buffer.cmdPushConstants(bindings);
       buffer.cmdBindIndexBuffer(ib0_, lvk::IndexFormat_UI32);
@@ -1172,14 +1169,14 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     }
     buffer.cmdEndRendering();
     buffer.transitionToShaderReadOnly(fbOffscreen_.color[0].texture);
-    device_->submit(buffer);
+    ctx_->submit(buffer);
   }
 
   // Pass 3: compute shader post-processing
   if (enableComputePass_) {
     lvk::TextureHandle tex = kNumSamplesMSAA > 1 ? fbOffscreen_.color[0].resolveTexture
                                                  : fbOffscreen_.color[0].texture;
-    lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
+    lvk::ICommandBuffer& buffer = ctx_->acquireCommandBuffer();
 
     buffer.cmdBindComputePipeline(computePipelineState_Grayscale_);
 
@@ -1203,12 +1200,12 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
             .textures = {tex},
         });
 
-    device_->submit(buffer);
+    ctx_->submit(buffer);
   }
 
   // Pass 4: render into the swapchain image
   {
-    lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
+    lvk::ICommandBuffer& buffer = ctx_->acquireCommandBuffer();
 
     // This will clear the framebuffer
     buffer.cmdBeginRendering(renderPassMain_, fbMain_);
@@ -1225,11 +1222,11 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3);
       buffer.cmdPopDebugGroupLabel();
 
-      imgui_->endFrame(*device_.get(), buffer);
+      imgui_->endFrame(*ctx_.get(), buffer);
     }
     buffer.cmdEndRendering();
 
-    device_->submit(buffer, fbMain_.color[0].texture);
+    ctx_->submit(buffer, fbMain_.color[0].texture);
   }
 }
 
@@ -1410,7 +1407,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, lvk::Holder<lvk::Texture
   const uint32_t height = (uint32_t)texRef.extent().y;
 
   if (tex.empty()) {
-    tex = device_->createTexture(
+    tex = ctx_->createTexture(
         {
             .type = lvk::TextureType_Cube,
             .format = gli2iglTextureFormat(texRef.format()),
@@ -1437,10 +1434,10 @@ void loadCubemapTexture(const std::string& fileNameKTX, lvk::Holder<lvk::Texture
       // if compression is enabled, upload all mip-levels
       .numMipLevels = kEnableCompression ? lvk::calcNumMipLevels(width, height) : 1u,
   };
-  device_->upload(tex, texRefRange, data);
+  ctx_->upload(tex, texRefRange, data);
 
   if (!kEnableCompression) {
-     device_->generateMipmap(tex);
+     ctx_->generateMipmap(tex);
   }
 }
 
@@ -1598,7 +1595,7 @@ lvk::TextureHandle createTexture(const LoadedImage& img) {
       .debugName = img.debugName.c_str(),
   };
 
-  lvk::Holder<lvk::TextureHandle> tex = device_->createTexture(desc, nullptr);
+  lvk::Holder<lvk::TextureHandle> tex = ctx_->createTexture(desc, nullptr);
 
   if (kEnableCompression && img.channels == 4 && std::filesystem::exists(img.compressedFileName.c_str())) {
     // uploading the texture
@@ -1608,11 +1605,11 @@ lvk::TextureHandle createTexture(const LoadedImage& img) {
       assert(0);
     }
     const void* data[] = {gliTex2d.data()};
-    device_->upload(tex, {.dimensions = {img.w, img.h}, .numMipLevels = desc.numMipLevels}, data);
+    ctx_->upload(tex, {.dimensions = {img.w, img.h}, .numMipLevels = desc.numMipLevels}, data);
   } else {
     const void* data[] = {img.pixels};
-    device_->upload(tex, {.dimensions = {img.w, img.h}}, data);
-    device_->generateMipmap(tex);
+    ctx_->upload(tex, {.dimensions = {img.w, img.h}}, data);
+    ctx_->generateMipmap(tex);
   }
 
   lvk::TextureHandle handle = tex;
@@ -1652,7 +1649,7 @@ void processLoadedMaterials() {
   LVK_ASSERT(materials_[mtl.idx].texAmbient >= 0 && materials_[mtl.idx].texAmbient < kMaxTextures);
   LVK_ASSERT(materials_[mtl.idx].texDiffuse >= 0 && materials_[mtl.idx].texDiffuse < kMaxTextures);
   LVK_ASSERT(materials_[mtl.idx].texAlpha >= 0 && materials_[mtl.idx].texAlpha < kMaxTextures);
-  device_->upload(sbMaterials_, materials_.data(), sizeof(GPUMaterial) * materials_.size());
+  ctx_->upload(sbMaterials_, materials_.data(), sizeof(GPUMaterial) * materials_.size());
 }
 
 int main(int argc, char* argv[]) {
@@ -1767,7 +1764,7 @@ int main(int argc, char* argv[]) {
   loadMaterials();
 
   fbMain_ = {
-      .color = {{.texture = device_->getCurrentSwapchainTexture()}},
+      .color = {{.texture = ctx_->getCurrentSwapchainTexture()}},
   };
   createShadowMap();
   createOffscreenFramebuffer();
@@ -1776,7 +1773,7 @@ int main(int argc, char* argv[]) {
   createComputePipeline();
 
   imgui_ = std::make_unique<lvk::ImGuiRenderer>(
-      *device_, (folderThirdParty + "3D-Graphics-Rendering-Cookbook/data/OpenSans-Light.ttf").c_str(), float(height_) / 70.0f);
+      *ctx_, (folderThirdParty + "3D-Graphics-Rendering-Cookbook/data/OpenSans-Light.ttf").c_str(), float(height_) / 70.0f);
 
   double prevTime = glfwGetTime();
 
@@ -1839,7 +1836,7 @@ int main(int argc, char* argv[]) {
     fps_.tick(delta);
     positioner_.update(delta, mousePos_, mousePressed_);
     prevTime = newTime;
-    render(device_->getCurrentSwapchainTexture(), frameIndex);
+    render(ctx_->getCurrentSwapchainTexture(), frameIndex);
     glfwPollEvents();
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
   }
@@ -1867,10 +1864,10 @@ int main(int argc, char* argv[]) {
   texturesCache_.clear();
   sampler_ = nullptr;
   samplerShadow_ = nullptr;
-  device_->destroy(fbMain_);
-  device_->destroy(fbShadowMap_);
-  device_->destroy(fbOffscreen_);
-  device_ = nullptr;
+  ctx_->destroy(fbMain_);
+  ctx_->destroy(fbShadowMap_);
+  ctx_->destroy(fbOffscreen_);
+  ctx_ = nullptr;
 
   glfwDestroyWindow(window_);
   glfwTerminate();

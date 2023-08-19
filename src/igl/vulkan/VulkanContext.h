@@ -46,7 +46,7 @@ struct DeviceQueues {
 
 class VulkanContext final {
  public:
-  VulkanContext(const lvk::VulkanContextConfig& config, void* window, void* display = nullptr);
+  VulkanContext(const lvk::ContextConfig& config, void* window, void* display = nullptr);
   ~VulkanContext();
 
   lvk::Result queryDevices(HWDeviceType deviceType, std::vector<HWDeviceDesc>& outDevices);
@@ -178,7 +178,7 @@ class VulkanContext final {
   // a texture/sampler was created since the last descriptor set update
   mutable bool awaitingCreation_ = false;
 
-  lvk::VulkanContextConfig config_;
+  lvk::ContextConfig config_;
 
   lvk::Pool<lvk::ShaderModule, VkShaderModule> shaderModulesPool_;
   lvk::Pool<lvk::RenderPipeline, lvk::vulkan::RenderPipelineState> renderPipelinesPool_;

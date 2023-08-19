@@ -49,7 +49,7 @@
 
 namespace lvk {
 
-class IDevice;
+class IContext;
 
 bool Assert(bool cond, const char* file, int line, const char* format, ...);
 
@@ -106,30 +106,30 @@ using SamplerHandle = lvk::Handle<struct Sampler>;
 using BufferHandle = lvk::Handle<struct Buffer>;
 using TextureHandle = lvk::Handle<struct Texture>;
 
-// forward declarations to access incomplete type IDevice
-void destroy(lvk::IDevice* device, lvk::ComputePipelineHandle handle);
-void destroy(lvk::IDevice* device, lvk::RenderPipelineHandle handle);
-void destroy(lvk::IDevice* device, lvk::ShaderModuleHandle handle);
-void destroy(lvk::IDevice* device, lvk::SamplerHandle handle);
-void destroy(lvk::IDevice* device, lvk::BufferHandle handle);
-void destroy(lvk::IDevice* device, lvk::TextureHandle handle);
+// forward declarations to access incomplete type IContext
+void destroy(lvk::IContext* ctx, lvk::ComputePipelineHandle handle);
+void destroy(lvk::IContext* ctx, lvk::RenderPipelineHandle handle);
+void destroy(lvk::IContext* ctx, lvk::ShaderModuleHandle handle);
+void destroy(lvk::IContext* ctx, lvk::SamplerHandle handle);
+void destroy(lvk::IContext* ctx, lvk::BufferHandle handle);
+void destroy(lvk::IContext* ctx, lvk::TextureHandle handle);
 
 template<typename HandleType>
 class Holder final {
  public:
   Holder() = default;
-  Holder(lvk::IDevice* device, HandleType handle) : device_(device), handle_(handle) {}
+  Holder(lvk::IContext* ctx, HandleType handle) : ctx_(ctx), handle_(handle) {}
   ~Holder() {
-    lvk::destroy(device_, handle_);
+    lvk::destroy(ctx_, handle_);
   }
   Holder(const Holder&) = delete;
-  Holder(Holder&& other) : device_(other.device_), handle_(other.handle_) {
-    other.device_ = nullptr;
+  Holder(Holder&& other) : ctx_(other.ctx_), handle_(other.handle_) {
+    other.ctx_ = nullptr;
     other.handle_ = HandleType{};
   }
   Holder& operator=(const Holder&) = delete;
   Holder& operator=(Holder&& other) {
-    std::swap(device_, other.device_);
+    std::swap(ctx_, other.ctx_);
     std::swap(handle_, other.handle_);
     return *this;
   }
@@ -151,13 +151,13 @@ class Holder final {
   }
 
   void reset() {
-    lvk::destroy(device_, handle_);
-    device_ = nullptr;
+    lvk::destroy(ctx_, handle_);
+    ctx_ = nullptr;
     handle_ = HandleType{};
   }
 
   HandleType release() {
-    device_ = nullptr;
+    ctx_ = nullptr;
     return std::exchange(handle_, HandleType{});
   }
 
@@ -169,7 +169,7 @@ class Holder final {
   }
 
  private:
-  lvk::IDevice* device_ = nullptr;
+  lvk::IContext* ctx_ = nullptr;
   HandleType handle_;
 };
 
@@ -739,9 +739,12 @@ class ICommandBuffer {
   virtual void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) = 0;
 };
 
-class IDevice {
+class IContext {
+ protected:
+  IContext() = default;
+
  public:
-  virtual ~IDevice() = default;
+  virtual ~IContext() = default;
 
   virtual ICommandBuffer& acquireCommandBuffer() = 0;
 
@@ -783,8 +786,6 @@ class IDevice {
   virtual TextureHandle getCurrentSwapchainTexture() = 0;
   virtual Format getSwapchainFormat() const = 0;
   virtual void recreateSwapchain(int newWidth, int newHeight) = 0;
- protected:
-  IDevice() = default;
 };
 
 } // namespace lvk
@@ -793,7 +794,7 @@ typedef struct GLFWwindow GLFWwindow;
 
 namespace lvk {
 
-struct VulkanContextConfig {
+struct ContextConfig {
   uint32_t maxTextures = 512;
   uint32_t maxSamplers = 512;
   bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
@@ -816,10 +817,10 @@ void logShaderSource(const char* text);
  *   The actual values in pixels are returned in parameters.
  */
 GLFWwindow* initWindow(const char* windowTitle, int& outWidth, int& outHeight, bool resizable = false);
-std::unique_ptr<lvk::IDevice> createVulkanDeviceWithSwapchain(GLFWwindow* window,
-                                                              uint32_t width,
-                                                              uint32_t height,
-                                                              const lvk::VulkanContextConfig& cfg,
-                                                              lvk::HWDeviceType preferredDeviceType = lvk::HWDeviceType_Discrete);
+std::unique_ptr<lvk::IContext> createVulkanContextWithSwapchain(GLFWwindow* window,
+                                                                uint32_t width,
+                                                                uint32_t height,
+                                                                const lvk::ContextConfig& cfg,
+                                                                lvk::HWDeviceType preferredDeviceType = lvk::HWDeviceType_Discrete);
 
 } // namespace lvk

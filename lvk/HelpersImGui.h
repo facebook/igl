@@ -14,17 +14,17 @@ namespace lvk {
 
 class ImGuiRenderer {
  public:
-  explicit ImGuiRenderer(lvk::IDevice& device, const char* defaultFontTTF = nullptr, float fontSizePixels = 24.0f);
+  explicit ImGuiRenderer(lvk::IContext& device, const char* defaultFontTTF = nullptr, float fontSizePixels = 24.0f);
   ~ImGuiRenderer();
 
   void beginFrame(const lvk::Framebuffer& desc);
-  void endFrame(lvk::IDevice& device, lvk::ICommandBuffer& cmdBuffer);
+  void endFrame(lvk::IContext& device, lvk::ICommandBuffer& cmdBuffer);
 
  private:
   lvk::Holder<lvk::RenderPipelineHandle> createNewPipelineState(const lvk::Framebuffer& desc);
 
  private:
-  lvk::IDevice& device_;
+  lvk::IContext& ctx_;
   lvk::Holder<lvk::RenderPipelineHandle> pipeline_;
   lvk::Holder<lvk::TextureHandle> fontTexture_;
 

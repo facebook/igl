@@ -597,7 +597,9 @@ Dimensions Device::getDimensions(TextureHandle handle) const {
 
   const lvk::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
 
-  if (!tex || tex->image_) {
+  LVK_ASSERT(tex);
+
+  if (!tex || !tex->image_) {
     return {};
   }
 
@@ -777,7 +779,7 @@ void Device::recreateSwapchain(int newWidth, int newHeight) {
   ctx_->initSwapchain(newWidth, newHeight);
 }
 
-std::unique_ptr<VulkanContext> Device::createContext(const lvk::VulkanContextConfig& config, void* window, void* display) {
+std::unique_ptr<VulkanContext> Device::createContext(const lvk::ContextConfig& config, void* window, void* display) {
   return std::make_unique<VulkanContext>(config, window, display);
 }
 
@@ -789,7 +791,7 @@ std::vector<HWDeviceDesc> Device::queryDevices(VulkanContext& ctx, HWDeviceType 
   return outDevices;
 }
 
-std::unique_ptr<IDevice> Device::create(std::unique_ptr<VulkanContext> ctx,
+std::unique_ptr<IContext> Device::create(std::unique_ptr<VulkanContext> ctx,
                                         const HWDeviceDesc& desc,
                                         uint32_t width,
                                         uint32_t height,

@@ -46,7 +46,7 @@ int width_ = 800;
 int height_ = 600;
 FramesPerSecondCounter fps_;
 
-std::unique_ptr<lvk::IDevice> device_;
+std::unique_ptr<lvk::IContext> ctx_;
 
 struct VulkanObjects {
   void init();
@@ -57,38 +57,38 @@ struct VulkanObjects {
 } vk;
 
 void VulkanObjects::init() {
-  device_ = lvk::createVulkanDeviceWithSwapchain(window_, width_, height_, {});
+  ctx_ = lvk::createVulkanContextWithSwapchain(window_, width_, height_, {});
 
   createFramebuffer();
 
-  renderPipelineState_Triangle_ = device_->createRenderPipeline(
+  renderPipelineState_Triangle_ = ctx_->createRenderPipeline(
       {
-          .smVert = device_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
-          .smFrag = device_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
-          .color = {{device_->getFormat(fb_.color[0].texture)},
-                    {device_->getFormat(fb_.color[1].texture)},
-                    {device_->getFormat(fb_.color[2].texture)},
-                    {device_->getFormat(fb_.color[3].texture)}},
+          .smVert = ctx_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
+          .smFrag = ctx_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
+          .color = {{ctx_->getFormat(fb_.color[0].texture)},
+                    {ctx_->getFormat(fb_.color[1].texture)},
+                    {ctx_->getFormat(fb_.color[2].texture)},
+                    {ctx_->getFormat(fb_.color[3].texture)}},
       },
       nullptr);
   LVK_ASSERT(renderPipelineState_Triangle_.valid());
 }
 
 void VulkanObjects::createFramebuffer() {
-  lvk::TextureHandle texSwapchain = device_->getCurrentSwapchainTexture();
+  lvk::TextureHandle texSwapchain = ctx_->getCurrentSwapchainTexture();
 
   {
     const lvk::TextureDesc desc = {
         .type = lvk::TextureType_2D,
-        .format = device_->getFormat(texSwapchain),
-        .dimensions = device_->getDimensions(texSwapchain),
+        .format = ctx_->getFormat(texSwapchain),
+        .dimensions = ctx_->getDimensions(texSwapchain),
         .usage = lvk::TextureUsageBits_Attachment | lvk::TextureUsageBits_Sampled,
     };
 
     fb_ = {.color = {{.texture = texSwapchain},
-                     {.texture = device_->createTexture(desc, "Framebuffer C1").release()},
-                     {.texture = device_->createTexture(desc, "Framebuffer C2").release()},
-                     {.texture = device_->createTexture(desc, "Framebuffer C3").release()}}};
+                     {.texture = ctx_->createTexture(desc, "Framebuffer C1").release()},
+                     {.texture = ctx_->createTexture(desc, "Framebuffer C2").release()},
+                     {.texture = ctx_->createTexture(desc, "Framebuffer C3").release()}}};
   }
 }
 
@@ -97,9 +97,9 @@ void VulkanObjects::render() {
     return;
   }
 
-  fb_.color[0].texture = device_->getCurrentSwapchainTexture();
+  fb_.color[0].texture = ctx_->getCurrentSwapchainTexture();
 
-  lvk::ICommandBuffer& buffer = device_->acquireCommandBuffer();
+  lvk::ICommandBuffer& buffer = ctx_->acquireCommandBuffer();
 
   // This will clear the framebuffer
   buffer.cmdBeginRendering(
@@ -117,7 +117,7 @@ void VulkanObjects::render() {
     buffer.cmdPopDebugGroupLabel();
   }
   buffer.cmdEndRendering();
-  device_->submit(buffer, fb_.color[0].texture);
+  ctx_->submit(buffer, fb_.color[0].texture);
 }
 
 int main(int argc, char* argv[]) {
@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
   glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     width_ = width;
     height_ = height;
-    device_->recreateSwapchain(width_, height_);
+    ctx_->recreateSwapchain(width_, height_);
     if (width && height) {
       vk.createFramebuffer();
     }
@@ -147,12 +147,12 @@ int main(int argc, char* argv[]) {
   }
 
   // destroy all the Vulkan stuff before closing the window
-  device_->destroy(vk.fb_.color[1].texture);
-  device_->destroy(vk.fb_.color[2].texture);
-  device_->destroy(vk.fb_.color[3].texture);
+  ctx_->destroy(vk.fb_.color[1].texture);
+  ctx_->destroy(vk.fb_.color[2].texture);
+  ctx_->destroy(vk.fb_.color[3].texture);
   vk = {};
 
-  device_ = nullptr;
+  ctx_ = nullptr;
 
   glfwDestroyWindow(window_);
   glfwTerminate();
