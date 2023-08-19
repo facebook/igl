@@ -8,7 +8,6 @@
 #pragma once
 
 #include <igl/vulkan/RenderPipelineState.h>
-#include <igl/vulkan/VulkanImmediateCommands.h>
 #include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
 

@@ -13,7 +13,6 @@
 #include <vector>
 
 #include <igl/vulkan/RenderPipelineState.h>
-#include <igl/vulkan/VulkanImmediateCommands.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
@@ -121,7 +120,7 @@ class VulkanContext final : public IContext {
 
   std::vector<uint8_t> getPipelineCacheData() const;
 
-  using SubmitHandle = VulkanImmediateCommands::SubmitHandle;
+  using SubmitHandle = lvk::VulkanImmediateCommands::SubmitHandle;
 
   // execute a task some time in the future after the submit handle finished processing
   void deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle = SubmitHandle()) const;
@@ -175,7 +174,7 @@ class VulkanContext final : public IContext {
  public:
   DeviceQueues deviceQueues_;
   std::unique_ptr<lvk::VulkanSwapchain> swapchain_;
-  std::unique_ptr<lvk::vulkan::VulkanImmediateCommands> immediate_;
+  std::unique_ptr<lvk::VulkanImmediateCommands> immediate_;
   std::unique_ptr<lvk::vulkan::VulkanStagingDevice> stagingDevice_;
   VkPipelineLayout vkPipelineLayout_ = VK_NULL_HANDLE;
   VkDescriptorSetLayout vkDSLBindless_ = VK_NULL_HANDLE;

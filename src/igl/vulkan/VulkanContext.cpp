@@ -1485,8 +1485,8 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
 
   VK_ASSERT(lvk::setDebugObjectName(vkDevice_, VK_OBJECT_TYPE_DEVICE, (uint64_t)vkDevice_, "Device: VulkanContext::vkDevice_"));
 
-  immediate_ = std::make_unique<lvk::vulkan::VulkanImmediateCommands>(
-      vkDevice_, deviceQueues_.graphicsQueueFamilyIndex, "VulkanContext::immediate_");
+  immediate_ =
+      std::make_unique<lvk::VulkanImmediateCommands>(vkDevice_, deviceQueues_.graphicsQueueFamilyIndex, "VulkanContext::immediate_");
 
   // create Vulkan pipeline cache
   {

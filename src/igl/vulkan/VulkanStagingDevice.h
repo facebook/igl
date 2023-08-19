@@ -16,11 +16,11 @@ namespace lvk {
 
 class VulkanBuffer;
 class VulkanImage;
+class VulkanImmediateCommands;
 
 namespace vulkan {
 
 class VulkanContext;
-class VulkanImmediateCommands;
 
 class VulkanStagingDevice final {
  public:
@@ -64,7 +64,7 @@ class VulkanStagingDevice final {
  private:
   VulkanContext& ctx_;
   BufferHandle stagingBuffer_;
-  std::unique_ptr<VulkanImmediateCommands> immediate_;
+  std::unique_ptr<lvk::VulkanImmediateCommands> immediate_;
   uint32_t stagingBufferFrontOffset_ = 0;
   uint32_t stagingBufferAlignment_ = 16; // updated to support BC7 compressed image
   uint32_t stagingBufferSize_;

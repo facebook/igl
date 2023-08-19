@@ -8,7 +8,6 @@
 #include <igl/vulkan/VulkanStagingDevice.h>
 
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanImmediateCommands.h>
 #include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
@@ -17,19 +16,7 @@
 
 #define LVK_VULKAN_DEBUG_STAGING_DEVICE 0
 
-using SubmitHandle = lvk::vulkan::VulkanImmediateCommands::SubmitHandle;
-
-namespace {
-
-/// Vulkan textures are up-side down compared to OGL textures. IGL follows
-/// the OGL convention and this function flips the texture vertically
-void flipBMP(uint8_t* dstImg, const uint8_t* srcImg, size_t height, size_t bytesPerRow) {
-  for (size_t h = 0; h < height; h++) {
-    memcpy(dstImg + h * bytesPerRow, srcImg + bytesPerRow * (height - 1 - h), bytesPerRow);
-  }
-}
-
-} // namespace
+using SubmitHandle = lvk::VulkanImmediateCommands::SubmitHandle;
 
 namespace lvk {
 
@@ -52,7 +39,7 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
                                      "Buffer: staging buffer");
   LVK_ASSERT(!stagingBuffer_.empty());
 
-  immediate_ = std::make_unique<lvk::vulkan::VulkanImmediateCommands>(
+  immediate_ = std::make_unique<lvk::VulkanImmediateCommands>(
       ctx_.getVkDevice(), ctx_.deviceQueues_.graphicsQueueFamilyIndex, "VulkanStagingDevice::immediate_");
 }
 
@@ -390,7 +377,11 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   uint8_t* dst = static_cast<uint8_t*>(data);
 
   if (flipImageVertical) {
-    flipBMP(dst, src, imageRegion.extent.height, imageRegion.extent.width * getBytesPerPixel(format));
+    const uint32_t height = imageRegion.extent.height;
+    const size_t bytesPerRow = imageRegion.extent.width * getBytesPerPixel(format);
+    for (size_t h = 0; h < height; h++) {
+      memcpy(dst + h * bytesPerRow, src + bytesPerRow * (height - 1 - h), bytesPerRow);
+    }
   } else {
     memcpy(dst, src, storageSize);
   }
