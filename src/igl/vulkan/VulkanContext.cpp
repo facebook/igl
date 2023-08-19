@@ -14,7 +14,6 @@
 
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanSwapchain.h>
 #include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
 
@@ -1688,7 +1687,7 @@ lvk::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
     return Result();
   }
 
-  swapchain_ = std::make_unique<lvk::vulkan::VulkanSwapchain>(*this, width, height);
+  swapchain_ = std::make_unique<lvk::VulkanSwapchain>(*this, width, height);
 
   return swapchain_ ? Result() : Result(Result::Code::RuntimeError, "Failed to create swapchain");
 }
@@ -1948,10 +1947,6 @@ void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle
     handle = immediate_->getLastSubmitHandle();
   }
   deferredTasks_.emplace_back(std::move(task), handle);
-}
-
-bool VulkanContext::areValidationLayersEnabled() const {
-  return config_.enableValidation;
 }
 
 void* VulkanContext::getVmaAllocator() const {

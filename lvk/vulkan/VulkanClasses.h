@@ -164,4 +164,32 @@ struct VulkanTexture final {
   VkImageView imageViewForFramebuffer_[LVK_MAX_MIP_LEVELS] = {};
 };
 
+class VulkanSwapchain final {
+  enum { LVK_MAX_SWAPCHAIN_IMAGES = 16 };
+ public:
+  VulkanSwapchain(vulkan::VulkanContext& ctx, uint32_t width, uint32_t height);
+  ~VulkanSwapchain();
+
+  Result present(VkSemaphore waitSemaphore);
+  VkImage getCurrentVkImage() const;
+  VkImageView getCurrentVkImageView() const;
+  TextureHandle getCurrentTexture();
+
+ public:
+  VkSemaphore acquireSemaphore_ = VK_NULL_HANDLE;
+
+ private:
+  vulkan::VulkanContext& ctx_;
+  VkDevice device_ = VK_NULL_HANDLE;
+  VkQueue graphicsQueue_ = VK_NULL_HANDLE;
+  uint32_t width_ = 0;
+  uint32_t height_ = 0;
+  uint32_t numSwapchainImages_ = 0;
+  uint32_t currentImageIndex_ = 0;
+  bool getNextImage_ = true;
+  VkSwapchainKHR swapchain_ = VK_NULL_HANDLE;
+  VkSurfaceFormatKHR surfaceFormat_ = {.format = VK_FORMAT_UNDEFINED};
+  TextureHandle swapchainTextures_[LVK_MAX_SWAPCHAIN_IMAGES] = {};
+};
+
 } // namespace lvk

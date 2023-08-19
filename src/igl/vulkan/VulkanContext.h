@@ -21,9 +21,6 @@
 
 namespace lvk::vulkan {
 
-class CommandBuffer;
-class VulkanSwapchain;
-
 struct VulkanContextImpl;
 
 struct DeviceQueues {
@@ -109,10 +106,6 @@ class VulkanContext final : public IContext {
     return vkPhysicalDeviceProperties2_.properties;
   }
 
-  const VkPhysicalDeviceFeatures2& getVkPhysicalDeviceFeatures2() const {
-    return vkFeatures10_;
-  }
-
   VkFormat getClosestDepthStencilFormat(lvk::Format desiredFormat) const;
 
   // OpenXR needs Vulkan instance to find physical device
@@ -133,15 +126,14 @@ class VulkanContext final : public IContext {
   // execute a task some time in the future after the submit handle finished processing
   void deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle = SubmitHandle()) const;
 
-  bool areValidationLayersEnabled() const;
-
   void* getVmaAllocator() const;
+
+  void checkAndUpdateDescriptorSets() const;
+  void bindDefaultDescriptorSets(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPoint) const;
 
  private:
   void createInstance();
   void createSurface(void* window, void* display);
-  void checkAndUpdateDescriptorSets() const;
-  void bindDefaultDescriptorSets(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPoint) const;
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void waitDeferredTasks();
@@ -149,8 +141,7 @@ class VulkanContext final : public IContext {
   VkShaderModule createShaderModule(ShaderStage stage, const char* source, const char* debugName, Result* outResult) const;
 
  private:
-  friend class lvk::vulkan::VulkanSwapchain;
-  friend class lvk::vulkan::CommandBuffer;
+  friend class lvk::VulkanSwapchain;
 
   VkInstance vkInstance_ = VK_NULL_HANDLE;
   VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;
@@ -183,7 +174,7 @@ class VulkanContext final : public IContext {
 
  public:
   DeviceQueues deviceQueues_;
-  std::unique_ptr<lvk::vulkan::VulkanSwapchain> swapchain_;
+  std::unique_ptr<lvk::VulkanSwapchain> swapchain_;
   std::unique_ptr<lvk::vulkan::VulkanImmediateCommands> immediate_;
   std::unique_ptr<lvk::vulkan::VulkanStagingDevice> stagingDevice_;
   VkPipelineLayout vkPipelineLayout_ = VK_NULL_HANDLE;
