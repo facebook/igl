@@ -31,7 +31,6 @@ class VulkanStagingDevice final {
   VulkanStagingDevice& operator=(const VulkanStagingDevice&) = delete;
 
   void bufferSubData(VulkanBuffer& buffer, size_t dstOffset, size_t size, const void* data);
-  void getBufferSubData(VulkanBuffer& buffer, size_t srcOffset, size_t size, void* data);
   void imageData2D(VulkanImage& image,
                    const VkRect2D& imageRegion,
                    uint32_t baseMipLevel,
@@ -41,15 +40,6 @@ class VulkanStagingDevice final {
                    VkFormat format,
                    const void* data[]);
   void imageData3D(VulkanImage& image, const VkOffset3D& offset, const VkExtent3D& extent, VkFormat format, const void* data);
-  void getImageData2D(VkImage srcImage,
-                      const uint32_t level,
-                      const uint32_t layer,
-                      const VkRect2D& imageRegion,
-                      VkFormat format,
-                      VkImageLayout layout,
-                      void* data,
-                      uint32_t dataBytesPerRow,
-                      bool flipImageVertical);
 
  private:
   struct MemoryRegionDesc {
@@ -57,7 +47,6 @@ class VulkanStagingDevice final {
     uint32_t alignedSize_ = 0;
   };
 
-  uint32_t getAlignedSize(uint32_t size) const;
   MemoryRegionDesc getNextFreeOffset(uint32_t size);
   void flushOutstandingFences();
 
@@ -66,9 +55,9 @@ class VulkanStagingDevice final {
   BufferHandle stagingBuffer_;
   std::unique_ptr<lvk::VulkanImmediateCommands> immediate_;
   uint32_t stagingBufferFrontOffset_ = 0;
-  uint32_t stagingBufferAlignment_ = 16; // updated to support BC7 compressed image
-  uint32_t stagingBufferSize_;
-  uint32_t bufferCapacity_;
+  uint32_t stagingBufferAlignment_ = 16;
+  uint32_t stagingBufferSize_ = 0;
+  uint32_t bufferCapacity_ = 0;
   std::unordered_map<uint64_t, MemoryRegionDesc> outstandingFences_;
 };
 
