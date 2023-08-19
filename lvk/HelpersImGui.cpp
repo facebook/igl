@@ -134,7 +134,7 @@ void ImGuiRenderer::beginFrame(const lvk::Framebuffer& desc) {
   ImGui::NewFrame();
 }
 
-void ImGuiRenderer::endFrame(lvk::IContext& device, lvk::ICommandBuffer& cmdBuffer) {
+void ImGuiRenderer::endFrame(lvk::ICommandBuffer& cmdBuffer) {
   static_assert(sizeof(ImDrawIdx) == 2);
   LVK_ASSERT_MSG(sizeof(ImDrawIdx) == 2, "The constants below may not work with the ImGui data.");
 
@@ -168,12 +168,12 @@ void ImGuiRenderer::endFrame(lvk::IContext& device, lvk::ICommandBuffer& cmdBuff
   frameIndex_ = (frameIndex_ + 1) % LVK_ARRAY_NUM_ELEMENTS(drawables_);
 
   if (drawableData.numAllocatedIndices_ < dd->TotalIdxCount) {
-    drawableData.ib_ = device.createBuffer(
+    drawableData.ib_ = ctx_.createBuffer(
         {.usage = lvk::BufferUsageBits_Index, .storage = lvk::StorageType_HostVisible, .size = dd->TotalIdxCount * sizeof(ImDrawIdx)});
     drawableData.numAllocatedIndices_ = dd->TotalIdxCount;
   }
   if (drawableData.numAllocatedVerteices_ < dd->TotalVtxCount) {
-    drawableData.vb_ = device.createBuffer(
+    drawableData.vb_ = ctx_.createBuffer(
         {.usage = lvk::BufferUsageBits_Storage, .storage = lvk::StorageType_HostVisible, .size = dd->TotalVtxCount * sizeof(ImDrawVert)});
     drawableData.numAllocatedVerteices_ = dd->TotalVtxCount;
   }

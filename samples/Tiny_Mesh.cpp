@@ -373,7 +373,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     }
     buffer.cmdPopDebugGroupLabel();
   }
-  imgui_->endFrame(*ctx_.get(), buffer);
+  imgui_->endFrame(buffer);
   buffer.cmdEndRendering();
 
   ctx_->submit(buffer, nativeDrawable);

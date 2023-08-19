@@ -18,7 +18,7 @@ class ImGuiRenderer {
   ~ImGuiRenderer();
 
   void beginFrame(const lvk::Framebuffer& desc);
-  void endFrame(lvk::IContext& device, lvk::ICommandBuffer& cmdBuffer);
+  void endFrame(lvk::ICommandBuffer& cmdBuffer);
 
  private:
   lvk::Holder<lvk::RenderPipelineHandle> createNewPipelineState(const lvk::Framebuffer& desc);

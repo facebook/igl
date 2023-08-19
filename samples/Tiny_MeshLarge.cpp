@@ -1222,7 +1222,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3);
       buffer.cmdPopDebugGroupLabel();
 
-      imgui_->endFrame(*ctx_.get(), buffer);
+      imgui_->endFrame(buffer);
     }
     buffer.cmdEndRendering();
 
