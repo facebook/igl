@@ -157,6 +157,7 @@ class ShaderUniforms final {
     igl::BufferArgDesc iglBufferDesc;
     std::shared_ptr<BufferAllocation> allocation;
     std::vector<UniformDesc> uniforms;
+    std::unordered_map<igl::NameHandle, int> memberIndices;
 
     // For suballocation:
     bool isSuballocated = false;

@@ -122,10 +122,12 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
       bufferDesc->suballocationsSize = length;
     }
 
-    for (const igl::BufferArgDesc::BufferMemberDesc& uniformDesc : iglDesc.members) {
+    for (int i = 0; i < static_cast<int>(iglDesc.members.size()); ++i) {
+      auto& uniformDesc = iglDesc.members[i];
       UniformDesc uniform{uniformDesc, bufferDesc};
       _allUniformsByName.insert({uniformDesc.name, uniform});
       bufferDesc->uniforms.push_back(uniform);
+      bufferDesc->memberIndices[uniformDesc.name] = i;
     }
 
     _bufferDescs.insert({iglDesc.name, std::move(bufferDesc)});
