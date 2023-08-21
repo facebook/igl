@@ -26,7 +26,18 @@ class ShaderUniforms final {
  public:
   // Setters: use these to update uniforms, individually or in bulk.
   void setBool(const igl::NameHandle& uniformName, const bool& value, size_t arrayIndex = 0);
+  void setBool(const igl::NameHandle& blockTypeName,
+               const igl::NameHandle& blockInstanceName,
+               const igl::NameHandle& memberName,
+               const bool& value,
+               size_t arrayIndex = 0);
   void setBoolArray(const igl::NameHandle& uniformName,
+                    bool* value,
+                    size_t count = 1,
+                    size_t arrayIndex = 0);
+  void setBoolArray(const igl::NameHandle& blockTypeName,
+                    const igl::NameHandle& blockInstanceName,
+                    const igl::NameHandle& memberName,
                     bool* value,
                     size_t count = 1,
                     size_t arrayIndex = 0);
@@ -34,7 +45,18 @@ class ShaderUniforms final {
   void setFloat(const igl::NameHandle& uniformName,
                 const iglu::simdtypes::float1& value,
                 size_t arrayIndex = 0);
+  void setFloat(const igl::NameHandle& blockTypeName,
+                const igl::NameHandle& blockInstanceName,
+                const igl::NameHandle& memberName,
+                const iglu::simdtypes::float1& value,
+                size_t arrayIndex = 0);
   void setFloatArray(const igl::NameHandle& uniformName,
+                     iglu::simdtypes::float1* value,
+                     size_t count = 1,
+                     size_t arrayIndex = 0);
+  void setFloatArray(const igl::NameHandle& blockTypeName,
+                     const igl::NameHandle& blockInstanceName,
+                     const igl::NameHandle& memberName,
                      iglu::simdtypes::float1* value,
                      size_t count = 1,
                      size_t arrayIndex = 0);
@@ -42,7 +64,18 @@ class ShaderUniforms final {
   void setFloat2(const igl::NameHandle& uniformName,
                  const iglu::simdtypes::float2& value,
                  size_t arrayIndex = 0);
+  void setFloat2(const igl::NameHandle& blockTypeName,
+                 const igl::NameHandle& blockInstanceName,
+                 const igl::NameHandle& memberName,
+                 const iglu::simdtypes::float2& value,
+                 size_t arrayIndex = 0);
   void setFloat2Array(const igl::NameHandle& uniformName,
+                      iglu::simdtypes::float2* value,
+                      size_t count = 1,
+                      size_t arrayIndex = 0);
+  void setFloat2Array(const igl::NameHandle& blockTypeName,
+                      const igl::NameHandle& blockInstanceName,
+                      const igl::NameHandle& memberName,
                       iglu::simdtypes::float2* value,
                       size_t count = 1,
                       size_t arrayIndex = 0);
@@ -58,7 +91,18 @@ class ShaderUniforms final {
   void setFloat4(const igl::NameHandle& uniformName,
                  const iglu::simdtypes::float4& value,
                  size_t arrayIndex = 0);
+  void setFloat4(const igl::NameHandle& blockTypeName,
+                 const igl::NameHandle& blockInstanceName,
+                 const igl::NameHandle& memberName,
+                 const iglu::simdtypes::float4& value,
+                 size_t arrayIndex = 0);
   void setFloat4Array(const igl::NameHandle& uniformName,
+                      const iglu::simdtypes::float4* value,
+                      size_t count = 1,
+                      size_t arrayIndex = 0);
+  void setFloat4Array(const igl::NameHandle& blockTypeName,
+                      const igl::NameHandle& blockInstanceName,
+                      const igl::NameHandle& memberName,
                       const iglu::simdtypes::float4* value,
                       size_t count = 1,
                       size_t arrayIndex = 0);
@@ -66,7 +110,18 @@ class ShaderUniforms final {
   void setFloat2x2(const igl::NameHandle& uniformName,
                    const iglu::simdtypes::float2x2& value,
                    size_t arrayIndex = 0);
+  void setFloat2x2(const igl::NameHandle& blockTypeName,
+                   const igl::NameHandle& blockInstanceName,
+                   const igl::NameHandle& memberName,
+                   const iglu::simdtypes::float2x2& value,
+                   size_t arrayIndex = 0);
   void setFloat2x2Array(const igl::NameHandle& uniformName,
+                        const iglu::simdtypes::float2x2* value,
+                        size_t count = 1,
+                        size_t arrayIndex = 0);
+  void setFloat2x2Array(const igl::NameHandle& blockTypeName,
+                        const igl::NameHandle& blockInstanceName,
+                        const igl::NameHandle& memberName,
                         const iglu::simdtypes::float2x2* value,
                         size_t count = 1,
                         size_t arrayIndex = 0);
@@ -82,7 +137,18 @@ class ShaderUniforms final {
   void setFloat4x4(const igl::NameHandle& uniformName,
                    const iglu::simdtypes::float4x4& value,
                    size_t arrayIndex = 0);
+  void setFloat4x4(const igl::NameHandle& blockTypeName,
+                   const igl::NameHandle& blockInstanceName,
+                   const igl::NameHandle& memberName,
+                   const iglu::simdtypes::float4x4& value,
+                   size_t arrayIndex = 0);
   void setFloat4x4Array(const igl::NameHandle& uniformName,
+                        const iglu::simdtypes::float4x4* value,
+                        size_t count = 1,
+                        size_t arrayIndex = 0);
+  void setFloat4x4Array(const igl::NameHandle& blockTypeName,
+                        const igl::NameHandle& blockInstanceName,
+                        const igl::NameHandle& memberName,
                         const iglu::simdtypes::float4x4* value,
                         size_t count = 1,
                         size_t arrayIndex = 0);
@@ -90,7 +156,18 @@ class ShaderUniforms final {
   void setInt(const igl::NameHandle& uniformName,
               const iglu::simdtypes::int1& value,
               size_t arrayIndex = 0);
+  void setInt(const igl::NameHandle& blockTypeName,
+              const igl::NameHandle& blockInstanceName,
+              const igl::NameHandle& memberName,
+              const iglu::simdtypes::int1& value,
+              size_t arrayIndex = 0);
   void setIntArray(const igl::NameHandle& uniformName,
+                   iglu::simdtypes::int1* value,
+                   size_t count = 1,
+                   size_t arrayIndex = 0);
+  void setIntArray(const igl::NameHandle& blockTypeName,
+                   const igl::NameHandle& blockInstanceName,
+                   const igl::NameHandle& memberName,
                    iglu::simdtypes::int1* value,
                    size_t count = 1,
                    size_t arrayIndex = 0);
