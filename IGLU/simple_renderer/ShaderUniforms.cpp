@@ -229,6 +229,80 @@ igl::NameHandle ShaderUniforms::getBufferMemberName(const igl::NameHandle& block
   return memberName;
 }
 
+void ShaderUniforms::setUniformBytes(const UniformDesc& uniformDesc,
+                                     const void* data,
+                                     size_t elementSize,
+                                     size_t count,
+                                     size_t arrayIndex) {
+  if (device_.getBackendType() != igl::BackendType::Vulkan) {
+    auto expectedSize =
+        getUniformExpectedSize(uniformDesc.iglMemberDesc.type, device_.getBackendType());
+    if (elementSize != expectedSize) {
+      IGL_LOG_ERROR_ONCE("[IGL][Error] Uniform %s size mismatch: expected %d got %d\n",
+                         uniformDesc.iglMemberDesc.name.toConstChar(),
+                         expectedSize,
+                         elementSize);
+      return;
+    }
+  }
+  if (arrayIndex + count > uniformDesc.iglMemberDesc.arrayLength) {
+    IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid range for uniform %s:  %zu,%zu,%zu\n",
+                       uniformDesc.iglMemberDesc.name.toConstChar(),
+                       arrayIndex,
+                       count,
+                       uniformDesc.iglMemberDesc.arrayLength);
+    return;
+  }
+  auto strongBuffer = uniformDesc.buffer.lock();
+  if (!strongBuffer) {
+    IGL_LOG_ERROR_ONCE("[IGL][Error] null uniform buffer %s!\n",
+                       uniformDesc.iglMemberDesc.name.toConstChar());
+    return;
+  }
+
+  uintptr_t subAllocatedOffset = 0;
+  if (strongBuffer->isSuballocated && strongBuffer->currentAllocation >= 0) {
+    subAllocatedOffset = strongBuffer->currentAllocation * strongBuffer->suballocationsSize;
+  }
+  uintptr_t offset =
+      uniformDesc.iglMemberDesc.offset + elementSize * arrayIndex + subAllocatedOffset;
+
+  auto err = try_checked_memcpy((uint8_t*)strongBuffer->allocation->ptr + offset, // destination
+                                strongBuffer->allocation->size - offset, // max destination size
+                                data, // source
+                                elementSize * count // num bytes to copy
+  );
+  if (err != 0) {
+    IGL_LOG_ERROR_ONCE("[IGL][Error] Failed to update uniform buffer\n");
+  }
+}
+
+void ShaderUniforms::setUniformBytes(const igl::NameHandle& blockTypeName,
+                                     const igl::NameHandle& blockInstanceName,
+                                     const igl::NameHandle& memberName,
+                                     const void* data,
+                                     size_t elementSize,
+                                     size_t count,
+                                     size_t arrayIndex) {
+  auto bufferName = getBufferName(blockTypeName, blockInstanceName, memberName);
+  auto range = _bufferDescs.equal_range(bufferName);
+  IGL_ASSERT_MSG(range.first != range.second, "Buffer not found: %s", bufferName.toConstChar());
+
+  for (auto bufferDescIt = range.first; bufferDescIt != range.second; ++bufferDescIt) {
+    auto& bufferDesc = bufferDescIt->second;
+    auto bufferMemberName = getBufferMemberName(blockTypeName, blockInstanceName, memberName);
+    auto memberIndexIt = bufferDesc->memberIndices.find(bufferMemberName);
+    if (memberIndexIt == bufferDesc->memberIndices.end()) {
+      IGL_LOG_ERROR_ONCE("Member %s not found in buffer %s",
+                         bufferMemberName.toConstChar(),
+                         bufferName.toConstChar());
+      continue;
+    }
+    auto& uniformDesc = bufferDesc->uniforms[memberIndexIt->second];
+    setUniformBytes(uniformDesc, data, elementSize, count, arrayIndex);
+  }
+}
+
 void ShaderUniforms::setUniformBytes(const igl::NameHandle& name,
                                      const void* data,
                                      size_t elementSize,
@@ -241,47 +315,7 @@ void ShaderUniforms::setUniformBytes(const igl::NameHandle& name,
   }
   for (auto it = range.first; it != range.second; ++it) {
     auto& uniformDesc = it->second;
-    if (device_.getBackendType() != igl::BackendType::Vulkan) {
-      auto expectedSize =
-          getUniformExpectedSize(uniformDesc.iglMemberDesc.type, device_.getBackendType());
-      if (elementSize != expectedSize) {
-        IGL_LOG_ERROR_ONCE("[IGL][Error] Uniform size mismatch: %s : expected %d got %d\n",
-                           name.toConstChar(),
-                           expectedSize,
-                           elementSize);
-        continue;
-      }
-    }
-    if (arrayIndex + count > uniformDesc.iglMemberDesc.arrayLength) {
-      IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid range for uniform: %s - %zu,%zu,%zu\n",
-                         name.toConstChar(),
-                         arrayIndex,
-                         count,
-                         uniformDesc.iglMemberDesc.arrayLength);
-      continue;
-    }
-    auto strongBuffer = uniformDesc.buffer.lock();
-    if (!strongBuffer) {
-      IGL_LOG_ERROR("[IGL][Error] null uniform buffer!");
-      continue;
-    }
-
-    uintptr_t subAllocatedOffset = 0;
-    if (strongBuffer->isSuballocated && strongBuffer->currentAllocation >= 0) {
-      subAllocatedOffset = strongBuffer->currentAllocation * strongBuffer->suballocationsSize;
-    }
-    uintptr_t offset =
-        uniformDesc.iglMemberDesc.offset + elementSize * arrayIndex + subAllocatedOffset;
-
-    auto err = try_checked_memcpy((uint8_t*)strongBuffer->allocation->ptr + offset, // destination
-                                  strongBuffer->allocation->size - offset, // max destination size
-                                  data, // source
-                                  elementSize * count // num bytes to copy
-    );
-    if (err != 0) {
-      IGL_LOG_ERROR("[IGL][Error] Failed to update uniform buffer\n");
-      continue;
-    }
+    setUniformBytes(uniformDesc, data, elementSize, count, arrayIndex);
   }
 }
 

@@ -200,6 +200,20 @@ class ShaderUniforms final {
                                       const igl::NameHandle& blockInstanceName,
                                       const igl::NameHandle& memberName);
 
+  void setUniformBytes(const UniformDesc& uniformDesc,
+                       const void* data,
+                       size_t elementSize,
+                       size_t count,
+                       size_t arrayIndex);
+
+  void setUniformBytes(const igl::NameHandle& blockTypeName,
+                       const igl::NameHandle& blockInstanceName,
+                       const igl::NameHandle& memberName,
+                       const void* data,
+                       size_t elementSize,
+                       size_t count,
+                       size_t arrayIndex);
+
   void setUniformBytes(const igl::NameHandle& name,
                        const void* data,
                        size_t elementSize,
