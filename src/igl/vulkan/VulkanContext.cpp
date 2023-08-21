@@ -638,21 +638,22 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                                               0.0f),
                                       "Sampler: default");
 
-  if (!IGL_VERIFY(
-          config_.maxSamplers <=
-          vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers)) {
-    IGL_LOG_ERROR(
-        "Max Samplers exceeded %u (max %u)",
-        config_.maxSamplers,
-        vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers);
-  }
+  if (config_.enableDescriptorIndexing) {
+    if (!IGL_VERIFY(config_.maxSamplers <= vkPhysicalDeviceDescriptorIndexingProperties_
+                                               .maxDescriptorSetUpdateAfterBindSamplers)) {
+      IGL_LOG_ERROR(
+          "Max Samplers exceeded %u (max %u)",
+          config_.maxSamplers,
+          vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers);
+    }
 
-  if (!IGL_VERIFY(config_.maxTextures <= vkPhysicalDeviceDescriptorIndexingProperties_
-                                             .maxDescriptorSetUpdateAfterBindSampledImages)) {
-    IGL_LOG_ERROR(
-        "Max Textures exceeded: %u (max %u)",
-        config_.maxTextures,
-        vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSampledImages);
+    if (!IGL_VERIFY(config_.maxTextures <= vkPhysicalDeviceDescriptorIndexingProperties_
+                                               .maxDescriptorSetUpdateAfterBindSampledImages)) {
+      IGL_LOG_ERROR("Max Textures exceeded: %u (max %u)",
+                    config_.maxTextures,
+                    vkPhysicalDeviceDescriptorIndexingProperties_
+                        .maxDescriptorSetUpdateAfterBindSampledImages);
+    }
   }
 
   const VkPhysicalDeviceLimits& limits = getVkPhysicalDeviceProperties().limits;
@@ -1140,7 +1141,12 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
     textures_.emplace_back(texture);
   }
 
-  IGL_ASSERT(textures_.size() <= config_.maxTextures);
+  if (config_.enableDescriptorIndexing) {
+    const bool canFitTextures = textures_.size() <= config_.maxTextures;
+    if (!IGL_VERIFY(canFitTextures)) {
+      return nullptr;
+    }
+  }
 
   awaitingCreation_ = true;
 
