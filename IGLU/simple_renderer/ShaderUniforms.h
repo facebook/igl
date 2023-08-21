@@ -166,6 +166,8 @@ class ShaderUniforms final {
     std::vector<int> suballocations;
   };
 
+  igl::IDevice& device_;
+
   std::vector<std::shared_ptr<BufferAllocation>> _allocations;
 
   std::unordered_multimap<igl::NameHandle, std::shared_ptr<BufferDesc>> _bufferDescs;
@@ -185,7 +187,6 @@ class ShaderUniforms final {
   std::vector<igl::TextureArgDesc> _textureDescs;
   std::unordered_map<std::string, TextureSlot> _allTexturesByName;
   std::unordered_map<std::string, SamplerSlot> _allSamplersByName;
-  const igl::BackendType _backend;
 
   void setUniformBytes(const igl::NameHandle& name,
                        const void* data,

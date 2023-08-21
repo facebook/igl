@@ -50,7 +50,7 @@ namespace iglu::material {
 
 ShaderUniforms::ShaderUniforms(igl::IDevice& device,
                                const igl::IRenderPipelineReflection& reflection) :
-  _backend(device.getBackendType()) {
+  device_(device) {
   bool hasBindBytesFeature = device.hasFeature(igl::DeviceFeatures::BindBytes);
   size_t bindBytesLimit = 0;
   if (!device.getFeatureLimits(igl::DeviceFeatureLimits::MaxBindBytesBytes, bindBytesLimit)) {
@@ -61,7 +61,7 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
   size_t uniformBufferLimit = 0;
   device.getFeatureLimits(igl::DeviceFeatureLimits::MaxUniformBufferBytes, uniformBufferLimit);
 
-  const bool isSuballocated = _backend == igl::BackendType::Vulkan;
+  const bool isSuballocated = device_.getBackendType() == igl::BackendType::Vulkan;
   for (const igl::BufferArgDesc& iglDesc : reflection.allUniformBuffers()) {
     size_t length = iglDesc.bufferDataSize;
     IGL_ASSERT_MSG(length > 0, "unexpected buffer with size 0");
@@ -78,10 +78,10 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
     }
 
     bool createBuffer = false;
-    if (_backend == igl::BackendType::OpenGL) {
+    if (device_.getBackendType() == igl::BackendType::OpenGL) {
       // On OpenGL, create buffers only when dealing with uniform blocks (and not single uniforms)
       createBuffer = iglDesc.isUniformBlock;
-    } else if (_backend == igl::BackendType::Vulkan) {
+    } else if (device_.getBackendType() == igl::BackendType::Vulkan) {
       createBuffer = true;
     } else {
       // On Metal, need to create buffers only when data > 4kb
@@ -96,7 +96,8 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
       desc.storage = igl::ResourceStorage::Shared;
       desc.type = igl::BufferDesc::BufferTypeBits::Uniform;
       desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
-      if (_backend == igl::BackendType::Metal || _backend == igl::BackendType::Vulkan) {
+      if (device_.getBackendType() == igl::BackendType::Metal ||
+          device_.getBackendType() == igl::BackendType::Vulkan) {
         desc.hint |= igl::BufferDesc::BufferAPIHintBits::Ring;
       }
       buffer = device.createBuffer(desc, nullptr);
@@ -175,8 +176,9 @@ void ShaderUniforms::setUniformBytes(const igl::NameHandle& name,
   }
   for (auto it = range.first; it != range.second; ++it) {
     auto& uniformDesc = it->second;
-    if (_backend != igl::BackendType::Vulkan) {
-      auto expectedSize = getUniformExpectedSize(uniformDesc.iglMemberDesc.type, _backend);
+    if (device_.getBackendType() != igl::BackendType::Vulkan) {
+      auto expectedSize =
+          getUniformExpectedSize(uniformDesc.iglMemberDesc.type, device_.getBackendType());
       if (elementSize != expectedSize) {
         IGL_LOG_ERROR_ONCE("[IGL][Error] Uniform size mismatch: %s : expected %d got %d\n",
                            name.toConstChar(),
@@ -260,8 +262,9 @@ void ShaderUniforms::setFloat2Array(const igl::NameHandle& uniformName,
 void ShaderUniforms::setFloat3(const igl::NameHandle& uniformName,
                                const iglu::simdtypes::float3& value,
                                size_t arrayIndex) {
-  size_t length = _backend == igl::BackendType::Metal ? sizeof(iglu::simdtypes::float3)
-                                                      : sizeof(float[3]);
+  size_t length = device_.getBackendType() == igl::BackendType::Metal
+                      ? sizeof(iglu::simdtypes::float3)
+                      : sizeof(float[3]);
   setUniformBytes(uniformName, &value, length, 1, arrayIndex);
 }
 
@@ -269,7 +272,7 @@ void ShaderUniforms::setFloat3Array(const igl::NameHandle& uniformName,
                                     iglu::simdtypes::float3* value,
                                     size_t count,
                                     size_t arrayIndex) {
-  if (_backend == igl::BackendType::Metal) {
+  if (device_.getBackendType() == igl::BackendType::Metal) {
     setUniformBytes(uniformName, value, sizeof(iglu::simdtypes::float3), count, arrayIndex);
   } else {
     // simdtypes::float3 is padded to have an extra float.
@@ -317,7 +320,8 @@ void ShaderUniforms::setFloat2x2Array(const igl::NameHandle& uniformName,
 void ShaderUniforms::setFloat3x3(const igl::NameHandle& uniformName,
                                  const iglu::simdtypes::float3x3& value,
                                  size_t arrayIndex) {
-  if (_backend == igl::BackendType::Metal || _backend == igl::BackendType::Vulkan) {
+  if (device_.getBackendType() == igl::BackendType::Metal ||
+      device_.getBackendType() == igl::BackendType::Vulkan) {
     setUniformBytes(uniformName, &value, sizeof(iglu::simdtypes::float3x3), 1, arrayIndex);
   } else {
     // simdtypes::float3x3 has an extra float per float-vector.
@@ -339,7 +343,8 @@ void ShaderUniforms::setFloat3x3Array(const igl::NameHandle& uniformName,
                                       const iglu::simdtypes::float3x3* value,
                                       size_t count,
                                       size_t arrayIndex) {
-  if (_backend == igl::BackendType::Metal || _backend == igl::BackendType::Vulkan) {
+  if (device_.getBackendType() == igl::BackendType::Metal ||
+      device_.getBackendType() == igl::BackendType::Vulkan) {
     setUniformBytes(uniformName, value, sizeof(iglu::simdtypes::float3x3), count, arrayIndex);
   } else {
     // simdtypes::float3x3 has an extra float per float-vector.
@@ -556,7 +561,7 @@ void ShaderUniforms::bind(igl::IDevice& device,
 }
 
 igl::Result ShaderUniforms::setSuballocationIndex(const igl::NameHandle& name, int index) {
-  if (_backend != igl::BackendType::Vulkan) {
+  if (device_.getBackendType() != igl::BackendType::Vulkan) {
     return igl::Result(igl::Result::Code::Unsupported,
                        "Suballocation is only available for Vulkan for now");
   }
