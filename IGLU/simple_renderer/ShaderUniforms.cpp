@@ -164,6 +164,71 @@ size_t getUniformExpectedSize(igl::UniformType uniformType, igl::BackendType bac
 }
 } // namespace
 
+igl::NameHandle ShaderUniforms::getQualifiedMemberName(const igl::NameHandle& blockTypeName,
+                                                       const igl::NameHandle& blockInstanceName,
+                                                       const igl::NameHandle& memberName) {
+  return igl::genNameHandle(blockInstanceName.toString() + "." + memberName.toString());
+}
+
+igl::NameHandle ShaderUniforms::getBufferName(const igl::NameHandle& blockTypeName,
+                                              const igl::NameHandle& blockInstanceName,
+                                              const igl::NameHandle& memberName) {
+  /**
+    Given an SparkSL/GLSL3 interface block:
+    ```
+      uniform BlockTypeName {
+        float f;
+      } blockInstanceName;
+    ```
+
+    The corresponding Legacy GLSL code:
+    ```
+      struct BlockTypeName {
+        float f;
+      }
+      uniform BlockTypeName blockInstanceName;
+    ```
+
+    The corresponding Metal code:
+    ```
+      struct BlockTypeName {
+        float f;
+      };
+      main(BlockTypeName& blockInstanceName) {
+        ...
+      }
+    ```
+
+    In OpenGL3, the name of the buffer block is `BlockTypeName`.
+
+    In legacy OpenGL, we treat each member of the struct an individual uniform, so the name is
+    `blockInstanceName.f`
+
+    In Metal, the name of the block is `blockInstanceName`
+  */
+  if (device_.getBackendType() == igl::BackendType::Metal) {
+    return blockInstanceName;
+  } else {
+    if (device_.getBackendType() == igl::BackendType::OpenGL) {
+      if (device_.getShaderVersion().majorVersion < 3) {
+        return getQualifiedMemberName(blockTypeName, blockInstanceName, memberName);
+      }
+    }
+    return blockTypeName;
+  }
+}
+
+igl::NameHandle ShaderUniforms::getBufferMemberName(const igl::NameHandle& blockTypeName,
+                                                    const igl::NameHandle& blockInstanceName,
+                                                    const igl::NameHandle& memberName) {
+  if (device_.getBackendType() == igl::BackendType::OpenGL) {
+    if (device_.getShaderVersion().majorVersion < 3) {
+      return getQualifiedMemberName(blockTypeName, blockInstanceName, memberName);
+    }
+  }
+  return memberName;
+}
+
 void ShaderUniforms::setUniformBytes(const igl::NameHandle& name,
                                      const void* data,
                                      size_t elementSize,

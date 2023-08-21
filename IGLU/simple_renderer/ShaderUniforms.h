@@ -134,6 +134,10 @@ class ShaderUniforms final {
     return _allUniformsByName.count(uniformName) > 0;
   }
 
+  static igl::NameHandle getQualifiedMemberName(const igl::NameHandle& blockTypeName,
+                                                const igl::NameHandle& blockInstanceName,
+                                                const igl::NameHandle& memberName);
+
   ShaderUniforms(igl::IDevice& device, const igl::IRenderPipelineReflection& reflection);
   ~ShaderUniforms();
 
@@ -187,6 +191,14 @@ class ShaderUniforms final {
   std::vector<igl::TextureArgDesc> _textureDescs;
   std::unordered_map<std::string, TextureSlot> _allTexturesByName;
   std::unordered_map<std::string, SamplerSlot> _allSamplersByName;
+
+  igl::NameHandle getBufferName(const igl::NameHandle& blockTypeName,
+                                const igl::NameHandle& blockInstanceName,
+                                const igl::NameHandle& memberName);
+
+  igl::NameHandle getBufferMemberName(const igl::NameHandle& blockTypeName,
+                                      const igl::NameHandle& blockInstanceName,
+                                      const igl::NameHandle& memberName);
 
   void setUniformBytes(const igl::NameHandle& name,
                        const void* data,
