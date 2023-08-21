@@ -167,7 +167,7 @@ class ShaderUniforms final {
 
   std::vector<std::shared_ptr<BufferAllocation>> _allocations;
 
-  std::vector<std::shared_ptr<BufferDesc>> _bufferDescs;
+  std::unordered_multimap<igl::NameHandle, std::shared_ptr<BufferDesc>> _bufferDescs;
 
   std::unordered_multimap<igl::NameHandle, UniformDesc> _allUniformsByName;
 

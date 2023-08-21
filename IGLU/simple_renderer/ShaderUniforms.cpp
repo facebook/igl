@@ -128,7 +128,7 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
       bufferDesc->uniforms.push_back(uniform);
     }
 
-    _bufferDescs.push_back(std::move(bufferDesc));
+    _bufferDescs.insert({iglDesc.name, std::move(bufferDesc)});
   }
 
   for (const igl::TextureArgDesc& iglDesc : reflection.allTextures()) {
@@ -528,7 +528,7 @@ void ShaderUniforms::bind(igl::IDevice& device,
 void ShaderUniforms::bind(igl::IDevice& device,
                           const igl::IRenderPipelineState& pipelineState,
                           igl::IRenderCommandEncoder& encoder) {
-  for (auto& bufferDesc : _bufferDescs) {
+  for (auto& [name, bufferDesc] : _bufferDescs) {
     bindBuffer(device, pipelineState, encoder, bufferDesc.get());
   }
 
