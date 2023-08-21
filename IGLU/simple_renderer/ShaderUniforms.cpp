@@ -910,4 +910,17 @@ igl::Result ShaderUniforms::setSuballocationIndex(const igl::NameHandle& name, i
                        "Could not update suballocation index for " + name.toString());
   }
 }
+
+bool ShaderUniforms::containsUniform(const igl::NameHandle& blockTypeName,
+                                     const igl::NameHandle& blockInstanceName,
+                                     const igl::NameHandle& memberName) {
+  auto bufferName = getBufferName(blockTypeName, blockInstanceName, memberName);
+  auto bufferDescIt = _bufferDescs.find(bufferName);
+  if (bufferDescIt == _bufferDescs.end()) {
+    return false;
+  }
+  auto& bufferDesc = bufferDescIt->second;
+  auto bufferMemberName = getBufferMemberName(blockTypeName, blockInstanceName, memberName);
+  return bufferDesc->memberIndices.find(bufferMemberName) != bufferDesc->memberIndices.end();
+}
 } // namespace iglu::material

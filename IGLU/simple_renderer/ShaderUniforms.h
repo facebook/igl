@@ -211,6 +211,10 @@ class ShaderUniforms final {
     return _allUniformsByName.count(uniformName) > 0;
   }
 
+  bool containsUniform(const igl::NameHandle& blockTypeName,
+                       const igl::NameHandle& blockInstanceName,
+                       const igl::NameHandle& memberName);
+
   static igl::NameHandle getQualifiedMemberName(const igl::NameHandle& blockTypeName,
                                                 const igl::NameHandle& blockInstanceName,
                                                 const igl::NameHandle& memberName);
