@@ -25,13 +25,6 @@ VulkanTexture::VulkanTexture(const VulkanContext& ctx,
   IGL_ASSERT(imageView_);
 }
 
-VulkanTexture::~VulkanTexture() {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
-
-  // inform the context it should prune the textures
-  ctx_.awaitingDeletion_ = true;
-}
-
 } // namespace vulkan
 
 } // namespace igl

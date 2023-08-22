@@ -104,11 +104,6 @@ namespace vulkan {
 
 SamplerState::SamplerState(const igl::vulkan::Device& device) : device_(device) {}
 
-SamplerState::~SamplerState() {
-  // inform the context it should prune the samplers
-  device_.getVulkanContext().awaitingDeletion_ = true;
-}
-
 Result SamplerState::create(const SamplerStateDesc& desc) {
   IGL_PROFILER_FUNCTION();
 

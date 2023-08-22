@@ -25,7 +25,7 @@ class VulkanTexture final {
   VulkanTexture(const VulkanContext& ctx,
                 std::shared_ptr<VulkanImage> image,
                 std::shared_ptr<VulkanImageView> imageView);
-  ~VulkanTexture();
+  ~VulkanTexture() = default;
 
   VulkanTexture(const VulkanTexture&) = delete;
   VulkanTexture& operator=(const VulkanTexture&) = delete;

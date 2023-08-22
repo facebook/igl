@@ -32,7 +32,7 @@ class SamplerState final : public ISamplerState {
    * which can be done by calling the create() method with the desired configuration
    */
   explicit SamplerState(const igl::vulkan::Device& device);
-  ~SamplerState() override;
+  ~SamplerState() override = default;
 
   /**
    * @brief Returns the ID of the sampler. Its ID is the index of the sampler into the vector of

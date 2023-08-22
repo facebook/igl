@@ -320,8 +320,6 @@ class VulkanContext final {
   mutable std::vector<uint32_t> freeIndicesSamplers_;
   // a texture/sampler was created since the last descriptor set update
   mutable bool awaitingCreation_ = false;
-  // a texture/sampler was deleted since the last descriptor set update
-  mutable bool awaitingDeletion_ = false;
   mutable uint64_t lastDeletionFrame_ = 0;
 
   mutable size_t drawCallCount_ = 0;
