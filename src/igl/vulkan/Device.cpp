@@ -281,7 +281,9 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
   }
 
   if (strstr(source, "#version ") == nullptr) {
-    std::string extraExtensions = "#extension GL_EXT_nonuniform_qualifier : require\n";
+    std::string extraExtensions = ctx_->config_.enableDescriptorIndexing
+                                      ? "#extension GL_EXT_nonuniform_qualifier : require\n"
+                                      : "";
 
     // GL_EXT_debug_printf extension
     if (ctx_->extensions_.enabled(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
@@ -319,9 +321,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
       sourcePatched += R"(
       #version 460
       )" + extraExtensions +
-                       R"(
-      #extension GL_EXT_nonuniform_qualifier : require
-      )" + enhancedShaderDebuggingCode;
+                       enhancedShaderDebuggingCode;
     }
     if (vkStage == VK_SHADER_STAGE_FRAGMENT_BIT) {
       sourcePatched += R"(
