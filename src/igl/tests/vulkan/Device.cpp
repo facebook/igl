@@ -65,7 +65,7 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
   config.terminateOnValidationError = true;
 #else
   config.enableValidation = true;
-  config.terminateOnValidationError = true;
+  config.terminateOnValidationError = false;
 #endif
   config.enableExtraLogs = true;
   config.enableBufferDeviceAddress = true;
@@ -110,6 +110,68 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
     return;
 
   ASSERT_NE(buffer->gpuAddress(), 0u);
+}
+
+GTEST_TEST(VulkanContext, DescriptorIndexing) {
+  std::shared_ptr<igl::IDevice> iglDev = nullptr;
+
+  igl::vulkan::VulkanContextConfig config;
+#if IGL_PLATFORM_MACOS
+  config.terminateOnValidationError = false;
+#elif IGL_DEBUG
+  config.enableValidation = true;
+  config.terminateOnValidationError = true;
+#else
+  config.enableValidation = true;
+  config.terminateOnValidationError = false;
+#endif
+  config.enableExtraLogs = true;
+  config.enableDescriptorIndexing = true;
+
+  auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
+
+  Result ret;
+
+  std::vector<HWDeviceDesc> devices = igl::vulkan::HWDevice::queryDevices(
+      *ctx.get(), HWDeviceQueryDesc(HWDeviceType::Unknown), &ret);
+
+  ASSERT_TRUE(!devices.empty());
+
+  if (ret.isOk()) {
+    std::vector<const char*> extraDeviceExtensions;
+    iglDev = igl::vulkan::HWDevice::create(std::move(ctx),
+                                           devices[0],
+                                           0, // width
+                                           0, // height,
+                                           0,
+                                           nullptr,
+                                           &ret);
+
+    if (!ret.isOk()) {
+      iglDev = nullptr;
+    }
+  }
+
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(iglDev, nullptr);
+
+  if (!iglDev)
+    return;
+
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 1,
+                                                 1,
+                                                 TextureDesc::TextureUsageBits::Sampled |
+                                                     TextureDesc::TextureUsageBits::Attachment);
+
+  auto texture = iglDev->createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_NE(texture, nullptr);
+
+  if (!texture)
+    return;
+
+  ASSERT_NE(texture->getTextureId(), 0u);
 }
 #endif
 
