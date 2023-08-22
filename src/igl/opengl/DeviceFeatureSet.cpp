@@ -320,6 +320,10 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
   case DeviceFeatures::ExplicitBindingExt:
     return hasDesktopExtension(*this, "GL_ARB_shading_language_420pack");
 
+  case DeviceFeatures::ExternalMemoryObjects:
+    return hasDesktopOrESExtension(*this, "GL_EXT_memory_object") &&
+           hasDesktopOrESExtension(*this, "GL_EXT_memory_object_fd");
+
   case DeviceFeatures::PushConstants:
     return false;
 

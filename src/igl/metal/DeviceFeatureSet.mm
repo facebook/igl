@@ -177,6 +177,8 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
     return true;
   case DeviceFeatures::ValidationLayersEnabled:
     return false;
+  case DeviceFeatures::ExternalMemoryObjects:
+    return false;
   }
   return false;
 }

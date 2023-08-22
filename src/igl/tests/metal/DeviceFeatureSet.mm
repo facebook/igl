@@ -72,6 +72,7 @@ TEST_F(DeviceFeatureSetMTLTest, HasFeatureTest) {
   ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::TextureArrayExt), false);
   ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::ExplicitBindingExt), false);
   ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::ValidationLayersEnabled), false);
+  ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::ExternalMemoryObjects), false);
 }
 
 TEST_F(DeviceFeatureSetMTLTest, HasRequirementTest) {

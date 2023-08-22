@@ -30,6 +30,7 @@ namespace igl {
  * DrawIndexedIndirect        Supports IRenderCommandEncoder::drawIndexedIndirect
  * ExplicitBinding,           Supports uniforms block explicit binding in shaders
  * ExplicitBindingExt,        Supports uniforms block explicit binding in shaders via an extension
+ * ExternalMemoryObjects,     Supports accessing external memory objects, including by POSIX file descriptor
  * MapBufferRange             Supports mapping buffer data into client address space
  * MinMaxBlend                Supports Min and Max blend operations
  * MultipleRenderTargets      Supports MRT - Multiple Render Targets
@@ -72,6 +73,7 @@ enum class DeviceFeatures {
   DrawIndexedIndirect,
   ExplicitBinding,
   ExplicitBindingExt,
+  ExternalMemoryObjects,
   MapBufferRange,
   MinMaxBlend,
   MultipleRenderTargets,

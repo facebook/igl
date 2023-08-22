@@ -164,6 +164,9 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
                            deviceFeatures.isSupported("GL_ARB_texture_rg")));
     EXPECT_EQ(iglDev_->hasFeature(DeviceFeatures::TextureFormatRG), textureFormatRG);
     EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ValidationLayersEnabled));
+    const bool externalMemoryObjects = deviceFeatures.isSupported("GL_EXT_memory_object") &&
+                                       deviceFeatures.isSupported("GL_EXT_memory_object_fd");
+    EXPECT_EQ(iglDev_->hasFeature(DeviceFeatures::ExternalMemoryObjects), externalMemoryObjects);
 #endif // IGL_BACKEND_OPENGL
   } else {
     // non OpenGL backends
@@ -200,6 +203,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
 #else
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ValidationLayersEnabled));
 #endif // IGL_PLATFORM_ANDROID
+      EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ExternalMemoryObjects));
     } else if (iglDev_->getBackendType() == igl::BackendType::Metal) {
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::Texture2DArray));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::Texture3D));
@@ -223,6 +227,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExplicitBindingExt));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::TextureFormatRG));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ValidationLayersEnabled));
+      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExternalMemoryObjects));
     } else {
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Texture2DArray));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Texture3D));
@@ -246,6 +251,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExplicitBindingExt));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::TextureFormatRG));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ValidationLayersEnabled));
+      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExternalMemoryObjects));
     }
   }
 

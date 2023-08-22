@@ -463,6 +463,8 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     return true;
   case DeviceFeatures::ExplicitBindingExt:
     return false;
+  case DeviceFeatures::ExternalMemoryObjects:
+    return true;
   case DeviceFeatures::TextureBindless:
     return ctx_->vkPhysicalDeviceDescriptorIndexingProperties_
                .shaderSampledImageArrayNonUniformIndexingNative == VK_TRUE;
