@@ -989,9 +989,6 @@ std::shared_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
 }
 
 void VulkanContext::checkAndUpdateDescriptorSets() const {
-  if (!config_.enableDescriptorIndexing) {
-    return;
-  }
   if (awaitingDeletion_) {
     // Our descriptor set was created with VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT which
     // indicates that descriptors in this binding that are not dynamically used need not contain
@@ -1035,6 +1032,9 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   }
 
   // update Vulkan descriptor set here
+  if (!config_.enableDescriptorIndexing) {
+    return;
+  }
 
   // 1. Sampled and storage images
   std::vector<VkDescriptorImageInfo> infoSampledImages;
