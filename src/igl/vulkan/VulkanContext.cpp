@@ -454,8 +454,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     extensions_.enable(extraDeviceExtensions[i], VulkanExtensions::ExtensionType::Device);
   }
   if (config_.enableBufferDeviceAddress) {
-    IGL_ASSERT(extensions_.enable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-                                  VulkanExtensions::ExtensionType::Device));
+    (void)IGL_VERIFY(extensions_.enable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+                                        VulkanExtensions::ExtensionType::Device));
   }
 
   VulkanQueuePool queuePool(vkPhysicalDevice_);
