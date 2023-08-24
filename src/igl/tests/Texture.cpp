@@ -1343,5 +1343,34 @@ TEST(TextureDescStaticTest, CalcMipmapLevelCount) {
   ASSERT_EQ(TextureDesc::calcNumMipLevels(10, 10), 4);
 }
 
+//
+// Test TextureFormatProperties::getNumMipLevels
+//
+TEST_F(TextureTest, GetNumMipLevels) {
+  {
+    auto properties = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
+    EXPECT_EQ(properties.getNumMipLevels(1, 1, 4), 1);
+    EXPECT_EQ(properties.getNumMipLevels(2, 2, 4 * 4 + 4), 2);
+    EXPECT_EQ(properties.getNumMipLevels(5, 5, 25 * 4 + 4 * 4 + 4), 3);
+
+    auto range = TextureRangeDesc::new2D(0, 0, 100, 50, 0);
+    range.numMipLevels = 5;
+    EXPECT_EQ(properties.getNumMipLevels(100, 50, properties.getBytesPerRange(range)), 5);
+  }
+
+  {
+    // Compressed
+    // 16 bytes per 5x5 block
+    auto properties = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_ASTC_5x5);
+    EXPECT_EQ(properties.getNumMipLevels(1, 1, 16), 1);
+    EXPECT_EQ(properties.getNumMipLevels(2, 2, 16 + 16), 2);
+    EXPECT_EQ(properties.getNumMipLevels(5, 5, 16 + 16 + 16), 3);
+
+    auto range = TextureRangeDesc::new2D(0, 0, 100, 50, 0);
+    range.numMipLevels = 5;
+    EXPECT_EQ(properties.getNumMipLevels(100, 50, properties.getBytesPerRange(range)), 5);
+  }
+}
+
 } // namespace tests
 } // namespace igl

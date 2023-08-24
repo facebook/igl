@@ -270,6 +270,21 @@ size_t TextureFormatProperties::getBytesPerRange(TextureRangeDesc range) const n
   return bytes;
 }
 
+size_t TextureFormatProperties::getNumMipLevels(size_t width, size_t height, size_t totalBytes) {
+  auto range = TextureRangeDesc::new2D(0, 0, width, height);
+
+  size_t numMipLevels = 0;
+  while (totalBytes) {
+    const auto mipLevelBytes = getBytesPerRange(range.atMipLevel(numMipLevels));
+    if (mipLevelBytes > totalBytes) {
+      break;
+    }
+    totalBytes -= mipLevelBytes;
+    ++numMipLevels;
+  }
+  return numMipLevels;
+}
+
 uint32_t TextureDesc::calcNumMipLevels(size_t width, size_t height) {
   if (width == 0 || height == 0) {
     return 0;

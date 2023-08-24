@@ -255,6 +255,16 @@ struct TextureFormatProperties {
    * @return Calculated total size in bytes of a the range of texture data for the texture format.
    */
   [[nodiscard]] size_t getBytesPerRange(TextureRangeDesc range) const noexcept;
+
+  /**
+   * @brief Utility function to calculate the number of mip levels given a total size in bytes of
+   * texture data.
+   *
+   * @param texWidth  The width of the first mip level of the texture.
+   * @param texHeight  The height of the first mip level of the texture.
+   * @return Calculated number of mip levels.
+   */
+  [[nodiscard]] size_t getNumMipLevels(size_t texWidth, size_t texHeight, size_t totalBytes);
 };
 
 /**
