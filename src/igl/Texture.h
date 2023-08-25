@@ -315,10 +315,10 @@ struct TextureDesc {
   size_t height = 1;
   size_t depth = 1;
   size_t numLayers = 1;
-  size_t numSamples = 1;
+  uint32_t numSamples = 1;
   TextureUsage usage = 0;
-  ulong_t options = 0;
-  size_t numMipLevels = 1;
+  uint64_t options = 0;
+  uint32_t numMipLevels = 1;
   TextureType type = TextureType::Invalid;
   TextureFormat format = TextureFormat::Invalid;
   ResourceStorage storage = ResourceStorage::Invalid;
@@ -586,13 +586,13 @@ class ITexture : public ITrackedResource<ITexture> {
    *
    * @return unsigned bitwise flag
    */
-  [[nodiscard]] virtual ulong_t getUsage() const = 0;
+  [[nodiscard]] virtual TextureDesc::TextureUsage getUsage() const = 0;
   /**
    * @brief Returns number of samples
    *
    * @return The count of samples in the underlying texture
    */
-  [[nodiscard]] virtual size_t getSamples() const = 0;
+  [[nodiscard]] virtual uint32_t getSamples() const = 0;
   /**
    * @brief Generates mipmap command using the command queue
    *
@@ -608,7 +608,7 @@ class ITexture : public ITrackedResource<ITexture> {
   /**
    * @brief Returns the number of mipmap levels
    */
-  [[nodiscard]] virtual size_t getNumMipLevels() const = 0;
+  [[nodiscard]] virtual uint32_t getNumMipLevels() const = 0;
   /**
    * @brief Returns a flag to indicate mipmap for the texture has been generated.
    *

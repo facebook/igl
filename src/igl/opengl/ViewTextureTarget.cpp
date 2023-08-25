@@ -14,7 +14,7 @@ TextureType ViewTextureTarget::getType() const {
   return TextureType::TwoD;
 }
 
-ulong_t ViewTextureTarget::getUsage() const {
+TextureDesc::TextureUsage ViewTextureTarget::getUsage() const {
   return TextureDesc::TextureUsageBits::Attachment;
 }
 

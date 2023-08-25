@@ -68,7 +68,7 @@ class TextureBufferBaseMock : public igl::opengl::TextureBufferBase {
   using igl::opengl::TextureBufferBase::setUsage;
 
   // Used by TextureBufferBase::attachAsColor()
-  [[nodiscard]] size_t getSamples() const override {
+  [[nodiscard]] uint32_t getSamples() const override {
     return num_samples;
   }
 
@@ -84,7 +84,7 @@ class TextureBufferBaseMock : public igl::opengl::TextureBufferBase {
     type = formatGL.type;
     return result;
   }
-  size_t num_samples = 1;
+  uint32_t num_samples = 1;
 };
 
 //

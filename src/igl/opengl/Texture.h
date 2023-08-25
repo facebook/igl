@@ -33,10 +33,10 @@ class Texture : public WithContext, public ITexture {
   // Accessors
   Dimensions getDimensions() const override;
   size_t getNumLayers() const override;
-  size_t getSamples() const override;
+  uint32_t getSamples() const override;
   void generateMipmap(ICommandQueue& cmdQueue) const override;
   void generateMipmap(ICommandBuffer& cmdBuffer) const override;
-  size_t getNumMipLevels() const override;
+  uint32_t getNumMipLevels() const override;
   bool isRequiredGenerateMipmap() const override;
   uint64_t getTextureId() const override;
 
@@ -124,7 +124,7 @@ class Texture : public WithContext, public ITexture {
   bool isTextureTargetFormat(TextureFormat textureFormat) const;
 
   GLenum glInternalFormat_;
-  size_t numMipLevels_ = 1;
+  uint32_t numMipLevels_ = 1;
   TextureType type_ = TextureType::Invalid;
 
  private:
@@ -133,7 +133,7 @@ class Texture : public WithContext, public ITexture {
   GLsizei height_ = 0;
   GLsizei depth_ = 1;
   GLsizei numLayers_ = 1;
-  size_t numSamples_ = 1;
+  uint32_t numSamples_ = 1;
   bool isCreated_ = false;
 };
 

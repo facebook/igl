@@ -26,7 +26,7 @@ size_t Texture::getNumLayers() const {
   return numLayers_;
 }
 
-size_t Texture::getSamples() const {
+uint32_t Texture::getSamples() const {
   return numSamples_;
 }
 
@@ -38,7 +38,7 @@ void Texture::generateMipmap(ICommandBuffer& /* unused */) const {
   IGL_ASSERT_MSG(0, "Can only generate mipmap for R/W texture (eg. TextureBuffer).");
 }
 
-size_t Texture::getNumMipLevels() const {
+uint32_t Texture::getNumMipLevels() const {
   IGL_ASSERT_MSG(0, "Can only query mipmap for R/W texture (eg. TextureBuffer).");
   return numMipLevels_;
 }

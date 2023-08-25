@@ -33,7 +33,7 @@ TextureFormat convertToTextureFormat(OSType pixelFormat) {
 TextureBuffer::TextureBuffer(IContext& context,
                              CVPixelBufferRef pixelBuffer,
                              CVOpenGLTextureCacheRef textureCache,
-                             ulong_t usage) :
+                             TextureDesc::TextureUsage usage) :
   Super(context, convertToTextureFormat(CVPixelBufferGetPixelFormatType(pixelBuffer))),
   pixelBuffer_(CVPixelBufferRetain(pixelBuffer)),
   textureCache_((CVOpenGLTextureCacheRef)CFRetain(textureCache)) {

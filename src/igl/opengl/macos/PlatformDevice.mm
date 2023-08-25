@@ -136,7 +136,7 @@ Size PlatformDevice::getNativeDrawableSize(Result* outResult) {
 std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBuffer(
     const CVImageBufferRef& sourceImage,
     const CVOpenGLTextureCacheRef& textureCache,
-    ulong_t usage,
+    TextureDesc::TextureUsage usage,
     Result* outResult) {
   auto textureBuffer =
       std::make_unique<TextureBuffer>(getContext(), sourceImage, textureCache, usage);

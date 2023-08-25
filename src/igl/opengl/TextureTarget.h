@@ -22,7 +22,7 @@ class TextureTarget final : public Texture {
 
   // ITexture overrides
   TextureType getType() const override;
-  ulong_t getUsage() const override;
+  TextureDesc::TextureUsage getUsage() const override;
 
   // Texture overrides
   Result create(const TextureDesc& desc, bool hasStorageAlready) override;

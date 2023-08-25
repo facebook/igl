@@ -207,7 +207,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
     size_t width,
     size_t height,
     size_t planeIndex,
-    ulong_t usage,
+    TextureDesc::TextureUsage usage,
     Result* outResult) {
   auto textureBuffer =
       std::make_unique<TextureBuffer>(getContext(), sourceImage, textureCache, planeIndex, usage);
@@ -227,7 +227,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBuffer(
     const CVImageBufferRef& sourceImage,
     const CVOpenGLESTextureCacheRef& textureCache,
     size_t planeIndex,
-    ulong_t usage,
+    TextureDesc::TextureUsage usage,
     Result* outResult) {
   auto textureBuffer =
       std::make_unique<TextureBuffer>(getContext(), sourceImage, textureCache, planeIndex, usage);
@@ -248,7 +248,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
     size_t width,
     size_t height,
     size_t planeIndex,
-    ulong_t usage,
+    TextureDesc::TextureUsage usage,
     Result* outResult) {
   auto textureBuffer = std::make_unique<TextureBuffer>(
       getContext(), sourceImage, getTextureCache(), planeIndex, usage);
@@ -267,7 +267,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
 std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBuffer(
     const CVImageBufferRef& sourceImage,
     size_t planeIndex,
-    ulong_t usage,
+    TextureDesc::TextureUsage usage,
     Result* outResult) {
   auto textureBuffer = std::make_unique<TextureBuffer>(
       getContext(), sourceImage, getTextureCache(), planeIndex, usage);

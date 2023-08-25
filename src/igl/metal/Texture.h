@@ -44,9 +44,9 @@ class Texture final : public ITexture {
   Dimensions getDimensions() const override;
   size_t getNumLayers() const override;
   TextureType getType() const override;
-  ulong_t getUsage() const override;
-  size_t getSamples() const override;
-  size_t getNumMipLevels() const override;
+  TextureDesc::TextureUsage getUsage() const override;
+  uint32_t getSamples() const override;
+  uint32_t getNumMipLevels() const override;
   void generateMipmap(ICommandQueue& cmdQueue) const override;
   void generateMipmap(ICommandBuffer& cmdBuffer) const override;
   bool isRequiredGenerateMipmap() const override;
@@ -59,8 +59,8 @@ class Texture final : public ITexture {
     return drawable_;
   }
 
-  static ulong_t toTextureUsage(MTLTextureUsage usage);
-  static MTLTextureUsage toMTLTextureUsage(ulong_t usage);
+  static TextureDesc::TextureUsage toTextureUsage(MTLTextureUsage usage);
+  static MTLTextureUsage toMTLTextureUsage(TextureDesc::TextureUsage usage);
 
   static MTLPixelFormat textureFormatToMTLPixelFormat(TextureFormat value);
   static TextureFormat mtlPixelFormatToTextureFormat(MTLPixelFormat value);

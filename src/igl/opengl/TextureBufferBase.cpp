@@ -41,7 +41,7 @@ TextureType TextureBufferBase::getType() const {
   return TextureType::Invalid;
 }
 
-ulong_t TextureBufferBase::getUsage() const {
+TextureDesc::TextureUsage TextureBufferBase::getUsage() const {
   return usage_;
 }
 
@@ -124,7 +124,7 @@ void TextureBufferBase::attachAsStencil(const AttachmentParams& params) {
   }
 }
 
-size_t TextureBufferBase::getNumMipLevels() const {
+uint32_t TextureBufferBase::getNumMipLevels() const {
   return numMipLevels_;
 }
 

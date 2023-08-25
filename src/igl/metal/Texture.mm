@@ -187,15 +187,15 @@ TextureType Texture::getType() const {
   return convertType([get() textureType]);
 }
 
-ulong_t Texture::getUsage() const {
+TextureDesc::TextureUsage Texture::getUsage() const {
   return toTextureUsage([get() usage]);
 }
 
-size_t Texture::getSamples() const {
+uint32_t Texture::getSamples() const {
   return [get() sampleCount];
 }
 
-size_t Texture::getNumMipLevels() const {
+uint32_t Texture::getNumMipLevels() const {
   return [get() mipmapLevelCount];
 }
 
@@ -243,8 +243,8 @@ uint64_t Texture::getTextureId() const {
   return 0;
 }
 
-ulong_t Texture::toTextureUsage(MTLTextureUsage usage) {
-  ulong_t result = 0;
+TextureDesc::TextureUsage Texture::toTextureUsage(MTLTextureUsage usage) {
+  TextureDesc::TextureUsage result = 0;
   result |= ((usage & MTLTextureUsageShaderRead) != 0) ? TextureDesc::TextureUsageBits::Sampled : 0;
   result |= ((usage & MTLTextureUsageShaderWrite) != 0) ? TextureDesc::TextureUsageBits::Storage
                                                         : 0;
@@ -253,7 +253,7 @@ ulong_t Texture::toTextureUsage(MTLTextureUsage usage) {
   return result;
 }
 
-MTLTextureUsage Texture::toMTLTextureUsage(ulong_t usage) {
+MTLTextureUsage Texture::toMTLTextureUsage(TextureDesc::TextureUsage usage) {
   MTLTextureUsage result = 0;
   result |= ((usage & TextureDesc::TextureUsageBits::Sampled) != 0) ? MTLTextureUsageShaderRead : 0;
   result |= ((usage & TextureDesc::TextureUsageBits::Storage) != 0) ? MTLTextureUsageShaderWrite

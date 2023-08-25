@@ -21,7 +21,7 @@ class TextureBufferBase : public Texture {
 
   // ITexture overrides
   TextureType getType() const override;
-  ulong_t getUsage() const override;
+  TextureDesc::TextureUsage getUsage() const override;
 
   void bind() override;
   void bindImage(size_t unit) override {}
@@ -30,7 +30,7 @@ class TextureBufferBase : public Texture {
   void detachAsColor(uint32_t index, bool read) override;
   void attachAsDepth(const AttachmentParams& params) override;
   void attachAsStencil(const AttachmentParams& params) override;
-  size_t getNumMipLevels() const override;
+  uint32_t getNumMipLevels() const override;
   void generateMipmap(ICommandQueue& cmdQueue) const override;
   void generateMipmap(ICommandBuffer& cmdBuffer) const override;
   bool isRequiredGenerateMipmap() const override;

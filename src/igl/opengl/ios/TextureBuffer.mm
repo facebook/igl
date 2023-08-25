@@ -59,7 +59,7 @@ TextureBuffer::TextureBuffer(IContext& context,
                              CVOpenGLESTextureCacheRef textureCache,
                              // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
                              size_t planeIndex,
-                             ulong_t usage) :
+                             TextureDesc::TextureUsage usage) :
   Super(context,
         convertToTextureFormat(context.deviceFeatures(),
                                CVPixelBufferGetPixelFormatType(pixelBuffer),

@@ -20,7 +20,7 @@ class TextureBuffer final : public opengl::TextureBuffer {
   TextureBuffer(IContext& context,
                 CVPixelBufferRef pixelBuffer,
                 CVOpenGLTextureCacheRef textureCache,
-                ulong_t usage = TextureDesc::TextureUsageBits::Sampled);
+                TextureDesc::TextureUsage usage = TextureDesc::TextureUsageBits::Sampled);
   ~TextureBuffer() override;
 
   // Disable those creation methods

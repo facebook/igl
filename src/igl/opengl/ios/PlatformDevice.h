@@ -61,14 +61,14 @@ class PlatformDevice final : public opengl::PlatformDevice {
       size_t width,
       size_t height,
       size_t planeIndex = 0,
-      ulong_t usage = TextureDesc::TextureUsageBits::Sampled,
+      TextureDesc::TextureUsage usage = TextureDesc::TextureUsageBits::Sampled,
       Result* outResult = nullptr);
   /// Uses the backing CVPixelBufferRef width and height.
   std::unique_ptr<ITexture> createTextureFromNativePixelBuffer(
       const CVImageBufferRef& sourceImage,
       const CVOpenGLESTextureCacheRef& textureCache,
       size_t planeIndex = 0,
-      ulong_t usage = TextureDesc::TextureUsageBits::Sampled,
+      TextureDesc::TextureUsage usage = TextureDesc::TextureUsageBits::Sampled,
       Result* outResult = nullptr);
 
   /// Creates a texture from a native PixelBuffer.
@@ -81,13 +81,13 @@ class PlatformDevice final : public opengl::PlatformDevice {
       size_t width,
       size_t height,
       size_t planeIndex = 0,
-      ulong_t usage = TextureDesc::TextureUsageBits::Sampled,
+      TextureDesc::TextureUsage usage = TextureDesc::TextureUsageBits::Sampled,
       Result* outResult = nullptr);
   /// Uses the backing CVPixelBufferRef width and height.
   std::unique_ptr<ITexture> createTextureFromNativePixelBuffer(
       const CVImageBufferRef& sourceImage,
       size_t planeIndex = 0,
-      ulong_t usage = TextureDesc::TextureUsageBits::Sampled,
+      TextureDesc::TextureUsage usage = TextureDesc::TextureUsageBits::Sampled,
       Result* outResult = nullptr);
 
   CVOpenGLESTextureCacheRef getTextureCache();

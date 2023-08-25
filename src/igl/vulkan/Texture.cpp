@@ -304,15 +304,15 @@ TextureType Texture::getType() const {
   return desc_.type;
 }
 
-ulong_t Texture::getUsage() const {
+TextureDesc::TextureUsage Texture::getUsage() const {
   return desc_.usage;
 }
 
-size_t Texture::getSamples() const {
+uint32_t Texture::getSamples() const {
   return desc_.numSamples;
 }
 
-size_t Texture::getNumMipLevels() const {
+uint32_t Texture::getNumMipLevels() const {
   return desc_.numMipLevels;
 }
 

@@ -40,11 +40,11 @@ class DummyTexture : public ITexture {
     IGL_ASSERT_NOT_REACHED();
     return TextureType::TwoDArray;
   }
-  ulong_t getUsage() const override {
+  TextureDesc::TextureUsage getUsage() const override {
     IGL_ASSERT_NOT_REACHED();
     return 0;
   }
-  size_t getSamples() const override {
+  uint32_t getSamples() const override {
     IGL_ASSERT_NOT_REACHED();
     return 1;
   }
@@ -54,7 +54,7 @@ class DummyTexture : public ITexture {
   void generateMipmap(ICommandBuffer& /* unused */) const override {
     IGL_ASSERT_NOT_REACHED();
   }
-  size_t getNumMipLevels() const override {
+  uint32_t getNumMipLevels() const override {
     IGL_ASSERT_NOT_REACHED();
     return 1;
   }

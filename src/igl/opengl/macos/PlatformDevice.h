@@ -58,7 +58,7 @@ class PlatformDevice : public opengl::PlatformDevice {
   std::unique_ptr<ITexture> createTextureFromNativePixelBuffer(
       const CVImageBufferRef& sourceImage,
       const CVOpenGLTextureCacheRef& textureCache,
-      ulong_t usage = TextureDesc::TextureUsageBits::Sampled,
+      TextureDesc::TextureUsage usage = TextureDesc::TextureUsageBits::Sampled,
       Result* outResult = nullptr);
 
  protected:

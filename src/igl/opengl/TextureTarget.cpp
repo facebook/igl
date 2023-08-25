@@ -22,7 +22,7 @@ TextureType TextureTarget::getType() const {
   return TextureType::TwoD;
 }
 
-ulong_t TextureTarget::getUsage() const {
+TextureDesc::TextureUsage TextureTarget::getUsage() const {
   return TextureDesc::TextureUsageBits::Attachment;
 }
 

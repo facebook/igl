@@ -20,9 +20,6 @@
 #include <type_traits>
 #include <utility>
 
-using ulong_t = unsigned long;
-using long_t = long;
-
 #define IGL_NULLABLE FOLLY_NULLABLE
 #define IGL_NONNULL FOLLY_NONNULL
 
@@ -32,22 +29,22 @@ namespace igl {
 using Deleter = void (*)(void* IGL_NULLABLE);
 
 /// Device Capabilities or Metal Features
-constexpr size_t IGL_TEXTURE_SAMPLERS_MAX = 16;
-constexpr size_t IGL_VERTEX_ATTRIBUTES_MAX = 24;
-constexpr size_t IGL_VERTEX_BUFFER_MAX = 128;
-constexpr size_t IGL_VERTEX_BINDINGS_MAX = 24;
-constexpr size_t IGL_UNIFORM_BLOCKS_BINDING_MAX = 16;
+constexpr uint32_t IGL_TEXTURE_SAMPLERS_MAX = 16;
+constexpr uint32_t IGL_VERTEX_ATTRIBUTES_MAX = 24;
+constexpr uint32_t IGL_VERTEX_BUFFER_MAX = 128;
+constexpr uint32_t IGL_VERTEX_BINDINGS_MAX = 24;
+constexpr uint32_t IGL_UNIFORM_BLOCKS_BINDING_MAX = 16;
 
 // See GL_MAX_COLOR_ATTACHMENTS in
 // https://www.khronos.org/registry/OpenGL-Refpages/es3.0/html/glGet.xhtml
 // and see maximum number of color render targets in
 // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
-constexpr size_t IGL_COLOR_ATTACHMENTS_MAX = 4;
+constexpr uint32_t IGL_COLOR_ATTACHMENTS_MAX = 4;
 
 // See https://www.khronos.org/registry/OpenGL-Refpages/es3.1/html/glDrawElementsIndirect.xhtml,
 // https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/VkDrawIndexedIndirectCommand.html,
 // or https://developer.apple.com/documentation/metal/mtldrawindexedprimitivesindirectarguments.
-constexpr size_t IGL_DRAW_ELEMENTS_INDIRECT_COMMAND_SIZE = 4 * 5;
+constexpr uint32_t IGL_DRAW_ELEMENTS_INDIRECT_COMMAND_SIZE = 4 * 5;
 
 enum class ResourceStorage {
   Invalid, /// Invalid sharing mode

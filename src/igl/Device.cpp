@@ -35,8 +35,8 @@ TextureDesc IDevice::sanitize(const TextureDesc& desc) const {
     sanitized.height = std::max(sanitized.height, static_cast<size_t>(1));
     sanitized.depth = std::max(sanitized.depth, static_cast<size_t>(1));
     sanitized.numLayers = std::max(sanitized.numLayers, static_cast<size_t>(1));
-    sanitized.numSamples = std::max(sanitized.numSamples, static_cast<size_t>(1));
-    sanitized.numMipLevels = std::max(sanitized.numMipLevels, static_cast<size_t>(1));
+    sanitized.numSamples = std::max(sanitized.numSamples, 1u);
+    sanitized.numMipLevels = std::max(sanitized.numMipLevels, 1u);
     IGL_LOG_ERROR(
         "width (%d), height (%d), depth (%d), numLayers (%d), numSamples (%d) and numMipLevels "
         "(%d) should be at least 1.\n",
