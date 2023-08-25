@@ -319,14 +319,19 @@ void VulkanContext::createInstance(const size_t numExtraExtensions, const char**
   auto instanceExtensions = extensions_.allEnabled(VulkanExtensions::ExtensionType::Instance);
 
   vkInstance_ = VK_NULL_HANDLE;
-  VK_ASSERT(ivkCreateInstance(VK_API_VERSION_1_1,
-                              config_.enableValidation,
-                              config_.enableGPUAssistedValidation,
-                              config_.enableSynchronizationValidation,
-                              instanceExtensions.size(),
-                              instanceExtensions.data(),
-                              &vkInstance_));
+  const VkResult creationErrorCode =
+      (ivkCreateInstance(VK_API_VERSION_1_1,
+                         static_cast<uint32_t>(config_.enableValidation),
+                         static_cast<uint32_t>(config_.enableGPUAssistedValidation),
+                         static_cast<uint32_t>(config_.enableSynchronizationValidation),
+                         instanceExtensions.size(),
+                         instanceExtensions.data(),
+                         &vkInstance_));
 
+  IGL_ASSERT_MSG(creationErrorCode != VK_ERROR_LAYER_NOT_PRESENT,
+                 "ivkCreateInstance() failed. Did you forget to install the Vulkan SDK?");
+
+  VK_ASSERT(creationErrorCode);
   volkLoadInstance(vkInstance_);
 
 #if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
