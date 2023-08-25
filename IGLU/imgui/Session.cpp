@@ -405,18 +405,29 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
 
 /* public API */
 
-Session::Session(igl::IDevice& device, igl::shell::InputDispatcher& inputDispatcher) :
-  _inputDispatcher(inputDispatcher) {
+Session::Session(igl::IDevice& device,
+                 igl::shell::InputDispatcher& inputDispatcher,
+                 bool needInitializeSession /* = true */) :
+  _inputDispatcher(inputDispatcher), _isInitialized(false) {
   _context = ImGui::CreateContext();
   makeCurrentContext();
 
   ImGuiStyle& style = ImGui::GetStyle();
   style.TouchExtraPadding = ImVec2(5, 5); // adjust to make touches more accurate
 
-  _inputListener = std::make_shared<InputListener>(_context);
-  _renderer = std::make_unique<Renderer>(device);
-  _inputDispatcher.addMouseListener(_inputListener);
-  _inputDispatcher.addTouchListener(_inputListener);
+  if (needInitializeSession) {
+    initialize(device);
+  }
+}
+
+void Session::initialize(igl::IDevice& device) {
+  if (!_isInitialized) {
+    _inputListener = std::make_shared<InputListener>(_context);
+    _renderer = std::make_unique<Renderer>(device);
+    _inputDispatcher.addMouseListener(_inputListener);
+    _inputDispatcher.addTouchListener(_inputListener);
+    _isInitialized = true;
+  }
 }
 
 Session::~Session() {

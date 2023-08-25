@@ -26,8 +26,12 @@ class Session {
   void beginFrame(const igl::FramebufferDesc& desc, float displayScale);
   void endFrame(igl::IDevice& device, igl::IRenderCommandEncoder& cmdEncoder);
 
-  Session(igl::IDevice& device, igl::shell::InputDispatcher& inputDispatcher);
+  Session(igl::IDevice& device,
+          igl::shell::InputDispatcher& inputDispatcher,
+          bool needInitializeSession = true);
   ~Session();
+
+  void initialize(igl::IDevice& device);
 
  private:
   class Renderer;
@@ -36,6 +40,7 @@ class Session {
   std::shared_ptr<InputListener> _inputListener;
   ImGuiContext* _context;
   std::unique_ptr<Renderer> _renderer;
+  bool _isInitialized;
 
   void makeCurrentContext() const;
 };
