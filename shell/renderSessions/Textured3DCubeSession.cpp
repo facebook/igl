@@ -128,25 +128,30 @@ static const char* getVulkanFragmentShaderSource() {
                       precision highp float;
                       layout(location = 0) in vec3 uvw;
                       layout(location = 0) out vec4 out_FragColor;
+
+                      layout(set = 0, binding = 0) uniform sampler3D in_texture;
+
                       void main() {
-                        out_FragColor = textureSample3D(0, 0, uvw);
+                        out_FragColor = texture(in_texture, uvw);
                       })";
 }
 
 static const char* getVulkanVertexShaderSource() {
   return R"(
                       precision highp float;
-                      layout(std430, buffer_reference) readonly buffer PerFrame {
+
+                      layout (set = 1, binding = 1, std140) uniform PerFrame {
                         mat4 mvpMatrix;
                         float scaleZ;
-                      };
+                      } perFrame;
+ 
                       layout(location = 0) in vec3 position;
                       layout(location = 1) in vec3 uvw_in;
                       layout(location = 0) out vec3 uvw;
 
                       void main() {
-                        gl_Position =  PerFrame(getBuffer(1)).mvpMatrix * vec4(position, 1.0);
-                        uvw = vec3(uvw_in.x, uvw_in.y, (uvw_in.z-0.5)*PerFrame(getBuffer(1)).scaleZ+0.5);
+                        gl_Position =  perFrame.mvpMatrix * vec4(position, 1.0);
+                        uvw = vec3(uvw_in.x, uvw_in.y, (uvw_in.z-0.5)*perFrame.scaleZ+0.5);
                       })";
 }
 

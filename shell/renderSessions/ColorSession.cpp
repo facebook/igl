@@ -109,7 +109,7 @@ static std::string getVulkanVertexShaderSource() {
                 layout(location = 0) out vec2 uv;
                 layout(location = 1) out vec3 color;
 
-                layout (set = 2, binding = 0, std140) uniform UniformsPerObject {
+                layout (set = 1, binding = 0, std140) uniform UniformsPerObject {
                   vec3 color;
                 } perObject;
 
@@ -127,8 +127,10 @@ static std::string getVulkanFragmentShaderSource() {
                 layout(location = 1) in vec3 color;
                 layout(location = 0) out vec4 out_FragColor;
 
+                layout(set = 0, binding = 0) uniform sampler2D in_texture;
+
                 void main() {
-                  out_FragColor = vec4(color, 1.0) * textureSample2D(0, 1, uv);
+                  out_FragColor = vec4(color, 1.0) * texture(in_texture, uv);
                 }
                 )";
 }

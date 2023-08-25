@@ -211,8 +211,11 @@ static std::string getVulkanFragmentShaderSource(int programIndex) {
                 layout(location = 0) in vec2 uv;
                 layout(location = 0) out vec4 colorGreen;
                 layout(location = 1) out vec4 colorRed;
+
+                layout(set = 0, binding = 0) uniform sampler2D in_texture;
+
                 void main() {
-                  vec4 c = textureSample2D(0, 1, uv);
+                  vec4 c = texture(in_texture, uv);
                   colorGreen = vec4(0., c.g, 0., 1.0);
                   colorRed = vec4(c.r, 0., 0., 1.0);
                 })";
@@ -220,9 +223,13 @@ static std::string getVulkanFragmentShaderSource(int programIndex) {
     return getPrecisionProlog(ShaderPrecision::High) + R"(
                 layout(location = 0) in vec2 uv;
                 layout(location = 0) out vec4 out_FragColor;
+
+                layout(set = 0, binding = 0) uniform sampler2D in_texture_green;
+                layout(set = 0, binding = 1) uniform sampler2D in_texture_red;
+
                 void main() {
                   vec2 uv1 = vec2(uv.x, 1.0-uv.y);
-                  out_FragColor = textureSample2D(0, 0, uv1) + textureSample2D(1, 0, uv1);
+                  out_FragColor = texture(in_texture_green, uv1) + texture(in_texture_red, uv1);
                 })";
   }
 }

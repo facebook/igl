@@ -112,14 +112,14 @@ static std::string getVulkanVertexShaderSource() {
                   vec3 color;
                 };
 
-                layout(std430, buffer_reference) readonly buffer PerObject {
+                layout (set = 1, binding = 0, std140) uniform PerObject {
                   UniformsPerObject perObject;
-                };
+                } object;
 
                 void main() {
                   gl_Position = vec4(position, 1.0);
                   uv = uv_in;
-                  color = PerObject(getBuffer(0)).perObject.color;
+                  color = object.perObject.color;
                 }
                 )";
 }
@@ -130,8 +130,10 @@ static std::string getVulkanFragmentShaderSource() {
                 layout(location = 1) in vec3 color;
                 layout(location = 0) out vec4 out_FragColor;
 
+                layout(set = 0, binding = 0) uniform sampler2D in_texture;
+
                 void main() {
-                  out_FragColor = vec4(color, 1.0) * textureSample2D(0, 1, uv);
+                  out_FragColor = vec4(color, 1.0) * texture(in_texture, uv);
                 }
                 )";
 }
