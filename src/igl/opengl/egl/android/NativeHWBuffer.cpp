@@ -355,7 +355,7 @@ bool NativeHWTextureBuffer::supportsTexStorage() const {
   return true;
 }
 
-size_t NativeHWTextureBuffer::getNumMipLevels() const {
+uint32_t NativeHWTextureBuffer::getNumMipLevels() const {
   return 1;
 }
 

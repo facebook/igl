@@ -47,7 +47,7 @@ class NativeHWTextureBuffer : public TextureBufferBase {
   uint64_t getTextureId() const override;
 
   void generateMipmap(ICommandQueue& cmdQueue) const override;
-  size_t getNumMipLevels() const override;
+  uint32_t getNumMipLevels() const override;
 
   static bool isValidFormat(TextureFormat format);
 
