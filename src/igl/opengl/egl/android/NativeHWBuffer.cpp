@@ -276,6 +276,27 @@ Result NativeHWTextureBuffer::upload2D(GLenum target,
 Result NativeHWTextureBuffer::upload(const TextureRangeDesc& range,
                                      const void* data,
                                      size_t bytesPerRow) const {
+  // not optimal pass
+
+  std::byte* dst = nullptr;
+  NativeHWTextureBuffer::RangeDesc outRange;
+  auto result = lockHWBuffer(reinterpret_cast<std::byte**>(&dst), outRange);
+  auto internalBpr = getProperties().getBytesPerRow(outRange.stride);
+
+  if (result.isOk() && dst != nullptr && bytesPerRow <= internalBpr &&
+      range.width == outRange.width && range.height == outRange.height) {
+    const std::byte* src = (const std::byte*)data;
+    uint32_t srcOffset = 0;
+    uint32_t dstOffset = 0;
+    for (int i = 0; i < outRange.height; ++i) {
+      memcpy((void*)(dst + dstOffset), (void*)(src + srcOffset), bytesPerRow);
+      dstOffset += internalBpr;
+      srcOffset += bytesPerRow;
+    }
+
+    return Result{};
+  }
+
   IGL_ASSERT_MSG(0, "Cannot upload buffer for HW texture for Native Hardware Buffer Textuees.");
   return Result{Result::Code::Unsupported, "NativeHWTextureBuffer upload not supported"};
 }
@@ -341,6 +362,10 @@ size_t NativeHWTextureBuffer::getNumMipLevels() const {
 void NativeHWTextureBuffer::generateMipmap(ICommandQueue& /* unused */) const {
   // native hardwaere texture does not support mip generation
   IGL_ASSERT_MSG(0, "Can only generate mipmap for non Native Hardware Buffer Textuees.");
+}
+
+bool NativeHWTextureBuffer::isValidFormat(TextureFormat format) {
+  return toNativeHWFormat(format) > 0;
 }
 
 } // namespace igl::opengl::egl::android
