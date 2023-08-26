@@ -12,7 +12,6 @@
 #include <memory>
 #include <vector>
 
-#include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
@@ -40,7 +39,7 @@ class VulkanContext final : public IContext {
 
   ICommandBuffer& acquireCommandBuffer() override;
 
-  void submit(const lvk::ICommandBuffer& commandBuffer, TextureHandle present) override;
+  void submit(lvk::ICommandBuffer& commandBuffer, TextureHandle present) override;
 
   Holder<BufferHandle> createBuffer(const BufferDesc& desc, Result* outResult) override;
   Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc, Result* outResult) override;
@@ -198,7 +197,7 @@ class VulkanContext final : public IContext {
   lvk::ContextConfig config_;
 
   lvk::Pool<lvk::ShaderModule, VkShaderModule> shaderModulesPool_;
-  lvk::Pool<lvk::RenderPipeline, lvk::vulkan::RenderPipelineState> renderPipelinesPool_;
+  lvk::Pool<lvk::RenderPipeline, lvk::RenderPipelineState> renderPipelinesPool_;
   lvk::Pool<lvk::ComputePipeline, VkPipeline> computePipelinesPool_;
   lvk::Pool<lvk::Sampler, VkSampler> samplersPool_;
   lvk::Pool<lvk::Buffer, lvk::VulkanBuffer> buffersPool_;

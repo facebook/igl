@@ -9,6 +9,8 @@
 
 #include <lvk/vulkan/VulkanUtils.h>
 
+#include <unordered_map>
+
 namespace lvk {
 
 namespace vulkan {
@@ -85,10 +87,10 @@ class VulkanImage final {
   VulkanImage(const VulkanImage&) = delete;
   VulkanImage& operator=(const VulkanImage&) = delete;
 
-// clang-format off
+  // clang-format off
   bool isSampledImage() const { return (vkUsageFlags_ & VK_IMAGE_USAGE_SAMPLED_BIT) > 0; }
   bool isStorageImage() const { return (vkUsageFlags_ & VK_IMAGE_USAGE_STORAGE_BIT) > 0; }
-// clang-format on
+  // clang-format on
 
   /*
    * Setting `numLevels` to a non-zero value will override `mipLevels_` value from the original Vulkan image, and can be used to create
@@ -166,6 +168,7 @@ struct VulkanTexture final {
 
 class VulkanSwapchain final {
   enum { LVK_MAX_SWAPCHAIN_IMAGES = 16 };
+
  public:
   VulkanSwapchain(vulkan::VulkanContext& ctx, uint32_t width, uint32_t height);
   ~VulkanSwapchain();
@@ -194,7 +197,8 @@ class VulkanSwapchain final {
 
 class VulkanImmediateCommands final {
  public:
-  // the maximum number of command buffers which can similtaneously exist in the system; when we run out of buffers, we stall and wait until an existing buffer becomes available
+  // the maximum number of command buffers which can similtaneously exist in the system; when we run out of buffers, we stall and wait until
+  // an existing buffer becomes available
   static constexpr uint32_t kMaxCommandBuffers = 64;
 
   VulkanImmediateCommands(VkDevice device, uint32_t queueFamilyIndex, const char* debugName);
@@ -253,6 +257,223 @@ class VulkanImmediateCommands final {
   VkSemaphore waitSemaphore_ = VK_NULL_HANDLE;
   uint32_t numAvailableCommandBuffers_ = kMaxCommandBuffers;
   uint32_t submitCounter_ = 1;
+};
+
+class alignas(sizeof(uint32_t)) RenderPipelineDynamicState {
+  uint32_t topology_ : 4;
+  uint32_t depthCompareOp_ : 3;
+
+ public:
+  uint32_t depthBiasEnable_ : 1;
+  uint32_t depthWriteEnable_ : 1;
+
+  uint32_t padding_ : 23;
+
+  RenderPipelineDynamicState() {
+    topology_ = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    depthCompareOp_ = VK_COMPARE_OP_ALWAYS;
+    depthBiasEnable_ = VK_FALSE;
+    depthWriteEnable_ = VK_FALSE;
+    padding_ = 0;
+  }
+
+  VkPrimitiveTopology getTopology() const {
+    return static_cast<VkPrimitiveTopology>(topology_);
+  }
+
+  void setTopology(VkPrimitiveTopology topology) {
+    LVK_ASSERT_MSG((topology & 0xF) == topology, "Invalid VkPrimitiveTopology.");
+    topology_ = topology & 0xF;
+  }
+
+  VkCompareOp getDepthCompareOp() const {
+    return static_cast<VkCompareOp>(depthCompareOp_);
+  }
+
+  void setDepthCompareOp(VkCompareOp depthCompareOp) {
+    LVK_ASSERT_MSG((depthCompareOp & 0x7) == depthCompareOp, "Invalid VkCompareOp for depth.");
+    depthCompareOp_ = depthCompareOp & 0x7;
+  }
+
+  // comparison operator and hash function for std::unordered_map<>
+  bool operator==(const RenderPipelineDynamicState& other) const {
+    return *(uint32_t*)this == *(uint32_t*)&other;
+  }
+
+  struct HashFunction {
+    uint64_t operator()(const RenderPipelineDynamicState& s) const {
+      return *(const uint32_t*)&s;
+    }
+  };
+};
+
+static_assert(sizeof(RenderPipelineDynamicState) == sizeof(uint32_t));
+static_assert(alignof(RenderPipelineDynamicState) == sizeof(uint32_t));
+
+class RenderPipelineState final {
+ public:
+  RenderPipelineState() = default;
+  RenderPipelineState(lvk::vulkan::VulkanContext* ctx, const RenderPipelineDesc& desc);
+  ~RenderPipelineState();
+
+  RenderPipelineState(const RenderPipelineState&) = delete;
+  RenderPipelineState& operator=(const RenderPipelineState&) = delete;
+
+  RenderPipelineState(RenderPipelineState&& other);
+  RenderPipelineState& operator=(RenderPipelineState&& other);
+
+  VkPipeline getVkPipeline(const RenderPipelineDynamicState& dynamicState) const;
+
+  const RenderPipelineDesc& getRenderPipelineDesc() const {
+    return desc_;
+  }
+
+ private:
+  lvk::vulkan::VulkanContext* ctx_ = nullptr;
+
+  RenderPipelineDesc desc_;
+
+  uint32_t numBindings_ = 0;
+  uint32_t numAttributes_ = 0;
+  VkVertexInputBindingDescription vkBindings_[VertexInput::LVK_VERTEX_BUFFER_MAX] = {};
+  VkVertexInputAttributeDescription vkAttributes_[VertexInput::LVK_VERTEX_ATTRIBUTES_MAX] = {};
+
+  mutable std::unordered_map<RenderPipelineDynamicState, VkPipeline, RenderPipelineDynamicState::HashFunction> pipelines_;
+};
+
+class VulkanPipelineBuilder final {
+ public:
+  VulkanPipelineBuilder();
+  ~VulkanPipelineBuilder() = default;
+
+  VulkanPipelineBuilder& depthBiasEnable(bool enable);
+  VulkanPipelineBuilder& depthWriteEnable(bool enable);
+  VulkanPipelineBuilder& depthCompareOp(VkCompareOp compareOp);
+  VulkanPipelineBuilder& dynamicState(VkDynamicState state);
+  VulkanPipelineBuilder& primitiveTopology(VkPrimitiveTopology topology);
+  VulkanPipelineBuilder& rasterizationSamples(VkSampleCountFlagBits samples);
+  VulkanPipelineBuilder& shaderStage(VkPipelineShaderStageCreateInfo stage);
+  VulkanPipelineBuilder& stencilStateOps(VkStencilFaceFlags faceMask,
+                                         VkStencilOp failOp,
+                                         VkStencilOp passOp,
+                                         VkStencilOp depthFailOp,
+                                         VkCompareOp compareOp);
+  VulkanPipelineBuilder& stencilMasks(VkStencilFaceFlags faceMask, uint32_t compareMask, uint32_t writeMask, uint32_t reference);
+  VulkanPipelineBuilder& cullMode(VkCullModeFlags mode);
+  VulkanPipelineBuilder& frontFace(VkFrontFace mode);
+  VulkanPipelineBuilder& polygonMode(VkPolygonMode mode);
+  VulkanPipelineBuilder& vertexInputState(const VkPipelineVertexInputStateCreateInfo& state);
+  VulkanPipelineBuilder& colorAttachments(const VkPipelineColorBlendAttachmentState* states,
+                                          const VkFormat* formats,
+                                          uint32_t numColorAttachments);
+  VulkanPipelineBuilder& depthAttachmentFormat(VkFormat format);
+  VulkanPipelineBuilder& stencilAttachmentFormat(VkFormat format);
+
+  VkResult build(VkDevice device,
+                 VkPipelineCache pipelineCache,
+                 VkPipelineLayout pipelineLayout,
+                 VkPipeline* outPipeline,
+                 const char* debugName = nullptr) noexcept;
+
+  static uint32_t getNumPipelinesCreated() {
+    return numPipelinesCreated_;
+  }
+
+ private:
+  enum { LVK_MAX_DYNAMIC_STATES = 128 };
+  uint32_t numDynamicStates_ = 0;
+  VkDynamicState dynamicStates_[LVK_MAX_DYNAMIC_STATES] = {};
+
+  uint32_t numShaderStages_ = 0;
+  VkPipelineShaderStageCreateInfo shaderStages_[Stage_Frag + 1] = {};
+
+  VkPipelineVertexInputStateCreateInfo vertexInputState_;
+  VkPipelineInputAssemblyStateCreateInfo inputAssembly_;
+  VkPipelineRasterizationStateCreateInfo rasterizationState_;
+  VkPipelineMultisampleStateCreateInfo multisampleState_;
+  VkPipelineDepthStencilStateCreateInfo depthStencilState_;
+
+  uint32_t numColorAttachments_ = 0;
+  VkPipelineColorBlendAttachmentState colorBlendAttachmentStates_[LVK_MAX_COLOR_ATTACHMENTS] = {};
+  VkFormat colorAttachmentFormats_[LVK_MAX_COLOR_ATTACHMENTS] = {};
+
+  VkFormat depthAttachmentFormat_ = VK_FORMAT_UNDEFINED;
+  VkFormat stencilAttachmentFormat_ = VK_FORMAT_UNDEFINED;
+
+  static uint32_t numPipelinesCreated_;
+};
+
+class CommandBuffer final : public ICommandBuffer {
+ public:
+  CommandBuffer() = default;
+  explicit CommandBuffer(vulkan::VulkanContext* ctx);
+  ~CommandBuffer() override;
+
+  CommandBuffer& operator=(CommandBuffer&& other) = default;
+
+  void transitionToShaderReadOnly(TextureHandle surface) const override;
+
+  void cmdBindComputePipeline(lvk::ComputePipelineHandle handle) override;
+  void cmdDispatchThreadGroups(const Dimensions& threadgroupCount, const Dependencies& deps) override;
+
+  void cmdPushDebugGroupLabel(const char* label, uint32_t colorRGBA) const override;
+  void cmdInsertDebugEventLabel(const char* label, uint32_t colorRGBA) const override;
+  void cmdPopDebugGroupLabel() const override;
+
+  void cmdBeginRendering(const lvk::RenderPass& renderPass, const lvk::Framebuffer& desc) override;
+  void cmdEndRendering() override;
+
+  void cmdBindViewport(const Viewport& viewport) override;
+  void cmdBindScissorRect(const ScissorRect& rect) override;
+
+  void cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) override;
+  void cmdBindDepthState(const DepthState& state) override;
+
+  void cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, size_t bufferOffset) override;
+  void cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, size_t indexBufferOffset) override;
+  void cmdPushConstants(const void* data, size_t size, size_t offset) override;
+
+  void cmdDraw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) override;
+  void cmdDrawIndexed(PrimitiveType primitiveType,
+                      uint32_t indexCount,
+                      uint32_t instanceCount,
+                      uint32_t firstIndex,
+                      int32_t vertexOffset,
+                      uint32_t baseInstance) override;
+  void cmdDrawIndirect(PrimitiveType primitiveType,
+                       BufferHandle indirectBuffer,
+                       size_t indirectBufferOffset,
+                       uint32_t drawCount,
+                       uint32_t stride = 0) override;
+  void cmdDrawIndexedIndirect(PrimitiveType primitiveType,
+                              BufferHandle indirectBuffer,
+                              size_t indirectBufferOffset,
+                              uint32_t drawCount,
+                              uint32_t stride = 0) override;
+
+  void cmdSetBlendColor(const float color[4]) override;
+  void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) override;
+
+ private:
+  void useComputeTexture(TextureHandle texture);
+  void bindGraphicsPipeline();
+
+ private:
+  friend class vulkan::VulkanContext;
+
+  vulkan::VulkanContext* ctx_ = nullptr;
+  const VulkanImmediateCommands::CommandBufferWrapper* wrapper_ = nullptr;
+
+  lvk::Framebuffer framebuffer_ = {};
+
+  VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
+
+  VkPipeline lastPipelineBound_ = VK_NULL_HANDLE;
+
+  bool isRendering_ = false;
+
+  lvk::RenderPipelineHandle currentPipeline_ = {};
+  lvk::RenderPipelineDynamicState dynamicState_ = {};
 };
 
 } // namespace lvk

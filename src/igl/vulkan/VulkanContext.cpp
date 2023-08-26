@@ -12,7 +12,6 @@
 #define VMA_IMPLEMENTATION
 #define VOLK_IMPLEMENTATION
 
-#include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
@@ -223,7 +222,7 @@ struct VulkanContextImpl final {
   // Vulkan Memory Allocator
   VmaAllocator vma_ = VK_NULL_HANDLE;
 
-  lvk::vulkan::CommandBuffer currentCommandBuffer_;
+  lvk::CommandBuffer currentCommandBuffer_;
 };
 
 VulkanContext::VulkanContext(const lvk::ContextConfig& config,
@@ -322,10 +321,10 @@ ICommandBuffer& VulkanContext::acquireCommandBuffer() {
   return pimpl_->currentCommandBuffer_;
 }
 
-void VulkanContext::submit(const lvk::ICommandBuffer& commandBuffer, TextureHandle present) {
+void VulkanContext::submit(lvk::ICommandBuffer& commandBuffer, TextureHandle present) {
   LVK_PROFILER_FUNCTION();
 
-  vulkan::CommandBuffer* vkCmdBuffer = const_cast<vulkan::CommandBuffer*>(static_cast<const vulkan::CommandBuffer*>(&commandBuffer));
+  CommandBuffer* vkCmdBuffer = static_cast<CommandBuffer*>(&commandBuffer);
 
   LVK_ASSERT(vkCmdBuffer);
   LVK_ASSERT(vkCmdBuffer->ctx_);
