@@ -31,10 +31,6 @@ Result Texture::create(const TextureDesc& desc) {
                                 ? ctx.getClosestDepthStencilFormat(desc_.format)
                                 : textureFormatToVkFormat(desc_.format);
 
-  if (!IGL_VERIFY(desc_.options == 0)) {
-    IGL_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented);
-  }
   const igl::TextureType type = desc_.type;
   if (!IGL_VERIFY(type == TextureType::TwoD || type == TextureType::TwoDArray ||
                   type == TextureType::Cube || type == TextureType::ThreeD)) {

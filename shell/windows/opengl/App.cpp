@@ -88,7 +88,6 @@ igl::SurfaceTextures createSurfaceTextures(igl::IDevice& device) {
         1,
         1,
         TextureDesc::TextureUsageBits::Attachment,
-        0,
         1,
         TextureType::TwoD,
         shellParams_.defaultColorFramebufferFormat,

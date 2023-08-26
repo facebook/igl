@@ -119,7 +119,6 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
     desc.depth = 1;
     desc.numSamples = 1;
     desc.usage = TextureDesc::TextureUsageBits::Attachment;
-    desc.options = 0;
 
     auto texture = std::make_shared<TextureTarget>(getContext(), desc.format);
     if (texture != nullptr) {
@@ -170,7 +169,6 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(CAEAGLLay
       1,
       1,
       TextureDesc::TextureUsageBits::Attachment,
-      0,
       1,
       TextureType::TwoD,
       TextureFormat::Z_UNorm16,

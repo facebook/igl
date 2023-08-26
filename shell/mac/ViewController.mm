@@ -412,7 +412,6 @@ using namespace igl;
                       1,
                       1,
                       TextureDesc::TextureUsageBits::Attachment,
-                      0,
                       1,
                       TextureType::TwoD,
                       shellParams_.defaultColorFramebufferFormat,

@@ -302,7 +302,7 @@ uint32_t TextureDesc::calcNumMipLevels(size_t width, size_t height) {
 bool TextureDesc::operator==(const TextureDesc& rhs) const {
   return (type == rhs.type) && (format == rhs.format) && (width == rhs.width) &&
          (height == rhs.height) && (depth == rhs.depth) && (numLayers == rhs.numLayers) &&
-         (numSamples == rhs.numSamples) && (usage == rhs.usage) && (options == rhs.options) &&
+         (numSamples == rhs.numSamples) && (usage == rhs.usage) &&
          (numMipLevels == rhs.numMipLevels) && (storage == rhs.storage) &&
          (debugName == rhs.debugName);
 }

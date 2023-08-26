@@ -317,7 +317,6 @@ struct TextureDesc {
   size_t numLayers = 1;
   uint32_t numSamples = 1;
   TextureUsage usage = 0;
-  uint64_t options = 0;
   uint32_t numMipLevels = 1;
   TextureType type = TextureType::Invalid;
   TextureFormat format = TextureFormat::Invalid;
@@ -349,7 +348,6 @@ struct TextureDesc {
                        1,
                        1,
                        usage,
-                       0,
                        1,
                        TextureType::TwoD,
                        format,
@@ -381,7 +379,6 @@ struct TextureDesc {
         numLayers,
         1,
         usage,
-        0,
         1,
         TextureType::TwoDArray,
         format,
@@ -411,7 +408,6 @@ struct TextureDesc {
                        1,
                        1,
                        usage,
-                       0,
                        1,
                        TextureType::Cube,
                        format,
@@ -442,7 +438,6 @@ struct TextureDesc {
                        1,
                        1,
                        usage,
-                       0,
                        1,
                        TextureType::ThreeD,
                        format,
@@ -470,7 +465,6 @@ struct TextureDesc {
                        1,
                        1,
                        usage,
-                       0,
                        1,
                        TextureType::ExternalImage,
                        format,
