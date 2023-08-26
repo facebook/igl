@@ -13,8 +13,8 @@ file(GLOB HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DI
 
 add_library(IGLVulkan ${SRC_FILES} ${HEADER_FILES})
 
-igl_set_cxxstd(IGLVulkan 20)
-igl_set_folder(IGLVulkan "IGL")
+lvk_set_cxxstd(IGLVulkan 20)
+lvk_set_folder(IGLVulkan "IGL")
 
 target_link_libraries(IGLVulkan PRIVATE LVKLibrary)
 target_link_libraries(IGLVulkan PRIVATE LVKVulkan)

@@ -22,11 +22,11 @@ if(DEFINED ENV{VULKAN_SDK})
   endif()
 endif()
 
-function(igl_set_folder target folder_name)
+function(lvk_set_folder target folder_name)
   set_property(TARGET ${target} PROPERTY FOLDER ${folder_name})
 endfunction()
 
-function(igl_set_cxxstd target cpp_version)
+function(lvk_set_cxxstd target cpp_version)
   set_property(TARGET ${target} PROPERTY CXX_STANDARD ${cpp_version})
   set_property(TARGET ${target} PROPERTY CXX_STANDARD_REQUIRED ON)
 endfunction()
@@ -47,7 +47,7 @@ message(STATUS "Generator : " ${CMAKE_GENERATOR})
 message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 
 set(LVK_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(IGL_DEPS_CACHE_FILE "${LVK_ROOT_DIR}/third-party/.bootstrap-deps.json")
+set(LVK_DEPS_CACHE_FILE "${LVK_ROOT_DIR}/third-party/.bootstrap-deps.json")
 find_package(Python3 COMPONENTS Interpreter)
 
 message(STATUS "LVK_ROOT_DIR = " ${LVK_ROOT_DIR})
@@ -56,22 +56,22 @@ if(LVK_DEPLOY_DEPS)
   # deploy dependencies during configuration
   execute_process(COMMAND ${Python3_EXECUTABLE} deploy_deps.py WORKING_DIRECTORY ${LVK_ROOT_DIR} COMMAND_ERROR_IS_FATAL ANY)
 
-  if(NOT EXISTS ${IGL_DEPS_CACHE_FILE})
+  if(NOT EXISTS ${LVK_DEPS_CACHE_FILE})
     message(FATAL_ERROR "Cannot deploy dependencies.")
   endif()
 
   # regenerate dependencies when .bootstrap-deps.json is older than bootstrap-deps.json
-  add_custom_command(COMMAND ${Python3_EXECUTABLE} deploy_deps.py OUTPUT ${IGL_DEPS_CACHE_FILE}
+  add_custom_command(COMMAND ${Python3_EXECUTABLE} deploy_deps.py OUTPUT ${LVK_DEPS_CACHE_FILE}
                      DEPENDS "${LVK_ROOT_DIR}/third-party/bootstrap-deps.json" WORKING_DIRECTORY ${LVK_ROOT_DIR})
-  add_custom_target(IGLDependencies DEPENDS ${IGL_DEPS_CACHE_FILE})
+  add_custom_target(LVKDependencies DEPENDS ${LVK_DEPS_CACHE_FILE})
 
-  igl_set_folder(IGLDependencies "IGL")
+  lvk_set_folder(LVKDependencies "LVK")
 endif()
 
 if(LVK_WITH_TRACY)
   add_definitions("-DTRACY_ENABLE=1")
   add_subdirectory(third-party/deps/src/tracy)
-  igl_set_folder(TracyClient "third-party")
+  lvk_set_folder(TracyClient "third-party")
 endif()
 
 # temporary
@@ -91,20 +91,20 @@ if(LVK_WITH_TRACY)
 endif()
 
 if(LVK_DEPLOY_DEPS)
-  add_dependencies(LVKLibrary IGLDependencies)
+  add_dependencies(LVKLibrary LVKDependencies)
 endif()
 
-add_library(IGLstb third-party/deps/patches/stb_impl/stb_image.c third-party/deps/patches/stb_impl/stb_image_resize.c
+add_library(LVKstb third-party/deps/patches/stb_impl/stb_image.c third-party/deps/patches/stb_impl/stb_image_resize.c
                    third-party/deps/patches/stb_impl/stb_image_write.c)
-target_include_directories(IGLstb PUBLIC "third-party/deps/src/stb")
-igl_set_folder(IGLstb "IGL")
+target_include_directories(LVKstb PUBLIC "third-party/deps/src/stb")
+lvk_set_folder(LVKstb "LVK")
 
 # cmake-format: off
 set(MINILOG_BUILD_EXAMPLE OFF CACHE BOOL "")
 set(MINILOG_RAW_OUTPUT     ON CACHE BOOL "")
 # cmake-format: on
 add_subdirectory(third-party/deps/src/minilog)
-igl_set_folder(minilog "third-party")
+lvk_set_folder(minilog "third-party")
 
 target_link_libraries(LVKLibrary PUBLIC minilog)
 target_include_directories(LVKLibrary PUBLIC "third-party/deps/src")
@@ -126,22 +126,22 @@ if(LVK_WITH_SAMPLES)
     set(GLFW_VULKAN_STATIC  OFF CACHE BOOL "")
     # cmake-format: on
     add_subdirectory(third-party/deps/src/glfw)
-    igl_set_folder(update_mappings "third-party/GLFW3")
+    lvk_set_folder(update_mappings "third-party/GLFW3")
   endif()
   if(UNIX)
     find_package(OpenGL REQUIRED)
   endif()
   add_subdirectory(third-party/deps/src/bc7enc)
-  igl_set_cxxstd(bc7enc 17)
+  lvk_set_cxxstd(bc7enc 17)
   add_subdirectory(third-party/deps/src/meshoptimizer)
   add_subdirectory(third-party/deps/src/tinyobjloader)
   add_subdirectory(samples)
   # cmake-format: off
-  igl_set_folder(bc7enc        "third-party")
-  igl_set_folder(meshoptimizer "third-party")
-  igl_set_folder(tinyobjloader "third-party/tinyobjloader")
-  igl_set_folder(uninstall     "third-party/tinyobjloader")
-  igl_set_folder(glfw          "third-party/GLFW3")
+  lvk_set_folder(bc7enc        "third-party")
+  lvk_set_folder(meshoptimizer "third-party")
+  lvk_set_folder(tinyobjloader "third-party/tinyobjloader")
+  lvk_set_folder(uninstall     "third-party/tinyobjloader")
+  lvk_set_folder(glfw          "third-party/GLFW3")
   # cmake-format: on
 endif()
 
