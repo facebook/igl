@@ -344,35 +344,31 @@ std::pair<Result, bool> ITexture::validateRange(const igl::TextureRangeDesc& ran
                                  "numMipLevels must be at least 1."},
                           false);
   }
-  if (range.mipLevel > getNumMipLevels()) {
-    return std::make_pair(
-        Result{Result::Code::ArgumentOutOfRange, "range mip level exceeds texture mip levels"},
-        false);
-  }
 
-  static constexpr size_t one = 1;
   const auto dimensions = getDimensions();
-  const auto texWidth = std::max(dimensions.width >> range.mipLevel, one);
-  const auto texHeight = std::max(dimensions.height >> range.mipLevel, one);
-  const auto texDepth = std::max(dimensions.depth >> range.mipLevel, one);
-  const auto texLayers = getNumLayers();
+  const size_t texMipLevels = getNumMipLevels();
+  const size_t levelWidth = std::max(dimensions.width >> range.mipLevel, static_cast<size_t>(1));
+  const size_t levelHeight = std::max(dimensions.height >> range.mipLevel, static_cast<size_t>(1));
+  const size_t levelDepth = std::max(dimensions.depth >> range.mipLevel, static_cast<size_t>(1));
+  const size_t texLayers = getNumLayers();
 
-  if (range.width > texWidth || range.height > texHeight || range.depth > texDepth ||
-      range.numLayers > texLayers) {
+  if (range.width > levelWidth || range.height > levelHeight || range.depth > levelDepth ||
+      range.numLayers > texLayers || range.numMipLevels > texMipLevels) {
     return std::make_pair(
         Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"},
         false);
   }
-  if (range.x > texWidth - range.width || range.y > texHeight - range.height ||
-      range.z > texDepth - range.depth || range.layer > texLayers - range.numLayers) {
+  if (range.x > levelWidth - range.width || range.y > levelHeight - range.height ||
+      range.z > levelDepth - range.depth || range.layer > texLayers - range.numLayers ||
+      range.mipLevel > texMipLevels - range.numMipLevels) {
     return std::make_pair(
         Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"},
         false);
   }
 
   const bool fullRange = (range.x == 0 && range.y == 0 && range.z == 0 && range.layer == 0 &&
-                          range.width == texWidth && range.height == texHeight &&
-                          range.depth == texDepth && range.numLayers == texLayers);
+                          range.width == levelWidth && range.height == levelHeight &&
+                          range.depth == levelDepth && range.numLayers == texLayers);
 
   return std::make_pair(Result{}, fullRange);
 }

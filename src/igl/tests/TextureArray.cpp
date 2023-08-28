@@ -451,8 +451,7 @@ TEST_F(TextureArrayTest, ValidateRange2DArray) {
   EXPECT_FALSE(fullRange);
 
   std::tie(ret, fullRange) = tex->validateRange(TextureRangeDesc::new2DArray(0, 0, 4, 4, 0, 2, 1));
-  EXPECT_TRUE(ret.isOk());
-  EXPECT_TRUE(fullRange);
+  EXPECT_FALSE(ret.isOk());
 
   std::tie(ret, fullRange) = tex->validateRange(TextureRangeDesc::new2DArray(0, 0, 12, 12, 0, 3));
   EXPECT_FALSE(ret.isOk());

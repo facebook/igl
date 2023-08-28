@@ -937,8 +937,7 @@ TEST_F(TextureTest, ValidateRange2D) {
   EXPECT_FALSE(fullRange);
 
   std::tie(ret, fullRange) = tex->validateRange(TextureRangeDesc::new2D(0, 0, 4, 4, 1));
-  EXPECT_TRUE(ret.isOk());
-  EXPECT_TRUE(fullRange);
+  EXPECT_FALSE(ret.isOk());
 
   std::tie(ret, fullRange) = tex->validateRange(TextureRangeDesc::new2D(0, 0, 12, 12));
   EXPECT_FALSE(ret.isOk());
@@ -968,8 +967,7 @@ TEST_F(TextureTest, ValidateRangeCube) {
   EXPECT_FALSE(fullRange);
 
   std::tie(ret, fullRange) = tex->validateRange(TextureRangeDesc::new2D(0, 0, 4, 4, 1));
-  EXPECT_TRUE(ret.isOk());
-  EXPECT_TRUE(fullRange);
+  EXPECT_FALSE(ret.isOk());
 
   std::tie(ret, fullRange) = tex->validateRange(TextureRangeDesc::new2D(0, 0, 12, 12));
   EXPECT_FALSE(ret.isOk());
@@ -1003,8 +1001,7 @@ TEST_F(TextureTest, ValidateRange3D) {
   EXPECT_FALSE(fullRange);
 
   std::tie(ret, fullRange) = tex->validateRange(TextureRangeDesc::new3D(0, 0, 0, 4, 4, 4, 1));
-  EXPECT_TRUE(ret.isOk());
-  EXPECT_TRUE(fullRange);
+  EXPECT_FALSE(ret.isOk());
 
   std::tie(ret, fullRange) = tex->validateRange(TextureRangeDesc::new3D(0, 0, 0, 12, 12, 12));
   EXPECT_FALSE(ret.isOk());
