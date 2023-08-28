@@ -321,7 +321,7 @@ ICommandBuffer& VulkanContext::acquireCommandBuffer() {
   return pimpl_->currentCommandBuffer_;
 }
 
-void VulkanContext::submit(lvk::ICommandBuffer& commandBuffer, TextureHandle present) {
+SubmitHandle VulkanContext::submit(lvk::ICommandBuffer& commandBuffer, TextureHandle present) {
   LVK_PROFILER_FUNCTION();
 
   CommandBuffer* vkCmdBuffer = static_cast<CommandBuffer*>(&commandBuffer);
@@ -363,6 +363,12 @@ void VulkanContext::submit(lvk::ICommandBuffer& commandBuffer, TextureHandle pre
 
   // reset
   pimpl_->currentCommandBuffer_ = {};
+
+  return vkCmdBuffer->lastSubmitHandle_;
+}
+
+void VulkanContext::wait(SubmitHandle handle) {
+  immediate_->wait(handle);
 }
 
 Holder<BufferHandle> VulkanContext::createBuffer(const BufferDesc& requestedDesc, Result* outResult) {

@@ -206,23 +206,6 @@ class VulkanImmediateCommands final {
   VulkanImmediateCommands(const VulkanImmediateCommands&) = delete;
   VulkanImmediateCommands& operator=(const VulkanImmediateCommands&) = delete;
 
-  struct SubmitHandle {
-    uint32_t bufferIndex_ = 0;
-    uint32_t submitId_ = 0;
-    SubmitHandle() = default;
-    explicit SubmitHandle(uint64_t handle) : bufferIndex_(uint32_t(handle & 0xffffffff)), submitId_(uint32_t(handle >> 32)) {
-      LVK_ASSERT(submitId_);
-    }
-    bool empty() const {
-      return submitId_ == 0;
-    }
-    uint64_t handle() const {
-      return (uint64_t(submitId_) << 32) + bufferIndex_;
-    }
-  };
-
-  static_assert(sizeof(SubmitHandle) == sizeof(uint64_t));
-
   struct CommandBufferWrapper {
     VkCommandBuffer cmdBuf_ = VK_NULL_HANDLE;
     VkCommandBuffer cmdBufAllocated_ = VK_NULL_HANDLE;
@@ -465,8 +448,7 @@ class CommandBuffer final : public ICommandBuffer {
   const VulkanImmediateCommands::CommandBufferWrapper* wrapper_ = nullptr;
 
   lvk::Framebuffer framebuffer_ = {};
-
-  VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
+  lvk::SubmitHandle lastSubmitHandle_ = {};
 
   VkPipeline lastPipelineBound_ = VK_NULL_HANDLE;
 

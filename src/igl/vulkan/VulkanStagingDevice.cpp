@@ -14,8 +14,6 @@
 #include <string.h>
 #include <algorithm>
 
-using SubmitHandle = lvk::VulkanImmediateCommands::SubmitHandle;
-
 namespace lvk {
 
 namespace vulkan {

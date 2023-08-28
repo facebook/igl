@@ -739,6 +739,23 @@ class ICommandBuffer {
   virtual void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) = 0;
 };
 
+struct SubmitHandle {
+  uint32_t bufferIndex_ = 0;
+  uint32_t submitId_ = 0;
+  SubmitHandle() = default;
+  explicit SubmitHandle(uint64_t handle) : bufferIndex_(uint32_t(handle & 0xffffffff)), submitId_(uint32_t(handle >> 32)) {
+    LVK_ASSERT(submitId_);
+  }
+  bool empty() const {
+    return submitId_ == 0;
+  }
+  uint64_t handle() const {
+    return (uint64_t(submitId_) << 32) + bufferIndex_;
+  }
+};
+
+static_assert(sizeof(SubmitHandle) == sizeof(uint64_t));
+
 class IContext {
  protected:
   IContext() = default;
@@ -748,7 +765,8 @@ class IContext {
 
   virtual ICommandBuffer& acquireCommandBuffer() = 0;
 
-  virtual void submit(ICommandBuffer& commandBuffer, TextureHandle present = {}) = 0;
+  virtual SubmitHandle submit(ICommandBuffer& commandBuffer, TextureHandle present = {}) = 0;
+  virtual void wait(SubmitHandle handle) = 0;
 
   [[nodiscard]] virtual Holder<BufferHandle> createBuffer(const BufferDesc& desc, Result* outResult = nullptr) = 0;
   [[nodiscard]] virtual Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc, Result* outResult = nullptr) = 0;

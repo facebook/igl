@@ -1364,7 +1364,7 @@ bool lvk::VulkanImmediateCommands::isReady(const SubmitHandle handle, bool fastC
   return vkWaitForFences(device_, 1, &buf.fence_, VK_TRUE, 0) == VK_SUCCESS;
 }
 
-lvk::VulkanImmediateCommands::SubmitHandle lvk::VulkanImmediateCommands::submit(const CommandBufferWrapper& wrapper) {
+lvk::SubmitHandle lvk::VulkanImmediateCommands::submit(const CommandBufferWrapper& wrapper) {
   LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_SUBMIT);
   LVK_ASSERT(wrapper.isEncoding_);
   VK_ASSERT(vkEndCommandBuffer(wrapper.cmdBuf_));
@@ -1422,7 +1422,7 @@ VkSemaphore lvk::VulkanImmediateCommands::acquireLastSubmitSemaphore() {
   return std::exchange(lastSubmitSemaphore_, VK_NULL_HANDLE);
 }
 
-lvk::VulkanImmediateCommands::SubmitHandle lvk::VulkanImmediateCommands::getLastSubmitHandle() const {
+lvk::SubmitHandle lvk::VulkanImmediateCommands::getLastSubmitHandle() const {
   return lastSubmitHandle_;
 }
 

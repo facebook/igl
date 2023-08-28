@@ -39,7 +39,8 @@ class VulkanContext final : public IContext {
 
   ICommandBuffer& acquireCommandBuffer() override;
 
-  void submit(lvk::ICommandBuffer& commandBuffer, TextureHandle present) override;
+  SubmitHandle submit(lvk::ICommandBuffer& commandBuffer, TextureHandle present) override;
+  void wait(SubmitHandle handle) override;
 
   Holder<BufferHandle> createBuffer(const BufferDesc& desc, Result* outResult) override;
   Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc, Result* outResult) override;
@@ -118,8 +119,6 @@ class VulkanContext final : public IContext {
   }
 
   std::vector<uint8_t> getPipelineCacheData() const;
-
-  using SubmitHandle = lvk::VulkanImmediateCommands::SubmitHandle;
 
   // execute a task some time in the future after the submit handle finished processing
   void deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle = SubmitHandle()) const;
