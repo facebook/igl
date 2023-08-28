@@ -40,15 +40,16 @@ enum class TextureType : uint8_t {
 /**
  * @brief Descriptor for texture dimensions
  *
- *  x         - offset position in width
- *  y         - offset position in height
- *  z         - offset position in depth
- *  width     - width of the range
- *  height    - height of the range
- *  depth     - depth of the range
- *  layer     - layer offset for 1D/2D array textures. Not used for cube textures faces.
- *  numLayers - number of layers in the range
- *  mipLevel  - mipmap level of the range
+ *  x            - offset position in width
+ *  y            - offset position in height
+ *  z            - offset position in depth
+ *  width        - width of the range
+ *  height       - height of the range
+ *  depth        - depth of the range
+ *  layer        - layer offset for 1D/2D array textures. Not used for cube textures faces.
+ *  numLayers    - number of layers in the range
+ *  mipLevel     - mipmap level offset of the range
+ *  numMipLevels - number of mipmap levels in the range
  */
 struct TextureRangeDesc {
   size_t x = 0;
@@ -60,7 +61,6 @@ struct TextureRangeDesc {
   size_t layer = 0;
   size_t numLayers = 1;
   size_t mipLevel = 0;
-  // number of mip levels to update
   size_t numMipLevels = 1;
 
   static TextureRangeDesc new1D(size_t x, size_t width, size_t mipLevel = 0);
