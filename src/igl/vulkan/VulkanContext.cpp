@@ -663,35 +663,41 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   const VkPhysicalDeviceLimits& limits = getVkPhysicalDeviceProperties().limits;
 
-  // TODO: make this more manageable (dynamic) once we migrate all apps to use descriptor sets
-  constexpr uint32_t kNumSets = 1024;
+  // create default descriptor set layout for texture bindings
   {
-    // create default descriptor set layout for texture bindings
-    constexpr uint32_t kNumBindings = IGL_TEXTURE_SAMPLERS_MAX;
     // NOTE: we really want these arrays to be uninitialized
     // @lint-ignore CLANGTIDY
-    VkDescriptorSetLayoutBinding bindings[kNumBindings];
+    VkDescriptorSetLayoutBinding bindings[IGL_TEXTURE_SAMPLERS_MAX];
     // @lint-ignore CLANGTIDY
-    VkDescriptorBindingFlags bindingFlags[kNumBindings];
-    // @lint-ignore CLANGTIDY
-    VkDescriptorPoolSize poolSizes[kNumBindings];
-    for (uint32_t i = 0; i != kNumBindings; i++) {
+    VkDescriptorBindingFlags bindingFlags[IGL_TEXTURE_SAMPLERS_MAX];
+    for (uint32_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
       bindings[i] =
           ivkGetDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1);
       bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
-      poolSizes[i] =
-          VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, kNumSets * kNumBindings};
     }
     dslCombinedImageSamplers_ = std::make_unique<VulkanDescriptorSetLayout>(
         device,
-        kNumBindings,
+        IGL_TEXTURE_SAMPLERS_MAX,
         bindings,
         bindingFlags,
         "Descriptor Set Layout: VulkanContext::dslCombinedImageSamplers_");
+  }
+
+  // create default descriptor pool for texture bindings
+  {
+    // TODO: make this more manageable (dynamic) once we migrate all apps to use descriptor sets
+    constexpr uint32_t kNumSets = 1024;
+
+    // @lint-ignore CLANGTIDY
+    VkDescriptorPoolSize poolSizes[IGL_TEXTURE_SAMPLERS_MAX];
+    for (uint32_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
+      poolSizes[i] = VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                          kNumSets * IGL_TEXTURE_SAMPLERS_MAX};
+    }
     // create default descriptor pool and allocate descriptor sets
     combinedImageSamplerDSets_.dsets.resize(kNumSets);
     VK_ASSERT_RETURN(ivkCreateDescriptorPool(
-        device, kNumSets, kNumBindings, poolSizes, &dpCombinedImageSamplers_));
+        device, kNumSets, IGL_TEXTURE_SAMPLERS_MAX, poolSizes, &dpCombinedImageSamplers_));
     for (uint32_t i = 0; i != kNumSets; i++) {
       VK_ASSERT_RETURN(
           ivkAllocateDescriptorSet(device,
@@ -700,30 +706,40 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                    &combinedImageSamplerDSets_.dsets[i].ds));
     }
   }
+
+  // create default descriptor set layout for uniform buffers
   {
-    // create default descriptor set layout for uniform buffers
-    constexpr uint32_t kNumBindings = IGL_UNIFORM_BLOCKS_BINDING_MAX;
     // NOTE: we really want these arrays to be uninitialized
     // @lint-ignore CLANGTIDY
-    VkDescriptorSetLayoutBinding bindings[kNumBindings];
+    VkDescriptorSetLayoutBinding bindings[IGL_UNIFORM_BLOCKS_BINDING_MAX];
     // @lint-ignore CLANGTIDY
-    VkDescriptorBindingFlags bindingFlags[kNumBindings];
-    // @lint-ignore CLANGTIDY
-    VkDescriptorPoolSize poolSizes[kNumBindings];
-    for (uint32_t i = 0; i != kNumBindings; i++) {
+    VkDescriptorBindingFlags bindingFlags[IGL_UNIFORM_BLOCKS_BINDING_MAX];
+
+    for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
       bindings[i] = ivkGetDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
       bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
-      poolSizes[i] = VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                          kNumSets * IGL_UNIFORM_BLOCKS_BINDING_MAX};
     }
     dslBuffersUniform_ = std::make_unique<VulkanDescriptorSetLayout>(
         device,
-        kNumBindings,
+        IGL_UNIFORM_BLOCKS_BINDING_MAX,
         bindings,
         bindingFlags,
         "Descriptor Set Layout: VulkanContext::dslBuffersUniform_");
-    VK_ASSERT_RETURN(
-        ivkCreateDescriptorPool(device, kNumSets, kNumBindings, poolSizes, &dpBuffersUniform_));
+  }
+
+  // create default descriptor pool for uniform buffers bindings
+  {
+    // TODO: make this more manageable (dynamic) once we migrate all apps to use descriptor sets
+    constexpr uint32_t kNumSets = 1024;
+
+    // @lint-ignore CLANGTIDY
+    VkDescriptorPoolSize poolSizes[IGL_UNIFORM_BLOCKS_BINDING_MAX];
+    for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
+      poolSizes[i] = VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                          kNumSets * IGL_UNIFORM_BLOCKS_BINDING_MAX};
+    }
+    VK_ASSERT_RETURN(ivkCreateDescriptorPool(
+        device, kNumSets, IGL_UNIFORM_BLOCKS_BINDING_MAX, poolSizes, &dpBuffersUniform_));
     bufferUniformDSets_.dsets.resize(kNumSets);
     for (size_t i = 0; i != kNumSets; i++) {
       VK_ASSERT_RETURN(ivkAllocateDescriptorSet(device,
@@ -732,30 +748,39 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                                 &bufferUniformDSets_.dsets[i].ds));
     }
   }
+
+  // create default descriptor set layout for storage buffers
   {
-    // create default descriptor set layout for storage buffers
-    constexpr uint32_t kNumBindings = IGL_UNIFORM_BLOCKS_BINDING_MAX;
     // NOTE: we really want these arrays to be uninitialized
     // @lint-ignore CLANGTIDY
-    VkDescriptorSetLayoutBinding bindings[kNumBindings];
+    VkDescriptorSetLayoutBinding bindings[IGL_UNIFORM_BLOCKS_BINDING_MAX];
     // @lint-ignore CLANGTIDY
-    VkDescriptorBindingFlags bindingFlags[kNumBindings];
-    // @lint-ignore CLANGTIDY
-    VkDescriptorPoolSize poolSizes[kNumBindings];
-    for (uint32_t i = 0; i != kNumBindings; i++) {
+    VkDescriptorBindingFlags bindingFlags[IGL_UNIFORM_BLOCKS_BINDING_MAX];
+    for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
       bindings[i] = ivkGetDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
       bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
-      poolSizes[i] = VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                          kNumSets * IGL_UNIFORM_BLOCKS_BINDING_MAX};
     }
     dslBuffersStorage_ = std::make_unique<VulkanDescriptorSetLayout>(
         device,
-        kNumBindings,
+        IGL_UNIFORM_BLOCKS_BINDING_MAX,
         bindings,
         bindingFlags,
         "Descriptor Set Layout: VulkanContext::dslBuffersStorage_");
-    VK_ASSERT_RETURN(
-        ivkCreateDescriptorPool(device, kNumSets, kNumBindings, poolSizes, &dpBuffersStorage_));
+  }
+
+  // create default descriptor pool for storage buffers bindings
+  {
+    // TODO: make this more manageable (dynamic) once we migrate all apps to use descriptor sets
+    constexpr uint32_t kNumSets = 1024;
+
+    // @lint-ignore CLANGTIDY
+    VkDescriptorPoolSize poolSizes[IGL_UNIFORM_BLOCKS_BINDING_MAX];
+    for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
+      poolSizes[i] = VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                          kNumSets * IGL_UNIFORM_BLOCKS_BINDING_MAX};
+    }
+    VK_ASSERT_RETURN(ivkCreateDescriptorPool(
+        device, kNumSets, IGL_UNIFORM_BLOCKS_BINDING_MAX, poolSizes, &dpBuffersStorage_));
     bufferStorageDSets_.dsets.resize(kNumSets);
     for (size_t i = 0; i != kNumSets; i++) {
       VK_ASSERT_RETURN(ivkAllocateDescriptorSet(device,
