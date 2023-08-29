@@ -206,12 +206,12 @@ Result TextureBuffer::initializeWithTexStorage() const {
 Result TextureBuffer::upload1D(GLenum target,
                                const TextureRangeDesc& range,
                                const void* data) const {
-  const auto [result, fullRange] = validateRange(range);
+  const auto result = validateRange(range);
   if (!result.isOk()) {
     return result;
   }
   // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
-  const auto texImage = fullRange && !supportsTexStorage();
+  const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage1D(target,
@@ -263,12 +263,12 @@ Result TextureBuffer::upload1D(GLenum target,
 Result TextureBuffer::upload1DArray(GLenum target,
                                     const TextureRangeDesc& range,
                                     const void* data) const {
-  const auto [result, fullRange] = validateRange(range);
+  const auto result = validateRange(range);
   if (!result.isOk()) {
     return result;
   }
   // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
-  const auto texImage = fullRange && !supportsTexStorage();
+  const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage2D(target,
@@ -324,12 +324,12 @@ Result TextureBuffer::upload1DArray(GLenum target,
 Result TextureBuffer::upload2D(GLenum target,
                                const TextureRangeDesc& range,
                                const void* data) const {
-  const auto [result, fullRange] = validateRange(range);
+  const auto result = validateRange(range);
   if (!result.isOk()) {
     return result;
   }
   // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
-  const auto texImage = fullRange && !supportsTexStorage();
+  const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage2D(target,
@@ -385,12 +385,12 @@ Result TextureBuffer::upload2D(GLenum target,
 Result TextureBuffer::upload2DArray(GLenum target,
                                     const TextureRangeDesc& range,
                                     const void* data) const {
-  const auto [result, fullRange] = validateRange(range);
+  const auto result = validateRange(range);
   if (!result.isOk()) {
     return result;
   }
   // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
-  const auto texImage = fullRange && !supportsTexStorage();
+  const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage3D(target,
@@ -451,12 +451,12 @@ Result TextureBuffer::upload2DArray(GLenum target,
 Result TextureBuffer::upload3D(GLenum target,
                                const TextureRangeDesc& range,
                                const void* data) const {
-  const auto [result, fullRange] = validateRange(range);
+  const auto result = validateRange(range);
   if (!result.isOk()) {
     return result;
   }
   // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
-  const auto texImage = fullRange && !supportsTexStorage();
+  const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage3D(target,

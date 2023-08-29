@@ -629,11 +629,9 @@ class ITexture : public ITrackedResource<ITexture> {
   /**
    * @brief Validates the range against texture dimensions at the range's mip level.
    *
-   * @return The returned Result indicates whether the range is valid or not. The returned bool is
-   * true if the range covers the full texture at the range's mipLevel and false otherwise.
+   * @return The returned Result indicates whether the range is valid or not.
    */
-  [[nodiscard]] std::pair<Result, bool> validateRange(
-      const igl::TextureRangeDesc& range) const noexcept;
+  [[nodiscard]] Result validateRange(const igl::TextureRangeDesc& range) const noexcept;
   /**
    * @brief Returns a TextureRangeDesc for the texture's full range at the specified mip level.
    *

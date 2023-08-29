@@ -188,7 +188,7 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
   if (!data) {
     return igl::Result();
   }
-  const auto [result, _] = validateRange(range);
+  const auto result = validateRange(range);
   if (!result.isOk()) {
     return result;
   }
@@ -264,7 +264,7 @@ Result Texture::uploadCube(const TextureRangeDesc& range,
                            TextureCubeFace face,
                            const void* data,
                            size_t bytesPerRow) const {
-  const auto [result, _] = validateRange(range);
+  const auto result = validateRange(range);
   if (!result.isOk()) {
     return result;
   }

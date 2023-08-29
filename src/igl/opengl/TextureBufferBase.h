@@ -56,6 +56,8 @@ class TextureBufferBase : public Texture {
   void attach(GLenum attachment, const AttachmentParams& params, GLuint textureID);
   void setMaxMipLevel() const;
 
+  [[nodiscard]] bool isValidForTexImage(const TextureRangeDesc& range) const;
+
  private:
   void generateMipmap() const;
 

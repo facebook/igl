@@ -236,12 +236,12 @@ Result NativeHWTextureBuffer::initializeWithTexStorage() const {
 Result NativeHWTextureBuffer::upload2D(GLenum target,
                                        const TextureRangeDesc& range,
                                        const void* data) const {
-  const auto [result, fullRange] = validateRange(range);
+  const auto result = validateRange(range);
   if (!result.isOk()) {
     return result;
   }
   // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
-  const auto texImage = fullRange && !supportsTexStorage();
+  const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage2D(target,

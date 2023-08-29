@@ -437,26 +437,23 @@ TEST_F(TextureArrayTest, ValidateRange2DArray) {
   }
 
   Result ret;
-  bool fullRange;
   auto texDesc = TextureDesc::new2DArray(
       TextureFormat::RGBA_UNorm8, 8, 8, 2, TextureDesc::TextureUsageBits::Sampled);
   auto tex = iglDev_->createTexture(texDesc, &ret);
 
-  std::tie(ret, fullRange) = tex->validateRange(TextureRangeDesc::new2DArray(0, 0, 8, 8, 0, 2));
+  ret = tex->validateRange(TextureRangeDesc::new2DArray(0, 0, 8, 8, 0, 2));
   EXPECT_TRUE(ret.isOk());
-  EXPECT_TRUE(fullRange);
 
-  std::tie(ret, fullRange) = tex->validateRange(TextureRangeDesc::new2DArray(4, 4, 4, 4, 1, 1));
+  ret = tex->validateRange(TextureRangeDesc::new2DArray(4, 4, 4, 4, 1, 1));
   EXPECT_TRUE(ret.isOk());
-  EXPECT_FALSE(fullRange);
 
-  std::tie(ret, fullRange) = tex->validateRange(TextureRangeDesc::new2DArray(0, 0, 4, 4, 0, 2, 1));
+  ret = tex->validateRange(TextureRangeDesc::new2DArray(0, 0, 4, 4, 0, 2, 1));
   EXPECT_FALSE(ret.isOk());
 
-  std::tie(ret, fullRange) = tex->validateRange(TextureRangeDesc::new2DArray(0, 0, 12, 12, 0, 3));
+  ret = tex->validateRange(TextureRangeDesc::new2DArray(0, 0, 12, 12, 0, 3));
   EXPECT_FALSE(ret.isOk());
 
-  std::tie(ret, fullRange) = tex->validateRange(TextureRangeDesc::new2DArray(0, 0, 0, 0, 0, 0));
+  ret = tex->validateRange(TextureRangeDesc::new2DArray(0, 0, 0, 0, 0, 0));
   EXPECT_FALSE(ret.isOk());
 }
 } // namespace tests

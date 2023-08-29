@@ -336,13 +336,11 @@ size_t ITexture::getEstimatedSizeInBytes() const {
   return totalBytes;
 }
 
-std::pair<Result, bool> ITexture::validateRange(const igl::TextureRangeDesc& range) const noexcept {
+Result ITexture::validateRange(const igl::TextureRangeDesc& range) const noexcept {
   if (IGL_UNEXPECTED(range.width == 0 || range.height == 0 || range.depth == 0 ||
                      range.numLayers == 0 || range.numMipLevels == 0)) {
-    return std::make_pair(Result{Result::Code::ArgumentInvalid,
-                                 "width, height, depth numLayers, and "
-                                 "numMipLevels must be at least 1."},
-                          false);
+    return Result{Result::Code::ArgumentInvalid,
+                  "width, height, depth, numLayers and numMipLevels must be at least 1."};
   }
 
   const auto dimensions = getDimensions();
@@ -354,23 +352,15 @@ std::pair<Result, bool> ITexture::validateRange(const igl::TextureRangeDesc& ran
 
   if (range.width > levelWidth || range.height > levelHeight || range.depth > levelDepth ||
       range.numLayers > texLayers || range.numMipLevels > texMipLevels) {
-    return std::make_pair(
-        Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"},
-        false);
+    return Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"};
   }
   if (range.x > levelWidth - range.width || range.y > levelHeight - range.height ||
       range.z > levelDepth - range.depth || range.layer > texLayers - range.numLayers ||
       range.mipLevel > texMipLevels - range.numMipLevels) {
-    return std::make_pair(
-        Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"},
-        false);
+    return Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"};
   }
 
-  const bool fullRange = (range.x == 0 && range.y == 0 && range.z == 0 && range.layer == 0 &&
-                          range.width == levelWidth && range.height == levelHeight &&
-                          range.depth == levelDepth && range.numLayers == texLayers);
-
-  return std::make_pair(Result{}, fullRange);
+  return Result{};
 }
 
 TextureRangeDesc ITexture::getFullRange(size_t mipLevel, size_t numMipLevels) const noexcept {

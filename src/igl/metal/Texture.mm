@@ -57,7 +57,7 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
   if (data == nullptr) {
     return Result(Result::Code::Ok);
   }
-  const auto [result, _] = validateRange(range);
+  const auto result = validateRange(range);
   if (!result.isOk()) {
     return result;
   }
@@ -154,7 +154,7 @@ Result Texture::uploadCube(const TextureRangeDesc& range,
     IGL_ASSERT_NOT_IMPLEMENTED();
     return Result(Result::Code::Unimplemented, "Can't upload more than 1 mip-level");
   }
-  const auto [result, _] = validateRange(range);
+  const auto result = validateRange(range);
   if (!result.isOk()) {
     return result;
   }
