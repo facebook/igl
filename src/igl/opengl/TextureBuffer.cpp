@@ -538,8 +538,13 @@ Result TextureBuffer::upload(GLenum target,
                              const TextureRangeDesc& range,
                              const void* data,
                              size_t bytesPerRow) const {
+  if (range.numMipLevels > 1) {
+    IGL_ASSERT_NOT_IMPLEMENTED();
+    return Result(Result::Code::Unimplemented,
+                  "Uploading to more than 1 mip level is not yet supported.");
+  }
+
   getContext().pixelStorei(GL_UNPACK_ALIGNMENT, this->getAlignment(bytesPerRow, range.mipLevel));
-  IGL_ASSERT(range.numMipLevels == 1);
 
   Result success;
   switch (type_) {
@@ -578,6 +583,12 @@ Result TextureBuffer::uploadCube(const TextureRangeDesc& range,
   if (data == nullptr) {
     return Result{};
   }
+  if (range.numMipLevels > 1) {
+    IGL_ASSERT_NOT_IMPLEMENTED();
+    return Result(Result::Code::Unimplemented,
+                  "Uploading to more than 1 mip level is not yet supported.");
+  }
+
   const auto target = getTarget();
   if (target != GL_TEXTURE_CUBE_MAP) {
     // this only uploads to cube textures

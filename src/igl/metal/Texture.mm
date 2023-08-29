@@ -52,7 +52,8 @@ Texture::~Texture() {
 Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t bytesPerRow) const {
   if (range.numMipLevels > 1) {
     IGL_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented, "Can't upload more than 1 mip-level");
+    return Result(Result::Code::Unimplemented,
+                  "Uploading to more than 1 mip level is not yet supported.");
   }
   if (data == nullptr) {
     return Result(Result::Code::Ok);
@@ -152,7 +153,8 @@ Result Texture::uploadCube(const TextureRangeDesc& range,
   }
   if (range.numMipLevels > 1) {
     IGL_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented, "Can't upload more than 1 mip-level");
+    return Result(Result::Code::Unimplemented,
+                  "Uploading to more than 1 mip level is not yet supported.");
   }
   const auto result = validateRange(range);
   if (!result.isOk()) {
