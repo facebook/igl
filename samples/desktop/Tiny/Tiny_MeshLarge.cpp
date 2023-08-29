@@ -379,7 +379,7 @@ layout(set = 0, binding = 0) uniform sampler2DShadow texShadow;
 layout(set = 0, binding = 4) uniform samplerCube texSkyboxIrradiance;
 
 vec4 textureBindless2D(uint textureid, vec2 uv) {
-  return texture(sampler2D(kTextures2D[textureid], kSamplers[0]), uv);
+  return texture(sampler2D(kTextures2D[textureid], kSamplers[1]), uv);
 }
 #else
   layout(binding = 0) uniform sampler2D texShadow;
