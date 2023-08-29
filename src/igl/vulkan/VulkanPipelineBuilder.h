@@ -40,12 +40,12 @@ class VulkanPipelineBuilder final {
   VulkanPipelineBuilder& colorBlendAttachmentStates(
       std::vector<VkPipelineColorBlendAttachmentState>& states);
 
-  VkResult build(VkDevice device,
-                 VkPipelineCache pipelineCache,
-                 VkPipelineLayout pipelineLayout,
-                 VkRenderPass renderPass,
-                 VkPipeline* outPipeline,
-                 const char* debugName = nullptr) noexcept;
+  [[nodiscard]] VkResult build(VkDevice device,
+                               VkPipelineCache pipelineCache,
+                               VkPipelineLayout pipelineLayout,
+                               VkRenderPass renderPass,
+                               VkPipeline* outPipeline,
+                               const char* debugName = nullptr) noexcept;
 
   static uint32_t getNumPipelinesCreated() {
     return numPipelinesCreated_;

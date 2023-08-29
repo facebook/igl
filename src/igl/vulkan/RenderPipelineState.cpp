@@ -314,56 +314,56 @@ VkPipeline RenderPipelineState::getVkPipeline(
 
   const auto& vertexModule = desc_.shaderStages->getVertexModule();
   const auto& fragmentModule = desc_.shaderStages->getFragmentModule();
-  igl::vulkan::VulkanPipelineBuilder()
-      .dynamicStates({
-          // from Vulkan 1.0
-          VK_DYNAMIC_STATE_VIEWPORT,
-          VK_DYNAMIC_STATE_SCISSOR,
-          VK_DYNAMIC_STATE_DEPTH_BIAS,
-          VK_DYNAMIC_STATE_BLEND_CONSTANTS,
-          VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
-          VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
-          VK_DYNAMIC_STATE_STENCIL_REFERENCE,
-      })
-      .primitiveTopology(dynamicState.getTopology())
-      .depthBiasEnable(dynamicState.depthBiasEnable_)
-      .depthCompareOp(dynamicState.getDepthCompareOp())
-      .depthWriteEnable(dynamicState.depthWriteEnable_)
-      .rasterizationSamples(getVulkanSampleCountFlags(desc_.sampleCount))
-      .polygonMode(polygonFillModeToVkPolygonMode(desc_.polygonFillMode))
-      .stencilStateOps(VK_STENCIL_FACE_FRONT_BIT,
-                       dynamicState.getStencilStateFailOp(true),
-                       dynamicState.getStencilStatePassOp(true),
-                       dynamicState.getStencilStateDepthFailOp(true),
-                       dynamicState.getStencilStateCompareOp(true))
-      .stencilStateOps(VK_STENCIL_FACE_BACK_BIT,
-                       dynamicState.getStencilStateFailOp(false),
-                       dynamicState.getStencilStatePassOp(false),
-                       dynamicState.getStencilStateDepthFailOp(false),
-                       dynamicState.getStencilStateCompareOp(false))
-      .shaderStages({
-          ivkGetPipelineShaderStageCreateInfo(
-              VK_SHADER_STAGE_VERTEX_BIT,
-              igl::vulkan::ShaderModule::getVkShaderModule(vertexModule),
-              vertexModule->info().entryPoint.c_str()),
-          ivkGetPipelineShaderStageCreateInfo(
-              VK_SHADER_STAGE_FRAGMENT_BIT,
-              igl::vulkan::ShaderModule::getVkShaderModule(fragmentModule),
-              fragmentModule->info().entryPoint.c_str()),
-      })
-      .cullMode(cullModeToVkCullMode(desc_.cullMode))
-      .frontFace(windingModeToVkFrontFace(desc_.frontFaceWinding))
-      .vertexInputState(vertexInputStateCreateInfo_)
-      .colorBlendAttachmentStates(colorBlendAttachmentStates)
-      .build(ctx.device_->getVkDevice(),
-             // TODO: use ctx.pipelineCache_
-             // @fb-only
-             // @fb-only
-             VK_NULL_HANDLE,
-             ctx.pipelineLayoutGraphics_->getVkPipelineLayout(),
-             renderPass,
-             &pipeline,
-             desc_.debugName.toConstChar());
+  VK_ASSERT_RETURN_NULL_HANDLE(
+      igl::vulkan::VulkanPipelineBuilder()
+          .dynamicStates({
+              // from Vulkan 1.0
+              VK_DYNAMIC_STATE_VIEWPORT,
+              VK_DYNAMIC_STATE_SCISSOR,
+              VK_DYNAMIC_STATE_DEPTH_BIAS,
+              VK_DYNAMIC_STATE_BLEND_CONSTANTS,
+              VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
+              VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
+              VK_DYNAMIC_STATE_STENCIL_REFERENCE,
+          })
+          .primitiveTopology(dynamicState.getTopology())
+          .depthBiasEnable(dynamicState.depthBiasEnable_)
+          .depthCompareOp(dynamicState.getDepthCompareOp())
+          .depthWriteEnable(dynamicState.depthWriteEnable_)
+          .rasterizationSamples(getVulkanSampleCountFlags(desc_.sampleCount))
+          .polygonMode(polygonFillModeToVkPolygonMode(desc_.polygonFillMode))
+          .stencilStateOps(VK_STENCIL_FACE_FRONT_BIT,
+                           dynamicState.getStencilStateFailOp(true),
+                           dynamicState.getStencilStatePassOp(true),
+                           dynamicState.getStencilStateDepthFailOp(true),
+                           dynamicState.getStencilStateCompareOp(true))
+          .stencilStateOps(VK_STENCIL_FACE_BACK_BIT,
+                           dynamicState.getStencilStateFailOp(false),
+                           dynamicState.getStencilStatePassOp(false),
+                           dynamicState.getStencilStateDepthFailOp(false),
+                           dynamicState.getStencilStateCompareOp(false))
+          .shaderStages({
+              ivkGetPipelineShaderStageCreateInfo(
+                  VK_SHADER_STAGE_VERTEX_BIT,
+                  igl::vulkan::ShaderModule::getVkShaderModule(vertexModule),
+                  vertexModule->info().entryPoint.c_str()),
+              ivkGetPipelineShaderStageCreateInfo(
+                  VK_SHADER_STAGE_FRAGMENT_BIT,
+                  igl::vulkan::ShaderModule::getVkShaderModule(fragmentModule),
+                  fragmentModule->info().entryPoint.c_str()),
+          })
+          .cullMode(cullModeToVkCullMode(desc_.cullMode))
+          .frontFace(windingModeToVkFrontFace(desc_.frontFaceWinding))
+          .vertexInputState(vertexInputStateCreateInfo_)
+          .colorBlendAttachmentStates(colorBlendAttachmentStates)
+          .build(ctx.device_->getVkDevice(),
+                 // TODO: use ctx.pipelineCache_
+                 // @fb-only
+                 VK_NULL_HANDLE,
+                 ctx.pipelineLayoutGraphics_->getVkPipelineLayout(),
+                 renderPass,
+                 &pipeline,
+                 desc_.debugName.toConstChar()));
 
   pipelines_[dynamicState] = pipeline;
 

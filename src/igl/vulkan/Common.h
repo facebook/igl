@@ -53,7 +53,7 @@
     }                                                              \
   }
 
-#define VK_ASSERT_RETURN(func)                                     \
+#define VK_ASSERT_RETURN_VALUE(func, value)                        \
   {                                                                \
     const VkResult vk_assert_result = func;                        \
     if (vk_assert_result != VK_SUCCESS) {                          \
@@ -63,9 +63,13 @@
                     #func,                                         \
                     ivkGetVulkanResultString(vk_assert_result));   \
       assert(false);                                               \
-      return getResultFromVkResult(vk_assert_result);              \
+      return value;                                                \
     }                                                              \
   }
+
+#define VK_ASSERT_RETURN(func) VK_ASSERT_RETURN_VALUE(func, getResultFromVkResult(vk_assert_result))
+
+#define VK_ASSERT_RETURN_NULL_HANDLE(func) VK_ASSERT_RETURN_VALUE(func, VK_NULL_HANDLE)
 
 namespace igl::vulkan {
 
