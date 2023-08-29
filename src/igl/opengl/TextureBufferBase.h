@@ -30,7 +30,6 @@ class TextureBufferBase : public Texture {
   void detachAsColor(uint32_t index, bool read) override;
   void attachAsDepth(const AttachmentParams& params) override;
   void attachAsStencil(const AttachmentParams& params) override;
-  uint32_t getNumMipLevels() const override;
   void generateMipmap(ICommandQueue& cmdQueue) const override;
   void generateMipmap(ICommandBuffer& cmdBuffer) const override;
   bool isRequiredGenerateMipmap() const override;

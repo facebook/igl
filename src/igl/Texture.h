@@ -617,7 +617,7 @@ class ITexture : public ITrackedResource<ITexture> {
    *
    * @return The estimated size of this texture, in bytes.
    */
-  [[nodiscard]] virtual size_t getEstimatedSizeInBytes() const;
+  [[nodiscard]] size_t getEstimatedSizeInBytes() const;
   /**
    * @brief Returns a texture id suitable for bindless rendering (descriptor indexing on Vulkan and
    * gpuResourceID on Metal)

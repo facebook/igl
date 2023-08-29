@@ -55,7 +55,6 @@ class Texture final : public ITexture {
   void generateMipmap(ICommandQueue& cmdQueue) const override;
   void generateMipmap(ICommandBuffer& cmdBuffer) const override;
   bool isRequiredGenerateMipmap() const override;
-  size_t getEstimatedSizeInBytes() const override;
   uint64_t getTextureId() const override;
   VkFormat getVkFormat() const;
 

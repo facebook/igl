@@ -326,7 +326,7 @@ size_t ITexture::getDepth() const {
 }
 
 size_t ITexture::getEstimatedSizeInBytes() const {
-  const auto range = getFullRange(0, isRequiredGenerateMipmap() ? getNumMipLevels() : 1);
+  const auto range = getFullRange(0, getNumMipLevels());
   auto totalBytes = properties_.getBytesPerRange(range);
 
   if (getType() == igl::TextureType::Cube) {
