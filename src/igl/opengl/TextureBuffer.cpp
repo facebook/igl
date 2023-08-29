@@ -7,6 +7,7 @@
 
 #include <igl/opengl/TextureBuffer.h>
 
+#include <array>
 #include <igl/opengl/Errors.h>
 #include <utility>
 
@@ -16,12 +17,12 @@ namespace opengl {
 namespace {
 // maps TextureCube::CubeFace to GL target type for cube map faces
 // required for glTexImageXXX APIs
-const GLenum sCubeFaceTargets[6] = {GL_TEXTURE_CUBE_MAP_POSITIVE_X,
-                                    GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-                                    GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-                                    GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-                                    GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-                                    GL_TEXTURE_CUBE_MAP_NEGATIVE_Z};
+constexpr std::array<GLenum, 6> kCubeFaceTargets = {GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+                                                    GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+                                                    GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+                                                    GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+                                                    GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+                                                    GL_TEXTURE_CUBE_MAP_NEGATIVE_Z};
 void swapTextureChannelsForFormat(igl::opengl::IContext& context,
                                   GLuint target,
                                   igl::TextureFormat iglFormat) {
@@ -555,7 +556,7 @@ Result TextureBuffer::upload(GLenum target,
     }
     return upload3D(target, range, data);
   case TextureType::Cube: {
-    for (auto cubeTarget : sCubeFaceTargets) {
+    for (auto cubeTarget : kCubeFaceTargets) {
       auto result = upload2D(cubeTarget, range, data);
       if (!result.isOk()) {
         return result;
@@ -588,7 +589,7 @@ Result TextureBuffer::uploadCube(const TextureRangeDesc& range,
 
   IGL_ASSERT(range.numMipLevels == 1);
 
-  GLenum cubeTarget = sCubeFaceTargets[static_cast<int>(face)];
+  GLenum cubeTarget = kCubeFaceTargets[static_cast<size_t>(face)];
 
   auto result = upload2D(cubeTarget, range, data);
 
