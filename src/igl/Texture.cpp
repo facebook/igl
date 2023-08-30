@@ -16,24 +16,29 @@ size_t std::hash<igl::TextureFormat>::operator()(igl::TextureFormat const& key) 
 
 namespace igl {
 
-TextureRangeDesc TextureRangeDesc::new1D(size_t x, size_t width, size_t mipLevel) {
-  return new3D(x, 0, 0, width, 1, 1, mipLevel);
+TextureRangeDesc TextureRangeDesc::new1D(size_t x,
+                                         size_t width,
+                                         size_t mipLevel,
+                                         size_t numMipLevels) {
+  return new3D(x, 0, 0, width, 1, 1, mipLevel, numMipLevels);
 }
 
 TextureRangeDesc TextureRangeDesc::new1DArray(size_t x,
                                               size_t width,
                                               size_t layer,
                                               size_t numLayers,
-                                              size_t mipLevel) {
-  return new2DArray(x, 0, width, 1, layer, numLayers, mipLevel);
+                                              size_t mipLevel,
+                                              size_t numMipLevels) {
+  return new2DArray(x, 0, width, 1, layer, numLayers, mipLevel, numMipLevels);
 }
 
 TextureRangeDesc TextureRangeDesc::new2D(size_t x,
                                          size_t y,
                                          size_t width,
                                          size_t height,
-                                         size_t mipLevel) {
-  return new3D(x, y, 0, width, height, 1, mipLevel);
+                                         size_t mipLevel,
+                                         size_t numMipLevels) {
+  return new3D(x, y, 0, width, height, 1, mipLevel, numMipLevels);
 }
 
 TextureRangeDesc TextureRangeDesc::new2DArray(size_t x,
@@ -42,8 +47,9 @@ TextureRangeDesc TextureRangeDesc::new2DArray(size_t x,
                                               size_t height,
                                               size_t layer,
                                               size_t numLayers,
-                                              size_t mipLevel) {
-  auto desc = new3D(x, y, 0, width, height, 1, mipLevel);
+                                              size_t mipLevel,
+                                              size_t numMipLevels) {
+  auto desc = new3D(x, y, 0, width, height, 1, mipLevel, numMipLevels);
   desc.layer = layer;
   desc.numLayers = numLayers;
   return desc;
@@ -55,7 +61,8 @@ TextureRangeDesc TextureRangeDesc::new3D(size_t x,
                                          size_t width,
                                          size_t height,
                                          size_t depth,
-                                         size_t mipLevel) {
+                                         size_t mipLevel,
+                                         size_t numMipLevels) {
   TextureRangeDesc desc;
   desc.x = x;
   desc.y = y;
@@ -64,6 +71,7 @@ TextureRangeDesc TextureRangeDesc::new3D(size_t x,
   desc.height = height;
   desc.depth = depth;
   desc.mipLevel = mipLevel;
+  desc.numMipLevels = numMipLevels;
   return desc;
 }
 

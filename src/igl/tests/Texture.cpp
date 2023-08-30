@@ -188,7 +188,7 @@ class TextureTest : public ::testing::Test {
 
 TEST(TextureRangeDesc, Construction) {
   {
-    const auto range = TextureRangeDesc::new1D(2, 3, 4);
+    const auto range = TextureRangeDesc::new1D(2, 3, 4, 5);
     EXPECT_EQ(range.x, 2);
     EXPECT_EQ(range.y, 0);
     EXPECT_EQ(range.z, 0);
@@ -198,10 +198,10 @@ TEST(TextureRangeDesc, Construction) {
     EXPECT_EQ(range.layer, 0);
     EXPECT_EQ(range.numLayers, 1);
     EXPECT_EQ(range.mipLevel, 4);
-    EXPECT_EQ(range.numMipLevels, 1);
+    EXPECT_EQ(range.numMipLevels, 5);
   }
   {
-    const auto range = TextureRangeDesc::new1DArray(2, 3, 4, 5, 6);
+    const auto range = TextureRangeDesc::new1DArray(2, 3, 4, 5, 6, 7);
     EXPECT_EQ(range.x, 2);
     EXPECT_EQ(range.y, 0);
     EXPECT_EQ(range.z, 0);
@@ -211,10 +211,10 @@ TEST(TextureRangeDesc, Construction) {
     EXPECT_EQ(range.layer, 4);
     EXPECT_EQ(range.numLayers, 5);
     EXPECT_EQ(range.mipLevel, 6);
-    EXPECT_EQ(range.numMipLevels, 1);
+    EXPECT_EQ(range.numMipLevels, 7);
   }
   {
-    const auto range = TextureRangeDesc::new2D(2, 3, 4, 5, 6);
+    const auto range = TextureRangeDesc::new2D(2, 3, 4, 5, 6, 7);
     EXPECT_EQ(range.x, 2);
     EXPECT_EQ(range.y, 3);
     EXPECT_EQ(range.z, 0);
@@ -224,10 +224,10 @@ TEST(TextureRangeDesc, Construction) {
     EXPECT_EQ(range.layer, 0);
     EXPECT_EQ(range.numLayers, 1);
     EXPECT_EQ(range.mipLevel, 6);
-    EXPECT_EQ(range.numMipLevels, 1);
+    EXPECT_EQ(range.numMipLevels, 7);
   }
   {
-    const auto range = TextureRangeDesc::new2DArray(2, 3, 4, 5, 6, 7, 8);
+    const auto range = TextureRangeDesc::new2DArray(2, 3, 4, 5, 6, 7, 8, 9);
     EXPECT_EQ(range.x, 2);
     EXPECT_EQ(range.y, 3);
     EXPECT_EQ(range.z, 0);
@@ -237,10 +237,10 @@ TEST(TextureRangeDesc, Construction) {
     EXPECT_EQ(range.layer, 6);
     EXPECT_EQ(range.numLayers, 7);
     EXPECT_EQ(range.mipLevel, 8);
-    EXPECT_EQ(range.numMipLevels, 1);
+    EXPECT_EQ(range.numMipLevels, 9);
   }
   {
-    const auto range = TextureRangeDesc::new3D(2, 3, 4, 5, 6, 7, 8);
+    const auto range = TextureRangeDesc::new3D(2, 3, 4, 5, 6, 7, 8, 9);
     EXPECT_EQ(range.x, 2);
     EXPECT_EQ(range.y, 3);
     EXPECT_EQ(range.z, 4);
@@ -250,7 +250,7 @@ TEST(TextureRangeDesc, Construction) {
     EXPECT_EQ(range.layer, 0);
     EXPECT_EQ(range.numLayers, 1);
     EXPECT_EQ(range.mipLevel, 8);
-    EXPECT_EQ(range.numMipLevels, 1);
+    EXPECT_EQ(range.numMipLevels, 9);
   }
 }
 

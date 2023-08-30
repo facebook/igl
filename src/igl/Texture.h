@@ -63,31 +63,38 @@ struct TextureRangeDesc {
   size_t mipLevel = 0;
   size_t numMipLevels = 1;
 
-  static TextureRangeDesc new1D(size_t x, size_t width, size_t mipLevel = 0);
+  static TextureRangeDesc new1D(size_t x,
+                                size_t width,
+                                size_t mipLevel = 0,
+                                size_t numMipLevels = 1);
   static TextureRangeDesc new1DArray(size_t x,
                                      size_t width,
                                      size_t layer,
                                      size_t numLayers,
-                                     size_t mipLevel = 0);
+                                     size_t mipLevel = 0,
+                                     size_t numMipLevels = 1);
   static TextureRangeDesc new2D(size_t x,
                                 size_t y,
                                 size_t width,
                                 size_t height,
-                                size_t mipLevel = 0);
+                                size_t mipLevel = 0,
+                                size_t numMipLevels = 1);
   static TextureRangeDesc new2DArray(size_t x,
                                      size_t y,
                                      size_t width,
                                      size_t height,
                                      size_t layer,
                                      size_t numLayers,
-                                     size_t mipLevel = 0);
+                                     size_t mipLevel = 0,
+                                     size_t numMipLevels = 1);
   static TextureRangeDesc new3D(size_t x,
                                 size_t y,
                                 size_t z,
                                 size_t width,
                                 size_t height,
                                 size_t depth,
-                                size_t mipLevel = 0);
+                                size_t mipLevel = 0,
+                                size_t numMipLevels = 1);
 
   /**
    * @brief Returns a new TextureRangeDesc based on this one but reduced to the specified mipLevel.

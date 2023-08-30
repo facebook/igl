@@ -2382,8 +2382,7 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
   if (kEnableCompression && img.channels == 4 &&
       std::filesystem::exists(img.compressedFileName.c_str())) {
     // Uploading the texture
-    auto rangeDesc = TextureRangeDesc::new2D(0, 0, img.w, img.h);
-    rangeDesc.numMipLevels = desc.numMipLevels;
+    const auto rangeDesc = TextureRangeDesc::new2D(0, 0, img.w, img.h, 0, desc.numMipLevels);
     auto gliTex2d = gli::load_ktx(img.compressedFileName.c_str());
     if (IGL_UNEXPECTED(gliTex2d.empty())) {
       printf("Failed to load %s\n", img.compressedFileName.c_str());
