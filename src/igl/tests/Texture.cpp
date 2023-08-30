@@ -1266,14 +1266,15 @@ TEST_F(TextureTest, GetTextureBytesPerLayer) {
 // Test ITexture::getEstimatedSizeInBytes
 //
 TEST_F(TextureTest, GetEstimatedSizeInBytes) {
-  auto calcSize = [&](size_t width, size_t height, TextureFormat format, size_t numMips) -> size_t {
+  auto calcSize =
+      [&](size_t width, size_t height, TextureFormat format, size_t numMipLevels) -> size_t {
     Result ret;
     TextureDesc texDesc = TextureDesc::new2D(format,
                                              width,
                                              height,
                                              TextureDesc::TextureUsageBits::Sampled |
                                                  TextureDesc::TextureUsageBits::Attachment);
-    texDesc.numMipLevels = numMips;
+    texDesc.numMipLevels = numMipLevels;
     auto texture = iglDev_->createTexture(texDesc, &ret);
     if (ret.code != Result::Code::Ok || texture == nullptr) {
       return 0;

@@ -456,5 +456,69 @@ TEST_F(TextureArrayTest, ValidateRange2DArray) {
   ret = tex->validateRange(TextureRangeDesc::new2DArray(0, 0, 0, 0, 0, 0));
   EXPECT_FALSE(ret.isOk());
 }
+
+//
+// Test ITexture::getEstimatedSizeInBytes
+//
+TEST_F(TextureArrayTest, GetEstimatedSizeInBytes) {
+  auto calcSize =
+      [&](size_t width, size_t height, TextureFormat format, size_t numMipLevels) -> size_t {
+    Result ret;
+    TextureDesc texDesc = TextureDesc::new2DArray(format,
+                                                  width,
+                                                  height,
+                                                  2,
+                                                  TextureDesc::TextureUsageBits::Sampled |
+                                                      TextureDesc::TextureUsageBits::Attachment);
+    texDesc.numMipLevels = numMipLevels;
+    auto texture = iglDev_->createTexture(texDesc, &ret);
+    if (ret.code != Result::Code::Ok || texture == nullptr) {
+      return 0;
+    }
+    return texture->getEstimatedSizeInBytes();
+  };
+
+  const auto format = iglDev_->getBackendType() == BackendType::OpenGL
+                          ? TextureFormat::R5G5B5A1_UNorm
+                          : TextureFormat::RGBA_UNorm8;
+  const uint32_t formatBytes = iglDev_->getBackendType() == BackendType::OpenGL ? 2u : 4u;
+
+  uint32_t bytes;
+  bytes = 12u * 34u * formatBytes * 2u;
+  ASSERT_EQ(calcSize(12, 34, format, 1), bytes);
+  bytes = (16u + 8u + 4u + 2u + 1u) * formatBytes * 2u;
+  ASSERT_EQ(calcSize(16, 1, format, 5), bytes);
+
+  if (iglDev_->hasFeature(DeviceFeatures::TextureNotPot)) {
+    if (!iglDev_->hasFeature(DeviceFeatures::TexturePartialMipChain)) {
+      // ES 2.0 generates maximum mip levels
+      bytes = (128u * 333u + 64u * 166u + 32u * 83u + 16u * 41u + 8u * 20u + 4u * 10u + 2u * 5u +
+               1u * 2u + 1u * 1u) *
+              formatBytes * 2u;
+      ASSERT_EQ(calcSize(128, 333, format, 9), bytes);
+    } else {
+      bytes = (128u * 333u + 64u * 166u) * formatBytes * 2u;
+      ASSERT_EQ(calcSize(128, 333, format, 2), bytes);
+    }
+
+    if (iglDev_->hasFeature(DeviceFeatures::TextureFormatRG)) {
+      const size_t rBytes = 1u;
+      const size_t rgBytes = 2u;
+      bytes = (16 + 8 + 4 + 2 + 1) * rBytes * 2u;
+      ASSERT_EQ(calcSize(16, 1, TextureFormat::R_UNorm8, 5), bytes);
+      if (!iglDev_->hasFeature(DeviceFeatures::TexturePartialMipChain)) {
+        // ES 2.0 generates maximum mip levels
+        bytes = (128u * 333u + 64u * 166u + 32u * 83u + 16u * 41u + 8u * 20u + 4u * 10u + 2u * 5u +
+                 1u * 2u + 1u * 1u) *
+                rgBytes * 2u;
+        ASSERT_EQ(calcSize(128, 333, TextureFormat::RG_UNorm8, 9), bytes);
+      } else {
+        bytes = (128u * 333u + 64u * 166u) * rgBytes * 2u;
+        ASSERT_EQ(calcSize(128, 333, TextureFormat::RG_UNorm8, 2), bytes);
+      }
+    }
+  }
+}
+
 } // namespace tests
 } // namespace igl

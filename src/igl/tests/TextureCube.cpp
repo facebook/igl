@@ -329,5 +329,36 @@ TEST_F(TextureCubeTest, Passthrough) {
   }
 }
 
+//
+// Test ITexture::getEstimatedSizeInBytes
+//
+TEST_F(TextureCubeTest, GetEstimatedSizeInBytes) {
+  auto calcSize =
+      [&](size_t width, size_t height, TextureFormat format, size_t numMipLevels) -> size_t {
+    Result ret;
+    TextureDesc texDesc = TextureDesc::newCube(format,
+                                               width,
+                                               height,
+                                               TextureDesc::TextureUsageBits::Sampled |
+                                                   TextureDesc::TextureUsageBits::Attachment);
+    texDesc.numMipLevels = numMipLevels;
+    auto texture = iglDev_->createTexture(texDesc, &ret);
+    if (ret.code != Result::Code::Ok || texture == nullptr) {
+      return 0;
+    }
+    return texture->getEstimatedSizeInBytes();
+  };
+
+  const auto format = iglDev_->getBackendType() == BackendType::OpenGL
+                          ? TextureFormat::R5G5B5A1_UNorm
+                          : TextureFormat::RGBA_UNorm8;
+  const uint32_t formatBytes = iglDev_->getBackendType() == BackendType::OpenGL ? 2u : 4u;
+
+  uint32_t bytes;
+  bytes = 34u * 34u * formatBytes * 6u;
+  ASSERT_EQ(calcSize(34, 34, format, 1), bytes);
+  bytes = (16u * 16u + 8u * 8u + 4u * 4u + 2u * 2u + 1u) * formatBytes * 6u;
+  ASSERT_EQ(calcSize(16, 16, format, 5), bytes);
+}
 } // namespace tests
 } // namespace igl
