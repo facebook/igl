@@ -99,12 +99,27 @@ TEST_F(TextureTargetOGLTest, TextureCreation) {
   textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
   texDesc.type = TextureType::ThreeD;
   ret = textureTarget->create(texDesc, false);
-  ASSERT_EQ(ret.code, Result::Code::Unimplemented);
+  ASSERT_EQ(ret.code, Result::Code::Unsupported);
+
+  // TextureTarget only supports a single mip level
+  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
+  texDesc.type = TextureType::TwoD;
+  texDesc.numMipLevels = 2;
+  ret = textureTarget->create(texDesc, false);
+  ASSERT_EQ(ret.code, Result::Code::Unsupported);
+
+  // TextureTarget only supports a layer
+  textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
+  texDesc.type = TextureType::TwoD;
+  texDesc.numMipLevels = 1;
+  texDesc.numLayers = 2;
+  ret = textureTarget->create(texDesc, false);
+  ASSERT_EQ(ret.code, Result::Code::Unsupported);
 
   // Unsupported texture format
   texDesc.format = TextureFormat::Invalid;
   textureTarget = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
-  texDesc.type = TextureType::TwoD;
+  texDesc.numLayers = 1;
   ret = textureTarget->create(texDesc, false);
   ASSERT_EQ(ret.code, Result::Code::ArgumentInvalid);
 

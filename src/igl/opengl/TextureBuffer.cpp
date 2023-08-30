@@ -66,7 +66,7 @@ Result TextureBuffer::create(const TextureDesc& desc, bool hasStorageAlready) {
   if (result.isOk()) {
     const auto isSampledOrStorage = (desc.usage & (TextureDesc::TextureUsageBits::Sampled |
                                                    TextureDesc::TextureUsageBits::Storage)) != 0;
-    if (isSampledOrStorage || desc.type != TextureType::TwoD) {
+    if (isSampledOrStorage || desc.type != TextureType::TwoD || desc.numMipLevels > 1) {
       result = createTexture(desc);
     } else {
       result = Result(Result::Code::Unsupported, "invalid usage!");
@@ -98,7 +98,11 @@ Result TextureBuffer::createTexture(const TextureDesc& desc) {
     return Result(Result::Code::Unsupported, "Unsupported texture target");
   }
 
-  if (!toFormatDescGL(desc.format, desc.usage, formatDescGL_)) {
+  // If usage doesn't include Storage, ensure usage includes sampled for correct format selection
+  const auto usageForFormat = (desc.usage & TextureDesc::TextureUsageBits::Storage) == 0
+                                  ? desc.usage | TextureDesc::TextureUsageBits::Sampled
+                                  : desc.usage;
+  if (!toFormatDescGL(desc.format, usageForFormat, formatDescGL_)) {
     // can't create a texture with the given format
     return Result(Result::Code::ArgumentInvalid, "Invalid texture format");
   }

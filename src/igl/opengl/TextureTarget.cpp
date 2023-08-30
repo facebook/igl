@@ -42,9 +42,11 @@ Result TextureTarget::create(const TextureDesc& desc, bool hasStorageAlready) {
 // create a render buffer for render target usages
 Result TextureTarget::createRenderBuffer(const TextureDesc& desc, bool hasStorageAlready) {
   if (desc.type != TextureType::TwoD) {
-    // we currently only support 2D textures with GLES 2.0
-    return Result{Result::Code::Unimplemented,
-                  "Non-2D textures are currently unsupported on GL backend."};
+    // Renderbuffers only support 2D textures
+    return Result{Result::Code::Unsupported, "Texture type must be TwoD."};
+  }
+  if (desc.numMipLevels > 1) {
+    return Result{Result::Code::Unsupported, "numMipLevels must be 1."};
   }
 
   if (!toRenderBufferFormatGL(desc.usage, glInternalFormat_)) {

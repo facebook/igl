@@ -54,6 +54,10 @@ uint64_t Texture::getTextureId() const {
 
 Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
   Result result;
+  if (desc.numLayers > 1 && desc.type != TextureType::TwoDArray) {
+    return Result{Result::Code::Unsupported,
+                  "Array textures are only supported when type is TwoDArray."};
+  }
   if (IGL_VERIFY(!isCreated_)) {
     isCreated_ = true;
     IGL_ASSERT(desc.format != TextureFormat::Invalid && desc.format == getFormat());

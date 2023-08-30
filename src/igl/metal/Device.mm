@@ -133,6 +133,12 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
 std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
                                                 Result* outResult) const noexcept {
   const auto sanitized = sanitize(desc);
+  if (desc.numLayers > 1 && desc.type != TextureType::TwoDArray) {
+    Result::setResult(outResult,
+                      Result::Code::Unsupported,
+                      "Array textures are only supported when type is TwoDArray.");
+    return nullptr;
+  }
 
   MTLTextureDescriptor* metalDesc = [MTLTextureDescriptor new];
   metalDesc.textureType = Texture::convertType(sanitized.type, sanitized.numSamples);

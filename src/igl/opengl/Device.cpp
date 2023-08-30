@@ -170,7 +170,8 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
       (sanitized.usage & TextureDesc::TextureUsageBits::Storage) != 0) {
     texture = std::make_unique<TextureBuffer>(getContext(), desc.format);
   } else if ((sanitized.usage & TextureDesc::TextureUsageBits::Attachment) != 0) {
-    if (sanitized.type == TextureType::TwoD) {
+    if (sanitized.type == TextureType::TwoD && sanitized.numMipLevels == 1 &&
+        sanitized.numLayers == 1) {
       texture = std::make_unique<TextureTarget>(getContext(), desc.format);
     } else {
       // Fall back to texture. e.g. TextureType::TwoDArray
