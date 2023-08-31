@@ -13,6 +13,7 @@
 
 namespace igl {
 class ITexture;
+class IFramebuffer;
 } // namespace igl
 
 namespace igl::shell {
@@ -33,5 +34,9 @@ class ScreenshotTestRenderSessionHelper {
  private:
   int frameTicked_ = 0;
 };
+
+void SaveFrameBufferToPng(const char* absoluteFilename,
+                          const std::shared_ptr<IFramebuffer>& framebuffer,
+                          Platform& platform);
 
 } // namespace igl::shell
