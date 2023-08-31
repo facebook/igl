@@ -302,6 +302,23 @@ TEST(TextureRangeDesc, AtLayer) {
   }
 }
 
+TEST(TextureRangeDesc, WithNumLayers) {
+  {
+    const auto initialRange = TextureRangeDesc::new2D(2, 3, 4, 5, 6, 7);
+    const auto range = initialRange.withNumLayers(8);
+    EXPECT_EQ(range.x, 2);
+    EXPECT_EQ(range.y, 3);
+    EXPECT_EQ(range.z, 0);
+    EXPECT_EQ(range.width, 4);
+    EXPECT_EQ(range.height, 5);
+    EXPECT_EQ(range.depth, 1);
+    EXPECT_EQ(range.layer, 0);
+    EXPECT_EQ(range.numLayers, 8);
+    EXPECT_EQ(range.mipLevel, 6);
+    EXPECT_EQ(range.numMipLevels, 7);
+  }
+}
+
 TEST(TextureFormatProperties, Construction) {
   {
     const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
@@ -671,16 +688,16 @@ TEST_F(TextureTest, FBCopy) {
 //
 // Pixel upload alignment test
 //
-// In openGL, when writing to a gpu texture from cpu memory the cpu memory pixel rows can be packed
-// a couple of different ways 1, 2, 4 or 8 byte aligned. This test ensures bytesPerRow gets
+// In openGL, when writing to a gpu texture from cpu memory the cpu memory pixel rows can be
+// packed a couple of different ways 1, 2, 4 or 8 byte aligned. This test ensures bytesPerRow gets
 // converted to the correct byte alignment in openGL and works as expected in metal
 //
 // If a row has 3 RGBA pixels but is 8 byte aligned the row will be 16 bytes with the last 4 bytes
 // being ignored. If it was instead 1, 2 or 4 byte aligned the row would be 12 bytes as 12 is
 // divisible by a single pixels byte size.
 //
-// Expected output: Pixels read out are correct even when different bytes per pixel are used during
-// upload.
+// Expected output: Pixels read out are correct even when different bytes per pixel are used
+// during upload.
 //
 // Note: This test only covers 4 and 8 byte alignment because copyBytesColorAttachment does not
 // support reading non 4 byte formats

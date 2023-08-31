@@ -110,6 +110,13 @@ struct TextureRangeDesc {
    * @remark The returned range only has 1 layer.
    */
   [[nodiscard]] TextureRangeDesc atLayer(size_t newLayer) const noexcept;
+  /**
+   * @brief Returns a new TextureRangeDesc based on this one but with the specified number of
+   * layers.
+   *
+   * @param newNumLayers The number of layers in the returned range.
+   */
+  [[nodiscard]] TextureRangeDesc withNumLayers(size_t newNumLayers) const noexcept;
 };
 
 /**

@@ -108,6 +108,13 @@ TextureRangeDesc TextureRangeDesc::atLayer(size_t newLayer) const noexcept {
   return newRange;
 }
 
+TextureRangeDesc TextureRangeDesc::withNumLayers(size_t newNumLayers) const noexcept {
+  TextureRangeDesc newRange = *this;
+  newRange.numLayers = newNumLayers;
+
+  return newRange;
+}
+
 #define PROPERTIES(fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs) \
   case TextureFormat::fmt:                                         \
     return TextureFormatProperties{                                \
