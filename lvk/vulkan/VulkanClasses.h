@@ -120,7 +120,6 @@ class VulkanImage final {
 
  public:
   lvk::vulkan::VulkanContext& ctx_;
-  VkPhysicalDevice vkPhysicalDevice_ = VK_NULL_HANDLE;
   VkDevice vkDevice_ = VK_NULL_HANDLE;
   VkImage vkImage_ = VK_NULL_HANDLE;
   VkImageUsageFlags vkUsageFlags_ = 0;

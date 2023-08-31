@@ -575,7 +575,6 @@ lvk::VulkanImage::VulkanImage(lvk::vulkan::VulkanContext& ctx,
                               VkExtent3D extent,
                               const char* debugName) :
   ctx_(ctx),
-  vkPhysicalDevice_(ctx.getVkPhysicalDevice()),
   vkDevice_(device),
   vkImage_(image),
   vkUsageFlags_(usageFlags),
@@ -602,7 +601,6 @@ lvk::VulkanImage::VulkanImage(lvk::vulkan::VulkanContext& ctx,
                               VkSampleCountFlagBits samples,
                               const char* debugName) :
   ctx_(ctx),
-  vkPhysicalDevice_(ctx.getVkPhysicalDevice()),
   vkDevice_(device),
   vkUsageFlags_(usageFlags),
   vkExtent_(extent),
@@ -662,7 +660,7 @@ lvk::VulkanImage::VulkanImage(lvk::vulkan::VulkanContext& ctx,
       VkMemoryRequirements memRequirements;
       vkGetImageMemoryRequirements(device, vkImage_, &memRequirements);
 
-      VK_ASSERT(lvk::allocateMemory(vkPhysicalDevice_, vkDevice_, &memRequirements, memFlags, &vkMemory_));
+      VK_ASSERT(lvk::allocateMemory(ctx.getVkPhysicalDevice(), vkDevice_, &memRequirements, memFlags, &vkMemory_));
       VK_ASSERT(vkBindImageMemory(vkDevice_, vkImage_, vkMemory_, 0));
     }
 
@@ -675,7 +673,7 @@ lvk::VulkanImage::VulkanImage(lvk::vulkan::VulkanContext& ctx,
   VK_ASSERT(lvk::setDebugObjectName(vkDevice_, VK_OBJECT_TYPE_IMAGE, (uint64_t)vkImage_, debugName));
 
   // Get physical device's properties for the image's format
-  vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice_, vkImageFormat_, &vkFormatProperties_);
+  vkGetPhysicalDeviceFormatProperties(ctx.getVkPhysicalDevice(), vkImageFormat_, &vkFormatProperties_);
 }
 
 lvk::VulkanImage::~VulkanImage() {
