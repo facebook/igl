@@ -13,7 +13,7 @@
 #include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl::shell {
-namespace {
+
 void SaveFrameBufferToPng(const char* absoluteFilename,
                           const std::shared_ptr<IFramebuffer>& framebuffer,
                           Platform& platform) {
@@ -37,7 +37,6 @@ void SaveFrameBufferToPng(const char* absoluteFilename,
   IGLLog(IGLLogLevel::LOG_INFO, "Writing screenshot to: %s", absoluteFilename);
   platform.getImageWriter().writeImage(absoluteFilename, imageData);
 }
-} // namespace
 
 void ScreenshotTestRenderSessionHelper::initialize(AppParams& appParams) noexcept {
   const char* screenshotTestsOutPath = std::getenv("SCREENSHOT_TESTS_OUT");
