@@ -12,6 +12,7 @@
 #include "util/TestDevice.h"
 
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
+#include <cstring>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <gtest/gtest.h>
@@ -516,6 +517,62 @@ TEST_F(TextureArrayTest, GetEstimatedSizeInBytes) {
         bytes = (128u * 333u + 64u * 166u) * rgBytes * 2u;
         ASSERT_EQ(calcSize(128, 333, TextureFormat::RG_UNorm8, 2), bytes);
       }
+    }
+  }
+}
+
+//
+// Test ITexture::GetFullRange
+//
+TEST_F(TextureArrayTest, GetFullRange) {
+  auto getFullRange = [&](size_t width,
+                          size_t height,
+                          TextureFormat format,
+                          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+                          size_t numMipLevels,
+                          size_t rangeMipLevel = 0,
+                          size_t rangeNumMipLevels = 0) -> TextureRangeDesc {
+    if (rangeNumMipLevels == 0) {
+      rangeNumMipLevels = numMipLevels;
+    }
+    Result ret;
+    TextureDesc texDesc = TextureDesc::new2DArray(format,
+                                                  width,
+                                                  height,
+                                                  2,
+                                                  TextureDesc::TextureUsageBits::Sampled |
+                                                      TextureDesc::TextureUsageBits::Attachment);
+    texDesc.numMipLevels = numMipLevels;
+    auto texture = iglDev_->createTexture(texDesc, &ret);
+    if (ret.code != Result::Code::Ok || texture == nullptr) {
+      return {};
+    }
+    return texture->getFullRange(rangeMipLevel, rangeNumMipLevels);
+  };
+  auto rangesAreEqual = [&](const TextureRangeDesc& a, const TextureRangeDesc& b) -> bool {
+    return std::memcmp(&a, &b, sizeof(TextureRangeDesc)) == 0;
+  };
+  const auto format = iglDev_->getBackendType() == BackendType::OpenGL
+                          ? TextureFormat::R5G5B5A1_UNorm
+                          : TextureFormat::RGBA_UNorm8;
+
+  TextureRangeDesc range;
+  range = TextureRangeDesc::new2DArray(0, 0, 12, 34, 0, 2, 0, 1);
+  ASSERT_TRUE(rangesAreEqual(getFullRange(12, 34, format, 1), range));
+  range = TextureRangeDesc::new2DArray(0, 0, 16, 1, 0, 2, 0, 4);
+  ASSERT_TRUE(rangesAreEqual(getFullRange(16, 1, format, 4), range));
+
+  // Test subset of mip levels
+  ASSERT_TRUE(rangesAreEqual(getFullRange(16, 1, format, 4, 1, 1), range.atMipLevel(1)));
+
+  if (iglDev_->hasFeature(DeviceFeatures::TextureNotPot)) {
+    if (!iglDev_->hasFeature(DeviceFeatures::TexturePartialMipChain)) {
+      // ES 2.0 generates maximum mip levels
+      range = TextureRangeDesc::new2DArray(0, 0, 128, 333, 0, 2, 0, 9);
+      ASSERT_TRUE(rangesAreEqual(getFullRange(128, 333, format, 9), range));
+    } else {
+      range = TextureRangeDesc::new2DArray(0, 0, 128, 333, 0, 2, 0, 2);
+      ASSERT_TRUE(rangesAreEqual(getFullRange(128, 333, format, 2), range));
     }
   }
 }

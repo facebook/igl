@@ -360,5 +360,46 @@ TEST_F(TextureCubeTest, GetEstimatedSizeInBytes) {
   bytes = (16u * 16u + 8u * 8u + 4u * 4u + 2u * 2u + 1u) * formatBytes * 6u;
   ASSERT_EQ(calcSize(16, 16, format, 5), bytes);
 }
+
+//
+// Test ITexture::GetFullRange
+//
+TEST_F(TextureCubeTest, GetFullRange) {
+  auto getFullRange = [&](size_t width,
+                          size_t height,
+                          TextureFormat format,
+                          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+                          size_t numMipLevels,
+                          size_t rangeMipLevel = 0,
+                          size_t rangeNumMipLevels = 0) -> TextureRangeDesc {
+    if (rangeNumMipLevels == 0) {
+      rangeNumMipLevels = numMipLevels;
+    }
+    Result ret;
+    TextureDesc texDesc = TextureDesc::newCube(format,
+                                               width,
+                                               height,
+                                               TextureDesc::TextureUsageBits::Sampled |
+                                                   TextureDesc::TextureUsageBits::Attachment);
+    texDesc.numMipLevels = numMipLevels;
+    auto texture = iglDev_->createTexture(texDesc, &ret);
+    if (ret.code != Result::Code::Ok || texture == nullptr) {
+      return {};
+    }
+    return texture->getFullRange(rangeMipLevel, rangeNumMipLevels);
+  };
+  auto rangesAreEqual = [&](const TextureRangeDesc& a, const TextureRangeDesc& b) -> bool {
+    return std::memcmp(&a, &b, sizeof(TextureRangeDesc)) == 0;
+  };
+  const auto format = iglDev_->getBackendType() == BackendType::OpenGL
+                          ? TextureFormat::R5G5B5A1_UNorm
+                          : TextureFormat::RGBA_UNorm8;
+
+  TextureRangeDesc range;
+  range = TextureRangeDesc::new2D(0, 0, 34, 34, 0, 1);
+  ASSERT_TRUE(rangesAreEqual(getFullRange(34, 34, format, 1), range));
+  range = TextureRangeDesc::new2D(0, 0, 16, 16, 0, 5);
+  ASSERT_TRUE(rangesAreEqual(getFullRange(16, 16, format, 5), range));
+}
 } // namespace tests
 } // namespace igl

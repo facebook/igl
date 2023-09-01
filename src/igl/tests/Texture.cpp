@@ -11,6 +11,8 @@
 #include "util/Common.h"
 #include "util/TestDevice.h"
 
+#include <cstddef>
+#include <cstring>
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 #include <igl/NameHandle.h>
@@ -709,8 +711,8 @@ TEST_F(TextureTest, PIXEL_UPLOAD_ALIGNMENT) {
   //-------------------------------------
   // Create new frame buffer with a width and height that can cause different alignments
   //-------------------------------------
-  auto width = 3;
-  auto height = 2;
+  const uint32_t width = 3u;
+  const uint32_t height = 2u;
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
                                            width,
                                            height,
@@ -729,47 +731,47 @@ TEST_F(TextureTest, PIXEL_UPLOAD_ALIGNMENT) {
   //-------------------------------------
   // Create pixels packed with different alignments
   //-------------------------------------
-  uint32_t inputPixelsEightAligned[] = {1,
-                                        2,
-                                        3,
-                                        0x00000000, // Expected to be skipped
-                                        4,
-                                        5,
-                                        6,
-                                        0x00000000}; // Expected to be skipped
-  uint32_t inputPixelsTwentyStride[] = {1,
-                                        2,
-                                        3,
-                                        0x00000000, // Expected to be skipped
-                                        0x00000000, // Expected to be skipped
-                                        4,
-                                        5,
-                                        6,
-                                        0x00000000, // Expected to be skipped
-                                        0x00000000}; // Expected to be skipped
-  uint32_t inputPixels[] = {1, 2, 3, 4, 5, 6};
+  uint32_t inputPixelsEightAligned[] = {1u,
+                                        2u,
+                                        3u,
+                                        0x00000000u, // Expected to be skipped
+                                        4u,
+                                        5u,
+                                        6u,
+                                        0x00000000u}; // Expected to be skipped
+  uint32_t inputPixelsTwentyStride[] = {1u,
+                                        2u,
+                                        3u,
+                                        0x00000000u, // Expected to be skipped
+                                        0x00000000u, // Expected to be skipped
+                                        4u,
+                                        5u,
+                                        6u,
+                                        0x00000000u, // Expected to be skipped
+                                        0x00000000u}; // Expected to be skipped
+  uint32_t inputPixels[] = {1u, 2u, 3u, 4u, 5u, 6u};
 
-  std::vector<std::pair<uint32_t*, size_t>> pixelAlignments;
+  std::vector<std::pair<uint32_t*, uint32_t>> pixelAlignments;
   pixelAlignments.emplace_back(inputPixels,
-                               width * 4); // 12 byte row will triggers 4 byte alignment
-                                           // No padding required since the width equals
-                                           // number of input pixels per row
+                               width * 4u); // 12 byte row will triggers 4 byte alignment
+                                            // No padding required since the width equals
+                                            // number of input pixels per row
   pixelAlignments.emplace_back(inputPixelsEightAligned,
-                               (width + 1) * 4); // 16 byte row will trigger
-                                                 // 8 byte alignment since
-                                                 // texture width is set to
-                                                 // 3
-                                                 // Padding of 1 pixel used
-                                                 // per row of width 3
+                               (width + 1u) * 4u); // 16 byte row will trigger
+                                                   // 8 byte alignment since
+                                                   // texture width is set to
+                                                   // 3
+                                                   // Padding of 1 pixel used
+                                                   // per row of width 3
   pixelAlignments.emplace_back(inputPixelsTwentyStride,
-                               (width + 2) * 4); // Because this is not 8, 4, 2 or 1 byte aligned
-                                                 // this should fail with not implemented for
-                                                 // openGL but succeed with metal
-                                                 // Padding of 2 pixels used per row of width 3
+                               (width + 2u) * 4u); // Because this is not 8, 4, 2 or 1 byte aligned
+                                                   // this should fail with not implemented for
+                                                   // openGL but succeed with metal
+                                                   // Padding of 2 pixels used per row of width 3
 
   for (const auto& alignment : pixelAlignments) {
     auto bytesPerRow = alignment.second;
-    if (backend_ == util::BACKEND_OGL && bytesPerRow == (width + 2) * 4) {
+    if (backend_ == util::BACKEND_OGL && bytesPerRow == (width + 2u) * 4u) {
       // Skip openGL for this case as it is expected to fail with IGL_ASSERT_NOT_IMPLEMENTED
       continue;
     }
@@ -784,7 +786,7 @@ TEST_F(TextureTest, PIXEL_UPLOAD_ALIGNMENT) {
 
     const auto rangeDesc = TextureRangeDesc::new2D(0, 0, width, height);
 
-    inputTexture_->upload(rangeDesc, alignment.first, bytesPerRow);
+    inputTexture_->upload(rangeDesc, alignment.first, static_cast<size_t>(bytesPerRow));
 
     //----------------
     // Create Pipeline
@@ -820,7 +822,8 @@ TEST_F(TextureTest, PIXEL_UPLOAD_ALIGNMENT) {
     //----------------------
     // Read back framebuffer
     //----------------------
-    auto outputPixels = std::vector<uint32_t>(width * height);
+    auto outputPixels =
+        std::vector<uint32_t>(static_cast<size_t>(width) * static_cast<size_t>(height));
 
     // bytesPerRow should be without padding, since 0x entries are ignored
     customFramebuffer->copyBytesColorAttachment(*cmdQueue_, 0, outputPixels.data(), rangeDesc);
@@ -1336,6 +1339,61 @@ TEST_F(TextureTest, GetEstimatedSizeInBytes) {
         bytes = static_cast<size_t>((128 * 333 + 64 * 166) * rgBytes);
         ASSERT_EQ(calcSize(128, 333, TextureFormat::RG_UNorm8, 2), bytes);
       }
+    }
+  }
+}
+
+//
+// Test ITexture::GetFullRange
+//
+TEST_F(TextureTest, GetFullRange) {
+  auto getFullRange = [&](size_t width,
+                          size_t height,
+                          TextureFormat format,
+                          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+                          size_t numMipLevels,
+                          size_t rangeMipLevel = 0,
+                          size_t rangeNumMipLevels = 0) -> TextureRangeDesc {
+    if (rangeNumMipLevels == 0) {
+      rangeNumMipLevels = numMipLevels;
+    }
+    Result ret;
+    TextureDesc texDesc = TextureDesc::new2D(format,
+                                             width,
+                                             height,
+                                             TextureDesc::TextureUsageBits::Sampled |
+                                                 TextureDesc::TextureUsageBits::Attachment);
+    texDesc.numMipLevels = numMipLevels;
+    auto texture = iglDev_->createTexture(texDesc, &ret);
+    if (ret.code != Result::Code::Ok || texture == nullptr) {
+      return {};
+    }
+    return texture->getFullRange(rangeMipLevel, rangeNumMipLevels);
+  };
+  auto rangesAreEqual = [&](const TextureRangeDesc& a, const TextureRangeDesc& b) -> bool {
+    return std::memcmp(&a, &b, sizeof(TextureRangeDesc)) == 0;
+  };
+  const auto format = iglDev_->getBackendType() == BackendType::OpenGL
+                          ? TextureFormat::R5G5B5A1_UNorm
+                          : TextureFormat::RGBA_UNorm8;
+
+  TextureRangeDesc range;
+  range = TextureRangeDesc::new2D(0, 0, 12, 34, 0, 1);
+  ASSERT_TRUE(rangesAreEqual(getFullRange(12, 34, format, 1), range));
+  range = TextureRangeDesc::new2D(0, 0, 16, 1, 0, 4);
+  ASSERT_TRUE(rangesAreEqual(getFullRange(16, 1, format, 4), range));
+
+  // Test subset of mip levels
+  ASSERT_TRUE(rangesAreEqual(getFullRange(16, 1, format, 4, 1, 1), range.atMipLevel(1)));
+
+  if (iglDev_->hasFeature(DeviceFeatures::TextureNotPot)) {
+    if (!iglDev_->hasFeature(DeviceFeatures::TexturePartialMipChain)) {
+      // ES 2.0 generates maximum mip levels
+      range = TextureRangeDesc::new2D(0, 0, 128, 333, 0, 9);
+      ASSERT_TRUE(rangesAreEqual(getFullRange(128, 333, format, 9), range));
+    } else {
+      range = TextureRangeDesc::new2D(0, 0, 128, 333, 0, 2);
+      ASSERT_TRUE(rangesAreEqual(getFullRange(128, 333, format, 2), range));
     }
   }
 }
