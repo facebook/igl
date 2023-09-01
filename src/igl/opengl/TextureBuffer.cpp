@@ -163,7 +163,7 @@ Result TextureBuffer::initialize() const {
 Result TextureBuffer::initializeWithUpload() const {
   const auto target = getTarget();
   for (size_t i = 0; i < getNumMipLevels(); ++i) {
-    const auto range = getFullRange(i);
+    const auto range = type_ == igl::TextureType::Cube ? getCubeFaceRange(0, i) : getFullRange(i);
     auto result = upload(target, range, nullptr);
     if (!result.isOk()) {
       return result;
@@ -547,6 +547,20 @@ Result TextureBuffer::upload(GLenum target,
     return Result(Result::Code::Unimplemented,
                   "Uploading to more than 1 mip level is not yet supported.");
   }
+  if (range.numFaces > 1) {
+    IGL_ASSERT_NOT_IMPLEMENTED();
+    return Result(Result::Code::Unimplemented,
+                  "Uploading to more than 1 face is not yet supported.");
+  }
+  if (range.face > 0) {
+    if (IGL_VERIFY(getType() == TextureType::Cube)) {
+      IGL_ASSERT_NOT_IMPLEMENTED();
+      return Result(Result::Code::Unimplemented,
+                    "Uploading to a specific face is not yet supported.");
+    } else {
+      return Result(Result::Code::Unsupported, "face must be 0.");
+    }
+  }
 
   getContext().pixelStorei(GL_UNPACK_ALIGNMENT, this->getAlignment(bytesPerRow, range.mipLevel));
 
@@ -591,6 +605,13 @@ Result TextureBuffer::uploadCube(const TextureRangeDesc& range,
     IGL_ASSERT_NOT_IMPLEMENTED();
     return Result(Result::Code::Unimplemented,
                   "Uploading to more than 1 mip level is not yet supported.");
+  }
+  if (IGL_UNEXPECTED(range.numFaces > 1)) {
+    return Result(Result::Code::Unsupported,
+                  "Uploading to more than 1 face is not supported with uploadCube.");
+  }
+  if (IGL_UNEXPECTED(range.face > 0)) {
+    return Result(Result::Code::Unsupported, "face must be 0.");
   }
 
   const auto target = getTarget();

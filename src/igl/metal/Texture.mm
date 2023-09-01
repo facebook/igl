@@ -55,6 +55,20 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
     return Result(Result::Code::Unimplemented,
                   "Uploading to more than 1 mip level is not yet supported.");
   }
+  if (range.numFaces > 1) {
+    IGL_ASSERT_NOT_IMPLEMENTED();
+    return Result(Result::Code::Unimplemented,
+                  "Uploading to more than 1 face is not yet supported.");
+  }
+  if (range.face > 0) {
+    if (IGL_VERIFY(getType() == TextureType::Cube)) {
+      IGL_ASSERT_NOT_IMPLEMENTED();
+      return Result(Result::Code::Unimplemented,
+                    "Uploading to a specific face is not yet supported.");
+    } else {
+      return Result(Result::Code::Unsupported, "face must be 0.");
+    }
+  }
   if (data == nullptr) {
     return Result(Result::Code::Ok);
   }
@@ -155,6 +169,13 @@ Result Texture::uploadCube(const TextureRangeDesc& range,
     IGL_ASSERT_NOT_IMPLEMENTED();
     return Result(Result::Code::Unimplemented,
                   "Uploading to more than 1 mip level is not yet supported.");
+  }
+  if (IGL_UNEXPECTED(range.numFaces > 1)) {
+    return Result(Result::Code::Unsupported,
+                  "Uploading to more than 1 face is not supported with uploadCube.");
+  }
+  if (IGL_UNEXPECTED(range.face > 0)) {
+    return Result(Result::Code::Unsupported, "face must be 0.");
   }
   const auto result = validateRange(range);
   if (!result.isOk()) {

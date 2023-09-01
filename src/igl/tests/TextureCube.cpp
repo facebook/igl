@@ -362,19 +362,13 @@ TEST_F(TextureCubeTest, GetEstimatedSizeInBytes) {
 }
 
 //
-// Test ITexture::GetFullRange
+// Test ITexture::getFullRange and ITexture::getCubeFaceRange and
 //
-TEST_F(TextureCubeTest, GetFullRange) {
-  auto getFullRange = [&](size_t width,
-                          size_t height,
-                          TextureFormat format,
-                          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-                          size_t numMipLevels,
-                          size_t rangeMipLevel = 0,
-                          size_t rangeNumMipLevels = 0) -> TextureRangeDesc {
-    if (rangeNumMipLevels == 0) {
-      rangeNumMipLevels = numMipLevels;
-    }
+TEST_F(TextureCubeTest, GetRange) {
+  auto createTexture = [&](size_t width,
+                           size_t height,
+                           TextureFormat format,
+                           size_t numMipLevels) -> std::shared_ptr<ITexture> {
     Result ret;
     TextureDesc texDesc = TextureDesc::newCube(format,
                                                width,
@@ -386,7 +380,43 @@ TEST_F(TextureCubeTest, GetFullRange) {
     if (ret.code != Result::Code::Ok || texture == nullptr) {
       return {};
     }
-    return texture->getFullRange(rangeMipLevel, rangeNumMipLevels);
+    return texture;
+  };
+  auto getFullRange = [&](size_t width,
+                          size_t height,
+                          TextureFormat format,
+                          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+                          size_t numMipLevels,
+                          size_t rangeMipLevel = 0,
+                          size_t rangeNumMipLevels = 0) -> TextureRangeDesc {
+    auto tex = createTexture(width, height, format, numMipLevels);
+    return tex ? tex->getFullRange(rangeMipLevel,
+                                   rangeNumMipLevels ? rangeNumMipLevels : numMipLevels)
+               : TextureRangeDesc{};
+  };
+  auto getCubeFaceRangeEnum = [&](size_t width,
+                                  size_t height,
+                                  TextureFormat format,
+                                  size_t numMipLevels,
+                                  TextureCubeFace face,
+                                  size_t rangeMipLevel = 0,
+                                  size_t rangeNumMipLevels = 0) -> TextureRangeDesc {
+    auto tex = createTexture(width, height, format, numMipLevels);
+    return tex ? tex->getCubeFaceRange(
+                     face, rangeMipLevel, rangeNumMipLevels ? rangeNumMipLevels : numMipLevels)
+               : TextureRangeDesc{};
+  };
+  auto getCubeFaceRangeNum = [&](size_t width,
+                                 size_t height,
+                                 TextureFormat format,
+                                 size_t numMipLevels,
+                                 size_t face,
+                                 size_t rangeMipLevel = 0,
+                                 size_t rangeNumMipLevels = 0) -> TextureRangeDesc {
+    auto tex = createTexture(width, height, format, numMipLevels);
+    return tex ? tex->getCubeFaceRange(
+                     face, rangeMipLevel, rangeNumMipLevels ? rangeNumMipLevels : numMipLevels)
+               : TextureRangeDesc{};
   };
   auto rangesAreEqual = [&](const TextureRangeDesc& a, const TextureRangeDesc& b) -> bool {
     return std::memcmp(&a, &b, sizeof(TextureRangeDesc)) == 0;
@@ -396,10 +426,25 @@ TEST_F(TextureCubeTest, GetFullRange) {
                           : TextureFormat::RGBA_UNorm8;
 
   TextureRangeDesc range;
-  range = TextureRangeDesc::new2D(0, 0, 34, 34, 0, 1);
+  range = TextureRangeDesc::newCube(0, 0, 34, 34, 0, 1);
   ASSERT_TRUE(rangesAreEqual(getFullRange(34, 34, format, 1), range));
-  range = TextureRangeDesc::new2D(0, 0, 16, 16, 0, 5);
+  ASSERT_TRUE(rangesAreEqual(getCubeFaceRangeEnum(34, 34, format, 1, TextureCubeFace::NegX),
+                             range.atFace(TextureCubeFace::NegX)));
+  ASSERT_TRUE(rangesAreEqual(getCubeFaceRangeNum(34, 34, format, 1, 1), range.atFace(1)));
+
+  range = TextureRangeDesc::newCube(0, 0, 16, 16, 0, 5);
   ASSERT_TRUE(rangesAreEqual(getFullRange(16, 16, format, 5), range));
+  ASSERT_TRUE(rangesAreEqual(getCubeFaceRangeEnum(16, 16, format, 5, TextureCubeFace::NegX),
+                             range.atFace(TextureCubeFace::NegX)));
+  ASSERT_TRUE(rangesAreEqual(getCubeFaceRangeNum(16, 16, format, 5, 1), range.atFace(1)));
+
+  // Subset of mip levels
+  ASSERT_TRUE(rangesAreEqual(getFullRange(16, 16, format, 5, 1, 1), range.atMipLevel(1)));
+  ASSERT_TRUE(rangesAreEqual(getCubeFaceRangeEnum(16, 16, format, 5, TextureCubeFace::NegX, 1, 1),
+                             range.atFace(TextureCubeFace::NegX).atMipLevel(1)));
+  ASSERT_TRUE(rangesAreEqual(getCubeFaceRangeNum(16, 16, format, 5, 1, 1, 1),
+                             range.atFace(1).atMipLevel(1)));
 }
+
 } // namespace tests
 } // namespace igl

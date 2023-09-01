@@ -197,6 +197,20 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
   if (!result.isOk()) {
     return result;
   }
+  if (range.numFaces > 1) {
+    IGL_ASSERT_NOT_IMPLEMENTED();
+    return Result(Result::Code::Unimplemented,
+                  "Uploading to more than 1 face is not yet supported.");
+  }
+  if (range.face > 0) {
+    if (IGL_VERIFY(getType() == TextureType::Cube)) {
+      IGL_ASSERT_NOT_IMPLEMENTED();
+      return Result(Result::Code::Unimplemented,
+                    "Uploading to a specific face is not yet supported.");
+    } else {
+      return Result(Result::Code::Unsupported, "face must be 0.");
+    }
+  }
 
   const void* uploadData = data;
   const auto imageRowWidth = getProperties().getBytesPerRow(range);
@@ -272,6 +286,13 @@ Result Texture::uploadCube(const TextureRangeDesc& range,
   const auto result = validateRange(range);
   if (!result.isOk()) {
     return result;
+  }
+  if (IGL_UNEXPECTED(range.numFaces > 1)) {
+    return Result(Result::Code::Unsupported,
+                  "Uploading to more than 1 face is not supported with uploadCube.");
+  }
+  if (IGL_UNEXPECTED(range.face > 0)) {
+    return Result(Result::Code::Unsupported, "face must be 0.");
   }
 
   const VulkanContext& ctx = device_.getVulkanContext();

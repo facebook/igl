@@ -201,6 +201,8 @@ TEST(TextureRangeDesc, Construction) {
     EXPECT_EQ(range.numLayers, 1);
     EXPECT_EQ(range.mipLevel, 4);
     EXPECT_EQ(range.numMipLevels, 5);
+    EXPECT_EQ(range.face, 0);
+    EXPECT_EQ(range.numFaces, 1);
   }
   {
     const auto range = TextureRangeDesc::new1DArray(2, 3, 4, 5, 6, 7);
@@ -214,6 +216,8 @@ TEST(TextureRangeDesc, Construction) {
     EXPECT_EQ(range.numLayers, 5);
     EXPECT_EQ(range.mipLevel, 6);
     EXPECT_EQ(range.numMipLevels, 7);
+    EXPECT_EQ(range.face, 0);
+    EXPECT_EQ(range.numFaces, 1);
   }
   {
     const auto range = TextureRangeDesc::new2D(2, 3, 4, 5, 6, 7);
@@ -227,6 +231,8 @@ TEST(TextureRangeDesc, Construction) {
     EXPECT_EQ(range.numLayers, 1);
     EXPECT_EQ(range.mipLevel, 6);
     EXPECT_EQ(range.numMipLevels, 7);
+    EXPECT_EQ(range.face, 0);
+    EXPECT_EQ(range.numFaces, 1);
   }
   {
     const auto range = TextureRangeDesc::new2DArray(2, 3, 4, 5, 6, 7, 8, 9);
@@ -240,6 +246,8 @@ TEST(TextureRangeDesc, Construction) {
     EXPECT_EQ(range.numLayers, 7);
     EXPECT_EQ(range.mipLevel, 8);
     EXPECT_EQ(range.numMipLevels, 9);
+    EXPECT_EQ(range.face, 0);
+    EXPECT_EQ(range.numFaces, 1);
   }
   {
     const auto range = TextureRangeDesc::new3D(2, 3, 4, 5, 6, 7, 8, 9);
@@ -253,6 +261,53 @@ TEST(TextureRangeDesc, Construction) {
     EXPECT_EQ(range.numLayers, 1);
     EXPECT_EQ(range.mipLevel, 8);
     EXPECT_EQ(range.numMipLevels, 9);
+    EXPECT_EQ(range.face, 0);
+    EXPECT_EQ(range.numFaces, 1);
+  }
+  {
+    const auto range = TextureRangeDesc::newCube(2, 3, 4, 5, 7, 8);
+    EXPECT_EQ(range.x, 2);
+    EXPECT_EQ(range.y, 3);
+    EXPECT_EQ(range.z, 0);
+    EXPECT_EQ(range.width, 4);
+    EXPECT_EQ(range.height, 5);
+    EXPECT_EQ(range.depth, 1);
+    EXPECT_EQ(range.layer, 0);
+    EXPECT_EQ(range.numLayers, 1);
+    EXPECT_EQ(range.mipLevel, 7);
+    EXPECT_EQ(range.numMipLevels, 8);
+    EXPECT_EQ(range.face, 0);
+    EXPECT_EQ(range.numFaces, 6);
+  }
+  {
+    const auto range = TextureRangeDesc::newCubeFace(2, 3, 4, 5, 1, 7, 8);
+    EXPECT_EQ(range.x, 2);
+    EXPECT_EQ(range.y, 3);
+    EXPECT_EQ(range.z, 0);
+    EXPECT_EQ(range.width, 4);
+    EXPECT_EQ(range.height, 5);
+    EXPECT_EQ(range.depth, 1);
+    EXPECT_EQ(range.layer, 0);
+    EXPECT_EQ(range.numLayers, 1);
+    EXPECT_EQ(range.mipLevel, 7);
+    EXPECT_EQ(range.numMipLevels, 8);
+    EXPECT_EQ(range.face, 1);
+    EXPECT_EQ(range.numFaces, 1);
+  }
+  {
+    const auto range = TextureRangeDesc::newCubeFace(2, 3, 4, 5, TextureCubeFace::NegX, 7, 8);
+    EXPECT_EQ(range.x, 2);
+    EXPECT_EQ(range.y, 3);
+    EXPECT_EQ(range.z, 0);
+    EXPECT_EQ(range.width, 4);
+    EXPECT_EQ(range.height, 5);
+    EXPECT_EQ(range.depth, 1);
+    EXPECT_EQ(range.layer, 0);
+    EXPECT_EQ(range.numLayers, 1);
+    EXPECT_EQ(range.mipLevel, 7);
+    EXPECT_EQ(range.numMipLevels, 8);
+    EXPECT_EQ(range.face, 1);
+    EXPECT_EQ(range.numFaces, 1);
   }
 }
 
@@ -270,6 +325,8 @@ TEST(TextureRangeDesc, AtMipLevel) {
     EXPECT_EQ(range.numLayers, 1);
     EXPECT_EQ(range.mipLevel, 1);
     EXPECT_EQ(range.numMipLevels, 1);
+    EXPECT_EQ(range.face, 0);
+    EXPECT_EQ(range.numFaces, 1);
   }
   {
     const auto initialRange = TextureRangeDesc::new2DArray(0, 5, 2, 10, 0, 2, 1);
@@ -284,6 +341,8 @@ TEST(TextureRangeDesc, AtMipLevel) {
     EXPECT_EQ(range.numLayers, 2);
     EXPECT_EQ(range.mipLevel, 3);
     EXPECT_EQ(range.numMipLevels, 1);
+    EXPECT_EQ(range.face, 0);
+    EXPECT_EQ(range.numFaces, 1);
   }
 }
 
@@ -301,6 +360,8 @@ TEST(TextureRangeDesc, AtLayer) {
     EXPECT_EQ(range.numLayers, 1);
     EXPECT_EQ(range.mipLevel, 8);
     EXPECT_EQ(range.numMipLevels, 1);
+    EXPECT_EQ(range.face, 0);
+    EXPECT_EQ(range.numFaces, 1);
   }
 }
 
@@ -318,6 +379,62 @@ TEST(TextureRangeDesc, WithNumLayers) {
     EXPECT_EQ(range.numLayers, 8);
     EXPECT_EQ(range.mipLevel, 6);
     EXPECT_EQ(range.numMipLevels, 7);
+    EXPECT_EQ(range.face, 0);
+    EXPECT_EQ(range.numFaces, 1);
+  }
+}
+
+TEST(TextureRangeDesc, AtFace) {
+  {
+    const auto initialRange = TextureRangeDesc::new2D(2, 3, 4, 5, 6, 7);
+    const auto range = initialRange.atFace(1);
+    EXPECT_EQ(range.x, 2);
+    EXPECT_EQ(range.y, 3);
+    EXPECT_EQ(range.z, 0);
+    EXPECT_EQ(range.width, 4);
+    EXPECT_EQ(range.height, 5);
+    EXPECT_EQ(range.depth, 1);
+    EXPECT_EQ(range.layer, 0);
+    EXPECT_EQ(range.numLayers, 1);
+    EXPECT_EQ(range.mipLevel, 6);
+    EXPECT_EQ(range.numMipLevels, 7);
+    EXPECT_EQ(range.face, 1);
+    EXPECT_EQ(range.numFaces, 1);
+  }
+  {
+    const auto initialRange = TextureRangeDesc::new2D(2, 3, 4, 5, 6, 7);
+    const auto range = initialRange.atFace(TextureCubeFace::NegX);
+    EXPECT_EQ(range.x, 2);
+    EXPECT_EQ(range.y, 3);
+    EXPECT_EQ(range.z, 0);
+    EXPECT_EQ(range.width, 4);
+    EXPECT_EQ(range.height, 5);
+    EXPECT_EQ(range.depth, 1);
+    EXPECT_EQ(range.layer, 0);
+    EXPECT_EQ(range.numLayers, 1);
+    EXPECT_EQ(range.mipLevel, 6);
+    EXPECT_EQ(range.numMipLevels, 7);
+    EXPECT_EQ(range.face, 1);
+    EXPECT_EQ(range.numFaces, 1);
+  }
+}
+
+TEST(TextureRangeDesc, WithNumFaces) {
+  {
+    const auto initialRange = TextureRangeDesc::new2D(2, 3, 4, 5, 6, 7);
+    const auto range = initialRange.withNumFaces(8);
+    EXPECT_EQ(range.x, 2);
+    EXPECT_EQ(range.y, 3);
+    EXPECT_EQ(range.z, 0);
+    EXPECT_EQ(range.width, 4);
+    EXPECT_EQ(range.height, 5);
+    EXPECT_EQ(range.depth, 1);
+    EXPECT_EQ(range.layer, 0);
+    EXPECT_EQ(range.numLayers, 1);
+    EXPECT_EQ(range.mipLevel, 6);
+    EXPECT_EQ(range.numMipLevels, 7);
+    EXPECT_EQ(range.face, 0);
+    EXPECT_EQ(range.numFaces, 8);
   }
 }
 
@@ -391,20 +508,30 @@ TEST(TextureFormatProperties, getBytesPerLayer) {
 
 TEST(TextureFormatProperties, getBytesPerRange) {
   auto range = TextureRangeDesc::new2D(0, 0, 10, 10);
+  auto cubeRange = TextureRangeDesc::newCube(0, 0, 10, 10);
+  auto cubeFaceRange = TextureRangeDesc::newCubeFace(0, 0, 10, 10, TextureCubeFace::PosZ);
   range.numMipLevels = 3;
+  cubeRange.numMipLevels = 3;
+  cubeFaceRange.numMipLevels = 3;
   {
     const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
     // Level 0: 10 pixels x 10 pixels
     // Level 1:  5 pixels x  5 pixels
     // Level 2:  2 pixels x  2 pixels
-    EXPECT_EQ(props.getBytesPerRange(range), ((10 * 10) + (5 * 5) + (2 * 2)) * 4);
+    const auto bytes = ((10 * 10) + (5 * 5) + (2 * 2)) * 4;
+    EXPECT_EQ(props.getBytesPerRange(range), bytes);
+    EXPECT_EQ(props.getBytesPerRange(cubeRange), bytes * 6);
+    EXPECT_EQ(props.getBytesPerRange(cubeFaceRange), bytes);
   }
   {
     const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGB_PVRTC_2BPPV1);
     // Level 0: 2 blocks x 3 blocks
     // Level 1: 2 blocks x 2 blocks
     // Level 2: 2 blocks x 2 blocks
-    EXPECT_EQ(props.getBytesPerRange(range), ((2 * 3) + (2 * 2) + (2 * 2)) * 8);
+    const auto bytes = ((2 * 3) + (2 * 2) + (2 * 2)) * 8;
+    EXPECT_EQ(props.getBytesPerRange(range), bytes);
+    EXPECT_EQ(props.getBytesPerRange(cubeRange), bytes * 6);
+    EXPECT_EQ(props.getBytesPerRange(cubeFaceRange), bytes);
   }
 }
 
@@ -974,19 +1101,39 @@ TEST_F(TextureTest, ValidateRangeCube) {
       TextureFormat::RGBA_UNorm8, 8, 8, TextureDesc::TextureUsageBits::Sampled);
   auto tex = iglDev_->createTexture(texDesc, &ret);
 
-  ret = tex->validateRange(TextureRangeDesc::new2D(0, 0, 8, 8));
+  ret = tex->validateRange(TextureRangeDesc::newCube(0, 0, 8, 8));
+  EXPECT_TRUE(ret.isOk());
+  ret = tex->validateRange(TextureRangeDesc::newCubeFace(0, 0, 8, 8, 1));
+  EXPECT_TRUE(ret.isOk());
+  ret = tex->validateRange(TextureRangeDesc::newCubeFace(0, 0, 8, 8, TextureCubeFace::NegX));
   EXPECT_TRUE(ret.isOk());
 
-  ret = tex->validateRange(TextureRangeDesc::new2D(4, 4, 4, 4));
+  ret = tex->validateRange(TextureRangeDesc::newCube(4, 4, 4, 4));
+  EXPECT_TRUE(ret.isOk());
+  ret = tex->validateRange(TextureRangeDesc::newCubeFace(4, 4, 4, 4, 1));
+  EXPECT_TRUE(ret.isOk());
+  ret = tex->validateRange(TextureRangeDesc::newCubeFace(4, 4, 4, 4, TextureCubeFace::NegX));
   EXPECT_TRUE(ret.isOk());
 
-  ret = tex->validateRange(TextureRangeDesc::new2D(0, 0, 4, 4, 1));
+  ret = tex->validateRange(TextureRangeDesc::newCube(0, 0, 4, 4, 1));
+  EXPECT_FALSE(ret.isOk());
+  ret = tex->validateRange(TextureRangeDesc::newCubeFace(0, 0, 4, 4, 1, 1));
+  EXPECT_FALSE(ret.isOk());
+  ret = tex->validateRange(TextureRangeDesc::newCubeFace(0, 0, 4, 4, TextureCubeFace::NegX, 1));
   EXPECT_FALSE(ret.isOk());
 
-  ret = tex->validateRange(TextureRangeDesc::new2D(0, 0, 12, 12));
+  ret = tex->validateRange(TextureRangeDesc::newCube(0, 0, 12, 12));
+  EXPECT_FALSE(ret.isOk());
+  ret = tex->validateRange(TextureRangeDesc::newCubeFace(0, 0, 12, 12, 1));
+  EXPECT_FALSE(ret.isOk());
+  ret = tex->validateRange(TextureRangeDesc::newCubeFace(0, 0, 12, 12, TextureCubeFace::NegX));
   EXPECT_FALSE(ret.isOk());
 
-  ret = tex->validateRange(TextureRangeDesc::new2D(0, 0, 0, 0));
+  ret = tex->validateRange(TextureRangeDesc::newCube(0, 0, 0, 0));
+  EXPECT_FALSE(ret.isOk());
+  ret = tex->validateRange(TextureRangeDesc::newCubeFace(0, 0, 0, 0, 1));
+  EXPECT_FALSE(ret.isOk());
+  ret = tex->validateRange(TextureRangeDesc::newCubeFace(0, 0, 0, 0, TextureCubeFace::NegX));
   EXPECT_FALSE(ret.isOk());
 }
 

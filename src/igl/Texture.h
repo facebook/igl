@@ -38,6 +38,20 @@ enum class TextureType : uint8_t {
 };
 
 /**
+ * @brief TextureCubeFace denotes side of the face in a cubemap setting.
+   Based on https://www.khronos.org/opengl/wiki/Cubemap_Texture
+
+  PosX            - The U coordinate is going behind the viewer, with the V coordinate going down.
+  NegX            - The U coordinate is going forward, with the V coordinate going down.
+  PosY            - The U coordinate goes to the right, with the V coordinate going forward.
+  NegY            - The U coordinate goes to the right, with the V coordinate going backward.
+  PosZ            - The U coordinate goes to the right, with the V coordinate going down.
+  NegZ            - The U coordinate goes to the left (relative to us facing forwards), with the V
+ coordinate going down.
+ */
+enum class TextureCubeFace : uint8_t { PosX = 0, NegX, PosY, NegY, PosZ, NegZ };
+
+/**
  * @brief Descriptor for texture dimensions
  *
  *  x            - offset position in width
@@ -50,6 +64,8 @@ enum class TextureType : uint8_t {
  *  numLayers    - number of layers in the range
  *  mipLevel     - mipmap level offset of the range
  *  numMipLevels - number of mipmap levels in the range
+ *  face         - face offset for cube textures
+ *  numFaces     - number of cube texture faces in the range
  */
 struct TextureRangeDesc {
   size_t x = 0;
@@ -62,6 +78,8 @@ struct TextureRangeDesc {
   size_t numLayers = 1;
   size_t mipLevel = 0;
   size_t numMipLevels = 1;
+  size_t face = 0;
+  size_t numFaces = 1;
 
   static TextureRangeDesc new1D(size_t x,
                                 size_t width,
@@ -95,6 +113,26 @@ struct TextureRangeDesc {
                                 size_t depth,
                                 size_t mipLevel = 0,
                                 size_t numMipLevels = 1);
+  static TextureRangeDesc newCube(size_t x,
+                                  size_t y,
+                                  size_t width,
+                                  size_t height,
+                                  size_t mipLevel = 0,
+                                  size_t numMipLevels = 1);
+  static TextureRangeDesc newCubeFace(size_t x,
+                                      size_t y,
+                                      size_t width,
+                                      size_t height,
+                                      size_t face,
+                                      size_t mipLevel = 0,
+                                      size_t numMipLevels = 1);
+  static TextureRangeDesc newCubeFace(size_t x,
+                                      size_t y,
+                                      size_t width,
+                                      size_t height,
+                                      TextureCubeFace face,
+                                      size_t mipLevel = 0,
+                                      size_t numMipLevels = 1);
 
   /**
    * @brief Returns a new TextureRangeDesc based on this one but reduced to the specified mipLevel.
@@ -117,6 +155,26 @@ struct TextureRangeDesc {
    * @param newNumLayers The number of layers in the returned range.
    */
   [[nodiscard]] TextureRangeDesc withNumLayers(size_t newNumLayers) const noexcept;
+  /**
+   * @brief Returns a new TextureRangeDesc based on this one but reduced to the specified face.
+   *
+   * @param newFace The face of the returned range.
+   * @remark The returned range only has 1 face.
+   */
+  [[nodiscard]] TextureRangeDesc atFace(size_t newFace) const noexcept;
+  /**
+   * @brief Returns a new TextureRangeDesc based on this one but reduced to the specified face.
+   *
+   * @param newFace The face of the returned range.
+   * @remark The returned range only has 1 face.
+   */
+  [[nodiscard]] TextureRangeDesc atFace(TextureCubeFace newFace) const noexcept;
+  /**
+   * @brief Returns a new TextureRangeDesc based on this one but with the specified number of faces.
+   *
+   * @param newNumFaces The number of faces in the returned range.
+   */
+  [[nodiscard]] TextureRangeDesc withNumFaces(size_t newNumFaces) const noexcept;
 };
 
 /**
@@ -280,20 +338,6 @@ struct TextureFormatProperties {
    */
   [[nodiscard]] size_t getNumMipLevels(size_t texWidth, size_t texHeight, size_t totalBytes);
 };
-
-/**
- * @brief TextureCubeFace denotes side of the face in a cubemap setting.
-   Based on https://www.khronos.org/opengl/wiki/Cubemap_Texture
-
-  PosX            - The U coordinate is going behind the viewer, with the V coordinate going down.
-  NegX            - The U coordinate is going forward, with the V coordinate going down.
-  PosY            - The U coordinate goes to the right, with the V coordinate going forward.
-  NegY            - The U coordinate goes to the right, with the V coordinate going backward.
-  PosZ            - The U coordinate goes to the right, with the V coordinate going down.
-  NegZ            - The U coordinate goes to the left (relative to us facing forwards), with the V
- coordinate going down.
- */
-enum class TextureCubeFace : uint8_t { PosX = 0, NegX, PosY, NegY, PosZ, NegZ };
 
 /**
  * @brief Descriptor for internal texture creation methods used in IGL
@@ -576,6 +620,13 @@ class ITexture : public ITrackedResource<ITexture> {
    */
   [[nodiscard]] virtual size_t getNumLayers() const = 0;
   /**
+   * @brief Returns the number of faces the texture has
+   * For non-cube textures, return 1
+   *
+   * @return size_t
+   */
+  [[nodiscard]] size_t getNumFaces() const;
+  /**
    * @brief Returns texture format properties of the texture
    *
    * @return TextureFormatProperties
@@ -649,10 +700,29 @@ class ITexture : public ITrackedResource<ITexture> {
   /**
    * @brief Returns a TextureRangeDesc for the texture's full range at the specified mip level.
    *
+   * For cube map textures, this range includes all faces.
    * @return TextureRangeDesc.
    */
   [[nodiscard]] TextureRangeDesc getFullRange(size_t mipLevel = 0,
                                               size_t numMipLevels = 1) const noexcept;
+  /**
+   * @brief Returns a TextureRangeDesc for the texture's full range for a single cube face at the
+   * specified mip level.
+   *
+   * @return TextureRangeDesc.
+   */
+  [[nodiscard]] TextureRangeDesc getCubeFaceRange(TextureCubeFace face,
+                                                  size_t mipLevel = 0,
+                                                  size_t numMipLevels = 1) const noexcept;
+  /**
+   * @brief Returns a TextureRangeDesc for the texture's full range for a single cube face at the
+   * specified mip level.
+   *
+   * @return TextureRangeDesc.
+   */
+  [[nodiscard]] TextureRangeDesc getCubeFaceRange(size_t face,
+                                                  size_t mipLevel = 0,
+                                                  size_t numMipLevels = 1) const noexcept;
   /**
    * @brief A helper function to quickly access TextureFormat.
    *

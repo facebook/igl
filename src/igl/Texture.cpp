@@ -75,21 +75,52 @@ TextureRangeDesc TextureRangeDesc::new3D(size_t x,
   return desc;
 }
 
+TextureRangeDesc TextureRangeDesc::newCube(size_t x,
+                                           size_t y,
+                                           size_t width,
+                                           size_t height,
+                                           size_t mipLevel,
+                                           size_t numMipLevels) {
+  auto desc = new3D(x, y, 0, width, height, 1, mipLevel, numMipLevels);
+  desc.numFaces = 6;
+  return desc;
+}
+
+TextureRangeDesc TextureRangeDesc::newCubeFace(size_t x,
+                                               size_t y,
+                                               size_t width,
+                                               size_t height,
+                                               size_t face,
+                                               size_t mipLevel,
+                                               size_t numMipLevels) {
+  auto desc = new3D(x, y, 0, width, height, 1, mipLevel, numMipLevels);
+  desc.numFaces = 1;
+  desc.face = face;
+  return desc;
+}
+
+TextureRangeDesc TextureRangeDesc::newCubeFace(size_t x,
+                                               size_t y,
+                                               size_t width,
+                                               size_t height,
+                                               TextureCubeFace face,
+                                               size_t mipLevel,
+                                               size_t numMipLevels) {
+  return newCubeFace(x, y, width, height, static_cast<size_t>(face), mipLevel, numMipLevels);
+}
+
 TextureRangeDesc TextureRangeDesc::atMipLevel(size_t newMipLevel) const noexcept {
   if (newMipLevel == mipLevel) {
     return *this;
   } else if (IGL_VERIFY(newMipLevel > mipLevel)) {
     const auto delta = newMipLevel - mipLevel;
-    TextureRangeDesc newRange;
+    TextureRangeDesc newRange = *this;
     newRange.x = x >> delta;
     newRange.y = y >> delta;
     newRange.z = z >> delta;
     newRange.width = std::max(width >> delta, static_cast<size_t>(1));
     newRange.height = std::max(height >> delta, static_cast<size_t>(1));
     newRange.depth = std::max(depth >> delta, static_cast<size_t>(1));
-
-    newRange.layer = layer;
-    newRange.numLayers = numLayers;
 
     newRange.mipLevel = newMipLevel;
     newRange.numMipLevels = 1;
@@ -111,6 +142,25 @@ TextureRangeDesc TextureRangeDesc::atLayer(size_t newLayer) const noexcept {
 TextureRangeDesc TextureRangeDesc::withNumLayers(size_t newNumLayers) const noexcept {
   TextureRangeDesc newRange = *this;
   newRange.numLayers = newNumLayers;
+
+  return newRange;
+}
+
+TextureRangeDesc TextureRangeDesc::atFace(size_t newFace) const noexcept {
+  TextureRangeDesc newRange = *this;
+  newRange.face = newFace;
+  newRange.numFaces = 1;
+
+  return newRange;
+}
+
+TextureRangeDesc TextureRangeDesc::atFace(TextureCubeFace newFace) const noexcept {
+  return atFace(static_cast<size_t>(newFace));
+}
+
+TextureRangeDesc TextureRangeDesc::withNumFaces(size_t newNumFaces) const noexcept {
+  TextureRangeDesc newRange = *this;
+  newRange.numFaces = newNumFaces;
 
   return newRange;
 }
@@ -259,6 +309,7 @@ size_t TextureFormatProperties::getBytesPerLayer(TextureRangeDesc range) const n
   const auto texWidth = std::max(range.width, static_cast<size_t>(1));
   const auto texHeight = std::max(range.height, static_cast<size_t>(1));
   const auto texDepth = std::max(range.depth, static_cast<size_t>(1));
+  const auto texFaces = std::max(range.numFaces, static_cast<size_t>(1));
   if (isCompressed()) {
     const size_t widthInBlocks =
         std::max((texWidth + blockWidth - 1) / blockWidth, static_cast<size_t>(minBlocksX));
@@ -266,9 +317,9 @@ size_t TextureFormatProperties::getBytesPerLayer(TextureRangeDesc range) const n
         std::max((texHeight + blockHeight - 1) / blockHeight, static_cast<size_t>(minBlocksY));
     const size_t depthInBlocks =
         std::max((texDepth + blockDepth - 1) / blockDepth, static_cast<size_t>(minBlocksZ));
-    return widthInBlocks * heightInBlocks * depthInBlocks * bytesPerBlock;
+    return texFaces * widthInBlocks * heightInBlocks * depthInBlocks * bytesPerBlock;
   } else {
-    return texWidth * texHeight * texDepth * bytesPerBlock;
+    return texFaces * texWidth * texHeight * texDepth * bytesPerBlock;
   }
 }
 
@@ -340,22 +391,21 @@ size_t ITexture::getDepth() const {
   return getDimensions().depth;
 }
 
+size_t ITexture::getNumFaces() const {
+  return getType() == TextureType::Cube ? 6 : 1;
+}
+
 size_t ITexture::getEstimatedSizeInBytes() const {
   const auto range = getFullRange(0, getNumMipLevels());
-  auto totalBytes = properties_.getBytesPerRange(range);
-
-  if (getType() == igl::TextureType::Cube) {
-    totalBytes *= 6;
-  }
-
-  return totalBytes;
+  return properties_.getBytesPerRange(range);
 }
 
 Result ITexture::validateRange(const igl::TextureRangeDesc& range) const noexcept {
   if (IGL_UNEXPECTED(range.width == 0 || range.height == 0 || range.depth == 0 ||
-                     range.numLayers == 0 || range.numMipLevels == 0)) {
-    return Result{Result::Code::ArgumentInvalid,
-                  "width, height, depth, numLayers and numMipLevels must be at least 1."};
+                     range.numLayers == 0 || range.numMipLevels == 0 || range.numFaces == 0)) {
+    return Result{
+        Result::Code::ArgumentInvalid,
+        "width, height, depth, numLayers, numMipLevels, and numFaces must be at least 1."};
   }
 
   const auto dimensions = getDimensions();
@@ -364,14 +414,17 @@ Result ITexture::validateRange(const igl::TextureRangeDesc& range) const noexcep
   const size_t levelHeight = std::max(dimensions.height >> range.mipLevel, static_cast<size_t>(1));
   const size_t levelDepth = std::max(dimensions.depth >> range.mipLevel, static_cast<size_t>(1));
   const size_t texLayers = getNumLayers();
+  const size_t texFaces = getNumFaces();
 
   if (range.width > levelWidth || range.height > levelHeight || range.depth > levelDepth ||
-      range.numLayers > texLayers || range.numMipLevels > texMipLevels) {
+      range.numLayers > texLayers || range.numMipLevels > texMipLevels ||
+      range.numFaces > texFaces) {
     return Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"};
   }
   if (range.x > levelWidth - range.width || range.y > levelHeight - range.height ||
       range.z > levelDepth - range.depth || range.layer > texLayers - range.numLayers ||
-      range.mipLevel > texMipLevels - range.numMipLevels) {
+      range.mipLevel > texMipLevels - range.numMipLevels ||
+      range.face > texFaces - range.numFaces) {
     return Result{Result::Code::ArgumentOutOfRange, "range dimensions exceed texture dimensions"};
   }
 
@@ -387,10 +440,26 @@ TextureRangeDesc ITexture::getFullRange(size_t mipLevel, size_t numMipLevels) co
   const auto texDepth = std::max(dimensions.depth >> mipLevel, one);
 
   auto desc = TextureRangeDesc::new3D(0, 0, 0, texWidth, texHeight, texDepth, mipLevel);
+  desc.face = 0;
   desc.numLayers = getNumLayers();
   desc.numMipLevels = numMipLevels;
+  desc.numFaces = getNumFaces();
 
   return desc;
+}
+
+TextureRangeDesc ITexture::getCubeFaceRange(size_t face,
+                                            size_t mipLevel,
+                                            size_t numMipLevels) const noexcept {
+  IGL_ASSERT(getType() == TextureType::Cube);
+  return getFullRange(mipLevel, numMipLevels).atFace(face);
+}
+
+TextureRangeDesc ITexture::getCubeFaceRange(TextureCubeFace face,
+                                            size_t mipLevel,
+                                            size_t numMipLevels) const noexcept {
+  IGL_ASSERT(getType() == TextureType::Cube);
+  return getCubeFaceRange(static_cast<size_t>(face), mipLevel, numMipLevels);
 }
 
 } // namespace igl
