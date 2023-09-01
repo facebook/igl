@@ -687,22 +687,14 @@ TEST_F(TextureTest, PassthroughSubTexture) {
 
   cmdBuf_->waitUntilCompleted();
 
-  //----------------------
-  // Read back framebuffer
-  //----------------------
-  auto pixels = std::vector<uint32_t>(OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT);
-
-  framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
-
-  //--------------------------------
-  // Verify against original texture
-  //--------------------------------
-  for (size_t i = 0; i < OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT - 1; i++) {
-    ASSERT_EQ(pixels[i], data::texture::TEX_RGBA_2x2[i]);
-  }
-
-  // Verify the lower-right corner is the color we have updated earlier.
-  ASSERT_EQ(pixels[OFFSCREEN_TEX_HEIGHT * OFFSCREEN_TEX_HEIGHT - 1], singlePixelColor);
+  //----------------
+  // Validate output
+  //----------------
+  util::validateFramebufferTexture(*iglDev_,
+                                   *cmdQueue_,
+                                   *framebuffer_,
+                                   data::texture::TEX_RGBA_2x2_MODIFIED,
+                                   "PassthroughSubTexture");
 }
 
 //
@@ -721,7 +713,6 @@ TEST_F(TextureTest, FBCopy) {
   std::shared_ptr<ITexture> dstTexture;
 
   const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
-  auto pixels = std::vector<uint32_t>(OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT);
 
   //--------------------------------
   // Create copy destination texture
@@ -764,11 +755,10 @@ TEST_F(TextureTest, FBCopy) {
   cmdBuf_->waitUntilCompleted();
 
   //----------------------------------------------------------------------
-  // Read back framebuffer. Only check one pixel because we expect all the
-  // pixels to be the same, i.e. {0.5, 0.5, 0.5, 0.5}
+  // Validate framebuffer texture
   //----------------------------------------------------------------------
-  framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
-  ASSERT_EQ(pixels[0], 0x80808080);
+  util::validateFramebufferTexture(
+      *iglDev_, *cmdQueue_, *framebuffer_, data::texture::TEX_RGBA_GRAY_2x2, "After Initial Clear");
 
   //------------------------
   // Copy content to texture
@@ -795,10 +785,10 @@ TEST_F(TextureTest, FBCopy) {
   cmdBuf_->waitUntilCompleted();
 
   //-----------------------------------
-  // Read back framebuffer. Should be 0
+  // Validate framebuffer texture again
   //-----------------------------------
-  framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
-  ASSERT_EQ(pixels[0], 0);
+  util::validateFramebufferTexture(
+      *iglDev_, *cmdQueue_, *framebuffer_, data::texture::TEX_RGBA_CLEAR_2x2, "After Second Clear");
 
   //---------------------------------------------
   // Copy dstTexture to FB so we can read it back
@@ -827,8 +817,8 @@ TEST_F(TextureTest, FBCopy) {
   //------------------------------------------------------
   // Read back framebuffer. Should be {0.5, 0.5, 0.5, 0.5}
   //------------------------------------------------------
-  framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
-  ASSERT_EQ(pixels[0], 0x80808080);
+  util::validateFramebufferTexture(
+      *iglDev_, *cmdQueue_, *framebuffer_, data::texture::TEX_RGBA_GRAY_2x2, "After Copy");
 }
 
 //
@@ -848,7 +838,7 @@ TEST_F(TextureTest, FBCopy) {
 // Note: This test only covers 4 and 8 byte alignment because copyBytesColorAttachment does not
 // support reading non 4 byte formats
 //
-TEST_F(TextureTest, PIXEL_UPLOAD_ALIGNMENT) {
+TEST_F(TextureTest, UploadAlignment) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
@@ -963,21 +953,11 @@ TEST_F(TextureTest, PIXEL_UPLOAD_ALIGNMENT) {
 
     cmdBuf_->waitUntilCompleted();
 
-    //----------------------
-    // Read back framebuffer
-    //----------------------
-    auto outputPixels =
-        std::vector<uint32_t>(static_cast<size_t>(width) * static_cast<size_t>(height));
-
-    // bytesPerRow should be without padding, since 0x entries are ignored
-    customFramebuffer->copyBytesColorAttachment(*cmdQueue_, 0, outputPixels.data(), rangeDesc);
-
-    //--------------------------------
-    // Verify against original texture
-    //--------------------------------
-    for (size_t i = 0; i < width * height; i++) {
-      ASSERT_EQ(outputPixels[i], inputPixels[i]);
-    }
+    //----------------
+    // Validate output
+    //----------------
+    util::validateFramebufferTexture(
+        *iglDev_, *cmdQueue_, *customFramebuffer, inputPixels, "UploadAlignment");
   }
 }
 
@@ -1065,19 +1045,11 @@ TEST_F(TextureTest, Resize) {
 
   cmdBuf_->waitUntilCompleted();
 
-  //----------------------
-  // Read back framebuffer
-  //----------------------
-  auto pixels = std::vector<uint32_t>(OUTPUT_TEX_WIDTH * OUTPUT_TEX_HEIGHT);
-
-  rangeDesc = TextureRangeDesc::new2D(0, 0, OUTPUT_TEX_WIDTH, OUTPUT_TEX_HEIGHT);
-
-  fb->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
-
-  //--------------------------------
-  // Verify output
-  //--------------------------------
-  ASSERT_EQ(pixels[0], 0x80808080);
+  //----------------
+  // Validate output
+  //----------------
+  util::validateFramebufferTexture(
+      *iglDev_, *cmdQueue_, *fb, data::texture::TEX_RGBA_GRAY_5x5, "Resize");
 }
 
 //
@@ -1205,6 +1177,13 @@ TEST_F(TextureTest, RenderToMip) {
 
   uint32_t colors[NUM_MIPS] = {0xdeadbeef, 0x8badf00d, 0xc00010ff, 0xbaaaaaad};
 
+  std::vector<std::vector<uint32_t>> inputTexData{
+      std::vector(64 /* 8 * 8 */, colors[0]),
+      std::vector(16 /* 4 * 4 */, colors[1]),
+      std::vector(4 /* 2 * 2 */, colors[2]),
+      std::vector(1 /* 1 * 1 */, colors[3]),
+  };
+
   //---------------------------------------------------------------------
   // Create output texture with mip levels and attach it to a framebuffer
   //---------------------------------------------------------------------
@@ -1248,9 +1227,8 @@ TEST_F(TextureTest, RenderToMip) {
     ASSERT_TRUE(inputTexture_ != nullptr);
 
     // Initialize the input texture's color
-    std::vector<uint32_t> inputTexData(inTexWidth * inTexWidth, colors[mipLevel]);
     auto rangeDesc = TextureRangeDesc::new2D(0, 0, inTexWidth, inTexWidth);
-    inputTexture_->upload(rangeDesc, inputTexData.data());
+    inputTexture_->upload(rangeDesc, inputTexData[mipLevel].data());
 
     cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -1279,58 +1257,19 @@ TEST_F(TextureTest, RenderToMip) {
 
   // Do readback in a separate loop to ensure all mip levels have been rendered.
   for (size_t mipLevel = 0; mipLevel < NUM_MIPS; mipLevel++) {
-    //--------------------------------------------------------
-    // Read back and verify the written mip of the framebuffer
-    //--------------------------------------------------------
-    auto rangeDesc = outputTex->getFullRange(mipLevel);
-    auto pixels = std::vector<uint32_t>(rangeDesc.width * rangeDesc.height);
-    fb->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
-
-    for (const auto& pixel : pixels) {
-      ASSERT_EQ(pixel, colors[mipLevel]) << "mip level " << mipLevel;
-    }
+    //----------------
+    // Validate output
+    //----------------
+    util::validateFramebufferTextureRange(*iglDev_,
+                                          *cmdQueue_,
+                                          *fb,
+                                          outputTex->getFullRange(mipLevel),
+                                          inputTexData[mipLevel].data(),
+                                          (std::string("Mip ") + std::to_string(mipLevel)).c_str());
   }
 }
 
 namespace {
-void readMipLevel(IDevice& device,
-                  ICommandQueue& cmdQueue,
-                  std::shared_ptr<ITexture>& tex,
-                  size_t mipLevel,
-                  void* data) {
-  Result ret;
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = tex;
-  auto fb = device.createFramebuffer(framebufferDesc, &ret);
-  ASSERT_EQ(ret.code, Result::Code::Ok);
-  ASSERT_TRUE(fb != nullptr);
-
-  auto rangeDesc = tex->getFullRange(mipLevel);
-  fb->copyBytesColorAttachment(cmdQueue, 0, data, rangeDesc);
-}
-
-template<size_t TEX_WIDTH>
-void validateMipLevels(IDevice& device,
-                       ICommandQueue& cmdQueue,
-                       std::shared_ptr<ITexture>& tex,
-                       // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-                       uint32_t baseMipColor,
-                       uint32_t mip1Color,
-                       const char* msg) {
-  std::array<uint32_t, TEX_WIDTH* TEX_WIDTH> baseMipPixels = {};
-  std::array<uint32_t, (TEX_WIDTH >> 1) * (TEX_WIDTH >> 1)> mip1Pixels = {};
-
-  readMipLevel(device, cmdQueue, tex, 0, baseMipPixels.data());
-  for (size_t i = 0; i < baseMipPixels.size(); ++i) {
-    ASSERT_EQ(baseMipPixels[i], baseMipColor) << msg;
-  }
-
-  readMipLevel(device, cmdQueue, tex, 1, mip1Pixels.data());
-  for (size_t i = 0; i < mip1Pixels.size(); ++i) {
-    ASSERT_EQ(mip1Pixels[i], mip1Color) << msg;
-  }
-}
-
 void testGenerateMipmap(IDevice& device, ICommandQueue& cmdQueue, bool withCommandQueue) {
   Result ret;
 
@@ -1340,8 +1279,9 @@ void testGenerateMipmap(IDevice& device, ICommandQueue& cmdQueue, bool withComma
   static_assert(TEX_WIDTH > 1);
 
   static constexpr uint32_t color = 0xdeadbeef;
-  static constexpr std::array<uint32_t, 4> initialBaseMipData = {color, color, color, color};
-  static constexpr std::array<uint32_t, 1> initialMip1Data = {0};
+  std::vector<uint32_t> baseMipData(4, color);
+  std::vector<uint32_t> initialMip1Data(1, 0);
+  std::vector<uint32_t> generatedMip1Data(1, color);
 
   //---------------------------------------------------------------------
   // Create texture with mip levels and attach it to a framebuffer
@@ -1359,13 +1299,17 @@ void testGenerateMipmap(IDevice& device, ICommandQueue& cmdQueue, bool withComma
   //---------------------------------------------------------------------
   // Validate initial state, upload pixel data, and generate mipmaps
   //---------------------------------------------------------------------
-  ret = tex->upload(tex->getFullRange(0), initialBaseMipData.data());
+  ret = tex->upload(tex->getFullRange(0), baseMipData.data());
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
 
   ret = tex->upload(tex->getFullRange(1), initialMip1Data.data());
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
 
-  validateMipLevels<TEX_WIDTH>(device, cmdQueue, tex, color, 0, "Initial Upload");
+  util::validateUploadedTextureRange(
+      device, cmdQueue, tex, tex->getFullRange(0), baseMipData.data(), "Initial (level 0)");
+
+  util::validateUploadedTextureRange(
+      device, cmdQueue, tex, tex->getFullRange(1), initialMip1Data.data(), "Initial (level 1)");
 
   if (withCommandQueue) {
     tex->generateMipmap(cmdQueue);
@@ -1384,7 +1328,11 @@ void testGenerateMipmap(IDevice& device, ICommandQueue& cmdQueue, bool withComma
     cmdBuffer->waitUntilCompleted();
   }
 
-  validateMipLevels<TEX_WIDTH>(device, cmdQueue, tex, color, color, "After Generation");
+  util::validateUploadedTextureRange(
+      device, cmdQueue, tex, tex->getFullRange(0), baseMipData.data(), "Final (level 0)");
+
+  util::validateUploadedTextureRange(
+      device, cmdQueue, tex, tex->getFullRange(1), generatedMip1Data.data(), "Final (level 1)");
 }
 } // namespace
 

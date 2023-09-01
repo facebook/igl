@@ -313,19 +313,11 @@ TEST_F(TextureCubeTest, Passthrough) {
 
     cmdBuf_->waitUntilCompleted();
 
-    //----------------------
-    // Read back framebuffer
-    //----------------------
-    auto pixels = std::vector<uint32_t>(OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT);
-
-    framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
-
-    //--------------------------------
-    // Verify against original texture
-    //--------------------------------
-    for (size_t i = 0; i < OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT; i++) {
-      ASSERT_EQ(pixels[i], textureArray[side][i]);
-    }
+    //----------------
+    // Validate output
+    //----------------
+    util::validateFramebufferTexture(
+        *iglDev_, *cmdQueue_, *framebuffer_, textureArray[side], "Passthrough");
   }
 }
 

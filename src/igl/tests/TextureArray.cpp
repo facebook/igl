@@ -394,25 +394,12 @@ void TextureArrayTest::runPassthroughTest(bool uploadFullArray, bool modifyTextu
 
     cmdBuf_->waitUntilCompleted();
 
-    //----------------------
-    // Read back framebuffer
-    //----------------------
-    auto pixels = std::vector<uint32_t>(OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT);
-
-    const auto downloadRange =
-        TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
-    framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), downloadRange);
-
-    //--------------------------------
-    // Verify against original texture
-    //--------------------------------
-    for (size_t j = 0; j < OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT; j++) {
-      if (modifyTexture) {
-        ASSERT_EQ(pixels[j], modifiedTextureArray2D[i][j]);
-      } else {
-        ASSERT_EQ(pixels[j], textureArray2D[i][j]);
-      }
-    }
+    //----------------
+    // Validate output
+    //----------------
+    const auto* expectedData = modifyTexture ? modifiedTextureArray2D[i] : textureArray2D[i];
+    util::validateFramebufferTexture(
+        *iglDev_, *cmdQueue_, *framebuffer_, expectedData, "Passthrough");
   }
 }
 
