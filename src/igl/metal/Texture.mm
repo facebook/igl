@@ -76,11 +76,12 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
   if (!result.isOk()) {
     return result;
   }
+  const auto& properties = getProperties();
   if (bytesPerRow == 0) {
-    bytesPerRow = getProperties().getBytesPerRow(range);
+    bytesPerRow = properties.getBytesPerRow(range);
   }
   const auto numLayers = std::max(range.numLayers, static_cast<size_t>(1));
-  const auto byteIncrement = numLayers > 1 ? getProperties().getBytesPerLayer(range.atLayer(0)) : 0;
+  const auto byteIncrement = numLayers > 1 ? properties.getBytesPerLayer(range.atLayer(0)) : 0;
   for (auto i = 0; i < numLayers; ++i) {
     MTLRegion region;
     switch (getType()) {
@@ -122,13 +123,17 @@ Result Texture::getBytes(const TextureRangeDesc& range, void* outData, size_t by
         Result::Code::Unsupported,
         "Can't retrieve the data from private memory; use a blit command encoder instead");
   }
+  const auto& properties = getProperties();
+  if (bytesPerRow == 0) {
+    bytesPerRow = properties.getBytesPerRow(range);
+  }
 
-  size_t bytesPerImage = getProperties().getBytesPerRange(range);
+  const size_t bytesPerImage = properties.getBytesPerRange(range);
   MTLRegion region = {{range.x, range.y, 0}, {range.width, range.height, 1}};
   auto tmpBuffer = std::vector<uint8_t>(bytesPerImage);
 
   [get() getBytes:tmpBuffer.data()
-        bytesPerRow:bytesPerRow
+        bytesPerRow:toMetalBytesPerRow(bytesPerRow)
       bytesPerImage:bytesPerImage
          fromRegion:region
         mipmapLevel:range.mipLevel
