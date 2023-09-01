@@ -535,6 +535,31 @@ TEST(TextureFormatProperties, getBytesPerRange) {
   }
 }
 
+TEST_F(TextureTest, Upload) {
+  Result ret;
+
+  //-------------------------------------
+  // Create input texture and upload data
+  //-------------------------------------
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 OFFSCREEN_TEX_WIDTH,
+                                                 OFFSCREEN_TEX_HEIGHT,
+                                                 TextureDesc::TextureUsageBits::Sampled);
+  inputTexture_ = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(inputTexture_ != nullptr);
+
+  auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
+
+  inputTexture_->upload(rangeDesc, data::texture::TEX_RGBA_2x2);
+
+  //----------------
+  // Validate data
+  //----------------
+  util::validateUploadedTexture(
+      *iglDev_, *cmdQueue_, inputTexture_, data::texture::TEX_RGBA_2x2, "Passthrough");
+}
+
 //
 // Texture Passthrough Test
 //
@@ -591,19 +616,11 @@ TEST_F(TextureTest, Passthrough) {
 
   cmdBuf_->waitUntilCompleted();
 
-  //----------------------
-  // Read back framebuffer
-  //----------------------
-  auto pixels = std::vector<uint32_t>(OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT);
-
-  framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
-
-  //--------------------------------
-  // Verify against original texture
-  //--------------------------------
-  for (size_t i = 0; i < OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT; i++) {
-    ASSERT_EQ(pixels[i], data::texture::TEX_RGBA_2x2[i]);
-  }
+  //----------------
+  // Validate output
+  //----------------
+  util::validateFramebufferTexture(
+      *iglDev_, *cmdQueue_, *framebuffer_, data::texture::TEX_RGBA_2x2, "Passthrough");
 }
 
 //
