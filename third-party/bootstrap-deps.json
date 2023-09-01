@@ -146,5 +146,13 @@
         "url": "https://github.com/corporateshark/ldrutils",
         "revision": "b5edab4b02e35f2fdc3944acdd9b55bd9da86e51"
     }
+},
+{
+    "name": "MoltenVK",
+    "source": {
+        "type": "sourcefile",
+        "url": "https://raw.githubusercontent.com/KhronosGroup/MoltenVK/v1.2.5/MoltenVK/MoltenVK/API/mvk_config.h",
+        "sha1": "2f7b9eaeff8e3ac725b6698c309d434451922cb3"
+    }
 }
 ]

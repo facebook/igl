@@ -1,4 +1,4 @@
-﻿/*
+/*
  * LightweightVK
  *
  * This source code is licensed under the MIT license found in the
@@ -22,6 +22,11 @@
 #include <unistd.h>
 #endif
 
+#if defined(__APPLE__)
+#include <MoltenVK/mvk_config.h>
+#include <dlfcn.h>
+#endif
+
 uint32_t lvk::VulkanPipelineBuilder::numPipelinesCreated_ = 0;
 
 static_assert(lvk::HWDeviceDesc::LVK_MAX_PHYSICAL_DEVICE_NAME_SIZE == VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
@@ -35,7 +40,7 @@ enum Bindings {
   kBinding_Textures = 0,
   kBinding_Samplers = 1,
   kBinding_StorageImages = 2,
-  kBinding_NumBindins = 3,
+  kBinding_NumBindings = 3,
 };
 
 VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
@@ -1660,6 +1665,7 @@ lvk::SubmitHandle lvk::VulkanImmediateCommands::getLastSubmitHandle() const {
 }
 
 void lvk::RenderPipelineState::destroyPipelines(lvk::VulkanContext* ctx) {
+#ifndef __APPLE__
   for (uint32_t topology = 0; topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST + 1; topology++) {
     for (uint32_t depthBiasEnabled = 0; depthBiasEnabled != VK_TRUE + 1; depthBiasEnabled++) {
       VkPipeline& vkPipeline = pipelines_[topology][depthBiasEnabled];
@@ -1670,6 +1676,22 @@ void lvk::RenderPipelineState::destroyPipelines(lvk::VulkanContext* ctx) {
       }
     }
   }
+#else
+  for (uint32_t topology = 0; topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST + 1; topology++) {
+    for (uint32_t depthCompareOp = 0; depthCompareOp != VK_COMPARE_OP_ALWAYS + 1; depthCompareOp++) {
+      for (uint32_t depthWriteEnabled = 0; depthWriteEnabled != VK_TRUE + 1; depthWriteEnabled++) {
+        for (uint32_t depthBiasEnabled = 0; depthBiasEnabled != VK_TRUE + 1; depthBiasEnabled++) {
+          VkPipeline& vkPipeline = pipelines_[topology][depthCompareOp][depthWriteEnabled][depthBiasEnabled];
+          if (vkPipeline != VK_NULL_HANDLE) {
+            ctx->deferredTask(std::packaged_task<void()>(
+                [device = ctx->getVkDevice(), pipeline = vkPipeline]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+            vkPipeline = VK_NULL_HANDLE;
+          }
+        }
+      }
+    }
+  }
+#endif
 }
 
 lvk::VulkanPipelineBuilder::VulkanPipelineBuilder() :
@@ -1746,6 +1768,19 @@ lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::depthBiasEnable(bool ena
   rasterizationState_.depthBiasEnable = enable ? VK_TRUE : VK_FALSE;
   return *this;
 }
+
+#if defined(__APPLE__)
+lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::depthWriteEnable(bool enable) {
+  depthStencilState_.depthWriteEnable = enable ? VK_TRUE : VK_FALSE;
+  return *this;
+}
+
+lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::depthCompareOp(VkCompareOp compareOp) {
+  depthStencilState_.depthTestEnable = compareOp != VK_COMPARE_OP_ALWAYS;
+  depthStencilState_.depthCompareOp = compareOp;
+  return *this;
+}
+#endif
 
 lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::dynamicState(VkDynamicState state) {
   LVK_ASSERT(numDynamicStates_ < LVK_MAX_DYNAMIC_STATES);
@@ -2206,7 +2241,9 @@ void lvk::CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, co
   ctx_->checkAndUpdateDescriptorSets();
   ctx_->bindDefaultDescriptorSets(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
+#ifndef __APPLE__
   vkCmdSetDepthCompareOp(wrapper_->cmdBuf_, VK_COMPARE_OP_ALWAYS);
+#endif
 
   vkCmdBeginRendering(wrapper_->cmdBuf_, &renderingInfo);
 }
@@ -2284,10 +2321,14 @@ void lvk::CommandBuffer::cmdBindDepthState(const DepthState& desc) {
   LVK_PROFILER_FUNCTION();
 
   const VkCompareOp op = compareOpToVkCompareOp(desc.compareOp);
-
+#ifndef __APPLE__
   vkCmdSetDepthWriteEnable(wrapper_->cmdBuf_, desc.isDepthWriteEnabled ? VK_TRUE : VK_FALSE);
   vkCmdSetDepthTestEnable(wrapper_->cmdBuf_, op != VK_COMPARE_OP_ALWAYS);
   vkCmdSetDepthCompareOp(wrapper_->cmdBuf_, op);
+#else
+  dynamicState_.depthWriteEnable_ = desc.isDepthWriteEnabled;
+  dynamicState_.depthCompareOp_ = op;
+#endif
 }
 
 void lvk::CommandBuffer::cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, size_t bufferOffset) {
@@ -3104,9 +3145,17 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
     rps->pipelineLayout_ = vkPipelineLayout_;
   }
 
+#ifndef __APPLE__
   if (rps->pipelines_[dynamicState.topology_][dynamicState.depthBiasEnable_] != VK_NULL_HANDLE) {
     return rps->pipelines_[dynamicState.topology_][dynamicState.depthBiasEnable_];
   }
+#else
+  if (rps->pipelines_[dynamicState.topology_][dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_]
+                     [dynamicState.depthBiasEnable_] != VK_NULL_HANDLE) {
+    return rps
+        ->pipelines_[dynamicState.topology_][dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_][dynamicState.depthBiasEnable_];
+  }
+#endif
 
   // build a new Vulkan pipeline
 
@@ -3174,10 +3223,15 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
       .dynamicState(VK_DYNAMIC_STATE_SCISSOR)
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS)
       .dynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS)
-      // from Vulkan 1.3
+  // from Vulkan 1.3
+#ifndef __APPLE__
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE)
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP)
+#else
+      .depthCompareOp(dynamicState.depthCompareOp_)
+      .depthWriteEnable(dynamicState.depthWriteEnable_)
+#endif
       .primitiveTopology(dynamicState.topology_)
       .depthBiasEnable(dynamicState.depthBiasEnable_)
       .rasterizationSamples(getVulkanSampleCountFlags(desc.samplesCount))
@@ -3206,8 +3260,12 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
       .stencilAttachmentFormat(formatToVkFormat(desc.stencilFormat))
       .build(vkDevice_, pipelineCache_, vkPipelineLayout_, &pipeline, desc.debugName);
 
+#ifndef __APPLE__
   rps->pipelines_[dynamicState.topology_][dynamicState.depthBiasEnable_] = pipeline;
-
+#else
+  rps->pipelines_[dynamicState.topology_][dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_][dynamicState.depthBiasEnable_] =
+      pipeline;
+#endif
   return pipeline;
 }
 
@@ -3588,13 +3646,27 @@ VkShaderModule lvk::VulkanContext::createShaderModule(ShaderStage stage,
       #extension GL_EXT_nonuniform_qualifier : require
       #extension GL_EXT_samplerless_texture_functions : require
       #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
+      )";
 
+#ifndef __APPLE__
+      sourcePatched += R"(
       layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
       layout (set = 0, binding = 0) uniform texture3D kTextures3D[];
       layout (set = 0, binding = 0) uniform textureCube kTexturesCube[];
       layout (set = 0, binding = 1) uniform sampler kSamplers[];
       layout (set = 0, binding = 1) uniform samplerShadow kSamplersShadow[];
+      )";
+#else
+      sourcePatched += R"(
+      layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
+      layout (set = 1, binding = 0) uniform texture3D kTextures3D[];
+      layout (set = 2, binding = 0) uniform textureCube kTexturesCube[];
+      layout (set = 0, binding = 1) uniform sampler kSamplers[];
+      layout (set = 1, binding = 1) uniform samplerShadow kSamplersShadow[];
+      )";
+#endif
 
+      sourcePatched += R"(
       vec4 textureBindless2D(uint textureid, uint samplerid, vec2 uv) {
         return texture(sampler2D(kTextures2D[textureid], kSamplers[samplerid]), uv);
       }
@@ -3681,6 +3753,9 @@ void lvk::VulkanContext::createInstance() {
     VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 #elif defined(__linux__)
     VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
+#elif defined(__APPLE__)
+    VK_MVK_MACOS_SURFACE_EXTENSION_NAME,
+    VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
 #endif
     VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME // enabled only for validation
   };
@@ -3709,10 +3784,14 @@ void lvk::VulkanContext::createInstance() {
       .apiVersion = VK_API_VERSION_1_3,
   };
 
+  VkInstanceCreateFlags flags = 0;
+#if defined(__APPLE__)
+  flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
   const VkInstanceCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
       .pNext = config_.enableValidation ? &features : nullptr,
-      .flags = 0,
+      .flags = flags,
       .pApplicationInfo = &appInfo,
       .enabledLayerCount = config_.enableValidation ? (uint32_t)LVK_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0,
       .ppEnabledLayerNames = config_.enableValidation ? kDefaultValidationLayers : nullptr,
@@ -3722,6 +3801,22 @@ void lvk::VulkanContext::createInstance() {
   VK_ASSERT(vkCreateInstance(&ci, nullptr, &vkInstance_));
 
   volkLoadInstance(vkInstance_);
+
+  // Update MoltenVK configuration.
+#if defined(__APPLE__)
+  void* moltenVkModule = dlopen("libMoltenVK.dylib", RTLD_NOW | RTLD_LOCAL);
+  PFN_vkGetMoltenVKConfigurationMVK vkGetMoltenVKConfigurationMVK =
+      (PFN_vkGetMoltenVKConfigurationMVK)dlsym(moltenVkModule, "vkGetMoltenVKConfigurationMVK");
+  PFN_vkSetMoltenVKConfigurationMVK vkSetMoltenVKConfigurationMVK =
+      (PFN_vkSetMoltenVKConfigurationMVK)dlsym(moltenVkModule, "vkSetMoltenVKConfigurationMVK");
+
+  MVKConfiguration configuration = {};
+  size_t configurationSize = sizeof(MVKConfiguration);
+  VK_ASSERT(vkGetMoltenVKConfigurationMVK(vkInstance_, &configuration, &configurationSize));
+
+  configuration.useMetalArgumentBuffers = MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS_ALWAYS;
+  VK_ASSERT(vkSetMoltenVKConfigurationMVK(vkInstance_, &configuration, &configurationSize));
+#endif
 
   // debug messenger
   {
@@ -3768,6 +3863,13 @@ void lvk::VulkanContext::createSurface(void* window, void* display) {
       .window = (Window)window,
   };
   VK_ASSERT(vkCreateXlibSurfaceKHR(vkInstance_, &ci, nullptr, &vkSurface_));
+#elif defined(VK_USE_PLATFORM_MACOS_MVK)
+  const VkMacOSSurfaceCreateInfoMVK ci = {
+      .sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK,
+      .flags = 0,
+      .pView = window,
+  };
+  VK_ASSERT(vkCreateMacOSSurfaceMVK(vkInstance_, &ci, nullptr, &vkSurface_));
 #else
 #error Implement for other platforms
 #endif
@@ -3894,10 +3996,30 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
 #if defined(LVK_WITH_TRACY)
     VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
 #endif
+#if defined(__APPLE__)
+    // All supported Vulkan 1.3 extensions
+    // https://github.com/KhronosGroup/MoltenVK/issues/1930
+    VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME,
+    VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+    VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
+    VK_EXT_4444_FORMATS_EXTENSION_NAME,
+    VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME,
+    VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME,
+    VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME,
+    VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME,
+    VK_EXT_PRIVATE_DATA_EXTENSION_NAME,
+    VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
+    VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
+    VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME,
+    VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME,
+    "VK_KHR_portability_subset",
+#endif
   };
 
   VkPhysicalDeviceFeatures deviceFeatures10 = {
+#ifndef __APPLE__
       .geometryShader = VK_TRUE,
+#endif
       .multiDrawIndirect = VK_TRUE,
       .drawIndirectFirstInstance = VK_TRUE,
       .depthBiasClamp = VK_TRUE,
@@ -4108,14 +4230,22 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
 #undef CHECK_FEATURE_1_3
     if (!missingFeatures.empty()) {
       MINILOG_LOG_PROC(minilog::FatalError, "Missing Vulkan features: %s\n", missingFeatures.c_str());
+      // Do not exit here in case of MoltenVK, some 1.3 features are available via extensions.
+#ifndef __APPLE__
       assert(false);
       return Result(Result::Code::RuntimeError);
+#endif
     }
   }
 
   VK_ASSERT_RETURN(vkCreateDevice(vkPhysicalDevice_, &ci, nullptr, &vkDevice_));
 
   volkLoadDevice(vkDevice_);
+
+#if defined(__APPLE__)
+  vkCmdBeginRendering = vkCmdBeginRenderingKHR;
+  vkCmdEndRendering = vkCmdEndRenderingKHR;
+#endif
 
   vkGetDeviceQueue(vkDevice_, deviceQueues_.graphicsQueueFamilyIndex, 0, &deviceQueues_.graphicsQueue);
   vkGetDeviceQueue(vkDevice_, deviceQueues_.computeQueueFamilyIndex, 0, &deviceQueues_.computeQueue);
@@ -4266,25 +4396,27 @@ lvk::Result lvk::VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_
   }
 
   // create default descriptor set layout which is going to be shared by graphics pipelines
-  constexpr uint32_t numBindings = 3;
-  const VkDescriptorSetLayoutBinding bindings[numBindings] = {
+  const VkDescriptorSetLayoutBinding bindings[kBinding_NumBindings] = {
       lvk::getDSLBinding(kBinding_Textures, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, maxTextures),
       lvk::getDSLBinding(kBinding_Samplers, VK_DESCRIPTOR_TYPE_SAMPLER, maxSamplers),
       lvk::getDSLBinding(kBinding_StorageImages, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, maxTextures),
   };
   const uint32_t flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
                          VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
-  const VkDescriptorBindingFlags bindingFlags[numBindings] = {flags, flags, flags};
+  VkDescriptorBindingFlags bindingFlags[kBinding_NumBindings];
+  for (int i = 0; i < kBinding_NumBindings; ++i) {
+    bindingFlags[i] = flags;
+  }
   const VkDescriptorSetLayoutBindingFlagsCreateInfo setLayoutBindingFlagsCI = {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
-      .bindingCount = numBindings,
+      .bindingCount = kBinding_NumBindings,
       .pBindingFlags = bindingFlags,
   };
   const VkDescriptorSetLayoutCreateInfo dslci = {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
       .pNext = &setLayoutBindingFlagsCI,
       .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
-      .bindingCount = numBindings,
+      .bindingCount = kBinding_NumBindings,
       .pBindings = bindings,
   };
   VK_ASSERT(vkCreateDescriptorSetLayout(vkDevice_, &dslci, nullptr, &vkDSLBindless_));
@@ -4292,27 +4424,33 @@ lvk::Result lvk::VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_
       vkDevice_, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)vkDSLBindless_, "Descriptor Set Layout: VulkanContext::vkDSLBindless_"));
 
   // create default descriptor pool and allocate 1 descriptor set
-  const VkDescriptorPoolSize poolSizes[numBindings]{
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, maxTextures},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, maxSamplers},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, maxTextures},
+  const VkDescriptorPoolSize poolSizes[kBinding_NumBindings]{
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, maxTextures * BindlessDescriptorSet::kDescriptorSetCount},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, maxSamplers * BindlessDescriptorSet::kDescriptorSetCount},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, maxTextures * BindlessDescriptorSet::kDescriptorSetCount},
   };
   const VkDescriptorPoolCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
       .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
-      .maxSets = 1,
-      .poolSizeCount = numBindings,
+      .maxSets = BindlessDescriptorSet::kDescriptorSetCount,
+      .poolSizeCount = kBinding_NumBindings,
       .pPoolSizes = poolSizes,
   };
   VK_ASSERT_RETURN(vkCreateDescriptorPool(vkDevice_, &ci, nullptr, &vkDPBindless_));
+
+  VkDescriptorSetLayout dsLayouts[BindlessDescriptorSet::kDescriptorSetCount];
+  for (uint32_t i = 0; i < BindlessDescriptorSet::kDescriptorSetCount; ++i) {
+    dsLayouts[i] = vkDSLBindless_;
+  }
+
   {
     const VkDescriptorSetAllocateInfo ai = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .descriptorPool = vkDPBindless_,
-        .descriptorSetCount = 1,
-        .pSetLayouts = &vkDSLBindless_,
+        .descriptorSetCount = BindlessDescriptorSet::kDescriptorSetCount,
+        .pSetLayouts = &dsLayouts[0],
     };
-    VK_ASSERT_RETURN(vkAllocateDescriptorSets(vkDevice_, &ai, &bindlessDSets_.ds));
+    VK_ASSERT_RETURN(vkAllocateDescriptorSets(vkDevice_, &ai, &bindlessDSets_.ds[0]));
   }
 
   // create pipeline layout
@@ -4333,8 +4471,8 @@ lvk::Result lvk::VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_
     };
     const VkPipelineLayoutCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = 1,
-        .pSetLayouts = &vkDSLBindless_,
+        .setLayoutCount = BindlessDescriptorSet::kDescriptorSetCount,
+        .pSetLayouts = &dsLayouts[0],
         .pushConstantRangeCount = 1,
         .pPushConstantRanges = &range,
     };
@@ -4391,8 +4529,8 @@ std::shared_ptr<lvk::VulkanImage> lvk::VulkanContext::createImage(VkImageType im
 
 void lvk::VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPoint) const {
   LVK_PROFILER_FUNCTION();
-
-  vkCmdBindDescriptorSets(cmdBuf, bindPoint, vkPipelineLayout_, 0, 1, &bindlessDSets_.ds, 0, nullptr);
+  vkCmdBindDescriptorSets(
+      cmdBuf, bindPoint, vkPipelineLayout_, 0, BindlessDescriptorSet::kDescriptorSetCount, &bindlessDSets_.ds[0], 0, nullptr);
 }
 
 void lvk::VulkanContext::checkAndUpdateDescriptorSets() {
@@ -4454,46 +4592,52 @@ void lvk::VulkanContext::checkAndUpdateDescriptorSets() {
     infoSamplers.push_back({sampler.obj_ ? sampler.obj_ : samplersPool_.objects_[0].obj_, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED});
   }
 
-  VkWriteDescriptorSet write[kBinding_NumBindins] = {};
+  VkWriteDescriptorSet write[kBinding_NumBindings * BindlessDescriptorSet::kDescriptorSetCount] = {};
   uint32_t numBindings = 0;
 
   // we want to update the next available descriptor set
   BindlessDescriptorSet& dsetToUpdate = bindlessDSets_;
 
   if (!infoSampledImages.empty()) {
-    write[numBindings++] = VkWriteDescriptorSet{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = dsetToUpdate.ds,
-        .dstBinding = kBinding_Textures,
-        .dstArrayElement = 0,
-        .descriptorCount = (uint32_t)infoSampledImages.size(),
-        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-        .pImageInfo = infoSampledImages.data(),
-    };
+    for (uint32_t i = 0; i < BindlessDescriptorSet::kDescriptorSetCount; ++i) {
+      write[numBindings++] = VkWriteDescriptorSet{
+          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+          .dstSet = dsetToUpdate.ds[i],
+          .dstBinding = kBinding_Textures,
+          .dstArrayElement = 0,
+          .descriptorCount = (uint32_t)infoSampledImages.size(),
+          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+          .pImageInfo = infoSampledImages.data(),
+      };
+    }
   }
 
   if (!infoSamplers.empty()) {
-    write[numBindings++] = VkWriteDescriptorSet{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = dsetToUpdate.ds,
-        .dstBinding = kBinding_Samplers,
-        .dstArrayElement = 0,
-        .descriptorCount = (uint32_t)infoSamplers.size(),
-        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
-        .pImageInfo = infoSamplers.data(),
-    };
+    for (uint32_t i = 0; i < BindlessDescriptorSet::kDescriptorSetCount; ++i) {
+      write[numBindings++] = VkWriteDescriptorSet{
+          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+          .dstSet = dsetToUpdate.ds[i],
+          .dstBinding = kBinding_Samplers,
+          .dstArrayElement = 0,
+          .descriptorCount = (uint32_t)infoSamplers.size(),
+          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+          .pImageInfo = infoSamplers.data(),
+      };
+    }
   }
 
   if (!infoStorageImages.empty()) {
-    write[numBindings++] = VkWriteDescriptorSet{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = dsetToUpdate.ds,
-        .dstBinding = kBinding_StorageImages,
-        .dstArrayElement = 0,
-        .descriptorCount = (uint32_t)infoStorageImages.size(),
-        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-        .pImageInfo = infoStorageImages.data(),
-    };
+    for (uint32_t i = 0; i < BindlessDescriptorSet::kDescriptorSetCount; ++i) {
+      write[numBindings++] = VkWriteDescriptorSet{
+          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+          .dstSet = dsetToUpdate.ds[i],
+          .dstBinding = kBinding_StorageImages,
+          .dstArrayElement = 0,
+          .descriptorCount = (uint32_t)infoStorageImages.size(),
+          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+          .pImageInfo = infoStorageImages.data(),
+      };
+    }
   }
 
   // do not switch to the next descriptor set if there is nothing to update

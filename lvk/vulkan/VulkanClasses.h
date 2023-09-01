@@ -1,4 +1,4 @@
-﻿/*
+/*
  * LightweightVK
  *
  * This source code is licensed under the MIT license found in the
@@ -252,6 +252,10 @@ class VulkanImmediateCommands final {
 
 struct RenderPipelineDynamicState final {
   VkPrimitiveTopology topology_ : 4 = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+#if defined(__APPLE__)
+  VkCompareOp depthCompareOp_ : 3 = VK_COMPARE_OP_ALWAYS;
+  VkBool32 depthWriteEnable_ : 1 = VK_FALSE;
+#endif
   VkBool32 depthBiasEnable_ : 1 = VK_FALSE;
 
   void setTopology(VkPrimitiveTopology topology) {
@@ -275,8 +279,13 @@ struct RenderPipelineState final {
   // non-owning, cached the last pipeline layout from the context
   VkPipelineLayout pipelineLayout_ = VK_NULL_HANDLE;
 
+#ifndef __APPLE__
   // [topology][depthBiasEnable]
   VkPipeline pipelines_[VK_PRIMITIVE_TOPOLOGY_PATCH_LIST + 1][2] = {};
+#else
+  // [topology][depthCompareOp][depthWriteEnable][depthBiasEnable]
+  VkPipeline pipelines_[VK_PRIMITIVE_TOPOLOGY_PATCH_LIST + 1][8][2][2] = {};
+#endif
 };
 
 class VulkanPipelineBuilder final {
@@ -285,6 +294,10 @@ class VulkanPipelineBuilder final {
   ~VulkanPipelineBuilder() = default;
 
   VulkanPipelineBuilder& depthBiasEnable(bool enable);
+#if defined(__APPLE__)
+  VulkanPipelineBuilder& depthWriteEnable(bool enable);
+  VulkanPipelineBuilder& depthCompareOp(VkCompareOp compareOp);
+#endif
   VulkanPipelineBuilder& dynamicState(VkDynamicState state);
   VulkanPipelineBuilder& primitiveTopology(VkPrimitiveTopology topology);
   VulkanPipelineBuilder& rasterizationSamples(VkSampleCountFlagBits samples);
@@ -609,7 +622,13 @@ class VulkanContext final : public IContext {
   VkDescriptorSetLayout vkDSLBindless_ = VK_NULL_HANDLE;
   VkDescriptorPool vkDPBindless_ = VK_NULL_HANDLE;
   struct BindlessDescriptorSet {
-    VkDescriptorSet ds = VK_NULL_HANDLE;
+#ifndef __APPLE__
+    static constexpr uint32_t kDescriptorSetCount = 1;
+    VkDescriptorSet ds[kDescriptorSetCount] = {VK_NULL_HANDLE};
+#else
+    static constexpr uint32_t kDescriptorSetCount = 3;
+    VkDescriptorSet ds[kDescriptorSetCount] = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
+#endif
     SubmitHandle handle = SubmitHandle(); // a handle of the last submit this descriptor set was a part of
   } bindlessDSets_;
   // don't use staging on devices with shared host-visible memory

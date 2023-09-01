@@ -61,7 +61,7 @@ layout(std430, buffer_reference) readonly buffer PerObject {
 layout(push_constant) uniform constants {
 	PerFrame perFrame;
 	PerObject perObject;
-   VertexBuffer vb;
+  VertexBuffer vb;
 } pc;
 
 void main() {
