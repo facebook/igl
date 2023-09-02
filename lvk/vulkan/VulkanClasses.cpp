@@ -3270,7 +3270,7 @@ lvk::Holder<lvk::RenderPipelineHandle> lvk::VulkanContext::createRenderPipeline(
     return {};
   }
 
-  RenderPipelineState rps(desc);
+  RenderPipelineState rps = {.desc_ = desc};
 
   // Iterate and cache vertex input bindings and attributes
   const lvk::VertexInput& vstate = rps.desc_.vertexInput;
