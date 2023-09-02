@@ -403,5 +403,9 @@ bool Texture::isSwapchainTexture() const {
   return texture_ ? texture_->getVulkanImage().isExternallyManaged_ : false;
 }
 
+uint32_t Texture::getVkLayer(TextureType type, uint32_t face, uint32_t layer) {
+  return type == TextureType::Cube ? face : layer;
+}
+
 } // namespace vulkan
 } // namespace igl

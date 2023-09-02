@@ -113,9 +113,10 @@ Texture::AttachmentParams toReadAttachmentParams(const TextureRangeDesc& range,
                                                  FramebufferMode mode) {
   IGL_ASSERT_MSG(range.numLayers == 1, "range.numLayers must be 1.");
   IGL_ASSERT_MSG(range.numMipLevels == 1, "range.numMipLevels must be 1.");
+  IGL_ASSERT_MSG(range.numFaces == 1, "range.numFaces must be 1.");
 
   Texture::AttachmentParams params{};
-  params.face = 0; // TextureRangeDesc does not support face
+  params.face = static_cast<uint32_t>(range.face);
   params.mipLevel = static_cast<uint32_t>(range.mipLevel);
   params.layer = static_cast<uint32_t>(range.layer);
   params.read = true;
@@ -188,6 +189,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
     IGL_ASSERT_MSG(0, "Invalid index: %d", index);
     return;
   }
+  IGL_ASSERT_MSG(range.numFaces == 1, "range.numFaces MUST be 1");
   IGL_ASSERT_MSG(range.numLayers == 1, "range.numLayers MUST be 1");
   IGL_ASSERT_MSG(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
 

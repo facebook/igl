@@ -72,6 +72,9 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
                                            void* pixelBytes,
                                            const TextureRangeDesc& range,
                                            size_t bytesPerRow) const {
+  IGL_ASSERT_MSG(range.numFaces == 1, "range.numFaces MUST be 1");
+  IGL_ASSERT_MSG(range.numLayers == 1, "range.numLayers MUST be 1");
+  IGL_ASSERT_MSG(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
   IGL_PROFILER_FUNCTION();
   if (!IGL_VERIFY(pixelBytes)) {
     return;
@@ -91,11 +94,16 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
   if (bytesPerRow == 0) {
     bytesPerRow = itexture->getProperties().getBytesPerRow(range);
   }
+  // Vulkan uses array layer to represent either cube face or array layer. IGL's TextureRangeDesc
+  // represents these separately. This gets the correct vulkan array layer for the either the
+  // range's cube face or array layer.
+  const auto layer = Texture::getVkLayer(
+      itexture->getType(), static_cast<uint32_t>(range.face), static_cast<uint32_t>(range.layer));
+
   const VulkanContext& ctx = device_.getVulkanContext();
   ctx.stagingDevice_->getImageData2D(vkTex.getVkImage(),
                                      static_cast<uint32_t>(range.mipLevel),
-                                     static_cast<uint32_t>(range.layer), // layer (or face of a
-                                                                         // cubemap)
+                                     layer, // Layer is either cube face or array layer
                                      imageRegion,
                                      vkTex.getProperties(),
                                      VK_FORMAT_R8G8B8A8_UNORM,

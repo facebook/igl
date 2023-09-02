@@ -1284,7 +1284,7 @@ void testGenerateMipmap(IDevice& device, ICommandQueue& cmdQueue, bool withComma
   std::vector<uint32_t> generatedMip1Data(1, color);
 
   //---------------------------------------------------------------------
-  // Create texture with mip levels and attach it to a framebuffer
+  // Create texture with mip levels
   //---------------------------------------------------------------------
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
                                            TEX_WIDTH,

@@ -70,6 +70,8 @@ class Texture final : public ITexture {
 
   bool isSwapchainTexture() const;
 
+  static uint32_t getVkLayer(TextureType type, uint32_t face, uint32_t layer);
+
  private:
   Result create(const TextureDesc& desc);
 

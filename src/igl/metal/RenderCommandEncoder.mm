@@ -19,16 +19,6 @@
 
 namespace igl {
 namespace metal {
-namespace {
-NSUInteger slice(TextureType type, const RenderPassDesc::ColorAttachmentDesc& attachment) {
-  if (type == TextureType::Cube) {
-    return attachment.face;
-  } else {
-    return attachment.layer;
-  }
-}
-}
-
 RenderCommandEncoder::RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer) :
   IRenderCommandEncoder::IRenderCommandEncoder(commandBuffer) {}
 
@@ -79,7 +69,10 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
     metalColorAttachment.loadAction = convertLoadAction(iglColorAttachment.loadAction);
     metalColorAttachment.storeAction = convertStoreAction(iglColorAttachment.storeAction);
     metalColorAttachment.clearColor = convertClearColor(iglColorAttachment.clearColor);
-    metalColorAttachment.slice = iglTexture ? slice(iglTexture->getType(), iglColorAttachment) : 0;
+    metalColorAttachment.slice = iglTexture ? Texture::getMetalSlice(iglTexture->getType(),
+                                                                     iglColorAttachment.face,
+                                                                     iglColorAttachment.layer)
+                                            : 0;
     metalColorAttachment.level = iglColorAttachment.mipLevel;
   }
 

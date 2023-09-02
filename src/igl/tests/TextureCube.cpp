@@ -26,8 +26,8 @@ namespace tests {
 // size texture, then you will have to either create a new offscreenTexture_
 // and the framebuffer object in your test, so know exactly what the end result
 // would be after sampling
-#define OFFSCREEN_TEX_WIDTH 2
-#define OFFSCREEN_TEX_HEIGHT 2
+constexpr size_t OFFSCREEN_TEX_WIDTH = 2;
+constexpr size_t OFFSCREEN_TEX_HEIGHT = 2;
 
 struct VertexUniforms {
   glm::vec4 viewDirection = glm::vec4(0.0);
@@ -80,7 +80,6 @@ class TextureCubeTest : public ::testing::Test {
     ASSERT_TRUE(iglDev_ != nullptr);
     ASSERT_TRUE(cmdQueue_ != nullptr);
 
-    // Create an offscreen texture to render to
     TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
                                              OFFSCREEN_TEX_WIDTH,
                                              OFFSCREEN_TEX_HEIGHT,
@@ -219,9 +218,9 @@ class TextureCubeTest : public ::testing::Test {
   size_t textureUnit_ = 0;
 };
 
-uint32_t R = 0x1F00000F;
-uint32_t G = 0x002F001F;
-uint32_t B = 0x00003F2F;
+uint32_t R = 0x1F00001F;
+uint32_t G = 0x002F002F;
+uint32_t B = 0x00003F4F;
 
 uint32_t textureArray[6][OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT] = {
     {R, R, R, R},
@@ -237,6 +236,47 @@ static glm::vec4 viewDirection[] = {{1.0f, 0.0f, 0.0f, 0.0f},
                                     {0.0f, -1.0f, 0.0f, 0.0f},
                                     {0.0f, 0.0f, 1.0f, 0.0f},
                                     {0.0f, 0.0f, -1.0f, 0.0f}};
+
+//
+// Test uploading cube maps
+//
+// Create a cube map texture and upload different solid color into each face. Then verify the color
+// of each face.
+//
+TEST_F(TextureCubeTest, UploadCube) {
+  Result ret;
+
+  //---------------------------------------------------------------------
+  // Create cube texture with mip levels and attach it to a framebuffer
+  //---------------------------------------------------------------------
+  const TextureDesc texDesc = TextureDesc::newCube(TextureFormat::RGBA_UNorm8,
+                                                   OFFSCREEN_TEX_WIDTH,
+                                                   OFFSCREEN_TEX_WIDTH,
+                                                   TextureDesc::TextureUsageBits::Sampled |
+                                                       TextureDesc::TextureUsageBits::Attachment);
+  auto tex = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+  ASSERT_TRUE(tex != nullptr);
+
+  //---------------------------------------------------------------------
+  // Upload pixel data and validate faces
+  //---------------------------------------------------------------------
+  for (size_t face = 0; face < 6; ++face) {
+    ASSERT_TRUE(tex->uploadCube(tex->getCubeFaceRange(0),
+                                static_cast<igl::TextureCubeFace>(face),
+                                textureArray[face])
+                    .isOk());
+  }
+
+  for (size_t face = 0; face < 6; ++face) {
+    util::validateUploadedTextureRange(*iglDev_,
+                                       *cmdQueue_,
+                                       tex,
+                                       tex->getCubeFaceRange(face),
+                                       textureArray[face],
+                                       (std::string("Face ") + std::to_string(face)).c_str());
+  }
+}
 
 //
 // Texture Passthrough Test
@@ -280,7 +320,7 @@ TEST_F(TextureCubeTest, Passthrough) {
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(pipelineState != nullptr);
 
-  for (int side = 0; side < 6; ++side) {
+  for (size_t face = 0; face < 6; ++face) {
     //-------
     // Render
     //-------
@@ -300,7 +340,7 @@ TEST_F(TextureCubeTest, Passthrough) {
     auto vertUniformBuffer = createVertexUniformBuffer(*iglDev_.get(), &result);
     ASSERT_TRUE(result.isOk());
 
-    vertexUniforms_.viewDirection = viewDirection[side];
+    vertexUniforms_.viewDirection = viewDirection[face];
 
     *static_cast<VertexUniforms*>(vertUniformBuffer->getData()) = vertexUniforms_;
     vertUniformBuffer->bind(*iglDev_.get(), *pipelineState, *cmds.get());
@@ -317,7 +357,7 @@ TEST_F(TextureCubeTest, Passthrough) {
     // Validate output
     //----------------
     util::validateFramebufferTexture(
-        *iglDev_, *cmdQueue_, *framebuffer_, textureArray[side], "Passthrough");
+        *iglDev_, *cmdQueue_, *framebuffer_, textureArray[face], "Passthrough");
   }
 }
 

@@ -66,6 +66,7 @@ class Texture final : public ITexture {
   static TextureFormat mtlPixelFormatToTextureFormat(MTLPixelFormat value);
   static MTLTextureType convertType(TextureType value, size_t numSamples);
   static TextureType convertType(MTLTextureType value);
+  static NSUInteger getMetalSlice(TextureType type, uint32_t face, uint32_t layer);
 
  private:
   void generateMipmap(id<MTLCommandBuffer> cmdBuffer) const;

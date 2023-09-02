@@ -90,7 +90,7 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
       region = MTLRegionMake2D(range.x, range.y, range.width, range.height);
       [get() replaceRegion:region
                mipmapLevel:range.mipLevel
-                     slice:range.layer + i
+                     slice:getMetalSlice(getType(), 0 /* face */, range.layer + i /* layer */)
                  withBytes:data
                bytesPerRow:toMetalBytesPerRow(bytesPerRow)
              bytesPerImage:0];
@@ -123,6 +123,10 @@ Result Texture::getBytes(const TextureRangeDesc& range, void* outData, size_t by
         Result::Code::Unsupported,
         "Can't retrieve the data from private memory; use a blit command encoder instead");
   }
+  if (range.numLayers > 1 || range.numFaces > 1) {
+    return Result(Result::Code::Unsupported,
+                  "Can't retrieve data from more than one face or layer");
+  }
   const auto& properties = getProperties();
   if (bytesPerRow == 0) {
     bytesPerRow = properties.getBytesPerRow(range);
@@ -137,7 +141,7 @@ Result Texture::getBytes(const TextureRangeDesc& range, void* outData, size_t by
       bytesPerImage:bytesPerImage
          fromRegion:region
         mipmapLevel:range.mipLevel
-              slice:range.layer];
+              slice:getMetalSlice(getType(), range.face, range.layer)];
 
   flipBMP(static_cast<unsigned char*>(outData), tmpBuffer.data(), range.height, bytesPerRow);
 
@@ -191,10 +195,9 @@ Result Texture::uploadCube(const TextureRangeDesc& range,
   }
   if (data) {
     MTLRegion region = MTLRegionMake2D(range.x, range.y, range.width, range.height);
-    int layer = static_cast<int>(face);
     [get() replaceRegion:region
              mipmapLevel:range.mipLevel
-                   slice:layer
+                   slice:getMetalSlice(getType(), static_cast<uint32_t>(face), 0)
                withBytes:data
              bytesPerRow:toMetalBytesPerRow(bytesPerRow)
            bytesPerImage:0];
@@ -898,6 +901,10 @@ TextureFormat Texture::mtlPixelFormatToTextureFormat(MTLPixelFormat value) {
   }
 
 #pragma clang diagnostic pop
+}
+
+NSUInteger Texture::getMetalSlice(TextureType type, uint32_t face, uint32_t layer) {
+  return type == TextureType::Cube ? face : layer;
 }
 
 } // namespace metal
