@@ -1027,30 +1027,35 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   // newly created resources can be used immediately - make sure they are put into descriptor sets
   IGL_PROFILER_FUNCTION();
 
-  // here we remove deleted textures - everything which has only 1 reference is owned by this
-  // context and can be released safely
-  for (uint32_t i = 1; i < (uint32_t)textures_.size(); i++) {
-    if (textures_[i] && textures_[i].use_count() == 1) {
-      if (i == textures_.size() - 1) {
-        textures_.pop_back();
-      } else {
+  // here we remove deleted textures and samplers - everything which has only 1 reference is owned
+  // by this context and can be released safely
+
+  // textures
+  {
+    while (textures_.size() > 1 && textures_.back().use_count() == 1) {
+      textures_.pop_back();
+    }
+    for (uint32_t i = 1; i < (uint32_t)textures_.size(); i++) {
+      if (textures_[i] && textures_[i].use_count() == 1) {
         textures_[i].reset();
         freeIndicesTextures_.push_back(i);
       }
     }
   }
-  for (uint32_t i = 1; i < (uint32_t)samplers_.size(); i++) {
-    if (samplers_[i] && samplers_[i].use_count() == 1) {
-      if (i == samplers_.size() - 1) {
-        samplers_.pop_back();
-      } else {
+  // samplers
+  {
+    while (samplers_.size() > 1 && samplers_.back().use_count() == 1) {
+      samplers_.pop_back();
+    }
+    for (uint32_t i = 1; i < (uint32_t)samplers_.size(); i++) {
+      if (samplers_[i] && samplers_[i].use_count() == 1) {
         samplers_[i].reset();
         freeIndicesSamplers_.push_back(i);
       }
     }
   }
 
-  // update Vulkan descriptor set here
+  // update Vulkan bindless descriptor sets here
   if (!config_.enableDescriptorIndexing) {
     return;
   }
