@@ -509,19 +509,13 @@ TEST_F(TextureArrayTest, GetEstimatedSizeInBytes) {
 }
 
 //
-// Test ITexture::GetFullRange
+// Test ITexture::getFullRange and ITexture::getLayerRange
 //
-TEST_F(TextureArrayTest, GetFullRange) {
-  auto getFullRange = [&](size_t width,
-                          size_t height,
-                          TextureFormat format,
-                          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-                          size_t numMipLevels,
-                          size_t rangeMipLevel = 0,
-                          size_t rangeNumMipLevels = 0) -> TextureRangeDesc {
-    if (rangeNumMipLevels == 0) {
-      rangeNumMipLevels = numMipLevels;
-    }
+TEST_F(TextureArrayTest, GetRange) {
+  auto createTexture = [&](size_t width,
+                           size_t height,
+                           TextureFormat format,
+                           size_t numMipLevels) -> std::shared_ptr<ITexture> {
     Result ret;
     TextureDesc texDesc = TextureDesc::new2DArray(format,
                                                   width,
@@ -534,7 +528,32 @@ TEST_F(TextureArrayTest, GetFullRange) {
     if (ret.code != Result::Code::Ok || texture == nullptr) {
       return {};
     }
-    return texture->getFullRange(rangeMipLevel, rangeNumMipLevels);
+    return texture;
+  };
+  auto getFullRange = [&](size_t width,
+                          size_t height,
+                          TextureFormat format,
+                          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+                          size_t numMipLevels,
+                          size_t rangeMipLevel = 0,
+                          size_t rangeNumMipLevels = 0) -> TextureRangeDesc {
+    auto tex = createTexture(width, height, format, numMipLevels);
+    return tex ? tex->getFullRange(rangeMipLevel,
+                                   rangeNumMipLevels ? rangeNumMipLevels : numMipLevels)
+               : TextureRangeDesc{};
+  };
+  auto getLayerRange = [&](size_t width,
+                           size_t height,
+                           TextureFormat format,
+                           // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+                           size_t numMipLevels,
+                           size_t layer,
+                           size_t rangeMipLevel = 0,
+                           size_t rangeNumMipLevels = 0) -> TextureRangeDesc {
+    auto tex = createTexture(width, height, format, numMipLevels);
+    return tex ? tex->getLayerRange(
+                     layer, rangeMipLevel, rangeNumMipLevels ? rangeNumMipLevels : numMipLevels)
+               : TextureRangeDesc{};
   };
   auto rangesAreEqual = [&](const TextureRangeDesc& a, const TextureRangeDesc& b) -> bool {
     return std::memcmp(&a, &b, sizeof(TextureRangeDesc)) == 0;
@@ -546,20 +565,26 @@ TEST_F(TextureArrayTest, GetFullRange) {
   TextureRangeDesc range;
   range = TextureRangeDesc::new2DArray(0, 0, 12, 34, 0, 2, 0, 1);
   ASSERT_TRUE(rangesAreEqual(getFullRange(12, 34, format, 1), range));
+  ASSERT_TRUE(rangesAreEqual(getLayerRange(12, 34, format, 1, 1), range.atLayer(1)));
   range = TextureRangeDesc::new2DArray(0, 0, 16, 1, 0, 2, 0, 4);
   ASSERT_TRUE(rangesAreEqual(getFullRange(16, 1, format, 4), range));
+  ASSERT_TRUE(rangesAreEqual(getLayerRange(16, 1, format, 4, 1), range.atLayer(1)));
 
   // Test subset of mip levels
   ASSERT_TRUE(rangesAreEqual(getFullRange(16, 1, format, 4, 1, 1), range.atMipLevel(1)));
+  ASSERT_TRUE(
+      rangesAreEqual(getLayerRange(16, 1, format, 4, 1, 1, 1), range.atMipLevel(1).atLayer(1)));
 
   if (iglDev_->hasFeature(DeviceFeatures::TextureNotPot)) {
     if (!iglDev_->hasFeature(DeviceFeatures::TexturePartialMipChain)) {
       // ES 2.0 generates maximum mip levels
       range = TextureRangeDesc::new2DArray(0, 0, 128, 333, 0, 2, 0, 9);
       ASSERT_TRUE(rangesAreEqual(getFullRange(128, 333, format, 9), range));
+      ASSERT_TRUE(rangesAreEqual(getLayerRange(128, 333, format, 9, 1), range.atLayer(1)));
     } else {
       range = TextureRangeDesc::new2DArray(0, 0, 128, 333, 0, 2, 0, 2);
       ASSERT_TRUE(rangesAreEqual(getFullRange(128, 333, format, 2), range));
+      ASSERT_TRUE(rangesAreEqual(getLayerRange(128, 333, format, 2, 1), range.atLayer(1)));
     }
   }
 }

@@ -462,4 +462,11 @@ TextureRangeDesc ITexture::getCubeFaceRange(TextureCubeFace face,
   return getCubeFaceRange(static_cast<size_t>(face), mipLevel, numMipLevels);
 }
 
+TextureRangeDesc ITexture::getLayerRange(size_t layer,
+                                         size_t mipLevel,
+                                         size_t numMipLevels) const noexcept {
+  IGL_ASSERT(getType() == TextureType::TwoDArray);
+  return getFullRange(mipLevel, numMipLevels).atLayer(layer);
+}
+
 } // namespace igl

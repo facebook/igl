@@ -706,6 +706,17 @@ class ITexture : public ITrackedResource<ITexture> {
   [[nodiscard]] TextureRangeDesc getCubeFaceRange(size_t face,
                                                   size_t mipLevel = 0,
                                                   size_t numMipLevels = 1) const noexcept;
+
+  /**
+   * @brief Returns a TextureRangeDesc for the texture's full range for a single array layer at the
+   * specified mip level.
+   *
+   * @return TextureRangeDesc.
+   */
+  [[nodiscard]] TextureRangeDesc getLayerRange(size_t layer,
+                                               size_t mipLevel = 0,
+                                               size_t numMipLevels = 1) const noexcept;
+
   /**
    * @brief A helper function to quickly access TextureFormat.
    *
