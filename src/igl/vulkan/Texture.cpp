@@ -282,9 +282,9 @@ Result Texture::uploadCube(const TextureRangeDesc& range,
                            TextureCubeFace face,
                            const void* data,
                            size_t bytesPerRow) const {
-  const auto result = validateRange(range);
-  if (!result.isOk()) {
-    return result;
+  if (getType() != TextureType::Cube) {
+    IGL_ASSERT_NOT_IMPLEMENTED();
+    return Result(Result::Code::Unsupported);
   }
   if (IGL_UNEXPECTED(range.numFaces > 1)) {
     return Result(Result::Code::Unsupported,
@@ -293,19 +293,7 @@ Result Texture::uploadCube(const TextureRangeDesc& range,
   if (IGL_UNEXPECTED(range.face > 0)) {
     return Result(Result::Code::Unsupported, "face must be 0.");
   }
-
-  const VulkanContext& ctx = device_.getVulkanContext();
-  const VkRect2D imageRegion = ivkGetRect2D(
-      (uint32_t)range.x, (uint32_t)range.y, (uint32_t)range.width, (uint32_t)range.height);
-  ctx.stagingDevice_->imageData2D(texture_->getVulkanImage(),
-                                  imageRegion,
-                                  (uint32_t)range.mipLevel,
-                                  (uint32_t)range.numMipLevels,
-                                  (uint32_t)face - (uint32_t)TextureCubeFace::PosX,
-                                  getProperties(),
-                                  getVkFormat(),
-                                  data);
-  return Result();
+  return upload(range.atFace(face), data, bytesPerRow);
 }
 
 Dimensions Texture::getDimensions() const {

@@ -173,11 +173,6 @@ Result Texture::uploadCube(const TextureRangeDesc& range,
     IGL_ASSERT_NOT_IMPLEMENTED();
     return Result(Result::Code::Unsupported);
   }
-  if (range.numMipLevels > 1) {
-    IGL_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented,
-                  "Uploading to more than 1 mip level is not yet supported.");
-  }
   if (IGL_UNEXPECTED(range.numFaces > 1)) {
     return Result(Result::Code::Unsupported,
                   "Uploading to more than 1 face is not supported with uploadCube.");
@@ -185,23 +180,7 @@ Result Texture::uploadCube(const TextureRangeDesc& range,
   if (IGL_UNEXPECTED(range.face > 0)) {
     return Result(Result::Code::Unsupported, "face must be 0.");
   }
-  const auto result = validateRange(range);
-  if (!result.isOk()) {
-    return result;
-  }
-  if (bytesPerRow == 0) {
-    bytesPerRow = getProperties().getBytesPerRow(range);
-  }
-  if (data) {
-    MTLRegion region = MTLRegionMake2D(range.x, range.y, range.width, range.height);
-    [get() replaceRegion:region
-             mipmapLevel:range.mipLevel
-                   slice:getMetalSlice(getType(), static_cast<uint32_t>(face), 0)
-               withBytes:data
-             bytesPerRow:toMetalBytesPerRow(bytesPerRow)
-           bytesPerImage:0];
-  }
-  return Result(Result::Code::Ok);
+  return upload(range.atFace(face), data, bytesPerRow);
 }
 
 Dimensions Texture::getDimensions() const {

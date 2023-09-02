@@ -598,13 +598,9 @@ Result TextureBuffer::uploadCube(const TextureRangeDesc& range,
                                  TextureCubeFace face,
                                  const void* data,
                                  size_t bytesPerRow) const {
-  if (data == nullptr) {
-    return Result{};
-  }
-  if (range.numMipLevels > 1) {
+  if (getType() != TextureType::Cube) {
     IGL_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented,
-                  "Uploading to more than 1 mip level is not yet supported.");
+    return Result(Result::Code::Unsupported);
   }
   if (IGL_UNEXPECTED(range.numFaces > 1)) {
     return Result(Result::Code::Unsupported,
@@ -613,25 +609,7 @@ Result TextureBuffer::uploadCube(const TextureRangeDesc& range,
   if (IGL_UNEXPECTED(range.face > 0)) {
     return Result(Result::Code::Unsupported, "face must be 0.");
   }
-
-  const auto target = getTarget();
-  if (target != GL_TEXTURE_CUBE_MAP) {
-    // this only uploads to cube textures
-    return Result{Result::Code::InvalidOperation, "upload2D can only upload to 2D textures"};
-  }
-
-  getContext().pixelStorei(GL_UNPACK_ALIGNMENT, this->getAlignment(bytesPerRow, range.mipLevel));
-  getContext().bindTexture(target, getId());
-
-  IGL_ASSERT(range.numMipLevels == 1);
-
-  GLenum cubeTarget = kCubeFaceTargets[static_cast<size_t>(face)];
-
-  auto result = upload2D(cubeTarget, range, data);
-
-  getContext().bindTexture(target, 0);
-
-  return Result();
+  return upload(range.atFace(face), data, bytesPerRow);
 }
 
 bool TextureBuffer::canInitialize() const {
