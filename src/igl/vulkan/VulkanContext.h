@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * LightweightVK
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,30 +7,16 @@
 
 #pragma once
 
-#include <deque>
-#include <future>
-#include <memory>
-#include <vector>
-
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
 #include <lvk/Pool.h>
 
-namespace lvk::vulkan {
+#include <future>
+#include <memory>
+#include <vector>
 
-struct VulkanContextImpl;
-
-struct DeviceQueues {
-  const static uint32_t INVALID = 0xFFFFFFFF;
-  uint32_t graphicsQueueFamilyIndex = INVALID;
-  uint32_t computeQueueFamilyIndex = INVALID;
-
-  VkQueue graphicsQueue = VK_NULL_HANDLE;
-  VkQueue computeQueue = VK_NULL_HANDLE;
-
-  DeviceQueues() = default;
-};
+namespace lvk {
 
 class VulkanContext final : public IContext {
  public:
@@ -75,6 +61,7 @@ class VulkanContext final : public IContext {
   ///////////////
 
   VkPipeline getVkPipeline(ComputePipelineHandle handle);
+  VkPipeline getVkPipeline(RenderPipelineHandle handle, const RenderPipelineDynamicState& dynamicState);
 
   lvk::Result queryDevices(HWDeviceType deviceType, std::vector<HWDeviceDesc>& outDevices);
   lvk::Result initContext(const HWDeviceDesc& desc);
@@ -189,7 +176,7 @@ class VulkanContext final : public IContext {
   // don't use staging on devices with shared host-visible memory
   bool useStaging_ = true;
 
-  std::unique_ptr<VulkanContextImpl> pimpl_;
+  std::unique_ptr<struct VulkanContextImpl> pimpl_;
 
   VkPipelineCache pipelineCache_ = VK_NULL_HANDLE;
 
@@ -204,14 +191,6 @@ class VulkanContext final : public IContext {
   lvk::Pool<lvk::Sampler, VkSampler> samplersPool_;
   lvk::Pool<lvk::Buffer, lvk::VulkanBuffer> buffersPool_;
   lvk::Pool<lvk::Texture, lvk::VulkanTexture> texturesPool_;
-
-  struct DeferredTask {
-    DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) : task_(std::move(task)), handle_(handle) {}
-    std::packaged_task<void()> task_;
-    SubmitHandle handle_;
-  };
-
-  mutable std::deque<DeferredTask> deferredTasks_;
 };
 
-} // namespace lvk::vulkan
+} // namespace lvk

@@ -18,9 +18,9 @@ class VulkanBuffer;
 class VulkanImage;
 class VulkanImmediateCommands;
 
-namespace vulkan {
-
 class VulkanContext;
+
+namespace vulkan {
 
 class VulkanStagingDevice final {
  public:

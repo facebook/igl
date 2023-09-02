@@ -7,7 +7,7 @@
 
 #include "VulkanUtils.h"
 
-#include <igl/vulkan/VulkanContext.h>
+#include "igl/vulkan/VulkanContext.h"
 #include <lvk/vulkan/VulkanUtils.h>
 
 #include <glslang/Include/glslang_c_interface.h>
@@ -265,7 +265,7 @@ VkFence lvk::createFence(VkDevice device, const char* debugName) {
 }
 
 uint32_t lvk::findQueueFamilyIndex(VkPhysicalDevice physDev, VkQueueFlags flags) {
-  using lvk::vulkan::DeviceQueues;
+  using lvk::DeviceQueues;
 
   uint32_t queueFamilyCount = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(physDev, &queueFamilyCount, nullptr);

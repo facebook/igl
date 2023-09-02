@@ -9,20 +9,23 @@
 
 #include <lvk/vulkan/VulkanUtils.h>
 
-#include <unordered_map>
-
 namespace lvk {
-
-namespace vulkan {
 
 class VulkanContext;
 
-} // namespace vulkan
+struct DeviceQueues {
+  const static uint32_t INVALID = 0xFFFFFFFF;
+  uint32_t graphicsQueueFamilyIndex = INVALID;
+  uint32_t computeQueueFamilyIndex = INVALID;
+
+  VkQueue graphicsQueue = VK_NULL_HANDLE;
+  VkQueue computeQueue = VK_NULL_HANDLE;
+};
 
 class VulkanBuffer final {
  public:
   VulkanBuffer() = default;
-  VulkanBuffer(lvk::vulkan::VulkanContext* ctx,
+  VulkanBuffer(lvk::VulkanContext* ctx,
                VkDevice device,
                VkDeviceSize bufferSize,
                VkBufferUsageFlags usageFlags,
@@ -47,7 +50,7 @@ class VulkanBuffer final {
   void flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) const;
 
  public:
-  lvk::vulkan::VulkanContext* ctx_ = nullptr;
+  lvk::VulkanContext* ctx_ = nullptr;
   VkDevice device_ = VK_NULL_HANDLE;
   VkBuffer vkBuffer_ = VK_NULL_HANDLE;
   VkDeviceMemory vkMemory_ = VK_NULL_HANDLE;
@@ -62,7 +65,7 @@ class VulkanBuffer final {
 
 class VulkanImage final {
  public:
-  VulkanImage(lvk::vulkan::VulkanContext& ctx,
+  VulkanImage(lvk::VulkanContext& ctx,
               VkDevice device,
               VkExtent3D extent,
               VkImageType type,
@@ -75,7 +78,7 @@ class VulkanImage final {
               VkImageCreateFlags createFlags,
               VkSampleCountFlagBits samples,
               const char* debugName);
-  VulkanImage(lvk::vulkan::VulkanContext& ctx,
+  VulkanImage(lvk::VulkanContext& ctx,
               VkDevice device,
               VkImage image,
               VkImageUsageFlags usageFlags,
@@ -119,7 +122,7 @@ class VulkanImage final {
   static bool isStencilFormat(VkFormat format);
 
  public:
-  lvk::vulkan::VulkanContext& ctx_;
+  lvk::VulkanContext& ctx_;
   VkDevice vkDevice_ = VK_NULL_HANDLE;
   VkImage vkImage_ = VK_NULL_HANDLE;
   VkImageUsageFlags vkUsageFlags_ = 0;
@@ -169,7 +172,7 @@ class VulkanSwapchain final {
   enum { LVK_MAX_SWAPCHAIN_IMAGES = 16 };
 
  public:
-  VulkanSwapchain(vulkan::VulkanContext& ctx, uint32_t width, uint32_t height);
+  VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height);
   ~VulkanSwapchain();
 
   Result present(VkSemaphore waitSemaphore);
@@ -181,7 +184,7 @@ class VulkanSwapchain final {
   VkSemaphore acquireSemaphore_ = VK_NULL_HANDLE;
 
  private:
-  vulkan::VulkanContext& ctx_;
+  VulkanContext& ctx_;
   VkDevice device_ = VK_NULL_HANDLE;
   VkQueue graphicsQueue_ = VK_NULL_HANDLE;
   uint32_t width_ = 0;
@@ -241,80 +244,20 @@ class VulkanImmediateCommands final {
   uint32_t submitCounter_ = 1;
 };
 
-class alignas(sizeof(uint32_t)) RenderPipelineDynamicState {
-  uint32_t topology_ : 4;
-  uint32_t depthCompareOp_ : 3;
-
- public:
-  uint32_t depthBiasEnable_ : 1;
-  uint32_t depthWriteEnable_ : 1;
-
-  uint32_t padding_ : 23;
-
-  RenderPipelineDynamicState() {
-    topology_ = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    depthCompareOp_ = VK_COMPARE_OP_ALWAYS;
-    depthBiasEnable_ = VK_FALSE;
-    depthWriteEnable_ = VK_FALSE;
-    padding_ = 0;
-  }
-
-  VkPrimitiveTopology getTopology() const {
-    return static_cast<VkPrimitiveTopology>(topology_);
-  }
+struct RenderPipelineDynamicState final {
+  VkPrimitiveTopology topology_ : 4 = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+  VkBool32 depthBiasEnable_ : 1 = VK_FALSE;
 
   void setTopology(VkPrimitiveTopology topology) {
-    LVK_ASSERT_MSG((topology & 0xF) == topology, "Invalid VkPrimitiveTopology.");
-    topology_ = topology & 0xF;
+    LVK_ASSERT_MSG(topology <= VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, "Invalid VkPrimitiveTopology");
+    topology_ = topology;
   }
-
-  VkCompareOp getDepthCompareOp() const {
-    return static_cast<VkCompareOp>(depthCompareOp_);
-  }
-
-  void setDepthCompareOp(VkCompareOp depthCompareOp) {
-    LVK_ASSERT_MSG((depthCompareOp & 0x7) == depthCompareOp, "Invalid VkCompareOp for depth.");
-    depthCompareOp_ = depthCompareOp & 0x7;
-  }
-
-  // comparison operator and hash function for std::unordered_map<>
-  bool operator==(const RenderPipelineDynamicState& other) const {
-    return *(uint32_t*)this == *(uint32_t*)&other;
-  }
-
-  struct HashFunction {
-    uint64_t operator()(const RenderPipelineDynamicState& s) const {
-      return *(const uint32_t*)&s;
-    }
-  };
 };
 
 static_assert(sizeof(RenderPipelineDynamicState) == sizeof(uint32_t));
-static_assert(alignof(RenderPipelineDynamicState) == sizeof(uint32_t));
 
-class RenderPipelineState final {
- public:
-  RenderPipelineState() = default;
-  RenderPipelineState(lvk::vulkan::VulkanContext* ctx, const RenderPipelineDesc& desc);
-  ~RenderPipelineState();
-
-  RenderPipelineState(const RenderPipelineState&) = delete;
-  RenderPipelineState& operator=(const RenderPipelineState&) = delete;
-
-  RenderPipelineState(RenderPipelineState&& other);
-  RenderPipelineState& operator=(RenderPipelineState&& other);
-
-  VkPipeline getVkPipeline(const RenderPipelineDynamicState& dynamicState);
-
-  const RenderPipelineDesc& getRenderPipelineDesc() const {
-    return desc_;
-  }
-
-private:
-  void destroyPipelines();
-
- private:
-  lvk::vulkan::VulkanContext* ctx_ = nullptr;
+struct RenderPipelineState final {
+  void destroyPipelines(lvk::VulkanContext * ctx);
 
   RenderPipelineDesc desc_;
 
@@ -326,7 +269,8 @@ private:
   // non-owning, cached the last pipeline layout from the context
   VkPipelineLayout pipelineLayout_ = VK_NULL_HANDLE;
 
-  std::unordered_map<RenderPipelineDynamicState, VkPipeline, RenderPipelineDynamicState::HashFunction> pipelines_;
+  // [topology][depthBiasEnable]
+  VkPipeline pipelines_[VK_PRIMITIVE_TOPOLOGY_PATCH_LIST + 1][2] = {};
 };
 
 class VulkanPipelineBuilder final {
@@ -335,8 +279,6 @@ class VulkanPipelineBuilder final {
   ~VulkanPipelineBuilder() = default;
 
   VulkanPipelineBuilder& depthBiasEnable(bool enable);
-  VulkanPipelineBuilder& depthWriteEnable(bool enable);
-  VulkanPipelineBuilder& depthCompareOp(VkCompareOp compareOp);
   VulkanPipelineBuilder& dynamicState(VkDynamicState state);
   VulkanPipelineBuilder& primitiveTopology(VkPrimitiveTopology topology);
   VulkanPipelineBuilder& rasterizationSamples(VkSampleCountFlagBits samples);
@@ -401,7 +343,7 @@ struct ComputePipelineState final {
 class CommandBuffer final : public ICommandBuffer {
  public:
   CommandBuffer() = default;
-  explicit CommandBuffer(vulkan::VulkanContext* ctx);
+  explicit CommandBuffer(VulkanContext* ctx);
   ~CommandBuffer() override;
 
   CommandBuffer& operator=(CommandBuffer&& other) = default;
@@ -454,9 +396,9 @@ class CommandBuffer final : public ICommandBuffer {
   void bindGraphicsPipeline();
 
  private:
-  friend class vulkan::VulkanContext;
+  friend class VulkanContext;
 
-  vulkan::VulkanContext* ctx_ = nullptr;
+  VulkanContext* ctx_ = nullptr;
   const VulkanImmediateCommands::CommandBufferWrapper* wrapper_ = nullptr;
 
   lvk::Framebuffer framebuffer_ = {};

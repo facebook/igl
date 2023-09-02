@@ -1,11 +1,12 @@
 /*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * LightweightVK
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 #include <cstring>
+#include <deque>
 #include <set>
 #include <vector>
 
@@ -72,7 +73,7 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
   }
 
   if (isError) {
-    lvk::vulkan::VulkanContext* ctx = static_cast<lvk::vulkan::VulkanContext*>(userData);
+    lvk::VulkanContext* ctx = static_cast<lvk::VulkanContext*>(userData);
     if (ctx->config_.terminateOnValidationError) {
       LVK_ASSERT(false);
       std::terminate();
@@ -118,6 +119,222 @@ VkMemoryPropertyFlags storageTypeToVkMemoryPropertyFlags(lvk::StorageType storag
     break;
   }
   return memFlags;
+}
+
+VkPolygonMode polygonModeToVkPolygonMode(lvk::PolygonMode mode) {
+  switch (mode) {
+  case lvk::PolygonMode_Fill:
+    return VK_POLYGON_MODE_FILL;
+  case lvk::PolygonMode_Line:
+    return VK_POLYGON_MODE_LINE;
+  }
+  LVK_ASSERT_MSG(false, "Implement a missing polygon fill mode");
+  return VK_POLYGON_MODE_FILL;
+}
+
+VkBlendFactor blendFactorToVkBlendFactor(lvk::BlendFactor value) {
+  switch (value) {
+  case lvk::BlendFactor_Zero:
+    return VK_BLEND_FACTOR_ZERO;
+  case lvk::BlendFactor_One:
+    return VK_BLEND_FACTOR_ONE;
+  case lvk::BlendFactor_SrcColor:
+    return VK_BLEND_FACTOR_SRC_COLOR;
+  case lvk::BlendFactor_OneMinusSrcColor:
+    return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+  case lvk::BlendFactor_DstColor:
+    return VK_BLEND_FACTOR_DST_COLOR;
+  case lvk::BlendFactor_OneMinusDstColor:
+    return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+  case lvk::BlendFactor_SrcAlpha:
+    return VK_BLEND_FACTOR_SRC_ALPHA;
+  case lvk::BlendFactor_OneMinusSrcAlpha:
+    return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+  case lvk::BlendFactor_DstAlpha:
+    return VK_BLEND_FACTOR_DST_ALPHA;
+  case lvk::BlendFactor_OneMinusDstAlpha:
+    return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+  case lvk::BlendFactor_BlendColor:
+    return VK_BLEND_FACTOR_CONSTANT_COLOR;
+  case lvk::BlendFactor_OneMinusBlendColor:
+    return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
+  case lvk::BlendFactor_BlendAlpha:
+    return VK_BLEND_FACTOR_CONSTANT_ALPHA;
+  case lvk::BlendFactor_OneMinusBlendAlpha:
+    return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+  case lvk::BlendFactor_SrcAlphaSaturated:
+    return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+  case lvk::BlendFactor_Src1Color:
+    return VK_BLEND_FACTOR_SRC1_COLOR;
+  case lvk::BlendFactor_OneMinusSrc1Color:
+    return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+  case lvk::BlendFactor_Src1Alpha:
+    return VK_BLEND_FACTOR_SRC1_ALPHA;
+  case lvk::BlendFactor_OneMinusSrc1Alpha:
+    return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+  default:
+    LVK_ASSERT(false);
+    return VK_BLEND_FACTOR_ONE; // default for unsupported values
+  }
+}
+
+VkBlendOp blendOpToVkBlendOp(lvk::BlendOp value) {
+  switch (value) {
+  case lvk::BlendOp_Add:
+    return VK_BLEND_OP_ADD;
+  case lvk::BlendOp_Subtract:
+    return VK_BLEND_OP_SUBTRACT;
+  case lvk::BlendOp_ReverseSubtract:
+    return VK_BLEND_OP_REVERSE_SUBTRACT;
+  case lvk::BlendOp_Min:
+    return VK_BLEND_OP_MIN;
+  case lvk::BlendOp_Max:
+    return VK_BLEND_OP_MAX;
+  }
+
+  LVK_ASSERT(false);
+  return VK_BLEND_OP_ADD;
+}
+
+VkCullModeFlags cullModeToVkCullMode(lvk::CullMode mode) {
+  switch (mode) {
+  case lvk::CullMode_None:
+    return VK_CULL_MODE_NONE;
+  case lvk::CullMode_Front:
+    return VK_CULL_MODE_FRONT_BIT;
+  case lvk::CullMode_Back:
+    return VK_CULL_MODE_BACK_BIT;
+  }
+  LVK_ASSERT_MSG(false, "Implement a missing cull mode");
+  return VK_CULL_MODE_NONE;
+}
+
+VkFrontFace windingModeToVkFrontFace(lvk::WindingMode mode) {
+  switch (mode) {
+  case lvk::WindingMode_CCW:
+    return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+  case lvk::WindingMode_CW:
+    return VK_FRONT_FACE_CLOCKWISE;
+  }
+  LVK_ASSERT_MSG(false, "Wrong winding order (cannot be more than 2)");
+  return VK_FRONT_FACE_CLOCKWISE;
+}
+
+VkStencilOp stencilOpToVkStencilOp(lvk::StencilOp op) {
+  switch (op) {
+  case lvk::StencilOp_Keep:
+    return VK_STENCIL_OP_KEEP;
+  case lvk::StencilOp_Zero:
+    return VK_STENCIL_OP_ZERO;
+  case lvk::StencilOp_Replace:
+    return VK_STENCIL_OP_REPLACE;
+  case lvk::StencilOp_IncrementClamp:
+    return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+  case lvk::StencilOp_DecrementClamp:
+    return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+  case lvk::StencilOp_Invert:
+    return VK_STENCIL_OP_INVERT;
+  case lvk::StencilOp_IncrementWrap:
+    return VK_STENCIL_OP_INCREMENT_AND_WRAP;
+  case lvk::StencilOp_DecrementWrap:
+    return VK_STENCIL_OP_DECREMENT_AND_WRAP;
+  }
+  LVK_ASSERT(false);
+  return VK_STENCIL_OP_KEEP;
+}
+
+VkFormat vertexFormatToVkFormat(lvk::VertexFormat fmt) {
+  using lvk::VertexFormat;
+  switch (fmt) {
+  case VertexFormat::Invalid:
+    LVK_ASSERT(false);
+    return VK_FORMAT_UNDEFINED;
+  case VertexFormat::Float1:
+    return VK_FORMAT_R32_SFLOAT;
+  case VertexFormat::Float2:
+    return VK_FORMAT_R32G32_SFLOAT;
+  case VertexFormat::Float3:
+    return VK_FORMAT_R32G32B32_SFLOAT;
+  case VertexFormat::Float4:
+    return VK_FORMAT_R32G32B32A32_SFLOAT;
+  case VertexFormat::Byte1:
+    return VK_FORMAT_R8_SINT;
+  case VertexFormat::Byte2:
+    return VK_FORMAT_R8G8_SINT;
+  case VertexFormat::Byte3:
+    return VK_FORMAT_R8G8B8_SINT;
+  case VertexFormat::Byte4:
+    return VK_FORMAT_R8G8B8A8_SINT;
+  case VertexFormat::UByte1:
+    return VK_FORMAT_R8_UINT;
+  case VertexFormat::UByte2:
+    return VK_FORMAT_R8G8_UINT;
+  case VertexFormat::UByte3:
+    return VK_FORMAT_R8G8B8_UINT;
+  case VertexFormat::UByte4:
+    return VK_FORMAT_R8G8B8A8_UINT;
+  case VertexFormat::Short1:
+    return VK_FORMAT_R16_SINT;
+  case VertexFormat::Short2:
+    return VK_FORMAT_R16G16_SINT;
+  case VertexFormat::Short3:
+    return VK_FORMAT_R16G16B16_SINT;
+  case VertexFormat::Short4:
+    return VK_FORMAT_R16G16B16A16_SINT;
+  case VertexFormat::UShort1:
+    return VK_FORMAT_R16_UINT;
+  case VertexFormat::UShort2:
+    return VK_FORMAT_R16G16_UINT;
+  case VertexFormat::UShort3:
+    return VK_FORMAT_R16G16B16_UINT;
+  case VertexFormat::UShort4:
+    return VK_FORMAT_R16G16B16A16_UINT;
+    // Normalized variants
+  case VertexFormat::Byte2Norm:
+    return VK_FORMAT_R8G8_SNORM;
+  case VertexFormat::Byte4Norm:
+    return VK_FORMAT_R8G8B8A8_SNORM;
+  case VertexFormat::UByte2Norm:
+    return VK_FORMAT_R8G8_UNORM;
+  case VertexFormat::UByte4Norm:
+    return VK_FORMAT_R8G8B8A8_UNORM;
+  case VertexFormat::Short2Norm:
+    return VK_FORMAT_R16G16_SNORM;
+  case VertexFormat::Short4Norm:
+    return VK_FORMAT_R16G16B16A16_SNORM;
+  case VertexFormat::UShort2Norm:
+    return VK_FORMAT_R16G16_UNORM;
+  case VertexFormat::UShort4Norm:
+    return VK_FORMAT_R16G16B16A16_UNORM;
+  case VertexFormat::Int1:
+    return VK_FORMAT_R32_SINT;
+  case VertexFormat::Int2:
+    return VK_FORMAT_R32G32_SINT;
+  case VertexFormat::Int3:
+    return VK_FORMAT_R32G32B32_SINT;
+  case VertexFormat::Int4:
+    return VK_FORMAT_R32G32B32A32_SINT;
+  case VertexFormat::UInt1:
+    return VK_FORMAT_R32_UINT;
+  case VertexFormat::UInt2:
+    return VK_FORMAT_R32G32_UINT;
+  case VertexFormat::UInt3:
+    return VK_FORMAT_R32G32B32_UINT;
+  case VertexFormat::UInt4:
+    return VK_FORMAT_R32G32B32A32_UINT;
+  case VertexFormat::HalfFloat1:
+    return VK_FORMAT_R16_SFLOAT;
+  case VertexFormat::HalfFloat2:
+    return VK_FORMAT_R16G16_SFLOAT;
+  case VertexFormat::HalfFloat3:
+    return VK_FORMAT_R16G16B16_SFLOAT;
+  case VertexFormat::HalfFloat4:
+    return VK_FORMAT_R16G16B16A16_SFLOAT;
+  case VertexFormat::Int_2_10_10_10_REV:
+    return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
+  }
+  LVK_ASSERT(false);
+  return VK_FORMAT_UNDEFINED;
 }
 
 std::vector<VkFormat> getCompatibleDepthStencilFormats(lvk::Format format) {
@@ -216,13 +433,20 @@ bool hasExtension(const char* ext, const std::vector<VkExtensionProperties>& pro
 } // namespace
 
 namespace lvk {
-namespace vulkan {
+
+struct DeferredTask {
+  DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) : task_(std::move(task)), handle_(handle) {}
+  std::packaged_task<void()> task_;
+  SubmitHandle handle_;
+};
 
 struct VulkanContextImpl final {
   // Vulkan Memory Allocator
   VmaAllocator vma_ = VK_NULL_HANDLE;
 
   lvk::CommandBuffer currentCommandBuffer_;
+
+  mutable std::deque<DeferredTask> deferredTasks_;
 };
 
 VulkanContext::VulkanContext(const lvk::ContextConfig& config,
@@ -608,6 +832,121 @@ Holder<TextureHandle> VulkanContext::createTexture(const TextureDesc& requestedD
   return {this, handle};
 }
 
+VkPipeline VulkanContext::getVkPipeline(RenderPipelineHandle handle, const RenderPipelineDynamicState& dynamicState) {
+  lvk::RenderPipelineState* rps = renderPipelinesPool_.get(handle);
+
+  if (!rps) {
+    return VK_NULL_HANDLE;
+  }
+
+  if (rps->pipelineLayout_ != vkPipelineLayout_) {
+    rps->destroyPipelines(this);
+    rps->pipelineLayout_ = vkPipelineLayout_;
+  }
+
+  if (rps->pipelines_[dynamicState.topology_][dynamicState.depthBiasEnable_] != VK_NULL_HANDLE) {
+    return rps->pipelines_[dynamicState.topology_][dynamicState.depthBiasEnable_];
+  }
+
+  // build a new Vulkan pipeline
+
+  VkPipeline pipeline = VK_NULL_HANDLE;
+
+  const RenderPipelineDesc& desc = rps->desc_;
+
+  const uint32_t numColorAttachments = rps->desc_.getNumColorAttachments();
+
+  // Not all attachments are valid. We need to create color blend attachments only for active attachments
+  VkPipelineColorBlendAttachmentState colorBlendAttachmentStates[LVK_MAX_COLOR_ATTACHMENTS] = {};
+  VkFormat colorAttachmentFormats[LVK_MAX_COLOR_ATTACHMENTS] = {};
+
+  for (uint32_t i = 0; i != numColorAttachments; i++) {
+    const auto& attachment = desc.color[i];
+    LVK_ASSERT(attachment.format != Format_Invalid);
+    colorAttachmentFormats[i] = formatToVkFormat(attachment.format);
+    if (!attachment.blendEnabled) {
+      colorBlendAttachmentStates[i] = VkPipelineColorBlendAttachmentState{
+          .blendEnable = VK_FALSE,
+          .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+          .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
+          .colorBlendOp = VK_BLEND_OP_ADD,
+          .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+          .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+          .alphaBlendOp = VK_BLEND_OP_ADD,
+          .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+      };
+    } else {
+      colorBlendAttachmentStates[i] = VkPipelineColorBlendAttachmentState{
+          .blendEnable = VK_TRUE,
+          .srcColorBlendFactor = blendFactorToVkBlendFactor(attachment.srcRGBBlendFactor),
+          .dstColorBlendFactor = blendFactorToVkBlendFactor(attachment.dstRGBBlendFactor),
+          .colorBlendOp = blendOpToVkBlendOp(attachment.rgbBlendOp),
+          .srcAlphaBlendFactor = blendFactorToVkBlendFactor(attachment.srcAlphaBlendFactor),
+          .dstAlphaBlendFactor = blendFactorToVkBlendFactor(attachment.dstAlphaBlendFactor),
+          .alphaBlendOp = blendOpToVkBlendOp(attachment.alphaBlendOp),
+          .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+      };
+    }
+  }
+
+  const VkShaderModule* vertModule = shaderModulesPool_.get(desc.smVert);
+  const VkShaderModule* geomModule = shaderModulesPool_.get(desc.smGeom);
+  const VkShaderModule* fragModule = shaderModulesPool_.get(desc.smFrag);
+
+  LVK_ASSERT(vertModule);
+  LVK_ASSERT(fragModule);
+
+  const VkPipelineVertexInputStateCreateInfo ciVertexInputState = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+      .vertexBindingDescriptionCount = rps->numBindings_,
+      .pVertexBindingDescriptions = rps->numBindings_ ? rps->vkBindings_ : nullptr,
+      .vertexAttributeDescriptionCount = rps->numAttributes_,
+      .pVertexAttributeDescriptions = rps->numAttributes_ ? rps->vkAttributes_ : nullptr,
+  };
+
+  lvk::VulkanPipelineBuilder()
+      // from Vulkan 1.0
+      .dynamicState(VK_DYNAMIC_STATE_VIEWPORT)
+      .dynamicState(VK_DYNAMIC_STATE_SCISSOR)
+      .dynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS)
+      .dynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS)
+      // from Vulkan 1.3
+      .dynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE)
+      .dynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
+      .dynamicState(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP)
+      .primitiveTopology(dynamicState.topology_)
+      .depthBiasEnable(dynamicState.depthBiasEnable_)
+      .rasterizationSamples(getVulkanSampleCountFlags(desc.samplesCount))
+      .polygonMode(polygonModeToVkPolygonMode(desc.polygonMode))
+      .stencilStateOps(VK_STENCIL_FACE_FRONT_BIT,
+                       stencilOpToVkStencilOp(desc.frontFaceStencil.stencilFailureOp),
+                       stencilOpToVkStencilOp(desc.frontFaceStencil.depthStencilPassOp),
+                       stencilOpToVkStencilOp(desc.frontFaceStencil.depthFailureOp),
+                       compareOpToVkCompareOp(desc.frontFaceStencil.stencilCompareOp))
+      .stencilStateOps(VK_STENCIL_FACE_BACK_BIT,
+                       stencilOpToVkStencilOp(desc.backFaceStencil.stencilFailureOp),
+                       stencilOpToVkStencilOp(desc.backFaceStencil.depthStencilPassOp),
+                       stencilOpToVkStencilOp(desc.backFaceStencil.depthFailureOp),
+                       compareOpToVkCompareOp(desc.backFaceStencil.stencilCompareOp))
+      .stencilMasks(VK_STENCIL_FACE_FRONT_BIT, 0xFF, desc.frontFaceStencil.writeMask, desc.frontFaceStencil.readMask)
+      .stencilMasks(VK_STENCIL_FACE_BACK_BIT, 0xFF, desc.backFaceStencil.writeMask, desc.backFaceStencil.readMask)
+      .shaderStage(lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, *vertModule, desc.entryPointVert))
+      .shaderStage(lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, *fragModule, desc.entryPointFrag))
+      .shaderStage(geomModule ? lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_GEOMETRY_BIT, *geomModule, desc.entryPointGeom)
+                              : VkPipelineShaderStageCreateInfo{.module = VK_NULL_HANDLE})
+      .cullMode(cullModeToVkCullMode(desc.cullMode))
+      .frontFace(windingModeToVkFrontFace(desc.frontFaceWinding))
+      .vertexInputState(ciVertexInputState)
+      .colorAttachments(colorBlendAttachmentStates, colorAttachmentFormats, numColorAttachments)
+      .depthAttachmentFormat(formatToVkFormat(desc.depthFormat))
+      .stencilAttachmentFormat(formatToVkFormat(desc.stencilFormat))
+      .build(vkDevice_, pipelineCache_, vkPipelineLayout_, &pipeline, desc.debugName);
+
+  rps->pipelines_[dynamicState.topology_][dynamicState.depthBiasEnable_] = pipeline;
+
+  return pipeline;
+}
+
 VkPipeline VulkanContext::getVkPipeline(ComputePipelineHandle handle) {
   lvk::ComputePipelineState* cps = computePipelinesPool_.get(handle);
 
@@ -671,7 +1010,29 @@ lvk::Holder<lvk::RenderPipelineHandle> VulkanContext::createRenderPipeline(const
     return {};
   }
 
-  return {this, renderPipelinesPool_.create(RenderPipelineState(this, desc))};
+  RenderPipelineState rps(desc);
+
+  // Iterate and cache vertex input bindings and attributes
+  const lvk::VertexInput& vstate = rps.desc_.vertexInput;
+
+  bool bufferAlreadyBound[VertexInput::LVK_VERTEX_BUFFER_MAX] = {};
+
+  rps.numAttributes_ = vstate.getNumAttributes();
+
+  for (uint32_t i = 0; i != rps.numAttributes_; i++) {
+    const auto& attr = vstate.attributes[i];
+
+    rps.vkAttributes_[i] = {
+        .location = attr.location, .binding = attr.binding, .format = vertexFormatToVkFormat(attr.format), .offset = (uint32_t)attr.offset};
+
+    if (!bufferAlreadyBound[attr.binding]) {
+      bufferAlreadyBound[attr.binding] = true;
+      rps.vkBindings_[rps.numBindings_++] = {
+          .binding = attr.binding, .stride = vstate.inputBindings[attr.binding].stride, .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
+    }
+  }
+
+  return {this, renderPipelinesPool_.create(std::move(rps))};
 }
 
 void VulkanContext::destroy(lvk::ComputePipelineHandle handle) {
@@ -692,13 +1053,29 @@ void VulkanContext::destroy(lvk::ComputePipelineHandle handle) {
 }
 
 void VulkanContext::destroy(lvk::RenderPipelineHandle handle) {
+  lvk::RenderPipelineState* rps = renderPipelinesPool_.get(handle);
+
+  if (!rps) {
+    return;
+  }
+
+  // a shader module can be destroyed while pipelines created using its shaders are still in use
+  // https://registry.khronos.org/vulkan/specs/1.3/html/chap9.html#vkDestroyShaderModule
+  destroy(rps->desc_.smVert);
+  destroy(rps->desc_.smGeom);
+  destroy(rps->desc_.smFrag);
+
+  rps->destroyPipelines(this);
+
   renderPipelinesPool_.destroy(handle);
 }
 
 void VulkanContext::destroy(lvk::ShaderModuleHandle handle) {
   const VkShaderModule* sm = shaderModulesPool_.get(handle);
 
-  LVK_ASSERT(sm);
+  if (!sm) {
+    return;
+  }
 
   if (*sm != VK_NULL_HANDLE) {
     // a shader module can be destroyed while pipelines created using its shaders are still in use
@@ -1988,7 +2365,7 @@ void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle
   if (handle.empty()) {
     handle = immediate_->getLastSubmitHandle();
   }
-  deferredTasks_.emplace_back(std::move(task), handle);
+  pimpl_->deferredTasks_.emplace_back(std::move(task), handle);
 }
 
 void* VulkanContext::getVmaAllocator() const {
@@ -1996,19 +2373,18 @@ void* VulkanContext::getVmaAllocator() const {
 }
 
 void VulkanContext::processDeferredTasks() const {
-  while (!deferredTasks_.empty() && immediate_->isReady(deferredTasks_.front().handle_, true)) {
-    deferredTasks_.front().task_();
-    deferredTasks_.pop_front();
+  while (!pimpl_->deferredTasks_.empty() && immediate_->isReady(pimpl_->deferredTasks_.front().handle_, true)) {
+    pimpl_->deferredTasks_.front().task_();
+    pimpl_->deferredTasks_.pop_front();
   }
 }
 
 void VulkanContext::waitDeferredTasks() {
-  for (auto& task : deferredTasks_) {
+  for (auto& task : pimpl_->deferredTasks_) {
     immediate_->wait(task.handle_);
     task.task_();
   }
-  deferredTasks_.clear();
+  pimpl_->deferredTasks_.clear();
 }
 
-} // namespace vulkan
 } // namespace lvk

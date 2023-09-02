@@ -254,12 +254,12 @@ std::unique_ptr<lvk::IContext> lvk::createVulkanContextWithSwapchain(GLFWwindow*
                                                                      lvk::HWDeviceType preferredDeviceType) {
   using namespace lvk;
 
-  std::unique_ptr<vulkan::VulkanContext> ctx;
+  std::unique_ptr<VulkanContext> ctx;
 
 #if defined(_WIN32)
-  ctx = std::make_unique<vulkan::VulkanContext>(cfg, (void*)glfwGetWin32Window(window));
+  ctx = std::make_unique<VulkanContext>(cfg, (void*)glfwGetWin32Window(window));
 #elif defined(__linux__)
-  ctx = std::make_unique<vulkan::VulkanContext>(cfg, (void*)glfwGetX11Window(window), (void*)glfwGetX11Display());
+  ctx = std::make_unique<VulkanContext>(cfg, (void*)glfwGetX11Window(window), (void*)glfwGetX11Display());
 #else
 #error Unsupported OS
 #endif

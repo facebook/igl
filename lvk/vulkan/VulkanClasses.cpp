@@ -8,7 +8,7 @@
 #include "VulkanClasses.h"
 #include "VulkanUtils.h"
 
-#include <igl/vulkan/VulkanContext.h>
+#include "igl/vulkan/VulkanContext.h"
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #include <unistd.h>
@@ -117,222 +117,6 @@ bool isDepthOrStencilVkFormat(VkFormat format) {
   return false;
 }
 
-VkStencilOp stencilOpToVkStencilOp(lvk::StencilOp op) {
-  switch (op) {
-  case lvk::StencilOp_Keep:
-    return VK_STENCIL_OP_KEEP;
-  case lvk::StencilOp_Zero:
-    return VK_STENCIL_OP_ZERO;
-  case lvk::StencilOp_Replace:
-    return VK_STENCIL_OP_REPLACE;
-  case lvk::StencilOp_IncrementClamp:
-    return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
-  case lvk::StencilOp_DecrementClamp:
-    return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
-  case lvk::StencilOp_Invert:
-    return VK_STENCIL_OP_INVERT;
-  case lvk::StencilOp_IncrementWrap:
-    return VK_STENCIL_OP_INCREMENT_AND_WRAP;
-  case lvk::StencilOp_DecrementWrap:
-    return VK_STENCIL_OP_DECREMENT_AND_WRAP;
-  }
-  LVK_ASSERT(false);
-  return VK_STENCIL_OP_KEEP;
-}
-
-VkBlendOp blendOpToVkBlendOp(lvk::BlendOp value) {
-  switch (value) {
-  case lvk::BlendOp_Add:
-    return VK_BLEND_OP_ADD;
-  case lvk::BlendOp_Subtract:
-    return VK_BLEND_OP_SUBTRACT;
-  case lvk::BlendOp_ReverseSubtract:
-    return VK_BLEND_OP_REVERSE_SUBTRACT;
-  case lvk::BlendOp_Min:
-    return VK_BLEND_OP_MIN;
-  case lvk::BlendOp_Max:
-    return VK_BLEND_OP_MAX;
-  }
-
-  LVK_ASSERT(false);
-  return VK_BLEND_OP_ADD;
-}
-
-VkCullModeFlags cullModeToVkCullMode(lvk::CullMode mode) {
-  switch (mode) {
-  case lvk::CullMode_None:
-    return VK_CULL_MODE_NONE;
-  case lvk::CullMode_Front:
-    return VK_CULL_MODE_FRONT_BIT;
-  case lvk::CullMode_Back:
-    return VK_CULL_MODE_BACK_BIT;
-  }
-  LVK_ASSERT_MSG(false, "Implement a missing cull mode");
-  return VK_CULL_MODE_NONE;
-}
-
-VkFrontFace windingModeToVkFrontFace(lvk::WindingMode mode) {
-  switch (mode) {
-  case lvk::WindingMode_CCW:
-    return VK_FRONT_FACE_COUNTER_CLOCKWISE;
-  case lvk::WindingMode_CW:
-    return VK_FRONT_FACE_CLOCKWISE;
-  }
-  LVK_ASSERT_MSG(false, "Wrong winding order (cannot be more than 2)");
-  return VK_FRONT_FACE_CLOCKWISE;
-}
-
-VkPolygonMode polygonModeToVkPolygonMode(lvk::PolygonMode mode) {
-  switch (mode) {
-  case lvk::PolygonMode_Fill:
-    return VK_POLYGON_MODE_FILL;
-  case lvk::PolygonMode_Line:
-    return VK_POLYGON_MODE_LINE;
-  }
-  LVK_ASSERT_MSG(false, "Implement a missing polygon fill mode");
-  return VK_POLYGON_MODE_FILL;
-}
-
-VkBlendFactor blendFactorToVkBlendFactor(lvk::BlendFactor value) {
-  switch (value) {
-  case lvk::BlendFactor_Zero:
-    return VK_BLEND_FACTOR_ZERO;
-  case lvk::BlendFactor_One:
-    return VK_BLEND_FACTOR_ONE;
-  case lvk::BlendFactor_SrcColor:
-    return VK_BLEND_FACTOR_SRC_COLOR;
-  case lvk::BlendFactor_OneMinusSrcColor:
-    return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-  case lvk::BlendFactor_DstColor:
-    return VK_BLEND_FACTOR_DST_COLOR;
-  case lvk::BlendFactor_OneMinusDstColor:
-    return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
-  case lvk::BlendFactor_SrcAlpha:
-    return VK_BLEND_FACTOR_SRC_ALPHA;
-  case lvk::BlendFactor_OneMinusSrcAlpha:
-    return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-  case lvk::BlendFactor_DstAlpha:
-    return VK_BLEND_FACTOR_DST_ALPHA;
-  case lvk::BlendFactor_OneMinusDstAlpha:
-    return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
-  case lvk::BlendFactor_BlendColor:
-    return VK_BLEND_FACTOR_CONSTANT_COLOR;
-  case lvk::BlendFactor_OneMinusBlendColor:
-    return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
-  case lvk::BlendFactor_BlendAlpha:
-    return VK_BLEND_FACTOR_CONSTANT_ALPHA;
-  case lvk::BlendFactor_OneMinusBlendAlpha:
-    return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
-  case lvk::BlendFactor_SrcAlphaSaturated:
-    return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
-  case lvk::BlendFactor_Src1Color:
-    return VK_BLEND_FACTOR_SRC1_COLOR;
-  case lvk::BlendFactor_OneMinusSrc1Color:
-    return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
-  case lvk::BlendFactor_Src1Alpha:
-    return VK_BLEND_FACTOR_SRC1_ALPHA;
-  case lvk::BlendFactor_OneMinusSrc1Alpha:
-    return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
-  default:
-    LVK_ASSERT(false);
-    return VK_BLEND_FACTOR_ONE; // default for unsupported values
-  }
-}
-
-VkFormat vertexFormatToVkFormat(lvk::VertexFormat fmt) {
-  using lvk::VertexFormat;
-  switch (fmt) {
-  case VertexFormat::Invalid:
-    LVK_ASSERT(false);
-    return VK_FORMAT_UNDEFINED;
-  case VertexFormat::Float1:
-    return VK_FORMAT_R32_SFLOAT;
-  case VertexFormat::Float2:
-    return VK_FORMAT_R32G32_SFLOAT;
-  case VertexFormat::Float3:
-    return VK_FORMAT_R32G32B32_SFLOAT;
-  case VertexFormat::Float4:
-    return VK_FORMAT_R32G32B32A32_SFLOAT;
-  case VertexFormat::Byte1:
-    return VK_FORMAT_R8_SINT;
-  case VertexFormat::Byte2:
-    return VK_FORMAT_R8G8_SINT;
-  case VertexFormat::Byte3:
-    return VK_FORMAT_R8G8B8_SINT;
-  case VertexFormat::Byte4:
-    return VK_FORMAT_R8G8B8A8_SINT;
-  case VertexFormat::UByte1:
-    return VK_FORMAT_R8_UINT;
-  case VertexFormat::UByte2:
-    return VK_FORMAT_R8G8_UINT;
-  case VertexFormat::UByte3:
-    return VK_FORMAT_R8G8B8_UINT;
-  case VertexFormat::UByte4:
-    return VK_FORMAT_R8G8B8A8_UINT;
-  case VertexFormat::Short1:
-    return VK_FORMAT_R16_SINT;
-  case VertexFormat::Short2:
-    return VK_FORMAT_R16G16_SINT;
-  case VertexFormat::Short3:
-    return VK_FORMAT_R16G16B16_SINT;
-  case VertexFormat::Short4:
-    return VK_FORMAT_R16G16B16A16_SINT;
-  case VertexFormat::UShort1:
-    return VK_FORMAT_R16_UINT;
-  case VertexFormat::UShort2:
-    return VK_FORMAT_R16G16_UINT;
-  case VertexFormat::UShort3:
-    return VK_FORMAT_R16G16B16_UINT;
-  case VertexFormat::UShort4:
-    return VK_FORMAT_R16G16B16A16_UINT;
-    // Normalized variants
-  case VertexFormat::Byte2Norm:
-    return VK_FORMAT_R8G8_SNORM;
-  case VertexFormat::Byte4Norm:
-    return VK_FORMAT_R8G8B8A8_SNORM;
-  case VertexFormat::UByte2Norm:
-    return VK_FORMAT_R8G8_UNORM;
-  case VertexFormat::UByte4Norm:
-    return VK_FORMAT_R8G8B8A8_UNORM;
-  case VertexFormat::Short2Norm:
-    return VK_FORMAT_R16G16_SNORM;
-  case VertexFormat::Short4Norm:
-    return VK_FORMAT_R16G16B16A16_SNORM;
-  case VertexFormat::UShort2Norm:
-    return VK_FORMAT_R16G16_UNORM;
-  case VertexFormat::UShort4Norm:
-    return VK_FORMAT_R16G16B16A16_UNORM;
-  case VertexFormat::Int1:
-    return VK_FORMAT_R32_SINT;
-  case VertexFormat::Int2:
-    return VK_FORMAT_R32G32_SINT;
-  case VertexFormat::Int3:
-    return VK_FORMAT_R32G32B32_SINT;
-  case VertexFormat::Int4:
-    return VK_FORMAT_R32G32B32A32_SINT;
-  case VertexFormat::UInt1:
-    return VK_FORMAT_R32_UINT;
-  case VertexFormat::UInt2:
-    return VK_FORMAT_R32G32_UINT;
-  case VertexFormat::UInt3:
-    return VK_FORMAT_R32G32B32_UINT;
-  case VertexFormat::UInt4:
-    return VK_FORMAT_R32G32B32A32_UINT;
-  case VertexFormat::HalfFloat1:
-    return VK_FORMAT_R16_SFLOAT;
-  case VertexFormat::HalfFloat2:
-    return VK_FORMAT_R16G16_SFLOAT;
-  case VertexFormat::HalfFloat3:
-    return VK_FORMAT_R16G16B16_SFLOAT;
-  case VertexFormat::HalfFloat4:
-    return VK_FORMAT_R16G16B16A16_SFLOAT;
-  case VertexFormat::Int_2_10_10_10_REV:
-    return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
-  }
-  LVK_ASSERT(false);
-  return VK_FORMAT_UNDEFINED;
-}
-
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats, lvk::ColorSpace colorSpace) {
   LVK_ASSERT(!formats.empty());
 
@@ -388,7 +172,7 @@ VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>
 
 } // namespace
 
-lvk::VulkanBuffer::VulkanBuffer(lvk::vulkan::VulkanContext* ctx,
+lvk::VulkanBuffer::VulkanBuffer(lvk::VulkanContext* ctx,
                                 VkDevice device,
                                 VkDeviceSize bufferSize,
                                 VkBufferUsageFlags usageFlags,
@@ -567,7 +351,7 @@ void lvk::VulkanBuffer::bufferSubData(size_t offset, size_t size, const void* da
   }
 }
 
-lvk::VulkanImage::VulkanImage(lvk::vulkan::VulkanContext& ctx,
+lvk::VulkanImage::VulkanImage(lvk::VulkanContext& ctx,
                               VkDevice device,
                               VkImage image,
                               VkImageUsageFlags usageFlags,
@@ -587,7 +371,7 @@ lvk::VulkanImage::VulkanImage(lvk::vulkan::VulkanContext& ctx,
   VK_ASSERT(lvk::setDebugObjectName(vkDevice_, VK_OBJECT_TYPE_IMAGE, (uint64_t)vkImage_, debugName));
 }
 
-lvk::VulkanImage::VulkanImage(lvk::vulkan::VulkanContext& ctx,
+lvk::VulkanImage::VulkanImage(lvk::VulkanContext& ctx,
                               VkDevice device,
                               VkExtent3D extent,
                               VkImageType type,
@@ -1013,7 +797,7 @@ VkImageView lvk::VulkanTexture::getOrCreateVkImageViewForFramebuffer(uint8_t lev
   return imageViewForFramebuffer_[level];
 }
 
-lvk::VulkanSwapchain::VulkanSwapchain(vulkan::VulkanContext& ctx, uint32_t width, uint32_t height) :
+lvk::VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height) :
   ctx_(ctx), device_(ctx.vkDevice_), graphicsQueue_(ctx.deviceQueues_.graphicsQueue), width_(width), height_(height) {
   surfaceFormat_ = chooseSwapSurfaceFormat(ctx.deviceSurfaceFormats_, ctx.config_.swapChainColorSpace);
 
@@ -1424,190 +1208,17 @@ lvk::SubmitHandle lvk::VulkanImmediateCommands::getLastSubmitHandle() const {
   return lastSubmitHandle_;
 }
 
-lvk::RenderPipelineState::RenderPipelineState(lvk::vulkan::VulkanContext* ctx, const RenderPipelineDesc& desc) : ctx_(ctx), desc_(desc) {
-  // Iterate and cache vertex input bindings and attributes
-  const lvk::VertexInput& vstate = desc_.vertexInput;
-
-  bool bufferAlreadyBound[VertexInput::LVK_VERTEX_BUFFER_MAX] = {};
-
-  numAttributes_ = vstate.getNumAttributes();
-
-  for (uint32_t i = 0; i != numAttributes_; i++) {
-    const auto& attr = vstate.attributes[i];
-
-    vkAttributes_[i] = {
-        .location = attr.location, .binding = attr.binding, .format = vertexFormatToVkFormat(attr.format), .offset = (uint32_t)attr.offset};
-
-    if (!bufferAlreadyBound[attr.binding]) {
-      bufferAlreadyBound[attr.binding] = true;
-      vkBindings_[numBindings_++] = {
-          .binding = attr.binding, .stride = vstate.inputBindings[attr.binding].stride, .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
+void lvk::RenderPipelineState::destroyPipelines(lvk::VulkanContext* ctx) {
+  for (uint32_t topology = 0; topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST + 1; topology++) {
+    for (uint32_t depthBiasEnabled = 0; depthBiasEnabled != VK_TRUE + 1; depthBiasEnabled++) {
+      VkPipeline& vkPipeline = pipelines_[topology][depthBiasEnabled];
+      if (vkPipeline != VK_NULL_HANDLE) {
+        ctx->deferredTask(std::packaged_task<void()>(
+            [device = ctx->getVkDevice(), pipeline = vkPipeline]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+        vkPipeline = VK_NULL_HANDLE;
+      }
     }
   }
-}
-
-lvk::RenderPipelineState::~RenderPipelineState() {
-  if (!ctx_) {
-    return;
-  }
-
-  if (!desc_.smVert.empty()) {
-    ctx_->destroy(desc_.smVert);
-  }
-  if (!desc_.smGeom.empty()) {
-    ctx_->destroy(desc_.smGeom);
-  }
-  if (!desc_.smFrag.empty()) {
-    ctx_->destroy(desc_.smFrag);
-  }
-
-  destroyPipelines();
-}
-
-lvk::RenderPipelineState::RenderPipelineState(RenderPipelineState&& other) :
-  ctx_(other.ctx_), numBindings_(other.numBindings_), numAttributes_(other.numAttributes_), pipelineLayout_(other.pipelineLayout_) {
-  std::swap(desc_, other.desc_);
-  std::swap(pipelines_, other.pipelines_);
-  for (uint32_t i = 0; i != numBindings_; i++) {
-    vkBindings_[i] = other.vkBindings_[i];
-  }
-  for (uint32_t i = 0; i != numAttributes_; i++) {
-    vkAttributes_[i] = other.vkAttributes_[i];
-  }
-  other.ctx_ = nullptr;
-}
-
-lvk::RenderPipelineState& lvk::RenderPipelineState::operator=(RenderPipelineState&& other) {
-  std::swap(ctx_, other.ctx_);
-  std::swap(desc_, other.desc_);
-  std::swap(numBindings_, other.numBindings_);
-  std::swap(numAttributes_, other.numAttributes_);
-  std::swap(pipelineLayout_, other.pipelineLayout_);
-  std::swap(pipelines_, other.pipelines_);
-  for (uint32_t i = 0; i != numBindings_; i++) {
-    vkBindings_[i] = other.vkBindings_[i];
-  }
-  for (uint32_t i = 0; i != numAttributes_; i++) {
-    vkAttributes_[i] = other.vkAttributes_[i];
-  }
-  return *this;
-}
-
-void lvk::RenderPipelineState::destroyPipelines() {
-  for (auto p : pipelines_) {
-    if (p.second != VK_NULL_HANDLE) {
-      ctx_->deferredTask(std::packaged_task<void()>(
-          [device = ctx_->getVkDevice(), pipeline = p.second]() { vkDestroyPipeline(device, pipeline, nullptr); }));
-    }
-  }
-  pipelines_.clear();
-}
-
-VkPipeline lvk::RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& dynamicState) {
-  if (pipelineLayout_ != ctx_->vkPipelineLayout_) {
-    destroyPipelines();
-    pipelineLayout_ = ctx_->vkPipelineLayout_;
-  }
-
-  const auto it = pipelines_.find(dynamicState);
-
-  if (it != pipelines_.end()) {
-    return it->second;
-  }
-
-  // build a new Vulkan pipeline
-
-  VkPipeline pipeline = VK_NULL_HANDLE;
-
-  const uint32_t numColorAttachments = desc_.getNumColorAttachments();
-
-  // Not all attachments are valid. We need to create color blend attachments only for active attachments
-  VkPipelineColorBlendAttachmentState colorBlendAttachmentStates[LVK_MAX_COLOR_ATTACHMENTS] = {};
-  VkFormat colorAttachmentFormats[LVK_MAX_COLOR_ATTACHMENTS] = {};
-
-  for (uint32_t i = 0; i != numColorAttachments; i++) {
-    const auto& attachment = desc_.color[i];
-    LVK_ASSERT(attachment.format != Format_Invalid);
-    colorAttachmentFormats[i] = formatToVkFormat(attachment.format);
-    if (!attachment.blendEnabled) {
-      colorBlendAttachmentStates[i] = VkPipelineColorBlendAttachmentState{
-          .blendEnable = VK_FALSE,
-          .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
-          .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
-          .colorBlendOp = VK_BLEND_OP_ADD,
-          .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-          .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
-          .alphaBlendOp = VK_BLEND_OP_ADD,
-          .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-      };
-    } else {
-      colorBlendAttachmentStates[i] = VkPipelineColorBlendAttachmentState{
-          .blendEnable = VK_TRUE,
-          .srcColorBlendFactor = blendFactorToVkBlendFactor(attachment.srcRGBBlendFactor),
-          .dstColorBlendFactor = blendFactorToVkBlendFactor(attachment.dstRGBBlendFactor),
-          .colorBlendOp = blendOpToVkBlendOp(attachment.rgbBlendOp),
-          .srcAlphaBlendFactor = blendFactorToVkBlendFactor(attachment.srcAlphaBlendFactor),
-          .dstAlphaBlendFactor = blendFactorToVkBlendFactor(attachment.dstAlphaBlendFactor),
-          .alphaBlendOp = blendOpToVkBlendOp(attachment.alphaBlendOp),
-          .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-      };
-    }
-  }
-
-  const VkShaderModule* vertModule = ctx_->shaderModulesPool_.get(desc_.smVert);
-  const VkShaderModule* geomModule = ctx_->shaderModulesPool_.get(desc_.smGeom);
-  const VkShaderModule* fragModule = ctx_->shaderModulesPool_.get(desc_.smFrag);
-
-  LVK_ASSERT(vertModule);
-  LVK_ASSERT(fragModule);
-
-  const VkPipelineVertexInputStateCreateInfo ciVertexInputState = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-      .vertexBindingDescriptionCount = numBindings_,
-      .pVertexBindingDescriptions = numBindings_ ? vkBindings_ : nullptr,
-      .vertexAttributeDescriptionCount = numAttributes_,
-      .pVertexAttributeDescriptions = numAttributes_ ? vkAttributes_ : nullptr,
-  };
-
-  lvk::VulkanPipelineBuilder()
-      // from Vulkan 1.0
-      .dynamicState(VK_DYNAMIC_STATE_VIEWPORT)
-      .dynamicState(VK_DYNAMIC_STATE_SCISSOR)
-      .dynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS)
-      .dynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS)
-      .primitiveTopology(dynamicState.getTopology())
-      .depthBiasEnable(dynamicState.depthBiasEnable_)
-      .depthCompareOp(dynamicState.getDepthCompareOp())
-      .depthWriteEnable(dynamicState.depthWriteEnable_)
-      .rasterizationSamples(getVulkanSampleCountFlags(desc_.samplesCount))
-      .polygonMode(polygonModeToVkPolygonMode(desc_.polygonMode))
-      .stencilStateOps(VK_STENCIL_FACE_FRONT_BIT,
-                       stencilOpToVkStencilOp(desc_.frontFaceStencil.stencilFailureOp),
-                       stencilOpToVkStencilOp(desc_.frontFaceStencil.depthStencilPassOp),
-                       stencilOpToVkStencilOp(desc_.frontFaceStencil.depthFailureOp),
-                       compareOpToVkCompareOp(desc_.frontFaceStencil.stencilCompareOp))
-      .stencilStateOps(VK_STENCIL_FACE_BACK_BIT,
-                       stencilOpToVkStencilOp(desc_.backFaceStencil.stencilFailureOp),
-                       stencilOpToVkStencilOp(desc_.backFaceStencil.depthStencilPassOp),
-                       stencilOpToVkStencilOp(desc_.backFaceStencil.depthFailureOp),
-                       compareOpToVkCompareOp(desc_.backFaceStencil.stencilCompareOp))
-      .stencilMasks(VK_STENCIL_FACE_FRONT_BIT, 0xFF, desc_.frontFaceStencil.writeMask, desc_.frontFaceStencil.readMask)
-      .stencilMasks(VK_STENCIL_FACE_BACK_BIT, 0xFF, desc_.backFaceStencil.writeMask, desc_.backFaceStencil.readMask)
-      .shaderStage(lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, *vertModule, desc_.entryPointVert))
-      .shaderStage(lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, *fragModule, desc_.entryPointFrag))
-      .shaderStage(geomModule ? lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_GEOMETRY_BIT, *geomModule, desc_.entryPointGeom)
-                              : VkPipelineShaderStageCreateInfo{.module = VK_NULL_HANDLE})
-      .cullMode(cullModeToVkCullMode(desc_.cullMode))
-      .frontFace(windingModeToVkFrontFace(desc_.frontFaceWinding))
-      .vertexInputState(ciVertexInputState)
-      .colorAttachments(colorBlendAttachmentStates, colorAttachmentFormats, numColorAttachments)
-      .depthAttachmentFormat(formatToVkFormat(desc_.depthFormat))
-      .stencilAttachmentFormat(formatToVkFormat(desc_.stencilFormat))
-      .build(ctx_->getVkDevice(), ctx_->pipelineCache_, ctx_->vkPipelineLayout_, &pipeline, desc_.debugName);
-
-  pipelines_[dynamicState] = pipeline;
-
-  return pipeline;
 }
 
 lvk::VulkanPipelineBuilder::VulkanPipelineBuilder() :
@@ -1682,17 +1293,6 @@ lvk::VulkanPipelineBuilder::VulkanPipelineBuilder() :
 
 lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::depthBiasEnable(bool enable) {
   rasterizationState_.depthBiasEnable = enable ? VK_TRUE : VK_FALSE;
-  return *this;
-}
-
-lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::depthWriteEnable(bool enable) {
-  depthStencilState_.depthWriteEnable = enable ? VK_TRUE : VK_FALSE;
-  return *this;
-}
-
-lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::depthCompareOp(VkCompareOp compareOp) {
-  depthStencilState_.depthTestEnable = compareOp != VK_COMPARE_OP_ALWAYS;
-  depthStencilState_.depthCompareOp = compareOp;
   return *this;
 }
 
@@ -1877,7 +1477,7 @@ VkResult lvk::VulkanPipelineBuilder::build(VkDevice device,
   return lvk::setDebugObjectName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)*outPipeline, debugName);
 }
 
-lvk::CommandBuffer::CommandBuffer(vulkan::VulkanContext* ctx) : ctx_(ctx), wrapper_(&ctx_->immediate_->acquire()) {}
+lvk::CommandBuffer::CommandBuffer(VulkanContext* ctx) : ctx_(ctx), wrapper_(&ctx_->immediate_->acquire()) {}
 
 lvk::CommandBuffer::~CommandBuffer() {
   // did you forget to call cmdEndRendering()?
@@ -2155,6 +1755,8 @@ void lvk::CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, co
   ctx_->checkAndUpdateDescriptorSets();
   ctx_->bindDefaultDescriptorSets(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
+  vkCmdSetDepthCompareOp(wrapper_->cmdBuf_, VK_COMPARE_OP_ALWAYS);
+
   vkCmdBeginRendering(wrapper_->cmdBuf_, &renderingInfo);
 }
 
@@ -2216,9 +1818,7 @@ void lvk::CommandBuffer::cmdBindRenderPipeline(lvk::RenderPipelineHandle handle)
 
   LVK_ASSERT(rps);
 
-  const RenderPipelineDesc& desc = rps->getRenderPipelineDesc();
-
-  const bool hasDepthAttachmentPipeline = desc.depthFormat != Format_Invalid;
+  const bool hasDepthAttachmentPipeline = rps->desc_.depthFormat != Format_Invalid;
   const bool hasDepthAttachmentPass = !framebuffer_.depthStencil.texture.empty();
 
   if (hasDepthAttachmentPipeline != hasDepthAttachmentPass) {
@@ -2232,8 +1832,11 @@ void lvk::CommandBuffer::cmdBindRenderPipeline(lvk::RenderPipelineHandle handle)
 void lvk::CommandBuffer::cmdBindDepthState(const DepthState& desc) {
   LVK_PROFILER_FUNCTION();
 
-  dynamicState_.depthWriteEnable_ = desc.isDepthWriteEnabled;
-  dynamicState_.setDepthCompareOp(compareOpToVkCompareOp(desc.compareOp));
+  const VkCompareOp op = compareOpToVkCompareOp(desc.compareOp);
+
+  vkCmdSetDepthWriteEnable(wrapper_->cmdBuf_, desc.isDepthWriteEnabled ? VK_TRUE : VK_FALSE);
+  vkCmdSetDepthTestEnable(wrapper_->cmdBuf_, op != VK_COMPARE_OP_ALWAYS);
+  vkCmdSetDepthCompareOp(wrapper_->cmdBuf_, op);
 }
 
 void lvk::CommandBuffer::cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, size_t bufferOffset) {
@@ -2280,13 +1883,7 @@ void lvk::CommandBuffer::cmdPushConstants(const void* data, size_t size, size_t 
 }
 
 void lvk::CommandBuffer::bindGraphicsPipeline() {
-  lvk::RenderPipelineState* rps = ctx_->renderPipelinesPool_.get(currentPipeline_);
-
-  if (!LVK_VERIFY(rps)) {
-    return;
-  }
-
-  VkPipeline pipeline = rps->getVkPipeline(dynamicState_);
+  VkPipeline pipeline = ctx_->getVkPipeline(currentPipeline_, dynamicState_);
 
   if (lastPipelineBound_ != pipeline) {
     lastPipelineBound_ = pipeline;
