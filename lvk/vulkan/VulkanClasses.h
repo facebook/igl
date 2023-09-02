@@ -8,8 +8,12 @@
 #pragma once
 
 #include <lvk/vulkan/VulkanUtils.h>
+#include <lvk/Pool.h>
 
+#include <future>
+#include <memory>
 #include <unordered_map>
+#include <vector>
 
 namespace lvk {
 
@@ -451,6 +455,181 @@ class VulkanStagingDevice final {
   uint32_t stagingBufferSize_ = 0;
   uint32_t bufferCapacity_ = 0;
   std::unordered_map<uint64_t, MemoryRegionDesc> outstandingFences_;
+};
+
+class VulkanContext final : public IContext {
+ public:
+  VulkanContext(const lvk::ContextConfig& config, void* window, void* display = nullptr);
+  ~VulkanContext();
+
+  ICommandBuffer& acquireCommandBuffer() override;
+
+  SubmitHandle submit(lvk::ICommandBuffer& commandBuffer, TextureHandle present) override;
+  void wait(SubmitHandle handle) override;
+
+  Holder<BufferHandle> createBuffer(const BufferDesc& desc, Result* outResult) override;
+  Holder<SamplerHandle> createSampler(const SamplerStateDesc& desc, Result* outResult) override;
+  Holder<TextureHandle> createTexture(const TextureDesc& desc, const char* debugName, Result* outResult) override;
+
+  Holder<ComputePipelineHandle> createComputePipeline(const ComputePipelineDesc& desc, Result* outResult) override;
+  Holder<RenderPipelineHandle> createRenderPipeline(const RenderPipelineDesc& desc, Result* outResult) override;
+  Holder<ShaderModuleHandle> createShaderModule(const ShaderModuleDesc& desc, Result* outResult) override;
+
+  void destroy(ComputePipelineHandle handle) override;
+  void destroy(RenderPipelineHandle handle) override;
+  void destroy(ShaderModuleHandle handle) override;
+  void destroy(SamplerHandle handle) override;
+  void destroy(BufferHandle handle) override;
+  void destroy(TextureHandle handle) override;
+  void destroy(Framebuffer& fb) override;
+
+  Result upload(BufferHandle handle, const void* data, size_t size, size_t offset) override;
+  uint8_t* getMappedPtr(BufferHandle handle) const override;
+  uint64_t gpuAddress(BufferHandle handle, size_t offset) const override;
+  void flushMappedMemory(BufferHandle handle, size_t offset, size_t size) const override;
+
+  Result upload(TextureHandle handle, const TextureRangeDesc& range, const void* data[]) override;
+  Dimensions getDimensions(TextureHandle handle) const override;
+  void generateMipmap(TextureHandle handle) const override;
+  Format getFormat(TextureHandle handle) const override;
+
+  TextureHandle getCurrentSwapchainTexture() override;
+  Format getSwapchainFormat() const override;
+  void recreateSwapchain(int newWidth, int newHeight) override;
+
+  ///////////////
+
+  VkPipeline getVkPipeline(ComputePipelineHandle handle);
+  VkPipeline getVkPipeline(RenderPipelineHandle handle, const RenderPipelineDynamicState& dynamicState);
+
+  lvk::Result queryDevices(HWDeviceType deviceType, std::vector<HWDeviceDesc>& outDevices);
+  lvk::Result initContext(const HWDeviceDesc& desc);
+  lvk::Result initSwapchain(uint32_t width, uint32_t height);
+
+  std::shared_ptr<VulkanImage> createImage(VkImageType imageType,
+                                           VkExtent3D extent,
+                                           VkFormat format,
+                                           uint32_t numLevels,
+                                           uint32_t numLayers,
+                                           VkImageTiling tiling,
+                                           VkImageUsageFlags usageFlags,
+                                           VkMemoryPropertyFlags memFlags,
+                                           VkImageCreateFlags flags,
+                                           VkSampleCountFlagBits samples,
+                                           lvk::Result* outResult,
+                                           const char* debugName = nullptr);
+  BufferHandle createBuffer(VkDeviceSize bufferSize,
+                            VkBufferUsageFlags usageFlags,
+                            VkMemoryPropertyFlags memFlags,
+                            lvk::Result* outResult,
+                            const char* debugName = nullptr);
+  SamplerHandle createSampler(const VkSamplerCreateInfo& ci, lvk::Result* outResult, const char* debugName = nullptr);
+
+  bool hasSwapchain() const noexcept {
+    return swapchain_ != nullptr;
+  }
+
+  const VkPhysicalDeviceProperties& getVkPhysicalDeviceProperties() const {
+    return vkPhysicalDeviceProperties2_.properties;
+  }
+
+  VkFormat getClosestDepthStencilFormat(lvk::Format desiredFormat) const;
+
+  // OpenXR needs Vulkan instance to find physical device
+  VkInstance getVkInstance() const {
+    return vkInstance_;
+  }
+  VkDevice getVkDevice() const {
+    return vkDevice_;
+  }
+  VkPhysicalDevice getVkPhysicalDevice() const {
+    return vkPhysicalDevice_;
+  }
+
+  std::vector<uint8_t> getPipelineCacheData() const;
+
+  // execute a task some time in the future after the submit handle finished processing
+  void deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle = SubmitHandle()) const;
+
+  void* getVmaAllocator() const;
+
+  void checkAndUpdateDescriptorSets();
+  void bindDefaultDescriptorSets(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPoint) const;
+
+ private:
+  void createInstance();
+  void createSurface(void* window, void* display);
+  void querySurfaceCapabilities();
+  void processDeferredTasks() const;
+  void waitDeferredTasks();
+  lvk::Result growDescriptorPool(uint32_t maxTextures, uint32_t maxSamplers);
+  VkShaderModule createShaderModule(const void* data, size_t length, const char* debugName, Result* outResult) const;
+  VkShaderModule createShaderModule(ShaderStage stage, const char* source, const char* debugName, Result* outResult) const;
+
+ private:
+  friend class lvk::VulkanSwapchain;
+
+  VkInstance vkInstance_ = VK_NULL_HANDLE;
+  VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;
+  VkSurfaceKHR vkSurface_ = VK_NULL_HANDLE;
+  VkPhysicalDevice vkPhysicalDevice_ = VK_NULL_HANDLE;
+  VkDevice vkDevice_ = VK_NULL_HANDLE;
+
+  VkPhysicalDeviceVulkan13Features vkFeatures13_ = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
+  VkPhysicalDeviceVulkan12Features vkFeatures12_ = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+                                                    .pNext = &vkFeatures13_};
+  VkPhysicalDeviceVulkan11Features vkFeatures11_ = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
+                                                    .pNext = &vkFeatures12_};
+  VkPhysicalDeviceFeatures2 vkFeatures10_ = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &vkFeatures11_};
+
+  // provided by Vulkan 1.2
+  VkPhysicalDeviceDriverProperties vkPhysicalDeviceDriverProperties_ = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES, nullptr};
+  VkPhysicalDeviceVulkan12Properties vkPhysicalDeviceVulkan12Properties_ = {
+      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES,
+      &vkPhysicalDeviceDriverProperties_,
+  };
+  // provided by Vulkan 1.1
+  VkPhysicalDeviceProperties2 vkPhysicalDeviceProperties2_ = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+                                                              &vkPhysicalDeviceVulkan12Properties_,
+                                                              VkPhysicalDeviceProperties{}};
+
+  std::vector<VkFormat> deviceDepthFormats_;
+  std::vector<VkSurfaceFormatKHR> deviceSurfaceFormats_;
+  VkSurfaceCapabilitiesKHR deviceSurfaceCaps_;
+  std::vector<VkPresentModeKHR> devicePresentModes_;
+
+ public:
+  DeviceQueues deviceQueues_;
+  std::unique_ptr<lvk::VulkanSwapchain> swapchain_;
+  std::unique_ptr<lvk::VulkanImmediateCommands> immediate_;
+  std::unique_ptr<lvk::VulkanStagingDevice> stagingDevice_;
+  uint32_t currentMaxTextures_ = 16;
+  uint32_t currentMaxSamplers_ = 16;
+  VkPipelineLayout vkPipelineLayout_ = VK_NULL_HANDLE;
+  VkDescriptorSetLayout vkDSLBindless_ = VK_NULL_HANDLE;
+  VkDescriptorPool vkDPBindless_ = VK_NULL_HANDLE;
+  struct BindlessDescriptorSet {
+    VkDescriptorSet ds = VK_NULL_HANDLE;
+    SubmitHandle handle = SubmitHandle(); // a handle of the last submit this descriptor set was a part of
+  } bindlessDSets_;
+  // don't use staging on devices with shared host-visible memory
+  bool useStaging_ = true;
+
+  std::unique_ptr<struct VulkanContextImpl> pimpl_;
+
+  VkPipelineCache pipelineCache_ = VK_NULL_HANDLE;
+
+  // a texture/sampler was created since the last descriptor set update
+  mutable bool awaitingCreation_ = false;
+
+  lvk::ContextConfig config_;
+
+  lvk::Pool<lvk::ShaderModule, VkShaderModule> shaderModulesPool_;
+  lvk::Pool<lvk::RenderPipeline, lvk::RenderPipelineState> renderPipelinesPool_;
+  lvk::Pool<lvk::ComputePipeline, lvk::ComputePipelineState> computePipelinesPool_;
+  lvk::Pool<lvk::Sampler, VkSampler> samplersPool_;
+  lvk::Pool<lvk::Buffer, lvk::VulkanBuffer> buffersPool_;
+  lvk::Pool<lvk::Texture, lvk::VulkanTexture> texturesPool_;
 };
 
 } // namespace lvk

@@ -27,7 +27,7 @@
 
 #include <GLFW/glfw3native.h>
 
-#include <igl/vulkan/VulkanContext.h>
+#include <lvk/vulkan/VulkanClasses.h>
 
 namespace {
 

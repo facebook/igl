@@ -7,8 +7,7 @@
 
 #include "VulkanUtils.h"
 
-#include "igl/vulkan/VulkanContext.h"
-#include <lvk/vulkan/VulkanUtils.h>
+#include <lvk/vulkan/VulkanClasses.h>
 
 #include <glslang/Include/glslang_c_interface.h>
 #include <ldrutils/lutils/ScopeExit.h>
