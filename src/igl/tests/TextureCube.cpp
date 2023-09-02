@@ -243,7 +243,7 @@ static glm::vec4 viewDirection[] = {{1.0f, 0.0f, 0.0f, 0.0f},
 // Create a cube map texture and upload different solid color into each face. Then verify the color
 // of each face.
 //
-TEST_F(TextureCubeTest, UploadCube) {
+TEST_F(TextureCubeTest, Upload) {
   Result ret;
 
   //---------------------------------------------------------------------
@@ -299,17 +299,17 @@ TEST_F(TextureCubeTest, Passthrough) {
   const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
 
   ASSERT_TRUE(
-      inputTexture_->uploadCube(rangeDesc, igl::TextureCubeFace::PosX, textureArray[0]).isOk());
+      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::PosX), textureArray[0]).isOk());
   ASSERT_TRUE(
-      inputTexture_->uploadCube(rangeDesc, igl::TextureCubeFace::NegX, textureArray[1]).isOk());
+      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::NegX), textureArray[1]).isOk());
   ASSERT_TRUE(
-      inputTexture_->uploadCube(rangeDesc, igl::TextureCubeFace::PosY, textureArray[2]).isOk());
+      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::PosY), textureArray[2]).isOk());
   ASSERT_TRUE(
-      inputTexture_->uploadCube(rangeDesc, igl::TextureCubeFace::NegY, textureArray[3]).isOk());
+      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::NegY), textureArray[3]).isOk());
   ASSERT_TRUE(
-      inputTexture_->uploadCube(rangeDesc, igl::TextureCubeFace::PosZ, textureArray[4]).isOk());
+      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::PosZ), textureArray[4]).isOk());
   ASSERT_TRUE(
-      inputTexture_->uploadCube(rangeDesc, igl::TextureCubeFace::NegZ, textureArray[5]).isOk());
+      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::NegZ), textureArray[5]).isOk());
   //----------------
   // Create Pipeline
   //----------------

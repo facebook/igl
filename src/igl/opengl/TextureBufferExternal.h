@@ -30,13 +30,6 @@ class TextureBufferExternal : public TextureBufferBase {
     // no-op, texture is not managed by igl
     return Result();
   }
-  Result uploadCube(const TextureRangeDesc& range,
-                    TextureCubeFace face,
-                    const void* data,
-                    size_t bytesPerRow) const override {
-    // no-op, texture is not managed by igl
-    return Result();
-  }
 };
 
 } // namespace opengl

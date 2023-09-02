@@ -24,10 +24,6 @@ class TextureBuffer : public TextureBufferBase {
   Result upload(const TextureRangeDesc& range,
                 const void* data,
                 size_t bytesPerRow = 0) const override;
-  Result uploadCube(const TextureRangeDesc& range,
-                    TextureCubeFace face,
-                    const void* data,
-                    size_t bytesPerRow = 0) const override;
 
   // Texture overrides
   Result create(const TextureDesc& desc, bool hasStorageAlready) override;

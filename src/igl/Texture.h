@@ -566,23 +566,6 @@ class ITexture : public ITrackedResource<ITexture> {
                         const void* IGL_NULLABLE data,
                         size_t bytesPerRow = 0) const = 0;
 
-  /**
-   * @brief Uploads the given data into texture memory in a given cube map face
-   *
-   * @param range       The texture range descriptor containing the offset & dimensions of the
-   * upload process.
-   * @param face        The cube face map index
-   * @param data        The pointer to the data. May be a nullptr to force initialization without
-   * providing data.
-   * @param bytesPerRow Number of bytes per row. If 0, it will be autocalculated assuming no
-   * padding.
-   * @return Result     A flag for the result of operation
-   */
-  virtual Result uploadCube(const TextureRangeDesc& range,
-                            TextureCubeFace face,
-                            const void* IGL_NULLABLE data,
-                            size_t bytesPerRow = 0) const = 0;
-
   // Texture Accessors Methods
   /**
    * @brief Returns the aspect ratio (width / height) of the texture.

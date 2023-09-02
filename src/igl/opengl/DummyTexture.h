@@ -21,13 +21,6 @@ class DummyTexture : public ITexture {
     IGL_ASSERT_NOT_REACHED();
     return Result();
   }
-  Result uploadCube(const TextureRangeDesc& /* unused */,
-                    TextureCubeFace /* unused */,
-                    const void* /* unused */,
-                    size_t /* unused */) const override {
-    IGL_ASSERT_NOT_REACHED();
-    return Result();
-  }
 
   Dimensions getDimensions() const override {
     return Dimensions{static_cast<size_t>(size_.width), static_cast<size_t>(size_.height), 1};

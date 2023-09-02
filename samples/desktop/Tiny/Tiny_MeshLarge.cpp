@@ -2223,7 +2223,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
       IGL_ASSERT(tex);
     }
 
-    tex->uploadCube(texRefRange, (igl::TextureCubeFace)face, texRef.data(0, face, 0));
+    tex->upload(texRefRange.atFace(face), texRef.data(0, face, 0));
   }
 
   if (!kEnableCompression) {

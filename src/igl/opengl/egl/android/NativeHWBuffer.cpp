@@ -301,14 +301,6 @@ Result NativeHWTextureBuffer::upload(const TextureRangeDesc& range,
   return Result{Result::Code::Unsupported, "NativeHWTextureBuffer upload not supported"};
 }
 
-Result NativeHWTextureBuffer::uploadCube(const TextureRangeDesc& range,
-                                         TextureCubeFace face,
-                                         const void* data,
-                                         size_t bytesPerRow) const {
-  IGL_ASSERT_MSG(0, "Cannot upload buffer for HW texture for Native Hardware Buffer Textuees.");
-  return Result{Result::Code::Unsupported, "NativeHWTextureBuffer uploadCube not supported"};
-}
-
 Result NativeHWTextureBuffer::lockHWBuffer(std::byte* _Nullable* _Nonnull dst,
                                            RangeDesc& outRange) const {
   AHardwareBuffer_Desc hwbDesc;

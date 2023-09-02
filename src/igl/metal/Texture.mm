@@ -165,24 +165,6 @@ size_t Texture::toMetalBytesPerRow(size_t bytesPerRow) const {
   }
 }
 
-Result Texture::uploadCube(const TextureRangeDesc& range,
-                           TextureCubeFace face,
-                           const void* data,
-                           size_t bytesPerRow) const {
-  if (getType() != TextureType::Cube) {
-    IGL_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unsupported);
-  }
-  if (IGL_UNEXPECTED(range.numFaces > 1)) {
-    return Result(Result::Code::Unsupported,
-                  "Uploading to more than 1 face is not supported with uploadCube.");
-  }
-  if (IGL_UNEXPECTED(range.face > 0)) {
-    return Result(Result::Code::Unsupported, "face must be 0.");
-  }
-  return upload(range.atFace(face), data, bytesPerRow);
-}
-
 Dimensions Texture::getDimensions() const {
   auto texture = get();
   return Dimensions{[texture width], [texture height], [texture depth]};

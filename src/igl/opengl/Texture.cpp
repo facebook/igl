@@ -130,15 +130,6 @@ Result Texture::upload(const TextureRangeDesc& /*range*/,
   return Result(Result::Code::Unsupported, "Texture::upload()");
 }
 
-Result Texture::uploadCube(const TextureRangeDesc& /*range*/,
-                           TextureCubeFace /*face*/,
-                           const void* /*data*/,
-                           size_t /*bytesPerRow*/) const {
-  // Subclasses that expect to upload CPU memory should override
-  IGL_ASSERT(!(getUsage() & TextureDesc::TextureUsageBits::Sampled));
-  return Result(Result::Code::Unsupported, "Texture::uploadCube()");
-}
-
 bool Texture::isImplicitStorage() const {
   return false;
 }
