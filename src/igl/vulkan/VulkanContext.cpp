@@ -1905,7 +1905,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
     LVK_ASSERT(pimpl_->vma_ != VK_NULL_HANDLE);
   }
 
-  stagingDevice_ = std::make_unique<lvk::vulkan::VulkanStagingDevice>(*this);
+  stagingDevice_ = std::make_unique<lvk::VulkanStagingDevice>(*this);
 
   // default texture
   {

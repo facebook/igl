@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <igl/vulkan/VulkanStagingDevice.h>
 #include <lvk/vulkan/VulkanClasses.h>
 #include <lvk/vulkan/VulkanUtils.h>
 #include <lvk/Pool.h>
@@ -163,7 +162,7 @@ class VulkanContext final : public IContext {
   DeviceQueues deviceQueues_;
   std::unique_ptr<lvk::VulkanSwapchain> swapchain_;
   std::unique_ptr<lvk::VulkanImmediateCommands> immediate_;
-  std::unique_ptr<lvk::vulkan::VulkanStagingDevice> stagingDevice_;
+  std::unique_ptr<lvk::VulkanStagingDevice> stagingDevice_;
   uint32_t currentMaxTextures_ = 16;
   uint32_t currentMaxSamplers_ = 16;
   VkPipelineLayout vkPipelineLayout_ = VK_NULL_HANDLE;
