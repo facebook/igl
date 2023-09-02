@@ -591,8 +591,6 @@ Holder<TextureHandle> VulkanContext::createTexture(const TextureDesc& requestedD
 
   TextureHandle handle = texturesPool_.create(lvk::VulkanTexture(std::move(image), view));
 
-  LVK_ASSERT(texturesPool_.numObjects() <= config_.maxTextures);
-
   awaitingCreation_ = true;
 
   if (desc.data) {
@@ -610,33 +608,48 @@ Holder<TextureHandle> VulkanContext::createTexture(const TextureDesc& requestedD
   return {this, handle};
 }
 
+VkPipeline VulkanContext::getVkPipeline(ComputePipelineHandle handle) {
+  lvk::ComputePipelineState* cps = computePipelinesPool_.get(handle);
+
+  if (!cps) {
+    return VK_NULL_HANDLE;
+  }
+
+  if (cps->pipelineLayout_ != vkPipelineLayout_) {
+    deferredTask(
+        std::packaged_task<void()>([device = vkDevice_, pipeline = cps->pipeline_]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+    cps->pipeline_ = VK_NULL_HANDLE;
+    cps->pipelineLayout_ = vkPipelineLayout_;
+  }
+
+  if (cps->pipeline_ == VK_NULL_HANDLE) {
+    const VkShaderModule* sm = shaderModulesPool_.get(cps->desc_.shaderModule);
+
+    LVK_ASSERT(sm);
+
+    const VkComputePipelineCreateInfo ci = {
+        .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+        .flags = 0,
+        .stage = lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, *sm, cps->desc_.entryPoint),
+        .layout = vkPipelineLayout_,
+        .basePipelineHandle = VK_NULL_HANDLE,
+        .basePipelineIndex = -1,
+    };
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    VK_ASSERT(vkCreateComputePipelines(vkDevice_, pipelineCache_, 1, &ci, nullptr, &cps->pipeline_));
+    VK_ASSERT(lvk::setDebugObjectName(vkDevice_, VK_OBJECT_TYPE_PIPELINE, (uint64_t)cps->pipeline_, cps->desc_.debugName));
+  }
+
+  return cps->pipeline_;
+}
+
 lvk::Holder<lvk::ComputePipelineHandle> VulkanContext::createComputePipeline(const ComputePipelineDesc& desc, Result* outResult) {
   if (!LVK_VERIFY(desc.shaderModule.valid())) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing compute shader");
     return {};
   }
 
-  const VkShaderModule* sm = shaderModulesPool_.get(desc.shaderModule);
-
-  LVK_ASSERT(sm);
-
-  const VkComputePipelineCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-      .flags = 0,
-      .stage = lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, *sm, desc.entryPoint),
-      .layout = vkPipelineLayout_,
-      .basePipelineHandle = VK_NULL_HANDLE,
-      .basePipelineIndex = -1,
-  };
-  VkPipeline pipeline = VK_NULL_HANDLE;
-  VK_ASSERT(vkCreateComputePipelines(getVkDevice(), pipelineCache_, 1, &ci, nullptr, &pipeline));
-  VK_ASSERT(lvk::setDebugObjectName(getVkDevice(), VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline, desc.debugName));
-
-  // a shader module can be destroyed while pipelines created using its shaders are still in use
-  // https://registry.khronos.org/vulkan/specs/1.3/html/chap9.html#vkDestroyShaderModule
-  destroy(desc.shaderModule);
-
-  return {this, computePipelinesPool_.create(std::move(pipeline))};
+  return {this, computePipelinesPool_.create(lvk::ComputePipelineState{desc})};
 }
 
 lvk::Holder<lvk::RenderPipelineHandle> VulkanContext::createRenderPipeline(const RenderPipelineDesc& desc, Result* outResult) {
@@ -662,13 +675,18 @@ lvk::Holder<lvk::RenderPipelineHandle> VulkanContext::createRenderPipeline(const
 }
 
 void VulkanContext::destroy(lvk::ComputePipelineHandle handle) {
-  VkPipeline* pipeline = computePipelinesPool_.get(handle);
+  lvk::ComputePipelineState* cps = computePipelinesPool_.get(handle);
 
-  LVK_ASSERT(pipeline);
-  LVK_ASSERT(*pipeline != VK_NULL_HANDLE);
+  if (!cps) {
+    return;
+  }
+
+  // a shader module can be destroyed while pipelines created using its shaders are still in use
+  // https://registry.khronos.org/vulkan/specs/1.3/html/chap9.html#vkDestroyShaderModule
+  destroy(cps->desc_.shaderModule);
 
   deferredTask(
-      std::packaged_task<void()>([device = getVkDevice(), pipeline = *pipeline]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+      std::packaged_task<void()>([device = getVkDevice(), pipeline = cps->pipeline_]() { vkDestroyPipeline(device, pipeline, nullptr); }));
 
   computePipelinesPool_.destroy(handle);
 }
@@ -1575,101 +1593,7 @@ lvk::Result VulkanContext::initContext(const HWDeviceDesc& desc) {
       nullptr,
       "Sampler: default");
 
-  if (!LVK_VERIFY(config_.maxSamplers <= vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSamplers)) {
-    LLOGW("Max Samplers exceeded %u (max %u)",
-          config_.maxSamplers,
-          vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSamplers);
-  }
-
-  if (!LVK_VERIFY(config_.maxTextures <= vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSampledImages)) {
-    LLOGW("Max Textures exceeded: %u (max %u)",
-          config_.maxTextures,
-          vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSampledImages);
-  }
-
-  const VkPhysicalDeviceLimits& limits = getVkPhysicalDeviceProperties().limits;
-
-  {
-    // create default descriptor set layout which is going to be shared by graphics pipelines
-    constexpr uint32_t numBindings = 3;
-    const VkDescriptorSetLayoutBinding bindings[numBindings] = {
-        lvk::getDSLBinding(kBinding_Textures, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, config_.maxTextures),
-        lvk::getDSLBinding(kBinding_Samplers, VK_DESCRIPTOR_TYPE_SAMPLER, config_.maxSamplers),
-        lvk::getDSLBinding(kBinding_StorageImages, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, config_.maxTextures),
-    };
-    const uint32_t flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
-                           VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
-    const VkDescriptorBindingFlags bindingFlags[numBindings] = {flags, flags, flags};
-    const VkDescriptorSetLayoutBindingFlagsCreateInfo setLayoutBindingFlagsCI = {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
-        .bindingCount = numBindings,
-        .pBindingFlags = bindingFlags,
-    };
-    const VkDescriptorSetLayoutCreateInfo dslci = {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .pNext = &setLayoutBindingFlagsCI,
-        .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
-        .bindingCount = numBindings,
-        .pBindings = bindings,
-    };
-    VK_ASSERT(vkCreateDescriptorSetLayout(vkDevice_, &dslci, nullptr, &vkDSLBindless_));
-    VK_ASSERT(lvk::setDebugObjectName(
-        vkDevice_, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)vkDSLBindless_, "Descriptor Set Layout: VulkanContext::vkDSLBindless_"));
-
-    // create default descriptor pool and allocate 1 descriptor set
-    const uint32_t numSets = 1;
-    LVK_ASSERT(numSets > 0);
-    const VkDescriptorPoolSize poolSizes[numBindings]{
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, numSets * config_.maxTextures},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, numSets * config_.maxSamplers},
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, numSets * config_.maxTextures},
-    };
-    bindlessDSets_.resize(numSets);
-    const VkDescriptorPoolCreateInfo ci = {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-        .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
-        .maxSets = numSets,
-        .poolSizeCount = numBindings,
-        .pPoolSizes = poolSizes,
-    };
-    VK_ASSERT_RETURN(vkCreateDescriptorPool(vkDevice_, &ci, nullptr, &vkDPBindless_));
-    for (size_t i = 0; i != numSets; i++) {
-      const VkDescriptorSetAllocateInfo ai = {
-          .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-          .descriptorPool = vkDPBindless_,
-          .descriptorSetCount = 1,
-          .pSetLayouts = &vkDSLBindless_,
-      };
-      VK_ASSERT_RETURN(vkAllocateDescriptorSets(vkDevice_, &ai, &bindlessDSets_[i].ds));
-    }
-  }
-
-  // maxPushConstantsSize is guaranteed to be at least 128 bytes
-  // https://www.khronos.org/registry/vulkan/specs/1.3/html/vkspec.html#features-limits
-  // Table 32. Required Limits
-  const uint32_t kPushConstantsSize = 128;
-  if (!LVK_VERIFY(kPushConstantsSize <= limits.maxPushConstantsSize)) {
-    LLOGW("Push constants size exceeded %u (max %u bytes)", kPushConstantsSize, limits.maxPushConstantsSize);
-  }
-
-  // create pipeline layout
-  {
-    const VkPushConstantRange range = {
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
-        .offset = 0,
-        .size = kPushConstantsSize,
-    };
-    const VkPipelineLayoutCreateInfo ci = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = 1,
-        .pSetLayouts = &vkDSLBindless_,
-        .pushConstantRangeCount = 1,
-        .pPushConstantRanges = &range,
-    };
-    VK_ASSERT(vkCreatePipelineLayout(vkDevice_, &ci, nullptr, &vkPipelineLayout_));
-    VK_ASSERT(lvk::setDebugObjectName(
-        vkDevice_, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)vkPipelineLayout_, "Pipeline Layout: VulkanContext::pipelineLayout_"));
-  }
+  growDescriptorPool(currentMaxTextures_, currentMaxSamplers_);
 
   querySurfaceCapabilities();
 
@@ -1695,6 +1619,117 @@ lvk::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
   swapchain_ = std::make_unique<lvk::VulkanSwapchain>(*this, width, height);
 
   return swapchain_ ? Result() : Result(Result::Code::RuntimeError, "Failed to create swapchain");
+}
+
+lvk::Result VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_t maxSamplers) {
+  currentMaxTextures_ = maxTextures;
+  currentMaxSamplers_ = maxSamplers;
+
+#if LVK_VULKAN_PRINT_COMMANDS
+  LLOGL("growDescriptorPool(%u, %u)\n", maxTextures, maxSamplers);
+#endif // LVK_VULKAN_PRINT_COMMANDS
+
+  if (!LVK_VERIFY(maxTextures <= vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSampledImages)) {
+    LLOGW("Max Textures exceeded: %u (max %u)",
+          maxTextures,
+          vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSampledImages);
+  }
+
+  if (!LVK_VERIFY(maxSamplers <= vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSamplers)) {
+    LLOGW("Max Samplers exceeded %u (max %u)", maxSamplers, vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSamplers);
+  }
+
+  if (vkDSLBindless_ != VK_NULL_HANDLE) {
+    deferredTask(
+        std::packaged_task<void()>([device = vkDevice_, dsl = vkDSLBindless_]() { vkDestroyDescriptorSetLayout(device, dsl, nullptr); }));
+  }
+  if (vkDPBindless_ != VK_NULL_HANDLE) {
+    deferredTask(std::packaged_task<void()>([device = vkDevice_, dp = vkDPBindless_]() { vkDestroyDescriptorPool(device, dp, nullptr); }));
+  }
+  if (vkPipelineLayout_ != VK_NULL_HANDLE) {
+    deferredTask(std::packaged_task<void()>(
+        [device = vkDevice_, layout = vkPipelineLayout_]() { vkDestroyPipelineLayout(device, layout, nullptr); }));
+  }
+
+  // create default descriptor set layout which is going to be shared by graphics pipelines
+  constexpr uint32_t numBindings = 3;
+  const VkDescriptorSetLayoutBinding bindings[numBindings] = {
+      lvk::getDSLBinding(kBinding_Textures, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, maxTextures),
+      lvk::getDSLBinding(kBinding_Samplers, VK_DESCRIPTOR_TYPE_SAMPLER, maxSamplers),
+      lvk::getDSLBinding(kBinding_StorageImages, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, maxTextures),
+  };
+  const uint32_t flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
+                         VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+  const VkDescriptorBindingFlags bindingFlags[numBindings] = {flags, flags, flags};
+  const VkDescriptorSetLayoutBindingFlagsCreateInfo setLayoutBindingFlagsCI = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
+      .bindingCount = numBindings,
+      .pBindingFlags = bindingFlags,
+  };
+  const VkDescriptorSetLayoutCreateInfo dslci = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .pNext = &setLayoutBindingFlagsCI,
+      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
+      .bindingCount = numBindings,
+      .pBindings = bindings,
+  };
+  VK_ASSERT(vkCreateDescriptorSetLayout(vkDevice_, &dslci, nullptr, &vkDSLBindless_));
+  VK_ASSERT(lvk::setDebugObjectName(
+      vkDevice_, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)vkDSLBindless_, "Descriptor Set Layout: VulkanContext::vkDSLBindless_"));
+
+  // create default descriptor pool and allocate 1 descriptor set
+  const VkDescriptorPoolSize poolSizes[numBindings]{
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, maxTextures},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, maxSamplers},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, maxTextures},
+  };
+  const VkDescriptorPoolCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+      .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+      .maxSets = 1,
+      .poolSizeCount = numBindings,
+      .pPoolSizes = poolSizes,
+  };
+  VK_ASSERT_RETURN(vkCreateDescriptorPool(vkDevice_, &ci, nullptr, &vkDPBindless_));
+  {
+    const VkDescriptorSetAllocateInfo ai = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool = vkDPBindless_,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &vkDSLBindless_,
+    };
+    VK_ASSERT_RETURN(vkAllocateDescriptorSets(vkDevice_, &ai, &bindlessDSets_.ds));
+  }
+
+  // create pipeline layout
+  {
+    // maxPushConstantsSize is guaranteed to be at least 128 bytes
+    // https://www.khronos.org/registry/vulkan/specs/1.3/html/vkspec.html#features-limits
+    // Table 32. Required Limits
+    const uint32_t kPushConstantsSize = 128;
+    const VkPhysicalDeviceLimits& limits = getVkPhysicalDeviceProperties().limits;
+    if (!LVK_VERIFY(kPushConstantsSize <= limits.maxPushConstantsSize)) {
+      LLOGW("Push constants size exceeded %u (max %u bytes)", kPushConstantsSize, limits.maxPushConstantsSize);
+    }
+     
+    const VkPushConstantRange range = {
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+        .offset = 0,
+        .size = kPushConstantsSize,
+    };
+    const VkPipelineLayoutCreateInfo ci = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        .setLayoutCount = 1,
+        .pSetLayouts = &vkDSLBindless_,
+        .pushConstantRangeCount = 1,
+        .pPushConstantRanges = &range,
+    };
+    VK_ASSERT(vkCreatePipelineLayout(vkDevice_, &ci, nullptr, &vkPipelineLayout_));
+    VK_ASSERT(lvk::setDebugObjectName(
+        vkDevice_, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)vkPipelineLayout_, "Pipeline Layout: VulkanContext::pipelineLayout_"));
+  }
+
+  return Result();
 }
 
 BufferHandle VulkanContext::createBuffer(VkDeviceSize bufferSize,
@@ -1746,17 +1781,10 @@ void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
                                               VkPipelineBindPoint bindPoint) const {
   LVK_PROFILER_FUNCTION();
 
-  vkCmdBindDescriptorSets(cmdBuf,
-                          bindPoint,
-                          vkPipelineLayout_,
-                          0,
-                          1,
-                          &bindlessDSets_[currentDSetIndex_].ds,
-                          0,
-                          nullptr);
+  vkCmdBindDescriptorSets(cmdBuf, bindPoint, vkPipelineLayout_, 0, 1, &bindlessDSets_.ds, 0, nullptr);
 }
 
-void VulkanContext::checkAndUpdateDescriptorSets() const {
+void VulkanContext::checkAndUpdateDescriptorSets() {
   if (!awaitingCreation_) {
     // nothing to update here
     return;
@@ -1770,6 +1798,19 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   // make sure the guard values are always there
   LVK_ASSERT(texturesPool_.numObjects() >= 1);
   LVK_ASSERT(samplersPool_.numObjects() >= 1);
+
+  uint32_t newMaxTextures = currentMaxTextures_;
+  uint32_t newMaxSamplers = currentMaxSamplers_;
+
+  while (texturesPool_.objects_.size() > newMaxTextures) {
+    newMaxTextures *= 2;
+  }
+  while (samplersPool_.objects_.size() > newMaxSamplers) {
+    newMaxSamplers *= 2;
+  }
+  if (newMaxTextures != currentMaxTextures_ || newMaxSamplers != currentMaxSamplers_) {
+    growDescriptorPool(newMaxTextures, newMaxSamplers);
+  }
 
   // 1. Sampled and storage images
   std::vector<VkDescriptorImageInfo> infoSampledImages;
@@ -1806,8 +1847,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   uint32_t numBindings = 0;
 
   // we want to update the next available descriptor set
-  const uint32_t nextDSetIndex = (currentDSetIndex_ + 1) % bindlessDSets_.size();
-  auto& dsetToUpdate = bindlessDSets_[nextDSetIndex];
+  BindlessDescriptorSet& dsetToUpdate = bindlessDSets_;
 
   if (!infoSampledImages.empty()) {
     write[numBindings++] = VkWriteDescriptorSet{
@@ -1848,9 +1888,8 @@ void VulkanContext::checkAndUpdateDescriptorSets() const {
   // do not switch to the next descriptor set if there is nothing to update
   if (numBindings) {
 #if LVK_VULKAN_PRINT_COMMANDS
-    LLOGL("Updating descriptor set %u\n", nextDSetIndex);
+    LLOGL("Updating descriptor set\n");
 #endif // LVK_VULKAN_PRINT_COMMANDS
-    currentDSetIndex_ = nextDSetIndex;
     immediate_->wait(std::exchange(dsetToUpdate.handle, immediate_->getLastSubmitHandle()));
     vkUpdateDescriptorSets(vkDevice_, numBindings, write, 0, nullptr);
   }
@@ -1867,8 +1906,6 @@ SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci, lvk::R
   VK_ASSERT(lvk::setDebugObjectName(vkDevice_, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, debugName));
 
   SamplerHandle handle = samplersPool_.create(VkSampler(sampler));
-
-  LVK_ASSERT(samplersPool_.numObjects() <= config_.maxSamplers);
 
   awaitingCreation_ = true;
 

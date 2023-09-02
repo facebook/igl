@@ -51,7 +51,6 @@
 #include <GLFW/glfw3.h>
 
 constexpr uint32_t kMeshCacheVersion = 0xC0DE0009;
-constexpr uint32_t kMaxTextures = 512;
 constexpr int kNumSamplesMSAA = 8;
 constexpr bool kEnableCompression = true;
 constexpr bool kPreferIntegratedGPU = false;
@@ -577,8 +576,6 @@ void initIGL() {
                                                width_,
                                                height_,
                                                {
-                                                   .maxTextures = kMaxTextures,
-                                                   .maxSamplers = 128,
                                                    .enableValidation = kEnableValidationLayers,
                                                },
                                                kPreferIntegratedGPU ? lvk::HWDeviceType_Integrated : lvk::HWDeviceType_Discrete);
@@ -1646,9 +1643,9 @@ void processLoadedMaterials() {
     materials_[mtl.idx].texAlpha = tex.alpha.index();
     textures_[mtl.idx] = std::move(tex);
   }
-  LVK_ASSERT(materials_[mtl.idx].texAmbient >= 0 && materials_[mtl.idx].texAmbient < kMaxTextures);
-  LVK_ASSERT(materials_[mtl.idx].texDiffuse >= 0 && materials_[mtl.idx].texDiffuse < kMaxTextures);
-  LVK_ASSERT(materials_[mtl.idx].texAlpha >= 0 && materials_[mtl.idx].texAlpha < kMaxTextures);
+  LVK_ASSERT(materials_[mtl.idx].texAmbient >= 0);
+  LVK_ASSERT(materials_[mtl.idx].texDiffuse >= 0);
+  LVK_ASSERT(materials_[mtl.idx].texAlpha >= 0);
   ctx_->upload(sbMaterials_, materials_.data(), sizeof(GPUMaterial) * materials_.size());
 }
 

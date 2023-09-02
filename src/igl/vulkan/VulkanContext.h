@@ -74,6 +74,8 @@ class VulkanContext final : public IContext {
 
   ///////////////
 
+  VkPipeline getVkPipeline(ComputePipelineHandle handle);
+
   lvk::Result queryDevices(HWDeviceType deviceType, std::vector<HWDeviceDesc>& outDevices);
   lvk::Result initContext(const HWDeviceDesc& desc);
   lvk::Result initSwapchain(uint32_t width, uint32_t height);
@@ -125,7 +127,7 @@ class VulkanContext final : public IContext {
 
   void* getVmaAllocator() const;
 
-  void checkAndUpdateDescriptorSets() const;
+  void checkAndUpdateDescriptorSets();
   void bindDefaultDescriptorSets(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPoint) const;
 
  private:
@@ -134,6 +136,7 @@ class VulkanContext final : public IContext {
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void waitDeferredTasks();
+  lvk::Result growDescriptorPool(uint32_t maxTextures, uint32_t maxSamplers);
   VkShaderModule createShaderModule(const void* data, size_t length, const char* debugName, Result* outResult) const;
   VkShaderModule createShaderModule(ShaderStage stage, const char* source, const char* debugName, Result* outResult) const;
 
@@ -174,15 +177,15 @@ class VulkanContext final : public IContext {
   std::unique_ptr<lvk::VulkanSwapchain> swapchain_;
   std::unique_ptr<lvk::VulkanImmediateCommands> immediate_;
   std::unique_ptr<lvk::vulkan::VulkanStagingDevice> stagingDevice_;
+  uint32_t currentMaxTextures_ = 16;
+  uint32_t currentMaxSamplers_ = 16;
   VkPipelineLayout vkPipelineLayout_ = VK_NULL_HANDLE;
   VkDescriptorSetLayout vkDSLBindless_ = VK_NULL_HANDLE;
   VkDescriptorPool vkDPBindless_ = VK_NULL_HANDLE;
   struct BindlessDescriptorSet {
     VkDescriptorSet ds = VK_NULL_HANDLE;
     SubmitHandle handle = SubmitHandle(); // a handle of the last submit this descriptor set was a part of
-  };
-  mutable std::vector<BindlessDescriptorSet> bindlessDSets_;
-  mutable uint32_t currentDSetIndex_ = 0;
+  } bindlessDSets_;
   // don't use staging on devices with shared host-visible memory
   bool useStaging_ = true;
 
@@ -197,7 +200,7 @@ class VulkanContext final : public IContext {
 
   lvk::Pool<lvk::ShaderModule, VkShaderModule> shaderModulesPool_;
   lvk::Pool<lvk::RenderPipeline, lvk::RenderPipelineState> renderPipelinesPool_;
-  lvk::Pool<lvk::ComputePipeline, VkPipeline> computePipelinesPool_;
+  lvk::Pool<lvk::ComputePipeline, lvk::ComputePipelineState> computePipelinesPool_;
   lvk::Pool<lvk::Sampler, VkSampler> samplersPool_;
   lvk::Pool<lvk::Buffer, lvk::VulkanBuffer> buffersPool_;
   lvk::Pool<lvk::Texture, lvk::VulkanTexture> texturesPool_;

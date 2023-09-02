@@ -813,12 +813,10 @@ typedef struct GLFWwindow GLFWwindow;
 namespace lvk {
 
 struct ContextConfig {
-  uint32_t maxTextures = 512;
-  uint32_t maxSamplers = 512;
   bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
   bool enableValidation = true;
   lvk::ColorSpace swapChainColorSpace = lvk::ColorSpace_SRGB_LINEAR;
-  // owned by the application - should be alive until initContext() returns
+  // owned by the application - should be alive until createVulkanContextWithSwapchain() returns
   const void* pipelineCacheData = nullptr;
   size_t pipelineCacheDataSize = 0;
 };

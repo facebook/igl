@@ -1461,16 +1461,11 @@ lvk::RenderPipelineState::~RenderPipelineState() {
     ctx_->destroy(desc_.smFrag);
   }
 
-  for (auto p : pipelines_) {
-    if (p.second != VK_NULL_HANDLE) {
-      ctx_->deferredTask(std::packaged_task<void()>(
-          [device = ctx_->getVkDevice(), pipeline = p.second]() { vkDestroyPipeline(device, pipeline, nullptr); }));
-    }
-  }
+  destroyPipelines();
 }
 
 lvk::RenderPipelineState::RenderPipelineState(RenderPipelineState&& other) :
-  ctx_(other.ctx_), numBindings_(other.numBindings_), numAttributes_(other.numAttributes_) {
+  ctx_(other.ctx_), numBindings_(other.numBindings_), numAttributes_(other.numAttributes_), pipelineLayout_(other.pipelineLayout_) {
   std::swap(desc_, other.desc_);
   std::swap(pipelines_, other.pipelines_);
   for (uint32_t i = 0; i != numBindings_; i++) {
@@ -1487,6 +1482,7 @@ lvk::RenderPipelineState& lvk::RenderPipelineState::operator=(RenderPipelineStat
   std::swap(desc_, other.desc_);
   std::swap(numBindings_, other.numBindings_);
   std::swap(numAttributes_, other.numAttributes_);
+  std::swap(pipelineLayout_, other.pipelineLayout_);
   std::swap(pipelines_, other.pipelines_);
   for (uint32_t i = 0; i != numBindings_; i++) {
     vkBindings_[i] = other.vkBindings_[i];
@@ -1497,7 +1493,22 @@ lvk::RenderPipelineState& lvk::RenderPipelineState::operator=(RenderPipelineStat
   return *this;
 }
 
-VkPipeline lvk::RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& dynamicState) const {
+void lvk::RenderPipelineState::destroyPipelines() {
+  for (auto p : pipelines_) {
+    if (p.second != VK_NULL_HANDLE) {
+      ctx_->deferredTask(std::packaged_task<void()>(
+          [device = ctx_->getVkDevice(), pipeline = p.second]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+    }
+  }
+  pipelines_.clear();
+}
+
+VkPipeline lvk::RenderPipelineState::getVkPipeline(const RenderPipelineDynamicState& dynamicState) {
+  if (pipelineLayout_ != ctx_->vkPipelineLayout_) {
+    destroyPipelines();
+    pipelineLayout_ = ctx_->vkPipelineLayout_;
+  }
+
   const auto it = pipelines_.find(dynamicState);
 
   if (it != pipelines_.end()) {
@@ -1904,15 +1915,14 @@ void lvk::CommandBuffer::cmdBindComputePipeline(lvk::ComputePipelineHandle handl
     return;
   }
 
-  VkPipeline* pipeline = ctx_->computePipelinesPool_.get(handle);
+  VkPipeline pipeline = ctx_->getVkPipeline(handle);
 
-  LVK_ASSERT(pipeline);
-  LVK_ASSERT(*pipeline != VK_NULL_HANDLE);
+  LVK_ASSERT(pipeline != VK_NULL_HANDLE);
 
-  if (lastPipelineBound_ != *pipeline) {
-    lastPipelineBound_ = *pipeline;
+  if (lastPipelineBound_ != pipeline) {
+    lastPipelineBound_ = pipeline;
     if (pipeline != VK_NULL_HANDLE) {
-      vkCmdBindPipeline(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);
+      vkCmdBindPipeline(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     }
   }
 }
@@ -2270,7 +2280,7 @@ void lvk::CommandBuffer::cmdPushConstants(const void* data, size_t size, size_t 
 }
 
 void lvk::CommandBuffer::bindGraphicsPipeline() {
-  const lvk::RenderPipelineState* rps = ctx_->renderPipelinesPool_.get(currentPipeline_);
+  lvk::RenderPipelineState* rps = ctx_->renderPipelinesPool_.get(currentPipeline_);
 
   if (!LVK_VERIFY(rps)) {
     return;

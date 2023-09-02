@@ -183,7 +183,7 @@ static uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
 UniformsPerObject perObject[kNumCubes];
 
 static void initIGL() {
-  ctx_ = lvk::createVulkanContextWithSwapchain(window_, width_, height_, {.maxTextures = 128, .maxSamplers = 128});
+  ctx_ = lvk::createVulkanContextWithSwapchain(window_, width_, height_, {});
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
   vb0_ = ctx_->createBuffer({.usage = lvk::BufferUsageBits_Storage,

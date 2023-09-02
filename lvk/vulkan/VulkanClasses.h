@@ -304,11 +304,14 @@ class RenderPipelineState final {
   RenderPipelineState(RenderPipelineState&& other);
   RenderPipelineState& operator=(RenderPipelineState&& other);
 
-  VkPipeline getVkPipeline(const RenderPipelineDynamicState& dynamicState) const;
+  VkPipeline getVkPipeline(const RenderPipelineDynamicState& dynamicState);
 
   const RenderPipelineDesc& getRenderPipelineDesc() const {
     return desc_;
   }
+
+private:
+  void destroyPipelines();
 
  private:
   lvk::vulkan::VulkanContext* ctx_ = nullptr;
@@ -320,7 +323,10 @@ class RenderPipelineState final {
   VkVertexInputBindingDescription vkBindings_[VertexInput::LVK_VERTEX_BUFFER_MAX] = {};
   VkVertexInputAttributeDescription vkAttributes_[VertexInput::LVK_VERTEX_ATTRIBUTES_MAX] = {};
 
-  mutable std::unordered_map<RenderPipelineDynamicState, VkPipeline, RenderPipelineDynamicState::HashFunction> pipelines_;
+  // non-owning, cached the last pipeline layout from the context
+  VkPipelineLayout pipelineLayout_ = VK_NULL_HANDLE;
+
+  std::unordered_map<RenderPipelineDynamicState, VkPipeline, RenderPipelineDynamicState::HashFunction> pipelines_;
 };
 
 class VulkanPipelineBuilder final {
@@ -383,6 +389,13 @@ class VulkanPipelineBuilder final {
   VkFormat stencilAttachmentFormat_ = VK_FORMAT_UNDEFINED;
 
   static uint32_t numPipelinesCreated_;
+};
+
+struct ComputePipelineState final {
+  ComputePipelineDesc desc_;
+  // non-owning, cached the last pipeline layout from the context
+  VkPipelineLayout pipelineLayout_ = VK_NULL_HANDLE;
+  VkPipeline pipeline_ = VK_NULL_HANDLE;
 };
 
 class CommandBuffer final : public ICommandBuffer {
