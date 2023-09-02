@@ -262,10 +262,7 @@ TEST_F(TextureCubeTest, UploadCube) {
   // Upload pixel data and validate faces
   //---------------------------------------------------------------------
   for (size_t face = 0; face < 6; ++face) {
-    ASSERT_TRUE(tex->uploadCube(tex->getCubeFaceRange(0),
-                                static_cast<igl::TextureCubeFace>(face),
-                                textureArray[face])
-                    .isOk());
+    ASSERT_TRUE(tex->upload(tex->getCubeFaceRange(face), textureArray[face]).isOk());
   }
 
   for (size_t face = 0; face < 6; ++face) {

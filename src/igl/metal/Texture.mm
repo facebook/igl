@@ -61,12 +61,10 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
                   "Uploading to more than 1 face is not yet supported.");
   }
   if (range.face > 0) {
-    if (IGL_VERIFY(getType() == TextureType::Cube)) {
-      IGL_ASSERT_NOT_IMPLEMENTED();
-      return Result(Result::Code::Unimplemented,
-                    "Uploading to a specific face is not yet supported.");
-    } else {
+    if (IGL_UNEXPECTED(getType() != TextureType::Cube)) {
       return Result(Result::Code::Unsupported, "face must be 0.");
+    } else if (IGL_UNEXPECTED(range.face > 5)) {
+      return Result(Result::Code::Unsupported, "face must be less than 6.");
     }
   }
   if (data == nullptr) {
@@ -85,12 +83,13 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
   for (auto i = 0; i < numLayers; ++i) {
     MTLRegion region;
     switch (getType()) {
+    case TextureType::Cube:
     case TextureType::TwoD:
     case TextureType::TwoDArray:
       region = MTLRegionMake2D(range.x, range.y, range.width, range.height);
       [get() replaceRegion:region
                mipmapLevel:range.mipLevel
-                     slice:getMetalSlice(getType(), 0 /* face */, range.layer + i /* layer */)
+                     slice:getMetalSlice(getType(), range.face, range.layer + i /* layer */)
                  withBytes:data
                bytesPerRow:toMetalBytesPerRow(bytesPerRow)
              bytesPerImage:0];

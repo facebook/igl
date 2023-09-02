@@ -203,12 +203,10 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
                   "Uploading to more than 1 face is not yet supported.");
   }
   if (range.face > 0) {
-    if (IGL_VERIFY(getType() == TextureType::Cube)) {
-      IGL_ASSERT_NOT_IMPLEMENTED();
-      return Result(Result::Code::Unimplemented,
-                    "Uploading to a specific face is not yet supported.");
-    } else {
+    if (IGL_UNEXPECTED(getType() != TextureType::Cube)) {
       return Result(Result::Code::Unsupported, "face must be 0.");
+    } else if (IGL_UNEXPECTED(range.face > 5)) {
+      return Result(Result::Code::Unsupported, "face must be less than 6.");
     }
   }
 
@@ -261,13 +259,14 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
           getVkFormat(),
           uploadData);
     } else {
+      const uint32_t layer = getVkLayer(desc_.type, range.face, range.layer + i);
       const VkRect2D imageRegion = ivkGetRect2D(
           (uint32_t)range.x, (uint32_t)range.y, (uint32_t)range.width, (uint32_t)range.height);
       ctx.stagingDevice_->imageData2D(texture_->getVulkanImage(),
                                       imageRegion,
                                       (uint32_t)range.mipLevel,
                                       (uint32_t)range.numMipLevels,
-                                      (uint32_t)range.layer + i,
+                                      layer,
                                       getProperties(),
                                       getVkFormat(),
                                       uploadData);

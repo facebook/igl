@@ -163,10 +163,19 @@ Result TextureBuffer::initialize() const {
 Result TextureBuffer::initializeWithUpload() const {
   const auto target = getTarget();
   for (size_t i = 0; i < getNumMipLevels(); ++i) {
-    const auto range = type_ == igl::TextureType::Cube ? getCubeFaceRange(0, i) : getFullRange(i);
-    auto result = upload(target, range, nullptr);
-    if (!result.isOk()) {
-      return result;
+    if (type_ == TextureType::Cube) {
+      for (size_t face = 0; face < 6; ++face) {
+        auto result = upload(target, getCubeFaceRange(face, i), nullptr);
+        if (!result.isOk()) {
+          return result;
+        }
+      }
+    } else {
+      const auto range = getFullRange(i);
+      auto result = upload(target, range, nullptr);
+      if (!result.isOk()) {
+        return result;
+      }
     }
   }
   return Result{};
@@ -553,12 +562,10 @@ Result TextureBuffer::upload(GLenum target,
                   "Uploading to more than 1 face is not yet supported.");
   }
   if (range.face > 0) {
-    if (IGL_VERIFY(getType() == TextureType::Cube)) {
-      IGL_ASSERT_NOT_IMPLEMENTED();
-      return Result(Result::Code::Unimplemented,
-                    "Uploading to a specific face is not yet supported.");
-    } else {
+    if (IGL_UNEXPECTED(getType() != TextureType::Cube)) {
       return Result(Result::Code::Unsupported, "face must be 0.");
+    } else if (IGL_UNEXPECTED(range.face > 5)) {
+      return Result(Result::Code::Unsupported, "face must be less than 6.");
     }
   }
 
@@ -579,14 +586,7 @@ Result TextureBuffer::upload(GLenum target,
     }
     return upload3D(target, range, data);
   case TextureType::Cube: {
-    for (auto cubeTarget : kCubeFaceTargets) {
-      auto result = upload2D(cubeTarget, range, data);
-      if (!result.isOk()) {
-        return result;
-      }
-    }
-
-    return Result{};
+    return upload2D(kCubeFaceTargets[range.face], range, data);
   }
   default:
     IGL_ASSERT_MSG(false, "Unknown texture type");
