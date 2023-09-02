@@ -37,7 +37,7 @@ python3 deploy_deps.py
 
 ```
 
-These scripts download external third-party dependencies. Please check [Dependencies] for the full list.
+These scripts download external third-party dependencies. Please check [LICENSE.md](./LICENSE.md) for the full list.
 
 * Windows
 
