@@ -3766,14 +3766,12 @@ void lvk::VulkanContext::createSurface(void* window, void* display) {
 #endif
 }
 
-lvk::Result lvk::VulkanContext::queryDevices(HWDeviceType deviceType, std::vector<HWDeviceDesc>& outDevices) {
-  outDevices.clear();
-
+uint32_t lvk::VulkanContext::queryDevices(HWDeviceType deviceType, HWDeviceDesc* outDevices, uint32_t maxOutDevices) {
   // Physical devices
   uint32_t deviceCount = 0;
-  VK_ASSERT_RETURN(vkEnumeratePhysicalDevices(vkInstance_, &deviceCount, nullptr));
+  VK_ASSERT(vkEnumeratePhysicalDevices(vkInstance_, &deviceCount, nullptr));
   std::vector<VkPhysicalDevice> vkDevices(deviceCount);
-  VK_ASSERT_RETURN(vkEnumeratePhysicalDevices(vkInstance_, &deviceCount, vkDevices.data()));
+  VK_ASSERT(vkEnumeratePhysicalDevices(vkInstance_, &deviceCount, vkDevices.data()));
 
   auto convertVulkanDeviceTypeToIGL = [](VkPhysicalDeviceType vkDeviceType) -> HWDeviceType {
     switch (vkDeviceType) {
@@ -3792,6 +3790,8 @@ lvk::Result lvk::VulkanContext::queryDevices(HWDeviceType deviceType, std::vecto
 
   const HWDeviceType desiredDeviceType = deviceType;
 
+  uint32_t numCompatibleDevices = 0;
+
   for (uint32_t i = 0; i < deviceCount; ++i) {
     VkPhysicalDevice physicalDevice = vkDevices[i];
     VkPhysicalDeviceProperties deviceProperties;
@@ -3804,15 +3804,14 @@ lvk::Result lvk::VulkanContext::queryDevices(HWDeviceType deviceType, std::vecto
       continue;
     }
 
-    outDevices.push_back({.guid = (uintptr_t)vkDevices[i], .type = deviceType});
-    strncpy(outDevices.back().name, deviceProperties.deviceName, strlen(deviceProperties.deviceName));
+    if (outDevices && numCompatibleDevices < maxOutDevices) {
+      outDevices[numCompatibleDevices] = {.guid = (uintptr_t)vkDevices[i], .type = deviceType};
+      strncpy(outDevices[numCompatibleDevices].name, deviceProperties.deviceName, strlen(deviceProperties.deviceName));
+      numCompatibleDevices++;
+    }
   }
 
-  if (outDevices.empty()) {
-    return Result(Result::Code::RuntimeError, "No Vulkan devices matching your criteria");
-  }
-
-  return Result();
+  return numCompatibleDevices;
 }
 
 lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {

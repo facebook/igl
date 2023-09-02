@@ -264,29 +264,24 @@ std::unique_ptr<lvk::IContext> lvk::createVulkanContextWithSwapchain(GLFWwindow*
 #error Unsupported OS
 #endif
 
-  std::vector<HWDeviceDesc> devices;
-  Result res = ctx->queryDevices(preferredDeviceType, devices);
+  HWDeviceDesc device;
+  uint32_t numDevices = ctx->queryDevices(preferredDeviceType, &device, 1);
 
-  if (!res.isOk()) {
-    LVK_ASSERT_MSG(false, "GPU is not found");
-    return nullptr;
-  }
-
-  if (devices.empty()) {
+  if (!numDevices) {
     if (preferredDeviceType == HWDeviceType_Discrete) {
-      res = ctx->queryDevices(HWDeviceType_Integrated, devices);
+      numDevices = ctx->queryDevices(HWDeviceType_Integrated, &device);
     }
-    if (preferredDeviceType == HWDeviceType_Integrated) {
-      res = ctx->queryDevices(HWDeviceType_Discrete, devices);
+    else if (preferredDeviceType == HWDeviceType_Integrated) {
+      numDevices = ctx->queryDevices(HWDeviceType_Discrete, &device);
     }
   }
 
-  if (!res.isOk() || devices.empty()) {
+  if (!numDevices) {
     LVK_ASSERT_MSG(false, "GPU is not found");
     return nullptr;
   }
 
-  res = ctx->initContext(devices[0]);
+  Result res = ctx->initContext(device);
 
   if (!res.isOk()) {
     LVK_ASSERT_MSG(false, "Failed initContext()");

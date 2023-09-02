@@ -502,7 +502,7 @@ class VulkanContext final : public IContext {
   VkPipeline getVkPipeline(ComputePipelineHandle handle);
   VkPipeline getVkPipeline(RenderPipelineHandle handle, const RenderPipelineDynamicState& dynamicState);
 
-  lvk::Result queryDevices(HWDeviceType deviceType, std::vector<HWDeviceDesc>& outDevices);
+  uint32_t queryDevices(HWDeviceType deviceType, HWDeviceDesc* outDevices, uint32_t maxOutDevices = 1);
   lvk::Result initContext(const HWDeviceDesc& desc);
   lvk::Result initSwapchain(uint32_t width, uint32_t height);
 
