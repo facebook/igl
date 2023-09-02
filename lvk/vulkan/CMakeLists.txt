@@ -51,3 +51,7 @@ if(WIN32)
 elseif(UNIX)
   add_definitions("-DVK_USE_PLATFORM_XLIB_KHR=1")
 endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  target_compile_options(LVKVulkan PRIVATE "-Wno-nullability-completeness")
+endif()
