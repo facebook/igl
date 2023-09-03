@@ -54,6 +54,8 @@ struct VulkanObjects {
   void render();
   lvk::Framebuffer fb_ = {};
   lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Triangle_;
+  lvk::Holder<lvk::ShaderModuleHandle> vert_;
+  lvk::Holder<lvk::ShaderModuleHandle> frag_;
 } vk;
 
 void VulkanObjects::init() {
@@ -61,10 +63,13 @@ void VulkanObjects::init() {
 
   createFramebuffer();
 
+  vert_ = ctx_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"});
+  frag_ = ctx_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"});
+
   renderPipelineState_Triangle_ = ctx_->createRenderPipeline(
       {
-          .smVert = ctx_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
-          .smFrag = ctx_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
+          .smVert = vert_,
+          .smFrag = frag_,
           .color = {{ctx_->getFormat(fb_.color[0].texture)},
                     {ctx_->getFormat(fb_.color[1].texture)},
                     {ctx_->getFormat(fb_.color[2].texture)},

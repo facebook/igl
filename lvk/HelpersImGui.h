@@ -25,6 +25,8 @@ class ImGuiRenderer {
 
  private:
   lvk::IContext& ctx_;
+  lvk::Holder<lvk::ShaderModuleHandle> vert_;
+  lvk::Holder<lvk::ShaderModuleHandle> frag_;
   lvk::Holder<lvk::RenderPipelineHandle> pipeline_;
   lvk::Holder<lvk::TextureHandle> fontTexture_;
 

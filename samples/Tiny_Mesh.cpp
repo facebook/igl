@@ -115,6 +115,8 @@ constexpr uint32_t kNumBufferedFrames = 3;
 
 std::unique_ptr<lvk::IContext> ctx_;
 lvk::Framebuffer framebuffer_;
+lvk::Holder<lvk::ShaderModuleHandle> vert_;
+lvk::Holder<lvk::ShaderModuleHandle> frag_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Mesh_;
 lvk::Holder<lvk::BufferHandle> vb0_, ib0_; // buffers for vertices and indices
 std::vector<lvk::Holder<lvk::BufferHandle>> ubPerFrame_, ubPerObject_;
@@ -292,10 +294,13 @@ static void initObjects() {
     return;
   }
 
+  vert_ = ctx_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"});
+  frag_ = ctx_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"});
+
   renderPipelineState_Mesh_ = ctx_->createRenderPipeline(
       {
-          .smVert = ctx_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
-          .smFrag = ctx_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
+          .smVert = vert_,
+          .smFrag = frag_,
           .color =
               {
                   {.format = ctx_->getSwapchainFormat()},
@@ -449,6 +454,8 @@ int main(int argc, char* argv[]) {
   ib0_ = nullptr;
   ubPerFrame_.clear();
   ubPerObject_.clear();
+  vert_ = nullptr;
+  frag_ = nullptr;
   renderPipelineState_Mesh_ = nullptr;
   texture0_ = nullptr;
   texture1_ = nullptr;

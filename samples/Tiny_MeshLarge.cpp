@@ -421,6 +421,17 @@ std::unique_ptr<lvk::IContext> ctx_;
 lvk::Framebuffer fbMain_; // swapchain
 lvk::Framebuffer fbOffscreen_;
 lvk::Framebuffer fbShadowMap_;
+lvk::Holder<lvk::ShaderModuleHandle> smMeshVert_;
+lvk::Holder<lvk::ShaderModuleHandle> smMeshFrag_;
+lvk::Holder<lvk::ShaderModuleHandle> smMeshWireframeVert_;
+lvk::Holder<lvk::ShaderModuleHandle> smMeshWireframeFrag_;
+lvk::Holder<lvk::ShaderModuleHandle> smShadowVert_;
+lvk::Holder<lvk::ShaderModuleHandle> smShadowFrag_;
+lvk::Holder<lvk::ShaderModuleHandle> smFullscreenVert_;
+lvk::Holder<lvk::ShaderModuleHandle> smFullscreenFrag_;
+lvk::Holder<lvk::ShaderModuleHandle> smSkyboxVert_;
+lvk::Holder<lvk::ShaderModuleHandle> smSkyboxFrag_;
+lvk::Holder<lvk::ShaderModuleHandle> smGrayscaleComp_;
 lvk::Holder<lvk::ComputePipelineHandle> computePipelineState_Grayscale_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_Mesh_;
 lvk::Holder<lvk::RenderPipelineHandle> renderPipelineState_MeshWireframe_;
@@ -878,19 +889,7 @@ void initModel() {
                                nullptr);
 }
 
-void createComputePipeline() {
-  if (computePipelineState_Grayscale_.valid()) {
-    return;
-  }
-
-  computePipelineState_Grayscale_ = ctx_->createComputePipeline(
-      {
-          .shaderModule = ctx_->createShaderModule({kCodeComputeTest, lvk::Stage_Comp, "Shader Module: grayscale (comp)"}).release(),
-      },
-      nullptr);
-}
-
-void createRenderPipelines() {
+void createPipelines() {
   if (renderPipelineState_Mesh_.valid()) {
     return;
   }
@@ -912,11 +911,22 @@ void createRenderPipelines() {
       .inputBindings = {{.stride = sizeof(VertexData)}},
   };
 
+  smMeshVert_ = ctx_->createShaderModule({kCodeVS, lvk::Stage_Vert, "Shader Module: main (vert)"});
+  smMeshFrag_ = ctx_->createShaderModule({kCodeFS, lvk::Stage_Frag, "Shader Module: main (frag)"});
+  smMeshWireframeVert_ = ctx_->createShaderModule({kCodeVS_Wireframe, lvk::Stage_Vert, "Shader Module: main wireframe (vert)"});
+  smMeshWireframeFrag_ = ctx_->createShaderModule({kCodeFS_Wireframe, lvk::Stage_Frag, "Shader Module: main wireframe (frag)"});
+  smShadowVert_ = ctx_->createShaderModule({kShadowVS, lvk::Stage_Vert, "Shader Module: shadow (vert)"});
+  smShadowFrag_ = ctx_->createShaderModule({kShadowFS, lvk::Stage_Frag, "Shader Module: shadow (frag)"});
+  smFullscreenVert_ = ctx_->createShaderModule({kCodeFullscreenVS, lvk::Stage_Vert, "Shader Module: fullscreen (vert)"});
+  smFullscreenFrag_ = ctx_->createShaderModule({kCodeFullscreenFS, lvk::Stage_Frag, "Shader Module: fullscreen (frag)"});
+  smSkyboxVert_ = ctx_->createShaderModule({kSkyboxVS, lvk::Stage_Vert, "Shader Module: skybox (vert)"});
+  smSkyboxFrag_ = ctx_->createShaderModule({kSkyboxFS, lvk::Stage_Frag, "Shader Module: skybox (frag)"});
+
   {
     lvk::RenderPipelineDesc desc = {
         .vertexInput = vdesc,
-        .smVert = ctx_->createShaderModule({kCodeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
-        .smFrag = ctx_->createShaderModule({kCodeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
+        .smVert = smMeshVert_,
+        .smFrag = smMeshFrag_,
         .color = {{.format = ctx_->getFormat(fbOffscreen_.color[0].texture)}},
         .depthFormat = ctx_->getFormat(fbOffscreen_.depthStencil.texture),
         .cullMode = lvk::CullMode_Back,
@@ -929,8 +939,8 @@ void createRenderPipelines() {
 
     desc.polygonMode = lvk::PolygonMode_Line;
     desc.vertexInput = vdescs; // positions-only
-    desc.smVert = ctx_->createShaderModule({kCodeVS_Wireframe, lvk::Stage_Vert, "Shader Module: main wireframe (vert)"}).release(),
-    desc.smFrag = ctx_->createShaderModule({kCodeFS_Wireframe, lvk::Stage_Frag, "Shader Module: main wireframe (frag)"}).release(),
+    desc.smVert = smMeshWireframeVert_;
+    desc.smFrag = smMeshWireframeFrag_;
     desc.debugName = "Pipeline: mesh (wireframe)";
     renderPipelineState_MeshWireframe_ = ctx_->createRenderPipeline(desc, nullptr);
   }
@@ -939,8 +949,8 @@ void createRenderPipelines() {
   renderPipelineState_Shadow_ = ctx_->createRenderPipeline(
       lvk::RenderPipelineDesc{
           .vertexInput = vdescs,
-          .smVert = ctx_->createShaderModule({kShadowVS, lvk::Stage_Vert, "Shader Module: shadow (vert)"}).release(),
-          .smFrag = ctx_->createShaderModule({kShadowFS, lvk::Stage_Frag, "Shader Module: shadow (frag)"}).release(),
+          .smVert = smShadowVert_,
+          .smFrag = smShadowFrag_,
           .depthFormat = ctx_->getFormat(fbShadowMap_.depthStencil.texture),
           .cullMode = lvk::CullMode_None,
           .debugName = "Pipeline: shadow",
@@ -950,8 +960,8 @@ void createRenderPipelines() {
   // fullscreen
   {
     const lvk::RenderPipelineDesc desc = {
-        .smVert = ctx_->createShaderModule({kCodeFullscreenVS, lvk::Stage_Vert, "Shader Module: fullscreen (vert)"}).release(),
-        .smFrag = ctx_->createShaderModule({kCodeFullscreenFS, lvk::Stage_Frag, "Shader Module: fullscreen (frag)"}).release(),
+        .smVert = smFullscreenVert_,
+        .smFrag = smFullscreenFrag_,
         .color = {{.format = ctx_->getFormat(fbMain_.color[0].texture)}},
         .depthFormat = ctx_->getFormat(fbMain_.depthStencil.texture),
         .cullMode = lvk::CullMode_None,
@@ -959,27 +969,28 @@ void createRenderPipelines() {
     };
     renderPipelineState_Fullscreen_ = ctx_->createRenderPipeline(desc, nullptr);
   }
-}
 
-void createRenderPipelineSkybox() {
-  if (renderPipelineState_Skybox_.valid()) {
-    return;
+  // skybox
+  {
+    const lvk::RenderPipelineDesc desc = {
+        .smVert = smSkyboxVert_,
+        .smFrag = smSkyboxFrag_,
+        .color = {{
+            .format = ctx_->getFormat(fbOffscreen_.color[0].texture),
+        }},
+        .depthFormat = ctx_->getFormat(fbOffscreen_.depthStencil.texture),
+        .cullMode = lvk::CullMode_Front,
+        .frontFaceWinding = lvk::WindingMode_CCW,
+        .samplesCount = kNumSamplesMSAA,
+        .debugName = "Pipeline: skybox",
+    };
+
+    renderPipelineState_Skybox_ = ctx_->createRenderPipeline(desc, nullptr);
   }
 
-  const lvk::RenderPipelineDesc desc = {
-      .smVert = ctx_->createShaderModule({kSkyboxVS, lvk::Stage_Vert, "Shader Module: skybox (vert)"}).release(),
-      .smFrag = ctx_->createShaderModule({kSkyboxFS, lvk::Stage_Frag, "Shader Module: skybox (frag)"}).release(),
-      .color = {{
-          .format = ctx_->getFormat(fbOffscreen_.color[0].texture),
-      }},
-      .depthFormat = ctx_->getFormat(fbOffscreen_.depthStencil.texture),
-      .cullMode = lvk::CullMode_Front,
-      .frontFaceWinding = lvk::WindingMode_CCW,
-      .samplesCount = kNumSamplesMSAA,
-      .debugName = "Pipeline: skybox",
-  };
+  smGrayscaleComp_ = ctx_->createShaderModule({kCodeComputeTest, lvk::Stage_Comp, "Shader Module: grayscale (comp)"});
 
-  renderPipelineState_Skybox_ = ctx_->createRenderPipeline(desc, nullptr);
+  computePipelineState_Grayscale_ = ctx_->createComputePipeline({.shaderModule = smGrayscaleComp_}, nullptr);
 }
 
 void createShadowMap() {
@@ -1765,9 +1776,7 @@ int main(int argc, char* argv[]) {
   };
   createShadowMap();
   createOffscreenFramebuffer();
-  createRenderPipelines();
-  createRenderPipelineSkybox();
-  createComputePipeline();
+  createPipelines();
 
   imgui_ = std::make_unique<lvk::ImGuiRenderer>(
       *ctx_, (folderThirdParty + "3D-Graphics-Rendering-Cookbook/data/OpenSans-Light.ttf").c_str(), float(height_) / 70.0f);
@@ -1848,6 +1857,17 @@ int main(int argc, char* argv[]) {
   ubPerFrame_.clear();
   ubPerFrameShadow_.clear();
   ubPerObject_.clear();
+  smMeshVert_ = nullptr;
+  smMeshFrag_ = nullptr;
+  smMeshWireframeVert_ = nullptr;
+  smMeshWireframeFrag_ = nullptr;
+  smShadowVert_ = nullptr;
+  smShadowFrag_ = nullptr;
+  smFullscreenVert_ = nullptr;
+  smFullscreenFrag_ = nullptr;
+  smSkyboxVert_ = nullptr;
+  smSkyboxFrag_ = nullptr;
+  smGrayscaleComp_ = nullptr;
   renderPipelineState_Mesh_ = nullptr;
   renderPipelineState_MeshWireframe_ = nullptr;
   renderPipelineState_Shadow_ = nullptr;

@@ -72,10 +72,14 @@ int main(int argc, char* argv[]) {
   window_ = lvk::initWindow("Vulkan Hello Triangle", width_, height_, true);
 
   ctx_ = lvk::createVulkanContextWithSwapchain(window_, width_, height_, {});
+
+  lvk::Holder<lvk::ShaderModuleHandle> vert = ctx_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"});
+  lvk::Holder<lvk::ShaderModuleHandle> frag = ctx_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"});
+
   renderPipelineState_Triangle_ = ctx_->createRenderPipeline(
       {
-          .smVert = ctx_->createShaderModule({codeVS, lvk::Stage_Vert, "Shader Module: main (vert)"}).release(),
-          .smFrag = ctx_->createShaderModule({codeFS, lvk::Stage_Frag, "Shader Module: main (frag)"}).release(),
+          .smVert = vert,
+          .smFrag = frag,
           .color = {{.format = ctx_->getSwapchainFormat()}},
       },
       nullptr);
@@ -100,6 +104,8 @@ int main(int argc, char* argv[]) {
   }
 
   // destroy all the Vulkan stuff before closing the window
+  vert = nullptr;
+  frag = nullptr;
   renderPipelineState_Triangle_ = nullptr;
   ctx_ = nullptr;
 

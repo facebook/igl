@@ -3302,10 +3302,6 @@ void lvk::VulkanContext::destroy(lvk::ComputePipelineHandle handle) {
     return;
   }
 
-  // a shader module can be destroyed while pipelines created using its shaders are still in use
-  // https://registry.khronos.org/vulkan/specs/1.3/html/chap9.html#vkDestroyShaderModule
-  destroy(cps->desc_.shaderModule);
-
   deferredTask(
       std::packaged_task<void()>([device = getVkDevice(), pipeline = cps->pipeline_]() { vkDestroyPipeline(device, pipeline, nullptr); }));
 
@@ -3318,12 +3314,6 @@ void lvk::VulkanContext::destroy(lvk::RenderPipelineHandle handle) {
   if (!rps) {
     return;
   }
-
-  // a shader module can be destroyed while pipelines created using its shaders are still in use
-  // https://registry.khronos.org/vulkan/specs/1.3/html/chap9.html#vkDestroyShaderModule
-  destroy(rps->desc_.smVert);
-  destroy(rps->desc_.smGeom);
-  destroy(rps->desc_.smFrag);
 
   rps->destroyPipelines(this);
 

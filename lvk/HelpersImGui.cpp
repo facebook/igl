@@ -63,8 +63,8 @@ namespace lvk {
 lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(const lvk::Framebuffer& desc) {
   return ctx_.createRenderPipeline(
       {
-          .smVert = ctx_.createShaderModule({codeVS, Stage_Vert, "Shader Module: imgui (vert)"}).release(),
-          .smFrag = ctx_.createShaderModule({codeFS, Stage_Frag, "Shader Module: imgui (frag)"}).release(),
+          .smVert = vert_,
+          .smFrag = frag_,
           .color = {{
               .format = ctx_.getFormat(desc.color[0].texture),
               .blendEnabled = true,
@@ -110,6 +110,9 @@ ImGuiRenderer::ImGuiRenderer(lvk::IContext& device, const char* defaultFontTTF, 
   io.Fonts->TexID = ImTextureID(fontTexture_.indexAsVoid());
   io.FontDefault = font;
   io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
+
+  vert_ = ctx_.createShaderModule({codeVS, Stage_Vert, "Shader Module: imgui (vert)"});
+  frag_ = ctx_.createShaderModule({codeFS, Stage_Frag, "Shader Module: imgui (frag)"});
 }
 
 ImGuiRenderer::~ImGuiRenderer() {
