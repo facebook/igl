@@ -69,3 +69,43 @@ jobs:
             cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
             cd build
             cmake --build . --parallel ${{ steps.cpu-cores.outputs.count }}
+  
+  cmake-build-macos:
+      strategy:
+        fail-fast: false
+        matrix:
+          config:
+          - {
+              name: "macOS - Clang (Xcode)",
+              os: macos-latest,
+              build_type: "Debug",
+              cc: "clang",
+              cxx: "clang++",
+              generators: "Xcode",
+              cmake_args: "-DLVK_WITH_TRACY=OFF"
+            }
+      runs-on: ${{ matrix.config.os }}
+
+      steps:
+        - uses: actions/checkout@v3
+          with:
+            submodules: recursive
+
+        - name: Install Vulkan SDK
+          uses: humbletim/install-vulkan-sdk@v1.1.1
+          with:
+            version: 1.3.261.1
+            cache: true
+
+        - name: Get the number of CPU cores
+          uses: SimenB/github-actions-cpu-cores@v1
+
+        - name: Build
+          shell: bash
+          env:
+            CC:  ${{ matrix.config.cc }}
+            CXX: ${{ matrix.config.cxx }}
+          run: |
+            cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
+            cd build
+            cmake --build . --parallel ${{ steps.cpu-cores.outputs.count }}
