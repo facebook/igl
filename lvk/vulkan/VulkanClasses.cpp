@@ -3164,6 +3164,10 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
       .pVertexAttributeDescriptions = rps->numAttributes_ ? rps->vkAttributes_ : nullptr,
   };
 
+  VkSpecializationMapEntry entries[SpecializationConstantDesc::LVK_SPECIALIZATION_CONSTANTS_MAX] = {};
+
+  const VkSpecializationInfo si = lvk::getPipelineShaderStageSpecializationInfo(desc.specInfo, entries);
+
   lvk::VulkanPipelineBuilder()
       // from Vulkan 1.0
       .dynamicState(VK_DYNAMIC_STATE_VIEWPORT)
@@ -3190,9 +3194,9 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
                        compareOpToVkCompareOp(desc.backFaceStencil.stencilCompareOp))
       .stencilMasks(VK_STENCIL_FACE_FRONT_BIT, 0xFF, desc.frontFaceStencil.writeMask, desc.frontFaceStencil.readMask)
       .stencilMasks(VK_STENCIL_FACE_BACK_BIT, 0xFF, desc.backFaceStencil.writeMask, desc.backFaceStencil.readMask)
-      .shaderStage(lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, *vertModule, desc.entryPointVert))
-      .shaderStage(lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, *fragModule, desc.entryPointFrag))
-      .shaderStage(geomModule ? lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_GEOMETRY_BIT, *geomModule, desc.entryPointGeom)
+      .shaderStage(lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, *vertModule, desc.entryPointVert, &si))
+      .shaderStage(lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, *fragModule, desc.entryPointFrag, &si))
+      .shaderStage(geomModule ? lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_GEOMETRY_BIT, *geomModule, desc.entryPointGeom, &si)
                               : VkPipelineShaderStageCreateInfo{.module = VK_NULL_HANDLE})
       .cullMode(cullModeToVkCullMode(desc.cullMode))
       .frontFace(windingModeToVkFrontFace(desc.frontFaceWinding))
@@ -3226,10 +3230,14 @@ VkPipeline lvk::VulkanContext::getVkPipeline(ComputePipelineHandle handle) {
 
     LVK_ASSERT(sm);
 
+	 VkSpecializationMapEntry entries[SpecializationConstantDesc::LVK_SPECIALIZATION_CONSTANTS_MAX] = {};
+
+	 const VkSpecializationInfo siComp = lvk::getPipelineShaderStageSpecializationInfo(cps->desc_.specInfo, entries);
+
     const VkComputePipelineCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
         .flags = 0,
-        .stage = lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, *sm, cps->desc_.entryPoint),
+        .stage = lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, *sm, cps->desc_.entryPoint, &siComp),
         .layout = vkPipelineLayout_,
         .basePipelineHandle = VK_NULL_HANDLE,
         .basePipelineIndex = -1,

@@ -77,9 +77,11 @@ Result compileShader(VkDevice device,
 
 VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const lvk::SamplerStateDesc& desc, const VkPhysicalDeviceLimits& limits);
 VkDescriptorSetLayoutBinding getDSLBinding(uint32_t binding, VkDescriptorType descriptorType, uint32_t descriptorCount);
+VkSpecializationInfo getPipelineShaderStageSpecializationInfo(lvk::SpecializationConstantDesc desc, VkSpecializationMapEntry* outEntries);
 VkPipelineShaderStageCreateInfo getPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
                                                                  VkShaderModule shaderModule,
-                                                                 const char* entryPoint);
+                                                                 const char* entryPoint,
+                                                                 const VkSpecializationInfo* specializationInfo);
 void imageMemoryBarrier(VkCommandBuffer buffer,
                         VkImage image,
                         VkAccessFlags srcAccessMask,

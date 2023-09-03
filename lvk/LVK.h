@@ -548,12 +548,34 @@ struct ShaderModuleDesc {
   }
 };
 
+struct SpecializationConstantEntry {
+  uint32_t constantId = 0;
+  uint32_t offset = 0; // offset within ShaderSpecializationConstantDesc::data
+  size_t size = 0;
+};
+
+struct SpecializationConstantDesc {
+  enum { LVK_SPECIALIZATION_CONSTANTS_MAX = 16 };
+  SpecializationConstantEntry entries[LVK_SPECIALIZATION_CONSTANTS_MAX] = {};
+  const void* data = nullptr;
+  size_t dataSize = 0;
+  uint32_t getNumSpecializationConstants() const {
+    uint32_t n = 0;
+    while (n < LVK_SPECIALIZATION_CONSTANTS_MAX && entries[n].size) {
+      n++;
+    }
+    return n;
+  }
+};
+
 struct RenderPipelineDesc final {
   lvk::VertexInput vertexInput;
 
   ShaderModuleHandle smVert;
   ShaderModuleHandle smGeom;
   ShaderModuleHandle smFrag;
+
+  SpecializationConstantDesc specInfo = {};
 
   const char* entryPointVert = "main";
   const char* entryPointFrag = "main";
@@ -585,6 +607,7 @@ struct RenderPipelineDesc final {
 
 struct ComputePipelineDesc final {
   ShaderModuleHandle shaderModule;
+  SpecializationConstantDesc specInfo = {};
   const char* entryPoint = "main";
   const char* debugName = "";
 };

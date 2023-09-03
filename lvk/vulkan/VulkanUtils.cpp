@@ -674,16 +674,37 @@ VkResult lvk::setDebugObjectName(VkDevice device, VkObjectType type, uint64_t ha
   return vkSetDebugUtilsObjectNameEXT(device, &ni);
 }
 
+VkSpecializationInfo lvk::getPipelineShaderStageSpecializationInfo(lvk::SpecializationConstantDesc desc,
+                                                                   VkSpecializationMapEntry* outEntries) {
+  const uint32_t numEntries = desc.getNumSpecializationConstants();
+  if (outEntries) {
+    for (uint32_t i = 0; i != numEntries; i++) {
+      outEntries[i] = VkSpecializationMapEntry{
+          .constantID = desc.entries[i].constantId,
+          .offset = desc.entries[i].offset,
+          .size = desc.entries[i].size,
+      };
+    }
+  }
+  return VkSpecializationInfo{
+      .mapEntryCount = numEntries,
+      .pMapEntries = outEntries,
+      .dataSize = desc.dataSize,
+      .pData = desc.data,
+  };
+}
+
 VkPipelineShaderStageCreateInfo lvk::getPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage,
                                                                       VkShaderModule shaderModule,
-                                                                      const char* entryPoint) {
+                                                                      const char* entryPoint,
+                                                                      const VkSpecializationInfo* specializationInfo) {
   return VkPipelineShaderStageCreateInfo{
       .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
       .flags = 0,
       .stage = stage,
       .module = shaderModule,
       .pName = entryPoint ? entryPoint : "main",
-      .pSpecializationInfo = NULL,
+      .pSpecializationInfo = specializationInfo,
   };
 }
 
