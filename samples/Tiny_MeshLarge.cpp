@@ -50,8 +50,17 @@
 
 #include <GLFW/glfw3.h>
 
+#ifdef __APPLE__
+#warning Not supported. Currently Vulkan 1.2 + extensions are available in MoltenVK.
+// Known issues: https://github.com/KhronosGroup/MoltenVK/issues/2011
+#endif
+
 constexpr uint32_t kMeshCacheVersion = 0xC0DE0009;
+#ifndef __APPLE__
 constexpr int kNumSamplesMSAA = 8;
+#else
+constexpr int kNumSamplesMSAA = 4;
+#endif
 constexpr bool kEnableCompression = true;
 constexpr bool kPreferIntegratedGPU = false;
 #if defined(NDEBUG)
@@ -669,7 +678,7 @@ void initIGL() {
 }
 
 void normalizeName(std::string& name) {
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
   std::replace(name.begin(), name.end(), '\\', '/');
 #endif
 }
@@ -1126,7 +1135,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       };
       buffer.cmdPushConstants(bindings);
       buffer.cmdBindIndexBuffer(ib0_, lvk::IndexFormat_UI32);
-      buffer.cmdDrawIndexed(lvk::Primitive_Triangle, indexData_.size());
+      buffer.cmdDrawIndexed(lvk::Primitive_Triangle, static_cast<uint32_t>(indexData_.size()));
       buffer.cmdPopDebugGroupLabel();
     }
     buffer.cmdEndRendering();
@@ -1161,10 +1170,10 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       };
       buffer.cmdPushConstants(bindings);
       buffer.cmdBindIndexBuffer(ib0_, lvk::IndexFormat_UI32);
-      buffer.cmdDrawIndexed(lvk::Primitive_Triangle, indexData_.size());
+      buffer.cmdDrawIndexed(lvk::Primitive_Triangle, static_cast<uint32_t>(indexData_.size()));
       if (enableWireframe_) {
         buffer.cmdBindRenderPipeline(renderPipelineState_MeshWireframe_);
-        buffer.cmdDrawIndexed(lvk::Primitive_Triangle, indexData_.size());
+        buffer.cmdDrawIndexed(lvk::Primitive_Triangle, static_cast<uint32_t>(indexData_.size()));
       }
       buffer.cmdPopDebugGroupLabel();
 

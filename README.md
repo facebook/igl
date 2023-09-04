@@ -14,18 +14,25 @@ There are no plans to keep this fork in sync with the upstream.
 
 ## Supported rendering backends
 
- * Vulkan 1.3
+ * Vulkan 1.3 (Windows, Linux)
+ * Vulkan 1.2 + extensions (MacOS)
 
 ## Supported platforms
 
  * Linux
  * Windows
+ * MacOS (via MoltenVK)
 
 ## API Support
 
-|                          | Windows                    | Linux                      |
-| ------------------------ | -------------------------- | -------------------------- |
-| Vulkan 1.3               | :heavy_check_mark:         | :heavy_check_mark:         |
+|                          | Windows                    | Linux                      | MacOS
+| ------------------------ | -------------------------- | -------------------------- | -------------------------- |
+| Vulkan 1.3               | :heavy_check_mark:         | :heavy_check_mark:         | :heavy_exclamation_mark:   |
+| Vulkan 1.2               |                            |                            | :heavy_check_mark:         |
+
+:heavy_exclamation_mark: On MacOS dynamic rendering and subgroup size control required by LightweightVK are available via extensions `VK_KHR_dynamic_rendering` and `VK_EXT_subgroup_size_control`. `VK_KHR_maintenance4` and `VK_KHR_synchronization2` are not currently supported.
+
+Check [here](https://github.com/KhronosGroup/MoltenVK/issues/1930) the status of Vulkan 1.3 support in MoltenVK.
 
 ## Build
 
@@ -52,6 +59,15 @@ cmake .. -G "Visual Studio 17 2022"
 sudo apt-get install clang xorg-dev libxinerama-dev libxcursor-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev
 cd build
 cmake .. -G "Unix Makefiles"
+```
+
+* MacOS
+
+:heavy_exclamation_mark: Be sure that VulkanSDK 1.3.261.1+ for MacOS is installed https://vulkan.lunarg.com/sdk/home#mac
+
+```
+cd build
+cmake .. -G "Xcode"
 ```
 
 ## Screenshots

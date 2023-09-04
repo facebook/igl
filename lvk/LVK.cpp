@@ -1,4 +1,4 @@
-﻿/*
+/*
  * LightweightVK
  *
  * This source code is licensed under the MIT license found in the
@@ -20,6 +20,8 @@
 #  define GLFW_EXPOSE_NATIVE_WIN32
 #elif defined(__linux__)
 #  define GLFW_EXPOSE_NATIVE_X11
+#elif __APPLE__
+#  define GLFW_EXPOSE_NATIVE_COCOA
 #else
 #  error Unsupported OS
 #endif
@@ -75,6 +77,10 @@ static constexpr TextureFormatProperties properties[] = {
 };
 
 } // namespace
+
+#if __APPLE__
+void* createCocoaWindowView(GLFWwindow* window);
+#endif
 
 static_assert(sizeof(TextureFormatProperties) <= sizeof(uint32_t));
 static_assert(LVK_ARRAY_NUM_ELEMENTS(properties) == lvk::Format_Z_UN24_S_UI8 + 1);
@@ -260,6 +266,8 @@ std::unique_ptr<lvk::IContext> lvk::createVulkanContextWithSwapchain(GLFWwindow*
   ctx = std::make_unique<VulkanContext>(cfg, (void*)glfwGetWin32Window(window));
 #elif defined(__linux__)
   ctx = std::make_unique<VulkanContext>(cfg, (void*)glfwGetX11Window(window), (void*)glfwGetX11Display());
+#elif defined(__APPLE__)
+  ctx = std::make_unique<VulkanContext>(cfg, createCocoaWindowView(window));
 #else
 #error Unsupported OS
 #endif

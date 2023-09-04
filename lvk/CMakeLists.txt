@@ -9,6 +9,10 @@ project(LVKLibrary CXX C)
 
 file(GLOB SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
 file(GLOB HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.h)
+if(APPLE)
+  file(GLOB SRC_FILES_MM LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.mm)
+  list(APPEND SRC_FILES ${SRC_FILES_MM})
+endif()
 
 add_library(LVKLibrary ${SRC_FILES} ${HEADER_FILES})
 
@@ -23,3 +27,7 @@ lvk_set_folder(LVKLibrary "LVK")
 add_subdirectory(vulkan)
 
 target_link_libraries(LVKLibrary PUBLIC LVKVulkan glfw)
+
+if(APPLE)
+  target_link_libraries(LVKLibrary PRIVATE "-framework Metal" "-framework AppKit" "-framework Foundation" "-framework QuartzCore")
+endif()
