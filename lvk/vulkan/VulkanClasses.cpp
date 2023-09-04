@@ -3230,9 +3230,9 @@ VkPipeline lvk::VulkanContext::getVkPipeline(ComputePipelineHandle handle) {
 
     LVK_ASSERT(sm);
 
-	 VkSpecializationMapEntry entries[SpecializationConstantDesc::LVK_SPECIALIZATION_CONSTANTS_MAX] = {};
+    VkSpecializationMapEntry entries[SpecializationConstantDesc::LVK_SPECIALIZATION_CONSTANTS_MAX] = {};
 
-	 const VkSpecializationInfo siComp = lvk::getPipelineShaderStageSpecializationInfo(cps->desc_.specInfo, entries);
+    const VkSpecializationInfo siComp = lvk::getPipelineShaderStageSpecializationInfo(cps->desc_.specInfo, entries);
 
     const VkComputePipelineCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
@@ -3598,6 +3598,9 @@ VkShaderModule lvk::VulkanContext::createShaderModule(ShaderStage stage,
       vec4 textureBindless2D(uint textureid, uint samplerid, vec2 uv) {
         return texture(sampler2D(kTextures2D[textureid], kSamplers[samplerid]), uv);
       }
+      vec4 textureBindless2DLod(uint textureid, uint samplerid, vec2 uv, float lod) {
+        return textureLod(sampler2D(kTextures2D[textureid], kSamplers[samplerid]), uv, lod);
+      }
       float textureBindless2DShadow(uint textureid, uint samplerid, vec3 uvw) {
         return texture(sampler2DShadow(kTextures2D[textureid], kSamplersShadow[samplerid]), uvw);
       }
@@ -3606,6 +3609,12 @@ VkShaderModule lvk::VulkanContext::createShaderModule(ShaderStage stage,
       }
       vec4 textureBindlessCube(uint textureid, uint samplerid, vec3 uvw) {
         return texture(samplerCube(kTexturesCube[textureid], kSamplers[samplerid]), uvw);
+      }
+      vec4 textureBindlessCubeLod(uint textureid, uint samplerid, vec3 uvw, float lod) {
+        return textureLod(samplerCube(kTexturesCube[textureid], kSamplers[samplerid]), uvw, lod);
+      }
+      int textureBindlessQueryLevels2D(uint textureid) {
+        return textureQueryLevels(kTextures2D[textureid]);
       }
       )";
     }
