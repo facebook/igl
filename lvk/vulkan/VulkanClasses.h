@@ -185,6 +185,7 @@ class VulkanSwapchain final {
   VkImage getCurrentVkImage() const;
   VkImageView getCurrentVkImageView() const;
   TextureHandle getCurrentTexture();
+  const VkSurfaceFormatKHR& getSurfaceFormat() const;
 
  public:
   VkSemaphore acquireSemaphore_ = VK_NULL_HANDLE;

@@ -1387,7 +1387,10 @@ lvk::TextureHandle lvk::VulkanSwapchain::getCurrentTexture() {
 
   if (getNextImage_) {
     // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
-    VK_ASSERT(vkAcquireNextImageKHR(device_, swapchain_, UINT64_MAX, acquireSemaphore_, VK_NULL_HANDLE, &currentImageIndex_));
+    VkResult r = vkAcquireNextImageKHR(device_, swapchain_, UINT64_MAX, acquireSemaphore_, VK_NULL_HANDLE, &currentImageIndex_);
+    if (r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR) {
+      VK_ASSERT(r);
+    }
     getNextImage_ = false;
   }
 
@@ -1396,6 +1399,10 @@ lvk::TextureHandle lvk::VulkanSwapchain::getCurrentTexture() {
   }
 
   return {};
+}
+
+const VkSurfaceFormatKHR& lvk::VulkanSwapchain::getSurfaceFormat() const {
+  return surfaceFormat_;
 }
 
 lvk::Result lvk::VulkanSwapchain::present(VkSemaphore waitSemaphore) {
@@ -1410,7 +1417,10 @@ lvk::Result lvk::VulkanSwapchain::present(VkSemaphore waitSemaphore) {
       .pSwapchains = &swapchain_,
       .pImageIndices = &currentImageIndex_,
   };
-  VK_ASSERT_RETURN(vkQueuePresentKHR(graphicsQueue_, &pi));
+  VkResult r = vkQueuePresentKHR(graphicsQueue_, &pi);
+  if (r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR) {
+    VK_ASSERT(r);
+  }
   LVK_PROFILER_ZONE_END();
 
   // Ready to call acquireNextImage() on the next getCurrentVulkanTexture();
@@ -3717,7 +3727,7 @@ lvk::Format lvk::VulkanContext::getSwapchainFormat() const {
     return Format_Invalid;
   }
 
-  return getFormat(swapchain_->getCurrentTexture());
+  return vkFormatToFormat(swapchain_->getSurfaceFormat().format);
 }
 
 lvk::TextureHandle lvk::VulkanContext::getCurrentSwapchainTexture() {
