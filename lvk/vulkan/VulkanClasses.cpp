@@ -3613,8 +3613,8 @@ VkShaderModule lvk::VulkanContext::createShaderModule(ShaderStage stage,
       vec4 textureBindlessCubeLod(uint textureid, uint samplerid, vec3 uvw, float lod) {
         return textureLod(samplerCube(kTexturesCube[textureid], kSamplers[samplerid]), uvw, lod);
       }
-      int textureBindlessQueryLevels2D(uint textureid, uint samplerid) {
-        return textureQueryLevels(sampler2D(kTextures2D[textureid], kSamplers[samplerid]));
+      int textureBindlessQueryLevels2D(uint textureid) {
+        return textureQueryLevels(kTextures2D[textureid]);
       }
       )";
     }
