@@ -695,7 +695,10 @@ lvk::VulkanBuffer::VulkanBuffer(lvk::VulkanContext* ctx,
 
   // handle shader access
   if (usageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
-    const VkBufferDeviceAddressInfo ai = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, vkBuffer_};
+    const VkBufferDeviceAddressInfo ai = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+        .buffer = vkBuffer_,
+    };
     vkDeviceAddress_ = vkGetBufferDeviceAddress(device_, &ai);
     LVK_ASSERT(vkDeviceAddress_);
   }
@@ -765,11 +768,10 @@ void lvk::VulkanBuffer::flushMappedMemory(VkDeviceSize offset, VkDeviceSize size
     vmaFlushAllocation((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, offset, size);
   } else {
     const VkMappedMemoryRange memoryRange = {
-        VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
-        nullptr,
-        vkMemory_,
-        offset,
-        size,
+        .sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+        .memory = vkMemory_,
+        .offset = offset,
+        .size = size,
     };
     vkFlushMappedMemoryRanges(device_, 1, &memoryRange);
   }
@@ -2360,6 +2362,8 @@ void lvk::CommandBuffer::cmdBindVertexBuffer(uint32_t index, BufferHandle buffer
 
 void lvk::CommandBuffer::cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, size_t indexBufferOffset) {
   lvk::VulkanBuffer* buf = ctx_->buffersPool_.get(indexBuffer);
+
+  LVK_ASSERT(buf->vkUsageFlags_ & VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
   const VkIndexType type = indexFormatToVkIndexType(indexFormat);
   vkCmdBindIndexBuffer(wrapper_->cmdBuf_, buf->vkBuffer_, indexBufferOffset, type);
