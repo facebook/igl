@@ -115,9 +115,10 @@ if(WIN32 OR (UNIX AND NOT ANDROID))
   set(GLFW_BUILD_TESTS    OFF CACHE BOOL "")
   set(GLFW_INSTALL        OFF CACHE BOOL "")
   set(GLFW_VULKAN_STATIC  OFF CACHE BOOL "")
-  # cmake-format: on
   add_subdirectory(third-party/deps/src/glfw)
+  lvk_set_folder(glfw            "third-party/GLFW3")
   lvk_set_folder(update_mappings "third-party/GLFW3")
+  # cmake-format: on
 endif()
   
 if(LVK_WITH_SAMPLES)
@@ -141,7 +142,6 @@ if(LVK_WITH_SAMPLES)
   lvk_set_folder(meshoptimizer "third-party")
   lvk_set_folder(tinyobjloader "third-party/tinyobjloader")
   lvk_set_folder(uninstall     "third-party/tinyobjloader")
-  lvk_set_folder(glfw          "third-party/GLFW3")
   # cmake-format: on
 endif()
 
