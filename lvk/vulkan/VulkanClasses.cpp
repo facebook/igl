@@ -2553,19 +2553,19 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
                  "Uploading mip-levels with an image region that is smaller than the base mip level is not supported");
 
   // find the storage size for all mip-levels being uploaded
-  uint32_t layarStorageSize = 0;
+  uint32_t layerStorageSize = 0;
   for (uint32_t i = 0; i < numMipLevels; ++i) {
     const uint32_t mipSize = lvk::getTextureBytesPerLayer(image.vkExtent_.width, image.vkExtent_.height, texFormat, i);
-    layarStorageSize += mipSize;
+    layerStorageSize += mipSize;
     mipSizes[i] = mipSize;
     width = width <= 1 ? 1 : width >> 1;
     height = height <= 1 ? 1 : height >> 1;
   }
-  const uint32_t storageSize = layarStorageSize * numLayers;
+  const uint32_t storageSize = layerStorageSize * numLayers;
 
   LVK_ASSERT(storageSize <= stagingBufferSize_);
 
-  MemoryRegionDesc desc = getNextFreeOffset(layarStorageSize);
+  MemoryRegionDesc desc = getNextFreeOffset(layerStorageSize);
   // No support for copying image in multiple smaller chunk sizes. If we get smaller buffer size than storageSize, we will wait for GPU idle and get bigger chunk.
   if (desc.alignedSize_ < storageSize) {
     waitAndReset();
@@ -2578,7 +2578,7 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
   lvk::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
 
   for (uint32_t layer = 0; layer != numLayers; layer++) {
-    stagingBuffer->bufferSubData(desc.srcOffset_ + layer * layarStorageSize, layarStorageSize, data[layer]);
+    stagingBuffer->bufferSubData(desc.srcOffset_ + layer * layerStorageSize, layerStorageSize, data[layer]);
 
     uint32_t mipLevelOffset = 0;
 
@@ -2610,7 +2610,7 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
       };
       const VkBufferImageCopy copy = {
           // the offset for this level is at the start of all mip-levels plus the size of all previous mip-levels being uploaded
-          .bufferOffset = desc.srcOffset_ + layer * layarStorageSize + mipLevelOffset,
+          .bufferOffset = desc.srcOffset_ + layer * layerStorageSize + mipLevelOffset,
           .bufferRowLength = 0,
           .bufferImageHeight = 0,
           .imageSubresource = VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, layer, 1},
@@ -2730,7 +2730,7 @@ lvk::VulkanStagingDevice::MemoryRegionDesc lvk::VulkanStagingDevice::getNextFree
         };
         return *it;
       }
-      if (it->alignedSize_ < it->alignedSize_) {
+      if (bestIt->alignedSize_ < it->alignedSize_) {
         bestIt = it;
       }
     }
