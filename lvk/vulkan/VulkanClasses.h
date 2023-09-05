@@ -465,7 +465,6 @@ class VulkanStagingDevice final {
   BufferHandle stagingBuffer_;
   std::unique_ptr<lvk::VulkanImmediateCommands> immediate_;
   uint32_t stagingBufferFrontOffset_ = 0;
-  uint32_t stagingBufferAlignment_ = 16;
   uint32_t stagingBufferSize_ = 0;
   uint32_t bufferCapacity_ = 0;
   std::unordered_map<uint64_t, MemoryRegionDesc> outstandingFences_;

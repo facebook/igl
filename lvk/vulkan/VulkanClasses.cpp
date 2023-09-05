@@ -2714,7 +2714,9 @@ void lvk::VulkanStagingDevice::imageData3D(VulkanImage& image,
 lvk::VulkanStagingDevice::MemoryRegionDesc lvk::VulkanStagingDevice::getNextFreeOffset(uint32_t size) {
   LVK_PROFILER_FUNCTION();
 
-  uint32_t alignedSize = (size + stagingBufferAlignment_ - 1) & ~(stagingBufferAlignment_ - 1);
+  constexpr uint32_t kStagingBufferAlignment_ = 16;
+
+  uint32_t alignedSize = (size + kStagingBufferAlignment_ - 1) & ~(kStagingBufferAlignment_ - 1);
 
   // track maximum previously used region
   MemoryRegionDesc maxRegionDesc;
