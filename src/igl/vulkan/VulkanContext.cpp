@@ -1486,7 +1486,7 @@ void* VulkanContext::getVmaAllocator() const {
 }
 
 void VulkanContext::processDeferredTasks() const {
-  while (!deferredTasks_.empty() && immediate_->isReady(deferredTasks_.front().handle_, true)) {
+  while (!deferredTasks_.empty() && immediate_->isRecycled(deferredTasks_.front().handle_)) {
     deferredTasks_.front().task_();
     deferredTasks_.pop_front();
   }

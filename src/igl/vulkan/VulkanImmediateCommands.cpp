@@ -146,7 +146,19 @@ void VulkanImmediateCommands::waitAll() {
   purge();
 }
 
-bool VulkanImmediateCommands::isReady(const SubmitHandle handle, bool fastCheckNoVulkan) const {
+bool VulkanImmediateCommands::isRecycled(SubmitHandle handle) const {
+  IGL_ASSERT(handle.bufferIndex_ < kMaxCommandBuffers);
+
+  if (handle.empty()) {
+    // a null handle
+    return true;
+  }
+
+  // already recycled and reused by another command buffer
+  return buffers_[handle.bufferIndex_].handle_.submitId_ != handle.submitId_;
+}
+
+bool VulkanImmediateCommands::isReady(const SubmitHandle handle) const {
   IGL_ASSERT(handle.bufferIndex_ < kMaxCommandBuffers);
 
   if (handle.empty()) {
@@ -164,12 +176,6 @@ bool VulkanImmediateCommands::isReady(const SubmitHandle handle, bool fastCheckN
   if (buf.handle_.submitId_ != handle.submitId_) {
     // already recycled and reused by another command buffer
     return true;
-  }
-
-  if (fastCheckNoVulkan) {
-    // do not ask the Vulkan API about it, just let it retire naturally (when submitId for this
-    // bufferIndex gets incremented)
-    return false;
   }
 
   return vkWaitForFences(device_, 1, &buf.fence_.vkFence_, VK_TRUE, 0) == VK_SUCCESS;
@@ -241,7 +247,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::getLastSubmitHand
 VkFence VulkanImmediateCommands::getVkFenceFromSubmitHandle(SubmitHandle handle) {
   IGL_ASSERT(handle.bufferIndex_ < buffers_.size());
 
-  if (isReady(handle, true)) {
+  if (isRecycled(handle)) {
     return VK_NULL_HANDLE;
   }
 

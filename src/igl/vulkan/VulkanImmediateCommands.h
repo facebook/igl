@@ -64,7 +64,8 @@ class VulkanImmediateCommands final {
   void waitSemaphore(VkSemaphore semaphore);
   VkSemaphore acquireLastSubmitSemaphore();
   SubmitHandle getLastSubmitHandle() const;
-  bool isReady(SubmitHandle handle, bool fastCheckNoVulkan = false) const;
+  [[nodiscard]] bool isRecycled(SubmitHandle handle) const;
+  [[nodiscard]] bool isReady(SubmitHandle handle) const;
   void wait(SubmitHandle handle);
   void waitAll();
   VkFence getVkFenceFromSubmitHandle(SubmitHandle handle);
