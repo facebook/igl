@@ -22,7 +22,7 @@ add_library(IGLVulkan ${SRC_FILES} ${HEADER_FILES})
 
 target_link_libraries(IGLVulkan PRIVATE IGLLibrary)
 
-igl_set_cxxstd(IGLVulkan 17)
+igl_set_cxxstd(IGLVulkan 20)
 igl_set_folder(IGLVulkan "IGL")
 
 # glslang
