@@ -12,7 +12,6 @@
 
 #include <future>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
 namespace lvk {
@@ -455,10 +454,11 @@ class VulkanStagingDevice final {
   struct MemoryRegionDesc {
     uint32_t srcOffset_ = 0;
     uint32_t alignedSize_ = 0;
+    SubmitHandle handle_ = {};
   };
 
   MemoryRegionDesc getNextFreeOffset(uint32_t size);
-  void flushOutstandingFences();
+  void waitAndReset();
 
  private:
   VulkanContext& ctx_;
@@ -467,7 +467,7 @@ class VulkanStagingDevice final {
   uint32_t stagingBufferFrontOffset_ = 0;
   uint32_t stagingBufferSize_ = 0;
   uint32_t bufferCapacity_ = 0;
-  std::unordered_map<uint64_t, MemoryRegionDesc> outstandingFences_;
+  std::vector<MemoryRegionDesc> regions_;
 };
 
 class VulkanContext final : public IContext {

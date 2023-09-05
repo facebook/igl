@@ -17,6 +17,7 @@
 #include "VulkanUtils.h"
 
 #include <glslang/Include/glslang_c_interface.h>
+#include <ldrutils/lutils/ScopeExit.h>
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #include <unistd.h>
@@ -2507,7 +2508,7 @@ void lvk::VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer, size_t dstOff
 
   while (size) {
     // get next staging buffer free offset
-    const MemoryRegionDesc desc = getNextFreeOffset((uint32_t)size);
+    MemoryRegionDesc desc = getNextFreeOffset((uint32_t)size);
     const uint32_t chunkSize = std::min((uint32_t)size, desc.alignedSize_);
 
     // copy data into staging buffer
@@ -2518,8 +2519,8 @@ void lvk::VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer, size_t dstOff
 
     auto& wrapper = immediate_->acquire();
     vkCmdCopyBuffer(wrapper.cmdBuf_, stagingBuffer->vkBuffer_, buffer.vkBuffer_, 1, &copy);
-    const SubmitHandle fenceId = immediate_->submit(wrapper);
-    outstandingFences_[fenceId.handle()] = desc;
+    desc.handle_ = immediate_->submit(wrapper);
+    regions_.push_back(desc);
 
     size -= chunkSize;
     data = (uint8_t*)data + chunkSize;
@@ -2565,10 +2566,9 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
   LVK_ASSERT(storageSize <= stagingBufferSize_);
 
   MemoryRegionDesc desc = getNextFreeOffset(layarStorageSize);
-  // No support for copying image in multiple smaller chunk sizes. If we get smaller buffer size than storageSize, we will wait for GPU idle
-  // and get bigger chunk.
+  // No support for copying image in multiple smaller chunk sizes. If we get smaller buffer size than storageSize, we will wait for GPU idle and get bigger chunk.
   if (desc.alignedSize_ < storageSize) {
-    flushOutstandingFences();
+    waitAndReset();
     desc = getNextFreeOffset(storageSize);
   }
   LVK_ASSERT(desc.alignedSize_ >= storageSize);
@@ -2637,8 +2637,8 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
 
   image.vkImageLayout_ = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-  SubmitHandle fenceId = immediate_->submit(wrapper);
-  outstandingFences_[fenceId.handle()] = desc;
+  desc.handle_ = immediate_->submit(wrapper);
+  regions_.push_back(desc);
 }
 
 void lvk::VulkanStagingDevice::imageData3D(VulkanImage& image,
@@ -2659,7 +2659,7 @@ void lvk::VulkanStagingDevice::imageData3D(VulkanImage& image,
   // No support for copying image in multiple smaller chunk sizes.
   // If we get smaller buffer size than storageSize, we will wait for GPU idle and get a bigger chunk.
   if (desc.alignedSize_ < storageSize) {
-    flushOutstandingFences();
+    waitAndReset();
     desc = getNextFreeOffset(storageSize);
   }
 
@@ -2707,8 +2707,8 @@ void lvk::VulkanStagingDevice::imageData3D(VulkanImage& image,
 
   image.vkImageLayout_ = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-  SubmitHandle fenceId = immediate_->submit(wrapper);
-  outstandingFences_[fenceId.handle()] = desc;
+  desc.handle_ = immediate_->submit(wrapper);
+  regions_.push_back(desc);
 }
 
 lvk::VulkanStagingDevice::MemoryRegionDesc lvk::VulkanStagingDevice::getNextFreeOffset(uint32_t size) {
@@ -2719,32 +2719,31 @@ lvk::VulkanStagingDevice::MemoryRegionDesc lvk::VulkanStagingDevice::getNextFree
   uint32_t alignedSize = (size + kStagingBufferAlignment_ - 1) & ~(kStagingBufferAlignment_ - 1);
 
   // track maximum previously used region
-  MemoryRegionDesc maxRegionDesc;
-  SubmitHandle maxRegionFence = SubmitHandle();
+  auto bestIt = regions_.begin();
 
   // check if we can reuse any of previously used memory region
-  for (auto [handle, desc] : outstandingFences_) {
-    if (immediate_->isReady(SubmitHandle(handle))) {
-      if (desc.alignedSize_ >= alignedSize) {
-        outstandingFences_.erase(handle);
-        return desc;
+  for (auto it = regions_.begin(); it != regions_.end(); it++) {
+    if (immediate_->isReady(SubmitHandle(it->handle_))) {
+      if (it->alignedSize_ >= alignedSize) {
+        SCOPE_EXIT {
+          regions_.erase(it);
+        };
+        return *it;
       }
-
-      if (maxRegionDesc.alignedSize_ < desc.alignedSize_) {
-        maxRegionDesc = desc;
-        maxRegionFence = SubmitHandle(handle);
+      if (it->alignedSize_ < it->alignedSize_) {
+        bestIt = it;
       }
     }
   }
 
-  if (!maxRegionFence.empty() && bufferCapacity_ < maxRegionDesc.alignedSize_) {
-    outstandingFences_.erase(maxRegionFence.handle());
-    return maxRegionDesc;
+  if (bestIt != regions_.end() && bufferCapacity_ < bestIt->alignedSize_) {
+    regions_.erase(bestIt);
+    return *bestIt;
   }
 
   if (bufferCapacity_ == 0) {
     // no more space available in the staging buffer
-    flushOutstandingFences();
+    waitAndReset();
   }
 
   // allocate from free staging memory
@@ -2756,14 +2755,14 @@ lvk::VulkanStagingDevice::MemoryRegionDesc lvk::VulkanStagingDevice::getNextFree
   return {srcOffset, alignedSize};
 }
 
-void lvk::VulkanStagingDevice::flushOutstandingFences() {
+void lvk::VulkanStagingDevice::waitAndReset() {
   LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_WAIT);
 
-  std::for_each(outstandingFences_.begin(), outstandingFences_.end(), [this](std::pair<uint64_t, MemoryRegionDesc> const& pair) {
-    immediate_->wait(SubmitHandle(pair.first));
-  });
+  for (const auto& r : regions_) {
+    immediate_->wait(r.handle_);
+  };
 
-  outstandingFences_.clear();
+  regions_.clear();
   stagingBufferFrontOffset_ = 0;
   bufferCapacity_ = stagingBufferSize_;
 }
