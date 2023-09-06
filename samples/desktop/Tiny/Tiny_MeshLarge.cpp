@@ -121,7 +121,6 @@
 // @fb-only
 
 constexpr uint32_t kMeshCacheVersion = 0xC0DE0009;
-constexpr uint32_t kMaxTextures = 512;
 constexpr int kNumSamplesMSAA = 8;
 #if USE_OPENGL_BACKEND
 constexpr bool kEnableCompression = false;
@@ -901,8 +900,6 @@ void initIGL() {
 #endif
 #else
       const igl::vulkan::VulkanContextConfig cfg = {
-          .maxTextures = kMaxTextures,
-          .maxSamplers = 128,
           .terminateOnValidationError = true,
           .enhancedShaderDebugging = false,
           .enableValidation = kEnableValidationLayers,
@@ -2422,9 +2419,9 @@ void processLoadedMaterials() {
   materials_[mtl.idx].texAmbient = tex.ambient ? (uint32_t)tex.ambient->getTextureId() : 0;
   materials_[mtl.idx].texDiffuse = tex.diffuse ? (uint32_t)tex.diffuse->getTextureId() : 0;
   materials_[mtl.idx].texAlpha = tex.alpha ? (uint32_t)tex.alpha->getTextureId() : 0;
-  IGL_ASSERT(materials_[mtl.idx].texAmbient >= 0 && materials_[mtl.idx].texAmbient < kMaxTextures);
-  IGL_ASSERT(materials_[mtl.idx].texDiffuse >= 0 && materials_[mtl.idx].texDiffuse < kMaxTextures);
-  IGL_ASSERT(materials_[mtl.idx].texAlpha >= 0 && materials_[mtl.idx].texAlpha < kMaxTextures);
+  IGL_ASSERT(materials_[mtl.idx].texAmbient >= 0);
+  IGL_ASSERT(materials_[mtl.idx].texDiffuse >= 0);
+  IGL_ASSERT(materials_[mtl.idx].texAlpha >= 0);
 #endif
   sbMaterials_->upload(materials_.data(), BufferRange(sizeof(GPUMaterial) * materials_.size()));
 }

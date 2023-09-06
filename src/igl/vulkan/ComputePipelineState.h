@@ -34,6 +34,7 @@ class ComputePipelineState final : public IComputePipelineState {
   const igl::vulkan::Device& device_;
   ComputePipelineDesc desc_;
 
+  mutable VkPipelineLayout vkPipelineLayout_ = VK_NULL_HANDLE;
   mutable VkPipeline pipeline_ = VK_NULL_HANDLE;
 };
 

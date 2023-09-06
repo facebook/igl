@@ -113,7 +113,7 @@ namespace igl {
 namespace vulkan {
 
 RenderCommandEncoder::RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer,
-                                           const VulkanContext& ctx) :
+                                           VulkanContext& ctx) :
   IRenderCommandEncoder::IRenderCommandEncoder(commandBuffer),
   ctx_(ctx),
   cmdBuffer_(commandBuffer ? commandBuffer->getVkCommandBuffer() : VK_NULL_HANDLE),
@@ -275,7 +275,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
 
 std::unique_ptr<RenderCommandEncoder> RenderCommandEncoder::create(
     const std::shared_ptr<CommandBuffer>& commandBuffer,
-    const VulkanContext& ctx,
+    VulkanContext& ctx,
     const RenderPassDesc& renderPass,
     const std::shared_ptr<IFramebuffer>& framebuffer,
     Result* outResult) {

@@ -221,6 +221,7 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
   device_(device),
   desc_(std::move(desc)),
   reflection_(std::make_shared<RenderPipelineReflection>()) {
+  vkPipelineLayout_ = device_.getVulkanContext().pipelineLayoutGraphics_->getVkPipelineLayout();
   // Iterate and cache vertex input bindings and attributes
   const igl::vulkan::VertexInputState* vstate =
       static_cast<igl::vulkan::VertexInputState*>(desc_.vertexInputState.get());
@@ -272,6 +273,20 @@ RenderPipelineState::~RenderPipelineState() {
 
 VkPipeline RenderPipelineState::getVkPipeline(
     const RenderPipelineDynamicState& dynamicState) const {
+  if (vkPipelineLayout_ !=
+      device_.getVulkanContext().pipelineLayoutGraphics_->getVkPipelineLayout()) {
+    // there's a new pipeline layout - drop all cached Vulkan pipelines
+    VkDevice device = device_.getVulkanContext().device_->getVkDevice();
+    for (auto p : pipelines_) {
+      if (p.second != VK_NULL_HANDLE) {
+        device_.getVulkanContext().deferredTask(std::packaged_task<void()>(
+            [device, pipeline = p.second]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+      }
+    }
+    pipelines_.clear();
+    vkPipelineLayout_ = device_.getVulkanContext().pipelineLayoutCompute_->getVkPipelineLayout();
+  }
+
   const auto it = pipelines_.find(dynamicState);
 
   if (it != pipelines_.end()) {

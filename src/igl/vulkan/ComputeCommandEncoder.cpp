@@ -19,7 +19,7 @@ namespace igl {
 namespace vulkan {
 
 ComputeCommandEncoder::ComputeCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer,
-                                             const VulkanContext& ctx) :
+                                             VulkanContext& ctx) :
   ctx_(ctx),
   cmdBuffer_(commandBuffer ? commandBuffer->getVkCommandBuffer() : VK_NULL_HANDLE),
   binder_(commandBuffer, ctx_, VK_PIPELINE_BIND_POINT_COMPUTE) {

@@ -261,8 +261,6 @@ using namespace igl;
     // YES; // Back the view with a layer created by the makeBackingLayer method.
 
     igl::vulkan::VulkanContextConfig vulkanContextConfig{
-        128, // maxTextures
-        80, // maxSamplers
         true, // terminateOnValidationError
         false // enhancedShaderDebugging
     };

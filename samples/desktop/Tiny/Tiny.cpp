@@ -208,8 +208,6 @@ static void initIGL() {
 #endif
 #else
     const igl::vulkan::VulkanContextConfig cfg{
-        .maxTextures = 8,
-        .maxSamplers = 8,
         .terminateOnValidationError = true,
         .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
     };

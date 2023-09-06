@@ -244,8 +244,6 @@ static void initIGL() {
   // create a device
   {
     const igl::vulkan::VulkanContextConfig cfg = {
-        .maxTextures = 128,
-        .maxSamplers = 128,
         .terminateOnValidationError = true,
         .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
     };

@@ -58,10 +58,6 @@ struct DeviceQueues {
 };
 
 struct VulkanContextConfig {
-  // small default values are used to speed up debugging via RenderDoc and Validation Layers
-  // macOS: MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS is required when using this with MoltenVK
-  uint32_t maxTextures = 256;
-  uint32_t maxSamplers = 256;
   bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
 
   // enable/disable enhanced shader debugging capabilities (line drawing)
@@ -193,11 +189,13 @@ class VulkanContext final {
  private:
   void createInstance(const size_t numExtraExtensions, const char** extraExtensions);
   void createSurface(void* window, void* display);
-  void checkAndUpdateDescriptorSets() const;
+  void checkAndUpdateDescriptorSets();
   void bindDefaultDescriptorSets(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPointa) const;
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void waitDeferredTasks();
+  void growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t newMaxSamplers);
+  void updatePipelineLayouts();
 
  private:
   friend class igl::vulkan::Device;
@@ -290,6 +288,8 @@ class VulkanContext final {
       prev = current;
     }
   };
+  uint32_t currentMaxBindlessTextures_ = 8;
+  uint32_t currentMaxBindlessSamplers_ = 8;
   mutable DescriptorSet bindlessDSet_;
   mutable DescriptorSetArray combinedImageSamplerDSets_;
   mutable DescriptorSetArray bufferUniformDSets_;

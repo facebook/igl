@@ -24,7 +24,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
  public:
   static std::unique_ptr<RenderCommandEncoder> create(
       const std::shared_ptr<CommandBuffer>& commandBuffer,
-      const VulkanContext& ctx,
+      VulkanContext& ctx,
       const RenderPassDesc& renderPass,
       const std::shared_ptr<IFramebuffer>& framebuffer,
       Result* outResult);
@@ -100,7 +100,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   void bindPipeline();
 
  private:
-  const VulkanContext& ctx_;
+  VulkanContext& ctx_;
   VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
   bool isEncoding_ = false;
   bool hasDepthAttachment_ = false;
@@ -117,8 +117,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   uint32_t drawCallCountEnabled_ = 1u;
 
  private:
-  RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer,
-                       const VulkanContext& ctx);
+  RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer, VulkanContext& ctx);
 
   void initialize(const RenderPassDesc& renderPass,
                   const std::shared_ptr<IFramebuffer>& framebuffer,

@@ -23,8 +23,7 @@ namespace vulkan {
 
 class ComputeCommandEncoder : public IComputeCommandEncoder {
  public:
-  ComputeCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer,
-                        const VulkanContext& ctx);
+  ComputeCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer, VulkanContext& ctx);
   ~ComputeCommandEncoder() override {
     IGL_ASSERT(!isEncoding_); // did you forget to call endEncoding()?
     endEncoding();
@@ -50,7 +49,7 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   }
 
  private:
-  const VulkanContext& ctx_;
+  VulkanContext& ctx_;
   VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
   bool isEncoding_ = false;
 

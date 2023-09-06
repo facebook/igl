@@ -24,7 +24,9 @@ ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
   device_(device),
   // Ignore modernize-pass-by-value
   // @lint-ignore CLANGTIDY
-  desc_(desc) {}
+  desc_(desc) {
+  vkPipelineLayout_ = device_.getVulkanContext().pipelineLayoutCompute_->getVkPipelineLayout();
+}
 
 ComputePipelineState ::~ComputePipelineState() {
   if (pipeline_ != VK_NULL_HANDLE) {
@@ -36,6 +38,18 @@ ComputePipelineState ::~ComputePipelineState() {
 }
 
 VkPipeline ComputePipelineState::getVkPipeline() const {
+  if (vkPipelineLayout_ !=
+      device_.getVulkanContext().pipelineLayoutCompute_->getVkPipelineLayout()) {
+    // there's a new pipeline layout - drop the previous Vulkan pipeline
+    VkDevice device = device_.getVulkanContext().device_->getVkDevice();
+    if (pipeline_ != VK_NULL_HANDLE) {
+      device_.getVulkanContext().deferredTask(std::packaged_task<void()>(
+          [device, pipeline = pipeline_]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+    }
+    pipeline_ = VK_NULL_HANDLE;
+    vkPipelineLayout_ = device_.getVulkanContext().pipelineLayoutCompute_->getVkPipelineLayout();
+  }
+
   if (pipeline_ != VK_NULL_HANDLE) {
     return pipeline_;
   }
