@@ -241,8 +241,6 @@ class TextureArrayTest : public ::testing::Test {
 
   void TearDown() override {}
 
-  void runPassthroughTest(bool uploadFullArray, bool modifyTexture);
-
   // Member variables
  public:
   std::shared_ptr<IDevice> iglDev_;
@@ -294,12 +292,15 @@ static uint32_t modifiedTextureArray2D[kNumLayers][OFFSCREEN_TEX_WIDTH * OFFSCRE
     {B, B, B, Y}};
 
 //
-// Texture Passthrough Test
+// Texture Upload Test
 //
-// This test uses a simple shader to copy the input texture to a same
-// sized output texture (offscreenTexture_)
+// This test uploads data to an array texture and then downloads it again to validate it
 //
-void TextureArrayTest::runPassthroughTest(bool uploadFullArray, bool modifyTexture) {
+namespace {
+void runUploadTest(IDevice& device,
+                   ICommandQueue& cmdQueue,
+                   bool singleUpload,
+                   bool modifyTexture) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
@@ -310,28 +311,29 @@ void TextureArrayTest::runPassthroughTest(bool uploadFullArray, bool modifyTextu
                                                 OFFSCREEN_TEX_WIDTH,
                                                 OFFSCREEN_TEX_HEIGHT,
                                                 kNumLayers,
-                                                TextureDesc::TextureUsageBits::Sampled);
-  inputTexture_ = iglDev_->createTexture(texDesc, &ret);
+                                                TextureDesc::TextureUsageBits::Sampled |
+                                                    TextureDesc::TextureUsageBits::Attachment);
+  auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
-  ASSERT_TRUE(inputTexture_ != nullptr);
+  ASSERT_TRUE(tex != nullptr);
 
   //
   // upload and redownload to make sure that we've uploaded successfully.
   //
-  if (uploadFullArray) {
+  if (singleUpload) {
     const auto uploadRange = TextureRangeDesc::new2DArray(
         0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT, 0, kNumLayers);
-    ASSERT_TRUE(inputTexture_->upload(uploadRange, textureArray2D[0]).isOk());
+    ASSERT_TRUE(tex->upload(uploadRange, textureArray2D[0]).isOk());
   } else {
-    for (int j = 0; j < kNumLayers; ++j) {
+    for (size_t layer = 0; layer < kNumLayers; ++layer) {
       const auto uploadRange =
-          TextureRangeDesc::new2DArray(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT, j, 1);
-      ASSERT_TRUE(inputTexture_->upload(uploadRange, textureArray2D[j]).isOk());
+          TextureRangeDesc::new2DArray(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT, layer, 1);
+      ASSERT_TRUE(tex->upload(uploadRange, textureArray2D[layer]).isOk());
     }
   }
 
   if (modifyTexture) {
-    if (uploadFullArray) {
+    if (singleUpload) {
       const auto uploadRange =
           TextureRangeDesc::new2DArray(OFFSCREEN_TEX_WIDTH - OFFSCREEN_SUBTEX_WIDTH,
                                        OFFSCREEN_TEX_HEIGHT - OFFSCREEN_SUBTEX_HEIGHT,
@@ -339,20 +341,86 @@ void TextureArrayTest::runPassthroughTest(bool uploadFullArray, bool modifyTextu
                                        OFFSCREEN_SUBTEX_HEIGHT,
                                        0,
                                        kNumLayers);
-      ASSERT_TRUE(inputTexture_->upload(uploadRange, textureSubArray2D[0]).isOk());
+      ASSERT_TRUE(tex->upload(uploadRange, textureSubArray2D[0]).isOk());
     } else {
-      for (int j = 0; j < kNumLayers; ++j) {
+      for (size_t layer = 0; layer < kNumLayers; ++layer) {
         const auto uploadRange =
             TextureRangeDesc::new2DArray(OFFSCREEN_TEX_WIDTH - OFFSCREEN_SUBTEX_WIDTH,
                                          OFFSCREEN_TEX_HEIGHT - OFFSCREEN_SUBTEX_HEIGHT,
                                          OFFSCREEN_SUBTEX_WIDTH,
                                          OFFSCREEN_SUBTEX_HEIGHT,
-                                         j,
+                                         layer,
                                          1);
-        ASSERT_TRUE(inputTexture_->upload(uploadRange, textureSubArray2D[j]).isOk());
+        ASSERT_TRUE(tex->upload(uploadRange, textureSubArray2D[layer]).isOk());
       }
     }
   }
+
+  for (size_t layer = 0; layer < kNumLayers; ++layer) {
+    //--------------------------------
+    // Verify against original texture
+    //--------------------------------
+    const auto layerStr = "Layer " + std::to_string(layer);
+    util::validateUploadedTextureRange(device,
+                                       cmdQueue,
+                                       tex,
+                                       tex->getLayerRange(layer),
+                                       modifyTexture ? modifiedTextureArray2D[layer]
+                                                     : textureArray2D[layer],
+                                       layerStr.c_str());
+  }
+}
+} // namespace
+
+TEST_F(TextureArrayTest, Upload_SingleUpload) {
+  runUploadTest(*iglDev_, *cmdQueue_, true, false);
+}
+
+TEST_F(TextureArrayTest, Upload_LayerByLayer) {
+  runUploadTest(*iglDev_, *cmdQueue_, false, false);
+}
+
+TEST_F(TextureArrayTest, Upload_SingleUpload_ModifySubTexture) {
+  runUploadTest(*iglDev_, *cmdQueue_, true, true);
+}
+
+TEST_F(TextureArrayTest, Upload_LayerByLayer_ModifySubTexture) {
+  runUploadTest(*iglDev_, *cmdQueue_, false, true);
+}
+
+//
+// Texture Passthrough Test
+//
+// This test uses a simple shader to copy the input texture to a same
+// sized output texture (offscreenTexture_)
+//
+TEST_F(TextureArrayTest, Passthrough) {
+  Result ret;
+  std::shared_ptr<IRenderPipelineState> pipelineState;
+
+  //-------------------------------------
+  // Create input texture and upload data
+  //-------------------------------------
+  const TextureDesc texDesc = TextureDesc::new2DArray(TextureFormat::RGBA_UNorm8,
+                                                      OFFSCREEN_TEX_WIDTH,
+                                                      OFFSCREEN_TEX_HEIGHT,
+                                                      kNumLayers,
+                                                      TextureDesc::TextureUsageBits::Sampled);
+  inputTexture_ = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(inputTexture_ != nullptr);
+
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
+  const size_t bytesPerRow = OFFSCREEN_TEX_WIDTH * 4;
+
+  //
+  // upload and redownload to make sure that we've uploaded successfully.
+  //
+  for (size_t layer = 0; layer < kNumLayers; ++layer) {
+    ASSERT_TRUE(
+        inputTexture_->upload(rangeDesc.atLayer(layer), textureArray2D[layer], bytesPerRow).isOk());
+  }
+
   //----------------
   // Create Pipeline
   //----------------
@@ -360,7 +428,7 @@ void TextureArrayTest::runPassthroughTest(bool uploadFullArray, bool modifyTextu
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(pipelineState != nullptr);
 
-  for (int i = 0; i < kNumLayers; ++i) {
+  for (size_t layer = 0; layer < kNumLayers; ++layer) {
     //-------
     // Render
     //-------
@@ -381,7 +449,7 @@ void TextureArrayTest::runPassthroughTest(bool uploadFullArray, bool modifyTextu
     auto vertUniformBuffer = createVertexUniformBuffer(*iglDev_.get(), &result);
     ASSERT_TRUE(result.isOk());
 
-    vertexUniforms_.layer = i;
+    vertexUniforms_.layer = static_cast<int>(layer);
 
     *static_cast<VertexUniforms*>(vertUniformBuffer->getData()) = vertexUniforms_;
     vertUniformBuffer->bind(*iglDev_.get(), *pipelineState, *cmds.get());
@@ -397,26 +465,10 @@ void TextureArrayTest::runPassthroughTest(bool uploadFullArray, bool modifyTextu
     //----------------
     // Validate output
     //----------------
-    const auto* expectedData = modifyTexture ? modifiedTextureArray2D[i] : textureArray2D[i];
+    const auto layerStr = "Layer " + std::to_string(layer);
     util::validateFramebufferTexture(
-        *iglDev_, *cmdQueue_, *framebuffer_, expectedData, "Passthrough");
+        *iglDev_, *cmdQueue_, *framebuffer_, textureArray2D[layer], layerStr.c_str());
   }
-}
-
-TEST_F(TextureArrayTest, Passthrough_FullRange) {
-  runPassthroughTest(true, false);
-}
-
-TEST_F(TextureArrayTest, Passthrough_LayerByLayer) {
-  runPassthroughTest(false, false);
-}
-
-TEST_F(TextureArrayTest, Passthrough_FullRange_ModifySubTexture) {
-  runPassthroughTest(true, true);
-}
-
-TEST_F(TextureArrayTest, Passthrough_LayerByLayer_ModifySubTexture) {
-  runPassthroughTest(false, true);
 }
 
 TEST_F(TextureArrayTest, ValidateRange2DArray) {
