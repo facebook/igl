@@ -138,7 +138,7 @@ void VulkanBuffer::flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) con
   if (IGL_VULKAN_USE_VMA) {
     vmaFlushAllocation((VmaAllocator)ctx_.getVmaAllocator(), vmaAllocation_, offset, size);
   } else {
-    const VkMappedMemoryRange memoryRange = {
+    const VkMappedMemoryRange memoryRange{
         VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
         nullptr,
         vkMemory_,
@@ -146,6 +146,26 @@ void VulkanBuffer::flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) con
         size,
     };
     vkFlushMappedMemoryRanges(device_, 1, &memoryRange);
+  }
+}
+
+void VulkanBuffer::invalidateMappedMemory(VkDeviceSize offset, VkDeviceSize size) const {
+  if (!IGL_VERIFY(isMapped())) {
+    return;
+  }
+
+  if (IGL_VULKAN_USE_VMA) {
+    vmaInvalidateAllocation(
+        static_cast<VmaAllocator>(ctx_.getVmaAllocator()), vmaAllocation_, offset, size);
+  } else {
+    const VkMappedMemoryRange memoryRange = {
+        VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+        nullptr,
+        vkMemory_,
+        offset,
+        size,
+    };
+    vkInvalidateMappedMemoryRanges(device_, 1, &memoryRange);
   }
 }
 
@@ -160,6 +180,10 @@ void VulkanBuffer::getBufferSubData(size_t offset, size_t size, void* data) {
   }
 
   IGL_ASSERT(offset + size <= bufferSize_);
+
+  if (!isCoherentMemory_) {
+    invalidateMappedMemory(offset, size);
+  }
 
   const uint8_t* src = static_cast<uint8_t*>(mappedPtr_) + offset;
   checked_memcpy(data, size, src, size);

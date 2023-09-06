@@ -38,7 +38,10 @@ class VulkanBuffer {
   bool isMapped() const {
     return mappedPtr_ != nullptr;
   }
+
   void flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) const;
+  void invalidateMappedMemory(VkDeviceSize offset, VkDeviceSize size) const;
+
   VkBuffer getVkBuffer() const {
     return vkBuffer_;
   }
