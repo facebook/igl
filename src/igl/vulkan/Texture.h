@@ -55,7 +55,8 @@ class Texture final : public ITexture {
   VkFormat getVkFormat() const;
 
   VkImageView getVkImageView() const;
-  VkImageView getVkImageViewForFramebuffer(uint32_t level,
+  VkImageView getVkImageViewForFramebuffer(uint32_t mipLevel,
+                                           uint32_t layer,
                                            FramebufferMode mode) const; // framebuffers can render
                                                                         // only into 1 mip-level
   VkImage getVkImage() const;
@@ -67,6 +68,7 @@ class Texture final : public ITexture {
   bool isSwapchainTexture() const;
 
   static uint32_t getVkLayer(TextureType type, uint32_t face, uint32_t layer);
+  uint32_t getNumVkLayers() const;
 
  private:
   Result create(const TextureDesc& desc);

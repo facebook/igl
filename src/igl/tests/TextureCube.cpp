@@ -387,9 +387,6 @@ TEST_F(TextureCubeTest, Passthrough_RenderToCube) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
-  if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
-    GTEST_SKIP() << "Vulkan backend does not support render to cube face";
-  }
   //---------------------------------
   // Create input and output textures
   //---------------------------------

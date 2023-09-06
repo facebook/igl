@@ -142,6 +142,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
 
   std::vector<VkClearValue> clearValues;
   uint32_t mipLevel = 0;
+  uint32_t layer = 0;
 
   VulkanRenderPassBuilder builder;
 
@@ -189,11 +190,18 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                                                 descColor.clearColor.g,
                                                 descColor.clearColor.b,
                                                 descColor.clearColor.a));
-    if (descColor.mipLevel && mipLevel) {
+    const auto colorLayer =
+        Texture::getVkLayer(colorTexture.getType(), descColor.face, descColor.layer);
+    if (mipLevel) {
       IGL_ASSERT_MSG(descColor.mipLevel == mipLevel,
                      "All color attachments should have the same mip-level");
     }
+    if (layer) {
+      IGL_ASSERT_MSG(colorLayer == layer,
+                     "All color attachments should have the same face or layer");
+    }
     mipLevel = descColor.mipLevel;
+    layer = colorLayer;
     const auto initialLayout = descColor.loadAction == igl::LoadAction::Load
                                    ? colorTexture.getVulkanTexture().getVulkanImage().imageLayout_
                                    : VK_IMAGE_LAYOUT_UNDEFINED;
@@ -230,6 +238,9 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
     hasDepthAttachment_ = true;
     IGL_ASSERT_MSG(descDepth.mipLevel == mipLevel,
                    "Depth attachment should have the same mip-level as color attachments");
+    IGL_ASSERT_MSG(Texture::getVkLayer(depthTexture.getType(), descDepth.face, descDepth.layer) ==
+                       layer,
+                   "Depth attachment should have the same face or layer as color attachments");
     clearValues.push_back(
         ivkGetClearDepthStencilValue(descDepth.clearDepth, descStencil.clearStencil));
     const auto initialLayout = descDepth.loadAction == igl::LoadAction::Load
@@ -253,7 +264,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   dynamicState_.depthBiasEnable_ = false;
 
   const VkRenderPassBeginInfo bi = fb.getRenderPassBeginInfo(
-      renderPassHandle.pass, mipLevel, (uint32_t)clearValues.size(), clearValues.data());
+      renderPassHandle.pass, mipLevel, layer, (uint32_t)clearValues.size(), clearValues.data());
 
   const uint32_t width = std::max(fb.getWidth() >> mipLevel, 1u);
   const uint32_t height = std::max(fb.getHeight() >> mipLevel, 1u);

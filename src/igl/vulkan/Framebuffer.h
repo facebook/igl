@@ -55,7 +55,7 @@ class Framebuffer final : public IFramebuffer {
 
   std::shared_ptr<ITexture> updateDrawable(std::shared_ptr<ITexture> texture) override;
 
-  VkFramebuffer getVkFramebuffer(uint32_t mipLevel, VkRenderPass pass) const;
+  VkFramebuffer getVkFramebuffer(uint32_t mipLevel, uint32_t layer, VkRenderPass pass) const;
 
   uint32_t getWidth() const {
     return width_;
@@ -70,6 +70,7 @@ class Framebuffer final : public IFramebuffer {
 
   VkRenderPassBeginInfo getRenderPassBeginInfo(VkRenderPass renderPass,
                                                uint32_t mipLevel,
+                                               uint32_t layer,
                                                uint32_t numClearValues,
                                                const VkClearValue* clearValues) const;
 

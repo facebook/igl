@@ -482,9 +482,6 @@ TEST_F(TextureArrayTest, Passthrough_RenderToArray) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
-  if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
-    GTEST_SKIP() << "Vulkan backend does not support render to array";
-  }
   //---------------------------------
   // Create input and output textures
   //---------------------------------

@@ -340,28 +340,31 @@ VkImageView Texture::getVkImageView() const {
   return texture_ ? texture_->getVulkanImageView().vkImageView_ : VK_NULL_HANDLE;
 }
 
-VkImageView Texture::getVkImageViewForFramebuffer(uint32_t level, FramebufferMode mode) const {
-  if (level < imageViewForFramebuffer_.size() && imageViewForFramebuffer_[level]) {
-    return imageViewForFramebuffer_[level]->getVkImageView();
+VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
+                                                  uint32_t layer,
+                                                  FramebufferMode mode) const {
+  const auto index = mipLevel * getNumVkLayers() + layer;
+  if (index < imageViewForFramebuffer_.size() && imageViewForFramebuffer_[index]) {
+    return imageViewForFramebuffer_[index]->getVkImageView();
   }
 
-  if (level >= imageViewForFramebuffer_.size()) {
-    imageViewForFramebuffer_.resize(level + 1);
+  if (index >= imageViewForFramebuffer_.size()) {
+    imageViewForFramebuffer_.resize(index + 1);
   }
 
   const VkImageAspectFlags flags = texture_->getVulkanImage().getImageAspectFlags();
   const bool isStereo = mode == FramebufferMode::Stereo;
 
-  imageViewForFramebuffer_[level] = texture_->getVulkanImage().createImageView(
+  imageViewForFramebuffer_[index] = texture_->getVulkanImage().createImageView(
       isStereo ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D,
       textureFormatToVkFormat(desc_.format),
       flags,
-      level,
+      mipLevel,
       1u,
-      0u,
+      layer,
       isStereo ? VK_REMAINING_ARRAY_LAYERS : 1u);
 
-  return imageViewForFramebuffer_[level]->vkImageView_;
+  return imageViewForFramebuffer_[index]->vkImageView_;
 }
 
 VkImage Texture::getVkImage() const {
@@ -374,6 +377,10 @@ bool Texture::isSwapchainTexture() const {
 
 uint32_t Texture::getVkLayer(TextureType type, uint32_t face, uint32_t layer) {
   return type == TextureType::Cube ? face : layer;
+}
+
+uint32_t Texture::getNumVkLayers() const {
+  return desc_.type == TextureType::Cube ? 6u : static_cast<uint32_t>(desc_.numLayers);
 }
 
 } // namespace vulkan

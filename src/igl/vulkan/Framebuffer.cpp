@@ -259,7 +259,9 @@ Framebuffer::Framebuffer(const Device& device, FramebufferDesc desc) :
   IGL_ASSERT(height_);
 }
 
-VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel, VkRenderPass pass) const {
+VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel,
+                                            uint32_t layer,
+                                            VkRenderPass pass) const {
   IGL_PROFILER_FUNCTION();
   // Because Vulkan framebuffers are immutable and we have a method updateDrawable() which can
   // change an attachment, we have to maintain a collection of attachments and map it into a
@@ -284,20 +286,21 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel, VkRenderPass pass
 
     const auto& colorTexture = static_cast<vulkan::Texture&>(*it->second.texture);
     attachments.attachments_.push_back(
-        colorTexture.getVkImageViewForFramebuffer(mipLevel, desc_.mode));
+        colorTexture.getVkImageViewForFramebuffer(mipLevel, layer, desc_.mode));
     // handle color MSAA
     if (it->second.resolveTexture) {
       IGL_ASSERT(mipLevel == 0);
       const auto& colorResolveTexture = static_cast<vulkan::Texture&>(*it->second.resolveTexture);
       attachments.attachments_.push_back(
-          colorResolveTexture.getVkImageViewForFramebuffer(0, desc_.mode));
+          colorResolveTexture.getVkImageViewForFramebuffer(0, layer, desc_.mode));
     }
   }
   // depth
   {
     const auto* depthTexture = static_cast<vulkan::Texture*>(desc_.depthAttachment.texture.get());
     if (depthTexture) {
-      attachments.attachments_.push_back(depthTexture->getVkImageViewForFramebuffer(0, desc_.mode));
+      attachments.attachments_.push_back(
+          depthTexture->getVkImageViewForFramebuffer(mipLevel, layer, desc_.mode));
     }
   }
   // handle depth MSAA
@@ -306,7 +309,7 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel, VkRenderPass pass
         static_cast<vulkan::Texture*>(desc_.depthAttachment.resolveTexture.get());
     if (depthResolveTexture) {
       attachments.attachments_.push_back(
-          depthResolveTexture->getVkImageViewForFramebuffer(0, desc_.mode));
+          depthResolveTexture->getVkImageViewForFramebuffer(mipLevel, layer, desc_.mode));
     }
   }
 
@@ -348,13 +351,14 @@ uint64_t Framebuffer::HashFunction::operator()(const Attachments& attachments) c
 
 VkRenderPassBeginInfo Framebuffer::getRenderPassBeginInfo(VkRenderPass renderPass,
                                                           uint32_t mipLevel,
+                                                          uint32_t layer,
                                                           uint32_t numClearValues,
                                                           const VkClearValue* clearValues) const {
   VkRenderPassBeginInfo bi = {};
   bi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
   bi.pNext = nullptr;
   bi.renderPass = renderPass;
-  bi.framebuffer = getVkFramebuffer(mipLevel, renderPass);
+  bi.framebuffer = getVkFramebuffer(mipLevel, layer, renderPass);
   bi.renderArea =
       VkRect2D{VkOffset2D{0, 0},
                VkExtent2D{std::max(width_ >> mipLevel, 1u), std::max(height_ >> mipLevel, 1u)}};
