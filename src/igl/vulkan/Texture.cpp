@@ -235,7 +235,7 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
     if (isAligned) {
       uploadData = data;
     } else {
-      const auto rows = getProperties().getRows(range);
+      const auto rows = getProperties().getRows(range.atLayer(i));
       for (uint32_t h = 0; h < rows; h++) {
         checked_memcpy(static_cast<uint8_t*>(linearData.data()) + h * imageRowWidth,
                        linearData.size() - h * imageRowWidth,

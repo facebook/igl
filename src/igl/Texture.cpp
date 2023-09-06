@@ -280,13 +280,20 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
 }
 
 size_t TextureFormatProperties::getRows(TextureRangeDesc range) const noexcept {
-  const auto texHeight = std::max(range.height, static_cast<size_t>(1));
-  if (isCompressed()) {
-    const size_t heightInBlocks =
-        std::max((texHeight + blockHeight - 1) / blockHeight, static_cast<size_t>(minBlocksY));
-    return heightInBlocks;
+  if (range.numMipLevels == 1) {
+    const size_t texHeight = std::max(range.height, static_cast<size_t>(1));
+    size_t rows = texHeight;
+    if (isCompressed()) {
+      rows = std::max((texHeight + blockHeight - 1) / blockHeight, static_cast<size_t>(minBlocksY));
+    }
+    return rows * range.depth * range.numFaces * range.numLayers;
   } else {
-    return texHeight;
+    size_t rows = 0;
+    for (size_t mipLevel = range.mipLevel; mipLevel < range.mipLevel + range.numMipLevels;
+         ++mipLevel) {
+      rows += getRows(range.atMipLevel(mipLevel));
+    }
+    return rows;
   }
 }
 

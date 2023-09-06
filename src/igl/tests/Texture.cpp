@@ -503,15 +503,59 @@ TEST(TextureFormatProperties, Construction) {
 }
 
 TEST(TextureFormatProperties, GetRows) {
-  const auto range = TextureRangeDesc::new2D(0, 0, 2, 2);
   {
+    const auto range = TextureRangeDesc::new2D(0, 0, 2, 2);
     const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
     EXPECT_EQ(props.getRows(range), 2);
+    EXPECT_EQ(props.getRows(range.withNumMipLevels(2)), 3);
   }
   {
+    const auto range = TextureRangeDesc::new2D(0, 0, 2, 2);
     const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGB_PVRTC_2BPPV1);
     // MinBlocksY = 2
     EXPECT_EQ(props.getRows(range), 2);
+    EXPECT_EQ(props.getRows(range.withNumMipLevels(2)), 4);
+  }
+  {
+    const auto range = TextureRangeDesc::new3D(0, 0, 0, 2, 2, 2);
+    const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
+    EXPECT_EQ(props.getRows(range), 4);
+    EXPECT_EQ(props.getRows(range.withNumMipLevels(2)), 5);
+  }
+  {
+    const auto range = TextureRangeDesc::new3D(0, 0, 0, 2, 2, 2);
+    const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGB_PVRTC_2BPPV1);
+    // MinBlocksY = 2
+    EXPECT_EQ(props.getRows(range), 4);
+    EXPECT_EQ(props.getRows(range.withNumMipLevels(2)), 6);
+  }
+  {
+    const auto range = TextureRangeDesc::new2DArray(0, 0, 2, 2, 0, 2);
+    const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
+    EXPECT_EQ(props.getRows(range), 4);
+    EXPECT_EQ(props.getRows(range.withNumMipLevels(2)), 6);
+  }
+  {
+    const auto range = TextureRangeDesc::new2DArray(0, 0, 2, 2, 0, 2);
+    const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGB_PVRTC_2BPPV1);
+    // MinBlocksY = 2
+    EXPECT_EQ(props.getRows(range), 4);
+    EXPECT_EQ(props.getRows(range.withNumMipLevels(2)), 8);
+  }
+  {
+    const auto range = TextureRangeDesc::newCube(0, 0, 2, 2);
+    const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
+    EXPECT_EQ(props.getRows(range), 12);
+    EXPECT_EQ(props.getRows(range.atFace(TextureCubeFace::NegX)), 2);
+    EXPECT_EQ(props.getRows(range.withNumMipLevels(2)), 18);
+  }
+  {
+    const auto range = TextureRangeDesc::newCube(0, 0, 2, 2);
+    const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGB_PVRTC_2BPPV1);
+    // MinBlocksY = 2
+    EXPECT_EQ(props.getRows(range), 12);
+    EXPECT_EQ(props.getRows(range.atFace(TextureCubeFace::NegX)), 2);
+    EXPECT_EQ(props.getRows(range.withNumMipLevels(2)), 24);
   }
 }
 
