@@ -389,12 +389,12 @@ TEST_F(TextureArrayTest, Upload_LayerByLayer_ModifySubTexture) {
 }
 
 //
-// Texture Passthrough Test
+// Texture Passthrough Test - Sample From Array
 //
-// This test uses a simple shader to copy the input texture to a same
-// sized output texture (offscreenTexture_)
+// This test uses a simple shader to copy a layer of the input array texture to an
+// a output texture that matches the size of the input texture layer
 //
-TEST_F(TextureArrayTest, Passthrough) {
+TEST_F(TextureArrayTest, Passthrough_SampleFromArray) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
@@ -468,6 +468,113 @@ TEST_F(TextureArrayTest, Passthrough) {
     const auto layerStr = "Layer " + std::to_string(layer);
     util::validateFramebufferTexture(
         *iglDev_, *cmdQueue_, *framebuffer_, textureArray2D[layer], layerStr.c_str());
+  }
+}
+
+//
+// Texture Passthrough Test - Render To Array
+//
+// This test uses a simple shader to copy a non-array input texture to an
+// a single layer of the array output texture. The size of the input texture matches the size of a
+// single layer in the output texture.
+//
+TEST_F(TextureArrayTest, Passthrough_RenderToArray) {
+  Result ret;
+  std::shared_ptr<IRenderPipelineState> pipelineState;
+
+  if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
+    GTEST_SKIP() << "Vulkan backend does not support render to array";
+  }
+  //---------------------------------
+  // Create input and output textures
+  //---------------------------------
+  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                           OFFSCREEN_TEX_WIDTH,
+                                           OFFSCREEN_TEX_HEIGHT,
+                                           TextureDesc::TextureUsageBits::Sampled);
+  inputTexture_ = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(inputTexture_ != nullptr);
+
+  texDesc = TextureDesc::new2DArray(TextureFormat::RGBA_UNorm8,
+                                    OFFSCREEN_TEX_WIDTH,
+                                    OFFSCREEN_TEX_HEIGHT,
+                                    kNumLayers,
+                                    TextureDesc::TextureUsageBits::Sampled);
+  auto customOffscreenTexture = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(customOffscreenTexture != nullptr);
+
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
+  const size_t bytesPerRow = OFFSCREEN_TEX_WIDTH * 4;
+
+  //--------------------------
+  // Create custom framebuffer
+  //--------------------------
+  FramebufferDesc framebufferDesc;
+  framebufferDesc.colorAttachments[0].texture = customOffscreenTexture;
+  auto customFramebuffer = iglDev_->createFramebuffer(framebufferDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(customFramebuffer != nullptr);
+
+  //----------------------------
+  // Create custom shader stages
+  //----------------------------
+  std::unique_ptr<IShaderStages> customStages;
+  igl::tests::util::createSimpleShaderStages(iglDev_, customStages);
+  renderPipelineDesc_.shaderStages = std::move(customStages);
+
+  //----------------
+  // Create Pipeline
+  //----------------
+  pipelineState = iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(pipelineState != nullptr);
+
+  for (size_t layer = 0; layer < kNumLayers; ++layer) {
+    //------------------
+    // Upload layer data
+    //------------------
+    ASSERT_TRUE(inputTexture_->upload(rangeDesc, textureArray2D[layer], bytesPerRow).isOk());
+
+    //-------
+    // Render
+    //-------
+    cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
+    ASSERT_EQ(ret.code, Result::Code::Ok);
+    ASSERT_TRUE(cmdBuf_ != nullptr);
+
+    renderPass_.colorAttachments[0].layer = layer;
+    auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, customFramebuffer);
+    cmds->bindBuffer(data::shader::simplePosIndex, BindTarget::kVertex, vb_, 0);
+    cmds->bindBuffer(data::shader::simpleUvIndex, BindTarget::kVertex, uv_, 0);
+
+    cmds->bindRenderPipelineState(pipelineState);
+
+    cmds->bindTexture(textureUnit_, BindTarget::kFragment, inputTexture_.get());
+    cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
+
+    cmds->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib_, 0);
+
+    cmds->endEncoding();
+
+    cmdQueue_->submit(*cmdBuf_);
+
+    cmdBuf_->waitUntilCompleted();
+  }
+
+  // Validate in a separate loop to ensure all layers are already written
+  for (size_t layer = 0; layer < kNumLayers; ++layer) {
+    //----------------
+    // Validate output
+    //----------------
+    const auto layerStr = "Layer " + std::to_string(layer);
+    util::validateFramebufferTextureRange(*iglDev_,
+                                          *cmdQueue_,
+                                          *customFramebuffer,
+                                          customOffscreenTexture->getLayerRange(layer),
+                                          textureArray2D[layer],
+                                          layerStr.c_str());
   }
 }
 
