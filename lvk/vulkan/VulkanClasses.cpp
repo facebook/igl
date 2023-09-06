@@ -1410,6 +1410,10 @@ const VkSurfaceFormatKHR& lvk::VulkanSwapchain::getSurfaceFormat() const {
   return surfaceFormat_;
 }
 
+uint32_t lvk::VulkanSwapchain::getNumSwapchainImages() const {
+  return numSwapchainImages_;
+}
+
 lvk::Result lvk::VulkanSwapchain::present(VkSemaphore waitSemaphore) {
   LVK_PROFILER_FUNCTION();
 
@@ -3735,6 +3739,10 @@ lvk::Format lvk::VulkanContext::getSwapchainFormat() const {
   }
 
   return vkFormatToFormat(swapchain_->getSurfaceFormat().format);
+}
+
+uint32_t lvk::VulkanContext::getNumSwapchainImages() const {
+  return hasSwapchain() ? swapchain_->getNumSwapchainImages() : 0;
 }
 
 lvk::TextureHandle lvk::VulkanContext::getCurrentSwapchainTexture() {
