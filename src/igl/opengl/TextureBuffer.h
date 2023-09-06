@@ -38,11 +38,18 @@ class TextureBuffer : public TextureBufferBase {
                 const TextureRangeDesc& range,
                 const void* data,
                 size_t bytesPerRow = 0) const;
-  Result upload1D(GLenum target, const TextureRangeDesc& range, const void* data) const;
-  Result upload1DArray(GLenum target, const TextureRangeDesc& range, const void* data) const;
-  Result upload2D(GLenum target, const TextureRangeDesc& range, const void* data) const;
-  Result upload2DArray(GLenum target, const TextureRangeDesc& range, const void* data) const;
-  Result upload3D(GLenum target, const TextureRangeDesc& range, const void* data) const;
+  Result upload2D(GLenum target,
+                  const TextureRangeDesc& range,
+                  bool texImage,
+                  const void* data) const;
+  Result upload2DArray(GLenum target,
+                       const TextureRangeDesc& range,
+                       bool texImage,
+                       const void* data) const;
+  Result upload3D(GLenum target,
+                  const TextureRangeDesc& range,
+                  bool texImage,
+                  const void* data) const;
 
  protected:
   // NOLINTNEXTLINE(misc-non-private-member-variables-in-classes)

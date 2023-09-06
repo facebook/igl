@@ -216,133 +216,10 @@ Result TextureBuffer::initializeWithTexStorage() const {
   return getContext().getLastError();
 }
 
-Result TextureBuffer::upload1D(GLenum target,
-                               const TextureRangeDesc& range,
-                               const void* data) const {
-  const auto result = validateRange(range);
-  if (!result.isOk()) {
-    return result;
-  }
-  // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
-  const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
-  if (data == nullptr || !getProperties().isCompressed()) {
-    if (texImage) {
-      getContext().texImage1D(target,
-                              (GLsizei)range.mipLevel,
-                              formatDescGL_.internalFormat,
-                              (GLsizei)range.width,
-                              0, // border
-                              formatDescGL_.format,
-                              formatDescGL_.type,
-                              data);
-    } else {
-      getContext().texSubImage1D(target,
-                                 (GLsizei)range.mipLevel,
-                                 (GLsizei)range.x,
-                                 (GLsizei)range.width,
-                                 formatDescGL_.format,
-                                 formatDescGL_.type,
-                                 data);
-    }
-  } else {
-    const auto numCompressedBytes = getProperties().getBytesPerRange(range);
-    IGL_ASSERT(numCompressedBytes > 0);
-    if (texImage) {
-      getContext().compressedTexImage1D(target,
-                                        (GLint)range.mipLevel,
-                                        formatDescGL_.internalFormat,
-                                        (GLsizei)range.width,
-                                        0, // border
-                                        (GLsizei)numCompressedBytes, // TODO: does not
-                                                                     // work for
-                                                                     // compressed mipmaps
-                                        data);
-    } else {
-      getContext().compressedTexSubImage1D(getTarget(),
-                                           (GLint)range.mipLevel,
-                                           (GLint)range.x,
-                                           (GLsizei)range.width,
-                                           formatDescGL_.internalFormat,
-                                           (GLsizei)numCompressedBytes, // TODO: does not work
-                                                                        // for compressed
-                                                                        // mipmaps
-                                           data);
-    }
-  }
-
-  return getContext().getLastError();
-}
-
-Result TextureBuffer::upload1DArray(GLenum target,
-                                    const TextureRangeDesc& range,
-                                    const void* data) const {
-  const auto result = validateRange(range);
-  if (!result.isOk()) {
-    return result;
-  }
-  // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
-  const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
-  if (data == nullptr || !getProperties().isCompressed()) {
-    if (texImage) {
-      getContext().texImage2D(target,
-                              (GLsizei)range.mipLevel,
-                              formatDescGL_.internalFormat,
-                              (GLsizei)range.width,
-                              (GLsizei)range.numLayers,
-                              0, // border
-                              formatDescGL_.format,
-                              formatDescGL_.type,
-                              data);
-    } else {
-      getContext().texSubImage2D(target,
-                                 (GLsizei)range.mipLevel,
-                                 (GLsizei)range.x,
-                                 (GLsizei)range.layer,
-                                 (GLsizei)range.width,
-                                 (GLsizei)range.numLayers,
-                                 formatDescGL_.format,
-                                 formatDescGL_.type,
-                                 data);
-    }
-  } else {
-    const auto numCompressedBytes = getProperties().getBytesPerRange(range);
-    IGL_ASSERT(numCompressedBytes > 0);
-    if (texImage) {
-      getContext().compressedTexImage2D(target,
-                                        (GLint)range.mipLevel,
-                                        formatDescGL_.internalFormat,
-                                        (GLsizei)range.width,
-                                        (GLsizei)range.numLayers,
-                                        0, // border
-                                        (GLsizei)numCompressedBytes, // TODO: does not
-                                                                     // work for
-                                                                     // compressed mipmaps
-                                        data);
-    } else {
-      getContext().compressedTexSubImage2D(getTarget(),
-                                           (GLint)range.mipLevel,
-                                           (GLint)range.x,
-                                           (GLint)range.layer,
-                                           (GLsizei)range.width,
-                                           (GLsizei)range.numLayers,
-                                           formatDescGL_.internalFormat,
-                                           (GLsizei)numCompressedBytes,
-                                           data);
-    }
-  }
-
-  return getContext().getLastError();
-}
-
 Result TextureBuffer::upload2D(GLenum target,
                                const TextureRangeDesc& range,
+                               bool texImage,
                                const void* data) const {
-  const auto result = validateRange(range);
-  if (!result.isOk()) {
-    return result;
-  }
-  // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
-  const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage2D(target,
@@ -397,13 +274,8 @@ Result TextureBuffer::upload2D(GLenum target,
 }
 Result TextureBuffer::upload2DArray(GLenum target,
                                     const TextureRangeDesc& range,
+                                    bool texImage,
                                     const void* data) const {
-  const auto result = validateRange(range);
-  if (!result.isOk()) {
-    return result;
-  }
-  // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
-  const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage3D(target,
@@ -463,13 +335,8 @@ Result TextureBuffer::upload2DArray(GLenum target,
 
 Result TextureBuffer::upload3D(GLenum target,
                                const TextureRangeDesc& range,
+                               bool texImage,
                                const void* data) const {
-  const auto result = validateRange(range);
-  if (!result.isOk()) {
-    return result;
-  }
-  // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
-  const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage3D(target,
@@ -568,25 +435,31 @@ Result TextureBuffer::upload(GLenum target,
       return Result(Result::Code::Unsupported, "face must be less than 6.");
     }
   }
+  const auto result = validateRange(range);
+  if (!result.isOk()) {
+    return result;
+  }
+  // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
+  const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
 
   getContext().pixelStorei(GL_UNPACK_ALIGNMENT, this->getAlignment(bytesPerRow, range.mipLevel));
 
   Result success;
   switch (type_) {
   case TextureType::TwoD:
-    return upload2D(target, range, data);
+    return upload2D(target, range, texImage, data);
   case TextureType::TwoDArray:
     if (!getContext().deviceFeatures().hasFeature(DeviceFeatures::Texture2DArray)) {
       return Result(Result::Code::Unsupported, "Unsupported texture type");
     }
-    return upload2DArray(target, range, data);
+    return upload2DArray(target, range, texImage, data);
   case TextureType::ThreeD:
     if (!getContext().deviceFeatures().hasFeature(DeviceFeatures::Texture3D)) {
       return Result(Result::Code::Unsupported, "Unsupported texture type");
     }
-    return upload3D(target, range, data);
+    return upload3D(target, range, texImage, data);
   case TextureType::Cube: {
-    return upload2D(kCubeFaceTargets[range.face], range, data);
+    return upload2D(kCubeFaceTargets[range.face], range, texImage, data);
   }
   default:
     IGL_ASSERT_MSG(false, "Unknown texture type");
