@@ -418,6 +418,8 @@ std::vector<VkFormat> getCompatibleDepthStencilFormats(lvk::Format format) {
     return {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
   case lvk::Format_Z_UN24_S_UI8:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT};
+  case lvk::Format_Z_F32_S_UI8:
+    return {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT};
   default:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT};
   }

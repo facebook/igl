@@ -74,6 +74,7 @@ static constexpr TextureFormatProperties properties[] = {
     PROPS(Z_UN24, 3, .depth = true),
     PROPS(Z_F32, 4, .depth = true),
     PROPS(Z_UN24_S_UI8, 4, .depth = true, .stencil = true),
+    PROPS(Z_F32_S_UI8, 5, .depth = true, .stencil = true),
 };
 
 } // namespace
@@ -83,7 +84,7 @@ void* createCocoaWindowView(GLFWwindow* window);
 #endif
 
 static_assert(sizeof(TextureFormatProperties) <= sizeof(uint32_t));
-static_assert(LVK_ARRAY_NUM_ELEMENTS(properties) == lvk::Format_Z_UN24_S_UI8 + 1);
+static_assert(LVK_ARRAY_NUM_ELEMENTS(properties) == lvk::Format_Z_F32_S_UI8 + 1);
 
 bool lvk::isDepthOrStencilFormat(lvk::Format format) {
   return properties[format].depth || properties[format].stencil;

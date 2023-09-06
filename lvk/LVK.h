@@ -1,4 +1,4 @@
-﻿/*
+/*
  * LightweightVK
  *
  * This source code is licensed under the MIT license found in the
@@ -471,6 +471,7 @@ enum Format : uint8_t {
   Format_Z_UN24,
   Format_Z_F32,
   Format_Z_UN24_S_UI8,
+  Format_Z_F32_S_UI8,
 };
 
 enum LoadOp : uint8_t {
