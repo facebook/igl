@@ -4039,6 +4039,7 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
       .drawIndirectFirstInstance = VK_TRUE,
       .depthBiasClamp = VK_TRUE,
       .fillModeNonSolid = VK_TRUE,
+      .samplerAnisotropy = VK_TRUE,
       .textureCompressionBC = VK_TRUE,
   };
   VkPhysicalDeviceVulkan11Features deviceFeatures11 = {
