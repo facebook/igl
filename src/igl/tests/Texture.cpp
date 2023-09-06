@@ -624,6 +624,119 @@ TEST(TextureFormatProperties, getBytesPerRange) {
   }
 }
 
+TEST(TextureFormatProperties, getSubRangeByteOffset) {
+  {
+    const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
+    {
+      // 2D Range
+      const auto range = TextureRangeDesc::new2D(0, 0, 10, 10, 0, 3);
+      // Level 0: 10 pixels x 10 pixels = 400 bytes
+      // Level 1:  5 pixels x  5 pixels = 100 bytes
+      // Level 2:  2 pixels x  2 pixels =  16 bytes
+
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range), 0);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(1)), 400);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(2)), 500);
+    }
+
+    {
+      // 2D Aray Range
+      const auto range = TextureRangeDesc::new2DArray(0, 0, 10, 10, 0, 2, 0, 3);
+      // Level 0: 10 pixels x 10 pixels x 2 layers = 800 bytes
+      // Level 1:  5 pixels x  5 pixels x 2 layers = 200 bytes
+      // Level 2:  2 pixels x  2 pixels x 2 layers =  32 bytes
+
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range), 0);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atLayer(1)), 400);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(1)), 800);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(1).atLayer(1)), 900);
+
+      // Custom row length
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atLayer(1), 50), 500);
+    }
+
+    {
+      // 3D Range
+      const auto range = TextureRangeDesc::new3D(0, 0, 0, 10, 10, 10, 0, 3);
+      // Level 0: 10 pixels x 10 pixels x 10 pixels = 4000 bytes
+      // Level 1:  5 pixels x  5 pixels x  5 pixels =  500 bytes
+      // Level 2:  2 pixels x  2 pixels x  2 pixels =   32 bytes
+
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range), 0);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(1)), 4000);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(2)), 4500);
+    }
+
+    {
+      // Cube Range
+      const auto range = TextureRangeDesc::newCube(0, 0, 10, 10, 0, 3);
+      // Level 0: 10 pixels x 10 pixels x 6 faces = 2400 bytes
+      // Level 1:  5 pixels x  5 pixels x 6 faces =  600 bytes
+      // Level 2:  2 pixels x  2 pixels x 6 faces =   96 bytes
+
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range), 0);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atFace(1)), 400);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(1)), 2400);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(1).atFace(1)), 2500);
+
+      // Custom row length
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atFace(1), 50), 500);
+    }
+  }
+  {
+    const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGB_PVRTC_2BPPV1);
+    {
+      // 2D Range
+      const auto range = TextureRangeDesc::new2D(0, 0, 10, 10, 0, 3);
+      // Level 0: 2 blocks x 3 blocks x 8 bytes = 48 bytes
+      // Level 1: 2 blocks x 2 blocks x 8 bytes = 32 bytes
+      // Level 2: 2 blocks x 2 blocks x 8 bytes = 32 bytes
+
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range), 0);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(1)), 48);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(2)), 80);
+    }
+
+    {
+      // 2D Aray Range
+      const auto range = TextureRangeDesc::new2DArray(0, 0, 10, 10, 0, 2, 0, 3);
+      // Level 0: 2 blocks x 3 blocks x 2 layers x 8 bytes = 96 bytes
+      // Level 1: 2 blocks x 2 blocks x 2 layers x 8 bytes = 64 bytes
+      // Level 2: 2 blocks x 2 blocks x 2 layers x 8 bytes = 64 bytes
+
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range), 0);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atLayer(1)), 48);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(1)), 96);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(1).atLayer(1)), 128);
+    }
+
+    {
+      // 3D Range
+      const auto range = TextureRangeDesc::new3D(0, 0, 0, 10, 10, 10, 0, 3);
+      // Level 0: 2 blocks x 3 blocks x 10 pixels x 8 bytes = 480 bytes
+      // Level 1: 2 blocks x 2 blocks x  5 pixels x 8 bytes = 160 bytes
+      // Level 2: 2 blocks x 2 blocks x  2 pixels x 8 bytes =  64 bytes
+
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range), 0);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(1)), 480);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(2)), 640);
+    }
+
+    {
+      // Cube Range
+      const auto range = TextureRangeDesc::newCube(0, 0, 10, 10, 0, 3);
+      // Level 0: 2 blocks x 3 blocks x 6 faces x 8 bytes = 288 bytes
+      // Level 1: 2 blocks x 2 blocks x 6 faces x 8 bytes = 192 bytes
+      // Level 2: 2 blocks x 2 blocks x 6 faces x 8 bytes = 192 bytes
+
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range), 0);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atFace(1)), 48);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(1)), 288);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(1).atFace(1)), 320);
+    }
+  }
+}
+
 TEST_F(TextureTest, Upload) {
   Result ret;
 

@@ -356,7 +356,9 @@ size_t TextureFormatProperties::getBytesPerRange(TextureRangeDesc range,
   return bytes;
 }
 
-size_t TextureFormatProperties::getNumMipLevels(size_t width, size_t height, size_t totalBytes) {
+size_t TextureFormatProperties::getNumMipLevels(size_t width,
+                                                size_t height,
+                                                size_t totalBytes) const noexcept {
   auto range = TextureRangeDesc::new2D(0, 0, width, height);
 
   size_t numMipLevels = 0;
@@ -369,6 +371,51 @@ size_t TextureFormatProperties::getNumMipLevels(size_t width, size_t height, siz
     ++numMipLevels;
   }
   return numMipLevels;
+}
+
+size_t TextureFormatProperties::getSubRangeByteOffset(const TextureRangeDesc& range,
+                                                      const TextureRangeDesc& subRange,
+                                                      size_t bytesPerRow) const noexcept {
+  // Ensure subRange's layer, face and mipLevel range is a subset of range's.
+  IGL_ASSERT(subRange.layer >= range.layer &&
+             (subRange.layer + subRange.numLayers) <= (range.layer + range.numLayers));
+  IGL_ASSERT(subRange.face >= range.face &&
+             (subRange.face + subRange.numFaces) <= (range.face + range.numFaces));
+  IGL_ASSERT(subRange.mipLevel >= range.mipLevel &&
+             (subRange.mipLevel + subRange.numMipLevels) <= (range.mipLevel + range.numMipLevels));
+
+  // Ensure subRange's dimensions are equal to the full dimensions of range's at subRange's first
+  // mip level.
+  IGL_ASSERT(subRange.x == range.atMipLevel(subRange.mipLevel).x &&
+             subRange.width == range.atMipLevel(subRange.mipLevel).width);
+  IGL_ASSERT(subRange.y == range.atMipLevel(subRange.mipLevel).y &&
+             subRange.height == range.atMipLevel(subRange.mipLevel).height);
+  IGL_ASSERT(subRange.z == range.atMipLevel(subRange.mipLevel).z &&
+             subRange.depth == range.atMipLevel(subRange.mipLevel).depth);
+
+  // Ensure bytes per row is either 0 OR subrange covers only the base mip level of range.
+  IGL_ASSERT(bytesPerRow == 0 ||
+             (subRange.mipLevel == range.mipLevel && subRange.numMipLevels == 1) ||
+             bytesPerRow == getBytesPerRow(subRange));
+
+  size_t offset = 0;
+  auto workingRange = range;
+  if (subRange.mipLevel > workingRange.mipLevel) {
+    offset += getBytesPerRange(
+        workingRange.withNumMipLevels(subRange.mipLevel - workingRange.mipLevel), bytesPerRow);
+  }
+  workingRange = workingRange.atMipLevel(subRange.mipLevel);
+  if (subRange.layer > workingRange.layer) {
+    offset += getBytesPerRange(workingRange.withNumLayers(subRange.layer - workingRange.layer),
+                               bytesPerRow);
+  }
+  workingRange = workingRange.atLayer(subRange.layer);
+  if (subRange.face > workingRange.face) {
+    offset +=
+        getBytesPerRange(workingRange.withNumFaces(subRange.face - workingRange.face), bytesPerRow);
+  }
+
+  return offset;
 }
 
 uint32_t TextureDesc::calcNumMipLevels(size_t width, size_t height) {

@@ -350,7 +350,34 @@ struct TextureFormatProperties {
    * @param texHeight  The height of the first mip level of the texture.
    * @return Calculated number of mip levels.
    */
-  [[nodiscard]] size_t getNumMipLevels(size_t texWidth, size_t texHeight, size_t totalBytes);
+  [[nodiscard]] size_t getNumMipLevels(size_t texWidth,
+                                       size_t texHeight,
+                                       size_t totalBytes) const noexcept;
+
+  /**
+   * @brief Utility function to calculate the byte offset of the start of a subrange within a block
+   * of data.
+   *
+   * This method assumes the following data hierarchy:
+   *   mip level
+   *     array layer
+   *       cube face
+   *         z slice
+   *           row
+   *
+   * This method only handles the case where the subrange is a proper subset of the full block of
+   * data. It also only handles subranges in terms of mip levels, layers or faces. It does not
+   * handle subsets along the x, y or z dimensions.
+   *
+   * @param range The range of the full block of data.
+   * @param subRange The subrange within the full block of data for which to get the byte offset.
+   * @param bytesPerRow The number of bytes in each row of range (the full block of data). 0 means
+   * the default for the texture format. Must be 0 if subrange starts at a different mip level than
+   * the full range or covers more than one mip level.
+   * @return The byte offset within the full block of data for the start of the subrange. */
+  [[nodiscard]] size_t getSubRangeByteOffset(const TextureRangeDesc& range,
+                                             const TextureRangeDesc& subRange,
+                                             size_t bytesPerRow = 0) const noexcept;
 };
 
 /**
