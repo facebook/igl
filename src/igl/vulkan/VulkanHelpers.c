@@ -354,7 +354,6 @@ VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
   }
 #endif // defined(VK_KHR_buffer_device_address)
 
-#if defined(VK_KHR_multiview)
   // Note this must exist outside of the if statement below
   // due to scope issues.
   VkPhysicalDeviceMultiviewFeatures multiviewFeature = {
@@ -364,7 +363,6 @@ VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
   if (enableMultiview == VK_TRUE) {
     ivkAddNext(&ci, &multiviewFeature);
   }
-#endif // defined(VK_KHR_multiview)
 
   return vkCreateDevice(physicalDevice, &ci, NULL, outDevice);
 }
