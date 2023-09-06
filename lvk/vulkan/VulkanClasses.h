@@ -53,6 +53,7 @@ class VulkanBuffer final {
     return mappedPtr_ != nullptr;
   }
   void flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) const;
+  void invalidateMappedMemory(VkDeviceSize offset, VkDeviceSize size) const;
 
  public:
   lvk::VulkanContext* ctx_ = nullptr;
@@ -66,6 +67,7 @@ class VulkanBuffer final {
   VkBufferUsageFlags vkUsageFlags_ = 0;
   VkMemoryPropertyFlags vkMemFlags_ = 0;
   void* mappedPtr_ = nullptr;
+  bool isCoherentMemory_ = false;
 };
 
 class VulkanImage final {

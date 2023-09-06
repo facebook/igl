@@ -657,11 +657,24 @@ lvk::VulkanBuffer::VulkanBuffer(lvk::VulkanContext* ctx,
     // Initialize VmaAllocation Info
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
       vmaAllocInfo_.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-      vmaAllocInfo_.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-      vmaAllocInfo_.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+      vmaAllocInfo_.preferredFlags =
+          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+      vmaAllocInfo_.flags =
+          VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
     }
-    if (memFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
-      vmaAllocInfo_.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+      // Check if coherent buffer is available.
+      VK_ASSERT(vkCreateBuffer(device_, &ci, nullptr, &vkBuffer_));
+      VkMemoryRequirements requirements = {};
+      vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
+      vkDestroyBuffer(device, vkBuffer_, nullptr);
+      vkBuffer_ = VK_NULL_HANDLE;
+
+      if (requirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+        vmaAllocInfo_.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        isCoherentMemory_ = true;
+      }
     }
 
     vmaAllocInfo_.usage = VMA_MEMORY_USAGE_AUTO;
@@ -680,6 +693,9 @@ lvk::VulkanBuffer::VulkanBuffer(lvk::VulkanContext* ctx,
     {
       VkMemoryRequirements requirements = {};
       vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
+      if (requirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+        isCoherentMemory_ = true;
+      }
 
       VK_ASSERT(lvk::allocateMemory(ctx_->getVkPhysicalDevice(), device_, &requirements, memFlags, &vkMemory_));
       VK_ASSERT(vkBindBufferMemory(device_, vkBuffer_, vkMemory_, 0));
@@ -770,13 +786,31 @@ void lvk::VulkanBuffer::flushMappedMemory(VkDeviceSize offset, VkDeviceSize size
   if (LVK_VULKAN_USE_VMA) {
     vmaFlushAllocation((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, offset, size);
   } else {
-    const VkMappedMemoryRange memoryRange = {
+    const VkMappedMemoryRange range = {
         .sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
         .memory = vkMemory_,
         .offset = offset,
         .size = size,
     };
-    vkFlushMappedMemoryRanges(device_, 1, &memoryRange);
+    vkFlushMappedMemoryRanges(device_, 1, &range);
+  }
+}
+
+void lvk::VulkanBuffer::invalidateMappedMemory(VkDeviceSize offset, VkDeviceSize size) const {
+  if (!LVK_VERIFY(isMapped())) {
+    return;
+  }
+
+  if (LVK_VULKAN_USE_VMA) {
+    vmaInvalidateAllocation(static_cast<VmaAllocator>(ctx_->getVmaAllocator()), vmaAllocation_, offset, size);
+  } else {
+    const VkMappedMemoryRange range = {
+        .sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+        .memory = vkMemory_,
+        .offset = offset,
+        .size = size,
+    };
+    vkInvalidateMappedMemoryRanges(device_, 1, &range);
   }
 }
 
@@ -789,6 +823,10 @@ void lvk::VulkanBuffer::getBufferSubData(size_t offset, size_t size, void* data)
   }
 
   LVK_ASSERT(offset + size <= bufferSize_);
+
+  if (!isCoherentMemory_) {
+    invalidateMappedMemory(offset, size);
+  }
 
   const uint8_t* src = static_cast<uint8_t*>(mappedPtr_) + offset;
   memcpy(data, src, size);
@@ -808,6 +846,10 @@ void lvk::VulkanBuffer::bufferSubData(size_t offset, size_t size, const void* da
     memcpy((uint8_t*)mappedPtr_ + offset, data, size);
   } else {
     memset((uint8_t*)mappedPtr_ + offset, 0, size);
+  }
+
+  if (!isCoherentMemory_) {
+    flushMappedMemory(offset, size);
   }
 }
 
