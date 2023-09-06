@@ -577,21 +577,23 @@ TEST(TextureFormatProperties, getBytesPerLayer) {
   {
     const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
     EXPECT_EQ(props.getBytesPerLayer(range), 10 * 10 * 4);
+    EXPECT_EQ(props.getBytesPerLayer(range, 50), 10 * 50);
+
+    EXPECT_EQ(props.getBytesPerLayer(10, 10, 1), 10 * 10 * 4);
+    EXPECT_EQ(props.getBytesPerLayer(10, 10, 1, 50), 10 * 50);
   }
   {
     const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGB_PVRTC_2BPPV1);
     // 2 blocks x 3 blocks
     EXPECT_EQ(props.getBytesPerLayer(range), 2 * 3 * 8);
+    EXPECT_EQ(props.getBytesPerLayer(10, 10, 1), 2 * 3 * 8);
   }
 }
 
 TEST(TextureFormatProperties, getBytesPerRange) {
-  auto range = TextureRangeDesc::new2D(0, 0, 10, 10);
-  auto cubeRange = TextureRangeDesc::newCube(0, 0, 10, 10);
-  auto cubeFaceRange = TextureRangeDesc::newCubeFace(0, 0, 10, 10, TextureCubeFace::PosZ);
-  range.numMipLevels = 3;
-  cubeRange.numMipLevels = 3;
-  cubeFaceRange.numMipLevels = 3;
+  auto range = TextureRangeDesc::new2D(0, 0, 10, 10, 0, 3);
+  auto cubeRange = TextureRangeDesc::newCube(0, 0, 10, 10, 0, 3);
+  auto cubeFaceRange = TextureRangeDesc::newCubeFace(0, 0, 10, 10, TextureCubeFace::PosZ, 0, 3);
   {
     const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
     // Level 0: 10 pixels x 10 pixels
@@ -601,6 +603,14 @@ TEST(TextureFormatProperties, getBytesPerRange) {
     EXPECT_EQ(props.getBytesPerRange(range), bytes);
     EXPECT_EQ(props.getBytesPerRange(cubeRange), bytes * 6);
     EXPECT_EQ(props.getBytesPerRange(cubeFaceRange), bytes);
+  }
+  {
+    const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
+    // Level 0: 10 pixels x 10 pixels
+    const auto bytes = 10 * 50;
+    EXPECT_EQ(props.getBytesPerRange(range.atMipLevel(0), 50), bytes);
+    EXPECT_EQ(props.getBytesPerRange(cubeRange.atMipLevel(0), 50), bytes * 6);
+    EXPECT_EQ(props.getBytesPerRange(cubeFaceRange.atMipLevel(0), 50), bytes);
   }
   {
     const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGB_PVRTC_2BPPV1);

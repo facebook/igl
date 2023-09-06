@@ -314,11 +314,14 @@ size_t TextureFormatProperties::getBytesPerRow(TextureRangeDesc range) const noe
 
 size_t TextureFormatProperties::getBytesPerLayer(size_t texWidth,
                                                  size_t texHeight,
-                                                 size_t texDepth) const noexcept {
-  return getBytesPerLayer(TextureRangeDesc::new3D(0, 0, 0, texWidth, texHeight, texDepth));
+                                                 size_t texDepth,
+                                                 size_t bytesPerRow) const noexcept {
+  return getBytesPerLayer(TextureRangeDesc::new3D(0, 0, 0, texWidth, texHeight, texDepth),
+                          bytesPerRow);
 }
 
-size_t TextureFormatProperties::getBytesPerLayer(TextureRangeDesc range) const noexcept {
+size_t TextureFormatProperties::getBytesPerLayer(TextureRangeDesc range,
+                                                 size_t bytesPerRow) const noexcept {
   const auto texWidth = std::max(range.width, static_cast<size_t>(1));
   const auto texHeight = std::max(range.height, static_cast<size_t>(1));
   const auto texDepth = std::max(range.depth, static_cast<size_t>(1));
@@ -330,20 +333,24 @@ size_t TextureFormatProperties::getBytesPerLayer(TextureRangeDesc range) const n
         std::max((texHeight + blockHeight - 1) / blockHeight, static_cast<size_t>(minBlocksY));
     const size_t depthInBlocks =
         std::max((texDepth + blockDepth - 1) / blockDepth, static_cast<size_t>(minBlocksZ));
-    return texFaces * widthInBlocks * heightInBlocks * depthInBlocks * bytesPerBlock;
+    const size_t widthBytes = std::max(bytesPerRow, widthInBlocks * bytesPerBlock);
+    return texFaces * widthBytes * heightInBlocks * depthInBlocks;
   } else {
-    return texFaces * texWidth * texHeight * texDepth * bytesPerBlock;
+    const size_t widthBytes = std::max(bytesPerRow, texWidth * bytesPerBlock);
+    return texFaces * widthBytes * texHeight * texDepth;
   }
 }
 
-size_t TextureFormatProperties::getBytesPerRange(TextureRangeDesc range) const noexcept {
+size_t TextureFormatProperties::getBytesPerRange(TextureRangeDesc range,
+                                                 size_t bytesPerRow) const noexcept {
   IGL_ASSERT(range.x % blockWidth == 0);
   IGL_ASSERT(range.y % blockHeight == 0);
   IGL_ASSERT(range.z % blockDepth == 0);
+  IGL_ASSERT(bytesPerRow == 0 || bytesPerRow == getBytesPerRow(range) || range.numMipLevels == 1);
 
   size_t bytes = 0;
   for (size_t i = 0; i < range.numMipLevels; ++i) {
-    bytes += getBytesPerLayer(range.atMipLevel(range.mipLevel + i)) * range.numLayers;
+    bytes += getBytesPerLayer(range.atMipLevel(range.mipLevel + i), bytesPerRow) * range.numLayers;
   }
 
   return bytes;

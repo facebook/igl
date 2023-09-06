@@ -273,7 +273,7 @@ struct TextureFormatProperties {
    * dimensions.
    * @return Calculated number of rows of texture data for the texture format.
    */
-  size_t getRows(TextureRangeDesc range) const noexcept;
+  [[nodiscard]] size_t getRows(TextureRangeDesc range) const noexcept;
 
   /**
    * @brief Utility function to calculate the size in bytes per row for a texture format.
@@ -301,6 +301,7 @@ struct TextureFormatProperties {
    * @param texWidth  The width of the texture layer.
    * @param texHeight  The height of the texture layer.
    * @param texDepth  The depth of the texture layer.
+   * @param bytesPerRow The size in bytes of each texture row. 0 for the format's default.
    * @remark texWidth, texHeight and texDepth should be the actual dimensions of the range to
    * calculate for. For subranges and mip levels other than 0, this should be the dimensions of the
    * subrange and/or mip level, which may be be less than the full texture dimensions.
@@ -308,7 +309,8 @@ struct TextureFormatProperties {
    */
   [[nodiscard]] size_t getBytesPerLayer(size_t texWidth,
                                         size_t texHeight,
-                                        size_t texDepth) const noexcept;
+                                        size_t texDepth,
+                                        size_t bytesPerRow = 0) const noexcept;
 
   /**
    * @brief Utility function to calculate the size in bytes per texture layer for a texture format.
@@ -316,24 +318,29 @@ struct TextureFormatProperties {
    * @param range  The range of the texture to calculate for. The range should be the full size of
    * the first mip level to calculate for. range.x, range.y, range.z, range.mipLevel and range.layer
    * are not used.
+   * @param bytesPerRow The size in bytes of each texture row. 0 for the format's default.
    * @remark range.width, range.height, and range.depth should be the actual dimensions of the range
    * to calculate for. For subranges and mip levels other than 0, these should be the dimensions of
    * the subrange and/or mip level, which may be be less than the full texture dimensions.
    * @return Calculated total size in bytes of a layer of texture data for the texture format.
    */
-  size_t getBytesPerLayer(TextureRangeDesc range) const noexcept;
+  [[nodiscard]] size_t getBytesPerLayer(TextureRangeDesc range,
+                                        size_t bytesPerRow = 0) const noexcept;
 
   /**
    * @brief Utility function to calculate the size in bytes per texture range for a texture format.
    *
    * @param range  The range of the texture to calculate for. The range should be the full size of
    * the first mip level to calculate for. range.x, range.y and range.z are not used.
+   * @param bytesPerRow The size in bytes of each texture row. 0 for the format's default. This
+   * mustt be 0 if numMipLevels is more than 1.
    * @remark range can include more than one layer. range can also include more than one mip level.
    * When range includes more than one mip level, dimensions  are divided by two for each subsequent
    * mip level.
    * @return Calculated total size in bytes of a the range of texture data for the texture format.
    */
-  [[nodiscard]] size_t getBytesPerRange(TextureRangeDesc range) const noexcept;
+  [[nodiscard]] size_t getBytesPerRange(TextureRangeDesc range,
+                                        size_t bytesPerRow = 0) const noexcept;
 
   /**
    * @brief Utility function to calculate the number of mip levels given a total size in bytes of
