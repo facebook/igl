@@ -313,6 +313,22 @@ TEST(TextureRangeDesc, Construction) {
 
 TEST(TextureRangeDesc, AtMipLevel) {
   {
+    const auto initialRange = TextureRangeDesc::new3D(0, 2, 5, 2, 10, 16, 0, 2);
+    const auto range = initialRange.atMipLevel(0);
+    EXPECT_EQ(range.x, 0);
+    EXPECT_EQ(range.y, 2);
+    EXPECT_EQ(range.z, 5);
+    EXPECT_EQ(range.width, 2);
+    EXPECT_EQ(range.height, 10);
+    EXPECT_EQ(range.depth, 16);
+    EXPECT_EQ(range.layer, 0);
+    EXPECT_EQ(range.numLayers, 1);
+    EXPECT_EQ(range.mipLevel, 0);
+    EXPECT_EQ(range.numMipLevels, 1);
+    EXPECT_EQ(range.face, 0);
+    EXPECT_EQ(range.numFaces, 1);
+  }
+  {
     const auto initialRange = TextureRangeDesc::new3D(0, 2, 5, 2, 10, 16, 0);
     const auto range = initialRange.atMipLevel(1);
     EXPECT_EQ(range.x, 0);
@@ -341,6 +357,25 @@ TEST(TextureRangeDesc, AtMipLevel) {
     EXPECT_EQ(range.numLayers, 2);
     EXPECT_EQ(range.mipLevel, 3);
     EXPECT_EQ(range.numMipLevels, 1);
+    EXPECT_EQ(range.face, 0);
+    EXPECT_EQ(range.numFaces, 1);
+  }
+}
+
+TEST(TextureRangeDesc, WithNumMipLevels) {
+  {
+    const auto initialRange = TextureRangeDesc::new2D(2, 3, 4, 5, 6, 7);
+    const auto range = initialRange.withNumMipLevels(8);
+    EXPECT_EQ(range.x, 2);
+    EXPECT_EQ(range.y, 3);
+    EXPECT_EQ(range.z, 0);
+    EXPECT_EQ(range.width, 4);
+    EXPECT_EQ(range.height, 5);
+    EXPECT_EQ(range.depth, 1);
+    EXPECT_EQ(range.layer, 0);
+    EXPECT_EQ(range.numLayers, 1);
+    EXPECT_EQ(range.mipLevel, 6);
+    EXPECT_EQ(range.numMipLevels, 8);
     EXPECT_EQ(range.face, 0);
     EXPECT_EQ(range.numFaces, 1);
   }

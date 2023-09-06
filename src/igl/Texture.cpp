@@ -110,25 +110,31 @@ TextureRangeDesc TextureRangeDesc::newCubeFace(size_t x,
 }
 
 TextureRangeDesc TextureRangeDesc::atMipLevel(size_t newMipLevel) const noexcept {
-  if (newMipLevel == mipLevel) {
-    return *this;
-  } else if (IGL_VERIFY(newMipLevel > mipLevel)) {
-    const auto delta = newMipLevel - mipLevel;
-    TextureRangeDesc newRange = *this;
-    newRange.x = x >> delta;
-    newRange.y = y >> delta;
-    newRange.z = z >> delta;
-    newRange.width = std::max(width >> delta, static_cast<size_t>(1));
-    newRange.height = std::max(height >> delta, static_cast<size_t>(1));
-    newRange.depth = std::max(depth >> delta, static_cast<size_t>(1));
-
-    newRange.mipLevel = newMipLevel;
-    newRange.numMipLevels = 1;
-
+  TextureRangeDesc newRange = *this;
+  newRange.numMipLevels = 1;
+  newRange.mipLevel = newMipLevel;
+  if (IGL_UNEXPECTED(newMipLevel < mipLevel) || newMipLevel == mipLevel) {
     return newRange;
   }
 
-  return *this;
+  const auto delta = newMipLevel - mipLevel;
+  newRange.x = x >> delta;
+  newRange.y = y >> delta;
+  newRange.z = z >> delta;
+  newRange.width = std::max(width >> delta, static_cast<size_t>(1));
+  newRange.height = std::max(height >> delta, static_cast<size_t>(1));
+  newRange.depth = std::max(depth >> delta, static_cast<size_t>(1));
+
+  newRange.numMipLevels = 1;
+
+  return newRange;
+}
+
+TextureRangeDesc TextureRangeDesc::withNumMipLevels(size_t newNumMipLevels) const noexcept {
+  TextureRangeDesc newRange = *this;
+  newRange.numMipLevels = newNumMipLevels;
+
+  return newRange;
 }
 
 TextureRangeDesc TextureRangeDesc::atLayer(size_t newLayer) const noexcept {

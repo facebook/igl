@@ -142,6 +142,13 @@ struct TextureRangeDesc {
    */
   [[nodiscard]] TextureRangeDesc atMipLevel(size_t newMipLevel) const noexcept;
   /**
+   * @brief Returns a new TextureRangeDesc based on this one but with the specified number of
+   * mip levels.
+   *
+   * @param newNumMipLevels The number of mip levels in the returned range.
+   */
+  [[nodiscard]] TextureRangeDesc withNumMipLevels(size_t newNumMipLevels) const noexcept;
+  /**
    * @brief Returns a new TextureRangeDesc based on this one but reduced to the specified layer.
    *
    * @param newLayer The layer of the returned range.
