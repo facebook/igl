@@ -143,8 +143,15 @@ class TextureCubeTest : public ::testing::Test {
     inputDesc.attributes[0].location = 0;
     inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
+    inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
+    inputDesc.attributes[1].offset = 0;
+    inputDesc.attributes[1].bufferIndex = data::shader::simpleUvIndex;
+    inputDesc.attributes[1].name = data::shader::simpleUv;
+    inputDesc.attributes[1].location = 1;
+    inputDesc.inputBindings[1].stride = sizeof(float) * 2;
+
     // numAttributes has to equal to bindings when using more than 1 buffer
-    inputDesc.numAttributes = inputDesc.numInputBindings = 1;
+    inputDesc.numAttributes = inputDesc.numInputBindings = 2;
 
     vertexInputState_ = iglDev_->createVertexInputState(inputDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -169,6 +176,15 @@ class TextureCubeTest : public ::testing::Test {
     vb_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(vb_ != nullptr);
+
+    // Initialize UV data and sampler buffer
+    bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
+    bufDesc.data = data::vertex_index::QUAD_UV;
+    bufDesc.length = sizeof(data::vertex_index::QUAD_UV);
+
+    uv_ = iglDev_->createBuffer(bufDesc, &ret);
+    ASSERT_EQ(ret.code, Result::Code::Ok);
+    ASSERT_TRUE(uv_ != nullptr);
 
     // Initialize sampler state
     SamplerStateDesc samplerDesc;
@@ -266,22 +282,23 @@ TEST_F(TextureCubeTest, Upload) {
   }
 
   for (size_t face = 0; face < 6; ++face) {
+    const auto faceStr = "Face " + std::to_string(face);
     util::validateUploadedTextureRange(*iglDev_,
                                        *cmdQueue_,
                                        tex,
                                        tex->getCubeFaceRange(face),
                                        textureArray[face],
-                                       (std::string("Face ") + std::to_string(face)).c_str());
+                                       faceStr.c_str());
   }
 }
 
 //
-// Texture Passthrough Test
+// Texture Passthrough Test - Sample From Cube
 //
-// This test uses a simple shader to copy the input texture to a same
-// sized output texture (offscreenTexture_)
+// This test uses a simple shader to copy a face of the input cube texture to an
+// a output texture that matches the size of the input texture face
 //
-TEST_F(TextureCubeTest, Passthrough) {
+TEST_F(TextureCubeTest, Passthrough_SampleFromCube) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
@@ -353,8 +370,115 @@ TEST_F(TextureCubeTest, Passthrough) {
     //----------------
     // Validate output
     //----------------
+    const auto faceStr = std::string("Face ") + std::to_string(face);
     util::validateFramebufferTexture(
-        *iglDev_, *cmdQueue_, *framebuffer_, textureArray[face], "Passthrough");
+        *iglDev_, *cmdQueue_, *framebuffer_, textureArray[face], faceStr.c_str());
+  }
+}
+
+//
+// Texture Passthrough Test - Render To Cube
+//
+// This test uses a simple shader to copy a non-cube input texture to an
+// a single face of the cube output texture. The size of the input texture matches the size of a
+// single face in the output texture.
+//
+TEST_F(TextureCubeTest, Passthrough_RenderToCube) {
+  Result ret;
+  std::shared_ptr<IRenderPipelineState> pipelineState;
+
+  if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
+    GTEST_SKIP() << "Vulkan backend does not support render to cube face";
+  }
+  //---------------------------------
+  // Create input and output textures
+  //---------------------------------
+  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                           OFFSCREEN_TEX_WIDTH,
+                                           OFFSCREEN_TEX_HEIGHT,
+                                           TextureDesc::TextureUsageBits::Sampled);
+  inputTexture_ = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(inputTexture_ != nullptr);
+
+  texDesc = TextureDesc::newCube(TextureFormat::RGBA_UNorm8,
+                                 OFFSCREEN_TEX_WIDTH,
+                                 OFFSCREEN_TEX_HEIGHT,
+                                 TextureDesc::TextureUsageBits::Sampled);
+  auto customOffscreenTexture = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(customOffscreenTexture != nullptr);
+
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
+  const size_t bytesPerRow = OFFSCREEN_TEX_WIDTH * 4;
+
+  //--------------------------
+  // Create custom framebuffer
+  //--------------------------
+  FramebufferDesc framebufferDesc;
+  framebufferDesc.colorAttachments[0].texture = customOffscreenTexture;
+  auto customFramebuffer = iglDev_->createFramebuffer(framebufferDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(customFramebuffer != nullptr);
+
+  //----------------------------
+  // Create custom shader stages
+  //----------------------------
+  std::unique_ptr<IShaderStages> customStages;
+  igl::tests::util::createSimpleShaderStages(iglDev_, customStages);
+  renderPipelineDesc_.shaderStages = std::move(customStages);
+
+  //----------------
+  // Create Pipeline
+  //----------------
+  pipelineState = iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(pipelineState != nullptr);
+
+  for (size_t face = 0; face < 6; ++face) {
+    //------------------
+    // Upload layer data
+    //------------------
+    ASSERT_TRUE(inputTexture_->upload(rangeDesc, textureArray[face], bytesPerRow).isOk());
+
+    //-------
+    // Render
+    //-------
+    cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
+    ASSERT_EQ(ret.code, Result::Code::Ok);
+    ASSERT_TRUE(cmdBuf_ != nullptr);
+
+    renderPass_.colorAttachments[0].face = face;
+    auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, customFramebuffer);
+    cmds->bindBuffer(data::shader::simplePosIndex, BindTarget::kVertex, vb_, 0);
+    cmds->bindBuffer(data::shader::simpleUvIndex, BindTarget::kVertex, uv_, 0);
+
+    cmds->bindRenderPipelineState(pipelineState);
+
+    cmds->bindTexture(textureUnit_, BindTarget::kFragment, inputTexture_.get());
+    cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
+
+    cmds->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib_, 0);
+
+    cmds->endEncoding();
+
+    cmdQueue_->submit(*cmdBuf_);
+
+    cmdBuf_->waitUntilCompleted();
+  }
+
+  // Validate in a separate loop to ensure all faces are already written
+  for (size_t face = 0; face < 6; ++face) {
+    //----------------
+    // Validate output
+    //----------------
+    const auto faceStr = "Face " + std::to_string(face);
+    util::validateFramebufferTextureRange(*iglDev_,
+                                          *cmdQueue_,
+                                          *customFramebuffer,
+                                          customOffscreenTexture->getCubeFaceRange(face),
+                                          textureArray[face],
+                                          faceStr.c_str());
   }
 }
 
