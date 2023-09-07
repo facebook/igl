@@ -190,8 +190,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                                                 descColor.clearColor.g,
                                                 descColor.clearColor.b,
                                                 descColor.clearColor.a));
-    const auto colorLayer =
-        Texture::getVkLayer(colorTexture.getType(), descColor.face, descColor.layer);
+    const auto colorLayer = getVkLayer(colorTexture.getType(), descColor.face, descColor.layer);
     if (mipLevel) {
       IGL_ASSERT_MSG(descColor.mipLevel == mipLevel,
                      "All color attachments should have the same mip-level");
@@ -238,8 +237,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
     hasDepthAttachment_ = true;
     IGL_ASSERT_MSG(descDepth.mipLevel == mipLevel,
                    "Depth attachment should have the same mip-level as color attachments");
-    IGL_ASSERT_MSG(Texture::getVkLayer(depthTexture.getType(), descDepth.face, descDepth.layer) ==
-                       layer,
+    IGL_ASSERT_MSG(getVkLayer(depthTexture.getType(), descDepth.face, descDepth.layer) == layer,
                    "Depth attachment should have the same face or layer as color attachments");
     clearValues.push_back(
         ivkGetClearDepthStencilValue(descDepth.clearDepth, descStencil.clearStencil));

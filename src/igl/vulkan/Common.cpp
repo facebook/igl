@@ -362,5 +362,9 @@ VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool 
   }
 }
 
+uint32_t getVkLayer(TextureType type, uint32_t face, uint32_t layer) {
+  return type == TextureType::Cube ? face : layer;
+}
+
 } // namespace vulkan
 } // namespace igl
