@@ -1581,6 +1581,49 @@ TEST_F(TextureTest, RenderToMip) {
   }
 }
 
+TEST_F(TextureTest, UploadToMip) {
+  Result ret;
+
+  // Use a square output texture with mips
+  static constexpr size_t TEX_WIDTH = 2;
+  const size_t TEX_MIP_COUNT = TextureDesc::calcNumMipLevels(TEX_WIDTH, TEX_WIDTH);
+  static_assert(TEX_WIDTH > 1);
+
+  static constexpr uint32_t baseMipColor = 0xdeadbeef;
+  static constexpr uint32_t mip1Color = 0x8badf00d;
+
+  std::vector<uint32_t> baseMipData(4, baseMipColor);
+  std::vector<uint32_t> mip1Data(1, mip1Color);
+
+  //---------------------------------------------------------------------
+  // Create texture with mip levels
+  //---------------------------------------------------------------------
+  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                           TEX_WIDTH,
+                                           TEX_WIDTH,
+                                           TextureDesc::TextureUsageBits::Sampled |
+                                               TextureDesc::TextureUsageBits::Attachment);
+  texDesc.numMipLevels = TEX_MIP_COUNT;
+  auto tex = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+  ASSERT_TRUE(tex != nullptr);
+
+  //---------------------------------------------------------------------
+  // Validate initial state, upload pixel data, and generate mipmaps
+  //---------------------------------------------------------------------
+  ret = tex->upload(tex->getFullRange(0), baseMipData.data());
+  ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+
+  ret = tex->upload(tex->getFullRange(1), mip1Data.data());
+  ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+
+  util::validateUploadedTextureRange(
+      *iglDev_, *cmdQueue_, tex, tex->getFullRange(0), baseMipData.data(), "Base Level");
+
+  util::validateUploadedTextureRange(
+      *iglDev_, *cmdQueue_, tex, tex->getFullRange(1), mip1Data.data(), "Mip 1");
+}
+
 namespace {
 void testGenerateMipmap(IDevice& device, ICommandQueue& cmdQueue, bool withCommandQueue) {
   Result ret;
