@@ -30,10 +30,6 @@ class Texture final : public ITexture {
   Texture(id<CAMetalDrawable> drawable, const ICapabilities& capabilities);
   ~Texture() override;
 
-  Result upload(const TextureRangeDesc& range,
-                const void* data,
-                size_t bytesPerRow = 0) const override;
-
   Result getBytes(const TextureRangeDesc& range, void* outData, size_t bytesPerRow = 0) const;
 
   // Accessors
@@ -65,6 +61,11 @@ class Texture final : public ITexture {
   static NSUInteger getMetalSlice(TextureType type, uint32_t face, uint32_t layer);
 
  private:
+  Result uploadInternal(TextureType type,
+                        const TextureRangeDesc& range,
+                        const void* data,
+                        size_t bytesPerRow) const final;
+
   void generateMipmap(id<MTLCommandBuffer> cmdBuffer) const;
 
   // Given bytes per row of an input texture, return bytesPerRow value

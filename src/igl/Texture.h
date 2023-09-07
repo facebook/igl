@@ -605,7 +605,7 @@ class ITexture : public ITrackedResource<ITexture> {
    */
   virtual Result upload(const TextureRangeDesc& range,
                         const void* IGL_NULLABLE data,
-                        size_t bytesPerRow = 0) const = 0;
+                        size_t bytesPerRow = 0) const;
 
   // Texture Accessors Methods
   /**
@@ -803,6 +803,14 @@ class ITexture : public ITrackedResource<ITexture> {
                          bool flipVertical = false);
 
  protected:
+  [[nodiscard]] virtual Result uploadInternal(IGL_MAYBE_UNUSED TextureType type,
+                                              IGL_MAYBE_UNUSED const TextureRangeDesc& range,
+                                              IGL_MAYBE_UNUSED const void* IGL_NULLABLE data,
+                                              IGL_MAYBE_UNUSED size_t bytesPerRow = 0) const {
+    IGL_ASSERT_NOT_IMPLEMENTED();
+    return Result{Result::Code::Unimplemented, "Upload not implemented."};
+  }
+
   const TextureFormatProperties properties_;
 };
 

@@ -37,10 +37,6 @@ class Texture final : public ITexture {
     desc_ = std::move(desc);
   }
 
-  Result upload(const TextureRangeDesc& range,
-                const void* data,
-                size_t bytesPerRow = 0) const override;
-
   // Accessors
   Dimensions getDimensions() const override;
   size_t getNumLayers() const override;
@@ -72,6 +68,11 @@ class Texture final : public ITexture {
 
  private:
   Result create(const TextureDesc& desc);
+
+  Result uploadInternal(TextureType type,
+                        const TextureRangeDesc& range,
+                        const void* data,
+                        size_t bytesPerRow) const final;
 
  protected:
   const igl::vulkan::Device& device_;

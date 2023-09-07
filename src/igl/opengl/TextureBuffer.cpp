@@ -165,14 +165,14 @@ Result TextureBuffer::initializeWithUpload() const {
   for (size_t i = 0; i < getNumMipLevels(); ++i) {
     if (type_ == TextureType::Cube) {
       for (size_t face = 0; face < 6; ++face) {
-        auto result = upload(target, getCubeFaceRange(face, i), nullptr);
+        auto result = uploadInternal(target, getCubeFaceRange(face, i), nullptr);
         if (!result.isOk()) {
           return result;
         }
       }
     } else {
       const auto range = getFullRange(i);
-      auto result = upload(target, range, nullptr);
+      auto result = uploadInternal(target, range, nullptr);
       if (!result.isOk()) {
         return result;
       }
@@ -396,9 +396,10 @@ Result TextureBuffer::upload3D(GLenum target,
 
 // upload data into the given mip level
 // a sub-rect of the texture may be specified to only upload the sub-rect
-Result TextureBuffer::upload(const TextureRangeDesc& range,
-                             const void* data,
-                             size_t bytesPerRow) const {
+Result TextureBuffer::uploadInternal(TextureType /*type*/,
+                                     const TextureRangeDesc& range,
+                                     const void* data,
+                                     size_t bytesPerRow) const {
   if (data == nullptr) {
     return Result{};
   }
@@ -408,43 +409,26 @@ Result TextureBuffer::upload(const TextureRangeDesc& range,
   }
   getContext().bindTexture(target, getId());
 
-  auto result = upload(target, range, data, bytesPerRow);
+  auto result = uploadInternal(target, range, data, bytesPerRow);
 
   getContext().bindTexture(getTarget(), 0);
   return result;
 }
 
-Result TextureBuffer::upload(GLenum target,
-                             const TextureRangeDesc& range,
-                             const void* data,
-                             size_t bytesPerRow) const {
+Result TextureBuffer::uploadInternal(GLenum target,
+                                     const TextureRangeDesc& range,
+                                     const void* data,
+                                     size_t bytesPerRow) const {
   if (range.numMipLevels > 1) {
     IGL_ASSERT_NOT_IMPLEMENTED();
     return Result(Result::Code::Unimplemented,
                   "Uploading to more than 1 mip level is not yet supported.");
-  }
-  if (range.numFaces > 1) {
-    IGL_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented,
-                  "Uploading to more than 1 face is not yet supported.");
-  }
-  if (range.face > 0) {
-    if (IGL_UNEXPECTED(getType() != TextureType::Cube)) {
-      return Result(Result::Code::Unsupported, "face must be 0.");
-    } else if (IGL_UNEXPECTED(range.face > 5)) {
-      return Result(Result::Code::Unsupported, "face must be less than 6.");
-    }
-  }
-  const auto result = validateRange(range);
-  if (!result.isOk()) {
-    return result;
   }
   // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
   const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
 
   getContext().pixelStorei(GL_UNPACK_ALIGNMENT, this->getAlignment(bytesPerRow, range.mipLevel));
 
-  Result success;
   switch (type_) {
   case TextureType::TwoD:
     return upload2D(target, range, texImage, data);

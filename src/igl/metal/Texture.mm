@@ -41,30 +41,17 @@ Texture::~Texture() {
   value_ = nil;
 }
 
-Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t bytesPerRow) const {
+Result Texture::uploadInternal(TextureType type,
+                               const TextureRangeDesc& range,
+                               const void* data,
+                               size_t bytesPerRow) const {
   if (range.numMipLevels > 1) {
     IGL_ASSERT_NOT_IMPLEMENTED();
     return Result(Result::Code::Unimplemented,
                   "Uploading to more than 1 mip level is not yet supported.");
   }
-  if (range.numFaces > 1) {
-    IGL_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented,
-                  "Uploading to more than 1 face is not yet supported.");
-  }
-  if (range.face > 0) {
-    if (IGL_UNEXPECTED(getType() != TextureType::Cube)) {
-      return Result(Result::Code::Unsupported, "face must be 0.");
-    } else if (IGL_UNEXPECTED(range.face > 5)) {
-      return Result(Result::Code::Unsupported, "face must be less than 6.");
-    }
-  }
   if (data == nullptr) {
     return Result(Result::Code::Ok);
-  }
-  const auto result = validateRange(range);
-  if (!result.isOk()) {
-    return result;
   }
   const auto& properties = getProperties();
   if (bytesPerRow == 0) {
@@ -74,14 +61,14 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
   const auto byteIncrement = numLayers > 1 ? properties.getBytesPerLayer(range.atLayer(0)) : 0;
   for (auto i = 0; i < numLayers; ++i) {
     MTLRegion region;
-    switch (getType()) {
+    switch (type) {
     case TextureType::Cube:
     case TextureType::TwoD:
     case TextureType::TwoDArray:
       region = MTLRegionMake2D(range.x, range.y, range.width, range.height);
       [get() replaceRegion:region
                mipmapLevel:range.mipLevel
-                     slice:getMetalSlice(getType(), range.face, range.layer + i /* layer */)
+                     slice:getMetalSlice(type, range.face, range.layer + i /* layer */)
                  withBytes:data
                bytesPerRow:toMetalBytesPerRow(bytesPerRow)
              bytesPerImage:0];
@@ -102,7 +89,7 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
 
     data = static_cast<const uint8_t*>(data) + byteIncrement;
   }
-  return Result(Result::Code::Ok);
+  return Result{};
 }
 
 Result Texture::getBytes(const TextureRangeDesc& range, void* outData, size_t bytesPerRow) const {

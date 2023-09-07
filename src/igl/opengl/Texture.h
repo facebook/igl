@@ -24,8 +24,6 @@ class Texture : public WithContext, public ITexture {
   ~Texture() override = default;
 
  public:
-  Result upload(const TextureRangeDesc& range, const void* data, size_t bytesPerRow) const override;
-
   // Accessors
   Dimensions getDimensions() const override;
   size_t getNumLayers() const override;

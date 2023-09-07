@@ -122,14 +122,6 @@ GLint Texture::getAlignment(size_t stride, size_t mipLevel) const {
   }
 }
 
-Result Texture::upload(const TextureRangeDesc& /*range*/,
-                       const void* /*data*/,
-                       size_t /*bytesPerRow*/) const {
-  // Subclasses that expect to upload CPU memory should override
-  IGL_ASSERT(!(getUsage() & TextureDesc::TextureUsageBits::Sampled));
-  return Result(Result::Code::Unsupported, "Texture::upload()");
-}
-
 bool Texture::isImplicitStorage() const {
   return false;
 }

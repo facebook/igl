@@ -22,14 +22,6 @@ class TextureBufferExternal : public TextureBufferBase {
   explicit TextureBufferExternal(IContext& context, TextureFormat format) :
     Super(context, format) {}
   ~TextureBufferExternal() override = default;
-
-  // ITexture overrides
-  Result upload(const TextureRangeDesc& range,
-                const void* data,
-                size_t bytesPerRow) const override {
-    // no-op, texture is not managed by igl
-    return Result();
-  }
 };
 
 } // namespace opengl

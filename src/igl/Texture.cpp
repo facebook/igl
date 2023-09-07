@@ -588,4 +588,52 @@ void ITexture::repackData(const TextureFormatProperties& properties,
   }
 }
 
+Result ITexture::upload(const TextureRangeDesc& range,
+                        const void* IGL_NULLABLE data,
+                        size_t bytesPerRow) const {
+  const auto type = getType();
+  const auto result = validateRange(range);
+  if (!result.isOk()) {
+    return result;
+  }
+
+  if (type != TextureType::TwoD && type != TextureType::TwoDArray && type != TextureType::Cube &&
+      type != TextureType::ThreeD) {
+    IGL_ASSERT_MSG(false, "Unknown texture type");
+    return Result{Result::Code::InvalidOperation, "Unknown texture type"};
+  }
+  if (range.numFaces > 1) {
+    IGL_ASSERT_NOT_IMPLEMENTED();
+    return Result(Result::Code::Unimplemented,
+                  "Uploading to more than 1 face is not yet supported.");
+  }
+  if (range.face > 0) {
+    if (IGL_UNEXPECTED(type != TextureType::Cube)) {
+      return Result(Result::Code::Unsupported, "face must be 0.");
+    } else if (IGL_UNEXPECTED(range.face > 5)) {
+      return Result(Result::Code::Unsupported, "face must be less than 6.");
+    }
+  }
+
+  const auto formatBytesPerRow = properties_.getBytesPerRow(range);
+  if (bytesPerRow > 0) {
+    if (IGL_UNEXPECTED(bytesPerRow < formatBytesPerRow)) {
+      return Result(Result::Code::ArgumentInvalid, "bytesPerRow too small.");
+    }
+    if (IGL_UNEXPECTED(range.numMipLevels > 1 && bytesPerRow != formatBytesPerRow)) {
+      return Result(Result::Code::ArgumentInvalid,
+                    "bytesPerRow MUST be 0 when uploading multiple mip levels.");
+    }
+  }
+
+  const bool isSampledOrStorage = (getUsage() & (TextureDesc::TextureUsageBits::Sampled |
+                                                 TextureDesc::TextureUsageBits::Storage)) != 0;
+  if (!IGL_VERIFY(isSampledOrStorage)) {
+    return Result(Result::Code::Unsupported,
+                  "Texture must support either sampled or storage usage.");
+  }
+
+  return uploadInternal(type, range, data, bytesPerRow);
+}
+
 } // namespace igl

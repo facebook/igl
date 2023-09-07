@@ -189,25 +189,12 @@ Result Texture::create(const TextureDesc& desc) {
   return Result();
 }
 
-Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t bytesPerRow) const {
+Result Texture::uploadInternal(TextureType /*type*/,
+                               const TextureRangeDesc& range,
+                               const void* data,
+                               size_t bytesPerRow) const {
   if (!data) {
-    return igl::Result();
-  }
-  const auto result = validateRange(range);
-  if (!result.isOk()) {
-    return result;
-  }
-  if (range.numFaces > 1) {
-    IGL_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented,
-                  "Uploading to more than 1 face is not yet supported.");
-  }
-  if (range.face > 0) {
-    if (IGL_UNEXPECTED(getType() != TextureType::Cube)) {
-      return Result(Result::Code::Unsupported, "face must be 0.");
-    } else if (IGL_UNEXPECTED(range.face > 5)) {
-      return Result(Result::Code::Unsupported, "face must be less than 6.");
-    }
+    return Result{};
   }
 
   auto numLayers = std::max(range.numLayers, static_cast<size_t>(1));
@@ -224,9 +211,9 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
   for (auto i = 0; i < numLayers; ++i) {
     const VulkanContext& ctx = device_.getVulkanContext();
 
-    const VkImageType type = texture_->getVulkanImage().type_;
+    const VkImageType vkType = texture_->getVulkanImage().type_;
 
-    if (type == VK_IMAGE_TYPE_3D) {
+    if (vkType == VK_IMAGE_TYPE_3D) {
       ctx.stagingDevice_->imageData3D(
           texture_->getVulkanImage(),
           VkOffset3D{(int32_t)range.x, (int32_t)range.y, (int32_t)range.z},

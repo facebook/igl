@@ -20,11 +20,6 @@ class TextureBuffer : public TextureBufferBase {
   TextureBuffer(IContext& context, TextureFormat format) : Super(context, format) {}
   ~TextureBuffer() override;
 
-  // ITexture overrides
-  Result upload(const TextureRangeDesc& range,
-                const void* data,
-                size_t bytesPerRow = 0) const override;
-
   // Texture overrides
   Result create(const TextureDesc& desc, bool hasStorageAlready) override;
   void bindImage(size_t unit) override;
@@ -34,10 +29,14 @@ class TextureBuffer : public TextureBufferBase {
   Result initialize() const;
   Result initializeWithUpload() const;
   Result initializeWithTexStorage() const;
-  Result upload(GLenum target,
-                const TextureRangeDesc& range,
-                const void* data,
-                size_t bytesPerRow = 0) const;
+  Result uploadInternal(TextureType type,
+                        const TextureRangeDesc& range,
+                        const void* data,
+                        size_t bytesPerRow) const final;
+  Result uploadInternal(GLenum target,
+                        const TextureRangeDesc& range,
+                        const void* data,
+                        size_t bytesPerRow = 0) const;
   Result upload2D(GLenum target,
                   const TextureRangeDesc& range,
                   bool texImage,
