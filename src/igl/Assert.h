@@ -86,7 +86,8 @@ static inline const T& _IGLVerify(const T& cond,
 
 #if IGL_DEBUG
 
-#define IGL_UNEXPECTED(cond) (!_IGLVerify(0 == !!(cond), IGL_FUNCTION, __FILE__, __LINE__, #cond))
+#define IGL_UNEXPECTED(cond) \
+  (!::igl::_IGLVerify(0 == !!(cond), IGL_FUNCTION, __FILE__, __LINE__, #cond))
 #define IGL_VERIFY(cond) ::igl::_IGLVerify((cond), IGL_FUNCTION, __FILE__, __LINE__, #cond)
 #define IGL_ASSERT(cond) (void)IGL_VERIFY(cond)
 #define IGL_ASSERT_MSG(cond, format, ...) \
