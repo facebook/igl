@@ -124,7 +124,7 @@ IGL_TO_STRING(VERSION(150)
     void main() {
       gl_Position = position_in;
       uv = uv_in;
-      layer_out = layer;
+      layer_out = uint(layer);
     });
 
 const char OGL_SIMPLE_FRAG_SHADER_TEXARRAY[] =

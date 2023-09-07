@@ -9,20 +9,9 @@
 
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
+#include <igl/opengl/Device.h>
 #include <igl/opengl/SamplerState.h>
 #include <string>
-
-#if IGL_PLATFORM_IOS
-#include <igl/opengl/ios/HWDevice.h>
-#elif IGL_PLATFORM_MACOS
-#include <igl/opengl/macos/HWDevice.h>
-#elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX_USE_EGL
-#include <igl/opengl/egl/HWDevice.h>
-#elif IGL_PLATFORM_LINUX
-#include <igl/opengl/glx/HWDevice.h>
-#else
-#error "Unsupported testing platform"
-#endif
 
 namespace igl {
 namespace tests {

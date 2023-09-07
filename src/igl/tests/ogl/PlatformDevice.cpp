@@ -15,10 +15,16 @@
 #include <igl/opengl/ios/PlatformDevice.h>
 #elif IGL_PLATFORM_MACOS
 #include <igl/opengl/macos/PlatformDevice.h>
-#elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX_USE_EGL
+#elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX_USE_EGL
 #include <igl/opengl/egl/PlatformDevice.h>
 #elif IGL_PLATFORM_LINUX
 #include <igl/opengl/glx/PlatformDevice.h>
+#elif IGL_PLATFORM_WIN
+#if defined(FORCE_USE_ANGLE)
+#include <igl/opengl/egl/PlatformDevice.h>
+#else
+#include <igl/opengl/wgl/PlatformDevice.h>
+#endif // FORCE_USE_ANGLE
 #else
 #error "Unsupported testing platform"
 #endif
@@ -29,10 +35,16 @@
 #define PLATFORM_DEVICE opengl::ios::PlatformDevice
 #elif IGL_PLATFORM_MACOS
 #define PLATFORM_DEVICE opengl::macos::PlatformDevice
-#elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX_USE_EGL
+#elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX_USE_EGL
 #define PLATFORM_DEVICE opengl::egl::PlatformDevice
 #elif IGL_PLATFORM_LINUX
 #define PLATFORM_DEVICE opengl::glx::PlatformDevice
+#elif IGL_PLATFORM_WIN
+#if defined(FORCE_USE_ANGLE)
+#define PLATFORM_DEVICE opengl::egl::PlatformDevice
+#else
+#define PLATFORM_DEVICE opengl::wgl::PlatformDevice
+#endif // FORCE_USE_ANGLE
 #endif
 
 // Use a 1x1 Framebuffer for this test

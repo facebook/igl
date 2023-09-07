@@ -8,17 +8,7 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 
-#if IGL_PLATFORM_IOS
-#include <igl/opengl/ios/Device.h>
-#elif IGL_PLATFORM_MACOS
-#include <igl/opengl/macos/Device.h>
-#elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX_USE_EGL
-#include <igl/opengl/egl/Device.h>
-#elif IGL_PLATFORM_LINUX
-#include <igl/opengl/glx/Device.h>
-#else
-#error "Unsupported testing platform"
-#endif
+#include <igl/opengl/Device.h>
 
 #include "../data/ShaderData.h"
 #include "../util/Common.h"
@@ -152,15 +142,13 @@ TEST_F(DeviceOGLTest, EndScope) {
   ASSERT_GT(shaderVersion.majorVersion + shaderVersion.minorVersion, 0);
 
 #if IGL_BACKEND_OPENGL
-#if IGL_OPENGL_ES
-  if (context_->deviceFeatures().getGLVersion() >= igl::opengl::GLVersion::v3_0_ES) {
-    ASSERT_EQ(igl::opengl::getStringFromShaderVersion(shaderVersion), "#version 300 es");
-  } else {
-    ASSERT_EQ(igl::opengl::getStringFromShaderVersion(shaderVersion), "#version 100");
-  }
-#else
-  ASSERT_EQ(igl::opengl::getStringFromShaderVersion(shaderVersion), "#version 120");
-#endif
+  const std::string expectedVersion =
+      "#version " + std::to_string(shaderVersion.majorVersion) +
+      (shaderVersion.minorVersion == 0 ? "00" : std::to_string(shaderVersion.minorVersion)) +
+      ((shaderVersion.family == igl::ShaderFamily::GlslEs && shaderVersion.majorVersion > 1) ? " es"
+                                                                                             : "");
+
+  ASSERT_EQ(igl::opengl::getStringFromShaderVersion(shaderVersion), expectedVersion);
 #endif // IGL_BACKEND_OPENGL
 }
 

@@ -144,6 +144,7 @@ Context::Context(HDC deviceContext, HGLRC renderContext, std::vector<HGLRC> shar
 Context::~Context() {
   // Clear pool explicitly, since it might have reference back to IContext.
   getAdapterPool().clear();
+  getComputeAdapterPool().clear();
 
   // Unregister wglContext
   IContext::unregisterContext(renderContext_);
