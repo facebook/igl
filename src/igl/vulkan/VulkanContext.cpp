@@ -211,6 +211,109 @@ struct VulkanContextImpl final {
   VmaAllocator vma_ = VK_NULL_HANDLE;
 };
 
+// @fb-only
+class DescriptorPoolsArena final {
+ public:
+  DescriptorPoolsArena(VulkanImmediateCommands& ic,
+                       VkDevice device,
+                       VkDescriptorType type,
+                       uint32_t numDescriptorsPerDSet,
+                       const char* debugName) :
+    device_(device), type_(type), numDescriptorsPerDSet_(numDescriptorsPerDSet) {
+    IGL_ASSERT(debugName);
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
+    std::vector<VkDescriptorBindingFlags> bindingFlags;
+    bindings.reserve(numDescriptorsPerDSet);
+    bindingFlags.reserve(numDescriptorsPerDSet);
+    for (uint32_t i = 0; i != numDescriptorsPerDSet; i++) {
+      bindings.emplace_back(ivkGetDescriptorSetLayoutBinding(i, type, 1));
+      bindingFlags.emplace_back(VkDescriptorBindingFlags{});
+    }
+    dsl_ = std::make_unique<VulkanDescriptorSetLayout>(
+        device,
+        VkDescriptorSetLayoutCreateFlags{},
+        numDescriptorsPerDSet,
+        bindings.data(),
+        bindingFlags.data(),
+        IGL_FORMAT("Descriptor Set Layout: {}", debugName).c_str());
+    dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName);
+    switchToNewDescriptorPool(ic);
+  }
+  ~DescriptorPoolsArena() {
+    // arenas are destroyed by VulkanContext after the GPU has been synchronized, so we do not have
+    // to defer the destruction
+    extinct_.push_back({pool_, {}});
+    for (const auto& p : extinct_) {
+      vkDestroyDescriptorPool(device_, p.pool_, nullptr);
+    }
+  }
+  [[nodiscard]] VkDescriptorSetLayout getVkDescriptorSetLayout() const {
+    return dsl_->getVkDescriptorSetLayout();
+  }
+  [[nodiscard]] VkDescriptorSet getNextDescriptorSet(VulkanImmediateCommands& ic) {
+    VkDescriptorSet dset = VK_NULL_HANDLE;
+    const VkResult result =
+        ivkAllocateDescriptorSet(device_, pool_, dsl_->getVkDescriptorSetLayout(), &dset);
+    // if the allocation fails due to no more space in the descriptor pool, and not because of
+    // system or device memory exhaustion, then VK_ERROR_OUT_OF_POOL_MEMORY must be returned.
+    // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkAllocateDescriptorSets.html
+    if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
+      switchToNewDescriptorPool(ic);
+      VK_ASSERT(ivkAllocateDescriptorSet(device_, pool_, dsl_->getVkDescriptorSetLayout(), &dset));
+    } else {
+      VK_ASSERT(result);
+    }
+    // @fb-only
+    return dset;
+  }
+  void markSubmit(VulkanImmediateCommands::SubmitHandle handle) {
+    lastSubmitHandle_ = handle;
+  }
+
+ private:
+  void switchToNewDescriptorPool(VulkanImmediateCommands& ic) {
+    if (pool_ != VK_NULL_HANDLE) {
+      extinct_.push_back({pool_, lastSubmitHandle_});
+    }
+    // first, let's try to reuse the oldest extinct pool
+    if (!extinct_.empty()) {
+      const ExtinctDescriptorPool p = extinct_.front();
+      if (ic.isRecycled(p.handle_)) {
+        pool_ = p.pool_;
+        extinct_.pop_front();
+        VK_ASSERT(vkResetDescriptorPool(device_, pool_, VkDescriptorPoolResetFlags{}));
+        return;
+      }
+    }
+    const VkDescriptorPoolSize poolSize =
+        VkDescriptorPoolSize{type_, kNumDSetsPerPool_ * numDescriptorsPerDSet_};
+    VK_ASSERT(ivkCreateDescriptorPool(
+        device_, VkDescriptorPoolCreateFlags{}, kNumDSetsPerPool_, 1, &poolSize, &pool_));
+    VK_ASSERT(ivkSetDebugObjectName(
+        device_, VK_OBJECT_TYPE_DESCRIPTOR_POOL, (uint64_t)pool_, dpDebugName_.c_str()));
+  }
+
+ private:
+  static constexpr uint32_t kNumDSetsPerPool_ = 256;
+
+  VkDevice device_ = VK_NULL_HANDLE;
+  VkDescriptorPool pool_ = VK_NULL_HANDLE;
+  const VkDescriptorType type_ = VK_DESCRIPTOR_TYPE_MAX_ENUM;
+  const uint32_t numDescriptorsPerDSet_ = 0;
+  std::string dpDebugName_;
+
+  std::unique_ptr<VulkanDescriptorSetLayout> dsl_;
+
+  VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
+
+  struct ExtinctDescriptorPool {
+    VkDescriptorPool pool_ = VK_NULL_HANDLE;
+    VulkanImmediateCommands::SubmitHandle handle_ = {};
+  };
+
+  std::deque<ExtinctDescriptorPool> extinct_;
+};
+
 VulkanContext::VulkanContext(const VulkanContextConfig& config,
                              void* window,
                              size_t numExtraInstanceExtensions,
