@@ -386,8 +386,8 @@ class CommandBuffer final : public ICommandBuffer {
   void cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) override;
   void cmdBindDepthState(const DepthState& state) override;
 
-  void cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, size_t bufferOffset) override;
-  void cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, size_t indexBufferOffset) override;
+  void cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, uint64_t bufferOffset) override;
+  void cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, uint64_t indexBufferOffset) override;
   void cmdPushConstants(const void* data, size_t size, size_t offset) override;
 
   void cmdDraw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) override;

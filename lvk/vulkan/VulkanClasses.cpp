@@ -2350,7 +2350,7 @@ void lvk::CommandBuffer::cmdBindDepthState(const DepthState& desc) {
 #endif
 }
 
-void lvk::CommandBuffer::cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, size_t bufferOffset) {
+void lvk::CommandBuffer::cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, uint64_t bufferOffset) {
   LVK_PROFILER_FUNCTION();
 
   if (!LVK_VERIFY(!buffer.empty())) {
@@ -2359,15 +2359,12 @@ void lvk::CommandBuffer::cmdBindVertexBuffer(uint32_t index, BufferHandle buffer
 
   lvk::VulkanBuffer* buf = ctx_->buffersPool_.get(buffer);
 
-  VkBuffer vkBuf = buf->vkBuffer_;
-
   LVK_ASSERT(buf->vkUsageFlags_ & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-  const VkDeviceSize offset = bufferOffset;
-  vkCmdBindVertexBuffers(wrapper_->cmdBuf_, index, 1, &vkBuf, &offset);
+  vkCmdBindVertexBuffers(wrapper_->cmdBuf_, index, 1, &buf->vkBuffer_, &bufferOffset);
 }
 
-void lvk::CommandBuffer::cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, size_t indexBufferOffset) {
+void lvk::CommandBuffer::cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, uint64_t indexBufferOffset) {
   lvk::VulkanBuffer* buf = ctx_->buffersPool_.get(indexBuffer);
 
   LVK_ASSERT(buf->vkUsageFlags_ & VK_BUFFER_USAGE_INDEX_BUFFER_BIT);

@@ -733,8 +733,8 @@ class ICommandBuffer {
   virtual void cmdBindRenderPipeline(lvk::RenderPipelineHandle handle) = 0;
   virtual void cmdBindDepthState(const DepthState& state) = 0;
 
-  virtual void cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, size_t bufferOffset = 0) = 0;
-  virtual void cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, size_t indexBufferOffset = 0) = 0;
+  virtual void cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, uint64_t bufferOffset = 0) = 0;
+  virtual void cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, uint64_t indexBufferOffset = 0) = 0;
   virtual void cmdPushConstants(const void* data, size_t size, size_t offset = 0) = 0;
   template<typename Struct>
   void cmdPushConstants(const Struct& data) {
