@@ -12,6 +12,7 @@
 #include "util/TestDevice.h"
 
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
+#include <array>
 #include <cstring>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -28,10 +29,10 @@ namespace tests {
 // size texture, then you will have to either create a new offscreenTexture_
 // and the framebuffer object in your test, so know exactly what the end result
 // would be after sampling
-constexpr size_t OFFSCREEN_TEX_WIDTH = 2;
-constexpr size_t OFFSCREEN_TEX_HEIGHT = 2;
-constexpr size_t OFFSCREEN_SUBTEX_WIDTH = 1;
-constexpr size_t OFFSCREEN_SUBTEX_HEIGHT = 1;
+constexpr size_t kOffscreenTexWidth = 2;
+constexpr size_t kOffscreenTexHeight = 2;
+constexpr size_t kOffscreenSubTexWidth = 1;
+constexpr size_t kOffscreenSubTexHeight = 1;
 
 struct VertexUniforms {
   int layer = 0;
@@ -94,8 +95,8 @@ class TextureArrayTest : public ::testing::Test {
 
     // Create an offscreen texture to render to
     TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                             OFFSCREEN_TEX_WIDTH,
-                                             OFFSCREEN_TEX_HEIGHT,
+                                             kOffscreenTexWidth,
+                                             kOffscreenTexHeight,
                                              TextureDesc::TextureUsageBits::Sampled |
                                                  TextureDesc::TextureUsageBits::Attachment);
 
@@ -269,27 +270,52 @@ class TextureArrayTest : public ::testing::Test {
   size_t textureUnit_ = 0;
 };
 
-static uint32_t R = 0x1F00000F;
-static uint32_t G = 0x002F001F;
-static uint32_t B = 0x00003F2F;
-static uint32_t C = 0x004F5F3F;
-static uint32_t M = 0x6F007F4F;
-static uint32_t Y = 0x8F9F005F;
+constexpr uint32_t kR = 0x1F00000F;
+constexpr uint32_t kG = 0x002F001F;
+constexpr uint32_t kB = 0x00003F2F;
+constexpr uint32_t kC = 0x004F5F3F;
+constexpr uint32_t kM = 0x6F007F4F;
+constexpr uint32_t kY = 0x8F9F005F;
 
 constexpr size_t kNumLayers = 3;
 
-static uint32_t textureArray2D[kNumLayers][OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT] = {
-    {R, R, R, R},
-    {G, G, G, G},
-    {B, B, B, B}};
-static uint32_t textureSubArray2D[kNumLayers][OFFSCREEN_SUBTEX_WIDTH * OFFSCREEN_SUBTEX_HEIGHT] = {
-    {C},
-    {M},
-    {Y}};
-static uint32_t modifiedTextureArray2D[kNumLayers][OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT] = {
-    {R, R, R, C},
-    {G, G, G, M},
-    {B, B, B, Y}};
+// clang-format off
+constexpr std::array<uint32_t, 12> kTextureData = {
+  kR, kR, kR, kR, // Layer 0
+  kG, kG, kG, kG, // Layer 1
+  kB, kB, kB, kB, // Layer 2
+};
+
+constexpr std::array<uint32_t, 12> kSubTextureData = {
+  kC,             // Layer 0
+  kM,             // Layer 1
+  kY,             // Layer 2
+};
+
+constexpr std::array<uint32_t, 12> kModifiedTextureData = {
+  kR, kR, kR, kC, // Layer 0
+  kG, kG, kG, kM, // Layer 1
+  kB, kB, kB, kY, // Layer 2
+};
+// clang-format on
+
+constexpr std::array<const uint32_t*, kNumLayers> kTextureLayerData = {
+    kTextureData.data() + 0,
+    kTextureData.data() + 4,
+    kTextureData.data() + 8,
+};
+
+constexpr std::array<const uint32_t*, kNumLayers> kSubTextureLayerData = {
+    kSubTextureData.data() + 0,
+    kSubTextureData.data() + 1,
+    kSubTextureData.data() + 2,
+};
+
+constexpr std::array<const uint32_t*, kNumLayers> kModifiedTextureLayerData = {
+    kModifiedTextureData.data() + 0,
+    kModifiedTextureData.data() + 4,
+    kModifiedTextureData.data() + 8,
+};
 
 //
 // Texture Upload Test
@@ -308,8 +334,8 @@ void runUploadTest(IDevice& device,
   // Create input texture and upload data
   //-------------------------------------
   TextureDesc texDesc = TextureDesc::new2DArray(TextureFormat::RGBA_UNorm8,
-                                                OFFSCREEN_TEX_WIDTH,
-                                                OFFSCREEN_TEX_HEIGHT,
+                                                kOffscreenTexWidth,
+                                                kOffscreenTexHeight,
                                                 kNumLayers,
                                                 TextureDesc::TextureUsageBits::Sampled |
                                                     TextureDesc::TextureUsageBits::Attachment);
@@ -321,37 +347,37 @@ void runUploadTest(IDevice& device,
   // upload and redownload to make sure that we've uploaded successfully.
   //
   if (singleUpload) {
-    const auto uploadRange = TextureRangeDesc::new2DArray(
-        0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT, 0, kNumLayers);
-    ASSERT_TRUE(tex->upload(uploadRange, textureArray2D[0]).isOk());
+    const auto uploadRange =
+        TextureRangeDesc::new2DArray(0, 0, kOffscreenTexWidth, kOffscreenTexHeight, 0, kNumLayers);
+    ASSERT_TRUE(tex->upload(uploadRange, kTextureData.data()).isOk());
   } else {
     for (size_t layer = 0; layer < kNumLayers; ++layer) {
       const auto uploadRange =
-          TextureRangeDesc::new2DArray(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT, layer, 1);
-      ASSERT_TRUE(tex->upload(uploadRange, textureArray2D[layer]).isOk());
+          TextureRangeDesc::new2DArray(0, 0, kOffscreenTexWidth, kOffscreenTexHeight, layer, 1);
+      ASSERT_TRUE(tex->upload(uploadRange, kTextureLayerData[layer]).isOk());
     }
   }
 
   if (modifyTexture) {
     if (singleUpload) {
       const auto uploadRange =
-          TextureRangeDesc::new2DArray(OFFSCREEN_TEX_WIDTH - OFFSCREEN_SUBTEX_WIDTH,
-                                       OFFSCREEN_TEX_HEIGHT - OFFSCREEN_SUBTEX_HEIGHT,
-                                       OFFSCREEN_SUBTEX_WIDTH,
-                                       OFFSCREEN_SUBTEX_HEIGHT,
+          TextureRangeDesc::new2DArray(kOffscreenTexWidth - kOffscreenSubTexWidth,
+                                       kOffscreenTexHeight - kOffscreenSubTexHeight,
+                                       kOffscreenSubTexWidth,
+                                       kOffscreenSubTexHeight,
                                        0,
                                        kNumLayers);
-      ASSERT_TRUE(tex->upload(uploadRange, textureSubArray2D[0]).isOk());
+      ASSERT_TRUE(tex->upload(uploadRange, kSubTextureData.data()).isOk());
     } else {
       for (size_t layer = 0; layer < kNumLayers; ++layer) {
         const auto uploadRange =
-            TextureRangeDesc::new2DArray(OFFSCREEN_TEX_WIDTH - OFFSCREEN_SUBTEX_WIDTH,
-                                         OFFSCREEN_TEX_HEIGHT - OFFSCREEN_SUBTEX_HEIGHT,
-                                         OFFSCREEN_SUBTEX_WIDTH,
-                                         OFFSCREEN_SUBTEX_HEIGHT,
+            TextureRangeDesc::new2DArray(kOffscreenTexWidth - kOffscreenSubTexWidth,
+                                         kOffscreenTexHeight - kOffscreenSubTexHeight,
+                                         kOffscreenSubTexWidth,
+                                         kOffscreenSubTexHeight,
                                          layer,
                                          1);
-        ASSERT_TRUE(tex->upload(uploadRange, textureSubArray2D[layer]).isOk());
+        ASSERT_TRUE(tex->upload(uploadRange, kSubTextureLayerData[layer]).isOk());
       }
     }
   }
@@ -365,8 +391,8 @@ void runUploadTest(IDevice& device,
                                        cmdQueue,
                                        tex,
                                        tex->getLayerRange(layer),
-                                       modifyTexture ? modifiedTextureArray2D[layer]
-                                                     : textureArray2D[layer],
+                                       modifyTexture ? kModifiedTextureLayerData[layer]
+                                                     : kTextureLayerData[layer],
                                        layerStr.c_str());
   }
 }
@@ -402,23 +428,24 @@ TEST_F(TextureArrayTest, Passthrough_SampleFromArray) {
   // Create input texture and upload data
   //-------------------------------------
   const TextureDesc texDesc = TextureDesc::new2DArray(TextureFormat::RGBA_UNorm8,
-                                                      OFFSCREEN_TEX_WIDTH,
-                                                      OFFSCREEN_TEX_HEIGHT,
+                                                      kOffscreenTexWidth,
+                                                      kOffscreenTexHeight,
                                                       kNumLayers,
                                                       TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
 
-  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
-  const size_t bytesPerRow = OFFSCREEN_TEX_WIDTH * 4;
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
+  const size_t bytesPerRow = kOffscreenTexWidth * 4;
 
   //
   // upload and redownload to make sure that we've uploaded successfully.
   //
   for (size_t layer = 0; layer < kNumLayers; ++layer) {
     ASSERT_TRUE(
-        inputTexture_->upload(rangeDesc.atLayer(layer), textureArray2D[layer], bytesPerRow).isOk());
+        inputTexture_->upload(rangeDesc.atLayer(layer), kTextureLayerData[layer], bytesPerRow)
+            .isOk());
   }
 
   //----------------
@@ -467,7 +494,7 @@ TEST_F(TextureArrayTest, Passthrough_SampleFromArray) {
     //----------------
     const auto layerStr = "Layer " + std::to_string(layer);
     util::validateFramebufferTexture(
-        *iglDev_, *cmdQueue_, *framebuffer_, textureArray2D[layer], layerStr.c_str());
+        *iglDev_, *cmdQueue_, *framebuffer_, kTextureLayerData[layer], layerStr.c_str());
   }
 }
 
@@ -486,24 +513,24 @@ TEST_F(TextureArrayTest, Passthrough_RenderToArray) {
   // Create input and output textures
   //---------------------------------
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           OFFSCREEN_TEX_WIDTH,
-                                           OFFSCREEN_TEX_HEIGHT,
+                                           kOffscreenTexWidth,
+                                           kOffscreenTexHeight,
                                            TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
 
   texDesc = TextureDesc::new2DArray(TextureFormat::RGBA_UNorm8,
-                                    OFFSCREEN_TEX_WIDTH,
-                                    OFFSCREEN_TEX_HEIGHT,
+                                    kOffscreenTexWidth,
+                                    kOffscreenTexHeight,
                                     kNumLayers,
                                     TextureDesc::TextureUsageBits::Sampled);
   auto customOffscreenTexture = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(customOffscreenTexture != nullptr);
 
-  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
-  const size_t bytesPerRow = OFFSCREEN_TEX_WIDTH * 4;
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
+  const size_t bytesPerRow = kOffscreenTexWidth * 4;
 
   //--------------------------
   // Create custom framebuffer
@@ -532,7 +559,7 @@ TEST_F(TextureArrayTest, Passthrough_RenderToArray) {
     //------------------
     // Upload layer data
     //------------------
-    ASSERT_TRUE(inputTexture_->upload(rangeDesc, textureArray2D[layer], bytesPerRow).isOk());
+    ASSERT_TRUE(inputTexture_->upload(rangeDesc, kTextureLayerData[layer], bytesPerRow).isOk());
 
     //-------
     // Render
@@ -570,7 +597,7 @@ TEST_F(TextureArrayTest, Passthrough_RenderToArray) {
                                           *cmdQueue_,
                                           *customFramebuffer,
                                           customOffscreenTexture->getLayerRange(layer),
-                                          textureArray2D[layer],
+                                          kTextureLayerData[layer],
                                           layerStr.c_str());
   }
 }

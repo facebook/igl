@@ -26,8 +26,8 @@ namespace tests {
 // size texture, then you will have to either create a new offscreenTexture_
 // and the framebuffer object in your test, so know exactly what the end result
 // would be after sampling
-#define OFFSCREEN_TEX_WIDTH 2
-#define OFFSCREEN_TEX_HEIGHT 2
+constexpr uint32_t kOffscreenTexWidth = 2u;
+constexpr uint32_t kOffscreenTexHeight = 2u;
 
 //
 // TextureTest
@@ -61,8 +61,8 @@ class TextureTest : public ::testing::Test {
 
     // Create an offscreen texture to render to
     TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                             OFFSCREEN_TEX_WIDTH,
-                                             OFFSCREEN_TEX_HEIGHT,
+                                             kOffscreenTexWidth,
+                                             kOffscreenTexHeight,
                                              TextureDesc::TextureUsageBits::Sampled |
                                                  TextureDesc::TextureUsageBits::Attachment);
 
@@ -744,14 +744,14 @@ TEST_F(TextureTest, Upload) {
   // Create input texture and upload data
   //-------------------------------------
   const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                                 OFFSCREEN_TEX_WIDTH,
-                                                 OFFSCREEN_TEX_HEIGHT,
+                                                 kOffscreenTexWidth,
+                                                 kOffscreenTexHeight,
                                                  TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
 
-  auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
+  auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
 
   inputTexture_->upload(rangeDesc, data::texture::TEX_RGBA_2x2);
 
@@ -776,14 +776,14 @@ TEST_F(TextureTest, Passthrough) {
   // Create input texture and upload data
   //-------------------------------------
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           OFFSCREEN_TEX_WIDTH,
-                                           OFFSCREEN_TEX_HEIGHT,
+                                           kOffscreenTexWidth,
+                                           kOffscreenTexHeight,
                                            TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
 
-  auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
+  auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
 
   inputTexture_->upload(rangeDesc, data::texture::TEX_RGBA_2x2);
 
@@ -840,20 +840,20 @@ TEST_F(TextureTest, PassthroughSubTexture) {
   // Create input texture and sub-texture, and upload data
   //------------------------------------------------------
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           OFFSCREEN_TEX_WIDTH,
-                                           OFFSCREEN_TEX_HEIGHT,
+                                           kOffscreenTexWidth,
+                                           kOffscreenTexHeight,
                                            TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
 
-  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
 
   inputTexture_->upload(rangeDesc, data::texture::TEX_RGBA_2x2);
 
   // Upload right lower corner as a single-pixel sub-texture.
   auto singlePixelDesc =
-      TextureRangeDesc::new2D(OFFSCREEN_TEX_WIDTH - 1, OFFSCREEN_TEX_HEIGHT - 1, 1, 1);
+      TextureRangeDesc::new2D(kOffscreenTexWidth - 1, kOffscreenTexHeight - 1, 1, 1);
   int32_t singlePixelColor = 0x44332211;
 
   inputTexture_->upload(singlePixelDesc, &singlePixelColor);
@@ -914,14 +914,14 @@ TEST_F(TextureTest, FBCopy) {
   std::shared_ptr<IRenderPipelineState> pipelineState;
   std::shared_ptr<ITexture> dstTexture;
 
-  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
 
   //--------------------------------
   // Create copy destination texture
   //--------------------------------
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           OFFSCREEN_TEX_WIDTH,
-                                           OFFSCREEN_TEX_HEIGHT,
+                                           kOffscreenTexWidth,
+                                           kOffscreenTexHeight,
                                            TextureDesc::TextureUsageBits::Sampled);
   texDesc.debugName = "Texture: TextureTest::FBCopy::dstTexture";
   dstTexture = iglDev_->createTexture(texDesc, &ret);
@@ -1283,34 +1283,36 @@ TEST_F(TextureTest, Resize) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
-  const size_t INPUT_TEX_WIDTH = 10;
-  const size_t INPUT_TEX_HEIGHT = 40;
-  const size_t OUTPUT_TEX_WIDTH = 5;
-  const size_t OUTPUT_TEX_HEIGHT = 5;
+  constexpr uint32_t kInputTexWidth = 10u;
+  constexpr uint32_t kInputTexHeight = 40u;
+  constexpr uint32_t kOutputTexWidth = 5u;
+  constexpr uint32_t kOutputTexHeight = 5u;
+  constexpr size_t kTextureSize =
+      static_cast<size_t>(kInputTexWidth) * static_cast<size_t>(kInputTexHeight);
 
   //-------------------------------------
   // Create input texture and upload data
   //-------------------------------------
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           INPUT_TEX_WIDTH,
-                                           INPUT_TEX_HEIGHT,
+                                           kInputTexWidth,
+                                           kInputTexHeight,
                                            TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
 
-  auto rangeDesc = TextureRangeDesc::new2D(0, 0, INPUT_TEX_WIDTH, INPUT_TEX_HEIGHT);
+  auto rangeDesc = TextureRangeDesc::new2D(0, 0, kInputTexWidth, kInputTexHeight);
 
   // Allocate input texture and set color to 0x80808080
-  std::vector<uint32_t> inputTexData(INPUT_TEX_WIDTH * INPUT_TEX_HEIGHT, 0x80808080);
+  std::vector<uint32_t> inputTexData(kTextureSize, 0x80808080);
   inputTexture_->upload(rangeDesc, inputTexData.data());
 
   //------------------------------------------------------------------------
   // Create a different sized output texture, and attach it to a framebuffer
   //------------------------------------------------------------------------
   texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                               OUTPUT_TEX_WIDTH,
-                               OUTPUT_TEX_HEIGHT,
+                               kOutputTexWidth,
+                               kOutputTexHeight,
                                TextureDesc::TextureUsageBits::Sampled |
                                    TextureDesc::TextureUsageBits::Attachment);
 
@@ -1481,30 +1483,32 @@ TEST_F(TextureTest, RenderToMip) {
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
   // Use a square output texture with mips
-  constexpr int NUM_MIPS = 4;
-  const size_t OUT_TEX_WIDTH = 8;
-  const size_t OUT_TEX_MIP_COUNT = TextureDesc::calcNumMipLevels(OUT_TEX_WIDTH, OUT_TEX_WIDTH);
-  static_assert(OUT_TEX_WIDTH > 1);
-  static_assert(1 << (NUM_MIPS - 1) == OUT_TEX_WIDTH);
+  constexpr uint32_t kNumMipLevels = 4;
+  constexpr uint32_t kOutputTexWidth = 8u;
+  constexpr uint32_t kOutputTexHeight = 8u;
+  static_assert(kOutputTexWidth > 1);
+  static_assert(1 << (kNumMipLevels - 1) == kOutputTexWidth);
+  static_assert(kOutputTexWidth == kOutputTexHeight);
 
-  uint32_t colors[NUM_MIPS] = {0xdeadbeef, 0x8badf00d, 0xc00010ff, 0xbaaaaaad};
+  static constexpr std::array<uint32_t, kNumMipLevels> kColors = {
+      0xdeadbeef, 0x8badf00d, 0xc00010ff, 0xbaaaaaad};
 
   std::vector<std::vector<uint32_t>> inputTexData{
-      std::vector(64 /* 8 * 8 */, colors[0]),
-      std::vector(16 /* 4 * 4 */, colors[1]),
-      std::vector(4 /* 2 * 2 */, colors[2]),
-      std::vector(1 /* 1 * 1 */, colors[3]),
+      std::vector(64 /* 8 * 8 */, kColors[0]),
+      std::vector(16 /* 4 * 4 */, kColors[1]),
+      std::vector(4 /* 2 * 2 */, kColors[2]),
+      std::vector(1 /* 1 * 1 */, kColors[3]),
   };
 
   //---------------------------------------------------------------------
   // Create output texture with mip levels and attach it to a framebuffer
   //---------------------------------------------------------------------
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           OUT_TEX_WIDTH,
-                                           OUT_TEX_WIDTH,
+                                           kOutputTexWidth,
+                                           kOutputTexHeight,
                                            TextureDesc::TextureUsageBits::Sampled |
                                                TextureDesc::TextureUsageBits::Attachment);
-  texDesc.numMipLevels = OUT_TEX_MIP_COUNT;
+  texDesc.numMipLevels = kNumMipLevels;
 
   auto outputTex = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -1527,11 +1531,11 @@ TEST_F(TextureTest, RenderToMip) {
   //-------------------------
   // Render to each mip level
   //-------------------------
-  for (auto mipLevel = 0; mipLevel < NUM_MIPS; mipLevel++) {
+  for (auto mipLevel = 0; mipLevel < kNumMipLevels; mipLevel++) {
     //---------------------
     // Create input texture
     //---------------------
-    const int inTexWidth = OUT_TEX_WIDTH >> mipLevel;
+    const int inTexWidth = kOutputTexWidth >> mipLevel;
     texDesc = TextureDesc::new2D(
         TextureFormat::RGBA_UNorm8, inTexWidth, inTexWidth, TextureDesc::TextureUsageBits::Sampled);
     inputTexture_ = iglDev_->createTexture(texDesc, &ret);
@@ -1568,7 +1572,7 @@ TEST_F(TextureTest, RenderToMip) {
   }
 
   // Do readback in a separate loop to ensure all mip levels have been rendered.
-  for (size_t mipLevel = 0; mipLevel < NUM_MIPS; mipLevel++) {
+  for (size_t mipLevel = 0; mipLevel < kNumMipLevels; mipLevel++) {
     //----------------
     // Validate output
     //----------------
@@ -1585,25 +1589,35 @@ TEST_F(TextureTest, UploadToMip) {
   Result ret;
 
   // Use a square output texture with mips
-  static constexpr size_t TEX_WIDTH = 2;
-  const size_t TEX_MIP_COUNT = TextureDesc::calcNumMipLevels(TEX_WIDTH, TEX_WIDTH);
-  static_assert(TEX_WIDTH > 1);
+  constexpr uint32_t kNumMipLevels = 2;
+  constexpr uint32_t kTexWidth = 2u;
+  constexpr uint32_t kTexHeight = 2u;
+  static_assert(kTexWidth > 1);
+  static_assert(1 << (kNumMipLevels - 1) == kTexWidth);
+  static_assert(kTexWidth == kTexHeight);
 
-  static constexpr uint32_t baseMipColor = 0xdeadbeef;
-  static constexpr uint32_t mip1Color = 0x8badf00d;
+  constexpr uint32_t kBaseMipColor = 0xdeadbeef;
+  constexpr uint32_t kMip1Color = 0x8badf00d;
 
-  std::vector<uint32_t> baseMipData(4, baseMipColor);
-  std::vector<uint32_t> mip1Data(1, mip1Color);
+  static constexpr std::array<uint32_t, 5> kMipTextureData = {
+      kBaseMipColor, // Base Mip
+      kBaseMipColor, // Base Mip
+      kBaseMipColor, // Base Mip
+      kBaseMipColor, // Base Mip
+      kMip1Color, // Mip 1
+  };
+  static constexpr const uint32_t* kBaseMipData = kMipTextureData.data();
+  static constexpr const uint32_t* kMip1Data = kMipTextureData.data() + 4;
 
   //---------------------------------------------------------------------
   // Create texture with mip levels
   //---------------------------------------------------------------------
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           TEX_WIDTH,
-                                           TEX_WIDTH,
+                                           kTexWidth,
+                                           kTexHeight,
                                            TextureDesc::TextureUsageBits::Sampled |
                                                TextureDesc::TextureUsageBits::Attachment);
-  texDesc.numMipLevels = TEX_MIP_COUNT;
+  texDesc.numMipLevels = kNumMipLevels;
   auto tex = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
   ASSERT_TRUE(tex != nullptr);
@@ -1611,17 +1625,17 @@ TEST_F(TextureTest, UploadToMip) {
   //---------------------------------------------------------------------
   // Validate initial state, upload pixel data, and generate mipmaps
   //---------------------------------------------------------------------
-  ret = tex->upload(tex->getFullRange(0), baseMipData.data());
+  ret = tex->upload(tex->getFullRange(0), kBaseMipData);
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
 
-  ret = tex->upload(tex->getFullRange(1), mip1Data.data());
+  ret = tex->upload(tex->getFullRange(1), kMip1Data);
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
 
   util::validateUploadedTextureRange(
-      *iglDev_, *cmdQueue_, tex, tex->getFullRange(0), baseMipData.data(), "Base Level");
+      *iglDev_, *cmdQueue_, tex, tex->getFullRange(0), kBaseMipData, "Base Level");
 
   util::validateUploadedTextureRange(
-      *iglDev_, *cmdQueue_, tex, tex->getFullRange(1), mip1Data.data(), "Mip 1");
+      *iglDev_, *cmdQueue_, tex, tex->getFullRange(1), kMip1Data, "Mip 1");
 }
 
 namespace {
@@ -1629,24 +1643,27 @@ void testGenerateMipmap(IDevice& device, ICommandQueue& cmdQueue, bool withComma
   Result ret;
 
   // Use a square output texture with mips
-  static constexpr size_t TEX_WIDTH = 2;
-  const size_t TEX_MIP_COUNT = TextureDesc::calcNumMipLevels(TEX_WIDTH, TEX_WIDTH);
-  static_assert(TEX_WIDTH > 1);
+  constexpr uint32_t kNumMipLevels = 2;
+  constexpr uint32_t kTexWidth = 2u;
+  constexpr uint32_t kTexHeight = 2u;
+  static_assert(kTexWidth > 1);
+  static_assert(1 << (kNumMipLevels - 1) == kTexWidth);
+  static_assert(kTexWidth == kTexHeight);
 
-  static constexpr uint32_t color = 0xdeadbeef;
-  std::vector<uint32_t> baseMipData(4, color);
-  std::vector<uint32_t> initialMip1Data(1, 0);
-  std::vector<uint32_t> generatedMip1Data(1, color);
+  constexpr uint32_t kColor = 0xdeadbeef;
+  constexpr std::array<uint32_t, 4> kBaseMipData = {kColor, kColor, kColor, kColor};
+  constexpr std::array<uint32_t, 1> kInitialMip1Data = {0};
+  constexpr std::array<uint32_t, 1> kGeneratedMip1Data = {kColor};
 
   //---------------------------------------------------------------------
   // Create texture with mip levels
   //---------------------------------------------------------------------
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           TEX_WIDTH,
-                                           TEX_WIDTH,
+                                           kTexWidth,
+                                           kTexWidth,
                                            TextureDesc::TextureUsageBits::Sampled |
                                                TextureDesc::TextureUsageBits::Attachment);
-  texDesc.numMipLevels = TEX_MIP_COUNT;
+  texDesc.numMipLevels = kNumMipLevels;
   auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
   ASSERT_TRUE(tex != nullptr);
@@ -1654,17 +1671,17 @@ void testGenerateMipmap(IDevice& device, ICommandQueue& cmdQueue, bool withComma
   //---------------------------------------------------------------------
   // Validate initial state, upload pixel data, and generate mipmaps
   //---------------------------------------------------------------------
-  ret = tex->upload(tex->getFullRange(0), baseMipData.data());
+  ret = tex->upload(tex->getFullRange(0), kBaseMipData.data());
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
 
-  ret = tex->upload(tex->getFullRange(1), initialMip1Data.data());
+  ret = tex->upload(tex->getFullRange(1), kInitialMip1Data.data());
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
 
   util::validateUploadedTextureRange(
-      device, cmdQueue, tex, tex->getFullRange(0), baseMipData.data(), "Initial (level 0)");
+      device, cmdQueue, tex, tex->getFullRange(0), kBaseMipData.data(), "Initial (level 0)");
 
   util::validateUploadedTextureRange(
-      device, cmdQueue, tex, tex->getFullRange(1), initialMip1Data.data(), "Initial (level 1)");
+      device, cmdQueue, tex, tex->getFullRange(1), kInitialMip1Data.data(), "Initial (level 1)");
 
   if (withCommandQueue) {
     tex->generateMipmap(cmdQueue);
@@ -1684,10 +1701,10 @@ void testGenerateMipmap(IDevice& device, ICommandQueue& cmdQueue, bool withComma
   }
 
   util::validateUploadedTextureRange(
-      device, cmdQueue, tex, tex->getFullRange(0), baseMipData.data(), "Final (level 0)");
+      device, cmdQueue, tex, tex->getFullRange(0), kBaseMipData.data(), "Final (level 0)");
 
   util::validateUploadedTextureRange(
-      device, cmdQueue, tex, tex->getFullRange(1), generatedMip1Data.data(), "Final (level 1)");
+      device, cmdQueue, tex, tex->getFullRange(1), kGeneratedMip1Data.data(), "Final (level 1)");
 }
 } // namespace
 

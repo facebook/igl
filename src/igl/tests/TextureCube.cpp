@@ -12,6 +12,7 @@
 #include "util/TestDevice.h"
 
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
+#include <array>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <gtest/gtest.h>
@@ -26,8 +27,8 @@ namespace tests {
 // size texture, then you will have to either create a new offscreenTexture_
 // and the framebuffer object in your test, so know exactly what the end result
 // would be after sampling
-constexpr size_t OFFSCREEN_TEX_WIDTH = 2;
-constexpr size_t OFFSCREEN_TEX_HEIGHT = 2;
+constexpr size_t kOffscreenTexWidth = 2;
+constexpr size_t kOffscreenTexHeight = 2;
 
 struct VertexUniforms {
   glm::vec4 viewDirection = glm::vec4(0.0);
@@ -81,8 +82,8 @@ class TextureCubeTest : public ::testing::Test {
     ASSERT_TRUE(cmdQueue_ != nullptr);
 
     TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                             OFFSCREEN_TEX_WIDTH,
-                                             OFFSCREEN_TEX_HEIGHT,
+                                             kOffscreenTexWidth,
+                                             kOffscreenTexHeight,
                                              TextureDesc::TextureUsageBits::Sampled |
                                                  TextureDesc::TextureUsageBits::Attachment);
 
@@ -234,24 +235,36 @@ class TextureCubeTest : public ::testing::Test {
   size_t textureUnit_ = 0;
 };
 
-uint32_t R = 0x1F00001F;
-uint32_t G = 0x002F002F;
-uint32_t B = 0x00003F4F;
+constexpr uint32_t kR = 0x1F00001F;
+constexpr uint32_t kG = 0x002F002F;
+constexpr uint32_t kB = 0x00003F4F;
 
-uint32_t textureArray[6][OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT] = {
-    {R, R, R, R},
-    {G, G, G, G},
-    {B, B, B, B},
-    {R | B, R | B, R | B, R | B},
-    {R | G, R | G, R | G, R | G},
-    {B | G, B | G, B | G, B | G}};
+// clang-format off
+constexpr std::array<uint32_t, 24> kTextureData = {
+  kR, kR, kR, kR,                     // Face 0
+  kG, kG, kG, kG,                     // Face 1
+  kB, kB, kB, kB,                     // Face 2
+  kR | kB, kR | kB, kR | kB, kR | kB, // Face 3
+  kR | kG, kR | kG, kR | kG, kR | kG, // Face 4
+  kB | kG, kB | kG, kB | kG, kB | kG, // Face 5
+};
+// clang-format on
 
-static glm::vec4 viewDirection[] = {{1.0f, 0.0f, 0.0f, 0.0f},
-                                    {-1.0f, 0.0f, 0.0f, 0.0f},
-                                    {0.0f, 1.0f, 0.0f, 0.0f},
-                                    {0.0f, -1.0f, 0.0f, 0.0f},
-                                    {0.0f, 0.0f, 1.0f, 0.0f},
-                                    {0.0f, 0.0f, -1.0f, 0.0f}};
+constexpr std::array<const uint32_t*, 6> kTextureFaceData{
+    kTextureData.data() + 0,
+    kTextureData.data() + 4,
+    kTextureData.data() + 8,
+    kTextureData.data() + 12,
+    kTextureData.data() + 16,
+    kTextureData.data() + 20,
+};
+
+static const std::array<glm::vec4, 6> kViewDirection = {glm::vec4{1.0f, 0.0f, 0.0f, 0.0f},
+                                                        glm::vec4{-1.0f, 0.0f, 0.0f, 0.0f},
+                                                        glm::vec4{0.0f, 1.0f, 0.0f, 0.0f},
+                                                        glm::vec4{0.0f, -1.0f, 0.0f, 0.0f},
+                                                        glm::vec4{0.0f, 0.0f, 1.0f, 0.0f},
+                                                        glm::vec4{0.0f, 0.0f, -1.0f, 0.0f}};
 
 //
 // Test uploading cube maps
@@ -266,8 +279,8 @@ TEST_F(TextureCubeTest, Upload) {
   // Create cube texture with mip levels and attach it to a framebuffer
   //---------------------------------------------------------------------
   const TextureDesc texDesc = TextureDesc::newCube(TextureFormat::RGBA_UNorm8,
-                                                   OFFSCREEN_TEX_WIDTH,
-                                                   OFFSCREEN_TEX_WIDTH,
+                                                   kOffscreenTexWidth,
+                                                   kOffscreenTexWidth,
                                                    TextureDesc::TextureUsageBits::Sampled |
                                                        TextureDesc::TextureUsageBits::Attachment);
   auto tex = iglDev_->createTexture(texDesc, &ret);
@@ -278,7 +291,7 @@ TEST_F(TextureCubeTest, Upload) {
   // Upload pixel data and validate faces
   //---------------------------------------------------------------------
   for (size_t face = 0; face < 6; ++face) {
-    ASSERT_TRUE(tex->upload(tex->getCubeFaceRange(face), textureArray[face]).isOk());
+    ASSERT_TRUE(tex->upload(tex->getCubeFaceRange(face), kTextureFaceData[face]).isOk());
   }
 
   for (size_t face = 0; face < 6; ++face) {
@@ -287,7 +300,7 @@ TEST_F(TextureCubeTest, Upload) {
                                        *cmdQueue_,
                                        tex,
                                        tex->getCubeFaceRange(face),
-                                       textureArray[face],
+                                       kTextureFaceData[face],
                                        faceStr.c_str());
   }
 }
@@ -306,27 +319,33 @@ TEST_F(TextureCubeTest, Passthrough_SampleFromCube) {
   // Create input texture and upload data
   //-------------------------------------
   TextureDesc texDesc = TextureDesc::newCube(TextureFormat::RGBA_UNorm8,
-                                             OFFSCREEN_TEX_WIDTH,
-                                             OFFSCREEN_TEX_HEIGHT,
+                                             kOffscreenTexWidth,
+                                             kOffscreenTexHeight,
                                              TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
 
-  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
 
   ASSERT_TRUE(
-      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::PosX), textureArray[0]).isOk());
+      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::PosX), kTextureFaceData[0])
+          .isOk());
   ASSERT_TRUE(
-      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::NegX), textureArray[1]).isOk());
+      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::NegX), kTextureFaceData[1])
+          .isOk());
   ASSERT_TRUE(
-      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::PosY), textureArray[2]).isOk());
+      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::PosY), kTextureFaceData[2])
+          .isOk());
   ASSERT_TRUE(
-      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::NegY), textureArray[3]).isOk());
+      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::NegY), kTextureFaceData[3])
+          .isOk());
   ASSERT_TRUE(
-      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::PosZ), textureArray[4]).isOk());
+      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::PosZ), kTextureFaceData[4])
+          .isOk());
   ASSERT_TRUE(
-      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::NegZ), textureArray[5]).isOk());
+      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::NegZ), kTextureFaceData[5])
+          .isOk());
   //----------------
   // Create Pipeline
   //----------------
@@ -354,7 +373,7 @@ TEST_F(TextureCubeTest, Passthrough_SampleFromCube) {
     auto vertUniformBuffer = createVertexUniformBuffer(*iglDev_.get(), &result);
     ASSERT_TRUE(result.isOk());
 
-    vertexUniforms_.viewDirection = viewDirection[face];
+    vertexUniforms_.viewDirection = kViewDirection[face];
 
     *static_cast<VertexUniforms*>(vertUniformBuffer->getData()) = vertexUniforms_;
     vertUniformBuffer->bind(*iglDev_.get(), *pipelineState, *cmds.get());
@@ -372,7 +391,7 @@ TEST_F(TextureCubeTest, Passthrough_SampleFromCube) {
     //----------------
     const auto faceStr = std::string("Face ") + std::to_string(face);
     util::validateFramebufferTexture(
-        *iglDev_, *cmdQueue_, *framebuffer_, textureArray[face], faceStr.c_str());
+        *iglDev_, *cmdQueue_, *framebuffer_, kTextureFaceData[face], faceStr.c_str());
   }
 }
 
@@ -391,23 +410,23 @@ TEST_F(TextureCubeTest, Passthrough_RenderToCube) {
   // Create input and output textures
   //---------------------------------
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           OFFSCREEN_TEX_WIDTH,
-                                           OFFSCREEN_TEX_HEIGHT,
+                                           kOffscreenTexWidth,
+                                           kOffscreenTexHeight,
                                            TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
 
   texDesc = TextureDesc::newCube(TextureFormat::RGBA_UNorm8,
-                                 OFFSCREEN_TEX_WIDTH,
-                                 OFFSCREEN_TEX_HEIGHT,
+                                 kOffscreenTexWidth,
+                                 kOffscreenTexHeight,
                                  TextureDesc::TextureUsageBits::Sampled);
   auto customOffscreenTexture = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(customOffscreenTexture != nullptr);
 
-  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
-  const size_t bytesPerRow = OFFSCREEN_TEX_WIDTH * 4;
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
+  const size_t bytesPerRow = kOffscreenTexWidth * 4;
 
   //--------------------------
   // Create custom framebuffer
@@ -436,7 +455,7 @@ TEST_F(TextureCubeTest, Passthrough_RenderToCube) {
     //------------------
     // Upload layer data
     //------------------
-    ASSERT_TRUE(inputTexture_->upload(rangeDesc, textureArray[face], bytesPerRow).isOk());
+    ASSERT_TRUE(inputTexture_->upload(rangeDesc, kTextureFaceData[face], bytesPerRow).isOk());
 
     //-------
     // Render
@@ -474,7 +493,7 @@ TEST_F(TextureCubeTest, Passthrough_RenderToCube) {
                                           *cmdQueue_,
                                           *customFramebuffer,
                                           customOffscreenTexture->getCubeFaceRange(face),
-                                          textureArray[face],
+                                          kTextureFaceData[face],
                                           faceStr.c_str());
   }
 }
