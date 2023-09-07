@@ -657,6 +657,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     }
     dslCombinedImageSamplers_ = std::make_unique<VulkanDescriptorSetLayout>(
         device,
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
         IGL_TEXTURE_SAMPLERS_MAX,
         bindings,
         bindingFlags,
@@ -676,8 +677,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     }
     // create default descriptor pool and allocate descriptor sets
     combinedImageSamplerDSets_.dsets.resize(kNumSets);
-    VK_ASSERT_RETURN(ivkCreateDescriptorPool(
-        device, kNumSets, IGL_TEXTURE_SAMPLERS_MAX, poolSizes, &dpCombinedImageSamplers_));
+    VK_ASSERT_RETURN(ivkCreateDescriptorPool(device,
+                                             VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+                                             kNumSets,
+                                             IGL_TEXTURE_SAMPLERS_MAX,
+                                             poolSizes,
+                                             &dpCombinedImageSamplers_));
     for (uint32_t i = 0; i != kNumSets; i++) {
       VK_ASSERT_RETURN(
           ivkAllocateDescriptorSet(device,
@@ -701,6 +706,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     }
     dslBuffersUniform_ = std::make_unique<VulkanDescriptorSetLayout>(
         device,
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
         IGL_UNIFORM_BLOCKS_BINDING_MAX,
         bindings,
         bindingFlags,
@@ -718,8 +724,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
       poolSizes[i] = VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                           kNumSets * IGL_UNIFORM_BLOCKS_BINDING_MAX};
     }
-    VK_ASSERT_RETURN(ivkCreateDescriptorPool(
-        device, kNumSets, IGL_UNIFORM_BLOCKS_BINDING_MAX, poolSizes, &dpBuffersUniform_));
+    VK_ASSERT_RETURN(ivkCreateDescriptorPool(device,
+                                             VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+                                             kNumSets,
+                                             IGL_UNIFORM_BLOCKS_BINDING_MAX,
+                                             poolSizes,
+                                             &dpBuffersUniform_));
     bufferUniformDSets_.dsets.resize(kNumSets);
     for (size_t i = 0; i != kNumSets; i++) {
       VK_ASSERT_RETURN(ivkAllocateDescriptorSet(device,
@@ -742,6 +752,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     }
     dslBuffersStorage_ = std::make_unique<VulkanDescriptorSetLayout>(
         device,
+        VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
         IGL_UNIFORM_BLOCKS_BINDING_MAX,
         bindings,
         bindingFlags,
@@ -759,8 +770,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
       poolSizes[i] = VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                           kNumSets * IGL_UNIFORM_BLOCKS_BINDING_MAX};
     }
-    VK_ASSERT_RETURN(ivkCreateDescriptorPool(
-        device, kNumSets, IGL_UNIFORM_BLOCKS_BINDING_MAX, poolSizes, &dpBuffersStorage_));
+    VK_ASSERT_RETURN(ivkCreateDescriptorPool(device,
+                                             VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+                                             kNumSets,
+                                             IGL_UNIFORM_BLOCKS_BINDING_MAX,
+                                             poolSizes,
+                                             &dpBuffersStorage_));
     bufferStorageDSets_.dsets.resize(kNumSets);
     for (size_t i = 0; i != kNumSets; i++) {
       VK_ASSERT_RETURN(ivkAllocateDescriptorSet(device,
@@ -848,6 +863,7 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
   IGL_ASSERT(bindingFlags.back() == flags);
   dslBindless_ = std::make_unique<VulkanDescriptorSetLayout>(
       device,
+      VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
       kNumBindings,
       bindings.data(),
       bindingFlags.data(),
@@ -862,8 +878,12 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
       VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, currentMaxBindlessSamplers_},
       VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, currentMaxBindlessTextures_},
   };
-  VK_ASSERT(ivkCreateDescriptorPool(
-      device, 1, static_cast<uint32_t>(poolSizes.size()), poolSizes.data(), &dpBindless_));
+  VK_ASSERT(ivkCreateDescriptorPool(device,
+                                    VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+                                    1,
+                                    static_cast<uint32_t>(poolSizes.size()),
+                                    poolSizes.data(),
+                                    &dpBindless_));
   VK_ASSERT(ivkSetDebugObjectName(device,
                                   VK_OBJECT_TYPE_DESCRIPTOR_POOL,
                                   (uint64_t)dpBindless_,

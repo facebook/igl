@@ -18,6 +18,7 @@ class VulkanPipelineLayout;
 class VulkanDescriptorSetLayout final {
  public:
   VulkanDescriptorSetLayout(VkDevice device,
+                            VkDescriptorSetLayoutCreateFlags flags,
                             uint32_t numBindings,
                             const VkDescriptorSetLayoutBinding* bindings,
                             const VkDescriptorBindingFlags* bindingFlags,

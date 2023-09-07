@@ -171,6 +171,7 @@ VkResult ivkCreateComputePipeline(VkDevice device,
                                   VkPipeline* outPipeline);
 
 VkResult ivkCreateDescriptorSetLayout(VkDevice device,
+                                      VkDescriptorSetLayoutCreateFlags flags,
                                       uint32_t numBindings,
                                       const VkDescriptorSetLayoutBinding* bindings,
                                       const VkDescriptorBindingFlags* bindingFlags,
@@ -206,6 +207,7 @@ VkResult ivkAllocateDescriptorSet(VkDevice device,
                                   VkDescriptorSet* outDescriptorSet);
 
 VkResult ivkCreateDescriptorPool(VkDevice device,
+                                 VkDescriptorPoolCreateFlags flags,
                                  uint32_t maxDescriptorSets,
                                  uint32_t numPoolSizes,
                                  const VkDescriptorPoolSize* poolSizes,

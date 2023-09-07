@@ -748,6 +748,7 @@ VkRenderPassMultiviewCreateInfo ivkGetRenderPassMultiviewCreateInfo(
 }
 
 VkResult ivkCreateDescriptorSetLayout(VkDevice device,
+                                      VkDescriptorSetLayoutCreateFlags flags,
                                       uint32_t numBindings,
                                       const VkDescriptorSetLayoutBinding* bindings,
                                       const VkDescriptorBindingFlags* bindingFlags,
@@ -766,7 +767,7 @@ VkResult ivkCreateDescriptorSetLayout(VkDevice device,
     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 #if !IGL_PLATFORM_ANDROID
     .pNext = &setLayoutBindingFlagsCI,
-    .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
+    .flags = flags,
 #endif
     .bindingCount = numBindings,
     .pBindings = bindings,
@@ -784,18 +785,18 @@ VkResult ivkAllocateDescriptorSet(VkDevice device,
       .descriptorSetCount = 1,
       .pSetLayouts = &layout,
   };
-
   return vkAllocateDescriptorSets(device, &ai, outDescriptorSet);
 }
 
 VkResult ivkCreateDescriptorPool(VkDevice device,
+                                 VkDescriptorPoolCreateFlags flags,
                                  uint32_t maxDescriptorSets,
                                  uint32_t numPoolSizes,
                                  const VkDescriptorPoolSize* poolSizes,
                                  VkDescriptorPool* outDescriptorPool) {
   const VkDescriptorPoolCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-      .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+      .flags = flags,
       .maxSets = maxDescriptorSets,
       .poolSizeCount = numPoolSizes,
       .pPoolSizes = poolSizes,
