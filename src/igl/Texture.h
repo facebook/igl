@@ -665,7 +665,7 @@ class ITexture : public ITrackedResource<ITexture> {
    *
    * @return TextureFormatProperties
    */
-  [[nodiscard]] TextureFormatProperties getProperties() const {
+  [[nodiscard]] const TextureFormatProperties& getProperties() const {
     return properties_;
   }
   /**
@@ -817,6 +817,11 @@ class ITexture : public ITrackedResource<ITexture> {
                                                          const TextureRangeDesc& range,
                                                          const TextureRangeDesc& subRange,
                                                          size_t bytesPerRow) const noexcept;
+
+  [[nodiscard]] virtual bool needsRepacking(IGL_MAYBE_UNUSED const TextureRangeDesc& range,
+                                            IGL_MAYBE_UNUSED size_t bytesPerRow) const {
+    return false;
+  }
 
   [[nodiscard]] virtual Result uploadInternal(IGL_MAYBE_UNUSED TextureType type,
                                               IGL_MAYBE_UNUSED const TextureRangeDesc& range,

@@ -189,6 +189,12 @@ Result Texture::create(const TextureDesc& desc) {
   return Result();
 }
 
+bool Texture::needsRepacking(const TextureRangeDesc& /*range*/, size_t bytesPerRow) const {
+  // Vulkan textures MUST be aligned to a multiple of the texel size or, for compressed textures,
+  // the texel block size.
+  return bytesPerRow != 0 && bytesPerRow % getProperties().bytesPerBlock != 0;
+}
+
 Result Texture::uploadInternal(TextureType /*type*/,
                                const TextureRangeDesc& range,
                                const void* data,

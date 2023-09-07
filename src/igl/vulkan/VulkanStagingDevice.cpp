@@ -131,18 +131,6 @@ void VulkanStagingDevice::imageData(VulkanImage& image,
                                     uint32_t bytesPerRow,
                                     const void* data) {
   IGL_PROFILER_FUNCTION();
-  std::unique_ptr<uint8_t[]> repackedData = nullptr;
-
-  // Vulkan only handles cases where row lengths are multiples of texel block size.
-  // Must repack the data if the source data does not conform to this.
-  if (bytesPerRow != 0 && bytesPerRow % properties.bytesPerBlock != 0) {
-    // Must repack the data.
-    repackedData = std::make_unique<uint8_t[]>(properties.getBytesPerRange(range));
-    ITexture::repackData(
-        properties, range, static_cast<const uint8_t*>(data), bytesPerRow, repackedData.get(), 0);
-    bytesPerRow = 0;
-    data = repackedData.get();
-  }
 
   const uint32_t storageSize =
       static_cast<uint32_t>(properties.getBytesPerRange(range, bytesPerRow));

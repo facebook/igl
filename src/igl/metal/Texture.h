@@ -64,6 +64,7 @@ class Texture final : public ITexture {
                                        NSUInteger metalSlice);
 
  private:
+  [[nodiscard]] bool needsRepacking(const TextureRangeDesc& range, size_t bytesPerRow) const final;
   Result uploadInternal(TextureType type,
                         const TextureRangeDesc& range,
                         const void* IGL_NULLABLE data,

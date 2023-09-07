@@ -68,6 +68,8 @@ class Texture final : public ITexture {
  private:
   Result create(const TextureDesc& desc);
 
+  [[nodiscard]] bool needsRepacking(const TextureRangeDesc& range, size_t bytesPerRow) const final;
+
   Result uploadInternal(TextureType type,
                         const TextureRangeDesc& range,
                         const void* data,

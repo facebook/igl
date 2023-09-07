@@ -41,6 +41,25 @@ Texture::~Texture() {
   value_ = nil;
 }
 
+bool Texture::needsRepacking(const TextureRangeDesc& range, size_t bytesPerRow) const {
+  if (bytesPerRow == 0) {
+    return false;
+  }
+
+  const auto format = getFormat();
+  if (format == TextureFormat::RGBA_PVRTC_2BPPV1 || format == TextureFormat::RGB_PVRTC_2BPPV1 ||
+      format == TextureFormat::RGBA_PVRTC_4BPPV1 || format == TextureFormat::RGB_PVRTC_4BPPV1) {
+    // PVRTC formats MUST pass a value of 0 to bytesPerRow, so MUST be repacked if bytesPerRow
+    // doesn't match the range's bytesPerRow.
+    const auto rangeBytesPerRow = getProperties().getBytesPerRow(range);
+    return rangeBytesPerRow != bytesPerRow;
+  }
+
+  // Metal textures MUST be aligned to a multiple of the texel size or, for compressed textures, the
+  // texel block size.
+  return bytesPerRow % getProperties().bytesPerBlock != 0;
+}
+
 Result Texture::uploadInternal(TextureType type,
                                const TextureRangeDesc& range,
                                const void* IGL_NULLABLE data,

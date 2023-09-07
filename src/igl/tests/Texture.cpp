@@ -1064,14 +1064,12 @@ constexpr std::array<std::pair<const void*, uint32_t>, 4> kPixelAlignments = {
     // No padding required since the width equals number of input pixels per row.
     std::make_pair(kPixelsAligned12.data(), kAlignedPixelsWidth * 4u),
     // 14 byte row will trigger 2 byte alignment since texture width is set to 3.
-    // Padding of 0.5 pixels used per row of width 3. Fails for OpenGL and Metal with current
-    // implementation.
+    // Padding of 0.5 pixels used per row of width 3.
     std::make_pair(kPixelsAligned14.data(), kAlignedPixelsWidth * 4u + 2u),
     // 16 byte row will trigger 8 byte alignment since texture width is set to 3.
     // Padding of 1 pixel used per row of width 3.
     std::make_pair(kPixelsAligned16.data(), (kAlignedPixelsWidth + 1u) * 4u),
-    // Because this is not 8, 4, 2 or 1 byte aligned, this should fail with not implemented for
-    // OpenGL but succeed with Metal and Vulkan.
+    // 20 byte row is neither 8, 4, 2, nor 1 byte aligned.
     // Padding of 2 pixels used per row of width 3.
     std::make_pair(kPixelsAligned20.data(), (kAlignedPixelsWidth + 2u) * 4u),
 };
@@ -1207,17 +1205,6 @@ TEST_F(TextureTest, UploadAlignment) {
   ASSERT_TRUE(customFramebuffer != nullptr);
 
   for (const auto& [data, bytesPerRow] : kPixelAlignments) {
-    if (iglDev_->getBackendType() == BackendType::OpenGL &&
-        (bytesPerRow == (kAlignedPixelsWidth + 2u) * 4u ||
-         bytesPerRow == kAlignedPixelsWidth * 4u + 2u)) {
-      // Skip OpenGL for these cases as it is expected to fail with IGL_ASSERT_NOT_IMPLEMENTED
-      continue;
-    }
-    if (iglDev_->getBackendType() == BackendType::Metal &&
-        bytesPerRow == kAlignedPixelsWidth * 4u + 2u) {
-      // Skip Metal for this case as it is expected to fail with IGL_ASSERT_NOT_IMPLEMENTED
-      continue;
-    }
     //-------------------------------------
     // Create input texture and upload data
     //-------------------------------------

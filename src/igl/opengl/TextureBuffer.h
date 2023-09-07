@@ -55,6 +55,7 @@ class TextureBuffer : public TextureBufferBase {
   FormatDescGL formatDescGL_;
 
  private:
+  [[nodiscard]] bool needsRepacking(const TextureRangeDesc& range, size_t bytesPerRow) const final;
   Result createTexture(const TextureDesc& desc);
   bool canInitialize() const;
   bool supportsTexStorage() const;

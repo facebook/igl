@@ -636,6 +636,17 @@ Result ITexture::upload(const TextureRangeDesc& range,
                   "Texture must support either sampled or storage usage.");
   }
 
+  std::unique_ptr<uint8_t[]> repackedData = nullptr;
+
+  // Repack data if necessary for upload
+  if (data != nullptr && needsRepacking(range, bytesPerRow)) {
+    repackedData = std::make_unique<uint8_t[]>(properties_.getBytesPerRange(range));
+    ITexture::repackData(
+        properties_, range, static_cast<const uint8_t*>(data), bytesPerRow, repackedData.get(), 0);
+    bytesPerRow = 0;
+    data = repackedData.get();
+  }
+
   return uploadInternal(type, range, data, bytesPerRow);
 }
 

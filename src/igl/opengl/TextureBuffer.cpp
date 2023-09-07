@@ -379,6 +379,31 @@ Result TextureBuffer::upload3D(GLenum target,
   return getContext().getLastError();
 }
 
+bool TextureBuffer::needsRepacking(const TextureRangeDesc& range, size_t bytesPerRow) const {
+  if (bytesPerRow == 0) {
+    return false;
+  }
+
+  const auto rangeBytesPerRow = getProperties().getBytesPerRow(range);
+  if (rangeBytesPerRow == bytesPerRow) {
+    return false;
+  }
+
+  // GL_UNPACK_ALIGNMENT supports padding up to, but not including, the alignment value.
+  // If bytesPerRow is equal to the packed row length rounded up to the nearest alignment multiple,
+  // the data does not need to be repacked.
+  const auto delta = bytesPerRow - rangeBytesPerRow;
+  if (delta < 8 && bytesPerRow % 8 == 0) {
+    return false;
+  } else if (delta < 4 && bytesPerRow % 4 == 0) {
+    return false;
+  } else if (delta < 2 && bytesPerRow % 2 == 0) {
+    return false;
+  }
+
+  return true;
+}
+
 // upload data into the given mip level
 // a sub-rect of the texture may be specified to only upload the sub-rect
 Result TextureBuffer::uploadInternal(TextureType /*type*/,
