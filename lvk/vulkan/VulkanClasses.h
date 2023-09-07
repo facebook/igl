@@ -625,11 +625,9 @@ class VulkanContext final : public IContext {
   VkDescriptorPool vkDPBindless_ = VK_NULL_HANDLE;
   struct BindlessDescriptorSet {
 #ifndef __APPLE__
-    static constexpr uint32_t kDescriptorSetCount = 1;
-    VkDescriptorSet ds[kDescriptorSetCount] = {VK_NULL_HANDLE};
+    VkDescriptorSet ds[1] = {};
 #else
-    static constexpr uint32_t kDescriptorSetCount = 3;
-    VkDescriptorSet ds[kDescriptorSetCount] = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
+    VkDescriptorSet ds[3] = {}; // MSL does not support descriptors aliasing
 #endif
     SubmitHandle handle = SubmitHandle(); // a handle of the last submit this descriptor set was a part of
   } bindlessDSets_;
