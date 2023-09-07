@@ -185,6 +185,7 @@ class VulkanSwapchain final {
   VkImageView getCurrentVkImageView() const;
   TextureHandle getCurrentTexture();
   const VkSurfaceFormatKHR& getSurfaceFormat() const;
+  uint32_t getNumSwapchainImages() const;
 
  public:
   VkSemaphore acquireSemaphore_ = VK_NULL_HANDLE;
@@ -508,6 +509,7 @@ class VulkanContext final : public IContext {
 
   TextureHandle getCurrentSwapchainTexture() override;
   Format getSwapchainFormat() const override;
+  uint32_t getNumSwapchainImages() const override;
   void recreateSwapchain(int newWidth, int newHeight) override;
 
   ///////////////
