@@ -1457,11 +1457,12 @@ VkVertexInputAttributeDescription ivkGetVertexInputAttributeDescription(uint32_t
 }
 
 VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset,
+                                          uint32_t bufferRowLength,
                                           const VkRect2D imageRegion,
                                           VkImageSubresourceLayers imageSubresource) {
   const VkBufferImageCopy copy = {
       .bufferOffset = bufferOffset,
-      .bufferRowLength = 0,
+      .bufferRowLength = bufferRowLength,
       .bufferImageHeight = 0,
       .imageSubresource = imageSubresource,
       .imageOffset = {.x = imageRegion.offset.x, .y = imageRegion.offset.y, .z = 0},
@@ -1473,12 +1474,13 @@ VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset,
 }
 
 VkBufferImageCopy ivkGetBufferImageCopy3D(uint32_t bufferOffset,
+                                          uint32_t bufferRowLength,
                                           const VkOffset3D offset,
                                           const VkExtent3D extent,
                                           VkImageSubresourceLayers imageSubresource) {
   const VkBufferImageCopy copy = {
       .bufferOffset = bufferOffset,
-      .bufferRowLength = 0,
+      .bufferRowLength = bufferRowLength,
       .bufferImageHeight = 0,
       .imageSubresource = imageSubresource,
       .imageOffset = offset,

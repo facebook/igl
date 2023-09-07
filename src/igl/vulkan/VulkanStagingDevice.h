@@ -37,14 +37,16 @@ class VulkanStagingDevice final {
                    uint32_t baseMipLevel,
                    uint32_t numMipLevels,
                    uint32_t layer,
-                   TextureFormatProperties properties,
+                   const TextureFormatProperties& properties,
                    VkFormat format,
+                   uint32_t bytesPerRow,
                    const void* data);
   void imageData3D(VulkanImage& image,
                    const VkOffset3D& offset,
                    const VkExtent3D& extent,
-                   TextureFormatProperties properties,
+                   const TextureFormatProperties& properties,
                    VkFormat format,
+                   uint32_t bytesPerRow,
                    const void* data);
   void getImageData2D(VkImage srcImage,
                       const uint32_t level,
@@ -54,7 +56,7 @@ class VulkanStagingDevice final {
                       VkFormat format,
                       VkImageLayout layout,
                       void* data,
-                      uint32_t dataBytesPerRow,
+                      uint32_t bytesPerRow,
                       bool flipImageVertical);
 
  private:

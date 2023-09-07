@@ -210,42 +210,18 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
     }
   }
 
-  const void* uploadData = data;
-  const auto imageRowWidth = getProperties().getBytesPerRow(range);
-
-  std::vector<uint8_t> linearData;
-
-  const bool isAligned = getProperties().isCompressed() || bytesPerRow == 0 ||
-                         imageRowWidth == bytesPerRow;
-
-  if (!isAligned) {
-    linearData.resize(getProperties().getBytesPerRange(range.atLayer(0)));
-  }
-
   auto numLayers = std::max(range.numLayers, static_cast<size_t>(1));
   auto byteIncrement =
-      numLayers > 1 ? getProperties().getBytesPerLayer(range.width, range.height, range.depth) : 0;
+      numLayers > 1
+          ? getProperties().getBytesPerLayer(range.width, range.height, range.depth, bytesPerRow)
+          : bytesPerRow;
   if (range.numMipLevels > 1) {
     for (auto i = 1; i < range.numMipLevels; ++i) {
-      byteIncrement += getProperties().getBytesPerRange(range.atMipLevel(i));
+      byteIncrement += getProperties().getBytesPerRange(range.atMipLevel(i), bytesPerRow);
     }
   }
 
   for (auto i = 0; i < numLayers; ++i) {
-    if (isAligned) {
-      uploadData = data;
-    } else {
-      const auto rows = getProperties().getRows(range.atLayer(i));
-      for (uint32_t h = 0; h < rows; h++) {
-        checked_memcpy(static_cast<uint8_t*>(linearData.data()) + h * imageRowWidth,
-                       linearData.size() - h * imageRowWidth,
-                       static_cast<const uint8_t*>(data) + h * bytesPerRow,
-                       imageRowWidth);
-      }
-
-      uploadData = linearData.data();
-    }
-
     const VulkanContext& ctx = device_.getVulkanContext();
 
     const VkImageType type = texture_->getVulkanImage().type_;
@@ -257,7 +233,8 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
           VkExtent3D{(uint32_t)range.width, (uint32_t)range.height, (uint32_t)range.depth},
           getProperties(),
           getVkFormat(),
-          uploadData);
+          bytesPerRow,
+          data);
     } else {
       const uint32_t layer = getVkLayer(desc_.type, range.face, range.layer + i);
       const VkRect2D imageRegion = ivkGetRect2D(
@@ -269,7 +246,8 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
                                       layer,
                                       getProperties(),
                                       getVkFormat(),
-                                      uploadData);
+                                      bytesPerRow,
+                                      data);
     }
 
     data = static_cast<const uint8_t*>(data) + byteIncrement;

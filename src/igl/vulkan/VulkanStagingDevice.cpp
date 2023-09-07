@@ -129,8 +129,9 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
                                       uint32_t baseMipLevel,
                                       uint32_t numMipLevels,
                                       uint32_t layer,
-                                      TextureFormatProperties properties,
+                                      const TextureFormatProperties& properties,
                                       VkFormat format,
+                                      uint32_t bytesPerRow,
                                       const void* data) {
   IGL_PROFILER_FUNCTION();
   // cache the dimensions of each mip level for later
@@ -150,10 +151,26 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
 
   // find the storage size for all mip levels being uploaded
   const auto range = TextureRangeDesc::new2D(0, 0, image.extent_.width, image.extent_.height);
+
+  std::unique_ptr<uint8_t[]> repackedData = nullptr;
+
+  // Vulkan only handles cases where row lengths are multiples of texel block size.
+  // Must repack the data if the source data does not conform to this.
+  if (bytesPerRow != 0 && bytesPerRow % properties.bytesPerBlock != 0) {
+    // Must repack the data.
+    repackedData = std::make_unique<uint8_t[]>(properties.getBytesPerRange(range));
+    ITexture::repackData(
+        properties, range, static_cast<const uint8_t*>(data), bytesPerRow, repackedData.get(), 0);
+    bytesPerRow = 0;
+    data = repackedData.get();
+  }
+
+  const uint32_t texelsPerRow = bytesPerRow / static_cast<uint32_t>(properties.bytesPerBlock);
+
   uint32_t storageSize = 0;
   for (size_t i = 0; i < numMipLevels; ++i) {
     const uint32_t mipSize =
-        static_cast<uint32_t>(properties.getBytesPerRange(range.atMipLevel(i)));
+        static_cast<uint32_t>(properties.getBytesPerRange(range.atMipLevel(i), bytesPerRow));
 
     storageSize += mipSize;
     mipSizes.push_back(mipSize);
@@ -210,6 +227,7 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
         desc.srcOffset_ + mipLevelOffset, // the offset for this level is at the start of all mip
                                           // levels + the size of all previous mip levels being
                                           // uploaded
+        texelsPerRow,
         region,
         VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, layer, 1});
 #if IGL_VULKAN_PRINT_COMMANDS
@@ -247,17 +265,33 @@ void VulkanStagingDevice::imageData2D(VulkanImage& image,
 void VulkanStagingDevice::imageData3D(VulkanImage& image,
                                       const VkOffset3D& offset,
                                       const VkExtent3D& extent,
-                                      TextureFormatProperties properties,
+                                      const TextureFormatProperties& properties,
                                       VkFormat format,
+                                      uint32_t bytesPerRow,
                                       const void* data) {
   IGL_PROFILER_FUNCTION();
   IGL_ASSERT_MSG(image.mipLevels_ == 1, "Can handle only 3D images with exactly 1 mip-level");
   IGL_ASSERT_MSG((offset.x == 0) && (offset.y == 0) && (offset.z == 0),
                  "Can upload only full-size 3D images");
 
+  const uint32_t texelsPerRow = bytesPerRow / static_cast<uint32_t>(properties.bytesPerBlock);
   const auto range = TextureRangeDesc::new3D(0, 0, 0, extent.width, extent.height, extent.depth);
+
+  std::unique_ptr<uint8_t[]> repackedData = nullptr;
+
+  // Vulkan only handles cases where row lengths are multiples of texel block size.
+  // Must repack the data if the source data does not conform to this.
+  if (bytesPerRow != 0 && bytesPerRow % properties.bytesPerBlock != 0) {
+    // Must repack the data.
+    repackedData = std::make_unique<uint8_t[]>(properties.getBytesPerRange(range));
+    ITexture::repackData(
+        properties, range, static_cast<const uint8_t*>(data), bytesPerRow, repackedData.get(), 0);
+    bytesPerRow = 0;
+    data = repackedData.get();
+  }
+
   const uint32_t storageSize =
-      static_cast<uint32_t>(properties.getBytesPerRange(range.atMipLevel(0)));
+      static_cast<uint32_t>(properties.getBytesPerRange(range.atMipLevel(0), bytesPerRow));
 
   IGL_ASSERT(storageSize <= stagingBufferSize_);
 
@@ -292,6 +326,7 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
   // 2. Copy the pixel data from the staging buffer into the image
   const VkBufferImageCopy copy =
       ivkGetBufferImageCopy3D(desc.srcOffset_,
+                              texelsPerRow,
                               offset,
                               extent,
                               VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1});
@@ -327,18 +362,18 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                                          VkFormat format,
                                          VkImageLayout layout,
                                          void* data,
-                                         uint32_t dataBytesPerRow,
+                                         uint32_t bytesPerRow,
                                          bool flipImageVertical) {
   IGL_PROFILER_FUNCTION();
   IGL_ASSERT(layout != VK_IMAGE_LAYOUT_UNDEFINED);
 
+  bool mustRepack = bytesPerRow != 0 && bytesPerRow % properties.bytesPerBlock != 0;
+
   const auto range =
       TextureRangeDesc::new2D(0, 0, imageRegion.extent.width, imageRegion.extent.height);
-  const uint32_t storageSize =
-      static_cast<uint32_t>(properties.getBytesPerRange(range.atMipLevel(0)));
+  const uint32_t storageSize = static_cast<uint32_t>(
+      properties.getBytesPerRange(range.atMipLevel(0), mustRepack ? 0 : bytesPerRow));
   IGL_ASSERT(storageSize <= stagingBufferSize_);
-
-  IGL_ASSERT(dataBytesPerRow == properties.getBytesPerRow(range.atMipLevel(0)));
 
   // get next staging buffer free offset
   MemoryRegionDesc desc = getNextFreeOffset(storageSize);
@@ -366,10 +401,12 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                         VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, level, 1, layer, 1});
 
   // 2.  Copy the pixel data from the image into the staging buffer
-  const VkBufferImageCopy copy =
-      ivkGetBufferImageCopy2D(desc.srcOffset_,
-                              imageRegion,
-                              VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, level, layer, 1});
+  const VkBufferImageCopy copy = ivkGetBufferImageCopy2D(
+      desc.srcOffset_,
+      mustRepack ? 0
+                 : bytesPerRow / static_cast<uint32_t>(properties.bytesPerBlock), // bufferRowLength
+      imageRegion,
+      VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, level, layer, 1});
   vkCmdCopyImageToBuffer(wrapper1.cmdBuf_,
                          srcImage,
                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -390,10 +427,17 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   const uint8_t* src = stagingBuffer_->getMappedPtr() + desc.srcOffset_;
   uint8_t* dst = static_cast<uint8_t*>(data);
 
-  if (flipImageVertical) {
-    ITexture::repackData(properties, range, src, 0, dst, 0, true);
+  // Vulkan only handles cases where row lengths are multiples of texel block size.
+  // Must repack the data if the output data does not conform to this.
+  if (mustRepack) {
+    // Must repack the data.
+    ITexture::repackData(properties, range, src, 0, dst, bytesPerRow, flipImageVertical);
   } else {
-    checked_memcpy(dst, storageSize, src, storageSize);
+    if (flipImageVertical) {
+      ITexture::repackData(properties, range, src, 0, dst, 0, true);
+    } else {
+      checked_memcpy(dst, storageSize, src, storageSize);
+    }
   }
 
   // 4. Transition back to the initial image layout

@@ -325,9 +325,11 @@ VkImageCopy ivkGetImageCopy2D(VkOffset2D srcDstOffset,
                               const VkExtent2D imageRegion);
 
 VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset,
+                                          uint32_t bufferRowLength,
                                           const VkRect2D imageRegion,
                                           VkImageSubresourceLayers imageSubresource);
 VkBufferImageCopy ivkGetBufferImageCopy3D(uint32_t bufferOffset,
+                                          uint32_t bufferRowLength,
                                           const VkOffset3D offset,
                                           const VkExtent3D extent,
                                           VkImageSubresourceLayers imageSubresource);

@@ -728,6 +728,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
         0,
         TextureFormatProperties::fromTextureFormat(vkFormatToTextureFormat(dummyTextureFormat)),
         dummyTextureFormat,
+        0,
         &pixel);
   }
 
