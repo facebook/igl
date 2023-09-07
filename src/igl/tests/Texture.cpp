@@ -1023,6 +1023,150 @@ TEST_F(TextureTest, FBCopy) {
       *iglDev_, *cmdQueue_, *framebuffer_, data::texture::TEX_RGBA_GRAY_2x2, "After Copy");
 }
 
+constexpr uint32_t kAlignedPixelsWidth = 3u;
+constexpr uint32_t kAlignedPixelsHeight = 2u;
+
+constexpr std::array<uint32_t, 6> kPixelsAligned12 = {1u, 2u, 3u, 4u, 5u, 6u};
+
+// clang-format off
+constexpr std::array<uint8_t, 28> kPixelsAligned14 = {
+    1, 0, 0, 0,
+    2, 0, 0, 0,
+    3, 0, 0, 0,
+    0, 0, // Expected to be skipped
+    4, 0, 0, 0,
+    5, 0, 0, 0,
+    6, 0, 0, 0,
+    0, 0, // Expected to be skipped
+};
+// clang-format on
+constexpr std::array<uint32_t, 8> kPixelsAligned16 = {1u,
+                                                      2u,
+                                                      3u,
+                                                      0x00000000u, // Expected to be skipped
+                                                      4u,
+                                                      5u,
+                                                      6u,
+                                                      0x00000000u}; // Expected to be skipped
+constexpr std::array<uint32_t, 10> kPixelsAligned20 = {1u,
+                                                       2u,
+                                                       3u,
+                                                       0x00000000u, // Expected to be skipped
+                                                       0x00000000u, // Expected to be skipped
+                                                       4u,
+                                                       5u,
+                                                       6u,
+                                                       0x00000000u, // Expected to be skipped
+                                                       0x00000000u}; // Expected to be skipped
+
+constexpr std::array<std::pair<const void*, uint32_t>, 4> kPixelAlignments = {
+    // 12 byte row will triggers 4 byte alignment.
+    // No padding required since the width equals number of input pixels per row.
+    std::make_pair(kPixelsAligned12.data(), kAlignedPixelsWidth * 4u),
+    // 14 byte row will trigger 2 byte alignment since texture width is set to 3.
+    // Padding of 0.5 pixels used per row of width 3. Fails for OpenGL and Metal with current
+    // implementation.
+    std::make_pair(kPixelsAligned14.data(), kAlignedPixelsWidth * 4u + 2u),
+    // 16 byte row will trigger 8 byte alignment since texture width is set to 3.
+    // Padding of 1 pixel used per row of width 3.
+    std::make_pair(kPixelsAligned16.data(), (kAlignedPixelsWidth + 1u) * 4u),
+    // Because this is not 8, 4, 2 or 1 byte aligned, this should fail with not implemented for
+    // OpenGL but succeed with Metal and Vulkan.
+    // Padding of 2 pixels used per row of width 3.
+    std::make_pair(kPixelsAligned20.data(), (kAlignedPixelsWidth + 2u) * 4u),
+};
+
+//
+// Test ITexture::repackData
+//
+TEST_F(TextureTest, RepackData) {
+  const auto properties = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);
+  const auto range = TextureRangeDesc::new2D(0, 0, kAlignedPixelsWidth, kAlignedPixelsHeight);
+
+  for (const auto& [data, bytesPerRow] : kPixelAlignments) {
+    const size_t alignedSize =
+        static_cast<size_t>(kAlignedPixelsWidth) * static_cast<size_t>(kAlignedPixelsHeight);
+    const size_t unalignedSize =
+        static_cast<size_t>(kAlignedPixelsHeight) * static_cast<size_t>(bytesPerRow);
+    {
+      //------------------
+      // Test packing data
+      //------------------
+
+      std::vector<uint32_t> packedData(alignedSize);
+      ITexture::repackData(properties,
+                           range,
+                           static_cast<const uint8_t*>(data),
+                           bytesPerRow,
+                           reinterpret_cast<uint8_t*>(packedData.data()),
+                           0);
+
+      for (size_t i = 0; i < packedData.size(); ++i) {
+        EXPECT_EQ(packedData[i], kPixelsAligned12[i]);
+      }
+    }
+
+    {
+      //-----------------------------
+      // Test packing + flipping data
+      //-----------------------------
+
+      std::vector<uint32_t> packedFlippedData(alignedSize);
+      ITexture::repackData(properties,
+                           range,
+                           static_cast<const uint8_t*>(data),
+                           bytesPerRow,
+                           reinterpret_cast<uint8_t*>(packedFlippedData.data()),
+                           0,
+                           true);
+
+      for (size_t i = 0; i < kAlignedPixelsWidth; ++i) {
+        EXPECT_EQ(packedFlippedData[i], kPixelsAligned12[i + kAlignedPixelsWidth]);
+        EXPECT_EQ(packedFlippedData[i + kAlignedPixelsWidth], kPixelsAligned12[i]);
+      }
+    }
+
+    {
+      //--------------------
+      // Test unpacking data
+      //--------------------
+
+      std::vector<uint8_t> unpackedData(unalignedSize);
+      ITexture::repackData(properties,
+                           range,
+                           reinterpret_cast<const uint8_t*>(kPixelsAligned12.data()),
+                           0,
+                           unpackedData.data(),
+                           bytesPerRow);
+
+      for (size_t i = 0; i < unpackedData.size(); ++i) {
+        EXPECT_EQ(unpackedData[i], reinterpret_cast<const uint8_t*>(data)[i]);
+      }
+    }
+
+    {
+      //-------------------------------
+      // Test unpacking + flipping data
+      //-------------------------------
+
+      std::vector<uint8_t> unpackedFlippedData(unalignedSize);
+      ITexture::repackData(properties,
+                           range,
+                           reinterpret_cast<const uint8_t*>(kPixelsAligned12.data()),
+                           0,
+                           unpackedFlippedData.data(),
+                           bytesPerRow,
+                           true);
+
+      const auto width = unpackedFlippedData.size() / 2;
+      for (size_t i = 0; i < width; ++i) {
+        EXPECT_EQ(unpackedFlippedData[i + width], reinterpret_cast<const uint8_t*>(data)[i]);
+        EXPECT_EQ(unpackedFlippedData[i], reinterpret_cast<const uint8_t*>(data)[i + width]);
+      }
+    }
+  }
+}
+
 //
 // Pixel upload alignment test
 //
@@ -1047,11 +1191,9 @@ TEST_F(TextureTest, UploadAlignment) {
   //-------------------------------------
   // Create new frame buffer with a width and height that can cause different alignments
   //-------------------------------------
-  const uint32_t width = 3u;
-  const uint32_t height = 2u;
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           width,
-                                           height,
+                                           kAlignedPixelsWidth,
+                                           kAlignedPixelsHeight,
                                            TextureDesc::TextureUsageBits::Sampled |
                                                TextureDesc::TextureUsageBits::Attachment);
   auto customOffscreenTexture = iglDev_->createTexture(texDesc, &ret);
@@ -1064,65 +1206,32 @@ TEST_F(TextureTest, UploadAlignment) {
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(customFramebuffer != nullptr);
 
-  //-------------------------------------
-  // Create pixels packed with different alignments
-  //-------------------------------------
-  uint32_t inputPixelsEightAligned[] = {1u,
-                                        2u,
-                                        3u,
-                                        0x00000000u, // Expected to be skipped
-                                        4u,
-                                        5u,
-                                        6u,
-                                        0x00000000u}; // Expected to be skipped
-  uint32_t inputPixelsTwentyStride[] = {1u,
-                                        2u,
-                                        3u,
-                                        0x00000000u, // Expected to be skipped
-                                        0x00000000u, // Expected to be skipped
-                                        4u,
-                                        5u,
-                                        6u,
-                                        0x00000000u, // Expected to be skipped
-                                        0x00000000u}; // Expected to be skipped
-  uint32_t inputPixels[] = {1u, 2u, 3u, 4u, 5u, 6u};
-
-  std::vector<std::pair<uint32_t*, uint32_t>> pixelAlignments;
-  pixelAlignments.emplace_back(inputPixels,
-                               width * 4u); // 12 byte row will triggers 4 byte alignment
-                                            // No padding required since the width equals
-                                            // number of input pixels per row
-  pixelAlignments.emplace_back(inputPixelsEightAligned,
-                               (width + 1u) * 4u); // 16 byte row will trigger
-                                                   // 8 byte alignment since
-                                                   // texture width is set to
-                                                   // 3
-                                                   // Padding of 1 pixel used
-                                                   // per row of width 3
-  pixelAlignments.emplace_back(inputPixelsTwentyStride,
-                               (width + 2u) * 4u); // Because this is not 8, 4, 2 or 1 byte aligned
-                                                   // this should fail with not implemented for
-                                                   // openGL but succeed with metal
-                                                   // Padding of 2 pixels used per row of width 3
-
-  for (const auto& alignment : pixelAlignments) {
-    auto bytesPerRow = alignment.second;
-    if (backend_ == util::BACKEND_OGL && bytesPerRow == (width + 2u) * 4u) {
-      // Skip openGL for this case as it is expected to fail with IGL_ASSERT_NOT_IMPLEMENTED
+  for (const auto& [data, bytesPerRow] : kPixelAlignments) {
+    if (iglDev_->getBackendType() == BackendType::OpenGL &&
+        (bytesPerRow == (kAlignedPixelsWidth + 2u) * 4u ||
+         bytesPerRow == kAlignedPixelsWidth * 4u + 2u)) {
+      // Skip OpenGL for these cases as it is expected to fail with IGL_ASSERT_NOT_IMPLEMENTED
+      continue;
+    }
+    if (iglDev_->getBackendType() == BackendType::Metal &&
+        bytesPerRow == kAlignedPixelsWidth * 4u + 2u) {
+      // Skip Metal for this case as it is expected to fail with IGL_ASSERT_NOT_IMPLEMENTED
       continue;
     }
     //-------------------------------------
     // Create input texture and upload data
     //-------------------------------------
-    texDesc = TextureDesc::new2D(
-        TextureFormat::RGBA_UNorm8, width, height, TextureDesc::TextureUsageBits::Sampled);
+    texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                 kAlignedPixelsWidth,
+                                 kAlignedPixelsHeight,
+                                 TextureDesc::TextureUsageBits::Sampled);
     inputTexture_ = iglDev_->createTexture(texDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(inputTexture_ != nullptr);
 
-    const auto rangeDesc = TextureRangeDesc::new2D(0, 0, width, height);
+    const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kAlignedPixelsWidth, kAlignedPixelsHeight);
 
-    inputTexture_->upload(rangeDesc, alignment.first, static_cast<size_t>(bytesPerRow));
+    inputTexture_->upload(rangeDesc, data, static_cast<size_t>(bytesPerRow));
 
     //----------------
     // Create Pipeline
@@ -1158,8 +1267,9 @@ TEST_F(TextureTest, UploadAlignment) {
     //----------------
     // Validate output
     //----------------
+    const std::string alignmentStr = "UploadAlignment: " + std::to_string(bytesPerRow);
     util::validateFramebufferTexture(
-        *iglDev_, *cmdQueue_, *customFramebuffer, inputPixels, "UploadAlignment");
+        *iglDev_, *cmdQueue_, *customFramebuffer, kPixelsAligned12.data(), alignmentStr.c_str());
   }
 }
 

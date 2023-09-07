@@ -767,6 +767,41 @@ class ITexture : public ITrackedResource<ITexture> {
     return properties_.format;
   }
 
+  /**
+   * @brief Helper method to repack texture data to achieve a desired alignment.
+   *
+   * Copies data from originalData to repackedData, one row of data at a time. Each row of data will
+   * be repackedBytesPerRow bytes long. If repackedBytesPerRow is less than originalDataBytesPerRow,
+   * data will NOT be 0 padded.
+   *
+   * Repacking only works correctly for 1 mip level.
+   *
+   * This method assumes the following data hierarchy:
+   *   mip level
+   *     array layer
+   *       cube face
+   *         z slice
+   *           row
+   *
+   * @param properties The texture format properties for the data being repacked.
+   * @param range The texture range of texture data that is being repacked.
+   * @param originalData Pointer to the texture data to repack.
+   * @param originalDataBytesPerRow Bytes per row of original data. 0 means no padding per row
+   * (i.e., the data is packed).
+   * @param repackedData Pointer to the destination to write repacked data to.
+   * @param repackedBytesPerRow Bytes per row of repacked data. 0 means no padding per row
+   * (i.e., the data should be packed).
+   * @param flipVertical If true, the repacked data will be flipped vertically for each texture
+   * layer, cube face, and Z slice.
+   */
+  static void repackData(const TextureFormatProperties& properties,
+                         const TextureRangeDesc& range,
+                         const uint8_t* IGL_NONNULL originalData,
+                         size_t originalDataBytesPerRow,
+                         uint8_t* IGL_NONNULL repackedData,
+                         size_t repackedBytesPerRow,
+                         bool flipVertical = false);
+
  protected:
   const TextureFormatProperties properties_;
 };

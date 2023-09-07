@@ -8,6 +8,7 @@
 #include <igl/Texture.h>
 
 #include <cmath>
+#include <igl/IGLSafeC.h>
 #include <utility>
 
 size_t std::hash<igl::TextureFormat>::operator()(igl::TextureFormat const& key) const {
@@ -534,6 +535,57 @@ TextureRangeDesc ITexture::getLayerRange(size_t layer,
                                          size_t numMipLevels) const noexcept {
   IGL_ASSERT(getType() == TextureType::TwoDArray);
   return getFullRange(mipLevel, numMipLevels).atLayer(layer);
+}
+
+void ITexture::repackData(const TextureFormatProperties& properties,
+                          const TextureRangeDesc& range,
+                          const uint8_t* IGL_NONNULL originalData,
+                          size_t originalDataBytesPerRow,
+                          uint8_t* IGL_NONNULL repackedData,
+                          size_t repackedBytesPerRow,
+                          bool flipVertical) {
+  if (IGL_UNEXPECTED(originalData == nullptr || repackedData == nullptr)) {
+    return;
+  }
+  if (IGL_UNEXPECTED(range.numMipLevels > 1 &&
+                     (originalDataBytesPerRow > 0 || repackedBytesPerRow > 0))) {
+    return;
+  }
+  const auto fullRangeBytesPerRow = properties.getBytesPerRow(range);
+  if (originalDataBytesPerRow > 0 &&
+      IGL_UNEXPECTED(originalDataBytesPerRow < fullRangeBytesPerRow)) {
+    return;
+  }
+  if (repackedBytesPerRow > 0 && IGL_UNEXPECTED(repackedBytesPerRow < fullRangeBytesPerRow)) {
+    return;
+  }
+
+  for (size_t mipLevel = range.mipLevel; mipLevel < range.mipLevel + range.numMipLevels;
+       ++mipLevel) {
+    const auto mipRange = range.atMipLevel(mipLevel);
+    const auto rangeBytesPerRow = properties.getBytesPerRow(mipRange);
+    const auto originalDataIncrement = originalDataBytesPerRow == 0 ? rangeBytesPerRow
+                                                                    : originalDataBytesPerRow;
+    const auto repackedDataIncrement = repackedBytesPerRow == 0 ? rangeBytesPerRow
+                                                                : repackedBytesPerRow;
+    const auto totalNumLayers = mipRange.numLayers * mipRange.numFaces * mipRange.depth;
+    for (size_t layer = 0; layer < totalNumLayers; ++layer) {
+      uint8_t* repackedDataPtr = repackedData;
+      if (flipVertical) {
+        repackedDataPtr += repackedDataIncrement * (mipRange.height - 1);
+      }
+      for (size_t y = 0; y < mipRange.height; ++y) {
+        checked_memcpy_robust(repackedDataPtr,
+                              repackedDataIncrement,
+                              originalData,
+                              originalDataIncrement,
+                              rangeBytesPerRow);
+        repackedDataPtr += flipVertical ? -repackedDataIncrement : repackedDataIncrement;
+        originalData += originalDataIncrement;
+      }
+      repackedData += repackedDataIncrement * mipRange.height;
+    }
+  }
 }
 
 } // namespace igl

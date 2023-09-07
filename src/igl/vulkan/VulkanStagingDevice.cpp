@@ -19,21 +19,6 @@
 
 using VulkanSubmitHandle = igl::vulkan::VulkanImmediateCommands::SubmitHandle;
 
-namespace {
-
-/// Vulkan textures are up-side down compared to OGL textures. IGL follows
-/// the OGL convention and this function flips the texture vertically
-void flipBMP(uint8_t* dstImg, const uint8_t* srcImg, size_t height, size_t bytesPerRow) {
-  for (size_t h = 0; h < height; h++) {
-    checked_memcpy(dstImg + h * bytesPerRow,
-                   bytesPerRow,
-                   srcImg + bytesPerRow * (height - 1 - h),
-                   bytesPerRow);
-  }
-}
-
-} // namespace
-
 namespace igl {
 
 namespace vulkan {
@@ -406,7 +391,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   uint8_t* dst = static_cast<uint8_t*>(data);
 
   if (flipImageVertical) {
-    flipBMP(dst, src, imageRegion.extent.height, properties.getBytesPerRow(range.atMipLevel(0)));
+    ITexture::repackData(properties, range, src, 0, dst, 0, true);
   } else {
     checked_memcpy(dst, storageSize, src, storageSize);
   }

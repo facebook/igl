@@ -12,14 +12,6 @@
 
 namespace {
 
-/// Metal textures are up-side down compared to OGL textures. IGL follows
-/// the OGL convention and this function flips the texture vertically
-void flipBMP(unsigned char* dstImg, unsigned char* srcImg, size_t height, size_t bytesPerRow) {
-  for (size_t h = 0; h < height; h++) {
-    memcpy(dstImg + h * bytesPerRow, srcImg + bytesPerRow * (height - 1 - h), bytesPerRow);
-  }
-}
-
 void bgrToRgb(unsigned char* dstImg, size_t width, size_t height, size_t bytesPerPixel) {
   for (int i = 0; i < height; ++i) {
     for (int j = 0; j < width; ++j) {
@@ -133,16 +125,18 @@ Result Texture::getBytes(const TextureRangeDesc& range, void* outData, size_t by
 
   const size_t bytesPerImage = properties.getBytesPerRange(range);
   MTLRegion region = {{range.x, range.y, 0}, {range.width, range.height, 1}};
-  auto tmpBuffer = std::vector<uint8_t>(bytesPerImage);
+  auto tmpBuffer = std::make_unique<uint8_t[]>(bytesPerImage);
 
-  [get() getBytes:tmpBuffer.data()
+  [get() getBytes:tmpBuffer.get()
         bytesPerRow:toMetalBytesPerRow(bytesPerRow)
       bytesPerImage:bytesPerImage
          fromRegion:region
         mipmapLevel:range.mipLevel
               slice:getMetalSlice(getType(), range.face, range.layer)];
 
-  flipBMP(static_cast<unsigned char*>(outData), tmpBuffer.data(), range.height, bytesPerRow);
+  /// Metal textures are up-side down compared to OGL textures. IGL follows
+  /// the OGL convention and this function flips the texture vertically
+  repackData(properties, range, tmpBuffer.get(), 0, static_cast<uint8_t*>(outData), 0, true);
 
   igl::TextureFormat f = getFormat();
   TextureFormatProperties props = TextureFormatProperties::fromTextureFormat(f);
