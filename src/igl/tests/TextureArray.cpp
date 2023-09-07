@@ -762,7 +762,7 @@ TEST_F(TextureArrayTest, GetEstimatedSizeInBytes) {
 }
 
 //
-// Test ITexture::getFullRange and ITexture::getLayerRange
+// Test ITexture::getFullRange ITexture::getFullMipRange, and ITexture::getLayerRange
 //
 TEST_F(TextureArrayTest, GetRange) {
   auto createTexture = [&](size_t width,
@@ -794,6 +794,14 @@ TEST_F(TextureArrayTest, GetRange) {
     return tex ? tex->getFullRange(rangeMipLevel,
                                    rangeNumMipLevels ? rangeNumMipLevels : numMipLevels)
                : TextureRangeDesc{};
+  };
+  auto getFullMipRange = [&](size_t width,
+                             size_t height,
+                             TextureFormat format,
+                             // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+                             size_t numMipLevels) -> TextureRangeDesc {
+    auto tex = createTexture(width, height, format, numMipLevels);
+    return tex ? tex->getFullMipRange() : TextureRangeDesc{};
   };
   auto getLayerRange = [&](size_t width,
                            size_t height,
@@ -828,16 +836,25 @@ TEST_F(TextureArrayTest, GetRange) {
   ASSERT_TRUE(
       rangesAreEqual(getLayerRange(16, 1, format, 4, 1, 1, 1), range.atMipLevel(1).atLayer(1)));
 
+  // Test all mip levels
+  ASSERT_TRUE(rangesAreEqual(getFullMipRange(16, 1, format, 4), range.withNumMipLevels(4)));
+
   if (iglDev_->hasFeature(DeviceFeatures::TextureNotPot)) {
     if (!iglDev_->hasFeature(DeviceFeatures::TexturePartialMipChain)) {
       // ES 2.0 generates maximum mip levels
       range = TextureRangeDesc::new2DArray(0, 0, 128, 333, 0, 2, 0, 9);
       ASSERT_TRUE(rangesAreEqual(getFullRange(128, 333, format, 9), range));
       ASSERT_TRUE(rangesAreEqual(getLayerRange(128, 333, format, 9, 1), range.atLayer(1)));
+
+      // Test all mip levels
+      ASSERT_TRUE(rangesAreEqual(getFullMipRange(128, 333, format, 9), range.withNumMipLevels(9)));
     } else {
       range = TextureRangeDesc::new2DArray(0, 0, 128, 333, 0, 2, 0, 2);
       ASSERT_TRUE(rangesAreEqual(getFullRange(128, 333, format, 2), range));
       ASSERT_TRUE(rangesAreEqual(getLayerRange(128, 333, format, 2, 1), range.atLayer(1)));
+
+      // Test all mip levels
+      ASSERT_TRUE(rangesAreEqual(getFullMipRange(128, 333, format, 2), range.withNumMipLevels(2)));
     }
   }
 }

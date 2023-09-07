@@ -464,7 +464,7 @@ size_t ITexture::getNumFaces() const {
 }
 
 size_t ITexture::getEstimatedSizeInBytes() const {
-  const auto range = getFullRange(0, getNumMipLevels());
+  const auto range = getFullMipRange();
   return properties_.getBytesPerRange(range);
 }
 
@@ -514,6 +514,10 @@ TextureRangeDesc ITexture::getFullRange(size_t mipLevel, size_t numMipLevels) co
   desc.numFaces = getNumFaces();
 
   return desc;
+}
+
+TextureRangeDesc ITexture::getFullMipRange() const noexcept {
+  return getFullRange(0, getNumMipLevels());
 }
 
 TextureRangeDesc ITexture::getCubeFaceRange(size_t face,

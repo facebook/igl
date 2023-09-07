@@ -620,7 +620,7 @@ TEST_F(TextureCubeTest, GetEstimatedSizeInBytes) {
 }
 
 //
-// Test ITexture::getFullRange and ITexture::getCubeFaceRange and
+// Test ITexture::getFullRange, ITexture::getFullMipRange, and ITexture::getCubeFaceRange and
 //
 TEST_F(TextureCubeTest, GetRange) {
   auto createTexture = [&](size_t width,
@@ -651,6 +651,14 @@ TEST_F(TextureCubeTest, GetRange) {
     return tex ? tex->getFullRange(rangeMipLevel,
                                    rangeNumMipLevels ? rangeNumMipLevels : numMipLevels)
                : TextureRangeDesc{};
+  };
+  auto getFullMipRange = [&](size_t width,
+                             size_t height,
+                             TextureFormat format,
+                             // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+                             size_t numMipLevels) -> TextureRangeDesc {
+    auto tex = createTexture(width, height, format, numMipLevels);
+    return tex ? tex->getFullMipRange() : TextureRangeDesc{};
   };
   auto getCubeFaceRangeEnum = [&](size_t width,
                                   size_t height,
@@ -702,6 +710,9 @@ TEST_F(TextureCubeTest, GetRange) {
                              range.atFace(TextureCubeFace::NegX).atMipLevel(1)));
   ASSERT_TRUE(rangesAreEqual(getCubeFaceRangeNum(16, 16, format, 5, 1, 1, 1),
                              range.atFace(1).atMipLevel(1)));
+
+  // All mip levels
+  ASSERT_TRUE(rangesAreEqual(getFullMipRange(16, 16, format, 5), range.withNumMipLevels(5)));
 }
 
 } // namespace tests

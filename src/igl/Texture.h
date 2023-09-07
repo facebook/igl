@@ -740,6 +740,12 @@ class ITexture : public ITrackedResource<ITexture> {
   [[nodiscard]] TextureRangeDesc getFullRange(size_t mipLevel = 0,
                                               size_t numMipLevels = 1) const noexcept;
   /**
+   * @brief Returns a TextureRangeDesc for the texture's full range, including all mip levels.
+   *
+   * @return TextureRangeDesc.
+   */
+  [[nodiscard]] TextureRangeDesc getFullMipRange() const noexcept;
+  /**
    * @brief Returns a TextureRangeDesc for the texture's full range for a single cube face at the
    * specified mip level.
    *

@@ -162,12 +162,12 @@ Result TextureBuffer::initialize() const {
 
 Result TextureBuffer::initializeWithUpload() const {
   const auto target = getTarget();
-  const auto range = getFullRange(0, getNumMipLevels());
+  const auto range = getFullMipRange();
   return uploadInternal(target, range, nullptr);
 }
 
 Result TextureBuffer::initializeWithTexStorage() const {
-  const auto range = getFullRange(0, getNumMipLevels());
+  const auto range = getFullMipRange();
   const auto target = getTarget();
   switch (getType()) {
   case TextureType::TwoD:
