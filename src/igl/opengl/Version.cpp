@@ -230,9 +230,9 @@ ShaderVersion getShaderVersion(GLVersion version) {
   case GLVersion::v3_0_ES:
     return {ShaderFamily::GlslEs, 3, 0};
   case GLVersion::v3_1_ES:
-    return {ShaderFamily::GlslEs, 3, 1};
+    return {ShaderFamily::GlslEs, 3, 10};
   case GLVersion::v3_2_ES:
-    return {ShaderFamily::GlslEs, 3, 2};
+    return {ShaderFamily::GlslEs, 3, 20};
   case GLVersion::v2_0:
     return {ShaderFamily::Glsl, 1, 10};
   case GLVersion::v2_1:
@@ -273,7 +273,9 @@ std::string getStringFromShaderVersion(ShaderVersion version) {
     } else if (version.majorVersion == 3) {
       if (version.minorVersion == 0) {
         return "#version 300 es";
-      } else if (version.minorVersion == 2) {
+      } else if (version.minorVersion == 10) {
+        return "#version 310 es";
+      } else if (version.minorVersion == 20) {
         return "#version 320 es";
       } else {
         IGL_ASSERT_NOT_IMPLEMENTED();
