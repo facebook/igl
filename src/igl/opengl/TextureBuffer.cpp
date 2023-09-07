@@ -401,6 +401,12 @@ bool TextureBuffer::needsRepacking(const TextureRangeDesc& range, size_t bytesPe
     return false;
   }
 
+  if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::UnpackRowLength)) {
+    // GL_UNPACK_ROW_LENGTH supports cases where bytesPerRow is a multiple of the texel size or, for
+    // compressed textures, the texel block size.
+    return bytesPerRow % getProperties().bytesPerBlock != 0;
+  }
+
   return true;
 }
 
@@ -432,7 +438,22 @@ Result TextureBuffer::uploadInternal(GLenum target,
   // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
   const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
 
-  getContext().pixelStorei(GL_UNPACK_ALIGNMENT, this->getAlignment(bytesPerRow, range.mipLevel));
+  const bool unpackRowLengthSupported =
+      getContext().deviceFeatures().hasInternalFeature(InternalFeatures::UnpackRowLength);
+  const int unpackRowLength = unpackRowLengthSupported &&
+                                      bytesPerRow % getProperties().bytesPerBlock == 0
+                                  ? static_cast<int>(bytesPerRow / getProperties().bytesPerBlock)
+                                  : 0;
+
+  if (unpackRowLength > 0) {
+    getContext().pixelStorei(GL_UNPACK_ROW_LENGTH, unpackRowLength);
+    getContext().pixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  } else {
+    if (unpackRowLengthSupported) {
+      getContext().pixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    }
+    getContext().pixelStorei(GL_UNPACK_ALIGNMENT, this->getAlignment(bytesPerRow, range.mipLevel));
+  }
 
   Result result;
   for (auto mipLevel = range.mipLevel; mipLevel < range.mipLevel + range.numMipLevels; ++mipLevel) {
@@ -460,6 +481,9 @@ Result TextureBuffer::uploadInternal(GLenum target,
       if (!result.isOk()) {
         return result;
       }
+    }
+    if (!result.isOk()) {
+      break;
     }
   }
   return result;

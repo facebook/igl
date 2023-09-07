@@ -77,6 +77,7 @@ enum class InternalFeatures {
   TexStorage,                // glTexStorage* is available
   TextureCompare,            // GL_TEXTURE_COMPARE_MODE and GL_TEXTURE_COMPARE_FUNC are supported
   UnmapBuffer,               // glUnmapBuffer is supported
+  UnpackRowLength,           // GL_UNPACK_ROW_LENGTH is supported with glPixelStorei
   VertexArrayObject,         // VAOS are available
   VertexAttribDivisor,       // glVertexAttribDivisor is supported
 };

@@ -440,6 +440,10 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
     return hasDesktopVersion(*this, GLVersion::v2_0) || hasExtension(Extensions::MapBuffer) ||
            hasExtension(Extensions::MapBufferRange);
 
+  case InternalFeatures::UnpackRowLength:
+    return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
+           hasESExtension(*this, "GL_EXT_unpack_subimage");
+
   case InternalFeatures::VertexArrayObject:
     // We've had issues with VertexArrayObject support on mobile so this is disabled for OpenGL ES.
     // Previously it was enabled specifically for Quest 2 on OpenGLES by checking if
