@@ -256,10 +256,16 @@ uint32_t ivkFindMemoryType(VkPhysicalDevice physDev,
   return 0;
 }
 
-VkResult ivkCreateSemaphore(VkDevice device, VkSemaphore* outSemaphore) {
+VkResult ivkCreateSemaphore(VkDevice device, VkSemaphore* outSemaphore, bool exportable) {
+  const VkExportSemaphoreCreateInfo exportInfo = {
+      .sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO,
+      .pNext = NULL,
+      .handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
+  };
+
   const VkSemaphoreCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-      .pNext = NULL,
+      .pNext = exportable ? &exportInfo : NULL,
       .flags = 0,
   };
   return vkCreateSemaphore(device, &ci, NULL, outSemaphore);

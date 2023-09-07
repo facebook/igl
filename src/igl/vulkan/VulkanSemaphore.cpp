@@ -11,10 +11,11 @@
 
 namespace igl::vulkan {
 
-VulkanSemaphore::VulkanSemaphore(VkDevice device, const char* debugName) : device_(device) {
+VulkanSemaphore::VulkanSemaphore(VkDevice device, const char* debugName, bool exportable) :
+  device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  VK_ASSERT(ivkCreateSemaphore(device_, &vkSemaphore_));
+  VK_ASSERT(ivkCreateSemaphore(device_, &vkSemaphore_, exportable));
   VK_ASSERT(
       ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)vkSemaphore_, debugName));
 }
@@ -39,6 +40,27 @@ VulkanSemaphore& VulkanSemaphore::operator=(VulkanSemaphore&& other) noexcept {
   std::swap(device_, tmp.device_);
   std::swap(vkSemaphore_, tmp.vkSemaphore_);
   return *this;
+}
+
+VkSemaphore VulkanSemaphore::getVkSemaphore() const noexcept {
+  return vkSemaphore_;
+}
+
+int VulkanSemaphore::getFileDescriptor() const noexcept {
+  // This is intentionally c++17 compatible and not c++20 style
+  // because there are libraries that rely on this code
+  // that are not yet moved forward to c++20
+  VkSemaphoreGetFdInfoKHR fdInfo;
+  fdInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR;
+  fdInfo.pNext = nullptr;
+  fdInfo.semaphore = vkSemaphore_;
+  fdInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+  int fd = -1;
+  auto ok = vkGetSemaphoreFdKHR(device_, &fdInfo, &fd);
+  if (ok == VK_SUCCESS) {
+    return fd;
+  }
+  return -1;
 }
 
 } // namespace igl::vulkan

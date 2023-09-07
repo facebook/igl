@@ -22,7 +22,9 @@ namespace vulkan {
  */
 class VulkanSemaphore final {
  public:
-  explicit VulkanSemaphore(VkDevice device, const char* debugName = nullptr);
+  explicit VulkanSemaphore(VkDevice device,
+                           const char* debugName = nullptr,
+                           bool exportable = false);
   ~VulkanSemaphore();
 
   VulkanSemaphore(VulkanSemaphore&& other) noexcept;
@@ -30,6 +32,10 @@ class VulkanSemaphore final {
 
   VulkanSemaphore(const VulkanSemaphore&) = delete;
   VulkanSemaphore& operator=(const VulkanSemaphore&) = delete;
+
+  [[nodiscard]] VkSemaphore getVkSemaphore() const noexcept;
+
+  [[nodiscard]] int getFileDescriptor() const noexcept;
 
  public:
   VkDevice device_ = VK_NULL_HANDLE;

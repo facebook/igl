@@ -48,7 +48,7 @@ VkResult ivkCreateDebugReportMessenger(VkInstance instance,
                                        void* logUserData,
                                        VkDebugReportCallbackEXT* outMessenger);
 
-VkResult ivkCreateSemaphore(VkDevice device, VkSemaphore* outSemaphore);
+VkResult ivkCreateSemaphore(VkDevice device, VkSemaphore* outSemaphore, bool exportable);
 
 VkResult ivkCreateFence(VkDevice device, VkFlags flags, VkFence* outFence);
 
