@@ -4592,7 +4592,7 @@ void lvk::VulkanContext::checkAndUpdateDescriptorSets() {
   for (const auto& obj : texturesPool_.objects_) {
     const VulkanTexture& texture = obj.obj_;
     // multisampled images cannot be directly accessed from shaders
-    const bool isTextureAvailable = (texture.image_->vkSamples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
+    const bool isTextureAvailable = texture.image_ && ((texture.image_->vkSamples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
     const bool isSampledImage = isTextureAvailable && texture.image_->isSampledImage();
     const bool isStorageImage = isTextureAvailable && texture.image_->isStorageImage();
     infoSampledImages.push_back(
