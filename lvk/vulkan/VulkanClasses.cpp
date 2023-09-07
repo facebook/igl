@@ -418,6 +418,8 @@ std::vector<VkFormat> getCompatibleDepthStencilFormats(lvk::Format format) {
     return {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
   case lvk::Format_Z_UN24_S_UI8:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT};
+  case lvk::Format_Z_F32_S_UI8:
+    return {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT};
   default:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT};
   }
@@ -4039,6 +4041,7 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
       .drawIndirectFirstInstance = VK_TRUE,
       .depthBiasClamp = VK_TRUE,
       .fillModeNonSolid = VK_TRUE,
+      .samplerAnisotropy = VK_TRUE,
       .textureCompressionBC = VK_TRUE,
   };
   VkPhysicalDeviceVulkan11Features deviceFeatures11 = {
@@ -4589,7 +4592,7 @@ void lvk::VulkanContext::checkAndUpdateDescriptorSets() {
   for (const auto& obj : texturesPool_.objects_) {
     const VulkanTexture& texture = obj.obj_;
     // multisampled images cannot be directly accessed from shaders
-    const bool isTextureAvailable = (texture.image_->vkSamples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
+    const bool isTextureAvailable = texture.image_ && ((texture.image_->vkSamples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
     const bool isSampledImage = isTextureAvailable && texture.image_->isSampledImage();
     const bool isStorageImage = isTextureAvailable && texture.image_->isStorageImage();
     infoSampledImages.push_back(

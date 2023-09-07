@@ -176,6 +176,8 @@ VkFormat lvk::formatToVkFormat(lvk::Format format) {
     return VK_FORMAT_D32_SFLOAT;
   case lvk::Format_Z_UN24_S_UI8:
     return VK_FORMAT_D24_UNORM_S8_UINT;
+  case lvk::Format_Z_F32_S_UI8:
+    return VK_FORMAT_D32_SFLOAT_S8_UINT;
   }
 #if defined(_MSC_VER)
   LVK_ASSERT_MSG(false, "TextureFormat value not handled: %d", (int)format);
@@ -235,6 +237,8 @@ lvk::Format lvk::vkFormatToFormat(VkFormat format) {
     return Format_Z_UN24_S_UI8;
   case VK_FORMAT_D32_SFLOAT:
     return Format_Z_F32;
+  case VK_FORMAT_D32_SFLOAT_S8_UINT:
+    return Format_Z_F32_S_UI8;
   default:;
   }
   LVK_ASSERT_MSG(false, "VkFormat value not handled: %d", (int)format);
