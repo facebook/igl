@@ -719,15 +719,11 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     }
     textures_[0] = std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView));
     const uint32_t pixel = 0xFF000000;
-    const VkRect2D imageRegion = ivkGetRect2D(0, 0, 1, 1);
-    stagingDevice_->imageData2D(
+    stagingDevice_->imageData(
         textures_[0]->getVulkanImage(),
-        imageRegion,
-        0,
-        1,
-        0,
-        TextureFormatProperties::fromTextureFormat(vkFormatToTextureFormat(dummyTextureFormat)),
-        dummyTextureFormat,
+        TextureType::TwoD,
+        TextureRangeDesc::new2D(0, 0, 1, 1),
+        TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8),
         0,
         &pixel);
   }

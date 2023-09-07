@@ -32,22 +32,12 @@ class VulkanStagingDevice final {
 
   void bufferSubData(VulkanBuffer& buffer, size_t dstOffset, size_t size, const void* data);
   void getBufferSubData(VulkanBuffer& buffer, size_t srcOffset, size_t size, void* data);
-  void imageData2D(VulkanImage& image,
-                   const VkRect2D& imageRegion,
-                   uint32_t baseMipLevel,
-                   uint32_t numMipLevels,
-                   uint32_t layer,
-                   const TextureFormatProperties& properties,
-                   VkFormat format,
-                   uint32_t bytesPerRow,
-                   const void* data);
-  void imageData3D(VulkanImage& image,
-                   const VkOffset3D& offset,
-                   const VkExtent3D& extent,
-                   const TextureFormatProperties& properties,
-                   VkFormat format,
-                   uint32_t bytesPerRow,
-                   const void* data);
+  void imageData(VulkanImage& image,
+                 TextureType type,
+                 const TextureRangeDesc& range,
+                 const TextureFormatProperties& properties,
+                 uint32_t bytesPerRow,
+                 const void* data);
   void getImageData2D(VkImage srcImage,
                       const uint32_t level,
                       const uint32_t layer,

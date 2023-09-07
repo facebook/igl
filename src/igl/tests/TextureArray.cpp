@@ -280,10 +280,13 @@ constexpr uint32_t kY = 0x8F9F005F;
 constexpr size_t kNumLayers = 3;
 
 // clang-format off
-constexpr std::array<uint32_t, 12> kTextureData = {
-  kR, kR, kR, kR, // Layer 0
-  kG, kG, kG, kG, // Layer 1
-  kB, kB, kB, kB, // Layer 2
+constexpr std::array<uint32_t, 15> kTextureData = {
+  kR, kR, kR, kR, // Base Mip, Layer 0
+  kG, kG, kG, kG, // Base Mip, Layer 1
+  kB, kB, kB, kB, // Base Mip, Layer 2
+  kC,             // Mip 1, Layer 0
+  kM,             // Mip 1, Layer 1
+  kY,             // Mip 1, Layer 2
 };
 
 constexpr std::array<uint32_t, 12> kSubTextureData = {
@@ -412,6 +415,73 @@ TEST_F(TextureArrayTest, Upload_SingleUpload_ModifySubTexture) {
 
 TEST_F(TextureArrayTest, Upload_LayerByLayer_ModifySubTexture) {
   runUploadTest(*iglDev_, *cmdQueue_, false, true);
+}
+
+namespace {
+void runUploadToMipTest(IDevice& device, ICommandQueue& cmdQueue, bool singleUpload) {
+  Result ret;
+
+  //-------------------------------------
+  // Create input texture and upload data
+  //-------------------------------------
+  TextureDesc texDesc = TextureDesc::new2DArray(TextureFormat::RGBA_UNorm8,
+                                                kOffscreenTexWidth,
+                                                kOffscreenTexHeight,
+                                                kNumLayers,
+                                                TextureDesc::TextureUsageBits::Sampled |
+                                                    TextureDesc::TextureUsageBits::Attachment);
+  texDesc.numMipLevels = 2;
+  auto tex = device.createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(tex != nullptr);
+
+  //
+  // upload and redownload to make sure that we've uploaded successfully.
+  //
+  if (singleUpload) {
+    const auto uploadRange = TextureRangeDesc::new2DArray(
+        0, 0, kOffscreenTexWidth, kOffscreenTexHeight, 0, kNumLayers, 0, 2);
+    ASSERT_TRUE(tex->upload(uploadRange, kTextureData.data()).isOk());
+  } else {
+    for (size_t mipLevel = 0; mipLevel < 2; ++mipLevel) {
+      for (size_t layer = 0; layer < kNumLayers; ++layer) {
+        const auto uploadRange =
+            TextureRangeDesc::new2DArray(0, 0, kOffscreenTexWidth, kOffscreenTexHeight, layer, 1)
+                .atMipLevel(mipLevel);
+        if (mipLevel == 0) {
+          ASSERT_TRUE(tex->upload(uploadRange, kTextureLayerData[layer]).isOk());
+        } else {
+          ASSERT_TRUE(tex->upload(uploadRange, kSubTextureLayerData[layer]).isOk());
+        }
+      }
+    }
+  }
+
+  for (size_t mipLevel = 0; mipLevel < 2; ++mipLevel) {
+    for (size_t layer = 0; layer < kNumLayers; ++layer) {
+      //--------------------------------
+      // Verify against original texture
+      //--------------------------------
+      const auto layerStr =
+          "Mip Level " + std::to_string(mipLevel) + "; Layer " + std::to_string(layer);
+      util::validateUploadedTextureRange(device,
+                                         cmdQueue,
+                                         tex,
+                                         tex->getLayerRange(layer, mipLevel),
+                                         mipLevel == 0 ? kTextureLayerData[layer]
+                                                       : kSubTextureLayerData[layer],
+                                         layerStr.c_str());
+    }
+  }
+}
+} // namespace
+
+TEST_F(TextureArrayTest, UploadToMip_SingleUpload) {
+  runUploadToMipTest(*iglDev_, *cmdQueue_, true);
+}
+
+TEST_F(TextureArrayTest, UploadToMip_LayerByLayer) {
+  runUploadToMipTest(*iglDev_, *cmdQueue_, false);
 }
 
 //

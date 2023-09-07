@@ -83,5 +83,6 @@ VkCompareOp compareFunctionToVkCompareOp(igl::CompareFunction func);
 VkSampleCountFlagBits getVulkanSampleCountFlags(size_t numSamples);
 VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool isBGR = false);
 uint32_t getVkLayer(igl::TextureType type, uint32_t face, uint32_t layer);
+TextureRangeDesc atVkLayer(TextureType type, const TextureRangeDesc& range, uint32_t vkLayer);
 
 } // namespace igl::vulkan

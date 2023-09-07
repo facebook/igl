@@ -162,23 +162,8 @@ Result TextureBuffer::initialize() const {
 
 Result TextureBuffer::initializeWithUpload() const {
   const auto target = getTarget();
-  for (size_t i = 0; i < getNumMipLevels(); ++i) {
-    if (type_ == TextureType::Cube) {
-      for (size_t face = 0; face < 6; ++face) {
-        auto result = uploadInternal(target, getCubeFaceRange(face, i), nullptr);
-        if (!result.isOk()) {
-          return result;
-        }
-      }
-    } else {
-      const auto range = getFullRange(i);
-      auto result = uploadInternal(target, range, nullptr);
-      if (!result.isOk()) {
-        return result;
-      }
-    }
-  }
-  return Result{};
+  const auto range = getFullRange(0, getNumMipLevels());
+  return uploadInternal(target, range, nullptr);
 }
 
 Result TextureBuffer::initializeWithTexStorage() const {
@@ -219,7 +204,7 @@ Result TextureBuffer::initializeWithTexStorage() const {
 Result TextureBuffer::upload2D(GLenum target,
                                const TextureRangeDesc& range,
                                bool texImage,
-                               const void* data) const {
+                               const void* IGL_NULLABLE data) const {
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage2D(target,
@@ -275,7 +260,7 @@ Result TextureBuffer::upload2D(GLenum target,
 Result TextureBuffer::upload2DArray(GLenum target,
                                     const TextureRangeDesc& range,
                                     bool texImage,
-                                    const void* data) const {
+                                    const void* IGL_NULLABLE data) const {
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage3D(target,
@@ -336,7 +321,7 @@ Result TextureBuffer::upload2DArray(GLenum target,
 Result TextureBuffer::upload3D(GLenum target,
                                const TextureRangeDesc& range,
                                bool texImage,
-                               const void* data) const {
+                               const void* IGL_NULLABLE data) const {
   if (data == nullptr || !getProperties().isCompressed()) {
     if (texImage) {
       getContext().texImage3D(target,
@@ -398,7 +383,7 @@ Result TextureBuffer::upload3D(GLenum target,
 // a sub-rect of the texture may be specified to only upload the sub-rect
 Result TextureBuffer::uploadInternal(TextureType /*type*/,
                                      const TextureRangeDesc& range,
-                                     const void* data,
+                                     const void* IGL_NULLABLE data,
                                      size_t bytesPerRow) const {
   if (data == nullptr) {
     return Result{};
@@ -417,38 +402,42 @@ Result TextureBuffer::uploadInternal(TextureType /*type*/,
 
 Result TextureBuffer::uploadInternal(GLenum target,
                                      const TextureRangeDesc& range,
-                                     const void* data,
+                                     const void* IGL_NULLABLE data,
                                      size_t bytesPerRow) const {
-  if (range.numMipLevels > 1) {
-    IGL_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented,
-                  "Uploading to more than 1 mip level is not yet supported.");
-  }
   // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
   const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
 
   getContext().pixelStorei(GL_UNPACK_ALIGNMENT, this->getAlignment(bytesPerRow, range.mipLevel));
 
-  switch (type_) {
-  case TextureType::TwoD:
-    return upload2D(target, range, texImage, data);
-  case TextureType::TwoDArray:
-    if (!getContext().deviceFeatures().hasFeature(DeviceFeatures::Texture2DArray)) {
-      return Result(Result::Code::Unsupported, "Unsupported texture type");
+  Result result;
+  for (auto mipLevel = range.mipLevel; mipLevel < range.mipLevel + range.numMipLevels; ++mipLevel) {
+    const auto mipRange = range.atMipLevel(mipLevel);
+    for (auto face = range.face; face < range.face + range.numFaces; ++face) {
+      const auto faceRange = mipRange.atFace(face);
+      const auto* faceData =
+          data == nullptr ? nullptr : getSubRangeStart(data, range, faceRange, bytesPerRow);
+      switch (type_) {
+      case TextureType::TwoD:
+        result = upload2D(target, faceRange, texImage, faceData);
+        break;
+      case TextureType::TwoDArray:
+        result = upload2DArray(target, faceRange, texImage, faceData);
+        break;
+      case TextureType::ThreeD:
+        result = upload3D(target, faceRange, texImage, faceData);
+        break;
+      case TextureType::Cube:
+        result = upload2D(kCubeFaceTargets[faceRange.face], faceRange, texImage, faceData);
+        break;
+      default:
+        return Result{Result::Code::InvalidOperation, "Unknown texture type"};
+      }
+      if (!result.isOk()) {
+        return result;
+      }
     }
-    return upload2DArray(target, range, texImage, data);
-  case TextureType::ThreeD:
-    if (!getContext().deviceFeatures().hasFeature(DeviceFeatures::Texture3D)) {
-      return Result(Result::Code::Unsupported, "Unsupported texture type");
-    }
-    return upload3D(target, range, texImage, data);
-  case TextureType::Cube: {
-    return upload2D(kCubeFaceTargets[range.face], range, texImage, data);
   }
-  default:
-    IGL_ASSERT_MSG(false, "Unknown texture type");
-    return Result{Result::Code::InvalidOperation, "Unknown texture type"};
-  }
+  return result;
 }
 
 bool TextureBuffer::canInitialize() const {

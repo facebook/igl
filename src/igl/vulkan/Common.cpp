@@ -366,5 +366,9 @@ uint32_t getVkLayer(TextureType type, uint32_t face, uint32_t layer) {
   return type == TextureType::Cube ? face : layer;
 }
 
+TextureRangeDesc atVkLayer(TextureType type, const TextureRangeDesc& range, uint32_t vkLayer) {
+  return type == TextureType::Cube ? range.atFace(vkLayer) : range.atLayer(vkLayer);
+}
+
 } // namespace vulkan
 } // namespace igl

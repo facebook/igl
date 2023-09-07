@@ -595,6 +595,16 @@ class ITexture : public ITrackedResource<ITexture> {
   /**
    * @brief Uploads the given data into texture memory.
    *
+   * Upload supports arbitrary ranges. That is, data may point to data for multiple mip levels, cube
+   * faces, array layers and Z slices.
+   *
+   * This method assumes the following data hierarchy:
+   *   mip level
+   *     array layer
+   *       cube face
+   *         z slice
+   *           row
+   *
    * @param range        The texture range descriptor containing the offset & dimensions of the
    * upload process.
    * @param data         The pointer to the data. May be a nullptr to force initialization without
@@ -803,6 +813,11 @@ class ITexture : public ITrackedResource<ITexture> {
                          bool flipVertical = false);
 
  protected:
+  [[nodiscard]] const void* IGL_NONNULL getSubRangeStart(const void* IGL_NONNULL data,
+                                                         const TextureRangeDesc& range,
+                                                         const TextureRangeDesc& subRange,
+                                                         size_t bytesPerRow) const noexcept;
+
   [[nodiscard]] virtual Result uploadInternal(IGL_MAYBE_UNUSED TextureType type,
                                               IGL_MAYBE_UNUSED const TextureRangeDesc& range,
                                               IGL_MAYBE_UNUSED const void* IGL_NULLABLE data,

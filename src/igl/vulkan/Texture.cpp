@@ -197,48 +197,9 @@ Result Texture::uploadInternal(TextureType /*type*/,
     return Result{};
   }
 
-  auto numLayers = std::max(range.numLayers, static_cast<size_t>(1));
-  auto byteIncrement =
-      numLayers > 1
-          ? getProperties().getBytesPerLayer(range.width, range.height, range.depth, bytesPerRow)
-          : bytesPerRow;
-  if (range.numMipLevels > 1) {
-    for (auto i = 1; i < range.numMipLevels; ++i) {
-      byteIncrement += getProperties().getBytesPerRange(range.atMipLevel(i), bytesPerRow);
-    }
-  }
-
-  for (auto i = 0; i < numLayers; ++i) {
-    const VulkanContext& ctx = device_.getVulkanContext();
-
-    const VkImageType vkType = texture_->getVulkanImage().type_;
-
-    if (vkType == VK_IMAGE_TYPE_3D) {
-      ctx.stagingDevice_->imageData3D(
-          texture_->getVulkanImage(),
-          VkOffset3D{(int32_t)range.x, (int32_t)range.y, (int32_t)range.z},
-          VkExtent3D{(uint32_t)range.width, (uint32_t)range.height, (uint32_t)range.depth},
-          getProperties(),
-          getVkFormat(),
-          bytesPerRow,
-          data);
-    } else {
-      const uint32_t layer = getVkLayer(desc_.type, range.face, range.layer + i);
-      const VkRect2D imageRegion = ivkGetRect2D(
-          (uint32_t)range.x, (uint32_t)range.y, (uint32_t)range.width, (uint32_t)range.height);
-      ctx.stagingDevice_->imageData2D(texture_->getVulkanImage(),
-                                      imageRegion,
-                                      (uint32_t)range.mipLevel,
-                                      (uint32_t)range.numMipLevels,
-                                      layer,
-                                      getProperties(),
-                                      getVkFormat(),
-                                      bytesPerRow,
-                                      data);
-    }
-
-    data = static_cast<const uint8_t*>(data) + byteIncrement;
-  }
+  const VulkanContext& ctx = device_.getVulkanContext();
+  ctx.stagingDevice_->imageData(
+      texture_->getVulkanImage(), desc_.type, range, getProperties(), bytesPerRow, data);
 
   return Result();
 }

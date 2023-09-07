@@ -588,6 +588,14 @@ void ITexture::repackData(const TextureFormatProperties& properties,
   }
 }
 
+const void* IGL_NULLABLE ITexture::getSubRangeStart(const void* IGL_NONNULL data,
+                                                    const TextureRangeDesc& range,
+                                                    const TextureRangeDesc& subRange,
+                                                    size_t bytesPerRow) const noexcept {
+  const auto offset = properties_.getSubRangeByteOffset(range, subRange, bytesPerRow);
+  return static_cast<const uint8_t*>(data) + offset;
+}
+
 Result ITexture::upload(const TextureRangeDesc& range,
                         const void* IGL_NULLABLE data,
                         size_t bytesPerRow) const {
@@ -601,11 +609,6 @@ Result ITexture::upload(const TextureRangeDesc& range,
       type != TextureType::ThreeD) {
     IGL_ASSERT_MSG(false, "Unknown texture type");
     return Result{Result::Code::InvalidOperation, "Unknown texture type"};
-  }
-  if (range.numFaces > 1) {
-    IGL_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented,
-                  "Uploading to more than 1 face is not yet supported.");
   }
   if (range.face > 0) {
     if (IGL_UNEXPECTED(type != TextureType::Cube)) {

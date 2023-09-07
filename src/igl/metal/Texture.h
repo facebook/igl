@@ -59,11 +59,14 @@ class Texture final : public ITexture {
   static MTLTextureType convertType(TextureType value, size_t numSamples);
   static TextureType convertType(MTLTextureType value);
   static NSUInteger getMetalSlice(TextureType type, uint32_t face, uint32_t layer);
+  static TextureRangeDesc atMetalSlice(TextureType type,
+                                       const TextureRangeDesc& range,
+                                       NSUInteger metalSlice);
 
  private:
   Result uploadInternal(TextureType type,
                         const TextureRangeDesc& range,
-                        const void* data,
+                        const void* IGL_NULLABLE data,
                         size_t bytesPerRow) const final;
 
   void generateMipmap(id<MTLCommandBuffer> cmdBuffer) const;

@@ -1585,7 +1585,8 @@ TEST_F(TextureTest, RenderToMip) {
   }
 }
 
-TEST_F(TextureTest, UploadToMip) {
+namespace {
+void testUploadToMip(IDevice& device, ICommandQueue& cmdQueue, bool singleUpload) {
   Result ret;
 
   // Use a square output texture with mips
@@ -1618,24 +1619,38 @@ TEST_F(TextureTest, UploadToMip) {
                                            TextureDesc::TextureUsageBits::Sampled |
                                                TextureDesc::TextureUsageBits::Attachment);
   texDesc.numMipLevels = kNumMipLevels;
-  auto tex = iglDev_->createTexture(texDesc, &ret);
+  auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
   ASSERT_TRUE(tex != nullptr);
 
   //---------------------------------------------------------------------
   // Validate initial state, upload pixel data, and generate mipmaps
   //---------------------------------------------------------------------
-  ret = tex->upload(tex->getFullRange(0), kBaseMipData);
-  ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+  if (singleUpload) {
+    ret = tex->upload(tex->getFullRange(0, 2), kMipTextureData.data());
+    ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+  } else {
+    ret = tex->upload(tex->getFullRange(0), kBaseMipData);
+    ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
 
-  ret = tex->upload(tex->getFullRange(1), kMip1Data);
-  ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+    ret = tex->upload(tex->getFullRange(1), kMip1Data);
+    ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+  }
 
   util::validateUploadedTextureRange(
-      *iglDev_, *cmdQueue_, tex, tex->getFullRange(0), kBaseMipData, "Base Level");
+      device, cmdQueue, tex, tex->getFullRange(0), kBaseMipData, "Base Level");
 
   util::validateUploadedTextureRange(
-      *iglDev_, *cmdQueue_, tex, tex->getFullRange(1), kMip1Data, "Mip 1");
+      device, cmdQueue, tex, tex->getFullRange(1), kMip1Data, "Mip 1");
+}
+} // namespace
+
+TEST_F(TextureTest, UploadToMip_LevelByLevel) {
+  testUploadToMip(*iglDev_, *cmdQueue_, false);
+}
+
+TEST_F(TextureTest, UploadToMip_SingleUpload) {
+  testUploadToMip(*iglDev_, *cmdQueue_, true);
 }
 
 namespace {

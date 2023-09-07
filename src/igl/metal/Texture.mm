@@ -43,51 +43,53 @@ Texture::~Texture() {
 
 Result Texture::uploadInternal(TextureType type,
                                const TextureRangeDesc& range,
-                               const void* data,
+                               const void* IGL_NULLABLE data,
                                size_t bytesPerRow) const {
-  if (range.numMipLevels > 1) {
-    IGL_ASSERT_NOT_IMPLEMENTED();
-    return Result(Result::Code::Unimplemented,
-                  "Uploading to more than 1 mip level is not yet supported.");
-  }
   if (data == nullptr) {
     return Result(Result::Code::Ok);
   }
   const auto& properties = getProperties();
-  if (bytesPerRow == 0) {
-    bytesPerRow = properties.getBytesPerRow(range);
-  }
-  const auto numLayers = std::max(range.numLayers, static_cast<size_t>(1));
-  const auto byteIncrement = numLayers > 1 ? properties.getBytesPerLayer(range.atLayer(0)) : 0;
-  for (auto i = 0; i < numLayers; ++i) {
-    MTLRegion region;
-    switch (type) {
-    case TextureType::Cube:
-    case TextureType::TwoD:
-    case TextureType::TwoDArray:
-      region = MTLRegionMake2D(range.x, range.y, range.width, range.height);
-      [get() replaceRegion:region
-               mipmapLevel:range.mipLevel
-                     slice:getMetalSlice(type, range.face, range.layer + i /* layer */)
-                 withBytes:data
-               bytesPerRow:toMetalBytesPerRow(bytesPerRow)
-             bytesPerImage:0];
-      break;
-    case TextureType::ThreeD:
-      region = MTLRegionMake3D(range.x, range.y, range.z, range.width, range.height, range.depth);
-      [get() replaceRegion:region
-               mipmapLevel:range.mipLevel
-                     slice:0 /* 3D array textures not supported */
-                 withBytes:data
-               bytesPerRow:toMetalBytesPerRow(bytesPerRow)
-             bytesPerImage:toMetalBytesPerRow(bytesPerRow * range.height)];
-      break;
-    default:
-      IGL_ASSERT(false && "Unknown texture type");
-      break;
-    }
+  const auto rangeBytesPerRow = bytesPerRow > 0 ? bytesPerRow : properties.getBytesPerRow(range);
 
-    data = static_cast<const uint8_t*>(data) + byteIncrement;
+  const auto initialSlice = getMetalSlice(type, range.face, range.layer);
+  const auto numSlices = getMetalSlice(type, range.numFaces, range.numLayers);
+  for (auto mipLevel = range.mipLevel; mipLevel < range.mipLevel + range.numMipLevels; ++mipLevel) {
+    const auto mipRange = range.atMipLevel(mipLevel);
+    for (auto slice = initialSlice; slice < initialSlice + numSlices; ++slice) {
+      const auto sliceRange = atMetalSlice(type, mipRange, slice);
+      const auto* sliceData = getSubRangeStart(data, range, sliceRange, bytesPerRow);
+      const auto region = MTLRegionMake3D(sliceRange.x,
+                                          sliceRange.y,
+                                          sliceRange.z,
+                                          sliceRange.width,
+                                          sliceRange.height,
+                                          sliceRange.depth);
+      switch (type) {
+      case TextureType::Cube:
+      case TextureType::TwoD:
+      case TextureType::TwoDArray: {
+        [get() replaceRegion:region
+                 mipmapLevel:sliceRange.mipLevel
+                       slice:getMetalSlice(type, sliceRange.face, sliceRange.layer)
+                   withBytes:sliceData
+                 bytesPerRow:toMetalBytesPerRow(rangeBytesPerRow)
+               bytesPerImage:0];
+        break;
+      }
+      case TextureType::ThreeD: {
+        [get() replaceRegion:region
+                 mipmapLevel:sliceRange.mipLevel
+                       slice:0 /* 3D array textures not supported */
+                   withBytes:sliceData
+                 bytesPerRow:toMetalBytesPerRow(rangeBytesPerRow)
+               bytesPerImage:toMetalBytesPerRow(rangeBytesPerRow * sliceRange.height)];
+        break;
+      }
+      default:
+        IGL_ASSERT(false && "Unknown texture type");
+        break;
+      }
+    }
   }
   return Result{};
 }
@@ -846,6 +848,13 @@ TextureFormat Texture::mtlPixelFormatToTextureFormat(MTLPixelFormat value) {
 
 NSUInteger Texture::getMetalSlice(TextureType type, uint32_t face, uint32_t layer) {
   return type == TextureType::Cube ? face : layer;
+}
+
+TextureRangeDesc Texture::atMetalSlice(TextureType type,
+                                       const TextureRangeDesc& range,
+                                       NSUInteger metalSlice) {
+  return type == TextureType::Cube ? range.atFace(static_cast<uint32_t>(metalSlice))
+                                   : range.atLayer(static_cast<uint32_t>(metalSlice));
 }
 
 } // namespace metal

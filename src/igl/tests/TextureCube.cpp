@@ -238,25 +238,43 @@ class TextureCubeTest : public ::testing::Test {
 constexpr uint32_t kR = 0x1F00001F;
 constexpr uint32_t kG = 0x002F002F;
 constexpr uint32_t kB = 0x00003F4F;
+constexpr uint32_t kC = 0x004F5F3F;
+constexpr uint32_t kM = 0x6F007F4F;
+constexpr uint32_t kY = 0x8F9F005F;
 
 // clang-format off
-constexpr std::array<uint32_t, 24> kTextureData = {
-  kR, kR, kR, kR,                     // Face 0
-  kG, kG, kG, kG,                     // Face 1
-  kB, kB, kB, kB,                     // Face 2
-  kR | kB, kR | kB, kR | kB, kR | kB, // Face 3
-  kR | kG, kR | kG, kR | kG, kR | kG, // Face 4
-  kB | kG, kB | kG, kB | kG, kB | kG, // Face 5
+constexpr std::array<uint32_t, 30> kTextureData = {
+  kR, kR, kR, kR,                     // Base Mip, Face 0
+  kG, kG, kG, kG,                     // Base Mip, Face 1
+  kB, kB, kB, kB,                     // Base Mip, Face 2
+  kR | kB, kR | kB, kR | kB, kR | kB, // Base Mip, Face 3
+  kR | kG, kR | kG, kR | kG, kR | kG, // Base Mip, Face 4
+  kB | kG, kB | kG, kB | kG, kB | kG, // Base Mip, Face 5
+  kC,                                 // Mip 1, Face 0
+  kM,                                 // Mip 1, Face 1
+  kY,                                 // Mip 1, Face 2
+  kC | kM,                            // Mip 1, Face 3
+  kC | kY,                            // Mip 1, Face 4
+  kM | kY,                            // Mip 1, Face 5
 };
 // clang-format on
 
-constexpr std::array<const uint32_t*, 6> kTextureFaceData{
+constexpr std::array<const uint32_t*, 6> kBaseMipTextureFaceData{
     kTextureData.data() + 0,
     kTextureData.data() + 4,
     kTextureData.data() + 8,
     kTextureData.data() + 12,
     kTextureData.data() + 16,
     kTextureData.data() + 20,
+};
+
+constexpr std::array<const uint32_t*, 6> kMip1TextureFaceData{
+    kTextureData.data() + 24,
+    kTextureData.data() + 25,
+    kTextureData.data() + 26,
+    kTextureData.data() + 27,
+    kTextureData.data() + 28,
+    kTextureData.data() + 29,
 };
 
 static const std::array<glm::vec4, 6> kViewDirection = {glm::vec4{1.0f, 0.0f, 0.0f, 0.0f},
@@ -272,37 +290,107 @@ static const std::array<glm::vec4, 6> kViewDirection = {glm::vec4{1.0f, 0.0f, 0.
 // Create a cube map texture and upload different solid color into each face. Then verify the color
 // of each face.
 //
-TEST_F(TextureCubeTest, Upload) {
+namespace {
+void runUploadTest(IDevice& device, ICommandQueue& cmdQueue, bool singleUpload) {
   Result ret;
 
-  //---------------------------------------------------------------------
-  // Create cube texture with mip levels and attach it to a framebuffer
-  //---------------------------------------------------------------------
+  //--------------------
+  // Create cube texture
+  //--------------------
   const TextureDesc texDesc = TextureDesc::newCube(TextureFormat::RGBA_UNorm8,
                                                    kOffscreenTexWidth,
                                                    kOffscreenTexWidth,
                                                    TextureDesc::TextureUsageBits::Sampled |
                                                        TextureDesc::TextureUsageBits::Attachment);
-  auto tex = iglDev_->createTexture(texDesc, &ret);
+  auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
   ASSERT_TRUE(tex != nullptr);
 
   //---------------------------------------------------------------------
   // Upload pixel data and validate faces
   //---------------------------------------------------------------------
-  for (size_t face = 0; face < 6; ++face) {
-    ASSERT_TRUE(tex->upload(tex->getCubeFaceRange(face), kTextureFaceData[face]).isOk());
+  if (singleUpload) {
+    for (size_t face = 0; face < 6; ++face) {
+      ASSERT_TRUE(tex->upload(tex->getFullRange(0), kTextureData.data()).isOk());
+    }
+  } else {
+    for (size_t face = 0; face < 6; ++face) {
+      ASSERT_TRUE(
+          tex->upload(tex->getCubeFaceRange(face, 0), kBaseMipTextureFaceData[face]).isOk());
+    }
   }
 
   for (size_t face = 0; face < 6; ++face) {
     const auto faceStr = "Face " + std::to_string(face);
-    util::validateUploadedTextureRange(*iglDev_,
-                                       *cmdQueue_,
+    util::validateUploadedTextureRange(device,
+                                       cmdQueue,
                                        tex,
                                        tex->getCubeFaceRange(face),
-                                       kTextureFaceData[face],
+                                       kBaseMipTextureFaceData[face],
                                        faceStr.c_str());
   }
+}
+} // namespace
+
+TEST_F(TextureCubeTest, Upload_SingleUpload) {
+  runUploadTest(*iglDev_, *cmdQueue_, true);
+}
+
+TEST_F(TextureCubeTest, Upload_FaceByFace) {
+  runUploadTest(*iglDev_, *cmdQueue_, false);
+}
+
+//
+// Test uploading cube maps including mipmaps
+//
+namespace {
+void runUploadToMipTest(IDevice& device, ICommandQueue& cmdQueue, bool singleUpload) {
+  Result ret;
+
+  //------------------------------------
+  // Create cube texture with mip levels
+  //------------------------------------
+  TextureDesc texDesc = TextureDesc::newCube(TextureFormat::RGBA_UNorm8,
+                                             kOffscreenTexWidth,
+                                             kOffscreenTexWidth,
+                                             TextureDesc::TextureUsageBits::Sampled |
+                                                 TextureDesc::TextureUsageBits::Attachment);
+  texDesc.numMipLevels = 2;
+  auto tex = device.createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
+  ASSERT_TRUE(tex != nullptr);
+
+  //---------------------------------------------------------------------
+  // Upload pixel data and validate faces
+  //---------------------------------------------------------------------
+  if (singleUpload) {
+    ASSERT_TRUE(tex->upload(tex->getFullRange(0, 2), kTextureData.data()).isOk());
+  } else {
+    ASSERT_TRUE(tex->upload(tex->getFullRange(0, 1), kTextureData.data()).isOk());
+    ASSERT_TRUE(tex->upload(tex->getFullRange(1, 1), kMip1TextureFaceData[0]).isOk());
+  }
+
+  for (size_t mipLevel = 0; mipLevel < 2; ++mipLevel) {
+    for (size_t face = 0; face < 6; ++face) {
+      const auto faceStr = "MipLevel " + std::to_string(mipLevel) + ";Face " + std::to_string(face);
+      util::validateUploadedTextureRange(device,
+                                         cmdQueue,
+                                         tex,
+                                         tex->getCubeFaceRange(face, mipLevel),
+                                         mipLevel == 0 ? kBaseMipTextureFaceData[face]
+                                                       : kMip1TextureFaceData[face],
+                                         faceStr.c_str());
+    }
+  }
+}
+} // namespace
+
+TEST_F(TextureCubeTest, UploadToMip_SingleUpload) {
+  runUploadToMipTest(*iglDev_, *cmdQueue_, true);
+}
+
+TEST_F(TextureCubeTest, UploadToMip_LevelByLevel) {
+  runUploadToMipTest(*iglDev_, *cmdQueue_, false);
 }
 
 //
@@ -328,24 +416,24 @@ TEST_F(TextureCubeTest, Passthrough_SampleFromCube) {
 
   const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
 
-  ASSERT_TRUE(
-      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::PosX), kTextureFaceData[0])
-          .isOk());
-  ASSERT_TRUE(
-      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::NegX), kTextureFaceData[1])
-          .isOk());
-  ASSERT_TRUE(
-      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::PosY), kTextureFaceData[2])
-          .isOk());
-  ASSERT_TRUE(
-      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::NegY), kTextureFaceData[3])
-          .isOk());
-  ASSERT_TRUE(
-      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::PosZ), kTextureFaceData[4])
-          .isOk());
-  ASSERT_TRUE(
-      inputTexture_->upload(rangeDesc.atFace(igl::TextureCubeFace::NegZ), kTextureFaceData[5])
-          .isOk());
+  ASSERT_TRUE(inputTexture_
+                  ->upload(rangeDesc.atFace(igl::TextureCubeFace::PosX), kBaseMipTextureFaceData[0])
+                  .isOk());
+  ASSERT_TRUE(inputTexture_
+                  ->upload(rangeDesc.atFace(igl::TextureCubeFace::NegX), kBaseMipTextureFaceData[1])
+                  .isOk());
+  ASSERT_TRUE(inputTexture_
+                  ->upload(rangeDesc.atFace(igl::TextureCubeFace::PosY), kBaseMipTextureFaceData[2])
+                  .isOk());
+  ASSERT_TRUE(inputTexture_
+                  ->upload(rangeDesc.atFace(igl::TextureCubeFace::NegY), kBaseMipTextureFaceData[3])
+                  .isOk());
+  ASSERT_TRUE(inputTexture_
+                  ->upload(rangeDesc.atFace(igl::TextureCubeFace::PosZ), kBaseMipTextureFaceData[4])
+                  .isOk());
+  ASSERT_TRUE(inputTexture_
+                  ->upload(rangeDesc.atFace(igl::TextureCubeFace::NegZ), kBaseMipTextureFaceData[5])
+                  .isOk());
   //----------------
   // Create Pipeline
   //----------------
@@ -391,7 +479,7 @@ TEST_F(TextureCubeTest, Passthrough_SampleFromCube) {
     //----------------
     const auto faceStr = std::string("Face ") + std::to_string(face);
     util::validateFramebufferTexture(
-        *iglDev_, *cmdQueue_, *framebuffer_, kTextureFaceData[face], faceStr.c_str());
+        *iglDev_, *cmdQueue_, *framebuffer_, kBaseMipTextureFaceData[face], faceStr.c_str());
   }
 }
 
@@ -455,7 +543,8 @@ TEST_F(TextureCubeTest, Passthrough_RenderToCube) {
     //------------------
     // Upload layer data
     //------------------
-    ASSERT_TRUE(inputTexture_->upload(rangeDesc, kTextureFaceData[face], bytesPerRow).isOk());
+    ASSERT_TRUE(
+        inputTexture_->upload(rangeDesc, kBaseMipTextureFaceData[face], bytesPerRow).isOk());
 
     //-------
     // Render
@@ -493,7 +582,7 @@ TEST_F(TextureCubeTest, Passthrough_RenderToCube) {
                                           *cmdQueue_,
                                           *customFramebuffer,
                                           customOffscreenTexture->getCubeFaceRange(face),
-                                          kTextureFaceData[face],
+                                          kBaseMipTextureFaceData[face],
                                           faceStr.c_str());
   }
 }

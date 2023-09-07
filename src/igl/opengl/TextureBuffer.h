@@ -31,24 +31,24 @@ class TextureBuffer : public TextureBufferBase {
   Result initializeWithTexStorage() const;
   Result uploadInternal(TextureType type,
                         const TextureRangeDesc& range,
-                        const void* data,
+                        const void* IGL_NULLABLE data,
                         size_t bytesPerRow) const final;
   Result uploadInternal(GLenum target,
                         const TextureRangeDesc& range,
-                        const void* data,
+                        const void* IGL_NULLABLE data,
                         size_t bytesPerRow = 0) const;
   Result upload2D(GLenum target,
                   const TextureRangeDesc& range,
                   bool texImage,
-                  const void* data) const;
+                  const void* IGL_NULLABLE data) const;
   Result upload2DArray(GLenum target,
                        const TextureRangeDesc& range,
                        bool texImage,
-                       const void* data) const;
+                       const void* IGL_NULLABLE data) const;
   Result upload3D(GLenum target,
                   const TextureRangeDesc& range,
                   bool texImage,
-                  const void* data) const;
+                  const void* IGL_NULLABLE data) const;
 
  protected:
   // NOLINTNEXTLINE(misc-non-private-member-variables-in-classes)

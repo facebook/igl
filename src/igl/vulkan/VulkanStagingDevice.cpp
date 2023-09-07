@@ -124,159 +124,13 @@ void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
   }
 }
 
-void VulkanStagingDevice::imageData2D(VulkanImage& image,
-                                      const VkRect2D& imageRegion,
-                                      uint32_t baseMipLevel,
-                                      uint32_t numMipLevels,
-                                      uint32_t layer,
-                                      const TextureFormatProperties& properties,
-                                      VkFormat format,
-                                      uint32_t bytesPerRow,
-                                      const void* data) {
+void VulkanStagingDevice::imageData(VulkanImage& image,
+                                    TextureType type,
+                                    const TextureRangeDesc& range,
+                                    const TextureFormatProperties& properties,
+                                    uint32_t bytesPerRow,
+                                    const void* data) {
   IGL_PROFILER_FUNCTION();
-  // cache the dimensions of each mip level for later
-  std::vector<uint32_t> mipSizes;
-  mipSizes.reserve(numMipLevels);
-
-  // divide the width and height by 2 until we get to the size of level 'baseMipLevel'
-  auto width = image.extent_.width >> baseMipLevel;
-  auto height = image.extent_.height >> baseMipLevel;
-
-  IGL_ASSERT_MSG(
-      imageRegion.offset.x == 0 && imageRegion.offset.y == 0 && imageRegion.extent.width == width &&
-          imageRegion.extent.height == height,
-
-      "Uploading mip levels with an image region that is smaller than the base mip level is "
-      "not supported");
-
-  // find the storage size for all mip levels being uploaded
-  const auto range = TextureRangeDesc::new2D(0, 0, image.extent_.width, image.extent_.height);
-
-  std::unique_ptr<uint8_t[]> repackedData = nullptr;
-
-  // Vulkan only handles cases where row lengths are multiples of texel block size.
-  // Must repack the data if the source data does not conform to this.
-  if (bytesPerRow != 0 && bytesPerRow % properties.bytesPerBlock != 0) {
-    // Must repack the data.
-    repackedData = std::make_unique<uint8_t[]>(properties.getBytesPerRange(range));
-    ITexture::repackData(
-        properties, range, static_cast<const uint8_t*>(data), bytesPerRow, repackedData.get(), 0);
-    bytesPerRow = 0;
-    data = repackedData.get();
-  }
-
-  const uint32_t texelsPerRow = bytesPerRow / static_cast<uint32_t>(properties.bytesPerBlock);
-
-  uint32_t storageSize = 0;
-  for (size_t i = 0; i < numMipLevels; ++i) {
-    const uint32_t mipSize =
-        static_cast<uint32_t>(properties.getBytesPerRange(range.atMipLevel(i), bytesPerRow));
-
-    storageSize += mipSize;
-    mipSizes.push_back(mipSize);
-    width = width <= 1 ? 1 : width >> 1; // divide the width by 2
-    height = height <= 1 ? 1 : height >> 1; // divide the height by 2
-  }
-
-  IGL_ASSERT(storageSize <= stagingBufferSize_);
-
-  // get next staging buffer free offset
-  MemoryRegionDesc desc = getNextFreeOffset(storageSize);
-
-  // currently, no support for copying image in multiple smaller chunk sizes.
-  // If we get smaller buffer size than storageSize, we will wait for gpu idle and get bigger chunk.
-  if (desc.alignedSize_ < storageSize) {
-    flushOutstandingFences();
-    desc = getNextFreeOffset(storageSize);
-  }
-
-  IGL_ASSERT(desc.alignedSize_ >= storageSize);
-
-  // 1. Copy the pixel data into the host visible staging buffer
-  stagingBuffer_->bufferSubData(desc.srcOffset_, storageSize, data);
-
-  auto& wrapper = immediate_->acquire();
-
-  uint32_t mipLevelOffset = 0;
-
-  for (uint32_t mipLevel = 0; mipLevel < numMipLevels; ++mipLevel) {
-    const auto currentMipLevel = baseMipLevel + mipLevel;
-
-    IGL_ASSERT(currentMipLevel < image.mipLevels_);
-    IGL_ASSERT(mipLevel < image.mipLevels_);
-
-    // 1. Transition initial image layout into TRANSFER_DST_OPTIMAL
-    ivkImageMemoryBarrier(
-        wrapper.cmdBuf_,
-        image.getVkImage(),
-        0,
-        VK_ACCESS_TRANSFER_WRITE_BIT,
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-        VK_PIPELINE_STAGE_TRANSFER_BIT,
-        VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, 1, layer, 1});
-
-    // 2. Copy the pixel data from the staging buffer into the image
-    const VkRect2D region = ivkGetRect2D(imageRegion.offset.x >> mipLevel,
-                                         imageRegion.offset.y >> mipLevel,
-                                         std::max(1u, imageRegion.extent.width >> mipLevel),
-                                         std::max(1u, imageRegion.extent.height >> mipLevel));
-
-    const VkBufferImageCopy copy = ivkGetBufferImageCopy2D(
-        desc.srcOffset_ + mipLevelOffset, // the offset for this level is at the start of all mip
-                                          // levels + the size of all previous mip levels being
-                                          // uploaded
-        texelsPerRow,
-        region,
-        VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, layer, 1});
-#if IGL_VULKAN_PRINT_COMMANDS
-    IGL_LOG_INFO("%p vkCmdCopyBufferToImage()\n", wrapper.cmdBuf_);
-#endif // IGL_VULKAN_PRINT_COMMANDS
-    vkCmdCopyBufferToImage(wrapper.cmdBuf_,
-                           stagingBuffer_->getVkBuffer(),
-                           image.getVkImage(),
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                           1,
-                           &copy);
-
-    // 3. Transition TRANSFER_DST_OPTIMAL into SHADER_READ_ONLY_OPTIMAL
-    ivkImageMemoryBarrier(
-        wrapper.cmdBuf_,
-        image.getVkImage(),
-        VK_ACCESS_TRANSFER_READ_BIT, // VK_ACCESS_TRANSFER_WRITE_BIT,
-        VK_ACCESS_SHADER_READ_BIT,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        VK_PIPELINE_STAGE_TRANSFER_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, 1, layer, 1});
-
-    // Compute the offset for the next level
-    mipLevelOffset += mipSizes[mipLevel];
-  }
-
-  image.imageLayout_ = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-  VulkanSubmitHandle fenceId = immediate_->submit(wrapper);
-  outstandingFences_[fenceId.handle()] = desc;
-}
-
-void VulkanStagingDevice::imageData3D(VulkanImage& image,
-                                      const VkOffset3D& offset,
-                                      const VkExtent3D& extent,
-                                      const TextureFormatProperties& properties,
-                                      VkFormat format,
-                                      uint32_t bytesPerRow,
-                                      const void* data) {
-  IGL_PROFILER_FUNCTION();
-  IGL_ASSERT_MSG(image.mipLevels_ == 1, "Can handle only 3D images with exactly 1 mip-level");
-  IGL_ASSERT_MSG((offset.x == 0) && (offset.y == 0) && (offset.z == 0),
-                 "Can upload only full-size 3D images");
-
-  const uint32_t texelsPerRow = bytesPerRow / static_cast<uint32_t>(properties.bytesPerBlock);
-  const auto range = TextureRangeDesc::new3D(0, 0, 0, extent.width, extent.height, extent.depth);
-
   std::unique_ptr<uint8_t[]> repackedData = nullptr;
 
   // Vulkan only handles cases where row lengths are multiples of texel block size.
@@ -291,7 +145,7 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
   }
 
   const uint32_t storageSize =
-      static_cast<uint32_t>(properties.getBytesPerRange(range.atMipLevel(0), bytesPerRow));
+      static_cast<uint32_t>(properties.getBytesPerRange(range, bytesPerRow));
 
   IGL_ASSERT(storageSize <= stagingBufferSize_);
 
@@ -312,6 +166,53 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
 
   auto& wrapper = immediate_->acquire();
 
+  const uint32_t initialLayer = getVkLayer(type, range.face, range.layer);
+  const uint32_t numLayers = getVkLayer(type, range.numFaces, range.numLayers);
+
+  std::vector<VkBufferImageCopy> copyRegions;
+  copyRegions.reserve(range.numMipLevels);
+
+  for (auto mipLevel = range.mipLevel; mipLevel < range.mipLevel + range.numMipLevels; ++mipLevel) {
+    const auto mipRange = range.atMipLevel(mipLevel);
+    const uint32_t offset =
+        static_cast<uint32_t>(properties.getSubRangeByteOffset(range, mipRange, bytesPerRow));
+    const uint32_t texelsPerRow = bytesPerRow / static_cast<uint32_t>(properties.bytesPerBlock);
+
+    if (image.type_ == VK_IMAGE_TYPE_2D) {
+      const VkRect2D region = ivkGetRect2D(static_cast<int32_t>(mipRange.x),
+                                           static_cast<int32_t>(mipRange.y),
+                                           static_cast<uint32_t>(mipRange.width),
+                                           static_cast<uint32_t>(mipRange.height));
+      copyRegions.emplace_back(
+          ivkGetBufferImageCopy2D(desc.srcOffset_ + offset,
+                                  texelsPerRow,
+                                  region,
+                                  VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT,
+                                                           static_cast<uint32_t>(mipLevel),
+                                                           initialLayer,
+                                                           numLayers}));
+    } else {
+      copyRegions.emplace_back(
+          ivkGetBufferImageCopy3D(desc.srcOffset_ + offset,
+                                  texelsPerRow,
+                                  VkOffset3D{static_cast<int32_t>(mipRange.x),
+                                             static_cast<int32_t>(mipRange.y),
+                                             static_cast<int32_t>(mipRange.z)},
+                                  VkExtent3D{static_cast<uint32_t>(mipRange.width),
+                                             static_cast<uint32_t>(mipRange.height),
+                                             static_cast<uint32_t>(mipRange.depth)},
+                                  VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT,
+                                                           static_cast<uint32_t>(mipLevel),
+                                                           initialLayer,
+                                                           numLayers}));
+    }
+  }
+
+  const auto subresourceRange = VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT,
+                                                        static_cast<uint32_t>(range.mipLevel),
+                                                        static_cast<uint32_t>(range.numMipLevels),
+                                                        initialLayer,
+                                                        numLayers};
   // 1. Transition initial image layout into TRANSFER_DST_OPTIMAL
   ivkImageMemoryBarrier(wrapper.cmdBuf_,
                         image.getVkImage(),
@@ -321,21 +222,18 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                         VK_PIPELINE_STAGE_TRANSFER_BIT,
-                        VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
+                        subresourceRange);
 
   // 2. Copy the pixel data from the staging buffer into the image
-  const VkBufferImageCopy copy =
-      ivkGetBufferImageCopy3D(desc.srcOffset_,
-                              texelsPerRow,
-                              offset,
-                              extent,
-                              VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1});
+#if IGL_VULKAN_PRINT_COMMANDS
+  IGL_LOG_INFO("%p vkCmdCopyBufferToImage()\n", wrapper.cmdBuf_);
+#endif // IGL_VULKAN_PRINT_COMMANDS
   vkCmdCopyBufferToImage(wrapper.cmdBuf_,
                          stagingBuffer_->getVkBuffer(),
                          image.getVkImage(),
                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                         1,
-                         &copy);
+                         static_cast<uint32_t>(copyRegions.size()),
+                         copyRegions.data());
 
   // 3. Transition TRANSFER_DST_OPTIMAL into SHADER_READ_ONLY_OPTIMAL
   ivkImageMemoryBarrier(wrapper.cmdBuf_,
@@ -346,7 +244,7 @@ void VulkanStagingDevice::imageData3D(VulkanImage& image,
                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                         VK_PIPELINE_STAGE_TRANSFER_BIT,
                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                        VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
+                        subresourceRange);
 
   image.imageLayout_ = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
