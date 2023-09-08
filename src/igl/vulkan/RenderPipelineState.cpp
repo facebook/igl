@@ -273,18 +273,19 @@ RenderPipelineState::~RenderPipelineState() {
 
 VkPipeline RenderPipelineState::getVkPipeline(
     const RenderPipelineDynamicState& dynamicState) const {
-  if (vkPipelineLayout_ !=
-      device_.getVulkanContext().pipelineLayoutGraphics_->getVkPipelineLayout()) {
+  const VulkanContext& ctx = device_.getVulkanContext();
+
+  if (vkPipelineLayout_ != ctx.pipelineLayoutGraphics_->getVkPipelineLayout()) {
     // there's a new pipeline layout - drop all cached Vulkan pipelines
-    VkDevice device = device_.getVulkanContext().device_->getVkDevice();
+    VkDevice device = ctx.device_->getVkDevice();
     for (auto p : pipelines_) {
       if (p.second != VK_NULL_HANDLE) {
-        device_.getVulkanContext().deferredTask(std::packaged_task<void()>(
+        ctx.deferredTask(std::packaged_task<void()>(
             [device, pipeline = p.second]() { vkDestroyPipeline(device, pipeline, nullptr); }));
       }
     }
     pipelines_.clear();
-    vkPipelineLayout_ = device_.getVulkanContext().pipelineLayoutCompute_->getVkPipelineLayout();
+    vkPipelineLayout_ = ctx.pipelineLayoutGraphics_->getVkPipelineLayout();
   }
 
   const auto it = pipelines_.find(dynamicState);
@@ -294,9 +295,6 @@ VkPipeline RenderPipelineState::getVkPipeline(
   }
 
   // build a new Vulkan pipeline
-
-  const VulkanContext& ctx = device_.getVulkanContext();
-
   VkRenderPass renderPass = ctx.getRenderPass(dynamicState.renderPassIndex_).pass;
 
   VkPipeline pipeline = VK_NULL_HANDLE;
