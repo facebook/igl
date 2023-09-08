@@ -587,6 +587,7 @@ class IContext {
   static void registerContext(void* glContext, IContext* context);
   static void unregisterContext(void* glContext);
   void initialize(Result* result = nullptr);
+  void willDestroy(void* glContext);
 
  private:
   bool alwaysCheckError_ = false; // TRUE to check error after each OGL call

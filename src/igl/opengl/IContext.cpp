@@ -583,6 +583,16 @@ void IContext::registerContext(void* glContext, IContext* context) {
 #endif
 }
 
+void IContext::willDestroy(void* glContext) {
+  // Clear pool explicitly, since it might have reference back to IContext.
+  getAdapterPool().clear();
+  getComputeAdapterPool().clear();
+  // Unregister context
+  if (glContext != nullptr) {
+    IContext::unregisterContext((void*)glContext);
+  }
+}
+
 void IContext::unregisterContext(void* glContext) {
 #if IGL_DEBUG
   IContext::getExistingContexts().erase(glContext);

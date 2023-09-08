@@ -104,10 +104,7 @@ Context::Context(NSOpenGLContext* context,
 }
 
 Context::~Context() {
-  // Clear pool explicitly, since it might have reference back to IContext.
-  getAdapterPool().clear();
-  // Unregister NSOpenGLContext
-  IContext::unregisterContext((__bridge void*)context_);
+  willDestroy((__bridge void*)context_);
 }
 
 void Context::present(std::shared_ptr<ITexture> /*surface*/) const {

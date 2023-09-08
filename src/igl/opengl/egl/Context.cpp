@@ -245,10 +245,7 @@ void Context::updateSurface(NativeWindowType window) {
 }
 
 Context::~Context() {
-  // Clear pool explicitly, since it might have reference back to IContext.
-  getAdapterPool().clear();
-  getComputeAdapterPool().clear();
-  // Unregister eglContext
+  willDestroy((void*)context_);
   IContext::unregisterContext((void*)context_);
   if (contextOwned_ && context_ != EGL_NO_CONTEXT) {
     if (surface_ != nullptr) {

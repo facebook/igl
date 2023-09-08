@@ -84,16 +84,15 @@ Context::Context(EAGLContext* context, Result* result) : context_(context) {
 }
 
 Context::~Context() {
-  // Clear pool explicitly, since it might have reference back to IContext.
-  getAdapterPool().clear();
   // Release CVOpenGLESTextureCacheRef
   if (textureCache_ != nullptr) {
     CVOpenGLESTextureCacheFlush(textureCache_, 0);
     CFRelease(textureCache_);
   }
+  willDestroy(context_ == nil ? nullptr : getOrGenerateContextUniqueID(context_));
+
   // Unregister EAGLContext
   if (context_ != nil) {
-    IContext::unregisterContext(getOrGenerateContextUniqueID(context_));
     if (context_ == [EAGLContext currentContext]) {
       [EAGLContext setCurrentContext:nil];
     }

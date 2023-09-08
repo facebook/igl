@@ -49,9 +49,7 @@ void Context::initialize(EmscriptenWebGLContextAttributes& attributes,
 }
 
 Context::~Context() {
-  getAdapterPool().clear();
-  // Unregister eglContext
-  IContext::unregisterContext((void*)context_);
+  willDestroy((void*)context_);
   emscripten_webgl_destroy_context(context_);
 }
 void Context::setCurrent() {
