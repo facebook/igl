@@ -20,6 +20,11 @@ std::vector<uint8_t> FileLoaderAndroid::loadBinaryData(const std::string& fileNa
     return data;
   }
 
+  if (assetManager_ == nullptr) {
+    IGL_LOG_ERROR("Error in loadBinaryData(): Asset manager is nullptr\n");
+    return data;
+  }
+
   // Load file
   AAsset* asset = AAssetManager_open(assetManager_, fileName.c_str(), AASSET_MODE_BUFFER);
   IGL_ASSERT(asset != nullptr);
