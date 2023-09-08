@@ -21,6 +21,8 @@ class ITexture;
 
 namespace vulkan {
 
+class VulkanImage;
+
 class ComputeCommandEncoder : public IComputeCommandEncoder {
  public:
   ComputeCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer, VulkanContext& ctx);
@@ -54,6 +56,8 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   bool isEncoding_ = false;
 
   igl::vulkan::ResourcesBinder binder_;
+
+  std::vector<const igl::vulkan::VulkanImage*> restoreLayout_;
 };
 
 } // namespace vulkan

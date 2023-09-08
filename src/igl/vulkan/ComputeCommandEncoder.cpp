@@ -41,6 +41,17 @@ void ComputeCommandEncoder::endEncoding() {
   }
 
   isEncoding_ = false;
+
+  for (const auto* img : restoreLayout_) {
+    img->transitionLayout(
+        cmdBuffer_,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VkImageSubresourceRange{
+            img->getImageAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+  }
+  restoreLayout_.clear();
 }
 
 void ComputeCommandEncoder::bindComputePipelineState(
@@ -99,8 +110,8 @@ void ComputeCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   IGL_ASSERT(texture);
   const igl::vulkan::Texture* tex = static_cast<igl::vulkan::Texture*>(texture);
   const igl::vulkan::VulkanTexture& vkTex = tex->getVulkanTexture();
-  const igl::vulkan::VulkanImage& vkImage = vkTex.getVulkanImage();
-  if (!vkImage.isStorageImage()) {
+  const igl::vulkan::VulkanImage* vkImage = &vkTex.getVulkanImage();
+  if (!vkImage->isStorageImage()) {
     IGL_ASSERT_MSG(false, "Did you forget to specify TextureUsageBits::Storage on your texture?");
     return;
   }
@@ -108,16 +119,20 @@ void ComputeCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   // "frame graph" heuristics: if we are already in VK_IMAGE_LAYOUT_GENERAL, wait for the previous
   // compute shader, otherwise wait for previous attachment writes
   const VkPipelineStageFlags srcStage =
-      (vkImage.imageLayout_ == VK_IMAGE_LAYOUT_GENERAL) ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-      : vkImage.isDepthOrStencilFormat_                 ? VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
-                                        : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-  vkImage.transitionLayout(
-      cmdBuffer_,
-      VK_IMAGE_LAYOUT_GENERAL,
-      srcStage,
-      VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-      VkImageSubresourceRange{
-          vkImage.getImageAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+      (vkImage->imageLayout_ == VK_IMAGE_LAYOUT_GENERAL) ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+      : vkImage->isDepthOrStencilFormat_                 ? VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
+                                         : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  vkImage->transitionLayout(cmdBuffer_,
+                            VK_IMAGE_LAYOUT_GENERAL,
+                            srcStage,
+                            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                            VkImageSubresourceRange{vkImage->getImageAspectFlags(),
+                                                    0,
+                                                    VK_REMAINING_MIP_LEVELS,
+                                                    0,
+                                                    VK_REMAINING_ARRAY_LAYERS});
+
+  restoreLayout_.push_back(vkImage);
 
   binder_.bindTexture(index, static_cast<igl::vulkan::Texture*>(texture));
 }
