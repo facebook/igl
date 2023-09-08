@@ -22,6 +22,7 @@ endmacro()
 add_iglu_module(imgui)
 add_iglu_module(managedUniformBuffer)
 add_iglu_module(simple_renderer)
+add_iglu_module(state_pool)
 add_iglu_module(texture_accessor)
 add_iglu_module(uniform)
 

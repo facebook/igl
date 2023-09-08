@@ -9,10 +9,10 @@
 #include "../util/Common.h"
 #include "../util/TestDevice.h"
 
+#include <IGLU/state_pool/RenderPipelineStatePool.h>
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 #include <igl/NameHandle.h>
-#include <iglu/state_pool/RenderPipelineStatePool.h>
 #include <string>
 
 namespace igl {
