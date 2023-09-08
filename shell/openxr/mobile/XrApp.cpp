@@ -16,11 +16,11 @@
 #include <android/log.h>
 #include <android_native_app_glue.h>
 
-#include <openxr/openxr_oculus.h>
-#include <openxr/openxr_oculus_helpers.h>
+#include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 
 #include <glm/gtc/type_ptr.hpp>
+#include <xr_linear.h>
 
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/imageLoader/android/ImageLoaderAndroid.h>
@@ -414,10 +414,10 @@ void XrApp::handleXrEvents() {
           (XrEventDataSessionStateChanged*)(baseEventHeader);
       IGL_LOG_INFO(
           "xrPollEvent: received XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: %d for session %p at "
-          "time %f",
+          "time %lld",
           session_state_changed_event->state,
           (void*)session_state_changed_event->session,
-          FromXrTime(session_state_changed_event->time));
+          session_state_changed_event->time);
 
       switch (session_state_changed_event->state) {
       case XR_SESSION_STATE_READY:
@@ -496,7 +496,8 @@ XrFrameState XrApp::beginFrame() {
   for (size_t i = 0; i < kNumViews; i++) {
     XrPosef eyePose = views_[i].pose;
     XrPosef_Multiply(&viewStagePoses_[i], &headPose, &eyePose);
-    auto viewTransformXrPosef = XrPosef_Inverse(viewStagePoses_[i]);
+    XrPosef viewTransformXrPosef{};
+    XrPosef_Invert(&viewTransformXrPosef, &viewStagePoses_[i]);
     XrMatrix4x4f xrMat4{};
     XrMatrix4x4f_CreateFromRigidTransform(&xrMat4, &viewTransformXrPosef);
     viewTransforms_[i] = glm::make_mat4(xrMat4.m);
