@@ -31,7 +31,8 @@ std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncod
 
 namespace {
 
-void transitionColorAttachment(VkCommandBuffer buffer, const std::shared_ptr<ITexture>& colorTex) {
+void transitionToColorAttachment(VkCommandBuffer buffer,
+                                 const std::shared_ptr<ITexture>& colorTex) {
   // We really shouldn't get a null here, but just in case.
   if (!IGL_VERIFY(colorTex)) {
     return;
@@ -69,11 +70,11 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
   const auto& indices = framebuffer->getColorAttachmentIndices();
   for (auto i : indices) {
     const auto colorTex = framebuffer->getColorAttachment(i);
-    transitionColorAttachment(wrapper_.cmdBuf_, colorTex);
+    transitionToColorAttachment(wrapper_.cmdBuf_, colorTex);
     // handle MSAA
     const auto colorResolveTex = framebuffer->getResolveColorAttachment(i);
     if (colorResolveTex) {
-      transitionColorAttachment(wrapper_.cmdBuf_, colorResolveTex);
+      transitionToColorAttachment(wrapper_.cmdBuf_, colorResolveTex);
     }
   }
 

@@ -306,6 +306,28 @@ void RenderCommandEncoder::endEncoding() {
     return;
   }
 
+  auto transitionToShaderReadOnly = [](VkCommandBuffer cmdBuf, ITexture* texture) {
+    if (!texture) {
+      return;
+    }
+    const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*texture);
+    const vulkan::VulkanImage& img = tex.getVulkanTexture().getVulkanImage();
+    // this must match the final layout of the render pass
+    img.imageLayout_ = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    if (img.usageFlags_ & VK_IMAGE_USAGE_SAMPLED_BIT) {
+      // transition sampled images to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+      img.transitionLayout(
+          cmdBuf,
+          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+              VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for all subsequent fragment/compute
+                                                    // shaders
+          VkImageSubresourceRange{
+              VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+    }
+  };
+
   isEncoding_ = false;
 
   vkCmdEndRenderPass(cmdBuffer_);
@@ -313,10 +335,9 @@ void RenderCommandEncoder::endEncoding() {
   // set image layouts after the render pass
   const FramebufferDesc& desc = static_cast<const Framebuffer&>((*framebuffer_)).getDesc();
 
-  for (const auto& attachment : desc.colorAttachments) {
-    const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*attachment.second.texture.get());
-    // this must match the final layout of the render pass
-    tex.getVulkanTexture().getVulkanImage().imageLayout_ = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+  for (const auto& [_, attachment] : desc.colorAttachments) {
+    transitionToShaderReadOnly(cmdBuffer_, attachment.texture.get());
+    transitionToShaderReadOnly(cmdBuffer_, attachment.resolveTexture.get());
   }
 
   if (desc.depthAttachment.texture) {
