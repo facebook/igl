@@ -17,7 +17,8 @@
 #include <shell/shared/testShell/TestShell.h>
 
 namespace igl::shell {
-void TestShellBase::SetUp() {
+
+void TestShellBase::SetUp(ScreenSize screenSize) {
   // Create igl device for requested backend
   const std::string backendTypeOption = IGL_BACKEND_TYPE;
   std::unique_ptr<igl::IDevice> iglDevice = nullptr;
@@ -53,16 +54,16 @@ void TestShellBase::SetUp() {
       platform_->getDevice().getBackendType() == igl::BackendType::Metal
           ? igl::TextureFormat::BGRA_UNorm8
           : igl::TextureFormat::RGBA_UNorm8,
-      OFFSCREEN_RT_WIDTH,
-      OFFSCREEN_RT_HEIGHT,
+      screenSize.width,
+      screenSize.height,
       igl::TextureDesc::TextureUsageBits::Sampled | igl::TextureDesc::TextureUsageBits::Attachment);
   offscreenTexture_ = platform_->getDevice().createTexture(texDesc, &ret);
   ASSERT_TRUE(ret.isOk());
   ASSERT_TRUE(offscreenTexture_ != nullptr);
   igl::TextureDesc depthDextureDesc = igl::TextureDesc::new2D(
       igl::TextureFormat::Z_UNorm24,
-      OFFSCREEN_RT_WIDTH,
-      OFFSCREEN_RT_HEIGHT,
+      screenSize.width,
+      screenSize.height,
       igl::TextureDesc::TextureUsageBits::Sampled | igl::TextureDesc::TextureUsageBits::Attachment);
   depthDextureDesc.storage = igl::ResourceStorage::Private;
   offscreenDepthTexture_ = platform_->getDevice().createTexture(depthDextureDesc, &ret);

@@ -11,21 +11,25 @@
 #include <iglu/device/OpenGLFactory.h>
 #include <memory>
 #include <shell/shared/renderSession/RenderSession.h>
-#define OFFSCREEN_RT_WIDTH 1
-#define OFFSCREEN_RT_HEIGHT 1
 
 namespace igl::shell {
+
+struct ScreenSize {
+  uint width;
+  uint height;
+};
+
 class TestShellBase {
  public:
   TestShellBase() = default;
 
-  ~TestShellBase() = default;
+  virtual ~TestShellBase() = default;
 
-  void SetUp();
+  void SetUp(ScreenSize screenSize = {1, 1});
 
   void TearDown(){};
 
-  void run(igl::shell::RenderSession& session, size_t numFrames);
+  virtual void run(igl::shell::RenderSession& session, size_t numFrames);
 
   std::shared_ptr<igl::shell::Platform> platform_;
   std::shared_ptr<igl::ITexture> offscreenTexture_;
