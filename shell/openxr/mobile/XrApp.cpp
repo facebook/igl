@@ -22,6 +22,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/imageLoader/android/ImageLoaderAndroid.h>
 #include <shell/shared/platform/android/PlatformAndroid.h>
 #include <shell/shared/renderSession/AppParams.h>
@@ -341,6 +342,7 @@ void XrApp::createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManag
   IGL_ASSERT(platform_ != nullptr);
   static_cast<igl::shell::ImageLoaderAndroid&>(platform_->getImageLoader())
       .setAssetManager(assetMgr);
+  static_cast<igl::shell::FileLoaderAndroid&>(platform_->getFileLoader()).setAssetManager(assetMgr);
   renderSession_ = igl::shell::createDefaultRenderSession(platform_);
   shellParams_->shellControlsViewParams = true;
   shellParams_->renderMode = useSinglePassStereo_ ? RenderMode::SinglePassStereo
