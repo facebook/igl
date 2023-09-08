@@ -7,7 +7,7 @@
       android:fullBackupContent="false"
       android:label="IGL Shell OpenXR OpenGL ES"
       android:debuggable="true">
-    <activity android:name="MainActivity"
+    <activity android:name="android.app.NativeActivity"
               android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
               android:launchMode="singleTask"
               android:screenOrientation="landscape"
