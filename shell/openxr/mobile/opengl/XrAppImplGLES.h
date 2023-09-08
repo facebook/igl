@@ -12,7 +12,6 @@
 #include <EGL/egl.h>
 
 #define XR_USE_GRAPHICS_API_OPENGL_ES
-#define XR_USE_PLATFORM_ANDROID
 #include <openxr/openxr_platform.h>
 
 #include <shell/openxr/impl/XrAppImpl.h>
