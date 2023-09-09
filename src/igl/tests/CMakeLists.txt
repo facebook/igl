@@ -28,6 +28,11 @@ if(IGL_WITH_OPENGL OR IGL_WITH_OPENGLES)
   list(APPEND HEADER_FILES util/device/opengl/TestDevice.h)
 endif()
 
+if(IGL_WITH_IGLU)
+  file(GLOB IGLU_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} iglu/*.cpp)
+  list(APPEND SRC_FILES ${IGLU_SRC_FILES})
+endif()
+
 enable_testing()
 
 add_executable(IGLTests ${SRC_FILES} ${HEADER_FILES})
@@ -70,6 +75,15 @@ target_link_libraries(IGLTests PUBLIC gtest)
 target_link_libraries(IGLTests PUBLIC gtest_main)
 target_link_libraries(IGLTests PUBLIC IGLUmanagedUniformBuffer)
 target_link_libraries(IGLTests PRIVATE glfw)
+
+if(IGL_WITH_IGLU)
+  target_link_libraries(IGLTests PUBLIC IGLUimgui)
+  target_link_libraries(IGLTests PUBLIC IGLUsimple_renderer)
+  target_link_libraries(IGLTests PUBLIC IGLUstate_pool)
+  target_link_libraries(IGLTests PUBLIC IGLUtexture_accessor)
+  target_link_libraries(IGLTests PUBLIC IGLUtexture_loader)
+  target_link_libraries(IGLTests PUBLIC IGLUuniform)
+endif()
 
 if(IGL_WITH_VULKAN)
   target_compile_definitions(IGLTests PUBLIC -DIGL_BACKEND_TYPE="vulkan")
