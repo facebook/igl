@@ -21,6 +21,7 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
+#include <fstream>
 #include <mutex>
 #include <stdio.h>
 #include <thread>
@@ -138,10 +139,52 @@ std::string contentRootFolder;
 
 #if IGL_WITH_IGLU
 #include <IGLU/imgui/Session.h>
+#include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
 
 std::unique_ptr<iglu::imgui::Session> imguiSession_;
 
 igl::shell::InputDispatcher inputDispatcher_;
+
+void loadKtxTexture(const igl::IDevice& device,
+                    igl::ICommandQueue& commandQueue,
+                    const std::string filename,
+                    std::shared_ptr<igl::ITexture>& texture,
+                    bool generateMipmaps) {
+  igl::Result result;
+
+  const auto size = std::filesystem::file_size(filename);
+  FILE* file = std::fopen(filename.c_str(), "rb");
+  if (!IGL_VERIFY(file)) {
+    return;
+  }
+  std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
+
+  std::fread(data.get(), 1, size, file);
+
+  std::fclose(file);
+
+  iglu::textureloader::ktx1::TextureLoaderFactory factory;
+
+  auto loader = factory.tryCreate(data.get(), size, &result);
+  if (!IGL_VERIFY(loader && result.isOk())) {
+    return;
+  }
+
+  if (!texture) {
+    IGL_ASSERT(loader->isSupported(device));
+    texture = loader->create(device, &result);
+    if (!IGL_VERIFY(texture && result.isOk())) {
+      return;
+    }
+  }
+  IGL_ASSERT(loader->isSupported(device, texture->getUsage()));
+  loader->upload(*texture, &result);
+  if (IGL_VERIFY(result.isOk())) {
+    if (generateMipmaps) {
+      texture->generateMipmap(commandQueue);
+    }
+  }
+}
 #endif // IGL_WITH_IGLU
 
 const char* kCodeComputeTest = R"(
@@ -2193,6 +2236,13 @@ void loadMaterials() {
 }
 
 void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture>& tex) {
+  if (!std::filesystem::exists(fileNameKTX)) {
+    return;
+  }
+
+#if IGL_WITH_IGLU
+  loadKtxTexture(*device_, *commandQueue_, fileNameKTX, tex, !kEnableCompression);
+#else
   auto texRef = gli::load_ktx(fileNameKTX);
 
   if (!IGL_VERIFY(texRef.format() == gli::FORMAT_RGBA32_SFLOAT_PACK32)) {
@@ -2226,6 +2276,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
   if (!kEnableCompression) {
     tex->generateMipmap(*commandQueue_);
   }
+#endif // IGL_WITH_IGLU
 }
 
 gli::texture_cube gliToCube(Bitmap& bmp) {
@@ -2378,6 +2429,9 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
 
   if (kEnableCompression && img.channels == 4 &&
       std::filesystem::exists(img.compressedFileName.c_str())) {
+#if IGL_WITH_IGLU
+    loadKtxTexture(*device_, *commandQueue_, img.compressedFileName, tex, false);
+#else
     // Uploading the texture
     const auto rangeDesc = TextureRangeDesc::new2D(0, 0, img.w, img.h, 0, desc.numMipLevels);
     auto gliTex2d = gli::load_ktx(img.compressedFileName.c_str());
@@ -2385,6 +2439,7 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
       printf("Failed to load %s\n", img.compressedFileName.c_str());
     }
     tex->upload(rangeDesc, gliTex2d.data());
+#endif
   } else {
     tex->upload(TextureRangeDesc::new2D(0, 0, img.w, img.h), img.pixels);
     tex->generateMipmap(*commandQueue_.get());
