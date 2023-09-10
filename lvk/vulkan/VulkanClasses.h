@@ -166,11 +166,11 @@ struct VulkanTexture final {
   }
 
   // framebuffers can render only into one level/layer
-  VkImageView getOrCreateVkImageViewForFramebuffer(uint8_t level);
+  VkImageView getOrCreateVkImageViewForFramebuffer(uint8_t level, uint16_t layer);
 
   std::shared_ptr<lvk::VulkanImage> image_;
   VkImageView imageView_ = VK_NULL_HANDLE; // all mip-levels
-  VkImageView imageViewForFramebuffer_[LVK_MAX_MIP_LEVELS] = {};
+  VkImageView imageViewForFramebuffer_[LVK_MAX_MIP_LEVELS][6] = {}; // max 6 faces for cubemap rendering
 };
 
 class VulkanSwapchain final {

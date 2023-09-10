@@ -1214,10 +1214,13 @@ lvk::VulkanTexture::~VulkanTexture() {
   if (image_) {
     image_->ctx_.deferredTask(std::packaged_task<void()>(
         [device = image_->ctx_.getVkDevice(), imageView = imageView_]() { vkDestroyImageView(device, imageView, nullptr); }));
-    for (VkImageView v : imageViewForFramebuffer_) {
-      if (v != VK_NULL_HANDLE) {
-        image_->ctx_.deferredTask(std::packaged_task<void()>(
-            [device = image_->ctx_.getVkDevice(), imageView = v]() { vkDestroyImageView(device, imageView, nullptr); }));
+    for (size_t i = 0; i != LVK_MAX_MIP_LEVELS; i++) {
+      for (size_t j = 0; j != LVK_ARRAY_NUM_ELEMENTS(imageViewForFramebuffer_[0]); j++) {
+        VkImageView v = imageViewForFramebuffer_[i][j];
+        if (v != VK_NULL_HANDLE) {
+          image_->ctx_.deferredTask(std::packaged_task<void()>(
+              [device = image_->ctx_.getVkDevice(), imageView = v]() { vkDestroyImageView(device, imageView, nullptr); }));
+        }
       }
     }
   }
@@ -1227,7 +1230,9 @@ lvk::VulkanTexture::VulkanTexture(VulkanTexture&& other) {
   std::swap(image_, other.image_);
   std::swap(imageView_, other.imageView_);
   for (size_t i = 0; i != LVK_MAX_MIP_LEVELS; i++) {
-    std::swap(imageViewForFramebuffer_[i], other.imageViewForFramebuffer_[i]);
+    for (size_t j = 0; j != LVK_ARRAY_NUM_ELEMENTS(imageViewForFramebuffer_[0]); j++) {
+      std::swap(imageViewForFramebuffer_[i][j], other.imageViewForFramebuffer_[i][j]);
+    }
   }
 }
 
@@ -1235,27 +1240,30 @@ lvk::VulkanTexture& lvk::VulkanTexture::operator=(VulkanTexture&& other) {
   std::swap(image_, other.image_);
   std::swap(imageView_, other.imageView_);
   for (size_t i = 0; i != LVK_MAX_MIP_LEVELS; i++) {
-    std::swap(imageViewForFramebuffer_[i], other.imageViewForFramebuffer_[i]);
+    for (size_t j = 0; j != LVK_ARRAY_NUM_ELEMENTS(imageViewForFramebuffer_[0]); j++) {
+      std::swap(imageViewForFramebuffer_[i][j], other.imageViewForFramebuffer_[i][j]);
+    }
   }
   return *this;
 }
 
-VkImageView lvk::VulkanTexture::getOrCreateVkImageViewForFramebuffer(uint8_t level) {
+VkImageView lvk::VulkanTexture::getOrCreateVkImageViewForFramebuffer(uint8_t level, uint16_t layer) {
   LVK_ASSERT(image_ != nullptr);
   LVK_ASSERT(level < LVK_MAX_MIP_LEVELS);
+  LVK_ASSERT(layer < LVK_ARRAY_NUM_ELEMENTS(imageViewForFramebuffer_[0]));
 
   if (!image_ || level >= LVK_MAX_MIP_LEVELS) {
     return VK_NULL_HANDLE;
   }
 
-  if (imageViewForFramebuffer_[level] != VK_NULL_HANDLE) {
-    return imageViewForFramebuffer_[level];
+  if (imageViewForFramebuffer_[level][layer] != VK_NULL_HANDLE) {
+    return imageViewForFramebuffer_[level][layer];
   }
 
-  imageViewForFramebuffer_[level] =
-      image_->createImageView(VK_IMAGE_VIEW_TYPE_2D, image_->vkImageFormat_, image_->getImageAspectFlags(), level, 1u, 0u, 1u);
+  imageViewForFramebuffer_[level][layer] =
+      image_->createImageView(VK_IMAGE_VIEW_TYPE_2D, image_->vkImageFormat_, image_->getImageAspectFlags(), level, 1u, layer, 1u);
 
-  return imageViewForFramebuffer_[level];
+  return imageViewForFramebuffer_[level][layer];
 }
 
 lvk::VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height) :
@@ -2182,7 +2190,7 @@ void lvk::CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, co
     colorAttachments[i] = {
         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .pNext = nullptr,
-        .imageView = colorTexture.getOrCreateVkImageViewForFramebuffer(descColor.level),
+        .imageView = colorTexture.getOrCreateVkImageViewForFramebuffer(descColor.level, descColor.layer),
         .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         .resolveMode = (samples > 1) ? VK_RESOLVE_MODE_AVERAGE_BIT : VK_RESOLVE_MODE_NONE,
         .resolveImageView = VK_NULL_HANDLE,
@@ -2197,7 +2205,7 @@ void lvk::CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, co
       LVK_ASSERT(samples > 1);
       LVK_ASSERT_MSG(!attachment.resolveTexture.empty(), "Framebuffer attachment should contain a resolve texture");
       lvk::VulkanTexture& colorResolveTexture = *ctx_->texturesPool_.get(attachment.resolveTexture);
-      colorAttachments[i].resolveImageView = colorResolveTexture.getOrCreateVkImageViewForFramebuffer(descColor.level);
+      colorAttachments[i].resolveImageView = colorResolveTexture.getOrCreateVkImageViewForFramebuffer(descColor.level, descColor.layer);
       colorAttachments[i].resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
   }
@@ -2211,7 +2219,7 @@ void lvk::CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, co
     depthAttachment = {
         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .pNext = nullptr,
-        .imageView = depthTexture.getOrCreateVkImageViewForFramebuffer(descDepth.level),
+        .imageView = depthTexture.getOrCreateVkImageViewForFramebuffer(descDepth.level, descDepth.layer),
         .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         .resolveMode = VK_RESOLVE_MODE_NONE,
         .resolveImageView = VK_NULL_HANDLE,
