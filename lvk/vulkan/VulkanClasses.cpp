@@ -3612,20 +3612,11 @@ lvk::Result lvk::VulkanContext::download(lvk::TextureHandle handle, const Textur
     return result;
   }
 
-  VkImageAspectFlags aspectMask = 0;
-
-  if (texture->image_->isDepthFormat_)
-    aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
-  if (texture->image_->isStencilFormat_)
-    aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
-  if (!aspectMask)
-    aspectMask |= VK_IMAGE_ASPECT_COLOR_BIT;
-
   stagingDevice_->getImageData(*texture->image_.get(),
                                VkOffset3D{(int32_t)range.x, (int32_t)range.y, (int32_t)range.z},
                                VkExtent3D{range.dimensions.width, range.dimensions.height, range.dimensions.depth},
                                VkImageSubresourceRange{
-                                   .aspectMask = aspectMask,
+                                   .aspectMask = texture->image_->getImageAspectFlags(),
                                    .baseMipLevel = range.mipLevel,
                                    .levelCount = range.numMipLevels,
                                    .baseArrayLayer = range.layer,
