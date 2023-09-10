@@ -3241,8 +3241,8 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
       .dynamicState(VK_DYNAMIC_STATE_SCISSOR)
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS)
       .dynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS)
-  // from Vulkan 1.3
-#ifndef __APPLE__
+ #ifndef __APPLE__
+      // from Vulkan 1.3
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE)
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP)
