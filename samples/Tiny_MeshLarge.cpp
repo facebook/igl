@@ -1771,6 +1771,11 @@ int main(int argc, char* argv[]) {
     if (key == GLFW_KEY_L && pressed) {
       perFrame_.bDebugLines = (perFrame_.bDebugLines + 1) % 2;
     }
+    if (key == GLFW_KEY_F9 && action == GLFW_PRESS) {
+      gli::texture screenshot = gli::texture2d(gli::FORMAT_BGRA8_UNORM_PACK8, gli::extent2d(width_, height_), 1);
+      ctx_->download(ctx_->getCurrentSwapchainTexture(), {.dimensions = {(uint32_t)width_, (uint32_t)height_}}, screenshot.data());
+      gli::save_ktx(screenshot, "screenshot.ktx");
+    }
   });
 
   if (kEnableCompression) {

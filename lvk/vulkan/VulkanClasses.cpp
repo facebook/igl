@@ -2714,6 +2714,86 @@ void lvk::VulkanStagingDevice::imageData3D(VulkanImage& image,
   regions_.push_back(desc);
 }
 
+void lvk::VulkanStagingDevice::getImageData(VulkanImage& image,
+                                            const VkOffset3D& offset,
+                                            const VkExtent3D& extent,
+                                            VkImageSubresourceRange range,
+                                            VkFormat format,
+                                            void* outData) {
+  LVK_ASSERT(image.vkImageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED);
+
+  const uint32_t storageSize = extent.width * extent.height * extent.depth * getBytesPerPixel(format);
+
+  LVK_ASSERT(storageSize <= stagingBufferSize_);
+
+  // get next staging buffer free offset
+  MemoryRegionDesc desc = getNextFreeOffset(storageSize);
+
+  // No support for copying image in multiple smaller chunk sizes.
+  // If we get smaller buffer size than storageSize, we will wait for GPU idle and get a bigger chunk.
+  if (desc.alignedSize_ < storageSize) {
+    waitAndReset();
+    desc = getNextFreeOffset(storageSize);
+  }
+
+  LVK_ASSERT(desc.alignedSize_ >= storageSize);
+
+  lvk::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
+
+  auto& wrapper1 = immediate_->acquire();
+
+  // 1. Transition to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+  lvk::imageMemoryBarrier(wrapper1.cmdBuf_,
+                          image.vkImage_,
+                          0, // srcAccessMask
+                          VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT, // dstAccessMask
+                          image.vkImageLayout_,
+                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                          VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // wait for all previous operations
+                          VK_PIPELINE_STAGE_TRANSFER_BIT, // dstStageMask
+                          range);
+
+  // 2.  Copy the pixel data from the image into the staging buffer
+  const VkBufferImageCopy copy = {
+      .bufferOffset = desc.srcOffset_,
+      .bufferRowLength = 0,
+      .bufferImageHeight = extent.height,
+      .imageSubresource =
+          VkImageSubresourceLayers{
+              .aspectMask = range.aspectMask,
+              .mipLevel = range.baseMipLevel,
+              .baseArrayLayer = range.baseArrayLayer,
+              .layerCount = range.layerCount,
+          },
+      .imageOffset = offset,
+      .imageExtent = extent,
+  };
+  vkCmdCopyImageToBuffer(wrapper1.cmdBuf_, image.vkImage_, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, stagingBuffer->vkBuffer_, 1, &copy);
+
+  desc.handle_ = immediate_->submit(wrapper1);
+  regions_.push_back(desc);
+
+  waitAndReset();
+
+  // 3. Copy data from staging buffer into data
+  memcpy(outData, stagingBuffer->getMappedPtr() + desc.srcOffset_, storageSize);
+
+  // 4. Transition back to the initial image layout
+  auto& wrapper2 = immediate_->acquire();
+
+  lvk::imageMemoryBarrier(wrapper2.cmdBuf_,
+                          image.vkImage_,
+                          VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT, // srcAccessMask
+                          0, // dstAccessMask
+                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                          image.vkImageLayout_,
+                          VK_PIPELINE_STAGE_TRANSFER_BIT, // srcStageMask
+                          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // dstStageMask
+                          range);
+
+  immediate_->submit(wrapper2);
+}
+
 lvk::VulkanStagingDevice::MemoryRegionDesc lvk::VulkanStagingDevice::getNextFreeOffset(uint32_t size) {
   LVK_PROFILER_FUNCTION();
 
@@ -3507,6 +3587,46 @@ void lvk::VulkanContext::flushMappedMemory(BufferHandle handle, size_t offset, s
   LVK_ASSERT(buf);
 
   buf->flushMappedMemory(offset, size);
+}
+
+lvk::Result lvk::VulkanContext::download(lvk::TextureHandle handle, const TextureRangeDesc& range, void* outData) {
+  if (!outData) {
+    return Result();
+  }
+
+  lvk::VulkanTexture* texture = texturesPool_.get(handle);
+
+  LVK_ASSERT(texture);
+
+  const Result result = validateRange(texture->getExtent(), texture->image_->numLevels_, range);
+
+  if (!LVK_VERIFY(result.isOk())) {
+    return result;
+  }
+
+  VkImageAspectFlags aspectMask = 0;
+
+  if (texture->image_->isDepthFormat_)
+    aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
+  if (texture->image_->isStencilFormat_)
+    aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
+  if (!aspectMask)
+    aspectMask |= VK_IMAGE_ASPECT_COLOR_BIT;
+
+  stagingDevice_->getImageData(*texture->image_.get(),
+                               VkOffset3D{(int32_t)range.x, (int32_t)range.y, (int32_t)range.z},
+                               VkExtent3D{range.dimensions.width, range.dimensions.height, range.dimensions.depth},
+                               VkImageSubresourceRange{
+                                   .aspectMask = aspectMask,
+                                   .baseMipLevel = range.mipLevel,
+                                   .levelCount = range.numMipLevels,
+                                   .baseArrayLayer = range.layer,
+                                   .layerCount = range.numLayers,
+                               },
+                               texture->image_->vkImageFormat_,
+                               outData);
+
+  return Result();
 }
 
 lvk::Result lvk::VulkanContext::upload(lvk::TextureHandle handle, const TextureRangeDesc& range, const void* data[]) {

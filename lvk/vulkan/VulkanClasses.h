@@ -450,6 +450,12 @@ class VulkanStagingDevice final {
                    VkFormat format,
                    const void* data[]);
   void imageData3D(VulkanImage& image, const VkOffset3D& offset, const VkExtent3D& extent, VkFormat format, const void* data);
+  void getImageData(VulkanImage& image,
+                    const VkOffset3D& offset,
+                    const VkExtent3D& extent,
+                    VkImageSubresourceRange range,
+                    VkFormat format,
+                    void* outData);
 
  private:
   struct MemoryRegionDesc {
@@ -503,6 +509,7 @@ class VulkanContext final : public IContext {
   void flushMappedMemory(BufferHandle handle, size_t offset, size_t size) const override;
 
   Result upload(TextureHandle handle, const TextureRangeDesc& range, const void* data[]) override;
+  Result download(TextureHandle handle, const TextureRangeDesc& range, void* outData) override;
   Dimensions getDimensions(TextureHandle handle) const override;
   void generateMipmap(TextureHandle handle) const override;
   Format getFormat(TextureHandle handle) const override;
