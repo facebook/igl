@@ -121,6 +121,14 @@
 // @fb-only
 // @fb-only
 
+#if IGL_WITH_IGLU
+#include <IGLU/imgui/Session.h>
+#include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
+#include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
+#endif
+
+namespace {
+
 constexpr uint32_t kMeshCacheVersion = 0xC0DE0009;
 constexpr int kNumSamplesMSAA = 8;
 #if USE_OPENGL_BACKEND
@@ -138,9 +146,6 @@ constexpr bool kEnableValidationLayers = true;
 std::string contentRootFolder;
 
 #if IGL_WITH_IGLU
-#include <IGLU/imgui/Session.h>
-#include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
-#include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
 
 std::unique_ptr<iglu::imgui::Session> imguiSession_;
 
@@ -767,12 +772,7 @@ std::atomic<uint32_t> remainingMaterialsToLoad_ = 0;
 std::unique_ptr<tf::Executor> loaderPool_ =
     std::make_unique<tf::Executor>(std::max(2u, std::thread::hardware_concurrency() / 2));
 
-static bool endsWith(const std::string& str, const std::string& suffix) {
-  return str.size() >= suffix.size() &&
-         0 == str.compare(str.size() - suffix.size(), suffix.size(), suffix);
-}
-
-static std::string convertFileName(std::string fileName) {
+std::string convertFileName(std::string fileName) {
   // generate compressed filename
   const std::string compressedPathPrefix = contentRootFolder;
 
@@ -789,9 +789,9 @@ static std::string convertFileName(std::string fileName) {
   // return absolute compressed filename
   return compressedPathPrefix + fileName + ".ktx";
 }
-static void stringReplaceAll(std::string& s,
-                             const std::string& searchString,
-                             const std::string& replaceString) {
+[[maybe_unused]] void stringReplaceAll(std::string& s,
+                                       const std::string& searchString,
+                                       const std::string& replaceString) {
   size_t pos = 0;
   while ((pos = s.find(searchString, pos)) != std::string::npos) {
     s.replace(pos, searchString.length(), replaceString);
@@ -976,10 +976,10 @@ void initIGL() {
       std::vector<HWDeviceDesc> devices =
           vulkan::HWDevice::queryDevices(*ctx.get(), HWDeviceQueryDesc(hardwareType), nullptr);
       if (devices.empty()) {
-        const HWDeviceType hardwareType = !kPreferIntegratedGPU ? HWDeviceType::IntegratedGpu
-                                                                : HWDeviceType::DiscreteGpu;
-        devices =
-            vulkan::HWDevice::queryDevices(*ctx.get(), HWDeviceQueryDesc(hardwareType), nullptr);
+        const HWDeviceType fallbackHardwareType =
+            !kPreferIntegratedGPU ? HWDeviceType::IntegratedGpu : HWDeviceType::DiscreteGpu;
+        devices = vulkan::HWDevice::queryDevices(
+            *ctx.get(), HWDeviceQueryDesc(fallbackHardwareType), nullptr);
       }
       IGL_ASSERT_MSG(!devices.empty(), "GPU is not found");
       device_ =
@@ -2157,6 +2157,8 @@ igl::TextureFormat gli2iglTextureFormat(gli::texture2d::format_type format) {
     return igl::TextureFormat::RGBA_F32;
   case gli::FORMAT_RG16_SFLOAT_PACK16:
     return igl::TextureFormat::RG_F16;
+  default:
+    break;
   }
 
   IGL_ASSERT_NOT_REACHED();
@@ -2307,7 +2309,6 @@ gli::texture_cube gliToCube(Bitmap& bmp) {
 
   for (size_t face = 0; face != 6; face++) {
     const vec3* src = reinterpret_cast<vec3*>(bmp.data_.data()) + face * numFacePixels;
-    float* dst = (float*)gliTexCube[face].data();
     for (int y = 0; y != h; y++) {
       for (int x = 0; x != w; x++) {
         const vec3& rgb = src[x + y * w];
@@ -2489,6 +2490,8 @@ void processLoadedMaterials() {
 #endif
   sbMaterials_->upload(materials_.data(), BufferRange(sizeof(GPUMaterial) * materials_.size()));
 }
+
+} // namespace
 
 int main(int argc, char* argv[]) {
   // find the content folder
