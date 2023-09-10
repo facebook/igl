@@ -18,7 +18,7 @@
 #endif
 
 #if IGL_PLATFORM_MACOS
-#include <igl/tests/util/device/vulkan/TestDeviceXCTestHelper.h>
+#include <igl/vulkan/moltenvk/MoltenVKHelpers.h>
 #endif
 
 namespace igl::tests::util::device::vulkan {
@@ -30,7 +30,7 @@ namespace igl::tests::util::device::vulkan {
 //
 std::shared_ptr<::igl::IDevice> createTestDevice() {
 #if IGL_PLATFORM_MACOS
-  setupXCTestEnvironment();
+  ::igl::vulkan::setupMoltenVKEnvironment();
 #endif
 
   std::shared_ptr<igl::IDevice> iglDev = nullptr;

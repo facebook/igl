@@ -10,5 +10,6 @@
 namespace igl::vulkan {
 
 void* getCAMetalLayer(void* nsWindow);
+void setupMoltenVKEnvironment();
 
-}
+} // namespace igl::vulkan
