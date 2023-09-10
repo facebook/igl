@@ -140,6 +140,7 @@ std::string contentRootFolder;
 #if IGL_WITH_IGLU
 #include <IGLU/imgui/Session.h>
 #include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
+#include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
 
 std::unique_ptr<iglu::imgui::Session> imguiSession_;
 
@@ -151,6 +152,10 @@ void loadKtxTexture(const igl::IDevice& device,
                     std::shared_ptr<igl::ITexture>& texture,
                     bool generateMipmaps) {
   igl::Result result;
+  if (!filename.empty() && filename.back() != '2' && std::filesystem::exists(filename + "2")) {
+    loadKtxTexture(device, commandQueue, filename + "2", texture, generateMipmaps);
+    return;
+  }
 
   const auto size = std::filesystem::file_size(filename);
   FILE* file = std::fopen(filename.c_str(), "rb");
@@ -163,9 +168,13 @@ void loadKtxTexture(const igl::IDevice& device,
 
   std::fclose(file);
 
-  iglu::textureloader::ktx1::TextureLoaderFactory factory;
+  iglu::textureloader::ktx1::TextureLoaderFactory factory1;
+  iglu::textureloader::ktx2::TextureLoaderFactory factory2;
+  iglu::textureloader::ITextureLoaderFactory* factory =
+      filename.back() == '2' ? static_cast<iglu::textureloader::ITextureLoaderFactory*>(&factory2)
+                             : &factory1;
 
-  auto loader = factory.tryCreate(data.get(), size, &result);
+  auto loader = factory->tryCreate(data.get(), size, &result);
   if (!IGL_VERIFY(loader && result.isOk())) {
     return;
   }
