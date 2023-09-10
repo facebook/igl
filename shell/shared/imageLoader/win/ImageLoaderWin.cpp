@@ -5,11 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "stb_image.h"
+#include <shell/shared/imageLoader/win/ImageLoaderWin.h>
+
 #include <cstring>
 #include <filesystem>
-#include <shell/shared/imageLoader/win/ImageLoaderWin.h>
+#include <igl/Common.h>
+#include <stb_image.h>
 #include <stdint.h>
+#include <windows.h>
 
 namespace igl::shell {
 
@@ -22,6 +25,10 @@ ImageLoaderWin::ImageLoaderWin() {
     // @fb-only
   // @fb-only
 // @fb-only
+  wchar_t path[MAX_PATH] = {0};
+  if (IGL_VERIFY(GetModuleFileNameW(NULL, path, MAX_PATH) != 0)) {
+    executablePath_ = std::filesystem::path(path).parent_path().string();
+  }
 }
 
 ImageLoaderWin::ImageLoaderWin(const std::string& homePath) {
@@ -52,6 +59,10 @@ ImageData ImageLoaderWin::loadImageData(std::string imageName) noexcept {
     path dir = current_path();
     const path subdir("images/");
     fullName = (dir / subdir / imageName).string();
+  }
+
+  if (!std::filesystem::exists(fullName)) {
+    fullName = (std::filesystem::path(executablePath_) / imageName).string();
   }
 
   // Load image from file in RGBA format

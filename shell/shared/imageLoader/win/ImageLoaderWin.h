@@ -18,6 +18,9 @@ class ImageLoaderWin final : public ImageLoader {
   ImageLoaderWin(const std::string& homePath);
   ~ImageLoaderWin() override = default;
   ImageData loadImageData(std::string imageName) noexcept override;
+
+ private:
+  std::string executablePath_;
 };
 
 } // namespace igl::shell

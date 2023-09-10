@@ -7,11 +7,21 @@
 
 #include <shell/shared/fileLoader/win/FileLoaderWin.h>
 
+#include <filesystem>
 #include <fstream>
+#include <igl/Common.h>
 #include <iterator>
 #include <string>
+#include <windows.h>
 
 namespace igl::shell {
+
+FileLoaderWin::FileLoaderWin() {
+  wchar_t path[MAX_PATH] = {0};
+  if (IGL_VERIFY(GetModuleFileNameW(NULL, path, MAX_PATH) != 0)) {
+    basePath_ = std::filesystem::path(path).parent_path().string();
+  }
+}
 
 std::vector<uint8_t> FileLoaderWin::loadBinaryData(const std::string& fileName) {
   std::vector<uint8_t> data;
@@ -42,11 +52,20 @@ bool FileLoaderWin::fileExists(const std::string& fileName) const {
 }
 
 std::string FileLoaderWin::basePath() const {
-  // passthrough, since there are no bundles on Windows
-  return FileLoader::basePath();
+  // Return executable path:
+  return basePath_;
 }
 
 std::string FileLoaderWin::fullPath(const std::string& fileName) const {
+  if (std::filesystem::exists(fileName)) {
+    return fileName;
+  }
+
+  auto absolutePath = std::filesystem::path(basePath_) / fileName;
+  if (std::filesystem::exists(absolutePath)) {
+    return absolutePath.string();
+  }
+
   // passthrough, since there are no bundles on Windows
   return fileName;
 }

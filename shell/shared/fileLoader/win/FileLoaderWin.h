@@ -13,7 +13,7 @@ namespace igl::shell {
 
 class FileLoaderWin final : public FileLoader {
  public:
-  FileLoaderWin() = default;
+  FileLoaderWin();
   ~FileLoaderWin() override = default;
   std::vector<uint8_t> loadBinaryData(const std::string& fileName) override;
   bool fileExists(const std::string& fileName) const override;
@@ -21,6 +21,7 @@ class FileLoaderWin final : public FileLoader {
   std::string fullPath(const std::string& fileName) const override;
 
  private:
+  std::string basePath_;
 };
 
 } // namespace igl::shell
