@@ -23,14 +23,34 @@ static NSString* getBundleFilePath(const std::string& fileName) {
 
   // first search for the full file name, which may include a path
   NSString* nsPath = [[NSBundle mainBundle] pathForResource:nsFileName ofType:nil];
-  if (nsPath == nil) {
+  if (nsPath != nil) {
+    return nsPath;
+  }
+
+  // next search for the root file name without the path
+  // since the bundle path may be different and flattened within the bundle
+  NSString* nsRootFileName = [nsFileName lastPathComponent];
+  nsPath = [[NSBundle mainBundle] pathForResource:nsRootFileName ofType:nil];
+  if (nsPath != nil) {
+    return nsPath;
+  }
+
+  for (NSBundle* bundle in [NSBundle allBundles]) {
+    NSString* nsPath = [bundle pathForResource:nsFileName ofType:nil];
+    if (nsPath != nil) {
+      return nsPath;
+    }
+
     // next search for the root file name without the path
     // since the bundle path may be different and flattened within the bundle
     NSString* nsRootFileName = [nsFileName lastPathComponent];
     nsPath = [[NSBundle mainBundle] pathForResource:nsRootFileName ofType:nil];
+    if (nsPath != nil) {
+      return nsPath;
+    }
   }
 
-  return nsPath;
+  return nil;
 }
 
 namespace igl::shell {
