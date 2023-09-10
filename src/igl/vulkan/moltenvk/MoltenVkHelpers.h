@@ -7,4 +7,8 @@
 
 #pragma once
 
+namespace igl::vulkan {
+
 void* getCAMetalLayer(void* nsWindow);
+
+}

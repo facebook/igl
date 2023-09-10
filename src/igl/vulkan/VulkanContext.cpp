@@ -39,8 +39,8 @@
 #include <igl/vulkan/VulkanTexture.h>
 #include <igl/vulkan/VulkanVma.h>
 
-#if IGL_PLATFORM_MACOS
-#include <dlfcn.h>
+#if IGL_PLATFORM_APPLE
+#include <igl/vulkan/moltenvk/MoltenVkHelpers.h>
 #endif
 
 namespace {
@@ -455,7 +455,11 @@ void VulkanContext::createInstance(const size_t numExtraExtensions, const char**
 }
 
 void VulkanContext::createSurface(void* window, void* display) {
-  VK_ASSERT(ivkCreateSurface(vkInstance_, window, display, &vkSurface_));
+  [[maybe_unused]] void* layer = nullptr;
+#if IGL_PLATFORM_APPLE
+  layer = igl::vulkan::getCAMetalLayer(window);
+#endif
+  VK_ASSERT(ivkCreateSurface(vkInstance_, window, display, layer, &vkSurface_));
 }
 
 igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,

@@ -16,10 +16,6 @@
 
 #include "VulkanHelpers.h"
 
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-#include "moltenvk/MoltenVkHelpers.h"
-#endif
-
 #include <assert.h>
 
 static const char* kDefaultValidationLayers[] = {"VK_LAYER_KHRONOS_validation"};
@@ -437,7 +433,11 @@ VkResult ivkCreateDebugReportMessenger(VkInstance instance,
 VkResult ivkCreateSurface(VkInstance instance,
                           void* window,
                           void* display,
+                          void* layer,
                           VkSurfaceKHR* outSurface) {
+#if !defined(VK_USE_PLATFORM_METAL_EXT)
+  (void)layer;
+#endif
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
   const VkWin32SurfaceCreateInfoKHR ci = {
       .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
@@ -454,7 +454,6 @@ VkResult ivkCreateSurface(VkInstance instance,
   };
   return vkCreateAndroidSurfaceKHR(instance, &ci, NULL, outSurface);
 #elif defined(VK_USE_PLATFORM_METAL_EXT)
-  void* layer = getCAMetalLayer(window);
   const VkMetalSurfaceCreateInfoEXT ci = {
       .sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT,
       .pNext = NULL,

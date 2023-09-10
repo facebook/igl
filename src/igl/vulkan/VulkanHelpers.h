@@ -55,6 +55,7 @@ VkResult ivkCreateFence(VkDevice device, VkFlags flags, VkFence* outFence);
 VkResult ivkCreateSurface(VkInstance instance,
                           void* window,
                           void* display,
+                          void* layer,
                           VkSurfaceKHR* outSurface);
 
 VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,

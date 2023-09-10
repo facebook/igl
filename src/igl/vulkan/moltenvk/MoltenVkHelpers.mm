@@ -15,9 +15,10 @@
 #import <QuartzCore/CAMetalLayer.h>
 
 #include <igl/Common.h>
+#include <igl/vulkan/moltenvk/MoltenVkHelpers.h>
 
-extern "C" {
-void* getCAMetalLayer(void* window);
+namespace igl::vulkan {
+
 void* getCAMetalLayer(void* window) {
 #if TARGET_OS_OSX
   auto* object = (__bridge NSObject*)window;
@@ -52,4 +53,4 @@ void* getCAMetalLayer(void* window) {
   return (__bridge void*)uiView.layer;
 #endif
 }
-}
+} // namespace igl::vulkan
