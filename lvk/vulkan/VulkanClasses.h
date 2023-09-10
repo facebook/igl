@@ -624,11 +624,7 @@ class VulkanContext final : public IContext {
   VkDescriptorSetLayout vkDSLBindless_ = VK_NULL_HANDLE;
   VkDescriptorPool vkDPBindless_ = VK_NULL_HANDLE;
   struct BindlessDescriptorSet {
-#ifndef __APPLE__
-    VkDescriptorSet ds[1] = {};
-#else
-    VkDescriptorSet ds[3] = {}; // MSL does not support descriptors aliasing
-#endif
+    VkDescriptorSet ds = VK_NULL_HANDLE;
     SubmitHandle handle = SubmitHandle(); // a handle of the last submit this descriptor set was a part of
   } bindlessDSets_;
   // don't use staging on devices with shared host-visible memory

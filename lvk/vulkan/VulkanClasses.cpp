@@ -3664,25 +3664,13 @@ VkShaderModule lvk::VulkanContext::createShaderModule(ShaderStage stage,
       #extension GL_EXT_nonuniform_qualifier : require
       #extension GL_EXT_samplerless_texture_functions : require
       #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
-      )";
 
-#ifndef __APPLE__
-      sourcePatched += R"(
-      layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
-      layout (set = 0, binding = 0) uniform texture3D kTextures3D[];
-      layout (set = 0, binding = 0) uniform textureCube kTexturesCube[];
-      layout (set = 0, binding = 1) uniform sampler kSamplers[];
-      layout (set = 0, binding = 1) uniform samplerShadow kSamplersShadow[];
-      )";
-#else
-      sourcePatched += R"(
       layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
       layout (set = 1, binding = 0) uniform texture3D kTextures3D[];
       layout (set = 2, binding = 0) uniform textureCube kTexturesCube[];
       layout (set = 0, binding = 1) uniform sampler kSamplers[];
       layout (set = 1, binding = 1) uniform samplerShadow kSamplersShadow[];
       )";
-#endif
 
       sourcePatched += R"(
       vec4 textureBindless2D(uint textureid, uint samplerid, vec2 uv) {
@@ -4448,32 +4436,27 @@ lvk::Result lvk::VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_
 
   // create default descriptor pool and allocate 1 descriptor set
   const VkDescriptorPoolSize poolSizes[kBinding_NumBindings]{
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, (uint32_t)LVK_ARRAY_NUM_ELEMENTS(BindlessDescriptorSet::ds) * maxTextures},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, (uint32_t)LVK_ARRAY_NUM_ELEMENTS(BindlessDescriptorSet::ds) * maxSamplers},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, (uint32_t)LVK_ARRAY_NUM_ELEMENTS(BindlessDescriptorSet::ds) * maxTextures},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, maxTextures},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, maxSamplers},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, maxTextures},
   };
   const VkDescriptorPoolCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
       .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
-      .maxSets = (uint32_t)LVK_ARRAY_NUM_ELEMENTS(BindlessDescriptorSet::ds),
+      .maxSets = 1,
       .poolSizeCount = kBinding_NumBindings,
       .pPoolSizes = poolSizes,
   };
   VK_ASSERT_RETURN(vkCreateDescriptorPool(vkDevice_, &ci, nullptr, &vkDPBindless_));
 
-  VkDescriptorSetLayout dsLayouts[LVK_ARRAY_NUM_ELEMENTS(BindlessDescriptorSet::ds)];
-  for (uint32_t i = 0; i != LVK_ARRAY_NUM_ELEMENTS(BindlessDescriptorSet::ds); i++) {
-    dsLayouts[i] = vkDSLBindless_;
-  }
-
   {
     const VkDescriptorSetAllocateInfo ai = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .descriptorPool = vkDPBindless_,
-        .descriptorSetCount = (uint32_t)LVK_ARRAY_NUM_ELEMENTS(BindlessDescriptorSet::ds),
-        .pSetLayouts = &dsLayouts[0],
+        .descriptorSetCount = 1,
+        .pSetLayouts = &vkDSLBindless_,
     };
-    VK_ASSERT_RETURN(vkAllocateDescriptorSets(vkDevice_, &ai, &bindlessDSets_.ds[0]));
+    VK_ASSERT_RETURN(vkAllocateDescriptorSets(vkDevice_, &ai, &bindlessDSets_.ds));
   }
 
   // create pipeline layout
@@ -4487,6 +4470,7 @@ lvk::Result lvk::VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_
       LLOGW("Push constants size exceeded %u (max %u bytes)", kPushConstantsSize, limits.maxPushConstantsSize);
     }
 
+    const VkDescriptorSetLayout dsls[] = {vkDSLBindless_, vkDSLBindless_, vkDSLBindless_};
     const VkPushConstantRange range = {
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
         .offset = 0,
@@ -4494,8 +4478,8 @@ lvk::Result lvk::VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_
     };
     const VkPipelineLayoutCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = (uint32_t)LVK_ARRAY_NUM_ELEMENTS(BindlessDescriptorSet::ds),
-        .pSetLayouts = &dsLayouts[0],
+        .setLayoutCount = (uint32_t)LVK_ARRAY_NUM_ELEMENTS(dsls),
+        .pSetLayouts = dsls,
         .pushConstantRangeCount = 1,
         .pPushConstantRanges = &range,
     };
@@ -4552,14 +4536,8 @@ std::shared_ptr<lvk::VulkanImage> lvk::VulkanContext::createImage(VkImageType im
 
 void lvk::VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPoint) const {
   LVK_PROFILER_FUNCTION();
-  vkCmdBindDescriptorSets(cmdBuf,
-                          bindPoint,
-                          vkPipelineLayout_,
-                          0,
-                          (uint32_t)LVK_ARRAY_NUM_ELEMENTS(BindlessDescriptorSet::ds),
-                          &bindlessDSets_.ds[0],
-                          0,
-                          nullptr);
+  const VkDescriptorSet dsets[3] = {bindlessDSets_.ds, bindlessDSets_.ds, bindlessDSets_.ds};
+  vkCmdBindDescriptorSets(cmdBuf, bindPoint, vkPipelineLayout_, 0, (uint32_t)LVK_ARRAY_NUM_ELEMENTS(dsets), dsets, 0, nullptr);
 }
 
 void lvk::VulkanContext::checkAndUpdateDescriptorSets() {
@@ -4609,8 +4587,7 @@ void lvk::VulkanContext::checkAndUpdateDescriptorSets() {
     infoSampledImages.push_back(
         {samplersPool_.objects_[0].obj_, isSampledImage ? texture.imageView_ : dummyImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
     LVK_ASSERT(infoSampledImages.back().imageView != VK_NULL_HANDLE);
-    infoStorageImages.push_back(
-        VkDescriptorImageInfo{VK_NULL_HANDLE, isStorageImage ? texture.imageView_ : dummyImageView, VK_IMAGE_LAYOUT_GENERAL});
+    infoStorageImages.push_back({VK_NULL_HANDLE, isStorageImage ? texture.imageView_ : dummyImageView, VK_IMAGE_LAYOUT_GENERAL});
   }
 
   // 2. Samplers
@@ -4621,52 +4598,43 @@ void lvk::VulkanContext::checkAndUpdateDescriptorSets() {
     infoSamplers.push_back({sampler.obj_ ? sampler.obj_ : samplersPool_.objects_[0].obj_, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED});
   }
 
-  VkWriteDescriptorSet write[kBinding_NumBindings * LVK_ARRAY_NUM_ELEMENTS(BindlessDescriptorSet::ds)] = {};
+  VkWriteDescriptorSet write[kBinding_NumBindings] = {};
   uint32_t numWrites = 0;
 
-  // we want to update the next available descriptor set
-  BindlessDescriptorSet& dsetToUpdate = bindlessDSets_;
-
   if (!infoSampledImages.empty()) {
-    for (uint32_t i = 0; i != LVK_ARRAY_NUM_ELEMENTS(BindlessDescriptorSet::ds); i++) {
-      write[numWrites++] = VkWriteDescriptorSet{
-          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-          .dstSet = dsetToUpdate.ds[i],
-          .dstBinding = kBinding_Textures,
-          .dstArrayElement = 0,
-          .descriptorCount = (uint32_t)infoSampledImages.size(),
-          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-          .pImageInfo = infoSampledImages.data(),
-      };
-    }
+    write[numWrites++] = VkWriteDescriptorSet{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = bindlessDSets_.ds,
+        .dstBinding = kBinding_Textures,
+        .dstArrayElement = 0,
+        .descriptorCount = (uint32_t)infoSampledImages.size(),
+        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+        .pImageInfo = infoSampledImages.data(),
+    };
   }
 
   if (!infoSamplers.empty()) {
-    for (uint32_t i = 0; i != LVK_ARRAY_NUM_ELEMENTS(BindlessDescriptorSet::ds); i++) {
-      write[numWrites++] = VkWriteDescriptorSet{
-          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-          .dstSet = dsetToUpdate.ds[i],
-          .dstBinding = kBinding_Samplers,
-          .dstArrayElement = 0,
-          .descriptorCount = (uint32_t)infoSamplers.size(),
-          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
-          .pImageInfo = infoSamplers.data(),
-      };
-    }
+    write[numWrites++] = VkWriteDescriptorSet{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = bindlessDSets_.ds,
+        .dstBinding = kBinding_Samplers,
+        .dstArrayElement = 0,
+        .descriptorCount = (uint32_t)infoSamplers.size(),
+        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+        .pImageInfo = infoSamplers.data(),
+    };
   }
 
   if (!infoStorageImages.empty()) {
-    for (uint32_t i = 0; i != LVK_ARRAY_NUM_ELEMENTS(BindlessDescriptorSet::ds); i++) {
-      write[numWrites++] = VkWriteDescriptorSet{
-          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-          .dstSet = dsetToUpdate.ds[i],
-          .dstBinding = kBinding_StorageImages,
-          .dstArrayElement = 0,
-          .descriptorCount = (uint32_t)infoStorageImages.size(),
-          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-          .pImageInfo = infoStorageImages.data(),
-      };
-    }
+    write[numWrites++] = VkWriteDescriptorSet{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = bindlessDSets_.ds,
+        .dstBinding = kBinding_StorageImages,
+        .dstArrayElement = 0,
+        .descriptorCount = (uint32_t)infoStorageImages.size(),
+        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        .pImageInfo = infoStorageImages.data(),
+    };
   }
 
   // do not switch to the next descriptor set if there is nothing to update
@@ -4674,7 +4642,7 @@ void lvk::VulkanContext::checkAndUpdateDescriptorSets() {
 #if LVK_VULKAN_PRINT_COMMANDS
     LLOGL("vkUpdateDescriptorSets()\n");
 #endif // LVK_VULKAN_PRINT_COMMANDS
-    immediate_->wait(std::exchange(dsetToUpdate.handle, immediate_->getLastSubmitHandle()));
+    immediate_->wait(std::exchange(bindlessDSets_.handle, immediate_->getLastSubmitHandle()));
     vkUpdateDescriptorSets(vkDevice_, numWrites, write, 0, nullptr);
   }
 
