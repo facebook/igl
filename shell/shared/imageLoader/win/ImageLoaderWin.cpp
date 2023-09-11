@@ -12,7 +12,10 @@
 #include <igl/Common.h>
 #include <stb_image.h>
 #include <stdint.h>
+
+#if IGL_PLATFORM_WIN
 #include <windows.h>
+#endif
 
 namespace igl::shell {
 
@@ -25,10 +28,12 @@ ImageLoaderWin::ImageLoaderWin() {
     // @fb-only
   // @fb-only
 // @fb-only
+#if IGL_PLATFORM_WIN
   wchar_t path[MAX_PATH] = {0};
   if (IGL_VERIFY(GetModuleFileNameW(NULL, path, MAX_PATH) != 0)) {
     executablePath_ = std::filesystem::path(path).parent_path().string();
   }
+#endif
 }
 
 ImageLoaderWin::ImageLoaderWin(const std::string& homePath) {
