@@ -18,8 +18,7 @@
 
 // For volk.h, define this before including volk.h in exactly one CPP file.
 // @fb-only
-#if defined(IGL_CMAKE_BUILD) || defined(VOLK_HEADER_ONLY)
-#define VOLK_DEFAULT_VISIBILITY
+#if defined(IGL_CMAKE_BUILD)
 #define VOLK_IMPLEMENTATION
 #endif // IGL_CMAKE_BUILD
 

@@ -10,6 +10,10 @@
 #include <windows.h>
 #endif
 
+#if defined(VOLK_HEADER_ONLY)
+#define VOLK_IMPLEMENTATION
+#endif
+
 #include "VulkanHelpers.h"
 
 #include <assert.h>
