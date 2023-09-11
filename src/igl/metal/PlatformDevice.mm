@@ -242,7 +242,7 @@ CVMetalTextureCacheRef PlatformDevice::getTextureCache() {
   return textureCache_;
 }
 
-void PlatformDevice::flushNativeTextureCache() {
+void PlatformDevice::flushNativeTextureCache() const {
 #if (!TARGET_OS_SIMULATOR || __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000)
   if (textureCache_) {
     CVMetalTextureCacheFlush(textureCache_, 0);

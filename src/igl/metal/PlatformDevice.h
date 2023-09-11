@@ -105,7 +105,7 @@ class PlatformDevice final : public IPlatformDevice {
   /// @return An accurate pixel format that is suitable for rendering or invalid if failed.
   TextureFormat getNativeDrawableTextureFormat(CALayer* nativeDrawable, Result* outResult);
 
-  void flushNativeTextureCache();
+  void flushNativeTextureCache() const;
 
   CVMetalTextureCacheRef getTextureCache();
 
