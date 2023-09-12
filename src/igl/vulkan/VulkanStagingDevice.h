@@ -7,12 +7,13 @@
 
 #pragma once
 
+#include <deque>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
+#include <igl/vulkan/VulkanImmediateCommands.h>
 
 namespace igl {
 namespace vulkan {
@@ -20,7 +21,6 @@ namespace vulkan {
 class VulkanBuffer;
 class VulkanContext;
 class VulkanImage;
-class VulkanImmediateCommands;
 
 class VulkanStagingDevice final {
  public:
@@ -50,24 +50,43 @@ class VulkanStagingDevice final {
                       bool flipImageVertical);
 
  private:
-  struct MemoryRegionDesc {
-    uint32_t srcOffset_ = 0;
-    uint32_t alignedSize_ = 0;
+  struct MemoryRegion {
+    uint32_t offset = 0u;
+    uint32_t size = 0u;
+    VulkanImmediateCommands::SubmitHandle handle;
   };
 
+  /**
+   * @brief Searches for an available block in the staging buffer that is as large as the size
+   * requested. If the only contiguous block of memory available is smaller than the requested size,
+   * the function returns the amount of memory it was able to find.
+   *
+   * @return The offset of the free memory block on the staging buffer and the size of the block
+   * found.
+   */
+  MemoryRegion nextFreeBlock(uint32_t size);
+
   uint32_t getAlignedSize(uint32_t size) const;
-  MemoryRegionDesc getNextFreeOffset(uint32_t size);
-  void flushOutstandingFences();
+
+  /// @brief Waits for all memory blocks to become available and resets the staging device's
+  /// internal state
+  void waitAndReset();
 
  private:
   VulkanContext& ctx_;
   std::shared_ptr<VulkanBuffer> stagingBuffer_;
   std::unique_ptr<VulkanImmediateCommands> immediate_;
-  uint32_t stagingBufferFrontOffset_ = 0;
-  uint32_t stagingBufferAlignment_ = 16; // updated to support BC7 compressed image
   uint32_t stagingBufferSize_;
   uint32_t bufferCapacity_;
-  std::unordered_map<uint64_t, MemoryRegionDesc> outstandingFences_;
+
+  /**
+   * @brief Stores the used and unused blocks of memory in the staging buffer. There is no
+   * distinction between used and unused blocks in the deque, as we always `wait` on each block
+   * before using them. Older blocks are stored at the front of the deque, while used/busy
+   * ones are stored at the end. Older blocks have a higher chance of being unused (not waiting for
+   * the associated command buffer to finish)
+   */
+  std::deque<MemoryRegion> regions_;
 };
 
 } // namespace vulkan
