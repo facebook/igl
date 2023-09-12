@@ -2990,10 +2990,12 @@ lvk::SubmitHandle lvk::VulkanContext::submit(lvk::ICommandBuffer& commandBuffer,
 
   processDeferredTasks();
 
+  SubmitHandle handle = vkCmdBuffer->lastSubmitHandle_;
+
   // reset
   pimpl_->currentCommandBuffer_ = {};
 
-  return vkCmdBuffer->lastSubmitHandle_;
+  return handle;
 }
 
 void lvk::VulkanContext::wait(SubmitHandle handle) {
