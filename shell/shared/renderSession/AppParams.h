@@ -10,12 +10,10 @@
 #include <vector>
 
 #include <shell/shared/renderSession/DepthParams.h>
-#include <shell/shared/renderSession/ScreenshotTestsParams.h>
 
 namespace igl::shell {
 struct AppParams {
   DepthParams depthParams;
-  ScreenshotTestsParams screenshotTestsParams;
   bool exitRequested = false;
 };
 } // namespace igl::shell

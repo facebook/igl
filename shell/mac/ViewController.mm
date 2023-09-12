@@ -103,11 +103,6 @@ using namespace igl;
 }
 
 - (void)render {
-  // Update viewport size but only in normal run since we call a 1024x768 window and on first frame
-  // we get 1024x712
-  if (!session_->appParams().screenshotTestsParams.isScreenshotTestsEnabled()) {
-    shellParams_.viewportSize = glm::vec2(self.view.frame.size.width, self.view.frame.size.height);
-  }
   shellParams_.viewportScale = self.view.window.backingScaleFactor;
   session_->setShellParams(shellParams_);
   // process user input
@@ -117,11 +112,8 @@ using namespace igl;
   session_->updateDisplayScale((float)self.view.window.backingScaleFactor);
 
   // draw
-  igl::SurfaceTextures surfaceTextures =
-      (session_->appParams().screenshotTestsParams.isScreenshotTestsEnabled())
-          ? [self createOffScreenTextures]
-          : igl::SurfaceTextures{[self createTextureFromNativeDrawable],
-                                 [self createTextureFromNativeDepth]};
+  igl::SurfaceTextures surfaceTextures = igl::SurfaceTextures{
+      [self createTextureFromNativeDrawable], [self createTextureFromNativeDepth]};
   IGL_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
   const auto& dims = surfaceTextures.color->getDimensions();
   shellParams_.nativeSurfaceDimensions = glm::ivec2{dims.width, dims.height};
@@ -401,24 +393,6 @@ using namespace igl;
     return nullptr;
   }
   }
-}
-
-- (igl::SurfaceTextures)createOffScreenTextures {
-  TextureDesc desc = {static_cast<size_t>(shellParams_.viewportSize.x),
-                      static_cast<size_t>(shellParams_.viewportSize.y),
-                      1,
-                      1,
-                      1,
-                      TextureDesc::TextureUsageBits::Attachment,
-                      1,
-                      TextureType::TwoD,
-                      shellParams_.defaultColorFramebufferFormat,
-                      ResourceStorage::Managed};
-  auto color = shellPlatform_->getDevice().createTexture(desc, nullptr);
-  desc.format = TextureFormat::Z_UNorm24;
-  desc.storage = ResourceStorage::Private;
-  auto depth = shellPlatform_->getDevice().createTexture(desc, nullptr);
-  return igl::SurfaceTextures{std::move(color), std::move(depth)};
 }
 
 - (std::shared_ptr<igl::ITexture>)createTextureFromNativeDepth {

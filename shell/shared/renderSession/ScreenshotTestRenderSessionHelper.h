@@ -12,29 +12,10 @@
 #include <memory>
 
 namespace igl {
-class ITexture;
 class IFramebuffer;
 } // namespace igl
 
 namespace igl::shell {
-struct AppParams;
-struct ShellParams;
-
-class ScreenshotTestRenderSessionHelper {
- public:
-  ScreenshotTestRenderSessionHelper() = default;
-
-  void initialize(AppParams& appParams) noexcept;
-  bool update(const AppParams& appParams,
-              const ShellParams& shellParams,
-              const igl::SurfaceTextures& surfaceTextures,
-              Platform& platform);
-  void dispose() noexcept {}
-
- private:
-  int frameTicked_ = 0;
-};
-
 void SaveFrameBufferToPng(const char* absoluteFilename,
                           const std::shared_ptr<IFramebuffer>& framebuffer,
                           Platform& platform);

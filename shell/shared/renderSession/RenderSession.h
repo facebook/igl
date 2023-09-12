@@ -16,7 +16,6 @@ class ITexture;
 } // namespace igl
 
 namespace igl::shell {
-class ScreenshotTestRenderSessionHelper;
 struct AppParams;
 struct ShellParams;
 
@@ -57,8 +56,6 @@ class RenderSession {
   std::shared_ptr<Platform> platform_;
   std::unique_ptr<AppParams> appParams_;
   const ShellParams* shellParams_ = nullptr;
-
-  std::unique_ptr<ScreenshotTestRenderSessionHelper> screenshotTestHelper_;
 };
 
 } // namespace igl::shell
