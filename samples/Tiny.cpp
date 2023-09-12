@@ -118,7 +118,7 @@ void VulkanObjects::render() {
     buffer.cmdBindViewport({0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f});
     buffer.cmdBindScissorRect({0, 0, (uint32_t)width_, (uint32_t)height_});
     buffer.cmdPushDebugGroupLabel("Render Triangle", 0xff0000ff);
-    buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3);
+    buffer.cmdDraw(lvk::Primitive_Triangle, 3);
     buffer.cmdPopDebugGroupLabel();
   }
   buffer.cmdEndRendering();

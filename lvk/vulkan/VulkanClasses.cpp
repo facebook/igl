@@ -2411,7 +2411,7 @@ void lvk::CommandBuffer::bindGraphicsPipeline() {
   }
 }
 
-void lvk::CommandBuffer::cmdDraw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) {
+void lvk::CommandBuffer::cmdDraw(PrimitiveType primitiveType, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t baseInstance) {
   LVK_PROFILER_FUNCTION();
 
   if (vertexCount == 0) {
@@ -2421,7 +2421,7 @@ void lvk::CommandBuffer::cmdDraw(PrimitiveType primitiveType, size_t vertexStart
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
 
-  vkCmdDraw(wrapper_->cmdBuf_, (uint32_t)vertexCount, 1, (uint32_t)vertexStart, 0);
+  vkCmdDraw(wrapper_->cmdBuf_, vertexCount, instanceCount, firstVertex, baseInstance);
 }
 
 void lvk::CommandBuffer::cmdDrawIndexed(PrimitiveType primitiveType,
@@ -3182,18 +3182,18 @@ lvk::Holder<lvk::TextureHandle> lvk::VulkanContext::createTexture(const TextureD
   }
 
   Result result;
-  auto image = createImage(imageType,
-                           VkExtent3D{desc.dimensions.width, desc.dimensions.height, desc.dimensions.depth},
-                           vkFormat,
-                           desc.numMipLevels,
-                           arrayLayerCount,
-                           VK_IMAGE_TILING_OPTIMAL,
-                           usageFlags,
-                           memFlags,
-                           createFlags,
-                           samples,
-                           &result,
-                           debugNameImage);
+  std::shared_ptr<lvk::VulkanImage> image = createImage(imageType,
+                                                        VkExtent3D{desc.dimensions.width, desc.dimensions.height, desc.dimensions.depth},
+                                                        vkFormat,
+                                                        desc.numMipLevels,
+                                                        arrayLayerCount,
+                                                        VK_IMAGE_TILING_OPTIMAL,
+                                                        usageFlags,
+                                                        memFlags,
+                                                        createFlags,
+                                                        samples,
+                                                        &result,
+                                                        debugNameImage);
   if (!LVK_VERIFY(result.isOk())) {
     Result::setResult(outResult, result);
     return {};
@@ -4411,18 +4411,19 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
     const VkFormat dummyTextureFormat = VK_FORMAT_R8G8B8A8_UNORM;
     const VkMemoryPropertyFlags memFlags = useStaging_ ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT : VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     Result result;
-    auto image = createImage(VK_IMAGE_TYPE_2D,
-                             VkExtent3D{1, 1, 1},
-                             dummyTextureFormat,
-                             1,
-                             1,
-                             VK_IMAGE_TILING_OPTIMAL,
-                             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
-                             memFlags,
-                             0,
-                             VK_SAMPLE_COUNT_1_BIT,
-                             &result,
-                             "Image: dummy 1x1");
+    std::shared_ptr<lvk::VulkanImage> image =
+        createImage(VK_IMAGE_TYPE_2D,
+                    VkExtent3D{1, 1, 1},
+                    dummyTextureFormat,
+                    1,
+                    1,
+                    VK_IMAGE_TILING_OPTIMAL,
+                    VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
+                    memFlags,
+                    0,
+                    VK_SAMPLE_COUNT_1_BIT,
+                    &result,
+                    "Image: dummy 1x1");
     if (!LVK_VERIFY(result.isOk())) {
       return result;
     }

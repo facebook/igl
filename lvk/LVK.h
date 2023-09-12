@@ -741,7 +741,11 @@ class ICommandBuffer {
     this->cmdPushConstants(&data, sizeof(Struct), 0);
   }
 
-  virtual void cmdDraw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) = 0;
+  virtual void cmdDraw(PrimitiveType primitiveType,
+                       uint32_t vertexCount,
+                       uint32_t instanceCount = 1,
+                       uint32_t firstVertex = 0,
+                       uint32_t baseInstance = 0) = 0;
   virtual void cmdDrawIndexed(PrimitiveType primitiveType,
                               uint32_t indexCount,
                               uint32_t instanceCount = 1,

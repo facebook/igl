@@ -390,7 +390,11 @@ class CommandBuffer final : public ICommandBuffer {
   void cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, uint64_t indexBufferOffset) override;
   void cmdPushConstants(const void* data, size_t size, size_t offset) override;
 
-  void cmdDraw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) override;
+  void cmdDraw(PrimitiveType primitiveType,
+               uint32_t vertexCount,
+               uint32_t instanceCount,
+               uint32_t firstVertex,
+               uint32_t baseInstance) override;
   void cmdDrawIndexed(PrimitiveType primitiveType,
                       uint32_t indexCount,
                       uint32_t instanceCount,

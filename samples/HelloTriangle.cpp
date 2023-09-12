@@ -60,7 +60,7 @@ void render() {
       {.color = {{.texture = ctx_->getCurrentSwapchainTexture()}}});
   buffer.cmdBindRenderPipeline(renderPipelineState_Triangle_);
   buffer.cmdPushDebugGroupLabel("Render Triangle", 0xff0000ff);
-  buffer.cmdDraw(lvk::Primitive_Triangle, 0, 3);
+  buffer.cmdDraw(lvk::Primitive_Triangle, 3);
   buffer.cmdPopDebugGroupLabel();
   buffer.cmdEndRendering();
   ctx_->submit(buffer, ctx_->getCurrentSwapchainTexture());
