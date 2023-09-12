@@ -182,6 +182,20 @@ struct TextureRangeDesc {
    * @param newNumFaces The number of faces in the returned range.
    */
   [[nodiscard]] TextureRangeDesc withNumFaces(size_t newNumFaces) const noexcept;
+
+  /**
+   * Validates the range.
+   *
+   * A range is valid if:
+   *  1) width, height, depth, numFaces, numLayers and numMipLevels are all at least 1.
+   *  2) numMipLevels is less than or equal to the max mip levels for the width, height and depth.
+   *  3) mipLevel, x + width, y + height, z + depth and layer + numLayers are all <=
+   *     std::numeric_limits<uint32_t>::max().
+   *  4) (x + width) * (y + height) * (z + depth) * (layer + numLayers) * numFaces <=
+   *     std::numeric_limits<uint32_t>::max().
+   *  5) face < 6 and numFaces <= 6
+   */
+  [[nodiscard]] Result validate() const noexcept;
 };
 
 /**
@@ -570,6 +584,13 @@ struct TextureDesc {
                        ResourceStorage::Invalid,
                        debugName ? debugName : ""};
   }
+
+  /**
+   * @brief Creates a TextureRangeDesc equivalent to descriptor.
+   *
+   * The range includes the full width, height, depth, number of layers, number of cube faces, and
+   * number of mip levels in the texture descriptor. */
+  [[nodiscard]] TextureRangeDesc asRange() const noexcept;
 
   /**
    * @brief Utility to calculate maximum mipmap level support

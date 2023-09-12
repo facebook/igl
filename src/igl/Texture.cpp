@@ -172,6 +172,53 @@ TextureRangeDesc TextureRangeDesc::withNumFaces(size_t newNumFaces) const noexce
   return newRange;
 }
 
+Result TextureRangeDesc::validate() const noexcept {
+  if (IGL_UNEXPECTED(width == 0 || height == 0 || depth == 0 || numLayers == 0 ||
+                     numMipLevels == 0 || numFaces == 0)) {
+    return Result{
+        Result::Code::ArgumentInvalid,
+        "width, height, depth, numLayers, numMipLevels, and numFaces must be at least 1."};
+  }
+
+  const uint32_t maxMipLevels = TextureDesc::calcNumMipLevels(width, height, depth);
+  if (IGL_UNEXPECTED(numMipLevels > static_cast<size_t>(maxMipLevels))) {
+    return Result{Result::Code::ArgumentInvalid,
+                  "numMipLevels must not exceed max mip levels for width, height and depth."};
+  }
+
+  if (IGL_UNEXPECTED(face > 5 || numFaces > 6)) {
+    return Result{Result::Code::ArgumentInvalid,
+                  "face must be less than 6 and numFaces must not exceed 6."};
+  }
+
+  constexpr size_t kMax = std::numeric_limits<uint32_t>::max();
+  if (IGL_UNEXPECTED(mipLevel > kMax || x + width > kMax || y + height > kMax || z + depth > kMax ||
+                     layer + numLayers > kMax)) {
+    return Result{
+        Result::Code::ArgumentInvalid,
+        "mipLevel, x + width, y + height, z + depth, and layer + numLayers must all not exceed "
+        "std::numeric_limits<uint32_t>::max()."};
+  };
+
+  size_t product = (x + width) * (y + height);
+  if (product <= kMax) {
+    product *= z + depth;
+    if (product <= kMax) {
+      product *= layer + numLayers;
+      if (product <= kMax) {
+        product *= numFaces;
+      }
+    }
+  }
+  if (product > std::numeric_limits<uint32_t>::max()) {
+    return Result{Result::Code::ArgumentInvalid,
+                  "(x + width) * (y + height) * (z + depth) * (layer + numLayers) * numFaces must "
+                  "not exceed std::numeric_limits<uint32_t>::max()."};
+  };
+
+  return Result{};
+}
+
 #define PROPERTIES(fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs) \
   case TextureFormat::fmt:                                         \
     return TextureFormatProperties{                                \
@@ -419,6 +466,18 @@ size_t TextureFormatProperties::getSubRangeByteOffset(const TextureRangeDesc& ra
   return offset;
 }
 
+TextureRangeDesc TextureDesc::asRange() const noexcept {
+  igl::TextureRangeDesc range;
+  range.width = width;
+  range.height = height;
+  range.depth = depth;
+  range.numFaces = type == igl::TextureType::Cube ? static_cast<size_t>(6) : static_cast<size_t>(1);
+  range.numLayers = numLayers;
+  range.numMipLevels = numMipLevels;
+
+  return range;
+}
+
 uint32_t TextureDesc::calcNumMipLevels(size_t width, size_t height, size_t depth) {
   if (width == 0 || height == 0 || depth == 0) {
     return 0;
@@ -470,11 +529,9 @@ size_t ITexture::getEstimatedSizeInBytes() const {
 }
 
 Result ITexture::validateRange(const igl::TextureRangeDesc& range) const noexcept {
-  if (IGL_UNEXPECTED(range.width == 0 || range.height == 0 || range.depth == 0 ||
-                     range.numLayers == 0 || range.numMipLevels == 0 || range.numFaces == 0)) {
-    return Result{
-        Result::Code::ArgumentInvalid,
-        "width, height, depth, numLayers, numMipLevels, and numFaces must be at least 1."};
+  const auto result = range.validate();
+  if (!result.isOk()) {
+    return result;
   }
 
   const auto dimensions = getDimensions();
@@ -610,17 +667,12 @@ Result ITexture::upload(const TextureRangeDesc& range,
     return result;
   }
 
-  if (type != TextureType::TwoD && type != TextureType::TwoDArray && type != TextureType::Cube &&
-      type != TextureType::ThreeD) {
-    IGL_ASSERT_MSG(false, "Unknown texture type");
+  if (IGL_UNEXPECTED(type != TextureType::TwoD && type != TextureType::TwoDArray &&
+                     type != TextureType::Cube && type != TextureType::ThreeD)) {
     return Result{Result::Code::InvalidOperation, "Unknown texture type"};
   }
-  if (range.face > 0) {
-    if (IGL_UNEXPECTED(type != TextureType::Cube)) {
-      return Result(Result::Code::Unsupported, "face must be 0.");
-    } else if (IGL_UNEXPECTED(range.face > 5)) {
-      return Result(Result::Code::Unsupported, "face must be less than 6.");
-    }
+  if (IGL_UNEXPECTED(range.face > 0 && type != TextureType::Cube)) {
+    return Result(Result::Code::Unsupported, "face must be 0.");
   }
 
   const auto formatBytesPerRow = properties_.getBytesPerRow(range);
