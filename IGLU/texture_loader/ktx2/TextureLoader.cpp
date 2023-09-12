@@ -93,7 +93,8 @@ bool TextureLoader::isHeaderValid(DataReader reader, igl::Result* IGL_NULLABLE o
 
   const uint32_t width = std::max(header->pixelWidth, 1u);
   const uint32_t height = std::max(header->pixelHeight, 1u);
-  const uint32_t maxMipLevels = igl::TextureDesc::calcNumMipLevels(width, height);
+  const uint32_t depth = std::max(header->pixelDepth, 1u);
+  const uint32_t maxMipLevels = igl::TextureDesc::calcNumMipLevels(width, height, depth);
   if (header->levelCount > maxMipLevels) {
     igl::Result::setResult(
         outResult, igl::Result::Code::InvalidOperation, "Too many mipmap levels.");

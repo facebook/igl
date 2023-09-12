@@ -59,7 +59,8 @@ Result Texture::create(const TextureDesc& desc) {
                   "Array textures are only supported when type is TwoDArray."};
   }
 
-  if (!IGL_VERIFY(desc_.numMipLevels <= TextureDesc::calcNumMipLevels(desc_.width, desc_.height))) {
+  if (!IGL_VERIFY(desc_.numMipLevels <=
+                  TextureDesc::calcNumMipLevels(desc_.width, desc_.height, desc_.height))) {
     return Result(Result::Code::ArgumentOutOfRange,
                   "The number of specified mip levels is greater than the maximum possible "
                   "number of mip levels.");

@@ -1914,7 +1914,12 @@ TEST_F(TextureTest, GetRange) {
 TEST(TextureDescStaticTest, CalcMipmapLevelCount) {
   ASSERT_EQ(TextureDesc::calcNumMipLevels(1, 1), 1);
   ASSERT_EQ(TextureDesc::calcNumMipLevels(4, 8), 4);
+  ASSERT_EQ(TextureDesc::calcNumMipLevels(8, 4), 4);
   ASSERT_EQ(TextureDesc::calcNumMipLevels(10, 10), 4);
+  ASSERT_EQ(TextureDesc::calcNumMipLevels(10, 10, 10), 4);
+  ASSERT_EQ(TextureDesc::calcNumMipLevels(8, 4, 4), 4);
+  ASSERT_EQ(TextureDesc::calcNumMipLevels(4, 8, 4), 4);
+  ASSERT_EQ(TextureDesc::calcNumMipLevels(4, 4, 8), 4);
 }
 
 //

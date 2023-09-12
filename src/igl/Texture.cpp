@@ -419,14 +419,15 @@ size_t TextureFormatProperties::getSubRangeByteOffset(const TextureRangeDesc& ra
   return offset;
 }
 
-uint32_t TextureDesc::calcNumMipLevels(size_t width, size_t height) {
-  if (width == 0 || height == 0) {
+uint32_t TextureDesc::calcNumMipLevels(size_t width, size_t height, size_t depth) {
+  if (width == 0 || height == 0 || depth == 0) {
     return 0;
   }
 
   uint32_t levels = 1;
 
-  while ((width | height) >> levels) {
+  const size_t combinedValue = width | height | depth;
+  while (combinedValue >> levels) {
     levels++;
   }
 

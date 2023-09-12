@@ -78,7 +78,7 @@ Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
     numMipLevels_ = desc.numMipLevels;
     if (!getContext().deviceFeatures().hasFeature(DeviceFeatures::TexturePartialMipChain)) {
       // For ES 2.0, we have to ignore numMipLevels_
-      const auto maxNumMipLevels = TextureDesc::calcNumMipLevels(width_, height_);
+      const auto maxNumMipLevels = TextureDesc::calcNumMipLevels(width_, height_, depth_);
       if (numMipLevels_ > 1 && numMipLevels_ != maxNumMipLevels) {
         IGL_LOG_ERROR("Partial mip chains are not supported so numMipLevels_ will be set to %d",
                       maxNumMipLevels);

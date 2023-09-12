@@ -576,9 +576,10 @@ struct TextureDesc {
    *
    * @param width  The width of the texture
    * @param height The height of the texture
+   * @param depth The depth of the texture
    * @return uint32_t
    */
-  static uint32_t calcNumMipLevels(size_t width, size_t height);
+  static uint32_t calcNumMipLevels(size_t width, size_t height, size_t depth = 1);
 };
 
 /**
