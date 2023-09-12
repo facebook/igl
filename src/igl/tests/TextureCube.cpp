@@ -508,7 +508,8 @@ TEST_F(TextureCubeTest, Passthrough_RenderToCube) {
   texDesc = TextureDesc::newCube(TextureFormat::RGBA_UNorm8,
                                  kOffscreenTexWidth,
                                  kOffscreenTexHeight,
-                                 TextureDesc::TextureUsageBits::Sampled);
+                                 TextureDesc::TextureUsageBits::Sampled |
+                                     TextureDesc::TextureUsageBits::Attachment);
   auto customOffscreenTexture = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(customOffscreenTexture != nullptr);

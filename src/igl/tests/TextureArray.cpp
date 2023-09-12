@@ -594,7 +594,8 @@ TEST_F(TextureArrayTest, Passthrough_RenderToArray) {
                                     kOffscreenTexWidth,
                                     kOffscreenTexHeight,
                                     kNumLayers,
-                                    TextureDesc::TextureUsageBits::Sampled);
+                                    TextureDesc::TextureUsageBits::Sampled |
+                                        TextureDesc::TextureUsageBits::Attachment);
   auto customOffscreenTexture = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(customOffscreenTexture != nullptr);
