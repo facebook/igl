@@ -6,7 +6,8 @@
  */
 
 #pragma once
-#include <stdint.h>
+
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -28,6 +29,9 @@ class FileLoader {
   virtual std::string fullPath(const std::string& /* filename */) const {
     return "";
   }
+
+ protected:
+  std::vector<uint8_t> loadBinaryDataInternal(const std::string& fileName);
 };
 
 } // namespace igl::shell

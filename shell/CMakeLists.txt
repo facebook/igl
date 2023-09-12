@@ -13,9 +13,9 @@ if(WIN32)
 endif()
 
 file(GLOB SHELL_SHARED_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-     shared/extension/*.cpp shared/input/*.cpp shared/platform/*.cpp shared/renderSession/*.cpp shared/netservice/*.cpp)
+     shared/fileLoader/*.cpp shared/extension/*.cpp shared/input/*.cpp shared/platform/*.cpp shared/renderSession/*.cpp shared/netservice/*.cpp)
 file(GLOB SHELL_SHARED_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-     shared/extension/*.h shared/input/*.h shared/platform/*.h shared/renderSession/*.h shared/netservice/*.h)
+     shared/fileLoader/*.h shared/extension/*.h shared/input/*.h shared/platform/*.h shared/renderSession/*.h shared/netservice/*.h)
 
 add_library(IGLShellShared ${SHELL_SHARED_SRC_FILES} ${SHELL_SHARED_HEADER_FILES})
 

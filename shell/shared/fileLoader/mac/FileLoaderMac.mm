@@ -56,27 +56,7 @@ static NSString* getBundleFilePath(const std::string& fileName) {
 namespace igl::shell {
 
 std::vector<uint8_t> FileLoaderMac::loadBinaryData(const std::string& fileName) {
-  std::vector<uint8_t> data;
-  if (fileName.empty()) {
-    return data;
-  }
-
-  const std::string path = fullPath(fileName);
-
-  std::ifstream file(path, std::ios::binary);
-  if ((file.rdstate() & std::ifstream::failbit) != 0) {
-    return data;
-  }
-  file.unsetf(std::ios::skipws);
-
-  std::streampos file_size;
-  file.seekg(0, std::ios::end);
-  file_size = file.tellg();
-  file.seekg(0, std::ios::beg);
-
-  data.reserve(file_size);
-  data.insert(data.begin(), std::istream_iterator<uint8_t>(file), std::istream_iterator<uint8_t>());
-  return (data);
+  return loadBinaryDataInternal(fileName);
 }
 
 bool FileLoaderMac::fileExists(const std::string& fileName) const {

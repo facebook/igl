@@ -19,8 +19,6 @@ class FileLoaderMac final : public FileLoader {
   bool fileExists(const std::string& fileName) const override;
   std::string basePath() const override;
   std::string fullPath(const std::string& fileName) const override;
-
- private:
 };
 
 } // namespace igl::shell
