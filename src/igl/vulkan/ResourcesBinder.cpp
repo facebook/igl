@@ -11,7 +11,9 @@
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
+#include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanPipelineLayout.h>
+#include <igl/vulkan/VulkanTexture.h>
 
 namespace igl {
 
@@ -112,6 +114,22 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
   }
 
   igl::vulkan::VulkanTexture* newTexture = tex ? &tex->getVulkanTexture() : nullptr;
+
+#if IGL_DEBUG
+  if (newTexture) {
+    igl::vulkan::VulkanImage& img = newTexture->getVulkanImage();
+    IGL_ASSERT_MSG(img.samples_ == VK_SAMPLE_COUNT_1_BIT,
+                   "Multisampled images cannot be sampled in shaders");
+    if (bindPoint_ == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+      // @fb-only
+      // TODO: Some calling code tries to bind textures with VK_IMAGE_LAYOUT_UNDEFINED.
+      //       Investiage and uncomment the next line:
+      // IGL_ASSERT(img.imageLayout_ == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    } else {
+      IGL_ASSERT(img.imageLayout_ == VK_IMAGE_LAYOUT_GENERAL);
+    }
+  }
+#endif // IGL_DEBUG
 
   if (bindingsTextures_.textures[index] != newTexture) {
     bindingsTextures_.textures[index] = newTexture;
