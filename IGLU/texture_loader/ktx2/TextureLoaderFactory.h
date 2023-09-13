@@ -11,6 +11,11 @@
 
 namespace iglu::textureloader::ktx2 {
 
+/**
+ * @brief ITextureLoaderFactory implementation for KTX v2 texture containers
+ * @note Texture container format specifications:
+ *   https://registry.khronos.org/KTX/specs/2.0/ktxspec.v2.html
+ */
 class TextureLoaderFactory final : public ITextureLoaderFactory {
  public:
   explicit TextureLoaderFactory() noexcept = default;
