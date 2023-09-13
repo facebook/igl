@@ -451,6 +451,7 @@ TEST_F(TextureCubeTest, Passthrough_SampleFromCube) {
 
     auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
     cmds->bindBuffer(data::shader::simplePosIndex, BindTarget::kVertex, vb_, 0);
+    cmds->bindBuffer(data::shader::simpleUvIndex, BindTarget::kVertex, uv_, 0);
 
     cmds->bindRenderPipelineState(pipelineState);
 
