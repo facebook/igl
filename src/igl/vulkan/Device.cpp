@@ -588,6 +588,19 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(
     return TextureFormatCapabilityBits::Unsupported;
   }
 
+  if (vkFormat == VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG ||
+      vkFormat == VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG ||
+      vkFormat == VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG ||
+      vkFormat == VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG ||
+      vkFormat == VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG ||
+      vkFormat == VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG ||
+      vkFormat == VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG ||
+      vkFormat == VK_FORMAT_PVRTC2_4BPP_UNORM_BLOCK_IMG) {
+    // Deprecated without replacement
+    // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_IMG_format_pvrtc.html
+    return TextureFormatCapabilityBits::Unsupported;
+  }
+
   VkFormatProperties properties;
   vkGetPhysicalDeviceFormatProperties(ctx_->vkPhysicalDevice_, vkFormat, &properties);
 
