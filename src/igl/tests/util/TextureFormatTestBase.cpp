@@ -378,6 +378,7 @@ void TextureFormatTestBase::testUsage(std::pair<TextureFormat, bool> formatSuppo
   IGL_LOG_INFO("%s: Testing %s\n", usageName, properties.name);
   auto texDesc =
       TextureDesc::new2D(textureFormat, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT, usage);
+  texDesc.debugName = std::string("TextureFormatTestBase:") + usageName + ":" + properties.name;
   if (iglDev_->getBackendType() == BackendType::Metal && properties.isDepthOrStencil()) {
     texDesc.storage = ResourceStorage::Private;
   }
