@@ -94,6 +94,10 @@ else()
   endif()
 endif()
 
+if(IGL_WITH_IGLU AND (NOT IGL_WITH_OPENGL))
+  message(FATAL_ERROR "IGL_WITH_IGLU requires enabling IGL_WITH_OPENGL.")
+endif()
+
 if(IGL_WITH_SHELL AND (NOT IGL_WITH_IGLU))
   message(FATAL_ERROR "IGL_WITH_SHELL requires enabling IGL_WITH_IGLU.")
 endif()
@@ -178,11 +182,13 @@ target_compile_definitions(IGLLibrary PUBLIC "IGL_CMAKE_BUILD=1")
 
 include_directories(.)
 
-if(IGL_WITH_IGLU)
+if(IGL_WITH_IGLU OR IGL_WITH_SAMPLES)
   add_library(IGLstb third-party/deps/patches/stb_impl/stb_image.c third-party/deps/patches/stb_impl/stb_image_resize.c
                      third-party/deps/patches/stb_impl/stb_image_write.c)
   target_include_directories(IGLstb PUBLIC "third-party/deps/src/stb")
   igl_set_folder(IGLstb "IGL")
+endif()
+if (IGL_WITH_IGLU)
   include_directories("third-party/deps/src/imgui")
   add_subdirectory(IGLU)
   if(IGL_WITH_SHELL)
