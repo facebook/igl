@@ -7,7 +7,9 @@
 
 #include <IGLU/texture_loader/ITextureLoader.h>
 
+#include <IGLU/texture_loader/IData.h>
 #include <igl/Device.h>
+#include <igl/IGLSafeC.h>
 
 namespace iglu::textureloader {
 
@@ -24,6 +26,20 @@ igl::TextureDesc& ITextureLoader::mutableDescriptor() noexcept {
 
 const igl::TextureDesc& ITextureLoader::descriptor() const noexcept {
   return desc_;
+}
+
+[[nodiscard]] uint32_t ITextureLoader::memorySizeInBytes() const noexcept {
+  const auto properties = igl::TextureFormatProperties::fromTextureFormat(desc_.format);
+  igl::TextureRangeDesc range;
+  range.width = desc_.width;
+  range.height = desc_.height;
+  range.depth = desc_.depth;
+  range.numFaces = desc_.type == igl::TextureType::Cube ? static_cast<size_t>(6)
+                                                        : static_cast<size_t>(1);
+  range.numLayers = desc_.numLayers;
+  range.numMipLevels = desc_.numMipLevels;
+
+  return static_cast<uint32_t>(properties.getBytesPerRange(range));
 }
 
 bool ITextureLoader::isSupported(const igl::ICapabilities& capabilities) const noexcept {
@@ -87,12 +103,73 @@ void ITextureLoader::upload(igl::ITexture& texture,
   uploadInternal(texture, outResult);
 }
 
+std::unique_ptr<IData> ITextureLoader::load(igl::Result* IGL_NULLABLE outResult) const noexcept {
+  return loadInternal(outResult);
+}
+
+void ITextureLoader::loadToExternalMemory(uint8_t* IGL_NONNULL data,
+                                          uint32_t length,
+                                          igl::Result* IGL_NULLABLE outResult) const noexcept {
+  if (data == nullptr) {
+    igl::Result::setResult(outResult, igl::Result::Code::ArgumentNull, "data is nullptr.");
+    return;
+  }
+  if (length < memorySizeInBytes()) {
+    igl::Result::setResult(outResult, igl::Result::Code::ArgumentInvalid, "length is too short.");
+    return;
+  }
+
+  return loadToExternalMemoryInternal(data, length, outResult);
+}
+
 DataReader& ITextureLoader::reader() noexcept {
   return reader_;
 }
 
 const DataReader& ITextureLoader::reader() const noexcept {
   return reader_;
+}
+
+void ITextureLoader::defaultUpload(igl::ITexture& texture,
+                                   igl::Result* IGL_NULLABLE outResult) const noexcept {
+  std::unique_ptr<IData> data;
+
+  if (!canUploadSourceData()) {
+    data = load(outResult);
+    if (!data) {
+      return;
+    }
+  }
+
+  const auto range = shouldGenerateMipmaps() ? texture.getFullRange() : texture.getFullMipRange();
+  auto result = texture.upload(range, data ? data->data() : reader_.data());
+  igl::Result::setResult(outResult, std::move(result));
+}
+
+std::unique_ptr<IData> ITextureLoader::defaultLoad(
+    igl::Result* IGL_NULLABLE outResult) const noexcept {
+  const uint32_t length = memorySizeInBytes();
+  auto data = std::make_unique<uint8_t[]>(length);
+  if (!data) {
+    igl::Result::setResult(outResult, igl::Result::Code::RuntimeError, "out of memory.");
+    return nullptr;
+  }
+
+  loadToExternalMemory(data.get(), length, outResult);
+
+  return IData::tryCreate(std::move(data), length, outResult);
+}
+
+void ITextureLoader::defaultLoadToExternalMemory(uint8_t* IGL_NONNULL data,
+                                                 uint32_t length,
+                                                 igl::Result* IGL_NULLABLE
+                                                     outResult) const noexcept {
+  if (reader_.length() != length) {
+    igl::Result::setResult(
+        outResult, igl::Result::Code::ArgumentInvalid, "length doesn't match reader length.");
+    return;
+  }
+  checked_memcpy(data, length, reader_.data(), length);
 }
 
 } // namespace iglu::textureloader

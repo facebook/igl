@@ -8,11 +8,18 @@
 #include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
 
 #include <IGLU/texture_loader/ktx2/Header.h>
+#include <igl/IGLSafeC.h>
 #include <numeric>
 #include <vector>
 
 namespace iglu::textureloader::ktx2 {
 namespace {
+
+struct MipLevelData {
+  const uint8_t* data = nullptr;
+  uint32_t length = 0u;
+};
+
 template<typename T>
 T align(T offset, T alignment) {
   return (offset + (alignment - 1)) & ~(alignment - 1);
@@ -25,23 +32,29 @@ class TextureLoader : public ITextureLoader {
   TextureLoader(DataReader reader,
                 const igl::TextureRangeDesc& range,
                 igl::TextureFormat format,
-                std::vector<const uint8_t*> mipData) noexcept;
+                std::vector<MipLevelData> mipLevelData) noexcept;
 
+  [[nodiscard]] bool canUploadSourceData() const noexcept final;
   [[nodiscard]] bool shouldGenerateMipmaps() const noexcept final;
 
  private:
   void uploadInternal(igl::ITexture& texture,
                       igl::Result* IGL_NULLABLE outResult) const noexcept final;
+  void loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
+                                    uint32_t length,
+                                    igl::Result* IGL_NULLABLE outResult) const noexcept final;
 
-  std::vector<const uint8_t*> mipData_;
+  std::vector<MipLevelData> mipLevelData_;
   bool shouldGenerateMipmaps_ = false;
 };
 
 TextureLoader::TextureLoader(DataReader reader,
                              const igl::TextureRangeDesc& range,
                              igl::TextureFormat format,
-                             std::vector<const uint8_t*> mipData) noexcept :
-  Super(reader), mipData_(std::move(mipData)), shouldGenerateMipmaps_(range.numMipLevels == 0) {
+                             std::vector<MipLevelData> mipLevelData) noexcept :
+  Super(reader),
+  mipLevelData_(std::move(mipLevelData)),
+  shouldGenerateMipmaps_(range.numMipLevels == 0) {
   auto& desc = mutableDescriptor();
   desc.format = format;
   desc.numMipLevels = range.numMipLevels;
@@ -61,6 +74,10 @@ TextureLoader::TextureLoader(DataReader reader,
   }
 }
 
+bool TextureLoader::canUploadSourceData() const noexcept {
+  return true;
+}
+
 bool TextureLoader::shouldGenerateMipmaps() const noexcept {
   return shouldGenerateMipmaps_;
 }
@@ -69,12 +86,23 @@ void TextureLoader::uploadInternal(igl::ITexture& texture,
                                    igl::Result* IGL_NULLABLE outResult) const noexcept {
   const auto& desc = descriptor();
 
-  for (size_t mipLevel = 0; mipLevel < desc.numMipLevels && mipLevel < mipData_.size();
+  for (size_t mipLevel = 0; mipLevel < desc.numMipLevels && mipLevel < mipLevelData_.size();
        ++mipLevel) {
-    texture.upload(texture.getFullRange(mipLevel), mipData_[mipLevel]);
+    texture.upload(texture.getFullRange(mipLevel), mipLevelData_[mipLevel].data);
   }
 
   igl::Result::setOk(outResult);
+}
+
+void TextureLoader::loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
+                                                 uint32_t length,
+                                                 igl::Result* IGL_NULLABLE
+                                                 /*outResult*/) const noexcept {
+  uint32_t offset = 0;
+  for (const auto& mipLevelData : mipLevelData_) {
+    checked_memcpy_offset(data, length, offset, mipLevelData.data, mipLevelData.length);
+    offset += mipLevelData.length;
+  }
 }
 } // namespace
 
@@ -225,8 +253,8 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     return nullptr;
   }
 
-  std::vector<const uint8_t*> mipData;
-  mipData.resize(range.numMipLevels);
+  std::vector<MipLevelData> mipLevelData;
+  mipLevelData.resize(range.numMipLevels);
 
   for (size_t i = 0; i < range.numMipLevels; ++i) {
     // ktx2 stores actual mip data in 'reverse' order (smallest images to largest) but the metadata
@@ -260,12 +288,12 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     }
 
     // @fb-only
-    mipData[mipLevel] = reader.at(expectedDataOffset);
+    mipLevelData[mipLevel] = {reader.at(expectedDataOffset), static_cast<uint32_t>(byteLength)};
     expectedDataOffset =
         align(expectedDataOffset + static_cast<uint32_t>(byteLength), mipLevelAlignment);
   }
 
-  return std::make_unique<TextureLoader>(reader, range, properties.format, std::move(mipData));
+  return std::make_unique<TextureLoader>(reader, range, properties.format, std::move(mipLevelData));
 }
 
 } // namespace iglu::textureloader::ktx2
