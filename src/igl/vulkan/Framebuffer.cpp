@@ -247,12 +247,24 @@ Framebuffer::Framebuffer(const Device& device, FramebufferDesc desc) :
   for (const auto& attachment : desc_.colorAttachments) {
     const auto& colorTexture = static_cast<vulkan::Texture&>(*attachment.second.texture);
     ensureSize(colorTexture);
+    if (!IGL_VERIFY((colorTexture.getUsage() & TextureDesc::TextureUsageBits::Attachment) != 0)) {
+      IGL_ASSERT_MSG(
+          false, "Did you forget to specify TextureUsageBits::Attachment on your color texture?");
+      IGL_LOG_ERROR(
+          "Did you forget to specify TextureUsageBits::Attachment on your color texture?");
+    }
   }
 
   const auto* depthTexture = static_cast<vulkan::Texture*>(desc_.depthAttachment.texture.get());
 
   if (depthTexture) {
     ensureSize(*depthTexture);
+    if (!IGL_VERIFY((depthTexture->getUsage() & TextureDesc::TextureUsageBits::Attachment) != 0)) {
+      IGL_ASSERT_MSG(
+          false, "Did you forget to specify TextureUsageBits::Attachment on your depth texture?");
+      IGL_LOG_ERROR(
+          "Did you forget to specify TextureUsageBits::Attachment on your depth texture?");
+    }
   }
 
   IGL_ASSERT(width_);

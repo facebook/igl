@@ -42,9 +42,14 @@ void transitionToColorAttachment(VkCommandBuffer buffer,
   const auto& colorImg = vkTex.getVulkanTexture().getVulkanImage();
   if (IGL_UNEXPECTED(colorImg.isDepthFormat_ || colorImg.isStencilFormat_)) {
     IGL_ASSERT_MSG(false, "Color attachments cannot have depth/stencil formats");
+    IGL_LOG_ERROR("Color attachments cannot have depth/stencil formats");
     return;
   }
   IGL_ASSERT_MSG(colorImg.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
+  if (!IGL_VERIFY((colorImg.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0)) {
+    IGL_ASSERT_MSG(false, "Did you forget to specify TextureUsageBit::Attachment usage bit?");
+    IGL_LOG_ERROR("Did you forget to specify TextureUsageBit::Attachment usage bit?");
+  }
   colorImg.transitionLayout(
       buffer,
       VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
