@@ -16,10 +16,9 @@ uint32_t TextureLoaderFactory::headerLength() const noexcept {
   return kHeaderLength;
 }
 
-bool TextureLoaderFactory::isHeaderValidInternal(DataReader reader,
-                                                 igl::Result* IGL_NULLABLE
-                                                     outResult) const noexcept {
-  return TextureLoader::isHeaderValid(reader, outResult);
+bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
+                                             igl::Result* IGL_NULLABLE outResult) const noexcept {
+  return TextureLoader::canCreate(headerReader, outResult);
 }
 
 std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(

@@ -9,31 +9,31 @@
 
 namespace iglu::textureloader {
 
-bool ITextureLoaderFactory::isHeaderValid(const uint8_t* IGL_NONNULL data,
-                                          uint32_t length,
-                                          igl::Result* IGL_NULLABLE outResult) const noexcept {
-  auto maybeReader = DataReader::tryCreate(data, length, outResult);
+bool ITextureLoaderFactory::canCreate(const uint8_t* IGL_NONNULL headerData,
+                                      uint32_t headerLength,
+                                      igl::Result* IGL_NULLABLE outResult) const noexcept {
+  auto maybeReader = DataReader::tryCreate(headerData, headerLength, outResult);
   if (!maybeReader.has_value()) {
     return false;
   }
 
-  return isHeaderValid(*maybeReader, outResult);
+  return canCreate(*maybeReader, outResult);
 }
 
-bool ITextureLoaderFactory::isHeaderValid(DataReader reader,
-                                          igl::Result* IGL_NULLABLE outResult) const noexcept {
-  if (reader.data() == nullptr) {
+bool ITextureLoaderFactory::canCreate(DataReader headerReader,
+                                      igl::Result* IGL_NULLABLE outResult) const noexcept {
+  if (headerReader.data() == nullptr) {
     igl::Result::setResult(
         outResult, igl::Result::Code::ArgumentInvalid, "Reader's data is nullptr.");
     return false;
   }
-  if (reader.length() < headerLength()) {
+  if (headerReader.length() < headerLength()) {
     igl::Result::setResult(
         outResult, igl::Result::Code::ArgumentOutOfRange, "Not enough data for header.");
     return false;
   }
 
-  return isHeaderValidInternal(reader, outResult);
+  return canCreateInternal(headerReader, outResult);
 }
 
 std::unique_ptr<ITextureLoader> ITextureLoaderFactory::tryCreate(const uint8_t* IGL_NONNULL data,
@@ -51,7 +51,7 @@ std::unique_ptr<ITextureLoader> ITextureLoaderFactory::tryCreate(const uint8_t* 
 std::unique_ptr<ITextureLoader> ITextureLoaderFactory::tryCreate(DataReader reader,
                                                                  igl::Result* IGL_NULLABLE
                                                                      outResult) const noexcept {
-  if (!isHeaderValid(reader, outResult)) {
+  if (!canCreate(reader, outResult)) {
     return nullptr;
   }
 

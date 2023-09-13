@@ -149,7 +149,9 @@ void populateMinimalValidFile(std::vector<uint8_t>& buffer,
 
 class Ktx2TextureLoaderTest : public ::testing::Test {
  public:
-  void SetUp() override {}
+  void SetUp() override {
+    setDebugBreakEnabled(false);
+  }
 
   void TearDown() override {}
 

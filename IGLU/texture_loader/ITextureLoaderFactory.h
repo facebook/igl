@@ -22,11 +22,11 @@ class ITextureLoaderFactory {
   virtual ~ITextureLoaderFactory() = default;
 
   [[nodiscard]] virtual uint32_t headerLength() const noexcept = 0;
-  [[nodiscard]] bool isHeaderValid(const uint8_t* IGL_NONNULL data,
-                                   uint32_t length,
-                                   igl::Result* IGL_NULLABLE outResult) const noexcept;
-  [[nodiscard]] bool isHeaderValid(DataReader reader,
-                                   igl::Result* IGL_NULLABLE outResult) const noexcept;
+  [[nodiscard]] bool canCreate(const uint8_t* IGL_NONNULL headerData,
+                               uint32_t headerLength,
+                               igl::Result* IGL_NULLABLE outResult) const noexcept;
+  [[nodiscard]] bool canCreate(DataReader headerReader,
+                               igl::Result* IGL_NULLABLE outResult) const noexcept;
 
   [[nodiscard]] std::unique_ptr<ITextureLoader> tryCreate(const uint8_t* IGL_NONNULL data,
                                                           uint32_t length,
@@ -37,9 +37,9 @@ class ITextureLoaderFactory {
                                                               outResult) const noexcept;
 
  protected:
-  [[nodiscard]] virtual bool isHeaderValidInternal(DataReader reader,
-                                                   igl::Result* IGL_NULLABLE
-                                                       outResult) const noexcept = 0;
+  [[nodiscard]] virtual bool canCreateInternal(DataReader headerReader,
+                                               igl::Result* IGL_NULLABLE
+                                                   outResult) const noexcept = 0;
   [[nodiscard]] virtual std::unique_ptr<ITextureLoader> tryCreateInternal(
       DataReader reader,
       igl::Result* IGL_NULLABLE outResult) const noexcept = 0;

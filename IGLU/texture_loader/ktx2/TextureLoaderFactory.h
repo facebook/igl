@@ -18,8 +18,8 @@ class TextureLoaderFactory final : public ITextureLoaderFactory {
   [[nodiscard]] uint32_t headerLength() const noexcept final;
 
  private:
-  [[nodiscard]] bool isHeaderValidInternal(DataReader reader, igl::Result* IGL_NULLABLE outResult)
-      const noexcept final;
+  [[nodiscard]] bool canCreateInternal(DataReader headerReader,
+                                       igl::Result* IGL_NULLABLE outResult) const noexcept final;
 
   [[nodiscard]] std::unique_ptr<ITextureLoader> tryCreateInternal(
       DataReader reader,

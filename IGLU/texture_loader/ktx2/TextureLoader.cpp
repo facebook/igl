@@ -18,19 +18,20 @@ T align(T offset, T alignment) {
 }
 } // namespace
 
-bool TextureLoader::isHeaderValid(DataReader reader, igl::Result* IGL_NULLABLE outResult) noexcept {
-  if (reader.data() == nullptr) {
+bool TextureLoader::canCreate(DataReader headerReader,
+                              igl::Result* IGL_NULLABLE outResult) noexcept {
+  if (headerReader.data() == nullptr) {
     igl::Result::setResult(
         outResult, igl::Result::Code::ArgumentInvalid, "Reader's data is nullptr.");
     return false;
   }
-  if (reader.length() < kHeaderLength) {
+  if (headerReader.length() < kHeaderLength) {
     igl::Result::setResult(
         outResult, igl::Result::Code::ArgumentOutOfRange, "Not enough data for header.");
     return false;
   }
 
-  const Header* header = reader.as<Header>();
+  const Header* header = headerReader.as<Header>();
   if (!header->tagIsValid()) {
     igl::Result::setResult(outResult, igl::Result::Code::InvalidOperation, "Incorrect identifier.");
     return false;
@@ -45,25 +46,6 @@ bool TextureLoader::isHeaderValid(DataReader reader, igl::Result* IGL_NULLABLE o
   if (header->formatProperties().format == igl::TextureFormat::Invalid) {
     igl::Result::setResult(
         outResult, igl::Result::Code::InvalidOperation, "Unrecognized texture format.");
-    return false;
-  }
-
-  if (header->faceCount != 1u && header->faceCount != 6u) {
-    igl::Result::setResult(
-        outResult, igl::Result::Code::InvalidOperation, "faceCount must be 1 or 6.");
-    return false;
-  }
-
-  if (header->faceCount == 6u && header->pixelDepth != 0) {
-    igl::Result::setResult(
-        outResult, igl::Result::Code::InvalidOperation, "pixelDepth must be 0 for cube textures.");
-    return false;
-  }
-
-  if (header->faceCount == 6u && header->pixelWidth != header->pixelHeight) {
-    igl::Result::setResult(outResult,
-                           igl::Result::Code::InvalidOperation,
-                           "pixelWidth must match pixelHeight for cube textures.");
     return false;
   }
 
@@ -84,37 +66,45 @@ bool TextureLoader::isHeaderValid(DataReader reader, igl::Result* IGL_NULLABLE o
     return false;
   }
 
-  if (header->sgdByteLength > std::numeric_limits<uint32_t>::max()) {
-    igl::Result::setResult(outResult,
-                           igl::Result::Code::InvalidOperation,
-                           "Super compression global data is too large to fit in uint32_t.");
-    return false;
-  }
-
-  const uint32_t width = std::max(header->pixelWidth, 1u);
-  const uint32_t height = std::max(header->pixelHeight, 1u);
-  const uint32_t depth = std::max(header->pixelDepth, 1u);
-  const uint32_t maxMipLevels = igl::TextureDesc::calcNumMipLevels(width, height, depth);
-  if (header->levelCount > maxMipLevels) {
-    igl::Result::setResult(
-        outResult, igl::Result::Code::InvalidOperation, "Too many mipmap levels.");
-    return false;
-  }
-
   return true;
 }
 
 std::unique_ptr<TextureLoader> TextureLoader::tryCreate(DataReader reader,
                                                         igl::Result* IGL_NULLABLE
                                                             outResult) noexcept {
-  if (!isHeaderValid(reader, outResult)) {
+  if (!canCreate(reader, outResult)) {
     return nullptr;
   }
 
   const Header* header = reader.as<Header>();
   const uint32_t length = reader.length();
 
+  if (header->sgdByteLength > std::numeric_limits<uint32_t>::max()) {
+    igl::Result::setResult(outResult,
+                           igl::Result::Code::InvalidOperation,
+                           "Super compression global data is too large to fit in uint32_t.");
+    return nullptr;
+  }
   const uint32_t sgdByteLength = static_cast<uint32_t>(header->sgdByteLength);
+
+  if (header->faceCount != 1u && header->faceCount != 6u) {
+    igl::Result::setResult(
+        outResult, igl::Result::Code::InvalidOperation, "faceCount must be 1 or 6.");
+    return nullptr;
+  }
+
+  if (header->faceCount == 6u && header->pixelDepth != 0) {
+    igl::Result::setResult(
+        outResult, igl::Result::Code::InvalidOperation, "pixelDepth must be 0 for cube textures.");
+    return nullptr;
+  }
+
+  if (header->faceCount == 6u && header->pixelWidth != header->pixelHeight) {
+    igl::Result::setResult(outResult,
+                           igl::Result::Code::InvalidOperation,
+                           "pixelWidth must match pixelHeight for cube textures.");
+    return nullptr;
+  }
 
   if (static_cast<uint64_t>(header->dfdByteLength) + static_cast<uint64_t>(header->kvdByteLength) +
           header->sgdByteLength >
@@ -132,6 +122,12 @@ std::unique_ptr<TextureLoader> TextureLoader::tryCreate(DataReader reader,
   range.width = std::max(header->pixelWidth, 1u);
   range.height = std::max(header->pixelHeight, 1u);
   range.depth = std::max(header->pixelDepth, 1u);
+
+  auto result = range.validate();
+  if (!result.isOk()) {
+    igl::Result::setResult(outResult, std::move(result));
+    return nullptr;
+  }
 
   const uint32_t mipLevelAlignment = std::lcm(static_cast<uint32_t>(properties.bytesPerBlock), 4u);
 

@@ -96,7 +96,9 @@ std::optional<iglu::textureloader::DataReader> getReader(const std::vector<uint8
 
 class Ktx1TextureLoaderTest : public ::testing::Test {
  public:
-  void SetUp() override {}
+  void SetUp() override {
+    setDebugBreakEnabled(false);
+  }
 
   void TearDown() override {}
 

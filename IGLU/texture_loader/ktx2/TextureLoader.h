@@ -24,8 +24,8 @@ class TextureLoader : public ITextureLoader {
   using Super = ITextureLoader;
 
  public:
-  [[nodiscard]] static bool isHeaderValid(DataReader reader,
-                                          igl::Result* IGL_NULLABLE outResult) noexcept;
+  [[nodiscard]] static bool canCreate(DataReader headerReader,
+                                      igl::Result* IGL_NULLABLE outResult) noexcept;
 
   [[nodiscard]] static std::unique_ptr<TextureLoader> tryCreate(DataReader reader,
                                                                 igl::Result* IGL_NULLABLE
