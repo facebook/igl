@@ -98,7 +98,6 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
 
  private:
   void bindPipeline();
-  void ensureVertexBuffers();
 
  private:
   VulkanContext& ctx_;
@@ -116,8 +115,6 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
    *  0: When draw call count is disabled during auxiliary draw calls (shader debugging)
    *  1: All other times */
   uint32_t drawCallCountEnabled_ = 1u;
-
-  bool isVertexBufferBound_[IGL_VERTEX_BUFFER_MAX] = {};
 
  private:
   RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer, VulkanContext& ctx);

@@ -21,7 +21,6 @@ class VertexInputState final : public IVertexInputState {
   ~VertexInputState() override = default;
 
   friend class Device;
-  friend class RenderCommandEncoder;
   friend class RenderPipelineState;
 
  private:

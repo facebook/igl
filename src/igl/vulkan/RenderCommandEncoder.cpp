@@ -18,7 +18,6 @@
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/Texture.h>
-#include <igl/vulkan/VertexInputState.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
@@ -485,9 +484,6 @@ void RenderCommandEncoder::bindBuffer(int index,
   if (isVertexBuffer) {
     IGL_ASSERT(target == BindTarget::kVertex);
     IGL_ASSERT(!isUniformOrStorageBuffer);
-    if (IGL_VERIFY(index < IGL_VERTEX_BINDINGS_MAX)) {
-      isVertexBufferBound_[index] = true;
-    }
     const VkDeviceSize offset = bufferOffset;
     vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
   } else if (isUniformOrStorageBuffer) {
@@ -600,8 +596,6 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
     return;
   }
 
-  ensureVertexBuffers();
-
   binder_.updateBindings();
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindPipeline();
@@ -625,8 +619,6 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
   if (indexCount == 0) {
     return;
   }
-
-  ensureVertexBuffers();
 
   binder_.updateBindings();
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
@@ -664,8 +656,6 @@ void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
                                              uint32_t stride) {
   IGL_PROFILER_FUNCTION();
 
-  ensureVertexBuffers();
-
   binder_.updateBindings();
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindPipeline();
@@ -689,8 +679,6 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
                                                     uint32_t drawCount,
                                                     uint32_t stride) {
   IGL_PROFILER_FUNCTION();
-
-  ensureVertexBuffers();
 
   binder_.updateBindings();
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
@@ -733,33 +721,6 @@ bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {
   const auto returnVal = drawCallCountEnabled_ > 0;
   drawCallCountEnabled_ = value;
   return returnVal;
-}
-
-void RenderCommandEncoder::ensureVertexBuffers() {
-  const igl::vulkan::RenderPipelineState* rps =
-      static_cast<igl::vulkan::RenderPipelineState*>(currentPipeline_.get());
-
-  if (!IGL_VERIFY(rps)) {
-    return;
-  }
-
-  const igl::vulkan::VertexInputState* vi = static_cast<igl::vulkan::VertexInputState*>(
-      rps->getRenderPipelineDesc().vertexInputState.get());
-
-  if (!vi) {
-    // no vertex input is perfectly valid
-    return;
-  }
-
-  const VertexInputStateDesc& desc = vi->desc_;
-
-  for (size_t i = 0; i != desc.numInputBindings; i++) {
-    if (!IGL_VERIFY(isVertexBufferBound_[i])) {
-      IGL_ASSERT_MSG(false,
-                     "Did you forget to call bindBuffer() for one of your vertex input buffers?");
-      IGL_LOG_ERROR("Did you forget to call bindBuffer() for one of your vertex input buffers?");
-    }
-  }
 }
 
 } // namespace vulkan
