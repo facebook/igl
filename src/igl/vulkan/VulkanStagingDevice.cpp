@@ -234,6 +234,13 @@ void VulkanStagingDevice::imageData(VulkanImage& image,
   std::vector<VkBufferImageCopy> copyRegions;
   copyRegions.reserve(range.numMipLevels);
 
+  // vkCmdCopyBufferToImage() can have only one single bit set for image aspect flags (IGL has no
+  // way to distinguish between Depth and Stencil for combined depth/stencil image formats)
+  const VkImageAspectFlags aspectMask =
+      image.isDepthFormat_
+          ? VK_IMAGE_ASPECT_DEPTH_BIT
+          : (image.isStencilFormat_ ? VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT);
+
   for (auto mipLevel = range.mipLevel; mipLevel < range.mipLevel + range.numMipLevels; ++mipLevel) {
     const auto mipRange = range.atMipLevel(mipLevel);
     const uint32_t offset =
@@ -245,36 +252,35 @@ void VulkanStagingDevice::imageData(VulkanImage& image,
                                            static_cast<int32_t>(mipRange.y),
                                            static_cast<uint32_t>(mipRange.width),
                                            static_cast<uint32_t>(mipRange.height));
-      copyRegions.emplace_back(
-          ivkGetBufferImageCopy2D(memoryChunk.offset + offset,
-                                  texelsPerRow,
-                                  region,
-                                  VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT,
-                                                           static_cast<uint32_t>(mipLevel),
-                                                           initialLayer,
-                                                           numLayers}));
+      copyRegions.emplace_back(ivkGetBufferImageCopy2D(
+          memoryChunk.offset + offset,
+          texelsPerRow,
+          region,
+          VkImageSubresourceLayers{
+              aspectMask, static_cast<uint32_t>(mipLevel), initialLayer, numLayers}));
     } else {
-      copyRegions.emplace_back(
-          ivkGetBufferImageCopy3D(memoryChunk.offset + offset,
-                                  texelsPerRow,
-                                  VkOffset3D{static_cast<int32_t>(mipRange.x),
-                                             static_cast<int32_t>(mipRange.y),
-                                             static_cast<int32_t>(mipRange.z)},
-                                  VkExtent3D{static_cast<uint32_t>(mipRange.width),
-                                             static_cast<uint32_t>(mipRange.height),
-                                             static_cast<uint32_t>(mipRange.depth)},
-                                  VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT,
-                                                           static_cast<uint32_t>(mipLevel),
-                                                           initialLayer,
-                                                           numLayers}));
+      copyRegions.emplace_back(ivkGetBufferImageCopy3D(
+          memoryChunk.offset + offset,
+          texelsPerRow,
+          VkOffset3D{static_cast<int32_t>(mipRange.x),
+                     static_cast<int32_t>(mipRange.y),
+                     static_cast<int32_t>(mipRange.z)},
+          VkExtent3D{static_cast<uint32_t>(mipRange.width),
+                     static_cast<uint32_t>(mipRange.height),
+                     static_cast<uint32_t>(mipRange.depth)},
+          VkImageSubresourceLayers{
+              aspectMask, static_cast<uint32_t>(mipLevel), initialLayer, numLayers}));
     }
   }
 
-  const auto subresourceRange = VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT,
-                                                        static_cast<uint32_t>(range.mipLevel),
-                                                        static_cast<uint32_t>(range.numMipLevels),
-                                                        initialLayer,
-                                                        numLayers};
+  // image memory barriers should have combined image aspect flags (depth/stencil)
+  const VkImageSubresourceRange subresourceRange = {
+      image.getImageAspectFlags(),
+      static_cast<uint32_t>(range.mipLevel),
+      static_cast<uint32_t>(range.numMipLevels),
+      initialLayer,
+      numLayers,
+  };
   // 1. Transition initial image layout into TRANSFER_DST_OPTIMAL
   ivkImageMemoryBarrier(wrapper.cmdBuf_,
                         image.getVkImage(),
@@ -297,18 +303,46 @@ void VulkanStagingDevice::imageData(VulkanImage& image,
                          static_cast<uint32_t>(copyRegions.size()),
                          copyRegions.data());
 
-  // 3. Transition TRANSFER_DST_OPTIMAL into SHADER_READ_ONLY_OPTIMAL
+  const bool isSampled = (image.getVkImageUsageFlags() & VK_IMAGE_USAGE_SAMPLED_BIT) != 0;
+  const bool isStorage = (image.getVkImageUsageFlags() & VK_IMAGE_USAGE_STORAGE_BIT) != 0;
+  const bool isColorAttachment =
+      (image.getVkImageUsageFlags() & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0;
+  const bool isDepthStencilAttachment =
+      (image.getVkImageUsageFlags() & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
+
+  // a ternary cascade...
+  const VkImageLayout targetLayout =
+      isSampled ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                : (isStorage ? VK_IMAGE_LAYOUT_GENERAL
+                             : (isColorAttachment
+                                    ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+                                    : (isDepthStencilAttachment
+                                           ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+                                           : VK_IMAGE_LAYOUT_UNDEFINED)));
+
+  IGL_ASSERT_MSG(targetLayout != VK_IMAGE_LAYOUT_UNDEFINED, "Missing usage flags");
+
+  const VkAccessFlags dstAccessMask =
+      isSampled
+          ? VK_ACCESS_SHADER_READ_BIT
+          : (isStorage ? VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT
+                       : (isColorAttachment ? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+                                            : (isDepthStencilAttachment
+                                                   ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+                                                   : 0)));
+
+  // 3. Transition TRANSFER_DST_OPTIMAL into `targetLayout`
   ivkImageMemoryBarrier(wrapper.cmdBuf_,
                         image.getVkImage(),
                         VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
-                        VK_ACCESS_SHADER_READ_BIT,
+                        dstAccessMask,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                        targetLayout,
                         VK_PIPELINE_STAGE_TRANSFER_BIT,
                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                         subresourceRange);
 
-  image.imageLayout_ = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  image.imageLayout_ = targetLayout;
 
   // Store the allocated block with the SubmitHandle at the end of the deque
   memoryChunk.handle = immediate_->submit(wrapper);
