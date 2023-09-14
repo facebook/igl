@@ -130,7 +130,7 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     return nullptr;
   }
 
-  if (x < 0 || y < 0 || (comp != 3 && comp != 4)) {
+  if (x < 0 || y < 0 || comp < 0 || comp > 4) {
     igl::Result::setResult(outResult, igl::Result::Code::InvalidOperation, "Invalid HDR metadata.");
     return nullptr;
   }
