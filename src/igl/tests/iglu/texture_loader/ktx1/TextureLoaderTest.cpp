@@ -105,6 +105,19 @@ class Ktx1TextureLoaderTest : public ::testing::Test {
   iglu::textureloader::ktx1::TextureLoaderFactory factory_;
 };
 
+TEST_F(Ktx1TextureLoaderTest, EmptyBuffer_Fails) {
+  const uint32_t numMipLevels = 1u;
+  const uint32_t imageSize = 512u;
+  auto buffer = getBuffer(kHeaderSize + imageSize + 4u * numMipLevels /* for imageSize */);
+
+  Result ret;
+  auto reader = *iglu::textureloader::DataReader::tryCreate(
+      buffer.data(), static_cast<uint32_t>(buffer.size()), nullptr);
+  auto loader = factory_.tryCreate(reader, &ret);
+  EXPECT_EQ(loader, nullptr);
+  EXPECT_FALSE(ret.isOk());
+}
+
 TEST_F(Ktx1TextureLoaderTest, MinimumValidHeader_Succeeds) {
   const uint32_t width = 64u;
   const uint32_t height = 32u;

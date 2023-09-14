@@ -158,6 +158,25 @@ class Ktx2TextureLoaderTest : public ::testing::Test {
   iglu::textureloader::ktx2::TextureLoaderFactory factory_;
 };
 
+TEST_F(Ktx2TextureLoaderTest, EmptyBuffer_Fails) {
+  const uint32_t width = 64u;
+  const uint32_t height = 32u;
+  const uint32_t numMipLevels = 1u;
+  const uint32_t bytesOfKeyValueData = 0u;
+  const uint32_t vkFormat = 1000054004u; /* VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG */
+  const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
+  const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
+
+  auto buffer = getBuffer(totalHeaderSize + totalDataSize);
+
+  Result ret;
+  auto reader = *iglu::textureloader::DataReader::tryCreate(
+      buffer.data(), static_cast<uint32_t>(buffer.size()), nullptr);
+  auto loader = factory_.tryCreate(reader, &ret);
+  EXPECT_EQ(loader, nullptr);
+  EXPECT_FALSE(ret.isOk());
+}
+
 TEST_F(Ktx2TextureLoaderTest, MinimumValidHeader_Succeeds) {
   const uint32_t width = 64u;
   const uint32_t height = 32u;
