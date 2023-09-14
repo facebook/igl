@@ -370,9 +370,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
           .vertexInputState(vertexInputStateCreateInfo_)
           .colorBlendAttachmentStates(colorBlendAttachmentStates)
           .build(ctx.device_->getVkDevice(),
-                 // TODO: use ctx.pipelineCache_
-                 // @fb-only
-                 VK_NULL_HANDLE,
+                 ctx.pipelineCache_,
                  ctx.pipelineLayoutGraphics_->getVkPipelineLayout(),
                  renderPass,
                  &pipeline,
