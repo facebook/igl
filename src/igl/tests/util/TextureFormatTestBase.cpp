@@ -392,7 +392,12 @@ void TextureFormatTestBase::testUsage(std::shared_ptr<ITexture> texture,
                                       TextureDesc::TextureUsage usage,
                                       const char* usageName) {
   const auto properties = texture->getProperties();
-  if ((usage & TextureDesc::TextureUsageBits::Sampled) != 0) {
+  // Non-normalized integer formats cannot be sampled with `float` GLSL samplers `sampler2D` on
+  // Vulkan (need `usampler2D` etc)
+  const bool isIntegerFormat = (properties.flags & TextureFormatProperties::Flags::Integer) != 0;
+  const bool isVulkan = iglDev_->getBackendType() == igl::BackendType::Vulkan;
+  const bool shouldSkip = isVulkan && isIntegerFormat;
+  if (!shouldSkip && (usage & TextureDesc::TextureUsageBits::Sampled) != 0) {
     const bool linearSampling =
         (iglDev_->getTextureFormatCapabilities(properties.format) &
          ICapabilities::TextureFormatCapabilityBits::SampledAttachment) != 0;
