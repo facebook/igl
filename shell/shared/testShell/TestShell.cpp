@@ -71,7 +71,7 @@ void TestShellBase::SetUp(ScreenSize screenSize) {
   ASSERT_TRUE(offscreenDepthTexture_ != nullptr);
 };
 
-void TestShellBase::run(igl::shell::RenderSession& session, size_t numFrames) {
+void TestShell::run(igl::shell::RenderSession& session, size_t numFrames) {
   ShellParams shellParams;
   session.setShellParams(shellParams);
   session.initialize();
