@@ -12,6 +12,7 @@
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 
+#if LVK_WITH_GLFW
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
@@ -28,6 +29,7 @@
 // clang-format on
 
 #include <GLFW/glfw3native.h>
+#endif // LVK_WITH_GLFW
 
 #include <lvk/vulkan/VulkanClasses.h>
 
@@ -79,7 +81,7 @@ static constexpr TextureFormatProperties properties[] = {
 
 } // namespace
 
-#if __APPLE__
+#if __APPLE__ && LVK_WITH_GLFW
 void* createCocoaWindowView(GLFWwindow* window);
 #endif
 
@@ -190,6 +192,7 @@ void lvk::logShaderSource(const char* text) {
   LLOGL("\n");
 }
 
+#if LVK_WITH_GLFW
 GLFWwindow* lvk::initWindow(const char* windowTitle, int& outWidth, int& outHeight, bool resizable) {
   if (!glfwInit()) {
     return nullptr;
@@ -307,3 +310,4 @@ std::unique_ptr<lvk::IContext> lvk::createVulkanContextWithSwapchain(GLFWwindow*
 
   return std::move(ctx);
 }
+#endif // LVK_WITH_GLFW

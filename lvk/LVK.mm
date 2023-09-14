@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#if LVK_WITH_GLFW
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
@@ -36,3 +37,4 @@ void* createCocoaWindowView(GLFWwindow* window) {
 
   return nswindow.contentView;
 }
+#endif // LVK_WITH_GLFW

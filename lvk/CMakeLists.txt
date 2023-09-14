@@ -26,7 +26,10 @@ lvk_set_folder(LVKLibrary "LVK")
 
 add_subdirectory(vulkan)
 
-target_link_libraries(LVKLibrary PUBLIC LVKVulkan glfw)
+target_link_libraries(LVKLibrary PUBLIC LVKVulkan)
+if(LVK_WITH_GLFW)
+  target_link_libraries(LVKLibrary PUBLIC glfw)
+endif()
 
 if(APPLE)
   target_link_libraries(LVKLibrary PRIVATE "-framework Metal" "-framework AppKit" "-framework Foundation" "-framework QuartzCore")
