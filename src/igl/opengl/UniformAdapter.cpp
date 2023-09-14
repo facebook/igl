@@ -115,9 +115,11 @@ void UniformAdapter::setUniform(const UniformDesc& uniformDesc,
   // This is technically a client bug and we shouldn't be doing this sort of
   // error-checking, as we're in the inner loop of rendering.
   //
-  // Instead, we assert in local dev builds to catch if we're setting uniform block
+  // Instead, we warn in local dev builds to catch if we're setting uniform block
   // in same location previously set (in either uniform or block) during the draw call.
-  IGL_ASSERT(!uniformsDirty_[location]);
+  if (uniformsDirty_[location]) {
+    IGL_LOG_INFO_ONCE("uniform location %d is already dirty\n", location);
+  }
   uniformsDirty_[location] = true;
 #endif // IGL_DEBUG
 
