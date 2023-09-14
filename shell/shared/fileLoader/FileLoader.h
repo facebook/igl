@@ -31,7 +31,7 @@ class FileLoader {
   }
 
  protected:
-  std::vector<uint8_t> loadBinaryDataInternal(const std::string& fileName);
+  std::vector<uint8_t> loadBinaryDataInternal(const std::string& filePath);
 };
 
 } // namespace igl::shell

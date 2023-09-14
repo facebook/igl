@@ -56,7 +56,7 @@ static NSString* getBundleFilePath(const std::string& fileName) {
 namespace igl::shell {
 
 std::vector<uint8_t> FileLoaderMac::loadBinaryData(const std::string& fileName) {
-  return loadBinaryDataInternal(fileName);
+  return loadBinaryDataInternal(fullPath(fileName));
 }
 
 bool FileLoaderMac::fileExists(const std::string& fileName) const {

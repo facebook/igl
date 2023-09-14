@@ -29,7 +29,7 @@ FileLoaderWin::FileLoaderWin() {
 }
 
 std::vector<uint8_t> FileLoaderWin::loadBinaryData(const std::string& fileName) {
-  return loadBinaryDataInternal(fileName);
+  return loadBinaryDataInternal(fullPath(fileName));
 }
 
 bool FileLoaderWin::fileExists(const std::string& fileName) const {
