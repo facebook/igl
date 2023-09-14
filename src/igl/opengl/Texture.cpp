@@ -129,18 +129,10 @@ bool Texture::isImplicitStorage() const {
 GLenum Texture::toGLTarget(TextureType type, size_t samples) const {
   switch (type) {
   case TextureType::TwoD:
-    if (samples > 1) {
-      return GL_TEXTURE_2D_MULTISAMPLE;
-    } else {
-      return GL_TEXTURE_2D;
-    }
+    return GL_TEXTURE_2D;
   case TextureType::TwoDArray:
     if (getContext().deviceFeatures().hasFeature(DeviceFeatures::Texture2DArray)) {
-      if (samples > 1) {
-        return GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
-      } else {
-        return GL_TEXTURE_2D_ARRAY;
-      }
+      return GL_TEXTURE_2D_ARRAY;
     }
     break;
   case TextureType::ThreeD:
