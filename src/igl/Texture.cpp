@@ -231,7 +231,8 @@ Result TextureRangeDesc::validate() const noexcept {
 #define DEPTH(fmt, cpp, bpb) PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, Flags::Depth)
 #define DEPTH_STENCIL(fmt, cpp, bpb) \
   PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, Flags::Depth | Flags::Stencil)
-#define STENCIL(fmt, cpp, bpb) PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, Flags::Stencil)
+#define STENCIL(fmt, cpp, bpb) \
+  PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, Flags::Stencil | Flags::Integer)
 
 TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat format) {
   switch (format) {
@@ -240,7 +241,7 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     COLOR(L_UNorm8, 1, 1, 0)
     COLOR(R_UNorm8, 1, 1, 0)
     COLOR(R_F16, 1, 2, 0)
-    COLOR(R_UInt16, 1, 2, 0)
+    COLOR(R_UInt16, 1, 2, Flags::Integer)
     COLOR(R_UNorm16, 1, 2, 0)
     COLOR(B5G5R5A1_UNorm, 4, 2, 0)
     COLOR(B5G6R5_UNorm, 3, 2, 0)
@@ -257,16 +258,16 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     COLOR(RGBA_SRGB, 4, 4, Flags::sRGB)
     COLOR(BGRA_SRGB, 4, 4, Flags::sRGB)
     COLOR(RG_F16, 2, 4, 0)
-    COLOR(RG_UInt16, 2, 4, 0)
+    COLOR(RG_UInt16, 2, 4, Flags::Integer)
     COLOR(RG_UNorm16, 2, 4, 0)
     COLOR(RGB10_A2_UNorm_Rev, 4, 4, 0)
-    COLOR(RGB10_A2_Uint_Rev, 4, 4, 0)
+    COLOR(RGB10_A2_Uint_Rev, 4, 4, Flags::Integer)
     COLOR(BGR10_A2_Unorm, 4, 4, 0)
     COLOR(R_F32, 1, 4, 0)
     COLOR(RGB_F16, 3, 6, 0)
     COLOR(RGBA_F16, 4, 8, 0)
     COLOR(RGB_F32, 3, 12, 0)
-    COLOR(RGBA_UInt32, 4, 16, 0)
+    COLOR(RGBA_UInt32, 4, 16, Flags::Integer)
     COLOR(RGBA_F32, 4, 16, 0)
     COMPRESSED(RGBA_ASTC_4x4, 4, 16, 4, 4, 1, 1, 1, 1, 0)
     COMPRESSED(SRGB8_A8_ASTC_4x4, 4, 16, 4, 4, 1, 1, 1, 1, Flags::sRGB)
@@ -322,7 +323,7 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
 #else
     DEPTH(S8_UInt_Z32_UNorm, 2, 8)
 #endif
-    DEPTH(S_UInt8, 1, 1)
+    STENCIL(S_UInt8, 1, 1)
   }
   IGL_UNREACHABLE_RETURN(TextureFormatProperties{});
 }

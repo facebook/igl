@@ -216,6 +216,8 @@ struct TextureRangeDesc {
  *                        - Stencil:    Stencil texture format
  *                        - Compressed: Compressed texture format
  *                        - sRGB:       sRGB texture format
+ *                        - Integer:    Integer formats do not support sampling via
+ *                                      float samplers `texture2D` (require `utexture2D`)
  */
 struct TextureFormatProperties {
   static TextureFormatProperties fromTextureFormat(TextureFormat format);
@@ -225,6 +227,7 @@ struct TextureFormatProperties {
     Stencil = 1 << 1,
     Compressed = 1 << 2,
     sRGB = 1 << 3,
+    Integer = 1 << 4,
   };
 
   const char* IGL_NONNULL name = "Invalid";
