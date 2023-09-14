@@ -100,9 +100,11 @@ void PlatformDevice::blitFramebuffer(const std::shared_ptr<IFramebuffer>& src,
       auto dstFormat = std::static_pointer_cast<igl::opengl::Texture>(dstDepthTexture)
                            ->getGLInternalTextureFormat();
       if (srcFormat != dstFormat) {
-        IGL_ASSERT_MSG(
-            0,
-            "PlatformDevice::blitFramebuffer: Mismatch of framebuffer depth attachment formats\n");
+        IGL_ASSERT_MSG(0,
+                       "PlatformDevice::blitFramebuffer: Mismatch of framebuffer depth attachment "
+                       "formats: %d vs %d\n",
+                       srcFormat,
+                       dstFormat);
       }
     }
   }
@@ -123,7 +125,9 @@ void PlatformDevice::blitFramebuffer(const std::shared_ptr<IFramebuffer>& src,
       if (srcFormat != dstFormat) {
         IGL_ASSERT_MSG(0,
                        "PlatformDevice::blitFramebuffer: Mismatch of framebuffer stencil "
-                       "attachment formats\n");
+                       "attachment formats: %d vs %d\n",
+                       srcFormat,
+                       dstFormat);
       }
     }
   }
