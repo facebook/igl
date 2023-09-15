@@ -33,12 +33,6 @@ class ImageLoader {
   virtual ImageData loadImageData(std::string /*imageName*/) noexcept {
     return checkerboard();
   }
-  void setHomePath(const std::string& homePath) {
-    homePath_ = homePath;
-  }
-  const std::string& homePath() const noexcept {
-    return homePath_;
-  }
 
  protected:
   [[nodiscard]] const FileLoader& fileLoader() const noexcept {
@@ -82,7 +76,6 @@ class ImageLoader {
   }
 
   FileLoader& fileLoader_;
-  std::string homePath_;
 };
 
 } // namespace igl::shell

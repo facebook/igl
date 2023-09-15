@@ -20,14 +20,6 @@
 namespace igl::shell {
 
 ImageLoaderWin::ImageLoaderWin(FileLoader& fileLoader) : ImageLoader(fileLoader) {
-// @fb-only
-  // @fb-only
-  // @fb-only
-    // @fb-only
-  // @fb-only
-    // @fb-only
-  // @fb-only
-// @fb-only
 #if IGL_PLATFORM_WIN
   wchar_t path[MAX_PATH] = {0};
   if (IGL_VERIFY(GetModuleFileNameW(NULL, path, MAX_PATH) != 0)) {
@@ -37,11 +29,10 @@ ImageLoaderWin::ImageLoaderWin(FileLoader& fileLoader) : ImageLoader(fileLoader)
 }
 
 ImageData ImageLoaderWin::loadImageData(std::string imageName) noexcept {
-  // Path from home directory
-  std::string fullName = homePath() + imageName;
+  std::string fullName = imageName;
 
   if (!std::filesystem::exists(fullName)) {
-    fullName = homePath() + "shell/resources/images/" + imageName;
+    fullName = "shell/resources/images/" + imageName;
   }
 
   if (!std::filesystem::exists(fullName)) {
