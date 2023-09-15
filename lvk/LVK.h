@@ -89,7 +89,7 @@ class Handle final {
  private:
   Handle(uint32_t index, uint32_t gen) : index_(index), gen_(gen){};
 
-  template<typename U, typename V>
+  template<typename ObjectType_, typename ImplObjectType>
   friend class Pool;
 
   uint32_t index_ = 0;
