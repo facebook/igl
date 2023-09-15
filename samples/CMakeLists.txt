@@ -5,7 +5,7 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-set(PROJECT_NAME "IGL Samples")
+set(PROJECT_NAME "LVK Samples")
 
 if(MSVC)
   add_definitions(-D_CONSOLE)

@@ -838,7 +838,9 @@ class IContext {
 
 } // namespace lvk
 
+#if LVK_WITH_GLFW
 typedef struct GLFWwindow GLFWwindow;
+#endif
 
 namespace lvk {
 
@@ -856,6 +858,7 @@ struct ContextConfig {
 [[nodiscard]] uint32_t getTextureBytesPerLayer(uint32_t width, uint32_t height, lvk::Format format, uint32_t level);
 void logShaderSource(const char* text);
 
+#if LVK_WITH_GLFW
 /*
  * width/height  > 0: window size in pixels
  * width/height == 0: take the whole monitor work area
@@ -868,5 +871,6 @@ std::unique_ptr<lvk::IContext> createVulkanContextWithSwapchain(GLFWwindow* wind
                                                                 uint32_t height,
                                                                 const lvk::ContextConfig& cfg,
                                                                 lvk::HWDeviceType preferredDeviceType = lvk::HWDeviceType_Discrete);
+#endif
 
 } // namespace lvk

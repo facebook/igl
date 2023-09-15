@@ -8,10 +8,24 @@ cmake_minimum_required(VERSION 3.16)
 project("LVK" CXX C)
 
 # cmake-format: off
-option(LVK_WITH_SAMPLES "Enable sample demo apps"  ON)
-option(LVK_WITH_TRACY   "Enable Tracy profiler"    ON)
 option(LVK_DEPLOY_DEPS  "Deploy dependencies via CMake" ON)
+option(LVK_WITH_GLFW    "Enable GLFW"                   ON)
+option(LVK_WITH_SAMPLES "Enable sample demo apps"       ON)
+option(LVK_WITH_TRACY   "Enable Tracy profiler"         ON)
 # cmake-format: on
+
+if(LVK_WITH_SAMPLES AND NOT LVK_WITH_GLFW)
+  message(STATUS "WARNING: LVK_WITH_SAMPLES=ON leads to forcing LVK_WITH_GLFW=ON")
+  set(LVK_WITH_GLFW ON)
+endif()
+if (ANDROID)
+  message(STATUS "WARNING: LVK_WITH_GLFW and LVK_WITH_SAMPLES were set to OFF for Android")
+  set(LVK_WITH_GLFW OFF)
+  set(LVK_WITH_SAMPLES OFF)
+endif()
+if(LVK_WITH_GLFW)
+  add_definitions(-DLVK_WITH_GLFW=1)
+endif()
 
 include(cmake/CommonMacros.txt)
 
@@ -34,9 +48,10 @@ endfunction()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # cmake-format: off
+message(STATUS "LVK_DEPLOY_DEPS  = ${LVK_DEPLOY_DEPS}")
+message(STATUS "LVK_WITH_GLFW    = ${LVK_WITH_GLFW}")
 message(STATUS "LVK_WITH_SAMPLES = ${LVK_WITH_SAMPLES}")
 message(STATUS "LVK_WITH_TRACY   = ${LVK_WITH_TRACY}")
-message(STATUS "LVK_DEPLOY_DEPS  = ${LVK_DEPLOY_DEPS}")
 # cmake-format: on
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
@@ -108,7 +123,7 @@ lvk_set_folder(minilog "third-party")
 target_link_libraries(LVKLibrary PUBLIC minilog)
 target_include_directories(LVKLibrary PUBLIC "third-party/deps/src")
 
-if(WIN32 OR (UNIX AND NOT ANDROID))
+if(LVK_WITH_GLFW)
   # cmake-format: off
   set(GLFW_BUILD_DOCS     OFF CACHE BOOL "")
   set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "")
