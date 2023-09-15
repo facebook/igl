@@ -4749,7 +4749,7 @@ void lvk::VulkanContext::checkAndUpdateDescriptorSets() {
     const bool isSampledImage = isTextureAvailable && texture.image_->isSampledImage();
     const bool isStorageImage = isTextureAvailable && texture.image_->isStorageImage();
     infoSampledImages.push_back(
-        {samplersPool_.objects_[0].obj_, isSampledImage ? texture.imageView_ : dummyImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+        {VK_NULL_HANDLE, isSampledImage ? texture.imageView_ : dummyImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
     LVK_ASSERT(infoSampledImages.back().imageView != VK_NULL_HANDLE);
     infoStorageImages.push_back({VK_NULL_HANDLE, isStorageImage ? texture.imageView_ : dummyImageView, VK_IMAGE_LAYOUT_GENERAL});
   }
