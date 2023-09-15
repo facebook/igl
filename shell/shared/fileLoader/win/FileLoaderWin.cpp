@@ -49,13 +49,38 @@ std::string FileLoaderWin::fullPath(const std::string& fileName) const {
     return fileName;
   }
 
-  auto absolutePath = std::filesystem::path(basePath_) / fileName;
-  if (std::filesystem::exists(absolutePath)) {
-    return absolutePath.string();
+  auto fullPath = std::filesystem::path(basePath_) / fileName;
+  if (std::filesystem::exists(fullPath)) {
+    return fullPath.string();
   }
 
-  // passthrough, since there are no bundles on Windows
-  return fileName;
+  fullPath = std::filesystem::path("shell/resources/images") / fileName;
+  if (std::filesystem::exists(fullPath)) {
+    return fullPath.string();
+  }
+
+  std::filesystem::path dir = std::filesystem::current_path();
+  // find `shell/resources/images/` somewhere above our current directory
+  std::filesystem::path subdir("shell/resources/images/");
+  while (dir != std::filesystem::current_path().root_path() &&
+         !std::filesystem::exists(dir / subdir)) {
+    dir = dir.parent_path();
+  }
+
+  fullPath = (dir / subdir / fileName);
+  if (std::filesystem::exists(fullPath)) {
+    return fullPath.string();
+  }
+
+  dir = std::filesystem::current_path();
+  subdir = "images/";
+  fullPath = (dir / subdir / fileName);
+  if (std::filesystem::exists(fullPath)) {
+    return fullPath.string();
+  }
+
+  IGL_ASSERT_NOT_REACHED();
+  return "";
 }
 
 } // namespace igl::shell

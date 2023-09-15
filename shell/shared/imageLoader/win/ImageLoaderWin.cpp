@@ -10,6 +10,7 @@
 #include <cstring>
 #include <filesystem>
 #include <igl/Common.h>
+#include <shell/shared/fileLoader/FileLoader.h>
 #include <stb_image.h>
 #include <stdint.h>
 
@@ -29,33 +30,7 @@ ImageLoaderWin::ImageLoaderWin(FileLoader& fileLoader) : ImageLoader(fileLoader)
 }
 
 ImageData ImageLoaderWin::loadImageData(std::string imageName) noexcept {
-  std::string fullName = imageName;
-
-  if (!std::filesystem::exists(fullName)) {
-    fullName = "shell/resources/images/" + imageName;
-  }
-
-  if (!std::filesystem::exists(fullName)) {
-    using namespace std::filesystem;
-    path dir = current_path();
-    // find `shell/resources/images/` somewhere above our current directory
-    const path subdir("shell/resources/images/");
-    while (dir != current_path().root_path() && !exists(dir / subdir)) {
-      dir = dir.parent_path();
-    }
-    fullName = (dir / subdir / imageName).string();
-  }
-
-  if (!std::filesystem::exists(fullName)) {
-    using namespace std::filesystem;
-    path dir = current_path();
-    const path subdir("images/");
-    fullName = (dir / subdir / imageName).string();
-  }
-
-  if (!std::filesystem::exists(fullName)) {
-    fullName = (std::filesystem::path(executablePath_) / imageName).string();
-  }
+  std::string fullName = fileLoader().fullPath(imageName);
 
   // Load image from file in RGBA format
   auto ret = ImageData();
