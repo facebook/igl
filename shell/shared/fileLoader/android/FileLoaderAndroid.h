@@ -19,7 +19,7 @@ class FileLoaderAndroid final : public FileLoader {
  public:
   FileLoaderAndroid() = default;
   ~FileLoaderAndroid() override = default;
-  std::vector<uint8_t> loadBinaryData(const std::string& fileName) override;
+  FileData loadBinaryData(const std::string& fileName) override;
   bool fileExists(const std::string& fileName) const override;
   std::string basePath() const override;
   std::string fullPath(const std::string& fileName) const override;

@@ -15,7 +15,7 @@ class FileLoaderApple final : public FileLoader {
  public:
   FileLoaderApple() = default;
   ~FileLoaderApple() override = default;
-  [[nodiscard]] std::vector<uint8_t> loadBinaryData(const std::string& fileName) override;
+  [[nodiscard]] FileData loadBinaryData(const std::string& fileName) override;
   [[nodiscard]] bool fileExists(const std::string& fileName) const override;
   [[nodiscard]] std::string basePath() const override;
   [[nodiscard]] std::string fullPath(const std::string& fileName) const override;

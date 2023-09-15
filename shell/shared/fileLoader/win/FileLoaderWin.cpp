@@ -28,7 +28,7 @@ FileLoaderWin::FileLoaderWin() {
 #endif
 }
 
-std::vector<uint8_t> FileLoaderWin::loadBinaryData(const std::string& fileName) {
+FileLoader::FileData FileLoaderWin::loadBinaryData(const std::string& fileName) {
   return loadBinaryDataInternal(fullPath(fileName));
 }
 

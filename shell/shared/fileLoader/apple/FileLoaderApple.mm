@@ -43,7 +43,7 @@ NSString* getBundleFilePath(const std::string& fileName) {
 }
 } // namespace
 
-std::vector<uint8_t> FileLoaderApple::loadBinaryData(const std::string& fileName) {
+FileLoader::FileData FileLoaderApple::loadBinaryData(const std::string& fileName) {
   return loadBinaryDataInternal(fullPath(fileName));
 }
 

@@ -15,7 +15,7 @@ class FileLoaderWin final : public FileLoader {
  public:
   FileLoaderWin();
   ~FileLoaderWin() override = default;
-  std::vector<uint8_t> loadBinaryData(const std::string& fileName) override;
+  FileData loadBinaryData(const std::string& fileName) override;
   bool fileExists(const std::string& fileName) const override;
   std::string basePath() const override;
   std::string fullPath(const std::string& fileName) const override;

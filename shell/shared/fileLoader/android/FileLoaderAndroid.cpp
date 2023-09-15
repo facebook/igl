@@ -13,38 +13,41 @@
 
 namespace igl::shell {
 
-std::vector<uint8_t> FileLoaderAndroid::loadBinaryData(const std::string& fileName) {
-  std::vector<uint8_t> data;
+FileLoader::FileData FileLoaderAndroid::loadBinaryData(const std::string& fileName) {
   if (fileName.empty()) {
     IGL_LOG_ERROR("Error in loadBinaryData(): empty fileName\n");
-    return data;
+    return {};
   }
 
   if (assetManager_ == nullptr) {
     IGL_LOG_ERROR("Error in loadBinaryData(): Asset manager is nullptr\n");
-    return data;
+    return {};
   }
 
   // Load file
   AAsset* asset = AAssetManager_open(assetManager_, fileName.c_str(), AASSET_MODE_BUFFER);
-  IGL_ASSERT(asset != nullptr);
-  if (asset == nullptr) {
+  if (IGL_UNEXPECTED(asset == nullptr)) {
     IGL_LOG_ERROR("Error in loadBinaryData(): failed to open file %s\n", fileName.c_str());
-    return data;
+    return {};
   }
 
-  data.resize(AAsset_getLength(asset));
-  auto readSize = AAsset_read(asset, data.data(), data.size());
-  if (readSize != data.size()) {
-    IGL_LOG_ERROR("Error in loadBinaryData(): read size mismatch (%ld != %ld) in %s\n",
+  off64_t length = AAsset_getLength64(asset);
+  if (IGL_UNEXPECTED(length > std::numeric_limits<uint32_t>::max())) {
+    AAsset_close(asset);
+    return {};
+  }
+
+  auto data = std::make_unique<uint8_t[]>(length);
+  auto readSize = AAsset_read(asset, data.get(), length);
+  if (IGL_UNEXPECTED(readSize != length)) {
+    IGL_LOG_ERROR("Error in loadBinaryData(): read size mismatch (%ld != %zu) in %s\n",
                   readSize,
-                  data.size(),
+                  length,
                   fileName.c_str());
-    IGL_ASSERT_NOT_REACHED();
   }
   AAsset_close(asset);
 
-  return data;
+  return {std::move(data), static_cast<uint32_t>(length)};
 }
 
 bool FileLoaderAndroid::fileExists(const std::string& fileName) const {

@@ -20,7 +20,7 @@ namespace fs = boost::filesystem;
 
 namespace igl::shell {
 
-std::vector<uint8_t> FileLoader::loadBinaryDataInternal(const std::string& filePath) {
+FileLoader::FileData FileLoader::loadBinaryDataInternal(const std::string& filePath) {
   if (IGL_UNEXPECTED(!fs::exists(filePath))) {
     return {};
   }
@@ -39,12 +39,12 @@ std::vector<uint8_t> FileLoader::loadBinaryDataInternal(const std::string& fileP
     std::fclose(file);
   };
 
-  std::vector<uint8_t> data(static_cast<size_t>(length));
-  if (std::fread(data.data(), 1, data.size(), file) != data.size()) {
+  auto data = std::make_unique<uint8_t[]>(static_cast<size_t>(length));
+  if (std::fread(data.get(), 1, length, file) != length) {
     return {};
   }
 
-  return data;
+  return {std::move(data), static_cast<uint32_t>(length)};
 }
 
 } // namespace igl::shell

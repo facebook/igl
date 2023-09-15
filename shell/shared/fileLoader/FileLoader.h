@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -15,10 +16,15 @@ namespace igl::shell {
 
 class FileLoader {
  public:
+  struct FileData {
+    std::unique_ptr<uint8_t[]> data = nullptr;
+    uint32_t length;
+  };
+
   FileLoader() = default;
   virtual ~FileLoader() = default;
-  virtual std::vector<uint8_t> loadBinaryData(const std::string& /* filename */) {
-    return std::vector<uint8_t>();
+  virtual FileData loadBinaryData(const std::string& /* filename */) {
+    return {};
   }
   virtual bool fileExists(const std::string& /* filename */) const {
     return false;
@@ -31,7 +37,7 @@ class FileLoader {
   }
 
  protected:
-  std::vector<uint8_t> loadBinaryDataInternal(const std::string& filePath);
+  FileData loadBinaryDataInternal(const std::string& filePath);
 };
 
 } // namespace igl::shell
