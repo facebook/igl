@@ -67,21 +67,22 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
   while (size) {
     // finds a free memory block to store the data in the staging buffer
     MemoryRegion memoryChunk = nextFreeBlock(size);
+    const auto copySize = std::min(static_cast<uint32_t>(size), memoryChunk.size);
 
     // copy data into the staging buffer
-    stagingBuffer_->bufferSubData(memoryChunk.offset, memoryChunk.size, copyData);
+    stagingBuffer_->bufferSubData(memoryChunk.offset, copySize, copyData);
 
     // do the transfer
-    const VkBufferCopy copy = {memoryChunk.offset, chunkDstOffset, memoryChunk.size};
+    const VkBufferCopy copy = {memoryChunk.offset, chunkDstOffset, copySize};
 
     auto& wrapper = immediate_->acquire();
     vkCmdCopyBuffer(wrapper.cmdBuf_, stagingBuffer_->getVkBuffer(), buffer.getVkBuffer(), 1, &copy);
     memoryChunk.handle = immediate_->submit(wrapper); // store the submit handle with the allocation
     regions_.push_back(memoryChunk);
 
-    size -= memoryChunk.size;
-    copyData = (uint8_t*)copyData + memoryChunk.size;
-    chunkDstOffset += memoryChunk.size;
+    size -= copySize;
+    copyData = (uint8_t*)copyData + copySize;
+    chunkDstOffset += copySize;
   }
 }
 
@@ -93,7 +94,8 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(uint32_t si
   const auto requestedAlignedSize = getAlignedSize(size);
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
-  IGL_LOG_INFO("Requesting new memory region with %u bytes, aligned %u bytes\n", size, alignedSize);
+  IGL_LOG_INFO(
+      "Requesting new memory region with %u bytes, aligned %u bytes\n", size, requestedAlignedSize);
 #endif
 
   // If we can't find an empty free region that is as big as the requestedAlignedSize, return
@@ -111,14 +113,17 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(uint32_t si
         // Return this region and add the remaining unused size to the regions_ deque
         IGL_SCOPE_EXIT {
           regions_.erase(it);
-          regions_.push_front({unusedOffset, unusedSize, VulkanImmediateCommands::SubmitHandle()});
+          if (unusedSize > 0) {
+            regions_.push_front(
+                {unusedOffset, unusedSize, VulkanImmediateCommands::SubmitHandle()});
+          }
         };
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
         IGL_LOG_INFO("Found block with %u bytes at offset %u\n", it->size, it->offset);
 #endif
 
-        return {it->offset, size, VulkanImmediateCommands::SubmitHandle()};
+        return {it->offset, requestedAlignedSize, VulkanImmediateCommands::SubmitHandle()};
       }
 
       // Cache the largest available region that isn't as big as the one we're looking for
@@ -152,15 +157,19 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(uint32_t si
   // Nothing was available. Let's wait for the entire staging buffer to become free
   waitAndReset();
 
+  // waitAndReset() adds a region that spans the entire buffer. Since we'll be using part of it, we
+  // need to replace it with a used block and an unused portion
+  regions_.clear();
+
   // Store the unused size in the deque first...
   const uint32_t unusedSize = stagingBufferSize_ - requestedAlignedSize;
-  const uint32_t unusedOffset = requestedAlignedSize;
-  regions_.push_front({unusedOffset, unusedSize, VulkanImmediateCommands::SubmitHandle()});
+  if (unusedSize > 0) {
+    const uint32_t unusedOffset = requestedAlignedSize;
+    regions_.push_front({unusedOffset, unusedSize, VulkanImmediateCommands::SubmitHandle()});
+  }
 
   //... and then return the smallest free region that can hold the requested size
-  return {0,
-          std::min(requestedAlignedSize, stagingBufferSize_),
-          VulkanImmediateCommands::SubmitHandle()};
+  return {0, requestedAlignedSize, VulkanImmediateCommands::SubmitHandle()};
 }
 
 void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
@@ -178,10 +187,10 @@ void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
 
   while (size) {
     MemoryRegion memoryChunk = nextFreeBlock(size);
-    const uint32_t chunkSize = std::min(memoryChunk.size, static_cast<uint32_t>(size));
+    const uint32_t copySize = std::min(static_cast<uint32_t>(size), memoryChunk.size);
 
     // do the transfer
-    const VkBufferCopy copy = {chunkSrcOffset, memoryChunk.offset, chunkSize};
+    const VkBufferCopy copy = {chunkSrcOffset, memoryChunk.offset, copySize};
 
     auto& wrapper = immediate_->acquire();
 
@@ -194,8 +203,11 @@ void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
     const uint8_t* src = stagingBuffer_->getMappedPtr() + memoryChunk.offset;
     checked_memcpy(dstData, size - chunkSrcOffset, src, memoryChunk.size);
 
-    dstData = (uint8_t*)dstData + chunkSize;
-    chunkSrcOffset += chunkSize;
+    size -= copySize;
+    dstData = (uint8_t*)dstData + copySize;
+    chunkSrcOffset += copySize;
+
+    regions_.push_back(memoryChunk);
   }
 }
 
@@ -447,6 +459,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
 
   // the data should be available as we get out of this function
   immediate_->wait(immediate_->submit(wrapper2));
+  regions_.push_back(memoryChunk);
 }
 
 uint32_t VulkanStagingDevice::getAlignedSize(uint32_t size) const {
