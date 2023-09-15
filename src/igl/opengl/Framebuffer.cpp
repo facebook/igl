@@ -35,8 +35,7 @@ string to_string(const T& t) {
 
 #endif
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 namespace {
 
@@ -345,6 +344,10 @@ std::shared_ptr<ITexture> CustomFramebuffer::getResolveDepthAttachment() const {
 
 std::shared_ptr<ITexture> CustomFramebuffer::getStencilAttachment() const {
   return renderTarget_.stencilAttachment.texture;
+}
+
+FramebufferMode CustomFramebuffer::getMode() const {
+  return renderTarget_.mode;
 }
 
 std::shared_ptr<ITexture> CustomFramebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
@@ -704,5 +707,8 @@ void CurrentFramebuffer::unbind() const {
   // no-op
 }
 
-} // namespace opengl
-} // namespace igl
+FramebufferMode CurrentFramebuffer::getMode() const {
+  return FramebufferMode::Mono;
+}
+
+} // namespace igl::opengl

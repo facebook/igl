@@ -13,8 +13,7 @@
 #include <utility>
 #include <vector>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 Framebuffer::Framebuffer(FramebufferDesc value) : value_(std::move(value)) {}
 
@@ -158,5 +157,8 @@ std::shared_ptr<ITexture> Framebuffer::updateDrawable(std::shared_ptr<ITexture> 
   return texture;
 }
 
+FramebufferMode Framebuffer::getMode() const {
+  return value_.mode;
+}
+
 } // namespace metal
-} // namespace igl

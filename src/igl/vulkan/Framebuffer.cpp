@@ -28,8 +28,7 @@
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <igl/vulkan/VulkanTexture.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 std::vector<size_t> Framebuffer::getColorAttachmentIndices() const {
   std::vector<size_t> indices;
@@ -379,5 +378,8 @@ VkRenderPassBeginInfo Framebuffer::getRenderPassBeginInfo(VkRenderPass renderPas
   return bi;
 }
 
-} // namespace vulkan
-} // namespace igl
+FramebufferMode Framebuffer::getMode() const {
+  return desc_.mode;
+}
+
+} // namespace igl::vulkan

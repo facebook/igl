@@ -105,6 +105,7 @@ class CustomFramebuffer final : public Framebuffer {
   std::shared_ptr<ITexture> getDepthAttachment() const override;
   std::shared_ptr<ITexture> getResolveDepthAttachment() const override;
   std::shared_ptr<ITexture> getStencilAttachment() const override;
+  [[nodiscard]] FramebufferMode getMode() const override;
 
   // Methods
   std::shared_ptr<ITexture> updateDrawable(std::shared_ptr<ITexture> texture) override;
@@ -141,6 +142,7 @@ class CurrentFramebuffer final : public Framebuffer {
   std::shared_ptr<ITexture> getResolveDepthAttachment() const override;
   std::shared_ptr<ITexture> getStencilAttachment() const override;
   std::shared_ptr<ITexture> updateDrawable(std::shared_ptr<ITexture> texture) override;
+  [[nodiscard]] FramebufferMode getMode() const override;
 
   // opengl::Framebuffer
   Viewport getViewport() const override;
