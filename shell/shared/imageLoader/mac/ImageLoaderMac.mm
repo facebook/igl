@@ -34,6 +34,8 @@ NSImage* imageForFileName(const std::string& fileName) {
 
 namespace igl::shell {
 
+ImageLoaderMac::ImageLoaderMac(FileLoader& fileLoader) : ImageLoader(fileLoader) {}
+
 ImageData ImageLoaderMac::loadImageData(std::string imageName) noexcept {
   auto ret = ImageData();
   CGImage* image = [imageForFileName(imageName) CGImageForProposedRect:nil context:nil hints:nil];

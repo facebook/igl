@@ -13,6 +13,8 @@
 
 namespace igl::shell {
 
+ImageLoaderAndroid::ImageLoaderAndroid(FileLoader& fileLoader) : ImageLoader(fileLoader) {}
+
 ImageData ImageLoaderAndroid::loadImageData(std::string imageName) noexcept {
   auto ret = ImageData();
 

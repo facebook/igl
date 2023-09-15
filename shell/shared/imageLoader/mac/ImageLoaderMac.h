@@ -13,7 +13,7 @@ namespace igl::shell {
 
 class ImageLoaderMac final : public ImageLoader {
  public:
-  ImageLoaderMac() = default;
+  ImageLoaderMac(FileLoader& fileLoader);
   ~ImageLoaderMac() override = default;
   ImageData loadImageData(std::string imageName) noexcept override;
 

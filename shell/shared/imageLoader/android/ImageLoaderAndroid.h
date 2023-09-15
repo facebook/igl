@@ -17,7 +17,7 @@ namespace igl::shell {
 
 class ImageLoaderAndroid final : public ImageLoader {
  public:
-  ImageLoaderAndroid() = default;
+  ImageLoaderAndroid(FileLoader& fileLoader);
   ~ImageLoaderAndroid() override = default;
   ImageData loadImageData(std::string imageName) noexcept override;
   void setAssetManager(AAssetManager* mgr) {

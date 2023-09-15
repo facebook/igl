@@ -14,7 +14,7 @@ namespace igl::shell {
 
 class ImageLoaderIos final : public ImageLoader {
  public:
-  ImageLoaderIos() = default;
+  ImageLoaderIos(FileLoader& fileLoader);
   ~ImageLoaderIos() override = default;
   ImageData loadImageData(std::string imageName) noexcept override;
 

@@ -14,9 +14,9 @@
 namespace igl::shell {
 
 PlatformIos::PlatformIos(std::unique_ptr<igl::IDevice> device) : device_(std::move(device)) {
-  imageLoader_ = std::make_unique<igl::shell::ImageLoaderIos>();
-  imageWriter_ = std::make_unique<igl::shell::ImageWriterIos>();
   fileLoader_ = std::make_unique<igl::shell::FileLoaderApple>();
+  imageLoader_ = std::make_unique<igl::shell::ImageLoaderIos>(*fileLoader_);
+  imageWriter_ = std::make_unique<igl::shell::ImageWriterIos>();
 }
 
 igl::IDevice& PlatformIos::getDevice() noexcept {

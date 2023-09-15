@@ -14,9 +14,9 @@
 namespace igl::shell {
 
 PlatformWin::PlatformWin(std::shared_ptr<igl::IDevice> device) : device_(std::move(device)) {
-  imageLoader_ = std::make_unique<igl::shell::ImageLoaderWin>();
-  imageWriter_ = std::make_unique<igl::shell::ImageWriterWin>();
   fileLoader_ = std::make_unique<igl::shell::FileLoaderWin>();
+  imageLoader_ = std::make_unique<igl::shell::ImageLoaderWin>(*fileLoader_);
+  imageWriter_ = std::make_unique<igl::shell::ImageWriterWin>();
 }
 
 igl::IDevice& PlatformWin::getDevice() noexcept {

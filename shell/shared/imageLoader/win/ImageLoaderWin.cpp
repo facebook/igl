@@ -19,7 +19,7 @@
 
 namespace igl::shell {
 
-ImageLoaderWin::ImageLoaderWin() {
+ImageLoaderWin::ImageLoaderWin(FileLoader& fileLoader) : ImageLoader(fileLoader) {
 // @fb-only
   // @fb-only
   // @fb-only
@@ -34,10 +34,6 @@ ImageLoaderWin::ImageLoaderWin() {
     executablePath_ = std::filesystem::path(path).parent_path().string();
   }
 #endif
-}
-
-ImageLoaderWin::ImageLoaderWin(const std::string& homePath) {
-  setHomePath(homePath);
 }
 
 ImageData ImageLoaderWin::loadImageData(std::string imageName) noexcept {

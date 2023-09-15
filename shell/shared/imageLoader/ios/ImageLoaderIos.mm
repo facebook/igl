@@ -13,6 +13,8 @@
 
 namespace igl::shell {
 
+ImageLoaderIos::ImageLoaderIos(FileLoader& fileLoader) : ImageLoader(fileLoader) {}
+
 ImageData ImageLoaderIos::loadImageData(std::string imageName) noexcept {
   auto ret = ImageData();
 

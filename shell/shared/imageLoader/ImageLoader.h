@@ -14,6 +14,8 @@
 
 namespace igl::shell {
 
+class FileLoader;
+
 struct ImageData {
   uint32_t width;
   uint32_t height;
@@ -26,7 +28,7 @@ struct ImageData {
 
 class ImageLoader {
  public:
-  ImageLoader() = default;
+  ImageLoader(FileLoader& fileLoader) : fileLoader_(fileLoader) {}
   virtual ~ImageLoader() = default;
   virtual ImageData loadImageData(std::string /*imageName*/) noexcept {
     return checkerboard();
@@ -36,6 +38,15 @@ class ImageLoader {
   }
   const std::string& homePath() const noexcept {
     return homePath_;
+  }
+
+ protected:
+  [[nodiscard]] const FileLoader& fileLoader() const noexcept {
+    return fileLoader_;
+  }
+
+  [[nodiscard]] FileLoader& fileLoader() noexcept {
+    return fileLoader_;
   }
 
  private:
@@ -70,6 +81,7 @@ class ImageLoader {
     return imageData;
   }
 
+  FileLoader& fileLoader_;
   std::string homePath_;
 };
 

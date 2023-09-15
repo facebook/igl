@@ -26,9 +26,9 @@ class PlatformAndroid : public Platform {
 
  private:
   std::shared_ptr<igl::IDevice> device_;
+  std::shared_ptr<FileLoader> fileLoader_;
   std::shared_ptr<ImageWriter> imageWriter_;
   std::shared_ptr<ImageLoader> imageLoader_;
-  std::shared_ptr<FileLoader> fileLoader_;
 };
 
 } // namespace igl::shell

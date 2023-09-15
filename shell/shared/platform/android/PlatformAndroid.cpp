@@ -16,13 +16,13 @@ namespace igl::shell {
 
 PlatformAndroid::PlatformAndroid(std::unique_ptr<igl::IDevice> device, bool useFakeLoader) :
   device_(std::move(device)) {
+  fileLoader_ = std::make_unique<igl::shell::FileLoaderAndroid>();
   if (useFakeLoader) {
-    imageLoader_ = std::make_unique<igl::shell::ImageLoader>();
+    imageLoader_ = std::make_unique<igl::shell::ImageLoader>(*fileLoader_);
   } else {
-    imageLoader_ = std::make_unique<igl::shell::ImageLoaderAndroid>();
+    imageLoader_ = std::make_unique<igl::shell::ImageLoaderAndroid>(*fileLoader_);
     imageWriter_ = std::make_unique<igl::shell::ImageWriterAndroid>();
   }
-  fileLoader_ = std::make_unique<igl::shell::FileLoaderAndroid>();
 }
 
 igl::IDevice& PlatformAndroid::getDevice() noexcept {
