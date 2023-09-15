@@ -519,6 +519,8 @@ class IContext {
   void apiLogStart();
   void apiLogEnd();
 
+  void setShouldValidateShaders(bool shouldValidateShaders);
+  bool shouldValidateShaders() const;
   inline bool isDestructionAllowed() const {
     return lockCount_ == 0;
   }
@@ -596,6 +598,7 @@ class IContext {
   unsigned int drawCallCount_ = 0;
   int lockCount_ = 0; // used by DestructionGuard
   int refCount_ = 0; // used by addRef/releaseRef
+  bool shouldValidateShaders_ = false;
 
   // API Logging
   unsigned int apiLogDrawsLeft_ = 0;

@@ -21,6 +21,9 @@
 // Uncomment to enable GL API logging
 // #define IGL_API_LOG
 
+// Uncomment to enable shader validation
+// #define IGL_VALIDATE_SHADERS
+
 #if defined(IGL_API_LOG) && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
 #define APILOG_DEC_DRAW_COUNT() \
   if (apiLogDrawsLeft_) {       \
@@ -546,6 +549,9 @@ IContext::IContext() : deviceFeatureSet_(*this) {
 #if IGL_DEBUG
   // In debug mode, we default to always checking errors after each OGL call
   alwaysCheckError_ = true;
+#endif
+#if defined(IGL_VALIDATE_SHADERS)
+  shouldValidateShaders_ = true;
 #endif
 }
 
@@ -3317,6 +3323,14 @@ void IContext::apiLogStart() {
 
 void IContext::apiLogEnd() {
   apiLogEnabled_ = false;
+}
+
+void IContext::setShouldValidateShaders(bool shouldValidateShaders) {
+  shouldValidateShaders_ = shouldValidateShaders;
+}
+
+bool IContext::shouldValidateShaders() const {
+  return shouldValidateShaders_;
 }
 
 void IContext::SynchronizedDeletionQueues::flushDeletionQueue(IContext& context) {

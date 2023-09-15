@@ -143,16 +143,7 @@ void ShaderStages::createComputeProgram(Result* result) {
   GLint status;
   getContext().getProgramiv(programID, GL_LINK_STATUS, &status);
   if (status == GL_FALSE) {
-    // Get the size of log
-    GLsizei logSize = 0;
-    getContext().getProgramiv(programID, GL_INFO_LOG_LENGTH, &logSize);
-
-    // Pre-allocate vector for storage
-    std::vector<GLchar> log(logSize);
-    getContext().getProgramInfoLog(programID, logSize, nullptr, log.data());
-
-    // Create actual string from it
-    const std::string errorLog(log.begin(), log.end());
+    const std::string errorLog = getProgramInfoLog(programID);
     IGL_LOG_ERROR("failed to link compute shaders:\n%s\n", errorLog.c_str());
 
     getContext().deleteProgram(programID);
@@ -183,7 +174,24 @@ Result ShaderStages::create(const ShaderStagesDesc& /*desc*/) {
   return result;
 }
 
+Result ShaderStages::validate() {
+  getContext().validateProgram(programID_);
+  GLint status;
+  getContext().getProgramiv(programID_, GL_VALIDATE_STATUS, &status);
+  if (status == GL_FALSE) {
+    std::string errorLog = getProgramInfoLog(programID_);
+    IGL_LOG_ERROR("Failed to validate program:\n%s\n", errorLog.c_str());
+    Result result(Result::Code::RuntimeError, std::move(errorLog));
+  }
+
+  return Result{};
+}
+
 void ShaderStages::bind() {
+  if (getContext().shouldValidateShaders()) {
+    const auto result = validate();
+    IGL_ASSERT_MSG(result.isOk(), result.message.c_str());
+  }
   getContext().useProgram(programID_);
 }
 
@@ -309,5 +317,19 @@ Result ShaderModule::create(const ShaderModuleDesc& desc) {
 
   return Result();
 }
+
+std::string ShaderStages::getProgramInfoLog(GLuint programID) {
+  // Get the size of log
+  GLsizei logSize = 0;
+  getContext().getProgramiv(programID, GL_INFO_LOG_LENGTH, &logSize);
+
+  // Pre-allocate vector for storage
+  std::vector<GLchar> log(logSize);
+  getContext().getProgramInfoLog(programID, logSize, nullptr, log.data());
+
+  // Create actual string from it
+  return std::string(log.begin(), log.end());
+}
+
 } // namespace opengl
 } // namespace igl
