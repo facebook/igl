@@ -7,7 +7,7 @@
 
 #include <shell/shared/platform/ios/PlatformIos.h>
 
-#include <shell/shared/fileLoader/ios/FileLoaderIos.h>
+#include <shell/shared/fileLoader/apple/FileLoaderApple.h>
 #include <shell/shared/imageLoader/ios/ImageLoaderIos.h>
 #include <shell/shared/imageWriter/ios/ImageWriterIos.h>
 
@@ -16,7 +16,7 @@ namespace igl::shell {
 PlatformIos::PlatformIos(std::unique_ptr<igl::IDevice> device) : device_(std::move(device)) {
   imageLoader_ = std::make_unique<igl::shell::ImageLoaderIos>();
   imageWriter_ = std::make_unique<igl::shell::ImageWriterIos>();
-  fileLoader_ = std::make_unique<igl::shell::FileLoaderIos>();
+  fileLoader_ = std::make_unique<igl::shell::FileLoaderApple>();
 }
 
 igl::IDevice& PlatformIos::getDevice() noexcept {

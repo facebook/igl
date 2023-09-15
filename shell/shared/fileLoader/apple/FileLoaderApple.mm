@@ -5,34 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <shell/shared/fileLoader/mac/FileLoaderMac.h>
+#include <shell/shared/fileLoader/apple/FileLoaderApple.h>
 
 #import <Foundation/Foundation.h>
-#include <fstream>
 #include <string>
 
-// returns the NSString version of the full path of fileName within the main bundle
+namespace igl::shell {
+namespace {
+// returns the NSString version of the full path of fileName within any bundle
 // it'll first attempt to find the bundle path using the full fileName
 // if not found, it'll attempt to find the bundle path using just the root of the fileName
-// a return value of nil indicates that the fileName wasn't found within the main bundle
-static NSString* getBundleFilePath(const std::string& fileName) {
+// a return value of nil indicates that the fileName wasn't found within ny bundle
+NSString* getBundleFilePath(const std::string& fileName) {
+  // NOLINTNEXTLINE(misc-const-correctness)
   NSString* nsFileName = [NSString stringWithUTF8String:fileName.c_str()];
   if (nsFileName == nil || [nsFileName length] == 0) {
     return nil;
-  }
-
-  // first search for the full file name, which may include a path
-  NSString* nsPath = [[NSBundle mainBundle] pathForResource:nsFileName ofType:nil];
-  if (nsPath != nil) {
-    return nsPath;
-  }
-
-  // next search for the root file name without the path
-  // since the bundle path may be different and flattened within the bundle
-  NSString* nsRootFileName = [nsFileName lastPathComponent];
-  nsPath = [[NSBundle mainBundle] pathForResource:nsRootFileName ofType:nil];
-  if (nsPath != nil) {
-    return nsPath;
   }
 
   for (NSBundle* bundle in [NSBundle allBundles]) {
@@ -43,6 +31,7 @@ static NSString* getBundleFilePath(const std::string& fileName) {
 
     // next search for the root file name without the path
     // since the bundle path may be different and flattened within the bundle
+    // NOLINTNEXTLINE(misc-const-correctness)
     NSString* nsRootFileName = [nsFileName lastPathComponent];
     nsPath = [[NSBundle mainBundle] pathForResource:nsRootFileName ofType:nil];
     if (nsPath != nil) {
@@ -52,14 +41,14 @@ static NSString* getBundleFilePath(const std::string& fileName) {
 
   return nil;
 }
+} // namespace
 
-namespace igl::shell {
-
-std::vector<uint8_t> FileLoaderMac::loadBinaryData(const std::string& fileName) {
+std::vector<uint8_t> FileLoaderApple::loadBinaryData(const std::string& fileName) {
   return loadBinaryDataInternal(fullPath(fileName));
 }
 
-bool FileLoaderMac::fileExists(const std::string& fileName) const {
+bool FileLoaderApple::fileExists(const std::string& fileName) const {
+  // NOLINTNEXTLINE(misc-const-correctness)
   NSString* nsPath = getBundleFilePath(fileName);
   if (nsPath == nil) {
     return false;
@@ -67,7 +56,7 @@ bool FileLoaderMac::fileExists(const std::string& fileName) const {
   return [[NSFileManager defaultManager] fileExistsAtPath:nsPath];
 }
 
-std::string FileLoaderMac::basePath() const {
+std::string FileLoaderApple::basePath() const {
   std::string basePath;
   const char* cstr = [[NSBundle mainBundle] resourcePath].UTF8String;
   if (cstr != nil) {
@@ -76,13 +65,14 @@ std::string FileLoaderMac::basePath() const {
   return basePath;
 }
 
-std::string FileLoaderMac::fullPath(const std::string& fileName) const {
-  std::string fullPath;
-  NSString* nsPath = getBundleFilePath(fileName);
+std::string FileLoaderApple::fullPath(const std::string& fileName) const {
+  // NOLINTNEXTLINE(misc-const-correctness)
+  const NSString* nsPath = getBundleFilePath(fileName);
   if (nsPath != nil) {
-    fullPath = std::string([nsPath UTF8String]);
+    return {[nsPath UTF8String]};
   }
-  return fullPath;
+
+  return {};
 }
 
 } // namespace igl::shell
