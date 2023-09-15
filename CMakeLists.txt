@@ -7,6 +7,8 @@ cmake_minimum_required(VERSION 3.16)
 
 project("LVK" CXX C)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 # cmake-format: off
 option(LVK_DEPLOY_DEPS  "Deploy dependencies via CMake" ON)
 option(LVK_WITH_GLFW    "Enable GLFW"                   ON)
@@ -18,13 +20,11 @@ if(LVK_WITH_SAMPLES AND NOT LVK_WITH_GLFW)
   message(STATUS "WARNING: LVK_WITH_SAMPLES=ON leads to forcing LVK_WITH_GLFW=ON")
   set(LVK_WITH_GLFW ON)
 endif()
+
 if (ANDROID)
   message(STATUS "WARNING: LVK_WITH_GLFW and LVK_WITH_SAMPLES were set to OFF for Android")
   set(LVK_WITH_GLFW OFF)
   set(LVK_WITH_SAMPLES OFF)
-endif()
-if(LVK_WITH_GLFW)
-  add_definitions(-DLVK_WITH_GLFW=1)
 endif()
 
 include(cmake/CommonMacros.txt)
@@ -44,8 +44,6 @@ function(lvk_set_cxxstd target cpp_version)
   set_property(TARGET ${target} PROPERTY CXX_STANDARD ${cpp_version})
   set_property(TARGET ${target} PROPERTY CXX_STANDARD_REQUIRED ON)
 endfunction()
-
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # cmake-format: off
 message(STATUS "LVK_DEPLOY_DEPS  = ${LVK_DEPLOY_DEPS}")
@@ -102,6 +100,10 @@ target_include_directories(LVKLibrary PUBLIC ${LVK_ROOT_DIR}/src)
 
 if(LVK_WITH_TRACY)
   target_compile_definitions(LVKLibrary PUBLIC "LVK_WITH_TRACY=1")
+endif()
+
+if(LVK_WITH_GLFW)
+  target_compile_definitions(LVKLibrary PUBLIC "LVK_WITH_GLFW=1")
 endif()
 
 if(LVK_DEPLOY_DEPS)
