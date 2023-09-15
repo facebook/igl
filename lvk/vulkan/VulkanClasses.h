@@ -634,12 +634,10 @@ class VulkanContext final : public IContext {
   uint32_t currentMaxTextures_ = 16;
   uint32_t currentMaxSamplers_ = 16;
   VkPipelineLayout vkPipelineLayout_ = VK_NULL_HANDLE;
-  VkDescriptorSetLayout vkDSLBindless_ = VK_NULL_HANDLE;
-  VkDescriptorPool vkDPBindless_ = VK_NULL_HANDLE;
-  struct BindlessDescriptorSet {
-    VkDescriptorSet ds = VK_NULL_HANDLE;
-    SubmitHandle handle = SubmitHandle(); // a handle of the last submit this descriptor set was a part of
-  } bindlessDSets_;
+  VkDescriptorSetLayout vkDSL_ = VK_NULL_HANDLE;
+  VkDescriptorPool vkDPool_ = VK_NULL_HANDLE;
+  VkDescriptorSet vkDSet_ = VK_NULL_HANDLE;
+  SubmitHandle lastSubmitHandle = SubmitHandle(); // a handle of the last submit this descriptor set was a part of
   // don't use staging on devices with shared host-visible memory
   bool useStaging_ = true;
 

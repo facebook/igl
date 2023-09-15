@@ -2960,9 +2960,9 @@ lvk::VulkanContext::~VulkanContext() {
 
   immediate_.reset(nullptr);
 
-  vkDestroyDescriptorSetLayout(vkDevice_, vkDSLBindless_, nullptr);
+  vkDestroyDescriptorSetLayout(vkDevice_, vkDSL_, nullptr);
   vkDestroyPipelineLayout(vkDevice_, vkPipelineLayout_, nullptr);
-  vkDestroyDescriptorPool(vkDevice_, vkDPBindless_, nullptr);
+  vkDestroyDescriptorPool(vkDevice_, vkDPool_, nullptr);
   vkDestroySurfaceKHR(vkInstance_, vkSurface_, nullptr);
   vkDestroyPipelineCache(vkDevice_, pipelineCache_, nullptr);
 
@@ -4558,12 +4558,12 @@ lvk::Result lvk::VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_
     LLOGW("Max Samplers exceeded %u (max %u)", maxSamplers, vkPhysicalDeviceVulkan12Properties_.maxDescriptorSetUpdateAfterBindSamplers);
   }
 
-  if (vkDSLBindless_ != VK_NULL_HANDLE) {
+  if (vkDSL_ != VK_NULL_HANDLE) {
     deferredTask(
-        std::packaged_task<void()>([device = vkDevice_, dsl = vkDSLBindless_]() { vkDestroyDescriptorSetLayout(device, dsl, nullptr); }));
+        std::packaged_task<void()>([device = vkDevice_, dsl = vkDSL_]() { vkDestroyDescriptorSetLayout(device, dsl, nullptr); }));
   }
-  if (vkDPBindless_ != VK_NULL_HANDLE) {
-    deferredTask(std::packaged_task<void()>([device = vkDevice_, dp = vkDPBindless_]() { vkDestroyDescriptorPool(device, dp, nullptr); }));
+  if (vkDPool_ != VK_NULL_HANDLE) {
+    deferredTask(std::packaged_task<void()>([device = vkDevice_, dp = vkDPool_]() { vkDestroyDescriptorPool(device, dp, nullptr); }));
   }
   if (vkPipelineLayout_ != VK_NULL_HANDLE) {
     deferredTask(std::packaged_task<void()>(
@@ -4594,33 +4594,32 @@ lvk::Result lvk::VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_
       .bindingCount = kBinding_NumBindings,
       .pBindings = bindings,
   };
-  VK_ASSERT(vkCreateDescriptorSetLayout(vkDevice_, &dslci, nullptr, &vkDSLBindless_));
+  VK_ASSERT(vkCreateDescriptorSetLayout(vkDevice_, &dslci, nullptr, &vkDSL_));
   VK_ASSERT(lvk::setDebugObjectName(
-      vkDevice_, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)vkDSLBindless_, "Descriptor Set Layout: VulkanContext::vkDSLBindless_"));
-
-  // create default descriptor pool and allocate 1 descriptor set
-  const VkDescriptorPoolSize poolSizes[kBinding_NumBindings]{
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, maxTextures},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, maxSamplers},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, maxTextures},
-  };
-  const VkDescriptorPoolCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-      .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
-      .maxSets = 1,
-      .poolSizeCount = kBinding_NumBindings,
-      .pPoolSizes = poolSizes,
-  };
-  VK_ASSERT_RETURN(vkCreateDescriptorPool(vkDevice_, &ci, nullptr, &vkDPBindless_));
+      vkDevice_, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)vkDSL_, "Descriptor Set Layout: VulkanContext::vkDSL_"));
 
   {
+    // create default descriptor pool and allocate 1 descriptor set
+    const VkDescriptorPoolSize poolSizes[kBinding_NumBindings]{
+        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, maxTextures},
+        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, maxSamplers},
+        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, maxTextures},
+    };
+    const VkDescriptorPoolCreateInfo ci = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+        .maxSets = 1,
+        .poolSizeCount = kBinding_NumBindings,
+        .pPoolSizes = poolSizes,
+    };
+    VK_ASSERT_RETURN(vkCreateDescriptorPool(vkDevice_, &ci, nullptr, &vkDPool_));
     const VkDescriptorSetAllocateInfo ai = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        .descriptorPool = vkDPBindless_,
+        .descriptorPool = vkDPool_,
         .descriptorSetCount = 1,
-        .pSetLayouts = &vkDSLBindless_,
+        .pSetLayouts = &vkDSL_,
     };
-    VK_ASSERT_RETURN(vkAllocateDescriptorSets(vkDevice_, &ai, &bindlessDSets_.ds));
+    VK_ASSERT_RETURN(vkAllocateDescriptorSets(vkDevice_, &ai, &vkDSet_));
   }
 
   // create pipeline layout
@@ -4634,7 +4633,8 @@ lvk::Result lvk::VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_
       LLOGW("Push constants size exceeded %u (max %u bytes)", kPushConstantsSize, limits.maxPushConstantsSize);
     }
 
-    const VkDescriptorSetLayout dsls[] = {vkDSLBindless_, vkDSLBindless_, vkDSLBindless_};
+	 // duplicate for MoltenVK
+    const VkDescriptorSetLayout dsls[] = {vkDSL_, vkDSL_, vkDSL_};
     const VkPushConstantRange range = {
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
         .offset = 0,
@@ -4700,7 +4700,7 @@ std::shared_ptr<lvk::VulkanImage> lvk::VulkanContext::createImage(VkImageType im
 
 void lvk::VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPoint) const {
   LVK_PROFILER_FUNCTION();
-  const VkDescriptorSet dsets[3] = {bindlessDSets_.ds, bindlessDSets_.ds, bindlessDSets_.ds};
+  const VkDescriptorSet dsets[3] = {vkDSet_, vkDSet_, vkDSet_};
   vkCmdBindDescriptorSets(cmdBuf, bindPoint, vkPipelineLayout_, 0, (uint32_t)LVK_ARRAY_NUM_ELEMENTS(dsets), dsets, 0, nullptr);
 }
 
@@ -4768,7 +4768,7 @@ void lvk::VulkanContext::checkAndUpdateDescriptorSets() {
   if (!infoSampledImages.empty()) {
     write[numWrites++] = VkWriteDescriptorSet{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = bindlessDSets_.ds,
+        .dstSet = vkDSet_,
         .dstBinding = kBinding_Textures,
         .dstArrayElement = 0,
         .descriptorCount = (uint32_t)infoSampledImages.size(),
@@ -4780,7 +4780,7 @@ void lvk::VulkanContext::checkAndUpdateDescriptorSets() {
   if (!infoSamplers.empty()) {
     write[numWrites++] = VkWriteDescriptorSet{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = bindlessDSets_.ds,
+        .dstSet = vkDSet_,
         .dstBinding = kBinding_Samplers,
         .dstArrayElement = 0,
         .descriptorCount = (uint32_t)infoSamplers.size(),
@@ -4792,7 +4792,7 @@ void lvk::VulkanContext::checkAndUpdateDescriptorSets() {
   if (!infoStorageImages.empty()) {
     write[numWrites++] = VkWriteDescriptorSet{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = bindlessDSets_.ds,
+        .dstSet = vkDSet_,
         .dstBinding = kBinding_StorageImages,
         .dstArrayElement = 0,
         .descriptorCount = (uint32_t)infoStorageImages.size(),
@@ -4806,7 +4806,7 @@ void lvk::VulkanContext::checkAndUpdateDescriptorSets() {
 #if LVK_VULKAN_PRINT_COMMANDS
     LLOGL("vkUpdateDescriptorSets()\n");
 #endif // LVK_VULKAN_PRINT_COMMANDS
-    immediate_->wait(std::exchange(bindlessDSets_.handle, immediate_->getLastSubmitHandle()));
+    immediate_->wait(std::exchange(lastSubmitHandle, immediate_->getLastSubmitHandle()));
     vkUpdateDescriptorSets(vkDevice_, numWrites, write, 0, nullptr);
   }
 
