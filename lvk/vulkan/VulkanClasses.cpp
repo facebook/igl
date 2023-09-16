@@ -3600,6 +3600,8 @@ lvk::Result lvk::VulkanContext::upload(lvk::BufferHandle handle, const void* dat
     return lvk::Result();
   }
 
+  LVK_ASSERT_MSG(size, "Data size should be non-zero");
+
   lvk::VulkanBuffer* buf = buffersPool_.get(handle);
 
   if (!LVK_VERIFY(buf)) {
