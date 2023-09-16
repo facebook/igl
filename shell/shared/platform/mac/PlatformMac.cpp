@@ -39,8 +39,4 @@ FileLoader& PlatformMac::getFileLoader() const noexcept {
   return *fileLoader_;
 }
 
-std::shared_ptr<FileLoader> PlatformMac::getFileLoaderPtr() const noexcept {
-  return fileLoader_;
-}
-
 } // namespace igl::shell

@@ -22,7 +22,6 @@ class PlatformAndroid : public Platform {
   ImageLoader& getImageLoader() noexcept override;
   const ImageWriter& getImageWriter() const noexcept override;
   FileLoader& getFileLoader() const noexcept override;
-  std::shared_ptr<FileLoader> getFileLoaderPtr() const noexcept override;
 
  private:
   std::shared_ptr<igl::IDevice> device_;

@@ -39,8 +39,4 @@ FileLoader& PlatformIos::getFileLoader() const noexcept {
   return *fileLoader_;
 }
 
-std::shared_ptr<FileLoader> PlatformIos::getFileLoaderPtr() const noexcept {
-  return fileLoader_;
-}
-
 } // namespace igl::shell
