@@ -33,9 +33,49 @@
   if (apiLogDrawsLeft_ || apiLogEnabled_) { \
     IGL_DEBUG_LOG(format, ##__VA_ARGS__);   \
   }
+namespace {
+uint32_t logSourceChunk(uint32_t line, const char* string, size_t length) {
+  int printLen = 0;
+  const char* lineString = string;
+  while (length > 0) {
+    if (*string == '\r' || *string == '\n') {
+      if (printLen > 0) {
+        IGL_DEBUG_LOG("%3u: %.*s\n", line++, printLen, lineString);
+      }
+      printLen = 0;
+      lineString = string + 1;
+    } else {
+      printLen++;
+    }
+    ++string;
+    --length;
+  }
+  if (printLen > 0) {
+    IGL_DEBUG_LOG("%3u: %.*s\n", line++, printLen, lineString);
+  }
+  return line;
+}
+
+void logSource(const int count, const char** string, const int* length) {
+  if (!string) {
+    return;
+  }
+  uint32_t line = 1;
+  for (int i = 0; i < count; ++i) {
+    if (!string[i]) {
+      continue;
+    }
+    line = logSourceChunk(
+        line, string[i], !length ? std::strlen(string[i]) : static_cast<size_t>(length[i]));
+  }
+}
+} // namespace
+#define APILOG_SOURCE(count, string, length) logSource(count, string, length);
+
 #else
 #define APILOG_DEC_DRAW_COUNT() static_cast<void>(0)
 #define APILOG(format, ...) static_cast<void>(0)
+#define APILOG_SOURCE(count, string, length) static_cast<void>(0)
 #endif // defined(IGL_API_LOG) && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
 
 #define GLCALL(funcName)                                         \
@@ -1576,7 +1616,9 @@ void IContext::getActiveAttrib(GLuint program,
          name,
          size == nullptr ? 0 : *size,
          type == nullptr ? GL_ENUM_TO_STRING(0) : GL_ENUM_TO_STRING(*type),
-         static_cast<int>(length == nullptr ? 0 : *length),
+         static_cast<int>(length == nullptr
+                              ? (name == nullptr ? 0 : static_cast<int>(std::strlen(name)))
+                              : *length),
          name == nullptr ? "" : name);
   GLCHECK_ERRORS();
 }
@@ -1599,7 +1641,9 @@ void IContext::getActiveUniform(GLuint program,
          name,
          size == nullptr ? 0 : *size,
          type == nullptr ? GL_ENUM_TO_STRING(0) : GL_ENUM_TO_STRING(*type),
-         static_cast<int>(length == nullptr ? 0 : *length),
+         static_cast<int>(length == nullptr
+                              ? (name == nullptr ? 0 : static_cast<int>(std::strlen(name)))
+                              : *length),
          name == nullptr ? "" : name);
   GLCHECK_ERRORS();
 }
@@ -1639,14 +1683,18 @@ void IContext::getActiveUniformBlockName(GLuint program,
                                          GLsizei* length,
                                          GLchar* uniformBlockName) const {
   IGLCALL(GetActiveUniformBlockName)(program, index, bufSize, length, uniformBlockName);
-  APILOG("glGetActiveUniformBlockName(%u, %u, %u, %p, %p) = %.*s\n",
-         program,
-         index,
-         bufSize,
-         length,
-         uniformBlockName,
-         static_cast<int>(length == nullptr ? 0 : *length),
-         uniformBlockName == nullptr ? "" : uniformBlockName);
+  APILOG(
+      "glGetActiveUniformBlockName(%u, %u, %u, %p, %p) = %.*s\n",
+      program,
+      index,
+      bufSize,
+      length,
+      uniformBlockName,
+      static_cast<int>(
+          length == nullptr
+              ? (uniformBlockName == nullptr ? 0 : static_cast<int>(std::strlen(uniformBlockName)))
+              : *length),
+      uniformBlockName == nullptr ? "" : uniformBlockName);
   GLCHECK_ERRORS();
 }
 
@@ -1760,7 +1808,9 @@ void IContext::getProgramInfoLog(GLuint program,
          bufsize,
          length,
          infolog,
-         static_cast<int>(length == nullptr ? 0 : *length),
+         static_cast<int>(length == nullptr
+                              ? (infolog == nullptr ? 0 : static_cast<int>(std::strlen(infolog)))
+                              : *length),
          infolog == nullptr ? "" : infolog);
   GLCHECK_ERRORS();
 }
@@ -1818,7 +1868,9 @@ void IContext::getProgramResourceName(GLuint program,
          bufSize,
          length,
          name,
-         static_cast<int>(length == nullptr ? 0 : *length),
+         static_cast<int>(length == nullptr
+                              ? (name == nullptr ? 0 : static_cast<int>(std::strlen(name)))
+                              : *length),
          name == nullptr ? "" : name);
   GLCHECK_ERRORS();
 }
@@ -1853,7 +1905,9 @@ void IContext::getShaderInfoLog(GLuint shader,
          maxLength,
          length,
          infoLog,
-         static_cast<int>(length == nullptr ? 0 : *length),
+         static_cast<int>(length == nullptr
+                              ? (infoLog == nullptr ? 0 : static_cast<int>(std::strlen(infoLog)))
+                              : *length),
          infoLog == nullptr ? "" : infoLog);
   GLCHECK_ERRORS();
 }
@@ -1883,7 +1937,9 @@ void IContext::getShaderSource(GLuint shader,
          bufsize,
          length,
          source,
-         static_cast<int>(length == nullptr ? 0 : *length),
+         static_cast<int>(length == nullptr
+                              ? (source == nullptr ? 0 : static_cast<int>(std::strlen(source)))
+                              : *length),
          source == nullptr ? "" : source);
   GLCHECK_ERRORS();
 }
@@ -2372,13 +2428,8 @@ void IContext::shaderSource(GLuint shader,
                             const GLchar** string,
                             const GLint* length) {
   GLCALL(ShaderSource)(shader, count, string, length);
-  APILOG("glShaderSource(%d, %u, %p, %p):\n%.*s\n",
-         shader,
-         count,
-         string,
-         length,
-         length == nullptr ? (string == nullptr ? 0 : std::strlen(string[0])) : *length,
-         string == nullptr ? "" : string[0]);
+  APILOG("glShaderSource(%d, %u, %p, %p)\n", shader, count, string, length);
+  APILOG_SOURCE(count, string, length);
   GLCHECK_ERRORS();
 }
 
