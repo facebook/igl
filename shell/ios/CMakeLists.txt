@@ -8,9 +8,9 @@ cmake_minimum_required(VERSION 3.16)
 set(PROJECT_NAME "iOS")
 
 file(GLOB PLATFORM_SHARED_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-     ../shared/fileLoader/apple/*.mm ../shared/imageLoader/ios/*.mm ../shared/imageWriter/ios/*.mm ../shared/platform/ios/*.mm)
+     ../shared/fileLoader/apple/*.mm ../shared/imageWriter/ios/*.mm ../shared/platform/ios/*.mm)
 file(GLOB PLATFORM_SHARED_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-     ../shared/fileLoader/apple/*.h ../shared/imageLoader/ios/*.h ../shared/imageWriter/ios/*.h ../shared/platform/ios/*.h)
+     ../shared/fileLoader/apple/*.h ../shared/imageWriter/ios/*.h ../shared/platform/ios/*.h)
 
 add_library(IGLShellPlatform ${PLATFORM_SHARED_SRC_FILES} ${PLATFORM_SHARED_HEADER_FILES})
 target_link_libraries(IGLShellPlatform PUBLIC IGLLibrary)

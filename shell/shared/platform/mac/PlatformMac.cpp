@@ -8,14 +8,14 @@
 #include <shell/shared/platform/mac/PlatformMac.h>
 
 #include <shell/shared/fileLoader/apple/FileLoaderApple.h>
-#include <shell/shared/imageLoader/mac/ImageLoaderMac.h>
+#include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/imageWriter/mac/ImageWriterMac.h>
 
 namespace igl::shell {
 
 PlatformMac::PlatformMac(std::shared_ptr<igl::IDevice> device) : device_(std::move(device)) {
   fileLoader_ = std::make_unique<igl::shell::FileLoaderApple>();
-  imageLoader_ = std::make_unique<igl::shell::ImageLoaderMac>(*fileLoader_);
+  imageLoader_ = std::make_unique<igl::shell::ImageLoader>(*fileLoader_);
   imageWriter_ = std::make_unique<igl::shell::ImageWriterMac>();
 }
 

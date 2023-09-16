@@ -19,7 +19,7 @@ class ImageLoaderAndroid final : public ImageLoader {
  public:
   ImageLoaderAndroid(FileLoader& fileLoader);
   ~ImageLoaderAndroid() override = default;
-  ImageData loadImageData(std::string imageName) noexcept override;
+  ImageData loadImageData(const std::string& imageName) noexcept override;
   void setAssetManager(AAssetManager* mgr) {
     assetManager_ = mgr;
   }

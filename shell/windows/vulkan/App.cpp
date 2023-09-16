@@ -19,7 +19,6 @@
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <memory>
-#include <shell/shared/imageLoader/win/ImageLoaderWin.h>
 #include <shell/shared/platform/win/PlatformWin.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/DefaultSession.h>

@@ -57,6 +57,12 @@ ImageLoader::ImageLoader(FileLoader& fileLoader) :
   fileLoader_(fileLoader),
   factory_(std::make_unique<iglu::textureloader::TextureLoaderFactory>(createLoaderFactories())) {}
 
+ImageData ImageLoader::defaultLoadImageData(const std::string& imageName) noexcept {
+  std::string fullName = fileLoader().fullPath(imageName);
+
+  return loadImageDataFromFile(fullName);
+}
+
 ImageData ImageLoader::loadImageDataFromFile(const std::string& fileName) noexcept {
   auto [data, length] = fileLoader_.loadBinaryData(fileName);
   if (IGL_VERIFY(data && length > 0)) {

@@ -24,7 +24,6 @@
 #import <igl/opengl/macos/Device.h>
 #import <igl/opengl/macos/HWDevice.h>
 #endif
-#include <shell/shared/imageLoader/mac/ImageLoaderMac.h>
 #include <shell/shared/platform/mac/PlatformMac.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/DefaultSession.h>

@@ -11,10 +11,10 @@ add_definitions("-DNOMINMAX")
 add_definitions("-D_USE_MATH_DEFINES=1")
 
 file(GLOB PLATFORM_SHARED_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-     ../shared/fileLoader/win/*.cpp ../shared/imageLoader/win/*.cpp ../shared/imageWriter/win/*.cpp
+     ../shared/fileLoader/win/*.cpp ../shared/imageWriter/win/*.cpp
      ../shared/imageWriter/stb/*.cpp ../shared/platform/win/*.cpp)
 file(GLOB PLATFORM_SHARED_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-     ../shared/fileLoader/win/*.h ../shared/imageLoader/win/*.h ../shared/imageWriter/win/*.h ../shared/imageWriter/stb/*.h
+     ../shared/fileLoader/win/*.h ../shared/imageWriter/win/*.h ../shared/imageWriter/stb/*.h
      ../shared/platform/win/*.h)
 
 add_library(IGLShellPlatform ${PLATFORM_SHARED_SRC_FILES} ${PLATFORM_SHARED_HEADER_FILES})

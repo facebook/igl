@@ -10,9 +10,9 @@ set(PROJECT_NAME "Mac")
 file(GLOB PLATFORM_SHARED_SRC_CPP_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
      ../shared/imageWriter/stb/*.cpp ../shared/platform/mac/*.cpp)
 file(GLOB PLATFORM_SHARED_SRC_OBJC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-     ../shared/fileLoader/apple/*.mm ../shared/imageLoader/mac/*.mm ../shared/imageWriter/mac/*.mm)
+     ../shared/fileLoader/apple/*.mm ../shared/imageWriter/mac/*.mm)
 file(GLOB PLATFORM_SHARED_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-     ../shared/fileLoader/apple/*.h ../shared/imageLoader/mac/*.h ../shared/imageWriter/mac/*.h ../shared/imageWriter/stb/*.h
+     ../shared/fileLoader/apple/*.h ../shared/imageWriter/mac/*.h ../shared/imageWriter/stb/*.h
      ../shared/platform/mac/*.h)
 
 add_library(IGLShellPlatform ${PLATFORM_SHARED_SRC_CPP_FILES} ${PLATFORM_SHARED_SRC_OBJC_FILES} ${PLATFORM_SHARED_HEADER_FILES})

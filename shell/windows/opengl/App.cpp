@@ -31,7 +31,6 @@
 #include <igl/opengl/Version.h>
 #include <igl/opengl/ViewTextureTarget.h>
 #include <memory>
-#include <shell/shared/imageLoader/win/ImageLoaderWin.h>
 #include <shell/shared/platform/win/PlatformWin.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/DefaultSession.h>

@@ -27,9 +27,10 @@ class ImageLoader {
  public:
   explicit ImageLoader(FileLoader& fileLoader);
   virtual ~ImageLoader() = default;
-  virtual ImageData loadImageData(std::string /*imageName*/) noexcept {
-    return checkerboard();
+  virtual ImageData loadImageData(const std::string& imageName) noexcept {
+    return defaultLoadImageData(imageName);
   }
+  static ImageData checkerboard() noexcept;
 
  protected:
   [[nodiscard]] const FileLoader& fileLoader() const noexcept {
@@ -45,7 +46,7 @@ class ImageLoader {
   [[nodiscard]] ImageData loadImageDataFromMemory(const uint8_t* data, uint32_t length) noexcept;
 
  private:
-  static ImageData checkerboard() noexcept;
+  ImageData defaultLoadImageData(const std::string& imageName) noexcept;
 
   FileLoader& fileLoader_;
   std::unique_ptr<iglu::textureloader::TextureLoaderFactory> factory_;
