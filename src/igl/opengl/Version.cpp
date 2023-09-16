@@ -223,13 +223,6 @@ GLVersion getGLVersion(const char* version, bool constrain) {
 }
 
 ShaderVersion getShaderVersion(GLVersion version) {
-#if IGL_PLATFORM_LINUX_SWIFTSHADER
-  // Swiftshader has a bug when it comes to uniform blocks. When calling
-  // `glGetActiveUniformsiv(,..,GL_UNIFORM_OFFSET, ...)`, it always returns -1. We work around this
-  // by forcing GLSL ES 100 shaders in swiftshaders.
-  // TODO(dunfanlu): consider patching swift shaders to fix this.
-  return {ShaderFamily::GlslEs, 1, 0};
-#else
   // TODO: Return proper GLSL ES versions
   switch (version) {
   case GLVersion::v2_0_ES:
@@ -270,7 +263,6 @@ ShaderVersion getShaderVersion(GLVersion version) {
     IGL_ASSERT_NOT_REACHED();
     return {};
   }
-#endif
 }
 
 std::string getStringFromShaderVersion(ShaderVersion version) {
