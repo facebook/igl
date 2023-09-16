@@ -2771,6 +2771,7 @@ void lvk::VulkanStagingDevice::getImageData(VulkanImage& image,
                                             VkFormat format,
                                             void* outData) {
   LVK_ASSERT(image.vkImageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED);
+  LVK_ASSERT(range.layerCount == 1);
 
   const uint32_t storageSize = extent.width * extent.height * extent.depth * getBytesPerPixel(format);
 
@@ -2824,6 +2825,10 @@ void lvk::VulkanStagingDevice::getImageData(VulkanImage& image,
   regions_.push_back(desc);
 
   waitAndReset();
+
+  if (!stagingBuffer->isCoherentMemory_) {
+    stagingBuffer->invalidateMappedMemory(desc.srcOffset_, desc.alignedSize_);
+  }
 
   // 3. Copy data from staging buffer into data
   memcpy(outData, stagingBuffer->getMappedPtr() + desc.srcOffset_, storageSize);
