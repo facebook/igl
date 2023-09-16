@@ -19,16 +19,12 @@ namespace iglu::textureloader::stb::hdr {
 
 class TextureLoaderFactory final : public image::TextureLoaderFactory {
  public:
-  explicit TextureLoaderFactory() noexcept = default;
+  TextureLoaderFactory() noexcept;
 
   [[nodiscard]] uint32_t headerLength() const noexcept final;
 
  private:
-  [[nodiscard]] bool isFloatFormat() const noexcept final;
-  [[nodiscard]] igl::TextureFormat format() const noexcept final;
-
-  [[nodiscard]] bool canCreateInternal(DataReader headerReader,
-                                       igl::Result* IGL_NULLABLE outResult) const noexcept final;
+  [[nodiscard]] bool isIdentifierValid(DataReader headerReader) const noexcept final;
 };
 
 } // namespace iglu::textureloader::stb::hdr

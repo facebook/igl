@@ -51,11 +51,7 @@ class TextureLoader : public ITextureLoader {
   using Super = ITextureLoader;
 
  public:
-  explicit TextureLoader(DataReader reader,
-                         int width,
-                         int height,
-                         igl::TextureFormat format,
-                         bool isFloatFormat) noexcept;
+  explicit TextureLoader(DataReader reader, int width, int height, bool isFloatFormat) noexcept;
 
   [[nodiscard]] bool canUploadSourceData() const noexcept final;
   [[nodiscard]] bool shouldGenerateMipmaps() const noexcept final;
@@ -66,14 +62,11 @@ class TextureLoader : public ITextureLoader {
   bool isFloatFormat_;
 };
 
-TextureLoader::TextureLoader(DataReader reader,
-                             int width,
-                             int height,
-                             igl::TextureFormat format,
-                             bool isFloatFormat) noexcept :
+TextureLoader::TextureLoader(DataReader reader, int width, int height, bool isFloatFormat) noexcept
+  :
   Super(reader), isFloatFormat_(isFloatFormat) {
   auto& desc = mutableDescriptor();
-  desc.format = format;
+  desc.format = isFloatFormat ? igl::TextureFormat::RGBA_F32 : igl::TextureFormat::RGBA_UNorm8;
   desc.numLayers = 1;
   desc.width = static_cast<size_t>(width);
   desc.height = static_cast<size_t>(height);
@@ -116,6 +109,30 @@ std::unique_ptr<IData> TextureLoader::loadInternal(
 }
 } // namespace
 
+TextureLoaderFactory::TextureLoaderFactory(bool isFloatFormat) noexcept :
+  isFloatFormat_(isFloatFormat) {}
+
+bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
+                                             igl::Result* IGL_NULLABLE outResult) const noexcept {
+  if (headerReader.data() == nullptr) {
+    igl::Result::setResult(
+        outResult, igl::Result::Code::ArgumentInvalid, "Reader's data is nullptr.");
+    return false;
+  }
+  if (headerReader.length() < headerLength()) {
+    igl::Result::setResult(
+        outResult, igl::Result::Code::ArgumentOutOfRange, "Not enough data for header.");
+    return false;
+  }
+
+  if (!isIdentifierValid(headerReader)) {
+    igl::Result::setResult(outResult, igl::Result::Code::InvalidOperation, "Incorrect identifier.");
+    return false;
+  }
+
+  return true;
+}
+
 std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     DataReader reader,
     igl::Result* IGL_NULLABLE outResult) const noexcept {
@@ -140,7 +157,7 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     return nullptr;
   }
 
-  return std::make_unique<TextureLoader>(reader, x, y, format(), isFloatFormat());
+  return std::make_unique<TextureLoader>(reader, x, y, isFloatFormat_);
 }
 
 } // namespace iglu::textureloader::stb::image

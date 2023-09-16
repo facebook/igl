@@ -12,17 +12,20 @@
 namespace iglu::textureloader::stb::image {
 
 class TextureLoaderFactory : public ITextureLoaderFactory {
- public:
-  explicit TextureLoaderFactory() noexcept = default;
-
  protected:
-  [[nodiscard]] virtual bool isFloatFormat() const noexcept = 0;
-  [[nodiscard]] virtual igl::TextureFormat format() const noexcept = 0;
+  explicit TextureLoaderFactory(bool isFloatFormat = false) noexcept;
+
+  [[nodiscard]] virtual bool isIdentifierValid(DataReader headerReader) const noexcept = 0;
 
  private:
+  [[nodiscard]] bool canCreateInternal(DataReader headerReader,
+                                       igl::Result* IGL_NULLABLE outResult) const noexcept final;
+
   [[nodiscard]] std::unique_ptr<ITextureLoader> tryCreateInternal(
       DataReader reader,
       igl::Result* IGL_NULLABLE outResult) const noexcept final;
+
+  bool isFloatFormat_;
 };
 
 } // namespace iglu::textureloader::stb::image
