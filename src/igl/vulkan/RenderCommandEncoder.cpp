@@ -753,7 +753,12 @@ void RenderCommandEncoder::ensureVertexBuffers() {
 
   const VertexInputStateDesc& desc = vi->desc_;
 
-  for (size_t i = 0; i != desc.numInputBindings; i++) {
+  IGL_ASSERT(desc.numInputBindings <= IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_));
+
+  const size_t numBindings =
+      std::min(desc.numInputBindings, IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_));
+
+  for (size_t i = 0; i != numBindings; i++) {
     if (!isVertexBufferBound_[i]) {
       // TODO: fix client apps and uncomment
       // IGL_ASSERT_MSG(false,
