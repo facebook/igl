@@ -862,12 +862,13 @@ bool loadFromCache(const char* cacheFileName) {
   return true;
 }
 
-void initModel() {
+bool initModel() {
   const std::string cacheFileName = folderContentRoot + "cache.data";
 
   if (!loadFromCache(cacheFileName.c_str())) {
     if (!LVK_VERIFY(loadAndCache(cacheFileName.c_str()))) {
       LVK_ASSERT_MSG(false, "Cannot load 3D model");
+      return false;
     }
   }
 
@@ -896,6 +897,7 @@ void initModel() {
                                 .data = indexData_.data(),
                                 .debugName = "Buffer: index"},
                                nullptr);
+  return true;
 }
 
 void createPipelines() {
@@ -1431,27 +1433,13 @@ void loadCubemapTexture(const std::string& fileNameKTX, lvk::Holder<lvk::Texture
             .dimensions = {width, height},
             .usage = lvk::TextureUsageBits_Sampled,
             .numMipLevels = lvk::calcNumMipLevels(texRef.extent().x, texRef.extent().y),
+            .data = texRef.data(),
+            // if compression is enabled, upload all mip-levels
+            .dataNumMipLevels = kEnableCompression ? lvk::calcNumMipLevels(width, height) : 1u,
             .debugName = fileNameKTX.c_str(),
         },
         nullptr);
   }
-
-  const void* data[6] = {
-      texRef.data(0, 0, 0),
-      texRef.data(0, 1, 0),
-      texRef.data(0, 2, 0),
-      texRef.data(0, 3, 0),
-      texRef.data(0, 4, 0),
-      texRef.data(0, 5, 0),
-  };
-
-  const lvk::TextureRangeDesc texRefRange = {
-      .dimensions = {width, height},
-      .numLayers = 6,
-      // if compression is enabled, upload all mip-levels
-      .numMipLevels = kEnableCompression ? lvk::calcNumMipLevels(width, height) : 1u,
-  };
-  ctx_->upload(tex, texRefRange, data);
 
   if (!kEnableCompression) {
      ctx_->generateMipmap(tex);
@@ -1603,29 +1591,38 @@ lvk::TextureHandle createTexture(const LoadedImage& img) {
     return it->second;
   }
 
-  const lvk::TextureDesc desc = {
-      .type = lvk::TextureType_2D,
-      .format = formatFromChannels(img.channels),
-      .dimensions = {img.w, img.h},
-      .usage = lvk::TextureUsageBits_Sampled,
-      .numMipLevels = lvk::calcNumMipLevels(img.w, img.h),
-      .debugName = img.debugName.c_str(),
-  };
+  const bool hasCompressedTexture = kEnableCompression && img.channels == 4 && std::filesystem::exists(img.compressedFileName.c_str());
 
-  lvk::Holder<lvk::TextureHandle> tex = ctx_->createTexture(desc, nullptr);
+  const void* initialData = img.pixels;
+  uint32_t initialDataNumMipLevels = 1u;
 
-  if (kEnableCompression && img.channels == 4 && std::filesystem::exists(img.compressedFileName.c_str())) {
+  gli::texture gliTex2d;
+
+  if (hasCompressedTexture) {
     // uploading the texture
-    auto gliTex2d = gli::load_ktx(img.compressedFileName.c_str());
+    gliTex2d = gli::load_ktx(img.compressedFileName.c_str());
     if (gliTex2d.empty()) {
       printf("Failed to load %s\n", img.compressedFileName.c_str());
       assert(0);
     }
-    const void* data[] = {gliTex2d.data()};
-    ctx_->upload(tex, {.dimensions = {img.w, img.h}, .numMipLevels = desc.numMipLevels}, data);
-  } else {
-    const void* data[] = {img.pixels};
-    ctx_->upload(tex, {.dimensions = {img.w, img.h}}, data);
+    initialData = gliTex2d.data();
+    initialDataNumMipLevels = lvk::calcNumMipLevels(img.w, img.h);
+  }
+
+  lvk::Holder<lvk::TextureHandle> tex = ctx_->createTexture(
+      {
+          .type = lvk::TextureType_2D,
+          .format = formatFromChannels(img.channels),
+          .dimensions = {img.w, img.h},
+          .usage = lvk::TextureUsageBits_Sampled,
+          .numMipLevels = lvk::calcNumMipLevels(img.w, img.h),
+          .data = initialData,
+          .dataNumMipLevels = initialDataNumMipLevels,
+          .debugName = img.debugName.c_str(),
+      },
+      nullptr);
+
+  if (!hasCompressedTexture) {
     ctx_->generateMipmap(tex);
   }
 
@@ -1691,7 +1688,9 @@ int main(int argc, char* argv[]) {
 
   window_ = lvk::initWindow("Vulkan Bistro", width_, height_);
   initIGL();
-  initModel();
+  if (!initModel()) {
+    return EXIT_FAILURE;
+  }
 
   glfwSetCursorPosCallback(window_, [](auto* window, double x, double y) {
     int width, height;

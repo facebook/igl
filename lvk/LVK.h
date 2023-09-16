@@ -701,6 +701,7 @@ struct TextureDesc {
   uint32_t numMipLevels = 1;
   StorageType storage = StorageType_Device;
   const void* data = nullptr;
+  uint32_t dataNumMipLevels = 1; // how many mip-levels we want to upload
   const char* debugName = "";
 };
 
