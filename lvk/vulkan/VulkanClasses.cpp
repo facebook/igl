@@ -3269,9 +3269,14 @@ lvk::Holder<lvk::TextureHandle> lvk::VulkanContext::createTexture(const TextureD
   awaitingCreation_ = true;
 
   if (desc.data) {
-    LVK_ASSERT(desc.type == TextureType_2D);
-    const void* mipMaps[] = {desc.data};
-    Result res = upload(handle, {.dimensions = desc.dimensions, .numMipLevels = 1}, mipMaps);
+    LVK_ASSERT_MSG(desc.numMipLevels == 1, "Use upload() to upload multiple mip-levels");
+    LVK_ASSERT(desc.type == TextureType_2D || desc.type == TextureType_Cube);
+    const void* layers[6] = {};
+    const uint32_t numLayers = desc.type == TextureType_Cube ? 6 : 1;
+    for (uint32_t i = 0; i != numLayers; i++) {
+      layers[i] = (const uint8_t*)desc.data + i * getTextureBytesPerLayer(desc.dimensions.width, desc.dimensions.height, desc.format, 0);
+    }
+    Result res = upload(handle, {.dimensions = desc.dimensions, .numLayers = numLayers, .numMipLevels = 1}, layers);
     if (!res.isOk()) {
       Result::setResult(outResult, res);
       return {};
