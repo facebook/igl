@@ -23,6 +23,10 @@ NSString* getBundleFilePath(const std::string& fileName) {
     return nil;
   }
 
+  if ([[NSFileManager defaultManager] fileExistsAtPath:nsFileName]) {
+    return nsFileName;
+  }
+
   for (NSBundle* bundle in [NSBundle allBundles]) {
     NSString* nsPath = [bundle pathForResource:nsFileName ofType:nil];
     if (nsPath != nil) {

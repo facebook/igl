@@ -28,7 +28,7 @@ std::shared_ptr<ITexture> Platform::loadTexture(const char* filename,
                                                 igl::TextureDesc::TextureUsageBits usage) {
   auto imageData = getImageLoader().loadImageData(filename);
   igl::TextureDesc texDesc =
-      igl::TextureDesc::new2D(format, imageData.width, imageData.height, usage);
+      igl::TextureDesc::new2D(format, imageData.desc.width, imageData.desc.height, usage);
   texDesc.numMipLevels =
       calculateMipmapLevels ? igl::TextureDesc::calcNumMipLevels(texDesc.width, texDesc.height) : 1;
 
@@ -36,8 +36,7 @@ std::shared_ptr<ITexture> Platform::loadTexture(const char* filename,
   auto tex = getDevice().createTexture(texDesc, &res);
   IGL_ASSERT_MSG(res.isOk(), res.message.c_str());
   IGL_ASSERT_MSG(tex != nullptr, "createTexture returned null for some reason");
-  const auto range = igl::TextureRangeDesc::new2D(0, 0, imageData.width, imageData.height);
-  tex->upload(range, imageData.buffer.data(), imageData.bytesPerRow);
+  tex->upload(tex->getFullRange(), imageData.data->data());
   return tex;
 }
 

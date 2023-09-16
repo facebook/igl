@@ -16,20 +16,23 @@ void SaveFrameBufferToPng(const char* absoluteFilename,
                           Platform& platform) {
   igl::Result ret;
   auto drawableSurface = framebuffer->getColorAttachment(0);
-  auto frameBuffersize = drawableSurface->getSize();
+  auto frameBuffersize = drawableSurface->getDimensions();
   int const bytesPerPixel = 4;
-  auto bytesPerRow = frameBuffersize.width * bytesPerPixel;
   const auto rangeDesc =
       TextureRangeDesc::new2D(0, 0, frameBuffersize.width, frameBuffersize.height);
   igl::shell::ImageData imageData;
-  imageData.width = frameBuffersize.width;
-  imageData.height = frameBuffersize.height;
-  imageData.bytesPerRow = bytesPerRow;
-  imageData.buffer.resize(frameBuffersize.width * frameBuffersize.height * bytesPerPixel);
+  imageData.desc.format = drawableSurface->getFormat();
+  imageData.desc.width = frameBuffersize.width;
+  imageData.desc.height = frameBuffersize.height;
+  auto buffer =
+      std::make_unique<uint8_t[]>(frameBuffersize.width * frameBuffersize.height * bytesPerPixel);
 
   const CommandQueueDesc desc{igl::CommandQueueType::Graphics};
   auto commandQueue = platform.getDevice().createCommandQueue(desc, nullptr);
-  framebuffer->copyBytesColorAttachment(*commandQueue, 0, imageData.buffer.data(), rangeDesc);
+  framebuffer->copyBytesColorAttachment(*commandQueue, 0, buffer.get(), rangeDesc);
+
+  imageData.data = iglu::textureloader::IData::tryCreate(
+      std::move(buffer), frameBuffersize.width * frameBuffersize.height * bytesPerPixel, nullptr);
 
   IGLLog(IGLLogLevel::LOG_INFO, "Writing screenshot to: %s", absoluteFilename);
   platform.getImageWriter().writeImage(absoluteFilename, imageData);
