@@ -1443,7 +1443,7 @@ lvk::TextureHandle lvk::VulkanSwapchain::getCurrentTexture() {
   if (getNextImage_) {
     // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
     VkResult r = vkAcquireNextImageKHR(device_, swapchain_, UINT64_MAX, acquireSemaphore_, VK_NULL_HANDLE, &currentImageIndex_);
-    if (r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR) {
+    if (r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR && r != VK_ERROR_OUT_OF_DATE_KHR) {
       VK_ASSERT(r);
     }
     getNextImage_ = false;
@@ -1477,7 +1477,7 @@ lvk::Result lvk::VulkanSwapchain::present(VkSemaphore waitSemaphore) {
       .pImageIndices = &currentImageIndex_,
   };
   VkResult r = vkQueuePresentKHR(graphicsQueue_, &pi);
-  if (r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR) {
+  if (r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR && r != VK_ERROR_OUT_OF_DATE_KHR) {
     VK_ASSERT(r);
   }
   LVK_PROFILER_ZONE_END();
