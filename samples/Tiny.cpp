@@ -131,10 +131,10 @@ int main(int argc, char* argv[]) {
   window_ = lvk::initWindow("Vulkan Triangle", width_, height_, true);
   vk.init();
 
-  glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
+  glfwSetFramebufferSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     width_ = width;
     height_ = height;
-    ctx_->recreateSwapchain(width_, height_);
+    ctx_->recreateSwapchain(width, height);
     if (width && height) {
       vk.createFramebuffer();
     }

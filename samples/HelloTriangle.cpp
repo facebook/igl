@@ -86,10 +86,10 @@ int main(int argc, char* argv[]) {
 
   LVK_ASSERT(renderPipelineState_Triangle_.valid());
 
-  glfwSetWindowSizeCallback(window_, [](GLFWwindow*, int width, int height) {
+  glfwSetFramebufferSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     width_ = width;
     height_ = height;
-    ctx_->recreateSwapchain(width_, height_);
+    ctx_->recreateSwapchain(width, height);
   });
 
   double prevTime = glfwGetTime();

@@ -3927,7 +3927,11 @@ void lvk::VulkanContext::createInstance() {
 #if defined(_WIN32)
     VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 #elif defined(__linux__)
+  #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME,
+  #else
     VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
+  #endif
 #elif defined(__APPLE__)
     VK_MVK_MACOS_SURFACE_EXTENSION_NAME,
     VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
@@ -4038,6 +4042,14 @@ void lvk::VulkanContext::createSurface(void* window, void* display) {
       .window = (Window)window,
   };
   VK_ASSERT(vkCreateXlibSurfaceKHR(vkInstance_, &ci, nullptr, &vkSurface_));
+#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
+  const VkWaylandSurfaceCreateInfoKHR ci = {
+    .sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
+    .flags = 0,
+    .display = (wl_display*)display,
+    .surface = (wl_surface*)window,
+  };
+  VK_ASSERT(vkCreateWaylandSurfaceKHR(vkInstance_, &ci, nullptr, &vkSurface_));
 #elif defined(VK_USE_PLATFORM_MACOS_MVK)
   const VkMacOSSurfaceCreateInfoMVK ci = {
       .sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK,

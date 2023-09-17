@@ -429,6 +429,9 @@ constexpr uint32_t kNumBufferedFrames = 3;
 std::unique_ptr<lvk::IContext> ctx_;
 lvk::Framebuffer fbMain_; // swapchain
 lvk::Framebuffer fbOffscreen_;
+lvk::Holder<lvk::TextureHandle> fbOffscreenColor_;
+lvk::Holder<lvk::TextureHandle> fbOffscreenDepth_;
+lvk::Holder<lvk::TextureHandle> fbOffscreenResolve_;
 lvk::Framebuffer fbShadowMap_;
 lvk::Holder<lvk::ShaderModuleHandle> smMeshVert_;
 lvk::Holder<lvk::ShaderModuleHandle> smMeshFrag_;
@@ -1053,18 +1056,20 @@ void createOffscreenFramebuffer() {
     descColor.numMipLevels = 1;
   }
 
+  fbOffscreenColor_ = ctx_->createTexture(descColor);
+  fbOffscreenDepth_ = ctx_->createTexture(descDepth);
   lvk::Framebuffer fb = {
-      .color = {{.texture = ctx_->createTexture(descColor).release()}},
-      .depthStencil = {.texture = ctx_->createTexture(descDepth).release()},
+      .color = {{.texture = fbOffscreenColor_}},
+      .depthStencil = {.texture = fbOffscreenDepth_},
   };
 
   if (kNumSamplesMSAA > 1) {
-    fb.color[0].resolveTexture = ctx_->createTexture({.type = lvk::TextureType_2D,
+    fbOffscreenResolve_ = ctx_->createTexture({.type = lvk::TextureType_2D,
                                                       .format = format,
                                                       .dimensions = {w, h},
                                                       .usage = usage,
-                                                      .debugName = "Offscreen framebuffer (color resolve)"})
-                                     .release();
+                                                      .debugName = "Offscreen framebuffer (color resolve)"});
+    fb.color[0].resolveTexture = fbOffscreenResolve_;
   }
 
   fbOffscreen_ = fb;
@@ -1229,6 +1234,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     {
       buffer.cmdBindRenderPipeline(renderPipelineState_Fullscreen_);
       buffer.cmdPushDebugGroupLabel("Swapchain Output", 0xff0000ff);
+      buffer.cmdBindDepthState(depthState_);
       struct {
         uint32_t texture;
       } bindings = {
@@ -1693,6 +1699,13 @@ int main(int argc, char* argv[]) {
   initIGL();
   initModel();
 
+  glfwSetFramebufferSizeCallback(window_, [](GLFWwindow*, int width, int height) {
+    width_ = width;
+    height_ = height;
+    ctx_->recreateSwapchain(width, height);
+    createOffscreenFramebuffer();
+  });
+
   glfwSetCursorPosCallback(window_, [](auto* window, double x, double y) {
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
@@ -1802,6 +1815,7 @@ int main(int argc, char* argv[]) {
   // Main loop
   while (!glfwWindowShouldClose(window_)) {
     {
+      fbMain_.color[0].texture = ctx_->getCurrentSwapchainTexture();
       imgui_->beginFrame(fbMain_);
       ImGui::ShowDemoWindow();
 
@@ -1897,7 +1911,9 @@ int main(int argc, char* argv[]) {
   samplerShadow_ = nullptr;
   ctx_->destroy(fbMain_);
   ctx_->destroy(fbShadowMap_);
-  ctx_->destroy(fbOffscreen_);
+  fbOffscreenColor_ = nullptr;
+  fbOffscreenDepth_ = nullptr;
+  fbOffscreenResolve_ = nullptr;
   ctx_ = nullptr;
 
   glfwDestroyWindow(window_);

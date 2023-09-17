@@ -20,7 +20,11 @@
 #ifdef _WIN32
 #  define GLFW_EXPOSE_NATIVE_WIN32
 #elif defined(__linux__)
-#  define GLFW_EXPOSE_NATIVE_X11
+#  if defined(LVK_WITH_WAYLAND)
+#    define GLFW_EXPOSE_NATIVE_WAYLAND
+#  else
+#    define GLFW_EXPOSE_NATIVE_X11
+#  endif
 #elif __APPLE__
 #  define GLFW_EXPOSE_NATIVE_COCOA
 #else
@@ -269,7 +273,16 @@ std::unique_ptr<lvk::IContext> lvk::createVulkanContextWithSwapchain(GLFWwindow*
 #if defined(_WIN32)
   ctx = std::make_unique<VulkanContext>(cfg, (void*)glfwGetWin32Window(window));
 #elif defined(__linux__)
-  ctx = std::make_unique<VulkanContext>(cfg, (void*)glfwGetX11Window(window), (void*)glfwGetX11Display());
+  #if defined(LVK_WITH_WAYLAND)
+    auto waylandWindow = glfwGetWaylandWindow(window);
+    if (!waylandWindow) {
+      LVK_ASSERT_MSG(false, "Wayland window not found");
+      return nullptr;
+    }
+    ctx = std::make_unique<VulkanContext>(cfg, (void*)waylandWindow, (void*)glfwGetWaylandDisplay());
+  #else
+    ctx = std::make_unique<VulkanContext>(cfg, (void*)glfwGetX11Window(window), (void*)glfwGetX11Display());
+  #endif
 #elif defined(__APPLE__)
   ctx = std::make_unique<VulkanContext>(cfg, createCocoaWindowView(window));
 #else
