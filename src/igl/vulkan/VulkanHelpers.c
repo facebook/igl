@@ -302,6 +302,7 @@ VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
                          VkDevice* outDevice) {
   assert(numQueueCreateInfos >= 1);
   const VkPhysicalDeviceFeatures deviceFeatures = {
+      .dualSrcBlend = VK_TRUE,
       .multiDrawIndirect = VK_TRUE,
       .drawIndirectFirstInstance = VK_TRUE,
       .depthBiasClamp = VK_TRUE,
