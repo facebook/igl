@@ -29,6 +29,15 @@ jobs:
               cxx: "clang++-15",
               generators: "Unix Makefiles",
             }
+          - {
+              name: "Ubuntu - Clang (Wayland)",
+              os: ubuntu-latest,
+              build_type: "Debug",
+              cc: "clang-15",
+              cxx: "clang++-15",
+              generators: "Unix Makefiles",
+              cmake_args: "-DLVK_WITH_WAYLAND=ON"
+            }
 #          - {
 #              name: "Ubuntu - GCC",
 #              os: ubuntu-latest,
@@ -48,7 +57,7 @@ jobs:
           run: |
             sudo sed -i 's/azure\.//' /etc/apt/sources.list
             sudo apt-get update
-            sudo apt-get install -y gcc-12 clang-15 xorg-dev libxinerama-dev libxcursor-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev
+            sudo apt-get install -y gcc-12 clang-15 xorg-dev libxinerama-dev libxcursor-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev extra-cmake-modules libxkbcommon-x11-dev wayland-protocols
 
         - name: Prepare Vulkan SDK
           uses: humbletim/setup-vulkan-sdk@v1.2.0

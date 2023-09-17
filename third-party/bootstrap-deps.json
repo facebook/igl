@@ -154,5 +154,13 @@
         "url": "https://raw.githubusercontent.com/KhronosGroup/MoltenVK/v1.2.5/MoltenVK/MoltenVK/API/mvk_config.h",
         "sha1": "2f7b9eaeff8e3ac725b6698c309d434451922cb3"
     }
+},
+{
+    "name": "cmake-wayland",
+    "source": {
+        "type": "sourcefile",
+        "url": "https://raw.githubusercontent.com/LunarG/VulkanSamples/master/cmake/FindWayland.cmake",
+        "sha1": "c2f6e9245c257e6eff91a53602844175e12a6ecc"
+    }
 }
 ]

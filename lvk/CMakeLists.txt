@@ -20,6 +20,9 @@ lvk_setup_groups("${SRC_FILES}")
 lvk_setup_groups("${HEADER_FILES}")
 
 target_include_directories(LVKLibrary PUBLIC "${LVK_ROOT_DIR}/lvk")
+if(WAYLAND_FOUND)
+  target_compile_definitions(LVKLibrary PUBLIC -DLVK_WITH_WAYLAND=1)
+endif()
 
 lvk_setup_target(LVKLibrary)
 lvk_set_folder(LVKLibrary "LVK")
