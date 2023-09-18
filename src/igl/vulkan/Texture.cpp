@@ -295,7 +295,8 @@ VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
       mipLevel,
       1u,
       layer,
-      isStereo ? VK_REMAINING_ARRAY_LAYERS : 1u);
+      isStereo ? VK_REMAINING_ARRAY_LAYERS : 1u,
+      "Image View: igl/vulkan/Texture.cpp: Texture::getVkImageViewForFramebuffer()");
 
   return imageViewForFramebuffer_[index]->vkImageView_;
 }
