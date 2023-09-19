@@ -83,7 +83,7 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
       createBuffer = iglDesc.isUniformBlock;
     } else if (device_.getBackendType() == igl::BackendType::Vulkan) {
       createBuffer = true;
-    } else {
+    } else if (device_.getBackendType() == igl::BackendType::Metal) {
       // On Metal, need to create buffers only when data > 4kb
       createBuffer = !hasBindBytesFeature || length > bindBytesLimit;
     }

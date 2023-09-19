@@ -15,6 +15,8 @@ static_assert(sizeof(Color) == 4 * sizeof(float));
 
 std::string BackendTypeToString(BackendType backendType) {
   switch (backendType) {
+  case BackendType::Invalid:
+    return "Invalid";
   case BackendType::OpenGL:
     return "OpenGL";
   case BackendType::Metal:

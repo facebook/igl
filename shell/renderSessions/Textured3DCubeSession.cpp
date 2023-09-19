@@ -144,7 +144,7 @@ static const char* getVulkanVertexShaderSource() {
                         mat4 mvpMatrix;
                         float scaleZ;
                       } perFrame;
- 
+
                       layout(location = 0) in vec3 position;
                       layout(location = 1) in vec3 uvw_in;
                       layout(location = 0) out vec3 uvw;
@@ -157,6 +157,9 @@ static const char* getVulkanVertexShaderSource() {
 
 static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
+  case igl::BackendType::Invalid:
+    IGL_ASSERT_NOT_REACHED();
+    return nullptr;
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(device,
                                                            getVulkanVertexShaderSource(),
@@ -184,22 +187,11 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
         "",
         nullptr);
   }
-  IGL_UNREACHABLE_RETURN(nullptr);
+  IGL_UNREACHABLE_RETURN(nullptr)
 }
 
 static bool isDeviceCompatible(IDevice& device) noexcept {
-  const auto backendtype = device.getBackendType();
-  if (backendtype == BackendType::OpenGL) {
-#if IGL_BACKEND_OPENGL
-    return device.hasFeature(DeviceFeatures::Texture3D);
-#endif // IGL_BACKEND_OPENGL
-  } else if (backendtype == BackendType::Vulkan) {
-    return true;
-  // @fb-only
-    // @fb-only
-  }
-
-  return true;
+  return device.hasFeature(DeviceFeatures::Texture3D);
 }
 
 void Textured3DCubeSession::createSamplerAndTextures(const igl::IDevice& device) {

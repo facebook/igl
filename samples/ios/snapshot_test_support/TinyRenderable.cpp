@@ -102,6 +102,9 @@ const char kGLSLShaderSourceFragment[] =
 
 std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
+  case igl::BackendType::Invalid:
+    IGL_ASSERT_NOT_REACHED();
+    return nullptr;
   case igl::BackendType::Vulkan:
     IGL_ASSERT_MSG(0, "IGLSamples not set up for Vulkan");
     return nullptr;
@@ -129,6 +132,7 @@ std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& devi
     return stages;
   }
   }
+  IGL_UNREACHABLE_RETURN(nullptr)
 }
 
 const size_t kTextureUnit = 0;

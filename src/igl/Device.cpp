@@ -53,6 +53,8 @@ TextureDesc IDevice::sanitize(const TextureDesc& desc) const {
 
 Color IDevice::backendDebugColor() const noexcept {
   switch (getBackendType()) {
+  case BackendType::Invalid:
+    return {0.f, 0.f, 0.f, 0.f};
   case BackendType::OpenGL:
     return {1.f, 1.f, 0.f, 1.f};
   case BackendType::Metal:

@@ -130,6 +130,9 @@ void main() {
 static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   igl::Result result;
   switch (device.getBackendType()) {
+  case igl::BackendType::Invalid:
+    IGL_ASSERT_NOT_REACHED();
+    return nullptr;
   case igl::BackendType::Vulkan: {
     return igl::ShaderStagesCreator::fromModuleStringInput(device,
                                                            getVulkanVertexShaderSource(),
@@ -158,7 +161,7 @@ static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevic
     break;
   }
   }
-  IGL_UNREACHABLE_RETURN(nullptr);
+  IGL_UNREACHABLE_RETURN(nullptr)
 }
 
 struct DrawableData {

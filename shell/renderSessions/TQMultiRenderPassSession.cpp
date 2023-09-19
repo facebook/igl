@@ -105,6 +105,9 @@ static std::string getOpenGLFragmentShaderSource() {
 
 static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
+  case igl::BackendType::Invalid:
+    IGL_ASSERT_NOT_REACHED();
+    return nullptr;
   case igl::BackendType::Vulkan:
     IGL_ASSERT_MSG(0, "IGLSamples not set up for Vulkan");
     return nullptr;
@@ -124,7 +127,7 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
                                                            "",
                                                            nullptr);
   }
-  IGL_UNREACHABLE_RETURN(nullptr);
+  IGL_UNREACHABLE_RETURN(nullptr)
 }
 
 static void render(std::shared_ptr<ICommandBuffer>& buffer,

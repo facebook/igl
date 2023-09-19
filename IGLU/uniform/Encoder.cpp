@@ -91,6 +91,8 @@ void Encoder::operator()(igl::IRenderCommandEncoder& encoder,
     IGL_ASSERT_NOT_IMPLEMENTED();
   // @fb-only
     // @fb-only
+  } else {
+    IGL_ASSERT_NOT_REACHED();
   }
 }
 

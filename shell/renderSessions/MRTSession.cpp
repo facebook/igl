@@ -237,6 +237,9 @@ static std::string getVulkanFragmentShaderSource(int programIndex) {
 static std::unique_ptr<IShaderStages> createShaderStagesForBackend(const IDevice& device,
                                                                    int programIndex) {
   switch (device.getBackendType()) {
+  case igl::BackendType::Invalid:
+    IGL_ASSERT_NOT_REACHED();
+    return nullptr;
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,
@@ -273,28 +276,7 @@ static std::unique_ptr<IShaderStages> createShaderStagesForBackend(const IDevice
 }
 
 static bool isDeviceCompatible(IDevice& device) noexcept {
-  const auto backendtype = device.getBackendType();
-  if (backendtype == BackendType::OpenGL) {
-#if IGL_BACKEND_OPENGL
-    auto glVersion =
-        static_cast<opengl::Device&>(device).getContext().deviceFeatures().getGLVersion();
-#if IGL_OPENGL_ES
-    if (glVersion < opengl::GLVersion::v3_0_ES) {
-      return false;
-    }
-#else
-    if (glVersion < opengl::GLVersion::v4_1) {
-      return false;
-    }
-#endif // IGL_OPENGL_ES
-#endif // IGL_BACKEND_OPENGL
-  } else if (backendtype == BackendType::Vulkan) {
-    return true;
-  // @fb-only
-    // @fb-only
-  }
-
-  return true;
+  return device.hasFeature(DeviceFeatures::MultipleRenderTargets);
 }
 
 void MRTSession::initialize() noexcept {

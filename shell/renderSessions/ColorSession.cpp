@@ -139,6 +139,9 @@ static std::string getVulkanFragmentShaderSource() {
 
 static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
+  case igl::BackendType::Invalid:
+    IGL_ASSERT_NOT_REACHED();
+    return nullptr;
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(device,
                                                            getVulkanVertexShaderSource().c_str(),
@@ -171,7 +174,7 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
                                                            "",
                                                            nullptr);
   }
-  IGL_UNREACHABLE_RETURN(nullptr);
+  IGL_UNREACHABLE_RETURN(nullptr)
 }
 
 ColorSession::ColorSession(std::shared_ptr<Platform> platform) :

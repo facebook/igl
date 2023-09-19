@@ -43,6 +43,9 @@ namespace igl::tests::util::device {
 
 bool isBackendTypeSupported(::igl::BackendType backendType) {
   switch (backendType) {
+  case ::igl::BackendType::Invalid:
+    IGL_ASSERT_NOT_REACHED();
+    return false;
   case ::igl::BackendType::Metal:
     return IGL_METAL_SUPPORTED;
   case ::igl::BackendType::OpenGL:
@@ -51,9 +54,8 @@ bool isBackendTypeSupported(::igl::BackendType backendType) {
     return IGL_VULKAN_SUPPORTED;
   // @fb-only
     // @fb-only
-  default:
-    return false;
   }
+  IGL_UNREACHABLE_RETURN(false)
 }
 
 std::shared_ptr<::igl::IDevice> createTestDevice(::igl::BackendType backendType,

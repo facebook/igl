@@ -136,6 +136,7 @@ struct Result {
 };
 
 enum class BackendType {
+  Invalid,
   OpenGL,
   Metal,
   Vulkan,

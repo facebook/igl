@@ -157,6 +157,9 @@
 
 - (void)loadView {
   switch (backendType_) {
+  case igl::BackendType::Invalid:
+    IGL_ASSERT_NOT_REACHED();
+    break;
   case igl::BackendType::Metal: {
 #if IGL_BACKEND_METAL
     [self initShell];
