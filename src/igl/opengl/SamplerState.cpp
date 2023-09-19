@@ -50,7 +50,7 @@ void SamplerState::bind(ITexture* t) {
   texture->setSamplerHash(hash_);
 
   auto type = texture->getType();
-  auto target = texture->toGLTarget(type, texture->getSamples());
+  auto target = texture->toGLTarget(type);
   if (target == 0) {
     return;
   }

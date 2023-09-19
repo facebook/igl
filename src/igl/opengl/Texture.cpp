@@ -126,7 +126,7 @@ bool Texture::isImplicitStorage() const {
   return false;
 }
 
-GLenum Texture::toGLTarget(TextureType type, size_t samples) const {
+GLenum Texture::toGLTarget(TextureType type) const {
   switch (type) {
   case TextureType::TwoD:
     return GL_TEXTURE_2D;

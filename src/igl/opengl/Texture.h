@@ -57,7 +57,7 @@ class Texture : public WithContext, public ITexture {
 
   virtual bool isImplicitStorage() const;
 
-  [[nodiscard]] GLenum toGLTarget(TextureType type, size_t samples = 1) const;
+  [[nodiscard]] GLenum toGLTarget(TextureType type) const;
   static TextureFormat glInternalFormatToTextureFormat(GLuint glTexInternalFormat,
                                                        GLuint glTexFormat,
                                                        GLuint glTexType);

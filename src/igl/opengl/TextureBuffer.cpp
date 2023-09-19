@@ -93,7 +93,7 @@ void TextureBuffer::bindImage(size_t unit) {
 
 // create a texture for shader read/write usages
 Result TextureBuffer::createTexture(const TextureDesc& desc) {
-  const auto target = toGLTarget(desc.type, desc.numSamples);
+  const auto target = toGLTarget(desc.type);
   if (target == 0) {
     return Result(Result::Code::Unsupported, "Unsupported texture target");
   }
