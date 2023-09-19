@@ -33,6 +33,9 @@ class Context final : public ::igl::opengl::IContext {
   bool isCurrentSharegroup() const override;
   void present(std::shared_ptr<ITexture> surface) const override;
 
+  /// Creates a shared context, matching format based on the current context.
+  std::unique_ptr<IContext> createShareContext(Result* outResult) override;
+
   void setCanvasBufferSize(int width, int height);
 
   EMSCRIPTEN_WEBGL_CONTEXT_HANDLE getWebGLContext() const {

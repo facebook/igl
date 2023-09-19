@@ -37,6 +37,10 @@ class Context : public IContext {
   bool isCurrentContext() const override;
   bool isCurrentSharegroup() const override;
   void present(std::shared_ptr<ITexture> surface) const override;
+
+  /// Creates a shared context, matching format based on the current context.
+  std::unique_ptr<IContext> createShareContext(Result* outResult) override;
+
   HDC getDeviceContext() const {
     return deviceContext_;
   }

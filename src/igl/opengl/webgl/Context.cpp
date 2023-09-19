@@ -68,6 +68,12 @@ bool Context::isCurrentSharegroup() const {
   return true;
 }
 
+std::unique_ptr<IContext> Context::createShareContext(Result* outResult) {
+  IGL_ASSERT_NOT_IMPLEMENTED();
+  Result::setResult(outResult, Result::Code::Unimplemented, "Implement as needed");
+  return nullptr;
+}
+
 void Context::setCanvasBufferSize(int width, int height) {
   auto result = emscripten_set_canvas_element_size(canvasName_.c_str(), width, height);
   if (result != EMSCRIPTEN_RESULT_SUCCESS) {

@@ -223,6 +223,12 @@ Context::Context(RenderingAPI /*api*/,
   initialize();
 }
 
+std::unique_ptr<IContext> Context::createShareContext(Result* outResult) {
+  IGL_ASSERT_NOT_IMPLEMENTED();
+  Result::setResult(outResult, Result::Code::Unimplemented, "Implement as needed");
+  return nullptr;
+}
+
 Context::Context(EGLDisplay display,
                  EGLContext context,
                  EGLSurface readSurface,

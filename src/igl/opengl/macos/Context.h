@@ -22,6 +22,9 @@ namespace opengl::macos {
 
 class Context final : public IContext {
  public:
+  /// Creates a shared context, matching format based on the current context.
+  std::unique_ptr<IContext> createShareContext(Result* outResult) override;
+
   /// Create a new context with new NSOpenGLContext.
   static std::unique_ptr<Context> createContext(igl::opengl::RenderingAPI api, Result* outResult);
   /// Create a new context with existing NSOpenGLContext.

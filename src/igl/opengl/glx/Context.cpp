@@ -267,6 +267,12 @@ void Context::present(std::shared_ptr<ITexture> surface) const {
   module_->glXMakeCurrent(display_, windowHandle_, contextHandle_);
 }
 
+std::unique_ptr<IContext> Context::createShareContext(Result* outResult) {
+  IGL_ASSERT_NOT_IMPLEMENTED();
+  Result::setResult(outResult, Result::Code::Unimplemented, "Implement as needed");
+  return nullptr;
+}
+
 std::shared_ptr<GLXSharedModule> Context::getSharedModule() const {
   return module_;
 }

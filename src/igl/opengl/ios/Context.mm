@@ -19,17 +19,18 @@ namespace igl {
 namespace opengl {
 namespace ios {
 namespace {
-EAGLContext* createEAGLContext(RenderingAPI api) {
+EAGLContext* createEAGLContext(RenderingAPI api, EAGLSharegroup* sharegroup) {
   if (api == RenderingAPI::GLES3) {
-    EAGLContext* context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
+    EAGLContext* context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3
+                                                 sharegroup:sharegroup];
     if (context == nullptr) {
-      return [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+      return [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:sharegroup];
     }
     return context;
   } else {
     IGL_ASSERT_MSG(api == RenderingAPI::GLES2,
                    "IGL: unacceptable enum for rendering API for iOS\n");
-    return [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+    return [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:sharegroup];
   }
 }
 
@@ -49,7 +50,7 @@ void* getOrGenerateContextUniqueID(EAGLContext* context) {
 }
 } // namespace
 
-Context::Context(RenderingAPI api) : context_(createEAGLContext(api)) {
+Context::Context(RenderingAPI api) : context_(createEAGLContext(api, nil)) {
   if (context_ != nil) {
     IContext::registerContext(getOrGenerateContextUniqueID(context_), this);
   }
@@ -57,7 +58,7 @@ Context::Context(RenderingAPI api) : context_(createEAGLContext(api)) {
   initialize();
 }
 
-Context::Context(RenderingAPI api, Result* result) : context_(createEAGLContext(api)) {
+Context::Context(RenderingAPI api, Result* result) : context_(createEAGLContext(api, nil)) {
   if (context_ != nil) {
     IContext::registerContext(getOrGenerateContextUniqueID(context_), this);
   } else {
@@ -119,6 +120,17 @@ bool Context::isCurrentContext() const {
 
 bool Context::isCurrentSharegroup() const {
   return [EAGLContext currentContext].sharegroup == context_.sharegroup;
+}
+
+std::unique_ptr<IContext> Context::createShareContext(Result* outResult) {
+  EAGLContext* sharedContext = [[EAGLContext alloc] initWithAPI:context_.API
+                                                     sharegroup:context_.sharegroup];
+  if (!sharedContext) {
+    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create shared context");
+    return nullptr;
+  }
+  Result::setOk(outResult);
+  return std::make_unique<Context>(sharedContext);
 }
 
 CVOpenGLESTextureCacheRef Context::getTextureCache() {

@@ -11,6 +11,7 @@
 #include <igl/opengl/Device.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
+#include <igl/opengl/Texture.h>
 
 #define DUMMY_FILE_NAME "dummy_file_name"
 #define DUMMY_LINE_NUM 0
@@ -308,6 +309,37 @@ TEST_F(ContextOGLTest, CheckForErrorsInvalidFrameBufferOperation) {
   // Clean up
   context_->bindFramebuffer(GL_FRAMEBUFFER, 0);
   context_->deleteFramebuffers(1, &frameBuffer);
+}
+
+/// Verify that an object is visible across contexts in the same sharegroup
+TEST_F(ContextOGLTest, BasicSharedContexts) {
+  // Setup is three contexts, (1) and (2) part of the same sharegroup and (3) not.
+  igl::Result result;
+  auto sharedContext = context_->createShareContext(&result);
+  ASSERT_TRUE(result.isOk());
+
+  auto unsharedDevice = util::createTestDevice();
+  ASSERT_TRUE(unsharedDevice != nullptr);
+  auto* unsharedContext = &static_cast<opengl::Device&>(*unsharedDevice).getContext();
+  ASSERT_TRUE(unsharedDevice != nullptr);
+
+  // Create texture from context (1)
+  context_->setCurrent();
+  const igl::TextureDesc textureDesc = igl::TextureDesc::new2D(
+      igl::TextureFormat::RGBA_UNorm8, 16, 16, igl::TextureDesc::TextureUsageBits::Sampled);
+  auto texture = device_->createTexture(textureDesc, &result);
+  ASSERT_TRUE(result.isOk());
+
+  const uint64_t glTextureId = static_cast<opengl::Texture*>(texture.get())->getId();
+  context_->flush(); // Required for texture to be visible from other contexts
+
+  // Confirm that texture is visible from context (2)
+  sharedContext->setCurrent();
+  ASSERT_TRUE(sharedContext->isTexture(glTextureId));
+
+  // Confirm that texture is not visible from context (3)
+  unsharedContext->setCurrent();
+  ASSERT_FALSE(unsharedContext->isTexture(glTextureId));
 }
 
 } // namespace tests

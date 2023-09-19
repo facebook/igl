@@ -48,6 +48,10 @@ NSOpenGLContext* createOpenGLContext(igl::opengl::RenderingAPI api) {
 ///--------------------------------------
 /// MARK: - Context
 
+std::unique_ptr<IContext> Context::createShareContext(Result* outResult) {
+  return createShareContext(*this, outResult);
+}
+
 std::unique_ptr<Context> Context::createContext(igl::opengl::RenderingAPI api, Result* outResult) {
   return createContext(createOpenGLContext(api), {}, outResult);
 }

@@ -30,6 +30,10 @@ class Context final : public IContext {
                                                      EGLSurface readSurface,
                                                      EGLSurface drawSurface,
                                                      Result* outResult);
+
+  /// Creates a shared context, matching format based on the current context.
+  std::unique_ptr<IContext> createShareContext(Result* outResult) override;
+
   /// Create a new context for default display. This constructor makes the assumption that the EGL
   /// surfaces to be associated with this context are already present and set to current.
   Context(RenderingAPI api, EGLNativeWindowType window);

@@ -23,6 +23,9 @@ class Context final : public IContext {
   bool isCurrentSharegroup() const override;
   void present(std::shared_ptr<ITexture> surface) const override;
 
+  /// Creates a shared context, matching format based on the current context.
+  std::unique_ptr<IContext> createShareContext(Result* outResult) override;
+
   ///--------------------------------------
   /// MARK: - GL APIs Overrides
 

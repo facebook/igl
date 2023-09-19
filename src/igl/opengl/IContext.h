@@ -47,6 +47,8 @@ class IContext {
   virtual bool isCurrentSharegroup() const = 0;
   virtual void present(std::shared_ptr<ITexture> surface) const = 0;
 
+  virtual std::unique_ptr<IContext> createShareContext(Result* outResult) = 0;
+
   IContext();
   virtual ~IContext();
 
