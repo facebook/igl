@@ -64,10 +64,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
           igl::vulkan::ShaderModule::getVkShaderModule(shaderModule),
           shaderModule->info().entryPoint.c_str()))
       .build(ctx.device_->getVkDevice(),
-             // TODO: use ctx.pipelineCache_
-             // @fb-only
-             // @fb-only
-             VK_NULL_HANDLE,
+             ctx.pipelineCache_,
              ctx.pipelineLayoutCompute_->getVkPipelineLayout(),
              &pipeline_,
              desc_.debugName.c_str());
