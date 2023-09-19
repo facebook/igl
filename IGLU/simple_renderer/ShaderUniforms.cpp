@@ -149,21 +149,6 @@ ShaderUniforms::~ShaderUniforms() {
   }
 }
 
-namespace {
-size_t getUniformExpectedSize(igl::UniformType uniformType, igl::BackendType backend) {
-  auto expectedSize = igl::sizeForUniformType(uniformType);
-  if (backend == igl::BackendType::Metal || backend == igl::BackendType::Vulkan) {
-    if (uniformType == igl::UniformType::Mat3x3) {
-      expectedSize = 48;
-    } else if (uniformType == igl::UniformType::Float3) {
-      expectedSize = 16;
-    }
-  }
-
-  return expectedSize;
-}
-} // namespace
-
 igl::NameHandle ShaderUniforms::getQualifiedMemberName(const igl::NameHandle& blockTypeName,
                                                        const igl::NameHandle& blockInstanceName,
                                                        const igl::NameHandle& memberName) {
@@ -234,17 +219,6 @@ void ShaderUniforms::setUniformBytes(const UniformDesc& uniformDesc,
                                      size_t elementSize,
                                      size_t count,
                                      size_t arrayIndex) {
-  if (device_.getBackendType() != igl::BackendType::Vulkan) {
-    auto expectedSize =
-        getUniformExpectedSize(uniformDesc.iglMemberDesc.type, device_.getBackendType());
-    if (elementSize != expectedSize) {
-      IGL_LOG_ERROR_ONCE("[IGL][Error] Uniform %s size mismatch: expected %d got %d\n",
-                         uniformDesc.iglMemberDesc.name.toConstChar(),
-                         expectedSize,
-                         elementSize);
-      return;
-    }
-  }
   if (arrayIndex + count > uniformDesc.iglMemberDesc.arrayLength) {
     IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid range for uniform %s:  %zu,%zu,%zu\n",
                        uniformDesc.iglMemberDesc.name.toConstChar(),
