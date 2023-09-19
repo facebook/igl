@@ -200,6 +200,7 @@ class VulkanContext final {
 
  private:
   friend class igl::vulkan::Device;
+  friend class igl::vulkan::VulkanStagingDevice;
   friend class igl::vulkan::VulkanSwapchain;
   friend class igl::vulkan::CommandQueue;
   friend class igl::vulkan::ComputeCommandEncoder;
