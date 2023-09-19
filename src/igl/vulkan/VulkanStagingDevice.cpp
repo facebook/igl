@@ -65,10 +65,18 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
   uint32_t chunkDstOffset = dstOffset;
   void* copyData = const_cast<void*>(data);
 
+#if IGL_VULKAN_DEBUG_STAGING_DEVICE
+  IGL_LOG_INFO("Upload requested for data with %u bytes\n", size);
+#endif
+
   while (size) {
     // finds a free memory block to store the data in the staging buffer
     MemoryRegion memoryChunk = nextFreeBlock(size);
-    const auto copySize = std::min(static_cast<uint32_t>(size), memoryChunk.size);
+    const uint32_t copySize = std::min(static_cast<uint32_t>(size), memoryChunk.size);
+
+#if IGL_VULKAN_DEBUG_STAGING_DEVICE
+    IGL_LOG_INFO("\tUploading %u bytes\n", copySize);
+#endif
 
     // copy data into the staging buffer
     stagingBuffer_->bufferSubData(memoryChunk.offset, copySize, copyData);
@@ -92,11 +100,10 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(uint32_t si
 
   IGL_ASSERT(!regions_.empty());
 
-  const auto requestedAlignedSize = getAlignedSize(size);
+  const uint32_t requestedAlignedSize = getAlignedSize(size);
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
-  IGL_LOG_INFO(
-      "Requesting new memory region with %u bytes, aligned %u bytes\n", size, requestedAlignedSize);
+  IGL_LOG_INFO("nextFreeBlock() with %u bytes, aligned %u bytes\n", size, requestedAlignedSize);
 #endif
 
   // If we can't find an empty free region that is as big as the requestedAlignedSize, return
@@ -152,7 +159,8 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(uint32_t si
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
   IGL_LOG_INFO(
-      "Didn't find available block. Waiting for staging device to become fully available\n");
+      "Could not find an available block. Waiting for the staging device to become fully "
+      "available\n");
 #endif
 
   // Nothing was available. Let's wait for the entire staging buffer to become free
@@ -182,6 +190,10 @@ void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
     buffer.getBufferSubData(srcOffset, size, data);
     return;
   }
+
+#if IGL_VULKAN_DEBUG_STAGING_DEVICE
+  IGL_LOG_INFO("Download requested for data with %u bytes\n", size);
+#endif
 
   size_t chunkSrcOffset = srcOffset;
   auto* dstData = static_cast<uint8_t*>(data);
@@ -222,6 +234,15 @@ void VulkanStagingDevice::imageData(VulkanImage& image,
 
   const uint32_t storageSize =
       static_cast<uint32_t>(properties.getBytesPerRange(range, bytesPerRow));
+
+  // We don't support uploading image data in small chunks. If the total upload size exceeds the
+  // the maximum allowed staging buffer size, we can't upload it
+  IGL_ASSERT_MSG(storageSize <= maxBufferCapacity_,
+                 "Image size exceeds maximum size of staging buffer");
+
+#if IGL_VULKAN_DEBUG_STAGING_DEVICE
+  IGL_LOG_INFO("Image upload requested for data with %u bytes\n", storageSize);
+#endif
 
   IGL_ASSERT(storageSize <= stagingBufferSize_);
 
@@ -381,6 +402,17 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
       TextureRangeDesc::new2D(0, 0, imageRegion.extent.width, imageRegion.extent.height);
   const uint32_t storageSize = static_cast<uint32_t>(
       properties.getBytesPerRange(range.atMipLevel(0), mustRepack ? 0 : bytesPerRow));
+  IGL_ASSERT(storageSize <= stagingBufferSize_);
+
+  // We don't support uploading image data in small chunks. If the total upload size exceeds the
+  // the maximum allowed staging buffer size, we can't upload it
+  IGL_ASSERT_MSG(storageSize <= maxBufferCapacity_,
+                 "Image size exceeds maximum size of staging buffer");
+
+#if IGL_VULKAN_DEBUG_STAGING_DEVICE
+  IGL_LOG_INFO("Image download requested for data with %u bytes\n", storageSize);
+#endif
+
   IGL_ASSERT(storageSize <= stagingBufferSize_);
 
   // get next staging buffer free offset
