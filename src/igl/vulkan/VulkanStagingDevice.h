@@ -64,7 +64,7 @@ class VulkanStagingDevice final {
    * @return The offset of the free memory block on the staging buffer and the size of the block
    * found.
    */
-  MemoryRegion nextFreeBlock(uint32_t size);
+  [[nodiscard]] MemoryRegion nextFreeBlock(uint32_t size);
 
   uint32_t getAlignedSize(uint32_t size) const;
 
@@ -72,12 +72,24 @@ class VulkanStagingDevice final {
   /// internal state
   void waitAndReset();
 
+  /// @brief Returns true if the staging buffer cannot store the size requested
+  [[nodiscard]] bool shouldGrowStagingBuffer(uint32_t sizeNeeded) const;
+
+  /// @brief Returns the next size to allocate for the staging buffer given the requested size
+  [[nodiscard]] uint32_t nextSize(uint32_t requestedSize) const;
+
+  /// @brief Grows the staging buffer to a size that is at least as large as the requested size
+  void growStagingBuffer(uint32_t minimumSize);
+
  private:
   VulkanContext& ctx_;
   std::shared_ptr<VulkanBuffer> stagingBuffer_;
   std::unique_ptr<VulkanImmediateCommands> immediate_;
-  uint32_t stagingBufferSize_;
-  uint32_t bufferCapacity_;
+
+  /// @brief Current size of the staging buffer
+  uint32_t stagingBufferSize_ = 0;
+  /// @brief Maximum staging buffer capacity, limited by some architectures
+  uint32_t maxBufferCapacity_ = 0;
 
   /**
    * @brief Stores the used and unused blocks of memory in the staging buffer. There is no

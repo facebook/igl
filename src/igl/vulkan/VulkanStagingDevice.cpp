@@ -28,13 +28,14 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
 
   const auto& limits = ctx_.getVkPhysicalDeviceProperties().limits;
 
-  // Use default value of 256 MB, and clamp it to the max limits
-  stagingBufferSize_ = std::min(limits.maxStorageBufferRange, 256u * 1024u * 1024u);
+  // Use value of 256MB (limited by some architectures), and clamp it to the max limits
+  maxBufferCapacity_ = std::min(limits.maxStorageBufferRange, 256u * 1024u * 1024u);
+
+  // Use default value maxBufferCapacity_
+  stagingBufferSize_ = maxBufferCapacity_;
 
   // Initialize the block list with a block that spans the entire staging buffer
   regions_.push_front(MemoryRegion{0, stagingBufferSize_, VulkanImmediateCommands::SubmitHandle()});
-
-  bufferCapacity_ = stagingBufferSize_;
 
   stagingBuffer_ =
       ctx_.createBuffer(stagingBufferSize_,
@@ -476,6 +477,52 @@ void VulkanStagingDevice::waitAndReset() {
 
   regions_.clear();
 
+  regions_.push_front({0, stagingBufferSize_, VulkanImmediateCommands::SubmitHandle()});
+}
+
+bool VulkanStagingDevice::shouldGrowStagingBuffer(uint32_t sizeNeeded) const {
+  return !stagingBuffer_ || (sizeNeeded > stagingBufferSize_);
+}
+
+uint32_t VulkanStagingDevice::nextSize(uint32_t requestedSize) const {
+  return std::min(getAlignedSize(requestedSize), maxBufferCapacity_);
+}
+
+void VulkanStagingDevice::growStagingBuffer(uint32_t minimumSize) {
+  IGL_PROFILER_FUNCTION();
+
+  IGL_ASSERT(minimumSize <= maxBufferCapacity_);
+
+#if IGL_VULKAN_DEBUG_STAGING_DEVICE
+  IGL_LOG_INFO("Growing staging buffer from %u to %u bytes\n", stagingBufferSize_, minimumSize);
+#endif
+
+  waitAndReset();
+
+  // De-allocates the staging buffer
+  stagingBuffer_ = nullptr;
+
+  // If the size of the new staging buffer plus the size of the existing one is larger than the
+  // limit imposed by some architectures on buffers that are device and host visible, we need to
+  // wait for the current buffer to be destroyed before we can allocate a new one
+  if ((minimumSize + stagingBufferSize_) > maxBufferCapacity_) {
+    // Wait for the current buffer to be destroyed on the device
+    ctx_.waitDeferredTasks();
+  }
+
+  stagingBufferSize_ = minimumSize;
+
+  // Create a new staging buffer with the new size
+  stagingBuffer_ =
+      ctx_.createBuffer(stagingBufferSize_,
+                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                        nullptr,
+                        "Buffer: staging buffer");
+  IGL_ASSERT(stagingBuffer_.get());
+
+  // Clear out the old regions and add one that represents the entire buffer
+  regions_.clear();
   regions_.push_front({0, stagingBufferSize_, VulkanImmediateCommands::SubmitHandle()});
 }
 
