@@ -1051,6 +1051,7 @@ std::shared_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSiz
 #define ENSURE_BUFFER_SIZE(flag, maxSize)                                                      \
   if (usageFlags & flag) {                                                                     \
     if (!IGL_VERIFY(bufferSize <= maxSize)) {                                                  \
+      IGL_LOG_INFO("Max size of buffer exceeded " #flag ": %llu > %llu", bufferSize, maxSize); \
       Result::setResult(outResult,                                                             \
                         Result(Result::Code::InvalidOperation, "Buffer size exceeded" #flag)); \
       return nullptr;                                                                          \
