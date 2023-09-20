@@ -17,6 +17,9 @@
 #include <unistd.h>
 #endif
 
+// any image layout transition causes a full barrier
+#define IGL_DEBUG_ENFORCE_FULL_IMAGE_BARRIER 0
+
 namespace {
 uint32_t ivkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memProps,
                                const uint32_t typeBits,
@@ -630,7 +633,7 @@ std::shared_ptr<VulkanImageView> VulkanImage::createImageView(VkImageViewType ty
                                            debugName);
 }
 
-void VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,
+void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
                                    VkImageLayout newImageLayout,
                                    VkPipelineStageFlags srcStageMask,
                                    VkPipelineStageFlags dstStageMask,
@@ -717,7 +720,16 @@ void VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,
     dstAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
   }
 
-  ivkImageMemoryBarrier(commandBuffer,
+#if IGL_DEBUG_ENFORCE_FULL_IMAGE_BARRIER
+  // full image barrier
+  srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+  dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+
+  srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+  dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+#endif // IGL_DEBUG_ENFORCE_FULL_IMAGE_BARRIER
+
+  ivkImageMemoryBarrier(cmdBuf,
                         vkImage_,
                         srcAccessMask,
                         dstAccessMask,
