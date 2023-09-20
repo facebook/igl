@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+#pragma once
+
+#include <igl/CommandBuffer.h>
+
+namespace iglu::sentinel {
+
+/**
+ * Sentinel CommandBuffer intended for safe use where access to a real command buffer is not
+ * available.
+ * Use cases include returning a reference to a command buffer from a raw pointer when a
+ * valid command buffer is not available.
+ * All methods return nullptr, the default value or an error.
+ */
+class CommandBuffer final : public igl::ICommandBuffer {
+ public:
+  explicit CommandBuffer(bool shouldAssert = true);
+
+  [[nodiscard]] std::unique_ptr<igl::IRenderCommandEncoder> createRenderCommandEncoder(
+      const igl::RenderPassDesc& /*renderPass*/,
+      std::shared_ptr<igl::IFramebuffer> /*framebuffer*/,
+      igl::Result* IGL_NULLABLE /*outResult*/) final;
+  [[nodiscard]] std::unique_ptr<igl::IComputeCommandEncoder> createComputeCommandEncoder() final;
+  void present(std::shared_ptr<igl::ITexture> /*surface*/) const final;
+  void waitUntilScheduled() final;
+  void waitUntilCompleted() final;
+  void pushDebugGroupLabel(const std::string& /*label*/,
+                           const igl::Color& /*color*/ = igl::Color(1, 1, 1, 1)) const final;
+  void popDebugGroupLabel() const final;
+
+ private:
+  [[maybe_unused]] bool shouldAssert_;
+};
+
+} // namespace iglu::sentinel
