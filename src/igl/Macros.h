@@ -228,8 +228,8 @@
 
 // clang-format off
 #ifndef IGL_REPORT_ERROR_ENABLED
-  // Either not Apple platform, or we have assertions not blocked.
-  #if IGL_DEBUG || !IGL_PLATFORM_APPLE || !defined(NS_BLOCK_ASSERTIONS)
+  // Either we have IGL_DEBUG, or Windows/Linux/etc, since we don't have good detection mechanism there.
+  #if IGL_DEBUG || (!IGL_PLATFORM_APPLE && !IGL_PLATFORM_ANDROID)
     #define IGL_REPORT_ERROR_ENABLED 1
   #else
     #define IGL_REPORT_ERROR_ENABLED 0
