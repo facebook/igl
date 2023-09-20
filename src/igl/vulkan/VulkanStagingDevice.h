@@ -90,6 +90,10 @@ class VulkanStagingDevice final {
   uint32_t stagingBufferSize_ = 0;
   /// @brief Maximum staging buffer capacity, limited by some architectures
   uint32_t maxBufferCapacity_ = 0;
+  /// @brief Used to track the current staging buffer's id. Updated every time the staging buffer
+  /// grows, it is used as the debug name for the staging buffer for easily tracking it during
+  /// debugging
+  uint32_t stagingBufferCounter_ = 0;
 
   /**
    * @brief Stores the used and unused blocks of memory in the staging buffer. There is no
