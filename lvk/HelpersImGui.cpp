@@ -152,6 +152,7 @@ void ImGuiRenderer::endFrame(lvk::ICommandBuffer& cmdBuffer) {
     return;
   }
 
+  cmdBuffer.cmdBindDepthState({});
   cmdBuffer.cmdBindViewport({
       .x = 0.0f,
       .y = 0.0f,
