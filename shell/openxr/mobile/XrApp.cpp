@@ -538,6 +538,18 @@ void XrApp::render() {
 }
 
 void XrApp::endFrame(XrFrameState frameState) {
+#ifdef USE_COMPOSITION_LAYER_QUAD
+  XrCompositionLayerQuad layer{};
+  layer.next = nullptr;
+  layer.type = XR_TYPE_COMPOSITION_LAYER_QUAD;
+  layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+  layer.space = stageSpace_;
+  layer.eyeVisibility = XR_EYE_VISIBILITY_BOTH;
+  memset(&layer.subImage, 0, sizeof(XrSwapchainSubImage));
+  layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, 0.f}};
+  layer.size = {1.f, 1.f};
+#endif
+
   std::array<XrCompositionLayerProjectionView, kNumViews> projectionViews;
   std::array<XrCompositionLayerDepthInfoKHR, kNumViews> depthInfos;
 
@@ -584,10 +596,18 @@ void XrApp::endFrame(XrFrameState frameState) {
     depthInfos[i].maxDepth = appParams.depthParams.maxDepth;
     depthInfos[i].nearZ = appParams.depthParams.nearZ;
     depthInfos[i].farZ = appParams.depthParams.farZ;
+#ifdef USE_COMPOSITION_LAYER_QUAD
+    layer.subImage = projectionViews[0].subImage;
+#endif
   }
 
   const XrCompositionLayerBaseHeader* const layers[] = {
-      (const XrCompositionLayerBaseHeader*)&projection};
+#ifdef USE_COMPOSITION_LAYER_QUAD
+      (const XrCompositionLayerBaseHeader*)&layer
+#else
+      (const XrCompositionLayerBaseHeader*)&projection
+#endif
+  };
 
   XrFrameEndInfo endFrameInfo = {
       XR_TYPE_FRAME_END_INFO,
