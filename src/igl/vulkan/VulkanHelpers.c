@@ -105,7 +105,8 @@ const char* ivkGetVulkanResultString(VkResult result) {
 #undef RESULT_CASE
 }
 
-VkResult ivkCreateInstance(uint32_t apiVersion,
+VkResult ivkCreateInstance(const struct VulkanFunctionTable* vt,
+                           uint32_t apiVersion,
                            uint32_t enableValidation,
                            uint32_t enableGPUAssistedValidation,
                            uint32_t enableSynchronizationValidation,
@@ -160,10 +161,11 @@ VkResult ivkCreateInstance(uint32_t apiVersion,
 #endif
   };
 
-  return vkCreateInstance(&ci, NULL, outInstance);
+  return vt->vkCreateInstance(&ci, NULL, outInstance);
 }
 
-VkResult ivkCreateCommandPool(VkDevice device,
+VkResult ivkCreateCommandPool(const struct VulkanFunctionTable* vt,
+                              VkDevice device,
                               VkCommandPoolCreateFlags flags,
                               uint32_t queueFamilyIndex,
                               VkCommandPool* outCommandPool) {
@@ -174,10 +176,11 @@ VkResult ivkCreateCommandPool(VkDevice device,
       .queueFamilyIndex = queueFamilyIndex,
   };
 
-  return vkCreateCommandPool(device, &ci, NULL, outCommandPool);
+  return vt->vkCreateCommandPool(device, &ci, NULL, outCommandPool);
 }
 
-VkResult ivkAllocateCommandBuffer(VkDevice device,
+VkResult ivkAllocateCommandBuffer(const struct VulkanFunctionTable* vt,
+                                  VkDevice device,
                                   VkCommandPool commandPool,
                                   VkCommandBuffer* outCommandBuffer) {
   const VkCommandBufferAllocateInfo ai = {
@@ -188,10 +191,11 @@ VkResult ivkAllocateCommandBuffer(VkDevice device,
       .commandBufferCount = 1,
   };
 
-  return vkAllocateCommandBuffers(device, &ai, outCommandBuffer);
+  return vt->vkAllocateCommandBuffers(device, &ai, outCommandBuffer);
 }
 
-VkResult ivkAllocateMemory(VkPhysicalDevice physDev,
+VkResult ivkAllocateMemory(const struct VulkanFunctionTable* vt,
+                           VkPhysicalDevice physDev,
                            VkDevice device,
                            const VkMemoryRequirements* memRequirements,
                            VkMemoryPropertyFlags props,
@@ -208,16 +212,17 @@ VkResult ivkAllocateMemory(VkPhysicalDevice physDev,
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
       .pNext = &memoryAllocateFlagsInfo,
       .allocationSize = memRequirements->size,
-      .memoryTypeIndex = ivkFindMemoryType(physDev, memRequirements->memoryTypeBits, props),
+      .memoryTypeIndex = ivkFindMemoryType(vt, physDev, memRequirements->memoryTypeBits, props),
   };
 
-  return vkAllocateMemory(device, &ai, NULL, outMemory);
+  return vt->vkAllocateMemory(device, &ai, NULL, outMemory);
 }
 
-bool ivkIsHostVisibleSingleHeapMemory(VkPhysicalDevice physDev) {
+bool ivkIsHostVisibleSingleHeapMemory(const struct VulkanFunctionTable* vt,
+                                      VkPhysicalDevice physDev) {
   VkPhysicalDeviceMemoryProperties memProperties;
 
-  vkGetPhysicalDeviceMemoryProperties(physDev, &memProperties);
+  vt->vkGetPhysicalDeviceMemoryProperties(physDev, &memProperties);
 
   if (memProperties.memoryHeapCount != 1) {
     return false;
@@ -234,11 +239,12 @@ bool ivkIsHostVisibleSingleHeapMemory(VkPhysicalDevice physDev) {
   return false;
 }
 
-uint32_t ivkFindMemoryType(VkPhysicalDevice physDev,
+uint32_t ivkFindMemoryType(const struct VulkanFunctionTable* vt,
+                           VkPhysicalDevice physDev,
                            uint32_t memoryTypeBits,
                            VkMemoryPropertyFlags flags) {
   VkPhysicalDeviceMemoryProperties memProperties;
-  vkGetPhysicalDeviceMemoryProperties(physDev, &memProperties);
+  vt->vkGetPhysicalDeviceMemoryProperties(physDev, &memProperties);
 
   for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
     const bool hasProperties = (memProperties.memoryTypes[i].propertyFlags & flags) == flags;
@@ -252,7 +258,10 @@ uint32_t ivkFindMemoryType(VkPhysicalDevice physDev,
   return 0;
 }
 
-VkResult ivkCreateSemaphore(VkDevice device, VkSemaphore* outSemaphore, bool exportable) {
+VkResult ivkCreateSemaphore(const struct VulkanFunctionTable* vt,
+                            VkDevice device,
+                            VkSemaphore* outSemaphore,
+                            bool exportable) {
   const VkExportSemaphoreCreateInfo exportInfo = {
       .sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO,
       .pNext = NULL,
@@ -264,16 +273,19 @@ VkResult ivkCreateSemaphore(VkDevice device, VkSemaphore* outSemaphore, bool exp
       .pNext = exportable ? &exportInfo : NULL,
       .flags = 0,
   };
-  return vkCreateSemaphore(device, &ci, NULL, outSemaphore);
+  return vt->vkCreateSemaphore(device, &ci, NULL, outSemaphore);
 }
 
-VkResult ivkCreateFence(VkDevice device, VkFlags flags, VkFence* outFence) {
+VkResult ivkCreateFence(const struct VulkanFunctionTable* vt,
+                        VkDevice device,
+                        VkFlags flags,
+                        VkFence* outFence) {
   const VkFenceCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
       .pNext = NULL,
       .flags = flags,
   };
-  return vkCreateFence(device, &ci, NULL, outFence);
+  return vt->vkCreateFence(device, &ci, NULL, outFence);
 }
 
 static void ivkAddNext(void* node, const void* next) {
@@ -290,7 +302,8 @@ static void ivkAddNext(void* node, const void* next) {
   cur->pNext = next;
 }
 
-VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
+VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
+                         VkPhysicalDevice physicalDevice,
                          size_t numQueueCreateInfos,
                          const VkDeviceQueueCreateInfo* queueCreateInfos,
                          size_t numDeviceExtensions,
@@ -367,7 +380,7 @@ VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
     ivkAddNext(&ci, &multiviewFeature);
   }
 
-  return vkCreateDevice(physicalDevice, &ci, NULL, outDevice);
+  return vt->vkCreateDevice(physicalDevice, &ci, NULL, outDevice);
 }
 
 #if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACCATALYST
@@ -377,7 +390,8 @@ VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
 #endif
 
 #if VK_EXT_DEBUG_UTILS_SUPPORTED
-VkResult ivkCreateDebugUtilsMessenger(VkInstance instance,
+VkResult ivkCreateDebugUtilsMessenger(const struct VulkanFunctionTable* vt,
+                                      VkInstance instance,
                                       PFN_vkDebugUtilsMessengerCallbackEXT callback,
                                       void* logUserData,
                                       VkDebugUtilsMessengerEXT* outMessenger) {
@@ -394,11 +408,12 @@ VkResult ivkCreateDebugUtilsMessenger(VkInstance instance,
       .pUserData = logUserData,
   };
 
-  return vkCreateDebugUtilsMessengerEXT(instance, &ci, NULL, outMessenger);
+  return vt->vkCreateDebugUtilsMessengerEXT(instance, &ci, NULL, outMessenger);
 }
 #else // VK_EXT_DEBUG_UTILS_SUPPORTED
 // Stub version
-VkResult ivkCreateDebugUtilsMessenger(VkInstance instance,
+VkResult ivkCreateDebugUtilsMessenger(const struct VulkanFunctionTable* vt,
+                                      VkInstance instance,
                                       PFN_vkDebugUtilsMessengerCallbackEXT callback,
                                       void* logUserData,
                                       VkDebugUtilsMessengerEXT* outMessenger) {
@@ -407,7 +422,8 @@ VkResult ivkCreateDebugUtilsMessenger(VkInstance instance,
 #endif // VK_EXT_DEBUG_UTILS_SUPPORTED
 
 #if defined(VK_EXT_debug_report)
-VkResult ivkCreateDebugReportMessenger(VkInstance instance,
+VkResult ivkCreateDebugReportMessenger(const struct VulkanFunctionTable* vt,
+                                       VkInstance instance,
                                        PFN_vkDebugReportCallbackEXT callback,
                                        void* logUserData,
                                        VkDebugReportCallbackEXT* outMessenger) {
@@ -419,7 +435,7 @@ VkResult ivkCreateDebugReportMessenger(VkInstance instance,
       .pUserData = logUserData,
   };
 
-  return vkCreateDebugReportCallbackEXT(instance, &ci, NULL, outMessenger);
+  return vt->vkCreateDebugReportCallbackEXT(instance, &ci, NULL, outMessenger);
 }
 #else // defined(VK_EXT_debug_report)
 // Stub version
@@ -431,7 +447,8 @@ VkResult ivkCreateDebugReportMessenger(VkInstance instance,
 }
 #endif // defined(VK_EXT_debug_report)
 
-VkResult ivkCreateSurface(VkInstance instance,
+VkResult ivkCreateSurface(const struct VulkanFunctionTable* vt,
+                          VkInstance instance,
                           void* window,
                           void* display,
                           void* layer,
@@ -453,7 +470,7 @@ VkResult ivkCreateSurface(VkInstance instance,
       .flags = 0,
       .window = window,
   };
-  return vkCreateAndroidSurfaceKHR(instance, &ci, NULL, outSurface);
+  return vt->vkCreateAndroidSurfaceKHR(instance, &ci, NULL, outSurface);
 #elif defined(VK_USE_PLATFORM_METAL_EXT)
   const VkMetalSurfaceCreateInfoEXT ci = {
       .sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT,
@@ -461,7 +478,7 @@ VkResult ivkCreateSurface(VkInstance instance,
       .flags = 0,
       .pLayer = layer,
   };
-  return vkCreateMetalSurfaceEXT(instance, &ci, NULL, outSurface);
+  return vt->vkCreateMetalSurfaceEXT(instance, &ci, NULL, outSurface);
 #elif defined(VK_USE_PLATFORM_XLIB_KHR)
   const VkXlibSurfaceCreateInfoKHR ci = {
       .sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,
@@ -470,7 +487,7 @@ VkResult ivkCreateSurface(VkInstance instance,
       .dpy = (Display*)display,
       .window = (Window)window,
   };
-  return vkCreateXlibSurfaceKHR(instance, &ci, NULL, outSurface);
+  return vt->vkCreateXlibSurfaceKHR(instance, &ci, NULL, outSurface);
 #else
   (void)instance;
   (void)window;
@@ -480,7 +497,8 @@ VkResult ivkCreateSurface(VkInstance instance,
 #endif
 }
 
-VkResult ivkCreateSwapchain(VkDevice device,
+VkResult ivkCreateSwapchain(const struct VulkanFunctionTable* vt,
+                            VkDevice device,
                             VkSurfaceKHR surface,
                             uint32_t minImageCount,
                             VkSurfaceFormatKHR surfaceFormat,
@@ -513,20 +531,24 @@ VkResult ivkCreateSwapchain(VkDevice device,
       .clipped = VK_TRUE,
       .oldSwapchain = VK_NULL_HANDLE,
   };
-  return vkCreateSwapchainKHR(device, &ci, NULL, outSwapchain);
+  return vt->vkCreateSwapchainKHR(device, &ci, NULL, outSwapchain);
 }
 
-VkResult ivkCreateHeadlessSurface(VkInstance instance, VkSurfaceKHR* outSurface) {
+VkResult ivkCreateHeadlessSurface(const struct VulkanFunctionTable* vt,
+                                  VkInstance instance,
+                                  VkSurfaceKHR* outSurface) {
   const VkHeadlessSurfaceCreateInfoEXT ci = {
       .sType = VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT,
       .pNext = NULL,
       .flags = 0,
   };
 
-  return vkCreateHeadlessSurfaceEXT(instance, &ci, NULL, outSurface);
+  return vt->vkCreateHeadlessSurfaceEXT(instance, &ci, NULL, outSurface);
 }
 
-VkResult ivkCreateSampler(VkDevice device, VkSampler* outSampler) {
+VkResult ivkCreateSampler(const struct VulkanFunctionTable* vt,
+                          VkDevice device,
+                          VkSampler* outSampler) {
   const VkSamplerCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
       .pNext = NULL,
@@ -547,7 +569,7 @@ VkResult ivkCreateSampler(VkDevice device, VkSampler* outSampler) {
       .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
       .unnormalizedCoordinates = VK_FALSE,
   };
-  return vkCreateSampler(device, &ci, NULL, outSampler);
+  return vt->vkCreateSampler(device, &ci, NULL, outSampler);
 }
 
 VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
@@ -581,7 +603,8 @@ VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
   return ci;
 }
 
-VkResult ivkCreateImageView(VkDevice device,
+VkResult ivkCreateImageView(const struct VulkanFunctionTable* vt,
+                            VkDevice device,
                             VkImage image,
                             VkImageViewType type,
                             VkFormat imageFormat,
@@ -599,10 +622,11 @@ VkResult ivkCreateImageView(VkDevice device,
       .subresourceRange = range,
   };
 
-  return vkCreateImageView(device, &ci, NULL, outImageView);
+  return vt->vkCreateImageView(device, &ci, NULL, outImageView);
 }
 
-VkResult ivkCreateFramebuffer(VkDevice device,
+VkResult ivkCreateFramebuffer(const struct VulkanFunctionTable* vt,
+                              VkDevice device,
                               uint32_t width,
                               uint32_t height,
                               VkRenderPass renderPass,
@@ -618,7 +642,7 @@ VkResult ivkCreateFramebuffer(VkDevice device,
       .height = height,
       .layers = 1,
   };
-  return vkCreateFramebuffer(device, &ci, NULL, outFramebuffer);
+  return vt->vkCreateFramebuffer(device, &ci, NULL, outFramebuffer);
 }
 
 VkAttachmentDescription2 ivkGetAttachmentDescriptionColor(VkFormat format,
@@ -650,7 +674,8 @@ VkAttachmentReference2 ivkGetAttachmentReferenceColor(uint32_t idx) {
   return ref;
 }
 
-VkResult ivkCreateRenderPass(VkDevice device,
+VkResult ivkCreateRenderPass(const struct VulkanFunctionTable* vt,
+                             VkDevice device,
                              uint32_t numAttachments,
                              const VkAttachmentDescription* attachments,
                              const VkSubpassDescription* subpass,
@@ -667,7 +692,7 @@ VkResult ivkCreateRenderPass(VkDevice device,
       .dependencyCount = 1,
       .pDependencies = dependency,
   };
-  return vkCreateRenderPass(device, &ci, NULL, outRenderPass);
+  return vt->vkCreateRenderPass(device, &ci, NULL, outRenderPass);
 }
 
 VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
@@ -753,7 +778,8 @@ VkRenderPassMultiviewCreateInfo ivkGetRenderPassMultiviewCreateInfo(
   return ci;
 }
 
-VkResult ivkCreateDescriptorSetLayout(VkDevice device,
+VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
+                                      VkDevice device,
                                       VkDescriptorSetLayoutCreateFlags flags,
                                       uint32_t numBindings,
                                       const VkDescriptorSetLayoutBinding* bindings,
@@ -778,10 +804,11 @@ VkResult ivkCreateDescriptorSetLayout(VkDevice device,
     .bindingCount = numBindings,
     .pBindings = bindings,
   };
-  return vkCreateDescriptorSetLayout(device, &ci, NULL, outLayout);
+  return vt->vkCreateDescriptorSetLayout(device, &ci, NULL, outLayout);
 }
 
-VkResult ivkAllocateDescriptorSet(VkDevice device,
+VkResult ivkAllocateDescriptorSet(const struct VulkanFunctionTable* vt,
+                                  VkDevice device,
                                   VkDescriptorPool pool,
                                   VkDescriptorSetLayout layout,
                                   VkDescriptorSet* outDescriptorSet) {
@@ -791,10 +818,11 @@ VkResult ivkAllocateDescriptorSet(VkDevice device,
       .descriptorSetCount = 1,
       .pSetLayouts = &layout,
   };
-  return vkAllocateDescriptorSets(device, &ai, outDescriptorSet);
+  return vt->vkAllocateDescriptorSets(device, &ai, outDescriptorSet);
 }
 
-VkResult ivkCreateDescriptorPool(VkDevice device,
+VkResult ivkCreateDescriptorPool(const struct VulkanFunctionTable* vt,
+                                 VkDevice device,
                                  VkDescriptorPoolCreateFlags flags,
                                  uint32_t maxDescriptorSets,
                                  uint32_t numPoolSizes,
@@ -807,20 +835,20 @@ VkResult ivkCreateDescriptorPool(VkDevice device,
       .poolSizeCount = numPoolSizes,
       .pPoolSizes = poolSizes,
   };
-  return vkCreateDescriptorPool(device, &ci, NULL, outDescriptorPool);
+  return vt->vkCreateDescriptorPool(device, &ci, NULL, outDescriptorPool);
 }
 
-VkResult ivkBeginCommandBuffer(VkCommandBuffer buffer) {
+VkResult ivkBeginCommandBuffer(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer) {
   const VkCommandBufferBeginInfo bi = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
       .pNext = NULL,
       .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
   };
-  return vkBeginCommandBuffer(buffer, &bi);
+  return vt->vkBeginCommandBuffer(buffer, &bi);
 }
 
-VkResult ivkEndCommandBuffer(VkCommandBuffer buffer) {
-  return vkEndCommandBuffer(buffer);
+VkResult ivkEndCommandBuffer(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer) {
+  return vt->vkEndCommandBuffer(buffer);
 }
 
 VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,
@@ -1226,7 +1254,8 @@ glslang_input_t ivkGetGLSLangInput(VkShaderStageFlagBits stage,
   return input;
 }
 
-VkResult ivkCreateShaderModule(VkDevice device,
+VkResult ivkCreateShaderModule(const struct VulkanFunctionTable* vt,
+                               VkDevice device,
                                glslang_program_t* program,
                                VkShaderModule* outShaderModule) {
   const VkShaderModuleCreateInfo ci = {
@@ -1234,10 +1263,11 @@ VkResult ivkCreateShaderModule(VkDevice device,
       .codeSize = glslang_program_SPIRV_get_size(program) * sizeof(uint32_t),
       .pCode = glslang_program_SPIRV_get_ptr(program),
   };
-  return vkCreateShaderModule(device, &ci, NULL, outShaderModule);
+  return vt->vkCreateShaderModule(device, &ci, NULL, outShaderModule);
 }
 
-VkResult ivkCreateShaderModuleFromSPIRV(VkDevice device,
+VkResult ivkCreateShaderModuleFromSPIRV(const struct VulkanFunctionTable* vt,
+                                        VkDevice device,
                                         const void* dataSPIRV,
                                         size_t size,
                                         VkShaderModule* outShaderModule) {
@@ -1246,10 +1276,11 @@ VkResult ivkCreateShaderModuleFromSPIRV(VkDevice device,
       .codeSize = size,
       .pCode = dataSPIRV,
   };
-  return vkCreateShaderModule(device, &ci, NULL, outShaderModule);
+  return vt->vkCreateShaderModule(device, &ci, NULL, outShaderModule);
 }
 
-VkResult ivkCreateGraphicsPipeline(VkDevice device,
+VkResult ivkCreateGraphicsPipeline(const struct VulkanFunctionTable* vt,
+                                   VkDevice device,
                                    VkPipelineCache pipelineCache,
                                    uint32_t numShaderStages,
                                    const VkPipelineShaderStageCreateInfo* shaderStages,
@@ -1286,10 +1317,11 @@ VkResult ivkCreateGraphicsPipeline(VkDevice device,
       .basePipelineHandle = VK_NULL_HANDLE,
       .basePipelineIndex = -1,
   };
-  return vkCreateGraphicsPipelines(device, pipelineCache, 1, &ci, NULL, outPipeline);
+  return vt->vkCreateGraphicsPipelines(device, pipelineCache, 1, &ci, NULL, outPipeline);
 }
 
-VkResult ivkCreateComputePipeline(VkDevice device,
+VkResult ivkCreateComputePipeline(const struct VulkanFunctionTable* vt,
+                                  VkDevice device,
                                   VkPipelineCache pipelineCache,
                                   const VkPipelineShaderStageCreateInfo* shaderStage,
                                   VkPipelineLayout pipelineLayout,
@@ -1303,10 +1335,11 @@ VkResult ivkCreateComputePipeline(VkDevice device,
       .basePipelineHandle = VK_NULL_HANDLE,
       .basePipelineIndex = -1,
   };
-  return vkCreateComputePipelines(device, pipelineCache, 1, &ci, NULL, outPipeline);
+  return vt->vkCreateComputePipelines(device, pipelineCache, 1, &ci, NULL, outPipeline);
 }
 
-void ivkImageMemoryBarrier(VkCommandBuffer buffer,
+void ivkImageMemoryBarrier(const struct VulkanFunctionTable* vt,
+                           VkCommandBuffer buffer,
                            VkImage image,
                            VkAccessFlags srcAccessMask,
                            VkAccessFlags dstAccessMask,
@@ -1324,10 +1357,11 @@ void ivkImageMemoryBarrier(VkCommandBuffer buffer,
       .image = image,
       .subresourceRange = subresourceRange,
   };
-  vkCmdPipelineBarrier(buffer, srcStageMask, dstStageMask, 0, 0, NULL, 0, NULL, 1, &barrier);
+  vt->vkCmdPipelineBarrier(buffer, srcStageMask, dstStageMask, 0, 0, NULL, 0, NULL, 1, &barrier);
 }
 
-void ivkBufferMemoryBarrier(VkCommandBuffer cmdBuffer,
+void ivkBufferMemoryBarrier(const struct VulkanFunctionTable* vt,
+                            VkCommandBuffer cmdBuffer,
                             VkBuffer buffer,
                             VkAccessFlags srcAccessMask,
                             VkAccessFlags dstAccessMask,
@@ -1345,10 +1379,11 @@ void ivkBufferMemoryBarrier(VkCommandBuffer cmdBuffer,
       .offset = offset,
       .size = size,
   };
-  vkCmdPipelineBarrier(cmdBuffer, srcStageMask, dstStageMask, 0, 0, NULL, 1, &barrier, 0, NULL);
+  vt->vkCmdPipelineBarrier(cmdBuffer, srcStageMask, dstStageMask, 0, 0, NULL, 1, &barrier, 0, NULL);
 }
 
-void ivkCmdBlitImage(VkCommandBuffer buffer,
+void ivkCmdBlitImage(const struct VulkanFunctionTable* vt,
+                     VkCommandBuffer buffer,
                      VkImage srcImage,
                      VkImage dstImage,
                      VkImageLayout srcImageLayout,
@@ -1364,10 +1399,11 @@ void ivkCmdBlitImage(VkCommandBuffer buffer,
       .dstSubresource = dstSubresourceRange,
       .dstOffsets = {dstOffsets[0], dstOffsets[1]},
   };
-  vkCmdBlitImage(buffer, srcImage, srcImageLayout, dstImage, dstImageLayout, 1, &blit, filter);
+  vt->vkCmdBlitImage(buffer, srcImage, srcImageLayout, dstImage, dstImageLayout, 1, &blit, filter);
 }
 
-VkResult ivkQueuePresent(VkQueue graphicsQueue,
+VkResult ivkQueuePresent(const struct VulkanFunctionTable* vt,
+                         VkQueue graphicsQueue,
                          VkSemaphore waitSemaphore,
                          VkSwapchainKHR swapchain,
                          uint32_t currentSwapchainImageIndex) {
@@ -1379,10 +1415,11 @@ VkResult ivkQueuePresent(VkQueue graphicsQueue,
       .pSwapchains = &swapchain,
       .pImageIndices = &currentSwapchainImageIndex,
   };
-  return vkQueuePresentKHR(graphicsQueue, &pi);
+  return vt->vkQueuePresentKHR(graphicsQueue, &pi);
 }
 
-VkResult ivkSetDebugObjectName(VkDevice device,
+VkResult ivkSetDebugObjectName(const struct VulkanFunctionTable* vt,
+                               VkDevice device,
                                VkObjectType type,
                                uint64_t handle,
                                const char* name) {
@@ -1398,13 +1435,14 @@ VkResult ivkSetDebugObjectName(VkDevice device,
       .pObjectName = name,
   };
 
-  return vkSetDebugUtilsObjectNameEXT(device, &ni);
+  return vt->vkSetDebugUtilsObjectNameEXT(device, &ni);
 #else
   return VK_SUCCESS;
 #endif // VK_EXT_DEBUG_UTILS_SUPPORTED
 }
 
-void ivkCmdBeginDebugUtilsLabel(VkCommandBuffer buffer,
+void ivkCmdBeginDebugUtilsLabel(const struct VulkanFunctionTable* vt,
+                                VkCommandBuffer buffer,
                                 const char* name,
                                 const float colorRGBA[4]) {
 #if VK_EXT_DEBUG_UTILS_SUPPORTED
@@ -1414,11 +1452,12 @@ void ivkCmdBeginDebugUtilsLabel(VkCommandBuffer buffer,
       .pLabelName = name,
       .color = {colorRGBA[0], colorRGBA[1], colorRGBA[2], colorRGBA[3]},
   };
-  vkCmdBeginDebugUtilsLabelEXT(buffer, &label);
+  vt->vkCmdBeginDebugUtilsLabelEXT(buffer, &label);
 #endif // VK_EXT_DEBUG_UTILS_SUPPORTED
 }
 
-void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer,
+void ivkCmdInsertDebugUtilsLabel(const struct VulkanFunctionTable* vt,
+                                 VkCommandBuffer buffer,
                                  const char* name,
                                  const float colorRGBA[4]) {
 #if VK_EXT_DEBUG_UTILS_SUPPORTED
@@ -1428,13 +1467,13 @@ void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer,
       .pLabelName = name,
       .color = {colorRGBA[0], colorRGBA[1], colorRGBA[2], colorRGBA[3]},
   };
-  vkCmdInsertDebugUtilsLabelEXT(buffer, &label);
+  vt->vkCmdInsertDebugUtilsLabelEXT(buffer, &label);
 #endif // VK_EXT_DEBUG_UTILS_SUPPORTED
 }
 
-void ivkCmdEndDebugUtilsLabel(VkCommandBuffer buffer) {
+void ivkCmdEndDebugUtilsLabel(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer) {
 #if VK_EXT_DEBUG_UTILS_SUPPORTED
-  vkCmdEndDebugUtilsLabelEXT(buffer);
+  vt->vkCmdEndDebugUtilsLabelEXT(buffer);
 #endif // VK_EXT_DEBUG_UTILS_SUPPORTED
 }
 
@@ -1508,44 +1547,45 @@ VkImageCopy ivkGetImageCopy2D(VkOffset2D srcDstOffset,
   return copy;
 }
 
-VkResult ivkVmaCreateAllocator(VkPhysicalDevice physDev,
+VkResult ivkVmaCreateAllocator(const struct VulkanFunctionTable* vt,
+                               VkPhysicalDevice physDev,
                                VkDevice device,
                                VkInstance instance,
                                uint32_t apiVersion,
                                bool enableBufferDeviceAddress,
                                VmaAllocator* outVma) {
   const VmaVulkanFunctions funcs = {
-    .vkGetInstanceProcAddr = vkGetInstanceProcAddr,
-    .vkGetDeviceProcAddr = vkGetDeviceProcAddr,
-    .vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties,
-    .vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties,
-    .vkAllocateMemory = vkAllocateMemory,
-    .vkFreeMemory = vkFreeMemory,
-    .vkMapMemory = vkMapMemory,
-    .vkUnmapMemory = vkUnmapMemory,
-    .vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges,
-    .vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges,
-    .vkBindBufferMemory = vkBindBufferMemory,
-    .vkBindImageMemory = vkBindImageMemory,
-    .vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements,
-    .vkGetImageMemoryRequirements = vkGetImageMemoryRequirements,
-    .vkCreateBuffer = vkCreateBuffer,
-    .vkDestroyBuffer = vkDestroyBuffer,
-    .vkCreateImage = vkCreateImage,
-    .vkDestroyImage = vkDestroyImage,
-    .vkCmdCopyBuffer = vkCmdCopyBuffer,
+    .vkGetInstanceProcAddr = vt->vkGetInstanceProcAddr,
+    .vkGetDeviceProcAddr = vt->vkGetDeviceProcAddr,
+    .vkGetPhysicalDeviceProperties = vt->vkGetPhysicalDeviceProperties,
+    .vkGetPhysicalDeviceMemoryProperties = vt->vkGetPhysicalDeviceMemoryProperties,
+    .vkAllocateMemory = vt->vkAllocateMemory,
+    .vkFreeMemory = vt->vkFreeMemory,
+    .vkMapMemory = vt->vkMapMemory,
+    .vkUnmapMemory = vt->vkUnmapMemory,
+    .vkFlushMappedMemoryRanges = vt->vkFlushMappedMemoryRanges,
+    .vkInvalidateMappedMemoryRanges = vt->vkInvalidateMappedMemoryRanges,
+    .vkBindBufferMemory = vt->vkBindBufferMemory,
+    .vkBindImageMemory = vt->vkBindImageMemory,
+    .vkGetBufferMemoryRequirements = vt->vkGetBufferMemoryRequirements,
+    .vkGetImageMemoryRequirements = vt->vkGetImageMemoryRequirements,
+    .vkCreateBuffer = vt->vkCreateBuffer,
+    .vkDestroyBuffer = vt->vkDestroyBuffer,
+    .vkCreateImage = vt->vkCreateImage,
+    .vkDestroyImage = vt->vkDestroyImage,
+    .vkCmdCopyBuffer = vt->vkCmdCopyBuffer,
 
 #if VMA_VULKAN_VERSION >= 1001000
-    .vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2,
-    .vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2,
-    .vkBindBufferMemory2KHR = vkBindBufferMemory2,
-    .vkBindImageMemory2KHR = vkBindImageMemory2,
-    .vkGetPhysicalDeviceMemoryProperties2KHR = vkGetPhysicalDeviceMemoryProperties2,
+    .vkGetBufferMemoryRequirements2KHR = vt->vkGetBufferMemoryRequirements2,
+    .vkGetImageMemoryRequirements2KHR = vt->vkGetImageMemoryRequirements2,
+    .vkBindBufferMemory2KHR = vt->vkBindBufferMemory2,
+    .vkBindImageMemory2KHR = vt->vkBindImageMemory2,
+    .vkGetPhysicalDeviceMemoryProperties2KHR = vt->vkGetPhysicalDeviceMemoryProperties2,
 #endif
 
 #if VMA_VULKAN_VERSION >= 1003000
-    .vkGetDeviceBufferMemoryRequirements = vkGetDeviceBufferMemoryRequirements,
-    .vkGetDeviceImageMemoryRequirements = vkGetDeviceImageMemoryRequirements,
+    .vkGetDeviceBufferMemoryRequirements = vt->vkGetDeviceBufferMemoryRequirements,
+    .vkGetDeviceImageMemoryRequirements = vt->vkGetDeviceImageMemoryRequirements,
 #endif
   };
 

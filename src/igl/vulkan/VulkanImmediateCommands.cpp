@@ -13,11 +13,14 @@
 namespace igl {
 namespace vulkan {
 
-VulkanImmediateCommands::VulkanImmediateCommands(VkDevice device,
+VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
+                                                 VkDevice device,
                                                  uint32_t queueFamilyIndex,
                                                  const char* debugName) :
+  vf_(vf),
   device_(device),
-  commandPool_(device_,
+  commandPool_(vf_,
+               device_,
                VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT |
                    VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
                queueFamilyIndex,
@@ -25,17 +28,19 @@ VulkanImmediateCommands::VulkanImmediateCommands(VkDevice device,
   debugName_(debugName) {
   IGL_PROFILER_FUNCTION();
 
-  vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue_);
+  vf_.vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue_);
 
   buffers_.reserve(kMaxCommandBuffers);
 
   for (uint32_t i = 0; i != kMaxCommandBuffers; i++) {
     buffers_.emplace_back(
-        VulkanFence(
-            device_, VkFenceCreateFlagBits{}, IGL_FORMAT("Fence: commandBuffer #{}", i).c_str()),
-        VulkanSemaphore(device, IGL_FORMAT("Semaphore: {} ({})", debugName, i).c_str()));
+        VulkanFence(vf_,
+                    device_,
+                    VkFenceCreateFlagBits{},
+                    IGL_FORMAT("Fence: commandBuffer #{}", i).c_str()),
+        VulkanSemaphore(vf_, device, IGL_FORMAT("Semaphore: {} ({})", debugName, i).c_str()));
     VK_ASSERT(ivkAllocateCommandBuffer(
-        device_, commandPool_.getVkCommandPool(), &buffers_[i].cmdBufAllocated_));
+        &vf_, device_, commandPool_.getVkCommandPool(), &buffers_[i].cmdBufAllocated_));
     buffers_[i].handle_.bufferIndex_ = i;
   }
 }
@@ -52,11 +57,11 @@ void VulkanImmediateCommands::purge() {
       continue;
     }
 
-    const VkResult result = vkWaitForFences(device_, 1, &buf.fence_.vkFence_, VK_TRUE, 0);
+    const VkResult result = vf_.vkWaitForFences(device_, 1, &buf.fence_.vkFence_, VK_TRUE, 0);
 
     if (result == VK_SUCCESS) {
-      VK_ASSERT(vkResetCommandBuffer(buf.cmdBuf_, VkCommandBufferResetFlags{0}));
-      VK_ASSERT(vkResetFences(device_, 1, &buf.fence_.vkFence_));
+      VK_ASSERT(vf_.vkResetCommandBuffer(buf.cmdBuf_, VkCommandBufferResetFlags{0}));
+      VK_ASSERT(vf_.vkResetFences(device_, 1, &buf.fence_.vkFence_));
       buf.cmdBuf_ = VK_NULL_HANDLE;
       numAvailableCommandBuffers_++;
     } else {
@@ -103,7 +108,7 @@ const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::ac
 
   current->cmdBuf_ = current->cmdBufAllocated_;
   current->isEncoding_ = true;
-  VK_ASSERT(ivkBeginCommandBuffer(current->cmdBuf_));
+  VK_ASSERT(ivkBeginCommandBuffer(&vf_, current->cmdBuf_));
 
   return *current;
 }
@@ -119,7 +124,7 @@ void VulkanImmediateCommands::wait(const SubmitHandle handle) {
     return;
   }
 
-  VK_ASSERT(vkWaitForFences(
+  VK_ASSERT(vf_.vkWaitForFences(
       device_, 1, &buffers_[handle.bufferIndex_].fence_.vkFence_, VK_TRUE, UINT64_MAX));
 
   purge();
@@ -140,7 +145,7 @@ void VulkanImmediateCommands::waitAll() {
   }
 
   if (numFences) {
-    VK_ASSERT(vkWaitForFences(device_, numFences, fences, VK_TRUE, UINT64_MAX));
+    VK_ASSERT(vf_.vkWaitForFences(device_, numFences, fences, VK_TRUE, UINT64_MAX));
   }
 
   purge();
@@ -178,14 +183,14 @@ bool VulkanImmediateCommands::isReady(const SubmitHandle handle) const {
     return true;
   }
 
-  return vkWaitForFences(device_, 1, &buf.fence_.vkFence_, VK_TRUE, 0) == VK_SUCCESS;
+  return vf_.vkWaitForFences(device_, 1, &buf.fence_.vkFence_, VK_TRUE, 0) == VK_SUCCESS;
 }
 
 VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     const CommandBufferWrapper& wrapper) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
   IGL_ASSERT(wrapper.isEncoding_);
-  VK_ASSERT(ivkEndCommandBuffer(wrapper.cmdBuf_));
+  VK_ASSERT(ivkEndCommandBuffer(&vf_, wrapper.cmdBuf_));
 
   // @lint-ignore CLANGTIDY
   const VkPipelineStageFlags waitStageMasks[] = {VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
@@ -211,7 +216,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkQueueSubmit()\n\n", wrapper.cmdBuf_);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-  VK_ASSERT(vkQueueSubmit(queue_, 1u, &si, vkFence));
+  VK_ASSERT(vf_.vkQueueSubmit(queue_, 1u, &si, vkFence));
   IGL_PROFILER_ZONE_END();
 
   lastSubmitSemaphore_ = wrapper.semaphore_.vkSemaphore_;

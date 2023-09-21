@@ -8,6 +8,7 @@
 #pragma once
 
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <vector>
 
@@ -40,7 +41,8 @@ class VulkanPipelineBuilder final {
   VulkanPipelineBuilder& colorBlendAttachmentStates(
       std::vector<VkPipelineColorBlendAttachmentState>& states);
 
-  [[nodiscard]] VkResult build(VkDevice device,
+  [[nodiscard]] VkResult build(const VulkanFunctionTable& vf,
+                               VkDevice device,
                                VkPipelineCache pipelineCache,
                                VkPipelineLayout pipelineLayout,
                                VkRenderPass renderPass,
@@ -70,7 +72,8 @@ class VulkanComputePipelineBuilder final {
 
   VulkanComputePipelineBuilder& shaderStage(VkPipelineShaderStageCreateInfo stage);
 
-  VkResult build(VkDevice device,
+  VkResult build(const VulkanFunctionTable& vf,
+                 VkDevice device,
                  VkPipelineCache pipelineCache,
                  VkPipelineLayout pipelineLayout,
                  VkPipeline* outPipeline,

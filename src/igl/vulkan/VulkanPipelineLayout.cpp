@@ -13,25 +13,26 @@ namespace igl {
 
 namespace vulkan {
 
-VulkanPipelineLayout::VulkanPipelineLayout(VkDevice device,
+VulkanPipelineLayout::VulkanPipelineLayout(const VulkanFunctionTable& vf,
+                                           VkDevice device,
                                            const VkDescriptorSetLayout* layouts,
                                            uint32_t numLayouts,
                                            const VkPushConstantRange& range,
                                            const char* debugName) :
-  device_(device) {
+  vf_(vf), device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   const VkPipelineLayoutCreateInfo ci = ivkGetPipelineLayoutCreateInfo(numLayouts, layouts, &range);
 
-  VK_ASSERT(vkCreatePipelineLayout(device, &ci, nullptr, &vkPipelineLayout_));
+  VK_ASSERT(vf_.vkCreatePipelineLayout(device, &ci, nullptr, &vkPipelineLayout_));
   VK_ASSERT(ivkSetDebugObjectName(
-      device_, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)vkPipelineLayout_, debugName));
+      &vf_, device_, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)vkPipelineLayout_, debugName));
 }
 
 VulkanPipelineLayout::~VulkanPipelineLayout() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
-  vkDestroyPipelineLayout(device_, vkPipelineLayout_, nullptr);
+  vf_.vkDestroyPipelineLayout(device_, vkPipelineLayout_, nullptr);
 }
 
 } // namespace vulkan

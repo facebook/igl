@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
 namespace igl {
@@ -14,7 +15,8 @@ namespace vulkan {
 
 class VulkanPipelineLayout final {
  public:
-  explicit VulkanPipelineLayout(VkDevice device,
+  explicit VulkanPipelineLayout(const VulkanFunctionTable& vf,
+                                VkDevice device,
                                 const VkDescriptorSetLayout* layouts,
                                 uint32_t numLayouts,
                                 const VkPushConstantRange& range,
@@ -29,6 +31,7 @@ class VulkanPipelineLayout final {
   }
 
  public:
+  const VulkanFunctionTable& vf_;
   VkDevice device_ = VK_NULL_HANDLE;
   VkPipelineLayout vkPipelineLayout_ = VK_NULL_HANDLE;
 };

@@ -24,7 +24,10 @@ class VulkanImmediateCommands final {
   // out of buffers, we stall and wait until an existing buffer becomes available
   static constexpr uint32_t kMaxCommandBuffers = 16;
 
-  VulkanImmediateCommands(VkDevice device, uint32_t queueFamilyIndex, const char* debugName);
+  VulkanImmediateCommands(const VulkanFunctionTable& vf,
+                          VkDevice device,
+                          uint32_t queueFamilyIndex,
+                          const char* debugName);
   ~VulkanImmediateCommands();
   VulkanImmediateCommands(const VulkanImmediateCommands&) = delete;
   VulkanImmediateCommands& operator=(const VulkanImmediateCommands&) = delete;
@@ -74,6 +77,7 @@ class VulkanImmediateCommands final {
   void purge();
 
  private:
+  const VulkanFunctionTable& vf_;
   VkDevice device_ = VK_NULL_HANDLE;
   VkQueue queue_ = VK_NULL_HANDLE;
   VulkanCommandPool commandPool_;

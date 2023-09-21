@@ -21,16 +21,18 @@ VulkanSampler::VulkanSampler(const VulkanContext& ctx,
   ctx_(ctx), device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  VK_ASSERT(vkCreateSampler(device_, &ci, nullptr, &vkSampler_));
-  VK_ASSERT(
-      ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_SAMPLER, (uint64_t)vkSampler_, debugName));
+  VK_ASSERT(ctx_.vf_.vkCreateSampler(device_, &ci, nullptr, &vkSampler_));
+  VK_ASSERT(ivkSetDebugObjectName(
+      &ctx_.vf_, device_, VK_OBJECT_TYPE_SAMPLER, (uint64_t)vkSampler_, debugName));
 }
 
 VulkanSampler::~VulkanSampler() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
-  ctx_.deferredTask(std::packaged_task<void()>(
-      [device = device_, sampler = vkSampler_]() { vkDestroySampler(device, sampler, nullptr); }));
+  ctx_.deferredTask(
+      std::packaged_task<void()>([vf = &ctx_.vf_, device = device_, sampler = vkSampler_]() {
+        vf->vkDestroySampler(device, sampler, nullptr);
+      }));
 }
 
 } // namespace vulkan

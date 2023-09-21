@@ -18,17 +18,17 @@ VulkanExtensions::VulkanExtensions() {
   enabledExtensions_.resize(kNumberOfExtensionTypes);
 }
 
-void VulkanExtensions::enumerate() {
+void VulkanExtensions::enumerate(const VulkanFunctionTable& vf) {
   // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are enabled
   // (validation layers are only enabled for DEBUG builds)
   // https://issuetracker.google.com/issues/209835779?pli=1
 #if !IGL_PLATFORM_ANDROID || !IGL_DEBUG
   uint32_t count;
-  VK_ASSERT(vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
+  VK_ASSERT(vf.vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
 
   std::vector<VkExtensionProperties> allExtensions(count);
 
-  VK_ASSERT(vkEnumerateInstanceExtensionProperties(nullptr, &count, allExtensions.data()));
+  VK_ASSERT(vf.vkEnumerateInstanceExtensionProperties(nullptr, &count, allExtensions.data()));
 
   constexpr size_t vectorIndex = (size_t)ExtensionType::Instance;
   std::transform(allExtensions.cbegin(),
@@ -40,17 +40,17 @@ void VulkanExtensions::enumerate() {
 #endif // !IGL_PLATFORM_ANDROID || !IGL_DEBUG
 }
 
-void VulkanExtensions::enumerate(VkPhysicalDevice device) {
+void VulkanExtensions::enumerate(const VulkanFunctionTable& vf, VkPhysicalDevice device) {
   // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are enabled
   // (validation layers are only enabled for DEBUG builds)
   // https://issuetracker.google.com/issues/209835779?pli=1
 #if !IGL_PLATFORM_ANDROID || !IGL_DEBUG
   uint32_t count;
-  VK_ASSERT(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr));
+  VK_ASSERT(vf.vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr));
 
   std::vector<VkExtensionProperties> allExtensions(count);
 
-  VK_ASSERT(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, allExtensions.data()));
+  VK_ASSERT(vf.vkEnumerateDeviceExtensionProperties(device, nullptr, &count, allExtensions.data()));
 
   constexpr size_t vectorIndex = (size_t)ExtensionType::Device;
   std::transform(allExtensions.cbegin(),

@@ -10,6 +10,7 @@
 #include <memory>
 
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
 namespace igl {
@@ -22,7 +23,10 @@ namespace vulkan {
  */
 class VulkanFence final {
  public:
-  VulkanFence(VkDevice device, VkFlags flags, const char* debugName = nullptr);
+  VulkanFence(const VulkanFunctionTable& vf,
+              VkDevice device,
+              VkFlags flags,
+              const char* debugName = nullptr);
   ~VulkanFence();
 
   VulkanFence(VulkanFence&& other) noexcept;
@@ -32,6 +36,7 @@ class VulkanFence final {
   VulkanFence operator=(const VulkanFence&) = delete;
 
  public:
+  const VulkanFunctionTable* vf_{};
   VkDevice device_ = VK_NULL_HANDLE;
   VkFence vkFence_ = VK_NULL_HANDLE;
 };

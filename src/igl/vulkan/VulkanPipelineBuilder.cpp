@@ -119,7 +119,8 @@ VulkanPipelineBuilder& VulkanPipelineBuilder::stencilStateOps(VkStencilFaceFlags
   return *this;
 }
 
-VkResult VulkanPipelineBuilder::build(VkDevice device,
+VkResult VulkanPipelineBuilder::build(const VulkanFunctionTable& vf,
+                                      VkDevice device,
                                       VkPipelineCache pipelineCache,
                                       VkPipelineLayout pipelineLayout,
                                       VkRenderPass renderPass,
@@ -134,7 +135,8 @@ VkResult VulkanPipelineBuilder::build(VkDevice device,
       ivkGetPipelineColorBlendStateCreateInfo(uint32_t(colorBlendAttachmentStates_.size()),
                                               colorBlendAttachmentStates_.data());
 
-  const auto result = ivkCreateGraphicsPipeline(device,
+  const auto result = ivkCreateGraphicsPipeline(&vf,
+                                                device,
                                                 pipelineCache,
                                                 (uint32_t)shaderStages_.size(),
                                                 shaderStages_.data(),
@@ -158,7 +160,8 @@ VkResult VulkanPipelineBuilder::build(VkDevice device,
   numPipelinesCreated_++;
 
   // set debug name
-  return ivkSetDebugObjectName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)*outPipeline, debugName);
+  return ivkSetDebugObjectName(
+      &vf, device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)*outPipeline, debugName);
 }
 
 VulkanComputePipelineBuilder& VulkanComputePipelineBuilder::shaderStage(
@@ -167,13 +170,14 @@ VulkanComputePipelineBuilder& VulkanComputePipelineBuilder::shaderStage(
   return *this;
 }
 
-VkResult VulkanComputePipelineBuilder::build(VkDevice device,
+VkResult VulkanComputePipelineBuilder::build(const VulkanFunctionTable& vf,
+                                             VkDevice device,
                                              VkPipelineCache pipelineCache,
                                              VkPipelineLayout pipelineLayout,
                                              VkPipeline* outPipeline,
                                              const char* debugName) noexcept {
-  const VkResult result =
-      ivkCreateComputePipeline(device, pipelineCache, &shaderStage_, pipelineLayout, outPipeline);
+  const VkResult result = ivkCreateComputePipeline(
+      &vf, device, pipelineCache, &shaderStage_, pipelineLayout, outPipeline);
 
   if (!IGL_VERIFY(result == VK_SUCCESS)) {
     return result;
@@ -182,7 +186,8 @@ VkResult VulkanComputePipelineBuilder::build(VkDevice device,
   numPipelinesCreated_++;
 
   // set debug name
-  return ivkSetDebugObjectName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)*outPipeline, debugName);
+  return ivkSetDebugObjectName(
+      &vf, device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)*outPipeline, debugName);
 }
 
 } // namespace vulkan

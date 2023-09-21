@@ -22,7 +22,8 @@ bool operator==(const VkAttachmentReference& a, const VkAttachmentReference& b) 
 namespace igl {
 namespace vulkan {
 
-VkResult VulkanRenderPassBuilder::build(VkDevice device,
+VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
+                                        VkDevice device,
                                         VkRenderPass* outRenderPass,
                                         const char* debugName) const noexcept {
   IGL_ASSERT_MSG(
@@ -41,7 +42,8 @@ VkResult VulkanRenderPassBuilder::build(VkDevice device,
 
   const VkRenderPassMultiviewCreateInfo ci =
       ivkGetRenderPassMultiviewCreateInfo(&viewMask_, &correlationMask_);
-  const VkResult result = ivkCreateRenderPass(device,
+  const VkResult result = ivkCreateRenderPass(&vf,
+                                              device,
                                               (uint32_t)attachments_.size(),
                                               attachments_.data(),
                                               &subpass,
@@ -54,7 +56,7 @@ VkResult VulkanRenderPassBuilder::build(VkDevice device,
 
   // set debug name
   return ivkSetDebugObjectName(
-      device, VK_OBJECT_TYPE_RENDER_PASS, (uint64_t)*outRenderPass, debugName);
+      &vf, device, VK_OBJECT_TYPE_RENDER_PASS, (uint64_t)*outRenderPass, debugName);
 }
 
 VulkanRenderPassBuilder& VulkanRenderPassBuilder::addColor(VkFormat format,

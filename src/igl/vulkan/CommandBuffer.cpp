@@ -161,11 +161,11 @@ void CommandBuffer::present(std::shared_ptr<ITexture> surface) const {
 }
 
 void CommandBuffer::pushDebugGroupLabel(const std::string& label, const igl::Color& color) const {
-  ivkCmdBeginDebugUtilsLabel(wrapper_.cmdBuf_, label.c_str(), color.toFloatPtr());
+  ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, wrapper_.cmdBuf_, label.c_str(), color.toFloatPtr());
 }
 
 void CommandBuffer::popDebugGroupLabel() const {
-  ivkCmdEndDebugUtilsLabel(wrapper_.cmdBuf_);
+  ivkCmdEndDebugUtilsLabel(&ctx_.vf_, wrapper_.cmdBuf_);
 }
 
 void CommandBuffer::waitUntilCompleted() {

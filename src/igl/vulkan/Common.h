@@ -12,12 +12,8 @@
 // set to 1 to see very verbose debug console logs with Vulkan commands
 #define IGL_VULKAN_PRINT_COMMANDS 0
 
-#if !defined(VK_NO_PROTOTYPES)
-#define VK_NO_PROTOTYPES 1
-#endif // !defined(VK_NO_PROTOTYPES)
-
 #include <igl/Macros.h>
-#include <volk.h>
+#include <igl/vulkan/VulkanFunctionTable.h>
 #if IGL_PLATFORM_MACOS
 #include <vulkan/vulkan_metal.h>
 #endif

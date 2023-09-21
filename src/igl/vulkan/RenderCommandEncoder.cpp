@@ -276,7 +276,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   ctx_.checkAndUpdateDescriptorSets();
   ctx_.bindDefaultDescriptorSets(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-  vkCmdBeginRenderPass(cmdBuffer_, &bi, VK_SUBPASS_CONTENTS_INLINE);
+  ctx_.vf_.vkCmdBeginRenderPass(cmdBuffer_, &bi, VK_SUBPASS_CONTENTS_INLINE);
 
   isEncoding_ = true;
 
@@ -331,7 +331,7 @@ void RenderCommandEncoder::endEncoding() {
 
   isEncoding_ = false;
 
-  vkCmdEndRenderPass(cmdBuffer_);
+  ctx_.vf_.vkCmdEndRenderPass(cmdBuffer_);
 
   // set image layouts after the render pass
   const FramebufferDesc& desc = static_cast<const Framebuffer&>((*framebuffer_)).getDesc();
@@ -351,16 +351,16 @@ void RenderCommandEncoder::endEncoding() {
 
 void RenderCommandEncoder::pushDebugGroupLabel(const std::string& label,
                                                const igl::Color& color) const {
-  ivkCmdBeginDebugUtilsLabel(cmdBuffer_, label.c_str(), color.toFloatPtr());
+  ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label.c_str(), color.toFloatPtr());
 }
 
 void RenderCommandEncoder::insertDebugEventLabel(const std::string& label,
                                                  const igl::Color& color) const {
-  ivkCmdInsertDebugUtilsLabel(cmdBuffer_, label.c_str(), color.toFloatPtr());
+  ivkCmdInsertDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label.c_str(), color.toFloatPtr());
 }
 
 void RenderCommandEncoder::popDebugGroupLabel() const {
-  ivkCmdEndDebugUtilsLabel(cmdBuffer_);
+  ivkCmdEndDebugUtilsLabel(&ctx_.vf_, cmdBuffer_);
 }
 
 void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
@@ -380,7 +380,7 @@ void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
       viewport.minDepth, // float minDepth;
       viewport.maxDepth, // float maxDepth;
   };
-  vkCmdSetViewport(cmdBuffer_, 0, 1, &vp);
+  ctx_.vf_.vkCmdSetViewport(cmdBuffer_, 0, 1, &vp);
 }
 
 void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
@@ -388,7 +388,7 @@ void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
       VkOffset2D{(int32_t)rect.x, (int32_t)rect.y},
       VkExtent2D{rect.width, rect.height},
   };
-  vkCmdSetScissor(cmdBuffer_, 0, 1, &scissor);
+  ctx_.vf_.vkCmdSetScissor(cmdBuffer_, 0, 1, &scissor);
 }
 
 void RenderCommandEncoder::bindRenderPipelineState(
@@ -443,9 +443,9 @@ void RenderCommandEncoder::bindDepthStencilState(
                                      stencilOperationToVkStencilOp(desc.depthFailureOperation),
                                      compareFunctionToVkCompareOp(desc.stencilCompareFunction));
     // this is what the IGL/OGL backend does with masks
-    vkCmdSetStencilReference(cmdBuffer_, faceMask, desc.readMask);
-    vkCmdSetStencilCompareMask(cmdBuffer_, faceMask, 0xFF);
-    vkCmdSetStencilWriteMask(cmdBuffer_, faceMask, desc.writeMask);
+    ctx_.vf_.vkCmdSetStencilReference(cmdBuffer_, faceMask, desc.readMask);
+    ctx_.vf_.vkCmdSetStencilCompareMask(cmdBuffer_, faceMask, 0xFF);
+    ctx_.vf_.vkCmdSetStencilWriteMask(cmdBuffer_, faceMask, desc.writeMask);
   };
 
   setStencilState(VK_STENCIL_FACE_FRONT_BIT, desc.frontFaceStencil);
@@ -489,7 +489,7 @@ void RenderCommandEncoder::bindBuffer(int index,
       isVertexBufferBound_[index] = true;
     }
     const VkDeviceSize offset = bufferOffset;
-    vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
+    ctx_.vf_.vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
   } else if (isUniformOrStorageBuffer) {
     if (!IGL_VERIFY(target == BindTarget::kAllGraphics)) {
       IGL_ASSERT_MSG(false, "Buffer target should be BindTarget::kAllGraphics");
@@ -530,12 +530,12 @@ void RenderCommandEncoder::bindPushConstants(const void* data, size_t length, si
         "Push constants size exceeded %u (max %u bytes)", size, limits.maxPushConstantsSize);
   }
 
-  vkCmdPushConstants(cmdBuffer_,
-                     ctx_.pipelineLayoutGraphics_->getVkPipelineLayout(),
-                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                     (uint32_t)offset,
-                     (uint32_t)length,
-                     data);
+  ctx_.vf_.vkCmdPushConstants(cmdBuffer_,
+                              ctx_.pipelineLayoutGraphics_->getVkPipelineLayout(),
+                              VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                              (uint32_t)offset,
+                              (uint32_t)length,
+                              data);
 }
 
 void RenderCommandEncoder::bindSamplerState(size_t index,
@@ -610,7 +610,7 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
   IGL_LOG_INFO("%p vkCmdDraw(%u, %u)\n", cmdBuffer_, (uint32_t)vertexCount, (uint32_t)vertexStart);
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
-  vkCmdDraw(cmdBuffer_, (uint32_t)vertexCount, 1, (uint32_t)vertexStart, 0);
+  ctx_.vf_.vkCmdDraw(cmdBuffer_, (uint32_t)vertexCount, 1, (uint32_t)vertexStart, 0);
 }
 
 void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
@@ -638,12 +638,12 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkCmdBindIndexBuffer(%u)\n", cmdBuffer_, (uint32_t)indexBufferOffset);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-  vkCmdBindIndexBuffer(cmdBuffer_, buf->getVkBuffer(), indexBufferOffset, type);
+  ctx_.vf_.vkCmdBindIndexBuffer(cmdBuffer_, buf->getVkBuffer(), indexBufferOffset, type);
 
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkCmdDrawIndexed(%u)\n", cmdBuffer_, (uint32_t)indexCount);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-  vkCmdDrawIndexed(cmdBuffer_, (uint32_t)indexCount, 1, 0, 0, 0);
+  ctx_.vf_.vkCmdDrawIndexed(cmdBuffer_, (uint32_t)indexCount, 1, 0, 0, 0);
 }
 
 void RenderCommandEncoder::drawIndexedIndirect(PrimitiveType primitiveType,
@@ -674,11 +674,11 @@ void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
 
   const igl::vulkan::Buffer* bufIndirect = static_cast<igl::vulkan::Buffer*>(&indirectBuffer);
 
-  vkCmdDrawIndirect(cmdBuffer_,
-                    bufIndirect->getVkBuffer(),
-                    indirectBufferOffset,
-                    drawCount,
-                    stride ? stride : sizeof(VkDrawIndirectCommand));
+  ctx_.vf_.vkCmdDrawIndirect(cmdBuffer_,
+                             bufIndirect->getVkBuffer(),
+                             indirectBufferOffset,
+                             drawCount,
+                             stride ? stride : sizeof(VkDrawIndirectCommand));
 }
 
 void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
@@ -702,13 +702,13 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
   const igl::vulkan::Buffer* bufIndirect = static_cast<igl::vulkan::Buffer*>(&indirectBuffer);
 
   const VkIndexType type = indexFormatToVkIndexType(indexFormat);
-  vkCmdBindIndexBuffer(cmdBuffer_, bufIndex->getVkBuffer(), 0, type);
+  ctx_.vf_.vkCmdBindIndexBuffer(cmdBuffer_, bufIndex->getVkBuffer(), 0, type);
 
-  vkCmdDrawIndexedIndirect(cmdBuffer_,
-                           bufIndirect->getVkBuffer(),
-                           indirectBufferOffset,
-                           drawCount,
-                           stride ? stride : sizeof(VkDrawIndexedIndirectCommand));
+  ctx_.vf_.vkCmdDrawIndexedIndirect(cmdBuffer_,
+                                    bufIndirect->getVkBuffer(),
+                                    indirectBufferOffset,
+                                    drawCount,
+                                    stride ? stride : sizeof(VkDrawIndexedIndirectCommand));
 }
 
 void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
@@ -716,17 +716,17 @@ void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
 }
 
 void RenderCommandEncoder::setStencilReferenceValues(uint32_t frontValue, uint32_t backValue) {
-  vkCmdSetStencilReference(cmdBuffer_, VK_STENCIL_FACE_FRONT_BIT, frontValue);
-  vkCmdSetStencilReference(cmdBuffer_, VK_STENCIL_FACE_BACK_BIT, backValue);
+  ctx_.vf_.vkCmdSetStencilReference(cmdBuffer_, VK_STENCIL_FACE_FRONT_BIT, frontValue);
+  ctx_.vf_.vkCmdSetStencilReference(cmdBuffer_, VK_STENCIL_FACE_BACK_BIT, backValue);
 }
 
 void RenderCommandEncoder::setBlendColor(Color color) {
-  vkCmdSetBlendConstants(cmdBuffer_, color.toFloatPtr());
+  ctx_.vf_.vkCmdSetBlendConstants(cmdBuffer_, color.toFloatPtr());
 }
 
 void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float clamp) {
   dynamicState_.depthBiasEnable_ = true;
-  vkCmdSetDepthBias(cmdBuffer_, depthBias, clamp, slopeScale);
+  ctx_.vf_.vkCmdSetDepthBias(cmdBuffer_, depthBias, clamp, slopeScale);
 }
 
 bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {

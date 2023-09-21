@@ -30,31 +30,31 @@ ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
 
 ComputePipelineState ::~ComputePipelineState() {
   if (pipeline_ != VK_NULL_HANDLE) {
-    device_.getVulkanContext().deferredTask(std::packaged_task<void()>(
-        [device = device_.getVulkanContext().device_->getVkDevice(), pipeline = pipeline_]() {
-          vkDestroyPipeline(device, pipeline, nullptr);
-        }));
+    const auto& ctx = device_.getVulkanContext();
+    ctx.deferredTask(std::packaged_task<void()>(
+        [vf = &ctx.vf_,
+         device = device_.getVulkanContext().device_->getVkDevice(),
+         pipeline = pipeline_]() { vf->vkDestroyPipeline(device, pipeline, nullptr); }));
   }
 }
 
 VkPipeline ComputePipelineState::getVkPipeline() const {
-  if (vkPipelineLayout_ !=
-      device_.getVulkanContext().pipelineLayoutCompute_->getVkPipelineLayout()) {
+  const VulkanContext& ctx = device_.getVulkanContext();
+  if (vkPipelineLayout_ != ctx.pipelineLayoutCompute_->getVkPipelineLayout()) {
     // there's a new pipeline layout - drop the previous Vulkan pipeline
-    VkDevice device = device_.getVulkanContext().device_->getVkDevice();
+    VkDevice device = ctx.device_->getVkDevice();
     if (pipeline_ != VK_NULL_HANDLE) {
-      device_.getVulkanContext().deferredTask(std::packaged_task<void()>(
-          [device, pipeline = pipeline_]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+      ctx.deferredTask(std::packaged_task<void()>([vf = &ctx.vf_, device, pipeline = pipeline_]() {
+        vf->vkDestroyPipeline(device, pipeline, nullptr);
+      }));
     }
     pipeline_ = VK_NULL_HANDLE;
-    vkPipelineLayout_ = device_.getVulkanContext().pipelineLayoutCompute_->getVkPipelineLayout();
+    vkPipelineLayout_ = ctx.pipelineLayoutCompute_->getVkPipelineLayout();
   }
 
   if (pipeline_ != VK_NULL_HANDLE) {
     return pipeline_;
   }
-
-  const VulkanContext& ctx = device_.getVulkanContext();
 
   const auto& shaderModule = desc_.shaderStages->getComputeModule();
 
@@ -63,7 +63,8 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
           VK_SHADER_STAGE_COMPUTE_BIT,
           igl::vulkan::ShaderModule::getVkShaderModule(shaderModule),
           shaderModule->info().entryPoint.c_str()))
-      .build(ctx.device_->getVkDevice(),
+      .build(ctx.vf_,
+             ctx.device_->getVkDevice(),
              ctx.pipelineCache_,
              ctx.pipelineLayoutCompute_->getVkPipelineLayout(),
              &pipeline_,

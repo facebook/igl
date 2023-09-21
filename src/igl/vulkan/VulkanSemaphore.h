@@ -10,6 +10,7 @@
 #include <memory>
 
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
 namespace igl {
@@ -22,7 +23,8 @@ namespace vulkan {
  */
 class VulkanSemaphore final {
  public:
-  explicit VulkanSemaphore(VkDevice device,
+  explicit VulkanSemaphore(const VulkanFunctionTable& vf,
+                           VkDevice device,
                            const char* debugName = nullptr,
                            bool exportable = false);
   ~VulkanSemaphore();
@@ -38,6 +40,7 @@ class VulkanSemaphore final {
   [[nodiscard]] int getFileDescriptor() const noexcept;
 
  public:
+  const VulkanFunctionTable* vf_{};
   VkDevice device_ = VK_NULL_HANDLE;
   VkSemaphore vkSemaphore_ = VK_NULL_HANDLE;
 };

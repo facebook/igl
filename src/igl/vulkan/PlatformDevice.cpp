@@ -162,8 +162,9 @@ int PlatformDevice::getFenceFdFromSubmitHandle(SubmitHandle handle) const {
   getFdInfo.handleType = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
 
   int fenceFd = -1;
-  VkDevice vkDevice = device_.getVulkanContext().device_->getVkDevice();
-  VkResult result = vkGetFenceFdKHR(vkDevice, &getFdInfo, &fenceFd);
+  const auto& ctx = device_.getVulkanContext();
+  VkDevice vkDevice = ctx.device_->getVkDevice();
+  VkResult result = ctx.vf_.vkGetFenceFdKHR(vkDevice, &getFdInfo, &fenceFd);
   if (result != VK_SUCCESS) {
     IGL_LOG_ERROR("Unable to get fence fd from submit handle: %lu", handle);
   }

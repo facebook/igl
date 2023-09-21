@@ -158,7 +158,8 @@ void CommandQueue::enhancedShaderDebuggingPass(const igl::vulkan::VulkanContext&
 
   // Barrier to ensure we have finished rendering the lines before we clear the buffer
   auto lineBuffer = static_cast<vulkan::Buffer*>(debugger->vertexBuffer().get());
-  ivkBufferMemoryBarrier(vkResetCmdBuffer,
+  ivkBufferMemoryBarrier(&ctx.vf_,
+                         vkResetCmdBuffer,
                          lineBuffer->getVkBuffer(),
                          0, /* src access flag */
                          0, /* dst access flag */
@@ -168,12 +169,12 @@ void CommandQueue::enhancedShaderDebuggingPass(const igl::vulkan::VulkanContext&
                          VK_PIPELINE_STAGE_TRANSFER_BIT);
 
   // Reset instanceCount of the buffer
-  vkCmdFillBuffer(vkResetCmdBuffer,
-                  lineBuffer->getVkBuffer(),
-                  offsetof(EnhancedShaderDebuggingStore::Header, command_) +
-                      offsetof(VkDrawIndirectCommand, instanceCount),
-                  sizeof(uint32_t), // reset only the instance count
-                  0);
+  ctx.vf_.vkCmdFillBuffer(vkResetCmdBuffer,
+                          lineBuffer->getVkBuffer(),
+                          offsetof(EnhancedShaderDebuggingStore::Header, command_) +
+                              offsetof(VkDrawIndirectCommand, instanceCount),
+                          sizeof(uint32_t), // reset only the instance count
+                          0);
 
   endCommandBuffer(ctx, resetCmdBuffer, true);
 }

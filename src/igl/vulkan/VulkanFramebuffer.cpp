@@ -23,17 +23,18 @@ VulkanFramebuffer::VulkanFramebuffer(const VulkanContext& ctx,
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   VK_ASSERT(ivkCreateFramebuffer(
-      device_, width, height, renderPass, numAttachments, attachments, &vkFramebuffer_));
+      &ctx_.vf_, device_, width, height, renderPass, numAttachments, attachments, &vkFramebuffer_));
   VK_ASSERT(ivkSetDebugObjectName(
-      device_, VK_OBJECT_TYPE_FRAMEBUFFER, (uint64_t)vkFramebuffer_, debugName));
+      &ctx_.vf_, device_, VK_OBJECT_TYPE_FRAMEBUFFER, (uint64_t)vkFramebuffer_, debugName));
 }
 
 VulkanFramebuffer::~VulkanFramebuffer() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
-  ctx_.deferredTask(std::packaged_task<void()>([device = device_, framebuffer = vkFramebuffer_]() {
-    vkDestroyFramebuffer(device, framebuffer, nullptr);
-  }));
+  ctx_.deferredTask(std::packaged_task<void()>(
+      [vf = &ctx_.vf_, device = device_, framebuffer = vkFramebuffer_]() {
+        vf->vkDestroyFramebuffer(device, framebuffer, nullptr);
+      }));
 }
 
 } // namespace vulkan

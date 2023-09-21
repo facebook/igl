@@ -32,6 +32,7 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
   maxBufferCapacity_ = std::min(limits.maxStorageBufferRange, 256u * 1024u * 1024u);
 
   immediate_ = std::make_unique<igl::vulkan::VulkanImmediateCommands>(
+      ctx_.vf_,
       ctx_.device_->getVkDevice(),
       ctx_.deviceQueues_.graphicsQueueFamilyIndex,
       "VulkanStagingDevice::immediate_");
@@ -71,7 +72,8 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
     const VkBufferCopy copy = {memoryChunk.offset, chunkDstOffset, copySize};
 
     auto& wrapper = immediate_->acquire();
-    vkCmdCopyBuffer(wrapper.cmdBuf_, stagingBuffer_->getVkBuffer(), buffer.getVkBuffer(), 1, &copy);
+    ctx_.vf_.vkCmdCopyBuffer(
+        wrapper.cmdBuf_, stagingBuffer_->getVkBuffer(), buffer.getVkBuffer(), 1, &copy);
     memoryChunk.handle = immediate_->submit(wrapper); // store the submit handle with the allocation
     regions_.push_back(memoryChunk);
 
@@ -197,7 +199,8 @@ void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
 
     auto& wrapper = immediate_->acquire();
 
-    vkCmdCopyBuffer(wrapper.cmdBuf_, buffer.getVkBuffer(), stagingBuffer_->getVkBuffer(), 1, &copy);
+    ctx_.vf_.vkCmdCopyBuffer(
+        wrapper.cmdBuf_, buffer.getVkBuffer(), stagingBuffer_->getVkBuffer(), 1, &copy);
 
     // Wait for command to finish
     immediate_->wait(immediate_->submit(wrapper));
@@ -306,7 +309,8 @@ void VulkanStagingDevice::imageData(VulkanImage& image,
       numLayers,
   };
   // 1. Transition initial image layout into TRANSFER_DST_OPTIMAL
-  ivkImageMemoryBarrier(wrapper.cmdBuf_,
+  ivkImageMemoryBarrier(&ctx_.vf_,
+                        wrapper.cmdBuf_,
                         image.getVkImage(),
                         0,
                         VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -320,12 +324,12 @@ void VulkanStagingDevice::imageData(VulkanImage& image,
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkCmdCopyBufferToImage()\n", wrapper.cmdBuf_);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-  vkCmdCopyBufferToImage(wrapper.cmdBuf_,
-                         stagingBuffer_->getVkBuffer(),
-                         image.getVkImage(),
-                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                         static_cast<uint32_t>(copyRegions.size()),
-                         copyRegions.data());
+  ctx_.vf_.vkCmdCopyBufferToImage(wrapper.cmdBuf_,
+                                  stagingBuffer_->getVkBuffer(),
+                                  image.getVkImage(),
+                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                  static_cast<uint32_t>(copyRegions.size()),
+                                  copyRegions.data());
 
   const bool isSampled = (image.getVkImageUsageFlags() & VK_IMAGE_USAGE_SAMPLED_BIT) != 0;
   const bool isStorage = (image.getVkImageUsageFlags() & VK_IMAGE_USAGE_STORAGE_BIT) != 0;
@@ -356,7 +360,8 @@ void VulkanStagingDevice::imageData(VulkanImage& image,
                                                    : 0)));
 
   // 3. Transition TRANSFER_DST_OPTIMAL into `targetLayout`
-  ivkImageMemoryBarrier(wrapper.cmdBuf_,
+  ivkImageMemoryBarrier(&ctx_.vf_,
+                        wrapper.cmdBuf_,
                         image.getVkImage(),
                         VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
                         dstAccessMask,
@@ -418,7 +423,8 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   auto& wrapper1 = immediate_->acquire();
 
   // 1. Transition to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-  ivkImageMemoryBarrier(wrapper1.cmdBuf_,
+  ivkImageMemoryBarrier(&ctx_.vf_,
+                        wrapper1.cmdBuf_,
                         srcImage,
                         0, // srcAccessMask
                         VK_ACCESS_TRANSFER_READ_BIT, // dstAccessMask
@@ -435,12 +441,12 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                  : bytesPerRow / static_cast<uint32_t>(properties.bytesPerBlock), // bufferRowLength
       imageRegion,
       VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, level, layer, 1});
-  vkCmdCopyImageToBuffer(wrapper1.cmdBuf_,
-                         srcImage,
-                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                         stagingBuffer_->getVkBuffer(),
-                         1,
-                         &copy);
+  ctx_.vf_.vkCmdCopyImageToBuffer(wrapper1.cmdBuf_,
+                                  srcImage,
+                                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                  stagingBuffer_->getVkBuffer(),
+                                  1,
+                                  &copy);
 
   // Wait for command to finish
   immediate_->wait(immediate_->submit(wrapper1));
@@ -469,7 +475,8 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   // 4. Transition back to the initial image layout
   auto& wrapper2 = immediate_->acquire();
 
-  ivkImageMemoryBarrier(wrapper2.cmdBuf_,
+  ivkImageMemoryBarrier(&ctx_.vf_,
+                        wrapper2.cmdBuf_,
                         srcImage,
                         VK_ACCESS_TRANSFER_READ_BIT, // srcAccessMask
                         0, // dstAccessMask

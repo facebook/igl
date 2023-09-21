@@ -215,12 +215,13 @@ struct VulkanContextImpl final {
 // @fb-only
 class DescriptorPoolsArena final {
  public:
-  DescriptorPoolsArena(VulkanImmediateCommands& ic,
+  DescriptorPoolsArena(const VulkanFunctionTable& vf,
+                       VulkanImmediateCommands& ic,
                        VkDevice device,
                        VkDescriptorType type,
                        uint32_t numDescriptorsPerDSet,
                        const char* debugName) :
-    device_(device), type_(type), numDescriptorsPerDSet_(numDescriptorsPerDSet) {
+    vf_(vf), device_(device), type_(type), numDescriptorsPerDSet_(numDescriptorsPerDSet) {
     IGL_ASSERT(debugName);
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     std::vector<VkDescriptorBindingFlags> bindingFlags;
@@ -231,6 +232,7 @@ class DescriptorPoolsArena final {
       bindingFlags.emplace_back(VkDescriptorBindingFlags{});
     }
     dsl_ = std::make_unique<VulkanDescriptorSetLayout>(
+        vf_,
         device,
         VkDescriptorSetLayoutCreateFlags{},
         numDescriptorsPerDSet,
@@ -245,7 +247,7 @@ class DescriptorPoolsArena final {
     // to defer the destruction
     extinct_.push_back({pool_, {}});
     for (const auto& p : extinct_) {
-      vkDestroyDescriptorPool(device_, p.pool_, nullptr);
+      vf_.vkDestroyDescriptorPool(device_, p.pool_, nullptr);
     }
   }
   [[nodiscard]] VkDescriptorSetLayout getVkDescriptorSetLayout() const {
@@ -254,13 +256,14 @@ class DescriptorPoolsArena final {
   [[nodiscard]] VkDescriptorSet getNextDescriptorSet(VulkanImmediateCommands& ic) {
     VkDescriptorSet dset = VK_NULL_HANDLE;
     const VkResult result =
-        ivkAllocateDescriptorSet(device_, pool_, dsl_->getVkDescriptorSetLayout(), &dset);
+        ivkAllocateDescriptorSet(&vf_, device_, pool_, dsl_->getVkDescriptorSetLayout(), &dset);
     // if the allocation fails due to no more space in the descriptor pool, and not because of
     // system or device memory exhaustion, then VK_ERROR_OUT_OF_POOL_MEMORY must be returned.
     // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkAllocateDescriptorSets.html
     if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
       switchToNewDescriptorPool(ic);
-      VK_ASSERT(ivkAllocateDescriptorSet(device_, pool_, dsl_->getVkDescriptorSetLayout(), &dset));
+      VK_ASSERT(
+          ivkAllocateDescriptorSet(&vf_, device_, pool_, dsl_->getVkDescriptorSetLayout(), &dset));
     } else {
       VK_ASSERT(result);
     }
@@ -282,21 +285,22 @@ class DescriptorPoolsArena final {
       if (ic.isRecycled(p.handle_)) {
         pool_ = p.pool_;
         extinct_.pop_front();
-        VK_ASSERT(vkResetDescriptorPool(device_, pool_, VkDescriptorPoolResetFlags{}));
+        VK_ASSERT(vf_.vkResetDescriptorPool(device_, pool_, VkDescriptorPoolResetFlags{}));
         return;
       }
     }
     const VkDescriptorPoolSize poolSize =
         VkDescriptorPoolSize{type_, kNumDSetsPerPool_ * numDescriptorsPerDSet_};
     VK_ASSERT(ivkCreateDescriptorPool(
-        device_, VkDescriptorPoolCreateFlags{}, kNumDSetsPerPool_, 1, &poolSize, &pool_));
+        &vf_, device_, VkDescriptorPoolCreateFlags{}, kNumDSetsPerPool_, 1, &poolSize, &pool_));
     VK_ASSERT(ivkSetDebugObjectName(
-        device_, VK_OBJECT_TYPE_DESCRIPTOR_POOL, (uint64_t)pool_, dpDebugName_.c_str()));
+        &vf_, device_, VK_OBJECT_TYPE_DESCRIPTOR_POOL, (uint64_t)pool_, dpDebugName_.c_str()));
   }
 
  private:
   static constexpr uint32_t kNumDSetsPerPool_ = 256;
 
+  const VulkanFunctionTable& vf_;
   VkDevice device_ = VK_NULL_HANDLE;
   VkDescriptorPool pool_ = VK_NULL_HANDLE;
   const VkDescriptorType type_ = VK_DESCRIPTOR_TYPE_MAX_ENUM;
@@ -362,7 +366,7 @@ VulkanContext::~VulkanContext() {
   VkDevice device = device_ ? device_->getVkDevice() : VK_NULL_HANDLE;
   if (device_) {
     for (auto r : renderPasses_) {
-      vkDestroyRenderPass(device, r, nullptr);
+      vf_.vkDestroyRenderPass(device, r, nullptr);
     }
   }
 
@@ -380,15 +384,15 @@ VulkanContext::~VulkanContext() {
 
   if (device_) {
     if (dpBindless_ != VK_NULL_HANDLE) {
-      vkDestroyDescriptorPool(device, dpBindless_, nullptr);
+      vf_.vkDestroyDescriptorPool(device, dpBindless_, nullptr);
     }
-    vkDestroyDescriptorPool(device, dpCombinedImageSamplers_, nullptr);
-    vkDestroyDescriptorPool(device, dpBuffersUniform_, nullptr);
+    vf_.vkDestroyDescriptorPool(device, dpCombinedImageSamplers_, nullptr);
+    vf_.vkDestroyDescriptorPool(device, dpBuffersUniform_, nullptr);
     arenaBuffersStorage_ = nullptr;
-    vkDestroyPipelineCache(device, pipelineCache_, nullptr);
+    vf_.vkDestroyPipelineCache(device, pipelineCache_, nullptr);
   }
 
-  vkDestroySurfaceKHR(vkInstance_, vkSurface_, nullptr);
+  vf_.vkDestroySurfaceKHR(vkInstance_, vkSurface_, nullptr);
 
   // Clean up VMA
   if (IGL_VULKAN_USE_VMA) {
@@ -397,9 +401,9 @@ VulkanContext::~VulkanContext() {
 
   device_.reset(nullptr); // Device has to be destroyed prior to Instance
 #if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID
-  vkDestroyDebugUtilsMessengerEXT(vkInstance_, vkDebugUtilsMessenger_, nullptr);
+  vf_.vkDestroyDebugUtilsMessengerEXT(vkInstance_, vkDebugUtilsMessenger_, nullptr);
 #endif // defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID
-  vkDestroyInstance(vkInstance_, nullptr);
+  vf_.vkDestroyInstance(vkInstance_, nullptr);
 
   glslang_finalize_process();
 
@@ -415,7 +419,7 @@ VulkanContext::~VulkanContext() {
 
 void VulkanContext::createInstance(const size_t numExtraExtensions, const char** extraExtensions) {
   // Enumerate all instance extensions
-  extensions_.enumerate();
+  extensions_.enumerate(vf_);
   extensions_.enableCommonExtensions(VulkanExtensions::ExtensionType::Instance,
                                      config_.enableValidation);
   for (size_t index = 0; index < numExtraExtensions; ++index) {
@@ -426,7 +430,8 @@ void VulkanContext::createInstance(const size_t numExtraExtensions, const char**
 
   vkInstance_ = VK_NULL_HANDLE;
   const VkResult creationErrorCode =
-      (ivkCreateInstance(VK_API_VERSION_1_1,
+      (ivkCreateInstance(&vf_,
+                         VK_API_VERSION_1_1,
                          static_cast<uint32_t>(config_.enableValidation),
                          static_cast<uint32_t>(config_.enableGPUAssistedValidation),
                          static_cast<uint32_t>(config_.enableSynchronizationValidation),
@@ -447,7 +452,7 @@ void VulkanContext::createInstance(const size_t numExtraExtensions, const char**
 #if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
   if (extensions_.enabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
     VK_ASSERT(ivkCreateDebugUtilsMessenger(
-        vkInstance_, &vulkanDebugCallback, this, &vkDebugUtilsMessenger_));
+        &vf_, vkInstance_, &vulkanDebugCallback, this, &vkDebugUtilsMessenger_));
   }
 #endif // if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
 
@@ -468,7 +473,7 @@ void VulkanContext::createSurface(void* window, void* display) {
 #if IGL_PLATFORM_APPLE
   layer = igl::vulkan::getCAMetalLayer(window);
 #endif
-  VK_ASSERT(ivkCreateSurface(vkInstance_, window, display, layer, &vkSurface_));
+  VK_ASSERT(ivkCreateSurface(&vf_, vkInstance_, window, display, layer, &vkSurface_));
 }
 
 igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
@@ -477,9 +482,9 @@ igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
 
   // Physical devices
   uint32_t deviceCount = 0;
-  VK_ASSERT_RETURN(vkEnumeratePhysicalDevices(vkInstance_, &deviceCount, nullptr));
+  VK_ASSERT_RETURN(vf_.vkEnumeratePhysicalDevices(vkInstance_, &deviceCount, nullptr));
   std::vector<VkPhysicalDevice> vkDevices(deviceCount);
-  VK_ASSERT_RETURN(vkEnumeratePhysicalDevices(vkInstance_, &deviceCount, vkDevices.data()));
+  VK_ASSERT_RETURN(vf_.vkEnumeratePhysicalDevices(vkInstance_, &deviceCount, vkDevices.data()));
 
   auto convertVulkanDeviceTypeToIGL = [](VkPhysicalDeviceType vkDeviceType) -> HWDeviceType {
     switch (vkDeviceType) {
@@ -501,7 +506,7 @@ igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
   for (uint32_t i = 0; i < deviceCount; ++i) {
     VkPhysicalDevice physicalDevice = vkDevices[i];
     VkPhysicalDeviceProperties deviceProperties;
-    vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+    vf_.vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
 
     const HWDeviceType deviceType = convertVulkanDeviceTypeToIGL(deviceProperties.deviceType);
 
@@ -534,10 +539,10 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   vkPhysicalDevice_ = (VkPhysicalDevice)desc.guid;
 
-  useStaging_ = !ivkIsHostVisibleSingleHeapMemory(vkPhysicalDevice_);
+  useStaging_ = !ivkIsHostVisibleSingleHeapMemory(&vf_, vkPhysicalDevice_);
 
-  vkGetPhysicalDeviceFeatures2(vkPhysicalDevice_, &vkPhysicalDeviceFeatures2_);
-  vkGetPhysicalDeviceProperties2(vkPhysicalDevice_, &vkPhysicalDeviceProperties2_);
+  vf_.vkGetPhysicalDeviceFeatures2(vkPhysicalDevice_, &vkPhysicalDeviceFeatures2_);
+  vf_.vkGetPhysicalDeviceProperties2(vkPhysicalDevice_, &vkPhysicalDeviceProperties2_);
 
   const uint32_t apiVersion = vkPhysicalDeviceProperties2_.properties.apiVersion;
 
@@ -554,7 +559,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                  vkPhysicalDeviceDriverProperties_.driverInfo);
   }
 
-  extensions_.enumerate(vkPhysicalDevice_);
+  extensions_.enumerate(vf_, vkPhysicalDevice_);
 
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
   if (config_.enableExtraLogs) {
@@ -577,7 +582,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                         VulkanExtensions::ExtensionType::Device));
   }
 
-  VulkanQueuePool queuePool(vkPhysicalDevice_);
+  VulkanQueuePool queuePool(vf_, vkPhysicalDevice_);
 
   // Reserve IGL Vulkan queues
   auto graphicsQueueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_GRAPHICS_BIT);
@@ -625,7 +630,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   VkDevice device;
   VK_ASSERT_RETURN(
-      ivkCreateDevice(vkPhysicalDevice_,
+      ivkCreateDevice(&vf_,
+                      vkPhysicalDevice_,
                       qcis.size(),
                       qcis.data(),
                       extensions_.allEnabled(VulkanExtensions::ExtensionType::Device).size(),
@@ -644,16 +650,19 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   // should use own copy of function table bound to a device.
   vulkan::functions::loadDeviceFunctions(*tableImpl_, device);
 
-  if (config_.enableBufferDeviceAddress && vkGetBufferDeviceAddressKHR == nullptr) {
+  if (config_.enableBufferDeviceAddress && vf_.vkGetBufferDeviceAddressKHR == nullptr) {
     return Result(Result::Code::InvalidOperation, "Cannot initialize VK_KHR_buffer_device_address");
   }
 
-  vkGetDeviceQueue(device, deviceQueues_.graphicsQueueFamilyIndex, 0, &deviceQueues_.graphicsQueue);
-  vkGetDeviceQueue(device, deviceQueues_.computeQueueFamilyIndex, 0, &deviceQueues_.computeQueue);
+  vf_.vkGetDeviceQueue(
+      device, deviceQueues_.graphicsQueueFamilyIndex, 0, &deviceQueues_.graphicsQueue);
+  vf_.vkGetDeviceQueue(
+      device, deviceQueues_.computeQueueFamilyIndex, 0, &deviceQueues_.computeQueue);
 
-  device_ = std::make_unique<igl::vulkan::VulkanDevice>(device, "Device: VulkanContext::device_");
+  device_ =
+      std::make_unique<igl::vulkan::VulkanDevice>(vf_, device, "Device: VulkanContext::device_");
   immediate_ = std::make_unique<igl::vulkan::VulkanImmediateCommands>(
-      device, deviceQueues_.graphicsQueueFamilyIndex, "VulkanContext::immediate_");
+      vf_, device, deviceQueues_.graphicsQueueFamilyIndex, "VulkanContext::immediate_");
   syncManager_ = std::make_unique<SyncManager>(*this, config_.maxResourceCount);
 
   // create Vulkan pipeline cache
@@ -665,12 +674,13 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
         config_.pipelineCacheDataSize,
         config_.pipelineCacheData,
     };
-    vkCreatePipelineCache(device, &ci, nullptr, &pipelineCache_);
+    vf_.vkCreatePipelineCache(device, &ci, nullptr, &pipelineCache_);
   }
 
   // Create Vulkan Memory Allocator
   if (IGL_VULKAN_USE_VMA) {
-    VK_ASSERT_RETURN(ivkVmaCreateAllocator(vkPhysicalDevice_,
+    VK_ASSERT_RETURN(ivkVmaCreateAllocator(&vf_,
+                                           vkPhysicalDevice_,
                                            device_->getVkDevice(),
                                            vkInstance_,
                                            apiVersion,
@@ -772,6 +782,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
       bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
     }
     dslCombinedImageSamplers_ = std::make_unique<VulkanDescriptorSetLayout>(
+        vf_,
         device,
         VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
         IGL_TEXTURE_SAMPLERS_MAX,
@@ -793,7 +804,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     }
     // create default descriptor pool and allocate descriptor sets
     combinedImageSamplerDSets_.dsets.resize(kNumSets);
-    VK_ASSERT_RETURN(ivkCreateDescriptorPool(device,
+    VK_ASSERT_RETURN(ivkCreateDescriptorPool(&vf_,
+                                             device,
                                              VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
                                              kNumSets,
                                              IGL_TEXTURE_SAMPLERS_MAX,
@@ -801,7 +813,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                              &dpCombinedImageSamplers_));
     for (uint32_t i = 0; i != kNumSets; i++) {
       VK_ASSERT_RETURN(
-          ivkAllocateDescriptorSet(device,
+          ivkAllocateDescriptorSet(&vf_,
+                                   device,
                                    dpCombinedImageSamplers_,
                                    dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
                                    &combinedImageSamplerDSets_.dsets[i].ds));
@@ -821,6 +834,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
       bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
     }
     dslBuffersUniform_ = std::make_unique<VulkanDescriptorSetLayout>(
+        vf_,
         device,
         VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
         IGL_UNIFORM_BLOCKS_BINDING_MAX,
@@ -840,7 +854,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
       poolSizes[i] = VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                           kNumSets * IGL_UNIFORM_BLOCKS_BINDING_MAX};
     }
-    VK_ASSERT_RETURN(ivkCreateDescriptorPool(device,
+    VK_ASSERT_RETURN(ivkCreateDescriptorPool(&vf_,
+                                             device,
                                              VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
                                              kNumSets,
                                              IGL_UNIFORM_BLOCKS_BINDING_MAX,
@@ -848,7 +863,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                              &dpBuffersUniform_));
     bufferUniformDSets_.dsets.resize(kNumSets);
     for (size_t i = 0; i != kNumSets; i++) {
-      VK_ASSERT_RETURN(ivkAllocateDescriptorSet(device,
+      VK_ASSERT_RETURN(ivkAllocateDescriptorSet(&vf_,
+                                                device,
                                                 dpBuffersUniform_,
                                                 dslBuffersUniform_->getVkDescriptorSetLayout(),
                                                 &bufferUniformDSets_.dsets[i].ds));
@@ -856,7 +872,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   }
 
   // create descriptor set layout and descriptor pool for storage buffers
-  arenaBuffersStorage_ = std::make_unique<DescriptorPoolsArena>(*immediate_,
+  arenaBuffersStorage_ = std::make_unique<DescriptorPoolsArena>(vf_,
+                                                                *immediate_,
                                                                 device,
                                                                 VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                                                 IGL_UNIFORM_BLOCKS_BINDING_MAX,
@@ -910,8 +927,9 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
   VkDevice device = getVkDevice();
 
   if (dpBindless_ != VK_NULL_HANDLE) {
-    deferredTask(std::packaged_task<void()>(
-        [device, dp = dpBindless_]() { vkDestroyDescriptorPool(device, dp, nullptr); }));
+    deferredTask(std::packaged_task<void()>([vf = &vf_, device, dp = dpBindless_]() {
+      vf->vkDestroyDescriptorPool(device, dp, nullptr);
+    }));
   }
 
   // create default descriptor set layout which is going to be shared by graphics pipelines
@@ -939,6 +957,7 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
       flags, flags, flags, flags, flags, flags, flags};
   IGL_ASSERT(bindingFlags.back() == flags);
   dslBindless_ = std::make_unique<VulkanDescriptorSetLayout>(
+      vf_,
       device,
       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
       kNumBindings,
@@ -955,19 +974,22 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
       VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, currentMaxBindlessSamplers_},
       VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, currentMaxBindlessTextures_},
   };
-  VK_ASSERT(ivkCreateDescriptorPool(device,
+  VK_ASSERT(ivkCreateDescriptorPool(&vf_,
+                                    device,
                                     VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
                                     1,
                                     static_cast<uint32_t>(poolSizes.size()),
                                     poolSizes.data(),
                                     &dpBindless_));
-  VK_ASSERT(ivkSetDebugObjectName(device,
+  VK_ASSERT(ivkSetDebugObjectName(&vf_,
+                                  device,
                                   VK_OBJECT_TYPE_DESCRIPTOR_POOL,
                                   (uint64_t)dpBindless_,
                                   "Descriptor Pool: dpBindless_"));
   VK_ASSERT(ivkAllocateDescriptorSet(
-      device, dpBindless_, dslBindless_->getVkDescriptorSetLayout(), &bindlessDSet_.ds));
-  VK_ASSERT(ivkSetDebugObjectName(device,
+      &vf_, device, dpBindless_, dslBindless_->getVkDescriptorSetLayout(), &bindlessDSet_.ds));
+  VK_ASSERT(ivkSetDebugObjectName(&vf_,
+                                  device,
                                   VK_OBJECT_TYPE_DESCRIPTOR_SET,
                                   (uint64_t)bindlessDSet_.ds,
                                   "Descriptor Set: bindlessDSet_.ds"));
@@ -997,6 +1019,7 @@ void VulkanContext::updatePipelineLayouts() {
 
   // create pipeline layout
   pipelineLayoutGraphics_ = std::make_unique<VulkanPipelineLayout>(
+      vf_,
       device,
       DSLs,
       static_cast<uint32_t>(config_.enableDescriptorIndexing ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
@@ -1006,6 +1029,7 @@ void VulkanContext::updatePipelineLayouts() {
       "Pipeline Layout: VulkanContext::pipelineLayoutGraphics_");
 
   pipelineLayoutCompute_ = std::make_unique<VulkanPipelineLayout>(
+      vf_,
       device,
       DSLs,
       static_cast<uint32_t>(config_.enableDescriptorIndexing ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
@@ -1021,7 +1045,7 @@ igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
   }
 
   if (swapchain_) {
-    vkDeviceWaitIdle(device_->device_);
+    vf_.vkDeviceWaitIdle(device_->device_);
     swapchain_ = nullptr; // Destroy old swapchain first
   }
 
@@ -1042,7 +1066,7 @@ Result VulkanContext::waitIdle() const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
 
   for (auto queue : {deviceQueues_.graphicsQueue, deviceQueues_.computeQueue}) {
-    VK_ASSERT_RETURN(vkQueueWaitIdle(queue));
+    VK_ASSERT_RETURN(vf_.vkQueueWaitIdle(queue));
   }
 
   return getResultFromVkResult(VK_SUCCESS);
@@ -1283,7 +1307,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
     IGL_LOG_INFO("Updating descriptor set bindlessDSet_\n");
 #endif // IGL_VULKAN_PRINT_COMMANDS
     immediate_->wait(std::exchange(bindlessDSet_.handle, immediate_->getLastSubmitHandle()));
-    vkUpdateDescriptorSets(
+    vf_.vkUpdateDescriptorSets(
         device_->getVkDevice(), static_cast<uint32_t>(write.size()), write.data(), 0, nullptr);
   }
 
@@ -1347,7 +1371,7 @@ void VulkanContext::querySurfaceCapabilities() {
                                         VK_FORMAT_S8_UINT};
   for (const auto& depthFormat : depthFormats) {
     VkFormatProperties formatProps;
-    vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice_, depthFormat, &formatProps);
+    vf_.vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice_, depthFormat, &formatProps);
 
     if (formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT ||
         formatProps.bufferFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT ||
@@ -1357,24 +1381,25 @@ void VulkanContext::querySurfaceCapabilities() {
   }
 
   if (vkSurface_ != VK_NULL_HANDLE) {
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice_, vkSurface_, &deviceSurfaceCaps_);
+    vf_.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+        vkPhysicalDevice_, vkSurface_, &deviceSurfaceCaps_);
 
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice_, vkSurface_, &formatCount, nullptr);
+    vf_.vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice_, vkSurface_, &formatCount, nullptr);
 
     if (formatCount) {
       deviceSurfaceFormats_.resize(formatCount);
-      vkGetPhysicalDeviceSurfaceFormatsKHR(
+      vf_.vkGetPhysicalDeviceSurfaceFormatsKHR(
           vkPhysicalDevice_, vkSurface_, &formatCount, deviceSurfaceFormats_.data());
     }
 
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(
+    vf_.vkGetPhysicalDeviceSurfacePresentModesKHR(
         vkPhysicalDevice_, vkSurface_, &presentModeCount, nullptr);
 
     if (presentModeCount) {
       devicePresentModes_.resize(presentModeCount);
-      vkGetPhysicalDeviceSurfacePresentModesKHR(
+      vf_.vkGetPhysicalDeviceSurfacePresentModesKHR(
           vkPhysicalDevice_, vkSurface_, &presentModeCount, devicePresentModes_.data());
     }
   }
@@ -1418,7 +1443,7 @@ VulkanContext::RenderPassHandle VulkanContext::findRenderPass(
   }
 
   VkRenderPass pass = VK_NULL_HANDLE;
-  builder.build(device_->getVkDevice(), &pass);
+  builder.build(vf_, device_->getVkDevice(), &pass);
 
   const size_t index = renderPasses_.size();
 
@@ -1436,12 +1461,12 @@ std::vector<uint8_t> VulkanContext::getPipelineCacheData() const {
   VkDevice device = device_->getVkDevice();
 
   size_t size = 0;
-  vkGetPipelineCacheData(device, pipelineCache_, &size, nullptr);
+  vf_.vkGetPipelineCacheData(device, pipelineCache_, &size, nullptr);
 
   std::vector<uint8_t> data(size);
 
   if (size) {
-    vkGetPipelineCacheData(device, pipelineCache_, &size, data.data());
+    vf_.vkGetPipelineCacheData(device, pipelineCache_, &size, data.data());
   }
 
   return data;
@@ -1462,7 +1487,7 @@ void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - bindless\n", cmdBuf, bindPoint);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-  vkCmdBindDescriptorSets(
+  vf_.vkCmdBindDescriptorSets(
       cmdBuf,
       bindPoint,
       (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
@@ -1507,12 +1532,12 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
   VkWriteDescriptorSet write = ivkGetWriteDescriptorSet_ImageInfo(
       dset, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numImages, infoSampledImages.data());
 
-  vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
+  vf_.vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
 
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - textures\n", cmdBuf, bindPoint);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-  vkCmdBindDescriptorSets(
+  vf_.vkCmdBindDescriptorSets(
       cmdBuf,
       bindPoint,
       (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
@@ -1542,14 +1567,14 @@ void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
                                           IGL_UNIFORM_BLOCKS_BINDING_MAX,
                                           data.buffers);
 
-  vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
+  vf_.vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - uniform buffers\n", cmdBuf, bindPoint);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-  vkCmdBindDescriptorSets(
+  vf_.vkCmdBindDescriptorSets(
       cmdBuf,
       bindPoint,
       (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
@@ -1579,14 +1604,14 @@ void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
                                           IGL_UNIFORM_BLOCKS_BINDING_MAX,
                                           data.buffers);
 
-  vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
+  vf_.vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - storage buffers\n", cmdBuf, bindPoint);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-  vkCmdBindDescriptorSets(
+  vf_.vkCmdBindDescriptorSets(
       cmdBuf,
       bindPoint,
       (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),

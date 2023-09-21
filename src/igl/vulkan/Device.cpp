@@ -33,9 +33,11 @@
 
 namespace {
 
-bool supportsFormat(VkPhysicalDevice physicalDevice, VkFormat format) {
+bool supportsFormat(const VulkanFunctionTable& vf,
+                    VkPhysicalDevice physicalDevice,
+                    VkFormat format) {
   VkFormatProperties properties;
-  vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &properties);
+  vf.vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &properties);
   return properties.bufferFeatures != 0 || properties.linearTilingFeatures != 0 ||
          properties.optimalTilingFeatures != 0;
 }
@@ -245,7 +247,8 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
 #endif // IGL_SHADER_DUMP && IGL_DEBUG
 
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
-  const VkResult result = ivkCreateShaderModuleFromSPIRV(device, data, length, &vkShaderModule);
+  const VkResult result =
+      ivkCreateShaderModuleFromSPIRV(&ctx_->vf_, device, data, length, &vkShaderModule);
 
   setResultFrom(outResult, result);
 
@@ -255,13 +258,16 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
 
   if (!debugName.empty()) {
     // set debug name
-    VK_ASSERT(ivkSetDebugObjectName(
-        device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName.c_str()));
+    VK_ASSERT(ivkSetDebugObjectName(&ctx_->vf_,
+                                    device,
+                                    VK_OBJECT_TYPE_SHADER_MODULE,
+                                    (uint64_t)vkShaderModule,
+                                    debugName.c_str()));
   }
 
   // @fb-only
   // @lint-ignore CLANGTIDY
-  return std::make_shared<VulkanShaderModule>(device, vkShaderModule);
+  return std::make_shared<VulkanShaderModule>(ctx_->vf_, device, vkShaderModule);
 }
 
 std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage,
@@ -337,8 +343,8 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
   ivkGlslangResource(&glslangResource, &ctx_->getVkPhysicalDeviceProperties());
 
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
-  const Result result =
-      igl::vulkan::compileShader(device, vkStage, source, &vkShaderModule, &glslangResource);
+  const Result result = igl::vulkan::compileShader(
+      ctx_->vf_, device, vkStage, source, &vkShaderModule, &glslangResource);
 
   Result::setResult(outResult, result);
 
@@ -348,13 +354,16 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
 
   if (!debugName.empty()) {
     // set debug name
-    VK_ASSERT(ivkSetDebugObjectName(
-        device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vkShaderModule, debugName.c_str()));
+    VK_ASSERT(ivkSetDebugObjectName(&ctx_->vf_,
+                                    device,
+                                    VK_OBJECT_TYPE_SHADER_MODULE,
+                                    (uint64_t)vkShaderModule,
+                                    debugName.c_str()));
   }
 
   // @fb-only
   // @lint-ignore CLANGTIDY
-  return std::make_shared<VulkanShaderModule>(device, vkShaderModule);
+  return std::make_shared<VulkanShaderModule>(ctx_->vf_, device, vkShaderModule);
 }
 
 std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,
@@ -427,9 +436,9 @@ bool Device::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::StandardDerivativeExt:
     return false;
   case DeviceFeatures::TextureFormatRG:
-    return supportsFormat(physicalDevice, VK_FORMAT_R8G8_UNORM);
+    return supportsFormat(ctx_->vf_, physicalDevice, VK_FORMAT_R8G8_UNORM);
   case DeviceFeatures::TextureFormatRGB:
-    return supportsFormat(physicalDevice, VK_FORMAT_R8G8B8_SRGB);
+    return supportsFormat(ctx_->vf_, physicalDevice, VK_FORMAT_R8G8B8_SRGB);
   case DeviceFeatures::ReadWriteFramebuffer:
     return true;
   case DeviceFeatures::TextureNotPot:
@@ -437,11 +446,11 @@ bool Device::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::UniformBlocks:
     return true;
   case DeviceFeatures::TextureHalfFloat:
-    return supportsFormat(physicalDevice, VK_FORMAT_R16G16B16A16_SFLOAT) ||
-           supportsFormat(physicalDevice, VK_FORMAT_R16_SFLOAT);
+    return supportsFormat(ctx_->vf_, physicalDevice, VK_FORMAT_R16G16B16A16_SFLOAT) ||
+           supportsFormat(ctx_->vf_, physicalDevice, VK_FORMAT_R16_SFLOAT);
   case DeviceFeatures::TextureFloat:
-    return supportsFormat(physicalDevice, VK_FORMAT_R32G32B32A32_SFLOAT) ||
-           supportsFormat(physicalDevice, VK_FORMAT_R32_SFLOAT);
+    return supportsFormat(ctx_->vf_, physicalDevice, VK_FORMAT_R32G32B32A32_SFLOAT) ||
+           supportsFormat(ctx_->vf_, physicalDevice, VK_FORMAT_R32_SFLOAT);
   case DeviceFeatures::Texture2DArray:
   case DeviceFeatures::Texture3D:
     return true;
@@ -602,7 +611,7 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(
   }
 
   VkFormatProperties properties;
-  vkGetPhysicalDeviceFormatProperties(ctx_->vkPhysicalDevice_, vkFormat, &properties);
+  ctx_->vf_.vkGetPhysicalDeviceFormatProperties(ctx_->vkPhysicalDevice_, vkFormat, &properties);
 
   const VkFormatFeatureFlags features = properties.optimalTilingFeatures;
 

@@ -11,13 +11,8 @@
 
 #include <glslang/Include/glslang_c_interface.h>
 
-#if !defined(VK_NO_PROTOTYPES)
-#define VK_NO_PROTOTYPES
-#endif // !defined(VK_NO_PROTOTYPES)
-
-#include <volk.h>
-
 #include <igl/Macros.h>
+#include <igl/vulkan/VulkanFunctionTable.h>
 #include <igl/vulkan/VulkanVma.h>
 
 #define IGL_ARRAY_NUM_ELEMENTS(x) (sizeof(x) / sizeof((x)[0]))
@@ -28,7 +23,8 @@ extern "C" {
 
 const char* ivkGetVulkanResultString(VkResult result);
 
-VkResult ivkCreateInstance(uint32_t apiVersion,
+VkResult ivkCreateInstance(const struct VulkanFunctionTable* vt,
+                           uint32_t apiVersion,
                            uint32_t enableValidation,
                            uint32_t enableGPUAssistedValidation,
                            uint32_t enableSynchronizationValidation,
@@ -36,29 +32,39 @@ VkResult ivkCreateInstance(uint32_t apiVersion,
                            const char** extensions,
                            VkInstance* outInstance);
 
-VkResult ivkCreateDebugUtilsMessenger(VkInstance instance,
+VkResult ivkCreateDebugUtilsMessenger(const struct VulkanFunctionTable* vt,
+                                      VkInstance instance,
                                       PFN_vkDebugUtilsMessengerCallbackEXT callback,
                                       void* logUserData,
                                       VkDebugUtilsMessengerEXT* outMessenger);
 
 // This function uses VK_EXT_debug_report extension, which is deprecated by VK_EXT_debug_utils.
 // However, it is available on some Android devices where VK_EXT_debug_utils is not available.
-VkResult ivkCreateDebugReportMessenger(VkInstance instance,
+VkResult ivkCreateDebugReportMessenger(const struct VulkanFunctionTable* vt,
+                                       VkInstance instance,
                                        PFN_vkDebugReportCallbackEXT callback,
                                        void* logUserData,
                                        VkDebugReportCallbackEXT* outMessenger);
 
-VkResult ivkCreateSemaphore(VkDevice device, VkSemaphore* outSemaphore, bool exportable);
+VkResult ivkCreateSemaphore(const struct VulkanFunctionTable* vt,
+                            VkDevice device,
+                            VkSemaphore* outSemaphore,
+                            bool exportable);
 
-VkResult ivkCreateFence(VkDevice device, VkFlags flags, VkFence* outFence);
+VkResult ivkCreateFence(const struct VulkanFunctionTable* vt,
+                        VkDevice device,
+                        VkFlags flags,
+                        VkFence* outFence);
 
-VkResult ivkCreateSurface(VkInstance instance,
+VkResult ivkCreateSurface(const struct VulkanFunctionTable* vt,
+                          VkInstance instance,
                           void* window,
                           void* display,
                           void* layer,
                           VkSurfaceKHR* outSurface);
 
-VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
+VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
+                         VkPhysicalDevice physicalDevice,
                          size_t numQueueCreateInfos,
                          const VkDeviceQueueCreateInfo* queueCreateInfos,
                          size_t numDeviceExtensions,
@@ -69,9 +75,12 @@ VkResult ivkCreateDevice(VkPhysicalDevice physicalDevice,
                          VkBool32 enableDescriptorIndexing,
                          VkDevice* outDevice);
 
-VkResult ivkCreateHeadlessSurface(VkInstance instance, VkSurfaceKHR* surface);
+VkResult ivkCreateHeadlessSurface(const struct VulkanFunctionTable* vt,
+                                  VkInstance instance,
+                                  VkSurfaceKHR* surface);
 
-VkResult ivkCreateSwapchain(VkDevice device,
+VkResult ivkCreateSwapchain(const struct VulkanFunctionTable* vt,
+                            VkDevice device,
                             VkSurfaceKHR surface,
                             uint32_t minImageCount,
                             VkSurfaceFormatKHR surfaceFormat,
@@ -83,7 +92,9 @@ VkResult ivkCreateSwapchain(VkDevice device,
                             uint32_t height,
                             VkSwapchainKHR* outSwapchain);
 
-VkResult ivkCreateSampler(VkDevice device, VkSampler* outSampler);
+VkResult ivkCreateSampler(const struct VulkanFunctionTable* vt,
+                          VkDevice device,
+                          VkSampler* outSampler);
 
 VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
                                             VkFilter magFilter,
@@ -94,14 +105,16 @@ VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
                                             float minLod,
                                             float maxLod);
 
-VkResult ivkCreateImageView(VkDevice device,
+VkResult ivkCreateImageView(const struct VulkanFunctionTable* vt,
+                            VkDevice device,
                             VkImage image,
                             VkImageViewType type,
                             VkFormat imageFormat,
                             VkImageSubresourceRange range,
                             VkImageView* outImageView);
 
-VkResult ivkCreateFramebuffer(VkDevice device,
+VkResult ivkCreateFramebuffer(const struct VulkanFunctionTable* vt,
+                              VkDevice device,
                               uint32_t width,
                               uint32_t height,
                               VkRenderPass renderPass,
@@ -109,29 +122,35 @@ VkResult ivkCreateFramebuffer(VkDevice device,
                               const VkImageView* attachments,
                               VkFramebuffer* outFramebuffer);
 
-VkResult ivkCreateCommandPool(VkDevice device,
+VkResult ivkCreateCommandPool(const struct VulkanFunctionTable* vt,
+                              VkDevice device,
                               VkCommandPoolCreateFlags flags,
                               uint32_t queueFamilyIndex,
                               VkCommandPool* outCommandPool);
 
-VkResult ivkAllocateCommandBuffer(VkDevice device,
+VkResult ivkAllocateCommandBuffer(const struct VulkanFunctionTable* vt,
+                                  VkDevice device,
                                   VkCommandPool commandPool,
                                   VkCommandBuffer* outCommandBuffer);
 
-VkResult ivkAllocateMemory(VkPhysicalDevice physDev,
+VkResult ivkAllocateMemory(const struct VulkanFunctionTable* vt,
+                           VkPhysicalDevice physDev,
                            VkDevice device,
                            const VkMemoryRequirements* memRequirements,
                            VkMemoryPropertyFlags props,
                            bool enableBufferDeviceAddress,
                            VkDeviceMemory* outMemory);
 
-bool ivkIsHostVisibleSingleHeapMemory(VkPhysicalDevice physDev);
+bool ivkIsHostVisibleSingleHeapMemory(const struct VulkanFunctionTable* vt,
+                                      VkPhysicalDevice physDev);
 
-uint32_t ivkFindMemoryType(VkPhysicalDevice physDev,
+uint32_t ivkFindMemoryType(const struct VulkanFunctionTable* vt,
+                           VkPhysicalDevice physDev,
                            uint32_t memoryTypeBits,
                            VkMemoryPropertyFlags flags);
 
-VkResult ivkCreateRenderPass(VkDevice device,
+VkResult ivkCreateRenderPass(const struct VulkanFunctionTable* vt,
+                             VkDevice device,
                              uint32_t numAttachments,
                              const VkAttachmentDescription* attachments,
                              const VkSubpassDescription* subpass,
@@ -139,16 +158,19 @@ VkResult ivkCreateRenderPass(VkDevice device,
                              const VkRenderPassMultiviewCreateInfo* renderPassMultiview,
                              VkRenderPass* outRenderPass);
 
-VkResult ivkCreateShaderModule(VkDevice device,
+VkResult ivkCreateShaderModule(const struct VulkanFunctionTable* vt,
+                               VkDevice device,
                                glslang_program_t* program,
                                VkShaderModule* outShaderModule);
 
-VkResult ivkCreateShaderModuleFromSPIRV(VkDevice device,
+VkResult ivkCreateShaderModuleFromSPIRV(const struct VulkanFunctionTable* vt,
+                                        VkDevice device,
                                         const void* dataSPIRV,
                                         size_t size,
                                         VkShaderModule* outShaderModule);
 
-VkResult ivkCreateGraphicsPipeline(VkDevice device,
+VkResult ivkCreateGraphicsPipeline(const struct VulkanFunctionTable* vt,
+                                   VkDevice device,
                                    VkPipelineCache pipelineCache,
                                    uint32_t numShaderStages,
                                    const VkPipelineShaderStageCreateInfo* shaderStages,
@@ -165,13 +187,15 @@ VkResult ivkCreateGraphicsPipeline(VkDevice device,
                                    VkRenderPass renderPass,
                                    VkPipeline* outPipeline);
 
-VkResult ivkCreateComputePipeline(VkDevice device,
+VkResult ivkCreateComputePipeline(const struct VulkanFunctionTable* vt,
+                                  VkDevice device,
                                   VkPipelineCache pipelineCache,
                                   const VkPipelineShaderStageCreateInfo* shaderStage,
                                   VkPipelineLayout pipelineLayout,
                                   VkPipeline* outPipeline);
 
-VkResult ivkCreateDescriptorSetLayout(VkDevice device,
+VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
+                                      VkDevice device,
                                       VkDescriptorSetLayoutCreateFlags flags,
                                       uint32_t numBindings,
                                       const VkDescriptorSetLayoutBinding* bindings,
@@ -202,21 +226,23 @@ VkRenderPassMultiviewCreateInfo ivkGetRenderPassMultiviewCreateInfo(
     const uint32_t* viewMask,
     const uint32_t* correlationMask);
 
-VkResult ivkAllocateDescriptorSet(VkDevice device,
+VkResult ivkAllocateDescriptorSet(const struct VulkanFunctionTable* vt,
+                                  VkDevice device,
                                   VkDescriptorPool pool,
                                   VkDescriptorSetLayout layout,
                                   VkDescriptorSet* outDescriptorSet);
 
-VkResult ivkCreateDescriptorPool(VkDevice device,
+VkResult ivkCreateDescriptorPool(const struct VulkanFunctionTable* vt,
+                                 VkDevice device,
                                  VkDescriptorPoolCreateFlags flags,
                                  uint32_t maxDescriptorSets,
                                  uint32_t numPoolSizes,
                                  const VkDescriptorPoolSize* poolSizes,
                                  VkDescriptorPool* outDescriptorPool);
 
-VkResult ivkBeginCommandBuffer(VkCommandBuffer buffer);
+VkResult ivkBeginCommandBuffer(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer);
 
-VkResult ivkEndCommandBuffer(VkCommandBuffer buffer);
+VkResult ivkEndCommandBuffer(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer);
 
 VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,
                               uint32_t numWaitSemaphores,
@@ -339,7 +365,8 @@ glslang_input_t ivkGetGLSLangInput(VkShaderStageFlagBits stage,
                                    const glslang_resource_t* resource,
                                    const char* shaderCode);
 
-void ivkImageMemoryBarrier(VkCommandBuffer buffer,
+void ivkImageMemoryBarrier(const struct VulkanFunctionTable* vt,
+                           VkCommandBuffer buffer,
                            VkImage image,
                            VkAccessFlags srcAccessMask,
                            VkAccessFlags dstAccessMask,
@@ -349,7 +376,8 @@ void ivkImageMemoryBarrier(VkCommandBuffer buffer,
                            VkPipelineStageFlags dstStageMask,
                            VkImageSubresourceRange subresourceRange);
 
-void ivkBufferMemoryBarrier(VkCommandBuffer cmdBuffer,
+void ivkBufferMemoryBarrier(const struct VulkanFunctionTable* vt,
+                            VkCommandBuffer cmdBuffer,
                             VkBuffer buffer,
                             VkAccessFlags srcAccessMask,
                             VkAccessFlags dstAccessMask,
@@ -358,7 +386,8 @@ void ivkBufferMemoryBarrier(VkCommandBuffer cmdBuffer,
                             VkPipelineStageFlags srcStageMask,
                             VkPipelineStageFlags dstStageMask);
 
-void ivkCmdBlitImage(VkCommandBuffer buffer,
+void ivkCmdBlitImage(const struct VulkanFunctionTable* vt,
+                     VkCommandBuffer buffer,
                      VkImage srcImage,
                      VkImage dstImage,
                      VkImageLayout srcImageLayout,
@@ -369,23 +398,29 @@ void ivkCmdBlitImage(VkCommandBuffer buffer,
                      VkImageSubresourceLayers dstSubresourceRange,
                      VkFilter filter);
 
-VkResult ivkQueuePresent(VkQueue graphicsQueue,
+VkResult ivkQueuePresent(const struct VulkanFunctionTable* vt,
+                         VkQueue graphicsQueue,
                          VkSemaphore waitSemaphore,
                          VkSwapchainKHR swapchain,
                          uint32_t currentSwapchainImageIndex);
 
-VkResult ivkSetDebugObjectName(VkDevice device,
+VkResult ivkSetDebugObjectName(const struct VulkanFunctionTable* vt,
+                               VkDevice device,
                                VkObjectType type,
                                uint64_t handle,
                                const char* name);
 
-void ivkCmdBeginDebugUtilsLabel(VkCommandBuffer buffer, const char* name, const float colorRGBA[4]);
+void ivkCmdBeginDebugUtilsLabel(const struct VulkanFunctionTable* vt,
+                                VkCommandBuffer buffer,
+                                const char* name,
+                                const float colorRGBA[4]);
 
-void ivkCmdInsertDebugUtilsLabel(VkCommandBuffer buffer,
+void ivkCmdInsertDebugUtilsLabel(const struct VulkanFunctionTable* vt,
+                                 VkCommandBuffer buffer,
                                  const char* name,
                                  const float colorRGBA[4]);
 
-void ivkCmdEndDebugUtilsLabel(VkCommandBuffer buffer);
+void ivkCmdEndDebugUtilsLabel(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer);
 
 VkVertexInputBindingDescription ivkGetVertexInputBindingDescription(uint32_t binding,
                                                                     uint32_t stride,
@@ -395,7 +430,8 @@ VkVertexInputAttributeDescription ivkGetVertexInputAttributeDescription(uint32_t
                                                                         VkFormat format,
                                                                         uint32_t offset);
 
-VkResult ivkVmaCreateAllocator(VkPhysicalDevice physDev,
+VkResult ivkVmaCreateAllocator(const struct VulkanFunctionTable* vt,
+                               VkPhysicalDevice physDev,
                                VkDevice device,
                                VkInstance instance,
                                uint32_t apiVersion,

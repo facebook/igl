@@ -13,11 +13,12 @@
 namespace igl::vulkan {
 namespace {
 
-std::set<VulkanQueueDescriptor> enumerateQueues(VkPhysicalDevice physicalDevice) {
+std::set<VulkanQueueDescriptor> enumerateQueues(const VulkanFunctionTable& vf,
+                                                VkPhysicalDevice physicalDevice) {
   uint32_t queueFamilyCount = 0;
-  vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+  vf.vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
   std::vector<VkQueueFamilyProperties> properties(queueFamilyCount);
-  vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, properties.data());
+  vf.vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, properties.data());
 
   std::set<VulkanQueueDescriptor> descriptors;
   for (uint32_t i = 0; i != properties.size(); i++) {
@@ -34,8 +35,8 @@ std::set<VulkanQueueDescriptor> enumerateQueues(VkPhysicalDevice physicalDevice)
 
 } // namespace
 
-VulkanQueuePool::VulkanQueuePool(VkPhysicalDevice physicalDevice) :
-  VulkanQueuePool(enumerateQueues(physicalDevice)) {}
+VulkanQueuePool::VulkanQueuePool(const VulkanFunctionTable& vf, VkPhysicalDevice physicalDevice) :
+  VulkanQueuePool(enumerateQueues(vf, physicalDevice)) {}
 
 VulkanQueuePool::VulkanQueuePool(std::set<VulkanQueueDescriptor> availableDescriptors) :
   availableDescriptors_(std::move(availableDescriptors)) {}

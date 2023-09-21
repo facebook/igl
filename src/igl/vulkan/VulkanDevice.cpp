@@ -9,14 +9,18 @@
 
 #include <igl/vulkan/Common.h>
 
-igl::vulkan::VulkanDevice::VulkanDevice(VkDevice device, const char* debugName) : device_(device) {
+igl::vulkan::VulkanDevice::VulkanDevice(const VulkanFunctionTable& vf,
+                                        VkDevice device,
+                                        const char* debugName) :
+  vf_(vf), device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  VK_ASSERT(ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_DEVICE, (uint64_t)device_, debugName));
+  VK_ASSERT(
+      ivkSetDebugObjectName(&vf, device_, VK_OBJECT_TYPE_DEVICE, (uint64_t)device_, debugName));
 }
 
 igl::vulkan::VulkanDevice::~VulkanDevice() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
-  vkDestroyDevice(device_, nullptr);
+  vf_.vkDestroyDevice(device_, nullptr);
 }

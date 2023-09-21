@@ -10,6 +10,7 @@
 #include <memory>
 
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
 namespace igl {
@@ -17,7 +18,9 @@ namespace vulkan {
 
 class VulkanDevice final {
  public:
-  explicit VulkanDevice(VkDevice device, const char* debugName = nullptr);
+  explicit VulkanDevice(const VulkanFunctionTable& vf,
+                        VkDevice device,
+                        const char* debugName = nullptr);
   ~VulkanDevice();
 
   VulkanDevice(const VulkanDevice&) = delete;
@@ -28,6 +31,7 @@ class VulkanDevice final {
   }
 
  public:
+  const VulkanFunctionTable& vf_;
   VkDevice device_ = VK_NULL_HANDLE;
 };
 

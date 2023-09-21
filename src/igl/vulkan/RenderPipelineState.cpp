@@ -261,12 +261,15 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
 }
 
 RenderPipelineState::~RenderPipelineState() {
-  VkDevice device = device_.getVulkanContext().device_->getVkDevice();
+  const VulkanContext& ctx = device_.getVulkanContext();
+  VkDevice device = ctx.device_->getVkDevice();
 
   for (auto p : pipelines_) {
     if (p.second != VK_NULL_HANDLE) {
-      device_.getVulkanContext().deferredTask(std::packaged_task<void()>(
-          [device, pipeline = p.second]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+      device_.getVulkanContext().deferredTask(
+          std::packaged_task<void()>([vf = &ctx.vf_, device, pipeline = p.second]() {
+            vf->vkDestroyPipeline(device, pipeline, nullptr);
+          }));
     }
   }
 }
@@ -280,8 +283,9 @@ VkPipeline RenderPipelineState::getVkPipeline(
     VkDevice device = ctx.device_->getVkDevice();
     for (auto p : pipelines_) {
       if (p.second != VK_NULL_HANDLE) {
-        ctx.deferredTask(std::packaged_task<void()>(
-            [device, pipeline = p.second]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+        ctx.deferredTask(std::packaged_task<void()>([vf = &ctx.vf_, device, pipeline = p.second]() {
+          vf->vkDestroyPipeline(device, pipeline, nullptr);
+        }));
       }
     }
     pipelines_.clear();
@@ -369,7 +373,8 @@ VkPipeline RenderPipelineState::getVkPipeline(
           .frontFace(windingModeToVkFrontFace(desc_.frontFaceWinding))
           .vertexInputState(vertexInputStateCreateInfo_)
           .colorBlendAttachmentStates(colorBlendAttachmentStates)
-          .build(ctx.device_->getVkDevice(),
+          .build(ctx.vf_,
+                 ctx.device_->getVkDevice(),
                  ctx.pipelineCache_,
                  ctx.pipelineLayoutGraphics_->getVkPipelineLayout(),
                  renderPass,

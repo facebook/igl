@@ -8,13 +8,15 @@
 #pragma once
 
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/VulkanFunctions.h>
 
 namespace igl {
 namespace vulkan {
 
 class VulkanCommandPool final {
  public:
-  VulkanCommandPool(VkDevice device,
+  VulkanCommandPool(const VulkanFunctionTable& vf,
+                    VkDevice device,
                     VkCommandPoolCreateFlags flags,
                     uint32_t queueFamilyIndex,
                     const char* debugName = nullptr);
@@ -32,6 +34,7 @@ class VulkanCommandPool final {
   }
 
  private:
+  const VulkanFunctionTable& vf_;
   VkDevice device_ = VK_NULL_HANDLE;
   uint32_t queueFamilyIndex_ = 0;
   VkCommandPool commandPool_ = VK_NULL_HANDLE;

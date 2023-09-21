@@ -11,16 +11,18 @@
 namespace igl {
 namespace vulkan {
 
-VulkanCommandPool::VulkanCommandPool(VkDevice device,
+VulkanCommandPool::VulkanCommandPool(const VulkanFunctionTable& vf,
+                                     VkDevice device,
                                      VkCommandPoolCreateFlags flags,
                                      uint32_t queueFamilyIndex,
                                      const char* debugName) :
-  device_(device), queueFamilyIndex_(queueFamilyIndex) {
+  vf_(vf), device_(device), queueFamilyIndex_(queueFamilyIndex) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  VK_ASSERT(ivkCreateCommandPool(device_, flags, queueFamilyIndex_, &commandPool_));
+  VK_ASSERT(ivkCreateCommandPool(&vf_, device_, flags, queueFamilyIndex_, &commandPool_));
 
-  ivkSetDebugObjectName(device,
+  ivkSetDebugObjectName(&vf_,
+                        device,
                         VK_OBJECT_TYPE_COMMAND_POOL,
                         (uint64_t)commandPool_,
                         IGL_FORMAT("Command Pool: {}", debugName).c_str());
@@ -29,7 +31,7 @@ VulkanCommandPool::VulkanCommandPool(VkDevice device,
 VulkanCommandPool ::~VulkanCommandPool() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
-  vkDestroyCommandPool(device_, commandPool_, nullptr);
+  vf_.vkDestroyCommandPool(device_, commandPool_, nullptr);
 }
 
 } // namespace vulkan

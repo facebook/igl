@@ -56,7 +56,8 @@ void logShaderSource(const char* text) {
 namespace igl {
 namespace vulkan {
 
-Result compileShader(VkDevice device,
+Result compileShader(const VulkanFunctionTable& vf,
+                     VkDevice device,
                      VkShaderStageFlagBits stage,
                      const char* code,
                      VkShaderModule* outShaderModule,
@@ -124,16 +125,18 @@ Result compileShader(VkDevice device,
     IGL_LOG_ERROR("%s\n", glslang_program_SPIRV_get_messages(program));
   }
 
-  VK_ASSERT_RETURN(ivkCreateShaderModule(device, program, outShaderModule));
+  VK_ASSERT_RETURN(ivkCreateShaderModule(&vf, device, program, outShaderModule));
 
   return Result();
 }
 
-VulkanShaderModule::VulkanShaderModule(VkDevice device, VkShaderModule shaderModule) :
-  device_(device), vkShaderModule_(shaderModule) {}
+VulkanShaderModule::VulkanShaderModule(const VulkanFunctionTable& vf,
+                                       VkDevice device,
+                                       VkShaderModule shaderModule) :
+  vf_(vf), device_(device), vkShaderModule_(shaderModule) {}
 
 VulkanShaderModule::~VulkanShaderModule() {
-  vkDestroyShaderModule(device_, vkShaderModule_, nullptr);
+  vf_.vkDestroyShaderModule(device_, vkShaderModule_, nullptr);
 }
 
 } // namespace vulkan

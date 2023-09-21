@@ -13,11 +13,16 @@
 namespace igl {
 namespace vulkan {
 
-VulkanFence::VulkanFence(VkDevice device, VkFlags flags, const char* debugName) : device_(device) {
+VulkanFence::VulkanFence(const VulkanFunctionTable& vf,
+                         VkDevice device,
+                         VkFlags flags,
+                         const char* debugName) :
+  vf_(&vf), device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  VK_ASSERT(ivkCreateFence(device_, flags, &vkFence_));
-  VK_ASSERT(ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_FENCE, (uint64_t)vkFence_, debugName));
+  VK_ASSERT(ivkCreateFence(vf_, device_, flags, &vkFence_));
+  VK_ASSERT(
+      ivkSetDebugObjectName(vf_, device_, VK_OBJECT_TYPE_FENCE, (uint64_t)vkFence_, debugName));
 }
 
 VulkanFence ::~VulkanFence() {
@@ -26,17 +31,19 @@ VulkanFence ::~VulkanFence() {
   if (device_ != VK_NULL_HANDLE) {
     // lifetimes of all VkFence objects are managed explicitly
     // we do not use deferredTask() for them
-    vkDestroyFence(device_, vkFence_, nullptr);
+    vf_->vkDestroyFence(device_, vkFence_, nullptr);
   }
 }
 
 VulkanFence::VulkanFence(VulkanFence&& other) noexcept {
+  std::swap(vf_, other.vf_);
   std::swap(device_, other.device_);
   std::swap(vkFence_, other.vkFence_);
 }
 
 VulkanFence& VulkanFence::operator=(VulkanFence&& other) noexcept {
   VulkanFence tmp(std::move(other));
+  std::swap(vf_, tmp.vf_);
   std::swap(device_, tmp.device_);
   std::swap(vkFence_, tmp.vkFence_);
   return *this;

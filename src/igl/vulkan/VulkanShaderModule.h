@@ -10,12 +10,14 @@
 #include <memory>
 
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
 namespace igl {
 namespace vulkan {
 
-Result compileShader(VkDevice device,
+Result compileShader(const VulkanFunctionTable& vf,
+                     VkDevice device,
                      VkShaderStageFlagBits stage,
                      const char* code,
                      VkShaderModule* outShaderModule,
@@ -27,7 +29,7 @@ Result compileShader(VkDevice device,
 class VulkanShaderModule final {
  public:
   /** @brief Instantiates a shader module wrapper with the module and the device that owns it */
-  VulkanShaderModule(VkDevice device, VkShaderModule shaderModule);
+  VulkanShaderModule(const VulkanFunctionTable& vf, VkDevice device, VkShaderModule shaderModule);
   ~VulkanShaderModule();
 
   /** @brief Returns the underlying Vulkan shader module */
@@ -36,6 +38,7 @@ class VulkanShaderModule final {
   }
 
  private:
+  const VulkanFunctionTable& vf_;
   VkDevice device_ = VK_NULL_HANDLE;
   VkShaderModule vkShaderModule_ = VK_NULL_HANDLE;
 };

@@ -76,7 +76,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
 
   binder_.updateBindings();
   // threadgroupSize is controlled inside compute shaders
-  vkCmdDispatch(
+  ctx_.vf_.vkCmdDispatch(
       cmdBuffer_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
 }
 
@@ -84,18 +84,18 @@ void ComputeCommandEncoder::pushDebugGroupLabel(const std::string& label,
                                                 const igl::Color& color) const {
   IGL_ASSERT(!label.empty());
 
-  ivkCmdBeginDebugUtilsLabel(cmdBuffer_, label.c_str(), color.toFloatPtr());
+  ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label.c_str(), color.toFloatPtr());
 }
 
 void ComputeCommandEncoder::insertDebugEventLabel(const std::string& label,
                                                   const igl::Color& color) const {
   IGL_ASSERT(!label.empty());
 
-  ivkCmdInsertDebugUtilsLabel(cmdBuffer_, label.c_str(), color.toFloatPtr());
+  ivkCmdInsertDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label.c_str(), color.toFloatPtr());
 }
 
 void ComputeCommandEncoder::popDebugGroupLabel() const {
-  ivkCmdEndDebugUtilsLabel(cmdBuffer_);
+  ivkCmdEndDebugUtilsLabel(&ctx_.vf_, cmdBuffer_);
 }
 
 void ComputeCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const void* /*data*/) {
@@ -177,12 +177,12 @@ void ComputeCommandEncoder::bindPushConstants(const void* data, size_t length, s
         "Push constants size exceeded %u (max %u bytes)", size, limits.maxPushConstantsSize);
   }
 
-  vkCmdPushConstants(cmdBuffer_,
-                     ctx_.pipelineLayoutCompute_->getVkPipelineLayout(),
-                     VK_SHADER_STAGE_COMPUTE_BIT,
-                     (uint32_t)offset,
-                     (uint32_t)length,
-                     data);
+  ctx_.vf_.vkCmdPushConstants(cmdBuffer_,
+                              ctx_.pipelineLayoutCompute_->getVkPipelineLayout(),
+                              VK_SHADER_STAGE_COMPUTE_BIT,
+                              (uint32_t)offset,
+                              (uint32_t)length,
+                              data);
 }
 
 } // namespace vulkan

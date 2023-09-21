@@ -11,6 +11,7 @@
 #include <vector>
 
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/VulkanFunctions.h>
 
 namespace igl::vulkan {
 
@@ -40,7 +41,7 @@ struct VulkanQueueDescriptor {
 
 class VulkanQueuePool final {
  public:
-  explicit VulkanQueuePool(VkPhysicalDevice physicalDevice);
+  VulkanQueuePool(const VulkanFunctionTable& vf, VkPhysicalDevice physicalDevice);
   explicit VulkanQueuePool(std::set<VulkanQueueDescriptor> availableDescriptors);
 
   /* Find a queue descriptor that conforms to give queue flags. */

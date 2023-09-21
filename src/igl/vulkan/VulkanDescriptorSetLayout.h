@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <memory>
 
@@ -17,7 +18,8 @@ class VulkanPipelineLayout;
 
 class VulkanDescriptorSetLayout final {
  public:
-  VulkanDescriptorSetLayout(VkDevice device,
+  VulkanDescriptorSetLayout(const VulkanFunctionTable& vf,
+                            VkDevice device,
                             VkDescriptorSetLayoutCreateFlags flags,
                             uint32_t numBindings,
                             const VkDescriptorSetLayoutBinding* bindings,
@@ -33,6 +35,7 @@ class VulkanDescriptorSetLayout final {
   }
 
  public:
+  const VulkanFunctionTable& vf_;
   VkDevice device_ = VK_NULL_HANDLE;
   VkDescriptorSetLayout vkDescriptorSetLayout_ = VK_NULL_HANDLE;
 };

@@ -40,10 +40,10 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
 
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
       // Check if coherent buffer is available.
-      VK_ASSERT(vkCreateBuffer(device_, &ci, nullptr, &vkBuffer_));
+      VK_ASSERT(ctx_.vf_.vkCreateBuffer(device_, &ci, nullptr, &vkBuffer_));
       VkMemoryRequirements requirements = {};
-      vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
-      vkDestroyBuffer(device, vkBuffer_, nullptr);
+      ctx_.vf_.vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
+      ctx_.vf_.vkDestroyBuffer(device, vkBuffer_, nullptr);
       vkBuffer_ = VK_NULL_HANDLE;
 
       if (requirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
@@ -68,41 +68,43 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
     }
   } else {
     // create buffer
-    VK_ASSERT(vkCreateBuffer(device_, &ci, nullptr, &vkBuffer_));
+    VK_ASSERT(ctx_.vf_.vkCreateBuffer(device_, &ci, nullptr, &vkBuffer_));
 
     // back the buffer with some memory
     {
       VkMemoryRequirements requirements = {};
-      vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
+      ctx_.vf_.vkGetBufferMemoryRequirements(device_, vkBuffer_, &requirements);
       if (requirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
         isCoherentMemory_ = true;
       }
 
-      VK_ASSERT(ivkAllocateMemory(ctx_.getVkPhysicalDevice(),
+      VK_ASSERT(ivkAllocateMemory(&ctx_.vf_,
+                                  ctx_.getVkPhysicalDevice(),
                                   device_,
                                   &requirements,
                                   memFlags,
                                   ctx.config_.enableBufferDeviceAddress,
                                   &vkMemory_));
-      VK_ASSERT(vkBindBufferMemory(device_, vkBuffer_, vkMemory_, 0));
+      VK_ASSERT(ctx_.vf_.vkBindBufferMemory(device_, vkBuffer_, vkMemory_, 0));
     }
 
     // handle memory-mapped buffers
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-      VK_ASSERT(vkMapMemory(device_, vkMemory_, 0, bufferSize_, 0, &mappedPtr_));
+      VK_ASSERT(ctx_.vf_.vkMapMemory(device_, vkMemory_, 0, bufferSize_, 0, &mappedPtr_));
     }
   }
 
   IGL_ASSERT(vkBuffer_ != VK_NULL_HANDLE);
 
   // set debug name
-  VK_ASSERT(ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_BUFFER, (uint64_t)vkBuffer_, debugName));
+  VK_ASSERT(ivkSetDebugObjectName(
+      &ctx_.vf_, device_, VK_OBJECT_TYPE_BUFFER, (uint64_t)vkBuffer_, debugName));
 
   // handle shader access
   if (usageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) {
     const VkBufferDeviceAddressInfo ai = {
         VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR, nullptr, vkBuffer_};
-    vkDeviceAddress_ = vkGetBufferDeviceAddressKHR(device_, &ai);
+    vkDeviceAddress_ = ctx_.vf_.vkGetBufferDeviceAddressKHR(device_, &ai);
     IGL_ASSERT(vkDeviceAddress_);
   }
 }
@@ -120,12 +122,12 @@ VulkanBuffer::~VulkanBuffer() {
         }));
   } else {
     if (mappedPtr_) {
-      vkUnmapMemory(device_, vkMemory_);
+      ctx_.vf_.vkUnmapMemory(device_, vkMemory_);
     }
-    ctx_.deferredTask(
-        std::packaged_task<void()>([device = device_, buffer = vkBuffer_, memory = vkMemory_]() {
-          vkDestroyBuffer(device, buffer, nullptr);
-          vkFreeMemory(device, memory, nullptr);
+    ctx_.deferredTask(std::packaged_task<void()>(
+        [vf = &ctx_.vf_, device = device_, buffer = vkBuffer_, memory = vkMemory_]() {
+          vf->vkDestroyBuffer(device, buffer, nullptr);
+          vf->vkFreeMemory(device, memory, nullptr);
         }));
   }
 }
@@ -145,7 +147,7 @@ void VulkanBuffer::flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) con
         offset,
         size,
     };
-    vkFlushMappedMemoryRanges(device_, 1, &memoryRange);
+    ctx_.vf_.vkFlushMappedMemoryRanges(device_, 1, &memoryRange);
   }
 }
 
@@ -165,7 +167,7 @@ void VulkanBuffer::invalidateMappedMemory(VkDeviceSize offset, VkDeviceSize size
         offset,
         size,
     };
-    vkInvalidateMappedMemoryRanges(device_, 1, &memoryRange);
+    ctx_.vf_.vkInvalidateMappedMemoryRanges(device_, 1, &memoryRange);
   }
 }
 

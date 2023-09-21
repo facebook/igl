@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
 namespace igl {
@@ -41,12 +42,12 @@ class VulkanExtensions final {
 
   /// @brief Enumerates all instance extensions and stores their names internally in a vector of
   /// std::strings
-  void enumerate();
+  void enumerate(const VulkanFunctionTable& vf);
 
   /// @brief Enumerates all physical device extensions and stores their names internally in a vector
   /// of std::strings
   /// @param The physical device to use as a reference for the enumeration
-  void enumerate(VkPhysicalDevice device);
+  void enumerate(const VulkanFunctionTable& vf, VkPhysicalDevice device);
 
   /// @brief Returns all available extensions of a type
   /// @param extensionType The type of the extensions

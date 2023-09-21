@@ -11,13 +11,16 @@
 
 namespace igl::vulkan {
 
-VulkanSemaphore::VulkanSemaphore(VkDevice device, const char* debugName, bool exportable) :
-  device_(device) {
+VulkanSemaphore::VulkanSemaphore(const VulkanFunctionTable& vf,
+                                 VkDevice device,
+                                 const char* debugName,
+                                 bool exportable) :
+  vf_(&vf), device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  VK_ASSERT(ivkCreateSemaphore(device_, &vkSemaphore_, exportable));
-  VK_ASSERT(
-      ivkSetDebugObjectName(device_, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)vkSemaphore_, debugName));
+  VK_ASSERT(ivkCreateSemaphore(vf_, device_, &vkSemaphore_, exportable));
+  VK_ASSERT(ivkSetDebugObjectName(
+      vf_, device_, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)vkSemaphore_, debugName));
 }
 
 VulkanSemaphore ::~VulkanSemaphore() {
@@ -26,17 +29,19 @@ VulkanSemaphore ::~VulkanSemaphore() {
   if (device_ != VK_NULL_HANDLE) {
     // lifetimes of all VkSemaphore objects are managed explicitly
     // we do not use deferredTask() for them
-    vkDestroySemaphore(device_, vkSemaphore_, nullptr);
+    vf_->vkDestroySemaphore(device_, vkSemaphore_, nullptr);
   }
 }
 
 VulkanSemaphore::VulkanSemaphore(VulkanSemaphore&& other) noexcept {
+  std::swap(vf_, other.vf_);
   std::swap(device_, other.device_);
   std::swap(vkSemaphore_, other.vkSemaphore_);
 }
 
 VulkanSemaphore& VulkanSemaphore::operator=(VulkanSemaphore&& other) noexcept {
   VulkanSemaphore tmp(std::move(other));
+  std::swap(vf_, tmp.vf_);
   std::swap(device_, tmp.device_);
   std::swap(vkSemaphore_, tmp.vkSemaphore_);
   return *this;
@@ -56,7 +61,7 @@ int VulkanSemaphore::getFileDescriptor() const noexcept {
   fdInfo.semaphore = vkSemaphore_;
   fdInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
   int fd = -1;
-  auto ok = vkGetSemaphoreFdKHR(device_, &fdInfo, &fd);
+  auto ok = vf_->vkGetSemaphoreFdKHR(device_, &fdInfo, &fd);
   if (ok == VK_SUCCESS) {
     return fd;
   }

@@ -136,6 +136,8 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
     return;
   }
 
+  const auto& ctx = device_.getVulkanContext();
+
   // Extract the underlying VkCommandBuffer
   CommandBufferDesc cbDesc;
   std::shared_ptr<ICommandBuffer> buffer = cmdQueue.createCommandBuffer(cbDesc, nullptr);
@@ -154,7 +156,8 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   const igl::vulkan::Texture& dstVkTex = static_cast<Texture&>(*destTexture);
 
   // 1. Transition dst into TRANSFER_DST_OPTIMAL
-  ivkImageMemoryBarrier(cmdBuf,
+  ivkImageMemoryBarrier(&ctx.vf_,
+                        cmdBuf,
                         dstVkTex.getVkImage(),
                         0, // srcAccessMask
                         VK_ACCESS_TRANSFER_WRITE_BIT, // dstAccessMask
@@ -178,13 +181,13 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
       VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
       VkExtent2D{static_cast<uint32_t>(range.width), static_cast<uint32_t>(range.height)});
 
-  vkCmdCopyImage(cmdBuf,
-                 srcVkTex.getVkImage(),
-                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                 dstVkTex.getVkImage(),
-                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                 1,
-                 &copy);
+  ctx.vf_.vkCmdCopyImage(cmdBuf,
+                         srcVkTex.getVkImage(),
+                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                         dstVkTex.getVkImage(),
+                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                         1,
+                         &copy);
 
   // 4. Transition images back
   srcVkTex.getVulkanTexture().getVulkanImage().transitionLayout(

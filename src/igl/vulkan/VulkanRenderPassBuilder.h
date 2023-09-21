@@ -8,6 +8,8 @@
 #pragma once
 
 #include <igl/vulkan/Common.h>
+
+#include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <vector>
 
@@ -62,7 +64,8 @@ class VulkanRenderPassBuilder final {
   // Only VulkanContext is allowed to create actual render passes. Use
   // VulkanContext::findRenderPass()
   friend class VulkanContext;
-  VkResult build(VkDevice device,
+  VkResult build(const VulkanFunctionTable& vf,
+                 VkDevice device,
                  VkRenderPass* outRenderPass,
                  const char* debugName = nullptr) const noexcept;
 

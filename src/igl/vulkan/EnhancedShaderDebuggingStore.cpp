@@ -311,7 +311,9 @@ void EnhancedShaderDebuggingStore::installBufferBarrier(
   if (enabled_) {
     auto cmdBuffer = static_cast<const vulkan::CommandBuffer*>(&commandBuffer);
     auto* buffer = static_cast<vulkan::Buffer*>(vertexBuffer().get());
-    ivkBufferMemoryBarrier(cmdBuffer->getVkCommandBuffer(),
+    const auto& ctx = device_->getVulkanContext();
+    ivkBufferMemoryBarrier(&ctx.vf_,
+                           cmdBuffer->getVkCommandBuffer(),
                            buffer->getVkBuffer(),
                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, /* src access flag */
                            VK_ACCESS_INDIRECT_COMMAND_READ_BIT, /* dst access flag */

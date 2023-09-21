@@ -163,7 +163,7 @@ void ResourcesBinder::bindPipeline(VkPipeline pipeline) {
 #if IGL_VULKAN_PRINT_COMMANDS
     IGL_LOG_INFO("%p vkCmdBindPipeline(%u, %p)\n", cmdBuffer_, bindPoint_, pipeline);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-    vkCmdBindPipeline(cmdBuffer_, bindPoint_, pipeline);
+    ctx_.vf_.vkCmdBindPipeline(cmdBuffer_, bindPoint_, pipeline);
   }
 }
 

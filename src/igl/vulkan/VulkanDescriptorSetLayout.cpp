@@ -14,25 +14,29 @@ namespace igl {
 
 namespace vulkan {
 
-VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice device,
+VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const VulkanFunctionTable& vf,
+                                                     VkDevice device,
                                                      VkDescriptorSetLayoutCreateFlags flags,
                                                      uint32_t numBindings,
                                                      const VkDescriptorSetLayoutBinding* bindings,
                                                      const VkDescriptorBindingFlags* bindingFlags,
                                                      const char* debugName) :
-  device_(device) {
+  vf_(vf), device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   VK_ASSERT(ivkCreateDescriptorSetLayout(
-      device, flags, numBindings, bindings, bindingFlags, &vkDescriptorSetLayout_));
-  VK_ASSERT(ivkSetDebugObjectName(
-      device_, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)vkDescriptorSetLayout_, debugName));
+      &vf, device, flags, numBindings, bindings, bindingFlags, &vkDescriptorSetLayout_));
+  VK_ASSERT(ivkSetDebugObjectName(&vf,
+                                  device_,
+                                  VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
+                                  (uint64_t)vkDescriptorSetLayout_,
+                                  debugName));
 }
 
 VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
-  vkDestroyDescriptorSetLayout(device_, vkDescriptorSetLayout_, nullptr);
+  vf_.vkDestroyDescriptorSetLayout(device_, vkDescriptorSetLayout_, nullptr);
 }
 
 } // namespace vulkan
