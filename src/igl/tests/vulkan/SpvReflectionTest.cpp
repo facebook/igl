@@ -237,11 +237,16 @@ TEST(SpvReflectionTest, TextureTest) {
 
   ASSERT_EQ(spvModuleInfo.uniformBufferBindingLocations.size(), 0);
   EXPECT_EQ(spvModuleInfo.storageBufferBindingLocations.size(), 0);
-  EXPECT_EQ(spvModuleInfo.textureBindingLocations.size(), 4);
-  EXPECT_EQ(spvModuleInfo.textureBindingLocations[0], kNoBindingLocation);
-  EXPECT_EQ(spvModuleInfo.textureBindingLocations[1], 1);
-  EXPECT_EQ(spvModuleInfo.textureBindingLocations[2], kNoBindingLocation);
-  EXPECT_EQ(spvModuleInfo.textureBindingLocations[3], 3);
+  EXPECT_EQ(spvModuleInfo.textures.size(), 4);
+  EXPECT_EQ(spvModuleInfo.textures[0].bindingLocation, kNoBindingLocation);
+  EXPECT_EQ(spvModuleInfo.textures[1].bindingLocation, 1);
+  EXPECT_EQ(spvModuleInfo.textures[2].bindingLocation, kNoBindingLocation);
+  EXPECT_EQ(spvModuleInfo.textures[3].bindingLocation, 3);
+
+  EXPECT_EQ(spvModuleInfo.textures[0].type, TextureType::TwoD);
+  EXPECT_EQ(spvModuleInfo.textures[1].type, TextureType::TwoD);
+  EXPECT_EQ(spvModuleInfo.textures[2].type, TextureType::TwoD);
+  EXPECT_EQ(spvModuleInfo.textures[3].type, TextureType::TwoD);
 }
 
 } // namespace igl::tests

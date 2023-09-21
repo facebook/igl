@@ -35,10 +35,17 @@ constexpr size_t kOpTypePointerId = 1;
 constexpr size_t kOpTypePointerObjectTypeId = 3;
 IGL_MAYBE_UNUSED constexpr size_t kOpTypePointerMaxUsedIx = kOpTypePointerObjectTypeId;
 
+constexpr size_t kOpTypeImageTypeId = 1;
+constexpr size_t kOpTypeImageDim = 3;
+constexpr size_t kOpTypeImageArrayed = 5;
+IGL_MAYBE_UNUSED constexpr size_t kOpTypeImageMaxUsedId = kOpTypeImageDim;
+
 constexpr size_t kOpTypeSampledImageTypeId = 1;
-IGL_MAYBE_UNUSED constexpr size_t kOpTypeSampledImageMaxUsedId = kOpTypeSampledImageTypeId;
+constexpr size_t kOpTypeSampledImageImageTypeId = 2;
+IGL_MAYBE_UNUSED constexpr size_t kOpTypeSampledImageMaxUsedId = kOpTypeSampledImageImageTypeId;
 
 enum class OpCode : uint32_t {
+  OpTypeImage = 25,
   OpTypeSampledImage = 27,
   OpTypePointer = 32,
   OpVariable = 59,
@@ -47,6 +54,17 @@ enum class OpCode : uint32_t {
 
 struct Decoration {
   enum : uint32_t { Block = 2, Binding = 33 };
+};
+
+struct ImageDimensionality {
+  enum : uint32_t {
+    Dim1d = 0,
+    Dim2d = 1,
+    Dim3d = 2,
+    DimCube = 3,
+    DimRect = 4,
+    Dim2dExternal = 666, // Doesn't exist in SPIR-V, but needed for Android.
+  };
 };
 
 struct StorageClass {
@@ -63,6 +81,24 @@ OpCode getOpCode(uint32_t firstWord) {
   return static_cast<OpCode>(firstWord & kSpvOpCodeMask);
 }
 
+TextureType getTextureType(uint32_t dim, bool isArrayed) {
+  switch (dim) {
+  case ImageDimensionality::Dim2d:
+    return isArrayed ? TextureType::TwoDArray : TextureType::TwoD;
+  case ImageDimensionality::Dim3d:
+    return TextureType::ThreeD;
+  case ImageDimensionality::DimCube:
+    return TextureType::Cube;
+  case ImageDimensionality::Dim2dExternal:
+    return TextureType::ExternalImage;
+
+  case ImageDimensionality::DimRect:
+  case ImageDimensionality::Dim1d:
+  default:
+    return TextureType::Invalid;
+  }
+}
+
 } // namespace
 
 SpvModuleInfo getReflectionData(const uint32_t* words, size_t size) {
@@ -77,9 +113,10 @@ SpvModuleInfo getReflectionData(const uint32_t* words, size_t size) {
 
   std::unordered_set<ResultId> interfaceBlockTypeIds;
   std::unordered_set<ResultId> interfaceBlockPointerTypeIds;
-  std::unordered_set<ResultId> sampledImageTypeIds;
-  std::unordered_set<ResultId> sampledImagePointerTypeIds;
+  std::unordered_map<ResultId, ResultId> sampledImageTypeIdToImageTypeId;
+  std::unordered_map<ResultId, TextureType> sampledImagePointerTypeIds;
   std::unordered_map<ResultId, uint32_t> bindingLocations;
+  std::unordered_map<ResultId, TextureType> imageTypes;
 
   for (size_t pos = kSpvHeaderSize; pos < size;) {
     uint16_t instructionSize = getInstructionSize(words[pos]);
@@ -107,12 +144,23 @@ SpvModuleInfo getReflectionData(const uint32_t* words, size_t size) {
       break;
     }
 
+    case OpCode::OpTypeImage: {
+      IGL_ASSERT_MSG((pos + kOpTypeImageMaxUsedId) < size, "OpTypeImage out of bounds");
+      ResultId imageTypeId = words[pos + kOpTypeImageTypeId];
+      uint32_t dim = words[pos + kOpTypeImageDim];
+      bool isArrayed = words[pos + kOpTypeImageArrayed] == 1u;
+      TextureType textureType = getTextureType(dim, isArrayed);
+      imageTypes.insert({imageTypeId, textureType});
+      break;
+    }
+
     case OpCode::OpTypeSampledImage: {
       IGL_ASSERT_MSG((pos + kOpTypeSampledImageMaxUsedId) < size,
                      "OpTypeSampledImage out of bounds");
 
       ResultId sampledImageTypeId = words[pos + kOpTypeSampledImageTypeId];
-      sampledImageTypeIds.insert(sampledImageTypeId);
+      ResultId imageTypeId = words[pos + kOpTypeSampledImageImageTypeId];
+      sampledImageTypeIdToImageTypeId.insert({sampledImageTypeId, imageTypeId});
       break;
     }
 
@@ -123,8 +171,18 @@ SpvModuleInfo getReflectionData(const uint32_t* words, size_t size) {
       ResultId pointerTypeId = words[pos + kOpTypePointerId];
       if (interfaceBlockTypeIds.count(objectTypeId)) {
         interfaceBlockPointerTypeIds.insert(pointerTypeId);
-      } else if (sampledImageTypeIds.count(objectTypeId)) {
-        sampledImagePointerTypeIds.insert(pointerTypeId);
+      } else {
+        auto sampledImageTypeIdToImageTypeIdIter =
+            sampledImageTypeIdToImageTypeId.find(objectTypeId);
+        if (sampledImageTypeIdToImageTypeIdIter != sampledImageTypeIdToImageTypeId.end()) {
+          auto imageTypeId = sampledImageTypeIdToImageTypeIdIter->second;
+          auto imageTypesIter = imageTypes.find(imageTypeId);
+          TextureType textureType = TextureType::Invalid;
+          if (imageTypesIter != imageTypes.end()) {
+            textureType = imageTypesIter->second;
+          }
+          sampledImagePointerTypeIds.insert({pointerTypeId, textureType});
+        }
       }
 
       break;
@@ -147,12 +205,20 @@ SpvModuleInfo getReflectionData(const uint32_t* words, size_t size) {
         } else if (storageClass == StorageClass::StorageBuffer) {
           spvModuleInfo.storageBufferBindingLocations.push_back(bindingLocation);
         }
-      } else if (sampledImagePointerTypeIds.count(variableTypeId)) {
-        auto bindingLocationIt = bindingLocations.find(variableId);
-        uint32_t bindingLocation = bindingLocationIt != bindingLocations.end()
-                                       ? bindingLocationIt->second
-                                       : kNoBindingLocation;
-        spvModuleInfo.textureBindingLocations.push_back(bindingLocation);
+      } else {
+        auto sampledImagePointerTypeIdsIter = sampledImagePointerTypeIds.find(variableTypeId);
+        if (sampledImagePointerTypeIdsIter != sampledImagePointerTypeIds.end()) {
+          auto bindingLocationIt = bindingLocations.find(variableId);
+          uint32_t bindingLocation = bindingLocationIt != bindingLocations.end()
+                                         ? bindingLocationIt->second
+                                         : kNoBindingLocation;
+
+          auto textureType = sampledImagePointerTypeIdsIter->second;
+          TextureDescription textureDesc;
+          textureDesc.type = textureType;
+          textureDesc.bindingLocation = bindingLocation;
+          spvModuleInfo.textures.push_back(std::move(textureDesc));
+        }
       }
 
       break;

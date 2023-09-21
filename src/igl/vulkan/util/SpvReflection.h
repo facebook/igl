@@ -9,6 +9,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <igl/Texture.h>
 #include <limits>
 #include <vector>
 
@@ -16,10 +17,15 @@ namespace igl::vulkan::util {
 
 constexpr uint32_t kNoBindingLocation = std::numeric_limits<uint32_t>::max();
 
+struct TextureDescription {
+  uint32_t bindingLocation = kNoBindingLocation;
+  TextureType type = TextureType::Invalid;
+};
+
 struct SpvModuleInfo {
   std::vector<uint32_t> uniformBufferBindingLocations;
   std::vector<uint32_t> storageBufferBindingLocations;
-  std::vector<uint32_t> textureBindingLocations;
+  std::vector<TextureDescription> textures;
 };
 
 SpvModuleInfo getReflectionData(const uint32_t* words, size_t size);
