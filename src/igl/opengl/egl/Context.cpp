@@ -178,21 +178,29 @@ EGLConfig chooseConfig(EGLDisplay display) {
 }
 
 Context::Context(RenderingAPI api, EGLNativeWindowType window) :
-  Context(api, false, window, 0, 0) {}
+  Context(api, EGL_NO_CONTEXT, false, window, {0, 0}) {}
 
 Context::Context(RenderingAPI api, size_t width, size_t height) :
-  Context(api, true, IGL_EGL_NULL_WINDOW, width, height) {}
+  Context(api, EGL_NO_CONTEXT, true, IGL_EGL_NULL_WINDOW, {width, height}) {}
 
-Context::Context(RenderingAPI /*api*/,
+Context::Context(const Context& sharedContext) :
+  Context(sharedContext.api_,
+          sharedContext.context_,
+          true,
+          IGL_EGL_NULL_WINDOW,
+          sharedContext.getDrawSurfaceDimensions(nullptr)) {}
+
+Context::Context(RenderingAPI api,
+                 EGLContext shareContext,
                  bool offscreen,
                  EGLNativeWindowType window,
-                 size_t width,
-                 size_t height) {
+                 std::pair<EGLint, EGLint> dimensions) {
   EGLConfig config{nullptr};
-  auto contextDisplay = newEGLContext(getDefaultEGLDisplay(), EGL_NO_CONTEXT, &config);
+  auto contextDisplay = newEGLContext(getDefaultEGLDisplay(), shareContext, &config);
   IGL_ASSERT_MSG(contextDisplay.second != EGL_NO_CONTEXT, "newEGLContext failed");
 
   contextOwned_ = true;
+  api_ = api;
   display_ = contextDisplay.first;
   context_ = contextDisplay.second;
   IContext::registerContext((void*)context_, this);
@@ -200,9 +208,9 @@ Context::Context(RenderingAPI /*api*/,
     if (offscreen) {
       EGLint pbufferAttribs[] = {
           EGL_WIDTH,
-          EGLint(width),
+          dimensions.first,
           EGL_HEIGHT,
-          EGLint(height),
+          dimensions.second,
           EGL_NONE, // Terminator. I'll be back!
       };
       readSurface_ = drawSurface_ = eglCreatePbufferSurface(display_, config, pbufferAttribs);
@@ -224,9 +232,7 @@ Context::Context(RenderingAPI /*api*/,
 }
 
 std::unique_ptr<IContext> Context::createShareContext(Result* outResult) {
-  IGL_ASSERT_NOT_IMPLEMENTED();
-  Result::setResult(outResult, Result::Code::Unimplemented, "Implement as needed");
-  return nullptr;
+  return std::make_unique<Context>(*this);
 }
 
 Context::Context(EGLDisplay display,
