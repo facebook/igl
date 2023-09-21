@@ -35,7 +35,11 @@ constexpr size_t kOpTypePointerId = 1;
 constexpr size_t kOpTypePointerObjectTypeId = 3;
 IGL_MAYBE_UNUSED constexpr size_t kOpTypePointerMaxUsedIx = kOpTypePointerObjectTypeId;
 
+constexpr size_t kOpTypeSampledImageTypeId = 1;
+IGL_MAYBE_UNUSED constexpr size_t kOpTypeSampledImageMaxUsedId = kOpTypeSampledImageTypeId;
+
 enum class OpCode : uint32_t {
+  OpTypeSampledImage = 27,
   OpTypePointer = 32,
   OpVariable = 59,
   OpDecorate = 71,
@@ -73,6 +77,8 @@ SpvModuleInfo getReflectionData(const uint32_t* words, size_t size) {
 
   std::unordered_set<ResultId> interfaceBlockTypeIds;
   std::unordered_set<ResultId> interfaceBlockPointerTypeIds;
+  std::unordered_set<ResultId> sampledImageTypeIds;
+  std::unordered_set<ResultId> sampledImagePointerTypeIds;
   std::unordered_map<ResultId, uint32_t> bindingLocations;
 
   for (size_t pos = kSpvHeaderSize; pos < size;) {
@@ -101,13 +107,24 @@ SpvModuleInfo getReflectionData(const uint32_t* words, size_t size) {
       break;
     }
 
+    case OpCode::OpTypeSampledImage: {
+      IGL_ASSERT_MSG((pos + kOpTypeSampledImageMaxUsedId) < size,
+                     "OpTypeSampledImage out of bounds");
+
+      ResultId sampledImageTypeId = words[pos + kOpTypeSampledImageTypeId];
+      sampledImageTypeIds.insert(sampledImageTypeId);
+      break;
+    }
+
     case OpCode::OpTypePointer: {
       IGL_ASSERT_MSG((pos + kOpTypePointerMaxUsedIx) < size, "OpTypePointer out of bounds");
 
       ResultId objectTypeId = words[pos + kOpTypePointerObjectTypeId];
+      ResultId pointerTypeId = words[pos + kOpTypePointerId];
       if (interfaceBlockTypeIds.count(objectTypeId)) {
-        ResultId pointerTypeId = words[pos + kOpTypePointerId];
         interfaceBlockPointerTypeIds.insert(pointerTypeId);
+      } else if (sampledImageTypeIds.count(objectTypeId)) {
+        sampledImagePointerTypeIds.insert(pointerTypeId);
       }
 
       break;
@@ -117,8 +134,9 @@ SpvModuleInfo getReflectionData(const uint32_t* words, size_t size) {
       IGL_ASSERT_MSG((pos + kOpVariableMaxUsedIdx) < size, "OpVariable out of bounds");
 
       ResultId variableTypeId = words[pos + kOpVariableTypeId];
+      ResultId variableId = words[pos + kOpVariableId];
+
       if (interfaceBlockPointerTypeIds.count(variableTypeId)) {
-        ResultId variableId = words[pos + kOpVariableId];
         auto bindingLocationIt = bindingLocations.find(variableId);
         uint32_t bindingLocation = bindingLocationIt != bindingLocations.end()
                                        ? bindingLocationIt->second
@@ -129,6 +147,12 @@ SpvModuleInfo getReflectionData(const uint32_t* words, size_t size) {
         } else if (storageClass == StorageClass::StorageBuffer) {
           spvModuleInfo.storageBufferBindingLocations.push_back(bindingLocation);
         }
+      } else if (sampledImagePointerTypeIds.count(variableTypeId)) {
+        auto bindingLocationIt = bindingLocations.find(variableId);
+        uint32_t bindingLocation = bindingLocationIt != bindingLocations.end()
+                                       ? bindingLocationIt->second
+                                       : kNoBindingLocation;
+        spvModuleInfo.textureBindingLocations.push_back(bindingLocation);
       }
 
       break;

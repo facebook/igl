@@ -78,7 +78,7 @@ namespace {
                OpFunctionEnd
 */
 
-const std::vector<uint32_t> kSpvWords = {
+const std::vector<uint32_t> kUniformBufferSpvWords = {
     0x07230203, 0x00010000, 0xdeadbeef, 0x0000003e, 0x00000000, 0x00020011, 0x00000001, 0x0003000e,
     0x00000000, 0x00000000, 0x0006000f, 0x00000000, 0x00000025, 0x6e69616d, 0x00000000, 0x00000002,
     0x0006000f, 0x00000004, 0x00000026, 0x6e69616d, 0x00000000, 0x00000003, 0x00030010, 0x00000026,
@@ -119,16 +119,129 @@ const std::vector<uint32_t> kSpvWords = {
     0x0000000b, 0x00000036, 0x00000034, 0x00070050, 0x0000000c, 0x00000038, 0x0000002c, 0x00000030,
     0x00000032, 0x00000036, 0x0003003e, 0x00000003, 0x00000038, 0x000100fd, 0x00010038,
 };
+
+/**
+               OpCapability Shader
+               OpMemoryModel Logical Simple
+               OpEntryPoint CombinedVF %main "main" %builtinPosition %_1
+               OpName %s0 "s0"
+               OpName %s1 "s1"
+               OpName %s2 "s2"
+               OpName %s3 "s3"
+               OpName %f "f"
+               OpName %main "main"
+               OpDecorate %builtinPosition BuiltIn Position
+               OpDecorate %_1 Location 0
+               OpDecorate %s1 DescriptorSet 0
+               OpDecorate %s1 Binding 1
+               OpDecorate %s3 DescriptorSet 0
+               OpDecorate %s3 Binding 3
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%ptr_Output_v4float = OpTypePointer Output %v4float
+%builtinPosition = OpVariable %ptr_Output_v4float Output
+         %_1 = OpVariable %ptr_Output_v4float Output
+   %image_2D = OpTypeImage %float 2D 0 0 0 1 Unknown
+%sampled_image_2D = OpTypeSampledImage %image_2D
+%ptr_UniformConstant_sampled_image_2D = OpTypePointer UniformConstant %sampled_image_2D
+         %s0 = OpVariable %ptr_UniformConstant_sampled_image_2D UniformConstant
+         %s1 = OpVariable %ptr_UniformConstant_sampled_image_2D UniformConstant
+         %s2 = OpVariable %ptr_UniformConstant_sampled_image_2D UniformConstant
+         %s3 = OpVariable %ptr_UniformConstant_sampled_image_2D UniformConstant
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+      %_0_0f = OpConstant %float 0.0
+   %v4floatc = OpConstantComposite %v4float %_0_0f %_0_0f %_0_0f %_0_0f
+    %v2float = OpTypeVector %float 2
+   %v2floatc = OpConstantComposite %v2float %_0_0f %_0_0f
+      %_0_1f = OpConstant %float 0.1
+  %v2floatc2 = OpConstantComposite %v2float %_0_1f %_0_1f
+      %_0_2f = OpConstant %float 0.2
+  %v2floatc3 = OpConstantComposite %v2float %_0_2f %_0_2f
+%_0_30000001f = OpConstant %float 0.30000001
+  %v2floatc4 = OpConstantComposite %v2float %_0_30000001f %_0_30000001f
+%ptr_Function_v4float = OpTypePointer Function %v4float
+       %main = OpFunction %void None %func
+         %_2 = OpLabel
+          %f = OpVariable %ptr_Function_v4float Function
+               OpStore %builtinPosition %v4floatc
+         %_3 = OpLoad %sampled_image_2D %s0
+         %_4 = OpImageSampleImplicitLod %v4float %_3 %v2floatc
+         %_5 = OpLoad %sampled_image_2D %s1
+         %_6 = OpImageSampleImplicitLod %v4float %_5 %v2floatc2
+         %_7 = OpFAdd %v4float %_4 %_6
+         %_8 = OpLoad %sampled_image_2D %s2
+         %_9 = OpImageSampleImplicitLod %v4float %_8 %v2floatc3
+        %_10 = OpFAdd %v4float %_7 %_9
+        %_11 = OpLoad %sampled_image_2D %s3
+        %_12 = OpImageSampleImplicitLod %v4float %_11 %v2floatc4
+        %_13 = OpFAdd %v4float %_10 %_12
+               OpStore %f %_13
+        %_14 = OpLoad %v4float %f
+               OpStore %_1 %_14
+               OpReturn
+               OpFunctionEnd
+*/
+
+const std::vector<uint32_t> kTextureSpvWords = {
+    0x07230203, 0x00010000, 0xdeadbeef, 0x00000036, 0x00000000, 0x00020011, 0x00000001, 0x0003000e,
+    0x00000000, 0x00000000, 0x0006000f, 0x00000000, 0x00000029, 0x6e69616d, 0x00000000, 0x00000002,
+    0x0006000f, 0x00000004, 0x0000002a, 0x6e69616d, 0x00000000, 0x00000003, 0x00030010, 0x0000002a,
+    0x00000008, 0x00030005, 0x00000004, 0x00003073, 0x00030005, 0x00000005, 0x00003173, 0x00030005,
+    0x00000006, 0x00003273, 0x00030005, 0x00000007, 0x00003373, 0x00040005, 0x00000029, 0x6e69616d,
+    0x00000000, 0x00040005, 0x0000002a, 0x6e69616d, 0x00000000, 0x00030005, 0x00000027, 0x00000066,
+    0x00040047, 0x00000002, 0x0000000b, 0x00000000, 0x00040047, 0x00000003, 0x0000001e, 0x00000000,
+    0x00040047, 0x00000005, 0x00000022, 0x00000000, 0x00040047, 0x00000005, 0x00000021, 0x00000001,
+    0x00040047, 0x00000007, 0x00000022, 0x00000000, 0x00040047, 0x00000007, 0x00000021, 0x00000003,
+    0x00030016, 0x00000009, 0x00000020, 0x0004002b, 0x00000009, 0x00000011, 0x00000000, 0x0004002b,
+    0x00000009, 0x00000015, 0x3dcccccd, 0x0004002b, 0x00000009, 0x00000017, 0x3e4ccccd, 0x0004002b,
+    0x00000009, 0x00000019, 0x3e99999a, 0x00040017, 0x0000000a, 0x00000009, 0x00000004, 0x00040020,
+    0x0000000b, 0x00000003, 0x0000000a, 0x00090019, 0x0000000c, 0x00000009, 0x00000001, 0x00000000,
+    0x00000000, 0x00000000, 0x00000001, 0x00000000, 0x0003001b, 0x0000000d, 0x0000000c, 0x00040020,
+    0x0000000e, 0x00000000, 0x0000000d, 0x00020013, 0x0000000f, 0x00030021, 0x00000010, 0x0000000f,
+    0x00040017, 0x00000013, 0x00000009, 0x00000002, 0x00040017, 0x00000035, 0x00000009, 0x00000003,
+    0x0007002c, 0x0000000a, 0x00000012, 0x00000011, 0x00000011, 0x00000011, 0x00000011, 0x0005002c,
+    0x00000013, 0x00000014, 0x00000011, 0x00000011, 0x0005002c, 0x00000013, 0x00000016, 0x00000015,
+    0x00000015, 0x0005002c, 0x00000013, 0x00000018, 0x00000017, 0x00000017, 0x0005002c, 0x00000013,
+    0x0000001a, 0x00000019, 0x00000019, 0x0004003b, 0x0000000b, 0x00000002, 0x00000003, 0x0004003b,
+    0x0000000b, 0x00000003, 0x00000003, 0x0004003b, 0x0000000e, 0x00000004, 0x00000000, 0x0004003b,
+    0x0000000e, 0x00000005, 0x00000000, 0x0004003b, 0x0000000e, 0x00000006, 0x00000000, 0x0004003b,
+    0x0000000e, 0x00000007, 0x00000000, 0x00050036, 0x0000000f, 0x00000029, 0x00000000, 0x00000010,
+    0x000200f8, 0x0000002b, 0x0003003e, 0x00000002, 0x00000012, 0x000100fd, 0x00010038, 0x00050036,
+    0x0000000f, 0x0000002a, 0x00000000, 0x00000010, 0x000200f8, 0x0000002c, 0x0004003d, 0x0000000d,
+    0x0000002e, 0x00000004, 0x00050057, 0x0000000a, 0x0000001e, 0x0000002e, 0x00000014, 0x0004003d,
+    0x0000000d, 0x00000030, 0x00000005, 0x00050057, 0x0000000a, 0x00000020, 0x00000030, 0x00000016,
+    0x00050081, 0x0000000a, 0x00000021, 0x0000001e, 0x00000020, 0x0004003d, 0x0000000d, 0x00000032,
+    0x00000006, 0x00050057, 0x0000000a, 0x00000023, 0x00000032, 0x00000018, 0x00050081, 0x0000000a,
+    0x00000024, 0x00000021, 0x00000023, 0x0004003d, 0x0000000d, 0x00000034, 0x00000007, 0x00050057,
+    0x0000000a, 0x00000026, 0x00000034, 0x0000001a, 0x00050081, 0x0000000a, 0x00000027, 0x00000024,
+    0x00000026, 0x0003003e, 0x00000003, 0x00000027, 0x000100fd, 0x00010038,
+};
+
 } // namespace
 
 TEST(SpvReflectionTest, UniformBufferTest) {
   using namespace vulkan::util;
-  SpvModuleInfo spvModuleInfo = getReflectionData(kSpvWords.data(), kSpvWords.size());
+  SpvModuleInfo spvModuleInfo =
+      getReflectionData(kUniformBufferSpvWords.data(), kUniformBufferSpvWords.size());
 
   ASSERT_EQ(spvModuleInfo.uniformBufferBindingLocations.size(), 2);
   EXPECT_EQ(spvModuleInfo.uniformBufferBindingLocations[0], 0);
   EXPECT_EQ(spvModuleInfo.uniformBufferBindingLocations[1], 3);
   EXPECT_EQ(spvModuleInfo.storageBufferBindingLocations.size(), 0);
+}
+
+TEST(SpvReflectionTest, TextureTest) {
+  using namespace vulkan::util;
+  SpvModuleInfo spvModuleInfo = getReflectionData(kTextureSpvWords.data(), kTextureSpvWords.size());
+
+  ASSERT_EQ(spvModuleInfo.uniformBufferBindingLocations.size(), 0);
+  EXPECT_EQ(spvModuleInfo.storageBufferBindingLocations.size(), 0);
+  EXPECT_EQ(spvModuleInfo.textureBindingLocations.size(), 4);
+  EXPECT_EQ(spvModuleInfo.textureBindingLocations[0], kNoBindingLocation);
+  EXPECT_EQ(spvModuleInfo.textureBindingLocations[1], 1);
+  EXPECT_EQ(spvModuleInfo.textureBindingLocations[2], kNoBindingLocation);
+  EXPECT_EQ(spvModuleInfo.textureBindingLocations[3], 3);
 }
 
 } // namespace igl::tests

@@ -19,6 +19,7 @@ constexpr uint32_t kNoBindingLocation = std::numeric_limits<uint32_t>::max();
 struct SpvModuleInfo {
   std::vector<uint32_t> uniformBufferBindingLocations;
   std::vector<uint32_t> storageBufferBindingLocations;
+  std::vector<uint32_t> textureBindingLocations;
 };
 
 SpvModuleInfo getReflectionData(const uint32_t* words, size_t size);
