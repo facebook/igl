@@ -16,6 +16,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanExtensions.h>
+#include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 #include <igl/vulkan/VulkanQueuePool.h>
@@ -206,6 +207,9 @@ class VulkanContext final {
   friend class igl::vulkan::ComputeCommandEncoder;
   friend class igl::vulkan::RenderCommandEncoder;
 
+  // should be kept on the heap, otherwise global Vulkan functions can cause arbitrary crashes.
+  std::unique_ptr<VulkanFunctionTable> tableImpl_;
+
   VkInstance vkInstance_ = VK_NULL_HANDLE;
   VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;
   VkSurfaceKHR vkSurface_ = VK_NULL_HANDLE;
@@ -249,6 +253,7 @@ class VulkanContext final {
   FOLLY_POP_WARNING
 
  public:
+  const VulkanFunctionTable& vf_;
   DeviceQueues deviceQueues_;
   std::unordered_map<CommandQueueType, VulkanQueueDescriptor> userQueues_;
   std::unique_ptr<igl::vulkan::VulkanDevice> device_;

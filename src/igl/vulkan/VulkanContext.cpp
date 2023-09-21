@@ -7,6 +7,7 @@
 
 #include <array>
 #include <cstring>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -319,15 +320,18 @@ VulkanContext::VulkanContext(const VulkanContextConfig& config,
                              size_t numExtraInstanceExtensions,
                              const char** extraInstanceExtensions,
                              void* display) :
-  config_(config) {
+  tableImpl_(std::make_unique<VulkanFunctionTable>()), vf_(*tableImpl_), config_(config) {
   IGL_PROFILER_THREAD("MainThread");
 
   pimpl_ = std::make_unique<VulkanContextImpl>();
 
+  // Do not remove for backward compatibility with projects using global functions.
   if (volkInitialize() != VK_SUCCESS) {
     IGL_LOG_ERROR("volkInitialize() failed\n");
     exit(255);
   };
+
+  vulkan::functions::initialize(*tableImpl_);
 
   glslang_initialize_process();
 
@@ -434,7 +438,11 @@ void VulkanContext::createInstance(const size_t numExtraExtensions, const char**
                  "ivkCreateInstance() failed. Did you forget to install the Vulkan SDK?");
 
   VK_ASSERT(creationErrorCode);
+
+  // Do not remove for backward compatibility with projects using global functions.
   volkLoadInstance(vkInstance_);
+
+  vulkan::functions::loadInstanceFunctions(*tableImpl_, vkInstance_);
 
 #if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
   if (extensions_.enabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
@@ -628,8 +636,13 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                       config_.enableDescriptorIndexing,
                       &device));
   if (!config_.enableConcurrentVkDevicesSupport) {
+    // Do not remove for backward compatibility with projects using global functions.
     volkLoadDevice(device);
   }
+
+  // Table functions are always bound to a device. Project using enableConcurrentVkDevicesSupport
+  // should use own copy of function table bound to a device.
+  vulkan::functions::loadDeviceFunctions(*tableImpl_, device);
 
   if (config_.enableBufferDeviceAddress && vkGetBufferDeviceAddressKHR == nullptr) {
     return Result(Result::Code::InvalidOperation, "Cannot initialize VK_KHR_buffer_device_address");
