@@ -46,6 +46,9 @@ bool XrSwapchainProvider::initialize() {
 #if defined(__APPLE__)
   selectedColorFormat_ = impl_->preferredColorFormat();
 #endif
+// @fb-only
+  // @fb-only
+// @fb-only
 
   colorSwapchain_ =
       createXrSwapchain(XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT, selectedColorFormat_);
