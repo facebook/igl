@@ -199,8 +199,8 @@ void RenderPipelineReflection::generateUniformBlocksDictionary(IContext& context
       auto start = nameData.begin();
       auto end = nameData.begin() + nameLength;
       // strip the block name from the uniform name
-      auto it = std::find(nameData.begin(), nameData.end(), '.');
-      if (it != nameData.end()) {
+      auto it = std::find(start, end, '.');
+      if (it != end) {
         start = it + 1;
       }
       std::string uniformName(start, end);
