@@ -53,7 +53,9 @@ class Texture : public WithContext, public ITexture {
   virtual void attachAsColor(uint32_t index, const AttachmentParams& params) = 0;
   virtual void detachAsColor(uint32_t index, bool read) = 0;
   virtual void attachAsDepth(const AttachmentParams& params) = 0;
+  virtual void detachAsDepth(bool read) = 0;
   virtual void attachAsStencil(const AttachmentParams& params) = 0;
+  virtual void detachAsStencil(bool read) = 0;
 
   virtual bool isImplicitStorage() const;
 

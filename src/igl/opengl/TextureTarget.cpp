@@ -87,10 +87,14 @@ void TextureTarget::bindImage(size_t /*unit*/) {
 }
 
 void TextureTarget::attachAsColor(uint32_t index, const AttachmentParams& params) {
-  attach(GL_COLOR_ATTACHMENT0 + index, params);
+  if (IGL_VERIFY(renderBufferID_)) {
+    attach(GL_COLOR_ATTACHMENT0 + index, params, renderBufferID_);
+  }
 }
 
-void TextureTarget::attach(GLenum attachment, const AttachmentParams& params) {
+void TextureTarget::attach(GLenum attachment,
+                           const AttachmentParams& params,
+                           GLuint renderBufferId) {
   IGL_ASSERT(params.stereo == false);
   IGL_ASSERT(params.face == 0);
   IGL_ASSERT(params.layer == 0);
@@ -100,24 +104,43 @@ void TextureTarget::attach(GLenum attachment, const AttachmentParams& params) {
   if (getContext().deviceFeatures().hasFeature(DeviceFeatures::ReadWriteFramebuffer)) {
     framebufferTarget = params.read ? GL_READ_FRAMEBUFFER : GL_DRAW_FRAMEBUFFER;
   }
-  if (IGL_VERIFY(renderBufferID_)) {
+  if (renderBufferId) {
     getContext().framebufferRenderbuffer(
-        framebufferTarget, attachment, GL_RENDERBUFFER, renderBufferID_);
+        framebufferTarget, attachment, GL_RENDERBUFFER, renderBufferId);
+  } else {
+    // Binding to render buffer ID 0 is undefined in iOS so unbind as texture
+    getContext().framebufferTexture2D(framebufferTarget, attachment, GL_TEXTURE_2D, 0, 0);
   }
 }
 
-void TextureTarget::detachAsColor(uint32_t /*index*/, bool /*read*/) {
-  // Binding to render buffer ID 0 is undefined in iOS, and currently we don't
-  // have a need to unbind for this texture type
-  IGL_ASSERT_NOT_IMPLEMENTED();
+void TextureTarget::detachAsColor(uint32_t index, bool read) {
+  AttachmentParams params{};
+  params.read = read;
+  attach(GL_COLOR_ATTACHMENT0 + index, params, 0);
 }
 
 void TextureTarget::attachAsDepth(const AttachmentParams& params) {
-  attach(GL_DEPTH_ATTACHMENT, params);
+  if (IGL_VERIFY(renderBufferID_)) {
+    attach(GL_DEPTH_ATTACHMENT, params, renderBufferID_);
+  }
+}
+
+void TextureTarget::detachAsDepth(bool read) {
+  AttachmentParams params{};
+  params.read = read;
+  attach(GL_DEPTH_ATTACHMENT, params, 0);
 }
 
 void TextureTarget::attachAsStencil(const AttachmentParams& params) {
-  attach(GL_STENCIL_ATTACHMENT, params);
+  if (IGL_VERIFY(renderBufferID_)) {
+    attach(GL_STENCIL_ATTACHMENT, params, renderBufferID_);
+  }
+}
+
+void TextureTarget::detachAsStencil(bool read) {
+  AttachmentParams params{};
+  params.read = read;
+  attach(GL_STENCIL_ATTACHMENT, params, 0);
 }
 
 bool TextureTarget::toRenderBufferFormatGL(TextureDesc::TextureUsage usage,

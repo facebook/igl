@@ -53,7 +53,8 @@ class Framebuffer final : public IFramebuffer {
                                   std::shared_ptr<ITexture> destTexture,
                                   const TextureRangeDesc& range) const override;
 
-  std::shared_ptr<ITexture> updateDrawable(std::shared_ptr<ITexture> texture) override;
+  void updateDrawable(std::shared_ptr<ITexture> texture) override;
+  void updateDrawable(SurfaceTextures surfaceTextures) override;
 
   VkFramebuffer getVkFramebuffer(uint32_t mipLevel, uint32_t layer, VkRenderPass pass) const;
 
@@ -86,6 +87,8 @@ class Framebuffer final : public IFramebuffer {
   };
 
  private:
+  void updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepth);
+
   const igl::vulkan::Device& device_;
   FramebufferDesc desc_; // attachments
 

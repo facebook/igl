@@ -144,17 +144,21 @@ void Framebuffer::copyBytes(ICommandQueue& cmdQueue,
   }
 }
 
-std::shared_ptr<ITexture> Framebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
-  if (texture == nullptr && getColorAttachment(0) != nullptr) {
-    // Removing an existing texture attachment
-    value_.colorAttachments.erase(0);
+void Framebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
+  if (getColorAttachment(0) != texture) {
+    if (!texture) {
+      value_.colorAttachments.erase(0);
+    } else {
+      value_.colorAttachments[0].texture = std::move(texture);
+    }
   }
+}
 
-  if (texture) {
-    value_.colorAttachments[0].texture = texture;
+void Framebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
+  updateDrawable(std::move(surfaceTextures.color));
+  if (getDepthAttachment() != surfaceTextures.depth) {
+    value_.depthAttachment.texture = std::move(surfaceTextures.depth);
   }
-
-  return texture;
 }
 
 FramebufferMode Framebuffer::getMode() const {

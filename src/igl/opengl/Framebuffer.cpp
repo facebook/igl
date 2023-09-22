@@ -87,7 +87,7 @@ void attachAsStencil(igl::ITexture& texture, const Texture::AttachmentParams& pa
   static_cast<Texture&>(texture).attachAsStencil(params);
 }
 
-Texture::AttachmentParams toAttachmentParams(const RenderPassDesc::ColorAttachmentDesc& attachment,
+Texture::AttachmentParams toAttachmentParams(const RenderPassDesc::BaseAttachmentDesc& attachment,
                                              FramebufferMode mode) {
   Texture::AttachmentParams params{};
   params.face = attachment.face;
@@ -350,27 +350,44 @@ FramebufferMode CustomFramebuffer::getMode() const {
   return renderTarget_.mode;
 }
 
-std::shared_ptr<ITexture> CustomFramebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
+void CustomFramebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
+  updateDrawableInternal({std::move(texture), nullptr}, false);
+}
+
+void CustomFramebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
+  updateDrawableInternal(std::move(surfaceTextures), true);
+}
+
+void CustomFramebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepth) {
   auto colorAttachment0 = getColorAttachment(0);
+  auto depthAttachment = updateDepth ? getDepthAttachment() : nullptr;
 
-  // Unbind currently bound texture if we are updating to nullptr
-  if (texture == nullptr && colorAttachment0 != nullptr) {
-    auto& curAttachment = static_cast<Texture&>(*colorAttachment0);
-
-    bindBuffer();
-    curAttachment.detachAsColor(0, true);
-    renderTarget_.colorAttachments.erase(0);
-  }
-
-  if (texture != nullptr && getColorAttachment(0) != texture) {
+  const bool updateColor = colorAttachment0 != surfaceTextures.color;
+  updateDepth = updateDepth && depthAttachment != surfaceTextures.depth;
+  if (updateColor || updateDepth) {
     FramebufferBindingGuard guard(getContext());
     bindBuffer();
-    attachAsColor(*texture, 0, defaultWriteAttachmentParams(renderTarget_.mode));
+    if (updateColor) {
+      if (!surfaceTextures.color) {
+        static_cast<Texture&>(*colorAttachment0).detachAsColor(0, false);
+        renderTarget_.colorAttachments.erase(0);
+      } else {
+        attachAsColor(*surfaceTextures.color, 0, defaultWriteAttachmentParams(renderTarget_.mode));
 
-    renderTarget_.colorAttachments[0].texture = texture;
+        renderTarget_.colorAttachments[0].texture = std::move(surfaceTextures.color);
+      }
+    }
+    if (updateDepth) {
+      if (!surfaceTextures.depth) {
+        static_cast<Texture&>(*colorAttachment0).detachAsDepth(false);
+        renderTarget_.depthAttachment.texture = nullptr;
+      } else {
+        attachAsDepth(*surfaceTextures.depth, defaultWriteAttachmentParams(renderTarget_.mode));
+
+        renderTarget_.depthAttachment.texture = std::move(surfaceTextures.depth);
+      }
+    }
   }
-
-  return texture;
 }
 
 bool CustomFramebuffer::isInitialized() const {
@@ -545,6 +562,16 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
                     toAttachmentParams(renderPassAttachment, renderTarget_.mode));
     }
   }
+  if (renderTarget_.depthAttachment.texture) {
+    const auto& renderPassAttachment = renderPass.depthAttachment;
+    const bool needsToBeReattached =
+        renderTarget_.mode == FramebufferMode::Stereo || renderPassAttachment.layer > 0 ||
+        renderPassAttachment.face > 0 || renderPassAttachment.mipLevel > 0;
+    if (needsToBeReattached) {
+      attachAsDepth(*renderTarget_.depthAttachment.texture,
+                    toAttachmentParams(renderPassAttachment, renderTarget_.mode));
+    }
+  }
   // clear the buffers if we're not loading previous contents
   GLbitfield clearMask = 0;
   auto colorAttachment0 = renderTarget_.colorAttachments.find(0);
@@ -655,10 +682,12 @@ std::shared_ptr<ITexture> CurrentFramebuffer::getStencilAttachment() const {
   return nullptr;
 }
 
-std::shared_ptr<ITexture> CurrentFramebuffer::updateDrawable(
-    std::shared_ptr<ITexture> /*texture*/) {
+void CurrentFramebuffer::updateDrawable(std::shared_ptr<ITexture> /*texture*/) {
   IGL_ASSERT_NOT_REACHED();
-  return nullptr;
+}
+
+void CurrentFramebuffer::updateDrawable(SurfaceTextures /*surfaceTextures*/) {
+  IGL_ASSERT_NOT_REACHED();
 }
 
 Viewport CurrentFramebuffer::getViewport() const {

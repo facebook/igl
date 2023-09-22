@@ -45,8 +45,8 @@ class Framebuffer : public igl::IFramebuffer {
                                   size_t index,
                                   std::shared_ptr<igl::ITexture> destTexture,
                                   const igl::TextureRangeDesc& range) const final;
-  [[nodiscard]] std::shared_ptr<igl::ITexture> updateDrawable(
-      std::shared_ptr<igl::ITexture> texture) final;
+  void updateDrawable(std::shared_ptr<igl::ITexture> texture) final;
+  void updateDrawable(igl::SurfaceTextures surfaceTextures) final;
 
  private:
   [[maybe_unused]] bool shouldAssert_;

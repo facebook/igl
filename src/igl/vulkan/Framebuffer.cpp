@@ -209,18 +209,28 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   cmdQueue.submit(*buffer);
 }
 
-std::shared_ptr<igl::ITexture> Framebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
+void Framebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
+  updateDrawableInternal({std::move(texture), nullptr}, false);
+}
+
+void Framebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
+  updateDrawableInternal(std::move(surfaceTextures), true);
+}
+
+void Framebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepth) {
   IGL_PROFILER_FUNCTION();
 
-  if (!texture && getColorAttachment(0)) {
-    desc_.colorAttachments.erase(0);
+  if (getColorAttachment(0) != surfaceTextures.color) {
+    if (!surfaceTextures.color) {
+      desc_.colorAttachments.erase(0);
+    } else {
+      desc_.colorAttachments[0].texture = std::move(surfaceTextures.color);
+    }
   }
 
-  if (texture && getColorAttachment(0) != texture) {
-    desc_.colorAttachments[0].texture = texture;
+  if (updateDepth && getDepthAttachment() != surfaceTextures.depth) {
+    desc_.depthAttachment.texture = std::move(surfaceTextures.depth);
   }
-
-  return texture;
 }
 
 Framebuffer::Framebuffer(const Device& device, FramebufferDesc desc) :

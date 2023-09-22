@@ -33,7 +33,9 @@ class TextureTarget final : public Texture {
   void attachAsColor(uint32_t index, const AttachmentParams& params) override;
   void detachAsColor(uint32_t index, bool read) override;
   void attachAsDepth(const AttachmentParams& params) override;
+  void detachAsDepth(bool read) override;
   void attachAsStencil(const AttachmentParams& params) override;
+  void detachAsStencil(bool read) override;
 
   // @fb-only
   GLuint getId() const override {
@@ -42,7 +44,7 @@ class TextureTarget final : public Texture {
   }
 
  private:
-  void attach(GLenum attachment, const AttachmentParams& params);
+  void attach(GLenum attachment, const AttachmentParams& params, GLuint renderBufferId);
 
   /// @returns false if an unknown format is specified
   bool toRenderBufferFormatGL(TextureDesc::TextureUsage usage, GLenum& formatGL) const;

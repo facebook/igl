@@ -77,10 +77,12 @@ void Framebuffer::copyTextureColorAttachment(igl::ICommandQueue& /*cmdQueue*/,
   IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
 }
 
-std::shared_ptr<igl::ITexture> Framebuffer::updateDrawable(
-    std::shared_ptr<igl::ITexture> /*texture*/) {
+void Framebuffer::updateDrawable(std::shared_ptr<igl::ITexture> /*texture*/) {
   IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
-  return nullptr;
+}
+
+void Framebuffer::updateDrawable(igl::SurfaceTextures /*surfaceTextures*/) {
+  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
 }
 
 } // namespace iglu::sentinel

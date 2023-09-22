@@ -42,8 +42,16 @@ void ViewTextureTarget::attachAsDepth(const AttachmentParams& /*params*/) {
   // No-op. This texture is already attached to view's implicit framebuffer
 }
 
+void ViewTextureTarget::detachAsDepth(bool /*read*/) {
+  // No-op. This cannot be done for this texture type.
+}
+
 void ViewTextureTarget::attachAsStencil(const AttachmentParams& /*params*/) {
   // No-op. This texture is already attached to view's implicit framebuffer
+}
+
+void ViewTextureTarget::detachAsStencil(bool /*read*/) {
+  // No-op. This cannot be done for this texture type.
 }
 
 bool ViewTextureTarget::isImplicitStorage() const {

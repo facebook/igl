@@ -64,7 +64,7 @@ enum class MsaaDepthResolveFilter : uint8_t {
  * RenderPass by default does not contain any ColorAttachmentDesc operations.
  */
 struct RenderPassDesc {
- private:
+ public:
   /**
    * @brief BaseAttachmentDesc sets default load action, store action, cube face , mip level, and
    * array layer for the attachments of a RenderPassDesc
@@ -77,7 +77,6 @@ struct RenderPassDesc {
     uint8_t layer = 0; // Texture array layer
   };
 
- public:
   /**
    * @brief ColorAttachmentDesc stores to black by default on a RenderPassDesc but can be set to
    * perform other operations

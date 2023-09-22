@@ -118,10 +118,22 @@ void TextureBufferBase::attachAsDepth(const AttachmentParams& params) {
   }
 }
 
+void TextureBufferBase::detachAsDepth(bool read) {
+  AttachmentParams params{};
+  params.read = read;
+  attach(GL_DEPTH_ATTACHMENT, params, 0);
+}
+
 void TextureBufferBase::attachAsStencil(const AttachmentParams& params) {
   if (IGL_VERIFY(textureID_)) {
     attach(GL_STENCIL_ATTACHMENT, params, textureID_);
   }
+}
+
+void TextureBufferBase::detachAsStencil(bool read) {
+  AttachmentParams params{};
+  params.read = read;
+  attach(GL_STENCIL_ATTACHMENT, params, 0);
 }
 
 void TextureBufferBase::setMaxMipLevel() const {

@@ -575,5 +575,58 @@ TEST_F(FramebufferTest, DrawableBindCount) {
   ASSERT_EQ(numOfAttachments, 1);
 }
 
+//
+// Framebuffer Update Drawable Test With Depth And Stencil Attachment
+//
+// This test checks that updateDrawable can be called to bind and unbind depth and stencil
+// attachments.
+//
+TEST_F(FramebufferTest, UpdateDrawableWithDepthAndStencilTest) {
+  // Currently the drawable is always bound to index 0
+  auto colorAttachment = framebuffer_->getColorAttachment(0);
+  auto depthAttachment = framebuffer_->getDepthAttachment();
+  auto stencilAttachment = framebuffer_->getStencilAttachment();
+
+  ASSERT_EQ(framebuffer_->getColorAttachment(0), colorAttachment);
+  ASSERT_EQ(framebuffer_->getDepthAttachment(), depthAttachment);
+  ASSERT_EQ(framebuffer_->getStencilAttachment(), stencilAttachment);
+
+  framebuffer_->updateDrawable(nullptr);
+
+  ASSERT_EQ(framebuffer_->getColorAttachment(0), nullptr);
+  ASSERT_EQ(framebuffer_->getDepthAttachment(), depthAttachment);
+  ASSERT_EQ(framebuffer_->getStencilAttachment(), stencilAttachment);
+
+  framebuffer_->updateDrawable(colorAttachment);
+
+  ASSERT_EQ(framebuffer_->getColorAttachment(0), colorAttachment);
+  ASSERT_EQ(framebuffer_->getDepthAttachment(), depthAttachment);
+  ASSERT_EQ(framebuffer_->getStencilAttachment(), stencilAttachment);
+
+  framebuffer_->updateDrawable(SurfaceTextures{colorAttachment, nullptr});
+
+  ASSERT_EQ(framebuffer_->getColorAttachment(0), colorAttachment);
+  ASSERT_EQ(framebuffer_->getDepthAttachment(), nullptr);
+  ASSERT_EQ(framebuffer_->getStencilAttachment(), stencilAttachment);
+
+  framebuffer_->updateDrawable(SurfaceTextures{colorAttachment, depthAttachment});
+
+  ASSERT_EQ(framebuffer_->getColorAttachment(0), colorAttachment);
+  ASSERT_EQ(framebuffer_->getDepthAttachment(), depthAttachment);
+  ASSERT_EQ(framebuffer_->getStencilAttachment(), stencilAttachment);
+
+  framebuffer_->updateDrawable(SurfaceTextures{nullptr, nullptr});
+
+  ASSERT_EQ(framebuffer_->getColorAttachment(0), nullptr);
+  ASSERT_EQ(framebuffer_->getDepthAttachment(), nullptr);
+  ASSERT_EQ(framebuffer_->getStencilAttachment(), stencilAttachment);
+
+  framebuffer_->updateDrawable(SurfaceTextures{colorAttachment, depthAttachment});
+
+  ASSERT_EQ(framebuffer_->getColorAttachment(0), colorAttachment);
+  ASSERT_EQ(framebuffer_->getDepthAttachment(), depthAttachment);
+  ASSERT_EQ(framebuffer_->getStencilAttachment(), stencilAttachment);
+}
+
 } // namespace tests
 } // namespace igl

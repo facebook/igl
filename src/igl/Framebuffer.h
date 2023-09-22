@@ -9,14 +9,13 @@
 
 #include <igl/Common.h>
 #include <igl/ITrackedResource.h>
+#include <igl/Texture.h>
 #include <unordered_map>
 #include <vector>
 
 namespace igl {
 
 class ICommandQueue;
-class ITexture;
-struct TextureRangeDesc;
 
 enum class FramebufferMode {
   Mono, // Default mode
@@ -103,7 +102,11 @@ class IFramebuffer : public ITrackedResource<IFramebuffer> {
 
   /** @brief Replaces color attachment at index 0 with the 'texture' specified. A null texture is
    * valid and unbinds the current color attachment at index 0. */
-  virtual std::shared_ptr<ITexture> updateDrawable(std::shared_ptr<ITexture> texture) = 0;
+  virtual void updateDrawable(std::shared_ptr<ITexture> texture) = 0;
+
+  /** @brief Replaces color attachment at index 0 and the depth texture with the textures specified.
+   * A null texture is valid and unbinds the attachment. */
+  virtual void updateDrawable(SurfaceTextures surfaceTextures) = 0;
 };
 
 } // namespace igl
