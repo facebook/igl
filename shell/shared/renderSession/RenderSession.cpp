@@ -16,8 +16,6 @@ RenderSession::RenderSession(std::shared_ptr<Platform> platform) :
 
 RenderSession::~RenderSession() noexcept = default;
 
-void RenderSession::update(igl::SurfaceTextures surfaceTextures) noexcept {}
-
 void RenderSession::updateDisplayScale(float scale) noexcept {
   platform_->getDisplayContext().scale = scale;
 }

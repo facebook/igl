@@ -20,6 +20,7 @@
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/imageLoader/android/ImageLoaderAndroid.h>
 #include <shell/shared/renderSession/DefaultSession.h>
+#include <shell/shared/renderSession/ShellParams.h>
 #if IGL_BACKEND_VULKAN
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
@@ -51,6 +52,7 @@ void TinyRenderer::init(AAssetManager* mgr,
     auto backendType = (backendTypeID_ == BackendTypeID::GLES3) ? igl::opengl::RenderingAPI::GLES3
                                                                 : igl::opengl::RenderingAPI::GLES2;
     d = hwDevice.create(hwDevices[0], backendType, nullptr, &result);
+    shellParams_.shouldPresent = false;
     break;
   }
 #endif
@@ -94,6 +96,7 @@ void TinyRenderer::init(AAssetManager* mgr,
     static_cast<igl::shell::ImageLoaderAndroid&>(platform_->getImageLoader()).setAssetManager(mgr);
     static_cast<igl::shell::FileLoaderAndroid&>(platform_->getFileLoader()).setAssetManager(mgr);
     session_ = igl::shell::createDefaultRenderSession(platform_);
+    session_->setShellParams(shellParams_);
     IGL_ASSERT(session_ != nullptr);
     session_->initialize();
   }

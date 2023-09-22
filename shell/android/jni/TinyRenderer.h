@@ -15,6 +15,7 @@
 #include <memory>
 #include <shell/shared/platform/android/PlatformAndroid.h>
 #include <shell/shared/renderSession/RenderSession.h>
+#include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl::samples {
 
@@ -33,6 +34,7 @@ class TinyRenderer final {
   std::shared_ptr<igl::shell::PlatformAndroid> platform_;
   std::unique_ptr<igl::shell::RenderSession> session_;
 
+  shell::ShellParams shellParams_;
   uint32_t width_ = 0;
   uint32_t height_ = 0;
 };

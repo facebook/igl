@@ -22,5 +22,6 @@ struct ShellParams {
   glm::ivec2 nativeSurfaceDimensions = glm::ivec2(2048, 1536);
   igl::TextureFormat defaultColorFramebufferFormat = igl::TextureFormat::BGRA_SRGB;
   float viewportScale = 1.f;
+  bool shouldPresent = true;
 };
 } // namespace igl::shell
