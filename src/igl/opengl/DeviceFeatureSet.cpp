@@ -346,6 +346,11 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
     return false;
   case DeviceFeatures::ShaderLibrary:
     return false;
+
+  case DeviceFeatures::StorageBuffers:
+    return hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_1_ES) ||
+           hasDesktopExtension(*this, "GL_ARB_shader_storage_buffer_object");
+
   case DeviceFeatures::BindBytes:
     return false;
   case DeviceFeatures::SRGB:
@@ -946,7 +951,7 @@ bool DeviceFeatureSet::hasInternalRequirement(InternalRequirement requirement) c
 }
 
 bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const {
-  GLint tsize;
+  GLint tsize = 0;
   switch (featureLimits) {
   case DeviceFeatureLimits::MaxTextureDimension1D2D:
     glContext_.getIntegerv(GL_MAX_TEXTURE_SIZE, &tsize);
@@ -967,7 +972,6 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     return true;
 
   case DeviceFeatureLimits::MaxMultisampleCount:
-    tsize = 0;
     if (hasFeature(DeviceFeatures::MultiSample)) {
       if (hasInternalRequirement(InternalRequirement::MultiSampleExtReq) &&
           hasExtension(Extensions::MultiSampleImg)) {
@@ -982,8 +986,13 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
   case DeviceFeatureLimits::MaxPushConstantBytes:
     result = 0;
     return true;
+  case DeviceFeatureLimits::MaxStorageBufferBytes:
+    if (hasFeature(DeviceFeatures::StorageBuffers)) {
+      glContext_.getIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &tsize);
+    }
+    result = tsize;
+    return true;
   case DeviceFeatureLimits::MaxUniformBufferBytes:
-    tsize = 0;
     if (hasFeature(DeviceFeatures::UniformBlocks)) {
       glContext_.getIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &tsize);
     }

@@ -454,6 +454,8 @@ bool Device::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::Texture2DArray:
   case DeviceFeatures::Texture3D:
     return true;
+  case DeviceFeatures::StorageBuffers:
+    return true;
   case DeviceFeatures::ShaderTextureLod:
     return true;
   case DeviceFeatures::ShaderTextureLodExt:
@@ -539,6 +541,9 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
     return true;
   case DeviceFeatureLimits::MaxCubeMapDimension:
     result = limits.maxImageDimensionCube;
+    return true;
+  case DeviceFeatureLimits::MaxStorageBufferBytes:
+    result = limits.maxStorageBufferRange;
     return true;
   case DeviceFeatureLimits::MaxVertexUniformVectors:
   case DeviceFeatureLimits::MaxFragmentUniformVectors:

@@ -46,6 +46,7 @@ namespace igl {
  * SRGB                       Supports sRGB Textures and FrameBuffer
  * StandardDerivative         Supports Standard Derivative function in shader
  * StandardDerivativeExt      Supports Standard Derivative function in shader via an extension
+ * StorageBuffers             Supports SSBO
  * Texture2DArray             Supports 2D array textures
  * Texture3D                  Supports 3D textures
  * TextureArrayExt            Supports array textures via an extension
@@ -90,6 +91,7 @@ enum class DeviceFeatures {
   SRGBWriteControl,
   StandardDerivative,
   StandardDerivativeExt,
+  StorageBuffers,
   Texture2DArray,
   TextureArrayExt,
   Texture3D,
@@ -144,6 +146,7 @@ enum class DeviceRequirement {
  * MaxPushConstantBytes         Maximum number of bytes for Push Constants
  * MaxTextureDimension1D2D      Maximum texture dimensions
  * MaxUniformBufferBytes        Maximum number of bytes for a uniform buffer
+ * MaxStorageBufferBytes        Maximum number of bytes for storage buffers
  * MaxVertexUniformVectors      Maximum vertex uniform vectors
  * PushConstantsAlignment       Required byte alignment for push constants data
  */
@@ -156,6 +159,7 @@ enum class DeviceFeatureLimits {
   MaxMultisampleCount,
   MaxPushConstantBytes,
   MaxTextureDimension1D2D,
+  MaxStorageBufferBytes,
   MaxUniformBufferBytes,
   MaxVertexUniformVectors,
   PushConstantsAlignment,

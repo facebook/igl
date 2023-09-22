@@ -166,6 +166,8 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
     return true;
   case DeviceFeatures::BufferNoCopy:
     return true;
+  case DeviceFeatures::StorageBuffers:
+    return true;
   case DeviceFeatures::ShaderLibrary:
     return true;
   case DeviceFeatures::BindBytes:
@@ -241,6 +243,7 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
   case DeviceFeatureLimits::MaxPushConstantBytes:
     result = 4096;
     return true;
+  case DeviceFeatureLimits::MaxStorageBufferBytes:
   case DeviceFeatureLimits::MaxUniformBufferBytes:
     result = maxBufferLength_;
     return true;
