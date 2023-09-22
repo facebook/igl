@@ -42,29 +42,9 @@ class NativeHWTextureBuffer : public TextureBufferBase {
   Result unlockHWBuffer() const;
   uint64_t getTextureId() const override;
 
-  void generateMipmap(ICommandQueue& cmdQueue) const override;
-  uint32_t getNumMipLevels() const override;
-
   static bool isValidFormat(TextureFormat format);
 
- protected:
-  Result initialize() const;
-  Result initializeWithUpload() const;
-  Result initializeWithTexStorage() const;
-  Result upload(GLenum target,
-                const TextureRangeDesc& range,
-                const void* data,
-                size_t bytesPerRow = 0) const;
-  Result upload2D(GLenum target, const TextureRangeDesc& range, const void* data) const;
-
- protected:
-  // NOLINTNEXTLINE(misc-non-private-member-variables-in-classes)
-  FormatDescGL formatDescGL_;
-
  private:
-  Result createTexture(const TextureDesc& desc);
-  bool canInitialize() const;
-  bool supportsTexStorage() const;
   AHardwareBuffer* hwBuffer_ = nullptr;
   std::shared_ptr<AHardwareBufferHelper> hwBufferHelper_ = nullptr;
 };

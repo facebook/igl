@@ -214,63 +214,6 @@ void NativeHWTextureBuffer::bindImage(size_t unit) {
   IGL_ASSERT_MSG(0, "bindImage not Native Hardware Buffer Textuees.");
 }
 
-// create a texture for shader read/write usages
-Result NativeHWTextureBuffer::createTexture(const TextureDesc& desc) {
-  return create(desc, false);
-}
-
-Result NativeHWTextureBuffer::initialize() const {
-  return Result{Result::Code::RuntimeError, "NativeHWTextureBuffer initialize not supported"};
-}
-
-Result NativeHWTextureBuffer::initializeWithUpload() const {
-  return Result{Result::Code::RuntimeError,
-                "NativeHWTextureBuffer initializeWithUpload not supported"};
-}
-
-Result NativeHWTextureBuffer::initializeWithTexStorage() const {
-  return Result{Result::Code::RuntimeError,
-                "NativeHWTextureBuffer initializeWithTexStorage not supported"};
-}
-
-Result NativeHWTextureBuffer::upload2D(GLenum target,
-                                       const TextureRangeDesc& range,
-                                       const void* data) const {
-  const auto result = validateRange(range);
-  if (!result.isOk()) {
-    return result;
-  }
-  // Use TexImage when range covers full texture AND texture was not initialized with TexStorage
-  const auto texImage = isValidForTexImage(range) && !supportsTexStorage();
-  if (data == nullptr || !getProperties().isCompressed()) {
-    if (texImage) {
-      getContext().texImage2D(target,
-                              (GLsizei)range.mipLevel,
-                              formatDescGL_.internalFormat,
-                              (GLsizei)range.width,
-                              (GLsizei)range.height,
-                              0, // border
-                              formatDescGL_.format,
-                              formatDescGL_.type,
-                              data);
-    } else {
-      getContext().texSubImage2D(target,
-                                 (GLsizei)range.mipLevel,
-                                 (GLsizei)range.x,
-                                 (GLsizei)range.y,
-                                 (GLsizei)range.width,
-                                 (GLsizei)range.height,
-                                 formatDescGL_.format,
-                                 formatDescGL_.type,
-                                 data);
-    }
-  } else {
-    return Result(Result::Code::Unsupported,
-                  "native texture only support uncomporessed 2d for now");
-  }
-  return getContext().getLastError();
-}
-
 // upload data into the given mip level
 // a sub-rect of the texture may be specified to only upload the sub-rect
 Result NativeHWTextureBuffer::upload(const TextureRangeDesc& range,
@@ -337,23 +280,6 @@ Result NativeHWTextureBuffer::unlockHWBuffer() const {
     return Result{Result::Code::RuntimeError, "Failed to unlock hardware buffer"};
   }
   return Result{};
-}
-
-bool NativeHWTextureBuffer::canInitialize() const {
-  return !getProperties().isCompressed();
-}
-
-bool NativeHWTextureBuffer::supportsTexStorage() const {
-  return true;
-}
-
-uint32_t NativeHWTextureBuffer::getNumMipLevels() const {
-  return 1;
-}
-
-void NativeHWTextureBuffer::generateMipmap(ICommandQueue& /* unused */) const {
-  // native hardwaere texture does not support mip generation
-  IGL_ASSERT_MSG(0, "Can only generate mipmap for non Native Hardware Buffer Textuees.");
 }
 
 bool NativeHWTextureBuffer::isValidFormat(TextureFormat format) {
