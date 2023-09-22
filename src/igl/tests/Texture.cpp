@@ -520,6 +520,107 @@ TEST(TextureRangeDesc, Validate) {
   EXPECT_FALSE(TextureRangeDesc::newCube(0, 0, 1024, 1024).atFace(7).validate().isOk());
 }
 
+namespace {
+TextureRangeDesc createTestRange() {
+  TextureRangeDesc range;
+  range.x = 1;
+  range.y = 2;
+  range.z = 3;
+  range.width = 4;
+  range.height = 5;
+  range.depth = 6;
+  range.layer = 7;
+  range.numLayers = 8;
+  range.mipLevel = 9;
+  range.numMipLevels = 10;
+  range.face = 11;
+  range.numFaces = 12;
+
+  return range;
+}
+} // namespace
+
+TEST(TextureRangeDesc, Equality) {
+  const auto rangeA = createTestRange();
+  {
+    const auto rangeB = createTestRange();
+    EXPECT_TRUE(rangeA == rangeB);
+    EXPECT_FALSE(rangeA != rangeB);
+  }
+  {
+    auto rangeB = createTestRange();
+    rangeB.x = 0;
+    EXPECT_FALSE(rangeA == rangeB);
+    EXPECT_TRUE(rangeA != rangeB);
+  }
+  {
+    auto rangeB = createTestRange();
+    rangeB.y = 0;
+    EXPECT_FALSE(rangeA == rangeB);
+    EXPECT_TRUE(rangeA != rangeB);
+  }
+  {
+    auto rangeB = createTestRange();
+    rangeB.z = 0;
+    EXPECT_FALSE(rangeA == rangeB);
+    EXPECT_TRUE(rangeA != rangeB);
+  }
+  {
+    auto rangeB = createTestRange();
+    rangeB.width = 0;
+    EXPECT_FALSE(rangeA == rangeB);
+    EXPECT_TRUE(rangeA != rangeB);
+  }
+  {
+    auto rangeB = createTestRange();
+    rangeB.height = 0;
+    EXPECT_FALSE(rangeA == rangeB);
+    EXPECT_TRUE(rangeA != rangeB);
+  }
+  {
+    auto rangeB = createTestRange();
+    rangeB.depth = 0;
+    EXPECT_FALSE(rangeA == rangeB);
+    EXPECT_TRUE(rangeA != rangeB);
+  }
+  {
+    auto rangeB = createTestRange();
+    rangeB.layer = 0;
+    EXPECT_FALSE(rangeA == rangeB);
+    EXPECT_TRUE(rangeA != rangeB);
+  }
+  {
+    auto rangeB = createTestRange();
+    rangeB.numLayers = 0;
+    EXPECT_FALSE(rangeA == rangeB);
+    EXPECT_TRUE(rangeA != rangeB);
+  }
+  {
+    auto rangeB = createTestRange();
+    rangeB.mipLevel = 0;
+    EXPECT_FALSE(rangeA == rangeB);
+    EXPECT_TRUE(rangeA != rangeB);
+  }
+  {
+    auto rangeB = createTestRange();
+    rangeB.numMipLevels = 0;
+    EXPECT_FALSE(rangeA == rangeB);
+    EXPECT_TRUE(rangeA != rangeB);
+  }
+  {
+    auto rangeB = createTestRange();
+    rangeB.face = 0;
+    EXPECT_FALSE(rangeA == rangeB);
+    EXPECT_TRUE(rangeA != rangeB);
+  }
+  {
+    auto rangeB = createTestRange();
+    rangeB.numFaces = 0;
+    EXPECT_FALSE(rangeA == rangeB);
+    EXPECT_TRUE(rangeA != rangeB);
+  }
+}
+
 TEST(TextureFormatProperties, Construction) {
   {
     const auto props = TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8);

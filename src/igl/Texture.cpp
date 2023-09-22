@@ -219,6 +219,17 @@ Result TextureRangeDesc::validate() const noexcept {
   return Result{};
 }
 
+bool TextureRangeDesc::operator==(const TextureRangeDesc& rhs) const noexcept {
+  return x == rhs.x && y == rhs.y && z == rhs.z && width == rhs.width && height == rhs.height &&
+         depth == rhs.depth && layer == rhs.layer && numLayers == rhs.numLayers &&
+         mipLevel == rhs.mipLevel && numMipLevels == rhs.numMipLevels && face == rhs.face &&
+         numFaces == rhs.numFaces;
+}
+
+bool TextureRangeDesc::operator!=(const TextureRangeDesc& rhs) const noexcept {
+  return !operator==(rhs);
+}
+
 #define PROPERTIES(fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs) \
   case TextureFormat::fmt:                                         \
     return TextureFormatProperties{                                \

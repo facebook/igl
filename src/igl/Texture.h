@@ -196,6 +196,9 @@ struct TextureRangeDesc {
    *  5) face < 6 and numFaces <= 6
    */
   [[nodiscard]] Result validate() const noexcept;
+
+  bool operator==(const TextureRangeDesc& rhs) const noexcept;
+  bool operator!=(const TextureRangeDesc& rhs) const noexcept;
 };
 
 /**
