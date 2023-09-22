@@ -438,7 +438,9 @@ void XrApp::handleXrEvents() {
 void XrApp::handleSessionStateChanges(XrSessionState state) {
   if (state == XR_SESSION_STATE_READY) {
     assert(resumed_);
+// @fb-only
     assert(nativeWindow_ != nullptr);
+// @fb-only
     assert(sessionActive_ == false);
 
     XrSessionBeginInfo sessionBeginInfo{
