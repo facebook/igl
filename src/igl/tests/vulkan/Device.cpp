@@ -61,7 +61,12 @@ TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
   BufferDesc bufferDesc;
   bufferDesc.type = BufferDesc::BufferTypeBits::Storage;
   bufferDesc.storage = ResourceStorage::Private;
-  bufferDesc.length = 256u * 1024u * 1024u + 2u;
+
+  constexpr size_t kDesiredBufferLength = 256u * 1024u * 1024u + 2u;
+  size_t maxBufferLength = 0;
+  iglDev_->getFeatureLimits(DeviceFeatureLimits::MaxStorageBufferBytes, maxBufferLength);
+
+  bufferDesc.length = std::min(kDesiredBufferLength, maxBufferLength);
 
   ASSERT_TRUE(bufferDesc.length % 2 == 0);
 
