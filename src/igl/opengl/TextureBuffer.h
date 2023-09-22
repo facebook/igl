@@ -32,7 +32,7 @@ class TextureBuffer : public TextureBufferBase {
   Result uploadInternal(TextureType type,
                         const TextureRangeDesc& range,
                         const void* IGL_NULLABLE data,
-                        size_t bytesPerRow) const final;
+                        size_t bytesPerRow) const override;
   Result uploadInternal(GLenum target,
                         const TextureRangeDesc& range,
                         const void* IGL_NULLABLE data,

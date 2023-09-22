@@ -220,9 +220,10 @@ void NativeHWTextureBuffer::bindImage(size_t unit) {
 
 // upload data into the given mip level
 // a sub-rect of the texture may be specified to only upload the sub-rect
-Result NativeHWTextureBuffer::upload(const TextureRangeDesc& range,
-                                     const void* data,
-                                     size_t bytesPerRow) const {
+Result NativeHWTextureBuffer::uploadInternal(TextureType /*type*/,
+                                             const TextureRangeDesc& range,
+                                             const void* IGL_NULLABLE data,
+                                             size_t bytesPerRow) const {
   // not optimal pass
 
   std::byte* dst = nullptr;

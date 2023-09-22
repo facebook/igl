@@ -647,11 +647,11 @@ class ITexture : public ITrackedResource<ITexture> {
    * padding.
    * @return Result      A flag for the result of operation
    */
-  virtual Result upload(const TextureRangeDesc& range,
-                        const void* IGL_NULLABLE data,
-                        size_t bytesPerRow = 0) const;
+  Result upload(const TextureRangeDesc& range,
+                const void* IGL_NULLABLE data,
+                size_t bytesPerRow = 0) const;
 
-  // Texture Accessors Methods
+  // Texture Accessor Methods
   /**
    * @brief Returns the aspect ratio (width / height) of the texture.
    *

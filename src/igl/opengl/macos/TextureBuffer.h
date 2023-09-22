@@ -32,9 +32,12 @@ class TextureBuffer final : public opengl::TextureBuffer {
 
   bool supportsUpload() const final;
 
-  Result upload(const TextureRangeDesc& range, const void* data, size_t bytesPerRow) const override;
-
  private:
+  Result uploadInternal(TextureType type,
+                        const TextureRangeDesc& range,
+                        const void* data,
+                        size_t bytesPerRow) const final;
+
   CVOpenGLTextureRef cvTexture_ = nullptr;
   CVPixelBufferRef pixelBuffer_ = nullptr;
   CVOpenGLTextureCacheRef textureCache_ = nullptr;

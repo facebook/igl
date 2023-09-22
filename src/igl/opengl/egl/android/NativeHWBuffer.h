@@ -29,16 +29,11 @@ class NativeHWTextureBuffer : public TextureBufferBase {
   NativeHWTextureBuffer(IContext& context, TextureFormat format) : Super(context, format) {}
   ~NativeHWTextureBuffer() override;
 
-  // ITexture overrides
-  Result upload(const TextureRangeDesc& range,
-                const void* data,
-                size_t bytesPerRow = 0) const override;
-
   // Texture overrides
   Result create(const TextureDesc& desc, bool hasStorageAlready) override;
   void bind() override;
   void bindImage(size_t unit) override;
-  Result lockHWBuffer(std::byte* _Nullable* _Nonnull dst, RangeDesc& outRange) const;
+  Result lockHWBuffer(std::byte* IGL_NULLABLE* IGL_NONNULL dst, RangeDesc& outRange) const;
   Result unlockHWBuffer() const;
   uint64_t getTextureId() const override;
 
@@ -47,6 +42,11 @@ class NativeHWTextureBuffer : public TextureBufferBase {
   static bool isValidFormat(TextureFormat format);
 
  private:
+  Result uploadInternal(TextureType type,
+                        const TextureRangeDesc& range,
+                        const void* IGL_NULLABLE data,
+                        size_t bytesPerRow) const final;
+
   AHardwareBuffer* hwBuffer_ = nullptr;
   std::shared_ptr<AHardwareBufferHelper> hwBufferHelper_ = nullptr;
 };

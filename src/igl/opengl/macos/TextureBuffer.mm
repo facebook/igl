@@ -97,9 +97,10 @@ bool TextureBuffer::supportsUpload() const {
   return false;
 }
 
-Result TextureBuffer::upload(const TextureRangeDesc& /*range*/,
-                             const void* /*data*/,
-                             size_t /*bytesPerRow*/) const {
+Result TextureBuffer::uploadInternal(TextureType /*type*/,
+                                     const TextureRangeDesc& /*range*/,
+                                     const void* /*data*/,
+                                     size_t /*bytesPerRow*/) const {
   return Result();
 }
 

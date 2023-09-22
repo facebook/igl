@@ -15,13 +15,6 @@ class DummyTexture : public ITexture {
     ITexture(format), size_(size) {}
   ~DummyTexture() override = default;
 
-  Result upload(const TextureRangeDesc& /* unused */,
-                const void* /* unused */,
-                size_t /* unused */) const override {
-    IGL_ASSERT_NOT_REACHED();
-    return Result();
-  }
-
   Dimensions getDimensions() const override {
     return Dimensions{static_cast<size_t>(size_.width), static_cast<size_t>(size_.height), 1};
   }
