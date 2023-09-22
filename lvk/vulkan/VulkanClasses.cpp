@@ -60,6 +60,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(VkDebugUtilsMessageSeverityFl
   char typeName[128] = {};
   void* messageID = nullptr;
 
+  minilog::eLogLevel level = minilog::Log;
+  if (isError) {
+    lvk::VulkanContext* ctx = static_cast<lvk::VulkanContext*>(userData);
+    level = ctx->config_.terminateOnValidationError ? minilog::FatalError : minilog::Warning;
+  }
+  
   if (sscanf(cbData->pMessage,
              "Validation Error : [ %127s ] Object %i: handle = %p, type = %127s | MessageID = %p",
              errorName,
@@ -68,7 +74,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(VkDebugUtilsMessageSeverityFl
              typeName,
              &messageID) >= 2) {
     const char* message = strrchr(cbData->pMessage, '|') + 1;
-    LLOGL(
+    
+    MINILOG_LOG_PROC(level,
         "%sValidation layer:\n Validation Error: %s \n Object %i: handle = %p, type = %s\n "
         "MessageID = %p \n%s \n",
         isError ? "\nERROR:\n" : "",
@@ -79,7 +86,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(VkDebugUtilsMessageSeverityFl
         messageID,
         message);
   } else {
-    LLOGL("%sValidation layer:\n%s\n", isError ? "\nERROR:\n" : "", cbData->pMessage);
+    MINILOG_LOG_PROC(level, "%sValidation layer:\n%s\n", isError ? "\nERROR:\n" : "", cbData->pMessage);
   }
 
   if (isError) {
@@ -4431,7 +4438,13 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
     CHECK_FEATURE_1_3(maintenance4);
 #undef CHECK_FEATURE_1_3
     if (!missingFeatures.empty()) {
-      MINILOG_LOG_PROC(minilog::FatalError, "Missing Vulkan features: %s\n", missingFeatures.c_str());
+      MINILOG_LOG_PROC(
+#ifndef __APPLE__
+        minilog::FatalError,
+#else
+        minilog::Warning,
+#endif
+        "Missing Vulkan features: %s\n", missingFeatures.c_str());
       // Do not exit here in case of MoltenVK, some 1.3 features are available via extensions.
 #ifndef __APPLE__
       assert(false);
