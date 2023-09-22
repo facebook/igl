@@ -516,15 +516,21 @@ void XrApp::render() {
 
 void XrApp::endFrame(XrFrameState frameState) {
 #ifdef USE_COMPOSITION_LAYER_QUAD
-  XrCompositionLayerQuad layer{};
-  layer.next = nullptr;
-  layer.type = XR_TYPE_COMPOSITION_LAYER_QUAD;
-  layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
-  layer.space = stageSpace_;
-  layer.eyeVisibility = XR_EYE_VISIBILITY_BOTH;
-  memset(&layer.subImage, 0, sizeof(XrSwapchainSubImage));
-  layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, 0.f}};
-  layer.size = {1.f, 1.f};
+  std::array<XrCompositionLayerQuad, kNumViews> quadLayers{};
+  XrEyeVisibility eye = XR_EYE_VISIBILITY_LEFT;
+  for (auto& layer : quadLayers) {
+    layer.next = nullptr;
+    layer.type = XR_TYPE_COMPOSITION_LAYER_QUAD;
+    layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+    layer.space = stageSpace_;
+    layer.eyeVisibility = eye;
+    memset(&layer.subImage, 0, sizeof(XrSwapchainSubImage));
+    layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, 0.f}};
+    layer.size = {1.f, 1.f};
+    if (eye == XR_EYE_VISIBILITY_LEFT) {
+      eye = XR_EYE_VISIBILITY_RIGHT;
+    }
+  }
 #endif
 
   std::array<XrCompositionLayerProjectionView, kNumViews> projectionViews;
@@ -574,25 +580,33 @@ void XrApp::endFrame(XrFrameState frameState) {
     depthInfos[i].nearZ = appParams.depthParams.nearZ;
     depthInfos[i].farZ = appParams.depthParams.farZ;
 #ifdef USE_COMPOSITION_LAYER_QUAD
-    layer.subImage = projectionViews[0].subImage;
+    quadLayers[i].subImage = projectionViews[i].subImage;
 #endif
   }
 
-  const XrCompositionLayerBaseHeader* const layers[] = {
 #ifdef USE_COMPOSITION_LAYER_QUAD
-      (const XrCompositionLayerBaseHeader*)&layer
+  std::array<const XrCompositionLayerBaseHeader*, kNumViews> quadLayersBase{};
+  for (uint32_t i = 0; i < quadLayers.size(); i++) {
+    quadLayersBase[i] = (const XrCompositionLayerBaseHeader*)&quadLayers[i];
+  }
 #else
-      (const XrCompositionLayerBaseHeader*)&projection
-#endif
+  const XrCompositionLayerBaseHeader* const layers[] = {
+      (const XrCompositionLayerBaseHeader*)&projection,
   };
+#endif
 
   XrFrameEndInfo endFrameInfo = {
       XR_TYPE_FRAME_END_INFO,
       nullptr,
       frameState.predictedDisplayTime,
       XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
+#ifdef USE_COMPOSITION_LAYER_QUAD
+      quadLayersBase.size(),
+      quadLayersBase.data(),
+#else
       1,
       layers,
+#endif
   };
 
   XR_CHECK(xrEndFrame(session_, &endFrameInfo));
