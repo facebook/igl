@@ -122,7 +122,6 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::MinMaxBlend:
   case DeviceFeatures::UniformBlocks:
   case DeviceFeatures::ExplicitBinding:
-  case DeviceFeatures::PushConstants:
   case DeviceFeatures::Texture2DArray:
   case DeviceFeatures::Texture3D:
   case DeviceFeatures::SRGB:
@@ -178,6 +177,8 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::ValidationLayersEnabled:
     return false;
   case DeviceFeatures::ExternalMemoryObjects:
+    return false;
+  case DeviceFeatures::PushConstants:
     return false;
   }
   return false;
