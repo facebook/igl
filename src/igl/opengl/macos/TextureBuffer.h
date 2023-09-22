@@ -30,6 +30,8 @@ class TextureBuffer final : public opengl::TextureBuffer {
   // around a GL texture created from CVOpenGLTextureCacheCreateTextureFromImage()
   Result create();
 
+  bool supportsUpload() const final;
+
   Result upload(const TextureRangeDesc& range, const void* data, size_t bytesPerRow) const override;
 
  private:

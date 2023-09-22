@@ -22,6 +22,10 @@ class TextureBufferExternal : public TextureBufferBase {
   explicit TextureBufferExternal(IContext& context, TextureFormat format) :
     Super(context, format) {}
   ~TextureBufferExternal() override = default;
+
+  bool supportsUpload() const final {
+    return false;
+  }
 };
 
 } // namespace opengl

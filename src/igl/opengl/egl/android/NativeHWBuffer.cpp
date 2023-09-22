@@ -121,6 +121,10 @@ uint64_t NativeHWTextureBuffer::getTextureId() const {
   return getId();
 }
 
+bool NativeHWTextureBuffer::supportsUpload() const {
+  return true;
+}
+
 Result NativeHWTextureBuffer::create(const TextureDesc& desc, bool hasStorageAlready) {
   if (getTextureId() != 0) {
     return Result{Result::Code::RuntimeError, "NativeHWTextureBuffer alreayd created"};

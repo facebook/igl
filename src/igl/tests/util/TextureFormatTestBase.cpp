@@ -410,12 +410,9 @@ void TextureFormatTestBase::testUsage(std::shared_ptr<ITexture> texture,
     testAttachment(texture);
   }
 
-  if ((usage & TextureDesc::TextureUsageBits::Sampled) != 0 ||
-      (usage & TextureDesc::TextureUsageBits::Storage) != 0) {
+  if (texture->supportsUpload()) {
     IGL_LOG_INFO("%s: Test Upload: %s\n", usageName, properties.name);
-    if (iglDev_->getBackendType() != BackendType::Metal || !properties.isDepthOrStencil()) {
-      testUpload(texture);
-    }
+    testUpload(texture);
   }
 }
 

@@ -618,6 +618,15 @@ class ITexture : public ITrackedResource<ITexture> {
   virtual ~ITexture() = default;
 
   /**
+   * @brief Indicates if this type of texture supports upload.
+   */
+  [[nodiscard]] virtual bool supportsUpload() const {
+    return ((getUsage() & (TextureDesc::TextureUsageBits::Sampled |
+                           TextureDesc::TextureUsageBits::Storage)) != 0) &&
+           !properties_.isDepthOrStencil();
+  }
+
+  /**
    * @brief Uploads the given data into texture memory.
    *
    * Upload supports arbitrary ranges. That is, data may point to data for multiple mip levels, cube

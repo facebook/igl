@@ -42,6 +42,8 @@ class TextureBuffer final : public opengl::TextureBuffer {
   /// @param height Height of generated texture
   Result createWithSize(size_t width, size_t height);
 
+  bool supportsUpload() const final;
+
   Result upload(const TextureRangeDesc& range, const void* data, size_t bytesPerRow) const override;
 
  private:

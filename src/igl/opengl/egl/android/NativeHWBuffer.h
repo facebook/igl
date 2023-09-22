@@ -42,6 +42,8 @@ class NativeHWTextureBuffer : public TextureBufferBase {
   Result unlockHWBuffer() const;
   uint64_t getTextureId() const override;
 
+  bool supportsUpload() const final;
+
   static bool isValidFormat(TextureFormat format);
 
  private:

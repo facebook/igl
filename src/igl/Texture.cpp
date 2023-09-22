@@ -662,6 +662,10 @@ const void* IGL_NULLABLE ITexture::getSubRangeStart(const void* IGL_NONNULL data
 Result ITexture::upload(const TextureRangeDesc& range,
                         const void* IGL_NULLABLE data,
                         size_t bytesPerRow) const {
+  if (IGL_UNEXPECTED(!supportsUpload())) {
+    return Result{Result::Code::InvalidOperation, "Texture doesn't support upload"};
+  }
+
   const auto type = getType();
   const auto result = validateRange(range);
   if (!result.isOk()) {
