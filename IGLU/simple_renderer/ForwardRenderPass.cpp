@@ -42,7 +42,8 @@ void ForwardRenderPass::begin(std::shared_ptr<igl::IFramebuffer> target,
 
   igl::CommandBufferDesc cbDesc;
   _commandBuffer = _commandQueue->createCommandBuffer(cbDesc, nullptr);
-  _commandEncoder = _commandBuffer->createRenderCommandEncoder(*finalDesc, _framebuffer);
+  _commandEncoder =
+      _commandBuffer->createRenderCommandEncoder(*finalDesc, _framebuffer, {}, nullptr);
 }
 
 void ForwardRenderPass::draw(drawable::Drawable& drawable, igl::IDevice& device) const {

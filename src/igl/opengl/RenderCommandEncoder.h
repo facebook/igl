@@ -19,6 +19,7 @@ class IDepthStencilState;
 class IRenderPipelineState;
 class ISamplerState;
 class ITexture;
+struct Dependencies;
 namespace opengl {
 
 class RenderCommandAdapter;
@@ -30,6 +31,7 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
       const std::shared_ptr<CommandBuffer>& commandBuffer,
       const RenderPassDesc& renderPass,
       const std::shared_ptr<IFramebuffer>& framebuffer,
+      const Dependencies& dependencies,
       Result* outResult);
 
   ~RenderCommandEncoder() override;

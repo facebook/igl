@@ -65,9 +65,12 @@ void transitionToColorAttachment(VkCommandBuffer buffer,
 std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder(
     const RenderPassDesc& renderPass,
     std::shared_ptr<IFramebuffer> framebuffer,
+    const Dependencies& dependencies,
     Result* outResult) {
   IGL_PROFILER_FUNCTION();
   IGL_ASSERT(framebuffer);
+
+  (void)dependencies; // will be implemented later
 
   framebuffer_ = framebuffer;
 

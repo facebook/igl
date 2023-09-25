@@ -35,6 +35,15 @@ struct CommandBufferStatistics {
 };
 
 /**
+ * Dependencies are used to issue proper memory barriers for external resources, such as textures
+ * modified by non-IGL code (Skia, Qt, etc), and synchronize between graphics and compute pipelines.
+ */
+struct Dependencies {
+  static constexpr uint32_t IGL_MAX_TEXTURE_DEPENDENCIES = 4;
+  ITexture* IGL_NULLABLE textures[IGL_MAX_TEXTURE_DEPENDENCIES] = {};
+};
+
+/**
  * @brief ICommandBuffer represents an object which accepts and stores commands to be executed on
  * the GPU.
  *
@@ -61,13 +70,14 @@ class ICommandBuffer {
   virtual std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
       const RenderPassDesc& renderPass,
       std::shared_ptr<IFramebuffer> framebuffer,
+      const Dependencies& dependencies,
       Result* IGL_NULLABLE outResult) = 0;
 
   // Use an overload here instead of a default parameter in a pure virtual function.
   std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
       const RenderPassDesc& renderPass,
       std::shared_ptr<IFramebuffer> framebuffer) {
-    return createRenderCommandEncoder(renderPass, std::move(framebuffer), nullptr);
+    return createRenderCommandEncoder(renderPass, std::move(framebuffer), Dependencies{}, nullptr);
   }
 
   /**

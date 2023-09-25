@@ -31,7 +31,10 @@ std::unique_ptr<RenderCommandEncoder> RenderCommandEncoder::create(
     const std::shared_ptr<CommandBuffer>& commandBuffer,
     const RenderPassDesc& renderPass,
     const std::shared_ptr<IFramebuffer>& framebuffer,
+    const Dependencies& dependencies,
     Result* outResult) {
+  (void)dependencies; // not used in OpenGL
+
   if (!commandBuffer) {
     Result::setResult(outResult, Result::Code::ArgumentNull, "commandBuffer was null");
     return {};

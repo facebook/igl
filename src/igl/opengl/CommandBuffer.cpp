@@ -22,8 +22,10 @@ CommandBuffer::~CommandBuffer() = default;
 std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder(
     const RenderPassDesc& renderPass,
     std::shared_ptr<IFramebuffer> framebuffer,
+    const Dependencies& dependencies,
     Result* outResult) {
-  return RenderCommandEncoder::create(shared_from_this(), renderPass, framebuffer, outResult);
+  return RenderCommandEncoder::create(
+      shared_from_this(), renderPass, framebuffer, dependencies, outResult);
 }
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {
