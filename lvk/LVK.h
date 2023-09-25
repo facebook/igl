@@ -197,12 +197,12 @@ enum IndexFormat : uint8_t {
   IndexFormat_UI32,
 };
 
-enum PrimitiveType : uint8_t {
-  Primitive_Point,
-  Primitive_Line,
-  Primitive_LineStrip,
-  Primitive_Triangle,
-  Primitive_TriangleStrip,
+enum Topology : uint8_t {
+  Topology_Point,
+  Topology_Line,
+  Topology_LineStrip,
+  Topology_Triangle,
+  Topology_TriangleStrip,
 };
 
 enum ColorSpace : uint8_t {
@@ -570,6 +570,8 @@ struct SpecializationConstantDesc {
 };
 
 struct RenderPipelineDesc final {
+  Topology topology = Topology_Triangle;
+
   lvk::VertexInput vertexInput;
 
   ShaderModuleHandle smVert;
@@ -742,24 +744,14 @@ class ICommandBuffer {
     this->cmdPushConstants(&data, sizeof(Struct), 0);
   }
 
-  virtual void cmdDraw(PrimitiveType primitiveType,
-                       uint32_t vertexCount,
-                       uint32_t instanceCount = 1,
-                       uint32_t firstVertex = 0,
-                       uint32_t baseInstance = 0) = 0;
-  virtual void cmdDrawIndexed(PrimitiveType primitiveType,
-                              uint32_t indexCount,
+  virtual void cmdDraw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t baseInstance = 0) = 0;
+  virtual void cmdDrawIndexed(uint32_t indexCount,
                               uint32_t instanceCount = 1,
                               uint32_t firstIndex = 0,
                               int32_t vertexOffset = 0,
                               uint32_t baseInstance = 0) = 0;
-  virtual void cmdDrawIndirect(PrimitiveType primitiveType,
-                               BufferHandle indirectBuffer,
-                               size_t indirectBufferOffset,
-                               uint32_t drawCount,
-                               uint32_t stride = 0) = 0;
-  virtual void cmdDrawIndexedIndirect(PrimitiveType primitiveType,
-                                      BufferHandle indirectBuffer,
+  virtual void cmdDrawIndirect(BufferHandle indirectBuffer, size_t indirectBufferOffset, uint32_t drawCount, uint32_t stride = 0) = 0;
+  virtual void cmdDrawIndexedIndirect(BufferHandle indirectBuffer,
                                       size_t indirectBufferOffset,
                                       uint32_t drawCount,
                                       uint32_t stride = 0) = 0;

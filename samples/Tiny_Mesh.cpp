@@ -374,7 +374,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
           .vb = ctx_->gpuAddress(vb0_),
       };
       buffer.cmdPushConstants(bindings);
-      buffer.cmdDrawIndexed(lvk::Primitive_Triangle, 3 * 6 * 2);
+      buffer.cmdDrawIndexed(3 * 6 * 2);
     }
     buffer.cmdPopDebugGroupLabel();
   }

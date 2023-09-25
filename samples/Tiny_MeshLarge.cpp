@@ -1142,7 +1142,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       };
       buffer.cmdPushConstants(bindings);
       buffer.cmdBindIndexBuffer(ib0_, lvk::IndexFormat_UI32);
-      buffer.cmdDrawIndexed(lvk::Primitive_Triangle, static_cast<uint32_t>(indexData_.size()));
+      buffer.cmdDrawIndexed(static_cast<uint32_t>(indexData_.size()));
       buffer.cmdPopDebugGroupLabel();
     }
     buffer.cmdEndRendering();
@@ -1177,10 +1177,10 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       };
       buffer.cmdPushConstants(bindings);
       buffer.cmdBindIndexBuffer(ib0_, lvk::IndexFormat_UI32);
-      buffer.cmdDrawIndexed(lvk::Primitive_Triangle, static_cast<uint32_t>(indexData_.size()));
+      buffer.cmdDrawIndexed(static_cast<uint32_t>(indexData_.size()));
       if (enableWireframe_) {
         buffer.cmdBindRenderPipeline(renderPipelineState_MeshWireframe_);
-        buffer.cmdDrawIndexed(lvk::Primitive_Triangle, static_cast<uint32_t>(indexData_.size()));
+        buffer.cmdDrawIndexed(static_cast<uint32_t>(indexData_.size()));
       }
       buffer.cmdPopDebugGroupLabel();
 
@@ -1188,7 +1188,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       buffer.cmdBindRenderPipeline(renderPipelineState_Skybox_);
       buffer.cmdPushDebugGroupLabel("Render Skybox", 0x00ff00ff);
       buffer.cmdBindDepthState(depthStateLEqual_);
-      buffer.cmdDraw(lvk::Primitive_Triangle, 3 * 6 * 2);
+      buffer.cmdDraw(3 * 6 * 2);
       buffer.cmdPopDebugGroupLabel();
     }
     buffer.cmdEndRendering();
@@ -1244,7 +1244,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
                                          : fbOffscreen_.color[0].texture.index(),
       };
       buffer.cmdPushConstants(bindings);
-      buffer.cmdDraw(lvk::Primitive_Triangle, 3);
+      buffer.cmdDraw(3);
       buffer.cmdPopDebugGroupLabel();
 
       imgui_->endFrame(buffer);

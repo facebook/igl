@@ -111,20 +111,20 @@ VkIndexType indexFormatToVkIndexType(lvk::IndexFormat fmt) {
   return VK_INDEX_TYPE_NONE_KHR;
 }
 
-VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(lvk::PrimitiveType t) {
+VkPrimitiveTopology topologyToVkPrimitiveTopology(lvk::Topology t) {
   switch (t) {
-  case lvk::Primitive_Point:
+  case lvk::Topology_Point:
     return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-  case lvk::Primitive_Line:
+  case lvk::Topology_Line:
     return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-  case lvk::Primitive_LineStrip:
+  case lvk::Topology_LineStrip:
     return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-  case lvk::Primitive_Triangle:
+  case lvk::Topology_Triangle:
     return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-  case lvk::Primitive_TriangleStrip:
+  case lvk::Topology_TriangleStrip:
     return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
   }
-  LVK_ASSERT_MSG(false, "Implement PrimitiveType = %u", (uint32_t)t);
+  LVK_ASSERT_MSG(false, "Implement Topology = %u", (uint32_t)t);
   return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 }
 
@@ -1741,33 +1741,29 @@ lvk::SubmitHandle lvk::VulkanImmediateCommands::getLastSubmitHandle() const {
 }
 
 void lvk::RenderPipelineState::destroyPipelines(lvk::VulkanContext* ctx) {
-#ifndef __APPLE__
-  for (uint32_t topology = 0; topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST + 1; topology++) {
-    for (uint32_t depthBiasEnabled = 0; depthBiasEnabled != VK_TRUE + 1; depthBiasEnabled++) {
-      VkPipeline& vkPipeline = pipelines_[topology][depthBiasEnabled];
-      if (vkPipeline != VK_NULL_HANDLE) {
-        ctx->deferredTask(std::packaged_task<void()>(
-            [device = ctx->getVkDevice(), pipeline = vkPipeline]() { vkDestroyPipeline(device, pipeline, nullptr); }));
-        vkPipeline = VK_NULL_HANDLE;
-      }
+#if !defined(__APPLE__)
+  for (uint32_t depthBiasEnabled = 0; depthBiasEnabled != VK_TRUE + 1; depthBiasEnabled++) {
+    VkPipeline& vkPipeline = pipelines_[depthBiasEnabled];
+    if (vkPipeline != VK_NULL_HANDLE) {
+      ctx->deferredTask(std::packaged_task<void()>(
+          [device = ctx->getVkDevice(), pipeline = vkPipeline]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+      vkPipeline = VK_NULL_HANDLE;
     }
   }
 #else
-  for (uint32_t topology = 0; topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST + 1; topology++) {
-    for (uint32_t depthCompareOp = 0; depthCompareOp != VK_COMPARE_OP_ALWAYS + 1; depthCompareOp++) {
-      for (uint32_t depthWriteEnabled = 0; depthWriteEnabled != VK_TRUE + 1; depthWriteEnabled++) {
-        for (uint32_t depthBiasEnabled = 0; depthBiasEnabled != VK_TRUE + 1; depthBiasEnabled++) {
-          VkPipeline& vkPipeline = pipelines_[topology][depthCompareOp][depthWriteEnabled][depthBiasEnabled];
-          if (vkPipeline != VK_NULL_HANDLE) {
-            ctx->deferredTask(std::packaged_task<void()>(
-                [device = ctx->getVkDevice(), pipeline = vkPipeline]() { vkDestroyPipeline(device, pipeline, nullptr); }));
-            vkPipeline = VK_NULL_HANDLE;
-          }
+  for (uint32_t depthCompareOp = 0; depthCompareOp != VK_COMPARE_OP_ALWAYS + 1; depthCompareOp++) {
+    for (uint32_t depthWriteEnabled = 0; depthWriteEnabled != VK_TRUE + 1; depthWriteEnabled++) {
+      for (uint32_t depthBiasEnabled = 0; depthBiasEnabled != VK_TRUE + 1; depthBiasEnabled++) {
+        VkPipeline& vkPipeline = pipelines_[depthCompareOp][depthWriteEnabled][depthBiasEnabled];
+        if (vkPipeline != VK_NULL_HANDLE) {
+          ctx->deferredTask(std::packaged_task<void()>(
+              [device = ctx->getVkDevice(), pipeline = vkPipeline]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+          vkPipeline = VK_NULL_HANDLE;
         }
       }
     }
   }
-#endif
+#endif // __APPLE__
 }
 
 lvk::VulkanPipelineBuilder::VulkanPipelineBuilder() :
@@ -2450,6 +2446,8 @@ void lvk::CommandBuffer::cmdPushConstants(const void* data, size_t size, size_t 
 }
 
 void lvk::CommandBuffer::bindGraphicsPipeline() {
+  // this whole function can be removed together with dynamicState_ once MoltenVK is capable of VK_EXT_extended_dynamic_state2
+
   VkPipeline pipeline = ctx_->getVkPipeline(currentPipeline_, dynamicState_);
 
   if (lastPipelineBound_ != pipeline) {
@@ -2460,21 +2458,19 @@ void lvk::CommandBuffer::bindGraphicsPipeline() {
   }
 }
 
-void lvk::CommandBuffer::cmdDraw(PrimitiveType primitiveType, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t baseInstance) {
+void lvk::CommandBuffer::cmdDraw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t baseInstance) {
   LVK_PROFILER_FUNCTION();
 
   if (vertexCount == 0) {
     return;
   }
 
-  dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
 
   vkCmdDraw(wrapper_->cmdBuf_, vertexCount, instanceCount, firstVertex, baseInstance);
 }
 
-void lvk::CommandBuffer::cmdDrawIndexed(PrimitiveType primitiveType,
-                                        uint32_t indexCount,
+void lvk::CommandBuffer::cmdDrawIndexed(uint32_t indexCount,
                                         uint32_t instanceCount,
                                         uint32_t firstIndex,
                                         int32_t vertexOffset,
@@ -2485,20 +2481,14 @@ void lvk::CommandBuffer::cmdDrawIndexed(PrimitiveType primitiveType,
     return;
   }
 
-  dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
 
   vkCmdDrawIndexed(wrapper_->cmdBuf_, indexCount, instanceCount, firstIndex, vertexOffset, baseInstance);
 }
 
-void lvk::CommandBuffer::cmdDrawIndirect(PrimitiveType primitiveType,
-                                         BufferHandle indirectBuffer,
-                                         size_t indirectBufferOffset,
-                                         uint32_t drawCount,
-                                         uint32_t stride) {
+void lvk::CommandBuffer::cmdDrawIndirect(BufferHandle indirectBuffer, size_t indirectBufferOffset, uint32_t drawCount, uint32_t stride) {
   LVK_PROFILER_FUNCTION();
 
-  dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
 
   lvk::VulkanBuffer* bufIndirect = ctx_->buffersPool_.get(indirectBuffer);
@@ -2507,14 +2497,12 @@ void lvk::CommandBuffer::cmdDrawIndirect(PrimitiveType primitiveType,
       wrapper_->cmdBuf_, bufIndirect->vkBuffer_, indirectBufferOffset, drawCount, stride ? stride : sizeof(VkDrawIndirectCommand));
 }
 
-void lvk::CommandBuffer::cmdDrawIndexedIndirect(PrimitiveType primitiveType,
-                                                BufferHandle indirectBuffer,
+void lvk::CommandBuffer::cmdDrawIndexedIndirect(BufferHandle indirectBuffer,
                                                 size_t indirectBufferOffset,
                                                 uint32_t drawCount,
                                                 uint32_t stride) {
   LVK_PROFILER_FUNCTION();
 
-  dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindGraphicsPipeline();
 
   lvk::VulkanBuffer* bufIndirect = ctx_->buffersPool_.get(indirectBuffer);
@@ -3316,17 +3304,17 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
     rps->pipelineLayout_ = vkPipelineLayout_;
   }
 
-#ifndef __APPLE__
-  if (rps->pipelines_[dynamicState.topology_][dynamicState.depthBiasEnable_] != VK_NULL_HANDLE) {
-    return rps->pipelines_[dynamicState.topology_][dynamicState.depthBiasEnable_];
+#if !defined( __APPLE__)
+  if (rps->pipelines_[dynamicState.depthBiasEnable_] != VK_NULL_HANDLE) {
+    return rps->pipelines_[dynamicState.depthBiasEnable_];
   }
 #else
-  if (rps->pipelines_[dynamicState.topology_][dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_]
+  if (rps->pipelines_[dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_]
                      [dynamicState.depthBiasEnable_] != VK_NULL_HANDLE) {
     return rps
-        ->pipelines_[dynamicState.topology_][dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_][dynamicState.depthBiasEnable_];
+        ->pipelines_[dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_][dynamicState.depthBiasEnable_];
   }
-#endif
+#endif // __APPLE__
 
   // build a new Vulkan pipeline
 
@@ -3394,7 +3382,7 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
       .dynamicState(VK_DYNAMIC_STATE_SCISSOR)
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS)
       .dynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS)
- #ifndef __APPLE__
+ #if !defined(__APPLE__)
       // from Vulkan 1.3
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE)
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
@@ -3402,8 +3390,8 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
 #else
       .depthCompareOp(dynamicState.depthCompareOp_)
       .depthWriteEnable(dynamicState.depthWriteEnable_)
-#endif
-      .primitiveTopology(dynamicState.topology_)
+#endif // __APPLE__
+      .primitiveTopology(topologyToVkPrimitiveTopology(desc.topology))
       .depthBiasEnable(dynamicState.depthBiasEnable_)
       .rasterizationSamples(getVulkanSampleCountFlags(desc.samplesCount))
       .polygonMode(polygonModeToVkPolygonMode(desc.polygonMode))
@@ -3431,12 +3419,11 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
       .stencilAttachmentFormat(formatToVkFormat(desc.stencilFormat))
       .build(vkDevice_, pipelineCache_, vkPipelineLayout_, &pipeline, desc.debugName);
 
-#ifndef __APPLE__
-  rps->pipelines_[dynamicState.topology_][dynamicState.depthBiasEnable_] = pipeline;
+#if !defined(__APPLE__)
+  rps->pipelines_[dynamicState.depthBiasEnable_] = pipeline;
 #else
-  rps->pipelines_[dynamicState.topology_][dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_][dynamicState.depthBiasEnable_] =
-      pipeline;
-#endif
+  rps->pipelines_[dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_][dynamicState.depthBiasEnable_] = pipeline;
+#endif // __APPLE__
   return pipeline;
 }
 

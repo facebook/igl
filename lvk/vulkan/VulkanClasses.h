@@ -254,23 +254,17 @@ class VulkanImmediateCommands final {
 };
 
 struct RenderPipelineDynamicState final {
-  VkPrimitiveTopology topology_ : 4 = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 #if defined(__APPLE__)
   VkCompareOp depthCompareOp_ : 3 = VK_COMPARE_OP_ALWAYS;
   VkBool32 depthWriteEnable_ : 1 = VK_FALSE;
 #endif
   VkBool32 depthBiasEnable_ : 1 = VK_FALSE;
-
-  void setTopology(VkPrimitiveTopology topology) {
-    LVK_ASSERT_MSG(topology <= VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, "Invalid VkPrimitiveTopology");
-    topology_ = topology;
-  }
 };
 
 static_assert(sizeof(RenderPipelineDynamicState) == sizeof(uint32_t));
 
 struct RenderPipelineState final {
-  void destroyPipelines(lvk::VulkanContext * ctx);
+  void destroyPipelines(lvk::VulkanContext* ctx);
 
   RenderPipelineDesc desc_;
 
@@ -279,16 +273,16 @@ struct RenderPipelineState final {
   VkVertexInputBindingDescription vkBindings_[VertexInput::LVK_VERTEX_BUFFER_MAX] = {};
   VkVertexInputAttributeDescription vkAttributes_[VertexInput::LVK_VERTEX_ATTRIBUTES_MAX] = {};
 
-  // non-owning, cached the last pipeline layout from the context
+  // non-owning, cached the last pipeline layout from the context (if the context has a new layout, invalidate all VkPipeline objects)
   VkPipelineLayout pipelineLayout_ = VK_NULL_HANDLE;
 
-#ifndef __APPLE__
-  // [topology][depthBiasEnable]
-  VkPipeline pipelines_[VK_PRIMITIVE_TOPOLOGY_PATCH_LIST + 1][2] = {};
+#if !defined(__APPLE__)
+  // [depthBiasEnable]
+  VkPipeline pipelines_[2] = {};
 #else
-  // [topology][depthCompareOp][depthWriteEnable][depthBiasEnable]
-  VkPipeline pipelines_[VK_PRIMITIVE_TOPOLOGY_PATCH_LIST + 1][8][2][2] = {};
-#endif
+  // [depthCompareOp][depthWriteEnable][depthBiasEnable]
+  VkPipeline pipelines_[8][2][2] = {};
+#endif // __APPLE__
 };
 
 class VulkanPipelineBuilder final {
@@ -392,27 +386,14 @@ class CommandBuffer final : public ICommandBuffer {
   void cmdBindIndexBuffer(BufferHandle indexBuffer, IndexFormat indexFormat, uint64_t indexBufferOffset) override;
   void cmdPushConstants(const void* data, size_t size, size_t offset) override;
 
-  void cmdDraw(PrimitiveType primitiveType,
-               uint32_t vertexCount,
-               uint32_t instanceCount,
-               uint32_t firstVertex,
-               uint32_t baseInstance) override;
-  void cmdDrawIndexed(PrimitiveType primitiveType,
-                      uint32_t indexCount,
+  void cmdDraw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t baseInstance) override;
+  void cmdDrawIndexed(uint32_t indexCount,
                       uint32_t instanceCount,
                       uint32_t firstIndex,
                       int32_t vertexOffset,
                       uint32_t baseInstance) override;
-  void cmdDrawIndirect(PrimitiveType primitiveType,
-                       BufferHandle indirectBuffer,
-                       size_t indirectBufferOffset,
-                       uint32_t drawCount,
-                       uint32_t stride = 0) override;
-  void cmdDrawIndexedIndirect(PrimitiveType primitiveType,
-                              BufferHandle indirectBuffer,
-                              size_t indirectBufferOffset,
-                              uint32_t drawCount,
-                              uint32_t stride = 0) override;
+  void cmdDrawIndirect(BufferHandle indirectBuffer, size_t indirectBufferOffset, uint32_t drawCount, uint32_t stride = 0) override;
+  void cmdDrawIndexedIndirect(BufferHandle indirectBuffer, size_t indirectBufferOffset, uint32_t drawCount, uint32_t stride = 0) override;
 
   void cmdSetBlendColor(const float color[4]) override;
   void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) override;

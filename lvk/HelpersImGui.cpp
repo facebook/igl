@@ -232,7 +232,7 @@ void ImGuiRenderer::endFrame(lvk::ICommandBuffer& cmdBuffer) {
       cmdBuffer.cmdPushConstants(bindData);
       cmdBuffer.cmdBindScissorRect(
           {uint32_t(clipMin.x), uint32_t(clipMin.y), uint32_t(clipMax.x - clipMin.x), uint32_t(clipMax.y - clipMin.y)});
-      cmdBuffer.cmdDrawIndexed(lvk::Primitive_Triangle, cmd.ElemCount, 1u, idxOffset + cmd.IdxOffset, int32_t(vtxOffset + cmd.VtxOffset));
+      cmdBuffer.cmdDrawIndexed(cmd.ElemCount, 1u, idxOffset + cmd.IdxOffset, int32_t(vtxOffset + cmd.VtxOffset));
     }
     idxOffset += cmdList->IdxBuffer.Size;
     vtxOffset += cmdList->VtxBuffer.Size;
