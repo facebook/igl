@@ -31,8 +31,7 @@ std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncod
 
 namespace {
 
-void transitionToColorAttachment(VkCommandBuffer buffer,
-                                 const std::shared_ptr<ITexture>& colorTex) {
+void transitionToColorAttachment(VkCommandBuffer buffer, ITexture* colorTex) {
   // We really shouldn't get a null here, but just in case.
   if (!IGL_VERIFY(colorTex)) {
     return;
@@ -60,6 +59,28 @@ void transitionToColorAttachment(VkCommandBuffer buffer,
           VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
 }
 
+void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture) {
+  // We really shouldn't get a null here, but just in case.
+  if (!IGL_VERIFY(texture)) {
+    return;
+  }
+
+  const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*texture);
+  const vulkan::VulkanImage& img = tex.getVulkanTexture().getVulkanImage();
+  // this must match the final layout of the render pass
+  img.imageLayout_ = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+  if (img.usageFlags_ & VK_IMAGE_USAGE_SAMPLED_BIT) {
+    // transition sampled images to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    img.transitionLayout(
+        cmdBuf,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, // wait for all subsequent fragment shaders
+        VkImageSubresourceRange{
+            VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+  }
+}
+
 } // namespace
 
 std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder(
@@ -70,19 +91,23 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
   IGL_PROFILER_FUNCTION();
   IGL_ASSERT(framebuffer);
 
-  (void)dependencies; // will be implemented later
-
   framebuffer_ = framebuffer;
+
+  for (ITexture* IGL_NULLABLE tex : dependencies.textures) {
+    if (tex) {
+      transitionToShaderReadOnly(wrapper_.cmdBuf_, tex);
+    }
+  }
 
   // prepare all the color attachments
   const auto& indices = framebuffer->getColorAttachmentIndices();
   for (auto i : indices) {
     const auto colorTex = framebuffer->getColorAttachment(i);
-    transitionToColorAttachment(wrapper_.cmdBuf_, colorTex);
+    transitionToColorAttachment(wrapper_.cmdBuf_, colorTex.get());
     // handle MSAA
     const auto colorResolveTex = framebuffer->getResolveColorAttachment(i);
     if (colorResolveTex) {
-      transitionToColorAttachment(wrapper_.cmdBuf_, colorResolveTex);
+      transitionToColorAttachment(wrapper_.cmdBuf_, colorResolveTex.get());
     }
   }
 
@@ -102,8 +127,8 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
         VkImageSubresourceRange{flags, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
   }
 
-  auto encoder =
-      RenderCommandEncoder::create(shared_from_this(), ctx_, renderPass, framebuffer, outResult);
+  auto encoder = RenderCommandEncoder::create(
+      shared_from_this(), ctx_, renderPass, framebuffer, dependencies, outResult);
 
   if (ctx_.enhancedShaderDebuggingStore_) {
     encoder->binder().bindStorageBuffer(

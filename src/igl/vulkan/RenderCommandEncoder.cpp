@@ -126,9 +126,11 @@ RenderCommandEncoder::RenderCommandEncoder(const std::shared_ptr<CommandBuffer>&
 
 void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                                       const std::shared_ptr<IFramebuffer>& framebuffer,
+                                      const Dependencies& dependencies,
                                       Result* outResult) {
   IGL_PROFILER_FUNCTION();
   framebuffer_ = framebuffer;
+  dependencies_ = dependencies;
 
   Result::setOk(outResult);
 
@@ -288,13 +290,14 @@ std::unique_ptr<RenderCommandEncoder> RenderCommandEncoder::create(
     VulkanContext& ctx,
     const RenderPassDesc& renderPass,
     const std::shared_ptr<IFramebuffer>& framebuffer,
+    const Dependencies& dependencies,
     Result* outResult) {
   IGL_PROFILER_FUNCTION();
 
   Result ret;
 
   std::unique_ptr<RenderCommandEncoder> encoder(new RenderCommandEncoder(commandBuffer, ctx));
-  encoder->initialize(renderPass, framebuffer, &ret);
+  encoder->initialize(renderPass, framebuffer, dependencies, &ret);
 
   Result::setResult(outResult, ret);
   return ret.isOk() ? std::move(encoder) : nullptr;
@@ -328,10 +331,34 @@ void RenderCommandEncoder::endEncoding() {
               VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
     }
   };
+  auto transitionToColorAttachment = [](VkCommandBuffer cmdBuf, ITexture* texture) {
+    if (!texture) {
+      return;
+    }
+    const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*texture);
+    const vulkan::VulkanImage& img = tex.getVulkanTexture().getVulkanImage();
+    img.imageLayout_ = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    if (img.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+      img.transitionLayout(
+          cmdBuf,
+          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+          VkImageSubresourceRange{
+              VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+    }
+  };
 
   isEncoding_ = false;
 
   ctx_.vf_.vkCmdEndRenderPass(cmdBuffer_);
+
+  for (ITexture* IGL_NULLABLE tex : dependencies_.textures) {
+    if (tex) {
+      transitionToColorAttachment(cmdBuffer_, tex);
+    }
+  }
+  dependencies_ = {};
 
   // set image layouts after the render pass
   const FramebufferDesc& desc = static_cast<const Framebuffer&>((*framebuffer_)).getDesc();

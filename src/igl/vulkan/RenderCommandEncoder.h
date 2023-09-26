@@ -27,6 +27,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
       VulkanContext& ctx,
       const RenderPassDesc& renderPass,
       const std::shared_ptr<IFramebuffer>& framebuffer,
+      const Dependencies& dependencies,
       Result* outResult);
 
   ~RenderCommandEncoder() override {
@@ -124,7 +125,10 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
 
   void initialize(const RenderPassDesc& renderPass,
                   const std::shared_ptr<IFramebuffer>& framebuffer,
+                  const Dependencies& dependencies,
                   Result* outResult);
+
+  Dependencies dependencies_ = {};
 };
 
 } // namespace vulkan
