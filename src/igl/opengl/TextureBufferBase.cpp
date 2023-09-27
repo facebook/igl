@@ -66,10 +66,11 @@ void TextureBufferBase::attachAsColor(uint32_t index, const AttachmentParams& pa
 void TextureBufferBase::attach(GLenum attachment,
                                const AttachmentParams& params,
                                GLuint textureID) {
-  GLenum target = target_ == GL_TEXTURE_CUBE_MAP ? GL_TEXTURE_CUBE_MAP_POSITIVE_X + params.face
-                                                 : target_;
+  const GLenum target =
+      target_ == GL_TEXTURE_CUBE_MAP ? GL_TEXTURE_CUBE_MAP_POSITIVE_X + params.face : target_;
   GLenum framebufferTarget = GL_FRAMEBUFFER;
-  if (getContext().deviceFeatures().hasFeature(DeviceFeatures::ReadWriteFramebuffer)) {
+  const auto& deviceFeatures = getContext().deviceFeatures();
+  if (deviceFeatures.hasFeature(DeviceFeatures::ReadWriteFramebuffer)) {
     framebufferTarget = params.read ? GL_READ_FRAMEBUFFER : GL_DRAW_FRAMEBUFFER;
   }
   const auto numSamples = getSamples();
@@ -89,6 +90,13 @@ void TextureBufferBase::attach(GLenum attachment,
                                                           0,
                                                           2);
     } else {
+      // `IMG_multisampled_render_to_texture` unlike `EXT_multisampled_render_to_texture`,
+      // only supports  GL_FRAMEBUFFER, not GL_DRAW/READ_FRAMEBUFFER
+      if ((framebufferTarget == GL_DRAW_FRAMEBUFFER || framebufferTarget == GL_READ_FRAMEBUFFER) &&
+          !deviceFeatures.hasExtension(Extensions::MultiSampleExt) &&
+          deviceFeatures.hasExtension(Extensions::MultiSampleImg)) {
+        framebufferTarget = GL_FRAMEBUFFER;
+      }
       getContext().framebufferTexture2DMultisample(
           framebufferTarget, attachment, target, textureID, params.mipLevel, getSamples());
     }
