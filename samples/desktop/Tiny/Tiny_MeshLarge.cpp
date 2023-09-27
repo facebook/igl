@@ -123,9 +123,12 @@
 
 #if IGL_WITH_IGLU
 #include <IGLU/imgui/Session.h>
+#endif // IGL_WITH_IGLU
+
+#if IGL_WITH_TEXTURE_LOADER
 #include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
 #include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
-#endif
+#endif // IGL_WITH_TEXTURE_LOADER
 
 namespace {
 
@@ -146,11 +149,11 @@ constexpr bool kEnableValidationLayers = true;
 std::string contentRootFolder;
 
 #if IGL_WITH_IGLU
-
 std::unique_ptr<iglu::imgui::Session> imguiSession_;
-
 igl::shell::InputDispatcher inputDispatcher_;
+#endif // IGL_WITH_IGLU
 
+#if IGL_WITH_TEXTURE_LOADER
 void loadKtxTexture(const igl::IDevice& device,
                     igl::ICommandQueue& commandQueue,
                     const std::string filename,
@@ -199,7 +202,7 @@ void loadKtxTexture(const igl::IDevice& device,
     }
   }
 }
-#endif // IGL_WITH_IGLU
+#endif // IGL_WITH_TEXTURE_LOADER
 
 const char* kCodeComputeTest = R"(
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -2251,7 +2254,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
     return;
   }
 
-#if IGL_WITH_IGLU
+#if IGL_WITH_TEXTURE_LOADER
   loadKtxTexture(*device_, *commandQueue_, fileNameKTX, tex, !kEnableCompression);
 #else
   auto texRef = gli::load_ktx(fileNameKTX);
@@ -2439,7 +2442,7 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
 
   if (kEnableCompression && img.channels == 4 &&
       std::filesystem::exists(img.compressedFileName.c_str())) {
-#if IGL_WITH_IGLU
+#if IGL_WITH_TEXTURE_LOADER
     loadKtxTexture(*device_, *commandQueue_, img.compressedFileName, tex, false);
 #else
     // Uploading the texture
