@@ -157,7 +157,7 @@ Result RenderPipelineState::create(const RenderPipelineDesc& desc) {
     if (blockIndex >= 0) {
       uniformBlockBindingMap_[blockIndex] = bindingIndex;
     } else {
-      IGL_LOG_ERROR("uniform block (%s) not found in shader.\n", blockName.toConstChar());
+      IGL_LOG_ERROR("Uniform block (%s) not found in shader.\n", blockName.toConstChar());
     }
   }
 
@@ -364,7 +364,14 @@ int RenderPipelineState::getIndexByName(const std::string& name, ShaderStage /*s
 
 int RenderPipelineState::getUniformBlockBindingPoint(const NameHandle& uniformBlockName) const {
   const int blockIndex = getIndexByName(uniformBlockName, ShaderStage::Fragment);
-  return uniformBlockBindingMap_.at(blockIndex);
+  auto it = uniformBlockBindingMap_.find(blockIndex);
+  if (it == uniformBlockBindingMap_.end()) {
+    IGL_LOG_ERROR("Uniform block (%s) with index (%d) not found in the block binding map.\n",
+                  uniformBlockName.toConstChar(),
+                  blockIndex);
+    return -1;
+  }
+  return it->second;
 }
 
 std::shared_ptr<IRenderPipelineReflection> RenderPipelineState::renderPipelineReflection() {
