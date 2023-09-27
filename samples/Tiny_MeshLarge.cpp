@@ -1080,6 +1080,9 @@ void createOffscreenFramebuffer() {
 void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
   LVK_PROFILER_FUNCTION();
 
+  if (!width_ && !height_)
+    return;
+
   fbMain_.color[0].texture = nativeDrawable;
 
   const float fov = float(45.0f * (M_PI / 180.0f));
@@ -1608,7 +1611,7 @@ lvk::TextureHandle createTexture(const LoadedImage& img) {
     // uploading the texture
     gliTex2d = gli::load_ktx(img.compressedFileName.c_str());
     if (gliTex2d.empty()) {
-      printf("Failed to load %s\n", img.compressedFileName.c_str());
+      LLOGW("Failed to load %s\n", img.compressedFileName.c_str());
       assert(0);
     }
     initialData = gliTex2d.data();
@@ -1701,6 +1704,8 @@ int main(int argc, char* argv[]) {
   glfwSetFramebufferSizeCallback(window_, [](GLFWwindow*, int width, int height) {
     width_ = width;
     height_ = height;
+    if (!width || !height)
+      return;
     ctx_->recreateSwapchain(width, height);
     createOffscreenFramebuffer();
   });
@@ -1708,8 +1713,10 @@ int main(int argc, char* argv[]) {
   glfwSetCursorPosCallback(window_, [](auto* window, double x, double y) {
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
-    mousePos_ = vec2(x / width, 1.0f - y / height);
-    ImGui::GetIO().MousePos = ImVec2(x, y);
+    if (width && height) {
+      mousePos_ = vec2(x / width, 1.0f - y / height);
+      ImGui::GetIO().MousePos = ImVec2(x, y);
+    }
   });
 
   glfwSetMouseButtonCallback(window_, [](auto* window, int button, int action, int mods) {
@@ -1813,6 +1820,18 @@ int main(int argc, char* argv[]) {
 
   // Main loop
   while (!glfwWindowShouldClose(window_)) {
+    glfwPollEvents();
+    processLoadedMaterials();
+
+    const double newTime = glfwGetTime();
+    const double delta = newTime - prevTime;
+    prevTime = newTime;
+
+    if (!width_ || !height_)
+      continue;
+
+    fps_.tick(delta);
+
     {
       fbMain_.color[0].texture = ctx_->getCurrentSwapchainTexture();
       imgui_->beginFrame(fbMain_);
@@ -1863,14 +1882,8 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    processLoadedMaterials();
-    const double newTime = glfwGetTime();
-    const double delta = newTime - prevTime;
-    fps_.tick(delta);
     positioner_.update(delta, mousePos_, mousePressed_);
-    prevTime = newTime;
     render(ctx_->getCurrentSwapchainTexture(), frameIndex);
-    glfwPollEvents();
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
   }
 
