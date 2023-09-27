@@ -180,19 +180,30 @@ void lvk::destroy(lvk::IContext* ctx, lvk::TextureHandle handle) {
 
 // Logs GLSL shaders with line numbers annotation
 void lvk::logShaderSource(const char* text) {
-  uint32_t line = 1;
-
-  LLOGL("\n(%3u) ", line);
+  uint32_t line = 0;
+  uint32_t numChars = 0;
+  const char* lineStart = text;
 
   while (text && *text) {
     if (*text == '\n') {
-      LLOGL("\n(%3u) ", ++line);
+      if (numChars) {
+        LLOGL("(%3u) %.*s", ++line, numChars, lineStart);
+      } else {
+        LLOGL("(%3u)", ++line);
+      }
+      numChars = 0;
+      lineStart = text + 1;
     } else if (*text == '\r') {
       // skip it to support Windows/UNIX EOLs
+      numChars = 0;
+      lineStart = text + 1;
     } else {
-      LLOGL("%c", *text);
+      numChars++;
     }
     text++;
+  }
+  if (numChars) {
+    LLOGL("(%3u) %.*s", ++line, numChars, lineStart);
   }
   LLOGL("\n");
 }
