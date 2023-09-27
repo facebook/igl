@@ -663,6 +663,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
   case VK_PIPELINE_STAGE_TRANSFER_BIT:
   case VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT:
   case VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT:
+  case VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT:
     break;
   default:
     IGL_ASSERT_MSG(
@@ -679,9 +680,11 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
     srcAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
   }
   if (srcStageMask & VK_PIPELINE_STAGE_TRANSFER_BIT) {
+    srcAccessMask |= VK_ACCESS_TRANSFER_READ_BIT;
     srcAccessMask |= VK_ACCESS_TRANSFER_WRITE_BIT;
   }
   if (srcStageMask & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) {
+    srcAccessMask |= VK_ACCESS_SHADER_READ_BIT;
     srcAccessMask |= VK_ACCESS_SHADER_WRITE_BIT;
   }
   if (srcStageMask & VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
