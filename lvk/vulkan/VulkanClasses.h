@@ -505,6 +505,8 @@ class VulkanContext final : public IContext {
   Format getSwapchainFormat() const override;
   uint32_t getNumSwapchainImages() const override;
   void recreateSwapchain(int newWidth, int newHeight) override;
+  
+  uint32_t getFramebufferMSAABitMask() const override;
 
   ///////////////
 
