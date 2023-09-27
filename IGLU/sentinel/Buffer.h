@@ -19,7 +19,7 @@ namespace iglu::sentinel {
  */
 class Buffer : public igl::IBuffer {
  public:
-  explicit Buffer(bool shouldAssert = true);
+  explicit Buffer(bool shouldAssert = true, size_t size = 0);
 
   [[nodiscard]] igl::Result upload(const void* IGL_NULLABLE data,
                                    const igl::BufferRange& range) final;
@@ -32,6 +32,7 @@ class Buffer : public igl::IBuffer {
   [[nodiscard]] uint64_t gpuAddress(size_t offset = 0) const final;
 
  private:
+  size_t size_;
   [[maybe_unused]] bool shouldAssert_;
 };
 

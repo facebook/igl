@@ -12,7 +12,7 @@
 
 namespace iglu::sentinel {
 
-Buffer::Buffer(bool shouldAssert) : shouldAssert_(shouldAssert) {}
+Buffer::Buffer(bool shouldAssert, size_t size) : size_(size), shouldAssert_(shouldAssert) {}
 
 igl::Result Buffer::upload(const void* IGL_NULLABLE /*data*/, const igl::BufferRange& /*range*/) {
   IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
@@ -46,7 +46,7 @@ igl::ResourceStorage Buffer::storage() const noexcept {
 
 size_t Buffer::getSizeInBytes() const {
   IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
-  return 0;
+  return size_;
 }
 
 uint64_t Buffer::gpuAddress(size_t /*offset*/) const {
