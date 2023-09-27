@@ -117,11 +117,20 @@ void logSource(const int count, const char** string, const int* length) {
 #if IGL_DEBUG
 #define GLCHECK_ERRORS()                      \
   do {                                        \
-    if (alwaysCheckError_)                    \
+    if (alwaysCheckError_) {                  \
       checkForErrors(__FUNCTION__, __LINE__); \
+    }                                         \
   } while (false)
+#define GL_ASSERT_ERROR(condition, callerName, lineNum, errorCode) \
+  IGL_ASSERT_MSG((condition),                                      \
+                 "[IGL] OpenGL error [%s:%zu] 0x%04X: %s\n",       \
+                 callerName,                                       \
+                 lineNum,                                          \
+                 errorCode,                                        \
+                 GL_ERROR_TO_STRING(errorCode))
 #else
-#define GLCHECK_ERRORS()
+#define GLCHECK_ERRORS() static_cast<void>(0)
+#define GL_ASSERT_ERROR(condition, callerName, lineNum, errorCode) static_cast<void>(0)
 #endif // IGL_DEBUG
 
 #define RESULT_CASE(res) \
@@ -1511,7 +1520,21 @@ void IContext::framebufferTexture2DMultisample(GLenum target,
          texture,
          level,
          samples);
-  GLCHECK_ERRORS();
+
+  // Certain drivers (I am looking at you Adreno) misbehave according to spec,
+  // where GL_DRAW_FRAMEBUFFER is perfectly valid framebuffer target, but it only recognizes
+  // GL_FRAMEBUFFER meaning that it behaves as if it is `IMG_multisampled_render_to_texture` not
+  // `EXT_multisampled_render_to_texture`.
+  auto error = getError();
+  if (error == GL_INVALID_ENUM &&
+      (target == GL_DRAW_FRAMEBUFFER || target == GL_READ_FRAMEBUFFER) &&
+      deviceFeatureSet_.hasExtension(Extensions::MultiSampleExt)) {
+    // Repeat again, now using explicitly GL_FRAMEBUFFER not GL_DRAW/GL_READ.
+    framebufferTexture2DMultisample(GL_FRAMEBUFFER, attachment, textarget, texture, level, samples);
+  } else if (alwaysCheckError_) {
+    lastError_ = error;
+    GL_ASSERT_ERROR(lastError_ == GL_NO_ERROR, __FUNCTION__, __LINE__, error);
+  }
 }
 
 void IContext::framebufferTextureLayer(GLenum target,
@@ -3232,12 +3255,7 @@ GLenum IContext::checkForErrors(IGL_MAYBE_UNUSED const char* callerName,
                                 IGL_MAYBE_UNUSED size_t lineNum) const {
   lastError_ = getError();
 
-  IGL_ASSERT_MSG(lastError_ == GL_NO_ERROR,
-                 "[IGL] OpenGL error [%s:%zu] 0x%04X: %s\n",
-                 callerName,
-                 lineNum,
-                 lastError_,
-                 GL_ERROR_TO_STRING(lastError_));
+  GL_ASSERT_ERROR(lastError_ == GL_NO_ERROR, callerName, lineNum, lastError_);
 
   return lastError_;
 }
