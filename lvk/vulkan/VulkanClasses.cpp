@@ -3899,6 +3899,10 @@ lvk::Format lvk::VulkanContext::getSwapchainFormat() const {
   return vkFormatToFormat(swapchain_->getSurfaceFormat().format);
 }
 
+lvk::ColorSpace lvk::VulkanContext::getSwapChainColorSpace() const {
+  return config_.swapChainColorSpace;
+}
+
 uint32_t lvk::VulkanContext::getNumSwapchainImages() const {
   return hasSwapchain() ? swapchain_->getNumSwapchainImages() : 0;
 }

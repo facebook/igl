@@ -1,4 +1,4 @@
-﻿/*
+/*
 * LightweightVK
 *
 * This source code is licensed under the MIT license found in the
@@ -16,9 +16,13 @@ class ImGuiRenderer {
  public:
   explicit ImGuiRenderer(lvk::IContext& device, const char* defaultFontTTF = nullptr, float fontSizePixels = 24.0f);
   ~ImGuiRenderer();
+  
+  void updateFont(const char* defaultFontTTF, float fontSizePixels);
 
   void beginFrame(const lvk::Framebuffer& desc);
   void endFrame(lvk::ICommandBuffer& cmdBuffer);
+  
+  void setDisplayScale(float displayScale);
 
  private:
   lvk::Holder<lvk::RenderPipelineHandle> createNewPipelineState(const lvk::Framebuffer& desc);
@@ -29,6 +33,8 @@ class ImGuiRenderer {
   lvk::Holder<lvk::ShaderModuleHandle> frag_;
   lvk::Holder<lvk::RenderPipelineHandle> pipeline_;
   lvk::Holder<lvk::TextureHandle> fontTexture_;
+  float displayScale_ = 1.0f;
+  bool nonLinearColorSpace_ = false;
 
   uint32_t frameIndex_ = 0;
 

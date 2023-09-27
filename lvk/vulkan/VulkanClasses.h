@@ -503,6 +503,7 @@ class VulkanContext final : public IContext {
 
   TextureHandle getCurrentSwapchainTexture() override;
   Format getSwapchainFormat() const override;
+  ColorSpace getSwapChainColorSpace() const override;
   uint32_t getNumSwapchainImages() const override;
   void recreateSwapchain(int newWidth, int newHeight) override;
   
