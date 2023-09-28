@@ -53,9 +53,6 @@ https://github.com/nigels-com/glew/blob/master/LICENSE.txt
 glfw
 https://github.com/glfw/glfw/blob/master/LICENSE.md
 
-gli
-https://github.com/g-truc/gli#readme
-
 glm
 https://github.com/g-truc/glm
 
@@ -70,6 +67,9 @@ https://github.com/ocornut/imgui/blob/master/LICENSE.txt
 
 ios-cmake
 https://github.com/leetal/ios-cmake/blob/master/LICENSE.md
+
+KTX-Software
+https://github.com/KhronosGroup/KTX-Software/blob/main/LICENSE.md
 
 Meshoptimizer
 https://github.com/zeux/meshoptimizer/blob/master/LICENSE.md

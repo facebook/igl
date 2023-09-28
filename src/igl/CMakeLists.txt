@@ -22,12 +22,10 @@ add_library(IGLLibrary ${SRC_FILES} ${HEADER_FILES})
 target_include_directories(IGLLibrary PUBLIC "${IGL_ROOT_DIR}/src")
 target_include_directories(IGLLibrary PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/glm")
 
-add_subdirectory(${IGL_ROOT_DIR}/third-party/deps/src/fmt "fmt")
 target_link_libraries(IGLLibrary PUBLIC fmt)
 
 igl_set_cxxstd(IGLLibrary 17)
 igl_set_folder(IGLLibrary "IGL")
-igl_set_folder(fmt "third-party")
 
 if(IGL_WITH_OPENGL OR IGL_WITH_OPENGLES OR IGL_WITH_WEBGL)
   add_subdirectory(opengl)

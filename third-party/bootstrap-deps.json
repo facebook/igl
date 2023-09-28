@@ -68,14 +68,6 @@
      }
 },
 {
-    "name": "gli",
-    "source": {
-        "type": "git",
-        "url": "https://github.com/g-truc/gli.git",
-        "revision": "779b99ac6656e4d30c3b24e96e0136a59649a869"
-    }
-},
-{
     "name": "glm",
     "source": {
         "type": "git",
@@ -161,6 +153,14 @@
         "type": "archive",
         "url": "https://github.com/facebook/igl/releases/download/SparkSL/SparkSL_Compiler-v0.0.1.zip",
         "sha1": "d636517b5fd3103f7aeca2ed6d4c9ad3e2e97964"
+    }
+},
+{
+    "name": "ktx-software",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/KhronosGroup/KTX-Software.git",
+        "revision": "170e75893e3d232a2c4f241afe199256f8abb6f9"
     }
 }
 ]
