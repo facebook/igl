@@ -1,4 +1,4 @@
-﻿/*
+/*
 * LightweightVK
 *
 * This source code is licensed under the MIT license found in the
@@ -54,17 +54,26 @@ layout (location = 2) in flat uint in_textureId;
 
 layout (location = 0) out vec4 out_color;
 
+layout (constant_id = 0) const bool kNonLinearColorSpace = false;
+
 void main() {
-  out_color = in_color * texture(sampler2D(kTextures2D[in_textureId], kSamplers[0]), in_uv);
+  vec4 c = in_color * texture(sampler2D(kTextures2D[in_textureId], kSamplers[0]), in_uv);
+  // Render UI in linear color space to sRGB framebuffer.
+  out_color = kNonLinearColorSpace ? vec4(pow(c.rgb, vec3(2.2)), c.a) : c;
 })";
 
 namespace lvk {
 
 lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(const lvk::Framebuffer& desc) {
+  nonLinearColorSpace_ = (ctx_.getSwapChainColorSpace() == ColorSpace_SRGB_NONLINEAR);
   return ctx_.createRenderPipeline(
       {
           .smVert = vert_,
           .smFrag = frag_,
+          .specInfo = {
+            .entries = {{.constantId = 0, .size = sizeof(bool)}},
+            .data = &nonLinearColorSpace_,
+            .dataSize = sizeof(nonLinearColorSpace_)},
           .color = {{
               .format = ctx_.getFormat(desc.color[0].texture),
               .blendEnabled = true,
@@ -80,6 +89,23 @@ lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(con
 ImGuiRenderer::ImGuiRenderer(lvk::IContext& device, const char* defaultFontTTF, float fontSizePixels) : ctx_(device) {
   ImGui::CreateContext();
 
+  ImGuiIO& io = ImGui::GetIO();
+  io.BackendRendererName = "imgui-lvk";
+  io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
+
+  updateFont(defaultFontTTF, fontSizePixels);
+  
+  vert_ = ctx_.createShaderModule({codeVS, Stage_Vert, "Shader Module: imgui (vert)"});
+  frag_ = ctx_.createShaderModule({codeFS, Stage_Frag, "Shader Module: imgui (frag)"});
+}
+
+ImGuiRenderer::~ImGuiRenderer() {
+  ImGuiIO& io = ImGui::GetIO();
+  io.Fonts->TexID = nullptr;
+  ImGui::DestroyContext();
+}
+
+void ImGuiRenderer::updateFont(const char* defaultFontTTF, float fontSizePixels) {
   ImGuiIO& io = ImGui::GetIO();
 
   ImFontConfig cfg = ImFontConfig();
@@ -100,35 +126,22 @@ ImGuiRenderer::ImGuiRenderer(lvk::IContext& device, const char* defaultFontTTF, 
   unsigned char* pixels;
   int width, height;
   io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-  fontTexture_ = device.createTexture({.type = lvk::TextureType_2D,
-                                       .format = lvk::Format_RGBA_UN8,
-                                       .dimensions = {(uint32_t)width, (uint32_t)height},
-                                       .usage = lvk::TextureUsageBits_Sampled,
-                                       .data = pixels},
-                                      nullptr);
-  io.BackendRendererName = "imgui-lvk";
+  fontTexture_ = ctx_.createTexture({.type = lvk::TextureType_2D,
+                                     .format = lvk::Format_RGBA_UN8,
+                                     .dimensions = {(uint32_t)width, (uint32_t)height},
+                                     .usage = lvk::TextureUsageBits_Sampled,
+                                     .data = pixels},
+                                    nullptr);
   io.Fonts->TexID = ImTextureID(fontTexture_.indexAsVoid());
   io.FontDefault = font;
-  io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
-
-  vert_ = ctx_.createShaderModule({codeVS, Stage_Vert, "Shader Module: imgui (vert)"});
-  frag_ = ctx_.createShaderModule({codeFS, Stage_Frag, "Shader Module: imgui (frag)"});
-}
-
-ImGuiRenderer::~ImGuiRenderer() {
-  ImGuiIO& io = ImGui::GetIO();
-  io.Fonts->TexID = nullptr;
-  ImGui::DestroyContext();
 }
 
 void ImGuiRenderer::beginFrame(const lvk::Framebuffer& desc) {
-  const float displayScale = 1.0f;
-
   const lvk::Dimensions dim = ctx_.getDimensions(desc.color[0].texture);
 
   ImGuiIO& io = ImGui::GetIO();
-  io.DisplaySize = ImVec2(dim.width / displayScale, dim.height / displayScale);
-  io.DisplayFramebufferScale = ImVec2(displayScale, displayScale);
+  io.DisplaySize = ImVec2(dim.width / displayScale_, dim.height / displayScale_);
+  io.DisplayFramebufferScale = ImVec2(displayScale_, displayScale_);
   io.IniFilename = nullptr;
 
   if (pipeline_.empty()) {
@@ -237,6 +250,10 @@ void ImGuiRenderer::endFrame(lvk::ICommandBuffer& cmdBuffer) {
     idxOffset += cmdList->IdxBuffer.Size;
     vtxOffset += cmdList->VtxBuffer.Size;
   }
+}
+
+void ImGuiRenderer::setDisplayScale(float displayScale) {
+  displayScale_ = displayScale;
 }
 
 } // namespace lvk
