@@ -77,8 +77,10 @@ igl::ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace);
 VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorage resourceStorage);
 VkCompareOp compareFunctionToVkCompareOp(igl::CompareFunction func);
 VkSampleCountFlagBits getVulkanSampleCountFlags(size_t numSamples);
-VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool isBGR = false);
+VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool isBGR);
 uint32_t getVkLayer(igl::TextureType type, uint32_t face, uint32_t layer);
 TextureRangeDesc atVkLayer(TextureType type, const TextureRangeDesc& range, uint32_t vkLayer);
+void transitionToColorAttachment(VkCommandBuffer cmdBuf, ITexture* colorTex);
+void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture);
 
 } // namespace igl::vulkan

@@ -16,7 +16,10 @@
 #include <windows.h>
 #endif
 
+#include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanHelpers.h>
+#include <igl/vulkan/VulkanImage.h>
+#include <igl/vulkan/VulkanTexture.h>
 #include <igl/vulkan/util/TextureFormat.h>
 
 namespace igl {
@@ -368,6 +371,59 @@ uint32_t getVkLayer(TextureType type, uint32_t face, uint32_t layer) {
 
 TextureRangeDesc atVkLayer(TextureType type, const TextureRangeDesc& range, uint32_t vkLayer) {
   return type == TextureType::Cube ? range.atFace(vkLayer) : range.atLayer(vkLayer);
+}
+
+void transitionToColorAttachment(VkCommandBuffer cmdBuf, ITexture* colorTex) {
+  if (!colorTex) {
+    return;
+  }
+
+  const auto& vkTex = static_cast<Texture&>(*colorTex);
+  const auto& img = vkTex.getVulkanTexture().getVulkanImage();
+  if (IGL_UNEXPECTED(img.isDepthFormat_ || img.isStencilFormat_)) {
+    IGL_ASSERT_MSG(false, "Color attachments cannot have depth/stencil formats");
+    IGL_LOG_ERROR("Color attachments cannot have depth/stencil formats");
+    return;
+  }
+  IGL_ASSERT_MSG(img.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
+  if (!IGL_VERIFY((img.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0)) {
+    IGL_ASSERT_MSG(false, "Did you forget to specify TextureUsageBit::Attachment usage bit?");
+    IGL_LOG_ERROR("Did you forget to specify TextureUsageBit::Attachment usage bit?");
+  }
+  if (img.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+    // transition to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    img.transitionLayout(
+        cmdBuf,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for all subsequent fragment/compute
+                                                  // shaders
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        VkImageSubresourceRange{
+            VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+  }
+}
+
+void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture) {
+  if (!texture) {
+    return;
+  }
+
+  const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*texture);
+  const vulkan::VulkanImage& img = tex.getVulkanTexture().getVulkanImage();
+
+  if (img.usageFlags_ & VK_IMAGE_USAGE_SAMPLED_BIT) {
+    // transition to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    img.transitionLayout(
+        cmdBuf,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for all subsequent fragment/compute
+                                                  // shaders
+        VkImageSubresourceRange{
+            VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+  }
 }
 
 } // namespace vulkan

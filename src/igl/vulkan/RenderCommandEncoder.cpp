@@ -310,53 +310,14 @@ void RenderCommandEncoder::endEncoding() {
     return;
   }
 
-  auto transitionToShaderReadOnly = [](VkCommandBuffer cmdBuf, ITexture* texture) {
-    if (!texture) {
-      return;
-    }
-    const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*texture);
-    const vulkan::VulkanImage& img = tex.getVulkanTexture().getVulkanImage();
-    // this must match the final layout of the render pass
-    img.imageLayout_ = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    if (img.usageFlags_ & VK_IMAGE_USAGE_SAMPLED_BIT) {
-      // transition sampled images to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-      img.transitionLayout(
-          cmdBuf,
-          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-              VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for all subsequent fragment/compute
-                                                    // shaders
-          VkImageSubresourceRange{
-              VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
-    }
-  };
-  auto transitionToColorAttachment = [](VkCommandBuffer cmdBuf, ITexture* texture) {
-    if (!texture) {
-      return;
-    }
-    const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*texture);
-    const vulkan::VulkanImage& img = tex.getVulkanTexture().getVulkanImage();
-    img.imageLayout_ = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    if (img.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
-      img.transitionLayout(
-          cmdBuf,
-          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-          VkImageSubresourceRange{
-              VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
-    }
-  };
-
   isEncoding_ = false;
 
   ctx_.vf_.vkCmdEndRenderPass(cmdBuffer_);
 
   for (ITexture* IGL_NULLABLE tex : dependencies_.textures) {
-    if (tex) {
-      transitionToColorAttachment(cmdBuffer_, tex);
-    }
+    // TODO: at some point we might want to know in which layout a dependent texture wants to be. We
+    // can implement that by adding a notion of image layouts to IGL.
+    transitionToColorAttachment(cmdBuffer_, tex);
   }
   dependencies_ = {};
 

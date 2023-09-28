@@ -29,60 +29,6 @@ std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncod
   return std::make_unique<ComputeCommandEncoder>(shared_from_this(), ctx_);
 }
 
-namespace {
-
-void transitionToColorAttachment(VkCommandBuffer buffer, ITexture* colorTex) {
-  // We really shouldn't get a null here, but just in case.
-  if (!IGL_VERIFY(colorTex)) {
-    return;
-  }
-
-  const auto& vkTex = static_cast<Texture&>(*colorTex);
-  const auto& colorImg = vkTex.getVulkanTexture().getVulkanImage();
-  if (IGL_UNEXPECTED(colorImg.isDepthFormat_ || colorImg.isStencilFormat_)) {
-    IGL_ASSERT_MSG(false, "Color attachments cannot have depth/stencil formats");
-    IGL_LOG_ERROR("Color attachments cannot have depth/stencil formats");
-    return;
-  }
-  IGL_ASSERT_MSG(colorImg.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
-  if (!IGL_VERIFY((colorImg.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0)) {
-    IGL_ASSERT_MSG(false, "Did you forget to specify TextureUsageBit::Attachment usage bit?");
-    IGL_LOG_ERROR("Did you forget to specify TextureUsageBit::Attachment usage bit?");
-  }
-  colorImg.transitionLayout(
-      buffer,
-      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for all subsequent fragment/compute shaders
-      VkImageSubresourceRange{
-          VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
-}
-
-void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture) {
-  // We really shouldn't get a null here, but just in case.
-  if (!IGL_VERIFY(texture)) {
-    return;
-  }
-
-  const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*texture);
-  const vulkan::VulkanImage& img = tex.getVulkanTexture().getVulkanImage();
-  // this must match the final layout of the render pass
-  img.imageLayout_ = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-  if (img.usageFlags_ & VK_IMAGE_USAGE_SAMPLED_BIT) {
-    // transition sampled images to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    img.transitionLayout(
-        cmdBuf,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, // wait for all subsequent fragment shaders
-        VkImageSubresourceRange{
-            VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
-  }
-}
-
-} // namespace
-
 std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder(
     const RenderPassDesc& renderPass,
     std::shared_ptr<IFramebuffer> framebuffer,
