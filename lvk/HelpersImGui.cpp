@@ -65,13 +65,13 @@ void main() {
 namespace lvk {
 
 lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(const lvk::Framebuffer& desc) {
-  nonLinearColorSpace_ = (ctx_.getSwapChainColorSpace() == ColorSpace_SRGB_NONLINEAR);
+  nonLinearColorSpace_ = ctx_.getSwapChainColorSpace() == ColorSpace_SRGB_NONLINEAR ? 1u : 0u;
   return ctx_.createRenderPipeline(
       {
           .smVert = vert_,
           .smFrag = frag_,
           .specInfo = {
-            .entries = {{.constantId = 0, .size = sizeof(bool)}},
+            .entries = {{.constantId = 0, .size = sizeof(nonLinearColorSpace_)}},
             .data = &nonLinearColorSpace_,
             .dataSize = sizeof(nonLinearColorSpace_)},
           .color = {{
