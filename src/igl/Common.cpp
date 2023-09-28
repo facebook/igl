@@ -26,7 +26,7 @@ std::string BackendTypeToString(BackendType backendType) {
   // @fb-only
     // @fb-only
   }
-  IGL_UNREACHABLE_RETURN(std::string());
+  IGL_UNREACHABLE_RETURN(std::string())
 }
 
 } // namespace igl

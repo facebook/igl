@@ -105,7 +105,7 @@ size_t VertexInputStateDesc::sizeForVertexAttributeFormat(VertexAttributeFormat 
   case VertexAttributeFormat::Int_2_10_10_10_REV:
     return sizeof(uint32_t);
   }
-  IGL_UNREACHABLE_RETURN(0);
+  IGL_UNREACHABLE_RETURN(0)
 }
 
 bool VertexInputBinding::operator!=(const VertexInputBinding& other) const {

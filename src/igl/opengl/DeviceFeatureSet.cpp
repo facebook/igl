@@ -202,7 +202,7 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
   case Extensions::VertexAttribDivisor:
     return hasESExtension(*this, "GL_NV_instanced_arrays");
   }
-  IGL_UNREACHABLE_RETURN(false);
+  IGL_UNREACHABLE_RETURN(false)
 }
 
 bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {

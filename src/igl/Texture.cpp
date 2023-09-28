@@ -336,7 +336,7 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
 #endif
     STENCIL(S_UInt8, 1, 1)
   }
-  IGL_UNREACHABLE_RETURN(TextureFormatProperties{});
+  IGL_UNREACHABLE_RETURN(TextureFormatProperties{})
 }
 
 size_t TextureFormatProperties::getRows(TextureRangeDesc range) const noexcept {

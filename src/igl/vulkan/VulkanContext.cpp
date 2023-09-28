@@ -161,7 +161,7 @@ VkQueueFlagBits getQueueTypeFlag(igl::CommandQueueType type) {
   case igl::CommandQueueType::MemoryTransfer:
     return VK_QUEUE_TRANSFER_BIT;
   }
-  IGL_UNREACHABLE_RETURN(VK_QUEUE_GRAPHICS_BIT);
+  IGL_UNREACHABLE_RETURN(VK_QUEUE_GRAPHICS_BIT)
 }
 
 bool validateImageLimits(VkImageType imageType,

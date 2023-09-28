@@ -44,7 +44,7 @@ GLenum RenderPipelineState::convertBlendOp(BlendOp value) {
   case BlendOp::Max:
     return GL_MAX;
   }
-  IGL_UNREACHABLE_RETURN(GL_FUNC_ADD);
+  IGL_UNREACHABLE_RETURN(GL_FUNC_ADD)
 }
 
 GLenum RenderPipelineState::convertBlendFactor(BlendFactor value) {
@@ -92,7 +92,7 @@ GLenum RenderPipelineState::convertBlendFactor(BlendFactor value) {
     logBlendFactorError(_IGL_TO_STRING_WRAPPER(GL_ONE_MINUS_SRC1_ALPHA));
     return GL_ONE; // default for unsupported values
   }
-  IGL_UNREACHABLE_RETURN(GL_ONE);
+  IGL_UNREACHABLE_RETURN(GL_ONE)
 }
 
 Result RenderPipelineState::create(const RenderPipelineDesc& desc) {

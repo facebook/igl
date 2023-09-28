@@ -41,7 +41,7 @@ GLenum DepthStencilState::convertCompareFunction(igl::CompareFunction value) {
   case CompareFunction::AlwaysPass:
     return GL_ALWAYS;
   }
-  IGL_UNREACHABLE_RETURN(GL_ALWAYS);
+  IGL_UNREACHABLE_RETURN(GL_ALWAYS)
 }
 
 void DepthStencilState::setStencilReferenceValue(uint32_t value) {
@@ -72,7 +72,7 @@ GLenum DepthStencilState::convertStencilOperation(igl::StencilOperation value) {
   case StencilOperation::DecrementWrap:
     return GL_DECR_WRAP;
   }
-  IGL_UNREACHABLE_RETURN(GL_ZERO);
+  IGL_UNREACHABLE_RETURN(GL_ZERO)
 }
 
 void DepthStencilState::bind() {

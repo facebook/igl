@@ -231,7 +231,7 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
   case TextureFormat::S_UInt8:
     return VK_FORMAT_S8_UINT;
   }
-  IGL_UNREACHABLE_RETURN(VK_FORMAT_UNDEFINED);
+  IGL_UNREACHABLE_RETURN(VK_FORMAT_UNDEFINED)
 }
 
 igl::ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace) {

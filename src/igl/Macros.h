@@ -337,7 +337,7 @@
 /// MARK: Visual Studio compatibility
 
 // not all control paths return a value
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__GNUC__)
 #define IGL_UNREACHABLE_RETURN(value) \
   IGL_ASSERT_NOT_REACHED();           \
   return value;

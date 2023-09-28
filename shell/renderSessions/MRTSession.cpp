@@ -272,7 +272,7 @@ static std::unique_ptr<IShaderStages> createShaderStagesForBackend(const IDevice
         "",
         nullptr);
   }
-  IGL_UNREACHABLE_RETURN(nullptr);
+  IGL_UNREACHABLE_RETURN(nullptr)
 }
 
 static bool isDeviceCompatible(IDevice& device) noexcept {

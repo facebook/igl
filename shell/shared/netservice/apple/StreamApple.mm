@@ -113,7 +113,7 @@ Stream::Status StreamAdapterApple::status() const noexcept {
   case NSStreamStatusWriting:
     return Stream::Status::Writing;
   }
-  IGL_UNREACHABLE_RETURN(Stream::Status::Error);
+  IGL_UNREACHABLE_RETURN(Stream::Status::Error)
 }
 
 void StreamAdapterApple::close() noexcept {

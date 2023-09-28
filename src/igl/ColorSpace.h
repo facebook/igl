@@ -66,7 +66,7 @@ inline const char* IGL_NONNULL colorSpaceToString(ColorSpace colorSpace) {
     IGL_ENUM_TO_STRING(ColorSpace, DISPLAY_NATIVE_AMD)
   }
 
-  IGL_UNREACHABLE_RETURN("unknown color space");
+  IGL_UNREACHABLE_RETURN("unknown color space")
 }
 
 inline igl::TextureFormat colorSpaceToTextureFormat(igl::ColorSpace colorSpace,

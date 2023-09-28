@@ -300,7 +300,7 @@ constexpr int toGlType(IndexFormat format) {
   case IndexFormat::UInt32:
     return GL_UNSIGNED_INT;
   }
-  IGL_UNREACHABLE_RETURN(GL_UNSIGNED_INT);
+  IGL_UNREACHABLE_RETURN(GL_UNSIGNED_INT)
 }
 
 } // namespace
