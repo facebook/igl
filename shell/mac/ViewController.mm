@@ -252,10 +252,15 @@ using namespace igl;
     // vulkanView.wantsLayer =
     // YES; // Back the view with a layer created by the makeBackingLayer method.
 
-    igl::vulkan::VulkanContextConfig vulkanContextConfig{
-        true, // terminateOnValidationError
-        false // enhancedShaderDebugging
-    };
+    const auto properties =
+        igl::TextureFormatProperties::fromTextureFormat(shellParams_.defaultColorFramebufferFormat);
+
+    igl::vulkan::VulkanContextConfig vulkanContextConfig;
+    vulkanContextConfig.terminateOnValidationError = true;
+    vulkanContextConfig.enhancedShaderDebugging = false;
+    vulkanContextConfig.swapChainColorSpace = properties.isSRGB() ? igl::ColorSpace::SRGB_NONLINEAR
+                                                                  : igl::ColorSpace::SRGB_LINEAR;
+
     auto context =
         igl::vulkan::HWDevice::createContext(vulkanContextConfig, (__bridge void*)vulkanView);
     auto devices = igl::vulkan::HWDevice::queryDevices(
@@ -264,12 +269,7 @@ using namespace igl;
       devices = igl::vulkan::HWDevice::queryDevices(
           *context.get(), igl::HWDeviceQueryDesc(igl::HWDeviceType::IntegratedGpu), nullptr);
     }
-    auto device = igl::vulkan::HWDevice::create(
-        std::move(context),
-        devices[0],
-        0,
-        0,
-        !igl::isTextureFormatsRGB(shellParams_.defaultColorFramebufferFormat));
+    auto device = igl::vulkan::HWDevice::create(std::move(context), devices[0], 0, 0);
 
     shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(std::move(device));
     [vulkanView prepareVulkan:shellPlatform_];

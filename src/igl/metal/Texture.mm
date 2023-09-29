@@ -149,7 +149,7 @@ Result Texture::getBytes(const TextureRangeDesc& range, void* outData, size_t by
   igl::TextureFormat f = getFormat();
   TextureFormatProperties props = TextureFormatProperties::fromTextureFormat(f);
   auto bytesPerPixel = props.bytesPerBlock;
-  if (isTextureFormatBGR(f)) {
+  if (f == TextureFormat::BGRA_SRGB || f == TextureFormat::BGRA_UNorm8) {
     bgrToRgb(static_cast<unsigned char*>(outData), range.width, range.height, bytesPerPixel);
   }
   return Result(Result::Code::Ok);

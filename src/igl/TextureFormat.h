@@ -205,12 +205,4 @@ enum class TextureFormat : uint8_t {
                      // account for this!
   S_UInt8
 };
-
-constexpr bool isTextureFormatsRGB(TextureFormat textureFormat) {
-  return textureFormat == TextureFormat::RGBA_SRGB || textureFormat == TextureFormat::BGRA_SRGB;
-}
-
-constexpr bool isTextureFormatBGR(TextureFormat textureFormat) {
-  return textureFormat == TextureFormat::BGRA_SRGB || textureFormat == TextureFormat::BGRA_UNorm8;
-}
 } // namespace igl
