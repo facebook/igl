@@ -280,7 +280,7 @@ class DescriptorPoolsArena final {
       extinct_.push_back({pool_, lastSubmitHandle_});
     }
     // first, let's try to reuse the oldest extinct pool
-    if (!extinct_.empty()) {
+    if (extinct_.size() > 1) {
       const ExtinctDescriptorPool p = extinct_.front();
       if (ic.isRecycled(p.handle_)) {
         pool_ = p.pool_;
@@ -371,7 +371,6 @@ VulkanContext::~VulkanContext() {
   }
 
   dslCombinedImageSamplers_.reset(nullptr);
-  dslBuffersUniform_.reset(nullptr);
   dslBindless_.reset(nullptr);
 
   pipelineLayoutGraphics_.reset(nullptr);
@@ -387,7 +386,7 @@ VulkanContext::~VulkanContext() {
       vf_.vkDestroyDescriptorPool(device, dpBindless_, nullptr);
     }
     vf_.vkDestroyDescriptorPool(device, dpCombinedImageSamplers_, nullptr);
-    vf_.vkDestroyDescriptorPool(device, dpBuffersUniform_, nullptr);
+    arenaBuffersUniform_ = nullptr;
     arenaBuffersStorage_ = nullptr;
     vf_.vkDestroyPipelineCache(device, pipelineCache_, nullptr);
   }
@@ -821,55 +820,13 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     }
   }
 
-  // create default descriptor set layout for uniform buffers
-  {
-    // NOTE: we really want these arrays to be uninitialized
-    // @lint-ignore CLANGTIDY
-    VkDescriptorSetLayoutBinding bindings[IGL_UNIFORM_BLOCKS_BINDING_MAX];
-    // @lint-ignore CLANGTIDY
-    VkDescriptorBindingFlags bindingFlags[IGL_UNIFORM_BLOCKS_BINDING_MAX];
-
-    for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
-      bindings[i] = ivkGetDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
-      bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
-    }
-    dslBuffersUniform_ = std::make_unique<VulkanDescriptorSetLayout>(
-        vf_,
-        device,
-        VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
-        IGL_UNIFORM_BLOCKS_BINDING_MAX,
-        bindings,
-        bindingFlags,
-        "Descriptor Set Layout: VulkanContext::dslBuffersUniform_");
-  }
-
-  // create default descriptor pool for uniform buffers bindings
-  {
-    // TODO: make this more manageable (dynamic) once we migrate all apps to use descriptor sets
-    constexpr uint32_t kNumSets = 1024;
-
-    // @lint-ignore CLANGTIDY
-    VkDescriptorPoolSize poolSizes[IGL_UNIFORM_BLOCKS_BINDING_MAX];
-    for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
-      poolSizes[i] = VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                          kNumSets * IGL_UNIFORM_BLOCKS_BINDING_MAX};
-    }
-    VK_ASSERT_RETURN(ivkCreateDescriptorPool(&vf_,
-                                             device,
-                                             VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
-                                             kNumSets,
-                                             IGL_UNIFORM_BLOCKS_BINDING_MAX,
-                                             poolSizes,
-                                             &dpBuffersUniform_));
-    bufferUniformDSets_.dsets.resize(kNumSets);
-    for (size_t i = 0; i != kNumSets; i++) {
-      VK_ASSERT_RETURN(ivkAllocateDescriptorSet(&vf_,
-                                                device,
-                                                dpBuffersUniform_,
-                                                dslBuffersUniform_->getVkDescriptorSetLayout(),
-                                                &bufferUniformDSets_.dsets[i].ds));
-    }
-  }
+  // create descriptor set layout and descriptor pool for uniform buffers
+  arenaBuffersUniform_ = std::make_unique<DescriptorPoolsArena>(vf_,
+                                                                *immediate_,
+                                                                device,
+                                                                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                                                IGL_UNIFORM_BLOCKS_BINDING_MAX,
+                                                                "arenaBuffersUniform_");
 
   // create descriptor set layout and descriptor pool for storage buffers
   arenaBuffersStorage_ = std::make_unique<DescriptorPoolsArena>(vf_,
@@ -1012,7 +969,7 @@ void VulkanContext::updatePipelineLayouts() {
   // @lint-ignore CLANGTIDY
   const VkDescriptorSetLayout DSLs[] = {
       dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
-      dslBuffersUniform_->getVkDescriptorSetLayout(),
+      arenaBuffersUniform_->getVkDescriptorSetLayout(),
       arenaBuffersStorage_->getVkDescriptorSetLayout(),
       config_.enableDescriptorIndexing ? dslBindless_->getVkDescriptorSetLayout() : VK_NULL_HANDLE,
   };
@@ -1551,7 +1508,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
 void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
                                                  VkPipelineBindPoint bindPoint,
                                                  BindingsBuffers& data) const {
-  VkDescriptorSet dsetBufUniform = bufferUniformDSets_.acquireNext(*immediate_);
+  VkDescriptorSet dsetBufUniform = arenaBuffersUniform_->getNextDescriptorSet(*immediate_);
 
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
     VkDescriptorBufferInfo& bi = data.buffers[i];
@@ -1627,7 +1584,7 @@ void VulkanContext::markSubmit(const VulkanImmediateCommands::SubmitHandle& hand
     bindlessDSet_.handle = handle;
   }
   combinedImageSamplerDSets_.updateHandles(handle);
-  bufferUniformDSets_.updateHandles(handle);
+  arenaBuffersUniform_->markSubmit(handle);
   arenaBuffersStorage_->markSubmit(handle);
 }
 
