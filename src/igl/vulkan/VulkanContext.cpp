@@ -370,7 +370,6 @@ VulkanContext::~VulkanContext() {
     }
   }
 
-  dslCombinedImageSamplers_.reset(nullptr);
   dslBindless_.reset(nullptr);
 
   pipelineLayoutGraphics_.reset(nullptr);
@@ -385,7 +384,7 @@ VulkanContext::~VulkanContext() {
     if (dpBindless_ != VK_NULL_HANDLE) {
       vf_.vkDestroyDescriptorPool(device, dpBindless_, nullptr);
     }
-    vf_.vkDestroyDescriptorPool(device, dpCombinedImageSamplers_, nullptr);
+    arenaCombinedImageSamplers_ = nullptr;
     arenaBuffersUniform_ = nullptr;
     arenaBuffersStorage_ = nullptr;
     vf_.vkDestroyPipelineCache(device, pipelineCache_, nullptr);
@@ -768,57 +767,14 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                                               0.0f),
                                       "Sampler: default");
 
-  // create default descriptor set layout for texture bindings
-  {
-    // NOTE: we really want these arrays to be uninitialized
-    // @lint-ignore CLANGTIDY
-    VkDescriptorSetLayoutBinding bindings[IGL_TEXTURE_SAMPLERS_MAX];
-    // @lint-ignore CLANGTIDY
-    VkDescriptorBindingFlags bindingFlags[IGL_TEXTURE_SAMPLERS_MAX];
-    for (uint32_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
-      bindings[i] =
-          ivkGetDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1);
-      bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
-    }
-    dslCombinedImageSamplers_ = std::make_unique<VulkanDescriptorSetLayout>(
-        vf_,
-        device,
-        VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
-        IGL_TEXTURE_SAMPLERS_MAX,
-        bindings,
-        bindingFlags,
-        "Descriptor Set Layout: VulkanContext::dslCombinedImageSamplers_");
-  }
-
-  // create default descriptor pool for texture bindings
-  {
-    // TODO: make this more manageable (dynamic) once we migrate all apps to use descriptor sets
-    constexpr uint32_t kNumSets = 1024;
-
-    // @lint-ignore CLANGTIDY
-    VkDescriptorPoolSize poolSizes[IGL_TEXTURE_SAMPLERS_MAX];
-    for (uint32_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
-      poolSizes[i] = VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                          kNumSets * IGL_TEXTURE_SAMPLERS_MAX};
-    }
-    // create default descriptor pool and allocate descriptor sets
-    combinedImageSamplerDSets_.dsets.resize(kNumSets);
-    VK_ASSERT_RETURN(ivkCreateDescriptorPool(&vf_,
+  // create descriptor set layout and descriptor pool for combined image samplers
+  arenaCombinedImageSamplers_ =
+      std::make_unique<DescriptorPoolsArena>(vf_,
+                                             *immediate_,
                                              device,
-                                             VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
-                                             kNumSets,
+                                             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                              IGL_TEXTURE_SAMPLERS_MAX,
-                                             poolSizes,
-                                             &dpCombinedImageSamplers_));
-    for (uint32_t i = 0; i != kNumSets; i++) {
-      VK_ASSERT_RETURN(
-          ivkAllocateDescriptorSet(&vf_,
-                                   device,
-                                   dpCombinedImageSamplers_,
-                                   dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
-                                   &combinedImageSamplerDSets_.dsets[i].ds));
-    }
-  }
+                                             "arenaCombinedImageSamplers_");
 
   // create descriptor set layout and descriptor pool for uniform buffers
   arenaBuffersUniform_ = std::make_unique<DescriptorPoolsArena>(vf_,
@@ -968,7 +924,7 @@ void VulkanContext::updatePipelineLayouts() {
 
   // @lint-ignore CLANGTIDY
   const VkDescriptorSetLayout DSLs[] = {
-      dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
+      arenaCombinedImageSamplers_->getVkDescriptorSetLayout(),
       arenaBuffersUniform_->getVkDescriptorSetLayout(),
       arenaBuffersStorage_->getVkDescriptorSetLayout(),
       config_.enableDescriptorIndexing ? dslBindless_->getVkDescriptorSetLayout() : VK_NULL_HANDLE,
@@ -1458,7 +1414,7 @@ void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
 void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
                                            VkPipelineBindPoint bindPoint,
                                            const BindingsTextures& data) const {
-  VkDescriptorSet dset = combinedImageSamplerDSets_.acquireNext(*immediate_);
+  VkDescriptorSet dset = arenaCombinedImageSamplers_->getNextDescriptorSet(*immediate_);
 
   std::array<VkDescriptorImageInfo, IGL_TEXTURE_SAMPLERS_MAX> infoSampledImages{};
   uint32_t numImages = 0;
@@ -1583,7 +1539,7 @@ void VulkanContext::markSubmit(const VulkanImmediateCommands::SubmitHandle& hand
   if (config_.enableDescriptorIndexing) {
     bindlessDSet_.handle = handle;
   }
-  combinedImageSamplerDSets_.updateHandles(handle);
+  arenaCombinedImageSamplers_->markSubmit(handle);
   arenaBuffersUniform_->markSubmit(handle);
   arenaBuffersStorage_->markSubmit(handle);
 }

@@ -260,14 +260,14 @@ class VulkanContext final {
   std::unique_ptr<igl::vulkan::VulkanSwapchain> swapchain_;
   std::unique_ptr<igl::vulkan::VulkanImmediateCommands> immediate_;
   std::unique_ptr<igl::vulkan::VulkanStagingDevice> stagingDevice_;
-  // combined image sampler slots for the current drawcall
-  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslCombinedImageSamplers_;
+
+  std::unique_ptr<igl::vulkan::DescriptorPoolsArena> arenaCombinedImageSamplers_;
   std::unique_ptr<igl::vulkan::DescriptorPoolsArena> arenaBuffersUniform_;
   std::unique_ptr<igl::vulkan::DescriptorPoolsArena> arenaBuffersStorage_;
 
   std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBindless_; // everything
-  VkDescriptorPool dpCombinedImageSamplers_ = VK_NULL_HANDLE;
   VkDescriptorPool dpBindless_ = VK_NULL_HANDLE;
+
   struct DescriptorSet {
     VkDescriptorSet ds = VK_NULL_HANDLE;
     SubmitHandle handle =
@@ -295,7 +295,6 @@ class VulkanContext final {
   uint32_t currentMaxBindlessTextures_ = 8;
   uint32_t currentMaxBindlessSamplers_ = 8;
   mutable DescriptorSet bindlessDSet_;
-  mutable DescriptorSetArray combinedImageSamplerDSets_;
   std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutGraphics_;
   std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutCompute_;
   std::shared_ptr<igl::vulkan::VulkanBuffer> dummyUniformBuffer_;
