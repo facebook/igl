@@ -11,6 +11,9 @@
 
 namespace iglu::textureloader::stb::image {
 
+/**
+ * @brief ITextureLoaderFactory base class for loading textures with STB Image
+ */
 class TextureLoaderFactory : public ITextureLoaderFactory {
  protected:
   explicit TextureLoaderFactory(bool isFloatFormat = false) noexcept;

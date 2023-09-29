@@ -114,17 +114,6 @@ TextureLoaderFactory::TextureLoaderFactory(bool isFloatFormat) noexcept :
 
 bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
                                              igl::Result* IGL_NULLABLE outResult) const noexcept {
-  if (headerReader.data() == nullptr) {
-    igl::Result::setResult(
-        outResult, igl::Result::Code::ArgumentInvalid, "Reader's data is nullptr.");
-    return false;
-  }
-  if (headerReader.length() < headerLength()) {
-    igl::Result::setResult(
-        outResult, igl::Result::Code::ArgumentOutOfRange, "Not enough data for header.");
-    return false;
-  }
-
   if (!isIdentifierValid(headerReader)) {
     igl::Result::setResult(outResult, igl::Result::Code::InvalidOperation, "Incorrect identifier.");
     return false;
