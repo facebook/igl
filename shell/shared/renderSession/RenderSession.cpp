@@ -7,14 +7,11 @@
 
 #include <shell/shared/renderSession/RenderSession.h>
 
-#include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl::shell {
 RenderSession::RenderSession(std::shared_ptr<Platform> platform) :
   platform_(std::move(platform)), appParams_(std::make_unique<AppParams>()) {}
-
-RenderSession::~RenderSession() noexcept = default;
 
 void RenderSession::updateDisplayScale(float scale) noexcept {
   platform_->getDisplayContext().scale = scale;

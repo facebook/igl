@@ -7,22 +7,21 @@
 
 #pragma once
 
-#include <shell/shared/platform/Platform.h>
-
 #include <memory>
+#include <shell/shared/platform/Platform.h>
+#include <shell/shared/renderSession/AppParams.h>
 
 namespace igl {
 class ITexture;
 } // namespace igl
 
 namespace igl::shell {
-struct AppParams;
 struct ShellParams;
 
 class RenderSession {
  public:
   RenderSession(std::shared_ptr<Platform> platform);
-  virtual ~RenderSession() noexcept;
+  virtual ~RenderSession() noexcept = default;
 
   virtual void initialize() noexcept {}
   // NOLINTNEXTLINE(performance-unnecessary-value-param)
