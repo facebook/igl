@@ -35,7 +35,6 @@ struct Header {
   uint64_t sgdByteLength;
 
   [[nodiscard]] bool tagIsValid() const noexcept;
-  [[nodiscard]] igl::TextureFormatProperties formatProperties() const noexcept;
 };
 static_assert(sizeof(Header) == 13 * sizeof(uint32_t) + 2 * sizeof(uint64_t) + 12);
 

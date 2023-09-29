@@ -9,11 +9,19 @@
 
 #include <IGLU/texture_loader/ktx2/Header.h>
 #include <igl/IGLSafeC.h>
+#include <igl/vulkan/util/TextureFormat.h>
+#include <ktx.h>
 #include <numeric>
 #include <vector>
 
 namespace iglu::textureloader::ktx2 {
 namespace {
+
+struct KtxDeleter {
+  void operator()(void* p) const {
+    ktxTexture_Destroy(ktxTexture(p));
+  }
+};
 
 struct MipLevelData {
   const uint8_t* data = nullptr;
@@ -32,7 +40,7 @@ class TextureLoader : public ITextureLoader {
   TextureLoader(DataReader reader,
                 const igl::TextureRangeDesc& range,
                 igl::TextureFormat format,
-                std::vector<MipLevelData> mipLevelData) noexcept;
+                std::unique_ptr<ktxTexture2, KtxDeleter> texture) noexcept;
 
   [[nodiscard]] bool canUploadSourceData() const noexcept final;
   [[nodiscard]] bool shouldGenerateMipmaps() const noexcept final;
@@ -44,17 +52,15 @@ class TextureLoader : public ITextureLoader {
                                     uint32_t length,
                                     igl::Result* IGL_NULLABLE outResult) const noexcept final;
 
-  std::vector<MipLevelData> mipLevelData_;
+  std::unique_ptr<ktxTexture2, KtxDeleter> texture_;
   bool shouldGenerateMipmaps_ = false;
 };
 
 TextureLoader::TextureLoader(DataReader reader,
                              const igl::TextureRangeDesc& range,
                              igl::TextureFormat format,
-                             std::vector<MipLevelData> mipLevelData) noexcept :
-  Super(reader),
-  mipLevelData_(std::move(mipLevelData)),
-  shouldGenerateMipmaps_(range.numMipLevels == 0) {
+                             std::unique_ptr<ktxTexture2, KtxDeleter> texture) noexcept :
+  Super(reader), texture_(std::move(texture)), shouldGenerateMipmaps_(range.numMipLevels == 0) {
   auto& desc = mutableDescriptor();
   desc.format = format;
   desc.numMipLevels = range.numMipLevels;
@@ -86,9 +92,16 @@ void TextureLoader::uploadInternal(igl::ITexture& texture,
                                    igl::Result* IGL_NULLABLE outResult) const noexcept {
   const auto& desc = descriptor();
 
-  for (size_t mipLevel = 0; mipLevel < desc.numMipLevels && mipLevel < mipLevelData_.size();
+  size_t offset;
+  for (uint32_t mipLevel = 0; mipLevel < desc.numMipLevels && mipLevel < texture_->numLevels;
        ++mipLevel) {
-    texture.upload(texture.getFullRange(mipLevel), mipLevelData_[mipLevel].data);
+    auto error = ktxTexture_GetImageOffset(ktxTexture(texture_.get()), 0, 0, mipLevel, &offset);
+    if (error != KTX_SUCCESS) {
+      IGL_LOG_ERROR("Error getting KTX2 texture data: %d %s\n", error, ktxErrorString(error));
+      igl::Result::setResult(
+          outResult, igl::Result::Code::RuntimeError, "Error getting KTX2 texture data.");
+    }
+    texture.upload(texture.getFullRange(mipLevel), texture_->pData + offset);
   }
 
   igl::Result::setOk(outResult);
@@ -97,11 +110,22 @@ void TextureLoader::uploadInternal(igl::ITexture& texture,
 void TextureLoader::loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
                                                  uint32_t length,
                                                  igl::Result* IGL_NULLABLE
-                                                 /*outResult*/) const noexcept {
-  uint32_t offset = 0;
-  for (const auto& mipLevelData : mipLevelData_) {
-    checked_memcpy_offset(data, length, offset, mipLevelData.data, mipLevelData.length);
-    offset += mipLevelData.length;
+                                                     outResult) const noexcept {
+  const auto& desc = descriptor();
+
+  size_t offset;
+  for (uint32_t mipLevel = 0; mipLevel < desc.numMipLevels && mipLevel < texture_->numLevels;
+       ++mipLevel) {
+    auto error = ktxTexture_GetImageOffset(ktxTexture(texture_.get()), 0, 0, mipLevel, &offset);
+    if (error != KTX_SUCCESS) {
+      IGL_LOG_ERROR("Error getting KTX2 texture data: %d %s\n", error, ktxErrorString(error));
+      igl::Result::setResult(
+          outResult, igl::Result::Code::RuntimeError, "Error getting KTX2 texture data.");
+    }
+
+    auto mipLevelLength = ktxTexture_GetImageSize(ktxTexture(texture_.get()), mipLevel);
+    checked_memcpy_offset(data, length, offset, texture_->pData + offset, mipLevelLength);
+    offset += mipLevelLength;
   }
 }
 } // namespace
@@ -135,7 +159,8 @@ bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
     return false;
   }
 
-  if (header->formatProperties().format == igl::TextureFormat::Invalid) {
+  if (igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat)) ==
+      igl::TextureFormat::Invalid) {
     igl::Result::setResult(
         outResult, igl::Result::Code::InvalidOperation, "Unrecognized texture format.");
     return false;
@@ -201,7 +226,9 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     return nullptr;
   }
 
-  const auto properties = header->formatProperties();
+  const auto format =
+      igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat));
+  const auto properties = igl::TextureFormatProperties::fromTextureFormat(format);
 
   igl::TextureRangeDesc range;
   range.numMipLevels = std::max(header->levelCount, 1u);
@@ -253,9 +280,6 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     return nullptr;
   }
 
-  std::vector<MipLevelData> mipLevelData;
-  mipLevelData.resize(range.numMipLevels);
-
   for (size_t i = 0; i < range.numMipLevels; ++i) {
     // ktx2 stores actual mip data in 'reverse' order (smallest images to largest) but the metadata
     // in 'normal' order (largest to smallest).
@@ -287,13 +311,31 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
       return nullptr;
     }
 
-    // @fb-only
-    mipLevelData[mipLevel] = {reader.at(expectedDataOffset), static_cast<uint32_t>(byteLength)};
     expectedDataOffset =
         align(expectedDataOffset + static_cast<uint32_t>(byteLength), mipLevelAlignment);
   }
 
-  return std::make_unique<TextureLoader>(reader, range, properties.format, std::move(mipLevelData));
-}
+  ktxTexture2* texture = nullptr;
+  auto error = ktxTexture2_CreateFromMemory(
+      reader.data(), reader.length(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
 
+  if (error != KTX_SUCCESS) {
+    IGL_LOG_ERROR("Error loading KTX2 texture: %d %s\n", error, ktxErrorString(error));
+    igl::Result::setResult(
+        outResult, igl::Result::Code::RuntimeError, "Error loading KTX2 texture.");
+    return nullptr;
+  }
+
+  const auto ktxFormat =
+      igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(texture->vkFormat));
+  if (ktxFormat != format) {
+    IGL_LOG_ERROR("Unexpected KTX2 texture format: %u\n", texture->vkFormat);
+    igl::Result::setResult(
+        outResult, igl::Result::Code::RuntimeError, "Unexpected KTX2 texture format.");
+    return nullptr;
+  }
+
+  return std::make_unique<TextureLoader>(
+      reader, range, format, std::unique_ptr<ktxTexture2, KtxDeleter>(texture));
+}
 } // namespace iglu::textureloader::ktx2

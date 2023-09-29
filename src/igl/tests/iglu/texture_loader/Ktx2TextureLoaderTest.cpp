@@ -43,13 +43,16 @@ constexpr uint32_t kOffsetWidth = 20u;
 constexpr uint32_t kOffsetHeight = 24u;
 constexpr uint32_t kOffsetFaceCount = 36u;
 constexpr uint32_t kOffsetLevelCount = 40u;
+constexpr uint32_t kOffsetDfdByteOffset = 48u;
+constexpr uint32_t kOffsetDfdByteLength = 52u;
 constexpr uint32_t kOffsetKvdByteOffset = 56u;
 constexpr uint32_t kOffsetKvdByteLength = 60u;
 
 constexpr uint32_t kMipmapMetadataSize = 24u;
+constexpr uint32_t kDfdMetadataSize = 48u;
 
 uint32_t getTotalHeaderSize(uint32_t numMipLevels, uint32_t bytesOfKeyValueData) {
-  return kHeaderSize + numMipLevels * kMipmapMetadataSize + bytesOfKeyValueData;
+  return kHeaderSize + numMipLevels * kMipmapMetadataSize + bytesOfKeyValueData + kDfdMetadataSize;
 }
 
 uint32_t getTotalDataSize(uint32_t vkFormat,
@@ -76,9 +79,84 @@ uint32_t getTotalDataSize(uint32_t vkFormat,
   return dataSize;
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+void putDfd(std::vector<uint8_t>& buffer, uint32_t vkFormat, uint32_t numMipLevels) {
+  const uint32_t dfdMetadataffset = kHeaderSize + numMipLevels * kMipmapMetadataSize;
+
+  constexpr uint32_t VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG = 1000054004u;
+  constexpr uint32_t VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK = 147u;
+
+  ASSERT_TRUE(vkFormat == VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG ||
+              vkFormat == VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK);
+
+  const auto format =
+      igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(vkFormat));
+  const auto properties = igl::TextureFormatProperties::fromTextureFormat(format);
+
+  const uint16_t descriptorType = 0;
+  const uint16_t vendorId = 0;
+  const uint16_t descriptorBlockSize = 44;
+  const uint16_t version = 2;
+  const uint8_t flags = 0 /*KHR_DF_FLAG_ALPHA_STRAIGHT*/;
+  const uint8_t transferFunction =
+      properties.isSRGB() ? 1 /*KHR_DF_TRANSFER_SRGB*/ : 2 /*KHR_DF_TRANSFER_LINEAR*/;
+  const uint8_t colorPrimaries = 1 /*KHR_DF_PRIMARIES_BT709*/;
+  const uint8_t colorModel = vkFormat == VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG
+                                 ? 164 /*KHR_DF_MODEL_PVRTC*/
+                                 : 160 /*KHR_DF_MODEL_ETC1*/;
+  const uint8_t texelBlockDimension3 = 0;
+  const uint8_t texelBlockDimension2 = properties.blockDepth - 1;
+  const uint8_t texelBlockDimension1 = properties.blockHeight - 1;
+  const uint8_t texelBlockDimension0 = properties.blockWidth - 1;
+  const uint32_t bytesPlane3210 = 8u;
+  const uint32_t bytesPlane7654 = 0;
+
+  const uint8_t channelFlags = 0;
+  const uint8_t bitLength = 63;
+  const uint16_t bitOffset = 0;
+  const uint8_t samplePosition3 = 0;
+  const uint8_t samplePosition2 = 0;
+  const uint8_t samplePosition1 = 0;
+  const uint8_t samplePosition0 = 0;
+  const uint32_t sampleLower = 0;
+  const uint32_t sampleUpper = std::numeric_limits<uint32_t>::max();
+
+  put(buffer, kOffsetDfdByteOffset, dfdMetadataffset);
+  put(buffer, kOffsetDfdByteLength, kDfdMetadataSize);
+
+  put(buffer, dfdMetadataffset, kDfdMetadataSize); // Total length
+
+  put(buffer, dfdMetadataffset + 4u, vendorId);
+  put(buffer, dfdMetadataffset + 6u, descriptorType);
+  put(buffer, dfdMetadataffset + 8u, version);
+  put(buffer, dfdMetadataffset + 10u, descriptorBlockSize);
+  put(buffer, dfdMetadataffset + 12u, colorModel);
+  put(buffer, dfdMetadataffset + 13u, colorPrimaries);
+  put(buffer, dfdMetadataffset + 14u, transferFunction);
+  put(buffer, dfdMetadataffset + 15u, flags);
+  put(buffer, dfdMetadataffset + 16u, texelBlockDimension0);
+  put(buffer, dfdMetadataffset + 17u, texelBlockDimension1);
+  put(buffer, dfdMetadataffset + 18u, texelBlockDimension2);
+  put(buffer, dfdMetadataffset + 19u, texelBlockDimension3);
+  put(buffer, dfdMetadataffset + 20u, bytesPlane3210);
+  put(buffer, dfdMetadataffset + 24u, bytesPlane7654);
+
+  put(buffer, dfdMetadataffset + 28u, bitOffset);
+  put(buffer, dfdMetadataffset + 30u, bitLength);
+  put(buffer, dfdMetadataffset + 31u, channelFlags);
+  put(buffer, dfdMetadataffset + 32u, samplePosition0);
+  put(buffer, dfdMetadataffset + 33u, samplePosition1);
+  put(buffer, dfdMetadataffset + 34u, samplePosition2);
+  put(buffer, dfdMetadataffset + 35u, samplePosition3);
+  put(buffer, dfdMetadataffset + 36u, sampleLower);
+  put(buffer, dfdMetadataffset + 40u, sampleUpper);
+}
+
 void putMipLevel(std::vector<uint8_t>& buffer, uint32_t mipLevel, uint32_t imageSize) {
   const auto* header = reinterpret_cast<const iglu::textureloader::ktx2::Header*>(buffer.data());
-  const auto properties = header->formatProperties();
+  const auto format =
+      igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat));
+  const auto properties = igl::TextureFormatProperties::fromTextureFormat(format);
 
   const auto range = igl::TextureRangeDesc::new2D(
       0, 0, std::max(header->pixelWidth, 1u), std::max(header->pixelHeight, 1u));
@@ -89,8 +167,8 @@ void putMipLevel(std::vector<uint8_t>& buffer, uint32_t mipLevel, uint32_t image
   const uint32_t mipLevelAlignment = std::lcm(static_cast<uint32_t>(properties.bytesPerBlock), 4u);
   const uint32_t mipmapMetadataLength = levelCount * kMipmapMetadataSize;
 
-  const uint32_t metadataLength =
-      iglu::textureloader::ktx2::kHeaderLength + mipmapMetadataLength + header->kvdByteLength;
+  const uint32_t metadataLength = iglu::textureloader::ktx2::kHeaderLength + mipmapMetadataLength +
+                                  header->kvdByteLength + kDfdMetadataSize;
 
   std::vector<uint32_t> mipmapOffsets(levelCount);
   uint32_t mipmapOffset = align(metadataLength, mipLevelAlignment);
@@ -120,7 +198,8 @@ void populateMinimalValidFile(std::vector<uint8_t>& buffer,
                               uint32_t height,
                               uint32_t numMipLevels,
                               uint32_t bytesOfKeyValueData,
-                              uint32_t imageSize) {
+                              uint32_t imageSize,
+                              bool forceDfdAfterMipLevel1 = false) {
   // HEADER
   // Zero-out the whole buffer, since there might be garbage in it.
   std::memset(buffer.data(), 0x00, buffer.size());
@@ -143,6 +222,8 @@ void populateMinimalValidFile(std::vector<uint8_t>& buffer,
   put(buffer, kOffsetKvdByteLength, bytesOfKeyValueData);
 
   putMipLevel(buffer, 0u, imageSize);
+
+  putDfd(buffer, vkFormat, forceDfdAfterMipLevel1 ? 1u : numMipLevels);
 }
 
 } // namespace
@@ -355,8 +436,14 @@ TEST_F(Ktx2TextureLoaderTest, InvalidHeaderWithExcessiveMipLevels_Fails) {
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, 6u);
 
   auto buffer = getBuffer(totalHeaderSize + totalDataSize);
-  populateMinimalValidFile(
-      buffer, vkFormat, width, height, numMipLevels, bytesOfKeyValueData, imageSize);
+  populateMinimalValidFile(buffer,
+                           vkFormat,
+                           width,
+                           height,
+                           numMipLevels,
+                           bytesOfKeyValueData,
+                           imageSize,
+                           true) /* forceDfdAfterMipLevel1*/;
 
   Result ret;
   auto reader = *iglu::textureloader::DataReader::tryCreate(
