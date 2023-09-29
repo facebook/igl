@@ -33,6 +33,7 @@ add_library(IGLUsimdtypes INTERFACE)
 target_include_directories(IGLUsimdtypes INTERFACE "simdtypes")
 
 target_link_libraries(IGLUtexture_loader PRIVATE IGLstb)
+target_link_libraries(IGLUtexture_loader PRIVATE ktx)
 
 if(IGL_WITH_SHELL)
   target_link_libraries(IGLUimgui PRIVATE IGLShellShared)
