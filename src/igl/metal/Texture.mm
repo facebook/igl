@@ -848,9 +848,11 @@ TextureFormat Texture::mtlPixelFormatToTextureFormat(MTLPixelFormat value) {
 #if IGL_PLATFORM_MACOS || IGL_PLATFORM_MACCATALYST
   case MTLPixelFormatBC7_RGBAUnorm:
     return TextureFormat::RGBA_BC7_UNORM_4x4;
+  case MTLPixelFormatBC7_RGBAUnorm_sRGB:
+    return TextureFormat::RGBA_BC7_SRGB_4x4;
 #endif
 
-    // Depth & Stencil
+  // Depth & Stencil
   case MTLPixelFormatDepth32Float:
     return TextureFormat::Z_UNorm32;
   case MTLPixelFormatDepth32Float_Stencil8:
