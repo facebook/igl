@@ -32,7 +32,6 @@ struct Header {
   uint32_t bytesOfKeyValueData; // 0 - extra key-value isn't needed at the moment
 
   [[nodiscard]] bool tagIsValid() const noexcept;
-  [[nodiscard]] igl::TextureFormatProperties formatProperties() const noexcept;
 };
 static_assert(sizeof(Header) == 13 * sizeof(uint32_t) + 12);
 

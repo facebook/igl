@@ -10,6 +10,7 @@
 #include <IGLU/texture_loader/ktx1/Header.h>
 #include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
 #include <cstring>
+#include <igl/opengl/util/TextureFormat.h>
 #include <vector>
 
 namespace igl::tests::ktx1 {
@@ -45,7 +46,10 @@ void putMipLevel(std::vector<uint8_t>& buffer, uint32_t mipLevel, uint32_t image
   const auto range = igl::TextureRangeDesc::new2D(
       0, 0, std::max(header->pixelWidth, 1u), std::max(header->pixelHeight, 1u));
 
-  const auto properties = header->formatProperties();
+  const auto format = igl::opengl::util::glTextureFormatToTextureFormat(
+      header->glInternalFormat, header->glFormat, header->glType);
+  const auto properties = igl::TextureFormatProperties::fromTextureFormat(format);
+
   uint32_t offset = kOffsetImages;
   for (uint32_t i = 0; i < mipLevel; ++i) {
     const uint32_t rangeBytes =

@@ -9,97 +9,11 @@
 
 #include <IGLU/texture_loader/ktx1/Header.h>
 #include <igl/IGLSafeC.h>
+#include <igl/opengl/util/TextureFormat.h>
+#include <ktx.h>
 #include <vector>
 
 namespace iglu::textureloader::ktx1 {
-namespace {
-
-struct MipLevelData {
-  const uint8_t* data = nullptr;
-  uint32_t length = 0u;
-};
-
-class TextureLoader : public ITextureLoader {
-  using Super = ITextureLoader;
-
- public:
-  TextureLoader(DataReader reader,
-                const igl::TextureRangeDesc& range,
-                igl::TextureFormat format,
-                std::vector<MipLevelData> mipLevelData) noexcept;
-
-  [[nodiscard]] bool canUploadSourceData() const noexcept final;
-  [[nodiscard]] bool shouldGenerateMipmaps() const noexcept final;
-
- private:
-  void uploadInternal(igl::ITexture& texture,
-                      igl::Result* IGL_NULLABLE outResult) const noexcept final;
-  void loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
-                                    uint32_t length,
-                                    igl::Result* IGL_NULLABLE outResult) const noexcept final;
-
-  std::vector<MipLevelData> mipLevelData_;
-  bool shouldGenerateMipmaps_ = false;
-};
-
-TextureLoader::TextureLoader(DataReader reader,
-                             const igl::TextureRangeDesc& range,
-                             igl::TextureFormat format,
-                             std::vector<MipLevelData> mipLevelData) noexcept :
-  Super(reader),
-  mipLevelData_(std::move(mipLevelData)),
-  shouldGenerateMipmaps_(range.numMipLevels == 0) {
-  auto& desc = mutableDescriptor();
-  desc.format = format;
-  desc.numMipLevels = range.numMipLevels;
-  desc.numLayers = range.numLayers;
-  desc.width = range.width;
-  desc.height = range.height;
-  desc.depth = range.depth;
-
-  if (range.numFaces == 6u) {
-    desc.type = igl::TextureType::Cube;
-  } else if (desc.depth > 1) {
-    desc.type = igl::TextureType::ThreeD;
-  } else if (desc.numLayers > 1) {
-    desc.type = igl::TextureType::TwoDArray;
-  } else {
-    desc.type = igl::TextureType::TwoD;
-  }
-}
-
-bool TextureLoader::canUploadSourceData() const noexcept {
-  return true;
-}
-
-bool TextureLoader::shouldGenerateMipmaps() const noexcept {
-  return shouldGenerateMipmaps_;
-}
-
-void TextureLoader::uploadInternal(igl::ITexture& texture,
-                                   igl::Result* IGL_NULLABLE outResult) const noexcept {
-  const auto& desc = descriptor();
-
-  for (size_t mipLevel = 0; mipLevel < desc.numMipLevels && mipLevel < mipLevelData_.size();
-       ++mipLevel) {
-    texture.upload(texture.getFullRange(mipLevel), mipLevelData_[mipLevel].data);
-  }
-
-  igl::Result::setOk(outResult);
-}
-
-void TextureLoader::loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
-                                                 uint32_t length,
-                                                 igl::Result* IGL_NULLABLE
-                                                 /*outResult*/) const noexcept {
-  uint32_t offset = 0;
-  for (const auto& mipLevelData : mipLevelData_) {
-    checked_memcpy_offset(data, length, offset, mipLevelData.data, mipLevelData.length);
-    offset += mipLevelData.length;
-  }
-}
-
-} // namespace
 
 uint32_t TextureLoaderFactory::headerLength() const noexcept {
   return kHeaderLength;
@@ -124,64 +38,19 @@ bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
     return false;
   }
 
-  if (header->endianness != 0x04030201) {
-    igl::Result::setResult(
-        outResult, igl::Result::Code::InvalidOperation, "Big endian not supported.");
-    return false;
-  }
-
-  if (header->formatProperties().format == igl::TextureFormat::Invalid) {
+  if (igl::opengl::util::glTextureFormatToTextureFormat(
+          header->glInternalFormat, header->glFormat, header->glType) ==
+      igl::TextureFormat::Invalid) {
     igl::Result::setResult(
         outResult, igl::Result::Code::InvalidOperation, "Unrecognized texture format.");
-    return false;
-  }
-
-  if (header->numberOfFaces == 6u && header->numberOfArrayElements > 1u) {
-    igl::Result::setResult(
-        outResult, igl::Result::Code::InvalidOperation, "Texture cube arrays not supported.");
-    return false;
-  }
-  if (header->numberOfArrayElements > 1 && header->pixelDepth > 1) {
-    igl::Result::setResult(
-        outResult, igl::Result::Code::InvalidOperation, "3D texture arrays not supported.");
     return false;
   }
 
   return true;
 }
 
-std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
-    DataReader reader,
-    igl::Result* IGL_NULLABLE outResult) const noexcept {
+igl::TextureRangeDesc TextureLoaderFactory::textureRange(DataReader reader) const noexcept {
   const Header* header = reader.as<Header>();
-  const uint32_t length = reader.length();
-
-  if (header->bytesOfKeyValueData > length) {
-    igl::Result::setResult(outResult, igl::Result::Code::InvalidOperation, "Length is too short.");
-    return nullptr;
-  }
-
-  if (header->numberOfFaces != 1u && header->numberOfFaces != 6u) {
-    igl::Result::setResult(
-        outResult, igl::Result::Code::InvalidOperation, "numberOfFaces must be 1 or 6.");
-    return nullptr;
-  }
-
-  if (header->numberOfFaces == 6u && header->pixelDepth != 0) {
-    igl::Result::setResult(
-        outResult, igl::Result::Code::InvalidOperation, "pixelDepth must be 0 for cube textures.");
-    return nullptr;
-  }
-
-  if (header->numberOfFaces == 6u && header->pixelWidth != header->pixelHeight) {
-    igl::Result::setResult(outResult,
-                           igl::Result::Code::InvalidOperation,
-                           "pixelWidth must match pixelHeight for cube textures.");
-    return nullptr;
-  }
-
-  const auto properties = header->formatProperties();
-
   igl::TextureRangeDesc range;
   range.numMipLevels = std::max(header->numberOfMipmapLevels, 1u);
   range.numLayers = std::max(header->numberOfArrayElements, 1u);
@@ -189,17 +58,23 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
   range.width = std::max(header->pixelWidth, 1u);
   range.height = std::max(header->pixelHeight, 1u);
   range.depth = std::max(header->pixelDepth, 1u);
+  return range;
+}
 
-  auto result = range.validate();
-  if (!result.isOk()) {
-    igl::Result::setResult(outResult, std::move(result));
-    return nullptr;
-  }
+bool TextureLoaderFactory::validate(DataReader reader,
+                                    const igl::TextureRangeDesc& range,
+                                    igl::Result* IGL_NULLABLE outResult) const noexcept {
+  const Header* header = reader.as<Header>();
+  const uint32_t length = reader.length();
+
+  const auto format = igl::opengl::util::glTextureFormatToTextureFormat(
+      header->glInternalFormat, header->glFormat, header->glType);
+  const auto properties = igl::TextureFormatProperties::fromTextureFormat(format);
 
   const size_t rangeBytesAsSizeT = properties.getBytesPerRange(range);
   if (rangeBytesAsSizeT > static_cast<size_t>(length)) {
     igl::Result::setResult(outResult, igl::Result::Code::InvalidOperation, "Length is too short.");
-    return nullptr;
+    return false;
   }
   const uint32_t rangeBytes = static_cast<uint32_t>(rangeBytesAsSizeT);
 
@@ -210,11 +85,8 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
   if (length < expectedLength) {
     igl::Result::setResult(
         outResult, igl::Result::Code::InvalidOperation, "Length shorter than expected length.");
-    return nullptr;
+    return false;
   }
-
-  std::vector<MipLevelData> mipLevelData;
-  mipLevelData.reserve(range.numMipLevels);
 
   const bool isCubeTexture = header->numberOfFaces == 6u;
 
@@ -224,19 +96,26 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     const size_t expectedBytes = properties.getBytesPerRange(range.atMipLevel(mipLevel).atFace(0));
     const size_t expectedCubeBytes = expectedBytes * static_cast<size_t>(6);
 
-    if (imageSize != expectedBytes && !(isCubeTexture && imageSize == expectedCubeBytes)) {
+    if (imageSize != expectedBytes) {
       igl::Result::setResult(
           outResult, igl::Result::Code::InvalidOperation, "Unexpected image size.");
-      return nullptr;
+      return false;
     }
     offset += 4u;
-    mipLevelData.emplace_back(
-        MipLevelData{reader.at(offset),
-                     static_cast<uint32_t>(isCubeTexture ? expectedCubeBytes : expectedBytes)});
     offset += static_cast<uint32_t>(isCubeTexture ? expectedCubeBytes : expectedBytes);
   }
 
-  return std::make_unique<TextureLoader>(reader, range, properties.format, std::move(mipLevelData));
+  return true;
+}
+
+igl::TextureFormat TextureLoaderFactory::textureFormat(const ktxTexture* texture) const noexcept {
+  if (texture->classId == ktxTexture1_c) {
+    const auto* texture1 = reinterpret_cast<const ktxTexture1*>(texture);
+    return igl::opengl::util::glTextureFormatToTextureFormat(
+        texture1->glInternalformat, texture1->glFormat, texture1->glType);
+  }
+
+  return igl::TextureFormat::Invalid;
 }
 
 } // namespace iglu::textureloader::ktx1
