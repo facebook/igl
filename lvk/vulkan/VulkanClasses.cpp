@@ -4264,8 +4264,6 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
       .pNext = &deviceFeatures13,
       .queueCreateInfoCount = numQueues,
       .pQueueCreateInfos = ciQueue,
-      .enabledLayerCount = (uint32_t)LVK_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers),
-      .ppEnabledLayerNames = kDefaultValidationLayers,
       .enabledExtensionCount = (uint32_t)LVK_ARRAY_NUM_ELEMENTS(deviceExtensionNames),
       .ppEnabledExtensionNames = deviceExtensionNames,
       .pEnabledFeatures = &deviceFeatures10,
