@@ -9,7 +9,7 @@
 
 #include <igl/opengl/TextureBufferBase.h>
 
-#if defined(__ANDROID_API__) && __ANDROID_MIN_SDK_VERSION__ >= 26
+#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
 
 struct AHardwareBuffer;
 
