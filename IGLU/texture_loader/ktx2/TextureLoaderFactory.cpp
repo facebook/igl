@@ -45,22 +45,14 @@ bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
     return false;
   }
 
-  if (header->vkFormat == 0u) {
-    igl::Result::setResult(
-        outResult, igl::Result::Code::InvalidOperation, "Basis universal texures not supported.");
-    return false;
-  }
-
-  if (igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat)) ==
-      igl::TextureFormat::Invalid) {
+  // vkFormat = 0 means basis universal or some non-Vulkan format.
+  // In either case, we need to process the DFD to understand whether we can really handle the
+  // format or not.
+  if (header->vkFormat != 0 &&
+      igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat)) ==
+          igl::TextureFormat::Invalid) {
     igl::Result::setResult(
         outResult, igl::Result::Code::InvalidOperation, "Unrecognized texture format.");
-    return false;
-  }
-
-  if (header->supercompressionScheme != 0) {
-    igl::Result::setResult(
-        outResult, igl::Result::Code::InvalidOperation, "Supercompression not supported.");
     return false;
   }
 
@@ -100,79 +92,84 @@ bool TextureLoaderFactory::validate(DataReader reader,
     return false;
   }
 
-  const auto format =
-      igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat));
-  const auto properties = igl::TextureFormatProperties::fromTextureFormat(format);
+  if (header->vkFormat != 0u) {
+    const auto format =
+        igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat));
+    const auto properties = igl::TextureFormatProperties::fromTextureFormat(format);
 
-  const uint32_t mipLevelAlignment = std::lcm(static_cast<uint32_t>(properties.bytesPerBlock), 4u);
+    const uint32_t mipLevelAlignment =
+        std::lcm(static_cast<uint32_t>(properties.bytesPerBlock), 4u);
 
-  size_t rangeBytesAsSizeT = 0;
-  for (size_t mipLevel = 0; mipLevel < range.numMipLevels; ++mipLevel) {
-    rangeBytesAsSizeT += align(properties.getBytesPerRange(range.atMipLevel(mipLevel)),
-                               static_cast<size_t>(mipLevelAlignment));
-  }
+    size_t rangeBytesAsSizeT = 0;
+    for (size_t mipLevel = 0; mipLevel < range.numMipLevels; ++mipLevel) {
+      rangeBytesAsSizeT += align(properties.getBytesPerRange(range.atMipLevel(mipLevel)),
+                                 static_cast<size_t>(mipLevelAlignment));
+    }
 
-  if (rangeBytesAsSizeT > static_cast<size_t>(length)) {
-    igl::Result::setResult(outResult, igl::Result::Code::InvalidOperation, "Length is too short.");
-    return false;
-  }
-  const uint32_t rangeBytes = static_cast<uint32_t>(rangeBytesAsSizeT);
-
-  // Mipmap metadata is:
-  //   UInt64 byteOffset
-  //   UInt64 byteLength
-  //   UInt64 uncompressedByteLength
-  const uint32_t mipmapMetadataLength = static_cast<uint32_t>(range.numMipLevels) * 24u;
-
-  const uint32_t preSupercompressionMetadataLength =
-      kHeaderLength + mipmapMetadataLength + header->dfdByteLength + header->kvdByteLength;
-
-  const uint32_t metadataLength = sgdByteLength > 0
-                                      ? align(preSupercompressionMetadataLength, 8u) + sgdByteLength
-                                      : preSupercompressionMetadataLength;
-
-  uint32_t expectedDataOffset = align(metadataLength, mipLevelAlignment);
-
-  const uint32_t expectedLength = expectedDataOffset + rangeBytes;
-  if (length < expectedLength) {
-    igl::Result::setResult(
-        outResult, igl::Result::Code::InvalidOperation, "Length shorter than expected length.");
-    return false;
-  }
-
-  for (size_t i = 0; i < range.numMipLevels; ++i) {
-    // ktx2 stores actual mip data in 'reverse' order (smallest images to largest) but the metadata
-    // in 'normal' order (largest to smallest).
-    // We process the list in the same order the data is stored to simplify the bookkeeping
-    // validation.
-    const size_t mipLevel = range.numMipLevels - i - 1;
-
-    const uint32_t offset = kHeaderLength + static_cast<uint32_t>(mipLevel) * 24u;
-    const uint64_t byteOffset = reader.readAt<uint64_t>(offset);
-    const uint64_t byteLength = reader.readAt<uint64_t>(offset + 8u);
-    const uint64_t uncompressedByteLength = reader.readAt<uint64_t>(offset + 16u);
-
-    if (byteLength != uncompressedByteLength) {
+    if (rangeBytesAsSizeT > static_cast<size_t>(length)) {
       igl::Result::setResult(
-          outResult, igl::Result::Code::InvalidOperation, "Supercompression not supported.");
+          outResult, igl::Result::Code::InvalidOperation, "Length is too short.");
+      return false;
+    }
+    const uint32_t rangeBytes = static_cast<uint32_t>(rangeBytesAsSizeT);
+
+    // Mipmap metadata is:
+    //   UInt64 byteOffset
+    //   UInt64 byteLength
+    //   UInt64 uncompressedByteLength
+    const uint32_t mipmapMetadataLength = static_cast<uint32_t>(range.numMipLevels) * 24u;
+
+    const uint32_t preSupercompressionMetadataLength =
+        kHeaderLength + mipmapMetadataLength + header->dfdByteLength + header->kvdByteLength;
+
+    const uint32_t metadataLength =
+        sgdByteLength > 0 ? align(preSupercompressionMetadataLength, 8u) + sgdByteLength
+                          : preSupercompressionMetadataLength;
+
+    uint32_t expectedDataOffset = align(metadataLength, mipLevelAlignment);
+
+    const uint32_t expectedLength = expectedDataOffset + rangeBytes;
+    if (length < expectedLength) {
+      igl::Result::setResult(
+          outResult, igl::Result::Code::InvalidOperation, "Length shorter than expected length.");
       return false;
     }
 
-    if (byteOffset != static_cast<uint64_t>(expectedDataOffset)) {
-      igl::Result::setResult(
-          outResult, igl::Result::Code::InvalidOperation, "Unexpected byteOffset.");
-      return false;
-    }
+    for (size_t i = 0; i < range.numMipLevels; ++i) {
+      // ktx2 stores actual mip data in 'reverse' order (smallest images to largest) but the
+      // metadata in 'normal' order (largest to smallest). We process the list in the same order the
+      // data is stored to simplify the bookkeeping validation.
+      const size_t mipLevel = range.numMipLevels - i - 1;
 
-    if (static_cast<size_t>(byteLength) !=
-        properties.getBytesPerRange(range.atMipLevel(mipLevel))) {
-      igl::Result::setResult(
-          outResult, igl::Result::Code::InvalidOperation, "Unexpected byteLength.");
-      return false;
-    }
+      const uint32_t offset = kHeaderLength + static_cast<uint32_t>(mipLevel) * 24u;
+      const uint64_t byteOffset = reader.readAt<uint64_t>(offset);
+      const uint64_t byteLength = reader.readAt<uint64_t>(offset + 8u);
+      const uint64_t uncompressedByteLength = reader.readAt<uint64_t>(offset + 16u);
 
-    expectedDataOffset =
-        align(expectedDataOffset + static_cast<uint32_t>(byteLength), mipLevelAlignment);
+      if (byteLength != uncompressedByteLength && header->supercompressionScheme == 0) {
+        igl::Result::setResult(
+            outResult,
+            igl::Result::Code::InvalidOperation,
+            "Unexpected difference between byteLength and uncompressedByteLength.");
+        return false;
+      }
+
+      if (byteOffset != static_cast<uint64_t>(expectedDataOffset)) {
+        igl::Result::setResult(
+            outResult, igl::Result::Code::InvalidOperation, "Unexpected byteOffset.");
+        return false;
+      }
+
+      if (static_cast<size_t>(uncompressedByteLength) !=
+          properties.getBytesPerRange(range.atMipLevel(mipLevel))) {
+        igl::Result::setResult(
+            outResult, igl::Result::Code::InvalidOperation, "Unexpected byteLength.");
+        return false;
+      }
+
+      expectedDataOffset =
+          align(expectedDataOffset + static_cast<uint32_t>(byteLength), mipLevelAlignment);
+    }
   }
 
   return true;

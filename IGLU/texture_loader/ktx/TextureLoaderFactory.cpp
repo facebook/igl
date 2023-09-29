@@ -146,6 +146,23 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
   }
 
   auto texture = std::unique_ptr<ktxTexture, KtxDeleter>(rawTexture);
+
+  if (ktxTexture_NeedsTranscoding(rawTexture)) {
+#if IGL_PLATFORM_ANDROID || IGL_PLATFORM_IOS
+    ktx_transcode_fmt_e transcodeFormat = KTX_TTF_ASTC_4x4_RGBA;
+#else
+    ktx_transcode_fmt_e transcodeFormat = KTX_TTF_BC7_RGBA;
+#endif
+    error =
+        ktxTexture2_TranscodeBasis(reinterpret_cast<ktxTexture2*>(rawTexture), transcodeFormat, 0);
+    if (error != KTX_SUCCESS) {
+      IGL_LOG_ERROR("Error transcoding KTX texture: %d %s\n", error, ktxErrorString(error));
+      igl::Result::setResult(
+          outResult, igl::Result::Code::RuntimeError, "Error transcoding KTX texture.");
+      return nullptr;
+    }
+  }
+
   const auto format = textureFormat(rawTexture);
   if (format == igl::TextureFormat::Invalid) {
     igl::Result::setResult(
@@ -159,7 +176,7 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     return nullptr;
   }
 
-  if (texture->numLayers > 1 && texture->baseDepth > 1) {
+  if (texture->numLayers > 1 && texture->baseDepth > 1u) {
     igl::Result::setResult(
         outResult, igl::Result::Code::InvalidOperation, "3D texture arrays not supported.");
     return nullptr;
@@ -170,7 +187,7 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     return nullptr;
   }
 
-  if (texture->numFaces == 6u && texture->baseDepth != 1) {
+  if (texture->numFaces == 6u && texture->baseDepth != 1u) {
     igl::Result::setResult(
         outResult, igl::Result::Code::InvalidOperation, "depth must be 1 for cube textures.");
     return nullptr;
