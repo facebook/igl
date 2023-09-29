@@ -582,272 +582,272 @@ bool Texture::toFormatDescGL(IContext& ctx,
 
   case TextureFormat::RGBA_ASTC_4x4:
     internalFormat = GL_COMPRESSED_RGBA_ASTC_4x4_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_ASTC_4x4:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_ASTC_5x4:
     internalFormat = GL_COMPRESSED_RGBA_ASTC_5x4_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_ASTC_5x4:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_ASTC_5x5:
     internalFormat = GL_COMPRESSED_RGBA_ASTC_5x5_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_ASTC_5x5:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x5_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_ASTC_6x5:
     internalFormat = GL_COMPRESSED_RGBA_ASTC_6x5_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_ASTC_6x5:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x5_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_ASTC_6x6:
     internalFormat = GL_COMPRESSED_RGBA_ASTC_6x6_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_ASTC_6x6:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_ASTC_8x5:
     internalFormat = GL_COMPRESSED_RGBA_ASTC_8x5_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_ASTC_8x5:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_ASTC_8x6:
     internalFormat = GL_COMPRESSED_RGBA_ASTC_8x6_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_ASTC_8x6:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x6_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_ASTC_8x8:
     internalFormat = GL_COMPRESSED_RGBA_ASTC_8x8_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_ASTC_8x8:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_ASTC_10x5:
     internalFormat = GL_COMPRESSED_RGBA_ASTC_10x5_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_ASTC_10x5:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x5_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_ASTC_10x6:
     internalFormat = GL_COMPRESSED_RGBA_ASTC_10x6_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_ASTC_10x6:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x6_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_ASTC_10x8:
     internalFormat = GL_COMPRESSED_RGBA_ASTC_10x8_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_ASTC_10x8:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_ASTC_10x10:
     internalFormat = GL_COMPRESSED_RGBA_ASTC_10x10_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_ASTC_10x10:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_ASTC_12x10:
     internalFormat = GL_COMPRESSED_RGBA_ASTC_12x10_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_ASTC_12x10:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_ASTC_12x12:
     internalFormat = GL_COMPRESSED_RGBA_ASTC_12x12_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_ASTC_12x12:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_BC7_UNORM_4x4:
     internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_BC7_SRGB_4x4:
     internalFormat = GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_PVRTC_2BPPV1:
     internalFormat = GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGB_PVRTC_2BPPV1:
     internalFormat = GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG;
-    format = 0;
-    type = 0;
+    format = GL_RGB;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA_PVRTC_4BPPV1:
     internalFormat = GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGB_PVRTC_4BPPV1:
     internalFormat = GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG;
-    format = 0;
-    type = 0;
+    format = GL_RGB;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGB8_ETC1:
     internalFormat = GL_ETC1_RGB8_OES;
-    format = 0;
-    type = 0;
+    format = GL_RGB;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGB8_ETC2:
     internalFormat = GL_COMPRESSED_RGB8_ETC2;
-    format = 0;
-    type = 0;
+    format = GL_RGB;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGB8_Punchthrough_A1_ETC2:
     internalFormat = GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RGBA8_EAC_ETC2:
     internalFormat = GL_COMPRESSED_RGBA8_ETC2_EAC;
     format = GL_RGBA;
-    type = 0;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_ETC2:
     internalFormat = GL_COMPRESSED_SRGB8_ETC2;
-    format = 0;
-    type = 0;
+    format = GL_RGB;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_Punchthrough_A1_ETC2:
     internalFormat = GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::SRGB8_A8_EAC_ETC2:
     internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC;
-    format = 0;
-    type = 0;
+    format = GL_RGBA;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RG_EAC_UNorm:
     internalFormat = GL_COMPRESSED_RG11_EAC;
-    format = 0;
-    type = 0;
+    format = GL_RG;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::RG_EAC_SNorm:
     internalFormat = GL_COMPRESSED_SIGNED_RG11_EAC;
-    format = 0;
-    type = 0;
+    format = GL_RG;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::R_EAC_UNorm:
     internalFormat = GL_COMPRESSED_R11_EAC;
-    format = 0;
-    type = 0;
+    format = GL_RED;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::R_EAC_SNorm:
     internalFormat = GL_COMPRESSED_SIGNED_R11_EAC;
-    format = 0;
-    type = 0;
+    format = GL_RED;
+    type = GL_UNSIGNED_BYTE;
     return compressedValid;
 
   case TextureFormat::S8_UInt_Z32_UNorm:
