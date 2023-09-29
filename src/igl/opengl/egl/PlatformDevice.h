@@ -39,15 +39,6 @@ class PlatformDevice : public opengl::PlatformDevice {
   /// Returns a texture representing the EGL depth texture associated with this device's context.
   std::shared_ptr<ITexture> createTextureFromNativeDepth(Result* outResult);
 
-#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
-
-  /// returns a android::NativeHWTextureBuffer on platforms supporting it
-  /// this texture allows CPU and GPU to both read/write memory
-  std::shared_ptr<ITexture> createTextureWithSharedMemory(const TextureDesc& desc,
-                                                          Result* outResult);
-
-#endif
-
   /// This function must be called every time the currently bound EGL read and/or draw surfaces
   /// change, in order to notify IGL of these changes.
   void updateSurfaces(EGLSurface readSurface, EGLSurface drawSurface, Result* outResult);
