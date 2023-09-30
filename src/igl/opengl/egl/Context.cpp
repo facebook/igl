@@ -181,7 +181,11 @@ Context::Context(RenderingAPI api, EGLNativeWindowType window) :
   Context(api, EGL_NO_CONTEXT, false, window, {0, 0}) {}
 
 Context::Context(RenderingAPI api, size_t width, size_t height) :
-  Context(api, EGL_NO_CONTEXT, true, IGL_EGL_NULL_WINDOW, {width, height}) {}
+  Context(api,
+          EGL_NO_CONTEXT,
+          true,
+          IGL_EGL_NULL_WINDOW,
+          {static_cast<EGLint>(width), static_cast<EGLint>(height)}) {}
 
 Context::Context(const Context& sharedContext) :
   Context(sharedContext.api_,
