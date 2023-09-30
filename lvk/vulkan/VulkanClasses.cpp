@@ -2525,8 +2525,8 @@ lvk::VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
 
   const auto& limits = ctx_.getVkPhysicalDeviceProperties().limits;
 
-  // Use default value of 256 MB, and clamp it to the max limits
-  stagingBufferSize_ = std::min(limits.maxStorageBufferRange, 256u * 1024u * 1024u);
+  // Use default value of 512 MB, and clamp it to the max limits
+  stagingBufferSize_ = std::min(limits.maxStorageBufferRange, 512u * 1024u * 1024u);
 
   bufferCapacity_ = stagingBufferSize_;
 
