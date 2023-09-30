@@ -2309,6 +2309,7 @@ void lvk::CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, co
 
   cmdBindViewport(viewport);
   cmdBindScissorRect(scissor);
+  cmdBindDepthState({});
 
   ctx_->checkAndUpdateDescriptorSets();
   ctx_->bindDefaultDescriptorSets(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_GRAPHICS);
