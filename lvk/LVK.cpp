@@ -187,9 +187,17 @@ void lvk::logShaderSource(const char* text) {
   while (text && *text) {
     if (*text == '\n') {
       if (numChars) {
+#if defined(MINILOG_RAW_OUTPUT)
+        LLOGL("(%3u) %.*s\n", ++line, numChars, lineStart);
+#else
         LLOGL("(%3u) %.*s", ++line, numChars, lineStart);
+#endif // MINILOG_RAW_OUTPUT
       } else {
+#if defined(MINILOG_RAW_OUTPUT)
+        LLOGL("(%3u)\n", ++line);
+#else
         LLOGL("(%3u)", ++line);
+#endif // MINILOG_RAW_OUTPUT
       }
       numChars = 0;
       lineStart = text + 1;
@@ -203,7 +211,11 @@ void lvk::logShaderSource(const char* text) {
     text++;
   }
   if (numChars) {
+#if defined(MINILOG_RAW_OUTPUT)
+    LLOGL("(%3u) %.*s\n", ++line, numChars, lineStart);
+#else
     LLOGL("(%3u) %.*s", ++line, numChars, lineStart);
+#endif // MINILOG_RAW_OUTPUT
   }
   LLOGL("\n");
 }
