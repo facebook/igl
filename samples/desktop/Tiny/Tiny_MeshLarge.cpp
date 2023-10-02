@@ -45,6 +45,7 @@
 #include <taskflow/taskflow.hpp>
 #include <tiny_obj_loader.h>
 
+#define USE_TEXTURE_LOADER 0
 #define USE_OPENGL_BACKEND 0
 
 #if IGL_BACKEND_OPENGL && !IGL_BACKEND_VULKAN
@@ -123,10 +124,12 @@
 #include <IGLU/imgui/Session.h>
 #endif // IGL_WITH_IGLU
 
-#if IGL_WITH_TEXTURE_LOADER
+#if USE_TEXTURE_LOADER
 #include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
 #include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
-#endif // IGL_WITH_TEXTURE_LOADER
+static_assert(IGL_WITH_IGLU != 0,
+              "USE_TEXTURE_LOADER can be enabled only together with IGL_WITH_IGLU");
+#endif // USE_TEXTURE_LOADER
 
 namespace {
 
@@ -151,7 +154,7 @@ std::unique_ptr<iglu::imgui::Session> imguiSession_;
 igl::shell::InputDispatcher inputDispatcher_;
 #endif // IGL_WITH_IGLU
 
-#if IGL_WITH_TEXTURE_LOADER
+#if USE_TEXTURE_LOADER
 void loadKtxTexture(const igl::IDevice& device,
                     igl::ICommandQueue& commandQueue,
                     const std::string filename,
@@ -200,7 +203,7 @@ void loadKtxTexture(const igl::IDevice& device,
     }
   }
 }
-#endif // IGL_WITH_TEXTURE_LOADER
+#endif // USE_TEXTURE_LOADER
 
 const char* kCodeComputeTest = R"(
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -2253,7 +2256,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
     return;
   }
 
-#if IGL_WITH_TEXTURE_LOADER
+#if USE_TEXTURE_LOADER
   loadKtxTexture(*device_, *commandQueue_, fileNameKTX, tex, !kEnableCompression);
 #else
   ktxTexture2* texture;
@@ -2496,7 +2499,7 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
 
   if (kEnableCompression && img.channels == 4 &&
       std::filesystem::exists(img.compressedFileName.c_str())) {
-#if IGL_WITH_TEXTURE_LOADER
+#if USE_TEXTURE_LOADER
     loadKtxTexture(*device_, *commandQueue_, img.compressedFileName, tex, false);
 #else
     // Uploading the texture
@@ -2518,7 +2521,7 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
 
       tex->upload(rangeDesc.atMipLevel(i), texture->pData + offset);
     }
-#endif
+#endif // USE_TEXTURE_LOADER
   } else {
     tex->upload(TextureRangeDesc::new2D(0, 0, img.w, img.h), img.pixels);
     tex->generateMipmap(*commandQueue_.get());
