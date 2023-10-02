@@ -334,18 +334,18 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
   };
   const VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeature = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
-      .shaderSampledImageArrayNonUniformIndexing = enableDescriptorIndexing ? VK_TRUE : VK_FALSE,
+      .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
       .descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE,
       .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
       .descriptorBindingStorageImageUpdateAfterBind = VK_TRUE,
       .descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE,
-      .descriptorBindingUpdateUnusedWhilePending = enableDescriptorIndexing ? VK_TRUE : VK_FALSE,
-      .descriptorBindingPartiallyBound = enableDescriptorIndexing ? VK_TRUE : VK_FALSE,
-      .runtimeDescriptorArray = enableDescriptorIndexing ? VK_TRUE : VK_FALSE,
+      .descriptorBindingUpdateUnusedWhilePending = VK_TRUE,
+      .descriptorBindingPartiallyBound = VK_TRUE,
+      .runtimeDescriptorArray = VK_TRUE,
   };
-  // TODO: make it completely optional
-  // @fb-only
-  ivkAddNext(&ci, &descriptorIndexingFeature);
+  if (enableDescriptorIndexing) {
+    ivkAddNext(&ci, &descriptorIndexingFeature);
+  }
 
   const VkPhysicalDevice16BitStorageFeatures float16StorageBuffersFeature = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,

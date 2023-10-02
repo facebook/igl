@@ -257,9 +257,11 @@ class DescriptorPoolsArena final {
     VkDescriptorSet dset = VK_NULL_HANDLE;
     const VkResult result =
         ivkAllocateDescriptorSet(&vf_, device_, pool_, dsl_->getVkDescriptorSetLayout(), &dset);
-    // if the allocation fails due to no more space in the descriptor pool, and not because of
+    // If the allocation fails due to no more space in the descriptor pool, and not because of
     // system or device memory exhaustion, then VK_ERROR_OUT_OF_POOL_MEMORY must be returned.
     // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkAllocateDescriptorSets.html
+    // P.S. This is guaranteed only on Vulkan 1.1. If we want Vulkan 1.0, we have to track
+    // allocations ourselves.
     if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
       switchToNewDescriptorPool(ic);
       VK_ASSERT(
