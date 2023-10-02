@@ -24,23 +24,23 @@
 
 namespace igl {
 namespace opengl {
-RenderCommandEncoder::RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer) :
-  IRenderCommandEncoder(commandBuffer), WithContext(commandBuffer->getContext()) {}
+RenderCommandEncoder::RenderCommandEncoder(std::shared_ptr<CommandBuffer> commandBuffer) :
+  IRenderCommandEncoder(std::move(commandBuffer)),
+  WithContext(static_cast<CommandBuffer&>(getCommandBuffer()).getContext()) {}
 
 std::unique_ptr<RenderCommandEncoder> RenderCommandEncoder::create(
-    const std::shared_ptr<CommandBuffer>& commandBuffer,
+    std::shared_ptr<CommandBuffer> commandBuffer,
     const RenderPassDesc& renderPass,
     const std::shared_ptr<IFramebuffer>& framebuffer,
     const Dependencies& dependencies,
     Result* outResult) {
-  (void)dependencies; // not used in OpenGL
-
   if (!commandBuffer) {
     Result::setResult(outResult, Result::Code::ArgumentNull, "commandBuffer was null");
     return {};
   }
 
-  std::unique_ptr<RenderCommandEncoder> newEncoder(new RenderCommandEncoder(commandBuffer));
+  std::unique_ptr<RenderCommandEncoder> newEncoder(
+      new RenderCommandEncoder(std::move(commandBuffer)));
   newEncoder->beginEncoding(renderPass, framebuffer, outResult);
   return newEncoder;
 }
