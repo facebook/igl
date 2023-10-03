@@ -207,11 +207,6 @@ bool validateImageLimits(VkImageType imageType,
 namespace igl {
 namespace vulkan {
 
-struct VulkanContextImpl final {
-  // Vulkan Memory Allocator
-  VmaAllocator vma_ = VK_NULL_HANDLE;
-};
-
 // @fb-only
 class DescriptorPoolsArena final {
  public:
@@ -321,6 +316,22 @@ class DescriptorPoolsArena final {
   std::deque<ExtinctDescriptorPool> extinct_;
 };
 
+struct VulkanContextImpl final {
+  // Vulkan Memory Allocator
+  VmaAllocator vma_ = VK_NULL_HANDLE;
+
+  std::unique_ptr<igl::vulkan::DescriptorPoolsArena> arenaCombinedImageSamplers_;
+  std::unique_ptr<igl::vulkan::DescriptorPoolsArena> arenaBuffersUniform_;
+  std::unique_ptr<igl::vulkan::DescriptorPoolsArena> arenaBuffersStorage_;
+  std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBindless_; // everything
+  VkDescriptorPool dpBindless_ = VK_NULL_HANDLE;
+  VkDescriptorSet dsBindless_ = VK_NULL_HANDLE;
+  // a handle of the last submit the descriptor set was a part of
+  VulkanImmediateCommands::SubmitHandle handleBindless_ = {};
+  uint32_t currentMaxBindlessTextures_ = 8;
+  uint32_t currentMaxBindlessSamplers_ = 8;
+};
+
 VulkanContext::VulkanContext(const VulkanContextConfig& config,
                              void* window,
                              size_t numExtraInstanceExtensions,
@@ -372,7 +383,7 @@ VulkanContext::~VulkanContext() {
     }
   }
 
-  dslBindless_.reset(nullptr);
+  pimpl_->dslBindless_.reset(nullptr);
 
   pipelineLayoutGraphics_.reset(nullptr);
   pipelineLayoutCompute_.reset(nullptr);
@@ -383,12 +394,12 @@ VulkanContext::~VulkanContext() {
   immediate_.reset(nullptr);
 
   if (device_) {
-    if (dpBindless_ != VK_NULL_HANDLE) {
-      vf_.vkDestroyDescriptorPool(device, dpBindless_, nullptr);
+    if (pimpl_->dpBindless_ != VK_NULL_HANDLE) {
+      vf_.vkDestroyDescriptorPool(device, pimpl_->dpBindless_, nullptr);
     }
-    arenaCombinedImageSamplers_ = nullptr;
-    arenaBuffersUniform_ = nullptr;
-    arenaBuffersStorage_ = nullptr;
+    pimpl_->arenaCombinedImageSamplers_ = nullptr;
+    pimpl_->arenaBuffersUniform_ = nullptr;
+    pimpl_->arenaBuffersStorage_ = nullptr;
     vf_.vkDestroyPipelineCache(device, pipelineCache_, nullptr);
   }
 
@@ -770,7 +781,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                       "Sampler: default");
 
   // create descriptor set layout and descriptor pool for combined image samplers
-  arenaCombinedImageSamplers_ =
+  pimpl_->arenaCombinedImageSamplers_ =
       std::make_unique<DescriptorPoolsArena>(vf_,
                                              *immediate_,
                                              device,
@@ -779,22 +790,25 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                              "arenaCombinedImageSamplers_");
 
   // create descriptor set layout and descriptor pool for uniform buffers
-  arenaBuffersUniform_ = std::make_unique<DescriptorPoolsArena>(vf_,
-                                                                *immediate_,
-                                                                device,
-                                                                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                                                IGL_UNIFORM_BLOCKS_BINDING_MAX,
-                                                                "arenaBuffersUniform_");
+  pimpl_->arenaBuffersUniform_ =
+      std::make_unique<DescriptorPoolsArena>(vf_,
+                                             *immediate_,
+                                             device,
+                                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                             IGL_UNIFORM_BLOCKS_BINDING_MAX,
+                                             "arenaBuffersUniform_");
 
   // create descriptor set layout and descriptor pool for storage buffers
-  arenaBuffersStorage_ = std::make_unique<DescriptorPoolsArena>(vf_,
-                                                                *immediate_,
-                                                                device,
-                                                                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                                                IGL_UNIFORM_BLOCKS_BINDING_MAX,
-                                                                "arenaBuffersStorage_");
+  pimpl_->arenaBuffersStorage_ =
+      std::make_unique<DescriptorPoolsArena>(vf_,
+                                             *immediate_,
+                                             device,
+                                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                             IGL_UNIFORM_BLOCKS_BINDING_MAX,
+                                             "arenaBuffersStorage_");
 
-  growBindlessDescriptorPool(currentMaxBindlessTextures_, currentMaxBindlessSamplers_);
+  growBindlessDescriptorPool(pimpl_->currentMaxBindlessTextures_,
+                             pimpl_->currentMaxBindlessSamplers_);
   updatePipelineLayouts();
 
   querySurfaceCapabilities();
@@ -813,8 +827,8 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
     return;
   }
 
-  currentMaxBindlessTextures_ = newMaxTextures;
-  currentMaxBindlessSamplers_ = newMaxSamplers;
+  pimpl_->currentMaxBindlessTextures_ = newMaxTextures;
+  pimpl_->currentMaxBindlessSamplers_ = newMaxSamplers;
 
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("growBindlessDescriptorPool(%u, %u)\n", newMaxTextures, newMaxSamplers);
@@ -841,8 +855,8 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
 
   VkDevice device = getVkDevice();
 
-  if (dpBindless_ != VK_NULL_HANDLE) {
-    deferredTask(std::packaged_task<void()>([vf = &vf_, device, dp = dpBindless_]() {
+  if (pimpl_->dpBindless_ != VK_NULL_HANDLE) {
+    deferredTask(std::packaged_task<void()>([vf = &vf_, device, dp = pimpl_->dpBindless_]() {
       vf->vkDestroyDescriptorPool(device, dp, nullptr);
     }));
   }
@@ -850,20 +864,25 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
   // create default descriptor set layout which is going to be shared by graphics pipelines
   constexpr uint32_t kNumBindings = 7;
   const std::array<VkDescriptorSetLayoutBinding, kNumBindings> bindings = {
+      ivkGetDescriptorSetLayoutBinding(kBinding_Texture2D,
+                                       VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                       pimpl_->currentMaxBindlessTextures_),
+      ivkGetDescriptorSetLayoutBinding(kBinding_Texture2DArray,
+                                       VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                       pimpl_->currentMaxBindlessTextures_),
+      ivkGetDescriptorSetLayoutBinding(kBinding_Texture3D,
+                                       VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                       pimpl_->currentMaxBindlessTextures_),
+      ivkGetDescriptorSetLayoutBinding(kBinding_TextureCube,
+                                       VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                       pimpl_->currentMaxBindlessTextures_),
       ivkGetDescriptorSetLayoutBinding(
-          kBinding_Texture2D, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, currentMaxBindlessTextures_),
+          kBinding_Sampler, VK_DESCRIPTOR_TYPE_SAMPLER, pimpl_->currentMaxBindlessSamplers_),
       ivkGetDescriptorSetLayoutBinding(
-          kBinding_Texture2DArray, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, currentMaxBindlessTextures_),
-      ivkGetDescriptorSetLayoutBinding(
-          kBinding_Texture3D, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, currentMaxBindlessTextures_),
-      ivkGetDescriptorSetLayoutBinding(
-          kBinding_TextureCube, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, currentMaxBindlessTextures_),
-      ivkGetDescriptorSetLayoutBinding(
-          kBinding_Sampler, VK_DESCRIPTOR_TYPE_SAMPLER, currentMaxBindlessSamplers_),
-      ivkGetDescriptorSetLayoutBinding(
-          kBinding_SamplerShadow, VK_DESCRIPTOR_TYPE_SAMPLER, currentMaxBindlessSamplers_),
-      ivkGetDescriptorSetLayoutBinding(
-          kBinding_StorageImages, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, currentMaxBindlessTextures_),
+          kBinding_SamplerShadow, VK_DESCRIPTOR_TYPE_SAMPLER, pimpl_->currentMaxBindlessSamplers_),
+      ivkGetDescriptorSetLayoutBinding(kBinding_StorageImages,
+                                       VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                       pimpl_->currentMaxBindlessTextures_),
   };
   const uint32_t flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
                          VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
@@ -871,7 +890,7 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
   const std::array<VkDescriptorBindingFlags, kNumBindings> bindingFlags = {
       flags, flags, flags, flags, flags, flags, flags};
   IGL_ASSERT(bindingFlags.back() == flags);
-  dslBindless_ = std::make_unique<VulkanDescriptorSetLayout>(
+  pimpl_->dslBindless_ = std::make_unique<VulkanDescriptorSetLayout>(
       vf_,
       device,
       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
@@ -881,13 +900,13 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
       "Descriptor Set Layout: VulkanContext::dslBindless_");
   // create default descriptor pool and allocate 1 descriptor set
   const std::array<VkDescriptorPoolSize, kNumBindings> poolSizes = {
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, currentMaxBindlessTextures_},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, currentMaxBindlessTextures_},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, currentMaxBindlessTextures_},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, currentMaxBindlessTextures_},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, currentMaxBindlessSamplers_},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, currentMaxBindlessSamplers_},
-      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, currentMaxBindlessTextures_},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, pimpl_->currentMaxBindlessTextures_},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, pimpl_->currentMaxBindlessTextures_},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, pimpl_->currentMaxBindlessTextures_},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, pimpl_->currentMaxBindlessTextures_},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, pimpl_->currentMaxBindlessSamplers_},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, pimpl_->currentMaxBindlessSamplers_},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, pimpl_->currentMaxBindlessTextures_},
   };
   VK_ASSERT(ivkCreateDescriptorPool(&vf_,
                                     device,
@@ -895,19 +914,22 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
                                     1,
                                     static_cast<uint32_t>(poolSizes.size()),
                                     poolSizes.data(),
-                                    &dpBindless_));
+                                    &pimpl_->dpBindless_));
   VK_ASSERT(ivkSetDebugObjectName(&vf_,
                                   device,
                                   VK_OBJECT_TYPE_DESCRIPTOR_POOL,
-                                  (uint64_t)dpBindless_,
+                                  (uint64_t)pimpl_->dpBindless_,
                                   "Descriptor Pool: dpBindless_"));
-  VK_ASSERT(ivkAllocateDescriptorSet(
-      &vf_, device, dpBindless_, dslBindless_->getVkDescriptorSetLayout(), &bindlessDSet_.ds));
+  VK_ASSERT(ivkAllocateDescriptorSet(&vf_,
+                                     device,
+                                     pimpl_->dpBindless_,
+                                     pimpl_->dslBindless_->getVkDescriptorSetLayout(),
+                                     &pimpl_->dsBindless_));
   VK_ASSERT(ivkSetDebugObjectName(&vf_,
                                   device,
                                   VK_OBJECT_TYPE_DESCRIPTOR_SET,
-                                  (uint64_t)bindlessDSet_.ds,
-                                  "Descriptor Set: bindlessDSet_.ds"));
+                                  (uint64_t)pimpl_->dsBindless_,
+                                  "Descriptor Set: dsBindless_"));
 }
 
 void VulkanContext::updatePipelineLayouts() {
@@ -926,10 +948,11 @@ void VulkanContext::updatePipelineLayouts() {
 
   // @lint-ignore CLANGTIDY
   const VkDescriptorSetLayout DSLs[] = {
-      arenaCombinedImageSamplers_->getVkDescriptorSetLayout(),
-      arenaBuffersUniform_->getVkDescriptorSetLayout(),
-      arenaBuffersStorage_->getVkDescriptorSetLayout(),
-      config_.enableDescriptorIndexing ? dslBindless_->getVkDescriptorSetLayout() : VK_NULL_HANDLE,
+      pimpl_->arenaCombinedImageSamplers_->getVkDescriptorSetLayout(),
+      pimpl_->arenaBuffersUniform_->getVkDescriptorSetLayout(),
+      pimpl_->arenaBuffersStorage_->getVkDescriptorSetLayout(),
+      config_.enableDescriptorIndexing ? pimpl_->dslBindless_->getVkDescriptorSetLayout()
+                                       : VK_NULL_HANDLE,
   };
 
   // create pipeline layout
@@ -1131,8 +1154,8 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
     return;
   }
 
-  uint32_t newMaxTextures = currentMaxBindlessTextures_;
-  uint32_t newMaxSamplers = currentMaxBindlessSamplers_;
+  uint32_t newMaxTextures = pimpl_->currentMaxBindlessTextures_;
+  uint32_t newMaxSamplers = pimpl_->currentMaxBindlessSamplers_;
 
   while (textures_.size() > newMaxTextures) {
     newMaxTextures *= 2;
@@ -1140,8 +1163,8 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
   while (samplers_.size() > newMaxSamplers) {
     newMaxSamplers *= 2;
   }
-  if (newMaxTextures != currentMaxBindlessTextures_ ||
-      newMaxSamplers != currentMaxBindlessSamplers_) {
+  if (newMaxTextures != pimpl_->currentMaxBindlessTextures_ ||
+      newMaxSamplers != pimpl_->currentMaxBindlessSamplers_) {
     growBindlessDescriptorPool(newMaxTextures, newMaxSamplers);
     updatePipelineLayouts();
   }
@@ -1190,7 +1213,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
   if (!infoSampledImages.empty()) {
     // use the same indexing for every texture type
     for (uint32_t i = kBinding_Texture2D; i != kBinding_TextureCube + 1; i++) {
-      write.push_back(ivkGetWriteDescriptorSet_ImageInfo(bindlessDSet_.ds,
+      write.push_back(ivkGetWriteDescriptorSet_ImageInfo(pimpl_->dsBindless_,
                                                          i,
                                                          VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                                                          (uint32_t)infoSampledImages.size(),
@@ -1200,7 +1223,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
 
   if (!infoSamplers.empty()) {
     for (uint32_t i = kBinding_Sampler; i != kBinding_SamplerShadow + 1; i++) {
-      write.push_back(ivkGetWriteDescriptorSet_ImageInfo(bindlessDSet_.ds,
+      write.push_back(ivkGetWriteDescriptorSet_ImageInfo(pimpl_->dsBindless_,
                                                          i,
                                                          VK_DESCRIPTOR_TYPE_SAMPLER,
                                                          (uint32_t)infoSamplers.size(),
@@ -1209,7 +1232,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
   }
 
   if (!infoStorageImages.empty()) {
-    write.push_back(ivkGetWriteDescriptorSet_ImageInfo(bindlessDSet_.ds,
+    write.push_back(ivkGetWriteDescriptorSet_ImageInfo(pimpl_->dsBindless_,
                                                        kBinding_StorageImages,
                                                        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                        (uint32_t)infoStorageImages.size(),
@@ -1221,7 +1244,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
 #if IGL_VULKAN_PRINT_COMMANDS
     IGL_LOG_INFO("Updating descriptor set bindlessDSet_\n");
 #endif // IGL_VULKAN_PRINT_COMMANDS
-    immediate_->wait(std::exchange(bindlessDSet_.handle, immediate_->getLastSubmitHandle()));
+    immediate_->wait(std::exchange(pimpl_->handleBindless_, immediate_->getLastSubmitHandle()));
     vf_.vkUpdateDescriptorSets(
         device_->getVkDevice(), static_cast<uint32_t>(write.size()), write.data(), 0, nullptr);
   }
@@ -1406,7 +1429,7 @@ void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
       (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
       kBindPoint_Bindless,
       1,
-      &bindlessDSet_.ds,
+      &pimpl_->dsBindless_,
       0,
       nullptr);
 }
@@ -1414,7 +1437,7 @@ void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
 void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
                                            VkPipelineBindPoint bindPoint,
                                            const BindingsTextures& data) const {
-  VkDescriptorSet dset = arenaCombinedImageSamplers_->getNextDescriptorSet(*immediate_);
+  VkDescriptorSet dset = pimpl_->arenaCombinedImageSamplers_->getNextDescriptorSet(*immediate_);
 
   std::array<VkDescriptorImageInfo, IGL_TEXTURE_SAMPLERS_MAX> infoSampledImages{};
   uint32_t numImages = 0;
@@ -1464,7 +1487,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
 void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
                                                  VkPipelineBindPoint bindPoint,
                                                  BindingsBuffers& data) const {
-  VkDescriptorSet dsetBufUniform = arenaBuffersUniform_->getNextDescriptorSet(*immediate_);
+  VkDescriptorSet dsetBufUniform = pimpl_->arenaBuffersUniform_->getNextDescriptorSet(*immediate_);
 
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
     VkDescriptorBufferInfo& bi = data.buffers[i];
@@ -1501,7 +1524,7 @@ void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
 void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
                                                  VkPipelineBindPoint bindPoint,
                                                  BindingsBuffers& data) const {
-  VkDescriptorSet dsetBufStorage = arenaBuffersStorage_->getNextDescriptorSet(*immediate_);
+  VkDescriptorSet dsetBufStorage = pimpl_->arenaBuffersStorage_->getNextDescriptorSet(*immediate_);
 
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
     VkDescriptorBufferInfo& bi = data.buffers[i];
@@ -1537,11 +1560,11 @@ void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
 
 void VulkanContext::markSubmitted(const VulkanImmediateCommands::SubmitHandle& handle) const {
   if (config_.enableDescriptorIndexing) {
-    bindlessDSet_.handle = handle;
+    pimpl_->handleBindless_ = handle;
   }
-  arenaCombinedImageSamplers_->markSubmitted(handle);
-  arenaBuffersUniform_->markSubmitted(handle);
-  arenaBuffersStorage_->markSubmitted(handle);
+  pimpl_->arenaCombinedImageSamplers_->markSubmitted(handle);
+  pimpl_->arenaBuffersUniform_->markSubmitted(handle);
+  pimpl_->arenaBuffersStorage_->markSubmitted(handle);
 }
 
 void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) const {
