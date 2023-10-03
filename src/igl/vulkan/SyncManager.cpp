@@ -34,7 +34,7 @@ void SyncManager::acquireNext() noexcept {
   ctx_.immediate_->wait(submitHandles_[currentIndex_]);
 }
 
-void SyncManager::markSubmit(SubmitHandle handle) noexcept {
+void SyncManager::markSubmitted(SubmitHandle handle) noexcept {
   submitHandles_[currentIndex_] = handle;
 
   acquireNext();

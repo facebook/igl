@@ -326,7 +326,7 @@ class VulkanContext final {
   void updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
                                     VkPipelineBindPoint bindPoint,
                                     BindingsBuffers& data) const;
-  void markSubmit(const SubmitHandle& handle) const;
+  void markSubmitted(const SubmitHandle& handle) const;
 
   struct DeferredTask {
     DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) :

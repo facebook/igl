@@ -272,7 +272,7 @@ class DescriptorPoolsArena final {
     // @fb-only
     return dset;
   }
-  void markSubmit(VulkanImmediateCommands::SubmitHandle handle) {
+  void markSubmitted(VulkanImmediateCommands::SubmitHandle handle) {
     lastSubmitHandle_ = handle;
   }
 
@@ -1535,13 +1535,13 @@ void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
       nullptr);
 }
 
-void VulkanContext::markSubmit(const VulkanImmediateCommands::SubmitHandle& handle) const {
+void VulkanContext::markSubmitted(const VulkanImmediateCommands::SubmitHandle& handle) const {
   if (config_.enableDescriptorIndexing) {
     bindlessDSet_.handle = handle;
   }
-  arenaCombinedImageSamplers_->markSubmit(handle);
-  arenaBuffersUniform_->markSubmit(handle);
-  arenaBuffersStorage_->markSubmit(handle);
+  arenaCombinedImageSamplers_->markSubmitted(handle);
+  arenaBuffersUniform_->markSubmitted(handle);
+  arenaBuffersStorage_->markSubmitted(handle);
 }
 
 void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) const {

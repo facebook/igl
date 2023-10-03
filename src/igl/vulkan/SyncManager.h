@@ -29,7 +29,7 @@ class SyncManager final {
 
   void acquireNext() noexcept;
 
-  void markSubmit(SubmitHandle handle) noexcept;
+  void markSubmitted(SubmitHandle handle) noexcept;
 
  private:
   const VulkanContext& ctx_;
