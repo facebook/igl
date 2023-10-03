@@ -1227,8 +1227,6 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
   }
 
   awaitingCreation_ = false;
-
-  lastDeletionFrame_ = getFrameNumber();
 }
 
 std::shared_ptr<VulkanTexture> VulkanContext::createTexture(

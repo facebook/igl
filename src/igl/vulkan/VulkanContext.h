@@ -273,25 +273,6 @@ class VulkanContext final {
     SubmitHandle handle =
         SubmitHandle(); // a handle of the last submit this descriptor set was a part of
   };
-  struct DescriptorSetArray {
-    std::vector<DescriptorSet> dsets;
-    uint32_t current = 0;
-    uint32_t prev = 0;
-    VkDescriptorSet acquireNext(VulkanImmediateCommands& ic) {
-      IGL_ASSERT(!dsets.empty());
-      VkDescriptorSet ds = dsets[current].ds;
-      ic.wait(std::exchange(dsets[current].handle, {}));
-      current = (current + 1) % dsets.size();
-      return ds;
-    }
-    void updateHandles(SubmitHandle handle) {
-      IGL_ASSERT(!dsets.empty());
-      for (uint32_t i = prev; i != current; i = (i + 1) % dsets.size()) {
-        dsets[i].handle = handle;
-      }
-      prev = current;
-    }
-  };
   uint32_t currentMaxBindlessTextures_ = 8;
   uint32_t currentMaxBindlessSamplers_ = 8;
   mutable DescriptorSet bindlessDSet_;
@@ -299,7 +280,7 @@ class VulkanContext final {
   std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutCompute_;
   std::shared_ptr<igl::vulkan::VulkanBuffer> dummyUniformBuffer_;
   std::shared_ptr<igl::vulkan::VulkanBuffer> dummyStorageBuffer_;
-  // don't use staging on devices with shared host-visible memory
+  // don't use staging on devices with device-local host-visible memory
   bool useStaging_ = true;
 
   std::unique_ptr<VulkanContextImpl> pimpl_;
@@ -321,7 +302,6 @@ class VulkanContext final {
   mutable std::vector<uint32_t> freeIndicesSamplers_;
   // a texture/sampler was created since the last descriptor set update
   mutable bool awaitingCreation_ = false;
-  mutable uint64_t lastDeletionFrame_ = 0;
 
   mutable size_t drawCallCount_ = 0;
 
