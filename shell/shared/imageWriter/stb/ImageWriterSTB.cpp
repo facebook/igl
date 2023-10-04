@@ -22,6 +22,7 @@ void ImageWriterSTB::writeImage(const std::string& imageAbsolutePath,
     IGLLog(IGLLogLevel::LOG_ERROR, "Failed saving the file: %s", imageAbsolutePath.c_str());
     return;
   }
+  stbi_flip_vertically_on_write(1);
   auto ret = stbi_write_png(imageAbsolutePath.c_str(),
                             static_cast<int>(imageData.desc.width),
                             static_cast<int>(imageData.desc.height),
