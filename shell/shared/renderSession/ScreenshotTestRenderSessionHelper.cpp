@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/Macros.h>
+
 #include <shell/shared/imageWriter/ImageWriter.h>
 #include <shell/shared/renderSession/ScreenshotTestRenderSessionHelper.h>
 #include <shell/shared/renderSession/ShellParams.h>
@@ -31,8 +33,20 @@ void SaveFrameBufferToPng(const char* absoluteFilename,
   auto commandQueue = platform.getDevice().createCommandQueue(desc, nullptr);
   framebuffer->copyBytesColorAttachment(*commandQueue, 0, buffer.get(), rangeDesc);
 
-  imageData.data = iglu::textureloader::IData::tryCreate(
-      std::move(buffer), frameBuffersize.width * frameBuffersize.height * bytesPerPixel, nullptr);
+  const size_t numPixels = frameBuffersize.width * frameBuffersize.height * bytesPerPixel;
+
+#if IGL_PLATFORM_WIN
+  if (imageData.desc.format == TextureFormat::BGRA_UNorm8) {
+    // Swap B and R channels, as image writer expects RGBA.
+    // Note that this is only defined for the Windows platform, as in practice
+    // BGRA might only be used there for render targets.
+    for (size_t i = 0; i < numPixels; i += bytesPerPixel) {
+      std::swap(buffer.get()[i], buffer.get()[i + 2]);
+    }
+  }
+#endif
+
+  imageData.data = iglu::textureloader::IData::tryCreate(std::move(buffer), numPixels, nullptr);
 
   IGLLog(IGLLogLevel::LOG_INFO, "Writing screenshot to: %s", absoluteFilename);
   platform.getImageWriter().writeImage(absoluteFilename, imageData);
