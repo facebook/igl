@@ -325,16 +325,18 @@ void RenderCommandEncoder::endEncoding() {
   const FramebufferDesc& desc = static_cast<const Framebuffer&>((*framebuffer_)).getDesc();
 
   for (const auto& [_, attachment] : desc.colorAttachments) {
+    // the image layouts of color attachments must match the final layout of the render pass, which
+    // is always VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL (check VulkanRenderPassBuilder.cpp)
+    overrideImageLayout(attachment.texture.get(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    overrideImageLayout(attachment.resolveTexture.get(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     transitionToShaderReadOnly(cmdBuffer_, attachment.texture.get());
     transitionToShaderReadOnly(cmdBuffer_, attachment.resolveTexture.get());
   }
 
-  if (desc.depthAttachment.texture) {
-    const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*desc.depthAttachment.texture.get());
-    // this must match the final layout of the render pass
-    tex.getVulkanTexture().getVulkanImage().imageLayout_ =
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-  }
+  // this must match the final layout of the render pass, which is always
+  // VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL (check VulkanRenderPassBuilder.cpp)
+  overrideImageLayout(desc.depthAttachment.texture.get(),
+                      VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
 void RenderCommandEncoder::pushDebugGroupLabel(const std::string& label,

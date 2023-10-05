@@ -426,5 +426,13 @@ void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture) {
   }
 }
 
+void overrideImageLayout(ITexture* texture, VkImageLayout layout) {
+  if (!texture) {
+    return;
+  }
+  const vulkan::Texture* tex = static_cast<vulkan::Texture*>(texture);
+  tex->getVulkanTexture().getVulkanImage().imageLayout_ = layout;
+}
+
 } // namespace vulkan
 } // namespace igl
