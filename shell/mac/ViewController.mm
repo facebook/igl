@@ -469,6 +469,12 @@ using namespace igl;
       igl::shell::MouseButtonEvent(igl::shell::MouseButton::Right, true, curPoint.x, curPoint.y));
 }
 
+- (void)otherMouseDown:(NSEvent*)event {
+  NSPoint curPoint = [self locationForEvent:event];
+  shellPlatform_->getInputDispatcher().queueEvent(
+      igl::shell::MouseButtonEvent(igl::shell::MouseButton::Middle, true, curPoint.x, curPoint.y));
+}
+
 - (void)mouseUp:(NSEvent*)event {
   NSPoint curPoint = [self locationForEvent:event];
   shellPlatform_->getInputDispatcher().queueEvent(
@@ -479,6 +485,12 @@ using namespace igl;
   NSPoint curPoint = [self locationForEvent:event];
   shellPlatform_->getInputDispatcher().queueEvent(
       igl::shell::MouseButtonEvent(igl::shell::MouseButton::Right, false, curPoint.x, curPoint.y));
+}
+
+- (void)otherMouseUp:(NSEvent*)event {
+  NSPoint curPoint = [self locationForEvent:event];
+  shellPlatform_->getInputDispatcher().queueEvent(
+      igl::shell::MouseButtonEvent(igl::shell::MouseButton::Middle, false, curPoint.x, curPoint.y));
 }
 
 - (void)mouseMoved:(NSEvent*)event {
@@ -494,6 +506,12 @@ using namespace igl;
 }
 
 - (void)rightMouseDragged:(NSEvent*)event {
+  NSPoint curPoint = [self locationForEvent:event];
+  shellPlatform_->getInputDispatcher().queueEvent(
+      igl::shell::MouseMotionEvent(curPoint.x, curPoint.y, event.deltaX, event.deltaY));
+}
+
+- (void)otherMouseDragged:(NSEvent*)event {
   NSPoint curPoint = [self locationForEvent:event];
   shellPlatform_->getInputDispatcher().queueEvent(
       igl::shell::MouseMotionEvent(curPoint.x, curPoint.y, event.deltaX, event.deltaY));
