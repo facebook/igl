@@ -276,19 +276,21 @@ VkImageView Texture::getVkImageView() const {
 VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
                                                   uint32_t layer,
                                                   FramebufferMode mode) const {
+  const bool isStereo = mode == FramebufferMode::Stereo;
   const auto index = mipLevel * getNumVkLayers() + layer;
-  if (index < imageViewForFramebuffer_.size() && imageViewForFramebuffer_[index]) {
-    return imageViewForFramebuffer_[index]->getVkImageView();
+  std::vector<std::shared_ptr<VulkanImageView>>& imageViews =
+      isStereo ? imageViewsForFramebufferStereo_ : imageViewsForFramebufferMono_;
+
+  if (index < imageViews.size() && imageViews[index]) {
+    return imageViews[index]->getVkImageView();
   }
 
-  if (index >= imageViewForFramebuffer_.size()) {
-    imageViewForFramebuffer_.resize(index + 1);
+  if (index >= imageViews.size()) {
+    imageViews.resize(index + 1);
   }
 
   const VkImageAspectFlags flags = texture_->getVulkanImage().getImageAspectFlags();
-  const bool isStereo = mode == FramebufferMode::Stereo;
-
-  imageViewForFramebuffer_[index] = texture_->getVulkanImage().createImageView(
+  imageViews[index] = texture_->getVulkanImage().createImageView(
       isStereo ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D,
       textureFormatToVkFormat(desc_.format),
       flags,
@@ -298,7 +300,7 @@ VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
       isStereo ? VK_REMAINING_ARRAY_LAYERS : 1u,
       "Image View: igl/vulkan/Texture.cpp: Texture::getVkImageViewForFramebuffer()");
 
-  return imageViewForFramebuffer_[index]->vkImageView_;
+  return imageViews[index]->vkImageView_;
 }
 
 VkImage Texture::getVkImage() const {
