@@ -677,6 +677,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
     srcAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
   }
   if (srcStageMask & VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT) {
+    srcAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
     srcAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
   }
   if (srcStageMask & VK_PIPELINE_STAGE_TRANSFER_BIT) {
@@ -723,6 +724,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
   }
   if (dstStageMask & VK_PIPELINE_STAGE_TRANSFER_BIT) {
     dstAccessMask |= VK_ACCESS_TRANSFER_READ_BIT;
+    dstAccessMask |= VK_ACCESS_TRANSFER_WRITE_BIT;
   }
   if (dstStageMask & VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT) {
     dstAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
