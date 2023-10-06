@@ -136,7 +136,8 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::setMultiviewMasks(
 bool VulkanRenderPassBuilder::operator==(const VulkanRenderPassBuilder& other) const {
   return attachments_ == other.attachments_ && refsColor_ == other.refsColor_ &&
          refsColorResolve_ == other.refsColorResolve_ && refDepth_ == other.refDepth_ &&
-         refDepthResolve_ == other.refDepthResolve_;
+         refDepthResolve_ == other.refDepthResolve_ && viewMask_ == other.viewMask_ &&
+         correlationMask_ == other.correlationMask_;
 }
 
 uint64_t VulkanRenderPassBuilder::HashFunction::operator()(
