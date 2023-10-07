@@ -383,13 +383,17 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
   case InternalFeatures::ClearDepthf:
     return hasDesktopOrESVersion(*this, GLVersion::v4_1, GLVersion::v2_0_ES);
 
-  case InternalFeatures::Debug:
-    return hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES) ||
-           hasExtension(Extensions::Debug) || hasExtension(Extensions::DebugMarker);
-
   case InternalFeatures::DebugLabel:
     return hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES) ||
            hasExtension(Extensions::Debug) || hasExtension(Extensions::DebugLabel);
+
+  case InternalFeatures::DebugMessage:
+    return hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES) ||
+           hasExtension(Extensions::Debug) || hasExtension(Extensions::DebugMarker);
+
+  case InternalFeatures::DebugMessageCallback:
+    return hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES) ||
+           hasExtension(Extensions::Debug);
 
   case InternalFeatures::FramebufferBlit:
     // TODO: Add support for GL_ANGLE_framebuffer_blit
@@ -883,7 +887,10 @@ bool DeviceFeatureSet::hasInternalRequirement(InternalRequirement requirement) c
   case InternalRequirement::ColorTexImageRgbApple422Unsized:
     return usesOpenGLES() && !hasESVersion(*this, GLVersion::v3_0_ES);
 
-  case InternalRequirement::DebugExtReq:
+  case InternalRequirement::DebugMessageExtReq:
+    return !hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES);
+
+  case InternalRequirement::DebugMessageCallbackExtReq:
     return !hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES);
 
   case InternalRequirement::DebugLabelExtEnumsReq:

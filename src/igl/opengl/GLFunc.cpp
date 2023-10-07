@@ -161,11 +161,15 @@ IGL_EXTERN_BEGIN
 #define CAN_CALL_glGetStringi 0
 #endif
 #if defined(GL_VERSION_4_3) || defined(GL_ES_VERSION_3_2)
+#define CAN_CALL_glDebugMessageCallback CAN_CALL
 #define CAN_CALL_glDebugMessageInsert CAN_CALL
+#define CAN_CALL_glObjectLabel CAN_CALL
 #define CAN_CALL_glPopDebugGroup CAN_CALL
 #define CAN_CALL_glPushDebugGroup CAN_CALL
 #else
+#define CAN_CALL_glDebugMessageCallback 0
 #define CAN_CALL_glDebugMessageInsert 0
+#define CAN_CALL_glObjectLabel 0
 #define CAN_CALL_glPopDebugGroup 0
 #define CAN_CALL_glPushDebugGroup 0
 #endif
@@ -174,11 +178,14 @@ IGL_EXTERN_BEGIN
 #else
 #define CAN_CALL_glVertexAttribDivisor 0
 #endif
-#if defined(GL_VERSION_4_3) || defined(GL_ES_VERSION_3_2)
-#define CAN_CALL_glObjectLabel CAN_CALL
-#else
-#define CAN_CALL_glObjectLabel 0
-#endif
+
+void iglDebugMessageCallback(PFNIGLDEBUGPROC callback, const void* userParam) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glDebugMessageCallback,
+                          glDebugMessageCallback,
+                          PFNIGLDEBUGMESSAGECALLBACKPROC,
+                          callback,
+                          userParam);
+}
 
 void iglDebugMessageInsert(GLenum source,
                            GLenum type,
@@ -1515,11 +1522,13 @@ void iglRenderbufferStorageMultisampleIMG(GLenum target,
 /// MARK: - GL_KHR_debug
 
 #if defined(GL_KHR_debug)
+#define CAN_CALL_glDebugMessageCallbackKHR CAN_CALL
 #define CAN_CALL_glDebugMessageInsertKHR CAN_CALL
 #define CAN_CALL_glObjectLabelKHR CAN_CALL
 #define CAN_CALL_glPopDebugGroupKHR CAN_CALL
 #define CAN_CALL_glPushDebugGroupKHR CAN_CALL
 #else
+#define CAN_CALL_glDebugMessageCallbackKHR 0
 #define CAN_CALL_glDebugMessageInsertKHR 0
 #define CAN_CALL_glObjectLabelKHR 0
 #define CAN_CALL_glPopDebugGroupKHR 0
@@ -1527,16 +1536,26 @@ void iglRenderbufferStorageMultisampleIMG(GLenum target,
 #endif
 
 #if IGL_OPENGL
+#define DebugMessageCallbackKHR glDebugMessageCallback
 #define DebugMessageInsertKHR glDebugMessageInsert
 #define ObjectLabelKHR glObjectLabel
 #define PopDebugGroupKHR glPopDebugGroup
 #define PushDebugGroupKHR glPushDebugGroup
 #else
+#define DebugMessageCallbackKHR glDebugMessageCallbackKHR
 #define DebugMessageInsertKHR glDebugMessageInsertKHR
 #define ObjectLabelKHR glObjectLabelKHR
 #define PopDebugGroupKHR glPopDebugGroupKHR
 #define PushDebugGroupKHR glPushDebugGroupKHR
 #endif
+
+void iglDebugMessageCallbackKHR(PFNIGLDEBUGPROC callback, const void* userParam) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glDebugMessageCallbackKHR,
+                          DebugMessageCallbackKHR,
+                          PFNIGLDEBUGMESSAGECALLBACKPROC,
+                          callback,
+                          userParam);
+}
 
 void iglDebugMessageInsertKHR(GLenum source,
                               GLenum type,

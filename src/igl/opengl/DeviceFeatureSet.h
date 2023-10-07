@@ -63,8 +63,9 @@ enum class Extensions {
 // clang-format off
 enum class InternalFeatures {
   ClearDepthf,               // glClearDepthf is supported
-  Debug,                     // Debug messages and group markers are supported
   DebugLabel,                // Debug labels on objects are supported
+  DebugMessage,              // Debug messages and group markers are supported
+  DebugMessageCallback,      // Debug message callbacks are supported
   FramebufferBlit,           // BlitFramebuffer is supported
   FramebufferObject,         // Framebuffer objects are supported
   GetStringi,                // GetStringi is supported
@@ -155,7 +156,8 @@ enum class InternalRequirement {
   ColorTexImageRgb5A1Unsized,
   ColorTexImageRgba4Unsized,
   ColorTexImageRgbApple422Unsized,
-  DebugExtReq,
+  DebugMessageExtReq,
+  DebugMessageCallbackExtReq,
   DebugLabelExtEnumsReq,
   DebugLabelExtReq,
   Depth24Stencil8Unsized,

@@ -176,6 +176,7 @@ class IContext {
   GLuint createProgram();
   GLuint createShader(GLenum shaderType);
   virtual void cullFace(GLint mode);
+  void debugMessageCallback(PFNIGLDEBUGPROC callback, const void* userParam);
   void debugMessageInsert(GLenum source,
                           GLenum type,
                           GLuint id,
@@ -613,6 +614,7 @@ class IContext {
   PFNIGLCLEARDEPTHFPROC clearDepthfProc_ = nullptr;
   PFNIGLCOMPRESSEDTEXIMAGE3DPROC compressedTexImage3DProc_ = nullptr;
   PFNIGLCOMPRESSEDTEXSUBIMAGE3DPROC compressedTexSubImage3DProc_ = nullptr;
+  PFNIGLDEBUGMESSAGECALLBACKPROC debugMessageCallbackProc_ = nullptr;
   PFNIGLDEBUGMESSAGEINSERTPROC debugMessageInsertProc_ = nullptr;
   PFNIGLDELETESYNCPROC deleteSyncProc_ = nullptr;
   PFNIGLDELETEVERTEXARRAYSPROC deleteVertexArraysProc_ = nullptr;

@@ -78,6 +78,14 @@ using PFNIGLCOMPRESSEDTEXSUBIMAGE3DPROC = void (*)(GLenum target,
                                                    GLsizei imageSize,
                                                    const GLvoid* data);
 using PFNIGLCREATEMEMORYOBJECTSPROC = void (*)(GLsizei n, GLuint* memoryObjects);
+using PFNIGLDEBUGPROC = void (*)(GLenum source,
+                                 GLenum type,
+                                 GLuint id,
+                                 GLenum severity,
+                                 GLsizei length,
+                                 const GLchar* message,
+                                 const void* userParam);
+using PFNIGLDEBUGMESSAGECALLBACKPROC = void (*)(PFNIGLDEBUGPROC callback, const void* userParam);
 using PFNIGLDEBUGMESSAGEINSERTPROC = void (*)(GLenum source,
                                               GLenum type,
                                               GLuint id,
@@ -289,6 +297,7 @@ void iglCompressedTexSubImage3D(GLenum target,
                                 GLenum format,
                                 GLsizei imageSize,
                                 const GLvoid* data);
+void iglDebugMessageCallback(PFNIGLDEBUGPROC callback, const void* userParam);
 void iglDebugMessageInsert(GLenum source,
                            GLenum type,
                            GLuint id,
@@ -642,6 +651,7 @@ void iglRenderbufferStorageMultisampleIMG(GLenum target,
 ///--------------------------------------
 /// MARK: - GL_KHR_debug
 
+void iglDebugMessageCallbackKHR(PFNIGLDEBUGPROC callback, const void* userParam);
 void iglDebugMessageInsertKHR(GLenum source,
                               GLenum type,
                               GLuint id,

@@ -238,9 +238,24 @@ std::string GLenumToString(GLenum code) {
     RESULT_CASE(GL_CW)
     RESULT_CASE(GL_CCW)
     RESULT_CASE(GL_CURRENT_VERTEX_ATTRIB)
+    RESULT_CASE(GL_DEBUG_OUTPUT)
+    RESULT_CASE(GL_DEBUG_SEVERITY_HIGH)
     RESULT_CASE(GL_DEBUG_SEVERITY_LOW)
+    RESULT_CASE(GL_DEBUG_SEVERITY_MEDIUM)
+    RESULT_CASE(GL_DEBUG_SEVERITY_NOTIFICATION)
+    RESULT_CASE(GL_DEBUG_SOURCE_API)
     RESULT_CASE(GL_DEBUG_SOURCE_APPLICATION)
+    RESULT_CASE(GL_DEBUG_SOURCE_OTHER)
+    RESULT_CASE(GL_DEBUG_SOURCE_SHADER_COMPILER)
+    RESULT_CASE(GL_DEBUG_SOURCE_THIRD_PARTY)
+    RESULT_CASE(GL_DEBUG_SOURCE_WINDOW_SYSTEM)
+    RESULT_CASE(GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR)
+    RESULT_CASE(GL_DEBUG_TYPE_ERROR)
     RESULT_CASE(GL_DEBUG_TYPE_MARKER)
+    RESULT_CASE(GL_DEBUG_TYPE_OTHER)
+    RESULT_CASE(GL_DEBUG_TYPE_PERFORMANCE)
+    RESULT_CASE(GL_DEBUG_TYPE_PORTABILITY)
+    RESULT_CASE(GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR)
     RESULT_CASE(GL_DECR)
     RESULT_CASE(GL_DECR_WRAP)
     RESULT_CASE(GL_DELETE_STATUS)
@@ -559,6 +574,27 @@ std::string GLenumToString(GLenum code) {
 
 #define GL_ENUM_TO_STRING(code) GLenumToString(code).c_str()
 #define GL_BOOL_TO_STRING(code) GLboolToString(code).c_str()
+
+void logOpenGlDebugMessage(GLenum source,
+                           GLenum type,
+                           GLuint id,
+                           GLenum severity,
+                           GLsizei length,
+                           const GLchar* message,
+                           const void* userParam) {
+  const auto logLevel = severity == GL_DEBUG_SEVERITY_HIGH
+                            ? IGLLogLevel::LOG_ERROR
+                            : (severity == GL_DEBUG_SEVERITY_MEDIUM ? IGLLogLevel::LOG_WARNING
+                                                                    : IGLLogLevel::LOG_INFO);
+  IGLLog(logLevel,
+         "%s %s %u %s: %.*s\n",
+         GL_ENUM_TO_STRING(source),
+         GL_ENUM_TO_STRING(type),
+         id,
+         GL_ENUM_TO_STRING(severity),
+         static_cast<int>(message ? length : 0),
+         message ? message : "");
+}
 
 } // namespace
 #endif // defined(IGL_API_LOG) && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
@@ -1175,6 +1211,25 @@ void IContext::cullFace(GLint mode) {
   GLCHECK_ERRORS();
 }
 
+void IContext::debugMessageCallback(PFNIGLDEBUGPROC callback, const void* userParam) {
+  if (debugMessageInsertProc_ == nullptr) {
+    if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessageCallback)) {
+      if (deviceFeatureSet_.hasInternalRequirement(
+              InternalRequirement::DebugMessageCallbackExtReq)) {
+        if (deviceFeatureSet_.hasExtension(Extensions::Debug)) {
+          debugMessageCallbackProc_ = iglDebugMessageCallbackKHR;
+        }
+      } else {
+        debugMessageCallbackProc_ = iglDebugMessageCallback;
+      }
+    }
+  }
+
+  GLCALL_PROC(debugMessageCallbackProc_, callback, userParam);
+  APILOG("glDebugMessageCallback(%p, %p)\n", callback, userParam);
+  GLCHECK_ERRORS();
+}
+
 void IContext::debugMessageInsert(GLenum source,
                                   GLenum type,
                                   GLuint id,
@@ -1182,8 +1237,8 @@ void IContext::debugMessageInsert(GLenum source,
                                   GLsizei length,
                                   const GLchar* buf) {
   if (debugMessageInsertProc_ == nullptr) {
-    if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::Debug)) {
-      if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::DebugExtReq)) {
+    if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessage)) {
+      if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::DebugMessageExtReq)) {
         if (deviceFeatureSet_.hasExtension(Extensions::Debug)) {
           debugMessageInsertProc_ = iglDebugMessageInsertKHR;
         } else if (deviceFeatureSet_.hasExtension(Extensions::DebugMarker)) {
@@ -2287,8 +2342,8 @@ void IContext::polygonOffset(GLfloat factor, GLfloat units) {
 
 void IContext::pushDebugGroup(GLenum source, GLuint id, GLsizei length, const GLchar* message) {
   if (pushDebugGroupProc_ == nullptr) {
-    if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::Debug)) {
-      if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::DebugExtReq)) {
+    if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessage)) {
+      if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::DebugMessageExtReq)) {
         if (deviceFeatureSet_.hasExtension(Extensions::Debug)) {
           pushDebugGroupProc_ = iglPushDebugGroupKHR;
         } else if (deviceFeatureSet_.hasExtension(Extensions::DebugMarker)) {
@@ -2307,8 +2362,8 @@ void IContext::pushDebugGroup(GLenum source, GLuint id, GLsizei length, const GL
 
 void IContext::popDebugGroup() {
   if (popDebugGroupProc_ == nullptr) {
-    if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::Debug)) {
-      if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::DebugExtReq)) {
+    if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessage)) {
+      if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::DebugMessageExtReq)) {
         if (deviceFeatureSet_.hasExtension(Extensions::Debug)) {
           popDebugGroupProc_ = iglPopDebugGroupKHR;
         } else if (deviceFeatureSet_.hasExtension(Extensions::DebugMarker)) {
@@ -3400,6 +3455,13 @@ void IContext::initialize(Result* result) {
   if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::SeamlessCubeMap)) {
     enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
   }
+
+#if defined(IGL_API_LOG)
+  enable(GL_DEBUG_OUTPUT);
+  if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessageCallback)) {
+    debugMessageCallback(logOpenGlDebugMessage, nullptr);
+  }
+#endif
 }
 
 const DeviceFeatureSet& IContext::deviceFeatures() const {
