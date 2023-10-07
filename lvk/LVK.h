@@ -161,6 +161,9 @@ class Holder final {
     return std::exchange(handle_, HandleType{});
   }
 
+  uint32_t gen() const {
+    return handle_.gen();
+  }
   uint32_t index() const {
     return handle_.index();
   }
@@ -170,7 +173,7 @@ class Holder final {
 
  private:
   lvk::IContext* ctx_ = nullptr;
-  HandleType handle_;
+  HandleType handle_ = {};
 };
 
 } // namespace lvk
