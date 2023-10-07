@@ -54,6 +54,7 @@ VkResult ivkCreateSemaphore(const struct VulkanFunctionTable* vt,
 VkResult ivkCreateFence(const struct VulkanFunctionTable* vt,
                         VkDevice device,
                         VkFlags flags,
+                        bool exportable,
                         VkFence* outFence);
 
 VkResult ivkCreateSurface(const struct VulkanFunctionTable* vt,

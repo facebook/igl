@@ -672,8 +672,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   device_ =
       std::make_unique<igl::vulkan::VulkanDevice>(vf_, device, "Device: VulkanContext::device_");
-  immediate_ = std::make_unique<igl::vulkan::VulkanImmediateCommands>(
-      vf_, device, deviceQueues_.graphicsQueueFamilyIndex, "VulkanContext::immediate_");
+  immediate_ =
+      std::make_unique<igl::vulkan::VulkanImmediateCommands>(vf_,
+                                                             device,
+                                                             deviceQueues_.graphicsQueueFamilyIndex,
+                                                             config_.exportableFences,
+                                                             "VulkanContext::immediate_");
   syncManager_ = std::make_unique<SyncManager>(*this, config_.maxResourceCount);
 
   // create Vulkan pipeline cache

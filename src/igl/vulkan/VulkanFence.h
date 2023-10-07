@@ -26,6 +26,7 @@ class VulkanFence final {
   VulkanFence(const VulkanFunctionTable& vf,
               VkDevice device,
               VkFlags flags,
+              bool exportable = false,
               const char* debugName = nullptr);
   ~VulkanFence();
 
@@ -39,6 +40,7 @@ class VulkanFence final {
   const VulkanFunctionTable* vf_{};
   VkDevice device_ = VK_NULL_HANDLE;
   VkFence vkFence_ = VK_NULL_HANDLE;
+  bool exportable_ = false;
 };
 
 } // namespace vulkan

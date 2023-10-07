@@ -16,11 +16,12 @@ namespace vulkan {
 VulkanFence::VulkanFence(const VulkanFunctionTable& vf,
                          VkDevice device,
                          VkFlags flags,
+                         bool exportable,
                          const char* debugName) :
-  vf_(&vf), device_(device) {
+  vf_(&vf), device_(device), exportable_(exportable) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  VK_ASSERT(ivkCreateFence(vf_, device_, flags, &vkFence_));
+  VK_ASSERT(ivkCreateFence(vf_, device_, flags, exportable, &vkFence_));
   VK_ASSERT(
       ivkSetDebugObjectName(vf_, device_, VK_OBJECT_TYPE_FENCE, (uint64_t)vkFence_, debugName));
 }
@@ -39,6 +40,7 @@ VulkanFence::VulkanFence(VulkanFence&& other) noexcept {
   std::swap(vf_, other.vf_);
   std::swap(device_, other.device_);
   std::swap(vkFence_, other.vkFence_);
+  std::swap(exportable_, other.exportable_);
 }
 
 VulkanFence& VulkanFence::operator=(VulkanFence&& other) noexcept {
@@ -46,6 +48,7 @@ VulkanFence& VulkanFence::operator=(VulkanFence&& other) noexcept {
   std::swap(vf_, tmp.vf_);
   std::swap(device_, tmp.device_);
   std::swap(vkFence_, tmp.vkFence_);
+  std::swap(exportable_, tmp.exportable_);
   return *this;
 }
 

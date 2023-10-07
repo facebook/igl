@@ -82,6 +82,10 @@ struct VulkanContextConfig {
   // owned by the application - should be alive until initContext() returns
   const void* pipelineCacheData = nullptr;
   size_t pipelineCacheDataSize = 0;
+
+  // This enables fences generated at the end of submission to be exported to the client.
+  // The client can then use the SubmitHandle to wait for the completion of the GPU work.
+  bool exportableFences = false;
 };
 
 class VulkanContext final {

@@ -27,6 +27,7 @@ class VulkanImmediateCommands final {
   VulkanImmediateCommands(const VulkanFunctionTable& vf,
                           VkDevice device,
                           uint32_t queueFamilyIndex,
+                          bool exportableFences,
                           const char* debugName);
   ~VulkanImmediateCommands();
   VulkanImmediateCommands(const VulkanImmediateCommands&) = delete;

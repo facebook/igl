@@ -16,6 +16,7 @@ namespace vulkan {
 VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
                                                  VkDevice device,
                                                  uint32_t queueFamilyIndex,
+                                                 bool exportableFences,
                                                  const char* debugName) :
   vf_(vf),
   device_(device),
@@ -37,6 +38,7 @@ VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
         VulkanFence(vf_,
                     device_,
                     VkFenceCreateFlagBits{},
+                    exportableFences,
                     IGL_FORMAT("Fence: commandBuffer #{}", i).c_str()),
         VulkanSemaphore(vf_, device, IGL_FORMAT("Semaphore: {} ({})", debugName, i).c_str()));
     VK_ASSERT(ivkAllocateCommandBuffer(

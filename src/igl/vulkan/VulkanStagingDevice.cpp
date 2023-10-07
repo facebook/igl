@@ -35,6 +35,7 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
       ctx_.vf_,
       ctx_.device_->getVkDevice(),
       ctx_.deviceQueues_.graphicsQueueFamilyIndex,
+      ctx_.config_.exportableFences,
       "VulkanStagingDevice::immediate_");
   IGL_ASSERT(immediate_.get());
 }
