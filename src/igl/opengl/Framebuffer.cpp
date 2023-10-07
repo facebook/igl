@@ -417,7 +417,11 @@ void CustomFramebuffer::initialize(const FramebufferDesc& desc, Result* outResul
 
   // Restore framebuffer binding
   FramebufferBindingGuard guard(getContext());
-
+  if (!desc.debugName.empty() &&
+      getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
+    getContext().objectLabel(
+        GL_FRAMEBUFFER, frameBufferID_, desc.debugName.size(), desc.debugName.c_str());
+  }
   if (hasImplicitColorAttachment()) {
     // Don't generate framebuffer id. Use implicit framebuffer supplied by containing view
     Result::setOk(outResult);

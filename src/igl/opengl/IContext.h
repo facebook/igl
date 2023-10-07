@@ -325,6 +325,7 @@ class IContext {
   void linkProgram(GLuint program);
   void* mapBuffer(GLenum target, GLbitfield access);
   void* mapBufferRange(GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access);
+  void objectLabel(GLenum identifier, GLuint name, GLsizei length, const char* label);
   void pixelStorei(GLenum pname, GLint param);
   void polygonOffset(GLfloat factor, GLfloat units);
   void popDebugGroup();
@@ -627,6 +628,7 @@ class IContext {
   PFNIGLMAPBUFFERPROC mapBufferProc_ = nullptr;
   PFNIGLMAPBUFFERRANGEPROC mapBufferRangeProc_ = nullptr;
   PFNIGLMEMORYBARRIERPROC memoryBarrierProc_ = nullptr;
+  PFNIGLOBJECTLABELPROC objectLabelProc_ = nullptr;
   PFNIGLPOPDEBUGGROUPPROC popDebugGroupProc_ = nullptr;
   PFNIGLPUSHDEBUGGROUPPROC pushDebugGroupProc_ = nullptr;
   PFNIGLRENDERBUFFERSTORAGEMULTISAMPLEPROC renderbufferStorageMultisampleProc_ = nullptr;

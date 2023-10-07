@@ -90,6 +90,15 @@ void ArrayBuffer::initialize(const BufferDesc& desc, Result* outResult) {
   GLint bufferSize = 0;
   getContext().getBufferParameteriv(target_, GL_BUFFER_SIZE, &bufferSize);
 
+  if (!desc.debugName.empty() &&
+      getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
+    GLenum identifier = getContext().deviceFeatures().hasInternalRequirement(
+                            InternalRequirement::DebugLabelExtEnumsReq)
+                            ? GL_BUFFER_OBJECT_EXT
+                            : GL_BUFFER;
+    getContext().objectLabel(identifier, iD_, desc.debugName.size(), desc.debugName.c_str());
+  }
+
   getContext().bindBuffer(target_, 0);
 
   if (bufferSize != size_) {

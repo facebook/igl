@@ -261,5 +261,21 @@ TEST_F(TextureTargetOGLTest, TextureBindAndAttachAndDetach) {
   ASSERT_EQ(value, GL_ZERO);
 }
 
+TEST_F(TextureTargetOGLTest, CreateWithDebugName) {
+  std::unique_ptr<igl::opengl::TextureTarget> textureTarget_;
+  Result ret;
+  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                           OFFSCREEN_TEX_WIDTH,
+                                           OFFSCREEN_TEX_HEIGHT,
+                                           TextureDesc::TextureUsageBits::Attachment);
+  texDesc.debugName = "test";
+
+  // Create 3 types of targets
+  auto target_ = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
+
+  // calling create() so that renderBufferID_ is set
+  ret = target_->create(texDesc, false);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+}
 } // namespace tests
 } // namespace igl

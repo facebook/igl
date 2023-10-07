@@ -67,6 +67,11 @@ Result TextureTarget::createRenderBuffer(const TextureDesc& desc, bool hasStorag
       getContext().renderbufferStorage(
           GL_RENDERBUFFER, glInternalFormat_, (GLsizei)getWidth(), (GLsizei)getHeight());
     }
+    if (!desc.debugName.empty() &&
+        getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
+      getContext().objectLabel(
+          GL_RENDERBUFFER, renderBufferID_, desc.debugName.size(), desc.debugName.c_str());
+    }
 
     getContext().bindRenderbuffer(GL_RENDERBUFFER, 0);
   }

@@ -65,6 +65,7 @@ class TextureTest : public ::testing::Test {
                                              kOffscreenTexHeight,
                                              TextureDesc::TextureUsageBits::Sampled |
                                                  TextureDesc::TextureUsageBits::Attachment);
+    texDesc.debugName = "test";
 
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);

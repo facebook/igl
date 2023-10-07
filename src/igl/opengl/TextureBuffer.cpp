@@ -126,6 +126,11 @@ Result TextureBuffer::createTexture(const TextureDesc& desc) {
   setTextureBufferProperties(textureID, target);
   setUsage(desc.usage);
 
+  if (!desc.debugName.empty() &&
+      getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
+    getContext().objectLabel(GL_TEXTURE, textureID, desc.debugName.size(), desc.debugName.c_str());
+  }
+
   if (desc.type == TextureType::ExternalImage) {
     // No further initialization needed for external image textures
     return Result{};

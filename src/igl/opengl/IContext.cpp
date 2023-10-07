@@ -174,6 +174,8 @@ std::string GLenumToString(GLenum code) {
     RESULT_CASE(GL_BLEND_SRC_ALPHA)
     RESULT_CASE(GL_BLEND_SRC_RGB)
     RESULT_CASE(GL_BLUE)
+    RESULT_CASE(GL_BUFFER)
+    RESULT_CASE(GL_BUFFER_OBJECT_EXT)
     RESULT_CASE(GL_BUFFER_SIZE)
     RESULT_CASE(GL_BUFFER_USAGE)
     RESULT_CASE(GL_BYTE)
@@ -379,6 +381,8 @@ std::string GLenumToString(GLenum code) {
     RESULT_CASE(GL_PIXEL_UNPACK_BUFFER)
     RESULT_CASE(GL_POINTS)
     RESULT_CASE(GL_POLYGON_OFFSET_FILL)
+    RESULT_CASE(GL_PROGRAM)
+    RESULT_CASE(GL_PROGRAM_OBJECT_EXT)
     RESULT_CASE(GL_R16)
     RESULT_CASE(GL_R16F)
     RESULT_CASE(GL_R16UI)
@@ -435,6 +439,8 @@ std::string GLenumToString(GLenum code) {
     RESULT_CASE(GL_SAMPLER_3D)
     RESULT_CASE(GL_SAMPLER_EXTERNAL_OES)
     RESULT_CASE(GL_SCISSOR_TEST)
+    RESULT_CASE(GL_SHADER)
+    RESULT_CASE(GL_SHADER_OBJECT_EXT)
     RESULT_CASE(GL_SHADER_SOURCE_LENGTH)
     RESULT_CASE(GL_SHADER_STORAGE_BLOCK)
     RESULT_CASE(GL_SHADER_STORAGE_BUFFER)
@@ -2248,6 +2254,23 @@ void* IContext::mapBufferRange(GLenum target,
          ret);
   GLCHECK_ERRORS();
   return ret;
+}
+
+void IContext::objectLabel(GLenum identifier, GLuint name, GLsizei length, const char* label) {
+  if (objectLabelProc_ == nullptr) {
+    if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::DebugLabelExtReq)) {
+      if (deviceFeatureSet_.hasExtension(Extensions::Debug)) {
+        objectLabelProc_ = iglObjectLabelKHR;
+      } else if (deviceFeatureSet_.hasExtension(Extensions::DebugLabel)) {
+        objectLabelProc_ = iglLabelObjectEXT;
+      }
+    } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugLabel)) {
+      objectLabelProc_ = iglObjectLabel;
+    }
+  }
+  GLCALL_PROC(objectLabelProc_, identifier, name, length, label);
+  APILOG("glObjectLabel(%s, %u, %u, %s)\n", GL_ENUM_TO_STRING(identifier), name, length, label);
+  GLCHECK_ERRORS();
 }
 
 void IContext::pixelStorei(GLenum pname, GLint param) {

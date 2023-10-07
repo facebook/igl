@@ -246,6 +246,15 @@ Result ShaderModule::create(const ShaderModuleDesc& desc) {
   // otherwise we won't modify this shader
   GLuint shaderID = getContext().createShader(shaderType_);
 
+  if (!desc.debugName.empty() &&
+      getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
+    GLenum identifier = getContext().deviceFeatures().hasInternalRequirement(
+                            InternalRequirement::DebugLabelExtEnumsReq)
+                            ? GL_SHADER_OBJECT_EXT
+                            : GL_SHADER;
+    getContext().objectLabel(identifier, shaderID, desc.debugName.size(), desc.debugName.c_str());
+  }
+
   // compile the shader
   const GLchar* src = (GLchar*)desc.input.source;
 

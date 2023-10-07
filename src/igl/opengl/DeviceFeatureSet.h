@@ -24,6 +24,7 @@ enum class Extensions {
   BindlessTextureArb,         // GL_ARB_bindless_texture is supported
   BindlessTextureNv,          // GL_NV_bindless_texture is supported
   Debug,                      // GL_KHR_debug is supported
+  DebugLabel,                 // GL_EXT_debug_label is supported
   DebugMarker,                // GL_EXT_debug_marker is supported
   Depth24,                    // GL_OES_depth24 is supported
   Depth32,                    // GL_OES_depth32 is supported
@@ -63,6 +64,7 @@ enum class Extensions {
 enum class InternalFeatures {
   ClearDepthf,               // glClearDepthf is supported
   Debug,                     // Debug messages and group markers are supported
+  DebugLabel,                // Debug labels on objects are supported
   FramebufferBlit,           // BlitFramebuffer is supported
   FramebufferObject,         // Framebuffer objects are supported
   GetStringi,                // GetStringi is supported
@@ -154,6 +156,8 @@ enum class InternalRequirement {
   ColorTexImageRgba4Unsized,
   ColorTexImageRgbApple422Unsized,
   DebugExtReq,
+  DebugLabelExtEnumsReq,
+  DebugLabelExtReq,
   Depth24Stencil8Unsized,
   Depth32Unsized,
   DrawBuffersExtReq,

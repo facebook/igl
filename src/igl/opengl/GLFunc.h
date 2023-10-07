@@ -192,6 +192,10 @@ using PFNIGLMAPBUFFERRANGEPROC = void* (*)(GLenum target,
                                            GLsizeiptr length,
                                            GLbitfield access);
 using PFNIGLMEMORYBARRIERPROC = void (*)(GLbitfield barriers);
+using PFNIGLOBJECTLABELPROC = void (*)(GLenum identifier,
+                                       GLuint name,
+                                       GLsizei length,
+                                       const char* label);
 using PFNIGLPOPDEBUGGROUPPROC = void (*)();
 using PFNIGLPOPGROUPMARKERPROC = void (*)();
 using PFNIGLPUSHDEBUGGROUPPROC = void (*)(GLenum source,
@@ -294,6 +298,7 @@ void iglDebugMessageInsert(GLenum source,
 void iglDrawBuffers(GLsizei n, const GLenum* bufs);
 const GLubyte* iglGetStringi(GLenum name, GLint index);
 void* iglMapBuffer(GLenum target, GLbitfield access);
+void iglObjectLabel(GLenum identifier, GLuint name, GLsizei length, const char* label);
 void iglPopDebugGroup();
 void iglPushDebugGroup(GLenum source, GLuint id, GLsizei length, const GLchar* message);
 void iglTexImage3D(GLenum target,
@@ -502,6 +507,11 @@ void iglDeleteVertexArrays(GLsizei n, const GLuint* vertexArrays);
 void iglGenVertexArrays(GLsizei n, GLuint* vertexArrays);
 
 ///--------------------------------------
+/// MARK: - GL_EXT_debug_label
+
+void iglLabelObjectEXT(GLenum identifier, GLuint name, GLsizei length, const char* label);
+
+///--------------------------------------
 /// MARK: - GL_EXT_debug_marker
 
 // NOTE: Public IGL signature altered to match GL_KHR_debug.
@@ -638,6 +648,7 @@ void iglDebugMessageInsertKHR(GLenum source,
                               GLenum severity,
                               GLsizei length,
                               const GLchar* buf);
+void iglObjectLabelKHR(GLenum identifier, GLuint name, GLsizei length, const char* label);
 void iglPopDebugGroupKHR();
 void iglPushDebugGroupKHR(GLenum source, GLuint id, GLsizei length, const GLchar* message);
 

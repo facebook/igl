@@ -174,6 +174,11 @@ IGL_EXTERN_BEGIN
 #else
 #define CAN_CALL_glVertexAttribDivisor 0
 #endif
+#if defined(GL_VERSION_4_3) || defined(GL_ES_VERSION_3_2)
+#define CAN_CALL_glObjectLabel CAN_CALL
+#else
+#define CAN_CALL_glObjectLabel 0
+#endif
 
 void iglDebugMessageInsert(GLenum source,
                            GLenum type,
@@ -258,6 +263,16 @@ const GLubyte* iglGetStringi(GLenum name, GLint index) {
 void* iglMapBuffer(GLenum target, GLbitfield access) {
   GLEXTENSION_METHOD_BODY_WITH_RETURN(
       CAN_CALL_glMapBuffer, glMapBuffer, PFNIGLMAPBUFFERPROC, nullptr, target, access);
+}
+
+void iglObjectLabel(GLenum identifier, GLuint name, GLsizei length, const char* label) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glObjectLabel,
+                          glObjectLabel,
+                          PFNIGLOBJECTLABELPROC,
+                          identifier,
+                          name,
+                          length,
+                          label);
 }
 
 void iglPopDebugGroup() {
@@ -1080,6 +1095,25 @@ void iglGenVertexArrays(GLsizei n, GLuint* vertexArrays) {
 }
 
 ///--------------------------------------
+/// MARK: - GL_EXT_debug_label
+
+#if defined(GL_EXT_debug_label)
+#define CAN_CALL_glLabelObjectEXT CAN_CALL
+#else
+#define CAN_CALL_glLabelObjectEXT 0
+#endif
+
+void iglLabelObjectEXT(GLenum identifier, GLuint name, GLsizei length, const char* label) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glLabelObjectEXT,
+                          glLabelObjectEXT,
+                          PFNIGLOBJECTLABELPROC,
+                          identifier,
+                          name,
+                          length,
+                          label);
+}
+
+///--------------------------------------
 /// MARK: - GL_EXT_debug_marker
 
 #if defined(GL_EXT_debug_marker)
@@ -1482,20 +1516,24 @@ void iglRenderbufferStorageMultisampleIMG(GLenum target,
 
 #if defined(GL_KHR_debug)
 #define CAN_CALL_glDebugMessageInsertKHR CAN_CALL
+#define CAN_CALL_glObjectLabelKHR CAN_CALL
 #define CAN_CALL_glPopDebugGroupKHR CAN_CALL
 #define CAN_CALL_glPushDebugGroupKHR CAN_CALL
 #else
 #define CAN_CALL_glDebugMessageInsertKHR 0
+#define CAN_CALL_glObjectLabelKHR 0
 #define CAN_CALL_glPopDebugGroupKHR 0
 #define CAN_CALL_glPushDebugGroupKHR 0
 #endif
 
 #if IGL_OPENGL
 #define DebugMessageInsertKHR glDebugMessageInsert
+#define ObjectLabelKHR glObjectLabel
 #define PopDebugGroupKHR glPopDebugGroup
 #define PushDebugGroupKHR glPushDebugGroup
 #else
 #define DebugMessageInsertKHR glDebugMessageInsertKHR
+#define ObjectLabelKHR glObjectLabelKHR
 #define PopDebugGroupKHR glPopDebugGroupKHR
 #define PushDebugGroupKHR glPushDebugGroupKHR
 #endif
@@ -1515,6 +1553,16 @@ void iglDebugMessageInsertKHR(GLenum source,
                           severity,
                           length,
                           buf);
+}
+
+void iglObjectLabelKHR(GLenum identifier, GLuint name, GLsizei length, const char* label) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glObjectLabelKHR,
+                          ObjectLabelKHR,
+                          PFNIGLOBJECTLABELPROC,
+                          identifier,
+                          name,
+                          length,
+                          label);
 }
 
 void iglPopDebugGroupKHR() {

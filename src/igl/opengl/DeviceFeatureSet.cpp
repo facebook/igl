@@ -136,6 +136,8 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
     return hasDesktopOrESExtension(*this, "GL_NV_bindless_texture");
   case Extensions::Debug:
     return hasDesktopOrESExtension(*this, "GL_KHR_debug");
+  case Extensions::DebugLabel:
+    return hasDesktopOrESExtension(*this, "GL_EXT_debug_label");
   case Extensions::DebugMarker:
     return hasDesktopOrESExtension(*this, "GL_EXT_debug_marker");
   case Extensions::Depth24:
@@ -384,6 +386,10 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
   case InternalFeatures::Debug:
     return hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES) ||
            hasExtension(Extensions::Debug) || hasExtension(Extensions::DebugMarker);
+
+  case InternalFeatures::DebugLabel:
+    return hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES) ||
+           hasExtension(Extensions::Debug) || hasExtension(Extensions::DebugLabel);
 
   case InternalFeatures::FramebufferBlit:
     // TODO: Add support for GL_ANGLE_framebuffer_blit
@@ -878,6 +884,14 @@ bool DeviceFeatureSet::hasInternalRequirement(InternalRequirement requirement) c
     return usesOpenGLES() && !hasESVersion(*this, GLVersion::v3_0_ES);
 
   case InternalRequirement::DebugExtReq:
+    return !hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES);
+
+  case InternalRequirement::DebugLabelExtEnumsReq:
+    // GL_EXT_debug_label requires extension-specific enums for some object types
+    return hasInternalRequirement(InternalRequirement::DebugLabelExtReq) &&
+           !hasExtension(Extensions::Debug);
+
+  case InternalRequirement::DebugLabelExtReq:
     return !hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES);
 
   case InternalRequirement::DrawBuffersExtReq:

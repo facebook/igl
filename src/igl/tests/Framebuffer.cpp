@@ -86,6 +86,7 @@ class FramebufferTest : public ::testing::Test {
     // Create framebuffer using the offscreen texture
     FramebufferDesc framebufferDesc;
 
+    framebufferDesc.debugName = "test";
     framebufferDesc.colorAttachments[0].texture = offscreenTexture_;
     framebufferDesc.depthAttachment.texture = depthStencilTexture_;
     framebufferDesc.stencilAttachment.texture = depthStencilTexture_;

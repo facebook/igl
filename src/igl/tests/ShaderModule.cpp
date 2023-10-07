@@ -58,7 +58,7 @@ TEST_F(ShaderModuleTest, CompileShaderModuleReturnNull) {
   }
 
   auto shaderModule = ShaderModuleCreator::fromStringInput(
-      *iglDev_, "hello world", {ShaderStage::Vertex, "Mordor"}, "", &ret);
+      *iglDev_, "hello world", {ShaderStage::Vertex, "Mordor"}, "test", &ret);
   ASSERT_TRUE(!ret.isOk());
   ASSERT_TRUE(shaderModule == nullptr);
 }
@@ -68,8 +68,8 @@ TEST_F(ShaderModuleTest, CompileShaderModuleReturnNullWitNullInput) {
 
   const char* source = nullptr;
 
-  auto shaderModule =
-      ShaderModuleCreator::fromStringInput(*iglDev_, source, {ShaderStage::Vertex, ""}, "", &ret);
+  auto shaderModule = ShaderModuleCreator::fromStringInput(
+      *iglDev_, source, {ShaderStage::Vertex, ""}, "test", &ret);
   ASSERT_TRUE(!ret.isOk());
   ASSERT_TRUE(shaderModule == nullptr);
 }
@@ -78,7 +78,7 @@ TEST_F(ShaderModuleTest, CompileShaderModuleReturnNullWithEmptyInput) {
   Result ret;
 
   auto shaderModule =
-      ShaderModuleCreator::fromStringInput(*iglDev_, "", {ShaderStage::Vertex, ""}, "", &ret);
+      ShaderModuleCreator::fromStringInput(*iglDev_, "", {ShaderStage::Vertex, ""}, "test", &ret);
   ASSERT_TRUE(!ret.isOk());
   ASSERT_TRUE(shaderModule == nullptr);
 }
@@ -98,7 +98,7 @@ TEST_F(ShaderModuleTest, CompileShaderModule) {
   }
 
   auto shaderModule = ShaderModuleCreator::fromStringInput(
-      *iglDev_, source, {ShaderStage::Vertex, "vertexShader"}, "", &ret);
+      *iglDev_, source, {ShaderStage::Vertex, "vertexShader"}, "test", &ret);
   ASSERT_TRUE(ret.isOk());
   ASSERT_TRUE(shaderModule != nullptr);
 }
@@ -116,7 +116,7 @@ TEST_F(ShaderModuleTest, CompileShaderModuleNoResult) {
   }
 
   auto shaderModule = ShaderModuleCreator::fromStringInput(
-      *iglDev_, source, {ShaderStage::Vertex, "vertexShader"}, "", nullptr);
+      *iglDev_, source, {ShaderStage::Vertex, "vertexShader"}, "test", nullptr);
   ASSERT_TRUE(shaderModule != nullptr);
 }
 } // namespace tests

@@ -102,6 +102,32 @@ TEST_F(BufferTest, sizeForUniformType) {
   ASSERT_EQ(64, sizeForUniformType(UniformType::Mat4x4));
 }
 
+TEST_F(BufferTest, createWithDebugLabel) {
+  Result ret;
+  constexpr size_t kIndexDataSize = 6;
+  constexpr std::array<uint16_t, kIndexDataSize> kIndexData = {
+      0,
+      1,
+      2,
+      1,
+      3,
+      2,
+  };
+  BufferDesc bufferDesc = BufferDesc(BufferDesc::BufferTypeBits::Index,
+                                     kIndexData.data(),
+                                     sizeof(kIndexData),
+                                     ResourceStorage::Shared);
+  bufferDesc.debugName = "test";
+
+  std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
+
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(buffer != nullptr);
+
+  ret = buffer->upload(kIndexData.data(), BufferRange{sizeof(kIndexData), 0});
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+}
+
 TEST_F(BufferTest, mapIndexBuffer) {
   Result ret;
   constexpr size_t indexDataSize = 6;

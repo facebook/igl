@@ -121,6 +121,12 @@
 #ifndef GL_BGRA8_EXT
 #define GL_BGRA8_EXT 0x93A1
 #endif
+#ifndef GL_BUFFER
+#define GL_BUFFER 0x82e0
+#endif
+#ifndef GL_BUFFER_OBJECT_EXT
+#define GL_BUFFER_OBJECT_EXT 0x9151
+#endif
 #ifndef GL_BUFFER_UPDATE_BARRIER_BIT
 #define GL_BUFFER_UPDATE_BARRIER_BIT 0x200
 #endif
@@ -478,6 +484,12 @@
 #ifndef GL_PIXEL_UNPACK_BUFFER
 #define GL_PIXEL_UNPACK_BUFFER 0x88ec
 #endif
+#ifndef GL_PROGRAM
+#define GL_PROGRAM 0x82e2
+#endif
+#ifndef GL_PROGRAM_OBJECT_EXT
+#define GL_PROGRAM_OBJECT_EXT 0x8B40
+#endif
 #ifndef GL_R16
 #define GL_R16 0x822A
 #endif
@@ -579,6 +591,12 @@
 #endif
 #ifndef GL_SAMPLER_EXTERNAL_OES
 #define GL_SAMPLER_EXTERNAL_OES 0x8D66
+#endif
+#ifndef GL_SHADER
+#define GL_SHADER 0x82e1
+#endif
+#ifndef GL_SHADER_OBJECT_EXT
+#define GL_SHADER_OBJECT_EXT 0x8B48
 #endif
 #ifndef GL_SHADER_STORAGE_BARRIER_BIT
 #define GL_SHADER_STORAGE_BARRIER_BIT 0x2000
