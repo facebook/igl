@@ -40,7 +40,7 @@ class Pool {
   void destroy(Handle<ObjectType> handle) {
     if (handle.empty())
       return;
-    assert(numObjects_ > 0);
+    assert(numObjects_ > 0); // double deletion
     const uint32_t index = handle.index();
     assert(index < objects_.size());
     assert(handle.gen() == objects_[index].gen_); // double deletion
