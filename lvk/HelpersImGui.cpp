@@ -185,13 +185,21 @@ void ImGuiRenderer::endFrame(lvk::ICommandBuffer& cmdBuffer) {
   frameIndex_ = (frameIndex_ + 1) % LVK_ARRAY_NUM_ELEMENTS(drawables_);
 
   if (drawableData.numAllocatedIndices_ < dd->TotalIdxCount) {
-    drawableData.ib_ = ctx_.createBuffer(
-        {.usage = lvk::BufferUsageBits_Index, .storage = lvk::StorageType_HostVisible, .size = dd->TotalIdxCount * sizeof(ImDrawIdx)});
+    drawableData.ib_ = ctx_.createBuffer({
+        .usage = lvk::BufferUsageBits_Index,
+        .storage = lvk::StorageType_HostVisible,
+        .size = dd->TotalIdxCount * sizeof(ImDrawIdx),
+        .debugName = "ImGui: drawableData.ib_",
+    });
     drawableData.numAllocatedIndices_ = dd->TotalIdxCount;
   }
   if (drawableData.numAllocatedVerteices_ < dd->TotalVtxCount) {
-    drawableData.vb_ = ctx_.createBuffer(
-        {.usage = lvk::BufferUsageBits_Storage, .storage = lvk::StorageType_HostVisible, .size = dd->TotalVtxCount * sizeof(ImDrawVert)});
+    drawableData.vb_ = ctx_.createBuffer({
+        .usage = lvk::BufferUsageBits_Storage,
+        .storage = lvk::StorageType_HostVisible,
+        .size = dd->TotalVtxCount * sizeof(ImDrawVert),
+        .debugName = "ImGui: drawableData.vb_",
+    });
     drawableData.numAllocatedVerteices_ = dd->TotalVtxCount;
   }
 
