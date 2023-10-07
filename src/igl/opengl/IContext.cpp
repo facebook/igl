@@ -3015,10 +3015,10 @@ void IContext::uniformMatrix2fv(GLint location,
          count,
          GL_BOOL_TO_STRING(transpose),
          value,
-         value == nullptr ? 0.f : (transpose ? value[0] : value[0]),
-         value == nullptr ? 0.f : (transpose ? value[1] : value[2]),
-         value == nullptr ? 0.f : (transpose ? value[2] : value[1]),
-         value == nullptr ? 0.f : (transpose ? value[3] : value[3]));
+         value == nullptr ? 0.f : value[0],
+         value == nullptr ? 0.f : value[1],
+         value == nullptr ? 0.f : value[2],
+         value == nullptr ? 0.f : value[3]);
   GLCHECK_ERRORS();
 }
 
@@ -3032,15 +3032,15 @@ void IContext::uniformMatrix3fv(GLint location,
          count,
          GL_BOOL_TO_STRING(transpose),
          value,
-         value == nullptr ? 0.f : (transpose ? value[0] : value[0]),
-         value == nullptr ? 0.f : (transpose ? value[1] : value[3]),
-         value == nullptr ? 0.f : (transpose ? value[2] : value[6]),
-         value == nullptr ? 0.f : (transpose ? value[3] : value[1]),
-         value == nullptr ? 0.f : (transpose ? value[4] : value[4]),
-         value == nullptr ? 0.f : (transpose ? value[5] : value[7]),
-         value == nullptr ? 0.f : (transpose ? value[6] : value[2]),
-         value == nullptr ? 0.f : (transpose ? value[7] : value[5]),
-         value == nullptr ? 0.f : (transpose ? value[8] : value[8]));
+         value == nullptr ? 0.f : value[0],
+         value == nullptr ? 0.f : value[1],
+         value == nullptr ? 0.f : value[2],
+         value == nullptr ? 0.f : value[3],
+         value == nullptr ? 0.f : value[4],
+         value == nullptr ? 0.f : value[5],
+         value == nullptr ? 0.f : value[6],
+         value == nullptr ? 0.f : value[7],
+         value == nullptr ? 0.f : value[8]);
   GLCHECK_ERRORS();
 }
 
@@ -3056,22 +3056,22 @@ void IContext::uniformMatrix4fv(GLint location,
       count,
       GL_BOOL_TO_STRING(transpose),
       value,
-      value == nullptr ? 0.f : (transpose ? value[0] : value[0]),
-      value == nullptr ? 0.f : (transpose ? value[1] : value[4]),
-      value == nullptr ? 0.f : (transpose ? value[2] : value[8]),
-      value == nullptr ? 0.f : (transpose ? value[3] : value[12]),
-      value == nullptr ? 0.f : (transpose ? value[4] : value[1]),
-      value == nullptr ? 0.f : (transpose ? value[5] : value[5]),
-      value == nullptr ? 0.f : (transpose ? value[6] : value[9]),
-      value == nullptr ? 0.f : (transpose ? value[7] : value[13]),
-      value == nullptr ? 0.f : (transpose ? value[8] : value[2]),
-      value == nullptr ? 0.f : (transpose ? value[9] : value[6]),
-      value == nullptr ? 0.f : (transpose ? value[10] : value[10]),
-      value == nullptr ? 0.f : (transpose ? value[11] : value[14]),
-      value == nullptr ? 0.f : (transpose ? value[12] : value[3]),
-      value == nullptr ? 0.f : (transpose ? value[13] : value[7]),
-      value == nullptr ? 0.f : (transpose ? value[14] : value[11]),
-      value == nullptr ? 0.f : (transpose ? value[15] : value[15]));
+      value == nullptr ? 0.f : value[0],
+      value == nullptr ? 0.f : value[1],
+      value == nullptr ? 0.f : value[2],
+      value == nullptr ? 0.f : value[3],
+      value == nullptr ? 0.f : value[4],
+      value == nullptr ? 0.f : value[5],
+      value == nullptr ? 0.f : value[6],
+      value == nullptr ? 0.f : value[7],
+      value == nullptr ? 0.f : value[8],
+      value == nullptr ? 0.f : value[9],
+      value == nullptr ? 0.f : value[10],
+      value == nullptr ? 0.f : value[11],
+      value == nullptr ? 0.f : value[12],
+      value == nullptr ? 0.f : value[13],
+      value == nullptr ? 0.f : value[14],
+      value == nullptr ? 0.f : value[15]);
   GLCHECK_ERRORS();
 }
 
