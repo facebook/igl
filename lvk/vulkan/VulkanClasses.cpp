@@ -2845,14 +2845,18 @@ void lvk::VulkanStagingDevice::getImageData(VulkanImage& image,
 void lvk::VulkanStagingDevice::ensureStagingBufferSize(uint32_t sizeNeeded) {
   LVK_PROFILER_FUNCTION();
 
-  if (!stagingBuffer_.empty() && (sizeNeeded <= stagingBufferSize_) || (stagingBufferSize_ == maxBufferSize_)) {
-    // we are at the maximum size already
-    return;
-  }
-
   const uint32_t alignedSize = std::max(getAlignedSize(sizeNeeded), minBufferSize_);
 
   sizeNeeded = alignedSize < maxBufferSize_ ? alignedSize : maxBufferSize_;
+
+  if (!stagingBuffer_.empty()) {
+    const bool isEnoughSize = sizeNeeded <= stagingBufferSize_;
+    const bool isMaxSize = stagingBufferSize_ == maxBufferSize_;
+
+    if (isEnoughSize || isMaxSize) {
+      return;
+    }
+  }
 
   waitAndReset();
 
@@ -2929,14 +2933,14 @@ lvk::VulkanStagingDevice::MemoryRegionDesc lvk::VulkanStagingDevice::getNextFree
     return {bestNextIt->offset_, bestNextIt->size_, SubmitHandle()};
   }
 
-  // Nothing was available. Let's wait for the entire staging buffer to become free
+  // nothing was available. Let's wait for the entire staging buffer to become free
   waitAndReset();
 
   // waitAndReset() adds a region that spans the entire buffer. Since we'll be using part of it, we need to replace it with a used block and
   // an unused portion
   regions_.clear();
 
-  // Store the unused size in the deque first...
+  // store the unused size in the deque first...
   const uint32_t unusedSize = stagingBufferSize_ > requestedAlignedSize ? stagingBufferSize_ - requestedAlignedSize : 0;
 
   if (unusedSize) {
