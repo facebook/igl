@@ -260,8 +260,8 @@ uint32_t ivkFindMemoryType(const struct VulkanFunctionTable* vt,
 
 VkResult ivkCreateSemaphore(const struct VulkanFunctionTable* vt,
                             VkDevice device,
-                            VkSemaphore* outSemaphore,
-                            bool exportable) {
+                            bool exportable,
+                            VkSemaphore* outSemaphore) {
   const VkExportSemaphoreCreateInfo exportInfo = {
       .sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO,
       .pNext = NULL,

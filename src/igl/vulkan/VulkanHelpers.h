@@ -48,8 +48,8 @@ VkResult ivkCreateDebugReportMessenger(const struct VulkanFunctionTable* vt,
 
 VkResult ivkCreateSemaphore(const struct VulkanFunctionTable* vt,
                             VkDevice device,
-                            VkSemaphore* outSemaphore,
-                            bool exportable);
+                            bool exportable,
+                            VkSemaphore* outSemaphore);
 
 VkResult ivkCreateFence(const struct VulkanFunctionTable* vt,
                         VkDevice device,

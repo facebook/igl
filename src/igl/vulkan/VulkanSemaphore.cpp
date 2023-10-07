@@ -13,12 +13,12 @@ namespace igl::vulkan {
 
 VulkanSemaphore::VulkanSemaphore(const VulkanFunctionTable& vf,
                                  VkDevice device,
-                                 const char* debugName,
-                                 bool exportable) :
+                                 bool exportable,
+                                 const char* debugName) :
   vf_(&vf), device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  VK_ASSERT(ivkCreateSemaphore(vf_, device_, &vkSemaphore_, exportable));
+  VK_ASSERT(ivkCreateSemaphore(vf_, device_, exportable, &vkSemaphore_));
   VK_ASSERT(ivkSetDebugObjectName(
       vf_, device_, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)vkSemaphore_, debugName));
 }

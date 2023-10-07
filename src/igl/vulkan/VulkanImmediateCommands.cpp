@@ -40,7 +40,8 @@ VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
                     VkFenceCreateFlagBits{},
                     exportableFences,
                     IGL_FORMAT("Fence: commandBuffer #{}", i).c_str()),
-        VulkanSemaphore(vf_, device, IGL_FORMAT("Semaphore: {} ({})", debugName, i).c_str()));
+        VulkanSemaphore(
+            vf_, device, false, IGL_FORMAT("Semaphore: {} ({})", debugName, i).c_str()));
     VK_ASSERT(ivkAllocateCommandBuffer(
         &vf_, device_, commandPool_.getVkCommandPool(), &buffers_[i].cmdBufAllocated_));
     buffers_[i].handle_.bufferIndex_ = i;

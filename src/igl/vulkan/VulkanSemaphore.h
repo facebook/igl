@@ -25,8 +25,8 @@ class VulkanSemaphore final {
  public:
   explicit VulkanSemaphore(const VulkanFunctionTable& vf,
                            VkDevice device,
-                           const char* debugName = nullptr,
-                           bool exportable = false);
+                           bool exportable = false,
+                           const char* debugName = nullptr);
   ~VulkanSemaphore();
 
   VulkanSemaphore(VulkanSemaphore&& other) noexcept;
