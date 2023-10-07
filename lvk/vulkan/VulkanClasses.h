@@ -10,6 +10,7 @@
 #include <lvk/vulkan/VulkanUtils.h>
 #include <lvk/Pool.h>
 
+#include <deque>
 #include <future>
 #include <memory>
 #include <vector>
@@ -422,7 +423,7 @@ class CommandBuffer final : public ICommandBuffer {
 class VulkanStagingDevice final {
  public:
   explicit VulkanStagingDevice(VulkanContext& ctx);
-  ~VulkanStagingDevice();
+  ~VulkanStagingDevice() = default;
 
   VulkanStagingDevice(const VulkanStagingDevice&) = delete;
   VulkanStagingDevice& operator=(const VulkanStagingDevice&) = delete;
@@ -446,22 +447,28 @@ class VulkanStagingDevice final {
 
  private:
   struct MemoryRegionDesc {
-    uint32_t srcOffset_ = 0;
-    uint32_t alignedSize_ = 0;
+    uint32_t offset_ = 0;
+    uint32_t size_ = 0;
     SubmitHandle handle_ = {};
   };
 
   MemoryRegionDesc getNextFreeOffset(uint32_t size);
+  void ensureStagingBufferSize(uint32_t sizeNeeded);
   void waitAndReset();
+  static uint32_t getAlignedSize(uint32_t size) {
+    constexpr uint32_t kStagingBufferAlignment = 16; // updated to support BC7 compressed image
+    return (size + kStagingBufferAlignment - 1) & ~(kStagingBufferAlignment - 1);
+  }
 
  private:
   VulkanContext& ctx_;
-  BufferHandle stagingBuffer_;
+  lvk::Holder<BufferHandle> stagingBuffer_;
   std::unique_ptr<lvk::VulkanImmediateCommands> immediate_;
-  uint32_t stagingBufferFrontOffset_ = 0;
   uint32_t stagingBufferSize_ = 0;
-  uint32_t bufferCapacity_ = 0;
-  std::vector<MemoryRegionDesc> regions_;
+  uint32_t stagingBufferCounter_ = 0;
+  uint32_t maxBufferSize_ = 0;
+  const uint32_t minBufferSize_ = 4u * 2048u * 2048u;
+  std::deque<MemoryRegionDesc> regions_;
 };
 
 class VulkanContext final : public IContext {
@@ -580,6 +587,7 @@ class VulkanContext final : public IContext {
 
  private:
   friend class lvk::VulkanSwapchain;
+  friend class lvk::VulkanStagingDevice;
 
   VkInstance vkInstance_ = VK_NULL_HANDLE;
   VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;

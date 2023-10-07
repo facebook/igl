@@ -2526,28 +2526,18 @@ lvk::VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
 
   const auto& limits = ctx_.getVkPhysicalDeviceProperties().limits;
 
-  // Use default value of 512 MB, and clamp it to the max limits
-  stagingBufferSize_ = std::min(limits.maxStorageBufferRange, 512u * 1024u * 1024u);
+  // use default value of 128Mb clamped to the max limits
+  maxBufferSize_ = std::min(limits.maxStorageBufferRange, 128u * 1024u * 1024u);
 
-  bufferCapacity_ = stagingBufferSize_;
-
-  stagingBuffer_ = ctx_.createBuffer(stagingBufferSize_,
-                                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                                     nullptr,
-                                     "Buffer: staging buffer");
-  LVK_ASSERT(!stagingBuffer_.empty());
+  LVK_ASSERT(minBufferSize_ <= maxBufferSize_);
 
   immediate_ = std::make_unique<lvk::VulkanImmediateCommands>(
       ctx_.getVkDevice(), ctx_.deviceQueues_.graphicsQueueFamilyIndex, "VulkanStagingDevice::immediate_");
 }
 
-lvk::VulkanStagingDevice::~VulkanStagingDevice() {
-  ctx_.buffersPool_.destroy(stagingBuffer_);
-}
-
 void lvk::VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer, size_t dstOffset, size_t size, const void* data) {
   LVK_PROFILER_FUNCTION();
+
   if (buffer.isMapped()) {
     buffer.bufferSubData(dstOffset, size, data);
     return;
@@ -2558,13 +2548,17 @@ void lvk::VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer, size_t dstOff
   while (size) {
     // get next staging buffer free offset
     MemoryRegionDesc desc = getNextFreeOffset((uint32_t)size);
-    const uint32_t chunkSize = std::min((uint32_t)size, desc.alignedSize_);
+    const uint32_t chunkSize = std::min((uint32_t)size, desc.size_);
 
     // copy data into staging buffer
-    stagingBuffer->bufferSubData(desc.srcOffset_, chunkSize, data);
+    stagingBuffer->bufferSubData(desc.offset_, chunkSize, data);
 
     // do the transfer
-    const VkBufferCopy copy = {desc.srcOffset_, dstOffset, chunkSize};
+    const VkBufferCopy copy = {
+        .srcOffset = desc.offset_,
+        .dstOffset = dstOffset,
+        .size = chunkSize,
+    };
 
     auto& wrapper = immediate_->acquire();
     vkCmdCopyBuffer(wrapper.cmdBuf_, stagingBuffer->vkBuffer_, buffer.vkBuffer_, 1, &copy);
@@ -2612,22 +2606,24 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
   }
   const uint32_t storageSize = layerStorageSize * numLayers;
 
+  ensureStagingBufferSize(storageSize);
+
   LVK_ASSERT(storageSize <= stagingBufferSize_);
 
   MemoryRegionDesc desc = getNextFreeOffset(layerStorageSize);
   // No support for copying image in multiple smaller chunk sizes. If we get smaller buffer size than storageSize, we will wait for GPU idle and get bigger chunk.
-  if (desc.alignedSize_ < storageSize) {
+  if (desc.size_ < storageSize) {
     waitAndReset();
     desc = getNextFreeOffset(storageSize);
   }
-  LVK_ASSERT(desc.alignedSize_ >= storageSize);
+  LVK_ASSERT(desc.size_ >= storageSize);
 
   auto& wrapper = immediate_->acquire();
 
   lvk::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
 
   for (uint32_t layer = 0; layer != numLayers; layer++) {
-    stagingBuffer->bufferSubData(desc.srcOffset_ + layer * layerStorageSize, layerStorageSize, data[layer]);
+    stagingBuffer->bufferSubData(desc.offset_ + layer * layerStorageSize, layerStorageSize, data[layer]);
 
     uint32_t mipLevelOffset = 0;
 
@@ -2659,7 +2655,7 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
       };
       const VkBufferImageCopy copy = {
           // the offset for this level is at the start of all mip-levels plus the size of all previous mip-levels being uploaded
-          .bufferOffset = desc.srcOffset_ + layer * layerStorageSize + mipLevelOffset,
+          .bufferOffset = desc.offset_ + layer * layerStorageSize + mipLevelOffset,
           .bufferRowLength = 0,
           .bufferImageHeight = 0,
           .imageSubresource = VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, layer, 1},
@@ -2700,24 +2696,26 @@ void lvk::VulkanStagingDevice::imageData3D(VulkanImage& image,
   LVK_ASSERT_MSG((offset.x == 0) && (offset.y == 0) && (offset.z == 0), "Can upload only full-size 3D images");
   const uint32_t storageSize = extent.width * extent.height * extent.depth * getBytesPerPixel(format);
 
-  LVK_ASSERT(storageSize <= stagingBufferSize_);
+  ensureStagingBufferSize(storageSize);
+
+  LVK_ASSERT_MSG(storageSize <= stagingBufferSize_, "No support for copying image in multiple smaller chunk sizes");
 
   // get next staging buffer free offset
   MemoryRegionDesc desc = getNextFreeOffset(storageSize);
 
   // No support for copying image in multiple smaller chunk sizes.
   // If we get smaller buffer size than storageSize, we will wait for GPU idle and get a bigger chunk.
-  if (desc.alignedSize_ < storageSize) {
+  if (desc.size_ < storageSize) {
     waitAndReset();
     desc = getNextFreeOffset(storageSize);
   }
 
-  LVK_ASSERT(desc.alignedSize_ >= storageSize);
+  LVK_ASSERT(desc.size_ >= storageSize);
 
   lvk::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
 
   // 1. Copy the pixel data into the host visible staging buffer
-  stagingBuffer->bufferSubData(desc.srcOffset_, storageSize, data);
+  stagingBuffer->bufferSubData(desc.offset_, storageSize, data);
 
   auto& wrapper = immediate_->acquire();
 
@@ -2734,7 +2732,7 @@ void lvk::VulkanStagingDevice::imageData3D(VulkanImage& image,
 
   // 2. Copy the pixel data from the staging buffer into the image
   const VkBufferImageCopy copy = {
-      .bufferOffset = desc.srcOffset_,
+      .bufferOffset = desc.offset_,
       .bufferRowLength = 0,
       .bufferImageHeight = 0,
       .imageSubresource = VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
@@ -2778,12 +2776,12 @@ void lvk::VulkanStagingDevice::getImageData(VulkanImage& image,
 
   // No support for copying image in multiple smaller chunk sizes.
   // If we get smaller buffer size than storageSize, we will wait for GPU idle and get a bigger chunk.
-  if (desc.alignedSize_ < storageSize) {
+  if (desc.size_ < storageSize) {
     waitAndReset();
     desc = getNextFreeOffset(storageSize);
   }
 
-  LVK_ASSERT(desc.alignedSize_ >= storageSize);
+  LVK_ASSERT(desc.size_ >= storageSize);
 
   lvk::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
 
@@ -2802,7 +2800,7 @@ void lvk::VulkanStagingDevice::getImageData(VulkanImage& image,
 
   // 2.  Copy the pixel data from the image into the staging buffer
   const VkBufferImageCopy copy = {
-      .bufferOffset = desc.srcOffset_,
+      .bufferOffset = desc.offset_,
       .bufferRowLength = 0,
       .bufferImageHeight = extent.height,
       .imageSubresource =
@@ -2823,11 +2821,11 @@ void lvk::VulkanStagingDevice::getImageData(VulkanImage& image,
   waitAndReset();
 
   if (!stagingBuffer->isCoherentMemory_) {
-    stagingBuffer->invalidateMappedMemory(desc.srcOffset_, desc.alignedSize_);
+    stagingBuffer->invalidateMappedMemory(desc.offset_, desc.size_);
   }
 
   // 3. Copy data from staging buffer into data
-  memcpy(outData, stagingBuffer->getMappedPtr() + desc.srcOffset_, storageSize);
+  memcpy(outData, stagingBuffer->getMappedPtr() + desc.offset_, storageSize);
 
   // 4. Transition back to the initial image layout
   auto& wrapper2 = immediate_->acquire();
@@ -2845,48 +2843,114 @@ void lvk::VulkanStagingDevice::getImageData(VulkanImage& image,
   immediate_->submit(wrapper2);
 }
 
+void lvk::VulkanStagingDevice::ensureStagingBufferSize(uint32_t sizeNeeded) {
+  LVK_PROFILER_FUNCTION();
+
+  if (!stagingBuffer_.empty() && (sizeNeeded <= stagingBufferSize_) || (stagingBufferSize_ == maxBufferSize_)) {
+    // we are at the maximum size already
+    return;
+  }
+
+  const uint32_t alignedSize = std::max(getAlignedSize(sizeNeeded), minBufferSize_);
+
+  sizeNeeded = alignedSize < maxBufferSize_ ? alignedSize : maxBufferSize_;
+
+  waitAndReset();
+
+  // deallocate the previous staging buffer
+  stagingBuffer_ = nullptr;
+
+  // if the combined size of the new staging buffer and the existing one is larger than the limit imposed by some architectures on buffers
+  // that are device and host visible, we need to wait for the current buffer to be destroyed before we can allocate a new one
+  if ((sizeNeeded + stagingBufferSize_) > maxBufferSize_) {
+    ctx_.waitDeferredTasks();
+  }
+
+  stagingBufferSize_ = sizeNeeded;
+
+  char debugName[256] = {0};
+  snprintf(debugName, sizeof(debugName) - 1, "Buffer: staging buffer %u", stagingBufferCounter_++);
+
+  stagingBuffer_ = {&ctx_,
+                    ctx_.createBuffer(stagingBufferSize_,
+                                      VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                                      nullptr,
+                                      debugName)};
+  LVK_ASSERT(!stagingBuffer_.empty());
+
+  regions_.clear();
+  regions_.push_front({0, stagingBufferSize_, SubmitHandle()});
+}
+
 lvk::VulkanStagingDevice::MemoryRegionDesc lvk::VulkanStagingDevice::getNextFreeOffset(uint32_t size) {
   LVK_PROFILER_FUNCTION();
 
-  constexpr uint32_t kStagingBufferAlignment_ = 16;
+  const uint32_t requestedAlignedSize = getAlignedSize(size);
 
-  uint32_t alignedSize = (size + kStagingBufferAlignment_ - 1) & ~(kStagingBufferAlignment_ - 1);
+  ensureStagingBufferSize(requestedAlignedSize);
 
-  // track maximum previously used region
-  auto bestIt = regions_.begin();
+  LVK_ASSERT(!regions_.empty());
 
-  // check if we can reuse any of previously used memory region
-  for (auto it = regions_.begin(); it != regions_.end(); it++) {
-    if (immediate_->isReady(SubmitHandle(it->handle_))) {
-      if (it->alignedSize_ >= alignedSize) {
+  // if we can't find an available region that is big enough to store requestedAlignedSize, return whatever we could find, which will be
+  // stored in bestNextIt
+  auto bestNextIt = regions_.begin();
+
+  for (auto it = regions_.begin(); it != regions_.end(); ++it) {
+    if (immediate_->isReady(it->handle_)) {
+      // This region is free, but is it big enough?
+      if (it->size_ >= requestedAlignedSize) {
+        // It is big enough!
+        const uint32_t unusedSize = it->size_ - requestedAlignedSize;
+        const uint32_t unusedOffset = it->offset_ + requestedAlignedSize;
+
+        // Return this region and add the remaining unused size to the regions_ deque
         SCOPE_EXIT {
           regions_.erase(it);
+          if (unusedSize > 0) {
+            regions_.push_front({unusedOffset, unusedSize, SubmitHandle()});
+          }
         };
-        return *it;
+
+        return {it->offset_, requestedAlignedSize, SubmitHandle()};
       }
-      if (bestIt->alignedSize_ < it->alignedSize_) {
-        bestIt = it;
+      // cache the largest available region that isn't as big as the one we're looking for
+      if (it->size_ > bestNextIt->size_) {
+        bestNextIt = it;
       }
     }
   }
 
-  if (bestIt != regions_.end() && bufferCapacity_ < bestIt->alignedSize_) {
-    regions_.erase(bestIt);
-    return *bestIt;
+  // we found a region that is available that is smaller than the requested size. It's the best we can do
+  if (bestNextIt != regions_.end() && immediate_->isReady(bestNextIt->handle_)) {
+    SCOPE_EXIT {
+      regions_.erase(bestNextIt);
+    };
+
+    return {bestNextIt->offset_, bestNextIt->size_, SubmitHandle()};
   }
 
-  if (bufferCapacity_ == 0) {
-    // no more space available in the staging buffer
-    waitAndReset();
+  // Nothing was available. Let's wait for the entire staging buffer to become free
+  waitAndReset();
+
+  // waitAndReset() adds a region that spans the entire buffer. Since we'll be using part of it, we need to replace it with a used block and
+  // an unused portion
+  regions_.clear();
+
+  // Store the unused size in the deque first...
+  const uint32_t unusedSize = stagingBufferSize_ > requestedAlignedSize ? stagingBufferSize_ - requestedAlignedSize : 0;
+
+  if (unusedSize) {
+    const uint32_t unusedOffset = stagingBufferSize_ - unusedSize;
+    regions_.push_front({unusedOffset, unusedSize, SubmitHandle()});
   }
 
-  // allocate from free staging memory
-  alignedSize = (alignedSize <= bufferCapacity_) ? alignedSize : bufferCapacity_;
-  const uint32_t srcOffset = stagingBufferFrontOffset_;
-  stagingBufferFrontOffset_ = (stagingBufferFrontOffset_ + alignedSize) % stagingBufferSize_;
-  bufferCapacity_ -= alignedSize;
-
-  return {srcOffset, alignedSize};
+  // ...and then return the smallest free region that can hold the requested size
+  return {
+      .offset_ = 0,
+      .size_ = stagingBufferSize_ - unusedSize,
+      .handle_ = SubmitHandle(),
+  };
 }
 
 void lvk::VulkanStagingDevice::waitAndReset() {
@@ -2897,8 +2961,7 @@ void lvk::VulkanStagingDevice::waitAndReset() {
   };
 
   regions_.clear();
-  stagingBufferFrontOffset_ = 0;
-  bufferCapacity_ = stagingBufferSize_;
+  regions_.push_front({0, stagingBufferSize_, SubmitHandle()});
 }
 
 lvk::VulkanContext::VulkanContext(const lvk::ContextConfig& config, void* window, void* display) : config_(config) {
