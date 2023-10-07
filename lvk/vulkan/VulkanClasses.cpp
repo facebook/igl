@@ -65,7 +65,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(VkDebugUtilsMessageSeverityFl
     lvk::VulkanContext* ctx = static_cast<lvk::VulkanContext*>(userData);
     level = ctx->config_.terminateOnValidationError ? minilog::FatalError : minilog::Warning;
   }
-  
+
   if (sscanf(cbData->pMessage,
              "Validation Error : [ %127s ] Object %i: handle = %p, type = %127s | MessageID = %p",
              errorName,
@@ -74,17 +74,17 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(VkDebugUtilsMessageSeverityFl
              typeName,
              &messageID) >= 2) {
     const char* message = strrchr(cbData->pMessage, '|') + 1;
-    
+
     MINILOG_LOG_PROC(level,
-        "%sValidation layer:\n Validation Error: %s \n Object %i: handle = %p, type = %s\n "
-        "MessageID = %p \n%s \n",
-        isError ? "\nERROR:\n" : "",
-        errorName,
-        object,
-        handle,
-        typeName,
-        messageID,
-        message);
+                     "%sValidation layer:\n Validation Error: %s \n Object %i: handle = %p, type = %s\n "
+                     "MessageID = %p \n%s \n",
+                     isError ? "\nERROR:\n" : "",
+                     errorName,
+                     object,
+                     handle,
+                     typeName,
+                     messageID,
+                     message);
   } else {
     MINILOG_LOG_PROC(level, "%sValidation layer:\n%s\n", isError ? "\nERROR:\n" : "", cbData->pMessage);
   }
@@ -664,10 +664,8 @@ lvk::VulkanBuffer::VulkanBuffer(lvk::VulkanContext* ctx,
     // Initialize VmaAllocation Info
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
       vmaAllocInfo_.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-      vmaAllocInfo_.preferredFlags =
-          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-      vmaAllocInfo_.flags =
-          VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+      vmaAllocInfo_.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+      vmaAllocInfo_.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
     }
 
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
@@ -2611,7 +2609,8 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
   LVK_ASSERT(storageSize <= stagingBufferSize_);
 
   MemoryRegionDesc desc = getNextFreeOffset(layerStorageSize);
-  // No support for copying image in multiple smaller chunk sizes. If we get smaller buffer size than storageSize, we will wait for GPU idle and get bigger chunk.
+  // No support for copying image in multiple smaller chunk sizes. If we get smaller buffer size than storageSize, we will wait for GPU idle
+  // and get bigger chunk.
   if (desc.size_ < storageSize) {
     waitAndReset();
     desc = getNextFreeOffset(storageSize);
@@ -3368,15 +3367,13 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
     rps->pipelineLayout_ = vkPipelineLayout_;
   }
 
-#if !defined( __APPLE__)
+#if !defined(__APPLE__)
   if (rps->pipelines_[dynamicState.depthBiasEnable_] != VK_NULL_HANDLE) {
     return rps->pipelines_[dynamicState.depthBiasEnable_];
   }
 #else
-  if (rps->pipelines_[dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_]
-                     [dynamicState.depthBiasEnable_] != VK_NULL_HANDLE) {
-    return rps
-        ->pipelines_[dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_][dynamicState.depthBiasEnable_];
+  if (rps->pipelines_[dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_][dynamicState.depthBiasEnable_] != VK_NULL_HANDLE) {
+    return rps->pipelines_[dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_][dynamicState.depthBiasEnable_];
   }
 #endif // __APPLE__
 
@@ -3446,7 +3443,7 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
       .dynamicState(VK_DYNAMIC_STATE_SCISSOR)
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS)
       .dynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS)
- #if !defined(__APPLE__)
+#if !defined(__APPLE__)
       // from Vulkan 1.3
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE)
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
@@ -4008,11 +4005,11 @@ void lvk::VulkanContext::createInstance() {
 #if defined(_WIN32)
     VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 #elif defined(__linux__)
-  #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
     VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME,
-  #else
+#else
     VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
-  #endif
+#endif
 #elif defined(__APPLE__)
     VK_MVK_MACOS_SURFACE_EXTENSION_NAME,
     VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
@@ -4125,10 +4122,10 @@ void lvk::VulkanContext::createSurface(void* window, void* display) {
   VK_ASSERT(vkCreateXlibSurfaceKHR(vkInstance_, &ci, nullptr, &vkSurface_));
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
   const VkWaylandSurfaceCreateInfoKHR ci = {
-    .sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
-    .flags = 0,
-    .display = (wl_display*)display,
-    .surface = (wl_surface*)window,
+      .sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
+      .flags = 0,
+      .display = (wl_display*)display,
+      .surface = (wl_surface*)window,
   };
   VK_ASSERT(vkCreateWaylandSurfaceKHR(vkInstance_, &ci, nullptr, &vkSurface_));
 #elif defined(VK_USE_PLATFORM_MACOS_MVK)
@@ -4498,11 +4495,12 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
     if (!missingFeatures.empty()) {
       MINILOG_LOG_PROC(
 #ifndef __APPLE__
-        minilog::FatalError,
+          minilog::FatalError,
 #else
-        minilog::Warning,
+          minilog::Warning,
 #endif
-        "Missing Vulkan features: %s\n", missingFeatures.c_str());
+          "Missing Vulkan features: %s\n",
+          missingFeatures.c_str());
       // Do not exit here in case of MoltenVK, some 1.3 features are available via extensions.
 #ifndef __APPLE__
       assert(false);
@@ -4658,8 +4656,7 @@ lvk::Result lvk::VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_
   }
 
   if (vkDSL_ != VK_NULL_HANDLE) {
-    deferredTask(
-        std::packaged_task<void()>([device = vkDevice_, dsl = vkDSL_]() { vkDestroyDescriptorSetLayout(device, dsl, nullptr); }));
+    deferredTask(std::packaged_task<void()>([device = vkDevice_, dsl = vkDSL_]() { vkDestroyDescriptorSetLayout(device, dsl, nullptr); }));
   }
   if (vkDPool_ != VK_NULL_HANDLE) {
     deferredTask(std::packaged_task<void()>([device = vkDevice_, dp = vkDPool_]() { vkDestroyDescriptorPool(device, dp, nullptr); }));
@@ -4732,7 +4729,7 @@ lvk::Result lvk::VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_
       LLOGW("Push constants size exceeded %u (max %u bytes)", kPushConstantsSize, limits.maxPushConstantsSize);
     }
 
-	 // duplicate for MoltenVK
+    // duplicate for MoltenVK
     const VkDescriptorSetLayout dsls[] = {vkDSL_, vkDSL_, vkDSL_};
     const VkPushConstantRange range = {
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
