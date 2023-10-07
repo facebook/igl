@@ -48,13 +48,11 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
   // prepare all the color attachments
   const auto& indices = framebuffer->getColorAttachmentIndices();
   for (auto i : indices) {
-    const auto colorTex = framebuffer->getColorAttachment(i);
-    transitionToColorAttachment(wrapper_.cmdBuf_, colorTex.get());
+    ITexture* colorTex = framebuffer->getColorAttachment(i).get();
+    transitionToColorAttachment(wrapper_.cmdBuf_, colorTex);
     // handle MSAA
-    const auto colorResolveTex = framebuffer->getResolveColorAttachment(i);
-    if (colorResolveTex) {
-      transitionToColorAttachment(wrapper_.cmdBuf_, colorResolveTex.get());
-    }
+    ITexture* colorResolveTex = framebuffer->getResolveColorAttachment(i).get();
+    transitionToColorAttachment(wrapper_.cmdBuf_, colorResolveTex);
   }
 
   // prepare depth attachment
