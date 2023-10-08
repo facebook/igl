@@ -3457,8 +3457,8 @@ void IContext::initialize(Result* result) {
   }
 
 #if defined(IGL_API_LOG)
-  enable(GL_DEBUG_OUTPUT);
   if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessageCallback)) {
+    enable(GL_DEBUG_OUTPUT);
     debugMessageCallback(logOpenGlDebugMessage, nullptr);
   }
 #endif
