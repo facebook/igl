@@ -100,14 +100,14 @@ void logSource(const int count, const char** string, const int* length) {
 
 #define GLCALL_PROC(funcPtr, ...)                                \
   IGL_REPORT_ERROR(isCurrentContext() || isCurrentSharegroup()); \
-  if (funcPtr) {                                                 \
+  if (IGL_VERIFY(funcPtr)) {                                     \
     callCounter_++;                                              \
     (*funcPtr)(__VA_ARGS__);                                     \
   }
 
 #define GLCALL_PROC_WITH_RETURN(ret, funcPtr, returnOnError, ...) \
   IGL_REPORT_ERROR(isCurrentContext() || isCurrentSharegroup());  \
-  if (funcPtr) {                                                  \
+  if (IGL_VERIFY(funcPtr)) {                                      \
     callCounter_++;                                               \
     ret = (*funcPtr)(__VA_ARGS__);                                \
   } else {                                                        \
@@ -778,6 +778,7 @@ void IContext::bindImageTexture(GLuint unit,
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::ShaderImageLoadStore)) {
       bindImageTexturerProc_ = iglBindImageTexture;
     }
+    IGL_ASSERT_MSG(bindImageTexturerProc_, "No supported function for glBindImageTexture\n");
   }
   GLCALL_PROC(bindImageTexturerProc_, unit, texture, level, layered, layer, access, format);
   APILOG("glBindImageTexture(%u, %u, %i, %s, %i %s %s)\n",
@@ -800,6 +801,7 @@ void IContext::bindVertexArray(GLuint vao) {
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::VertexArrayObject)) {
       bindVertexArrayProc_ = iglBindVertexArray;
     }
+    IGL_ASSERT_MSG(bindVertexArrayProc_, "No supported function for glBindVertexArray\n");
   }
   GLCALL_PROC(bindVertexArrayProc_, vao);
   APILOG("glBindVertexArray(%u)\n", vao);
@@ -860,6 +862,7 @@ void IContext::blitFramebuffer(GLint srcX0,
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::FramebufferBlit)) {
       blitFramebufferProc_ = iglBlitFramebuffer;
     }
+    IGL_ASSERT_MSG(blitFramebufferProc_, "No supported function for glBlitFramebuffer\n");
   }
   GLCALL_PROC(
       blitFramebufferProc_, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
@@ -924,6 +927,7 @@ void IContext::clearDepthf(GLfloat depth) {
     } else {
       clearDepthfProc_ = iglClearDepth;
     }
+    IGL_ASSERT_MSG(clearDepthfProc_, "No supported function for glClearDepthf\n");
   }
 
   GLCALL_PROC(clearDepthfProc_, depth);
@@ -1017,6 +1021,7 @@ void IContext::compressedTexImage3D(GLenum target,
         compressedTexImage3DProc_ = iglCompressedTexImage3D;
       }
     }
+    IGL_ASSERT_MSG(compressedTexImage3DProc_, "No supported function for glCompressedTexImage3D\n");
   }
   GLCALL_PROC(compressedTexImage3DProc_,
               target,
@@ -1109,6 +1114,8 @@ void IContext::compressedTexSubImage3D(GLenum target,
         compressedTexSubImage3DProc_ = iglCompressedTexSubImage3D;
       }
     }
+    IGL_ASSERT_MSG(compressedTexSubImage3DProc_,
+                   "No supported function for glCompressedTexSubImage3D\n");
   }
   GLCALL_PROC(compressedTexSubImage3DProc_,
               target,
@@ -1212,7 +1219,7 @@ void IContext::cullFace(GLint mode) {
 }
 
 void IContext::debugMessageCallback(PFNIGLDEBUGPROC callback, const void* userParam) {
-  if (debugMessageInsertProc_ == nullptr) {
+  if (debugMessageCallbackProc_ == nullptr) {
     if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessageCallback)) {
       if (deviceFeatureSet_.hasInternalRequirement(
               InternalRequirement::DebugMessageCallbackExtReq)) {
@@ -1223,6 +1230,7 @@ void IContext::debugMessageCallback(PFNIGLDEBUGPROC callback, const void* userPa
         debugMessageCallbackProc_ = iglDebugMessageCallback;
       }
     }
+    IGL_ASSERT_MSG(debugMessageCallbackProc_, "No supported function for glDebugMessageCallback\n");
   }
 
   GLCALL_PROC(debugMessageCallbackProc_, callback, userParam);
@@ -1248,6 +1256,7 @@ void IContext::debugMessageInsert(GLenum source,
         debugMessageInsertProc_ = iglDebugMessageInsert;
       }
     }
+    IGL_ASSERT_MSG(debugMessageInsertProc_, "No supported function for glDebugMessageInsert\n");
   }
 
   GLCALL_PROC(debugMessageInsertProc_, source, type, id, severity, length, buf);
@@ -1332,6 +1341,7 @@ void IContext::deleteVertexArrays(GLsizei n, const GLuint* vertexArrays) {
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::VertexArrayObject)) {
       deleteVertexArraysProc_ = iglDeleteVertexArrays;
     }
+    IGL_ASSERT_MSG(deleteVertexArraysProc_, "No supported function for glDeleteVertexArrays\n");
   }
   if (isDestructionAllowed() && IGL_VERIFY(vertexArrays != nullptr)) {
     if (shouldQueueAPI()) {
@@ -1365,6 +1375,7 @@ void IContext::deleteSync(GLsync sync) {
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::Sync)) {
       deleteSyncProc_ = iglDeleteSync;
     }
+    IGL_ASSERT_MSG(deleteSyncProc_, "No supported function for glDeleteSync\n");
   }
 
   GLCALL_PROC(deleteSyncProc_, sync);
@@ -1440,6 +1451,7 @@ void IContext::drawBuffers(GLsizei n, GLenum* buffers) {
         drawBuffersProc_ = iglDrawBuffers;
       }
     }
+    IGL_ASSERT_MSG(drawBuffersProc_, "No supported function for glDrawBuffers\n");
   }
 
   GLCALL_PROC(drawBuffersProc_, n, buffers);
@@ -1492,6 +1504,7 @@ GLsync IContext::fenceSync(GLenum condition, GLbitfield flags) {
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::Sync)) {
       fenceSyncProc_ = iglFenceSync;
     }
+    IGL_ASSERT_MSG(fenceSyncProc_, "No supported function for glFenceSync\n");
   }
 
   GLsync sync;
@@ -1557,6 +1570,8 @@ void IContext::framebufferTexture2DMultisample(GLenum target,
     } else if (deviceFeatureSet_.hasExtension(Extensions::MultiSampleImg)) {
       framebufferTexture2DMultisampleProc_ = iglFramebufferTexture2DMultisampleIMG;
     }
+    IGL_ASSERT_MSG(framebufferTexture2DMultisampleProc_,
+                   "No supported function for glFramebufferTexture2DMultisample\n");
   }
 
   if (maxSamples_ == -1 && framebufferTexture2DMultisampleProc_ != nullptr) {
@@ -1674,6 +1689,7 @@ void IContext::genVertexArrays(GLsizei n, GLuint* vertexArrays) {
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::VertexArrayObject)) {
       genVertexArraysProc_ = iglGenVertexArrays;
     }
+    IGL_ASSERT_MSG(genVertexArraysProc_, "No supported function for glGenVertexArrays\n");
   }
   GLCALL_PROC(genVertexArraysProc_, n, vertexArrays);
   APILOG("glGenVertexArrays(%u, %p) = %u\n",
@@ -2065,6 +2081,7 @@ void IContext::getSynciv(GLsync sync,
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::Sync)) {
       getSyncivProc_ = iglGetSynciv;
     }
+    IGL_ASSERT_MSG(getSyncivProc_, "No supported function for glGetSynciv\n");
   }
   GLCALL_PROC(getSyncivProc_, sync, pname, bufSize, length, values);
   APILOG("glGetSynciv(%p, %s, %u, %p, %p)\n", sync, pname, bufSize, length, values);
@@ -2174,6 +2191,8 @@ void IContext::invalidateFramebuffer(IGL_MAYBE_UNUSED GLenum target,
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::InvalidateFramebuffer)) {
       invalidateFramebufferProc_ = iglInvalidateFramebuffer;
     }
+    IGL_ASSERT_MSG(invalidateFramebufferProc_,
+                   "No supported function for glInvalidateFramebuffer\n");
   }
   GLCALL_PROC(invalidateFramebufferProc_, target, numAttachments, attachments);
   APILOG("glInvalidateFramebuffer(%s, %u, %p)\n",
@@ -2298,6 +2317,7 @@ void* IContext::mapBufferRange(GLenum target,
     } else if (deviceFeatureSet_.hasFeature(DeviceFeatures::MapBufferRange)) {
       mapBufferRangeProc_ = iglMapBufferRange;
     }
+    IGL_ASSERT_MSG(mapBufferRangeProc_, "No supported function for glMapBufferRange\n");
   }
   void* ret = nullptr;
   GLCALL_PROC_WITH_RETURN(ret, mapBufferRangeProc_, nullptr, target, offset, length, access);
@@ -2322,6 +2342,7 @@ void IContext::objectLabel(GLenum identifier, GLuint name, GLsizei length, const
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugLabel)) {
       objectLabelProc_ = iglObjectLabel;
     }
+    IGL_ASSERT_MSG(objectLabelProc_, "No supported function for glObjectLabel\n");
   }
   GLCALL_PROC(objectLabelProc_, identifier, name, length, label);
   APILOG("glObjectLabel(%s, %u, %u, %s)\n", GL_ENUM_TO_STRING(identifier), name, length, label);
@@ -2353,6 +2374,7 @@ void IContext::pushDebugGroup(GLenum source, GLuint id, GLsizei length, const GL
         pushDebugGroupProc_ = iglPushDebugGroup;
       }
     }
+    IGL_ASSERT_MSG(pushDebugGroupProc_, "No supported function for glPushDebugGroup\n");
   }
 
   GLCALL_PROC(pushDebugGroupProc_, source, id, length, message);
@@ -2373,6 +2395,7 @@ void IContext::popDebugGroup() {
         popDebugGroupProc_ = iglPopDebugGroup;
       }
     }
+    IGL_ASSERT_MSG(popDebugGroupProc_, "No supported function for glPopDebugGroup\n");
   }
 
   GLCALL_PROC(popDebugGroupProc_);
@@ -2437,6 +2460,8 @@ void IContext::renderbufferStorageMultisample(GLenum target,
         renderbufferStorageMultisampleProc_ = iglRenderbufferStorageMultisampleAPPLE;
       }
     }
+    IGL_ASSERT_MSG(renderbufferStorageMultisampleProc_,
+                   "No supported function for glRenderbufferStorageMultisampleProc\n");
   }
 
   GLCALL_PROC(renderbufferStorageMultisampleProc_, target, samples, internalformat, width, height);
@@ -2661,6 +2686,7 @@ void IContext::texStorage1D(GLenum target, GLsizei levels, GLenum internalformat
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::TexStorage)) {
       texStorage1DProc_ = iglTexStorage1D;
     }
+    IGL_ASSERT_MSG(texStorage1DProc_, "No supported function for glTexStorage1D\n");
   }
 
   GLCALL_PROC(texStorage1DProc_, target, levels, internalformat, width);
@@ -2685,6 +2711,7 @@ void IContext::texStorage2D(GLenum target,
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::TexStorage)) {
       texStorage2DProc_ = iglTexStorage2D;
     }
+    IGL_ASSERT_MSG(texStorage2DProc_, "No supported function for glTexStorage2D\n");
   }
 
   GLCALL_PROC(texStorage2DProc_, target, levels, internalformat, width, height);
@@ -2711,6 +2738,7 @@ void IContext::texStorage3D(GLenum target,
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::TexStorage)) {
       texStorage3DProc_ = iglTexStorage3D;
     }
+    IGL_ASSERT_MSG(texStorage3DProc_, "No supported function for glTexStorage3D\n");
   }
   GLCALL_PROC(texStorage3DProc_, target, levels, internalformat, width, height, depth);
   APILOG("glTexStorage3D(%s, %u, %s, %u, %u, %u)\n",
@@ -2783,6 +2811,7 @@ void IContext::texImage3D(GLenum target,
         texImage3DProc_ = iglTexImage3D;
       }
     }
+    IGL_ASSERT_MSG(texImage3DProc_, "No supported function for glTexImage3D\n");
   }
 
   GLCALL_PROC(texImage3DProc_,
@@ -2891,6 +2920,7 @@ void IContext::texSubImage3D(GLenum target,
         texSubImage3DProc_ = iglTexSubImage3D;
       }
     }
+    IGL_ASSERT_MSG(texSubImage3DProc_, "No supported function for glTexSubImage3D\n");
   }
 
   GLCALL_PROC(texSubImage3DProc_,
@@ -3140,6 +3170,7 @@ void IContext::unmapBuffer(GLenum target) {
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::UnmapBuffer)) {
       unmapBufferProc_ = iglUnmapBuffer;
     }
+    IGL_ASSERT_MSG(unmapBufferProc_, "No supported function for glUnmapBuffer\n");
   }
   GLCALL_PROC(unmapBufferProc_, target);
   APILOG("glUnmapBuffer(%s)\n", GL_ENUM_TO_STRING(target));
@@ -3234,6 +3265,7 @@ GLuint64 IContext::getTextureHandle(GLuint texture) {
     } else if (deviceFeatureSet_.hasExtension(Extensions::BindlessTextureNv)) {
       getTextureHandleProc_ = iglGetTextureHandleNV;
     }
+    IGL_ASSERT_MSG(getTextureHandleProc_, "No supported function for glGetTextureHandle\n");
   }
 
   GLuint64 ret;
@@ -3250,6 +3282,8 @@ void IContext::makeTextureHandleResident(GLuint64 handle) {
     } else if (deviceFeatureSet_.hasExtension(Extensions::BindlessTextureNv)) {
       makeTextureHandleResidentProc_ = iglMakeTextureHandleResidentNV;
     }
+    IGL_ASSERT_MSG(makeTextureHandleResidentProc_,
+                   "No supported function for glMakeTextureHandleResidentARB\n");
   }
 
   GLCALL_PROC(makeTextureHandleResidentProc_, handle);
@@ -3264,6 +3298,8 @@ void IContext::makeTextureHandleNonResident(GLuint64 handle) {
     } else if (deviceFeatureSet_.hasExtension(Extensions::BindlessTextureNv)) {
       makeTextureHandleNonResidentProc_ = iglMakeTextureHandleNonResidentNV;
     }
+    IGL_ASSERT_MSG(makeTextureHandleNonResidentProc_,
+                   "No supported function for glMakeTextureHandleNonResidentARB\n");
   }
 
   GLCALL_PROC(makeTextureHandleNonResidentProc_, handle);
@@ -3286,6 +3322,7 @@ void IContext::memoryBarrier(GLbitfield barriers) {
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::ShaderImageLoadStore)) {
       memoryBarrierProc_ = iglMemoryBarrier;
     }
+    IGL_ASSERT_MSG(memoryBarrierProc_, "No supported function for glMemoryBarrier\n");
   }
   GLCALL_PROC(memoryBarrierProc_, barriers);
   APILOG("glMemoryBarrier(0x%x)\n", barriers);
@@ -3318,6 +3355,7 @@ void IContext::vertexAttribDivisor(GLuint index, GLuint divisor) {
     } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::VertexAttribDivisor)) {
       vertexAttribDivisorProc_ = iglVertexAttribDivisor;
     }
+    IGL_ASSERT_MSG(vertexAttribDivisorProc_, "No supported function for glVertexAttribDivisor\n");
   }
 
   GLCALL_PROC(vertexAttribDivisorProc_, index, divisor);

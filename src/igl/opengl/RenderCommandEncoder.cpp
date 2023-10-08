@@ -158,24 +158,39 @@ void RenderCommandEncoder::pushDebugGroupLabel(const std::string& label,
                                                const igl::Color& /*color*/) const {
   IGL_ASSERT(adapter_);
   IGL_ASSERT(!label.empty());
-  getContext().pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, label.length(), label.c_str());
+
+  if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
+    getContext().pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, label.length(), label.c_str());
+  } else {
+    IGL_LOG_ERROR_ONCE(
+        "RenderCommandEncoder::pushDebugGroupLabel not supported in this context!\n");
+  }
 }
 
 void RenderCommandEncoder::insertDebugEventLabel(const std::string& label,
                                                  const igl::Color& /*color*/) const {
   IGL_ASSERT(adapter_);
   IGL_ASSERT(!label.empty());
-  getContext().debugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
-                                  GL_DEBUG_TYPE_MARKER,
-                                  0,
-                                  GL_DEBUG_SEVERITY_LOW,
-                                  label.length(),
-                                  label.c_str());
+  if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
+    getContext().debugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                                    GL_DEBUG_TYPE_MARKER,
+                                    0,
+                                    GL_DEBUG_SEVERITY_LOW,
+                                    label.length(),
+                                    label.c_str());
+  } else {
+    IGL_LOG_ERROR_ONCE(
+        "RenderCommandEncoder::insertDebugEventLabel not supported in this context!\n");
+  }
 }
 
 void RenderCommandEncoder::popDebugGroupLabel() const {
   IGL_ASSERT(adapter_);
-  getContext().popDebugGroup();
+  if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
+    getContext().popDebugGroup();
+  } else {
+    IGL_LOG_ERROR_ONCE("RenderCommandEncoder::popDebugGroupLabel not supported in this context!\n");
+  }
 }
 
 void RenderCommandEncoder::bindViewport(const Viewport& viewport) {

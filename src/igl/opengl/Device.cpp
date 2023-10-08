@@ -97,11 +97,19 @@ Device::~Device() = default;
 
 // debug markers useful in GPU captures
 void Device::pushMarker(int len, const char* name) {
-  context_->pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, len, name);
+  if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessage)) {
+    context_->pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, len, name);
+  } else {
+    IGL_LOG_ERROR_ONCE("Device::pushMarker not supported in this context!");
+  }
 }
 
 void Device::popMarker() {
-  context_->popDebugGroup();
+  if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessage)) {
+    context_->popDebugGroup();
+  } else {
+    IGL_LOG_ERROR_ONCE("Device::popMarker not supported in this context!");
+  }
 }
 
 // Command Queue
