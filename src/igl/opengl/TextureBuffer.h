@@ -26,7 +26,7 @@ class TextureBuffer : public TextureBufferBase {
   uint64_t getTextureId() const override;
 
  protected:
-  Result initialize() const;
+  Result initialize(const std::string& debugName) const;
   Result initializeWithUpload() const;
   Result initializeWithTexStorage() const;
   Result uploadInternal(TextureType type,

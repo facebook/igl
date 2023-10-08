@@ -126,20 +126,15 @@ Result TextureBuffer::createTexture(const TextureDesc& desc) {
   setTextureBufferProperties(textureID, target);
   setUsage(desc.usage);
 
-  if (!desc.debugName.empty() &&
-      getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
-    getContext().objectLabel(GL_TEXTURE, textureID, desc.debugName.size(), desc.debugName.c_str());
-  }
-
   if (desc.type == TextureType::ExternalImage) {
     // No further initialization needed for external image textures
     return Result{};
   } else {
-    return initialize();
+    return initialize(desc.debugName);
   }
 }
 
-Result TextureBuffer::initialize() const {
+Result TextureBuffer::initialize(const std::string& debugName) const {
   const auto target = getTarget();
   if (target == 0) {
     return Result{Result::Code::InvalidOperation, "Unknown texture type"};
@@ -152,6 +147,11 @@ Result TextureBuffer::initialize() const {
   if (!getProperties().isCompressed()) {
     swapTextureChannelsForFormat(getContext(), target, getFormat());
   }
+  if (!debugName.empty() &&
+      getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
+    getContext().objectLabel(GL_TEXTURE, getId(), debugName.size(), debugName.c_str());
+  }
+
   Result result;
   if (canInitialize()) {
     if (!supportsTexStorage()) {
