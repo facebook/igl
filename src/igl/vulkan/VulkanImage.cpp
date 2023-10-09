@@ -246,10 +246,6 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR};
 
   ci.pNext = &extImgMem;
-  ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  ci.queueFamilyIndexCount = 0;
-  ci.pQueueFamilyIndices = nullptr;
-  ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
   VkPhysicalDeviceMemoryProperties vulkanMemoryProperties;
   ctx_.vf_.vkGetPhysicalDeviceMemoryProperties(physicalDevice_, &vulkanMemoryProperties);
@@ -357,10 +353,6 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT};
 
   ci.pNext = &extImgMem;
-  ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  ci.queueFamilyIndexCount = 0;
-  ci.pQueueFamilyIndices = nullptr;
-  ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
   VkPhysicalDeviceMemoryProperties vulkanMemoryProperties;
   ctx_.vf_.vkGetPhysicalDeviceMemoryProperties(physicalDevice_, &vulkanMemoryProperties);
@@ -525,10 +517,6 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                                                samples);
 
   ci.pNext = &externalImageCreateInfo;
-  ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  ci.queueFamilyIndexCount = 0;
-  ci.pQueueFamilyIndices = nullptr;
-  ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
   VkPhysicalDeviceMemoryProperties vulkanMemoryProperties;
   ctx_.vf_.vkGetPhysicalDeviceMemoryProperties(physicalDevice_, &vulkanMemoryProperties);
