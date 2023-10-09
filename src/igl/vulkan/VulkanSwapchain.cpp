@@ -128,7 +128,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
       colorSpaceToString(vkColorSpaceToColorSpace(surfaceFormat_.colorSpace)));
 
   acquireSemaphore_ = std::make_unique<igl::vulkan::VulkanSemaphore>(
-      ctx_.vf_, device_, "Semaphore: swapchain-acquire");
+      ctx_.vf_, device_, false, "Semaphore: swapchain-acquire");
 
   IGL_ASSERT_MSG(
       ctx.vkSurface_ != VK_NULL_HANDLE,
