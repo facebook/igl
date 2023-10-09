@@ -54,6 +54,12 @@
 #define USE_OPENGL_BACKEND 1
 #endif
 
+#if USE_OPENGL_BACKEND
+// for KTX textures
+#define VK_FORMAT_R32G32B32A32_SFLOAT 109
+#define VK_FORMAT_BC7_UNORM_BLOCK 145
+#endif // USE_OPENGL_BACKEND
+
 #if defined(__cpp_lib_format)
 #include <format>
 #define IGL_FORMAT std::format
@@ -2112,8 +2118,7 @@ void generateCompressedTexture(LoadedImage img) {
 
   // Go over all generated mipmap and create a compressed texture
 
-  // Create ktx2 texture
-  // hard coded and support only BC7 format
+  // Create ktx2 texture hard coded and support only BC7 format
   ktxTextureCreateInfo createInfo = {
       .vkFormat = VK_FORMAT_BC7_UNORM_BLOCK,
       .baseWidth = static_cast<uint32_t>(img.w),
