@@ -3477,14 +3477,10 @@ void IContext::initialize(Result* result) {
     std::vector<std::string> sortedExtensions(supportedExtensions.begin(),
                                               supportedExtensions.end());
     std::sort(sortedExtensions.begin(), sortedExtensions.end());
-    std::stringstream extensionsLog;
-    for (auto it = sortedExtensions.begin(); it != sortedExtensions.end(); ++it) {
-      extensionsLog << *it;
-      if (it != std::prev(sortedExtensions.end())) {
-        extensionsLog << ", ";
-      }
+    IGL_LOG_INFO("GL Extensions:\n");
+    for (const auto& extension : sortedExtensions) {
+      IGL_LOG_INFO(extension.c_str());
     }
-    IGL_LOG_INFO("GL Extensions: %s\n", extensionsLog.str().c_str());
   }
 #endif
 
