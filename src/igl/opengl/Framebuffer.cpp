@@ -517,7 +517,11 @@ Viewport CustomFramebuffer::getViewport() const {
   auto texture = getColorAttachment(0);
 
   if (texture == nullptr) {
-    IGL_ASSERT_MSG(0, "No color attachment in CustomFrameBuffer at index 0");
+    texture = getDepthAttachment();
+  }
+
+  if (texture == nullptr) {
+    IGL_ASSERT_MSG(0, "No color/depth attachments in CustomFrameBuffer at index 0");
     return {0, 0, 0, 0};
   }
 

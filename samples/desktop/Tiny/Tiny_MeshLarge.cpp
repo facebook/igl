@@ -1781,21 +1781,7 @@ void createShadowMap() {
   IGL_ASSERT(ret.isOk());
 
   FramebufferDesc framebufferDesc;
-
   framebufferDesc.depthAttachment.texture = shadowMap;
-#if USE_OPENGL_BACKEND
-  // OpenGL backend requires both color and depth attchments.
-  auto descColor = TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
-                                      w,
-                                      h,
-                                      TextureDesc::TextureUsageBits::Sampled |
-                                          TextureDesc::TextureUsageBits::Attachment,
-                                      "shadow color framebuffer");
-  descColor.numMipLevels = TextureDesc::calcNumMipLevels(w, h);
-  std::shared_ptr<ITexture> texColor = device_->createTexture(descColor, &ret);
-  IGL_ASSERT(ret.isOk());
-  framebufferDesc.colorAttachments[0].texture = texColor;
-#endif
   fbShadowMap_ = device_->createFramebuffer(framebufferDesc, nullptr);
   IGL_ASSERT(fbShadowMap_);
 }
