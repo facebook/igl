@@ -713,6 +713,7 @@ struct TextureDesc {
 struct Dependencies {
   enum { LVK_MAX_SUBMIT_DEPENDENCIES = 4 };
   TextureHandle textures[LVK_MAX_SUBMIT_DEPENDENCIES] = {};
+  BufferHandle buffers[LVK_MAX_SUBMIT_DEPENDENCIES] = {};
 };
 
 class ICommandBuffer {

@@ -401,6 +401,7 @@ class CommandBuffer final : public ICommandBuffer {
 
  private:
   void useComputeTexture(TextureHandle texture);
+  void bufferBarrier(BufferHandle handle, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage);
   void bindGraphicsPipeline();
 
  private:
