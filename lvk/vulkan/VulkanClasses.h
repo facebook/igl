@@ -374,7 +374,7 @@ class CommandBuffer final : public ICommandBuffer {
   void cmdInsertDebugEventLabel(const char* label, uint32_t colorRGBA) const override;
   void cmdPopDebugGroupLabel() const override;
 
-  void cmdBeginRendering(const lvk::RenderPass& renderPass, const lvk::Framebuffer& desc) override;
+  void cmdBeginRendering(const lvk::RenderPass& renderPass, const lvk::Framebuffer& desc, const Dependencies& deps) override;
   void cmdEndRendering() override;
 
   void cmdBindViewport(const Viewport& viewport) override;

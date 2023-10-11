@@ -1093,8 +1093,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
                                vec4(0, 0.544812560f, 0.838557839f, 0),
                                vec4(0.634882748f, -0.647876859f, 0.420926809f, 0),
                                vec4(-58.9244843f, -30.4530792f, -508.410126f, 1.0f));
-  const mat4 scaleBias =
-      mat4(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.5, 0.5, 0.0, 1.0);
+  const mat4 scaleBias = mat4(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.5, 0.5, 0.0, 1.0);
 
   perFrame_ = UniformsPerFrame{
       .proj = glm::perspective(fov, aspectRatio, 0.5f, 500.0f),
@@ -1195,14 +1194,12 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       buffer.cmdPopDebugGroupLabel();
     }
     buffer.cmdEndRendering();
-    buffer.transitionToShaderReadOnly(fbOffscreen_.color[0].texture);
     ctx_->submit(buffer);
   }
 
   // Pass 3: compute shader post-processing
   if (enableComputePass_) {
-    lvk::TextureHandle tex = kNumSamplesMSAA > 1 ? fbOffscreen_.color[0].resolveTexture
-                                                 : fbOffscreen_.color[0].texture;
+    lvk::TextureHandle tex = kNumSamplesMSAA > 1 ? fbOffscreen_.color[0].resolveTexture : fbOffscreen_.color[0].texture;
     lvk::ICommandBuffer& buffer = ctx_->acquireCommandBuffer();
 
     buffer.cmdBindComputePipeline(computePipelineState_Grayscale_);
@@ -1234,8 +1231,10 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
   {
     lvk::ICommandBuffer& buffer = ctx_->acquireCommandBuffer();
 
+    lvk::TextureHandle tex = kNumSamplesMSAA > 1 ? fbOffscreen_.color[0].resolveTexture : fbOffscreen_.color[0].texture;
+
     // This will clear the framebuffer
-    buffer.cmdBeginRendering(renderPassMain_, fbMain_);
+    buffer.cmdBeginRendering(renderPassMain_, fbMain_, {.textures = {tex}});
     {
       buffer.cmdBindRenderPipeline(renderPipelineState_Fullscreen_);
       buffer.cmdPushDebugGroupLabel("Swapchain Output", 0xff0000ff);
@@ -1243,8 +1242,7 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       struct {
         uint32_t texture;
       } bindings = {
-          .texture = kNumSamplesMSAA > 1 ? fbOffscreen_.color[0].resolveTexture.index()
-                                         : fbOffscreen_.color[0].texture.index(),
+          .texture = tex.index(),
       };
       buffer.cmdPushConstants(bindings);
       buffer.cmdDraw(3);

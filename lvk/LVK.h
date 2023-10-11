@@ -726,11 +726,9 @@ class ICommandBuffer {
   virtual void cmdPopDebugGroupLabel() const = 0;
 
   virtual void cmdBindComputePipeline(lvk::ComputePipelineHandle handle) = 0;
-  virtual void cmdDispatchThreadGroups(const Dimensions& threadgroupCount,
-                                       const Dependencies& deps = Dependencies()) = 0;
+  virtual void cmdDispatchThreadGroups(const Dimensions& threadgroupCount, const Dependencies& deps = {}) = 0;
 
-  virtual void cmdBeginRendering(const lvk::RenderPass& renderPass,
-                                 const lvk::Framebuffer& desc) = 0;
+  virtual void cmdBeginRendering(const lvk::RenderPass& renderPass, const lvk::Framebuffer& desc, const Dependencies& deps = {}) = 0;
   virtual void cmdEndRendering() = 0;
 
   virtual void cmdBindViewport(const Viewport& viewport) = 0;

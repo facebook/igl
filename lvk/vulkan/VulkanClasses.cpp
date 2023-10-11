@@ -528,7 +528,7 @@ bool hasExtension(const char* ext, const std::vector<VkExtensionProperties>& pro
   return false;
 }
 
-void transitionColorAttachment(VkCommandBuffer buffer, lvk::VulkanTexture* colorTex) {
+void transitionToColorAttachment(VkCommandBuffer buffer, lvk::VulkanTexture* colorTex) {
   if (!LVK_VERIFY(colorTex)) {
     return;
   }
@@ -2159,12 +2159,16 @@ void lvk::CommandBuffer::useComputeTexture(TextureHandle handle) {
       VkImageSubresourceRange{vkImage.getImageAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
 }
 
-void lvk::CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const lvk::Framebuffer& fb) {
+void lvk::CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, const lvk::Framebuffer& fb, const Dependencies& deps) {
   LVK_PROFILER_FUNCTION();
 
   LVK_ASSERT(!isRendering_);
 
   isRendering_ = true;
+
+  for (uint32_t i = 0; i != Dependencies::LVK_MAX_SUBMIT_DEPENDENCIES && deps.textures[i]; i++) {
+    transitionToShaderReadOnly(deps.textures[i]);
+  }
 
   const uint32_t numFbColorAttachments = fb.getNumColorAttachments();
   const uint32_t numPassColorAttachments = renderPass.getNumColorAttachments();
@@ -2177,12 +2181,12 @@ void lvk::CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, co
   for (uint32_t i = 0; i != numFbColorAttachments; i++) {
     if (const auto handle = fb.color[i].texture) {
       lvk::VulkanTexture* colorTex = ctx_->texturesPool_.get(handle);
-      transitionColorAttachment(wrapper_->cmdBuf_, colorTex);
+      transitionToColorAttachment(wrapper_->cmdBuf_, colorTex);
     }
     // handle MSAA
     if (TextureHandle handle = fb.color[i].resolveTexture) {
       lvk::VulkanTexture* colorResolveTex = ctx_->texturesPool_.get(handle);
-      transitionColorAttachment(wrapper_->cmdBuf_, colorResolveTex);
+      transitionToColorAttachment(wrapper_->cmdBuf_, colorResolveTex);
     }
   }
   // transition depth-stencil attachment
