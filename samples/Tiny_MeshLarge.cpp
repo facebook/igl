@@ -1004,7 +1004,7 @@ void createPipelines() {
 
   smGrayscaleComp_ = ctx_->createShaderModule({kCodeComputeTest, lvk::Stage_Comp, "Shader Module: grayscale (comp)"});
 
-  computePipelineState_Grayscale_ = ctx_->createComputePipeline({.shaderModule = smGrayscaleComp_}, nullptr);
+  computePipelineState_Grayscale_ = ctx_->createComputePipeline({.smComp = smGrayscaleComp_}, nullptr);
 }
 
 void createShadowMap() {

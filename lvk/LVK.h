@@ -612,7 +612,7 @@ struct RenderPipelineDesc final {
 };
 
 struct ComputePipelineDesc final {
-  ShaderModuleHandle shaderModule;
+  ShaderModuleHandle smComp;
   SpecializationConstantDesc specInfo = {};
   const char* entryPoint = "main";
   const char* debugName = "";

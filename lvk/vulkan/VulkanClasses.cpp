@@ -3511,7 +3511,7 @@ VkPipeline lvk::VulkanContext::getVkPipeline(ComputePipelineHandle handle) {
   }
 
   if (cps->pipeline_ == VK_NULL_HANDLE) {
-    const VkShaderModule* sm = shaderModulesPool_.get(cps->desc_.shaderModule);
+    const VkShaderModule* sm = shaderModulesPool_.get(cps->desc_.smComp);
 
     LVK_ASSERT(sm);
 
@@ -3536,7 +3536,7 @@ VkPipeline lvk::VulkanContext::getVkPipeline(ComputePipelineHandle handle) {
 }
 
 lvk::Holder<lvk::ComputePipelineHandle> lvk::VulkanContext::createComputePipeline(const ComputePipelineDesc& desc, Result* outResult) {
-  if (!LVK_VERIFY(desc.shaderModule.valid())) {
+  if (!LVK_VERIFY(desc.smComp.valid())) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Missing compute shader");
     return {};
   }
