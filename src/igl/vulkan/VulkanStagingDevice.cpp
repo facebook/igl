@@ -29,7 +29,7 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
   const auto& limits = ctx_.getVkPhysicalDeviceProperties().limits;
 
   // Use value of 256MB (limited by some architectures), and clamp it to the max limits
-  maxBufferCapacity_ = std::min(limits.maxStorageBufferRange, 256u * 1024u * 1024u);
+  maxStagingBufferSize_ = std::min(limits.maxStorageBufferRange, 256u * 1024u * 1024u);
 
   immediate_ = std::make_unique<igl::vulkan::VulkanImmediateCommands>(
       ctx_.vf_,
@@ -60,7 +60,7 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
   while (size) {
     // finds a free memory block to store the data in the staging buffer
     MemoryRegion memoryChunk = nextFreeBlock(size);
-    const uint32_t copySize = std::min(static_cast<uint32_t>(size), memoryChunk.size);
+    const VkDeviceSize copySize = std::min(static_cast<VkDeviceSize>(size), memoryChunk.size);
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
     IGL_LOG_INFO("\tUploading %u bytes\n", copySize);
@@ -84,10 +84,10 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
   }
 }
 
-VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(uint32_t size) {
+VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSize size) {
   IGL_PROFILER_FUNCTION();
 
-  const uint32_t requestedAlignedSize = getAlignedSize(size);
+  const VkDeviceSize requestedAlignedSize = getAlignedSize(size);
 
   if (shouldGrowStagingBuffer(requestedAlignedSize)) {
     growStagingBuffer(nextSize(requestedAlignedSize));
@@ -193,7 +193,7 @@ void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
 
   while (size) {
     MemoryRegion memoryChunk = nextFreeBlock(size);
-    const uint32_t copySize = std::min(static_cast<uint32_t>(size), memoryChunk.size);
+    const VkDeviceSize copySize = std::min(static_cast<VkDeviceSize>(size), memoryChunk.size);
 
     // do the transfer
     const VkBufferCopy copy = {chunkSrcOffset, memoryChunk.offset, copySize};
@@ -231,7 +231,7 @@ void VulkanStagingDevice::imageData(VulkanImage& image,
 
   // We don't support uploading image data in small chunks. If the total upload size exceeds the
   // the maximum allowed staging buffer size, we can't upload it
-  IGL_ASSERT_MSG(storageSize <= maxBufferCapacity_,
+  IGL_ASSERT_MSG(storageSize <= maxStagingBufferSize_,
                  "Image size exceeds maximum size of staging buffer");
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
@@ -401,7 +401,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
 
   // We don't support uploading image data in small chunks. If the total upload size exceeds the
   // the maximum allowed staging buffer size, we can't upload it
-  IGL_ASSERT_MSG(storageSize <= maxBufferCapacity_,
+  IGL_ASSERT_MSG(storageSize <= maxStagingBufferSize_,
                  "Image size exceeds maximum size of staging buffer");
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
@@ -492,8 +492,8 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   regions_.push_front(memoryChunk);
 }
 
-uint32_t VulkanStagingDevice::getAlignedSize(uint32_t size) const {
-  constexpr uint32_t kStagingBufferAlignment = 16; // updated to support BC7 compressed image
+VkDeviceSize VulkanStagingDevice::getAlignedSize(VkDeviceSize size) const {
+  constexpr VkDeviceSize kStagingBufferAlignment = 16; // updated to support BC7 compressed image
   return (size + kStagingBufferAlignment - 1) & ~(kStagingBufferAlignment - 1);
 }
 
@@ -509,18 +509,18 @@ void VulkanStagingDevice::waitAndReset() {
   regions_.push_front({0, stagingBufferSize_, VulkanImmediateCommands::SubmitHandle()});
 }
 
-bool VulkanStagingDevice::shouldGrowStagingBuffer(uint32_t sizeNeeded) const {
+bool VulkanStagingDevice::shouldGrowStagingBuffer(VkDeviceSize sizeNeeded) const {
   return !stagingBuffer_ || (sizeNeeded > stagingBufferSize_);
 }
 
-uint32_t VulkanStagingDevice::nextSize(uint32_t requestedSize) const {
-  return std::min(getAlignedSize(requestedSize), maxBufferCapacity_);
+VkDeviceSize VulkanStagingDevice::nextSize(VkDeviceSize requestedSize) const {
+  return std::min(getAlignedSize(requestedSize), maxStagingBufferSize_);
 }
 
-void VulkanStagingDevice::growStagingBuffer(uint32_t minimumSize) {
+void VulkanStagingDevice::growStagingBuffer(VkDeviceSize minimumSize) {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT(minimumSize <= maxBufferCapacity_);
+  IGL_ASSERT(minimumSize <= maxStagingBufferSize_);
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
   IGL_LOG_INFO("Growing staging buffer from %u to %u bytes\n", stagingBufferSize_, minimumSize);
@@ -534,7 +534,7 @@ void VulkanStagingDevice::growStagingBuffer(uint32_t minimumSize) {
   // If the size of the new staging buffer plus the size of the existing one is larger than the
   // limit imposed by some architectures on buffers that are device and host visible, we need to
   // wait for the current buffer to be destroyed before we can allocate a new one
-  if ((minimumSize + stagingBufferSize_) > maxBufferCapacity_) {
+  if ((minimumSize + stagingBufferSize_) > maxStagingBufferSize_) {
     // Wait for the current buffer to be destroyed on the device
     ctx_.waitDeferredTasks();
   }

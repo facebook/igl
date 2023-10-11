@@ -49,10 +49,17 @@ class VulkanStagingDevice final {
                       uint32_t bytesPerRow,
                       bool flipImageVertical);
 
+  [[nodiscard]] VkDeviceSize getCurrentStagingBufferSize() const {
+    return stagingBufferSize_;
+  }
+  [[nodiscard]] VkDeviceSize getMaxStagingBufferSize() const {
+    return maxStagingBufferSize_;
+  }
+
  private:
   struct MemoryRegion {
-    uint32_t offset = 0u;
-    uint32_t size = 0u;
+    VkDeviceSize offset = 0u;
+    VkDeviceSize size = 0u;
     VulkanImmediateCommands::SubmitHandle handle;
   };
 
@@ -64,22 +71,22 @@ class VulkanStagingDevice final {
    * @return The offset of the free memory block on the staging buffer and the size of the block
    * found.
    */
-  [[nodiscard]] MemoryRegion nextFreeBlock(uint32_t size);
+  [[nodiscard]] MemoryRegion nextFreeBlock(VkDeviceSize size);
 
-  uint32_t getAlignedSize(uint32_t size) const;
+  [[nodiscard]] VkDeviceSize getAlignedSize(VkDeviceSize size) const;
 
   /// @brief Waits for all memory blocks to become available and resets the staging device's
   /// internal state
   void waitAndReset();
 
   /// @brief Returns true if the staging buffer cannot store the size requested
-  [[nodiscard]] bool shouldGrowStagingBuffer(uint32_t sizeNeeded) const;
+  [[nodiscard]] bool shouldGrowStagingBuffer(VkDeviceSize sizeNeeded) const;
 
   /// @brief Returns the next size to allocate for the staging buffer given the requested size
-  [[nodiscard]] uint32_t nextSize(uint32_t requestedSize) const;
+  [[nodiscard]] VkDeviceSize nextSize(VkDeviceSize requestedSize) const;
 
   /// @brief Grows the staging buffer to a size that is at least as large as the requested size
-  void growStagingBuffer(uint32_t minimumSize);
+  void growStagingBuffer(VkDeviceSize minimumSize);
 
  private:
   VulkanContext& ctx_;
@@ -87,9 +94,9 @@ class VulkanStagingDevice final {
   std::unique_ptr<VulkanImmediateCommands> immediate_;
 
   /// @brief Current size of the staging buffer
-  uint32_t stagingBufferSize_ = 0;
-  /// @brief Maximum staging buffer capacity, limited by some architectures
-  uint32_t maxBufferCapacity_ = 0;
+  VkDeviceSize stagingBufferSize_ = 0;
+  /// @brief Maximum staging buffer size, limited by some architectures
+  VkDeviceSize maxStagingBufferSize_ = 0;
   /// @brief Used to track the current staging buffer's id. Updated every time the staging buffer
   /// grows, it is used as the debug name for the staging buffer for easily tracking it during
   /// debugging
