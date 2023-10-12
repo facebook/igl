@@ -36,11 +36,22 @@ lvk_set_folder(SPIRV              "third-party/glslang")
 lvk_set_folder(glslang-default-resource-limits "third-party/glslang")
 # cmake-format: on
 
-find_package(Vulkan REQUIRED)
+if(NOT LVK_USE_CUSTOM_MOLTENVK)
+  find_package(Vulkan REQUIRED)
+endif()
+
+if(LVK_WITH_VULKAN_PORTABILITY)
+  add_definitions("-DLVK_WITH_VULKAN_PORTABILITY")
+endif()
 
 target_link_libraries(LVKVulkan PRIVATE LVKLibrary)
 target_link_libraries(LVKVulkan PRIVATE glslang SPIRV glslang-default-resource-limits)
-target_link_libraries(LVKVulkan PUBLIC Vulkan::Vulkan)
+if(LVK_USE_CUSTOM_MOLTENVK)
+  target_include_directories(LVKVulkan PUBLIC "${LVK_CUSTOM_MOLTENVK_PATH}/include")
+  target_link_libraries(LVKVulkan PUBLIC "${LVK_CUSTOM_MOLTENVK_PATH}/dylib/macOS/libMoltenVK.dylib")
+else()
+  target_link_libraries(LVKVulkan PUBLIC Vulkan::Vulkan)
+endif()
 
 target_include_directories(LVKVulkan PUBLIC "${LVK_ROOT_DIR}/third-party/deps/src/volk")
 target_include_directories(LVKVulkan PUBLIC "${LVK_ROOT_DIR}/third-party/deps/src/vma/include")

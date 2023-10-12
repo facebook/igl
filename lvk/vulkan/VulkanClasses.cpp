@@ -4045,6 +4045,8 @@ void lvk::VulkanContext::createInstance() {
 #endif
 #elif defined(__APPLE__)
     VK_MVK_MACOS_SURFACE_EXTENSION_NAME,
+#endif
+#if defined(LVK_WITH_VULKAN_PORTABILITY)
     VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
 #endif
     VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME // enabled only for validation
@@ -4088,7 +4090,7 @@ void lvk::VulkanContext::createInstance() {
   };
 
   VkInstanceCreateFlags flags = 0;
-#if defined(__APPLE__)
+#if defined(LVK_WITH_VULKAN_PORTABILITY)
   flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
   const VkInstanceCreateInfo ci = {
@@ -4323,6 +4325,8 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
     VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
     VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME,
     VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME,
+#endif
+#if defined(LVK_WITH_VULKAN_PORTABILITY)
     "VK_KHR_portability_subset",
 #endif
   };
