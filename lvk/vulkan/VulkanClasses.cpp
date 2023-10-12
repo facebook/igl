@@ -4324,6 +4324,7 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
       .fillModeNonSolid = VK_TRUE,
       .samplerAnisotropy = VK_TRUE,
       .textureCompressionBC = VK_TRUE,
+      .fragmentStoresAndAtomics = VK_TRUE,
   };
   VkPhysicalDeviceVulkan11Features deviceFeatures11 = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
