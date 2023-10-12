@@ -4056,12 +4056,25 @@ void lvk::VulkanContext::createInstance() {
   const VkValidationFeatureEnableEXT validationFeaturesEnabled[] = {
       VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
   };
+  
+#if defined(__APPLE__)
+  // Shader validation doesn't work in MoltenVK for SPIR-V 1.6 under Vulkan 1.3:
+  // "Invalid SPIR-V binary version 1.6 for target environment SPIR-V 1.5 (under Vulkan 1.2 semantics)."
+  const VkValidationFeatureDisableEXT validationFeaturesDisabled[] = {
+    VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT,
+    VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT,
+  };
+#endif
 
   const VkValidationFeaturesEXT features = {
       .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
       .pNext = nullptr,
       .enabledValidationFeatureCount = config_.enableValidation ? (uint32_t)LVK_ARRAY_NUM_ELEMENTS(validationFeaturesEnabled) : 0u,
       .pEnabledValidationFeatures = config_.enableValidation ? validationFeaturesEnabled : nullptr,
+#if defined(__APPLE__)
+      .disabledValidationFeatureCount = config_.enableValidation ? (uint32_t)LVK_ARRAY_NUM_ELEMENTS(validationFeaturesDisabled) : 0u,
+      .pDisabledValidationFeatures = config_.enableValidation ? validationFeaturesDisabled : nullptr,
+#endif
   };
 
   const VkApplicationInfo appInfo = {
