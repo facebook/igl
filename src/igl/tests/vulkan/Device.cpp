@@ -11,6 +11,7 @@
 #include "../util/TestDevice.h"
 
 #if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOS || IGL_PLATFORM_LINUX
+#include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 #endif
@@ -53,6 +54,7 @@ TEST_F(DeviceVulkanTest, CreateCommandQueue) {
   ASSERT_NE(cmdQueue, nullptr);
 }
 
+#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOS || IGL_PLATFORM_LINUX
 TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
   Result ret;
 
@@ -62,11 +64,17 @@ TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
   bufferDesc.type = BufferDesc::BufferTypeBits::Storage;
   bufferDesc.storage = ResourceStorage::Private;
 
-  constexpr size_t kDesiredBufferLength = 256u * 1024u * 1024u + 2u;
+  igl::vulkan::VulkanContext& ctx =
+      static_cast<igl::vulkan::Device*>(iglDev_.get())->getVulkanContext();
+
+  const VkDeviceSize kMaxStagingBufferSize = ctx.stagingDevice_->getMaxStagingBufferSize();
+
+  const VkDeviceSize kDesiredBufferSize = kMaxStagingBufferSize + 2u;
+
   size_t maxBufferLength = 0;
   iglDev_->getFeatureLimits(DeviceFeatureLimits::MaxStorageBufferBytes, maxBufferLength);
 
-  bufferDesc.length = std::min(kDesiredBufferLength, maxBufferLength);
+  bufferDesc.length = std::min(static_cast<size_t>(kDesiredBufferSize), maxBufferLength);
 
   ASSERT_TRUE(bufferDesc.length % 2 == 0);
 
@@ -104,9 +112,14 @@ TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
   }
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
+
+  if (ctx.useStaging_) {
+    // do not check if we are not using a staging buffer
+    const VkDeviceSize stagingBufferSize = ctx.stagingDevice_->getCurrentStagingBufferSize();
+    ASSERT_EQ(stagingBufferSize, kMaxStagingBufferSize);
+  }
 }
 
-#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOS || IGL_PLATFORM_LINUX
 GTEST_TEST(VulkanContext, BufferDeviceAddress) {
   std::shared_ptr<igl::IDevice> iglDev = nullptr;
 
