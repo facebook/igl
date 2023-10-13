@@ -298,8 +298,16 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                memoryRequirements.memoryRequirements.memoryTypeBits,
                memoryAllocateInfo.memoryTypeIndex);
 
+  // @fb-only
+  // @fb-only
+// @fb-only
+  // @fb-only
+      // @fb-only
+  // @fb-only
+// @fb-only
   VK_ASSERT(ctx_.vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_));
   VK_ASSERT(ctx_.vf_.vkBindImageMemory(device_, vkImage_, vkMemory_, 0));
+// @fb-only
 }
 
 #if IGL_PLATFORM_WIN
