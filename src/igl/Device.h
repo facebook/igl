@@ -213,7 +213,9 @@ class IDevice : public ICapabilities {
    * valid.
    * @return Whether or not the current scope is valid.
    */
-  virtual bool verifyScope();
+  virtual bool verifyScope() {
+    return defaultVerifyScope();
+  }
 
   /**
    * @brief Returns the actual graphics API backing this IGL device (Metal, OpenGL, etc).
@@ -303,6 +305,8 @@ class IDevice : public ICapabilities {
   Color backendDebugColor() const noexcept;
 
  private:
+  bool defaultVerifyScope();
+
   int scopeDepth_ = 0;
   std::shared_ptr<IResourceTracker> resourceTracker_;
 

@@ -21,7 +21,7 @@ void IDevice::endScope() {
   --scopeDepth_;
 }
 
-bool IDevice::verifyScope() {
+bool IDevice::defaultVerifyScope() {
   return scopeDepth_ > 0;
 }
 
