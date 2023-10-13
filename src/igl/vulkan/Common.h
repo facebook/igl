@@ -49,6 +49,20 @@
     }                                                              \
   }
 
+#define VK_ASSERT_FORCE_LOG(func)                           \
+  {                                                         \
+    const VkResult vk_assert_result = func;                 \
+    if (vk_assert_result != VK_SUCCESS) {                   \
+      IGLLog(IGLLogLevel::LOG_ERROR,                        \
+             "Vulkan API call failed: %s:%i\n  %s\n  %s\n", \
+             __FILE__,                                      \
+             __LINE__,                                      \
+             #func,                                         \
+             ivkGetVulkanResultString(vk_assert_result));   \
+      assert(false);                                        \
+    }                                                       \
+  }
+
 #define VK_ASSERT_RETURN_VALUE(func, value)                        \
   {                                                                \
     const VkResult vk_assert_result = func;                        \
