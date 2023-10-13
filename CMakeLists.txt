@@ -94,10 +94,6 @@ else()
   endif()
 endif()
 
-if(IGL_WITH_IGLU AND (NOT IGL_WITH_OPENGL) AND (NOT IGL_WITH_OPENGLES))
-  message(FATAL_ERROR "IGL_WITH_IGLU requires enabling IGL_WITH_OPENGL OR IGL_WITH_OPENGLES.")
-endif()
-
 if(IGL_WITH_SHELL AND (NOT IGL_WITH_IGLU))
   message(FATAL_ERROR "IGL_WITH_SHELL requires enabling IGL_WITH_IGLU.")
 endif()

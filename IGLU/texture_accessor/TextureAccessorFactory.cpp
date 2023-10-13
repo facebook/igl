@@ -21,12 +21,14 @@ std::unique_ptr<ITextureAccessor> TextureAccessorFactory::createTextureAccessor(
     const std::shared_ptr<igl::ITexture>& texture,
     igl::IDevice& device) {
   switch (backendType) {
+#if IGL_BACKEND_OPENGL
   case igl::BackendType::OpenGL:
     return std::make_unique<OpenGLTextureAccessor>(texture, device);
+#endif // IGL_BACKEND_OPENGL
 #if IGL_PLATFORM_APPLE
   case igl::BackendType::Metal:
     return std::make_unique<MetalTextureAccessor>(texture, device);
-#endif
+#endif // IGL_PLATFORM_APPLE
   default:
     IGL_ASSERT_NOT_IMPLEMENTED();
     return nullptr;
