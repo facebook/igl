@@ -4045,6 +4045,8 @@ void lvk::VulkanContext::createInstance() {
 #endif
 #elif defined(__APPLE__)
     VK_MVK_MACOS_SURFACE_EXTENSION_NAME,
+#endif
+#if defined(LVK_WITH_VULKAN_PORTABILITY)
     VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
 #endif
     VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME // enabled only for validation
@@ -4056,12 +4058,25 @@ void lvk::VulkanContext::createInstance() {
   const VkValidationFeatureEnableEXT validationFeaturesEnabled[] = {
       VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
   };
+  
+#if defined(__APPLE__)
+  // Shader validation doesn't work in MoltenVK for SPIR-V 1.6 under Vulkan 1.3:
+  // "Invalid SPIR-V binary version 1.6 for target environment SPIR-V 1.5 (under Vulkan 1.2 semantics)."
+  const VkValidationFeatureDisableEXT validationFeaturesDisabled[] = {
+    VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT,
+    VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT,
+  };
+#endif
 
   const VkValidationFeaturesEXT features = {
       .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
       .pNext = nullptr,
       .enabledValidationFeatureCount = config_.enableValidation ? (uint32_t)LVK_ARRAY_NUM_ELEMENTS(validationFeaturesEnabled) : 0u,
       .pEnabledValidationFeatures = config_.enableValidation ? validationFeaturesEnabled : nullptr,
+#if defined(__APPLE__)
+      .disabledValidationFeatureCount = config_.enableValidation ? (uint32_t)LVK_ARRAY_NUM_ELEMENTS(validationFeaturesDisabled) : 0u,
+      .pDisabledValidationFeatures = config_.enableValidation ? validationFeaturesDisabled : nullptr,
+#endif
   };
 
   const VkApplicationInfo appInfo = {
@@ -4075,7 +4090,7 @@ void lvk::VulkanContext::createInstance() {
   };
 
   VkInstanceCreateFlags flags = 0;
-#if defined(__APPLE__)
+#if defined(LVK_WITH_VULKAN_PORTABILITY)
   flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
   const VkInstanceCreateInfo ci = {
@@ -4310,6 +4325,8 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
     VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
     VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME,
     VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME,
+#endif
+#if defined(LVK_WITH_VULKAN_PORTABILITY)
     "VK_KHR_portability_subset",
 #endif
   };
@@ -4324,6 +4341,7 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
       .fillModeNonSolid = VK_TRUE,
       .samplerAnisotropy = VK_TRUE,
       .textureCompressionBC = VK_TRUE,
+      .fragmentStoresAndAtomics = VK_TRUE,
   };
   VkPhysicalDeviceVulkan11Features deviceFeatures11 = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,

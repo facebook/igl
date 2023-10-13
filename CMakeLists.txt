@@ -5,16 +5,21 @@
 
 cmake_minimum_required(VERSION 3.16)
 
+include(CMakeDependentOption)
+
 project("LVK" CXX C)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # cmake-format: off
-option(LVK_DEPLOY_DEPS  "Deploy dependencies via CMake" ON)
-option(LVK_WITH_GLFW    "Enable GLFW"                   ON)
-option(LVK_WITH_SAMPLES "Enable sample demo apps"       ON)
-option(LVK_WITH_TRACY   "Enable Tracy profiler"         ON)
-option(LVK_WITH_WAYLAND "Enable Wayland"                OFF)
+option(LVK_CUSTOM_MOLTENVK_PATH "Path to custom MoltenVK"       "")
+option(LVK_DEPLOY_DEPS          "Deploy dependencies via CMake" ON)
+option(LVK_WITH_GLFW            "Enable GLFW"                   ON)
+option(LVK_WITH_SAMPLES         "Enable sample demo apps"       ON)
+option(LVK_WITH_TRACY           "Enable Tracy profiler"         ON)
+option(LVK_WITH_WAYLAND         "Enable Wayland"                OFF)
+
+cmake_dependent_option(LVK_WITH_VULKAN_PORTABILITY "Enable portability extension" ON "APPLE" OFF)
 # cmake-format: on
 
 if(LVK_WITH_SAMPLES AND NOT LVK_WITH_GLFW)
@@ -22,7 +27,7 @@ if(LVK_WITH_SAMPLES AND NOT LVK_WITH_GLFW)
   set(LVK_WITH_GLFW ON)
 endif()
 
-if (ANDROID)
+if(ANDROID)
   message(STATUS "WARNING: LVK_WITH_GLFW and LVK_WITH_SAMPLES were set to OFF for Android")
   set(LVK_WITH_GLFW OFF)
   set(LVK_WITH_SAMPLES OFF)
@@ -32,9 +37,21 @@ if(LVK_WITH_WAYLAND AND (ANDROID OR APPLE OR WIN32))
   message(FATAL_ERROR "LVK_WITH_WAYLAND=ON can be set only on Linux")
 endif()
 
+if(APPLE)
+  if(EXISTS ${LVK_CUSTOM_MOLTENVK_PATH})
+    message("Custom MoltenVK found at ${LVK_CUSTOM_MOLTENVK_PATH}")
+    set(LVK_USE_CUSTOM_MOLTENVK ON)
+  else()
+    if(NOT LVK_WITH_VULKAN_PORTABILITY)
+      message(FATAL_ERROR "LVK_WITH_VULKAN_PORTABILITY=ON must be set on macOS if Vulkan SDK is used")
+    endif()
+    set(LVK_USE_CUSTOM_MOLTENVK OFF)
+  endif()
+endif()
+
 include(cmake/CommonMacros.txt)
 
-if(DEFINED ENV{VULKAN_SDK})
+if(NOT LVK_USE_CUSTOM_MOLTENVK AND DEFINED ENV{VULKAN_SDK})
   message(STATUS "VULKAN_SDK=$ENV{VULKAN_SDK}")
   if(NOT EXISTS $ENV{VULKAN_SDK})
     message(FATAL_ERROR "$ENV{VULKAN_SDK} does not exist.")
@@ -51,11 +68,12 @@ function(lvk_set_cxxstd target cpp_version)
 endfunction()
 
 # cmake-format: off
-message(STATUS "LVK_DEPLOY_DEPS  = ${LVK_DEPLOY_DEPS}")
-message(STATUS "LVK_WITH_GLFW    = ${LVK_WITH_GLFW}")
-message(STATUS "LVK_WITH_SAMPLES = ${LVK_WITH_SAMPLES}")
-message(STATUS "LVK_WITH_TRACY   = ${LVK_WITH_TRACY}")
-message(STATUS "LVK_WITH_WAYLAND = ${LVK_WITH_WAYLAND}")
+message(STATUS "LVK_DEPLOY_DEPS             = ${LVK_DEPLOY_DEPS}")
+message(STATUS "LVK_WITH_GLFW               = ${LVK_WITH_GLFW}")
+message(STATUS "LVK_WITH_SAMPLES            = ${LVK_WITH_SAMPLES}")
+message(STATUS "LVK_WITH_TRACY              = ${LVK_WITH_TRACY}")
+message(STATUS "LVK_WITH_VULKAN_PORTABILITY = ${LVK_WITH_VULKAN_PORTABILITY}")
+message(STATUS "LVK_WITH_WAYLAND            = ${LVK_WITH_WAYLAND}")
 # cmake-format: on
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
@@ -103,7 +121,9 @@ if(LVK_WITH_TRACY)
 endif()
 
 # temporary
-find_package(Vulkan REQUIRED)
+if(NOT LVK_USE_CUSTOM_MOLTENVK)
+  find_package(Vulkan REQUIRED)
+endif()
 
 include_directories(.)
 include_directories(src)
