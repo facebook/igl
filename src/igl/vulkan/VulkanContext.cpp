@@ -550,7 +550,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   vkPhysicalDevice_ = (VkPhysicalDevice)desc.guid;
 
-  useStaging_ = !ivkIsHostVisibleSingleHeapMemory(&vf_, vkPhysicalDevice_);
+  useStagingForBuffers_ = !ivkIsHostVisibleSingleHeapMemory(&vf_, vkPhysicalDevice_);
 
   vf_.vkGetPhysicalDeviceFeatures2(vkPhysicalDevice_, &vkPhysicalDeviceFeatures2_);
   vf_.vkGetPhysicalDeviceProperties2(vkPhysicalDevice_, &vkPhysicalDeviceProperties2_);
@@ -725,8 +725,6 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   IGL_ASSERT(textures_.size() == 1);
   {
     const VkFormat dummyTextureFormat = VK_FORMAT_R8G8B8A8_UNORM;
-    const VkMemoryPropertyFlags memFlags = useStaging_ ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-                                                       : VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     Result result;
     auto image = createImage(VK_IMAGE_TYPE_2D,
                              VkExtent3D{1, 1, 1},
@@ -736,7 +734,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                              VK_IMAGE_TILING_OPTIMAL,
                              VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
                                  VK_IMAGE_USAGE_STORAGE_BIT,
-                             memFlags,
+                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                              0,
                              VK_SAMPLE_COUNT_1_BIT,
                              &result,

@@ -81,7 +81,7 @@ Result Texture::create(const TextureDesc& desc) {
       (desc_.storage == ResourceStorage::Private) ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : 0;
 
   // On M1 Macs, depth texture has to be ResourceStorage::Private.
-  if (!ctx.useStaging_ && desc_.storage == ResourceStorage::Private &&
+  if (!ctx.useStagingForBuffers_ && desc_.storage == ResourceStorage::Private &&
       !getProperties().isDepthOrStencil()) {
     desc_.storage = ResourceStorage::Shared;
   }

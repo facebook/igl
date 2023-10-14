@@ -269,7 +269,7 @@ class VulkanContext final {
   std::shared_ptr<igl::vulkan::VulkanBuffer> dummyUniformBuffer_;
   std::shared_ptr<igl::vulkan::VulkanBuffer> dummyStorageBuffer_;
   // don't use staging on devices with device-local host-visible memory
-  bool useStaging_ = true;
+  bool useStagingForBuffers_ = true;
 
   std::unique_ptr<VulkanContextImpl> pimpl_;
 

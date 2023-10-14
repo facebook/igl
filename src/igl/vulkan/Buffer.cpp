@@ -30,7 +30,7 @@ Result Buffer::create(const BufferDesc& desc) {
 
   const VulkanContext& ctx = device_.getVulkanContext();
 
-  if (!ctx.useStaging_ && (desc_.storage == ResourceStorage::Private)) {
+  if (!ctx.useStagingForBuffers_ && (desc_.storage == ResourceStorage::Private)) {
     desc_.storage = ResourceStorage::Shared;
   }
 
