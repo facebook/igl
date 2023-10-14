@@ -48,6 +48,14 @@ class Platform {
       igl::TextureFormat format = igl::TextureFormat::RGBA_SRGB,
       igl::TextureDesc::TextureUsageBits usage = igl::TextureDesc::TextureUsageBits::Sampled);
 
+  // 'argc' and 'argv' are the exact arguments received in 'main()'.
+  static int argc();
+  static char** argv();
+
+  // Don't call this from the application level. The shell framework will use this API to expose
+  // command line arguments for the application.
+  static void initializeCommandLineArgs(int argc, char** argv);
+
  public:
   Extension* createAndInitializeExtension(const char* name) noexcept;
 

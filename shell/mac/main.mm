@@ -7,6 +7,10 @@
 
 #import <Cocoa/Cocoa.h>
 
-int main(int argc, const char* argv[]) {
-  return NSApplicationMain(argc, argv);
+#import <shell/shared/platform/Platform.h>
+
+int main(int argc, char* argv[]) {
+  igl::shell::Platform::initializeCommandLineArgs(argc, argv);
+
+  return NSApplicationMain(argc, (const char**)argv);
 }

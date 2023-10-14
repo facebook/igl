@@ -7,7 +7,11 @@
 
 #import "AppDelegate.h"
 
+#import <shell/shared/platform/Platform.h>
+
 int main(int argc, char* argv[]) {
+  igl::shell::Platform::initializeCommandLineArgs(argc, argv);
+
   @autoreleasepool {
     return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
   }

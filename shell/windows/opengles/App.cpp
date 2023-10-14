@@ -157,6 +157,8 @@ igl::SurfaceTextures createSurfaceTextures(igl::IDevice& device) {
 }
 
 int main(int argc, char* argv[]) {
+  igl::shell::Platform::initializeCommandLineArgs(argc, argv);
+
   uint32_t majorVersion = 3;
   uint32_t minorVersion = 1;
   if (argc == 2) {

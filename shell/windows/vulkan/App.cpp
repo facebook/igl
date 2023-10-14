@@ -168,6 +168,8 @@ igl::SurfaceTextures getVulkanSurfaceTextures(igl::IDevice& device) {
 }
 
 int main(int argc, char* argv[]) {
+  igl::shell::Platform::initializeCommandLineArgs(argc, argv);
+
   using WindowPtr = std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)>;
 
   WindowPtr vulkanWindow(initWindow(), &glfwDestroyWindow);

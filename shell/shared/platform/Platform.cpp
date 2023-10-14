@@ -10,6 +10,14 @@
 #include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/platform/Platform.h>
 
+namespace {
+
+int g_argc = 0;
+char** g_argv = nullptr;
+bool g_argsInitialized = false;
+
+} // namespace
+
 namespace igl::shell {
 
 Platform::~Platform() = default;
@@ -38,6 +46,23 @@ std::shared_ptr<ITexture> Platform::loadTexture(const char* filename,
   IGL_ASSERT_MSG(tex != nullptr, "createTexture returned null for some reason");
   tex->upload(tex->getFullRange(), imageData.data->data());
   return tex;
+}
+
+int Platform::argc() {
+  IGL_ASSERT_MSG(g_argsInitialized, "Accessing command line args before they are initialized.");
+  return g_argc;
+}
+
+char** Platform::argv() {
+  IGL_ASSERT_MSG(g_argsInitialized, "Accessing command line args before they are initialized.");
+  return g_argv;
+}
+
+void Platform::initializeCommandLineArgs(int argc, char** argv) {
+  IGL_ASSERT_MSG(!g_argsInitialized, "Must not initialize command line arguments more than once.");
+  g_argc = argc;
+  g_argv = argv;
+  g_argsInitialized = true;
 }
 
 } // namespace igl::shell

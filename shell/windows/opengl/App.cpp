@@ -226,6 +226,8 @@ static void RunApplicationMode(uint32_t majorVersion, uint32_t minorVersion) {
 }
 
 int main(int argc, char* argv[]) {
+  igl::shell::Platform::initializeCommandLineArgs(argc, argv);
+
   uint32_t majorVersion = 4;
   uint32_t minorVersion = 6;
   if (argc == 2) {
