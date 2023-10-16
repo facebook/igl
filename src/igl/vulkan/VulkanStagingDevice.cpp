@@ -116,7 +116,7 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
           regions_.erase(it);
           if (unusedSize > 0) {
             regions_.push_front(
-                {unusedOffset, unusedSize, VulkanImmediateCommands::SubmitHandle()});
+                {unusedOffset, unusedSize, unusedSize, VulkanImmediateCommands::SubmitHandle()});
           }
         };
 
@@ -124,7 +124,7 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
         IGL_LOG_INFO("Found block with %u bytes at offset %u\n", it->size, it->offset);
 #endif
 
-        return {it->offset, requestedAlignedSize, VulkanImmediateCommands::SubmitHandle()};
+        return {it->offset, size, requestedAlignedSize, VulkanImmediateCommands::SubmitHandle()};
       }
 
       // Cache the largest available region that isn't as big as the one we're looking for
@@ -142,12 +142,16 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
     };
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
-    IGL_LOG_INFO("Found block smaller than size needed with %u bytes at offset %u\n",
+    IGL_LOG_INFO("Found block smaller than size needed with %u bytes (%u aligned) at offset %u\n",
                  bestNextIt->size,
+                 bestNextIt->alignedSize,
                  bestNextIt->offset);
 #endif
 
-    return {bestNextIt->offset, bestNextIt->size, VulkanImmediateCommands::SubmitHandle()};
+    return {bestNextIt->offset,
+            bestNextIt->size,
+            bestNextIt->alignedSize,
+            VulkanImmediateCommands::SubmitHandle()};
   }
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
@@ -167,11 +171,12 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
   const uint32_t unusedSize = stagingBufferSize_ - requestedAlignedSize;
   if (unusedSize > 0) {
     const uint32_t unusedOffset = requestedAlignedSize;
-    regions_.push_front({unusedOffset, unusedSize, VulkanImmediateCommands::SubmitHandle()});
+    regions_.push_front(
+        {unusedOffset, unusedSize, unusedSize, VulkanImmediateCommands::SubmitHandle()});
   }
 
   //... and then return the smallest free region that can hold the requested size
-  return {0, requestedAlignedSize, VulkanImmediateCommands::SubmitHandle()};
+  return {0, size, requestedAlignedSize, VulkanImmediateCommands::SubmitHandle()};
 }
 
 void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
@@ -208,7 +213,7 @@ void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
 
     // Copy data into data
     const uint8_t* src = stagingBuffer_->getMappedPtr() + memoryChunk.offset;
-    checked_memcpy(dstData, size - chunkSrcOffset, src, memoryChunk.size);
+    checked_memcpy(dstData, size - chunkSrcOffset, src, memoryChunk.alignedSize);
 
     size -= copySize;
     dstData = (uint8_t*)dstData + copySize;
@@ -506,7 +511,8 @@ void VulkanStagingDevice::waitAndReset() {
 
   regions_.clear();
 
-  regions_.push_front({0, stagingBufferSize_, VulkanImmediateCommands::SubmitHandle()});
+  regions_.push_front(
+      {0, stagingBufferSize_, stagingBufferSize_, VulkanImmediateCommands::SubmitHandle()});
 }
 
 bool VulkanStagingDevice::shouldGrowStagingBuffer(VkDeviceSize sizeNeeded) const {
@@ -555,7 +561,8 @@ void VulkanStagingDevice::growStagingBuffer(VkDeviceSize minimumSize) {
 
   // Clear out the old regions and add one that represents the entire buffer
   regions_.clear();
-  regions_.push_front({0, stagingBufferSize_, VulkanImmediateCommands::SubmitHandle()});
+  regions_.push_front(
+      {0, stagingBufferSize_, stagingBufferSize_, VulkanImmediateCommands::SubmitHandle()});
 }
 
 } // namespace vulkan

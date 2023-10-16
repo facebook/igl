@@ -60,6 +60,7 @@ class VulkanStagingDevice final {
   struct MemoryRegion {
     VkDeviceSize offset = 0u;
     VkDeviceSize size = 0u;
+    VkDeviceSize alignedSize = 0u;
     VulkanImmediateCommands::SubmitHandle handle;
   };
 
