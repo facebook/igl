@@ -166,8 +166,6 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
 
   largestIndexPlusOne += 1;
 
-  VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
-
   for (size_t i = 0; i < largestIndexPlusOne; ++i) {
     auto it = desc.colorAttachments.find(i);
     if (it == desc.colorAttachments.end()) {
@@ -213,8 +211,6 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                      initialLayout,
                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                      colorTexture.getVulkanTexture().getVulkanImage().samples_);
-    // RenderPassBuilder ensures that all non-resolve attachments have the same number of samples
-    samples = colorTexture.getVulkanTexture().getVulkanImage().samples_;
     // handle MSAA
     if (descColor.storeAction == StoreAction::MsaaResolve) {
       IGL_ASSERT_MSG(it->second.resolveTexture != nullptr,
@@ -253,8 +249,6 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                      initialLayout,
                      VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                      depthTexture.getVulkanTexture().getVulkanImage().samples_);
-    // RenderPassBuilder ensures that all non-resolve attachments have the same number of samples
-    samples = depthTexture.getVulkanTexture().getVulkanImage().samples_;
   }
 
   const auto& fb = static_cast<vulkan::Framebuffer&>(*framebuffer);
