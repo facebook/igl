@@ -222,8 +222,8 @@ const std::vector<uint32_t> kTextureSpvWords = {
 
 TEST(SpvReflectionTest, UniformBufferTest) {
   using namespace vulkan::util;
-  SpvModuleInfo spvModuleInfo =
-      getReflectionData(kUniformBufferSpvWords.data(), kUniformBufferSpvWords.size());
+  SpvModuleInfo spvModuleInfo = getReflectionData(kUniformBufferSpvWords.data(),
+                                                  kUniformBufferSpvWords.size() * sizeof(uint32_t));
 
   ASSERT_EQ(spvModuleInfo.uniformBufferBindingLocations.size(), 2);
   EXPECT_EQ(spvModuleInfo.uniformBufferBindingLocations[0], 0);
@@ -233,7 +233,8 @@ TEST(SpvReflectionTest, UniformBufferTest) {
 
 TEST(SpvReflectionTest, TextureTest) {
   using namespace vulkan::util;
-  SpvModuleInfo spvModuleInfo = getReflectionData(kTextureSpvWords.data(), kTextureSpvWords.size());
+  SpvModuleInfo spvModuleInfo =
+      getReflectionData(kTextureSpvWords.data(), kTextureSpvWords.size() * sizeof(uint32_t));
 
   ASSERT_EQ(spvModuleInfo.uniformBufferBindingLocations.size(), 0);
   EXPECT_EQ(spvModuleInfo.storageBufferBindingLocations.size(), 0);

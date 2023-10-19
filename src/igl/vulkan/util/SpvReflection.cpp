@@ -101,14 +101,19 @@ TextureType getTextureType(uint32_t dim, bool isArrayed) {
 
 } // namespace
 
-SpvModuleInfo getReflectionData(const uint32_t* words, size_t size) {
-  SpvModuleInfo spvModuleInfo;
-  if (size < kSpvHeaderSize) {
-    return spvModuleInfo;
+SpvModuleInfo getReflectionData(const void* spirv, size_t numBytes) {
+  // go from bytes to SPIR-V words
+  const size_t size = numBytes / sizeof(uint32_t);
+
+  if (size <= kSpvHeaderSize) {
+    return {};
   }
+
+  const uint32_t* words = reinterpret_cast<const uint32_t*>(spirv);
+
   if (words[0] != kSpvMagicWord) {
     IGL_ASSERT_MSG(false, "Invalid SPIR-V magic word");
-    return spvModuleInfo;
+    return {};
   }
 
   std::unordered_set<ResultId> interfaceBlockTypeIds;
@@ -117,6 +122,8 @@ SpvModuleInfo getReflectionData(const uint32_t* words, size_t size) {
   std::unordered_map<ResultId, TextureType> sampledImagePointerTypeIds;
   std::unordered_map<ResultId, uint32_t> bindingLocations;
   std::unordered_map<ResultId, TextureType> imageTypes;
+
+  SpvModuleInfo spvModuleInfo;
 
   for (size_t pos = kSpvHeaderSize; pos < size;) {
     uint16_t instructionSize = getInstructionSize(words[pos]);

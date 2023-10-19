@@ -28,6 +28,6 @@ struct SpvModuleInfo {
   std::vector<TextureDescription> textures;
 };
 
-SpvModuleInfo getReflectionData(const uint32_t* words, size_t size);
+SpvModuleInfo getReflectionData(const void* spirv, size_t numBytes);
 
 } // namespace igl::vulkan::util
