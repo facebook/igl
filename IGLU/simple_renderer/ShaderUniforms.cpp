@@ -412,10 +412,7 @@ void ShaderUniforms::setFloat2Array(const igl::NameHandle& blockTypeName,
 void ShaderUniforms::setFloat3(const igl::NameHandle& uniformName,
                                const iglu::simdtypes::float3& value,
                                size_t arrayIndex) {
-  size_t length = device_.getBackendType() == igl::BackendType::Metal
-                      ? sizeof(iglu::simdtypes::float3)
-                      : sizeof(float[3]);
-  setUniformBytes(uniformName, &value, length, 1, arrayIndex);
+  setUniformBytes(uniformName, &value, sizeof(float[3]), 1, arrayIndex);
 }
 
 void ShaderUniforms::setFloat3Array(const igl::NameHandle& uniformName,
