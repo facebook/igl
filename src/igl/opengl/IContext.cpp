@@ -3465,7 +3465,7 @@ void IContext::initialize(Result* result) {
   }
 
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
-  IGL_LOG_INFO("GL Context Initialized: %p", this);
+  IGL_LOG_INFO("GL Context Initialized: %p\n", this);
   IGL_LOG_INFO("GL Version: %s\n", version);
   const char* vendor = (char*)getString(GL_VENDOR);
   IGL_LOG_INFO("GL Vendor: %s\n", (vendor != nullptr) ? vendor : "(null)");
@@ -3479,7 +3479,7 @@ void IContext::initialize(Result* result) {
     std::sort(sortedExtensions.begin(), sortedExtensions.end());
     IGL_LOG_INFO("GL Extensions:\n");
     for (const auto& extension : sortedExtensions) {
-      IGL_LOG_INFO(extension.c_str());
+      IGL_LOG_INFO("- %s\n", extension.c_str());
     }
   }
 #endif
