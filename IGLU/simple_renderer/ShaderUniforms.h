@@ -83,18 +83,7 @@ class ShaderUniforms final {
   void setFloat3(const igl::NameHandle& uniformName,
                  const iglu::simdtypes::float3& value,
                  size_t arrayIndex = 0);
-  void setFloat3(const igl::NameHandle& blockTypeName,
-                 const igl::NameHandle& blockInstanceName,
-                 const igl::NameHandle& memberName,
-                 const iglu::simdtypes::float3& value,
-                 size_t arrayIndex = 0);
   void setFloat3Array(const igl::NameHandle& uniformName,
-                      iglu::simdtypes::float3* value,
-                      size_t count = 1,
-                      size_t arrayIndex = 0);
-  void setFloat3Array(const igl::NameHandle& blockTypeName,
-                      const igl::NameHandle& blockInstanceName,
-                      const igl::NameHandle& memberName,
                       iglu::simdtypes::float3* value,
                       size_t count = 1,
                       size_t arrayIndex = 0);
@@ -140,18 +129,7 @@ class ShaderUniforms final {
   void setFloat3x3(const igl::NameHandle& uniformName,
                    const iglu::simdtypes::float3x3& value,
                    size_t arrayIndex = 0);
-  void setFloat3x3(const igl::NameHandle& blockTypeName,
-                   const igl::NameHandle& blockInstanceName,
-                   const igl::NameHandle& memberName,
-                   const iglu::simdtypes::float3x3& value,
-                   size_t arrayIndex = 0);
   void setFloat3x3Array(const igl::NameHandle& uniformName,
-                        const iglu::simdtypes::float3x3* value,
-                        size_t count = 1,
-                        size_t arrayIndex = 0);
-  void setFloat3x3Array(const igl::NameHandle& blockTypeName,
-                        const igl::NameHandle& blockInstanceName,
-                        const igl::NameHandle& memberName,
                         const iglu::simdtypes::float3x3* value,
                         size_t count = 1,
                         size_t arrayIndex = 0);
