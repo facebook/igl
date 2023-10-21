@@ -551,12 +551,13 @@ void VulkanStagingDevice::growStagingBuffer(VkDeviceSize minimumSize) {
   ++stagingBufferCounter_;
 
   // Create a new staging buffer with the new size
-  stagingBuffer_ =
-      ctx_.createBuffer(stagingBufferSize_,
-                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                        nullptr,
-                        IGL_FORMAT("Buffer: staging buffer #{}", stagingBufferCounter_).c_str());
+  stagingBuffer_ = ctx_.createBuffer(
+      stagingBufferSize_,
+      VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+      nullptr,
+      IGL_FORMAT("Buffer: staging buffer #{} with {}B", stagingBufferCounter_, stagingBufferSize_)
+          .c_str());
   IGL_ASSERT(stagingBuffer_.get());
 
   // Clear out the old regions and add one that represents the entire buffer
