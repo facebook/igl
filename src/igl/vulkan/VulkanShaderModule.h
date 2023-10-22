@@ -8,10 +8,12 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
+#include <igl/vulkan/util/SpvReflection.h>
 
 namespace igl {
 namespace vulkan {
@@ -20,7 +22,7 @@ Result compileShader(const VulkanFunctionTable& vf,
                      VkDevice device,
                      VkShaderStageFlagBits stage,
                      const char* code,
-                     VkShaderModule* outShaderModule,
+                     std::vector<uint32_t>& outSPIRV,
                      const glslang_resource_t* glslLangResource = nullptr);
 
 /**
@@ -29,7 +31,10 @@ Result compileShader(const VulkanFunctionTable& vf,
 class VulkanShaderModule final {
  public:
   /** @brief Instantiates a shader module wrapper with the module and the device that owns it */
-  VulkanShaderModule(const VulkanFunctionTable& vf, VkDevice device, VkShaderModule shaderModule);
+  VulkanShaderModule(const VulkanFunctionTable& vf,
+                     VkDevice device,
+                     VkShaderModule shaderModule,
+                     util::SpvModuleInfo&& moduleInfo);
   ~VulkanShaderModule();
 
   /** @brief Returns the underlying Vulkan shader module */
@@ -41,6 +46,7 @@ class VulkanShaderModule final {
   const VulkanFunctionTable& vf_;
   VkDevice device_ = VK_NULL_HANDLE;
   VkShaderModule vkShaderModule_ = VK_NULL_HANDLE;
+  util::SpvModuleInfo moduleInfo_ = {};
 };
 
 } // namespace vulkan

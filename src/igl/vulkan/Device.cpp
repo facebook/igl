@@ -267,7 +267,11 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
 
   // @fb-only
   // @lint-ignore CLANGTIDY
-  return std::make_shared<VulkanShaderModule>(ctx_->vf_, device, vkShaderModule);
+  return std::make_shared<VulkanShaderModule>(
+      ctx_->vf_,
+      device,
+      vkShaderModule,
+      util::getReflectionData(reinterpret_cast<const uint32_t*>(data), length));
 }
 
 std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage,
@@ -342,9 +346,13 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
   glslang_resource_t glslangResource;
   ivkGlslangResource(&glslangResource, &ctx_->getVkPhysicalDeviceProperties());
 
+  std::vector<uint32_t> spirv;
+  const Result result =
+      igl::vulkan::compileShader(ctx_->vf_, device, vkStage, source, spirv, &glslangResource);
+
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
-  const Result result = igl::vulkan::compileShader(
-      ctx_->vf_, device, vkStage, source, &vkShaderModule, &glslangResource);
+  VK_ASSERT(ivkCreateShaderModuleFromSPIRV(
+      &ctx_->vf_, device, spirv.data(), spirv.size() * sizeof(uint32_t), &vkShaderModule));
 
   Result::setResult(outResult, result);
 
@@ -363,7 +371,8 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
 
   // @fb-only
   // @lint-ignore CLANGTIDY
-  return std::make_shared<VulkanShaderModule>(ctx_->vf_, device, vkShaderModule);
+  return std::make_shared<VulkanShaderModule>(
+      ctx_->vf_, device, vkShaderModule, util::getReflectionData(spirv.data(), spirv.size()));
 }
 
 std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,

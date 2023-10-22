@@ -60,13 +60,9 @@ Result compileShader(const VulkanFunctionTable& vf,
                      VkDevice device,
                      VkShaderStageFlagBits stage,
                      const char* code,
-                     VkShaderModule* outShaderModule,
+                     std::vector<uint32_t>& outSPIRV,
                      const glslang_resource_t* glslLangResource) {
   IGL_PROFILER_FUNCTION();
-
-  if (!outShaderModule) {
-    return Result(Result::Code::ArgumentNull, "outShaderModule is NULL");
-  }
 
   const glslang_input_t input = ivkGetGLSLangInput(stage, glslLangResource, code);
 
@@ -125,15 +121,18 @@ Result compileShader(const VulkanFunctionTable& vf,
     IGL_LOG_ERROR("%s\n", glslang_program_SPIRV_get_messages(program));
   }
 
-  VK_ASSERT_RETURN(ivkCreateShaderModule(&vf, device, program, outShaderModule));
+  const unsigned int* codePtr = glslang_program_SPIRV_get_ptr(program);
+
+  outSPIRV = std::vector(codePtr, codePtr + glslang_program_SPIRV_get_size(program));
 
   return Result();
 }
 
 VulkanShaderModule::VulkanShaderModule(const VulkanFunctionTable& vf,
                                        VkDevice device,
-                                       VkShaderModule shaderModule) :
-  vf_(vf), device_(device), vkShaderModule_(shaderModule) {}
+                                       VkShaderModule shaderModule,
+                                       util::SpvModuleInfo&& moduleInfo) :
+  vf_(vf), device_(device), vkShaderModule_(shaderModule), moduleInfo_(std::move(moduleInfo)) {}
 
 VulkanShaderModule::~VulkanShaderModule() {
   vf_.vkDestroyShaderModule(device_, vkShaderModule_, nullptr);

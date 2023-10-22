@@ -159,11 +159,6 @@ VkResult ivkCreateRenderPass(const struct VulkanFunctionTable* vt,
                              const VkRenderPassMultiviewCreateInfo* renderPassMultiview,
                              VkRenderPass* outRenderPass);
 
-VkResult ivkCreateShaderModule(const struct VulkanFunctionTable* vt,
-                               VkDevice device,
-                               glslang_program_t* program,
-                               VkShaderModule* outShaderModule);
-
 VkResult ivkCreateShaderModuleFromSPIRV(const struct VulkanFunctionTable* vt,
                                         VkDevice device,
                                         const void* dataSPIRV,

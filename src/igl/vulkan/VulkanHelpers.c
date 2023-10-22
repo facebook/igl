@@ -1260,18 +1260,6 @@ glslang_input_t ivkGetGLSLangInput(VkShaderStageFlagBits stage,
   return input;
 }
 
-VkResult ivkCreateShaderModule(const struct VulkanFunctionTable* vt,
-                               VkDevice device,
-                               glslang_program_t* program,
-                               VkShaderModule* outShaderModule) {
-  const VkShaderModuleCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-      .codeSize = glslang_program_SPIRV_get_size(program) * sizeof(uint32_t),
-      .pCode = glslang_program_SPIRV_get_ptr(program),
-  };
-  return vt->vkCreateShaderModule(device, &ci, NULL, outShaderModule);
-}
-
 VkResult ivkCreateShaderModuleFromSPIRV(const struct VulkanFunctionTable* vt,
                                         VkDevice device,
                                         const void* dataSPIRV,
