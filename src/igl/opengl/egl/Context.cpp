@@ -287,6 +287,7 @@ Context::~Context() {
 
 void Context::setCurrent() {
   eglMakeCurrent(display_, drawSurface_, readSurface_, context_);
+  CHECK_EGL_ERRORS();
   flushDeletionQueue();
 }
 
