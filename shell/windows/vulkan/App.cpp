@@ -34,6 +34,13 @@ using namespace igl;
 
 namespace {
 
+igl::shell::ShellParams initShellParams() {
+  igl::shell::ShellParams shellParams;
+  shellParams.viewportSize = glm::vec2(1024.0f, 768.0f);
+  shellParams.nativeSurfaceDimensions = glm::vec2(1024.0f, 768.0f);
+  return shellParams;
+}
+
 void throwOnBadResult(const Result& result) {
   if (result.code != Result::Code::Ok) {
     std::stringstream errorMsg;
@@ -168,6 +175,7 @@ igl::SurfaceTextures getVulkanSurfaceTextures(igl::IDevice& device) {
 }
 
 int main(int argc, char* argv[]) {
+  shellParams_ = initShellParams();
   igl::shell::Platform::initializeCommandLineArgs(argc, argv);
 
   using WindowPtr = std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)>;
@@ -181,6 +189,7 @@ int main(int argc, char* argv[]) {
   vulkanSession_ = igl::shell::createDefaultRenderSession(vulkanShellPlatform_);
 
   IGL_ASSERT_MSG(vulkanSession_, "createDefaultRenderSession() must return a valid session");
+  vulkanSession_->setShellParams(shellParams_);
   vulkanSession_->initialize();
 
   while (!glfwWindowShouldClose(vulkanWindow.get()) && !vulkanSession_->appParams().exitRequested) {

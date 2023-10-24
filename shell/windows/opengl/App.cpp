@@ -49,6 +49,13 @@ namespace {
 // Backend toggle, currentonly Angle vs Vulkan
 bool angleBackend = true;
 
+igl::shell::ShellParams initShellParams() {
+  igl::shell::ShellParams shellParams;
+  shellParams.viewportSize = glm::vec2(1024.0f, 768.0f);
+  shellParams.nativeSurfaceDimensions = glm::vec2(1024.0f, 768.0f);
+  return shellParams;
+}
+
 void throwOnBadResult(const Result& result) {
   if (result.code != Result::Code::Ok) {
     std::stringstream errorMsg;
@@ -176,6 +183,7 @@ GLFWwindow* initGLWindow(uint32_t majorVersion, uint32_t minorVersion) {
 
 // This mode is the normal running mode when running samples as applications.
 static void RunApplicationMode(uint32_t majorVersion, uint32_t minorVersion) {
+  shellParams_ = initShellParams();
   using WindowPtr = std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)>;
   WindowPtr glWindow(initGLWindow(majorVersion, minorVersion), &glfwDestroyWindow);
 
@@ -203,6 +211,7 @@ static void RunApplicationMode(uint32_t majorVersion, uint32_t minorVersion) {
     std::unique_ptr<igl::shell::RenderSession> glSession_;
     glSession_ = igl::shell::createDefaultRenderSession(glShellPlatform_);
     IGL_ASSERT_MSG(glSession_, "createDefaultRenderSession() must return a valid session");
+    glSession_->setShellParams(shellParams_);
     glSession_->initialize();
 
     auto surfaceTextures = createSurfaceTextures(glShellPlatform_->getDevice());
