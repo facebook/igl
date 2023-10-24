@@ -13,7 +13,6 @@
 #include <igl/opengl/Device.h>
 #include <igl/opengl/DummyTexture.h>
 #include <igl/opengl/Errors.h>
-#include <igl/opengl/Texture.h>
 
 #include <algorithm>
 #if !IGL_PLATFORM_ANDROID
@@ -71,20 +70,6 @@ Result checkFramebufferStatus(IContext& context, bool read) {
   }
 
   return Result(code, message);
-}
-
-void attachAsColor(igl::ITexture& texture,
-                   uint32_t index,
-                   const Texture::AttachmentParams& params) {
-  static_cast<Texture&>(texture).attachAsColor(index, params);
-}
-
-void attachAsDepth(igl::ITexture& texture, const Texture::AttachmentParams& params) {
-  static_cast<Texture&>(texture).attachAsDepth(params);
-}
-
-void attachAsStencil(igl::ITexture& texture, const Texture::AttachmentParams& params) {
-  static_cast<Texture&>(texture).attachAsStencil(params);
 }
 
 Texture::AttachmentParams toAttachmentParams(const RenderPassDesc::BaseAttachmentDesc& attachment,
@@ -164,6 +149,32 @@ FramebufferBindingGuard::~FramebufferBindingGuard() {
 /// MARK: - Framebuffer
 
 Framebuffer::Framebuffer(IContext& context) : WithContext(context) {}
+
+void Framebuffer::attachAsColor(igl::ITexture& texture,
+                                uint32_t index,
+                                const Texture::AttachmentParams& params) const {
+  static_cast<Texture&>(texture).attachAsColor(index, params);
+  IGL_ASSERT(index >= 0 && index < kNumCachedStates);
+  colorCachedState_[index].updateCache(params.stereo ? FramebufferMode::Stereo
+                                                     : FramebufferMode::Mono,
+                                       params.layer,
+                                       params.face,
+                                       params.mipLevel);
+}
+
+void Framebuffer::attachAsDepth(igl::ITexture& texture,
+                                const Texture::AttachmentParams& params) const {
+  static_cast<Texture&>(texture).attachAsDepth(params);
+  depthCachedState_.updateCache(params.stereo ? FramebufferMode::Stereo : FramebufferMode::Mono,
+                                params.layer,
+                                params.face,
+                                params.mipLevel);
+}
+
+void Framebuffer::attachAsStencil(igl::ITexture& texture,
+                                  const Texture::AttachmentParams& params) const {
+  static_cast<Texture&>(texture).attachAsStencil(params);
+}
 
 void Framebuffer::bindBuffer() const {
   getContext().bindFramebuffer(GL_FRAMEBUFFER, frameBufferID_);
@@ -292,6 +303,23 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& /*cmdQueue*/,
                                  static_cast<GLint>(range.y),
                                  static_cast<GLsizei>(range.width),
                                  static_cast<GLsizei>(range.height));
+}
+
+bool Framebuffer::CachedState::needsUpdate(FramebufferMode mode,
+                                           uint8_t layer,
+                                           uint8_t face,
+                                           uint8_t mipLevel) {
+  return mode_ != mode || layer_ != layer || face_ != face || mipLevel_ != mipLevel;
+}
+
+void Framebuffer::CachedState::updateCache(FramebufferMode mode,
+                                           uint8_t layer,
+                                           uint8_t face,
+                                           uint8_t mipLevel) {
+  mode_ = mode;
+  layer_ = layer;
+  face_ = face;
+  mipLevel_ = mipLevel;
 }
 
 ///--------------------------------------
@@ -560,11 +588,11 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
     // When setting up a framebuffer, we attach textures as though they were a non-array
     // texture with and set layer, mip level and face equal to 0.
     // If any of these assumptions are not true, we need to reattach with proper values.
-    const bool needsToBeReattached =
-        renderTarget_.mode == FramebufferMode::Stereo || renderPassAttachment.layer > 0 ||
-        renderPassAttachment.face > 0 || renderPassAttachment.mipLevel > 0;
-
-    if (needsToBeReattached) {
+    IGL_ASSERT(index >= 0 && index < kNumCachedStates);
+    if (colorCachedState_[index].needsUpdate(renderTarget_.mode,
+                                             renderPassAttachment.layer,
+                                             renderPassAttachment.face,
+                                             renderPassAttachment.mipLevel)) {
       attachAsColor(*colorAttachmentTexture,
                     static_cast<uint32_t>(index),
                     toAttachmentParams(renderPassAttachment, renderTarget_.mode));
@@ -572,10 +600,10 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
   }
   if (renderTarget_.depthAttachment.texture) {
     const auto& renderPassAttachment = renderPass.depthAttachment;
-    const bool needsToBeReattached =
-        renderTarget_.mode == FramebufferMode::Stereo || renderPassAttachment.layer > 0 ||
-        renderPassAttachment.face > 0 || renderPassAttachment.mipLevel > 0;
-    if (needsToBeReattached) {
+    if (depthCachedState_.needsUpdate(renderTarget_.mode,
+                                      renderPassAttachment.layer,
+                                      renderPassAttachment.face,
+                                      renderPassAttachment.mipLevel)) {
       attachAsDepth(*renderTarget_.depthAttachment.texture,
                     toAttachmentParams(renderPassAttachment, renderTarget_.mode));
     }

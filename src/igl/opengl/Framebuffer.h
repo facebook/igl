@@ -11,11 +11,11 @@
 #include <igl/RenderPass.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
+#include <igl/opengl/Texture.h>
 
 namespace igl {
 class ICommandBuffer;
 namespace opengl {
-class Texture;
 
 ///--------------------------------------
 /// MARK: - FramebufferBindingGuard
@@ -72,8 +72,27 @@ class Framebuffer : public WithContext, public IFramebuffer {
   }
 
  protected:
+  void attachAsColor(igl::ITexture& texture,
+                     uint32_t index,
+                     const Texture::AttachmentParams& params) const;
+  void attachAsDepth(igl::ITexture& texture, const Texture::AttachmentParams& params) const;
+  void attachAsStencil(igl::ITexture& texture, const Texture::AttachmentParams& params) const;
   // NOLINTNEXTLINE(misc-non-private-member-variables-in-classes)
   GLuint frameBufferID_ = 0;
+
+  struct CachedState {
+    FramebufferMode mode_ = igl::FramebufferMode::Mono;
+    uint8_t layer_ = 0;
+    uint8_t face_ = 0;
+    uint8_t mipLevel_ = 0;
+
+    bool needsUpdate(FramebufferMode mode, uint8_t layer, uint8_t face, uint8_t mipLevel);
+    void updateCache(FramebufferMode mode, uint8_t layer, uint8_t face, uint8_t mipLevel);
+  };
+
+  constexpr static auto kNumCachedStates = 8; // We allow up to 8 color attachments
+  mutable std::array<CachedState, kNumCachedStates> colorCachedState_;
+  mutable CachedState depthCachedState_;
 
   std::shared_ptr<Framebuffer> resolveFramebuffer = nullptr;
 };
