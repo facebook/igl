@@ -195,5 +195,12 @@ int main(int argc, char* argv[]) {
   glfwDestroyWindow(vulkanWindow.get());
   glfwTerminate();
 
+  // Explicitly destroy all objects before exiting in order to make sure that
+  // whatever else global destructors may there, will be called after these. One
+  // example is a graphics resource tracker in the client code, which otherwise
+  // would not be guaranteed to be called after the graphics resources release.
+  vulkanShellPlatform_ = nullptr;
+  vulkanSession_ = nullptr;
+
   return 0;
 }
