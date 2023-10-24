@@ -8,6 +8,7 @@
 #include "../util/TestDevice.h"
 
 #include <gtest/gtest.h>
+#include <igl/Macros.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
@@ -313,6 +314,9 @@ TEST_F(ContextOGLTest, CheckForErrorsInvalidFrameBufferOperation) {
 
 /// Verify that an object is visible across contexts in the same sharegroup
 TEST_F(ContextOGLTest, BasicSharedContexts) {
+#if IGL_PLATFORM_WIN && !IGL_ANGLE
+  GTEST_SKIP() << "Context sharing not implemented in opengl::wgl";
+#endif
   // Setup is three contexts, (1) and (2) part of the same sharegroup and (3) not.
   igl::Result result;
   auto sharedContext = context_->createShareContext(&result);
