@@ -178,11 +178,12 @@ EGLConfig chooseConfig(EGLDisplay display) {
 }
 
 Context::Context(RenderingAPI api, EGLNativeWindowType window) :
-  Context(api, EGL_NO_CONTEXT, false, window, {0, 0}) {}
+  Context(api, EGL_NO_CONTEXT, nullptr, false, window, {0, 0}) {}
 
 Context::Context(RenderingAPI api, size_t width, size_t height) :
   Context(api,
           EGL_NO_CONTEXT,
+          nullptr,
           true,
           IGL_EGL_NULL_WINDOW,
           {static_cast<EGLint>(width), static_cast<EGLint>(height)}) {}
@@ -190,12 +191,14 @@ Context::Context(RenderingAPI api, size_t width, size_t height) :
 Context::Context(const Context& sharedContext) :
   Context(sharedContext.api_,
           sharedContext.context_,
+          sharedContext.sharegroup_,
           true,
           IGL_EGL_NULL_WINDOW,
           sharedContext.getDrawSurfaceDimensions(nullptr)) {}
 
 Context::Context(RenderingAPI api,
                  EGLContext shareContext,
+                 std::shared_ptr<std::vector<EGLContext>> sharegroup,
                  bool offscreen,
                  EGLNativeWindowType window,
                  std::pair<EGLint, EGLint> dimensions) {
@@ -232,6 +235,14 @@ Context::Context(RenderingAPI api,
     drawSurface_ = surface_;
   }
   config_ = config;
+
+  if (sharegroup != nullptr) {
+    sharegroup_ = std::move(sharegroup);
+  } else {
+    sharegroup_ = std::make_shared<std::vector<EGLContext>>();
+  }
+  sharegroup_->push_back(context_);
+
   initialize();
 }
 
@@ -291,9 +302,6 @@ bool Context::isCurrentContext() const {
 }
 
 bool Context::isCurrentSharegroup() const {
-#if defined(FORCE_USE_ANGLE)
-  return true;
-#else
   // EGL doesn't seem to provide a way to check if two contexts are in the same group.
   // For now we can at least check some trivial cases before hitting the assertion below.
   EGLContext currentContext = eglGetCurrentContext();
@@ -310,7 +318,6 @@ bool Context::isCurrentSharegroup() const {
     return it != sharegroup.end();
   }
   return false;
-#endif
 }
 
 void Context::present(std::shared_ptr<ITexture> /*surface*/) const {

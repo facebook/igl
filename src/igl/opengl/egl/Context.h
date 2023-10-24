@@ -75,6 +75,7 @@ class Context final : public IContext {
  private:
   Context(RenderingAPI api,
           EGLContext shareContext,
+          std::shared_ptr<std::vector<EGLContext>> sharegroup,
           bool offscreen,
           EGLNativeWindowType window,
           std::pair<EGLint, EGLint> dimensions);
