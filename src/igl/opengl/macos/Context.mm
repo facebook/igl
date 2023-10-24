@@ -60,50 +60,61 @@ std::unique_ptr<Context> Context::createContext(NSOpenGLContext* context, Result
   return createContext(context, {}, outResult);
 }
 
-/*static*/ std::unique_ptr<Context> Context::createShareContext(Context& existingContext,
-                                                                Result* outResult) {
+std::unique_ptr<Context> Context::createShareContext(Context& existingContext, Result* outResult) {
   auto existingNSContext = existingContext.getNSContext();
   auto newGLContext = [[NSOpenGLContext alloc] initWithFormat:existingNSContext.pixelFormat
                                                  shareContext:existingNSContext];
 
-  auto sharegroup = existingContext.sharegroup_;
-  if (!sharegroup) {
-    sharegroup = std::make_shared<std::vector<NSOpenGLContext*>>();
-    sharegroup->reserve(2);
-    sharegroup->emplace_back(existingNSContext);
-  }
+  IGL_ASSERT_MSG(existingContext.sharegroup_, "Sharegroup must exist");
 
   igl::Result result;
-  auto context = std::unique_ptr<Context>(new Context(newGLContext, sharegroup));
+  auto context = std::unique_ptr<Context>(new Context(newGLContext, existingContext.sharegroup_));
   context->initialize(&result);
 
-  // If we are successful - add the new context back to our sharegroup.
+  // If we are successful, add the new context to our sharegroup.
   if (result.isOk()) {
-    sharegroup->emplace_back(newGLContext);
-    existingContext.sharegroup_ = std::move(sharegroup);
+    context->sharegroup_->push_back(newGLContext);
+  } else {
+    context = nullptr;
   }
 
   Result::setResult(outResult, result);
   return context;
 }
 
-std::unique_ptr<Context> Context::createContext(NSOpenGLContext* context,
-                                                std::vector<NSOpenGLContext*> shareContexts,
-                                                Result* outResult) {
+std::unique_ptr<Context> Context::createContext(
+    NSOpenGLContext* context,
+    std::shared_ptr<std::vector<NSOpenGLContext*>> shareContexts,
+    Result* outResult) {
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::ArgumentNull, "NSOpenGLContext was null");
     return {};
   }
 
-  auto newContext = std::unique_ptr<Context>(new Context(
-      context, std::make_shared<std::vector<NSOpenGLContext*>>(std::move(shareContexts))));
-  newContext->initialize(outResult);
+  igl::Result result;
+  auto newContext = std::unique_ptr<Context>(new Context(context, std::move(shareContexts)));
+  newContext->initialize(&result);
+
+  // If we are successful, add the new context to our sharegroup.
+  if (result.isOk()) {
+    newContext->sharegroup_->push_back(context);
+  } else {
+    newContext = nullptr;
+  }
+
+  Result::setResult(outResult, result);
   return newContext;
 }
 
 Context::Context(NSOpenGLContext* context,
                  std::shared_ptr<std::vector<NSOpenGLContext*>> shareContexts) :
   context_(context), sharegroup_(std::move(shareContexts)) {
+  if (!sharegroup_) {
+    sharegroup_ = std::make_shared<std::vector<NSOpenGLContext*>>();
+  }
+  // Note that we're not adding the context to the sharegroup yet. It'll only be done by the
+  // callers, after the new context is initialized successfully.
+
   IContext::registerContext((__bridge void*)context_, this);
 }
 
@@ -129,12 +140,9 @@ bool Context::isCurrentContext() const {
 }
 
 bool Context::isCurrentSharegroup() const {
-  if (sharegroup_) {
-    const auto& sharegroup = *sharegroup_;
-    auto it = std::find(sharegroup.begin(), sharegroup.end(), [NSOpenGLContext currentContext]);
-    return it != sharegroup.end();
-  }
-  return false;
+  IGL_ASSERT_MSG(sharegroup_ != nullptr, "Sharegroup must exist");
+  auto it = std::find(sharegroup_->begin(), sharegroup_->end(), [NSOpenGLContext currentContext]);
+  return it != sharegroup_->end();
 }
 
 NSOpenGLPixelFormat* Context::preferredPixelFormat() {

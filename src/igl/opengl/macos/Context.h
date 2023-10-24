@@ -34,9 +34,10 @@ class Context final : public IContext {
   // Create a new context with existing NSOpenGLContext and its shared contexts. The share context
   // must be setup ahead of calling this constructor, e.g. via QOpenGLContext->setShareContext, and
   // should not be modified during the lifetime of this IContext
-  static std::unique_ptr<Context> createContext(NSOpenGLContext* context,
-                                                std::vector<NSOpenGLContext*> shareContexts,
-                                                Result* outResult);
+  static std::unique_ptr<Context> createContext(
+      NSOpenGLContext* context,
+      std::shared_ptr<std::vector<NSOpenGLContext*>> shareContexts,
+      Result* outResult);
 
   ~Context() override;
 
