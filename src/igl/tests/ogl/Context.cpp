@@ -329,6 +329,15 @@ TEST_F(ContextOGLTest, BasicSharedContexts) {
 
   // Create texture from context (1)
   context_->setCurrent();
+
+  ASSERT_TRUE(context_->isCurrentContext());
+  ASSERT_FALSE(sharedContext->isCurrentContext());
+  ASSERT_FALSE(unsharedContext->isCurrentContext());
+
+  ASSERT_TRUE(context_->isCurrentSharegroup());
+  ASSERT_TRUE(sharedContext->isCurrentSharegroup());
+  ASSERT_FALSE(unsharedContext->isCurrentSharegroup());
+
   const igl::TextureDesc textureDesc = igl::TextureDesc::new2D(
       igl::TextureFormat::RGBA_UNorm8, 16, 16, igl::TextureDesc::TextureUsageBits::Sampled);
   auto texture = device_->createTexture(textureDesc, &result);
@@ -339,10 +348,28 @@ TEST_F(ContextOGLTest, BasicSharedContexts) {
 
   // Confirm that texture is visible from context (2)
   sharedContext->setCurrent();
+
+  ASSERT_FALSE(context_->isCurrentContext());
+  ASSERT_TRUE(sharedContext->isCurrentContext());
+  ASSERT_FALSE(unsharedContext->isCurrentContext());
+
+  ASSERT_TRUE(context_->isCurrentSharegroup());
+  ASSERT_TRUE(sharedContext->isCurrentSharegroup());
+  ASSERT_FALSE(unsharedContext->isCurrentSharegroup());
+
   ASSERT_TRUE(sharedContext->isTexture(glTextureId));
 
   // Confirm that texture is not visible from context (3)
   unsharedContext->setCurrent();
+
+  ASSERT_FALSE(context_->isCurrentContext());
+  ASSERT_FALSE(sharedContext->isCurrentContext());
+  ASSERT_TRUE(unsharedContext->isCurrentContext());
+
+  ASSERT_FALSE(context_->isCurrentSharegroup());
+  ASSERT_FALSE(sharedContext->isCurrentSharegroup());
+  ASSERT_TRUE(unsharedContext->isCurrentSharegroup());
+
   ASSERT_FALSE(unsharedContext->isTexture(glTextureId));
 }
 
