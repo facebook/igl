@@ -37,7 +37,7 @@ class CommandBuffer final : public ICommandBuffer,
 
   void waitUntilCompleted() override;
 
-  void pushDebugGroupLabel(const std::string& label, const igl::Color& color) const override;
+  void pushDebugGroupLabel(const char* label, const igl::Color& color) const override;
 
   void popDebugGroupLabel() const override;
 

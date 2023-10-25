@@ -37,8 +37,8 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
                             const Dimensions& threadgroupSize) override;
   void endEncoding() override;
 
-  void pushDebugGroupLabel(const std::string& label, const igl::Color& color) const override;
-  void insertDebugEventLabel(const std::string& label, const igl::Color& color) const override;
+  void pushDebugGroupLabel(const char* label, const igl::Color& color) const override;
+  void insertDebugEventLabel(const char* label, const igl::Color& color) const override;
   void popDebugGroupLabel() const override;
   void bindUniform(const UniformDesc& uniformDesc, const void* data) override;
   void bindTexture(size_t index, ITexture* texture) override;

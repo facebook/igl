@@ -40,8 +40,7 @@ void CommandBuffer::waitUntilCompleted() {
   IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
 }
 
-void CommandBuffer::pushDebugGroupLabel(const std::string& /*label*/,
-                                        const igl::Color& /*color*/) const {
+void CommandBuffer::pushDebugGroupLabel(const char* /*label*/, const igl::Color& /*color*/) const {
   IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
 }
 

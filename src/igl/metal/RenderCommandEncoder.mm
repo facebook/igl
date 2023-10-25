@@ -130,18 +130,18 @@ void RenderCommandEncoder::endEncoding() {
   encoder_ = nil;
 }
 
-void RenderCommandEncoder::pushDebugGroupLabel(const std::string& label,
+void RenderCommandEncoder::pushDebugGroupLabel(const char* label,
                                                const igl::Color& /*color*/) const {
   IGL_ASSERT(encoder_);
-  IGL_ASSERT(!label.empty());
-  [encoder_ pushDebugGroup:[NSString stringWithUTF8String:label.c_str()] ?: @""];
+  IGL_ASSERT(label != nullptr);
+  [encoder_ pushDebugGroup:[NSString stringWithUTF8String:label] ?: @""];
 }
 
-void RenderCommandEncoder::insertDebugEventLabel(const std::string& label,
+void RenderCommandEncoder::insertDebugEventLabel(const char* label,
                                                  const igl::Color& /*color*/) const {
   IGL_ASSERT(encoder_);
-  IGL_ASSERT(!label.empty());
-  [encoder_ insertDebugSignpost:[NSString stringWithUTF8String:label.c_str()] ?: @""];
+  IGL_ASSERT(label != nullptr);
+  [encoder_ insertDebugSignpost:[NSString stringWithUTF8String:label] ?: @""];
 }
 
 void RenderCommandEncoder::popDebugGroupLabel() const {

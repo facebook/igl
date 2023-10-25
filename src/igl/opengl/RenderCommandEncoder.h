@@ -45,8 +45,8 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
  public:
   void endEncoding() override;
 
-  void pushDebugGroupLabel(const std::string& label, const igl::Color& color) const override;
-  void insertDebugEventLabel(const std::string& label, const igl::Color& color) const override;
+  void pushDebugGroupLabel(const char* label, const igl::Color& color) const override;
+  void insertDebugEventLabel(const char* label, const igl::Color& color) const override;
   void popDebugGroupLabel() const override;
 
   void bindViewport(const Viewport& viewport) override;

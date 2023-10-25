@@ -82,9 +82,9 @@ TEST_F(RenderCommandEncoderMTLTest, CreateRenderCommandEncoderAll) {
   auto encoder = commandBuffer_->createRenderCommandEncoder(rpDesc, framebuffer);
   ASSERT_TRUE(encoder != nullptr);
 
-  encoder->pushDebugGroupLabel(label_);
+  encoder->pushDebugGroupLabel(label_.c_str());
 
-  encoder->insertDebugEventLabel(label_);
+  encoder->insertDebugEventLabel(label_.c_str());
 
   encoder->popDebugGroupLabel();
 

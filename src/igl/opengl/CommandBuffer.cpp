@@ -44,11 +44,11 @@ void CommandBuffer::waitUntilCompleted() {
   context_->finish();
 }
 
-void CommandBuffer::pushDebugGroupLabel(const std::string& label,
-                                        const igl::Color& /*color*/) const {
-  IGL_ASSERT(!label.empty());
+void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& /*color*/) const {
+  IGL_ASSERT(label != nullptr);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
-    getContext().pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, label.length(), label.c_str());
+    std::string_view labelSV(label);
+    getContext().pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, labelSV.length(), labelSV.data());
   } else {
     IGL_LOG_ERROR_ONCE("CommandBuffer::pushDebugGroupLabel not supported in this context!\n");
   }

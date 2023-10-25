@@ -42,10 +42,9 @@ void CommandBuffer::present(std::shared_ptr<ITexture> surface) const {
   }
 }
 
-void CommandBuffer::pushDebugGroupLabel(const std::string& label,
-                                        const igl::Color& /*color*/) const {
-  IGL_ASSERT(!label.empty());
-  [value_ pushDebugGroup:[NSString stringWithUTF8String:label.c_str()] ?: @""];
+void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& /*color*/) const {
+  IGL_ASSERT(label != nullptr);
+  [value_ pushDebugGroup:[NSString stringWithUTF8String:label] ?: @""];
 }
 
 void CommandBuffer::popDebugGroupLabel() const {

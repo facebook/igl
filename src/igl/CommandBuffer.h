@@ -116,7 +116,7 @@ class ICommandBuffer {
    * When all commands for this label have been sent to the encoder, call popDebugGroupLabel()
    * to pop the label off the stack.
    */
-  virtual void pushDebugGroupLabel(const std::string& label,
+  virtual void pushDebugGroupLabel(const char* IGL_NONNULL label,
                                    const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
 
   /**

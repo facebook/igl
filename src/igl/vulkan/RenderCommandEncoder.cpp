@@ -333,14 +333,14 @@ void RenderCommandEncoder::endEncoding() {
                       VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
-void RenderCommandEncoder::pushDebugGroupLabel(const std::string& label,
-                                               const igl::Color& color) const {
-  ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label.c_str(), color.toFloatPtr());
+void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const igl::Color& color) const {
+  IGL_ASSERT(label != nullptr);
+  ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
-void RenderCommandEncoder::insertDebugEventLabel(const std::string& label,
-                                                 const igl::Color& color) const {
-  ivkCmdInsertDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label.c_str(), color.toFloatPtr());
+void RenderCommandEncoder::insertDebugEventLabel(const char* label, const igl::Color& color) const {
+  IGL_ASSERT(label != nullptr);
+  ivkCmdInsertDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
 void RenderCommandEncoder::popDebugGroupLabel() const {

@@ -30,18 +30,18 @@ void ComputeCommandEncoder::endEncoding() {
   encoder_ = nil;
 }
 
-void ComputeCommandEncoder::pushDebugGroupLabel(const std::string& label,
+void ComputeCommandEncoder::pushDebugGroupLabel(const char* label,
                                                 const igl::Color& /*color*/) const {
   IGL_ASSERT(encoder_);
-  IGL_ASSERT(!label.empty());
-  [encoder_ pushDebugGroup:[NSString stringWithUTF8String:label.c_str()] ?: @""];
+  IGL_ASSERT(label != nullptr);
+  [encoder_ pushDebugGroup:[NSString stringWithUTF8String:label] ?: @""];
 }
 
-void ComputeCommandEncoder::insertDebugEventLabel(const std::string& label,
+void ComputeCommandEncoder::insertDebugEventLabel(const char* label,
                                                   const igl::Color& /*color*/) const {
   IGL_ASSERT(encoder_);
-  IGL_ASSERT(!label.empty());
-  [encoder_ insertDebugSignpost:[NSString stringWithUTF8String:label.c_str()] ?: @""];
+  IGL_ASSERT(label != nullptr);
+  [encoder_ insertDebugSignpost:[NSString stringWithUTF8String:label] ?: @""];
 }
 
 void ComputeCommandEncoder::popDebugGroupLabel() const {

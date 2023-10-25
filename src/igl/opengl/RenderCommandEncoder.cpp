@@ -154,30 +154,31 @@ void RenderCommandEncoder::endEncoding() {
   }
 }
 
-void RenderCommandEncoder::pushDebugGroupLabel(const std::string& label,
+void RenderCommandEncoder::pushDebugGroupLabel(const char* label,
                                                const igl::Color& /*color*/) const {
   IGL_ASSERT(adapter_);
-  IGL_ASSERT(!label.empty());
-
+  IGL_ASSERT(label != nullptr);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
-    getContext().pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, label.length(), label.c_str());
+    std::string_view labelSV(label);
+    getContext().pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, labelSV.length(), labelSV.data());
   } else {
     IGL_LOG_ERROR_ONCE(
         "RenderCommandEncoder::pushDebugGroupLabel not supported in this context!\n");
   }
 }
 
-void RenderCommandEncoder::insertDebugEventLabel(const std::string& label,
+void RenderCommandEncoder::insertDebugEventLabel(const char* label,
                                                  const igl::Color& /*color*/) const {
   IGL_ASSERT(adapter_);
-  IGL_ASSERT(!label.empty());
+  IGL_ASSERT(label != nullptr);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
+    std::string_view labelSV(label);
     getContext().debugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
                                     GL_DEBUG_TYPE_MARKER,
                                     0,
                                     GL_DEBUG_SEVERITY_LOW,
-                                    label.length(),
-                                    label.c_str());
+                                    labelSV.length(),
+                                    labelSV.data());
   } else {
     IGL_LOG_ERROR_ONCE(
         "RenderCommandEncoder::insertDebugEventLabel not supported in this context!\n");

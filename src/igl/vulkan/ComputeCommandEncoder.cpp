@@ -80,18 +80,15 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
       cmdBuffer_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
 }
 
-void ComputeCommandEncoder::pushDebugGroupLabel(const std::string& label,
-                                                const igl::Color& color) const {
-  IGL_ASSERT(!label.empty());
-
-  ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label.c_str(), color.toFloatPtr());
+void ComputeCommandEncoder::pushDebugGroupLabel(const char* label, const igl::Color& color) const {
+  IGL_ASSERT(label != nullptr);
+  ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
-void ComputeCommandEncoder::insertDebugEventLabel(const std::string& label,
+void ComputeCommandEncoder::insertDebugEventLabel(const char* label,
                                                   const igl::Color& color) const {
-  IGL_ASSERT(!label.empty());
-
-  ivkCmdInsertDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label.c_str(), color.toFloatPtr());
+  IGL_ASSERT(label != nullptr);
+  ivkCmdInsertDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
 void ComputeCommandEncoder::popDebugGroupLabel() const {

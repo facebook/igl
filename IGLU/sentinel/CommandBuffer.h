@@ -31,7 +31,7 @@ class CommandBuffer final : public igl::ICommandBuffer {
   void present(std::shared_ptr<igl::ITexture> /*surface*/) const final;
   void waitUntilScheduled() final;
   void waitUntilCompleted() final;
-  void pushDebugGroupLabel(const std::string& /*label*/,
+  void pushDebugGroupLabel(const char* /*label*/,
                            const igl::Color& /*color*/ = igl::Color(1, 1, 1, 1)) const final;
   void popDebugGroupLabel() const final;
 
