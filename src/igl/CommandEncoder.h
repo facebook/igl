@@ -61,6 +61,11 @@ class ICommandEncoder {
     return *commandBuffer_;
   }
 
+  std::shared_ptr<ICommandBuffer> getCommandBufferPtr() {
+    IGL_ASSERT(commandBuffer_);
+    return commandBuffer_;
+  }
+
  private:
   std::shared_ptr<ICommandBuffer> commandBuffer_;
 };
