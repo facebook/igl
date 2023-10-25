@@ -452,8 +452,8 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
            hasESExtension(*this, "GL_EXT_shadow_samplers");
 
   case InternalFeatures::UnmapBuffer:
-    return hasDesktopVersion(*this, GLVersion::v2_0) || hasExtension(Extensions::MapBuffer) ||
-           hasExtension(Extensions::MapBufferRange);
+    return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
+           hasExtension(Extensions::MapBuffer) || hasExtension(Extensions::MapBufferRange);
 
   case InternalFeatures::UnpackRowLength:
     return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||

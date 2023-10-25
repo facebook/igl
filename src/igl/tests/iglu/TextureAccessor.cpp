@@ -103,5 +103,53 @@ TEST_F(TextureAccessorTest, testRequestAndGetBytesSync) {
   }
 }
 
+TEST_F(TextureAccessorTest, reuseTextureAccessor) {
+  ASSERT_NO_THROW(textureAccessor_ =
+                      iglu::textureaccessor::TextureAccessorFactory::createTextureAccessor(
+                          iglDev_->getBackendType(), texture_, *iglDev_));
+  ASSERT_TRUE(textureAccessor_ != nullptr);
+
+  // Verify requestStatus before
+  ASSERT_EQ(textureAccessor_->getRequestStatus(),
+            iglu::textureaccessor::RequestStatus::NotInitialized);
+
+  // First Upload
+  {
+    // Update texture data
+    const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
+    texture_->upload(rangeDesc, data::texture::TEX_RGBA_2x2);
+
+    auto bytes = textureAccessor_->requestAndGetBytesSync(*cmdQueue_);
+    // Verify requestStatus after
+    ASSERT_EQ(textureAccessor_->getRequestStatus(), iglu::textureaccessor::RequestStatus::Ready);
+
+    // 2x2 texture * 4 bytes per pixel
+    ASSERT_EQ(bytes.size(), 16);
+    // Verify data
+    auto* pixels = reinterpret_cast<uint32_t*>(bytes.data());
+    for (int i = 0; (i < textureSizeInBytes_ / 4); i++) {
+      ASSERT_EQ(pixels[i], data::texture::TEX_RGBA_2x2[i]);
+    }
+  }
+
+  // Second Upload
+  {
+    // Update texture data
+    const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
+    texture_->upload(rangeDesc, data::texture::TEX_RGBA_GRAY_2x2);
+
+    auto bytes = textureAccessor_->requestAndGetBytesSync(*cmdQueue_);
+    // Verify requestStatus after
+    ASSERT_EQ(textureAccessor_->getRequestStatus(), iglu::textureaccessor::RequestStatus::Ready);
+
+    // 2x2 texture * 4 bytes per pixel
+    ASSERT_EQ(bytes.size(), 16);
+    // Verify data
+    auto* pixels = reinterpret_cast<uint32_t*>(bytes.data());
+    for (int i = 0; (i < textureSizeInBytes_ / 4); i++) {
+      ASSERT_EQ(pixels[i], data::texture::TEX_RGBA_GRAY_2x2[i]);
+    }
+  }
+}
 } // namespace tests
 } // namespace igl

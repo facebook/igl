@@ -19,8 +19,7 @@
 #include <secure_lib/secure_string.h>
 #endif
 
-namespace iglu {
-namespace textureaccessor {
+namespace iglu::textureaccessor {
 
 OpenGLTextureAccessor::OpenGLTextureAccessor(std::shared_ptr<igl::ITexture> texture,
                                              igl::IDevice& device) :
@@ -49,27 +48,39 @@ OpenGLTextureAccessor::OpenGLTextureAccessor(std::shared_ptr<igl::ITexture> text
     // Create PBO and allocate size
     context.genBuffers((GLsizei)1, &pboId_);
     context.bindBuffer(GL_PIXEL_PACK_BUFFER, pboId_);
-    context.bufferData(GL_PIXEL_PACK_BUFFER, textureBytesPerImage_, nullptr, GL_STREAM_READ);
+    context.bufferData(GL_PIXEL_PACK_BUFFER, textureBytesPerImage_, nullptr, GL_DYNAMIC_READ);
     context.bindBuffer(GL_PIXEL_PACK_BUFFER, 0);
   }
 };
 
 void OpenGLTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
                                          std::shared_ptr<igl::ITexture> texture) {
+  dataCopied_ = false;
   if (texture) {
     IGL_ASSERT(textureWidth_ == texture->getDimensions().width &&
                textureHeight_ == texture->getDimensions().height);
     texture_ = std::move(texture);
     frameBuffer_->updateDrawable(texture_);
+    textureAttached_ = false;
   }
 
   if (asyncReadbackSupported_) {
     auto& glTexture = static_cast<igl::opengl::Texture&>(*texture_);
     auto& context = glTexture.getContext();
 
-    auto oglFrameBuffer = static_cast<igl::opengl::Framebuffer*>(&(*frameBuffer_));
-    oglFrameBuffer->bindBufferForRead();
+    auto oglFrameBuffer = static_cast<igl::opengl::Framebuffer*>(frameBuffer_.get());
 
+    oglFrameBuffer->bindBufferForRead();
+    if (!textureAttached_) {
+      igl::opengl::Texture::AttachmentParams params;
+      params.read = true;
+      params.face = 0;
+      params.layer = 0;
+      params.mipLevel = 0;
+      params.stereo = false;
+      glTexture.attachAsColor(0u, params);
+      textureAttached_ = true;
+    }
     const auto& properties = glTexture.getProperties();
     context.pixelStorei(GL_PACK_ALIGNMENT,
                         glTexture.getAlignment(properties.getBytesPerRow(textureWidth_), 0));
@@ -89,6 +100,7 @@ void OpenGLTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
   const auto range = igl::TextureRangeDesc::new2D(0, 0, textureWidth_, textureHeight_);
   frameBuffer_->copyBytesColorAttachment(commandQueue, 0, latestBytesRead_.data(), range);
 
+  dataCopied_ = true;
   status_ = RequestStatus::Ready;
 }
 
@@ -111,20 +123,23 @@ RequestStatus OpenGLTextureAccessor::getRequestStatus() {
 };
 
 std::vector<unsigned char>& OpenGLTextureAccessor::getBytes() {
-  if (asyncReadbackSupported_ && status_ == RequestStatus::InProgress) {
+  if (asyncReadbackSupported_ && status_ != RequestStatus::NotInitialized && !dataCopied_) {
     auto& texture = static_cast<igl::opengl::Texture&>(*texture_);
     auto& context = texture.getContext();
     context.bindBuffer(GL_PIXEL_PACK_BUFFER, pboId_);
     auto bytes =
         context.mapBufferRange(GL_PIXEL_PACK_BUFFER, 0, textureBytesPerImage_, GL_MAP_READ_BIT);
-    checked_memcpy_robust(latestBytesRead_.data(),
-                          latestBytesRead_.size(),
-                          bytes,
-                          textureBytesPerImage_,
-                          textureBytesPerImage_);
+    if (IGL_VERIFY(bytes)) {
+      checked_memcpy_robust(latestBytesRead_.data(),
+                            latestBytesRead_.size(),
+                            bytes,
+                            textureBytesPerImage_,
+                            textureBytesPerImage_);
+    }
     context.unmapBuffer(GL_PIXEL_PACK_BUFFER);
     context.bindBuffer(GL_PIXEL_PACK_BUFFER, 0);
     status_ = RequestStatus::Ready;
+    dataCopied_ = true;
     if (sync_ != nullptr) {
       context.deleteSync(sync_);
       sync_ = nullptr;
@@ -133,5 +148,4 @@ std::vector<unsigned char>& OpenGLTextureAccessor::getBytes() {
   return latestBytesRead_;
 }
 
-} // namespace textureaccessor
-} // namespace iglu
+} // namespace iglu::textureaccessor

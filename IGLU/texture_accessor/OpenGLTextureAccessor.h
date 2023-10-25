@@ -36,7 +36,9 @@ class OpenGLTextureAccessor : public ITextureAccessor {
 
   GLuint pboId_ = 0;
   GLsync sync_ = nullptr;
+  bool dataCopied_ = false;
   bool asyncReadbackSupported_ = false;
+  bool textureAttached_ = false;
 };
 
 } // namespace textureaccessor

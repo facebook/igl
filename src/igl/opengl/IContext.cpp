@@ -2084,7 +2084,13 @@ void IContext::getSynciv(GLsync sync,
     IGL_ASSERT_MSG(getSyncivProc_, "No supported function for glGetSynciv\n");
   }
   GLCALL_PROC(getSyncivProc_, sync, pname, bufSize, length, values);
-  APILOG("glGetSynciv(%p, %s, %u, %p, %p)\n", sync, pname, bufSize, length, values);
+  APILOG("glGetSynciv(%p, %s, %u, %p, %p) = %d\n",
+         sync,
+         GL_ENUM_TO_STRING(pname),
+         bufSize,
+         length,
+         values,
+         values == nullptr ? 0 : *values);
   GLCHECK_ERRORS();
 }
 
