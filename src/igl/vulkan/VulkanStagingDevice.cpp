@@ -168,7 +168,8 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
   regions_.clear();
 
   // Store the unused size in the deque first...
-  const uint32_t unusedSize = stagingBufferSize_ - requestedAlignedSize;
+  const VkDeviceSize unusedSize =
+      stagingBufferSize_ > requestedAlignedSize ? stagingBufferSize_ - requestedAlignedSize : 0;
   if (unusedSize > 0) {
     const uint32_t unusedOffset = requestedAlignedSize;
     regions_.push_front(
@@ -176,7 +177,10 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
   }
 
   //... and then return the smallest free region that can hold the requested size
-  return {0, size, requestedAlignedSize, VulkanImmediateCommands::SubmitHandle()};
+  return {0,
+          std::min(size, stagingBufferSize_),
+          std::min(requestedAlignedSize, stagingBufferSize_),
+          VulkanImmediateCommands::SubmitHandle()};
 }
 
 void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
@@ -195,6 +199,7 @@ void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
 
   size_t chunkSrcOffset = srcOffset;
   auto* dstData = static_cast<uint8_t*>(data);
+  const size_t bufferSize = size;
 
   while (size) {
     MemoryRegion memoryChunk = nextFreeBlock(size);
@@ -213,7 +218,7 @@ void VulkanStagingDevice::getBufferSubData(VulkanBuffer& buffer,
 
     // Copy data into data
     const uint8_t* src = stagingBuffer_->getMappedPtr() + memoryChunk.offset;
-    checked_memcpy(dstData, size - chunkSrcOffset, src, memoryChunk.alignedSize);
+    checked_memcpy(dstData, bufferSize - chunkSrcOffset, src, memoryChunk.size);
 
     size -= copySize;
     dstData = (uint8_t*)dstData + copySize;
