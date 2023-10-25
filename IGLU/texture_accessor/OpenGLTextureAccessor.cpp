@@ -68,7 +68,7 @@ void OpenGLTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
     auto& context = glTexture.getContext();
 
     auto oglFrameBuffer = static_cast<igl::opengl::Framebuffer*>(&(*frameBuffer_));
-    oglFrameBuffer->bindBuffer();
+    oglFrameBuffer->bindBufferForRead();
 
     const auto& properties = glTexture.getProperties();
     context.pixelStorei(GL_PACK_ALIGNMENT,

@@ -177,7 +177,11 @@ void Framebuffer::attachAsStencil(igl::ITexture& texture,
 }
 
 void Framebuffer::bindBuffer() const {
-  getContext().bindFramebuffer(GL_FRAMEBUFFER, frameBufferID_);
+  if (getContext().deviceFeatures().hasFeature(DeviceFeatures::ReadWriteFramebuffer)) {
+    getContext().bindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBufferID_);
+  } else {
+    getContext().bindFramebuffer(GL_FRAMEBUFFER, frameBufferID_);
+  }
 }
 
 void Framebuffer::bindBufferForRead() const {
@@ -185,7 +189,7 @@ void Framebuffer::bindBufferForRead() const {
   if (getContext().deviceFeatures().hasFeature(DeviceFeatures::ReadWriteFramebuffer)) {
     getContext().bindFramebuffer(GL_READ_FRAMEBUFFER, frameBufferID_);
   } else {
-    bindBuffer();
+    getContext().bindFramebuffer(GL_FRAMEBUFFER, frameBufferID_);
   }
 }
 
