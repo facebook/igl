@@ -69,49 +69,53 @@ TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
 
   const VkDeviceSize kMaxStagingBufferSize = ctx.stagingDevice_->getMaxStagingBufferSize();
 
-  const VkDeviceSize kDesiredBufferSize = kMaxStagingBufferSize + 2u;
+  const std::array<size_t, 2> kDesiredBufferSizes = {kMaxStagingBufferSize * 2u,
+                                                     kMaxStagingBufferSize + 2u};
 
   size_t maxBufferLength = 0;
   iglDev_->getFeatureLimits(DeviceFeatureLimits::MaxStorageBufferBytes, maxBufferLength);
 
-  bufferDesc.length = std::min(static_cast<size_t>(kDesiredBufferSize), maxBufferLength);
+  for (size_t sizeIdx = 0; sizeIdx < kDesiredBufferSizes.size(); ++sizeIdx) {
+    bufferDesc.length = std::min(kDesiredBufferSizes[sizeIdx], maxBufferLength);
 
-  ASSERT_TRUE(bufferDesc.length % 2 == 0);
+    ASSERT_TRUE(bufferDesc.length % 2 == 0);
 
-  std::shared_ptr<IBuffer> const buffer = iglDev_->createBuffer(bufferDesc, &ret);
+    std::shared_ptr<IBuffer> const buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
-  ASSERT_EQ(ret.code, Result::Code::Ok);
-  ASSERT_TRUE(buffer != nullptr);
+    ASSERT_EQ(ret.code, Result::Code::Ok);
+    ASSERT_TRUE(buffer != nullptr);
 
-  // upload
-  {
-    std::vector<uint16_t> bufferData(bufferDesc.length / 2);
+    // upload
+    {
+      std::vector<uint16_t> bufferData(bufferDesc.length / 2);
 
-    uint16_t* data = bufferData.data();
+      uint16_t* data = bufferData.data();
 
-    for (size_t i = 0; i != bufferDesc.length / 2; i++) {
-      data[i] = uint16_t(i & 0xffff);
+      for (size_t i = 0; i != bufferDesc.length / 2; i++) {
+        data[i] = uint16_t(i & 0xffff);
+      }
+
+      ret = buffer->upload(data, BufferRange(bufferDesc.length, 0));
+
+      ASSERT_EQ(ret.code, Result::Code::Ok);
     }
+    // download
+    {
+      // map() will create a CPU-copy of data
+      const auto* data =
+          static_cast<uint16_t*>(buffer->map(BufferRange(bufferDesc.length, 0), &ret));
 
-    ret = buffer->upload(data, BufferRange(bufferDesc.length, 0));
+      ASSERT_EQ(ret.code, Result::Code::Ok);
+
+      for (size_t i = 0; i != bufferDesc.length / 2; i++) {
+        ASSERT_EQ(data[i], uint16_t(i & 0xffff));
+      }
+
+      buffer->unmap();
+    }
 
     ASSERT_EQ(ret.code, Result::Code::Ok);
   }
-  // download
-  {
-    // map() will create a CPU-copy of data
-    const auto* data = static_cast<uint16_t*>(buffer->map(BufferRange(bufferDesc.length, 0), &ret));
-
-    ASSERT_EQ(ret.code, Result::Code::Ok);
-
-    for (size_t i = 0; i != bufferDesc.length / 2; i++) {
-      ASSERT_EQ(data[i], uint16_t(i & 0xffff));
-    }
-
-    buffer->unmap();
-  }
-
-  ASSERT_EQ(ret.code, Result::Code::Ok);
 
   if (ctx.useStagingForBuffers_) {
     // do not check if we are not using a staging buffer
