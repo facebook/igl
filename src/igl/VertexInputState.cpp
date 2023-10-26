@@ -40,11 +40,15 @@ size_t VertexInputStateDesc::sizeForVertexAttributeFormat(VertexAttributeFormat 
   case VertexAttributeFormat::Byte4Norm:
     return sizeof(int8_t[4]);
 
+  case VertexAttributeFormat::UByte1Norm:
+    return sizeof(uint8_t[1]);
+
   case VertexAttributeFormat::UByte2:
   case VertexAttributeFormat::UByte2Norm:
     return sizeof(uint8_t[2]);
 
   case VertexAttributeFormat::UByte3:
+  case VertexAttributeFormat::UByte3Norm:
     return sizeof(uint8_t[3]);
 
   case VertexAttributeFormat::UByte4:

@@ -57,8 +57,13 @@ MTLVertexFormat VertexInputState::convertAttributeFormat(VertexAttributeFormat v
     return MTLVertexFormatChar3Normalized;
   case VertexAttributeFormat::Byte4Norm:
     return MTLVertexFormatChar4Normalized;
+
+  case VertexAttributeFormat::UByte1Norm:
+    return MTLVertexFormatUCharNormalized;
   case VertexAttributeFormat::UByte2Norm:
     return MTLVertexFormatUChar2Normalized;
+  case VertexAttributeFormat::UByte3Norm:
+    return MTLVertexFormatUChar3Normalized;
   case VertexAttributeFormat::UByte4Norm:
     return MTLVertexFormatUChar4Normalized;
 

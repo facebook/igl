@@ -103,8 +103,12 @@ VkFormat vertexAttributeFormatToVkFormat(igl::VertexAttributeFormat fmt) {
     return VK_FORMAT_R8G8B8_SNORM;
   case VertexAttributeFormat::Byte4Norm:
     return VK_FORMAT_R8G8B8A8_SNORM;
+  case VertexAttributeFormat::UByte1Norm:
+    return VK_FORMAT_R8_UNORM;
   case VertexAttributeFormat::UByte2Norm:
     return VK_FORMAT_R8G8_UNORM;
+  case VertexAttributeFormat::UByte3Norm:
+    return VK_FORMAT_R8G8B8_UNORM;
   case VertexAttributeFormat::UByte4Norm:
     return VK_FORMAT_R8G8B8A8_UNORM;
   case VertexAttributeFormat::Short2Norm:
