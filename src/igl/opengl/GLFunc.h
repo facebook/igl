@@ -151,6 +151,14 @@ using PFNIGLGETACTIVEUNIFORMBLOCKNAMEPROC = void (*)(GLuint program,
                                                      GLsizei bufSize,
                                                      GLsizei* length,
                                                      GLchar* uniformBlockName);
+using PFNIGLGETDEBUGMESSAGELOGPROC = GLuint (*)(GLuint count,
+                                                GLsizei bufSize,
+                                                GLenum* sources,
+                                                GLenum* types,
+                                                GLuint* ids,
+                                                GLenum* severities,
+                                                GLsizei* lengths,
+                                                GLchar* messageLog);
 using PFNIGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC = void (*)(GLenum target,
                                                                GLenum attachment,
                                                                GLenum pname,
@@ -305,6 +313,14 @@ void iglDebugMessageInsert(GLenum source,
                            GLsizei length,
                            const GLchar* buf);
 void iglDrawBuffers(GLsizei n, const GLenum* bufs);
+GLuint iglGetDebugMessageLog(GLuint count,
+                             GLsizei bufSize,
+                             GLenum* sources,
+                             GLenum* types,
+                             GLuint* ids,
+                             GLenum* severities,
+                             GLsizei* lengths,
+                             GLchar* messageLog);
 const GLubyte* iglGetStringi(GLenum name, GLint index);
 void* iglMapBuffer(GLenum target, GLbitfield access);
 void iglObjectLabel(GLenum identifier, GLuint name, GLsizei length, const char* label);
@@ -658,6 +674,14 @@ void iglDebugMessageInsertKHR(GLenum source,
                               GLenum severity,
                               GLsizei length,
                               const GLchar* buf);
+GLuint iglGetDebugMessageLogKHR(GLuint count,
+                                GLsizei bufSize,
+                                GLenum* sources,
+                                GLenum* types,
+                                GLuint* ids,
+                                GLenum* severities,
+                                GLsizei* lengths,
+                                GLchar* messageLog);
 void iglObjectLabelKHR(GLenum identifier, GLuint name, GLsizei length, const char* label);
 void iglPopDebugGroupKHR();
 void iglPushDebugGroupKHR(GLenum source, GLuint id, GLsizei length, const GLchar* message);

@@ -265,6 +265,14 @@ class IContext {
   GLint getAttribLocation(GLuint program, const GLchar* name) const;
   void getBooleanv(GLenum pname, GLboolean* params) const;
   void getBufferParameteriv(GLenum target, GLenum pname, GLint* params) const;
+  GLuint getDebugMessageLog(GLuint count,
+                            GLsizei bufSize,
+                            GLenum* sources,
+                            GLenum* types,
+                            GLuint* ids,
+                            GLenum* severities,
+                            GLsizei* lengths,
+                            GLchar* messageLog) const;
   virtual GLenum getError() const;
   void getFloatv(GLenum pname, GLfloat* params) const;
   void getFramebufferAttachmentParameteriv(GLenum target,
@@ -623,6 +631,7 @@ class IContext {
   PFNIGLFRAMEBUFFERTEXTURE2DMULTISAMPLEPROC framebufferTexture2DMultisampleProc_ = nullptr;
   PFNIGLINVALIDATEFRAMEBUFFERPROC invalidateFramebufferProc_ = nullptr;
   PFNIGLGENVERTEXARRAYSPROC genVertexArraysProc_ = nullptr;
+  mutable PFNIGLGETDEBUGMESSAGELOGPROC getDebugMessageLogProc_ = nullptr;
   mutable PFNIGLGETSYNCIVPROC getSyncivProc_ = nullptr;
   PFNIGLGETTEXTUREHANDLEPROC getTextureHandleProc_ = nullptr;
   PFNIGLMAKETEXTUREHANDLERESIDENTPROC makeTextureHandleResidentProc_ = nullptr;
@@ -701,6 +710,8 @@ class IContext {
 
   // For framebufferTexture2DMultisample
   GLint maxSamples_ = -1;
+  GLint maxDebugStackSize_ = -1;
+  GLint debugStackSize_ = 0;
 
   static constexpr uint64_t kNotAZombie = 0xdeadc0def3315badLL;
   uint64_t zombieGuard_ = kNotAZombie;

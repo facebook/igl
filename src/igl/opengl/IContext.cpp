@@ -238,6 +238,8 @@ std::string GLenumToString(GLenum code) {
     RESULT_CASE(GL_CW)
     RESULT_CASE(GL_CCW)
     RESULT_CASE(GL_CURRENT_VERTEX_ATTRIB)
+    RESULT_CASE(GL_DEBUG_LOGGED_MESSAGES)
+    RESULT_CASE(GL_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH)
     RESULT_CASE(GL_DEBUG_OUTPUT)
     RESULT_CASE(GL_DEBUG_SEVERITY_HIGH)
     RESULT_CASE(GL_DEBUG_SEVERITY_LOW)
@@ -364,6 +366,7 @@ std::string GLenumToString(GLenum code) {
     RESULT_CASE(GL_MAX)
     RESULT_CASE(GL_MAX_COMPUTE_UNIFORM_COMPONENTS)
     RESULT_CASE(GL_MAX_CUBE_MAP_TEXTURE_SIZE)
+    RESULT_CASE(GL_MAX_DEBUG_GROUP_STACK_DEPTH)
     RESULT_CASE(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS)
     RESULT_CASE(GL_MAX_FRAGMENT_UNIFORM_VECTORS)
     RESULT_CASE(GL_MAX_NAME_LENGTH)
@@ -575,6 +578,70 @@ std::string GLenumToString(GLenum code) {
 #define GL_ENUM_TO_STRING(code) GLenumToString(code).c_str()
 #define GL_BOOL_TO_STRING(code) GLboolToString(code).c_str()
 
+} // namespace
+#endif // defined(IGL_API_LOG) && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
+
+namespace {
+
+#if IGL_DEBUG || defined(IGL_API_LOG)
+const char* GLDebugSeverityToString(GLenum severity) {
+  switch (severity) {
+    RESULT_CASE(GL_DEBUG_SEVERITY_HIGH)
+    RESULT_CASE(GL_DEBUG_SEVERITY_LOW)
+    RESULT_CASE(GL_DEBUG_SEVERITY_MEDIUM)
+    RESULT_CASE(GL_DEBUG_SEVERITY_NOTIFICATION)
+  default:
+    return "GL_DEBUG_SEVERITY_UNKNOWN";
+  }
+}
+
+const char* GLDebugSourceToString(GLenum source) {
+  switch (source) {
+    RESULT_CASE(GL_DEBUG_SOURCE_API)
+    RESULT_CASE(GL_DEBUG_SOURCE_APPLICATION)
+    RESULT_CASE(GL_DEBUG_SOURCE_OTHER)
+    RESULT_CASE(GL_DEBUG_SOURCE_SHADER_COMPILER)
+    RESULT_CASE(GL_DEBUG_SOURCE_THIRD_PARTY)
+    RESULT_CASE(GL_DEBUG_SOURCE_WINDOW_SYSTEM)
+  default:
+    return "GL_DEBUG_SOURCE_WINDOW_UNKNOWN";
+  }
+}
+
+const char* GLDebugTypeToString(GLenum type) {
+  switch (type) {
+    RESULT_CASE(GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR)
+    RESULT_CASE(GL_DEBUG_TYPE_ERROR)
+    RESULT_CASE(GL_DEBUG_TYPE_MARKER)
+    RESULT_CASE(GL_DEBUG_TYPE_OTHER)
+    RESULT_CASE(GL_DEBUG_TYPE_PERFORMANCE)
+    RESULT_CASE(GL_DEBUG_TYPE_PORTABILITY)
+    RESULT_CASE(GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR)
+  default:
+    return "GL_DEBUG_TYPE_UNDEFINED_UNKNOWN";
+  }
+}
+
+void logDebugMessage(GLenum source,
+                     GLenum type,
+                     GLuint id,
+                     GLenum severity,
+                     GLsizei length,
+                     const GLchar* message) {
+  const auto logLevel = severity == GL_DEBUG_SEVERITY_HIGH
+                            ? IGLLogLevel::LOG_ERROR
+                            : (severity == GL_DEBUG_SEVERITY_MEDIUM ? IGLLogLevel::LOG_WARNING
+                                                                    : IGLLogLevel::LOG_INFO);
+  IGLLog(logLevel,
+         "%s %s %u %s: %.*s\n",
+         GLDebugSourceToString(source),
+         GLDebugTypeToString(type),
+         id,
+         GLDebugSeverityToString(severity),
+         static_cast<int>(message ? length : 0),
+         message ? message : "");
+}
+#if defined(IGL_API_LOG)
 void logOpenGlDebugMessage(GLenum source,
                            GLenum type,
                            GLuint id,
@@ -582,23 +649,11 @@ void logOpenGlDebugMessage(GLenum source,
                            GLsizei length,
                            const GLchar* message,
                            const void* userParam) {
-  const auto logLevel = severity == GL_DEBUG_SEVERITY_HIGH
-                            ? IGLLogLevel::LOG_ERROR
-                            : (severity == GL_DEBUG_SEVERITY_MEDIUM ? IGLLogLevel::LOG_WARNING
-                                                                    : IGLLogLevel::LOG_INFO);
-  IGLLog(logLevel,
-         "%s %s %u %s: %.*s\n",
-         GL_ENUM_TO_STRING(source),
-         GL_ENUM_TO_STRING(type),
-         id,
-         GL_ENUM_TO_STRING(severity),
-         static_cast<int>(message ? length : 0),
-         message ? message : "");
+  logDebugMessage(source, type, id, severity, length, message);
 }
-
+#endif // defined(IGL_API_LOG)
+#endif // IGL_DEBUG || defined(IGL_API_LOG)
 } // namespace
-#endif // defined(IGL_API_LOG) && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
-
 namespace igl::opengl {
 namespace {
 const char* GLerrorToString(GLenum error) {
@@ -1843,6 +1898,49 @@ GLenum IContext::getError() const {
   return glGetError();
 }
 
+GLuint IContext::getDebugMessageLog(GLuint count,
+                                    GLsizei bufSize,
+                                    GLenum* sources,
+                                    GLenum* types,
+                                    GLuint* ids,
+                                    GLenum* severities,
+                                    GLsizei* lengths,
+                                    GLchar* messageLog) const {
+  if (getDebugMessageLogProc_ == nullptr) {
+    if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::DebugMessageCallbackExtReq)) {
+      if (deviceFeatureSet_.hasExtension(Extensions::Debug)) {
+        getDebugMessageLogProc_ = iglGetDebugMessageLogKHR;
+      }
+    } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessageCallback)) {
+      getDebugMessageLogProc_ = iglGetDebugMessageLog;
+    }
+    IGL_ASSERT_MSG(getDebugMessageLogProc_, "No supported function for glGetDebugMessageLog\n");
+  }
+  GLuint ret = 0;
+  GLCALL_PROC_WITH_RETURN(ret,
+                          getDebugMessageLogProc_,
+                          0,
+                          count,
+                          bufSize,
+                          sources,
+                          types,
+                          ids,
+                          severities,
+                          lengths,
+                          messageLog);
+  APILOG("glGetDebugMessageLog(%u, %d, %p, %p, %p, %p, %p, %p)\n",
+         count,
+         bufSize,
+         sources,
+         types,
+         ids,
+         severities,
+         lengths,
+         messageLog);
+  GLCHECK_ERRORS();
+  return ret;
+}
+
 void IContext::getFloatv(GLenum pname, GLfloat* params) const {
   GLCALL(GetFloatv)(pname, params);
   APILOG("glGetFloatv(%s, %p) = %f\n",
@@ -2373,19 +2471,28 @@ void IContext::pushDebugGroup(GLenum source, GLuint id, GLsizei length, const GL
       if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::DebugMessageExtReq)) {
         if (deviceFeatureSet_.hasExtension(Extensions::Debug)) {
           pushDebugGroupProc_ = iglPushDebugGroupKHR;
+          getIntegerv(GL_MAX_DEBUG_GROUP_STACK_DEPTH, &maxDebugStackSize_);
         } else if (deviceFeatureSet_.hasExtension(Extensions::DebugMarker)) {
           pushDebugGroupProc_ = iglPushGroupMarkerEXT;
+          // GL_EXT_debug_marker does not provide a way to query the max
+          maxDebugStackSize_ = std::numeric_limits<int>::max();
         }
       } else {
         pushDebugGroupProc_ = iglPushDebugGroup;
+        getIntegerv(GL_MAX_DEBUG_GROUP_STACK_DEPTH, &maxDebugStackSize_);
       }
     }
     IGL_ASSERT_MSG(pushDebugGroupProc_, "No supported function for glPushDebugGroup\n");
   }
 
-  GLCALL_PROC(pushDebugGroupProc_, source, id, length, message);
-  APILOG("glPushDebugGroup(%s, %u, %u, %s)\n", GL_ENUM_TO_STRING(source), id, length, message);
-  GLCHECK_ERRORS();
+  if (++debugStackSize_ < maxDebugStackSize_) {
+    GLCALL_PROC(pushDebugGroupProc_, source, id, length, message);
+    APILOG("glPushDebugGroup(%s, %u, %u, %s)\n", GL_ENUM_TO_STRING(source), id, length, message);
+    GLCHECK_ERRORS();
+  } else {
+    IGL_LOG_ERROR_ONCE("Exceeded max debug group stack size of %d, ignoring push\n",
+                       maxDebugStackSize_);
+  }
 }
 
 void IContext::popDebugGroup() {
@@ -2404,9 +2511,17 @@ void IContext::popDebugGroup() {
     IGL_ASSERT_MSG(popDebugGroupProc_, "No supported function for glPopDebugGroup\n");
   }
 
-  GLCALL_PROC(popDebugGroupProc_);
-  APILOG("glPopDebugGroup()\n");
-  GLCHECK_ERRORS();
+  if (debugStackSize_ < maxDebugStackSize_ && maxDebugStackSize_ > 0) {
+    --debugStackSize_;
+    GLCALL_PROC(popDebugGroupProc_);
+    APILOG("glPopDebugGroup()\n");
+    GLCHECK_ERRORS();
+  } else if (debugStackSize_ >= maxDebugStackSize_) {
+    --debugStackSize_;
+    IGL_LOG_ERROR_ONCE("Debug group stack size was exceeded, ignoring pop\n");
+  } else if (maxDebugStackSize_ == 0) {
+    IGL_LOG_ERROR_ONCE("Debug group stack is empty, can't pop\n");
+  }
 }
 
 void IContext::readPixels(GLint x,
@@ -3376,6 +3491,32 @@ Result IContext::getLastError() const {
 GLenum IContext::checkForErrors(IGL_MAYBE_UNUSED const char* callerName,
                                 IGL_MAYBE_UNUSED size_t lineNum) const {
   lastError_ = getError();
+#if IGL_DEBUG && !defined(IGL_API_LOG)
+  static bool gettingMessageLog = false; // Used to avoid recursive entry
+  if (lastError_ != GL_NO_ERROR && !gettingMessageLog &&
+      deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessageCallback)) {
+    GLint numMessages;
+    getIntegerv(GL_DEBUG_LOGGED_MESSAGES, &numMessages);
+    for (GLint i = 0; i < numMessages; ++i) {
+      GLint messageLength;
+      getIntegerv(GL_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH, &messageLength);
+      std::vector<GLchar> messageBuffer(messageLength);
+      GLenum source, type, severity;
+      GLuint id;
+      GLsizei length;
+      gettingMessageLog = true;
+      IGL_SCOPE_EXIT {
+        gettingMessageLog = false;
+      };
+      GLuint count = getDebugMessageLog(
+          1, messageLength, &source, &type, &id, &severity, &length, messageBuffer.data());
+
+      if (IGL_VERIFY(count == 1)) {
+        logDebugMessage(source, type, id, severity, length, messageBuffer.data());
+      }
+    }
+  }
+#endif //  IGL_DEBUG && !defined(IGL_API_LOG)
 
   GL_ASSERT_ERROR(lastError_ == GL_NO_ERROR, callerName, lineNum, lastError_);
 
@@ -3496,12 +3637,14 @@ void IContext::initialize(Result* result) {
     enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
   }
 
-#if defined(IGL_API_LOG)
+#if IGL_DEBUG || defined(IGL_API_LOG)
   if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessageCallback)) {
     enable(GL_DEBUG_OUTPUT);
+#if defined(IGL_API_LOG)
     debugMessageCallback(logOpenGlDebugMessage, nullptr);
+#endif // defined(IGL_API_LOG)
   }
-#endif
+#endif // IGL_DEBUG || defined(IGL_API_LOG)
 }
 
 const DeviceFeatureSet& IContext::deviceFeatures() const {

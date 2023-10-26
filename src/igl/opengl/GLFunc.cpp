@@ -163,12 +163,14 @@ IGL_EXTERN_BEGIN
 #if defined(GL_VERSION_4_3) || defined(GL_ES_VERSION_3_2)
 #define CAN_CALL_glDebugMessageCallback CAN_CALL
 #define CAN_CALL_glDebugMessageInsert CAN_CALL
+#define CAN_CALL_glGetDebugMessageLog CAN_CALL
 #define CAN_CALL_glObjectLabel CAN_CALL
 #define CAN_CALL_glPopDebugGroup CAN_CALL
 #define CAN_CALL_glPushDebugGroup CAN_CALL
 #else
 #define CAN_CALL_glDebugMessageCallback 0
 #define CAN_CALL_glDebugMessageInsert 0
+#define CAN_CALL_glGetDebugMessageLog 0
 #define CAN_CALL_glObjectLabel 0
 #define CAN_CALL_glPopDebugGroup 0
 #define CAN_CALL_glPushDebugGroup 0
@@ -260,6 +262,28 @@ void iglCompressedTexSubImage3D(GLenum target,
 
 void iglDrawBuffers(GLsizei n, const GLenum* bufs) {
   GLEXTENSION_METHOD_BODY(CAN_CALL_glDrawBuffers, glDrawBuffers, PFNIGLDRAWBUFFERSPROC, n, bufs);
+}
+
+GLuint iglGetDebugMessageLog(GLuint count,
+                             GLsizei bufSize,
+                             GLenum* sources,
+                             GLenum* types,
+                             GLuint* ids,
+                             GLenum* severities,
+                             GLsizei* lengths,
+                             GLchar* messageLog) {
+  GLEXTENSION_METHOD_BODY_WITH_RETURN(CAN_CALL_glGetDebugMessageLog,
+                                      glGetDebugMessageLog,
+                                      PFNIGLGETDEBUGMESSAGELOGPROC,
+                                      0,
+                                      count,
+                                      bufSize,
+                                      sources,
+                                      types,
+                                      ids,
+                                      severities,
+                                      lengths,
+                                      messageLog);
 }
 
 const GLubyte* iglGetStringi(GLenum name, GLint index) {
@@ -1524,12 +1548,14 @@ void iglRenderbufferStorageMultisampleIMG(GLenum target,
 #if defined(GL_KHR_debug)
 #define CAN_CALL_glDebugMessageCallbackKHR CAN_CALL
 #define CAN_CALL_glDebugMessageInsertKHR CAN_CALL
+#define CAN_CALL_glGetDebugMessageLogKHR CAN_CALL
 #define CAN_CALL_glObjectLabelKHR CAN_CALL
 #define CAN_CALL_glPopDebugGroupKHR CAN_CALL
 #define CAN_CALL_glPushDebugGroupKHR CAN_CALL
 #else
 #define CAN_CALL_glDebugMessageCallbackKHR 0
 #define CAN_CALL_glDebugMessageInsertKHR 0
+#define CAN_CALL_glGetDebugMessageLogKHR 0
 #define CAN_CALL_glObjectLabelKHR 0
 #define CAN_CALL_glPopDebugGroupKHR 0
 #define CAN_CALL_glPushDebugGroupKHR 0
@@ -1538,12 +1564,14 @@ void iglRenderbufferStorageMultisampleIMG(GLenum target,
 #if IGL_OPENGL
 #define DebugMessageCallbackKHR glDebugMessageCallback
 #define DebugMessageInsertKHR glDebugMessageInsert
+#define GetDebugMessageLogKHR glGetDebugMessageLog
 #define ObjectLabelKHR glObjectLabel
 #define PopDebugGroupKHR glPopDebugGroup
 #define PushDebugGroupKHR glPushDebugGroup
 #else
 #define DebugMessageCallbackKHR glDebugMessageCallbackKHR
 #define DebugMessageInsertKHR glDebugMessageInsertKHR
+#define GetDebugMessageLogKHR glGetDebugMessageLogKHR
 #define ObjectLabelKHR glObjectLabelKHR
 #define PopDebugGroupKHR glPopDebugGroupKHR
 #define PushDebugGroupKHR glPushDebugGroupKHR
@@ -1572,6 +1600,28 @@ void iglDebugMessageInsertKHR(GLenum source,
                           severity,
                           length,
                           buf);
+}
+
+GLuint iglGetDebugMessageLogKHR(GLuint count,
+                                GLsizei bufSize,
+                                GLenum* sources,
+                                GLenum* types,
+                                GLuint* ids,
+                                GLenum* severities,
+                                GLsizei* lengths,
+                                GLchar* messageLog) {
+  GLEXTENSION_METHOD_BODY_WITH_RETURN(CAN_CALL_glGetDebugMessageLogKHR,
+                                      GetDebugMessageLogKHR,
+                                      PFNIGLGETDEBUGMESSAGELOGPROC,
+                                      0,
+                                      count,
+                                      bufSize,
+                                      sources,
+                                      types,
+                                      ids,
+                                      severities,
+                                      lengths,
+                                      messageLog);
 }
 
 void iglObjectLabelKHR(GLenum identifier, GLuint name, GLsizei length, const char* label) {
