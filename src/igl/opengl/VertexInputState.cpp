@@ -145,8 +145,20 @@ static void toOGLAttribute(const VertexAttribute& attrib,
     normalized = GL_FALSE;
     break;
 
+  case VertexAttributeFormat::Byte1Norm:
+    numComponents = 1;
+    componentType = GL_BYTE;
+    normalized = GL_TRUE;
+    break;
+
   case VertexAttributeFormat::Byte2Norm:
     numComponents = 2;
+    componentType = GL_BYTE;
+    normalized = GL_TRUE;
+    break;
+
+  case VertexAttributeFormat::Byte3Norm:
+    numComponents = 3;
     componentType = GL_BYTE;
     normalized = GL_TRUE;
     break;
