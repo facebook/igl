@@ -72,6 +72,7 @@ size_t VertexInputStateDesc::sizeForVertexAttributeFormat(VertexAttributeFormat 
     return sizeof(int16_t[4]);
 
   case VertexAttributeFormat::UShort1:
+  case VertexAttributeFormat::UShort1Norm:
     return sizeof(uint16_t);
 
   case VertexAttributeFormat::UShort2:
@@ -79,6 +80,7 @@ size_t VertexInputStateDesc::sizeForVertexAttributeFormat(VertexAttributeFormat 
     return sizeof(uint16_t[2]);
 
   case VertexAttributeFormat::UShort3:
+  case VertexAttributeFormat::UShort3Norm:
     return sizeof(uint16_t[3]);
 
   case VertexAttributeFormat::UShort4:

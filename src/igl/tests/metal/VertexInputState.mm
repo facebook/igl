@@ -367,8 +367,14 @@ TEST(VertexInputStateMTLStaticTest, testConvertAttributeFormat) {
             MTLVertexFormatShort4Normalized);
 
   ASSERT_EQ(
+      igl::metal::VertexInputState::convertAttributeFormat(VertexAttributeFormat::UShort1Norm),
+      MTLVertexFormatUShortNormalized);
+  ASSERT_EQ(
       igl::metal::VertexInputState::convertAttributeFormat(VertexAttributeFormat::UShort2Norm),
       MTLVertexFormatUShort2Normalized);
+  ASSERT_EQ(
+      igl::metal::VertexInputState::convertAttributeFormat(VertexAttributeFormat::UShort3Norm),
+      MTLVertexFormatUShort3Normalized);
   ASSERT_EQ(
       igl::metal::VertexInputState::convertAttributeFormat(VertexAttributeFormat::UShort4Norm),
       MTLVertexFormatUShort4Normalized);
