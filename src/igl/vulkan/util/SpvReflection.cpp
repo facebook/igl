@@ -24,7 +24,6 @@ constexpr uint32_t kSpvOpCodeMask = 0xFFFF;
 constexpr size_t kOpDecorateTargetId = 1;
 constexpr size_t kOpDecorateDecoration = 2;
 constexpr size_t kOpDecorateOperandIds = 3;
-IGL_MAYBE_UNUSED constexpr size_t kOpDecorateMaxUsedIdx = kOpDecorateOperandIds;
 
 constexpr size_t kOpVariableTypeId = 1;
 constexpr size_t kOpVariableId = 2;
@@ -131,7 +130,7 @@ SpvModuleInfo getReflectionData(const void* spirv, size_t numBytes) {
 
     switch (opCode) {
     case OpCode::OpDecorate: {
-      IGL_ASSERT_MSG((pos + kOpDecorateMaxUsedIdx) < size, "OpDecorate out of bounds");
+      IGL_ASSERT_MSG((pos + kOpDecorateDecoration) < size, "OpDecorate out of bounds");
 
       uint32_t decoration = words[pos + kOpDecorateDecoration];
       uint32_t targetId = words[pos + kOpDecorateTargetId];
@@ -141,6 +140,8 @@ SpvModuleInfo getReflectionData(const void* spirv, size_t numBytes) {
         break;
       }
       case Decoration::Binding: {
+        IGL_ASSERT_MSG((pos + kOpDecorateOperandIds) < size, "OpDecorate out of bounds");
+
         uint32_t bindingLocation = words[pos + kOpDecorateOperandIds];
         bindingLocations.insert({targetId, bindingLocation});
         break;
