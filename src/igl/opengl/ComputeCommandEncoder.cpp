@@ -62,7 +62,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
 
 void ComputeCommandEncoder::pushDebugGroupLabel(const char* label,
                                                 const igl::Color& /*color*/) const {
-  IGL_ASSERT(label != nullptr);
+  IGL_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
     std::string_view labelSV(label);
     getContext().pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, labelSV.length(), labelSV.data());
@@ -74,7 +74,7 @@ void ComputeCommandEncoder::pushDebugGroupLabel(const char* label,
 
 void ComputeCommandEncoder::insertDebugEventLabel(const char* label,
                                                   const igl::Color& /*color*/) const {
-  IGL_ASSERT(label != nullptr);
+  IGL_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
     std::string_view labelSV(label);
     getContext().debugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,

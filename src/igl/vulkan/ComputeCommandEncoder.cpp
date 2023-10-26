@@ -81,13 +81,13 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
 }
 
 void ComputeCommandEncoder::pushDebugGroupLabel(const char* label, const igl::Color& color) const {
-  IGL_ASSERT(label != nullptr);
+  IGL_ASSERT(label != nullptr && *label);
   ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
 void ComputeCommandEncoder::insertDebugEventLabel(const char* label,
                                                   const igl::Color& color) const {
-  IGL_ASSERT(label != nullptr);
+  IGL_ASSERT(label != nullptr && *label);
   ivkCmdInsertDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 

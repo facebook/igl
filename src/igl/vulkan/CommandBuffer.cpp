@@ -133,7 +133,7 @@ void CommandBuffer::present(std::shared_ptr<ITexture> surface) const {
 }
 
 void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& color) const {
-  IGL_ASSERT(label != nullptr);
+  IGL_ASSERT(label != nullptr && *label);
   ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, wrapper_.cmdBuf_, label, color.toFloatPtr());
 }
 

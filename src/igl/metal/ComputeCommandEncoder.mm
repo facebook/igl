@@ -33,14 +33,14 @@ void ComputeCommandEncoder::endEncoding() {
 void ComputeCommandEncoder::pushDebugGroupLabel(const char* label,
                                                 const igl::Color& /*color*/) const {
   IGL_ASSERT(encoder_);
-  IGL_ASSERT(label != nullptr);
+  IGL_ASSERT(label != nullptr && *label);
   [encoder_ pushDebugGroup:[NSString stringWithUTF8String:label] ?: @""];
 }
 
 void ComputeCommandEncoder::insertDebugEventLabel(const char* label,
                                                   const igl::Color& /*color*/) const {
   IGL_ASSERT(encoder_);
-  IGL_ASSERT(label != nullptr);
+  IGL_ASSERT(label != nullptr && *label);
   [encoder_ insertDebugSignpost:[NSString stringWithUTF8String:label] ?: @""];
 }
 
