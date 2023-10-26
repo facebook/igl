@@ -68,7 +68,8 @@ void OpenGLTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
     auto& glTexture = static_cast<igl::opengl::Texture&>(*texture_);
     auto& context = glTexture.getContext();
 
-    auto oglFrameBuffer = static_cast<igl::opengl::Framebuffer*>(frameBuffer_.get());
+    auto oglFrameBuffer = static_cast<igl::opengl::Framebuffer*>(&(*frameBuffer_));
+    oglFrameBuffer->bindBuffer();
 
     oglFrameBuffer->bindBufferForRead();
     if (!textureAttached_) {
