@@ -93,9 +93,9 @@
   renderPass.colorAttachments[0].clearColor = {1.0, 1.0, 1.0, 1.0};
 
   auto cmds = commandBuffer->createRenderCommandEncoder(renderPass, _framebuffer);
-  IGL_DEBUG_BUFFER_LABEL_START(*commandBuffer, "draw renderable");
+  IGL_DEBUG_BUFFER_LABEL_START(commandBuffer, "draw renderable");
   _renderable->submit(*cmds);
-  IGL_DEBUG_BUFFER_LABEL_END(*commandBuffer);
+  IGL_DEBUG_BUFFER_LABEL_END(commandBuffer);
   cmds->endEncoding();
 
   _commandQueue->submit(*commandBuffer); // Guarantees ordering between command buffers
