@@ -78,8 +78,12 @@ TEST_F(VertexInputStateTest, VertexAttributeSizes) {
             VertexInputStateDesc::sizeForVertexAttributeFormat(VertexAttributeFormat::UByte3Norm));
   ASSERT_EQ(4,
             VertexInputStateDesc::sizeForVertexAttributeFormat(VertexAttributeFormat::UByte4Norm));
+  ASSERT_EQ(2,
+            VertexInputStateDesc::sizeForVertexAttributeFormat(VertexAttributeFormat::Short1Norm));
   ASSERT_EQ(4,
             VertexInputStateDesc::sizeForVertexAttributeFormat(VertexAttributeFormat::Short2Norm));
+  ASSERT_EQ(6,
+            VertexInputStateDesc::sizeForVertexAttributeFormat(VertexAttributeFormat::Short3Norm));
   ASSERT_EQ(8,
             VertexInputStateDesc::sizeForVertexAttributeFormat(VertexAttributeFormat::Short4Norm));
   ASSERT_EQ(4,

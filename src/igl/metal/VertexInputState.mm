@@ -67,8 +67,12 @@ MTLVertexFormat VertexInputState::convertAttributeFormat(VertexAttributeFormat v
   case VertexAttributeFormat::UByte4Norm:
     return MTLVertexFormatUChar4Normalized;
 
+  case VertexAttributeFormat::Short1Norm:
+    return MTLVertexFormatShortNormalized;
   case VertexAttributeFormat::Short2Norm:
     return MTLVertexFormatShort2Normalized;
+  case VertexAttributeFormat::Short3Norm:
+    return MTLVertexFormatShort3Normalized;
   case VertexAttributeFormat::Short4Norm:
     return MTLVertexFormatShort4Normalized;
 

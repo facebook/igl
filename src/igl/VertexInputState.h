@@ -53,7 +53,9 @@ enum class VertexAttributeFormat {
   UByte3Norm,
   UByte4Norm,
 
+  Short1Norm,
   Short2Norm,
+  Short3Norm,
   Short4Norm,
 
   UShort2Norm,

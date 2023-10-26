@@ -193,8 +193,20 @@ static void toOGLAttribute(const VertexAttribute& attrib,
     normalized = GL_TRUE;
     break;
 
+  case VertexAttributeFormat::Short1Norm:
+    numComponents = 1;
+    componentType = GL_SHORT;
+    normalized = GL_TRUE;
+    break;
+
   case VertexAttributeFormat::Short2Norm:
     numComponents = 2;
+    componentType = GL_SHORT;
+    normalized = GL_TRUE;
+    break;
+
+  case VertexAttributeFormat::Short3Norm:
+    numComponents = 3;
     componentType = GL_SHORT;
     normalized = GL_TRUE;
     break;
