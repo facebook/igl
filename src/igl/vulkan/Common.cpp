@@ -412,17 +412,19 @@ void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture) {
   const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*texture);
   const vulkan::VulkanImage& img = tex.getVulkanTexture().getVulkanImage();
 
+  const bool isColor = (img.getImageAspectFlags() & VK_IMAGE_ASPECT_COLOR_BIT) > 0;
+
   if (img.usageFlags_ & VK_IMAGE_USAGE_SAMPLED_BIT) {
-    // transition to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    // transition sampled images to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     img.transitionLayout(
         cmdBuf,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        isColor ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+                : VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for all subsequent fragment/compute
-                                                  // shaders
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for subsequent fragment/compute shaders
         VkImageSubresourceRange{
-            VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+            img.getImageAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
   }
 }
 
