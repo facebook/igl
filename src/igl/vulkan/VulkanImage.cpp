@@ -652,6 +652,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
 
   switch (srcStageMask) {
   case VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT:
+  case VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT:
   case VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT:
   case VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT:
   case VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT:
@@ -692,6 +693,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
   switch (dstStageMask) {
   case VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT:
   case VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT:
+  case VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT:
   case VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT:
   case VK_PIPELINE_STAGE_TRANSFER_BIT:
   case VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT:
@@ -769,7 +771,7 @@ VkImageAspectFlags VulkanImage::getImageAspectFlags() const {
 void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
   IGL_PROFILER_FUNCTION();
 
-  // Check if device supports downscaling for color or depth/stancil buffer based on image format
+  // Check if device supports downscaling for color or depth/stencil buffer based on image format
   {
     const uint32_t formatFeatureMask =
         (VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT);
