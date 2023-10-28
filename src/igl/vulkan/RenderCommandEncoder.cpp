@@ -331,6 +331,7 @@ void RenderCommandEncoder::endEncoding() {
   // VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL (check VulkanRenderPassBuilder.cpp)
   overrideImageLayout(desc.depthAttachment.texture.get(),
                       VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+  transitionToShaderReadOnly(cmdBuffer_, desc.depthAttachment.texture.get());
 }
 
 void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const igl::Color& color) const {
