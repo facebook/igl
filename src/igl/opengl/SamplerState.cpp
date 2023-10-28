@@ -56,14 +56,14 @@ void SamplerState::bind(ITexture* t) {
   }
 
   const auto& deviceFeatures = getContext().deviceFeatures();
-
+  const bool isDepthOrDepthStencil = texture->getProperties().isDepthOrDepthStencil();
   // From OpenGL ES 3.1 spec
   // The effective internal format specified for the texture arrays is a sized internal depth or
   // depth and stencil format (see table 8.14), the value of TEXTURE_COMPARE_MODE is NONE , and
   // either the magnification filter is not NEAREST or the minification filter is neither
   // NEAREST nor NEAREST_MIPMAP_NEAREST.
-  if (!depthCompareEnabled_ && texture->getProperties().isDepthOrStencil() &&
-      minMipFilter_ != GL_NEAREST && minMipFilter_ != GL_NEAREST_MIPMAP_NEAREST) {
+  if (!depthCompareEnabled_ && isDepthOrDepthStencil && minMipFilter_ != GL_NEAREST &&
+      minMipFilter_ != GL_NEAREST_MIPMAP_NEAREST) {
     IGL_LOG_INFO_ONCE(
         "OpenGL requires a GL_NEAREST or NEAREST_MIPMAP_NEAREST min filter for depth/stencil "
         "samplers when DepthCompareEnabled is false, falling back to supported mode instead of "
@@ -77,8 +77,7 @@ void SamplerState::bind(ITexture* t) {
   } else {
     getContext().texParameteri(target, GL_TEXTURE_MIN_FILTER, minMipFilter_);
   }
-  if (!depthCompareEnabled_ && texture->getProperties().isDepthOrStencil() &&
-      magFilter_ != GL_NEAREST) {
+  if (!depthCompareEnabled_ && isDepthOrDepthStencil && magFilter_ != GL_NEAREST) {
     IGL_LOG_INFO_ONCE(
         "OpenGL requires a GL_NEAREST mag filter for depth/stencil samplers when "
         "DepthCompareEnabled is false, falling back to GL_NEAREST instead of requested format.");
@@ -94,7 +93,8 @@ void SamplerState::bind(ITexture* t) {
     getContext().texParameteri(target, GL_TEXTURE_MAX_LOD, mipLodMax_);
   }
 
-  if (deviceFeatures.hasInternalFeature(InternalFeatures::TextureCompare)) {
+  if (isDepthOrDepthStencil &&
+      deviceFeatures.hasInternalFeature(InternalFeatures::TextureCompare)) {
     getContext().texParameteri(target,
                                GL_TEXTURE_COMPARE_MODE,
                                depthCompareEnabled_ ? GL_COMPARE_REF_TO_TEXTURE : GL_NONE);

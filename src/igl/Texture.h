@@ -252,31 +252,37 @@ struct TextureFormatProperties {
     return format != TextureFormat::Invalid;
   }
   /**
-   * @brief true compressed texture formats.
+   * @brief true for compressed texture formats.
    */
   [[nodiscard]] bool isCompressed() const noexcept {
     return (flags & Flags::Compressed) != 0;
   }
   /**
-   * @brief true sRGB texture formats.
+   * @brief true for sRGB texture formats.
    */
   [[nodiscard]] bool isSRGB() const noexcept {
     return (flags & Flags::sRGB) != 0;
   }
   /**
-   * @brief true depth-only texture formats (e.g., TextureFormat::Z_UNorm24).
+   * @brief true for depth-only texture formats (e.g., TextureFormat::Z_UNorm24).
    */
   [[nodiscard]] bool isDepthOnly() const noexcept {
     return (flags & Flags::Depth) != 0 && (flags & Flags::Stencil) == 0;
   }
   /**
-   * @brief true stencil-only texture formats (e.g., TextureFormat::S_UInt8).
+   * @brief true for depth-only and depth-stencil texture formats.
+   */
+  [[nodiscard]] bool isDepthOrDepthStencil() const noexcept {
+    return (flags & Flags::Depth) != 0;
+  }
+  /**
+   * @brief true for stencil-only texture formats (e.g., TextureFormat::S_UInt8).
    */
   [[nodiscard]] bool isStencilOnly() const noexcept {
     return (flags & Flags::Depth) == 0 && (flags & Flags::Stencil) != 0;
   }
   /**
-   * @brief true depth-only, stencil-only and depth-stencil texture formats.
+   * @brief true for depth-only, stencil-only and depth-stencil texture formats.
    */
   [[nodiscard]] bool isDepthOrStencil() const noexcept {
     return (flags & Flags::Depth) != 0 || (flags & Flags::Stencil) != 0;
