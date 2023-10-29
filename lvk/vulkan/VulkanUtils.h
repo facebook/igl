@@ -22,6 +22,7 @@
 #define LVK_VULKAN_USE_VMA 1
 
 #include <cassert>
+#include <cstdio>
 #include <volk.h>
 #include <vk_mem_alloc.h>
 #include <lvk/LVK.h>
