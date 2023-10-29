@@ -112,7 +112,7 @@
     "source": {
         "type": "git",
         "url": "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git",
-        "revision": "v3.0.1"
+        "revision": "2f382df218d7e8516dee3b3caccb819a62b571a2"
     }
 },
 {
