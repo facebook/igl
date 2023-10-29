@@ -120,7 +120,7 @@
     "source": {
         "type": "git",
         "url": "https://github.com/wolfpld/tracy.git",
-        "revision": "v0.9.1"
+        "revision": "v0.10"
     }
 },
 {
