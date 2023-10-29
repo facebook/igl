@@ -1025,7 +1025,7 @@ void lvk::VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,
                                         VkPipelineStageFlags srcStageMask,
                                         VkPipelineStageFlags dstStageMask,
                                         const VkImageSubresourceRange& subresourceRange) const {
-  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_TRANSITION);
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_BARRIER);
 
   VkAccessFlags srcAccessMask = 0;
   VkAccessFlags dstAccessMask = 0;
@@ -2084,6 +2084,8 @@ void lvk::CommandBuffer::cmdBindComputePipeline(lvk::ComputePipelineHandle handl
 }
 
 void lvk::CommandBuffer::cmdDispatchThreadGroups(const Dimensions& threadgroupCount, const Dependencies& deps) {
+  LVK_PROFILER_FUNCTION();
+
   LVK_ASSERT(!isRendering_);
 
   for (uint32_t i = 0; i != Dependencies::LVK_MAX_SUBMIT_DEPENDENCIES && deps.textures[i]; i++) {
@@ -2141,7 +2143,7 @@ void lvk::CommandBuffer::cmdPopDebugGroupLabel() const {
 }
 
 void lvk::CommandBuffer::useComputeTexture(TextureHandle handle) {
-  LVK_PROFILER_FUNCTION();
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_BARRIER);
 
   LVK_ASSERT(!handle.empty());
   lvk::VulkanTexture* tex = ctx_->texturesPool_.get(handle);
@@ -2164,6 +2166,8 @@ void lvk::CommandBuffer::useComputeTexture(TextureHandle handle) {
 }
 
 void lvk::CommandBuffer::bufferBarrier(BufferHandle handle, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage) {
+  LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_BARRIER);
+
   lvk::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
 
   const VkBufferMemoryBarrier barrier = {
