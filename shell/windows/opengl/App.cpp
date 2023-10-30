@@ -231,6 +231,11 @@ static void RunApplicationMode(uint32_t majorVersion, uint32_t minorVersion) {
     }
   }
 
+  glShellPlatform_ = nullptr;
+  glDevice = nullptr;
+  context = nullptr;
+  glWindow = nullptr;
+
   glfwTerminate();
 }
 
