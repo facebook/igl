@@ -16,8 +16,16 @@
 namespace igl {
 namespace vulkan {
 
+/**
+ * @brief A wrapper around a VkDevice.
+ */
 class VulkanDevice final {
  public:
+  /** @brief Constructs a new VulkanDevice object from an existing VkDevice, which is automatically
+   * destroyed when the VulkanDevice object is destroyed. The VulkanFunctionTable object must have
+   * been initialized before being passed into the constructor. The `debugName` parameter can be
+   * used to give the VkDevice a user-friendly name for debugging in tools such as RenderDoc, etc.
+   */
   explicit VulkanDevice(const VulkanFunctionTable& vf,
                         VkDevice device,
                         const char* debugName = nullptr);
