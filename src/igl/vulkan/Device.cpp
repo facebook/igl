@@ -585,13 +585,13 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
     result = 4;
     return true;
   case DeviceFeatureLimits::ShaderStorageBufferOffsetAlignment:
-    result = 8;
+    result = limits.minStorageBufferOffsetAlignment;
     return true;
   case DeviceFeatureLimits::BufferAlignment:
-    result = 1;
+    result = limits.minUniformBufferOffsetAlignment;
     return true;
   case DeviceFeatureLimits::BufferNoCopyAlignment:
-    result = 0;
+    result = limits.minUniformBufferOffsetAlignment;
     return true;
   case DeviceFeatureLimits::MaxBindBytesBytes:
     result = 0;
