@@ -88,7 +88,10 @@ void SamplerState::bind(ITexture* t) {
 
   // See https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/glTexParameter.xml
   // for OpenGL version information.
-  if (deviceFeatures.hasFeature(DeviceFeatures::SamplerMinMaxLod)) {
+  // Ensure we have mipmaps before setting this state. This should also catch special
+  // texture types that may not support mipmaps, like ExternalOES textures on Android
+  if (texture->getNumMipLevels() > 1 &&
+      deviceFeatures.hasFeature(DeviceFeatures::SamplerMinMaxLod)) {
     getContext().texParameteri(target, GL_TEXTURE_MIN_LOD, mipLodMin_);
     getContext().texParameteri(target, GL_TEXTURE_MAX_LOD, mipLodMax_);
   }
