@@ -18,8 +18,10 @@ namespace opengl {
 // ****  ArrayBuffer
 // ********************************
 // the base buffer object
-ArrayBuffer::ArrayBuffer(IContext& context, BufferDesc::BufferAPIHint requestedApiHints) :
-  Buffer(context, requestedApiHints) {
+ArrayBuffer::ArrayBuffer(IContext& context,
+                         BufferDesc::BufferAPIHint requestedApiHints,
+                         BufferDesc::BufferType bufferType) :
+  Buffer(context, requestedApiHints, bufferType) {
   iD_ = 0;
   size_ = 0;
   isDynamic_ = false;

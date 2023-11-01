@@ -21,7 +21,8 @@ class Buffer : public igl::IBuffer {
   Buffer(id<MTLBuffer> value,
          MTLResourceOptions options,
          BufferDesc::BufferAPIHint requestedApiHints,
-         BufferDesc::BufferAPIHint acceptedApiHints);
+         BufferDesc::BufferAPIHint acceptedApiHints,
+         BufferDesc::BufferType bufferType);
 
   Result upload(const void* data, const BufferRange& range) override;
 
@@ -35,6 +36,10 @@ class Buffer : public igl::IBuffer {
   size_t getSizeInBytes() const override;
   [[nodiscard]] uint64_t gpuAddress(size_t offset) const override;
 
+  [[nodiscard]] BufferDesc::BufferType getBufferType() const override {
+    return bufferType_;
+  }
+
   IGL_INLINE virtual id<MTLBuffer> get() {
     return mtlBuffers_[0];
   }
@@ -44,6 +49,7 @@ class Buffer : public igl::IBuffer {
   std::vector<id<MTLBuffer>> mtlBuffers_;
   BufferDesc::BufferAPIHint requestedApiHints_;
   BufferDesc::BufferAPIHint acceptedApiHints_;
+  BufferDesc::BufferType bufferType_;
 };
 
 // Manages a ring of buffers.
@@ -54,7 +60,8 @@ class RingBuffer final : public Buffer {
   RingBuffer(std::vector<id<MTLBuffer>> ringBuffers,
              MTLResourceOptions options,
              std::shared_ptr<const BufferSynchronizationManager> syncManager,
-             BufferDesc::BufferAPIHint requestedApiHints);
+             BufferDesc::BufferAPIHint requestedApiHints,
+             BufferDesc::BufferType bufferType);
 
   Result upload(const void* data, const BufferRange& range) override;
 

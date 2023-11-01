@@ -38,12 +38,12 @@ std::unique_ptr<Buffer> allocateBuffer(BufferDesc::BufferType bufferType,
   if ((bufferType & BufferDesc::BufferTypeBits::Index) ||
       (bufferType & BufferDesc::BufferTypeBits::Vertex) ||
       (bufferType & BufferDesc::BufferTypeBits::Storage)) {
-    resource = std::make_unique<ArrayBuffer>(context, requestedApiHints);
+    resource = std::make_unique<ArrayBuffer>(context, requestedApiHints, bufferType);
   } else if (bufferType & BufferDesc::BufferTypeBits::Uniform) {
     if (requestedApiHints & BufferDesc::BufferAPIHintBits::UniformBlock) {
-      resource = std::make_unique<UniformBlockBuffer>(context, requestedApiHints);
+      resource = std::make_unique<UniformBlockBuffer>(context, requestedApiHints, bufferType);
     } else {
-      resource = std::make_unique<UniformBuffer>(context, requestedApiHints);
+      resource = std::make_unique<UniformBuffer>(context, requestedApiHints, bufferType);
     }
 
   } else {

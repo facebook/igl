@@ -79,10 +79,10 @@ struct BufferDesc {
    */
   BufferAPIHint hint = 0;
   /**
-   * @brief GLES only. Target binding point for this IBuffer
+   * @brief A bit mask of BufferTypeBits. All usage types must be specified.
    * @See  igl::BufferType
    */
-  BufferType type; // GLES only
+  BufferType type = 0;
 
   /** @brief Identifier used for debugging */
   std::string debugName;
@@ -170,6 +170,13 @@ class IBuffer : public ITrackedResource<IBuffer> {
    * @return uint64_t
    */
   virtual uint64_t gpuAddress(size_t offset = 0) const = 0;
+
+  /**
+   * @brief Returns the underlying buffer type which is a mask of igl::BufferDesc::BufferTypeBits
+   *
+   * @return igl::BufferDesc::BufferType
+   */
+  virtual BufferDesc::BufferType getBufferType() const = 0;
 
  protected:
   IBuffer() = default;

@@ -30,6 +30,7 @@ class Buffer : public igl::IBuffer {
   [[nodiscard]] igl::ResourceStorage storage() const noexcept final;
   [[nodiscard]] size_t getSizeInBytes() const final;
   [[nodiscard]] uint64_t gpuAddress(size_t offset = 0) const final;
+  [[nodiscard]] igl::BufferDesc::BufferType getBufferType() const final;
 
  private:
   size_t size_;

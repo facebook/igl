@@ -96,10 +96,12 @@ namespace metal {
 Buffer::Buffer(id<MTLBuffer> value,
                MTLResourceOptions options,
                BufferDesc::BufferAPIHint requestedApiHints,
-               BufferDesc::BufferAPIHint acceptedApiHints) :
+               BufferDesc::BufferAPIHint acceptedApiHints,
+               BufferDesc::BufferType bufferType) :
   resourceOptions_(options),
   requestedApiHints_(requestedApiHints),
-  acceptedApiHints_(acceptedApiHints) {
+  acceptedApiHints_(acceptedApiHints),
+  bufferType_(bufferType) {
   mtlBuffers_.push_back(value);
 }
 
@@ -152,8 +154,9 @@ uint64_t Buffer::gpuAddress(size_t) const {
 RingBuffer::RingBuffer(std::vector<id<MTLBuffer>> ringBuffers,
                        MTLResourceOptions options,
                        std::shared_ptr<const BufferSynchronizationManager> syncManager,
-                       BufferDesc::BufferAPIHint requestedApiHints) :
-  Buffer(nil, options, requestedApiHints, BufferDesc::BufferAPIHintBits::Ring),
+                       BufferDesc::BufferAPIHint requestedApiHints,
+                       BufferDesc::BufferType bufferType) :
+  Buffer(nil, options, requestedApiHints, BufferDesc::BufferAPIHintBits::Ring, bufferType),
   syncManager_(std::move(syncManager)) {
   mtlBuffers_ = std::move(ringBuffers);
 }

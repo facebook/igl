@@ -20,7 +20,9 @@ class RenderPipelineState;
 
 class UniformBuffer final : public Buffer {
  public:
-  UniformBuffer(IContext& context, BufferDesc::BufferAPIHint requestedApiHints);
+  UniformBuffer(IContext& context,
+                BufferDesc::BufferAPIHint requestedApiHints,
+                BufferDesc::BufferType bufferType);
   ~UniformBuffer() override;
 
   Result upload(const void* data, const BufferRange& range) override;

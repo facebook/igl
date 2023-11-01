@@ -22,8 +22,10 @@ class Buffer : public WithContext, public IBuffer {
  public:
   enum class Type : uint8_t { Attribute, Uniform, UniformBlock };
 
-  Buffer(IContext& context, BufferDesc::BufferAPIHint requestedApiHints) :
-    WithContext(context), requestedApiHints_(requestedApiHints) {}
+  Buffer(IContext& context,
+         BufferDesc::BufferAPIHint requestedApiHints,
+         BufferDesc::BufferType bufferType) :
+    WithContext(context), requestedApiHints_(requestedApiHints), bufferType_(bufferType) {}
   uint64_t gpuAddress(size_t) const override {
     IGL_ASSERT_NOT_IMPLEMENTED();
     return 0;
@@ -35,13 +37,20 @@ class Buffer : public WithContext, public IBuffer {
     return requestedApiHints_;
   }
 
+  [[nodiscard]] BufferDesc::BufferType getBufferType() const override {
+    return bufferType_;
+  }
+
  private:
   BufferDesc::BufferAPIHint requestedApiHints_;
+  BufferDesc::BufferType bufferType_ = 0;
 };
 
 class ArrayBuffer : public Buffer {
  public:
-  ArrayBuffer(IContext& context, BufferDesc::BufferAPIHint requestedApiHints);
+  ArrayBuffer(IContext& context,
+              BufferDesc::BufferAPIHint requestedApiHints,
+              BufferDesc::BufferType bufferType);
   ~ArrayBuffer() override;
 
   Result upload(const void* data, const BufferRange& range) override;
@@ -98,8 +107,10 @@ class ArrayBuffer : public Buffer {
 
 class UniformBlockBuffer : public ArrayBuffer {
  public:
-  UniformBlockBuffer(IContext& context, BufferDesc::BufferAPIHint requestedApiHints) :
-    ArrayBuffer(context, requestedApiHints) {}
+  UniformBlockBuffer(IContext& context,
+                     BufferDesc::BufferAPIHint requestedApiHints,
+                     BufferDesc::BufferType bufferType) :
+    ArrayBuffer(context, requestedApiHints, bufferType) {}
 
   Type getType() const noexcept override {
     return Type::UniformBlock;

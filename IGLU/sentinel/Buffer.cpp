@@ -54,4 +54,9 @@ uint64_t Buffer::gpuAddress(size_t /*offset*/) const {
   return 0;
 }
 
+igl::BufferDesc::BufferType Buffer::getBufferType() const {
+  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
+  return 0;
+}
+
 } // namespace iglu::sentinel

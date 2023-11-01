@@ -27,8 +27,10 @@ enum class UniformBaseType { Invalid = 0, Boolean, Int, Float, FloatMatrix };
 // ****  Buffer
 // ********************************
 // the base buffer object
-UniformBuffer::UniformBuffer(IContext& context, BufferDesc::BufferAPIHint requestedApiHints) :
-  Buffer(context, requestedApiHints) {
+UniformBuffer::UniformBuffer(IContext& context,
+                             BufferDesc::BufferAPIHint requestedApiHints,
+                             BufferDesc::BufferType bufferType) :
+  Buffer(context, requestedApiHints, bufferType) {
   isDynamic_ = false;
 }
 

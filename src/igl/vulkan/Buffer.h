@@ -36,10 +36,11 @@ class Buffer final : public igl::IBuffer {
   size_t getSizeInBytes() const override;
   uint64_t gpuAddress(size_t offset) const override;
 
-  VkBuffer getVkBuffer() const;
-  BufferDesc::BufferType getBufferType() const {
+  BufferDesc::BufferType getBufferType() const override {
     return desc_.type;
   }
+
+  VkBuffer getVkBuffer() const;
 
  private:
   Result create(const BufferDesc& desc);
