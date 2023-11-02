@@ -67,6 +67,8 @@ Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)), platf
 
 std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc& desc,
                                                           Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   Result::setOk(outResult);
   auto resource = std::make_shared<CommandQueue>(*this, desc);
   return resource;
@@ -74,6 +76,8 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc
 
 std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
                                               Result* outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   auto buffer = std::make_unique<vulkan::Buffer>(*this);
 
   const auto result = buffer->create(desc);
@@ -96,12 +100,16 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
 std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
     const DepthStencilStateDesc& desc,
     Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   Result::setOk(outResult);
   return std::make_shared<vulkan::DepthStencilState>(desc);
 }
 
 std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc& desc,
                                                           Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   auto shaderStages = std::make_unique<ShaderStages>(desc);
   if (shaderStages == nullptr) {
     Result::setResult(
@@ -118,6 +126,8 @@ std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc
 
 std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
                                                           Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   auto samplerState = std::make_shared<vulkan::SamplerState>(*this);
 
   Result::setResult(outResult, samplerState->create(desc));
@@ -127,6 +137,8 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
 
 std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
                                                 Result* outResult) const noexcept {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   const auto sanitized = sanitize(desc);
 
   auto texture = std::make_shared<vulkan::Texture>(*this, desc.format);
@@ -140,6 +152,8 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 
 std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexInputStateDesc& desc,
                                                                   Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   // VertexInputState is compiled into the RenderPipelineState at a later stage. For now, we just
   // have to store the description.
   Result::setOk(outResult);
@@ -150,6 +164,8 @@ std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexIn
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
     Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   if (IGL_UNEXPECTED(desc.shaderStages == nullptr)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
     return nullptr;
@@ -169,6 +185,8 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 
 std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderPipelineDesc& desc,
                                                                    Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   if (IGL_UNEXPECTED(desc.shaderStages == nullptr)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
     return nullptr;
@@ -201,6 +219,8 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
 
 std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
                                                           Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   std::shared_ptr<VulkanShaderModule> vulkanShaderModule;
   Result result;
   if (desc.input.type == ShaderInputType::Binary) {
@@ -223,6 +243,8 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
                                                                size_t length,
                                                                const std::string& debugName,
                                                                Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   VkDevice device = ctx_->device_->getVkDevice();
 
 #if IGL_SHADER_DUMP && IGL_DEBUG
@@ -278,6 +300,8 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
                                                                const char* source,
                                                                const std::string& debugName,
                                                                Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   VkDevice device = ctx_->device_->getVkDevice();
   const VkShaderStageFlagBits vkStage = shaderStageToVkShaderStage(stage);
   IGL_ASSERT(vkStage != VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM);
@@ -377,6 +401,8 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
 
 std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,
                                                         Result* outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   auto resource = std::make_shared<Framebuffer>(*this, desc);
   Result::setOk(outResult);
   return resource;
@@ -392,6 +418,8 @@ size_t Device::getCurrentDrawCount() const {
 
 std::unique_ptr<igl::IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& desc,
                                                                  Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   if (IGL_UNEXPECTED(desc.moduleInfo.empty())) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     return nullptr;
@@ -427,6 +455,8 @@ std::unique_ptr<igl::IShaderLibrary> Device::createShaderLibrary(const ShaderLib
 }
 
 bool Device::hasFeature(DeviceFeatures feature) const {
+  IGL_PROFILER_FUNCTION();
+
   VkPhysicalDevice physicalDevice = ctx_->vkPhysicalDevice_;
   const VkPhysicalDeviceProperties& deviceProperties = ctx_->getVkPhysicalDeviceProperties();
 
@@ -527,6 +557,8 @@ bool Device::hasFeature(DeviceFeatures feature) const {
 }
 
 bool Device::hasRequirement(DeviceRequirement requirement) const {
+  IGL_PROFILER_FUNCTION();
+
   switch (requirement) {
   case DeviceRequirement::ExplicitBindingExtReq:
   case DeviceRequirement::StandardDerivativeExtReq:
@@ -542,6 +574,8 @@ bool Device::hasRequirement(DeviceRequirement requirement) const {
 }
 
 bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const {
+  IGL_PROFILER_FUNCTION();
+
   const VkPhysicalDeviceLimits& limits = ctx_->getVkPhysicalDeviceProperties().limits;
 
   switch (featureLimits) {
@@ -605,6 +639,8 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
 
 ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(
     TextureFormat format) const {
+  IGL_PROFILER_FUNCTION();
+
   const VkFormat vkFormat = igl::vulkan::textureFormatToVkFormat(format);
 
   if (vkFormat == VK_FORMAT_UNDEFINED) {

@@ -829,6 +829,8 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
     return;
   }
 
+  IGL_PROFILER_FUNCTION();
+
   pimpl_->currentMaxBindlessTextures_ = newMaxTextures;
   pimpl_->currentMaxBindlessSamplers_ = newMaxSamplers;
 
@@ -935,6 +937,8 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
 }
 
 void VulkanContext::updatePipelineLayouts() {
+  IGL_PROFILER_FUNCTION();
+
   VkDevice device = getVkDevice();
   const VkPhysicalDeviceLimits& limits = getVkPhysicalDeviceProperties().limits;
 
@@ -979,6 +983,8 @@ void VulkanContext::updatePipelineLayouts() {
 }
 
 igl::Result VulkanContext::initSwapchain(uint32_t width, uint32_t height) {
+  IGL_PROFILER_FUNCTION();
+
   if (!device_ || !immediate_) {
     IGL_LOG_ERROR("Call initContext() first");
     return Result(Result::Code::Unsupported, "Call initContext() first");
@@ -1025,6 +1031,8 @@ std::shared_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSiz
                                                           VkMemoryPropertyFlags memFlags,
                                                           igl::Result* outResult,
                                                           const char* debugName) const {
+  IGL_PROFILER_FUNCTION();
+
 #define ENSURE_BUFFER_SIZE(flag, maxSize)                                                      \
   if (usageFlags & flag) {                                                                     \
     if (!IGL_VERIFY(bufferSize <= maxSize)) {                                                  \
@@ -1059,6 +1067,8 @@ std::shared_ptr<VulkanImage> VulkanContext::createImage(VkImageType imageType,
                                                         VkSampleCountFlagBits samples,
                                                         igl::Result* outResult,
                                                         const char* debugName) const {
+  IGL_PROFILER_FUNCTION();
+
   if (!validateImageLimits(
           imageType, samples, extent, getVkPhysicalDeviceProperties().limits, outResult)) {
     return nullptr;
@@ -1257,6 +1267,8 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
 std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
     std::shared_ptr<VulkanImage> image,
     std::shared_ptr<VulkanImageView> imageView) const {
+  IGL_PROFILER_FUNCTION();
+
   auto texture = std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView));
   if (!IGL_VERIFY(texture)) {
     return nullptr;
@@ -1279,6 +1291,8 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
 std::shared_ptr<VulkanSampler> VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
                                                             igl::Result* outResult,
                                                             const char* debugName) const {
+  IGL_PROFILER_FUNCTION();
+
   auto sampler = std::make_shared<VulkanSampler>(*this, device_->getVkDevice(), ci, debugName);
   if (!IGL_VERIFY(sampler)) {
     Result::setResult(outResult, Result::Code::InvalidOperation);
@@ -1606,6 +1620,8 @@ void VulkanContext::processDeferredTasks() const {
 }
 
 void VulkanContext::waitDeferredTasks() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
+
   for (auto& task : deferredTasks_) {
     immediate_->wait(task.handle_);
     task.task_();

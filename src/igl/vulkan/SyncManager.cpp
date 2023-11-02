@@ -28,6 +28,8 @@ uint32_t SyncManager::maxResourceCount() const noexcept {
 }
 
 void SyncManager::acquireNext() noexcept {
+  IGL_PROFILER_FUNCTION();
+
   currentIndex_ = (currentIndex_ + 1) % maxResourceCount_;
 
   // Wait for the current buffer to become available
@@ -35,6 +37,8 @@ void SyncManager::acquireNext() noexcept {
 }
 
 void SyncManager::markSubmitted(SubmitHandle handle) noexcept {
+  IGL_PROFILER_FUNCTION();
+
   submitHandles_[currentIndex_] = handle;
 
   acquireNext();

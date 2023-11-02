@@ -138,6 +138,8 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
 }
 
 void ResourcesBinder::updateBindings() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_UPDATE);
+
   if (isDirtyTextures_) {
     ctx_.updateBindingsTextures(cmdBuffer_, bindPoint_, bindingsTextures_);
     isDirtyTextures_ = false;

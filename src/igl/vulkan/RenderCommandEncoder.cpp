@@ -129,6 +129,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                                       const Dependencies& dependencies,
                                       Result* outResult) {
   IGL_PROFILER_FUNCTION();
+
   framebuffer_ = framebuffer;
   dependencies_ = dependencies;
 
@@ -349,6 +350,8 @@ void RenderCommandEncoder::popDebugGroupLabel() const {
 }
 
 void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
+  IGL_PROFILER_FUNCTION();
+
   /**
     Using the negative viewport height Vulkan feature, we make the Vulkan "top-left" coordinate
   system to be "bottom-left" as in OpenGL. This way VK_FRONT_FACE_COUNTER_CLOCKWISE and
@@ -378,6 +381,8 @@ void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
 
 void RenderCommandEncoder::bindRenderPipelineState(
     const std::shared_ptr<IRenderPipelineState>& pipelineState) {
+  IGL_PROFILER_FUNCTION();
+
   if (!IGL_VERIFY(pipelineState != nullptr)) {
     return;
   }
@@ -697,30 +702,42 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
 }
 
 void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
+  IGL_PROFILER_FUNCTION();
+
   setStencilReferenceValues(value, value);
 }
 
 void RenderCommandEncoder::setStencilReferenceValues(uint32_t frontValue, uint32_t backValue) {
+  IGL_PROFILER_FUNCTION();
+
   ctx_.vf_.vkCmdSetStencilReference(cmdBuffer_, VK_STENCIL_FACE_FRONT_BIT, frontValue);
   ctx_.vf_.vkCmdSetStencilReference(cmdBuffer_, VK_STENCIL_FACE_BACK_BIT, backValue);
 }
 
 void RenderCommandEncoder::setBlendColor(Color color) {
+  IGL_PROFILER_FUNCTION();
+
   ctx_.vf_.vkCmdSetBlendConstants(cmdBuffer_, color.toFloatPtr());
 }
 
 void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float clamp) {
+  IGL_PROFILER_FUNCTION();
+
   dynamicState_.depthBiasEnable_ = true;
   ctx_.vf_.vkCmdSetDepthBias(cmdBuffer_, depthBias, clamp, slopeScale);
 }
 
 bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {
+  IGL_PROFILER_FUNCTION();
+
   const auto returnVal = drawCallCountEnabled_ > 0;
   drawCallCountEnabled_ = value;
   return returnVal;
 }
 
 void RenderCommandEncoder::ensureVertexBuffers() {
+  IGL_PROFILER_FUNCTION();
+
   const igl::vulkan::RenderPipelineState* rps =
       static_cast<igl::vulkan::RenderPipelineState*>(currentPipeline_.get());
 

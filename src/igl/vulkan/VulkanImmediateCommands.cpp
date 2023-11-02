@@ -127,6 +127,8 @@ void VulkanImmediateCommands::wait(const SubmitHandle handle) {
     return;
   }
 
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
+
   VK_ASSERT(vf_.vkWaitForFences(
       device_, 1, &buffers_[handle.bufferIndex_].fence_.vkFence_, VK_TRUE, UINT64_MAX));
 

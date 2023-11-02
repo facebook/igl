@@ -378,6 +378,8 @@ VkRenderPassBeginInfo Framebuffer::getRenderPassBeginInfo(VkRenderPass renderPas
                                                           uint32_t layer,
                                                           uint32_t numClearValues,
                                                           const VkClearValue* clearValues) const {
+  IGL_PROFILER_FUNCTION();
+
   VkRenderPassBeginInfo bi = {};
   bi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
   bi.pNext = nullptr;

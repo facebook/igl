@@ -142,6 +142,8 @@ void CommandBuffer::popDebugGroupLabel() const {
 }
 
 void CommandBuffer::waitUntilCompleted() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
+
   ctx_.immediate_->wait(lastSubmitHandle_);
 
   lastSubmitHandle_ = VulkanImmediateCommands::SubmitHandle();
