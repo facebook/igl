@@ -1439,6 +1439,8 @@ void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
 void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
                                            VkPipelineBindPoint bindPoint,
                                            const BindingsTextures& data) const {
+  IGL_PROFILER_FUNCTION();
+
   VkDescriptorSet dset = pimpl_->arenaCombinedImageSamplers_->getNextDescriptorSet(*immediate_);
 
   std::array<VkDescriptorImageInfo, IGL_TEXTURE_SAMPLERS_MAX> infoSampledImages{};
@@ -1470,7 +1472,9 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
   VkWriteDescriptorSet write = ivkGetWriteDescriptorSet_ImageInfo(
       dset, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numImages, infoSampledImages.data());
 
+  IGL_PROFILER_ZONE("vkUpdateDescriptorSets()", IGL_PROFILER_COLOR_UPDATE);
   vf_.vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
+  IGL_PROFILER_ZONE_END();
 
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - textures\n", cmdBuf, bindPoint);
@@ -1489,6 +1493,8 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
 void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
                                                  VkPipelineBindPoint bindPoint,
                                                  BindingsBuffers& data) const {
+  IGL_PROFILER_FUNCTION();
+
   VkDescriptorSet dsetBufUniform = pimpl_->arenaBuffersUniform_->getNextDescriptorSet(*immediate_);
 
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
@@ -1505,7 +1511,9 @@ void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
                                           IGL_UNIFORM_BLOCKS_BINDING_MAX,
                                           data.buffers);
 
+  IGL_PROFILER_ZONE("vkUpdateDescriptorSets()", IGL_PROFILER_COLOR_UPDATE);
   vf_.vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
+  IGL_PROFILER_ZONE_END();
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
@@ -1526,6 +1534,8 @@ void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
 void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
                                                  VkPipelineBindPoint bindPoint,
                                                  BindingsBuffers& data) const {
+  IGL_PROFILER_FUNCTION();
+
   VkDescriptorSet dsetBufStorage = pimpl_->arenaBuffersStorage_->getNextDescriptorSet(*immediate_);
 
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
@@ -1542,7 +1552,9 @@ void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
                                           IGL_UNIFORM_BLOCKS_BINDING_MAX,
                                           data.buffers);
 
+  IGL_PROFILER_ZONE("vkUpdateDescriptorSets()", IGL_PROFILER_COLOR_UPDATE);
   vf_.vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
+  IGL_PROFILER_ZONE_END();
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
@@ -1585,6 +1597,8 @@ void* VulkanContext::getVmaAllocator() const {
 }
 
 void VulkanContext::processDeferredTasks() const {
+  IGL_PROFILER_FUNCTION();
+
   while (!deferredTasks_.empty() && immediate_->isRecycled(deferredTasks_.front().handle_)) {
     deferredTasks_.front().task_();
     deferredTasks_.pop_front();
