@@ -137,6 +137,9 @@ GLFWwindow* initWindow() {
 
 std::shared_ptr<igl::shell::PlatformWin> createPlatform(GLFWwindow* window) {
   igl::vulkan::VulkanContextConfig cfg = igl::vulkan::VulkanContextConfig();
+#if defined(_MSC_VER) && !IGL_DEBUG
+  cfg.enableValidation = false;
+#endif
   auto ctx = vulkan::HWDevice::createContext(cfg,
 #if defined(_WIN32)
                                              (void*)glfwGetWin32Window(window)
