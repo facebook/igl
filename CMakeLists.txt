@@ -133,13 +133,16 @@ if(IGL_DEPLOY_DEPS)
 endif()
 
 if(IGL_WITH_TRACY)
-  add_definitions("-DIGL_WITH_TRACY=1")
   add_definitions("-DTRACY_ENABLE=1")
   add_subdirectory(third-party/deps/src/tracy)
   igl_set_folder(TracyClient "third-party")
 endif()
 
 add_subdirectory(src/igl)
+
+if(IGL_WITH_TRACY)
+  target_compile_definitions(IGLLibrary PUBLIC "IGL_WITH_TRACY=1")
+endif()
 
 if(IGL_DEPLOY_DEPS)
   add_dependencies(IGLLibrary IGLDependencies)
