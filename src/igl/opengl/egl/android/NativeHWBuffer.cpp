@@ -112,8 +112,10 @@ NativeHWTextureBuffer::~NativeHWTextureBuffer() {
   auto context = std::static_pointer_cast<AHardwareBufferContext>(hwBufferHelper_);
   if (context) {
     eglDestroyImageKHR(context->display, context->elgImage);
-    AHardwareBuffer_acquire(hwBuffer_);
-    AHardwareBuffer_release(hwBuffer_);
+    if (hwBuffer_) {
+      AHardwareBuffer_release(hwBuffer_);
+    }
+    hwBuffer_ = nullptr;
   }
 }
 
