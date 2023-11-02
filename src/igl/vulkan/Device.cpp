@@ -625,7 +625,7 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
     result = limits.minUniformBufferOffsetAlignment;
     return true;
   case DeviceFeatureLimits::BufferNoCopyAlignment:
-    result = limits.minUniformBufferOffsetAlignment;
+    result = 0;
     return true;
   case DeviceFeatureLimits::MaxBindBytesBytes:
     result = 0;
