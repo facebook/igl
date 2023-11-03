@@ -582,7 +582,7 @@ void RenderCommandEncoder::bindPipeline() {
 void RenderCommandEncoder::draw(PrimitiveType primitiveType,
                                 size_t vertexStart,
                                 size_t vertexCount) {
-  IGL_PROFILER_FUNCTION();
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
 
@@ -608,7 +608,7 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
                                        IndexFormat indexFormat,
                                        IBuffer& indexBuffer,
                                        size_t indexBufferOffset) {
-  IGL_PROFILER_FUNCTION();
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
 
@@ -641,7 +641,7 @@ void RenderCommandEncoder::drawIndexedIndirect(PrimitiveType primitiveType,
                                                IBuffer& indexBuffer,
                                                IBuffer& indirectBuffer,
                                                size_t indirectBufferOffset) {
-  IGL_PROFILER_FUNCTION();
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
 
   multiDrawIndexedIndirect(
       primitiveType, indexFormat, indexBuffer, indirectBuffer, indirectBufferOffset, 1, 0);
@@ -652,7 +652,7 @@ void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
                                              size_t indirectBufferOffset,
                                              uint32_t drawCount,
                                              uint32_t stride) {
-  IGL_PROFILER_FUNCTION();
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
 
   ensureVertexBuffers();
 
@@ -678,7 +678,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
                                                     size_t indirectBufferOffset,
                                                     uint32_t drawCount,
                                                     uint32_t stride) {
-  IGL_PROFILER_FUNCTION();
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
 
   ensureVertexBuffers();
 

@@ -163,6 +163,8 @@ std::shared_ptr<igl::shell::PlatformWin> createPlatform(GLFWwindow* window) {
 }
 
 igl::SurfaceTextures getVulkanSurfaceTextures(igl::IDevice& device) {
+  IGL_PROFILER_FUNCTION();
+
   const auto& vkPlatformDevice = device.getPlatformDevice<igl::vulkan::PlatformDevice>();
 
   IGL_ASSERT(vkPlatformDevice != nullptr);
