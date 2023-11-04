@@ -155,6 +155,7 @@ Result RenderPipelineState::create(const RenderPipelineDesc& desc) {
     if (blockDescIt != uniformBlockDict.end()) {
       auto blockIndex = blockDescIt->second.blockIndex;
       uniformBlockBindingMap_[blockIndex] = bindingIndex;
+      blockDescIt->second.bindingIndex = bindingIndex;
     } else {
       IGL_LOG_ERROR("Uniform block (%s) not found in shader.\n", blockName.toConstChar());
     }

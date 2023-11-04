@@ -53,6 +53,10 @@ class RenderPipelineReflection final : public IRenderPipelineReflection {
     return uniformBlocksDictionary_;
   }
 
+  std::unordered_map<NameHandle, UniformBlockDesc>& getUniformBlocksDictionary() {
+    return uniformBlocksDictionary_;
+  }
+
   const std::unordered_map<std::string, int>& getAttributeDictionary() const {
     return attributeDictionary_;
   }
