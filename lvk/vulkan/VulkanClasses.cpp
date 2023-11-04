@@ -2872,7 +2872,7 @@ void lvk::VulkanStagingDevice::getImageData(VulkanImage& image,
                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // dstStageMask
                           range);
 
-  immediate_->submit(wrapper2);
+  immediate_->wait(immediate_->submit(wrapper2));
 }
 
 void lvk::VulkanStagingDevice::ensureStagingBufferSize(uint32_t sizeNeeded) {
