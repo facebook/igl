@@ -154,8 +154,14 @@ Result RenderPipelineState::create(const RenderPipelineDesc& desc) {
     auto blockDescIt = uniformBlockDict.find(blockName);
     if (blockDescIt != uniformBlockDict.end()) {
       auto blockIndex = blockDescIt->second.blockIndex;
-      uniformBlockBindingMap_[blockIndex] = bindingIndex;
-      blockDescIt->second.bindingIndex = bindingIndex;
+      if (blockDescIt->second.bindingIndex > 0) {
+        //  avoid overriding explicit binding points from shaders because we observed
+        //  crashes when doing so on some Adreno devices.
+        uniformBlockBindingMap_[blockIndex] = blockDescIt->second.bindingIndex;
+      } else {
+        uniformBlockBindingMap_[blockIndex] = bindingIndex;
+        blockDescIt->second.bindingIndex = bindingIndex;
+      }
     } else {
       IGL_LOG_ERROR("Uniform block (%s) not found in shader.\n", blockName.toConstChar());
     }
