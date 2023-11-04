@@ -150,11 +150,10 @@ Result RenderPipelineState::create(const RenderPipelineDesc& desc) {
 
   for (const auto& [bindingIndex, names] : desc.uniformBlockBindingMap) {
     const auto& [blockName, instanceName] = names;
-    int blockIndex = reflection_->getIndexByName(blockName);
-    if (blockIndex < 0 && !instanceName.toString().empty()) {
-      blockIndex = reflection_->getIndexByName(instanceName);
-    }
-    if (blockIndex >= 0) {
+    auto& uniformBlockDict = reflection_->getUniformBlocksDictionary();
+    auto blockDescIt = uniformBlockDict.find(blockName);
+    if (blockDescIt != uniformBlockDict.end()) {
+      auto blockIndex = blockDescIt->second.blockIndex;
       uniformBlockBindingMap_[blockIndex] = bindingIndex;
     } else {
       IGL_LOG_ERROR("Uniform block (%s) not found in shader.\n", blockName.toConstChar());
@@ -363,15 +362,7 @@ int RenderPipelineState::getIndexByName(const std::string& name, ShaderStage /*s
 }
 
 int RenderPipelineState::getUniformBlockBindingPoint(const NameHandle& uniformBlockName) const {
-  const int blockIndex = getIndexByName(uniformBlockName, ShaderStage::Fragment);
-  auto it = uniformBlockBindingMap_.find(blockIndex);
-  if (it == uniformBlockBindingMap_.end()) {
-    IGL_LOG_ERROR("Uniform block (%s) with index (%d) not found in the block binding map.\n",
-                  uniformBlockName.toConstChar(),
-                  blockIndex);
-    return -1;
-  }
-  return it->second;
+  return getIndexByName(uniformBlockName, ShaderStage::Fragment);
 }
 
 std::shared_ptr<IRenderPipelineReflection> RenderPipelineState::renderPipelineReflection() {

@@ -272,7 +272,7 @@ int RenderPipelineReflection::getIndexByName(const NameHandle& name) const {
   // search through the list of uniform blocks
   const auto uniformBlockEntry = uniformBlocksDictionary_.find(name);
   if (uniformBlockEntry != uniformBlocksDictionary_.end()) {
-    return uniformBlockEntry->second.blockIndex;
+    return uniformBlockEntry->second.bindingIndex;
   }
 
   // Search through list of attributes
