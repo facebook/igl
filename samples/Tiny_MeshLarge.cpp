@@ -33,6 +33,7 @@
 #include <gli/save_ktx.hpp>
 #include <gli/texture2d.hpp>
 #include <gli/texture_cube.hpp>
+#include <ldrutils/lmath/Colors.h>
 #include <ldrutils/lutils/ScopeExit.h>
 
 #include <Compress.h>
@@ -47,6 +48,7 @@
 
 #include <lvk/LVK.h>
 #include <lvk/HelpersImGui.h>
+#include <implot/implot.h>
 
 #include <GLFW/glfw3.h>
 
@@ -73,6 +75,23 @@ std::string folderThirdParty;
 std::string folderContentRoot;
 
 std::unique_ptr<lvk::ImGuiRenderer> imgui_;
+
+enum GPUTimestamp {
+  GPUTimestamp_BeginSceneRendering = 0,
+  GPUTimestamp_EndSceneRendering,
+
+  GPUTimestamp_BeginComputePass,
+  GPUTimestamp_EndComputePass,
+
+  GPUTimestamp_BeginPresent,
+  GPUTimestamp_EndPresent,
+
+  GPUTimestamp_NUM_TIMESTAMPS
+};
+lvk::Holder<lvk::QueryPoolHandle> queryPoolTimestamps_;
+uint64_t pipelineTimestamps[GPUTimestamp_NUM_TIMESTAMPS] = {};
+double timestampBeginRendering = 0;
+double timestampEndRendering = 0;
 
 const char* kCodeComputeTest = R"(
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
@@ -1083,6 +1102,8 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
   if (!width_ && !height_)
     return;
 
+  timestampBeginRendering = glfwGetTime();
+
   fbMain_.color[0].texture = nativeDrawable;
 
   const float fov = float(45.0f * (M_PI / 180.0f));
@@ -1155,9 +1176,15 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     isShadowMapDirty_ = false;
   }
 
+#define GPU_TIMESTAMP(timestamp) buffer.cmdWriteTimestamp(queryPoolTimestamps_, timestamp);
+
   // Pass 2: mesh
   {
     lvk::ICommandBuffer& buffer = ctx_->acquireCommandBuffer();
+
+    buffer.cmdResetQueryPool(queryPoolTimestamps_, 0, GPUTimestamp_NUM_TIMESTAMPS);
+
+    GPU_TIMESTAMP(GPUTimestamp_BeginSceneRendering);
 
     // This will clear the framebuffer
     buffer.cmdBeginRendering(renderPassOffscreen_, fbOffscreen_);
@@ -1194,35 +1221,44 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
       buffer.cmdPopDebugGroupLabel();
     }
     buffer.cmdEndRendering();
+
+    GPU_TIMESTAMP(GPUTimestamp_EndSceneRendering);
+
     ctx_->submit(buffer);
   }
 
   // Pass 3: compute shader post-processing
-  if (enableComputePass_) {
-    lvk::TextureHandle tex = kNumSamplesMSAA > 1 ? fbOffscreen_.color[0].resolveTexture : fbOffscreen_.color[0].texture;
+  {
     lvk::ICommandBuffer& buffer = ctx_->acquireCommandBuffer();
 
-    buffer.cmdBindComputePipeline(computePipelineState_Grayscale_);
+    GPU_TIMESTAMP(GPUTimestamp_BeginComputePass);
 
-    struct {
-      uint32_t texture;
-      uint32_t width;
-      uint32_t height;
-    } bindings = {
-        .texture = tex.index(),
-        .width = (uint32_t)width_,
-        .height = (uint32_t)height_,
-    };
-    buffer.cmdPushConstants(bindings);
-    buffer.cmdDispatchThreadGroups(
-        {
-            .width = 1 + (uint32_t)width_ / 16,
-            .height = 1 + (uint32_t)height_ / 16,
-            .depth = 1u,
-        },
-        {
-            .textures = {tex},
-        });
+    if (enableComputePass_) {
+      lvk::TextureHandle tex = kNumSamplesMSAA > 1 ? fbOffscreen_.color[0].resolveTexture : fbOffscreen_.color[0].texture;
+
+      buffer.cmdBindComputePipeline(computePipelineState_Grayscale_);
+
+      struct {
+        uint32_t texture;
+        uint32_t width;
+        uint32_t height;
+      } bindings = {
+          .texture = tex.index(),
+          .width = (uint32_t)width_,
+          .height = (uint32_t)height_,
+      };
+      buffer.cmdPushConstants(bindings);
+      buffer.cmdDispatchThreadGroups(
+          {
+              .width = 1 + (uint32_t)width_ / 16,
+              .height = 1 + (uint32_t)height_ / 16,
+              .depth = 1u,
+          },
+          {
+              .textures = {tex},
+          });
+    }
+    GPU_TIMESTAMP(GPUTimestamp_EndComputePass);
 
     ctx_->submit(buffer);
   }
@@ -1230,6 +1266,8 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
   // Pass 4: render into the swapchain image
   {
     lvk::ICommandBuffer& buffer = ctx_->acquireCommandBuffer();
+
+    GPU_TIMESTAMP(GPUTimestamp_BeginPresent);
 
     lvk::TextureHandle tex = kNumSamplesMSAA > 1 ? fbOffscreen_.color[0].resolveTexture : fbOffscreen_.color[0].texture;
 
@@ -1252,8 +1290,20 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
     }
     buffer.cmdEndRendering();
 
+    GPU_TIMESTAMP(GPUTimestamp_EndPresent);
+
     ctx_->submit(buffer, fbMain_.color[0].texture);
   }
+
+  timestampEndRendering = glfwGetTime();
+
+  // timestamp stats
+  ctx_->getQueryPoolResults(queryPoolTimestamps_,
+                            0,
+                            LVK_ARRAY_NUM_ELEMENTS(pipelineTimestamps),
+                            sizeof(pipelineTimestamps),
+                            pipelineTimestamps,
+                            sizeof(pipelineTimestamps[0]));
 }
 
 void generateCompressedTexture(LoadedImage img) {
@@ -1673,6 +1723,130 @@ void processLoadedMaterials() {
   ctx_->upload(sbMaterials_, materials_.data(), sizeof(GPUMaterial) * materials_.size());
 }
 
+inline ImVec4 toVec4(const vec4& c) {
+  return ImVec4(c.x, c.y, c.z, c.w);
+}
+
+void showTimeGPU() {
+#if defined(LVK_WITH_IMPLOT)
+  const double toMS = ctx_->getTimestampPeriodToMs();
+  auto getTimespan = [toMS](GPUTimestamp begin) -> double {
+    return double(pipelineTimestamps[begin + 1] - pipelineTimestamps[begin]) * toMS;
+  };
+  struct sTimeStats {
+    enum size { kNumTimelines = 5 };
+    struct MinMax {
+      float vmin = FLT_MAX;
+      float vmax = 0.0f;
+    };
+    double add(uint32_t pass, const char* name, double value) {
+      LVK_ASSERT(pass < kNumTimelines);
+      names[pass] = name;
+      const float prev = timelines[pass].empty() ? (float)value : timelines[pass].back();
+      timelines[pass].push_back(0.9 * prev + 0.1 * value);
+      if (timelines[pass].size() > 128)
+        timelines[pass].erase(timelines[pass].begin());
+      avg[pass] = value;
+      return (float)value;
+    }
+    void updateMinMax() {
+      for (uint32_t i = 0; i != kNumTimelines; i++) {
+        float minT = FLT_MAX;
+        float maxT = 0.0f;
+        for (float v : timelines[i]) {
+          if (v < minT)
+            minT = v;
+          if (v > maxT)
+            maxT = v;
+        }
+        minmax[i] = {minT, maxT};
+      }
+    }
+    std::vector<float> timelines[kNumTimelines] = {};
+    MinMax minmax[kNumTimelines] = {};
+    float avg[kNumTimelines] = {};
+    const char* names[kNumTimelines] = {};
+    const vec4 colors[kNumTimelines] = {LC_Red, LC_Green, LC_Green, LC_LightBlue, LC_Red};
+  };
+  static sTimeStats stats;
+
+  const double timeScene = stats.add(1, " Scene", getTimespan(GPUTimestamp_BeginSceneRendering));
+  const double timeCompute = stats.add(2, " Compute", getTimespan(GPUTimestamp_BeginComputePass));
+  const double timePresent = stats.add(3, " Present", getTimespan(GPUTimestamp_BeginPresent));
+
+  const double timeGPU = timeScene + timeCompute + timePresent;
+  stats.add(0, "GPU", timeGPU);
+  const double timeCPU = stats.add(4, "CPU", (timestampEndRendering - timestampBeginRendering) * 1000);
+  stats.updateMinMax();
+
+  char text[128];
+  snprintf(text,
+           sizeof(text),
+           "GPU: %6.02f ms   (Scene: %.02f   Compute: %.02f   Present: %.02f)",
+           timeGPU,
+           timeScene,
+           timeCompute,
+           timePresent);
+
+  const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
+                                 ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+  ImGui::SetNextWindowBgAlpha(0.8f);
+  ImGui::SetNextWindowPos({20, height_ * 0.8f}, ImGuiCond_Appearing);
+  ImGui::SetNextWindowSize({width_ * 0.4f, 0});
+  ImGui::Begin("GPU Stats", nullptr, flags);
+  ImGui::Text("%s", text);
+
+  auto Sparkline = [](const char* id, const float* values, int count, float min_v, float max_v, const ImVec4& col, const ImVec2& size) {
+    ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(0, 0));
+    ImPlot::SetNextAxesLimits(0, count - 1, min_v, max_v, ImGuiCond_Always);
+    if (ImPlot::BeginPlot(id, size, ImPlotFlags_CanvasOnly)) {
+      ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoDecorations, ImPlotAxisFlags_NoDecorations);
+      ImPlot::PushStyleColor(ImPlotCol_Line, col);
+      ImPlot::PlotLine(id, values, count, 1, 0);
+      ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.25f);
+      ImPlot::PlotShaded(id, values, count, 0, 1, 0);
+      ImPlot::PopStyleVar();
+      ImPlot::PopStyleColor();
+      ImPlot::EndPlot();
+    }
+    ImPlot::PopStyleVar();
+  };
+
+  auto RowLeadIn = [](const char* stage, float value, const ImVec4& color) {
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextColored(color, "%s", stage);
+    ImGui::TableSetColumnIndex(1);
+    ImGui::TextColored(color, "%6.02f", value);
+    ImGui::TableSetColumnIndex(2);
+  };
+
+  if (ImGui::BeginTable("##table", 3, ImGuiTableFlags_None, ImVec2(-1, 0))) {
+    const ImGuiTableColumnFlags flags = ImGuiTableColumnFlags_NoSort;
+    ImGui::TableSetupColumn("Stage", flags);
+    ImGui::TableSetupColumn("Time (ms)", flags);
+    ImGui::TableSetupColumn("Graph", flags | ImGuiTableColumnFlags_WidthStretch);
+    ImGui::TableHeadersRow();
+    for (uint32_t i = 0; i != sTimeStats::kNumTimelines; i++) {
+      ImGui::TableNextRow();
+      const ImVec4 color = toVec4(stats.colors[i]);
+      RowLeadIn(stats.names[i], stats.avg[i], color);
+      if (stats.avg[i] > 0.01)
+        Sparkline("##spark",
+                  stats.timelines[i].data(),
+                  stats.timelines[i].size(),
+                  stats.minmax[i].vmin * 0.8f,
+                  stats.minmax[i].vmax * 1.2f,
+                  color,
+                  ImVec2(-1, 30));
+    }
+
+    ImGui::EndTable();
+  }
+
+  ImGui::End();
+#endif // LVK_WITH_IMPLOT
+}
+
 int main(int argc, char* argv[]) {
   minilog::initialize(nullptr, {.threadNames = false});
   // find the content folder
@@ -1816,6 +1990,8 @@ int main(int argc, char* argv[]) {
 
   uint32_t frameIndex = 0;
 
+  queryPoolTimestamps_ = ctx_->createQueryPool(GPUTimestamp_NUM_TIMESTAMPS, "queryPoolTimestamps_");
+
   // Main loop
   while (!glfwWindowShouldClose(window_)) {
     glfwPollEvents();
@@ -1878,10 +2054,13 @@ int main(int argc, char* argv[]) {
         }
         ImGui::End();
       }
+
+      showTimeGPU();
     }
 
     positioner_.update(delta, mousePos_, mousePressed_);
     render(ctx_->getCurrentSwapchainTexture(), frameIndex);
+
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
   }
 
@@ -1924,6 +2103,7 @@ int main(int argc, char* argv[]) {
   fbOffscreenColor_ = nullptr;
   fbOffscreenDepth_ = nullptr;
   fbOffscreenResolve_ = nullptr;
+  queryPoolTimestamps_ = nullptr;
   ctx_ = nullptr;
 
   glfwDestroyWindow(window_);
