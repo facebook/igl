@@ -32,8 +32,6 @@ SamplerState::SamplerState(IContext& context, const SamplerStateDesc& desc) :
   addressW_(convertAddressMode(desc.addressModeW)),
   depthCompareFunction_(DepthStencilState::convertCompareFunction(desc.depthCompareFunction)),
   depthCompareEnabled_(desc.depthCompareEnabled) {
-  (void)mipLodMin_;
-  (void)mipLodMax_;
   std::hash<SamplerStateDesc> h;
   hash_ = h(desc);
 }
