@@ -100,6 +100,14 @@
     }
 },
 {
+    "name": "implot",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/epezent/implot",
+        "revision": "065acc3319f0422479c0fed5a5edccd0f563729f"
+    }
+},
+{
     "name": "volk",
     "source": {
         "type": "git",

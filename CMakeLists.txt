@@ -18,6 +18,7 @@ option(LVK_WITH_GLFW            "Enable GLFW"                   ON)
 option(LVK_WITH_SAMPLES         "Enable sample demo apps"       ON)
 option(LVK_WITH_TRACY           "Enable Tracy profiler"         ON)
 option(LVK_WITH_WAYLAND         "Enable Wayland"                OFF)
+option(LVK_WITH_IMPLOT          "Enable ImPlot"                 ON)
 
 cmake_dependent_option(LVK_WITH_VULKAN_PORTABILITY "Enable portability extension" ON "APPLE" OFF)
 # cmake-format: on
@@ -74,6 +75,7 @@ message(STATUS "LVK_WITH_SAMPLES            = ${LVK_WITH_SAMPLES}")
 message(STATUS "LVK_WITH_TRACY              = ${LVK_WITH_TRACY}")
 message(STATUS "LVK_WITH_VULKAN_PORTABILITY = ${LVK_WITH_VULKAN_PORTABILITY}")
 message(STATUS "LVK_WITH_WAYLAND            = ${LVK_WITH_WAYLAND}")
+message(STATUS "LVK_WITH_IMPLOT             = ${LVK_WITH_IMPLOT}")
 # cmake-format: on
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
@@ -139,6 +141,10 @@ endif()
 
 if(LVK_WITH_GLFW)
   target_compile_definitions(LVKLibrary PUBLIC "LVK_WITH_GLFW=1")
+endif()
+
+if(LVK_WITH_IMPLOT)
+  target_compile_definitions(LVKLibrary PUBLIC "LVK_WITH_IMPLOT=1")
 endif()
 
 if(LVK_DEPLOY_DEPS)
@@ -207,9 +213,4 @@ if(LVK_WITH_TRACY)
 endif()
 
 # ImGui
-target_sources(LVKLibrary PRIVATE "${LVK_ROOT_DIR}/third-party/deps/src/imgui/imgui.cpp")
-target_sources(LVKLibrary PRIVATE "${LVK_ROOT_DIR}/third-party/deps/src/imgui/imgui_demo.cpp")
-target_sources(LVKLibrary PRIVATE "${LVK_ROOT_DIR}/third-party/deps/src/imgui/imgui_draw.cpp")
-target_sources(LVKLibrary PRIVATE "${LVK_ROOT_DIR}/third-party/deps/src/imgui/imgui_tables.cpp")
-target_sources(LVKLibrary PRIVATE "${LVK_ROOT_DIR}/third-party/deps/src/imgui/imgui_widgets.cpp")
 target_include_directories(LVKLibrary PUBLIC "${LVK_ROOT_DIR}/third-party/deps/src/imgui")

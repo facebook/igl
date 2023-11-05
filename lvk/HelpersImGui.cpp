@@ -7,6 +7,15 @@
 
 #include "HelpersImGui.h"
 
+#include "imgui/imgui.cpp"
+#include "imgui/imgui_draw.cpp"
+#include "imgui/imgui_tables.cpp"
+#include "imgui/imgui_widgets.cpp"
+#if defined(LVK_WITH_IMPLOT)
+#include "implot/implot.cpp"
+#include "implot/implot_items.cpp"
+#endif // LVK_WITH_IMPLOT
+
 #include <math.h>
 
 static const char* codeVS = R"(
@@ -88,6 +97,9 @@ lvk::Holder<lvk::RenderPipelineHandle> ImGuiRenderer::createNewPipelineState(con
 
 ImGuiRenderer::ImGuiRenderer(lvk::IContext& device, const char* defaultFontTTF, float fontSizePixels) : ctx_(device) {
   ImGui::CreateContext();
+#if defined(LVK_WITH_IMPLOT)
+  ImPlot::CreateContext();
+#endif // LVK_WITH_IMPLOT
 
   ImGuiIO& io = ImGui::GetIO();
   io.BackendRendererName = "imgui-lvk";
@@ -102,6 +114,9 @@ ImGuiRenderer::ImGuiRenderer(lvk::IContext& device, const char* defaultFontTTF, 
 ImGuiRenderer::~ImGuiRenderer() {
   ImGuiIO& io = ImGui::GetIO();
   io.Fonts->TexID = nullptr;
+#if defined(LVK_WITH_IMPLOT)
+  ImPlot::DestroyContext();
+#endif // LVK_WITH_IMPLOT
   ImGui::DestroyContext();
 }
 

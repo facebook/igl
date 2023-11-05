@@ -39,4 +39,6 @@ ADD_DEMO("Tiny_Mesh")
 ADD_DEMO("Tiny_MeshLarge")
 
 target_sources(Tiny_MeshLarge
-               PUBLIC "${LVK_ROOT_DIR}/third-party/deps/src/3D-Graphics-Rendering-Cookbook/shared/UtilsCubemap.cpp")
+               PRIVATE "${LVK_ROOT_DIR}/third-party/deps/src/3D-Graphics-Rendering-Cookbook/shared/UtilsCubemap.cpp")
+
+target_sources(Tiny_MeshLarge PRIVATE "${LVK_ROOT_DIR}/third-party/deps/src/imgui/imgui_demo.cpp")
