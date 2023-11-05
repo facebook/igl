@@ -399,6 +399,13 @@ class CommandBuffer final : public ICommandBuffer {
   void cmdSetBlendColor(const float color[4]) override;
   void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) override;
 
+  void cmdResetQueryPool(QueryPoolHandle pool, uint32_t firstQuery, uint32_t queryCount) override;
+  void cmdWriteTimestamp(QueryPoolHandle pool, uint32_t query) override;
+
+  VkCommandBuffer getVkCommandBuffer() const {
+    return wrapper_ ? wrapper_->cmdBuf_ : VK_NULL_HANDLE;
+  }
+
  private:
   void useComputeTexture(TextureHandle texture);
   void bufferBarrier(BufferHandle handle, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage);
@@ -490,12 +497,15 @@ class VulkanContext final : public IContext {
   Holder<RenderPipelineHandle> createRenderPipeline(const RenderPipelineDesc& desc, Result* outResult) override;
   Holder<ShaderModuleHandle> createShaderModule(const ShaderModuleDesc& desc, Result* outResult) override;
 
+  Holder<QueryPoolHandle> createQueryPool(uint32_t numQueries, const char* debugName, Result* outResult) override;
+
   void destroy(ComputePipelineHandle handle) override;
   void destroy(RenderPipelineHandle handle) override;
   void destroy(ShaderModuleHandle handle) override;
   void destroy(SamplerHandle handle) override;
   void destroy(BufferHandle handle) override;
   void destroy(TextureHandle handle) override;
+  void destroy(QueryPoolHandle handle) override;
   void destroy(Framebuffer& fb) override;
 
   Result upload(BufferHandle handle, const void* data, size_t size, size_t offset) override;
@@ -516,6 +526,10 @@ class VulkanContext final : public IContext {
   void recreateSwapchain(int newWidth, int newHeight) override;
   
   uint32_t getFramebufferMSAABitMask() const override;
+
+  double getTimestampPeriodToMs() const override;
+  bool getQueryPoolResults(QueryPoolHandle pool, uint32_t firstQuery, uint32_t queryCount, size_t dataSize, void* outData, size_t stride)
+      const override;
 
   ///////////////
 
@@ -649,6 +663,7 @@ class VulkanContext final : public IContext {
   lvk::Pool<lvk::Sampler, VkSampler> samplersPool_;
   lvk::Pool<lvk::Buffer, lvk::VulkanBuffer> buffersPool_;
   lvk::Pool<lvk::Texture, lvk::VulkanTexture> texturesPool_;
+  lvk::Pool<lvk::QueryPool, VkQueryPool> queriesPool_;
 };
 
 } // namespace lvk

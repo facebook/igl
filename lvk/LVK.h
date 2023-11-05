@@ -105,6 +105,7 @@ using ShaderModuleHandle = lvk::Handle<struct ShaderModule>;
 using SamplerHandle = lvk::Handle<struct Sampler>;
 using BufferHandle = lvk::Handle<struct Buffer>;
 using TextureHandle = lvk::Handle<struct Texture>;
+using QueryPoolHandle = lvk::Handle<struct QueryPool>;
 
 // forward declarations to access incomplete type IContext
 void destroy(lvk::IContext* ctx, lvk::ComputePipelineHandle handle);
@@ -113,6 +114,7 @@ void destroy(lvk::IContext* ctx, lvk::ShaderModuleHandle handle);
 void destroy(lvk::IContext* ctx, lvk::SamplerHandle handle);
 void destroy(lvk::IContext* ctx, lvk::BufferHandle handle);
 void destroy(lvk::IContext* ctx, lvk::TextureHandle handle);
+void destroy(lvk::IContext* ctx, lvk::QueryPoolHandle handle);
 
 template<typename HandleType>
 class Holder final {
@@ -760,6 +762,9 @@ class ICommandBuffer {
 
   virtual void cmdSetBlendColor(const float color[4]) = 0;
   virtual void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) = 0;
+
+  virtual void cmdResetQueryPool(QueryPoolHandle pool, uint32_t firstQuery, uint32_t queryCount) = 0;
+  virtual void cmdWriteTimestamp(QueryPoolHandle pool, uint32_t query) = 0;
 };
 
 struct SubmitHandle {
@@ -801,12 +806,17 @@ class IContext {
   [[nodiscard]] virtual Holder<RenderPipelineHandle> createRenderPipeline(const RenderPipelineDesc& desc, Result* outResult = nullptr) = 0;
   [[nodiscard]] virtual Holder<ShaderModuleHandle> createShaderModule(const ShaderModuleDesc& desc, Result* outResult = nullptr) = 0;
 
+  [[nodiscard]] virtual Holder<QueryPoolHandle> createQueryPool(uint32_t numQueries,
+                                                                const char* debugName,
+                                                                Result* outResult = nullptr) = 0;
+
   virtual void destroy(ComputePipelineHandle handle) = 0;
   virtual void destroy(RenderPipelineHandle handle) = 0;
   virtual void destroy(ShaderModuleHandle handle) = 0;
   virtual void destroy(SamplerHandle handle) = 0;
   virtual void destroy(BufferHandle handle) = 0;
   virtual void destroy(TextureHandle handle) = 0;
+  virtual void destroy(QueryPoolHandle handle) = 0;
   virtual void destroy(Framebuffer& fb) = 0;
 
 #pragma region Buffer functions
@@ -833,6 +843,16 @@ class IContext {
   
   // MSAA level is supported if ((samples & bitmask) != 0), where samples must be power of two.
   virtual uint32_t getFramebufferMSAABitMask() const = 0;
+
+#pragma region Performance queries
+  virtual double getTimestampPeriodToMs() const = 0;
+  virtual bool getQueryPoolResults(QueryPoolHandle pool,
+                                   uint32_t firstQuery,
+                                   uint32_t queryCount,
+                                   size_t dataSize,
+                                   void* outData,
+                                   size_t stride) const = 0;
+#pragma endregion
 };
 
 } // namespace lvk

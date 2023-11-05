@@ -2552,6 +2552,18 @@ void lvk::CommandBuffer::cmdSetDepthBias(float depthBias, float slopeScale, floa
   vkCmdSetDepthBias(wrapper_->cmdBuf_, depthBias, clamp, slopeScale);
 }
 
+void lvk::CommandBuffer::cmdResetQueryPool(QueryPoolHandle pool, uint32_t firstQuery, uint32_t queryCount) {
+  VkQueryPool vkPool = *ctx_->queriesPool_.get(pool);
+
+  vkCmdResetQueryPool(wrapper_->cmdBuf_, vkPool, firstQuery, queryCount);
+}
+
+void lvk::CommandBuffer::cmdWriteTimestamp(QueryPoolHandle pool, uint32_t query) {
+  VkQueryPool vkPool = *ctx_->queriesPool_.get(pool);
+
+  vkCmdWriteTimestamp(wrapper_->cmdBuf_, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, vkPool, query);
+}
+
 lvk::VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
   LVK_PROFILER_FUNCTION();
 
@@ -3197,6 +3209,34 @@ lvk::Holder<lvk::BufferHandle> lvk::VulkanContext::createBuffer(const BufferDesc
   return {this, handle};
 }
 
+lvk::Holder<lvk::QueryPoolHandle> lvk::VulkanContext::createQueryPool(uint32_t numQueries, const char* debugName, Result* outResult) {
+  LVK_PROFILER_FUNCTION();
+
+  const VkQueryPoolCreateInfo createInfo = {
+      .sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
+      .flags = 0,
+      .queryType = VK_QUERY_TYPE_TIMESTAMP,
+      .queryCount = numQueries,
+      .pipelineStatistics = 0,
+  };
+
+  VkQueryPool queryPool = VK_NULL_HANDLE;
+  VK_ASSERT(vkCreateQueryPool(vkDevice_, &createInfo, 0, &queryPool));
+
+  if (!queryPool) {
+    Result::setResult(outResult, Result(Result::Code::RuntimeError, "Cannot create QueryPool"));
+    return {};
+  }
+
+  if (debugName && *debugName) {
+    lvk::setDebugObjectName(vkDevice_, VK_OBJECT_TYPE_QUERY_POOL, (uint64_t)queryPool, debugName);
+  }
+
+  lvk::QueryPoolHandle handle = queriesPool_.create(std::move(queryPool));
+
+  return {this, handle};
+}
+
 lvk::Holder<lvk::SamplerHandle> lvk::VulkanContext::createSampler(const SamplerStateDesc& desc, Result* outResult) {
   LVK_PROFILER_FUNCTION();
 
@@ -3678,6 +3718,14 @@ void lvk::VulkanContext::destroy(lvk::TextureHandle handle) {
   texturesPool_.destroy(handle);
 }
 
+void lvk::VulkanContext::destroy(lvk::QueryPoolHandle handle) {
+  VkQueryPool pool = *queriesPool_.get(handle);
+
+  queriesPool_.destroy(handle);
+
+  deferredTask(std::packaged_task<void()>([device = vkDevice_, pool = pool]() { vkDestroyQueryPool(device, pool, nullptr); }));
+}
+
 void lvk::VulkanContext::destroy(Framebuffer& fb) {
   auto destroyFbTexture = [this](TextureHandle& handle) {
     {
@@ -4031,6 +4079,24 @@ void lvk::VulkanContext::recreateSwapchain(int newWidth, int newHeight) {
 uint32_t lvk::VulkanContext::getFramebufferMSAABitMask() const {
   const VkPhysicalDeviceLimits& limits = getVkPhysicalDeviceProperties().limits;
   return limits.framebufferColorSampleCounts;
+}
+
+double lvk::VulkanContext::getTimestampPeriodToMs() const {
+  return double(getVkPhysicalDeviceProperties().limits.timestampPeriod) * 1e-6;
+}
+
+bool lvk::VulkanContext::getQueryPoolResults(QueryPoolHandle pool,
+                                             uint32_t firstQuery,
+                                             uint32_t queryCount,
+                                             size_t dataSize,
+                                             void* outData,
+                                             size_t stride) const {
+  VkQueryPool vkPool = *queriesPool_.get(pool);
+
+  VK_ASSERT(vkGetQueryPoolResults(
+      vkDevice_, vkPool, firstQuery, queryCount, dataSize, outData, stride, VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT));
+
+  return true;
 }
 
 void lvk::VulkanContext::createInstance() {
