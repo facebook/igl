@@ -25,32 +25,32 @@ namespace igl::vulkan::functions {
 namespace {
 PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
 #if defined(_WIN32)
-  HMODULE module = LoadLibraryA("vulkan-1.dll");
-  if (!module) {
+  HMODULE lib = LoadLibraryA("vulkan-1.dll");
+  if (!lib) {
     return nullptr;
   }
-  return (PFN_vkGetInstanceProcAddr)GetProcAddress(module, "vkGetInstanceProcAddr");
+  return (PFN_vkGetInstanceProcAddr)GetProcAddress(lib, "vkGetInstanceProcAddr");
 #elif defined(__APPLE__)
-  void* module = dlopen("libvulkan.dylib", RTLD_NOW | RTLD_LOCAL);
-  if (!module) {
-    module = dlopen("libvulkan.1.dylib", RTLD_NOW | RTLD_LOCAL);
+  void* lib = dlopen("libvulkan.dylib", RTLD_NOW | RTLD_LOCAL);
+  if (!lib) {
+    lib = dlopen("libvulkan.1.dylib", RTLD_NOW | RTLD_LOCAL);
   }
-  if (!module) {
-    module = dlopen("libMoltenVK.dylib", RTLD_NOW | RTLD_LOCAL);
+  if (!lib) {
+    lib = dlopen("libMoltenVK.dylib", RTLD_NOW | RTLD_LOCAL);
   }
-  if (!module) {
+  if (!lib) {
     return nullptr;
   }
-  return (PFN_vkGetInstanceProcAddr)dlsym(module, "vkGetInstanceProcAddr");
+  return (PFN_vkGetInstanceProcAddr)dlsym(lib, "vkGetInstanceProcAddr");
 #else
-  void* module = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
-  if (!module) {
-    module = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
+  void* lib = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
+  if (!lib) {
+    lib = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
   }
-  if (!module) {
+  if (!lib) {
     return nullptr;
   }
-  return (PFN_vkGetInstanceProcAddr)dlsym(module, "vkGetInstanceProcAddr");
+  return (PFN_vkGetInstanceProcAddr)dlsym(lib, "vkGetInstanceProcAddr");
 #endif
   return nullptr;
 }

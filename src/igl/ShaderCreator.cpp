@@ -29,12 +29,12 @@ std::shared_ptr<IShaderModule> ShaderModuleCreator::fromStringInput(const IDevic
   const auto desc =
       igl::ShaderModuleDesc::fromStringInput(source, std::move(info), std::move(debugName));
 
-  auto module = device.createShaderModule(desc, result);
+  auto sm = device.createShaderModule(desc, result);
   if (!result->isOk()) {
     return nullptr;
   }
 
-  return module;
+  return sm;
 }
 
 std::shared_ptr<IShaderModule> ShaderModuleCreator::fromBinaryInput(const IDevice& device,
@@ -51,12 +51,12 @@ std::shared_ptr<IShaderModule> ShaderModuleCreator::fromBinaryInput(const IDevic
   const auto desc = igl::ShaderModuleDesc::fromBinaryInput(
       data, dataLength, std::move(info), std::move(debugName));
 
-  auto module = device.createShaderModule(desc, result);
+  auto sm = device.createShaderModule(desc, result);
   if (!result->isOk()) {
     return nullptr;
   }
 
-  return module;
+  return sm;
 }
 
 std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromStringInput(

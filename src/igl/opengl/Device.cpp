@@ -237,11 +237,11 @@ std::unique_ptr<igl::IShaderLibrary> Device::createShaderLibrary(const ShaderLib
 
 std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc& desc,
                                                           Result* outResult) const {
-  auto module = createSharedResource<ShaderModule>(desc, outResult, getContext(), desc.info);
-  if (auto resourceTracker = getResourceTracker(); module && resourceTracker) {
-    module->initResourceTracker(resourceTracker);
+  auto sm = createSharedResource<ShaderModule>(desc, outResult, getContext(), desc.info);
+  if (auto resourceTracker = getResourceTracker(); sm && resourceTracker) {
+    sm->initResourceTracker(resourceTracker);
   }
-  return module;
+  return sm;
 }
 
 std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc& desc,
