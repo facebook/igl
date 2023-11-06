@@ -43,9 +43,6 @@ https://github.com/richgel999/bc7enc/blob/master/LICENSE
 Bootstrap
 https://github.com/corporateshark/bootstrapping/blob/master/LICENSE
 
-Color Checker
-https://en.wikipedia.org/wiki/File:Color_Checker.pdf
-
 Damaged Helmet
 https://github.com/KhronosGroup/glTF-Sample-Models/blob/master/2.0/DamagedHelmet/README.md
 
@@ -79,6 +76,9 @@ https://github.com/facebook/igl/blob/main/LICENSE.md
 imgui
 https://github.com/ocornut/imgui/blob/master/LICENSE.txt
 
+implot
+https://github.com/epezent/implot/blob/master/LICENSE
+
 ios-cmake
 https://github.com/leetal/ios-cmake/blob/master/LICENSE.md
 
@@ -87,6 +87,9 @@ https://github.com/corporateshark/ldrutils/blob/master/LICENSE.md
 
 Meshoptimizer
 https://github.com/zeux/meshoptimizer/blob/master/LICENSE.md
+
+minilog
+https://github.com/corporateshark/minilog/blob/main/LICENSE
 
 stb
 https://github.com/nothings/stb/blob/master/LICENSE
