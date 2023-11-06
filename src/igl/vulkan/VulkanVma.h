@@ -15,6 +15,8 @@
  * VMA using the functions VmaVulkanFunctions::vkGetInstanceProcAddr and
  * VmaVulkanFunctions::vkGetDeviceProcAddr
  */
+#undef VMA_STATIC_VULKAN_FUNCTIONS
+#undef VMA_DYNAMIC_VULKAN_FUNCTIONS
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
 
