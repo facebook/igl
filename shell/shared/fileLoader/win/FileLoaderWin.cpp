@@ -87,10 +87,11 @@ std::string FileLoaderWin::fullPath(const std::string& fileName) const {
     return fullPath.string();
   }
 
-  constexpr std::array<const char*, 4> folders = {"shell/resources/images/",
+  constexpr std::array<const char*, 5> folders = {"shell/resources/images/",
                                                   "samples/resources/images/",
                                                   "samples/resources/models/",
-                                                  "samples/resources/fonts/"};
+                                                  "samples/resources/fonts/",
+                                                  "samples/resources/fonts/optimistic"};
 
   // find folders somewhere above our current directory
   for (const char* folder : folders) {
