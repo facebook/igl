@@ -15,22 +15,36 @@ namespace igl::shell {
 ImageLoaderAndroid::ImageLoaderAndroid(FileLoader& fileLoader) : ImageLoader(fileLoader) {}
 
 ImageData ImageLoaderAndroid::loadImageData(const std::string& imageName) noexcept {
-  auto ret = ImageData();
+  if (imageName.empty()) {
+    IGL_LOG_ERROR("Error in loadBinaryData(): empty fileName\n");
+    return {};
+  }
+
+  if (assetManager_ == nullptr) {
+    IGL_LOG_ERROR("Error in loadImageData(): Asset manager is nullptr\n");
+    return {};
+  }
 
   // Load file
-  std::unique_ptr<uint8_t[]> buffer;
   AAsset* asset = AAssetManager_open(assetManager_, imageName.c_str(), AASSET_MODE_BUFFER);
-  IGL_ASSERT(asset != nullptr);
+  if (IGL_UNEXPECTED(asset == nullptr)) {
+    IGL_LOG_ERROR("Error in loadImageData(): failed to open file %s\n", imageName.c_str());
+    return {};
+  }
+
   off64_t length = AAsset_getLength64(asset);
   if (IGL_UNEXPECTED(length > std::numeric_limits<int>::max())) {
     AAsset_close(asset);
     return {};
   }
-  buffer = std::make_unique<uint8_t[]>(length);
+
+  auto buffer = std::make_unique<uint8_t[]>(length);
   auto readSize = AAsset_read(asset, buffer.get(), length);
-  if (readSize != length) {
-    IGL_ASSERT_NOT_REACHED();
-    return ret;
+  if (IGL_UNEXPECTED(readSize != length)) {
+    IGL_LOG_ERROR("Error in loadImageData(): read size mismatch (%ld != %zu) in %s\n",
+                  readSize,
+                  length,
+                  imageName.c_str());
   }
   AAsset_close(asset);
 
