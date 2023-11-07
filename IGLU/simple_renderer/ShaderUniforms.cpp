@@ -419,7 +419,23 @@ void ShaderUniforms::setFloat3Array(const igl::NameHandle& uniformName,
                                     iglu::simdtypes::float3* value,
                                     size_t count,
                                     size_t arrayIndex) {
-  setUniformBytes(uniformName, value, sizeof(iglu::simdtypes::float3), count, arrayIndex);
+  if (device_.getBackendType() == igl::BackendType::Metal) {
+    setUniformBytes(uniformName, value, sizeof(iglu::simdtypes::float3), count, arrayIndex);
+  } else {
+    // simdtypes::float3 is padded to have an extra float.
+    // Remove it so we can send the packed version to OpenGL/Vulkan
+    auto* packedArray = new float[3 * count];
+    float* packedArrayPtr = packedArray;
+    auto paddedArrayPtr = reinterpret_cast<const float*>(value);
+    for (size_t i = 0; i < count; i++) {
+      for (int j = 0; j < 3; j++) {
+        *packedArrayPtr++ = *paddedArrayPtr++;
+      }
+      paddedArrayPtr++; // padded float
+    }
+    setUniformBytes(uniformName, packedArray, sizeof(float) * 3 * count, 1, arrayIndex);
+    delete[] packedArray;
+  }
 }
 
 void ShaderUniforms::setFloat4(const igl::NameHandle& uniformName,
