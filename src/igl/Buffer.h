@@ -56,8 +56,8 @@ struct BufferDesc {
     Atomic = 1 << 0,
     UniformBlock = 1 << 1, // Enforces UBO for OpenGL
     Query = 1 << 2,
-    Bone = 1 << 3,
-    Ring = 1 << 4, // Metal: Ring buffers with memory for each swapchain image
+    // @fb-only
+    Ring = 1 << 4, // Metal/Vulkan: Ring buffers with memory for each swapchain image
     NoCopy = 1 << 5, // Metal: The buffer should re-use previously allocated memory.
   };
 
@@ -123,9 +123,8 @@ class IBuffer : public ITrackedResource<IBuffer> {
   virtual Result upload(const void* IGL_NULLABLE data, const BufferRange& range) = 0;
 
   /**
-   * @brief Map a portion of the contents of a GPU Buffer into memory. Not efficient; intended
-   * primarily for debug and test use. unmap() must be called before the buffer is used again in any
-   * GPU operations.
+   * @brief Map a portion of the contents of a GPU Buffer into memory. Not efficient on OpenGL.
+   * unmap() must be called before the buffer is used again in any GPU operations.
    *
    * @param range offset (in IBuffer) and size
    * @param outResult result of the operation,  Result::Code::Ok On success

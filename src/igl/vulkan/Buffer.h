@@ -42,8 +42,6 @@ class Buffer final : public igl::IBuffer {
 
   VkBuffer getVkBuffer() const;
 
- private:
-  Result create(const BufferDesc& desc);
   [[nodiscard]] const std::shared_ptr<VulkanBuffer>& currentVulkanBuffer() const;
 
  private:
@@ -54,6 +52,8 @@ class Buffer final : public igl::IBuffer {
   std::vector<std::shared_ptr<VulkanBuffer>> buffers_;
   std::unique_ptr<uint8_t[]> localData_;
   std::vector<BufferRange> bufferPatches_;
+
+  Result create(const BufferDesc& desc);
 
   // Function determines smallest starting and largest ending offset by iterating over all
   // bufferPatches_, and returns it in the form of buffer range
