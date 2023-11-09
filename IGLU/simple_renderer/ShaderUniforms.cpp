@@ -423,18 +423,20 @@ void ShaderUniforms::setFloat3Array(const igl::NameHandle& uniformName,
     setUniformBytes(uniformName, value, sizeof(iglu::simdtypes::float3), count, arrayIndex);
   } else {
     // simdtypes::float3 is padded to have an extra float.
-    // Remove it so we can send the packed version to OpenGL/Vulkan
-    auto* packedArray = new float[3 * count];
-    float* packedArrayPtr = packedArray;
-    auto paddedArrayPtr = reinterpret_cast<const float*>(value);
+    // This code path should not be used for Vulkan. (it should only be used for OpenGL when uniform
+    // blocks are not used).
+    const size_t size = sizeof(float) * 3u * count;
+    IGL_ASSERT(size <= 65536);
+    float* IGL_RESTRICT packedArray = reinterpret_cast<float*>(alloca(size));
+    float* IGL_RESTRICT packedArrayPtr = packedArray;
+    const float* paddedArrayPtr = reinterpret_cast<const float*>(value);
     for (size_t i = 0; i < count; i++) {
       for (int j = 0; j < 3; j++) {
         *packedArrayPtr++ = *paddedArrayPtr++;
       }
       paddedArrayPtr++; // padded float
     }
-    setUniformBytes(uniformName, packedArray, sizeof(float) * 3 * count, 1, arrayIndex);
-    delete[] packedArray;
+    setUniformBytes(uniformName, packedArray, size, 1, arrayIndex);
   }
 }
 
