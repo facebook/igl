@@ -270,13 +270,6 @@ class IDevice : public ICapabilities {
                                                             Result* IGL_NULLABLE
                                                                 outResult) const = 0;
 
- protected:
-  virtual void beginScope();
-  virtual void endScope();
-  TextureDesc sanitize(const TextureDesc& desc) const;
-  IDevice() = default;
-
- public:
   /**
    * @brief Sets the resource tracker used by this device.
    * @see igl::IResourceTracker
@@ -303,6 +296,12 @@ class IDevice : public ICapabilities {
    // @fb-only
    */
   Color backendDebugColor() const noexcept;
+
+ protected:
+  virtual void beginScope();
+  virtual void endScope();
+  TextureDesc sanitize(const TextureDesc& desc) const;
+  IDevice() = default;
 
  private:
   bool defaultVerifyScope();
