@@ -24,6 +24,7 @@
 - (void)applicationDidFinishLaunching:(NSNotification*)aNotification {
   [self setupViewController];
   [self.window makeKeyAndOrderFront:nil];
+  [self.window makeFirstResponder:self.tabViewController.view];
 }
 
 - (void)setupViewController {

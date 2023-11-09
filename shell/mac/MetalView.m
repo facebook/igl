@@ -9,6 +9,7 @@
 
 @implementation MetalView {
   NSTrackingArea* _trackingArea; // needed for mouseMoved: events
+  IBOutlet NSViewController* viewController;
 }
 
 - (id)initWithFrame:(NSRect)frame device:(nullable id<MTLDevice>)device {
@@ -16,6 +17,20 @@
     [self addFullScreenTrackingArea];
   }
   return self;
+}
+
+- (void)setViewController:(NSViewController*)newController {
+  if (viewController) {
+    NSResponder* controllerNextResponder = [viewController nextResponder];
+    [super setNextResponder:controllerNextResponder];
+    [viewController setNextResponder:nil];
+  }
+  viewController = newController;
+  if (newController) {
+    NSResponder* ownNextResponder = [self nextResponder];
+    [super setNextResponder:viewController];
+    [viewController setNextResponder:ownNextResponder];
+  }
 }
 
 - (void)addFullScreenTrackingArea {
@@ -31,6 +46,32 @@
 - (void)updateTrackingAreas {
   [self removeTrackingArea:_trackingArea];
   [self addFullScreenTrackingArea];
+}
+
+- (void)setNextResponder:(NSResponder*)newNextResponder {
+  if (viewController) {
+    [viewController setNextResponder:newNextResponder];
+    return;
+  }
+  [super setNextResponder:newNextResponder];
+}
+
+- (BOOL)acceptsFirstResponder {
+  return YES;
+}
+
+- (void)keyUp:(NSEvent*)event {
+  if (viewController) {
+    [viewController keyUp:event];
+  }
+  [self interpretKeyEvents:[NSArray arrayWithObject:event]];
+}
+
+- (void)keyDown:(NSEvent*)event {
+  if (viewController) {
+    [viewController keyDown:event];
+  }
+  [self interpretKeyEvents:[NSArray arrayWithObject:event]];
 }
 
 @end

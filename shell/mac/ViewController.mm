@@ -143,6 +143,7 @@ using namespace igl;
     metalView.colorPixelFormat =
         metal::Texture::textureFormatToMTLPixelFormat(shellParams_.defaultColorFramebufferFormat);
     metalView.framebufferOnly = NO;
+    [metalView setViewController:self];
     self.view = metalView;
     shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(std::move(device));
     break;
@@ -455,6 +456,14 @@ using namespace igl;
   NSRect contentRect = self.view.frame;
   NSPoint pos = [event locationInWindow];
   return NSMakePoint(pos.x, contentRect.size.height - pos.y);
+}
+
+- (void)keyUp:(NSEvent*)theEvent {
+  // NSLog(@"Caught keyUp event");
+}
+
+- (void)keyDown:(NSEvent*)theEvent {
+  // NSLog(@"Caught keyDown event");
 }
 
 - (void)mouseDown:(NSEvent*)event {

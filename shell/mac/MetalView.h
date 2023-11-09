@@ -9,4 +9,6 @@
 
 @interface MetalView : MTKView {
 }
+
+- (void)setViewController:(NSViewController*)newController;
 @end
