@@ -458,12 +458,12 @@ using namespace igl;
   return NSMakePoint(pos.x, contentRect.size.height - pos.y);
 }
 
-- (void)keyUp:(NSEvent*)theEvent {
-  // NSLog(@"Caught keyUp event");
+- (void)keyUp:(NSEvent*)event {
+  shellPlatform_->getInputDispatcher().queueEvent(igl::shell::KeyEvent(false, event.keyCode));
 }
 
-- (void)keyDown:(NSEvent*)theEvent {
-  // NSLog(@"Caught keyDown event");
+- (void)keyDown:(NSEvent*)event {
+  shellPlatform_->getInputDispatcher().queueEvent(igl::shell::KeyEvent(true, event.keyCode));
 }
 
 - (void)mouseDown:(NSEvent*)event {

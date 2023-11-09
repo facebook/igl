@@ -71,6 +71,20 @@ void InputDispatcher::removeTouchListener(const std::shared_ptr<ITouchListener>&
   }
 }
 
+void InputDispatcher::addKeyListener(const std::shared_ptr<IKeyListener>& listener) {
+  std::lock_guard<std::mutex> guard(_mutex);
+  _keyListeners.push_back(listener);
+}
+
+void InputDispatcher::removeKeyListener(const std::shared_ptr<IKeyListener>& listener) {
+  std::lock_guard<std::mutex> guard(_mutex);
+  for (int i = _keyListeners.size() - 1; i >= 0; --i) {
+    if (listener.get() == _keyListeners[i].get()) {
+      _keyListeners.erase(_keyListeners.begin() + i);
+    }
+  }
+}
+
 void InputDispatcher::queueEvent(const MouseButtonEvent& event) {
   std::lock_guard<std::mutex> guard(_mutex);
   InputDispatcher::Event evt;
@@ -101,6 +115,15 @@ void InputDispatcher::queueEvent(const TouchEvent& event) {
   InputDispatcher::Event evt;
   evt.type = EventType::Touch;
   evt.touchEvent = event;
+  _events.push(evt);
+}
+
+void InputDispatcher::queueEvent(const KeyEvent& event) {
+  std::lock_guard<std::mutex> guard(_mutex);
+
+  InputDispatcher::Event evt;
+  evt.type = EventType::Key;
+  evt.keyEvent = event;
   _events.push(evt);
 }
 
