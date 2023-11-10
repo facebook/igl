@@ -321,6 +321,7 @@ class VulkanContext final {
       task_(std::move(task)), handle_(handle) {}
     std::packaged_task<void()> task_;
     SubmitHandle handle_;
+    uint64_t frameId_ = 0;
   };
 
   mutable std::deque<DeferredTask> deferredTasks_;

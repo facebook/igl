@@ -1600,6 +1600,7 @@ void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle
     handle = immediate_->getLastSubmitHandle();
   }
   deferredTasks_.emplace_back(std::move(task), handle);
+  deferredTasks_.back().frameId_ = this->getFrameNumber();
 }
 
 bool VulkanContext::areValidationLayersEnabled() const {
@@ -1613,7 +1614,14 @@ void* VulkanContext::getVmaAllocator() const {
 void VulkanContext::processDeferredTasks() const {
   IGL_PROFILER_FUNCTION();
 
+  const uint64_t frameId = getFrameNumber();
+  constexpr uint64_t kNumWaitFrames = 1u;
+
   while (!deferredTasks_.empty() && immediate_->isRecycled(deferredTasks_.front().handle_)) {
+    if (frameId && frameId <= deferredTasks_.front().frameId_ + kNumWaitFrames) {
+      // do not check anything if it is not yet older than kNumWaitFrames
+      break;
+    }
     deferredTasks_.front().task_();
     deferredTasks_.pop_front();
   }
