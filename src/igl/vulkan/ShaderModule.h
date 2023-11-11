@@ -23,6 +23,13 @@ class ShaderModule final : public IShaderModule {
   ShaderModule(ShaderModuleInfo info, std::shared_ptr<VulkanShaderModule> shaderModule);
   ~ShaderModule() override = default;
 
+  VulkanShaderModule& getVulkanShaderModule() {
+    return *module_;
+  }
+  const VulkanShaderModule& getVulkanShaderModule() const {
+    return *module_;
+  }
+
   static VkShaderModule getVkShaderModule(const std::shared_ptr<IShaderModule>& shaderModule);
 
  private:

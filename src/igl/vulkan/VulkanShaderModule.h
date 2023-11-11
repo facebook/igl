@@ -42,6 +42,10 @@ class VulkanShaderModule final {
     return vkShaderModule_;
   }
 
+  const util::SpvModuleInfo& getSpvModuleInfo() const {
+    return moduleInfo_;
+  }
+
  private:
   const VulkanFunctionTable& vf_;
   VkDevice device_ = VK_NULL_HANDLE;
