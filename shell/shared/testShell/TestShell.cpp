@@ -52,8 +52,8 @@ void TestShellBase::SetUp(ScreenSize screenSize) {
   igl::Result ret;
   igl::TextureDesc texDesc = igl::TextureDesc::new2D(
       platform_->getDevice().getBackendType() == igl::BackendType::Metal
-          ? igl::TextureFormat::BGRA_UNorm8
-          : igl::TextureFormat::RGBA_UNorm8,
+          ? igl::TextureFormat::BGRA_SRGB
+          : igl::TextureFormat::RGBA_SRGB,
       screenSize.width,
       screenSize.height,
       igl::TextureDesc::TextureUsageBits::Sampled | igl::TextureDesc::TextureUsageBits::Attachment);
