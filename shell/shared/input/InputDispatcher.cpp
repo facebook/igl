@@ -37,6 +37,12 @@ void InputDispatcher::processEvents() {
           break;
         }
       }
+    } else if (event.type == EventType::Key) {
+      for (auto& listener : _keyListeners) {
+        if (event.type == EventType::Key && listener->process(event.keyEvent)) {
+          break;
+        }
+      }
     }
 
     _events.pop();
