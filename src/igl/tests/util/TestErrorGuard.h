@@ -27,7 +27,9 @@ class TestErrorGuard final {
                                  ...);
 
  private:
+#if IGL_REPORT_ERROR_ENABLED
   IGLReportErrorFunc savedErrorHandler_;
+#endif
 };
 } // namespace util
 } // namespace tests

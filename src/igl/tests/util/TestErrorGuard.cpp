@@ -14,12 +14,16 @@
 #include <string>
 
 igl::tests::util::TestErrorGuard::TestErrorGuard() {
+#if IGL_REPORT_ERROR_ENABLED
   savedErrorHandler_ = IGLReportErrorGetHandler();
   IGLReportErrorSetHandler(ReportErrorHandler);
+#endif
 }
 
 igl::tests::util::TestErrorGuard::~TestErrorGuard() {
+#if IGL_REPORT_ERROR_ENABLED
   IGLReportErrorSetHandler(savedErrorHandler_);
+#endif
 }
 
 void igl::tests::util::TestErrorGuard::ReportErrorHandler(const char* file,
@@ -28,6 +32,7 @@ void igl::tests::util::TestErrorGuard::ReportErrorHandler(const char* file,
                                                           const char* category,
                                                           const char* format,
                                                           ...) {
+#if IGL_REPORT_ERROR_ENABLED
   va_list ap;
   va_start(ap, format);
 
@@ -44,4 +49,5 @@ void igl::tests::util::TestErrorGuard::ReportErrorHandler(const char* file,
 
   ADD_FAILURE() << "IGL error encountered in " << file << ":" << line << " category=" << category
                 << " " << fmtString;
+#endif
 }
