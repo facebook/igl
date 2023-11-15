@@ -370,6 +370,24 @@ VulkanContext::~VulkanContext() {
 
   dummyStorageBuffer_.reset();
   dummyUniformBuffer_.reset();
+#if IGL_DEBUG
+  for (const auto& t : textures_) {
+    if (t.use_count() > 1) {
+      IGL_ASSERT_MSG(false,
+                     "Leaked texture detected! %u %s",
+                     t->getTextureId(),
+                     debugNamesTextures_[t->getTextureId()].c_str());
+    }
+  }
+  for (const auto& s : samplers_) {
+    if (s.use_count() > 1) {
+      IGL_ASSERT_MSG(false,
+                     "Leaked sampler detected! %u %s",
+                     s->getSamplerId(),
+                     debugNamesSamplers_[s->getSamplerId()].c_str());
+    }
+  }
+#endif // IGL_DEBUG
   textures_.clear();
   samplers_.clear();
 
@@ -1266,7 +1284,8 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
 
 std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
     std::shared_ptr<VulkanImage> image,
-    std::shared_ptr<VulkanImageView> imageView) const {
+    std::shared_ptr<VulkanImageView> imageView,
+    [[maybe_unused]] const char* debugName) const {
   IGL_PROFILER_FUNCTION();
 
   auto texture = std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView));
@@ -1282,6 +1301,14 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
     texture->textureId_ = uint32_t(textures_.size());
     textures_.emplace_back(texture);
   }
+
+#if IGL_DEBUG
+  const uint32_t id = texture->getTextureId();
+  if (debugNamesTextures_.size() <= id) {
+    debugNamesTextures_.resize(id + 1);
+  }
+  debugNamesTextures_[id] = debugName;
+#endif // IGL_DEBUG
 
   awaitingCreation_ = true;
 
@@ -1307,6 +1334,14 @@ std::shared_ptr<VulkanSampler> VulkanContext::createSampler(const VkSamplerCreat
     sampler->samplerId_ = uint32_t(samplers_.size());
     samplers_.emplace_back(sampler);
   }
+
+#if IGL_DEBUG
+  const uint32_t id = sampler->getSamplerId();
+  if (debugNamesSamplers_.size() <= id) {
+    debugNamesSamplers_.resize(id + 1);
+  }
+  debugNamesSamplers_[id] = debugName;
+#endif // IGL_DEBUG
 
   awaitingCreation_ = true;
 

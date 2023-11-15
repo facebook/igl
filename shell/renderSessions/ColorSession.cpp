@@ -208,6 +208,7 @@ void ColorSession::initialize() noexcept {
   // Sampler & Texture
   SamplerStateDesc samplerDesc;
   samplerDesc.minFilter = samplerDesc.magFilter = SamplerMinMagFilter::Linear;
+  samplerDesc.debugName = "Sampler: linear";
   samp0_ = device.createSamplerState(samplerDesc, nullptr);
   IGL_ASSERT(samp0_ != nullptr);
 

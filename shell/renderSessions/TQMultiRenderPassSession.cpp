@@ -190,6 +190,7 @@ void TQMultiRenderPassSession::initialize() noexcept {
   // Sampler & Texture
   SamplerStateDesc samplerDesc;
   samplerDesc.minFilter = samplerDesc.magFilter = SamplerMinMagFilter::Linear;
+  samplerDesc.debugName = "Sampler: linear";
   samplerState_ = device.createSamplerState(samplerDesc, nullptr);
   tex0_ = getPlatform().loadTexture("igl.png");
 

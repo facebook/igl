@@ -131,6 +131,7 @@ struct SamplerStateDesc {
     SamplerStateDesc desc;
     desc.minFilter = desc.magFilter = SamplerMinMagFilter::Linear;
     desc.mipFilter = SamplerMipFilter::Disabled;
+    desc.debugName = "newLinear()";
     return desc;
   }
 
@@ -146,6 +147,7 @@ struct SamplerStateDesc {
     SamplerStateDesc desc;
     desc.minFilter = desc.magFilter = SamplerMinMagFilter::Linear;
     desc.mipFilter = SamplerMipFilter::Linear;
+    desc.debugName = "newLinearMipmapped()";
     return desc;
   }
 

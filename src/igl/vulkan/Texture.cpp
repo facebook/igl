@@ -185,7 +185,7 @@ Result Texture::create(const TextureDesc& desc) {
     return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
   }
 
-  texture_ = ctx.createTexture(std::move(image), std::move(imageView));
+  texture_ = ctx.createTexture(std::move(image), std::move(imageView), desc.debugName.c_str());
 
   return Result();
 }

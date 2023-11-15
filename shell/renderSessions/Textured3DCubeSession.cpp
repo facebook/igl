@@ -201,6 +201,7 @@ void Textured3DCubeSession::createSamplerAndTextures(const igl::IDevice& device)
   samplerDesc.addressModeU = SamplerAddressMode::MirrorRepeat;
   samplerDesc.addressModeV = SamplerAddressMode::MirrorRepeat;
   samplerDesc.addressModeW = SamplerAddressMode::MirrorRepeat;
+  samplerDesc.debugName = "Sampler: linear (MirrorRepeat)";
   samp0_ = device.createSamplerState(samplerDesc, nullptr);
 
   uint32_t width = 256;
@@ -260,6 +261,7 @@ void Textured3DCubeSession::createSamplerAndTextures(const igl::IDevice& device)
                                                      height,
                                                      depth,
                                                      igl::TextureDesc::TextureUsageBits::Sampled);
+  texDesc.debugName = "shell/renderSessions/Textured3DCubeSession.cpp:tex0_";
   tex0_ = getPlatform().getDevice().createTexture(texDesc, nullptr);
   const auto range = igl::TextureRangeDesc::new3D(0, 0, 0, width, height, depth);
   tex0_->upload(range, textureData.data());

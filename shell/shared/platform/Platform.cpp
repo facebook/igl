@@ -39,6 +39,7 @@ std::shared_ptr<ITexture> Platform::loadTexture(const char* filename,
       igl::TextureDesc::new2D(format, imageData.desc.width, imageData.desc.height, usage);
   texDesc.numMipLevels =
       calculateMipmapLevels ? igl::TextureDesc::calcNumMipLevels(texDesc.width, texDesc.height) : 1;
+  texDesc.debugName = filename;
 
   Result res;
   auto tex = getDevice().createTexture(texDesc, &res);

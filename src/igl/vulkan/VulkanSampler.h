@@ -42,6 +42,10 @@ class VulkanSampler final {
     return vkSampler_;
   }
 
+  uint32_t getSamplerId() const {
+    return samplerId_;
+  }
+
  public:
   const VulkanContext& ctx_;
   VkDevice device_ = VK_NULL_HANDLE;

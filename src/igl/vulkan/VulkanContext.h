@@ -136,7 +136,8 @@ class VulkanContext final {
                                              igl::Result* outResult,
                                              const char* debugName = nullptr) const;
   std::shared_ptr<VulkanTexture> createTexture(std::shared_ptr<VulkanImage> image,
-                                               std::shared_ptr<VulkanImageView> imageView) const;
+                                               std::shared_ptr<VulkanImageView> imageView,
+                                               const char* debugName) const;
   std::shared_ptr<VulkanSampler> createSampler(const VkSamplerCreateInfo& ci,
                                                igl::Result* outResult,
                                                const char* debugName = nullptr) const;
@@ -274,6 +275,11 @@ class VulkanContext final {
   std::unique_ptr<VulkanContextImpl> pimpl_;
 
   VkPipelineCache pipelineCache_ = VK_NULL_HANDLE;
+
+#if IGL_DEBUG
+  mutable std::vector<std::string> debugNamesTextures_;
+  mutable std::vector<std::string> debugNamesSamplers_;
+#endif // IGL_DEBUG
 
   // 1. Textures can be safely deleted once they are not in use by GPU, hence our Vulkan context
   // owns all allocated textures (images+image views). The IGL interface vulkan::Texture does not

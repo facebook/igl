@@ -308,6 +308,7 @@ void MRTSession::initialize() noexcept {
   // Sampler & Texture
   SamplerStateDesc samplerDesc;
   samplerDesc.minFilter = samplerDesc.magFilter = SamplerMinMagFilter::Linear;
+  samplerDesc.debugName = "Sampler: linear";
   samp0_ = device.createSamplerState(samplerDesc, nullptr);
   tex0_ = getPlatform().loadTexture("igl.png");
 
@@ -452,6 +453,7 @@ std::shared_ptr<ITexture> MRTSession::createTexture2D(const std::shared_ptr<ITex
                                         dimensions.height,
                                         TextureDesc::TextureUsageBits::Attachment |
                                             TextureDesc::TextureUsageBits::Sampled);
+  desc.debugName = "shell/renderSessions/MRTSession.cpp:MRTSession::createTexture2D()";
 
   return getPlatform().getDevice().createTexture(desc, nullptr);
 }

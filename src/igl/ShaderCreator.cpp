@@ -44,6 +44,8 @@ std::shared_ptr<IShaderModule> ShaderModuleCreator::fromBinaryInput(const IDevic
                                                                     std::string debugName,
                                                                     Result* IGL_NULLABLE
                                                                         outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   Result localResult;
   Result* result = outResult ? outResult : &localResult;
   IGL_ASSERT(result);
@@ -66,6 +68,8 @@ std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromStringInput(
     std::string fragmentEntryPoint,
     std::string libraryDebugName,
     Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   Result localResult;
   Result* result = outResult ? outResult : &localResult;
   IGL_ASSERT(result);

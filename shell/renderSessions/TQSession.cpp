@@ -205,6 +205,7 @@ void TQSession::initialize() noexcept {
   // Sampler & Texture
   SamplerStateDesc samplerDesc;
   samplerDesc.minFilter = samplerDesc.magFilter = SamplerMinMagFilter::Linear;
+  samplerDesc.debugName = "Sampler: linear";
   _samp0 = device.createSamplerState(samplerDesc, NULL);
   IGL_ASSERT(_samp0 != nullptr);
   _tex0 = getPlatform().loadTexture("igl.png");

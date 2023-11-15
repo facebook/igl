@@ -235,6 +235,7 @@ Session::Renderer::Renderer(igl::IDevice& device) {
                                                     width,
                                                     height,
                                                     igl::TextureDesc::TextureUsageBits::Sampled);
+    desc.debugName = "IGLU/imgui/Session.cpp:Session::Renderer::_fontTexture";
     _fontTexture = device.createTexture(desc, nullptr);
     _fontTexture->upload(igl::TextureRangeDesc::new2D(0, 0, width, height), pixels);
 
