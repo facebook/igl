@@ -210,15 +210,23 @@ SpvModuleInfo getReflectionData(const void* spirv, size_t numBytes) {
       ResultId variableId = words[pos + kOpVariableId];
 
       if (interfaceBlockPointerTypeIds.count(variableTypeId)) {
-        auto bindingLocationIt = bindingLocations.find(variableId);
-        uint32_t bindingLocation = bindingLocationIt != bindingLocations.end()
-                                       ? bindingLocationIt->second
-                                       : kNoBindingLocation;
-        uint32_t storageClass = words[pos + kOpVariableStorageClass];
+        const uint32_t storageClass = words[pos + kOpVariableStorageClass];
+
+        BufferDescription* bufferDesc = nullptr;
         if (storageClass == StorageClass::Uniform) {
-          spvModuleInfo.uniformBufferBindingLocations.push_back(bindingLocation);
+          bufferDesc = &spvModuleInfo.uniformBuffers.emplace_back();
         } else if (storageClass == StorageClass::StorageBuffer) {
-          spvModuleInfo.storageBufferBindingLocations.push_back(bindingLocation);
+          bufferDesc = &spvModuleInfo.storageBuffers.emplace_back();
+        }
+
+        if (bufferDesc) {
+          auto bindingLocationIt = bindingLocations.find(variableId);
+          auto descriptorSetIt = descriptorSets.find(variableId);
+          bufferDesc->bindingLocation = bindingLocationIt != bindingLocations.end()
+                                            ? bindingLocationIt->second
+                                            : kNoBindingLocation;
+          bufferDesc->descriptorSet =
+              descriptorSetIt != descriptorSets.end() ? descriptorSetIt->second : kNoDescriptorSet;
         }
       } else {
         auto sampledImagePointerTypeIdsIter = sampledImagePointerTypeIds.find(variableTypeId);

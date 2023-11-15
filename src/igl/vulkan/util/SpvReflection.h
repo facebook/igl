@@ -24,9 +24,14 @@ struct TextureDescription {
   TextureType type = TextureType::Invalid;
 };
 
+struct BufferDescription {
+  uint32_t bindingLocation = kNoBindingLocation;
+  uint32_t descriptorSet = kNoDescriptorSet;
+};
+
 struct SpvModuleInfo {
-  std::vector<uint32_t> uniformBufferBindingLocations;
-  std::vector<uint32_t> storageBufferBindingLocations;
+  std::vector<BufferDescription> uniformBuffers;
+  std::vector<BufferDescription> storageBuffers;
   std::vector<TextureDescription> textures;
 };
 
