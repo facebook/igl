@@ -218,6 +218,77 @@ const std::vector<uint32_t> kTextureSpvWords = {
     0x00000026, 0x0003003e, 0x00000003, 0x00000027, 0x000100fd, 0x00010038,
 };
 
+/*
+               OpCapability Shader
+               OpMemoryModel Logical Simple
+               OpEntryPoint CombinedVF %main "main" %uv %fragColor
+               OpName %tex0 "tex0"
+               OpName %tex1 "tex1"
+               OpName %uv "uv"
+               OpName %fragColor "fragColor"
+               OpName %main "main"
+               OpDecorate %tex0 Binding 1
+               OpDecorate %tex0 DescriptorSet 0
+               OpDecorate %tex1 Binding 2
+               OpDecorate %tex1 DescriptorSet 1
+      %float = OpTypeFloat 32
+   %image_2D = OpTypeImage %float 2D 0 0 0 1 Unknown
+%sampled_image_2D = OpTypeSampledImage %image_2D
+%ptr_UniformConstant_sampled_image_2D = OpTypePointer UniformConstant %sampled_image_2D
+       %tex0 = OpVariable %ptr_UniformConstant_sampled_image_2D UniformConstant
+       %tex1 = OpVariable %ptr_UniformConstant_sampled_image_2D UniformConstant
+    %v2float = OpTypeVector %float 2
+%ptr_Input_v2float = OpTypePointer Input %v2float
+         %uv = OpVariable %ptr_Input_v2float Input
+    %v4float = OpTypeVector %float 4
+%ptr_Output_v4float = OpTypePointer Output %v4float
+  %fragColor = OpVariable %ptr_Output_v4float Output
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+       %main = OpFunction %void None %func
+         %_1 = OpLabel
+         %_2 = OpLoad %sampled_image_2D %tex0
+         %_3 = OpLoad %v2float %uv
+         %_4 = OpImageSampleImplicitLod %v4float %_2 %_3
+         %_5 = OpLoad %sampled_image_2D %tex1
+         %_6 = OpLoad %v2float %uv
+         %_7 = OpImageSampleImplicitLod %v4float %_5 %_6
+         %_8 = OpFAdd %v4float %_4 %_7
+               OpStore %fragColor %_8
+               OpReturn
+               OpFunctionEnd
+*/
+
+const std::vector<uint32_t> kTextureWithDescriptorSetSpvWords = {
+    0x07230203, 0x00010000, 0xdeadbeef, 0x00000025, 0x00000000, 0x00020011, 0x00000001, 0x0003000e,
+    0x00000000, 0x00000000, 0x0007000f, 0x00000000, 0x00000018, 0x6e69616d, 0x00000000, 0x00000002,
+    0x0000001e, 0x0007000f, 0x00000004, 0x00000019, 0x6e69616d, 0x00000000, 0x00000003, 0x0000001f,
+    0x00030010, 0x00000019, 0x00000008, 0x00040005, 0x00000004, 0x30786574, 0x00000000, 0x00040005,
+    0x00000005, 0x31786574, 0x00000000, 0x00030005, 0x00000002, 0x00007675, 0x00050005, 0x00000003,
+    0x67617266, 0x6f6c6f43, 0x00000072, 0x00040005, 0x00000018, 0x6e69616d, 0x00000000, 0x00040005,
+    0x00000019, 0x6e69616d, 0x00000000, 0x00040047, 0x00000004, 0x00000022, 0x00000000, 0x00040047,
+    0x00000004, 0x00000021, 0x00000001, 0x00040047, 0x00000005, 0x00000022, 0x00000001, 0x00040047,
+    0x00000005, 0x00000021, 0x00000002, 0x00040047, 0x00000002, 0x0000001e, 0x00000000, 0x00040047,
+    0x00000003, 0x0000001e, 0x00000000, 0x00040047, 0x0000001e, 0x0000001e, 0x00000000, 0x00040047,
+    0x0000001f, 0x0000001e, 0x00000000, 0x00030016, 0x00000006, 0x00000020, 0x00090019, 0x00000007,
+    0x00000006, 0x00000001, 0x00000000, 0x00000000, 0x00000000, 0x00000001, 0x00000000, 0x0003001b,
+    0x00000008, 0x00000007, 0x00040020, 0x00000009, 0x00000000, 0x00000008, 0x00040017, 0x0000000a,
+    0x00000006, 0x00000002, 0x00040020, 0x0000000b, 0x00000001, 0x0000000a, 0x00040017, 0x0000000c,
+    0x00000006, 0x00000004, 0x00040020, 0x0000000d, 0x00000003, 0x0000000c, 0x00020013, 0x0000000e,
+    0x00030021, 0x0000000f, 0x0000000e, 0x00040020, 0x00000023, 0x00000003, 0x0000000a, 0x00040017,
+    0x00000024, 0x00000006, 0x00000003, 0x0004003b, 0x00000009, 0x00000004, 0x00000000, 0x0004003b,
+    0x00000009, 0x00000005, 0x00000000, 0x0004003b, 0x0000000b, 0x00000002, 0x00000001, 0x0004003b,
+    0x0000000d, 0x00000003, 0x00000003, 0x0004003b, 0x00000023, 0x0000001e, 0x00000003, 0x0004003b,
+    0x0000000b, 0x0000001f, 0x00000001, 0x00050036, 0x0000000e, 0x00000018, 0x00000000, 0x0000000f,
+    0x000200f8, 0x0000001a, 0x0004003d, 0x0000000a, 0x00000012, 0x00000002, 0x0003003e, 0x0000001e,
+    0x00000012, 0x000100fd, 0x00010038, 0x00050036, 0x0000000e, 0x00000019, 0x00000000, 0x0000000f,
+    0x000200f8, 0x0000001b, 0x0004003d, 0x00000008, 0x0000001d, 0x00000004, 0x0004003d, 0x0000000a,
+    0x00000020, 0x0000001f, 0x00050057, 0x0000000c, 0x00000013, 0x0000001d, 0x00000020, 0x0004003d,
+    0x00000008, 0x00000022, 0x00000005, 0x00050057, 0x0000000c, 0x00000016, 0x00000022, 0x00000020,
+    0x00050081, 0x0000000c, 0x00000017, 0x00000013, 0x00000016, 0x0003003e, 0x00000003, 0x00000017,
+    0x000100fd, 0x00010038,
+};
+
 } // namespace
 
 TEST(SpvReflectionTest, UniformBufferTest) {
@@ -240,14 +311,36 @@ TEST(SpvReflectionTest, TextureTest) {
   EXPECT_EQ(spvModuleInfo.storageBufferBindingLocations.size(), 0);
   EXPECT_EQ(spvModuleInfo.textures.size(), 4);
   EXPECT_EQ(spvModuleInfo.textures[0].bindingLocation, kNoBindingLocation);
+  EXPECT_EQ(spvModuleInfo.textures[0].descriptorSet, kNoDescriptorSet);
   EXPECT_EQ(spvModuleInfo.textures[1].bindingLocation, 1);
+  EXPECT_EQ(spvModuleInfo.textures[1].descriptorSet, 0);
   EXPECT_EQ(spvModuleInfo.textures[2].bindingLocation, kNoBindingLocation);
+  EXPECT_EQ(spvModuleInfo.textures[2].descriptorSet, kNoBindingLocation);
   EXPECT_EQ(spvModuleInfo.textures[3].bindingLocation, 3);
+  EXPECT_EQ(spvModuleInfo.textures[3].descriptorSet, 0);
 
   EXPECT_EQ(spvModuleInfo.textures[0].type, TextureType::TwoD);
   EXPECT_EQ(spvModuleInfo.textures[1].type, TextureType::TwoD);
   EXPECT_EQ(spvModuleInfo.textures[2].type, TextureType::TwoD);
   EXPECT_EQ(spvModuleInfo.textures[3].type, TextureType::TwoD);
+}
+
+TEST(SpvReflectionTest, TextureDescriptorSetTest) {
+  using namespace vulkan::util;
+  SpvModuleInfo spvModuleInfo =
+      getReflectionData(kTextureWithDescriptorSetSpvWords.data(),
+                        kTextureWithDescriptorSetSpvWords.size() * sizeof(uint32_t));
+
+  ASSERT_EQ(spvModuleInfo.uniformBufferBindingLocations.size(), 0);
+  EXPECT_EQ(spvModuleInfo.storageBufferBindingLocations.size(), 0);
+  EXPECT_EQ(spvModuleInfo.textures.size(), 2);
+  EXPECT_EQ(spvModuleInfo.textures[0].bindingLocation, 1);
+  EXPECT_EQ(spvModuleInfo.textures[0].descriptorSet, 0);
+  EXPECT_EQ(spvModuleInfo.textures[1].bindingLocation, 2);
+  EXPECT_EQ(spvModuleInfo.textures[1].descriptorSet, 1);
+
+  EXPECT_EQ(spvModuleInfo.textures[0].type, TextureType::TwoD);
+  EXPECT_EQ(spvModuleInfo.textures[1].type, TextureType::TwoD);
 }
 
 } // namespace igl::tests

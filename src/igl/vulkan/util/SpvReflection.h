@@ -16,9 +16,11 @@
 namespace igl::vulkan::util {
 
 constexpr uint32_t kNoBindingLocation = std::numeric_limits<uint32_t>::max();
+constexpr uint32_t kNoDescriptorSet = std::numeric_limits<uint32_t>::max();
 
 struct TextureDescription {
   uint32_t bindingLocation = kNoBindingLocation;
+  uint32_t descriptorSet = kNoDescriptorSet;
   TextureType type = TextureType::Invalid;
 };
 

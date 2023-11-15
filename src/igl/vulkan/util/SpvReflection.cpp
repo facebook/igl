@@ -52,7 +52,7 @@ enum class OpCode : uint32_t {
 };
 
 struct Decoration {
-  enum : uint32_t { Block = 2, Binding = 33 };
+  enum : uint32_t { Block = 2, Binding = 33, DescriptorSet = 34 };
 };
 
 struct ImageDimensionality {
@@ -120,6 +120,7 @@ SpvModuleInfo getReflectionData(const void* spirv, size_t numBytes) {
   std::unordered_map<ResultId, ResultId> sampledImageTypeIdToImageTypeId;
   std::unordered_map<ResultId, TextureType> sampledImagePointerTypeIds;
   std::unordered_map<ResultId, uint32_t> bindingLocations;
+  std::unordered_map<ResultId, uint32_t> descriptorSets;
   std::unordered_map<ResultId, TextureType> imageTypes;
 
   SpvModuleInfo spvModuleInfo;
@@ -132,8 +133,8 @@ SpvModuleInfo getReflectionData(const void* spirv, size_t numBytes) {
     case OpCode::OpDecorate: {
       IGL_ASSERT_MSG((pos + kOpDecorateDecoration) < size, "OpDecorate out of bounds");
 
-      uint32_t decoration = words[pos + kOpDecorateDecoration];
-      uint32_t targetId = words[pos + kOpDecorateTargetId];
+      const uint32_t decoration = words[pos + kOpDecorateDecoration];
+      const uint32_t targetId = words[pos + kOpDecorateTargetId];
       switch (decoration) {
       case Decoration::Block: {
         interfaceBlockTypeIds.insert(targetId);
@@ -142,8 +143,14 @@ SpvModuleInfo getReflectionData(const void* spirv, size_t numBytes) {
       case Decoration::Binding: {
         IGL_ASSERT_MSG((pos + kOpDecorateOperandIds) < size, "OpDecorate out of bounds");
 
-        uint32_t bindingLocation = words[pos + kOpDecorateOperandIds];
+        const uint32_t bindingLocation = words[pos + kOpDecorateOperandIds];
         bindingLocations.insert({targetId, bindingLocation});
+        break;
+      }
+      case Decoration::DescriptorSet: {
+        IGL_ASSERT_MSG((pos + kOpDecorateOperandIds) < size, "OpDecorate out of bounds");
+        const uint32_t descriptorSet = words[pos + kOpDecorateOperandIds];
+        descriptorSets.insert({targetId, descriptorSet});
         break;
       }
       default:
@@ -155,7 +162,7 @@ SpvModuleInfo getReflectionData(const void* spirv, size_t numBytes) {
     case OpCode::OpTypeImage: {
       IGL_ASSERT_MSG((pos + kOpTypeImageMaxUsedId) < size, "OpTypeImage out of bounds");
       ResultId imageTypeId = words[pos + kOpTypeImageTypeId];
-      uint32_t dim = words[pos + kOpTypeImageDim];
+      const uint32_t dim = words[pos + kOpTypeImageDim];
       bool isArrayed = words[pos + kOpTypeImageArrayed] == 1u;
       TextureType textureType = getTextureType(dim, isArrayed);
       imageTypes.insert({imageTypeId, textureType});
@@ -217,14 +224,17 @@ SpvModuleInfo getReflectionData(const void* spirv, size_t numBytes) {
         auto sampledImagePointerTypeIdsIter = sampledImagePointerTypeIds.find(variableTypeId);
         if (sampledImagePointerTypeIdsIter != sampledImagePointerTypeIds.end()) {
           auto bindingLocationIt = bindingLocations.find(variableId);
-          uint32_t bindingLocation = bindingLocationIt != bindingLocations.end()
-                                         ? bindingLocationIt->second
-                                         : kNoBindingLocation;
-
+          const uint32_t bindingLocation = bindingLocationIt != bindingLocations.end()
+                                               ? bindingLocationIt->second
+                                               : kNoBindingLocation;
+          auto descriptorSetIt = descriptorSets.find(variableId);
+          const uint32_t descriptorSet =
+              descriptorSetIt != descriptorSets.end() ? descriptorSetIt->second : kNoDescriptorSet;
           auto textureType = sampledImagePointerTypeIdsIter->second;
           TextureDescription textureDesc;
           textureDesc.type = textureType;
           textureDesc.bindingLocation = bindingLocation;
+          textureDesc.descriptorSet = descriptorSet;
           spvModuleInfo.textures.push_back(std::move(textureDesc));
         }
       }
