@@ -57,7 +57,15 @@ inline void* checked_memcpy_offset(void* destination,
                                    size_t offset,
                                    const void* source,
                                    size_t count) {
-  if (destination_size < count || offset >= destination_size) {
+  // Naively, we could just check count > destination_size - offset. However,
+  // if offset is very large, e.g. size_t(-1), then destination_size - offset
+  // will overflow `size_t` and hence act additive to destination_size.
+  //
+  // To avoid this, we properly compute the available_size and then check that.
+
+  size_t available_size = offset > destination_size ? 0 : destination_size - offset;
+
+  if (count > available_size) {
     IGL_REPORT_ERROR_MSG(false, "Aborting due to potential buffer overflow");
     exit(EXIT_FAILURE);
   }
