@@ -1337,7 +1337,7 @@ void generateCompressedTexture(LoadedImage img) {
   // Create KTX texture
   // hard coded and support only BC7 format
   ktxTexture1* texture = nullptr;
-  LVK_VERIFY(ktxTexture1_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &texture) == KTX_SUCCESS);
+  (void)LVK_VERIFY(ktxTexture1_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &texture) == KTX_SUCCESS);
 
   SCOPE_EXIT {
     ktxTexture_Destroy(ktxTexture(texture));
@@ -1488,7 +1488,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, lvk::Holder<lvk::Texture
   LVK_PROFILER_FUNCTION();
 
   ktxTexture1* texture = nullptr;
-  LVK_VERIFY(ktxTexture1_CreateFromNamedFile(fileNameKTX.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS);
+  (void)LVK_VERIFY(ktxTexture1_CreateFromNamedFile(fileNameKTX.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS);
   SCOPE_EXIT {
     ktxTexture_Destroy(ktxTexture(texture));
   };
@@ -1546,14 +1546,14 @@ ktxTexture1* bitmapToCube(Bitmap& bmp) {
   };
 
   ktxTexture1* texture = nullptr;
-  LVK_VERIFY(ktxTexture1_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &texture) == KTX_SUCCESS);
+  (void)LVK_VERIFY(ktxTexture1_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &texture) == KTX_SUCCESS);
 
   const int numFacePixels = w * h;
 
   for (size_t face = 0; face != 6; face++) {
      const vec3* src = reinterpret_cast<vec3*>(bmp.data_.data()) + face * numFacePixels;
      size_t offset = 0;
-     LVK_VERIFY(ktxTexture_GetImageOffset(ktxTexture(texture), 0, 0, face, &offset) == KTX_SUCCESS);
+     (void)LVK_VERIFY(ktxTexture_GetImageOffset(ktxTexture(texture), 0, 0, face, &offset) == KTX_SUCCESS);
      float* dst = (float*)(texture->pData + offset);
      for (int y = 0; y != h; y++) {
       for (int x = 0; x != w; x++) {
@@ -1585,9 +1585,9 @@ void generateMipmaps(const std::string& outFilename, ktxTexture1* cubemap) {
       const uint32_t height = prevHeight > 1 ? prevWidth >> 1 : 1;
 
       size_t prevOffset = 0;
-      LVK_VERIFY(ktxTexture_GetImageOffset(ktxTexture(cubemap), miplevel - 1, 0, face, &prevOffset) == KTX_SUCCESS);
+      (void)LVK_VERIFY(ktxTexture_GetImageOffset(ktxTexture(cubemap), miplevel - 1, 0, face, &prevOffset) == KTX_SUCCESS);
       size_t offset = 0;
-      LVK_VERIFY(ktxTexture_GetImageOffset(ktxTexture(cubemap), miplevel, 0, face, &offset) == KTX_SUCCESS);
+      (void)LVK_VERIFY(ktxTexture_GetImageOffset(ktxTexture(cubemap), miplevel, 0, face, &offset) == KTX_SUCCESS);
 
       stbir_resize_float_linear(reinterpret_cast<const float*>(cubemap->pData + prevOffset),
                                 prevWidth,
@@ -2028,7 +2028,7 @@ int main(int argc, char* argv[]) {
       };
 
       ktxTexture1* texture = nullptr;
-      LVK_VERIFY(ktxTexture1_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &texture) == KTX_SUCCESS);
+      (void)LVK_VERIFY(ktxTexture1_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &texture) == KTX_SUCCESS);
       ctx_->download(ctx_->getCurrentSwapchainTexture(), {.dimensions = {(uint32_t)width_, (uint32_t)height_}}, texture->pData);
       ktxTexture_WriteToNamedFile(ktxTexture(texture), "screenshot.ktx");
       ktxTexture_Destroy(ktxTexture(texture));
