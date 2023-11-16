@@ -309,7 +309,7 @@ void ShaderUniforms::setBool(const igl::NameHandle& blockTypeName,
 }
 
 void ShaderUniforms::setBoolArray(const igl::NameHandle& uniformName,
-                                  bool* value,
+                                  const bool* value,
                                   size_t count,
                                   size_t arrayIndex) {
   setUniformBytes(uniformName, value, sizeof(bool), count, arrayIndex);
@@ -318,7 +318,7 @@ void ShaderUniforms::setBoolArray(const igl::NameHandle& uniformName,
 void ShaderUniforms::setBoolArray(const igl::NameHandle& blockTypeName,
                                   const igl::NameHandle& blockInstanceName,
                                   const igl::NameHandle& memberName,
-                                  bool* value,
+                                  const bool* value,
                                   size_t count,
                                   size_t arrayIndex) {
   setUniformBytes(
@@ -346,7 +346,7 @@ void ShaderUniforms::setFloat(const igl::NameHandle& blockTypeName,
 }
 
 void ShaderUniforms::setFloatArray(const igl::NameHandle& uniformName,
-                                   iglu::simdtypes::float1* value,
+                                   const iglu::simdtypes::float1* value,
                                    size_t count,
                                    size_t arrayIndex) {
   setUniformBytes(uniformName, value, sizeof(iglu::simdtypes::float1), count, arrayIndex);
@@ -388,7 +388,7 @@ void ShaderUniforms::setFloat2(const igl::NameHandle& blockTypeName,
 }
 
 void ShaderUniforms::setFloat2Array(const igl::NameHandle& uniformName,
-                                    iglu::simdtypes::float2* value,
+                                    const iglu::simdtypes::float2* value,
                                     size_t count,
                                     size_t arrayIndex) {
   setUniformBytes(uniformName, value, sizeof(iglu::simdtypes::float2), count, arrayIndex);
@@ -397,7 +397,7 @@ void ShaderUniforms::setFloat2Array(const igl::NameHandle& uniformName,
 void ShaderUniforms::setFloat2Array(const igl::NameHandle& blockTypeName,
                                     const igl::NameHandle& blockInstanceName,
                                     const igl::NameHandle& memberName,
-                                    iglu::simdtypes::float2* value,
+                                    const iglu::simdtypes::float2* value,
                                     size_t count,
                                     size_t arrayIndex) {
   setUniformBytes(blockTypeName,
@@ -416,7 +416,7 @@ void ShaderUniforms::setFloat3(const igl::NameHandle& uniformName,
 }
 
 void ShaderUniforms::setFloat3Array(const igl::NameHandle& uniformName,
-                                    iglu::simdtypes::float3* value,
+                                    const iglu::simdtypes::float3* value,
                                     size_t count,
                                     size_t arrayIndex) {
   if (device_.getBackendType() == igl::BackendType::Metal) {
@@ -635,7 +635,7 @@ void ShaderUniforms::setInt(const igl::NameHandle& blockTypeName,
 }
 
 void ShaderUniforms::setIntArray(const igl::NameHandle& uniformName,
-                                 iglu::simdtypes::int1* value,
+                                 const iglu::simdtypes::int1* value,
                                  size_t count,
                                  size_t arrayIndex) {
   setUniformBytes(uniformName, value, sizeof(iglu::simdtypes::int1), count, arrayIndex);
@@ -644,7 +644,7 @@ void ShaderUniforms::setIntArray(const igl::NameHandle& uniformName,
 void ShaderUniforms::setIntArray(const igl::NameHandle& blockTypeName,
                                  const igl::NameHandle& blockInstanceName,
                                  const igl::NameHandle& memberName,
-                                 iglu::simdtypes::int1* value,
+                                 const iglu::simdtypes::int1* value,
                                  size_t count,
                                  size_t arrayIndex) {
   setUniformBytes(blockTypeName,
