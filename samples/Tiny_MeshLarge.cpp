@@ -490,6 +490,7 @@ glm::vec2 mousePos_ = glm::vec2(0.0f);
 bool mousePressed_ = false;
 bool enableComputePass_ = false;
 bool enableWireframe_ = false;
+bool showPerfStats_ = false;
 
 bool isShadowMapDirty_ = true;
 
@@ -1298,12 +1299,14 @@ void render(lvk::TextureHandle nativeDrawable, uint32_t frameIndex) {
   timestampEndRendering = glfwGetTime();
 
   // timestamp stats
-  ctx_->getQueryPoolResults(queryPoolTimestamps_,
-                            0,
-                            LVK_ARRAY_NUM_ELEMENTS(pipelineTimestamps),
-                            sizeof(pipelineTimestamps),
-                            pipelineTimestamps,
-                            sizeof(pipelineTimestamps[0]));
+  if (showPerfStats_) {
+    ctx_->getQueryPoolResults(queryPoolTimestamps_,
+                              0,
+                              LVK_ARRAY_NUM_ELEMENTS(pipelineTimestamps),
+                              sizeof(pipelineTimestamps),
+                              pipelineTimestamps,
+                              sizeof(pipelineTimestamps[0]));
+  }
 }
 
 void generateCompressedTexture(LoadedImage img) {
@@ -1930,6 +1933,9 @@ int main(int argc, char* argv[]) {
     if (key == GLFW_KEY_T && pressed) {
       enableWireframe_ = !enableWireframe_;
     }
+    if (key == GLFW_KEY_P && pressed) {
+      showPerfStats_ = !showPerfStats_;
+    }
     if (key == GLFW_KEY_ESCAPE && pressed)
       glfwSetWindowShouldClose(window, GLFW_TRUE);
     if (key == GLFW_KEY_W) {
@@ -2018,6 +2024,7 @@ int main(int argc, char* argv[]) {
       ImGui::Text("C - toggle compute shader postprocessing");
       ImGui::Text("N - toggle normals");
       ImGui::Text("T - toggle wireframe");
+      ImGui::Text("P - show perf stats");
       ImGui::End();
 
       if (!textures_[1].diffuse.empty()) {
@@ -2055,7 +2062,8 @@ int main(int argc, char* argv[]) {
         ImGui::End();
       }
 
-      showTimeGPU();
+		if (showPerfStats_)
+        showTimeGPU();
     }
 
     positioner_.update(delta, mousePos_, mousePressed_);
