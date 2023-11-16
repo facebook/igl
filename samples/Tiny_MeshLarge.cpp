@@ -42,7 +42,7 @@
 #include <shared/UtilsCubemap.h>
 #include <shared/UtilsFPS.h>
 #include <stb/stb_image.h>
-#include <stb/stb_image_resize.h>
+#include <stb/stb_image_resize2.h>
 #include <taskflow/taskflow.hpp>
 #include <tiny_obj_loader.h>
 
@@ -1337,15 +1337,15 @@ void generateCompressedTexture(LoadedImage img) {
     std::vector<uint8_t> destPixels(w * h * img.channels);
 
     // resize
-    stbir_resize_uint8((const unsigned char*)img.pixels,
-                       (int)img.w,
-                       (int)img.h,
-                       0,
-                       (unsigned char*)destPixels.data(),
-                       w,
-                       h,
-                       0,
-                       (int)img.channels);
+    stbir_resize_uint8_linear((const unsigned char*)img.pixels,
+                              (int)img.w,
+                              (int)img.h,
+                              0,
+                              (unsigned char*)destPixels.data(),
+                              w,
+                              h,
+                              0,
+                              (stbir_pixel_layout)img.channels);
     // compress
     auto packedImage16 = Compress::getCompressedImage(
         destPixels.data(), w, h, img.channels, false, &loaderShouldExit_);
@@ -1547,15 +1547,15 @@ void generateMipmaps(const std::string& outFilename, gli::texture_cube& cubemap)
       const auto width = prevWidth > 1 ? prevWidth >> 1 : 1;
       const auto height = prevHeight > 1 ? prevWidth >> 1 : 1;
 
-      stbir_resize_float((const float*)cubemap.data(0, face, miplevel - 1),
-                         prevWidth,
-                         prevHeight,
-                         0,
-                         (float*)cubemap.data(0, face, miplevel),
-                         width,
-                         height,
-                         0,
-                         4);
+      stbir_resize_float_linear((const float*)cubemap.data(0, face, miplevel - 1),
+                                prevWidth,
+                                prevHeight,
+                                0,
+                                (float*)cubemap.data(0, face, miplevel),
+                                width,
+                                height,
+                                0,
+                                STBIR_RGBA);
 
       prevWidth = width;
       prevHeight = height;

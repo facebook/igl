@@ -44,7 +44,7 @@
     "source": {
         "type": "git",
         "url": "https://github.com/nothings/stb.git",
-        "revision": "8b5f1f37b5b75829fc72d38e7b5d4bcbf8a26d55"
+        "revision": "03f50e343d796e492e6579a11143a085429d7f5d"
     }
 },
 {
@@ -52,7 +52,7 @@
     "source": {
         "type": "git",
         "url": "https://github.com/PacktPublishing/3D-Graphics-Rendering-Cookbook.git",
-        "revision": "9b44e0b5dc0328e635bd30edc8f4f2ba1e79be38"
+        "revision": "972e7a131774f41a9108c1a08492acb367900c00"
     }
 },
 {

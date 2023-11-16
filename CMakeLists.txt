@@ -151,7 +151,7 @@ if(LVK_DEPLOY_DEPS)
   add_dependencies(LVKLibrary LVKDependencies)
 endif()
 
-add_library(LVKstb third-party/deps/patches/stb_impl/stb_image.c third-party/deps/patches/stb_impl/stb_image_resize.c
+add_library(LVKstb third-party/deps/patches/stb_impl/stb_image.c third-party/deps/patches/stb_impl/stb_image_resize2.c
                    third-party/deps/patches/stb_impl/stb_image_write.c)
 target_include_directories(LVKstb PUBLIC "third-party/deps/src/stb")
 lvk_set_folder(LVKstb "LVK")
