@@ -2621,11 +2621,8 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
                                            uint32_t layer,
                                            uint32_t numLayers,
                                            VkFormat format,
-                                           const void* data[]) {
+                                           const void* data) {
   LVK_PROFILER_FUNCTION();
-
-  // cache the dimensions of each mip-level for later
-  uint32_t mipSizes[LVK_MAX_MIP_LEVELS];
 
   LVK_ASSERT(numMipLevels <= LVK_MAX_MIP_LEVELS);
 
@@ -2643,7 +2640,6 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
   for (uint32_t i = 0; i < numMipLevels; ++i) {
     const uint32_t mipSize = lvk::getTextureBytesPerLayer(image.vkExtent_.width, image.vkExtent_.height, texFormat, i);
     layerStorageSize += mipSize;
-    mipSizes[i] = mipSize;
     width = width <= 1 ? 1 : width >> 1;
     height = height <= 1 ? 1 : height >> 1;
   }
@@ -2653,7 +2649,7 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
 
   LVK_ASSERT(storageSize <= stagingBufferSize_);
 
-  MemoryRegionDesc desc = getNextFreeOffset(layerStorageSize);
+  MemoryRegionDesc desc = getNextFreeOffset(storageSize);
   // No support for copying image in multiple smaller chunk sizes. If we get smaller buffer size than storageSize, we will wait for GPU idle
   // and get bigger chunk.
   if (desc.size_ < storageSize) {
@@ -2666,12 +2662,13 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
 
   lvk::VulkanBuffer* stagingBuffer = ctx_.buffersPool_.get(stagingBuffer_);
 
-  for (uint32_t layer = 0; layer != numLayers; layer++) {
-    stagingBuffer->bufferSubData(desc.offset_ + layer * layerStorageSize, layerStorageSize, data[layer]);
+  stagingBuffer->bufferSubData(desc.offset_, storageSize, data);
 
-    uint32_t mipLevelOffset = 0;
+  uint32_t offset = 0;
 
-    for (uint32_t mipLevel = 0; mipLevel < numMipLevels; ++mipLevel) {
+  // https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
+  for (uint32_t mipLevel = 0; mipLevel < numMipLevels; ++mipLevel) {
+    for (uint32_t layer = 0; layer != numLayers; layer++) {
       const auto currentMipLevel = baseMipLevel + mipLevel;
 
       LVK_ASSERT(currentMipLevel < image.numLevels_);
@@ -2699,7 +2696,7 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
       };
       const VkBufferImageCopy copy = {
           // the offset for this level is at the start of all mip-levels plus the size of all previous mip-levels being uploaded
-          .bufferOffset = desc.offset_ + layer * layerStorageSize + mipLevelOffset,
+          .bufferOffset = desc.offset_ + offset,
           .bufferRowLength = 0,
           .bufferImageHeight = 0,
           .imageSubresource = VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, layer, 1},
@@ -2719,8 +2716,7 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
                               VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                               VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, currentMipLevel, 1, layer, 1});
 
-      // Compute the offset for the next level
-      mipLevelOffset += mipSizes[mipLevel];
+      offset += lvk::getTextureBytesPerLayer(imageRegion.extent.width, imageRegion.extent.height, texFormat, currentMipLevel);
     }
   }
 
@@ -3411,16 +3407,8 @@ lvk::Holder<lvk::TextureHandle> lvk::VulkanContext::createTexture(const TextureD
   if (desc.data) {
     LVK_ASSERT(desc.type == TextureType_2D || desc.type == TextureType_Cube);
     LVK_ASSERT(desc.dataNumMipLevels <= desc.numMipLevels);
-    const void* layers[6] = {};
-    uint32_t layerSize = 0;
-    for (uint32_t level = 0; level != desc.dataNumMipLevels; level++) {
-      layerSize += getTextureBytesPerLayer(desc.dimensions.width, desc.dimensions.height, desc.format, level);
-    }
     const uint32_t numLayers = desc.type == TextureType_Cube ? 6 : 1;
-    for (uint32_t i = 0; i != numLayers; i++) {
-      layers[i] = (const uint8_t*)desc.data + i * layerSize;
-    }
-    Result res = upload(handle, {.dimensions = desc.dimensions, .numLayers = numLayers, .numMipLevels = desc.dataNumMipLevels}, layers);
+    Result res = upload(handle, {.dimensions = desc.dimensions, .numLayers = numLayers, .numMipLevels = desc.dataNumMipLevels}, desc.data);
     if (!res.isOk()) {
       Result::setResult(outResult, res);
       return {};
@@ -3828,7 +3816,7 @@ lvk::Result lvk::VulkanContext::download(lvk::TextureHandle handle, const Textur
   return Result();
 }
 
-lvk::Result lvk::VulkanContext::upload(lvk::TextureHandle handle, const TextureRangeDesc& range, const void* data[]) {
+lvk::Result lvk::VulkanContext::upload(lvk::TextureHandle handle, const TextureRangeDesc& range, const void* data) {
   if (!data) {
     return Result();
   }
@@ -3847,12 +3835,11 @@ lvk::Result lvk::VulkanContext::upload(lvk::TextureHandle handle, const TextureR
   VkFormat vkFormat = texture->image_->vkImageFormat_;
 
   if (type == VK_IMAGE_TYPE_3D) {
-    const void* uploadData = data[0];
     stagingDevice_->imageData3D(*texture->image_.get(),
                                 VkOffset3D{(int32_t)range.x, (int32_t)range.y, (int32_t)range.z},
                                 VkExtent3D{range.dimensions.width, range.dimensions.height, range.dimensions.depth},
                                 vkFormat,
-                                uploadData);
+                                data);
   } else {
     const VkRect2D imageRegion = {
         .offset = {.x = (int)range.x, .y = (int)range.y},
@@ -4697,9 +4684,8 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
     }
     VulkanTexture dummyTexture(std::move(image), imageView);
     const uint32_t pixel = 0xFF000000;
-    const void* data[] = {&pixel};
     const VkRect2D imageRegion = {.offset = {.x = 0, .y = 0}, .extent = {.width = 1, .height = 1}};
-    stagingDevice_->imageData2D(*dummyTexture.image_.get(), imageRegion, 0, 1, 0, 1, dummyTextureFormat, data);
+    stagingDevice_->imageData2D(*dummyTexture.image_.get(), imageRegion, 0, 1, 0, 1, dummyTextureFormat, &pixel);
     texturesPool_.create(std::move(dummyTexture));
     LVK_ASSERT(texturesPool_.numObjects() == 1);
   }

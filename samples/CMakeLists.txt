@@ -42,3 +42,5 @@ target_sources(Tiny_MeshLarge
                PRIVATE "${LVK_ROOT_DIR}/third-party/deps/src/3D-Graphics-Rendering-Cookbook/shared/UtilsCubemap.cpp")
 
 target_sources(Tiny_MeshLarge PRIVATE "${LVK_ROOT_DIR}/third-party/deps/src/imgui/imgui_demo.cpp")
+
+target_link_libraries(Tiny_MeshLarge PRIVATE ktx)

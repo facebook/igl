@@ -827,8 +827,8 @@ class IContext {
 #pragma endregion
 
 #pragma region Texture functions
-  // data[] contains per-layer mip-stacks
-  virtual Result upload(TextureHandle handle, const TextureRangeDesc& range, const void* data[]) = 0;
+  // `data` contains mip-levels and layers as in https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
+  virtual Result upload(TextureHandle handle, const TextureRangeDesc& range, const void* data) = 0;
   virtual Result download(TextureHandle handle, const TextureRangeDesc& range, void* outData) = 0;
   virtual void generateMipmap(TextureHandle handle) const = 0;
   [[nodiscard]] virtual Dimensions getDimensions(TextureHandle handle) const = 0;

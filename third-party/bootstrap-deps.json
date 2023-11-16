@@ -68,11 +68,11 @@
      }
 },
 {
-    "name": "gli",
+    "name": "ktx-software",
     "source": {
         "type": "git",
-        "url": "https://github.com/g-truc/gli.git",
-        "revision": "779b99ac6656e4d30c3b24e96e0136a59649a869"
+        "url": "https://github.com/KhronosGroup/KTX-Software.git",
+        "revision": "84ee59dd27232ff60ea6ee135f67d46fde5c766b"
     }
 },
 {

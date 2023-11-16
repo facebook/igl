@@ -29,10 +29,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
 
-// GLI should be included after GLM
-#include <gli/save_ktx.hpp>
-#include <gli/texture2d.hpp>
-#include <gli/texture_cube.hpp>
+#include <ktx.h>
+#include <ktx-software/lib/vkformat_enum.h>
+#undef NOMINMAX
+#include <ktx-software/lib/gl_format.h>
 #include <ldrutils/lmath/Colors.h>
 #include <ldrutils/lutils/ScopeExit.h>
 
@@ -1321,23 +1321,35 @@ void generateCompressedTexture(LoadedImage img) {
   const auto mipmapLevelCount = lvk::calcNumMipLevels(img.w, img.h);
 
   // Go over all generated mipmap and create a compressed texture
-  gli::texture2d::extent_type extents;
-  extents.x = img.w;
-  extents.y = img.h;
+  ktxTextureCreateInfo createInfo = {
+      .glInternalformat = GL_COMPRESSED_RGBA_BPTC_UNORM,
+      .vkFormat = VK_FORMAT_BC7_UNORM_BLOCK,
+      .baseWidth = static_cast<uint32_t>(img.w),
+      .baseHeight = static_cast<uint32_t>(img.h),
+      .baseDepth = 1u,
+      .numDimensions = 2u,
+      .numLevels = mipmapLevelCount,
+      .numLayers = 1u,
+      .numFaces = 1u,
+      .generateMipmaps = KTX_FALSE,
+  };
 
-  // Create gli texture
+  // Create KTX texture
   // hard coded and support only BC7 format
-  gli::texture2d gliTex2d =
-      gli::texture2d(gli::FORMAT_RGBA_BP_UNORM_BLOCK16, extents, mipmapLevelCount);
+  ktxTexture1* texture = nullptr;
+  LVK_VERIFY(ktxTexture1_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &texture) == KTX_SUCCESS);
+
+  SCOPE_EXIT {
+    ktxTexture_Destroy(ktxTexture(texture));
+  };
 
   uint32_t w = img.w;
   uint32_t h = img.h;
-  size_t imgsize = 0;
-  for (uint32_t i = 0; i < mipmapLevelCount; ++i) {
-    // mipi level
-    gli::image gliImage = gliTex2d[i];
 
-    std::vector<uint8_t> destPixels(w * h * img.channels);
+  std::vector<uint8_t> destPixels;
+
+  for (uint32_t i = 0; i < mipmapLevelCount; ++i) {
+    destPixels.resize(w * h * img.channels);
 
     // resize
     stbir_resize_uint8_linear((const unsigned char*)img.pixels,
@@ -1350,10 +1362,10 @@ void generateCompressedTexture(LoadedImage img) {
                               0,
                               (stbir_pixel_layout)img.channels);
     // compress
-    auto packedImage16 = Compress::getCompressedImage(
-        destPixels.data(), w, h, img.channels, false, &loaderShouldExit_);
-    memcpy(gliImage.data(), packedImage16.data(), sizeof(block16) * packedImage16.size());
-    imgsize += gliTex2d.size(i);
+    const block16_vec packedImage16 = Compress::getCompressedImage(destPixels.data(), w, h, img.channels, false, &loaderShouldExit_);
+    ktxTexture_SetImageFromMemory(
+        ktxTexture(texture), i, 0, 0, reinterpret_cast<const uint8_t*>(packedImage16.data()), sizeof(block16) * packedImage16.size());
+
     h = h > 1 ? h >> 1 : 1;
     w = w > 1 ? w >> 1 : 1;
 
@@ -1362,19 +1374,7 @@ void generateCompressedTexture(LoadedImage img) {
     }
   }
 
-  gli::save_ktx(gliTex2d, img.compressedFileName.c_str());
-}
-
-lvk::Format gli2iglTextureFormat(gli::texture2d::format_type format) {
-  switch (format) {
-  case gli::FORMAT_RGBA32_SFLOAT_PACK32:
-    return lvk::Format_RGBA_F32;
-  case gli::FORMAT_RG16_SFLOAT_PACK16:
-    return lvk::Format_RG_F16;
-  default:;
-  }
-  LVK_ASSERT_MSG(false, "Code should NOT be reached");
-  return lvk::Format_RGBA_UN8;
+  ktxTexture_WriteToNamedFile(ktxTexture(texture), img.compressedFileName.c_str());
 }
 
 LoadedImage loadImage(const char* fileName, int channels) {
@@ -1472,28 +1472,44 @@ void loadMaterials() {
   }
 }
 
+lvk::Format ktx2iglTextureFormat(ktx_uint32_t format) {
+  switch (format) {
+  case GL_RGBA32F:
+    return lvk::Format_RGBA_F32;
+  case GL_RG16F:
+    return lvk::Format_RG_F16;
+  default:;
+  }
+  LVK_ASSERT_MSG(false, "Code should NOT be reached");
+  return lvk::Format_RGBA_UN8;
+}
+
 void loadCubemapTexture(const std::string& fileNameKTX, lvk::Holder<lvk::TextureHandle>& tex) {
   LVK_PROFILER_FUNCTION();
 
-  auto texRef = gli::load_ktx(fileNameKTX);
+  ktxTexture1* texture = nullptr;
+  LVK_VERIFY(ktxTexture1_CreateFromNamedFile(fileNameKTX.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS);
+  SCOPE_EXIT {
+    ktxTexture_Destroy(ktxTexture(texture));
+  };
 
-  if (!LVK_VERIFY(texRef.format() == gli::FORMAT_RGBA32_SFLOAT_PACK32)) {
+  if (!LVK_VERIFY(texture->glInternalformat == GL_RGBA32F)) {
     LVK_ASSERT_MSG(false, "Texture format not supported");
     return;
   }
 
-  const uint32_t width = (uint32_t)texRef.extent().x;
-  const uint32_t height = (uint32_t)texRef.extent().y;
+  const uint32_t width = texture->baseWidth;
+  const uint32_t height = texture->baseHeight;
 
   if (tex.empty()) {
     tex = ctx_->createTexture(
         {
             .type = lvk::TextureType_Cube,
-            .format = gli2iglTextureFormat(texRef.format()),
+            .format = ktx2iglTextureFormat(texture->glInternalformat),
             .dimensions = {width, height},
             .usage = lvk::TextureUsageBits_Sampled,
-            .numMipLevels = lvk::calcNumMipLevels(texRef.extent().x, texRef.extent().y),
-            .data = texRef.data(),
+            .numMipLevels = lvk::calcNumMipLevels(width, height),
+            .data = texture->pData,
             // if compression is enabled, upload all mip-levels
             .dataNumMipLevels = kEnableCompression ? lvk::calcNumMipLevels(width, height) : 1u,
             .debugName = fileNameKTX.c_str(),
@@ -1506,7 +1522,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, lvk::Holder<lvk::Texture
   }
 }
 
-gli::texture_cube gliToCube(Bitmap& bmp) {
+ktxTexture1* bitmapToCube(Bitmap& bmp) {
   LVK_ASSERT(bmp.comp_ == 3); // RGB
   LVK_ASSERT(bmp.type_ == eBitmapType_Cube);
   LVK_ASSERT(bmp.fmt_ == eBitmapFormat_Float);
@@ -1514,47 +1530,70 @@ gli::texture_cube gliToCube(Bitmap& bmp) {
   const int w = bmp.w_;
   const int h = bmp.h_;
 
-  const gli::texture_cube::extent_type extents{w, h};
+  const uint32_t mipLevels = lvk::calcNumMipLevels(w, h);
 
-  const uint32_t miplevels = lvk::calcNumMipLevels(w, h);
+  ktxTextureCreateInfo createInfo = {
+      .glInternalformat = GL_RGBA32F,
+      .vkFormat = VK_FORMAT_R32G32B32A32_SFLOAT,
+      .baseWidth = static_cast<uint32_t>(w),
+      .baseHeight = static_cast<uint32_t>(h),
+      .baseDepth = 1u,
+      .numDimensions = 2u,
+      .numLevels = mipLevels,
+      .numLayers = 1u,
+      .numFaces = 6u,
+      .generateMipmaps = KTX_FALSE,
+  };
 
-  gli::texture_cube gliTexCube = gli::texture_cube(gli::FORMAT_RGBA32_SFLOAT_PACK32, extents, miplevels);
+  ktxTexture1* texture = nullptr;
+  LVK_VERIFY(ktxTexture1_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &texture) == KTX_SUCCESS);
 
   const int numFacePixels = w * h;
 
   for (size_t face = 0; face != 6; face++) {
      const vec3* src = reinterpret_cast<vec3*>(bmp.data_.data()) + face * numFacePixels;
-     float* dst = (float*)gliTexCube[face].data();
+     size_t offset = 0;
+     LVK_VERIFY(ktxTexture_GetImageOffset(ktxTexture(texture), 0, 0, face, &offset) == KTX_SUCCESS);
+     float* dst = (float*)(texture->pData + offset);
      for (int y = 0; y != h; y++) {
       for (int x = 0; x != w; x++) {
-        const vec3& rgb = src[x + y * w];
-        gliTexCube[face].store(gli::texture2d::extent_type{x, y}, 0, vec4(rgb, 0.0f));
+        const vec4 rgba = vec4(src[x + y * w], 1.0f);
+        memcpy(dst, &rgba, sizeof(rgba));
+        dst += 4;
       }
      }
   }
 
-  return gliTexCube;
+  return texture;
 }
 
-void generateMipmaps(const std::string& outFilename, gli::texture_cube& cubemap) {
+void generateMipmaps(const std::string& outFilename, ktxTexture1* cubemap) {
   LVK_PROFILER_FUNCTION();
 
   LLOGL("Generating mipmaps");
 
-  auto prevWidth = cubemap.extent().x;
-  auto prevHeight = cubemap.extent().y;
-  for (size_t face = 0; face < 6; ++face) {
-    LLOGL(".");
-    for (size_t miplevel = 1; miplevel <= cubemap.max_level(); ++miplevel) {
-      LLOGL(":");
-      const auto width = prevWidth > 1 ? prevWidth >> 1 : 1;
-      const auto height = prevHeight > 1 ? prevWidth >> 1 : 1;
+  LVK_ASSERT(cubemap);
 
-      stbir_resize_float_linear((const float*)cubemap.data(0, face, miplevel - 1),
+  uint32_t prevWidth = cubemap->baseWidth;
+  uint32_t prevHeight = cubemap->baseHeight;
+
+  for (uint32_t face = 0; face != 6; face++) {
+    LLOGL(".");
+    for (uint32_t miplevel = 1; miplevel < cubemap->numLevels; miplevel++) {
+      LLOGL(":");
+      const uint32_t width = prevWidth > 1 ? prevWidth >> 1 : 1;
+      const uint32_t height = prevHeight > 1 ? prevWidth >> 1 : 1;
+
+      size_t prevOffset = 0;
+      LVK_VERIFY(ktxTexture_GetImageOffset(ktxTexture(cubemap), miplevel - 1, 0, face, &prevOffset) == KTX_SUCCESS);
+      size_t offset = 0;
+      LVK_VERIFY(ktxTexture_GetImageOffset(ktxTexture(cubemap), miplevel, 0, face, &offset) == KTX_SUCCESS);
+
+      stbir_resize_float_linear(reinterpret_cast<const float*>(cubemap->pData + prevOffset),
                                 prevWidth,
                                 prevHeight,
                                 0,
-                                (float*)cubemap.data(0, face, miplevel),
+                                reinterpret_cast<float*>(cubemap->pData + offset),
                                 width,
                                 height,
                                 0,
@@ -1563,12 +1602,12 @@ void generateMipmaps(const std::string& outFilename, gli::texture_cube& cubemap)
       prevWidth = width;
       prevHeight = height;
     }
-    prevWidth = cubemap.extent().x;
-    prevHeight = cubemap.extent().y;
+    prevWidth = cubemap->baseWidth;
+    prevHeight = cubemap->baseHeight;
   }
 
   LLOGL("\n");
-  gli::save_ktx(cubemap, outFilename);
+  ktxTexture_WriteToNamedFile(ktxTexture(cubemap), outFilename.c_str());
 }
 
 void processCubemap(const std::string& inFilename, const std::string& outFilenameEnv, const std::string& outFilenameIrr) {
@@ -1590,8 +1629,9 @@ void processCubemap(const std::string& inFilename, const std::string& outFilenam
   // Environment map
   {
     Bitmap bmp = convertEquirectangularMapToCubeMapFaces(Bitmap(sourceWidth, sourceHeight, 3, eBitmapFormat_Float, pxs));
-    gli::texture_cube cube = gliToCube(bmp);
+    ktxTexture1* cube = bitmapToCube(bmp);
     generateMipmaps(outFilenameEnv, cube);
+    ktxTexture_Destroy(ktxTexture(cube));
   }
 
   // Irradiance map
@@ -1603,8 +1643,9 @@ void processCubemap(const std::string& inFilename, const std::string& outFilenam
     convolveDiffuse((vec3*)pxs, sourceWidth, sourceHeight, dstW, dstH, out.data(), 1024);
 
     Bitmap bmp = convertEquirectangularMapToCubeMapFaces(Bitmap(dstW, dstH, 3, eBitmapFormat_Float, out.data()));
-    gli::texture_cube cube = gliToCube(bmp);
+    ktxTexture1* cube = bitmapToCube(bmp);
     generateMipmaps(outFilenameIrr, cube);
+    ktxTexture_Destroy(ktxTexture(cube));
   }
 }
 
@@ -1656,18 +1697,22 @@ lvk::TextureHandle createTexture(const LoadedImage& img) {
   const void* initialData = img.pixels;
   uint32_t initialDataNumMipLevels = 1u;
 
-  gli::texture gliTex2d;
+  ktxTexture* texture = nullptr;
 
   if (hasCompressedTexture) {
     // uploading the texture
-    gliTex2d = gli::load_ktx(img.compressedFileName.c_str());
-    if (gliTex2d.empty()) {
-      LLOGW("Failed to load %s\n", img.compressedFileName.c_str());
+    if (!LVK_VERIFY(ktxTexture_CreateFromNamedFile(img.compressedFileName.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) ==
+                    KTX_SUCCESS)) {
+      printf("Failed to load %s\n", img.compressedFileName.c_str());
       assert(0);
     }
-    initialData = gliTex2d.data();
+    initialData = texture->pData;
     initialDataNumMipLevels = lvk::calcNumMipLevels(img.w, img.h);
   }
+  SCOPE_EXIT {
+    if (texture)
+      ktxTexture_Destroy(ktxTexture(texture));
+  };
 
   lvk::Holder<lvk::TextureHandle> tex = ctx_->createTexture(
       {
@@ -1969,9 +2014,24 @@ int main(int argc, char* argv[]) {
       perFrame_.bDebugLines = (perFrame_.bDebugLines + 1) % 2;
     }
     if (key == GLFW_KEY_F9 && action == GLFW_PRESS) {
-      gli::texture screenshot = gli::texture2d(gli::FORMAT_BGRA8_UNORM_PACK8, gli::extent2d(width_, height_), 1);
-      ctx_->download(ctx_->getCurrentSwapchainTexture(), {.dimensions = {(uint32_t)width_, (uint32_t)height_}}, screenshot.data());
-      gli::save_ktx(screenshot, "screenshot.ktx");
+      ktxTextureCreateInfo createInfo = {
+          .glInternalformat = GL_RGBA8,
+          .vkFormat = VK_FORMAT_B8G8R8A8_UNORM,
+          .baseWidth = static_cast<uint32_t>(width_),
+          .baseHeight = static_cast<uint32_t>(height_),
+          .baseDepth = 1u,
+          .numDimensions = 2u,
+          .numLevels = 1u,
+          .numLayers = 1u,
+          .numFaces = 1u,
+          .generateMipmaps = KTX_FALSE,
+      };
+
+      ktxTexture1* texture = nullptr;
+      LVK_VERIFY(ktxTexture1_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &texture) == KTX_SUCCESS);
+      ctx_->download(ctx_->getCurrentSwapchainTexture(), {.dimensions = {(uint32_t)width_, (uint32_t)height_}}, texture->pData);
+      ktxTexture_WriteToNamedFile(ktxTexture(texture), "screenshot.ktx");
+      ktxTexture_Destroy(ktxTexture(texture));
     }
   });
 
