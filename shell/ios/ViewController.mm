@@ -9,9 +9,9 @@
 
 #import "View.h"
 
-#import <Metal/Metal.h>
 #import <igl/IGL.h>
 #if IGL_BACKEND_METAL
+#import <Metal/Metal.h>
 #import <igl/metal/HWDevice.h>
 #endif
 #if IGL_BACKEND_OPENGL
