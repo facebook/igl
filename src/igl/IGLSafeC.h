@@ -63,7 +63,7 @@ inline void* checked_memcpy_offset(void* destination,
   //
   // To avoid this, we properly compute the available_size and then check that.
 
-  size_t available_size = offset > destination_size ? 0 : destination_size - offset;
+  const size_t available_size = offset > destination_size ? 0 : destination_size - offset;
 
   if (count > available_size) {
     IGL_REPORT_ERROR_MSG(false, "Aborting due to potential buffer overflow");
