@@ -396,7 +396,10 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
   // @fb-only
   // @lint-ignore CLANGTIDY
   return std::make_shared<VulkanShaderModule>(
-      ctx_->vf_, device, vkShaderModule, util::getReflectionData(spirv.data(), spirv.size()));
+      ctx_->vf_,
+      device,
+      vkShaderModule,
+      util::getReflectionData(spirv.data(), spirv.size() * sizeof(uint32_t)));
 }
 
 std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,
