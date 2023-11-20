@@ -105,7 +105,7 @@ TEST_F(VulkanImageTest, CreateImageWithExportedMemory) {
       VK_SAMPLE_COUNT_1_BIT,
       "Image: vulkan export memory");
   ASSERT_NE(vulkanImage, nullptr);
-  EXPECT_NE(vulkanImage->getVkImage(), VK_NULL_HANDLE);
+  EXPECT_NE(vulkanImage->getVkImage(), reinterpret_cast<VkImage_T*>(VK_NULL_HANDLE));
   EXPECT_TRUE(vulkanImage->isExported_);
 #if IGL_PLATFORM_WIN
   EXPECT_NE(vulkanImage->exportedMemoryHandle_, nullptr);
@@ -147,7 +147,7 @@ TEST_F(VulkanImageTest, CreateImageWithImportedMemoryWin32) {
                                VK_SAMPLE_COUNT_1_BIT,
                                "Image: vulkan import memory");
   EXPECT_TRUE(importedImage.isImported_);
-  EXPECT_NE(importedImage.getVkImage(), VK_NULL_HANDLE);
+  EXPECT_NE(importedImage.getVkImage(), reinterpret_cast<VkImage_T*>(VK_NULL_HANDLE));
 }
 #endif // IGL_PLATFORM_WIN
 
