@@ -12,6 +12,7 @@
 namespace igl {
 namespace vulkan {
 
+/// @brief Implements the igl::IDepthStencilState interface
 class DepthStencilState final : public IDepthStencilState {
  public:
   explicit DepthStencilState(const DepthStencilStateDesc& desc) : desc_(desc) {}
