@@ -22,6 +22,16 @@ class VulkanBuffer;
 class VulkanContext;
 class VulkanImage;
 
+/** @brief Manages data transfers between the CPU and the GPU.
+ * This class automatically allocates and uses a staging buffer when transferring data between the
+ * CPU and device-local resources. Transfers between the CPU and host-visible resources are copied
+ * directly to the device, without the intermediary copy to the staging buffer. The staging buffer
+ * is lazily allocated and grows as needed when the uploaded data cannot be transferred in small
+ * chunks and is larger than the current staging buffer's size. The maximum size of the buffer is
+ * determined at runtime and is the minimum between VkPhysicalDeviceLimits::VkPhysicalDeviceLimits
+ * and 256 MB. Some architectures limit the size of staging buffers to 256MB (buffers that are both
+ * host and device visible).
+ */
 class VulkanStagingDevice final {
  public:
   explicit VulkanStagingDevice(VulkanContext& ctx);
@@ -30,14 +40,34 @@ class VulkanStagingDevice final {
   VulkanStagingDevice(const VulkanStagingDevice&) = delete;
   VulkanStagingDevice& operator=(const VulkanStagingDevice&) = delete;
 
+  /** @brief Uploads the data at location `data` with the provided size (in bytes) to the
+   * VulkanBuffer object on the device at offset `dstOffset`. The upload operation is asynchronous
+   * and the data may or may not be available to the GPU when the function returns
+   */
   void bufferSubData(VulkanBuffer& buffer, size_t dstOffset, size_t size, const void* data);
+
+  /** @brief Downloads the data with the provided size (in bytes) from the VulkanBuffer object on
+   * the device, and at the offset provided, to the location referenced by the pointer `data`. The
+   * function is synchronous and the data donwloaded from the device is expected to be available in
+   * the location pointed by `data` upon return
+   */
   void getBufferSubData(VulkanBuffer& buffer, size_t srcOffset, size_t size, void* data);
+
+  /// @brief Uploads the texture data pointed by `data` to the VulkanImage object on the device. The
+  /// data may span the entire texture or just part of it. The upload operation is asynchronous and
+  /// the data may or may not be available to the GPU when the function returns
   void imageData(VulkanImage& image,
                  TextureType type,
                  const TextureRangeDesc& range,
                  const TextureFormatProperties& properties,
                  uint32_t bytesPerRow,
                  const void* data);
+
+  /** @brief Downloads the texture data from the VulkanImage object on the device to the location
+   * pointed by `data`. The data requested may span the entire texture or just part of it. The
+   * download operation is synchronous and the data is expected to be available at location `data`
+   * upon return
+   */
   void getImageData2D(VkImage srcImage,
                       const uint32_t level,
                       const uint32_t layer,
@@ -48,10 +78,12 @@ class VulkanStagingDevice final {
                       void* data,
                       uint32_t bytesPerRow,
                       bool flipImageVertical);
-
+  /// @brief Returns the current size of the staging buffer in bytes
   [[nodiscard]] VkDeviceSize getCurrentStagingBufferSize() const {
     return stagingBufferSize_;
   }
+
+  /// @brief Returns the maximum possible size of the staging buffer in bytes
   [[nodiscard]] VkDeviceSize getMaxStagingBufferSize() const {
     return maxStagingBufferSize_;
   }
