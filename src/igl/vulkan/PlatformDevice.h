@@ -19,6 +19,7 @@ namespace vulkan {
 class Device;
 class VulkanTexture;
 
+/// @brief Implements the igl::IPlatformDevice interface
 class PlatformDevice : public IPlatformDevice {
  public:
   static constexpr igl::PlatformDeviceType Type = igl::PlatformDeviceType::Vulkan;
