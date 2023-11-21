@@ -10,13 +10,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <igl/Texture.h>
-#include <limits>
 #include <vector>
 
 namespace igl::vulkan::util {
 
-constexpr uint32_t kNoBindingLocation = std::numeric_limits<uint32_t>::max();
-constexpr uint32_t kNoDescriptorSet = std::numeric_limits<uint32_t>::max();
+constexpr uint32_t kNoBindingLocation = 0xffffffff;
+constexpr uint32_t kNoDescriptorSet = 0xffffffff;
 
 struct TextureDescription {
   uint32_t bindingLocation = kNoBindingLocation;
@@ -35,6 +34,6 @@ struct SpvModuleInfo {
   std::vector<TextureDescription> textures;
 };
 
-SpvModuleInfo getReflectionData(const void* spirv, size_t numBytes);
+SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes);
 
 } // namespace igl::vulkan::util

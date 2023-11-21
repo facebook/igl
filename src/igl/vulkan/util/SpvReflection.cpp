@@ -7,52 +7,26 @@
 
 #include <igl/vulkan/util/SpvReflection.h>
 
+#if defined(IGL_CMAKE_BUILD) && !IGL_PLATFORM_LINUX
+#include <spirv-headers/spirv.h>
+#else
+#include <spirv/unified1/spirv.h>
+#endif // IGL_CMAKE_BUILD
+
 #define IGL_COMMON_SKIP_CHECK
 #include <igl/Assert.h>
 #include <igl/Macros.h>
 
-#include <unordered_map>
-#include <unordered_set>
-
 namespace igl::vulkan::util {
 namespace {
-constexpr uint32_t kSpvMagicWord = 0x07230203;
-constexpr uint32_t kSpvHeaderSize = 5;
-constexpr uint32_t kSpvWordCountShift = 16;
-constexpr uint32_t kSpvOpCodeMask = 0xFFFF;
 
-constexpr size_t kOpDecorateTargetId = 1;
-constexpr size_t kOpDecorateDecoration = 2;
-constexpr size_t kOpDecorateOperandIds = 3;
-
-constexpr size_t kOpVariableTypeId = 1;
-constexpr size_t kOpVariableId = 2;
-constexpr size_t kOpVariableStorageClass = 3;
-IGL_MAYBE_UNUSED constexpr size_t kOpVariableMaxUsedIdx = kOpVariableStorageClass;
-
-constexpr size_t kOpTypePointerId = 1;
-constexpr size_t kOpTypePointerObjectTypeId = 3;
-IGL_MAYBE_UNUSED constexpr size_t kOpTypePointerMaxUsedIx = kOpTypePointerObjectTypeId;
-
-constexpr size_t kOpTypeImageTypeId = 1;
-constexpr size_t kOpTypeImageDim = 3;
-constexpr size_t kOpTypeImageArrayed = 5;
-IGL_MAYBE_UNUSED constexpr size_t kOpTypeImageMaxUsedId = kOpTypeImageDim;
-
-constexpr size_t kOpTypeSampledImageTypeId = 1;
-constexpr size_t kOpTypeSampledImageImageTypeId = 2;
-IGL_MAYBE_UNUSED constexpr size_t kOpTypeSampledImageMaxUsedId = kOpTypeSampledImageImageTypeId;
-
-enum class OpCode : uint32_t {
-  OpTypeImage = 25,
-  OpTypeSampledImage = 27,
-  OpTypePointer = 32,
-  OpVariable = 59,
-  OpDecorate = 71,
-};
-
-struct Decoration {
-  enum : uint32_t { Block = 2, Binding = 33, DescriptorSet = 34 };
+struct SpirvId {
+  uint32_t opCode = 0;
+  uint32_t typeId = 0;
+  uint32_t storageClass = 0;
+  uint32_t binding = kNoBindingLocation;
+  uint32_t dset = kNoDescriptorSet;
+  TextureType type = TextureType::Invalid;
 };
 
 struct ImageDimensionality {
@@ -66,21 +40,7 @@ struct ImageDimensionality {
   };
 };
 
-struct StorageClass {
-  enum : uint32_t { Uniform = 2, StorageBuffer = 12 };
-};
-
-using ResultId = uint32_t;
-
-uint16_t getInstructionSize(uint32_t firstWord) {
-  return firstWord >> kSpvWordCountShift;
-}
-
-OpCode getOpCode(uint32_t firstWord) {
-  return static_cast<OpCode>(firstWord & kSpvOpCodeMask);
-}
-
-TextureType getTextureType(uint32_t dim, bool isArrayed) {
+TextureType getIGLTextureType(uint32_t dim, bool isArrayed) {
   switch (dim) {
   case ImageDimensionality::Dim2d:
     return isArrayed ? TextureType::TwoDArray : TextureType::TwoD;
@@ -100,57 +60,69 @@ TextureType getTextureType(uint32_t dim, bool isArrayed) {
 
 } // namespace
 
-SpvModuleInfo getReflectionData(const void* spirv, size_t numBytes) {
+SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
+  if (!IGL_VERIFY(spirv)) {
+    return {};
+  }
+
   // go from bytes to SPIR-V words
   const size_t size = numBytes / sizeof(uint32_t);
 
-  if (size <= kSpvHeaderSize) {
+  constexpr uint32_t kSpvBoundOffset = 3;
+  constexpr uint32_t kSpvHeaderSize = 5;
+
+  // initial pre-checks
+  {
+    if (size <= kSpvHeaderSize) {
+      return {};
+    }
+
+    if (spirv[0] != SpvMagicNumber) {
+      IGL_ASSERT_MSG(false, "Invalid SPIR-V magic word");
+      return {};
+    }
+  }
+
+  // SPIR-V spec: "all <id>s in this module are guaranteed to satisfy: 0 < id < kBound"
+  const uint32_t kBound = spirv[kSpvBoundOffset];
+
+  // some reasonable upper bound so that we don't try to allocate a lot of memory in case the SPIR-V
+  // header is broken
+  if (!IGL_VERIFY(kBound < 1024 * 1024)) {
     return {};
   }
 
-  const uint32_t* words = reinterpret_cast<const uint32_t*>(spirv);
+  std::vector<SpirvId> ids(kBound);
 
-  if (words[0] != kSpvMagicWord) {
-    IGL_ASSERT_MSG(false, "Invalid SPIR-V magic word");
-    return {};
-  }
+  SpvModuleInfo info = {};
 
-  std::unordered_set<ResultId> interfaceBlockTypeIds;
-  std::unordered_set<ResultId> interfaceBlockPointerTypeIds;
-  std::unordered_map<ResultId, ResultId> sampledImageTypeIdToImageTypeId;
-  std::unordered_map<ResultId, TextureType> sampledImagePointerTypeIds;
-  std::unordered_map<ResultId, uint32_t> bindingLocations;
-  std::unordered_map<ResultId, uint32_t> descriptorSets;
-  std::unordered_map<ResultId, TextureType> imageTypes;
+  const uint32_t* words = spirv + kSpvHeaderSize;
 
-  SpvModuleInfo spvModuleInfo;
-
-  for (size_t pos = kSpvHeaderSize; pos < size;) {
-    uint16_t instructionSize = getInstructionSize(words[pos]);
-    OpCode opCode = getOpCode(words[pos]);
+  while (words < spirv + size) {
+    const uint16_t instructionSize = uint16_t(words[0] >> SpvWordCountShift);
+    const uint16_t opCode = uint16_t(words[0] & SpvOpCodeMask);
 
     switch (opCode) {
-    case OpCode::OpDecorate: {
-      IGL_ASSERT_MSG((pos + kOpDecorateDecoration) < size, "OpDecorate out of bounds");
+    case SpvOpDecorate: {
+      constexpr uint32_t kOpDecorateTargetId = 1;
+      constexpr uint32_t kOpDecorateDecoration = 2;
+      constexpr uint32_t kOpDecorateOperandIds = 3;
 
-      const uint32_t decoration = words[pos + kOpDecorateDecoration];
-      const uint32_t targetId = words[pos + kOpDecorateTargetId];
+      IGL_ASSERT_MSG(words + kOpDecorateDecoration <= spirv + size, "OpDecorate out of bounds");
+
+      const uint32_t decoration = words[kOpDecorateDecoration];
+      const uint32_t targetId = words[kOpDecorateTargetId];
+      IGL_ASSERT(targetId < kBound);
+
       switch (decoration) {
-      case Decoration::Block: {
-        interfaceBlockTypeIds.insert(targetId);
+      case SpvDecorationBinding: {
+        IGL_ASSERT_MSG(words + kOpDecorateOperandIds <= spirv + size, "OpDecorate out of bounds");
+        ids[targetId].binding = words[kOpDecorateOperandIds];
         break;
       }
-      case Decoration::Binding: {
-        IGL_ASSERT_MSG((pos + kOpDecorateOperandIds) < size, "OpDecorate out of bounds");
-
-        const uint32_t bindingLocation = words[pos + kOpDecorateOperandIds];
-        bindingLocations.insert({targetId, bindingLocation});
-        break;
-      }
-      case Decoration::DescriptorSet: {
-        IGL_ASSERT_MSG((pos + kOpDecorateOperandIds) < size, "OpDecorate out of bounds");
-        const uint32_t descriptorSet = words[pos + kOpDecorateOperandIds];
-        descriptorSets.insert({targetId, descriptorSet});
+      case SpvDecorationDescriptorSet: {
+        IGL_ASSERT_MSG(words + kOpDecorateOperandIds <= spirv + size, "OpDecorate out of bounds");
+        ids[targetId].dset = words[kOpDecorateOperandIds];
         break;
       }
       default:
@@ -158,106 +130,111 @@ SpvModuleInfo getReflectionData(const void* spirv, size_t numBytes) {
       }
       break;
     }
-
-    case OpCode::OpTypeImage: {
-      IGL_ASSERT_MSG((pos + kOpTypeImageMaxUsedId) < size, "OpTypeImage out of bounds");
-      ResultId imageTypeId = words[pos + kOpTypeImageTypeId];
-      const uint32_t dim = words[pos + kOpTypeImageDim];
-      bool isArrayed = words[pos + kOpTypeImageArrayed] == 1u;
-      TextureType textureType = getTextureType(dim, isArrayed);
-      imageTypes.insert({imageTypeId, textureType});
-      break;
-    }
-
-    case OpCode::OpTypeSampledImage: {
-      IGL_ASSERT_MSG((pos + kOpTypeSampledImageMaxUsedId) < size,
-                     "OpTypeSampledImage out of bounds");
-
-      ResultId sampledImageTypeId = words[pos + kOpTypeSampledImageTypeId];
-      ResultId imageTypeId = words[pos + kOpTypeSampledImageImageTypeId];
-      sampledImageTypeIdToImageTypeId.insert({sampledImageTypeId, imageTypeId});
-      break;
-    }
-
-    case OpCode::OpTypePointer: {
-      IGL_ASSERT_MSG((pos + kOpTypePointerMaxUsedIx) < size, "OpTypePointer out of bounds");
-
-      ResultId objectTypeId = words[pos + kOpTypePointerObjectTypeId];
-      ResultId pointerTypeId = words[pos + kOpTypePointerId];
-      if (interfaceBlockTypeIds.count(objectTypeId)) {
-        interfaceBlockPointerTypeIds.insert(pointerTypeId);
-      } else {
-        auto sampledImageTypeIdToImageTypeIdIter =
-            sampledImageTypeIdToImageTypeId.find(objectTypeId);
-        if (sampledImageTypeIdToImageTypeIdIter != sampledImageTypeIdToImageTypeId.end()) {
-          auto imageTypeId = sampledImageTypeIdToImageTypeIdIter->second;
-          auto imageTypesIter = imageTypes.find(imageTypeId);
-          TextureType textureType = TextureType::Invalid;
-          if (imageTypesIter != imageTypes.end()) {
-            textureType = imageTypesIter->second;
-          }
-          sampledImagePointerTypeIds.insert({pointerTypeId, textureType});
-        }
+    case SpvOpTypeStruct:
+    case SpvOpTypeImage:
+    case SpvOpTypeSampler:
+    case SpvOpTypeSampledImage: {
+      constexpr uint32_t kOpTypeResultId = 1;
+      IGL_ASSERT_MSG(words + kOpTypeResultId <= spirv + size, "OpTypeImage out of bounds");
+      const uint32_t targetId = words[kOpTypeResultId];
+      IGL_ASSERT(targetId < kBound);
+      IGL_ASSERT(ids[targetId].opCode == 0);
+      ids[targetId].opCode = opCode;
+      if (opCode == SpvOpTypeSampledImage) {
+        constexpr uint32_t kOpTypeSampledImageImageTypeId = 2;
+        ids[targetId].typeId = words[kOpTypeSampledImageImageTypeId];
+      } else if (opCode == SpvOpTypeImage) {
+        constexpr uint32_t kOpTypeImageTypeId = 1;
+        constexpr uint32_t kOpTypeImageDim = 3;
+        constexpr uint32_t kOpTypeImageArrayed = 5;
+        IGL_ASSERT_MSG(words + kOpTypeImageArrayed <= spirv + size, "OpTypeImage out of bounds");
+        const uint32_t imageTypeId = words[kOpTypeImageTypeId];
+        const uint32_t dim = words[kOpTypeImageDim];
+        const bool isArray = words[kOpTypeImageArrayed] == 1u;
+        const TextureType textureType = getIGLTextureType(dim, isArray);
+        ids[imageTypeId].type = textureType;
       }
-
       break;
     }
-
-    case OpCode::OpVariable: {
-      IGL_ASSERT_MSG((pos + kOpVariableMaxUsedIdx) < size, "OpVariable out of bounds");
-
-      ResultId variableTypeId = words[pos + kOpVariableTypeId];
-      ResultId variableId = words[pos + kOpVariableId];
-
-      if (interfaceBlockPointerTypeIds.count(variableTypeId)) {
-        const uint32_t storageClass = words[pos + kOpVariableStorageClass];
-
-        BufferDescription* bufferDesc = nullptr;
-        if (storageClass == StorageClass::Uniform) {
-          bufferDesc = &spvModuleInfo.uniformBuffers.emplace_back();
-        } else if (storageClass == StorageClass::StorageBuffer) {
-          bufferDesc = &spvModuleInfo.storageBuffers.emplace_back();
-        }
-
-        if (bufferDesc) {
-          auto bindingLocationIt = bindingLocations.find(variableId);
-          auto descriptorSetIt = descriptorSets.find(variableId);
-          bufferDesc->bindingLocation = bindingLocationIt != bindingLocations.end()
-                                            ? bindingLocationIt->second
-                                            : kNoBindingLocation;
-          bufferDesc->descriptorSet =
-              descriptorSetIt != descriptorSets.end() ? descriptorSetIt->second : kNoDescriptorSet;
-        }
-      } else {
-        auto sampledImagePointerTypeIdsIter = sampledImagePointerTypeIds.find(variableTypeId);
-        if (sampledImagePointerTypeIdsIter != sampledImagePointerTypeIds.end()) {
-          auto bindingLocationIt = bindingLocations.find(variableId);
-          const uint32_t bindingLocation = bindingLocationIt != bindingLocations.end()
-                                               ? bindingLocationIt->second
-                                               : kNoBindingLocation;
-          auto descriptorSetIt = descriptorSets.find(variableId);
-          const uint32_t descriptorSet =
-              descriptorSetIt != descriptorSets.end() ? descriptorSetIt->second : kNoDescriptorSet;
-          auto textureType = sampledImagePointerTypeIdsIter->second;
-          TextureDescription textureDesc;
-          textureDesc.type = textureType;
-          textureDesc.bindingLocation = bindingLocation;
-          textureDesc.descriptorSet = descriptorSet;
-          spvModuleInfo.textures.push_back(std::move(textureDesc));
-        }
-      }
-
+    case SpvOpTypePointer: {
+      constexpr uint32_t kOpTypePointerTargetId = 1;
+      constexpr uint32_t kOpTypePointerStorageClassId = 2;
+      constexpr uint32_t kOpTypePointerObjectTypeId = 3;
+      IGL_ASSERT_MSG(words + kOpTypePointerObjectTypeId <= spirv + size,
+                     "OpTypePointer out of bounds");
+      const uint32_t targetId = words[kOpTypePointerTargetId];
+      IGL_ASSERT(targetId < kBound);
+      IGL_ASSERT(ids[targetId].opCode == 0);
+      ids[targetId].opCode = opCode;
+      ids[targetId].typeId = words[kOpTypePointerObjectTypeId];
+      ids[targetId].storageClass = words[kOpTypePointerStorageClassId];
       break;
     }
-
+    case SpvOpConstant: {
+      constexpr uint32_t kOpConstantTypeId = 1;
+      constexpr uint32_t kOpConstantTargetId = 2;
+      IGL_ASSERT_MSG(words + kOpConstantTargetId <= spirv + size, "OpTypePointer out of bounds");
+      const uint32_t targetId = words[kOpConstantTargetId];
+      IGL_ASSERT(targetId < kBound);
+      IGL_ASSERT(ids[targetId].opCode == 0);
+      ids[targetId].opCode = opCode;
+      ids[targetId].typeId = words[kOpConstantTypeId];
+      break;
+    }
+    case SpvOpVariable: {
+      constexpr uint32_t kOpVariableTypeId = 1;
+      constexpr uint32_t kOpVariableTargetId = 2;
+      constexpr uint32_t kOpVariableStorageClass = 3;
+      IGL_ASSERT_MSG(words + kOpVariableStorageClass <= spirv + size, "OpVariable out of bounds");
+      const uint32_t targetId = words[kOpVariableTargetId];
+      IGL_ASSERT(targetId < kBound);
+      IGL_ASSERT(ids[targetId].opCode == 0);
+      ids[targetId].opCode = opCode;
+      ids[targetId].typeId = words[kOpVariableTypeId];
+      ids[targetId].storageClass = words[kOpVariableStorageClass];
+      break;
+    }
     default:
       break;
     }
 
-    pos += instructionSize;
+    IGL_ASSERT(words + instructionSize <= spirv + size);
+    words += instructionSize;
   }
 
-  return spvModuleInfo;
+  for (auto& id : ids) {
+    const bool isStorage = id.storageClass == SpvStorageClassStorageBuffer;
+    const bool isUniform = id.storageClass == SpvStorageClassUniform ||
+                           id.storageClass == SpvStorageClassUniformConstant;
+    if (id.opCode == SpvOpVariable && (isStorage || isUniform)) {
+      IGL_ASSERT(ids[id.typeId].opCode == SpvOpTypePointer);
+      IGL_ASSERT(ids[id.typeId].typeId < kBound);
+
+      const uint32_t opCode = ids[ids[id.typeId].typeId].opCode;
+
+      switch (SpvOp(opCode)) {
+      case SpvOpTypeStruct:
+        (isStorage ? info.storageBuffers : info.uniformBuffers).push_back({id.binding, id.dset});
+        break;
+      case SpvOpTypeImage:
+        break;
+      case SpvOpTypeSampler:
+        break;
+      case SpvOpTypeSampledImage: {
+        IGL_ASSERT(ids[ids[id.typeId].typeId].typeId < kBound);
+        IGL_ASSERT(ids[ids[ids[id.typeId].typeId].typeId].opCode == SpvOpTypeImage);
+        const TextureType tt = ids[ids[ids[id.typeId].typeId].typeId].type;
+        IGL_ASSERT(tt != TextureType::Invalid);
+        info.textures.push_back({id.binding, id.dset, tt});
+        break;
+      }
+      default:
+        break;
+      }
+    }
+  }
+
+  return info;
 }
 
 } // namespace igl::vulkan::util
