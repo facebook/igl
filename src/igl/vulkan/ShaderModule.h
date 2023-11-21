@@ -18,6 +18,7 @@ namespace vulkan {
 class Device;
 class VulkanShaderModule;
 
+/// @brief Implements the igl::IShaderModule interface
 class ShaderModule final : public IShaderModule {
  public:
   ShaderModule(ShaderModuleInfo info, std::shared_ptr<VulkanShaderModule> shaderModule);
@@ -36,12 +37,14 @@ class ShaderModule final : public IShaderModule {
   std::shared_ptr<VulkanShaderModule> module_;
 };
 
+/// @brief Implements the igl::IShaderStages interface
 class ShaderStages final : public IShaderStages {
  public:
   explicit ShaderStages(ShaderStagesDesc desc);
   ~ShaderStages() override = default;
 };
 
+/// @brief Implements the igl::IShaderLibrary interface
 class ShaderLibrary : public IShaderLibrary {
  public:
   explicit ShaderLibrary(std::vector<std::shared_ptr<IShaderModule>> modules);
