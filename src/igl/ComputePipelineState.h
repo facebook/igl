@@ -16,7 +16,7 @@
 #include <unordered_map>
 
 namespace igl {
-/*
+/**
  * @brief Object for customizing the compilation of a new compute pipeline state object
  * To create a IComputePipelineState object, you create a pipeline descriptor, configure
  * its properties, pass it to one of the creation methods on a IDevice object.
@@ -45,7 +45,7 @@ struct ComputePipelineDesc {
   std::string debugName;
 };
 
-/*
+/**
  * @brief Object that contains a compiled compute pipeline.
  * These objects can be created by calling methods on an IDevice object.
  */
