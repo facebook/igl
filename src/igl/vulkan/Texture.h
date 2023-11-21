@@ -23,12 +23,17 @@ class VulkanImageView;
 class VulkanTexture;
 class PlatformDevice;
 
+/// @brief Implements the igl::ITexture interface
 class Texture final : public ITexture {
   friend class Device;
   friend class PlatformDevice;
 
  public:
+  /// @brief Initializes an instance of the class, but does not create the resource on the device
+  /// until `create()` is called
   Texture(const igl::vulkan::Device& device, TextureFormat format);
+
+  /// @brief Initializes an instance of the class with an existing VulkanTexture object.
   Texture(const igl::vulkan::Device& device,
           std::shared_ptr<VulkanTexture> vkTexture,
           TextureDesc desc) :
@@ -51,6 +56,9 @@ class Texture final : public ITexture {
   VkFormat getVkFormat() const;
 
   VkImageView getVkImageView() const;
+
+  /// @brief Specialization of `getVkImageView()` that returns an image view specific to a mip level
+  /// and layer of an image. Used to retrieve image views to be used with framebuffers
   VkImageView getVkImageViewForFramebuffer(uint32_t mipLevel,
                                            uint32_t layer,
                                            FramebufferMode mode) const; // framebuffers can render
@@ -66,10 +74,14 @@ class Texture final : public ITexture {
   uint32_t getNumVkLayers() const;
 
  private:
+  /// @brief Creates the resource on the device given the properties in `desc`. This function should
+  /// only be called by the `Device` class, from its `vulkan::Device::createTexture()`
   Result create(const TextureDesc& desc);
 
   [[nodiscard]] bool needsRepacking(const TextureRangeDesc& range, size_t bytesPerRow) const final;
 
+  /// @brief Uploads the texture's data to the device using the staging device in the context. This
+  /// function is not synchronous and the data may or may not be available to the GPU upon return.
   Result uploadInternal(TextureType type,
                         const TextureRangeDesc& range,
                         const void* data,
