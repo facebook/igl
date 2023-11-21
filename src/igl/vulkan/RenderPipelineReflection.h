@@ -13,8 +13,8 @@
 
 namespace igl::vulkan {
 
-// This is an empty class for now since Vulkan doesn't have a built-in
-// reflection system.
+/// @brief This is an empty class for now since Vulkan doesn't have a built-in reflection system. It
+/// implements the igl::IRenderPipelineReflection interface
 class RenderPipelineReflection final : public IRenderPipelineReflection {
  public:
   const std::vector<BufferArgDesc>& allUniformBuffers() const override;
