@@ -19,6 +19,7 @@ bool operator==(const VkAttachmentReference& a, const VkAttachmentReference& b);
 namespace igl {
 namespace vulkan {
 
+/// @brief A helper class to build VkRenderPass objects.
 class VulkanRenderPassBuilder final {
  public:
   VulkanRenderPassBuilder() = default;
