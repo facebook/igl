@@ -16,7 +16,9 @@
 #define GLFW_INCLUDE_NONE
 
 #if !defined(IGL_CMAKE_BUILD)
-  #define GLEW_STATIC
+  #if !defined(GLEW_STATIC)
+    #define GLEW_STATIC
+  #endif
 #endif // IGL_CMAKE_BUILD
 #if defined(_WIN32)
   #include <GL/glew.h>
