@@ -16,6 +16,14 @@
     }
 },
 {
+    "name": "SPIRV-Headers",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/KhronosGroup/SPIRV-Headers.git",
+        "revision": "cca08c63cefa129d082abca0302adcb81610b465"
+    }
+},
+{
     "name": "tinyobjloader",
     "source": {
         "type": "git",

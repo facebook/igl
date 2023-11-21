@@ -7,11 +7,7 @@
 
 #include <igl/vulkan/util/SpvReflection.h>
 
-#if defined(IGL_CMAKE_BUILD) && !IGL_PLATFORM_LINUX
-#include <spirv-headers/spirv.h>
-#else
 #include <spirv/unified1/spirv.h>
-#endif // IGL_CMAKE_BUILD
 
 #define IGL_COMMON_SKIP_CHECK
 #include <igl/Assert.h>
