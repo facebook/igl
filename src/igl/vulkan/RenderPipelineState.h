@@ -17,6 +17,8 @@ namespace vulkan {
 
 class Device;
 
+/// @brief This class stores all mutable pipeline parameters as member variables and serves as a
+/// hash key for the `RenderPipelineState` class
 class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
   uint32_t topology_ : 4;
   uint32_t depthCompareOp_ : 3;
@@ -149,11 +151,29 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
 static_assert(sizeof(RenderPipelineDynamicState) == sizeof(uint64_t));
 static_assert(alignof(RenderPipelineDynamicState) == sizeof(uint64_t));
 
+/** @brief Implements the igl::IRenderPipelineState interface. In Vulkan, certain render parameters
+ * belong to a pipeline, which is immutable, and changing parameters is not possible once a
+ * pipeline has been created. IGL, on the other hand, allows some pipeline parameters to be changed.
+ * This class manages a hash map internally that automatically tracks all pipeline's instances that
+ * are created based on the original parameters provided during the instantiation of the class. A
+ * Vulkan pipeline object can be retrieved with the `getVkPipeline()` method by providing its
+ * mutable parameters. If a pipeline doesn't exist with those parameters, one is created and
+ * returned. Otherwise an existing pipeline with those settings is returned. This class also tracks
+ * the pipeline layout in the context. If a pipeline layout change is detected, this class purges
+ * all the pipelines that have been created so far.
+ */
 class RenderPipelineState final : public IRenderPipelineState {
  public:
+  /** @brief Caches the render pipeline parameters passed in `desc` for later use. A pipeline isn't
+   * realized until `getVkPipeline()` is called and all mutable parameters are provided.
+   */
   RenderPipelineState(const igl::vulkan::Device& device, RenderPipelineDesc desc);
   ~RenderPipelineState() override;
 
+  /** @brief Creates a pipeline with the base parameters provided during construction and all
+   * mutable ones provided in the `dynamicState` parameter. If a pipeline layout change is detected,
+   * all cached pipelines are discarded.
+   */
   VkPipeline getVkPipeline(const RenderPipelineDynamicState& dynamicState) const;
 
   const RenderPipelineDesc& getRenderPipelineDesc() const {
