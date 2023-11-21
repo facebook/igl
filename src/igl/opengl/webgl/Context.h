@@ -26,7 +26,7 @@ class Context final : public ::igl::opengl::IContext {
           const char* canvasName = "#canvas",
           int width = -1,
           int height = -1);
-  virtual ~Context() override;
+  ~Context() override;
   void setCurrent() override;
   void clearCurrentContext() const override;
   bool isCurrentContext() const override;

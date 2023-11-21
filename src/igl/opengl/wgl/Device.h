@@ -17,7 +17,7 @@ namespace wgl {
 class Device final : public igl::opengl::Device {
  public:
   explicit Device(std::unique_ptr<IContext> context);
-  virtual ~Device() override;
+  ~Device() override;
 
   const PlatformDevice& getPlatformDevice() const noexcept override;
 

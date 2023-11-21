@@ -18,7 +18,7 @@ class PlatformAndroid : public Platform {
  public:
   PlatformAndroid(std::unique_ptr<igl::IDevice> device, bool useFakeLoader = false);
   igl::IDevice& getDevice() noexcept override;
-  virtual std::shared_ptr<igl::IDevice> getDevicePtr() const noexcept override;
+  std::shared_ptr<igl::IDevice> getDevicePtr() const noexcept override;
   ImageLoader& getImageLoader() noexcept override;
   const ImageWriter& getImageWriter() const noexcept override;
   FileLoader& getFileLoader() const noexcept override;
