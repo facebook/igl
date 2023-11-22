@@ -130,12 +130,22 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
 #endif
 
   } else if (extensionType == ExtensionType::Device) {
-    enable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, ExtensionType::Device);
+    if (config.enableDescriptorIndexing) {
+      // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are
+      // enabled for DEBUG builds. https://issuetracker.google.com/issues/209835779?pli=1 Hence,
+      // allow developers to not enable certain extensions on Android which are not present.
+      enable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, ExtensionType::Device);
+    }
 #if defined(VK_KHR_driver_properties)
     enable(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME, ExtensionType::Device);
 #endif // VK_KHR_driver_properties
 #if defined(VK_KHR_shader_non_semantic_info)
+#if !IGL_PLATFORM_ANDROID || !IGL_DEBUG
+    // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are enabled
+    // for DEBUG builds. https://issuetracker.google.com/issues/209835779?pli=1 Hence, don't enable
+    // some extensions on Android which are not present and no way to check without crashing.
     enable(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, ExtensionType::Device);
+#endif // !IGL_PLATFORM_ANDROID || !IGL_DEBUG
 #endif // VK_KHR_shader_non_semantic_info
     enable(VK_KHR_SWAPCHAIN_EXTENSION_NAME, ExtensionType::Device);
 

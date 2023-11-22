@@ -668,6 +668,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                       vkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16,
                       config_.enableBufferDeviceAddress,
                       config_.enableDescriptorIndexing,
+                      &vkPhysicalDeviceFeatures2_.features,
                       &device));
   if (!config_.enableConcurrentVkDevicesSupport) {
     // Do not remove for backward compatibility with projects using global functions.

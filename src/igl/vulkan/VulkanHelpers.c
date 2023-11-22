@@ -320,15 +320,16 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
                          VkBool32 enableShaderFloat16,
                          VkBool32 enableBufferDeviceAddress,
                          VkBool32 enableDescriptorIndexing,
+                         const VkPhysicalDeviceFeatures* supported,
                          VkDevice* outDevice) {
   assert(numQueueCreateInfos >= 1);
   const VkPhysicalDeviceFeatures deviceFeatures = {
-      .dualSrcBlend = VK_TRUE,
-      .multiDrawIndirect = VK_TRUE,
-      .drawIndirectFirstInstance = VK_TRUE,
-      .depthBiasClamp = VK_TRUE,
-      .fillModeNonSolid = VK_TRUE,
-      .shaderInt16 = VK_TRUE,
+      .dualSrcBlend = supported ? supported->dualSrcBlend : VK_TRUE,
+      .multiDrawIndirect = supported ? supported->multiDrawIndirect : VK_TRUE,
+      .drawIndirectFirstInstance = supported ? supported->drawIndirectFirstInstance : VK_TRUE,
+      .depthBiasClamp = supported ? supported->depthBiasClamp : VK_TRUE,
+      .fillModeNonSolid = supported ? supported->fillModeNonSolid : VK_TRUE,
+      .shaderInt16 = supported ? supported->shaderInt16 : VK_TRUE,
   };
   VkDeviceCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,

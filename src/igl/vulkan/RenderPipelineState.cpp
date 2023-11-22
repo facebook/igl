@@ -179,6 +179,22 @@ VkBlendOp blendOpToVkBlendOp(igl::BlendOp value) {
   return VK_BLEND_OP_ADD;
 }
 
+VkBool32 checkDualSrcBlendFactor(igl::BlendFactor value, VkBool32 dualSrcBlendSupported) {
+  if (!dualSrcBlendSupported) {
+    switch (value) {
+    case igl::BlendFactor::Src1Color:
+    case igl::BlendFactor::OneMinusSrc1Color:
+    case igl::BlendFactor::Src1Alpha:
+    case igl::BlendFactor::OneMinusSrc1Alpha:
+      IGL_ASSERT(false);
+      return VK_FALSE;
+    default:
+      return VK_TRUE;
+    }
+  }
+  return VK_TRUE;
+}
+
 VkBlendFactor blendFactorToVkBlendFactor(igl::BlendFactor value) {
   using igl::BlendFactor;
   switch (value) {
@@ -314,6 +330,9 @@ VkPipeline RenderPipelineState::getVkPipeline(
     return it->second;
   }
 
+  const VkPhysicalDeviceFeatures2& deviceFeatures = ctx.getVkPhysicalDeviceFeatures2();
+  VkBool32 dualSrcBlendSupported = deviceFeatures.features.dualSrcBlend;
+
   // build a new Vulkan pipeline
   VkRenderPass renderPass = ctx.getRenderPass(dynamicState.renderPassIndex_).pass;
 
@@ -323,27 +342,33 @@ VkPipeline RenderPipelineState::getVkPipeline(
   // attachments
   std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates;
   colorBlendAttachmentStates.reserve(desc_.targetDesc.colorAttachments.size());
-  std::for_each(desc_.targetDesc.colorAttachments.begin(),
-                desc_.targetDesc.colorAttachments.end(),
-                [&colorBlendAttachmentStates](auto attachment) mutable {
-                  if (attachment.textureFormat != TextureFormat::Invalid) {
-                    if (!attachment.blendEnabled) {
-                      colorBlendAttachmentStates.push_back(
-                          ivkGetPipelineColorBlendAttachmentState_NoBlending());
-                    } else {
-                      colorBlendAttachmentStates.push_back(ivkGetPipelineColorBlendAttachmentState(
-                          attachment.blendEnabled,
-                          blendFactorToVkBlendFactor(attachment.srcRGBBlendFactor),
-                          blendFactorToVkBlendFactor(attachment.dstRGBBlendFactor),
-                          blendOpToVkBlendOp(attachment.rgbBlendOp),
-                          blendFactorToVkBlendFactor(attachment.srcAlphaBlendFactor),
-                          blendFactorToVkBlendFactor(attachment.dstAlphaBlendFactor),
-                          blendOpToVkBlendOp(attachment.alphaBlendOp),
-                          VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                              VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT));
-                    }
-                  }
-                });
+  std::for_each(
+      desc_.targetDesc.colorAttachments.begin(),
+      desc_.targetDesc.colorAttachments.end(),
+      [&colorBlendAttachmentStates, dualSrcBlendSupported](auto attachment) mutable {
+        if (attachment.textureFormat != TextureFormat::Invalid) {
+          if (!attachment.blendEnabled) {
+            colorBlendAttachmentStates.push_back(
+                ivkGetPipelineColorBlendAttachmentState_NoBlending());
+          } else {
+            checkDualSrcBlendFactor(attachment.srcRGBBlendFactor, dualSrcBlendSupported);
+            checkDualSrcBlendFactor(attachment.dstRGBBlendFactor, dualSrcBlendSupported);
+            checkDualSrcBlendFactor(attachment.srcAlphaBlendFactor, dualSrcBlendSupported);
+            checkDualSrcBlendFactor(attachment.dstAlphaBlendFactor, dualSrcBlendSupported);
+
+            colorBlendAttachmentStates.push_back(ivkGetPipelineColorBlendAttachmentState(
+                attachment.blendEnabled,
+                blendFactorToVkBlendFactor(attachment.srcRGBBlendFactor),
+                blendFactorToVkBlendFactor(attachment.dstRGBBlendFactor),
+                blendOpToVkBlendOp(attachment.rgbBlendOp),
+                blendFactorToVkBlendFactor(attachment.srcAlphaBlendFactor),
+                blendFactorToVkBlendFactor(attachment.dstAlphaBlendFactor),
+                blendOpToVkBlendOp(attachment.alphaBlendOp),
+                VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+                    VK_COLOR_COMPONENT_A_BIT));
+          }
+        }
+      });
 
   const auto& vertexModule = desc_.shaderStages->getVertexModule();
   const auto& fragmentModule = desc_.shaderStages->getFragmentModule();
