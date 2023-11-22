@@ -335,9 +335,12 @@ using namespace igl;
 }
 
 - (void)drawInMTKView:(nonnull MTKView*)view {
-  currentDrawable_ = view.currentDrawable;
-  depthStencilTexture_ = view.depthStencilTexture;
-  [self render];
+  @autoreleasepool {
+    currentDrawable_ = view.currentDrawable;
+    depthStencilTexture_ = view.depthStencilTexture;
+    [self render];
+    currentDrawable_ = nil;
+  }
 }
 
 - (void)mtkView:(nonnull MTKView*)view drawableSizeWillChange:(CGSize)size {
@@ -354,6 +357,7 @@ using namespace igl;
     auto& device = shellPlatform_->getDevice();
     auto platformDevice = device.getPlatformDevice<igl::metal::PlatformDevice>();
     IGL_ASSERT(platformDevice);
+    IGL_ASSERT(currentDrawable_ != nil);
     auto texture = platformDevice->createTextureFromNativeDrawable(currentDrawable_, nullptr);
     return texture;
   }
