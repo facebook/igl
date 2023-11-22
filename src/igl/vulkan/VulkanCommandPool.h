@@ -13,8 +13,11 @@
 namespace igl {
 namespace vulkan {
 
+/// @brief Wrapper around a Vulkan Command Pool (VkCommandPool)
 class VulkanCommandPool final {
  public:
+  /// @brief Creates a Vulkan Command Pool for a queue family with the specified creation flags and
+  /// an optional debug name
   VulkanCommandPool(const VulkanFunctionTable& vf,
                     VkDevice device,
                     VkCommandPoolCreateFlags flags,
