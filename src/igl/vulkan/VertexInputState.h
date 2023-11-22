@@ -15,6 +15,7 @@ namespace vulkan {
 class Device;
 class RenderCommandEncoder;
 
+/// @brief Implements the igl::IVertexInputState interface
 class VertexInputState final : public IVertexInputState {
  public:
   explicit VertexInputState(VertexInputStateDesc desc) : desc_(std::move(desc)) {}
