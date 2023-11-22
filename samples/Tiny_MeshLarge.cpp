@@ -31,7 +31,6 @@
 
 #include <ktx.h>
 #include <ktx-software/lib/vkformat_enum.h>
-#undef NOMINMAX
 #include <ktx-software/lib/gl_format.h>
 #include <ldrutils/lmath/Colors.h>
 #include <ldrutils/lutils/ScopeExit.h>
