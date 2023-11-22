@@ -18,6 +18,8 @@
 namespace igl {
 namespace vulkan {
 
+struct VulkanContextConfig;
+
 /// @brief The VulkanExtensions class is a helper class that manages instance and device
 /// extensions in Vulkan by enumerating all extensions available for either object and storing the
 /// names of the available ones as std::strings. A call to either `enumerate()` or
@@ -65,7 +67,7 @@ class VulkanExtensions final {
   /// @param extensionType The type of the extensions
   /// @param validationEnabled Flag that informs the class whether the Validation Layer is
   /// enabled or not.
-  void enableCommonExtensions(ExtensionType extensionType, bool validationEnabled = false);
+  void enableCommonExtensions(ExtensionType extensionType, const VulkanContextConfig& config);
 
   /// @brief Enables the extension with name `extensionName` of the type `extensionType` if the
   /// extension is available. If an instance or physical device deoesn't support the

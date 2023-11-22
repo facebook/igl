@@ -7,6 +7,8 @@
 
 #include <igl/vulkan/VulkanExtensions.h>
 
+#include <igl/vulkan/VulkanContext.h>
+
 #include <algorithm>
 #include <iterator>
 
@@ -95,7 +97,8 @@ bool VulkanExtensions::enable(const char* extensionName, ExtensionType extension
 #endif
 }
 
-void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType, bool validationEnabled) {
+void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
+                                              const VulkanContextConfig& config) {
   if (extensionType == ExtensionType::Instance) {
     enable(VK_KHR_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
     enable(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, ExtensionType::Instance);
@@ -121,7 +124,7 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType, bool 
 #endif
 
 #if !IGL_PLATFORM_ANDROID
-    if (validationEnabled) {
+    if (config.enableValidation) {
       enable(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, ExtensionType::Instance);
     }
 #endif
