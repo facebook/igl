@@ -36,6 +36,10 @@
 // Enable to use VulkanMemoryAllocator (VMA)
 #define IGL_VULKAN_USE_VMA 1
 
+// Macro that encapsulates a function call and check its return value against VK_SUCCESS. Prints
+// location of failure when the result is not VK_SUCCESS, along with a stringified version of the
+// result value. Asserts at the end of the code block. Expands to void function calls when build
+// mode is not DEBUG
 #define VK_ASSERT(func)                                            \
   {                                                                \
     const VkResult vk_assert_result = func;                        \
@@ -49,6 +53,10 @@
     }                                                              \
   }
 
+// Macro that encapsulates a function call and check its return value against VK_SUCCESS. Prints
+// location of failure when the result is not VK_SUCCESS, along with a stringified version of the
+// result value. Asserts at the end of the code block. The check remains even in build modes other
+// than DEBUG
 #define VK_ASSERT_FORCE_LOG(func)                           \
   {                                                         \
     const VkResult vk_assert_result = func;                 \
@@ -63,6 +71,10 @@
     }                                                       \
   }
 
+// Macro that encapsulates a function call and check its return value against VK_SUCCESS. Prints
+// location of failure when the result is not VK_SUCCESS, along with a stringified version of the
+// result value. Asserts at the end of the code block. The check remains even in build modes other
+// than DEBUG. Returns the value passed as a parameter
 #define VK_ASSERT_RETURN_VALUE(func, value)                        \
   {                                                                \
     const VkResult vk_assert_result = func;                        \
@@ -77,11 +89,18 @@
     }                                                              \
   }
 
+// Calls the function provided as `func`, checks the return value from the function call against
+// VK_SUCCESS and converts the return value from VkResult to an igl::Result and returns it
 #define VK_ASSERT_RETURN(func) VK_ASSERT_RETURN_VALUE(func, getResultFromVkResult(vk_assert_result))
 
+// Calls the function provided as `func`, checks the return value from the function call against
+// VK_SUCCESS and returns VK_NULL_HANDLE
 #define VK_ASSERT_RETURN_NULL_HANDLE(func) VK_ASSERT_RETURN_VALUE(func, VK_NULL_HANDLE)
 
 namespace igl::vulkan {
+
+// The functions below are convenience functions used to convert to and from Vulkan values to IGL
+// values
 
 Result getResultFromVkResult(VkResult result);
 void setResultFrom(Result* outResult, VkResult result);
@@ -94,8 +113,18 @@ VkSampleCountFlagBits getVulkanSampleCountFlags(size_t numSamples);
 VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool isBGR);
 uint32_t getVkLayer(igl::TextureType type, uint32_t face, uint32_t layer);
 TextureRangeDesc atVkLayer(TextureType type, const TextureRangeDesc& range, uint32_t vkLayer);
+
+/// @brief Performs a transition from the texture's current layout to a color attachment layout on
+/// the texture specified by colorTex
 void transitionToColorAttachment(VkCommandBuffer cmdBuf, ITexture* colorTex);
+
+/// @brief Performs a transition from the texture's current layout to a shader read only layout on
+/// the texture specified by texture
 void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture);
+
+/// @brief Overrides the layout stored in the `texture` with the one in `layout`. This function does
+/// not perform a transition, it only updates the texture's member variable that stores its current
+/// layout
 void overrideImageLayout(ITexture* texture, VkImageLayout layout);
 
 } // namespace igl::vulkan
