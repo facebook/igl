@@ -21,25 +21,34 @@ void InputDispatcher::processEvents() {
     if (event.type == EventType::MouseButton || event.type == EventType::MouseMotion ||
         event.type == EventType::MouseWheel) {
       for (auto& listener : _mouseListeners) {
-        if (event.type == EventType::MouseButton && listener->process(event.mouseButtonEvent)) {
+        if (event.type == EventType::MouseButton &&
+            listener->process(std::get<MouseButtonEvent>(event.data))) {
           break;
         }
-        if (event.type == EventType::MouseMotion && listener->process(event.mouseMotionEvent)) {
+        if (event.type == EventType::MouseMotion &&
+            listener->process(std::get<MouseMotionEvent>(event.data))) {
           break;
         }
-        if (event.type == EventType::MouseWheel && listener->process(event.mouseWheelEvent)) {
+        if (event.type == EventType::MouseWheel &&
+            listener->process(std::get<MouseWheelEvent>(event.data))) {
           break;
         }
       }
     } else if (event.type == EventType::Touch) {
       for (auto& listener : _touchListeners) {
-        if (event.type == EventType::Touch && listener->process(event.touchEvent)) {
+        if (event.type == EventType::Touch && listener->process(std::get<TouchEvent>(event.data))) {
           break;
         }
       }
     } else if (event.type == EventType::Key) {
       for (auto& listener : _keyListeners) {
-        if (event.type == EventType::Key && listener->process(event.keyEvent)) {
+        if (event.type == EventType::Key && listener->process(std::get<KeyEvent>(event.data))) {
+          break;
+        }
+      }
+    } else if (event.type == EventType::Ray) {
+      for (auto& listener : _rayListeners) {
+        if (event.type == EventType::Ray && listener->process(std::get<RayEvent>(event.data))) {
           break;
         }
       }
@@ -91,11 +100,25 @@ void InputDispatcher::removeKeyListener(const std::shared_ptr<IKeyListener>& lis
   }
 }
 
+void InputDispatcher::addRayListener(const std::shared_ptr<IRayListener>& listener) {
+  std::lock_guard<std::mutex> const guard(_mutex);
+  _rayListeners.push_back(listener);
+}
+
+void InputDispatcher::removeRayListener(const std::shared_ptr<IRayListener>& listener) {
+  std::lock_guard<std::mutex> const guard(_mutex);
+  for (int i = _rayListeners.size() - 1; i >= 0; --i) {
+    if (listener.get() == _rayListeners[i].get()) {
+      _rayListeners.erase(_rayListeners.begin() + i);
+    }
+  }
+}
+
 void InputDispatcher::queueEvent(const MouseButtonEvent& event) {
   std::lock_guard<std::mutex> guard(_mutex);
   InputDispatcher::Event evt;
   evt.type = EventType::MouseButton;
-  evt.mouseButtonEvent = event;
+  evt.data = event;
   _events.push(evt);
 }
 
@@ -103,7 +126,7 @@ void InputDispatcher::queueEvent(const MouseMotionEvent& event) {
   std::lock_guard<std::mutex> guard(_mutex);
   InputDispatcher::Event evt;
   evt.type = EventType::MouseMotion;
-  evt.mouseMotionEvent = event;
+  evt.data = event;
   _events.push(evt);
 }
 
@@ -111,7 +134,7 @@ void InputDispatcher::queueEvent(const MouseWheelEvent& event) {
   std::lock_guard<std::mutex> guard(_mutex);
   InputDispatcher::Event evt;
   evt.type = EventType::MouseWheel;
-  evt.mouseWheelEvent = event;
+  evt.data = event;
   _events.push(evt);
 }
 
@@ -120,7 +143,16 @@ void InputDispatcher::queueEvent(const TouchEvent& event) {
 
   InputDispatcher::Event evt;
   evt.type = EventType::Touch;
-  evt.touchEvent = event;
+  evt.data = event;
+  _events.push(evt);
+}
+
+void InputDispatcher::queueEvent(const RayEvent& event) {
+  std::lock_guard<std::mutex> guard(_mutex);
+
+  InputDispatcher::Event evt;
+  evt.type = EventType::Ray;
+  evt.data = event;
   _events.push(evt);
 }
 
@@ -129,7 +161,7 @@ void InputDispatcher::queueEvent(const KeyEvent& event) {
 
   InputDispatcher::Event evt;
   evt.type = EventType::Key;
-  evt.keyEvent = event;
+  evt.data = event;
   _events.push(evt);
 }
 
