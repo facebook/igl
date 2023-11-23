@@ -407,7 +407,7 @@ void CustomFramebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures, 
     }
     if (updateDepth) {
       if (!surfaceTextures.depth) {
-        static_cast<Texture&>(*colorAttachment0).detachAsDepth(false);
+        static_cast<Texture&>(*depthAttachment).detachAsDepth(false);
         renderTarget_.depthAttachment.texture = nullptr;
       } else {
         attachAsDepth(*surfaceTextures.depth, defaultWriteAttachmentParams(renderTarget_.mode));
