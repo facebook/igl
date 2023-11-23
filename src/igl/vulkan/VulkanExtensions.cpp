@@ -130,12 +130,16 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
 #endif
 
   } else if (extensionType == ExtensionType::Device) {
+#if IGL_PLATFORM_ANDROID
     if (config.enableDescriptorIndexing) {
+#endif
       // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are
       // enabled for DEBUG builds. https://issuetracker.google.com/issues/209835779?pli=1 Hence,
       // allow developers to not enable certain extensions on Android which are not present.
       enable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, ExtensionType::Device);
+#if IGL_PLATFORM_ANDROID
     }
+#endif
 #if defined(VK_KHR_driver_properties)
     enable(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME, ExtensionType::Device);
 #endif // VK_KHR_driver_properties
