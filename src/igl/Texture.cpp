@@ -325,14 +325,14 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     COMPRESSED(R_EAC_SNorm, 1, 8, 4, 4, 1, 1, 1, 1, 0)
     COMPRESSED(RGBA_BC7_UNORM_4x4, 4, 16, 4, 4, 1, 1, 1, 1, 0)
     COMPRESSED(RGBA_BC7_SRGB_4x4, 4, 16, 4, 4, 1, 1, 1, 1, Flags::sRGB)
-    DEPTH_STENCIL(Z_UNorm16, 1, 2)
-    DEPTH_STENCIL(Z_UNorm24, 1, 3)
-    DEPTH_STENCIL(Z_UNorm32, 1, 4)
-    DEPTH(S8_UInt_Z24_UNorm, 2, 4)
+    DEPTH(Z_UNorm16, 1, 2)
+    DEPTH(Z_UNorm24, 1, 3)
+    DEPTH(Z_UNorm32, 1, 4)
+    DEPTH_STENCIL(S8_UInt_Z24_UNorm, 2, 4)
 #if IGL_PLATFORM_IOS
-    DEPTH(S8_UInt_Z32_UNorm, 2, 5)
+    DEPTH_STENCIL(S8_UInt_Z32_UNorm, 2, 5)
 #else
-    DEPTH(S8_UInt_Z32_UNorm, 2, 8)
+    DEPTH_STENCIL(S8_UInt_Z32_UNorm, 2, 8)
 #endif
     STENCIL(S_UInt8, 1, 1)
   }
