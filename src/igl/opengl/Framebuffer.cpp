@@ -174,6 +174,10 @@ void Framebuffer::attachAsDepth(igl::ITexture& texture,
 void Framebuffer::attachAsStencil(igl::ITexture& texture,
                                   const Texture::AttachmentParams& params) const {
   static_cast<Texture&>(texture).attachAsStencil(params);
+  stencilCachedState_.updateCache(params.stereo ? FramebufferMode::Stereo : FramebufferMode::Mono,
+                                  params.layer,
+                                  params.face,
+                                  params.mipLevel);
 }
 
 void Framebuffer::bindBuffer() const {
@@ -386,13 +390,16 @@ void CustomFramebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
   updateDrawableInternal(std::move(surfaceTextures), true);
 }
 
-void CustomFramebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepth) {
+void CustomFramebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures,
+                                               bool updateDepthStencil) {
   auto colorAttachment0 = getColorAttachment(0);
-  auto depthAttachment = updateDepth ? getDepthAttachment() : nullptr;
+  auto depthAttachment = updateDepthStencil ? getDepthAttachment() : nullptr;
+  auto stencilAttachment = updateDepthStencil ? getStencilAttachment() : nullptr;
 
   const bool updateColor = colorAttachment0 != surfaceTextures.color;
-  updateDepth = updateDepth && depthAttachment != surfaceTextures.depth;
-  if (updateColor || updateDepth) {
+  updateDepthStencil = updateDepthStencil && (depthAttachment != surfaceTextures.depth ||
+                                              stencilAttachment != surfaceTextures.depth);
+  if (updateColor || updateDepthStencil) {
     FramebufferBindingGuard guard(getContext());
     bindBuffer();
     if (updateColor) {
@@ -405,13 +412,25 @@ void CustomFramebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures, 
         renderTarget_.colorAttachments[0].texture = std::move(surfaceTextures.color);
       }
     }
-    if (updateDepth) {
+    if (updateDepthStencil) {
       if (!surfaceTextures.depth) {
-        static_cast<Texture&>(*depthAttachment).detachAsDepth(false);
+        if (depthAttachment) {
+          static_cast<Texture&>(*depthAttachment).detachAsDepth(false);
+        }
         renderTarget_.depthAttachment.texture = nullptr;
+
+        if (depthAttachment == stencilAttachment) {
+          if (stencilAttachment) {
+            static_cast<Texture&>(*stencilAttachment).detachAsStencil(false);
+          }
+          renderTarget_.stencilAttachment.texture = nullptr;
+        }
       } else {
         attachAsDepth(*surfaceTextures.depth, defaultWriteAttachmentParams(renderTarget_.mode));
-
+        if (surfaceTextures.depth->getProperties().hasStencil()) {
+          attachAsStencil(*surfaceTextures.depth, defaultWriteAttachmentParams(renderTarget_.mode));
+          renderTarget_.stencilAttachment.texture = surfaceTextures.depth;
+        }
         renderTarget_.depthAttachment.texture = std::move(surfaceTextures.depth);
       }
     }
@@ -606,6 +625,16 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
                                       renderPassAttachment.mipLevel)) {
       attachAsDepth(*renderTarget_.depthAttachment.texture,
                     toAttachmentParams(renderPassAttachment, renderTarget_.mode));
+    }
+  }
+  if (renderTarget_.stencilAttachment.texture) {
+    const auto& renderPassAttachment = renderPass.stencilAttachment;
+    if (stencilCachedState_.needsUpdate(renderTarget_.mode,
+                                        renderPassAttachment.layer,
+                                        renderPassAttachment.face,
+                                        renderPassAttachment.mipLevel)) {
+      attachAsStencil(*renderTarget_.stencilAttachment.texture,
+                      toAttachmentParams(renderPassAttachment, renderTarget_.mode));
     }
   }
   // clear the buffers if we're not loading previous contents

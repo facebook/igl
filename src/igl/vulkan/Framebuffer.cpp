@@ -217,7 +217,7 @@ void Framebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
   updateDrawableInternal(std::move(surfaceTextures), true);
 }
 
-void Framebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepth) {
+void Framebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepthStencil) {
   IGL_PROFILER_FUNCTION();
 
   if (getColorAttachment(0) != surfaceTextures.color) {
@@ -228,8 +228,17 @@ void Framebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures, bool u
     }
   }
 
-  if (updateDepth && getDepthAttachment() != surfaceTextures.depth) {
-    desc_.depthAttachment.texture = std::move(surfaceTextures.depth);
+  if (updateDepthStencil) {
+    if (surfaceTextures.depth && surfaceTextures.depth->getProperties().hasStencil()) {
+      if (getStencilAttachment() != surfaceTextures.depth) {
+        desc_.stencilAttachment.texture = surfaceTextures.depth;
+      }
+    } else {
+      desc_.stencilAttachment.texture = nullptr;
+    }
+    if (getDepthAttachment() != surfaceTextures.depth) {
+      desc_.depthAttachment.texture = std::move(surfaceTextures.depth);
+    }
   }
 }
 

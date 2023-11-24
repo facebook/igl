@@ -93,6 +93,7 @@ class Framebuffer : public WithContext, public IFramebuffer {
   constexpr static auto kNumCachedStates = 8; // We allow up to 8 color attachments
   mutable std::array<CachedState, kNumCachedStates> colorCachedState_;
   mutable CachedState depthCachedState_;
+  mutable CachedState stencilCachedState_;
 
   std::shared_ptr<Framebuffer> resolveFramebuffer = nullptr;
 };
@@ -141,7 +142,7 @@ class CustomFramebuffer final : public Framebuffer {
 
  private:
   void prepareResource(Result* outResult);
-  void updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepth);
+  void updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepthStencil);
 
   bool initialized_ = false;
 

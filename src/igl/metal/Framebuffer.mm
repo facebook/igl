@@ -156,6 +156,13 @@ void Framebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
 
 void Framebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
   updateDrawable(std::move(surfaceTextures.color));
+  if (surfaceTextures.depth && surfaceTextures.depth->getProperties().hasStencil()) {
+    if (getStencilAttachment() != surfaceTextures.depth) {
+      value_.stencilAttachment.texture = surfaceTextures.depth;
+    }
+  } else {
+    value_.stencilAttachment.texture = nullptr;
+  }
   if (getDepthAttachment() != surfaceTextures.depth) {
     value_.depthAttachment.texture = std::move(surfaceTextures.depth);
   }

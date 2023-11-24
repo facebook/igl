@@ -608,7 +608,7 @@ TEST_F(FramebufferTest, UpdateDrawableWithDepthAndStencilTest) {
 
   ASSERT_EQ(framebuffer_->getColorAttachment(0), colorAttachment);
   ASSERT_EQ(framebuffer_->getDepthAttachment(), nullptr);
-  ASSERT_EQ(framebuffer_->getStencilAttachment(), stencilAttachment);
+  ASSERT_EQ(framebuffer_->getStencilAttachment(), nullptr);
 
   framebuffer_->updateDrawable(SurfaceTextures{colorAttachment, depthAttachment});
 
@@ -620,7 +620,7 @@ TEST_F(FramebufferTest, UpdateDrawableWithDepthAndStencilTest) {
 
   ASSERT_EQ(framebuffer_->getColorAttachment(0), nullptr);
   ASSERT_EQ(framebuffer_->getDepthAttachment(), nullptr);
-  ASSERT_EQ(framebuffer_->getStencilAttachment(), stencilAttachment);
+  ASSERT_EQ(framebuffer_->getStencilAttachment(), nullptr);
 
   framebuffer_->updateDrawable(SurfaceTextures{colorAttachment, depthAttachment});
 
