@@ -136,7 +136,7 @@ using namespace igl;
     auto d = static_cast<igl::metal::macos::Device*>(device.get())->get();
 
     auto metalView = [[MetalView alloc] initWithFrame:frame_ device:d];
-    metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
+    metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
 
     metalView.delegate = self;
     metalView.colorspace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
