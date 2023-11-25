@@ -863,6 +863,8 @@ typedef struct GLFWwindow GLFWwindow;
 
 namespace lvk {
 
+using ShaderModuleErrorCallback = void (*)(lvk::IContext*, lvk::ShaderModuleHandle, int line, int col, const char* debugName);
+
 struct ContextConfig {
   bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
   bool enableValidation = true;
@@ -870,6 +872,7 @@ struct ContextConfig {
   // owned by the application - should be alive until createVulkanContextWithSwapchain() returns
   const void* pipelineCacheData = nullptr;
   size_t pipelineCacheDataSize = 0;
+  ShaderModuleErrorCallback shaderModuleErrorCallback = nullptr;
 };
 
 [[nodiscard]] bool isDepthOrStencilFormat(lvk::Format format);

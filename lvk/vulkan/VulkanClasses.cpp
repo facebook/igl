@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <malloc.h>
+
 #include <cstring>
 #include <deque>
 #include <set>
@@ -54,7 +56,11 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(VkDebugUtilsMessageSeverityFl
 
   const bool isError = (msgSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0;
 
-  char errorName[128] = {};
+  const size_t len = cbData->pMessage ? strlen(cbData->pMessage) : 128u;
+
+  LVK_ASSERT(len < 65536);
+
+  char* errorName = (char*)alloca(len + 1);
   int object = 0;
   void* handle = nullptr;
   char typeName[128] = {};
@@ -67,7 +73,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(VkDebugUtilsMessageSeverityFl
   }
 
   if (sscanf(cbData->pMessage,
-             "Validation Error : [ %127s ] Object %i: handle = %p, type = %127s | MessageID = %p",
+             "Validation Error: [ %[^]] ] Object %i: handle = %p, type = %127s | MessageID = %p",
              errorName,
              &object,
              &handle,
@@ -91,6 +97,22 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(VkDebugUtilsMessageSeverityFl
 
   if (isError) {
     lvk::VulkanContext* ctx = static_cast<lvk::VulkanContext*>(userData);
+
+    if (ctx->config_.shaderModuleErrorCallback != nullptr) {
+      // retrieve source code references - this is very experimental and depends a lot on the validation layer output
+      int line = 0;
+      int col = 0;
+      const char* substr1 = strstr(cbData->pMessage, "Shader validation error occurred at line ");
+      if (substr1 && sscanf(substr1, "Shader validation error occurred at line %d, column %d.", &line, &col) >= 1) {
+        const char* substr2 = strstr(cbData->pMessage, "Shader Module (Shader Module: ");
+        char* shaderModuleDebugName = (char*)alloca(len + 1);
+        VkShaderModule shaderModule = VK_NULL_HANDLE;
+        if (substr2 && sscanf(substr2, "Shader Module (Shader Module: %[^)])(%p)", shaderModuleDebugName, &shaderModule) == 2) {
+          ctx->invokeShaderModuleErrorCallback(line, col, shaderModuleDebugName, shaderModule);
+        }
+      }
+    }
+
     if (ctx->config_.terminateOnValidationError) {
       LVK_ASSERT(false);
       std::terminate();
@@ -4114,6 +4136,7 @@ void lvk::VulkanContext::createInstance() {
 
   const VkValidationFeatureEnableEXT validationFeaturesEnabled[] = {
       VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
+      VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
   };
   
 #if defined(__APPLE__)
@@ -5126,4 +5149,16 @@ void lvk::VulkanContext::waitDeferredTasks() {
     task.task_();
   }
   pimpl_->deferredTasks_.clear();
+}
+
+void lvk::VulkanContext::invokeShaderModuleErrorCallback(int line, int col, const char* debugName, VkShaderModule sm) {
+  if (!config_.shaderModuleErrorCallback) {
+    return;
+  }
+
+  lvk::ShaderModuleHandle handle = shaderModulesPool_.findObject(&sm);
+
+  if (!handle.empty()) {
+    config_.shaderModuleErrorCallback(this, handle, line, col, debugName);
+  }
 }
