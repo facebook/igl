@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <malloc.h>
-
 #include <cstring>
 #include <deque>
 #include <set>
@@ -28,6 +26,8 @@
 #if defined(__APPLE__)
 #include <MoltenVK/mvk_config.h>
 #include <dlfcn.h>
+#else
+#include <malloc.h>
 #endif
 
 uint32_t lvk::VulkanPipelineBuilder::numPipelinesCreated_ = 0;
