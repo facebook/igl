@@ -68,6 +68,18 @@ class Pool {
     assert(handle.gen() == objects_[index].gen_); // accessing deleted object
     return &objects_[index].obj_;
   }
+  Handle<ObjectType> findObject(const ImplObjectType* obj) {
+    if (!obj)
+      return {};
+
+    for (size_t idx = 0; idx != objects_.size(); idx++) {
+      if (objects_[idx].obj_ == *obj) {
+        return Handle<ObjectType>((uint32_t)idx, objects_[idx].gen_);
+      }
+    }
+
+    return {};
+  }
   void clear() {
     objects_.clear();
     freeListHead_ = kListEndSentinel;
