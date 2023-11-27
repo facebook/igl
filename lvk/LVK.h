@@ -208,6 +208,7 @@ enum Topology : uint8_t {
   Topology_LineStrip,
   Topology_Triangle,
   Topology_TriangleStrip,
+  Topology_Patch,
 };
 
 enum ColorSpace : uint8_t {
@@ -496,6 +497,8 @@ enum StoreOp : uint8_t {
 
 enum ShaderStage : uint8_t {
   Stage_Vert,
+  Stage_Tesc,
+  Stage_Tese,
   Stage_Geom,
   Stage_Frag,
   Stage_Comp,
@@ -580,12 +583,16 @@ struct RenderPipelineDesc final {
   lvk::VertexInput vertexInput;
 
   ShaderModuleHandle smVert;
+  ShaderModuleHandle smTesc;
+  ShaderModuleHandle smTese;
   ShaderModuleHandle smGeom;
   ShaderModuleHandle smFrag;
 
   SpecializationConstantDesc specInfo = {};
 
   const char* entryPointVert = "main";
+  const char* entryPointTesc = "main";
+  const char* entryPointTese = "main";
   const char* entryPointFrag = "main";
   const char* entryPointGeom = "main";
 
@@ -601,6 +608,7 @@ struct RenderPipelineDesc final {
   StencilState frontFaceStencil = {};
 
   uint32_t samplesCount = 1u;
+  uint32_t patchControlPoints = 0;
 
   const char* debugName = "";
 
