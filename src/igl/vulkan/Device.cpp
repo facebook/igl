@@ -26,6 +26,7 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanShaderModule.h>
 
+// Writes the shader code to disk for debugging. Used in `Device::createShaderModule()`
 #if IGL_SHADER_DUMP && IGL_DEBUG
 #include <filesystem>
 #include <fstream>
