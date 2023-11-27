@@ -16,6 +16,10 @@ namespace vulkan {
 class Device;
 class VulkanBuffer;
 
+/// @brief Implements the igl::IBuffer interface for Vulkan. Contains one or more VulkanBuffers,
+/// depending on the type of buffer this class represents. If this class represents a ring buffer,
+/// then there will be multiple VulkanBuffers, each with its own index. Otherwise it contains only
+/// one VulkanBuffer object.
 class Buffer final : public igl::IBuffer {
   friend class Device;
 
@@ -42,6 +46,8 @@ class Buffer final : public igl::IBuffer {
 
   VkBuffer getVkBuffer() const;
 
+  /// @brief Returns the current active VulkanBuffer object managed by this class. Since this class
+  /// may be used as a Ring Buffer, the active buffer is the buffer currently being accessed.
   [[nodiscard]] const std::shared_ptr<VulkanBuffer>& currentVulkanBuffer() const;
 
  private:
