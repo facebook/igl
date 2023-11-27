@@ -753,7 +753,8 @@ VkDescriptorSetLayoutBinding lvk::getDSLBinding(uint32_t binding, VkDescriptorTy
       .binding = binding,
       .descriptorType = descriptorType,
       .descriptorCount = descriptorCount,
-      .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+      .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
+                    VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
       .pImmutableSamplers = nullptr,
   };
 }

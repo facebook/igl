@@ -2508,12 +2508,11 @@ void lvk::CommandBuffer::cmdPushConstants(const void* data, size_t size, size_t 
     LLOGW("Push constants size exceeded %u (max %u bytes)", size + offset, limits.maxPushConstantsSize);
   }
 
-  vkCmdPushConstants(wrapper_->cmdBuf_,
-                     ctx_->vkPipelineLayout_,
-                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
-                     (uint32_t)offset,
-                     (uint32_t)size,
-                     data);
+  const VkShaderStageFlags shaderStageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                                              VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
+                                              VK_SHADER_STAGE_COMPUTE_BIT;
+
+  vkCmdPushConstants(wrapper_->cmdBuf_, ctx_->vkPipelineLayout_, shaderStageFlags, (uint32_t)offset, (uint32_t)size, data);
 }
 
 void lvk::CommandBuffer::bindGraphicsPipeline() {
@@ -3523,11 +3522,19 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
   }
 
   const VkShaderModule* vertModule = shaderModulesPool_.get(desc.smVert);
+  const VkShaderModule* tescModule = shaderModulesPool_.get(desc.smTesc);
+  const VkShaderModule* teseModule = shaderModulesPool_.get(desc.smTese);
   const VkShaderModule* geomModule = shaderModulesPool_.get(desc.smGeom);
   const VkShaderModule* fragModule = shaderModulesPool_.get(desc.smFrag);
 
   LVK_ASSERT(vertModule);
   LVK_ASSERT(fragModule);
+
+  if (tescModule || teseModule || desc.patchControlPoints) {
+    LVK_ASSERT_MSG(tescModule && teseModule, "Both tessellation control and evaluation shaders should be provided");
+    LVK_ASSERT(desc.patchControlPoints > 0 &&
+               desc.patchControlPoints <= vkPhysicalDeviceProperties2_.properties.limits.maxTessellationPatchSize);
+  }
 
   const VkPipelineVertexInputStateCreateInfo ciVertexInputState = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -3574,6 +3581,12 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
       .stencilMasks(VK_STENCIL_FACE_BACK_BIT, 0xFF, desc.backFaceStencil.writeMask, desc.backFaceStencil.readMask)
       .shaderStage(lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, *vertModule, desc.entryPointVert, &si))
       .shaderStage(lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, *fragModule, desc.entryPointFrag, &si))
+      .shaderStage(tescModule ? lvk::getPipelineShaderStageCreateInfo(
+                                    VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, *tescModule, desc.entryPointTesc, &si)
+                              : VkPipelineShaderStageCreateInfo{.module = VK_NULL_HANDLE})
+      .shaderStage(teseModule ? lvk::getPipelineShaderStageCreateInfo(
+                                    VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, *teseModule, desc.entryPointTese, &si)
+                              : VkPipelineShaderStageCreateInfo{.module = VK_NULL_HANDLE})
       .shaderStage(geomModule ? lvk::getPipelineShaderStageCreateInfo(VK_SHADER_STAGE_GEOMETRY_BIT, *geomModule, desc.entryPointGeom, &si)
                               : VkPipelineShaderStageCreateInfo{.module = VK_NULL_HANDLE})
       .cullMode(cullModeToVkCullMode(desc.cullMode))
@@ -4433,6 +4446,7 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
   VkPhysicalDeviceFeatures deviceFeatures10 = {
 #ifndef __APPLE__
       .geometryShader = VK_TRUE,
+      .tessellationShader = VK_TRUE,
 #endif
       .multiDrawIndirect = VK_TRUE,
       .drawIndirectFirstInstance = VK_TRUE,
@@ -4881,7 +4895,8 @@ lvk::Result lvk::VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_
     // duplicate for MoltenVK
     const VkDescriptorSetLayout dsls[] = {vkDSL_, vkDSL_, vkDSL_};
     const VkPushConstantRange range = {
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
+                      VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
         .offset = 0,
         .size = kPushConstantsSize,
     };
