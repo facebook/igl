@@ -367,6 +367,10 @@ class CommandBuffer final : public ICommandBuffer {
 
   CommandBuffer& operator=(CommandBuffer&& other) = default;
 
+  operator VkCommandBuffer() const {
+    return getVkCommandBuffer();
+  }
+
   void transitionToShaderReadOnly(TextureHandle surface) const override;
 
   void cmdBindComputePipeline(lvk::ComputePipelineHandle handle) override;
