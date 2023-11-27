@@ -315,6 +315,7 @@ class VulkanPipelineBuilder final {
                                           uint32_t numColorAttachments);
   VulkanPipelineBuilder& depthAttachmentFormat(VkFormat format);
   VulkanPipelineBuilder& stencilAttachmentFormat(VkFormat format);
+  VulkanPipelineBuilder& patchControlPoints(uint32_t numPoints);
 
   VkResult build(VkDevice device,
                  VkPipelineCache pipelineCache,
@@ -339,6 +340,7 @@ class VulkanPipelineBuilder final {
   VkPipelineRasterizationStateCreateInfo rasterizationState_;
   VkPipelineMultisampleStateCreateInfo multisampleState_;
   VkPipelineDepthStencilStateCreateInfo depthStencilState_;
+  VkPipelineTessellationStateCreateInfo tessellationState_;
 
   uint32_t numColorAttachments_ = 0;
   VkPipelineColorBlendAttachmentState colorBlendAttachmentStates_[LVK_MAX_COLOR_ATTACHMENTS] = {};

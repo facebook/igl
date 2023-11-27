@@ -145,6 +145,8 @@ VkPrimitiveTopology topologyToVkPrimitiveTopology(lvk::Topology t) {
     return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   case lvk::Topology_TriangleStrip:
     return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+  case lvk::Topology_Patch:
+    return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
   }
   LVK_ASSERT_MSG(false, "Implement Topology = %u", (uint32_t)t);
   return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
@@ -188,6 +190,10 @@ VkShaderStageFlagBits shaderStageToVkShaderStage(lvk::ShaderStage stage) {
   switch (stage) {
   case lvk::Stage_Vert:
     return VK_SHADER_STAGE_VERTEX_BIT;
+  case lvk::Stage_Tesc:
+    return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+  case lvk::Stage_Tese:
+    return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
   case lvk::Stage_Geom:
     return VK_SHADER_STAGE_GEOMETRY_BIT;
   case lvk::Stage_Frag:
@@ -195,6 +201,7 @@ VkShaderStageFlagBits shaderStageToVkShaderStage(lvk::ShaderStage stage) {
   case lvk::Stage_Comp:
     return VK_SHADER_STAGE_COMPUTE_BIT;
   };
+  LVK_ASSERT(false);
   return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
 }
 
@@ -1800,6 +1807,11 @@ lvk::VulkanPipelineBuilder::VulkanPipelineBuilder() :
       .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
       .primitiveRestartEnable = VK_FALSE,
   }),
+  tessellationState_({
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
+      .flags = 0,
+      .patchControlPoints = 0,
+  }),
   rasterizationState_({
       .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
       .flags = 0,
@@ -1935,6 +1947,11 @@ lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::stencilAttachmentFormat(
   return *this;
 }
 
+lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::patchControlPoints(uint32_t numPoints) {
+  tessellationState_.patchControlPoints = numPoints;
+  return *this;
+}
+
 lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::shaderStage(VkPipelineShaderStageCreateInfo stage) {
   if (stage.module != VK_NULL_HANDLE) {
     LVK_ASSERT(numShaderStages_ < LVK_ARRAY_NUM_ELEMENTS(shaderStages_));
@@ -2029,7 +2046,7 @@ VkResult lvk::VulkanPipelineBuilder::build(VkDevice device,
       .pStages = shaderStages_,
       .pVertexInputState = &vertexInputState_,
       .pInputAssemblyState = &inputAssembly_,
-      .pTessellationState = nullptr,
+      .pTessellationState = &tessellationState_,
       .pViewportState = &viewportState,
       .pRasterizationState = &rasterizationState_,
       .pMultisampleState = &multisampleState_,
@@ -3565,6 +3582,7 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
       .colorAttachments(colorBlendAttachmentStates, colorAttachmentFormats, numColorAttachments)
       .depthAttachmentFormat(formatToVkFormat(desc.depthFormat))
       .stencilAttachmentFormat(formatToVkFormat(desc.stencilFormat))
+      .patchControlPoints(desc.patchControlPoints)
       .build(vkDevice_, pipelineCache_, vkPipelineLayout_, &pipeline, desc.debugName);
 
 #if !defined(__APPLE__)
@@ -3974,7 +3992,8 @@ VkShaderModule lvk::VulkanContext::createShaderModule(ShaderStage stage,
   }
 
   if (strstr(source, "#version ") == nullptr) {
-    if (vkStage == VK_SHADER_STAGE_VERTEX_BIT || vkStage == VK_SHADER_STAGE_COMPUTE_BIT) {
+    if (vkStage == VK_SHADER_STAGE_VERTEX_BIT || vkStage == VK_SHADER_STAGE_COMPUTE_BIT ||
+        vkStage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || vkStage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
       sourcePatched += R"(
       #version 460
       #extension GL_EXT_buffer_reference : require
