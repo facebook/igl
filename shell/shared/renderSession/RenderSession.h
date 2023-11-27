@@ -30,6 +30,9 @@ class RenderSession {
 
   void updateDisplayScale(float scale) noexcept;
 
+  float pixelsPerPoint() const noexcept;
+  void setPixelsPerPoint(float scale) noexcept;
+
   void setShellParams(const ShellParams& shellParams) noexcept;
 
   /// @brief Params provided to the session by the host

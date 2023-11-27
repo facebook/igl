@@ -38,6 +38,7 @@
 #import <igl/vulkan/HWDevice.h>
 #import <igl/vulkan/VulkanContext.h>
 #endif
+#import <math.h>
 #import <simd/simd.h>
 
 using namespace igl;
@@ -108,15 +109,20 @@ using namespace igl;
   // process user input
   shellPlatform_->getInputDispatcher().processEvents();
 
-  // update retina scale
-  session_->updateDisplayScale((float)self.view.window.backingScaleFactor);
-
-  // draw
+  // surface textures
   igl::SurfaceTextures surfaceTextures = igl::SurfaceTextures{
       [self createTextureFromNativeDrawable], [self createTextureFromNativeDepth]};
   IGL_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
   const auto& dims = surfaceTextures.color->getDimensions();
   shellParams_.nativeSurfaceDimensions = glm::ivec2{dims.width, dims.height};
+
+  // update retina scale
+  float pixelsPerPoint = shellParams_.nativeSurfaceDimensions.x / shellParams_.viewportSize.x;
+  session_->setPixelsPerPoint(pixelsPerPoint);
+  IGL_ASSERT(fabs(shellParams_.nativeSurfaceDimensions.y / shellParams_.viewportSize.y -
+                  pixelsPerPoint) < FLT_EPSILON);
+
+  // draw
   session_->update(std::move(surfaceTextures));
   if (session_->appParams().exitRequested)
     [[NSApplication sharedApplication] terminate:nil];

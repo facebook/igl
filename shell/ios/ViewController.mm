@@ -148,9 +148,9 @@
   igl::SurfaceTextures surfaceTextures = [self createSurfaceTextures];
   auto backend = platform_->getDevice().getBackendType();
   if (backend == igl::BackendType::Metal) {
-    session_->updateDisplayScale((float)[UIScreen mainScreen].scale);
+    session_->setPixelsPerPoint((float)[UIScreen mainScreen].scale);
   } else if (backend == igl::BackendType::OpenGL) {
-    session_->updateDisplayScale(1.0f);
+    session_->setPixelsPerPoint(1.0f);
   }
   session_->update(std::move(surfaceTextures));
 }

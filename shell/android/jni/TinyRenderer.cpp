@@ -137,7 +137,7 @@ void TinyRenderer::render(float displayScale) {
   }
   IGL_ASSERT(result.isOk());
   IGL_REPORT_ERROR(result.isOk());
-  session_->updateDisplayScale(displayScale);
+  session_->setPixelsPerPoint(displayScale);
   session_->update(std::move(surfaceTextures));
 }
 

@@ -17,6 +17,14 @@ void RenderSession::updateDisplayScale(float scale) noexcept {
   platform_->getDisplayContext().scale = scale;
 }
 
+float RenderSession::pixelsPerPoint() const noexcept {
+  return platform_->getDisplayContext().pixelsPerPoint;
+}
+
+void RenderSession::setPixelsPerPoint(float scale) noexcept {
+  platform_->getDisplayContext().pixelsPerPoint = scale;
+}
+
 void RenderSession::setShellParams(const ShellParams& shellParams) noexcept {
   shellParams_ = &shellParams;
 }

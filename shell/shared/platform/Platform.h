@@ -25,7 +25,8 @@ class ImageWriter;
 
 class DisplayContext {
  public:
-  float scale = 1.0f; // e.g. retina scale on apple platforms
+  float scale = 1.0f; // TODO: Transition call sites to pixelsPerPoint and remove this
+  float pixelsPerPoint = 1.0f; // e.g. retina scale on apple platforms
 };
 
 class Platform {
