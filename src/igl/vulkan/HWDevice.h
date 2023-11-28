@@ -19,8 +19,22 @@ namespace vulkan {
 class VulkanContext;
 struct VulkanContextConfig;
 
+/// @brief This class provides convenience functions to query, and create devices, as well as to
+/// create a VulkanContext object.
 class HWDevice final {
  public:
+  /** @brief Creates a VulkanContext object with the specified configuration and the extensions
+   * provided in the array pointed by `extraInstanceExtensions`.
+   * @param config is the configuration used to create the VulkanContext object
+   * @param window is a pointer to a native window handle. For windows, it should be a pointer to
+   * the Win32 HINSTANCE for the window to associate the surface with. For Android, it should be a
+   * pointer to the ANativeWindow. For Xlib, it should be an Xlib Window.
+   * @param numExtraInstanceExtensions is the number of additional instance extensions to enable.
+   * @param extraInstanceExtensions is a pointer to an array of strings containing the names of the
+   * extensions to enable for the context.
+   * @param display is a pointer to an Xlib Display connection to the X server. Used only when
+   * `VK_USE_PLATFORM_XLIB_KHR` is defined.
+   */
   static std::unique_ptr<VulkanContext> createContext(
       const VulkanContextConfig& config,
       void* window,
@@ -35,7 +49,8 @@ class HWDevice final {
   /*
    * @brief Create a new vulkan::Device
    *        Only 1 device can be created for Vulkan. The new device will take ownership of
-   * VulkanContext. If the process fails, the provided VulkanContext is destroyed.
+   * VulkanContext. If the process fails, the provided VulkanContext is destroyed. If the width and
+   * height are greater than 0, this functions also initializes the swapchain.
    */
 
   static std::unique_ptr<IDevice> create(std::unique_ptr<VulkanContext> ctx,
