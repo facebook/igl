@@ -119,9 +119,11 @@ using namespace igl;
   // update retina scale
   float pixelsPerPoint = shellParams_.nativeSurfaceDimensions.x / shellParams_.viewportSize.x;
   session_->setPixelsPerPoint(pixelsPerPoint);
+// @fb-only
+  // @fb-only
   IGL_ASSERT(fabs(shellParams_.nativeSurfaceDimensions.y / shellParams_.viewportSize.y -
                   pixelsPerPoint) < FLT_EPSILON);
-
+// @fb-only
   // draw
   session_->update(std::move(surfaceTextures));
   if (session_->appParams().exitRequested)
