@@ -16,8 +16,14 @@ namespace vulkan {
 
 class VulkanPipelineLayout;
 
+/// @brief A wrapper around a VkDescriptorSetLayout
 class VulkanDescriptorSetLayout final {
  public:
+  /** @brief Construct a new VulkanDescriptorSetLayout object with the given function table, device,
+   * descriptor set layout create info, and optional debug name. `bindings` is a pointer to an
+   * array of VkDescriptorSetLayoutBinding and `bindingFlags` is a pointer to an array of
+   * VkDescriptorBindingFlags. The number of elements in each array must be equal to `numBindings`.
+   */
   VulkanDescriptorSetLayout(const VulkanFunctionTable& vf,
                             VkDevice device,
                             VkDescriptorSetLayoutCreateFlags flags,
