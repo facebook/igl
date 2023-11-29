@@ -47,6 +47,20 @@ struct BindingsBuffers;
 struct BindingsTextures;
 struct VulkanContextImpl;
 
+/*
+ * Descriptor sets:
+ *  0 - combined image samplers
+ *  1 - uniform buffers
+ *  2 - storage buffers
+ *  3 - bindless textures/samplers  <--  optional
+ */
+enum {
+  kBindPoint_CombinedImageSamplers = 0,
+  kBindPoint_BuffersUniform = 1,
+  kBindPoint_BuffersStorage = 2,
+  kBindPoint_Bindless = 3,
+};
+
 struct DeviceQueues {
   const static uint32_t INVALID = 0xFFFFFFFF;
   uint32_t graphicsQueueFamilyIndex = INVALID;

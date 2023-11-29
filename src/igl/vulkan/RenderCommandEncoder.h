@@ -100,6 +100,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
  private:
   void bindPipeline();
   void ensureVertexBuffers();
+  void ensureShaderModule(IShaderModule* sm);
 
  private:
   VulkanContext& ctx_;

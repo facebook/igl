@@ -24,7 +24,9 @@
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanPipelineLayout.h>
 #include <igl/vulkan/VulkanRenderPassBuilder.h>
+#include <igl/vulkan/VulkanShaderModule.h>
 #include <igl/vulkan/VulkanSwapchain.h>
+#include <igl/vulkan/util/SpvReflection.h>
 
 namespace {
 
@@ -396,6 +398,9 @@ void RenderCommandEncoder::bindRenderPipelineState(
 
   const RenderPipelineDesc& desc = rps->getRenderPipelineDesc();
 
+  ensureShaderModule(desc.shaderStages->getVertexModule().get());
+  ensureShaderModule(desc.shaderStages->getFragmentModule().get());
+
   const bool hasDepthAttachment = desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid;
 
   if (hasDepthAttachment != hasDepthAttachment_) {
@@ -733,6 +738,41 @@ bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {
   const auto returnVal = drawCallCountEnabled_ > 0;
   drawCallCountEnabled_ = value;
   return returnVal;
+}
+
+void RenderCommandEncoder::ensureShaderModule(IShaderModule* sm) {
+  IGL_ASSERT(sm);
+
+  const igl::vulkan::util::SpvModuleInfo& info =
+      static_cast<igl::vulkan::ShaderModule*>(sm)->getVulkanShaderModule().getSpvModuleInfo();
+
+  for (const auto& t : info.textures) {
+    if (!IGL_VERIFY(t.descriptorSet == kBindPoint_CombinedImageSamplers)) {
+      IGL_LOG_ERROR(
+          "Missing descriptor set id for textures: the shader should contain \"layout(set = "
+          "%u, ...)\"",
+          kBindPoint_CombinedImageSamplers);
+      continue;
+    }
+  }
+  for (const auto& b : info.uniformBuffers) {
+    if (!IGL_VERIFY(b.descriptorSet == kBindPoint_BuffersUniform)) {
+      IGL_LOG_ERROR(
+          "Missing descriptor set id for uniform buffers: the shader should contain \"layout(set = "
+          "%u, ...)\"",
+          kBindPoint_BuffersUniform);
+      continue;
+    }
+  }
+  for (const auto& b : info.storageBuffers) {
+    if (!IGL_VERIFY(b.descriptorSet == kBindPoint_BuffersStorage)) {
+      IGL_LOG_ERROR(
+          "Missing descriptor set id for storage buffers: the shader should contain \"layout(set = "
+          "%u, ...)\"",
+          kBindPoint_BuffersStorage);
+      continue;
+    }
+  }
 }
 
 void RenderCommandEncoder::ensureVertexBuffers() {

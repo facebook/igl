@@ -47,18 +47,6 @@
 namespace {
 
 /*
- * Descriptor sets:
- *  0 - combined image samplers
- *  1 - uniform buffers
- *  2 - storage buffers
- *  3 - bindless textures/samplers  <--  optional
- */
-const uint32_t kBindPoint_CombinedImageSamplers = 0;
-const uint32_t kBindPoint_BuffersUniform = 1;
-const uint32_t kBindPoint_BuffersStorage = 2;
-const uint32_t kBindPoint_Bindless = 3;
-
-/*
  BINDLESS ONLY: these bindings should match GLSL declarations injected into shaders in
  Device::compileShaderModule(). Same with SparkSL.
  */

@@ -299,7 +299,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
     return;
   }
 
-  cmdEncoder.pushDebugGroupLabel("ImGui Rndering", igl::Color(0, 1, 0));
+  cmdEncoder.pushDebugGroupLabel("ImGui Rendering", igl::Color(0, 1, 0));
 
   igl::Viewport viewport = {
       /*.x = */ 0.0,
