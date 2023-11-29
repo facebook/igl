@@ -105,12 +105,13 @@ TEST_F(VulkanImageTest, CreateImageWithExportedMemory) {
       VK_SAMPLE_COUNT_1_BIT,
       "Image: vulkan export memory");
   ASSERT_NE(vulkanImage, nullptr);
-  EXPECT_NE(vulkanImage->getVkImage(), reinterpret_cast<VkImage_T*>(VK_NULL_HANDLE));
   EXPECT_TRUE(vulkanImage->isExported_);
 #if IGL_PLATFORM_WIN
   EXPECT_NE(vulkanImage->exportedMemoryHandle_, nullptr);
+  EXPECT_NE(vulkanImage->getVkImage(), reinterpret_cast<VkImage_T*>(VK_NULL_HANDLE));
 #elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
   EXPECT_NE(vulkanImage->exportedFd_, -1);
+  EXPECT_NE(vulkanImage->getVkImage(), VK_NULL_HANDLE);
 #endif
 }
 
