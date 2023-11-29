@@ -69,14 +69,14 @@ TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
 
   const VkDeviceSize kMaxStagingBufferSize = ctx.stagingDevice_->getMaxStagingBufferSize();
 
-  const std::array<size_t, 2> kDesiredBufferSizes = {kMaxStagingBufferSize * 2u,
-                                                     kMaxStagingBufferSize + 2u};
+  const std::array<VkDeviceSize, 2> kDesiredBufferSizes = {kMaxStagingBufferSize * 2u,
+                                                           kMaxStagingBufferSize + 2u};
 
   size_t maxBufferLength = 0;
   iglDev_->getFeatureLimits(DeviceFeatureLimits::MaxStorageBufferBytes, maxBufferLength);
 
   for (size_t sizeIdx = 0; sizeIdx < kDesiredBufferSizes.size(); ++sizeIdx) {
-    bufferDesc.length = std::min(kDesiredBufferSizes[sizeIdx], maxBufferLength);
+    bufferDesc.length = std::min<VkDeviceSize>(kDesiredBufferSizes[sizeIdx], maxBufferLength);
 
     ASSERT_TRUE(bufferDesc.length % 2 == 0);
 
