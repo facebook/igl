@@ -299,6 +299,8 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
     return;
   }
 
+  cmdEncoder.pushDebugGroupLabel("ImGui Rndering", igl::Color(0, 1, 0));
+
   igl::Viewport viewport = {
       /*.x = */ 0.0,
       /*.y = */ 0.0,
@@ -405,6 +407,8 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
     // disable scissor
     cmdEncoder.bindScissorRect(igl::ScissorRect());
   }
+
+  cmdEncoder.popDebugGroupLabel();
 }
 
 /* public API */
