@@ -128,6 +128,12 @@ bool NativeHWTextureBuffer::supportsUpload() const {
 }
 
 Result NativeHWTextureBuffer::create(const TextureDesc& desc, bool hasStorageAlready) {
+  return createHWBuffer(desc, hasStorageAlready, false);
+}
+
+Result NativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
+                                             bool hasStorageAlready,
+                                             bool surfaceComposite) {
   if (getTextureId() != 0) {
     return Result{Result::Code::RuntimeError, "NativeHWTextureBuffer alreayd created"};
   }
@@ -144,6 +150,10 @@ Result NativeHWTextureBuffer::create(const TextureDesc& desc, bool hasStorageAlr
     descHW.height = desc.height;
     descHW.layers = 1;
     descHW.usage = getBufferUsage(desc.usage);
+// USAGE_COMPOSER_OVERLAY API 33
+#if __ANDROID_MIN_SDK_VERSION__ >= 33
+    descHW.usage |= surfaceComposite ? AHARDWAREBUFFER_USAGE_COMPOSER_OVERLAY : 0;
+#endif
 
     auto hwResult = AHardwareBuffer_allocate(&descHW, &hwBuffer_);
     if (hwResult != 0) {
