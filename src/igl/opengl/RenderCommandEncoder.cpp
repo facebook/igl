@@ -309,7 +309,7 @@ GLenum toGlPrimitive(PrimitiveType t) {
   return result;
 }
 
-constexpr int toGlType(IndexFormat format) {
+int toGlType(IndexFormat format) {
   switch (format) {
   case IndexFormat::UInt16:
     return GL_UNSIGNED_SHORT;
