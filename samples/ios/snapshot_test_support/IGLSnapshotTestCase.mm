@@ -13,6 +13,7 @@
 #import <FBServerSnapshotTestCase/FBServerSnapshotTestCase.h>
 #import <FBServerSnapshotTestCase/FBServerSnapshotTestData.h>
 #import <FBServerSnapshotTestCase/FBServerSnapshotTestRecorder.h>
+#import <igl/DebugMacros.h>
 #import <igl/IGL.h>
 #import <igl/metal/HWDevice.h>
 #import <igl/opengl/ios/Context.h>
