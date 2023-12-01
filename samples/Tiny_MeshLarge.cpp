@@ -626,9 +626,10 @@ void initIGL() {
     textureDummyWhite_ = ctx_->createTexture(
         {
             .type = lvk::TextureType_2D,
-            .format = lvk::Format_RGBA_UN8,
+            .format = lvk::Format_R_UN8,
             .dimensions = {1, 1},
             .usage = lvk::TextureUsageBits_Sampled,
+            .swizzle = {lvk::Swizzle_1, lvk::Swizzle_1, lvk::Swizzle_1, lvk::Swizzle_1},
             .data = &pixel,
             .debugName = "dummy 1x1 (white)",
         },
@@ -1720,6 +1721,8 @@ lvk::TextureHandle createTexture(const LoadedImage& img) {
           .dimensions = {img.w, img.h},
           .usage = lvk::TextureUsageBits_Sampled,
           .numMipLevels = lvk::calcNumMipLevels(img.w, img.h),
+          .swizzle = (img.channels == 1) ? lvk::ComponentMapping{lvk::Swizzle_R, lvk::Swizzle_R, lvk::Swizzle_R, lvk::Swizzle_R}
+                                         : lvk::ComponentMapping{},
           .data = initialData,
           .dataNumMipLevels = initialDataNumMipLevels,
           .debugName = img.debugName.c_str(),
