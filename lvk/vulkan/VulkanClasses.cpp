@@ -33,6 +33,13 @@
 uint32_t lvk::VulkanPipelineBuilder::numPipelinesCreated_ = 0;
 
 static_assert(lvk::HWDeviceDesc::LVK_MAX_PHYSICAL_DEVICE_NAME_SIZE == VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+static_assert(lvk::Swizzle_Default == VK_COMPONENT_SWIZZLE_IDENTITY);
+static_assert(lvk::Swizzle_0 == VK_COMPONENT_SWIZZLE_ZERO);
+static_assert(lvk::Swizzle_1 == VK_COMPONENT_SWIZZLE_ONE);
+static_assert(lvk::Swizzle_R == VK_COMPONENT_SWIZZLE_R);
+static_assert(lvk::Swizzle_G == VK_COMPONENT_SWIZZLE_G);
+static_assert(lvk::Swizzle_B == VK_COMPONENT_SWIZZLE_B);
+static_assert(lvk::Swizzle_A == VK_COMPONENT_SWIZZLE_A);
 
 namespace {
 
@@ -1028,6 +1035,7 @@ VkImageView lvk::VulkanImage::createImageView(VkImageViewType type,
                                               uint32_t numLevels,
                                               uint32_t baseLayer,
                                               uint32_t numLayers,
+                                              const VkComponentMapping mapping,
                                               const char* debugName) const {
   LVK_PROFILER_FUNCTION_COLOR(LVK_PROFILER_COLOR_CREATE);
 
@@ -1036,10 +1044,7 @@ VkImageView lvk::VulkanImage::createImageView(VkImageViewType type,
       .image = vkImage_,
       .viewType = type,
       .format = format,
-      .components = {.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-                     .g = VK_COMPONENT_SWIZZLE_IDENTITY,
-                     .b = VK_COMPONENT_SWIZZLE_IDENTITY,
-                     .a = VK_COMPONENT_SWIZZLE_IDENTITY},
+      .components = mapping,
       .subresourceRange = {aspectMask, baseLevel, numLevels ? numLevels : numLevels_, baseLayer, numLayers},
   };
   VkImageView vkView = VK_NULL_HANDLE;
@@ -1442,7 +1447,7 @@ lvk::VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32
                                                                        VkExtent3D{.width = width_, .height = height_, .depth = 1},
                                                                        debugNameImage);
     VkImageView imageView = image->createImageView(
-        VK_IMAGE_VIEW_TYPE_2D, surfaceFormat_.format, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 1, debugNameImageView);
+        VK_IMAGE_VIEW_TYPE_2D, surfaceFormat_.format, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 1, {}, debugNameImageView);
     swapchainTextures_[i] = ctx_.texturesPool_.create(VulkanTexture(std::move(image), std::move(imageView)));
   }
 }
@@ -3430,8 +3435,15 @@ lvk::Holder<lvk::TextureHandle> lvk::VulkanContext::createTexture(const TextureD
     aspect = VK_IMAGE_ASPECT_COLOR_BIT;
   }
 
+  const VkComponentMapping mapping = {
+      .r = VkComponentSwizzle(desc.swizzle.r),
+      .g = VkComponentSwizzle(desc.swizzle.g),
+      .b = VkComponentSwizzle(desc.swizzle.b),
+      .a = VkComponentSwizzle(desc.swizzle.a),
+  };
+
   VkImageView view =
-      image->createImageView(imageViewType, vkFormat, aspect, 0, VK_REMAINING_MIP_LEVELS, 0, arrayLayerCount, debugNameImageView);
+      image->createImageView(imageViewType, vkFormat, aspect, 0, VK_REMAINING_MIP_LEVELS, 0, arrayLayerCount, mapping, debugNameImageView);
 
   if (!LVK_VERIFY(view != VK_NULL_HANDLE)) {
     Result::setResult(outResult, Result::Code::RuntimeError, "Cannot create VkImageView");
@@ -4733,8 +4745,15 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
     if (!LVK_VERIFY(image.get())) {
       return Result(Result::Code::RuntimeError, "Cannot create VulkanImage");
     }
-    VkImageView imageView = image->createImageView(
-        VK_IMAGE_VIEW_TYPE_2D, dummyTextureFormat, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 1, "Image View: dummy 1x1");
+    VkImageView imageView = image->createImageView(VK_IMAGE_VIEW_TYPE_2D,
+                                                   dummyTextureFormat,
+                                                   VK_IMAGE_ASPECT_COLOR_BIT,
+                                                   0,
+                                                   VK_REMAINING_MIP_LEVELS,
+                                                   0,
+                                                   1,
+                                                   {},
+                                                   "Image View: dummy 1x1");
     if (!LVK_VERIFY(imageView != VK_NULL_HANDLE)) {
       return Result(Result::Code::RuntimeError, "Cannot create VkImageView");
     }

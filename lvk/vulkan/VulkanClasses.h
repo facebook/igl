@@ -114,6 +114,10 @@ class VulkanImage final {
                               uint32_t numLevels = VK_REMAINING_MIP_LEVELS,
                               uint32_t baseLayer = 0,
                               uint32_t numLayers = 1,
+                              const VkComponentMapping mapping = {.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                                                                  .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                                                                  .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                                                                  .a = VK_COMPONENT_SWIZZLE_IDENTITY},
                               const char* debugName = nullptr) const;
 
   void generateMipmap(VkCommandBuffer commandBuffer) const;

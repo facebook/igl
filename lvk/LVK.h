@@ -705,6 +705,23 @@ enum TextureUsageBits : uint8_t {
   TextureUsageBits_Attachment = 1 << 2,
 };
 
+enum Swizzle : uint8_t {
+  Swizzle_Default = 0,
+  Swizzle_0,
+  Swizzle_1,
+  Swizzle_R,
+  Swizzle_G,
+  Swizzle_B,
+  Swizzle_A,
+};
+
+struct ComponentMapping {
+  Swizzle r = Swizzle_Default;
+  Swizzle g = Swizzle_Default;
+  Swizzle b = Swizzle_Default;
+  Swizzle a = Swizzle_Default;
+};
+
 struct TextureDesc {
   TextureType type = TextureType_2D;
   Format format = Format_Invalid;
@@ -715,6 +732,7 @@ struct TextureDesc {
   uint8_t usage = TextureUsageBits_Sampled;
   uint32_t numMipLevels = 1;
   StorageType storage = StorageType_Device;
+  ComponentMapping swizzle = {};
   const void* data = nullptr;
   uint32_t dataNumMipLevels = 1; // how many mip-levels we want to upload
   const char* debugName = "";
