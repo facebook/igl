@@ -14,8 +14,11 @@ namespace vulkan {
 
 class VulkanContext;
 
+/// @brief A wrapper around a Vulkan Framebuffer object
 class VulkanFramebuffer final {
  public:
+  /// @brief Constructs a VulkanFramebuffer object with the parameters provided and an optional
+  /// debug name
   VulkanFramebuffer(const VulkanContext& ctx,
                     VkDevice device,
                     uint32_t width,
@@ -24,6 +27,9 @@ class VulkanFramebuffer final {
                     size_t numAttachments,
                     const VkImageView* attachments,
                     const char* debugName = nullptr);
+
+  /// @brief Queues the destruction of the framebuffer on the Vulkan context via a deferred task.
+  /// For more details about deferred tasks, please refer to the igl::vulkan::VulkanContext class
   ~VulkanFramebuffer();
 
   VulkanFramebuffer(const VulkanFramebuffer&) = delete;
