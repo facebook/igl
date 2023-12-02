@@ -14,7 +14,7 @@
 
 namespace igl::shell {
 
-PlatformAndroid::PlatformAndroid(std::unique_ptr<igl::IDevice> device, bool useFakeLoader) :
+PlatformAndroid::PlatformAndroid(std::shared_ptr<igl::IDevice> device, bool useFakeLoader) :
   device_(std::move(device)) {
   fileLoader_ = std::make_unique<igl::shell::FileLoaderAndroid>();
   if (useFakeLoader) {

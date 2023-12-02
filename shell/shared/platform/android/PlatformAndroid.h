@@ -16,7 +16,7 @@ namespace igl::shell {
 
 class PlatformAndroid : public Platform {
  public:
-  PlatformAndroid(std::unique_ptr<igl::IDevice> device, bool useFakeLoader = false);
+  explicit PlatformAndroid(std::shared_ptr<igl::IDevice> device, bool useFakeLoader = false);
   igl::IDevice& getDevice() noexcept override;
   std::shared_ptr<igl::IDevice> getDevicePtr() const noexcept override;
   ImageLoader& getImageLoader() noexcept override;
