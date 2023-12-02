@@ -180,6 +180,7 @@ void ImGuiRenderer::endFrame(lvk::ICommandBuffer& cmdBuffer) {
     return;
   }
 
+  cmdBuffer.cmdPushDebugGroupLabel("ImGui Rendering", 0xff00ff00);
   cmdBuffer.cmdBindDepthState({});
   cmdBuffer.cmdBindViewport({
       .x = 0.0f,
@@ -273,6 +274,8 @@ void ImGuiRenderer::endFrame(lvk::ICommandBuffer& cmdBuffer) {
     idxOffset += cmdList->IdxBuffer.Size;
     vtxOffset += cmdList->VtxBuffer.Size;
   }
+
+  cmdBuffer.cmdPopDebugGroupLabel();
 }
 
 void ImGuiRenderer::setDisplayScale(float displayScale) {
