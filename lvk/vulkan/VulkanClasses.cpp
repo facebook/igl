@@ -2586,6 +2586,28 @@ void lvk::CommandBuffer::cmdDrawIndexedIndirect(BufferHandle indirectBuffer,
       wrapper_->cmdBuf_, bufIndirect->vkBuffer_, indirectBufferOffset, drawCount, stride ? stride : sizeof(VkDrawIndexedIndirectCommand));
 }
 
+void lvk::CommandBuffer::cmdDrawIndexedIndirectCount(BufferHandle indirectBuffer,
+                                                     size_t indirectBufferOffset,
+                                                     BufferHandle countBuffer,
+                                                     size_t countBufferOffset,
+                                                     uint32_t maxDrawCount,
+                                                     uint32_t stride) {
+  LVK_PROFILER_FUNCTION();
+
+  bindGraphicsPipeline();
+
+  lvk::VulkanBuffer* bufIndirect = ctx_->buffersPool_.get(indirectBuffer);
+  lvk::VulkanBuffer* bufCount = ctx_->buffersPool_.get(countBuffer);
+
+  vkCmdDrawIndexedIndirectCount(wrapper_->cmdBuf_,
+                                bufIndirect->vkBuffer_,
+                                indirectBufferOffset,
+                                bufCount->vkBuffer_,
+                                countBufferOffset,
+                                maxDrawCount,
+                                stride ? stride : sizeof(VkDrawIndexedIndirectCommand));
+}
+
 void lvk::CommandBuffer::cmdSetBlendColor(const float color[4]) {
   vkCmdSetBlendConstants(wrapper_->cmdBuf_, color);
 }
@@ -4476,6 +4498,7 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
   VkPhysicalDeviceVulkan12Features deviceFeatures12 = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
       .pNext = &deviceFeatures11,
+      .drawIndirectCount = VK_TRUE,
       .descriptorIndexing = VK_TRUE,
       .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
       .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,

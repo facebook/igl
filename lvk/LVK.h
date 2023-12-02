@@ -785,6 +785,12 @@ class ICommandBuffer {
                                       size_t indirectBufferOffset,
                                       uint32_t drawCount,
                                       uint32_t stride = 0) = 0;
+  virtual void cmdDrawIndexedIndirectCount(BufferHandle indirectBuffer,
+                                           size_t indirectBufferOffset,
+                                           BufferHandle countBuffer,
+                                           size_t countBufferOffset,
+                                           uint32_t maxDrawCount,
+                                           uint32_t stride = 0) = 0;
 
   virtual void cmdSetBlendColor(const float color[4]) = 0;
   virtual void cmdSetDepthBias(float depthBias, float slopeScale, float clamp) = 0;
