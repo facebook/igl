@@ -106,7 +106,9 @@ uint32_t getBufferUsage(TextureDesc::TextureUsage usage) {
 NativeHWTextureBuffer::~NativeHWTextureBuffer() {
   GLuint textureID = getId();
   if (textureID != 0) {
-    getContext().deleteTextures({textureID});
+    if (getContext().isLikelyValidObject()) {
+      getContext().deleteTextures({textureID});
+    }
   }
 
   auto context = std::static_pointer_cast<AHardwareBufferContext>(hwBufferHelper_);
