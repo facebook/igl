@@ -19,6 +19,12 @@
 extern "C" {
 #endif
 
+/** @brief Vulkan function table. On some systems, multiple Vulkan loaders can be executed, which
+ * may cause a different set of functions to be loaded or unloaded after a Vulkan context has been
+ * created. This structure stores one set of functions that can be used to call Vulkan functions
+ * for one session. It is populated by the `loadVulkanLoaderFunctions()` function declared in this
+ * file.
+ */
 struct VulkanFunctionTable {
   /* IGL_GENERATE_FUNCTION_TABLE */
 #if defined(VK_VERSION_1_0)
@@ -1098,10 +1104,21 @@ static_assert(sizeof(VulkanFunctionTable) == 543 * sizeof(PFN_vkVoidFunction));
 /* IGL_GENERATE_SIZE_CHECK */
 #endif
 
+/// @brief Populates the `VulkanFunctionTable` structure. Requires a pointer to the
+/// vkGetInstanceProcAddr function, which is used to retrieve pointers to all non-instance and
+/// no-device functions defined in the `VulkanFunctionTable` structure.
 void loadVulkanLoaderFunctions(struct VulkanFunctionTable* table, PFN_vkGetInstanceProcAddr load);
+
+/// @brief Populates the instance function pointers in the `VulkanFunctionTable` structure. Requires
+/// a pointer to the vkGetInstanceProcAddr function, which is used to retrieve pointers to all
+/// instance functions defined in the `VulkanFunctionTable` structure.
 void loadVulkanInstanceFunctions(struct VulkanFunctionTable* table,
                                  VkInstance context,
                                  PFN_vkGetInstanceProcAddr load);
+
+/// @brief Populates the device function pointers in the `VulkanFunctionTable` structure. Requires a
+/// pointer to the vkGetInstanceProcAddr function, which is used to retrieve pointers to all device
+/// functions defined in the `VulkanFunctionTable` structure.
 void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
                                VkDevice context,
                                PFN_vkGetDeviceProcAddr load);
