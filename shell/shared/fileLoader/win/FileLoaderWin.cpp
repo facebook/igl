@@ -7,7 +7,6 @@
 
 #include <shell/shared/fileLoader/win/FileLoaderWin.h>
 
-#include <array>
 #include <filesystem>
 #include <fstream>
 #include <igl/Common.h>
