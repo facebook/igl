@@ -42,7 +42,7 @@ void ResourcesBinder::bindUniformBuffer(uint32_t index,
 
   if (slot.buffer != buf || slot.offset != bufferOffset) {
     slot = {buf, bufferOffset, VK_WHOLE_SIZE};
-    isDirtyUniformBuffers_ = true;
+    isDirtyFlags_ |= DirtyFlagBits_UniformBuffers;
   }
 }
 
@@ -64,7 +64,7 @@ void ResourcesBinder::bindStorageBuffer(uint32_t index,
 
   if (slot.buffer != buf || slot.offset != bufferOffset) {
     slot = {buf, bufferOffset, VK_WHOLE_SIZE};
-    isDirtyStorageBuffers_ = true;
+    isDirtyFlags_ |= DirtyFlagBits_StorageBuffers;
   }
 }
 
@@ -80,7 +80,7 @@ void ResourcesBinder::bindSamplerState(uint32_t index, igl::vulkan::SamplerState
 
   if (bindingsTextures_.samplers[index] != newSampler) {
     bindingsTextures_.samplers[index] = newSampler;
-    isDirtyTextures_ = true;
+    isDirtyFlags_ |= DirtyFlagBits_Textures;
   }
 }
 
@@ -133,24 +133,26 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
 
   if (bindingsTextures_.textures[index] != newTexture) {
     bindingsTextures_.textures[index] = newTexture;
-    isDirtyTextures_ = true;
+    isDirtyFlags_ |= DirtyFlagBits_Textures;
   }
 }
 
 void ResourcesBinder::updateBindings() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_UPDATE);
 
-  if (isDirtyTextures_) {
+  if (isDirtyFlags_ & DirtyFlagBits_Textures) {
     ctx_.updateBindingsTextures(cmdBuffer_, bindPoint_, bindingsTextures_);
-    isDirtyTextures_ = false;
   }
-  if (isDirtyUniformBuffers_) {
+  if (isDirtyFlags_ & DirtyFlagBits_UniformBuffers) {
     ctx_.updateBindingsUniformBuffers(cmdBuffer_, bindPoint_, bindingsUniformBuffers_);
-    isDirtyUniformBuffers_ = false;
   }
-  if (isDirtyStorageBuffers_) {
+  if (isDirtyFlags_ & DirtyFlagBits_StorageBuffers) {
     ctx_.updateBindingsStorageBuffers(cmdBuffer_, bindPoint_, bindingsStorageBuffers_);
-    isDirtyStorageBuffers_ = false;
+  }
+
+  if (isDirtyFlags_) {
+    // TODO: rebind all descriptor sets here in one command
+    isDirtyFlags_ = 0;
   }
 }
 

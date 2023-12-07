@@ -77,13 +77,21 @@ class ResourcesBinder final {
     return bindPoint_ == VK_PIPELINE_BIND_POINT_GRAPHICS;
   }
 
+  /*
+   * @brief Bitwise flags for dirty descriptor sets (per each supported resource type)
+   */
+  enum DirtyFlagBits : uint8_t {
+    DirtyFlagBits_Textures = 1 << 0,
+    DirtyFlagBits_UniformBuffers = 1 << 1,
+    DirtyFlagBits_StorageBuffers = 1 << 2,
+  };
+
  private:
   const VulkanContext& ctx_;
   VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
   VkPipeline lastPipelineBound_ = VK_NULL_HANDLE;
-  bool isDirtyTextures_ = true;
-  bool isDirtyUniformBuffers_ = true;
-  bool isDirtyStorageBuffers_ = true;
+  uint32_t isDirtyFlags_ =
+      DirtyFlagBits_Textures | DirtyFlagBits_UniformBuffers | DirtyFlagBits_StorageBuffers;
   BindingsTextures bindingsTextures_;
   BindingsBuffers bindingsUniformBuffers_;
   BindingsBuffers bindingsStorageBuffers_;
