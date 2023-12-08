@@ -14,10 +14,10 @@
 namespace iglu::textureloader {
 
 /// Interface for getting CPU access to GPU texture data
-ITextureLoader::ITextureLoader(DataReader reader) noexcept : reader_(reader) {
+ITextureLoader::ITextureLoader(DataReader reader, igl::TextureDesc::TextureUsage usage) noexcept :
+  reader_(reader) {
   IGL_ASSERT(reader.data() != nullptr && reader.length() > 0);
-  desc_.usage =
-      igl::TextureDesc::TextureUsageBits::Sampled | igl::TextureDesc::TextureUsageBits::Attachment;
+  desc_.usage = usage;
 }
 
 igl::TextureDesc& ITextureLoader::mutableDescriptor() noexcept {

@@ -21,7 +21,9 @@ namespace iglu::textureloader {
 /// Interface for getting CPU access to GPU texture data
 class ITextureLoader {
  protected:
-  explicit ITextureLoader(DataReader reader) noexcept;
+  explicit ITextureLoader(
+      DataReader reader,
+      igl::TextureDesc::TextureUsage usage = igl::TextureDesc::TextureUsageBits::Sampled) noexcept;
 
  public:
   virtual ~ITextureLoader() = default;
