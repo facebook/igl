@@ -296,7 +296,7 @@ RenderPipelineState::~RenderPipelineState() {
   const VulkanContext& ctx = device_.getVulkanContext();
   VkDevice device = ctx.device_->getVkDevice();
 
-  for (auto p : pipelines_) {
+  for (const auto& p : pipelines_) {
     if (p.second != VK_NULL_HANDLE) {
       device_.getVulkanContext().deferredTask(
           std::packaged_task<void()>([vf = &ctx.vf_, device, pipeline = p.second]() {
@@ -313,7 +313,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
   if (vkPipelineLayout_ != ctx.pipelineLayoutGraphics_->getVkPipelineLayout()) {
     // there's a new pipeline layout - drop all cached Vulkan pipelines
     VkDevice device = ctx.device_->getVkDevice();
-    for (auto p : pipelines_) {
+    for (const auto& p : pipelines_) {
       if (p.second != VK_NULL_HANDLE) {
         ctx.deferredTask(std::packaged_task<void()>([vf = &ctx.vf_, device, pipeline = p.second]() {
           vf->vkDestroyPipeline(device, pipeline, nullptr);
