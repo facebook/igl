@@ -68,12 +68,19 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
   void bindSamplerState(size_t index, uint8_t target, ISamplerState* samplerState) override;
   void bindTexture(size_t index, uint8_t target, ITexture* texture) override;
 
-  void draw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) override;
+  void draw(PrimitiveType primitiveType,
+            size_t vertexStart,
+            size_t vertexCount,
+            uint32_t instanceCount,
+            uint32_t baseInstance) override;
   void drawIndexed(PrimitiveType primitiveType,
                    size_t indexCount,
                    IndexFormat indexFormat,
                    IBuffer& indexBuffer,
-                   size_t indexBufferOffset) override;
+                   size_t indexBufferOffset,
+                   uint32_t instanceCount,
+                   int32_t baseVertex,
+                   uint32_t baseInstance) override;
   void drawIndexedIndirect(PrimitiveType primitiveType,
                            IndexFormat indexFormat,
                            IBuffer& indexBuffer,

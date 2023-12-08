@@ -339,18 +339,27 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
 
 void RenderCommandEncoder::draw(PrimitiveType primitiveType,
                                 size_t vertexStart,
-                                size_t vertexCount) {
+                                size_t vertexCount,
+                                uint32_t instanceCount,
+                                uint32_t baseInstance) {
   getCommandBuffer().incrementCurrentDrawCount();
   IGL_ASSERT(encoder_);
   MTLPrimitiveType metalPrimitive = convertPrimitiveType(primitiveType);
-  [encoder_ drawPrimitives:metalPrimitive vertexStart:vertexStart vertexCount:vertexCount];
+  [encoder_ drawPrimitives:metalPrimitive
+               vertexStart:vertexStart
+               vertexCount:vertexCount
+             instanceCount:instanceCount
+              baseInstance:baseInstance];
 }
 
 void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
                                        size_t indexCount,
                                        IndexFormat indexFormat,
                                        IBuffer& indexBuffer,
-                                       size_t indexBufferOffset) {
+                                       size_t indexBufferOffset,
+                                       uint32_t instanceCount,
+                                       int32_t baseVertex,
+                                       uint32_t baseInstance) {
   getCommandBuffer().incrementCurrentDrawCount();
   IGL_ASSERT(encoder_);
   auto& buffer = (Buffer&)(indexBuffer);
@@ -361,7 +370,10 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
                        indexCount:indexCount
                         indexType:indexType
                       indexBuffer:buffer.get()
-                indexBufferOffset:indexBufferOffset];
+                indexBufferOffset:indexBufferOffset
+                    instanceCount:instanceCount
+                       baseVertex:baseVertex
+                     baseInstance:baseInstance];
 }
 
 void RenderCommandEncoder::drawIndexedIndirect(PrimitiveType primitiveType,

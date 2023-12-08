@@ -323,7 +323,15 @@ int toGlType(IndexFormat format) {
 
 void RenderCommandEncoder::draw(PrimitiveType primitiveType,
                                 size_t vertexStart,
-                                size_t vertexCount) {
+                                size_t vertexCount,
+                                uint32_t instanceCount,
+                                uint32_t baseInstance) {
+  (void)instanceCount;
+  (void)baseInstance;
+
+  IGL_ASSERT_MSG(instanceCount == 1, "Instancing is not implemented");
+  IGL_ASSERT_MSG(baseInstance == 0, "Instancing is not implemented");
+
   if (IGL_VERIFY(adapter_)) {
     getCommandBuffer().incrementCurrentDrawCount();
     auto mode = toGlPrimitive(primitiveType);
@@ -335,7 +343,18 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
                                        size_t indexCount,
                                        IndexFormat indexFormat,
                                        IBuffer& indexBuffer,
-                                       size_t indexBufferOffset) {
+                                       size_t indexBufferOffset,
+                                       uint32_t instanceCount,
+                                       int32_t baseVertex,
+                                       uint32_t baseInstance) {
+  (void)instanceCount;
+  (void)baseVertex;
+  (void)baseInstance;
+
+  IGL_ASSERT_MSG(instanceCount == 1, "Instancing is not implemented");
+  IGL_ASSERT_MSG(baseVertex == 0, "baseVertex is not implemented");
+  IGL_ASSERT_MSG(baseInstance == 0, "Instancing is not implemented");
+
   if (IGL_VERIFY(adapter_)) {
     getCommandBuffer().incrementCurrentDrawCount();
     auto mode = toGlPrimitive(primitiveType);

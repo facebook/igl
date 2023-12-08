@@ -69,12 +69,19 @@ class IRenderCommandEncoder : public ICommandEncoder {
   /// Binds an individual uniform. Exclusively for use when uniform blocks are not supported.
   virtual void bindUniform(const UniformDesc& uniformDesc, const void* data) = 0;
 
-  virtual void draw(PrimitiveType primitiveType, size_t vertexStart, size_t vertexCount) = 0;
+  virtual void draw(PrimitiveType primitiveType,
+                    size_t vertexStart,
+                    size_t vertexCount,
+                    uint32_t instanceCount = 1,
+                    uint32_t baseInstance = 0) = 0;
   virtual void drawIndexed(PrimitiveType primitiveType,
                            size_t indexCount,
                            IndexFormat indexFormat,
                            IBuffer& indexBuffer,
-                           size_t indexBufferOffset) = 0;
+                           size_t indexBufferOffset,
+                           uint32_t instanceCount = 1,
+                           int32_t baseVertex = 0,
+                           uint32_t baseInstance = 0) = 0;
   // NOTE: indexBufferOffset parameter is supported in Metal but not OpenGL
   virtual void drawIndexedIndirect(PrimitiveType primitiveType,
                                    IndexFormat indexFormat,

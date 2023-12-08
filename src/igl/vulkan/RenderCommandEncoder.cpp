@@ -586,7 +586,9 @@ void RenderCommandEncoder::bindPipeline() {
 
 void RenderCommandEncoder::draw(PrimitiveType primitiveType,
                                 size_t vertexStart,
-                                size_t vertexCount) {
+                                size_t vertexCount,
+                                uint32_t instanceCount,
+                                uint32_t baseInstance) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
@@ -602,17 +604,26 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
   bindPipeline();
 
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkCmdDraw(%u, %u)\n", cmdBuffer_, (uint32_t)vertexCount, (uint32_t)vertexStart);
+  IGL_LOG_INFO("%p vkCmdDraw(%u, %u, %u, %u)\n",
+               cmdBuffer_,
+               (uint32_t)vertexCount,
+               instanceCount,
+               (uint32_t)vertexStart,
+               baseInstance);
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
-  ctx_.vf_.vkCmdDraw(cmdBuffer_, (uint32_t)vertexCount, 1, (uint32_t)vertexStart, 0);
+  ctx_.vf_.vkCmdDraw(
+      cmdBuffer_, (uint32_t)vertexCount, instanceCount, (uint32_t)vertexStart, baseInstance);
 }
 
 void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
                                        size_t indexCount,
                                        IndexFormat indexFormat,
                                        IBuffer& indexBuffer,
-                                       size_t indexBufferOffset) {
+                                       size_t indexBufferOffset,
+                                       uint32_t instanceCount,
+                                       int32_t baseVertex,
+                                       uint32_t baseInstance) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
@@ -636,9 +647,10 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
   ctx_.vf_.vkCmdBindIndexBuffer(cmdBuffer_, buf->getVkBuffer(), indexBufferOffset, type);
 
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkCmdDrawIndexed(%u)\n", cmdBuffer_, (uint32_t)indexCount);
+  IGL_LOG_INFO("%p vkCmdDrawIndexed(%u, %u)\n", cmdBuffer_, (uint32_t)indexCount, instanceCount);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-  ctx_.vf_.vkCmdDrawIndexed(cmdBuffer_, (uint32_t)indexCount, 1, 0, 0, 0);
+  ctx_.vf_.vkCmdDrawIndexed(
+      cmdBuffer_, (uint32_t)indexCount, instanceCount, 0, baseVertex, baseInstance);
 }
 
 void RenderCommandEncoder::drawIndexedIndirect(PrimitiveType primitiveType,
