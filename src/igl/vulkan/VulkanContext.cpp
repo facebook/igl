@@ -1260,7 +1260,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
   // do not switch to the next descriptor set if there is nothing to update
   if (!write.empty()) {
 #if IGL_VULKAN_PRINT_COMMANDS
-    IGL_LOG_INFO("Updating descriptor set bindlessDSet_\n");
+    IGL_LOG_INFO("Updating descriptor set dsBindless_\n");
 #endif // IGL_VULKAN_PRINT_COMMANDS
     immediate_->wait(std::exchange(pimpl_->handleBindless_, immediate_->getLastSubmitHandle()));
     vf_.vkUpdateDescriptorSets(
@@ -1451,7 +1451,7 @@ uint64_t VulkanContext::getFrameNumber() const {
   return swapchain_ ? swapchain_->getFrameNumber() : 0u;
 }
 
-void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
+void VulkanContext::bindBindlessDescriptorSet(VkCommandBuffer cmdBuf,
                                               VkPipelineBindPoint bindPoint) const {
   if (!config_.enableDescriptorIndexing) {
     return;
@@ -1473,140 +1473,111 @@ void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
       nullptr);
 }
 
-void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
-                                           VkPipelineBindPoint bindPoint,
-                                           const BindingsTextures& data) const {
-  IGL_PROFILER_FUNCTION();
+void VulkanContext::updateBindings(VkCommandBuffer cmdBuf,
+                                   VkPipelineBindPoint bindPoint,
+                                   uint32_t isDirtyFlags,
+                                   const BindingsTextures& dataTextures,
+                                   BindingsBuffers& dataUniformBuffers,
+                                   BindingsBuffers& dataStorageBuffers) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_UPDATE);
 
-  VkDescriptorSet dset = pimpl_->arenaCombinedImageSamplers_->getNextDescriptorSet(*immediate_);
-
-  std::array<VkDescriptorImageInfo, IGL_TEXTURE_SAMPLERS_MAX> infoSampledImages{};
-  uint32_t numImages = 0;
-
-  // use the dummy texture to avoid sparse array
-  VkImageView dummyImageView = textures_[0]->imageView_->getVkImageView();
-  VkSampler dummySampler = samplers_[0]->getVkSampler();
+  // @lint-ignore CLANGTIDY
+  VkWriteDescriptorSet write[3]; // uninitialized
+  uint32_t writeCount = 0;
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-  for (size_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
-    igl::vulkan::VulkanTexture* texture = data.textures[i];
-    if (texture && isGraphics) {
-      IGL_ASSERT_MSG(data.samplers[i], "A sampler should be bound to every bound texture slot");
-      (void)IGL_VERIFY(data.samplers[i]);
+  if (isDirtyFlags & ResourcesBinder::DirtyFlagBits_Textures) {
+    lastBoundDSets_[kBindPoint_CombinedImageSamplers] =
+        pimpl_->arenaCombinedImageSamplers_->getNextDescriptorSet(*immediate_);
+
+    std::array<VkDescriptorImageInfo, IGL_TEXTURE_SAMPLERS_MAX> infoSampledImages{};
+    uint32_t numImages = 0;
+
+    // use the dummy texture to avoid sparse array
+    VkImageView dummyImageView = textures_[0]->imageView_->getVkImageView();
+    VkSampler dummySampler = samplers_[0]->getVkSampler();
+
+    for (size_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
+      igl::vulkan::VulkanTexture* texture = dataTextures.textures[i];
+      if (texture && isGraphics) {
+        IGL_ASSERT_MSG(dataTextures.samplers[i],
+                       "A sampler should be bound to every bound texture slot");
+        (void)IGL_VERIFY(dataTextures.samplers[i]);
+      }
+      VkSampler sampler = dataTextures.samplers[i] ? dataTextures.samplers[i]->getVkSampler()
+                                                   : dummySampler;
+      // multisampled images cannot be directly accessed from shaders
+      // @lint-ignore CLANGTIDY
+      const bool isTextureAvailable =
+          texture && ((texture->image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
+      const bool isSampledImage = isTextureAvailable && texture->image_->isSampledImage();
+      infoSampledImages[numImages++] = {isSampledImage ? sampler : dummySampler,
+                                        isSampledImage ? texture->imageView_->getVkImageView()
+                                                       : dummyImageView,
+                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     }
-    VkSampler sampler = data.samplers[i] ? data.samplers[i]->getVkSampler() : dummySampler;
-    // multisampled images cannot be directly accessed from shaders
-    const bool isTextureAvailable =
-        texture && ((texture->image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
-    const bool isSampledImage = isTextureAvailable && texture->image_->isSampledImage();
-    infoSampledImages[numImages++] = {isSampledImage ? sampler : dummySampler,
-                                      isSampledImage ? texture->imageView_->getVkImageView()
-                                                     : dummyImageView,
-                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+
+    write[writeCount++] =
+        ivkGetWriteDescriptorSet_ImageInfo(lastBoundDSets_[kBindPoint_CombinedImageSamplers],
+                                           0,
+                                           VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                           numImages,
+                                           infoSampledImages.data());
   }
 
-  VkWriteDescriptorSet write = ivkGetWriteDescriptorSet_ImageInfo(
-      dset, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numImages, infoSampledImages.data());
+  if (isDirtyFlags & ResourcesBinder::DirtyFlagBits_UniformBuffers) {
+    lastBoundDSets_[kBindPoint_BuffersUniform] =
+        pimpl_->arenaBuffersUniform_->getNextDescriptorSet(*immediate_);
 
-  IGL_PROFILER_ZONE("vkUpdateDescriptorSets()", IGL_PROFILER_COLOR_UPDATE);
-  vf_.vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
-  IGL_PROFILER_ZONE_END();
-
-#if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - textures\n", cmdBuf, bindPoint);
-#endif // IGL_VULKAN_PRINT_COMMANDS
-  vf_.vkCmdBindDescriptorSets(
-      cmdBuf,
-      bindPoint,
-      (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
-      kBindPoint_CombinedImageSamplers,
-      1,
-      &dset,
-      0,
-      nullptr);
-}
-
-void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
-                                                 VkPipelineBindPoint bindPoint,
-                                                 BindingsBuffers& data) const {
-  IGL_PROFILER_FUNCTION();
-
-  VkDescriptorSet dsetBufUniform = pimpl_->arenaBuffersUniform_->getNextDescriptorSet(*immediate_);
-
-  for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
-    VkDescriptorBufferInfo& bi = data.buffers[i];
-    if (bi.buffer == VK_NULL_HANDLE) {
-      bi = {dummyUniformBuffer_->getVkBuffer(), 0, VK_WHOLE_SIZE};
+    for (VkDescriptorBufferInfo& bi : dataUniformBuffers.buffers) {
+      if (bi.buffer == VK_NULL_HANDLE) {
+        bi = {dummyUniformBuffer_->getVkBuffer(), 0, VK_WHOLE_SIZE};
+      }
     }
+    write[writeCount++] =
+        ivkGetWriteDescriptorSet_BufferInfo(lastBoundDSets_[kBindPoint_BuffersUniform],
+                                            0,
+                                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                            IGL_UNIFORM_BLOCKS_BINDING_MAX,
+                                            dataUniformBuffers.buffers);
   }
 
-  VkWriteDescriptorSet write =
-      ivkGetWriteDescriptorSet_BufferInfo(dsetBufUniform,
-                                          0,
-                                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                          IGL_UNIFORM_BLOCKS_BINDING_MAX,
-                                          data.buffers);
+  if (isDirtyFlags & ResourcesBinder::DirtyFlagBits_StorageBuffers) {
+    lastBoundDSets_[kBindPoint_BuffersStorage] =
+        pimpl_->arenaBuffersStorage_->getNextDescriptorSet(*immediate_);
 
-  IGL_PROFILER_ZONE("vkUpdateDescriptorSets()", IGL_PROFILER_COLOR_UPDATE);
-  vf_.vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
-  IGL_PROFILER_ZONE_END();
-
-  const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-#if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - uniform buffers\n", cmdBuf, bindPoint);
-#endif // IGL_VULKAN_PRINT_COMMANDS
-  vf_.vkCmdBindDescriptorSets(
-      cmdBuf,
-      bindPoint,
-      (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
-      kBindPoint_BuffersUniform,
-      1,
-      &dsetBufUniform,
-      0,
-      nullptr);
-}
-
-void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
-                                                 VkPipelineBindPoint bindPoint,
-                                                 BindingsBuffers& data) const {
-  IGL_PROFILER_FUNCTION();
-
-  VkDescriptorSet dsetBufStorage = pimpl_->arenaBuffersStorage_->getNextDescriptorSet(*immediate_);
-
-  for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
-    VkDescriptorBufferInfo& bi = data.buffers[i];
-    if (bi.buffer == VK_NULL_HANDLE) {
-      bi = {dummyStorageBuffer_->getVkBuffer(), 0, VK_WHOLE_SIZE};
+    for (VkDescriptorBufferInfo& bi : dataStorageBuffers.buffers) {
+      if (bi.buffer == VK_NULL_HANDLE) {
+        bi = {dummyStorageBuffer_->getVkBuffer(), 0, VK_WHOLE_SIZE};
+      }
     }
+    write[writeCount++] =
+        ivkGetWriteDescriptorSet_BufferInfo(lastBoundDSets_[kBindPoint_BuffersStorage],
+                                            0,
+                                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                            IGL_UNIFORM_BLOCKS_BINDING_MAX,
+                                            dataStorageBuffers.buffers);
   }
 
-  VkWriteDescriptorSet write =
-      ivkGetWriteDescriptorSet_BufferInfo(dsetBufStorage,
-                                          0,
-                                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                          IGL_UNIFORM_BLOCKS_BINDING_MAX,
-                                          data.buffers);
-
   IGL_PROFILER_ZONE("vkUpdateDescriptorSets()", IGL_PROFILER_COLOR_UPDATE);
-  vf_.vkUpdateDescriptorSets(device_->getVkDevice(), 1, &write, 0, nullptr);
+  vf_.vkUpdateDescriptorSets(device_->getVkDevice(), writeCount, write, 0, nullptr);
   IGL_PROFILER_ZONE_END();
 
-  const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
-
+  if (isDirtyFlags) {
 #if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - storage buffers\n", cmdBuf, bindPoint);
+    IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u)\n", cmdBuf, bindPoint);
 #endif // IGL_VULKAN_PRINT_COMMANDS
-  vf_.vkCmdBindDescriptorSets(
-      cmdBuf,
-      bindPoint,
-      (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
-      kBindPoint_BuffersStorage,
-      1,
-      &dsetBufStorage,
-      0,
-      nullptr);
+    vf_.vkCmdBindDescriptorSets(
+        cmdBuf,
+        bindPoint,
+        (isGraphics ? pipelineLayoutGraphics_ : pipelineLayoutCompute_)->getVkPipelineLayout(),
+        kBindPoint_CombinedImageSamplers,
+        IGL_ARRAY_NUM_ELEMENTS(lastBoundDSets_),
+        lastBoundDSets_,
+        0,
+        nullptr);
+  }
 }
 
 void VulkanContext::markSubmitted(const VulkanImmediateCommands::SubmitHandle& handle) const {

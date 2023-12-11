@@ -140,20 +140,14 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
 void ResourcesBinder::updateBindings() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_UPDATE);
 
-  if (isDirtyFlags_ & DirtyFlagBits_Textures) {
-    ctx_.updateBindingsTextures(cmdBuffer_, bindPoint_, bindingsTextures_);
-  }
-  if (isDirtyFlags_ & DirtyFlagBits_UniformBuffers) {
-    ctx_.updateBindingsUniformBuffers(cmdBuffer_, bindPoint_, bindingsUniformBuffers_);
-  }
-  if (isDirtyFlags_ & DirtyFlagBits_StorageBuffers) {
-    ctx_.updateBindingsStorageBuffers(cmdBuffer_, bindPoint_, bindingsStorageBuffers_);
-  }
+  ctx_.updateBindings(cmdBuffer_,
+                      bindPoint_,
+                      isDirtyFlags_,
+                      bindingsTextures_,
+                      bindingsUniformBuffers_,
+                      bindingsStorageBuffers_);
 
-  if (isDirtyFlags_) {
-    // TODO: rebind all descriptor sets here in one command
-    isDirtyFlags_ = 0;
-  }
+  isDirtyFlags_ = 0;
 }
 
 void ResourcesBinder::bindPipeline(VkPipeline pipeline) {
