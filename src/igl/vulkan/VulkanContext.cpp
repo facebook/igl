@@ -1260,7 +1260,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
   // do not switch to the next descriptor set if there is nothing to update
   if (!write.empty()) {
 #if IGL_VULKAN_PRINT_COMMANDS
-    IGL_LOG_INFO("Updating descriptor set bindlessDSet_\n");
+    IGL_LOG_INFO("Updating descriptor set dsBindless_\n");
 #endif // IGL_VULKAN_PRINT_COMMANDS
     immediate_->wait(std::exchange(pimpl_->handleBindless_, immediate_->getLastSubmitHandle()));
     vf_.vkUpdateDescriptorSets(
@@ -1451,7 +1451,7 @@ uint64_t VulkanContext::getFrameNumber() const {
   return swapchain_ ? swapchain_->getFrameNumber() : 0u;
 }
 
-void VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf,
+void VulkanContext::bindBindlessDescriptorSet(VkCommandBuffer cmdBuf,
                                               VkPipelineBindPoint bindPoint) const {
   if (!config_.enableDescriptorIndexing) {
     return;

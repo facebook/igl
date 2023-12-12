@@ -210,7 +210,7 @@ class VulkanContext final {
   void createInstance(const size_t numExtraExtensions, const char** extraExtensions);
   void createSurface(void* window, void* display);
   void checkAndUpdateDescriptorSets();
-  void bindDefaultDescriptorSets(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPointa) const;
+  void bindBindlessDescriptorSet(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPointa) const;
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void waitDeferredTasks();
