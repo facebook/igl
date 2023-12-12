@@ -96,32 +96,32 @@ GLenum RenderPipelineState::convertBlendFactor(BlendFactor value) {
 }
 
 Result RenderPipelineState::create(const RenderPipelineDesc& desc) {
+  desc_ = desc;
   if (IGL_UNEXPECTED(desc.shaderStages == nullptr)) {
     return Result(Result::Code::ArgumentInvalid, "Missing shader stages");
   }
   if (!IGL_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Render)) {
     return Result(Result::Code::ArgumentInvalid, "Shader stages not for render");
   }
-  shaderStages_ = std::static_pointer_cast<ShaderStages>(desc.shaderStages);
-  if (!shaderStages_) {
+  const auto& shaderStages = std::static_pointer_cast<ShaderStages>(desc.shaderStages);
+  if (!shaderStages) {
     return Result(Result::Code::ArgumentInvalid,
                   "Shader stages required to create pipeline state.");
   }
-  if (shaderStages_->getType() != ShaderStagesType::Render) {
+  if (shaderStages->getType() != ShaderStagesType::Render) {
     return Result(Result::Code::ArgumentInvalid, "Expected render shader stages.");
-  } else if (!shaderStages_->isValid()) {
+  } else if (!shaderStages->isValid()) {
     return Result(Result::Code::ArgumentInvalid, "Missing required shader module(s).");
   }
 
-  reflection_ = std::make_shared<RenderPipelineReflection>(getContext(), *shaderStages_);
+  reflection_ = std::make_shared<RenderPipelineReflection>(getContext(), *shaderStages);
 
-  mFramebufferDesc = desc.targetDesc;
-
+  const auto& mFramebufferDesc = desc.targetDesc;
   // Get and cache all attribute locations, since this won't change throughout
   // the lifetime of this RenderPipelineState
-  vertexInputState_ = std::static_pointer_cast<VertexInputState>(desc.vertexInputState);
-  if (vertexInputState_ != nullptr) {
-    auto bufferAttribMap = vertexInputState_->getBufferAttribMap();
+  const auto& vertexInputState = std::static_pointer_cast<VertexInputState>(desc.vertexInputState);
+  if (desc_.vertexInputState != nullptr) {
+    auto bufferAttribMap = vertexInputState->getBufferAttribMap();
 
     // For each bufferIndex, storage the list of associated attribute locations
     for (const auto& [index, attribList] : bufferAttribMap) {
@@ -211,25 +211,22 @@ Result RenderPipelineState::create(const RenderPipelineDesc& desc) {
     blendEnabled_ = false;
   }
 
-  cullMode_ = desc.cullMode;
-  frontFaceWinding_ = desc.frontFaceWinding;
-  polygonFillMode_ = desc.polygonFillMode;
-
   return Result();
 }
 
 void RenderPipelineState::bind() {
-  if (shaderStages_) {
-    shaderStages_->bind();
+  if (desc_.shaderStages) {
+    const auto& shaderStages = std::static_pointer_cast<ShaderStages>(desc_.shaderStages);
+    shaderStages->bind();
     for (const auto& binding : uniformBlockBindingMap_) {
       const auto& blockIndex = binding.first;
       const auto& bindingIndex = binding.second;
-      getContext().uniformBlockBinding(shaderStages_->getProgramID(), blockIndex, bindingIndex);
+      getContext().uniformBlockBinding(shaderStages->getProgramID(), blockIndex, bindingIndex);
     }
   }
 
   getContext().colorMask(colorMask_[0], colorMask_[1], colorMask_[2], colorMask_[3]);
-  if (!mFramebufferDesc.colorAttachments.empty() && blendEnabled_) {
+  if (!desc_.targetDesc.colorAttachments.empty() && blendEnabled_) {
     getContext().enable(GL_BLEND);
     getContext().blendEquationSeparate(blendMode_.blendOpColor, blendMode_.blendOpAlpha);
     getContext().blendFuncSeparate(
@@ -239,26 +236,26 @@ void RenderPipelineState::bind() {
   }
 
   // face cull mode
-  if (cullMode_ == CullMode::Disabled) {
+  if (desc_.cullMode == CullMode::Disabled) {
     getContext().disable(GL_CULL_FACE);
   } else {
     getContext().enable(GL_CULL_FACE);
-    getContext().cullFace(cullMode_ == CullMode::Front ? GL_FRONT : GL_BACK);
+    getContext().cullFace(desc_.cullMode == CullMode::Front ? GL_FRONT : GL_BACK);
   }
 
   // face winding mode
-  getContext().frontFace((frontFaceWinding_ == WindingMode::Clockwise) ? GL_CW : GL_CCW);
+  getContext().frontFace((desc_.frontFaceWinding == WindingMode::Clockwise) ? GL_CW : GL_CCW);
 
   // polygon rasterization mode
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::PolygonFillMode)) {
-    getContext().polygonFillMode((polygonFillMode_ == igl::PolygonFillMode::Fill) ? GL_FILL
-                                                                                  : GL_LINE);
+    getContext().polygonFillMode((desc_.polygonFillMode == igl::PolygonFillMode::Fill) ? GL_FILL
+                                                                                       : GL_LINE);
   }
 }
 
 void RenderPipelineState::unbind() {
-  if (shaderStages_) {
-    shaderStages_->unbind();
+  if (desc_.shaderStages) {
+    std::static_pointer_cast<ShaderStages>(desc_.shaderStages)->unbind();
   }
 }
 
@@ -273,7 +270,8 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
   }
 #endif
 
-  const auto& attribList = vertexInputState_->getAssociatedAttributes(bufferIndex);
+  const auto& attribList = std::static_pointer_cast<VertexInputState>(desc_.vertexInputState)
+                               ->getAssociatedAttributes(bufferIndex);
   auto& locations = bufferAttribLocations_[bufferIndex];
 
   // attributeList and locations should have an 1-to-1 correspondence
@@ -316,7 +314,7 @@ void RenderPipelineState::unbindVertexAttributes() {
 //
 // Prerequisite: The shader program has to be loaded
 Result RenderPipelineState::bindTextureUnit(const size_t unit, uint8_t bindTarget) {
-  if (!shaderStages_) {
+  if (!desc_.shaderStages) {
     return Result{Result::Code::InvalidOperation, "No shader set\n"};
   }
 
@@ -347,11 +345,12 @@ Result RenderPipelineState::bindTextureUnit(const size_t unit, uint8_t bindTarge
 }
 
 bool RenderPipelineState::matchesShaderProgram(const RenderPipelineState& rhs) const {
-  return shaderStages_->getProgramID() == rhs.shaderStages_->getProgramID();
+  return std::static_pointer_cast<ShaderStages>(desc_.shaderStages)->getProgramID() ==
+         std::static_pointer_cast<ShaderStages>(rhs.desc_.shaderStages)->getProgramID();
 }
 
 bool RenderPipelineState::matchesVertexInputState(const RenderPipelineState& rhs) const {
-  return vertexInputState_ == rhs.vertexInputState_;
+  return desc_.vertexInputState == rhs.desc_.vertexInputState;
 }
 
 int RenderPipelineState::getIndexByName(const NameHandle& name, ShaderStage /*stage*/) const {

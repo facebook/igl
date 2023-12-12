@@ -17,7 +17,6 @@
 
 namespace igl {
 namespace opengl {
-class VertexInputState;
 
 struct BlendMode {
   GLenum blendOpColor;
@@ -59,36 +58,30 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
   static GLenum convertBlendOp(BlendOp value);
   static GLenum convertBlendFactor(BlendFactor value);
   CullMode getCullMode() const {
-    return cullMode_;
+    return desc_.cullMode;
   }
   WindingMode getWindingMode() const {
-    return frontFaceWinding_;
+    return desc_.frontFaceWinding;
   }
   PolygonFillMode getPolygonFillMode() const {
-    return polygonFillMode_;
+    return desc_.polygonFillMode;
   }
 
   std::unordered_map<int, size_t>& uniformBlockBindingMap();
 
  private:
-  std::shared_ptr<VertexInputState> vertexInputState_;
+  RenderPipelineDesc desc_;
 
   // Tracks a list of attribute locations associated with a bufferIndex
   std::vector<int> bufferAttribLocations_[IGL_VERTEX_BUFFER_MAX];
 
-  std::shared_ptr<ShaderStages> shaderStages_;
   std::shared_ptr<RenderPipelineReflection> reflection_;
-  RenderPipelineDesc::TargetDesc mFramebufferDesc;
   std::unordered_map<size_t, size_t> vertexTextureUnitRemap;
   std::array<GLint, IGL_TEXTURE_SAMPLERS_MAX> unitSamplerLocationMap_;
   std::unordered_map<int, size_t> uniformBlockBindingMap_;
   std::array<GLboolean, 4> colorMask_ = {GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE};
   std::vector<int> activeAttributesLocations_;
   BlendMode blendMode_ = {GL_FUNC_ADD, GL_FUNC_ADD, GL_ONE, GL_ZERO, GL_ONE, GL_ZERO};
-  CullMode cullMode_ = igl::CullMode::Back;
-  WindingMode frontFaceWinding_ = igl::WindingMode::CounterClockwise;
-  PolygonFillMode polygonFillMode_ = igl::PolygonFillMode::Fill;
-
   bool blendEnabled_ = false;
 };
 
