@@ -21,9 +21,7 @@ class RenderPipelineState final : public IRenderPipelineState {
  public:
   explicit RenderPipelineState(id<MTLRenderPipelineState> value,
                                MTLRenderPipelineReflection* reflection,
-                               igl::CullMode cullMode,
-                               igl::WindingMode frontFaceWinding,
-                               igl::PolygonFillMode polygonFillMode);
+                               const RenderPipelineDesc& desc);
   ~RenderPipelineState() override = default;
 
   IGL_INLINE id<MTLRenderPipelineState> get() {
@@ -37,22 +35,20 @@ class RenderPipelineState final : public IRenderPipelineState {
       const IRenderPipelineReflection& renderPipelineReflection) override;
 
   CullMode getCullMode() const {
-    return cullMode_;
+    return desc_.cullMode;
   }
   WindingMode getWindingMode() const {
-    return frontFaceWinding_;
+    return desc_.frontFaceWinding;
   }
   PolygonFillMode getPolygonFillMode() const {
-    return polygonFillMode_;
+    return desc_.polygonFillMode;
   }
   static MTLColorWriteMask convertColorWriteMask(ColorWriteBits value);
 
  private:
+  RenderPipelineDesc desc_;
   id<MTLRenderPipelineState> value_;
   std::shared_ptr<RenderPipelineReflection> reflection_;
-  CullMode cullMode_{igl::CullMode::Back};
-  WindingMode frontFaceWinding_{igl::WindingMode::CounterClockwise};
-  PolygonFillMode polygonFillMode_{igl::PolygonFillMode::Fill};
 };
 
 } // namespace metal

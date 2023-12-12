@@ -14,13 +14,9 @@ namespace metal {
 
 RenderPipelineState::RenderPipelineState(id<MTLRenderPipelineState> value,
                                          MTLRenderPipelineReflection* reflection,
-                                         igl::CullMode cullMode,
-                                         igl::WindingMode frontFaceWinding,
-                                         igl::PolygonFillMode polygonFillMode) :
-  value_(value),
-  cullMode_(cullMode),
-  frontFaceWinding_(frontFaceWinding),
-  polygonFillMode_(polygonFillMode) {
+                                         const RenderPipelineDesc& desc) :
+  value_(value) {
+  desc_ = desc;
   reflection_ = reflection ? std::make_shared<RenderPipelineReflection>(reflection) : nullptr;
 }
 

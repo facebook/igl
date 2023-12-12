@@ -88,6 +88,11 @@ class RenderPipelineStateMTLTest : public ::testing::Test {
     MTLRenderPipelineReflection* reflection = nil;
     auto device_ = MTLCreateSystemDefaultDevice();
 
+    RenderPipelineDesc pipelineDesc_{};
+    pipelineDesc_.cullMode = CullMode::Back;
+    pipelineDesc_.frontFaceWinding = igl::WindingMode::CounterClockwise;
+    pipelineDesc_.polygonFillMode = PolygonFillMode::Fill;
+
     // Create reflection for use later in binding, etc.
     id<MTLRenderPipelineState> metalObject =
         [device_ newRenderPipelineStateWithDescriptor:metalDesc
@@ -95,23 +100,17 @@ class RenderPipelineStateMTLTest : public ::testing::Test {
                                            reflection:&reflection
                                                 error:&error];
 
-    pipeState_ = std::make_shared<metal::RenderPipelineState>(metalObject,
-                                                              reflection,
-                                                              igl::CullMode::Back,
-                                                              igl::WindingMode::CounterClockwise,
-                                                              igl::PolygonFillMode::Fill);
+    pipeState_ =
+        std::make_shared<metal::RenderPipelineState>(metalObject, reflection, pipelineDesc_);
 
     id<MTLRenderPipelineState> metalObjectWithoutRefl =
         [device_ newRenderPipelineStateWithDescriptor:metalDesc
                                               options:MTLPipelineOptionArgumentInfo
                                            reflection:nullptr
                                                 error:&error];
-    pipeStateWithNoRefl_ =
-        std::make_shared<metal::RenderPipelineState>(metalObjectWithoutRefl,
-                                                     nullptr,
-                                                     igl::CullMode::Back,
-                                                     igl::WindingMode::CounterClockwise,
-                                                     igl::PolygonFillMode::Fill);
+
+    pipeStateWithNoRefl_ = std::make_shared<metal::RenderPipelineState>(
+        metalObjectWithoutRefl, nullptr, pipelineDesc_);
 
     ASSERT_NE(pipeState_, nullptr);
   }

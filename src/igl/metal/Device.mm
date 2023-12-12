@@ -445,8 +445,7 @@ std::shared_ptr<igl::IRenderPipelineState> Device::createRenderPipeline(
     return nullptr;
   }
 
-  return std::make_shared<RenderPipelineState>(
-      metalObject, reflection, desc.cullMode, desc.frontFaceWinding, desc.polygonFillMode);
+  return std::make_shared<RenderPipelineState>(metalObject, reflection, desc);
 }
 
 std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& desc,
