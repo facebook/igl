@@ -210,7 +210,7 @@ class VulkanContext final {
   void createInstance(const size_t numExtraExtensions, const char** extraExtensions);
   void createSurface(void* window, void* display);
   void checkAndUpdateDescriptorSets();
-  void bindBindlessDescriptorSet(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPointa) const;
+  void bindDefaultDescriptorSets(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPointa) const;
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void waitDeferredTasks();
@@ -325,13 +325,15 @@ class VulkanContext final {
   // Enhanced shader debug: line drawing
   std::unique_ptr<EnhancedShaderDebuggingStore> enhancedShaderDebuggingStore_;
 
-  void updateBindings(VkCommandBuffer cmdBuf,
-                      VkPipelineBindPoint bindPoint,
-                      uint32_t isDirtyFlags,
-                      const BindingsTextures& dataTextures,
-                      BindingsBuffers& dataUniformBuffers,
-                      BindingsBuffers& dataStorageBuffers) const;
-
+  void updateBindingsTextures(VkCommandBuffer cmdBuf,
+                              VkPipelineBindPoint bindPoint,
+                              const BindingsTextures& data) const;
+  void updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
+                                    VkPipelineBindPoint bindPoint,
+                                    BindingsBuffers& data) const;
+  void updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
+                                    VkPipelineBindPoint bindPoint,
+                                    BindingsBuffers& data) const;
   void markSubmitted(const SubmitHandle& handle) const;
 
   struct DeferredTask {
@@ -345,9 +347,6 @@ class VulkanContext final {
   mutable std::deque<DeferredTask> deferredTasks_;
 
   std::unique_ptr<SyncManager> syncManager_;
-
-  // @lint-ignore CLANGTIDY
-  mutable VkDescriptorSet lastBoundDSets_[3] = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
 };
 
 } // namespace vulkan
