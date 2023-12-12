@@ -96,10 +96,42 @@ bool lvk::isDepthOrStencilFormat(lvk::Format format) {
   return properties[format].depth || properties[format].stencil;
 }
 
-uint32_t lvk::getTextureBytesPerLayer(uint32_t width,
-                                      uint32_t height,
-                                      lvk::Format format,
-                                      uint32_t level) {
+uint32_t lvk::getVertexFormatSize(lvk::VertexFormat format) {
+  // clang-format off
+#define SIZE4(LVKBaseType, BaseType)           \
+  case VertexFormat::LVKBaseType##1: return sizeof(BaseType) * 1u; \
+  case VertexFormat::LVKBaseType##2: return sizeof(BaseType) * 2u; \
+  case VertexFormat::LVKBaseType##3: return sizeof(BaseType) * 3u; \
+  case VertexFormat::LVKBaseType##4: return sizeof(BaseType) * 4u;
+#define SIZE2_4_NORM(LVKBaseType, BaseType)           \
+  case VertexFormat::LVKBaseType##2Norm: return sizeof(BaseType) * 2u; \
+  case VertexFormat::LVKBaseType##4Norm: return sizeof(BaseType) * 4u;
+
+  // clang-format on
+
+  switch (format) {
+    SIZE4(Float, float);
+    SIZE4(Byte, uint8_t);
+    SIZE4(UByte, uint8_t);
+    SIZE4(Short, uint16_t);
+    SIZE4(UShort, uint16_t);
+    SIZE2_4_NORM(Byte, uint8_t);
+    SIZE2_4_NORM(UByte, uint8_t);
+    SIZE2_4_NORM(Short, uint16_t);
+    SIZE2_4_NORM(UShort, uint16_t);
+    SIZE4(Int, uint32_t);
+    SIZE4(UInt, uint32_t);
+    SIZE4(HalfFloat, uint16_t);
+  case VertexFormat::Int_2_10_10_10_REV:
+    return sizeof(uint32_t);
+  default:
+    assert(false);
+    return 0;
+  }
+#undef SIZE4
+}
+
+uint32_t lvk::getTextureBytesPerLayer(uint32_t width, uint32_t height, lvk::Format format, uint32_t level) {
   const uint32_t levelWidth = std::max(width >> level, 1u);
   const uint32_t levelHeight = std::max(height >> level, 1u);
 
