@@ -19,6 +19,7 @@ namespace uniform {
 
 namespace {
 
+#if IGL_BACKEND_OPENGL
 void bindRenderUniform(igl::IRenderCommandEncoder& encoder,
                        int bufferIndex,
                        const Descriptor& uniform) {
@@ -40,6 +41,7 @@ void bindComputeUniform(igl::IComputeCommandEncoder& encoder,
   const void* data = uniform.data(Alignment::Packed);
   encoder.bindUniform(descriptor, data);
 }
+#endif
 
 void encodeRenderUniform(igl::IRenderCommandEncoder& encoder,
                          int bufferIndex,
