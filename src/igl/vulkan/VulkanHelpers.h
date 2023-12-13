@@ -23,6 +23,10 @@ extern "C" {
 
 const char* ivkGetVulkanResultString(VkResult result);
 
+/// @brief Creates a Vulkan instance with the given parameters. For platforms other than Android,
+/// this function will enable the GPU assisted validation and the synchronization validation layers.
+/// The application information is also set up to be "IGL/Vulkan" for application and engine names.
+/// Both the application and engine versions are set to 1.0.0
 VkResult ivkCreateInstance(const struct VulkanFunctionTable* vt,
                            uint32_t apiVersion,
                            uint32_t enableValidation,
@@ -32,6 +36,9 @@ VkResult ivkCreateInstance(const struct VulkanFunctionTable* vt,
                            const char** extensions,
                            VkInstance* outInstance);
 
+/// @brief Creates a Debug Utils Messenger if the VK_EXT_debug_utils extension is available and the
+/// platform is not Android or Mac Catalyst. Otherwise the function is defined as a no-op that
+/// always returns VK_SUCCESS
 VkResult ivkCreateDebugUtilsMessenger(const struct VulkanFunctionTable* vt,
                                       VkInstance instance,
                                       PFN_vkDebugUtilsMessengerCallbackEXT callback,
@@ -57,6 +64,14 @@ VkResult ivkCreateFence(const struct VulkanFunctionTable* vt,
                         bool exportable,
                         VkFence* outFence);
 
+/** @brief Creates a platform specific VkSurfaceKHR object. The surface creation functions
+ * conditionally-compiled and guarded by their respective platform specific extension macros defined
+ * by the Vulkan API. The current supported platforms, and their macros, are:
+ * - Windows: VK_USE_PLATFORM_WIN32_KHR
+ * - Linux: VK_USE_PLATFORM_XLIB_KHR
+ * - MacOS: VK_USE_PLATFORM_METAL_EXT
+ * - Android: VK_USE_PLATFORM_ANDROID_KHR
+ */
 VkResult ivkCreateSurface(const struct VulkanFunctionTable* vt,
                           VkInstance instance,
                           void* window,
@@ -64,6 +79,24 @@ VkResult ivkCreateSurface(const struct VulkanFunctionTable* vt,
                           void* layer,
                           VkSurfaceKHR* outSurface);
 
+/** @brief Creates a Vulkan device from the given physical device. The physical device features
+ * (VkPhysicalDeviceFeatures) conditionally enabled, based on the provided supported physical device
+ * features, are `dualSrcBlend`, `multiDrawIndirect`, `drawIndirectFirstInstance`, `depthBiasClamp`,
+ * `fillModeNonSolid`, and `shaderInt16`.
+ * The validation layers enabled are defined in `kDefaultValidationLayers`
+ * If descriptor indexing is enabled, then the following descriptor indexing features
+ * (VkPhysicalDeviceDescriptorIndexingFeaturesEXT) are enabled:
+ * `shaderSampledImageArrayNonUniformIndexing`, `descriptorBindingUniformBufferUpdateAfterBind`,
+ * `descriptorBindingSampledImageUpdateAfterBind`, `descriptorBindingStorageImageUpdateAfterBind`,
+ * `descriptorBindingStorageBufferUpdateAfterBind`, `descriptorBindingUpdateUnusedWhilePending`,
+ * `descriptorBindingPartiallyBound`, `runtimeDescriptorArray`.
+ * If 16-bit shader floats are enabled, then the following shader float 16 features are enabled:
+ * VkPhysicalDevice16BitStorageFeatures::storageBuffer16BitAccess
+ * VkPhysicalDeviceShaderFloat16Int8Features::shaderFloat16
+ * If the `VK_KHR_buffer_device_address` extension is available, then
+ * VkPhysicalDeviceBufferDeviceAddressFeaturesKHR::bufferDeviceAddress is enabled If multiview is
+ * enabled, then VkPhysicalDeviceMultiviewFeatures::multiview is enabled
+ */
 VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
                          VkPhysicalDevice physicalDevice,
                          size_t numQueueCreateInfos,
@@ -94,6 +127,7 @@ VkResult ivkCreateSwapchain(const struct VulkanFunctionTable* vt,
                             uint32_t height,
                             VkSwapchainKHR* outSwapchain);
 
+/// @brief Creates a Vulkan Sampler object with default values
 VkResult ivkCreateSampler(const struct VulkanFunctionTable* vt,
                           VkDevice device,
                           VkSampler* outSampler);
@@ -107,6 +141,8 @@ VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
                                             float minLod,
                                             float maxLod);
 
+/// @brief Creates a Vulkan Image View with the R, G, B, and A components mapped to themselves
+/// (identity)
 VkResult ivkCreateImageView(const struct VulkanFunctionTable* vt,
                             VkDevice device,
                             VkImage image,
@@ -199,10 +235,14 @@ VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
                                       const VkDescriptorBindingFlags* bindingFlags,
                                       VkDescriptorSetLayout* outLayout);
 
+/// @brief Creates a VkDescriptorSetLayoutBinding structure. The binding specifies that the
+/// resource is accessible at the vertex, fragment, and compute shader stages.
 VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
                                                               VkDescriptorType descriptorType,
                                                               uint32_t descriptorCount);
 
+/// @brief Creates a VkAttachmentDescription structure with load and store operations for the
+/// stencil attachment as "Don't Care"
 VkAttachmentDescription ivkGetAttachmentDescription(VkFormat format,
                                                     VkAttachmentLoadOp loadOp,
                                                     VkAttachmentStoreOp storeOp,
@@ -212,11 +252,14 @@ VkAttachmentDescription ivkGetAttachmentDescription(VkFormat format,
 
 VkAttachmentReference ivkGetAttachmentReference(uint32_t attachment, VkImageLayout layout);
 
+/// @brief Creates s VkSubpassDescription structure with its pipeline bind point equal to
+/// `VK_PIPELINE_BIND_POINT_GRAPHICS`
 VkSubpassDescription ivkGetSubpassDescription(uint32_t numColorAttachments,
                                               const VkAttachmentReference* refsColor,
                                               const VkAttachmentReference* refsColorResolve,
                                               const VkAttachmentReference* refDepth);
 
+/// @brief Creates a VkSubpassDependency structure with no dependencies between subpasses
 VkSubpassDependency ivkGetSubpassDependency(void);
 
 VkRenderPassMultiviewCreateInfo ivkGetRenderPassMultiviewCreateInfo(
@@ -237,22 +280,30 @@ VkResult ivkCreateDescriptorPool(const struct VulkanFunctionTable* vt,
                                  const VkDescriptorPoolSize* poolSizes,
                                  VkDescriptorPool* outDescriptorPool);
 
+/// @brief Starts recording a command buffer that will be submitted only once (i.e. it cannot be
+/// reused)
 VkResult ivkBeginCommandBuffer(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer);
 
 VkResult ivkEndCommandBuffer(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer);
 
+/// @brief Creates a VkSubmitInfo structure with an optional semaphore, used to signal when the
+/// command buffer for this batch have completed execution
 VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,
                               uint32_t numWaitSemaphores,
                               const VkSemaphore* waitSemaphores,
                               const VkPipelineStageFlags* waitStageMasks,
                               const VkSemaphore* releaseSemaphore);
 
+/// @brief Creates a VkAttachmentDescription2 structure with load and store operations for the
+/// stencil attachment as "Don't Care"
 VkAttachmentDescription2 ivkGetAttachmentDescriptionColor(VkFormat format,
                                                           VkAttachmentLoadOp loadOp,
                                                           VkAttachmentStoreOp storeOp,
                                                           VkImageLayout initialLayout,
                                                           VkImageLayout finalLayout);
 
+/// @brief Creates a VkAttachmentReference2 structure with its layout set to
+/// `Vk_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL`
 VkAttachmentReference2 ivkGetAttachmentReferenceColor(uint32_t idx);
 
 VkClearValue ivkGetClearDepthStencilValue(float depth, uint32_t stencil);
@@ -260,6 +311,7 @@ VkClearValue ivkGetClearColorValue(float r, float g, float b, float a);
 
 VkBufferCreateInfo ivkGetBufferCreateInfo(uint64_t size, VkBufferUsageFlags usage);
 
+/// @brief Creates a VkImageCreateInfo structure with its layout set to `VK_IMAGE_LAYOUT_UNDEFINED`
 VkImageCreateInfo ivkGetImageCreateInfo(VkImageType type,
                                         VkFormat imageFormat,
                                         VkImageTiling tiling,
@@ -272,6 +324,7 @@ VkImageCreateInfo ivkGetImageCreateInfo(VkImageType type,
 
 VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfo_Empty(void);
 
+/// @brief Creates an empty VkPipelineVertexInputStateCreateInfo structure
 VkPipelineVertexInputStateCreateInfo ivkGetPipelineVertexInputStateCreateInfo(
     uint32_t vbCount,
     const VkVertexInputBindingDescription* bindings,
@@ -286,15 +339,21 @@ VkPipelineDynamicStateCreateInfo ivkGetPipelineDynamicStateCreateInfo(
     uint32_t numDynamicStates,
     const VkDynamicState* dynamicStates);
 
+/// @brief Creates a VkPipelineRasterizationStateCreateInfo structure with default values, except
+/// for polygon mode and cull mode flags
 VkPipelineRasterizationStateCreateInfo ivkGetPipelineRasterizationStateCreateInfo(
     VkPolygonMode polygonMode,
     VkCullModeFlags cullMode);
 
+/// @brief Creates a VkPipelineMultisampleStateCreateInfo structure with default values
 VkPipelineMultisampleStateCreateInfo ivkGetPipelineMultisampleStateCreateInfo_Empty(void);
 
+/// @brief Creates a VkPipelineDepthStencilStateCreateInfo structure with depth test and write
+/// disabled
 VkPipelineDepthStencilStateCreateInfo ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests(
     void);
 
+/// @brief Creates a VkPipelineColorBlendAttachmentState structure with blending disabled
 VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentState_NoBlending(void);
 
 VkPipelineColorBlendAttachmentState ivkGetPipelineColorBlendAttachmentState(
@@ -311,9 +370,12 @@ VkPipelineColorBlendStateCreateInfo ivkGetPipelineColorBlendStateCreateInfo(
     uint32_t numAttachments,
     const VkPipelineColorBlendAttachmentState* colorBlendAttachmentStates);
 
+/// @brief Creates a VkPipelineViewportStateCreateInfo structure. If the viewport state is dyanamoc,
+/// the parameters `viewport` and `scissor` may be NULL
 VkPipelineViewportStateCreateInfo ivkGetPipelineViewportStateCreateInfo(const VkViewport* viewport,
                                                                         const VkRect2D* scissor);
 
+/// @brief Creates a VkImageSubresourceRange structure for the first layer and mip level
 VkImageSubresourceRange ivkGetImageSubresourceRange(VkImageAspectFlags aspectMask);
 
 VkWriteDescriptorSet ivkGetWriteDescriptorSet_ImageInfo(VkDescriptorSet dstSet,
@@ -401,22 +463,30 @@ VkResult ivkQueuePresent(const struct VulkanFunctionTable* vt,
                          VkSwapchainKHR swapchain,
                          uint32_t currentSwapchainImageIndex);
 
+/// @brief Adds a name for the Vulkan object with handle equals to `handle` and type equals to
+/// `type`. This function is a no-op if `VK_EXT_DEBUG_UTILS_SUPPORTED` is not defined
 VkResult ivkSetDebugObjectName(const struct VulkanFunctionTable* vt,
                                VkDevice device,
                                VkObjectType type,
                                uint64_t handle,
                                const char* name);
 
+/// @brief Opens a command buffer debug region. This function is a no-op if
+/// `VK_EXT_DEBUG_UTILS_SUPPORTED` is not defined
 void ivkCmdBeginDebugUtilsLabel(const struct VulkanFunctionTable* vt,
                                 VkCommandBuffer buffer,
                                 const char* name,
                                 const float colorRGBA[4]);
 
+/// @brief Inserts a debug label into a command buffer. This function is a no-op if
+/// `VK_EXT_DEBUG_UTILS_SUPPORTED` is not defined
 void ivkCmdInsertDebugUtilsLabel(const struct VulkanFunctionTable* vt,
                                  VkCommandBuffer buffer,
                                  const char* name,
                                  const float colorRGBA[4]);
 
+/// @brief Closes a command buffer debug region. This function is a no-op if
+/// `VK_EXT_DEBUG_UTILS_SUPPORTED` is not defined
 void ivkCmdEndDebugUtilsLabel(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer);
 
 VkVertexInputBindingDescription ivkGetVertexInputBindingDescription(uint32_t binding,
