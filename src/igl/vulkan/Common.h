@@ -127,4 +127,8 @@ void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture);
 /// layout
 void overrideImageLayout(ITexture* texture, VkImageLayout layout);
 
+/// @brief Ensures that all shader bindings are bound by checking the SPIR-V reflection. If the
+/// function doesn't assert at some point, the shader bindings are correct. Only for debugging.
+void ensureShaderModule(IShaderModule* sm);
+
 } // namespace igl::vulkan

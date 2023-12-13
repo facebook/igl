@@ -128,10 +128,6 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   /// assert at some point, the vertex buffer(s) is bound correctly.
   void ensureVertexBuffers();
 
-  /// @brief Ensures that all shader bindings are bound by checking the SPIR-V reflection. If the
-  /// function doesn't assert at some point, the shader bindings are correct.
-  void ensureShaderModule(IShaderModule* sm);
-
  private:
   VulkanContext& ctx_;
   VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;

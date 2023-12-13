@@ -16,10 +16,14 @@
 #include <windows.h>
 #endif
 
+#include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/Texture.h>
+#include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImage.h>
+#include <igl/vulkan/VulkanShaderModule.h>
 #include <igl/vulkan/VulkanTexture.h>
+#include <igl/vulkan/util/SpvReflection.h>
 #include <igl/vulkan/util/TextureFormat.h>
 
 namespace igl {
@@ -434,6 +438,41 @@ void overrideImageLayout(ITexture* texture, VkImageLayout layout) {
   }
   const vulkan::Texture* tex = static_cast<vulkan::Texture*>(texture);
   tex->getVulkanTexture().getVulkanImage().imageLayout_ = layout;
+}
+
+void ensureShaderModule(IShaderModule* sm) {
+  IGL_ASSERT(sm);
+
+  const igl::vulkan::util::SpvModuleInfo& info =
+      static_cast<igl::vulkan::ShaderModule*>(sm)->getVulkanShaderModule().getSpvModuleInfo();
+
+  for (const auto& t : info.textures) {
+    if (!IGL_VERIFY(t.descriptorSet == kBindPoint_CombinedImageSamplers)) {
+      IGL_LOG_ERROR(
+          "Missing descriptor set id for textures: the shader should contain \"layout(set = "
+          "%u, ...)\"",
+          kBindPoint_CombinedImageSamplers);
+      continue;
+    }
+  }
+  for (const auto& b : info.uniformBuffers) {
+    if (!IGL_VERIFY(b.descriptorSet == kBindPoint_BuffersUniform)) {
+      IGL_LOG_ERROR(
+          "Missing descriptor set id for uniform buffers: the shader should contain \"layout(set = "
+          "%u, ...)\"",
+          kBindPoint_BuffersUniform);
+      continue;
+    }
+  }
+  for (const auto& b : info.storageBuffers) {
+    if (!IGL_VERIFY(b.descriptorSet == kBindPoint_BuffersStorage)) {
+      IGL_LOG_ERROR(
+          "Missing descriptor set id for storage buffers: the shader should contain \"layout(set = "
+          "%u, ...)\"",
+          kBindPoint_BuffersStorage);
+      continue;
+    }
+  }
 }
 
 } // namespace vulkan

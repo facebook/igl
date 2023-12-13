@@ -28,6 +28,10 @@ class ComputePipelineState final : public IComputePipelineState {
 
   VkPipeline getVkPipeline() const;
 
+  const ComputePipelineDesc& getComputePipelineDesc() const {
+    return desc_;
+  }
+
  private:
   friend class Device;
 

@@ -67,6 +67,10 @@ void ComputeCommandEncoder::bindComputePipelineState(
 
   IGL_ASSERT(cps);
 
+  const ComputePipelineDesc& desc = cps->getComputePipelineDesc();
+
+  ensureShaderModule(desc.shaderStages->getComputeModule().get());
+
   binder_.bindPipeline(cps->getVkPipeline());
 }
 
