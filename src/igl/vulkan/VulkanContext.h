@@ -192,6 +192,8 @@ class VulkanContext final {
   VkPhysicalDevice getVkPhysicalDevice() const {
     return vkPhysicalDevice_;
   }
+  VkDescriptorSetLayout getBindlessVkDescriptorSetLayout() const;
+  VkDescriptorSet getBindlessVkDescriptorSet() const;
 
   std::vector<uint8_t> getPipelineCacheData() const;
 

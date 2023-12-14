@@ -1660,5 +1660,14 @@ void VulkanContext::waitDeferredTasks() {
   deferredTasks_.clear();
 }
 
+VkDescriptorSetLayout VulkanContext::getBindlessVkDescriptorSetLayout() const {
+  return config_.enableDescriptorIndexing ? pimpl_->dslBindless_->getVkDescriptorSetLayout()
+                                          : VK_NULL_HANDLE;
+}
+
+VkDescriptorSet VulkanContext::getBindlessVkDescriptorSet() const {
+  return config_.enableDescriptorIndexing ? pimpl_->dsBindless_ : VK_NULL_HANDLE;
+}
+
 } // namespace vulkan
 } // namespace igl
