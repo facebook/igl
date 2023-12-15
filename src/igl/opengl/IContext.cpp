@@ -18,6 +18,10 @@
 #include <sstream>
 #include <string>
 
+#if defined(IGL_WITH_TRACY_GPU)
+#include "tracy/TracyOpenGL.hpp"
+#endif
+
 // Uncomment to enable GL API logging
 // #define IGL_API_LOG
 
@@ -1489,6 +1493,8 @@ void IContext::disableVertexAttribArray(GLuint index) {
 void IContext::drawArrays(GLenum mode, GLint first, GLsizei count) {
   drawCallCount_++;
 
+  IGL_PROFILER_ZONE_GPU_OGL("drawArrays()");
+
   GLCALL(DrawArrays)(mode, first, count);
   APILOG("glDrawArrays(%s, %d, %u)\n", GL_ENUM_TO_STRING(mode), first, count);
   GLCHECK_ERRORS();
@@ -1508,6 +1514,7 @@ void IContext::drawBuffers(GLsizei n, GLenum* buffers) {
     }
     IGL_ASSERT_MSG(drawBuffersProc_, "No supported function for glDrawBuffers\n");
   }
+  IGL_PROFILER_ZONE_GPU_COLOR_OGL("drawBuffers()", IGL_PROFILER_COLOR_DRAW);
 
   GLCALL_PROC(drawBuffersProc_, n, buffers);
   APILOG("glDrawBuffers(%u, %u)\n", n, buffers);
@@ -1516,6 +1523,9 @@ void IContext::drawBuffers(GLsizei n, GLenum* buffers) {
 
 void IContext::drawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices) {
   drawCallCount_++;
+
+  IGL_PROFILER_ZONE_GPU_COLOR_OGL("drawElements()", IGL_PROFILER_COLOR_DRAW);
+
   GLCALL(DrawElements)(mode, count, type, indices);
 
   APILOG("glDrawElements(%s, %u, %s, %p)\n",
@@ -1529,6 +1539,9 @@ void IContext::drawElements(GLenum mode, GLsizei count, GLenum type, const GLvoi
 
 void IContext::drawElementsIndirect(GLenum mode, GLenum type, const GLvoid* indirect) {
   drawCallCount_++;
+
+  IGL_PROFILER_ZONE_GPU_COLOR_OGL("drawElementsIndirect()", IGL_PROFILER_COLOR_DRAW);
+
   IGLCALL(DrawElementsIndirect)(mode, type, indirect);
   APILOG("glDrawElementsIndirect(%s, %s, %p)\n",
          GL_ENUM_TO_STRING(mode),
@@ -3645,6 +3658,12 @@ void IContext::initialize(Result* result) {
 #endif // defined(IGL_API_LOG)
   }
 #endif // IGL_DEBUG || defined(IGL_API_LOG)
+
+#if defined(IGL_WITH_TRACY_GPU)
+  constexpr std::string_view kTracyContextName = "IGL OpenGL";
+  TracyGpuContext;
+  TracyGpuContextName(kTracyContextName.data(), kTracyContextName.size());
+#endif
 }
 
 const DeviceFeatureSet& IContext::deviceFeatures() const {

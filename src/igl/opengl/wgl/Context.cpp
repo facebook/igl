@@ -18,6 +18,10 @@
 #include <GL/wglext.h>
 #endif
 
+#if defined(IGL_WITH_TRACY_GPU)
+#include "tracy/TracyOpenGL.hpp"
+#endif
+
 namespace igl {
 namespace opengl {
 namespace wgl {
@@ -192,6 +196,10 @@ bool Context::isCurrentSharegroup() const {
 void Context::present(std::shared_ptr<ITexture> surface) const {
   SwapBuffers(deviceContext_);
   wglMakeCurrent(deviceContext_, renderContext_);
+
+#if defined(IGL_WITH_TRACY_GPU)
+  TracyGpuCollect;
+#endif
 }
 
 std::unique_ptr<IContext> Context::createShareContext(Result* outResult) {
