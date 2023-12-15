@@ -348,6 +348,11 @@
 ///--------------------------------------
 /// MARK: Integrated profiling
 
+/// Do not use Tracy for GPU profiling if IGL_WITH_TRACY isn't defined
+#if defined(IGL_WITH_TRACY_GPU) && !defined(IGL_WITH_TRACY)
+#undef IGL_WITH_TRACY_GPU
+#endif
+
 #if defined(IGL_WITH_TRACY) && defined(__cplusplus)
 #include "tracy/Tracy.hpp"
 // predefined 0xRGB colors for "heavy" point-of-interest operations

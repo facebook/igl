@@ -8,21 +8,22 @@ cmake_minimum_required(VERSION 3.16)
 project("IGL" CXX C)
 
 # cmake-format: off
-option(IGL_WITH_SAMPLES  "Enable sample demo apps"        ON)
+option(IGL_WITH_SAMPLES   "Enable sample demo apps"            ON)
 
-option(IGL_WITH_OPENGL   "Enable IGL/OpenGL"              ON)
-option(IGL_WITH_OPENGLES "Enable IGL/OpenGL ES"          OFF)
-option(IGL_WITH_VULKAN   "Enable IGL/Vulkan"              ON)
-option(IGL_WITH_METAL    "Enable IGL/Metal"               ON)
-option(IGL_WITH_WEBGL    "Enable IGL/WebGL"              OFF)
+option(IGL_WITH_OPENGL    "Enable IGL/OpenGL"                  ON)
+option(IGL_WITH_OPENGLES  "Enable IGL/OpenGL ES"              OFF)
+option(IGL_WITH_VULKAN    "Enable IGL/Vulkan"                  ON)
+option(IGL_WITH_METAL     "Enable IGL/Metal"                   ON)
+option(IGL_WITH_WEBGL     "Enable IGL/WebGL"                  OFF)
 
-option(IGL_WITH_IGLU     "Enable IGLU utils"              ON)
-option(IGL_WITH_SHELL    "Enable Shell utils"             ON)
-option(IGL_WITH_TESTS    "Enable IGL tests (gtest)"      OFF)
-option(IGL_WITH_TRACY    "Enable Tracy profiler"         OFF)
-option(IGL_ENFORCE_LOGS  "Enable logs in Release builds"  ON)
+option(IGL_WITH_IGLU      "Enable IGLU utils"                  ON)
+option(IGL_WITH_SHELL     "Enable Shell utils"                 ON)
+option(IGL_WITH_TESTS     "Enable IGL tests (gtest)"          OFF)
+option(IGL_WITH_TRACY     "Enable Tracy profiler"             OFF)
+option(IGL_WITH_TRACY_GPU "Enable Tracy profiler for the GPU" OFF)
+option(IGL_ENFORCE_LOGS   "Enable logs in Release builds"      ON)
 
-option(IGL_DEPLOY_DEPS   "Deploy dependencies via CMake"  ON)
+option(IGL_DEPLOY_DEPS    "Deploy dependencies via CMake"      ON)
 # cmake-format: on
 
 if(DEFINED ENV{VULKAN_SDK})
@@ -69,19 +70,20 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # cmake-format: off
 message(STATUS "IGL_WITH_SAMPLES  = ${IGL_WITH_SAMPLES}")
 
-message(STATUS "IGL_WITH_OPENGL   = ${IGL_WITH_OPENGL}")
-message(STATUS "IGL_WITH_OPENGLES = ${IGL_WITH_OPENGLES}")
-message(STATUS "IGL_WITH_VULKAN   = ${IGL_WITH_VULKAN}")
-message(STATUS "IGL_WITH_METAL    = ${IGL_WITH_METAL}")
-message(STATUS "IGL_WITH_WEBGL    = ${IGL_WITH_WEBGL}")
+message(STATUS "IGL_WITH_OPENGL    = ${IGL_WITH_OPENGL}")
+message(STATUS "IGL_WITH_OPENGLES  = ${IGL_WITH_OPENGLES}")
+message(STATUS "IGL_WITH_VULKAN    = ${IGL_WITH_VULKAN}")
+message(STATUS "IGL_WITH_METAL     = ${IGL_WITH_METAL}")
+message(STATUS "IGL_WITH_WEBGL     = ${IGL_WITH_WEBGL}")
 
-message(STATUS "IGL_WITH_IGLU     = ${IGL_WITH_IGLU}")
-message(STATUS "IGL_WITH_SHELL    = ${IGL_WITH_SHELL}")
-message(STATUS "IGL_WITH_TESTS    = ${IGL_WITH_TESTS}")
-message(STATUS "IGL_WITH_TRACY    = ${IGL_WITH_TRACY}")
-message(STATUS "IGL_ENFORCE_LOGS  = ${IGL_ENFORCE_LOGS}")
+message(STATUS "IGL_WITH_IGLU      = ${IGL_WITH_IGLU}")
+message(STATUS "IGL_WITH_SHELL     = ${IGL_WITH_SHELL}")
+message(STATUS "IGL_WITH_TESTS     = ${IGL_WITH_TESTS}")
+message(STATUS "IGL_WITH_TRACY     = ${IGL_WITH_TRACY}")
+message(STATUS "IGL_WITH_TRACY_GPU = ${IGL_WITH_TRACY_GPU}")
+message(STATUS "IGL_ENFORCE_LOGS   = ${IGL_ENFORCE_LOGS}")
 
-message(STATUS "IGL_DEPLOY_DEPS   = ${IGL_DEPLOY_DEPS}")
+message(STATUS "IGL_DEPLOY_DEPS    = ${IGL_DEPLOY_DEPS}")
 # cmake-format: on
 
 if(APPLE)
@@ -132,6 +134,11 @@ if(IGL_DEPLOY_DEPS)
   igl_set_folder(IGLDependencies "IGL")
 endif()
 
+if (NOT IGL_WITH_TRACY AND IGL_WITH_TRACY_GPU)
+  message(FATAL_ERROR "IGL_WITH_TRACY must be enabled to use Tracy's GPU profiling")
+endif()
+
+
 if(IGL_WITH_TRACY)
   add_definitions("-DTRACY_ENABLE=1")
   add_subdirectory(third-party/deps/src/tracy)
@@ -142,6 +149,9 @@ add_subdirectory(src/igl)
 
 if(IGL_WITH_TRACY)
   target_compile_definitions(IGLLibrary PUBLIC "IGL_WITH_TRACY=1")
+  if(IGL_WITH_TRACY_GPU)
+    target_compile_definitions(IGLLibrary PUBLIC "IGL_WITH_TRACY_GPU=1")
+  endif()
 endif()
 
 if(IGL_DEPLOY_DEPS)

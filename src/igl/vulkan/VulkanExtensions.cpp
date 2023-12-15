@@ -166,7 +166,7 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
     enable(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, ExtensionType::Device);
 #endif // IGL_PLATFORM_LINUX
 
-#if defined(IGL_WITH_TRACY) && defined(VK_EXT_calibrated_timestamps)
+#if defined(IGL_WITH_TRACY_GPU) && defined(VK_EXT_calibrated_timestamps)
     enable(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, ExtensionType::Device);
 #endif
     enable(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, ExtensionType::Device);
