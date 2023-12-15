@@ -364,7 +364,38 @@
 #define IGL_PROFILER_COLOR_TRANSITION 0xffffff
 #define IGL_PROFILER_COLOR_UPDATE 0xffa500
 #define IGL_PROFILER_COLOR_DRAW 0x00ff00
-//
+
+// GPU profiling macros
+#if defined(IGL_WITH_TRACY_GPU)
+#define IGL_PROFILER_ZONE_GPU_OGL(name) TracyGpuZone(name);
+#define IGL_PROFILER_ZONE_GPU_COLOR_OGL(name, color) TracyGpuZoneC(name, color);
+
+#define IGL_PROFILER_ZONE_GPU_VK(name, profilingContext, cmdBuffer) \
+  TracyVkZone(profilingContext, cmdBuffer, name);
+#define IGL_PROFILER_ZONE_GPU_COLOR_VK(name, profilingContext, cmdBuffer, color) \
+  TracyVkZoneC(profilingContext, cmdBuffer, name, color);
+
+#define IGL_PROFILER_ZONE_TRANSIENT_GPU_OGL(varname, name) \
+  {                                                        \
+    TracyGpuZoneTransientS(varname, name, 0, true);
+#define IGL_PROFILER_ZONE_TRANSIENT_GPU_VK(profilingContext, varname, cmdBuffer, name) \
+  {                                                                                    \
+    TracyVkZoneTransientS(profilingContext, varname, cmdBuffer, name, 0, true);
+#define IGL_PROFILER_ZONE_GPU_END() }
+#else // IGL_WITH_TRACY_GPU
+
+#define IGL_PROFILER_ZONE_GPU_OGL(name)
+#define IGL_PROFILER_ZONE_GPU_COLOR_OGL(name, color)
+
+#define IGL_PROFILER_ZONE_GPU_VK(name, profilingContext, cmdBuffer)
+#define IGL_PROFILER_ZONE_GPU_COLOR_VK(name, profilingContext, cmdBuffer, color)
+
+#define IGL_PROFILER_ZONE_TRANSIENT_GPU_OGL(varname, name)
+#define IGL_PROFILER_ZONE_TRANSIENT_GPU_VK(profilingContext, varname, cmdBuffer, name)
+#define IGL_PROFILER_ZONE_GPU_END()
+
+#endif // IGL_WITH_TRACY_GPU
+
 #define IGL_PROFILER_FUNCTION() ZoneScoped
 #define IGL_PROFILER_FUNCTION_COLOR(color) ZoneScopedC(color)
 #define IGL_PROFILER_ZONE(name, color) \
@@ -374,7 +405,18 @@
 #define IGL_PROFILER_ZONE_END() }
 #define IGL_PROFILER_THREAD(name) tracy::SetThreadName(name)
 #define IGL_PROFILER_FRAME(name) FrameMarkNamed(name)
+
 #else
+#define IGL_PROFILER_ZONE_GPU_OGL(name)
+#define IGL_PROFILER_ZONE_GPU_COLOR_OGL(name, color)
+
+#define IGL_PROFILER_ZONE_GPU_VK(name, profilingContext, cmdBuffer)
+#define IGL_PROFILER_ZONE_GPU_COLOR_VK(name, profilingContext, cmdBuffer, color)
+
+#define IGL_PROFILER_ZONE_TRANSIENT_GPU_OGL(varname, name)
+#define IGL_PROFILER_ZONE_TRANSIENT_GPU_VK(profilingContext, varname, cmdBuffer, name)
+#define IGL_PROFILER_ZONE_GPU_END()
+
 #define IGL_PROFILER_FUNCTION()
 #define IGL_PROFILER_FUNCTION_COLOR(color)
 #define IGL_PROFILER_ZONE(name, color) {
