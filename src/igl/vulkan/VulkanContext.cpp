@@ -1010,7 +1010,7 @@ void VulkanContext::updatePipelineLayouts() {
 
   // create pipeline layout
   pipelineLayoutGraphics_ = std::make_unique<VulkanPipelineLayout>(
-      vf_,
+      *this,
       device,
       DSLs,
       static_cast<uint32_t>(config_.enableDescriptorIndexing ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
@@ -1020,7 +1020,7 @@ void VulkanContext::updatePipelineLayouts() {
       "Pipeline Layout: VulkanContext::pipelineLayoutGraphics_");
 
   pipelineLayoutCompute_ = std::make_unique<VulkanPipelineLayout>(
-      vf_,
+      *this,
       device,
       DSLs,
       static_cast<uint32_t>(config_.enableDescriptorIndexing ? IGL_ARRAY_NUM_ELEMENTS(DSLs)

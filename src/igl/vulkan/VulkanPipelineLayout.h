@@ -7,15 +7,15 @@
 
 #pragma once
 
-#include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
+
+class VulkanContext;
 
 class VulkanPipelineLayout final {
  public:
-  explicit VulkanPipelineLayout(const VulkanFunctionTable& vf,
+  explicit VulkanPipelineLayout(const VulkanContext& ctx,
                                 VkDevice device,
                                 const VkDescriptorSetLayout* layouts,
                                 uint32_t numLayouts,
@@ -31,10 +31,9 @@ class VulkanPipelineLayout final {
   }
 
  public:
-  const VulkanFunctionTable& vf_;
+  const VulkanContext& ctx_;
   VkDevice device_ = VK_NULL_HANDLE;
   VkPipelineLayout vkPipelineLayout_ = VK_NULL_HANDLE;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan
