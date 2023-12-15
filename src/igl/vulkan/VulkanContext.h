@@ -23,6 +23,10 @@
 #include <igl/vulkan/VulkanRenderPassBuilder.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 
+#if defined(IGL_WITH_TRACY_GPU)
+#include "tracy/TracyVulkan.hpp"
+#endif
+
 namespace igl {
 namespace vulkan {
 
@@ -207,6 +211,12 @@ class VulkanContext final {
   bool areValidationLayersEnabled() const;
 
   void* getVmaAllocator() const;
+
+#if defined(IGL_WITH_TRACY_GPU)
+  TracyVkCtx tracyCtx_ = nullptr;
+  std::unique_ptr<VulkanCommandPool> profilingCommandPool_;
+  VkCommandBuffer profilingCommandBuffer_ = VK_NULL_HANDLE;
+#endif
 
  private:
   void createInstance(const size_t numExtraExtensions, const char** extraExtensions);

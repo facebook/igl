@@ -354,6 +354,13 @@ VulkanContext::~VulkanContext() {
     waitIdle();
   }
 
+#if defined(IGL_WITH_TRACY_GPU)
+  if (tracyCtx_) {
+    TracyVkDestroy(tracyCtx_);
+    profilingCommandPool_.reset(nullptr);
+  }
+#endif
+
   enhancedShaderDebuggingStore_.reset(nullptr);
 
   dummyStorageBuffer_.reset();
@@ -820,6 +827,40 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   updatePipelineLayouts();
 
   querySurfaceCapabilities();
+
+#if defined(IGL_WITH_TRACY_GPU)
+  profilingCommandPool_ = std::make_unique<VulkanCommandPool>(
+      vf_,
+      device_->getVkDevice(),
+      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
+      deviceQueues_.graphicsQueueFamilyIndex,
+      "VulkanContext::profilingCommandPool_ (Tracy)");
+
+  profilingCommandBuffer_ = VK_NULL_HANDLE;
+  VK_ASSERT(ivkAllocateCommandBuffer(&vf_,
+                                     device_->getVkDevice(),
+                                     profilingCommandPool_->getVkCommandPool(),
+                                     &profilingCommandBuffer_));
+
+#if defined(VK_EXT_calibrated_timestamps)
+  if (extensions_.enabled(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)) {
+    tracyCtx_ = TracyVkContextCalibrated(getVkPhysicalDevice(),
+                                         getVkDevice(),
+                                         deviceQueues_.graphicsQueue,
+                                         profilingCommandBuffer_,
+                                         vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
+                                         vkGetCalibratedTimestampsEXT);
+  }
+#endif // VK_EXT_calibrated_timestamps
+  // If VK_EXT_calibrated_timestamps is not available or it has not been enabled, use the
+  // uncalibrated Tracy context
+  if (!tracyCtx_) {
+    tracyCtx_ = TracyVkContext(
+        getVkPhysicalDevice(), getVkDevice(), deviceQueues_.graphicsQueue, profilingCommandBuffer_);
+  }
+
+  IGL_ASSERT_MSG(tracyCtx_, "Failed to create Tracy GPU profiling context");
+#endif // IGL_WITH_TRACY_GPU
 
   // enables/disables enhanced shader debugging
   if (config_.enhancedShaderDebugging) {
