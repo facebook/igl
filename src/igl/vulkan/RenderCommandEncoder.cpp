@@ -335,6 +335,10 @@ void RenderCommandEncoder::endEncoding() {
   overrideImageLayout(desc.depthAttachment.texture.get(),
                       VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
   transitionToShaderReadOnly(cmdBuffer_, desc.depthAttachment.texture.get());
+
+#if defined(IGL_WITH_TRACY_GPU)
+  TracyVkCollect(ctx_.tracyCtx_, cmdBuffer_);
+#endif
 }
 
 void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const igl::Color& color) const {
@@ -353,6 +357,7 @@ void RenderCommandEncoder::popDebugGroupLabel() const {
 
 void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
   IGL_PROFILER_FUNCTION();
+  IGL_PROFILER_ZONE_GPU_VK("bindViewport()", ctx_.tracyCtx_, cmdBuffer_);
 
   /**
     Using the negative viewport height Vulkan feature, we make the Vulkan "top-left" coordinate
@@ -452,6 +457,7 @@ void RenderCommandEncoder::bindBuffer(int index,
                                       const std::shared_ptr<IBuffer>& buffer,
                                       size_t bufferOffset) {
   IGL_PROFILER_FUNCTION();
+  IGL_PROFILER_ZONE_GPU_VK("bindBuffer()", ctx_.tracyCtx_, cmdBuffer_);
 
 #if IGL_VULKAN_PRINT_COMMANDS
   const char* tgt = target == igl::BindTarget::kVertex ? "kVertex" : "kAllGraphics";
@@ -514,6 +520,7 @@ void RenderCommandEncoder::bindBytes(size_t /*index*/,
 
 void RenderCommandEncoder::bindPushConstants(const void* data, size_t length, size_t offset) {
   IGL_PROFILER_FUNCTION();
+  IGL_PROFILER_ZONE_GPU_VK("bindPushConstants()", ctx_.tracyCtx_, cmdBuffer_);
 
   IGL_ASSERT(length % 4 == 0); // VUID-vkCmdPushConstants-size-00369: size must be a multiple of 4
 
@@ -590,6 +597,7 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
                                 uint32_t instanceCount,
                                 uint32_t baseInstance) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
+  IGL_PROFILER_ZONE_GPU_COLOR_VK("draw()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
 
@@ -625,6 +633,8 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
                                        int32_t baseVertex,
                                        uint32_t baseInstance) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
+  IGL_PROFILER_ZONE_GPU_COLOR_VK(
+      "drawIndexed()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
 
@@ -659,6 +669,8 @@ void RenderCommandEncoder::drawIndexedIndirect(PrimitiveType primitiveType,
                                                IBuffer& indirectBuffer,
                                                size_t indirectBufferOffset) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
+  IGL_PROFILER_ZONE_GPU_COLOR_VK(
+      "drawIndexedIndirect()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
 
   multiDrawIndexedIndirect(
       primitiveType, indexFormat, indexBuffer, indirectBuffer, indirectBufferOffset, 1, 0);
@@ -670,6 +682,8 @@ void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
                                              uint32_t drawCount,
                                              uint32_t stride) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
+  IGL_PROFILER_ZONE_GPU_COLOR_VK(
+      "multiDrawIndirect()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
 
   ensureVertexBuffers();
 
@@ -696,6 +710,8 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
                                                     uint32_t drawCount,
                                                     uint32_t stride) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
+  IGL_PROFILER_ZONE_GPU_COLOR_VK(
+      "multiDrawIndexedIndirect()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
 
   ensureVertexBuffers();
 
