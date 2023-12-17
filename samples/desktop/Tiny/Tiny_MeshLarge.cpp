@@ -48,67 +48,14 @@
 #define USE_TEXTURE_LOADER 0
 #define USE_OPENGL_BACKEND 0
 
-#if IGL_BACKEND_OPENGL && !IGL_BACKEND_VULKAN
-// no IGL/Vulkan was compiled in, switch to IGL/OpenGL
-#undef USE_OPENGL_BACKEND
-#define USE_OPENGL_BACKEND 1
-#endif
+#include "IGLCommon.h"
+#include "SamplesCommon.h"
 
 #if USE_OPENGL_BACKEND
 // for KTX textures
 #define VK_FORMAT_R32G32B32A32_SFLOAT 109
 #define VK_FORMAT_BC7_UNORM_BLOCK 145
 #endif // USE_OPENGL_BACKEND
-
-#if defined(__cpp_lib_format)
-#include <format>
-#define IGL_FORMAT std::format
-#else
-#include <fmt/core.h>
-#define IGL_FORMAT fmt::format
-#endif // __cpp_lib_format
-
-#include <igl/IGL.h>
-
-// clang-format off
-#if USE_OPENGL_BACKEND
-  #include <igl/RenderCommandEncoder.h>
-  #include <igl/opengl/RenderCommandEncoder.h>
-  #include <igl/opengl/RenderPipelineState.h>
-  #if IGL_PLATFORM_WIN
-    #include <igl/opengl/wgl/Context.h>
-    #include <igl/opengl/wgl/Device.h>
-    #include <igl/opengl/wgl/HWDevice.h>
-    #include <igl/opengl/wgl/PlatformDevice.h>
-  #elif IGL_PLATFORM_LINUX
-    #include <igl/opengl/glx/Context.h>
-    #include <igl/opengl/glx/Device.h>
-    #include <igl/opengl/glx/HWDevice.h>
-    #include <igl/opengl/glx/PlatformDevice.h>
-  #endif
-#else
-  #include <igl/vulkan/Common.h>
-  #include <igl/vulkan/Device.h>
-  #include <igl/vulkan/HWDevice.h>
-  #include <igl/vulkan/PlatformDevice.h>
-  #include <igl/vulkan/Texture.h>
-  #include <igl/vulkan/VulkanContext.h>
-#endif
-// clang-format on
-
-#ifdef _WIN32
-#define GLFW_EXPOSE_NATIVE_WIN32
-#define GLFW_EXPOSE_NATIVE_WGL
-#elif __APPLE__
-#define GLFW_EXPOSE_NATIVE_COCOA
-#elif defined(__linux__)
-#define GLFW_EXPOSE_NATIVE_X11
-#define GLFW_EXPOSE_NATIVE_GLX
-#else
-#error Unsupported OS
-#endif
-#include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
 
 // @fb-only
 
@@ -649,9 +596,10 @@ using glm::vec2;
 using glm::vec3;
 using glm::vec4;
 
-GLFWwindow* window_ = nullptr;
 int width_ = 0;
 int height_ = 0;
+int fbWidth_ = 0;
+int fbHeight_ = 0;
 igl::FPSCounter fps_;
 
 constexpr uint32_t kNumBufferedFrames = 3;
@@ -808,135 +756,85 @@ std::string convertFileName(std::string fileName) {
   }
 }
 
-bool initWindow(GLFWwindow** outWindow) {
-  if (!glfwInit())
-    return false;
-
+bool initWindow() {
 #if USE_OPENGL_BACKEND
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  glfwWindowHint(GLFW_VISIBLE, true);
-  glfwWindowHint(GLFW_DOUBLEBUFFER, true);
-  glfwWindowHint(GLFW_SRGB_CAPABLE, true);
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
   const char* title = "OpenGL Mesh";
 #else
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   const char* title = "Vulkan Mesh";
 #endif
-  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+  sample::initWindow(title, false, &width_, &height_, &fbWidth_, &fbHeight_);
 
-  // render full screen without overlapping taskbar
-  GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-  const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-
-  int posX = 0;
-  int posY = 0;
-  int width = mode->width;
-  int height = mode->height;
-
-  glfwGetMonitorWorkarea(monitor, &posX, &posY, &width, &height);
-
-  GLFWwindow* window = glfwCreateWindow(width, height, title, nullptr, nullptr);
-
-  if (!window) {
-    glfwTerminate();
-    return false;
-  }
-
-  glfwSetWindowPos(window, posX, posY);
-
-  glfwSetErrorCallback([](int error, const char* description) {
-    printf("GLFW Error (%i): %s\n", error, description);
-  });
-
-  glfwSetCursorPosCallback(window, [](auto* window, double x, double y) {
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    mousePos_ = vec2(x / width, 1.0f - y / height);
+  sample::setCallbackMousePos([](double x, double y) {
+    mousePos_ = vec2(x / fbWidth_, 1.0f - y / fbHeight_);
 #if IGL_WITH_IGLU
     inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
 #endif // IGL_WITH_IGLU
   });
 
-  glfwSetMouseButtonCallback(window, [](auto* window, int button, int action, int mods) {
+  sample::setCallbackMouseButton(
+      [](sample::MouseButton button, bool pressed, double xpos, double ypos) {
 #if IGL_WITH_IGLU
-    if (!ImGui::GetIO().WantCaptureMouse) {
+        if (!ImGui::GetIO().WantCaptureMouse) {
 #endif // IGL_WITH_IGLU
-      if (button == GLFW_MOUSE_BUTTON_LEFT) {
-        mousePressed_ = (action == GLFW_PRESS);
-      }
+          if (button == sample::MouseButton::Left) {
+            mousePressed_ = pressed;
+          }
 #if IGL_WITH_IGLU
-    } else {
-      // release the mouse
-      mousePressed_ = false;
-    }
-    double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
-    using igl::shell::MouseButton;
-    const MouseButton iglButton =
-        (button == GLFW_MOUSE_BUTTON_LEFT)
-            ? MouseButton::Left
-            : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
-    inputDispatcher_.queueEvent(
-        igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
+        } else {
+          // release the mouse
+          mousePressed_ = false;
+        }
+        using igl::shell::MouseButton;
+        const MouseButton iglButton =
+            (button == sample::MouseButton::Left)
+                ? MouseButton::Left
+                : (button == sample::MouseButton::Right ? MouseButton::Right : MouseButton::Middle);
+        inputDispatcher_.queueEvent(
+            igl::shell::MouseButtonEvent(iglButton, pressed, (float)xpos, (float)ypos));
 #endif // IGL_WITH_IGLU
-  });
+      });
 
-  glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int mods) {
-    const bool pressed = action != GLFW_RELEASE;
-    if (key == GLFW_KEY_ESCAPE && pressed) {
-      glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-    if (key == GLFW_KEY_N && pressed) {
+  sample::setCallbackKeyboard([](sample::Keys key, bool pressed, sample::KeyMods keyMods) {
+    if (key == sample::Keys::Key_N && pressed) {
       perFrame_.bDrawNormals = (perFrame_.bDrawNormals + 1) % 2;
     }
-    if (key == GLFW_KEY_C && pressed) {
+    if (key == sample::Keys::Key_C && pressed) {
       enableComputePass_ = !enableComputePass_;
     }
-    if (key == GLFW_KEY_T && pressed) {
+    if (key == sample::Keys::Key_T && pressed) {
       enableWireframe_ = !enableWireframe_;
     }
-    if (key == GLFW_KEY_ESCAPE && pressed)
-      glfwSetWindowShouldClose(window, GLFW_TRUE);
-    if (key == GLFW_KEY_W) {
+    if (key == sample::Keys::Key_W) {
       positioner_.movement_.forward_ = pressed;
     }
-    if (key == GLFW_KEY_S) {
+    if (key == sample::Keys::Key_S) {
       positioner_.movement_.backward_ = pressed;
     }
-    if (key == GLFW_KEY_A) {
+    if (key == sample::Keys::Key_A) {
       positioner_.movement_.left_ = pressed;
     }
-    if (key == GLFW_KEY_D) {
+    if (key == sample::Keys::Key_D) {
       positioner_.movement_.right_ = pressed;
     }
-    if (key == GLFW_KEY_1) {
+    if (key == sample::Keys::Key_1) {
       positioner_.movement_.up_ = pressed;
     }
-    if (key == GLFW_KEY_2) {
+    if (key == sample::Keys::Key_2) {
       positioner_.movement_.down_ = pressed;
     }
-    if (mods & GLFW_MOD_SHIFT) {
+    if ((int)keyMods & (int)sample::KeyMods::Shift) {
       positioner_.movement_.fastSpeed_ = pressed;
     }
-    if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
+    if (key == sample::Keys::Key_LEFT_SHIFT || key == sample::Keys::Key_RIGHT_SHIFT) {
       positioner_.movement_.fastSpeed_ = pressed;
     }
-    if (key == GLFW_KEY_SPACE) {
+    if (key == sample::Keys::Key_SPACE) {
       positioner_.setUpVector(vec3(0.0f, 1.0f, 0.0f));
     }
-    if (key == GLFW_KEY_L && pressed) {
+    if (key == sample::Keys::Key_L && pressed) {
       perFrame_.bDebugLines = (perFrame_.bDebugLines + 1) % 2;
     }
   });
-
-  glfwGetWindowSize(window, &width_, &height_);
-
-  if (outWindow) {
-    *outWindow = window;
-  }
 
   return true;
 }
@@ -944,59 +842,17 @@ bool initWindow(GLFWwindow** outWindow) {
 void initIGL() {
   // create a device
   {
-    {
-      Result result;
-#if USE_OPENGL_BACKEND
-#if IGL_PLATFORM_WIN
-      auto ctx = std::make_unique<igl::opengl::wgl::Context>(GetDC(glfwGetWin32Window(window_)),
-                                                             glfwGetWGLContext(window_));
-      device_ = std::make_unique<igl::opengl::wgl::Device>(std::move(ctx));
-#elif IGL_PLATFORM_LINUX
-      auto ctx = std::make_unique<igl::opengl::glx::Context>(
-          nullptr,
-          glfwGetX11Display(),
-          (igl::opengl::glx::GLXDrawable)glfwGetX11Window(window_),
-          (igl::opengl::glx::GLXContext)glfwGetGLXContext(window_));
-      device_ = std::make_unique<igl::opengl::glx::Device>(std::move(ctx));
+    device_ = createIGLDevice(sample::getWindow(),
+                              sample::getDisplay(),
+                              sample::getContext(),
+                              width_,
+                              height_,
+                              {
+                                  .enableValidation = kEnableValidationLayers,
+                                  .enableDescriptorIndexing = true,
+                              });
 
-#endif
-#else
-      const igl::vulkan::VulkanContextConfig cfg = {
-          .terminateOnValidationError = true,
-          .enhancedShaderDebugging = false,
-          .enableValidation = kEnableValidationLayers,
-          .enableDescriptorIndexing = true,
-          .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
-      };
-#ifdef _WIN32
-      auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
-
-#elif __APPLE__
-      auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetCocoaWindow(window_));
-
-#elif defined(__linux__)
-      auto ctx = vulkan::HWDevice::createContext(
-          cfg, (void*)glfwGetX11Window(window_), 0, nullptr, (void*)glfwGetX11Display());
-
-#else
-#error Unsupported OS
-#endif
-      const HWDeviceType hardwareType = kPreferIntegratedGPU ? HWDeviceType::IntegratedGpu
-                                                             : HWDeviceType::DiscreteGpu;
-      std::vector<HWDeviceDesc> devices =
-          vulkan::HWDevice::queryDevices(*ctx.get(), HWDeviceQueryDesc(hardwareType), nullptr);
-      if (devices.empty()) {
-        const HWDeviceType fallbackHardwareType =
-            !kPreferIntegratedGPU ? HWDeviceType::IntegratedGpu : HWDeviceType::DiscreteGpu;
-        devices = vulkan::HWDevice::queryDevices(
-            *ctx.get(), HWDeviceQueryDesc(fallbackHardwareType), nullptr);
-      }
-      IGL_ASSERT_MSG(!devices.empty(), "GPU is not found");
-      device_ =
-          vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
-#endif
-      IGL_ASSERT(device_);
-    }
+    sample::setDevice(device_.get());
   }
 // @fb-only
   // @fb-only
@@ -2575,7 +2431,7 @@ int main(int argc, char* argv[]) {
     contentRootFolder = (dir / subdir).string();
   }
 
-  initWindow(&window_);
+  initWindow();
   initIGL();
   initModel();
 
@@ -2598,12 +2454,12 @@ int main(int argc, char* argv[]) {
   imguiSession_ = std::make_unique<iglu::imgui::Session>(*device_.get(), inputDispatcher_);
 #endif // IGL_WITH_IGLU
 
-  double prevTime = glfwGetTime();
+  double prevTime = sample::getTimeInSecs();
 
   uint32_t frameIndex = 0;
 
   // Main loop
-  while (!glfwWindowShouldClose(window_)) {
+  while (!sample::isDone()) {
     {
       FramebufferDesc framebufferDesc;
       framebufferDesc.colorAttachments[0].texture = getNativeDrawable();
@@ -2663,7 +2519,7 @@ int main(int argc, char* argv[]) {
     }
 
     processLoadedMaterials();
-    const double newTime = glfwGetTime();
+    const double newTime = sample::getTimeInSecs();
     const double delta = newTime - prevTime;
     fps_.updateFPS(delta);
     positioner_.update(delta, mousePos_, mousePressed_);
@@ -2672,7 +2528,7 @@ int main(int argc, char* argv[]) {
     inputDispatcher_.processEvents();
 #endif // IGL_WITH_IGLU
     render(getNativeDrawable(), frameIndex);
-    glfwPollEvents();
+    sample::update();
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
   }
 
@@ -2709,8 +2565,7 @@ int main(int argc, char* argv[]) {
   fbOffscreen_ = nullptr;
   device_.reset(nullptr);
 
-  glfwDestroyWindow(window_);
-  glfwTerminate();
+  sample::shutdown();
 
   printf("Waiting for the loader thread to exit...\n");
 

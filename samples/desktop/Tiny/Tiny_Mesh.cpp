@@ -5,37 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <GLFW/glfw3.h>
+#include "IGLCommon.h"
+#include "SamplesCommon.h"
+
 #include <cassert>
-#if !defined(_USE_MATH_DEFINES)
-#define _USE_MATH_DEFINES
-#endif // _USE_MATH_DEFINES
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
+#include <numbers>
 #include <stdio.h>
-#ifdef _WIN32
-#define GLFW_EXPOSE_NATIVE_WIN32
-#define GLFW_EXPOSE_NATIVE_WGL
-#elif __APPLE__
-#define GLFW_EXPOSE_NATIVE_COCOA
-#elif defined(__linux__)
-#define GLFW_EXPOSE_NATIVE_X11
-#else
-#error Unsupported OS
-#endif
-#include <GLFW/glfw3native.h>
+
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
 #include <igl/FPSCounter.h>
 #include <igl/IGL.h>
 #include <igl/ShaderCreator.h>
-#include <igl/vulkan/Common.h>
-#include <igl/vulkan/Device.h>
-#include <igl/vulkan/HWDevice.h>
-#include <igl/vulkan/PlatformDevice.h>
-#include <igl/vulkan/VulkanContext.h>
 #include <stb/stb_image.h>
 
 #define TINY_TEST_USE_DEPTH_BUFFER 1
@@ -99,9 +84,10 @@ using glm::vec4;
 
 vec3 axis_[kNumCubes];
 
-GLFWwindow* window_ = nullptr;
 int width_ = 0;
 int height_ = 0;
+int fbWidth_ = 0;
+int fbHeight_ = 0;
 igl::FPSCounter fps_;
 
 constexpr uint32_t kNumBufferedFrames = 3;
@@ -176,98 +162,44 @@ static uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
 UniformsPerFrame perFrame;
 UniformsPerObject perObject[kNumCubes];
 
-static bool initWindow(GLFWwindow** outWindow) {
-  if (!glfwInit())
-    return false;
+static bool initWindow() {
+#if USE_OPENGL_BACKEND
+  const char* title = "OpenGL Mesh";
+#else
+  const char* title = "Vulkan Mesh";
+#endif
+  sample::initWindow(title, false, &width_, &height_, &fbWidth_, &fbHeight_);
 
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-  GLFWwindow* window = glfwCreateWindow(1280, 1024, "Vulkan Mesh", nullptr, nullptr);
-
-  if (!window) {
-    glfwTerminate();
-    return false;
-  }
-
-  glfwSetErrorCallback([](int error, const char* description) {
-    printf("GLFW Error (%i): %s\n", error, description);
-  });
-
-  glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-      glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-    if (key == GLFW_KEY_T && action == GLFW_PRESS) {
+  sample::setCallbackKeyboard([](sample::Keys key, bool pressed, sample::KeyMods keyMods) {
+    if (key == sample::Keys::Key_T && pressed) {
       texture1_.reset();
     }
   });
 
-  // @lint-ignore CLANGTIDY
-  glfwSetWindowSizeCallback(window, [](GLFWwindow* /*window*/, int width, int height) {
-    printf("Window resized! width=%d, height=%d\n", width, height);
-    width_ = width;
-    height_ = height;
-#if !USE_OPENGL_BACKEND
-    auto* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
-    auto& ctx = vulkanDevice->getVulkanContext();
-    ctx.initSwapchain(width_, height_);
-#endif
-  });
-
 #if IGL_WITH_IGLU
-  glfwSetCursorPosCallback(window, [](auto* window, double x, double y) {
+  sample::setCallbackMousePos([](double x, double y) {
     inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
   });
-  glfwSetMouseButtonCallback(window, [](auto* window, int button, int action, int mods) {
-    double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
-    using igl::shell::MouseButton;
-    const MouseButton iglButton =
-        (button == GLFW_MOUSE_BUTTON_LEFT)
-            ? MouseButton::Left
-            : (button == GLFW_MOUSE_BUTTON_RIGHT ? MouseButton::Right : MouseButton::Middle);
-    inputDispatcher_.queueEvent(
-        igl::shell::MouseButtonEvent(iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
-  });
+
+  sample::setCallbackMouseButton(
+      [](sample::MouseButton button, bool pressed, double xpos, double ypos) {
+        using igl::shell::MouseButton;
+        const MouseButton iglButton =
+            (button == sample::MouseButton::Left)
+                ? MouseButton::Left
+                : (button == sample::MouseButton::Right ? MouseButton::Right : MouseButton::Middle);
+        inputDispatcher_.queueEvent(
+            igl::shell::MouseButtonEvent(iglButton, pressed, (float)xpos, (float)ypos));
+      });
 #endif // IGL_WITH_IGLU
-
-  glfwGetWindowSize(window, &width_, &height_);
-
-  if (outWindow) {
-    *outWindow = window;
-  }
 
   return true;
 }
 
 static void initIGL() {
-  // create a device
-  {
-    const igl::vulkan::VulkanContextConfig cfg = {
-        .terminateOnValidationError = true,
-        .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
-    };
-#ifdef _WIN32
-    auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
-#elif __APPLE__
-    auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetCocoaWindow(window_));
-#elif defined(__linux__)
-    auto ctx = vulkan::HWDevice::createContext(
-        cfg, (void*)glfwGetX11Window(window_), 0, nullptr, (void*)glfwGetX11Display());
-#else
-#error Unsupported OS
-#endif
-
-    std::vector<HWDeviceDesc> devices = vulkan::HWDevice::queryDevices(
-        *ctx.get(), HWDeviceQueryDesc(HWDeviceType::DiscreteGpu), nullptr);
-    if (devices.empty()) {
-      devices = vulkan::HWDevice::queryDevices(
-          *ctx.get(), HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
-    }
-    device_ =
-        vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
-    IGL_ASSERT(device_);
-  }
+  device_ = createIGLDevice(
+      sample::getWindow(), sample::getDisplay(), sample::getContext(), width_, height_);
+  sample::setDevice(device_.get());
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
   vb0_ = device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Vertex,
@@ -501,7 +433,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   }
 
   // from igl/shell/renderSessions/Textured3DCubeSession.cpp
-  const float fov = float(45.0f * (M_PI / 180.0f));
+  const float fov = float(45.0f * (std::numbers::pi / 180.0f));
   const float aspectRatio = (float)width_ / (float)height_;
   perFrame.proj = glm::perspectiveLH(fov, aspectRatio, 0.1f, 500.0f);
   // place a "camera" behind the cubes, the distance depends on the total number of cubes
@@ -516,8 +448,8 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
     const vec3 offset = vec3(-1.5f * sqrt(kNumCubes) + 4.0f * (i % cubesInLine),
                              -1.5f * sqrt(kNumCubes) + 4.0f * (i / cubesInLine),
                              0);
-    perObject[i].model =
-        glm::rotate(glm::translate(mat4(1.0f), offset), direction * (float)glfwGetTime(), axis_[i]);
+    perObject[i].model = glm::rotate(
+        glm::translate(mat4(1.0f), offset), direction * (float)sample::getTimeInSecs(), axis_[i]);
   }
 
   ubPerObject_[frameIndex]->upload(&perObject, igl::BufferRange(sizeof(perObject)));
@@ -561,7 +493,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
 }
 
 int main(int argc, char* argv[]) {
-  initWindow(&window_);
+  initWindow();
   initIGL();
 
   createFramebuffer(getVulkanNativeDrawable());
@@ -571,17 +503,17 @@ int main(int argc, char* argv[]) {
   imguiSession_ = std::make_unique<iglu::imgui::Session>(*device_.get(), inputDispatcher_);
 #endif // IGL_WITH_IGLU
 
-  double prevTime = glfwGetTime();
+  double prevTime = sample::getTimeInSecs();
 
   uint32_t frameIndex = 0;
 
   // Main loop
-  while (!glfwWindowShouldClose(window_)) {
-    const double newTime = glfwGetTime();
+  while (!sample::isDone()) {
+    const double newTime = sample::getTimeInSecs();
     fps_.updateFPS(newTime - prevTime);
     prevTime = newTime;
     render(getVulkanNativeDrawable(), frameIndex);
-    glfwPollEvents();
+    sample::update();
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
   }
 
@@ -602,8 +534,7 @@ int main(int argc, char* argv[]) {
   framebuffer_ = nullptr;
   device_.reset(nullptr);
 
-  glfwDestroyWindow(window_);
-  glfwTerminate();
+  sample::shutdown();
 
   return 0;
 }

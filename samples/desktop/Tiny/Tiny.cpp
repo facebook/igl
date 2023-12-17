@@ -5,57 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
-#ifdef _WIN32
-#define GLFW_EXPOSE_NATIVE_WIN32
-#define GLFW_EXPOSE_NATIVE_WGL
-#elif __APPLE__
-#define GLFW_EXPOSE_NATIVE_COCOA
-#elif defined(__linux__)
-#define GLFW_EXPOSE_NATIVE_X11
-#define GLFW_EXPOSE_NATIVE_GLX
-#else
-#error Unsupported OS
-#endif
-
-#include <GLFW/glfw3native.h>
+#include "IGLCommon.h"
+#include "SamplesCommon.h"
 
 #include <cassert>
 #include <regex>
 #include <stdio.h>
-
-#include <igl/IGL.h>
-
-#define USE_OPENGL_BACKEND 0
-
-#if IGL_BACKEND_OPENGL && !IGL_BACKEND_VULKAN
-// no IGL/Vulkan was compiled in, switch to IGL/OpenGL
-#undef USE_OPENGL_BACKEND
-#define USE_OPENGL_BACKEND 1
-#endif
-
-// clang-format off
-#if USE_OPENGL_BACKEND
-  #if IGL_PLATFORM_WIN
-    #include <igl/opengl/wgl/Context.h>
-    #include <igl/opengl/wgl/Device.h>
-    #include <igl/opengl/wgl/HWDevice.h>
-    #include <igl/opengl/wgl/PlatformDevice.h>
-  #elif IGL_PLATFORM_LINUX
-    #include <igl/opengl/glx/Context.h>
-    #include <igl/opengl/glx/Device.h>
-    #include <igl/opengl/glx/HWDevice.h>
-    #include <igl/opengl/glx/PlatformDevice.h>
-  #endif
-#else
-  #include <igl/vulkan/Common.h>
-  #include <igl/vulkan/Device.h>
-  #include <igl/vulkan/HWDevice.h>
-  #include <igl/vulkan/PlatformDevice.h>
-  #include <igl/vulkan/VulkanContext.h>
-#endif // USE_OPENGL_BACKEND
-// clang-format on
 
 #define ENABLE_MULTIPLE_COLOR_ATTACHMENTS 0
 
@@ -64,14 +19,6 @@ static const uint32_t kNumColorAttachments = 4;
 #else
 static const uint32_t kNumColorAttachments = 1;
 #endif
-
-#if defined(__cpp_lib_format)
-#include <format>
-#define IGL_FORMAT std::format
-#else
-#include <fmt/core.h>
-#define IGL_FORMAT fmt::format
-#endif // __cpp_lib_format
 
 std::string codeVS = R"(
 #version 460
@@ -117,9 +64,10 @@ void main() {
 
 using namespace igl;
 
-GLFWwindow* window_ = nullptr;
 int width_ = 0;
 int height_ = 0;
+int fbWidth_ = 0;
+int fbHeight_ = 0;
 
 std::unique_ptr<IDevice> device_;
 std::shared_ptr<ICommandQueue> commandQueue_;
@@ -127,112 +75,11 @@ RenderPassDesc renderPass_;
 std::shared_ptr<IFramebuffer> framebuffer_;
 std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
 
-static bool initWindow(GLFWwindow** outWindow) {
-  if (!glfwInit()) {
-    return false;
-  }
-
-#if USE_OPENGL_BACKEND
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-  glfwWindowHint(GLFW_VISIBLE, true);
-  glfwWindowHint(GLFW_DOUBLEBUFFER, true);
-  glfwWindowHint(GLFW_SRGB_CAPABLE, true);
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-#else
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-#endif
-  glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-
-#if USE_OPENGL_BACKEND
-  const char* title = "OpenGL Triangle";
-#else
-  const char* title = "Vulkan Triangle";
-#endif
-
-  GLFWwindow* window = glfwCreateWindow(800, 600, title, nullptr, nullptr);
-
-  if (!window) {
-    glfwTerminate();
-    return false;
-  }
-
-  glfwSetErrorCallback([](int error, const char* description) {
-    printf("GLFW Error (%i): %s\n", error, description);
-  });
-
-  glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-      glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-  });
-
-  // @lint-ignore CLANGTIDY
-  glfwSetWindowSizeCallback(window, [](GLFWwindow* /*window*/, int width, int height) {
-    printf("Window resized! width=%d, height=%d\n", width, height);
-    width_ = width;
-    height_ = height;
-#if !USE_OPENGL_BACKEND
-    auto* vulkanDevice = static_cast<vulkan::Device*>(device_.get());
-    auto& ctx = vulkanDevice->getVulkanContext();
-    ctx.initSwapchain(width_, height_);
-#endif
-  });
-
-  glfwGetWindowSize(window, &width_, &height_);
-
-  if (outWindow) {
-    *outWindow = window;
-  }
-
-  return true;
-}
-
 static void initIGL() {
   // create a device
-  {
-#if USE_OPENGL_BACKEND
-#if IGL_PLATFORM_WIN
-    auto ctx = std::make_unique<igl::opengl::wgl::Context>(GetDC(glfwGetWin32Window(window_)),
-                                                           glfwGetWGLContext(window_));
-    device_ = std::make_unique<igl::opengl::wgl::Device>(std::move(ctx));
-#elif IGL_PLATFORM_LINUX
-    auto ctx = std::make_unique<igl::opengl::glx::Context>(
-        nullptr,
-        glfwGetX11Display(),
-        (igl::opengl::glx::GLXDrawable)glfwGetX11Window(window_),
-        (igl::opengl::glx::GLXContext)glfwGetGLXContext(window_));
-
-    device_ = std::make_unique<igl::opengl::glx::Device>(std::move(ctx));
-#endif
-#else
-    const igl::vulkan::VulkanContextConfig cfg{
-        .terminateOnValidationError = true,
-        .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
-    };
-#ifdef _WIN32
-    auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));
-#elif __APPLE__
-    auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetCocoaWindow(window_));
-#elif defined(__linux__)
-    auto ctx = vulkan::HWDevice::createContext(
-        cfg, (void*)glfwGetX11Window(window_), 0, nullptr, (void*)glfwGetX11Display());
-#else
-#error Unsupported OS
-#endif
-
-    std::vector<HWDeviceDesc> devices = vulkan::HWDevice::queryDevices(
-        *ctx.get(), HWDeviceQueryDesc(HWDeviceType::DiscreteGpu), nullptr);
-    if (devices.empty()) {
-      devices = vulkan::HWDevice::queryDevices(
-          *ctx.get(), HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
-    }
-    device_ =
-        vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
-#endif
-    IGL_ASSERT(device_);
-  }
+  device_ = createIGLDevice(
+      sample::getWindow(), sample::getDisplay(), sample::getContext(), width_, height_);
+  sample::setDevice(device_.get());
 
   // Command queue: backed by different types of GPU HW queues
   CommandQueueDesc desc{CommandQueueType::Graphics};
@@ -366,16 +213,21 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
 
 int main(int argc, char* argv[]) {
   renderPass_.colorAttachments.resize(kNumColorAttachments);
-  initWindow(&window_);
+#if USE_OPENGL_BACKEND
+  const char* title = "OpenGL Triangle";
+#else
+  const char* title = "Vulkan Triangle";
+#endif
+  sample::initWindow(title, false, &width_, &height_, &fbWidth_, &fbHeight_);
   initIGL();
 
   createFramebuffer(getNativeDrawable());
   createRenderPipeline();
 
   // Main loop
-  while (!glfwWindowShouldClose(window_)) {
+  while (!sample::isDone()) {
     render(getNativeDrawable());
-    glfwPollEvents();
+    sample::update();
   }
 
   // destroy all the Vulkan stuff before closing the window
@@ -383,8 +235,7 @@ int main(int argc, char* argv[]) {
   framebuffer_ = nullptr;
   device_.reset(nullptr);
 
-  glfwDestroyWindow(window_);
-  glfwTerminate();
+  sample::shutdown();
 
   return 0;
 }
