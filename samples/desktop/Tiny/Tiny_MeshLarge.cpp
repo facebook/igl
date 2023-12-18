@@ -1566,58 +1566,10 @@ void createRenderPipelineSkybox() {
   renderPipelineState_Skybox_ = device_->createRenderPipeline(desc, nullptr);
 }
 
-std::shared_ptr<ITexture> getNativeDrawable() {
-  IGL_PROFILER_FUNCTION();
-  Result ret;
-  std::shared_ptr<ITexture> drawable;
-#if USE_OPENGL_BACKEND
-#if IGL_PLATFORM_WIN
-  const auto& platformDevice = device_->getPlatformDevice<opengl::wgl::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
-  drawable = platformDevice->createTextureFromNativeDrawable(&ret);
-#elif IGL_PLATFORM_LINUX
-  const auto& platformDevice = device_->getPlatformDevice<opengl::glx::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
-  drawable = platformDevice->createTextureFromNativeDrawable(width_, height_, &ret);
-#endif
-#else
-  const auto& platformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
-  drawable = platformDevice->createTextureFromNativeDrawable(&ret);
-#endif
-  IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
-  IGL_ASSERT(drawable != nullptr);
-  return drawable;
-}
-
-std::shared_ptr<ITexture> getNativeDepthDrawable() {
-  IGL_PROFILER_FUNCTION();
-  Result ret;
-  std::shared_ptr<ITexture> drawable;
-#if USE_OPENGL_BACKEND
-#if IGL_PLATFORM_WIN
-  const auto& platformDevice = device_->getPlatformDevice<opengl::wgl::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
-  drawable = platformDevice->createTextureFromNativeDepth(width_, height_, &ret);
-#elif IGL_PLATFORM_LINUX
-  const auto& platformDevice = device_->getPlatformDevice<opengl::glx::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
-  drawable = platformDevice->createTextureFromNativeDepth(width_, height_, &ret);
-#endif
-#else
-  const auto& platformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
-  drawable = platformDevice->createTextureFromNativeDepth(width_, height_, &ret);
-#endif
-  IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
-  IGL_ASSERT(drawable != nullptr);
-  return drawable;
-}
-
 void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   FramebufferDesc framebufferDesc;
   framebufferDesc.colorAttachments[0].texture = nativeDrawable;
-  framebufferDesc.depthAttachment.texture = getNativeDepthDrawable();
+  framebufferDesc.depthAttachment.texture = getNativeDepthDrawable(device_.get(), width_, height_);
   fbMain_ = device_->createFramebuffer(framebufferDesc, nullptr);
   IGL_ASSERT(fbMain_);
 }
@@ -2443,7 +2395,7 @@ int main(int argc, char* argv[]) {
   loadSkyboxTexture();
   loadMaterials();
 
-  createFramebuffer(getNativeDrawable());
+  createFramebuffer(getNativeDrawable(device_.get(), width_, height_));
   createShadowMap();
   createOffscreenFramebuffer();
   createRenderPipelines();
@@ -2462,8 +2414,8 @@ int main(int argc, char* argv[]) {
   while (!sample::isDone()) {
     {
       FramebufferDesc framebufferDesc;
-      framebufferDesc.colorAttachments[0].texture = getNativeDrawable();
-      framebufferDesc.depthAttachment.texture = getNativeDepthDrawable();
+      framebufferDesc.colorAttachments[0].texture = getNativeDrawable(device_.get(), width_, height_);
+      framebufferDesc.depthAttachment.texture = getNativeDepthDrawable(device_.get(), width_, height_);
 #if IGL_WITH_IGLU
       imguiSession_->beginFrame(framebufferDesc, 1.0f);
       ImGui::ShowDemoWindow();
@@ -2527,7 +2479,7 @@ int main(int argc, char* argv[]) {
 #if IGL_WITH_IGLU
     inputDispatcher_.processEvents();
 #endif // IGL_WITH_IGLU
-    render(getNativeDrawable(), frameIndex);
+    render(getNativeDrawable(device_.get(), width_, height_), frameIndex);
     sample::update();
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
   }

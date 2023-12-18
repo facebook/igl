@@ -65,4 +65,8 @@ std::unique_ptr<IDevice> createIGLDevice(void* window,
                                          int width,
                                          int height,
                                          DeviceContextSettings ctxSettings = {});
+
+std::shared_ptr<ITexture> getNativeDrawable(IDevice* device, int winWidth, int winHeight);
+std::shared_ptr<ITexture> getNativeDepthDrawable(IDevice* device, int winWidth, int winHeight);
+
 } // namespace igl

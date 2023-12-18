@@ -132,28 +132,6 @@ static void createRenderPipeline() {
   IGL_ASSERT(renderPipelineState_Triangle_);
 }
 
-static std::shared_ptr<ITexture> getNativeDrawable() {
-  Result ret;
-  std::shared_ptr<ITexture> drawable;
-#if USE_OPENGL_BACKEND
-#if IGL_PLATFORM_WIN
-  const auto& platformDevice = device_->getPlatformDevice<opengl::wgl::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
-  drawable = platformDevice->createTextureFromNativeDrawable(&ret);
-#elif IGL_PLATFORM_LINUX
-  const auto& platformDevice = device_->getPlatformDevice<opengl::glx::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
-  drawable = platformDevice->createTextureFromNativeDrawable(width_, height_, &ret);
-#endif
-#else
-  const auto& platformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
-  drawable = platformDevice->createTextureFromNativeDrawable(&ret);
-#endif
-  IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
-  return drawable;
-}
-
 static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   FramebufferDesc framebufferDesc;
   framebufferDesc.colorAttachments[0].texture = nativeDrawable;
@@ -221,12 +199,12 @@ int main(int argc, char* argv[]) {
   sample::initWindow(title, false, &width_, &height_, &fbWidth_, &fbHeight_);
   initIGL();
 
-  createFramebuffer(getNativeDrawable());
+  createFramebuffer(getNativeDrawable(device_.get(), width_, height_));
   createRenderPipeline();
 
   // Main loop
   while (!sample::isDone()) {
-    render(getNativeDrawable());
+    render(getNativeDrawable(device_.get(), width_, height_));
     sample::update();
   }
 

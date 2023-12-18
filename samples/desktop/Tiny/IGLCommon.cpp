@@ -56,4 +56,53 @@ std::unique_ptr<IDevice> createIGLDevice(void* window,
 #endif // USE_OPENGL_BACKEND
 }
 
+std::shared_ptr<ITexture> getNativeDrawable(IDevice* device, int winWidth, int winHeight) {
+  IGL_PROFILER_FUNCTION();
+  Result ret;
+  std::shared_ptr<ITexture> drawable;
+#if USE_OPENGL_BACKEND
+#if IGL_PLATFORM_WIN
+  const auto& platformDevice = device->getPlatformDevice<opengl::wgl::PlatformDevice>();
+  IGL_ASSERT(platformDevice != nullptr);
+  drawable = platformDevice->createTextureFromNativeDrawable(&ret);
+#elif IGL_PLATFORM_LINUX
+  const auto& platformDevice = device->getPlatformDevice<opengl::glx::PlatformDevice>();
+  IGL_ASSERT(platformDevice != nullptr);
+  drawable = platformDevice->createTextureFromNativeDrawable(winWidth, winHeight, &ret);
+#endif
+#else
+  const auto& platformDevice = device->getPlatformDevice<igl::vulkan::PlatformDevice>();
+  IGL_ASSERT(platformDevice != nullptr);
+  drawable = platformDevice->createTextureFromNativeDrawable(&ret);
+#endif
+  IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
+  IGL_ASSERT(drawable != nullptr);
+  return drawable;
+}
+
+std::shared_ptr<ITexture> getNativeDepthDrawable(IDevice* device, int winWidth, int winHeight) {
+  IGL_PROFILER_FUNCTION();
+  Result ret;
+  std::shared_ptr<ITexture> drawable;
+#if USE_OPENGL_BACKEND
+#if IGL_PLATFORM_WIN
+  const auto& platformDevice = device->getPlatformDevice<opengl::wgl::PlatformDevice>();
+  IGL_ASSERT(platformDevice != nullptr);
+  drawable = platformDevice->createTextureFromNativeDepth(winWidth, winHeight, &ret);
+#elif IGL_PLATFORM_LINUX
+  const auto& platformDevice = device->getPlatformDevice<opengl::glx::PlatformDevice>();
+  IGL_ASSERT(platformDevice != nullptr);
+  drawable = platformDevice->createTextureFromNativeDepth(winWidth, winHeight, &ret);
+#endif
+#else
+  const auto& platformDevice = device->getPlatformDevice<igl::vulkan::PlatformDevice>();
+  IGL_ASSERT(platformDevice != nullptr);
+  drawable = platformDevice->createTextureFromNativeDepth(winWidth, winHeight, &ret);
+#endif
+  IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
+  IGL_ASSERT(drawable != nullptr);
+  return drawable;
+}
+
+
 } // namespace igl

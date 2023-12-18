@@ -372,36 +372,11 @@ static void createRenderPipeline() {
   renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
 }
 
-static std::shared_ptr<ITexture> getVulkanNativeDrawable() {
-  const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
-
-  IGL_ASSERT(vkPlatformDevice != nullptr);
-
-  Result ret;
-  std::shared_ptr<ITexture> drawable = vkPlatformDevice->createTextureFromNativeDrawable(&ret);
-
-  IGL_ASSERT(ret.isOk());
-  return drawable;
-}
-
-static std::shared_ptr<ITexture> getVulkanNativeDepth() {
-  const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
-
-  IGL_ASSERT(vkPlatformDevice != nullptr);
-
-  Result ret;
-  std::shared_ptr<ITexture> drawable =
-      vkPlatformDevice->createTextureFromNativeDepth(width_, height_, &ret);
-
-  IGL_ASSERT(ret.isOk());
-  return drawable;
-}
-
 static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   framebufferDesc_.colorAttachments[0].texture = nativeDrawable;
 
 #if TINY_TEST_USE_DEPTH_BUFFER
-  framebufferDesc_.depthAttachment.texture = getVulkanNativeDepth();
+  framebufferDesc_.depthAttachment.texture = getNativeDepthDrawable(device_.get(), width_, height_);
 #endif // TINY_TEST_USE_DEPTH_BUFFER
 
   framebuffer_ = device_->createFramebuffer(framebufferDesc_, nullptr);
@@ -496,7 +471,7 @@ int main(int argc, char* argv[]) {
   initWindow();
   initIGL();
 
-  createFramebuffer(getVulkanNativeDrawable());
+  createFramebuffer(getNativeDrawable(device_.get(), width_, height_));
   createRenderPipeline();
 
 #if IGL_WITH_IGLU
@@ -512,7 +487,7 @@ int main(int argc, char* argv[]) {
     const double newTime = sample::getTimeInSecs();
     fps_.updateFPS(newTime - prevTime);
     prevTime = newTime;
-    render(getVulkanNativeDrawable(), frameIndex);
+    render(getNativeDrawable(device_.get(), width_, height_), frameIndex);
     sample::update();
     frameIndex = (frameIndex + 1) % kNumBufferedFrames;
   }
