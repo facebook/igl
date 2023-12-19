@@ -1970,6 +1970,12 @@ lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::stencilStateOps(VkStenci
                                                                         VkStencilOp passOp,
                                                                         VkStencilOp depthFailOp,
                                                                         VkCompareOp compareOp) {
+  depthStencilState_.stencilTestEnable = depthStencilState_.stencilTestEnable == VK_TRUE || failOp != VK_STENCIL_OP_KEEP ||
+                                                 passOp != VK_STENCIL_OP_KEEP || depthFailOp != VK_STENCIL_OP_KEEP ||
+                                                 compareOp != VK_COMPARE_OP_ALWAYS
+                                             ? VK_TRUE
+                                             : VK_FALSE;
+
   if (faceMask & VK_STENCIL_FACE_FRONT_BIT) {
     VkStencilOpState& s = depthStencilState_.front;
     s.failOp = failOp;
