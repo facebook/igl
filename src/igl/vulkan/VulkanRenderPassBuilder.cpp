@@ -90,12 +90,15 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addColorResolve(VkFormat forma
   return *this;
 }
 
-VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepth(VkFormat format,
-                                                           VkAttachmentLoadOp loadOp,
-                                                           VkAttachmentStoreOp storeOp,
-                                                           VkImageLayout initialLayout,
-                                                           VkImageLayout finalLayout,
-                                                           VkSampleCountFlagBits samples) {
+VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthStencil(
+    VkFormat format,
+    VkAttachmentLoadOp loadOp,
+    VkAttachmentStoreOp storeOp,
+    VkAttachmentLoadOp stencilLoadOp,
+    VkAttachmentStoreOp stencilStoreOp,
+    VkImageLayout initialLayout,
+    VkImageLayout finalLayout,
+    VkSampleCountFlagBits samples) {
   IGL_ASSERT_MSG(refDepth_.layout == VK_IMAGE_LAYOUT_UNDEFINED, "Can have only 1 depth attachment");
   IGL_ASSERT_MSG(format != VK_FORMAT_UNDEFINED, "Invalid depth attachment format");
   if (!refsColor_.empty()) {
@@ -105,23 +108,34 @@ VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepth(VkFormat format,
   }
   refDepth_ = ivkGetAttachmentReference((uint32_t)attachments_.size(),
                                         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-  attachments_.push_back(
-      ivkGetAttachmentDescription(format, loadOp, storeOp, initialLayout, finalLayout, samples));
+
+  auto desc =
+      ivkGetAttachmentDescription(format, loadOp, storeOp, initialLayout, finalLayout, samples);
+  desc.stencilLoadOp = stencilLoadOp;
+  desc.stencilStoreOp = stencilStoreOp;
+  attachments_.push_back(desc);
   return *this;
 }
 
-VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthResolve(VkFormat format,
-                                                                  VkAttachmentLoadOp loadOp,
-                                                                  VkAttachmentStoreOp storeOp,
-                                                                  VkImageLayout initialLayout,
-                                                                  VkImageLayout finalLayout) {
+VulkanRenderPassBuilder& VulkanRenderPassBuilder::addDepthStencilResolve(
+    VkFormat format,
+    VkAttachmentLoadOp loadOp,
+    VkAttachmentStoreOp storeOp,
+    VkAttachmentLoadOp stencilLoadOp,
+    VkAttachmentStoreOp stencilStoreOp,
+    VkImageLayout initialLayout,
+    VkImageLayout finalLayout) {
   IGL_ASSERT_MSG(refDepthResolve_.layout == VK_IMAGE_LAYOUT_UNDEFINED,
                  "Can have only 1 depth resolve attachment");
   IGL_ASSERT_MSG(format != VK_FORMAT_UNDEFINED, "Invalid depth resolve attachment format");
   refDepthResolve_ = ivkGetAttachmentReference((uint32_t)attachments_.size(),
                                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-  attachments_.push_back(ivkGetAttachmentDescription(
-      format, loadOp, storeOp, initialLayout, finalLayout, VK_SAMPLE_COUNT_1_BIT));
+
+  auto desc = ivkGetAttachmentDescription(
+      format, loadOp, storeOp, initialLayout, finalLayout, VK_SAMPLE_COUNT_1_BIT);
+  desc.stencilLoadOp = stencilLoadOp;
+  desc.stencilStoreOp = stencilStoreOp;
+  attachments_.push_back(desc);
   return *this;
 }
 

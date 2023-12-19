@@ -246,12 +246,14 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
     const auto initialLayout = descDepth.loadAction == igl::LoadAction::Load
                                    ? depthTexture.getVulkanTexture().getVulkanImage().imageLayout_
                                    : VK_IMAGE_LAYOUT_UNDEFINED;
-    builder.addDepth(depthTexture.getVkFormat(),
-                     loadActionToVkAttachmentLoadOp(descDepth.loadAction),
-                     storeActionToVkAttachmentStoreOp(descDepth.storeAction),
-                     initialLayout,
-                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                     depthTexture.getVulkanTexture().getVulkanImage().samples_);
+    builder.addDepthStencil(depthTexture.getVkFormat(),
+                            loadActionToVkAttachmentLoadOp(descDepth.loadAction),
+                            storeActionToVkAttachmentStoreOp(descDepth.storeAction),
+                            loadActionToVkAttachmentLoadOp(descStencil.loadAction),
+                            storeActionToVkAttachmentStoreOp(descStencil.storeAction),
+                            initialLayout,
+                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                            depthTexture.getVulkanTexture().getVulkanImage().samples_);
   }
 
   const auto& fb = static_cast<vulkan::Framebuffer&>(*framebuffer);

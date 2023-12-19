@@ -38,17 +38,21 @@ class VulkanRenderPassBuilder final {
       VkAttachmentStoreOp storeOp,
       VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
       VkImageLayout finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-  VulkanRenderPassBuilder& addDepth(
+  VulkanRenderPassBuilder& addDepthStencil(
       VkFormat format,
       VkAttachmentLoadOp loadOp,
       VkAttachmentStoreOp storeOp,
+      VkAttachmentLoadOp stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+      VkAttachmentStoreOp stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
       VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
       VkImageLayout finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
       VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT);
-  VulkanRenderPassBuilder& addDepthResolve(
+  VulkanRenderPassBuilder& addDepthStencilResolve(
       VkFormat format,
       VkAttachmentLoadOp loadOp,
       VkAttachmentStoreOp storeOp,
+      VkAttachmentLoadOp stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+      VkAttachmentStoreOp stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
       VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
       VkImageLayout finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
   VulkanRenderPassBuilder& setMultiviewMasks(const uint32_t viewMask,
