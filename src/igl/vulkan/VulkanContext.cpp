@@ -1575,8 +1575,7 @@ void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
 
   VkDescriptorSet dsetBufUniform = pimpl_->arenaBuffersUniform_->getNextDescriptorSet(*immediate_);
 
-  for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
-    VkDescriptorBufferInfo& bi = data.buffers[i];
+  for (VkDescriptorBufferInfo& bi : data.buffers) {
     if (bi.buffer == VK_NULL_HANDLE) {
       bi = {dummyUniformBuffer_->getVkBuffer(), 0, VK_WHOLE_SIZE};
     }

@@ -21,7 +21,7 @@ VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const VulkanFunctionTable& 
                                                      const VkDescriptorSetLayoutBinding* bindings,
                                                      const VkDescriptorBindingFlags* bindingFlags,
                                                      const char* debugName) :
-  vf_(vf), device_(device) {
+  vf_(vf), device_(device), numBindings_(numBindings) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   VK_ASSERT(ivkCreateDescriptorSetLayout(

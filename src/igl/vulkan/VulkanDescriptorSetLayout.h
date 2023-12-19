@@ -44,6 +44,7 @@ class VulkanDescriptorSetLayout final {
   const VulkanFunctionTable& vf_;
   VkDevice device_ = VK_NULL_HANDLE;
   VkDescriptorSetLayout vkDescriptorSetLayout_ = VK_NULL_HANDLE;
+  uint32_t numBindings_ = 0;
 };
 
 } // namespace vulkan
