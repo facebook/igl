@@ -10,13 +10,14 @@
 #include <igl/Common.h>
 #include <igl/ComputePipelineState.h>
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/PipelineState.h>
 
 namespace igl {
 namespace vulkan {
 
 class Device;
 
-class ComputePipelineState final : public IComputePipelineState {
+class ComputePipelineState final : public IComputePipelineState, public vulkan::PipelineState {
  public:
   // Ignore modernize-pass-by-value
   // @lint-ignore CLANGTIDY
