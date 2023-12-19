@@ -88,7 +88,10 @@ void DepthStencilState::bind() {
   }
   getContext().depthFunc(convertCompareFunction(desc_.compareFunction));
 
-  if (getContext().isEnabled(GL_STENCIL_TEST)) {
+  if (desc_.frontFaceStencil != igl::StencilStateDesc() ||
+      desc_.backFaceStencil != igl::StencilStateDesc()) {
+    getContext().enable(GL_STENCIL_TEST);
+
     GLuint mask{0xff};
     GLenum frontCompareFunc = convertCompareFunction(desc_.frontFaceStencil.stencilCompareFunction);
     GLenum backCompareFunc = convertCompareFunction(desc_.backFaceStencil.stencilCompareFunction);
@@ -109,6 +112,8 @@ void DepthStencilState::bind() {
 
     getContext().stencilMaskSeparate(GL_BACK, desc_.backFaceStencil.writeMask);
     getContext().stencilMaskSeparate(GL_FRONT, desc_.frontFaceStencil.writeMask);
+  } else {
+    getContext().disable(GL_STENCIL_TEST);
   }
 }
 
