@@ -102,6 +102,11 @@ VulkanPipelineBuilder& VulkanPipelineBuilder::stencilStateOps(VkStencilFaceFlags
                                                               VkStencilOp passOp,
                                                               VkStencilOp depthFailOp,
                                                               VkCompareOp compareOp) {
+  depthStencilState_.stencilTestEnable =
+      static_cast<VkBool32>(static_cast<bool>(depthStencilState_.stencilTestEnable) ||
+                            failOp != VK_STENCIL_OP_KEEP || passOp != VK_STENCIL_OP_KEEP ||
+                            depthFailOp != VK_STENCIL_OP_KEEP || compareOp != VK_COMPARE_OP_ALWAYS);
+
   if (faceMask & VK_STENCIL_FACE_FRONT_BIT) {
     VkStencilOpState& front = depthStencilState_.front;
     front.failOp = failOp;
