@@ -406,4 +406,11 @@ FramebufferMode Framebuffer::getMode() const {
   return desc_.mode;
 }
 
+bool Framebuffer::isSwapchainBound() const {
+  if (auto tex = getColorAttachment(0)) {
+    return tex->isSwapchainTexture();
+  }
+  return false;
+}
+
 } // namespace igl::vulkan

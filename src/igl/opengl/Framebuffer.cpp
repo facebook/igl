@@ -150,6 +150,10 @@ FramebufferBindingGuard::~FramebufferBindingGuard() {
 
 Framebuffer::Framebuffer(IContext& context) : WithContext(context) {}
 
+bool Framebuffer::isSwapchainBound() const {
+  return frameBufferID_ == 0;
+}
+
 void Framebuffer::attachAsColor(igl::ITexture& texture,
                                 uint32_t index,
                                 const Texture::AttachmentParams& params) const {

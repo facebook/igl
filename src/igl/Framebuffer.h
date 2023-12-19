@@ -69,6 +69,8 @@ class IFramebuffer : public ITrackedResource<IFramebuffer> {
   virtual std::shared_ptr<ITexture> getStencilAttachment() const = 0;
   /** @brief Retrieve the mode that this framebuffer was created in. */
   [[nodiscard]] virtual FramebufferMode getMode() const = 0;
+  /** @brief Retrieve the flag checking if framebuffer is bound to swapchain. */
+  [[nodiscard]] virtual bool isSwapchainBound() const = 0;
 
   // Methods
   /** @brief Copy color data from the color attachment at the specified index into 'pixelBytes'.

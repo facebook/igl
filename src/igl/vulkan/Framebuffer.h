@@ -34,6 +34,7 @@ class Framebuffer final : public IFramebuffer {
   std::shared_ptr<ITexture> getResolveDepthAttachment() const override;
   std::shared_ptr<ITexture> getStencilAttachment() const override;
   [[nodiscard]] FramebufferMode getMode() const override;
+  [[nodiscard]] bool isSwapchainBound() const override;
 
   /// @brief Copies color attachment to location pointed by `pixelBytes`. This function only
   /// supports copying one face, one layer, and one mip level at a time. This function is

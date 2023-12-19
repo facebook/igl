@@ -71,6 +71,8 @@ class Framebuffer : public WithContext, public IFramebuffer {
     return resolveFramebuffer;
   }
 
+  [[nodiscard]] bool isSwapchainBound() const override;
+
  protected:
   void attachAsColor(igl::ITexture& texture,
                      uint32_t index,

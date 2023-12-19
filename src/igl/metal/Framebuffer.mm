@@ -59,6 +59,13 @@ std::shared_ptr<ITexture> Framebuffer::getStencilAttachment() const {
   return value_.stencilAttachment.texture;
 }
 
+bool Framebuffer::isSwapchainBound() const {
+  if (auto tex = getColorAttachment(0)) {
+    return tex->isSwapchainTexture();
+  }
+  return false;
+}
+
 void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
                                            size_t index,
                                            void* pixelBytes,

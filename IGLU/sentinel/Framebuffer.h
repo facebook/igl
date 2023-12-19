@@ -28,6 +28,7 @@ class Framebuffer : public igl::IFramebuffer {
   [[nodiscard]] std::shared_ptr<igl::ITexture> getResolveDepthAttachment() const final;
   [[nodiscard]] std::shared_ptr<igl::ITexture> getStencilAttachment() const final;
   [[nodiscard]] igl::FramebufferMode getMode() const final;
+  [[nodiscard]] bool isSwapchainBound() const final;
   void copyBytesColorAttachment(igl::ICommandQueue& cmdQueue,
                                 size_t index,
                                 void* pixelBytes,

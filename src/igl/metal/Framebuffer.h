@@ -31,6 +31,7 @@ class Framebuffer : public IFramebuffer {
   std::shared_ptr<ITexture> getResolveDepthAttachment() const override;
   std::shared_ptr<ITexture> getStencilAttachment() const override;
   [[nodiscard]] FramebufferMode getMode() const override;
+  [[nodiscard]] bool isSwapchainBound() const override;
 
   // Methods
   void copyBytesColorAttachment(ICommandQueue& cmdQueue,

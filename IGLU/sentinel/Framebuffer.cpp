@@ -48,6 +48,11 @@ igl::FramebufferMode Framebuffer::getMode() const {
   return igl::FramebufferMode::Mono;
 }
 
+bool Framebuffer::isSwapchainBound() const {
+  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
+  return false;
+}
+
 void Framebuffer::copyBytesColorAttachment(igl::ICommandQueue& /*cmdQueue*/,
                                            size_t /*index*/,
                                            void* /*pixelBytes*/,
