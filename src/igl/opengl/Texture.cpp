@@ -52,6 +52,10 @@ uint64_t Texture::getTextureId() const {
   return 0;
 }
 
+bool Texture::isSwapchainTexture() const {
+  return isImplicitStorage();
+}
+
 Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
   Result result;
   if (desc.numLayers > 1 && desc.type != TextureType::TwoDArray) {

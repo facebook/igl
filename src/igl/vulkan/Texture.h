@@ -53,6 +53,7 @@ class Texture final : public ITexture {
   void generateMipmap(ICommandBuffer& cmdBuffer) const override;
   bool isRequiredGenerateMipmap() const override;
   uint64_t getTextureId() const override;
+  bool isSwapchainTexture() const override;
   VkFormat getVkFormat() const;
 
   VkImageView getVkImageView() const;
@@ -68,8 +69,6 @@ class Texture final : public ITexture {
     IGL_ASSERT(texture_);
     return *texture_.get();
   }
-
-  bool isSwapchainTexture() const;
 
   uint32_t getNumVkLayers() const;
 

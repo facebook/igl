@@ -33,6 +33,7 @@ class Texture : public WithContext, public ITexture {
   uint32_t getNumMipLevels() const override;
   bool isRequiredGenerateMipmap() const override;
   uint64_t getTextureId() const override;
+  [[nodiscard]] bool isSwapchainTexture() const override;
 
   virtual Result create(const TextureDesc& desc, bool hasStorageAlready);
 

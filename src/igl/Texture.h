@@ -844,6 +844,15 @@ class ITexture : public ITrackedResource<ITexture> {
   }
 
   /**
+   * @brief Returns a flag checking if this texture belongs to swapchain.
+   *
+   * @return Boolean.
+   */
+  [[nodiscard]] virtual bool isSwapchainTexture() const {
+    return false;
+  }
+
+  /**
    * @brief Helper method to repack texture data to achieve a desired alignment.
    *
    * Copies data from originalData to repackedData, one row of data at a time. Each row of data will
