@@ -44,18 +44,18 @@ int RenderPipelineState::getIndexByName(const std::string& name, ShaderStage sta
   return reflection_->getIndexByName(name, stage);
 }
 
-MTLColorWriteMask RenderPipelineState::convertColorWriteMask(ColorWriteBits value) {
+MTLColorWriteMask RenderPipelineState::convertColorWriteMask(ColorWriteMask value) {
   MTLColorWriteMask result = MTLColorWriteMaskNone;
-  if (value & EnumToValue(ColorWriteMask::Red)) {
+  if (value & ColorWriteBitsRed) {
     result |= MTLColorWriteMaskRed;
   }
-  if (value & EnumToValue(ColorWriteMask::Green)) {
+  if (value & ColorWriteBitsGreen) {
     result |= MTLColorWriteMaskGreen;
   }
-  if (value & EnumToValue(ColorWriteMask::Blue)) {
+  if (value & ColorWriteBitsBlue) {
     result |= MTLColorWriteMaskBlue;
   }
-  if (value & EnumToValue(ColorWriteMask::Alpha)) {
+  if (value & ColorWriteBitsAlpha) {
     result |= MTLColorWriteMaskAlpha;
   }
   return result;

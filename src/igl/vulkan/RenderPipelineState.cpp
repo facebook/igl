@@ -242,6 +242,23 @@ VkBlendFactor blendFactorToVkBlendFactor(igl::BlendFactor value) {
   }
 }
 
+VkColorComponentFlags colorWriteMaskToVkColorComponentFlags(igl::ColorWriteMask value) {
+  VkColorComponentFlags result = 0;
+  if (value & igl::ColorWriteBitsRed) {
+    result |= VK_COLOR_COMPONENT_R_BIT;
+  }
+  if (value & igl::ColorWriteBitsGreen) {
+    result |= VK_COLOR_COMPONENT_G_BIT;
+  }
+  if (value & igl::ColorWriteBitsBlue) {
+    result |= VK_COLOR_COMPONENT_B_BIT;
+  }
+  if (value & igl::ColorWriteBitsAlpha) {
+    result |= VK_COLOR_COMPONENT_A_BIT;
+  }
+  return result;
+}
+
 } // namespace
 
 namespace igl {
@@ -347,7 +364,8 @@ VkPipeline RenderPipelineState::getVkPipeline(
       desc_.targetDesc.colorAttachments.end(),
       [&colorBlendAttachmentStates, dualSrcBlendSupported](auto attachment) mutable {
         if (attachment.textureFormat != TextureFormat::Invalid) {
-          if (!attachment.blendEnabled) {
+          // In Vulkan color write bits are part of blending.
+          if (!attachment.blendEnabled && attachment.colorWriteMask == igl::ColorWriteBitsAll) {
             colorBlendAttachmentStates.push_back(
                 ivkGetPipelineColorBlendAttachmentState_NoBlending());
           } else {
@@ -357,15 +375,14 @@ VkPipeline RenderPipelineState::getVkPipeline(
             checkDualSrcBlendFactor(attachment.dstAlphaBlendFactor, dualSrcBlendSupported);
 
             colorBlendAttachmentStates.push_back(ivkGetPipelineColorBlendAttachmentState(
-                attachment.blendEnabled,
+                true,
                 blendFactorToVkBlendFactor(attachment.srcRGBBlendFactor),
                 blendFactorToVkBlendFactor(attachment.dstRGBBlendFactor),
                 blendOpToVkBlendOp(attachment.rgbBlendOp),
                 blendFactorToVkBlendFactor(attachment.srcAlphaBlendFactor),
                 blendFactorToVkBlendFactor(attachment.dstAlphaBlendFactor),
                 blendOpToVkBlendOp(attachment.alphaBlendOp),
-                VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
-                    VK_COLOR_COMPONENT_A_BIT));
+                colorWriteMaskToVkColorComponentFlags(attachment.colorWriteMask)));
           }
         }
       });

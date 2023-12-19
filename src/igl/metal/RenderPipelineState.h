@@ -43,7 +43,7 @@ class RenderPipelineState final : public IRenderPipelineState {
   PolygonFillMode getPolygonFillMode() const {
     return desc_.polygonFillMode;
   }
-  static MTLColorWriteMask convertColorWriteMask(ColorWriteBits value);
+  static MTLColorWriteMask convertColorWriteMask(ColorWriteMask value);
 
  private:
   RenderPipelineDesc desc_;

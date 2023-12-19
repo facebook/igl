@@ -190,11 +190,11 @@ Result RenderPipelineState::create(const RenderPipelineDesc& desc) {
   }
 
   if (!mFramebufferDesc.colorAttachments.empty()) {
-    ColorWriteBits colorWriteBits = mFramebufferDesc.colorAttachments[0].colorWriteBits;
-    colorMask_[0] = (colorWriteBits & EnumToValue(ColorWriteMask::Red)) != 0;
-    colorMask_[1] = (colorWriteBits & EnumToValue(ColorWriteMask::Green)) != 0;
-    colorMask_[2] = (colorWriteBits & EnumToValue(ColorWriteMask::Blue)) != 0;
-    colorMask_[3] = (colorWriteBits & EnumToValue(ColorWriteMask::Alpha)) != 0;
+    ColorWriteMask const colorWriteMask = mFramebufferDesc.colorAttachments[0].colorWriteMask;
+    colorMask_[0] = static_cast<GLboolean>((colorWriteMask & ColorWriteBitsRed) != 0);
+    colorMask_[1] = static_cast<GLboolean>((colorWriteMask & ColorWriteBitsGreen) != 0);
+    colorMask_[2] = static_cast<GLboolean>((colorWriteMask & ColorWriteBitsBlue) != 0);
+    colorMask_[3] = static_cast<GLboolean>((colorWriteMask & ColorWriteBitsAlpha) != 0);
   }
 
   if (!mFramebufferDesc.colorAttachments.empty() &&

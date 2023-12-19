@@ -22,7 +22,7 @@ bool RenderPipelineDesc::TargetDesc::ColorAttachment::operator!=(
 
 bool RenderPipelineDesc::TargetDesc::ColorAttachment::operator==(
     const ColorAttachment& other) const {
-  return (textureFormat == other.textureFormat && colorWriteBits == other.colorWriteBits &&
+  return (textureFormat == other.textureFormat && colorWriteMask == other.colorWriteMask &&
           blendEnabled == other.blendEnabled && rgbBlendOp == other.rgbBlendOp &&
           alphaBlendOp == other.alphaBlendOp && srcRGBBlendFactor == other.srcRGBBlendFactor &&
           srcAlphaBlendFactor == other.srcAlphaBlendFactor &&
@@ -138,7 +138,7 @@ size_t std::hash<RenderPipelineDesc::TargetDesc>::operator()(
 size_t std::hash<RenderPipelineDesc::TargetDesc::ColorAttachment>::operator()(
     RenderPipelineDesc::TargetDesc::ColorAttachment const& key) const {
   size_t hash = std::hash<int>()(EnumToValue(key.textureFormat));
-  hash ^= std::hash<uint8_t>()(key.colorWriteBits);
+  hash ^= std::hash<uint8_t>()(key.colorWriteMask);
   hash ^= std::hash<bool>()(key.blendEnabled);
   hash ^= std::hash<int>()(EnumToValue(key.rgbBlendOp));
   hash ^= std::hash<int>()(EnumToValue(key.alphaBlendOp));

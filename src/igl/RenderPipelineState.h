@@ -97,14 +97,15 @@ enum class BlendFactor : uint8_t {
  * value. The values red, green, blue, and alpha select one color channel each, and they can be
  * bitwise combined.
  */
-using ColorWriteBits = uint8_t;
-enum class ColorWriteMask : ColorWriteBits {
-  Disabled = 0,
-  Red = 1 << 0,
-  Green = 1 << 1,
-  Blue = 1 << 2,
-  Alpha = 1 << 3,
-  All = Red | Green | Blue | Alpha,
+using ColorWriteMask = uint8_t;
+enum ColorWriteBits : uint8_t {
+  ColorWriteBitsDisabled = 0,
+  ColorWriteBitsRed = 1 << 0,
+  ColorWriteBitsGreen = 1 << 1,
+  ColorWriteBitsBlue = 1 << 2,
+  ColorWriteBitsAlpha = 1 << 3,
+  ColorWriteBitsAll =
+      ColorWriteBitsRed | ColorWriteBitsGreen | ColorWriteBitsBlue | ColorWriteBitsAlpha,
 };
 
 /*
@@ -130,7 +131,7 @@ struct RenderPipelineDesc {
       /*
        * @brief Identify which color channels are blended.
        */
-      ColorWriteBits colorWriteBits = EnumToValue(ColorWriteMask::All);
+      ColorWriteMask colorWriteMask = ColorWriteBitsAll;
       bool blendEnabled = false;
       /*
        * @brief Assign the blend operations for RGB and alpha pixel data.

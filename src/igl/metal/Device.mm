@@ -414,7 +414,7 @@ std::shared_ptr<igl::IRenderPipelineState> Device::createRenderPipeline(
     auto& src = desc.targetDesc.colorAttachments[i];
     MTLRenderPipelineColorAttachmentDescriptor* dst = metalDesc.colorAttachments[i];
     dst.pixelFormat = Texture::textureFormatToMTLPixelFormat(src.textureFormat);
-    dst.writeMask = RenderPipelineState::convertColorWriteMask(src.colorWriteBits);
+    dst.writeMask = RenderPipelineState::convertColorWriteMask(src.colorWriteMask);
     dst.blendingEnabled = src.blendEnabled;
     dst.rgbBlendOperation = MTLBlendOperation(src.rgbBlendOp);
     dst.alphaBlendOperation = MTLBlendOperation(src.alphaBlendOp);
