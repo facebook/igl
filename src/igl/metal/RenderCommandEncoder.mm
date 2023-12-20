@@ -367,7 +367,7 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
   MTLIndexType indexType = convertIndexType(indexFormat);
 
 #if IGL_PLATFORM_IOS
-  if (@available(iOS 9, *)) {
+  if (@available(iOS 16, *)) {
 #endif // IGL_PLATFORM_IOS
     [encoder_ drawIndexedPrimitives:metalPrimitive
                          indexCount:indexCount
@@ -383,8 +383,7 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
                          indexCount:indexCount
                           indexType:indexType
                         indexBuffer:buffer.get()
-                  indexBufferOffset:indexBufferOffset
-                      instanceCount:instanceCount];
+                  indexBufferOffset:indexBufferOffset];
   }
 #endif // IGL_PLATFORM_IOS
 }
