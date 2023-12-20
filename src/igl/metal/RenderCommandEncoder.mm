@@ -366,14 +366,27 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
   MTLPrimitiveType metalPrimitive = convertPrimitiveType(primitiveType);
   MTLIndexType indexType = convertIndexType(indexFormat);
 
-  [encoder_ drawIndexedPrimitives:metalPrimitive
-                       indexCount:indexCount
-                        indexType:indexType
-                      indexBuffer:buffer.get()
-                indexBufferOffset:indexBufferOffset
-                    instanceCount:instanceCount
-                       baseVertex:baseVertex
-                     baseInstance:baseInstance];
+#if IGL_PLATFORM_IOS
+  if (@available(iOS 9, *)) {
+#endif // IGL_PLATFORM_IOS
+    [encoder_ drawIndexedPrimitives:metalPrimitive
+                         indexCount:indexCount
+                          indexType:indexType
+                        indexBuffer:buffer.get()
+                  indexBufferOffset:indexBufferOffset
+                      instanceCount:instanceCount
+                         baseVertex:baseVertex
+                       baseInstance:baseInstance];
+#if IGL_PLATFORM_IOS
+  } else {
+    [encoder_ drawIndexedPrimitives:metalPrimitive
+                         indexCount:indexCount
+                          indexType:indexType
+                        indexBuffer:buffer.get()
+                  indexBufferOffset:indexBufferOffset
+                      instanceCount:instanceCount];
+  }
+#endif // IGL_PLATFORM_IOS
 }
 
 void RenderCommandEncoder::drawIndexedIndirect(PrimitiveType primitiveType,
