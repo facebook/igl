@@ -223,7 +223,7 @@ class DescriptorPoolsArena final {
         bindingFlags.data(),
         IGL_FORMAT("Descriptor Set Layout: {}", debugName).c_str());
     dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName);
-    switchToNewDescriptorPool(ic);
+    switchToNewDescriptorPool(ic, {});
   }
   ~DescriptorPoolsArena() {
     // arenas are destroyed by VulkanContext after the GPU has been synchronized, so we do not have
@@ -236,7 +236,9 @@ class DescriptorPoolsArena final {
   [[nodiscard]] VkDescriptorSetLayout getVkDescriptorSetLayout() const {
     return dsl_->getVkDescriptorSetLayout();
   }
-  [[nodiscard]] VkDescriptorSet getNextDescriptorSet(VulkanImmediateCommands& ic) {
+  [[nodiscard]] VkDescriptorSet getNextDescriptorSet(
+      VulkanImmediateCommands& ic,
+      VulkanImmediateCommands::SubmitHandle lastSubmitHandle) {
     VkDescriptorSet dset = VK_NULL_HANDLE;
     const VkResult result =
         ivkAllocateDescriptorSet(&vf_, device_, pool_, dsl_->getVkDescriptorSetLayout(), &dset);
@@ -246,7 +248,7 @@ class DescriptorPoolsArena final {
     // P.S. This is guaranteed only on Vulkan 1.1. If we want Vulkan 1.0, we have to track
     // allocations ourselves.
     if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
-      switchToNewDescriptorPool(ic);
+      switchToNewDescriptorPool(ic, lastSubmitHandle);
       VK_ASSERT(
           ivkAllocateDescriptorSet(&vf_, device_, pool_, dsl_->getVkDescriptorSetLayout(), &dset));
     } else {
@@ -255,14 +257,12 @@ class DescriptorPoolsArena final {
     // @fb-only
     return dset;
   }
-  void markSubmitted(VulkanImmediateCommands::SubmitHandle handle) {
-    lastSubmitHandle_ = handle;
-  }
 
  private:
-  void switchToNewDescriptorPool(VulkanImmediateCommands& ic) {
+  void switchToNewDescriptorPool(VulkanImmediateCommands& ic,
+                                 VulkanImmediateCommands::SubmitHandle lastSubmitHandle) {
     if (pool_ != VK_NULL_HANDLE) {
-      extinct_.push_back({pool_, lastSubmitHandle_});
+      extinct_.push_back({pool_, lastSubmitHandle});
     }
     // first, let's try to reuse the oldest extinct pool
     if (extinct_.size() > 1) {
@@ -274,8 +274,8 @@ class DescriptorPoolsArena final {
         return;
       }
     }
-    const VkDescriptorPoolSize poolSize =
-        VkDescriptorPoolSize{type_, kNumDSetsPerPool_ * numDescriptorsPerDSet_};
+    const VkDescriptorPoolSize poolSize = VkDescriptorPoolSize{
+        type_, numDescriptorsPerDSet_ ? kNumDSetsPerPool_ * numDescriptorsPerDSet_ : 1u};
     VK_ASSERT(ivkCreateDescriptorPool(
         &vf_, device_, VkDescriptorPoolCreateFlags{}, kNumDSetsPerPool_, 1, &poolSize, &pool_));
     VK_ASSERT(ivkSetDebugObjectName(
@@ -293,8 +293,6 @@ class DescriptorPoolsArena final {
   std::string dpDebugName_;
 
   std::unique_ptr<VulkanDescriptorSetLayout> dsl_;
-
-  VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
 
   struct ExtinctDescriptorPool {
     VkDescriptorPool pool_ = VK_NULL_HANDLE;
@@ -314,8 +312,7 @@ struct VulkanContextImpl final {
   std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBindless_; // everything
   VkDescriptorPool dpBindless_ = VK_NULL_HANDLE;
   VkDescriptorSet dsBindless_ = VK_NULL_HANDLE;
-  // a handle of the last submit the descriptor set was a part of
-  VulkanImmediateCommands::SubmitHandle handleBindless_ = {};
+  VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
   uint32_t currentMaxBindlessTextures_ = 8;
   uint32_t currentMaxBindlessSamplers_ = 8;
 };
@@ -1303,7 +1300,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
 #if IGL_VULKAN_PRINT_COMMANDS
     IGL_LOG_INFO("Updating descriptor set dsBindless_\n");
 #endif // IGL_VULKAN_PRINT_COMMANDS
-    immediate_->wait(std::exchange(pimpl_->handleBindless_, immediate_->getLastSubmitHandle()));
+    immediate_->wait(std::exchange(pimpl_->lastSubmitHandle_, immediate_->getLastSubmitHandle()));
     vf_.vkUpdateDescriptorSets(
         device_->getVkDevice(), static_cast<uint32_t>(write.size()), write.data(), 0, nullptr);
   }
@@ -1519,7 +1516,8 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
                                            const BindingsTextures& data) const {
   IGL_PROFILER_FUNCTION();
 
-  VkDescriptorSet dset = pimpl_->arenaCombinedImageSamplers_->getNextDescriptorSet(*immediate_);
+  VkDescriptorSet dset = pimpl_->arenaCombinedImageSamplers_->getNextDescriptorSet(
+      *immediate_, pimpl_->lastSubmitHandle_);
 
   std::array<VkDescriptorImageInfo, IGL_TEXTURE_SAMPLERS_MAX> infoSampledImages{};
   uint32_t numImages = 0;
@@ -1573,7 +1571,8 @@ void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
                                                  BindingsBuffers& data) const {
   IGL_PROFILER_FUNCTION();
 
-  VkDescriptorSet dsetBufUniform = pimpl_->arenaBuffersUniform_->getNextDescriptorSet(*immediate_);
+  VkDescriptorSet dsetBufUniform =
+      pimpl_->arenaBuffersUniform_->getNextDescriptorSet(*immediate_, pimpl_->lastSubmitHandle_);
 
   for (VkDescriptorBufferInfo& bi : data.buffers) {
     if (bi.buffer == VK_NULL_HANDLE) {
@@ -1613,10 +1612,10 @@ void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
                                                  BindingsBuffers& data) const {
   IGL_PROFILER_FUNCTION();
 
-  VkDescriptorSet dsetBufStorage = pimpl_->arenaBuffersStorage_->getNextDescriptorSet(*immediate_);
+  VkDescriptorSet dsetBufStorage =
+      pimpl_->arenaBuffersStorage_->getNextDescriptorSet(*immediate_, pimpl_->lastSubmitHandle_);
 
-  for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
-    VkDescriptorBufferInfo& bi = data.buffers[i];
+  for (VkDescriptorBufferInfo& bi : data.buffers) {
     if (bi.buffer == VK_NULL_HANDLE) {
       bi = {dummyStorageBuffer_->getVkBuffer(), 0, VK_WHOLE_SIZE};
     }
@@ -1650,12 +1649,7 @@ void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
 }
 
 void VulkanContext::markSubmitted(const VulkanImmediateCommands::SubmitHandle& handle) const {
-  if (config_.enableDescriptorIndexing) {
-    pimpl_->handleBindless_ = handle;
-  }
-  pimpl_->arenaCombinedImageSamplers_->markSubmitted(handle);
-  pimpl_->arenaBuffersUniform_->markSubmitted(handle);
-  pimpl_->arenaBuffersStorage_->markSubmitted(handle);
+  pimpl_->lastSubmitHandle_ = handle;
 }
 
 void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) const {
