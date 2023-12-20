@@ -2340,7 +2340,7 @@ void lvk::CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, co
 
   if (fb.depthStencil.texture) {
     auto& depthTexture = *ctx_->texturesPool_.get(fb.depthStencil.texture);
-    const auto& descDepth = renderPass.depth;
+    const RenderPass::AttachmentDesc& descDepth = renderPass.depth;
     LVK_ASSERT_MSG(descDepth.level == mipLevel, "Depth attachment should have the same mip-level as color attachments");
     depthAttachment = {
         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
