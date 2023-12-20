@@ -198,13 +198,27 @@ namespace vulkan {
 // @fb-only
 class DescriptorPoolsArena final {
  public:
-  DescriptorPoolsArena(const VulkanFunctionTable& vf,
-                       VulkanImmediateCommands& ic,
-                       VkDevice device,
+  DescriptorPoolsArena(const VulkanContext& ctx,
+                       VkDescriptorType type,
+                       const VulkanDescriptorSetLayout& dsl,
+                       const char* debugName) :
+    vf_(ctx.vf_),
+    device_(ctx.getVkDevice()),
+    type_(type),
+    numDescriptorsPerDSet_(dsl.numBindings_),
+    dsl_(dsl.getVkDescriptorSetLayout()) {
+    IGL_ASSERT(debugName);
+    dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
+    switchToNewDescriptorPool(*ctx.immediate_, {});
+  }
+  DescriptorPoolsArena(const VulkanContext& ctx,
                        VkDescriptorType type,
                        uint32_t numDescriptorsPerDSet,
                        const char* debugName) :
-    vf_(vf), device_(device), type_(type), numDescriptorsPerDSet_(numDescriptorsPerDSet) {
+    vf_(ctx.vf_),
+    device_(ctx.getVkDevice()),
+    type_(type),
+    numDescriptorsPerDSet_(numDescriptorsPerDSet) {
     IGL_ASSERT(debugName);
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     std::vector<VkDescriptorBindingFlags> bindingFlags;
@@ -214,16 +228,17 @@ class DescriptorPoolsArena final {
       bindings.emplace_back(ivkGetDescriptorSetLayoutBinding(i, type, 1));
       bindingFlags.emplace_back(VkDescriptorBindingFlags{});
     }
-    dsl_ = std::make_unique<VulkanDescriptorSetLayout>(
+    dslOwnership_ = std::make_unique<VulkanDescriptorSetLayout>(
         vf_,
-        device,
+        device_,
         VkDescriptorSetLayoutCreateFlags{},
         numDescriptorsPerDSet,
         bindings.data(),
         bindingFlags.data(),
         IGL_FORMAT("Descriptor Set Layout: {}", debugName).c_str());
+    dsl_ = dslOwnership_->getVkDescriptorSetLayout();
     dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName);
-    switchToNewDescriptorPool(ic, {});
+    switchToNewDescriptorPool(*ctx.immediate_, {});
   }
   ~DescriptorPoolsArena() {
     // arenas are destroyed by VulkanContext after the GPU has been synchronized, so we do not have
@@ -234,14 +249,13 @@ class DescriptorPoolsArena final {
     }
   }
   [[nodiscard]] VkDescriptorSetLayout getVkDescriptorSetLayout() const {
-    return dsl_->getVkDescriptorSetLayout();
+    return dsl_;
   }
   [[nodiscard]] VkDescriptorSet getNextDescriptorSet(
       VulkanImmediateCommands& ic,
       VulkanImmediateCommands::SubmitHandle lastSubmitHandle) {
     VkDescriptorSet dset = VK_NULL_HANDLE;
-    const VkResult result =
-        ivkAllocateDescriptorSet(&vf_, device_, pool_, dsl_->getVkDescriptorSetLayout(), &dset);
+    const VkResult result = ivkAllocateDescriptorSet(&vf_, device_, pool_, dsl_, &dset);
     // If the allocation fails due to no more space in the descriptor pool, and not because of
     // system or device memory exhaustion, then VK_ERROR_OUT_OF_POOL_MEMORY must be returned.
     // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkAllocateDescriptorSets.html
@@ -249,8 +263,7 @@ class DescriptorPoolsArena final {
     // allocations ourselves.
     if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
       switchToNewDescriptorPool(ic, lastSubmitHandle);
-      VK_ASSERT(
-          ivkAllocateDescriptorSet(&vf_, device_, pool_, dsl_->getVkDescriptorSetLayout(), &dset));
+      VK_ASSERT(ivkAllocateDescriptorSet(&vf_, device_, pool_, dsl_, &dset));
     } else {
       VK_ASSERT(result);
     }
@@ -292,7 +305,10 @@ class DescriptorPoolsArena final {
   const uint32_t numDescriptorsPerDSet_ = 0;
   std::string dpDebugName_;
 
-  std::unique_ptr<VulkanDescriptorSetLayout> dsl_;
+  // TODO: this can be removed once we migrate to a new descriptor set management scheme
+  std::unique_ptr<VulkanDescriptorSetLayout> dslOwnership_;
+
+  VkDescriptorSetLayout dsl_ = VK_NULL_HANDLE; // owned elsewhere
 
   struct ExtinctDescriptorPool {
     VkDescriptorPool pool_ = VK_NULL_HANDLE;
@@ -794,27 +810,21 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   // create descriptor set layout and descriptor pool for combined image samplers
   pimpl_->arenaCombinedImageSamplers_ =
-      std::make_unique<DescriptorPoolsArena>(vf_,
-                                             *immediate_,
-                                             device,
+      std::make_unique<DescriptorPoolsArena>(*this,
                                              VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                              IGL_TEXTURE_SAMPLERS_MAX,
                                              "arenaCombinedImageSamplers_");
 
   // create descriptor set layout and descriptor pool for uniform buffers
   pimpl_->arenaBuffersUniform_ =
-      std::make_unique<DescriptorPoolsArena>(vf_,
-                                             *immediate_,
-                                             device,
+      std::make_unique<DescriptorPoolsArena>(*this,
                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                              IGL_UNIFORM_BLOCKS_BINDING_MAX,
                                              "arenaBuffersUniform_");
 
   // create descriptor set layout and descriptor pool for storage buffers
   pimpl_->arenaBuffersStorage_ =
-      std::make_unique<DescriptorPoolsArena>(vf_,
-                                             *immediate_,
-                                             device,
+      std::make_unique<DescriptorPoolsArena>(*this,
                                              VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                              IGL_UNIFORM_BLOCKS_BINDING_MAX,
                                              "arenaBuffersStorage_");
