@@ -11,6 +11,7 @@
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/ResourcesBinder.h>
+#include <igl/vulkan/util/SpvReflection.h>
 
 namespace igl {
 
@@ -21,6 +22,7 @@ class ITexture;
 
 namespace vulkan {
 
+class ComputePipelineState;
 class VulkanImage;
 
 /// @brief Implements the igl::IComputeCommandEncoder interface for Vulkan
@@ -76,6 +78,8 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   igl::vulkan::ResourcesBinder binder_;
 
   std::vector<const igl::vulkan::VulkanImage*> restoreLayout_;
+
+  const igl::vulkan::ComputePipelineState* cps_ = nullptr;
 };
 
 } // namespace vulkan
