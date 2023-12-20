@@ -18,13 +18,8 @@ namespace igl {
 namespace vulkan {
 
 ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
-                                           // Ignore modernize-pass-by-value
-                                           // @lint-ignore CLANGTIDY
-                                           const ComputePipelineDesc& desc) :
-  device_(device),
-  // Ignore modernize-pass-by-value
-  // @lint-ignore CLANGTIDY
-  desc_(desc) {
+                                           ComputePipelineDesc desc) :
+  device_(device), desc_(std::move(desc)) {
   vkPipelineLayout_ = device_.getVulkanContext().pipelineLayoutCompute_->getVkPipelineLayout();
 }
 

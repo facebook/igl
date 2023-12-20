@@ -19,9 +19,7 @@ class Device;
 
 class ComputePipelineState final : public IComputePipelineState, public vulkan::PipelineState {
  public:
-  // Ignore modernize-pass-by-value
-  // @lint-ignore CLANGTIDY
-  ComputePipelineState(const igl::vulkan::Device& device, const ComputePipelineDesc& desc);
+  ComputePipelineState(const igl::vulkan::Device& device, ComputePipelineDesc desc);
   ~ComputePipelineState() override;
   std::shared_ptr<IComputePipelineReflection> computePipelineReflection() override {
     return nullptr;
