@@ -868,7 +868,7 @@ VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,
   const VkSubmitInfo si = {
       .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
       .waitSemaphoreCount = numWaitSemaphores,
-      .pWaitSemaphores = waitSemaphores,
+      .pWaitSemaphores = numWaitSemaphores ? waitSemaphores : NULL,
       .pWaitDstStageMask = waitStageMasks,
       .commandBufferCount = 1,
       .pCommandBuffers = buffer,
