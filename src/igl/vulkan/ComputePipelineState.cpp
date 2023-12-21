@@ -19,7 +19,9 @@ namespace vulkan {
 
 ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
                                            ComputePipelineDesc desc) :
-  device_(device), desc_(std::move(desc)) {}
+  PipelineState(device.getVulkanContext(), nullptr, desc.debugName.c_str()),
+  device_(device),
+  desc_(std::move(desc)) {}
 
 ComputePipelineState ::~ComputePipelineState() {
   if (pipeline_ != VK_NULL_HANDLE) {
@@ -33,16 +35,22 @@ ComputePipelineState ::~ComputePipelineState() {
 
 VkPipeline ComputePipelineState::getVkPipeline() const {
   const VulkanContext& ctx = device_.getVulkanContext();
-  if (lastBindlessVkDescriptorSetLayout_ != ctx.getBindlessVkDescriptorSetLayout()) {
-    // there's a new pipeline layout - drop the previous Vulkan pipeline
-    VkDevice device = ctx.device_->getVkDevice();
-    if (pipeline_ != VK_NULL_HANDLE) {
-      ctx.deferredTask(std::packaged_task<void()>([vf = &ctx.vf_, device, pipeline = pipeline_]() {
-        vf->vkDestroyPipeline(device, pipeline, nullptr);
-      }));
+
+  if (ctx.config_.enableDescriptorIndexing) {
+    // the bindless descriptor set layout can be changed in VulkanContext when the number of
+    // existing textures increases
+    if (lastBindlessVkDescriptorSetLayout_ != ctx.getBindlessVkDescriptorSetLayout()) {
+      // there's a new descriptor set layout - drop the previous Vulkan pipeline
+      VkDevice device = ctx.device_->getVkDevice();
+      if (pipeline_ != VK_NULL_HANDLE) {
+        ctx.deferredTask(
+            std::packaged_task<void()>([vf = &ctx.vf_, device, pipeline = pipeline_]() {
+              vf->vkDestroyPipeline(device, pipeline, nullptr);
+            }));
+      }
+      pipeline_ = VK_NULL_HANDLE;
+      lastBindlessVkDescriptorSetLayout_ = ctx.getBindlessVkDescriptorSetLayout();
     }
-    pipeline_ = VK_NULL_HANDLE;
-    lastBindlessVkDescriptorSetLayout_ = ctx.getBindlessVkDescriptorSetLayout();
   }
 
   if (pipeline_ != VK_NULL_HANDLE) {

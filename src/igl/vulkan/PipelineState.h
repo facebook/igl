@@ -11,13 +11,19 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/util/SpvReflection.h>
 
+namespace igl {
+class IShaderStages;
+} // namespace igl
+
 namespace igl::vulkan {
 
+class VulkanContext;
 class VulkanDescriptorSetLayout;
 class VulkanPipelineLayout;
 
 class PipelineState {
  public:
+  PipelineState(const VulkanContext& ctx, IShaderStages* stages, const char* debugName);
   virtual ~PipelineState() = default;
 
   VkPipelineLayout getVkPipelineLayout() const;
@@ -27,6 +33,8 @@ class PipelineState {
   }
 
  protected:
+  friend class ResourcesBinder;
+
   igl::vulkan::util::SpvModuleInfo info_;
 
   mutable std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayout_;
