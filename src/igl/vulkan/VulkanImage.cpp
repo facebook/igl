@@ -276,7 +276,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, nullptr, vkImage_};
 
   VkMemoryRequirements2 memoryRequirements = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
-  ctx_.vf_.vkGetImageMemoryRequirements2KHR(device_, &memoryRequirementInfo, &memoryRequirements);
+  ctx_.vf_.vkGetImageMemoryRequirements2(device_, &memoryRequirementInfo, &memoryRequirements);
 
   // TODO_VULKAN: Verify the following from the spec:
   // the memory from which fd was exported must have been created on the same physical device
@@ -374,7 +374,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, nullptr, vkImage_};
 
   VkMemoryRequirements2 memoryRequirements = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
-  ctx_.vf_.vkGetImageMemoryRequirements2KHR(device_, &memoryRequirementInfo, &memoryRequirements);
+  ctx_.vf_.vkGetImageMemoryRequirements2(device_, &memoryRequirementInfo, &memoryRequirements);
 
   const VkImportMemoryWin32HandleInfoKHR handleInfo = {
       VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR,
@@ -555,7 +555,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, nullptr, vkImage_};
 
   VkMemoryRequirements2 memoryRequirements = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
-  ctx_.vf_.vkGetImageMemoryRequirements2KHR(device_, &memoryRequirementInfo, &memoryRequirements);
+  ctx_.vf_.vkGetImageMemoryRequirements2(device_, &memoryRequirementInfo, &memoryRequirements);
 
   const VkMemoryAllocateInfo memoryAllocateInfo = {
       VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,

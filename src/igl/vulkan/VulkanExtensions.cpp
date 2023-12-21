@@ -169,7 +169,6 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
 #if defined(IGL_WITH_TRACY_GPU) && defined(VK_EXT_calibrated_timestamps)
     enable(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, ExtensionType::Device);
 #endif
-    enable(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, ExtensionType::Device);
   } else {
     IGL_ASSERT_MSG(false, "Unrecognized extension type when enabling commong extensions.");
   }
