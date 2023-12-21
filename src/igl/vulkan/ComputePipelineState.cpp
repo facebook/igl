@@ -19,9 +19,7 @@ namespace vulkan {
 
 ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
                                            ComputePipelineDesc desc) :
-  device_(device), desc_(std::move(desc)) {
-  vkPipelineLayout_ = device_.getVulkanContext().pipelineLayoutCompute_->getVkPipelineLayout();
-}
+  device_(device), desc_(std::move(desc)) {}
 
 ComputePipelineState ::~ComputePipelineState() {
   if (pipeline_ != VK_NULL_HANDLE) {
@@ -35,7 +33,7 @@ ComputePipelineState ::~ComputePipelineState() {
 
 VkPipeline ComputePipelineState::getVkPipeline() const {
   const VulkanContext& ctx = device_.getVulkanContext();
-  if (vkPipelineLayout_ != ctx.pipelineLayoutCompute_->getVkPipelineLayout()) {
+  if (lastBindlessVkDescriptorSetLayout_ != ctx.getBindlessVkDescriptorSetLayout()) {
     // there's a new pipeline layout - drop the previous Vulkan pipeline
     VkDevice device = ctx.device_->getVkDevice();
     if (pipeline_ != VK_NULL_HANDLE) {
@@ -44,7 +42,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
       }));
     }
     pipeline_ = VK_NULL_HANDLE;
-    vkPipelineLayout_ = ctx.pipelineLayoutCompute_->getVkPipelineLayout();
+    lastBindlessVkDescriptorSetLayout_ = ctx.getBindlessVkDescriptorSetLayout();
   }
 
   if (pipeline_ != VK_NULL_HANDLE) {

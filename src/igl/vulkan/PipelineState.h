@@ -9,18 +9,34 @@
 
 #include <igl/Common.h>
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/util/SpvReflection.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanDescriptorSetLayout;
+class VulkanPipelineLayout;
 
 class PipelineState {
  public:
+  virtual ~PipelineState() = default;
+
+  VkPipelineLayout getVkPipelineLayout() const;
+
+  const util::SpvModuleInfo& getSpvModuleInfo() const {
+    return info_;
+  }
+
+ protected:
+  igl::vulkan::util::SpvModuleInfo info_;
+
+  mutable std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayout_;
+
+  // the last seen VkDescriptorSetLayout from VulkanContext::dslBindless_
+  mutable VkDescriptorSetLayout lastBindlessVkDescriptorSetLayout_ = VK_NULL_HANDLE;
+
   std::shared_ptr<VulkanDescriptorSetLayout> dslCombinedImageSamplers_;
   std::shared_ptr<VulkanDescriptorSetLayout> dslUniformBuffers_;
   std::shared_ptr<VulkanDescriptorSetLayout> dslStorageBuffers_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

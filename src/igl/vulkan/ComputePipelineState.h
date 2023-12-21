@@ -32,12 +32,10 @@ class ComputePipelineState final : public IComputePipelineState, public vulkan::
   }
 
  private:
-  friend class Device;
-
   const igl::vulkan::Device& device_;
   ComputePipelineDesc desc_;
 
-  mutable VkPipelineLayout vkPipelineLayout_ = VK_NULL_HANDLE;
+  // a Vulkan pipeline owned by this ComputePipelineState object
   mutable VkPipeline pipeline_ = VK_NULL_HANDLE;
 };
 
