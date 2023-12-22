@@ -123,6 +123,11 @@
 
   #error "Platform not supported"
 #endif
+
+// IGL_PLATFORM_XR is for extended reality platforms like OpenXR
+#if !defined(IGL_PLATFORM_XR)
+  #define IGL_PLATFORM_XR 0
+#endif
 // clang-format on
 
 ///--------------------------------------
