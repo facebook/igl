@@ -32,6 +32,9 @@ class PipelineState {
     return info_;
   }
 
+ private:
+  void initializeSpvModuleInfoFromShaderStages(IShaderStages* stages);
+
  protected:
   friend class ResourcesBinder;
 

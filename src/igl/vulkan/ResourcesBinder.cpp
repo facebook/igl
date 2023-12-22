@@ -182,7 +182,10 @@ void ResourcesBinder::bindPipeline(VkPipeline pipeline, const util::SpvModuleInf
 
   if (pipeline != VK_NULL_HANDLE) {
 #if IGL_VULKAN_PRINT_COMMANDS
-    IGL_LOG_INFO("%p vkCmdBindPipeline(%u, %p)\n", cmdBuffer_, bindPoint_, pipeline);
+    IGL_LOG_INFO("%p vkCmdBindPipeline(%s, %p)\n",
+                 cmdBuffer_,
+                 bindPoint_ == VK_PIPELINE_BIND_POINT_GRAPHICS ? "GRAPHICS" : "COMPUTE",
+                 pipeline);
 #endif // IGL_VULKAN_PRINT_COMMANDS
     ctx_.vf_.vkCmdBindPipeline(cmdBuffer_, bindPoint_, pipeline);
   }

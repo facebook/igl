@@ -1582,7 +1582,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
           texture && ((texture->image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
       const bool isSampledImage = isTextureAvailable && texture->image_->isSampledImage();
       writes[numWrites++] = ivkGetWriteDescriptorSet_ImageInfo(
-          dset, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &infoSampledImages[numImages]);
+          dset, loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &infoSampledImages[numImages]);
       infoSampledImages[numImages++] = {isSampledImage ? sampler : dummySampler,
                                         isSampledImage ? texture->imageView_->getVkImageView()
                                                        : dummyImageView,

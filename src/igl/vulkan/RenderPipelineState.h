@@ -9,6 +9,7 @@
 
 #include <igl/RenderPipelineState.h>
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/PipelineState.h>
 #include <igl/vulkan/RenderPipelineReflection.h>
 #include <unordered_map>
 
@@ -162,7 +163,7 @@ static_assert(alignof(RenderPipelineDynamicState) == sizeof(uint64_t));
  * the pipeline layout in the context. If a pipeline layout change is detected, this class purges
  * all the pipelines that have been created so far.
  */
-class RenderPipelineState final : public IRenderPipelineState {
+class RenderPipelineState final : public IRenderPipelineState, public vulkan::PipelineState {
  public:
   /** @brief Caches the render pipeline parameters passed in `desc` for later use. A pipeline isn't
    * realized until `getVkPipeline()` is called and all mutable parameters are provided.

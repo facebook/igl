@@ -86,7 +86,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
                                                  const Dimensions& /*threadgroupSize*/) {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT_MSG(cps_, "Did you forget to call bindComputePipeline()?");
+  IGL_ASSERT_MSG(cps_, "Did you forget to call bindComputePipelineState()?");
 
   binder_.updateBindings(cps_->getVkPipelineLayout(), cps_);
   // threadgroupSize is controlled inside compute shaders
@@ -178,7 +178,7 @@ void ComputeCommandEncoder::bindBytes(size_t /*index*/, const void* /*data*/, si
 void ComputeCommandEncoder::bindPushConstants(const void* data, size_t length, size_t offset) {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT_MSG(cps_, "Did you forget to call bindComputePipeline()?");
+  IGL_ASSERT_MSG(cps_, "Did you forget to call bindComputePipelineState()?");
 
   IGL_ASSERT(length % 4 == 0); // VUID-vkCmdPushConstants-size-00369: size must be a multiple of 4
 

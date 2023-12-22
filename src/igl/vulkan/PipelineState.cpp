@@ -15,16 +15,35 @@
 
 namespace igl::vulkan {
 
+void PipelineState::initializeSpvModuleInfoFromShaderStages(IShaderStages* stages) {
+  auto* smComp = static_cast<igl::vulkan::ShaderModule*>(stages->getComputeModule().get());
+
+  if (smComp) {
+    // compute
+    ensureShaderModule(smComp);
+
+    info_ = smComp->getVulkanShaderModule().getSpvModuleInfo();
+  } else {
+    auto* smVert = static_cast<igl::vulkan::ShaderModule*>(stages->getVertexModule().get());
+    auto* smFrag = static_cast<igl::vulkan::ShaderModule*>(stages->getFragmentModule().get());
+
+    // vertex/fragment
+    ensureShaderModule(smVert);
+    ensureShaderModule(smFrag);
+
+    const util::SpvModuleInfo& infoVert = smVert->getVulkanShaderModule().getSpvModuleInfo();
+    const util::SpvModuleInfo& infoFrag = smFrag->getVulkanShaderModule().getSpvModuleInfo();
+
+    info_ = util::mergeReflectionData(infoVert, infoFrag);
+  }
+}
+
 PipelineState::PipelineState(const VulkanContext& ctx,
                              IShaderStages* stages,
                              const char* debugName) {
   IGL_ASSERT(stages);
 
-  auto* sm = static_cast<igl::vulkan::ShaderModule*>(stages->getComputeModule().get());
-
-  ensureShaderModule(sm);
-
-  info_ = sm->getVulkanShaderModule().getSpvModuleInfo();
+  initializeSpvModuleInfoFromShaderStages(stages);
 
   // Create all Vulkan descriptor set layouts for this pipeline
 

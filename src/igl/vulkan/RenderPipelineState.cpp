@@ -267,6 +267,7 @@ namespace vulkan {
 
 RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
                                          RenderPipelineDesc desc) :
+  PipelineState(device.getVulkanContext(), desc.shaderStages.get(), desc.debugName.toConstChar()),
   device_(device),
   desc_(std::move(desc)),
   reflection_(std::make_shared<RenderPipelineReflection>()) {

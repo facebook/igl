@@ -311,7 +311,7 @@ class VulkanContext final {
 
   // 1. Textures can be safely deleted once they are not in use by GPU, hence our Vulkan context
   // owns all allocated textures (images+image views). The IGL interface vulkan::Texture does not
-  // delete the underylying VulkanTexture but instead informs the context that it should be
+  // delete the underlying VulkanTexture but instead informs the context that it should be
   // deallocated. The context deallocates textures in a deferred way when it is safe to do so.
   // 2. Descriptor sets can be updated when they are not in use.
   mutable std::vector<std::shared_ptr<VulkanTexture>> textures_ = {nullptr}; // the guard element
