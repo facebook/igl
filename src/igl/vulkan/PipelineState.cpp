@@ -18,9 +18,7 @@ namespace igl::vulkan {
 PipelineState::PipelineState(const VulkanContext& ctx,
                              IShaderStages* stages,
                              const char* debugName) {
-  if (!stages) {
-    return;
-  }
+  IGL_ASSERT(stages);
 
   auto* sm = static_cast<igl::vulkan::ShaderModule*>(stages->getComputeModule().get());
 

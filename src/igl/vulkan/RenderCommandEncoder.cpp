@@ -275,7 +275,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   bindScissorRect(scissor);
 
   ctx_.checkAndUpdateDescriptorSets();
-  ctx_.bindBindlessDescriptorSet(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS);
+  ctx_.bindBindlessDescriptorSet(cmdBuffer_);
 
   ctx_.vf_.vkCmdBeginRenderPass(cmdBuffer_, &bi, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -416,7 +416,7 @@ void RenderCommandEncoder::bindRenderPipelineState(
         "Make sure your render pass and render pipeline both have matching depth attachments");
   }
 
-  binder_.bindPipeline(VK_NULL_HANDLE);
+  binder_.bindPipeline(VK_NULL_HANDLE, nullptr);
 }
 
 void RenderCommandEncoder::bindDepthStencilState(
@@ -590,7 +590,7 @@ void RenderCommandEncoder::bindPipeline() {
     return;
   }
 
-  binder_.bindPipeline(rps->getVkPipeline(dynamicState_));
+  binder_.bindPipeline(rps->getVkPipeline(dynamicState_), nullptr);
 }
 
 void RenderCommandEncoder::draw(PrimitiveType primitiveType,
@@ -609,7 +609,7 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
 
   ensureVertexBuffers();
 
-  binder_.updateBindings();
+  binder_.updateBindings(ctx_.pipelineLayoutGraphics_->getVkPipelineLayout(), nullptr);
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindPipeline();
 
@@ -646,7 +646,7 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
 
   ensureVertexBuffers();
 
-  binder_.updateBindings();
+  binder_.updateBindings(ctx_.pipelineLayoutGraphics_->getVkPipelineLayout(), nullptr);
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindPipeline();
 
@@ -689,7 +689,7 @@ void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
 
   ensureVertexBuffers();
 
-  binder_.updateBindings();
+  binder_.updateBindings(ctx_.pipelineLayoutGraphics_->getVkPipelineLayout(), nullptr);
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindPipeline();
 
@@ -717,7 +717,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
 
   ensureVertexBuffers();
 
-  binder_.updateBindings();
+  binder_.updateBindings(ctx_.pipelineLayoutGraphics_->getVkPipelineLayout(), nullptr);
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
   bindPipeline();
 

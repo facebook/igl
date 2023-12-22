@@ -6,6 +6,7 @@
  */
 
 #include <igl/vulkan/Buffer.h>
+#include <igl/vulkan/PipelineState.h>
 #include <igl/vulkan/ResourcesBinder.h>
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/Texture.h>
@@ -138,31 +139,46 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
   }
 }
 
-void ResourcesBinder::updateBindings() {
+void ResourcesBinder::updateBindings(VkPipelineLayout layout, const vulkan::PipelineState* state) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_UPDATE);
 
+  IGL_ASSERT(layout != VK_NULL_HANDLE);
+
   if (isDirtyFlags_ & DirtyFlagBits_Textures) {
-    ctx_.updateBindingsTextures(cmdBuffer_, bindPoint_, bindingsTextures_);
+    ctx_.updateBindingsTextures(cmdBuffer_,
+                                layout,
+                                bindPoint_,
+                                bindingsTextures_,
+                                state ? state->dslCombinedImageSamplers_.get() : nullptr,
+                                info_);
   }
   if (isDirtyFlags_ & DirtyFlagBits_UniformBuffers) {
-    ctx_.updateBindingsUniformBuffers(cmdBuffer_, bindPoint_, bindingsUniformBuffers_);
+    ctx_.updateBindingsUniformBuffers(cmdBuffer_,
+                                      layout,
+                                      bindPoint_,
+                                      bindingsUniformBuffers_,
+                                      state ? state->dslUniformBuffers_.get() : nullptr,
+                                      info_);
   }
   if (isDirtyFlags_ & DirtyFlagBits_StorageBuffers) {
-    ctx_.updateBindingsStorageBuffers(cmdBuffer_, bindPoint_, bindingsStorageBuffers_);
+    ctx_.updateBindingsStorageBuffers(cmdBuffer_,
+                                      layout,
+                                      bindPoint_,
+                                      bindingsStorageBuffers_,
+                                      state ? state->dslStorageBuffers_.get() : nullptr,
+                                      info_);
   }
 
-  if (isDirtyFlags_) {
-    // TODO: rebind all descriptor sets here in one command
-    isDirtyFlags_ = 0;
-  }
+  isDirtyFlags_ = 0;
 }
 
-void ResourcesBinder::bindPipeline(VkPipeline pipeline) {
+void ResourcesBinder::bindPipeline(VkPipeline pipeline, const util::SpvModuleInfo* info) {
   if (lastPipelineBound_ == pipeline) {
     return;
   }
 
   lastPipelineBound_ = pipeline;
+  info_ = info;
 
   if (pipeline != VK_NULL_HANDLE) {
 #if IGL_VULKAN_PRINT_COMMANDS

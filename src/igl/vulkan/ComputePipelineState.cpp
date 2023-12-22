@@ -9,6 +9,7 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/VulkanContext.h>
+#include <igl/vulkan/VulkanDescriptorSetLayout.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
 #include <igl/vulkan/VulkanPipelineLayout.h>
@@ -19,7 +20,7 @@ namespace vulkan {
 
 ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
                                            ComputePipelineDesc desc) :
-  PipelineState(device.getVulkanContext(), nullptr, desc.debugName.c_str()),
+  PipelineState(device.getVulkanContext(), desc.shaderStages.get(), desc.debugName.c_str()),
   device_(device),
   desc_(std::move(desc)) {}
 
@@ -57,6 +58,34 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
     return pipeline_;
   }
 
+  // @fb-only
+  const VkDescriptorSetLayout DSLs[] = {
+      dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
+      dslUniformBuffers_->getVkDescriptorSetLayout(),
+      dslStorageBuffers_->getVkDescriptorSetLayout(),
+      ctx.getBindlessVkDescriptorSetLayout(),
+  };
+
+  const VkPhysicalDeviceLimits& limits = ctx.getVkPhysicalDeviceProperties().limits;
+
+  constexpr uint32_t kPushConstantsSize = 128;
+
+  if (!IGL_VERIFY(kPushConstantsSize <= limits.maxPushConstantsSize)) {
+    IGL_LOG_ERROR("Push constants size exceeded %u (max %u bytes)",
+                  kPushConstantsSize,
+                  limits.maxPushConstantsSize);
+  }
+
+  pipelineLayout_ = std::make_unique<VulkanPipelineLayout>(
+      ctx,
+      ctx.getVkDevice(),
+      DSLs,
+      static_cast<uint32_t>(ctx.config_.enableDescriptorIndexing
+                                ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
+                                : IGL_ARRAY_NUM_ELEMENTS(DSLs) - 1u),
+      ivkGetPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, kPushConstantsSize),
+      IGL_FORMAT("Pipeline Layout: {}", desc_.debugName).c_str());
+
   const auto& shaderModule = desc_.shaderStages->getComputeModule();
 
   igl::vulkan::VulkanComputePipelineBuilder()
@@ -67,7 +96,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
       .build(ctx.vf_,
              ctx.device_->getVkDevice(),
              ctx.pipelineCache_,
-             ctx.pipelineLayoutCompute_->getVkPipelineLayout(),
+             pipelineLayout_->getVkPipelineLayout(),
              &pipeline_,
              desc_.debugName.c_str());
 

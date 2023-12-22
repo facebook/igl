@@ -28,7 +28,6 @@ ComputeCommandEncoder::ComputeCommandEncoder(const std::shared_ptr<CommandBuffer
   IGL_ASSERT(commandBuffer);
 
   ctx_.checkAndUpdateDescriptorSets();
-  ctx_.bindBindlessDescriptorSet(cmdBuffer_, VK_PIPELINE_BIND_POINT_COMPUTE);
 
   isEncoding_ = true;
 }
@@ -64,11 +63,23 @@ void ComputeCommandEncoder::bindComputePipelineState(
 
   cps_ = static_cast<igl::vulkan::ComputePipelineState*>(pipelineState.get());
 
-  const ComputePipelineDesc& desc = cps_->getComputePipelineDesc();
+  binder_.bindPipeline(cps_->getVkPipeline(), &cps_->getSpvModuleInfo());
 
-  ensureShaderModule(desc.shaderStages->getComputeModule().get());
+  if (ctx_.config_.enableDescriptorIndexing) {
+    VkDescriptorSet dset = ctx_.getBindlessVkDescriptorSet();
 
-  binder_.bindPipeline(cps_->getVkPipeline());
+#if IGL_VULKAN_PRINT_COMMANDS
+    IGL_LOG_INFO("%p vkCmdBindDescriptorSets(COMPUTE) - bindless\n", cmdBuffer_);
+#endif // IGL_VULKAN_PRINT_COMMANDS
+    ctx_.vf_.vkCmdBindDescriptorSets(cmdBuffer_,
+                                     VK_PIPELINE_BIND_POINT_COMPUTE,
+                                     cps_->getVkPipelineLayout(),
+                                     kBindPoint_Bindless,
+                                     1,
+                                     &dset,
+                                     0,
+                                     nullptr);
+  }
 }
 
 void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCount,
@@ -77,7 +88,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
 
   IGL_ASSERT_MSG(cps_, "Did you forget to call bindComputePipeline()?");
 
-  binder_.updateBindings();
+  binder_.updateBindings(cps_->getVkPipelineLayout(), cps_);
   // threadgroupSize is controlled inside compute shaders
   ctx_.vf_.vkCmdDispatch(
       cmdBuffer_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);
@@ -180,7 +191,7 @@ void ComputeCommandEncoder::bindPushConstants(const void* data, size_t length, s
   }
 
   ctx_.vf_.vkCmdPushConstants(cmdBuffer_,
-                              ctx_.pipelineLayoutCompute_->getVkPipelineLayout(),
+                              cps_->getVkPipelineLayout(),
                               VK_SHADER_STAGE_COMPUTE_BIT,
                               (uint32_t)offset,
                               (uint32_t)length,

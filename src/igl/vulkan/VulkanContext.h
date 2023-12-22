@@ -29,6 +29,9 @@
 
 namespace igl {
 namespace vulkan {
+namespace util {
+struct SpvModuleInfo;
+} // namespace util
 
 class Device;
 class EnhancedShaderDebuggingStore;
@@ -222,7 +225,7 @@ class VulkanContext final {
   void createInstance(const size_t numExtraExtensions, const char** extraExtensions);
   void createSurface(void* window, void* display);
   void checkAndUpdateDescriptorSets();
-  void bindBindlessDescriptorSet(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPointa) const;
+  void bindBindlessDescriptorSet(VkCommandBuffer cmdBuf) const;
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void waitDeferredTasks();
@@ -292,7 +295,6 @@ class VulkanContext final {
   std::unique_ptr<igl::vulkan::VulkanStagingDevice> stagingDevice_;
 
   std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutGraphics_;
-  std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutCompute_;
   std::shared_ptr<igl::vulkan::VulkanBuffer> dummyUniformBuffer_;
   std::shared_ptr<igl::vulkan::VulkanBuffer> dummyStorageBuffer_;
   // don't use staging on devices with device-local host-visible memory
@@ -338,14 +340,23 @@ class VulkanContext final {
   std::unique_ptr<EnhancedShaderDebuggingStore> enhancedShaderDebuggingStore_;
 
   void updateBindingsTextures(VkCommandBuffer cmdBuf,
+                              VkPipelineLayout layout,
                               VkPipelineBindPoint bindPoint,
-                              const BindingsTextures& data) const;
+                              const BindingsTextures& data,
+                              const VulkanDescriptorSetLayout* dsl,
+                              const util::SpvModuleInfo* info) const;
   void updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
+                                    VkPipelineLayout layout,
                                     VkPipelineBindPoint bindPoint,
-                                    BindingsBuffers& data) const;
+                                    BindingsBuffers& data,
+                                    const VulkanDescriptorSetLayout* dsl,
+                                    const util::SpvModuleInfo* info) const;
   void updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
+                                    VkPipelineLayout layout,
                                     VkPipelineBindPoint bindPoint,
-                                    BindingsBuffers& data) const;
+                                    BindingsBuffers& data,
+                                    const VulkanDescriptorSetLayout* dsl,
+                                    const util::SpvModuleInfo* info) const;
   void markSubmitted(const SubmitHandle& handle) const;
 
   struct DeferredTask {

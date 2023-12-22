@@ -15,8 +15,12 @@
 
 namespace igl {
 namespace vulkan {
+namespace util {
+struct SpvModuleInfo;
+} // namespace util
 
 class Buffer;
+class PipelineState;
 class SamplerState;
 class Texture;
 class VulkanBuffer;
@@ -64,11 +68,11 @@ class ResourcesBinder final {
 
   /// @brief Convenience function that updates all bindings in the context for all resource types
   /// that have been modified since the last time this function was called
-  void updateBindings();
+  void updateBindings(VkPipelineLayout layout, const vulkan::PipelineState* state);
 
   /// @brief If the pipeline passed in as a parameter is different than the last pipeline bound
   /// through this class, binds it and cache it as the last pipeline bound. Does nothing otherwise
-  void bindPipeline(VkPipeline pipeline);
+  void bindPipeline(VkPipeline pipeline, const util::SpvModuleInfo* info);
 
  private:
   friend class VulkanContext;
@@ -96,6 +100,7 @@ class ResourcesBinder final {
   BindingsBuffers bindingsUniformBuffers_;
   BindingsBuffers bindingsStorageBuffers_;
   VkPipelineBindPoint bindPoint_ = VK_PIPELINE_BIND_POINT_GRAPHICS;
+  const util::SpvModuleInfo* info_ = nullptr;
 };
 
 } // namespace vulkan
