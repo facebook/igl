@@ -35,5 +35,6 @@ struct SpvModuleInfo {
 };
 
 SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes);
+SpvModuleInfo mergeReflectionData(const SpvModuleInfo& info1, const SpvModuleInfo& info2);
 
 } // namespace igl::vulkan::util

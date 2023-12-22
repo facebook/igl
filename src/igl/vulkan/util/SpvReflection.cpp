@@ -233,4 +233,34 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
   return info;
 }
 
+namespace {
+
+template<typename T>
+void combineDescriptions(std::vector<T>& out, const std::vector<T>& c1, const std::vector<T>& c2) {
+  out = c1;
+
+  for (const auto& desc : c2) {
+    auto it = std::find_if(out.begin(), out.end(), [loc = desc.bindingLocation](const auto& d) {
+      return d.bindingLocation == loc;
+    });
+    if (it == out.end()) {
+      out.emplace_back(desc);
+    } else {
+      IGL_ASSERT(desc.descriptorSet == it->descriptorSet);
+    }
+  }
+}
+
+} // namespace
+
+SpvModuleInfo mergeReflectionData(const SpvModuleInfo& info1, const SpvModuleInfo& info2) {
+  SpvModuleInfo result;
+
+  combineDescriptions(result.uniformBuffers, info1.uniformBuffers, info2.uniformBuffers);
+  combineDescriptions(result.storageBuffers, info1.storageBuffers, info2.storageBuffers);
+  combineDescriptions(result.textures, info1.textures, info2.textures);
+
+  return result;
+}
+
 } // namespace igl::vulkan::util
