@@ -170,5 +170,13 @@
         "url": "https://github.com/KhronosGroup/KTX-Software.git",
         "revision": "84ee59dd27232ff60ea6ee135f67d46fde5c766b"
     }
+},
+{
+    "name": "openxr-sdk",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/KhronosGroup/OpenXR-SDK.git",
+        "sha1": "49e81bbd919af7c0cf513517a730d12253c28902"
+    }
 }
 ]

@@ -10,7 +10,9 @@
 #include <array>
 #include <igl/vulkan/Common.h>
 
+#if !defined(XR_USE_GRAPHICS_API_VULKAN)
 #define XR_USE_GRAPHICS_API_VULKAN
+#endif // XR_USE_GRAPHICS_API_VULKAN
 #include <openxr/openxr_platform.h>
 
 #include <shell/openxr/impl/XrAppImpl.h>

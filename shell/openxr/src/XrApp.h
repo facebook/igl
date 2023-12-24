@@ -11,7 +11,16 @@
 #include <string>
 #include <vector>
 
+#if IGL_BACKEND_VULKAN
+#include <igl/vulkan/Common.h>
+#endif // IGL_BACKEND_VULKAN
+
+#if IGL_BACKEND_OPENGL
+#include <igl/opengl/GLIncludes.h>
+#endif // IGL_BACKEND_OPENGL
+
 #include <openxr/openxr.h>
+#include <openxr/openxr_platform.h>
 
 #include <glm/glm.hpp>
 
@@ -89,7 +98,10 @@ class XrApp {
 
   std::vector<XrExtensionProperties> extensions_;
   std::vector<const char*> requiredExtensions_ = {
-#ifndef XR_USE_PLATFORM_MACOS
+#if IGL_BACKEND_VULKAN
+      XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
+#endif // IGL_BACKEND_VULKAN
+#if !defined(XR_USE_PLATFORM_MACOS) && !defined(IGL_CMAKE_BUILD)
       XR_FB_SWAPCHAIN_UPDATE_STATE_EXTENSION_NAME,
 #endif
   };
@@ -109,7 +121,7 @@ class XrApp {
   XrSession session_ = XR_NULL_HANDLE;
 
   XrViewConfigurationProperties viewConfigProps_ = {.type = XR_TYPE_VIEW_CONFIGURATION_PROPERTIES};
-  static constexpr auto kNumViews = 2; // 2 for stereo
+  static constexpr uint32_t kNumViews = 2; // 2 for stereo
   std::array<XrViewConfigurationView, kNumViews> viewports_;
   std::array<XrView, kNumViews> views_;
   std::array<XrPosef, kNumViews> viewStagePoses_;
