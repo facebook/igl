@@ -19,6 +19,7 @@ option(LVK_WITH_SAMPLES         "Enable sample demo apps"       ON)
 option(LVK_WITH_TRACY           "Enable Tracy profiler"         ON)
 option(LVK_WITH_WAYLAND         "Enable Wayland"                OFF)
 option(LVK_WITH_IMPLOT          "Enable ImPlot"                 ON)
+option(LVK_WITH_OPENXR          "Enable OpenXR"                 OFF)
 
 cmake_dependent_option(LVK_WITH_VULKAN_PORTABILITY "Enable portability extension" ON "APPLE" OFF)
 # cmake-format: on
@@ -76,6 +77,7 @@ message(STATUS "LVK_WITH_TRACY              = ${LVK_WITH_TRACY}")
 message(STATUS "LVK_WITH_VULKAN_PORTABILITY = ${LVK_WITH_VULKAN_PORTABILITY}")
 message(STATUS "LVK_WITH_WAYLAND            = ${LVK_WITH_WAYLAND}")
 message(STATUS "LVK_WITH_IMPLOT             = ${LVK_WITH_IMPLOT}")
+message(STATUS "LVK_WITH_OPENXR             = ${LVK_WITH_OPENXR}")
 # cmake-format: on
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
@@ -120,6 +122,19 @@ if(LVK_WITH_TRACY)
   add_definitions("-DTRACY_ENABLE=1")
   add_subdirectory(third-party/deps/src/tracy)
   lvk_set_folder(TracyClient "third-party")
+endif()
+
+if(LVK_WITH_OPENXR)
+  if(NOT WIN32)
+    message(FATAL_ERROR "OpenXR can be enabled only on Windows.")
+  endif()
+  add_subdirectory(third-party/deps/src/openxr-sdk)
+  # cmake-format: off
+  lvk_set_folder(openxr_loader             "third-party/OpenXR")
+  lvk_set_folder(generate_openxr_header    "third-party/OpenXR")
+  lvk_set_folder(xr_common_generated_files "third-party/OpenXR")
+  lvk_set_folder(xr_global_generated_files "third-party/OpenXR")
+  # cmake-format: on
 endif()
 
 # temporary
@@ -236,6 +251,13 @@ endif()
 
 if(LVK_WITH_TRACY)
   target_link_libraries(LVKLibrary PUBLIC TracyClient)
+endif()
+
+if(LVK_WITH_OPENXR)
+  target_compile_definitions(LVKVulkan PRIVATE "XR_USE_GRAPHICS_API_VULKAN=1")
+  target_compile_definitions(LVKLibrary PUBLIC "LVK_WITH_OPENXR=1")
+  target_link_libraries(LVKLibrary PUBLIC OpenXR::openxr_loader)
+  target_include_directories(LVKLibrary PUBLIC "${LVK_ROOT_DIR}/third-party/deps/src/openxr-sdk/include")
 endif()
 
 # ImGui

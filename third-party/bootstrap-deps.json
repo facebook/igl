@@ -76,6 +76,14 @@
     }
 },
 {
+    "name": "openxr-sdk",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/KhronosGroup/OpenXR-SDK.git",
+        "sha1": "49e81bbd919af7c0cf513517a730d12253c28902"
+    }
+},
+{
     "name": "glm",
     "source": {
         "type": "git",
