@@ -5,6 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/Common.h>
+
+#if IGL_BACKEND_VULKAN
+#include <igl/vulkan/Common.h>
+#endif // IGL_BACKEND_VULKAN
+
+#if IGL_BACKEND_OPENGL
+#include <igl/opengl/GLIncludes.h>
+#endif // IGL_BACKEND_OPENGL
+
 #include <shell/openxr/XrApp.h>
 
 #include <algorithm>
@@ -19,7 +29,12 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#if IGL_PLATFORM_APPLE
 #include <shell/shared/platform/mac/PlatformMac.h>
+#elif IGL_PLATFORM_WIN
+#include <shell/shared/platform/win/PlatformWin.h>
+#endif
+
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/DefaultSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
@@ -255,8 +270,8 @@ void XrApp::enumerateReferenceSpaces() {
 }
 
 void XrApp::createSwapchainProviders(const std::unique_ptr<igl::IDevice>& device) {
-  const size_t numSwapchainProviders = useSinglePassStereo_ ? 1 : kNumViews;
-  const size_t numViewsPerSwapchain = useSinglePassStereo_ ? kNumViews : 1;
+  const uint32_t numSwapchainProviders = useSinglePassStereo_ ? 1 : kNumViews;
+  const uint32_t numViewsPerSwapchain = useSinglePassStereo_ ? kNumViews : 1;
   swapchainProviders_.reserve(numSwapchainProviders);
 
   for (size_t i = 0; i < numSwapchainProviders; i++) {
@@ -319,7 +334,11 @@ bool XrApp::initialize(const struct android_app* app) {
 }
 
 void XrApp::createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManager* assetMgr) {
+#if IGL_PLATFORM_APPLE
   platform_ = std::make_shared<igl::shell::PlatformMac>(std::move(device));
+#elif IGL_PLATFORM_WIN
+  platform_ = std::make_shared<igl::shell::PlatformWin>(std::move(device));
+#endif
   IGL_ASSERT(platform_ != nullptr);
   renderSession_ = igl::shell::createDefaultRenderSession(platform_);
   shellParams_->shellControlsViewParams = true;

@@ -11,7 +11,9 @@
 #include <igl/vulkan/VulkanTexture.h>
 #include <vector>
 
+#if !defined(XR_USE_GRAPHICS_API_VULKAN)
 #define XR_USE_GRAPHICS_API_VULKAN
+#endif // XR_USE_GRAPHICS_API_VULKAN
 #include <openxr/openxr_platform.h>
 
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
