@@ -13,8 +13,8 @@
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
+
 namespace util {
 struct SpvModuleInfo;
 } // namespace util
@@ -103,5 +103,4 @@ class ResourcesBinder final {
   const util::SpvModuleInfo* info_ = nullptr;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

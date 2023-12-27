@@ -17,8 +17,7 @@
 #include <igl/vulkan/ResourcesBinder.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 /// @brief This class implements the igl::IRenderCommandEncoder interface for Vulkan
 class RenderCommandEncoder : public IRenderCommandEncoder {
@@ -158,5 +157,4 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   Dependencies dependencies_ = {};
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

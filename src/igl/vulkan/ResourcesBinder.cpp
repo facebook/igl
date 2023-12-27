@@ -177,6 +177,19 @@ void ResourcesBinder::bindPipeline(VkPipeline pipeline, const util::SpvModuleInf
     return;
   }
 
+  if (info && info_ != info) {
+    // a new pipeline might want a new descriptors configuration
+    if (!info->uniformBuffers.empty()) {
+      isDirtyFlags_ |= DirtyFlagBits_UniformBuffers;
+    }
+    if (!info->storageBuffers.empty()) {
+      isDirtyFlags_ |= DirtyFlagBits_StorageBuffers;
+    }
+    if (!info->textures.empty()) {
+      isDirtyFlags_ |= DirtyFlagBits_Textures;
+    }
+  }
+
   lastPipelineBound_ = pipeline;
   info_ = info;
 
