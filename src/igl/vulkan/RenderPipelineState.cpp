@@ -269,8 +269,8 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
                                          RenderPipelineDesc desc) :
   PipelineState(device.getVulkanContext(), desc.shaderStages.get(), desc.debugName.toConstChar()),
   device_(device),
-  desc_(std::move(desc)),
   reflection_(std::make_shared<RenderPipelineReflection>()) {
+  desc_ = std::move(desc);
   vkPipelineLayout_ = device_.getVulkanContext().pipelineLayoutGraphics_->getVkPipelineLayout();
   // Iterate and cache vertex input bindings and attributes
   const igl::vulkan::VertexInputState* vstate =

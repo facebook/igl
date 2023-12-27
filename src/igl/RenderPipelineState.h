@@ -222,6 +222,13 @@ class IRenderPipelineState {
   virtual int getIndexByName(const std::string& /* name */, ShaderStage /* stage */) const {
     return -1;
   }
+
+  const RenderPipelineDesc& getRenderPipelineDesc() const {
+    return desc_;
+  }
+
+ protected:
+  RenderPipelineDesc desc_{};
 };
 
 } // namespace igl

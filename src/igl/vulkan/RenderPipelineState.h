@@ -177,10 +177,6 @@ class RenderPipelineState final : public IRenderPipelineState, public vulkan::Pi
    */
   VkPipeline getVkPipeline(const RenderPipelineDynamicState& dynamicState) const;
 
-  const RenderPipelineDesc& getRenderPipelineDesc() const {
-    return desc_;
-  }
-
  private:
   friend class Device;
 
@@ -194,8 +190,6 @@ class RenderPipelineState final : public IRenderPipelineState, public vulkan::Pi
  private:
   const igl::vulkan::Device& device_;
 
-  std::shared_ptr<IShaderStages> shaderStages_;
-  RenderPipelineDesc desc_;
   VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo_;
 
   std::vector<VkVertexInputBindingDescription> vkBindings_;

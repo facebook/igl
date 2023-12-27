@@ -70,8 +70,6 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
   std::unordered_map<int, size_t>& uniformBlockBindingMap();
 
  private:
-  RenderPipelineDesc desc_;
-
   // Tracks a list of attribute locations associated with a bufferIndex
   std::vector<int> bufferAttribLocations_[IGL_VERTEX_BUFFER_MAX];
 

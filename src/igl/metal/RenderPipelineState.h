@@ -46,7 +46,6 @@ class RenderPipelineState final : public IRenderPipelineState {
   static MTLColorWriteMask convertColorWriteMask(ColorWriteMask value);
 
  private:
-  RenderPipelineDesc desc_;
   id<MTLRenderPipelineState> value_;
   std::shared_ptr<RenderPipelineReflection> reflection_;
 };
