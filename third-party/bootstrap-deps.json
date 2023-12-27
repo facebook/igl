@@ -164,14 +164,6 @@
     }
 },
 {
-    "name": "MoltenVK",
-    "source": {
-        "type": "sourcefile",
-        "url": "https://raw.githubusercontent.com/KhronosGroup/MoltenVK/v1.2.5/MoltenVK/MoltenVK/API/mvk_config.h",
-        "sha1": "2f7b9eaeff8e3ac725b6698c309d434451922cb3"
-    }
-},
-{
     "name": "cmake-wayland",
     "source": {
         "type": "sourcefile",
