@@ -139,7 +139,7 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
   }
 }
 
-void ResourcesBinder::updateBindings(VkPipelineLayout layout, const vulkan::PipelineState* state) {
+void ResourcesBinder::updateBindings(VkPipelineLayout layout, const vulkan::PipelineState& state) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_UPDATE);
 
   IGL_ASSERT(layout != VK_NULL_HANDLE);
@@ -149,24 +149,24 @@ void ResourcesBinder::updateBindings(VkPipelineLayout layout, const vulkan::Pipe
                                 layout,
                                 bindPoint_,
                                 bindingsTextures_,
-                                state ? state->dslCombinedImageSamplers_.get() : nullptr,
-                                info_);
+                                *state.dslCombinedImageSamplers_,
+                                state.info_);
   }
   if (isDirtyFlags_ & DirtyFlagBits_UniformBuffers) {
     ctx_.updateBindingsUniformBuffers(cmdBuffer_,
                                       layout,
                                       bindPoint_,
                                       bindingsUniformBuffers_,
-                                      state ? state->dslUniformBuffers_.get() : nullptr,
-                                      info_);
+                                      *state.dslUniformBuffers_,
+                                      state.info_);
   }
   if (isDirtyFlags_ & DirtyFlagBits_StorageBuffers) {
     ctx_.updateBindingsStorageBuffers(cmdBuffer_,
                                       layout,
                                       bindPoint_,
                                       bindingsStorageBuffers_,
-                                      state ? state->dslStorageBuffers_.get() : nullptr,
-                                      info_);
+                                      *state.dslStorageBuffers_,
+                                      state.info_);
   }
 
   isDirtyFlags_ = 0;
@@ -177,7 +177,7 @@ void ResourcesBinder::bindPipeline(VkPipeline pipeline, const util::SpvModuleInf
     return;
   }
 
-  if (info && info_ != info) {
+  if (info) {
     // a new pipeline might want a new descriptors configuration
     if (!info->uniformBuffers.empty()) {
       isDirtyFlags_ |= DirtyFlagBits_UniformBuffers;
@@ -191,7 +191,6 @@ void ResourcesBinder::bindPipeline(VkPipeline pipeline, const util::SpvModuleInf
   }
 
   lastPipelineBound_ = pipeline;
-  info_ = info;
 
   if (pipeline != VK_NULL_HANDLE) {
 #if IGL_VULKAN_PRINT_COMMANDS

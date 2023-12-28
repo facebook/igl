@@ -596,8 +596,6 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
   ensureVertexBuffers();
 
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
-  binder_.bindPipeline(rps_->getVkPipeline(dynamicState_), &rps_->getSpvModuleInfo());
-  binder_.updateBindings(rps_->getVkPipelineLayout(), rps_);
   flushDynamicState();
 
 #if IGL_VULKAN_PRINT_COMMANDS
@@ -636,8 +634,6 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
   ensureVertexBuffers();
 
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
-  binder_.bindPipeline(rps_->getVkPipeline(dynamicState_), &rps_->getSpvModuleInfo());
-  binder_.updateBindings(rps_->getVkPipelineLayout(), rps_);
   flushDynamicState();
 
   const igl::vulkan::Buffer* buf = static_cast<igl::vulkan::Buffer*>(&indexBuffer);
@@ -682,8 +678,6 @@ void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
   ensureVertexBuffers();
 
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
-  binder_.bindPipeline(rps_->getVkPipeline(dynamicState_), &rps_->getSpvModuleInfo());
-  binder_.updateBindings(rps_->getVkPipelineLayout(), rps_);
   flushDynamicState();
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
@@ -713,8 +707,6 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
   ensureVertexBuffers();
 
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
-  binder_.bindPipeline(rps_->getVkPipeline(dynamicState_), &rps_->getSpvModuleInfo());
-  binder_.updateBindings(rps_->getVkPipelineLayout(), rps_);
   flushDynamicState();
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
@@ -767,6 +759,9 @@ bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {
 }
 
 void RenderCommandEncoder::flushDynamicState() {
+  binder_.bindPipeline(rps_->getVkPipeline(dynamicState_), &rps_->getSpvModuleInfo());
+  binder_.updateBindings(rps_->getVkPipelineLayout(), *rps_);
+
   if (ctx_.config_.enableDescriptorIndexing) {
     VkDescriptorSet dset = ctx_.getBindlessVkDescriptorSet();
 

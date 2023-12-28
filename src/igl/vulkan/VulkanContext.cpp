@@ -201,44 +201,16 @@ class DescriptorPoolsArena final {
  public:
   DescriptorPoolsArena(const VulkanContext& ctx,
                        VkDescriptorType type,
-                       const VulkanDescriptorSetLayout& dsl,
-                       const char* debugName) :
-    vf_(ctx.vf_),
-    device_(ctx.getVkDevice()),
-    type_(type),
-    numDescriptorsPerDSet_(dsl.numBindings_),
-    dsl_(dsl.getVkDescriptorSetLayout()) {
-    IGL_ASSERT(debugName);
-    dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
-    switchToNewDescriptorPool(*ctx.immediate_, {});
-  }
-  DescriptorPoolsArena(const VulkanContext& ctx,
-                       VkDescriptorType type,
+                       VkDescriptorSetLayout dsl,
                        uint32_t numDescriptorsPerDSet,
                        const char* debugName) :
     vf_(ctx.vf_),
     device_(ctx.getVkDevice()),
     type_(type),
-    numDescriptorsPerDSet_(numDescriptorsPerDSet) {
+    numDescriptorsPerDSet_(numDescriptorsPerDSet),
+    dsl_(dsl) {
     IGL_ASSERT(debugName);
-    std::vector<VkDescriptorSetLayoutBinding> bindings;
-    std::vector<VkDescriptorBindingFlags> bindingFlags;
-    bindings.reserve(numDescriptorsPerDSet);
-    bindingFlags.reserve(numDescriptorsPerDSet);
-    for (uint32_t i = 0; i != numDescriptorsPerDSet; i++) {
-      bindings.emplace_back(ivkGetDescriptorSetLayoutBinding(i, type, 1));
-      bindingFlags.emplace_back(VkDescriptorBindingFlags{});
-    }
-    dslOwnership_ = std::make_unique<VulkanDescriptorSetLayout>(
-        vf_,
-        device_,
-        VkDescriptorSetLayoutCreateFlags{},
-        numDescriptorsPerDSet,
-        bindings.data(),
-        bindingFlags.data(),
-        IGL_FORMAT("Descriptor Set Layout: {}", debugName).c_str());
-    dsl_ = dslOwnership_->getVkDescriptorSetLayout();
-    dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName);
+    dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
     switchToNewDescriptorPool(*ctx.immediate_, {});
   }
   ~DescriptorPoolsArena() {
@@ -301,9 +273,6 @@ class DescriptorPoolsArena final {
   uint32_t numRemainingDSetsInPool_ = 0;
   std::string dpDebugName_;
 
-  // TODO: this can be removed once we migrate to a new descriptor set management scheme
-  std::unique_ptr<VulkanDescriptorSetLayout> dslOwnership_;
-
   VkDescriptorSetLayout dsl_ = VK_NULL_HANDLE; // owned elsewhere
 
   struct ExtinctDescriptorPool {
@@ -318,14 +287,11 @@ struct VulkanContextImpl final {
   // Vulkan Memory Allocator
   VmaAllocator vma_ = VK_NULL_HANDLE;
   // :)
-  std::unordered_map<const VulkanDescriptorSetLayout*,
-                     std::unique_ptr<igl::vulkan::DescriptorPoolsArena>>
+  std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<igl::vulkan::DescriptorPoolsArena>>
       arenaCombinedImageSamplers_;
-  std::unordered_map<const VulkanDescriptorSetLayout*,
-                     std::unique_ptr<igl::vulkan::DescriptorPoolsArena>>
+  std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<igl::vulkan::DescriptorPoolsArena>>
       arenaBuffersUniform_;
-  std::unordered_map<const VulkanDescriptorSetLayout*,
-                     std::unique_ptr<igl::vulkan::DescriptorPoolsArena>>
+  std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<igl::vulkan::DescriptorPoolsArena>>
       arenaBuffersStorage_;
   std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBindless_; // everything
   VkDescriptorPool dpBindless_ = VK_NULL_HANDLE;
@@ -336,38 +302,40 @@ struct VulkanContextImpl final {
 
   igl::vulkan::DescriptorPoolsArena& getOrCreateArena_CombinedImageSamplers(
       const VulkanContext& ctx,
-      const VulkanDescriptorSetLayout* dsl) {
-    IGL_ASSERT(dsl);
+      VkDescriptorSetLayout dsl,
+      uint32_t numBindings) {
     auto it = arenaCombinedImageSamplers_.find(dsl);
     if (it != arenaCombinedImageSamplers_.end()) {
       return *it->second;
     }
-    arenaCombinedImageSamplers_[dsl] = std::make_unique<DescriptorPoolsArena>(
-        ctx, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, *dsl, "arenaCombinedImageSamplers_");
+    arenaCombinedImageSamplers_[dsl] =
+        std::make_unique<DescriptorPoolsArena>(ctx,
+                                               VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                               dsl,
+                                               numBindings,
+                                               "arenaCombinedImageSamplers_");
     return *arenaCombinedImageSamplers_[dsl].get();
   }
-  igl::vulkan::DescriptorPoolsArena& getOrCreateArena_UniformBuffers(
-      const VulkanContext& ctx,
-      const VulkanDescriptorSetLayout* dsl) {
-    IGL_ASSERT(dsl);
+  igl::vulkan::DescriptorPoolsArena& getOrCreateArena_UniformBuffers(const VulkanContext& ctx,
+                                                                     VkDescriptorSetLayout dsl,
+                                                                     uint32_t numBindings) {
     auto it = arenaBuffersUniform_.find(dsl);
     if (it != arenaBuffersUniform_.end()) {
       return *it->second;
     }
     arenaBuffersUniform_[dsl] = std::make_unique<DescriptorPoolsArena>(
-        ctx, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, *dsl, "arenaBuffersUniform_");
+        ctx, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, dsl, numBindings, "arenaBuffersUniform_");
     return *arenaBuffersUniform_[dsl].get();
   }
-  igl::vulkan::DescriptorPoolsArena& getOrCreateArena_StorageBuffers(
-      const VulkanContext& ctx,
-      const VulkanDescriptorSetLayout* dsl) {
-    IGL_ASSERT(dsl);
+  igl::vulkan::DescriptorPoolsArena& getOrCreateArena_StorageBuffers(const VulkanContext& ctx,
+                                                                     VkDescriptorSetLayout dsl,
+                                                                     uint32_t numBindings) {
     auto it = arenaBuffersStorage_.find(dsl);
     if (it != arenaBuffersStorage_.end()) {
       return *it->second;
     }
     arenaBuffersStorage_[dsl] = std::make_unique<DescriptorPoolsArena>(
-        ctx, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, *dsl, "arenaBuffersStorage_");
+        ctx, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, dsl, numBindings, "arenaBuffersStorage_");
     return *arenaBuffersStorage_[dsl].get();
   }
 };
@@ -1471,11 +1439,12 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
                                            VkPipelineLayout layout,
                                            VkPipelineBindPoint bindPoint,
                                            const BindingsTextures& data,
-                                           const VulkanDescriptorSetLayout* dsl,
-                                           const util::SpvModuleInfo* info) const {
+                                           const VulkanDescriptorSetLayout& dsl,
+                                           const util::SpvModuleInfo& info) const {
   IGL_PROFILER_FUNCTION();
 
-  DescriptorPoolsArena& arena = pimpl_->getOrCreateArena_CombinedImageSamplers(*this, dsl);
+  DescriptorPoolsArena& arena = pimpl_->getOrCreateArena_CombinedImageSamplers(
+      *this, dsl.getVkDescriptorSetLayout(), dsl.numBindings_);
 
   VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, pimpl_->lastSubmitHandle_);
 
@@ -1493,49 +1462,25 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-  if (info) {
-    for (const util::TextureDescription& d : info->textures) {
-      IGL_ASSERT(d.descriptorSet == kBindPoint_CombinedImageSamplers);
-      const uint32_t loc = d.bindingLocation;
-      IGL_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
-      igl::vulkan::VulkanTexture* texture = data.textures[loc];
-      if (texture && isGraphics) {
-        IGL_ASSERT_MSG(data.samplers[loc], "A sampler should be bound to every bound texture slot");
-      }
-      VkSampler sampler = data.samplers[loc] ? data.samplers[loc]->getVkSampler() : dummySampler;
-      // multisampled images cannot be directly accessed from shaders
-      const bool isTextureAvailable =
-          texture && ((texture->image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
-      const bool isSampledImage = isTextureAvailable && texture->image_->isSampledImage();
-      writes[numWrites++] = ivkGetWriteDescriptorSet_ImageInfo(
-          dset, loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &infoSampledImages[numImages]);
-      infoSampledImages[numImages++] = {isSampledImage ? sampler : dummySampler,
-                                        isSampledImage ? texture->imageView_->getVkImageView()
-                                                       : dummyImageView,
-                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+  for (const util::TextureDescription& d : info.textures) {
+    IGL_ASSERT(d.descriptorSet == kBindPoint_CombinedImageSamplers);
+    const uint32_t loc = d.bindingLocation;
+    IGL_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
+    igl::vulkan::VulkanTexture* texture = data.textures[loc];
+    if (texture && isGraphics) {
+      IGL_ASSERT_MSG(data.samplers[loc], "A sampler should be bound to every bound texture slot");
     }
-  } else {
-    // TODO: this is the code path for the old descriptor set management scheme; it will go away
-    // once we transition to the new one (using SPIR-V reflection info)
-    for (size_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
-      igl::vulkan::VulkanTexture* texture = data.textures[i];
-      if (texture && isGraphics) {
-        IGL_ASSERT_MSG(data.samplers[i], "A sampler should be bound to every bound texture slot");
-      }
-      VkSampler sampler = data.samplers[i] ? data.samplers[i]->getVkSampler() : dummySampler;
-      // multisampled images cannot be directly accessed from shaders
-      const bool isTextureAvailable =
-          texture && ((texture->image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
-      const bool isSampledImage = isTextureAvailable && texture->image_->isSampledImage();
-      infoSampledImages[numImages++] = {isSampledImage ? sampler : dummySampler,
-                                        isSampledImage ? texture->imageView_->getVkImageView()
-                                                       : dummyImageView,
-                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-    }
-    if (numImages) {
-      writes[numWrites++] = ivkGetWriteDescriptorSet_ImageInfo(
-          dset, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numImages, infoSampledImages);
-    }
+    VkSampler sampler = data.samplers[loc] ? data.samplers[loc]->getVkSampler() : dummySampler;
+    // multisampled images cannot be directly accessed from shaders
+    const bool isTextureAvailable =
+        texture && ((texture->image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
+    const bool isSampledImage = isTextureAvailable && texture->image_->isSampledImage();
+    writes[numWrites++] = ivkGetWriteDescriptorSet_ImageInfo(
+        dset, loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &infoSampledImages[numImages]);
+    infoSampledImages[numImages++] = {isSampledImage ? sampler : dummySampler,
+                                      isSampledImage ? texture->imageView_->getVkImageView()
+                                                     : dummyImageView,
+                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
   }
 
   if (numWrites) {
@@ -1555,11 +1500,12 @@ void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
                                                  VkPipelineLayout layout,
                                                  VkPipelineBindPoint bindPoint,
                                                  BindingsBuffers& data,
-                                                 const VulkanDescriptorSetLayout* dsl,
-                                                 const util::SpvModuleInfo* info) const {
+                                                 const VulkanDescriptorSetLayout& dsl,
+                                                 const util::SpvModuleInfo& info) const {
   IGL_PROFILER_FUNCTION();
 
-  DescriptorPoolsArena& arena = pimpl_->getOrCreateArena_UniformBuffers(*this, dsl);
+  DescriptorPoolsArena& arena = pimpl_->getOrCreateArena_UniformBuffers(
+      *this, dsl.getVkDescriptorSetLayout(), dsl.numBindings_);
 
   VkDescriptorSet dsetBufUniform =
       arena.getNextDescriptorSet(*immediate_, pimpl_->lastSubmitHandle_);
@@ -1568,28 +1514,13 @@ void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
   VkWriteDescriptorSet writes[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
   uint32_t numWrites = 0;
 
-  if (info) {
-    for (const util::BufferDescription& b : info->uniformBuffers) {
-      IGL_ASSERT(b.descriptorSet == kBindPoint_BuffersUniform);
-      writes[numWrites++] = ivkGetWriteDescriptorSet_BufferInfo(dsetBufUniform,
-                                                                b.bindingLocation,
-                                                                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                                                1,
-                                                                &data.buffers[b.bindingLocation]);
-    }
-  } else {
-    // TODO: this is the code path for the old descriptor set management scheme; it will go away
-    // once we transition to the new one (using SPIR-V reflection info)
-    for (VkDescriptorBufferInfo& bi : data.buffers) {
-      if (bi.buffer == VK_NULL_HANDLE) {
-        bi = {dummyUniformBuffer_->getVkBuffer(), 0, VK_WHOLE_SIZE};
-      }
-    }
+  for (const util::BufferDescription& b : info.uniformBuffers) {
+    IGL_ASSERT(b.descriptorSet == kBindPoint_BuffersUniform);
     writes[numWrites++] = ivkGetWriteDescriptorSet_BufferInfo(dsetBufUniform,
-                                                              0,
+                                                              b.bindingLocation,
                                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                                              IGL_UNIFORM_BLOCKS_BINDING_MAX,
-                                                              data.buffers);
+                                                              1,
+                                                              &data.buffers[b.bindingLocation]);
   }
 
   if (numWrites) {
@@ -1609,11 +1540,12 @@ void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
                                                  VkPipelineLayout layout,
                                                  VkPipelineBindPoint bindPoint,
                                                  BindingsBuffers& data,
-                                                 const VulkanDescriptorSetLayout* dsl,
-                                                 const util::SpvModuleInfo* info) const {
+                                                 const VulkanDescriptorSetLayout& dsl,
+                                                 const util::SpvModuleInfo& info) const {
   IGL_PROFILER_FUNCTION();
 
-  DescriptorPoolsArena& arena = pimpl_->getOrCreateArena_StorageBuffers(*this, dsl);
+  DescriptorPoolsArena& arena = pimpl_->getOrCreateArena_StorageBuffers(
+      *this, dsl.getVkDescriptorSetLayout(), dsl.numBindings_);
 
   VkDescriptorSet dsetBufStorage =
       arena.getNextDescriptorSet(*immediate_, pimpl_->lastSubmitHandle_);
@@ -1622,28 +1554,13 @@ void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
   VkWriteDescriptorSet writes[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
   uint32_t numWrites = 0;
 
-  if (info) {
-    for (const util::BufferDescription& b : info->storageBuffers) {
-      IGL_ASSERT(b.descriptorSet == kBindPoint_BuffersStorage);
-      writes[numWrites++] = ivkGetWriteDescriptorSet_BufferInfo(dsetBufStorage,
-                                                                b.bindingLocation,
-                                                                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                                                1,
-                                                                &data.buffers[b.bindingLocation]);
-    }
-  } else {
-    // TODO: this is the code path for the old descriptor set management scheme; it will go away
-    // once we transition to the new one (using SPIR-V reflection info)
-    for (VkDescriptorBufferInfo& bi : data.buffers) {
-      if (bi.buffer == VK_NULL_HANDLE) {
-        bi = {dummyStorageBuffer_->getVkBuffer(), 0, VK_WHOLE_SIZE};
-      }
-    }
+  for (const util::BufferDescription& b : info.storageBuffers) {
+    IGL_ASSERT(b.descriptorSet == kBindPoint_BuffersStorage);
     writes[numWrites++] = ivkGetWriteDescriptorSet_BufferInfo(dsetBufStorage,
-                                                              0,
+                                                              b.bindingLocation,
                                                               VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                                              IGL_UNIFORM_BLOCKS_BINDING_MAX,
-                                                              data.buffers);
+                                                              1,
+                                                              &data.buffers[b.bindingLocation]);
   }
 
   if (numWrites) {

@@ -88,7 +88,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
 
   IGL_ASSERT_MSG(cps_, "Did you forget to call bindComputePipelineState()?");
 
-  binder_.updateBindings(cps_->getVkPipelineLayout(), cps_);
+  binder_.updateBindings(cps_->getVkPipelineLayout(), *cps_);
   // threadgroupSize is controlled inside compute shaders
   ctx_.vf_.vkCmdDispatch(
       cmdBuffer_, threadgroupCount.width, threadgroupCount.height, threadgroupCount.depth);

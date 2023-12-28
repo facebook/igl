@@ -340,20 +340,20 @@ class VulkanContext final {
                               VkPipelineLayout layout,
                               VkPipelineBindPoint bindPoint,
                               const BindingsTextures& data,
-                              const VulkanDescriptorSetLayout* dsl,
-                              const util::SpvModuleInfo* info) const;
+                              const VulkanDescriptorSetLayout& dsl,
+                              const util::SpvModuleInfo& info) const;
   void updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
                                     VkPipelineLayout layout,
                                     VkPipelineBindPoint bindPoint,
                                     BindingsBuffers& data,
-                                    const VulkanDescriptorSetLayout* dsl,
-                                    const util::SpvModuleInfo* info) const;
+                                    const VulkanDescriptorSetLayout& dsl,
+                                    const util::SpvModuleInfo& info) const;
   void updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
                                     VkPipelineLayout layout,
                                     VkPipelineBindPoint bindPoint,
                                     BindingsBuffers& data,
-                                    const VulkanDescriptorSetLayout* dsl,
-                                    const util::SpvModuleInfo* info) const;
+                                    const VulkanDescriptorSetLayout& dsl,
+                                    const util::SpvModuleInfo& info) const;
   void markSubmitted(const SubmitHandle& handle) const;
 
   struct DeferredTask {
