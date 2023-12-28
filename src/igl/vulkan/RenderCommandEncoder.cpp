@@ -9,6 +9,7 @@
 
 #include <algorithm>
 
+#include <igl/IGLSafeC.h>
 #include <igl/RenderPass.h>
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
@@ -275,7 +276,6 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   bindScissorRect(scissor);
 
   ctx_.checkAndUpdateDescriptorSets();
-  ctx_.bindBindlessDescriptorSet(cmdBuffer_);
 
   ctx_.vf_.vkCmdBeginRenderPass(cmdBuffer_, &bi, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -396,14 +396,11 @@ void RenderCommandEncoder::bindRenderPipelineState(
     return;
   }
 
-  currentPipeline_ = pipelineState;
+  rps_ = static_cast<igl::vulkan::RenderPipelineState*>(pipelineState.get());
 
-  const igl::vulkan::RenderPipelineState* rps =
-      static_cast<igl::vulkan::RenderPipelineState*>(pipelineState.get());
+  IGL_ASSERT(rps_);
 
-  IGL_ASSERT(rps);
-
-  const RenderPipelineDesc& desc = rps->getRenderPipelineDesc();
+  const RenderPipelineDesc& desc = rps_->getRenderPipelineDesc();
 
   ensureShaderModule(desc.shaderStages->getVertexModule().get());
   ensureShaderModule(desc.shaderStages->getFragmentModule().get());
@@ -529,17 +526,15 @@ void RenderCommandEncoder::bindPushConstants(const void* data, size_t length, si
   // check push constant size is within max size
   const VkPhysicalDeviceLimits& limits = ctx_.getVkPhysicalDeviceProperties().limits;
   const size_t size = offset + length;
-  if (!IGL_VERIFY(size <= limits.maxPushConstantsSize)) {
-    IGL_LOG_ERROR(
-        "Push constants size exceeded %u (max %u bytes)", size, limits.maxPushConstantsSize);
+  const uint32_t maxSize = std::min(kMaxPushConstantsSize, limits.maxPushConstantsSize);
+  if (!IGL_VERIFY(size <= maxSize)) {
+    IGL_LOG_ERROR("Push constants size exceeded %u (max %u bytes)", size, maxSize);
+    return;
   }
 
-  ctx_.vf_.vkCmdPushConstants(cmdBuffer_,
-                              ctx_.pipelineLayoutGraphics_->getVkPipelineLayout(),
-                              VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                              (uint32_t)offset,
-                              (uint32_t)length,
-                              data);
+  pushConstantsSize_ = size;
+
+  checked_memcpy(pushConstants_ + offset, kMaxPushConstantsSize, data, length);
 }
 
 void RenderCommandEncoder::bindSamplerState(size_t index,
@@ -582,17 +577,6 @@ void RenderCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
 
-void RenderCommandEncoder::bindPipeline() {
-  const igl::vulkan::RenderPipelineState* rps =
-      static_cast<igl::vulkan::RenderPipelineState*>(currentPipeline_.get());
-
-  if (!IGL_VERIFY(rps)) {
-    return;
-  }
-
-  binder_.bindPipeline(rps->getVkPipeline(dynamicState_), nullptr);
-}
-
 void RenderCommandEncoder::draw(PrimitiveType primitiveType,
                                 size_t vertexStart,
                                 size_t vertexCount,
@@ -607,11 +591,14 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
     return;
   }
 
+  IGL_ASSERT_MSG(rps_, "Did you forget to call bindRenderPipelineState()?");
+
   ensureVertexBuffers();
 
-  binder_.updateBindings(ctx_.pipelineLayoutGraphics_->getVkPipelineLayout(), nullptr);
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
-  bindPipeline();
+  binder_.bindPipeline(rps_->getVkPipeline(dynamicState_), &rps_->getSpvModuleInfo());
+  binder_.updateBindings(rps_->getVkPipelineLayout(), rps_);
+  flushDynamicState();
 
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkCmdDraw(%u, %u, %u, %u)\n",
@@ -644,11 +631,14 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
     return;
   }
 
+  IGL_ASSERT_MSG(rps_, "Did you forget to call bindRenderPipelineState()?");
+
   ensureVertexBuffers();
 
-  binder_.updateBindings(ctx_.pipelineLayoutGraphics_->getVkPipelineLayout(), nullptr);
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
-  bindPipeline();
+  binder_.bindPipeline(rps_->getVkPipeline(dynamicState_), &rps_->getSpvModuleInfo());
+  binder_.updateBindings(rps_->getVkPipelineLayout(), rps_);
+  flushDynamicState();
 
   const igl::vulkan::Buffer* buf = static_cast<igl::vulkan::Buffer*>(&indexBuffer);
 
@@ -687,11 +677,14 @@ void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
   IGL_PROFILER_ZONE_GPU_COLOR_VK(
       "multiDrawIndirect()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
 
+  IGL_ASSERT_MSG(rps_, "Did you forget to call bindRenderPipelineState()?");
+
   ensureVertexBuffers();
 
-  binder_.updateBindings(ctx_.pipelineLayoutGraphics_->getVkPipelineLayout(), nullptr);
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
-  bindPipeline();
+  binder_.bindPipeline(rps_->getVkPipeline(dynamicState_), &rps_->getSpvModuleInfo());
+  binder_.updateBindings(rps_->getVkPipelineLayout(), rps_);
+  flushDynamicState();
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
 
@@ -715,11 +708,14 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
   IGL_PROFILER_ZONE_GPU_COLOR_VK(
       "multiDrawIndexedIndirect()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
 
+  IGL_ASSERT_MSG(rps_, "Did you forget to call bindRenderPipelineState()?");
+
   ensureVertexBuffers();
 
-  binder_.updateBindings(ctx_.pipelineLayoutGraphics_->getVkPipelineLayout(), nullptr);
   dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
-  bindPipeline();
+  binder_.bindPipeline(rps_->getVkPipeline(dynamicState_), &rps_->getSpvModuleInfo());
+  binder_.updateBindings(rps_->getVkPipelineLayout(), rps_);
+  flushDynamicState();
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
 
@@ -770,18 +766,47 @@ bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {
   return returnVal;
 }
 
+void RenderCommandEncoder::flushDynamicState() {
+  if (ctx_.config_.enableDescriptorIndexing) {
+    VkDescriptorSet dset = ctx_.getBindlessVkDescriptorSet();
+
+#if IGL_VULKAN_PRINT_COMMANDS
+    IGL_LOG_INFO("%p vkCmdBindDescriptorSets(GRAPHICS) - bindless\n", cmdBuffer_);
+#endif // IGL_VULKAN_PRINT_COMMANDS
+    ctx_.vf_.vkCmdBindDescriptorSets(cmdBuffer_,
+                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                     rps_->getVkPipelineLayout(),
+                                     kBindPoint_Bindless,
+                                     1,
+                                     &dset,
+                                     0,
+                                     nullptr);
+  }
+
+  if (pushConstantsSize_) {
+#if IGL_VULKAN_PRINT_COMMANDS
+    IGL_LOG_INFO("%p vkCmdPushConstants(%u) - GRAPHICS\n", cmdBuffer_, pushConstantsSize_);
+#endif // IGL_VULKAN_PRINT_COMMANDS
+    ctx_.vf_.vkCmdPushConstants(cmdBuffer_,
+                                rps_->getVkPipelineLayout(),
+                                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                0,
+                                pushConstantsSize_,
+                                pushConstants_);
+
+    pushConstantsSize_ = 0;
+  }
+}
+
 void RenderCommandEncoder::ensureVertexBuffers() {
   IGL_PROFILER_FUNCTION();
 
-  const igl::vulkan::RenderPipelineState* rps =
-      static_cast<igl::vulkan::RenderPipelineState*>(currentPipeline_.get());
-
-  if (!IGL_VERIFY(rps)) {
+  if (!IGL_VERIFY(rps_)) {
     return;
   }
 
   const igl::vulkan::VertexInputState* vi = static_cast<igl::vulkan::VertexInputState*>(
-      rps->getRenderPipelineDesc().vertexInputState.get());
+      rps_->getRenderPipelineDesc().vertexInputState.get());
 
   if (!vi) {
     // no vertex input is perfectly valid

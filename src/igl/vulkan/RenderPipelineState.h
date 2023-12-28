@@ -198,7 +198,6 @@ class RenderPipelineState final : public IRenderPipelineState, public vulkan::Pi
   // This is empty for now.
   std::shared_ptr<RenderPipelineReflection> reflection_;
 
-  mutable VkPipelineLayout vkPipelineLayout_ = VK_NULL_HANDLE;
   mutable std::unordered_map<RenderPipelineDynamicState,
                              VkPipeline,
                              RenderPipelineDynamicState::HashFunction>

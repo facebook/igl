@@ -225,12 +225,10 @@ class VulkanContext final {
   void createInstance(const size_t numExtraExtensions, const char** extraExtensions);
   void createSurface(void* window, void* display);
   void checkAndUpdateDescriptorSets();
-  void bindBindlessDescriptorSet(VkCommandBuffer cmdBuf) const;
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void waitDeferredTasks();
   void growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t newMaxSamplers);
-  void updatePipelineLayouts();
 
  private:
   friend class igl::vulkan::Device;
@@ -294,7 +292,6 @@ class VulkanContext final {
   std::unique_ptr<igl::vulkan::VulkanImmediateCommands> immediate_;
   std::unique_ptr<igl::vulkan::VulkanStagingDevice> stagingDevice_;
 
-  std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayoutGraphics_;
   std::shared_ptr<igl::vulkan::VulkanBuffer> dummyUniformBuffer_;
   std::shared_ptr<igl::vulkan::VulkanBuffer> dummyStorageBuffer_;
   // don't use staging on devices with device-local host-visible memory

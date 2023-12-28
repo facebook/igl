@@ -10,6 +10,7 @@
 #include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/VertexInputState.h>
 #include <igl/vulkan/VulkanContext.h>
+#include <igl/vulkan/VulkanDescriptorSetLayout.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
 #include <igl/vulkan/VulkanPipelineLayout.h>
@@ -271,7 +272,6 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
   device_(device),
   reflection_(std::make_shared<RenderPipelineReflection>()) {
   desc_ = std::move(desc);
-  vkPipelineLayout_ = device_.getVulkanContext().pipelineLayoutGraphics_->getVkPipelineLayout();
   // Iterate and cache vertex input bindings and attributes
   const igl::vulkan::VertexInputState* vstate =
       static_cast<igl::vulkan::VertexInputState*>(desc_.vertexInputState.get());
@@ -328,18 +328,23 @@ VkPipeline RenderPipelineState::getVkPipeline(
     const RenderPipelineDynamicState& dynamicState) const {
   const VulkanContext& ctx = device_.getVulkanContext();
 
-  if (vkPipelineLayout_ != ctx.pipelineLayoutGraphics_->getVkPipelineLayout()) {
-    // there's a new pipeline layout - drop all cached Vulkan pipelines
-    VkDevice device = ctx.device_->getVkDevice();
-    for (const auto& p : pipelines_) {
-      if (p.second != VK_NULL_HANDLE) {
-        ctx.deferredTask(std::packaged_task<void()>([vf = &ctx.vf_, device, pipeline = p.second]() {
-          vf->vkDestroyPipeline(device, pipeline, nullptr);
-        }));
+  if (ctx.config_.enableDescriptorIndexing) {
+    // the bindless descriptor set layout can be changed in VulkanContext when the number of
+    // existing textures increases
+    if (lastBindlessVkDescriptorSetLayout_ != ctx.getBindlessVkDescriptorSetLayout()) {
+      // there's a new descriptor set layout - drop the previous Vulkan pipeline
+      VkDevice device = ctx.device_->getVkDevice();
+      for (const auto& p : pipelines_) {
+        if (p.second != VK_NULL_HANDLE) {
+          ctx.deferredTask(
+              std::packaged_task<void()>([vf = &ctx.vf_, device, pipeline = p.second]() {
+                vf->vkDestroyPipeline(device, pipeline, nullptr);
+              }));
+        }
       }
+      pipelines_.clear();
+      lastBindlessVkDescriptorSetLayout_ = ctx.getBindlessVkDescriptorSetLayout();
     }
-    pipelines_.clear();
-    vkPipelineLayout_ = ctx.pipelineLayoutGraphics_->getVkPipelineLayout();
   }
 
   const auto it = pipelines_.find(dynamicState);
@@ -347,6 +352,35 @@ VkPipeline RenderPipelineState::getVkPipeline(
   if (it != pipelines_.end()) {
     return it->second;
   }
+
+  // @fb-only
+  const VkDescriptorSetLayout DSLs[] = {
+      dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
+      dslUniformBuffers_->getVkDescriptorSetLayout(),
+      dslStorageBuffers_->getVkDescriptorSetLayout(),
+      ctx.getBindlessVkDescriptorSetLayout(),
+  };
+
+  const VkPhysicalDeviceLimits& limits = ctx.getVkPhysicalDeviceProperties().limits;
+
+  constexpr uint32_t kPushConstantsSize = 128;
+
+  if (!IGL_VERIFY(kPushConstantsSize <= limits.maxPushConstantsSize)) {
+    IGL_LOG_ERROR("Push constants size exceeded %u (max %u bytes)",
+                  kPushConstantsSize,
+                  limits.maxPushConstantsSize);
+  }
+
+  pipelineLayout_ = std::make_unique<VulkanPipelineLayout>(
+      ctx,
+      ctx.getVkDevice(),
+      DSLs,
+      static_cast<uint32_t>(ctx.config_.enableDescriptorIndexing
+                                ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
+                                : IGL_ARRAY_NUM_ELEMENTS(DSLs) - 1u),
+      ivkGetPushConstantRange(
+          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, kPushConstantsSize),
+      IGL_FORMAT("Pipeline Layout: {}", desc_.debugName).c_str());
 
   const VkPhysicalDeviceFeatures2& deviceFeatures = ctx.getVkPhysicalDeviceFeatures2();
   VkBool32 dualSrcBlendSupported = deviceFeatures.features.dualSrcBlend;
@@ -435,7 +469,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
           .build(ctx.vf_,
                  ctx.device_->getVkDevice(),
                  ctx.pipelineCache_,
-                 ctx.pipelineLayoutGraphics_->getVkPipelineLayout(),
+                 pipelineLayout_->getVkPipelineLayout(),
                  renderPass,
                  &pipeline,
                  desc_.debugName.toConstChar()));

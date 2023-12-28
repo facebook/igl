@@ -121,11 +121,17 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   bool setDrawCallCountEnabled(bool value);
 
  private:
-  void bindPipeline();
+  RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer, VulkanContext& ctx);
 
   /// @brief Ensures that the vertex buffers are bound by performing checks. If the function doesn't
   /// assert at some point, the vertex buffer(s) is bound correctly.
   void ensureVertexBuffers();
+  void flushDynamicState();
+
+  void initialize(const RenderPassDesc& renderPass,
+                  const std::shared_ptr<IFramebuffer>& framebuffer,
+                  const Dependencies& dependencies,
+                  Result* outResult);
 
  private:
   VulkanContext& ctx_;
@@ -136,7 +142,6 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
 
   igl::vulkan::ResourcesBinder binder_;
 
-  std::shared_ptr<igl::IRenderPipelineState> currentPipeline_ = nullptr;
   RenderPipelineDynamicState dynamicState_;
 
   /* Used to increment the draw call count. Should either be 0 or 1
@@ -146,15 +151,14 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
 
   bool isVertexBufferBound_[IGL_VERTEX_BUFFER_MAX] = {};
 
- private:
-  RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer, VulkanContext& ctx);
-
-  void initialize(const RenderPassDesc& renderPass,
-                  const std::shared_ptr<IFramebuffer>& framebuffer,
-                  const Dependencies& dependencies,
-                  Result* outResult);
-
   Dependencies dependencies_ = {};
+
+  const igl::vulkan::RenderPipelineState* rps_ = nullptr;
+
+  static constexpr uint32_t kMaxPushConstantsSize = 128;
+
+  uint8_t pushConstants_[kMaxPushConstantsSize] = {};
+  uint32_t pushConstantsSize_ = 0;
 };
 
 } // namespace igl::vulkan
