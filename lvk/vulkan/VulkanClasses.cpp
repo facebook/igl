@@ -4065,8 +4065,9 @@ VkShaderModule lvk::VulkanContext::createShaderModule(ShaderStage stage,
       layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
       layout (set = 1, binding = 0) uniform texture3D kTextures3D[];
       layout (set = 2, binding = 0) uniform textureCube kTexturesCube[];
+      layout (set = 3, binding = 0) uniform texture2D kTextures2DShadow[];
       layout (set = 0, binding = 1) uniform sampler kSamplers[];
-      layout (set = 1, binding = 1) uniform samplerShadow kSamplersShadow[];
+      layout (set = 3, binding = 1) uniform samplerShadow kSamplersShadow[];
       )";
 
       sourcePatched += R"(
@@ -4077,7 +4078,7 @@ VkShaderModule lvk::VulkanContext::createShaderModule(ShaderStage stage,
         return textureLod(sampler2D(kTextures2D[textureid], kSamplers[samplerid]), uv, lod);
       }
       float textureBindless2DShadow(uint textureid, uint samplerid, vec3 uvw) {
-        return texture(sampler2DShadow(kTextures2D[textureid], kSamplersShadow[samplerid]), uvw);
+        return texture(sampler2DShadow(kTextures2DShadow[textureid], kSamplersShadow[samplerid]), uvw);
       }
       ivec2 textureBindlessSize2D(uint textureid) {
         return textureSize(kTextures2D[textureid], 0);
@@ -4944,7 +4945,7 @@ lvk::Result lvk::VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_
     }
 
     // duplicate for MoltenVK
-    const VkDescriptorSetLayout dsls[] = {vkDSL_, vkDSL_, vkDSL_};
+    const VkDescriptorSetLayout dsls[] = {vkDSL_, vkDSL_, vkDSL_, vkDSL_};
     const VkPushConstantRange range = {
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
                       VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
@@ -5011,7 +5012,7 @@ std::shared_ptr<lvk::VulkanImage> lvk::VulkanContext::createImage(VkImageType im
 
 void lvk::VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPoint) const {
   LVK_PROFILER_FUNCTION();
-  const VkDescriptorSet dsets[3] = {vkDSet_, vkDSet_, vkDSet_};
+  const VkDescriptorSet dsets[4] = {vkDSet_, vkDSet_, vkDSet_, vkDSet_};
   vkCmdBindDescriptorSets(cmdBuf, bindPoint, vkPipelineLayout_, 0, (uint32_t)LVK_ARRAY_NUM_ELEMENTS(dsets), dsets, 0, nullptr);
 }
 
