@@ -51,18 +51,17 @@
 
 #include <GLFW/glfw3.h>
 
-#ifdef __APPLE__
-#warning Not supported. Currently Vulkan 1.2 + extensions are available in MoltenVK.
-// Known issues: https://github.com/KhronosGroup/MoltenVK/issues/2011
-#endif
-
 constexpr uint32_t kMeshCacheVersion = 0xC0DE0009;
 #ifndef __APPLE__
 constexpr int kNumSamplesMSAA = 8;
 #else
 constexpr int kNumSamplesMSAA = 4;
 #endif
+#ifdef __APPLE__
+constexpr bool kEnableCompression = false;
+#else
 constexpr bool kEnableCompression = true;
+#endif
 constexpr bool kPreferIntegratedGPU = false;
 #if defined(NDEBUG)
 constexpr bool kEnableValidationLayers = false;
@@ -92,11 +91,13 @@ uint64_t pipelineTimestamps[GPUTimestamp_NUM_TIMESTAMPS] = {};
 double timestampBeginRendering = 0;
 double timestampEndRendering = 0;
 
+// https://github.com/KhronosGroup/MoltenVK/issues/2106
+// TODO: After fix, use the only shader with binding = 2 to be compatible with Vulkan image layout on other platforms.
+#ifdef __APPLE__
 const char* kCodeComputeTest = R"(
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-layout (set = 0, binding = 2, rgba8) uniform readonly  image2D kTextures2Din[];
-layout (set = 0, binding = 2, rgba8) uniform writeonly image2D kTextures2Dout[];
+layout (set = 0, binding = 0, rgba8) uniform image2D kTextures2DInOut[];
 
 layout(push_constant) uniform constants {
    uint tex;
@@ -108,12 +109,35 @@ void main() {
    ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
 
    if (pos.x < pc.width && pos.y < pc.height) {
-     vec4 pixel = imageLoad(kTextures2Din[pc.tex], pos);
+     vec4 pixel = imageLoad(kTextures2DInOut[pc.tex], pos);
      float luminance = dot(pixel, vec4(0.299, 0.587, 0.114, 0.0)); // https://www.w3.org/TR/AERT/#color-contrast
-     imageStore(kTextures2Dout[pc.tex], pos, vec4(vec3(luminance), 1.0));
+     imageStore(kTextures2DInOut[pc.tex], pos, vec4(vec3(luminance), 1.0));
    }
 }
 )";
+#else
+const char* kCodeComputeTest = R"(
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout (set = 0, binding = 2, rgba8) uniform image2D kTextures2DInOut[];
+
+layout(push_constant) uniform constants {
+   uint tex;
+   uint width;
+   uint height;
+} pc;
+
+void main() {
+   ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
+
+   if (pos.x < pc.width && pos.y < pc.height) {
+     vec4 pixel = imageLoad(kTextures2DInOut[pc.tex], pos);
+     float luminance = dot(pixel, vec4(0.299, 0.587, 0.114, 0.0)); // https://www.w3.org/TR/AERT/#color-contrast
+     imageStore(kTextures2DInOut[pc.tex], pos, vec4(vec3(luminance), 1.0));
+   }
+}
+)";
+#endif
 
 const char* kCodeFullscreenVS = R"(
 layout (location=0) out vec2 uv;
@@ -1729,9 +1753,14 @@ lvk::TextureHandle createTexture(const LoadedImage& img) {
       },
       nullptr);
 
+  // No mip-maps come from files on Apple platform, we need to generate them.
+#ifdef __APPLE__
+  ctx_->generateMipmap(tex);
+#else
   if (!hasCompressedTexture) {
     ctx_->generateMipmap(tex);
   }
+#endif
 
   lvk::TextureHandle handle = tex;
 

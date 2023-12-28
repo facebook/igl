@@ -65,7 +65,7 @@ cmake .. -G "Unix Makefiles"
 
 ### MacOS
 
-:heavy_exclamation_mark: Be sure that VulkanSDK 1.3.261.1+ for MacOS is installed https://vulkan.lunarg.com/sdk/home#mac
+:heavy_exclamation_mark: Be sure that VulkanSDK 1.3.275.0 for MacOS is installed https://vulkan.lunarg.com/sdk/home#mac
 
 ```
 cd build
