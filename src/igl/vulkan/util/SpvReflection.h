@@ -32,6 +32,7 @@ struct SpvModuleInfo {
   std::vector<BufferDescription> uniformBuffers;
   std::vector<BufferDescription> storageBuffers;
   std::vector<TextureDescription> textures;
+  bool hasPushConstants = false;
 };
 
 SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes);

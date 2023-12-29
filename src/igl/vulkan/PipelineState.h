@@ -33,12 +33,12 @@ class PipelineState {
   }
 
  private:
-  void initializeSpvModuleInfoFromShaderStages(IShaderStages* stages);
+  void initializeSpvModuleInfoFromShaderStages(const VulkanContext& ctx, IShaderStages* stages);
 
- protected:
-  friend class ResourcesBinder;
-
+ public:
   igl::vulkan::util::SpvModuleInfo info_;
+
+  VkPushConstantRange pushConstantRange_ = {};
 
   mutable std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayout_;
 

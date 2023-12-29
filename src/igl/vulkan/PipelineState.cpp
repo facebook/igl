@@ -15,14 +15,21 @@
 
 namespace igl::vulkan {
 
-void PipelineState::initializeSpvModuleInfoFromShaderStages(IShaderStages* stages) {
+void PipelineState::initializeSpvModuleInfoFromShaderStages(const VulkanContext& ctx,
+                                                            IShaderStages* stages) {
   auto* smComp = static_cast<igl::vulkan::ShaderModule*>(stages->getComputeModule().get());
+
+  VkShaderStageFlags pushConstantMask = 0;
 
   if (smComp) {
     // compute
     ensureShaderModule(smComp);
 
     info_ = smComp->getVulkanShaderModule().getSpvModuleInfo();
+
+    if (info_.hasPushConstants) {
+      pushConstantMask |= VK_SHADER_STAGE_COMPUTE_BIT;
+    }
   } else {
     auto* smVert = static_cast<igl::vulkan::ShaderModule*>(stages->getVertexModule().get());
     auto* smFrag = static_cast<igl::vulkan::ShaderModule*>(stages->getFragmentModule().get());
@@ -34,7 +41,28 @@ void PipelineState::initializeSpvModuleInfoFromShaderStages(IShaderStages* stage
     const util::SpvModuleInfo& infoVert = smVert->getVulkanShaderModule().getSpvModuleInfo();
     const util::SpvModuleInfo& infoFrag = smFrag->getVulkanShaderModule().getSpvModuleInfo();
 
+    if (infoVert.hasPushConstants) {
+      pushConstantMask |= VK_SHADER_STAGE_VERTEX_BIT;
+    }
+    if (infoFrag.hasPushConstants) {
+      pushConstantMask |= VK_SHADER_STAGE_FRAGMENT_BIT;
+    }
+
     info_ = util::mergeReflectionData(infoVert, infoFrag);
+  }
+
+  if (pushConstantMask) {
+    const VkPhysicalDeviceLimits& limits = ctx.getVkPhysicalDeviceProperties().limits;
+
+    constexpr uint32_t kPushConstantsSize = 128;
+
+    if (!IGL_VERIFY(kPushConstantsSize <= limits.maxPushConstantsSize)) {
+      IGL_LOG_ERROR("Push constants size exceeded %u (max %u bytes)",
+                    kPushConstantsSize,
+                    limits.maxPushConstantsSize);
+    }
+
+    pushConstantRange_ = ivkGetPushConstantRange(pushConstantMask, 0, kPushConstantsSize);
   }
 }
 
@@ -43,7 +71,7 @@ PipelineState::PipelineState(const VulkanContext& ctx,
                              const char* debugName) {
   IGL_ASSERT(stages);
 
-  initializeSpvModuleInfoFromShaderStages(stages);
+  initializeSpvModuleInfoFromShaderStages(ctx, stages);
 
   // Create all Vulkan descriptor set layouts for this pipeline
 

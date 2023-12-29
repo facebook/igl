@@ -228,6 +228,9 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
         break;
       }
     }
+    if (id.opCode == SpvOpVariable && id.storageClass == SpvStorageClassPushConstant) {
+      info.hasPushConstants = true;
+    }
   }
 
   return info;
@@ -259,6 +262,8 @@ SpvModuleInfo mergeReflectionData(const SpvModuleInfo& info1, const SpvModuleInf
   combineDescriptions(result.uniformBuffers, info1.uniformBuffers, info2.uniformBuffers);
   combineDescriptions(result.storageBuffers, info1.storageBuffers, info2.storageBuffers);
   combineDescriptions(result.textures, info1.textures, info2.textures);
+
+  result.hasPushConstants = info1.hasPushConstants || info2.hasPushConstants;
 
   return result;
 }

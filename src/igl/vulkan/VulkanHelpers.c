@@ -1170,7 +1170,7 @@ VkPipelineLayoutCreateInfo ivkGetPipelineLayoutCreateInfo(uint32_t numLayouts,
       .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
       .setLayoutCount = numLayouts,
       .pSetLayouts = layouts,
-      .pushConstantRangeCount = 1,
+      .pushConstantRangeCount = range ? 1u : 0u,
       .pPushConstantRanges = range,
   };
   return ci;
