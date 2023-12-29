@@ -338,10 +338,6 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
   const bool isOpenGL = device.getBackendType() == igl::BackendType::OpenGL;
   const bool isVulkan = device.getBackendType() == igl::BackendType::Vulkan;
 
-  if (isVulkan) {
-    cmdEncoder.bindPushConstants(&orthoProjection, sizeof(orthoProjection));
-  }
-
   ImTextureID lastBoundTextureId = nullptr;
 
   for (int n = 0; n < drawData->CmdListsCount; n++) {
@@ -384,7 +380,6 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
         lastBoundTextureId = cmd.TextureId;
         auto* tex = reinterpret_cast<igl::ITexture*>(cmd.TextureId);
         if (isVulkan) {
-          cmdEncoder.bindPushConstants(&orthoProjection, sizeof(orthoProjection));
           // @fb-only
           // Add Vulkan support for texture reflection info in ShaderUniforms so we don't need to
           // bind the texture directly
@@ -399,7 +394,11 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
       drawableData.vertexData->primitiveDesc().numEntries = cmd.ElemCount;
       drawableData.vertexData->primitiveDesc().offset = cmd.IdxOffset * sizeof(ImDrawIdx);
 
-      drawableData.drawable->draw(device, cmdEncoder, _renderPipelineDesc);
+      drawableData.drawable->draw(device,
+                                  cmdEncoder,
+                                  _renderPipelineDesc,
+                                  isVulkan ? sizeof(orthoProjection) : 0,
+                                  &orthoProjection);
     }
   }
 

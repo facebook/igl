@@ -24,7 +24,9 @@ class Drawable final {
   /// related configurations will be handled internally.
   void draw(igl::IDevice& device,
             igl::IRenderCommandEncoder& commandEncoder,
-            const igl::RenderPipelineDesc& pipelineDesc);
+            const igl::RenderPipelineDesc& pipelineDesc,
+            size_t pushConstantsDataSize = 0,
+            const void* pushConstantsData = nullptr);
 
   /// A Drawable is "immutable" in that there's no API to modify its inputs after
   /// creation. They're lightweight objects and should be recreated instead of updated.

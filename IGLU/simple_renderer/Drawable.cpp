@@ -18,7 +18,9 @@ Drawable::Drawable(std::shared_ptr<vertexdata::VertexData> vertexData,
 
 void Drawable::draw(igl::IDevice& device,
                     igl::IRenderCommandEncoder& commandEncoder,
-                    const igl::RenderPipelineDesc& pipelineDesc) {
+                    const igl::RenderPipelineDesc& pipelineDesc,
+                    size_t pushConstantsDataSize,
+                    const void* pushConstantsData) {
   // Assumption: _vertexData and _material are immutable
   size_t pipelineDescHash = std::hash<igl::RenderPipelineDesc>()(pipelineDesc);
   if (!_pipelineState || pipelineDescHash != _lastPipelineDescHash) {
@@ -33,6 +35,10 @@ void Drawable::draw(igl::IDevice& device,
   commandEncoder.bindRenderPipelineState(_pipelineState);
 
   _material->bind(device, *_pipelineState, commandEncoder);
+
+  if (pushConstantsData && pushConstantsDataSize) {
+    commandEncoder.bindPushConstants(pushConstantsData, pushConstantsDataSize);
+  }
 
   _vertexData->draw(commandEncoder);
 }
