@@ -19,7 +19,7 @@ class VulkanPipelineLayout final {
                                 VkDevice device,
                                 const VkDescriptorSetLayout* layouts,
                                 uint32_t numLayouts,
-                                const VkPushConstantRange& range,
+                                const VkPushConstantRange* range,
                                 const char* debugName = nullptr);
   ~VulkanPipelineLayout();
 

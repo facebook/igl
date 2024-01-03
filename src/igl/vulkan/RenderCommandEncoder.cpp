@@ -9,7 +9,6 @@
 
 #include <algorithm>
 
-#include <igl/IGLSafeC.h>
 #include <igl/RenderPass.h>
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
@@ -523,18 +522,26 @@ void RenderCommandEncoder::bindPushConstants(const void* data, size_t length, si
 
   IGL_ASSERT(length % 4 == 0); // VUID-vkCmdPushConstants-size-00369: size must be a multiple of 4
 
-  // check push constant size is within max size
-  const VkPhysicalDeviceLimits& limits = ctx_.getVkPhysicalDeviceProperties().limits;
-  const size_t size = offset + length;
-  const uint32_t maxSize = std::min(kMaxPushConstantsSize, limits.maxPushConstantsSize);
-  if (!IGL_VERIFY(size <= maxSize)) {
-    IGL_LOG_ERROR("Push constants size exceeded %u (max %u bytes)", size, maxSize);
-    return;
+  IGL_ASSERT_MSG(rps_, "Did you forget to call bindRenderPipelineState()?");
+  IGL_ASSERT_MSG(rps_->pushConstantRange_.size,
+                 "Currently bound render pipeline state has no push constants");
+  IGL_ASSERT_MSG(offset + length <= rps_->pushConstantRange_.offset + rps_->pushConstantRange_.size,
+                 "Push constants size exceeded");
+
+  if (!rps_->pipelineLayout_) {
+    // bring a pipeline layout into existence - we don't really care about the dynamic state here
+    (void)rps_->getVkPipeline(dynamicState_);
   }
 
-  pushConstantsSize_ = size;
-
-  checked_memcpy(pushConstants_ + offset, kMaxPushConstantsSize, data, length);
+#if IGL_VULKAN_PRINT_COMMANDS
+  IGL_LOG_INFO("%p vkCmdPushConstants(%u) - GRAPHICS\n", cmdBuffer_, length);
+#endif // IGL_VULKAN_PRINT_COMMANDS
+  ctx_.vf_.vkCmdPushConstants(cmdBuffer_,
+                              rps_->getVkPipelineLayout(),
+                              rps_->pushConstantRange_.stageFlags,
+                              (uint32_t)offset,
+                              (uint32_t)length,
+                              data);
 }
 
 void RenderCommandEncoder::bindSamplerState(size_t index,
@@ -776,20 +783,6 @@ void RenderCommandEncoder::flushDynamicState() {
                                      &dset,
                                      0,
                                      nullptr);
-  }
-
-  if (pushConstantsSize_) {
-#if IGL_VULKAN_PRINT_COMMANDS
-    IGL_LOG_INFO("%p vkCmdPushConstants(%u) - GRAPHICS\n", cmdBuffer_, pushConstantsSize_);
-#endif // IGL_VULKAN_PRINT_COMMANDS
-    ctx_.vf_.vkCmdPushConstants(cmdBuffer_,
-                                rps_->getVkPipelineLayout(),
-                                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                                0,
-                                pushConstantsSize_,
-                                pushConstants_);
-
-    pushConstantsSize_ = 0;
   }
 }
 

@@ -66,16 +66,6 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
       ctx.getBindlessVkDescriptorSetLayout(),
   };
 
-  const VkPhysicalDeviceLimits& limits = ctx.getVkPhysicalDeviceProperties().limits;
-
-  constexpr uint32_t kPushConstantsSize = 128;
-
-  if (!IGL_VERIFY(kPushConstantsSize <= limits.maxPushConstantsSize)) {
-    IGL_LOG_ERROR("Push constants size exceeded %u (max %u bytes)",
-                  kPushConstantsSize,
-                  limits.maxPushConstantsSize);
-  }
-
   pipelineLayout_ = std::make_unique<VulkanPipelineLayout>(
       ctx,
       ctx.getVkDevice(),
@@ -83,7 +73,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
       static_cast<uint32_t>(ctx.config_.enableDescriptorIndexing
                                 ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
                                 : IGL_ARRAY_NUM_ELEMENTS(DSLs) - 1u),
-      ivkGetPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, kPushConstantsSize),
+      info_.hasPushConstants ? &pushConstantRange_ : nullptr,
       IGL_FORMAT("Pipeline Layout: {}", desc_.debugName).c_str());
 
   const auto& shaderModule = desc_.shaderStages->getComputeModule();

@@ -154,11 +154,6 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   Dependencies dependencies_ = {};
 
   const igl::vulkan::RenderPipelineState* rps_ = nullptr;
-
-  static constexpr uint32_t kMaxPushConstantsSize = 128;
-
-  uint8_t pushConstants_[kMaxPushConstantsSize] = {};
-  uint32_t pushConstantsSize_ = 0;
 };
 
 } // namespace igl::vulkan

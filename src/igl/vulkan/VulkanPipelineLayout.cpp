@@ -17,12 +17,12 @@ VulkanPipelineLayout::VulkanPipelineLayout(const VulkanContext& ctx,
                                            VkDevice device,
                                            const VkDescriptorSetLayout* layouts,
                                            uint32_t numLayouts,
-                                           const VkPushConstantRange& range,
+                                           const VkPushConstantRange* range,
                                            const char* debugName) :
   ctx_(ctx), device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  const VkPipelineLayoutCreateInfo ci = ivkGetPipelineLayoutCreateInfo(numLayouts, layouts, &range);
+  const VkPipelineLayoutCreateInfo ci = ivkGetPipelineLayoutCreateInfo(numLayouts, layouts, range);
 
   VK_ASSERT(ctx.vf_.vkCreatePipelineLayout(device, &ci, nullptr, &vkPipelineLayout_));
   VK_ASSERT(ivkSetDebugObjectName(

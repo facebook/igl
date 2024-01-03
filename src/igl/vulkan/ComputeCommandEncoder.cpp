@@ -178,18 +178,17 @@ void ComputeCommandEncoder::bindBytes(size_t /*index*/, const void* /*data*/, si
 void ComputeCommandEncoder::bindPushConstants(const void* data, size_t length, size_t offset) {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT_MSG(cps_, "Did you forget to call bindComputePipelineState()?");
-
   IGL_ASSERT(length % 4 == 0); // VUID-vkCmdPushConstants-size-00369: size must be a multiple of 4
 
-  // check push constant size is within max size
-  const VkPhysicalDeviceLimits& limits = ctx_.getVkPhysicalDeviceProperties().limits;
-  const size_t size = offset + length;
-  if (!IGL_VERIFY(size <= limits.maxPushConstantsSize)) {
-    IGL_LOG_ERROR(
-        "Push constants size exceeded %u (max %u bytes)", size, limits.maxPushConstantsSize);
-  }
+  IGL_ASSERT_MSG(cps_, "Did you forget to call bindComputePipelineState()?");
+  IGL_ASSERT_MSG(cps_->pushConstantRange_.size,
+                 "Currently bound compute pipeline state has no push constants");
+  IGL_ASSERT_MSG(offset + length <= cps_->pushConstantRange_.offset + cps_->pushConstantRange_.size,
+                 "Push constants size exceeded");
 
+#if IGL_VULKAN_PRINT_COMMANDS
+  IGL_LOG_INFO("%p vkCmdPushConstants(%u) - COMPUTE\n", cmdBuffer_, length);
+#endif // IGL_VULKAN_PRINT_COMMANDS
   ctx_.vf_.vkCmdPushConstants(cmdBuffer_,
                               cps_->getVkPipelineLayout(),
                               VK_SHADER_STAGE_COMPUTE_BIT,
