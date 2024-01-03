@@ -145,7 +145,7 @@ class VulkanImmediateCommands final {
   /// @brief If the SubmitHandle is not ready, this function waits for the fence associated with the
   /// command buffer referred by the handle to become signaled. The maximum wait time is
   /// `UINT64_MAX` nanoseconds
-  void wait(SubmitHandle handle);
+  void wait(SubmitHandle handle, uint64_t timeoutNanoseconds = UINT64_MAX);
 
   /// @brief Wait for _all_ fences for all command buffers stored in `VulkanImmediateCommands` to
   /// become signaled. The maximum wait time is `UINT64_MAX` nanoseconds

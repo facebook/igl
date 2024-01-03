@@ -47,7 +47,7 @@ class PlatformDevice : public IPlatformDevice {
 
   /// Waits on the GPU Fence associated with the handle
   /// @param handle The handle to the GPU Fence
-  void waitOnSubmitHandle(SubmitHandle handle) const;
+  void waitOnSubmitHandle(SubmitHandle handle, uint64_t timeoutNanoseconds = UINT64_MAX) const;
 
   /// Android only for now - Creates the file descriptor for the underlying VkFence
   /// @param handle The handle to the GPU Fence

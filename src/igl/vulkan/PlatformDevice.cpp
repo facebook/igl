@@ -134,7 +134,7 @@ VkFence PlatformDevice::getVkFenceFromSubmitHandle(SubmitHandle handle) const {
   return vkFence;
 }
 
-void PlatformDevice::waitOnSubmitHandle(SubmitHandle handle) const {
+void PlatformDevice::waitOnSubmitHandle(SubmitHandle handle, uint64_t timeoutNanoseconds) const {
   if (handle == 0) {
     IGL_LOG_ERROR("Invalid submit handle passed to waitOnSubmitHandle");
     return;
@@ -143,7 +143,7 @@ void PlatformDevice::waitOnSubmitHandle(SubmitHandle handle) const {
   const auto& ctx = device_.getVulkanContext();
   const auto& immediateCommands = ctx.immediate_;
 
-  immediateCommands->wait(VulkanImmediateCommands::SubmitHandle(handle));
+  immediateCommands->wait(VulkanImmediateCommands::SubmitHandle(handle), timeoutNanoseconds);
 }
 
 #if defined(IGL_PLATFORM_ANDROID) && defined(VK_KHR_external_fence_fd)
