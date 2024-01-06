@@ -35,8 +35,12 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
   const FramebufferDesc& desc = static_cast<const Framebuffer&>(*framebuffer).get();
 
   // Colors
-  for (const auto& attachment : desc.colorAttachments) {
-    size_t index = attachment.first;
+  for (size_t index = 0; index != IGL_COLOR_ATTACHMENTS_MAX; index++) {
+    const auto& attachment = desc.colorAttachments[index];
+
+    if (!attachment.texture) {
+      continue;
+    }
 
     if (index >= renderPass.colorAttachments.size() || index >= IGL_COLOR_ATTACHMENTS_MAX) {
       static const char* kNotEnoughRenderPassColorAttachments =
@@ -47,7 +51,7 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
       break;
     }
 
-    auto& iglTexture = attachment.second.texture;
+    const auto& iglTexture = attachment.texture;
     MTLRenderPassColorAttachmentDescriptor* metalColorAttachment =
         metalRenderPassDesc.colorAttachments[index];
 
@@ -59,7 +63,7 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
       Result::setResult(outResult, Result::Code::ArgumentNull, kNullColorAttachmentMsg);
     }
 
-    auto& iglResolveTexture = attachment.second.resolveTexture;
+    const auto& iglResolveTexture = attachment.resolveTexture;
     if (iglResolveTexture &&
         renderPass.colorAttachments[index].storeAction == igl::StoreAction::MsaaResolve) {
       metalColorAttachment.resolveTexture = static_cast<Texture&>(*iglResolveTexture).get();

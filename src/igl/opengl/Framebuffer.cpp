@@ -343,31 +343,24 @@ CustomFramebuffer::~CustomFramebuffer() {
 std::vector<size_t> CustomFramebuffer::getColorAttachmentIndices() const {
   std::vector<size_t> indices;
 
-  for (const auto& attachment : renderTarget_.colorAttachments) {
-    indices.push_back(attachment.first);
+  for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
+    if (renderTarget_.colorAttachments[i].texture ||
+        renderTarget_.colorAttachments[i].resolveTexture) {
+      indices.push_back(i);
+    }
   }
 
   return indices;
 }
 
 std::shared_ptr<ITexture> CustomFramebuffer::getColorAttachment(size_t index) const {
-  auto colorAttachment = renderTarget_.colorAttachments.find(index);
-
-  if (colorAttachment != renderTarget_.colorAttachments.end()) {
-    return colorAttachment->second.texture;
-  }
-
-  return nullptr;
+  IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
+  return renderTarget_.colorAttachments[index].texture;
 }
 
 std::shared_ptr<ITexture> CustomFramebuffer::getResolveColorAttachment(size_t index) const {
-  auto colorAttachment = renderTarget_.colorAttachments.find(index);
-
-  if (colorAttachment != renderTarget_.colorAttachments.end()) {
-    return colorAttachment->second.resolveTexture;
-  }
-
-  return nullptr;
+  IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
+  return renderTarget_.colorAttachments[index].resolveTexture;
 }
 
 std::shared_ptr<ITexture> CustomFramebuffer::getDepthAttachment() const {
@@ -409,7 +402,7 @@ void CustomFramebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures,
     if (updateColor) {
       if (!surfaceTextures.color) {
         static_cast<Texture&>(*colorAttachment0).detachAsColor(0, false);
-        renderTarget_.colorAttachments.erase(0);
+        renderTarget_.colorAttachments[0] = {};
       } else {
         attachAsColor(*surfaceTextures.color, 0, defaultWriteAttachmentParams(renderTarget_.mode));
 
@@ -450,11 +443,10 @@ bool CustomFramebuffer::hasImplicitColorAttachment() const {
     return false;
   }
 
-  auto colorAttachment0 = renderTarget_.colorAttachments.find(0);
+  const auto& colorAttachment0 = renderTarget_.colorAttachments[0];
 
-  return colorAttachment0 != renderTarget_.colorAttachments.end() &&
-         colorAttachment0->second.texture != nullptr &&
-         static_cast<Texture&>(*colorAttachment0->second.texture).isImplicitStorage();
+  return colorAttachment0.texture != nullptr &&
+         static_cast<Texture&>(*colorAttachment0.texture).isImplicitStorage();
 }
 
 void CustomFramebuffer::initialize(const FramebufferDesc& desc, Result* outResult) {
@@ -491,12 +483,11 @@ void CustomFramebuffer::prepareResource(Result* outResult) {
 
   const auto attachmentParams = defaultWriteAttachmentParams(renderTarget_.mode);
   // attach the textures and render buffers to the frame buffer
-  for (const auto& colorAttachment : renderTarget_.colorAttachments) {
-    auto const colorAttachmentTexture = colorAttachment.second.texture;
-    if (colorAttachmentTexture != nullptr) {
-      size_t index = colorAttachment.first;
-      attachAsColor(*colorAttachmentTexture, static_cast<uint32_t>(index), attachmentParams);
-      drawBuffers.push_back(static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + index));
+  for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
+    const auto& colorAttachment = renderTarget_.colorAttachments[i];
+    if (colorAttachment.texture != nullptr) {
+      attachAsColor(*colorAttachment.texture, static_cast<uint32_t>(i), attachmentParams);
+      drawBuffers.push_back(static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i));
     }
   }
 
@@ -526,16 +517,22 @@ void CustomFramebuffer::prepareResource(Result* outResult) {
   // Check if resolve framebuffer is needed
   FramebufferDesc resolveDesc;
   auto createResolveFramebuffer = false;
-  for (const auto& colorAttachment : renderTarget_.colorAttachments) {
-    if (colorAttachment.second.resolveTexture) {
+  uint32_t maskColorAttachments = 0;
+  uint32_t maskColorResolveAttachments = 0;
+  for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
+    const auto& colorAttachment = renderTarget_.colorAttachments[i];
+    if (colorAttachment.texture) {
+      maskColorAttachments |= 1u << i;
+    }
+    if (colorAttachment.resolveTexture) {
       createResolveFramebuffer = true;
       FramebufferDesc::AttachmentDesc attachment;
-      attachment.texture = colorAttachment.second.resolveTexture;
-      resolveDesc.colorAttachments.emplace(colorAttachment.first, attachment);
+      attachment.texture = colorAttachment.resolveTexture;
+      resolveDesc.colorAttachments[i] = attachment;
+      maskColorResolveAttachments |= 1u << i;
     }
   }
-  if (createResolveFramebuffer &&
-      resolveDesc.colorAttachments.size() != renderTarget_.colorAttachments.size()) {
+  if (createResolveFramebuffer && maskColorResolveAttachments != maskColorAttachments) {
     IGL_ASSERT_NOT_REACHED();
     if (outResult) {
       *outResult = igl::Result(igl::Result::Code::ArgumentInvalid,
@@ -589,34 +586,33 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
 
   bindBuffer();
 
-  for (auto colorAttachment : renderTarget_.colorAttachments) {
-    auto const colorAttachmentTexture = colorAttachment.second.texture;
-
-    if (colorAttachmentTexture == nullptr) {
+  for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
+    const auto& colorAttachment = renderTarget_.colorAttachments[i];
+    if (!colorAttachment.texture) {
       continue;
     }
 #if !IGL_OPENGL_ES
     // OpenGL ES doesn't need to call glEnable. All it needs is an sRGB framebuffer.
     if (getContext().deviceFeatures().hasFeature(DeviceFeatures::SRGB)) {
-      if (colorAttachmentTexture->getProperties().isSRGB()) {
+      if (colorAttachment.texture->getProperties().isSRGB()) {
         getContext().enable(GL_FRAMEBUFFER_SRGB);
       } else {
         getContext().disable(GL_FRAMEBUFFER_SRGB);
       }
     }
 #endif
-    const size_t index = colorAttachment.first;
+    const size_t index = i;
     IGL_ASSERT(index >= 0 && index < renderPass.colorAttachments.size());
     const auto& renderPassAttachment = renderPass.colorAttachments[index];
     // When setting up a framebuffer, we attach textures as though they were a non-array
-    // texture with and set layer, mip level and face equal to 0.
+    // texture with and set layer, mip-level and face equal to 0.
     // If any of these assumptions are not true, we need to reattach with proper values.
     IGL_ASSERT(index >= 0 && index < kNumCachedStates);
     if (colorCachedState_[index].needsUpdate(renderTarget_.mode,
                                              renderPassAttachment.layer,
                                              renderPassAttachment.face,
                                              renderPassAttachment.mipLevel)) {
-      attachAsColor(*colorAttachmentTexture,
+      attachAsColor(*colorAttachment.texture,
                     static_cast<uint32_t>(index),
                     toAttachmentParams(renderPassAttachment, renderTarget_.mode));
     }
@@ -643,10 +639,9 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
   }
   // clear the buffers if we're not loading previous contents
   GLbitfield clearMask = 0;
-  auto colorAttachment0 = renderTarget_.colorAttachments.find(0);
+  const auto& colorAttachment0 = renderTarget_.colorAttachments[0];
 
-  if (colorAttachment0 != renderTarget_.colorAttachments.end() &&
-      colorAttachment0->second.texture != nullptr &&
+  if (colorAttachment0.texture != nullptr &&
       renderPass_.colorAttachments[0].loadAction == LoadAction::Clear) {
     clearMask |= GL_COLOR_BUFFER_BIT;
     auto clearColor = renderPass_.colorAttachments[0].clearColor;
@@ -678,10 +673,9 @@ void CustomFramebuffer::unbind() const {
   // discard the depthStencil if we don't need to store its contents
   GLenum attachments[3];
   GLsizei numAttachments = 0;
-  auto colorAttachment0 = renderTarget_.colorAttachments.find(0);
+  const auto& colorAttachment0 = renderTarget_.colorAttachments[0];
 
-  if (colorAttachment0 != renderTarget_.colorAttachments.end() &&
-      colorAttachment0->second.texture != nullptr &&
+  if (colorAttachment0.texture != nullptr &&
       renderPass_.colorAttachments[0].storeAction != StoreAction::Store) {
     attachments[numAttachments++] = GL_COLOR_ATTACHMENT0;
   }

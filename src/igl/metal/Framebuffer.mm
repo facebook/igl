@@ -18,33 +18,25 @@ namespace igl::metal {
 Framebuffer::Framebuffer(FramebufferDesc value) : value_(std::move(value)) {}
 
 std::vector<size_t> Framebuffer::getColorAttachmentIndices() const {
-  std::vector<size_t> ret;
+  std::vector<size_t> indices;
 
-  for (const auto& attachment : value_.colorAttachments) {
-    ret.push_back(attachment.first);
+  for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
+    if (value_.colorAttachments[i].texture || value_.colorAttachments[i].resolveTexture) {
+      indices.push_back(i);
+    }
   }
 
-  return ret;
+  return indices;
 }
 
 std::shared_ptr<ITexture> Framebuffer::getColorAttachment(size_t index) const {
-  auto colorAttachment = value_.colorAttachments.find(index);
-
-  if (colorAttachment != value_.colorAttachments.end()) {
-    return colorAttachment->second.texture;
-  }
-
-  return nullptr;
+  IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
+  return value_.colorAttachments[index].texture;
 }
 
 std::shared_ptr<ITexture> Framebuffer::getResolveColorAttachment(size_t index) const {
-  auto colorAttachment = value_.colorAttachments.find(index);
-
-  if (colorAttachment != value_.colorAttachments.end()) {
-    return colorAttachment->second.resolveTexture;
-  }
-
-  return nullptr;
+  IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
+  return value_.colorAttachments[index].resolveTexture;
 }
 
 std::shared_ptr<ITexture> Framebuffer::getDepthAttachment() const {
@@ -71,13 +63,14 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
                                            void* pixelBytes,
                                            const TextureRangeDesc& range,
                                            size_t bytesPerRow) const {
+  IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
   IGL_ASSERT_MSG(range.numFaces == 1, "range.numFaces MUST be 1");
   IGL_ASSERT_MSG(range.numLayers == 1, "range.numLayers MUST be 1");
   IGL_ASSERT_MSG(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
-  auto colorAttachment = value_.colorAttachments.find(index);
+  const auto& colorAttachment = value_.colorAttachments[index];
 
-  if (IGL_VERIFY(colorAttachment != value_.colorAttachments.end())) {
-    auto texture = colorAttachment->second.texture;
+  if (IGL_VERIFY(colorAttachment.texture != nullptr)) {
+    auto texture = colorAttachment.texture;
     copyBytes(cmdQueue, texture, pixelBytes, range, bytesPerRow);
   }
 }
@@ -106,10 +99,11 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
                                              size_t index,
                                              std::shared_ptr<ITexture> destTexture,
                                              const TextureRangeDesc& range) const {
-  auto colorAttachment = value_.colorAttachments.find(index);
+  IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
+  const auto& colorAttachment = value_.colorAttachments[index];
 
-  if (IGL_VERIFY(colorAttachment != value_.colorAttachments.end())) {
-    auto srcTexture = colorAttachment->second.texture;
+  if (IGL_VERIFY(colorAttachment.texture != nullptr)) {
+    auto srcTexture = colorAttachment.texture;
     id<MTLTexture> srcMtlTexture = static_cast<Texture&>(*srcTexture).get();
     id<MTLTexture> dstMtlTexture = static_cast<Texture&>(*destTexture).get();
     if (IGL_VERIFY(srcMtlTexture && dstMtlTexture)) {
@@ -154,7 +148,7 @@ void Framebuffer::copyBytes(ICommandQueue& cmdQueue,
 void Framebuffer::updateDrawable(std::shared_ptr<ITexture> texture) {
   if (getColorAttachment(0) != texture) {
     if (!texture) {
-      value_.colorAttachments.erase(0);
+      value_.colorAttachments[0] = {};
     } else {
       value_.colorAttachments[0].texture = std::move(texture);
     }

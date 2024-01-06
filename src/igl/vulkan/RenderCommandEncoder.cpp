@@ -144,8 +144,6 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
 
   const FramebufferDesc& desc = static_cast<const Framebuffer&>((*framebuffer)).getDesc();
 
-  IGL_ASSERT(desc.colorAttachments.size() <= IGL_COLOR_ATTACHMENTS_MAX);
-
   std::vector<VkClearValue> clearValues;
   uint32_t mipLevel = 0;
   uint32_t layer = 0;
@@ -160,23 +158,13 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
     }
   }
 
-  // All attachments may not valid.  Track active attachments
-  size_t largestIndexPlusOne = 0;
-  for (const auto& attachment : desc.colorAttachments) {
-    largestIndexPlusOne = largestIndexPlusOne < attachment.first ? attachment.first
-                                                                 : largestIndexPlusOne;
-  }
-
-  largestIndexPlusOne += 1;
-
-  for (size_t i = 0; i < largestIndexPlusOne; ++i) {
-    auto it = desc.colorAttachments.find(i);
-    if (it == desc.colorAttachments.end()) {
+  for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
+    const auto& attachment = desc.colorAttachments[i];
+    if (!attachment.texture) {
       continue;
     }
-    IGL_ASSERT(it->second.texture);
 
-    const auto& colorTexture = static_cast<vulkan::Texture&>(*it->second.texture);
+    const auto& colorTexture = static_cast<vulkan::Texture&>(*attachment.texture);
 
     // Specifically using renderPass.colorAttachments.size() in case we somehow
     // get into this loop even when renderPass.colorAttachments.empty() == true
@@ -216,9 +204,9 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                      colorTexture.getVulkanTexture().getVulkanImage().samples_);
     // handle MSAA
     if (descColor.storeAction == StoreAction::MsaaResolve) {
-      IGL_ASSERT_MSG(it->second.resolveTexture != nullptr,
+      IGL_ASSERT_MSG(attachment.resolveTexture,
                      "Framebuffer attachment should contain a resolve texture");
-      const auto& colorResolveTexture = static_cast<vulkan::Texture&>(*it->second.resolveTexture);
+      const auto& colorResolveTexture = static_cast<vulkan::Texture&>(*attachment.resolveTexture);
       builder.addColorResolve(textureFormatToVkFormat(colorResolveTexture.getFormat()),
                               VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                               VK_ATTACHMENT_STORE_OP_STORE);
@@ -322,7 +310,7 @@ void RenderCommandEncoder::endEncoding() {
   // set image layouts after the render pass
   const FramebufferDesc& desc = static_cast<const Framebuffer&>((*framebuffer_)).getDesc();
 
-  for (const auto& [_, attachment] : desc.colorAttachments) {
+  for (const auto& attachment : desc.colorAttachments) {
     // the image layouts of color attachments must match the final layout of the render pass, which
     // is always VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL (check VulkanRenderPassBuilder.cpp)
     overrideImageLayout(attachment.texture.get(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);

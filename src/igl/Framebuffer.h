@@ -10,7 +10,6 @@
 #include <igl/Common.h>
 #include <igl/ITrackedResource.h>
 #include <igl/Texture.h>
-#include <unordered_map>
 #include <vector>
 
 namespace igl {
@@ -35,11 +34,11 @@ struct FramebufferDesc {
     std::shared_ptr<ITexture> resolveTexture;
   };
 
-  /** @brief Mapping of index to specific color texture attachments */
-  std::unordered_map<size_t, AttachmentDesc> colorAttachments;
-  /** @brief The depth texture attachment */
+  /** @brief All color attachments */
+  AttachmentDesc colorAttachments[IGL_COLOR_ATTACHMENTS_MAX] = {};
+  /** @brief The depth attachment */
   AttachmentDesc depthAttachment;
-  /** @brief The stencil texture attachment */
+  /** @brief The stencil attachment */
   AttachmentDesc stencilAttachment;
 
   std::string debugName;

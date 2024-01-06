@@ -280,9 +280,10 @@ Session::Renderer::~Renderer() {
 }
 
 void Session::Renderer::newFrame(const igl::FramebufferDesc& desc) {
+  IGL_ASSERT(desc.colorAttachments[0].texture);
   _renderPipelineDesc.targetDesc.colorAttachments.resize(1);
   _renderPipelineDesc.targetDesc.colorAttachments[0].textureFormat =
-      desc.colorAttachments.at(0).texture->getFormat();
+      desc.colorAttachments[0].texture->getFormat();
   _renderPipelineDesc.targetDesc.depthAttachmentFormat =
       desc.depthAttachment.texture ? desc.depthAttachment.texture->getFormat()
                                    : igl::TextureFormat::Invalid;
@@ -450,7 +451,9 @@ Session::~Session() {
 void Session::beginFrame(const igl::FramebufferDesc& desc, float displayScale) {
   makeCurrentContext();
 
-  igl::Size size = desc.colorAttachments.at(0).texture->getSize();
+  IGL_ASSERT(desc.colorAttachments[0].texture);
+
+  const igl::Size size = desc.colorAttachments[0].texture->getSize();
 
   ImGuiIO& io = ImGui::GetIO();
   io.DisplaySize = ImVec2(size.width / displayScale, size.height / displayScale);
