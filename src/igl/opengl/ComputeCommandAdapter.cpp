@@ -17,7 +17,6 @@
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/Framebuffer.h>
 #include <igl/opengl/IContext.h>
-#include <igl/opengl/Memcpy.h>
 #include <igl/opengl/SamplerState.h>
 #include <igl/opengl/Shader.h>
 #include <igl/opengl/Texture.h>

@@ -267,6 +267,15 @@ ScopeGuard<T> operator+(ScopeGuardOnExit, T&& fn) {
 
 #define IGL_SCOPE_EXIT \
   auto FB_ANONYMOUS_VARIABLE(SCOPE_EXIT_STATE) = ScopeGuardOnExit() + [&]() noexcept
+
+///--------------------------------------
+/// MARK: - optimizedMemcpy
+
+// Optimized version of memcpy that allows to copy smallest unforms in most efficient way
+// Other sizes utilize a libc memcpy implementation
+// It's not a universal function and expects to have a proper alignment for data!
+void optimizedMemcpy(void* IGL_NULLABLE dst, const void* IGL_NULLABLE src, size_t size);
+
 } // namespace igl
 
 #endif // IGL_COMMON_H

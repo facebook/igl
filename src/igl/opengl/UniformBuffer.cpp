@@ -13,7 +13,6 @@
 #include <igl/opengl/CommandBuffer.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/Errors.h>
-#include <igl/opengl/Memcpy.h>
 #include <igl/opengl/RenderPipelineState.h>
 #include <igl/opengl/Shader.h>
 #include <memory>

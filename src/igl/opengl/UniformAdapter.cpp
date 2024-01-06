@@ -6,7 +6,6 @@
  */
 
 #include <igl/opengl/Buffer.h>
-#include <igl/opengl/Memcpy.h>
 #include <igl/opengl/UniformAdapter.h>
 #include <igl/opengl/UniformBuffer.h>
 

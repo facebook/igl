@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/opengl/Memcpy.h>
-
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 #include <string>
@@ -55,7 +53,7 @@ TEST_F(MemcpyOGLTest, optimizedMemcpyAlignmentPermutation) {
 
     // Always clear the dst buffer before each optimizedMemcpy() call.
     memcpy(dst, clr, sizeof(dst));
-    opengl::optimizedMemcpy(dst + di, src + i, len);
+    igl::optimizedMemcpy(dst + di, src + i, len);
 
     // Verify optimizedMemcpy() has done the job correctly.
     // We divide the dst buffer into up to 3 sections,
