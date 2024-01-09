@@ -204,7 +204,6 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
   case DeviceFeatureLimits::MaxTextureDimension1D2D:
   case DeviceFeatureLimits::MaxCubeMapDimension:
     switch (deviceFeatureDesc_.featureSet) {
-#if !defined(__OSMETA__)
 #if IGL_PLATFORM_IOS
     case MTLFeatureSet_iOS_GPUFamily1_v1:
     case MTLFeatureSet_iOS_GPUFamily1_v2:
@@ -216,16 +215,10 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     default:
       result = 16384;
       return true;
-
 #else // macos
     default:
       result = 16384;
       return true;
-#endif
-#else
-    default:
-      result = 8192;
-      return false;
 #endif
     }
   case DeviceFeatureLimits::MaxFragmentUniformVectors:
