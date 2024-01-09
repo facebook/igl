@@ -32,11 +32,14 @@ class Device;
 class RenderPipelineState final : public WithContext, public IRenderPipelineState {
   friend class Device;
 
+  Result create();
+
  public:
-  explicit RenderPipelineState(IContext& context);
+  explicit RenderPipelineState(IContext& context,
+                               const RenderPipelineDesc& desc,
+                               Result* outResult);
   ~RenderPipelineState() override;
 
-  Result create(const RenderPipelineDesc& desc);
   void bind();
   void unbind();
   Result bindTextureUnit(const size_t unit, uint8_t bindTarget);

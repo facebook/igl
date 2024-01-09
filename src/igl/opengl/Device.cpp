@@ -53,6 +53,19 @@ std::unique_ptr<Buffer> allocateBuffer(BufferDesc::BufferType bufferType,
   return resource;
 }
 
+template<class Ptr>
+Ptr verifyResult(Ptr resource, Result inResult, Result* outResult) {
+  if (inResult.isOk()) {
+    Result::setOk(outResult);
+  } else {
+    IGL_ASSERT_MSG(0, inResult.message.c_str());
+    resource = {};
+    Result::setResult(outResult, std::move(inResult));
+  }
+
+  return resource;
+}
+
 // common signature to the creation of all resources
 template<class Ptr, class Desc, class... Params>
 Ptr createResource(const Desc& desc, Result* outResult, Params&&... constructorParams) {
@@ -62,15 +75,7 @@ Ptr createResource(const Desc& desc, Result* outResult, Params&&... constructorP
 
   // Create the resource using desc.
   Result result = resource->create(desc);
-  if (result.isOk()) {
-    Result::setOk(outResult);
-  } else {
-    IGL_ASSERT_MSG(0, result.message.c_str());
-    resource = nullptr;
-    Result::setResult(outResult, std::move(result));
-  }
-
-  return resource;
+  return verifyResult<Ptr>(std::move(resource), std::move(result), outResult);
 }
 
 template<class T, class Desc, class... Params>
@@ -217,7 +222,9 @@ std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexIn
 // Pipelines
 std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderPipelineDesc& desc,
                                                                    Result* outResult) const {
-  return createSharedResource<RenderPipelineState>(desc, outResult, getContext());
+  Result res;
+  auto resource = std::make_shared<RenderPipelineState>(getContext(), desc, &res);
+  return verifyResult(resource, res, outResult);
 }
 
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(

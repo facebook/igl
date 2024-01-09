@@ -23,9 +23,17 @@ void logBlendFactorError(IGL_MAYBE_UNUSED const char* value) {
 
 } // namespace
 
-RenderPipelineState::RenderPipelineState(IContext& context) : WithContext(context) {
+RenderPipelineState::RenderPipelineState(IContext& context,
+                                         const RenderPipelineDesc& desc,
+                                         Result* outResult) :
+  WithContext(context) {
+  desc_ = desc;
   activeAttributesLocations_.reserve(64);
   unitSamplerLocationMap_.fill(-1);
+  auto ret = create();
+  if (outResult) {
+    *outResult = ret;
+  }
 }
 
 RenderPipelineState::~RenderPipelineState() = default;
@@ -95,15 +103,14 @@ GLenum RenderPipelineState::convertBlendFactor(BlendFactor value) {
   IGL_UNREACHABLE_RETURN(GL_ONE)
 }
 
-Result RenderPipelineState::create(const RenderPipelineDesc& desc) {
-  desc_ = desc;
-  if (IGL_UNEXPECTED(desc.shaderStages == nullptr)) {
+Result RenderPipelineState::create() {
+  if (IGL_UNEXPECTED(desc_.shaderStages == nullptr)) {
     return Result(Result::Code::ArgumentInvalid, "Missing shader stages");
   }
-  if (!IGL_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Render)) {
+  if (!IGL_VERIFY(desc_.shaderStages->getType() == ShaderStagesType::Render)) {
     return Result(Result::Code::ArgumentInvalid, "Shader stages not for render");
   }
-  const auto& shaderStages = std::static_pointer_cast<ShaderStages>(desc.shaderStages);
+  const auto& shaderStages = std::static_pointer_cast<ShaderStages>(desc_.shaderStages);
   if (!shaderStages) {
     return Result(Result::Code::ArgumentInvalid,
                   "Shader stages required to create pipeline state.");
@@ -116,10 +123,10 @@ Result RenderPipelineState::create(const RenderPipelineDesc& desc) {
 
   reflection_ = std::make_shared<RenderPipelineReflection>(getContext(), *shaderStages);
 
-  const auto& mFramebufferDesc = desc.targetDesc;
+  const auto& mFramebufferDesc = desc_.targetDesc;
   // Get and cache all attribute locations, since this won't change throughout
   // the lifetime of this RenderPipelineState
-  const auto& vertexInputState = std::static_pointer_cast<VertexInputState>(desc.vertexInputState);
+  const auto& vertexInputState = std::static_pointer_cast<VertexInputState>(desc_.vertexInputState);
   if (desc_.vertexInputState != nullptr) {
     auto bufferAttribMap = vertexInputState->getBufferAttribMap();
 
@@ -139,7 +146,7 @@ Result RenderPipelineState::create(const RenderPipelineDesc& desc) {
   }
 
   // Note this work is only done once. Beyond this point, there is no more query by name
-  for (const auto& [textureUnit, samplerName] : desc.fragmentUnitSamplerMap) {
+  for (const auto& [textureUnit, samplerName] : desc_.fragmentUnitSamplerMap) {
     const int loc = reflection_->getIndexByName(samplerName);
     if (loc >= 0) {
       unitSamplerLocationMap_[textureUnit] = loc;
@@ -148,7 +155,7 @@ Result RenderPipelineState::create(const RenderPipelineDesc& desc) {
     }
   }
 
-  for (const auto& [bindingIndex, names] : desc.uniformBlockBindingMap) {
+  for (const auto& [bindingIndex, names] : desc_.uniformBlockBindingMap) {
     const auto& [blockName, instanceName] = names;
     auto& uniformBlockDict = reflection_->getUniformBlocksDictionary();
     auto blockDescIt = uniformBlockDict.find(blockName);
@@ -167,7 +174,7 @@ Result RenderPipelineState::create(const RenderPipelineDesc& desc) {
     }
   }
 
-  for (const auto& [textureUnit, samplerName] : desc.vertexUnitSamplerMap) {
+  for (const auto& [textureUnit, samplerName] : desc_.vertexUnitSamplerMap) {
     const int loc = reflection_->getIndexByName(samplerName);
     if (loc < 0) {
       IGL_LOG_ERROR("Sampler uniform (%s) not found in shader.\n", samplerName.toConstChar());
