@@ -268,10 +268,10 @@ namespace vulkan {
 
 RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
                                          RenderPipelineDesc desc) :
+  IRenderPipelineState(std::move(desc)),
   PipelineState(device.getVulkanContext(), desc.shaderStages.get(), desc.debugName.toConstChar()),
   device_(device),
   reflection_(std::make_shared<RenderPipelineReflection>()) {
-  desc_ = std::move(desc);
   // Iterate and cache vertex input bindings and attributes
   const igl::vulkan::VertexInputState* vstate =
       static_cast<igl::vulkan::VertexInputState*>(desc_.vertexInputState.get());

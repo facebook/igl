@@ -15,8 +15,7 @@ namespace metal {
 RenderPipelineState::RenderPipelineState(id<MTLRenderPipelineState> value,
                                          MTLRenderPipelineReflection* reflection,
                                          const RenderPipelineDesc& desc) :
-  value_(value) {
-  desc_ = desc;
+  IRenderPipelineState(desc), value_(value) {
   reflection_ = reflection ? std::make_shared<RenderPipelineReflection>(reflection) : nullptr;
 }
 

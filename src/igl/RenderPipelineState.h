@@ -208,7 +208,7 @@ struct RenderPipelineDesc {
 
 class IRenderPipelineState {
  public:
-  IRenderPipelineState() = default;
+  explicit IRenderPipelineState(const RenderPipelineDesc& desc) : desc_(desc) {}
   virtual ~IRenderPipelineState() = default;
 
   virtual std::shared_ptr<IRenderPipelineReflection> renderPipelineReflection() = 0;
@@ -228,7 +228,7 @@ class IRenderPipelineState {
   }
 
  protected:
-  RenderPipelineDesc desc_{};
+  const RenderPipelineDesc desc_{};
 };
 
 } // namespace igl

@@ -26,8 +26,7 @@ void logBlendFactorError(IGL_MAYBE_UNUSED const char* value) {
 RenderPipelineState::RenderPipelineState(IContext& context,
                                          const RenderPipelineDesc& desc,
                                          Result* outResult) :
-  WithContext(context) {
-  desc_ = desc;
+  WithContext(context), IRenderPipelineState(desc) {
   activeAttributesLocations_.reserve(64);
   unitSamplerLocationMap_.fill(-1);
   auto ret = create();
