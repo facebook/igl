@@ -184,9 +184,36 @@ void* ManagedUniformBuffer::getData() {
   return data_;
 }
 
+void ManagedUniformBuffer::buildUnifromLUT() {
+  uniformLUT_ = std::make_unique<std::unordered_map<std::string, size_t>>();
+  for (size_t i = 0; i < uniformInfo.uniforms.size(); ++i) {
+    auto& uniform = uniformInfo.uniforms[i];
+    uniformLUT_->insert({uniform.name, i});
+  }
+}
+
+static int findUniformByName(const std::vector<igl::UniformDesc>& uniforms, const char* name) {
+  for (size_t i = 0; i < uniforms.size(); ++i) {
+    if (strcmp(name, uniforms[i].name.c_str()) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 bool ManagedUniformBuffer::updateData(const char* name, const void* data, size_t dataSize) {
   IGL_ASSERT(name);
-  for (auto& uniform : uniformInfo.uniforms) {
+
+  int index = -1;
+  if (uniformLUT_) {
+    auto search = uniformLUT_->find(name);
+    index = search != uniformLUT_->end() ? (int)search->second : -1;
+  } else {
+    index = findUniformByName(uniformInfo.uniforms, name);
+  }
+
+  if (index >= 0) {
+    auto& uniform = uniformInfo.uniforms[index];
     if (strcmp(name, uniform.name.c_str()) == 0) {
       // If dataSize is smaller than the expected size, we will just update as client requested.
       // This could mean the user knows only a portion of the uniform data needs updating

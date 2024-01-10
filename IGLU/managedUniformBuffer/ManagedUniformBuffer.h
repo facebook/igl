@@ -46,11 +46,14 @@ class ManagedUniformBuffer {
 
   void* getData();
 
+  void buildUnifromLUT();
+
  private:
   size_t getUniformDataSizeInternal(igl::UniformDesc& uniform);
   void* data_ = nullptr;
   int length_ = 0;
-  std::shared_ptr<igl::IBuffer> buffer_;
+  std::shared_ptr<igl::IBuffer> buffer_ = nullptr;
+  std::unique_ptr<std::unordered_map<std::string, size_t>> uniformLUT_ = nullptr;
 #if IGL_PLATFORM_IOS_SIMULATOR
   /// If we're in the simulator we need to hold onto length so we can deallocate memory buffer
   /// properly.
