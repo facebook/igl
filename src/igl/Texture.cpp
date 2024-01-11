@@ -8,6 +8,7 @@
 #include <igl/Texture.h>
 
 #include <cmath>
+#include <cstddef>
 #include <igl/IGLSafeC.h>
 #include <utility>
 
@@ -645,6 +646,9 @@ void ITexture::repackData(const TextureFormatProperties& properties,
     const auto totalNumLayers = mipRange.numLayers * mipRange.numFaces * mipRange.depth;
     for (size_t layer = 0; layer < totalNumLayers; ++layer) {
       uint8_t* repackedDataPtr = repackedData;
+      const std::ptrdiff_t increment = flipVertical ? -repackedDataIncrement
+                                                    : repackedDataIncrement;
+      // Start at the end
       if (flipVertical) {
         repackedDataPtr += repackedDataIncrement * (mipRange.height - 1);
       }
@@ -654,7 +658,7 @@ void ITexture::repackData(const TextureFormatProperties& properties,
                               originalData,
                               originalDataIncrement,
                               rangeBytesPerRow);
-        repackedDataPtr += flipVertical ? -repackedDataIncrement : repackedDataIncrement;
+        repackedDataPtr += increment;
         originalData += originalDataIncrement;
       }
       repackedData += repackedDataIncrement * mipRange.height;
