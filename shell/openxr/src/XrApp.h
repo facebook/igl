@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#if defined(IGL_CMAKE_BUILD)
+
 #if IGL_BACKEND_VULKAN
 #include <igl/vulkan/Common.h>
 #endif // IGL_BACKEND_VULKAN
@@ -19,8 +21,11 @@
 #include <igl/opengl/GLIncludes.h>
 #endif // IGL_BACKEND_OPENGL
 
-#include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
+
+#endif // IGL_CMAKE_BUILD
+
+#include <openxr/openxr.h>
 
 #include <glm/glm.hpp>
 
@@ -98,9 +103,9 @@ class XrApp {
 
   std::vector<XrExtensionProperties> extensions_;
   std::vector<const char*> requiredExtensions_ = {
-#if IGL_BACKEND_VULKAN
+#if USE_VULKAN_BACKEND
       XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
-#endif // IGL_BACKEND_VULKAN
+#endif // USE_VULKAN_BACKEND
 #if !defined(XR_USE_PLATFORM_MACOS) && !defined(IGL_CMAKE_BUILD)
       XR_FB_SWAPCHAIN_UPDATE_STATE_EXTENSION_NAME,
 #endif
