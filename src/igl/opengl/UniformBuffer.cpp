@@ -19,8 +19,20 @@
 
 namespace igl {
 namespace opengl {
-
+namespace {
+// There's a non-zero chance of unexpected behavior if limit is larger than available stack size
+const size_t kAllocSizeLimit = 512;
+} // namespace
 enum class UniformBaseType { Invalid = 0, Boolean, Int, Float, FloatMatrix };
+
+template<typename T>
+using ArrayHolder = std::unique_ptr<T[], void (*)(void*)>;
+// This can't be a function because alloc result goes away on function return
+#define IGL_MAYBE_STACK_ALLOC(Type, count)                                         \
+  (sizeof(Type) * count) > kAllocSizeLimit                                         \
+      ? ArrayHolder<Type>(reinterpret_cast<Type*>(malloc(sizeof(Type) * count)),   \
+                          [](auto* addr) { free(reinterpret_cast<Type*>(addr)); }) \
+      : ArrayHolder<Type>(reinterpret_cast<Type*>(alloca(sizeof(Type) * count)), [](auto*) {})
 
 // ********************************
 // ****  Buffer
@@ -246,28 +258,28 @@ void UniformBuffer::bindUniformArray(IContext& context,
     }
     switch (baseType) {
     case UniformBaseType::Boolean: {
-      auto packedIntArray = std::vector<GLint>(numElements);
+      auto packedIntArray = IGL_MAYBE_STACK_ALLOC(GLint, numElements);
       for (int i = 0; i < numElements; i++) {
         packedIntArray[i] = !!*(start);
         start += stride;
       }
       UniformBuffer::bindUniform(
-          context, shaderLocation, UniformType::Int, (uint8_t*)packedIntArray.data(), numElements);
+          context, shaderLocation, UniformType::Int, (uint8_t*)packedIntArray.get(), numElements);
       break;
     }
     case UniformBaseType::Int: {
-      auto packedIntArray = std::vector<GLint>(primitivesPerElement * numElements);
+      auto packedIntArray = IGL_MAYBE_STACK_ALLOC(GLint, primitivesPerElement * numElements);
       for (int i = 0; i < numElements; i++) {
         optimizedMemcpy(
             &packedIntArray[i * primitivesPerElement], start, primitivesPerElement * sizeof(GLint));
         start += stride;
       }
       UniformBuffer::bindUniform(
-          context, shaderLocation, uniformType, (uint8_t*)packedIntArray.data(), numElements);
+          context, shaderLocation, uniformType, (uint8_t*)packedIntArray.get(), numElements);
       break;
     }
     case UniformBaseType::Float: {
-      auto packedFloatArray = std::vector<GLfloat>(primitivesPerElement * numElements);
+      auto packedFloatArray = IGL_MAYBE_STACK_ALLOC(GLfloat, primitivesPerElement * numElements);
       for (int i = 0; i < numElements; i++) {
         optimizedMemcpy(&packedFloatArray[i * primitivesPerElement],
                         start,
@@ -275,12 +287,12 @@ void UniformBuffer::bindUniformArray(IContext& context,
         start += stride;
       }
       UniformBuffer::bindUniform(
-          context, shaderLocation, uniformType, (uint8_t*)packedFloatArray.data(), numElements);
+          context, shaderLocation, uniformType, (uint8_t*)packedFloatArray.get(), numElements);
       break;
     }
     case UniformBaseType::FloatMatrix: {
       auto packedFloatArray =
-          std::vector<GLfloat>(primitivesPerElement * primitivesPerElement * numElements);
+          IGL_MAYBE_STACK_ALLOC(GLfloat, primitivesPerElement * primitivesPerElement * numElements);
       for (int i = 0; i < numElements; i++) {
         for (int j = 0; j < primitivesPerElement; j++) {
           size_t bytesToCopy = primitivesPerElement * sizeof(GLfloat);
@@ -292,7 +304,7 @@ void UniformBuffer::bindUniformArray(IContext& context,
         }
       }
       UniformBuffer::bindUniform(
-          context, shaderLocation, uniformType, (uint8_t*)packedFloatArray.data(), numElements);
+          context, shaderLocation, uniformType, (uint8_t*)packedFloatArray.get(), numElements);
     } break;
     default:
       return;
