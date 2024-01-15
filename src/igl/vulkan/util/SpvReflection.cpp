@@ -199,9 +199,11 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
   }
 
   for (auto& id : ids) {
-    const bool isStorage = id.storageClass == SpvStorageClassStorageBuffer;
-    const bool isUniform = id.storageClass == SpvStorageClassUniform ||
-                           id.storageClass == SpvStorageClassUniformConstant;
+    // https://github.com/microsoft/DirectXShaderCompiler/blob/f94fe829f7944c97ea2646fc7950ae4e367d7136/docs/SPIR-V.rst?plain=1#L1712
+    const bool _isUniform = id.storageClass == SpvStorageClassUniform || id.storageClass == SpvStorageClassUniformConstant;
+    const bool isUniform = _isUniform && id.dset == 1; // [[vk::binding(..., 1)]] in HLSL
+    const bool isStorage = id.storageClass == SpvStorageClassStorageBuffer || _isUniform && id.dset == 2; // [[vk::binding(..., 2)]] in HLSL
+
     if (id.opCode == SpvOpVariable && (isStorage || isUniform)) {
       IGL_ASSERT(ids[id.typeId].opCode == SpvOpTypePointer);
       IGL_ASSERT(ids[id.typeId].typeId < kBound);
