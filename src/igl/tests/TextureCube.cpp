@@ -20,8 +20,7 @@
 #include <igl/NameHandle.h>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 // Picking this just to match the texture we will use. If you use a different
 // size texture, then you will have to either create a new offscreenTexture_
@@ -717,5 +716,4 @@ TEST_F(TextureCubeTest, GetRange) {
   ASSERT_TRUE(rangesAreEqual(getFullMipRange(16, 16, format, 5), range.withNumMipLevels(5)));
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

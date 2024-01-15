@@ -19,8 +19,7 @@
 #include <igl/opengl/Device.h>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 // Picking this just to match the texture we will use. If you use a different
 // size texture, then you will have to either create a new offscreenTexture_
@@ -2108,5 +2107,4 @@ TEST_F(TextureTest, GetNumMipLevels) {
   }
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests
