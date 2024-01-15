@@ -17,7 +17,7 @@ namespace igl::shell {
 class PlatformIos : public Platform {
  public:
   ~PlatformIos() override = default;
-  PlatformIos(std::unique_ptr<igl::IDevice> device);
+  PlatformIos(std::shared_ptr<igl::IDevice> device);
   igl::IDevice& getDevice() noexcept override;
   std::shared_ptr<igl::IDevice> getDevicePtr() const noexcept override;
   ImageLoader& getImageLoader() noexcept override;
