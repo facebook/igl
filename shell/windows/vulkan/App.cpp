@@ -151,8 +151,14 @@ std::shared_ptr<igl::shell::PlatformWin> createPlatform(GLFWwindow* window) {
 #endif
   );
 
+  // Prioritize discrete GPUs. If not found, use any that is available.
   std::vector<HWDeviceDesc> devices = vulkan::HWDevice::queryDevices(
       *ctx.get(), HWDeviceQueryDesc(HWDeviceType::DiscreteGpu), nullptr);
+  if (devices.empty()) {
+    devices = vulkan::HWDevice::queryDevices(
+        *ctx.get(), HWDeviceQueryDesc(HWDeviceType::Unknown), nullptr);
+  }
+  IGL_ASSERT_MSG(devices.size() > 0, "Could not find Vulkan device with requested capabilities");
 
   auto vulkanDevice = vulkan::HWDevice::create(std::move(ctx),
                                                devices[0],
