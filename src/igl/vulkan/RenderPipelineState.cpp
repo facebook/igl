@@ -369,7 +369,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
                                 ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
                                 : IGL_ARRAY_NUM_ELEMENTS(DSLs) - 1u),
       info_.hasPushConstants ? &pushConstantRange_ : nullptr,
-      IGL_FORMAT("Pipeline Layout: {}", desc_.debugName).c_str());
+      IGL_FORMAT("Pipeline Layout: {}", desc_.debugName.toConstChar()).c_str());
 
   const VkPhysicalDeviceFeatures2& deviceFeatures = ctx.getVkPhysicalDeviceFeatures2();
   VkBool32 dualSrcBlendSupported = deviceFeatures.features.dualSrcBlend;
