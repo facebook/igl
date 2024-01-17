@@ -51,6 +51,13 @@ function(ADD_SHELL_SESSION_WITH_SRCS target srcs libs)
            "-framework QuartzCore"
            "-framework UIKit")
   set_target_properties(
-    ${target} PROPERTIES MACOSX_BUNDLE TRUE MACOSX_BUNDLE_GUI_IDENTIFIER "com.meta.iglshell" MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0"
-                         MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0.0" RESOURCE "${RESOURCES}")
+    ${target}
+    PROPERTIES
+      MACOSX_BUNDLE TRUE
+      MACOSX_BUNDLE_BUNDLE_NAME "${target}"
+      MACOSX_BUNDLE_GUI_IDENTIFIER "com.meta.${target}"
+      MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0"
+      MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0.0"
+      RESOURCE "${RESOURCES}"
+  )
 endfunction()
