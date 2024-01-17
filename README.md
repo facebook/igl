@@ -85,7 +85,7 @@ cmake .. -G "Xcode" -DIGL_WITH_VULKAN=OFF
 
 ```
 cd build
-cmake .. -G Xcode -DCMAKE_TOOLCHAIN_FILE=../third-party/deps/src/ios-cmake/ios.toolchain.cmake -DPLATFORM=SIMULATOR64
+cmake .. -G Xcode -DCMAKE_TOOLCHAIN_FILE=../third-party/deps/src/ios-cmake/ios.toolchain.cmake -DDEPLOYMENT_TARGET=13.0 -DPLATFORM=OS64
 ```
 
 * Android
