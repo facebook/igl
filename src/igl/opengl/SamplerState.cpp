@@ -27,6 +27,7 @@ SamplerState::SamplerState(IContext& context, const SamplerStateDesc& desc) :
   magFilter_(convertMagFilter(desc.magFilter)),
   mipLodMin_(desc.mipLodMin),
   mipLodMax_(desc.mipLodMax),
+  maxAnisotropy_(desc.maxAnisotropic),
   addressU_(convertAddressMode(desc.addressModeU)),
   addressV_(convertAddressMode(desc.addressModeV)),
   addressW_(convertAddressMode(desc.addressModeW)),
@@ -92,6 +93,9 @@ void SamplerState::bind(ITexture* t) {
       deviceFeatures.hasFeature(DeviceFeatures::SamplerMinMaxLod)) {
     getContext().texParameteri(target, GL_TEXTURE_MIN_LOD, mipLodMin_);
     getContext().texParameteri(target, GL_TEXTURE_MAX_LOD, mipLodMax_);
+  }
+  if (deviceFeatures.hasFeature(DeviceFeatures::TextureFilterAnisotropic)) {
+    getContext().texParameteri(target, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy_);
   }
 
   if (isDepthOrDepthStencil &&

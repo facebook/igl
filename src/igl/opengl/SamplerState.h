@@ -34,6 +34,7 @@ class SamplerState final : public WithContext, public ISamplerState {
   GLint magFilter_;
   GLfloat mipLodMin_;
   GLfloat mipLodMax_;
+  GLfloat maxAnisotropy_;
 
   GLint addressU_;
   GLint addressV_;
