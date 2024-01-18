@@ -259,10 +259,6 @@ class VulkanImmediateCommands final {
 };
 
 struct RenderPipelineDynamicState final {
-#if defined(__APPLE__)
-  VkCompareOp depthCompareOp_ : 3 = VK_COMPARE_OP_ALWAYS;
-  VkBool32 depthWriteEnable_ : 1 = VK_FALSE;
-#endif
   VkBool32 depthBiasEnable_ : 1 = VK_FALSE;
 };
 
@@ -281,13 +277,8 @@ struct RenderPipelineState final {
   // non-owning, cached the last pipeline layout from the context (if the context has a new layout, invalidate all VkPipeline objects)
   VkPipelineLayout pipelineLayout_ = VK_NULL_HANDLE;
 
-#if !defined(__APPLE__)
   // [depthBiasEnable]
   VkPipeline pipelines_[2] = {};
-#else
-  // [depthCompareOp][depthWriteEnable][depthBiasEnable]
-  VkPipeline pipelines_[8][2][2] = {};
-#endif // __APPLE__
 };
 
 class VulkanPipelineBuilder final {
@@ -296,10 +287,6 @@ class VulkanPipelineBuilder final {
   ~VulkanPipelineBuilder() = default;
 
   VulkanPipelineBuilder& depthBiasEnable(bool enable);
-#if defined(__APPLE__)
-  VulkanPipelineBuilder& depthWriteEnable(bool enable);
-  VulkanPipelineBuilder& depthCompareOp(VkCompareOp compareOp);
-#endif
   VulkanPipelineBuilder& dynamicState(VkDynamicState state);
   VulkanPipelineBuilder& primitiveTopology(VkPrimitiveTopology topology);
   VulkanPipelineBuilder& rasterizationSamples(VkSampleCountFlagBits samples);

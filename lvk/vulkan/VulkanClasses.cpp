@@ -1770,7 +1770,6 @@ lvk::SubmitHandle lvk::VulkanImmediateCommands::getLastSubmitHandle() const {
 }
 
 void lvk::RenderPipelineState::destroyPipelines(lvk::VulkanContext* ctx) {
-#if !defined(__APPLE__)
   for (uint32_t depthBiasEnabled = 0; depthBiasEnabled != VK_TRUE + 1; depthBiasEnabled++) {
     VkPipeline& vkPipeline = pipelines_[depthBiasEnabled];
     if (vkPipeline != VK_NULL_HANDLE) {
@@ -1779,20 +1778,6 @@ void lvk::RenderPipelineState::destroyPipelines(lvk::VulkanContext* ctx) {
       vkPipeline = VK_NULL_HANDLE;
     }
   }
-#else
-  for (uint32_t depthCompareOp = 0; depthCompareOp != VK_COMPARE_OP_ALWAYS + 1; depthCompareOp++) {
-    for (uint32_t depthWriteEnabled = 0; depthWriteEnabled != VK_TRUE + 1; depthWriteEnabled++) {
-      for (uint32_t depthBiasEnabled = 0; depthBiasEnabled != VK_TRUE + 1; depthBiasEnabled++) {
-        VkPipeline& vkPipeline = pipelines_[depthCompareOp][depthWriteEnabled][depthBiasEnabled];
-        if (vkPipeline != VK_NULL_HANDLE) {
-          ctx->deferredTask(std::packaged_task<void()>(
-              [device = ctx->getVkDevice(), pipeline = vkPipeline]() { vkDestroyPipeline(device, pipeline, nullptr); }));
-          vkPipeline = VK_NULL_HANDLE;
-        }
-      }
-    }
-  }
-#endif // __APPLE__
 }
 
 lvk::VulkanPipelineBuilder::VulkanPipelineBuilder() :
@@ -1874,19 +1859,6 @@ lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::depthBiasEnable(bool ena
   rasterizationState_.depthBiasEnable = enable ? VK_TRUE : VK_FALSE;
   return *this;
 }
-
-#if defined(__APPLE__)
-lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::depthWriteEnable(bool enable) {
-  depthStencilState_.depthWriteEnable = enable ? VK_TRUE : VK_FALSE;
-  return *this;
-}
-
-lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::depthCompareOp(VkCompareOp compareOp) {
-  depthStencilState_.depthTestEnable = compareOp != VK_COMPARE_OP_ALWAYS;
-  depthStencilState_.depthCompareOp = compareOp;
-  return *this;
-}
-#endif
 
 lvk::VulkanPipelineBuilder& lvk::VulkanPipelineBuilder::dynamicState(VkDynamicState state) {
   LVK_ASSERT(numDynamicStates_ < LVK_MAX_DYNAMIC_STATES);
@@ -2392,9 +2364,7 @@ void lvk::CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, co
   ctx_->checkAndUpdateDescriptorSets();
   ctx_->bindDefaultDescriptorSets(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-#ifndef __APPLE__
   vkCmdSetDepthCompareOp(wrapper_->cmdBuf_, VK_COMPARE_OP_ALWAYS);
-#endif
 
   vkCmdBeginRendering(wrapper_->cmdBuf_, &renderingInfo);
 }
@@ -2472,14 +2442,9 @@ void lvk::CommandBuffer::cmdBindDepthState(const DepthState& desc) {
   LVK_PROFILER_FUNCTION();
 
   const VkCompareOp op = compareOpToVkCompareOp(desc.compareOp);
-#ifndef __APPLE__
   vkCmdSetDepthWriteEnable(wrapper_->cmdBuf_, desc.isDepthWriteEnabled ? VK_TRUE : VK_FALSE);
   vkCmdSetDepthTestEnable(wrapper_->cmdBuf_, op != VK_COMPARE_OP_ALWAYS);
   vkCmdSetDepthCompareOp(wrapper_->cmdBuf_, op);
-#else
-  dynamicState_.depthWriteEnable_ = desc.isDepthWriteEnabled;
-  dynamicState_.depthCompareOp_ = op;
-#endif
 }
 
 void lvk::CommandBuffer::cmdBindVertexBuffer(uint32_t index, BufferHandle buffer, uint64_t bufferOffset) {
@@ -3507,15 +3472,9 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
     rps->pipelineLayout_ = vkPipelineLayout_;
   }
 
-#if !defined(__APPLE__)
   if (rps->pipelines_[dynamicState.depthBiasEnable_] != VK_NULL_HANDLE) {
     return rps->pipelines_[dynamicState.depthBiasEnable_];
   }
-#else
-  if (rps->pipelines_[dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_][dynamicState.depthBiasEnable_] != VK_NULL_HANDLE) {
-    return rps->pipelines_[dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_][dynamicState.depthBiasEnable_];
-  }
-#endif // __APPLE__
 
   // build a new Vulkan pipeline
 
@@ -3591,15 +3550,10 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
       .dynamicState(VK_DYNAMIC_STATE_SCISSOR)
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS)
       .dynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS)
-#if !defined(__APPLE__)
       // from Vulkan 1.3
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE)
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
       .dynamicState(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP)
-#else
-      .depthCompareOp(dynamicState.depthCompareOp_)
-      .depthWriteEnable(dynamicState.depthWriteEnable_)
-#endif // __APPLE__
       .primitiveTopology(topologyToVkPrimitiveTopology(desc.topology))
       .depthBiasEnable(dynamicState.depthBiasEnable_)
       .rasterizationSamples(getVulkanSampleCountFlags(desc.samplesCount))
@@ -3635,11 +3589,7 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle, const 
       .patchControlPoints(desc.patchControlPoints)
       .build(vkDevice_, pipelineCache_, vkPipelineLayout_, &pipeline, desc.debugName);
 
-#if !defined(__APPLE__)
   rps->pipelines_[dynamicState.depthBiasEnable_] = pipeline;
-#else
-  rps->pipelines_[dynamicState.depthCompareOp_][dynamicState.depthWriteEnable_][dynamicState.depthBiasEnable_] = pipeline;
-#endif // __APPLE__
   return pipeline;
 }
 
@@ -4467,7 +4417,10 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
     VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME,
     VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
     VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
+    VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
     VK_EXT_4444_FORMATS_EXTENSION_NAME,
+    VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
+    VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
     VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME,
     VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME,
     VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME,
@@ -4527,9 +4480,22 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
       .dynamicRendering = VK_TRUE,
       .maintenance4 = VK_TRUE,
   };
+  
+#ifdef __APPLE__
+  VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamicStateFeature = {
+    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT,
+    .pNext = &deviceFeatures13,
+    .extendedDynamicState = VK_TRUE,
+  };
+  
+  const void* createInfoNext = &dynamicStateFeature;
+#else
+  const void* createInfoNext = &deviceFeatures13;
+#endif
+  
   const VkDeviceCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-      .pNext = &deviceFeatures13,
+      .pNext = createInfoNext,
       .queueCreateInfoCount = numQueues,
       .pQueueCreateInfos = ciQueue,
       .enabledExtensionCount = (uint32_t)LVK_ARRAY_NUM_ELEMENTS(deviceExtensionNames),
@@ -4725,6 +4691,9 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
 #if defined(__APPLE__)
   vkCmdBeginRendering = vkCmdBeginRenderingKHR;
   vkCmdEndRendering = vkCmdEndRenderingKHR;
+  vkCmdSetDepthWriteEnable = vkCmdSetDepthWriteEnableEXT;
+  vkCmdSetDepthTestEnable = vkCmdSetDepthTestEnableEXT;
+  vkCmdSetDepthCompareOp = vkCmdSetDepthCompareOpEXT;
 #endif
 
   vkGetDeviceQueue(vkDevice_, deviceQueues_.graphicsQueueFamilyIndex, 0, &deviceQueues_.graphicsQueue);
