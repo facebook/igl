@@ -42,13 +42,19 @@ void ComputeCommandEncoder::endEncoding() {
   isEncoding_ = false;
 
   for (const auto* img : restoreLayout_) {
-    img->transitionLayout(
-        cmdBuffer_,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-        VkImageSubresourceRange{
-            img->getImageAspectFlags(), 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+    if (img->isSampledImage()) {
+      // only sampled images can be transitioned to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+      img->transitionLayout(cmdBuffer_,
+                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                            VkImageSubresourceRange{img->getImageAspectFlags(),
+                                                    0,
+                                                    VK_REMAINING_MIP_LEVELS,
+                                                    0,
+                                                    VK_REMAINING_ARRAY_LAYERS});
+    }
   }
   restoreLayout_.clear();
 }
