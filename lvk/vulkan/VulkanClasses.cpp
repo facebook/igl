@@ -23,10 +23,7 @@
 #include <unistd.h>
 #endif
 
-#if defined(__APPLE__)
-#include <MoltenVK/mvk_config.h>
-#include <dlfcn.h>
-#else
+#if !defined(__APPLE__)
 #include <malloc.h>
 #endif
 
@@ -4068,8 +4065,9 @@ VkShaderModule lvk::VulkanContext::createShaderModule(ShaderStage stage,
       layout (set = 0, binding = 0) uniform texture2D kTextures2D[];
       layout (set = 1, binding = 0) uniform texture3D kTextures3D[];
       layout (set = 2, binding = 0) uniform textureCube kTexturesCube[];
+      layout (set = 3, binding = 0) uniform texture2D kTextures2DShadow[];
       layout (set = 0, binding = 1) uniform sampler kSamplers[];
-      layout (set = 1, binding = 1) uniform samplerShadow kSamplersShadow[];
+      layout (set = 3, binding = 1) uniform samplerShadow kSamplersShadow[];
       )";
 
       sourcePatched += R"(
@@ -4080,7 +4078,7 @@ VkShaderModule lvk::VulkanContext::createShaderModule(ShaderStage stage,
         return textureLod(sampler2D(kTextures2D[textureid], kSamplers[samplerid]), uv, lod);
       }
       float textureBindless2DShadow(uint textureid, uint samplerid, vec3 uvw) {
-        return texture(sampler2DShadow(kTextures2D[textureid], kSamplersShadow[samplerid]), uvw);
+        return texture(sampler2DShadow(kTextures2DShadow[textureid], kSamplersShadow[samplerid]), uvw);
       }
       ivec2 textureBindlessSize2D(uint textureid) {
         return textureSize(kTextures2D[textureid], 0);
@@ -4195,6 +4193,7 @@ void lvk::VulkanContext::createInstance() {
     VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
 #endif
 #elif defined(__APPLE__)
+    VK_EXT_LAYER_SETTINGS_EXTENSION_NAME,
     VK_MVK_MACOS_SURFACE_EXTENSION_NAME,
 #endif
 #if defined(LVK_WITH_VULKAN_PORTABILITY)
@@ -4230,6 +4229,19 @@ void lvk::VulkanContext::createInstance() {
       .pDisabledValidationFeatures = config_.enableValidation ? validationFeaturesDisabled : nullptr,
 #endif
   };
+  
+#if defined(__APPLE__)
+  // https://github.com/KhronosGroup/MoltenVK/blob/main/Docs/MoltenVK_Configuration_Parameters.md
+  const int useMetalArgumentBuffers = 1;
+  const VkLayerSettingEXT settings[] = {
+    {"MoltenVK", "MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", VK_LAYER_SETTING_TYPE_INT32_EXT, 1, &useMetalArgumentBuffers}};
+  const VkLayerSettingsCreateInfoEXT layerSettingsCreateInfo = {
+    .sType = VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT,
+    .pNext = config_.enableValidation ? &features : nullptr,
+    .settingCount = (uint32_t)LVK_ARRAY_NUM_ELEMENTS(settings),
+    .pSettings = settings
+  };
+#endif
 
   const VkApplicationInfo appInfo = {
       .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -4247,10 +4259,14 @@ void lvk::VulkanContext::createInstance() {
 #endif
   const VkInstanceCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+#if defined(__APPLE__)
+      .pNext = &layerSettingsCreateInfo,
+#else
       .pNext = config_.enableValidation ? &features : nullptr,
+#endif
       .flags = flags,
       .pApplicationInfo = &appInfo,
-      .enabledLayerCount = config_.enableValidation ? (uint32_t)LVK_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0,
+      .enabledLayerCount = config_.enableValidation ? (uint32_t)LVK_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0u,
       .ppEnabledLayerNames = config_.enableValidation ? kDefaultValidationLayers : nullptr,
       .enabledExtensionCount = numInstanceExtensions,
       .ppEnabledExtensionNames = instanceExtensionNames,
@@ -4258,22 +4274,6 @@ void lvk::VulkanContext::createInstance() {
   VK_ASSERT(vkCreateInstance(&ci, nullptr, &vkInstance_));
 
   volkLoadInstance(vkInstance_);
-
-  // Update MoltenVK configuration.
-#if defined(__APPLE__)
-  void* moltenVkModule = dlopen("libMoltenVK.dylib", RTLD_NOW | RTLD_LOCAL);
-  PFN_vkGetMoltenVKConfigurationMVK vkGetMoltenVKConfigurationMVK =
-      (PFN_vkGetMoltenVKConfigurationMVK)dlsym(moltenVkModule, "vkGetMoltenVKConfigurationMVK");
-  PFN_vkSetMoltenVKConfigurationMVK vkSetMoltenVKConfigurationMVK =
-      (PFN_vkSetMoltenVKConfigurationMVK)dlsym(moltenVkModule, "vkSetMoltenVKConfigurationMVK");
-
-  MVKConfiguration configuration = {};
-  size_t configurationSize = sizeof(MVKConfiguration);
-  VK_ASSERT(vkGetMoltenVKConfigurationMVK(vkInstance_, &configuration, &configurationSize));
-
-  configuration.useMetalArgumentBuffers = MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS_ALWAYS;
-  VK_ASSERT(vkSetMoltenVKConfigurationMVK(vkInstance_, &configuration, &configurationSize));
-#endif
 
   // debug messenger
   {
@@ -4541,8 +4541,10 @@ lvk::Result lvk::VulkanContext::initContext(const HWDeviceDesc& desc) {
   {
     std::vector<VkExtensionProperties> props;
     getDeviceExtensionProps(vkPhysicalDevice_, props);
-    for (const char* layer : kDefaultValidationLayers) {
-      getDeviceExtensionProps(vkPhysicalDevice_, props, layer);
+    if (config_.enableValidation) {
+      for (const char* layer : kDefaultValidationLayers) {
+        getDeviceExtensionProps(vkPhysicalDevice_, props, layer);
+      }
     }
     std::string missingExtensions;
     for (const char* ext : deviceExtensionNames) {
@@ -4943,7 +4945,7 @@ lvk::Result lvk::VulkanContext::growDescriptorPool(uint32_t maxTextures, uint32_
     }
 
     // duplicate for MoltenVK
-    const VkDescriptorSetLayout dsls[] = {vkDSL_, vkDSL_, vkDSL_};
+    const VkDescriptorSetLayout dsls[] = {vkDSL_, vkDSL_, vkDSL_, vkDSL_};
     const VkPushConstantRange range = {
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
                       VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
@@ -5010,7 +5012,7 @@ std::shared_ptr<lvk::VulkanImage> lvk::VulkanContext::createImage(VkImageType im
 
 void lvk::VulkanContext::bindDefaultDescriptorSets(VkCommandBuffer cmdBuf, VkPipelineBindPoint bindPoint) const {
   LVK_PROFILER_FUNCTION();
-  const VkDescriptorSet dsets[3] = {vkDSet_, vkDSet_, vkDSet_};
+  const VkDescriptorSet dsets[4] = {vkDSet_, vkDSet_, vkDSet_, vkDSet_};
   vkCmdBindDescriptorSets(cmdBuf, bindPoint, vkPipelineLayout_, 0, (uint32_t)LVK_ARRAY_NUM_ELEMENTS(dsets), dsets, 0, nullptr);
 }
 
