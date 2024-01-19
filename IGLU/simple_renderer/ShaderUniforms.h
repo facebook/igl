@@ -133,6 +133,12 @@ class ShaderUniforms final {
                         const iglu::simdtypes::float3x3* value,
                         size_t count = 1,
                         size_t arrayIndex = 0);
+  void setFloat3x3Array(const igl::NameHandle& blockTypeName,
+                        const igl::NameHandle& blockInstanceName,
+                        const igl::NameHandle& memberName,
+                        const iglu::simdtypes::float3x3* value,
+                        size_t count = 1,
+                        size_t arrayIndex = 0);
 
   void setFloat4x4(const igl::NameHandle& uniformName,
                    const iglu::simdtypes::float4x4& value,

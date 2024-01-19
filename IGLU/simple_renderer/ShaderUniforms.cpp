@@ -572,6 +572,52 @@ void ShaderUniforms::setFloat3x3Array(const igl::NameHandle& uniformName,
   }
 }
 
+void ShaderUniforms::setFloat3x3Array(const igl::NameHandle& blockTypeName,
+                                      const igl::NameHandle& blockInstanceName,
+                                      const igl::NameHandle& memberName,
+                                      const iglu::simdtypes::float3x3* value,
+                                      size_t count,
+                                      size_t arrayIndex) {
+  auto isOglBlock = device_.getBackendType() == igl::BackendType::OpenGL &&
+                    _bufferDescs.find(blockTypeName) != _bufferDescs.end();
+
+  if (device_.getBackendType() == igl::BackendType::Metal ||
+      device_.getBackendType() == igl::BackendType::Vulkan || isOglBlock) {
+    setUniformBytes(blockTypeName,
+                    blockInstanceName,
+                    memberName,
+                    value,
+                    sizeof(iglu::simdtypes::float3x3),
+                    count,
+                    arrayIndex);
+  } else {
+    // simdtypes::float3x3 has an extra float per float-vector.
+    // Remove it so we can send the packed version to OpenGL
+    const size_t size = sizeof(float) * 9u * count;
+    IGL_ASSERT(size <= 65536);
+    float* IGL_RESTRICT packedMatrix = reinterpret_cast<float*>(alloca(size));
+    float* IGL_RESTRICT packedMatrixPtr = packedMatrix;
+
+    const auto* paddedMatrixPtr = reinterpret_cast<const float*>(value);
+    for (size_t n = 0; n < count; n++) {
+      for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+          *packedMatrixPtr++ = *paddedMatrixPtr++;
+        }
+        paddedMatrixPtr++; // skip over padded float
+      }
+    }
+
+    setUniformBytes(blockTypeName,
+                    blockInstanceName,
+                    memberName,
+                    packedMatrix,
+                    sizeof(float) * 9,
+                    count,
+                    arrayIndex);
+  }
+}
+
 void ShaderUniforms::setFloat4x4(const igl::NameHandle& uniformName,
                                  const iglu::simdtypes::float4x4& value,
                                  size_t arrayIndex) {
