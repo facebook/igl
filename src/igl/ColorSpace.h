@@ -37,6 +37,10 @@ enum class ColorSpace : uint8_t {
   PASS_THROUGH,
   EXTENDED_SRGB_NONLINEAR,
   DISPLAY_NATIVE_AMD,
+  BT601_NONLINEAR,
+  BT2020_NONLINEAR,
+  BT2100_HLG_NONLINEAR,
+  BT2100_PQ_NONLINEAR
 };
 
 /**
@@ -64,6 +68,10 @@ inline const char* IGL_NONNULL colorSpaceToString(ColorSpace colorSpace) {
     IGL_ENUM_TO_STRING(ColorSpace, PASS_THROUGH)
     IGL_ENUM_TO_STRING(ColorSpace, EXTENDED_SRGB_NONLINEAR)
     IGL_ENUM_TO_STRING(ColorSpace, DISPLAY_NATIVE_AMD)
+    IGL_ENUM_TO_STRING(ColorSpace, BT601_NONLINEAR)
+    IGL_ENUM_TO_STRING(ColorSpace, BT2020_NONLINEAR)
+    IGL_ENUM_TO_STRING(ColorSpace, BT2100_HLG_NONLINEAR)
+    IGL_ENUM_TO_STRING(ColorSpace, BT2100_PQ_NONLINEAR)
   }
 
   IGL_UNREACHABLE_RETURN("unknown color space")
@@ -91,6 +99,10 @@ inline igl::TextureFormat colorSpaceToTextureFormat(igl::ColorSpace colorSpace,
   case igl::ColorSpace::PASS_THROUGH:
   case igl::ColorSpace::EXTENDED_SRGB_NONLINEAR:
   case igl::ColorSpace::DISPLAY_NATIVE_AMD:
+  case igl::ColorSpace::BT601_NONLINEAR:
+  case igl::ColorSpace::BT2020_NONLINEAR:
+  case igl::ColorSpace::BT2100_HLG_NONLINEAR:
+  case igl::ColorSpace::BT2100_PQ_NONLINEAR:
     IGL_ASSERT_NOT_IMPLEMENTED();
     // default to normal sRGB non linear.
     return igl::TextureFormat::RGBA_SRGB;
