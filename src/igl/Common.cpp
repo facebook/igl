@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <cstring>
 #include <igl/Common.h>
+#include <igl/Device.h>
 
 namespace igl {
 
@@ -60,6 +61,12 @@ void optimizedMemcpy(void* dst, const void* src, size_t size) {
     break;
   default:
     memcpy(dst, src, size);
+  }
+}
+
+void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupHandle handle) {
+  if (device) {
+    device->destroy(handle);
   }
 }
 

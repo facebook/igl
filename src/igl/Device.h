@@ -17,6 +17,7 @@
 
 namespace igl {
 
+struct BindGroupDesc;
 struct BufferDesc;
 struct CommandQueueDesc;
 struct ComputePipelineDesc;
@@ -50,6 +51,26 @@ class IVertexInputState;
 class IDevice : public ICapabilities {
  public:
   ~IDevice() override = default;
+
+  virtual Holder<igl::BindGroupHandle> createBindGroup(const BindGroupDesc& desc,
+                                                       Result* IGL_NULLABLE outResult) {
+    (void)desc;
+
+    IGL_ASSERT_NOT_IMPLEMENTED();
+
+    Result::setResult(outResult,
+                      Result(Result::Code::Unimplemented, "Bind groups are not implemented (yet)"));
+
+    return {};
+  }
+
+  virtual void destroy(igl::BindGroupHandle handle) {
+    if (!handle) {
+      return;
+    }
+
+    IGL_ASSERT_NOT_IMPLEMENTED();
+  }
 
   /**
    * @brief Creates a command queue.

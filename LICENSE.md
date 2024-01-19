@@ -71,6 +71,9 @@ https://github.com/leetal/ios-cmake/blob/master/LICENSE.md
 KTX-Software
 https://github.com/KhronosGroup/KTX-Software/blob/main/LICENSE.md
 
+LightweightVK
+https://github.com/corporateshark/lightweightvk/blob/main/LICENSE.md
+
 Meshoptimizer
 https://github.com/zeux/meshoptimizer/blob/master/LICENSE.md
 

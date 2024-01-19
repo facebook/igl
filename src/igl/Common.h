@@ -271,10 +271,129 @@ ScopeGuard<T> operator+(ScopeGuardOnExit, T&& fn) {
 ///--------------------------------------
 /// MARK: - optimizedMemcpy
 
-// Optimized version of memcpy that allows to copy smallest unforms in most efficient way
-// Other sizes utilize a libc memcpy implementation
-// It's not a universal function and expects to have a proper alignment for data!
+// Optimized version of memcpy() that allows to copy smallest uniforms in the most efficient way.
+// Other sizes utilize a libc memcpy() implementation. It's not a universal function and expects to
+// have a proper alignment for data!
 void optimizedMemcpy(void* IGL_NULLABLE dst, const void* IGL_NULLABLE src, size_t size);
+
+// Non-ref counted handles; based on:
+// https://enginearchitecture.realtimerendering.com/downloads/reac2023_modern_mobile_rendering_at_hypehype.pdf
+// https://github.com/corporateshark/lightweightvk/blob/main/lvk/LVK.h
+template<typename ObjectType>
+class Handle final {
+ public:
+  Handle() noexcept = default;
+
+  [[nodiscard]] bool empty() const noexcept {
+    return gen_ == 0;
+  }
+  [[nodiscard]] bool valid() const noexcept {
+    return gen_ != 0;
+  }
+  [[nodiscard]] uint32_t index() const noexcept {
+    return index_;
+  }
+  [[nodiscard]] uint32_t gen() const noexcept {
+    return gen_;
+  }
+  [[nodiscard]] void* IGL_NULLABLE indexAsVoid() const noexcept {
+    return reinterpret_cast<void*>(static_cast<ptrdiff_t>(index_));
+  }
+  bool operator==(const Handle<ObjectType>& other) const noexcept {
+    return index_ == other.index_ && gen_ == other.gen_;
+  }
+  bool operator!=(const Handle<ObjectType>& other) const noexcept {
+    return index_ != other.index_ || gen_ != other.gen_;
+  }
+  // allow conditions 'if (handle)'
+  explicit operator bool() const noexcept {
+    return gen_ != 0;
+  }
+
+ private:
+  Handle(uint32_t index, uint32_t gen) noexcept : index_(index), gen_(gen) {}
+
+  template<typename ObjectType_, typename ImplObjectType>
+  friend class Pool;
+
+  uint32_t index_ = 0; // the index of this handle within a Pool
+  uint32_t gen_ = 0; // the generation of this handle to prevent the ABA Problem
+};
+
+static_assert(sizeof(Handle<class Foo>) == sizeof(uint64_t));
+
+// specialized with dummy structs for type safety
+using BindGroupHandle = igl::Handle<struct BindGroup>;
+
+class IDevice;
+
+// forward declarations to access incomplete type IDevice
+void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupHandle handle);
+
+// RAII wrapper around Handle<>; based on:
+// https://github.com/corporateshark/lightweightvk/blob/main/lvk/LVK.h
+template<typename HandleType>
+class Holder final {
+ public:
+  Holder() noexcept = default;
+  Holder(igl::IDevice* IGL_NULLABLE device, HandleType handle) noexcept :
+    device_(device), handle_(handle) {}
+  ~Holder() {
+    igl::destroy(device_, handle_);
+  }
+  Holder(const Holder&) = delete;
+  Holder(Holder&& other) noexcept : device_(other.device_), handle_(other.handle_) {
+    other.device_ = nullptr;
+    other.handle_ = HandleType{};
+  }
+  Holder& operator=(const Holder&) = delete;
+  Holder& operator=(Holder&& other) noexcept {
+    std::swap(device_, other.device_);
+    std::swap(handle_, other.handle_);
+    return *this;
+  }
+  Holder& operator=(std::nullptr_t) {
+    this->reset();
+    return *this;
+  }
+
+  [[nodiscard]] operator HandleType() const noexcept {
+    return handle_;
+  }
+
+  [[nodiscard]] bool valid() const noexcept {
+    return handle_.valid();
+  }
+
+  [[nodiscard]] bool empty() const noexcept {
+    return handle_.empty();
+  }
+
+  void reset() {
+    igl::destroy(device_, handle_);
+    device_ = nullptr;
+    handle_ = HandleType{};
+  }
+
+  [[nodiscard]] HandleType release() noexcept {
+    device_ = nullptr;
+    return std::exchange(handle_, HandleType{});
+  }
+
+  [[nodiscard]] uint32_t gen() const noexcept {
+    return handle_.gen();
+  }
+  [[nodiscard]] uint32_t index() const noexcept {
+    return handle_.index();
+  }
+  [[nodiscard]] void* IGL_NULLABLE indexAsVoid() const noexcept {
+    return handle_.indexAsVoid();
+  }
+
+ private:
+  igl::IDevice* IGL_NULLABLE device_ = nullptr;
+  HandleType handle_ = {};
+};
 
 } // namespace igl
 

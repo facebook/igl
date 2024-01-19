@@ -9,9 +9,23 @@
 
 #include <string>
 
+#include <igl/Common.h>
+
 namespace igl {
 
 class IDevice;
+
+/**
+ * A BindGroup represents a set of resources bound to a command encoder.
+ * It is a replacement of the old OpenGL-style binding model where individual resources are bound
+ * using multiple calls to bindTexture(...) and bindBuffer(...).
+ */
+struct BindGroupDesc {
+  std::shared_ptr<ITexture> textures[IGL_TEXTURE_SAMPLERS_MAX] = {};
+  std::shared_ptr<IBuffer> buffersUniform[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
+  std::shared_ptr<IBuffer> buffersStorage[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
+  std::string debugName;
+};
 
 class ICommandEncoder {
  public:
