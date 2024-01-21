@@ -30,6 +30,9 @@ void ForwardRenderPass::begin(std::shared_ptr<igl::IFramebuffer> target,
   auto depthAttachment = _framebuffer->getDepthAttachment();
   _renderPipelineDesc.targetDesc.depthAttachmentFormat =
       depthAttachment ? depthAttachment->getFormat() : igl::TextureFormat::Invalid;
+  auto stencilAttachment = _framebuffer->getStencilAttachment();
+  _renderPipelineDesc.targetDesc.stencilAttachmentFormat =
+      stencilAttachment ? stencilAttachment->getFormat() : igl::TextureFormat::Invalid;
 
   igl::RenderPassDesc defaultRenderPassDesc;
   defaultRenderPassDesc.colorAttachments.resize(1);
