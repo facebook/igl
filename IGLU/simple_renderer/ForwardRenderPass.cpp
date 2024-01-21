@@ -83,8 +83,14 @@ bool ForwardRenderPass::isActive() const {
   return _framebuffer != nullptr;
 }
 
-std::shared_ptr<igl::IFramebuffer> ForwardRenderPass::activeTarget() {
-  return _framebuffer;
+igl::IFramebuffer& ForwardRenderPass::activeTarget() {
+  IGL_ASSERT_MSG(isActive(), "No valid target when not active");
+  return *_framebuffer;
+}
+
+igl::IRenderCommandEncoder& ForwardRenderPass::activeCommandEncoder() {
+  IGL_ASSERT_MSG(isActive(), "No valid command encoder when not active");
+  return *_commandEncoder;
 }
 
 } // namespace renderpass

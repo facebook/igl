@@ -43,7 +43,8 @@ class ForwardRenderPass final {
 
   //// The render pass is considered active when in between begin() and end() calls.
   bool isActive() const;
-  std::shared_ptr<igl::IFramebuffer> activeTarget();
+  igl::IFramebuffer& activeTarget();
+  igl::IRenderCommandEncoder& activeCommandEncoder();
 
   explicit ForwardRenderPass(igl::IDevice& device);
   ~ForwardRenderPass() = default;
