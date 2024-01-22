@@ -118,6 +118,10 @@ TextureRangeDesc atVkLayer(TextureType type, const TextureRangeDesc& range, uint
 /// the texture specified by colorTex
 void transitionToColorAttachment(VkCommandBuffer cmdBuf, ITexture* colorTex);
 
+/// @brief Performs a transition from the texture's current layout to a depth-stencil attachment
+/// layout on the texture specified by depthStencilTex
+void transitionToDepthStencilAttachment(VkCommandBuffer cmdBuf, ITexture* depthStencilTex);
+
 /// @brief Performs a transition from the texture's current layout to a shader read only layout on
 /// the texture specified by texture
 void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture);

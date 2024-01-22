@@ -408,6 +408,44 @@ void transitionToColorAttachment(VkCommandBuffer cmdBuf, ITexture* colorTex) {
   }
 }
 
+void transitionToDepthStencilAttachment(VkCommandBuffer cmdBuf, ITexture* depthStencilTex) {
+  if (!depthStencilTex) {
+    return;
+  }
+
+  const auto& vkTex = static_cast<Texture&>(*depthStencilTex);
+  const auto& img = vkTex.getVulkanTexture().getVulkanImage();
+  if (IGL_UNEXPECTED(!img.isDepthFormat_ && !img.isStencilFormat_)) {
+    IGL_ASSERT_MSG(false, "Only depth/stencil formats are accepted");
+    IGL_LOG_ERROR("Only depth/stencil formats are accepted");
+    return;
+  }
+  IGL_ASSERT_MSG(img.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
+  if (!IGL_VERIFY((img.usageFlags_ & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0)) {
+    IGL_ASSERT_MSG(false, "Did you forget to specify TextureUsageBit::Attachment usage bit?");
+    IGL_LOG_ERROR("Did you forget to specify TextureUsageBit::Attachment usage bit?");
+  }
+  if (img.usageFlags_ & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+    // transition to VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+    VkImageAspectFlags aspectFlags = 0;
+    if (img.isDepthFormat_) {
+      aspectFlags |= VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+    if (img.isStencilFormat_) {
+      aspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+    img.transitionLayout(
+        cmdBuf,
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // wait for all subsequent fragment/compute
+                                                  // shaders
+        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+        VkImageSubresourceRange{
+            aspectFlags, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+  }
+}
+
 void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture) {
   if (!texture) {
     return;

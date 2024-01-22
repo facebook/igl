@@ -303,7 +303,14 @@ void RenderCommandEncoder::endEncoding() {
   for (ITexture* IGL_NULLABLE tex : dependencies_.textures) {
     // TODO: at some point we might want to know in which layout a dependent texture wants to be. We
     // can implement that by adding a notion of image layouts to IGL.
-    transitionToColorAttachment(cmdBuffer_, tex);
+    if (!tex) {
+      continue;
+    }
+    if (tex->getProperties().isDepthOrStencil()) {
+      transitionToDepthStencilAttachment(cmdBuffer_, tex);
+    } else {
+      transitionToColorAttachment(cmdBuffer_, tex);
+    }
   }
   dependencies_ = {};
 
