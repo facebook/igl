@@ -130,12 +130,30 @@ class NameHandle {
     return crc32_ == other.crc32_;
   }
 
-  NameHandle& operator=(const NameHandle& other) = default;
-  NameHandle& operator=(NameHandle&& other) noexcept = default;
-
   bool operator!=(const NameHandle& other) const {
     return !(*this == other);
   }
+
+  bool operator<(const NameHandle& other) const {
+    CHECK_VALID_CRC(other);
+    return (crc32_ < other.crc32_);
+  }
+
+  bool operator>=(const NameHandle& other) const {
+    return !(*this < other);
+  }
+
+  bool operator>(const NameHandle& other) const {
+    CHECK_VALID_CRC(other);
+    return (crc32_ > other.crc32_);
+  }
+
+  bool operator<=(const NameHandle& other) const {
+    return !(*this > other);
+  }
+
+  NameHandle& operator=(const NameHandle& other) = default;
+  NameHandle& operator=(NameHandle&& other) noexcept = default;
 
   operator const char*() const {
     return name_.c_str();
