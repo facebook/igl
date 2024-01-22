@@ -105,7 +105,15 @@ class NameHandle {
    * @brief Returns a null terminated character array version of the name
    * @returns null terminated character array
    */
-  const char* toConstChar() const {
+  inline const char* toConstChar() const {
+    return c_str();
+  }
+
+  /**
+   * @brief Returns a null terminated character array version of the name
+   * @returns null terminated character array
+   */
+  const char* c_str() const {
     return name_.c_str();
   }
 
