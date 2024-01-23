@@ -1715,7 +1715,7 @@ lvk::SubmitHandle lvk::VulkanImmediateCommands::submit(const CommandBufferWrappe
   const VkSubmitInfo si = {
       .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
       .waitSemaphoreCount = numWaitSemaphores,
-      .pWaitSemaphores = waitSemaphores,
+      .pWaitSemaphores = numWaitSemaphores ? waitSemaphores : nullptr,
       .pWaitDstStageMask = waitStageMasks,
       .commandBufferCount = 1u,
       .pCommandBuffers = &wrapper.cmdBuf_,
