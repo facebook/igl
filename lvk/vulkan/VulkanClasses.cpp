@@ -2056,9 +2056,14 @@ void lvk::CommandBuffer::transitionToShaderReadOnly(TextureHandle handle) const 
   // transition only non-multisampled images - MSAA images cannot be accessed from shaders
   if (img->vkSamples_ == VK_SAMPLE_COUNT_1_BIT) {
     const VkImageAspectFlags flags = tex.image_->getImageAspectFlags();
-    const VkPipelineStageFlags srcStage = isDepthOrStencilVkFormat(tex.image_->vkImageFormat_)
-                                              ? VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
-                                              : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    VkPipelineStageFlags srcStage = 0;
+    if (tex.image_->isSampledImage()) {
+      srcStage |= isDepthOrStencilVkFormat(tex.image_->vkImageFormat_) ? VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
+                                                                       : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    }
+    if (tex.image_->isStorageImage()) {
+      srcStage |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    }
     // set the result of the previous render pass
     img->transitionLayout(wrapper_->cmdBuf_,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
