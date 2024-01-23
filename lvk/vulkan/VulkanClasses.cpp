@@ -2205,8 +2205,16 @@ void lvk::CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, co
     transitionToShaderReadOnly(deps.textures[i]);
   }
   for (uint32_t i = 0; i != Dependencies::LVK_MAX_SUBMIT_DEPENDENCIES && deps.buffers[i]; i++) {
-    bufferBarrier(
-        deps.buffers[i], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+    VkPipelineStageFlags dstStageFlags = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    const lvk::VulkanBuffer* buf = ctx_->buffersPool_.get(deps.buffers[i]);
+    LVK_ASSERT(buf);
+    if ((buf->vkUsageFlags_ & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) || (buf->vkUsageFlags_ & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) {
+      dstStageFlags |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+    }
+    if (buf->vkUsageFlags_ & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
+      dstStageFlags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+    }
+    bufferBarrier(deps.buffers[i], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, dstStageFlags);
   }
 
   const uint32_t numFbColorAttachments = fb.getNumColorAttachments();
@@ -2732,7 +2740,7 @@ void lvk::VulkanStagingDevice::imageData2D(VulkanImage& image,
       // 3. Transition TRANSFER_DST_OPTIMAL into SHADER_READ_ONLY_OPTIMAL
       lvk::imageMemoryBarrier(wrapper.cmdBuf_,
                               image.vkImage_,
-                              VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+                              VK_ACCESS_TRANSFER_WRITE_BIT,
                               VK_ACCESS_SHADER_READ_BIT,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
