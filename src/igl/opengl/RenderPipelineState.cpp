@@ -150,7 +150,7 @@ Result RenderPipelineState::create() {
     if (loc >= 0) {
       unitSamplerLocationMap_[textureUnit] = loc;
     } else {
-      IGL_LOG_ERROR("Sampler uniform (%s) not found in shader.\n", samplerName.toConstChar());
+      IGL_LOG_ERROR("Sampler uniform (%s) not found in shader.\n", samplerName.c_str());
     }
   }
 
@@ -169,14 +169,14 @@ Result RenderPipelineState::create() {
         blockDescIt->second.bindingIndex = bindingIndex;
       }
     } else {
-      IGL_LOG_ERROR("Uniform block (%s) not found in shader.\n", blockName.toConstChar());
+      IGL_LOG_ERROR("Uniform block (%s) not found in shader.\n", blockName.c_str());
     }
   }
 
   for (const auto& [textureUnit, samplerName] : desc_.vertexUnitSamplerMap) {
     const int loc = reflection_->getIndexByName(samplerName);
     if (loc < 0) {
-      IGL_LOG_ERROR("Sampler uniform (%s) not found in shader.\n", samplerName.toConstChar());
+      IGL_LOG_ERROR("Sampler uniform (%s) not found in shader.\n", samplerName.c_str());
       continue;
     }
 

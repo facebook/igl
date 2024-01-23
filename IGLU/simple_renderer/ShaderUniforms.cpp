@@ -221,7 +221,7 @@ void ShaderUniforms::setUniformBytes(const UniformDesc& uniformDesc,
                                      size_t arrayIndex) {
   if (arrayIndex + count > uniformDesc.iglMemberDesc.arrayLength) {
     IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid range for uniform %s:  %zu,%zu,%zu\n",
-                       uniformDesc.iglMemberDesc.name.toConstChar(),
+                       uniformDesc.iglMemberDesc.name.c_str(),
                        arrayIndex,
                        count,
                        uniformDesc.iglMemberDesc.arrayLength);
@@ -230,7 +230,7 @@ void ShaderUniforms::setUniformBytes(const UniformDesc& uniformDesc,
   auto strongBuffer = uniformDesc.buffer.lock();
   if (!strongBuffer) {
     IGL_LOG_ERROR_ONCE("[IGL][Error] null uniform buffer %s!\n",
-                       uniformDesc.iglMemberDesc.name.toConstChar());
+                       uniformDesc.iglMemberDesc.name.c_str());
     return;
   }
 
@@ -260,16 +260,15 @@ void ShaderUniforms::setUniformBytes(const igl::NameHandle& blockTypeName,
                                      size_t arrayIndex) {
   auto bufferName = getBufferName(blockTypeName, blockInstanceName, memberName);
   auto range = _bufferDescs.equal_range(bufferName);
-  IGL_ASSERT_MSG(range.first != range.second, "Buffer not found: %s", bufferName.toConstChar());
+  IGL_ASSERT_MSG(range.first != range.second, "Buffer not found: %s", bufferName.c_str());
 
   for (auto bufferDescIt = range.first; bufferDescIt != range.second; ++bufferDescIt) {
     auto& bufferDesc = bufferDescIt->second;
     auto bufferMemberName = getBufferMemberName(blockTypeName, blockInstanceName, memberName);
     auto memberIndexIt = bufferDesc->memberIndices.find(bufferMemberName);
     if (memberIndexIt == bufferDesc->memberIndices.end()) {
-      IGL_LOG_ERROR_ONCE("Member %s not found in buffer %s",
-                         bufferMemberName.toConstChar(),
-                         bufferName.toConstChar());
+      IGL_LOG_ERROR_ONCE(
+          "Member %s not found in buffer %s", bufferMemberName.c_str(), bufferName.c_str());
       continue;
     }
     auto& uniformDesc = bufferDesc->uniforms[memberIndexIt->second];
@@ -284,7 +283,7 @@ void ShaderUniforms::setUniformBytes(const igl::NameHandle& name,
                                      size_t arrayIndex) {
   auto range = _allUniformsByName.equal_range(name);
   if (range.first == range.second) {
-    IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid uniform name: %s\n", name.toConstChar());
+    IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid uniform name: %s\n", name.c_str());
     return;
   }
   for (auto it = range.first; it != range.second; ++it) {
@@ -761,7 +760,7 @@ void ShaderUniforms::bindUniformOpenGL(const igl::NameHandle& uniformName,
       encoder.bindUniform(desc, strongBuffer->allocation->ptr);
     }
   } else {
-    IGL_LOG_ERROR_ONCE("[IGL][Error] Uniform not found in shader: %s\n", uniformName.toConstChar());
+    IGL_LOG_ERROR_ONCE("[IGL][Error] Uniform not found in shader: %s\n", uniformName.c_str());
   }
 }
 #endif
@@ -833,7 +832,7 @@ void ShaderUniforms::bind(igl::IDevice& device,
                           const igl::NameHandle& uniformName) {
   auto range = _allUniformsByName.equal_range(uniformName);
   if (range.first == range.second) {
-    IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid uniform name: %s\n", uniformName.toConstChar());
+    IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid uniform name: %s\n", uniformName.c_str());
     return;
   }
 

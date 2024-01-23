@@ -44,10 +44,10 @@ Result ComputePipelineState::create(const ComputePipelineDesc& desc) {
       if (IGL_VERIFY(unit >= 0)) {
         imageUnitMap_[textureUnit] = unit;
       } else {
-        IGL_LOG_ERROR("Image uniform unit (%s) not found in shader.\n", imageName.toConstChar());
+        IGL_LOG_ERROR("Image uniform unit (%s) not found in shader.\n", imageName.c_str());
       }
     } else {
-      IGL_LOG_ERROR("Image uniform (%s) not found in shader.\n", imageName.toConstChar());
+      IGL_LOG_ERROR("Image uniform (%s) not found in shader.\n", imageName.c_str());
     }
   }
 
@@ -61,13 +61,12 @@ Result ComputePipelineState::create(const ComputePipelineDesc& desc) {
       if (auto& ssboDictionary = reflection_->getShaderStorageBufferObjectDictionary();
           ssboDictionary.find(bufferName) != ssboDictionary.end()) {
         GLint index = getContext().getProgramResourceIndex(
-            shaderStages_->getProgramID(), GL_SHADER_STORAGE_BLOCK, bufferName.toConstChar());
+            shaderStages_->getProgramID(), GL_SHADER_STORAGE_BLOCK, bufferName.c_str());
         if (IGL_VERIFY(index != GL_INVALID_INDEX)) {
           bufferUnitMap_[bufferUnit] = loc;
           usingShaderStorageBuffers_ = true;
         } else {
-          IGL_LOG_ERROR("Shader storage buffer (%s) not found in shader.\n",
-                        bufferName.toConstChar());
+          IGL_LOG_ERROR("Shader storage buffer (%s) not found in shader.\n", bufferName.c_str());
         }
       } else {
         GLint unit = 0;
@@ -75,12 +74,11 @@ Result ComputePipelineState::create(const ComputePipelineDesc& desc) {
         if (IGL_VERIFY(unit >= 0)) {
           bufferUnitMap_[bufferUnit] = loc;
         } else {
-          IGL_LOG_ERROR("Buffer uniform unit (%s) not found in shader.\n",
-                        bufferName.toConstChar());
+          IGL_LOG_ERROR("Buffer uniform unit (%s) not found in shader.\n", bufferName.c_str());
         }
       }
     } else {
-      IGL_LOG_ERROR("Buffer uniform (%s) not found in shader.\n", bufferName.toConstChar());
+      IGL_LOG_ERROR("Buffer uniform (%s) not found in shader.\n", bufferName.c_str());
     }
   }
 
