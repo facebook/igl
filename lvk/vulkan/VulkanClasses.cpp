@@ -1066,64 +1066,50 @@ void lvk::VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,
     srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
   }
 
-  switch (srcStageMask) {
-  case VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT:
-  case VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT:
-  case VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT:
-  case VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT:
-  case VK_PIPELINE_STAGE_ALL_COMMANDS_BIT:
-  case VK_PIPELINE_STAGE_TRANSFER_BIT:
-  case VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT:
-    break;
-  default:
-    LVK_ASSERT_MSG(false, "Automatic access mask deduction is not implemented (yet) for this srcStageMask");
-    break;
-  }
+  const VkPipelineStageFlags doNotRequireAccessMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT |
+                                                      VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+  VkPipelineStageFlags srcRemainingMask = srcStageMask & ~doNotRequireAccessMask;
+  VkPipelineStageFlags dstRemainingMask = dstStageMask & ~doNotRequireAccessMask;
 
-  // once you want to add a new pipeline stage to this block of if's, don't forget to add it to the
-  // switch() statement above
   if (srcStageMask & VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT) {
     srcAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    srcRemainingMask &= ~VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
   }
   if (srcStageMask & VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT) {
     srcAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    srcRemainingMask &= ~VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
   }
   if (srcStageMask & VK_PIPELINE_STAGE_TRANSFER_BIT) {
     srcAccessMask |= VK_ACCESS_TRANSFER_WRITE_BIT;
+    srcRemainingMask &= ~VK_PIPELINE_STAGE_TRANSFER_BIT;
   }
   if (srcStageMask & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) {
     srcAccessMask |= VK_ACCESS_SHADER_WRITE_BIT;
+    srcRemainingMask &= ~VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
   }
 
-  switch (dstStageMask) {
-  case VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT:
-  case VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT:
-  case VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT:
-  case VK_PIPELINE_STAGE_TRANSFER_BIT:
-  case VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT:
-  case VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT:
-    break;
-  default:
-    LVK_ASSERT_MSG(false, "Automatic access mask deduction is not implemented (yet) for this dstStageMask");
-    break;
-  }
+  LVK_ASSERT_MSG(srcRemainingMask == 0, "Automatic access mask deduction is not implemented (yet) for this srcStageMask");
 
-  // once you want to add a new pipeline stage to this block of if's, don't forget to add it to the
-  // switch() statement above
   if (dstStageMask & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) {
     dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
     dstAccessMask |= VK_ACCESS_SHADER_WRITE_BIT;
+    dstRemainingMask &= ~VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
   }
   if (dstStageMask & VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT) {
     dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dstRemainingMask &= ~VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
   }
   if (dstStageMask & VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
     dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
     dstAccessMask |= VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+    dstRemainingMask &= ~VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
   }
   if (dstStageMask & VK_PIPELINE_STAGE_TRANSFER_BIT) {
     dstAccessMask |= VK_ACCESS_TRANSFER_READ_BIT;
+    dstRemainingMask &= ~VK_PIPELINE_STAGE_TRANSFER_BIT;
   }
+
+  LVK_ASSERT_MSG(dstRemainingMask == 0, "Automatic access mask deduction is not implemented (yet) for this dstStageMask");
 
   lvk::imageMemoryBarrier(
       commandBuffer, vkImage_, srcAccessMask, dstAccessMask, vkImageLayout_, newImageLayout, srcStageMask, dstStageMask, subresourceRange);
