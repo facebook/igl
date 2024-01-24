@@ -17,6 +17,12 @@
 #include <android_native_app_glue.h>
 
 #include <openxr/openxr.h>
+
+#if USE_VULKAN_BACKEND
+#include <igl/vulkan/Common.h>
+
+#define XR_USE_GRAPHICS_API_VULKAN
+#endif // USE_VULKAN_BACKEND
 #include <openxr/openxr_platform.h>
 
 #include <glm/gtc/type_ptr.hpp>
@@ -40,7 +46,16 @@ constexpr auto kEngineName = "IGL";
 constexpr auto kSupportedViewConfigType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
 
 XrApp::XrApp(std::unique_ptr<impl::XrAppImpl>&& impl) :
-  impl_(std::move(impl)), shellParams_(std::make_unique<ShellParams>()) {
+  requiredExtensions_({
+#if USE_VULKAN_BACKEND
+    XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
+#endif // USE_VULKAN_BACKEND
+#if !defined(XR_USE_PLATFORM_MACOS) && !defined(IGL_CMAKE_BUILD)
+        XR_FB_SWAPCHAIN_UPDATE_STATE_EXTENSION_NAME,
+#endif
+  }),
+  impl_(std::move(impl)),
+  shellParams_(std::make_unique<ShellParams>()) {
   viewports_.fill({XR_TYPE_VIEW_CONFIGURATION_VIEW});
   views_.fill({XR_TYPE_VIEW});
 }

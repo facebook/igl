@@ -102,14 +102,7 @@ class XrApp {
   bool sessionActive_ = false;
 
   std::vector<XrExtensionProperties> extensions_;
-  std::vector<const char*> requiredExtensions_ = {
-#if USE_VULKAN_BACKEND
-      XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
-#endif // USE_VULKAN_BACKEND
-#if !defined(XR_USE_PLATFORM_MACOS) && !defined(IGL_CMAKE_BUILD)
-      XR_FB_SWAPCHAIN_UPDATE_STATE_EXTENSION_NAME,
-#endif
-  };
+  std::vector<const char*> requiredExtensions_;
 
   XrInstanceProperties instanceProps_ = {
       .type = XR_TYPE_INSTANCE_PROPERTIES,
