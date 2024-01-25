@@ -66,7 +66,7 @@ constexpr uint32_t iglCrc32ImplConstExpr(const char* p, uint32_t crc) {
  * @returns CRC32 representation of data
  */
 constexpr uint32_t iglCrc32ConstExpr(const char* data) {
-  return ~iglCrc32ImplConstExpr(data, ~0);
+  return ~iglCrc32ImplConstExpr(data, ~0u);
 }
 #endif // defined(__cpp_constexpr)
 

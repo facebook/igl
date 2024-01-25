@@ -32,7 +32,8 @@ class TextureLoaderFactory final : public ktx::TextureLoaderFactory {
                               const igl::TextureRangeDesc& range,
                               igl::Result* IGL_NULLABLE outResult) const noexcept final;
 
-  [[nodiscard]] igl::TextureFormat textureFormat(const ktxTexture* texture) const noexcept final;
+  [[nodiscard]] igl::TextureFormat textureFormat(
+      const ktxTexture* IGL_NONNULL texture) const noexcept final;
 };
 
 } // namespace iglu::textureloader::ktx2

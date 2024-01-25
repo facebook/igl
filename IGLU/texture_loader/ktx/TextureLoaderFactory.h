@@ -26,7 +26,7 @@ class TextureLoaderFactory : public ITextureLoaderFactory {
                                       igl::Result* IGL_NULLABLE outResult) const noexcept = 0;
 
   [[nodiscard]] virtual igl::TextureFormat textureFormat(
-      const ktxTexture* texture) const noexcept = 0;
+      const ktxTexture* IGL_NONNULL texture) const noexcept = 0;
 
  private:
   [[nodiscard]] std::unique_ptr<ITextureLoader> tryCreateInternal(
