@@ -103,6 +103,10 @@ using namespace igl;
 }
 
 - (void)render {
+  if (session_ == nullptr) {
+    return;
+  }
+
   shellParams_.viewportSize = glm::vec2(self.view.frame.size.width, self.view.frame.size.height);
   shellParams_.viewportScale = self.view.window.backingScaleFactor;
   session_->setShellParams(shellParams_);
