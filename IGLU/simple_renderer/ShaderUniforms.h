@@ -279,13 +279,10 @@ class ShaderUniforms final {
   std::unordered_map<std::string, TextureSlot> _allTexturesByName;
   std::unordered_map<std::string, SamplerSlot> _allSamplersByName;
 
-  igl::NameHandle getBufferName(const igl::NameHandle& blockTypeName,
-                                const igl::NameHandle& blockInstanceName,
-                                const igl::NameHandle& memberName);
-
-  igl::NameHandle getBufferMemberName(const igl::NameHandle& blockTypeName,
-                                      const igl::NameHandle& blockInstanceName,
-                                      const igl::NameHandle& memberName);
+  std::vector<std::pair<igl::NameHandle, igl::NameHandle>> getPossibleBufferAndMemberNames(
+      const igl::NameHandle& blockTypeName,
+      const igl::NameHandle& blockInstanceName,
+      const igl::NameHandle& memberName);
 
   void setUniformBytes(const UniformDesc& uniformDesc,
                        const void* data,

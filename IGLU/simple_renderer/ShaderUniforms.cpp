@@ -155,9 +155,10 @@ igl::NameHandle ShaderUniforms::getQualifiedMemberName(const igl::NameHandle& bl
   return igl::genNameHandle(blockInstanceName.toString() + "." + memberName.toString());
 }
 
-igl::NameHandle ShaderUniforms::getBufferName(const igl::NameHandle& blockTypeName,
-                                              const igl::NameHandle& blockInstanceName,
-                                              const igl::NameHandle& memberName) {
+std::vector<std::pair<igl::NameHandle, igl::NameHandle>>
+ShaderUniforms::getPossibleBufferAndMemberNames(const igl::NameHandle& blockTypeName,
+                                                const igl::NameHandle& blockInstanceName,
+                                                const igl::NameHandle& memberName) {
   /**
     Given an SparkSL/GLSL3 interface block:
     ```
@@ -184,34 +185,23 @@ igl::NameHandle ShaderUniforms::getBufferName(const igl::NameHandle& blockTypeNa
       }
     ```
 
-    In OpenGL3, the name of the buffer block is `BlockTypeName`.
+    In OpenGL3, the name of the buffer block is `BlockTypeName` and the member name is 'memberName'.
 
-    In legacy OpenGL, we treat each member of the struct an individual uniform, so the name is
-    `blockInstanceName.f`
+    In legacy OpenGL, we treat each member of the struct an individual uniform, so both the buffer
+    name and member name are `blockInstanceName.f`
 
-    In Metal, the name of the block is `blockInstanceName`
+    In Metal, the name of the block is `blockInstanceName` and the member name is 'memberName'.
   */
   if (device_.getBackendType() == igl::BackendType::Metal) {
-    return blockInstanceName;
+    return {{blockInstanceName, memberName}};
   } else {
     if (device_.getBackendType() == igl::BackendType::OpenGL) {
-      if (device_.getShaderVersion().majorVersion < 3) {
-        return getQualifiedMemberName(blockTypeName, blockInstanceName, memberName);
-      }
+      auto qualifiedName =
+          ShaderUniforms::getQualifiedMemberName(blockTypeName, blockInstanceName, memberName);
+      return {{blockTypeName, memberName}, {qualifiedName, qualifiedName}};
     }
-    return blockTypeName;
+    return {{blockTypeName, memberName}};
   }
-}
-
-igl::NameHandle ShaderUniforms::getBufferMemberName(const igl::NameHandle& blockTypeName,
-                                                    const igl::NameHandle& blockInstanceName,
-                                                    const igl::NameHandle& memberName) {
-  if (device_.getBackendType() == igl::BackendType::OpenGL) {
-    if (device_.getShaderVersion().majorVersion < 3) {
-      return getQualifiedMemberName(blockTypeName, blockInstanceName, memberName);
-    }
-  }
-  return memberName;
 }
 
 void ShaderUniforms::setUniformBytes(const UniformDesc& uniformDesc,
@@ -258,22 +248,29 @@ void ShaderUniforms::setUniformBytes(const igl::NameHandle& blockTypeName,
                                      size_t elementSize,
                                      size_t count,
                                      size_t arrayIndex) {
-  auto bufferName = getBufferName(blockTypeName, blockInstanceName, memberName);
-  auto range = _bufferDescs.equal_range(bufferName);
-  IGL_ASSERT_MSG(range.first != range.second, "Buffer not found: %s", bufferName.c_str());
+  auto possibleBufferNames =
+      getPossibleBufferAndMemberNames(blockTypeName, blockInstanceName, memberName);
 
-  for (auto bufferDescIt = range.first; bufferDescIt != range.second; ++bufferDescIt) {
-    auto& bufferDesc = bufferDescIt->second;
-    auto bufferMemberName = getBufferMemberName(blockTypeName, blockInstanceName, memberName);
-    auto memberIndexIt = bufferDesc->memberIndices.find(bufferMemberName);
-    if (memberIndexIt == bufferDesc->memberIndices.end()) {
-      IGL_LOG_ERROR_ONCE(
-          "Member %s not found in buffer %s", bufferMemberName.c_str(), bufferName.c_str());
+  for (auto& [bufferName, bufferMemberName] : possibleBufferNames) {
+    auto range = _bufferDescs.equal_range(bufferName);
+    if (range.first == range.second) {
       continue;
     }
-    auto& uniformDesc = bufferDesc->uniforms[memberIndexIt->second];
-    setUniformBytes(uniformDesc, data, elementSize, count, arrayIndex);
+
+    for (auto bufferDescIt = range.first; bufferDescIt != range.second; ++bufferDescIt) {
+      auto& bufferDesc = bufferDescIt->second;
+      auto memberIndexIt = bufferDesc->memberIndices.find(bufferMemberName);
+      if (memberIndexIt == bufferDesc->memberIndices.end()) {
+        IGL_LOG_ERROR_ONCE(
+            "Member %s not found in buffer %s", bufferMemberName.c_str(), bufferName.c_str());
+        continue;
+      }
+      auto& uniformDesc = bufferDesc->uniforms[memberIndexIt->second];
+      setUniformBytes(uniformDesc, data, elementSize, count, arrayIndex);
+    }
+    return;
   }
+  IGL_LOG_ERROR_ONCE("Buffer block not found: %s", blockTypeName.c_str());
 }
 
 void ShaderUniforms::setUniformBytes(const igl::NameHandle& name,
@@ -932,13 +929,19 @@ igl::Result ShaderUniforms::setSuballocationIndex(const igl::NameHandle& name, i
 bool ShaderUniforms::containsUniform(const igl::NameHandle& blockTypeName,
                                      const igl::NameHandle& blockInstanceName,
                                      const igl::NameHandle& memberName) {
-  auto bufferName = getBufferName(blockTypeName, blockInstanceName, memberName);
-  auto bufferDescIt = _bufferDescs.find(bufferName);
-  if (bufferDescIt == _bufferDescs.end()) {
-    return false;
+  auto possibleBufferNames =
+      getPossibleBufferAndMemberNames(blockTypeName, blockInstanceName, memberName);
+
+  for (auto& [bufferName, bufferMemberName] : possibleBufferNames) {
+    auto bufferDescIt = _bufferDescs.find(bufferName);
+    if (bufferDescIt == _bufferDescs.end()) {
+      continue;
+    }
+    auto& bufferDesc = bufferDescIt->second;
+    if (bufferDesc->memberIndices.find(bufferMemberName) != bufferDesc->memberIndices.end()) {
+      return true;
+    }
   }
-  auto& bufferDesc = bufferDescIt->second;
-  auto bufferMemberName = getBufferMemberName(blockTypeName, blockInstanceName, memberName);
-  return bufferDesc->memberIndices.find(bufferMemberName) != bufferDesc->memberIndices.end();
+  return false;
 }
 } // namespace iglu::material
