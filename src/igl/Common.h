@@ -19,6 +19,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #define IGL_NULLABLE FOLLY_NULLABLE
 #define IGL_NONNULL FOLLY_NONNULL
@@ -276,6 +277,9 @@ ScopeGuard<T> operator+(ScopeGuardOnExit, T&& fn) {
 // have a proper alignment for data!
 void optimizedMemcpy(void* IGL_NULLABLE dst, const void* IGL_NULLABLE src, size_t size);
 
+///--------------------------------------
+/// MARK: - Handle
+
 // Non-ref counted handles; based on:
 // https://enginearchitecture.realtimerendering.com/downloads/reac2023_modern_mobile_rendering_at_hypehype.pdf
 // https://github.com/corporateshark/lightweightvk/blob/main/lvk/LVK.h
@@ -329,6 +333,9 @@ class IDevice;
 
 // forward declarations to access incomplete type IDevice
 void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupHandle handle);
+
+///--------------------------------------
+/// MARK: - Holder
 
 // RAII wrapper around Handle<>; based on:
 // https://github.com/corporateshark/lightweightvk/blob/main/lvk/LVK.h
@@ -393,6 +400,93 @@ class Holder final {
  private:
   igl::IDevice* IGL_NULLABLE device_ = nullptr;
   HandleType handle_ = {};
+};
+
+///--------------------------------------
+/// MARK: - Pool
+
+// A Pool of objects which is compatible with the abovementioned Handle<> types; based on:
+// https://enginearchitecture.realtimerendering.com/downloads/reac2023_modern_mobile_rendering_at_hypehype.pdf
+// https://github.com/corporateshark/lightweightvk/blob/main/lvk/Pool.h
+template<typename ObjectType, typename ImplObjectType>
+class Pool {
+  static constexpr uint32_t kListEndSentinel = 0xffffffff;
+  struct PoolEntry {
+    explicit PoolEntry(ImplObjectType& obj) noexcept : obj_(std::move(obj)) {}
+    ImplObjectType obj_ = {};
+    uint32_t gen_ = 1;
+    uint32_t nextFree_ = kListEndSentinel;
+  };
+  uint32_t freeListHead_ = kListEndSentinel;
+  uint32_t numObjects_ = 0;
+
+ public:
+  std::vector<PoolEntry> objects_;
+
+  [[nodiscard]] Handle<ObjectType> create(ImplObjectType&& obj) {
+    uint32_t idx = 0;
+    if (freeListHead_ != kListEndSentinel) {
+      idx = freeListHead_;
+      freeListHead_ = objects_[idx].nextFree_;
+      objects_[idx].obj_ = std::move(obj);
+    } else {
+      idx = (uint32_t)objects_.size();
+      objects_.emplace_back(obj);
+    }
+    numObjects_++;
+    return Handle<ObjectType>(idx, objects_[idx].gen_);
+  }
+  void destroy(Handle<ObjectType> handle) noexcept {
+    if (handle.empty())
+      return;
+    IGL_ASSERT_MSG(numObjects_ > 0, "Double deletion");
+    const uint32_t index = handle.index();
+    IGL_ASSERT(index < objects_.size());
+    IGL_ASSERT_MSG(handle.gen() == objects_[index].gen_, "Double deletion");
+    objects_[index].obj_ = ImplObjectType{};
+    objects_[index].gen_++;
+    objects_[index].nextFree_ = freeListHead_;
+    freeListHead_ = index;
+    numObjects_--;
+  }
+  [[nodiscard]] const ImplObjectType* IGL_NULLABLE get(Handle<ObjectType> handle) const noexcept {
+    if (handle.empty())
+      return nullptr;
+
+    const uint32_t index = handle.index();
+    IGL_ASSERT(index < objects_.size());
+    IGL_ASSERT_MSG(handle.gen() == objects_[index].gen_, "Accessing a deleted object");
+    return &objects_[index].obj_;
+  }
+  [[nodiscard]] ImplObjectType* IGL_NULLABLE get(Handle<ObjectType> handle) noexcept {
+    if (handle.empty())
+      return nullptr;
+
+    const uint32_t index = handle.index();
+    IGL_ASSERT(index < objects_.size());
+    IGL_ASSERT_MSG(handle.gen() == objects_[index].gen_, "Accessing a deleted object");
+    return &objects_[index].obj_;
+  }
+  [[nodiscard]] Handle<ObjectType> findObject(const ImplObjectType* IGL_NULLABLE obj) noexcept {
+    if (!obj)
+      return {};
+
+    for (size_t idx = 0; idx != objects_.size(); idx++) {
+      if (objects_[idx].obj_ == *obj) {
+        return Handle<ObjectType>((uint32_t)idx, objects_[idx].gen_);
+      }
+    }
+
+    return {};
+  }
+  void clear() noexcept {
+    objects_.clear();
+    freeListHead_ = kListEndSentinel;
+    numObjects_ = 0;
+  }
+  [[nodiscard]] uint32_t numObjects() const noexcept {
+    return numObjects_;
+  }
 };
 
 } // namespace igl
