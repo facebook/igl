@@ -190,7 +190,13 @@ void TextureFormatTestBase::render(std::shared_ptr<ITexture> sampledTexture,
   ASSERT_TRUE(ret.isOk()) << testProperties.name << ": " << ret.message;
   ASSERT_TRUE(framebuffer != nullptr);
 
-  auto cmds = cmdBuf->createRenderCommandEncoder(renderPass_, framebuffer);
+  // Add sampled textures as dependencies so that their layout is transitioned correctly for Vulkan
+  igl::Dependencies dep;
+  dep.textures[0] = sampledTexture.get();
+
+  igl::Result result;
+  auto cmds = cmdBuf->createRenderCommandEncoder(renderPass_, framebuffer, dep, &result);
+  ASSERT_TRUE(result.isOk());
   cmds->bindBuffer(data::shader::simplePosIndex, BindTarget::kVertex, vb_, 0);
   cmds->bindBuffer(data::shader::simpleUvIndex, BindTarget::kVertex, uv_, 0);
 
