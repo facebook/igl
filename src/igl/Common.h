@@ -328,11 +328,13 @@ static_assert(sizeof(Handle<class Foo>) == sizeof(uint64_t));
 
 // specialized with dummy structs for type safety
 using BindGroupHandle = igl::Handle<struct BindGroup>;
+using TextureHandle = igl::Handle<struct TextureTag>;
 
 class IDevice;
 
 // forward declarations to access incomplete type IDevice
 void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupHandle handle);
+void destroy(igl::IDevice* IGL_NULLABLE device, igl::TextureHandle handle);
 
 ///--------------------------------------
 /// MARK: - Holder
@@ -443,6 +445,17 @@ class Pool {
     const uint32_t index = handle.index();
     IGL_ASSERT(index < objects_.size());
     IGL_ASSERT_MSG(handle.gen() == objects_[index].gen_, "Double deletion");
+    objects_[index].obj_ = ImplObjectType{};
+    objects_[index].gen_++;
+    objects_[index].nextFree_ = freeListHead_;
+    freeListHead_ = index;
+    numObjects_--;
+  }
+  // this is a helper function to simplify migration to handles (should be deprecated after the
+  // migration is completed)
+  void destroy(uint32_t index) noexcept {
+    IGL_ASSERT_MSG(numObjects_ > 0, "Double deletion");
+    IGL_ASSERT(index < objects_.size());
     objects_[index].obj_ = ImplObjectType{};
     objects_[index].gen_++;
     objects_[index].nextFree_ = freeListHead_;

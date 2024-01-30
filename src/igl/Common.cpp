@@ -70,4 +70,10 @@ void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupHandle handle) {
   }
 }
 
+void destroy(igl::IDevice* IGL_NULLABLE device, igl::TextureHandle handle) {
+  if (device) {
+    // do nothing until we transition all textures to handles
+  }
+}
+
 } // namespace igl
