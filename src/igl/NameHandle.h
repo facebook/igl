@@ -152,7 +152,16 @@ class NameHandle {
     return !(*this > other);
   }
 
-  NameHandle& operator=(const NameHandle& other) = default;
+  NameHandle& operator=(const NameHandle& other) {
+    if (crc32_ == other.crc32_) {
+      return *this;
+    }
+
+    crc32_ = other.crc32_;
+    name_ = other.name_;
+    return *this;
+  }
+
   NameHandle& operator=(NameHandle&& other) noexcept = default;
 
   operator const char*() const {
