@@ -576,7 +576,7 @@ void XrApp::endFrame(XrFrameState frameState) {
   std::array<XrCompositionLayerProjectionView, kNumViews> projectionViews;
   std::array<XrCompositionLayerDepthInfoKHR, kNumViews> depthInfos;
 
-  XrCompositionLayerProjection projection = {
+  [[maybe_unused]] XrCompositionLayerProjection projection = {
       XR_TYPE_COMPOSITION_LAYER_PROJECTION,
       nullptr,
       XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT,
