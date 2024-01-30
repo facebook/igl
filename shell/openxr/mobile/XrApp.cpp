@@ -58,6 +58,9 @@ XrApp::XrApp(std::unique_ptr<impl::XrAppImpl>&& impl) :
   shellParams_(std::make_unique<ShellParams>()) {
   viewports_.fill({XR_TYPE_VIEW_CONFIGURATION_VIEW});
   views_.fill({XR_TYPE_VIEW});
+#ifdef USE_COMPOSITION_LAYER_QUAD
+  useQuadLayerComposition_ = true;
+#endif
 }
 
 XrApp::~XrApp() {
@@ -576,27 +579,27 @@ void XrApp::render() {
 }
 
 void XrApp::endFrame(XrFrameState frameState) {
-#ifdef USE_COMPOSITION_LAYER_QUAD
   std::array<XrCompositionLayerQuad, kNumViews> quadLayers{};
-  XrEyeVisibility eye = XR_EYE_VISIBILITY_LEFT;
-  for (auto& layer : quadLayers) {
-    layer.next = nullptr;
-    layer.type = XR_TYPE_COMPOSITION_LAYER_QUAD;
-    layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
-    layer.space = currentSpace_;
-    layer.eyeVisibility = eye;
-    memset(&layer.subImage, 0, sizeof(XrSwapchainSubImage));
+  if (useQuadLayerComposition_) {
+    XrEyeVisibility eye = XR_EYE_VISIBILITY_LEFT;
+    for (auto& layer : quadLayers) {
+      layer.next = nullptr;
+      layer.type = XR_TYPE_COMPOSITION_LAYER_QUAD;
+      layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+      layer.space = currentSpace_;
+      layer.eyeVisibility = eye;
+      memset(&layer.subImage, 0, sizeof(XrSwapchainSubImage));
 #if USE_LOCAL_AR_SPACE
-    layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, -1.f}};
+      layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, -1.f}};
 #else
-    layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, 0.f}};
+      layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, 0.f}};
 #endif
-    layer.size = {1.f, 1.f};
-    if (eye == XR_EYE_VISIBILITY_LEFT) {
-      eye = XR_EYE_VISIBILITY_RIGHT;
+      layer.size = {1.f, 1.f};
+      if (eye == XR_EYE_VISIBILITY_LEFT) {
+        eye = XR_EYE_VISIBILITY_RIGHT;
+      }
     }
   }
-#endif
 
   std::array<XrCompositionLayerProjectionView, kNumViews> projectionViews;
   std::array<XrCompositionLayerDepthInfoKHR, kNumViews> depthInfos;
@@ -644,36 +647,36 @@ void XrApp::endFrame(XrFrameState frameState) {
     depthInfos[i].maxDepth = appParams.depthParams.maxDepth;
     depthInfos[i].nearZ = appParams.depthParams.nearZ;
     depthInfos[i].farZ = appParams.depthParams.farZ;
-#ifdef USE_COMPOSITION_LAYER_QUAD
-    quadLayers[i].subImage = projectionViews[i].subImage;
-#endif
+    if (useQuadLayerComposition_) {
+      quadLayers[i].subImage = projectionViews[i].subImage;
+    }
   }
 
-#ifdef USE_COMPOSITION_LAYER_QUAD
-  std::array<const XrCompositionLayerBaseHeader*, kNumViews> quadLayersBase{};
-  for (uint32_t i = 0; i < quadLayers.size(); i++) {
-    quadLayersBase[i] = (const XrCompositionLayerBaseHeader*)&quadLayers[i];
+  XrFrameEndInfo endFrameInfo;
+  if (useQuadLayerComposition_) {
+    std::array<const XrCompositionLayerBaseHeader*, kNumViews> quadLayersBase{};
+    for (uint32_t i = 0; i < quadLayers.size(); i++) {
+      quadLayersBase[i] = (const XrCompositionLayerBaseHeader*)&quadLayers[i];
+    }
+    endFrameInfo = {XR_TYPE_FRAME_END_INFO,
+                    nullptr,
+                    frameState.predictedDisplayTime,
+                    additiveBlendingSupported_ ? XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
+                                               : XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
+                    quadLayersBase.size(),
+                    quadLayersBase.data()};
+  } else {
+    const XrCompositionLayerBaseHeader* const layers[] = {
+        (const XrCompositionLayerBaseHeader*)&projection,
+    };
+    endFrameInfo = {XR_TYPE_FRAME_END_INFO,
+                    nullptr,
+                    frameState.predictedDisplayTime,
+                    additiveBlendingSupported_ ? XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
+                                               : XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
+                    1,
+                    layers};
   }
-#else
-  const XrCompositionLayerBaseHeader* const layers[] = {
-      (const XrCompositionLayerBaseHeader*)&projection,
-  };
-#endif
-
-  XrFrameEndInfo endFrameInfo = {
-      XR_TYPE_FRAME_END_INFO,
-      nullptr,
-      frameState.predictedDisplayTime,
-      additiveBlendingSupported_ ? XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
-                                 : XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
-#ifdef USE_COMPOSITION_LAYER_QUAD
-      quadLayersBase.size(),
-      quadLayersBase.data(),
-#else
-      1,
-      layers,
-#endif
-  };
 
   XR_CHECK(xrEndFrame(session_, &endFrameInfo));
 }
