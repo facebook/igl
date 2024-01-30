@@ -66,8 +66,7 @@ XrApp::~XrApp() {
 
   swapchainProviders_.clear();
 
-  xrDestroySpace(stageSpace_);
-  xrDestroySpace(localSpace_);
+  xrDestroySpace(currentSpace_);
   xrDestroySpace(headSpace_);
   xrDestroySession(session_);
   xrDestroyInstance(instance_);
@@ -274,6 +273,27 @@ void XrApp::enumerateReferenceSpaces() {
                stageSpaceSupported_ ? "supported" : "not supported");
 }
 
+void XrApp::enumerateBlendModes() {
+  uint32_t numBlendModes = 0;
+  XR_CHECK(xrEnumerateEnvironmentBlendModes(
+      instance_, systemId_, kSupportedViewConfigType, 0, &numBlendModes, nullptr));
+
+  std::vector<XrEnvironmentBlendMode> blendModes(numBlendModes);
+  XR_CHECK(xrEnumerateEnvironmentBlendModes(instance_,
+                                            systemId_,
+                                            kSupportedViewConfigType,
+                                            numBlendModes,
+                                            &numBlendModes,
+                                            blendModes.data()));
+
+  additiveBlendingSupported_ =
+      std::any_of(std::begin(blendModes), std::end(blendModes), [](const auto& type) {
+        return type == XR_ENVIRONMENT_BLEND_MODE_ADDITIVE;
+      });
+  IGL_LOG_INFO("OpenXR additive blending %s",
+               additiveBlendingSupported_ ? "supported" : "not supported");
+}
+
 void XrApp::createSwapchainProviders(const std::unique_ptr<igl::IDevice>& device) {
   const size_t numSwapchainProviders = useSinglePassStereo_ ? 1 : kNumViews;
   const size_t numViewsPerSwapchain = useSinglePassStereo_ ? kNumViews : 1;
@@ -344,6 +364,7 @@ bool XrApp::initialize(const struct android_app* app) {
 
   // The following are initialization steps that happen after XrSession is created.
   enumerateReferenceSpaces();
+  enumerateBlendModes();
   createSwapchainProviders(device);
   createSpaces();
 
@@ -376,13 +397,13 @@ void XrApp::createSpaces() {
   };
   XR_CHECK(xrCreateReferenceSpace(session_, &spaceCreateInfo, &headSpace_));
 
+#if USE_LOCAL_AR_SPACE
   spaceCreateInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_LOCAL;
-  XR_CHECK(xrCreateReferenceSpace(session_, &spaceCreateInfo, &localSpace_));
-
-  if (stageSpaceSupported_) {
-    spaceCreateInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_STAGE;
-    XR_CHECK(xrCreateReferenceSpace(session_, &spaceCreateInfo, &stageSpace_));
-  }
+#else
+  spaceCreateInfo.referenceSpaceType = stageSpaceSupported_ ? XR_REFERENCE_SPACE_TYPE_STAGE
+                                                            : XR_REFERENCE_SPACE_TYPE_LOCAL;
+#endif
+  XR_CHECK(xrCreateReferenceSpace(session_, &spaceCreateInfo, &currentSpace_));
 }
 
 void XrApp::handleXrEvents() {
@@ -492,7 +513,7 @@ XrFrameState XrApp::beginFrame() {
   XrSpaceLocation loc = {
       loc.type = XR_TYPE_SPACE_LOCATION,
   };
-  XR_CHECK(xrLocateSpace(headSpace_, stageSpace_, frameState.predictedDisplayTime, &loc));
+  XR_CHECK(xrLocateSpace(headSpace_, currentSpace_, frameState.predictedDisplayTime, &loc));
   XrPosef headPose = loc.pose;
 
   XrViewState viewState = {XR_TYPE_VIEW_STATE};
@@ -562,10 +583,14 @@ void XrApp::endFrame(XrFrameState frameState) {
     layer.next = nullptr;
     layer.type = XR_TYPE_COMPOSITION_LAYER_QUAD;
     layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
-    layer.space = stageSpace_;
+    layer.space = currentSpace_;
     layer.eyeVisibility = eye;
     memset(&layer.subImage, 0, sizeof(XrSwapchainSubImage));
+#if USE_LOCAL_AR_SPACE
+    layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, -1.f}};
+#else
     layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, 0.f}};
+#endif
     layer.size = {1.f, 1.f};
     if (eye == XR_EYE_VISIBILITY_LEFT) {
       eye = XR_EYE_VISIBILITY_RIGHT;
@@ -580,7 +605,7 @@ void XrApp::endFrame(XrFrameState frameState) {
       XR_TYPE_COMPOSITION_LAYER_PROJECTION,
       nullptr,
       XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT,
-      stageSpace_,
+      currentSpace_,
       static_cast<uint32_t>(kNumViews),
       projectionViews.data(),
   };
@@ -639,7 +664,8 @@ void XrApp::endFrame(XrFrameState frameState) {
       XR_TYPE_FRAME_END_INFO,
       nullptr,
       frameState.predictedDisplayTime,
-      XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
+      additiveBlendingSupported_ ? XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
+                                 : XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
 #ifdef USE_COMPOSITION_LAYER_QUAD
       quadLayersBase.size(),
       quadLayersBase.data(),

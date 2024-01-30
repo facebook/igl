@@ -87,6 +87,7 @@ class XrApp {
   bool createSystem();
   bool enumerateViewConfigurations();
   void enumerateReferenceSpaces();
+  void enumerateBlendModes();
   void createSwapchainProviders(const std::unique_ptr<igl::IDevice>& device);
   void handleSessionStateChanges(XrSessionState state);
   void createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManager* assetMgr);
@@ -132,9 +133,10 @@ class XrApp {
   std::vector<std::unique_ptr<XrSwapchainProvider>> swapchainProviders_;
 
   XrSpace headSpace_ = XR_NULL_HANDLE;
-  XrSpace localSpace_ = XR_NULL_HANDLE;
-  XrSpace stageSpace_ = XR_NULL_HANDLE;
+  XrSpace currentSpace_ = XR_NULL_HANDLE;
   bool stageSpaceSupported_ = false;
+
+  bool additiveBlendingSupported_ = false;
 
   std::unique_ptr<impl::XrAppImpl> impl_;
 
