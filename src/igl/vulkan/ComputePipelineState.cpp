@@ -74,7 +74,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
                                 ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
                                 : IGL_ARRAY_NUM_ELEMENTS(DSLs) - 1u),
       info_.hasPushConstants ? &pushConstantRange_ : nullptr,
-      IGL_FORMAT("Pipeline Layout: {}", desc_.debugName).c_str());
+      IGL_FORMAT("Pipeline Layout: {}", desc_.debugName.c_str()).c_str());
 
   const auto& shaderModule = desc_.shaderStages->getComputeModule();
 
