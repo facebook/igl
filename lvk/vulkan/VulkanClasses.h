@@ -236,6 +236,7 @@ class VulkanImmediateCommands final {
   SubmitHandle submit(const CommandBufferWrapper& wrapper);
   void waitSemaphore(VkSemaphore semaphore);
   VkSemaphore acquireLastSubmitSemaphore();
+  VkFence getVkFence(SubmitHandle handle) const;
   SubmitHandle getLastSubmitHandle() const;
   bool isReady(SubmitHandle handle, bool fastCheckNoVulkan = false) const;
   void wait(SubmitHandle handle);

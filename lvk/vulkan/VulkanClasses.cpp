@@ -1751,6 +1751,14 @@ VkSemaphore lvk::VulkanImmediateCommands::acquireLastSubmitSemaphore() {
   return std::exchange(lastSubmitSemaphore_, VK_NULL_HANDLE);
 }
 
+VkFence lvk::VulkanImmediateCommands::getVkFence(lvk::SubmitHandle handle) const {
+  if (handle.empty()) {
+    return VK_NULL_HANDLE;
+  }
+
+  return buffers_[handle.bufferIndex_].fence_;
+}
+
 lvk::SubmitHandle lvk::VulkanImmediateCommands::getLastSubmitHandle() const {
   return lastSubmitHandle_;
 }
