@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <thread>
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
