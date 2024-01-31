@@ -2645,6 +2645,23 @@ void lvk::VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer, size_t dstOff
 
     auto& wrapper = immediate_->acquire();
     vkCmdCopyBuffer(wrapper.cmdBuf_, stagingBuffer->vkBuffer_, buffer.vkBuffer_, 1, &copy);
+    VkBufferMemoryBarrier barrier = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+        .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+        .dstAccessMask = 0,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .buffer = buffer.vkBuffer_,
+        .offset = dstOffset,
+        .size = chunkSize,
+    };
+    VkPipelineStageFlags dstMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    if (buffer.vkUsageFlags_ & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
+      dstMask |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+      barrier.dstAccessMask |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+    }
+    vkCmdPipelineBarrier(
+        wrapper.cmdBuf_, VK_PIPELINE_STAGE_TRANSFER_BIT, dstMask, VkDependencyFlags{}, 0, nullptr, 1, &barrier, 0, nullptr);
     desc.handle_ = immediate_->submit(wrapper);
     regions_.push_back(desc);
 
