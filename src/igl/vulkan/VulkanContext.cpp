@@ -386,12 +386,12 @@ VulkanContext::~VulkanContext() {
   dummyStorageBuffer_.reset();
   dummyUniformBuffer_.reset();
 #if IGL_DEBUG
-  for (const auto& t : textures_) {
-    if (t.use_count() > 1) {
+  for (const auto& t : textures_.objects_) {
+    if (t.obj_.use_count() > 1) {
       IGL_ASSERT_MSG(false,
                      "Leaked texture detected! %u %s",
-                     t->getTextureId(),
-                     debugNamesTextures_[t->getTextureId()].c_str());
+                     t.obj_->getTextureId(),
+                     debugNamesTextures_[t.obj_->getTextureId()].c_str());
     }
   }
   for (const auto& s : samplers_) {
@@ -753,7 +753,6 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                      "Buffer: dummy storage");
 
   // default texture
-  IGL_ASSERT(textures_.size() == 1);
   {
     const VkFormat dummyTextureFormat = VK_FORMAT_R8G8B8A8_UNORM;
     Result result;
@@ -787,10 +786,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     if (!IGL_VERIFY(imageView)) {
       return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
     }
-    textures_[0] = std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView));
+    const TextureHandle dummyTexture = textures_.create(
+        std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView)));
+    IGL_ASSERT(textures_.numObjects() == 1);
     const uint32_t pixel = 0xFF000000;
     stagingDevice_->imageData(
-        textures_[0]->getVulkanImage(),
+        (*textures_.get(dummyTexture))->getVulkanImage(),
         TextureType::TwoD,
         TextureRangeDesc::new2D(0, 0, 1, 1),
         TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8),
@@ -1129,13 +1130,12 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
 
   // textures
   {
-    while (textures_.size() > 1 && textures_.back().use_count() == 1) {
-      textures_.pop_back();
+    while (textures_.objects_.size() > 1 && textures_.objects_.back().obj_.use_count() == 1) {
+      textures_.objects_.pop_back();
     }
-    for (uint32_t i = 1; i < (uint32_t)textures_.size(); i++) {
-      if (textures_[i] && textures_[i].use_count() == 1) {
-        textures_[i].reset();
-        freeIndicesTextures_.push_back(i);
+    for (uint32_t i = 1; i < (uint32_t)textures_.objects_.size(); i++) {
+      if (textures_.objects_[i].obj_ && textures_.objects_[i].obj_.use_count() == 1) {
+        textures_.destroy(i);
       }
     }
   }
@@ -1160,7 +1160,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
   uint32_t newMaxTextures = pimpl_->currentMaxBindlessTextures_;
   uint32_t newMaxSamplers = pimpl_->currentMaxBindlessSamplers_;
 
-  while (textures_.size() > newMaxTextures) {
+  while (textures_.objects_.size() > newMaxTextures) {
     newMaxTextures *= 2;
   }
   while (samplers_.size() > newMaxSamplers) {
@@ -1174,14 +1174,15 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
   // 1. Sampled and storage images
   std::vector<VkDescriptorImageInfo> infoSampledImages;
   std::vector<VkDescriptorImageInfo> infoStorageImages;
-  IGL_ASSERT(textures_.size() >= 1); // make sure the guard value is always there
-  infoSampledImages.reserve(textures_.size());
-  infoStorageImages.reserve(textures_.size());
+  IGL_ASSERT(textures_.objects_.size() >= 1); // make sure the guard value is always there
+  infoSampledImages.reserve(textures_.objects_.size());
+  infoStorageImages.reserve(textures_.objects_.size());
 
   // use the dummy texture to avoid sparse array
-  VkImageView dummyImageView = textures_[0]->imageView_->getVkImageView();
+  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_->getVkImageView();
 
-  for (const auto& texture : textures_) {
+  for (const auto& entry : textures_.objects_) {
+    const VulkanTexture* texture = entry.obj_.get();
     // multisampled images cannot be directly accessed from shaders
     // @lint-ignore CLANGTIDY
     const bool isTextureAvailable =
@@ -1260,19 +1261,16 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
     [[maybe_unused]] const char* debugName) const {
   IGL_PROFILER_FUNCTION();
 
-  auto texture = std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView));
+  const TextureHandle handle = textures_.create(
+      std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView)));
+
+  auto texture = *textures_.get(handle);
+
   if (!IGL_VERIFY(texture)) {
     return nullptr;
   }
-  if (!freeIndicesTextures_.empty()) {
-    // reuse an empty slot
-    texture->textureId_ = freeIndicesTextures_.back();
-    freeIndicesTextures_.pop_back();
-    textures_[texture->textureId_] = texture;
-  } else {
-    texture->textureId_ = uint32_t(textures_.size());
-    textures_.emplace_back(texture);
-  }
+
+  texture->textureId_ = handle.index();
 
 #if IGL_DEBUG
   const uint32_t id = texture->getTextureId();
@@ -1457,7 +1455,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
   uint32_t numWrites = 0;
 
   // use the dummy texture to avoid sparse array
-  VkImageView dummyImageView = textures_[0]->imageView_->getVkImageView();
+  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_->getVkImageView();
   VkSampler dummySampler = samplers_[0]->getVkSampler();
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
