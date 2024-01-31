@@ -2660,6 +2660,14 @@ void lvk::VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer, size_t dstOff
       dstMask |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
       barrier.dstAccessMask |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
     }
+    if (buffer.vkUsageFlags_ & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) {
+      dstMask |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+      barrier.dstAccessMask |= VK_ACCESS_INDEX_READ_BIT;
+    }
+    if (buffer.vkUsageFlags_ & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) {
+      dstMask |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+      barrier.dstAccessMask |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+    }
     vkCmdPipelineBarrier(
         wrapper.cmdBuf_, VK_PIPELINE_STAGE_TRANSFER_BIT, dstMask, VkDependencyFlags{}, 0, nullptr, 1, &barrier, 0, nullptr);
     desc.handle_ = immediate_->submit(wrapper);
