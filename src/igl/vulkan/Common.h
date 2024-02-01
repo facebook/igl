@@ -99,6 +99,12 @@
 
 namespace igl::vulkan {
 
+// The color definitions below are used by debugging utility functions, such as the ones provided by
+// VK_EXT_debug_utils
+#define kColorGenerateMipmaps igl::Color(1.f, 0.75f, 0.f)
+#define kColorUploadImage igl::Color(1.f, 0.2f, 0.78f)
+#define kColorDebugLines igl::Color(0.f, 1.f, 1.f)
+
 // The functions below are convenience functions used to convert to and from Vulkan values to IGL
 // values
 

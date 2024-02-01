@@ -131,7 +131,7 @@ void CommandQueue::enhancedShaderDebuggingPass(const igl::vulkan::VulkanContext&
         static_cast<igl::vulkan::Buffer*>(debugger->vertexBuffer().get()),
         sizeof(EnhancedShaderDebuggingStore::Header));
 
-    cmdEncoder->pushDebugGroupLabel("Render Debug Lines", igl::Color(0.f, 1.f, 1.f));
+    cmdEncoder->pushDebugGroupLabel("Render Debug Lines", kColorDebugLines);
     cmdEncoder->bindDepthStencilState(debugger->depthStencilState());
 
     // Disable incrementing the draw call count
