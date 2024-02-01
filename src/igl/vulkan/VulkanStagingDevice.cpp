@@ -279,6 +279,11 @@ void VulkanStagingDevice::imageData(VulkanImage& image,
           ? VK_IMAGE_ASPECT_DEPTH_BIT
           : (image.isStencilFormat_ ? VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT);
 
+  ivkCmdBeginDebugUtilsLabel(&ctx_.vf_,
+                             wrapper.cmdBuf_,
+                             "VulkanStagingDevice::imageData (upload image data)",
+                             kColorUploadImage.toFloatPtr());
+
   for (auto mipLevel = range.mipLevel; mipLevel < range.mipLevel + range.numMipLevels; ++mipLevel) {
     const auto mipRange = range.atMipLevel(mipLevel);
     const uint32_t offset =
@@ -383,6 +388,8 @@ void VulkanStagingDevice::imageData(VulkanImage& image,
                         subresourceRange);
 
   image.imageLayout_ = targetLayout;
+
+  ivkCmdEndDebugUtilsLabel(&ctx_.vf_, wrapper.cmdBuf_);
 
   // Store the allocated block with the SubmitHandle at the end of the deque
   memoryChunk.handle = immediate_->submit(wrapper);
