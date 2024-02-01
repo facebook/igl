@@ -69,6 +69,12 @@ XrApp::~XrApp() {
 
   swapchainProviders_.clear();
 
+  if (passthrougLayer_ != XR_NULL_HANDLE) {
+    xrDestroyPassthroughLayerFB_(passthrougLayer_);
+  }
+  if (passthrough_ != XR_NULL_HANDLE) {
+    xrDestroyPassthroughFB_(passthrough_);
+  }
   xrDestroySpace(currentSpace_);
   xrDestroySpace(headSpace_);
   xrDestroySession(session_);
@@ -125,6 +131,22 @@ bool XrApp::checkExtensions() {
     }
   }
 
+  passthroughSupported_ = std::any_of(
+      std::begin(extensions_), std::end(extensions_), [](const XrExtensionProperties& extension) {
+        return strcmp(extension.extensionName, XR_FB_PASSTHROUGH_EXTENSION_NAME) == 0;
+      });
+  IGL_LOG_INFO("Passthrough is %s", stageSpaceSupported_ ? "supported" : "not supported");
+
+  // Add passthough extension if supported.
+  if (passthroughSupported_ && std::find_if(std::begin(requiredExtensions_),
+                                            std::end(requiredExtensions_),
+                                            [](const char* extensionName) {
+                                              return strcmp(extensionName,
+                                                            XR_FB_PASSTHROUGH_EXTENSION_NAME) == 0;
+                                            }) == std::end(requiredExtensions_)) {
+    requiredExtensions_.push_back(XR_FB_PASSTHROUGH_EXTENSION_NAME);
+  }
+
   return true;
 }
 
@@ -159,6 +181,25 @@ bool XrApp::createInstance() {
                XR_VERSION_MAJOR(instanceProps_.runtimeVersion),
                XR_VERSION_MINOR(instanceProps_.runtimeVersion),
                XR_VERSION_PATCH(instanceProps_.runtimeVersion));
+
+  if (passthroughSupported_) {
+    XR_CHECK(xrGetInstanceProcAddr(
+        instance_, "xrCreatePassthroughFB", (PFN_xrVoidFunction*)(&xrCreatePassthroughFB_)));
+    XR_CHECK(xrGetInstanceProcAddr(
+        instance_, "xrDestroyPassthroughFB", (PFN_xrVoidFunction*)(&xrDestroyPassthroughFB_)));
+    XR_CHECK(xrGetInstanceProcAddr(
+        instance_, "xrPassthroughStartFB", (PFN_xrVoidFunction*)(&xrPassthroughStartFB_)));
+    XR_CHECK(xrGetInstanceProcAddr(instance_,
+                                   "xrCreatePassthroughLayerFB",
+                                   (PFN_xrVoidFunction*)(&xrCreatePassthroughLayerFB_)));
+    XR_CHECK(xrGetInstanceProcAddr(instance_,
+                                   "xrDestroyPassthroughLayerFB",
+                                   (PFN_xrVoidFunction*)(&xrDestroyPassthroughLayerFB_)));
+    XR_CHECK(xrGetInstanceProcAddr(instance_,
+                                   "xrPassthroughLayerSetStyleFB",
+                                   (PFN_xrVoidFunction*)(&xrPassthroughLayerSetStyleFB_)));
+  }
+
   return true;
 } // namespace igl::shell::openxr
 
@@ -186,6 +227,47 @@ bool XrApp::createSystem() {
   IGL_LOG_INFO("System Tracking Properties: OrientationTracking=%s PositionTracking=%s",
                systemProps_.trackingProperties.orientationTracking ? "True" : "False",
                systemProps_.trackingProperties.positionTracking ? "True" : "False");
+  return true;
+}
+
+bool XrApp::createPassthrough() {
+  XrPassthroughCreateInfoFB passthroughInfo{XR_TYPE_PASSTHROUGH_CREATE_INFO_FB};
+  passthroughInfo.next = nullptr;
+  passthroughInfo.flags = 0u;
+
+  XrResult result;
+  XR_CHECK(result = xrCreatePassthroughFB_(session_, &passthroughInfo, &passthrough_));
+  if (result != XR_SUCCESS) {
+    IGL_LOG_ERROR("xrCreatePassthroughFB failed.");
+    return false;
+  }
+
+  XrPassthroughLayerCreateInfoFB layerInfo{XR_TYPE_PASSTHROUGH_LAYER_CREATE_INFO_FB};
+  layerInfo.next = nullptr;
+  layerInfo.passthrough = passthrough_;
+  layerInfo.purpose = XR_PASSTHROUGH_LAYER_PURPOSE_RECONSTRUCTION_FB;
+  layerInfo.flags = XR_PASSTHROUGH_IS_RUNNING_AT_CREATION_BIT_FB;
+  XR_CHECK(result = xrCreatePassthroughLayerFB_(session_, &layerInfo, &passthrougLayer_));
+  if (result != XR_SUCCESS) {
+    IGL_LOG_ERROR("xrCreatePassthroughLayerFB failed.");
+    return false;
+  }
+
+  XrPassthroughStyleFB style{XR_TYPE_PASSTHROUGH_STYLE_FB};
+  style.next = nullptr;
+  style.textureOpacityFactor = 1.0f;
+  style.edgeColor = {0.0f, 0.0f, 0.0f, 0.0f};
+  XR_CHECK(result = xrPassthroughLayerSetStyleFB_(passthrougLayer_, &style));
+  if (result != XR_SUCCESS) {
+    IGL_LOG_ERROR("xrPassthroughLayerSetStyleFB failed.");
+    return false;
+  }
+
+  XR_CHECK(result = xrPassthroughStartFB_(passthrough_));
+  if (result != XR_SUCCESS) {
+    IGL_LOG_ERROR("xrPassthroughStartFB failed.");
+    return false;
+  }
   return true;
 }
 
@@ -370,6 +452,9 @@ bool XrApp::initialize(const struct android_app* app) {
   enumerateBlendModes();
   createSwapchainProviders(device);
   createSpaces();
+  if (passthroughSupported_ && !createPassthrough()) {
+    return false;
+  }
 
   initialized_ = true;
 
@@ -654,17 +739,28 @@ void XrApp::endFrame(XrFrameState frameState) {
 
   XrFrameEndInfo endFrameInfo;
   if (useQuadLayerComposition_) {
-    std::array<const XrCompositionLayerBaseHeader*, kNumViews> quadLayersBase{};
-    for (uint32_t i = 0; i < quadLayers.size(); i++) {
-      quadLayersBase[i] = (const XrCompositionLayerBaseHeader*)&quadLayers[i];
+    std::array<const XrCompositionLayerBaseHeader*, kNumViews + 1> layers{};
+    uint32_t layerIndex = 0;
+
+    XrCompositionLayerPassthroughFB compositionLayer{XR_TYPE_COMPOSITION_LAYER_PASSTHROUGH_FB};
+    if (passthroughSupported_) {
+      compositionLayer.next = nullptr;
+      compositionLayer.layerHandle = passthrougLayer_;
+      layers[layerIndex++] = (const XrCompositionLayerBaseHeader*)&compositionLayer;
     }
+
+    for (uint32_t i = 0; i < quadLayers.size(); i++) {
+      IGL_ASSERT(layerIndex < layers.size());
+      layers[layerIndex++] = (const XrCompositionLayerBaseHeader*)&quadLayers[i];
+    }
+
     endFrameInfo = {XR_TYPE_FRAME_END_INFO,
                     nullptr,
                     frameState.predictedDisplayTime,
                     additiveBlendingSupported_ ? XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
                                                : XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
-                    quadLayersBase.size(),
-                    quadLayersBase.data()};
+                    layerIndex,
+                    layers.data()};
   } else {
     const XrCompositionLayerBaseHeader* const layers[] = {
         (const XrCompositionLayerBaseHeader*)&projection,

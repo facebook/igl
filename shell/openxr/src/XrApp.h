@@ -85,6 +85,7 @@ class XrApp {
   bool checkExtensions();
   bool createInstance();
   bool createSystem();
+  bool createPassthrough();
   bool enumerateViewConfigurations();
   void enumerateReferenceSpaces();
   void enumerateBlendModes();
@@ -138,6 +139,17 @@ class XrApp {
   bool stageSpaceSupported_ = false;
 
   bool additiveBlendingSupported_ = false;
+
+  XrPassthroughFB passthrough_;
+  XrPassthroughLayerFB passthrougLayer_;
+
+  bool passthroughSupported_ = false;
+  PFN_xrCreatePassthroughFB xrCreatePassthroughFB_ = nullptr;
+  PFN_xrDestroyPassthroughFB xrDestroyPassthroughFB_ = nullptr;
+  PFN_xrPassthroughStartFB xrPassthroughStartFB_ = nullptr;
+  PFN_xrCreatePassthroughLayerFB xrCreatePassthroughLayerFB_ = nullptr;
+  PFN_xrDestroyPassthroughLayerFB xrDestroyPassthroughLayerFB_ = nullptr;
+  PFN_xrPassthroughLayerSetStyleFB xrPassthroughLayerSetStyleFB_ = nullptr;
 
   std::unique_ptr<impl::XrAppImpl> impl_;
 
