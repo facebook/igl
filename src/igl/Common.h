@@ -66,8 +66,8 @@ struct Color {
   float b;
   float a;
 
-  Color(float r, float g, float b) : r(r), g(g), b(b), a(1.0f) {}
-  Color(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
+  constexpr Color(float r, float g, float b) : r(r), g(g), b(b), a(1.0f) {}
+  constexpr Color(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
 
   const float* IGL_NONNULL toFloatPtr() const {
     return &r;
