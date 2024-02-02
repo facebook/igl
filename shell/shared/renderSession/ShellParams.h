@@ -7,8 +7,10 @@
 
 #pragma once
 
+#include <optional>
 #include <vector>
 
+#include <igl/Common.h>
 #include <igl/TextureFormat.h>
 #include <shell/shared/renderSession/RenderMode.h>
 #include <shell/shared/renderSession/ViewParams.h>
@@ -23,5 +25,6 @@ struct ShellParams {
   igl::TextureFormat defaultColorFramebufferFormat = igl::TextureFormat::BGRA_SRGB;
   float viewportScale = 1.f; // TODO: remove???
   bool shouldPresent = true;
+  std::optional<igl::Color> clearColorValue = {};
 };
 } // namespace igl::shell
