@@ -18,6 +18,7 @@
 
 #include <openxr/openxr.h>
 
+#include <igl/Common.h>
 #if USE_VULKAN_BACKEND
 #include <igl/vulkan/Common.h>
 
@@ -643,6 +644,12 @@ void copyFov(igl::shell::Fov& dst, const XrFovf& src) {
 } // namespace
 
 void XrApp::render() {
+  if (useQuadLayerComposition_) {
+    shellParams_->clearColorValue = igl::Color{0.0f, 0.0f, 0.0f, 0.0f};
+  } else {
+    shellParams_->clearColorValue.reset();
+  }
+
   if (useSinglePassStereo_) {
     auto surfaceTextures = swapchainProviders_[0]->getSurfaceTextures();
     for (size_t j = 0; j < shellParams_->viewParams.size(); j++) {
