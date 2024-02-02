@@ -329,12 +329,14 @@ static_assert(sizeof(Handle<class Foo>) == sizeof(uint64_t));
 // specialized with dummy structs for type safety
 using BindGroupHandle = igl::Handle<struct BindGroup>;
 using TextureHandle = igl::Handle<struct TextureTag>;
+using SamplerHandle = igl::Handle<struct SamplerTag>;
 
 class IDevice;
 
 // forward declarations to access incomplete type IDevice
 void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupHandle handle);
 void destroy(igl::IDevice* IGL_NULLABLE device, igl::TextureHandle handle);
+void destroy(igl::IDevice* IGL_NULLABLE device, igl::SamplerHandle handle);
 
 ///--------------------------------------
 /// MARK: - Holder

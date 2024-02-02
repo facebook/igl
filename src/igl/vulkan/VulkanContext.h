@@ -312,11 +312,7 @@ class VulkanContext final {
   // deallocated. The context deallocates textures in a deferred way when it is safe to do so.
   // 2. Descriptor sets can be updated when they are not in use.
   mutable Pool<TextureTag, std::shared_ptr<VulkanTexture>> textures_;
-
-  mutable std::vector<std::shared_ptr<VulkanSampler>> samplers_ = {nullptr}; // the guard element
-                                                                             // [0] is always there
-  // contains a list of free indices inside the sparse array `samplers_`
-  mutable std::vector<uint32_t> freeIndicesSamplers_;
+  mutable Pool<SamplerTag, std::shared_ptr<VulkanSampler>> samplers_;
   // a texture/sampler was created since the last descriptor set update
   mutable bool awaitingCreation_ = false;
 
