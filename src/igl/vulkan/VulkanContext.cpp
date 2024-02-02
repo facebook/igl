@@ -1186,21 +1186,28 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
 
   for (const auto& entry : textures_.objects_) {
     const VulkanTexture* texture = entry.obj_.get();
-    // multisampled images cannot be directly accessed from shaders
-    // @lint-ignore CLANGTIDY
-    const bool isTextureAvailable =
-        texture && ((texture->image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
-    const bool isSampledImage = isTextureAvailable && texture->image_->isSampledImage();
-    const bool isStorageImage = isTextureAvailable && texture->image_->isStorageImage();
-    infoSampledImages.push_back(
-        {dummySampler,
-         isSampledImage ? texture->imageView_->getVkImageView() : dummyImageView,
-         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+    if (texture) {
+      // multisampled images cannot be directly accessed from shaders
+      const bool isTextureAvailable =
+          (texture->image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
+      const bool isSampledImage = isTextureAvailable && texture->image_->isSampledImage();
+      const bool isStorageImage = isTextureAvailable && texture->image_->isStorageImage();
+      infoSampledImages.push_back(
+          {dummySampler,
+           isSampledImage ? texture->imageView_->getVkImageView() : dummyImageView,
+           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+      infoStorageImages.push_back(VkDescriptorImageInfo{
+          VK_NULL_HANDLE,
+          isStorageImage ? texture->imageView_->getVkImageView() : dummyImageView,
+          VK_IMAGE_LAYOUT_GENERAL});
+    } else {
+      infoSampledImages.push_back(
+          {dummySampler, dummyImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+      infoStorageImages.push_back(
+          VkDescriptorImageInfo{VK_NULL_HANDLE, dummyImageView, VK_IMAGE_LAYOUT_GENERAL});
+    }
     IGL_ASSERT(infoSampledImages.back().imageView != VK_NULL_HANDLE);
-    infoStorageImages.push_back(VkDescriptorImageInfo{
-        VK_NULL_HANDLE,
-        isStorageImage ? texture->imageView_->getVkImageView() : dummyImageView,
-        VK_IMAGE_LAYOUT_GENERAL});
+    IGL_ASSERT(infoStorageImages.back().imageView != VK_NULL_HANDLE);
   }
 
   // 2. Samplers
