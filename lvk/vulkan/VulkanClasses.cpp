@@ -2199,7 +2199,7 @@ void lvk::CommandBuffer::bufferBarrier(BufferHandle handle, VkPipelineStageFlags
 
   lvk::VulkanBuffer* buf = ctx_->buffersPool_.get(handle);
 
-  const VkBufferMemoryBarrier barrier = {
+  VkBufferMemoryBarrier barrier = {
       .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
       .srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
       .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
@@ -2209,6 +2209,13 @@ void lvk::CommandBuffer::bufferBarrier(BufferHandle handle, VkPipelineStageFlags
       .offset = 0,
       .size = VK_WHOLE_SIZE,
   };
+
+  if (dstStage & VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT) {
+    barrier.dstAccessMask |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+  }
+  if (buf->vkUsageFlags_ & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) {
+    barrier.dstAccessMask |= VK_ACCESS_INDEX_READ_BIT;
+  }
 
   vkCmdPipelineBarrier(wrapper_->cmdBuf_, srcStage, dstStage, VkDependencyFlags{}, 0, nullptr, 1, &barrier, 0, nullptr);
 }
