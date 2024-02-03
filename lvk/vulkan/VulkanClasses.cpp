@@ -1087,6 +1087,11 @@ void lvk::VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,
     srcAccessMask |= VK_ACCESS_SHADER_WRITE_BIT;
     srcRemainingMask &= ~VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
   }
+  if (srcStageMask & VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT) {
+    srcAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+    srcAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    srcRemainingMask &= ~VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+  }
 
   LVK_ASSERT_MSG(srcRemainingMask == 0, "Automatic access mask deduction is not implemented (yet) for this srcStageMask");
 
@@ -1098,6 +1103,11 @@ void lvk::VulkanImage::transitionLayout(VkCommandBuffer commandBuffer,
   if (dstStageMask & VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT) {
     dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     dstRemainingMask &= ~VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+  }
+  if (dstStageMask & VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT) {
+    dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+    dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dstRemainingMask &= ~VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
   }
   if (dstStageMask & VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
     dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
