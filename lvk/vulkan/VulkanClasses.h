@@ -651,7 +651,6 @@ class VulkanContext final : public IContext {
   VkDescriptorSetLayout vkDSL_ = VK_NULL_HANDLE;
   VkDescriptorPool vkDPool_ = VK_NULL_HANDLE;
   VkDescriptorSet vkDSet_ = VK_NULL_HANDLE;
-  SubmitHandle lastSubmitHandle = SubmitHandle(); // a handle of the last submit this descriptor set was a part of
   // don't use staging on devices with shared host-visible memory
   bool useStaging_ = true;
 

@@ -5133,7 +5133,7 @@ void lvk::VulkanContext::checkAndUpdateDescriptorSets() {
 #if LVK_VULKAN_PRINT_COMMANDS
     LLOGL("vkUpdateDescriptorSets()\n");
 #endif // LVK_VULKAN_PRINT_COMMANDS
-    immediate_->wait(std::exchange(lastSubmitHandle, immediate_->getLastSubmitHandle()));
+    immediate_->wait(immediate_->getLastSubmitHandle());
     vkUpdateDescriptorSets(vkDevice_, numWrites, write, 0, nullptr);
   }
 
