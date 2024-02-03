@@ -2271,9 +2271,9 @@ void lvk::CommandBuffer::cmdBeginRendering(const lvk::RenderPass& renderPass, co
     const VkImageAspectFlags flags = vkDepthTex.image_->getImageAspectFlags();
     depthImg->transitionLayout(wrapper_->cmdBuf_,
                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                               VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // wait for all subsequent
-                                                                  // operations
+                               VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, // wait for all subsequent
+                                                                                                               // operations
                                VkImageSubresourceRange{flags, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
   }
 
