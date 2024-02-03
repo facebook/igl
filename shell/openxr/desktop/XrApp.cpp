@@ -64,8 +64,7 @@ XrApp::~XrApp() {
 
   swapchainProviders_.clear();
 
-  xrDestroySpace(stageSpace_);
-  xrDestroySpace(localSpace_);
+  xrDestroySpace(currentSpace_);
   xrDestroySpace(headSpace_);
   xrDestroySession(session_);
   xrDestroyInstance(instance_);
@@ -359,15 +358,16 @@ void XrApp::createSpaces() {
       XR_REFERENCE_SPACE_TYPE_VIEW,
       {{0.0f, 0.0f, 0.0f, 1.0f}},
   };
-  XR_CHECK(xrCreateReferenceSpace(session_, &spaceCreateInfo, &headSpace_));
 
+#if USE_LOCAL_AR_SPACE
   spaceCreateInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_LOCAL;
-  XR_CHECK(xrCreateReferenceSpace(session_, &spaceCreateInfo, &localSpace_));
+#else
+  spaceCreateInfo.referenceSpaceType = stageSpaceSupported_ ? XR_REFERENCE_SPACE_TYPE_STAGE
+                                                            : XR_REFERENCE_SPACE_TYPE_LOCAL;
+#endif // USE_LOCAL_AR_SPACE
 
-  if (stageSpaceSupported_) {
-    spaceCreateInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_STAGE;
-    XR_CHECK(xrCreateReferenceSpace(session_, &spaceCreateInfo, &stageSpace_));
-  }
+  XR_CHECK(xrCreateReferenceSpace(session_, &spaceCreateInfo, &currentSpace_));
+  XR_CHECK(xrCreateReferenceSpace(session_, &spaceCreateInfo, &headSpace_));
 }
 
 void XrApp::handleXrEvents() {
@@ -474,7 +474,7 @@ XrFrameState XrApp::beginFrame() {
   XrSpaceLocation loc = {
       loc.type = XR_TYPE_SPACE_LOCATION,
   };
-  XR_CHECK(xrLocateSpace(headSpace_, stageSpace_, frameState.predictedDisplayTime, &loc));
+  XR_CHECK(xrLocateSpace(headSpace_, currentSpace_, frameState.predictedDisplayTime, &loc));
   XrPosef headPose = loc.pose;
 
   XrViewState viewState = {XR_TYPE_VIEW_STATE};
@@ -544,7 +544,7 @@ void XrApp::endFrame(XrFrameState frameState) {
       layer.next = nullptr;
       layer.type = XR_TYPE_COMPOSITION_LAYER_QUAD;
       layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
-      layer.space = stageSpace_;
+      layer.space = currentSpace_;
       layer.eyeVisibility = eye;
       memset(&layer.subImage, 0, sizeof(XrSwapchainSubImage));
       layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, 0.f}};
@@ -562,7 +562,7 @@ void XrApp::endFrame(XrFrameState frameState) {
       XR_TYPE_COMPOSITION_LAYER_PROJECTION,
       nullptr,
       XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT,
-      stageSpace_,
+      currentSpace_,
       static_cast<uint32_t>(kNumViews),
       projectionViews.data(),
   };
