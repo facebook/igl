@@ -1469,6 +1469,7 @@ lvk::TextureHandle lvk::VulkanSwapchain::getCurrentTexture() {
       VK_ASSERT(r);
     }
     getNextImage_ = false;
+    ctx_.immediate_->waitSemaphore(acquireSemaphore_);
   }
 
   if (LVK_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
@@ -3192,10 +3193,6 @@ lvk::SubmitHandle lvk::VulkanContext::submit(lvk::ICommandBuffer& commandBuffer,
   }
 
   const bool shouldPresent = hasSwapchain() && present;
-
-  if (shouldPresent) {
-    immediate_->waitSemaphore(swapchain_->acquireSemaphore_);
-  }
 
   vkCmdBuffer->lastSubmitHandle_ = immediate_->submit(*vkCmdBuffer->wrapper_);
 
