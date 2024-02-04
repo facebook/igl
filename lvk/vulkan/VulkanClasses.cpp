@@ -1483,7 +1483,7 @@ lvk::TextureHandle lvk::VulkanSwapchain::getCurrentTexture() {
     //   (https://vulkan.lunarg.com/doc/view/1.3.275.0/windows/1.3-extensions/vkspec.html#VUID-vkAcquireNextImageKHR-semaphore-01779)
     if (acquireFence_ == VK_NULL_HANDLE) {
       acquireFence_ = lvk::createFence(device_, "Fence: swapchain-acquire");
-	 } else {
+    } else {
       vkWaitForFences(device_, 1, &acquireFence_, VK_TRUE, UINT64_MAX);
       vkResetFences(device_, 1, &acquireFence_);
     }
