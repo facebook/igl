@@ -1449,6 +1449,10 @@ lvk::VulkanSwapchain::~VulkanSwapchain() {
   for (TextureHandle handle : swapchainTextures_) {
     ctx_.texturesPool_.destroy(handle);
   }
+  if (acquireFence_ != VK_NULL_HANDLE) {
+    vkWaitForFences(device_, 1, &acquireFence_, VK_TRUE, UINT64_MAX);
+    vkDestroyFence(device_, acquireFence_, nullptr);
+  }
   vkDestroySwapchainKHR(device_, swapchain_, nullptr);
   vkDestroySemaphore(device_, acquireSemaphore_, nullptr);
 }
@@ -1473,8 +1477,18 @@ lvk::TextureHandle lvk::VulkanSwapchain::getCurrentTexture() {
   LVK_PROFILER_FUNCTION();
 
   if (getNextImage_) {
+    // Our first submit handle can be still waiting on the previous `acquireSemaphore`.
+    //   vkAcquireNextImageKHR():  Semaphore must not have any pending operations. The Vulkan spec states:
+    //   If semaphore is not VK_NULL_HANDLE it must not have any uncompleted signal or wait operations pending
+    //   (https://vulkan.lunarg.com/doc/view/1.3.275.0/windows/1.3-extensions/vkspec.html#VUID-vkAcquireNextImageKHR-semaphore-01779)
+    if (acquireFence_ == VK_NULL_HANDLE) {
+      acquireFence_ = lvk::createFence(device_, "Fence: swapchain-acquire");
+	 } else {
+      vkWaitForFences(device_, 1, &acquireFence_, VK_TRUE, UINT64_MAX);
+      vkResetFences(device_, 1, &acquireFence_);
+    }
     // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
-    VkResult r = vkAcquireNextImageKHR(device_, swapchain_, UINT64_MAX, acquireSemaphore_, VK_NULL_HANDLE, &currentImageIndex_);
+    VkResult r = vkAcquireNextImageKHR(device_, swapchain_, UINT64_MAX, acquireSemaphore_, acquireFence_, &currentImageIndex_);
     if (r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR && r != VK_ERROR_OUT_OF_DATE_KHR) {
       VK_ASSERT(r);
     }

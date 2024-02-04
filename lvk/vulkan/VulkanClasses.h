@@ -194,9 +194,6 @@ class VulkanSwapchain final {
   const VkSurfaceFormatKHR& getSurfaceFormat() const;
   uint32_t getNumSwapchainImages() const;
 
- public:
-  VkSemaphore acquireSemaphore_ = VK_NULL_HANDLE;
-
  private:
   VulkanContext& ctx_;
   VkDevice device_ = VK_NULL_HANDLE;
@@ -209,6 +206,8 @@ class VulkanSwapchain final {
   VkSwapchainKHR swapchain_ = VK_NULL_HANDLE;
   VkSurfaceFormatKHR surfaceFormat_ = {.format = VK_FORMAT_UNDEFINED};
   TextureHandle swapchainTextures_[LVK_MAX_SWAPCHAIN_IMAGES] = {};
+  VkSemaphore acquireSemaphore_ = VK_NULL_HANDLE;
+  VkFence acquireFence_ = VK_NULL_HANDLE;
 };
 
 class VulkanImmediateCommands final {
