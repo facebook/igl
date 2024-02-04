@@ -14,7 +14,7 @@ import android.view.Surface;
 public class SampleLib {
 
   static {
-    System.loadLibrary("ColorSession");
+    System.loadLibrary("ImguiSession");
   }
   // should match with IDs in TinyRenderer.h
   protected static final int gl3ID = 0;

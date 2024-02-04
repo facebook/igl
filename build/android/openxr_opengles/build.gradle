@@ -10,11 +10,11 @@ plugins {
 }
 
 android {
-    namespace 'com.facebook.igl.shell'
+    namespace 'com.facebook.igl.shell.openxr.gles'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.facebook.igl.shell"
+        applicationId "com.facebook.igl.shell.openxr.gles"
         minSdk 33
         targetSdk 33
         versionCode 1
@@ -22,6 +22,7 @@ android {
 
         externalNativeBuild {
             cmake {
+                arguments '-DIGL_WITH_OPENXR=ON', '-DIGL_WITH_OPENGLES=ON', '-DIGL_WITH_VULKAN=OFF'
                 cppFlags '-std=c++17'
             }
         }

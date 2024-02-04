@@ -63,8 +63,14 @@ macro(ADD_SHELL_SESSION target libs)
 endmacro()
 
 macro(ADD_SHELL_SESSION_OPENXR target)
+if (ANDROID)
+  set(shell_srcs apps/SessionApp.cpp renderSessions/${target}.cpp renderSessions/${target}.h openxr/mobile/AndroidMain.cpp
+          openxr/mobile/XrApp.cpp)
+  add_shell_session_backend_openxr(${target} opengles "${shell_srcs}" IGLShellOpenXR)
+else()
   set(shell_srcs apps/SessionApp.cpp renderSessions/${target}.cpp renderSessions/${target}.h openxr/desktop/main.cpp)
   add_shell_session_backend_openxr(${target} vulkan "${shell_srcs}" IGLShellOpenXR)
+endif()
 endmacro()
 
 if(IGL_WITH_SAMPLES)

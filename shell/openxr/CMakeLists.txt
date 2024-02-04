@@ -13,18 +13,35 @@ file(CREATE_LINK
      "${IGL_ROOT_DIR}/shell/openxr/src"
      "${CMAKE_CURRENT_BINARY_DIR}/include_shell_openxr/shell/openxr" COPY_ON_ERROR SYMBOLIC)
 #
+if(IGL_WITH_OPENGLES)
+    SET(BACKEND, "opengl")
+elseif (IGL_WITH_VULKAN)
+    SET(BACKEND, "vulkan")
+endif()
 
-file(GLOB SHELL_OPENXR_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-     ../openxr/desktop/*.cpp
-     ../openxr/desktop/vulkan/*.cpp
-     ../openxr/impl/*.cpp
-     ../openxr/src/*.cpp)
-file(GLOB SHELL_OPENXR_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-     ../openxr/desktop/*.h
-     ../openxr/desktop/vulkan/*.h
-     ../openxr/impl/*.h
-     ../openxr/src/*.h)
-
+if (ANDROID)
+    file(GLOB SHELL_OPENXR_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+            ../openxr/mobile/*.cpp
+            ../openxr/mobile/${BACKEND}/*.cpp
+            ../openxr/impl/*.cpp
+            ../openxr/src/*.cpp)
+    file(GLOB SHELL_OPENXR_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+            ../openxr/mobile/*.h
+            ../openxr/mobile/${BACKEND}/*.h
+            ../openxr/impl/*.h
+            ../openxr/src/*.h)
+else()
+    file(GLOB SHELL_OPENXR_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+         ../openxr/desktop/*.cpp
+         ../openxr/desktop/vulkan/*.cpp
+         ../openxr/impl/*.cpp
+         ../openxr/src/*.cpp)
+    file(GLOB SHELL_OPENXR_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+         ../openxr/desktop/*.h
+         ../openxr/desktop/vulkan/*.h
+         ../openxr/impl/*.h
+         ../openxr/src/*.h)
+endif ()
 add_library(IGLShellOpenXR ${SHELL_OPENXR_SRC_FILES} ${SHELL_OPENXR_HEADER_FILES})
 
 target_link_libraries(IGLShellOpenXR PUBLIC IGLLibrary)
