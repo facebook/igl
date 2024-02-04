@@ -72,7 +72,7 @@
     "source": {
         "type": "git",
         "url": "https://github.com/KhronosGroup/KTX-Software.git",
-        "revision": "6dbb24643023e1d01cd1cad0205308e03422c91e"
+        "revision": "408cde7212840fcef7106224365a070e674afcdc"
     }
 },
 {
@@ -120,7 +120,7 @@
     "source": {
         "type": "git",
         "url": "https://github.com/zeux/volk",
-        "revision": "3ee06ecfc9ca1b44cc8882de96e21b78a0058282"
+        "revision": "7121910043955154c585ebb63de2e7d63aefa489"
     }
 },
 {
