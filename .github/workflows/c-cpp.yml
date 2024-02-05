@@ -129,6 +129,13 @@ jobs:
             CC:  ${{ matrix.config.cc }}
             CXX: ${{ matrix.config.cxx }}
           run: |
-            cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
-            cd build
-            cmake --build . --parallel ${{ steps.cpu-cores.outputs.count }}
+            if [[ "${{ matrix.config.name }}" == "Ubuntu - Emscripten" ]]; then
+              emcmake cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
+              cd build
+              cmake --build . --parallel ${{ steps.cpu-cores.outputs.count }}
+            else
+              make ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
+              cd build
+              cmake --build . --parallel ${{ steps.cpu-cores.outputs.count }}
+            fi
+
