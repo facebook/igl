@@ -128,14 +128,19 @@ jobs:
           env:
             CC:  ${{ matrix.config.cc }}
             CXX: ${{ matrix.config.cxx }}
+          if: ${{ !matrix.config.name  == 'Ubuntu - Emscripten' }}
           run: |
-            if [[ "${{ matrix.config.name }}" == "Ubuntu - Emscripten" ]]; then
+              cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
+              cd build
+              cmake --build . --parallel ${{ steps.cpu-cores.outputs.count }}
+
+        - name: Build Emscripten
+          shell: bash
+          env:
+            CC:  ${{ matrix.config.cc }}
+            CXX: ${{ matrix.config.cxx }}
+          if: ${{ matrix.config.name  == 'Ubuntu - Emscripten' }}
+          run: |
               emcmake cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
               cd build
               cmake --build . --parallel ${{ steps.cpu-cores.outputs.count }}
-            else
-              make ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
-              cd build
-              cmake --build . --parallel ${{ steps.cpu-cores.outputs.count }}
-            fi
-
