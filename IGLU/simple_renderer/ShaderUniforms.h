@@ -57,7 +57,7 @@ class ShaderUniforms final {
   void setFloatArray(const igl::NameHandle& blockTypeName,
                      const igl::NameHandle& blockInstanceName,
                      const igl::NameHandle& memberName,
-                     iglu::simdtypes::float1* value,
+                     const iglu::simdtypes::float1* value,
                      size_t count = 1,
                      size_t arrayIndex = 0);
 
