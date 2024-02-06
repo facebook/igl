@@ -24,7 +24,7 @@ namespace igl::shell::openxr::mobile {
 class XrSwapchainProviderImplVulkan final : public impl::XrSwapchainProviderImpl {
  public:
   int64_t preferredColorFormat() const final {
-    return VK_FORMAT_R8G8B8A8_UNORM;
+    return VK_FORMAT_R8G8B8A8_SRGB;
   }
   int64_t preferredDepthFormat() const final {
     return VK_FORMAT_D24_UNORM_S8_UINT;

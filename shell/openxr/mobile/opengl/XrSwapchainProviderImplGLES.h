@@ -23,7 +23,7 @@ namespace igl::shell::openxr::mobile {
 class XrSwapchainProviderImplGLES final : public impl::XrSwapchainProviderImpl {
  public:
   int64_t preferredColorFormat() const final {
-    return GL_RGBA8;
+    return GL_SRGB8;
   }
   int64_t preferredDepthFormat() const final {
     return GL_DEPTH_COMPONENT16;
