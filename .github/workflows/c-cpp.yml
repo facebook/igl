@@ -134,7 +134,7 @@ jobs:
           env:
             CC:  ${{ matrix.config.cc }}
             CXX: ${{ matrix.config.cxx }}
-          if: ${{ !matrix.config.name  == 'Ubuntu - Emscripten' }}
+          if: ${{ matrix.config.name  != 'Ubuntu - Emscripten' }}
           run: |
               cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
               cd build
