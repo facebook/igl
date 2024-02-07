@@ -259,8 +259,6 @@ class VulkanImmediateCommands final {
 };
 
 struct RenderPipelineState final {
-  void destroyPipelines(lvk::VulkanContext* ctx);
-
   RenderPipelineDesc desc_;
 
   uint32_t numBindings_ = 0;
@@ -339,6 +337,7 @@ struct ComputePipelineState final {
   ComputePipelineDesc desc_;
   // non-owning, cached the last pipeline layout from the context
   VkPipelineLayout pipelineLayout_ = VK_NULL_HANDLE;
+
   VkPipeline pipeline_ = VK_NULL_HANDLE;
 };
 
@@ -404,7 +403,6 @@ class CommandBuffer final : public ICommandBuffer {
  private:
   void useComputeTexture(TextureHandle texture);
   void bufferBarrier(BufferHandle handle, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage);
-  void bindGraphicsPipeline();
 
  private:
   friend class VulkanContext;

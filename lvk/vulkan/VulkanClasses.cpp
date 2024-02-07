@@ -1788,14 +1788,6 @@ lvk::SubmitHandle lvk::VulkanImmediateCommands::getLastSubmitHandle() const {
   return lastSubmitHandle_;
 }
 
-void lvk::RenderPipelineState::destroyPipelines(lvk::VulkanContext* ctx) {
-  if (pipeline_ != VK_NULL_HANDLE) {
-    ctx->deferredTask(std::packaged_task<void()>(
-        [device = ctx->getVkDevice(), pipeline = pipeline_]() { vkDestroyPipeline(device, pipeline, nullptr); }));
-    pipeline_ = VK_NULL_HANDLE;
-  }
-}
-
 lvk::VulkanPipelineBuilder::VulkanPipelineBuilder() :
   vertexInputState_(VkPipelineVertexInputStateCreateInfo{
       .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -2112,9 +2104,7 @@ void lvk::CommandBuffer::cmdBindComputePipeline(lvk::ComputePipelineHandle handl
 
   if (lastPipelineBound_ != pipeline) {
     lastPipelineBound_ = pipeline;
-    if (pipeline != VK_NULL_HANDLE) {
-      vkCmdBindPipeline(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
-    }
+    vkCmdBindPipeline(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
   }
 }
 
@@ -2464,7 +2454,14 @@ void lvk::CommandBuffer::cmdBindRenderPipeline(lvk::RenderPipelineHandle handle)
     LLOGW("Make sure your render pass and render pipeline both have matching depth attachments");
   }
 
-  lastPipelineBound_ = VK_NULL_HANDLE;
+  VkPipeline pipeline = ctx_->getVkPipeline(currentPipeline_);
+
+  LVK_ASSERT(pipeline != VK_NULL_HANDLE);
+
+  if (lastPipelineBound_ != pipeline) {
+    lastPipelineBound_ = pipeline;
+    vkCmdBindPipeline(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+  }
 }
 
 void lvk::CommandBuffer::cmdBindDepthState(const DepthState& desc) {
@@ -2517,27 +2514,12 @@ void lvk::CommandBuffer::cmdPushConstants(const void* data, size_t size, size_t 
   vkCmdPushConstants(wrapper_->cmdBuf_, ctx_->vkPipelineLayout_, shaderStageFlags, (uint32_t)offset, (uint32_t)size, data);
 }
 
-void lvk::CommandBuffer::bindGraphicsPipeline() {
-  // this whole function can be removed together with dynamicState_ once MoltenVK is capable of VK_EXT_extended_dynamic_state2
-
-  VkPipeline pipeline = ctx_->getVkPipeline(currentPipeline_);
-
-  if (lastPipelineBound_ != pipeline) {
-    lastPipelineBound_ = pipeline;
-    if (pipeline != VK_NULL_HANDLE) {
-      vkCmdBindPipeline(wrapper_->cmdBuf_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    }
-  }
-}
-
 void lvk::CommandBuffer::cmdDraw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t baseInstance) {
   LVK_PROFILER_FUNCTION();
 
   if (vertexCount == 0) {
     return;
   }
-
-  bindGraphicsPipeline();
 
   vkCmdDraw(wrapper_->cmdBuf_, vertexCount, instanceCount, firstVertex, baseInstance);
 }
@@ -2553,17 +2535,15 @@ void lvk::CommandBuffer::cmdDrawIndexed(uint32_t indexCount,
     return;
   }
 
-  bindGraphicsPipeline();
-
   vkCmdDrawIndexed(wrapper_->cmdBuf_, indexCount, instanceCount, firstIndex, vertexOffset, baseInstance);
 }
 
 void lvk::CommandBuffer::cmdDrawIndirect(BufferHandle indirectBuffer, size_t indirectBufferOffset, uint32_t drawCount, uint32_t stride) {
   LVK_PROFILER_FUNCTION();
 
-  bindGraphicsPipeline();
-
   lvk::VulkanBuffer* bufIndirect = ctx_->buffersPool_.get(indirectBuffer);
+
+  LVK_ASSERT(bufIndirect);
 
   vkCmdDrawIndirect(
       wrapper_->cmdBuf_, bufIndirect->vkBuffer_, indirectBufferOffset, drawCount, stride ? stride : sizeof(VkDrawIndirectCommand));
@@ -2575,9 +2555,9 @@ void lvk::CommandBuffer::cmdDrawIndexedIndirect(BufferHandle indirectBuffer,
                                                 uint32_t stride) {
   LVK_PROFILER_FUNCTION();
 
-  bindGraphicsPipeline();
-
   lvk::VulkanBuffer* bufIndirect = ctx_->buffersPool_.get(indirectBuffer);
+
+  LVK_ASSERT(bufIndirect);
 
   vkCmdDrawIndexedIndirect(
       wrapper_->cmdBuf_, bufIndirect->vkBuffer_, indirectBufferOffset, drawCount, stride ? stride : sizeof(VkDrawIndexedIndirectCommand));
@@ -2591,10 +2571,11 @@ void lvk::CommandBuffer::cmdDrawIndexedIndirectCount(BufferHandle indirectBuffer
                                                      uint32_t stride) {
   LVK_PROFILER_FUNCTION();
 
-  bindGraphicsPipeline();
-
   lvk::VulkanBuffer* bufIndirect = ctx_->buffersPool_.get(indirectBuffer);
   lvk::VulkanBuffer* bufCount = ctx_->buffersPool_.get(countBuffer);
+
+  LVK_ASSERT(bufIndirect);
+  LVK_ASSERT(bufCount);
 
   vkCmdDrawIndexedIndirectCount(wrapper_->cmdBuf_,
                                 bufIndirect->vkBuffer_,
@@ -3518,7 +3499,9 @@ VkPipeline lvk::VulkanContext::getVkPipeline(RenderPipelineHandle handle) {
   }
 
   if (rps->pipelineLayout_ != vkPipelineLayout_) {
-    rps->destroyPipelines(this);
+    deferredTask(std::packaged_task<void()>(
+        [device = getVkDevice(), pipeline = rps->pipeline_]() { vkDestroyPipeline(device, pipeline, nullptr); }));
+    rps->pipeline_ = VK_NULL_HANDLE;
     rps->pipelineLayout_ = vkPipelineLayout_;
   }
 
@@ -3757,7 +3740,8 @@ void lvk::VulkanContext::destroy(lvk::RenderPipelineHandle handle) {
     return;
   }
 
-  rps->destroyPipelines(this);
+  deferredTask(
+      std::packaged_task<void()>([device = getVkDevice(), pipeline = rps->pipeline_]() { vkDestroyPipeline(device, pipeline, nullptr); }));
 
   renderPipelinesPool_.destroy(handle);
 }
