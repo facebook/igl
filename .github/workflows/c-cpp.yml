@@ -75,7 +75,7 @@ jobs:
               cmake_args: "-DIGL_WITH_TRACY=ON -DIGL_WITH_SHELL=OFF"
             }
           - {
-              name: "Ubuntu - Emscripten",
+              name: "Emscripten (Ubuntu)",
               os: ubuntu-latest,
               build_type: "Debug",
               cc: "emcc",
@@ -107,7 +107,7 @@ jobs:
           with:
             submodules: recursive
 
-        - if: startsWith(matrix.config.name, 'Ubuntu - Emscripten')
+        - if: startsWith(matrix.config.name, 'Emscripten (Ubuntu)')
           run: |
             sudo sed -i 's/azure\.//' /etc/apt/sources.list
             sudo apt-get update
@@ -134,7 +134,7 @@ jobs:
           env:
             CC:  ${{ matrix.config.cc }}
             CXX: ${{ matrix.config.cxx }}
-          if: ${{ matrix.config.name  != 'Ubuntu - Emscripten' }}
+          if: ${{ matrix.config.name  != 'Emscripten (Ubuntu)' }}
           run: |
               cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
               cd build
@@ -145,7 +145,7 @@ jobs:
           env:
             CC:  ${{ matrix.config.cc }}
             CXX: ${{ matrix.config.cxx }}
-          if: ${{ matrix.config.name  == 'Ubuntu - Emscripten' }}
+          if: ${{ matrix.config.name  == 'Emscripten (Ubuntu)' }}
           run: |
               emcmake cmake ${{ env.CMAKE_GENERATOR }} -S "${{ github.workspace }}" -B build ${{ matrix.config.cmake_args }}
               cd build
