@@ -107,12 +107,18 @@ jobs:
           with:
             submodules: recursive
 
-        - if: startsWith(matrix.config.os, 'ubuntu')
+        - if: startsWith(matrix.config.name, 'Ubuntu - Emscripten')
           run: |
             sudo sed -i 's/azure\.//' /etc/apt/sources.list
             sudo apt-get update
             sudo apt-get install -y clang emscripten xorg-dev libxinerama-dev libxcursor-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev
-
+        
+        - if: startsWith(matrix.config.name, 'Ubuntu - Clang' ) || startsWith(matrix.config.name, 'Ubuntu - GCC')
+          run: |
+            sudo sed -i 's/azure\.//' /etc/apt/sources.list
+            sudo apt-get update
+            sudo apt-get install -y clang xorg-dev libxinerama-dev libxcursor-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev
+        
         - name: Prepare Vulkan SDK
           uses: humbletim/setup-vulkan-sdk@v1.2.0
           with:
