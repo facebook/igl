@@ -258,12 +258,6 @@ class VulkanImmediateCommands final {
   uint32_t submitCounter_ = 1;
 };
 
-struct RenderPipelineDynamicState final {
-  VkBool32 depthBiasEnable_ : 1 = VK_FALSE;
-};
-
-static_assert(sizeof(RenderPipelineDynamicState) == sizeof(uint32_t));
-
 struct RenderPipelineState final {
   void destroyPipelines(lvk::VulkanContext* ctx);
 
@@ -277,8 +271,7 @@ struct RenderPipelineState final {
   // non-owning, cached the last pipeline layout from the context (if the context has a new layout, invalidate all VkPipeline objects)
   VkPipelineLayout pipelineLayout_ = VK_NULL_HANDLE;
 
-  // [depthBiasEnable]
-  VkPipeline pipelines_[2] = {};
+  VkPipeline pipeline_ = VK_NULL_HANDLE;
 };
 
 class VulkanPipelineBuilder final {
@@ -286,7 +279,6 @@ class VulkanPipelineBuilder final {
   VulkanPipelineBuilder();
   ~VulkanPipelineBuilder() = default;
 
-  VulkanPipelineBuilder& depthBiasEnable(bool enable);
   VulkanPipelineBuilder& dynamicState(VkDynamicState state);
   VulkanPipelineBuilder& primitiveTopology(VkPrimitiveTopology topology);
   VulkanPipelineBuilder& rasterizationSamples(VkSampleCountFlagBits samples);
@@ -428,7 +420,6 @@ class CommandBuffer final : public ICommandBuffer {
   bool isRendering_ = false;
 
   lvk::RenderPipelineHandle currentPipeline_ = {};
-  lvk::RenderPipelineDynamicState dynamicState_ = {};
 };
 
 class VulkanStagingDevice final {
@@ -537,7 +528,7 @@ class VulkanContext final : public IContext {
   ///////////////
 
   VkPipeline getVkPipeline(ComputePipelineHandle handle);
-  VkPipeline getVkPipeline(RenderPipelineHandle handle, const RenderPipelineDynamicState& dynamicState);
+  VkPipeline getVkPipeline(RenderPipelineHandle handle);
 
   uint32_t queryDevices(HWDeviceType deviceType, HWDeviceDesc* outDevices, uint32_t maxOutDevices = 1);
   lvk::Result initContext(const HWDeviceDesc& desc);
