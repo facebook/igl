@@ -218,7 +218,7 @@
 #elif defined(_MSC_VER)
   // Visual Studio never defines NDEBUG, it uses _DEBUG instead. See:
   // https://learn.microsoft.com/en-us/cpp/c-runtime-library/debug?view=msvc-170
-  #if defined(_DEBUG)
+  #if defined(_DEBUG) || defined(DEBUG)
     #define IGL_DEBUG 1
   #else
     #define IGL_DEBUG 0
