@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <glm/glm.hpp>
+
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 #include <igl/opengl/IContext.h>
@@ -17,6 +19,34 @@
 #include "simdstub.h"
 #endif
 namespace igl::tests::util {
+
+template<typename ColorType>
+inline void TestArray(std::vector<ColorType> actualData,
+                      const ColorType* expectedData,
+                      size_t expectedDataSize,
+                      const char* message) {
+  for (size_t i = 0; i < expectedDataSize; i++) {
+    ASSERT_EQ(expectedData[i], actualData[i])
+        << message << ": Mismatch at index " << i << ": Expected: " << std::hex << expectedData[i]
+        << " Actual: " << std::hex << actualData[i];
+  }
+}
+
+template<>
+inline void TestArray(std::vector<glm::vec4> actualData,
+                      const glm::vec4* expectedData,
+                      size_t expectedDataSize,
+                      const char* message) {
+  for (size_t i = 0; i < expectedDataSize; i++) {
+    ASSERT_EQ(expectedData[i], actualData[i])
+        << message << ": Mismatch at index " << i << ": Expected: " << std::hex << "("
+        << expectedData[i].x << " " << expectedData[i].y << " " << expectedData[i].z << " "
+        << expectedData[i].w << ")"
+        << " Actual: " << std::hex << "(" << actualData[i].x << " " << actualData[i].y << " "
+        << actualData[i].z << " " << actualData[i].w << ")";
+  }
+}
+
 /// Reads back a range of texture data
 /// @param device The device the texture was created with
 /// @param cmdQueue A command queue to submit any read requests on
@@ -75,11 +105,7 @@ inline void validateTextureRange(IDevice& device,
     actualData = std::move(tmpData);
   }
 
-  for (size_t i = 0; i < expectedDataSize; i++) {
-    ASSERT_EQ(expectedData[i], actualData[i])
-        << message << ": Mismatch at index " << i << ": Expected: " << std::hex << expectedData[i]
-        << " Actual: " << std::hex << actualData[i];
-  }
+  TestArray<ColorType>(actualData, expectedData, expectedDataSize, message);
 }
 
 template<typename ColorType>
