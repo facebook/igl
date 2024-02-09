@@ -178,6 +178,15 @@ class ShaderUniforms final {
                    size_t count = 1,
                    size_t arrayIndex = 0);
 
+  void setInt2(const igl::NameHandle& uniformName,
+               const iglu::simdtypes::int2& value,
+               size_t arrayIndex = 0);
+  void setInt2(const igl::NameHandle& blockTypeName,
+               const igl::NameHandle& blockInstanceName,
+               const igl::NameHandle& memberName,
+               const iglu::simdtypes::int2& value,
+               size_t arrayIndex = 0);
+
   void setTexture(const std::string& name,
                   const std::shared_ptr<igl::ITexture>& value,
                   const std::shared_ptr<igl::ISamplerState>& sampler,
