@@ -25,44 +25,13 @@ namespace igl::tests::util {
 /// @param range The range of data to validate. Must resolve to a single 2D texture region
 /// @param expectedData The expected data in the specified range
 /// @param message A message to print when validation fails
+template<typename ColorType>
 inline void validateTextureRange(IDevice& device,
                                  ICommandQueue& cmdQueue,
                                  const std::shared_ptr<ITexture>& texture,
                                  bool isRenderTarget,
                                  const TextureRangeDesc& range,
-                                 const uint32_t* expectedData,
-                                 const char* message);
-
-inline void validateFramebufferTextureRange(IDevice& device,
-                                            ICommandQueue& cmdQueue,
-                                            const IFramebuffer& framebuffer,
-                                            const TextureRangeDesc& range,
-                                            const uint32_t* expectedData,
-                                            const char* message);
-inline void validateFramebufferTexture(IDevice& device,
-                                       ICommandQueue& cmdQueue,
-                                       const IFramebuffer& framebuffer,
-                                       const uint32_t* expectedData,
-                                       const char* message);
-
-inline void validateUploadedTextureRange(IDevice& device,
-                                         ICommandQueue& cmdQueue,
-                                         const std::shared_ptr<ITexture>& texture,
-                                         const TextureRangeDesc& range,
-                                         const uint32_t* expectedData,
-                                         const char* message);
-inline void validateUploadedTexture(IDevice& device,
-                                    ICommandQueue& cmdQueue,
-                                    const std::shared_ptr<ITexture>& texture,
-                                    const uint32_t* expectedData,
-                                    const char* message);
-
-inline void validateTextureRange(IDevice& device,
-                                 ICommandQueue& cmdQueue,
-                                 const std::shared_ptr<ITexture>& texture,
-                                 bool isRenderTarget,
-                                 const TextureRangeDesc& range,
-                                 const uint32_t* expectedData,
+                                 const ColorType* expectedData,
                                  const char* message) {
   Result ret;
   // Dummy command buffer to wait for completion.
@@ -77,7 +46,7 @@ inline void validateTextureRange(IDevice& device,
   ASSERT_EQ(range.depth, 1);
 
   const auto expectedDataSize = range.width * range.height;
-  std::vector<uint32_t> actualData;
+  std::vector<ColorType> actualData;
   actualData.resize(expectedDataSize);
 
   FramebufferDesc framebufferDesc;
@@ -94,7 +63,7 @@ inline void validateTextureRange(IDevice& device,
     // vertically. This is the desired behavior for render targets, but for non-render target
     // textures, we want the unflipped data. This flips the output image again to get the unmodified
     // data.
-    std::vector<uint32_t> tmpData;
+    std::vector<ColorType> tmpData;
     tmpData.resize(actualData.size());
     for (size_t h = 0; h < range.height; ++h) {
       size_t src = (range.height - 1 - h) * range.width;
@@ -113,20 +82,22 @@ inline void validateTextureRange(IDevice& device,
   }
 }
 
+template<typename ColorType>
 inline void validateFramebufferTextureRange(IDevice& device,
                                             ICommandQueue& cmdQueue,
                                             const IFramebuffer& framebuffer,
                                             const TextureRangeDesc& range,
-                                            const uint32_t* expectedData,
+                                            const ColorType* expectedData,
                                             const char* message) {
   validateTextureRange(
       device, cmdQueue, framebuffer.getColorAttachment(0), true, range, expectedData, message);
 }
 
+template<typename ColorType>
 inline void validateFramebufferTexture(IDevice& device,
                                        ICommandQueue& cmdQueue,
                                        const IFramebuffer& framebuffer,
-                                       const uint32_t* expectedData,
+                                       const ColorType* expectedData,
                                        const char* message) {
   validateFramebufferTextureRange(device,
                                   cmdQueue,
@@ -136,19 +107,21 @@ inline void validateFramebufferTexture(IDevice& device,
                                   message);
 }
 
+template<typename ColorType>
 inline void validateUploadedTextureRange(IDevice& device,
                                          ICommandQueue& cmdQueue,
                                          const std::shared_ptr<ITexture>& texture,
                                          const TextureRangeDesc& range,
-                                         const uint32_t* expectedData,
+                                         const ColorType* expectedData,
                                          const char* message) {
   validateTextureRange(device, cmdQueue, texture, false, range, expectedData, message);
 }
 
+template<typename ColorType>
 inline void validateUploadedTexture(IDevice& device,
                                     ICommandQueue& cmdQueue,
                                     const std::shared_ptr<ITexture>& texture,
-                                    const uint32_t* expectedData,
+                                    const ColorType* expectedData,
                                     const char* message) {
   validateTextureRange(
       device, cmdQueue, texture, false, texture->getFullRange(), expectedData, message);

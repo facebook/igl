@@ -11,8 +11,6 @@
 #include <igl/IGL.h>
 #include <igl/opengl/IContext.h>
 
-#include "TextureValidationHelpers.h"
-
 #if IGL_PLATFORM_IOS || IGL_PLATFORM_MACOS
 #include "simd/simd.h"
 #else
