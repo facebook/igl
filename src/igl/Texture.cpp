@@ -278,6 +278,7 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     COLOR(R_F32, 1, 4, 0)
     COLOR(RGB_F16, 3, 6, 0)
     COLOR(RGBA_F16, 4, 8, 0)
+    COLOR(RG_F32, 2, 8, 0)
     COLOR(RGB_F32, 3, 12, 0)
     COLOR(RGBA_UInt32, 4, 16, Flags::Integer)
     COLOR(RGBA_F32, 4, 16, 0)
