@@ -127,7 +127,7 @@ jobs:
             vulkan-use-cache: true
 
         - name: Get the number of CPU cores
-          uses: SimenB/github-actions-cpu-cores@v1
+          uses: SimenB/github-actions-cpu-cores@v2
 
         - name: Build
           shell: bash
