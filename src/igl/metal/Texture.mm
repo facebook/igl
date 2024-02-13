@@ -371,6 +371,9 @@ MTLPixelFormat Texture::textureFormatToMTLPixelFormat(TextureFormat value) {
   case TextureFormat::R_F32:
     return MTLPixelFormatR32Float;
 
+  case TextureFormat::RG_F32:
+    return MTLPixelFormatRG32Float;
+
   // 96 bit
   case TextureFormat::RGB_F32:
     return MTLPixelFormatInvalid;
@@ -768,7 +771,8 @@ TextureFormat Texture::mtlPixelFormatToTextureFormat(MTLPixelFormat value) {
 
   case MTLPixelFormatR32Float:
     return TextureFormat::R_F32;
-
+  case MTLPixelFormatRG32Float:
+    return TextureFormat::RG_F32;
   case MTLPixelFormatRGBA32Uint:
     return TextureFormat::RGBA_UInt32;
   case MTLPixelFormatRGBA32Float:

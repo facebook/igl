@@ -147,9 +147,20 @@ using namespace igl;
     metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
 
     metalView.delegate = self;
-    metalView.colorspace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+
     metalView.colorPixelFormat =
         metal::Texture::textureFormatToMTLPixelFormat(shellParams_.defaultColorFramebufferFormat);
+    // !!!WARNING must be called after setting the colorPixelFormat WARNING!!!
+    //
+    // Disables OS Level Color Management to achieve parity with OpenGL
+    // Without this, the OS will try to "color convert" the resulting framebuffer
+    // to the monitor's color profile which is fine but doesn't seem to be
+    // supported under OpenGL which results in discrepancies between Metal
+    // and OpenGL. This feature is equivalent to using MoltenVK colorSpace
+    // VK_COLOR_SPACE_PASS_THROUGH_EXT
+    // Must be called after set colorPixelFormat since it resets the colorspace
+    metalView.colorspace = nil;
+
     metalView.framebufferOnly = NO;
     [metalView setViewController:self];
     self.view = metalView;

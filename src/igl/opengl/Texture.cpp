@@ -496,6 +496,15 @@ bool Texture::toFormatDescGL(IContext& ctx,
     }
     return true;
 
+  case TextureFormat::RG_F32:
+    format = GL_RG;
+    type = GL_FLOAT;
+    internalFormat = GL_RG32F;
+    if (texImage && !deviceFeatures.hasTextureFeature(TextureFeatures::ColorTexImage32f)) {
+      internalFormat = GL_RG;
+    }
+    return true;
+
   case TextureFormat::RG_UInt16:
     internalFormat = GL_RG16UI;
     format = GL_RG_INTEGER;

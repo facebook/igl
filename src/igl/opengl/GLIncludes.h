@@ -586,6 +586,9 @@
 #ifndef GL_RG16F
 #define GL_RG16F 0x822F
 #endif
+#ifndef GL_RG32F
+#define GL_RG32F 0x8230
+#endif
 #ifndef GL_RG8
 #define GL_RG8 0x822B
 #endif

@@ -46,46 +46,6 @@ void createSimpleShaderStages(const std::shared_ptr<IDevice>& dev,
                               std::unique_ptr<IShaderStages>& stages,
                               TextureFormat outputFormat = TextureFormat::Invalid);
 
-/// Reads back a range of texture data
-/// @param device The device the texture was created with
-/// @param cmdQueue A command queue to submit any read requests on
-/// @param texture The texture to validate
-/// @param isRenderTarget True if the texture was the target of a render pass; false otherwise
-/// @param range The range of data to validate. Must resolve to a single 2D texture region
-/// @param expectedData The expected data in the specified range
-/// @param message A message to print when validation fails
-void validateTextureRange(IDevice& device,
-                          ICommandQueue& cmdQueue,
-                          const std::shared_ptr<ITexture>& texture,
-                          bool isRenderTarget,
-                          const TextureRangeDesc& range,
-                          const uint32_t* expectedData,
-                          const char* message);
-
-void validateFramebufferTextureRange(IDevice& device,
-                                     ICommandQueue& cmdQueue,
-                                     const IFramebuffer& framebuffer,
-                                     const TextureRangeDesc& range,
-                                     const uint32_t* expectedData,
-                                     const char* message);
-void validateFramebufferTexture(IDevice& device,
-                                ICommandQueue& cmdQueue,
-                                const IFramebuffer& framebuffer,
-                                const uint32_t* expectedData,
-                                const char* message);
-
-void validateUploadedTextureRange(IDevice& device,
-                                  ICommandQueue& cmdQueue,
-                                  const std::shared_ptr<ITexture>& texture,
-                                  const TextureRangeDesc& range,
-                                  const uint32_t* expectedData,
-                                  const char* message);
-void validateUploadedTexture(IDevice& device,
-                             ICommandQueue& cmdQueue,
-                             const std::shared_ptr<ITexture>& texture,
-                             const uint32_t* expectedData,
-                             const char* message);
-
 } // namespace util
 } // namespace tests
 } // namespace igl

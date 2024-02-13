@@ -1235,6 +1235,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
       capabilities |= sampledFiltered;
     }
     break;
+  case TextureFormat::RG_F32:
   case TextureFormat::R_F32:
     if (hasFeature(DeviceFeatures::TextureFormatRG)) {
       if (hasFeature(DeviceFeatures::TextureFloat)) {

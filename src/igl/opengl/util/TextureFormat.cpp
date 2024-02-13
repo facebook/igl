@@ -87,6 +87,7 @@ namespace igl::opengl::util {
 #define GL_RG16 0x822C
 #define GL_RG16F 0x822F
 #define GL_RG16UI 0x823a
+#define GL_RG32F 0x8230
 #define GL_RGB 0x1907
 #define GL_RGB_RAW_422_APPLE 0x8A51
 #define GL_RGB10_A2 0x8059
@@ -384,6 +385,9 @@ TextureFormat glTextureFormatToTextureFormat(int32_t glInternalFormat,
 
   case GL_RG16UI:
     return TextureFormat::RG_UInt16;
+
+  case GL_RG32F:
+    return TextureFormat::RG_F32;
 
   case GL_RGB_RAW_422_APPLE:
     if (glType == GL_UNSIGNED_SHORT_8_8_APPLE) {

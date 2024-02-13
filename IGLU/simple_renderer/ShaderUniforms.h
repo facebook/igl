@@ -57,7 +57,7 @@ class ShaderUniforms final {
   void setFloatArray(const igl::NameHandle& blockTypeName,
                      const igl::NameHandle& blockInstanceName,
                      const igl::NameHandle& memberName,
-                     iglu::simdtypes::float1* value,
+                     const iglu::simdtypes::float1* value,
                      size_t count = 1,
                      size_t arrayIndex = 0);
 
@@ -177,6 +177,15 @@ class ShaderUniforms final {
                    const iglu::simdtypes::int1* value,
                    size_t count = 1,
                    size_t arrayIndex = 0);
+
+  void setInt2(const igl::NameHandle& uniformName,
+               const iglu::simdtypes::int2& value,
+               size_t arrayIndex = 0);
+  void setInt2(const igl::NameHandle& blockTypeName,
+               const igl::NameHandle& blockInstanceName,
+               const igl::NameHandle& memberName,
+               const iglu::simdtypes::int2& value,
+               size_t arrayIndex = 0);
 
   void setTexture(const std::string& name,
                   const std::shared_ptr<igl::ITexture>& value,

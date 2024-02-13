@@ -10,6 +10,7 @@
 #include "data/VertexIndexData.h"
 #include "util/Common.h"
 #include "util/TestDevice.h"
+#include "util/TextureValidationHelpers.h"
 
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <array>
@@ -120,48 +121,46 @@ class TextureArrayTest : public ::testing::Test {
 
     // Initialize shader stages
     std::unique_ptr<IShaderStages> stages;
-    if (iglDev_->hasFeature(DeviceFeatures::Texture2DArray)) {
-      if (iglDev_->getBackendType() == BackendType::OpenGL) {
+    if (iglDev_->getBackendType() == BackendType::OpenGL) {
 #if IGL_BACKEND_OPENGL
-        if (opengl::DeviceFeatureSet::usesOpenGLES()) {
+      if (opengl::DeviceFeatureSet::usesOpenGLES()) {
+        util::createShaderStages(iglDev_,
+                                 igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER_TEXARRAY_ES3,
+                                 igl::tests::data::shader::shaderFunc,
+                                 igl::tests::data::shader::OGL_SIMPLE_FRAG_SHADER_TEXARRAY_ES3,
+                                 igl::tests::data::shader::shaderFunc,
+                                 stages);
+      } else {
+        if (!iglDev_->hasRequirement(DeviceRequirement::TextureArrayExtReq)) {
           util::createShaderStages(iglDev_,
-                                   igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER_TEXARRAY_ES3,
+                                   igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER_TEXARRAY,
                                    igl::tests::data::shader::shaderFunc,
-                                   igl::tests::data::shader::OGL_SIMPLE_FRAG_SHADER_TEXARRAY_ES3,
+                                   igl::tests::data::shader::OGL_SIMPLE_FRAG_SHADER_TEXARRAY,
                                    igl::tests::data::shader::shaderFunc,
                                    stages);
-        } else {
-          if (!iglDev_->hasRequirement(DeviceRequirement::TextureArrayExtReq)) {
-            util::createShaderStages(iglDev_,
-                                     igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER_TEXARRAY,
-                                     igl::tests::data::shader::shaderFunc,
-                                     igl::tests::data::shader::OGL_SIMPLE_FRAG_SHADER_TEXARRAY,
-                                     igl::tests::data::shader::shaderFunc,
-                                     stages);
-          } else if (iglDev_->hasFeature(DeviceFeatures::TextureArrayExt)) {
-            util::createShaderStages(iglDev_,
-                                     igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER_TEXARRAY_EXT,
-                                     igl::tests::data::shader::shaderFunc,
-                                     igl::tests::data::shader::OGL_SIMPLE_FRAG_SHADER_TEXARRAY_EXT,
-                                     igl::tests::data::shader::shaderFunc,
-                                     stages);
-          }
+        } else if (iglDev_->hasFeature(DeviceFeatures::TextureArrayExt)) {
+          util::createShaderStages(iglDev_,
+                                   igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER_TEXARRAY_EXT,
+                                   igl::tests::data::shader::shaderFunc,
+                                   igl::tests::data::shader::OGL_SIMPLE_FRAG_SHADER_TEXARRAY_EXT,
+                                   igl::tests::data::shader::shaderFunc,
+                                   stages);
         }
-#endif // IGL_BACKEND_OPENGL
-      } else if (iglDev_->getBackendType() == BackendType::Vulkan) {
-        util::createShaderStages(iglDev_,
-                                 igl::tests::data::shader::VULKAN_SIMPLE_VERT_SHADER_TEX_2DARRAY,
-                                 igl::tests::data::shader::shaderFunc,
-                                 igl::tests::data::shader::VULKAN_SIMPLE_FRAG_SHADER_TEX_2DARRAY,
-                                 igl::tests::data::shader::shaderFunc,
-                                 stages);
-      } else if (iglDev_->getBackendType() == BackendType::Metal) {
-        util::createShaderStages(iglDev_,
-                                 igl::tests::data::shader::MTL_SIMPLE_SHADER_TXT_2D_ARRAY,
-                                 igl::tests::data::shader::simpleVertFunc,
-                                 igl::tests::data::shader::simpleFragFunc,
-                                 stages);
       }
+#endif // IGL_BACKEND_OPENGL
+    } else if (iglDev_->getBackendType() == BackendType::Vulkan) {
+      util::createShaderStages(iglDev_,
+                               igl::tests::data::shader::VULKAN_SIMPLE_VERT_SHADER_TEX_2DARRAY,
+                               igl::tests::data::shader::shaderFunc,
+                               igl::tests::data::shader::VULKAN_SIMPLE_FRAG_SHADER_TEX_2DARRAY,
+                               igl::tests::data::shader::shaderFunc,
+                               stages);
+    } else if (iglDev_->getBackendType() == BackendType::Metal) {
+      util::createShaderStages(iglDev_,
+                               igl::tests::data::shader::MTL_SIMPLE_SHADER_TXT_2D_ARRAY,
+                               igl::tests::data::shader::simpleVertFunc,
+                               igl::tests::data::shader::simpleFragFunc,
+                               stages);
     }
 
     ASSERT_TRUE(stages != nullptr);
