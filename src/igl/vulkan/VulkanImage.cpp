@@ -706,6 +706,19 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
     dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
     dstRemainingMask &= ~VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
   }
+  if (dstStageMask & VK_PIPELINE_STAGE_VERTEX_SHADER_BIT) {
+    dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
+    dstRemainingMask &= ~VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+  }
+  if (dstStageMask & VK_PIPELINE_STAGE_VERTEX_INPUT_BIT) {
+    dstAccessMask |= VK_ACCESS_INDEX_READ_BIT;
+    dstAccessMask |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+    dstRemainingMask &= ~VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+  }
+  if (dstStageMask & VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT) {
+    dstAccessMask |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+    dstRemainingMask &= ~VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+  }
   if (dstStageMask & VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT) {
     dstAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
     dstAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -713,6 +726,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
   }
   if (dstStageMask & VK_PIPELINE_STAGE_TRANSFER_BIT) {
     dstAccessMask |= VK_ACCESS_TRANSFER_READ_BIT;
+    dstAccessMask |= VK_ACCESS_TRANSFER_WRITE_BIT;
     dstRemainingMask &= ~VK_PIPELINE_STAGE_TRANSFER_BIT;
   }
 
