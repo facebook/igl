@@ -16,6 +16,17 @@ namespace igl {
 class IDevice;
 
 /**
+ * Dependencies are used to issue proper memory barriers for external resources, such as textures
+ * modified by non-IGL code (Skia, Qt, etc), and synchronize between graphics and compute pipelines.
+ */
+struct Dependencies {
+  static constexpr uint32_t IGL_MAX_TEXTURE_DEPENDENCIES = 4;
+  static constexpr uint32_t IGL_MAX_BUFFER_DEPENDENCIES = 4;
+  ITexture* IGL_NULLABLE textures[IGL_MAX_TEXTURE_DEPENDENCIES] = {};
+  IBuffer* IGL_NULLABLE buffers[IGL_MAX_BUFFER_DEPENDENCIES] = {};
+};
+
+/**
  * A BindGroup represents a set of resources bound to a command encoder.
  * It is a replacement of the old OpenGL-style binding model where individual resources are bound
  * using multiple calls to bindTexture(...) and bindBuffer(...).

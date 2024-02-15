@@ -35,15 +35,6 @@ struct CommandBufferStatistics {
 };
 
 /**
- * Dependencies are used to issue proper memory barriers for external resources, such as textures
- * modified by non-IGL code (Skia, Qt, etc), and synchronize between graphics and compute pipelines.
- */
-struct Dependencies {
-  static constexpr uint32_t IGL_MAX_TEXTURE_DEPENDENCIES = 4;
-  ITexture* IGL_NULLABLE textures[IGL_MAX_TEXTURE_DEPENDENCIES] = {};
-};
-
-/**
  * @brief ICommandBuffer represents an object which accepts and stores commands to be executed on
  * the GPU.
  *
