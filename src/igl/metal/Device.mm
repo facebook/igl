@@ -509,6 +509,10 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
       return nullptr;
     }
     modules.emplace_back(std::make_shared<metal::ShaderModule>(info, metalFunction));
+
+    if (auto resourceTracker = getResourceTracker(); resourceTracker && !modules.empty()) {
+      modules.back()->initResourceTracker(resourceTracker);
+    }
   }
 
   auto shaderLibrary = std::make_unique<ShaderLibrary>(std::move(modules));
