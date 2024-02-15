@@ -321,6 +321,8 @@ void MRTSession::initialize() noexcept {
   const CommandQueueDesc desc{igl::CommandQueueType::Graphics};
   commandQueue_ = device.createCommandQueue(desc, nullptr);
 
+  tex0_->generateMipmap(*commandQueue_);
+
   renderPassMRT_.colorAttachments.resize(2);
   renderPassMRT_.colorAttachments[0].loadAction = LoadAction::Clear;
   renderPassMRT_.colorAttachments[0].storeAction = StoreAction::Store;
