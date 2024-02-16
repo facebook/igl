@@ -74,6 +74,10 @@ class Framebuffer final : public IFramebuffer {
   /// provided, the stencil attachment is set to null.
   void updateDrawable(SurfaceTextures surfaceTextures) override;
 
+  /// @brief Updates the color attachment's resolve texture at index 0 with the texture passed in as
+  /// a parameter
+  void updateResolveAttachment(std::shared_ptr<ITexture> texture) override;
+
   /** @brief Returns the underlying Vulkan framebuffer handle for the given mip level, layer, and
    * render pass. Vulkan framebuffers are immutable and are made of one or more image views. This
    * class keeps track of all framebuffers for each combination of mip level, layer, and render

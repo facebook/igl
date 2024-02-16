@@ -217,6 +217,11 @@ void Framebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
   updateDrawableInternal(std::move(surfaceTextures), true);
 }
 
+void Framebuffer::updateResolveAttachment(std::shared_ptr<ITexture> texture) {
+  if (getColorAttachment(0) && getResolveColorAttachment(0) != texture)
+    desc_.colorAttachments[0].resolveTexture = std::move(texture);
+}
+
 void Framebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepthStencil) {
   IGL_PROFILER_FUNCTION();
 

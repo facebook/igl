@@ -90,4 +90,8 @@ void Framebuffer::updateDrawable(igl::SurfaceTextures /*surfaceTextures*/) {
   IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
 }
 
+void Framebuffer::updateResolveAttachment(std::shared_ptr<igl::ITexture> /*texture*/) {
+  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
+}
+
 } // namespace iglu::sentinel

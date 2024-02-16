@@ -132,6 +132,7 @@ class CustomFramebuffer final : public Framebuffer {
   // Methods
   void updateDrawable(std::shared_ptr<ITexture> texture) override;
   void updateDrawable(SurfaceTextures surfaceTextures) override;
+  void updateResolveAttachment(std::shared_ptr<ITexture> texture) override;
 
   bool isInitialized() const;
   bool hasImplicitColorAttachment() const;
@@ -167,6 +168,7 @@ class CurrentFramebuffer final : public Framebuffer {
   std::shared_ptr<ITexture> getStencilAttachment() const override;
   void updateDrawable(std::shared_ptr<ITexture> texture) override;
   void updateDrawable(SurfaceTextures surfaceTextures) override;
+  void updateResolveAttachment(std::shared_ptr<ITexture> texture) override;
   [[nodiscard]] FramebufferMode getMode() const override;
 
   // opengl::Framebuffer

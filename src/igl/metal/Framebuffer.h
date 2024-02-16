@@ -57,6 +57,7 @@ class Framebuffer : public IFramebuffer {
 
   void updateDrawable(std::shared_ptr<ITexture> texture) override;
   void updateDrawable(SurfaceTextures surfaceTextures) override;
+  void updateResolveAttachment(std::shared_ptr<ITexture> texture) override;
 
   IGL_INLINE const FramebufferDesc& get() const {
     return value_;

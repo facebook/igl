@@ -387,6 +387,12 @@ void CustomFramebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
   updateDrawableInternal(std::move(surfaceTextures), true);
 }
 
+void CustomFramebuffer::updateResolveAttachment(std::shared_ptr<ITexture> texture) {
+  if (resolveFramebuffer) {
+    resolveFramebuffer->updateDrawable(texture);
+  }
+}
+
 void CustomFramebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures,
                                                bool updateDepthStencil) {
   auto colorAttachment0 = getColorAttachment(0);
@@ -750,6 +756,10 @@ void CurrentFramebuffer::updateDrawable(std::shared_ptr<ITexture> /*texture*/) {
 }
 
 void CurrentFramebuffer::updateDrawable(SurfaceTextures /*surfaceTextures*/) {
+  IGL_ASSERT_NOT_REACHED();
+}
+
+void CurrentFramebuffer::updateResolveAttachment(std::shared_ptr<ITexture> /*texture*/) {
   IGL_ASSERT_NOT_REACHED();
 }
 

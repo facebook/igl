@@ -169,6 +169,12 @@ void Framebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
   }
 }
 
+void Framebuffer::updateResolveAttachment(std::shared_ptr<ITexture> texture) {
+  if (getResolveColorAttachment(0) != texture) {
+    value_.colorAttachments[0].resolveTexture = std::move(texture);
+  }
+}
+
 FramebufferMode Framebuffer::getMode() const {
   return value_.mode;
 }

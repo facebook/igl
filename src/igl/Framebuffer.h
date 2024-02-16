@@ -108,6 +108,11 @@ class IFramebuffer : public ITrackedResource<IFramebuffer> {
   /** @brief Replaces color attachment at index 0 and the depth texture with the textures specified.
    * A null texture is valid and unbinds the attachment. */
   virtual void updateDrawable(SurfaceTextures surfaceTextures) = 0;
+
+  /** @brief Replaces color attachment at index 0 and the depth texture with the textures specified.
+   * A null texture is valid and unbinds the attachment. */
+
+  virtual void updateResolveAttachment(std::shared_ptr<ITexture> texture) = 0;
 };
 
 } // namespace igl
