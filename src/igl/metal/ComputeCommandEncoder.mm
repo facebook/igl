@@ -58,7 +58,8 @@ void ComputeCommandEncoder::bindComputePipelineState(
 }
 
 void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCount,
-                                                 const Dimensions& threadgroupSize) {
+                                                 const Dimensions& threadgroupSize,
+                                                 const Dependencies& /*dependencies*/) {
   MTLSize tgc;
   tgc.width = threadgroupCount.width;
   tgc.height = threadgroupCount.height;

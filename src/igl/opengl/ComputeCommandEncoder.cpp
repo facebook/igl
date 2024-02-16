@@ -54,7 +54,8 @@ void ComputeCommandEncoder::bindComputePipelineState(
 }
 
 void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCount,
-                                                 const Dimensions& threadgroupSize) {
+                                                 const Dimensions& threadgroupSize,
+                                                 const Dependencies& /*dependencies*/) {
   if (IGL_VERIFY(adapter_)) {
     adapter_->dispatchThreadGroups(threadgroupCount, threadgroupSize);
   }

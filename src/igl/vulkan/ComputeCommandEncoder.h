@@ -37,7 +37,8 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   void bindComputePipelineState(
       const std::shared_ptr<IComputePipelineState>& pipelineState) override;
   void dispatchThreadGroups(const Dimensions& threadgroupCount,
-                            const Dimensions& threadgroupSize) override;
+                            const Dimensions& threadgroupSize,
+                            const Dependencies& dependencies) override;
 
   /// @brief Ends encoding for compute commands and transitions all images bound to this encoder
   /// back to `VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL`

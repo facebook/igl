@@ -35,7 +35,8 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder, public WithCo
   // threadgroupSize is how many threads are in each threadgroup
   // total number of threads per grid is threadgroupCount * threadgroupSize
   void dispatchThreadGroups(const Dimensions& threadgroupCount,
-                            const Dimensions& threadgroupSize) override;
+                            const Dimensions& threadgroupSize,
+                            const Dependencies& dependencies) override;
   void endEncoding() override;
 
   void pushDebugGroupLabel(const char* label, const igl::Color& color) const override;

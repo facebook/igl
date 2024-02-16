@@ -104,9 +104,11 @@ class IComputeCommandEncoder : public ICommandEncoder {
    *
    * @param threadgroupCount The number of thread groups in the grid, in each dimension.
    * @param threadgroupSize The number of threads in one threadgroup, in each dimension.
+   * @param dependencies Any textures or buffers accessed in this dispatch.
    */
   virtual void dispatchThreadGroups(const Dimensions& threadgroupCount,
-                                    const Dimensions& threadgroupSize) = 0;
+                                    const Dimensions& threadgroupSize,
+                                    const Dependencies& dependencies = Dependencies()) = 0;
 };
 
 } // namespace igl
