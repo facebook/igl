@@ -48,6 +48,7 @@ struct BufferDesc {
     Uniform = 1 << 2,
     Storage = 1 << 3,
     Indirect = 1 << 4,
+    // @fb-only
   };
 
   using BufferType = uint8_t;
