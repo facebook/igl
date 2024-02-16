@@ -1353,6 +1353,33 @@ void ivkImageMemoryBarrier(const struct VulkanFunctionTable* vt,
   vt->vkCmdPipelineBarrier(buffer, srcStageMask, dstStageMask, 0, 0, NULL, 0, NULL, 1, &barrier);
 }
 
+void ivkBufferBarrier(const struct VulkanFunctionTable* vt,
+                      VkCommandBuffer cmdBuffer,
+                      VkBuffer buffer,
+                      VkBufferUsageFlags usageFlags,
+                      VkPipelineStageFlags srcStageMask,
+                      VkPipelineStageFlags dstStageMask) {
+  VkBufferMemoryBarrier barrier = {
+      .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+      .srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+      .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .buffer = buffer,
+      .offset = 0,
+      .size = VK_WHOLE_SIZE,
+  };
+
+  if (dstStageMask & VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT) {
+    barrier.dstAccessMask |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+  }
+  if (usageFlags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) {
+    barrier.dstAccessMask |= VK_ACCESS_INDEX_READ_BIT;
+  }
+
+  vt->vkCmdPipelineBarrier(cmdBuffer, srcStageMask, dstStageMask, 0, 0, NULL, 1, &barrier, 0, NULL);
+}
+
 void ivkBufferMemoryBarrier(const struct VulkanFunctionTable* vt,
                             VkCommandBuffer cmdBuffer,
                             VkBuffer buffer,

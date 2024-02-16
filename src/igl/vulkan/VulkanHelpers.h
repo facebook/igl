@@ -445,6 +445,13 @@ void ivkBufferMemoryBarrier(const struct VulkanFunctionTable* vt,
                             VkPipelineStageFlags srcStageMask,
                             VkPipelineStageFlags dstStageMask);
 
+void ivkBufferBarrier(const struct VulkanFunctionTable* vt,
+                      VkCommandBuffer cmdBuffer,
+                      VkBuffer buffer,
+                      VkBufferUsageFlags usageFlags,
+                      VkPipelineStageFlags srcStageMask,
+                      VkPipelineStageFlags dstStageMask);
+
 void ivkCmdBlitImage(const struct VulkanFunctionTable* vt,
                      VkCommandBuffer buffer,
                      VkImage srcImage,
