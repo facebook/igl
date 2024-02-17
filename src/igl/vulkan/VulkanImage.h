@@ -233,6 +233,9 @@ class VulkanImage final {
   bool isExported_ = false;
   void* exportedMemoryHandle_ = nullptr; // windows handle
   int exportedFd_ = -1; // linux fd
+#if defined(IGL_DEBUG)
+  std::string name_;
+#endif
 
  private:
 #if IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
@@ -268,6 +271,9 @@ class VulkanImage final {
               VkExternalMemoryHandleTypeFlags compatibleHandleTypes,
               const char* debugName);
 #endif // IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
+
+  // No-op in all builds except DEBUG
+  void setName(const std::string& name) noexcept;
 };
 
 } // namespace vulkan

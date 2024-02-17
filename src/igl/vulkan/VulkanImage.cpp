@@ -80,6 +80,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   isStencilFormat_(isStencilFormat(imageFormat)),
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
   isImported_(isImported) {
+  setName(debugName);
   VK_ASSERT(ivkSetDebugObjectName(
       &ctx_.vf_, device_, VK_OBJECT_TYPE_IMAGE, (uint64_t)vkImage_, debugName));
 }
@@ -117,6 +118,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   IGL_ASSERT_MSG(arrayLayers_ > 0, "The image must contain at least one layer");
   IGL_ASSERT_MSG(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
   IGL_ASSERT_MSG(samples_ > 0, "The image must contain at least one sample");
+
+  setName(debugName);
 
   const VkImageCreateInfo ci = ivkGetImageCreateInfo(type,
                                                      imageFormat_,
@@ -229,6 +232,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 #ifdef VK_USE_PLATFORM_WIN32_KHR
   IGL_ASSERT_MSG(false, "You can only import a VulkanImage on non-windows environments");
 #endif
+
+  setName(debugName);
 
   VkImageCreateInfo ci = ivkGetImageCreateInfo(type,
                                                imageFormat_,
@@ -919,6 +924,14 @@ bool VulkanImage::isDepthFormat(VkFormat format) {
 bool VulkanImage::isStencilFormat(VkFormat format) {
   return (format == VK_FORMAT_S8_UINT) || (format == VK_FORMAT_D16_UNORM_S8_UINT) ||
          (format == VK_FORMAT_D24_UNORM_S8_UINT) || (format == VK_FORMAT_D32_SFLOAT_S8_UINT);
+}
+
+void VulkanImage::setName(const std::string& name) noexcept {
+#if defined(IGL_DEBUG)
+  name_ = name;
+#else
+  (void)name;
+#endif
 }
 
 } // namespace vulkan
