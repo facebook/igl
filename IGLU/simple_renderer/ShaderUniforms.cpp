@@ -542,6 +542,44 @@ void ShaderUniforms::setFloat3x3(const igl::NameHandle& uniformName,
   }
 }
 
+void ShaderUniforms::setFloat3x3(const igl::NameHandle& blockTypeName,
+                                 const igl::NameHandle& blockInstanceName,
+                                 const igl::NameHandle& uniformName,
+                                 const iglu::simdtypes::float3x3& value,
+                                 size_t arrayIndex) {
+  const bool isOglBlock = device_.getBackendType() == igl::BackendType::OpenGL &&
+                          _bufferDescs.find(blockTypeName) != _bufferDescs.end();
+  if (device_.getBackendType() == igl::BackendType::Metal ||
+      device_.getBackendType() == igl::BackendType::Vulkan || isOglBlock) {
+    setUniformBytes(blockTypeName,
+                    blockInstanceName,
+                    uniformName,
+                    &value,
+                    sizeof(iglu::simdtypes::float3x3),
+                    1,
+                    arrayIndex);
+  } else {
+    // simdtypes::float3x3 has an extra float per float-vector.
+    // Remove it so we can send the packed version to OpenGL
+    std::array<float, 9> packedMatrix;
+    auto paddedMatrixPtr = reinterpret_cast<const float*>(&value);
+    float* packedMatrixPtr = packedMatrix.data();
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        *packedMatrixPtr++ = *paddedMatrixPtr++;
+      }
+      paddedMatrixPtr++; // padded float
+    }
+    setUniformBytes(blockTypeName,
+                    blockInstanceName,
+                    uniformName,
+                    &packedMatrix,
+                    sizeof(packedMatrix),
+                    1,
+                    arrayIndex);
+  }
+}
+
 void ShaderUniforms::setFloat3x3Array(const igl::NameHandle& uniformName,
                                       const iglu::simdtypes::float3x3* value,
                                       size_t count,
