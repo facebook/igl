@@ -80,6 +80,9 @@ class VulkanBuffer {
   VkMemoryPropertyFlags getMemoryPropertyFlags() const {
     return memFlags_;
   }
+  [[nodiscard]] VkBufferUsageFlags getBufferUsageFlags() const {
+    return usageFlags_;
+  }
   [[nodiscard]] bool isCoherentMemory() const {
     return isCoherentMemory_;
   }
@@ -93,6 +96,7 @@ class VulkanBuffer {
   VmaAllocation vmaAllocation_ = VK_NULL_HANDLE;
   VkDeviceAddress vkDeviceAddress_ = 0;
   VkDeviceSize bufferSize_ = 0;
+  VkBufferUsageFlags usageFlags_ = 0;
   VkMemoryPropertyFlags memFlags_ = 0;
   void* mappedPtr_ = nullptr;
   bool isCoherentMemory_ = false;

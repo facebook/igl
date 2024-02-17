@@ -20,7 +20,11 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
                            VkBufferUsageFlags usageFlags,
                            VkMemoryPropertyFlags memFlags,
                            const char* debugName) :
-  ctx_(ctx), device_(device), bufferSize_(bufferSize), memFlags_(memFlags) {
+  ctx_(ctx),
+  device_(device),
+  bufferSize_(bufferSize),
+  usageFlags_(usageFlags),
+  memFlags_(memFlags) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ASSERT(bufferSize > 0);
