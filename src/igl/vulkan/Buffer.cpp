@@ -191,6 +191,10 @@ VkBuffer Buffer::getVkBuffer() const {
   return currentVulkanBuffer()->getVkBuffer();
 }
 
+VkBufferUsageFlags Buffer::getBufferUsageFlags() const {
+  return currentVulkanBuffer()->getBufferUsageFlags();
+}
+
 void* Buffer::map(const BufferRange& range, igl::Result* outResult) {
   IGL_ASSERT_MSG(!isRingBuffer_, "Buffer::map() operation not supported for ring buffer");
 

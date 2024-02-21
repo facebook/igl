@@ -45,6 +45,7 @@ class Buffer final : public igl::IBuffer {
   }
 
   VkBuffer getVkBuffer() const;
+  [[nodiscard]] VkBufferUsageFlags getBufferUsageFlags() const;
 
   /// @brief Returns the current active VulkanBuffer object managed by this class. Since this class
   /// may be used as a Ring Buffer, the active buffer is the buffer currently being accessed.
