@@ -287,6 +287,7 @@ void Session::Renderer::newFrame(const igl::FramebufferDesc& desc) {
   _renderPipelineDesc.targetDesc.depthAttachmentFormat =
       desc.depthAttachment.texture ? desc.depthAttachment.texture->getFormat()
                                    : igl::TextureFormat::Invalid;
+  _renderPipelineDesc.sampleCount = desc.colorAttachments[0].texture->getSamples();
 }
 
 void Session::Renderer::renderDrawData(igl::IDevice& device,
