@@ -134,6 +134,7 @@ Result Texture::create(const TextureDesc& desc) {
   case TextureType::TwoDArray:
     imageType = VK_IMAGE_TYPE_2D;
     imageViewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    samples = getVulkanSampleCountFlags(desc_.numSamples);
     break;
   default:
     IGL_ASSERT_NOT_REACHED();
