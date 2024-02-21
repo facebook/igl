@@ -120,16 +120,16 @@ VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool 
 uint32_t getVkLayer(igl::TextureType type, uint32_t face, uint32_t layer);
 TextureRangeDesc atVkLayer(TextureType type, const TextureRangeDesc& range, uint32_t vkLayer);
 
-/// @brief Performs a transition from the texture's current layout to a color attachment layout on
-/// the texture specified by colorTex
+/// @brief Transition from the current layout to VK_IMAGE_LAYOUT_GENERAL
+void transitionToGeneral(VkCommandBuffer cmdBuf, ITexture* texture);
+
+/// @brief Transition from the current layout to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 void transitionToColorAttachment(VkCommandBuffer cmdBuf, ITexture* colorTex);
 
-/// @brief Performs a transition from the texture's current layout to a depth-stencil attachment
-/// layout on the texture specified by depthStencilTex
+/// @brief Transition from the current layout to VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 void transitionToDepthStencilAttachment(VkCommandBuffer cmdBuf, ITexture* depthStencilTex);
 
-/// @brief Performs a transition from the texture's current layout to a shader read only layout on
-/// the texture specified by texture
+/// @brief Transition from the current layout to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture);
 
 /// @brief Overrides the layout stored in the `texture` with the one in `layout`. This function does
