@@ -57,14 +57,15 @@ VkShaderStageFlagBits shaderStageToVkShaderStage(igl::ShaderStage stage) {
 
 } // namespace
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 Device::Device(std::unique_ptr<VulkanContext> ctx) : ctx_(std::move(ctx)), platformDevice_(*this) {
   if (ctx_->enhancedShaderDebuggingStore_) {
     ctx_->enhancedShaderDebuggingStore_->initialize(this);
   }
 }
+
+Device::~Device() = default;
 
 std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc& desc,
                                                           Result* outResult) {
@@ -700,5 +701,4 @@ ShaderVersion Device::getShaderVersion() const {
   return {ShaderFamily::SpirV, 1, 5, 0};
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

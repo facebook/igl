@@ -14,8 +14,7 @@
 #include <igl/vulkan/VulkanSemaphore.h>
 #include <memory>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanContext;
 class VulkanShaderModule;
@@ -25,6 +24,7 @@ struct DeviceQueues;
 class Device final : public IDevice {
  public:
   explicit Device(std::unique_ptr<VulkanContext> ctx);
+  ~Device() override;
 
   // Command Queue
   std::shared_ptr<ICommandQueue> createCommandQueue(const CommandQueueDesc& desc,
@@ -100,5 +100,4 @@ class Device final : public IDevice {
   PlatformDevice platformDevice_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan
