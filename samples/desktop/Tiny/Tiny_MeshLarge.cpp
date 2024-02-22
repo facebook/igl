@@ -1477,6 +1477,7 @@ void createRenderPipelines() {
           // @fb-only
           // @fb-only
           // @fb-only
+          // @fb-only
       // @fb-only
       // @fb-only
           // @fb-only
@@ -1484,6 +1485,7 @@ void createRenderPipelines() {
            // @fb-only
            // @fb-only
       // @fb-only
+          // @fb-only
           // @fb-only
           // @fb-only
           // @fb-only
@@ -1654,12 +1656,14 @@ void createRenderPipelineSkybox() {
         // @fb-only
         // @fb-only
         // @fb-only
+        // @fb-only
     // @fb-only
     // @fb-only
         // @fb-only
             // @fb-only
              // @fb-only
     // @fb-only
+        // @fb-only
         // @fb-only
         // @fb-only
         // @fb-only
