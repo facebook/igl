@@ -286,7 +286,7 @@ GLuint iglGetDebugMessageLog(GLuint count,
                                       messageLog);
 }
 
-const GLubyte* iglGetStringi(GLenum name, GLint index) {
+const GLubyte* iglGetStringi(GLenum name, GLuint index) {
   GLEXTENSION_METHOD_BODY_WITH_RETURN(
       CAN_CALL_glGetStringi, glGetStringi, PFNIGLGETSTRINGIPROC, nullptr, name, index);
 }

@@ -2170,7 +2170,7 @@ const GLubyte* IContext::getString(GLenum name) const {
   return ret;
 }
 
-const GLubyte* IContext::getStringi(GLenum name, GLint index) const {
+const GLubyte* IContext::getStringi(GLenum name, GLuint index) const {
   const GLubyte* ret;
 
   IGLCALL_WITH_RETURN(ret, GetStringi)(name, index);
@@ -3620,10 +3620,12 @@ void IContext::initialize(Result* result) {
   } else {
     GLint n = 0;
     getIntegerv(GL_NUM_EXTENSIONS, &n);
-    for (GLint i = 0; i < n; i++) {
-      auto ext = reinterpret_cast<const char*>(getStringi(GL_EXTENSIONS, i));
-      if (ext) {
-        supportedExtensions.insert(ext);
+    if (IGL_VERIFY(n >= 0)) {
+      for (GLuint i = 0; i < static_cast<GLuint>(n); i++) {
+        auto ext = reinterpret_cast<const char*>(getStringi(GL_EXTENSIONS, i));
+        if (ext) {
+          supportedExtensions.insert(ext);
+        }
       }
     }
   }

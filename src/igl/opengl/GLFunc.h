@@ -185,7 +185,7 @@ using PFNIGLGETPROGRAMRESOURCENAMEPROC = void (*)(GLuint program,
                                                   GLsizei* length,
                                                   char* name);
 using PFNIGLGETRENDERBUFFERPARAMETERIVPROC = void (*)(GLenum target, GLenum pname, GLint* params);
-using PFNIGLGETSTRINGIPROC = const GLubyte* (*)(GLenum name, GLint index);
+using PFNIGLGETSTRINGIPROC = const GLubyte* (*)(GLenum name, GLuint index);
 using PFNIGLGETSYNCIVPROC =
     void (*)(GLsync sync, GLenum pname, GLsizei bufSize, GLsizei* length, GLint* values);
 using PFNIGLGETTEXTUREHANDLEPROC = GLuint64 (*)(GLuint texture);
@@ -321,7 +321,7 @@ GLuint iglGetDebugMessageLog(GLuint count,
                              GLenum* severities,
                              GLsizei* lengths,
                              GLchar* messageLog);
-const GLubyte* iglGetStringi(GLenum name, GLint index);
+const GLubyte* iglGetStringi(GLenum name, GLuint index);
 void* iglMapBuffer(GLenum target, GLbitfield access);
 void iglObjectLabel(GLenum identifier, GLuint name, GLsizei length, const char* label);
 void iglPopDebugGroup();

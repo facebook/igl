@@ -310,7 +310,7 @@ class IContext {
                                 GLint* precision) const;
   void getShaderSource(GLuint shader, GLsizei bufsize, GLsizei* length, GLchar* source) const;
   virtual const GLubyte* getString(GLenum name) const;
-  virtual const GLubyte* getStringi(GLenum name, GLint index) const;
+  virtual const GLubyte* getStringi(GLenum name, GLuint index) const;
   void getSynciv(GLsync sync, GLenum pname, GLsizei bufSize, GLsizei* length, GLint* values) const;
   void getTexParameterfv(GLenum target, GLenum pname, GLfloat* params) const;
   void getTexParameteriv(GLenum target, GLenum pname, GLint* params) const;
