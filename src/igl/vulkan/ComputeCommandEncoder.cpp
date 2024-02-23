@@ -10,6 +10,7 @@
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/Texture.h>
+#include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanPipelineLayout.h>
@@ -96,6 +97,26 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   IGL_PROFILER_FUNCTION();
 
   IGL_ASSERT_MSG(cps_, "Did you forget to call bindComputePipelineState()?");
+
+  for (ITexture* tex : dependencies.textures) {
+    if (!tex) {
+      break;
+    }
+    igl::vulkan::transitionToGeneral(cmdBuffer_, tex);
+  }
+  for (IBuffer* buf : dependencies.buffers) {
+    if (!buf) {
+      break;
+    }
+    const auto* vkBuf = static_cast<igl::vulkan::Buffer*>(buf);
+    ivkBufferBarrier(&ctx_.vf_,
+                     cmdBuffer_,
+                     vkBuf->getVkBuffer(),
+                     vkBuf->getBufferUsageFlags(),
+                     VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+  }
 
   binder_.updateBindings(cps_->getVkPipelineLayout(), *cps_);
   // threadgroupSize is controlled inside compute shaders

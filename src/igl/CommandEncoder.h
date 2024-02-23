@@ -22,6 +22,8 @@ class IDevice;
 struct Dependencies {
   static constexpr uint32_t IGL_MAX_TEXTURE_DEPENDENCIES = 4;
   static constexpr uint32_t IGL_MAX_BUFFER_DEPENDENCIES = 4;
+  // Note: please ensure that both arrays are dense, meaning that processing will halt immediately
+  // if any NULL texture or buffer is encountered.
   ITexture* IGL_NULLABLE textures[IGL_MAX_TEXTURE_DEPENDENCIES] = {};
   IBuffer* IGL_NULLABLE buffers[IGL_MAX_BUFFER_DEPENDENCIES] = {};
 };
