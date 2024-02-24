@@ -24,7 +24,7 @@ class VulkanImmediateCommands final {
  public:
   // The maximum number of command buffers which can simultaneously exist in the system; when we run
   // out of buffers, we stall and wait until an existing buffer becomes available
-  static constexpr uint32_t kMaxCommandBuffers = 16;
+  static constexpr uint32_t kMaxCommandBuffers = 32;
 
   /** @brief Creates an instance of the class for a specific queue family and whether the fences
    * created for each command buffer are exportable (see VulkanFence for more details about the
