@@ -48,7 +48,7 @@ endif()
 # tests are disabled for now on Windows
 if(IGL_WITH_TESTS AND IGL_WITH_IGLU AND (IGL_WITH_VULKAN OR (NOT WIN32)))
   add_subdirectory(tests)
-  if(IGL_WITH_OPENGL OR IGL_WITH_OPENGLES)
+  if((IGL_WITH_OPENGL OR IGL_WITH_OPENGLES) AND NOT APPLE)
     target_sources(IGLTests PRIVATE opengl/egl/Context.cpp opengl/egl/Device.cpp opengl/egl/HWDevice.cpp
                                     opengl/egl/PlatformDevice.cpp)
   endif()
