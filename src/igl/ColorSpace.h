@@ -78,7 +78,7 @@ inline const char* IGL_NONNULL colorSpaceToString(ColorSpace colorSpace) {
 }
 
 inline igl::TextureFormat colorSpaceToTextureFormat(igl::ColorSpace colorSpace,
-                                                    bool isBGR = false) {
+                                                    IGL_MAYBE_UNUSED bool isBGR = false) {
   switch (colorSpace) {
   case igl::ColorSpace::SRGB_LINEAR:
     return igl::TextureFormat::RGBA_UNorm8;
