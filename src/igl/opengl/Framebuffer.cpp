@@ -212,64 +212,65 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
   IGL_ASSERT_MSG(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
 
   auto itexture = getColorAttachment(index);
-  if (itexture != nullptr) {
-    FramebufferBindingGuard guard(getContext());
+  if (itexture == nullptr) {
+    IGL_ASSERT_MSG(0, "The framebuffer does not have any color attachment at index %d", index);
+    return;
+  }
 
-    CustomFramebuffer extraFramebuffer(getContext());
+  FramebufferBindingGuard const guard(getContext());
 
-    auto& texture = static_cast<igl::opengl::Texture&>(*itexture);
+  CustomFramebuffer extraFramebuffer(getContext());
 
-    Result ret;
-    FramebufferDesc desc;
-    desc.colorAttachments[0].texture = itexture;
-    extraFramebuffer.initialize(desc, &ret);
-    IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
+  auto& texture = static_cast<igl::opengl::Texture&>(*itexture);
 
-    extraFramebuffer.bindBufferForRead();
-    attachAsColor(*itexture, 0, toReadAttachmentParams(range, FramebufferMode::Mono));
-    checkFramebufferStatus(getContext(), true);
+  Result ret;
+  FramebufferDesc desc;
+  desc.colorAttachments[0].texture = itexture;
+  extraFramebuffer.initialize(desc, &ret);
+  IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
 
-    if (bytesPerRow == 0) {
-      bytesPerRow = itexture->getProperties().getBytesPerRow(range);
-    }
-    getContext().pixelStorei(GL_PACK_ALIGNMENT, texture.getAlignment(bytesPerRow, range.mipLevel));
+  extraFramebuffer.bindBufferForRead();
+  attachAsColor(*itexture, 0, toReadAttachmentParams(range, FramebufferMode::Mono));
+  checkFramebufferStatus(getContext(), true);
 
-    // Note read out format is based on
-    // (https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glReadPixels.xml)
-    // as using GL_RGBA with GL_UNSIGNED_BYTE is the only always supported combination
-    // with glReadPixels.
-    getContext().flush();
-    auto format = GL_RGBA;
-    auto intFormat = GL_RGBA_INTEGER;
+  if (bytesPerRow == 0) {
+    bytesPerRow = itexture->getProperties().getBytesPerRow(range);
+  }
+  getContext().pixelStorei(GL_PACK_ALIGNMENT, texture.getAlignment(bytesPerRow, range.mipLevel));
 
-    // @fb-only
-    if (texture.getFormat() == TextureFormat::RGBA_UInt32) {
-      if (getContext().deviceFeatures().hasTextureFeature(TextureFeatures::TextureInteger)) {
-        getContext().readPixels(static_cast<GLint>(range.x),
-                                static_cast<GLint>(range.y),
-                                static_cast<GLsizei>(range.width),
-                                static_cast<GLsizei>(range.height),
-                                intFormat,
-                                GL_UNSIGNED_INT,
-                                pixelBytes);
-      } else {
-        IGL_ASSERT_NOT_IMPLEMENTED();
-      }
-    } else {
+  // Note read out format is based on
+  // (https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glReadPixels.xml)
+  // as using GL_RGBA with GL_UNSIGNED_BYTE is the only always supported combination
+  // with glReadPixels.
+  getContext().flush();
+  auto format = GL_RGBA;
+  auto intFormat = GL_RGBA_INTEGER;
+
+  // @fb-only
+  if (texture.getFormat() == TextureFormat::RGBA_UInt32) {
+    if (getContext().deviceFeatures().hasTextureFeature(TextureFeatures::TextureInteger)) {
       getContext().readPixels(static_cast<GLint>(range.x),
                               static_cast<GLint>(range.y),
                               static_cast<GLsizei>(range.width),
                               static_cast<GLsizei>(range.height),
-                              format,
-                              GL_UNSIGNED_BYTE,
+                              intFormat,
+                              GL_UNSIGNED_INT,
                               pixelBytes);
+    } else {
+      IGL_ASSERT_NOT_IMPLEMENTED();
     }
-    getContext().checkForErrors(nullptr, 0);
-    auto error = getContext().getLastError();
-    IGL_ASSERT_MSG(error.isOk(), error.message.c_str());
   } else {
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    getContext().readPixels(static_cast<GLint>(range.x),
+                            static_cast<GLint>(range.y),
+                            static_cast<GLsizei>(range.width),
+                            static_cast<GLsizei>(range.height),
+                            format,
+                            GL_UNSIGNED_BYTE,
+                            pixelBytes);
   }
+  getContext().checkForErrors(nullptr, 0);
+  auto error = getContext().getLastError();
+  IGL_ASSERT_MSG(error.isOk(), error.message.c_str());
 }
 
 void Framebuffer::copyBytesDepthAttachment(ICommandQueue& /* unused */,
