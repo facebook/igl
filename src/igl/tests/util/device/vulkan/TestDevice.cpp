@@ -47,6 +47,10 @@ std::shared_ptr<::igl::IDevice> createTestDevice() {
   config.enableValidation = false;
   config.terminateOnValidationError = false;
 #endif
+#ifdef IGL_DISABLE_VALIDATION
+  config.enableValidation = false;
+  config.terminateOnValidationError = false;
+#endif
   config.swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
   config.enableExtraLogs = true;
 

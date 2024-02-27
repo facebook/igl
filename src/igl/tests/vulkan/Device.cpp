@@ -137,6 +137,10 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
   config.enableValidation = true;
   config.terminateOnValidationError = false;
 #endif
+#ifdef IGL_DISABLE_VALIDATION
+  config.enableValidation = false;
+  config.terminateOnValidationError = false;
+#endif
   config.enableExtraLogs = true;
   config.enableBufferDeviceAddress = true;
 
@@ -193,6 +197,10 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
   config.terminateOnValidationError = true;
 #else
   config.enableValidation = true;
+  config.terminateOnValidationError = false;
+#endif
+#ifdef IGL_DISABLE_VALIDATION
+  config.enableValidation = false;
   config.terminateOnValidationError = false;
 #endif
   config.enableExtraLogs = true;

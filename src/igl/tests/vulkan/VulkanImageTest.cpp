@@ -58,6 +58,10 @@ class VulkanImageTest : public ::testing::Test {
     config.enableValidation = false;
     config.terminateOnValidationError = false;
 #endif // IGL_DEBUG
+#ifdef IGL_DISABLE_VALIDATION
+    config.enableValidation = false;
+    config.terminateOnValidationError = false;
+#endif
 
 #if IGL_PLATFORM_WIN
     config.enableGPUAssistedValidation = true;
