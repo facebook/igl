@@ -537,6 +537,8 @@ void XrApp::render() {
 }
 
 void XrApp::endFrame(XrFrameState frameState) {
+  const auto& appParams = renderSession_->appParams();
+
   std::array<XrCompositionLayerQuad, kNumViews> quadLayers{};
   if (useQuadLayerComposition_) {
     XrEyeVisibility eye = XR_EYE_VISIBILITY_LEFT;
@@ -548,7 +550,7 @@ void XrApp::endFrame(XrFrameState frameState) {
       layer.eyeVisibility = eye;
       memset(&layer.subImage, 0, sizeof(XrSwapchainSubImage));
       layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, 0.f}};
-      layer.size = {1.f, 1.f};
+      layer.size = {appParams.sizeX, appParams.sizeY};
       if (eye == XR_EYE_VISIBILITY_LEFT) {
         eye = XR_EYE_VISIBILITY_RIGHT;
       }
@@ -596,7 +598,6 @@ void XrApp::endFrame(XrFrameState frameState) {
         imageRect,
         index,
     };
-    const auto& appParams = renderSession_->appParams();
     depthInfos[i].minDepth = appParams.depthParams.minDepth;
     depthInfos[i].maxDepth = appParams.depthParams.maxDepth;
     depthInfos[i].nearZ = appParams.depthParams.nearZ;

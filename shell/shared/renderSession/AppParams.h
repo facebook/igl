@@ -6,14 +6,13 @@
  */
 
 #pragma once
-
-#include <vector>
-
 #include <shell/shared/renderSession/DepthParams.h>
 
 namespace igl::shell {
 struct AppParams {
   DepthParams depthParams;
   bool exitRequested = false;
+  float sizeX = 1.f;
+  float sizeY = 1.f;
 };
 } // namespace igl::shell
