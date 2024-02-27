@@ -63,7 +63,7 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
   RenderPipelineDynamicState() {
     // memset makes sure all padding bits are zero
     std::memset(this, 0, sizeof(*this));
-    topology_ = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    topology_ = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     // depth and stencil default state values should be based on DepthStencilStateDesc and
     // StencilStateDesc in graphics/igl/src/igl/DepthStencilState.h
     depthCompareOp_ = VK_COMPARE_OP_ALWAYS;
