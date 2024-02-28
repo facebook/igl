@@ -12,8 +12,13 @@
 #include "igl/metal/Buffer.h"
 #include "igl/metal/CommandBuffer.h"
 #include "igl/metal/Texture.h"
-#include "secure_lib/secure_string.h"
 #include <igl/metal/Buffer.h>
+
+#if defined(IGL_CMAKE_BUILD)
+#include <igl/IGLSafeC.h>
+#else
+#include <secure_lib/secure_string.h>
+#endif
 
 namespace iglu {
 namespace textureaccessor {
