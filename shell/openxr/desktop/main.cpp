@@ -11,7 +11,7 @@
 
 using namespace igl::shell::openxr;
 
-#if IGL_BACKEND_VULKAN
+#if USE_VULKAN_BACKEND
 #include "vulkan/XrAppImplVulkan.h"
 // @fb-only
 // @fb-only
@@ -25,7 +25,7 @@ XrInstance getXrInstance() {
 }
 
 int main(int argc, const char* argv[]) {
-#if IGL_BACKEND_VULKAN
+#if USE_VULKAN_BACKEND
   auto xrApp = std::make_unique<XrApp>(std::make_unique<desktop::XrAppImplVulkan>());
 // @fb-only
   // @fb-only
