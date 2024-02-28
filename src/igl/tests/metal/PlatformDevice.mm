@@ -16,10 +16,10 @@
 namespace igl {
 namespace tests {
 
-class PlatformDeviceTest : public ::testing::Test {
+class PlatformDeviceMetalTest : public ::testing::Test {
  public:
-  PlatformDeviceTest() = default;
-  ~PlatformDeviceTest() override = default;
+  PlatformDeviceMetalTest() = default;
+  ~PlatformDeviceMetalTest() override = default;
 
   void SetUp() override {
     setDebugBreakEnabled(false);
@@ -37,7 +37,7 @@ class PlatformDeviceTest : public ::testing::Test {
 };
 
 // Test Cases
-TEST_F(PlatformDeviceTest, GetPlatformDeviceParentCls) {
+TEST_F(PlatformDeviceMetalTest, GetPlatformDeviceParentCls) {
   auto pd = iglDev_.get()->getPlatformDevice<metal::PlatformDevice>();
   ASSERT_NE(pd, nullptr);
 }
