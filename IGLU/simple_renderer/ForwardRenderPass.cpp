@@ -30,6 +30,9 @@ void ForwardRenderPass::begin(std::shared_ptr<igl::IFramebuffer> target,
   auto depthAttachment = _framebuffer->getDepthAttachment();
   _renderPipelineDesc.targetDesc.depthAttachmentFormat =
       depthAttachment ? depthAttachment->getFormat() : igl::TextureFormat::Invalid;
+  auto stencilAttachment = _framebuffer->getStencilAttachment();
+  _renderPipelineDesc.targetDesc.stencilAttachmentFormat =
+      stencilAttachment ? stencilAttachment->getFormat() : igl::TextureFormat::Invalid;
 
   igl::RenderPassDesc defaultRenderPassDesc;
   defaultRenderPassDesc.colorAttachments.resize(1);
@@ -83,8 +86,14 @@ bool ForwardRenderPass::isActive() const {
   return _framebuffer != nullptr;
 }
 
-std::shared_ptr<igl::IFramebuffer> ForwardRenderPass::activeTarget() {
-  return _framebuffer;
+igl::IFramebuffer& ForwardRenderPass::activeTarget() {
+  IGL_ASSERT_MSG(isActive(), "No valid target when not active");
+  return *_framebuffer;
+}
+
+igl::IRenderCommandEncoder& ForwardRenderPass::activeCommandEncoder() {
+  IGL_ASSERT_MSG(isActive(), "No valid command encoder when not active");
+  return *_commandEncoder;
 }
 
 } // namespace renderpass
