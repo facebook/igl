@@ -15,15 +15,17 @@ static size_t getGPUFamily(id<MTLDevice> device) {
   // the new supportsFamily API is applicable to both iOS and macOS
   if (@available(macOS 10.15, iOS 13.0, *)) {
     typedef std::pair<MTLGPUFamily, size_t> GPUFamilyPair;
-    std::vector<GPUFamilyPair> const gpuFamilies = {{MTLGPUFamilyApple9, 9},
-                                                    {MTLGPUFamilyApple8, 8},
-                                                    {MTLGPUFamilyApple7, 7},
-                                                    {MTLGPUFamilyApple6, 6},
-                                                    {MTLGPUFamilyApple5, 5},
-                                                    {MTLGPUFamilyApple4, 4},
-                                                    {MTLGPUFamilyApple3, 3},
-                                                    {MTLGPUFamilyApple2, 2},
-                                                    {MTLGPUFamilyApple1, 1}};
+    std::vector<GPUFamilyPair> const gpuFamilies = {
+        // @fb-only
+        // @fb-only
+        {MTLGPUFamilyApple8, 8},
+        {MTLGPUFamilyApple7, 7},
+        {MTLGPUFamilyApple6, 6},
+        {MTLGPUFamilyApple5, 5},
+        {MTLGPUFamilyApple4, 4},
+        {MTLGPUFamilyApple3, 3},
+        {MTLGPUFamilyApple2, 2},
+        {MTLGPUFamilyApple1, 1}};
 
     // return the first (highest) supported GPU family
     for (const GPUFamilyPair& gpuFam : gpuFamilies) {
