@@ -245,26 +245,20 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
   getContext().flush();
 
   // @fb-only
+  const auto rangeX = static_cast<GLint>(range.x);
+  const auto rangeY = static_cast<GLint>(range.y);
+  const auto rangeWidth = static_cast<GLsizei>(range.width);
+  const auto rangeHeight = static_cast<GLsizei>(range.height);
   const auto textureFormat = texture.getFormat();
   if (textureFormat == TextureFormat::RGBA_UInt32) {
     if (IGL_VERIFY(
             getContext().deviceFeatures().hasTextureFeature(TextureFeatures::TextureInteger))) {
-      getContext().readPixels(static_cast<GLint>(range.x),
-                              static_cast<GLint>(range.y),
-                              static_cast<GLsizei>(range.width),
-                              static_cast<GLsizei>(range.height),
-                              GL_RGBA_INTEGER,
-                              GL_UNSIGNED_INT,
-                              pixelBytes);
+      getContext().readPixels(
+          rangeX, rangeY, rangeWidth, rangeHeight, GL_RGBA_INTEGER, GL_UNSIGNED_INT, pixelBytes);
     }
   } else {
-    getContext().readPixels(static_cast<GLint>(range.x),
-                            static_cast<GLint>(range.y),
-                            static_cast<GLsizei>(range.width),
-                            static_cast<GLsizei>(range.height),
-                            GL_RGBA,
-                            GL_UNSIGNED_BYTE,
-                            pixelBytes);
+    getContext().readPixels(
+        rangeX, rangeY, rangeWidth, rangeHeight, GL_RGBA, GL_UNSIGNED_BYTE, pixelBytes);
   }
   getContext().checkForErrors(nullptr, 0);
   auto error = getContext().getLastError();
