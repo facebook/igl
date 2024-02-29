@@ -200,7 +200,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExplicitBindingExt));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::TextureFormatRG));
       // On Android Validation Layers are only enabled for debug builds by default
-#if (IGL_PLATFORM_ANDROID && !IGL_DEBUG) || !IGL_DEBUG
+#if (IGL_PLATFORM_ANDROID && !IGL_DEBUG) || !IGL_DEBUG || defined(IGL_DISABLE_VALIDATION)
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ValidationLayersEnabled));
 #else
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ValidationLayersEnabled));
