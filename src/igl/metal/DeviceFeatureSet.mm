@@ -151,12 +151,12 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
     return false;
   case DeviceFeatures::DepthCompare:
     /// docs say:
-    ///  The MTLFeatureSet_iOS_GPUFamily3_v1 and MTLFeatureSet_OSX_GPUFamily1_v1 feature sets allow
+    ///  The MTLFeatureSet_iOS_GPUFamily2_v1 and MTLFeatureSet_OSX_GPUFamily1_v1 feature sets allow
     ///  you to define a framework-side sampler comparison function for a MTLSamplerState object.
     ///  All feature sets support shader-side sampler comparison functions, as described in the
     ///  Metal Shading Language Guide.
 #if IGL_PLATFORM_IOS
-    return gpuFamily_ >= 3;
+    return gpuFamily_ >= 2;
 #else
     return gpuFamily_ >= 1;
 #endif
