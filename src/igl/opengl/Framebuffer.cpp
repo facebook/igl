@@ -243,18 +243,17 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
   // as using GL_RGBA with GL_UNSIGNED_BYTE is the only always supported combination
   // with glReadPixels.
   getContext().flush();
-  auto format = GL_RGBA;
-  auto intFormat = GL_RGBA_INTEGER;
 
   // @fb-only
-  if (texture.getFormat() == TextureFormat::RGBA_UInt32) {
+  const auto textureFormat = texture.getFormat();
+  if (textureFormat == TextureFormat::RGBA_UInt32) {
     if (IGL_VERIFY(
             getContext().deviceFeatures().hasTextureFeature(TextureFeatures::TextureInteger))) {
       getContext().readPixels(static_cast<GLint>(range.x),
                               static_cast<GLint>(range.y),
                               static_cast<GLsizei>(range.width),
                               static_cast<GLsizei>(range.height),
-                              intFormat,
+                              GL_RGBA_INTEGER,
                               GL_UNSIGNED_INT,
                               pixelBytes);
     }
@@ -263,7 +262,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
                             static_cast<GLint>(range.y),
                             static_cast<GLsizei>(range.width),
                             static_cast<GLsizei>(range.height),
-                            format,
+                            GL_RGBA,
                             GL_UNSIGNED_BYTE,
                             pixelBytes);
   }
