@@ -95,7 +95,7 @@ void putDfd(std::vector<uint8_t>& buffer, uint32_t vkFormat, uint32_t numMipLeve
 
   const uint16_t descriptorType = 0;
   const uint16_t vendorId = 0;
-  const uint16_t descriptorBlockSize = 44;
+  const uint16_t descriptorBlockSize = 40;
   const uint16_t version = 2;
   const uint8_t flags = 0 /*KHR_DF_FLAG_ALPHA_STRAIGHT*/;
   const uint8_t transferFunction =
