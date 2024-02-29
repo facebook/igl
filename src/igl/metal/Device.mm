@@ -578,7 +578,6 @@ ShaderVersion Device::getShaderVersion() const {
   // From https://developer.apple.com/documentation/metal/mtllanguageversion
   ShaderVersion version{.family = ShaderFamily::Metal};
 #if IGL_PLATFORM_IOS
-  std::vector<DeviceFeatureDesc> featureSet;
   if (@available(iOS 15, *)) {
     version.majorVersion = 2;
     version.minorVersion = 4;

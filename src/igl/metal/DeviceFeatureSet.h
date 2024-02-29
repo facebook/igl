@@ -13,21 +13,9 @@
 namespace igl {
 namespace metal {
 
-struct DeviceFeatureDesc {
-  DeviceFeatureDesc() = default;
-  DeviceFeatureDesc(MTLFeatureSet featureSet, size_t gpuFamily, size_t gpuVersion) :
-    featureSet(featureSet), gpuFamily(gpuFamily), gpuVersion(gpuVersion) {}
-  MTLFeatureSet featureSet;
-  size_t gpuFamily;
-  size_t gpuVersion;
-  bool isValid;
-};
-
 class DeviceFeatureSet final {
  public:
-  explicit DeviceFeatureSet(id<MTLDevice> device) {
-    getFeatureSet(device);
-  }
+  explicit DeviceFeatureSet(id<MTLDevice> device);
   ~DeviceFeatureSet() = default;
 
   bool hasFeature(DeviceFeatures feature) const;
@@ -39,14 +27,22 @@ class DeviceFeatureSet final {
   ICapabilities::TextureFormatCapabilities getTextureFormatCapabilities(TextureFormat format) const;
 
  private:
-  void getFeatureSet(id<MTLDevice> device);
+  // Apple GPU family as defined by MTLGPUFamily and the docs:
+  //   https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+  // Apple2: iOS: A8
+  // Apple3: iOS: A9, A10
+  // Apple4: iOS: A11
+  // Apple5: iOS: A12
+  // Apple6: iOS: A13
+  // Apple7: iOS: A14         Mac: M1
+  // Apple8: iOS: A15, A16    Mac: M2
+  // Apple9: iOS: A16         Mac: M3
+  //
+  // MTLGPUFamily enum isn't available until macos(10.15), ios(13.0)
+  // also MTLGPUFamily includes enum values that don't directly correspond to a GPU
+  // so we use an integer representation that maps to Apple GPU family 2+
+  size_t gpuFamily_;
 
-  // find the highest supported feature set
-  void findHighestFeatureSet(id<MTLDevice> device,
-                             const std::vector<DeviceFeatureDesc>& featureSet,
-                             DeviceFeatureDesc& result);
-
-  DeviceFeatureDesc deviceFeatureDesc_;
   size_t maxMultisampleCount_;
   size_t maxBufferLength_;
   bool supports32BitFloatFiltering_ = false;

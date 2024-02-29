@@ -9,78 +9,90 @@
 
 #include <vector>
 
+// get the GPU family from the device
+// a return value of 0 indicates an error or lack of a supported GPU
+static size_t getGPUFamily(id<MTLDevice> device) {
+  // the new supportsFamily API is applicable to both iOS and macOS
+  if (@available(macOS 10.15, iOS 13.0, *)) {
+    typedef std::pair<MTLGPUFamily, size_t> GPUFamilyPair;
+    std::vector<GPUFamilyPair> const gpuFamilies = {{MTLGPUFamilyApple9, 9},
+                                                    {MTLGPUFamilyApple8, 8},
+                                                    {MTLGPUFamilyApple7, 7},
+                                                    {MTLGPUFamilyApple6, 6},
+                                                    {MTLGPUFamilyApple5, 5},
+                                                    {MTLGPUFamilyApple4, 4},
+                                                    {MTLGPUFamilyApple3, 3},
+                                                    {MTLGPUFamilyApple2, 2},
+                                                    {MTLGPUFamilyApple1, 1}};
+
+    // return the first (highest) supported GPU family
+    for (const GPUFamilyPair& gpuFam : gpuFamilies) {
+      if ([device supportsFamily:gpuFam.first]) {
+        return gpuFam.second;
+      }
+    }
+  } else {
+    // resort to the old deprecated API supportsFeatureSet for older OS versions
+    typedef std::pair<MTLFeatureSet, size_t> FeatureSetPair;
+    std::vector<FeatureSetPair> featureSets;
+
+#if IGL_PLATFORM_IOS
+    if (@available(iOS 12, *)) {
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily5_v1, 5);
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily4_v2, 4);
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily3_v4, 3);
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily2_v5, 2);
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily1_v5, 1);
+    } else if (@available(iOS 11, *)) {
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily4_v1, 4);
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily3_v3, 3);
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily2_v4, 2);
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily1_v4, 1);
+    } else if (@available(iOS 10, *)) {
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily3_v2, 3);
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily2_v3, 2);
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily1_v3, 1);
+    } else if (@available(iOS 9, *)) {
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily3_v1, 3);
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily2_v2, 2);
+      featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily1_v2, 1);
+    } else {
+      IGL_ASSERT_MSG(0, "IGL iOS deployment target is 9.0+");
+      return 0;
+    }
+#elif IGL_PLATFORM_MACOS
+    if (@available(macOS 10.14, *)) {
+      featureSets.emplace_back(MTLFeatureSet_macOS_GPUFamily2_v1, 2);
+      featureSets.emplace_back(MTLFeatureSet_macOS_GPUFamily1_v4, 1);
+    } else if (@available(macOS 10.13, *)) {
+      featureSets.emplace_back(MTLFeatureSet_macOS_GPUFamily1_v3, 1);
+    } else if (@available(macOS 10.12, *)) {
+      featureSets.emplace_back(MTLFeatureSet_macOS_GPUFamily1_v2, 1);
+    } else if (@available(macOS 10.11, *)) {
+      featureSets.emplace_back(MTLFeatureSet_macOS_GPUFamily1_v1, 1);
+    } else {
+      IGL_ASSERT_MSG(0, "IGL macOS deployment target is 10.11+");
+      return 0;
+    }
+#endif
+
+    // return the first (highest) supported GPU family
+    for (const FeatureSetPair& featureSet : featureSets) {
+      if ([device supportsFeatureSet:featureSet.first]) {
+        return featureSet.second;
+      }
+    }
+  }
+
+  IGL_LOG_INFO("No supported GPU family available");
+  return 0;
+}
+
 namespace igl {
 namespace metal {
 
-void DeviceFeatureSet::findHighestFeatureSet(id<MTLDevice> device,
-                                             const std::vector<DeviceFeatureDesc>& featureSet,
-                                             DeviceFeatureDesc& result) {
-  // the feature set is ordered in reverse of chronological order
-  // because within each set the capabilities are always expanding over time
-  // so we return the first one supported which will be the one with the highest capabilities
-  for (const auto& it : featureSet) {
-    bool supported = [device supportsFeatureSet:it.featureSet];
-    if (supported) {
-      result = it;
-      return;
-    }
-  }
-}
-
-void DeviceFeatureSet::getFeatureSet(id<MTLDevice> device) {
-#if IGL_PLATFORM_IOS
-  std::vector<DeviceFeatureDesc> featureSet;
-  if (@available(iOS 12, *)) {
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily5_v1, 5, 1);
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily4_v2, 4, 2);
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily3_v4, 3, 4);
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily2_v5, 2, 5);
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily1_v5, 1, 5);
-
-  } else if (@available(iOS 11, *)) {
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily4_v1, 4, 1);
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily3_v3, 3, 3);
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily2_v4, 2, 4);
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily1_v4, 1, 4);
-  } else if (@available(iOS 10, *)) {
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily3_v2, 3, 2);
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily2_v3, 2, 3);
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily1_v3, 1, 3);
-  } else if (@available(iOS 9, *)) {
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily3_v1, 3, 1);
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily2_v2, 2, 2);
-    featureSet.emplace_back(MTLFeatureSet_iOS_GPUFamily1_v2, 1, 2);
-
-  } else {
-    IGL_ASSERT_MSG(0, "IGL ios deployment target is 9.0+");
-  }
-  findHighestFeatureSet(device, featureSet, deviceFeatureDesc_);
-
-#elif IGL_PLATFORM_MACOS
-  if (@available(macOS 10.14, *)) {
-    std::vector<DeviceFeatureDesc> featureSet;
-    featureSet.push_back({MTLFeatureSet_macOS_GPUFamily2_v1, 2, 1});
-    featureSet.push_back({MTLFeatureSet_macOS_GPUFamily1_v4, 1, 4});
-    findHighestFeatureSet(device, featureSet, deviceFeatureDesc_);
-  } else if (@available(macOS 10.13, *)) {
-    bool supported = [device supportsFeatureSet:MTLFeatureSet_macOS_GPUFamily1_v3];
-    if (supported) {
-      deviceFeatureDesc_ = {MTLFeatureSet_macOS_GPUFamily1_v3, 1, 3};
-    }
-  } else if (@available(macOS 10.12, *)) {
-    bool supported = [device supportsFeatureSet:MTLFeatureSet_macOS_GPUFamily1_v2];
-    if (supported) {
-      deviceFeatureDesc_ = {MTLFeatureSet_macOS_GPUFamily1_v2, 1, 2};
-    }
-  } else if (@available(macOS 10.11, *)) {
-    bool supported = [device supportsFeatureSet:MTLFeatureSet_macOS_GPUFamily1_v1];
-    if (supported) {
-      deviceFeatureDesc_ = {MTLFeatureSet_macOS_GPUFamily1_v1, 1, 1};
-    }
-  } else {
-    IGL_ASSERT_MSG(0, "IGL macOS deployment target is 10.11+");
-  }
-#endif
+DeviceFeatureSet::DeviceFeatureSet(id<MTLDevice> device) {
+  gpuFamily_ = getGPUFamily(device);
 
   // Get the supported MSAA
   maxMultisampleCount_ = 0;
@@ -144,9 +156,9 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
     ///  All feature sets support shader-side sampler comparison functions, as described in the
     ///  Metal Shading Language Guide.
 #if IGL_PLATFORM_IOS
-    return deviceFeatureDesc_.gpuFamily >= 3;
+    return gpuFamily_ >= 3;
 #else
-    return deviceFeatureDesc_.gpuFamily >= 1;
+    return gpuFamily_ >= 1;
 #endif
   case DeviceFeatures::TextureExternalImage:
     return false;
@@ -203,24 +215,12 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
   switch (featureLimits) {
   case DeviceFeatureLimits::MaxTextureDimension1D2D:
   case DeviceFeatureLimits::MaxCubeMapDimension:
-    switch (deviceFeatureDesc_.featureSet) {
 #if IGL_PLATFORM_IOS
-    case MTLFeatureSet_iOS_GPUFamily1_v1:
-    case MTLFeatureSet_iOS_GPUFamily1_v2:
-    case MTLFeatureSet_iOS_GPUFamily1_v3:
-    case MTLFeatureSet_iOS_GPUFamily1_v4:
-    case MTLFeatureSet_iOS_GPUFamily2_v4:
-      result = 8192;
-      return true;
-    default:
-      result = 16384;
-      return true;
+    result = (gpuFamily_ <= 2) ? 8192 : 16384;
 #else // macos
-    default:
-      result = 16384;
-      return true;
+    result = 16384;
 #endif
-    }
+    return true;
   case DeviceFeatureLimits::MaxFragmentUniformVectors:
     // According to Metal gurus, this should be identical to MaxVertexUniformVectors
   case DeviceFeatureLimits::MaxVertexUniformVectors:
@@ -385,7 +385,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
 #if TARGET_OS_OSX
     return unsupported;
 #else
-    if (deviceFeatureDesc_.gpuFamily >= 2) {
+    if (gpuFamily_ >= 2) {
       return sampled;
     } else {
       return unsupported;
