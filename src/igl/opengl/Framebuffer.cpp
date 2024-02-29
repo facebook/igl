@@ -248,7 +248,8 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
 
   // @fb-only
   if (texture.getFormat() == TextureFormat::RGBA_UInt32) {
-    if (getContext().deviceFeatures().hasTextureFeature(TextureFeatures::TextureInteger)) {
+    if (IGL_VERIFY(
+            getContext().deviceFeatures().hasTextureFeature(TextureFeatures::TextureInteger))) {
       getContext().readPixels(static_cast<GLint>(range.x),
                               static_cast<GLint>(range.y),
                               static_cast<GLsizei>(range.width),
@@ -256,8 +257,6 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
                               intFormat,
                               GL_UNSIGNED_INT,
                               pixelBytes);
-    } else {
-      IGL_ASSERT_NOT_IMPLEMENTED();
     }
   } else {
     getContext().readPixels(static_cast<GLint>(range.x),
