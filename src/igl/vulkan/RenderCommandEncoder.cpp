@@ -306,10 +306,24 @@ void RenderCommandEncoder::endEncoding() {
     if (!tex) {
       continue;
     }
+
+    // Retrieve the VulkanImage to check its usage
+    const auto& vkTex = static_cast<Texture&>(*tex);
+    const auto& img = vkTex.getVulkanTexture().getVulkanImage();
+
     if (tex->getProperties().isDepthOrStencil()) {
-      transitionToDepthStencilAttachment(cmdBuffer_, tex);
+      // If the texture has not been marked as a depth/stencil attachment
+      // (TextureDesc::TextureUsageBits::Attachment), don't transition it to a depth/stencil
+      // attchment
+      if (img.usageFlags_ & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+        transitionToDepthStencilAttachment(cmdBuffer_, tex);
+      }
     } else {
-      transitionToColorAttachment(cmdBuffer_, tex);
+      // If the texture has not been marked as a color attachment
+      // (TextureDesc::TextureUsageBits::Attachment), don't transition it to a color attchment
+      if (img.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+        transitionToColorAttachment(cmdBuffer_, tex);
+      }
     }
   }
   dependencies_ = {};
