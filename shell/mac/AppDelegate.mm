@@ -32,6 +32,17 @@
   auto frame = [self.window frame];
   (void)frame;
   ViewController* viewController = nullptr;
+
+  // Headless tab
+  NSTabViewItem* tinyHeadlessTabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
+  viewController = [[ViewController alloc] initWithFrame:frame
+                                             backendType:igl::BackendType::Invalid
+                                     preferLatestVersion:true];
+
+  tinyHeadlessTabViewItem.viewController = viewController;
+  tinyHeadlessTabViewItem.label = @"Headless";
+  [self.tabViewController addTabViewItem:tinyHeadlessTabViewItem];
+
 #if IGL_BACKEND_METAL
   // Metal tab
   NSTabViewItem* tinyMetalTabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];

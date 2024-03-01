@@ -8,6 +8,7 @@
 #import "ViewController.h"
 
 #import "GLView.h"
+#import "HeadlessView.h"
 #import "MetalView.h"
 #import "VulkanView.h"
 // @fb-only
@@ -140,6 +141,15 @@ using namespace igl;
   HWDeviceQueryDesc queryDesc(HWDeviceType::Unknown);
 
   switch (backendType_) {
+  case igl::BackendType::Invalid: {
+    auto headlessView = [[HeadlessView alloc] initWithFrame:frame_];
+    self.view = headlessView;
+
+    // Headless platform does not run on a real device
+    shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(nullptr);
+    break;
+  }
+
 #if IGL_BACKEND_METAL
   case igl::BackendType::Metal: {
     auto hwDevices = metal::HWDevice().queryDevices(queryDesc, nullptr);
