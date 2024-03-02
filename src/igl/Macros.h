@@ -140,6 +140,12 @@
 //
 // Furthermore, the macros below are provided so that IGL clients can safely wrap backend specific
 // code for conditional compilation.
+#ifdef IGL_BACKEND_ENABLE_HEADLESS
+#define IGL_BACKEND_HEADLESS 1
+#else
+#define IGL_BACKEND_HEADLESS 0
+#endif
+
 #ifdef IGL_BACKEND_ENABLE_METAL
 #define IGL_BACKEND_METAL 1
 #else
