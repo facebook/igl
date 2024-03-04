@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.facebook.igl.shell.openxr.vulkan'
+    compileSdk 33
+
+    defaultConfig {
+        applicationId "com.facebook.igl.shell.openxr.vulkan"
+        minSdk 24
+        targetSdk 33
+        versionCode 1
+        versionName "1.0"
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
+        externalNativeBuild {
+            cmake {
+                targets 'openxr-vulkan-Jni'
+                cppFlags '-std=c++20'
+                arguments '-DIGL_OPENXR_RENDER_SESSION=Textured3DCubeSession', '-DIGL_WITH_OPENXR=ON', '-DIGL_WITH_VULKAN=ON', '-DIGL_WITH_SAMPLES=ON'
+            }
+        }
+    }
+
+    aaptOptions {
+        noCompress 'png', 'ktx', 'data', 'gltf', 'glb', 'obj'
+    }
+    
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    externalNativeBuild {
+        cmake {
+            path file('../../../CMakeLists.txt')
+            version '3.22.1'
+        }
+    }
+
+    sourceSets {
+        main.assets.srcDirs += '../../../shell/resources/images'
+    }
+
+    ndkVersion '25.2.9519653'
+
+    buildFeatures {
+        viewBinding true
+    }
+}

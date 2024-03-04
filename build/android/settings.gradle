@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "IGL"
 include ':app'
+include ':app-openxr-vulkan'

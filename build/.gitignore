@@ -4,3 +4,6 @@
 !android/
 !android/**
 android/.gitignore
+!openxr/
+!openxr/**
+openxr/vulkan/.gitignore

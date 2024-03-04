@@ -7,6 +7,7 @@
 
 #include <android_native_app_glue.h>
 #include <igl/Common.h>
+#include <igl/Macros.h>
 //#define ATTACH_DEBUGGER
 
 #ifdef ATTACH_DEBUGGER

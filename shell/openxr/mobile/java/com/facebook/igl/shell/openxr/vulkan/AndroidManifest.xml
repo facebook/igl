@@ -20,6 +20,7 @@
     <activity android:name="android.app.NativeActivity"
               android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
               android:launchMode="singleTask"
+              android:exported="true"
               android:screenOrientation="landscape"
 				      android:excludeFromRecents="false"
               android:configChanges="screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode">

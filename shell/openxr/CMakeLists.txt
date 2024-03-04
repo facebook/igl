@@ -15,17 +15,36 @@ file(CREATE_LINK
 #
 
 file(GLOB SHELL_OPENXR_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-     ../openxr/desktop/*.cpp
-     ../openxr/desktop/vulkan/*.cpp
      ../openxr/impl/*.cpp
      ../openxr/src/*.cpp)
+
 file(GLOB SHELL_OPENXR_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-     ../openxr/desktop/*.h
-     ../openxr/desktop/vulkan/*.h
      ../openxr/impl/*.h
      ../openxr/src/*.h)
 
-add_library(IGLShellOpenXR ${SHELL_OPENXR_SRC_FILES} ${SHELL_OPENXR_HEADER_FILES})
+if(ANDROID)
+  if(IGL_WITH_VULKAN)
+    file(GLOB SHELL_OPENXR_PLATFORM_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+         ../openxr/mobile/vulkan/*.cpp)
+
+    file(GLOB SHELL_OPENXR_PLATFORM_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+         ../openxr/desktop/vulkan/*.h)
+  endif()
+else()
+  file(GLOB SHELL_OPENXR_PLATFORM_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+       ../openxr/desktop/*.cpp
+       ../openxr/desktop/vulkan/*.cpp)
+
+  file(GLOB SHELL_OPENXR_PLATFORM_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+       ../openxr/desktop/*.h
+       ../openxr/desktop/vulkan/*.h)
+endif()
+
+add_library(IGLShellOpenXR
+  ${SHELL_OPENXR_SRC_FILES}
+  ${SHELL_OPENXR_HEADER_FILES}
+  ${SHELL_OPENXR_PLATFORM_SRC_FILES}
+  ${SHELL_OPENXR_PLATFORM_HEADER_FILES})
 
 target_link_libraries(IGLShellOpenXR PUBLIC IGLLibrary)
 target_link_libraries(IGLShellOpenXR PUBLIC IGLLibrary)

@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <igl/Macros.h>
+
 #include <array>
 #include <string>
 #include <vector>
@@ -20,6 +22,10 @@
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/GLIncludes.h>
 #endif // IGL_BACKEND_OPENGL
+
+#if IGL_PLATFORM_ANDROID
+#include <jni.h>
+#endif
 
 #include <openxr/openxr_platform.h>
 
