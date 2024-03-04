@@ -256,6 +256,27 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
       getContext().readPixels(
           rangeX, rangeY, rangeWidth, rangeHeight, GL_RGBA_INTEGER, GL_UNSIGNED_INT, pixelBytes);
     }
+  } else if (textureFormat == TextureFormat::RGBA_F32) {
+    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFloat))) {
+      getContext().readPixels(
+          rangeX, rangeY, rangeWidth, rangeHeight, GL_RGBA, GL_FLOAT, pixelBytes);
+    }
+  } else if (textureFormat == TextureFormat::RGB_F32) {
+    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFloat))) {
+      getContext().readPixels(
+          rangeX, rangeY, rangeWidth, rangeHeight, GL_RGB, GL_FLOAT, pixelBytes);
+    }
+  } else if (textureFormat == TextureFormat::RG_F32) {
+    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFloat)) &&
+        IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
+      getContext().readPixels(rangeX, rangeY, rangeWidth, rangeHeight, GL_RG, GL_FLOAT, pixelBytes);
+    }
+  } else if (textureFormat == TextureFormat::R_F32) {
+    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFloat)) &&
+        IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
+      getContext().readPixels(
+          rangeX, rangeY, rangeWidth, rangeHeight, GL_RED, GL_FLOAT, pixelBytes);
+    }
   } else {
     getContext().readPixels(
         rangeX, rangeY, rangeWidth, rangeHeight, GL_RGBA, GL_UNSIGNED_BYTE, pixelBytes);
