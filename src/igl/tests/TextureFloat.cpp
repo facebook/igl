@@ -66,6 +66,32 @@ const std::array<glm::vec4, 15> kTextureDataRGBA = {
   kM,             // Mip 1, Layer 1
   kY,             // Mip 1, Layer 2
 };
+const std::array<glm::vec3, 15> kTextureDataRGB = {
+  glm::vec3(kR), glm::vec3(kR), glm::vec3(kR), glm::vec3(kR), // Base Mip, Layer 0
+  glm::vec3(kG), glm::vec3(kG), glm::vec3(kG), glm::vec3(kG), // Base Mip, Layer 1
+  glm::vec3(kB), glm::vec3(kB), glm::vec3(kB), glm::vec3(kB), // Base Mip, Layer 2
+  glm::vec3(kC),             // Mip 1, Layer 0
+  glm::vec3(kM),             // Mip 1, Layer 1
+  glm::vec3(kY),             // Mip 1, Layer 2
+};
+
+const std::array<glm::vec2, 15> kTextureDataRG = {
+  glm::vec2(kR), glm::vec2(kR), glm::vec2(kR), glm::vec2(kR), // Base Mip, Layer 0
+  glm::vec2(kG), glm::vec2(kG), glm::vec2(kG), glm::vec2(kG), // Base Mip, Layer 1
+  glm::vec2(kB), glm::vec2(kB), glm::vec2(kB), glm::vec2(kB), // Base Mip, Layer 2
+  glm::vec2(kC),             // Mip 1, Layer 0
+  glm::vec2(kM),             // Mip 1, Layer 1
+  glm::vec2(kY),             // Mip 1, Layer 2
+};
+
+const std::array<float, 15> kTextureDataR = {
+  kR.y, kR.y, kR.y, kR.y, // Base Mip, Layer 0
+  kG.y, kG.y, kG.y, kG.y, // Base Mip, Layer 1
+  kB.y, kB.y, kB.y, kB.y, // Base Mip, Layer 2
+  kC.y,             // Mip 1, Layer 0
+  kM.y,             // Mip 1, Layer 1
+  kY.y,             // Mip 1, Layer 2
+};
 // clang-format on
 
 struct VertexUniforms {
@@ -389,6 +415,12 @@ void runUploadTest(IDevice& device,
 
 TEST_F(TextureFloatTest, Upload_RGBA) {
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RGBA_F32, kTextureDataRGBA.data());
+  if (iglDev_->getBackendType() != BackendType::Vulkan &&
+      iglDev_->getBackendType() != BackendType::Metal) {
+    runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RGB_F32, kTextureDataRGB.data());
+  }
+  runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RG_F32, kTextureDataRG.data());
+  runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::R_F32, kTextureDataR.data());
 }
 
 //
@@ -399,6 +431,12 @@ TEST_F(TextureFloatTest, Upload_RGBA) {
 //
 TEST_F(TextureFloatTest, Passthrough_Sample) {
   runPasthroughFormat(igl::TextureFormat::RGBA_F32, kTextureDataRGBA.data());
+  if (iglDev_->getBackendType() != BackendType::Vulkan &&
+      iglDev_->getBackendType() != BackendType::Metal) {
+    runPasthroughFormat(igl::TextureFormat::RGB_F32, kTextureDataRGB.data());
+  }
+  runPasthroughFormat(igl::TextureFormat::RG_F32, kTextureDataRG.data());
+  runPasthroughFormat(igl::TextureFormat::R_F32, kTextureDataR.data());
 }
 
 } // namespace igl::tests

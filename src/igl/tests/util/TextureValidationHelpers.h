@@ -47,6 +47,33 @@ inline void TestArray(std::vector<glm::vec4> actualData,
   }
 }
 
+template<>
+inline void TestArray(std::vector<glm::vec3> actualData,
+                      const glm::vec3* expectedData,
+                      size_t expectedDataSize,
+                      const char* message) {
+  for (size_t i = 0; i < expectedDataSize; i++) {
+    ASSERT_EQ(expectedData[i], actualData[i])
+        << message << ": Mismatch at index " << i << ": Expected: " << std::hex << "("
+        << expectedData[i].x << " " << expectedData[i].y << " " << expectedData[i].z << ")"
+        << " Actual: " << std::hex << "(" << actualData[i].x << " " << actualData[i].y << " "
+        << actualData[i].z << ")";
+  }
+}
+
+template<>
+inline void TestArray(std::vector<glm::vec2> actualData,
+                      const glm::vec2* expectedData,
+                      size_t expectedDataSize,
+                      const char* message) {
+  for (size_t i = 0; i < expectedDataSize; i++) {
+    ASSERT_EQ(expectedData[i], actualData[i])
+        << message << ": Mismatch at index " << i << ": Expected: " << std::hex << "("
+        << expectedData[i].x << " " << expectedData[i].y << ")"
+        << " Actual: " << std::hex << "(" << actualData[i].x << " " << actualData[i].y << ")";
+  }
+}
+
 /// Reads back a range of texture data
 /// @param device The device the texture was created with
 /// @param cmdQueue A command queue to submit any read requests on
