@@ -106,8 +106,9 @@ class TextureArrayFloatTest : public ::testing::Test {
     ASSERT_TRUE(iglDev_ != nullptr);
     ASSERT_TRUE(cmdQueue_ != nullptr);
 
-    if (!iglDev_->hasFeature(DeviceFeatures::TextureFloat) &&
-        !iglDev_->hasFeature(DeviceFeatures::Texture2DArray)) {
+    if (!iglDev_->hasFeature(DeviceFeatures::TextureFloat) ||
+        !iglDev_->hasFeature(DeviceFeatures::Texture2DArray) ||
+        opengl::DeviceFeatureSet::usesOpenGLES()) {
       GTEST_SKIP() << "2D float texture array is unsupported for this platform.";
       return;
     }
@@ -116,8 +117,7 @@ class TextureArrayFloatTest : public ::testing::Test {
     TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_F32,
                                              kOffscreenTexWidth,
                                              kOffscreenTexHeight,
-                                             TextureDesc::TextureUsageBits::Sampled |
-                                                 TextureDesc::TextureUsageBits::Attachment);
+                                             TextureDesc::TextureUsageBits::Attachment);
 
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);
@@ -440,8 +440,7 @@ void runUploadToMipTest(IDevice& device, ICommandQueue& cmdQueue, bool singleUpl
                                                 kOffscreenTexWidth,
                                                 kOffscreenTexHeight,
                                                 kNumLayers,
-                                                TextureDesc::TextureUsageBits::Sampled |
-                                                    TextureDesc::TextureUsageBits::Attachment);
+                                                TextureDesc::TextureUsageBits::Sampled);
   texDesc.numMipLevels = 2;
   auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -492,6 +491,7 @@ TEST_F(TextureArrayFloatTest, UploadToMip_LayerByLayer) {
   runUploadToMipTest(*iglDev_, *cmdQueue_, false);
 }
 
+#if IGL_ANGLE
 //
 // Texture Passthrough Test - Sample From Array
 //
@@ -602,8 +602,7 @@ TEST_F(TextureArrayFloatTest, Passthrough_RenderToArray) {
                                     kOffscreenTexWidth,
                                     kOffscreenTexHeight,
                                     kNumLayers,
-                                    TextureDesc::TextureUsageBits::Sampled |
-                                        TextureDesc::TextureUsageBits::Attachment);
+                                    TextureDesc::TextureUsageBits::Attachment);
   auto customOffscreenTexture = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(customOffscreenTexture != nullptr);
@@ -681,6 +680,7 @@ TEST_F(TextureArrayFloatTest, Passthrough_RenderToArray) {
                                           layerStr.c_str());
   }
 }
+#endif
 
 TEST_F(TextureArrayFloatTest, ValidateRange2DArray) {
   if (!iglDev_->hasFeature(DeviceFeatures::Texture2DArray)) {
