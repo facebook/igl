@@ -74,14 +74,15 @@ jobs:
               # TODO: Fix killing GCC process on Github CI when IGL_WITH_SHELL is ON.
               cmake_args: "-DIGL_WITH_TRACY=ON -DIGL_WITH_SHELL=OFF"
             }
-          - {
-              name: "Emscripten (Ubuntu)",
-              os: ubuntu-latest,
-              build_type: "Debug",
-              cc: "emcc",
-              cxx: "em++",
-              generators: "Ninja",
-          }
+# https://github.com/emscripten-core/emscripten/pull/20802#issuecomment-1858114093
+#          - {
+#              name: "Emscripten (Ubuntu)",
+#              os: ubuntu-latest,
+#              build_type: "Debug",
+#              cc: "emcc",
+#              cxx: "em++",
+#              generators: "Ninja",
+#          }
           - {
               name: "macOS - Clang (Xcode)",
               os: macos-latest,
