@@ -22,6 +22,7 @@ add_library(IGLShellShared ${SHELL_SHARED_SRC_FILES} ${SHELL_SHARED_HEADER_FILES
 target_include_directories(IGLShellShared PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include_renderSessions")
 target_include_directories(IGLShellShared PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include_shared")
 
+target_link_libraries(IGLShellShared PUBLIC fmt)
 target_link_libraries(IGLShellShared PUBLIC IGLLibrary)
 target_link_libraries(IGLShellShared PUBLIC IGLUimgui)
 target_link_libraries(IGLShellShared PUBLIC IGLUmanagedUniformBuffer)

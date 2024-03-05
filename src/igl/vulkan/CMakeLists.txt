@@ -50,6 +50,7 @@ find_package(Vulkan REQUIRED)
 target_link_libraries(IGLVulkan PUBLIC Vulkan::Vulkan)
 target_link_libraries(IGLVulkan PUBLIC fmt)
 
+target_include_directories(IGLVulkan PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/fmt/include")
 target_include_directories(IGLVulkan PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/volk")
 target_include_directories(IGLVulkan PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/vma/include")
 target_include_directories(IGLVulkan PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/SPIRV-Headers/include")

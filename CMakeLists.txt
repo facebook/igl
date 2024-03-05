@@ -269,7 +269,11 @@ if(IGL_WITH_SAMPLES)
     endif()
 endif()
 
-# KTX-Software forcibly includes fmt so prefer its version when building IGL_WITH_IGLU or IGL_WITH_SAMPLES
+if (IGL_WITH_VULKAN OR IGL_WITH_IGLU OR IGL_WITH_SAMPLES)
+  add_subdirectory(third-party/deps/src/fmt "fmt")
+  igl_set_folder(fmt "third-party")
+endif()
+
 if (IGL_WITH_IGLU OR IGL_WITH_SAMPLES)
   set(KTX_FEATURE_DOC OFF CACHE BOOL "")
 
@@ -294,12 +298,6 @@ if (IGL_WITH_IGLU OR IGL_WITH_SAMPLES)
   igl_set_folder(ktx_version "third-party/ktx-software")
   igl_set_folder(obj_basisu_cbind "third-party/ktx-software")
   igl_set_folder(objUtil "third-party/ktx-software")
-  if(TARGET fmt)
-    igl_set_folder(fmt "third-party")
-  endif()
-elseif (IGL_WITH_VULKAN)
-  add_subdirectory(third-party/deps/src/fmt "fmt")
-  igl_set_folder(fmt "third-party")
 endif()
 
 
