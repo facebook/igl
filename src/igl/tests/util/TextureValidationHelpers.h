@@ -32,9 +32,9 @@ inline void TestArray(std::vector<ColorType> actualData,
   }
 }
 
-template<>
-inline void TestArray(std::vector<glm::vec4> actualData,
-                      const glm::vec4* expectedData,
+template<typename VectorUnit, glm::qualifier Precision>
+inline void TestArray(std::vector<glm::vec<4, VectorUnit, Precision>> actualData,
+                      const glm::vec<4, VectorUnit, Precision>* expectedData,
                       size_t expectedDataSize,
                       const char* message) {
   for (size_t i = 0; i < expectedDataSize; i++) {
@@ -47,9 +47,9 @@ inline void TestArray(std::vector<glm::vec4> actualData,
   }
 }
 
-template<>
-inline void TestArray(std::vector<glm::vec3> actualData,
-                      const glm::vec3* expectedData,
+template<typename VectorUnit, glm::qualifier Precision>
+inline void TestArray(std::vector<glm::vec<3, VectorUnit, Precision>> actualData,
+                      const glm::vec<3, VectorUnit, Precision>* expectedData,
                       size_t expectedDataSize,
                       const char* message) {
   for (size_t i = 0; i < expectedDataSize; i++) {
@@ -61,9 +61,9 @@ inline void TestArray(std::vector<glm::vec3> actualData,
   }
 }
 
-template<>
-inline void TestArray(std::vector<glm::vec2> actualData,
-                      const glm::vec2* expectedData,
+template<typename VectorUnit, glm::qualifier Precision>
+inline void TestArray(std::vector<glm::vec<2, VectorUnit, Precision>> actualData,
+                      const glm::vec<2, VectorUnit, Precision>* expectedData,
                       size_t expectedDataSize,
                       const char* message) {
   for (size_t i = 0; i < expectedDataSize; i++) {
@@ -132,7 +132,7 @@ inline void validateTextureRange(IDevice& device,
     actualData = std::move(tmpData);
   }
 
-  TestArray<ColorType>(actualData, expectedData, expectedDataSize, message);
+  TestArray(actualData, expectedData, expectedDataSize, message);
 }
 
 template<typename ColorType>
