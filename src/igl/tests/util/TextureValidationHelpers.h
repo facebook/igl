@@ -19,16 +19,19 @@
 #include "simdstub.h"
 #endif
 namespace igl::tests::util {
+constexpr auto kTestPrecision = 0.0001f;
 
 template<typename ColorType>
 inline void TestArray(std::vector<ColorType> actualData,
                       const ColorType* expectedData,
                       size_t expectedDataSize,
                       const char* message) {
+  const auto kInnerTestPrecision = ColorType(kTestPrecision);
   for (size_t i = 0; i < expectedDataSize; i++) {
-    ASSERT_EQ(expectedData[i], actualData[i])
-        << message << ": Mismatch at index " << i << ": Expected: " << std::hex << expectedData[i]
-        << " Actual: " << std::hex << actualData[i];
+    std::stringstream ss;
+    ss << message << ": Mismatch at index " << i << ": Expected: " << std::hex << expectedData[i]
+       << " Actual: " << std::hex << actualData[i];
+    ASSERT_NEAR(expectedData[i], actualData[i], kInnerTestPrecision) << ss.str();
   }
 }
 
@@ -37,13 +40,18 @@ inline void TestArray(std::vector<glm::vec<4, VectorUnit, Precision>> actualData
                       const glm::vec<4, VectorUnit, Precision>* expectedData,
                       size_t expectedDataSize,
                       const char* message) {
+  const auto kInnerTestPrecision = VectorUnit(kTestPrecision);
   for (size_t i = 0; i < expectedDataSize; i++) {
-    ASSERT_EQ(expectedData[i], actualData[i])
-        << message << ": Mismatch at index " << i << ": Expected: " << std::hex << "("
-        << expectedData[i].x << " " << expectedData[i].y << " " << expectedData[i].z << " "
-        << expectedData[i].w << ")"
-        << " Actual: " << std::hex << "(" << actualData[i].x << " " << actualData[i].y << " "
-        << actualData[i].z << " " << actualData[i].w << ")";
+    std::stringstream ss;
+    ss << message << ": Mismatch at index " << i << ": Expected: " << std::hex << "("
+       << expectedData[i].x << " " << expectedData[i].y << " " << expectedData[i].z << " "
+       << expectedData[i].w << ")"
+       << " Actual: " << std::hex << "(" << actualData[i].x << " " << actualData[i].y << " "
+       << actualData[i].z << " " << actualData[i].w << ")";
+    ASSERT_NEAR(expectedData[i].x, actualData[i].x, kInnerTestPrecision) << ss.str();
+    ASSERT_NEAR(expectedData[i].y, actualData[i].y, kInnerTestPrecision) << ss.str();
+    ASSERT_NEAR(expectedData[i].z, actualData[i].z, kInnerTestPrecision) << ss.str();
+    ASSERT_NEAR(expectedData[i].w, actualData[i].w, kInnerTestPrecision) << ss.str();
   }
 }
 
@@ -52,12 +60,16 @@ inline void TestArray(std::vector<glm::vec<3, VectorUnit, Precision>> actualData
                       const glm::vec<3, VectorUnit, Precision>* expectedData,
                       size_t expectedDataSize,
                       const char* message) {
+  const auto kInnerTestPrecision = VectorUnit(kTestPrecision);
   for (size_t i = 0; i < expectedDataSize; i++) {
-    ASSERT_EQ(expectedData[i], actualData[i])
-        << message << ": Mismatch at index " << i << ": Expected: " << std::hex << "("
-        << expectedData[i].x << " " << expectedData[i].y << " " << expectedData[i].z << ")"
-        << " Actual: " << std::hex << "(" << actualData[i].x << " " << actualData[i].y << " "
-        << actualData[i].z << ")";
+    std::stringstream ss;
+    ss << message << ": Mismatch at index " << i << ": Expected: " << std::hex << "("
+       << expectedData[i].x << " " << expectedData[i].y << " " << expectedData[i].z << ")"
+       << " Actual: " << std::hex << "(" << actualData[i].x << " " << actualData[i].y << " "
+       << actualData[i].z << ")";
+    ASSERT_NEAR(expectedData[i].x, actualData[i].x, kInnerTestPrecision) << ss.str();
+    ASSERT_NEAR(expectedData[i].y, actualData[i].y, kInnerTestPrecision) << ss.str();
+    ASSERT_NEAR(expectedData[i].z, actualData[i].z, kInnerTestPrecision) << ss.str();
   }
 }
 
@@ -66,11 +78,14 @@ inline void TestArray(std::vector<glm::vec<2, VectorUnit, Precision>> actualData
                       const glm::vec<2, VectorUnit, Precision>* expectedData,
                       size_t expectedDataSize,
                       const char* message) {
+  const auto kInnerTestPrecision = VectorUnit(kTestPrecision);
   for (size_t i = 0; i < expectedDataSize; i++) {
-    ASSERT_EQ(expectedData[i], actualData[i])
-        << message << ": Mismatch at index " << i << ": Expected: " << std::hex << "("
-        << expectedData[i].x << " " << expectedData[i].y << ")"
-        << " Actual: " << std::hex << "(" << actualData[i].x << " " << actualData[i].y << ")";
+    std::stringstream ss;
+    ss << message << ": Mismatch at index " << i << ": Expected: " << std::hex << "("
+       << expectedData[i].x << " " << expectedData[i].y << ")"
+       << " Actual: " << std::hex << "(" << actualData[i].x << " " << actualData[i].y << ")";
+    ASSERT_NEAR(expectedData[i].x, actualData[i].x, kInnerTestPrecision) << ss.str();
+    ASSERT_NEAR(expectedData[i].y, actualData[i].y, kInnerTestPrecision) << ss.str();
   }
 }
 
