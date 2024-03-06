@@ -106,9 +106,15 @@ class TextureArrayFloatTest : public ::testing::Test {
     ASSERT_TRUE(iglDev_ != nullptr);
     ASSERT_TRUE(cmdQueue_ != nullptr);
 
+#if IGL_OPENGL_ES
+    const bool kUsesOpenGLES = opengl::DeviceFeatureSet::usesOpenGLES();
+#else
+    // no OpenGLES was linked
+    const bool kUsesOpenGLES = false;
+#endif
+
     if (!iglDev_->hasFeature(DeviceFeatures::TextureFloat) ||
-        !iglDev_->hasFeature(DeviceFeatures::Texture2DArray) ||
-        opengl::DeviceFeatureSet::usesOpenGLES()) {
+        !iglDev_->hasFeature(DeviceFeatures::Texture2DArray) || kUsesOpenGLES) {
       GTEST_SKIP() << "2D float texture array is unsupported for this platform.";
       return;
     }
