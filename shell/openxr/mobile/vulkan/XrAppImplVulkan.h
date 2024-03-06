@@ -14,7 +14,9 @@
 #define VK_USE_PLATFORM_ANDROID_KHR
 #include <igl/vulkan/Common.h>
 
+#ifndef XR_USE_GRAPHICS_API_VULKAN
 #define XR_USE_GRAPHICS_API_VULKAN
+#endif
 #include <openxr/openxr_platform.h>
 
 #include <shell/openxr/impl/XrAppImpl.h>

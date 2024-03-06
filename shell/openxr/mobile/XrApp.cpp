@@ -22,7 +22,9 @@
 #if USE_VULKAN_BACKEND
 #include <igl/vulkan/Common.h>
 
+#ifndef XR_USE_GRAPHICS_API_VULKAN
 #define XR_USE_GRAPHICS_API_VULKAN
+#endif
 #endif // USE_VULKAN_BACKEND
 #include <openxr/openxr_platform.h>
 

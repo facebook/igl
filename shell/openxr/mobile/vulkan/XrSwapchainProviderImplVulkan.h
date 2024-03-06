@@ -15,7 +15,9 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanTexture.h>
 
+#ifndef XR_USE_GRAPHICS_API_VULKAN
 #define XR_USE_GRAPHICS_API_VULKAN
+#endif
 #include <openxr/openxr_platform.h>
 
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
