@@ -22,35 +22,60 @@ file(GLOB SHELL_OPENXR_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURR
      ../openxr/impl/*.h
      ../openxr/src/*.h)
 
-if(ANDROID)
-  if(IGL_WITH_VULKAN)
-    file(GLOB SHELL_OPENXR_PLATFORM_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-         ../openxr/mobile/vulkan/*.cpp)
+macro(ADD_SHELL_LIBRARY name srcs)
+  set (extra_srcs ${ARGN})
+  add_library(${name} ${srcs} ${extra_srcs})
 
-    file(GLOB SHELL_OPENXR_PLATFORM_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-         ../openxr/desktop/vulkan/*.h)
-  endif()
-else()
-  file(GLOB SHELL_OPENXR_PLATFORM_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-       ../openxr/desktop/*.cpp
-       ../openxr/desktop/vulkan/*.cpp)
+  target_link_libraries(${name} PUBLIC IGLLibrary)
 
-  file(GLOB SHELL_OPENXR_PLATFORM_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-       ../openxr/desktop/*.h
-       ../openxr/desktop/vulkan/*.h)
-endif()
+  target_include_directories(${name} PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/openxr-sdk/src/common")
+  target_include_directories(${name} PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include_shell_openxr")
 
-add_library(IGLShellOpenXR
+  igl_set_folder(${name} "IGL")
+  igl_set_cxxstd(${name} 20)
+endmacro()
+
+file(GLOB SHELL_OPENXR_PLATFORM_DEKTOP_VULKAN_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+     ../openxr/desktop/*.cpp
+     ../openxr/desktop/vulkan/*.cpp)
+
+file(GLOB SHELL_OPENXR_PLATFORM_DEKTOP_VULKAN_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+     ../openxr/desktop/*.h
+     ../openxr/desktop/vulkan/*.h)
+
+add_shell_library(IGLShellOpenXR_DesktopVulkan
   ${SHELL_OPENXR_SRC_FILES}
   ${SHELL_OPENXR_HEADER_FILES}
-  ${SHELL_OPENXR_PLATFORM_SRC_FILES}
-  ${SHELL_OPENXR_PLATFORM_HEADER_FILES})
+  ${SHELL_OPENXR_PLATFORM_DEKTOP_VULKAN_SRC_FILES}
+  ${SHELL_OPENXR_PLATFORM_DEKTOP_VULKAN_HEADER_FILES})
 
-target_link_libraries(IGLShellOpenXR PUBLIC IGLLibrary)
-target_link_libraries(IGLShellOpenXR PUBLIC IGLLibrary)
+if(ANDROID)
+  if(IGL_WITH_VULKAN)
+    file(GLOB SHELL_OPENXR_PLATFORM_ANDROID_VULKAN_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+      ../openxr/mobile/vulkan/*.cpp)
 
-target_include_directories(IGLShellOpenXR PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/openxr-sdk/src/common")
-target_include_directories(IGLShellOpenXR PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include_shell_openxr")
+    file(GLOB SHELL_OPENXR_PLATFORM_ANDROID_VULKAN_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+      ../openxr/mobile/vulkan/*.h)
 
-igl_set_folder(IGLShellOpenXR "IGL")
-igl_set_cxxstd(IGLShellOpenXR 20)
+    add_shell_library(IGLShellOpenXR_AndroidVulkan
+      ${SHELL_OPENXR_SRC_FILES}
+      ${SHELL_OPENXR_HEADER_FILES}
+      ${SHELL_OPENXR_PLATFORM_ANDROID_VULKAN_SRC_FILES}
+      ${SHELL_OPENXR_PLATFORM_ANDROID_VULKAN_HEADER_FILES})
+    target_compile_definitions(IGLShellOpenXR_AndroidVulkan PRIVATE "USE_VULKAN_BACKEND" "XR_USE_PLATFORM_ANDROID" "XR_USE_GRAPHICS_API_VULKAN")
+  endif()
+  if(IGL_WITH_OPENGLES)
+    file(GLOB SHELL_OPENXR_PLATFORM_ANDROID_GL_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+      ../openxr/mobile/opengl/*.cpp)
+
+    file(GLOB SHELL_OPENXR_PLATFORM_ANDROID_GL_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+      ../openxr/mobile/opengl/*.h)
+
+    add_shell_library(IGLShellOpenXR_AndroidOpenGLES
+      ${SHELL_OPENXR_SRC_FILES}
+      ${SHELL_OPENXR_HEADER_FILES}
+      ${SHELL_OPENXR_PLATFORM_ANDROID_GL_SRC_FILES}
+      ${SHELL_OPENXR_PLATFORM_ANDROID_GL_HEADER_FILES})
+    target_compile_definitions(IGLShellOpenXR_AndroidOpenGLES PRIVATE "USE_OPENGL_BACKEND" "XR_USE_PLATFORM_ANDROID" "XR_USE_GRAPHICS_API_OPENGL_ES")
+  endif()
+endif()

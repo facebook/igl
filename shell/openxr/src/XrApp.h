@@ -25,7 +25,10 @@
 
 #if IGL_PLATFORM_ANDROID
 #include <jni.h>
-#endif
+#if IGL_BACKEND_OPENGL
+#include <EGL/egl.h>
+#endif // IGL_BACKEND_OPENGL
+#endif // IGL_PLATFORM_ANDROID
 
 #include <openxr/openxr_platform.h>
 

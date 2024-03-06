@@ -26,6 +26,11 @@
 #define XR_USE_GRAPHICS_API_VULKAN
 #endif
 #endif // USE_VULKAN_BACKEND
+#if USE_OPENGL_BACKEND
+#ifndef XR_USE_GRAPHICS_API_OPENGL_ES
+#define XR_USE_GRAPHICS_API_OPENGL_ES
+#endif
+#endif // USE_OPENGL_BACKEND
 #include <openxr/openxr_platform.h>
 
 #include <glm/gtc/type_ptr.hpp>

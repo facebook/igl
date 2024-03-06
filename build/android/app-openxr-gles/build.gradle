@@ -10,11 +10,11 @@ plugins {
 }
 
 android {
-    namespace 'com.facebook.igl.shell.openxr.vulkan'
+    namespace 'com.facebook.igl.shell.openxr.gles'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.facebook.igl.shell.openxr.vulkan"
+        applicationId "com.facebook.igl.shell.openxr.gles"
         minSdk 24
         targetSdk 33
         versionCode 1
@@ -24,9 +24,9 @@ android {
         }
         externalNativeBuild {
             cmake {
-                targets 'openxr-vulkan-Jni'
+                targets 'openxr-gles-Jni'
                 cppFlags '-std=c++20'
-                arguments '-DIGL_OPENXR_RENDER_SESSION=Textured3DCubeSession', '-DIGL_WITH_OPENXR=ON', '-DIGL_WITH_VULKAN=ON', '-DIGL_WITH_OPENGLES=OFF', '-DIGL_WITH_SAMPLES=ON'
+                arguments '-DIGL_OPENXR_RENDER_SESSION=Textured3DCubeSession', '-DIGL_WITH_OPENXR=ON', '-DIGL_WITH_VULKAN=OFF', '-DIGL_WITH_OPENGLES=ON', '-DIGL_WITH_SAMPLES=ON'
             }
         }
     }
@@ -39,14 +39,14 @@ android {
         debug {
             sourceSets {
                 main {
-                    manifest.srcFile '../../../shell/openxr/mobile/java/com/facebook/igl/shell/openxr/vulkan/AndroidManifest.xml'
+                    manifest.srcFile '../../../shell/openxr/mobile/java/com/facebook/igl/shell/openxr/gles/AndroidManifest.xml'
                 }
             }
         }
         release {
             sourceSets {
                 main {
-                    manifest.srcFile '../../../shell/openxr/mobile/java/com/facebook/igl/shell/openxr/vulkan/AndroidManifest.xml'
+                    manifest.srcFile '../../../shell/openxr/mobile/java/com/facebook/igl/shell/openxr/gles/AndroidManifest.xml'
                 }
             }
             minifyEnabled false
