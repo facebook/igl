@@ -34,9 +34,21 @@ android {
     aaptOptions {
         noCompress 'png', 'ktx', 'data', 'gltf', 'glb', 'obj'
     }
-    
+
     buildTypes {
+        debug {
+            sourceSets {
+                main {
+                    manifest.srcFile '../../../shell/openxr/mobile/java/com/facebook/igl/shell/openxr/vulkan/AndroidManifest.xml'
+                }
+            }
+        }
         release {
+            sourceSets {
+                main {
+                    manifest.srcFile '../../../shell/openxr/mobile/java/com/facebook/igl/shell/openxr/vulkan/AndroidManifest.xml'
+                }
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.debug
