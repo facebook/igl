@@ -219,12 +219,16 @@ struct Viewport {
   float height = 1.0f;
   float minDepth = 0.0f;
   float maxDepth = 1.0f;
-
-  bool operator!=(const Viewport other) const {
-    return x != other.x || y != other.y || width != other.width || height != other.height ||
-           minDepth != other.minDepth || maxDepth != other.maxDepth;
-  }
 };
+
+inline bool operator==(const Viewport& lhs, const Viewport& rhs) {
+  return lhs.x == rhs.x && lhs.y == rhs.y && lhs.width == rhs.width && lhs.height == rhs.height &&
+         lhs.minDepth == rhs.minDepth && lhs.maxDepth == rhs.maxDepth;
+}
+
+inline bool operator!=(const Viewport& lhs, const Viewport& rhs) {
+  return !operator==(lhs, rhs);
+}
 
 const Viewport kInvalidViewport = {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f};
 
