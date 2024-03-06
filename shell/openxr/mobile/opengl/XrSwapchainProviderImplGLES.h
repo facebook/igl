@@ -14,7 +14,9 @@
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
 
+#ifndef XR_USE_GRAPHICS_API_OPENGL_ES
 #define XR_USE_GRAPHICS_API_OPENGL_ES
+#endif
 #include <openxr/openxr_platform.h>
 
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
