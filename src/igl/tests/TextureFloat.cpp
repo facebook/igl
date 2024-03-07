@@ -28,6 +28,12 @@ namespace igl::tests {
 // To avoid mix matching gamma, this defines a constant that everyone can use until it can be
 // configured on a per project basis.
 constexpr double kDefaultGamma = 2.4;
+#if IGL_OPENGL_ES
+static const bool kUsesOpenGLES = opengl::DeviceFeatureSet::usesOpenGLES();
+#else
+// no OpenGLES was linked
+static const bool kUsesOpenGLES = false;
+#endif
 
 // force double precision color conversion to not lose precision
 template<glm::length_t L, typename T, glm::qualifier Q>
@@ -418,7 +424,7 @@ TEST_F(TextureFloatTest, Upload_RGBA32) {
 
 TEST_F(TextureFloatTest, Upload_RGB32) {
   if (iglDev_->getBackendType() == BackendType::Vulkan ||
-      iglDev_->getBackendType() == BackendType::Metal || opengl::DeviceFeatureSet::usesOpenGLES()) {
+      iglDev_->getBackendType() == BackendType::Metal || kUsesOpenGLES) {
     GTEST_SKIP() << "Skip due to lack of support for RGB";
   }
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RGB_F32, kTextureDataRGB.data());
@@ -444,7 +450,7 @@ TEST_F(TextureFloatTest, Passthrough_SampleRGBA32) {
 
 TEST_F(TextureFloatTest, Passthrough_SampleRGB32) {
   if (iglDev_->getBackendType() == BackendType::Vulkan ||
-      iglDev_->getBackendType() == BackendType::Metal || opengl::DeviceFeatureSet::usesOpenGLES()) {
+      iglDev_->getBackendType() == BackendType::Metal || kUsesOpenGLES) {
     GTEST_SKIP() << "Skip due to lack of support for RGB";
   }
   runPassthroughFormat(igl::TextureFormat::RGB_F32, kTextureDataRGB.data());
