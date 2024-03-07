@@ -30,7 +30,11 @@ std::vector<const char*> XrAppImplVulkan::getXrRequiredExtensions() const {
 }
 
 void* XrAppImplVulkan::getInstanceCreateExtension() {
+#if defined(IGL_CMAKE_BUILD)
     return &instanceCreateInfoAndroid_;
+#else
+    return nullptr;
+#endif
 }
 
 std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSystemId systemId) {
