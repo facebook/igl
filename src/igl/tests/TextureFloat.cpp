@@ -126,18 +126,17 @@ class TextureFloatTest : public ::testing::Test {
     return vertUniformBuffer;
   }
 
-  void createFrameBuffer(igl::TextureFormat format) {
+  void createPassthroughFrameBuffer(igl::TextureFormat format) {
     // Create an offscreen texture to render to
-    TextureDesc const texDesc = TextureDesc::new2D(format,
-                                                   kOffscreenTexWidth,
-                                                   kOffscreenTexHeight,
-                                                   TextureDesc::TextureUsageBits::Sampled |
-                                                       TextureDesc::TextureUsageBits::Attachment);
+    TextureDesc const texDesc = TextureDesc::new2D(
+        format, kOffscreenTexWidth, kOffscreenTexHeight, TextureDesc::TextureUsageBits::Attachment);
 
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);
-    ASSERT_EQ(ret.code, Result::Code::Ok);
+    ASSERT_EQ(ret.code, Result::Code::Ok)
+        << "RetCode: " << static_cast<int>(ret.code) << " Message: " << ret.message;
     ASSERT_TRUE(offscreenTexture_ != nullptr);
+    ASSERT_TRUE(offscreenTexture_->getFormat() == format);
 
     // Create framebuffer using the offscreen texture
     FramebufferDesc framebufferDesc;
@@ -146,6 +145,7 @@ class TextureFloatTest : public ::testing::Test {
     framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(framebuffer_ != nullptr);
+    ASSERT_TRUE(offscreenTexture_->getFormat() == format);
   }
 
   void createShaderStages() {
@@ -199,7 +199,7 @@ class TextureFloatTest : public ::testing::Test {
     }
 
     Result ret;
-    createFrameBuffer(igl::TextureFormat::RGBA_F32);
+    createPassthroughFrameBuffer(igl::TextureFormat::RGBA_F32);
 
     // Initialize render pass descriptor
     renderPass_.colorAttachments.resize(1);
@@ -273,9 +273,11 @@ class TextureFloatTest : public ::testing::Test {
 
   void TearDown() override {}
   template<typename ColorType>
-  void runPasthroughFormat(igl::TextureFormat format, const ColorType* data) {
+  void runPassthroughFormat(igl::TextureFormat format, const ColorType* data) {
     std::shared_ptr<IRenderPipelineState> pipelineState;
-    createFrameBuffer(format);
+    createPassthroughFrameBuffer(format);
+    ASSERT_TRUE(offscreenTexture_ != nullptr);
+    ASSERT_TRUE(offscreenTexture_->getFormat() == format);
     createShaderStages();
     initializeRenderPipeline();
 
@@ -389,11 +391,8 @@ void runUploadTest(IDevice& device,
   //-------------------------------------
   // Create input texture and upload data
   //-------------------------------------
-  TextureDesc const texDesc = TextureDesc::new2D(format,
-                                                 kOffscreenTexWidth,
-                                                 kOffscreenTexHeight,
-                                                 TextureDesc::TextureUsageBits::Sampled |
-                                                     TextureDesc::TextureUsageBits::Attachment);
+  TextureDesc const texDesc = TextureDesc::new2D(
+      format, kOffscreenTexWidth, kOffscreenTexHeight, TextureDesc::TextureUsageBits::Sampled);
   auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(tex != nullptr);
@@ -413,13 +412,23 @@ void runUploadTest(IDevice& device,
 }
 } // namespace
 
-TEST_F(TextureFloatTest, Upload_RGBA) {
+TEST_F(TextureFloatTest, Upload_RGBA32) {
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RGBA_F32, kTextureDataRGBA.data());
-  if (iglDev_->getBackendType() != BackendType::Vulkan &&
-      iglDev_->getBackendType() != BackendType::Metal) {
-    runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RGB_F32, kTextureDataRGB.data());
+}
+
+TEST_F(TextureFloatTest, Upload_RGB32) {
+  if (iglDev_->getBackendType() == BackendType::Vulkan ||
+      iglDev_->getBackendType() == BackendType::Metal || opengl::DeviceFeatureSet::usesOpenGLES()) {
+    GTEST_SKIP() << "Skip due to lack of support for RGB";
   }
+  runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RGB_F32, kTextureDataRGB.data());
+}
+
+TEST_F(TextureFloatTest, Upload_RG32) {
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::RG_F32, kTextureDataRG.data());
+}
+
+TEST_F(TextureFloatTest, Upload_R32) {
   runUploadTest(*iglDev_, *cmdQueue_, igl::TextureFormat::R_F32, kTextureDataR.data());
 }
 
@@ -429,14 +438,24 @@ TEST_F(TextureFloatTest, Upload_RGBA) {
 // This test uses a simple shader to copy a layer of the input array texture to an
 // a output texture that matches the size of the input texture layer
 //
-TEST_F(TextureFloatTest, Passthrough_Sample) {
-  runPasthroughFormat(igl::TextureFormat::RGBA_F32, kTextureDataRGBA.data());
-  if (iglDev_->getBackendType() != BackendType::Vulkan &&
-      iglDev_->getBackendType() != BackendType::Metal) {
-    runPasthroughFormat(igl::TextureFormat::RGB_F32, kTextureDataRGB.data());
+TEST_F(TextureFloatTest, Passthrough_SampleRGBA32) {
+  runPassthroughFormat(igl::TextureFormat::RGBA_F32, kTextureDataRGBA.data());
+}
+
+TEST_F(TextureFloatTest, Passthrough_SampleRGB32) {
+  if (iglDev_->getBackendType() == BackendType::Vulkan ||
+      iglDev_->getBackendType() == BackendType::Metal || opengl::DeviceFeatureSet::usesOpenGLES()) {
+    GTEST_SKIP() << "Skip due to lack of support for RGB";
   }
-  runPasthroughFormat(igl::TextureFormat::RG_F32, kTextureDataRG.data());
-  runPasthroughFormat(igl::TextureFormat::R_F32, kTextureDataR.data());
+  runPassthroughFormat(igl::TextureFormat::RGB_F32, kTextureDataRGB.data());
+}
+
+TEST_F(TextureFloatTest, Passthrough_SampleRG32) {
+  runPassthroughFormat(igl::TextureFormat::RG_F32, kTextureDataRG.data());
+}
+
+TEST_F(TextureFloatTest, Passthrough_SampleR32) {
+  runPassthroughFormat(igl::TextureFormat::R_F32, kTextureDataR.data());
 }
 
 } // namespace igl::tests

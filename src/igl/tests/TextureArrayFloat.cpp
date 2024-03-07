@@ -358,12 +358,11 @@ void runUploadTest(IDevice& device,
   //-------------------------------------
   // Create input texture and upload data
   //-------------------------------------
-  const TextureDesc texDesc = TextureDesc::new2DArray(
-      TextureFormat::RGBA_F32,
-      kOffscreenTexWidth,
-      kOffscreenTexHeight,
-      kNumLayers,
-      TextureDesc::TextureUsageBits::Sampled | TextureDesc::TextureUsageBits::Attachment);
+  const TextureDesc texDesc = TextureDesc::new2DArray(TextureFormat::RGBA_F32,
+                                                      kOffscreenTexWidth,
+                                                      kOffscreenTexHeight,
+                                                      kNumLayers,
+                                                      TextureDesc::TextureUsageBits::Sampled);
   auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(tex != nullptr);
@@ -721,12 +720,8 @@ TEST_F(TextureArrayFloatTest, GetEstimatedSizeInBytes) {
   auto calcSize =
       [&](size_t width, size_t height, TextureFormat format, size_t numMipLevels) -> size_t {
     Result ret;
-    TextureDesc texDesc = TextureDesc::new2DArray(format,
-                                                  width,
-                                                  height,
-                                                  2,
-                                                  TextureDesc::TextureUsageBits::Sampled |
-                                                      TextureDesc::TextureUsageBits::Attachment);
+    TextureDesc texDesc =
+        TextureDesc::new2DArray(format, width, height, 2, TextureDesc::TextureUsageBits::Sampled);
     texDesc.numMipLevels = numMipLevels;
     auto texture = iglDev_->createTexture(texDesc, &ret);
     if (ret.code != Result::Code::Ok || texture == nullptr) {
@@ -784,12 +779,8 @@ TEST_F(TextureArrayFloatTest, GetRange) {
                            TextureFormat format,
                            size_t numMipLevels) -> std::shared_ptr<ITexture> {
     Result ret;
-    TextureDesc texDesc = TextureDesc::new2DArray(format,
-                                                  width,
-                                                  height,
-                                                  2,
-                                                  TextureDesc::TextureUsageBits::Sampled |
-                                                      TextureDesc::TextureUsageBits::Attachment);
+    TextureDesc texDesc =
+        TextureDesc::new2DArray(format, width, height, 2, TextureDesc::TextureUsageBits::Sampled);
     texDesc.numMipLevels = numMipLevels;
     auto texture = iglDev_->createTexture(texDesc, &ret);
     if (ret.code != Result::Code::Ok || texture == nullptr) {
