@@ -26,6 +26,7 @@ class XrSwapchainProvider;
 class XrAppImplVulkan final : public impl::XrAppImpl {
  public:
   std::vector<const char*> getXrRequiredExtensions() const override;
+  void* getInstanceCreateExtension() override;
   std::unique_ptr<igl::IDevice> initIGL(XrInstance instance, XrSystemId systemId) override;
   XrSession initXrSession(XrInstance instance, XrSystemId systemId, igl::IDevice& device) override;
   std::unique_ptr<impl::XrSwapchainProviderImpl> createSwapchainProviderImpl() const override;
@@ -36,6 +37,10 @@ class XrAppImplVulkan final : public impl::XrAppImpl {
  private:
   XrGraphicsRequirementsVulkanKHR graphicsRequirements_ = {
       .type = XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR,
+  };
+
+  XrInstanceCreateInfoAndroidKHR instanceCreateInfoAndroid_ = {
+      .type = XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR,
   };
 
   std::vector<const char*> requiredVkInstanceExtensions_;

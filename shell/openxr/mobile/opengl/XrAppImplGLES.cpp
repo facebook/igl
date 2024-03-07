@@ -20,7 +20,12 @@ std::vector<const char*> XrAppImplGLES::getXrRequiredExtensions() const {
   return {
       XR_KHR_OPENGL_ES_ENABLE_EXTENSION_NAME,
       XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
+      XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME
   };
+}
+
+void* XrAppImplGLES::getInstanceCreateExtension() {
+    return &instanceCreateInfoAndroid_;
 }
 
 std::unique_ptr<igl::IDevice> XrAppImplGLES::initIGL(XrInstance instance, XrSystemId systemId) {

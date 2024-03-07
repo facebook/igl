@@ -26,6 +26,10 @@ std::vector<const char*> XrAppImplVulkan::getXrRequiredExtensions() const {
   };
 }
 
+void* XrAppImplVulkan::getInstanceCreateExtension() {
+    return &instanceCreateInfoAndroid_;
+}
+
 std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSystemId systemId) {
   // Get the API requirements.
   PFN_xrGetVulkanGraphicsRequirementsKHR pfnGetVulkanGraphicsRequirementsKHR = NULL;

@@ -20,6 +20,7 @@ class XrAppImpl {
  public:
   virtual ~XrAppImpl() = default;
   virtual std::vector<const char*> getXrRequiredExtensions() const = 0;
+  virtual void* getInstanceCreateExtension() = 0;
   virtual std::unique_ptr<igl::IDevice> initIGL(XrInstance instance, XrSystemId systemId) = 0;
   virtual XrSession initXrSession(XrInstance instance,
                                   XrSystemId systemId,
