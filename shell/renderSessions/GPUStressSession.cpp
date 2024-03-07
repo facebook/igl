@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <future>
+#include <cmath>
 #include <glm/detail/qualifier.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <igl/NameHandle.h>
