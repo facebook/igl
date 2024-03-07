@@ -8,6 +8,7 @@
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <future>
