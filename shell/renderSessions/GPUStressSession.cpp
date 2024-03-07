@@ -486,7 +486,7 @@ void getOffset(int counter, float& x, float& y, float& z) {
     z *= counter / 2.f;
     return;
   }
-  const float grid = std::ceilf(powf(kCubeCount, 1.0f / 3.0f));
+  const float grid = std::ceilf(std::powf(kCubeCount, 1.0f / 3.0f));
   const int igrid = (int)grid;
   const float fgrid = static_cast<float>(igrid);
   x = 2.1f * half * static_cast<float>((counter % igrid) - grid / 2);
@@ -513,7 +513,7 @@ void GPUStressSession::createCubes() {
   if (vertexData0.size() == 8) {
     addNormalsToCube(); // setup for lighting if appropriate
 
-    const float grid = std::ceilf(powf(kCubeCount, 1.0f / 3.0f));
+    const float grid = std::ceilf(std::powf(kCubeCount, 1.0f / 3.0f));
 
     const int vertexCount = vertexData0.size();
     const int indexCount = indexData.size();
