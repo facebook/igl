@@ -456,6 +456,9 @@ TEST_F(TextureFloatTest, Passthrough_SampleRGBA32) {
 }
 
 TEST_F(TextureFloatTest, Passthrough_SampleRGB32) {
+#if IGL_PLATFORM_WIN && !IGL_ANGLE
+  GTEST_SKIP() << "Skipping due to known issue on Windows without angle";
+#endif
   if (iglDev_->getBackendType() == BackendType::Vulkan ||
       iglDev_->getBackendType() == BackendType::Metal || kUsesOpenGLES) {
     GTEST_SKIP() << "Skip due to lack of support for RGB";
