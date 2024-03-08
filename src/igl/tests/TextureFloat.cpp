@@ -204,6 +204,13 @@ class TextureFloatTest : public ::testing::Test {
       return;
     }
 
+// Those tests just crash on macos but run fine on android opengles
+#if IGL_PLATFORM_MACOS || IGL_PLATFORM_IOS_SIMULATOR
+    if (iglDev_->getBackendType() == BackendType::OpenGL || kUsesOpenGLES) {
+      GTEST_SKIP() << "Skip due to lack of support for OpenGL on Macos";
+    }
+#endif
+
     Result ret;
     createPassthroughFrameBuffer(igl::TextureFormat::RGBA_F32);
 
