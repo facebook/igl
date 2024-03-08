@@ -112,7 +112,7 @@ TEST_F(VulkanImageTest, CreateImageWithExportedMemory) {
   EXPECT_TRUE(vulkanImage->isExported_);
 #if IGL_PLATFORM_WIN
   EXPECT_NE(vulkanImage->exportedMemoryHandle_, nullptr);
-  EXPECT_NE(vulkanImage->getVkImage(), reinterpret_cast<VkImage_T*>(VK_NULL_HANDLE));
+  EXPECT_NE(vulkanImage->getVkImage(), static_cast<VkImage_T*>(VK_NULL_HANDLE));
 #elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
   EXPECT_NE(vulkanImage->exportedFd_, -1);
   EXPECT_NE(vulkanImage->getVkImage(), VK_NULL_HANDLE);
@@ -152,7 +152,7 @@ TEST_F(VulkanImageTest, CreateImageWithImportedMemoryWin32) {
                                VK_SAMPLE_COUNT_1_BIT,
                                "Image: vulkan import memory");
   EXPECT_TRUE(importedImage.isImported_);
-  EXPECT_NE(importedImage.getVkImage(), reinterpret_cast<VkImage_T*>(VK_NULL_HANDLE));
+  EXPECT_NE(importedImage.getVkImage(), static_cast<VkImage_T*>(VK_NULL_HANDLE));
 }
 #endif // IGL_PLATFORM_WIN
 
