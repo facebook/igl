@@ -57,3 +57,9 @@ target_sources(IGLUimgui PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/img
 target_sources(IGLUimgui PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_widgets.cpp")
 target_include_directories(IGLUimgui PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/imgui")
 target_include_directories(IGLUtexture_accessor PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/glew/include")
+
+if(UNIX)
+  if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(IGLUimgui PUBLIC "-Wno-volatile")
+  endif()
+endif()

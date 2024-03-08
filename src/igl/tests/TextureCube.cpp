@@ -687,7 +687,7 @@ TEST_F(TextureCubeTest, GetRange) {
                : TextureRangeDesc{};
   };
   auto rangesAreEqual = [&](const TextureRangeDesc& a, const TextureRangeDesc& b) -> bool {
-    return std::memcmp(&a, &b, sizeof(TextureRangeDesc)) == 0;
+    return memcmp(&a, &b, sizeof(TextureRangeDesc)) == 0;
   };
   const auto format = iglDev_->getBackendType() == BackendType::OpenGL
                           ? TextureFormat::R5G5B5A1_UNorm
