@@ -5,29 +5,40 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <IGLU/imgui/Session.h>
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 
+// some functions are not in the `std` namespace on Ubuntu (GitHub CI)
+// @lint-ignore CLANGTIDY
+#include <math.h>
+// @lint-ignore CLANGTIDY
+#include <stdint.h>
+// @lint-ignore CLANGTIDY
+#include <stdlib.h>
+
 #include <chrono>
-#include <cmath>
-#include <cstdint>
-#include <cstdlib>
+#include <cstddef>
+#include <cstdio>
 #include <future>
+#include <memory>
+#include <random>
+
 #include <glm/detail/qualifier.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
+#include <glm/geometric.hpp>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/RenderCommandEncoder.h>
-#include <random>
 #include <shell/renderSessions/GPUStressSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || (defined(__clang__) && IGL_PLATFORM_LINUX)
 static uint32_t arc4random(void) {
   return static_cast<uint32_t>(rand());
 }
-#endif // _MSC_VER
+#endif
 
 namespace igl::shell {
 
@@ -368,7 +379,7 @@ double calcPi(int numberOfDivisions) {
   double pi = 0.0;
   for (int i = 0; i <= numberOfDivisions; ++i) {
     double const numerator = 1.0;
-    double const denominator = std::sqrt(1.0 + std::pow(-1.0, i));
+    double const denominator = sqrt(1.0 + pow(-1.0, i));
     if (denominator > 0.f) {
       pi += numerator / denominator;
     }
@@ -487,7 +498,7 @@ void getOffset(int counter, float& x, float& y, float& z) {
     z *= counter / 2.f;
     return;
   }
-  const float grid = std::ceilf(std::powf(kCubeCount, 1.0f / 3.0f));
+  const float grid = ceilf(powf(kCubeCount, 1.0f / 3.0f));
   const int igrid = (int)grid;
   const float fgrid = static_cast<float>(igrid);
   x = 2.1f * half * static_cast<float>((counter % igrid) - grid / 2);
@@ -514,7 +525,7 @@ void GPUStressSession::createCubes() {
   if (vertexData0.size() == 8) {
     addNormalsToCube(); // setup for lighting if appropriate
 
-    const float grid = std::ceilf(std::powf(kCubeCount, 1.0f / 3.0f));
+    const float grid = ceilf(powf(kCubeCount, 1.0f / 3.0f));
 
     const int vertexCount = vertexData0.size();
     const int indexCount = indexData.size();
@@ -649,10 +660,10 @@ void GPUStressSession::setModelViewMatrix(float angle,
                                           float offsetX,
                                           float offsetY,
                                           float offsetZ) {
-  float const divisor = std::sqrt(static_cast<float>(kDrawCount));
+  float const divisor = sqrtf(static_cast<float>(kDrawCount));
 
-  float const cosAngle = std::cos(angle);
-  float const sinAngle = std::sin(angle);
+  float const cosAngle = cosf(angle);
+  float const sinAngle = sinf(angle);
   glm::vec4 const v0(cosAngle / divisor, 0.f, -sinAngle / divisor, 0.f);
   glm::vec4 const v1(0.f, 1.f / divisor, 0.f, 0.f);
   glm::vec4 const v2(sinAngle / divisor, 0.f, cosAngle / divisor, 0.f);
@@ -768,7 +779,7 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
   auto& device = getPlatform().getDevice();
   // cube animation
   constexpr uint32_t textureUnit = 0;
-  const int grid = static_cast<int>(std::ceil(std::sqrt(static_cast<float>(kDrawCount))));
+  const int grid = static_cast<int>(ceil(sqrt(static_cast<float>(kDrawCount))));
   float const divisor = .5 / static_cast<float>(grid);
 
   int counter = 0;
