@@ -442,4 +442,14 @@
     return IGL_TO_STRING(res);
 #endif // IGL_ENUM_TO_STRING
 
+// Define this to 1 to enable shader dumping. Currently only the Vulkan Device supports it.
+// It will dump the SPIR-V code into files in the specified path below in
+// Device::createShaderModule(...)
 #define IGL_SHADER_DUMP 0
+
+// Replace IGL_SHADER_DUMP_PATH with your own path according to the platform
+// Ex. for Android your filepath should be specific to the package name:
+// "/sdcard/Android/data/<packageName>/files/"
+// @fb-only An example path used with the CodecAvatars app:
+// @fb-only "/sdcard/Android/data/com.meta.ar.codecavatars/files/"
+#define IGL_SHADER_DUMP_PATH "/path/to/output/file/"
