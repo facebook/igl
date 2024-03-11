@@ -19,8 +19,7 @@
   <application
       android:allowBackup="false"
       android:fullBackupContent="false"
-      android:label="IGL Shell OpenXR Vulkan"
-      android:debuggable="true">
+      android:label="IGL Shell OpenXR Vulkan">
     <activity android:name="android.app.NativeActivity"
               android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
               android:launchMode="singleTask"
