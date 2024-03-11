@@ -38,6 +38,11 @@ class XrAppImplVulkan final : public impl::XrAppImpl {
   XrGraphicsRequirementsVulkanKHR graphicsRequirements_ = {
       .type = XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR,
   };
+#if defined(IGL_CMAKE_BUILD)
+  XrInstanceCreateInfoAndroidKHR instanceCreateInfoAndroid_ = {
+      .type = XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR,
+  };
+#endif // IGL_CMAKE_BUILD
 
   XrInstanceCreateInfoAndroidKHR instanceCreateInfoAndroid_ = {
       .type = XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR,
