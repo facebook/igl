@@ -26,6 +26,7 @@ namespace igl::shell::openxr::desktop {
 class XrAppImplVulkan final : public impl::XrAppImpl {
  public:
   std::vector<const char*> getXrRequiredExtensions() const override;
+  void* getInstanceCreateExtension() override;
   std::unique_ptr<igl::IDevice> initIGL(XrInstance instance, XrSystemId systemId) override;
   XrSession initXrSession(XrInstance instance, XrSystemId systemId, igl::IDevice& device) override;
   std::unique_ptr<impl::XrSwapchainProviderImpl> createSwapchainProviderImpl() const override;

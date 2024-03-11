@@ -133,6 +133,7 @@ bool XrApp::createInstance() {
 
   XrInstanceCreateInfo instanceCreateInfo = {
       .type = XR_TYPE_INSTANCE_CREATE_INFO,
+      .next = impl_->getInstanceCreateExtension(),
       .createFlags = 0,
       .applicationInfo = appInfo,
       .enabledApiLayerCount = 0,

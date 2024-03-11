@@ -18,9 +18,19 @@
 namespace igl::shell::openxr::mobile {
 std::vector<const char*> XrAppImplGLES::getXrRequiredExtensions() const {
   return {
-      XR_KHR_OPENGL_ES_ENABLE_EXTENSION_NAME,
-      XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
+    XR_KHR_OPENGL_ES_ENABLE_EXTENSION_NAME, XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
+#if defined(IGL_CMAKE_BUILD)
+        XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME,
+#endif
   };
+}
+
+void* XrAppImplGLES::getInstanceCreateExtension() {
+#if defined(IGL_CMAKE_BUILD)
+  return &instanceCreateInfoAndroid_;
+#else
+  return nullptr;
+#endif
 }
 
 std::unique_ptr<igl::IDevice> XrAppImplGLES::initIGL(XrInstance instance, XrSystemId systemId) {

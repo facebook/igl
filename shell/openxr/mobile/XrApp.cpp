@@ -168,6 +168,7 @@ bool XrApp::createInstance() {
 
   XrInstanceCreateInfo instanceCreateInfo = {
       .type = XR_TYPE_INSTANCE_CREATE_INFO,
+      .next = impl_->getInstanceCreateExtension(),
       .createFlags = 0,
       .applicationInfo = appInfo,
       .enabledApiLayerCount = 0,
@@ -426,6 +427,14 @@ bool XrApp::initialize(const struct android_app* app) {
     return false;
   }
 
+  XrInstanceCreateInfoAndroidKHR* instanceCreateInfoAndroid_ptr =
+      (XrInstanceCreateInfoAndroidKHR*)impl_->getInstanceCreateExtension();
+
+  if (instanceCreateInfoAndroid_ptr) {
+    instanceCreateInfoAndroid_ptr->applicationVM = app->activity->vm;
+    instanceCreateInfoAndroid_ptr->applicationActivity = app->activity->clazz;
+  }
+
   if (!createInstance()) {
     return false;
   }
@@ -569,7 +578,9 @@ void XrApp::handleXrEvents() {
 
 void XrApp::handleSessionStateChanges(XrSessionState state) {
   if (state == XR_SESSION_STATE_READY) {
+#if !defined(IGL_CMAKE_BUILD)
     assert(resumed_);
+#endif // IGL_CMAKE_BUILD
     assert(sessionActive_ == false);
 
     XrSessionBeginInfo sessionBeginInfo{
