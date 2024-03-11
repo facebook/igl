@@ -256,10 +256,9 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* data,
   for (int i = 0; i < (length / sizeof(uint32_t)); i++) {
     hash ^= std::hash<uint32_t>()(words[i]);
   }
-  // Replace filename with your own path according to the platform and recompile.
-  // Ex. for Android your filepath should be specific to the package name:
-  // /sdcard/Android/data/<packageName>/files/
-  std::string filename = IGL_FORMAT("{}{}{}.spv", PATH_HERE, debugName, std::to_string(hash));
+  std::string filename =
+      IGL_FORMAT("{}{}{}.spv", IGL_SHADER_DUMP_PATH, debugName, std::to_string(hash));
+  IGL_LOG_INFO("Dumping shader to: %s", filename.c_str());
   if (!std::filesystem::exists(filename)) {
     std::ofstream spirvFile;
     spirvFile.open(filename, std::ios::out | std::ios::binary);

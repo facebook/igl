@@ -710,28 +710,19 @@ void XrApp::endFrame(XrFrameState frameState) {
     }
   }
 
-  std::array<XrCompositionLayerProjectionView, kNumViews> projectionViews;
-  std::array<XrCompositionLayerDepthInfoKHR, kNumViews> depthInfos;
-
-  [[maybe_unused]] XrCompositionLayerProjection projection = {
-      XR_TYPE_COMPOSITION_LAYER_PROJECTION,
-      nullptr,
-      XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT,
-      currentSpace_,
-      static_cast<uint32_t>(kNumViews),
-      projectionViews.data(),
-  };
+  std::array<XrCompositionLayerProjectionView, kNumViews> projectionViews{};
+  std::array<XrCompositionLayerDepthInfoKHR, kNumViews> depthInfos{};
 
   for (size_t i = 0; i < kNumViews; i++) {
+    depthInfos[i] = {
+        XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR,
+        nullptr,
+    };
     projectionViews[i] = {
         XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW,
         &depthInfos[i],
         viewStagePoses_[i],
         views_[i].fov,
-    };
-    depthInfos[i] = {
-        XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR,
-        nullptr,
     };
     XrRect2Di imageRect = {{0, 0},
                            {
@@ -760,7 +751,6 @@ void XrApp::endFrame(XrFrameState frameState) {
     }
   }
 
-  XrFrameEndInfo endFrameInfo;
   if (useQuadLayerComposition_) {
     std::array<const XrCompositionLayerBaseHeader*, kNumViews + 1> layers{};
     uint32_t layerIndex = 0;
@@ -777,27 +767,38 @@ void XrApp::endFrame(XrFrameState frameState) {
       layers[layerIndex++] = (const XrCompositionLayerBaseHeader*)&quadLayers[i];
     }
 
-    endFrameInfo = {XR_TYPE_FRAME_END_INFO,
-                    nullptr,
-                    frameState.predictedDisplayTime,
-                    additiveBlendingSupported_ ? XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
-                                               : XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
-                    layerIndex,
-                    layers.data()};
+    const XrFrameEndInfo endFrameInfo = {XR_TYPE_FRAME_END_INFO,
+                                         nullptr,
+                                         frameState.predictedDisplayTime,
+                                         additiveBlendingSupported_
+                                             ? XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
+                                             : XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
+                                         layerIndex,
+                                         layers.data()};
+    XR_CHECK(xrEndFrame(session_, &endFrameInfo));
   } else {
+    XrCompositionLayerProjection projection = {
+        XR_TYPE_COMPOSITION_LAYER_PROJECTION,
+        nullptr,
+        XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT,
+        currentSpace_,
+        static_cast<uint32_t>(kNumViews),
+        projectionViews.data(),
+    };
+
     const XrCompositionLayerBaseHeader* const layers[] = {
         (const XrCompositionLayerBaseHeader*)&projection,
     };
-    endFrameInfo = {XR_TYPE_FRAME_END_INFO,
-                    nullptr,
-                    frameState.predictedDisplayTime,
-                    additiveBlendingSupported_ ? XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
-                                               : XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
-                    1,
-                    layers};
+    const XrFrameEndInfo endFrameInfo = {XR_TYPE_FRAME_END_INFO,
+                                         nullptr,
+                                         frameState.predictedDisplayTime,
+                                         additiveBlendingSupported_
+                                             ? XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
+                                             : XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
+                                         1,
+                                         layers};
+    XR_CHECK(xrEndFrame(session_, &endFrameInfo));
   }
-
-  XR_CHECK(xrEndFrame(session_, &endFrameInfo));
 }
 
 void XrApp::update() {
