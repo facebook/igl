@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <chrono>
 #include <string>
 
 #include <android/asset_manager.h>
@@ -79,6 +80,11 @@ inline Pose poseFromXrPose(const XrPosef& pose) noexcept {
       /*.orientation = */ glmQuatFromXrQuat(pose.orientation),
       /*.position = */ glmVecFromXrVec(pose.position),
   };
+}
+
+inline int64_t currentTimeInNs() {
+  const auto now = std::chrono::steady_clock::now();
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
 }
 } // namespace
 
@@ -455,6 +461,70 @@ void XrApp::updateHandMeshes() {
   }
 }
 
+void XrApp::updateHandTracking() {
+  auto& handTracking = shellParams_->handTracking;
+
+  XrResult result;
+  XrHandTrackerEXT trackers[] = {leftHandTracker_, rightHandTracker_};
+  for (uint8_t i = 0; i < 2; ++i) {
+    XrHandJointLocationEXT jointLocations[XR_HAND_JOINT_COUNT_EXT];
+    XrHandJointVelocityEXT jointVelocities[XR_HAND_JOINT_COUNT_EXT];
+
+    XrHandJointVelocitiesEXT velocities{.type = XR_TYPE_HAND_JOINT_VELOCITIES_EXT,
+                                        .next = nullptr,
+                                        .jointCount = XR_HAND_JOINT_COUNT_EXT,
+                                        .jointVelocities = jointVelocities};
+
+    XrHandJointLocationsEXT locations{.type = XR_TYPE_HAND_JOINT_LOCATIONS_EXT,
+                                      .next = &velocities,
+                                      .jointCount = XR_HAND_JOINT_COUNT_EXT,
+                                      .jointLocations = jointLocations};
+
+    XrHandJointsMotionRangeInfoEXT motionRangeInfo{XR_TYPE_HAND_JOINTS_MOTION_RANGE_INFO_EXT};
+    motionRangeInfo.handJointsMotionRange =
+        XR_HAND_JOINTS_MOTION_RANGE_CONFORMING_TO_CONTROLLER_EXT;
+
+    const XrHandJointsLocateInfoEXT locateInfo{.type = XR_TYPE_HAND_JOINTS_LOCATE_INFO_EXT,
+                                               .next = &motionRangeInfo,
+                                               .baseSpace = currentSpace_,
+                                               .time = currentTimeInNs()};
+
+    handTracking[i].jointPose.resize(XR_HAND_JOINT_COUNT_EXT);
+    handTracking[i].jointVelocity.resize(XR_HAND_JOINT_COUNT_EXT);
+    handTracking[i].isJointTracked.resize(XR_HAND_JOINT_COUNT_EXT);
+
+    XR_CHECK(result = xrLocateHandJointsEXT_(trackers[i], &locateInfo, &locations));
+    if (result != XR_SUCCESS) {
+      for (size_t jointIndex = 0; jointIndex < XR_HAND_JOINT_COUNT_EXT; ++jointIndex) {
+        handTracking[i].isJointTracked[jointIndex] = false;
+      }
+      continue;
+    }
+
+    if (!locations.isActive) {
+      for (size_t jointIndex = 0; jointIndex < XR_HAND_JOINT_COUNT_EXT; ++jointIndex) {
+        handTracking[i].isJointTracked[jointIndex] = false;
+      }
+      continue;
+    }
+
+    constexpr XrSpaceLocationFlags isValid =
+        XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_POSITION_VALID_BIT;
+    for (size_t jointIndex = 0; jointIndex < XR_HAND_JOINT_COUNT_EXT; ++jointIndex) {
+      if ((jointLocations[jointIndex].locationFlags & isValid) != 0) {
+        handTracking[i].jointPose[jointIndex] = poseFromXrPose(jointLocations[jointIndex].pose);
+        handTracking[i].jointVelocity[jointIndex].linear =
+            glmVecFromXrVec(jointVelocities[jointIndex].linearVelocity);
+        handTracking[i].jointVelocity[jointIndex].angular =
+            glmVecFromXrVec(jointVelocities[jointIndex].angularVelocity);
+        handTracking[i].isJointTracked[jointIndex] = true;
+      } else {
+        handTracking[i].isJointTracked[jointIndex] = false;
+      }
+    }
+  }
+}
+
 bool XrApp::enumerateViewConfigurations() {
   uint32_t numViewConfigs = 0;
   XR_CHECK(xrEnumerateViewConfigurations(instance_, systemId_, 0, &numViewConfigs, nullptr));
@@ -824,6 +894,10 @@ XrFrameState XrApp::beginFrame() {
     XrMatrix4x4f_CreateFromRigidTransform(&xrMat4, &viewTransformXrPosef);
     viewTransforms_[i] = glm::make_mat4(xrMat4.m);
     cameraPositions_[i] = glm::vec3(eyePose.position.x, eyePose.position.y, eyePose.position.z);
+  }
+
+  if (handsTrackingSupported_) {
+    updateHandTracking();
   }
 
   return frameState;

@@ -97,6 +97,7 @@ class XrApp {
   bool createPassthrough();
   bool createHandsTracking();
   void updateHandMeshes();
+  void updateHandTracking();
   bool enumerateViewConfigurations();
   void enumerateReferenceSpaces();
   void enumerateBlendModes();
