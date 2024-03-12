@@ -149,10 +149,26 @@ ShaderUniforms::~ShaderUniforms() {
   }
 }
 
+igl::NameHandle ShaderUniforms::MemoizedQualifiedMemberNameCalculator::getQualifiedMemberName(
+    const igl::NameHandle& blockTypeName,
+    const igl::NameHandle& blockInstanceName,
+    const igl::NameHandle& memberName) const {
+  std::pair<igl::NameHandle, igl::NameHandle> key = {blockInstanceName, memberName};
+  auto it = qualifiedMemberNameCache_.find(key);
+  if (it != qualifiedMemberNameCache_.end()) {
+    return it->second;
+  }
+  auto qualifiedMemberName =
+      igl::genNameHandle(blockInstanceName.toString() + "." + memberName.toString());
+  qualifiedMemberNameCache_.insert({key, qualifiedMemberName});
+  return qualifiedMemberName;
+}
+
 igl::NameHandle ShaderUniforms::getQualifiedMemberName(const igl::NameHandle& blockTypeName,
                                                        const igl::NameHandle& blockInstanceName,
                                                        const igl::NameHandle& memberName) {
-  return igl::genNameHandle(blockInstanceName.toString() + "." + memberName.toString());
+  return memoizedQualifiedMemberNameCalculator_.getQualifiedMemberName(
+      blockTypeName, blockInstanceName, memberName);
 }
 
 std::vector<std::pair<igl::NameHandle, igl::NameHandle>>

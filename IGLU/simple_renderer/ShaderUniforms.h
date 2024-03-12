@@ -19,6 +19,7 @@
 
 namespace iglu {
 namespace material {
+class MemoizedQualifiedMemberNameCalculator;
 
 /// Handles allocation, updating and binding of shader uniforms. It uses reflection
 /// information to generate the underlying data and provides a simple API to manipulate it.
@@ -235,9 +236,20 @@ class ShaderUniforms final {
                        const igl::NameHandle& blockInstanceName,
                        const igl::NameHandle& memberName);
 
-  static igl::NameHandle getQualifiedMemberName(const igl::NameHandle& blockTypeName,
-                                                const igl::NameHandle& blockInstanceName,
-                                                const igl::NameHandle& memberName);
+  class MemoizedQualifiedMemberNameCalculator {
+   public:
+    igl::NameHandle getQualifiedMemberName(const igl::NameHandle& blockTypeName,
+                                           const igl::NameHandle& blockInstanceName,
+                                           const igl::NameHandle& memberName) const;
+
+   private:
+    mutable std::unordered_map<std::pair<igl::NameHandle, igl::NameHandle>, igl::NameHandle>
+        qualifiedMemberNameCache_;
+  };
+
+  igl::NameHandle getQualifiedMemberName(const igl::NameHandle& blockTypeName,
+                                         const igl::NameHandle& blockInstanceName,
+                                         const igl::NameHandle& memberName);
 
   ShaderUniforms(igl::IDevice& device, const igl::IRenderPipelineReflection& reflection);
   ~ShaderUniforms();
@@ -278,6 +290,8 @@ class ShaderUniforms final {
   std::unordered_multimap<igl::NameHandle, std::shared_ptr<BufferDesc>> _bufferDescs;
 
   std::unordered_multimap<igl::NameHandle, UniformDesc> _allUniformsByName;
+
+  MemoizedQualifiedMemberNameCalculator memoizedQualifiedMemberNameCalculator_;
 
   struct TextureSlot {
     std::shared_ptr<igl::ITexture> texture;

@@ -245,6 +245,14 @@ struct hash<igl::NameHandle> {
 };
 
 template<>
+struct hash<std::pair<igl::NameHandle, igl::NameHandle>> {
+  size_t operator()(std::pair<igl::NameHandle, igl::NameHandle> const& key) const {
+    return std::hash<uint32_t>()(key.first.getCrc32()) ^
+           std::hash<uint32_t>()(key.second.getCrc32());
+  }
+};
+
+template<>
 struct hash<std::vector<igl::NameHandle>> {
   size_t operator()(std::vector<igl::NameHandle> const& key) const;
 };
