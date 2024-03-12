@@ -127,7 +127,7 @@ using namespace igl;
 // @fb-only
   // @fb-only
   IGL_ASSERT(fabs(shellParams_.nativeSurfaceDimensions.y / shellParams_.viewportSize.y -
-                  pixelsPerPoint) < FLT_EPSILON);
+                  // @fb-only
 // @fb-only
   // draw
   session_->update(std::move(surfaceTextures));
