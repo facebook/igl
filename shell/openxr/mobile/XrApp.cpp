@@ -652,6 +652,8 @@ bool XrApp::initialize(const struct android_app* app) {
   }
   updateHandMeshes();
 
+  IGL_ASSERT(renderSession_ != nullptr);
+  renderSession_->initialize();
   initialized_ = true;
 
   return initialized_;
@@ -669,7 +671,6 @@ void XrApp::createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManag
                                                   : RenderMode::DualPassStereo;
   shellParams_->viewParams.resize(useSinglePassStereo_ ? 2 : 1);
   renderSession_->setShellParams(*shellParams_);
-  renderSession_->initialize();
 }
 
 void XrApp::createSpaces() {
