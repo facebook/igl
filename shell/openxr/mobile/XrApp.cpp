@@ -139,36 +139,45 @@ bool XrApp::checkExtensions() {
     }
   }
 
-  passthroughSupported_ = std::any_of(
-      std::begin(extensions_), std::end(extensions_), [](const XrExtensionProperties& extension) {
-        return strcmp(extension.extensionName, XR_FB_PASSTHROUGH_EXTENSION_NAME) == 0;
-      });
+  auto checkExtensionSupported = [this](const char* name) {
+    return std::any_of(std::begin(extensions_),
+                       std::end(extensions_),
+                       [&](const XrExtensionProperties& extension) {
+                         return strcmp(extension.extensionName, name) == 0;
+                       });
+  };
+
+  passthroughSupported_ = checkExtensionSupported(XR_FB_PASSTHROUGH_EXTENSION_NAME);
   IGL_LOG_INFO("Passthrough is %s", stageSpaceSupported_ ? "supported" : "not supported");
 
+  auto checkNeedRequiredExtension = [this](const char* name) {
+    return std::find_if(std::begin(requiredExtensions_),
+                        std::end(requiredExtensions_),
+                        [&](const char* extensionName) {
+                          return strcmp(extensionName, name) == 0;
+                        }) == std::end(requiredExtensions_);
+  };
+
   // Add passthough extension if supported.
-  if (passthroughSupported_ && std::find_if(std::begin(requiredExtensions_),
-                                            std::end(requiredExtensions_),
-                                            [](const char* extensionName) {
-                                              return strcmp(extensionName,
-                                                            XR_FB_PASSTHROUGH_EXTENSION_NAME) == 0;
-                                            }) == std::end(requiredExtensions_)) {
+  if (passthroughSupported_ && checkNeedRequiredExtension(XR_FB_PASSTHROUGH_EXTENSION_NAME)) {
     requiredExtensions_.push_back(XR_FB_PASSTHROUGH_EXTENSION_NAME);
   }
 
-  handsTrackingSupported_ = std::any_of(
-      std::begin(extensions_), std::end(extensions_), [](const XrExtensionProperties& extension) {
-        return strcmp(extension.extensionName, XR_EXT_HAND_TRACKING_EXTENSION_NAME) == 0;
-      });
+  handsTrackingSupported_ = checkExtensionSupported(XR_EXT_HAND_TRACKING_EXTENSION_NAME);
   IGL_LOG_INFO("Hands tracking is %s", handsTrackingSupported_ ? "supported" : "not supported");
 
+  handsTrackingMeshSupported_ = checkExtensionSupported(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME);
+  IGL_LOG_INFO("Hands tracking mesh is %s",
+               handsTrackingMeshSupported_ ? "supported" : "not supported");
+
   // Add hands tracking extension if supported.
-  if (handsTrackingSupported_ &&
-      std::find_if(std::begin(requiredExtensions_),
-                   std::end(requiredExtensions_),
-                   [](const char* extensionName) {
-                     return strcmp(extensionName, XR_EXT_HAND_TRACKING_EXTENSION_NAME) == 0;
-                   }) == std::end(requiredExtensions_)) {
+  if (handsTrackingSupported_ && checkNeedRequiredExtension(XR_EXT_HAND_TRACKING_EXTENSION_NAME)) {
     requiredExtensions_.push_back(XR_EXT_HAND_TRACKING_EXTENSION_NAME);
+
+    if (handsTrackingMeshSupported_ &&
+        checkNeedRequiredExtension(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME)) {
+      requiredExtensions_.push_back(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME);
+    }
   }
 
   return true;
@@ -235,6 +244,11 @@ bool XrApp::createInstance() {
     XR_CHECK(xrGetInstanceProcAddr(
         instance_, "xrLocateHandJointsEXT", (PFN_xrVoidFunction*)(&xrLocateHandJointsEXT_)));
     IGL_ASSERT(xrLocateHandJointsEXT_ != nullptr);
+    if (handsTrackingMeshSupported_) {
+      XR_CHECK(xrGetInstanceProcAddr(
+          instance_, "xrGetHandMeshFB", (PFN_xrVoidFunction*)(&xrGetHandMeshFB_)));
+      IGL_ASSERT(xrGetHandMeshFB_ != nullptr);
+    }
   }
 
   return true;

@@ -161,9 +161,11 @@ class XrApp {
   PFN_xrPassthroughLayerSetStyleFB xrPassthroughLayerSetStyleFB_ = nullptr;
 
   bool handsTrackingSupported_ = false;
+  bool handsTrackingMeshSupported_ = false;
   PFN_xrCreateHandTrackerEXT xrCreateHandTrackerEXT_ = nullptr;
   PFN_xrDestroyHandTrackerEXT xrDestroyHandTrackerEXT_ = nullptr;
   PFN_xrLocateHandJointsEXT xrLocateHandJointsEXT_ = nullptr;
+  PFN_xrGetHandMeshFB xrGetHandMeshFB_ = nullptr;
 
   std::unique_ptr<impl::XrAppImpl> impl_;
 
