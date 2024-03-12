@@ -7,11 +7,13 @@
 
 #pragma once
 
+#include <array>
 #include <optional>
 #include <vector>
 
 #include <igl/Common.h>
 #include <igl/TextureFormat.h>
+#include <shell/shared/renderSession/Hands.h>
 #include <shell/shared/renderSession/RenderMode.h>
 #include <shell/shared/renderSession/ViewParams.h>
 
@@ -26,5 +28,7 @@ struct ShellParams {
   float viewportScale = 1.f; // TODO: remove???
   bool shouldPresent = true;
   std::optional<igl::Color> clearColorValue = {};
+  std::array<HandMesh, 2> handMeshes = {};
+  std::array<HandTracking, 2> handTracking = {};
 };
 } // namespace igl::shell

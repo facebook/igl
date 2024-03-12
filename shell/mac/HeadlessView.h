@@ -10,5 +10,7 @@
 @interface HeadlessView : NSView {
 }
 
-- (void)setViewController:(NSViewController*)newController;
+- (void)startTimer;
+- (void)stopTimer;
+- (void)prepareHeadless;
 @end

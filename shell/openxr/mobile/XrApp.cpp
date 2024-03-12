@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <chrono>
 #include <string>
 
 #include <android/asset_manager.h>
@@ -53,6 +54,40 @@ constexpr auto kAppName = "IGL Shell OpenXR";
 constexpr auto kEngineName = "IGL";
 constexpr auto kSupportedViewConfigType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
 
+namespace {
+inline glm::quat glmQuatFromXrQuat(const XrQuaternionf& quat) noexcept {
+  return glm::quat(quat.w, quat.x, quat.y, quat.z);
+}
+
+inline glm::vec4 glmVecFromXrVec(const XrVector4f& vec) noexcept {
+  return glm::vec4(vec.x, vec.y, vec.z, vec.w);
+}
+
+inline glm::vec4 glmVecFromXrVec(const XrVector4sFB& vec) noexcept {
+  return glm::vec4(vec.x, vec.y, vec.z, vec.w);
+}
+
+inline glm::vec3 glmVecFromXrVec(const XrVector3f& vec) noexcept {
+  return glm::vec3(vec.x, vec.y, vec.z);
+}
+
+inline glm::vec2 glmVecFromXrVec(const XrVector2f& vec) noexcept {
+  return glm::vec2(vec.x, vec.y);
+}
+
+inline Pose poseFromXrPose(const XrPosef& pose) noexcept {
+  return Pose{
+      /*.orientation = */ glmQuatFromXrQuat(pose.orientation),
+      /*.position = */ glmVecFromXrVec(pose.position),
+  };
+}
+
+inline int64_t currentTimeInNs() {
+  const auto now = std::chrono::steady_clock::now();
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+}
+} // namespace
+
 XrApp::XrApp(std::unique_ptr<impl::XrAppImpl>&& impl) :
   requiredExtensions_({
 #if USE_VULKAN_BACKEND
@@ -77,8 +112,11 @@ XrApp::~XrApp() {
 
   swapchainProviders_.clear();
 
-  if (passthrougLayer_ != XR_NULL_HANDLE) {
-    xrDestroyPassthroughLayerFB_(passthrougLayer_);
+  if (leftHandTracker_ != XR_NULL_HANDLE) {
+    xrDestroyHandTrackerEXT_(leftHandTracker_);
+  }
+  if (rightHandTracker_ != XR_NULL_HANDLE) {
+    xrDestroyHandTrackerEXT_(rightHandTracker_);
   }
   if (passthrough_ != XR_NULL_HANDLE) {
     xrDestroyPassthroughFB_(passthrough_);
@@ -139,20 +177,45 @@ bool XrApp::checkExtensions() {
     }
   }
 
-  passthroughSupported_ = std::any_of(
-      std::begin(extensions_), std::end(extensions_), [](const XrExtensionProperties& extension) {
-        return strcmp(extension.extensionName, XR_FB_PASSTHROUGH_EXTENSION_NAME) == 0;
-      });
+  auto checkExtensionSupported = [this](const char* name) {
+    return std::any_of(std::begin(extensions_),
+                       std::end(extensions_),
+                       [&](const XrExtensionProperties& extension) {
+                         return strcmp(extension.extensionName, name) == 0;
+                       });
+  };
+
+  passthroughSupported_ = checkExtensionSupported(XR_FB_PASSTHROUGH_EXTENSION_NAME);
   IGL_LOG_INFO("Passthrough is %s", stageSpaceSupported_ ? "supported" : "not supported");
 
+  auto checkNeedRequiredExtension = [this](const char* name) {
+    return std::find_if(std::begin(requiredExtensions_),
+                        std::end(requiredExtensions_),
+                        [&](const char* extensionName) {
+                          return strcmp(extensionName, name) == 0;
+                        }) == std::end(requiredExtensions_);
+  };
+
   // Add passthough extension if supported.
-  if (passthroughSupported_ && std::find_if(std::begin(requiredExtensions_),
-                                            std::end(requiredExtensions_),
-                                            [](const char* extensionName) {
-                                              return strcmp(extensionName,
-                                                            XR_FB_PASSTHROUGH_EXTENSION_NAME) == 0;
-                                            }) == std::end(requiredExtensions_)) {
+  if (passthroughSupported_ && checkNeedRequiredExtension(XR_FB_PASSTHROUGH_EXTENSION_NAME)) {
     requiredExtensions_.push_back(XR_FB_PASSTHROUGH_EXTENSION_NAME);
+  }
+
+  handsTrackingSupported_ = checkExtensionSupported(XR_EXT_HAND_TRACKING_EXTENSION_NAME);
+  IGL_LOG_INFO("Hands tracking is %s", handsTrackingSupported_ ? "supported" : "not supported");
+
+  handsTrackingMeshSupported_ = checkExtensionSupported(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME);
+  IGL_LOG_INFO("Hands tracking mesh is %s",
+               handsTrackingMeshSupported_ ? "supported" : "not supported");
+
+  // Add hands tracking extension if supported.
+  if (handsTrackingSupported_ && checkNeedRequiredExtension(XR_EXT_HAND_TRACKING_EXTENSION_NAME)) {
+    requiredExtensions_.push_back(XR_EXT_HAND_TRACKING_EXTENSION_NAME);
+
+    if (handsTrackingMeshSupported_ &&
+        checkNeedRequiredExtension(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME)) {
+      requiredExtensions_.push_back(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME);
+    }
   }
 
   return true;
@@ -207,6 +270,23 @@ bool XrApp::createInstance() {
     XR_CHECK(xrGetInstanceProcAddr(instance_,
                                    "xrPassthroughLayerSetStyleFB",
                                    (PFN_xrVoidFunction*)(&xrPassthroughLayerSetStyleFB_)));
+  }
+
+  if (handsTrackingSupported_) {
+    XR_CHECK(xrGetInstanceProcAddr(
+        instance_, "xrCreateHandTrackerEXT", (PFN_xrVoidFunction*)(&xrCreateHandTrackerEXT_)));
+    IGL_ASSERT(xrCreateHandTrackerEXT_ != nullptr);
+    XR_CHECK(xrGetInstanceProcAddr(
+        instance_, "xrDestroyHandTrackerEXT", (PFN_xrVoidFunction*)(&xrDestroyHandTrackerEXT_)));
+    IGL_ASSERT(xrDestroyHandTrackerEXT_ != nullptr);
+    XR_CHECK(xrGetInstanceProcAddr(
+        instance_, "xrLocateHandJointsEXT", (PFN_xrVoidFunction*)(&xrLocateHandJointsEXT_)));
+    IGL_ASSERT(xrLocateHandJointsEXT_ != nullptr);
+    if (handsTrackingMeshSupported_) {
+      XR_CHECK(xrGetInstanceProcAddr(
+          instance_, "xrGetHandMeshFB", (PFN_xrVoidFunction*)(&xrGetHandMeshFB_)));
+      IGL_ASSERT(xrGetHandMeshFB_ != nullptr);
+    }
   }
 
   return true;
@@ -278,6 +358,171 @@ bool XrApp::createPassthrough() {
     return false;
   }
   return true;
+}
+
+bool XrApp::createHandsTracking() {
+  XrHandTrackerCreateInfoEXT createInfo{XR_TYPE_HAND_TRACKER_CREATE_INFO_EXT};
+  createInfo.handJointSet = XR_HAND_JOINT_SET_DEFAULT_EXT;
+  createInfo.hand = XR_HAND_LEFT_EXT;
+
+  std::array<XrHandTrackingDataSourceEXT, 2> dataSources = {
+      XR_HAND_TRACKING_DATA_SOURCE_UNOBSTRUCTED_EXT,
+      XR_HAND_TRACKING_DATA_SOURCE_CONTROLLER_EXT,
+  };
+
+  XrHandTrackingDataSourceInfoEXT dataSourceInfo{XR_TYPE_HAND_TRACKING_DATA_SOURCE_INFO_EXT};
+  dataSourceInfo.requestedDataSourceCount = static_cast<uint32_t>(dataSources.size());
+  dataSourceInfo.requestedDataSources = dataSources.data();
+
+  createInfo.next = &dataSourceInfo;
+
+  XrResult result;
+  XR_CHECK(result = xrCreateHandTrackerEXT_(session_, &createInfo, &leftHandTracker_));
+  if (result != XR_SUCCESS) {
+    IGL_LOG_ERROR("xrCreateHandTrackerEXT (left hand) failed.");
+    return false;
+  }
+
+  createInfo.hand = XR_HAND_RIGHT_EXT;
+  XR_CHECK(result = xrCreateHandTrackerEXT_(session_, &createInfo, &rightHandTracker_));
+  if (result != XR_SUCCESS) {
+    IGL_LOG_ERROR("xrCreateHandTrackerEXT (right hand) failed.");
+    return false;
+  }
+
+  return true;
+}
+
+void XrApp::updateHandMeshes() {
+  auto& handMeshes = shellParams_->handMeshes;
+
+  XrResult result;
+  XrHandTrackerEXT trackers[] = {leftHandTracker_, rightHandTracker_};
+  for (uint8_t i = 0; i < 2; ++i) {
+    XrHandTrackingMeshFB mesh{XR_TYPE_HAND_TRACKING_MESH_FB};
+    XR_CHECK(result = xrGetHandMeshFB_(trackers[i], &mesh));
+    if (result != XR_SUCCESS) {
+      continue;
+    }
+
+    IGL_ASSERT(mesh.jointCountOutput <= XR_HAND_JOINT_COUNT_EXT);
+    XrPosef jointBindPoses[XR_HAND_JOINT_COUNT_EXT]{};
+    XrHandJointEXT jointParents[XR_HAND_JOINT_COUNT_EXT]{};
+    float jointRadii[XR_HAND_JOINT_COUNT_EXT]{};
+
+    mesh.jointCapacityInput = mesh.jointCountOutput;
+    mesh.vertexCapacityInput = mesh.vertexCountOutput;
+    mesh.indexCapacityInput = mesh.indexCountOutput;
+
+    std::vector<XrVector3f> vertexPositions(mesh.vertexCapacityInput);
+    std::vector<XrVector3f> vertexNormals(mesh.vertexCapacityInput);
+    std::vector<XrVector2f> vertexUVs(mesh.vertexCapacityInput);
+    std::vector<XrVector4sFB> vertexBlendIndices(mesh.vertexCapacityInput);
+    std::vector<XrVector4f> vertexBlendWeights(mesh.vertexCapacityInput);
+
+    handMeshes[i].indices.resize(mesh.indexCapacityInput);
+
+    mesh.jointBindPoses = jointBindPoses;
+    mesh.jointParents = jointParents;
+    mesh.jointRadii = jointRadii;
+    mesh.vertexPositions = vertexPositions.data();
+    mesh.vertexNormals = vertexNormals.data();
+    mesh.vertexUVs = vertexUVs.data();
+    mesh.vertexBlendIndices = vertexBlendIndices.data();
+    mesh.vertexBlendWeights = vertexBlendWeights.data();
+    mesh.indices = handMeshes[i].indices.data();
+
+    XR_CHECK(result = xrGetHandMeshFB_(trackers[i], &mesh));
+    if (result != XR_SUCCESS) {
+      continue;
+    }
+
+    handMeshes[i].vertexCountOutput = mesh.vertexCountOutput;
+    handMeshes[i].indexCountOutput = mesh.indexCountOutput;
+    handMeshes[i].jointCountOutput = mesh.jointCountOutput;
+    handMeshes[i].vertexPositions.reserve(mesh.vertexCountOutput);
+    handMeshes[i].vertexNormals.reserve(mesh.vertexCountOutput);
+    handMeshes[i].vertexUVs.reserve(mesh.vertexCountOutput);
+    handMeshes[i].vertexBlendIndices.reserve(mesh.vertexCountOutput);
+    handMeshes[i].vertexBlendWeights.reserve(mesh.vertexCountOutput);
+    handMeshes[i].jointBindPoses.reserve(mesh.jointCountOutput);
+
+    for (uint32_t j = 0; j < mesh.vertexCountOutput; ++j) {
+      handMeshes[i].vertexPositions.emplace_back(glmVecFromXrVec(mesh.vertexPositions[j]));
+      handMeshes[i].vertexUVs.emplace_back(glmVecFromXrVec(mesh.vertexUVs[j]));
+      handMeshes[i].vertexNormals.emplace_back(glmVecFromXrVec(mesh.vertexNormals[j]));
+      handMeshes[i].vertexBlendIndices.emplace_back(glmVecFromXrVec(mesh.vertexBlendIndices[j]));
+      handMeshes[i].vertexBlendWeights.emplace_back(glmVecFromXrVec(mesh.vertexBlendWeights[j]));
+    }
+
+    for (uint32_t j = 0; j < mesh.jointCountOutput; ++j) {
+      handMeshes[i].jointBindPoses.emplace_back(poseFromXrPose(mesh.jointBindPoses[j]));
+    }
+  }
+}
+
+void XrApp::updateHandTracking() {
+  auto& handTracking = shellParams_->handTracking;
+
+  XrResult result;
+  XrHandTrackerEXT trackers[] = {leftHandTracker_, rightHandTracker_};
+  for (uint8_t i = 0; i < 2; ++i) {
+    XrHandJointLocationEXT jointLocations[XR_HAND_JOINT_COUNT_EXT];
+    XrHandJointVelocityEXT jointVelocities[XR_HAND_JOINT_COUNT_EXT];
+
+    XrHandJointVelocitiesEXT velocities{.type = XR_TYPE_HAND_JOINT_VELOCITIES_EXT,
+                                        .next = nullptr,
+                                        .jointCount = XR_HAND_JOINT_COUNT_EXT,
+                                        .jointVelocities = jointVelocities};
+
+    XrHandJointLocationsEXT locations{.type = XR_TYPE_HAND_JOINT_LOCATIONS_EXT,
+                                      .next = &velocities,
+                                      .jointCount = XR_HAND_JOINT_COUNT_EXT,
+                                      .jointLocations = jointLocations};
+
+    XrHandJointsMotionRangeInfoEXT motionRangeInfo{XR_TYPE_HAND_JOINTS_MOTION_RANGE_INFO_EXT};
+    motionRangeInfo.handJointsMotionRange =
+        XR_HAND_JOINTS_MOTION_RANGE_CONFORMING_TO_CONTROLLER_EXT;
+
+    const XrHandJointsLocateInfoEXT locateInfo{.type = XR_TYPE_HAND_JOINTS_LOCATE_INFO_EXT,
+                                               .next = &motionRangeInfo,
+                                               .baseSpace = currentSpace_,
+                                               .time = currentTimeInNs()};
+
+    handTracking[i].jointPose.resize(XR_HAND_JOINT_COUNT_EXT);
+    handTracking[i].jointVelocity.resize(XR_HAND_JOINT_COUNT_EXT);
+    handTracking[i].isJointTracked.resize(XR_HAND_JOINT_COUNT_EXT);
+
+    XR_CHECK(result = xrLocateHandJointsEXT_(trackers[i], &locateInfo, &locations));
+    if (result != XR_SUCCESS) {
+      for (size_t jointIndex = 0; jointIndex < XR_HAND_JOINT_COUNT_EXT; ++jointIndex) {
+        handTracking[i].isJointTracked[jointIndex] = false;
+      }
+      continue;
+    }
+
+    if (!locations.isActive) {
+      for (size_t jointIndex = 0; jointIndex < XR_HAND_JOINT_COUNT_EXT; ++jointIndex) {
+        handTracking[i].isJointTracked[jointIndex] = false;
+      }
+      continue;
+    }
+
+    constexpr XrSpaceLocationFlags isValid =
+        XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_POSITION_VALID_BIT;
+    for (size_t jointIndex = 0; jointIndex < XR_HAND_JOINT_COUNT_EXT; ++jointIndex) {
+      if ((jointLocations[jointIndex].locationFlags & isValid) != 0) {
+        handTracking[i].jointPose[jointIndex] = poseFromXrPose(jointLocations[jointIndex].pose);
+        handTracking[i].jointVelocity[jointIndex].linear =
+            glmVecFromXrVec(jointVelocities[jointIndex].linearVelocity);
+        handTracking[i].jointVelocity[jointIndex].angular =
+            glmVecFromXrVec(jointVelocities[jointIndex].angularVelocity);
+        handTracking[i].isJointTracked[jointIndex] = true;
+      } else {
+        handTracking[i].isJointTracked[jointIndex] = false;
+      }
+    }
+  }
 }
 
 bool XrApp::enumerateViewConfigurations() {
@@ -472,7 +717,13 @@ bool XrApp::initialize(const struct android_app* app) {
   if (passthroughSupported_ && !createPassthrough()) {
     return false;
   }
+  if (handsTrackingSupported_ && !createHandsTracking()) {
+    return false;
+  }
+  updateHandMeshes();
 
+  IGL_ASSERT(renderSession_ != nullptr);
+  renderSession_->initialize();
   initialized_ = true;
 
   return initialized_;
@@ -490,7 +741,6 @@ void XrApp::createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManag
                                                   : RenderMode::DualPassStereo;
   shellParams_->viewParams.resize(useSinglePassStereo_ ? 2 : 1);
   renderSession_->setShellParams(*shellParams_);
-  renderSession_->initialize();
 }
 
 void XrApp::createSpaces() {
@@ -644,6 +894,10 @@ XrFrameState XrApp::beginFrame() {
     XrMatrix4x4f_CreateFromRigidTransform(&xrMat4, &viewTransformXrPosef);
     viewTransforms_[i] = glm::make_mat4(xrMat4.m);
     cameraPositions_[i] = glm::vec3(eyePose.position.x, eyePose.position.y, eyePose.position.z);
+  }
+
+  if (handsTrackingSupported_) {
+    updateHandTracking();
   }
 
   return frameState;

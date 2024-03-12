@@ -114,21 +114,24 @@ using namespace igl;
   // process user input
   shellPlatform_->getInputDispatcher().processEvents();
 
-  // surface textures
-  igl::SurfaceTextures surfaceTextures = igl::SurfaceTextures{
-      [self createTextureFromNativeDrawable], [self createTextureFromNativeDepth]};
-  IGL_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
-  const auto& dims = surfaceTextures.color->getDimensions();
-  shellParams_.nativeSurfaceDimensions = glm::ivec2{dims.width, dims.height};
+  igl::SurfaceTextures surfaceTextures;
+  if (backendType_ != igl::BackendType::Invalid && shellPlatform_->getDevicePtr() != nullptr) {
+    // surface textures
+    surfaceTextures = igl::SurfaceTextures{[self createTextureFromNativeDrawable],
+                                           [self createTextureFromNativeDepth]};
+    IGL_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
+    const auto& dims = surfaceTextures.color->getDimensions();
+    shellParams_.nativeSurfaceDimensions = glm::ivec2{dims.width, dims.height};
 
-  // update retina scale
-  float pixelsPerPoint = shellParams_.nativeSurfaceDimensions.x / shellParams_.viewportSize.x;
-  session_->setPixelsPerPoint(pixelsPerPoint);
+    // update retina scale
+    float pixelsPerPoint = shellParams_.nativeSurfaceDimensions.x / shellParams_.viewportSize.x;
+    session_->setPixelsPerPoint(pixelsPerPoint);
 // @fb-only
-  // @fb-only
-  IGL_ASSERT(fabs(shellParams_.nativeSurfaceDimensions.y / shellParams_.viewportSize.y -
-                  pixelsPerPoint) < FLT_EPSILON);
+    // @fb-only
+    IGL_ASSERT(fabs(shellParams_.nativeSurfaceDimensions.y / shellParams_.viewportSize.y -
+                    // @fb-only
 // @fb-only
+  }
   // draw
   session_->update(std::move(surfaceTextures));
   if (session_->appParams().exitRequested)
@@ -145,8 +148,13 @@ using namespace igl;
     auto headlessView = [[HeadlessView alloc] initWithFrame:frame_];
     self.view = headlessView;
 
+    // @fb-only
+        // @fb-only
+
     // Headless platform does not run on a real device
     shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(nullptr);
+
+    [headlessView prepareHeadless];
     break;
   }
 

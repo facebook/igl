@@ -8,6 +8,7 @@
 #include "data/ShaderData.h"
 #include "data/TextureData.h"
 #include "data/VertexIndexData.h"
+#include "util/Color.h"
 #include "util/Common.h"
 #include "util/TestDevice.h"
 #include "util/TextureValidationHelpers.h"
@@ -25,29 +26,12 @@
 #include <string>
 
 namespace igl::tests {
-// To avoid mix matching gamma, this defines a constant that everyone can use until it can be
-// configured on a per project basis.
-constexpr double kDefaultGamma = 2.4;
 #if IGL_OPENGL_ES
 static const bool kUsesOpenGLES = opengl::DeviceFeatureSet::usesOpenGLES();
 #else
 // no OpenGLES was linked
 static const bool kUsesOpenGLES = false;
 #endif
-
-// force double precision color conversion to not lose precision
-template<glm::length_t L, typename T, glm::qualifier Q>
-glm::vec<L, T, Q> convertSRGBToLinear(const glm::vec<L, T, Q>& nonLinearColor,
-                                      double gamma = kDefaultGamma) {
-  return glm::vec<L, T, Q>(glm::convertSRGBToLinear(glm::vec<L, double, Q>(nonLinearColor), gamma));
-}
-
-// force double precision color conversion to not lose precision
-template<glm::length_t L, typename T, glm::qualifier Q>
-glm::vec<L, T, Q> convertLinearToSRGB(const glm::vec<L, T, Q>& linearColor,
-                                      double gamma = kDefaultGamma) {
-  return glm::vec<L, T, Q>(glm::convertLinearToSRGB(glm::vec<L, double, Q>(linearColor), gamma));
-}
 
 // Picking this just to match the texture we will use. If you use a different
 // size texture, then you will have to either create a new offscreenTexture_
@@ -57,12 +41,12 @@ constexpr size_t kOffscreenTexWidth = 2;
 constexpr size_t kOffscreenTexHeight = 2;
 
 // clang-format off
-const glm::vec4 kR = igl::tests::convertSRGBToLinear(glm::vec4(0x1F / 255.0, 0x00/255.0, 0x00/255.0, 0x0F/255.0)); // 0x1F00000F
-const glm::vec4 kG = igl::tests::convertSRGBToLinear(glm::vec4(0x00 / 255.0, 0x2F/255.0, 0x00/255.0, 0x1F/255.0)); // 0x002F001F;
-const glm::vec4 kB = igl::tests::convertSRGBToLinear(glm::vec4(0x00 / 255.0, 0x00/255.0, 0x3F/255.0, 0x2F/255.0)); // 0x00003F2F;
-const glm::vec4 kC = igl::tests::convertSRGBToLinear(glm::vec4(0x00 / 255.0, 0x4F/255.0, 0x5F/255.0, 0x3F/255.0)); // 0x004F5F3F;
-const glm::vec4 kM = igl::tests::convertSRGBToLinear(glm::vec4(0x6F / 255.0, 0x00/255.0, 0x7F/255.0, 0x4F/255.0)); // 0x6F007F4F;
-const glm::vec4 kY = igl::tests::convertSRGBToLinear(glm::vec4(0x8F / 255.0, 0x9F/255.0, 0x00/255.0, 0x5F/255.0)); // 0x8F9F005F;
+const glm::vec4 kR = igl::tests::util::convertSRGBToLinear(glm::vec4(0x1F / 255.0, 0x00/255.0, 0x00/255.0, 0x0F/255.0)); // 0x1F00000F
+const glm::vec4 kG = igl::tests::util::convertSRGBToLinear(glm::vec4(0x00 / 255.0, 0x2F/255.0, 0x00/255.0, 0x1F/255.0)); // 0x002F001F;
+const glm::vec4 kB = igl::tests::util::convertSRGBToLinear(glm::vec4(0x00 / 255.0, 0x00/255.0, 0x3F/255.0, 0x2F/255.0)); // 0x00003F2F;
+const glm::vec4 kC = igl::tests::util::convertSRGBToLinear(glm::vec4(0x00 / 255.0, 0x4F/255.0, 0x5F/255.0, 0x3F/255.0)); // 0x004F5F3F;
+const glm::vec4 kM = igl::tests::util::convertSRGBToLinear(glm::vec4(0x6F / 255.0, 0x00/255.0, 0x7F/255.0, 0x4F/255.0)); // 0x6F007F4F;
+const glm::vec4 kY = igl::tests::util::convertSRGBToLinear(glm::vec4(0x8F / 255.0, 0x9F/255.0, 0x00/255.0, 0x5F/255.0)); // 0x8F9F005F;
 
 const std::array<glm::vec4, 15> kTextureDataRGBA = {
   kR, kR, kR, kR, // Base Mip, Layer 0
