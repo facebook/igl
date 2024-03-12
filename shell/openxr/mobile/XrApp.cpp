@@ -53,6 +53,35 @@ constexpr auto kAppName = "IGL Shell OpenXR";
 constexpr auto kEngineName = "IGL";
 constexpr auto kSupportedViewConfigType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
 
+namespace {
+inline glm::quat glmQuatFromXrQuat(const XrQuaternionf& quat) noexcept {
+  return glm::quat(quat.w, quat.x, quat.y, quat.z);
+}
+
+inline glm::vec4 glmVecFromXrVec(const XrVector4f& vec) noexcept {
+  return glm::vec4(vec.x, vec.y, vec.z, vec.w);
+}
+
+inline glm::vec4 glmVecFromXrVec(const XrVector4sFB& vec) noexcept {
+  return glm::vec4(vec.x, vec.y, vec.z, vec.w);
+}
+
+inline glm::vec3 glmVecFromXrVec(const XrVector3f& vec) noexcept {
+  return glm::vec3(vec.x, vec.y, vec.z);
+}
+
+inline glm::vec2 glmVecFromXrVec(const XrVector2f& vec) noexcept {
+  return glm::vec2(vec.x, vec.y);
+}
+
+inline Pose poseFromXrPose(const XrPosef& pose) noexcept {
+  return Pose{
+      /*.orientation = */ glmQuatFromXrQuat(pose.orientation),
+      /*.position = */ glmVecFromXrVec(pose.position),
+  };
+}
+} // namespace
+
 XrApp::XrApp(std::unique_ptr<impl::XrAppImpl>&& impl) :
   requiredExtensions_({
 #if USE_VULKAN_BACKEND
@@ -358,6 +387,74 @@ bool XrApp::createHandsTracking() {
   return true;
 }
 
+void XrApp::updateHandMeshes() {
+  auto& handMeshes = shellParams_->handMeshes;
+
+  XrResult result;
+  XrHandTrackerEXT trackers[] = {leftHandTracker_, rightHandTracker_};
+  for (uint8_t i = 0; i < 2; ++i) {
+    XrHandTrackingMeshFB mesh{XR_TYPE_HAND_TRACKING_MESH_FB};
+    XR_CHECK(result = xrGetHandMeshFB_(trackers[i], &mesh));
+    if (result != XR_SUCCESS) {
+      continue;
+    }
+
+    IGL_ASSERT(mesh.jointCountOutput <= XR_HAND_JOINT_COUNT_EXT);
+    XrPosef jointBindPoses[XR_HAND_JOINT_COUNT_EXT]{};
+    XrHandJointEXT jointParents[XR_HAND_JOINT_COUNT_EXT]{};
+    float jointRadii[XR_HAND_JOINT_COUNT_EXT]{};
+
+    mesh.jointCapacityInput = mesh.jointCountOutput;
+    mesh.vertexCapacityInput = mesh.vertexCountOutput;
+    mesh.indexCapacityInput = mesh.indexCountOutput;
+
+    std::vector<XrVector3f> vertexPositions(mesh.vertexCapacityInput);
+    std::vector<XrVector3f> vertexNormals(mesh.vertexCapacityInput);
+    std::vector<XrVector2f> vertexUVs(mesh.vertexCapacityInput);
+    std::vector<XrVector4sFB> vertexBlendIndices(mesh.vertexCapacityInput);
+    std::vector<XrVector4f> vertexBlendWeights(mesh.vertexCapacityInput);
+
+    handMeshes[i].indices.resize(mesh.indexCapacityInput);
+
+    mesh.jointBindPoses = jointBindPoses;
+    mesh.jointParents = jointParents;
+    mesh.jointRadii = jointRadii;
+    mesh.vertexPositions = vertexPositions.data();
+    mesh.vertexNormals = vertexNormals.data();
+    mesh.vertexUVs = vertexUVs.data();
+    mesh.vertexBlendIndices = vertexBlendIndices.data();
+    mesh.vertexBlendWeights = vertexBlendWeights.data();
+    mesh.indices = handMeshes[i].indices.data();
+
+    XR_CHECK(result = xrGetHandMeshFB_(trackers[i], &mesh));
+    if (result != XR_SUCCESS) {
+      continue;
+    }
+
+    handMeshes[i].vertexCountOutput = mesh.vertexCountOutput;
+    handMeshes[i].indexCountOutput = mesh.indexCountOutput;
+    handMeshes[i].jointCountOutput = mesh.jointCountOutput;
+    handMeshes[i].vertexPositions.reserve(mesh.vertexCountOutput);
+    handMeshes[i].vertexNormals.reserve(mesh.vertexCountOutput);
+    handMeshes[i].vertexUVs.reserve(mesh.vertexCountOutput);
+    handMeshes[i].vertexBlendIndices.reserve(mesh.vertexCountOutput);
+    handMeshes[i].vertexBlendWeights.reserve(mesh.vertexCountOutput);
+    handMeshes[i].jointBindPoses.reserve(mesh.jointCountOutput);
+
+    for (uint32_t j = 0; j < mesh.vertexCountOutput; ++j) {
+      handMeshes[i].vertexPositions.emplace_back(glmVecFromXrVec(mesh.vertexPositions[j]));
+      handMeshes[i].vertexUVs.emplace_back(glmVecFromXrVec(mesh.vertexUVs[j]));
+      handMeshes[i].vertexNormals.emplace_back(glmVecFromXrVec(mesh.vertexNormals[j]));
+      handMeshes[i].vertexBlendIndices.emplace_back(glmVecFromXrVec(mesh.vertexBlendIndices[j]));
+      handMeshes[i].vertexBlendWeights.emplace_back(glmVecFromXrVec(mesh.vertexBlendWeights[j]));
+    }
+
+    for (uint32_t j = 0; j < mesh.jointCountOutput; ++j) {
+      handMeshes[i].jointBindPoses.emplace_back(poseFromXrPose(mesh.jointBindPoses[j]));
+    }
+  }
+}
+
 bool XrApp::enumerateViewConfigurations() {
   uint32_t numViewConfigs = 0;
   XR_CHECK(xrEnumerateViewConfigurations(instance_, systemId_, 0, &numViewConfigs, nullptr));
@@ -553,6 +650,7 @@ bool XrApp::initialize(const struct android_app* app) {
   if (handsTrackingSupported_ && !createHandsTracking()) {
     return false;
   }
+  updateHandMeshes();
 
   initialized_ = true;
 
