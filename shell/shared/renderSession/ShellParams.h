@@ -29,5 +29,6 @@ struct ShellParams {
   bool shouldPresent = true;
   std::optional<igl::Color> clearColorValue = {};
   std::array<HandMesh, 2> handMeshes = {};
+  std::array<HandTracking, 2> handTracking = {};
 };
 } // namespace igl::shell
