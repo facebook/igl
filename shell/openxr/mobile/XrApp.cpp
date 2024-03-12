@@ -155,6 +155,22 @@ bool XrApp::checkExtensions() {
     requiredExtensions_.push_back(XR_FB_PASSTHROUGH_EXTENSION_NAME);
   }
 
+  handsTrackingSupported_ = std::any_of(
+      std::begin(extensions_), std::end(extensions_), [](const XrExtensionProperties& extension) {
+        return strcmp(extension.extensionName, XR_EXT_HAND_TRACKING_EXTENSION_NAME) == 0;
+      });
+  IGL_LOG_INFO("Hands tracking is %s", handsTrackingSupported_ ? "supported" : "not supported");
+
+  // Add hands tracking extension if supported.
+  if (handsTrackingSupported_ &&
+      std::find_if(std::begin(requiredExtensions_),
+                   std::end(requiredExtensions_),
+                   [](const char* extensionName) {
+                     return strcmp(extensionName, XR_EXT_HAND_TRACKING_EXTENSION_NAME) == 0;
+                   }) == std::end(requiredExtensions_)) {
+    requiredExtensions_.push_back(XR_EXT_HAND_TRACKING_EXTENSION_NAME);
+  }
+
   return true;
 }
 
@@ -207,6 +223,18 @@ bool XrApp::createInstance() {
     XR_CHECK(xrGetInstanceProcAddr(instance_,
                                    "xrPassthroughLayerSetStyleFB",
                                    (PFN_xrVoidFunction*)(&xrPassthroughLayerSetStyleFB_)));
+  }
+
+  if (handsTrackingSupported_) {
+    XR_CHECK(xrGetInstanceProcAddr(
+        instance_, "xrCreateHandTrackerEXT", (PFN_xrVoidFunction*)(&xrCreateHandTrackerEXT_)));
+    IGL_ASSERT(xrCreateHandTrackerEXT_ != nullptr);
+    XR_CHECK(xrGetInstanceProcAddr(
+        instance_, "xrDestroyHandTrackerEXT", (PFN_xrVoidFunction*)(&xrDestroyHandTrackerEXT_)));
+    IGL_ASSERT(xrDestroyHandTrackerEXT_ != nullptr);
+    XR_CHECK(xrGetInstanceProcAddr(
+        instance_, "xrLocateHandJointsEXT", (PFN_xrVoidFunction*)(&xrLocateHandJointsEXT_)));
+    IGL_ASSERT(xrLocateHandJointsEXT_ != nullptr);
   }
 
   return true;
