@@ -143,7 +143,6 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
                                                            "main",
                                                            "",
                                                            nullptr);
-    return nullptr;
   case igl::BackendType::OpenGL:
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,
