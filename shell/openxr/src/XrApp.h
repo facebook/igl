@@ -95,6 +95,7 @@ class XrApp {
   bool createInstance();
   bool createSystem();
   bool createPassthrough();
+  bool createHandsTracking();
   bool enumerateViewConfigurations();
   void enumerateReferenceSpaces();
   void enumerateBlendModes();
@@ -166,6 +167,9 @@ class XrApp {
   PFN_xrDestroyHandTrackerEXT xrDestroyHandTrackerEXT_ = nullptr;
   PFN_xrLocateHandJointsEXT xrLocateHandJointsEXT_ = nullptr;
   PFN_xrGetHandMeshFB xrGetHandMeshFB_ = nullptr;
+
+  XrHandTrackerEXT leftHandTracker_ = XR_NULL_HANDLE;
+  XrHandTrackerEXT rightHandTracker_ = XR_NULL_HANDLE;
 
   std::unique_ptr<impl::XrAppImpl> impl_;
 

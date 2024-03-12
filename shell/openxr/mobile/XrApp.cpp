@@ -77,8 +77,11 @@ XrApp::~XrApp() {
 
   swapchainProviders_.clear();
 
-  if (passthrougLayer_ != XR_NULL_HANDLE) {
-    xrDestroyPassthroughLayerFB_(passthrougLayer_);
+  if (leftHandTracker_ != XR_NULL_HANDLE) {
+    xrDestroyHandTrackerEXT_(leftHandTracker_);
+  }
+  if (rightHandTracker_ != XR_NULL_HANDLE) {
+    xrDestroyHandTrackerEXT_(rightHandTracker_);
   }
   if (passthrough_ != XR_NULL_HANDLE) {
     xrDestroyPassthroughFB_(passthrough_);
@@ -322,6 +325,39 @@ bool XrApp::createPassthrough() {
   return true;
 }
 
+bool XrApp::createHandsTracking() {
+  XrHandTrackerCreateInfoEXT createInfo{XR_TYPE_HAND_TRACKER_CREATE_INFO_EXT};
+  createInfo.handJointSet = XR_HAND_JOINT_SET_DEFAULT_EXT;
+  createInfo.hand = XR_HAND_LEFT_EXT;
+
+  std::array<XrHandTrackingDataSourceEXT, 2> dataSources = {
+      XR_HAND_TRACKING_DATA_SOURCE_UNOBSTRUCTED_EXT,
+      XR_HAND_TRACKING_DATA_SOURCE_CONTROLLER_EXT,
+  };
+
+  XrHandTrackingDataSourceInfoEXT dataSourceInfo{XR_TYPE_HAND_TRACKING_DATA_SOURCE_INFO_EXT};
+  dataSourceInfo.requestedDataSourceCount = static_cast<uint32_t>(dataSources.size());
+  dataSourceInfo.requestedDataSources = dataSources.data();
+
+  createInfo.next = &dataSourceInfo;
+
+  XrResult result;
+  XR_CHECK(result = xrCreateHandTrackerEXT_(session_, &createInfo, &leftHandTracker_));
+  if (result != XR_SUCCESS) {
+    IGL_LOG_ERROR("xrCreateHandTrackerEXT (left hand) failed.");
+    return false;
+  }
+
+  createInfo.hand = XR_HAND_RIGHT_EXT;
+  XR_CHECK(result = xrCreateHandTrackerEXT_(session_, &createInfo, &rightHandTracker_));
+  if (result != XR_SUCCESS) {
+    IGL_LOG_ERROR("xrCreateHandTrackerEXT (right hand) failed.");
+    return false;
+  }
+
+  return true;
+}
+
 bool XrApp::enumerateViewConfigurations() {
   uint32_t numViewConfigs = 0;
   XR_CHECK(xrEnumerateViewConfigurations(instance_, systemId_, 0, &numViewConfigs, nullptr));
@@ -512,6 +548,9 @@ bool XrApp::initialize(const struct android_app* app) {
   createSwapchainProviders(device);
   createSpaces();
   if (passthroughSupported_ && !createPassthrough()) {
+    return false;
+  }
+  if (handsTrackingSupported_ && !createHandsTracking()) {
     return false;
   }
 
