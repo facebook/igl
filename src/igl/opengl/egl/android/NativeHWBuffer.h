@@ -32,6 +32,9 @@ class NativeHWTextureBuffer : public TextureBufferBase {
   // Texture overrides
   Result create(const TextureDesc& desc, bool hasStorageAlready) override;
   Result createHWBuffer(const TextureDesc& desc, bool hasStorageAlready, bool surfaceComposite);
+  [[nodiscard]] static Result bindTextureWithHWBuffer(IContext& context,
+                                                      GLuint target,
+                                                      const AHardwareBuffer* hwb) noexcept;
   void bind() override;
   void bindImage(size_t unit) override;
   Result lockHWBuffer(std::byte* IGL_NULLABLE* IGL_NONNULL dst, RangeDesc& outRange) const;
