@@ -24,6 +24,8 @@ VulkanSampler::VulkanSampler(const VulkanContext& ctx,
   VK_ASSERT(ctx_.vf_.vkCreateSampler(device_, &ci, nullptr, &vkSampler_));
   VK_ASSERT(ivkSetDebugObjectName(
       &ctx_.vf_, device_, VK_OBJECT_TYPE_SAMPLER, (uint64_t)vkSampler_, debugName));
+
+  setDebugName(debugName);
 }
 
 VulkanSampler::~VulkanSampler() {
@@ -33,6 +35,14 @@ VulkanSampler::~VulkanSampler() {
       std::packaged_task<void()>([vf = &ctx_.vf_, device = device_, sampler = vkSampler_]() {
         vf->vkDestroySampler(device, sampler, nullptr);
       }));
+}
+
+void VulkanSampler::setDebugName(const std::string& debugName) noexcept {
+#if defined(IGL_DEBUG)
+  debugName_ = debugName;
+#else
+  (void)debugName;
+#endif
 }
 
 } // namespace vulkan

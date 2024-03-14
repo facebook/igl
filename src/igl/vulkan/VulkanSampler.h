@@ -9,6 +9,10 @@
 
 #include <igl/vulkan/VulkanHelpers.h>
 
+#if defined(IGL_DEBUG)
+#include <string> // For storing the debug name
+#endif
+
 namespace igl {
 namespace vulkan {
 
@@ -46,6 +50,9 @@ class VulkanSampler final {
     return samplerId_;
   }
 
+  // No-op in all builds except DEBUG
+  void setDebugName(const std::string& debugName) noexcept;
+
  public:
   const VulkanContext& ctx_;
   VkDevice device_ = VK_NULL_HANDLE;
@@ -56,6 +63,9 @@ class VulkanSampler final {
    * of samplers maintained by the VulkanContext.
    */
   uint32_t samplerId_ = 0;
+#if defined(IGL_DEBUG)
+  std::string debugName_;
+#endif
 };
 
 } // namespace vulkan
