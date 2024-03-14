@@ -4,12 +4,18 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+// obscure compiler error where glm::vec would delete it's construct_at
+// since Half didnt have a trivial default ctor despite specifying it.
+#if defined(IGL_CMAKE_BUILD)
+#define GLM_FORCE_XYZW_ONLY 1
+#endif
 
 #include "data/ShaderData.h"
 #include "data/TextureData.h"
 #include "data/VertexIndexData.h"
 #include "util/Color.h"
 #include "util/Common.h"
+#include "util/Half.h"
 #include "util/TestDevice.h"
 #include "util/TextureValidationHelpers.h"
 
@@ -35,6 +41,10 @@ constexpr size_t kOffscreenTexWidth = 2;
 constexpr size_t kOffscreenTexHeight = 2;
 constexpr size_t kOffscreenSubTexWidth = 1;
 constexpr size_t kOffscreenSubTexHeight = 1;
+
+constexpr igl::TextureFormat kFloatTextureFormat = TextureFormat::RGBA_F16;
+using TestColorType = glm::vec<4, util::TestHalf, glm::defaultp>; // control
+// using TestColorType = glm::vec<4, float, glm::defaultp>;
 
 struct VertexUniforms {
   int layer = 0;
@@ -90,24 +100,17 @@ class TextureArrayFloatTest : public ::testing::Test {
     ASSERT_TRUE(iglDev_ != nullptr);
     ASSERT_TRUE(cmdQueue_ != nullptr);
 
-#if IGL_OPENGL_ES && IGL_BACKEND_OPENGL
-    const bool kUsesOpenGLES = opengl::DeviceFeatureSet::usesOpenGLES();
-#else
-    // no OpenGLES was linked
-    const bool kUsesOpenGLES = false;
-#endif
-
-    if (!iglDev_->hasFeature(DeviceFeatures::TextureFloat) ||
-        !iglDev_->hasFeature(DeviceFeatures::Texture2DArray) || kUsesOpenGLES) {
+    if (!iglDev_->hasFeature(DeviceFeatures::TextureHalfFloat) ||
+        !iglDev_->hasFeature(DeviceFeatures::Texture2DArray)) {
       GTEST_SKIP() << "2D float texture array is unsupported for this platform.";
       return;
     }
 
     // Create an offscreen texture to render to
-    TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_F32,
-                                             kOffscreenTexWidth,
-                                             kOffscreenTexHeight,
-                                             TextureDesc::TextureUsageBits::Attachment);
+    const TextureDesc texDesc = TextureDesc::new2D(kFloatTextureFormat,
+                                                   kOffscreenTexWidth,
+                                                   kOffscreenTexHeight,
+                                                   TextureDesc::TextureUsageBits::Attachment);
 
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);
@@ -277,16 +280,16 @@ class TextureArrayFloatTest : public ::testing::Test {
 };
 
 // clang-format off
-const glm::vec4 kR = igl::tests::util::convertSRGBToLinear(glm::vec4(0x1F / 255.0, 0x00/255.0, 0x00/255.0, 0x0F/255.0)); // 0x1F00000F
-const glm::vec4 kG = igl::tests::util::convertSRGBToLinear(glm::vec4(0x00 / 255.0, 0x2F/255.0, 0x00/255.0, 0x1F/255.0)); // 0x002F001F;
-const glm::vec4 kB = igl::tests::util::convertSRGBToLinear(glm::vec4(0x00 / 255.0, 0x00/255.0, 0x3F/255.0, 0x2F/255.0)); // 0x00003F2F;
-const glm::vec4 kC = igl::tests::util::convertSRGBToLinear(glm::vec4(0x00 / 255.0, 0x4F/255.0, 0x5F/255.0, 0x3F/255.0)); // 0x004F5F3F;
-const glm::vec4 kM = igl::tests::util::convertSRGBToLinear(glm::vec4(0x6F / 255.0, 0x00/255.0, 0x7F/255.0, 0x4F/255.0)); // 0x6F007F4F;
-const glm::vec4 kY = igl::tests::util::convertSRGBToLinear(glm::vec4(0x8F / 255.0, 0x9F/255.0, 0x00/255.0, 0x5F/255.0)); // 0x8F9F005F;
+const TestColorType kR = igl::tests::util::convertSRGBToLinear(glm::vec4(0x1F / 255.0, 0x00/255.0, 0x00/255.0, 0x0F/255.0)); // 0x1F00000F
+const TestColorType kG = igl::tests::util::convertSRGBToLinear(glm::vec4(0x00 / 255.0, 0x2F/255.0, 0x00/255.0, 0x1F/255.0)); // 0x002F001F;
+const TestColorType kB = igl::tests::util::convertSRGBToLinear(glm::vec4(0x00 / 255.0, 0x00/255.0, 0x3F/255.0, 0x2F/255.0)); // 0x00003F2F;
+const TestColorType kC = igl::tests::util::convertSRGBToLinear(glm::vec4(0x00 / 255.0, 0x4F/255.0, 0x5F/255.0, 0x3F/255.0)); // 0x004F5F3F;
+const TestColorType kM = igl::tests::util::convertSRGBToLinear(glm::vec4(0x6F / 255.0, 0x00/255.0, 0x7F/255.0, 0x4F/255.0)); // 0x6F007F4F;
+const TestColorType kY = igl::tests::util::convertSRGBToLinear(glm::vec4(0x8F / 255.0, 0x9F/255.0, 0x00/255.0, 0x5F/255.0)); // 0x8F9F005F;
 
 constexpr size_t kNumLayers = 3;
 
-const std::array<glm::vec4, 15> kTextureData = {
+const std::array<TestColorType, 15> kTextureData = {
   kR, kR, kR, kR, // Base Mip, Layer 0
   kG, kG, kG, kG, // Base Mip, Layer 1
   kB, kB, kB, kB, // Base Mip, Layer 2
@@ -295,32 +298,32 @@ const std::array<glm::vec4, 15> kTextureData = {
   kY,             // Mip 1, Layer 2
 };
 
-const std::array<glm::vec4, 12> kSubTextureData = {
+const std::array<TestColorType, 3> kSubTextureData = {
   kC,             // Layer 0
   kM,             // Layer 1
   kY,             // Layer 2
 };
 
-const std::array<glm::vec4, 12> kModifiedTextureData = {
+const std::array<TestColorType, 12> kModifiedTextureData = {
   kR, kR, kR, kC, // Layer 0
   kG, kG, kG, kM, // Layer 1
   kB, kB, kB, kY, // Layer 2
 };
 // clang-format on
 
-const std::array<const glm::vec4*, kNumLayers> kTextureLayerData = {
+const std::array<const TestColorType*, kNumLayers> kTextureLayerData = {
     kTextureData.data() + 0,
     kTextureData.data() + 4,
     kTextureData.data() + 8,
 };
 
-const std::array<const glm::vec4*, kNumLayers> kSubTextureLayerData = {
+const std::array<const TestColorType*, kNumLayers> kSubTextureLayerData = {
     kSubTextureData.data() + 0,
     kSubTextureData.data() + 1,
     kSubTextureData.data() + 2,
 };
 
-const std::array<const glm::vec4*, kNumLayers> kModifiedTextureLayerData = {
+const std::array<const TestColorType*, kNumLayers> kModifiedTextureLayerData = {
     kModifiedTextureData.data() + 0,
     kModifiedTextureData.data() + 4,
     kModifiedTextureData.data() + 8,
@@ -342,7 +345,7 @@ void runUploadTest(IDevice& device,
   //-------------------------------------
   // Create input texture and upload data
   //-------------------------------------
-  const TextureDesc texDesc = TextureDesc::new2DArray(TextureFormat::RGBA_F32,
+  const TextureDesc texDesc = TextureDesc::new2DArray(kFloatTextureFormat,
                                                       kOffscreenTexWidth,
                                                       kOffscreenTexHeight,
                                                       kNumLayers,
@@ -425,7 +428,7 @@ void runUploadToMipTest(IDevice& device, ICommandQueue& cmdQueue, bool singleUpl
   //-------------------------------------
   // Create input texture and upload data
   //-------------------------------------
-  TextureDesc texDesc = TextureDesc::new2DArray(TextureFormat::RGBA_F32,
+  TextureDesc texDesc = TextureDesc::new2DArray(kFloatTextureFormat,
                                                 kOffscreenTexWidth,
                                                 kOffscreenTexHeight,
                                                 kNumLayers,
@@ -480,7 +483,6 @@ TEST_F(TextureArrayFloatTest, UploadToMip_LayerByLayer) {
   runUploadToMipTest(*iglDev_, *cmdQueue_, false);
 }
 
-#if IGL_ANGLE
 //
 // Texture Passthrough Test - Sample From Array
 //
@@ -494,7 +496,7 @@ TEST_F(TextureArrayFloatTest, Passthrough_SampleFromArray) {
   //-------------------------------------
   // Create input texture and upload data
   //-------------------------------------
-  const TextureDesc texDesc = TextureDesc::new2DArray(TextureFormat::RGBA_F32,
+  const TextureDesc texDesc = TextureDesc::new2DArray(kFloatTextureFormat,
                                                       kOffscreenTexWidth,
                                                       kOffscreenTexHeight,
                                                       kNumLayers,
@@ -504,7 +506,7 @@ TEST_F(TextureArrayFloatTest, Passthrough_SampleFromArray) {
   ASSERT_TRUE(inputTexture_ != nullptr);
 
   const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
-  const size_t bytesPerRow = kOffscreenTexWidth * sizeof(glm::vec4);
+  const size_t bytesPerRow = kOffscreenTexWidth * sizeof(TestColorType);
 
   //
   // upload and redownload to make sure that we've uploaded successfully.
@@ -579,7 +581,7 @@ TEST_F(TextureArrayFloatTest, Passthrough_RenderToArray) {
   //---------------------------------
   // Create input and output textures
   //---------------------------------
-  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_F32,
+  TextureDesc texDesc = TextureDesc::new2D(kFloatTextureFormat,
                                            kOffscreenTexWidth,
                                            kOffscreenTexHeight,
                                            TextureDesc::TextureUsageBits::Sampled);
@@ -587,7 +589,7 @@ TEST_F(TextureArrayFloatTest, Passthrough_RenderToArray) {
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
 
-  texDesc = TextureDesc::new2DArray(TextureFormat::RGBA_F32,
+  texDesc = TextureDesc::new2DArray(kFloatTextureFormat,
                                     kOffscreenTexWidth,
                                     kOffscreenTexHeight,
                                     kNumLayers,
@@ -597,7 +599,7 @@ TEST_F(TextureArrayFloatTest, Passthrough_RenderToArray) {
   ASSERT_TRUE(customOffscreenTexture != nullptr);
 
   const auto rangeDesc = TextureRangeDesc::new2D(0, 0, kOffscreenTexWidth, kOffscreenTexHeight);
-  const size_t bytesPerRow = kOffscreenTexWidth * sizeof(glm::vec4);
+  const size_t bytesPerRow = kOffscreenTexWidth * sizeof(TestColorType);
 
   //--------------------------
   // Create custom framebuffer
@@ -669,16 +671,11 @@ TEST_F(TextureArrayFloatTest, Passthrough_RenderToArray) {
                                           layerStr.c_str());
   }
 }
-#endif
 
 TEST_F(TextureArrayFloatTest, ValidateRange2DArray) {
-  if (!iglDev_->hasFeature(DeviceFeatures::Texture2DArray)) {
-    GTEST_SKIP() << "2D array textures not supported. Skipping.";
-  }
-
   Result ret;
-  auto texDesc = TextureDesc::new2DArray(
-      TextureFormat::RGBA_F32, 8, 8, 2, TextureDesc::TextureUsageBits::Sampled);
+  auto texDesc =
+      TextureDesc::new2DArray(kFloatTextureFormat, 8, 8, 2, TextureDesc::TextureUsageBits::Sampled);
   auto tex = iglDev_->createTexture(texDesc, &ret);
 
   ret = tex->validateRange(TextureRangeDesc::new2DArray(0, 0, 8, 8, 0, 2));
@@ -714,8 +711,8 @@ TEST_F(TextureArrayFloatTest, GetEstimatedSizeInBytes) {
     return texture->getEstimatedSizeInBytes();
   };
 
-  const auto format = TextureFormat::RGBA_F32;
-  const uint32_t formatBytes = 16u;
+  const auto format = kFloatTextureFormat;
+  const uint32_t formatBytes = (kFloatTextureFormat == TextureFormat::RGBA_F16) ? 8u : 16u;
 
   uint32_t bytes;
   bytes = 12u * 34u * formatBytes * 2u;
@@ -808,9 +805,7 @@ TEST_F(TextureArrayFloatTest, GetRange) {
   auto rangesAreEqual = [&](const TextureRangeDesc& a, const TextureRangeDesc& b) -> bool {
     return std::memcmp(&a, &b, sizeof(TextureRangeDesc)) == 0;
   };
-  const auto format = iglDev_->getBackendType() == BackendType::OpenGL
-                          ? TextureFormat::R5G5B5A1_UNorm
-                          : TextureFormat::RGBA_F32;
+  const auto format = kFloatTextureFormat;
 
   TextureRangeDesc range;
   range = TextureRangeDesc::new2DArray(0, 0, 12, 34, 0, 2, 0, 1);

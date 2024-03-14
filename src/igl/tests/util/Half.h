@@ -15,7 +15,7 @@
 namespace igl::tests::util {
 struct Half {
  public:
-  constexpr Half() noexcept {}
+  constexpr Half() noexcept = default;
 
   explicit Half(float f) {
     data_ = glm::packHalf1x16(f);
