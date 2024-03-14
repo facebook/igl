@@ -128,8 +128,9 @@ using namespace igl;
     session_->setPixelsPerPoint(pixelsPerPoint);
 // @fb-only
     // @fb-only
-    IGL_ASSERT(fabs(shellParams_.nativeSurfaceDimensions.y / shellParams_.viewportSize.y -
-                    // @fb-only
+    // @fb-only
+        // @fb-only
+    // @fb-only
 // @fb-only
   }
   // draw

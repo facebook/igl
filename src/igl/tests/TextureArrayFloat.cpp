@@ -90,7 +90,7 @@ class TextureArrayFloatTest : public ::testing::Test {
     ASSERT_TRUE(iglDev_ != nullptr);
     ASSERT_TRUE(cmdQueue_ != nullptr);
 
-#if IGL_OPENGL_ES
+#if IGL_OPENGL_ES && IGL_BACKEND_OPENGL
     const bool kUsesOpenGLES = opengl::DeviceFeatureSet::usesOpenGLES();
 #else
     // no OpenGLES was linked

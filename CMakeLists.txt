@@ -127,6 +127,12 @@ find_package(Python3 COMPONENTS Interpreter)
 
 message(STATUS "IGL_ROOT_DIR = " ${IGL_ROOT_DIR})
 
+# Enables multithreaded compilation on visual studio
+if(MSVC)
+  SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} /MP")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+endif()
+
 if(IGL_DEPLOY_DEPS)
   # deploy dependencies during configuration
   execute_process(COMMAND ${Python3_EXECUTABLE} deploy_deps.py WORKING_DIRECTORY ${IGL_ROOT_DIR} COMMAND_ERROR_IS_FATAL ANY)
