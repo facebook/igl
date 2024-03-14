@@ -391,7 +391,7 @@ VulkanContext::~VulkanContext() {
       IGL_ASSERT_MSG(false,
                      "Leaked texture detected! %u %s",
                      t.obj_->getTextureId(),
-                     debugNamesTextures_[t.obj_->getTextureId()].c_str());
+                     t.obj_->getVulkanImage().name_.c_str());
     }
   }
   for (const auto& s : samplers_.objects_) {
@@ -1281,14 +1281,6 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
   }
 
   texture->textureId_ = handle.index();
-
-#if IGL_DEBUG
-  const uint32_t id = texture->getTextureId();
-  if (debugNamesTextures_.size() <= id) {
-    debugNamesTextures_.resize(id + 1);
-  }
-  debugNamesTextures_[id] = debugName;
-#endif // IGL_DEBUG
 
   awaitingCreation_ = true;
 

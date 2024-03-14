@@ -302,7 +302,6 @@ class VulkanContext final {
   VkPipelineCache pipelineCache_ = VK_NULL_HANDLE;
 
 #if IGL_DEBUG
-  mutable std::vector<std::string> debugNamesTextures_;
   mutable std::vector<std::string> debugNamesSamplers_;
 #endif // IGL_DEBUG
 
