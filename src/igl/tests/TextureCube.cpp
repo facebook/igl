@@ -85,8 +85,8 @@ class TextureCubeTest : public ::testing::Test {
                                              kOffscreenTexWidth,
                                              kOffscreenTexHeight,
                                              TextureDesc::TextureUsageBits::Sampled |
-                                                 TextureDesc::TextureUsageBits::Attachment);
-
+                                                 TextureDesc::TextureUsageBits::Attachment,
+                                             "TextureCubeTest::SetUp::offscreenTexture");
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -301,7 +301,8 @@ void runUploadTest(IDevice& device, ICommandQueue& cmdQueue, bool singleUpload) 
                                                    kOffscreenTexWidth,
                                                    kOffscreenTexWidth,
                                                    TextureDesc::TextureUsageBits::Sampled |
-                                                       TextureDesc::TextureUsageBits::Attachment);
+                                                       TextureDesc::TextureUsageBits::Attachment,
+                                                   "runUploadTest()::tex");
   auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
   ASSERT_TRUE(tex != nullptr);
@@ -354,7 +355,8 @@ void runUploadToMipTest(IDevice& device, ICommandQueue& cmdQueue, bool singleUpl
                                              kOffscreenTexWidth,
                                              kOffscreenTexWidth,
                                              TextureDesc::TextureUsageBits::Sampled |
-                                                 TextureDesc::TextureUsageBits::Attachment);
+                                                 TextureDesc::TextureUsageBits::Attachment,
+                                             "runUploadToMipTest()::tex");
   texDesc.numMipLevels = 2;
   auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok) << ret.message;
@@ -397,7 +399,7 @@ TEST_F(TextureCubeTest, UploadToMip_LevelByLevel) {
 // Texture Passthrough Test - Sample From Cube
 //
 // This test uses a simple shader to copy a face of the input cube texture to an
-// a output texture that matches the size of the input texture face
+// output texture that matches the size of the input texture face
 //
 TEST_F(TextureCubeTest, Passthrough_SampleFromCube) {
   Result ret;
@@ -406,10 +408,12 @@ TEST_F(TextureCubeTest, Passthrough_SampleFromCube) {
   //-------------------------------------
   // Create input texture and upload data
   //-------------------------------------
-  TextureDesc texDesc = TextureDesc::newCube(TextureFormat::RGBA_UNorm8,
-                                             kOffscreenTexWidth,
-                                             kOffscreenTexHeight,
-                                             TextureDesc::TextureUsageBits::Sampled);
+  const TextureDesc texDesc =
+      TextureDesc::newCube(TextureFormat::RGBA_UNorm8,
+                           kOffscreenTexWidth,
+                           kOffscreenTexHeight,
+                           TextureDesc::TextureUsageBits::Sampled,
+                           "TextureCubeTest::Passthrough_SampleFromCube::inputTexture_");
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
@@ -498,19 +502,22 @@ TEST_F(TextureCubeTest, Passthrough_RenderToCube) {
   //---------------------------------
   // Create input and output textures
   //---------------------------------
-  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           kOffscreenTexWidth,
-                                           kOffscreenTexHeight,
-                                           TextureDesc::TextureUsageBits::Sampled);
+  TextureDesc texDesc =
+      TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                         kOffscreenTexWidth,
+                         kOffscreenTexHeight,
+                         TextureDesc::TextureUsageBits::Sampled,
+                         "TextureCubeTest::Passthrough_RenderToCube::inputTexture_");
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
 
-  texDesc = TextureDesc::newCube(TextureFormat::RGBA_UNorm8,
-                                 kOffscreenTexWidth,
-                                 kOffscreenTexHeight,
-                                 TextureDesc::TextureUsageBits::Sampled |
-                                     TextureDesc::TextureUsageBits::Attachment);
+  texDesc = TextureDesc::newCube(
+      TextureFormat::RGBA_UNorm8,
+      kOffscreenTexWidth,
+      kOffscreenTexHeight,
+      TextureDesc::TextureUsageBits::Sampled | TextureDesc::TextureUsageBits::Attachment,
+      "TextureCubeTest::Passthrough_RenderToCube::customOffscreenTexture");
   auto customOffscreenTexture = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(customOffscreenTexture != nullptr);
@@ -600,7 +607,8 @@ TEST_F(TextureCubeTest, GetEstimatedSizeInBytes) {
                                                width,
                                                height,
                                                TextureDesc::TextureUsageBits::Sampled |
-                                                   TextureDesc::TextureUsageBits::Attachment);
+                                                   TextureDesc::TextureUsageBits::Attachment,
+                                               "TextureCubeTest::GetEstimatedSizeInBytes::texture");
     texDesc.numMipLevels = numMipLevels;
     auto texture = iglDev_->createTexture(texDesc, &ret);
     if (ret.code != Result::Code::Ok || texture == nullptr) {
@@ -634,7 +642,8 @@ TEST_F(TextureCubeTest, GetRange) {
                                                width,
                                                height,
                                                TextureDesc::TextureUsageBits::Sampled |
-                                                   TextureDesc::TextureUsageBits::Attachment);
+                                                   TextureDesc::TextureUsageBits::Attachment,
+                                               "TextureCubeTest::GetRange::texture");
     texDesc.numMipLevels = numMipLevels;
     auto texture = iglDev_->createTexture(texDesc, &ret);
     if (ret.code != Result::Code::Ok || texture == nullptr) {
