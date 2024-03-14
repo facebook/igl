@@ -301,10 +301,6 @@ class VulkanContext final {
 
   VkPipelineCache pipelineCache_ = VK_NULL_HANDLE;
 
-#if IGL_DEBUG
-  mutable std::vector<std::string> debugNamesSamplers_;
-#endif // IGL_DEBUG
-
   // 1. Textures can be safely deleted once they are not in use by GPU, hence our Vulkan context
   // owns all allocated textures (images+image views). The IGL interface vulkan::Texture does not
   // delete the underlying VulkanTexture but instead informs the context that it should be
