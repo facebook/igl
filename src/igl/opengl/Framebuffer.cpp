@@ -245,6 +245,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
   getContext().flush();
 
   // @fb-only
+  // @fb-only
   const auto rangeX = static_cast<GLint>(range.x);
   const auto rangeY = static_cast<GLint>(range.y);
   const auto rangeWidth = static_cast<GLsizei>(range.width);
@@ -255,6 +256,28 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
             getContext().deviceFeatures().hasTextureFeature(TextureFeatures::TextureInteger))) {
       getContext().readPixels(
           rangeX, rangeY, rangeWidth, rangeHeight, GL_RGBA_INTEGER, GL_UNSIGNED_INT, pixelBytes);
+    }
+  } else if (textureFormat == TextureFormat::RGBA_F16) {
+    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureHalfFloat))) {
+      getContext().readPixels(
+          rangeX, rangeY, rangeWidth, rangeHeight, GL_RGBA, GL_HALF_FLOAT, pixelBytes);
+    }
+  } else if (textureFormat == TextureFormat::RGB_F16) {
+    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureHalfFloat))) {
+      getContext().readPixels(
+          rangeX, rangeY, rangeWidth, rangeHeight, GL_RGB, GL_HALF_FLOAT, pixelBytes);
+    }
+  } else if (textureFormat == TextureFormat::RG_F16) {
+    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureHalfFloat)) &&
+        IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
+      getContext().readPixels(
+          rangeX, rangeY, rangeWidth, rangeHeight, GL_RG, GL_HALF_FLOAT, pixelBytes);
+    }
+  } else if (textureFormat == TextureFormat::R_F16) {
+    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureHalfFloat)) &&
+        IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
+      getContext().readPixels(
+          rangeX, rangeY, rangeWidth, rangeHeight, GL_RED, GL_HALF_FLOAT, pixelBytes);
     }
   } else if (textureFormat == TextureFormat::RGBA_F32) {
     if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFloat))) {
