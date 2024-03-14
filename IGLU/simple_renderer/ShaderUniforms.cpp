@@ -915,6 +915,22 @@ void ShaderUniforms::bind(igl::IDevice& device,
 
 void ShaderUniforms::bind(igl::IDevice& device,
                           const igl::IRenderPipelineState& pipelineState,
+                          igl::IRenderCommandEncoder& encoder,
+                          const igl::NameHandle& blockName,
+                          const igl::NameHandle& blockInstanceName,
+                          const igl::NameHandle& memberName) {
+  auto possibleBufferNames =
+      getPossibleBufferAndMemberNames(blockName, blockInstanceName, memberName);
+  for (auto& [bufferName, bufferMemberName] : possibleBufferNames) {
+    auto range = _bufferDescs.equal_range(bufferName);
+    for (auto bufferDescIt = range.first; bufferDescIt != range.second; ++bufferDescIt) {
+      bindBuffer(device, pipelineState, encoder, bufferDescIt->second.get());
+    }
+  }
+}
+
+void ShaderUniforms::bind(igl::IDevice& device,
+                          const igl::IRenderPipelineState& pipelineState,
                           igl::IRenderCommandEncoder& encoder) {
   for (auto& [name, bufferDesc] : _bufferDescs) {
     bindBuffer(device, pipelineState, encoder, bufferDesc.get());

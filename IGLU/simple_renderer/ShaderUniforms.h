@@ -214,6 +214,13 @@ class ShaderUniforms final {
             igl::IRenderCommandEncoder& encoder,
             const igl::NameHandle& uniformName);
 
+  void bind(igl::IDevice& device,
+            const igl::IRenderPipelineState& pipelineState,
+            igl::IRenderCommandEncoder& encoder,
+            const igl::NameHandle& blockName,
+            const igl::NameHandle& blockInstanceName,
+            const igl::NameHandle& memberName);
+
   /**
    * Uniform/Storage buffers can be suballocated, for scenarios where
    * we only want to update a portion of a buffer
