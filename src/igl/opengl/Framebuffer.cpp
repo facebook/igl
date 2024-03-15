@@ -262,6 +262,16 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
       getContext().readPixels(
           rangeX, rangeY, rangeWidth, rangeHeight, GL_RGBA_INTEGER, GL_UNSIGNED_INT, pixelBytes);
     }
+  } else if (textureFormat == TextureFormat::R_UNorm8) {
+    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
+      getContext().readPixels(
+          rangeX, rangeY, rangeWidth, rangeHeight, GL_RED, GL_UNSIGNED_BYTE, pixelBytes);
+    }
+  } else if (textureFormat == TextureFormat::RG_UNorm8) {
+    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
+      getContext().readPixels(
+          rangeX, rangeY, rangeWidth, rangeHeight, GL_RG, GL_UNSIGNED_BYTE, pixelBytes);
+    }
   } else if (textureFormat == TextureFormat::RGBA_F16) {
     if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureHalfFloat))) {
       getContext().readPixels(
