@@ -728,20 +728,6 @@ bool XrApp::initialize(const struct android_app* app) {
     return false;
   }
 
-#if 1
-  if (refreshRateExtensionSupported_) {
-    getCurrentRefreshRate();
-    querySupportedRefreshRates();
-
-    if (useMaxRefreshRate_){
-        setMaxRefreshRate();
-    }
-    else{
-        setRefreshRate(desiredSpecificRefreshRate_);
-    }
-  }
-#endif
-
   // The following are initialization steps that happen after XrSession is created.
   enumerateReferenceSpaces();
   enumerateBlendModes();
@@ -752,6 +738,16 @@ bool XrApp::initialize(const struct android_app* app) {
   }
   if (handsTrackingSupported_ && !createHandsTracking()) {
     return false;
+  }
+  if (refreshRateExtensionSupported_) {
+    getCurrentRefreshRate();
+
+    if (useMaxRefreshRate_){
+        setMaxRefreshRate();
+    }
+    else{
+        setRefreshRate(desiredSpecificRefreshRate_);
+    }
   }
 
   updateHandMeshes();
