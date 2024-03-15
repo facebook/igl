@@ -44,10 +44,6 @@ class XrAppImplVulkan final : public impl::XrAppImpl {
   };
 #endif // IGL_CMAKE_BUILD
 
-  XrInstanceCreateInfoAndroidKHR instanceCreateInfoAndroid_ = {
-      .type = XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR,
-  };
-
   std::vector<const char*> requiredVkInstanceExtensions_;
   std::vector<char> requiredVkInstanceExtensionsBuffer_;
 
