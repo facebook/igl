@@ -770,10 +770,6 @@ bool XrApp::initialize(const struct android_app* app) {
   }
   if (compositionLayerSettingsSupported_ && enableSharpeningAtStartup_) {
     setSharpeningEnabled(true);
-    setSharpeningEnabled(false);
-    setSharpeningEnabled(true);
-    setSharpeningEnabled(false);
-    setSharpeningEnabled(true);
   }
   updateHandMeshes();
 
