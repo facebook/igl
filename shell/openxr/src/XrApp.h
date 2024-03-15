@@ -110,6 +110,10 @@ class XrApp {
   void render();
   void endFrame(XrFrameState frameState);
 
+  bool setRefreshRate(const float refreshRate);
+  bool isRefreshRateSupported(const float refreshRate);
+  const std::vector<float>& getSupportedRefreshRates();
+
  private:
   void* nativeWindow_ = nullptr;
   bool resumed_ = false;
@@ -172,6 +176,11 @@ class XrApp {
 
   XrHandTrackerEXT leftHandTracker_ = XR_NULL_HANDLE;
   XrHandTrackerEXT rightHandTracker_ = XR_NULL_HANDLE;
+
+  bool refreshRateExtensionSupported_ = false;
+  std::vector<float> supportedRefreshRates_;
+  float currentRefreshRate_ = 0.0f;
+  void querySupportedRefreshRates();
 
   std::unique_ptr<impl::XrAppImpl> impl_;
 

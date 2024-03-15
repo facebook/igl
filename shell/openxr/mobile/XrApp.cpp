@@ -1064,4 +1064,55 @@ void XrApp::update() {
   render();
   endFrame(frameState);
 }
+
+bool XrApp::setRefreshRate(const float refreshRate){
+
+    if (!initialized_ || !resumed_ || !sessionActive_ ||
+        !refreshRateExtensionSupported_
+        || (refreshRate == currentRefreshRate_)
+        || !isRefreshRateSupported(refreshRate)) {
+        return false;
+    }
+
+    // Do it
+    currentRefreshRate_ = refreshRate;
+
+    return true;
+}
+
+bool XrApp::isRefreshRateSupported(const float refreshRate){
+    if (!initialized_ || !resumed_ || !sessionActive_ || !refreshRateExtensionSupported_) {
+        return false;
+    }
+
+    const std::vector<float>& supportedRefreshRates = getSupportedRefreshRates();
+
+    for(const float& supportedRefreshRate : supportedRefreshRates){
+        if (fabs(refreshRate - supportedRefreshRate) < FLT_EPSILON){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+const std::vector<float>& XrApp::getSupportedRefreshRates()  {
+    if (!initialized_ || !resumed_ || !sessionActive_ || !refreshRateExtensionSupported_) {
+        return supportedRefreshRates_;
+    }
+
+    if (supportedRefreshRates_.empty()){
+        querySupportedRefreshRates();
+    }
+
+    return supportedRefreshRates_;
+}
+
+void XrApp::querySupportedRefreshRates() {
+    if (!initialized_ || !resumed_ || !sessionActive_ || !refreshRateExtensionSupported_ || !supportedRefreshRates_.empty()) {
+        return;
+    }
+
+}
+
 } // namespace igl::shell::openxr
