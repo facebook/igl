@@ -728,6 +728,18 @@ bool XrApp::initialize(const struct android_app* app) {
     return false;
   }
 
+  if (refreshRateExtensionSupported_) {
+    getCurrentRefreshRate();
+    querySupportedRefreshRates();
+
+    if (useMaxRefreshRate_){
+        setMaxRefreshRate();
+    }
+    else{
+        setRefreshRate(desiredSpecificRefreshRate_);
+    }
+  }
+
   // The following are initialization steps that happen after XrSession is created.
   enumerateReferenceSpaces();
   enumerateBlendModes();
@@ -864,18 +876,6 @@ void XrApp::handleSessionStateChanges(XrSessionState state) {
 
     sessionActive_ = (result == XR_SUCCESS);
     IGL_LOG_INFO("XR session active");
-
-    if (sessionActive_ && refreshRateExtensionSupported_) {
-      getCurrentRefreshRate();
-      querySupportedRefreshRates();
-
-      if (useMaxRefreshRate_){
-          setMaxRefreshRate();
-      }
-      else{
-          setRefreshRate(desiredSpecificRefreshRate_);
-      }
-    }
   } else if (state == XR_SESSION_STATE_STOPPING) {
     assert(resumed_ == false);
     assert(sessionActive_);
@@ -1098,9 +1098,7 @@ void XrApp::update() {
 }
 
 float XrApp::getCurrentRefreshRate(){
-
-    if (!initialized_ || !resumed_ || !sessionActive_ ||
-        !refreshRateExtensionSupported_ || (currentRefreshRate_ > 0.0f)) {
+    if (!session_ || !refreshRateExtensionSupported_ || (currentRefreshRate_ > 0.0f)) {
         return currentRefreshRate_;
     }
 
@@ -1114,8 +1112,7 @@ float XrApp::getCurrentRefreshRate(){
 }
 
 float XrApp::getMaxRefreshRate() {
-    if (!initialized_ || !resumed_ || !sessionActive_ ||
-        !refreshRateExtensionSupported_) {
+    if (!session_ || !refreshRateExtensionSupported_) {
         return 0.0f;
     }
 
@@ -1132,8 +1129,7 @@ float XrApp::getMaxRefreshRate() {
 
 bool XrApp::setRefreshRate(const float refreshRate){
 
-    if (!initialized_ || !resumed_ || !sessionActive_ ||
-        !refreshRateExtensionSupported_
+    if (!session_ || !refreshRateExtensionSupported_
         || (refreshRate == currentRefreshRate_)
         || !isRefreshRateSupported(refreshRate)) {
         return false;
@@ -1152,7 +1148,7 @@ bool XrApp::setRefreshRate(const float refreshRate){
 }
 
 void XrApp::setMaxRefreshRate(){
-    if (!initialized_ || !resumed_ || !sessionActive_ || !refreshRateExtensionSupported_) {
+    if (!session_ || !refreshRateExtensionSupported_) {
         return;
     }
 
@@ -1164,7 +1160,7 @@ void XrApp::setMaxRefreshRate(){
 }
 
 bool XrApp::isRefreshRateSupported(const float refreshRate){
-    if (!initialized_ || !resumed_ || !sessionActive_ || !refreshRateExtensionSupported_) {
+    if (!session_ || !refreshRateExtensionSupported_) {
         return false;
     }
 
@@ -1174,7 +1170,7 @@ bool XrApp::isRefreshRateSupported(const float refreshRate){
 }
 
 const std::vector<float>& XrApp::getSupportedRefreshRates()  {
-    if (!initialized_ || !resumed_ || !sessionActive_ || !refreshRateExtensionSupported_) {
+    if (!session_ || !refreshRateExtensionSupported_) {
         return supportedRefreshRates_;
     }
 
@@ -1186,7 +1182,7 @@ const std::vector<float>& XrApp::getSupportedRefreshRates()  {
 }
 
 void XrApp::querySupportedRefreshRates() {
-    if (!initialized_ || !resumed_ || !sessionActive_ || !refreshRateExtensionSupported_ || !supportedRefreshRates_.empty()) {
+    if (!session_ || !refreshRateExtensionSupported_ || !supportedRefreshRates_.empty()) {
         return;
     }
 
