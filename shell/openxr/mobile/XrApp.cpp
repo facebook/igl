@@ -1206,11 +1206,10 @@ void XrApp::querySupportedRefreshRates() {
       std::sort(supportedRefreshRates_.begin(), supportedRefreshRates_.end());
     }
 
-  for (float refreshRate : supportedRefreshRates_) {
-    IGL_LOG_INFO("querySupportedRefreshRates Hz = %.2f.", refreshRate);
+    for (float refreshRate : supportedRefreshRates_) {
+      IGL_LOG_INFO("querySupportedRefreshRates Hz = %.2f.", refreshRate);
+    }
   }
-}
-
 }
 
 } // namespace igl::shell::openxr
