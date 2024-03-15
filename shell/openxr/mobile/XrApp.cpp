@@ -340,7 +340,7 @@ bool XrApp::createSystem() {
 
 bool XrApp::createPassthrough() {
   if (!passthroughSupported_) {
-      return false;
+    return false;
   }
   XrPassthroughCreateInfoFB passthroughInfo{XR_TYPE_PASSTHROUGH_CREATE_INFO_FB};
   passthroughInfo.next = nullptr;
