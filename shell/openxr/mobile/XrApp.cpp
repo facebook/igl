@@ -225,7 +225,14 @@ bool XrApp::checkExtensions() {
     requiredExtensions_.push_back(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME);
   }
 
-  return true;
+  compositionLayerSettingsSupported_ = checkExtensionSupported(XR_FB_COMPOSITION_LAYER_SETTINGS_EXTENSION_NAME);
+  IGL_LOG_INFO("Composition Layer Settings are %s", compositionLayerSettingsSupported_ ? "supported" : "not supported");
+
+  if (compositionLayerSettingsSupported_ && checkNeedRequiredExtension(XR_FB_COMPOSITION_LAYER_SETTINGS_EXTENSION_NAME)) {
+    requiredExtensions_.push_back(XR_FB_COMPOSITION_LAYER_SETTINGS_EXTENSION_NAME);
+  }
+
+    return true;
 }
 
 bool XrApp::createInstance() {
@@ -749,6 +756,9 @@ bool XrApp::initialize(const struct android_app* app) {
         setRefreshRate(desiredSpecificRefreshRate_);
     }
   }
+  if (compositionLayerSettingsSupported_ && enableSharpeningAtStartup_){
+      setSharpeningEnabled(true);
+  }
 
   updateHandMeshes();
 
@@ -1070,6 +1080,10 @@ void XrApp::endFrame(XrFrameState frameState) {
         projectionViews.data(),
     };
 
+      if (compositionLayerSettingsSupported_) {
+          ((XrCompositionLayerBaseHeader*)&projection)->next = &compositionLayerSettings_;
+      }
+
     const XrCompositionLayerBaseHeader* const layers[] = {
         (const XrCompositionLayerBaseHeader*)&projection,
     };
@@ -1198,6 +1212,20 @@ void XrApp::querySupportedRefreshRates() {
         for (float refreshRate : supportedRefreshRates_) {
             IGL_LOG_INFO("querySupportedRefreshRates Hz = %.2f.", refreshRate);
         }
+    }
+}
+
+bool XrApp::isSharpeningEnabled() const {
+    return sharpeningEnabled_;
+}
+
+void XrApp::setSharpeningEnabled(const bool enabled) {
+
+    if (compositionLayerSettingsSupported_){
+        compositionLayerSettings_.layerFlags = enabled ? XR_COMPOSITION_LAYER_SETTINGS_QUALITY_SHARPENING_BIT_FB : 0;
+        sharpeningEnabled_ = enabled;
+
+        IGL_LOG_INFO("setSharpeningEnabled, Sharpening is now %s", enabled ? "ON" : "OFF");
     }
 }
 
