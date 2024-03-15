@@ -1228,16 +1228,19 @@ void XrApp::querySupportedRefreshRates() {
 }
 
 bool XrApp::isSharpeningEnabled() const {
-  return sharpeningEnabled_;
+  return ((compositionLayerSettings_.layerFlags & XR_COMPOSITION_LAYER_SETTINGS_QUALITY_SHARPENING_BIT_FB) != 0);
 }
 
 void XrApp::setSharpeningEnabled(const bool enabled) {
 
   if (compositionLayerSettingsSupported_) {
-    compositionLayerSettings_.layerFlags = enabled ? XR_COMPOSITION_LAYER_SETTINGS_QUALITY_SHARPENING_BIT_FB : 0;
-    sharpeningEnabled_ = enabled;
-
-    IGL_LOG_INFO("setSharpeningEnabled, Sharpening is now %s", enabled ? "ON" : "OFF");
+    if (enabled) {
+      compositionLayerSettings_.layerFlags |= XR_COMPOSITION_LAYER_SETTINGS_QUALITY_SHARPENING_BIT_FB;
+    }
+    else {
+      compositionLayerSettings_.layerFlags &= ~XR_COMPOSITION_LAYER_SETTINGS_QUALITY_SHARPENING_BIT_FB;
+    }
+    IGL_LOG_INFO("setSharpeningEnabled, Sharpening is now %s", isSharpeningEnabled() ? "ON" : "OFF");
   }
 }
 
