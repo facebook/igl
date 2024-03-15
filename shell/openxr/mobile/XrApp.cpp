@@ -728,6 +728,7 @@ bool XrApp::initialize(const struct android_app* app) {
     return false;
   }
 
+#if 0
   if (refreshRateExtensionSupported_) {
     getCurrentRefreshRate();
     querySupportedRefreshRates();
@@ -739,6 +740,7 @@ bool XrApp::initialize(const struct android_app* app) {
         setRefreshRate(desiredSpecificRefreshRate_);
     }
   }
+#endif
 
   // The following are initialization steps that happen after XrSession is created.
   enumerateReferenceSpaces();
