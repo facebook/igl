@@ -339,6 +339,9 @@ bool XrApp::createSystem() {
 }
 
 bool XrApp::createPassthrough() {
+  if (!passthroughSupported_) {
+      return false;
+  }
   XrPassthroughCreateInfoFB passthroughInfo{XR_TYPE_PASSTHROUGH_CREATE_INFO_FB};
   passthroughInfo.next = nullptr;
   passthroughInfo.flags = 0u;
@@ -380,6 +383,9 @@ bool XrApp::createPassthrough() {
 }
 
 bool XrApp::createHandsTracking() {
+  if (!handsTrackingSupported_) {
+    return false;
+  }
   XrHandTrackerCreateInfoEXT createInfo{XR_TYPE_HAND_TRACKER_CREATE_INFO_EXT};
   createInfo.handJointSet = XR_HAND_JOINT_SET_DEFAULT_EXT;
   createInfo.hand = XR_HAND_LEFT_EXT;
@@ -413,6 +419,9 @@ bool XrApp::createHandsTracking() {
 }
 
 void XrApp::updateHandMeshes() {
+  if (!handsTrackingMeshSupported_) {
+    return;
+  }
   auto& handMeshes = shellParams_->handMeshes;
 
   XrResult result;
@@ -481,6 +490,9 @@ void XrApp::updateHandMeshes() {
 }
 
 void XrApp::updateHandTracking() {
+  if (!handsTrackingSupported_) {
+    return;
+  }
   auto& handTracking = shellParams_->handTracking;
 
   XrResult result;
