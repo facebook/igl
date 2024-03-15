@@ -728,7 +728,7 @@ bool XrApp::initialize(const struct android_app* app) {
     return false;
   }
 
-#if 0
+#if 1
   if (refreshRateExtensionSupported_) {
     getCurrentRefreshRate();
     querySupportedRefreshRates();
