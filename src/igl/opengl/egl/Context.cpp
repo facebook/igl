@@ -96,14 +96,16 @@ EGLint attribs[] = {
     16,
     EGL_SURFACE_TYPE,
     EGL_PBUFFER_BIT,
-    // want opengl-es 2.x conformant CONTEXT
+    EGL_SAMPLES,
+    4,
+    // want opengl-es 3.x conformant CONTEXT
     EGL_RENDERABLE_TYPE,
-    EGL_OPENGL_ES2_BIT,
+    EGL_OPENGL_ES3_BIT,
     EGL_NONE // Terminator
 };
 EGLint contextAttribs[] = {
     EGL_CONTEXT_CLIENT_VERSION,
-    2,
+    3,
     EGL_NONE // Terminator
 };
 
@@ -215,9 +217,9 @@ Context::Context(RenderingAPI api,
     if (offscreen) {
       EGLint pbufferAttribs[] = {
           EGL_WIDTH,
-          dimensions.first,
+          4,
           EGL_HEIGHT,
-          dimensions.second,
+          4,
           EGL_NONE, // Terminator. I'll be back!
       };
       readSurface_ = drawSurface_ = eglCreatePbufferSurface(display_, config, pbufferAttribs);
