@@ -25,15 +25,7 @@
     android:label="IGL Shell OpenXR Vulkan">
 
     <meta-data android:name="com.oculus.vr.focusaware" android:value="true"/>
-    <meta-data android:name="com.samsung.android.vr.application_mode" android:value="vr_only"/>
     <meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|quest3|questpro"/>
-    <meta-data android:name="com.oculus.handtracking.version" android:value="V2.2"/>
-
-    <meta-data android:name="com.htc.vr.content.NumDoFHmd" android:value="6DoF"/>
-    <meta-data android:name="com.htc.vr.content.NumDoFController" android:value="6DoF"/>
-    <meta-data android:name="com.htc.vr.content.NumController" android:value="2"/>
-
-    <meta-data android:name="pvr.app.type" android:value="vr" />
 
     <activity android:name="android.app.NativeActivity"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
