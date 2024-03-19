@@ -30,7 +30,6 @@
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
         android:launchMode="singleTask"
         android:exported="true"
-        android:resizeableActivity="false"
         android:screenOrientation="landscape"
         android:excludeFromRecents="false"
         android:configChanges="screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode">
@@ -40,7 +39,6 @@
         <action android:name="android.intent.action.MAIN" />
         <category android:name="com.oculus.intent.category.VR" />
         <category android:name="android.intent.category.LAUNCHER" />
-        <category android:name="org.khronos.openxr.intent.category.IMMERSIVE_HMD" />
       </intent-filter>
     </activity>
   </application>
