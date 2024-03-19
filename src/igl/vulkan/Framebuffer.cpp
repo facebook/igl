@@ -84,7 +84,9 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
     return;
   }
 
-  const auto& vkTex = static_cast<Texture&>(*itexture);
+  // If we're doing MSAA, we should be using the resolve color attachment
+  const auto& vkTex = static_cast<Texture&>(
+      itexture->getSamples() == 1 ? *itexture : *getResolveColorAttachment(index));
   const VkRect2D imageRegion = {
       VkOffset2D{static_cast<int32_t>(range.x), static_cast<int32_t>(range.y)},
       VkExtent2D{static_cast<uint32_t>(range.width), static_cast<uint32_t>(range.height)},
@@ -148,7 +150,9 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   if (!IGL_VERIFY(srcTexture)) {
     return;
   }
-  const igl::vulkan::Texture& srcVkTex = static_cast<Texture&>(*srcTexture);
+  // If we're doing MSAA, we should be using the resolve color attachment
+  const igl::vulkan::Texture& srcVkTex = static_cast<Texture&>(
+      srcTexture->getSamples() == 1 ? *srcTexture : *getResolveColorAttachment(index));
 
   if (!IGL_VERIFY(destTexture)) {
     return;
