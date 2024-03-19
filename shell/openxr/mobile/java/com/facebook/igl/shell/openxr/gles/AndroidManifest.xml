@@ -34,15 +34,13 @@
         android:screenOrientation="landscape"
         android:excludeFromRecents="false"
         android:configChanges="screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode">
-
+      <!-- This filter lets the apk show up as a launchable icon. -->
       <meta-data android:name="android.app.lib_name" android:value="openxr-gles-Jni" />
-
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="com.oculus.intent.category.VR" />
         <category android:name="android.intent.category.LAUNCHER" />
         <category android:name="org.khronos.openxr.intent.category.IMMERSIVE_HMD" />
-        <category android:name="com.htc.intent.category.VRAPP" />
       </intent-filter>
     </activity>
   </application>
