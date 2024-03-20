@@ -185,6 +185,7 @@ class XrApp {
 
   bool refreshRateExtensionSupported_ = false;
   bool useMaxRefreshRate_ = false;
+  bool useSpecificRefreshRate_ = false;
   float desiredSpecificRefreshRate_ = 90.0f;
   std::vector<float> supportedRefreshRates_;
   float currentRefreshRate_ = 0.0f;

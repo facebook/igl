@@ -758,13 +758,13 @@ bool XrApp::initialize(const struct android_app* app) {
   if (handsTrackingSupported_ && !createHandsTracking()) {
     return false;
   }
-  if (refreshRateExtensionSupported_) {
+  if (refreshRateExtensionSupported_ && (useMaxRefreshRate_ || useSpecificRefreshRate_)) {
     getCurrentRefreshRate();
 
     if (useMaxRefreshRate_) {
       setMaxRefreshRate();
     }
-    else {
+    else if (useSpecificRefreshRate_) {
       setRefreshRate(desiredSpecificRefreshRate_);
     }
   }
