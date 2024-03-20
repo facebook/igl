@@ -115,7 +115,7 @@ void android_main(struct android_app* app) {
   // @fb-only
   // @fb-only
 #endif
-  if (!xrApp->initialize(app)) {
+  if (!xrApp->initialize(app, {})) {
     return;
   }
 

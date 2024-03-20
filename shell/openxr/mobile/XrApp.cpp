@@ -186,7 +186,7 @@ bool XrApp::checkExtensions() {
   };
 
   passthroughSupported_ = checkExtensionSupported(XR_FB_PASSTHROUGH_EXTENSION_NAME);
-  IGL_LOG_INFO("Passthrough is %s", stageSpaceSupported_ ? "supported" : "not supported");
+  IGL_LOG_INFO("Passthrough is %s", passthroughSupported_ ? "supported" : "not supported");
 
   auto checkNeedRequiredExtension = [this](const char* name) {
     return std::find_if(std::begin(requiredExtensions_),
@@ -216,6 +216,15 @@ bool XrApp::checkExtensions() {
         checkNeedRequiredExtension(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME)) {
       requiredExtensions_.push_back(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME);
     }
+  }
+
+  refreshRateExtensionSupported_ =
+      checkExtensionSupported(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME);
+  IGL_LOG_INFO("RefreshRate is %s", refreshRateExtensionSupported_ ? "supported" : "not supported");
+
+  if (refreshRateExtensionSupported_ &&
+      checkNeedRequiredExtension(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME)) {
+    requiredExtensions_.push_back(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME);
   }
 
   return true;
@@ -289,6 +298,21 @@ bool XrApp::createInstance() {
     }
   }
 
+  if (refreshRateExtensionSupported_) {
+    XR_CHECK(xrGetInstanceProcAddr(instance_,
+                                   "xrGetDisplayRefreshRateFB",
+                                   (PFN_xrVoidFunction*)(&xrGetDisplayRefreshRateFB_)));
+    IGL_ASSERT(xrGetDisplayRefreshRateFB_ != nullptr);
+    XR_CHECK(xrGetInstanceProcAddr(instance_,
+                                   "xrEnumerateDisplayRefreshRatesFB",
+                                   (PFN_xrVoidFunction*)(&xrEnumerateDisplayRefreshRatesFB_)));
+    IGL_ASSERT(xrEnumerateDisplayRefreshRatesFB_ != nullptr);
+    XR_CHECK(xrGetInstanceProcAddr(instance_,
+                                   "xrRequestDisplayRefreshRateFB",
+                                   (PFN_xrVoidFunction*)(&xrRequestDisplayRefreshRateFB_)));
+    IGL_ASSERT(xrRequestDisplayRefreshRateFB_ != nullptr);
+  }
+
   return true;
 } // namespace igl::shell::openxr
 
@@ -320,6 +344,9 @@ bool XrApp::createSystem() {
 }
 
 bool XrApp::createPassthrough() {
+  if (!passthroughSupported_) {
+    return false;
+  }
   XrPassthroughCreateInfoFB passthroughInfo{XR_TYPE_PASSTHROUGH_CREATE_INFO_FB};
   passthroughInfo.next = nullptr;
   passthroughInfo.flags = 0u;
@@ -361,6 +388,9 @@ bool XrApp::createPassthrough() {
 }
 
 bool XrApp::createHandsTracking() {
+  if (!handsTrackingSupported_) {
+    return false;
+  }
   XrHandTrackerCreateInfoEXT createInfo{XR_TYPE_HAND_TRACKER_CREATE_INFO_EXT};
   createInfo.handJointSet = XR_HAND_JOINT_SET_DEFAULT_EXT;
   createInfo.hand = XR_HAND_LEFT_EXT;
@@ -394,6 +424,9 @@ bool XrApp::createHandsTracking() {
 }
 
 void XrApp::updateHandMeshes() {
+  if (!handsTrackingMeshSupported_) {
+    return;
+  }
   auto& handMeshes = shellParams_->handMeshes;
 
   XrResult result;
@@ -462,6 +495,9 @@ void XrApp::updateHandMeshes() {
 }
 
 void XrApp::updateHandTracking() {
+  if (!handsTrackingSupported_) {
+    return;
+  }
   auto& handTracking = shellParams_->handTracking;
 
   XrResult result;
@@ -649,7 +685,7 @@ void XrApp::createSwapchainProviders(const std::unique_ptr<igl::IDevice>& device
   }
 }
 
-bool XrApp::initialize(const struct android_app* app) {
+bool XrApp::initialize(const struct android_app* app, const InitParams& params) {
   if (initialized_) {
     return false;
   }
@@ -720,6 +756,17 @@ bool XrApp::initialize(const struct android_app* app) {
   if (handsTrackingSupported_ && !createHandsTracking()) {
     return false;
   }
+  if (refreshRateExtensionSupported_) {
+    queryCurrentRefreshRate();
+    if (params.refreshRateMode_ == InitParams::UseMaxRefreshRate) {
+      setMaxRefreshRate();
+    } else if (params.refreshRateMode_ == InitParams::UseSpecificRefreshRate) {
+      setRefreshRate(params.desiredSpecificRefreshRate_);
+    } else {
+      // Do nothing. Use default refresh rate.
+    }
+  }
+
   updateHandMeshes();
 
   IGL_ASSERT(renderSession_ != nullptr);
@@ -1064,4 +1111,112 @@ void XrApp::update() {
   render();
   endFrame(frameState);
 }
+
+float XrApp::getCurrentRefreshRate() {
+  if (!session_ || !refreshRateExtensionSupported_ || (currentRefreshRate_ > 0.0f)) {
+    return currentRefreshRate_;
+  }
+
+  queryCurrentRefreshRate();
+  return currentRefreshRate_;
+}
+
+void XrApp::queryCurrentRefreshRate() {
+  const XrResult result = xrGetDisplayRefreshRateFB_(session_, &currentRefreshRate_);
+  if (result == XR_SUCCESS) {
+    IGL_LOG_INFO("getCurrentRefreshRate success, current Hz = %.2f.", currentRefreshRate_);
+  }
+}
+
+float XrApp::getMaxRefreshRate() {
+  if (!session_ || !refreshRateExtensionSupported_) {
+    return 0.0f;
+  }
+
+  const std::vector<float>& supportedRefreshRates = getSupportedRefreshRates();
+
+  if (supportedRefreshRates.empty()) {
+    return 0.0f;
+  }
+
+  const float maxRefreshRate = supportedRefreshRates.back();
+  IGL_LOG_INFO("getMaxRefreshRate Hz = %.2f.", maxRefreshRate);
+  return maxRefreshRate;
+}
+
+bool XrApp::setRefreshRate(float refreshRate) {
+  if (!session_ || !refreshRateExtensionSupported_ || (refreshRate == currentRefreshRate_) ||
+      !isRefreshRateSupported(refreshRate)) {
+    return false;
+  }
+
+  const XrResult result = xrRequestDisplayRefreshRateFB_(session_, refreshRate);
+  if (result != XR_SUCCESS) {
+    return false;
+  }
+
+  IGL_LOG_INFO(
+      "setRefreshRate SUCCESS, changed from %.2f Hz to %.2f Hz", currentRefreshRate_, refreshRate);
+  currentRefreshRate_ = refreshRate;
+
+  return true;
+}
+
+void XrApp::setMaxRefreshRate() {
+  if (!session_ || !refreshRateExtensionSupported_) {
+    return;
+  }
+
+  const float maxRefreshRate = getMaxRefreshRate();
+
+  if (maxRefreshRate > 0.0f) {
+    setRefreshRate(maxRefreshRate);
+  }
+}
+
+bool XrApp::isRefreshRateSupported(float refreshRate) {
+  if (!session_ || !refreshRateExtensionSupported_) {
+    return false;
+  }
+
+  const std::vector<float>& supportedRefreshRates = getSupportedRefreshRates();
+  return std::find(supportedRefreshRates.begin(), supportedRefreshRates.end(), refreshRate) !=
+         supportedRefreshRates.end();
+}
+
+const std::vector<float>& XrApp::getSupportedRefreshRates() {
+  if (!session_ || !refreshRateExtensionSupported_) {
+    return supportedRefreshRates_;
+  }
+
+  if (supportedRefreshRates_.empty()) {
+    querySupportedRefreshRates();
+  }
+
+  return supportedRefreshRates_;
+}
+
+void XrApp::querySupportedRefreshRates() {
+  if (!session_ || !refreshRateExtensionSupported_ || !supportedRefreshRates_.empty()) {
+    return;
+  }
+
+  uint32_t numRefreshRates = 0;
+  XrResult result = xrEnumerateDisplayRefreshRatesFB_(session_, 0, &numRefreshRates, nullptr);
+
+  if ((result == XR_SUCCESS) && (numRefreshRates > 0)) {
+    supportedRefreshRates_.resize(numRefreshRates);
+    result = xrEnumerateDisplayRefreshRatesFB_(
+        session_, numRefreshRates, &numRefreshRates, supportedRefreshRates_.data());
+
+    if (result == XR_SUCCESS) {
+      std::sort(supportedRefreshRates_.begin(), supportedRefreshRates_.end());
+    }
+
+    for (float refreshRate : supportedRefreshRates_) {
+      IGL_LOG_INFO("querySupportedRefreshRates Hz = %.2f.", refreshRate);
+    }
+  }
+}
+
 } // namespace igl::shell::openxr
