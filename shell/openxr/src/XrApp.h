@@ -63,7 +63,17 @@ class XrApp {
   inline bool initialized() const {
     return initialized_;
   }
-  bool initialize(const struct android_app* app);
+
+  struct InitParams {
+    enum RefreshRateMode {
+      UseDefault,
+      UseMaxRefreshRate,
+      UseSpecificRefreshRate,
+    };
+    RefreshRateMode refreshRateMode_ = RefreshRateMode::UseDefault;
+    float desiredSpecificRefreshRate_ = 90.0f;
+  };
+  bool initialize(const struct android_app* app, const InitParams& params);
 
   XrInstance instance() const;
 
@@ -110,7 +120,17 @@ class XrApp {
   void render();
   void endFrame(XrFrameState frameState);
 
+  float getCurrentRefreshRate();
+  float getMaxRefreshRate();
+  bool setRefreshRate(float refreshRate);
+  void setMaxRefreshRate();
+  bool isRefreshRateSupported(float refreshRate);
+  const std::vector<float>& getSupportedRefreshRates();
+
  private:
+  void queryCurrentRefreshRate();
+  void querySupportedRefreshRates();
+
   void* nativeWindow_ = nullptr;
   bool resumed_ = false;
   bool sessionActive_ = false;
@@ -172,6 +192,14 @@ class XrApp {
 
   XrHandTrackerEXT leftHandTracker_ = XR_NULL_HANDLE;
   XrHandTrackerEXT rightHandTracker_ = XR_NULL_HANDLE;
+
+  bool refreshRateExtensionSupported_ = false;
+  std::vector<float> supportedRefreshRates_;
+  float currentRefreshRate_ = 0.0f;
+
+  PFN_xrGetDisplayRefreshRateFB xrGetDisplayRefreshRateFB_ = nullptr;
+  PFN_xrEnumerateDisplayRefreshRatesFB xrEnumerateDisplayRefreshRatesFB_ = nullptr;
+  PFN_xrRequestDisplayRefreshRateFB xrRequestDisplayRefreshRateFB_ = nullptr;
 
   std::unique_ptr<impl::XrAppImpl> impl_;
 
