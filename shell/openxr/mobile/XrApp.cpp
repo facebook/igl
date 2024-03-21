@@ -1234,25 +1234,21 @@ void XrApp::querySupportedRefreshRates() {
 }
 
 bool XrApp::isSharpeningEnabled() const {
-  return compositionLayerSettingsSupported_ && ((compositionLayerSettings_.layerFlags & XR_COMPOSITION_LAYER_SETTINGS_QUALITY_SHARPENING_BIT_FB) != 0);
+  return compositionLayerSettingsSupported_ &&
+  ((compositionLayerSettings_.layerFlags & XR_COMPOSITION_LAYER_SETTINGS_QUALITY_SHARPENING_BIT_FB) != 0);
 }
 
 void XrApp::setSharpeningEnabled(const bool enabled) {
-  if (enabled == isSharpeningEnabled()) {
+  if (!compositionLayerSettingsSupported_ || (enabled == isSharpeningEnabled())) {
     return;
   }
-  if (compositionLayerSettingsSupported_) {
     if (enabled) {
       compositionLayerSettings_.layerFlags |= XR_COMPOSITION_LAYER_SETTINGS_QUALITY_SHARPENING_BIT_FB;
     }
     else {
       compositionLayerSettings_.layerFlags &= ~XR_COMPOSITION_LAYER_SETTINGS_QUALITY_SHARPENING_BIT_FB;
     }
-    IGL_LOG_INFO("setSharpeningEnabled, Sharpening is now %s", isSharpeningEnabled() ? "ON" : "OFF");
-  }
-  else if (enabled) {
-    IGL_LOG_ERROR("setSharpeningEnabled FAILED, device does not support composition layer settings");
-  }
+    IGL_LOG_INFO("Link Sharpening is now %s", isSharpeningEnabled() ? "ON" : "OFF");
 }
 
 } // namespace igl::shell::openxr

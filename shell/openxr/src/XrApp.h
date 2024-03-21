@@ -207,7 +207,6 @@ class XrApp {
   bool compositionLayerSettingsSupported_ = false;
   XrCompositionLayerSettingsFB compositionLayerSettings_ = 
   { XR_TYPE_COMPOSITION_LAYER_SETTINGS_FB, nullptr, 0 };
-  bool enableSharpeningAtStartup_ = false;
 
   std::unique_ptr<impl::XrAppImpl> impl_;
 
