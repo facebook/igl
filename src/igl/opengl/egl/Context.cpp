@@ -5,11 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/opengl/egl/Context.h>
+
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
 #include <igl/opengl/ComputeCommandAdapter.h>
 #include <igl/opengl/HWDevice.h>
 #include <igl/opengl/RenderCommandAdapter.h>
-#include <igl/opengl/egl/Context.h>
 
 #include <cassert>
 #include <igl/Macros.h>
@@ -401,6 +403,42 @@ std::pair<EGLint, EGLint> Context::getDrawSurfaceDimensions(Result* outResult) c
 
 EGLConfig Context::getConfig() const {
   return config_;
+}
+
+#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+EGLImageKHR Context::createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) const {
+  EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(hwb);
+  EGLint attribs[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE, EGL_NONE, EGL_NONE};
+
+  EGLDisplay display = this->getDisplay();
+  // eglCreateImageKHR will add a ref to the AHardwareBuffer
+  EGLImageKHR eglImage =
+      eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID, clientBuffer, attribs);
+  IGL_DEBUG_LOG("eglCreateImageKHR(%p, %x, %x, %p, {%d, %d, %d, %d, %d})\n",
+                display,
+                EGL_NO_CONTEXT,
+                EGL_NATIVE_BUFFER_ANDROID,
+                clientBuffer,
+                attribs[0],
+                attribs[1],
+                attribs[2],
+                attribs[3],
+                attribs[4]);
+
+  this->checkForErrors(__FUNCTION__, __LINE__);
+
+  IGL_REPORT_ERROR(this->isCurrentContext() || this->isCurrentSharegroup());
+
+  return eglImage;
+}
+#endif
+
+void Context::imageTargetTexture(EGLImageKHR eglImage, GLenum target) const {
+  glEGLImageTargetTexture2DOES(target, static_cast<GLeglImageOES>(eglImage));
+  IGL_DEBUG_LOG("glEGLImageTargetTexture2DOES(%u, %#x)\n",
+                GL_TEXTURE_2D,
+                static_cast<GLeglImageOES>(eglImage));
+  this->checkForErrors(__FUNCTION__, __LINE__);
 }
 
 } // namespace egl
