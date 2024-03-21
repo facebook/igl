@@ -63,7 +63,17 @@ class XrApp {
   inline bool initialized() const {
     return initialized_;
   }
-  bool initialize(const struct android_app* app);
+
+  struct InitParams {
+    enum RefreshRateMode {
+      UseDefault,
+      UseMaxRefreshRate,
+      UseSpecificRefreshRate,
+    };
+    RefreshRateMode refreshRateMode_ = RefreshRateMode::UseDefault;
+    float desiredSpecificRefreshRate_ = 90.0f;
+  };
+  bool initialize(const struct android_app* app, const InitParams& params);
 
   XrInstance instance() const;
 
@@ -112,15 +122,18 @@ class XrApp {
 
   float getCurrentRefreshRate();
   float getMaxRefreshRate();
-  bool setRefreshRate(const float refreshRate);
+  bool setRefreshRate(float refreshRate);
   void setMaxRefreshRate();
-  bool isRefreshRateSupported(const float refreshRate);
+  bool isRefreshRateSupported(float refreshRate);
   const std::vector<float>& getSupportedRefreshRates();
-
+  
   bool isSharpeningEnabled() const;
   void setSharpeningEnabled(const bool enabled);
 
  private:
+  void queryCurrentRefreshRate();
+  void querySupportedRefreshRates();
+
   void* nativeWindow_ = nullptr;
   bool resumed_ = false;
   bool sessionActive_ = false;
@@ -184,18 +197,16 @@ class XrApp {
   XrHandTrackerEXT rightHandTracker_ = XR_NULL_HANDLE;
 
   bool refreshRateExtensionSupported_ = false;
-  bool useMaxRefreshRate_ = false;
-  bool useSpecificRefreshRate_ = false;
-  float desiredSpecificRefreshRate_ = 90.0f;
   std::vector<float> supportedRefreshRates_;
   float currentRefreshRate_ = 0.0f;
-  void querySupportedRefreshRates();
+
   PFN_xrGetDisplayRefreshRateFB xrGetDisplayRefreshRateFB_ = nullptr;
   PFN_xrEnumerateDisplayRefreshRatesFB xrEnumerateDisplayRefreshRatesFB_ = nullptr;
   PFN_xrRequestDisplayRefreshRateFB xrRequestDisplayRefreshRateFB_ = nullptr;
 
   bool compositionLayerSettingsSupported_ = false;
-  XrCompositionLayerSettingsFB compositionLayerSettings_ = { XR_TYPE_COMPOSITION_LAYER_SETTINGS_FB, nullptr, 0 };
+  XrCompositionLayerSettingsFB compositionLayerSettings_ = 
+  { XR_TYPE_COMPOSITION_LAYER_SETTINGS_FB, nullptr, 0 };
   bool enableSharpeningAtStartup_ = false;
 
   std::unique_ptr<impl::XrAppImpl> impl_;

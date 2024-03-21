@@ -169,7 +169,16 @@ Result NativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
     // eglCreateImageKHR will add a ref to the AHardwareBuffer
     EGLImageKHR eglImage = eglCreateImageKHR(
         display, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID, clientBuffer, attribs);
-    APILOG("eglCreateImageKHR()\n");
+    APILOG("eglCreateImageKHR(%p, %x, %x, %p, {%d, %d, %d, %d, %d})\n",
+           display,
+           EGL_NO_CONTEXT,
+           EGL_NATIVE_BUFFER_ANDROID,
+           clientBuffer,
+           attribs[0],
+           attribs[1],
+           attribs[2],
+           attribs[3],
+           attribs[4]);
 
     if (EGL_NO_IMAGE_KHR == eglImage) {
       return Result{Result::Code::RuntimeError, "Could not create EGL image, err"};
@@ -297,35 +306,6 @@ Result NativeHWTextureBuffer::unlockHWBuffer() const {
 
 bool NativeHWTextureBuffer::isValidFormat(TextureFormat format) {
   return toNativeHWFormat(format) > 0;
-}
-
-Result NativeHWTextureBuffer::bindTextureWithHWBuffer(IContext& context,
-                                                      GLuint target,
-                                                      const AHardwareBuffer* hwb) noexcept {
-  EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(hwb);
-  EGLint attribs[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE, EGL_NONE, EGL_NONE};
-
-  EGLDisplay display = ((egl::Context*)&context)->getDisplay();
-  // eglCreateImageKHR will add a ref to the AHardwareBuffer
-  EGLImageKHR eglImage =
-      eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID, clientBuffer, attribs);
-  APILOG("eglCreateImageKHR()\n");
-
-  if (EGL_NO_IMAGE_KHR == eglImage) {
-    return Result{Result::Code::RuntimeError, "Could not create EGL image, err"};
-  }
-  context.checkForErrors(__FUNCTION__, __LINE__);
-
-  IGL_REPORT_ERROR(context.isCurrentContext() || context.isCurrentSharegroup());
-
-  glEGLImageTargetTexture2DOES(target, static_cast<GLeglImageOES>(eglImage));
-  APILOG("glEGLImageTargetTexture2DOES(%u, %#x)\n",
-         GL_TEXTURE_2D,
-         static_cast<GLeglImageOES>(eglImage));
-
-  context.checkForErrors(__FUNCTION__, __LINE__);
-
-  return Result{};
 }
 
 } // namespace igl::opengl::egl::android

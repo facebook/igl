@@ -72,6 +72,11 @@ class Context final : public IContext {
   /// Mark this context as belonging to a sharegroup with another context.
   void markSharegroup(Context& context);
 
+  void imageTargetTexture(EGLImageKHR eglImage, GLenum target) const;
+
+#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+  EGLImageKHR createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) const;
+#endif
  private:
   Context(RenderingAPI api,
           EGLContext shareContext,
