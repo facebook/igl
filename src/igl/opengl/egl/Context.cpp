@@ -433,7 +433,6 @@ EGLImageKHR Context::createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) 
 
   return eglImage;
 }
-#endif
 
 void Context::imageTargetTexture(EGLImageKHR eglImage, GLenum target) const {
   glEGLImageTargetTexture2DOES(target, static_cast<GLeglImageOES>(eglImage));
@@ -442,6 +441,7 @@ void Context::imageTargetTexture(EGLImageKHR eglImage, GLenum target) const {
                 static_cast<GLeglImageOES>(eglImage));
   this->checkForErrors(__FUNCTION__, __LINE__);
 }
+#endif
 
 } // namespace egl
 } // namespace opengl

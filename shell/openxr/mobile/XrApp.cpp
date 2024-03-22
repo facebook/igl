@@ -256,7 +256,7 @@ bool XrApp::createInstance() {
       .enabledApiLayerCount = 0,
       .enabledApiLayerNames = nullptr,
       .enabledExtensionCount = static_cast<uint32_t>(requiredExtensions_.size()),
-      .enabledExtensionNames = requiredExtensions_.data(),
+      .enabledExtensionNames = requiredExtensions_.data()
   };
 
   XrResult initResult;
