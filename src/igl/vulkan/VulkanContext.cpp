@@ -1267,7 +1267,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
 
 std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
     std::shared_ptr<VulkanImage> image,
-    std::shared_ptr<VulkanImageView> imageView,
+    std::unique_ptr<VulkanImageView> imageView,
     [[maybe_unused]] const char* debugName) const {
   IGL_PROFILER_FUNCTION();
 

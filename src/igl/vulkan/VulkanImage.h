@@ -176,7 +176,7 @@ class VulkanImage final {
    * Setting `numLevels` to a non-zero value will override `mipLevels_` value from the original
    * vulkan image, and can be used to create image views with different number of levels
    */
-  std::shared_ptr<VulkanImageView> createImageView(VkImageViewType type,
+  std::unique_ptr<VulkanImageView> createImageView(VkImageViewType type,
                                                    VkFormat format,
                                                    VkImageAspectFlags aspectMask,
                                                    uint32_t baseLevel,
