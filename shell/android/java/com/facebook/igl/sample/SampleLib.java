@@ -16,6 +16,7 @@ public class SampleLib {
   static {
     System.loadLibrary("sampleJni");
   }
+
   // should match with IDs in TinyRenderer.h
   protected static final int gl3ID = 0;
   protected static final int gl2ID = 1;
