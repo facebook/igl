@@ -157,7 +157,7 @@ class VulkanContext final {
                                              igl::Result* outResult,
                                              const char* debugName = nullptr) const;
   std::shared_ptr<VulkanTexture> createTexture(std::shared_ptr<VulkanImage> image,
-                                               std::shared_ptr<VulkanImageView> imageView,
+                                               std::unique_ptr<VulkanImageView> imageView,
                                                const char* debugName) const;
   std::shared_ptr<VulkanSampler> createSampler(const VkSamplerCreateInfo& ci,
                                                igl::Result* outResult,

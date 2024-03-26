@@ -619,7 +619,7 @@ VulkanImage::~VulkanImage() {
   }
 }
 
-std::shared_ptr<VulkanImageView> VulkanImage::createImageView(VkImageViewType type,
+std::unique_ptr<VulkanImageView> VulkanImage::createImageView(VkImageViewType type,
                                                               VkFormat format,
                                                               VkImageAspectFlags aspectMask,
                                                               uint32_t baseLevel,
@@ -627,7 +627,7 @@ std::shared_ptr<VulkanImageView> VulkanImage::createImageView(VkImageViewType ty
                                                               uint32_t baseLayer,
                                                               uint32_t numLayers,
                                                               const char* debugName) const {
-  return std::make_shared<VulkanImageView>(ctx_,
+  return std::make_unique<VulkanImageView>(ctx_,
                                            device_,
                                            vkImage_,
                                            type,

@@ -173,7 +173,7 @@ Result Texture::create(const TextureDesc& desc) {
     aspect = VK_IMAGE_ASPECT_COLOR_BIT;
   }
 
-  std::shared_ptr<VulkanImageView> imageView = image->createImageView(imageViewType,
+  std::unique_ptr<VulkanImageView> imageView = image->createImageView(imageViewType,
                                                                       vkFormat,
                                                                       aspect,
                                                                       0,
