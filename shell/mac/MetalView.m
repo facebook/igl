@@ -64,14 +64,12 @@
   if (viewController) {
     [viewController keyUp:event];
   }
-  [self interpretKeyEvents:[NSArray arrayWithObject:event]];
 }
 
 - (void)keyDown:(NSEvent*)event {
   if (viewController) {
     [viewController keyDown:event];
   }
-  [self interpretKeyEvents:[NSArray arrayWithObject:event]];
 }
 
 @end
