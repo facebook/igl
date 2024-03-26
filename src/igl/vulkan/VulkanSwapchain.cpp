@@ -207,15 +207,14 @@ VkImage VulkanSwapchain::getDepthVkImage() const {
 }
 
 VkImageView VulkanSwapchain::getDepthVkImageView() const {
-  if (!depthImageView_) {
+  if (!depthTexture_) {
     lazyAllocateDepthBuffer();
   }
-  return depthImageView_->getVkImageView();
+  return depthTexture_->getVulkanImageView().getVkImageView();
 }
 
 void VulkanSwapchain::lazyAllocateDepthBuffer() const {
   IGL_ASSERT(!depthImage_);
-  IGL_ASSERT(!depthImageView_);
 
   const VkFormat depthFormat =
 #if IGL_PLATFORM_APPLE
@@ -243,10 +242,10 @@ void VulkanSwapchain::lazyAllocateDepthBuffer() const {
                                               0,
                                               VK_SAMPLE_COUNT_1_BIT,
                                               "Image: swapchain depth");
-  depthImageView_ = depthImage_->createImageView(
+  auto depthImageView = depthImage_->createImageView(
       VK_IMAGE_VIEW_TYPE_2D, depthFormat, aspectMask, 0, 1, 0, 1, "Image View: swapchain depth");
 
-  depthTexture_ = std::make_shared<VulkanTexture>(ctx_, depthImage_, depthImageView_);
+  depthTexture_ = std::make_shared<VulkanTexture>(ctx_, depthImage_, std::move(depthImageView));
 }
 
 VulkanSwapchain::~VulkanSwapchain() {
