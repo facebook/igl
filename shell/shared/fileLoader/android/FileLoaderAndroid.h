@@ -11,7 +11,7 @@
 #include <shell/shared/fileLoader/FileLoader.h>
 #include <string>
 
-class AAssetManager;
+struct AAssetManager;
 
 namespace igl::shell {
 

@@ -43,7 +43,7 @@
 #include <shell/shared/renderSession/RenderSession.h>
 
 struct android_app;
-class AAssetManager;
+struct AAssetManager;
 
 // forward declarations
 namespace igl::shell::openxr {
