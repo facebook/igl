@@ -7,14 +7,14 @@
 
 #include "XrAppImplVulkan.h"
 
-#include <shell/openxr/XrLog.h>
+#include <shell/openxr/src/XrLog.h>
 
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 
-#include <shell/openxr/XrSwapchainProvider.h>
+#include <shell/openxr/src/XrSwapchainProvider.h>
 #include <shell/openxr/mobile/vulkan/XrSwapchainProviderImplVulkan.h>
 
 namespace igl::shell::openxr::mobile {

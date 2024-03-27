@@ -14,7 +14,7 @@
 #include <unistd.h>
 #endif
 
-#include <shell/openxr/XrApp.h>
+#include <shell/openxr/src/XrApp.h>
 
 using namespace igl::shell::openxr;
 

@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "XrSwapchainProvider.h"
-#include <shell/openxr/XrLog.h>
+#include <shell/openxr/src/XrLog.h>
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
 
 namespace igl::shell::openxr {
