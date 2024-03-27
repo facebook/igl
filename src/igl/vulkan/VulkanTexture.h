@@ -23,7 +23,7 @@ class VulkanImageView;
 class VulkanTexture final {
  public:
   VulkanTexture(const VulkanContext& ctx,
-                std::shared_ptr<VulkanImage> image,
+                std::unique_ptr<VulkanImage> image,
                 std::unique_ptr<VulkanImageView> imageView);
   ~VulkanTexture() = default;
 
@@ -49,7 +49,7 @@ class VulkanTexture final {
  private:
   friend class VulkanContext;
   const VulkanContext& ctx_;
-  std::shared_ptr<VulkanImage> image_;
+  std::unique_ptr<VulkanImage> image_;
   std::unique_ptr<VulkanImageView> imageView_;
   // an index into VulkanContext::textures_
   uint32_t textureId_ = 0;

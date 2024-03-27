@@ -1047,7 +1047,7 @@ std::shared_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSiz
       *this, device_->getVkDevice(), bufferSize, usageFlags, memFlags, debugName);
 }
 
-std::shared_ptr<VulkanImage> VulkanContext::createImage(VkImageType imageType,
+std::unique_ptr<VulkanImage> VulkanContext::createImage(VkImageType imageType,
                                                         VkExtent3D extent,
                                                         VkFormat format,
                                                         uint32_t mipLevels,
@@ -1066,7 +1066,7 @@ std::shared_ptr<VulkanImage> VulkanContext::createImage(VkImageType imageType,
     return nullptr;
   }
 
-  return std::make_shared<VulkanImage>(*this,
+  return std::make_unique<VulkanImage>(*this,
                                        device_->getVkDevice(),
                                        extent,
                                        imageType,
@@ -1081,7 +1081,7 @@ std::shared_ptr<VulkanImage> VulkanContext::createImage(VkImageType imageType,
                                        debugName);
 }
 
-std::shared_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
+std::unique_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
     int32_t fileDescriptor,
     uint64_t memoryAllocationSize,
     VkImageType imageType,
@@ -1100,7 +1100,7 @@ std::shared_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
     return nullptr;
   }
 
-  return std::make_shared<VulkanImage>(*this,
+  return std::make_unique<VulkanImage>(*this,
                                        fileDescriptor,
                                        memoryAllocationSize,
                                        device_->getVkDevice(),
@@ -1266,7 +1266,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
 }
 
 std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
-    std::shared_ptr<VulkanImage> image,
+    std::unique_ptr<VulkanImage> image,
     std::unique_ptr<VulkanImageView> imageView,
     [[maybe_unused]] const char* debugName) const {
   IGL_PROFILER_FUNCTION();

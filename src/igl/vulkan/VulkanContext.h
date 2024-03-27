@@ -126,7 +126,7 @@ class VulkanContext final {
   igl::Result initSwapchain(uint32_t width, uint32_t height);
   VkExtent2D getSwapchainExtent() const;
 
-  std::shared_ptr<VulkanImage> createImage(VkImageType imageType,
+  std::unique_ptr<VulkanImage> createImage(VkImageType imageType,
                                            VkExtent3D extent,
                                            VkFormat format,
                                            uint32_t mipLevels,
@@ -138,7 +138,7 @@ class VulkanContext final {
                                            VkSampleCountFlagBits samples,
                                            igl::Result* outResult,
                                            const char* debugName = nullptr) const;
-  std::shared_ptr<VulkanImage> createImageFromFileDescriptor(int32_t fileDescriptor,
+  std::unique_ptr<VulkanImage> createImageFromFileDescriptor(int32_t fileDescriptor,
                                                              uint64_t memoryAllocationSize,
                                                              VkImageType imageType,
                                                              VkExtent3D extent,
@@ -156,7 +156,7 @@ class VulkanContext final {
                                              VkMemoryPropertyFlags memFlags,
                                              igl::Result* outResult,
                                              const char* debugName = nullptr) const;
-  std::shared_ptr<VulkanTexture> createTexture(std::shared_ptr<VulkanImage> image,
+  std::shared_ptr<VulkanTexture> createTexture(std::unique_ptr<VulkanImage> image,
                                                std::unique_ptr<VulkanImageView> imageView,
                                                const char* debugName) const;
   std::shared_ptr<VulkanSampler> createSampler(const VkSamplerCreateInfo& ci,
