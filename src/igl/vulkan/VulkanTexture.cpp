@@ -17,7 +17,7 @@ namespace igl {
 namespace vulkan {
 
 VulkanTexture::VulkanTexture(const VulkanContext& ctx,
-                             std::shared_ptr<VulkanImage> image,
+                             std::unique_ptr<VulkanImage> image,
                              std::unique_ptr<VulkanImageView> imageView) :
   ctx_(ctx), image_(std::move(image)), imageView_(std::move(imageView)) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
