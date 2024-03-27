@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <shell/openxr/XrApp.h>
+#include <shell/openxr/src/XrApp.h>
 
 #include <algorithm>
 #include <array>
@@ -44,8 +44,8 @@
 #include <shell/shared/renderSession/DefaultSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
-#include <shell/openxr/XrLog.h>
-#include <shell/openxr/XrSwapchainProvider.h>
+#include <shell/openxr/src/XrLog.h>
+#include <shell/openxr/src/XrSwapchainProvider.h>
 #include <shell/openxr/impl/XrAppImpl.h>
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
 

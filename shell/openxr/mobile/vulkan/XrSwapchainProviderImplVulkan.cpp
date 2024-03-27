@@ -12,7 +12,7 @@
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImageView.h>
-#include <shell/openxr/XrLog.h>
+#include <shell/openxr/src/XrLog.h>
 
 #include "XrSwapchainProviderImplVulkan.h"
 
