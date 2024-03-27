@@ -42,7 +42,7 @@ void enumerateSwapchainImages(
   outVulkanTextures.reserve(numImages);
 
   for (uint32_t i = 0; i < numImages; i++) {
-    auto image = std::make_shared<igl::vulkan::VulkanImage>(
+    auto image = std::make_unique<igl::vulkan::VulkanImage>(
         ctx,
         ctx.device_->device_,
         images[i].image,
