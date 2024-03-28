@@ -11,7 +11,7 @@
 #include <shell/shared/imageWriter/ImageWriter.h>
 #include <string>
 
-class AAssetManager;
+struct AAssetManager;
 
 namespace igl::shell {
 

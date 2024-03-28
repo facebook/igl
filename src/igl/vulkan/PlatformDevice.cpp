@@ -78,7 +78,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
 
   auto& swapChain = ctx.swapchain_;
 
-  std::shared_ptr<VulkanTexture> vkTex = swapChain->getCurrentVulkanTexture();
+  auto vkTex = swapChain->getCurrentVulkanTexture();
 
   if (!IGL_VERIFY(vkTex != nullptr)) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "Swapchain has no valid texture");

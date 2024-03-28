@@ -12,6 +12,7 @@
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanRenderPassBuilder.h>
 #include <igl/vulkan/VulkanSemaphore.h>
+#include <igl/vulkan/VulkanTexture.h>
 
 namespace {
 
@@ -178,7 +179,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
   frameNumber_ = numSwapchainImages_;
 
   // create images, image views and framebuffers
-  swapchainTextures_.reserve(numSwapchainImages_);
+  swapchainTextures_ = std::make_unique<std::shared_ptr<VulkanTexture>[]>(numSwapchainImages_);
   for (uint32_t i = 0; i < numSwapchainImages_; i++) {
     auto image = std::make_unique<VulkanImage>(
         ctx_, device_, swapchainImages[i], IGL_FORMAT("Image: swapchain #{}", i).c_str());
@@ -194,8 +195,8 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
                                             0,
                                             1,
                                             IGL_FORMAT("Image View: swapchain #{}", i).c_str());
-    swapchainTextures_.emplace_back(
-        std::make_shared<VulkanTexture>(ctx_, std::move(image), std::move(imageView)));
+    swapchainTextures_[i] =
+        std::make_shared<VulkanTexture>(ctx_, std::move(image), std::move(imageView));
   }
 }
 
