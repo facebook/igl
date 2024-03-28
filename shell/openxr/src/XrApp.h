@@ -126,6 +126,9 @@ class XrApp {
   void setMaxRefreshRate();
   bool isRefreshRateSupported(float refreshRate);
   const std::vector<float>& getSupportedRefreshRates();
+  
+  bool isSharpeningEnabled() const;
+  void setSharpeningEnabled(const bool enabled);
 
  private:
   void queryCurrentRefreshRate();
@@ -200,6 +203,10 @@ class XrApp {
   PFN_xrGetDisplayRefreshRateFB xrGetDisplayRefreshRateFB_ = nullptr;
   PFN_xrEnumerateDisplayRefreshRatesFB xrEnumerateDisplayRefreshRatesFB_ = nullptr;
   PFN_xrRequestDisplayRefreshRateFB xrRequestDisplayRefreshRateFB_ = nullptr;
+
+  bool compositionLayerSettingsSupported_ = false;
+  XrCompositionLayerSettingsFB compositionLayerSettings_ = 
+  { XR_TYPE_COMPOSITION_LAYER_SETTINGS_FB, nullptr, 0 };
 
   std::unique_ptr<impl::XrAppImpl> impl_;
 

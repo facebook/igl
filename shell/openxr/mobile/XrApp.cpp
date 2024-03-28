@@ -226,6 +226,16 @@ bool XrApp::checkExtensions() {
       checkNeedRequiredExtension(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME)) {
     requiredExtensions_.push_back(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME);
   }
+  
+  compositionLayerSettingsSupported_ = 
+  checkExtensionSupported(XR_FB_COMPOSITION_LAYER_SETTINGS_EXTENSION_NAME);
+  IGL_LOG_INFO("Composition Layer Settings are %s", 
+	compositionLayerSettingsSupported_ ? "supported" : "not supported");
+
+  if (compositionLayerSettingsSupported_ && 
+	checkNeedRequiredExtension(XR_FB_COMPOSITION_LAYER_SETTINGS_EXTENSION_NAME)) {
+    requiredExtensions_.push_back(XR_FB_COMPOSITION_LAYER_SETTINGS_EXTENSION_NAME);
+  }
 
   return true;
 }
@@ -246,7 +256,7 @@ bool XrApp::createInstance() {
       .enabledApiLayerCount = 0,
       .enabledApiLayerNames = nullptr,
       .enabledExtensionCount = static_cast<uint32_t>(requiredExtensions_.size()),
-      .enabledExtensionNames = requiredExtensions_.data(),
+      .enabledExtensionNames = requiredExtensions_.data()
   };
 
   XrResult initResult;
@@ -1087,6 +1097,10 @@ void XrApp::endFrame(XrFrameState frameState) {
         projectionViews.data(),
     };
 
+    if (compositionLayerSettingsSupported_) {
+      ((XrCompositionLayerBaseHeader*)&projection)->next = &compositionLayerSettings_;
+    }
+
     const XrCompositionLayerBaseHeader* const layers[] = {
         (const XrCompositionLayerBaseHeader*)&projection,
     };
@@ -1217,6 +1231,24 @@ void XrApp::querySupportedRefreshRates() {
       IGL_LOG_INFO("querySupportedRefreshRates Hz = %.2f.", refreshRate);
     }
   }
+}
+
+bool XrApp::isSharpeningEnabled() const {
+  return compositionLayerSettingsSupported_ &&
+  ((compositionLayerSettings_.layerFlags & XR_COMPOSITION_LAYER_SETTINGS_QUALITY_SHARPENING_BIT_FB) != 0);
+}
+
+void XrApp::setSharpeningEnabled(const bool enabled) {
+  if (!compositionLayerSettingsSupported_ || (enabled == isSharpeningEnabled())) {
+    return;
+  }
+    if (enabled) {
+      compositionLayerSettings_.layerFlags |= XR_COMPOSITION_LAYER_SETTINGS_QUALITY_SHARPENING_BIT_FB;
+    }
+    else {
+      compositionLayerSettings_.layerFlags &= ~XR_COMPOSITION_LAYER_SETTINGS_QUALITY_SHARPENING_BIT_FB;
+    }
+    IGL_LOG_INFO("Link Sharpening is now %s", isSharpeningEnabled() ? "ON" : "OFF");
 }
 
 } // namespace igl::shell::openxr
