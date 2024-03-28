@@ -108,7 +108,7 @@ class VulkanSwapchain final {
   uint64_t frameNumber_ = 0;
   bool getNextImage_ = true;
   VkSwapchainKHR swapchain_;
-  std::vector<std::shared_ptr<VulkanTexture>> swapchainTextures_;
+  std::unique_ptr<std::shared_ptr<VulkanTexture>[]> swapchainTextures_;
   mutable std::shared_ptr<VulkanTexture> depthTexture_;
   VkSurfaceFormatKHR surfaceFormat_;
 };
