@@ -30,7 +30,7 @@ int main(int argc, const char* argv[]) {
 // @fb-only
   // @fb-only
 #endif
-  if (!xrApp->initialize(nullptr)) {
+  if (!xrApp->initialize(nullptr, {})) {
     return 1;
   }
 
