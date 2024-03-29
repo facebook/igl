@@ -279,7 +279,7 @@ VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
                                                   FramebufferMode mode) const {
   const bool isStereo = mode == FramebufferMode::Stereo;
   const auto index = mipLevel * getNumVkLayers() + layer;
-  std::vector<std::shared_ptr<VulkanImageView>>& imageViews =
+  std::vector<std::unique_ptr<VulkanImageView>>& imageViews =
       isStereo ? imageViewsForFramebufferStereo_ : imageViewsForFramebufferMono_;
 
   if (index < imageViews.size() && imageViews[index]) {

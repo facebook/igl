@@ -92,6 +92,7 @@
   #include <igl/vulkan/HWDevice.h>
   #include <igl/vulkan/PlatformDevice.h>
   #include <igl/vulkan/Texture.h>
+  #include <igl/vulkan/VulkanImageView.h>
   #include <igl/vulkan/VulkanContext.h>
 #endif
 // clang-format on

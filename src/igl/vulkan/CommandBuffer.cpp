@@ -15,6 +15,7 @@
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
+#include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanTexture.h>
 
 namespace igl {

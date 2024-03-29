@@ -91,8 +91,8 @@ class Texture final : public ITexture {
   TextureDesc desc_;
 
   std::shared_ptr<VulkanTexture> texture_;
-  mutable std::vector<std::shared_ptr<VulkanImageView>> imageViewsForFramebufferMono_;
-  mutable std::vector<std::shared_ptr<VulkanImageView>> imageViewsForFramebufferStereo_;
+  mutable std::vector<std::unique_ptr<VulkanImageView>> imageViewsForFramebufferMono_;
+  mutable std::vector<std::unique_ptr<VulkanImageView>> imageViewsForFramebufferStereo_;
 };
 
 } // namespace vulkan

@@ -25,6 +25,7 @@
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanFramebuffer.h>
 #include <igl/vulkan/VulkanImage.h>
+#include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <igl/vulkan/VulkanTexture.h>
 
