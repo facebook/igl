@@ -11,7 +11,7 @@
 #include <igl/opengl/PlatformDevice.h>
 #include <igl/opengl/TextureBufferExternal.h>
 
-#include <shell/openxr/src/XrLog.h>
+#include <shell/openxr/XrLog.h>
 
 #include "XrSwapchainProviderImplGLES.h"
 
