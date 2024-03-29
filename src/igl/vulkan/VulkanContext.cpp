@@ -1311,12 +1311,14 @@ std::shared_ptr<VulkanSampler> VulkanContext::createSampler(const VkSamplerCreat
 
 void VulkanContext::querySurfaceCapabilities() {
   // This is not an exhaustive list. It's only formats that we are using.
-  std::vector<VkFormat> depthFormats = {VK_FORMAT_D32_SFLOAT_S8_UINT,
-                                        VK_FORMAT_D24_UNORM_S8_UINT,
-                                        VK_FORMAT_D16_UNORM_S8_UINT,
-                                        VK_FORMAT_D32_SFLOAT,
-                                        VK_FORMAT_D16_UNORM,
-                                        VK_FORMAT_S8_UINT};
+  // @fb-only
+  const VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT,
+                                   VK_FORMAT_D24_UNORM_S8_UINT,
+                                   VK_FORMAT_D16_UNORM_S8_UINT,
+                                   VK_FORMAT_D32_SFLOAT,
+                                   VK_FORMAT_D16_UNORM,
+                                   VK_FORMAT_S8_UINT};
+  deviceDepthFormats_.reserve(IGL_ARRAY_NUM_ELEMENTS(depthFormats));
   for (const auto& depthFormat : depthFormats) {
     VkFormatProperties formatProps;
     vf_.vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice_, depthFormat, &formatProps);
