@@ -52,5 +52,15 @@ VulkanFence& VulkanFence::operator=(VulkanFence&& other) noexcept {
   return *this;
 }
 
+bool VulkanFence::reset() noexcept {
+  const VkResult result = vf_->vkResetFences(device_, 1, &vkFence_);
+  return result == VK_SUCCESS;
+}
+
+bool VulkanFence::wait(uint64_t timeoutNs) noexcept {
+  const VkResult result = vf_->vkWaitForFences(device_, 1, &vkFence_, VK_TRUE, timeoutNs);
+  return result == VK_SUCCESS;
+}
+
 } // namespace vulkan
 } // namespace igl

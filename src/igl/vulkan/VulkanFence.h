@@ -36,6 +36,9 @@ class VulkanFence final {
   VulkanFence(const VulkanFence&) = delete;
   VulkanFence operator=(const VulkanFence&) = delete;
 
+  bool reset() noexcept;
+  bool wait(uint64_t timeoutNs = UINT64_MAX) noexcept;
+
  public:
   const VulkanFunctionTable* vf_{};
   VkDevice device_ = VK_NULL_HANDLE;
