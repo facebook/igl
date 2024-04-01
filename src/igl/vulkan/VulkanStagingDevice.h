@@ -123,7 +123,7 @@ class VulkanStagingDevice final {
 
  private:
   VulkanContext& ctx_;
-  std::shared_ptr<VulkanBuffer> stagingBuffer_;
+  std::unique_ptr<VulkanBuffer> stagingBuffer_;
   std::unique_ptr<VulkanImmediateCommands> immediate_;
 
   /// @brief Current size of the staging buffer
