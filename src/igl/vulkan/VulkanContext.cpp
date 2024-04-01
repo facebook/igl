@@ -350,9 +350,11 @@ VulkanContext::VulkanContext(const VulkanContextConfig& config,
 
   pimpl_ = std::make_unique<VulkanContextImpl>();
 
+  const auto result = volkInitialize();
+
   // Do not remove for backward compatibility with projects using global functions.
-  if (volkInitialize() != VK_SUCCESS) {
-    IGL_LOG_ERROR("volkInitialize() failed\n");
+  if (result != VK_SUCCESS) {
+    IGL_LOG_ERROR("volkInitialize() failed with error code %d\n", static_cast<int>(result));
     exit(255);
   };
 
