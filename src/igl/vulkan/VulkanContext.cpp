@@ -1018,7 +1018,7 @@ Result VulkanContext::present() const {
   return swapchain_->present(immediate_->acquireLastSubmitSemaphore());
 }
 
-std::shared_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSize,
+std::unique_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSize,
                                                           VkBufferUsageFlags usageFlags,
                                                           VkMemoryPropertyFlags memFlags,
                                                           igl::Result* outResult,
@@ -1043,7 +1043,7 @@ std::shared_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSiz
 #undef ENSURE_BUFFER_SIZE
 
   Result::setOk(outResult);
-  return std::make_shared<VulkanBuffer>(
+  return std::make_unique<VulkanBuffer>(
       *this, device_->getVkDevice(), bufferSize, usageFlags, memFlags, debugName);
 }
 

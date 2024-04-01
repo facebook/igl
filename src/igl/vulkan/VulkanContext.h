@@ -151,7 +151,7 @@ class VulkanContext final {
                                                              VkSampleCountFlagBits samples,
                                                              igl::Result* outResult,
                                                              const char* debugName = nullptr) const;
-  std::shared_ptr<VulkanBuffer> createBuffer(VkDeviceSize bufferSize,
+  std::unique_ptr<VulkanBuffer> createBuffer(VkDeviceSize bufferSize,
                                              VkBufferUsageFlags usageFlags,
                                              VkMemoryPropertyFlags memFlags,
                                              igl::Result* outResult,
