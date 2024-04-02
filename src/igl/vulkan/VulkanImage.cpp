@@ -84,6 +84,24 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   VK_ASSERT(ivkSetDebugObjectName(
       &ctx_.vf_, device_, VK_OBJECT_TYPE_IMAGE, (uint64_t)vkImage_, debugName));
 }
+VulkanImage::VulkanImage(const VulkanContext& ctx,
+                         VkDevice device,
+                         VkImage image,
+                         const VulkanImageCreateInfo& createInfo,
+                         const char* debugName) :
+  VulkanImage(ctx,
+              device,
+              image,
+              debugName,
+              createInfo.usageFlags,
+              createInfo.isExternallyManaged,
+              createInfo.extent,
+              createInfo.type,
+              createInfo.imageFormat,
+              createInfo.mipLevels,
+              createInfo.arrayLayers,
+              createInfo.samples,
+              createInfo.isImported) {}
 
 VulkanImage::VulkanImage(const VulkanContext& ctx,
                          VkDevice device,

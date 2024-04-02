@@ -19,6 +19,18 @@ namespace vulkan {
 class VulkanContext;
 class VulkanImageView;
 
+struct VulkanImageCreateInfo {
+  VkImageUsageFlags usageFlags = 0;
+  bool isExternallyManaged = true;
+  VkExtent3D extent = VkExtent3D{0, 0, 0};
+  VkImageType type = VK_IMAGE_TYPE_MAX_ENUM;
+  VkFormat imageFormat = VK_FORMAT_UNDEFINED;
+  uint32_t mipLevels = 1;
+  uint32_t arrayLayers = 1;
+  VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
+  bool isImported = false;
+};
+
 /**
  * @brief Encapsulates a Vulkan Image object (`VkImage`) along with some of its properties
  */
@@ -41,6 +53,16 @@ class VulkanImage final {
               uint32_t arrayLayers = 1,
               VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT,
               bool isImported = false);
+
+  /**
+   * @brief Constructs a `VulkanImage` object from a `VkImage` object. If a debug name is provided,
+   * the constructor will assign it to the `VkImage` object. No other Vulkan functions are called
+   */
+  VulkanImage(const VulkanContext& ctx,
+              VkDevice device,
+              VkImage image,
+              const VulkanImageCreateInfo& createInfo,
+              const char* debugName = nullptr);
 
   /**
    * @brief Constructs a `VulkanImage` object and a `VkImage` object. Except for the debug name, all
