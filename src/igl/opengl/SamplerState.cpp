@@ -95,7 +95,13 @@ void SamplerState::bind(ITexture* t) {
     getContext().texParameteri(target, GL_TEXTURE_MAX_LOD, mipLodMax_);
   }
   if (deviceFeatures.hasFeature(DeviceFeatures::TextureFilterAnisotropic)) {
+    // @fb-only
+    // Disable the anisotropic filter for now, it's causing a crash on some devices
+#if 0
     getContext().texParameteri(target, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy_);
+#else
+    (void)maxAnisotropy_;
+#endif
   }
 
   if (isDepthOrDepthStencil &&
