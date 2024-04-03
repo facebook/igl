@@ -81,7 +81,7 @@ Result Buffer::create(const BufferDesc& desc) {
   }
 
   buffers_.reserve(numBuffers);
-  bufferPatches_.resize(numBuffers, BufferRange());
+  bufferPatches_ = std::make_unique<BufferRange[]>(numBuffers);
   Result result;
   for (size_t bufferIndex = 0; bufferIndex < numBuffers; ++bufferIndex) {
     std::string bufferName = desc_.debugName + " - sub-buffer " + std::to_string(bufferIndex);

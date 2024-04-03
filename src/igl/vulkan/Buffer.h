@@ -58,7 +58,7 @@ class Buffer final : public igl::IBuffer {
   uint32_t previousBufferIndex_ = UINT32_MAX;
   std::vector<std::shared_ptr<VulkanBuffer>> buffers_;
   std::unique_ptr<uint8_t[]> localData_;
-  std::vector<BufferRange> bufferPatches_;
+  std::unique_ptr<BufferRange[]> bufferPatches_;
 
   Result create(const BufferDesc& desc);
 
