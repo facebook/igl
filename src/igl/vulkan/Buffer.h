@@ -49,14 +49,14 @@ class Buffer final : public igl::IBuffer {
 
   /// @brief Returns the current active VulkanBuffer object managed by this class. Since this class
   /// may be used as a Ring Buffer, the active buffer is the buffer currently being accessed.
-  [[nodiscard]] const std::shared_ptr<VulkanBuffer>& currentVulkanBuffer() const;
+  [[nodiscard]] const std::unique_ptr<VulkanBuffer>& currentVulkanBuffer() const;
 
  private:
   const igl::vulkan::Device& device_;
   BufferDesc desc_;
   bool isRingBuffer_ = false;
   uint32_t previousBufferIndex_ = UINT32_MAX;
-  std::vector<std::shared_ptr<VulkanBuffer>> buffers_;
+  std::vector<std::unique_ptr<VulkanBuffer>> buffers_;
   std::unique_ptr<uint8_t[]> localData_;
   std::unique_ptr<BufferRange[]> bufferPatches_;
 

@@ -93,7 +93,7 @@ Result Buffer::create(const BufferDesc& desc) {
   return result;
 }
 
-const std::shared_ptr<VulkanBuffer>& Buffer::currentVulkanBuffer() const {
+const std::unique_ptr<VulkanBuffer>& Buffer::currentVulkanBuffer() const {
   IGL_ASSERT_MSG(!buffers_.empty(), "There are no sub-allocations available for this buffer");
   return buffers_[isRingBuffer_ ? device_.getVulkanContext().syncManager_->currentIndex() : 0u];
 }
