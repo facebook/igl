@@ -25,7 +25,7 @@ class ITrackedResource {
  public:
   virtual ~ITrackedResource() {
     if (resourceTracker_) {
-      resourceTracker_->willDelete(static_cast<T*>(this));
+      resourceTracker_->willDelete(castThisAsTPtr());
     }
   }
 
@@ -43,6 +43,23 @@ class ITrackedResource {
   }
 
  private:
+  // ITrackedResource destructor is called after the `T` object is partially destructed
+  // and ubsan complaints about vptr mismatch on this line :
+  //  return static_cast<T*>(this);
+  // So we prevent UBSan by turning off vptr sanitizer on this function
+  //
+  // So we prevent UBSan from analyzing pointers that are never dereferenced anyway, by //@fb-only
+  // We are not seeing actual undefined behavior  //@fb-only
+  // @fb-only
+  // @fb-only
+#if defined(__clang__)
+  __attribute__((no_sanitize("vptr")))
+#endif
+  inline T*
+  castThisAsTPtr() {
+    return static_cast<T*>(this);
+  }
+
   std::shared_ptr<IResourceTracker> resourceTracker_;
 };
 
