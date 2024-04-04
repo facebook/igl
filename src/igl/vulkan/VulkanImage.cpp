@@ -658,6 +658,11 @@ std::unique_ptr<VulkanImageView> VulkanImage::createImageView(VkImageViewType ty
                                            debugName);
 }
 
+std::unique_ptr<VulkanImageView> VulkanImage::createImageView(VulkanImageViewCreateInfo createInfo,
+                                                              const char* debugName) const {
+  return std::make_unique<VulkanImageView>(ctx_, device_, vkImage_, createInfo, debugName);
+}
+
 void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
                                    VkImageLayout newImageLayout,
                                    VkPipelineStageFlags srcStageMask,

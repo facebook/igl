@@ -17,6 +17,16 @@ namespace vulkan {
 
 class VulkanContext;
 
+struct VulkanImageViewCreateInfo {
+  VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D;
+  VkFormat format = VK_FORMAT_UNDEFINED;
+  VkImageAspectFlags aspectMask = 0;
+  uint32_t baseLevel = 0;
+  uint32_t numLevels = 1;
+  uint32_t baseLayer = 0;
+  uint32_t numLayers = 1;
+};
+
 /**
  * @brief VulkanImageView is a RAII wrapper for VkImageView.
  * The device member is not managed by this class (it is used to destroy the imageView).
@@ -39,6 +49,18 @@ class VulkanImageView final {
                   uint32_t baseLayer,
                   uint32_t numLayers,
                   const char* debugName = nullptr);
+
+  /**
+   * @brief Creates the VulkanImageView object which stores a handle to a VkImageView.
+   * The imageView is created from the device, image, and other parameters with a name that can be
+   * used for debugging.
+   */
+  VulkanImageView(const VulkanContext& ctx,
+                  VkDevice device,
+                  VkImage image,
+                  const VulkanImageViewCreateInfo& createInfo,
+                  const char* debugName = nullptr);
+
   ~VulkanImageView();
 
   VulkanImageView(const VulkanImageView&) = delete;

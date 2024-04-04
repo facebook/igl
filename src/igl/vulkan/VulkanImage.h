@@ -18,6 +18,7 @@ namespace vulkan {
 
 class VulkanContext;
 class VulkanImageView;
+struct VulkanImageViewCreateInfo;
 
 struct VulkanImageCreateInfo {
   VkImageUsageFlags usageFlags = 0;
@@ -206,7 +207,8 @@ class VulkanImage final {
                                                    uint32_t baseLayer = 0,
                                                    uint32_t numLayers = 1,
                                                    const char* debugName = nullptr) const;
-
+  std::unique_ptr<VulkanImageView> createImageView(VulkanImageViewCreateInfo createInfo,
+                                                   const char* debugName = nullptr) const;
   void generateMipmap(VkCommandBuffer commandBuffer) const;
 
   /**

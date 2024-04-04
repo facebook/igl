@@ -41,6 +41,23 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
       &ctx_.vf_, device_, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vkImageView_, debugName));
 }
 
+VulkanImageView::VulkanImageView(const VulkanContext& ctx,
+                                 VkDevice device,
+                                 VkImage image,
+                                 const VulkanImageViewCreateInfo& createInfo,
+                                 const char* debugName) :
+  VulkanImageView(ctx,
+                  device,
+                  image,
+                  createInfo.type,
+                  createInfo.format,
+                  createInfo.aspectMask,
+                  createInfo.baseLevel,
+                  createInfo.numLevels,
+                  createInfo.baseLayer,
+                  createInfo.numLayers,
+                  debugName) {}
+
 VulkanImageView::~VulkanImageView() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
