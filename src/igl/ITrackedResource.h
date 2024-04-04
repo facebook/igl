@@ -25,7 +25,7 @@ class ITrackedResource {
  public:
   virtual ~ITrackedResource() {
     if (resourceTracker_) {
-      resourceTracker_->willDelete(static_cast<T&>(*this));
+      resourceTracker_->willDelete(static_cast<T*>(this));
     }
   }
 
@@ -37,7 +37,7 @@ class ITrackedResource {
     if (IGL_VERIFY(!resourceTracker_)) {
       resourceTracker_ = std::move(tracker);
       if (resourceTracker_) {
-        resourceTracker_->didCreate(static_cast<T&>(*this));
+        resourceTracker_->didCreate(static_cast<T*>(this));
       }
     }
   }

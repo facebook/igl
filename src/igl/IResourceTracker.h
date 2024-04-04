@@ -37,105 +37,105 @@ class IResourceTracker {
    *
    * @param texture Texture to be tracked
    */
-  virtual void didCreate(const ITexture& texture) noexcept = 0;
+  virtual void didCreate(const ITexture* texture) noexcept = 0;
 
   /**
    * @brief Informs the tracker that the texture will be deleted
    *
    * @param texture Texture which will be deleted
    */
-  virtual void willDelete(const ITexture& texture) noexcept = 0;
+  virtual void willDelete(const ITexture* texture) noexcept = 0;
 
   /**
    * @brief Informs the tracker that the buffer has been created
    *
    * @param buffer Buffer to be tracked
    */
-  virtual void didCreate(const IBuffer& buffer) noexcept = 0;
+  virtual void didCreate(const IBuffer* buffer) noexcept = 0;
 
   /**
    * @brief Informs the tracker that the buffer will be deleted
    *
    * @param buffer Buffer which will be deleted
    */
-  virtual void willDelete(const IBuffer& buffer) noexcept = 0;
+  virtual void willDelete(const IBuffer* buffer) noexcept = 0;
 
   /**
    * @brief Informs the tracker that the framebuffer has been created
    *
    * @param framebuffer Framebuffer to be tracked
    */
-  virtual void didCreate(const IFramebuffer& framebuffer) noexcept = 0;
+  virtual void didCreate(const IFramebuffer* framebuffer) noexcept = 0;
 
   /**
    * @brief Informs the tracker that the framebuffer will be deleted
    *
    * @param framebuffer Framebuffer which will be deleted
    */
-  virtual void willDelete(const IFramebuffer& framebuffer) noexcept = 0;
+  virtual void willDelete(const IFramebuffer* framebuffer) noexcept = 0;
 
   /**
    * @brief Informs the tracker that the sampler state has been created
    *
    * @param samplerState Sampler state to be tracked
    */
-  virtual void didCreate(const ISamplerState& samplerState) noexcept = 0;
+  virtual void didCreate(const ISamplerState* samplerState) noexcept = 0;
 
   /**
    * @brief Informs the tracker that the sampler will be deleted
    *
    * @param samplerState Sampler state which will be deleted
    */
-  virtual void willDelete(const ISamplerState& samplerState) noexcept = 0;
+  virtual void willDelete(const ISamplerState* samplerState) noexcept = 0;
 
   /**
    * @brief Informs the tracker that the shader library has been created
    *
    * @param shaderLibrary Shader library to be tracked
    */
-  virtual void didCreate(const IShaderLibrary& shaderLibrary) noexcept = 0;
+  virtual void didCreate(const IShaderLibrary* shaderLibrary) noexcept = 0;
 
   /**
    * @brief Informs the tracker that the shader library be deleted
    *
    * @param shaderLibrary Shader library which will be deleted
    */
-  virtual void willDelete(const IShaderLibrary& shaderLibrary) noexcept = 0;
+  virtual void willDelete(const IShaderLibrary* shaderLibrary) noexcept = 0;
 
   /**
    * @brief Informs the tracker that the shader module has been created
    *
    * @param shaderModule Shader module to be tracked
    */
-  virtual void didCreate(const IShaderModule& shaderModule) noexcept = 0;
+  virtual void didCreate(const IShaderModule* shaderModule) noexcept = 0;
 
   /**
    * @brief Informs the tracker that the shader module will be deleted
    *
    * @param shaderModule Shader module which will be deleted
    */
-  virtual void willDelete(const IShaderModule& shaderModule) noexcept = 0;
+  virtual void willDelete(const IShaderModule* shaderModule) noexcept = 0;
 
   /**
    * @brief Informs the tracker that the shader stages has been created
    *
    * @param shaderStages Shader stages to be tracked
    */
-  virtual void didCreate(const IShaderStages& shaderStages) noexcept = 0;
+  virtual void didCreate(const IShaderStages* shaderStages) noexcept = 0;
 
   /**
    * @brief Informs the tracker that the shader stages will be deleted
    *
    * @param shaderStages Shader stages which will be deleted
    */
-  virtual void willDelete(const IShaderStages& shaderStages) noexcept = 0;
+  virtual void willDelete(const IShaderStages* shaderStages) noexcept = 0;
 
   template<typename T>
-  void didCreate(IGL_MAYBE_UNUSED const ITrackedResource<T>& resource) noexcept {
+  void didCreate(IGL_MAYBE_UNUSED const ITrackedResource<T>* resource) noexcept {
     IGL_ASSERT_NOT_REACHED();
   }
   template<typename T>
-  void willDelete(IGL_MAYBE_UNUSED const ITrackedResource<T>& resource) noexcept {
+  void willDelete(IGL_MAYBE_UNUSED const ITrackedResource<T>* resource) noexcept {
     IGL_ASSERT_NOT_REACHED();
   }
 
