@@ -46,6 +46,16 @@ class ITexture;
 class IVertexInputState;
 
 /**
+ * @brief DeviceFeatures denotes the different kinds of specific features that are supported in the
+ * device. Note that this can differ across devices based on vendor support.
+ *
+ */
+enum class InDevelopementFeatures : uint8_t {
+  // Define your in-development feature enums here
+  DummyFeatureExample,
+};
+
+/**
  * @brief Interface to a GPU that is used to draw graphics or do parallel computation.
  */
 class IDevice : public ICapabilities {
@@ -318,11 +328,47 @@ class IDevice : public ICapabilities {
    */
   Color backendDebugColor() const noexcept;
 
+  /**
+   * @brief Controls an opaque internal bit field that enables/disables certain
+   * in-development paths at run time.
+   *
+   * It is strongly recommended to set the fields during device creation or very near it.
+   *
+   * Some examples of the usage:
+   *     * Preserving the original path while making a particularly dangerous change
+   *     * Enabling a new IGL feature to a subset of users as an experiment.
+   */
+  bool testDevelopmentFlags(InDevelopementFeatures featureEnum) {
+    const uint8_t pos = static_cast<uint8_t>(featureEnum);
+    IGL_ASSERT(pos < 64);
+
+    return inDevelopmentFlags_ & (1ull << pos);
+  }
+
+  /**
+   * @brief Set/Unset an In-Development Flag
+   * The pos/value is only meaningful to the client of IGL and whatever
+   * in-development IGL feature you have in your IGL code base. No
+   * in-development paths will be upstreamed or accepted into public IGL
+   */
+  void setDevelopmentFlags(InDevelopementFeatures featureEnum, bool val) {
+    const uint8_t pos = static_cast<uint8_t>(featureEnum);
+    IGL_ASSERT(pos < 64);
+
+    if (val) {
+      inDevelopmentFlags_ |= 1ull << pos;
+    } else {
+      inDevelopmentFlags_ &= ~(1ull << pos);
+    }
+  }
+
  protected:
   virtual void beginScope();
   virtual void endScope();
   TextureDesc sanitize(const TextureDesc& desc) const;
   IDevice() = default;
+
+  int64_t inDevelopmentFlags_ = 0;
 
  private:
   bool defaultVerifyScope();
