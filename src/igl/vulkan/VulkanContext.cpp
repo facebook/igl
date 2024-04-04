@@ -32,6 +32,7 @@
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanExtensions.h>
+#include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
 #include <igl/vulkan/VulkanPipelineLayout.h>
 #include <igl/vulkan/VulkanSampler.h>
@@ -1287,6 +1288,17 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
   awaitingCreation_ = true;
 
   return texture;
+}
+
+std::shared_ptr<VulkanTexture> VulkanContext::createTextureFromVkImage(
+    VkImage vkImage,
+    VulkanImageCreateInfo imageCreateInfo,
+    VulkanImageViewCreateInfo imageViewCreateInfo,
+    const char* debugName) const {
+  auto iglImage = std::make_unique<VulkanImage>(
+      *this, device_->getVkDevice(), vkImage, imageCreateInfo, debugName);
+  auto imageView = iglImage->createImageView(imageViewCreateInfo, debugName);
+  return createTexture(std::move(iglImage), std::move(imageView), debugName);
 }
 
 std::shared_ptr<VulkanSampler> VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
