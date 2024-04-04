@@ -177,6 +177,21 @@ TEST_F(DeviceTest, LastDrawStat) {
 }
 
 //
+// In Development Feature API Test
+//
+// Make sure what flags have the right defaults, and setter and getter work.
+//
+TEST_F(DeviceTest, InDevelopmentFeature) {
+  // Set a flag
+  iglDev_->setDevelopmentFlags(igl::InDevelopementFeatures::DummyFeatureExample, true);
+  ASSERT_TRUE(iglDev_->testDevelopmentFlags(igl::InDevelopementFeatures::DummyFeatureExample) != 0);
+
+  // Reset the flag
+  iglDev_->setDevelopmentFlags(igl::InDevelopementFeatures::DummyFeatureExample, false);
+  ASSERT_TRUE(iglDev_->testDevelopmentFlags(igl::InDevelopementFeatures::DummyFeatureExample) == 0);
+}
+
+//
 // Get Backend Type
 //
 // Make sure IDevice->getBackendType() only returns expected values
