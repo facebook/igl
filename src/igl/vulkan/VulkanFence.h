@@ -39,6 +39,15 @@ class VulkanFence final {
   bool reset() noexcept;
   bool wait(uint64_t timeoutNs = UINT64_MAX) noexcept;
 
+  /** @brief Signals the fence on the provided queue.
+   *
+   * This does not wait for completion of the signal, it merely
+   * executes the vkQueueSubmit with the fence and no actual workload
+   * so that the fence is signaled as soon as the queue workload executes
+   * on the GPU.
+   */
+  bool signal(VkQueue queue);
+
  public:
   const VulkanFunctionTable* vf_{};
   VkDevice device_ = VK_NULL_HANDLE;

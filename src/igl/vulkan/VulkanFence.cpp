@@ -62,5 +62,15 @@ bool VulkanFence::wait(uint64_t timeoutNs) noexcept {
   return result == VK_SUCCESS;
 }
 
+bool VulkanFence::signal(VkQueue queue) {
+  if (queue == VK_NULL_HANDLE) {
+    // protected against invalid submit
+    return false;
+  }
+
+  const VkResult result = vf_->vkQueueSubmit(queue, 0, nullptr, vkFence_);
+  return result == VK_SUCCESS;
+}
+
 } // namespace vulkan
 } // namespace igl
