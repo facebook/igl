@@ -135,6 +135,7 @@ class XrApp {
   void setupProjectionAndDepth(
       std::array<XrCompositionLayerProjectionView, kNumViews>& projectionViews,
       std::array<XrCompositionLayerDepthInfoKHR, kNumViews>& depthInfos);
+  void endFrameQuadLayerComposition(XrFrameState frameState);
 
   void* nativeWindow_ = nullptr;
   bool resumed_ = false;
