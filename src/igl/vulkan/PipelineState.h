@@ -45,9 +45,9 @@ class PipelineState {
   // the last seen VkDescriptorSetLayout from VulkanContext::dslBindless_
   mutable VkDescriptorSetLayout lastBindlessVkDescriptorSetLayout_ = VK_NULL_HANDLE;
 
-  std::shared_ptr<VulkanDescriptorSetLayout> dslCombinedImageSamplers_;
-  std::shared_ptr<VulkanDescriptorSetLayout> dslUniformBuffers_;
-  std::shared_ptr<VulkanDescriptorSetLayout> dslStorageBuffers_;
+  std::unique_ptr<VulkanDescriptorSetLayout> dslCombinedImageSamplers_;
+  std::unique_ptr<VulkanDescriptorSetLayout> dslUniformBuffers_;
+  std::unique_ptr<VulkanDescriptorSetLayout> dslStorageBuffers_;
 };
 
 } // namespace igl::vulkan
