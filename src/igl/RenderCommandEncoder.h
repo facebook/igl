@@ -55,6 +55,9 @@ class IRenderCommandEncoder : public ICommandEncoder {
                           uint8_t target,
                           const std::shared_ptr<IBuffer>& buffer,
                           size_t bufferOffset) = 0;
+  virtual void bindVertexBuffer(uint32_t index,
+                                const std::shared_ptr<IBuffer>& buffer,
+                                size_t bufferOffset = 0) = 0;
   /// Creates and binds a temporary buffer to the specified buffer index.
   virtual void bindBytes(size_t index, uint8_t target, const void* data, size_t length) = 0;
   /// Binds push constant data to the current encoder.
