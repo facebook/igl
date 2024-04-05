@@ -368,7 +368,7 @@ class IDevice : public ICapabilities {
   TextureDesc sanitize(const TextureDesc& desc) const;
   IDevice() = default;
 
-  int64_t inDevelopmentFlags_ = 0;
+  uint64_t inDevelopmentFlags_ = 0;
 
  private:
   bool defaultVerifyScope();
