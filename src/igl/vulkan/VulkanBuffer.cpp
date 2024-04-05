@@ -175,7 +175,7 @@ void VulkanBuffer::invalidateMappedMemory(VkDeviceSize offset, VkDeviceSize size
   }
 }
 
-void VulkanBuffer::getBufferSubData(size_t offset, size_t size, void* data) {
+void VulkanBuffer::getBufferSubData(size_t offset, size_t size, void* data) const {
   // Only mapped host-visible buffers can be downloaded this way. All other
   // GPU buffers should use a temporary staging buffer
 

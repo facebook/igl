@@ -51,7 +51,7 @@ class VulkanBuffer {
    * function is a no-op. This function is synchronous and the data is expected to be available
    * when the function returns.
    */
-  void getBufferSubData(size_t offset, size_t size, void* data);
+  void getBufferSubData(size_t offset, size_t size, void* data) const;
   [[nodiscard]] uint8_t* getMappedPtr() const {
     return static_cast<uint8_t*>(mappedPtr_);
   }
