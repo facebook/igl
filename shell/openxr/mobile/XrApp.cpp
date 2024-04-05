@@ -1025,11 +1025,11 @@ void XrApp::endFrame(XrFrameState frameState) {
         viewStagePoses_[i],
         views_[i].fov,
     };
-    XrRect2Di imageRect = {{0, 0},
-                           {
-                               (int32_t)viewports_[i].recommendedImageRectWidth,
-                               (int32_t)viewports_[i].recommendedImageRectHeight,
-                           }};
+    const XrRect2Di imageRect = {{0, 0},
+                                 {
+                                     (int32_t)viewports_[i].recommendedImageRectWidth,
+                                     (int32_t)viewports_[i].recommendedImageRectHeight,
+                                 }};
     auto index = useSinglePassStereo_ ? static_cast<uint32_t>(i) : 0;
     projectionViews[i].subImage = {
         useSinglePassStereo_ ? swapchainProviders_[0]->colorSwapchain()
