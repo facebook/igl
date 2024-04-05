@@ -134,7 +134,7 @@ std::shared_ptr<igl::IBuffer> EnhancedShaderDebuggingStore::vertexBuffer() const
 
 igl::RenderPassDesc EnhancedShaderDebuggingStore::renderPassDesc(
     const std::shared_ptr<IFramebuffer>& framebuffer) const {
-  const auto& attachmentIndices = framebuffer->getColorAttachmentIndices();
+  const auto attachmentIndices = framebuffer->getColorAttachmentIndices();
   const auto max = std::max_element(attachmentIndices.begin(), attachmentIndices.end());
 
   igl::RenderPassDesc desc;
@@ -205,11 +205,11 @@ std::shared_ptr<igl::IRenderPipelineState> EnhancedShaderDebuggingStore::pipelin
     return result->second;
   }
 
-  IGL_ASSERT(!framebuffer->getColorAttachmentIndices().empty());
+  const auto attachments = framebuffer->getColorAttachmentIndices();
+  IGL_ASSERT(!attachments.empty());
 
   RenderPipelineDesc desc;
 
-  const auto& attachments = framebuffer->getColorAttachmentIndices();
   const auto max = std::max_element(attachments.begin(), attachments.end());
 
   desc.targetDesc.colorAttachments.resize(*max + 1);

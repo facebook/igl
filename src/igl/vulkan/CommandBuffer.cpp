@@ -47,8 +47,7 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
   }
 
   // prepare all the color attachments
-  const auto& indices = framebuffer->getColorAttachmentIndices();
-  for (auto i : indices) {
+  for (const auto i : framebuffer->getColorAttachmentIndices()) {
     ITexture* colorTex = framebuffer->getColorAttachment(i).get();
     transitionToColorAttachment(wrapper_.cmdBuf_, colorTex);
     // handle MSAA

@@ -94,13 +94,16 @@ void CommandQueue::enhancedShaderDebuggingPass(const igl::vulkan::VulkanContext&
 
   auto& debugger = ctx.enhancedShaderDebuggingStore_;
 
-  // If there are no color attachments, return, as we won't have a framebuffer to render into
-  if (!cmdBuffer->getFramebuffer() ||
-      cmdBuffer->getFramebuffer()->getColorAttachmentIndices().empty()) {
+  if (!cmdBuffer->getFramebuffer()) {
     return;
   }
 
+  // If there are no color attachments, return, as we won't have a framebuffer to render into
   const auto indices = cmdBuffer->getFramebuffer()->getColorAttachmentIndices();
+  if (indices.empty()) {
+    return;
+  }
+
   const auto min = std::min_element(indices.begin(), indices.end());
 
   const auto resolveAttachment = cmdBuffer->getFramebuffer()->getResolveColorAttachment(*min);
