@@ -56,9 +56,10 @@ class Buffer final : public igl::IBuffer {
   BufferDesc desc_;
   bool isRingBuffer_ = false;
   uint32_t previousBufferIndex_ = UINT32_MAX;
-  std::vector<std::unique_ptr<VulkanBuffer>> buffers_;
+  std::unique_ptr<std::unique_ptr<VulkanBuffer>[]> buffers_;
   std::unique_ptr<uint8_t[]> localData_;
   std::unique_ptr<BufferRange[]> bufferPatches_;
+  uint32_t bufferCount_ = 0;
 
   Result create(const BufferDesc& desc);
 

@@ -72,21 +72,20 @@ Result Buffer::create(const BufferDesc& desc) {
   // Store the flag that determines if this buffer contains sub-allocations (i.e. is a ring-buffer)
   isRingBuffer_ = ((desc_.hint & BufferDesc::BufferAPIHintBits::Ring) != 0);
 
-  const auto numBuffers =
-      isRingBuffer_ ? device_.getVulkanContext().syncManager_->maxResourceCount() : 1u;
+  bufferCount_ = isRingBuffer_ ? device_.getVulkanContext().syncManager_->maxResourceCount() : 1u;
 
   if (isRingBuffer_) {
     // Resize the local copy of the data
     localData_ = std::make_unique<uint8_t[]>(desc_.length);
   }
 
-  buffers_.reserve(numBuffers);
-  bufferPatches_ = std::make_unique<BufferRange[]>(numBuffers);
+  buffers_ = std::make_unique<std::unique_ptr<VulkanBuffer>[]>(bufferCount_);
+  bufferPatches_ = std::make_unique<BufferRange[]>(bufferCount_);
   Result result;
-  for (size_t bufferIndex = 0; bufferIndex < numBuffers; ++bufferIndex) {
+  for (size_t bufferIndex = 0; bufferIndex < bufferCount_; ++bufferIndex) {
     std::string bufferName = desc_.debugName + " - sub-buffer " + std::to_string(bufferIndex);
-    buffers_.emplace_back(
-        ctx.createBuffer(desc_.length, usageFlags, memFlags, &result, bufferName.c_str()));
+    buffers_[bufferIndex] =
+        ctx.createBuffer(desc_.length, usageFlags, memFlags, &result, bufferName.c_str());
     IGL_VERIFY(result.isOk());
   }
 
@@ -94,7 +93,7 @@ Result Buffer::create(const BufferDesc& desc) {
 }
 
 const std::unique_ptr<VulkanBuffer>& Buffer::currentVulkanBuffer() const {
-  IGL_ASSERT_MSG(!buffers_.empty(), "There are no sub-allocations available for this buffer");
+  IGL_ASSERT_MSG(buffers_, "There are no sub-allocations available for this buffer");
   return buffers_[isRingBuffer_ ? device_.getVulkanContext().syncManager_->currentIndex() : 0u];
 }
 
@@ -102,7 +101,7 @@ BufferRange Buffer::getUpdateRange() const {
   size_t start = std::numeric_limits<size_t>::max();
   size_t end = 0;
 
-  for (uint32_t i = 0; i < buffers_.size(); ++i) {
+  for (uint32_t i = 0; i < bufferCount_; ++i) {
     const auto& bufferPatch = bufferPatches_[i];
     // skip this buffer, if update size is zero
     if (bufferPatch.size == 0) {
