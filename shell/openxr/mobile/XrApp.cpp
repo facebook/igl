@@ -986,33 +986,10 @@ void XrApp::render() {
   }
 }
 
-void XrApp::endFrame(XrFrameState frameState) {
+void XrApp::setupProjectionAndDepth(
+    std::array<XrCompositionLayerProjectionView, kNumViews>& projectionViews,
+    std::array<XrCompositionLayerDepthInfoKHR, kNumViews>& depthInfos) {
   const auto& appParams = renderSession_->appParams();
-
-  std::array<XrCompositionLayerQuad, kNumViews> quadLayers{};
-  if (useQuadLayerComposition_) {
-    XrEyeVisibility eye = XR_EYE_VISIBILITY_LEFT;
-    for (auto& layer : quadLayers) {
-      layer.next = nullptr;
-      layer.type = XR_TYPE_COMPOSITION_LAYER_QUAD;
-      layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
-      layer.space = currentSpace_;
-      layer.eyeVisibility = eye;
-      memset(&layer.subImage, 0, sizeof(XrSwapchainSubImage));
-#if USE_LOCAL_AR_SPACE
-      layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, -1.f}};
-#else
-      layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, 0.f}};
-#endif
-      layer.size = {appParams.sizeX, appParams.sizeY};
-      if (eye == XR_EYE_VISIBILITY_LEFT) {
-        eye = XR_EYE_VISIBILITY_RIGHT;
-      }
-    }
-  }
-
-  std::array<XrCompositionLayerProjectionView, kNumViews> projectionViews{};
-  std::array<XrCompositionLayerDepthInfoKHR, kNumViews> depthInfos{};
 
   for (size_t i = 0; i < kNumViews; i++) {
     depthInfos[i] = {
@@ -1047,7 +1024,40 @@ void XrApp::endFrame(XrFrameState frameState) {
     depthInfos[i].maxDepth = appParams.depthParams.maxDepth;
     depthInfos[i].nearZ = appParams.depthParams.nearZ;
     depthInfos[i].farZ = appParams.depthParams.farZ;
-    if (useQuadLayerComposition_) {
+  }
+}
+
+void XrApp::endFrame(XrFrameState frameState) {
+  const auto& appParams = renderSession_->appParams();
+
+  std::array<XrCompositionLayerQuad, kNumViews> quadLayers{};
+  if (useQuadLayerComposition_) {
+    XrEyeVisibility eye = XR_EYE_VISIBILITY_LEFT;
+    for (auto& layer : quadLayers) {
+      layer.next = nullptr;
+      layer.type = XR_TYPE_COMPOSITION_LAYER_QUAD;
+      layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+      layer.space = currentSpace_;
+      layer.eyeVisibility = eye;
+      memset(&layer.subImage, 0, sizeof(XrSwapchainSubImage));
+#if USE_LOCAL_AR_SPACE
+      layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, -1.f}};
+#else
+      layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, 0.f}};
+#endif
+      layer.size = {appParams.sizeX, appParams.sizeY};
+      if (eye == XR_EYE_VISIBILITY_LEFT) {
+        eye = XR_EYE_VISIBILITY_RIGHT;
+      }
+    }
+  }
+
+  std::array<XrCompositionLayerProjectionView, kNumViews> projectionViews{};
+  std::array<XrCompositionLayerDepthInfoKHR, kNumViews> depthInfos{};
+  setupProjectionAndDepth(projectionViews, depthInfos);
+
+  if (useQuadLayerComposition_) {
+    for (size_t i = 0; i < kNumViews; i++) {
       quadLayers[i].subImage = projectionViews[i].subImage;
     }
   }
