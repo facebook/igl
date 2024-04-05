@@ -193,7 +193,7 @@ class RenderPipelineState final : public IRenderPipelineState, public vulkan::Pi
   VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo_;
 
   std::vector<VkVertexInputBindingDescription> vkBindings_;
-  std::vector<VkVertexInputAttributeDescription> vkAttributes_;
+  std::array<VkVertexInputAttributeDescription, IGL_VERTEX_ATTRIBUTES_MAX> vkAttributes_{};
 
   // This is empty for now.
   std::shared_ptr<RenderPipelineReflection> reflection_;
