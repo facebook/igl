@@ -46,10 +46,22 @@ class ITexture;
 class IVertexInputState;
 
 /**
- * @brief DeviceFeatures denotes the different kinds of specific features that are supported in the
- * device. Note that this can differ across devices based on vendor support.
+ * @brief InDevelopmentFeature is where you'd add in your own enum for testing out
+ * an IGL feature you are working on. Once you declare it, you'd set it with
+ * setDevelopmentFlags() from outside of IGL and then check for it with
+ * testDevelopmentFlags() inside of IGL.
  *
+ * For the IGL data types without access to IDevice, you'd need to do some
+ * additional plumbing to pass the flag through.
+ *
+ * Note that none of this in-development code will be upstreamed. These flags
+ * are only here so you have a way to revert to a safe path while testing in
+ * production.
  */
+
+// @fb-only
+ // @fb-only
+ // @fb-only
 enum class InDevelopementFeatures : uint8_t {
   // Define your in-development feature enums here
   DummyFeatureExample,
