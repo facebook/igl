@@ -521,10 +521,33 @@ void RenderCommandEncoder::bindBuffer(int index,
 void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
                                             const std::shared_ptr<IBuffer>& buffer,
                                             size_t bufferOffset) {
-  (void)index;
-  (void)buffer;
-  (void)bufferOffset;
-  IGL_ASSERT_NOT_IMPLEMENTED(); // yet
+  IGL_PROFILER_FUNCTION();
+  IGL_PROFILER_ZONE_GPU_VK("bindVertexBuffer()", ctx_.tracyCtx_, cmdBuffer_);
+
+#if IGL_VULKAN_PRINT_COMMANDS
+  IGL_LOG_INFO(
+      "%p  bindVertexBuffer(%u, %p, %u)\n", cmdBuffer_, index, buffer, (uint32_t)bufferOffset);
+#endif // IGL_VULKAN_PRINT_COMMANDS
+
+  if (!IGL_VERIFY(buffer != nullptr)) {
+    return;
+  }
+
+  auto* buf = static_cast<igl::vulkan::Buffer*>(buffer.get());
+
+  const bool isVertexBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Vertex) != 0;
+
+  if (!isVertexBuffer) {
+    IGL_ASSERT_MSG(false, "A vertex buffer should have BufferTypeBits::Vertex");
+    return;
+  }
+
+  if (IGL_VERIFY(index < IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_))) {
+    isVertexBufferBound_[index] = true;
+  }
+  VkBuffer vkBuf = buf->getVkBuffer();
+  const VkDeviceSize offset = bufferOffset;
+  ctx_.vf_.vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
 }
 
 void RenderCommandEncoder::bindBytes(size_t /*index*/,
