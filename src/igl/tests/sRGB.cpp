@@ -247,8 +247,8 @@ TEST_F(sRGBTest, Passthrough) {
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindBuffer(data::shader::simplePosIndex, BindTarget::kVertex, vb_, 0);
-  cmds->bindBuffer(data::shader::simpleUvIndex, BindTarget::kVertex, uv_, 0);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 

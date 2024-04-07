@@ -92,8 +92,8 @@ TEST_F(TextureTest, RenderToMip) {
     renderPass_.colorAttachments[0].mipLevel = mipLevel;
 
     auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, fb);
-    cmds->bindBuffer(data::shader::simplePosIndex, BindTarget::kVertex, vb_, 0);
-    cmds->bindBuffer(data::shader::simpleUvIndex, BindTarget::kVertex, uv_, 0);
+    cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
+    cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
 
     cmds->bindRenderPipelineState(pipelineState);
 

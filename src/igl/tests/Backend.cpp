@@ -260,8 +260,8 @@ TEST_F(BackendTest, DISABLED_CoordinateSystem) {
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindBuffer(data::shader::simplePosIndex, BindTarget::kVertex, zAdjustedVertexBuffer, 0);
-  cmds->bindBuffer(data::shader::simpleUvIndex, BindTarget::kVertex, uv_, 0);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, zAdjustedVertexBuffer);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
