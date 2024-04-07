@@ -1900,7 +1900,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     commands->bindRenderPipelineState(renderPipelineState_Shadow_);
     commands->pushDebugGroupLabel("Render Shadows", igl::Color(1, 0, 0));
     commands->bindDepthStencilState(depthStencilState_);
-    commands->bindBuffer(0, BindTarget::kVertex, vb0_, 0);
+    commands->bindVertexBuffer(0, vb0_);
 #if USE_OPENGL_BACKEND
     const auto& glPipelineState =
         static_cast<const igl::opengl::RenderPipelineState*>(renderPipelineState_Shadow_.get());
@@ -1950,7 +1950,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     commands->bindRenderPipelineState(renderPipelineState_Mesh_);
     commands->pushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
     commands->bindDepthStencilState(depthStencilState_);
-    commands->bindBuffer(0, BindTarget::kVertex, vb0_, 0);
+    commands->bindVertexBuffer(0, vb0_);
 
 #if USE_OPENGL_BACKEND
     const auto& glPipelineState =
@@ -1980,7 +1980,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     commands->bindSamplerState(4, igl::BindTarget::kFragment, sampler_.get());
 
 #if USE_OPENGL_BACKEND
-    commands->bindBuffer(0, BindTarget::kVertex, vb0_, 0);
+    commands->bindVertexBuffer(0, vb0_);
     int shapeStart = 0;
     for (auto numVertices : shapeVertexCnt_) {
       const uint32_t imageIdx = (uint32_t)vertexData_[shapeStart].mtlIndex;
@@ -2003,12 +2003,12 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
       commands->draw(PrimitiveType::Triangle, shapeStart, numVertices);
       if (enableWireframe_) {
         commands->bindRenderPipelineState(renderPipelineState_MeshWireframe_);
-        commands->bindBuffer(0, BindTarget::kVertex, vb0_, 0);
+        commands->bindVertexBuffer(0, vb0_);
         commands->draw(PrimitiveType::Triangle, shapeStart, numVertices);
 
         // Bind the non-wireframe pipeline and the vertex buffer
         commands->bindRenderPipelineState(renderPipelineState_Mesh_);
-        commands->bindBuffer(0, BindTarget::kVertex, vb0_, 0);
+        commands->bindVertexBuffer(0, vb0_);
       }
 
       shapeStart += numVertices;

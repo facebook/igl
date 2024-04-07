@@ -245,7 +245,7 @@ void TinyRenderable::update(igl::IDevice& device) {
 void TinyRenderable::submit(igl::IRenderCommandEncoder& cmds) {
   // Draw call 0
   // clang-format off
-  cmds.bindBuffer(0, igl::BindTarget::kVertex, vertexBuffer_, 0);
+  cmds.bindVertexBuffer(0, vertexBuffer_);
 //  cmds.bindBuffer(1, igl::BindTarget::kFragment, uniformBuffer_, 0);
   cmds.bindRenderPipelineState(pipelineState_);
   cmds.bindTexture(kTextureUnit, igl::BindTarget::kFragment, texture_.get());

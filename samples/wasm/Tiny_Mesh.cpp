@@ -400,7 +400,7 @@ void onDraw(void*) {
   commands->bindViewport(viewport);
   commands->bindScissorRect(scissor);
   commands->pushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
-  commands->bindBuffer(0, BindTarget::kVertex, vb0_, 0);
+  commands->bindVertexBuffer(0, vb0_);
   commands->bindDepthStencilState(depthStencilState_);
   commands->bindBuffer(0, BindTarget::kAllGraphics, ubPerFrame_[frameIndex], 0);
   commands->bindTexture(0, igl::BindTarget::kFragment, texture0_.get());

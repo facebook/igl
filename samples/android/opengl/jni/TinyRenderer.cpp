@@ -186,7 +186,7 @@ void TinyRenderer::render() {
 
   auto cmds = buffer->createRenderCommandEncoder(renderPassDesc_, framebuffer_);
 
-  cmds->bindBuffer(0, BindTarget::kVertex, vertexBuffer_, 0);
+  cmds->bindVertexBuffer(0, vertexBuffer_);
   cmds->bindRenderPipelineState(pipelineState_);
   cmds->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *indexBuffer_, 0);
 
