@@ -303,7 +303,7 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
       buffer->createRenderCommandEncoder(_renderPass, _framebuffer);
   IGL_ASSERT(commands != nullptr);
   if (commands) {
-    commands->bindBuffer(1, BindTarget::kVertex, _vb0, 0);
+    commands->bindVertexBuffer(1, _vb0);
     commands->bindRenderPipelineState(_pipelineState);
     if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
       // Bind non block uniforms

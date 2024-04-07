@@ -314,7 +314,7 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_ASSERT(commands != nullptr);
   if (commands) {
-    commands->bindBuffer(1, BindTarget::kVertex, vb0_, 0);
+    commands->bindVertexBuffer(1, vb0_);
     commands->bindRenderPipelineState(pipelineState_);
     if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
       // Bind non block uniforms

@@ -389,7 +389,7 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
 
   // Draw call 0
   // clang-format off
-  commands->bindBuffer(0, BindTarget::kVertex, vb0_, 0);
+  commands->bindVertexBuffer(0,  vb0_);
   commands->bindRenderPipelineState(pipelineStateMRT_);
   commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());
   commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
@@ -398,7 +398,7 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
 
   // Draw call 1
   // clang-format off
-  commands->bindBuffer(0, BindTarget::kVertex, vb1_, 0);
+  commands->bindVertexBuffer(0,  vb1_);
   commands->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib0_, 0);
   // clang-format on
 
@@ -427,7 +427,7 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
 
   // Draw call 0
   // clang-format off
-  commands->bindBuffer(0, BindTarget::kVertex, vb0_, 0);
+  commands->bindVertexBuffer(0,  vb0_);
   commands->bindRenderPipelineState(pipelineStateLastDisplay_);
   auto green = framebufferMRT_->getColorAttachment(0);
   commands->bindTexture(textureUnit, BindTarget::kFragment, green.get());
@@ -438,7 +438,7 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
 
   commands->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib0_, 0);
 
-  commands->bindBuffer(0, BindTarget::kVertex, vb1_, 0);
+  commands->bindVertexBuffer(0, vb1_);
   commands->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib0_, 0);
 
   // clang-format on
