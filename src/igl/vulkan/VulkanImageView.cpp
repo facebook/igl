@@ -61,12 +61,19 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
 
 VulkanImageView::~VulkanImageView() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+  destroy();
+}
 
+void VulkanImageView::destroy() {
   if (ctx_) {
     ctx_->deferredTask(
         std::packaged_task<void()>([vf = &ctx_->vf_, device = device_, imageView = vkImageView_]() {
           vf->vkDestroyImageView(device, imageView, nullptr);
         }));
+
+    vkImageView_ = VK_NULL_HANDLE;
+    device_ = VK_NULL_HANDLE;
+    ctx_ = nullptr;
   }
 }
 

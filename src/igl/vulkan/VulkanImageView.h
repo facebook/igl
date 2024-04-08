@@ -77,6 +77,9 @@ class VulkanImageView final {
   const VulkanContext* ctx_ = nullptr;
   VkDevice device_ = VK_NULL_HANDLE;
   VkImageView vkImageView_ = VK_NULL_HANDLE;
+
+ private:
+  void destroy();
 };
 
 } // namespace vulkan
