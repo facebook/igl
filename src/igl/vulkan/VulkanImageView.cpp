@@ -25,11 +25,12 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
                                  uint32_t baseLayer,
                                  uint32_t numLayers,
                                  const char* debugName) :
-  ctx_(ctx), device_(device) {
+  ctx_(&ctx), device_(device) {
+  IGL_ASSERT(ctx_);
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   VK_ASSERT(ivkCreateImageView(
-      &ctx_.vf_,
+      &ctx_->vf_,
       device_,
       image,
       type,
@@ -38,7 +39,7 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
       &vkImageView_));
 
   VK_ASSERT(ivkSetDebugObjectName(
-      &ctx_.vf_, device_, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vkImageView_, debugName));
+      &ctx_->vf_, device_, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vkImageView_, debugName));
 }
 
 VulkanImageView::VulkanImageView(const VulkanContext& ctx,
@@ -61,10 +62,12 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
 VulkanImageView::~VulkanImageView() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
-  ctx_.deferredTask(
-      std::packaged_task<void()>([vf = &ctx_.vf_, device = device_, imageView = vkImageView_]() {
-        vf->vkDestroyImageView(device, imageView, nullptr);
-      }));
+  if (ctx_) {
+    ctx_->deferredTask(
+        std::packaged_task<void()>([vf = &ctx_->vf_, device = device_, imageView = vkImageView_]() {
+          vf->vkDestroyImageView(device, imageView, nullptr);
+        }));
+  }
 }
 
 } // namespace vulkan

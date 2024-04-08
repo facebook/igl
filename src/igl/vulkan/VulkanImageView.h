@@ -74,7 +74,7 @@ class VulkanImageView final {
   }
 
  public:
-  const VulkanContext& ctx_;
+  const VulkanContext* ctx_ = nullptr;
   VkDevice device_ = VK_NULL_HANDLE;
   VkImageView vkImageView_ = VK_NULL_HANDLE;
 };
