@@ -228,7 +228,7 @@ void VulkanStagingDevice::getBufferSubData(const VulkanBuffer& buffer,
   }
 }
 
-void VulkanStagingDevice::imageData(VulkanImage& image,
+void VulkanStagingDevice::imageData(const VulkanImage& image,
                                     TextureType type,
                                     const TextureRangeDesc& range,
                                     const TextureFormatProperties& properties,
