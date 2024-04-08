@@ -140,25 +140,25 @@
 //
 // Furthermore, the macros below are provided so that IGL clients can safely wrap backend specific
 // code for conditional compilation.
-#ifdef IGL_BACKEND_ENABLE_HEADLESS
+#if defined(IGL_BACKEND_ENABLE_HEADLESS)
 #define IGL_BACKEND_HEADLESS 1
 #else
 #define IGL_BACKEND_HEADLESS 0
 #endif
 
-#ifdef IGL_BACKEND_ENABLE_METAL
+#if defined(IGL_BACKEND_ENABLE_METAL)
 #define IGL_BACKEND_METAL 1
 #else
 #define IGL_BACKEND_METAL 0
 #endif
 
-#ifdef IGL_BACKEND_ENABLE_OPENGL
+#if defined(IGL_BACKEND_ENABLE_OPENGL)
 #define IGL_BACKEND_OPENGL 1
 #else
 #define IGL_BACKEND_OPENGL 0
 #endif
 
-#ifdef IGL_BACKEND_ENABLE_VULKAN
+#if defined(IGL_BACKEND_ENABLE_VULKAN)
 #define IGL_BACKEND_VULKAN 1
 #else
 #define IGL_BACKEND_VULKAN 0
@@ -197,11 +197,11 @@
 // IGL_PLATFORM_LINUX_USE_EGL enables EGL context on Linux, otherwise GLX is in use.
 // GLX is used in CMake builds for samples and shell apps to use OpenGL 4.6 on Linux desktops.
 #if IGL_PLATFORM_LINUX
-#ifndef IGL_PLATFORM_LINUX_USE_EGL
+#if !defined(IGL_PLATFORM_LINUX_USE_EGL)
 #define IGL_PLATFORM_LINUX_USE_EGL 1
 #endif
 #else
-#ifndef IGL_PLATFORM_LINUX_USE_EGL
+#if !defined(IGL_PLATFORM_LINUX_USE_EGL)
 #define IGL_PLATFORM_LINUX_USE_EGL 0
 #endif
 #endif
@@ -210,7 +210,7 @@
 /// MARK: - Debug
 
 // clang-format off
-#ifndef IGL_DEBUG // allow build systems to define it
+#if !defined(IGL_DEBUG) // allow build systems to define it
 #if defined(IGL_BUILD_MODE_OPT)
   // Forced opt build.
   #define IGL_DEBUG 0
@@ -238,7 +238,7 @@
 // clang-format on
 
 // clang-format off
-#ifndef IGL_REPORT_ERROR_ENABLED
+#if !defined(IGL_REPORT_ERROR_ENABLED)
   // Either we have IGL_DEBUG, or Windows/Linux/etc, since we don't have good detection mechanism there.
   #if IGL_DEBUG || (!IGL_PLATFORM_APPLE && !IGL_PLATFORM_ANDROID)
     #define IGL_REPORT_ERROR_ENABLED 1
@@ -303,7 +303,7 @@
 ///--------------------------------------
 /// MARK: - Inline
 
-#ifndef IGL_INLINE
+#if !defined(IGL_INLINE)
 #define IGL_INLINE inline
 #endif
 
@@ -334,13 +334,13 @@
 ///--------------------------------------
 /// MARK: - C++17 attributes (these should be inlined after all of our compilers are on c++17)
 
-#ifdef __has_cpp_attribute
+#if defined(__has_cpp_attribute)
 #if __has_cpp_attribute(maybe_unused)
 #define IGL_MAYBE_UNUSED [[maybe_unused]]
 #endif
 #endif
 
-#ifndef IGL_MAYBE_UNUSED
+#if !defined(IGL_MAYBE_UNUSED)
 #define IGL_MAYBE_UNUSED
 #endif
 
@@ -436,7 +436,7 @@
 #define IGL_PROFILER_FRAME(name)
 #endif // IGL_WITH_TRACY
 
-#ifndef IGL_ENUM_TO_STRING
+#if !defined(IGL_ENUM_TO_STRING)
 #define IGL_ENUM_TO_STRING(enum, res) \
   case enum ::res:                    \
     return IGL_TO_STRING(res);
