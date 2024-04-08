@@ -986,10 +986,11 @@ void XrApp::render() {
   }
 }
 
-void XrApp::setupProjectionAndDepth(
-    std::array<XrCompositionLayerProjectionView, kNumViews>& projectionViews,
-    std::array<XrCompositionLayerDepthInfoKHR, kNumViews>& depthInfos) {
+void XrApp::setupProjectionAndDepth(std::vector<XrCompositionLayerProjectionView>& projectionViews,
+                                    std::vector<XrCompositionLayerDepthInfoKHR>& depthInfos) {
   const auto& appParams = renderSession_->appParams();
+  projectionViews.resize(kNumViews);
+  depthInfos.resize(kNumViews);
 
   for (size_t i = 0; i < kNumViews; i++) {
     depthInfos[i] = {
@@ -1030,7 +1031,7 @@ void XrApp::setupProjectionAndDepth(
 void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
   const auto& appParams = renderSession_->appParams();
 
-  std::array<XrCompositionLayerQuad, kNumViews> quadLayers{};
+  std::vector<XrCompositionLayerQuad> quadLayers(kNumViews);
   XrEyeVisibility eye = XR_EYE_VISIBILITY_LEFT;
   for (auto& layer : quadLayers) {
     layer.next = nullptr;
@@ -1050,17 +1051,16 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
     }
   }
 
-  std::array<XrCompositionLayerProjectionView, kNumViews> projectionViews{};
-  std::array<XrCompositionLayerDepthInfoKHR, kNumViews> depthInfos{};
+  std::vector<XrCompositionLayerProjectionView> projectionViews;
+  std::vector<XrCompositionLayerDepthInfoKHR> depthInfos;
   setupProjectionAndDepth(projectionViews, depthInfos);
 
   for (size_t i = 0; i < kNumViews; i++) {
     quadLayers[i].subImage = projectionViews[i].subImage;
   }
 
-  std::array<const XrCompositionLayerBaseHeader*, kNumViews + 1> layers{};
+  std::vector<const XrCompositionLayerBaseHeader*> layers(kNumViews + 1);
   uint32_t layerIndex = 0;
-
   XrCompositionLayerPassthroughFB compositionLayer{XR_TYPE_COMPOSITION_LAYER_PASSTHROUGH_FB};
   if (passthroughSupported_) {
     compositionLayer.next = nullptr;
@@ -1090,8 +1090,8 @@ void XrApp::endFrame(XrFrameState frameState) {
     return;
   }
 
-  std::array<XrCompositionLayerProjectionView, kNumViews> projectionViews{};
-  std::array<XrCompositionLayerDepthInfoKHR, kNumViews> depthInfos{};
+  std::vector<XrCompositionLayerProjectionView> projectionViews;
+  std::vector<XrCompositionLayerDepthInfoKHR> depthInfos;
   setupProjectionAndDepth(projectionViews, depthInfos);
 
   XrCompositionLayerProjection projection = {

@@ -132,9 +132,8 @@ class XrApp {
 
   void queryCurrentRefreshRate();
   void querySupportedRefreshRates();
-  void setupProjectionAndDepth(
-      std::array<XrCompositionLayerProjectionView, kNumViews>& projectionViews,
-      std::array<XrCompositionLayerDepthInfoKHR, kNumViews>& depthInfos);
+  void setupProjectionAndDepth(std::vector<XrCompositionLayerProjectionView>& projectionViews,
+                               std::vector<XrCompositionLayerDepthInfoKHR>& depthInfos);
   void endFrameQuadLayerComposition(XrFrameState frameState);
 
   void* nativeWindow_ = nullptr;
