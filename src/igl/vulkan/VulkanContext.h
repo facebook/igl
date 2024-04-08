@@ -300,8 +300,8 @@ class VulkanContext final {
   std::unique_ptr<igl::vulkan::VulkanImmediateCommands> immediate_;
   std::unique_ptr<igl::vulkan::VulkanStagingDevice> stagingDevice_;
 
-  std::shared_ptr<igl::vulkan::VulkanBuffer> dummyUniformBuffer_;
-  std::shared_ptr<igl::vulkan::VulkanBuffer> dummyStorageBuffer_;
+  std::unique_ptr<igl::vulkan::VulkanBuffer> dummyUniformBuffer_;
+  std::unique_ptr<igl::vulkan::VulkanBuffer> dummyStorageBuffer_;
   // don't use staging on devices with device-local host-visible memory
   bool useStagingForBuffers_ = true;
 
