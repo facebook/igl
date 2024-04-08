@@ -646,7 +646,6 @@ std::unique_ptr<VulkanImageView> VulkanImage::createImageView(VkImageViewType ty
                                                               uint32_t numLayers,
                                                               const char* debugName) const {
   return std::make_unique<VulkanImageView>(ctx_,
-                                           device_,
                                            vkImage_,
                                            type,
                                            format,

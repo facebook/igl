@@ -39,7 +39,6 @@ class VulkanImageView final {
    * used for debugging.
    */
   VulkanImageView(const VulkanContext& ctx,
-                  VkDevice device,
                   VkImage image,
                   VkImageViewType type,
                   VkFormat format,
@@ -75,7 +74,6 @@ class VulkanImageView final {
 
  public:
   const VulkanContext* ctx_ = nullptr;
-  VkDevice device_ = VK_NULL_HANDLE;
   VkImageView vkImageView_ = VK_NULL_HANDLE;
 
  private:
