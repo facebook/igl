@@ -992,39 +992,39 @@ void XrApp::setupProjectionAndDepth(std::vector<XrCompositionLayerProjectionView
   projectionViews.resize(kNumViews);
   depthInfos.resize(kNumViews);
 
-  for (size_t i = 0; i < kNumViews; i++) {
-    depthInfos[i] = {
+  size_t layer = 0;
+  for (size_t view = 0; view < kNumViews; view++, layer++) {
+    depthInfos[layer] = {
         XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR,
         nullptr,
     };
-    projectionViews[i] = {
+    projectionViews[layer] = {
         XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW,
-        &depthInfos[i],
-        viewStagePoses_[i],
-        views_[i].fov,
+        &depthInfos[layer],
+        viewStagePoses_[view],
+        views_[view].fov,
     };
     const XrRect2Di imageRect = {{0, 0},
                                  {
-                                     (int32_t)viewports_[i].recommendedImageRectWidth,
-                                     (int32_t)viewports_[i].recommendedImageRectHeight,
+                                     (int32_t)viewports_[view].recommendedImageRectWidth,
+                                     (int32_t)viewports_[view].recommendedImageRectHeight,
                                  }};
-    auto index = useSinglePassStereo_ ? static_cast<uint32_t>(i) : 0;
-    projectionViews[i].subImage = {
-        useSinglePassStereo_ ? swapchainProviders_[0]->colorSwapchain()
-                             : swapchainProviders_[i]->colorSwapchain(),
+    auto swapChainIndex = useSinglePassStereo_ ? 0 : layer;
+    auto subImageIndex = useSinglePassStereo_ ? static_cast<uint32_t>(view) : 0;
+    projectionViews[layer].subImage = {
+        swapchainProviders_[swapChainIndex]->colorSwapchain(),
         imageRect,
-        index,
+        subImageIndex,
     };
-    depthInfos[i].subImage = {
-        useSinglePassStereo_ ? swapchainProviders_[0]->depthSwapchain()
-                             : swapchainProviders_[i]->depthSwapchain(),
+    depthInfos[layer].subImage = {
+        swapchainProviders_[swapChainIndex]->colorSwapchain(),
         imageRect,
-        index,
+        subImageIndex,
     };
-    depthInfos[i].minDepth = appParams.depthParams.minDepth;
-    depthInfos[i].maxDepth = appParams.depthParams.maxDepth;
-    depthInfos[i].nearZ = appParams.depthParams.nearZ;
-    depthInfos[i].farZ = appParams.depthParams.farZ;
+    depthInfos[layer].minDepth = appParams.depthParams.minDepth;
+    depthInfos[layer].maxDepth = appParams.depthParams.maxDepth;
+    depthInfos[layer].nearZ = appParams.depthParams.nearZ;
+    depthInfos[layer].farZ = appParams.depthParams.farZ;
   }
 }
 
@@ -1033,19 +1033,20 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
 
   std::vector<XrCompositionLayerQuad> quadLayers(kNumViews);
   XrEyeVisibility eye = XR_EYE_VISIBILITY_LEFT;
-  for (auto& layer : quadLayers) {
-    layer.next = nullptr;
-    layer.type = XR_TYPE_COMPOSITION_LAYER_QUAD;
-    layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
-    layer.space = currentSpace_;
-    layer.eyeVisibility = eye;
-    memset(&layer.subImage, 0, sizeof(XrSwapchainSubImage));
+  XrVector3f position = {0.f, 0.f, 0.f};
 #if USE_LOCAL_AR_SPACE
-    layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, -1.f}};
-#else
-    layer.pose = {{0.f, 0.f, 0.f, 1.f}, {0.f, 0.f, 0.f}};
+  position.z = -1.f;
 #endif
-    layer.size = {appParams.sizeX, appParams.sizeY};
+  size_t layer = 0;
+  for (size_t view = 0; view < kNumViews; view++, layer++) {
+    quadLayers[layer].next = nullptr;
+    quadLayers[layer].type = XR_TYPE_COMPOSITION_LAYER_QUAD;
+    quadLayers[layer].layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+    quadLayers[layer].space = currentSpace_;
+    quadLayers[layer].eyeVisibility = eye;
+    memset(&quadLayers[layer].subImage, 0, sizeof(XrSwapchainSubImage));
+    quadLayers[layer].pose = {{0.f, 0.f, 0.f, 1.f}, position};
+    quadLayers[layer].size = {appParams.sizeX, appParams.sizeY};
     if (eye == XR_EYE_VISIBILITY_LEFT) {
       eye = XR_EYE_VISIBILITY_RIGHT;
     }
