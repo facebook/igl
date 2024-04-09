@@ -120,7 +120,7 @@ ManagedUniformBuffer::~ManagedUniformBuffer() {
 void ManagedUniformBuffer::bind(const igl::IDevice& device,
                                 const igl::IRenderPipelineState& pipelineState,
                                 igl::IRenderCommandEncoder& encoder) {
-  bind(device, pipelineState, encoder, igl::BindTarget::kVertex | igl::BindTarget::kFragment);
+  bind(device, pipelineState, encoder, igl::BindTarget::kAllGraphics);
 }
 
 void ManagedUniformBuffer::bind(const igl::IDevice& device,

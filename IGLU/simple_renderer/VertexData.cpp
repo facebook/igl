@@ -70,7 +70,7 @@ void VertexData::draw(igl::IRenderCommandEncoder& commandEncoder) {
   }
   // Assumption: we don't need buffer offset
   if (vb_) {
-    commandEncoder.bindBuffer(0, igl::BindTarget::kVertex, vb_, 0);
+    commandEncoder.bindVertexBuffer(0, vb_);
   }
 
   if (ib_) {
