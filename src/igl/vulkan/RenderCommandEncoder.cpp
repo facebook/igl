@@ -529,23 +529,16 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
       "%p  bindVertexBuffer(%u, %p, %u)\n", cmdBuffer_, index, buffer, (uint32_t)bufferOffset);
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
-  if (!IGL_VERIFY(buffer != nullptr)) {
-    return;
-  }
+  const bool isVertexBuffer = (buffer->getBufferType() & BufferDesc::BufferTypeBits::Vertex) != 0;
 
-  auto* buf = static_cast<igl::vulkan::Buffer*>(buffer.get());
-
-  const bool isVertexBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Vertex) != 0;
-
-  if (!isVertexBuffer) {
-    IGL_ASSERT_MSG(false, "A vertex buffer should have BufferTypeBits::Vertex");
+  if (!IGL_VERIFY(buffer && isVertexBuffer)) {
     return;
   }
 
   if (IGL_VERIFY(index < IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_))) {
     isVertexBufferBound_[index] = true;
   }
-  VkBuffer vkBuf = buf->getVkBuffer();
+  VkBuffer vkBuf = static_cast<igl::vulkan::Buffer*>(buffer.get())->getVkBuffer();
   const VkDeviceSize offset = bufferOffset;
   ctx_.vf_.vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
 }
