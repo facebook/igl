@@ -33,12 +33,14 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
   const VkBufferCreateInfo ci = ivkGetBufferCreateInfo(bufferSize, usageFlags);
 
   if (IGL_VULKAN_USE_VMA) {
+    VmaAllocationCreateInfo ciAlloc = {};
+
     // Initialize VmaAllocation Info
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-      vmaAllocInfo_.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-      vmaAllocInfo_.preferredFlags =
+      ciAlloc.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+      ciAlloc.preferredFlags =
           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-      vmaAllocInfo_.flags =
+      ciAlloc.flags =
           VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
     }
 
@@ -51,19 +53,15 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
       vkBuffer_ = VK_NULL_HANDLE;
 
       if (requirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
-        vmaAllocInfo_.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        ciAlloc.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         isCoherentMemory_ = true;
       }
     }
 
-    vmaAllocInfo_.usage = VMA_MEMORY_USAGE_AUTO;
+    ciAlloc.usage = VMA_MEMORY_USAGE_AUTO;
 
-    vmaCreateBuffer((VmaAllocator)ctx_.getVmaAllocator(),
-                    &ci,
-                    &vmaAllocInfo_,
-                    &vkBuffer_,
-                    &vmaAllocation_,
-                    nullptr);
+    vmaCreateBuffer(
+        (VmaAllocator)ctx_.getVmaAllocator(), &ci, &ciAlloc, &vkBuffer_, &vmaAllocation_, nullptr);
     IGL_ASSERT(vmaAllocation_ != nullptr);
 
     // handle memory-mapped buffers
