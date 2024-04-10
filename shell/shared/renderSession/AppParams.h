@@ -6,7 +6,10 @@
  */
 
 #pragma once
+#include <cstdint>
+#include <optional>
 #include <shell/shared/renderSession/DepthParams.h>
+#include <shell/shared/renderSession/QuadLayerParams.h>
 
 namespace igl::shell {
 struct AppParams {
@@ -14,5 +17,6 @@ struct AppParams {
   bool exitRequested = false;
   float sizeX = 1.f;
   float sizeY = 1.f;
+  std::optional<QuadLayerParams> quadLayerParams;
 };
 } // namespace igl::shell
