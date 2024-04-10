@@ -43,6 +43,10 @@ class RenderSession {
   /// @remark Params may vary each frame.
   const AppParams& appParams() const noexcept;
 
+  void setCurrentQuadLayer(size_t layer) noexcept {
+    currentQuadLayer_ = layer;
+  }
+
  protected:
   Platform& getPlatform() noexcept;
   const Platform& getPlatform() const noexcept;
@@ -53,6 +57,7 @@ class RenderSession {
 
   std::shared_ptr<IFramebuffer> framebuffer_;
   std::shared_ptr<ICommandQueue> commandQueue_;
+  size_t currentQuadLayer_ = 0;
 
  private:
   std::shared_ptr<Platform> platform_;
