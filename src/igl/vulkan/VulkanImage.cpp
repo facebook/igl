@@ -150,16 +150,13 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                                                      samples);
 
   if (IGL_VULKAN_USE_VMA) {
-    vmaAllocInfo_.usage = memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
-                              ? VMA_MEMORY_USAGE_CPU_TO_GPU
-                              : VMA_MEMORY_USAGE_AUTO;
+    VmaAllocationCreateInfo ciAlloc = {};
 
-    VkResult result = vmaCreateImage((VmaAllocator)ctx_.getVmaAllocator(),
-                                     &ci,
-                                     &vmaAllocInfo_,
-                                     &vkImage_,
-                                     &vmaAllocation_,
-                                     nullptr);
+    ciAlloc.usage = memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT ? VMA_MEMORY_USAGE_CPU_TO_GPU
+                                                                   : VMA_MEMORY_USAGE_AUTO;
+
+    VkResult result = vmaCreateImage(
+        (VmaAllocator)ctx_.getVmaAllocator(), &ci, &ciAlloc, &vkImage_, &vmaAllocation_, nullptr);
 
     if (!IGL_VERIFY(result == VK_SUCCESS)) {
       IGL_LOG_ERROR("failed: error result: %d, memflags: %d,  imageformat: %d\n",

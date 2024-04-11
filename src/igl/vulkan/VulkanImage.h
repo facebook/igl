@@ -237,7 +237,6 @@ class VulkanImage final {
   VkImage vkImage_ = VK_NULL_HANDLE;
   VkImageUsageFlags usageFlags_ = 0;
   VkDeviceMemory vkMemory_ = VK_NULL_HANDLE;
-  VmaAllocationCreateInfo vmaAllocInfo_ = {};
   VmaAllocation vmaAllocation_ = VK_NULL_HANDLE;
   VkFormatProperties formatProperties_{};
   void* mappedPtr_ = nullptr;
