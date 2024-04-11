@@ -299,7 +299,7 @@ void runUploadTest(IDevice& device, ICommandQueue& cmdQueue, bool singleUpload) 
   //--------------------
   const TextureDesc texDesc = TextureDesc::newCube(TextureFormat::RGBA_UNorm8,
                                                    kOffscreenTexWidth,
-                                                   kOffscreenTexWidth,
+                                                   kOffscreenTexHeight,
                                                    TextureDesc::TextureUsageBits::Sampled |
                                                        TextureDesc::TextureUsageBits::Attachment,
                                                    "runUploadTest()::tex");
