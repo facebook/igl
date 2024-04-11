@@ -1525,6 +1525,12 @@ void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
 
   for (const util::BufferDescription& b : info.uniformBuffers) {
     IGL_ASSERT(b.descriptorSet == kBindPoint_BuffersUniform);
+    IGL_ASSERT_MSG(
+        data.buffers[b.bindingLocation].buffer != VK_NULL_HANDLE,
+        IGL_FORMAT(
+            "Did you forget to call bindBuffer() for a uniform buffer at the binding location {}?",
+            b.bindingLocation)
+            .c_str());
     writes[numWrites++] = ivkGetWriteDescriptorSet_BufferInfo(dsetBufUniform,
                                                               b.bindingLocation,
                                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -1565,6 +1571,12 @@ void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
 
   for (const util::BufferDescription& b : info.storageBuffers) {
     IGL_ASSERT(b.descriptorSet == kBindPoint_BuffersStorage);
+    IGL_ASSERT_MSG(
+        data.buffers[b.bindingLocation].buffer != VK_NULL_HANDLE,
+        IGL_FORMAT(
+            "Did you forget to call bindBuffer() for a storage buffer at the binding location {}?",
+            b.bindingLocation)
+            .c_str());
     writes[numWrites++] = ivkGetWriteDescriptorSet_BufferInfo(dsetBufStorage,
                                                               b.bindingLocation,
                                                               VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
