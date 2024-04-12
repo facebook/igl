@@ -33,6 +33,7 @@ struct VulkanImageViewCreateInfo {
  */
 class VulkanImageView final {
  public:
+  explicit VulkanImageView() = default;
   /**
    * @brief Creates the VulkanImageView object which stores a handle to a VkImageView.
    * The imageView is created from the device, image, and other parameters with a name that can be
@@ -65,12 +66,21 @@ class VulkanImageView final {
   VulkanImageView(const VulkanImageView&) = delete;
   VulkanImageView& operator=(const VulkanImageView&) = delete;
 
+  VulkanImageView(VulkanImageView&& other) noexcept {
+    *this = std::move(other);
+  }
+  VulkanImageView& operator=(VulkanImageView&& other) noexcept;
+
   /**
    * @brief Returns Vulkan's opaque handle to the imageView object
    */
   VkImageView getVkImageView() const {
     return vkImageView_;
   }
+  /**
+   * @brief Returns true if the object is valid
+   */
+  [[nodiscard]] bool valid() const;
 
  public:
   const VulkanContext* ctx_ = nullptr;

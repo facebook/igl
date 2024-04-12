@@ -64,8 +64,21 @@ VulkanImageView::~VulkanImageView() {
   destroy();
 }
 
+VulkanImageView& VulkanImageView::operator=(VulkanImageView&& other) noexcept {
+  destroy();
+  ctx_ = other.ctx_;
+  vkImageView_ = other.vkImageView_;
+  other.ctx_ = nullptr;
+  other.vkImageView_ = VK_NULL_HANDLE;
+  return *this;
+}
+
+[[nodiscard]] bool VulkanImageView::valid() const {
+  return ctx_ != nullptr;
+}
+
 void VulkanImageView::destroy() {
-  if (ctx_) {
+  if (valid()) {
     ctx_->deferredTask(std::packaged_task<void()>(
         [vf = &ctx_->vf_, device = ctx_->getVkDevice(), imageView = vkImageView_]() {
           vf->vkDestroyImageView(device, imageView, nullptr);
