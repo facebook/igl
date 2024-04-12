@@ -782,6 +782,49 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
   imageLayout_ = newImageLayout;
 }
 
+void VulkanImage::clearColorImage(VkCommandBuffer commandBuffer,
+                                  const igl::Color& rgba,
+                                  const VkImageSubresourceRange* subresourceRange) const {
+  IGL_ASSERT(usageFlags_ & VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+  IGL_ASSERT(!isDepthFormat_);
+
+  const VkImageLayout oldLayout = imageLayout_;
+
+  VkClearColorValue value;
+  value.float32[0] = rgba.r;
+  value.float32[1] = rgba.g;
+  value.float32[2] = rgba.b;
+  value.float32[3] = rgba.a;
+
+  const VkImageSubresourceRange defaultRange{
+      getImageAspectFlags(),
+      0,
+      VK_REMAINING_MIP_LEVELS,
+      0,
+      VK_REMAINING_ARRAY_LAYERS,
+  };
+
+  transitionLayout(commandBuffer,
+                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                   VK_PIPELINE_STAGE_TRANSFER_BIT,
+                   subresourceRange ? *subresourceRange : defaultRange);
+
+  ctx_.vf_.vkCmdClearColorImage(commandBuffer,
+                                getVkImage(),
+                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                &value,
+                                1,
+                                subresourceRange ? subresourceRange : &defaultRange);
+
+  transitionLayout(commandBuffer,
+                   oldLayout == VK_IMAGE_LAYOUT_UNDEFINED ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                                                          : oldLayout,
+                   VK_PIPELINE_STAGE_TRANSFER_BIT,
+                   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                   subresourceRange ? *subresourceRange : defaultRange);
+}
+
 VkImageAspectFlags VulkanImage::getImageAspectFlags() const {
   VkImageAspectFlags flags = 0;
 
