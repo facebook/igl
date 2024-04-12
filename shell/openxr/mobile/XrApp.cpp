@@ -1067,8 +1067,8 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
       IGL_ASSERT(i < appParams.quadLayerParams->sizes.size());
       auto glmPos = appParams.quadLayerParams->positions[i];
       auto glmSize = appParams.quadLayerParams->sizes[i];
-      position = XrVector3f(glmPos.x, glmPos.y, glmPos.z);
-      size = XrExtent2Df(glmSize.x, glmSize.y);
+      position = {glmPos.x, glmPos.y, glmPos.z};
+      size = {glmSize.x, glmSize.y};
 #if USE_LOCAL_AR_SPACE
       position.z = -1.f;
 #endif
