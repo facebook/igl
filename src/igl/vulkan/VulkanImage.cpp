@@ -634,29 +634,29 @@ VulkanImage::~VulkanImage() {
   }
 }
 
-std::unique_ptr<VulkanImageView> VulkanImage::createImageView(VkImageViewType type,
-                                                              VkFormat format,
-                                                              VkImageAspectFlags aspectMask,
-                                                              uint32_t baseLevel,
-                                                              uint32_t numLevels,
-                                                              uint32_t baseLayer,
-                                                              uint32_t numLayers,
-                                                              const char* debugName) const {
-  return std::make_unique<VulkanImageView>(ctx_,
-                                           vkImage_,
-                                           type,
-                                           format,
-                                           aspectMask,
-                                           baseLevel,
-                                           numLevels ? numLevels : mipLevels_,
-                                           baseLayer,
-                                           numLayers,
-                                           debugName);
+VulkanImageView VulkanImage::createImageView(VkImageViewType type,
+                                             VkFormat format,
+                                             VkImageAspectFlags aspectMask,
+                                             uint32_t baseLevel,
+                                             uint32_t numLevels,
+                                             uint32_t baseLayer,
+                                             uint32_t numLayers,
+                                             const char* debugName) const {
+  return {ctx_,
+          vkImage_,
+          type,
+          format,
+          aspectMask,
+          baseLevel,
+          numLevels ? numLevels : mipLevels_,
+          baseLayer,
+          numLayers,
+          debugName};
 }
 
-std::unique_ptr<VulkanImageView> VulkanImage::createImageView(VulkanImageViewCreateInfo createInfo,
-                                                              const char* debugName) const {
-  return std::make_unique<VulkanImageView>(ctx_, device_, vkImage_, createInfo, debugName);
+VulkanImageView VulkanImage::createImageView(VulkanImageViewCreateInfo createInfo,
+                                             const char* debugName) const {
+  return {ctx_, device_, vkImage_, createInfo, debugName};
 }
 
 void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,

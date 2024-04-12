@@ -786,7 +786,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                             0,
                                             1,
                                             "Image View: dummy 1x1");
-    if (!IGL_VERIFY(imageView)) {
+    if (!IGL_VERIFY(imageView.valid())) {
       return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
     }
     const TextureHandle dummyTexture = textures_.create(
@@ -1184,7 +1184,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
   infoStorageImages.reserve(textures_.objects_.size());
 
   // use the dummy texture/sampler to avoid sparse array
-  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_->getVkImageView();
+  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
   VkSampler dummySampler = samplers_.objects_[0].obj_->getVkSampler();
 
   for (const auto& entry : textures_.objects_) {
@@ -1197,11 +1197,11 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
       const bool isStorageImage = isTextureAvailable && texture->image_->isStorageImage();
       infoSampledImages.push_back(
           {dummySampler,
-           isSampledImage ? texture->imageView_->getVkImageView() : dummyImageView,
+           isSampledImage ? texture->imageView_.getVkImageView() : dummyImageView,
            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
       infoStorageImages.push_back(VkDescriptorImageInfo{
           VK_NULL_HANDLE,
-          isStorageImage ? texture->imageView_->getVkImageView() : dummyImageView,
+          isStorageImage ? texture->imageView_.getVkImageView() : dummyImageView,
           VK_IMAGE_LAYOUT_GENERAL});
     } else {
       infoSampledImages.push_back(
@@ -1270,7 +1270,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
 
 std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
     std::unique_ptr<VulkanImage> image,
-    std::unique_ptr<VulkanImageView> imageView,
+    VulkanImageView&& imageView,
     [[maybe_unused]] const char* debugName) const {
   IGL_PROFILER_FUNCTION();
 
@@ -1466,7 +1466,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
   IGL_ASSERT(!samplers_.objects_.empty());
 
   // use the dummy texture/sampler to avoid sparse array
-  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_->getVkImageView();
+  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
   VkSampler dummySampler = samplers_.objects_[0].obj_->getVkSampler();
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -1487,7 +1487,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
     writes[numWrites++] = ivkGetWriteDescriptorSet_ImageInfo(
         dset, loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &infoSampledImages[numImages]);
     infoSampledImages[numImages++] = {isSampledImage ? sampler : dummySampler,
-                                      isSampledImage ? texture->imageView_->getVkImageView()
+                                      isSampledImage ? texture->imageView_.getVkImageView()
                                                      : dummyImageView,
                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
   }

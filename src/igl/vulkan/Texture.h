@@ -11,6 +11,7 @@
 #include <igl/Framebuffer.h>
 #include <igl/Texture.h>
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/VulkanImageView.h>
 
 #include <vector>
 
@@ -19,7 +20,6 @@ namespace vulkan {
 
 class Device;
 class VulkanImage;
-class VulkanImageView;
 class VulkanTexture;
 class PlatformDevice;
 
@@ -93,8 +93,8 @@ class Texture final : public ITexture {
   TextureDesc desc_;
 
   std::shared_ptr<VulkanTexture> texture_;
-  mutable std::vector<std::unique_ptr<VulkanImageView>> imageViewsForFramebufferMono_;
-  mutable std::vector<std::unique_ptr<VulkanImageView>> imageViewsForFramebufferStereo_;
+  mutable std::vector<VulkanImageView> imageViewsForFramebufferMono_;
+  mutable std::vector<VulkanImageView> imageViewsForFramebufferStereo_;
 };
 
 } // namespace vulkan

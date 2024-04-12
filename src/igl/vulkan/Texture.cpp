@@ -173,16 +173,16 @@ Result Texture::create(const TextureDesc& desc) {
     aspect = VK_IMAGE_ASPECT_COLOR_BIT;
   }
 
-  std::unique_ptr<VulkanImageView> imageView = image->createImageView(imageViewType,
-                                                                      vkFormat,
-                                                                      aspect,
-                                                                      0,
-                                                                      VK_REMAINING_MIP_LEVELS,
-                                                                      0,
-                                                                      arrayLayerCount,
-                                                                      debugNameImageView.c_str());
+  VulkanImageView imageView = image->createImageView(imageViewType,
+                                                     vkFormat,
+                                                     aspect,
+                                                     0,
+                                                     VK_REMAINING_MIP_LEVELS,
+                                                     0,
+                                                     arrayLayerCount,
+                                                     debugNameImageView.c_str());
 
-  if (!IGL_VERIFY(imageView)) {
+  if (!IGL_VERIFY(imageView.valid())) {
     return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
   }
 
@@ -285,11 +285,11 @@ VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
                                                   FramebufferMode mode) const {
   const bool isStereo = mode == FramebufferMode::Stereo;
   const auto index = mipLevel * getNumVkLayers() + layer;
-  std::vector<std::unique_ptr<VulkanImageView>>& imageViews =
-      isStereo ? imageViewsForFramebufferStereo_ : imageViewsForFramebufferMono_;
+  std::vector<VulkanImageView>& imageViews = isStereo ? imageViewsForFramebufferStereo_
+                                                      : imageViewsForFramebufferMono_;
 
-  if (index < imageViews.size() && imageViews[index]) {
-    return imageViews[index]->getVkImageView();
+  if (index < imageViews.size() && imageViews[index].valid()) {
+    return imageViews[index].getVkImageView();
   }
 
   if (index >= imageViews.size()) {
@@ -307,7 +307,7 @@ VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
       isStereo ? VK_REMAINING_ARRAY_LAYERS : 1u,
       "Image View: igl/vulkan/Texture.cpp: Texture::getVkImageViewForFramebuffer()");
 
-  return imageViews[index]->vkImageView_;
+  return imageViews[index].vkImageView_;
 }
 
 VkImage Texture::getVkImage() const {

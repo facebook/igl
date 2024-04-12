@@ -159,7 +159,7 @@ class VulkanContext final {
                                              igl::Result* outResult,
                                              const char* debugName = nullptr) const;
   std::shared_ptr<VulkanTexture> createTexture(std::unique_ptr<VulkanImage> image,
-                                               std::unique_ptr<VulkanImageView> imageView,
+                                               VulkanImageView&& imageView,
                                                const char* debugName) const;
   std::shared_ptr<VulkanTexture> createTextureFromVkImage(
       VkImage vkImage,

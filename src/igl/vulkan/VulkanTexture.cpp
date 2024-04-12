@@ -10,7 +10,6 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
-#include <igl/vulkan/VulkanImageView.h>
 
 namespace igl {
 
@@ -18,12 +17,12 @@ namespace vulkan {
 
 VulkanTexture::VulkanTexture(const VulkanContext& ctx,
                              std::unique_ptr<VulkanImage> image,
-                             std::unique_ptr<VulkanImageView> imageView) :
+                             VulkanImageView&& imageView) :
   ctx_(ctx), image_(std::move(image)), imageView_(std::move(imageView)) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ASSERT(image_);
-  IGL_ASSERT(imageView_);
+  IGL_ASSERT(imageView_.valid());
 }
 
 } // namespace vulkan
