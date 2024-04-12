@@ -86,6 +86,8 @@ class Texture final : public ITexture {
                         const void* data,
                         size_t bytesPerRow) const final;
 
+  void clearColorTexture(const igl::Color& rgba);
+
  protected:
   const igl::vulkan::Device& device_;
   TextureDesc desc_;
