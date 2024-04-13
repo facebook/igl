@@ -37,6 +37,7 @@ struct VulkanImageCreateInfo {
  */
 class VulkanImage final {
  public:
+  explicit VulkanImage() = default;
   /**
    * @brief Constructs a `VulkanImage` object from a `VkImage` object. If a debug name is provided,
    * the constructor will assign it to the `VkImage` object. No other Vulkan functions are called
@@ -177,9 +178,19 @@ class VulkanImage final {
   VulkanImage(const VulkanImage&) = delete;
   VulkanImage& operator=(const VulkanImage&) = delete;
 
+  VulkanImage(VulkanImage&& other) {
+    *this = std::move(other);
+  }
+  VulkanImage& operator=(VulkanImage&& other);
+
   VkImage getVkImage() const {
     return vkImage_;
   }
+
+  /**
+   * @brief Returns true if the object is valid
+   */
+  bool valid() const;
 
   VkImageUsageFlags getVkImageUsageFlags() const {
     return usageFlags_;

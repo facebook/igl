@@ -613,7 +613,7 @@ VulkanImage::~VulkanImage() {
 }
 
 void VulkanImage::destroy() {
-  if (!ctx_) {
+  if (!valid()) {
     return;
   }
 
@@ -1004,6 +1004,47 @@ void VulkanImage::setName(const std::string& name) noexcept {
 #else
   (void)name;
 #endif
+}
+
+bool VulkanImage::valid() const {
+  return ctx_ != nullptr;
+}
+
+VulkanImage& VulkanImage::operator=(VulkanImage&& other) {
+  destroy();
+  ctx_ = std::move(other.ctx_);
+  physicalDevice_ = std::move(other.physicalDevice_);
+  device_ = std::move(other.device_);
+  vkImage_ = std::move(other.vkImage_);
+  usageFlags_ = std::move(other.usageFlags_);
+  vkMemory_ = std::move(other.vkMemory_);
+  vmaAllocation_ = std::move(other.vmaAllocation_);
+  formatProperties_ = std::move(other.formatProperties_);
+  mappedPtr_ = std::move(other.mappedPtr_);
+  isExternallyManaged_ = std::move(other.isExternallyManaged_);
+  extent_ = std::move(other.extent_);
+  type_ = std::move(other.type_);
+  imageFormat_ = std::move(other.imageFormat_);
+  mipLevels_ = std::move(other.mipLevels_);
+  arrayLayers_ = std::move(other.arrayLayers_);
+  samples_ = std::move(other.samples_);
+  isDepthFormat_ = std::move(other.isDepthFormat_);
+  isStencilFormat_ = std::move(other.isStencilFormat_);
+  isDepthOrStencilFormat_ = std::move(other.isDepthOrStencilFormat_);
+  allocatedSize = std::move(other.allocatedSize);
+  imageLayout_ = std::move(other.imageLayout_);
+  isImported_ = std::move(other.isImported_);
+  isExported_ = std::move(other.isExported_);
+  exportedMemoryHandle_ = std::move(other.exportedMemoryHandle_);
+  exportedFd_ = std::move(other.exportedFd_);
+#if defined(IGL_DEBUG)
+  name_ = std::move(other.name_);
+#endif
+
+  other.ctx_ = nullptr;
+  other.vkImage_ = VK_NULL_HANDLE;
+
+  return *this;
 }
 
 } // namespace vulkan
