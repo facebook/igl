@@ -300,6 +300,8 @@ class VulkanImage final {
 
   // No-op in all builds except DEBUG
   void setName(const std::string& name) noexcept;
+
+  void destroy();
 };
 
 } // namespace vulkan

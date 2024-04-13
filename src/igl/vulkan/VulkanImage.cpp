@@ -609,6 +609,13 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
 VulkanImage::~VulkanImage() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+  destroy();
+}
+
+void VulkanImage::destroy() {
+  if (!ctx_) {
+    return;
+  }
 
   if (!isExternallyManaged_) {
     if (IGL_VULKAN_USE_VMA && !isImported_ && !isExported_) {
@@ -632,6 +639,9 @@ VulkanImage::~VulkanImage() {
           }));
     }
   }
+
+  ctx_ = nullptr;
+  vkImage_ = VK_NULL_HANDLE;
 }
 
 VulkanImageView VulkanImage::createImageView(VkImageViewType type,
