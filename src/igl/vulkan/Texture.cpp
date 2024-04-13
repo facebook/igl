@@ -329,11 +329,11 @@ void Texture::clearColorTexture(const igl::Color& rgba) {
 
   igl::vulkan::VulkanImage& img = texture_->getVulkanImage();
 
-  const auto& wrapper = img.ctx_.immediate_->acquire();
+  const auto& wrapper = img.ctx_->immediate_->acquire();
 
   img.clearColorImage(wrapper.cmdBuf_, rgba);
 
-  img.ctx_.immediate_->submit(wrapper);
+  img.ctx_->immediate_->submit(wrapper);
 }
 
 } // namespace vulkan

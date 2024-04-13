@@ -234,7 +234,7 @@ class VulkanImage final {
   static bool isStencilFormat(VkFormat format);
 
  public:
-  const VulkanContext& ctx_;
+  const VulkanContext* ctx_ = nullptr;
   VkPhysicalDevice physicalDevice_ = VK_NULL_HANDLE;
   VkDevice device_ = VK_NULL_HANDLE;
   VkImage vkImage_ = VK_NULL_HANDLE;
