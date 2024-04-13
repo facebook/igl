@@ -16,7 +16,7 @@ namespace tests::util::device::vulkan {
 /**
  Create and return an igl::Device that is suitable for running tests against.
  */
-std::shared_ptr<::igl::IDevice> createTestDevice();
+std::shared_ptr<::igl::IDevice> createTestDevice(bool enableValidation = true);
 
 } // namespace tests::util::device::vulkan
 } // namespace igl

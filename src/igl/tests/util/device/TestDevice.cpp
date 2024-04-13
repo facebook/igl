@@ -59,7 +59,8 @@ bool isBackendTypeSupported(::igl::BackendType backendType) {
 }
 
 std::shared_ptr<::igl::IDevice> createTestDevice(::igl::BackendType backendType,
-                                                 const std::string& backendApi) {
+                                                 const std::string& backendApi,
+                                                 bool enableValidation) {
   if (backendType == ::igl::BackendType::Metal) {
 #if IGL_METAL_SUPPORTED
     return metal::createTestDevice();
@@ -76,7 +77,7 @@ std::shared_ptr<::igl::IDevice> createTestDevice(::igl::BackendType backendType,
   }
   if (backendType == ::igl::BackendType::Vulkan) {
 #if IGL_VULKAN_SUPPORTED
-    return vulkan::createTestDevice();
+    return vulkan::createTestDevice(enableValidation);
 #else
     return nullptr;
 #endif

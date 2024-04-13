@@ -27,7 +27,8 @@ bool isBackendTypeSupported(::igl::BackendType backendType);
  GLES3 context.
  */
 std::shared_ptr<::igl::IDevice> createTestDevice(::igl::BackendType backendType,
-                                                 const std::string& backendApi = "");
+                                                 const std::string& backendApi = "",
+                                                 bool enableValidation = true);
 
 } // namespace tests::util::device
 } // namespace igl
