@@ -78,9 +78,10 @@ class VulkanStagingDevice final {
                       void* data,
                       uint32_t bytesPerRow,
                       bool flipImageVertical);
-  /// @brief Returns the current size of the staging buffer in bytes
-  [[nodiscard]] VkDeviceSize getCurrentStagingBufferSize() const {
-    return stagingBufferSize_;
+
+  /// @brief Returns the size of staging buffer available for use
+  [[nodiscard]] VkDeviceSize getFreeStagingBufferSize() const {
+    return freeStagingBufferSize_;
   }
 
   /// @brief Returns the maximum possible size of the staging buffer in bytes
@@ -88,12 +89,17 @@ class VulkanStagingDevice final {
     return maxStagingBufferSize_;
   }
 
+  /// @brief Function to merge regions of the staging buffer that are contiguous, and deallocate
+  /// unused staging buffers.
+  void mergeRegionsAndFreeBuffers();
+
  private:
   struct MemoryRegion {
     VkDeviceSize offset = 0u;
     VkDeviceSize size = 0u;
     VkDeviceSize alignedSize = 0u;
     VulkanImmediateCommands::SubmitHandle handle;
+    uint32_t stagingBufferIndex = 0u;
   };
 
   /**
@@ -101,10 +107,13 @@ class VulkanStagingDevice final {
    * requested. If the only contiguous block of memory available is smaller than the requested size,
    * the function returns the amount of memory it was able to find.
    *
+   * @param contiguous
+   * if true, the function will return a region big enough to accommodate full requested size.
+   * if false, the function may return a region smaller than the requested size.
    * @return The offset of the free memory block on the staging buffer and the size of the block
    * found.
    */
-  [[nodiscard]] MemoryRegion nextFreeBlock(VkDeviceSize size);
+  [[nodiscard]] MemoryRegion nextFreeBlock(VkDeviceSize size, bool contiguous);
 
   [[nodiscard]] VkDeviceSize getAlignedSize(VkDeviceSize size) const;
 
@@ -112,22 +121,29 @@ class VulkanStagingDevice final {
   /// internal state
   void waitAndReset();
 
-  /// @brief Returns true if the staging buffer cannot store the size requested
-  [[nodiscard]] bool shouldGrowStagingBuffer(VkDeviceSize sizeNeeded) const;
+  /**
+   * @brief Returns true if the staging buffer cannot store the size requested
+   * @param sizeNeeded the size of the memory block requested
+   * @param contiguous if true, the function returns true if a contiguous block of memory cannot
+   * accommodate sizeNeeded
+   **/
+  [[nodiscard]] bool shouldAllocateStagingBuffer(VkDeviceSize sizeNeeded,
+                                                 bool contiguous) const noexcept;
 
   /// @brief Returns the next size to allocate for the staging buffer given the requested size
   [[nodiscard]] VkDeviceSize nextSize(VkDeviceSize requestedSize) const;
 
-  /// @brief Grows the staging buffer to a size that is at least as large as the requested size
-  void growStagingBuffer(VkDeviceSize minimumSize);
+  /// @brief Allocates a new staging buffer to a size that is at least as large as the requested
+  /// size
+  void allocateStagingBuffer(VkDeviceSize minimumSize);
 
  private:
   VulkanContext& ctx_;
-  std::unique_ptr<VulkanBuffer> stagingBuffer_;
+  std::vector<std::unique_ptr<VulkanBuffer>> stagingBuffers_;
   std::unique_ptr<VulkanImmediateCommands> immediate_;
 
-  /// @brief Current size of the staging buffer
-  VkDeviceSize stagingBufferSize_ = 0;
+  /// @brief available free memory in staging buffer
+  VkDeviceSize freeStagingBufferSize_ = 0;
   /// @brief Maximum staging buffer size, limited by some architectures
   VkDeviceSize maxStagingBufferSize_ = 0;
   /// @brief Used to track the current staging buffer's id. Updated every time the staging buffer

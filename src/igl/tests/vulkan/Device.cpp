@@ -119,7 +119,7 @@ TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
 
   if (ctx.useStagingForBuffers_) {
     // do not check if we are not using a staging buffer
-    const VkDeviceSize stagingBufferSize = ctx.stagingDevice_->getCurrentStagingBufferSize();
+    const VkDeviceSize stagingBufferSize = ctx.stagingDevice_->getFreeStagingBufferSize();
     ASSERT_EQ(stagingBufferSize, kMaxStagingBufferSize);
   }
 }

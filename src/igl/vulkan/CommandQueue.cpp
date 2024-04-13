@@ -82,6 +82,7 @@ SubmitHandle CommandQueue::endCommandBuffer(const igl::vulkan::VulkanContext& ct
   ctx.markSubmitted(cmdBuffer->lastSubmitHandle_);
   ctx.syncManager_->markSubmitted(cmdBuffer->lastSubmitHandle_);
   ctx.processDeferredTasks();
+  ctx.stagingDevice_->mergeRegionsAndFreeBuffers();
 
   isInsideFrame_ = false;
 
