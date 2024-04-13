@@ -108,7 +108,7 @@ struct BufferDesc {
 
 class IBuffer : public ITrackedResource<IBuffer> {
  public:
-  virtual ~IBuffer() = default;
+  ~IBuffer() override = default;
 
   /**
    * @brief Upload data into a range in IBuffer.
