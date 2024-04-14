@@ -143,19 +143,19 @@ VkResult ivkCreateInstance(const struct VulkanFunctionTable* vt,
   };
 
   const VkInstanceCreateInfo ci = {
-    .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+      .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 #if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOS
-    .pNext = enableValidation ? &features : NULL,
+      .pNext = enableValidation ? &features : NULL,
 #endif
-    .pApplicationInfo = &appInfo,
+      .pApplicationInfo = &appInfo,
 #if !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACOS
-    .enabledLayerCount = enableValidation ? IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0,
-    .ppEnabledLayerNames = enableValidation ? kDefaultValidationLayers : NULL,
+      .enabledLayerCount = enableValidation ? IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers) : 0,
+      .ppEnabledLayerNames = enableValidation ? kDefaultValidationLayers : NULL,
 #endif
-    .enabledExtensionCount = (uint32_t)numExtensions,
-    .ppEnabledExtensionNames = extensions,
+      .enabledExtensionCount = (uint32_t)numExtensions,
+      .ppEnabledExtensionNames = extensions,
 #if IGL_PLATFORM_MACOS || IGL_PLATFORM_MACCATALYST
-    .flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
+      .flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
 #endif
   };
 
@@ -801,13 +801,13 @@ VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
 #endif // !IGL_PLATFORM_ANDROID
 
   const VkDescriptorSetLayoutCreateInfo ci = {
-    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 #if !IGL_PLATFORM_ANDROID
-    .pNext = &setLayoutBindingFlagsCI,
-    .flags = flags,
+      .pNext = &setLayoutBindingFlagsCI,
+      .flags = flags,
 #endif
-    .bindingCount = numBindings,
-    .pBindings = bindings,
+      .bindingCount = numBindings,
+      .pBindings = bindings,
   };
   return vt->vkCreateDescriptorSetLayout(device, &ci, NULL, outLayout);
 }
@@ -1575,37 +1575,37 @@ VkResult ivkVmaCreateAllocator(const struct VulkanFunctionTable* vt,
                                bool enableBufferDeviceAddress,
                                VmaAllocator* outVma) {
   const VmaVulkanFunctions funcs = {
-    .vkGetInstanceProcAddr = vt->vkGetInstanceProcAddr,
-    .vkGetDeviceProcAddr = vt->vkGetDeviceProcAddr,
-    .vkGetPhysicalDeviceProperties = vt->vkGetPhysicalDeviceProperties,
-    .vkGetPhysicalDeviceMemoryProperties = vt->vkGetPhysicalDeviceMemoryProperties,
-    .vkAllocateMemory = vt->vkAllocateMemory,
-    .vkFreeMemory = vt->vkFreeMemory,
-    .vkMapMemory = vt->vkMapMemory,
-    .vkUnmapMemory = vt->vkUnmapMemory,
-    .vkFlushMappedMemoryRanges = vt->vkFlushMappedMemoryRanges,
-    .vkInvalidateMappedMemoryRanges = vt->vkInvalidateMappedMemoryRanges,
-    .vkBindBufferMemory = vt->vkBindBufferMemory,
-    .vkBindImageMemory = vt->vkBindImageMemory,
-    .vkGetBufferMemoryRequirements = vt->vkGetBufferMemoryRequirements,
-    .vkGetImageMemoryRequirements = vt->vkGetImageMemoryRequirements,
-    .vkCreateBuffer = vt->vkCreateBuffer,
-    .vkDestroyBuffer = vt->vkDestroyBuffer,
-    .vkCreateImage = vt->vkCreateImage,
-    .vkDestroyImage = vt->vkDestroyImage,
-    .vkCmdCopyBuffer = vt->vkCmdCopyBuffer,
+      .vkGetInstanceProcAddr = vt->vkGetInstanceProcAddr,
+      .vkGetDeviceProcAddr = vt->vkGetDeviceProcAddr,
+      .vkGetPhysicalDeviceProperties = vt->vkGetPhysicalDeviceProperties,
+      .vkGetPhysicalDeviceMemoryProperties = vt->vkGetPhysicalDeviceMemoryProperties,
+      .vkAllocateMemory = vt->vkAllocateMemory,
+      .vkFreeMemory = vt->vkFreeMemory,
+      .vkMapMemory = vt->vkMapMemory,
+      .vkUnmapMemory = vt->vkUnmapMemory,
+      .vkFlushMappedMemoryRanges = vt->vkFlushMappedMemoryRanges,
+      .vkInvalidateMappedMemoryRanges = vt->vkInvalidateMappedMemoryRanges,
+      .vkBindBufferMemory = vt->vkBindBufferMemory,
+      .vkBindImageMemory = vt->vkBindImageMemory,
+      .vkGetBufferMemoryRequirements = vt->vkGetBufferMemoryRequirements,
+      .vkGetImageMemoryRequirements = vt->vkGetImageMemoryRequirements,
+      .vkCreateBuffer = vt->vkCreateBuffer,
+      .vkDestroyBuffer = vt->vkDestroyBuffer,
+      .vkCreateImage = vt->vkCreateImage,
+      .vkDestroyImage = vt->vkDestroyImage,
+      .vkCmdCopyBuffer = vt->vkCmdCopyBuffer,
 
 #if VMA_VULKAN_VERSION >= 1001000
-    .vkGetBufferMemoryRequirements2KHR = vt->vkGetBufferMemoryRequirements2,
-    .vkGetImageMemoryRequirements2KHR = vt->vkGetImageMemoryRequirements2,
-    .vkBindBufferMemory2KHR = vt->vkBindBufferMemory2,
-    .vkBindImageMemory2KHR = vt->vkBindImageMemory2,
-    .vkGetPhysicalDeviceMemoryProperties2KHR = vt->vkGetPhysicalDeviceMemoryProperties2,
+      .vkGetBufferMemoryRequirements2KHR = vt->vkGetBufferMemoryRequirements2,
+      .vkGetImageMemoryRequirements2KHR = vt->vkGetImageMemoryRequirements2,
+      .vkBindBufferMemory2KHR = vt->vkBindBufferMemory2,
+      .vkBindImageMemory2KHR = vt->vkBindImageMemory2,
+      .vkGetPhysicalDeviceMemoryProperties2KHR = vt->vkGetPhysicalDeviceMemoryProperties2,
 #endif
 
 #if VMA_VULKAN_VERSION >= 1003000
-    .vkGetDeviceBufferMemoryRequirements = vt->vkGetDeviceBufferMemoryRequirements,
-    .vkGetDeviceImageMemoryRequirements = vt->vkGetDeviceImageMemoryRequirements,
+      .vkGetDeviceBufferMemoryRequirements = vt->vkGetDeviceBufferMemoryRequirements,
+      .vkGetDeviceImageMemoryRequirements = vt->vkGetDeviceImageMemoryRequirements,
 #endif
   };
 

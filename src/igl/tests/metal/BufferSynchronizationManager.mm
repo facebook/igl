@@ -60,5 +60,5 @@ TEST_F(BufferSynchronizationManagerMTLTest, BufferSynchronizationManagerEndOfFra
   ASSERT_EQ(bufferSyncManager_->getCurrentInFlightBufferIndex(), 1);
 }
 
-}
-}
+} // namespace tests
+} // namespace igl

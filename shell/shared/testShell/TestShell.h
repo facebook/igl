@@ -27,7 +27,7 @@ class TestShellBase {
 
   void SetUp(ScreenSize screenSize = {1, 1});
 
-  void TearDown(){};
+  void TearDown() {};
 
   std::shared_ptr<igl::shell::Platform> platform_;
   std::shared_ptr<igl::ITexture> offscreenTexture_;

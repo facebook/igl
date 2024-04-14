@@ -562,13 +562,13 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 #endif // IGL_PLATFORM_ANDROID
 
   const VkExportMemoryAllocateInfoKHR externalMemoryAllocateInfo = {
-    VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR,
+      VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR,
 #if IGL_PLATFORM_ANDROID
-    &dedicatedAllocateInfo,
+      &dedicatedAllocateInfo,
 #else
-    nullptr,
+      nullptr,
 #endif // IGL_PLATFORM_ANDROID
-    compatibleHandleTypes,
+      compatibleHandleTypes,
   };
 
   const VkImageMemoryRequirementsInfo2 memoryRequirementInfo = {

@@ -301,10 +301,10 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
       // @fb-only
       // @fb-only
     // @fb-only
-        if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
-      fragmentUniformDescriptors_.back().location =
-          pipelineState_->getIndexByName("color", igl::ShaderStage::Fragment);
-    }
+      if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
+        fragmentUniformDescriptors_.back().location =
+            pipelineState_->getIndexByName("color", igl::ShaderStage::Fragment);
+      }
     fragmentUniformDescriptors_.back().type = UniformType::Float3;
     fragmentUniformDescriptors_.back().offset = offsetof(FragmentFormat, color);
   }

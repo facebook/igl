@@ -88,7 +88,7 @@ igl::Result copyFromPreviousBufferInstance(std::vector<id<MTLBuffer>>& buffers,
                   resourceOptions,
                   acceptedApiHints);
 }
-}
+} // namespace
 
 namespace igl {
 namespace metal {
@@ -113,7 +113,7 @@ void* Buffer::map(const BufferRange& range, Result* outResult) {
   return ::map(mtlBuffers_, 0, range, outResult, resourceOptions_);
 }
 
-void Buffer::unmap(){};
+void Buffer::unmap() {};
 
 BufferDesc::BufferAPIHint Buffer::requestedApiHints() const noexcept {
   return requestedApiHints_;

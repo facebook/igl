@@ -45,9 +45,8 @@ inline void TestArray(std::vector<glm::vec<4, VectorUnit, Precision>> actualData
     std::stringstream ss;
     ss << message << ": Mismatch at index " << i << ": Expected: " << std::hex << "("
        << expectedData[i].x << " " << expectedData[i].y << " " << expectedData[i].z << " "
-       << expectedData[i].w << ")"
-       << " Actual: " << std::hex << "(" << actualData[i].x << " " << actualData[i].y << " "
-       << actualData[i].z << " " << actualData[i].w << ")";
+       << expectedData[i].w << ")" << " Actual: " << std::hex << "(" << actualData[i].x << " "
+       << actualData[i].y << " " << actualData[i].z << " " << actualData[i].w << ")";
     ASSERT_NEAR(expectedData[i].x, actualData[i].x, kInnerTestPrecision) << ss.str();
     ASSERT_NEAR(expectedData[i].y, actualData[i].y, kInnerTestPrecision) << ss.str();
     ASSERT_NEAR(expectedData[i].z, actualData[i].z, kInnerTestPrecision) << ss.str();
@@ -82,8 +81,8 @@ inline void TestArray(std::vector<glm::vec<2, VectorUnit, Precision>> actualData
   for (size_t i = 0; i < expectedDataSize; i++) {
     std::stringstream ss;
     ss << message << ": Mismatch at index " << i << ": Expected: " << std::hex << "("
-       << expectedData[i].x << " " << expectedData[i].y << ")"
-       << " Actual: " << std::hex << "(" << actualData[i].x << " " << actualData[i].y << ")";
+       << expectedData[i].x << " " << expectedData[i].y << ")" << " Actual: " << std::hex << "("
+       << actualData[i].x << " " << actualData[i].y << ")";
     ASSERT_NEAR(expectedData[i].x, actualData[i].x, kInnerTestPrecision) << ss.str();
     ASSERT_NEAR(expectedData[i].y, actualData[i].y, kInnerTestPrecision) << ss.str();
   }

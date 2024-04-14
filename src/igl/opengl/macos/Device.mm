@@ -20,4 +20,4 @@ const PlatformDevice& Device::getPlatformDevice() const noexcept {
   return platformDevice_;
 }
 
-} // namespace igl::opengl::mac
+} // namespace igl::opengl::macos

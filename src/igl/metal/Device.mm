@@ -60,7 +60,7 @@ id<MTLBuffer> createMetalBuffer(id<MTLDevice> device,
   }
   return metalObject;
 }
-}
+} // namespace
 
 std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
                                               Result* outResult) const noexcept {

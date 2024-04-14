@@ -141,5 +141,5 @@ MTLVertexStepFunction VertexInputState::convertSampleFunction(VertexSampleFuncti
     return MTLVertexStepFunctionPerInstance;
   }
 }
-}
-}
+} // namespace metal
+} // namespace igl

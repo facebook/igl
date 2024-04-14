@@ -48,7 +48,7 @@ igl::UniformType metalDataTypeToIGLUniformType(MTLDataType type) {
   }
 }
 
-}
+} // namespace
 
 namespace igl {
 namespace metal {

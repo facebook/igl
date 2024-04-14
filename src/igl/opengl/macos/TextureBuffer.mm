@@ -29,7 +29,7 @@ TextureFormat convertToTextureFormat(OSType pixelFormat) {
     return TextureFormat::Invalid;
   }
 }
-}
+} // namespace
 TextureBuffer::TextureBuffer(IContext& context,
                              CVPixelBufferRef pixelBuffer,
                              CVOpenGLTextureCacheRef textureCache,
@@ -104,4 +104,4 @@ Result TextureBuffer::uploadInternal(TextureType /*type*/,
   return Result();
 }
 
-} // igl::opengl::macos
+} // namespace igl::opengl::macos

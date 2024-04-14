@@ -51,4 +51,4 @@ void BufferSynchronizationManager::manageEndOfFrameSync() {
   currentInFlightBufferIndex_ = (currentInFlightBufferIndex_ + 1) % maxInFlightBuffers_;
 }
 
-}
+} // namespace igl::metal

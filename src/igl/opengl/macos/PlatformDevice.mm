@@ -156,4 +156,4 @@ bool PlatformDevice::isType(PlatformDeviceType t) const noexcept {
   return t == Type || opengl::PlatformDevice::isType(t);
 }
 
-} // namespace igl::opengl::ios
+} // namespace igl::opengl::macos

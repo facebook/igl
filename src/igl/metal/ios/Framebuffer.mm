@@ -22,6 +22,6 @@ bool Framebuffer::canCopy(ICommandQueue& /* unused */,
   return texture.storageMode == MTLStorageModeShared;
 }
 
-} // namespace macos
+} // namespace ios
 } // namespace metal
 } // namespace igl

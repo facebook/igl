@@ -52,7 +52,7 @@ TextureFormat convertToTextureFormat(const DeviceFeatureSet& deviceFeatures,
     return TextureFormat::Invalid;
   }
 }
-}
+} // namespace
 
 TextureBuffer::TextureBuffer(IContext& context,
                              CVPixelBufferRef pixelBuffer,
@@ -220,6 +220,6 @@ Result TextureBuffer::uploadInternal(TextureType /*type*/,
   return Result();
 }
 
-} // igl
-} // opengl
-} // igl
+} // namespace ios
+} // namespace opengl
+} // namespace igl

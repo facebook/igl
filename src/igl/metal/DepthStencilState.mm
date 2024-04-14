@@ -66,5 +66,5 @@ MTLStencilDescriptor* DepthStencilState::convertStencilDescriptor(const StencilS
   metalDesc.writeMask = desc.writeMask;
   return metalDesc;
 }
-}
-}
+} // namespace metal
+} // namespace igl

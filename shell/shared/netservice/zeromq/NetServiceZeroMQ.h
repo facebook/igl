@@ -44,4 +44,4 @@ class NetServiceZeroMQ : public NetService {
   std::shared_ptr<OutputStreamZeroMQ> outputStream_;
 };
 
-} // namespace igl::shell::bonjour
+} // namespace igl::shell::netservice

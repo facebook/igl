@@ -91,5 +91,5 @@ TEST_F(CommandBufferMTLTest, CreateRenderCommandEncoderSimple) {
   // MTLCommandEncoder must always call endEncoding before being released.
   encoder->endEncoding();
 }
-}
-}
+} // namespace tests
+} // namespace igl

@@ -16,4 +16,4 @@ void ImageWriterIos::writeImage(const std::string& /*imageAbsolutePath*/,
                                 const ImageData& /*imageData*/) const noexcept {
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
-}
+} // namespace igl::shell

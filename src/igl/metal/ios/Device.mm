@@ -25,6 +25,6 @@ std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& d
   return resource;
 }
 
-} // namespace macos
+} // namespace ios
 } // namespace metal
 } // namespace igl

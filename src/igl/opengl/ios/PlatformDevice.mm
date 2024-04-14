@@ -45,7 +45,7 @@ namespace {
 // @fb-only
 _IGLRenderBufferHolder* GetAssociatedRenderBufferHolder(CAEAGLLayer* nativeDrawable);
 
-}
+} // namespace
 
 namespace igl {
 namespace opengl {
@@ -308,7 +308,7 @@ _IGLRenderBufferHolder* GetAssociatedRenderBufferHolder(CAEAGLLayer* nativeDrawa
                            OBJC_ASSOCIATION_RETAIN_NONATOMIC);
   return renderBufferHolder;
 }
-}
+} // namespace
 
 @implementation _IGLRenderBufferHolder
 @end

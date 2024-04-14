@@ -179,4 +179,4 @@ FramebufferMode Framebuffer::getMode() const {
   return value_.mode;
 }
 
-} // namespace metal
+} // namespace igl::metal
