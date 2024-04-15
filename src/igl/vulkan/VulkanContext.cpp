@@ -1369,20 +1369,16 @@ void VulkanContext::querySurfaceCapabilities() {
 }
 
 VkFormat VulkanContext::getClosestDepthStencilFormat(igl::TextureFormat desiredFormat) const {
+  IGL_ASSERT(!deviceDepthFormats_.empty());
   // get a list of compatible depth formats for a given desired format
   // The list will contain depth format that are ordered from most to least closest
   const std::vector<VkFormat> compatibleDepthStencilFormatList =
       getCompatibleDepthStencilFormats(desiredFormat);
 
-  // Generate a set of device supported formats
-  std::set<VkFormat> availableFormats;
-  for (auto format : deviceDepthFormats_) {
-    availableFormats.insert(format);
-  }
-
   // check if any of the format in compatible list is supported
   for (auto depthStencilFormat : compatibleDepthStencilFormatList) {
-    if (availableFormats.count(depthStencilFormat) != 0) {
+    if (std::find(deviceDepthFormats_.begin(), deviceDepthFormats_.end(), depthStencilFormat) !=
+        deviceDepthFormats_.end()) {
       return depthStencilFormat;
     }
   }
