@@ -108,14 +108,14 @@ TEST_F(VulkanImageTest, CreateImageWithExportedMemory) {
       0, /* createFlags */
       VK_SAMPLE_COUNT_1_BIT,
       "Image: vulkan export memory");
-  ASSERT_NE(vulkanImage, nullptr);
-  EXPECT_TRUE(vulkanImage->isExported_);
+  ASSERT_NE(vulkanImage.valid(), false);
+  EXPECT_TRUE(vulkanImage.isExported_);
 #if IGL_PLATFORM_WIN
-  EXPECT_NE(vulkanImage->exportedMemoryHandle_, nullptr);
-  EXPECT_NE(vulkanImage->getVkImage(), static_cast<VkImage_T*>(VK_NULL_HANDLE));
+  EXPECT_NE(vulkanImage.exportedMemoryHandle_, nullptr);
+  EXPECT_NE(vulkanImage.getVkImage(), static_cast<VkImage_T*>(VK_NULL_HANDLE));
 #elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
-  EXPECT_NE(vulkanImage->exportedFd_, -1);
-  EXPECT_NE(vulkanImage->getVkImage(), VK_NULL_HANDLE);
+  EXPECT_NE(vulkanImage.exportedFd_, -1);
+  EXPECT_NE(vulkanImage.getVkImage(), VK_NULL_HANDLE);
 #endif
 }
 
@@ -134,12 +134,12 @@ TEST_F(VulkanImageTest, CreateImageWithImportedMemoryWin32) {
       0, /* createFlags */
       VK_SAMPLE_COUNT_1_BIT,
       "Image: vulkan export memory");
-  ASSERT_NE(exportedImage, nullptr);
-  EXPECT_NE(exportedImage->exportedMemoryHandle_, nullptr);
+  ASSERT_NE(exportedImage.valid(), false);
+  EXPECT_NE(exportedImage.exportedMemoryHandle_, nullptr);
 
   auto importedImage =
       igl::vulkan::VulkanImage(*context_,
-                               exportedImage->exportedMemoryHandle_,
+                               exportedImage.exportedMemoryHandle_,
                                context_->getVkDevice(),
                                VkExtent3D{.width = kWidth, .height = kHeight, .depth = 1},
                                VK_IMAGE_TYPE_2D,

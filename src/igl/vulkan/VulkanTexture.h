@@ -12,29 +12,24 @@
 #include <igl/ColorSpace.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
+#include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImageView.h>
 
 namespace igl {
 namespace vulkan {
 
 class VulkanContext;
-class VulkanImage;
 
 class VulkanTexture final {
  public:
-  VulkanTexture(const VulkanContext& ctx,
-                std::unique_ptr<VulkanImage> image,
-                VulkanImageView&& imageView);
+  VulkanTexture(const VulkanContext& ctx, VulkanImage&& image, VulkanImageView&& imageView);
   ~VulkanTexture() = default;
 
   VulkanTexture(const VulkanTexture&) = delete;
   VulkanTexture& operator=(const VulkanTexture&) = delete;
 
-  VulkanImage& getVulkanImage() {
-    return *image_.get();
-  }
   const VulkanImage& getVulkanImage() const {
-    return *image_.get();
+    return image_;
   }
   const VulkanImageView& getVulkanImageView() const {
     return imageView_;
@@ -46,7 +41,7 @@ class VulkanTexture final {
  private:
   friend class VulkanContext;
   const VulkanContext& ctx_;
-  std::unique_ptr<VulkanImage> image_;
+  VulkanImage image_;
   VulkanImageView imageView_;
   // an index into VulkanContext::textures_
   uint32_t textureId_ = 0;

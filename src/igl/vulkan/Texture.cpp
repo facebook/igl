@@ -158,29 +158,29 @@ Result Texture::create(const TextureDesc& desc) {
   if (!IGL_VERIFY(result.isOk())) {
     return result;
   }
-  if (!IGL_VERIFY(image)) {
+  if (!IGL_VERIFY(image.valid())) {
     return Result(Result::Code::InvalidOperation, "Cannot create VulkanImage");
   }
 
   VkImageAspectFlags aspect = 0;
-  if (image->isDepthOrStencilFormat_) {
-    if (image->isDepthFormat_) {
+  if (image.isDepthOrStencilFormat_) {
+    if (image.isDepthFormat_) {
       aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
-    } else if (image->isStencilFormat_) {
+    } else if (image.isStencilFormat_) {
       aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
     }
   } else {
     aspect = VK_IMAGE_ASPECT_COLOR_BIT;
   }
 
-  VulkanImageView imageView = image->createImageView(imageViewType,
-                                                     vkFormat,
-                                                     aspect,
-                                                     0,
-                                                     VK_REMAINING_MIP_LEVELS,
-                                                     0,
-                                                     arrayLayerCount,
-                                                     debugNameImageView.c_str());
+  VulkanImageView imageView = image.createImageView(imageViewType,
+                                                    vkFormat,
+                                                    aspect,
+                                                    0,
+                                                    VK_REMAINING_MIP_LEVELS,
+                                                    0,
+                                                    arrayLayerCount,
+                                                    debugNameImageView.c_str());
 
   if (!IGL_VERIFY(imageView.valid())) {
     return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
@@ -327,7 +327,8 @@ void Texture::clearColorTexture(const igl::Color& rgba) {
     return;
   }
 
-  igl::vulkan::VulkanImage& img = texture_->getVulkanImage();
+  const igl::vulkan::VulkanImage& img = texture_->getVulkanImage();
+  IGL_ASSERT(img.valid());
 
   const auto& wrapper = img.ctx_->immediate_->acquire();
 

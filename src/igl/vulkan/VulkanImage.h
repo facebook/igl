@@ -159,18 +159,18 @@ class VulkanImage final {
    * On Windows, the exported `HANDLE` will be stored in `exportedMemoryHandle_`.
    * On Linux/Android, the exported file descriptor will be stored in `exportedFd_`.
    */
-  static std::shared_ptr<VulkanImage> createWithExportMemory(const VulkanContext& ctx,
-                                                             VkDevice device,
-                                                             VkExtent3D extent,
-                                                             VkImageType type,
-                                                             VkFormat format,
-                                                             uint32_t mipLevels,
-                                                             uint32_t arrayLayers,
-                                                             VkImageTiling tiling,
-                                                             VkImageUsageFlags usageFlags,
-                                                             VkImageCreateFlags createFlags,
-                                                             VkSampleCountFlagBits samples,
-                                                             const char* debugName = nullptr);
+  static VulkanImage createWithExportMemory(const VulkanContext& ctx,
+                                            VkDevice device,
+                                            VkExtent3D extent,
+                                            VkImageType type,
+                                            VkFormat format,
+                                            uint32_t mipLevels,
+                                            uint32_t arrayLayers,
+                                            VkImageTiling tiling,
+                                            VkImageUsageFlags usageFlags,
+                                            VkImageCreateFlags createFlags,
+                                            VkSampleCountFlagBits samples,
+                                            const char* debugName = nullptr);
 #endif // IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
 
   ~VulkanImage();

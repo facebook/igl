@@ -422,18 +422,18 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 #endif // IGL_PLATFORM_WIN
 
 #if IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
-std::shared_ptr<VulkanImage> VulkanImage::createWithExportMemory(const VulkanContext& ctx,
-                                                                 VkDevice device,
-                                                                 VkExtent3D extent,
-                                                                 VkImageType type,
-                                                                 VkFormat format,
-                                                                 uint32_t mipLevels,
-                                                                 uint32_t arrayLayers,
-                                                                 VkImageTiling tiling,
-                                                                 VkImageUsageFlags usageFlags,
-                                                                 VkImageCreateFlags createFlags,
-                                                                 VkSampleCountFlagBits samples,
-                                                                 const char* debugName) {
+VulkanImage VulkanImage::createWithExportMemory(const VulkanContext& ctx,
+                                                VkDevice device,
+                                                VkExtent3D extent,
+                                                VkImageType type,
+                                                VkFormat format,
+                                                uint32_t mipLevels,
+                                                uint32_t arrayLayers,
+                                                VkImageTiling tiling,
+                                                VkImageUsageFlags usageFlags,
+                                                VkImageCreateFlags createFlags,
+                                                VkSampleCountFlagBits samples,
+                                                const char* debugName) {
   const VkPhysicalDeviceExternalImageFormatInfo externaInfo = {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO,
       nullptr,
@@ -462,7 +462,7 @@ std::shared_ptr<VulkanImage> VulkanImage::createWithExportMemory(const VulkanCon
         tiling,
         usageFlags,
         createFlags);
-    return nullptr;
+    return VulkanImage();
   }
   const auto& externalFormatProperties = externalImageFormatProperties.externalMemoryProperties;
   if (!(externalFormatProperties.externalMemoryFeatures &
@@ -473,24 +473,24 @@ std::shared_ptr<VulkanImage> VulkanImage::createWithExportMemory(const VulkanCon
         tiling,
         usageFlags,
         createFlags);
-    return nullptr;
+    return VulkanImage();
   }
   const auto compatibleHandleTypes = externalFormatProperties.compatibleHandleTypes;
   IGL_ASSERT(compatibleHandleTypes & kHandleType);
-  return std::shared_ptr<VulkanImage>(new VulkanImage(ctx,
-                                                      device,
-                                                      extent,
-                                                      type,
-                                                      format,
-                                                      mipLevels,
-                                                      arrayLayers,
-                                                      tiling,
-                                                      usageFlags,
-                                                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                                      createFlags,
-                                                      samples,
-                                                      compatibleHandleTypes,
-                                                      debugName));
+  return {ctx,
+          device,
+          extent,
+          type,
+          format,
+          mipLevels,
+          arrayLayers,
+          tiling,
+          usageFlags,
+          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+          createFlags,
+          samples,
+          compatibleHandleTypes,
+          debugName};
 }
 
 VulkanImage::VulkanImage(const VulkanContext& ctx,

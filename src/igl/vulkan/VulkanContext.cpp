@@ -775,17 +775,17 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     if (!IGL_VERIFY(result.isOk())) {
       return result;
     }
-    if (!IGL_VERIFY(image)) {
+    if (!IGL_VERIFY(image.valid())) {
       return Result(Result::Code::InvalidOperation, "Cannot create VulkanImage");
     }
-    auto imageView = image->createImageView(VK_IMAGE_VIEW_TYPE_2D,
-                                            dummyTextureFormat,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            0,
-                                            VK_REMAINING_MIP_LEVELS,
-                                            0,
-                                            1,
-                                            "Image View: dummy 1x1");
+    auto imageView = image.createImageView(VK_IMAGE_VIEW_TYPE_2D,
+                                           dummyTextureFormat,
+                                           VK_IMAGE_ASPECT_COLOR_BIT,
+                                           0,
+                                           VK_REMAINING_MIP_LEVELS,
+                                           0,
+                                           1,
+                                           "Image View: dummy 1x1");
     if (!IGL_VERIFY(imageView.valid())) {
       return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
     }
@@ -1050,38 +1050,38 @@ std::unique_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSiz
       *this, device_->getVkDevice(), bufferSize, usageFlags, memFlags, debugName);
 }
 
-std::unique_ptr<VulkanImage> VulkanContext::createImage(VkImageType imageType,
-                                                        VkExtent3D extent,
-                                                        VkFormat format,
-                                                        uint32_t mipLevels,
-                                                        uint32_t arrayLayers,
-                                                        VkImageTiling tiling,
-                                                        VkImageUsageFlags usageFlags,
-                                                        VkMemoryPropertyFlags memFlags,
-                                                        VkImageCreateFlags flags,
-                                                        VkSampleCountFlagBits samples,
-                                                        igl::Result* outResult,
-                                                        const char* debugName) const {
+VulkanImage VulkanContext::createImage(VkImageType imageType,
+                                       VkExtent3D extent,
+                                       VkFormat format,
+                                       uint32_t mipLevels,
+                                       uint32_t arrayLayers,
+                                       VkImageTiling tiling,
+                                       VkImageUsageFlags usageFlags,
+                                       VkMemoryPropertyFlags memFlags,
+                                       VkImageCreateFlags flags,
+                                       VkSampleCountFlagBits samples,
+                                       igl::Result* outResult,
+                                       const char* debugName) const {
   IGL_PROFILER_FUNCTION();
 
   if (!validateImageLimits(
           imageType, samples, extent, getVkPhysicalDeviceProperties().limits, outResult)) {
-    return nullptr;
+    return VulkanImage();
   }
 
-  return std::make_unique<VulkanImage>(*this,
-                                       device_->getVkDevice(),
-                                       extent,
-                                       imageType,
-                                       format,
-                                       mipLevels,
-                                       arrayLayers,
-                                       tiling,
-                                       usageFlags,
-                                       memFlags,
-                                       flags,
-                                       samples,
-                                       debugName);
+  return {*this,
+          device_->getVkDevice(),
+          extent,
+          imageType,
+          format,
+          mipLevels,
+          arrayLayers,
+          tiling,
+          usageFlags,
+          memFlags,
+          flags,
+          samples,
+          debugName};
 }
 
 std::unique_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
@@ -1192,9 +1192,9 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
     if (texture) {
       // multisampled images cannot be directly accessed from shaders
       const bool isTextureAvailable =
-          (texture->image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
-      const bool isSampledImage = isTextureAvailable && texture->image_->isSampledImage();
-      const bool isStorageImage = isTextureAvailable && texture->image_->isStorageImage();
+          (texture->image_.samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
+      const bool isSampledImage = isTextureAvailable && texture->image_.isSampledImage();
+      const bool isStorageImage = isTextureAvailable && texture->image_.isStorageImage();
       infoSampledImages.push_back(
           {dummySampler,
            isSampledImage ? texture->imageView_.getVkImageView() : dummyImageView,
@@ -1269,7 +1269,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
 }
 
 std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
-    std::unique_ptr<VulkanImage> image,
+    VulkanImage&& image,
     VulkanImageView&& imageView,
     [[maybe_unused]] const char* debugName) const {
   IGL_PROFILER_FUNCTION();
@@ -1295,9 +1295,8 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTextureFromVkImage(
     VulkanImageCreateInfo imageCreateInfo,
     VulkanImageViewCreateInfo imageViewCreateInfo,
     const char* debugName) const {
-  auto iglImage = std::make_unique<VulkanImage>(
-      *this, device_->getVkDevice(), vkImage, imageCreateInfo, debugName);
-  auto imageView = iglImage->createImageView(imageViewCreateInfo, debugName);
+  auto iglImage = VulkanImage(*this, device_->getVkDevice(), vkImage, imageCreateInfo, debugName);
+  auto imageView = iglImage.createImageView(imageViewCreateInfo, debugName);
   return createTexture(std::move(iglImage), std::move(imageView), debugName);
 }
 
@@ -1482,8 +1481,9 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
     VkSampler sampler = data.samplers[loc] ? data.samplers[loc]->getVkSampler() : dummySampler;
     // multisampled images cannot be directly accessed from shaders
     const bool isTextureAvailable =
-        texture && ((texture->image_->samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
-    const bool isSampledImage = isTextureAvailable && texture->image_->isSampledImage();
+        (texture != nullptr) &&
+        ((texture->image_.samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
+    const bool isSampledImage = isTextureAvailable && texture->image_.isSampledImage();
     writes[numWrites++] = ivkGetWriteDescriptorSet_ImageInfo(
         dset, loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &infoSampledImages[numImages]);
     infoSampledImages[numImages++] = {isSampledImage ? sampler : dummySampler,

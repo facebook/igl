@@ -181,20 +181,20 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
   // create images, image views and framebuffers
   swapchainTextures_ = std::make_unique<std::shared_ptr<VulkanTexture>[]>(numSwapchainImages_);
   for (uint32_t i = 0; i < numSwapchainImages_; i++) {
-    auto image = std::make_unique<VulkanImage>(
+    auto image = VulkanImage(
         ctx_, device_, swapchainImages[i], IGL_FORMAT("Image: swapchain #{}", i).c_str());
     // set usage flags for retrieved images
-    image->usageFlags_ = usageFlags;
-    image->imageFormat_ = surfaceFormat_.format;
+    image.usageFlags_ = usageFlags;
+    image.imageFormat_ = surfaceFormat_.format;
 
-    auto imageView = image->createImageView(VK_IMAGE_VIEW_TYPE_2D,
-                                            surfaceFormat_.format,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            0,
-                                            VK_REMAINING_MIP_LEVELS,
-                                            0,
-                                            1,
-                                            IGL_FORMAT("Image View: swapchain #{}", i).c_str());
+    auto imageView = image.createImageView(VK_IMAGE_VIEW_TYPE_2D,
+                                           surfaceFormat_.format,
+                                           VK_IMAGE_ASPECT_COLOR_BIT,
+                                           0,
+                                           VK_REMAINING_MIP_LEVELS,
+                                           0,
+                                           1,
+                                           IGL_FORMAT("Image View: swapchain #{}", i).c_str());
     swapchainTextures_[i] =
         std::make_shared<VulkanTexture>(ctx_, std::move(image), std::move(imageView));
   }
@@ -230,20 +230,20 @@ void VulkanSwapchain::lazyAllocateDepthBuffer() const {
       VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 #endif
 
-  auto depthImage = std::make_unique<VulkanImage>(ctx_,
-                                                  device_,
-                                                  VkExtent3D{width_, height_, 1},
-                                                  VK_IMAGE_TYPE_2D,
-                                                  depthFormat,
-                                                  1,
-                                                  1,
-                                                  VK_IMAGE_TILING_OPTIMAL,
-                                                  VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                                  0,
-                                                  VK_SAMPLE_COUNT_1_BIT,
-                                                  "Image: swapchain depth");
-  auto depthImageView = depthImage->createImageView(
+  auto depthImage = VulkanImage(ctx_,
+                                device_,
+                                VkExtent3D{width_, height_, 1},
+                                VK_IMAGE_TYPE_2D,
+                                depthFormat,
+                                1,
+                                1,
+                                VK_IMAGE_TILING_OPTIMAL,
+                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                0,
+                                VK_SAMPLE_COUNT_1_BIT,
+                                "Image: swapchain depth");
+  auto depthImageView = depthImage.createImageView(
       VK_IMAGE_VIEW_TYPE_2D, depthFormat, aspectMask, 0, 1, 0, 1, "Image View: swapchain depth");
 
   depthTexture_ =

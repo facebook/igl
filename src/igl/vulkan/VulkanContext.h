@@ -128,18 +128,18 @@ class VulkanContext final {
   igl::Result initSwapchain(uint32_t width, uint32_t height);
   VkExtent2D getSwapchainExtent() const;
 
-  std::unique_ptr<VulkanImage> createImage(VkImageType imageType,
-                                           VkExtent3D extent,
-                                           VkFormat format,
-                                           uint32_t mipLevels,
-                                           uint32_t arrayLayers,
-                                           VkImageTiling tiling,
-                                           VkImageUsageFlags usageFlags,
-                                           VkMemoryPropertyFlags memFlags,
-                                           VkImageCreateFlags flags,
-                                           VkSampleCountFlagBits samples,
-                                           igl::Result* outResult,
-                                           const char* debugName = nullptr) const;
+  VulkanImage createImage(VkImageType imageType,
+                          VkExtent3D extent,
+                          VkFormat format,
+                          uint32_t mipLevels,
+                          uint32_t arrayLayers,
+                          VkImageTiling tiling,
+                          VkImageUsageFlags usageFlags,
+                          VkMemoryPropertyFlags memFlags,
+                          VkImageCreateFlags flags,
+                          VkSampleCountFlagBits samples,
+                          igl::Result* outResult,
+                          const char* debugName = nullptr) const;
   std::unique_ptr<VulkanImage> createImageFromFileDescriptor(int32_t fileDescriptor,
                                                              uint64_t memoryAllocationSize,
                                                              VkImageType imageType,
@@ -158,7 +158,7 @@ class VulkanContext final {
                                              VkMemoryPropertyFlags memFlags,
                                              igl::Result* outResult,
                                              const char* debugName = nullptr) const;
-  std::shared_ptr<VulkanTexture> createTexture(std::unique_ptr<VulkanImage> image,
+  std::shared_ptr<VulkanTexture> createTexture(VulkanImage&& image,
                                                VulkanImageView&& imageView,
                                                const char* debugName) const;
   std::shared_ptr<VulkanTexture> createTextureFromVkImage(
