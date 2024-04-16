@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #include <IGLU/imgui/Session.h>
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 
