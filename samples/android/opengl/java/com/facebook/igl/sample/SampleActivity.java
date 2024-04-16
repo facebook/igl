@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 package com.facebook.igl.sample.opengl;
 
 import android.app.Activity;
