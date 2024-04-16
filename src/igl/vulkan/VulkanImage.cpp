@@ -796,7 +796,8 @@ void VulkanImage::clearColorImage(VkCommandBuffer commandBuffer,
                                   const igl::Color& rgba,
                                   const VkImageSubresourceRange* subresourceRange) const {
   IGL_ASSERT(usageFlags_ & VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-  IGL_ASSERT(!isDepthFormat_);
+  IGL_ASSERT(samples_ == VK_SAMPLE_COUNT_1_BIT);
+  IGL_ASSERT(!isDepthOrStencilFormat_);
 
   const VkImageLayout oldLayout = imageLayout_;
 
