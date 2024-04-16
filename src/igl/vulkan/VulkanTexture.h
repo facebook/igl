@@ -22,7 +22,7 @@ class VulkanContext;
 
 class VulkanTexture final {
  public:
-  VulkanTexture(const VulkanContext& ctx, VulkanImage&& image, VulkanImageView&& imageView);
+  VulkanTexture(VulkanImage&& image, VulkanImageView&& imageView);
   ~VulkanTexture() = default;
 
   VulkanTexture(const VulkanTexture&) = delete;
@@ -40,7 +40,6 @@ class VulkanTexture final {
 
  private:
   friend class VulkanContext;
-  const VulkanContext& ctx_;
   VulkanImage image_;
   VulkanImageView imageView_;
   // an index into VulkanContext::textures_

@@ -65,7 +65,7 @@ void enumerateSwapchainImages(
                               numViews,
                               fmt::format("Image View: swapchain #{}", i).c_str());
     outVulkanTextures.emplace_back(
-        std::make_shared<igl::vulkan::VulkanTexture>(ctx, std::move(image), std::move(imageView)));
+        std::make_shared<igl::vulkan::VulkanTexture>(std::move(image), std::move(imageView)));
   }
 }
 

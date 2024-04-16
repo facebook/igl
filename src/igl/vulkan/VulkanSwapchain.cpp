@@ -195,8 +195,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
                                            0,
                                            1,
                                            IGL_FORMAT("Image View: swapchain #{}", i).c_str());
-    swapchainTextures_[i] =
-        std::make_shared<VulkanTexture>(ctx_, std::move(image), std::move(imageView));
+    swapchainTextures_[i] = std::make_shared<VulkanTexture>(std::move(image), std::move(imageView));
   }
 }
 
@@ -246,8 +245,7 @@ void VulkanSwapchain::lazyAllocateDepthBuffer() const {
   auto depthImageView = depthImage.createImageView(
       VK_IMAGE_VIEW_TYPE_2D, depthFormat, aspectMask, 0, 1, 0, 1, "Image View: swapchain depth");
 
-  depthTexture_ =
-      std::make_shared<VulkanTexture>(ctx_, std::move(depthImage), std::move(depthImageView));
+  depthTexture_ = std::make_shared<VulkanTexture>(std::move(depthImage), std::move(depthImageView));
 }
 
 VulkanSwapchain::~VulkanSwapchain() {

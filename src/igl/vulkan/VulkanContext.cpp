@@ -789,8 +789,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     if (!IGL_VERIFY(imageView.valid())) {
       return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
     }
-    const TextureHandle dummyTexture = textures_.create(
-        std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView)));
+    const TextureHandle dummyTexture =
+        textures_.create(std::make_shared<VulkanTexture>(std::move(image), std::move(imageView)));
     IGL_ASSERT(textures_.numObjects() == 1);
     const uint32_t pixel = 0xFF000000;
     stagingDevice_->imageData(
@@ -1274,8 +1274,8 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
     [[maybe_unused]] const char* debugName) const {
   IGL_PROFILER_FUNCTION();
 
-  const TextureHandle handle = textures_.create(
-      std::make_shared<VulkanTexture>(*this, std::move(image), std::move(imageView)));
+  const TextureHandle handle =
+      textures_.create(std::make_shared<VulkanTexture>(std::move(image), std::move(imageView)));
 
   auto texture = *textures_.get(handle);
 
