@@ -174,7 +174,8 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
   // at this point, there should be a free region that can fit the requested size
   auto regionItr = regions_.begin();
   while (regionItr != regions_.end()) {
-    if (regionItr->size >= requestedAlignedSize) {
+    // if requested size is available or if contiguous memory is not requested
+    if (regionItr->size >= requestedAlignedSize || (!contiguous)) {
       break;
     }
     regionItr++;
