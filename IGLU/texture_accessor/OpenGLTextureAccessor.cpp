@@ -124,6 +124,16 @@ RequestStatus OpenGLTextureAccessor::getRequestStatus() {
 };
 
 std::vector<unsigned char>& OpenGLTextureAccessor::getBytes() {
+  copyBytes(latestBytesRead_.data(), latestBytesRead_.size());
+  return latestBytesRead_;
+}
+
+size_t OpenGLTextureAccessor::copyBytes(unsigned char* ptr, size_t length) {
+  if (length < textureBytesPerImage_) {
+    dataCopied_ = false;
+    return 0;
+  }
+
   if (asyncReadbackSupported_ && status_ != RequestStatus::NotInitialized && !dataCopied_) {
     auto& texture = static_cast<igl::opengl::Texture&>(*texture_);
     auto& context = texture.getContext();
@@ -131,22 +141,22 @@ std::vector<unsigned char>& OpenGLTextureAccessor::getBytes() {
     auto bytes =
         context.mapBufferRange(GL_PIXEL_PACK_BUFFER, 0, textureBytesPerImage_, GL_MAP_READ_BIT);
     if (IGL_VERIFY(bytes)) {
-      checked_memcpy_robust(latestBytesRead_.data(),
-                            latestBytesRead_.size(),
-                            bytes,
-                            textureBytesPerImage_,
-                            textureBytesPerImage_);
+      checked_memcpy_robust(ptr, length, bytes, textureBytesPerImage_, textureBytesPerImage_);
+      length = textureBytesPerImage_;
+      dataCopied_ = true;
+      status_ = RequestStatus::Ready;
+    } else {
+      dataCopied_ = false;
+      length = 0;
     }
     context.unmapBuffer(GL_PIXEL_PACK_BUFFER);
     context.bindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-    status_ = RequestStatus::Ready;
-    dataCopied_ = true;
     if (sync_ != nullptr) {
       context.deleteSync(sync_);
       sync_ = nullptr;
     }
   }
-  return latestBytesRead_;
+  return length;
 }
 
 } // namespace iglu::textureaccessor

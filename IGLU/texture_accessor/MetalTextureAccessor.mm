@@ -94,6 +94,15 @@ void MetalTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
   [metalCmdBuffer commit];
 }
 
+size_t MetalTextureAccessor::copyBytes(unsigned char* ptr, size_t length) {
+  if (length < latestBytesRead_.size()) {
+    return 0;
+  }
+  const size_t count = latestBytesRead_.size();
+  checked_memcpy_robust(ptr, length, latestBytesRead_.data(), count, count);
+  return count;
+}
+
 RequestStatus MetalTextureAccessor::getRequestStatus() {
   return status_;
 };

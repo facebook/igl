@@ -12,6 +12,7 @@
 
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
+#include <igl/vulkan/VulkanImageView.h>
 
 namespace igl {
 namespace vulkan {

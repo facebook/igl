@@ -8,6 +8,9 @@
 #include "TextureAccessorFactory.h"
 #include "ITextureAccessor.h"
 #include "OpenGLTextureAccessor.h"
+#if IGL_BACKEND_VULKAN
+#include "VulkanTextureAccessor.h"
+#endif
 #include <memory>
 #if IGL_PLATFORM_APPLE
 #include "MetalTextureAccessor.h"
@@ -29,6 +32,10 @@ std::unique_ptr<ITextureAccessor> TextureAccessorFactory::createTextureAccessor(
   case igl::BackendType::Metal:
     return std::make_unique<MetalTextureAccessor>(texture, device);
 #endif // IGL_PLATFORM_APPLE
+#if IGL_BACKEND_VULKAN
+  case igl::BackendType::Vulkan:
+    return std::make_unique<VulkanTextureAccessor>(texture);
+#endif
   default:
     IGL_ASSERT_NOT_IMPLEMENTED();
     return nullptr;

@@ -24,6 +24,7 @@ class MetalTextureAccessor : public ITextureAccessor {
                     std::shared_ptr<igl::ITexture> texture = nullptr) override;
   RequestStatus getRequestStatus() override;
   std::vector<unsigned char>& getBytes() override;
+  size_t copyBytes(unsigned char* ptr, size_t length) override;
 
  private:
   std::vector<unsigned char> latestBytesRead_;

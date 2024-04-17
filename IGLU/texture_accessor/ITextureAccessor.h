@@ -42,6 +42,9 @@ class ITextureAccessor {
   */
   virtual std::vector<unsigned char>& getBytes() = 0;
 
+  // copy data into preallocated buffer, returns copied data in bytes
+  virtual size_t copyBytes(unsigned char* ptr, size_t length) = 0;
+
   // Synchronously read the bytes of the ITexture. This is not recommended; using requestBytes() and
   // getBytes() is more performant when getBytes() is called later.
   // Receive an optional texture an input. It MUST be the same size as previous texture
@@ -50,6 +53,18 @@ class ITextureAccessor {
       std::shared_ptr<igl::ITexture> texture = nullptr) {
     requestBytes(commandQueue, std::move(texture));
     return getBytes();
+  }
+
+  // Synchronously read the bytes of the ITexture. This is not recommended; using requestBytes() and
+  // copyBytes() is more performant when copyBytes() is called later.
+  // Receive an optional texture an input. It MUST be the same size as previous texture
+
+  size_t requestAndCopyBytesSync(igl::ICommandQueue& commandQueue,
+                                 unsigned char* ptr,
+                                 size_t length,
+                                 std::shared_ptr<igl::ITexture> texture = nullptr) {
+    requestBytes(commandQueue, std::move(texture));
+    return copyBytes(ptr, length);
   }
 
  protected:

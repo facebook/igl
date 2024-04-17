@@ -8,18 +8,18 @@
 #pragma once
 
 #include "ITextureAccessor.h"
-#include "igl/Framebuffer.h"
 #include <igl/CommandQueue.h>
 #include <igl/IGL.h>
 #include <igl/Texture.h>
-#include <igl/opengl/GLIncludes.h>
+#if IGL_BACKEND_VULKAN
+#include <igl/vulkan/VulkanImage.h>
+#endif
 
-namespace iglu {
-namespace textureaccessor {
+namespace iglu::textureaccessor {
 
-class OpenGLTextureAccessor : public ITextureAccessor {
+class VulkanTextureAccessor : public ITextureAccessor {
  public:
-  OpenGLTextureAccessor(std::shared_ptr<igl::ITexture> texture, igl::IDevice& device);
+  explicit VulkanTextureAccessor(std::shared_ptr<igl::ITexture> texture);
 
   void requestBytes(igl::ICommandQueue& commandQueue,
                     std::shared_ptr<igl::ITexture> texture = nullptr) override;
@@ -28,19 +28,20 @@ class OpenGLTextureAccessor : public ITextureAccessor {
   size_t copyBytes(unsigned char* ptr, size_t length) override;
 
  private:
+  void assignTexture(std::shared_ptr<igl::ITexture> texture);
+
+ private:
   std::vector<unsigned char> latestBytesRead_;
   RequestStatus status_ = RequestStatus::NotInitialized;
-  std::shared_ptr<igl::IFramebuffer> frameBuffer_;
-  size_t textureWidth_ = 0;
-  size_t textureHeight_ = 0;
-  size_t textureBytesPerImage_ = 0;
-
-  GLuint pboId_ = 0;
-  GLsync sync_ = nullptr;
-  bool dataCopied_ = false;
-  bool asyncReadbackSupported_ = false;
-  bool textureAttached_ = false;
+#if IGL_BACKEND_VULKAN
+  const igl::vulkan::VulkanContext* ctx_ = nullptr;
+  VkImage vkImage_ = VK_NULL_HANDLE;
+  VkFormat vkImageFormat_ = VK_FORMAT_UNDEFINED;
+  VkImageLayout vkImageLayout_ = VK_IMAGE_LAYOUT_UNDEFINED;
+  uint32_t textureWidth_ = 0;
+  uint32_t textureHeight_ = 0;
+  size_t bytesPerRow_ = 0;
+#endif
+  size_t numBytesRequired_ = 0;
 };
-
-} // namespace textureaccessor
-} // namespace iglu
+} // namespace iglu::textureaccessor
