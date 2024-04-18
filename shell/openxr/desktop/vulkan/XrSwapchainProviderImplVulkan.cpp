@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #include <fmt/core.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/Texture.h>
