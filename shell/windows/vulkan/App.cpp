@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #if defined(_WIN32)
 #define GLFW_EXPOSE_NATIVE_WIN32
 #else
