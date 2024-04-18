@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #include <GLFW/glfw3.h>
 #include <cassert>
 #if !defined(_USE_MATH_DEFINES)
