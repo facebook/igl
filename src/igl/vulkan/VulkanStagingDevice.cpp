@@ -602,7 +602,7 @@ void VulkanStagingDevice::allocateStagingBuffer(VkDeviceSize minimumSize) {
   IGL_ASSERT(minimumSize <= maxStagingBufferSize_);
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
-  IGL_LOG_INFO("Growing staging buffer from %u to %u bytes\n", stagingBufferSize_, minimumSize);
+  IGL_LOG_INFO("Allocating a new staging buffer of size %u bytes\n", minimumSize);
 #endif
 
   const auto stagingBufferSize = minimumSize;
