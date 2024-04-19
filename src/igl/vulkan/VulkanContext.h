@@ -109,6 +109,13 @@ struct VulkanContextConfig {
   // This enables fences generated at the end of submission to be exported to the client.
   // The client can then use the SubmitHandle to wait for the completion of the GPU work.
   bool exportableFences = false;
+
+  // Size for VulkanMemoryAllocator's default pool block size parameter.
+  // Only relevant if VMA is used for memory allocation.
+  // Passing 0 will prompt VMA to a large default value (currently 256 MB).
+  // Using a smaller heap size would increase the chance of memory deallocation and result in less
+  // memory wastage.
+  size_t vmaPreferredLargeHeapBlockSize = 0;
 };
 
 class VulkanContext final {

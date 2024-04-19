@@ -510,6 +510,7 @@ VkResult ivkVmaCreateAllocator(const struct VulkanFunctionTable* vt,
                                VkInstance instance,
                                uint32_t apiVersion,
                                bool enableBufferDeviceAddress,
+                               VkDeviceSize preferredLargeHeapBlockSize,
                                VmaAllocator* outVma);
 
 void ivkGlslangResource(glslang_resource_t* glslangResource,

@@ -734,6 +734,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                            vkInstance_,
                                            apiVersion,
                                            config_.enableBufferDeviceAddress,
+                                           (VkDeviceSize)config_.vmaPreferredLargeHeapBlockSize,
                                            &pimpl_->vma_));
   }
 
