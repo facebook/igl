@@ -853,7 +853,7 @@ void ShaderUniforms::bindBuffer(igl::IDevice& device,
       const auto& glPipelineState =
           static_cast<const igl::opengl::RenderPipelineState&>(pipelineState);
       encoder.bindBuffer(glPipelineState.getUniformBlockBindingPoint(uniformName),
-                         bindTargetForShaderStage(buffer->iglBufferDesc.shaderStage),
+                         igl::BindTarget::kAllGraphics,
                          buffer->allocation->iglBuffer,
                          0);
     } else {

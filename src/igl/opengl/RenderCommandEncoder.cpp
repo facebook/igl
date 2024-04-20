@@ -231,11 +231,19 @@ void RenderCommandEncoder::bindUniform(const UniformDesc& uniformDesc, const voi
 }
 
 void RenderCommandEncoder::bindBuffer(int index,
-                                      uint8_t bindTarget,
+                                      uint8_t target,
                                       const std::shared_ptr<IBuffer>& buffer,
                                       size_t offset) {
   IGL_ASSERT_MSG(index >= 0, "Invalid index passed to bindBuffer: %d", index);
-  // bindTarget (which can be BindTarget::kVertex or kFragment) is unused in OGL backend
+
+  IGL_ASSERT_MSG(
+      target == igl::BindTarget::kAllGraphics,
+      "Use bindVertexBuffer() to bind vertex buffers. The target should be kAllGraphics");
+
+  if (!IGL_VERIFY(target == igl::BindTarget::kAllGraphics)) {
+    return;
+  }
+
   if (IGL_VERIFY(adapter_) && buffer) {
     auto glBuffer = std::static_pointer_cast<Buffer>(buffer);
     auto bufferType = glBuffer->getType();
@@ -244,8 +252,6 @@ void RenderCommandEncoder::bindBuffer(int index,
       IGL_ASSERT_NOT_IMPLEMENTED();
     } else if (bufferType == Buffer::Type::UniformBlock) {
       adapter_->setUniformBuffer(glBuffer, offset, index);
-    } else if (bufferType == Buffer::Type::Attribute && (bindTarget & BindTarget::kVertex) != 0) {
-      adapter_->setVertexBuffer(std::move(glBuffer), offset, index);
     }
   }
 }
