@@ -28,7 +28,8 @@ ResourcesBinder::ResourcesBinder(const std::shared_ptr<CommandBuffer>& commandBu
 
 void ResourcesBinder::bindUniformBuffer(uint32_t index,
                                         igl::vulkan::Buffer* buffer,
-                                        size_t bufferOffset) {
+                                        size_t bufferOffset,
+                                        size_t bufferSize) {
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_VERIFY(index < IGL_UNIFORM_BLOCKS_BINDING_MAX)) {
@@ -43,14 +44,15 @@ void ResourcesBinder::bindUniformBuffer(uint32_t index,
   VkDescriptorBufferInfo& slot = bindingsUniformBuffers_.buffers[index];
 
   if (slot.buffer != buf || slot.offset != bufferOffset) {
-    slot = {buf, bufferOffset, VK_WHOLE_SIZE};
+    slot = {buf, bufferOffset, bufferSize ? bufferSize : VK_WHOLE_SIZE};
     isDirtyFlags_ |= DirtyFlagBits_UniformBuffers;
   }
 }
 
 void ResourcesBinder::bindStorageBuffer(uint32_t index,
                                         igl::vulkan::Buffer* buffer,
-                                        size_t bufferOffset) {
+                                        size_t bufferOffset,
+                                        size_t bufferSize) {
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_VERIFY(index < IGL_UNIFORM_BLOCKS_BINDING_MAX)) {
@@ -65,7 +67,7 @@ void ResourcesBinder::bindStorageBuffer(uint32_t index,
   VkDescriptorBufferInfo& slot = bindingsStorageBuffers_.buffers[index];
 
   if (slot.buffer != buf || slot.offset != bufferOffset) {
-    slot = {buf, bufferOffset, VK_WHOLE_SIZE};
+    slot = {buf, bufferOffset, bufferSize ? bufferSize : VK_WHOLE_SIZE};
     isDirtyFlags_ |= DirtyFlagBits_StorageBuffers;
   }
 }

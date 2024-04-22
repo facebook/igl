@@ -44,7 +44,10 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder, public WithCo
   void popDebugGroupLabel() const override;
   void bindUniform(const UniformDesc& uniformDesc, const void* data) override;
   void bindTexture(size_t index, ITexture* texture) override;
-  void bindBuffer(size_t index, const std::shared_ptr<IBuffer>& buffer, size_t offset) override;
+  void bindBuffer(size_t index,
+                  const std::shared_ptr<IBuffer>& buffer,
+                  size_t offset,
+                  size_t bufferSize) override;
   void bindBytes(size_t index, const void* data, size_t length) override;
   void bindPushConstants(const void* data, size_t length, size_t offset) override;
 

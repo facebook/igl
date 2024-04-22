@@ -89,7 +89,10 @@ void ComputeCommandEncoder::bindTexture(size_t index, ITexture* texture) {
 
 void ComputeCommandEncoder::bindBuffer(size_t index,
                                        const std::shared_ptr<IBuffer>& buffer,
-                                       size_t offset) {
+                                       size_t offset,
+                                       size_t bufferSize) {
+  (void)bufferSize;
+
   IGL_ASSERT(encoder_);
   if (buffer) {
     auto& iglBuffer = static_cast<Buffer&>(*buffer);

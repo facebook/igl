@@ -133,7 +133,8 @@ void CommandQueue::enhancedShaderDebuggingPass(const igl::vulkan::VulkanContext&
     vkEncoder->binder().bindStorageBuffer(
         EnhancedShaderDebuggingStore::kBufferIndex,
         static_cast<igl::vulkan::Buffer*>(debugger->vertexBuffer().get()),
-        sizeof(EnhancedShaderDebuggingStore::Header));
+        sizeof(EnhancedShaderDebuggingStore::Header),
+        0);
 
     cmdEncoder->pushDebugGroupLabel("Render Debug Lines", kColorDebugLines);
     cmdEncoder->bindDepthStencilState(debugger->depthStencilState());

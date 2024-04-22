@@ -462,7 +462,8 @@ void RenderCommandEncoder::bindDepthStencilState(
 void RenderCommandEncoder::bindBuffer(int index,
                                       uint8_t target,
                                       const std::shared_ptr<IBuffer>& buffer,
-                                      size_t bufferOffset) {
+                                      size_t bufferOffset,
+                                      size_t bufferSize) {
   IGL_PROFILER_FUNCTION();
   IGL_PROFILER_ZONE_GPU_VK("bindBuffer()", ctx_.tracyCtx_, cmdBuffer_);
 
@@ -494,14 +495,14 @@ void RenderCommandEncoder::bindBuffer(int index,
     return;
   }
   if (isUniformBuffer) {
-    binder_.bindUniformBuffer(index, buf, bufferOffset);
+    binder_.bindUniformBuffer(index, buf, bufferOffset, bufferSize);
   }
   if (isStorageBuffer) {
     if (ctx_.enhancedShaderDebuggingStore_) {
       IGL_ASSERT_MSG(index < (IGL_UNIFORM_BLOCKS_BINDING_MAX - 1),
                      "The last buffer index is reserved for enhanced debugging features");
     }
-    binder_.bindStorageBuffer(index, buf, bufferOffset);
+    binder_.bindStorageBuffer(index, buf, bufferOffset, bufferSize);
   }
 }
 

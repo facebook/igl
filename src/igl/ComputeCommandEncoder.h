@@ -68,8 +68,13 @@ class IComputeCommandEncoder : public ICommandEncoder {
    * @param index An index for the buffer argument table.
    * @param buffer The buffer to set in the buffer argument table.
    * @param offset Where the data begins in bytes from the start of the buffer.
+   * @param bufferSize The size of the buffer to bind used for additional validation (0 means the
+   * remaining size starting from `offset`)
    */
-  virtual void bindBuffer(size_t index, const std::shared_ptr<IBuffer>& buffer, size_t offset) = 0;
+  virtual void bindBuffer(size_t index,
+                          const std::shared_ptr<IBuffer>& buffer,
+                          size_t offset,
+                          size_t bufferSize = 0) = 0;
   /**
    * @brief Sets a block of data for the compute function. A buffer will be created behind the
    * scenes to hold the input data and bound to the buffer argument table at the specified index.

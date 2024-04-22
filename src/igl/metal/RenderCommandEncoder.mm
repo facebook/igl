@@ -251,7 +251,10 @@ void RenderCommandEncoder::setStencilReferenceValues(uint32_t frontValue, uint32
 void RenderCommandEncoder::bindBuffer(int index,
                                       uint8_t bindTarget,
                                       const std::shared_ptr<IBuffer>& buffer,
-                                      size_t offset) {
+                                      size_t offset,
+                                      size_t bufferSize) {
+  (void)bufferSize;
+
   IGL_ASSERT(encoder_);
   IGL_ASSERT_MSG(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
                      bindTarget == BindTarget::kAllGraphics,

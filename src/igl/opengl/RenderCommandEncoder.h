@@ -62,7 +62,8 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
   void bindBuffer(int index,
                   uint8_t target,
                   const std::shared_ptr<IBuffer>& buffer,
-                  size_t bufferOffset) override;
+                  size_t bufferOffset,
+                  size_t bufferSize) override;
   void bindVertexBuffer(uint32_t index,
                         const std::shared_ptr<IBuffer>& buffer,
                         size_t bufferOffset) override;

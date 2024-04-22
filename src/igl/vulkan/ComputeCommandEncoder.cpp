@@ -164,7 +164,8 @@ void ComputeCommandEncoder::bindTexture(size_t index, ITexture* texture) {
 
 void ComputeCommandEncoder::bindBuffer(size_t index,
                                        const std::shared_ptr<IBuffer>& buffer,
-                                       size_t offset) {
+                                       size_t offset,
+                                       size_t bufferSize) {
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_VERIFY(buffer != nullptr)) {
@@ -182,7 +183,7 @@ void ComputeCommandEncoder::bindBuffer(size_t index,
     return;
   }
 
-  binder_.bindStorageBuffer((int)index, buf, offset);
+  binder_.bindStorageBuffer((int)index, buf, offset, bufferSize);
 }
 
 void ComputeCommandEncoder::bindBytes(size_t /*index*/, const void* /*data*/, size_t /*length*/) {

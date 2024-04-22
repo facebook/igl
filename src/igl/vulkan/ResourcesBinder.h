@@ -55,10 +55,16 @@ class ResourcesBinder final {
                   VkPipelineBindPoint bindPoint);
 
   /// @brief Binds a uniform buffer with an offset to index equal to `index`
-  void bindUniformBuffer(uint32_t index, igl::vulkan::Buffer* buffer, size_t bufferOffset);
+  void bindUniformBuffer(uint32_t index,
+                         igl::vulkan::Buffer* buffer,
+                         size_t bufferOffset,
+                         size_t bufferSize);
 
   /// @brief Binds a storage buffer with an offset to index equal to `index`
-  void bindStorageBuffer(uint32_t index, igl::vulkan::Buffer* buffer, size_t bufferOffset);
+  void bindStorageBuffer(uint32_t index,
+                         igl::vulkan::Buffer* buffer,
+                         size_t bufferOffset,
+                         size_t bufferSize);
 
   /// @brief Binds a sampler state to index equal to `index`
   void bindSamplerState(uint32_t index, igl::vulkan::SamplerState* samplerState);
