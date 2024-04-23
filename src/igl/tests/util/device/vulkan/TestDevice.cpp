@@ -53,7 +53,7 @@ std::shared_ptr<::igl::IDevice> createTestDevice(bool enableValidation) {
   config.enableValidation = false;
   config.terminateOnValidationError = false;
 #endif
-  config.swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
+  config.swapChainColorSpace = igl::ColorSpace::PASS_THROUGH;
   config.enableExtraLogs = enableValidation;
 
   auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
