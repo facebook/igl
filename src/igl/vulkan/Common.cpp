@@ -363,6 +363,9 @@ VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool 
     // the closest thing to sRGB linear
     return VkSurfaceFormatKHR{isBGR ? VK_FORMAT_B8G8R8A8_UNORM : VK_FORMAT_R8G8B8A8_UNORM,
                               VK_COLOR_SPACE_BT709_LINEAR_EXT};
+  case igl::ColorSpace::PASS_THROUGH:
+    return VkSurfaceFormatKHR{isBGR ? VK_FORMAT_B8G8R8A8_SRGB : VK_FORMAT_R8G8B8A8_SRGB,
+                              VK_COLOR_SPACE_PASS_THROUGH_EXT};
   case igl::ColorSpace::SRGB_NONLINEAR:
     [[fallthrough]];
   default:
