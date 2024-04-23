@@ -303,8 +303,10 @@ using namespace igl;
     igl::vulkan::VulkanContextConfig vulkanContextConfig;
     vulkanContextConfig.terminateOnValidationError = true;
     vulkanContextConfig.enhancedShaderDebugging = false;
-    vulkanContextConfig.swapChainColorSpace = properties.isSRGB() ? igl::ColorSpace::SRGB_NONLINEAR
-                                                                  : igl::ColorSpace::SRGB_LINEAR;
+    vulkanContextConfig.swapChainColorSpace =
+        properties.isSRGB() ? igl::ColorSpace::PASS_THROUGH // Disables OS Level Color Management to
+                                                            // achieve parity with OpenGL
+                            : igl::ColorSpace::SRGB_LINEAR;
 
     auto context =
         igl::vulkan::HWDevice::createContext(vulkanContextConfig, (__bridge void*)vulkanView);
