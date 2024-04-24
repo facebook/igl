@@ -107,6 +107,8 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
                          VkBool32 enableShaderFloat16,
                          VkBool32 enableBufferDeviceAddress,
                          VkBool32 enableDescriptorIndexing,
+                         VkBool32 enableDrawParameters,
+                         VkBool32 enableYcbcr,
                          const VkPhysicalDeviceFeatures* supported,
                          VkDevice* outDevice);
 

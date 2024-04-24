@@ -158,6 +158,7 @@ VkResult ivkCreateInstance(const struct VulkanFunctionTable* vt,
       .flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
 #endif
   };
+  (void)kDefaultValidationLayers; // maybe unused
 
   return vt->vkCreateInstance(&ci, NULL, outInstance);
 }
@@ -316,10 +317,12 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
                          VkBool32 enableShaderFloat16,
                          VkBool32 enableBufferDeviceAddress,
                          VkBool32 enableDescriptorIndexing,
+                         VkBool32 enableDrawParameters,
+                         VkBool32 enableYcbcr,
                          const VkPhysicalDeviceFeatures* supported,
                          VkDevice* outDevice) {
   assert(numQueueCreateInfos >= 1);
-  const VkPhysicalDeviceFeatures deviceFeatures = {
+  const VkPhysicalDeviceFeatures deviceFeatures10 = {
       .dualSrcBlend = supported ? supported->dualSrcBlend : VK_TRUE,
       .multiDrawIndirect = supported ? supported->multiDrawIndirect : VK_TRUE,
       .drawIndirectFirstInstance = supported ? supported->drawIndirectFirstInstance : VK_TRUE,
@@ -331,11 +334,9 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
       .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
       .queueCreateInfoCount = (uint32_t)numQueueCreateInfos,
       .pQueueCreateInfos = queueCreateInfos,
-      .enabledLayerCount = (uint32_t)IGL_ARRAY_NUM_ELEMENTS(kDefaultValidationLayers),
-      .ppEnabledLayerNames = kDefaultValidationLayers,
       .enabledExtensionCount = (uint32_t)numDeviceExtensions,
       .ppEnabledExtensionNames = deviceExtensions,
-      .pEnabledFeatures = &deviceFeatures,
+      .pEnabledFeatures = &deviceFeatures10,
   };
   const VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeature = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
@@ -360,7 +361,7 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES,
       .shaderFloat16 = VK_TRUE,
   };
-  if (enableShaderFloat16 == VK_TRUE) {
+  if (enableShaderFloat16) {
     ivkAddNext(&ci, &float16ArithmeticFeature);
     ivkAddNext(&ci, &float16StorageBuffersFeature);
   }
@@ -381,8 +382,22 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
       .multiview = VK_TRUE,
   };
-  if (enableMultiview == VK_TRUE) {
+  if (enableMultiview) {
     ivkAddNext(&ci, &multiviewFeature);
+  }
+  VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcrFeature = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES,
+      .samplerYcbcrConversion = VK_TRUE,
+  };
+  if (enableYcbcr) {
+    ivkAddNext(&ci, &ycbcrFeature);
+  }
+  VkPhysicalDeviceShaderDrawParameterFeatures shaderDrawParameterFeature = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETER_FEATURES,
+      .shaderDrawParameters = VK_TRUE,
+  };
+  if (enableDrawParameters) {
+    ivkAddNext(&ci, &shaderDrawParameterFeature);
   }
 
   return vt->vkCreateDevice(physicalDevice, &ci, NULL, outDevice);
