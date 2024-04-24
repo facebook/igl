@@ -274,19 +274,21 @@ void XrApp::enumerateReferenceSpaces() {
                stageSpaceSupported_ ? "supported" : "not supported");
 }
 
-void XrApp::createSwapchainProviders(const std::unique_ptr<igl::IDevice>& device) {
+void XrApp::updateSwapchainProviders() {
   const uint32_t numSwapchainProviders = useSinglePassStereo_ ? 1 : kNumViews;
   const uint32_t numViewsPerSwapchain = useSinglePassStereo_ ? kNumViews : 1;
-  swapchainProviders_.reserve(numSwapchainProviders);
-
-  for (size_t i = 0; i < numSwapchainProviders; i++) {
-    swapchainProviders_.emplace_back(
-        std::make_unique<XrSwapchainProvider>(impl_->createSwapchainProviderImpl(),
-                                              platform_,
-                                              session_,
-                                              viewports_[i],
-                                              numViewsPerSwapchain));
-    swapchainProviders_.back()->initialize();
+  if (swapchainProviders_.size() != numSwapchainProviders) {
+    swapchainProviders_.clear();
+    swapchainProviders_.reserve(numSwapchainProviders);
+    for (size_t i = 0; i < numSwapchainProviders; i++) {
+      swapchainProviders_.emplace_back(
+          std::make_unique<XrSwapchainProvider>(impl_->createSwapchainProviderImpl(),
+                                                platform_,
+                                                session_,
+                                                viewports_[i],
+                                                numViewsPerSwapchain));
+      swapchainProviders_.back()->initialize();
+    }
   }
 }
 
@@ -330,7 +332,7 @@ bool XrApp::initialize(const struct android_app* app, const InitParams&) {
 
   // The following are initialization steps that happen after XrSession is created.
   enumerateReferenceSpaces();
-  createSwapchainProviders(device);
+  updateSwapchainProviders();
   createSpaces();
 
   initialized_ = true;
@@ -464,6 +466,8 @@ void XrApp::handleSessionStateChanges(XrSessionState state) {
 }
 
 XrFrameState XrApp::beginFrame() {
+  updateSwapchainProviders();
+
   XrFrameWaitInfo waitFrameInfo = {XR_TYPE_FRAME_WAIT_INFO};
 
   XrFrameState frameState = {XR_TYPE_FRAME_STATE};

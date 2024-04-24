@@ -671,22 +671,26 @@ void XrApp::enumerateBlendModes() {
                additiveBlendingSupported_ ? "supported" : "not supported");
 }
 
-void XrApp::createSwapchainProviders(const std::unique_ptr<igl::IDevice>& device) {
+void XrApp::updateSwapchainProviders() {
   const size_t numSwapchainProviders = useSinglePassStereo_ ? numQuadLayersPerView_
                                                             : kNumViews * numQuadLayersPerView_;
   const size_t numViewsPerSwapchain = useSinglePassStereo_ ? kNumViews : 1;
-  swapchainProviders_.reserve(numSwapchainProviders);
-
-  for (size_t quadLayer = 0; quadLayer < numQuadLayersPerView_; quadLayer++) {
-    for (size_t view = 0; view < kNumViews; view++) {
-      swapchainProviders_.emplace_back(
-          std::make_unique<XrSwapchainProvider>(impl_->createSwapchainProviderImpl(),
-                                                platform_,
-                                                session_,
-                                                viewports_[view],
-                                                numViewsPerSwapchain));
-      swapchainProviders_.back()->initialize();
+  if (numSwapchainProviders != swapchainProviders_.size()) {
+    swapchainProviders_.clear();
+    swapchainProviders_.reserve(numSwapchainProviders);
+    const size_t viewCnt = useSinglePassStereo_ ? 1 : kNumViews;
+    for (size_t quadLayer = 0; quadLayer < numQuadLayersPerView_; quadLayer++) {
+      for (size_t view = 0; view < viewCnt; view++) {
+        swapchainProviders_.emplace_back(
+            std::make_unique<XrSwapchainProvider>(impl_->createSwapchainProviderImpl(),
+                                                  platform_,
+                                                  session_,
+                                                  viewports_[view],
+                                                  numViewsPerSwapchain));
+        swapchainProviders_.back()->initialize();
+      }
     }
+    IGL_ASSERT(numSwapchainProviders == swapchainProviders_.size());
   }
 }
 
@@ -753,7 +757,7 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
   // The following are initialization steps that happen after XrSession is created.
   enumerateReferenceSpaces();
   enumerateBlendModes();
-  createSwapchainProviders(device);
+  updateSwapchainProviders();
   createSpaces();
   if (passthroughSupported_ && !createPassthrough()) {
     return false;
@@ -910,6 +914,8 @@ void XrApp::handleSessionStateChanges(XrSessionState state) {
 }
 
 XrFrameState XrApp::beginFrame() {
+  updateSwapchainProviders();
+
   XrFrameWaitInfo waitFrameInfo = {XR_TYPE_FRAME_WAIT_INFO};
 
   XrFrameState frameState = {XR_TYPE_FRAME_STATE};

@@ -111,7 +111,7 @@ class XrApp {
   bool enumerateViewConfigurations();
   void enumerateReferenceSpaces();
   void enumerateBlendModes();
-  void createSwapchainProviders(const std::unique_ptr<igl::IDevice>& device);
+  void updateSwapchainProviders();
   void handleSessionStateChanges(XrSessionState state);
   void createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManager* assetMgr);
 
