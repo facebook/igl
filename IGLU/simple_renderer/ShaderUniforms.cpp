@@ -135,9 +135,6 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
   }
 
   for (const igl::TextureArgDesc& iglDesc : reflection.allTextures()) {
-    IGL_ASSERT_MSG(_allTexturesByName.find(iglDesc.name) == _allTexturesByName.end(),
-                   "Texture names must be unique across all shader stages: %s",
-                   iglDesc.name.c_str());
     _textureDescs.push_back(iglDesc);
     _allTexturesByName[iglDesc.name] = TextureSlot{nullptr, nullptr};
   }
