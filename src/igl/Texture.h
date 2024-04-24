@@ -750,14 +750,26 @@ class ITexture : public ITrackedResource<ITexture> {
    * @brief Generates mipmap command using the command queue
    *
    * @param cmdQueue The command queue that is generated from the graphics device.
+   * @param range The texture range descriptor containing the extents of the image to generate
+   * mipmaps. If nullptr is provided, the function generates mips for all levels. Note: not all
+   * parameters in the TextureRangeDesc structure are supported for mipmap generation. For example,
+   * the x, y, z offsets and the dimensions are not used by this function. Also, not all
+   * implementations support generating a subset of miplevels for an image (OpenGL, for example)
    */
-  virtual void generateMipmap(ICommandQueue& cmdQueue) const = 0;
+  virtual void generateMipmap(ICommandQueue& cmdQueue,
+                              const TextureRangeDesc* IGL_NULLABLE range = nullptr) const = 0;
   /**
    * @brief Generates mipmap command using an existing command buffer
-   *
+   * @param range The texture range descriptor containing the extents of the image to generate
+   * mipmaps. If nullptr is provided, the function generates mips for all levels. Note: not all
+   * parameters in the TextureRangeDesc structure are supported for mipmap generation. For example,
+   * the x, y, z offsets and the dimensions are not used by this function. Also, not all
+   * implementations support generating a subset of miplevels for an image (OpenGL, for example)
    * @param cmdBuffer A command buffer that is generated from an ICommandQueue.
    */
-  virtual void generateMipmap(ICommandBuffer& cmdBuffer) const = 0;
+  virtual void generateMipmap(ICommandBuffer& cmdBuffer,
+                              const TextureRangeDesc* IGL_NULLABLE range = nullptr) const = 0;
+
   /**
    * @brief Returns the number of mipmap levels
    */

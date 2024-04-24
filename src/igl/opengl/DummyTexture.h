@@ -34,10 +34,12 @@ class DummyTexture : public ITexture {
     IGL_ASSERT_NOT_REACHED();
     return 1;
   }
-  void generateMipmap(ICommandQueue& /* unused */) const override {
+  void generateMipmap(ICommandQueue& /* unused */,
+                      const TextureRangeDesc* IGL_NULLABLE /* unused */) const override {
     IGL_ASSERT_NOT_REACHED();
   }
-  void generateMipmap(ICommandBuffer& /* unused */) const override {
+  void generateMipmap(ICommandBuffer& /* unused */,
+                      const TextureRangeDesc* IGL_NULLABLE /* unused */) const override {
     IGL_ASSERT_NOT_REACHED();
   }
   uint32_t getNumMipLevels() const override {

@@ -49,8 +49,10 @@ class Texture final : public ITexture {
   TextureDesc::TextureUsage getUsage() const override;
   uint32_t getSamples() const override;
   uint32_t getNumMipLevels() const override;
-  void generateMipmap(ICommandQueue& cmdQueue) const override;
-  void generateMipmap(ICommandBuffer& cmdBuffer) const override;
+  void generateMipmap(ICommandQueue& cmdQueue,
+                      const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
+  void generateMipmap(ICommandBuffer& cmdBuffer,
+                      const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
   bool isRequiredGenerateMipmap() const override;
   uint64_t getTextureId() const override;
   bool isSwapchainTexture() const override;

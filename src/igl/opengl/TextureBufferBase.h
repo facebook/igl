@@ -32,8 +32,10 @@ class TextureBufferBase : public Texture {
   void detachAsDepth(bool read) override;
   void attachAsStencil(const AttachmentParams& params) override;
   void detachAsStencil(bool read) override;
-  void generateMipmap(ICommandQueue& cmdQueue) const override;
-  void generateMipmap(ICommandBuffer& cmdBuffer) const override;
+  void generateMipmap(ICommandQueue& cmdQueue,
+                      const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
+  void generateMipmap(ICommandBuffer& cmdBuffer,
+                      const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
   bool isRequiredGenerateMipmap() const override;
 
   GLuint getId() const override {

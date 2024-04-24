@@ -28,8 +28,10 @@ class Texture : public WithContext, public ITexture {
   Dimensions getDimensions() const override;
   size_t getNumLayers() const override;
   uint32_t getSamples() const override;
-  void generateMipmap(ICommandQueue& cmdQueue) const override;
-  void generateMipmap(ICommandBuffer& cmdBuffer) const override;
+  void generateMipmap(ICommandQueue& cmdQueue,
+                      const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
+  void generateMipmap(ICommandBuffer& cmdBuffer,
+                      const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
   uint32_t getNumMipLevels() const override;
   bool isRequiredGenerateMipmap() const override;
   uint64_t getTextureId() const override;

@@ -192,7 +192,11 @@ uint32_t Texture::getNumMipLevels() const {
   return [get() mipmapLevelCount];
 }
 
-void Texture::generateMipmap(ICommandQueue& cmdQueue) const {
+void Texture::generateMipmap(ICommandQueue& cmdQueue, const TextureRangeDesc* range) const {
+  if (range) {
+    IGL_ASSERT_NOT_IMPLEMENTED();
+  }
+
   if (value_.mipmapLevelCount > 1) {
     auto mtlCmdQueue = static_cast<CommandQueue&>(cmdQueue).get();
 
@@ -204,7 +208,11 @@ void Texture::generateMipmap(ICommandQueue& cmdQueue) const {
   }
 }
 
-void Texture::generateMipmap(ICommandBuffer& cmdBuffer) const {
+void Texture::generateMipmap(ICommandBuffer& cmdBuffer, const TextureRangeDesc* range) const {
+  if (range) {
+    IGL_ASSERT_NOT_IMPLEMENTED();
+  }
+
   if (value_.mipmapLevelCount > 1) {
     auto mtlCmdBuffer = static_cast<CommandBuffer&>(cmdBuffer).get();
     generateMipmap(mtlCmdBuffer);

@@ -30,11 +30,13 @@ uint32_t Texture::getSamples() const {
   return numSamples_;
 }
 
-void Texture::generateMipmap(ICommandQueue& /* unused */) const {
+void Texture::generateMipmap(ICommandQueue& /* unused */,
+                             const TextureRangeDesc* IGL_NULLABLE /* unused */) const {
   IGL_ASSERT_MSG(0, "Can only generate mipmap for R/W texture (eg. TextureBuffer).");
 }
 
-void Texture::generateMipmap(ICommandBuffer& /* unused */) const {
+void Texture::generateMipmap(ICommandBuffer& /* unused */,
+                             const TextureRangeDesc* IGL_NULLABLE /* unused */) const {
   IGL_ASSERT_MSG(0, "Can only generate mipmap for R/W texture (eg. TextureBuffer).");
 }
 

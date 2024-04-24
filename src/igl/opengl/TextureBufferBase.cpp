@@ -150,11 +150,13 @@ void TextureBufferBase::setMaxMipLevel() const {
   }
 }
 
-void TextureBufferBase::generateMipmap(ICommandQueue& /* unused */) const {
+void TextureBufferBase::generateMipmap(ICommandQueue& /* unused */,
+                                       const TextureRangeDesc* IGL_NULLABLE /* unused */) const {
   generateMipmap();
 }
 
-void TextureBufferBase::generateMipmap(ICommandBuffer& /* unused */) const {
+void TextureBufferBase::generateMipmap(ICommandBuffer& /* unused */,
+                                       const TextureRangeDesc* IGL_NULLABLE /* unused */) const {
   generateMipmap();
 }
 
