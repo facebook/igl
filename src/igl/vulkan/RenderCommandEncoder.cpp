@@ -842,5 +842,88 @@ void RenderCommandEncoder::ensureVertexBuffers() {
   }
 }
 
+void RenderCommandEncoder::blitColorImage(const igl::vulkan::VulkanImage& srcImage,
+                                          const igl::vulkan::VulkanImage& destImage,
+                                          const igl::TextureRangeDesc& srcRange,
+                                          const igl::TextureRangeDesc& destRange) {
+  const auto& wrapper = ctx_.immediate_->acquire();
+  const VkImageSubresourceRange srcResourceRange = {
+      srcImage.getImageAspectFlags(),
+      static_cast<uint32_t>(srcRange.mipLevel),
+      static_cast<uint32_t>(srcRange.numMipLevels),
+      static_cast<uint32_t>(srcRange.layer),
+      static_cast<uint32_t>(srcRange.numLayers),
+  };
+  const VkImageSubresourceRange destSubresourceRange = {
+      destImage.getImageAspectFlags(),
+      static_cast<uint32_t>(destRange.mipLevel),
+      static_cast<uint32_t>(destRange.numMipLevels),
+      static_cast<uint32_t>(destRange.layer),
+      static_cast<uint32_t>(destRange.numLayers),
+  };
+  srcImage.transitionLayout(wrapper.cmdBuf_,
+                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                            VK_PIPELINE_STAGE_TRANSFER_BIT,
+                            srcResourceRange);
+
+  destImage.transitionLayout(wrapper.cmdBuf_,
+                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             destSubresourceRange);
+
+  const std::array<VkOffset3D, 2> srcOffsets = {
+      {{static_cast<int32_t>(srcRange.x), static_cast<int32_t>(srcRange.y), 0},
+       {static_cast<int32_t>(srcRange.width + srcRange.x),
+        static_cast<int32_t>(srcRange.height + srcRange.y),
+        1}}};
+  const std::array<VkOffset3D, 2> dstOffsets = {
+      {{static_cast<int32_t>(destRange.x), static_cast<int32_t>(destRange.y), 0},
+       {static_cast<int32_t>(destRange.width + destRange.x),
+        static_cast<int32_t>(destRange.height + destRange.y),
+        1}}};
+  ivkCmdBlitImage(&ctx_.vf_,
+                  wrapper.cmdBuf_,
+                  srcImage.getVkImage(),
+                  destImage.getVkImage(),
+                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                  srcOffsets.data(),
+                  dstOffsets.data(),
+                  VkImageSubresourceLayers{
+                      VK_IMAGE_ASPECT_COLOR_BIT, static_cast<uint32_t>(srcRange.mipLevel), 0, 1},
+                  VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                  VK_FILTER_LINEAR);
+
+  const bool isSampled = (destImage.getVkImageUsageFlags() & VK_IMAGE_USAGE_SAMPLED_BIT) != 0;
+  const bool isStorage = (destImage.getVkImageUsageFlags() & VK_IMAGE_USAGE_STORAGE_BIT) != 0;
+  const bool isColorAttachment =
+      (destImage.getVkImageUsageFlags() & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0;
+  const bool isDepthStencilAttachment =
+      (destImage.getVkImageUsageFlags() & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
+
+  // a ternary cascade...
+  const VkImageLayout targetLayout =
+      isSampled ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                : (isStorage ? VK_IMAGE_LAYOUT_GENERAL
+                             : (isColorAttachment
+                                    ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+                                    : (isDepthStencilAttachment
+                                           ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+                                           : VK_IMAGE_LAYOUT_UNDEFINED)));
+
+  IGL_ASSERT_MSG(targetLayout != VK_IMAGE_LAYOUT_UNDEFINED, "Missing usage flags");
+
+  // 3. Transition TRANSFER_DST_OPTIMAL into `targetLayout`
+  destImage.transitionLayout(wrapper.cmdBuf_,
+                             targetLayout,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                             destSubresourceRange);
+
+  destImage.imageLayout_ = targetLayout;
+}
+
 } // namespace vulkan
 } // namespace igl

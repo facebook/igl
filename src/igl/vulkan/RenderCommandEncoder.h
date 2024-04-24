@@ -15,6 +15,7 @@
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/ResourcesBinder.h>
+#include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 
 namespace igl::vulkan {
@@ -123,6 +124,11 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   /// otherwise it won't. This is used to disable the draw call count when we are doing auxiliary
   /// draw calls such as shader debugging.
   bool setDrawCallCountEnabled(bool value);
+
+  void blitColorImage(const igl::vulkan::VulkanImage& srcImage,
+                      const igl::vulkan::VulkanImage& destImage,
+                      const igl::TextureRangeDesc& srcRange,
+                      const igl::TextureRangeDesc& destRange);
 
  private:
   RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer, VulkanContext& ctx);
