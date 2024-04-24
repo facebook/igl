@@ -797,10 +797,6 @@ void XrApp::createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManag
                                                   : RenderMode::DualPassStereo;
   shellParams_->viewParams.resize(useSinglePassStereo_ ? 2 : 1);
   renderSession_->setShellParams(*shellParams_);
-  numQuadLayersPerView_ = 1;
-  if (useQuadLayerComposition_ && renderSession_->appParams().quadLayerParams.has_value()) {
-    numQuadLayersPerView_ = renderSession_->appParams().quadLayerParams->numQuads();
-  }
 }
 
 void XrApp::createSpaces() {
@@ -914,6 +910,14 @@ void XrApp::handleSessionStateChanges(XrSessionState state) {
 }
 
 XrFrameState XrApp::beginFrame() {
+  const auto& appParams = renderSession_->appParams();
+  if (appParams.quadLayerParamsGetter) {
+    quadLayersParams_ = appParams.quadLayerParamsGetter();
+    numQuadLayersPerView_ = quadLayersParams_.numQuads() > 0 ? quadLayersParams_.numQuads() : 1;
+  } else {
+    quadLayersParams_ = {};
+    numQuadLayersPerView_ = 1;
+  }
   updateSwapchainProviders();
 
   XrFrameWaitInfo waitFrameInfo = {XR_TYPE_FRAME_WAIT_INFO};
@@ -1070,11 +1074,11 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
   XrExtent2Df size = {appParams.sizeX, appParams.sizeY};
   size_t layer = 0;
   for (size_t i = 0; i < numQuadLayersPerView_; i++) {
-    if (useQuadLayerComposition_ && appParams.quadLayerParams.has_value()) {
-      IGL_ASSERT(i < appParams.quadLayerParams->positions.size());
-      IGL_ASSERT(i < appParams.quadLayerParams->sizes.size());
-      auto glmPos = appParams.quadLayerParams->positions[i];
-      auto glmSize = appParams.quadLayerParams->sizes[i];
+    if (useQuadLayerComposition_ && quadLayersParams_.numQuads() > 0) {
+      IGL_ASSERT(i < quadLayersParams_.positions.size());
+      IGL_ASSERT(i < quadLayersParams_.sizes.size());
+      auto glmPos = quadLayersParams_.positions[i];
+      auto glmSize = quadLayersParams_.sizes[i];
       position = {glmPos.x, glmPos.y, glmPos.z};
       size = {glmSize.x, glmSize.y};
 #if USE_LOCAL_AR_SPACE

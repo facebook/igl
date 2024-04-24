@@ -7,16 +7,18 @@
 
 #pragma once
 #include <cstdint>
-#include <optional>
+#include <functional>
 #include <shell/shared/renderSession/DepthParams.h>
 #include <shell/shared/renderSession/QuadLayerParams.h>
 
 namespace igl::shell {
+using QuadLayerParamsGetter = std::function<QuadLayerParams()>;
+
 struct AppParams {
   DepthParams depthParams;
   bool exitRequested = false;
   float sizeX = 1.f;
   float sizeY = 1.f;
-  std::optional<QuadLayerParams> quadLayerParams;
+  QuadLayerParamsGetter quadLayerParamsGetter;
 };
 } // namespace igl::shell
