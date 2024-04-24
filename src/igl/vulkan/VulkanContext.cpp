@@ -684,8 +684,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                       vkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16,
                       config_.enableBufferDeviceAddress,
                       config_.enableDescriptorIndexing,
-                      VK_FALSE,
-                      VK_FALSE,
+                      vkPhysicalDeviceShaderDrawParametersFeatures_.shaderDrawParameters,
+                      vkPhysicalDeviceSamplerYcbcrConversionFeatures_.samplerYcbcrConversion,
                       &vkPhysicalDeviceFeatures2_.features,
                       &device));
   if (!config_.enableConcurrentVkDevicesSupport) {

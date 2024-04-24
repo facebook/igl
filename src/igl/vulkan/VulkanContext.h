@@ -293,9 +293,17 @@ class VulkanContext final {
   VkPhysicalDeviceMultiviewFeatures vkPhysicalDeviceMultiviewFeatures_ = {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
       &vkPhysicalDeviceShaderFloat16Int8Features_};
+  VkPhysicalDeviceShaderDrawParametersFeatures vkPhysicalDeviceShaderDrawParametersFeatures_ = {
+      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
+      &vkPhysicalDeviceMultiviewFeatures_,
+  };
+  VkPhysicalDeviceSamplerYcbcrConversionFeatures vkPhysicalDeviceSamplerYcbcrConversionFeatures_ = {
+      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES,
+      &vkPhysicalDeviceShaderDrawParametersFeatures_,
+  };
   VkPhysicalDeviceFeatures2 vkPhysicalDeviceFeatures2_ = {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-      &vkPhysicalDeviceMultiviewFeatures_};
+      &vkPhysicalDeviceSamplerYcbcrConversionFeatures_};
   FOLLY_POP_WARNING
 
  public:
