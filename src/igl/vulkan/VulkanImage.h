@@ -221,7 +221,7 @@ class VulkanImage final {
                                   const char* debugName = nullptr) const;
   VulkanImageView createImageView(VulkanImageViewCreateInfo createInfo,
                                   const char* debugName = nullptr) const;
-  void generateMipmap(VkCommandBuffer commandBuffer) const;
+  void generateMipmap(VkCommandBuffer commandBuffer, const TextureRangeDesc& range) const;
 
   /**
    * @brief Transitions the `VkImage`'s layout from the current layout (stored in the object) to the

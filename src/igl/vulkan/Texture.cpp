@@ -248,19 +248,19 @@ uint32_t Texture::getNumMipLevels() const {
 }
 
 void Texture::generateMipmap(ICommandQueue& /* unused */,
-                             const TextureRangeDesc* /* unused */) const {
+                             const TextureRangeDesc* IGL_NULLABLE range) const {
   if (desc_.numMipLevels > 1) {
     const auto& ctx = device_.getVulkanContext();
     const auto& wrapper = ctx.immediate_->acquire();
-    texture_->getVulkanImage().generateMipmap(wrapper.cmdBuf_);
+    texture_->getVulkanImage().generateMipmap(wrapper.cmdBuf_, range ? *range : desc_.asRange());
     ctx.immediate_->submit(wrapper);
   }
 }
 
-void Texture::generateMipmap(ICommandBuffer& cmdBuffer,
-                             const TextureRangeDesc* /* unused */) const {
+void Texture::generateMipmap(ICommandBuffer& cmdBuffer, const TextureRangeDesc* range) const {
   auto& vkCmdBuffer = static_cast<vulkan::CommandBuffer&>(cmdBuffer);
-  texture_->getVulkanImage().generateMipmap(vkCmdBuffer.getVkCommandBuffer());
+  texture_->getVulkanImage().generateMipmap(vkCmdBuffer.getVkCommandBuffer(),
+                                            range ? *range : desc_.asRange());
 }
 
 bool Texture::isRequiredGenerateMipmap() const {

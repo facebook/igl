@@ -363,8 +363,8 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
   // image memory barriers should have combined image aspect flags (depth/stencil)
   const VkImageSubresourceRange subresourceRange = {
       image.getImageAspectFlags(),
-      static_cast<uint32_t>(range.mipLevel),
-      static_cast<uint32_t>(range.numMipLevels),
+      static_cast<uint32_t>(0u),
+      static_cast<uint32_t>(VK_REMAINING_MIP_LEVELS),
       initialLayer,
       numLayers,
   };

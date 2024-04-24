@@ -857,7 +857,8 @@ VkImageAspectFlags VulkanImage::getImageAspectFlags() const {
   return flags;
 }
 
-void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
+void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
+                                 const TextureRangeDesc& range) const {
   IGL_PROFILER_FUNCTION();
 
   // Check if device supports downscaling for color or depth/stencil buffer based on image format
@@ -910,13 +911,17 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                    VK_PIPELINE_STAGE_TRANSFER_BIT,
-                   VkImageSubresourceRange{imageAspectFlags, 0, 1, 0, arrayLayers_});
+                   VkImageSubresourceRange{imageAspectFlags,
+                                           static_cast<uint32_t>(range.mipLevel),
+                                           static_cast<uint32_t>(range.numMipLevels),
+                                           static_cast<uint32_t>(range.layer),
+                                           static_cast<uint32_t>(range.layer + range.numLayers)});
 
-  for (uint32_t layer = 0; layer < arrayLayers_; ++layer) {
-    auto mipWidth = (int32_t)extent_.width;
-    auto mipHeight = (int32_t)extent_.height;
+  for (uint32_t layer = range.layer; layer < (range.layer + range.numLayers); ++layer) {
+    auto mipWidth = extent_.width > 1 ? (int32_t)extent_.width >> (range.mipLevel) : 1;
+    auto mipHeight = extent_.height > 1 ? (int32_t)extent_.height >> (range.mipLevel) : 1;
 
-    for (uint32_t i = 1; i < mipLevels_; ++i) {
+    for (uint32_t i = (range.mipLevel + 1); i < (range.mipLevel + range.numMipLevels); ++i) {
       // 1: Transition the i-th level to VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
       //    It will be copied into from the (i-1)-th layer
       ivkImageMemoryBarrier(&ctx_->vf_,
@@ -988,7 +993,11 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer) const {
                         originalImageLayout, // newImageLayout
                         VK_PIPELINE_STAGE_TRANSFER_BIT, // srcStageMask
                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // dstStageMask
-                        VkImageSubresourceRange{imageAspectFlags, 0, mipLevels_, 0, arrayLayers_});
+                        VkImageSubresourceRange{imageAspectFlags,
+                                                static_cast<uint32_t>(range.mipLevel),
+                                                static_cast<uint32_t>(range.numMipLevels),
+                                                static_cast<uint32_t>(range.layer),
+                                                static_cast<uint32_t>(range.numLayers)});
 
   imageLayout_ = originalImageLayout;
 }
