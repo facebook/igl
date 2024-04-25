@@ -21,10 +21,6 @@ VulkanExtensions::VulkanExtensions() {
 }
 
 void VulkanExtensions::enumerate(const VulkanFunctionTable& vf) {
-  // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are enabled
-  // (validation layers are only enabled for DEBUG builds)
-  // https://issuetracker.google.com/issues/209835779?pli=1
-#if !IGL_PLATFORM_ANDROID || !IGL_DEBUG
   uint32_t count;
   VK_ASSERT(vf.vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
 
@@ -39,14 +35,9 @@ void VulkanExtensions::enumerate(const VulkanFunctionTable& vf) {
                  [](const VkExtensionProperties& extensionProperties) {
                    return extensionProperties.extensionName;
                  });
-#endif // !IGL_PLATFORM_ANDROID || !IGL_DEBUG
 }
 
 void VulkanExtensions::enumerate(const VulkanFunctionTable& vf, VkPhysicalDevice device) {
-  // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are enabled
-  // (validation layers are only enabled for DEBUG builds)
-  // https://issuetracker.google.com/issues/209835779?pli=1
-#if !IGL_PLATFORM_ANDROID || !IGL_DEBUG
   uint32_t count;
   VK_ASSERT(vf.vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr));
 
@@ -61,7 +52,6 @@ void VulkanExtensions::enumerate(const VulkanFunctionTable& vf, VkPhysicalDevice
                  [](const VkExtensionProperties& extensionProperties) {
                    return extensionProperties.extensionName;
                  });
-#endif // !IGL_PLATFORM_ANDROID || !IGL_DEBUG
 }
 
 const std::vector<std::string>& VulkanExtensions::allAvailableExtensions(
@@ -83,18 +73,11 @@ bool VulkanExtensions::available(const char* extensionName, ExtensionType extens
 
 bool VulkanExtensions::enable(const char* extensionName, ExtensionType extensionType) {
   const size_t vectorIndex = (size_t)extensionType;
-  // Since VK on Android currently crashes with Validation layers,
-  // enable the extension by default.
-#if IGL_DEBUG && IGL_PLATFORM_ANDROID
-  enabledExtensions_[vectorIndex].insert(extensionName);
-  return true;
-#else
   if (available(extensionName, extensionType)) {
     enabledExtensions_[vectorIndex].insert(extensionName);
     return true;
   }
   return false;
-#endif
 }
 
 void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
