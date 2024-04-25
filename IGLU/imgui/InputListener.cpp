@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @MARK:COVERAGE_EXCLUDE_FILE
+
 #include "InputListener.h"
 
 // ImGui has a very awkward expectation when it comes to processing inputs and making decisions
