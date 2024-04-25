@@ -437,7 +437,9 @@ VulkanContext::~VulkanContext() {
     vf_.vkDestroyPipelineCache(device, pipelineCache_, nullptr);
   }
 
-  vf_.vkDestroySurfaceKHR(vkInstance_, vkSurface_, nullptr);
+  if (vkSurface_ != VK_NULL_HANDLE) {
+    vf_.vkDestroySurfaceKHR(vkInstance_, vkSurface_, nullptr);
+  }
 
   // Clean up VMA
   if (IGL_VULKAN_USE_VMA) {
