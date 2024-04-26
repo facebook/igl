@@ -58,6 +58,9 @@ class IRenderCommandEncoder : public ICommandEncoder {
                           const std::shared_ptr<IBuffer>& buffer,
                           size_t bufferOffset,
                           size_t bufferSize = 0) = 0;
+  // On Vulkan and OpenGL: bind a vertex buffer (as in "a buffer with vertices").
+  // On Metal: bind any buffer to the vertex stage. Buffers bound with bindVertexBuffer() always
+  //           take precedence over those bound with bindBuffer().
   virtual void bindVertexBuffer(uint32_t index,
                                 const std::shared_ptr<IBuffer>& buffer,
                                 size_t bufferOffset = 0) = 0;
