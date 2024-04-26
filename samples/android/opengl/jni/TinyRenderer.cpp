@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #include <igl/samples/android/opengl/TinyRenderer.h>
 
 #include <EGL/egl.h>

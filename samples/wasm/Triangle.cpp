@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #ifndef __EMSCRIPTEN__
 #error Unsupported OS
 #endif
