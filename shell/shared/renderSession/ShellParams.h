@@ -22,6 +22,7 @@ struct ShellParams {
   std::vector<ViewParams> viewParams;
   RenderMode renderMode = RenderMode::Mono;
   bool shellControlsViewParams = false;
+  bool rightHandedCoordinateSystem = false;
   glm::vec2 viewportSize = glm::vec2(1024.0f, 768.0f);
   glm::ivec2 nativeSurfaceDimensions = glm::ivec2(2048, 1536);
   igl::TextureFormat defaultColorFramebufferFormat = igl::TextureFormat::BGRA_SRGB;

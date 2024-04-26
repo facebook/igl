@@ -349,6 +349,7 @@ void XrApp::createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManag
   IGL_ASSERT(platform_ != nullptr);
   renderSession_ = igl::shell::createDefaultRenderSession(platform_);
   shellParams_->shellControlsViewParams = true;
+  shellParams_->rightHandedCoordinateSystem = true;
   shellParams_->renderMode = useSinglePassStereo_ ? RenderMode::SinglePassStereo
                                                   : RenderMode::DualPassStereo;
   shellParams_->viewParams.resize(useSinglePassStereo_ ? 2 : 1);

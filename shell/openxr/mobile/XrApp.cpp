@@ -793,6 +793,7 @@ void XrApp::createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManag
   static_cast<igl::shell::FileLoaderAndroid&>(platform_->getFileLoader()).setAssetManager(assetMgr);
   renderSession_ = igl::shell::createDefaultRenderSession(platform_);
   shellParams_->shellControlsViewParams = true;
+  shellParams_->rightHandedCoordinateSystem = true;
   shellParams_->renderMode = useSinglePassStereo_ ? RenderMode::SinglePassStereo
                                                   : RenderMode::DualPassStereo;
   shellParams_->viewParams.resize(useSinglePassStereo_ ? 2 : 1);
