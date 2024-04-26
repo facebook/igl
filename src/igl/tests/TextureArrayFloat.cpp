@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 // obscure compiler error where glm::vec would delete it's construct_at
 // since Half didnt have a trivial default ctor despite specifying it.
 #if defined(IGL_CMAKE_BUILD)
@@ -65,12 +66,16 @@ class TextureArrayFloatTest : public ::testing::Test {
                                                                         igl::Result* /*result*/) {
     std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer = nullptr;
 
-    iglu::ManagedUniformBufferInfo const vertInfo = {
+    const iglu::ManagedUniformBufferInfo vertInfo = {
         .index = 2,
         .length = sizeof(VertexUniforms),
-        .uniforms = {{.name = "layer",
-                      .type = igl::UniformType::Int,
-                      .offset = offsetof(VertexUniforms, layer)}}};
+        .uniforms = {
+            igl::UniformDesc{
+                .name = "layer",
+                .type = igl::UniformType::Int,
+                .offset = offsetof(VertexUniforms, layer),
+            },
+        }};
 
     vertUniformBuffer = std::make_shared<iglu::ManagedUniformBuffer>(device, vertInfo);
 

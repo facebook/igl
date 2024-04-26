@@ -49,12 +49,16 @@ class TextureCubeTest : public ::testing::Test {
                                                                         igl::Result* /*result*/) {
     std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer = nullptr;
 
-    iglu::ManagedUniformBufferInfo info = {
+    const iglu::ManagedUniformBufferInfo info = {
         .index = 1,
         .length = sizeof(VertexUniforms),
-        .uniforms = {{.name = "view",
-                      .type = igl::UniformType::Float4,
-                      .offset = offsetof(VertexUniforms, viewDirection)}}};
+        .uniforms = {
+            igl::UniformDesc{
+                .name = "view",
+                .type = igl::UniformType::Float4,
+                .offset = offsetof(VertexUniforms, viewDirection),
+            },
+        }};
 
     vertUniformBuffer = std::make_shared<iglu::ManagedUniformBuffer>(device, info);
 

@@ -53,12 +53,16 @@ class TextureArrayTest : public ::testing::Test {
                                                                         igl::Result* /*result*/) {
     std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer = nullptr;
 
-    iglu::ManagedUniformBufferInfo vertInfo = {
+    const iglu::ManagedUniformBufferInfo vertInfo = {
         .index = 2,
         .length = sizeof(VertexUniforms),
-        .uniforms = {{.name = "layer",
-                      .type = igl::UniformType::Int,
-                      .offset = offsetof(VertexUniforms, layer)}}};
+        .uniforms = {
+            igl::UniformDesc{
+                .name = "layer",
+                .type = igl::UniformType::Int,
+                .offset = offsetof(VertexUniforms, layer),
+            },
+        }};
 
     vertUniformBuffer = std::make_shared<iglu::ManagedUniformBuffer>(device, vertInfo);
 
