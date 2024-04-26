@@ -460,20 +460,11 @@ void RenderCommandEncoder::bindDepthStencilState(
 }
 
 void RenderCommandEncoder::bindBuffer(int index,
-                                      uint8_t target,
                                       const std::shared_ptr<IBuffer>& buffer,
                                       size_t bufferOffset,
                                       size_t bufferSize) {
   IGL_PROFILER_FUNCTION();
   IGL_PROFILER_ZONE_GPU_VK("bindBuffer()", ctx_.tracyCtx_, cmdBuffer_);
-
-  IGL_ASSERT_MSG(
-      target == igl::BindTarget::kAllGraphics,
-      "Use bindVertexBuffer() to bind vertex buffers. The target should be kAllGraphics");
-
-  if (!IGL_VERIFY(target == igl::BindTarget::kAllGraphics)) {
-    return;
-  }
 
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p  bindBuffer(%i, %u)\n", cmdBuffer_, index, (uint32_t)bufferOffset);

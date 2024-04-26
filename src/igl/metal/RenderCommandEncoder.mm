@@ -249,32 +249,23 @@ void RenderCommandEncoder::setStencilReferenceValues(uint32_t frontValue, uint32
 }
 
 void RenderCommandEncoder::bindBuffer(int index,
-                                      uint8_t bindTarget,
                                       const std::shared_ptr<IBuffer>& buffer,
                                       size_t offset,
                                       size_t bufferSize) {
   (void)bufferSize;
 
   IGL_ASSERT(encoder_);
-  IGL_ASSERT_MSG(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
-                     bindTarget == BindTarget::kAllGraphics,
-                 "Bind target is not valid: %d",
-                 bindTarget);
   if (buffer) {
     auto& metalBuffer = static_cast<Buffer&>(*buffer);
-    if ((bindTarget & BindTarget::kVertex) != 0) {
-      // don't override any vertex buffers already set by bindVertexBuffer()
-      const bool hasVertexBuffer = (hasVertexBuffers_.size() > index) && hasVertexBuffers_[index];
-      IGL_ASSERT_MSG(!hasVertexBuffer,
-                     "There's an 'index' collision between bindVertexBuffer() and bindBuffer() "
-                     "calls. They must not share the same index.");
-      if (!hasVertexBuffer) {
-        [encoder_ setVertexBuffer:metalBuffer.get() offset:offset atIndex:index];
-      }
+    // don't override any vertex buffers already set by bindVertexBuffer()
+    const bool hasVertexBuffer = (hasVertexBuffers_.size() > index) && hasVertexBuffers_[index];
+    IGL_ASSERT_MSG(!hasVertexBuffer,
+                   "There's an 'index' collision between bindVertexBuffer() and bindBuffer() "
+                   "calls. They must not share the same index.");
+    if (!hasVertexBuffer) {
+      [encoder_ setVertexBuffer:metalBuffer.get() offset:offset atIndex:index];
     }
-    if ((bindTarget & BindTarget::kFragment) != 0) {
-      [encoder_ setFragmentBuffer:metalBuffer.get() offset:offset atIndex:index];
-    }
+    [encoder_ setFragmentBuffer:metalBuffer.get() offset:offset atIndex:index];
   }
 }
 

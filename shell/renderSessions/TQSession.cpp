@@ -313,7 +313,7 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
         commands->bindUniform(uniformDesc, &_fragmentParameters);
       }
     } else if (getPlatform().getDevice().hasFeature(DeviceFeatures::UniformBlocks)) {
-      commands->bindBuffer(0, BindTarget::kAllGraphics, _fragmentParamBuffer, 0);
+      commands->bindBuffer(0, _fragmentParamBuffer, 0);
     } else {
       IGL_ASSERT_NOT_REACHED();
     }

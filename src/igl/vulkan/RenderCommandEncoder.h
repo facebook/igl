@@ -54,7 +54,6 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   void bindDepthStencilState(const std::shared_ptr<IDepthStencilState>& depthStencilState) override;
 
   void bindBuffer(int index,
-                  uint8_t target,
                   const std::shared_ptr<IBuffer>& buffer,
                   size_t bufferOffset,
                   size_t bufferSize) override;

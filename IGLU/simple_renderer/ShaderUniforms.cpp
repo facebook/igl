@@ -850,7 +850,6 @@ void ShaderUniforms::bindBuffer(igl::IDevice& device,
       const auto& glPipelineState =
           static_cast<const igl::opengl::RenderPipelineState&>(pipelineState);
       encoder.bindBuffer(glPipelineState.getUniformBlockBindingPoint(uniformName),
-                         igl::BindTarget::kAllGraphics,
                          buffer->allocation->iglBuffer,
                          0);
     } else {
@@ -874,16 +873,8 @@ void ShaderUniforms::bindBuffer(igl::IDevice& device,
 
       buffer->allocation->iglBuffer->upload((uint8_t*)buffer->allocation->ptr + subAllocatedOffset,
                                             igl::BufferRange(uploadSize, subAllocatedOffset));
-      uint8_t bindTarget;
-      if (device.getBackendType() == igl::BackendType::Vulkan) {
-        bindTarget = igl::BindTarget::kAllGraphics;
-      } else {
-        bindTarget = bindTargetForShaderStage(buffer->iglBufferDesc.shaderStage);
-      }
-      encoder.bindBuffer(buffer->iglBufferDesc.bufferIndex,
-                         bindTarget,
-                         buffer->allocation->iglBuffer,
-                         subAllocatedOffset);
+      encoder.bindBuffer(
+          buffer->iglBufferDesc.bufferIndex, buffer->allocation->iglBuffer, subAllocatedOffset);
     } else {
       encoder.bindBytes(buffer->iglBufferDesc.bufferIndex,
                         bindTargetForShaderStage(buffer->iglBufferDesc.shaderStage),

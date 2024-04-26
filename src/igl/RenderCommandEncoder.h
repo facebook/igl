@@ -54,7 +54,6 @@ class IRenderCommandEncoder : public ICommandEncoder {
   // bufferSize is the size of the buffer to bind used for additional validation (0 means the
   // remaining size starting from `offset`)
   virtual void bindBuffer(int index,
-                          uint8_t target,
                           const std::shared_ptr<IBuffer>& buffer,
                           size_t bufferOffset,
                           size_t bufferSize = 0) = 0;

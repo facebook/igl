@@ -120,13 +120,6 @@ ManagedUniformBuffer::~ManagedUniformBuffer() {
 void ManagedUniformBuffer::bind(const igl::IDevice& device,
                                 const igl::IRenderPipelineState& pipelineState,
                                 igl::IRenderCommandEncoder& encoder) {
-  bind(device, pipelineState, encoder, igl::BindTarget::kAllGraphics);
-}
-
-void ManagedUniformBuffer::bind(const igl::IDevice& device,
-                                const igl::IRenderPipelineState& pipelineState,
-                                igl::IRenderCommandEncoder& encoder,
-                                uint8_t bindTarget) {
   if (device.getBackendType() == igl::BackendType::OpenGL) {
 #if IGL_BACKEND_OPENGL && !IGL_PLATFORM_MACCATALYST
     for (auto& uniform : uniformInfo.uniforms) {
@@ -147,7 +140,7 @@ void ManagedUniformBuffer::bind(const igl::IDevice& device,
 #endif
   } else {
     if (useBindBytes_) {
-      encoder.bindBytes(uniformInfo.index, bindTarget, data_, length_);
+      encoder.bindBytes(uniformInfo.index, igl::BindTarget::kAllGraphics, data_, length_);
     } else {
       // Need to ensure the latest data is present in the buffer
       // TODO: Have callers handle this when data has changed.
@@ -156,7 +149,7 @@ void ManagedUniformBuffer::bind(const igl::IDevice& device,
         data = nullptr;
       }
       buffer_->upload(data, {buffer_->getSizeInBytes(), 0});
-      encoder.bindBuffer(uniformInfo.index, bindTarget, buffer_, 0);
+      encoder.bindBuffer(uniformInfo.index, buffer_, 0);
     }
   }
 }

@@ -540,15 +540,14 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   commands->pushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
   commands->bindVertexBuffer(0, vb0_);
   commands->bindDepthStencilState(depthStencilState_);
-  commands->bindBuffer(0, BindTarget::kAllGraphics, ubPerFrame_[frameIndex], 0);
+  commands->bindBuffer(0, ubPerFrame_[frameIndex], 0);
   commands->bindTexture(0, igl::BindTarget::kFragment, texture0_.get());
   commands->bindTexture(1, igl::BindTarget::kFragment, texture1_.get());
   commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
   commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
   // Draw 2 cubes: we use uniform buffer to update matrices
   for (uint32_t i = 0; i != kNumCubes; i++) {
-    commands->bindBuffer(
-        1, BindTarget::kAllGraphics, ubPerObject_[frameIndex], i * sizeof(UniformsPerObject));
+    commands->bindBuffer(1, ubPerObject_[frameIndex], i * sizeof(UniformsPerObject));
     commands->drawIndexed(PrimitiveType::Triangle, 3 * 6 * 2, IndexFormat::UInt16, *ib0_.get(), 0);
   }
   commands->popDebugGroupLabel();
