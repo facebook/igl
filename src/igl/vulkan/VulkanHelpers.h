@@ -143,6 +143,8 @@ VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
                                             float minLod,
                                             float maxLod);
 
+VkSamplerYcbcrConversionCreateInfo ivkGetSamplerYcbcrCreateInfo(VkFormat format);
+
 /// @brief Creates a Vulkan Image View with the R, G, B, and A components mapped to themselves
 /// (identity)
 VkResult ivkCreateImageView(const struct VulkanFunctionTable* vt,
