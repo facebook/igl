@@ -58,6 +58,7 @@ id<MTLBuffer> createMetalBuffer(id<MTLDevice> device,
   } else {
     metalObject = [device newBufferWithLength:desc.length options:options];
   }
+  metalObject.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
   return metalObject;
 }
 } // namespace
@@ -191,6 +192,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     IGL_ASSERT_MSG(0, outResult->message.c_str());
     return nullptr;
   }
+  metalObject.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
   auto iglObject = std::make_shared<Texture>(metalObject, *this);
   if (getResourceTracker()) {
     iglObject->initResourceTracker(getResourceTracker());
@@ -365,6 +367,8 @@ std::shared_ptr<igl::IRenderPipelineState> Device::createRenderPipeline(
 
   NSError* error = nil;
   MTLRenderPipelineDescriptor* metalDesc = [MTLRenderPipelineDescriptor new];
+
+  metalDesc.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
 
   metalDesc.sampleCount = desc.sampleCount;
 
