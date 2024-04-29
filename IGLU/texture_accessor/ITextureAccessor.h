@@ -67,6 +67,10 @@ class ITextureAccessor {
     return copyBytes(ptr, length);
   }
 
+  std::shared_ptr<igl::ITexture> getTexture() const {
+    return texture_;
+  }
+
  protected:
   std::shared_ptr<igl::ITexture> texture_;
 };
