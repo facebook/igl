@@ -58,6 +58,7 @@ id<MTLBuffer> createMetalBuffer(id<MTLDevice> device,
   } else {
     metalObject = [device newBufferWithLength:desc.length options:options];
   }
+  metalObject.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
   return metalObject;
 }
 } // namespace
