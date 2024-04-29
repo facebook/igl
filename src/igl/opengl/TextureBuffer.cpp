@@ -120,8 +120,12 @@ Result TextureBuffer::createTexture(const TextureDesc& desc) {
   glInternalFormat_ = formatDescGL_.internalFormat;
 
   // create the GL texture ID
-  GLuint textureID;
+  GLuint textureID = 0;
   getContext().genTextures(1, &textureID);
+
+  if (textureID == 0) {
+    return Result(Result::Code::RuntimeError, "Failed to create texture ID");
+  }
 
   setTextureBufferProperties(textureID, target);
   setUsage(desc.usage);

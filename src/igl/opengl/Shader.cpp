@@ -245,6 +245,9 @@ Result ShaderModule::create(const ShaderModuleDesc& desc) {
   // we'll set or update this object's shader ID after the compilation succeeds
   // otherwise we won't modify this shader
   GLuint shaderID = getContext().createShader(shaderType_);
+  if (shaderID == 0) {
+    return Result(Result::Code::RuntimeError, "Failed to create shader ID");
+  }
 
   if (!desc.debugName.empty() &&
       getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {

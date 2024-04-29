@@ -18,6 +18,9 @@ namespace opengl {
 
 Result VertexArrayObject::create() {
   getContext().genVertexArrays(1, &vertexAttriuteObject_);
+  if (vertexAttriuteObject_ == 0) {
+    return Result(Result::Code::RuntimeError, "Failed to create vertex array object ID");
+  }
   return Result();
 }
 

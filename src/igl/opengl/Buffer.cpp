@@ -66,6 +66,9 @@ void ArrayBuffer::initialize(const BufferDesc& desc, Result* outResult) {
   }
 
   getContext().genBuffers(1, &iD_);
+  if (iD_ == 0) {
+    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create buffer");
+  }
 
   if (desc.type & BufferDesc::BufferTypeBits::Storage) {
     if (getContext().deviceFeatures().hasFeature(DeviceFeatures::Compute)) {

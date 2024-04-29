@@ -534,6 +534,10 @@ void CustomFramebuffer::initialize(const FramebufferDesc& desc, Result* outResul
 void CustomFramebuffer::prepareResource(Result* outResult) {
   // create a new frame buffer if we don't already have one
   getContext().genFramebuffers(1, &frameBufferID_);
+  if (IGL_UNEXPECTED(frameBufferID_ == 0)) {
+    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create framebuffer ID.");
+    return;
+  }
 
   bindBuffer();
 
