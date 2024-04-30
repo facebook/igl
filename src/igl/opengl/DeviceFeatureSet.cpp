@@ -1033,6 +1033,10 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     return true;
   case DeviceFeatureLimits::BufferAlignment:
     result = 16;
+    if (hasFeature(DeviceFeatures::UniformBlocks)) {
+        glContext_.getIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &tsize);
+        result = (size_t)tsize;
+    }
     return true;
   case DeviceFeatureLimits::BufferNoCopyAlignment:
     result = 0;
