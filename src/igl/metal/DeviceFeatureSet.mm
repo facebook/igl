@@ -247,7 +247,7 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     return true;
   case DeviceFeatureLimits::ShaderStorageBufferOffsetAlignment:
   case DeviceFeatureLimits::BufferAlignment:
-#if IGL_PLATFORM_IOS_SIMULATOR
+#if (IGL_PLATFORM_IOS_SIMULATOR || IGL_PLATFORM_MACOS)
     result = 256;
 #else
     result = 16;
