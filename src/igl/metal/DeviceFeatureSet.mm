@@ -247,7 +247,11 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     return true;
   case DeviceFeatureLimits::ShaderStorageBufferOffsetAlignment:
   case DeviceFeatureLimits::BufferAlignment:
+#if IGL_PLATFORM_IOS_SIMULATOR
+    result = 256;
+#else
     result = 16;
+#endif
     return true;
   case DeviceFeatureLimits::BufferNoCopyAlignment: {
     IGL_ASSERT(getpagesize() > 0);
