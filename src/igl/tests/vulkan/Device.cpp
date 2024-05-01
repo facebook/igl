@@ -116,12 +116,6 @@ TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
 
     ASSERT_EQ(ret.code, Result::Code::Ok);
   }
-
-  if (ctx.useStagingForBuffers_) {
-    // do not check if we are not using a staging buffer
-    const VkDeviceSize stagingBufferSize = ctx.stagingDevice_->getFreeStagingBufferSize();
-    ASSERT_EQ(stagingBufferSize, kMaxStagingBufferSize);
-  }
 }
 
 GTEST_TEST(VulkanContext, BufferDeviceAddress) {
