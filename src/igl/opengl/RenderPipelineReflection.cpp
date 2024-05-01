@@ -69,6 +69,9 @@ igl::TextureType toIGLTextureType(GLenum type) {
   case GL_IMAGE_CUBE:
     return igl::TextureType::Cube;
   case GL_SAMPLER_EXTERNAL_OES:
+#if defined(GL_EXT_YUV_target)
+  case GL_SAMPLER_EXTERNAL_2D_Y2Y_EXT:
+#endif
     return igl::TextureType::ExternalImage;
   default:
     return igl::TextureType::Invalid;
