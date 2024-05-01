@@ -270,7 +270,7 @@ void VulkanStagingDevice::getBufferSubData(const VulkanBuffer& buffer,
 
     // Copy data into data
     const uint8_t* src = stagingBuffer->getMappedPtr() + memoryChunk.offset;
-    checked_memcpy(dstData, bufferSize - chunkSrcOffset, src, memoryChunk.size);
+    checked_memcpy(dstData, bufferSize - chunkSrcOffset, src, copySize);
 
     size -= copySize;
     dstData = (uint8_t*)dstData + copySize;
@@ -571,8 +571,8 @@ bool VulkanStagingDevice::shouldAllocateStagingBuffer(VkDeviceSize sizeNeeded,
 
   // if contiguous memory is not requested
   if (!contiguous) {
-    // return true if there is not enough free space
-    return sizeNeeded > freeStagingBufferSize_;
+    // return true if there is no free space
+    return freeStagingBufferSize_ == 0;
   }
 
   // if contiguous memory is requested and we have enough free space
