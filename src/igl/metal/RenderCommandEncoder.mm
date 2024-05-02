@@ -255,16 +255,14 @@ void RenderCommandEncoder::bindBuffer(int index,
   (void)bufferSize;
 
   IGL_ASSERT(encoder_);
+  IGL_ASSERT(index < IGL_VERTEX_BUFFER_MAX);
+
   if (buffer) {
     auto& metalBuffer = static_cast<Buffer&>(*buffer);
-    // don't override any vertex buffers already set by bindVertexBuffer()
-    const bool hasVertexBuffer = (hasVertexBuffers_.size() > index) && hasVertexBuffers_[index];
-    IGL_ASSERT_MSG(!hasVertexBuffer,
+    IGL_ASSERT_MSG(!hasVertexBuffers_[index],
                    "There's an 'index' collision between bindVertexBuffer() and bindBuffer() "
                    "calls. They must not share the same index.");
-    if (!hasVertexBuffer) {
-      [encoder_ setVertexBuffer:metalBuffer.get() offset:offset atIndex:index];
-    }
+    [encoder_ setVertexBuffer:metalBuffer.get() offset:offset atIndex:index];
     [encoder_ setFragmentBuffer:metalBuffer.get() offset:offset atIndex:index];
   }
 }
@@ -273,14 +271,13 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
                                             const std::shared_ptr<IBuffer>& buffer,
                                             size_t bufferOffset) {
   IGL_ASSERT(encoder_);
+  IGL_ASSERT(index < IGL_VERTEX_BUFFER_MAX);
+
   if (buffer) {
     auto& metalBuffer = static_cast<Buffer&>(*buffer);
     [encoder_ setVertexBuffer:metalBuffer.get() offset:bufferOffset atIndex:index];
   }
 
-  if (hasVertexBuffers_.size() <= index) {
-    hasVertexBuffers_.resize(index + 1);
-  }
   hasVertexBuffers_[index] = true;
 }
 
