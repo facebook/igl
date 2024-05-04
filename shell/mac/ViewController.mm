@@ -118,6 +118,16 @@ using namespace igl;
 
   igl::SurfaceTextures surfaceTextures;
   if (backendType_ != igl::BackendType::Invalid && shellPlatform_->getDevicePtr() != nullptr) {
+// @fb-only
+    // @fb-only
+    // @fb-only
+      // @fb-only
+          // @fb-only
+      // @fb-only
+      // @fb-only
+    // @fb-only
+// @fb-only
+
     // surface textures
     surfaceTextures = igl::SurfaceTextures{[self createTextureFromNativeDrawable],
                                            [self createTextureFromNativeDepth]};

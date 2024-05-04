@@ -44,20 +44,6 @@ enum class StoreAction : uint8_t {
 };
 
 /**
- * @brief MsaaDepthResolveFilter determines the MSAA algorithm used. This can be Sample0, Min, or
- * Max.
- *
- * Sample0 : Use provided value
- * Min : Use minimum value allowed
- * Max : Use maximum value allowed
- */
-enum class MsaaDepthResolveFilter : uint8_t {
-  Sample0,
-  Min,
-  Max,
-};
-
-/**
  * @brief RenderPassDesc provides the basis for describing a render pass and provides default
  * operations for depth and stencil.
  *
@@ -91,7 +77,6 @@ struct RenderPassDesc {
    * @brief DepthAttachmentDesc uses provided MSAA value by default and clears depth.
    */
   struct DepthAttachmentDesc : BaseAttachmentDesc {
-    MsaaDepthResolveFilter depthResolveFilter = MsaaDepthResolveFilter::Sample0;
     float clearDepth = 1.0f;
   };
 

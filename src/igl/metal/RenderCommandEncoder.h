@@ -110,7 +110,7 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   // 4 KB - page aligned memory for metal managed resource
   static constexpr uint32_t MAX_RECOMMENDED_BYTES = 4 * 1024;
 
-  std::vector<bool> hasVertexBuffers_;
+  bool hasVertexBuffers_[IGL_VERTEX_BUFFER_MAX] = {};
 };
 
 } // namespace metal
