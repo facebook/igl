@@ -32,6 +32,9 @@ class ImageLoader {
   }
   static ImageData checkerboard() noexcept;
 
+  [[nodiscard]] ImageData loadImageDataFromFile(const std::string& fileName) noexcept;
+  [[nodiscard]] ImageData loadImageDataFromMemory(const uint8_t* data, uint32_t length) noexcept;
+
  protected:
   [[nodiscard]] const FileLoader& fileLoader() const noexcept {
     return fileLoader_;
@@ -40,10 +43,6 @@ class ImageLoader {
   [[nodiscard]] FileLoader& fileLoader() noexcept {
     return fileLoader_;
   }
-
- protected:
-  [[nodiscard]] ImageData loadImageDataFromFile(const std::string& fileName) noexcept;
-  [[nodiscard]] ImageData loadImageDataFromMemory(const uint8_t* data, uint32_t length) noexcept;
 
  private:
   ImageData defaultLoadImageData(const std::string& imageName) noexcept;

@@ -79,12 +79,12 @@ ImageData ImageLoader::loadImageDataFromMemory(const uint8_t* data, uint32_t len
 
   Result result;
   auto loader = factory_->tryCreate(data, length, &result);
-  if (IGL_UNEXPECTED(loader == nullptr || !result.isOk())) {
+  if (loader == nullptr || !result.isOk()) {
     return {};
   }
 
   auto texData = loader->load(&result);
-  if (IGL_UNEXPECTED(texData == nullptr || !result.isOk())) {
+  if (texData == nullptr || !result.isOk()) {
     return {};
   }
 
