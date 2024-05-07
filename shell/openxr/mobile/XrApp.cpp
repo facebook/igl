@@ -1302,6 +1302,7 @@ void XrApp::querySupportedRefreshRates() {
     }
 
     for (float refreshRate : supportedRefreshRates_) {
+      (void)refreshRate;
       IGL_LOG_INFO("querySupportedRefreshRates Hz = %.2f.", refreshRate);
     }
   }

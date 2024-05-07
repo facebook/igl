@@ -7,120 +7,111 @@
 
 // @fb-only
 
+#include "GPUStressSession.h"
 #include <IGLU/imgui/Session.h>
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
-
-// some functions are not in the `std` namespace on Ubuntu (GitHub CI)
-// @lint-ignore CLANGTIDY
-#include <math.h>
-// @lint-ignore CLANGTIDY
-#include <stdint.h>
-// @lint-ignore CLANGTIDY
-#include <stdlib.h>
-
 #include <chrono>
+#include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <future>
-#include <memory>
-#include <random>
-
 #include <glm/detail/qualifier.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
-#include <glm/geometric.hpp>
+#include <glm/fwd.hpp>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/GLIncludes.h>
-#include <igl/opengl/RenderCommandEncoder.h>
-#include <shell/renderSessions/GPUStressSession.h>
+
+#include <memory>
+#include <random>
+#include <shell/shared/renderSession/QuadLayerParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
-#if defined(_MSC_VER) || (defined(__clang__) && IGL_PLATFORM_LINUX)
+#if defined(_MSC_VER)
 static uint32_t arc4random(void) {
   return static_cast<uint32_t>(rand());
 }
+#endif // _MSC_VER
+
+#if ANDROID
+
+#include <sys/syscall.h>
+#include <unistd.h>
 #endif
 
 namespace igl::shell {
 
 struct VertexPosUvw {
   glm::vec3 position;
-  glm::vec3 uvw;
+  glm::vec4 uvw;
   glm::vec4 base_color;
 };
 
 namespace {
 
-const int kCubeCount = 1; // number of cubes in the vertex buffer
-// number of times to draw the vertex buffer (triangles = 12 * kDrawCount * kCubeCount)
-const int kDrawCount = 1;
-// turn this on and set kDrawCount to 1.  Cube count will be the number of layers you'll see
-const bool kTestOverdraw = false;
+std::atomic<int> kCubeCount = 1; // number of cubes in the vertex buffer
+// number of times to draw the vertex buffer (triangles = 12 * kDrawCount *
+// kCubeCount)
+std::atomic<int> kDrawCount = 50;
+// turn this on and set kDrawCount to 1.  Cube count will be the number of
+// layers you'll see
+std::atomic<bool> kTestOverdraw = false;
 
-const bool kEnableBlending = false; // turn this on to see the effects of alpha blending
-// make this number little to make all the cubes tiny on screen so fill isn't a problem
-const bool kUseMSAA = false;
+std::atomic<bool> kEnableBlending = false; // turn this on to see the effects of alpha blending
+// make this number little to make all the cubes tiny on screen so fill isn't a
+// problem
+std::atomic<bool> kUseMSAA = false;
 const int kMsaaSamples = 4; // this is the max number possible
-const float kScaleFill = .05f;
-// each light will add about 45 ish instructions to your pixel shader (tested using powerVR compiler
-// so grain of salt)arc lint --engine LintCPP
-const int kLightCount = 0;
+const float kScaleFill = 1.f;
+// each light will add about 45 ish instructions to your pixel shader (tested
+// using powerVR compiler so grain of salt)arc lint --engine LintCPP
+std::atomic<int> kLightCount = 5;
 // number of times to do a lof of math that does not calculate pi
-const int kGoSlowOnCpu = 0; // max10000000;
-// cpu threads - these are really necessary to get our CPU usage up  to 100% (otherwise the
-// framerate just throttles)
-int kThreadCount = 8;
-bool kThrashMemory = false;
-size_t kMemorySize = 64; // in MB
-size_t kMemoryReads = 100000000; // max 100000000;
-size_t kMemoryWrites = 100000000; // 100000000;
+std::atomic<int> kGoSlowOnCpu = 10000; // max10000000;
+// cpu threads - these are really necessary to get our CPU usage up  to 100%
+// (otherwise the framerate just throttles)
+std::atomic<int> kThreadCount = 1;
+std::atomic<bool> kThrashMemory = true;
+std::atomic<size_t> kMemorySize = 64; // in MB
+std::atomic<unsigned long> kMemoryReads = 10000; // max 1000000;
+std::atomic<unsigned long> kMemoryWrites = 10000; // 100000;
+std::vector<int> threadIds = {-1, -1, -1, -1, -1, -1, -1, -1};
 
-// static bool show gpu stats
+const float half = .5f;
 
-const float half = 2.f * kScaleFill;
-
-std::vector<VertexPosUvw> vertexData0 = {
-    {{-half, half, -half}, {0.0, 1.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{half, half, -half}, {1.0, 1.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{-half, -half, -half}, {0.0, 0.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{half, -half, -half}, {1.0, 0.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{half, half, half}, {1.0, 1.0, 1.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{-half, half, half}, {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{half, -half, half}, {1.0, 0.0, 1.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{-half, -half, half}, {0.0, 0.0, 1.0}, {1.0, 1.0, 1.0, 1.0}},
+// single cube - 8 verts and 36 indicies
+const std::vector<VertexPosUvw> vertexData0 = {
+    {{-half, half, -half}, {0.0, 1.0, 0.0, 1.0}, {1.0, 1.0, 1.0, 1.0}},
+    {{half, half, -half}, {1.0, 1.0, 1.0, 1.0}, {1.0, 1.0, 1.0, 1.0}},
+    {{-half, -half, -half}, {0.0, 0.0, 0.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
+    {{half, -half, -half}, {1.0, 0.0, 1.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
+    {{half, half, half}, {1.0, 1.0, 1.0, 1.1}, {1.0, 1.0, 1.0, 1.0}},
+    {{-half, half, half}, {0.0, 1.0, 0.0, 1.0}, {1.0, 1.0, 1.0, 1.0}},
+    {{half, -half, half}, {1.0, 0.0, 1.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
+    {{-half, -half, half}, {0.0, 0.0, 0.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
 };
-std::vector<uint16_t> indexData = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
-                                   5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};
 
-std::string getProlog(igl::IDevice& device) {
-#if IGL_BACKEND_OPENGL
-  const auto shaderVersion = device.getShaderVersion();
-  if (shaderVersion.majorVersion >= 3 || shaderVersion.minorVersion >= 30) {
-    std::string prependVersionString = igl::opengl::getStringFromShaderVersion(shaderVersion);
-    if (device.hasFeature(DeviceFeatures::Multiview)) {
-      prependVersionString += "\n#extension GL_OVR_multiview2 : require\n";
-    }
+std::vector<VertexPosUvw> vertexData;
+const std::vector<uint16_t> indexData0 = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
+                                          5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};
 
-    prependVersionString += "\nprecision highp float;\n";
-
-    return prependVersionString;
-  }
-#endif // IGL_BACKEND_OPENGL
-  return "";
-};
+std::vector<uint16_t> indexData = indexData0;
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-std::string getOpenGLLightingFunc(const char* matrixProj, const char* matrixMod) {
+std::string getLightingFunc(const char* matrixProj, const char* matrixMod) {
   std::string const var1 = matrixProj;
   std::string const var2 = matrixMod;
-  auto func = std::string(R"(
+  auto func = std::string(
+      R"(
 
       vec3 calcLighting(vec3 lightDir, vec3 lightPosition,  vec3 normal, float attenuation, vec3 color)
       {
-        normal.xyz = ()" + var1 +
-                          "*" + var2 +
-                          R"(* vec4(normal, 0.f)).xyz;
+        normal.xyz = ()" +
+      var1 + "*" + var2 +
+      R"(* vec4(normal, 0.f)).xyz;
         normal = normalize(normal);
         float angle = dot(normalize(lightDir), normal);
         float distance = length(lightPosition - screen_pos);
@@ -132,10 +123,10 @@ std::string getOpenGLLightingFunc(const char* matrixProj, const char* matrixMod)
 
   return func;
 }
-std::string getOpenGLLightingCalc() {
+std::string getLightingCalc() {
   std::string params = "\nvec4 lightFactor = color;\n";
   if (kLightCount) {
-    params = "\nvec4 lightFactor = vec4(0.0, 0.0, 0.0, 1.0);\n";
+    params = "\nvec4 lightFactor = vec4(0.2, 0.2, 0.2, 1.0);\n";
   }
   for (int i = 0; i < kLightCount; ++i) {
     char tmp[256];
@@ -167,86 +158,17 @@ std::string getOpenGLLightingCalc() {
   return params;
 }
 
-std::string getOpenGLFragmentShaderSource(igl::IDevice& device) {
-  return getProlog(device) +
-         std::string(R"(
-                      precision highp float;
-                      precision highp sampler3D;
-                      in vec3 uvw;
-                      in vec4 color;
-                      in vec3 screen_pos;
-                      uniform mat4 projectionMatrix;
-                      uniform mat4 modelViewMatrix;
-                      uniform sampler2D inputImage;
-                      out vec4 fragmentColor;)" +
-                     getOpenGLLightingFunc("projectionMatrix", "modelViewMatrix") + R"(
-                      void main() {)" +
-                     getOpenGLLightingCalc() +
-                     R"(
-                        fragmentColor = texture(inputImage, uvw.xy) * lightFactor;
-                      })");
-}
-
-std::string getOpenGLVertexShaderSourceMultiView(igl::IDevice& device) {
-  return getProlog(device) + R"(
-                     layout(num_views = 2) in;
-                      precision highp float;
-                      uniform mat4 projectionMatrix;
-                      uniform mat4 modelViewMatrix;
-                      uniform float scaleZ;
-                      in vec3 position;
-                      in vec3 uvw_in;
-                      in vec4 base_color;
-                      out vec3 uvw;
-                      out vec4 color;
-                      out vec3 screen_pos;
-
-                      void main() {
-                        const vec4 pos = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                        gl_Position = pos;
-                        screen_pos.xyz = pos.xyz/pos.w;
-                        uvw = vec3(uvw_in.x, uvw_in.y, (uvw_in.z-0.5)*scaleZ+0.5);
-                        float yVal = float(gl_ViewID_OVR);
-                        color = vec4(base_color.x, yVal * base_color.y, base_color.z, base_color.w);
-                    })";
-}
-
-std::string getOpenGLVertexShaderSource(igl::IDevice& device) {
-  if (device.hasFeature(DeviceFeatures::Multiview)) {
-    return getOpenGLVertexShaderSourceMultiView(device);
-  }
-
-  return getProlog(device) + R"(
-                      precision highp float;
-                      uniform mat4 projectionMatrix;
-                      uniform mat4 modelViewMatrix;
-                      uniform float scaleZ;
-                      in vec3 position;
-                      in vec3 uvw_in;
-                      in vec4 base_color;
-                      out vec3 uvw;
-                      out vec4 color;
-                      out vec3 screen_pos;
-
-                      void main() {
-                        gl_Position =  projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                        screen_pos = gl_Position.xyz/gl_Position.w;
-                        uvw = vec3(uvw_in.x, uvw_in.y, (uvw_in.z-0.5)*scaleZ+0.5);
-                        color = base_color;
-                      })";
-}
-// MAC + Vulkan is misreporting that it supports multiview ...
 std::string getVulkanVertexShaderSource(bool bMultiView) {
   return std::string(bMultiView ? "\n#define MULTIVIEW 1\n" : "") + R"(
 #ifdef MULTIVIEW
 #extension GL_EXT_multiview : enable
 #endif
 layout(location = 0) in vec3 position;
-layout(location = 1) in vec3 uvw_in;
+layout(location = 1) in vec4 uvw_in;
 layout(location = 2) in vec4 base_color;
 
 layout (location = 0) out vec4 color;
-layout (location = 1) out vec2 uv;
+layout (location = 1) out vec4 uv;
 layout (location = 2) out vec3 screen_pos;
 
 layout(push_constant) uniform PushConstants {
@@ -263,7 +185,7 @@ void main() {
     color = base_color;
   #endif
 
-    uv = uvw_in.xy;
+    uv = uvw_in;
     gl_Position = pc.projectionMatrix * pc.modelViewMatrix * vec4(position.xyz, 1.0);
     screen_pos = gl_Position.xyz/gl_Position.w;
 })";
@@ -273,21 +195,22 @@ std::string getVulkanFragmentShaderSource() {
   return R"(
 layout(location = 0) out vec4 fColor;
 layout(location = 0) in vec4 color;
-layout(location = 1) in vec2 uv;
+layout(location = 1) in vec4 uv;
 layout(location = 2) in vec3 screen_pos;
 
 layout (set = 0, binding = 0) uniform sampler2D uTex;
+layout (set = 0, binding = 1) uniform sampler2D uTex2;
 
 layout(push_constant) uniform PushConstants {
     mat4 projectionMatrix;
     mat4 modelViewMatrix;
 } pc;
-)" + getOpenGLLightingFunc("pc.projectionMatrix", "pc.modelViewMatrix") +
+)" + getLightingFunc("pc.projectionMatrix", "pc.modelViewMatrix") +
          R"(
                       void main() {)" +
-         getOpenGLLightingCalc() +
+         getLightingCalc() +
          R"(
-  fColor = lightFactor * texture(uTex, uv);
+  fColor = lightFactor * texture(uTex2, uv.xy) * texture(uTex, uv.zw);
 })";
 }
 
@@ -297,17 +220,6 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) n
   // @fb-only
     // @fb-only
     // @fb-only
-  case igl::BackendType::OpenGL:
-    return igl::ShaderStagesCreator::fromModuleStringInput(
-        device,
-        getOpenGLVertexShaderSource(device).c_str(),
-        "main",
-        "",
-        getOpenGLFragmentShaderSource(device).c_str(),
-        "main",
-        "",
-        nullptr);
-
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,
@@ -346,14 +258,14 @@ void addNormalsToCube() {
       if (indexremap.at(oldIndex) != -1) {
         indexData.at(i) = indexremap[oldIndex];
       } else if (!normalSet[oldIndex]) {
-        vertexData0.at(oldIndex).base_color = glm::vec4(normal, 1.0);
+        vertexData.at(oldIndex).base_color = glm::vec4(normal, 1.0);
         normalSet[oldIndex] = true;
         indexremap.at(oldIndex) = oldIndex;
       } else {
         auto vertex = vertexData0.at(oldIndex);
         vertex.base_color = glm::vec4(normal, 1.0);
-        vertexData0.push_back(vertex);
-        size_t const nextIndex = (vertexData0.size() - 1);
+        vertexData.push_back(vertex);
+        size_t const nextIndex = (vertexData.size() - 1);
         indexData.at(i) = nextIndex;
         normalSet[nextIndex] = true;
         indexremap.at(oldIndex) = nextIndex;
@@ -377,11 +289,33 @@ bool isDeviceCompatible(IDevice& device) noexcept {
   return false;
 }
 
-double calcPi(int numberOfDivisions) {
+int setCurrentThreadAffinityMask(int mask) {
+#if IGL_PLATFORM_ANDROID
+  int err, syscallres;
+  pid_t const pid = gettid();
+  syscallres = syscall(__NR_sched_setaffinity, pid, sizeof(mask), &mask);
+  if (syscallres) {
+    err = errno;
+    IGL_LOG_ERROR("Set thread affinity failed. with mask 0x%x and error 0x%x\n", mask, err);
+    return err;
+  }
+#else
+  IGL_LOG_ERROR("Set thread affinity not supported on this platorm");
+  return -1;
+#endif
+
+  return 0;
+}
+
+double calcPi(int numberOfDivisions, int core) {
   double pi = 0.0;
+
+  if (core >= 0) {
+    setCurrentThreadAffinityMask((1 << core));
+  }
   for (int i = 0; i <= numberOfDivisions; ++i) {
     double const numerator = 1.0;
-    double const denominator = sqrt(1.0 + pow(-1.0, i));
+    double const denominator = std::sqrt(1.0 + std::pow(-1.0, i));
     if (denominator > 0.f) {
       pi += numerator / denominator;
     }
@@ -392,14 +326,22 @@ double calcPi(int numberOfDivisions) {
 double pi = 0.f;
 void thrashCPU() noexcept {
   static std::vector<std::future<double>> futures;
+  static unsigned int threadSpawnId = 0;
   if (kGoSlowOnCpu) {
+    // don't fall off the array
+    while (threadIds.size() < kThreadCount) {
+      threadIds.push_back(-1);
+    }
     if (!kThreadCount) {
-      pi = calcPi(kGoSlowOnCpu);
+      pi = calcPi(kGoSlowOnCpu, -1);
     }
     while (futures.size() < kThreadCount) {
-      auto future = std::async(std::launch::async, [] { return calcPi(kGoSlowOnCpu); });
+      auto future = std::async(std::launch::async, [] {
+        return calcPi(kGoSlowOnCpu, threadIds[threadSpawnId % kThreadCount]);
+      });
 
       futures.push_back(std::move(future));
+      threadSpawnId++;
     }
 
     for (int i = futures.size() - 1; i > -1; i--) {
@@ -420,7 +362,11 @@ float doReadWrite(std::vector<std::vector<std::vector<float>>>& memBlock,
                   // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
                   int numBlocks,
                   int numRows,
-                  int numCols) {
+                  int numCols,
+                  int threadId) {
+  if (threadId != -1) {
+    setCurrentThreadAffinityMask(1 << threadId);
+  }
   std::random_device const rd;
   std::mt19937 gen(0);
   std::uniform_int_distribution<> randBlocks(0, numBlocks - 1);
@@ -444,10 +390,8 @@ float doReadWrite(std::vector<std::vector<std::vector<float>>>& memBlock,
   return sum;
 }
 
-std::atomic<float> memoryVal;
-void thrashMemory() noexcept {
-  static std::vector<std::vector<std::vector<float>>> memBlock;
-
+std::vector<std::vector<std::vector<float>>> memBlock;
+void allocateMemory() {
   if (kThrashMemory) {
     const static size_t blocks = kMemorySize;
     const static size_t rows = 1024;
@@ -464,32 +408,48 @@ void thrashMemory() noexcept {
         }
       }
     }
-    if (!kThreadCount) {
-      memoryVal.store(doReadWrite(memBlock, blocks, rows, cols));
-    } else {
-      static std::vector<std::future<float>> futures;
+  }
+}
 
-      while (futures.size() < kThreadCount) {
-        auto future = std::async(std::launch::async,
-                                 [] { return doReadWrite(memBlock, blocks, rows, cols); });
+std::atomic<float> memoryVal;
+void thrashMemory() noexcept {
+  if (!kThrashMemory) {
+    return;
+  }
 
-        futures.push_back(std::move(future));
-      }
+  const static size_t blocks = kMemorySize;
+  const static size_t rows = 1024;
+  const static size_t cols = 1024;
 
-      for (int i = futures.size() - 1; i > -1; i--) {
-        auto& future = futures.at(i);
+  if (!kThreadCount) {
+    memoryVal.store(doReadWrite(memBlock, blocks, rows, cols, -1));
+  } else {
+    static std::vector<std::future<float>> futures;
+    static int memoryThreadId = 0;
 
-        // Use wait_for() with zero milliseconds to check thread status.
-        auto status = future.wait_for(std::chrono::milliseconds(0));
+    while (futures.size() < kThreadCount) {
+      auto future = std::async(std::launch::async, [] {
+        return doReadWrite(memBlock, blocks, rows, cols, threadIds[memoryThreadId % kThreadCount]);
+      });
 
-        if (status == std::future_status::ready) {
-          memoryVal.store(future.get());
-          futures.erase(futures.begin() + i);
-        }
+      futures.push_back(std::move(future));
+      memoryThreadId++;
+    }
+
+    for (int i = futures.size() - 1; i > -1; i--) {
+      auto& future = futures.at(i);
+
+      // Use wait_for() with zero milliseconds to check thread status.
+      auto status = future.wait_for(std::chrono::milliseconds(0));
+
+      if (status == std::future_status::ready) {
+        memoryVal.store(future.get());
+        futures.erase(futures.begin() + i);
       }
     }
   }
 }
+
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void getOffset(int counter, float& x, float& y, float& z) {
   if (kTestOverdraw) {
@@ -500,12 +460,12 @@ void getOffset(int counter, float& x, float& y, float& z) {
     z *= counter / 2.f;
     return;
   }
-  const float grid = ceilf(powf(kCubeCount, 1.0f / 3.0f));
+  const float grid = std::ceilf(std::powf(kCubeCount, 1.0f / 3.0f));
   const int igrid = (int)grid;
-  const float fgrid = static_cast<float>(igrid);
-  x = 2.1f * half * static_cast<float>((counter % igrid) - grid / 2);
-  z = 2.1f * half * (static_cast<float>(counter / (fgrid * fgrid)) - grid / 2.f);
-  y = 2.1f * half * (static_cast<float>((counter % (igrid * igrid)) / fgrid) - grid / 2.f);
+  // const float fgrid = static_cast<float>(igrid);
+  x = static_cast<float>((counter % igrid) - grid / 2);
+  z = (static_cast<float>(counter / (igrid * igrid)) - grid / 2.f);
+  y = (static_cast<float>((counter % (igrid * igrid)) / igrid) - grid / 2.f);
 }
 
 } // namespace
@@ -518,61 +478,76 @@ void GPUStressSession::createSamplerAndTextures(const igl::IDevice& device) {
   samplerDesc.addressModeV = SamplerAddressMode::MirrorRepeat;
   samplerDesc.addressModeW = SamplerAddressMode::MirrorRepeat;
   samp0_ = device.createSamplerState(samplerDesc, nullptr);
+  samp1_ = device.createSamplerState(samplerDesc, nullptr);
 
   tex0_ = getPlatform().loadTexture("macbeth.png");
+  tex1_ = getPlatform().loadTexture("igl.png");
 }
 
 void GPUStressSession::createCubes() {
-  // only reset once - on mac we hit this path multiple times for different devices
-  if (vertexData0.size() == 8) {
-    addNormalsToCube(); // setup for lighting if appropriate
+  // only reset once - on mac we hit this path multiple times for different
+  // devices
+  vertexData = vertexData0;
+  indexData = indexData0;
 
-    const float grid = ceilf(powf(kCubeCount, 1.0f / 3.0f));
+  addNormalsToCube(); // setup for lighting if appropriate
 
-    const int vertexCount = vertexData0.size();
-    const int indexCount = indexData.size();
+  const float grid = std::ceilf(std::powf(kCubeCount, 1.0f / 3.0f));
 
-    std::random_device const rd;
-    std::mt19937 gen(0);
-    std::uniform_real_distribution<> dis(0, 1.f);
+  const int vertexCount = vertexData.size();
+  const int indexCount = indexData.size();
 
-    // Vertex buffer, Index buffer and Vertex Input
-    for (int i = 1; i < kCubeCount; i++) {
-      float x, y, z;
-      getOffset(i, x, y, z);
-      glm::vec4 color(1.0, 1.0, 1.0, 1.f / kCubeCount);
-      color[0] = (dis(gen));
-      color[1] = (dis(gen));
-      color[2] = (dis(gen));
-      for (int j = 0; j < vertexCount; j++) {
-        VertexPosUvw newPoint = vertexData0.at(j);
-        newPoint.position += (glm::vec3(x, y, z));
-        if (!kLightCount) {
-          newPoint.base_color = color;
-        }
-        vertexData0.push_back(newPoint);
+  std::random_device const rd;
+  std::mt19937 gen(0);
+  std::uniform_real_distribution<> dis(0, 1.f);
+  float const scale = 1.f / grid;
+
+  int const uvScale = 1.f / grid;
+  glm::vec2 offset = glm::vec2(0.f, 0.f);
+
+  // Vertex buffer, Index buffer and Vertex Input
+  for (int i = 1; i < kCubeCount; i++) {
+    float x, y, z;
+    getOffset(i, x, y, z);
+    glm::vec4 color(1.0, 1.0, 1.0, 1.f);
+    color[0] = (dis(gen));
+    color[1] = (dis(gen));
+    color[2] = (dis(gen));
+
+    for (int j = 0; j < vertexCount; j++) {
+      VertexPosUvw newPoint = vertexData.at(j);
+      newPoint.position += (glm::vec3(x, y, z));
+      newPoint.uvw *= glm::vec4(uvScale, uvScale, 1.f, 1.f);
+      newPoint.uvw += glm::vec4(offset.x, offset.y, 0.f, 0.f);
+      if (!kLightCount) {
+        newPoint.base_color = color;
       }
-      for (int j = 0; j < indexCount; j++) {
-        indexData.push_back(static_cast<uint16_t>(indexData.at(j) + i * (vertexCount)));
-      }
+      vertexData.push_back(newPoint);
+    }
+    for (int j = 0; j < indexCount; j++) {
+      indexData.push_back(static_cast<uint16_t>(indexData.at(j) + i * (vertexCount)));
     }
 
-    float const scale = 1.f / grid;
+    offset.x += 1.f / grid;
+    if (offset.x > 1.f) {
+      offset.x = 0.f;
+      offset.y += 1.f / grid;
+    }
+  }
 
-    if (!kTestOverdraw) // we want to fill up the screen here
-    {
-      for (auto& i : vertexData0) {
-        i.position.x *= scale;
-        i.position.y *= scale;
-        i.position.z *= scale;
-      }
+  if (!kTestOverdraw) // we want to fill up the screen here
+  {
+    for (auto& i : vertexData) {
+      i.position.x *= scale;
+      i.position.y *= scale;
+      i.position.z *= scale;
     }
   }
 
   auto& device = getPlatform().getDevice();
   const BufferDesc vb0Desc = BufferDesc(BufferDesc::BufferTypeBits::Vertex,
-                                        vertexData0.data(),
-                                        sizeof(VertexPosUvw) * vertexData0.size());
+                                        vertexData.data(),
+                                        sizeof(VertexPosUvw) * vertexData.size());
   vb0_ = device.createBuffer(vb0Desc, nullptr);
   const BufferDesc ibDesc = BufferDesc(
       BufferDesc::BufferTypeBits::Index, indexData.data(), sizeof(uint16_t) * indexData.size());
@@ -585,7 +560,7 @@ void GPUStressSession::createCubes() {
   inputDesc.attributes[0].bufferIndex = 0;
   inputDesc.attributes[0].name = "position";
   inputDesc.attributes[0].location = 0;
-  inputDesc.attributes[1].format = VertexAttributeFormat::Float3;
+  inputDesc.attributes[1].format = VertexAttributeFormat::Float4;
   inputDesc.attributes[1].offset = offsetof(VertexPosUvw, uvw);
   inputDesc.attributes[1].bufferIndex = 0;
   inputDesc.attributes[1].name = "uvw_in";
@@ -602,6 +577,18 @@ void GPUStressSession::createCubes() {
 }
 
 void GPUStressSession::initialize() noexcept {
+  pipelineState_ = nullptr;
+  vertexInput0_ = nullptr;
+  vb0_ = nullptr;
+  ib0_ = nullptr; // Buffers for vertices and indices (or constants)
+  samp0_ = nullptr;
+  samp1_ = nullptr;
+  framebuffer_ = nullptr;
+  vertexData.resize(0); // recalc verts
+  indexData.resize(36); // keep the first 36 indices
+
+  //  this is sets the size of our 'app window' so we can shrink the number of
+  //  changed pixels we send to the delphi.
   appParamsRef().sizeX = .5f;
   appParamsRef().sizeY = .5f;
   lastTime_ = std::chrono::duration_cast<std::chrono::microseconds>(
@@ -613,8 +600,10 @@ void GPUStressSession::initialize() noexcept {
   }
 
   createCubes();
-  imguiSession_ = std::make_unique<iglu::imgui::Session>(getPlatform().getDevice(),
-                                                         getPlatform().getInputDispatcher());
+  if (!imguiSession_) {
+    imguiSession_ = std::make_unique<iglu::imgui::Session>(getPlatform().getDevice(),
+                                                           getPlatform().getInputDispatcher());
+  }
 
   createSamplerAndTextures(device);
   shaderStages_ = getShaderStagesForBackend(device);
@@ -624,6 +613,7 @@ void GPUStressSession::initialize() noexcept {
   commandQueue_ = device.createCommandQueue(desc, nullptr);
 
   tex0_->generateMipmap(*commandQueue_);
+  tex1_->generateMipmap(*commandQueue_);
 
   // Set up vertex uniform data
   vertexParameters_.scaleZ = 1.0f;
@@ -662,10 +652,15 @@ void GPUStressSession::setModelViewMatrix(float angle,
                                           float offsetX,
                                           float offsetY,
                                           float offsetZ) {
-  float const divisor = sqrtf(static_cast<float>(kDrawCount));
+  float divisor = std::sqrt(static_cast<float>(kDrawCount)) / kScaleFill;
+  if (kTestOverdraw) {
+    divisor = 1.f;
+    offsetX = 0.f;
+    offsetY = 0.f;
+  }
 
-  float const cosAngle = cosf(angle);
-  float const sinAngle = sinf(angle);
+  float const cosAngle = std::cos(angle);
+  float const sinAngle = std::sin(angle);
   glm::vec4 const v0(cosAngle / divisor, 0.f, -sinAngle / divisor, 0.f);
   glm::vec4 const v1(0.f, 1.f / divisor, 0.f, 0.f);
   glm::vec4 const v2(sinAngle / divisor, 0.f, cosAngle / divisor, 0.f);
@@ -766,9 +761,7 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
 void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
                                  std::shared_ptr<igl::IRenderCommandEncoder> commands) {
   static float angle = 0.0f;
-  if (!kTestOverdraw) {
-    angle += 0.005f;
-  }
+  angle += 0.005f;
 
   // rotating animation
   static float scaleZ = 1.0f, ss = 0.005f;
@@ -781,7 +774,8 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
   auto& device = getPlatform().getDevice();
   // cube animation
   constexpr uint32_t textureUnit = 0;
-  const int grid = static_cast<int>(ceil(sqrt(static_cast<float>(kDrawCount))));
+  constexpr uint32_t textureUnit1 = 1;
+  const int grid = static_cast<int>(std::ceil(std::sqrt(static_cast<float>(kDrawCount))));
   float const divisor = .5 / static_cast<float>(grid);
 
   int counter = 0;
@@ -796,13 +790,16 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
       counter++;
       float const x = static_cast<float>(j) * divisor;
       float const y = static_cast<float>(i) * divisor;
-      setModelViewMatrix(angle, scaleZ, x, y, 0.f);
+      setModelViewMatrix(kTestOverdraw ? 0.f : angle, scaleZ, x, y, 0.f);
 
-      // note that we are deliberately binding redundant state - the goal here is to
-      // tax the driver.  The giant vertex buffer (kCubeCount) will stress just the gpu
+      // note that we are deliberately binding redundant state - the goal here
+      // is to tax the driver.  The giant vertex buffer (kCubeCount) will stress
+      // just the gpu
       commands->bindVertexBuffer(0, vb0_);
       commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());
       commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
+      commands->bindTexture(textureUnit1, BindTarget::kFragment, tex1_.get());
+      commands->bindSamplerState(textureUnit1, BindTarget::kFragment, samp1_.get());
       commands->bindRenderPipelineState(pipelineState_);
       commands->bindDepthStencilState(depthStencilState_);
 
@@ -853,6 +850,13 @@ void GPUStressSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   if (!isDeviceCompatible(device)) {
     return;
   }
+  if (forceReset_) {
+    memBlock.resize(0);
+    forceReset_ = false;
+    initialize();
+  }
+
+  allocateMemory();
   thrashCPU();
   thrashMemory();
 
@@ -907,4 +911,136 @@ void GPUStressSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commandQueue_->submit(*buffer); // Guarantees ordering between command buffers
 }
 
+void GPUStressSession::setNumThreads(int numThreads) {
+  kThreadCount = numThreads;
+}
+
+void GPUStressSession::setThrashMemory(bool thrashMemory) {
+  kThrashMemory = thrashMemory;
+}
+void GPUStressSession::setMemorySize(size_t memorySize) {
+  if (memorySize != kMemorySize) {
+    kMemorySize = memorySize;
+    forceReset_ = true;
+  }
+}
+void GPUStressSession::setMemoryReads(size_t memoryReads) {
+  kMemoryReads = memoryReads;
+}
+void GPUStressSession::setMemoryWrites(size_t memoryWrites) {
+  kMemoryWrites = memoryWrites;
+}
+void GPUStressSession::setGoSlowOnCpu(int goSlowOnCpu) {
+  kGoSlowOnCpu = goSlowOnCpu;
+}
+void GPUStressSession::setCubeCount(int count) {
+  if (kCubeCount != count) {
+    forceReset_ = true;
+    kCubeCount = count;
+  }
+}
+void GPUStressSession::setDrawCount(int count) {
+  kDrawCount = count;
+}
+void GPUStressSession::setTestOverdraw(bool testOverdraw) {
+  if (testOverdraw != kTestOverdraw) {
+    kTestOverdraw = testOverdraw;
+    forceReset_ = true;
+  }
+}
+void GPUStressSession::setEnableBlending(bool enableBlending) {
+  if (enableBlending != kEnableBlending) {
+    kEnableBlending = enableBlending;
+    forceReset_ = true;
+  }
+}
+void GPUStressSession::setUseMSAA(bool useMSAA) {
+  if (kUseMSAA != useMSAA) {
+    kUseMSAA = useMSAA;
+    forceReset_ = true;
+  }
+}
+void GPUStressSession::setLightCount(int lightCount) {
+  if (kLightCount != lightCount) {
+    kLightCount = lightCount;
+    forceReset_ = true;
+  }
+}
+
+void GPUStressSession::setThreadCore(int thread, int core) {
+  threadIds[thread % kThreadCount] = core;
+}
+
+int GPUStressSession::getNumThreads() const {
+  return kThreadCount;
+}
+bool GPUStressSession::getThrashMemory() const {
+  return kThrashMemory;
+}
+size_t GPUStressSession::getMemorySize() const {
+  return kMemorySize;
+}
+size_t GPUStressSession::getMemoryReads() const {
+  return kMemoryReads;
+}
+size_t GPUStressSession::getMemoryWrites() const {
+  return kMemoryWrites;
+}
+bool GPUStressSession::getGoSlowOnCpu() const {
+  return kGoSlowOnCpu != 0;
+}
+int GPUStressSession::getCubeCount() const {
+  return kCubeCount;
+}
+int GPUStressSession::getDrawCount() const {
+  return kDrawCount;
+}
+bool GPUStressSession::getTestOverdraw() const {
+  return kTestOverdraw;
+}
+bool GPUStressSession::getEnableBlending() const {
+  return kEnableBlending;
+}
+bool GPUStressSession::getUseMSAA() const {
+  return kUseMSAA;
+}
+int GPUStressSession::getLightCount() const {
+  return kLightCount;
+}
+std::vector<int> GPUStressSession::getThreadsCores() const {
+  return threadIds;
+}
+
+std::string GPUStressSession::getCurrentUsageString() const {
+  char output[2048];
+
+  snprintf(output,
+           sizeof(output),
+           "cubes: %d, draws: %d, lights: %d, threads: %d,  cpu load: %d, memory reads: %lu , "
+           "memory writes: %lu, "
+           "msaa %s , blending %s, framerate: %.2f,",
+           kCubeCount.load(),
+           kDrawCount.load(),
+           kLightCount.load(),
+           kThreadCount.load(),
+           kGoSlowOnCpu.load(),
+           kMemoryReads.load() * (kThrashMemory ? 1 : 0),
+           kMemoryWrites.load() * (kThrashMemory ? 1 : 0),
+           kUseMSAA ? "on" : "off",
+           kEnableBlending ? "on" : "off ",
+           fps_.getAverageFPS());
+
+  return output;
+}
+void GPUStressSession::setNumLayers(size_t numLayers) {
+#if !defined(IGL_PLATFORM_WIN)
+  QuadLayerParams params;
+  for (int i = 0; i < numLayers; i++) {
+    params.positions.emplace_back(0.f, 0.f, 0.f);
+    params.sizes.emplace_back(1.f, 1.f);
+  }
+
+  appParamsRef().quadLayerParams.emplace(params);
+#endif
+}
 } // namespace igl::shell

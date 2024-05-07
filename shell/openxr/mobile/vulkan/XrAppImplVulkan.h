@@ -23,7 +23,7 @@
 
 namespace igl::shell::openxr::mobile {
 class XrSwapchainProvider;
-class XrAppImplVulkan final : public impl::XrAppImpl {
+class XrAppImplVulkan : public impl::XrAppImpl {
  public:
   std::vector<const char*> getXrRequiredExtensions() const override;
   void* getInstanceCreateExtension() override;
