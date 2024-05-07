@@ -40,6 +40,9 @@ android {
             sourceSets {
                 main {
                     manifest.srcFile '../../../shell/openxr/mobile/java/com/facebook/igl/shell/openxr/gles/AndroidManifest.xml'
+                    java {
+                        srcDir '../../../shell/openxr/mobile/java/com/facebook/igl/shell/openxr/gles'
+                    }
                 }
             }
             debuggable true
@@ -48,6 +51,9 @@ android {
             sourceSets {
                 main {
                     manifest.srcFile '../../../shell/openxr/mobile/java/com/facebook/igl/shell/openxr/gles/AndroidManifest.xml'
+                    java {
+                        srcDir '../../../shell/openxr/mobile/java/com/facebook/igl/shell/openxr/gles'
+                    }
                 }
             }
             debuggable false

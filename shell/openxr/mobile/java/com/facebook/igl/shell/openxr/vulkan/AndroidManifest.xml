@@ -26,7 +26,7 @@
 
     <meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|quest3|questpro"/>
 
-    <activity android:name="android.app.NativeActivity"
+    <activity android:name="com.facebook.igl.shell.openxr.vulkan.MainActivity"
               android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
               android:launchMode="singleTask"
               android:exported="true"
