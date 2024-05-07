@@ -9,8 +9,20 @@
 
 package com.facebook.igl.shell.openxr.gles;
 
+import android.content.Intent;
+
 public class MainActivity extends android.app.NativeActivity {
   static {
     System.loadLibrary("openxr-gles-Jni");
   }
+
+  @Override
+  protected void onNewIntent(Intent intent) {
+    super.onNewIntent(intent);
+    if (intent != null && Intent.ACTION_VIEW.equals(intent.getAction())) {
+      onActionView(intent.getStringExtra("data"));
+    }
+  }
+
+  private native void onActionView(String data);
 }

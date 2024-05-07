@@ -8,6 +8,10 @@
 #include <android_native_app_glue.h>
 #include <igl/Common.h>
 #include <igl/Macros.h>
+#include <jni.h>
+#include <memory>
+#include <string>
+#include <vector>
 // #define ATTACH_DEBUGGER
 
 #ifdef ATTACH_DEBUGGER
@@ -15,6 +19,39 @@
 #endif
 
 #include <shell/openxr/XrApp.h>
+
+namespace {
+std::vector<std::string> gActionViewQueue;
+} // namespace
+
+extern "C" {
+void processActionView(JNIEnv* env, jstring data) {
+  if (env == nullptr || data == nullptr) {
+    return;
+  }
+  const jsize stringLength = env->GetStringUTFLength(data);
+  const char* stringChars = env->GetStringUTFChars(data, nullptr);
+  if (stringLength == 0 || stringChars == nullptr) {
+    return;
+  }
+  gActionViewQueue.emplace_back(stringChars, stringLength);
+  env->ReleaseStringUTFChars(data, stringChars);
+}
+
+JNIEXPORT void JNICALL
+Java_com_facebook_igl_shell_openxr_vulkan_MainActivity_onActionView(JNIEnv* env,
+                                                                    jclass /*clazz*/,
+                                                                    jstring data) {
+  processActionView(env, data);
+}
+
+JNIEXPORT void JNICALL
+Java_com_facebook_igl_shell_openxr_gles_MainActivity_onActionView(JNIEnv* env,
+                                                                  jclass /*clazz*/,
+                                                                  jstring data) {
+  processActionView(env, data);
+}
+}
 
 using namespace igl::shell::openxr;
 
@@ -144,6 +181,11 @@ void android_main(struct android_app* app) {
     if (!xrApp->sessionActive()) {
       continue;
     }
+
+    for (const auto& actionView : gActionViewQueue) {
+      xrApp->handleActionView(actionView);
+    }
+    gActionViewQueue.clear();
 
     xrApp->update();
   }

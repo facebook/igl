@@ -441,6 +441,8 @@ void XrApp::handleXrEvents() {
   }
 }
 
+void XrApp::handleActionView(const std::string& data) {}
+
 void XrApp::handleSessionStateChanges(XrSessionState state) {
   if (state == XR_SESSION_STATE_READY) {
     assert(resumed_);

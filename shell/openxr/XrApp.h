@@ -80,6 +80,7 @@ class XrApp {
   XrInstance instance() const;
 
   void handleXrEvents();
+  void handleActionView(const std::string& data);
 
   void update();
 
