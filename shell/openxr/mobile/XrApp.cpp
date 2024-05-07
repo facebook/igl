@@ -990,7 +990,10 @@ void copyFov(igl::shell::Fov& dst, const XrFovf& src) {
 } // namespace
 
 void XrApp::render() {
-  if (useQuadLayerComposition_) {
+  const auto& appParams = renderSession_->appParams();
+  const bool passthroughEnabled = appParams.passthroughGetter ? appParams.passthroughGetter()
+                                                              : useQuadLayerComposition_;
+  if (passthroughEnabled) {
     shellParams_->clearColorValue = igl::Color{0.0f, 0.0f, 0.0f, 0.0f};
   } else {
     shellParams_->clearColorValue.reset();
@@ -1125,7 +1128,10 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
                                                           static_cast<std::size_t>(kNumViews + 1));
   uint32_t layerIndex = 0;
   XrCompositionLayerPassthroughFB compositionLayer{XR_TYPE_COMPOSITION_LAYER_PASSTHROUGH_FB};
-  if (passthroughSupported_) {
+
+  const bool passthroughEnabled = appParams.passthroughGetter ? appParams.passthroughGetter()
+                                                              : useQuadLayerComposition_;
+  if (passthroughSupported_ && passthroughEnabled) {
     compositionLayer.next = nullptr;
     compositionLayer.layerHandle = passthrougLayer_;
     layers[layerIndex++] = (const XrCompositionLayerBaseHeader*)&compositionLayer;

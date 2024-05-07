@@ -13,6 +13,7 @@
 
 namespace igl::shell {
 using QuadLayerParamsGetter = std::function<QuadLayerParams()>;
+using PassthroughGetter = std::function<bool()>;
 
 struct AppParams {
   DepthParams depthParams;
@@ -20,5 +21,6 @@ struct AppParams {
   float sizeX = 1.f;
   float sizeY = 1.f;
   QuadLayerParamsGetter quadLayerParamsGetter;
+  PassthroughGetter passthroughGetter;
 };
 } // namespace igl::shell
