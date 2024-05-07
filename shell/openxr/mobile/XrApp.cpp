@@ -41,6 +41,7 @@
 
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/imageLoader/android/ImageLoaderAndroid.h>
+#include <shell/shared/input/IntentListener.h>
 #include <shell/shared/platform/android/PlatformAndroid.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/DefaultSession.h>
@@ -883,7 +884,14 @@ void XrApp::handleXrEvents() {
   }
 }
 
-void XrApp::handleActionView(const std::string& data) {}
+void XrApp::handleActionView(const std::string& data) {
+  if (platform_ != nullptr) {
+    igl::shell::IntentEvent event;
+    event.type = igl::shell::IntentType::ActionView;
+    event.data = data;
+    platform_->getInputDispatcher().queueEvent(event);
+  }
+}
 
 void XrApp::handleSessionStateChanges(XrSessionState state) {
   if (state == XR_SESSION_STATE_READY) {
@@ -1175,6 +1183,10 @@ void XrApp::endFrame(XrFrameState frameState) {
 void XrApp::update() {
   if (!initialized_ || !resumed_ || !sessionActive_) {
     return;
+  }
+
+  if (platform_ != nullptr) {
+    platform_->getInputDispatcher().processEvents();
   }
 
   auto frameState = beginFrame();
