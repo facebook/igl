@@ -49,7 +49,7 @@
                     __LINE__,                                      \
                     #func,                                         \
                     ivkGetVulkanResultString(vk_assert_result));   \
-      assert(false);                                               \
+      IGL_ASSERT(false);                                           \
     }                                                              \
   }
 
@@ -67,7 +67,7 @@
              __LINE__,                                      \
              #func,                                         \
              ivkGetVulkanResultString(vk_assert_result));   \
-      assert(false);                                        \
+      IGL_ASSERT(false);                                    \
     }                                                       \
   }
 
@@ -84,7 +84,7 @@
                     __LINE__,                                      \
                     #func,                                         \
                     ivkGetVulkanResultString(vk_assert_result));   \
-      assert(false);                                               \
+      IGL_ASSERT(false);                                           \
       return value;                                                \
     }                                                              \
   }
