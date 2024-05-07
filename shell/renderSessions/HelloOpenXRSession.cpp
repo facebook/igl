@@ -87,7 +87,7 @@ std::string getOpenGLVertexShaderSource(igl::IDevice& device) {
                         mat4 mvpMatrix = viewProjectionMatrix[gl_ViewID_OVR] * modelMatrix;
                         gl_Position = mvpMatrix * vec4(position, 1.0);
                         uvw = vec3(uvw_in.x, uvw_in.y, (uvw_in.z - 0.5) * scaleZ + 0.5);
-                        color = vec3(1.0, gl_ViewID_OVR, 0.0);
+                        color = vec3(1.0, 1.0, 0.0);
                       })";
 }
 
@@ -127,7 +127,7 @@ static const char* getVulkanVertexShaderSource() {
                         mat4 mvpMatrix = perFrame.viewProjectionMatrix[gl_ViewID_OVR] * perFrame.modelMatrix;
                         gl_Position = mvpMatrix * vec4(position, 1.0);
                         uvw = vec3(uvw_in.x, uvw_in.y, (uvw_in.z - 0.5) * perFrame.scaleZ + 0.5);
-                        color = vec3(1.0, gl_ViewID_OVR, 0.0);
+                        color = vec3(1.0, 1.0, 0.0);
                       })";
 }
 
