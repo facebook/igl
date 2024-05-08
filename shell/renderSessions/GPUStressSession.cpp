@@ -30,7 +30,7 @@
 #include <shell/shared/renderSession/QuadLayerParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || (defined(__clang__) && IGL_PLATFORM_LINUX)
 static uint32_t arc4random(void) {
   return static_cast<uint32_t>(rand());
 }
@@ -460,7 +460,7 @@ void getOffset(int counter, float& x, float& y, float& z) {
     z *= counter / 2.f;
     return;
   }
-  const float grid = std::ceilf(std::powf(kCubeCount, 1.0f / 3.0f));
+  const float grid = std::ceil(std::pow(kCubeCount, 1.0f / 3.0f));
   const int igrid = (int)grid;
   // const float fgrid = static_cast<float>(igrid);
   x = static_cast<float>((counter % igrid) - grid / 2);
@@ -492,7 +492,7 @@ void GPUStressSession::createCubes() {
 
   addNormalsToCube(); // setup for lighting if appropriate
 
-  const float grid = std::ceilf(std::powf(kCubeCount, 1.0f / 3.0f));
+  const float grid = std::ceil(std::pow(kCubeCount, 1.0f / 3.0f));
 
   const int vertexCount = vertexData.size();
   const int indexCount = indexData.size();
