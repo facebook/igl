@@ -197,8 +197,8 @@ void TextureFormatTestBase::render(std::shared_ptr<ITexture> sampledTexture,
   igl::Result result;
   auto cmds = cmdBuf->createRenderCommandEncoder(renderPass_, framebuffer, dep, &result);
   ASSERT_TRUE(result.isOk());
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
   // Create createFramebuffer fills in proper texture formats and shader stages in
   // renderPipelineDesc_

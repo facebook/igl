@@ -458,8 +458,8 @@ TEST_F(TextureCubeTest, Passthrough_SampleFromCube) {
     ASSERT_TRUE(cmdBuf_ != nullptr);
 
     auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-    cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-    cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+    cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+    cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
     cmds->bindRenderPipelineState(pipelineState);
 
@@ -568,8 +568,8 @@ TEST_F(TextureCubeTest, Passthrough_RenderToCube) {
 
     renderPass_.colorAttachments[0].face = face;
     auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, customFramebuffer);
-    cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-    cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+    cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+    cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
     cmds->bindRenderPipelineState(pipelineState);
 

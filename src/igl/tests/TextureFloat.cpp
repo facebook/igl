@@ -315,8 +315,8 @@ class TextureFloatTest : public ::testing::Test {
     ASSERT_TRUE(cmdBuf_ != nullptr);
 
     auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-    cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-    cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+    cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+    cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
     cmds->bindRenderPipelineState(pipelineState);
 

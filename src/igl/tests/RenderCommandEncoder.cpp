@@ -191,8 +191,8 @@ class RenderCommandEncoderTest : public ::testing::Test {
     encoder->bindTexture(textureUnit_, BindTarget::kFragment, texture_.get());
     encoder->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
 
-    encoder->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-    encoder->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+    encoder->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+    encoder->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
     encoder->bindRenderPipelineState(renderPipelineState_);
     encoder->bindDepthStencilState(depthStencilState_);

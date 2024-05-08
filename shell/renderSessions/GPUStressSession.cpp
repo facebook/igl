@@ -795,7 +795,7 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
       // note that we are deliberately binding redundant state - the goal here
       // is to tax the driver.  The giant vertex buffer (kCubeCount) will stress
       // just the gpu
-      commands->bindVertexBuffer(0, vb0_);
+      commands->bindVertexBuffer(0, *vb0_);
       commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());
       commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
       commands->bindTexture(textureUnit1, BindTarget::kFragment, tex1_.get());

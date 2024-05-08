@@ -74,8 +74,8 @@ TEST_F(TextureTest, Passthrough) {
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -145,8 +145,8 @@ TEST_F(TextureTest, PassthroughSubTexture) {
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -216,8 +216,8 @@ TEST_F(TextureTest, FBCopy) {
   ASSERT_TRUE(ret.isOk());
 
   auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
   cmds->bindRenderPipelineState(pipelineState);
 
   // draw 0 indices here just to clear the FB
@@ -248,8 +248,8 @@ TEST_F(TextureTest, FBCopy) {
   ASSERT_TRUE(ret.isOk());
 
   cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
   cmds->bindRenderPipelineState(pipelineState);
   cmds->drawIndexed(PrimitiveType::Triangle, 0, IndexFormat::UInt16, *ib_, 0);
   cmds->endEncoding();
@@ -271,8 +271,8 @@ TEST_F(TextureTest, FBCopy) {
   ASSERT_TRUE(ret.isOk());
 
   cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -507,8 +507,8 @@ TEST_F(TextureTest, UploadAlignment) {
     ASSERT_TRUE(cmdBuf_ != nullptr);
 
     auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, customFramebuffer);
-    cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-    cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+    cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+    cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
     cmds->bindRenderPipelineState(pipelineState);
 
@@ -602,8 +602,8 @@ TEST_F(TextureTest, Resize) {
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, fb);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 

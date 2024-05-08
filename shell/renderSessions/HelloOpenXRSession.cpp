@@ -335,7 +335,7 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   const std::shared_ptr<igl::IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
-  commands->bindVertexBuffer(0, vb0_);
+  commands->bindVertexBuffer(0, *vb0_);
 
 #if defined(IGL_UWP_VS_FIX)
   iglu::ManagedUniformBufferInfo info;

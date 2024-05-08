@@ -128,15 +128,14 @@ void RenderCommandAdapter::clearVertexBuffers() {
   vertexBuffersDirty_.reset();
 }
 
-void RenderCommandAdapter::setVertexBuffer(std::shared_ptr<Buffer> buffer,
+void RenderCommandAdapter::setVertexBuffer(Buffer& buffer,
                                            size_t offset,
-                                           int index,
+                                           size_t index,
                                            Result* outResult) {
-  IGL_ASSERT_MSG(index >= 0, "Invalid index passed to setVertexBuffer");
   IGL_ASSERT_MSG(index < IGL_VERTEX_BUFFER_MAX,
                  "Buffer index is beyond max, may want to increase limit");
-  if (index >= 0 && index < IGL_VERTEX_BUFFER_MAX && buffer) {
-    vertexBuffers_[index] = {std::move(buffer), offset};
+  if (index < IGL_VERTEX_BUFFER_MAX) {
+    vertexBuffers_[index] = {&buffer, offset};
     SET_DIRTY(vertexBuffersDirty_, index);
     Result::setOk(outResult);
   } else {

@@ -538,7 +538,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   commands->bindViewport(viewport);
   commands->bindScissorRect(scissor);
   commands->pushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
-  commands->bindVertexBuffer(0, vb0_);
+  commands->bindVertexBuffer(0, *vb0_);
   commands->bindDepthStencilState(depthStencilState_);
   commands->bindBuffer(0, ubPerFrame_[frameIndex], 0);
   commands->bindTexture(0, igl::BindTarget::kFragment, texture0_.get());

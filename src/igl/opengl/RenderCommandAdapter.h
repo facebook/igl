@@ -36,8 +36,8 @@ class RenderCommandAdapter final : public WithContext {
 
  private:
   struct BufferState {
-    std::shared_ptr<Buffer> resource;
-    size_t offset;
+    Buffer* resource = nullptr;
+    size_t offset = 0;
   };
 
   using TextureState = std::pair<ITexture*, ISamplerState*>;
@@ -63,10 +63,7 @@ class RenderCommandAdapter final : public WithContext {
   void setDepthBias(float depthBias, float slopeScale);
 
   void clearVertexBuffers();
-  void setVertexBuffer(std::shared_ptr<Buffer> buffer,
-                       size_t offset,
-                       int index,
-                       Result* outResult = nullptr);
+  void setVertexBuffer(Buffer& buffer, size_t offset, size_t index, Result* outResult = nullptr);
 
   void clearUniformBuffers();
   void setUniformBuffer(const std::shared_ptr<Buffer>& buffer,

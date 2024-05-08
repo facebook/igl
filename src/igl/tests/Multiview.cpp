@@ -294,7 +294,7 @@ TEST_F(MultiviewTest, SinglePassStereo) {
   cmds->bindRenderPipelineState(pipelineState);
   cmds->bindDepthStencilState(depthStencilState);
 
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
   vertUniformBuffer->bind(*iglDev_.get(), *pipelineState, *cmds.get());
 
   cmds->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib_, 0);

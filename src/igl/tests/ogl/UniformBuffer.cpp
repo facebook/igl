@@ -747,8 +747,8 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
 
   std::shared_ptr<igl::IRenderCommandEncoder> cmds =
       cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -783,8 +783,8 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -1148,8 +1148,8 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
 
   std::shared_ptr<igl::IRenderCommandEncoder> cmds =
       cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 
@@ -1184,8 +1184,8 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
   cmds->bindRenderPipelineState(pipelineState);
 

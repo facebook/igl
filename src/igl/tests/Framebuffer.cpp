@@ -302,8 +302,8 @@ TEST_F(FramebufferTest, Clear) {
   cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
   cmds->bindRenderPipelineState(pipelineState);
   cmds->bindDepthStencilState(depthStencilState);
-  cmds->bindVertexBuffer(data::shader::simplePosIndex, vb_);
-  cmds->bindVertexBuffer(data::shader::simpleUvIndex, uv_);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
   cmds->drawIndexed(PrimitiveType::Triangle, 0, IndexFormat::UInt16, *ib_, 0); // draw 0 indices
   cmds->endEncoding();
 
