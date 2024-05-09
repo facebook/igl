@@ -47,6 +47,8 @@ class GPUStressSession : public RenderSession {
   void setUseMSAA(bool useMSAA);
   void setLightCount(int lightCount);
   void setThreadCore(int thread, int core);
+  void setDropFrameInterval(int numberOfFramesBetweenDrops);
+  void setDropFrameCount(int numberOfFramesToDrop);
 
   int getNumThreads() const;
   bool getThrashMemory() const;
@@ -62,6 +64,8 @@ class GPUStressSession : public RenderSession {
   int getLightCount() const;
   std::vector<int> getThreadsCores() const;
   std::string getCurrentUsageString() const;
+  int getDropFrameInterval() const;
+  int getDropFrameCount() const;
 
  private:
   std::shared_ptr<ICommandQueue> commandQueue_;

@@ -63,7 +63,7 @@ std::atomic<bool> kTestOverdraw = false;
 std::atomic<bool> kEnableBlending = false; // turn this on to see the effects of alpha blending
 // make this number little to make all the cubes tiny on screen so fill isn't a
 // problem
-std::atomic<bool> kUseMSAA = false;
+std::atomic<bool> kUseMSAA = true;
 const int kMsaaSamples = 4; // this is the max number possible
 const float kScaleFill = 1.f;
 // each light will add about 45 ish instructions to your pixel shader (tested
@@ -79,6 +79,8 @@ std::atomic<size_t> kMemorySize = 64; // in MB
 std::atomic<unsigned long> kMemoryReads = 10000; // max 1000000;
 std::atomic<unsigned long> kMemoryWrites = 10000; // 100000;
 std::vector<int> threadIds = {-1, -1, -1, -1, -1, -1, -1, -1};
+std::atomic<int> kDropFrameX = 0;
+std::atomic<int> kDropFrameCount = 2;
 
 const float half = .5f;
 
@@ -88,7 +90,7 @@ const std::vector<VertexPosUvw> vertexData0 = {
     {{half, half, -half}, {1.0, 1.0, 1.0, 1.0}, {1.0, 1.0, 1.0, 1.0}},
     {{-half, -half, -half}, {0.0, 0.0, 0.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
     {{half, -half, -half}, {1.0, 0.0, 1.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
-    {{half, half, half}, {1.0, 1.0, 1.0, 1.1}, {1.0, 1.0, 1.0, 1.0}},
+    {{half, half, half}, {1.0, 1.0, 1.0, 1.0}, {1.0, 1.0, 1.0, 1.0}},
     {{-half, half, half}, {0.0, 1.0, 0.0, 1.0}, {1.0, 1.0, 1.0, 1.0}},
     {{half, -half, half}, {1.0, 0.0, 1.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
     {{-half, -half, half}, {0.0, 0.0, 0.0, 0.0}, {1.0, 1.0, 1.0, 1.0}},
@@ -468,6 +470,48 @@ void getOffset(int counter, float& x, float& y, float& z) {
   y = (static_cast<float>((counter % (igrid * igrid)) / igrid) - grid / 2.f);
 }
 
+glm::vec3 animateCube(int counter, float x, float y, float scale, int frameCount) {
+  struct animationInfo {
+    glm::vec3 velocity;
+    glm::vec3 lastPos;
+  };
+
+  static std::vector<animationInfo> animations;
+  if (animations.size() < counter) {
+    animationInfo info;
+    info.velocity = glm::vec3(1.f * (counter % 2 ? 1.0 : -1.0), 1.f - (float)(counter % 3), 0.f);
+    info.lastPos = glm::vec3(x, y, 0);
+    animations.push_back(info);
+  }
+
+  float velocityScale = 1.f;
+  if (kDropFrameX && (frameCount % kDropFrameX) < kDropFrameCount) {
+    velocityScale = 0.f;
+  } else if (kDropFrameX && (frameCount % kDropFrameX) == kDropFrameCount) {
+    velocityScale = 1.f + (float)kDropFrameCount;
+  }
+  glm::vec3 const pos =
+      animations[counter].lastPos + animations[counter].velocity * velocityScale * scale * .005f;
+  // check for collisons;
+  float const radius = .75 * scale;
+  if (pos.x + radius > 1.f) {
+    animations[counter].velocity.x = -1.f;
+  }
+  if (pos.x - radius < -1.f) {
+    animations[counter].velocity.x = 1.f;
+  }
+
+  if (pos.y + radius > 1.f) {
+    animations[counter].velocity.y = -1.f;
+  }
+  if (pos.y - radius < -1.f) {
+    animations[counter].velocity.y = 1.f;
+  }
+
+  animations[counter].lastPos = pos;
+  return pos;
+}
+
 } // namespace
 
 void GPUStressSession::createSamplerAndTextures(const igl::IDevice& device) {
@@ -652,7 +696,8 @@ void GPUStressSession::setModelViewMatrix(float angle,
                                           float offsetX,
                                           float offsetY,
                                           float offsetZ) {
-  float divisor = std::sqrt(static_cast<float>(kDrawCount)) / kScaleFill;
+  float divisor = std::ceil(std::sqrt(static_cast<float>(kDrawCount))) / (half * kScaleFill);
+
   if (kTestOverdraw) {
     divisor = 1.f;
     offsetX = 0.f;
@@ -761,6 +806,9 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
 void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
                                  std::shared_ptr<igl::IRenderCommandEncoder> commands) {
   static float angle = 0.0f;
+  static int frameCount = 0;
+  frameCount++;
+
   angle += 0.005f;
 
   // rotating animation
@@ -777,6 +825,7 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
   constexpr uint32_t textureUnit1 = 1;
   const int grid = static_cast<int>(std::ceil(std::sqrt(static_cast<float>(kDrawCount))));
   float const divisor = .5 / static_cast<float>(grid);
+  const float scale = 1.f / std::ceil(std::pow(kCubeCount, 1.0f / 3.0f));
 
   int counter = 0;
   setProjectionMatrix(surfaceTextures.color->getAspectRatio());
@@ -784,12 +833,18 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
   std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer = nullptr;
   for (int i = -grid / 2; i < grid / 2 + grid % 2; i++) {
     for (int j = -grid / 2; j < grid / 2 + grid % 2; j++) {
-      if (counter > kDrawCount) {
+      if (counter >= kDrawCount) {
         break;
       }
       counter++;
-      float const x = static_cast<float>(j) * divisor;
-      float const y = static_cast<float>(i) * divisor;
+      float x = static_cast<float>(j) * divisor;
+      float y = static_cast<float>(i) * divisor;
+      if (kDropFrameX) {
+        auto offset = animateCube(counter, x, y, scale, frameCount);
+        x = offset.x;
+        y = offset.y;
+      }
+
       setModelViewMatrix(kTestOverdraw ? 0.f : angle, scaleZ, x, y, 0.f);
 
       // note that we are deliberately binding redundant state - the goal here
@@ -1009,6 +1064,22 @@ int GPUStressSession::getLightCount() const {
 }
 std::vector<int> GPUStressSession::getThreadsCores() const {
   return threadIds;
+}
+
+void GPUStressSession::setDropFrameInterval(int numberOfFramesBetweenDrops) {
+  kDropFrameX = numberOfFramesBetweenDrops;
+}
+
+int GPUStressSession::getDropFrameInterval() const {
+  return kDropFrameX;
+}
+
+void GPUStressSession::setDropFrameCount(int numberOfFramesToDrop) {
+  kDropFrameCount = numberOfFramesToDrop;
+}
+
+int GPUStressSession::getDropFrameCount() const {
+  return kDropFrameCount;
 }
 
 std::string GPUStressSession::getCurrentUsageString() const {
