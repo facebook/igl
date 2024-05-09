@@ -5,11 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#if defined(IGL_UWP_VS_FIX)
-#include <igl/IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
-#else
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
-#endif
 
 #include <cstdlib>
 #include <igl/Macros.h>

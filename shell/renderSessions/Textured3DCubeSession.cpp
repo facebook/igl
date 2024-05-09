@@ -385,34 +385,27 @@ void Textured3DCubeSession::update(igl::SurfaceTextures surfaceTextures) noexcep
 
   commands->bindVertexBuffer(0, *vb0_);
 
-#if defined(IGL_UWP_VS_FIX)
-  igl::UniformDesc e1;
-  e1.name = "mvpMatrix";
-  e1.type = igl::UniformType::Mat4x4;
-  e1.offset = offsetof(VertexFormat, mvpMatrix);
-
-  igl::UniformDesc e2;
-  e2.name = "scaleZ";
-  e2.type = igl::UniformType::Float;
-  e2.offset = offsetof(VertexFormat, scaleZ);
-
-  iglu::ManagedUniformBufferInfo info;
-  info.index = 1;
-  info.length = sizeof(VertexFormat);
-  info.uniforms.push_back(e1);
-  info.uniforms.push_back(e2);
-
-#else // to preserve a beauty of new C++ standard!
   // Bind Vertex Uniform Data
   iglu::ManagedUniformBufferInfo info;
   info.index = 1;
   info.length = sizeof(VertexFormat);
-  info.uniforms = std::vector<igl::UniformDesc>{
-      igl::UniformDesc{
-          "mvpMatrix", -1, igl::UniformType::Mat4x4, 1, offsetof(VertexFormat, mvpMatrix), 0},
-      igl::UniformDesc{
-          "scaleZ", -1, igl::UniformType::Float, 1, offsetof(VertexFormat, scaleZ), 0}};
-#endif
+  info.uniforms = std::vector<igl::UniformDesc>{igl::UniformDesc{
+                                                    "mvpMatrix",
+                                                    -1,
+                                                    igl::UniformType::Mat4x4,
+                                                    1,
+                                                    offsetof(VertexFormat, mvpMatrix),
+                                                    0,
+                                                },
+                                                igl::UniformDesc{
+                                                    "scaleZ",
+                                                    -1,
+                                                    igl::UniformType::Float,
+                                                    1,
+                                                    offsetof(VertexFormat, scaleZ),
+                                                    0,
+                                                }};
+
   std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer =
       std::make_shared<iglu::ManagedUniformBuffer>(device, info);
   IGL_ASSERT(vertUniformBuffer->result.isOk());

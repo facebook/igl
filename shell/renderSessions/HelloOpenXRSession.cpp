@@ -337,35 +337,6 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   commands->bindVertexBuffer(0, *vb0_);
 
-#if defined(IGL_UWP_VS_FIX)
-  iglu::ManagedUniformBufferInfo info;
-  info.index = 1;
-  info.length = sizeof(VertexFormat);
-  {
-    igl::UniformDesc e;
-    e.name = "modelMatrix";
-    e.type = igl::UniformType::Mat4x4;
-    e.offset = offsetof(VertexFormat, modelMatrix);
-    info.uniforms.push_back(std::move(e));
-  }
-  {
-    igl::UniformDesc e;
-    e.name = "viewProjectionMatrix";
-    e.type = igl::UniformType::Mat4x4;
-    e.numElements = 2;
-    e.offset = offsetof(VertexFormat, viewProjectionMatrix);
-    e.elementStride = sizeof(glm::mat4);
-    info.uniforms.push_back(std::move(e));
-  }
-  {
-    igl::UniformDesc e;
-    e.name = "scaleZ";
-    e.type = igl::UniformType::Float;
-    e.offset = offsetof(VertexFormat, scaleZ);
-    info.uniforms.push_back(std::move(e));
-  }
-
-#else // to preserve a beauty of new C++ standard!
   // Bind Vertex Uniform Data
   iglu::ManagedUniformBufferInfo info;
   info.index = 1;
@@ -373,15 +344,23 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   info.uniforms = std::vector<igl::UniformDesc>{
       igl::UniformDesc{
           "modelMatrix", -1, igl::UniformType::Mat4x4, 1, offsetof(VertexFormat, modelMatrix), 0},
-      igl::UniformDesc{"viewProjectionMatrix",
-                       -1,
-                       igl::UniformType::Mat4x4,
-                       2,
-                       offsetof(VertexFormat, viewProjectionMatrix),
-                       sizeof(glm::mat4)},
       igl::UniformDesc{
-          "scaleZ", -1, igl::UniformType::Float, 1, offsetof(VertexFormat, scaleZ), 0}};
-#endif
+          "viewProjectionMatrix",
+          -1,
+          igl::UniformType::Mat4x4,
+          2,
+          offsetof(VertexFormat, viewProjectionMatrix),
+          sizeof(glm::mat4),
+      },
+      igl::UniformDesc{
+          "scaleZ",
+          -1,
+          igl::UniformType::Float,
+          1,
+          offsetof(VertexFormat, scaleZ),
+          0,
+      }};
+
   const auto vertUniformBuffer = std::make_shared<iglu::ManagedUniformBuffer>(device, info);
   IGL_ASSERT(vertUniformBuffer->result.isOk());
   *static_cast<VertexFormat*>(vertUniformBuffer->getData()) = vertexParameters_;

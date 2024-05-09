@@ -359,48 +359,26 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   commands->bindVertexBuffer(0, *vb0_);
 
-#if defined(IGL_UWP_VS_FIX)
   iglu::ManagedUniformBufferInfo info;
   info.index = 1;
   info.length = sizeof(UniformBlock);
+  info.uniforms = std::vector<igl::UniformDesc>{
+      igl::UniformDesc{
+          "jointMatrices",
+          -1,
+          igl::UniformType::Mat4x4,
+          kMaxJoints,
+          offsetof(UniformBlock, jointMatrices),
+          sizeof(glm::mat4),
+      },
+      igl::UniformDesc{"viewProjectionMatrix",
+                       -1,
+                       igl::UniformType::Mat4x4,
+                       2,
+                       offsetof(UniformBlock, viewProjectionMatrix),
+                       sizeof(glm::mat4)},
+  };
 
-  {
-    igl::UniformDesc e;
-    e.name = "jointMatrices";
-    e.type = igl::UniformType::Mat4x4;
-    e.numElements = kMaxJoints;
-    e.offset = offsetof(UniformBlock, jointMatrices);
-    e.elementStride = sizeof(glm::mat4);
-    info.uniforms.push_back(std::move(e));
-  }
-  {
-    igl::UniformDesc e;
-    e.name = "viewProjectionMatrix";
-    e.type = igl::UniformType::Mat4x4;
-    e.numElements = 2;
-    e.offset = offsetof(UniformBlock, viewProjectionMatrix);
-    e.elementStride = sizeof(glm::mat4);
-    info.uniforms.push_back(std::move(e));
-  }
-#else // to preserve a beauty of new C++ standard!
-  iglu::ManagedUniformBufferInfo info;
-  info.index = 1;
-  info.length = sizeof(UniformBlock);
-  info.uniforms =
-      std::vector<igl::UniformDesc>{igl::UniformDesc{"jointMatrices",
-                                                     -1,
-                                                     igl::UniformType::Mat4x4,
-                                                     kMaxJoints,
-                                                     offsetof(UniformBlock, jointMatrices),
-                                                     sizeof(glm::mat4)},
-                                    igl::UniformDesc{"viewProjectionMatrix",
-                                                     -1,
-                                                     igl::UniformType::Mat4x4,
-                                                     2,
-                                                     offsetof(UniformBlock, viewProjectionMatrix),
-                                                     sizeof(glm::mat4)}};
-
-#endif
   commands->bindRenderPipelineState(pipelineState_);
   commands->bindDepthStencilState(depthStencilState_);
 
