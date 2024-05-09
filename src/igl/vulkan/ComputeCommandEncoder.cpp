@@ -93,11 +93,12 @@ void ComputeCommandEncoder::bindComputePipelineState(
 void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCount,
                                                  const Dimensions& /*threadgroupSize*/,
                                                  const Dependencies& dependencies) {
-  (void)dependencies;
-
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT_MSG(cps_, "Did you forget to call bindComputePipelineState()?");
+  if (!cps_) {
+    IGL_ASSERT_MSG(false, "Did you forget to call bindComputePipelineState()?");
+    return;
+  }
 
   for (ITexture* tex : dependencies.textures) {
     if (!tex) {
