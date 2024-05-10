@@ -45,6 +45,7 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
                   size_t bufferOffset,
                   size_t bufferSize) override;
   void bindVertexBuffer(uint32_t index, IBuffer& buffer, size_t bufferOffset) override;
+  void bindIndexBuffer(IBuffer& buffer, IndexFormat format, size_t bufferOffset) override;
   void bindBytes(size_t index, uint8_t bindTarget, const void* data, size_t length) override;
   void bindPushConstants(const void* data, size_t length, size_t offset) override;
   void bindSamplerState(size_t index, uint8_t target, ISamplerState* samplerState) override;
@@ -105,6 +106,9 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   void bindPolygonFillMode(const PolygonFillMode& polygonFillMode);
 
   id<MTLRenderCommandEncoder> encoder_ = nil;
+  id<MTLBuffer> indexBuffer_ = nil;
+  MTLIndexType indexType_ = MTLIndexTypeUInt32;
+  size_t indexBufferOffset_ = 0;
   // 4 KB - page aligned memory for metal managed resource
   static constexpr uint32_t MAX_RECOMMENDED_BYTES = 4 * 1024;
 

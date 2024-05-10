@@ -64,6 +64,7 @@ class RenderCommandAdapter final : public WithContext {
 
   void clearVertexBuffers();
   void setVertexBuffer(Buffer& buffer, size_t offset, size_t index, Result* outResult = nullptr);
+  void setIndexBuffer(Buffer& buffer);
 
   void clearUniformBuffers();
   void setUniformBuffer(const std::shared_ptr<Buffer>& buffer,

@@ -520,6 +520,19 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, siz
   ctx_.vf_.vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
 }
 
+void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
+                                           IndexFormat format,
+                                           size_t bufferOffset) {
+  const auto& buf = static_cast<igl::vulkan::Buffer&>(buffer);
+
+  IGL_ASSERT_MSG(buf.getBufferUsageFlags() & VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                 "Did you forget to specify BufferTypeBits::Index on your buffer?");
+
+  const VkIndexType type = indexFormatToVkIndexType(format);
+
+  ctx_.vf_.vkCmdBindIndexBuffer(cmdBuffer_, buf.getVkBuffer(), bufferOffset, type);
+}
+
 void RenderCommandEncoder::bindBytes(size_t /*index*/,
                                      uint8_t /*target*/,
                                      const void* /*data*/,

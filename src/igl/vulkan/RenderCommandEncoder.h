@@ -58,6 +58,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
                   size_t bufferOffset,
                   size_t bufferSize) override;
   void bindVertexBuffer(uint32_t index, IBuffer& buffer, size_t bufferOffset) override;
+  void bindIndexBuffer(IBuffer& buffer, IndexFormat format, size_t bufferOffset) override;
 
   /// @brief Not implemented
   void bindBytes(size_t index, uint8_t target, const void* data, size_t length) override;

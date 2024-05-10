@@ -143,6 +143,10 @@ void RenderCommandAdapter::setVertexBuffer(Buffer& buffer,
   }
 }
 
+void RenderCommandAdapter::setIndexBuffer(Buffer& buffer) {
+  bindBufferWithShaderStorageBufferOverride(buffer, GL_ELEMENT_ARRAY_BUFFER);
+}
+
 void RenderCommandAdapter::clearUniformBuffers() {
   uniformAdapter_.clearUniformBuffers();
 }

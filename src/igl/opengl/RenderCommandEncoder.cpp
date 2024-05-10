@@ -24,6 +24,41 @@
 
 namespace igl {
 namespace opengl {
+
+namespace {
+GLenum toGlPrimitive(PrimitiveType t) {
+  GLenum result = GL_TRIANGLES;
+  switch (t) {
+  case PrimitiveType::Point:
+    result = GL_POINTS;
+    break;
+  case PrimitiveType::Line:
+    result = GL_LINES;
+    break;
+  case PrimitiveType::LineStrip:
+    result = GL_LINE_STRIP;
+    break;
+  case PrimitiveType::Triangle:
+    break;
+  case PrimitiveType::TriangleStrip:
+    result = GL_TRIANGLE_STRIP;
+    break;
+  }
+  return result;
+}
+
+int toGlType(IndexFormat format) {
+  switch (format) {
+  case IndexFormat::UInt16:
+    return GL_UNSIGNED_SHORT;
+  case IndexFormat::UInt32:
+    return GL_UNSIGNED_INT;
+  }
+  IGL_UNREACHABLE_RETURN(GL_UNSIGNED_INT)
+}
+
+} // namespace
+
 RenderCommandEncoder::RenderCommandEncoder(std::shared_ptr<CommandBuffer> commandBuffer) :
   IRenderCommandEncoder(std::move(commandBuffer)),
   WithContext(static_cast<CommandBuffer&>(getCommandBuffer()).getContext()) {}
@@ -260,6 +295,16 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, siz
   }
 }
 
+void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
+                                           IndexFormat format,
+                                           size_t bufferOffset) {
+  if (IGL_VERIFY(adapter_)) {
+    indexType_ = toGlType(format);
+    indexBufferOffset_ = reinterpret_cast<void*>(bufferOffset);
+    adapter_->setIndexBuffer((Buffer&)buffer);
+  }
+}
+
 void RenderCommandEncoder::bindBytes(size_t /*index*/,
                                      uint8_t /*target*/,
                                      const void* /*data*/,
@@ -296,40 +341,6 @@ void RenderCommandEncoder::bindTexture(size_t index, uint8_t bindTarget, ITextur
     }
   }
 }
-
-namespace {
-GLenum toGlPrimitive(PrimitiveType t) {
-  GLenum result = GL_TRIANGLES;
-  switch (t) {
-  case PrimitiveType::Point:
-    result = GL_POINTS;
-    break;
-  case PrimitiveType::Line:
-    result = GL_LINES;
-    break;
-  case PrimitiveType::LineStrip:
-    result = GL_LINE_STRIP;
-    break;
-  case PrimitiveType::Triangle:
-    break;
-  case PrimitiveType::TriangleStrip:
-    result = GL_TRIANGLE_STRIP;
-    break;
-  }
-  return result;
-}
-
-int toGlType(IndexFormat format) {
-  switch (format) {
-  case IndexFormat::UInt16:
-    return GL_UNSIGNED_SHORT;
-  case IndexFormat::UInt32:
-    return GL_UNSIGNED_INT;
-  }
-  IGL_UNREACHABLE_RETURN(GL_UNSIGNED_INT)
-}
-
-} // namespace
 
 void RenderCommandEncoder::draw(PrimitiveType primitiveType,
                                 size_t vertexStart,

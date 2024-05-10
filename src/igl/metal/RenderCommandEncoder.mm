@@ -277,6 +277,15 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, siz
   hasVertexBuffers_[index] = true;
 }
 
+void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
+                                           IndexFormat format,
+                                           size_t bufferOffset) {
+  auto& metalBuffer = static_cast<Buffer&>(buffer);
+  indexBuffer_ = metalBuffer.get();
+  indexType_ = convertIndexType(format);
+  indexBufferOffset_ = bufferOffset;
+}
+
 void RenderCommandEncoder::bindBytes(size_t index,
                                      uint8_t bindTarget,
                                      const void* data,
