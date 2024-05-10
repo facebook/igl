@@ -263,7 +263,7 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     COLOR(R4G2B2_UNorm_Apple, 3, 2, 0)
     COLOR(R4G2B2_UNorm_Rev_Apple, 3, 2, 0)
     COLOR(R5G5B5A1_UNorm, 4, 2, 0)
-    COLOR(RGBX_UNorm8, 3, 3, 0)
+    COLOR(RGBX_UNorm8, 3, 4, 0)
     COLOR(RGBA_UNorm8, 4, 4, 0)
     COLOR(BGRA_UNorm8, 4, 4, 0)
     COLOR(BGRA_UNorm8_Rev, 4, 4, 0)
