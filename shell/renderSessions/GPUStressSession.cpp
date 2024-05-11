@@ -81,6 +81,7 @@ std::atomic<unsigned long> kMemoryWrites = 10000; // 100000;
 std::vector<int> threadIds = {-1, -1, -1, -1, -1, -1, -1, -1};
 std::atomic<int> kDropFrameX = 0;
 std::atomic<int> kDropFrameCount = 2;
+std::atomic<bool> kRotateCubes = true;
 
 const float half = .5f;
 
@@ -683,7 +684,7 @@ void GPUStressSession::setProjectionMatrix(float aspectRatio) {
   // perspective projection
   constexpr float fov = 45.0f * (M_PI / 180.0f);
   glm::mat4 projectionMat = glm::perspectiveLH(fov, aspectRatio, .1f, 2.1f);
-  if (kTestOverdraw) {
+  if (kTestOverdraw || !kRotateCubes) {
     projectionMat =
         glm::orthoLH_ZO(-half, half, -half / aspectRatio, half / aspectRatio, .1f, 2.1f);
   }
@@ -845,7 +846,7 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
         y = offset.y;
       }
 
-      setModelViewMatrix(kTestOverdraw ? 0.f : angle, scaleZ, x, y, 0.f);
+      setModelViewMatrix((kTestOverdraw || kRotateCubes == false) ? 0.f : angle, scaleZ, x, y, 0.f);
 
       // note that we are deliberately binding redundant state - the goal here
       // is to tax the driver.  The giant vertex buffer (kCubeCount) will stress
@@ -1080,6 +1081,14 @@ void GPUStressSession::setDropFrameCount(int numberOfFramesToDrop) {
 
 int GPUStressSession::getDropFrameCount() const {
   return kDropFrameCount;
+}
+
+void GPUStressSession::setRotateCubes(bool bRotate) {
+  kRotateCubes = bRotate;
+}
+
+bool GPUStressSession::getRotateCubes() const {
+  return kRotateCubes;
 }
 
 std::string GPUStressSession::getCurrentUsageString() const {

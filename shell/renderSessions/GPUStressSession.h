@@ -49,6 +49,7 @@ class GPUStressSession : public RenderSession {
   void setThreadCore(int thread, int core);
   void setDropFrameInterval(int numberOfFramesBetweenDrops);
   void setDropFrameCount(int numberOfFramesToDrop);
+  void setRotateCubes(bool rotate);
 
   int getNumThreads() const;
   bool getThrashMemory() const;
@@ -66,6 +67,7 @@ class GPUStressSession : public RenderSession {
   std::string getCurrentUsageString() const;
   int getDropFrameInterval() const;
   int getDropFrameCount() const;
+  bool getRotateCubes() const;
 
  private:
   std::shared_ptr<ICommandQueue> commandQueue_;
