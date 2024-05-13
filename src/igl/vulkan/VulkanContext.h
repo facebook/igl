@@ -97,6 +97,7 @@ struct VulkanContextConfig {
   bool enableDescriptorIndexing = false;
 
   igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
+  igl::TextureFormat requestedSwapChainTextureFormat = igl::TextureFormat::RGBA_UNorm8;
 
   std::vector<CommandQueueType> userQueues;
 

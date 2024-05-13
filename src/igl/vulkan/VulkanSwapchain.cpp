@@ -7,6 +7,7 @@
 
 #include "VulkanSwapchain.h"
 
+#include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
@@ -29,16 +30,14 @@ uint32_t chooseSwapImageCount(const VkSurfaceCapabilitiesKHR& caps) {
 }
 
 bool isNativeSwapChainBGR(const std::vector<VkSurfaceFormatKHR>& formats) {
-  for (auto& format : formats) {
+  for (const auto& format : formats) {
     // The preferred format should be the one which is closer to the beginning of the formats
     // container. If BGR is encountered earlier, it should be picked as the format of choice. If RGB
     // happens to be earlier, take it.
-    if (format.format == VK_FORMAT_R8G8B8A8_UNORM || format.format == VK_FORMAT_R8G8B8A8_SRGB ||
-        format.format == VK_FORMAT_A2R10G10B10_UNORM_PACK32) {
+    if (igl::vulkan::isTextureFormatRGB(format.format)) {
       return false;
     }
-    if (format.format == VK_FORMAT_B8G8R8A8_UNORM || format.format == VK_FORMAT_B8G8R8A8_SRGB ||
-        format.format == VK_FORMAT_A2B10G10R10_UNORM_PACK32) {
+    if (igl::vulkan::isTextureFormatBGR(format.format)) {
       return true;
     }
   }
@@ -46,11 +45,18 @@ bool isNativeSwapChainBGR(const std::vector<VkSurfaceFormatKHR>& formats) {
 }
 
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats,
+                                           igl::TextureFormat textureFormat,
                                            igl::ColorSpace colorSpace) {
   IGL_ASSERT(!formats.empty());
 
-  const VkSurfaceFormatKHR preferred =
-      igl::vulkan::colorSpaceToVkSurfaceFormat(colorSpace, isNativeSwapChainBGR(formats));
+  const bool isNativeSwapchainBGR = isNativeSwapChainBGR(formats);
+  auto vulkanTextureFormat = igl::vulkan::textureFormatToVkFormat(textureFormat);
+  const bool isRequestedFormatBGR = igl::vulkan::isTextureFormatBGR(vulkanTextureFormat);
+  if (isNativeSwapchainBGR != isRequestedFormatBGR) {
+    vulkanTextureFormat = igl::vulkan::invertRedAndBlue(vulkanTextureFormat);
+  }
+  const auto preferred =
+      VkSurfaceFormatKHR{vulkanTextureFormat, igl::vulkan::colorSpaceToVkColorSpace(colorSpace)};
 
   for (const auto& curFormat : formats) {
     if (curFormat.format == preferred.format && curFormat.colorSpace == preferred.colorSpace) {
@@ -120,8 +126,9 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
   graphicsQueue_(ctx.deviceQueues_.graphicsQueue),
   width_(width),
   height_(height) {
-  surfaceFormat_ =
-      chooseSwapSurfaceFormat(ctx.deviceSurfaceFormats_, ctx.config_.swapChainColorSpace);
+  surfaceFormat_ = chooseSwapSurfaceFormat(ctx.deviceSurfaceFormats_,
+                                           ctx.config_.requestedSwapChainTextureFormat,
+                                           ctx.config_.swapChainColorSpace);
   IGL_DEBUG_LOG(
       "Swapchain format: %s; colorSpace: %s\n",
       TextureFormatProperties::fromTextureFormat(vkFormatToTextureFormat(surfaceFormat_.format))

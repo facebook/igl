@@ -247,7 +247,6 @@ static void initIGL() {
   {
     const igl::vulkan::VulkanContextConfig cfg = {
         .terminateOnValidationError = true,
-        .swapChainColorSpace = igl::ColorSpace::SRGB_LINEAR,
     };
 #ifdef _WIN32
     auto ctx = vulkan::HWDevice::createContext(cfg, (void*)glfwGetWin32Window(window_));

@@ -307,16 +307,11 @@ using namespace igl;
     // vulkanView.wantsLayer =
     // YES; // Back the view with a layer created by the makeBackingLayer method.
 
-    const auto properties =
-        igl::TextureFormatProperties::fromTextureFormat(shellParams_.defaultColorFramebufferFormat);
-
     igl::vulkan::VulkanContextConfig vulkanContextConfig;
     vulkanContextConfig.terminateOnValidationError = true;
     vulkanContextConfig.enhancedShaderDebugging = false;
-    vulkanContextConfig.swapChainColorSpace =
-        properties.isSRGB() ? igl::ColorSpace::PASS_THROUGH // Disables OS Level Color Management to
-                                                            // achieve parity with OpenGL
-                            : igl::ColorSpace::SRGB_LINEAR;
+    // Disables OS Level Color Management to achieve parity with OpenGL
+    vulkanContextConfig.swapChainColorSpace = igl::ColorSpace::PASS_THROUGH;
 
     auto context =
         igl::vulkan::HWDevice::createContext(vulkanContextConfig, (__bridge void*)vulkanView);

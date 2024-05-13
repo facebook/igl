@@ -77,36 +77,4 @@ inline const char* IGL_NONNULL colorSpaceToString(ColorSpace colorSpace) {
   IGL_UNREACHABLE_RETURN("unknown color space")
 }
 
-inline igl::TextureFormat colorSpaceToTextureFormat(igl::ColorSpace colorSpace,
-                                                    IGL_MAYBE_UNUSED bool isBGR = false) {
-  switch (colorSpace) {
-  case igl::ColorSpace::SRGB_LINEAR:
-    return igl::TextureFormat::RGBA_UNorm8;
-  case igl::ColorSpace::SRGB_NONLINEAR:
-    return igl::TextureFormat::RGBA_SRGB;
-  case igl::ColorSpace::DISPLAY_P3_NONLINEAR:
-  case igl::ColorSpace::EXTENDED_SRGB_LINEAR:
-  case igl::ColorSpace::DISPLAY_P3_LINEAR:
-  case igl::ColorSpace::DCI_P3_NONLINEAR:
-  case igl::ColorSpace::BT709_LINEAR:
-  case igl::ColorSpace::BT709_NONLINEAR:
-  case igl::ColorSpace::BT2020_LINEAR:
-  case igl::ColorSpace::HDR10_ST2084:
-  case igl::ColorSpace::DOLBYVISION:
-  case igl::ColorSpace::HDR10_HLG:
-  case igl::ColorSpace::ADOBERGB_LINEAR:
-  case igl::ColorSpace::ADOBERGB_NONLINEAR:
-  case igl::ColorSpace::PASS_THROUGH:
-  case igl::ColorSpace::EXTENDED_SRGB_NONLINEAR:
-  case igl::ColorSpace::DISPLAY_NATIVE_AMD:
-  case igl::ColorSpace::BT601_NONLINEAR:
-  case igl::ColorSpace::BT2020_NONLINEAR:
-  case igl::ColorSpace::BT2100_HLG_NONLINEAR:
-  case igl::ColorSpace::BT2100_PQ_NONLINEAR:
-    IGL_ASSERT_NOT_IMPLEMENTED();
-    // default to normal sRGB non linear.
-    return igl::TextureFormat::RGBA_SRGB;
-  }
-}
-
 } // namespace igl

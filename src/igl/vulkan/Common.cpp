@@ -67,6 +67,25 @@ void setResultFrom(Result* outResult, VkResult result) {
   *outResult = getResultFromVkResult(result);
 }
 
+VkFormat invertRedAndBlue(VkFormat format) {
+  switch (format) {
+  case VK_FORMAT_B8G8R8A8_UNORM:
+    return VK_FORMAT_R8G8B8A8_UNORM;
+  case VK_FORMAT_R8G8B8A8_UNORM:
+    return VK_FORMAT_B8G8R8A8_UNORM;
+  case VK_FORMAT_R8G8B8A8_SRGB:
+    return VK_FORMAT_B8G8R8A8_SRGB;
+  case VK_FORMAT_B8G8R8A8_SRGB:
+    return VK_FORMAT_R8G8B8A8_SRGB;
+  case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
+    return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+  case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+    return VK_FORMAT_A2R10G10B10_UNORM_PACK32;
+  default:
+    IGL_UNREACHABLE_RETURN(format);
+  }
+}
+
 VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
   using TextureFormat = ::igl::TextureFormat;
   switch (format) {
@@ -283,6 +302,16 @@ igl::ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace) {
   }
 }
 
+bool isTextureFormatRGB(const VkFormat& textureFormat) {
+  return textureFormat == VK_FORMAT_R8G8B8A8_UNORM || textureFormat == VK_FORMAT_R8G8B8A8_SRGB ||
+         textureFormat == VK_FORMAT_A2R10G10B10_UNORM_PACK32;
+}
+
+bool isTextureFormatBGR(const VkFormat& textureFormat) {
+  return textureFormat == VK_FORMAT_B8G8R8A8_UNORM || textureFormat == VK_FORMAT_B8G8R8A8_SRGB ||
+         textureFormat == VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+}
+
 igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
   return util::vkTextureFormatToTextureFormat(static_cast<int32_t>(format));
 }
@@ -356,22 +385,50 @@ VkSampleCountFlagBits getVulkanSampleCountFlags(size_t numSamples) {
   return VK_SAMPLE_COUNT_64_BIT;
 }
 
-VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool isBGR) {
+VkColorSpaceKHR colorSpaceToVkColorSpace(igl::ColorSpace colorSpace) {
   switch (colorSpace) {
-  case igl::ColorSpace::SRGB_LINEAR:
-    // the closest thing to sRGB linear
-    return VkSurfaceFormatKHR{isBGR ? VK_FORMAT_B8G8R8A8_UNORM : VK_FORMAT_R8G8B8A8_UNORM,
-                              VK_COLOR_SPACE_BT709_LINEAR_EXT};
-  case igl::ColorSpace::PASS_THROUGH:
-    return VkSurfaceFormatKHR{isBGR ? VK_FORMAT_B8G8R8A8_SRGB : VK_FORMAT_R8G8B8A8_SRGB,
-                              VK_COLOR_SPACE_PASS_THROUGH_EXT};
-  case igl::ColorSpace::SRGB_NONLINEAR:
-    [[fallthrough]];
-  default:
-    // default to normal sRGB non linear.
-    return VkSurfaceFormatKHR{isBGR ? VK_FORMAT_B8G8R8A8_SRGB : VK_FORMAT_R8G8B8A8_SRGB,
-                              VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+  case ColorSpace::SRGB_LINEAR:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_BT709_LINEAR_EXT; // closest thing to linear srgb
+  case ColorSpace::SRGB_NONLINEAR:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+  case ColorSpace::DISPLAY_P3_NONLINEAR:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT;
+  case ColorSpace::DISPLAY_P3_LINEAR:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_DISPLAY_P3_LINEAR_EXT;
+  case ColorSpace::EXTENDED_SRGB_LINEAR:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT;
+  case ColorSpace::DCI_P3_NONLINEAR:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT;
+  case ColorSpace::BT709_LINEAR:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_BT709_LINEAR_EXT;
+  case ColorSpace::BT709_NONLINEAR:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_BT709_NONLINEAR_EXT;
+  case ColorSpace::BT2020_LINEAR:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_BT2020_LINEAR_EXT;
+  case ColorSpace::HDR10_ST2084:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_HDR10_ST2084_EXT;
+  case ColorSpace::DOLBYVISION:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_DOLBYVISION_EXT;
+  case ColorSpace::HDR10_HLG:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_HDR10_HLG_EXT;
+  case ColorSpace::ADOBERGB_LINEAR:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT;
+  case ColorSpace::ADOBERGB_NONLINEAR:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT;
+  case ColorSpace::PASS_THROUGH:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_PASS_THROUGH_EXT;
+  case ColorSpace::EXTENDED_SRGB_NONLINEAR:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT;
+  case ColorSpace::DISPLAY_NATIVE_AMD:
+    return VkColorSpaceKHR::VK_COLOR_SPACE_DISPLAY_NATIVE_AMD;
+  case ColorSpace::BT2020_NONLINEAR:
+  case ColorSpace::BT601_NONLINEAR:
+  case ColorSpace::BT2100_HLG_NONLINEAR:
+  case ColorSpace::BT2100_PQ_NONLINEAR:
+    IGL_ASSERT_NOT_IMPLEMENTED();
+    return VkColorSpaceKHR::VK_COLOR_SPACE_BT709_NONLINEAR_EXT;
   }
+  IGL_UNREACHABLE_RETURN(VK_COLOR_SPACE_BT709_NONLINEAR_EXT);
 }
 
 uint32_t getVkLayer(TextureType type, uint32_t face, uint32_t layer) {
