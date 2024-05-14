@@ -15,19 +15,29 @@
 #import "View.h"
 
 #import <igl/IGL.h>
+
 #if IGL_BACKEND_METAL
 #import <Metal/Metal.h>
 #import <igl/metal/HWDevice.h>
 #endif
+
 #if IGL_BACKEND_OPENGL
 #import <igl/opengl/ios/Context.h>
 #import <igl/opengl/ios/Device.h>
 #import <igl/opengl/ios/HWDevice.h>
 #endif
+
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+
 #include <memory>
 #include <shell/shared/platform/ios/PlatformIos.h>
 #include <shell/shared/renderSession/DefaultSession.h>
 #include <shell/shared/renderSession/RenderSession.h>
+
 // @fb-only
 // @fb-only
 // @fb-only
@@ -105,44 +115,52 @@
   return adapter->platform;
 }
 
-- (igl::SurfaceTextures)createOpenGLSurfaceTextures {
-#if IGL_BACKEND_OPENGL
-  IGL_ASSERT(backendType_ == igl::BackendType::OpenGL);
-  auto& device = [self platform]->getDevice();
-  auto platformDevice = device.getPlatformDevice<igl::opengl::ios::PlatformDevice>();
-  IGL_ASSERT(platformDevice);
-  auto color = platformDevice->createTextureFromNativeDrawable((CAEAGLLayer*)layer_, nullptr);
-  auto depth = platformDevice->createTextureFromNativeDepth((CAEAGLLayer*)layer_, nullptr);
-  return igl::SurfaceTextures{std::move(color), std::move(depth)};
-#else
-  return igl::SurfaceTextures{};
-#endif
-}
-
-- (igl::SurfaceTextures)createMetalSurfaceTextures {
-#if IGL_BACKEND_METAL
-  IGL_ASSERT(backendType_ == igl::BackendType::Metal);
-  auto& device = [self platform]->getDevice();
-  auto platformDevice = device.getPlatformDevice<igl::metal::PlatformDevice>();
-  IGL_ASSERT(platformDevice);
-  auto color = platformDevice->createTextureFromNativeDrawable(currentDrawable_, nullptr);
-  auto depth = platformDevice->createTextureFromNativeDepth(depthStencilTexture_, nullptr);
-  return igl::SurfaceTextures{std::move(color), std::move(depth)};
-#else
-  return igl::SurfaceTextures{};
-#endif
-}
-
+// clang-format off
 - (igl::SurfaceTextures)createSurfaceTexturesInternal {
-  if (backendType_ == igl::BackendType::Metal) {
-    return [self createMetalSurfaceTextures];
-  } else if (backendType_ == igl::BackendType::OpenGL) {
-    return [self createOpenGLSurfaceTextures];
-  } else {
+  [[maybe_unused]] auto& device = [self platform]->getDevice();
+  switch (backendType_) {
+#if IGL_BACKEND_METAL
+  case igl::BackendType::Metal: {
+    IGL_ASSERT(backendType_ == igl::BackendType::Metal);
+    auto platformDevice = device.getPlatformDevice<igl::metal::PlatformDevice>();
+    IGL_ASSERT(platformDevice);
+    return igl::SurfaceTextures{
+        .color = platformDevice->createTextureFromNativeDrawable(currentDrawable_, nullptr),
+        .depth = platformDevice->createTextureFromNativeDepth(depthStencilTexture_, nullptr),
+    };
+  }
+#endif
+
+#if IGL_BACKEND_OPENGL
+  case igl::BackendType::OpenGL: {
+    IGL_ASSERT(backendType_ == igl::BackendType::OpenGL);
+    auto platformDevice = device.getPlatformDevice<igl::opengl::ios::PlatformDevice>();
+    IGL_ASSERT(platformDevice);
+    return igl::SurfaceTextures{
+        .color = platformDevice->createTextureFromNativeDrawable((CAEAGLLayer*)layer_, nullptr),
+        .depth = platformDevice->createTextureFromNativeDepth((CAEAGLLayer*)layer_, nullptr),
+    };
+  }
+#endif
+
+// @fb-only
+  // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+        // @fb-only
+        // @fb-only
+    // @fb-only
+  // @fb-only
+// @fb-only
+
+  default: {
     IGL_ASSERT_NOT_REACHED();
     return igl::SurfaceTextures{};
   }
+  }
 }
+// clang-format on
 
 // Protocol IglSurfaceTexturesProvider
 - (IglSurfacesTextureAdapterPtr)createSurfaceTextures {
