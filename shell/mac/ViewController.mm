@@ -80,7 +80,7 @@ using namespace igl;
   frame.size.width = shellParams_.viewportSize.x;
   frame.size.height = shellParams_.viewportSize.y;
   frame_ = frame;
-  kMouseSpeed_ = 0.0005;
+  kMouseSpeed_ = 0.05f;
   currentDrawable_ = nil;
   depthStencilTexture_ = nil;
   preferLatestVersion_ = preferLatestVersion;
