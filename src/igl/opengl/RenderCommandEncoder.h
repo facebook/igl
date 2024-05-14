@@ -84,8 +84,6 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
                    int32_t baseVertex,
                    uint32_t baseInstance) override;
   void drawIndexedIndirect(PrimitiveType primitiveType,
-                           IndexFormat indexFormat,
-                           IBuffer& indexBuffer,
                            IBuffer& indirectBuffer,
                            size_t indirectBufferOffset) override;
   void multiDrawIndirect(PrimitiveType primitiveType,
@@ -94,8 +92,6 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
                          uint32_t drawCount,
                          uint32_t stride) override;
   void multiDrawIndexedIndirect(PrimitiveType primitiveType,
-                                IndexFormat indexFormat,
-                                IBuffer& indexBuffer,
                                 IBuffer& indirectBuffer,
                                 size_t indirectBufferOffset,
                                 uint32_t drawCount,

@@ -96,7 +96,6 @@ class RenderCommandAdapter final : public WithContext {
                     const GLvoid* indexOffset);
   void drawElementsIndirect(GLenum mode,
                             GLenum indexType,
-                            Buffer& indexBuffer,
                             Buffer& indirectBuffer,
                             const GLvoid* indirectBufferOffset);
 

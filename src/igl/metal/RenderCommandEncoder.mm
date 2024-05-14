@@ -419,21 +419,21 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
 }
 
 void RenderCommandEncoder::drawIndexedIndirect(PrimitiveType primitiveType,
-                                               IndexFormat indexFormat,
-                                               IBuffer& indexBuffer,
                                                IBuffer& indirectBuffer,
                                                size_t indirectBufferOffset) {
   getCommandBuffer().incrementCurrentDrawCount();
   IGL_ASSERT(encoder_);
-  auto& indexBufferRef = (Buffer&)(indexBuffer);
+  IGL_ASSERT_MSG(indexBuffer_, "No index buffer bound");
+  if (!IGL_VERIFY(encoder_ && indexBuffer_)) {
+    return;
+  }
   auto& indirectBufferRef = (Buffer&)(indirectBuffer);
   MTLPrimitiveType metalPrimitive = convertPrimitiveType(primitiveType);
-  MTLIndexType indexType = convertIndexType(indexFormat);
 
   [encoder_ drawIndexedPrimitives:metalPrimitive
-                        indexType:indexType
-                      indexBuffer:indexBufferRef.get()
-                indexBufferOffset:0
+                        indexType:indexType_
+                      indexBuffer:indexBuffer_
+                indexBufferOffset:indexBufferOffset_
                    indirectBuffer:indirectBufferRef.get()
              indirectBufferOffset:indirectBufferOffset];
 }
@@ -459,10 +459,6 @@ void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
 }
 
 void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
-                                                    IndexFormat indexFormat,
-                                                    // Ignore bugprone-easily-swappable-parameters
-                                                    // @lint-ignore CLANGTIDY
-                                                    IBuffer& indexBuffer,
                                                     IBuffer& indirectBuffer,
                                                     // Ignore bugprone-easily-swappable-parameters
                                                     // @lint-ignore CLANGTIDY
@@ -470,18 +466,20 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
                                                     uint32_t drawCount,
                                                     uint32_t stride) {
   IGL_ASSERT(encoder_);
+  IGL_ASSERT_MSG(indexBuffer_, "No index buffer bound");
+  if (!IGL_VERIFY(encoder_ && indexBuffer_)) {
+    return;
+  }
   stride = stride ? stride : sizeof(MTLDrawIndexedPrimitivesIndirectArguments);
-  auto& indexBufferRef = (Buffer&)(indexBuffer);
   auto& indirectBufferRef = (Buffer&)(indirectBuffer);
   MTLPrimitiveType metalPrimitive = convertPrimitiveType(primitiveType);
-  MTLIndexType indexType = convertIndexType(indexFormat);
 
   for (uint32_t drawIndex = 0; drawIndex < drawCount; drawIndex++) {
     getCommandBuffer().incrementCurrentDrawCount();
     [encoder_ drawIndexedPrimitives:metalPrimitive
-                          indexType:indexType
-                        indexBuffer:indexBufferRef.get()
-                  indexBufferOffset:0
+                          indexType:indexType_
+                        indexBuffer:indexBuffer_
+                  indexBufferOffset:indexBufferOffset_
                      indirectBuffer:indirectBufferRef.get()
                indirectBufferOffset:indirectBufferOffset + static_cast<size_t>(stride) * drawIndex];
   }

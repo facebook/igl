@@ -386,17 +386,14 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
 }
 
 void RenderCommandEncoder::drawIndexedIndirect(PrimitiveType primitiveType,
-                                               IndexFormat indexFormat,
-                                               IBuffer& indexBuffer,
                                                IBuffer& indirectBuffer,
                                                size_t indirectBufferOffset) {
   if (IGL_VERIFY(adapter_)) {
     getCommandBuffer().incrementCurrentDrawCount();
     auto mode = toGlPrimitive(primitiveType);
-    auto type = toGlType(indexFormat);
     auto indirectBufferOffsetPtr = reinterpret_cast<void*>(indirectBufferOffset);
     adapter_->drawElementsIndirect(
-        mode, type, (Buffer&)indexBuffer, (Buffer&)indirectBuffer, indirectBufferOffsetPtr);
+        mode, indexType_, (Buffer&)indirectBuffer, indirectBufferOffsetPtr);
   }
 }
 
@@ -409,8 +406,6 @@ void RenderCommandEncoder::multiDrawIndirect(PrimitiveType /*primitiveType*/,
 }
 
 void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType /*primitiveType*/,
-                                                    IndexFormat /*indexFormat*/,
-                                                    IBuffer& /*indexBuffer*/,
                                                     IBuffer& /*indirectBuffer*/,
                                                     size_t /*indirectBufferOffset*/,
                                                     uint32_t /*drawCount*/,

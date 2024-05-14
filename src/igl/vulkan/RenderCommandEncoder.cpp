@@ -683,16 +683,13 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
 }
 
 void RenderCommandEncoder::drawIndexedIndirect(PrimitiveType primitiveType,
-                                               IndexFormat indexFormat,
-                                               IBuffer& indexBuffer,
                                                IBuffer& indirectBuffer,
                                                size_t indirectBufferOffset) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
   IGL_PROFILER_ZONE_GPU_COLOR_VK(
       "drawIndexedIndirect()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
 
-  multiDrawIndexedIndirect(
-      primitiveType, indexFormat, indexBuffer, indirectBuffer, indirectBufferOffset, 1, 0);
+  multiDrawIndexedIndirect(primitiveType, indirectBuffer, indirectBufferOffset, 1, 0);
 }
 
 void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
@@ -723,8 +720,6 @@ void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
 }
 
 void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
-                                                    IndexFormat indexFormat,
-                                                    IBuffer& indexBuffer,
                                                     IBuffer& indirectBuffer,
                                                     size_t indirectBufferOffset,
                                                     uint32_t drawCount,
@@ -742,11 +737,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
 
-  const igl::vulkan::Buffer* bufIndex = static_cast<igl::vulkan::Buffer*>(&indexBuffer);
   const igl::vulkan::Buffer* bufIndirect = static_cast<igl::vulkan::Buffer*>(&indirectBuffer);
-
-  const VkIndexType type = indexFormatToVkIndexType(indexFormat);
-  ctx_.vf_.vkCmdBindIndexBuffer(cmdBuffer_, bufIndex->getVkBuffer(), 0, type);
 
   ctx_.vf_.vkCmdDrawIndexedIndirect(cmdBuffer_,
                                     bufIndirect->getVkBuffer(),
