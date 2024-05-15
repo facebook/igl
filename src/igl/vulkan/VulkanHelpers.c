@@ -1413,6 +1413,9 @@ void ivkBufferBarrier(const struct VulkanFunctionTable* vt,
   if (usageFlags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) {
     barrier.dstAccessMask |= VK_ACCESS_INDEX_READ_BIT;
   }
+  if (usageFlags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) {
+    barrier.dstAccessMask |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+  }
 
   vt->vkCmdPipelineBarrier(cmdBuffer, srcStageMask, dstStageMask, 0, 0, NULL, 1, &barrier, 0, NULL);
 }
