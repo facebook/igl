@@ -1811,6 +1811,7 @@ void createOffscreenFramebuffer() {
     descDepth.usage = TextureDesc::TextureUsageBits::Attachment;
     descDepth.numSamples = kNumSamplesMSAA;
     descDepth.numMipLevels = 1;
+    descDepth.storage = ResourceStorage::Memoryless;
   }
   std::shared_ptr<ITexture> texDepth = device_->createTexture(descDepth, &ret);
   IGL_ASSERT(ret.isOk());
@@ -1828,6 +1829,7 @@ void createOffscreenFramebuffer() {
     descColor.usage = TextureDesc::TextureUsageBits::Attachment;
     descColor.numSamples = kNumSamplesMSAA;
     descColor.numMipLevels = 1;
+    descColor.storage = ResourceStorage::Memoryless;
   }
   std::shared_ptr<ITexture> texColor = device_->createTexture(descColor, &ret);
   IGL_ASSERT(ret.isOk());
