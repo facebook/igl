@@ -90,6 +90,46 @@ void ComputeCommandEncoder::bindComputePipelineState(
   }
 }
 
+void ComputeCommandEncoder::processDependencies(const Dependencies& dependencies) {
+  // 1. Process all textures
+  {
+    const Dependencies* deps = &dependencies;
+
+    while (deps) {
+      for (ITexture* tex : deps->textures) {
+        if (!tex) {
+          break;
+        }
+        igl::vulkan::transitionToGeneral(cmdBuffer_, tex);
+      }
+      deps = deps->next;
+    }
+  }
+
+  // 2. Process all buffers
+  {
+    const Dependencies* deps = &dependencies;
+
+    while (deps) {
+      for (IBuffer* buf : deps->buffers) {
+        if (!buf) {
+          break;
+        }
+        const auto* vkBuf = static_cast<igl::vulkan::Buffer*>(buf);
+        ivkBufferBarrier(&ctx_.vf_,
+                         cmdBuffer_,
+                         vkBuf->getVkBuffer(),
+                         vkBuf->getBufferUsageFlags(),
+                         VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+      }
+      deps = deps->next;
+    }
+  }
+}
+
 void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCount,
                                                  const Dimensions& /*threadgroupSize*/,
                                                  const Dependencies& dependencies) {
@@ -100,25 +140,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
     return;
   }
 
-  for (ITexture* tex : dependencies.textures) {
-    if (!tex) {
-      break;
-    }
-    igl::vulkan::transitionToGeneral(cmdBuffer_, tex);
-  }
-  for (IBuffer* buf : dependencies.buffers) {
-    if (!buf) {
-      break;
-    }
-    const auto* vkBuf = static_cast<igl::vulkan::Buffer*>(buf);
-    ivkBufferBarrier(&ctx_.vf_,
-                     cmdBuffer_,
-                     vkBuf->getVkBuffer(),
-                     vkBuf->getBufferUsageFlags(),
-                     VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-  }
+  processDependencies(dependencies);
 
   binder_.updateBindings(cps_->getVkPipelineLayout(), *cps_);
   // threadgroupSize is controlled inside compute shaders

@@ -75,6 +75,9 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   }
 
  private:
+  void processDependencies(const Dependencies& dependencies);
+
+ private:
   VulkanContext& ctx_;
   VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
   bool isEncoding_ = false;
