@@ -283,6 +283,8 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
   // attributeList and locations should have an 1-to-1 correspondence
   IGL_ASSERT(attribList.size() == locations.size());
 
+  activeAttributesLocations_.clear();
+
   for (size_t i = 0, iLen = attribList.size(); i < iLen; i++) {
     auto location = locations[i];
     if (location < 0) {
