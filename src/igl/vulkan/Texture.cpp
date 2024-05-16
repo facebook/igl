@@ -96,6 +96,10 @@ Result Texture::create(const TextureDesc& desc) {
   if (desc_.usage & TextureDesc::TextureUsageBits::Attachment) {
     usageFlags |= getProperties().isDepthOrStencil() ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
                                                      : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    if (desc_.storage == igl::ResourceStorage::Memoryless) {
+      usageFlags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+    }
   }
 
   // For now, always set this flag so we can read it back
