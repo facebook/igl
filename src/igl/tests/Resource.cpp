@@ -7,7 +7,6 @@
 
 #include "data/TextureData.h"
 #include "util/Common.h"
-#include "util/TestDevice.h"
 
 #include <string>
 
