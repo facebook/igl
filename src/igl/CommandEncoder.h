@@ -26,6 +26,7 @@ struct Dependencies {
   // if any NULL texture or buffer is encountered.
   ITexture* IGL_NULLABLE textures[IGL_MAX_TEXTURE_DEPENDENCIES] = {};
   IBuffer* IGL_NULLABLE buffers[IGL_MAX_BUFFER_DEPENDENCIES] = {};
+  const Dependencies* IGL_NULLABLE next = nullptr; // optional extra dependencies
 };
 
 /**
