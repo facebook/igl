@@ -332,7 +332,8 @@ class TextureFloatTest : public ::testing::Test {
     *static_cast<VertexUniforms*>(vertUniformBuffer->getData()) = vertexUniforms_;
     vertUniformBuffer->bind(*iglDev_, *pipelineState, *cmds);
 
-    cmds->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib_, 0);
+    cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
+    cmds->drawIndexed(PrimitiveType::Triangle, 6);
 
     cmds->endEncoding();
 
