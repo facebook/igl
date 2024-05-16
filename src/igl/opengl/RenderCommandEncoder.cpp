@@ -385,10 +385,36 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
   }
 }
 
+void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
+                                       size_t indexCount,
+                                       uint32_t instanceCount,
+                                       uint32_t firstIndex,
+                                       int32_t vertexOffset,
+                                       uint32_t baseInstance) {
+  (void)instanceCount;
+  (void)firstIndex;
+  (void)vertexOffset;
+  (void)baseInstance;
+
+  IGL_ASSERT_MSG(instanceCount == 1, "Instancing is not implemented");
+  IGL_ASSERT_MSG(firstIndex == 0, "firstIndex is not implemented");
+  IGL_ASSERT_MSG(vertexOffset == 0, "vertexOffset is not implemented");
+  IGL_ASSERT_MSG(baseInstance == 0, "Instancing is not implemented");
+  IGL_ASSERT_MSG(indexType_, "No index buffer bound");
+
+  if (IGL_VERIFY(adapter_ && indexType_)) {
+    getCommandBuffer().incrementCurrentDrawCount();
+    auto mode = toGlPrimitive(primitiveType);
+    adapter_->drawElements(mode, (GLsizei)indexCount, indexType_, indexBufferOffset_);
+  }
+}
+
 void RenderCommandEncoder::drawIndexedIndirect(PrimitiveType primitiveType,
                                                IBuffer& indirectBuffer,
                                                size_t indirectBufferOffset) {
-  if (IGL_VERIFY(adapter_)) {
+  IGL_ASSERT_MSG(indexType_, "No index buffer bound");
+
+  if (IGL_VERIFY(adapter_ && indexType_)) {
     getCommandBuffer().incrementCurrentDrawCount();
     auto mode = toGlPrimitive(primitiveType);
     auto indirectBufferOffsetPtr = reinterpret_cast<void*>(indirectBufferOffset);
@@ -410,6 +436,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType /*primitiveTyp
                                                     size_t /*indirectBufferOffset*/,
                                                     uint32_t /*drawCount*/,
                                                     uint32_t /*stride*/) {
+  IGL_ASSERT_MSG(indexType_, "No index buffer bound");
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
 

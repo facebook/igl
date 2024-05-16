@@ -384,6 +384,44 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
 
 void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
                                        size_t indexCount,
+                                       uint32_t instanceCount,
+                                       uint32_t firstIndex,
+                                       int32_t vertexOffset,
+                                       uint32_t baseInstance) {
+  getCommandBuffer().incrementCurrentDrawCount();
+  IGL_ASSERT(encoder_);
+  IGL_ASSERT_MSG(firstIndex == 0, "firstIndex not supported");
+  IGL_ASSERT_MSG(indexBuffer_, "No index buffer bound");
+  if (!IGL_VERIFY(encoder_ && indexBuffer_)) {
+    return;
+  }
+
+  MTLPrimitiveType metalPrimitive = convertPrimitiveType(primitiveType);
+
+#if IGL_PLATFORM_IOS
+  if (@available(iOS 16, *)) {
+#endif // IGL_PLATFORM_IOS
+    [encoder_ drawIndexedPrimitives:metalPrimitive
+                         indexCount:indexCount
+                          indexType:indexType_
+                        indexBuffer:indexBuffer_
+                  indexBufferOffset:indexBufferOffset_
+                      instanceCount:instanceCount
+                         baseVertex:vertexOffset
+                       baseInstance:baseInstance];
+#if IGL_PLATFORM_IOS
+  } else {
+    [encoder_ drawIndexedPrimitives:metalPrimitive
+                         indexCount:indexCount
+                          indexType:indexType_
+                        indexBuffer:indexBuffer_
+                  indexBufferOffset:indexBufferOffset_];
+  }
+#endif // IGL_PLATFORM_IOS
+}
+
+void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
+                                       size_t indexCount,
                                        IndexFormat indexFormat,
                                        IBuffer& indexBuffer,
                                        size_t indexBufferOffset,
