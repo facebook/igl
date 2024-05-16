@@ -403,7 +403,7 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
   return vt->vkCreateDevice(physicalDevice, &ci, NULL, outDevice);
 }
 
-#if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACCATALYST
+#if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_MACCATALYST
 #define VK_EXT_DEBUG_UTILS_SUPPORTED 1
 #else
 #define VK_EXT_DEBUG_UTILS_SUPPORTED 0
@@ -415,6 +415,12 @@ VkResult ivkCreateDebugUtilsMessenger(const struct VulkanFunctionTable* vt,
                                       PFN_vkDebugUtilsMessengerCallbackEXT callback,
                                       void* logUserData,
                                       VkDebugUtilsMessengerEXT* outMessenger) {
+  // Some Android devices don't have the VK_EXT_debug_utils functions available, even though the
+  // extension is supported and has been enabled
+  if (vt->vkCreateDebugUtilsMessengerEXT == NULL) {
+    return VK_SUCCESS;
+  }
+
   const VkDebugUtilsMessengerCreateInfoEXT ci = {
       .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
       .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
@@ -1483,7 +1489,9 @@ VkResult ivkSetDebugObjectName(const struct VulkanFunctionTable* vt,
                                VkObjectType type,
                                uint64_t handle,
                                const char* name) {
-  if (!name || !*name) {
+  // Some Android devices don't have the VK_EXT_debug_utils functions available, even though the
+  // extension is supported and has been enabled
+  if (!name || !*name || vt->vkSetDebugUtilsObjectNameEXT == NULL) {
     return VK_SUCCESS;
   }
 
@@ -1506,6 +1514,12 @@ void ivkCmdBeginDebugUtilsLabel(const struct VulkanFunctionTable* vt,
                                 const char* name,
                                 const float colorRGBA[4]) {
 #if VK_EXT_DEBUG_UTILS_SUPPORTED
+  // Some Android devices don't have the VK_EXT_debug_utils functions available, even though the
+  // extension is supported and has been enabled
+  if (!name || !*name || vt->vkCmdBeginDebugUtilsLabelEXT == NULL) {
+    return;
+  }
+
   const VkDebugUtilsLabelEXT label = {
       .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
       .pNext = NULL,
@@ -1521,6 +1535,12 @@ void ivkCmdInsertDebugUtilsLabel(const struct VulkanFunctionTable* vt,
                                  const char* name,
                                  const float colorRGBA[4]) {
 #if VK_EXT_DEBUG_UTILS_SUPPORTED
+  // Some Android devices don't have the VK_EXT_debug_utils functions available, even though the
+  // extension is supported and has been enabled
+  if (!name || !*name || vt->vkCmdInsertDebugUtilsLabelEXT == NULL) {
+    return;
+  }
+
   const VkDebugUtilsLabelEXT label = {
       .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
       .pNext = NULL,
@@ -1533,7 +1553,11 @@ void ivkCmdInsertDebugUtilsLabel(const struct VulkanFunctionTable* vt,
 
 void ivkCmdEndDebugUtilsLabel(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer) {
 #if VK_EXT_DEBUG_UTILS_SUPPORTED
-  vt->vkCmdEndDebugUtilsLabelEXT(buffer);
+  // Some Android devices don't have the VK_EXT_debug_utils functions available, even though the
+  // extension is supported and has been enabled
+  if (vt->vkCmdEndDebugUtilsLabelEXT != NULL) {
+    vt->vkCmdEndDebugUtilsLabelEXT(buffer);
+  }
 #endif // VK_EXT_DEBUG_UTILS_SUPPORTED
 }
 
