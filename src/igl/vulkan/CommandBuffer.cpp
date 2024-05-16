@@ -41,35 +41,6 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
 
   framebuffer_ = framebuffer;
 
-  for (ITexture* IGL_NULLABLE tex : dependencies.textures) {
-    if (!tex) {
-      break;
-    }
-    transitionToShaderReadOnly(wrapper_.cmdBuf_, tex);
-  }
-  for (IBuffer* IGL_NULLABLE buf : dependencies.buffers) {
-    if (!buf) {
-      break;
-    }
-    VkPipelineStageFlags dstStageFlags =
-        VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    const auto* vkBuf = static_cast<const igl::vulkan::Buffer*>(buf);
-    const VkBufferUsageFlags flags = vkBuf->getBufferUsageFlags();
-    if ((flags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) || (flags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) {
-      dstStageFlags |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
-    }
-    if (flags & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
-      dstStageFlags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
-    }
-    // compute-to-graphics barrier
-    ivkBufferBarrier(&ctx_.vf_,
-                     wrapper_.cmdBuf_,
-                     vkBuf->getVkBuffer(),
-                     vkBuf->getBufferUsageFlags(),
-                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                     dstStageFlags);
-  }
-
   // prepare all the color attachments
   for (const auto i : framebuffer->getColorAttachmentIndices()) {
     ITexture* colorTex = framebuffer->getColorAttachment(i).get();

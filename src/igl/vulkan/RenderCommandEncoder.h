@@ -136,6 +136,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
                   const std::shared_ptr<IFramebuffer>& framebuffer,
                   const Dependencies& dependencies,
                   Result* outResult);
+  void processDependencies(const Dependencies& dependencies);
 
  private:
   VulkanContext& ctx_;

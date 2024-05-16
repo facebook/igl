@@ -132,6 +132,8 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                                       Result* outResult) {
   IGL_PROFILER_FUNCTION();
 
+  processDependencies(dependencies);
+
   framebuffer_ = framebuffer;
   dependencies_ = dependencies;
 
@@ -916,6 +918,55 @@ void RenderCommandEncoder::blitColorImage(const igl::vulkan::VulkanImage& srcIma
                              destSubresourceRange);
 
   destImage.imageLayout_ = targetLayout;
+}
+
+void RenderCommandEncoder::processDependencies(const Dependencies& dependencies) {
+  // 1. Process all textures
+  {
+    const Dependencies* deps = &dependencies;
+
+    while (deps) {
+      for (ITexture* IGL_NULLABLE tex : deps->textures) {
+        if (!tex) {
+          break;
+        }
+        transitionToShaderReadOnly(cmdBuffer_, tex);
+      }
+      deps = deps->next;
+    }
+  }
+
+  // 2. Process all buffers
+  {
+    const Dependencies* deps = &dependencies;
+
+    while (deps) {
+      for (IBuffer* IGL_NULLABLE buf : deps->buffers) {
+        if (!buf) {
+          break;
+        }
+        VkPipelineStageFlags dstStageFlags =
+            VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        const auto* vkBuf = static_cast<const igl::vulkan::Buffer*>(buf);
+        const VkBufferUsageFlags flags = vkBuf->getBufferUsageFlags();
+        if ((flags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) ||
+            (flags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)) {
+          dstStageFlags |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+        }
+        if (flags & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
+          dstStageFlags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+        }
+        // compute-to-graphics barrier
+        ivkBufferBarrier(&ctx_.vf_,
+                         cmdBuffer_,
+                         vkBuf->getVkBuffer(),
+                         vkBuf->getBufferUsageFlags(),
+                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                         dstStageFlags);
+      }
+      deps = deps->next;
+    }
+  }
 }
 
 } // namespace vulkan
