@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "**" ]
 
+# https://github.com/git-lfs/git-lfs/issues/5749
+env:
+  GIT_CLONE_PROTECTION_ACTIVE: false
+
 jobs:
   build:
     name: "Android (Ubuntu)"
@@ -108,6 +112,10 @@ jobs:
           with:
             submodules: recursive
 
+        - if: startsWith(matrix.config.os, 'windows')
+          run: |
+            git config --system core.longpaths true
+            
         - if: startsWith(matrix.config.name, 'Emscripten')
           run: |
             sudo sed -i 's/azure\.//' /etc/apt/sources.list
