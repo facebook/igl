@@ -250,7 +250,8 @@ void TinyRenderable::submit(igl::IRenderCommandEncoder& cmds) {
   cmds.bindRenderPipelineState(pipelineState_);
   cmds.bindTexture(kTextureUnit, igl::BindTarget::kFragment, texture_.get());
   cmds.bindSamplerState(kTextureUnit, igl::BindTarget::kFragment, sampler_.get());
-  cmds.drawIndexed(igl::PrimitiveType::Triangle, 6, igl::IndexFormat::UInt16, *indexBuffer_, 0);
+  cmds.bindIndexBuffer(*indexBuffer_, igl::IndexFormat::UInt16);
+  cmds.drawIndexed(igl::PrimitiveType::Triangle, 6);
   // clang-format on
 }
 

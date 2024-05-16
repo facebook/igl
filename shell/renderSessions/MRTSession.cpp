@@ -389,19 +389,21 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
 
   auto commands = buffer->createRenderCommandEncoder(renderPassMRT_, framebufferMRT_);
 
+  commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
+
   // Draw call 0
   // clang-format off
   commands->bindVertexBuffer(0, *vb0_);
   commands->bindRenderPipelineState(pipelineStateMRT_);
   commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());
   commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
-  commands->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib0_, 0);
+  commands->drawIndexed(PrimitiveType::Triangle, 6);
   // clang-format on
 
   // Draw call 1
   // clang-format off
   commands->bindVertexBuffer(0, *vb1_);
-  commands->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib0_, 0);
+  commands->drawIndexed(PrimitiveType::Triangle, 6);
   // clang-format on
 
   commands->endEncoding();
@@ -427,9 +429,10 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
 
   commands = buffer->createRenderCommandEncoder(renderPassDisplayLast_, framebufferDisplayLast_);
 
+  commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
+
   // Draw call 0
   // clang-format off
-  commands->bindVertexBuffer(0,  *vb0_);
   commands->bindRenderPipelineState(pipelineStateLastDisplay_);
   auto green = framebufferMRT_->getColorAttachment(0);
   commands->bindTexture(textureUnit, BindTarget::kFragment, green.get());
@@ -438,10 +441,11 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
   commands->bindTexture(textureUnit+1, BindTarget::kFragment, red.get());
   commands->bindSamplerState(textureUnit+1, BindTarget::kFragment, samp0_.get());
 
-  commands->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib0_, 0);
+  commands->bindVertexBuffer(0,  *vb0_);
+  commands->drawIndexed(PrimitiveType::Triangle, 6);
 
   commands->bindVertexBuffer(0, *vb1_);
-  commands->drawIndexed(PrimitiveType::Triangle, 6, IndexFormat::UInt16, *ib0_, 0);
+  commands->drawIndexed(PrimitiveType::Triangle, 6);
 
   // clang-format on
   commands->endEncoding();
