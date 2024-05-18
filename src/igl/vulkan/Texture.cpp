@@ -103,7 +103,10 @@ Result Texture::create(const TextureDesc& desc) {
   }
 
   // For now, always set this flag so we can read it back
-  usageFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+  if (desc_.storage != igl::ResourceStorage::Memoryless) {
+    // not supported on transient attachments
+    usageFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+  }
 
   IGL_ASSERT_MSG(usageFlags != 0, "Invalid usage flags");
 
