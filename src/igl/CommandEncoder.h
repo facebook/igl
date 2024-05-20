@@ -14,6 +14,9 @@
 namespace igl {
 
 class IDevice;
+class ITexture;
+class IBuffer;
+class ICommandBuffer;
 
 /**
  * Dependencies are used to issue proper memory barriers for external resources, such as textures
