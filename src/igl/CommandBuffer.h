@@ -67,8 +67,10 @@ class ICommandBuffer {
   // Use an overload here instead of a default parameter in a pure virtual function.
   std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
       const RenderPassDesc& renderPass,
-      std::shared_ptr<IFramebuffer> framebuffer) {
-    return createRenderCommandEncoder(renderPass, std::move(framebuffer), Dependencies{}, nullptr);
+      std::shared_ptr<IFramebuffer> framebuffer,
+      const Dependencies* IGL_NULLABLE dependencies = nullptr) {
+    return createRenderCommandEncoder(
+        renderPass, std::move(framebuffer), dependencies ? *dependencies : Dependencies{}, nullptr);
   }
 
   /**
