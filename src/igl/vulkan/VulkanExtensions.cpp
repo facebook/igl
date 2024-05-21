@@ -85,17 +85,16 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
   if (extensionType == ExtensionType::Instance) {
     enable(VK_KHR_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
     enable(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, ExtensionType::Instance);
+#if defined(VK_EXT_debug_utils)
+    enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ExtensionType::Instance);
+#endif
 #if IGL_PLATFORM_WIN
     enable(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
-    enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ExtensionType::Instance);
 #elif IGL_PLATFORM_ANDROID
     enable("VK_KHR_android_surface", ExtensionType::Instance);
-    enable(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, ExtensionType::Instance);
 #elif IGL_PLATFORM_LINUX
-    enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ExtensionType::Instance);
     enable("VK_KHR_xlib_surface", ExtensionType::Instance);
 #elif IGL_PLATFORM_MACOS
-    enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ExtensionType::Instance);
     enable(VK_EXT_METAL_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
 #endif
 
