@@ -77,14 +77,6 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
             uint32_t baseInstance) override;
   void drawIndexed(PrimitiveType primitiveType,
                    size_t indexCount,
-                   IndexFormat indexFormat,
-                   IBuffer& indexBuffer,
-                   size_t indexBufferOffset,
-                   uint32_t instanceCount,
-                   int32_t baseVertex,
-                   uint32_t baseInstance) override;
-  void drawIndexed(PrimitiveType primitiveType,
-                   size_t indexCount,
                    uint32_t instanceCount,
                    uint32_t firstIndex,
                    int32_t vertexOffset,

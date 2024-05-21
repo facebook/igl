@@ -646,46 +646,6 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
 
 void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
                                        size_t indexCount,
-                                       IndexFormat indexFormat,
-                                       IBuffer& indexBuffer,
-                                       size_t indexBufferOffset,
-                                       uint32_t instanceCount,
-                                       int32_t baseVertex,
-                                       uint32_t baseInstance) {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
-  IGL_PROFILER_ZONE_GPU_COLOR_VK(
-      "drawIndexed()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
-
-  ctx_.drawCallCount_ += drawCallCountEnabled_;
-
-  if (indexCount == 0) {
-    return;
-  }
-
-  IGL_ASSERT_MSG(rps_, "Did you forget to call bindRenderPipelineState()?");
-
-  ensureVertexBuffers();
-
-  dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
-  flushDynamicState();
-
-  const igl::vulkan::Buffer* buf = static_cast<igl::vulkan::Buffer*>(&indexBuffer);
-
-  const VkIndexType type = indexFormatToVkIndexType(indexFormat);
-#if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkCmdBindIndexBuffer(%u)\n", cmdBuffer_, (uint32_t)indexBufferOffset);
-#endif // IGL_VULKAN_PRINT_COMMANDS
-  ctx_.vf_.vkCmdBindIndexBuffer(cmdBuffer_, buf->getVkBuffer(), indexBufferOffset, type);
-
-#if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkCmdDrawIndexed(%u, %u)\n", cmdBuffer_, (uint32_t)indexCount, instanceCount);
-#endif // IGL_VULKAN_PRINT_COMMANDS
-  ctx_.vf_.vkCmdDrawIndexed(
-      cmdBuffer_, (uint32_t)indexCount, instanceCount, 0, baseVertex, baseInstance);
-}
-
-void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
-                                       size_t indexCount,
                                        uint32_t instanceCount,
                                        uint32_t firstIndex,
                                        int32_t vertexOffset,
