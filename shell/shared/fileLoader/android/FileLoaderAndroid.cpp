@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 #include <filesystem>
