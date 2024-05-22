@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #include <shell/shared/netservice/apple/StreamApple.h>
 
 #include <igl/Common.h>
