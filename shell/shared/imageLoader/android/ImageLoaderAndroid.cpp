@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #include <shell/shared/imageLoader/android/ImageLoaderAndroid.h>
 
 #include <android/asset_manager.h>
