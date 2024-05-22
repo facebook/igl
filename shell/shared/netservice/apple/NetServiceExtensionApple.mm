@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #include <shell/shared/netservice/apple/NetServiceExtensionApple.h>
 
 #include <shell/shared/netservice/apple/NetServiceApple.h>
