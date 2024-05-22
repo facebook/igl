@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #import "View.h"
 
 #import <QuartzCore/CAMetalLayer.h>
