@@ -218,8 +218,8 @@ int main(int argc, char* argv[]) {
   // whatever else global destructors may there, will be called after these. One
   // example is a graphics resource tracker in the client code, which otherwise
   // would not be guaranteed to be called after the graphics resources release.
-  vulkanShellPlatform_ = nullptr;
   vulkanSession_ = nullptr;
+  vulkanShellPlatform_ = nullptr;
   vulkanWindow = nullptr;
 
   glfwTerminate();
