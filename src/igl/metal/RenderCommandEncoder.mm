@@ -483,7 +483,10 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
                         indexBuffer:indexBuffer_
                   indexBufferOffset:indexBufferOffset_
                      indirectBuffer:indirectBufferRef.get()
-               indirectBufferOffset:indirectBufferOffset + static_cast<size_t>(stride) * drawIndex];
+               indirectBufferOffset:indirectBufferOffset +
+                                    (stride ? static_cast<size_t>(stride)
+                                            : sizeof(MTLDrawIndexedPrimitivesIndirectArguments)) *
+                                        drawIndex];
   }
 }
 
