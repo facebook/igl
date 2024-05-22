@@ -74,11 +74,6 @@ Result Buffer::create(const BufferDesc& desc) {
 
   bufferCount_ = isRingBuffer_ ? device_.getVulkanContext().syncManager_->maxResourceCount() : 1u;
 
-  if (isRingBuffer_) {
-    // Resize the local copy of the data
-    localData_ = std::make_unique<uint8_t[]>(desc_.length);
-  }
-
   buffers_ = std::make_unique<std::unique_ptr<VulkanBuffer>[]>(bufferCount_);
   bufferPatches_ = std::make_unique<BufferRange[]>(bufferCount_);
   Result result;
@@ -87,6 +82,12 @@ Result Buffer::create(const BufferDesc& desc) {
     buffers_[bufferIndex] =
         ctx.createBuffer(desc_.length, usageFlags, memFlags, &result, bufferName.c_str());
     IGL_VERIFY(result.isOk());
+  }
+
+  // allocate local data for ring-buffer only if Vulkan Buffers are not mapped to the CPU
+  if (isRingBuffer_ && !buffers_[0]->isMapped()) {
+    // Resize the local copy of the data
+    localData_ = std::make_unique<uint8_t[]>(desc_.length);
   }
 
   return result;
@@ -147,12 +148,14 @@ igl::Result Buffer::upload(const void* data, const BufferRange& range) {
   // local data to the device below
   const VulkanContext& ctx = device_.getVulkanContext();
   if (isRingBuffer_) {
-    // update local data copy
-    checked_memcpy(localData_.get() + range.offset, range.size, (void*)data, range.size);
     // get the current ring buffer index
     const auto currentBufferIndex = device_.getVulkanContext().syncManager_->currentIndex();
+    uint8_t* prevDataPtr = nullptr; // pointer to the previous local copy of the data
     BufferRange currentUpdateRange = range;
     if (currentBufferIndex != previousBufferIndex_) {
+      prevDataPtr = previousBufferIndex_ < bufferCount_
+                        ? buffers_[previousBufferIndex_]->getMappedPtr()
+                        : nullptr;
       // if the index has changed update the index
       previousBufferIndex_ = currentBufferIndex;
       // reset update range at the current index, using input range
@@ -163,11 +166,59 @@ igl::Result Buffer::upload(const void* data, const BufferRange& range) {
       // increase buffer update range at the current index, based on new range
       extendUpdateRange(currentBufferIndex, range);
     }
-    // use staging to upload data to device-local buffers
-    ctx.stagingDevice_->bufferSubData(*currentVulkanBuffer(),
-                                      currentUpdateRange.offset,
-                                      currentUpdateRange.size,
-                                      localData_.get() + currentUpdateRange.offset);
+
+    // If ring buffer's Vulkan Buffers are CPU mapped
+    if (buffers_[0]->isMapped()) { // if the buffer is mapped
+      // if current updated range differs from the input range, copy data outside of the input range
+      // from previous buffer
+      if ((currentUpdateRange.offset != range.offset || currentUpdateRange.size != range.size) &&
+          prevDataPtr) {
+        uint8_t* currDataPtr = currentVulkanBuffer()->getMappedPtr();
+        // this block is not required for non-mapped buffers, because in that case localData_ always
+        // contains the latest data; and staging device is used to copy data from localData_ to the
+        // device.
+
+        // this block is needed for mapped buffer, because device buffer data will be updated based
+        // on CPU accessible portion of the currentVulkanBuffer (which is in currDataPtr). And so
+        // data changes outside the input range will be copied from the previous buffer.
+
+        // this should never happen, but check just in case
+        IGL_ASSERT(currentUpdateRange.offset <= range.offset);
+
+        // copy data from starting of current update range to range offset
+        const auto frontCopySize = range.offset - currentUpdateRange.offset;
+        if (frontCopySize > 0) {
+          checked_memcpy(currDataPtr + currentUpdateRange.offset,
+                         getSizeInBytes() - currentUpdateRange.offset,
+                         prevDataPtr + currentUpdateRange.offset,
+                         frontCopySize);
+        }
+
+        // copy data from range end to current update range end
+        const auto rangeEnd = range.offset + range.size;
+        const auto currentUpdateRangeEnd = currentUpdateRange.offset + currentUpdateRange.size;
+
+        // this should never happen, but check just in case
+        IGL_ASSERT(currentUpdateRangeEnd >= rangeEnd);
+
+        const auto backCopySize = currentUpdateRangeEnd - rangeEnd;
+        if (backCopySize > 0) {
+          checked_memcpy(currDataPtr + rangeEnd,
+                         getSizeInBytes() - rangeEnd,
+                         prevDataPtr + rangeEnd,
+                         backCopySize);
+        }
+      }
+      currentVulkanBuffer()->bufferSubData(range.offset, range.size, data);
+    } else {
+      // update local data copy
+      checked_memcpy(localData_.get() + range.offset, range.size, (void*)data, range.size);
+      // use staging to upload data to device-local buffers
+      ctx.stagingDevice_->bufferSubData(*currentVulkanBuffer(),
+                                        currentUpdateRange.offset,
+                                        currentUpdateRange.size,
+                                        localData_.get() + currentUpdateRange.offset);
+    }
   } else {
     // use staging to upload data to device-local buffers
     ctx.stagingDevice_->bufferSubData(*currentVulkanBuffer(), range.offset, range.size, data);
