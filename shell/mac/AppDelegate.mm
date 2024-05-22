@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 // @lint-ignore-every CLANGTIDY NonLocalizedStringChecker
 #import "AppDelegate.h"
 
