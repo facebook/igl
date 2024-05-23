@@ -81,8 +81,9 @@ Result Texture::create(const TextureDesc& desc) {
       (desc_.storage == ResourceStorage::Private) ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : 0;
 
   // On M1 Macs, depth texture has to be ResourceStorage::Private.
+  // On Intel Macs, multisample does not work with shared or managed storage modes
   if (!ctx.useStagingForBuffers_ && desc_.storage == ResourceStorage::Private &&
-      !getProperties().isDepthOrStencil()) {
+      !getProperties().isDepthOrStencil() && desc.numSamples == 1) {
     desc_.storage = ResourceStorage::Shared;
   }
 
