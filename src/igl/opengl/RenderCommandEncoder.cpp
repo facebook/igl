@@ -384,20 +384,6 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
   }
 }
 
-void RenderCommandEncoder::drawIndexedIndirect(PrimitiveType primitiveType,
-                                               IBuffer& indirectBuffer,
-                                               size_t indirectBufferOffset) {
-  IGL_ASSERT_MSG(indexType_, "No index buffer bound");
-
-  if (IGL_VERIFY(adapter_ && indexType_)) {
-    getCommandBuffer().incrementCurrentDrawCount();
-    auto mode = toGlPrimitive(primitiveType);
-    auto indirectBufferOffsetPtr = reinterpret_cast<void*>(indirectBufferOffset);
-    adapter_->drawElementsIndirect(
-        mode, indexType_, (Buffer&)indirectBuffer, indirectBufferOffsetPtr);
-  }
-}
-
 void RenderCommandEncoder::multiDrawIndirect(PrimitiveType /*primitiveType*/,
                                              IBuffer& /*indirectBuffer*/,
                                              size_t /*indirectBufferOffset*/,

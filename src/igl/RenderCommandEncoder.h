@@ -87,9 +87,6 @@ class IRenderCommandEncoder : public ICommandEncoder {
                            uint32_t firstIndex = 0,
                            int32_t vertexOffset = 0,
                            uint32_t baseInstance = 0) = 0;
-  virtual void drawIndexedIndirect(PrimitiveType primitiveType,
-                                   IBuffer& indirectBuffer,
-                                   size_t indirectBufferOffset) = 0;
   virtual void multiDrawIndirect(PrimitiveType primitiveType,
                                  IBuffer& indirectBuffer,
                                  size_t indirectBufferOffset,

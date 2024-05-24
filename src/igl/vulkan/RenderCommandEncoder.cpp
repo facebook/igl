@@ -682,16 +682,6 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
       cmdBuffer_, (uint32_t)indexCount, instanceCount, firstIndex, vertexOffset, baseInstance);
 }
 
-void RenderCommandEncoder::drawIndexedIndirect(PrimitiveType primitiveType,
-                                               IBuffer& indirectBuffer,
-                                               size_t indirectBufferOffset) {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
-  IGL_PROFILER_ZONE_GPU_COLOR_VK(
-      "drawIndexedIndirect()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
-
-  multiDrawIndexedIndirect(primitiveType, indirectBuffer, indirectBufferOffset, 1, 0);
-}
-
 void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
                                              IBuffer& indirectBuffer,
                                              size_t indirectBufferOffset,
