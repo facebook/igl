@@ -167,6 +167,11 @@ struct RenderPipelineDesc {
   };
 
   /*
+   * @brief Describes the primitive topology for this graphics pipeline
+   */
+  PrimitiveType topology = PrimitiveType::Triangle;
+
+  /*
    * @brief Describes the organization of per-vertex input data passed to a vertex shader function
    */
   std::shared_ptr<IVertexInputState> vertexInputState;

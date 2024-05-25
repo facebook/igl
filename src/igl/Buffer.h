@@ -23,14 +23,6 @@ enum class IndexFormat : uint8_t {
   UInt32,
 };
 
-enum class PrimitiveType : uint8_t {
-  Point,
-  Line,
-  LineStrip,
-  Triangle,
-  TriangleStrip,
-};
-
 struct BufferRange {
   size_t size;
   uintptr_t offset;

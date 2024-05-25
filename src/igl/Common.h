@@ -60,6 +60,14 @@ enum class CullMode : uint8_t { Disabled, Front, Back };
 enum class WindingMode : uint8_t { Clockwise, CounterClockwise };
 enum class NormalizedZRange : uint8_t { NegOneToOne, ZeroToOne };
 
+enum class PrimitiveType : uint8_t {
+  Point,
+  Line,
+  LineStrip,
+  Triangle,
+  TriangleStrip,
+};
+
 struct Color {
   float r;
   float g;

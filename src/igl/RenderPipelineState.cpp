@@ -51,6 +51,10 @@ bool RenderPipelineDesc::operator!=(const RenderPipelineDesc& other) const {
 }
 
 bool RenderPipelineDesc::operator==(const RenderPipelineDesc& other) const {
+  if (topology != other.topology) {
+    return false;
+  }
+
   if (vertexInputState != other.vertexInputState) {
     return false;
   }
@@ -96,6 +100,7 @@ bool RenderPipelineDesc::operator==(const RenderPipelineDesc& other) const {
 size_t std::hash<RenderPipelineDesc>::operator()(RenderPipelineDesc const& key) const {
   size_t hash = std::hash<uintptr_t>()(reinterpret_cast<uintptr_t>(key.vertexInputState.get()));
 
+  hash ^= std::hash<int>()(EnumToValue(key.topology));
   hash ^= std::hash<uintptr_t>()(reinterpret_cast<uintptr_t>(key.shaderStages.get()));
   hash ^= std::hash<RenderPipelineDesc::TargetDesc>()(key.targetDesc);
   hash ^= std::hash<int>()(EnumToValue(key.cullMode));

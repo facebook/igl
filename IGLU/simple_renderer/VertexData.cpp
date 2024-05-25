@@ -44,6 +44,7 @@ VertexData::VertexData(igl::IDevice& device,
 
 void VertexData::populatePipelineDescriptor(igl::RenderPipelineDesc& pipelineDesc) const {
   pipelineDesc.vertexInputState = vis_;
+  pipelineDesc.topology = primitiveDesc_.type;
   pipelineDesc.frontFaceWinding = primitiveDesc_.frontFaceWinding;
 }
 
