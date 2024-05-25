@@ -1099,11 +1099,29 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
       position.z = -1.f;
 #endif
     }
+
+    void* head = nullptr;
+
+#ifdef XR_FB_composition_layer_alpha_blend
+    if (quadLayersParams_.blendModes_[i] == igl::shell::LayerBlendMode::AlphaAdditive) {
+      layerAlphaBlend_ = {XR_TYPE_COMPOSITION_LAYER_ALPHA_BLEND_FB};
+      layerAlphaBlend_.srcFactorColor = XR_BLEND_FACTOR_ONE_MINUS_DST_ALPHA_FB;
+      layerAlphaBlend_.dstFactorColor = XR_BLEND_FACTOR_ONE_FB;
+      layerAlphaBlend_.srcFactorAlpha = XR_BLEND_FACTOR_ZERO_FB;
+      layerAlphaBlend_.dstFactorAlpha = XR_BLEND_FACTOR_ONE_FB;
+      layerAlphaBlend_.next = head;
+      head = &layerAlphaBlend_;
+    }
+#endif
+
     XrEyeVisibility eye = XR_EYE_VISIBILITY_LEFT;
     for (size_t view = 0; view < kNumViews; view++, layer++) {
-      quadLayers[layer].next = nullptr;
+      quadLayers[layer].next = head;
       quadLayers[layer].type = XR_TYPE_COMPOSITION_LAYER_QUAD;
-      quadLayers[layer].layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+      quadLayers[layer].layerFlags =
+          quadLayersParams_.blendModes_[i] == igl::shell::LayerBlendMode::AlphaBlend
+              ? XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT
+              : 0;
       quadLayers[layer].space = currentSpace_;
       quadLayers[layer].eyeVisibility = eye;
       memset(&quadLayers[layer].subImage, 0, sizeof(XrSwapchainSubImage));

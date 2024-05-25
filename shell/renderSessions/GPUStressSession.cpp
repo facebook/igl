@@ -1119,6 +1119,7 @@ void GPUStressSession::setNumLayers(size_t numLayers) {
   for (int i = 0; i < numLayers; i++) {
     params.positions.emplace_back(0.f, 0.f, 0.f);
     params.sizes.emplace_back(1.f, 1.f);
+    params.layerAlphaBlend_(igl::shell::LayerBlendMode::AlphaBlend);
   }
 
   appParamsRef().quadLayerParams.emplace(params);

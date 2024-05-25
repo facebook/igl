@@ -11,9 +11,17 @@
 #include <vector>
 
 namespace igl::shell {
+
+enum class LayerBlendMode : uint8_t {
+  Opaque = 0,
+  AlphaBlend = 1,
+  AlphaAdditive = 2,
+};
+
 struct QuadLayerParams {
   std::vector<glm::vec3> positions;
   std::vector<glm::vec2> sizes;
+  std::vector<LayerBlendMode> blendModes_;
   [[nodiscard]] size_t numQuads() const noexcept {
     return positions.size();
   }
