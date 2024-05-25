@@ -18,7 +18,8 @@ TEST_F(TextureTest, Upload) {
   const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
                                                  kOffscreenTexWidth,
                                                  kOffscreenTexHeight,
-                                                 TextureDesc::TextureUsageBits::Sampled);
+                                                 TextureDesc::TextureUsageBits::Sampled |
+                                                     TextureDesc::TextureUsageBits::Attachment);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);

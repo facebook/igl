@@ -350,11 +350,12 @@ void runUploadTest(IDevice& device,
   //-------------------------------------
   // Create input texture and upload data
   //-------------------------------------
-  const TextureDesc texDesc = TextureDesc::new2DArray(kFloatTextureFormat,
-                                                      kOffscreenTexWidth,
-                                                      kOffscreenTexHeight,
-                                                      kNumLayers,
-                                                      TextureDesc::TextureUsageBits::Sampled);
+  const TextureDesc texDesc = TextureDesc::new2DArray(
+      kFloatTextureFormat,
+      kOffscreenTexWidth,
+      kOffscreenTexHeight,
+      kNumLayers,
+      TextureDesc::TextureUsageBits::Sampled | TextureDesc::TextureUsageBits::Attachment);
   auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(tex != nullptr);
@@ -437,7 +438,8 @@ void runUploadToMipTest(IDevice& device, ICommandQueue& cmdQueue, bool singleUpl
                                                 kOffscreenTexWidth,
                                                 kOffscreenTexHeight,
                                                 kNumLayers,
-                                                TextureDesc::TextureUsageBits::Sampled);
+                                                TextureDesc::TextureUsageBits::Sampled |
+                                                    TextureDesc::TextureUsageBits::Attachment);
   texDesc.numMipLevels = 2;
   auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
