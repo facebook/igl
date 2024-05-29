@@ -101,6 +101,11 @@ class RenderCommandAdapter final : public WithContext {
                   const std::shared_ptr<IFramebuffer>& framebuffer,
                   Result* outResult);
 
+  const igl::IRenderPipelineState& pipelineState() const {
+    IGL_ASSERT_MSG(pipelineState_, "No rendering pipeline is bound");
+    return *pipelineState_;
+  }
+
  private:
   RenderCommandAdapter(IContext& context);
 
