@@ -15,9 +15,11 @@
 #include <chrono>
 #include <string>
 
+#if IGL_PLATFORM_ANDROID
 #include <android/asset_manager.h>
 #include <android/log.h>
 #include <android_native_app_glue.h>
+#endif
 
 #include <openxr/openxr.h>
 
@@ -39,10 +41,16 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <xr_linear.h>
 
+#if IGL_PLATFORM_ANDROID
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/imageLoader/android/ImageLoaderAndroid.h>
-#include <shell/shared/input/IntentListener.h>
 #include <shell/shared/platform/android/PlatformAndroid.h>
+#endif
+#if IGL_PLATFORM_WIN
+#include <shell/shared/platform/win/PlatformWin.h>
+#endif
+
+#include <shell/shared/input/IntentListener.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/DefaultSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
@@ -51,6 +59,11 @@
 #include <shell/openxr/XrSwapchainProvider.h>
 #include <shell/openxr/impl/XrAppImpl.h>
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
+
+#if !IGL_PLATFORM_ANDROID
+struct android_app {};
+struct AAssetManager {};
+#endif
 
 namespace igl::shell::openxr {
 constexpr auto kAppName = "IGL Shell OpenXR";
@@ -91,7 +104,7 @@ inline int64_t currentTimeInNs() {
 }
 } // namespace
 
-XrApp::XrApp(std::unique_ptr<impl::XrAppImpl>&& impl) :
+XrApp::XrApp(std::unique_ptr<impl::XrAppImpl>&& impl, bool shouldPresent) :
   requiredExtensions_({
 #if USE_VULKAN_BACKEND
       XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
@@ -102,6 +115,7 @@ XrApp::XrApp(std::unique_ptr<impl::XrAppImpl>&& impl) :
   }),
   impl_(std::move(impl)),
   shellParams_(std::make_unique<ShellParams>()) {
+  shellParams_->shouldPresent = shouldPresent;
   viewports_.fill({XR_TYPE_VIEW_CONFIGURATION_VIEW});
   views_.fill({XR_TYPE_VIEW});
 #ifdef USE_COMPOSITION_LAYER_QUAD
@@ -700,6 +714,7 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
     return false;
   }
 
+#if IGL_PLATFORM_ANDROID
   PFN_xrInitializeLoaderKHR xrInitializeLoaderKHR;
   XR_CHECK(xrGetInstanceProcAddr(
       XR_NULL_HANDLE, "xrInitializeLoaderKHR", (PFN_xrVoidFunction*)&xrInitializeLoaderKHR));
@@ -713,11 +728,13 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
 
     XR_CHECK(xrInitializeLoaderKHR((XrLoaderInitInfoBaseHeaderKHR*)&loaderInitializeInfoAndroid));
   }
+#endif
 
   if (!checkExtensions()) {
     return false;
   }
 
+#if IGL_PLATFORM_ANDROID
   XrInstanceCreateInfoAndroidKHR* instanceCreateInfoAndroid_ptr =
       (XrInstanceCreateInfoAndroidKHR*)impl_->getInstanceCreateExtension();
 
@@ -725,6 +742,7 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
     instanceCreateInfoAndroid_ptr->applicationVM = app->activity->vm;
     instanceCreateInfoAndroid_ptr->applicationActivity = app->activity->clazz;
   }
+#endif
 
   if (!createInstance()) {
     return false;
@@ -747,7 +765,11 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
 
   useSinglePassStereo_ = useSinglePassStereo_ && device->hasFeature(igl::DeviceFeatures::Multiview);
 
+#if IGL_PLATFORM_ANDROID
   createShellSession(std::move(device), app->activity->assetManager);
+#else
+  createShellSession(std::move(device), nullptr);
+#endif
 
   session_ = impl_->initXrSession(instance_, systemId_, platform_->getDevice());
   if (session_ == XR_NULL_HANDLE) {
@@ -787,11 +809,18 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
 }
 
 void XrApp::createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManager* assetMgr) {
+#if IGL_PLATFORM_ANDROID
   platform_ = std::make_shared<igl::shell::PlatformAndroid>(std::move(device));
   IGL_ASSERT(platform_ != nullptr);
   static_cast<igl::shell::ImageLoaderAndroid&>(platform_->getImageLoader())
       .setAssetManager(assetMgr);
   static_cast<igl::shell::FileLoaderAndroid&>(platform_->getFileLoader()).setAssetManager(assetMgr);
+#elif IGL_PLATFORM_APPLE
+  platform_ = std::make_shared<igl::shell::PlatformMac>(std::move(device));
+#elif IGL_PLATFORM_WIN
+  platform_ = std::make_shared<igl::shell::PlatformWin>(std::move(device));
+#endif
+
   renderSession_ = igl::shell::createDefaultRenderSession(platform_);
   shellParams_->shellControlsViewParams = true;
   shellParams_->rightHandedCoordinateSystem = true;

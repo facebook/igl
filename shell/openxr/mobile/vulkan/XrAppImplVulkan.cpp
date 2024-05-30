@@ -22,16 +22,18 @@
 namespace igl::shell::openxr::mobile {
 std::vector<const char*> XrAppImplVulkan::getXrRequiredExtensions() const {
   return {XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
+#if IGL_PLATFORM_ANDROID
           XR_FB_SWAPCHAIN_UPDATE_STATE_VULKAN_EXTENSION_NAME,
+#endif
           XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
-#if defined(IGL_CMAKE_BUILD)
+#if IGL_PLATFORM_ANDROID && defined(IGL_CMAKE_BUILD)
           XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME
 #endif
   };
 }
 
 void* XrAppImplVulkan::getInstanceCreateExtension() {
-#if defined(IGL_CMAKE_BUILD)
+#if IGL_PLATFORM_ANDROID && defined(IGL_CMAKE_BUILD)
   return &instanceCreateInfoAndroid_;
 #else
   return nullptr;

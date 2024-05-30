@@ -7,10 +7,14 @@
 
 // @fb-only
 
-#include <android_native_app_glue.h>
 #include <igl/Common.h>
 #include <igl/Macros.h>
+
+#if IGL_PLATFORM_ANDROID
+#include <android_native_app_glue.h>
 #include <jni.h>
+#endif // IGL_PLATFORM_ANDROID
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -22,6 +26,18 @@
 
 #include <shell/openxr/XrApp.h>
 
+#if defined(USE_VULKAN_BACKEND)
+#include "vulkan/XrAppImplVulkan.h"
+#elif defined(USE_OPENGL_BACKEND)
+#include "opengl/XrAppImplGLES.h"
+#endif
+
+XrInstance gInstance_;
+XrInstance getXrInstance() {
+  return gInstance_;
+}
+
+#if IGL_PLATFORM_ANDROID
 namespace {
 std::vector<std::string> gActionViewQueue;
 } // namespace
@@ -119,17 +135,6 @@ void handleAppCmd(struct android_app* app, int32_t appCmd) {
   }
 }
 
-#if defined(USE_VULKAN_BACKEND)
-#include "vulkan/XrAppImplVulkan.h"
-#elif defined(USE_OPENGL_BACKEND)
-#include "opengl/XrAppImplGLES.h"
-#endif
-
-XrInstance gInstance_;
-XrInstance getXrInstance() {
-  return gInstance_;
-}
-
 void android_main(struct android_app* app) {
   JNIEnv* Env;
   app->activity->vm->AttachCurrentThread(&Env, nullptr);
@@ -183,3 +188,34 @@ void android_main(struct android_app* app) {
 
   app->activity->vm->DetachCurrentThread();
 }
+#else
+// To run via MetaXR Simulator or Monado.
+int main(int argc, const char* argv[]) {
+#if defined(USE_VULKAN_BACKEND)
+  // Do not present running on MetaXR Simulator. It has its own composition and present.
+  auto xrApp = std::make_unique<igl::shell::openxr::XrApp>(
+      std::make_unique<igl::shell::openxr::mobile::XrAppImplVulkan>(), false /* shouldPresent */);
+#elif defined(USE_OPENGL_BACKEND)
+  // OpenGL for MetaXR Simulator is not implemented yet.
+  return 1;
+#endif
+  if (!xrApp->initialize(nullptr, {})) {
+    return 1;
+  }
+
+  gInstance_ = xrApp->instance();
+  xrApp->setResumed(true);
+
+  for (;;) {
+    xrApp->handleXrEvents();
+    if (!xrApp->sessionActive()) {
+      break;
+    }
+
+    xrApp->update();
+  }
+
+  return 0;
+}
+
+#endif // IGL_PLATFORM_ANDROID

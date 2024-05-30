@@ -59,7 +59,7 @@ namespace igl::shell::openxr {
 
 class XrApp {
  public:
-  XrApp(std::unique_ptr<impl::XrAppImpl>&& impl);
+  XrApp(std::unique_ptr<impl::XrAppImpl>&& impl, bool shouldPresent = true);
   ~XrApp();
 
   inline bool initialized() const {

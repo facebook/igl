@@ -7,11 +7,14 @@
 
 #pragma once
 
-#include <array>
+#include <igl/Macros.h>
 
+#if IGL_PLATFORM_ANDROID
 #include <android/native_window_jni.h>
 
 #define VK_USE_PLATFORM_ANDROID_KHR
+#endif // IGL_PLATFORM_ANDROID
+
 #include <igl/vulkan/Common.h>
 
 #ifndef XR_USE_GRAPHICS_API_VULKAN
@@ -38,7 +41,7 @@ class XrAppImplVulkan : public impl::XrAppImpl {
   XrGraphicsRequirementsVulkanKHR graphicsRequirements_ = {
       .type = XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR,
   };
-#if defined(IGL_CMAKE_BUILD)
+#if IGL_PLATFORM_ANDROID && defined(IGL_CMAKE_BUILD)
   XrInstanceCreateInfoAndroidKHR instanceCreateInfoAndroid_ = {
       .type = XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR,
   };
