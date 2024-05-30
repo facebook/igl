@@ -1104,6 +1104,14 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
 
   std::vector<XrCompositionLayerQuad> quadLayers(static_cast<size_t>(kNumViews) *
                                                  numQuadLayersPerView_);
+#ifdef XR_FB_composition_layer_alpha_blend
+  XrCompositionLayerAlphaBlendFB blendMode = {XR_TYPE_COMPOSITION_LAYER_ALPHA_BLEND_FB};
+  blendMode.srcFactorColor = XR_BLEND_FACTOR_ONE_MINUS_DST_ALPHA_FB;
+  blendMode.dstFactorColor = XR_BLEND_FACTOR_ONE_FB;
+  blendMode.srcFactorAlpha = XR_BLEND_FACTOR_ZERO_FB;
+  blendMode.dstFactorAlpha = XR_BLEND_FACTOR_ONE_FB;
+#endif
+
   XrVector3f position = {0.f, 0.f, 0.f};
 #if USE_LOCAL_AR_SPACE
   position.z = -1.f;
@@ -1111,7 +1119,7 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
   XrExtent2Df size = {appParams.sizeX, appParams.sizeY};
   size_t layer = 0;
   for (size_t i = 0; i < numQuadLayersPerView_; i++) {
-    if (useQuadLayerComposition_ && quadLayersParams_.numQuads() > 0) {
+    if (quadLayersParams_.numQuads() > 0) {
       IGL_ASSERT(i < quadLayersParams_.positions.size());
       IGL_ASSERT(i < quadLayersParams_.sizes.size());
       auto glmPos = quadLayersParams_.positions[i];
@@ -1123,26 +1131,22 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
 #endif
     }
 
-    void* head = nullptr;
-
-#ifdef XR_FB_composition_layer_alpha_blend
-    if (quadLayersParams_.blendModes_[i] == igl::shell::LayerBlendMode::AlphaAdditive) {
-      layerAlphaBlend_ = {XR_TYPE_COMPOSITION_LAYER_ALPHA_BLEND_FB};
-      layerAlphaBlend_.srcFactorColor = XR_BLEND_FACTOR_ONE_MINUS_DST_ALPHA_FB;
-      layerAlphaBlend_.dstFactorColor = XR_BLEND_FACTOR_ONE_FB;
-      layerAlphaBlend_.srcFactorAlpha = XR_BLEND_FACTOR_ZERO_FB;
-      layerAlphaBlend_.dstFactorAlpha = XR_BLEND_FACTOR_ONE_FB;
-      layerAlphaBlend_.next = head;
-      head = &layerAlphaBlend_;
-    }
-#endif
-
     XrEyeVisibility eye = XR_EYE_VISIBILITY_LEFT;
     for (size_t view = 0; view < kNumViews; view++, layer++) {
-      quadLayers[layer].next = head;
+#ifdef XR_FB_composition_layer_alpha_blend
+      quadLayers[layer].next =
+          (quadLayersParams_.numQuads() > 0 &&
+           quadLayersParams_.blendModes_[layer] == igl::shell::LayerBlendMode::AlphaAdditive)
+              ? &blendMode
+              : nullptr;
+#else
+      quadLayers[layer].next = nullptr;
+#endif
+
       quadLayers[layer].type = XR_TYPE_COMPOSITION_LAYER_QUAD;
       quadLayers[layer].layerFlags =
-          quadLayersParams_.blendModes_[i] == igl::shell::LayerBlendMode::AlphaBlend
+          (quadLayersParams_.numQuads() > 0 &&
+           quadLayersParams_.blendModes_[i] == igl::shell::LayerBlendMode::AlphaBlend)
               ? XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT
               : 0;
       quadLayers[layer].space = currentSpace_;
@@ -1168,6 +1172,7 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
   std::vector<const XrCompositionLayerBaseHeader*> layers(numQuadLayersPerView_ *
                                                           static_cast<std::size_t>(kNumViews + 1));
   uint32_t layerIndex = 0;
+
   XrCompositionLayerPassthroughFB compositionLayer{XR_TYPE_COMPOSITION_LAYER_PASSTHROUGH_FB};
 
   const bool passthroughEnabled = appParams.passthroughGetter ? appParams.passthroughGetter()
