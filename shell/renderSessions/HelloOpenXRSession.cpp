@@ -334,6 +334,7 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
   const std::shared_ptr<igl::IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+  commands->pushDebugGroupLabel("HelloOpenXRSession Commands", igl::Color(0.0f, 1.0f, 0.0f));
 
   commands->bindVertexBuffer(0, *vb0_);
 
@@ -374,9 +375,12 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
   commands->drawIndexed(PrimitiveType::Triangle, 3u * 6u * 2u);
 
+  commands->popDebugGroupLabel();
   commands->endEncoding();
 
-  buffer->present(framebuffer_->getColorAttachment(0));
+  if (shellParams().shouldPresent) {
+    buffer->present(framebuffer_->getColorAttachment(0));
+  }
 
   commandQueue_->submit(*buffer); // Guarantees ordering between command buffers
 }

@@ -356,6 +356,7 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
   const std::shared_ptr<igl::IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+  commands->pushDebugGroupLabel("HandsOpenXRSession Commands", igl::Color(0.0f, 1.0f, 0.0f));
 
   commands->bindVertexBuffer(0, *vb0_);
 
@@ -399,9 +400,12 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     commands->drawIndexed(PrimitiveType::Triangle, handsDrawParams_[i].indexCount);
   }
 
+  commands->popDebugGroupLabel();
   commands->endEncoding();
 
-  buffer->present(framebuffer_->getColorAttachment(0));
+  if (shellParams().shouldPresent) {
+    buffer->present(framebuffer_->getColorAttachment(0));
+  }
 
   commandQueue_->submit(*buffer); // Guarantees ordering between command buffers
 }
