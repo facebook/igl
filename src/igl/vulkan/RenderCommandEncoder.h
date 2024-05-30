@@ -99,6 +99,10 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
                          size_t indirectBufferOffset,
                          uint32_t drawCount,
                          uint32_t stride = 0) override;
+  void multiDrawIndexedIndirect(IBuffer& indirectBuffer,
+                                size_t indirectBufferOffset,
+                                uint32_t drawCount,
+                                uint32_t stride = 0) override;
 
   void setStencilReferenceValue(uint32_t value) override;
   void setStencilReferenceValues(uint32_t frontValue, uint32_t backValue) override;
