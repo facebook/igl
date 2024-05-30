@@ -33,7 +33,7 @@ void enumerateSwapchainImages(
   uint32_t numImages = 0;
   XR_CHECK(xrEnumerateSwapchainImages(swapchain, 0, &numImages, NULL));
 
-  IGL_LOG_INFO("numImages: %d", numImages);
+  IGL_LOG_INFO("XRSwapchain numImages: %d\n", numImages);
 
   std::vector<XrSwapchainImageVulkanKHR> images(
       numImages, {.type = XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR, .next = nullptr});
@@ -44,12 +44,14 @@ void enumerateSwapchainImages(
   const auto& ctx = actualDevice.getVulkanContext();
   outVulkanTextures.reserve(numImages);
 
+  const bool isDepth = ((aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0);
+
   for (uint32_t i = 0; i < numImages; i++) {
     auto image = igl::vulkan::VulkanImage(
         ctx,
         ctx.device_->device_,
         images[i].image,
-        fmt::format("Image: swapchain #{}", i).c_str(),
+        fmt::format("Image: swapchain {} #{}", isDepth ? "depth" : "color", i).c_str(),
         usageFlags,
         true,
         VkExtent3D{viewport.recommendedImageRectWidth, viewport.recommendedImageRectHeight, 0},
@@ -58,15 +60,15 @@ void enumerateSwapchainImages(
         1,
         numViews);
 
-    auto imageView =
-        image.createImageView(numViews > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D,
-                              (VkFormat)format,
-                              aspectMask,
-                              0,
-                              VK_REMAINING_MIP_LEVELS,
-                              0,
-                              numViews,
-                              fmt::format("Image View: swapchain #{}", i).c_str());
+    auto imageView = image.createImageView(
+        numViews > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D,
+        (VkFormat)format,
+        aspectMask,
+        0,
+        VK_REMAINING_MIP_LEVELS,
+        0,
+        numViews,
+        fmt::format("Image View: swapchain {} #{}", isDepth ? "depth" : "color", i).c_str());
     outVulkanTextures.emplace_back(
         std::make_shared<igl::vulkan::VulkanTexture>(std::move(image), std::move(imageView)));
   }

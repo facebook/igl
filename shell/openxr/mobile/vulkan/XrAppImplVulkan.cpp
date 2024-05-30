@@ -62,7 +62,7 @@ std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSy
       instance, systemId, bufferSize, &bufferSize, requiredVkInstanceExtensionsBuffer_.data()));
   requiredVkInstanceExtensions_ = processExtensionsBuffer(requiredVkInstanceExtensionsBuffer_);
 
-  IGL_LOG_INFO("Number of required Vulkan extensions: %d", requiredVkInstanceExtensions_.size());
+  IGL_LOG_INFO("Number of required Vulkan extensions: %d\n", requiredVkInstanceExtensions_.size());
 
   // Get the required device extensions.
   bufferSize = 0;
@@ -94,7 +94,7 @@ std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSy
   XR_CHECK(
       pfnGetVulkanGraphicsDeviceKHR(instance, systemId, context->getVkInstance(), &physicalDevice));
   if (physicalDevice == VK_NULL_HANDLE) {
-    IGL_LOG_ERROR("OpenXR: Failed to get vulkan physical device");
+    IGL_LOG_ERROR("OpenXR: Failed to get vulkan physical device.\n");
     return nullptr;
   }
 
@@ -137,10 +137,10 @@ XrSession XrAppImplVulkan::initXrSession(XrInstance instance,
   XrSession session;
   XR_CHECK(xrResult = xrCreateSession(instance, &sessionCreateInfo, &session));
   if (xrResult != XR_SUCCESS) {
-    IGL_LOG_ERROR("Failed to create XR session: %d.", xrResult);
+    IGL_LOG_ERROR("Failed to create XR session: %d\n", xrResult);
     return XR_NULL_HANDLE;
   }
-  IGL_LOG_INFO("XR session created");
+  IGL_LOG_INFO("XR session created.\n");
 
   return session;
 } // namespace igl::shell::openxr::mobile

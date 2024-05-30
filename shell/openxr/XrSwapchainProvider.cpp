@@ -94,9 +94,9 @@ XrSwapchain XrSwapchainProvider::createXrSwapchain(XrSwapchainUsageFlags extraUs
 
   XrSwapchain swapchain;
   XR_CHECK(xrCreateSwapchain(session_, &swapChainCreateInfo, &swapchain));
-  IGL_LOG_INFO("XrSwapchain created");
-  IGL_LOG_INFO("XrSwapchain viewport width: %d", viewport_.recommendedImageRectWidth);
-  IGL_LOG_INFO("XrSwapchain viewport height: %d", viewport_.recommendedImageRectHeight);
+  IGL_LOG_INFO("XrSwapchain created\n");
+  IGL_LOG_INFO("XrSwapchain viewport width: %d\n", viewport_.recommendedImageRectWidth);
+  IGL_LOG_INFO("XrSwapchain viewport height: %d\n", viewport_.recommendedImageRectHeight);
 
   return swapchain;
 }

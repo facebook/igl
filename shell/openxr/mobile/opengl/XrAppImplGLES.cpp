@@ -78,10 +78,10 @@ XrSession XrAppImplGLES::initXrSession(XrInstance instance,
   XrSession session;
   XR_CHECK(xrResult = xrCreateSession(instance, &sessionCreateInfo, &session));
   if (xrResult != XR_SUCCESS) {
-    IGL_LOG_ERROR("Failed to create XR session: %d.", xrResult);
+    IGL_LOG_ERROR("Failed to create XR session: %d.\n", xrResult);
     return XR_NULL_HANDLE;
   }
-  IGL_LOG_INFO("XR session created");
+  IGL_LOG_INFO("XR session created.\n");
 
   return session;
 }
