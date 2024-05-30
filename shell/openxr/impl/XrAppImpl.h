@@ -10,7 +10,7 @@
 #include <memory>
 #include <vector>
 
-#include <openxr/openxr.h>
+#include <shell/openxr/XrPlatform.h>
 
 #include <igl/Device.h>
 

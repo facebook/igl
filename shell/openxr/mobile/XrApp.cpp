@@ -21,23 +21,6 @@
 #include <android_native_app_glue.h>
 #endif
 
-#include <openxr/openxr.h>
-
-#include <igl/Common.h>
-#if USE_VULKAN_BACKEND
-#include <igl/vulkan/Common.h>
-
-#ifndef XR_USE_GRAPHICS_API_VULKAN
-#define XR_USE_GRAPHICS_API_VULKAN
-#endif
-#endif // USE_VULKAN_BACKEND
-#if USE_OPENGL_BACKEND
-#if !defined(XR_USE_GRAPHICS_API_OPENGL_ES) && defined(IGL_CMAKE_BUILD)
-#define XR_USE_GRAPHICS_API_OPENGL_ES
-#endif
-#endif // USE_OPENGL_BACKEND
-#include <openxr/openxr_platform.h>
-
 #include <glm/gtc/type_ptr.hpp>
 #include <xr_linear.h>
 

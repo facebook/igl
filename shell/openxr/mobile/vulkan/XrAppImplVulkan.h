@@ -7,22 +7,11 @@
 
 #pragma once
 
-#include <igl/Macros.h>
-
-#if IGL_PLATFORM_ANDROID
-#include <android/native_window_jni.h>
-
-#define VK_USE_PLATFORM_ANDROID_KHR
-#endif // IGL_PLATFORM_ANDROID
-
-#include <igl/vulkan/Common.h>
-
-#ifndef XR_USE_GRAPHICS_API_VULKAN
-#define XR_USE_GRAPHICS_API_VULKAN
-#endif
-#include <openxr/openxr_platform.h>
+#include <shell/openxr/XrPlatform.h>
 
 #include <shell/openxr/impl/XrAppImpl.h>
+
+#include <vector>
 
 namespace igl::shell::openxr::mobile {
 class XrSwapchainProvider;

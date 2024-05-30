@@ -27,9 +27,9 @@
 #include <shell/openxr/XrApp.h>
 
 #if defined(USE_VULKAN_BACKEND)
-#include "vulkan/XrAppImplVulkan.h"
+#include <shell/openxr/mobile/vulkan/XrAppImplVulkan.h>
 #elif defined(USE_OPENGL_BACKEND)
-#include "opengl/XrAppImplGLES.h"
+#include <shell/openxr/mobile/opengl/XrAppImplGLES.h>
 #endif
 
 XrInstance gInstance_;

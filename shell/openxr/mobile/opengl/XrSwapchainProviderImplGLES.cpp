@@ -7,6 +7,8 @@
 
 // @fb-only
 
+#include <shell/openxr/mobile/opengl/XrSwapchainProviderImplGLES.h>
+
 #include <algorithm>
 
 #include <igl/opengl/Device.h>
@@ -14,8 +16,6 @@
 #include <igl/opengl/TextureBufferExternal.h>
 
 #include <shell/openxr/XrLog.h>
-
-#include "XrSwapchainProviderImplGLES.h"
 
 namespace igl::shell::openxr::mobile {
 namespace {

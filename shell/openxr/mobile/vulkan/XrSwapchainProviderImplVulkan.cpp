@@ -7,6 +7,8 @@
 
 // @fb-only
 
+#include <shell/openxr/mobile/vulkan/XrSwapchainProviderImplVulkan.h>
+
 #include <fmt/core.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/Texture.h>
@@ -14,9 +16,8 @@
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImageView.h>
-#include <shell/openxr/XrLog.h>
 
-#include "XrSwapchainProviderImplVulkan.h"
+#include <shell/openxr/XrLog.h>
 
 namespace igl::shell::openxr::mobile {
 namespace {

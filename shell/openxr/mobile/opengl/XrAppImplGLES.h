@@ -7,14 +7,7 @@
 
 #pragma once
 
-#include <android/native_window_jni.h>
-
-#include <EGL/egl.h>
-
-#ifndef XR_USE_GRAPHICS_API_OPENGL_ES
-#define XR_USE_GRAPHICS_API_OPENGL_ES
-#endif
-#include <openxr/openxr_platform.h>
+#include <shell/openxr/XrPlatform.h>
 
 #include <shell/openxr/impl/XrAppImpl.h>
 

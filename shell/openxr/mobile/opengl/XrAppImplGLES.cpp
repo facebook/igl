@@ -7,15 +7,15 @@
 
 // @fb-only
 
-#include "XrAppImplGLES.h"
+#include <shell/openxr/mobile/opengl/XrAppImplGLES.h>
 
 #include <igl/HWDevice.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/egl/Context.h>
 #include <igl/opengl/egl/HWDevice.h>
-#include <shell/openxr/XrLog.h>
 
-#include "XrSwapchainProviderImplGLES.h"
+#include <shell/openxr/XrLog.h>
+#include <shell/openxr/mobile/opengl/XrSwapchainProviderImplGLES.h>
 
 namespace igl::shell::openxr::mobile {
 std::vector<const char*> XrAppImplGLES::getXrRequiredExtensions() const {

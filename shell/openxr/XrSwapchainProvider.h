@@ -11,7 +11,7 @@
 
 #include <memory>
 
-#include <openxr/openxr.h>
+#include <shell/openxr/XrPlatform.h>
 
 #include <igl/Device.h>
 #include <igl/Texture.h>

@@ -7,15 +7,14 @@
 
 // @fb-only
 
-#include "XrAppImplVulkan.h"
-
-#include <shell/openxr/XrLog.h>
+#include <shell/openxr/mobile/vulkan/XrAppImplVulkan.h>
 
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 
+#include <shell/openxr/XrLog.h>
 #include <shell/openxr/XrSwapchainProvider.h>
 #include <shell/openxr/mobile/vulkan/XrSwapchainProviderImplVulkan.h>
 
