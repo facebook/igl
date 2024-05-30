@@ -32,6 +32,10 @@
 #include <shell/openxr/mobile/opengl/XrAppImplGLES.h>
 #endif
 
+#if IGL_PLATFORM_WIN
+#include "ShellScalingApi.h"
+#endif // IGL_PLATFORM_WIN
+
 XrInstance gInstance_;
 XrInstance getXrInstance() {
   return gInstance_;
@@ -191,6 +195,10 @@ void android_main(struct android_app* app) {
 #else
 // To run via MetaXR Simulator or Monado.
 int main(int argc, const char* argv[]) {
+#if IGL_PLATFORM_WIN
+  SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+#endif // IGL_PLATFORM_WIN
+
 #if defined(USE_VULKAN_BACKEND)
   // Do not present running on MetaXR Simulator. It has its own composition and present.
   auto xrApp = std::make_unique<igl::shell::openxr::XrApp>(

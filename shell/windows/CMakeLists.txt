@@ -59,7 +59,7 @@ function(ADD_SHELL_SESSION_BACKEND_OPENXR_SIM targetApp backend srcs libs compil
   igl_set_cxxstd(${target} 20)
   target_compile_definitions(${target} PRIVATE "IGL_SHELL_SESSION=${targetApp}" ${compileDefs})
   target_include_directories(${target} PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/openxr-sdk/src/common")
-  target_link_libraries(${target} PUBLIC IGLShellOpenXR_SimVulkan IGLShellShared IGLShellPlatform ${libs})
+  target_link_libraries(${target} PUBLIC IGLShellOpenXR_SimVulkan IGLShellShared IGLShellPlatform Shcore.lib ${libs})
 endfunction()
 
 macro(ADD_SHELL_SESSION_WITH_SRCS target srcs libs)
