@@ -144,11 +144,8 @@ void CommandQueue::enhancedShaderDebuggingPass(const igl::vulkan::VulkanContext&
     IGL_SCOPE_EXIT {
       vkEncoder->setDrawCallCountEnabled(resetDrawCallCountValue);
     };
-    cmdEncoder->multiDrawIndirect(PrimitiveType::Line,
-                                  *debugger->vertexBuffer(),
-                                  sizeof(EnhancedShaderDebuggingStore::Metadata),
-                                  1,
-                                  0);
+    cmdEncoder->multiDrawIndirect(
+        *debugger->vertexBuffer(), sizeof(EnhancedShaderDebuggingStore::Metadata), 1, 0);
   }
   cmdEncoder->popDebugGroupLabel();
   cmdEncoder->endEncoding();

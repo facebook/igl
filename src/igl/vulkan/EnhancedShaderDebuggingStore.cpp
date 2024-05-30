@@ -210,6 +210,8 @@ std::shared_ptr<igl::IRenderPipelineState> EnhancedShaderDebuggingStore::pipelin
 
   RenderPipelineDesc desc;
 
+  desc.topology = PrimitiveType::Line;
+
   const auto max = std::max_element(attachments.begin(), attachments.end());
 
   desc.targetDesc.colorAttachments.resize(*max + 1);
