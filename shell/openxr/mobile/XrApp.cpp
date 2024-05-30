@@ -1076,7 +1076,7 @@ void XrApp::setupProjectionAndDepth(std::vector<XrCompositionLayerProjectionView
           subImageIndex,
       };
       depthInfos[layer].subImage = {
-          swapchainProviders_[swapChainIndex]->colorSwapchain(),
+          swapchainProviders_[swapChainIndex]->depthSwapchain(),
           imageRect,
           subImageIndex,
       };
