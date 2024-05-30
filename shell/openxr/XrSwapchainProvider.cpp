@@ -27,8 +27,12 @@ XrSwapchainProvider::XrSwapchainProvider(std::unique_ptr<impl::XrSwapchainProvid
   numViews_(numViews) {}
 
 XrSwapchainProvider::~XrSwapchainProvider() {
-  xrDestroySwapchain(colorSwapchain_);
-  xrDestroySwapchain(depthSwapchain_);
+  if (colorSwapchain_ != XR_NULL_HANDLE) {
+    xrDestroySwapchain(colorSwapchain_);
+  }
+  if (depthSwapchain_ != XR_NULL_HANDLE) {
+    xrDestroySwapchain(depthSwapchain_);
+  }
 }
 
 bool XrSwapchainProvider::initialize() {

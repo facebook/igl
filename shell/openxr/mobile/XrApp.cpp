@@ -110,6 +110,7 @@ XrApp::~XrApp() {
   if (!initialized_)
     return;
 
+  renderSession_.reset();
   swapchainProviders_.clear();
 
   if (leftHandTracker_ != XR_NULL_HANDLE) {
@@ -121,10 +122,20 @@ XrApp::~XrApp() {
   if (passthrough_ != XR_NULL_HANDLE) {
     xrDestroyPassthroughFB_(passthrough_);
   }
-  xrDestroySpace(currentSpace_);
-  xrDestroySpace(headSpace_);
-  xrDestroySession(session_);
-  xrDestroyInstance(instance_);
+  if (currentSpace_ != XR_NULL_HANDLE) {
+    xrDestroySpace(currentSpace_);
+  }
+  if (headSpace_ != XR_NULL_HANDLE) {
+    xrDestroySpace(headSpace_);
+  }
+  if (session_ != XR_NULL_HANDLE) {
+    xrDestroySession(session_);
+  }
+  if (instance_ != XR_NULL_HANDLE) {
+    xrDestroyInstance(instance_);
+  }
+
+  platform_.reset();
 }
 
 XrInstance XrApp::instance() const {

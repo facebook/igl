@@ -160,8 +160,8 @@ class XrApp {
 
   bool additiveBlendingSupported_ = false;
 
-  XrPassthroughFB passthrough_;
-  XrPassthroughLayerFB passthrougLayer_;
+  XrPassthroughFB passthrough_ = XR_NULL_HANDLE;
+  XrPassthroughLayerFB passthrougLayer_ = XR_NULL_HANDLE;
 
   bool passthroughSupported_ = false;
   PFN_xrCreatePassthroughFB xrCreatePassthroughFB_ = nullptr;
