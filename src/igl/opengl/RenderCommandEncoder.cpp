@@ -415,6 +415,13 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
   }
 }
 
+void RenderCommandEncoder::multiDrawIndirect(IBuffer& /*indirectBuffer*/,
+                                             size_t /*indirectBufferOffset*/,
+                                             uint32_t /*drawCount*/,
+                                             uint32_t /*stride*/) {
+  IGL_ASSERT_NOT_IMPLEMENTED();
+}
+
 void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
   if (IGL_VERIFY(adapter_)) {
     adapter_->setStencilReferenceValue(value);

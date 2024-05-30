@@ -89,12 +89,16 @@ class IRenderCommandEncoder : public ICommandEncoder {
                                  IBuffer& indirectBuffer,
                                  size_t indirectBufferOffset,
                                  uint32_t drawCount = 1,
-                                 uint32_t stride = 0) = 0;
+                                 uint32_t stride = 0) = 0; // old-n-sad
   virtual void multiDrawIndexedIndirect(PrimitiveType primitiveType,
                                         IBuffer& indirectBuffer,
                                         size_t indirectBufferOffset,
                                         uint32_t drawCount = 1,
                                         uint32_t stride = 0) = 0;
+  virtual void multiDrawIndirect(IBuffer& indirectBuffer,
+                                 size_t indirectBufferOffset,
+                                 uint32_t drawCount = 1,
+                                 uint32_t stride = 0) = 0; // new-n-rad
 
   virtual void setStencilReferenceValue(uint32_t value) = 0;
   virtual void setStencilReferenceValues(uint32_t frontValue, uint32_t backValue) = 0;

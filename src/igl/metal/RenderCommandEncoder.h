@@ -73,6 +73,10 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
                                 size_t indirectBufferOffset,
                                 uint32_t drawCount,
                                 uint32_t stride) override;
+  void multiDrawIndirect(IBuffer& indirectBuffer,
+                         size_t indirectBufferOffset,
+                         uint32_t drawCount,
+                         uint32_t stride) override;
 
   void setStencilReferenceValue(uint32_t value) override;
   void setStencilReferenceValues(uint32_t frontValue, uint32_t backValue) override;
@@ -104,6 +108,8 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   static constexpr uint32_t MAX_RECOMMENDED_BYTES = 4 * 1024;
 
   bool hasVertexBuffers_[IGL_VERTEX_BUFFER_MAX] = {};
+
+  MTLPrimitiveType metalPrimitive_ = MTLPrimitiveTypeTriangle;
 };
 
 } // namespace metal
