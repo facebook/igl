@@ -58,3 +58,24 @@ if(ANDROID)
     target_compile_definitions(IGLShellOpenXR_AndroidOpenGLES PRIVATE "USE_OPENGL_BACKEND" "XR_USE_PLATFORM_ANDROID" "XR_USE_GRAPHICS_API_OPENGL_ES")
   endif()
 endif()
+
+if(WIN32)
+  if(IGL_WITH_VULKAN)
+    file(GLOB SHELL_OPENXR_PLATFORM_ANDROID_VULKAN_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+      ../openxr/mobile/vulkan/*.cpp)
+
+    file(GLOB SHELL_OPENXR_PLATFORM_ANDROID_VULKAN_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+      ../openxr/mobile/vulkan/*.h)
+
+    add_shell_library(IGLShellOpenXR_SimVulkan
+      ../openxr/mobile/XrApp.cpp
+      ../openxr/mobile/AndroidMain.cpp
+      ${SHELL_OPENXR_SRC_FILES}
+      ${SHELL_OPENXR_HEADER_FILES}
+      ${SHELL_OPENXR_PLATFORM_ANDROID_VULKAN_SRC_FILES}
+      ${SHELL_OPENXR_PLATFORM_ANDROID_VULKAN_HEADER_FILES})
+    igl_set_folder(IGLShellOpenXR_SimVulkan "IGL Shell App/vulkan")
+    target_include_directories(IGLShellOpenXR_SimVulkan PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/openxr-sdk/src/common")
+    target_compile_definitions(IGLShellOpenXR_SimVulkan PRIVATE "USE_VULKAN_BACKEND" "XR_USE_PLATFORM_WIN32" "XR_USE_GRAPHICS_API_VULKAN")
+  endif()
+endif()
