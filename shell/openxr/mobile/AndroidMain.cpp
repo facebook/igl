@@ -123,20 +123,12 @@ void handleAppCmd(struct android_app* app, int32_t appCmd) {
 #include "vulkan/XrAppImplVulkan.h"
 #elif defined(USE_OPENGL_BACKEND)
 #include "opengl/XrAppImplGLES.h"
-// @fb-only
-// @fb-only
 #endif
 
 XrInstance gInstance_;
 XrInstance getXrInstance() {
   return gInstance_;
 }
-
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
 
 void android_main(struct android_app* app) {
   JNIEnv* Env;
@@ -150,9 +142,6 @@ void android_main(struct android_app* app) {
   auto xrApp = std::make_unique<XrApp>(std::make_unique<mobile::XrAppImplVulkan>());
 #elif defined(USE_OPENGL_BACKEND)
   auto xrApp = std::make_unique<XrApp>(std::make_unique<mobile::XrAppImplGLES>());
-// @fb-only
-  // @fb-only
-  // @fb-only
 #endif
   if (!xrApp->initialize(app, {})) {
     return;
