@@ -29,6 +29,7 @@ struct AAssetManager;
 
 // forward declarations
 namespace igl::shell::openxr {
+class XrHands;
 class XrSwapchainProvider;
 class XrPassthrough;
 namespace impl {
@@ -88,9 +89,6 @@ class XrApp {
   bool checkExtensions();
   bool createInstance();
   bool createSystem();
-  bool createHandsTracking();
-  void updateHandMeshes();
-  void updateHandTracking();
   bool enumerateViewConfigurations();
   void enumerateReferenceSpaces();
   void enumerateBlendModes();
@@ -180,14 +178,7 @@ class XrApp {
   bool additiveBlendingSupported_ = false;
 
   std::unique_ptr<XrPassthrough> passthrough_;
-
-  PFN_xrCreateHandTrackerEXT xrCreateHandTrackerEXT_ = nullptr;
-  PFN_xrDestroyHandTrackerEXT xrDestroyHandTrackerEXT_ = nullptr;
-  PFN_xrLocateHandJointsEXT xrLocateHandJointsEXT_ = nullptr;
-  PFN_xrGetHandMeshFB xrGetHandMeshFB_ = nullptr;
-
-  XrHandTrackerEXT leftHandTracker_ = XR_NULL_HANDLE;
-  XrHandTrackerEXT rightHandTracker_ = XR_NULL_HANDLE;
+  std::unique_ptr<XrHands> hands_;
 
   std::vector<float> supportedRefreshRates_;
   float currentRefreshRate_ = 0.0f;
