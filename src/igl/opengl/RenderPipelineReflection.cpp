@@ -99,10 +99,42 @@ void RenderPipelineReflection::generateUniformDictionary(IContext& context, GLui
   IGL_ASSERT(pid != 0);
   uniformDictionary_.clear();
 
-  GLint maxUniformNameLength = 0;
-  context.getProgramiv(pid, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxUniformNameLength);
   GLint count = 0;
   context.getProgramiv(pid, GL_ACTIVE_UNIFORMS, &count);
+
+  // We compute max uniform length by querying GL_ACTIVE_UNIFORM_MAX_LENGTH, and then taking the max
+  // of that with every GL_UNIFORM_NAME_LENGTH of each of the uniforms. This is needed because we
+  // observed that OpenGL drivers are sometimes unreliable with these values:
+  //
+  // 1. Android devices with old Mali GPUs (e.g. Mali-T860MP2) sometimes incorrectly return 0 for
+  // GL_ACTIVE_UNIFORM_MAX_LENGTH
+  //
+  // 2. When running macOS unit tests, sometimes GL_UNIFORM_NAME_LENGTH always return 0
+  //
+  // So the safe thing to do here is to take the max of the two.
+
+  GLint maxUniformNameLength = 0;
+  context.getProgramiv(pid, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxUniformNameLength);
+
+#ifdef GL_UNIFORM_NAME_LENGTH
+  auto glVersion = context.deviceFeatures().getGLVersion();
+  bool supportsGetActiveUniformsiv =
+      glVersion == GLVersion::v3_0_ES || glVersion == GLVersion::v3_1_ES ||
+      glVersion == GLVersion::v3_2_ES || glVersion >= GLVersion::v3_1;
+  if (supportsGetActiveUniformsiv) {
+    std::vector<GLuint> indices(count);
+    for (int i = 0; i < count; ++i) {
+      indices[i] = static_cast<GLuint>(i);
+    }
+    std::vector<GLint> nameLengths(count);
+    context.getActiveUniformsiv(
+        pid, count, indices.data(), GL_UNIFORM_NAME_LENGTH, nameLengths.data());
+
+    for (int i = 0; i < count; ++i) {
+      maxUniformNameLength = std::max(maxUniformNameLength, nameLengths[i]);
+    }
+  }
+#endif
 
   std::vector<GLchar> cname(maxUniformNameLength);
   for (int i = 0; i < count; i++) {
