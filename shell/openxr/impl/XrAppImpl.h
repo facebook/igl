@@ -19,11 +19,14 @@ class XrSwapchainProviderImpl;
 class XrAppImpl {
  public:
   virtual ~XrAppImpl() = default;
-  virtual std::vector<const char*> getXrRequiredExtensions() const = 0;
-  virtual std::unique_ptr<igl::IDevice> initIGL(XrInstance instance, XrSystemId systemId) = 0;
-  virtual XrSession initXrSession(XrInstance instance,
-                                  XrSystemId systemId,
-                                  igl::IDevice& device) = 0;
-  virtual std::unique_ptr<impl::XrSwapchainProviderImpl> createSwapchainProviderImpl() const = 0;
+  [[nodiscard]] virtual std::vector<const char*> getXrRequiredExtensions() const = 0;
+  [[nodiscard]] virtual std::vector<const char*> getXrOptionalExtensions() const = 0;
+  [[nodiscard]] virtual std::unique_ptr<igl::IDevice> initIGL(XrInstance instance,
+                                                              XrSystemId systemId) = 0;
+  [[nodiscard]] virtual XrSession initXrSession(XrInstance instance,
+                                                XrSystemId systemId,
+                                                igl::IDevice& device) = 0;
+  [[nodiscard]] virtual std::unique_ptr<impl::XrSwapchainProviderImpl> createSwapchainProviderImpl()
+      const = 0;
 };
 } // namespace igl::shell::openxr::impl

@@ -22,10 +22,15 @@ namespace igl::shell::openxr::mobile {
 std::vector<const char*> XrAppImplVulkan::getXrRequiredExtensions() const {
   return {
       XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
+      XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
+  };
+}
+
+std::vector<const char*> XrAppImplVulkan::getXrOptionalExtensions() const {
+  return {
 #if IGL_PLATFORM_ANDROID
       XR_FB_SWAPCHAIN_UPDATE_STATE_VULKAN_EXTENSION_NAME,
 #endif
-      XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
   };
 }
 

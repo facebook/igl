@@ -13,6 +13,7 @@
 
 #include <array>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include <shell/openxr/XrPlatform.h>
@@ -118,6 +119,13 @@ class XrApp {
                                std::vector<XrCompositionLayerDepthInfoKHR>& depthInfos);
   void endFrameQuadLayerComposition(XrFrameState frameState);
 
+  [[nodiscard]] inline bool passthroughSupported() const noexcept;
+  [[nodiscard]] inline bool handsTrackingSupported() const noexcept;
+  [[nodiscard]] inline bool handsTrackingMeshSupported() const noexcept;
+  [[nodiscard]] inline bool refreshRateExtensionSupported() const noexcept;
+  [[nodiscard]] inline bool instanceCreateInfoAndroidSupported() const noexcept;
+  [[nodiscard]] inline bool alphaBlendCompositionSupported() const noexcept;
+
   void* nativeWindow_ = nullptr;
   bool resumed_ = false;
   bool sessionActive_ = false;
@@ -139,8 +147,9 @@ class XrApp {
   XrInstanceCreateInfoAndroidKHR instanceCreateInfoAndroid_ = {
       .type = XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR,
   };
-  bool instanceCreateInfoAndroidSupported_ = false;
 #endif // IGL_PLATFORM_ANDROID
+
+  std::unordered_set<std::string> supportedOptionalXrExtensions_;
 
   XrInstance instance_ = XR_NULL_HANDLE;
   XrSystemId systemId_ = XR_NULL_SYSTEM_ID;
@@ -170,7 +179,6 @@ class XrApp {
   XrPassthroughFB passthrough_ = XR_NULL_HANDLE;
   XrPassthroughLayerFB passthrougLayer_ = XR_NULL_HANDLE;
 
-  bool passthroughSupported_ = false;
   PFN_xrCreatePassthroughFB xrCreatePassthroughFB_ = nullptr;
   PFN_xrDestroyPassthroughFB xrDestroyPassthroughFB_ = nullptr;
   PFN_xrPassthroughStartFB xrPassthroughStartFB_ = nullptr;
@@ -178,8 +186,6 @@ class XrApp {
   PFN_xrDestroyPassthroughLayerFB xrDestroyPassthroughLayerFB_ = nullptr;
   PFN_xrPassthroughLayerSetStyleFB xrPassthroughLayerSetStyleFB_ = nullptr;
 
-  bool handsTrackingSupported_ = false;
-  bool handsTrackingMeshSupported_ = false;
   PFN_xrCreateHandTrackerEXT xrCreateHandTrackerEXT_ = nullptr;
   PFN_xrDestroyHandTrackerEXT xrDestroyHandTrackerEXT_ = nullptr;
   PFN_xrLocateHandJointsEXT xrLocateHandJointsEXT_ = nullptr;
@@ -188,7 +194,6 @@ class XrApp {
   XrHandTrackerEXT leftHandTracker_ = XR_NULL_HANDLE;
   XrHandTrackerEXT rightHandTracker_ = XR_NULL_HANDLE;
 
-  bool refreshRateExtensionSupported_ = false;
   std::vector<float> supportedRefreshRates_;
   float currentRefreshRate_ = 0.0f;
 

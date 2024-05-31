@@ -17,15 +17,20 @@ namespace igl::shell::openxr::mobile {
 class XrSwapchainProvider;
 class XrAppImplVulkan : public impl::XrAppImpl {
  public:
-  std::vector<const char*> getXrRequiredExtensions() const override;
-  std::unique_ptr<igl::IDevice> initIGL(XrInstance instance, XrSystemId systemId) override;
-  XrSession initXrSession(XrInstance instance, XrSystemId systemId, igl::IDevice& device) override;
-  std::unique_ptr<impl::XrSwapchainProviderImpl> createSwapchainProviderImpl() const override;
+  [[nodiscard]] std::vector<const char*> getXrRequiredExtensions() const override;
+  [[nodiscard]] std::vector<const char*> getXrOptionalExtensions() const override;
+
+  [[nodiscard]] std::unique_ptr<igl::IDevice> initIGL(XrInstance instance,
+                                                      XrSystemId systemId) override;
+  [[nodiscard]] XrSession initXrSession(XrInstance instance,
+                                        XrSystemId systemId,
+                                        igl::IDevice& device) override;
+  [[nodiscard]] std::unique_ptr<impl::XrSwapchainProviderImpl> createSwapchainProviderImpl()
+      const override;
 
  private:
   std::vector<const char*> processExtensionsBuffer(std::vector<char>& buffer);
 
- private:
   XrGraphicsRequirementsVulkanKHR graphicsRequirements_ = {
       .type = XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR,
   };

@@ -138,7 +138,6 @@ XrSession XrApp::session() const {
 }
 
 bool XrApp::checkExtensions() {
-  // Check that the extensions required are present.
   XrResult result;
   PFN_xrEnumerateInstanceExtensionProperties xrEnumerateInstanceExtensionProperties;
   XR_CHECK(result =
@@ -162,22 +161,6 @@ bool XrApp::checkExtensions() {
     IGL_LOG_INFO("Extension #%d = '%s'.\n", i, extensions_[i].extensionName);
   }
 
-  auto requiredExtensionsImpl_ = impl_->getXrRequiredExtensions();
-  for (auto& requiredExtension : requiredExtensionsImpl_) {
-    auto it = std::find_if(std::begin(extensions_),
-                           std::end(extensions_),
-                           [&requiredExtension](const XrExtensionProperties& extension) {
-                             return strcmp(extension.extensionName, requiredExtension) == 0;
-                           });
-    if (it == std::end(extensions_)) {
-      IGL_LOG_ERROR("Extension %s is required.\n", requiredExtension);
-      return false;
-    }
-  }
-  enabledExtensions_.insert(std::end(enabledExtensions_),
-                            std::begin(requiredExtensionsImpl_),
-                            std::end(requiredExtensionsImpl_));
-
   auto checkExtensionSupported = [this](const char* name) {
     return std::any_of(std::begin(extensions_),
                        std::end(extensions_),
@@ -186,8 +169,14 @@ bool XrApp::checkExtensions() {
                        });
   };
 
-  passthroughSupported_ = checkExtensionSupported(XR_FB_PASSTHROUGH_EXTENSION_NAME);
-  IGL_LOG_INFO("Passthrough is %s\n", passthroughSupported_ ? "supported" : "not supported");
+  // Check all required extensions are supported.
+  auto requiredExtensionsImpl = impl_->getXrRequiredExtensions();
+  for (const char* requiredExtension : requiredExtensionsImpl) {
+    if (!checkExtensionSupported(requiredExtension)) {
+      IGL_LOG_ERROR("Extension %s is required, but not supported.\n", requiredExtension);
+      return false;
+    }
+  }
 
   auto checkNeedEnableExtension = [this](const char* name) {
     return std::find_if(std::begin(enabledExtensions_),
@@ -197,50 +186,43 @@ bool XrApp::checkExtensions() {
                         }) == std::end(enabledExtensions_);
   };
 
-  // Add passthough extension if supported.
-  if (passthroughSupported_ && checkNeedEnableExtension(XR_FB_PASSTHROUGH_EXTENSION_NAME)) {
-    enabledExtensions_.push_back(XR_FB_PASSTHROUGH_EXTENSION_NAME);
-  }
-
-  if (checkNeedRequiredExtension(XR_FB_COMPOSITION_LAYER_ALPHA_BLEND_EXTENSION_NAME)) {
-    requiredExtensions_.push_back(XR_FB_COMPOSITION_LAYER_ALPHA_BLEND_EXTENSION_NAME);
-  }
-
-  handsTrackingSupported_ = checkExtensionSupported(XR_EXT_HAND_TRACKING_EXTENSION_NAME);
-  IGL_LOG_INFO("Hands tracking is %s\n", handsTrackingSupported_ ? "supported" : "not supported");
-
-  handsTrackingMeshSupported_ = checkExtensionSupported(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME);
-  IGL_LOG_INFO("Hands tracking mesh is %s\n",
-               handsTrackingMeshSupported_ ? "supported" : "not supported");
-
-  // Add hands tracking extension if supported.
-  if (handsTrackingSupported_ && checkNeedEnableExtension(XR_EXT_HAND_TRACKING_EXTENSION_NAME)) {
-    enabledExtensions_.push_back(XR_EXT_HAND_TRACKING_EXTENSION_NAME);
-
-    if (handsTrackingMeshSupported_ &&
-        checkNeedEnableExtension(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME)) {
-      enabledExtensions_.push_back(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME);
+  // Add required extensions to enabledExtensions_.
+  for (const char* requiredExtension : requiredExtensionsImpl) {
+    if (checkNeedEnableExtension(requiredExtension)) {
+      IGL_LOG_INFO("Extension %s is enabled.\n", requiredExtension);
+      enabledExtensions_.push_back(requiredExtension);
     }
   }
 
-  refreshRateExtensionSupported_ =
-      checkExtensionSupported(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME);
-  IGL_LOG_INFO("RefreshRate is %s\n",
-               refreshRateExtensionSupported_ ? "supported" : "not supported");
-
-  if (refreshRateExtensionSupported_ &&
-      checkNeedEnableExtension(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME)) {
-    enabledExtensions_.push_back(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME);
-  }
-
+  // Get list of all optional extensions.
+  auto optionalExtensionsImpl = impl_->getXrOptionalExtensions();
+  std::vector<const char*> additionalOptionalExtensions = {
 #if IGL_PLATFORM_ANDROID
-  instanceCreateInfoAndroidSupported_ =
-      checkExtensionSupported(XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME);
-  if (instanceCreateInfoAndroidSupported_ &&
-      checkNeedEnableExtension(XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME)) {
-    enabledExtensions_.push_back(XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME);
-  }
+      XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME,
 #endif // IGL_PLATFORM_ANDROID
+      XR_FB_PASSTHROUGH_EXTENSION_NAME,
+      XR_EXT_HAND_TRACKING_EXTENSION_NAME,
+      XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME,
+#ifdef XR_FB_composition_layer_alpha_blend
+      XR_FB_COMPOSITION_LAYER_ALPHA_BLEND_EXTENSION_NAME,
+#endif // XR_FB_composition_layer_alpha_blend
+      XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME};
+  optionalExtensionsImpl.insert(optionalExtensionsImpl.end(),
+                                std::begin(additionalOptionalExtensions),
+                                std::end(additionalOptionalExtensions));
+
+  // Add optional extensions to enabledExtensions_.
+  for (const char* optionalExtension : optionalExtensionsImpl) {
+    if (checkExtensionSupported(optionalExtension)) {
+      supportedOptionalXrExtensions_.insert(optionalExtension);
+      if (checkNeedEnableExtension(optionalExtension)) {
+        IGL_LOG_INFO("Extension %s is enabled.\n", optionalExtension);
+        enabledExtensions_.push_back(optionalExtension);
+      }
+    } else {
+      IGL_LOG_INFO("Warning: Extension %s is not supported.\n", optionalExtension);
+    }
+  }
 
   return true;
 }
@@ -256,10 +238,10 @@ bool XrApp::createInstance() {
   XrInstanceCreateInfo instanceCreateInfo = {
       .type = XR_TYPE_INSTANCE_CREATE_INFO,
 #if IGL_PLATFORM_ANDROID
-      .next = instanceCreateInfoAndroidSupported_ ? &instanceCreateInfoAndroid_ : nullptr,
+      .next = instanceCreateInfoAndroidSupported() ? &instanceCreateInfoAndroid_ : nullptr,
 #else
       .next = nullptr,
-#endif
+#endif // IGL_PLATFORM_ANDROID
       .createFlags = 0,
       .applicationInfo = appInfo,
       .enabledApiLayerCount = 0,
@@ -282,7 +264,7 @@ bool XrApp::createInstance() {
                XR_VERSION_MINOR(instanceProps_.runtimeVersion),
                XR_VERSION_PATCH(instanceProps_.runtimeVersion));
 
-  if (passthroughSupported_) {
+  if (passthroughSupported()) {
     XR_CHECK(xrGetInstanceProcAddr(
         instance_, "xrCreatePassthroughFB", (PFN_xrVoidFunction*)(&xrCreatePassthroughFB_)));
     XR_CHECK(xrGetInstanceProcAddr(
@@ -300,7 +282,7 @@ bool XrApp::createInstance() {
                                    (PFN_xrVoidFunction*)(&xrPassthroughLayerSetStyleFB_)));
   }
 
-  if (handsTrackingSupported_) {
+  if (handsTrackingSupported()) {
     XR_CHECK(xrGetInstanceProcAddr(
         instance_, "xrCreateHandTrackerEXT", (PFN_xrVoidFunction*)(&xrCreateHandTrackerEXT_)));
     IGL_ASSERT(xrCreateHandTrackerEXT_ != nullptr);
@@ -310,14 +292,15 @@ bool XrApp::createInstance() {
     XR_CHECK(xrGetInstanceProcAddr(
         instance_, "xrLocateHandJointsEXT", (PFN_xrVoidFunction*)(&xrLocateHandJointsEXT_)));
     IGL_ASSERT(xrLocateHandJointsEXT_ != nullptr);
-    if (handsTrackingMeshSupported_) {
-      XR_CHECK(xrGetInstanceProcAddr(
-          instance_, "xrGetHandMeshFB", (PFN_xrVoidFunction*)(&xrGetHandMeshFB_)));
-      IGL_ASSERT(xrGetHandMeshFB_ != nullptr);
-    }
   }
 
-  if (refreshRateExtensionSupported_) {
+  if (handsTrackingMeshSupported()) {
+    XR_CHECK(xrGetInstanceProcAddr(
+        instance_, "xrGetHandMeshFB", (PFN_xrVoidFunction*)(&xrGetHandMeshFB_)));
+    IGL_ASSERT(xrGetHandMeshFB_ != nullptr);
+  }
+
+  if (refreshRateExtensionSupported()) {
     XR_CHECK(xrGetInstanceProcAddr(instance_,
                                    "xrGetDisplayRefreshRateFB",
                                    (PFN_xrVoidFunction*)(&xrGetDisplayRefreshRateFB_)));
@@ -363,7 +346,7 @@ bool XrApp::createSystem() {
 }
 
 bool XrApp::createPassthrough() {
-  if (!passthroughSupported_) {
+  if (!passthroughSupported()) {
     return false;
   }
   XrPassthroughCreateInfoFB passthroughInfo{XR_TYPE_PASSTHROUGH_CREATE_INFO_FB};
@@ -407,7 +390,7 @@ bool XrApp::createPassthrough() {
 }
 
 bool XrApp::createHandsTracking() {
-  if (!handsTrackingSupported_) {
+  if (!handsTrackingSupported()) {
     return false;
   }
   XrHandTrackerCreateInfoEXT createInfo{XR_TYPE_HAND_TRACKER_CREATE_INFO_EXT};
@@ -443,7 +426,7 @@ bool XrApp::createHandsTracking() {
 }
 
 void XrApp::updateHandMeshes() {
-  if (!handsTrackingMeshSupported_) {
+  if (!handsTrackingMeshSupported()) {
     return;
   }
   auto& handMeshes = shellParams_->handMeshes;
@@ -514,7 +497,7 @@ void XrApp::updateHandMeshes() {
 }
 
 void XrApp::updateHandTracking() {
-  if (!handsTrackingSupported_) {
+  if (!handsTrackingSupported()) {
     return;
   }
   auto& handTracking = shellParams_->handTracking;
@@ -777,13 +760,13 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
   enumerateBlendModes();
   updateSwapchainProviders();
   createSpaces();
-  if (passthroughSupported_ && !createPassthrough()) {
+  if (passthroughSupported() && !createPassthrough()) {
     return false;
   }
-  if (handsTrackingSupported_ && !createHandsTracking()) {
+  if (handsTrackingSupported() && !createHandsTracking()) {
     return false;
   }
-  if (refreshRateExtensionSupported_) {
+  if (refreshRateExtensionSupported()) {
     queryCurrentRefreshRate();
     if (params.refreshRateMode_ == InitParams::UseMaxRefreshRate) {
       setMaxRefreshRate();
@@ -997,9 +980,7 @@ XrFrameState XrApp::beginFrame() {
     cameraPositions_[i] = glm::vec3(eyePose.position.x, eyePose.position.y, eyePose.position.z);
   }
 
-  if (handsTrackingSupported_) {
-    updateHandTracking();
-  }
+  updateHandTracking();
 
   return frameState;
 }
@@ -1105,6 +1086,7 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
   std::vector<XrCompositionLayerQuad> quadLayers(static_cast<size_t>(kNumViews) *
                                                  numQuadLayersPerView_);
 #ifdef XR_FB_composition_layer_alpha_blend
+  const auto isAlphaBlendCompositionSupported = alphaBlendCompositionSupported();
   XrCompositionLayerAlphaBlendFB blendMode = {XR_TYPE_COMPOSITION_LAYER_ALPHA_BLEND_FB};
   blendMode.srcFactorColor = XR_BLEND_FACTOR_ONE_MINUS_DST_ALPHA_FB;
   blendMode.dstFactorColor = XR_BLEND_FACTOR_ONE_FB;
@@ -1135,7 +1117,7 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
     for (size_t view = 0; view < kNumViews; view++, layer++) {
 #ifdef XR_FB_composition_layer_alpha_blend
       quadLayers[layer].next =
-          (quadLayersParams_.numQuads() > 0 &&
+          (isAlphaBlendCompositionSupported && quadLayersParams_.numQuads() > 0 &&
            quadLayersParams_.blendModes_[layer] == igl::shell::LayerBlendMode::AlphaAdditive)
               ? &blendMode
               : nullptr;
@@ -1177,7 +1159,7 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
 
   const bool passthroughEnabled = appParams.passthroughGetter ? appParams.passthroughGetter()
                                                               : useQuadLayerComposition_;
-  if (passthroughSupported_ && passthroughEnabled) {
+  if (passthroughEnabled && passthroughSupported()) {
     compositionLayer.next = nullptr;
     compositionLayer.layerHandle = passthrougLayer_;
     layers[layerIndex++] = (const XrCompositionLayerBaseHeader*)&compositionLayer;
@@ -1247,7 +1229,7 @@ void XrApp::update() {
 }
 
 float XrApp::getCurrentRefreshRate() {
-  if (!session_ || !refreshRateExtensionSupported_ || (currentRefreshRate_ > 0.0f)) {
+  if (!session_ || (currentRefreshRate_ > 0.0f) || !refreshRateExtensionSupported()) {
     return currentRefreshRate_;
   }
 
@@ -1263,7 +1245,7 @@ void XrApp::queryCurrentRefreshRate() {
 }
 
 float XrApp::getMaxRefreshRate() {
-  if (!session_ || !refreshRateExtensionSupported_) {
+  if (!session_ || !refreshRateExtensionSupported()) {
     return 0.0f;
   }
 
@@ -1279,8 +1261,7 @@ float XrApp::getMaxRefreshRate() {
 }
 
 bool XrApp::setRefreshRate(float refreshRate) {
-  if (!session_ || !refreshRateExtensionSupported_ || (refreshRate == currentRefreshRate_) ||
-      !isRefreshRateSupported(refreshRate)) {
+  if (!session_ || (refreshRate == currentRefreshRate_) || !isRefreshRateSupported(refreshRate)) {
     return false;
   }
 
@@ -1298,7 +1279,7 @@ bool XrApp::setRefreshRate(float refreshRate) {
 }
 
 void XrApp::setMaxRefreshRate() {
-  if (!session_ || !refreshRateExtensionSupported_) {
+  if (!session_ || !refreshRateExtensionSupported()) {
     return;
   }
 
@@ -1310,7 +1291,7 @@ void XrApp::setMaxRefreshRate() {
 }
 
 bool XrApp::isRefreshRateSupported(float refreshRate) {
-  if (!session_ || !refreshRateExtensionSupported_) {
+  if (!session_ || !refreshRateExtensionSupported()) {
     return false;
   }
 
@@ -1320,7 +1301,7 @@ bool XrApp::isRefreshRateSupported(float refreshRate) {
 }
 
 const std::vector<float>& XrApp::getSupportedRefreshRates() {
-  if (!session_ || !refreshRateExtensionSupported_) {
+  if (!session_ || !refreshRateExtensionSupported()) {
     return supportedRefreshRates_;
   }
 
@@ -1332,7 +1313,7 @@ const std::vector<float>& XrApp::getSupportedRefreshRates() {
 }
 
 void XrApp::querySupportedRefreshRates() {
-  if (!session_ || !refreshRateExtensionSupported_ || !supportedRefreshRates_.empty()) {
+  if (!session_ || !supportedRefreshRates_.empty() || !refreshRateExtensionSupported()) {
     return;
   }
 
@@ -1353,6 +1334,37 @@ void XrApp::querySupportedRefreshRates() {
       IGL_LOG_INFO("querySupportedRefreshRates Hz = %.2f.\n", refreshRate);
     }
   }
+}
+
+bool XrApp::passthroughSupported() const noexcept {
+  return supportedOptionalXrExtensions_.count(XR_FB_PASSTHROUGH_EXTENSION_NAME) != 0;
+}
+
+bool XrApp::handsTrackingSupported() const noexcept {
+  return supportedOptionalXrExtensions_.count(XR_EXT_HAND_TRACKING_EXTENSION_NAME) != 0;
+}
+
+bool XrApp::handsTrackingMeshSupported() const noexcept {
+  return supportedOptionalXrExtensions_.count(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME) != 0;
+}
+
+bool XrApp::refreshRateExtensionSupported() const noexcept {
+  return supportedOptionalXrExtensions_.count(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME) != 0;
+}
+
+bool XrApp::instanceCreateInfoAndroidSupported() const noexcept {
+#if IGL_PLATFORM_ANDROID
+  return supportedOptionalXrExtensions_.count(XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME) != 0;
+#endif // IGL_PLATFORM_ANDROID
+  return false;
+}
+
+bool XrApp::alphaBlendCompositionSupported() const noexcept {
+#ifdef XR_FB_composition_layer_alpha_blend
+  return supportedOptionalXrExtensions_.count(XR_FB_COMPOSITION_LAYER_ALPHA_BLEND_EXTENSION_NAME) !=
+         0;
+#endif // XR_FB_composition_layer_alpha_blend
+  return false;
 }
 
 } // namespace igl::shell::openxr

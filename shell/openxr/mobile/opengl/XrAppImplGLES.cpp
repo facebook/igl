@@ -25,6 +25,10 @@ std::vector<const char*> XrAppImplGLES::getXrRequiredExtensions() const {
   };
 }
 
+std::vector<const char*> XrAppImplGLES::getXrOptionalExtensions() const {
+  return {};
+}
+
 std::unique_ptr<igl::IDevice> XrAppImplGLES::initIGL(XrInstance instance, XrSystemId systemId) {
   // Get the graphics requirements.
   PFN_xrGetOpenGLESGraphicsRequirementsKHR pfnGetOpenGLESGraphicsRequirementsKHR = NULL;

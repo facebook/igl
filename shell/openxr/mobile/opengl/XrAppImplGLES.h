@@ -15,11 +15,16 @@ namespace igl::shell::openxr::mobile {
 
 class XrAppImplGLES final : public impl::XrAppImpl {
  public:
-  std::vector<const char*> getXrRequiredExtensions() const override;
+  [[nodiscard]] std::vector<const char*> getXrRequiredExtensions() const override;
+  [[nodiscard]] std::vector<const char*> getXrOptionalExtensions() const override;
 
-  std::unique_ptr<igl::IDevice> initIGL(XrInstance instance, XrSystemId systemId) override;
-  XrSession initXrSession(XrInstance instance, XrSystemId systemId, igl::IDevice& device) override;
-  std::unique_ptr<impl::XrSwapchainProviderImpl> createSwapchainProviderImpl() const override;
+  [[nodiscard]] std::unique_ptr<igl::IDevice> initIGL(XrInstance instance,
+                                                      XrSystemId systemId) override;
+  [[nodiscard]] XrSession initXrSession(XrInstance instance,
+                                        XrSystemId systemId,
+                                        igl::IDevice& device) override;
+  [[nodiscard]] std::unique_ptr<impl::XrSwapchainProviderImpl> createSwapchainProviderImpl()
+      const override;
 
  private:
   XrGraphicsRequirementsOpenGLESKHR graphicsRequirements_ = {
