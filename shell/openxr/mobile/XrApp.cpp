@@ -212,6 +212,10 @@ bool XrApp::checkExtensions() {
     requiredExtensions_.push_back(XR_FB_PASSTHROUGH_EXTENSION_NAME);
   }
 
+  if (checkNeedRequiredExtension(XR_FB_COMPOSITION_LAYER_ALPHA_BLEND_EXTENSION_NAME)) {
+    requiredExtensions_.push_back(XR_FB_COMPOSITION_LAYER_ALPHA_BLEND_EXTENSION_NAME);
+  }
+
   handsTrackingSupported_ = checkExtensionSupported(XR_EXT_HAND_TRACKING_EXTENSION_NAME);
   IGL_LOG_INFO("Hands tracking is %s\n", handsTrackingSupported_ ? "supported" : "not supported");
 
