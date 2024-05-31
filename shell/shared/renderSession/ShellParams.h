@@ -26,7 +26,7 @@ struct ShellParams {
   glm::vec2 viewportSize = glm::vec2(1024.0f, 768.0f);
   glm::ivec2 nativeSurfaceDimensions = glm::ivec2(2048, 1536);
   igl::TextureFormat defaultColorFramebufferFormat = igl::TextureFormat::BGRA_SRGB;
-  float viewportScale = 1.f; // TODO: remove???
+  float viewportScale = 1.f;
   bool shouldPresent = true;
   std::optional<igl::Color> clearColorValue = {};
   std::array<HandMesh, 2> handMeshes = {};
