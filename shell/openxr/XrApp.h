@@ -30,6 +30,7 @@ struct AAssetManager;
 // forward declarations
 namespace igl::shell::openxr {
 class XrSwapchainProvider;
+class XrPassthrough;
 namespace impl {
 class XrAppImpl;
 }
@@ -87,7 +88,6 @@ class XrApp {
   bool checkExtensions();
   bool createInstance();
   bool createSystem();
-  bool createPassthrough();
   bool createHandsTracking();
   void updateHandMeshes();
   void updateHandTracking();
@@ -117,9 +117,12 @@ class XrApp {
   void querySupportedRefreshRates();
   void setupProjectionAndDepth(std::vector<XrCompositionLayerProjectionView>& projectionViews,
                                std::vector<XrCompositionLayerDepthInfoKHR>& depthInfos);
+  void endFrameProjectionComposition(XrFrameState frameState);
   void endFrameQuadLayerComposition(XrFrameState frameState);
 
   [[nodiscard]] inline bool passthroughSupported() const noexcept;
+  [[nodiscard]] inline bool passthroughEnabled() const noexcept;
+
   [[nodiscard]] inline bool handsTrackingSupported() const noexcept;
   [[nodiscard]] inline bool handsTrackingMeshSupported() const noexcept;
   [[nodiscard]] inline bool refreshRateExtensionSupported() const noexcept;
@@ -176,15 +179,7 @@ class XrApp {
 
   bool additiveBlendingSupported_ = false;
 
-  XrPassthroughFB passthrough_ = XR_NULL_HANDLE;
-  XrPassthroughLayerFB passthrougLayer_ = XR_NULL_HANDLE;
-
-  PFN_xrCreatePassthroughFB xrCreatePassthroughFB_ = nullptr;
-  PFN_xrDestroyPassthroughFB xrDestroyPassthroughFB_ = nullptr;
-  PFN_xrPassthroughStartFB xrPassthroughStartFB_ = nullptr;
-  PFN_xrCreatePassthroughLayerFB xrCreatePassthroughLayerFB_ = nullptr;
-  PFN_xrDestroyPassthroughLayerFB xrDestroyPassthroughLayerFB_ = nullptr;
-  PFN_xrPassthroughLayerSetStyleFB xrPassthroughLayerSetStyleFB_ = nullptr;
+  std::unique_ptr<XrPassthrough> passthrough_;
 
   PFN_xrCreateHandTrackerEXT xrCreateHandTrackerEXT_ = nullptr;
   PFN_xrDestroyHandTrackerEXT xrDestroyHandTrackerEXT_ = nullptr;

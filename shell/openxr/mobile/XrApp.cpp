@@ -39,6 +39,7 @@
 #include <shell/shared/renderSession/ShellParams.h>
 
 #include <shell/openxr/XrLog.h>
+#include <shell/openxr/XrPassthrough.h>
 #include <shell/openxr/XrSwapchainProvider.h>
 #include <shell/openxr/impl/XrAppImpl.h>
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
@@ -103,6 +104,7 @@ XrApp::~XrApp() {
 
   renderSession_.reset();
   swapchainProviders_.clear();
+  passthrough_.reset();
 
   if (leftHandTracker_ != XR_NULL_HANDLE) {
     xrDestroyHandTrackerEXT_(leftHandTracker_);
@@ -110,9 +112,7 @@ XrApp::~XrApp() {
   if (rightHandTracker_ != XR_NULL_HANDLE) {
     xrDestroyHandTrackerEXT_(rightHandTracker_);
   }
-  if (passthrough_ != XR_NULL_HANDLE) {
-    xrDestroyPassthroughFB_(passthrough_);
-  }
+
   if (currentSpace_ != XR_NULL_HANDLE) {
     xrDestroySpace(currentSpace_);
   }
@@ -200,13 +200,17 @@ bool XrApp::checkExtensions() {
 #if IGL_PLATFORM_ANDROID
       XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME,
 #endif // IGL_PLATFORM_ANDROID
-      XR_FB_PASSTHROUGH_EXTENSION_NAME,
       XR_EXT_HAND_TRACKING_EXTENSION_NAME,
       XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME,
 #ifdef XR_FB_composition_layer_alpha_blend
       XR_FB_COMPOSITION_LAYER_ALPHA_BLEND_EXTENSION_NAME,
 #endif // XR_FB_composition_layer_alpha_blend
       XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME};
+
+  optionalExtensionsImpl.insert(optionalExtensionsImpl.end(),
+                                std::begin(XrPassthrough::getExtensions()),
+                                std::end(XrPassthrough::getExtensions()));
+
   optionalExtensionsImpl.insert(optionalExtensionsImpl.end(),
                                 std::begin(additionalOptionalExtensions),
                                 std::end(additionalOptionalExtensions));
@@ -263,24 +267,6 @@ bool XrApp::createInstance() {
                XR_VERSION_MAJOR(instanceProps_.runtimeVersion),
                XR_VERSION_MINOR(instanceProps_.runtimeVersion),
                XR_VERSION_PATCH(instanceProps_.runtimeVersion));
-
-  if (passthroughSupported()) {
-    XR_CHECK(xrGetInstanceProcAddr(
-        instance_, "xrCreatePassthroughFB", (PFN_xrVoidFunction*)(&xrCreatePassthroughFB_)));
-    XR_CHECK(xrGetInstanceProcAddr(
-        instance_, "xrDestroyPassthroughFB", (PFN_xrVoidFunction*)(&xrDestroyPassthroughFB_)));
-    XR_CHECK(xrGetInstanceProcAddr(
-        instance_, "xrPassthroughStartFB", (PFN_xrVoidFunction*)(&xrPassthroughStartFB_)));
-    XR_CHECK(xrGetInstanceProcAddr(instance_,
-                                   "xrCreatePassthroughLayerFB",
-                                   (PFN_xrVoidFunction*)(&xrCreatePassthroughLayerFB_)));
-    XR_CHECK(xrGetInstanceProcAddr(instance_,
-                                   "xrDestroyPassthroughLayerFB",
-                                   (PFN_xrVoidFunction*)(&xrDestroyPassthroughLayerFB_)));
-    XR_CHECK(xrGetInstanceProcAddr(instance_,
-                                   "xrPassthroughLayerSetStyleFB",
-                                   (PFN_xrVoidFunction*)(&xrPassthroughLayerSetStyleFB_)));
-  }
 
   if (handsTrackingSupported()) {
     XR_CHECK(xrGetInstanceProcAddr(
@@ -342,50 +328,6 @@ bool XrApp::createSystem() {
   IGL_LOG_INFO("System Tracking Properties: OrientationTracking=%s PositionTracking=%s\n",
                systemProps_.trackingProperties.orientationTracking ? "True" : "False",
                systemProps_.trackingProperties.positionTracking ? "True" : "False");
-  return true;
-}
-
-bool XrApp::createPassthrough() {
-  if (!passthroughSupported()) {
-    return false;
-  }
-  XrPassthroughCreateInfoFB passthroughInfo{XR_TYPE_PASSTHROUGH_CREATE_INFO_FB};
-  passthroughInfo.next = nullptr;
-  passthroughInfo.flags = 0u;
-
-  XrResult result;
-  XR_CHECK(result = xrCreatePassthroughFB_(session_, &passthroughInfo, &passthrough_));
-  if (result != XR_SUCCESS) {
-    IGL_LOG_ERROR("xrCreatePassthroughFB failed.\n");
-    return false;
-  }
-
-  XrPassthroughLayerCreateInfoFB layerInfo{XR_TYPE_PASSTHROUGH_LAYER_CREATE_INFO_FB};
-  layerInfo.next = nullptr;
-  layerInfo.passthrough = passthrough_;
-  layerInfo.purpose = XR_PASSTHROUGH_LAYER_PURPOSE_RECONSTRUCTION_FB;
-  layerInfo.flags = XR_PASSTHROUGH_IS_RUNNING_AT_CREATION_BIT_FB;
-  XR_CHECK(result = xrCreatePassthroughLayerFB_(session_, &layerInfo, &passthrougLayer_));
-  if (result != XR_SUCCESS) {
-    IGL_LOG_ERROR("xrCreatePassthroughLayerFB failed.\n");
-    return false;
-  }
-
-  XrPassthroughStyleFB style{XR_TYPE_PASSTHROUGH_STYLE_FB};
-  style.next = nullptr;
-  style.textureOpacityFactor = 1.0f;
-  style.edgeColor = {0.0f, 0.0f, 0.0f, 0.0f};
-  XR_CHECK(result = xrPassthroughLayerSetStyleFB_(passthrougLayer_, &style));
-  if (result != XR_SUCCESS) {
-    IGL_LOG_ERROR("xrPassthroughLayerSetStyleFB failed.\n");
-    return false;
-  }
-
-  XR_CHECK(result = xrPassthroughStartFB_(passthrough_));
-  if (result != XR_SUCCESS) {
-    IGL_LOG_ERROR("xrPassthroughStartFB failed.\n");
-    return false;
-  }
   return true;
 }
 
@@ -760,8 +702,11 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
   enumerateBlendModes();
   updateSwapchainProviders();
   createSpaces();
-  if (passthroughSupported() && !createPassthrough()) {
-    return false;
+  if (passthroughSupported()) {
+    passthrough_ = std::make_unique<XrPassthrough>(instance_, session_);
+    if (!passthrough_->initialize()) {
+      return false;
+    }
   }
   if (handsTrackingSupported() && !createHandsTracking()) {
     return false;
@@ -928,6 +873,10 @@ void XrApp::handleSessionStateChanges(XrSessionState state) {
 }
 
 XrFrameState XrApp::beginFrame() {
+  if (passthrough_) {
+    passthrough_->setEnabled(passthroughEnabled());
+  }
+
   const auto& appParams = renderSession_->appParams();
   if (appParams.quadLayerParamsGetter) {
     quadLayersParams_ = appParams.quadLayerParamsGetter();
@@ -995,10 +944,7 @@ void copyFov(igl::shell::Fov& dst, const XrFovf& src) {
 } // namespace
 
 void XrApp::render() {
-  const auto& appParams = renderSession_->appParams();
-  const bool passthroughEnabled = appParams.passthroughGetter ? appParams.passthroughGetter()
-                                                              : useQuadLayerComposition_;
-  if (passthroughEnabled) {
+  if (passthroughEnabled()) {
     shellParams_->clearColorValue = igl::Color{0.0f, 0.0f, 0.0f, 0.0f};
   } else {
     shellParams_->clearColorValue.reset();
@@ -1080,6 +1026,45 @@ void XrApp::setupProjectionAndDepth(std::vector<XrCompositionLayerProjectionView
   }
 }
 
+void XrApp::endFrameProjectionComposition(XrFrameState frameState) {
+  std::vector<XrCompositionLayerProjectionView> projectionViews;
+  std::vector<XrCompositionLayerDepthInfoKHR> depthInfos;
+  setupProjectionAndDepth(projectionViews, depthInfos);
+
+  XrCompositionLayerFlags compositionFlags = XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT;
+  if (passthroughEnabled()) {
+    compositionFlags |= XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+  }
+
+  XrCompositionLayerProjection projection = {
+      XR_TYPE_COMPOSITION_LAYER_PROJECTION,
+      nullptr,
+      compositionFlags,
+      currentSpace_,
+      static_cast<uint32_t>(kNumViews),
+      projectionViews.data(),
+  };
+
+  std::vector<const XrCompositionLayerBaseHeader*> layers;
+  layers.reserve(2);
+
+  if (passthroughEnabled()) {
+    passthrough_->injectLayer(layers);
+  }
+  layers.push_back(reinterpret_cast<const XrCompositionLayerBaseHeader*>(&projection));
+
+  const XrFrameEndInfo endFrameInfo{
+      .type = XR_TYPE_FRAME_END_INFO,
+      .next = nullptr,
+      .displayTime = frameState.predictedDisplayTime,
+      .environmentBlendMode = additiveBlendingSupported_ ? XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
+                                                         : XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
+      .layerCount = static_cast<uint32_t>(layers.size()),
+      .layers = layers.data(),
+  };
+  XR_CHECK(xrEndFrame(session_, &endFrameInfo));
+}
+
 void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
   const auto& appParams = renderSession_->appParams();
 
@@ -1151,67 +1136,34 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
     quadLayers[i].subImage = projectionViews[i].subImage;
   }
 
-  std::vector<const XrCompositionLayerBaseHeader*> layers(numQuadLayersPerView_ *
-                                                          static_cast<std::size_t>(kNumViews + 1));
-  uint32_t layerIndex = 0;
+  std::vector<const XrCompositionLayerBaseHeader*> layers;
+  layers.reserve(numQuadLayersPerView_ * static_cast<std::size_t>(kNumViews + 1));
 
-  XrCompositionLayerPassthroughFB compositionLayer{XR_TYPE_COMPOSITION_LAYER_PASSTHROUGH_FB};
-
-  const bool passthroughEnabled = appParams.passthroughGetter ? appParams.passthroughGetter()
-                                                              : useQuadLayerComposition_;
-  if (passthroughEnabled && passthroughSupported()) {
-    compositionLayer.next = nullptr;
-    compositionLayer.layerHandle = passthrougLayer_;
-    layers[layerIndex++] = (const XrCompositionLayerBaseHeader*)&compositionLayer;
+  if (passthroughEnabled()) {
+    passthrough_->injectLayer(layers);
   }
-
   for (auto& quadLayer : quadLayers) {
-    IGL_ASSERT(layerIndex < layers.size());
-    layers[layerIndex++] = (const XrCompositionLayerBaseHeader*)&quadLayer;
+    layers.push_back(reinterpret_cast<const XrCompositionLayerBaseHeader*>(&quadLayer));
   }
 
-  const XrFrameEndInfo endFrameInfo = {XR_TYPE_FRAME_END_INFO,
-                                       nullptr,
-                                       frameState.predictedDisplayTime,
-                                       additiveBlendingSupported_
-                                           ? XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
-                                           : XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
-                                       layerIndex,
-                                       layers.data()};
+  const XrFrameEndInfo endFrameInfo{
+      .type = XR_TYPE_FRAME_END_INFO,
+      .next = nullptr,
+      .displayTime = frameState.predictedDisplayTime,
+      .environmentBlendMode = additiveBlendingSupported_ ? XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
+                                                         : XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
+      .layerCount = static_cast<uint32_t>(layers.size()),
+      .layers = layers.data(),
+  };
   XR_CHECK(xrEndFrame(session_, &endFrameInfo));
 }
 
 void XrApp::endFrame(XrFrameState frameState) {
   if (useQuadLayerComposition_) {
     endFrameQuadLayerComposition(frameState);
-    return;
+  } else {
+    endFrameProjectionComposition(frameState);
   }
-
-  std::vector<XrCompositionLayerProjectionView> projectionViews;
-  std::vector<XrCompositionLayerDepthInfoKHR> depthInfos;
-  setupProjectionAndDepth(projectionViews, depthInfos);
-
-  XrCompositionLayerProjection projection = {
-      XR_TYPE_COMPOSITION_LAYER_PROJECTION,
-      nullptr,
-      XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT,
-      currentSpace_,
-      static_cast<uint32_t>(kNumViews),
-      projectionViews.data(),
-  };
-
-  const XrCompositionLayerBaseHeader* const layers[] = {
-      (const XrCompositionLayerBaseHeader*)&projection,
-  };
-  const XrFrameEndInfo endFrameInfo = {XR_TYPE_FRAME_END_INFO,
-                                       nullptr,
-                                       frameState.predictedDisplayTime,
-                                       additiveBlendingSupported_
-                                           ? XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
-                                           : XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
-                                       1,
-                                       layers};
-  XR_CHECK(xrEndFrame(session_, &endFrameInfo));
 }
 
 void XrApp::update() {
@@ -1338,6 +1290,14 @@ void XrApp::querySupportedRefreshRates() {
 
 bool XrApp::passthroughSupported() const noexcept {
   return supportedOptionalXrExtensions_.count(XR_FB_PASSTHROUGH_EXTENSION_NAME) != 0;
+}
+
+bool XrApp::passthroughEnabled() const noexcept {
+  if (!renderSession_ || !passthrough_) {
+    return false;
+  }
+  const auto& appParams = renderSession_->appParams();
+  return appParams.passthroughGetter ? appParams.passthroughGetter() : useQuadLayerComposition_;
 }
 
 bool XrApp::handsTrackingSupported() const noexcept {
