@@ -7,34 +7,44 @@
 
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
 #include <shell/openxr/XrPlatform.h>
 
 #include <igl/Device.h>
 #include <igl/Texture.h>
 
+#include <cstdint>
+#include <memory>
+#include <vector>
+
 namespace igl::shell::openxr::impl {
+constexpr int64_t kSwapchainImageInvalidFormat = -1;
+
+struct SwapchainImageInfo {
+  int64_t colorFormat = kSwapchainImageInvalidFormat;
+  int64_t depthFormat = kSwapchainImageInvalidFormat;
+  uint32_t imageWidth = 0;
+  uint32_t imageHeight = 0;
+};
+
 class XrSwapchainProviderImpl {
  public:
-  virtual ~XrSwapchainProviderImpl() = default;
-  virtual int64_t preferredColorFormat() const = 0;
-  virtual int64_t preferredDepthFormat() const = 0;
+  virtual ~XrSwapchainProviderImpl() noexcept = default;
+
+  [[nodiscard]] virtual int64_t preferredColorFormat() const noexcept = 0;
+  [[nodiscard]] virtual int64_t preferredDepthFormat() const noexcept = 0;
+
   virtual void enumerateImages(igl::IDevice& device,
                                XrSwapchain colorSwapchain,
                                XrSwapchain depthSwapchain,
-                               int64_t selectedColorFormat,
-                               int64_t selectedDepthFormat,
-                               const XrViewConfigurationView& viewport,
-                               uint32_t numViews) = 0;
-  virtual igl::SurfaceTextures getSurfaceTextures(igl::IDevice& device,
-                                                  const XrSwapchain& colorSwapchain,
-                                                  const XrSwapchain& depthSwapchain,
-                                                  int64_t selectedColorFormat,
-                                                  int64_t selectedDepthFormat,
-                                                  const XrViewConfigurationView& viewport,
-                                                  uint32_t numViews) = 0;
+                               const SwapchainImageInfo& swapchainImageInfo,
+                               uint8_t numViews) noexcept = 0;
+
+  [[nodiscard]] virtual igl::SurfaceTextures getSurfaceTextures(
+      igl::IDevice& device,
+      XrSwapchain colorSwapchain,
+      XrSwapchain depthSwapchain,
+      const SwapchainImageInfo& swapchainImageInfo,
+      uint8_t numViews) noexcept = 0;
 
  protected:
   std::vector<std::shared_ptr<igl::ITexture>> colorTextures_;

@@ -5,37 +5,36 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #pragma once
 
 #include <shell/openxr/XrPlatform.h>
-
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
-
-#include <vector>
 
 namespace igl::shell::openxr::mobile {
 class XrSwapchainProviderImplGLES final : public impl::XrSwapchainProviderImpl {
  public:
-  int64_t preferredColorFormat() const final {
+  [[nodiscard]] int64_t preferredColorFormat() const noexcept final {
     return GL_SRGB8_ALPHA8;
   }
-  int64_t preferredDepthFormat() const final {
+
+  [[nodiscard]] int64_t preferredDepthFormat() const noexcept final {
     return GL_DEPTH_COMPONENT16;
   }
+
   void enumerateImages(igl::IDevice& device,
                        XrSwapchain colorSwapchain,
                        XrSwapchain depthSwapchain,
-                       int64_t selectedColorFormat,
-                       int64_t selectedDepthFormat,
-                       const XrViewConfigurationView& viewport,
-                       uint32_t numViews) final;
-  igl::SurfaceTextures getSurfaceTextures(igl::IDevice& device,
-                                          const XrSwapchain& colorSwapchain,
-                                          const XrSwapchain& depthSwapchain,
-                                          int64_t selectedColorFormat,
-                                          int64_t selectedDepthFormat,
-                                          const XrViewConfigurationView& viewport,
-                                          uint32_t numViews) final;
+                       const impl::SwapchainImageInfo& swapchainImageInfo,
+                       uint8_t numViews) noexcept final;
+
+  [[nodiscard]] igl::SurfaceTextures getSurfaceTextures(
+      igl::IDevice& device,
+      XrSwapchain colorSwapchain,
+      XrSwapchain depthSwapchain,
+      const impl::SwapchainImageInfo& swapchainImageInfo,
+      uint8_t numViews) noexcept final;
 
  private:
   std::vector<uint32_t> colorImages_;

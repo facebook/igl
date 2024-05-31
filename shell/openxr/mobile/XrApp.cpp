@@ -386,20 +386,23 @@ void XrApp::enumerateBlendModes() {
 void XrApp::updateSwapchainProviders() {
   const size_t numSwapchainProviders = useSinglePassStereo_ ? numQuadLayersPerView_
                                                             : kNumViews * numQuadLayersPerView_;
-  const size_t numViewsPerSwapchain = useSinglePassStereo_ ? kNumViews : 1;
+  const auto numViewsPerSwapchain = static_cast<uint8_t>(useSinglePassStereo_ ? kNumViews : 1);
   if (numSwapchainProviders != swapchainProviders_.size()) {
     swapchainProviders_.clear();
     swapchainProviders_.reserve(numSwapchainProviders);
     const size_t viewCnt = useSinglePassStereo_ ? 1 : kNumViews;
     for (size_t quadLayer = 0; quadLayer < numQuadLayersPerView_; quadLayer++) {
       for (size_t view = 0; view < viewCnt; view++) {
-        swapchainProviders_.emplace_back(
-            std::make_unique<XrSwapchainProvider>(impl_->createSwapchainProviderImpl(),
-                                                  platform_,
-                                                  session_,
-                                                  viewports_[view],
-                                                  numViewsPerSwapchain));
-        swapchainProviders_.back()->initialize();
+        swapchainProviders_.emplace_back(std::make_unique<XrSwapchainProvider>(
+            impl_->createSwapchainProviderImpl(),
+            platform_,
+            session_,
+            impl::SwapchainImageInfo{.imageWidth = viewports_[view].recommendedImageRectWidth,
+                                     .imageHeight = viewports_[view].recommendedImageRectHeight},
+            numViewsPerSwapchain));
+        if (!swapchainProviders_.back()->initialize()) {
+          IGL_ASSERT_MSG(false, "Failed to initialize swapchain provider");
+        }
       }
     }
     IGL_ASSERT(numSwapchainProviders == swapchainProviders_.size());

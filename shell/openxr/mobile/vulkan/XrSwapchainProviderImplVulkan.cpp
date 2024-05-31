@@ -24,9 +24,9 @@ namespace {
 void enumerateSwapchainImages(
     igl::IDevice& device,
     XrSwapchain swapchain,
-    int64_t format,
-    const XrViewConfigurationView& viewport,
-    uint32_t numViews,
+    VkFormat format,
+    const impl::SwapchainImageInfo& swapchainImageInfo,
+    uint8_t numViews,
     VkImageUsageFlags usageFlags,
     VkImageAspectFlags aspectMask,
     std::vector<std::shared_ptr<igl::vulkan::VulkanTexture>>& outVulkanTextures) {
@@ -46,7 +46,7 @@ void enumerateSwapchainImages(
 
   const bool isDepth = ((aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0);
 
-  for (uint32_t i = 0; i < numImages; i++) {
+  for (uint32_t i = 0; i < numImages; ++i) {
     auto image = igl::vulkan::VulkanImage(
         ctx,
         ctx.device_->device_,
@@ -54,15 +54,15 @@ void enumerateSwapchainImages(
         fmt::format("Image: swapchain {} #{}", isDepth ? "depth" : "color", i).c_str(),
         usageFlags,
         true,
-        VkExtent3D{viewport.recommendedImageRectWidth, viewport.recommendedImageRectHeight, 0},
+        VkExtent3D{swapchainImageInfo.imageWidth, swapchainImageInfo.imageHeight, 0},
         VK_IMAGE_TYPE_2D,
-        static_cast<VkFormat>(format),
+        format,
         1,
         numViews);
 
     auto imageView = image.createImageView(
         numViews > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D,
-        (VkFormat)format,
+        format,
         aspectMask,
         0,
         VK_REMAINING_MIP_LEVELS,
@@ -77,10 +77,10 @@ void enumerateSwapchainImages(
 std::shared_ptr<igl::ITexture> getSurfaceTexture(
     igl::IDevice& device,
     const XrSwapchain& swapchain,
-    const XrViewConfigurationView& viewport,
-    uint32_t numViews,
+    const impl::SwapchainImageInfo& swapchainImageInfo,
+    uint8_t numViews,
     const std::vector<std::shared_ptr<igl::vulkan::VulkanTexture>>& vulkanTextures,
-    int64_t externalTextureFormat,
+    VkFormat externalTextureFormat,
     std::vector<std::shared_ptr<igl::ITexture>>& inOutTextures) {
   uint32_t imageIndex;
   XrSwapchainImageAcquireInfo acquireInfo{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
@@ -97,25 +97,24 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
   }
 
   const auto& actualDevice = static_cast<igl::vulkan::Device&>(device);
-  const auto iglFormat =
-      vulkan::vkFormatToTextureFormat(static_cast<VkFormat>(externalTextureFormat));
+  const auto iglFormat = vulkan::vkFormatToTextureFormat(externalTextureFormat);
   const auto texture = inOutTextures[imageIndex];
   // allocate new drawable textures if its null or mismatches in size or format
-  if (!texture || viewport.recommendedImageRectWidth != texture->getSize().width ||
-      viewport.recommendedImageRectHeight != texture->getSize().height ||
+  if (!texture || swapchainImageInfo.imageWidth != texture->getSize().width ||
+      swapchainImageInfo.imageHeight != texture->getSize().height ||
       iglFormat != texture->getProperties().format) {
     TextureDesc textureDesc;
     if (numViews > 1) {
       textureDesc = TextureDesc::new2DArray(iglFormat,
-                                            viewport.recommendedImageRectWidth,
-                                            viewport.recommendedImageRectHeight,
+                                            swapchainImageInfo.imageWidth,
+                                            swapchainImageInfo.imageHeight,
                                             numViews,
                                             TextureDesc::TextureUsageBits::Attachment,
                                             "SwapChain Texture");
     } else {
       textureDesc = TextureDesc::new2D(iglFormat,
-                                       viewport.recommendedImageRectWidth,
-                                       viewport.recommendedImageRectHeight,
+                                       swapchainImageInfo.imageWidth,
+                                       swapchainImageInfo.imageHeight,
                                        TextureDesc::TextureUsageBits::Attachment,
                                        "SwapChain Texture");
     }
@@ -128,22 +127,22 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
 }
 } // namespace
 
-void XrSwapchainProviderImplVulkan::enumerateImages(igl::IDevice& device,
-                                                    XrSwapchain colorSwapchain,
-                                                    XrSwapchain depthSwapchain,
-                                                    int64_t selectedColorFormat,
-                                                    int64_t selectedDepthFormat,
-                                                    const XrViewConfigurationView& viewport,
-                                                    uint32_t numViews) {
+void XrSwapchainProviderImplVulkan::enumerateImages(
+    igl::IDevice& device,
+    XrSwapchain colorSwapchain,
+    XrSwapchain depthSwapchain,
+    const impl::SwapchainImageInfo& swapchainImageInfo,
+    uint8_t numViews) noexcept {
   enumerateSwapchainImages(device,
                            colorSwapchain,
-                           selectedColorFormat,
-                           viewport,
+                           static_cast<VkFormat>(swapchainImageInfo.colorFormat),
+                           swapchainImageInfo,
                            numViews,
                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                            VK_IMAGE_ASPECT_COLOR_BIT,
                            vulkanColorTextures_);
-  auto vkDepthFormat = static_cast<VkFormat>(selectedDepthFormat);
+
+  auto vkDepthFormat = static_cast<VkFormat>(swapchainImageInfo.depthFormat);
   VkImageAspectFlags depthAspectFlags = 0;
   if (vulkan::VulkanImage::isDepthFormat(vkDepthFormat)) {
     depthAspectFlags |= VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -153,8 +152,8 @@ void XrSwapchainProviderImplVulkan::enumerateImages(igl::IDevice& device,
   }
   enumerateSwapchainImages(device,
                            depthSwapchain,
-                           selectedDepthFormat,
-                           viewport,
+                           vkDepthFormat,
+                           swapchainImageInfo,
                            numViews,
                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                            depthAspectFlags,
@@ -163,25 +162,23 @@ void XrSwapchainProviderImplVulkan::enumerateImages(igl::IDevice& device,
 
 igl::SurfaceTextures XrSwapchainProviderImplVulkan::getSurfaceTextures(
     igl::IDevice& device,
-    const XrSwapchain& colorSwapchain,
-    const XrSwapchain& depthSwapchain,
-    int64_t selectedColorFormat,
-    int64_t selectedDepthFormat,
-    const XrViewConfigurationView& viewport,
-    uint32_t numViews) {
+    XrSwapchain colorSwapchain,
+    XrSwapchain depthSwapchain,
+    const impl::SwapchainImageInfo& swapchainImageInfo,
+    uint8_t numViews) noexcept {
   auto colorTexture = getSurfaceTexture(device,
                                         colorSwapchain,
-                                        viewport,
+                                        swapchainImageInfo,
                                         numViews,
                                         vulkanColorTextures_,
-                                        selectedColorFormat,
+                                        static_cast<VkFormat>(swapchainImageInfo.colorFormat),
                                         colorTextures_);
   auto depthTexture = getSurfaceTexture(device,
                                         depthSwapchain,
-                                        viewport,
+                                        swapchainImageInfo,
                                         numViews,
                                         vulkanDepthTextures_,
-                                        selectedDepthFormat,
+                                        static_cast<VkFormat>(swapchainImageInfo.depthFormat),
                                         depthTextures_);
 
   return {colorTexture, depthTexture};

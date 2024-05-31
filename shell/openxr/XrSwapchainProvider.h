@@ -9,60 +9,60 @@
 
 #pragma once
 
-#include <memory>
-
 #include <shell/openxr/XrPlatform.h>
+#include <shell/openxr/impl/XrSwapchainProviderImpl.h>
+#include <shell/shared/platform/Platform.h>
 
 #include <igl/Device.h>
 #include <igl/Texture.h>
-#include <shell/shared/platform/Platform.h>
 
 // forward declarations
 namespace igl::shell::openxr::impl {
 class XrSwapchainProviderImpl;
-}
+} // namespace igl::shell::openxr::impl
 
 namespace igl::shell::openxr {
 
 class XrSwapchainProvider {
  public:
   XrSwapchainProvider(std::unique_ptr<impl::XrSwapchainProviderImpl>&& impl,
-                      const std::shared_ptr<igl::shell::Platform>& platform,
-                      const XrSession& session,
-                      const XrViewConfigurationView& viewport,
-                      uint32_t numViews);
-  ~XrSwapchainProvider();
+                      std::shared_ptr<igl::shell::Platform> platform,
+                      XrSession session,
+                      impl::SwapchainImageInfo swapchainImageInfo,
+                      uint8_t numViews) noexcept;
+  ~XrSwapchainProvider() noexcept;
 
-  bool initialize();
+  [[nodiscard]] bool initialize() noexcept;
 
-  inline uint32_t currentImageIndex() const {
+  [[nodiscard]] inline uint32_t currentImageIndex() const noexcept {
     return currentImageIndex_;
   }
-  igl::SurfaceTextures getSurfaceTextures() const;
-  void releaseSwapchainImages() const;
 
-  inline XrSwapchain colorSwapchain() const {
+  [[nodiscard]] igl::SurfaceTextures getSurfaceTextures() const noexcept;
+
+  void releaseSwapchainImages() const noexcept;
+
+  [[nodiscard]] inline XrSwapchain colorSwapchain() const noexcept {
     return colorSwapchain_;
   }
 
-  inline XrSwapchain depthSwapchain() const {
+  [[nodiscard]] inline XrSwapchain depthSwapchain() const noexcept {
     return depthSwapchain_;
   }
 
  private:
-  XrSwapchain createXrSwapchain(XrSwapchainUsageFlags extraUsageFlags, int64_t format);
+  XrSwapchain createXrSwapchain(XrSwapchainUsageFlags extraUsageFlags, int64_t format) noexcept;
 
   std::unique_ptr<impl::XrSwapchainProviderImpl> impl_;
   std::shared_ptr<igl::shell::Platform> platform_;
-  const XrSession& session_;
-  const XrViewConfigurationView& viewport_;
+  const XrSession session_;
+  impl::SwapchainImageInfo swapchainImageInfo_;
 
-  int64_t selectedColorFormat_;
-  int64_t selectedDepthFormat_;
   XrSwapchain colorSwapchain_ = XR_NULL_HANDLE;
   XrSwapchain depthSwapchain_ = XR_NULL_HANDLE;
-  uint32_t currentImageIndex_;
-  const uint32_t numViews_ =
+  uint32_t currentImageIndex_ = 0;
+
+  const uint8_t numViews_ =
       1; // The number of layers of the underlying swapchain image would match numViews_.
 };
 } // namespace igl::shell::openxr

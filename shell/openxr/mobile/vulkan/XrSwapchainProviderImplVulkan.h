@@ -8,36 +8,32 @@
 #pragma once
 
 #include <shell/openxr/XrPlatform.h>
-
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
 
 #include <igl/vulkan/VulkanTexture.h>
 
-#include <vector>
-
 namespace igl::shell::openxr::mobile {
 class XrSwapchainProviderImplVulkan final : public impl::XrSwapchainProviderImpl {
  public:
-  int64_t preferredColorFormat() const final {
+  [[nodiscard]] int64_t preferredColorFormat() const noexcept final {
     return VK_FORMAT_R8G8B8A8_SRGB;
   }
-  int64_t preferredDepthFormat() const final {
+  [[nodiscard]] int64_t preferredDepthFormat() const noexcept final {
     return VK_FORMAT_D24_UNORM_S8_UINT;
   }
+
   void enumerateImages(igl::IDevice& device,
                        XrSwapchain colorSwapchain,
                        XrSwapchain depthSwapchain,
-                       int64_t selectedColorFormat,
-                       int64_t selectedDepthFormat,
-                       const XrViewConfigurationView& viewport,
-                       uint32_t numViews) final;
-  igl::SurfaceTextures getSurfaceTextures(igl::IDevice& device,
-                                          const XrSwapchain& colorSwapchain,
-                                          const XrSwapchain& depthSwapchain,
-                                          int64_t selectedColorFormat,
-                                          int64_t selectedDepthFormat,
-                                          const XrViewConfigurationView& viewport,
-                                          uint32_t numViews) final;
+                       const impl::SwapchainImageInfo& swapchainImageInfo,
+                       uint8_t numViews) noexcept final;
+
+  [[nodiscard]] igl::SurfaceTextures getSurfaceTextures(
+      igl::IDevice& device,
+      XrSwapchain colorSwapchain,
+      XrSwapchain depthSwapchain,
+      const impl::SwapchainImageInfo& swapchainImageInfo,
+      uint8_t numViews) noexcept final;
 
  private:
   std::vector<std::shared_ptr<igl::vulkan::VulkanTexture>> vulkanColorTextures_;

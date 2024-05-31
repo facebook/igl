@@ -23,7 +23,7 @@ void enumerateSwapchainImages(igl::IDevice& device,
                               XrSwapchain swapchain,
                               std::vector<uint32_t>& outImages) {
   uint32_t numImages = 0;
-  XR_CHECK(xrEnumerateSwapchainImages(swapchain, 0, &numImages, NULL));
+  XR_CHECK(xrEnumerateSwapchainImages(swapchain, 0, &numImages, nullptr));
 
   IGL_LOG_INFO("XRSwapchain numImages: %d\n", numImages);
 
@@ -46,8 +46,8 @@ void enumerateSwapchainImages(igl::IDevice& device,
 std::shared_ptr<igl::ITexture> getSurfaceTexture(
     igl::IDevice& device,
     const XrSwapchain& swapchain,
-    const XrViewConfigurationView& viewport,
-    uint32_t numViews,
+    const impl::SwapchainImageInfo& swapchainImageInfo,
+    uint8_t numViews,
     const std::vector<uint32_t>& images,
     igl::TextureFormat externalTextureFormat,
     std::vector<std::shared_ptr<igl::ITexture>>& inOutTextures) {
@@ -62,19 +62,19 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
   const auto glTexture = images[imageIndex];
 
   if (imageIndex >= inOutTextures.size()) {
-    inOutTextures.resize((size_t)imageIndex + 1, nullptr);
+    inOutTextures.resize(static_cast<size_t>(imageIndex) + 1, nullptr);
   }
 
   auto texture = inOutTextures[imageIndex];
-  if (!texture || viewport.recommendedImageRectWidth != texture->getSize().width ||
-      viewport.recommendedImageRectHeight != texture->getSize().height) {
+  if (!texture || swapchainImageInfo.imageWidth != texture->getSize().width ||
+      swapchainImageInfo.imageHeight != texture->getSize().height) {
     const auto platformDevice = device.getPlatformDevice<igl::opengl::PlatformDevice>();
     texture = platformDevice->createTextureBufferExternal(
         glTexture,
         numViews > 1 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D,
         igl::TextureDesc::TextureUsageBits::Attachment,
-        viewport.recommendedImageRectWidth,
-        viewport.recommendedImageRectHeight,
+        swapchainImageInfo.imageWidth,
+        swapchainImageInfo.imageHeight,
         externalTextureFormat,
         numViews);
     if (!texture) {
@@ -88,34 +88,42 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
 }
 } // namespace
 
-void XrSwapchainProviderImplGLES::enumerateImages(igl::IDevice& device,
-                                                  XrSwapchain colorSwapchain,
-                                                  XrSwapchain depthSwapchain,
-                                                  int64_t selectedColorFormat,
-                                                  int64_t selectedDepthFormat,
-                                                  const XrViewConfigurationView& viewport,
-                                                  uint32_t numViews) {
+void XrSwapchainProviderImplGLES::enumerateImages(
+    igl::IDevice& device,
+    XrSwapchain colorSwapchain,
+    XrSwapchain depthSwapchain,
+    const impl::SwapchainImageInfo& /* swapchainImageInfo */,
+    uint8_t /* numViews */) noexcept {
   enumerateSwapchainImages(device, colorSwapchain, colorImages_);
   enumerateSwapchainImages(device, depthSwapchain, depthImages_);
 }
 
 igl::SurfaceTextures XrSwapchainProviderImplGLES::getSurfaceTextures(
     igl::IDevice& device,
-    const XrSwapchain& colorSwapchain,
-    const XrSwapchain& depthSwapchain,
-    int64_t selectedColorFormat,
-    int64_t selectedDepthFormat,
-    const XrViewConfigurationView& viewport,
-    uint32_t numViews) {
+    XrSwapchain colorSwapchain,
+    XrSwapchain depthSwapchain,
+    const impl::SwapchainImageInfo& swapchainImageInfo,
+    uint8_t numViews) noexcept {
   // Assume sized format so format / type are not needed.
   auto iglColorFormat = igl::opengl::Texture::glInternalFormatToTextureFormat(
-      static_cast<GLuint>(selectedColorFormat), 0, 0);
-  auto colorTexture = getSurfaceTexture(
-      device, colorSwapchain, viewport, numViews, colorImages_, iglColorFormat, colorTextures_);
+      static_cast<GLuint>(swapchainImageInfo.colorFormat), 0, 0);
+  auto colorTexture = getSurfaceTexture(device,
+                                        colorSwapchain,
+                                        swapchainImageInfo,
+                                        numViews,
+                                        colorImages_,
+                                        iglColorFormat,
+                                        colorTextures_);
+
   auto iglDepthFormat = igl::opengl::Texture::glInternalFormatToTextureFormat(
-      static_cast<GLuint>(selectedDepthFormat), 0, 0);
-  auto depthTexture = getSurfaceTexture(
-      device, depthSwapchain, viewport, numViews, depthImages_, iglDepthFormat, depthTextures_);
+      static_cast<GLuint>(swapchainImageInfo.depthFormat), 0, 0);
+  auto depthTexture = getSurfaceTexture(device,
+                                        depthSwapchain,
+                                        swapchainImageInfo,
+                                        numViews,
+                                        depthImages_,
+                                        iglDepthFormat,
+                                        depthTextures_);
 
   return {colorTexture, depthTexture};
 }
