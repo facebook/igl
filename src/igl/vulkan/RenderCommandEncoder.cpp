@@ -682,33 +682,6 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
       cmdBuffer_, (uint32_t)indexCount, instanceCount, firstIndex, vertexOffset, baseInstance);
 }
 
-void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
-                                             IBuffer& indirectBuffer,
-                                             size_t indirectBufferOffset,
-                                             uint32_t drawCount,
-                                             uint32_t stride) {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
-  IGL_PROFILER_ZONE_GPU_COLOR_VK(
-      "multiDrawIndirect()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
-
-  IGL_ASSERT_MSG(rps_, "Did you forget to call bindRenderPipelineState()?");
-
-  ensureVertexBuffers();
-
-  dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
-  flushDynamicState();
-
-  ctx_.drawCallCount_ += drawCallCountEnabled_;
-
-  const igl::vulkan::Buffer* bufIndirect = static_cast<igl::vulkan::Buffer*>(&indirectBuffer);
-
-  ctx_.vf_.vkCmdDrawIndirect(cmdBuffer_,
-                             bufIndirect->getVkBuffer(),
-                             indirectBufferOffset,
-                             drawCount,
-                             stride ? stride : sizeof(VkDrawIndirectCommand));
-}
-
 void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
                                                     IBuffer& indirectBuffer,
                                                     size_t indirectBufferOffset,

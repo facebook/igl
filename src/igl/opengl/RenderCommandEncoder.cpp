@@ -386,14 +386,6 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
   }
 }
 
-void RenderCommandEncoder::multiDrawIndirect(PrimitiveType /*primitiveType*/,
-                                             IBuffer& /*indirectBuffer*/,
-                                             size_t /*indirectBufferOffset*/,
-                                             uint32_t /*drawCount*/,
-                                             uint32_t /*stride*/) {
-  IGL_ASSERT_NOT_IMPLEMENTED();
-}
-
 void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
                                                     IBuffer& indirectBuffer,
                                                     size_t indirectBufferOffset,

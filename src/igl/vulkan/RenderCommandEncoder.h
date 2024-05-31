@@ -85,11 +85,6 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
                    uint32_t firstIndex,
                    int32_t vertexOffset,
                    uint32_t baseInstance) override;
-  void multiDrawIndirect(PrimitiveType primitiveType,
-                         IBuffer& indirectBuffer,
-                         size_t indirectBufferOffset,
-                         uint32_t drawCount,
-                         uint32_t stride = 0) override;
   void multiDrawIndexedIndirect(PrimitiveType primitiveType,
                                 IBuffer& indirectBuffer,
                                 size_t indirectBufferOffset,

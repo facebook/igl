@@ -424,26 +424,6 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
 #endif // IGL_PLATFORM_IOS
 }
 
-void RenderCommandEncoder::multiDrawIndirect(PrimitiveType primitiveType,
-                                             IBuffer& indirectBuffer,
-                                             // Ignore bugprone-easily-swappable-parameters
-                                             // @lint-ignore CLANGTIDY
-                                             size_t indirectBufferOffset,
-                                             uint32_t drawCount,
-                                             uint32_t stride) {
-  IGL_ASSERT(encoder_);
-  stride = stride ? stride : sizeof(MTLDrawPrimitivesIndirectArguments);
-  auto& indirectBufferRef = (Buffer&)(indirectBuffer);
-  MTLPrimitiveType metalPrimitive = convertPrimitiveType(primitiveType);
-
-  for (uint32_t drawIndex = 0; drawIndex < drawCount; drawIndex++) {
-    getCommandBuffer().incrementCurrentDrawCount();
-    [encoder_ drawPrimitives:metalPrimitive
-              indirectBuffer:indirectBufferRef.get()
-        indirectBufferOffset:indirectBufferOffset + static_cast<size_t>(stride) * drawIndex];
-  }
-}
-
 void RenderCommandEncoder::multiDrawIndexedIndirect(PrimitiveType primitiveType,
                                                     IBuffer& indirectBuffer,
                                                     // Ignore bugprone-easily-swappable-parameters
