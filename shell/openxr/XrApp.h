@@ -123,7 +123,7 @@ class XrApp {
   bool sessionActive_ = false;
 
   std::vector<XrExtensionProperties> extensions_;
-  std::vector<const char*> requiredExtensions_;
+  std::vector<const char*> enabledExtensions_;
 
   XrInstanceProperties instanceProps_ = {
       .type = XR_TYPE_INSTANCE_PROPERTIES,

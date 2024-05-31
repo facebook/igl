@@ -88,16 +88,7 @@ inline int64_t currentTimeInNs() {
 } // namespace
 
 XrApp::XrApp(std::unique_ptr<impl::XrAppImpl>&& impl, bool shouldPresent) :
-  requiredExtensions_({
-#if USE_VULKAN_BACKEND
-      XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
-#endif // USE_VULKAN_BACKEND
-#if !defined(XR_USE_PLATFORM_MACOS) && !defined(IGL_CMAKE_BUILD)
-      XR_FB_SWAPCHAIN_UPDATE_STATE_EXTENSION_NAME,
-#endif
-  }),
-  impl_(std::move(impl)),
-  shellParams_(std::make_unique<ShellParams>()) {
+  impl_(std::move(impl)), shellParams_(std::make_unique<ShellParams>()) {
   shellParams_->shouldPresent = shouldPresent;
   viewports_.fill({XR_TYPE_VIEW_CONFIGURATION_VIEW});
   views_.fill({XR_TYPE_VIEW});
@@ -172,11 +163,7 @@ bool XrApp::checkExtensions() {
   }
 
   auto requiredExtensionsImpl_ = impl_->getXrRequiredExtensions();
-  requiredExtensions_.insert(std::end(requiredExtensions_),
-                             std::begin(requiredExtensionsImpl_),
-                             std::end(requiredExtensionsImpl_));
-
-  for (auto& requiredExtension : requiredExtensions_) {
+  for (auto& requiredExtension : requiredExtensionsImpl_) {
     auto it = std::find_if(std::begin(extensions_),
                            std::end(extensions_),
                            [&requiredExtension](const XrExtensionProperties& extension) {
@@ -187,6 +174,9 @@ bool XrApp::checkExtensions() {
       return false;
     }
   }
+  enabledExtensions_.insert(std::end(enabledExtensions_),
+                            std::begin(requiredExtensionsImpl_),
+                            std::end(requiredExtensionsImpl_));
 
   auto checkExtensionSupported = [this](const char* name) {
     return std::any_of(std::begin(extensions_),
@@ -199,17 +189,17 @@ bool XrApp::checkExtensions() {
   passthroughSupported_ = checkExtensionSupported(XR_FB_PASSTHROUGH_EXTENSION_NAME);
   IGL_LOG_INFO("Passthrough is %s\n", passthroughSupported_ ? "supported" : "not supported");
 
-  auto checkNeedRequiredExtension = [this](const char* name) {
-    return std::find_if(std::begin(requiredExtensions_),
-                        std::end(requiredExtensions_),
+  auto checkNeedEnableExtension = [this](const char* name) {
+    return std::find_if(std::begin(enabledExtensions_),
+                        std::end(enabledExtensions_),
                         [&](const char* extensionName) {
                           return strcmp(extensionName, name) == 0;
-                        }) == std::end(requiredExtensions_);
+                        }) == std::end(enabledExtensions_);
   };
 
   // Add passthough extension if supported.
-  if (passthroughSupported_ && checkNeedRequiredExtension(XR_FB_PASSTHROUGH_EXTENSION_NAME)) {
-    requiredExtensions_.push_back(XR_FB_PASSTHROUGH_EXTENSION_NAME);
+  if (passthroughSupported_ && checkNeedEnableExtension(XR_FB_PASSTHROUGH_EXTENSION_NAME)) {
+    enabledExtensions_.push_back(XR_FB_PASSTHROUGH_EXTENSION_NAME);
   }
 
   if (checkNeedRequiredExtension(XR_FB_COMPOSITION_LAYER_ALPHA_BLEND_EXTENSION_NAME)) {
@@ -224,12 +214,12 @@ bool XrApp::checkExtensions() {
                handsTrackingMeshSupported_ ? "supported" : "not supported");
 
   // Add hands tracking extension if supported.
-  if (handsTrackingSupported_ && checkNeedRequiredExtension(XR_EXT_HAND_TRACKING_EXTENSION_NAME)) {
-    requiredExtensions_.push_back(XR_EXT_HAND_TRACKING_EXTENSION_NAME);
+  if (handsTrackingSupported_ && checkNeedEnableExtension(XR_EXT_HAND_TRACKING_EXTENSION_NAME)) {
+    enabledExtensions_.push_back(XR_EXT_HAND_TRACKING_EXTENSION_NAME);
 
     if (handsTrackingMeshSupported_ &&
-        checkNeedRequiredExtension(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME)) {
-      requiredExtensions_.push_back(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME);
+        checkNeedEnableExtension(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME)) {
+      enabledExtensions_.push_back(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME);
     }
   }
 
@@ -239,16 +229,16 @@ bool XrApp::checkExtensions() {
                refreshRateExtensionSupported_ ? "supported" : "not supported");
 
   if (refreshRateExtensionSupported_ &&
-      checkNeedRequiredExtension(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME)) {
-    requiredExtensions_.push_back(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME);
+      checkNeedEnableExtension(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME)) {
+    enabledExtensions_.push_back(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME);
   }
 
 #if IGL_PLATFORM_ANDROID
   instanceCreateInfoAndroidSupported_ =
       checkExtensionSupported(XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME);
   if (instanceCreateInfoAndroidSupported_ &&
-      checkNeedRequiredExtension(XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME)) {
-    requiredExtensions_.push_back(XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME);
+      checkNeedEnableExtension(XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME)) {
+    enabledExtensions_.push_back(XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME);
   }
 #endif // IGL_PLATFORM_ANDROID
 
@@ -274,8 +264,8 @@ bool XrApp::createInstance() {
       .applicationInfo = appInfo,
       .enabledApiLayerCount = 0,
       .enabledApiLayerNames = nullptr,
-      .enabledExtensionCount = static_cast<uint32_t>(requiredExtensions_.size()),
-      .enabledExtensionNames = requiredExtensions_.data(),
+      .enabledExtensionCount = static_cast<uint32_t>(enabledExtensions_.size()),
+      .enabledExtensionNames = enabledExtensions_.data(),
   };
 
   XrResult initResult;
