@@ -42,13 +42,16 @@ class NativeHWTextureBuffer : public TextureBufferBase {
 
   static bool isValidFormat(TextureFormat format);
 
+  // exported to use on Java side via JNI into an Android HardwareBuffer
+  // Use with great care!
+  AHardwareBuffer* hwBuffer_ = nullptr;
+
  private:
   Result uploadInternal(TextureType type,
                         const TextureRangeDesc& range,
                         const void* IGL_NULLABLE data,
                         size_t bytesPerRow) const final;
 
-  AHardwareBuffer* hwBuffer_ = nullptr;
   std::shared_ptr<AHardwareBufferHelper> hwBufferHelper_ = nullptr;
 };
 
