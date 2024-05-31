@@ -101,8 +101,6 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   // 4 KB - page aligned memory for metal managed resource
   static constexpr uint32_t MAX_RECOMMENDED_BYTES = 4 * 1024;
 
-  bool hasVertexBuffers_[IGL_VERTEX_BUFFER_MAX] = {};
-
   MTLPrimitiveType metalPrimitive_ = MTLPrimitiveTypeTriangle;
 };
 

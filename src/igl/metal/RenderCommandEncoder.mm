@@ -261,9 +261,6 @@ void RenderCommandEncoder::bindBuffer(int index,
 
   if (buffer) {
     auto& metalBuffer = static_cast<Buffer&>(*buffer);
-    IGL_ASSERT_MSG(!hasVertexBuffers_[index],
-                   "There's an 'index' collision between bindVertexBuffer() and bindBuffer() "
-                   "calls. They must not share the same index.");
     [encoder_ setVertexBuffer:metalBuffer.get() offset:offset atIndex:index];
     [encoder_ setFragmentBuffer:metalBuffer.get() offset:offset atIndex:index];
   }
@@ -275,8 +272,6 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, siz
 
   auto& metalBuffer = static_cast<Buffer&>(buffer);
   [encoder_ setVertexBuffer:metalBuffer.get() offset:bufferOffset atIndex:index];
-
-  hasVertexBuffers_[index] = true;
 }
 
 void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
