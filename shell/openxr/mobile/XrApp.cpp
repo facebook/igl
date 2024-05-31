@@ -243,6 +243,15 @@ bool XrApp::checkExtensions() {
     requiredExtensions_.push_back(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME);
   }
 
+#if IGL_PLATFORM_ANDROID
+  instanceCreateInfoAndroidSupported_ =
+      checkExtensionSupported(XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME);
+  if (instanceCreateInfoAndroidSupported_ &&
+      checkNeedRequiredExtension(XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME)) {
+    requiredExtensions_.push_back(XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME);
+  }
+#endif // IGL_PLATFORM_ANDROID
+
   return true;
 }
 
@@ -256,7 +265,11 @@ bool XrApp::createInstance() {
 
   XrInstanceCreateInfo instanceCreateInfo = {
       .type = XR_TYPE_INSTANCE_CREATE_INFO,
-      .next = impl_->getInstanceCreateExtension(),
+#if IGL_PLATFORM_ANDROID
+      .next = instanceCreateInfoAndroidSupported_ ? &instanceCreateInfoAndroid_ : nullptr,
+#else
+      .next = nullptr,
+#endif
       .createFlags = 0,
       .applicationInfo = appInfo,
       .enabledApiLayerCount = 0,
@@ -727,21 +740,14 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
 
     XR_CHECK(xrInitializeLoaderKHR((XrLoaderInitInfoBaseHeaderKHR*)&loaderInitializeInfoAndroid));
   }
+
+  instanceCreateInfoAndroid_.applicationVM = app->activity->vm;
+  instanceCreateInfoAndroid_.applicationActivity = app->activity->clazz;
 #endif
 
   if (!checkExtensions()) {
     return false;
   }
-
-#if IGL_PLATFORM_ANDROID
-  XrInstanceCreateInfoAndroidKHR* instanceCreateInfoAndroid_ptr =
-      (XrInstanceCreateInfoAndroidKHR*)impl_->getInstanceCreateExtension();
-
-  if (instanceCreateInfoAndroid_ptr) {
-    instanceCreateInfoAndroid_ptr->applicationVM = app->activity->vm;
-    instanceCreateInfoAndroid_ptr->applicationActivity = app->activity->clazz;
-  }
-#endif
 
   if (!createInstance()) {
     return false;

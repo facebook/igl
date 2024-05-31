@@ -135,6 +135,13 @@ class XrApp {
       .next = nullptr,
   };
 
+#if IGL_PLATFORM_ANDROID
+  XrInstanceCreateInfoAndroidKHR instanceCreateInfoAndroid_ = {
+      .type = XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR,
+  };
+  bool instanceCreateInfoAndroidSupported_ = false;
+#endif // IGL_PLATFORM_ANDROID
+
   XrInstance instance_ = XR_NULL_HANDLE;
   XrSystemId systemId_ = XR_NULL_SYSTEM_ID;
   XrSession session_ = XR_NULL_HANDLE;
