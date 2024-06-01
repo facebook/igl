@@ -269,6 +269,7 @@ class VulkanImage final {
   mutable VkImageLayout imageLayout_ = VK_IMAGE_LAYOUT_UNDEFINED; // current image layout
   bool isImported_ = false;
   bool isExported_ = false;
+  bool isCubemap_ = false;
   void* exportedMemoryHandle_ = nullptr; // windows handle
   int exportedFd_ = -1; // linux fd
 #if defined(IGL_DEBUG)
