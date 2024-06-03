@@ -122,9 +122,9 @@ void putDfd(std::vector<uint8_t>& buffer, uint32_t vkFormat, uint32_t numMipLeve
   const uint32_t sampleUpper = std::numeric_limits<uint32_t>::max();
 
   put(buffer, kOffsetDfdByteOffset, dfdMetadataffset);
-  put(buffer, kOffsetDfdByteLength, kDfdMetadataSize);
+  put(buffer, kOffsetDfdByteLength, kDfdMetadataSize - 4);
 
-  put(buffer, dfdMetadataffset, kDfdMetadataSize); // Total length
+  put(buffer, dfdMetadataffset, kDfdMetadataSize - 4); // Total length
 
   put(buffer, dfdMetadataffset + 4u, vendorId);
   put(buffer, dfdMetadataffset + 6u, descriptorType);
