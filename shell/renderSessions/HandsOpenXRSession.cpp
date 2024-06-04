@@ -307,6 +307,11 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     return;
   }
 
+  if (shellParams().handMeshes[0].vertexCountOutput == 0 &&
+      shellParams().handMeshes[1].vertexCountOutput == 0) {
+    return;
+  }
+
   // Update uniforms.
   for (size_t i = 0; i < std::min(shellParams().viewParams.size(), size_t(2)); ++i) {
     ub_.viewProjectionMatrix[i] =
