@@ -27,8 +27,14 @@ class XrAppImplGLES final : public impl::XrAppImpl {
       const override;
 
  private:
+#if IGL_WGL
+  XrGraphicsRequirementsOpenGLKHR graphicsRequirements_ = {
+      .type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_KHR,
+  };
+#else
   XrGraphicsRequirementsOpenGLESKHR graphicsRequirements_ = {
       .type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_ES_KHR,
   };
+#endif // IGL_WGL
 };
 } // namespace igl::shell::openxr::mobile

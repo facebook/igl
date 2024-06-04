@@ -456,7 +456,12 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
     return false;
   }
 
+#if IGL_WGL
+  // Single stereo render pass is not supported for OpenGL on Windows.
+  useSinglePassStereo_ = false;
+#else
   useSinglePassStereo_ = useSinglePassStereo_ && device->hasFeature(igl::DeviceFeatures::Multiview);
+#endif
 
 #if IGL_PLATFORM_ANDROID
   createShellSession(std::move(device), app->activity->assetManager);
@@ -1081,11 +1086,17 @@ bool XrApp::passthroughEnabled() const noexcept {
 }
 
 bool XrApp::handsTrackingSupported() const noexcept {
+#if IGL_PLATFORM_ANDROID
   return supportedOptionalXrExtensions_.count(XR_EXT_HAND_TRACKING_EXTENSION_NAME) != 0;
+#endif // IGL_PLATFORM_ANDROID
+  return false;
 }
 
 bool XrApp::handsTrackingMeshSupported() const noexcept {
+#if IGL_PLATFORM_ANDROID
   return supportedOptionalXrExtensions_.count(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME) != 0;
+#endif // IGL_PLATFORM_ANDROID
+  return false;
 }
 
 bool XrApp::refreshRateExtensionSupported() const noexcept {

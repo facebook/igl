@@ -11,8 +11,13 @@
 
 #include <igl/HWDevice.h>
 #include <igl/opengl/Device.h>
+#if IGL_WGL
+#include <igl/opengl/wgl/Context.h>
+#include <igl/opengl/wgl/HWDevice.h>
+#else
 #include <igl/opengl/egl/Context.h>
 #include <igl/opengl/egl/HWDevice.h>
+#endif // IGL_WGL
 
 #include <shell/openxr/XrLog.h>
 #include <shell/openxr/mobile/opengl/XrSwapchainProviderImplGLES.h>
@@ -20,7 +25,11 @@
 namespace igl::shell::openxr::mobile {
 std::vector<const char*> XrAppImplGLES::getXrRequiredExtensions() const {
   return {
+#if IGL_WGL
+      XR_KHR_OPENGL_ENABLE_EXTENSION_NAME,
+#else
       XR_KHR_OPENGL_ES_ENABLE_EXTENSION_NAME,
+#endif // IGL_WGL
       XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
   };
 }
@@ -31,38 +40,63 @@ std::vector<const char*> XrAppImplGLES::getXrOptionalExtensions() const {
 
 std::unique_ptr<igl::IDevice> XrAppImplGLES::initIGL(XrInstance instance, XrSystemId systemId) {
   // Get the graphics requirements.
+  // XR_ERROR_GRAPHICS_REQUIREMENTS_CALL_MISSING is returned on calls to xrCreateSession
+  // if this function has not been called for the instance and systemId before xrCreateSession.
+#if IGL_WGL
+  PFN_xrGetOpenGLGraphicsRequirementsKHR pfnGetOpenGLGraphicsRequirementsKHR = NULL;
+  XR_CHECK(xrGetInstanceProcAddr(instance,
+                                 "xrGetOpenGLGraphicsRequirementsKHR",
+                                 (PFN_xrVoidFunction*)(&pfnGetOpenGLGraphicsRequirementsKHR)));
+  XR_CHECK(pfnGetOpenGLGraphicsRequirementsKHR(instance, systemId, &graphicsRequirements_));
+
+  auto hwDevice = opengl::wgl::HWDevice();
+  constexpr igl::opengl::RenderingAPI kRenderingApi = igl::opengl::RenderingAPI::GL;
+#else
   PFN_xrGetOpenGLESGraphicsRequirementsKHR pfnGetOpenGLESGraphicsRequirementsKHR = NULL;
   XR_CHECK(xrGetInstanceProcAddr(instance,
                                  "xrGetOpenGLESGraphicsRequirementsKHR",
                                  (PFN_xrVoidFunction*)(&pfnGetOpenGLESGraphicsRequirementsKHR)));
-
   XR_CHECK(pfnGetOpenGLESGraphicsRequirementsKHR(instance, systemId, &graphicsRequirements_));
 
-  Result result;
-  igl::HWDeviceQueryDesc queryDesc(HWDeviceType::IntegratedGpu);
   auto hwDevice = opengl::egl::HWDevice();
+  constexpr igl::opengl::RenderingAPI kRenderingApi = igl::opengl::RenderingAPI::GLES3;
+#endif // IGL_WGL
+
+  Result result;
+  const igl::HWDeviceQueryDesc queryDesc(HWDeviceType::Unknown);
   auto hwDevices = hwDevice.queryDevices(queryDesc, &result);
   IGL_ASSERT(result.isOk());
-  return hwDevice.create(hwDevices[0], igl::opengl::RenderingAPI::GLES3, nullptr, &result);
+  return hwDevice.create(hwDevices[0], kRenderingApi, nullptr, &result);
 }
 
 XrSession XrAppImplGLES::initXrSession(XrInstance instance,
                                        XrSystemId systemId,
                                        igl::IDevice& device) {
   const auto& glDevice = static_cast<igl::opengl::Device&>(device); // Downcast is safe here
-  const auto& context = static_cast<igl::opengl::egl::Context&>(glDevice.getContext());
 
-  XrGraphicsBindingOpenGLESAndroidKHR graphicsBindingAndroidGLES = {
+#if IGL_WGL
+  const auto& context =
+      static_cast<igl::opengl::wgl::Context&>(glDevice.getContext()); // Downcast is safe here
+  XrGraphicsBindingOpenGLWin32KHR graphicsBindingGL = {
+      .type = XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR,
+      .next = nullptr,
+      .hDC = context.getDeviceContext(),
+      .hGLRC = context.getRenderContext()};
+#else
+  const auto& context =
+      static_cast<igl::opengl::egl::Context&>(glDevice.getContext()); // Downcast is safe here
+  XrGraphicsBindingOpenGLESAndroidKHR graphicsBindingGL = {
       .type = XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR,
       .next = nullptr,
       .display = context.getDisplay(),
       .config = context.getConfig(),
       .context = context.get(),
   };
+#endif // IGL_WGL
 
   XrSessionCreateInfo sessionCreateInfo = {
       .type = XR_TYPE_SESSION_CREATE_INFO,
-      .next = &graphicsBindingAndroidGLES,
+      .next = &graphicsBindingGL,
       .createFlags = 0,
       .systemId = systemId,
   };

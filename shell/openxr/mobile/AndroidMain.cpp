@@ -204,8 +204,9 @@ int main(int argc, const char* argv[]) {
   auto xrApp = std::make_unique<igl::shell::openxr::XrApp>(
       std::make_unique<igl::shell::openxr::mobile::XrAppImplVulkan>(), false /* shouldPresent */);
 #elif defined(USE_OPENGL_BACKEND)
-  // OpenGL for MetaXR Simulator is not implemented yet.
-  return 1;
+  // Do not present running on MetaXR Simulator. It has its own composition and present.
+  auto xrApp = std::make_unique<igl::shell::openxr::XrApp>(
+      std::make_unique<igl::shell::openxr::mobile::XrAppImplGLES>(), false /* shouldPresent */);
 #endif
   if (!xrApp->initialize(nullptr, {})) {
     return 1;

@@ -45,6 +45,10 @@ class Context : public IContext {
     return deviceContext_;
   }
 
+  HGLRC getRenderContext() const {
+    return renderContext_;
+  }
+
  private:
   const bool contextOwned_ = false;
   HDC deviceContext_;

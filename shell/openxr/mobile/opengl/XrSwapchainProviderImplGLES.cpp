@@ -17,6 +17,9 @@
 
 #include <shell/openxr/XrLog.h>
 
+#include <algorithm>
+#include <iterator>
+
 namespace igl::shell::openxr::mobile {
 namespace {
 void enumerateSwapchainImages(igl::IDevice& device,
@@ -27,12 +30,20 @@ void enumerateSwapchainImages(igl::IDevice& device,
 
   IGL_LOG_INFO("XRSwapchain numImages: %d\n", numImages);
 
+#if IGL_WGL
+  std::vector<XrSwapchainImageOpenGLKHR> xrImages(numImages,
+                                                  {
+                                                      .type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_KHR,
+                                                      .next = nullptr,
+                                                  });
+#else
   std::vector<XrSwapchainImageOpenGLESKHR> xrImages(
       numImages,
       {
           .type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_ES_KHR,
           .next = nullptr,
       });
+#endif // IGL_WGL
   XR_CHECK(xrEnumerateSwapchainImages(
       swapchain, numImages, &numImages, (XrSwapchainImageBaseHeader*)xrImages.data()));
 
@@ -40,7 +51,7 @@ void enumerateSwapchainImages(igl::IDevice& device,
   std::transform(xrImages.cbegin(),
                  xrImages.cend(),
                  std::back_inserter(outImages),
-                 [](const XrSwapchainImageOpenGLESKHR& xrImage) { return xrImage.image; });
+                 [](const auto& xrImage) { return xrImage.image; });
 }
 
 std::shared_ptr<igl::ITexture> getSurfaceTexture(
