@@ -15,11 +15,13 @@
 namespace igl::shell::openxr::mobile {
 class XrSwapchainProviderImplVulkan final : public impl::XrSwapchainProviderImpl {
  public:
-  [[nodiscard]] int64_t preferredColorFormat() const noexcept final {
-    return VK_FORMAT_R8G8B8A8_SRGB;
+  // NOLINTNEXTLINE(bugprone-exception-escape)
+  [[nodiscard]] std::vector<int64_t> preferredColorFormats() const noexcept final {
+    return {VK_FORMAT_R8G8B8A8_SRGB};
   }
-  [[nodiscard]] int64_t preferredDepthFormat() const noexcept final {
-    return VK_FORMAT_D24_UNORM_S8_UINT;
+  // NOLINTNEXTLINE(bugprone-exception-escape)
+  [[nodiscard]] std::vector<int64_t> preferredDepthFormats() const noexcept final {
+    return {VK_FORMAT_D16_UNORM, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT};
   }
 
   void enumerateImages(igl::IDevice& device,

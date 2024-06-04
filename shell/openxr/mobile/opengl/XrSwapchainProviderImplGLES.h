@@ -15,12 +15,13 @@
 namespace igl::shell::openxr::mobile {
 class XrSwapchainProviderImplGLES final : public impl::XrSwapchainProviderImpl {
  public:
-  [[nodiscard]] int64_t preferredColorFormat() const noexcept final {
-    return GL_SRGB8_ALPHA8;
+  // NOLINTNEXTLINE(bugprone-exception-escape)
+  [[nodiscard]] std::vector<int64_t> preferredColorFormats() const noexcept final {
+    return {GL_SRGB8_ALPHA8};
   }
-
-  [[nodiscard]] int64_t preferredDepthFormat() const noexcept final {
-    return GL_DEPTH_COMPONENT16;
+  // NOLINTNEXTLINE(bugprone-exception-escape)
+  [[nodiscard]] std::vector<int64_t> preferredDepthFormats() const noexcept final {
+    return {GL_DEPTH_COMPONENT16};
   }
 
   void enumerateImages(igl::IDevice& device,

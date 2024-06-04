@@ -30,8 +30,8 @@ class XrSwapchainProviderImpl {
  public:
   virtual ~XrSwapchainProviderImpl() noexcept = default;
 
-  [[nodiscard]] virtual int64_t preferredColorFormat() const noexcept = 0;
-  [[nodiscard]] virtual int64_t preferredDepthFormat() const noexcept = 0;
+  [[nodiscard]] virtual std::vector<int64_t> preferredColorFormats() const noexcept = 0;
+  [[nodiscard]] virtual std::vector<int64_t> preferredDepthFormats() const noexcept = 0;
 
   virtual void enumerateImages(igl::IDevice& device,
                                XrSwapchain colorSwapchain,

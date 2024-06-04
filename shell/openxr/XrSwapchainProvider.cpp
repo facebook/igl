@@ -7,13 +7,29 @@
 
 // @fb-only
 
+#include <cstdint>
 #include <igl/Core.h>
 
 #include <shell/openxr/XrLog.h>
 #include <shell/openxr/XrSwapchainProvider.h>
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
 
+#include <algorithm>
+
 namespace igl::shell::openxr {
+namespace {
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+[[nodiscard]] int64_t findFormat(const std::vector<int64_t>& sortedSwapchainFormats,
+                                 const std::vector<int64_t>& formats) noexcept {
+  for (const int64_t format : formats) {
+    if (std::binary_search(sortedSwapchainFormats.begin(), sortedSwapchainFormats.end(), format)) {
+      return format;
+    }
+  }
+  return impl::kSwapchainImageInvalidFormat;
+}
+} // namespace
+
 XrSwapchainProvider::XrSwapchainProvider(std::unique_ptr<impl::XrSwapchainProviderImpl>&& impl,
                                          std::shared_ptr<igl::shell::Platform> platform,
                                          XrSession session,
@@ -41,15 +57,14 @@ bool XrSwapchainProvider::initialize() noexcept {
   std::vector<int64_t> swapchainFormats(numSwapchainFormats);
   XR_CHECK(xrEnumerateSwapchainFormats(
       session_, numSwapchainFormats, &numSwapchainFormats, swapchainFormats.data()));
+  std::sort(swapchainFormats.begin(), swapchainFormats.end());
 
-  const auto colorFormat = swapchainImageInfo_.colorFormat != impl::kSwapchainImageInvalidFormat
-                               ? swapchainImageInfo_.colorFormat
-                               : impl_->preferredColorFormat();
-  if (std::any_of(std::begin(swapchainFormats),
-                  std::end(swapchainFormats),
-                  [&](const auto& format) { return format == colorFormat; })) {
-    swapchainImageInfo_.colorFormat = colorFormat;
-  } else {
+  swapchainImageInfo_.colorFormat =
+      findFormat(swapchainFormats,
+                 swapchainImageInfo_.colorFormat != impl::kSwapchainImageInvalidFormat
+                     ? std::vector<int64_t>{swapchainImageInfo_.colorFormat}
+                     : impl_->preferredColorFormats());
+  if (swapchainImageInfo_.colorFormat == impl::kSwapchainImageInvalidFormat) {
     IGL_ASSERT_MSG(false, "No supported color format found");
     return false;
   }
@@ -57,14 +72,12 @@ bool XrSwapchainProvider::initialize() noexcept {
   colorSwapchain_ =
       createXrSwapchain(XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT, swapchainImageInfo_.colorFormat);
 
-  const auto depthFormat = swapchainImageInfo_.depthFormat != impl::kSwapchainImageInvalidFormat
-                               ? swapchainImageInfo_.depthFormat
-                               : impl_->preferredDepthFormat();
-  if (std::any_of(std::begin(swapchainFormats),
-                  std::end(swapchainFormats),
-                  [&](const auto& format) { return format == depthFormat; })) {
-    swapchainImageInfo_.depthFormat = depthFormat;
-  } else {
+  swapchainImageInfo_.depthFormat =
+      findFormat(swapchainFormats,
+                 swapchainImageInfo_.depthFormat != impl::kSwapchainImageInvalidFormat
+                     ? std::vector<int64_t>{swapchainImageInfo_.depthFormat}
+                     : impl_->preferredDepthFormats());
+  if (swapchainImageInfo_.depthFormat == impl::kSwapchainImageInvalidFormat) {
     IGL_ASSERT_MSG(false, "No supported depth format found");
     return false;
   }
