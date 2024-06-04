@@ -36,6 +36,8 @@ std::vector<const char*> XrAppImplVulkan::getXrOptionalExtensions() const {
 
 std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSystemId systemId) {
   // Get the API requirements.
+  // XR_ERROR_GRAPHICS_REQUIREMENTS_CALL_MISSING is returned on calls to xrCreateSession
+  // if this function has not been called for the instance and systemId before xrCreateSession.
   PFN_xrGetVulkanGraphicsRequirementsKHR pfnGetVulkanGraphicsRequirementsKHR = NULL;
   XR_CHECK(xrGetInstanceProcAddr(instance,
                                  "xrGetVulkanGraphicsRequirementsKHR",
@@ -84,6 +86,13 @@ std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSy
                                  "xrGetVulkanGraphicsDeviceKHR",
                                  (PFN_xrVoidFunction*)(&pfnGetVulkanGraphicsDeviceKHR)));
 
+  const std::vector<HWDeviceDesc> devices =
+      vulkan::HWDevice::queryDevices(*context, HWDeviceQueryDesc(HWDeviceType::Unknown), nullptr);
+  if (devices.empty()) {
+    IGL_LOG_ERROR("IGL: Failed to find a suitable Vulkan hardware device.\n");
+    return nullptr;
+  }
+
   // Let OpenXR find a suitable Vulkan physical device.
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   XR_CHECK(
@@ -93,8 +102,14 @@ std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSy
     return nullptr;
   }
 
-  igl::HWDeviceDesc hwDevice(reinterpret_cast<uintptr_t>(physicalDevice),
-                             igl::HWDeviceType::IntegratedGpu);
+  igl::HWDeviceDesc hwDevice(0, HWDeviceType::Unknown);
+  for (const auto& device : devices) {
+    if (device.guid == reinterpret_cast<uintptr_t>(physicalDevice)) {
+      hwDevice = device;
+      IGL_LOG_INFO("IGL: Selected hardware device: %s", device.name.c_str());
+      break;
+    }
+  }
 
   auto device = igl::vulkan::HWDevice::create(std::move(context),
                                               hwDevice,
