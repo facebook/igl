@@ -33,7 +33,7 @@ Context::Context(RenderingAPI api) : contextOwned_(true) {
   // context after setting up the correct pixel format. Until then, we can properly create the right
   // render context.
 
-  WNDCLASSA window_class;
+  WNDCLASSA window_class = {};
   window_class.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
   window_class.cbClsExtra = window_class.cbWndExtra = 0;
   window_class.lpfnWndProc = DefWindowProcA;
