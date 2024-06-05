@@ -476,7 +476,7 @@ TEST_F(TextureCubeTest, Passthrough_SampleFromCube) {
     vertUniformBuffer->bind(*iglDev_.get(), *pipelineState, *cmds.get());
 
     cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-    cmds->drawIndexed(PrimitiveType::Triangle, 6);
+    cmds->drawIndexed(6);
 
     cmds->endEncoding();
 
@@ -578,7 +578,7 @@ TEST_F(TextureCubeTest, Passthrough_RenderToCube) {
     cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
 
     cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-    cmds->drawIndexed(PrimitiveType::Triangle, 6);
+    cmds->drawIndexed(6);
 
     cmds->endEncoding();
 

@@ -756,7 +756,7 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
   cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
 
   cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-  cmds->drawIndexed(PrimitiveType::Triangle, 6);
+  cmds->drawIndexed(6);
   cmds->endEncoding();
 
   cmdQueue_->submit(*cmdBuf_);
@@ -798,7 +798,7 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
   cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
 
   cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-  cmds->drawIndexed(PrimitiveType::Triangle, 6);
+  cmds->drawIndexed(6);
   cmds->endEncoding();
 
   cmdQueue_->submit(*cmdBuf_);
@@ -1159,7 +1159,7 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
 
   cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-  cmds->drawIndexed(PrimitiveType::Triangle, 6);
+  cmds->drawIndexed(6);
   cmds->endEncoding();
 
   cmdQueue_->submit(*cmdBuf_);
@@ -1201,7 +1201,7 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
 
   cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-  cmds->drawIndexed(PrimitiveType::Triangle, 6);
+  cmds->drawIndexed(6);
   cmds->endEncoding();
 
   cmdQueue_->submit(*cmdBuf_);

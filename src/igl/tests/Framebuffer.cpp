@@ -305,7 +305,7 @@ TEST_F(FramebufferTest, Clear) {
   cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
   cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
   cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-  cmds->drawIndexed(PrimitiveType::Triangle, 0); // draw 0 indices
+  cmds->drawIndexed(0); // draw 0 indices
   cmds->endEncoding();
 
   cmdQueue_->submit(*cmdBuf_);

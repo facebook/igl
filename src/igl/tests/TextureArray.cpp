@@ -554,7 +554,7 @@ TEST_F(TextureArrayTest, Passthrough_SampleFromArray) {
     vertUniformBuffer->bind(*iglDev_.get(), *pipelineState, *cmds.get());
 
     cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-    cmds->drawIndexed(PrimitiveType::Triangle, 6);
+    cmds->drawIndexed(6);
 
     cmds->endEncoding();
 
@@ -653,7 +653,7 @@ TEST_F(TextureArrayTest, Passthrough_RenderToArray) {
     cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
 
     cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-    cmds->drawIndexed(PrimitiveType::Triangle, 6);
+    cmds->drawIndexed(6);
 
     cmds->endEncoding();
 

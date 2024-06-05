@@ -216,7 +216,7 @@ void TextureFormatTestBase::render(std::shared_ptr<ITexture> sampledTexture,
                          (linearSampling ? linearSampler_ : nearestSampler_).get());
 
   cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-  cmds->drawIndexed(PrimitiveType::Triangle, 6);
+  cmds->drawIndexed(6);
 
   cmds->endEncoding();
 

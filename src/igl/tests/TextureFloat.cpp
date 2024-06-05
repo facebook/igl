@@ -333,7 +333,7 @@ class TextureFloatTest : public ::testing::Test {
     vertUniformBuffer->bind(*iglDev_, *pipelineState, *cmds);
 
     cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-    cmds->drawIndexed(PrimitiveType::Triangle, 6);
+    cmds->drawIndexed(6);
 
     cmds->endEncoding();
 

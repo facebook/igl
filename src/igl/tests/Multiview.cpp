@@ -298,7 +298,7 @@ TEST_F(MultiviewTest, SinglePassStereo) {
   vertUniformBuffer->bind(*iglDev_.get(), *pipelineState, *cmds.get());
 
   cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-  cmds->drawIndexed(PrimitiveType::Triangle, 6);
+  cmds->drawIndexed(6);
 
   cmds->endEncoding();
   cmdBuf_->present(framebuffer_->getColorAttachment(0));

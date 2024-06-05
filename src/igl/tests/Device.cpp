@@ -166,7 +166,7 @@ TEST_F(DeviceTest, LastDrawStat) {
   auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
   cmds->bindRenderPipelineState(pipelineState);
   cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-  cmds->drawIndexed(PrimitiveType::Triangle, 0); // draw 0 indices
+  cmds->drawIndexed(0); // draw 0 indices
   cmds->endEncoding();
   cmdQueue_->submit(*cmdBuf_);
 

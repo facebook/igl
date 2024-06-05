@@ -256,7 +256,7 @@ TEST_F(sRGBTest, Passthrough) {
   cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
 
   cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
-  cmds->drawIndexed(PrimitiveType::Triangle, 6);
+  cmds->drawIndexed(6);
 
   cmds->endEncoding();
 
