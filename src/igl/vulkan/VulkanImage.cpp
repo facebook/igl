@@ -909,10 +909,10 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
   IGL_ASSERT_MSG(!isCubemap_ || arrayLayers_ % 6u == 0,
                  "Cubemaps must have a multiple of 6 array layers!");
   const uint32_t multiplier = isCubemap_ ? static_cast<uint32_t>(arrayLayers_) / 6u : 1u;
-  const uint32_t rangeStartLayer =
-      static_cast<uint32_t>(range.layer) * multiplier + static_cast<uint32_t>(range.face);
-  const uint32_t rangeLayerCount =
-      static_cast<uint32_t>(range.numLayers) * multiplier + static_cast<uint32_t>(range.numFaces);
+  const uint32_t rangeStartLayer = (static_cast<uint32_t>(range.layer) * multiplier) +
+                                   (isCubemap_ ? static_cast<uint32_t>(range.face) : 0u);
+  const uint32_t rangeLayerCount = (static_cast<uint32_t>(range.numLayers) * multiplier) +
+                                   (isCubemap_ ? static_cast<uint32_t>(range.numFaces) : 0u);
 
   // 0: Transition the first mip-level - all layers - to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
   transitionLayout(commandBuffer,
