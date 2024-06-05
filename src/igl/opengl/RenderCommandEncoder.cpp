@@ -360,6 +360,23 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
   }
 }
 
+void RenderCommandEncoder::draw(size_t firstVertex,
+                                size_t vertexCount,
+                                uint32_t instanceCount,
+                                uint32_t baseInstance) {
+  (void)instanceCount;
+  (void)baseInstance;
+
+  IGL_ASSERT_MSG(instanceCount == 1, "Instancing is not implemented");
+  IGL_ASSERT_MSG(baseInstance == 0, "Instancing is not implemented");
+
+  if (IGL_VERIFY(adapter_)) {
+    getCommandBuffer().incrementCurrentDrawCount();
+    auto mode = toGlPrimitive(adapter_->pipelineState().getRenderPipelineDesc().topology);
+    adapter_->drawArrays(mode, (GLsizei)firstVertex, (GLsizei)vertexCount);
+  }
+}
+
 void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
                                        size_t indexCount,
                                        uint32_t instanceCount,
