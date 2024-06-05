@@ -20,13 +20,9 @@ class XrCompositionQuad final : public XrComposition {
                     XrSession session,
                     bool useSinglePassStereo,
                     bool isAlphaBlendCompositionSupported,
-                    glm::vec3 position,
-                    glm::vec2 size,
-                    LayerBlendMode blendMode) noexcept;
+                    const QuadLayerInfo& quadLayerInfo) noexcept;
 
-  void updatePosition(glm::vec3 position) noexcept;
-  void updateSize(glm::vec2 size) noexcept;
-  void updateBlendMode(LayerBlendMode blendMode) noexcept;
+  void updateQuadLayerInfo(const QuadLayerInfo& info) noexcept;
 
   void doComposition(const DepthParams& depthParams,
                      const std::array<XrView, kNumViews>& views,
@@ -37,13 +33,11 @@ class XrCompositionQuad final : public XrComposition {
 
  private:
 #ifdef XR_FB_composition_layer_alpha_blend
-  XrCompositionLayerAlphaBlendFB additiveBlending_{};
+  XrCompositionLayerAlphaBlendFB customBlending_{};
 #endif
   std::array<XrCompositionLayerQuad, kNumViews> quadLayers_{};
 
-  glm::vec3 position_;
-  glm::vec2 size_{1.0f, 1.0f};
-  LayerBlendMode blendMode_ = LayerBlendMode::Opaque;
+  QuadLayerInfo info_;
 
   const bool isAlphaBlendCompositionSupported_;
 };

@@ -9,41 +9,56 @@
 
 #include <shell/openxr/XrCompositionQuad.h>
 
+#include <igl/RenderPipelineState.h>
+
 namespace igl::shell::openxr {
+namespace {
+#ifdef XR_FB_composition_layer_alpha_blend
+inline XrBlendFactorFB iglToOpenXR(igl::BlendFactor factor) noexcept {
+  switch (factor) {
+  case igl::BlendFactor::Zero:
+    return XR_BLEND_FACTOR_ZERO_FB;
+  case igl::BlendFactor::One:
+    return XR_BLEND_FACTOR_ONE_FB;
+  case igl::BlendFactor::SrcAlpha:
+    return XR_BLEND_FACTOR_SRC_ALPHA_FB;
+  case igl::BlendFactor::OneMinusSrcAlpha:
+    return XR_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA_FB;
+  case igl::BlendFactor::DstAlpha:
+    return XR_BLEND_FACTOR_DST_ALPHA_FB;
+  case igl::BlendFactor::OneMinusDstAlpha:
+    return XR_BLEND_FACTOR_ONE_MINUS_DST_ALPHA_FB;
+  default:
+    IGL_ASSERT_MSG(false, "Not supported blend factor (%d)", static_cast<int>(factor));
+    break;
+  }
+  return XR_BLEND_FACTOR_ZERO_FB;
+}
+#endif // XR_FB_composition_layer_alpha_blend
+} // namespace
 
 XrCompositionQuad::XrCompositionQuad(impl::XrAppImpl& appImpl,
                                      std::shared_ptr<igl::shell::Platform> platform,
                                      XrSession session,
                                      bool useSinglePassStereo,
                                      bool isAlphaBlendCompositionSupported,
-                                     glm::vec3 position,
-                                     glm::vec2 size,
-                                     LayerBlendMode blendMode) noexcept :
+                                     const QuadLayerInfo& info) noexcept :
   XrComposition(appImpl, std::move(platform), session, useSinglePassStereo),
-  position_(position),
-  size_(size),
-  blendMode_(blendMode),
   isAlphaBlendCompositionSupported_(isAlphaBlendCompositionSupported) {
+  updateQuadLayerInfo(info);
+}
+
+void XrCompositionQuad::updateQuadLayerInfo(const QuadLayerInfo& info) noexcept {
+  info_ = info;
+
 #ifdef XR_FB_composition_layer_alpha_blend
-  additiveBlending_ = {.type = XR_TYPE_COMPOSITION_LAYER_ALPHA_BLEND_FB,
-                       .next = nullptr,
-                       .srcFactorColor = XR_BLEND_FACTOR_ONE_MINUS_DST_ALPHA_FB,
-                       .dstFactorColor = XR_BLEND_FACTOR_ONE_FB,
-                       .srcFactorAlpha = XR_BLEND_FACTOR_ZERO_FB,
-                       .dstFactorAlpha = XR_BLEND_FACTOR_ONE_FB};
+  customBlending_ = {.type = XR_TYPE_COMPOSITION_LAYER_ALPHA_BLEND_FB,
+                     .next = nullptr,
+                     .srcFactorColor = iglToOpenXR(info.customSrcRGBBlendFactor),
+                     .dstFactorColor = iglToOpenXR(info.customDstRGBBlendFactor),
+                     .srcFactorAlpha = iglToOpenXR(info.customSrcAlphaBlendFactor),
+                     .dstFactorAlpha = iglToOpenXR(info.customDstAlphaBlendFactor)};
 #endif
-}
-
-void XrCompositionQuad::updatePosition(glm::vec3 position) noexcept {
-  position_ = position;
-}
-
-void XrCompositionQuad::updateSize(glm::vec2 size) noexcept {
-  size_ = size;
-}
-
-void XrCompositionQuad::updateBlendMode(LayerBlendMode blendMode) noexcept {
-  blendMode_ = blendMode;
 }
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
@@ -54,7 +69,7 @@ void XrCompositionQuad::doComposition(
     XrSpace currentSpace,
     XrCompositionLayerFlags compositionFlags,
     std::vector<const XrCompositionLayerBaseHeader*>& layers) noexcept {
-  compositionFlags |= (blendMode_ == igl::shell::LayerBlendMode::AlphaBlend)
+  compositionFlags |= (info_.blendMode == igl::shell::LayerBlendMode::AlphaBlend)
                           ? XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT
                           : 0;
 
@@ -72,8 +87,8 @@ void XrCompositionQuad::doComposition(
         .type = XR_TYPE_COMPOSITION_LAYER_QUAD,
 #ifdef XR_FB_composition_layer_alpha_blend
         .next = (isAlphaBlendCompositionSupported_ &&
-                 blendMode_ == igl::shell::LayerBlendMode::AlphaAdditive)
-                    ? &additiveBlending_
+                 info_.blendMode == igl::shell::LayerBlendMode::Custom)
+                    ? &customBlending_
                     : nullptr,
 #else
         .next = nullptr,
@@ -88,8 +103,8 @@ void XrCompositionQuad::doComposition(
                 subImageIndex,
             },
         .pose = {.orientation = {0.f, 0.f, 0.f, 1.f},
-                 .position = {position_.x, position_.y, position_.z}},
-        .size = {size_.x, size_.y},
+                 .position = {info_.position.x, info_.position.y, info_.position.z}},
+        .size = {info_.size.x, info_.size.y},
     };
 
     layers.push_back(reinterpret_cast<const XrCompositionLayerBaseHeader*>(&quadLayers_[view]));

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <igl/RenderPipelineState.h>
 #include <vector>
 
 namespace igl::shell {
@@ -15,18 +16,26 @@ namespace igl::shell {
 enum class LayerBlendMode : uint8_t {
   Opaque = 0,
   AlphaBlend = 1,
-  AlphaAdditive = 2,
+  Custom = 2,
+};
+
+struct QuadLayerInfo {
+  glm::vec3 position{0.0f, 0.0f, 0.0f};
+  glm::vec2 size{1.0f, 1.0f};
+  LayerBlendMode blendMode = LayerBlendMode::Opaque;
+  uint32_t imageWidth = 1024;
+  uint32_t imageHeight = 1024;
+  igl::BlendFactor customSrcRGBBlendFactor = igl::BlendFactor::One;
+  igl::BlendFactor customSrcAlphaBlendFactor = igl::BlendFactor::One;
+  igl::BlendFactor customDstRGBBlendFactor = igl::BlendFactor::Zero;
+  igl::BlendFactor customDstAlphaBlendFactor = igl::BlendFactor::Zero;
 };
 
 struct QuadLayerParams {
-  std::vector<glm::vec3> positions;
-  std::vector<glm::vec2> sizes;
-  std::vector<LayerBlendMode> blendModes;
-  uint32_t imageWidth = 1024;
-  uint32_t imageHeight = 1024;
+  std::vector<QuadLayerInfo> layerInfo;
 
   [[nodiscard]] size_t numQuads() const noexcept {
-    return positions.size();
+    return layerInfo.size();
   }
 };
 } // namespace igl::shell

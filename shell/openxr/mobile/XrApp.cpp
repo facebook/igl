@@ -511,20 +511,20 @@ void XrApp::updateQuadComposition() noexcept {
   const auto& appParams = renderSession_->appParams();
 
   constexpr uint32_t kQuadLayerDefaultImageSize = 1024;
-#if USE_LOCAL_AR_SPACE
-  static glm::vec3 kDefaultPosition = {0.0f, 0.0f, -1.0f};
-#else
-  static glm::vec3 kDefaultPosition = {0.0f, 0.0f, 0.0f};
-#endif
 
   const auto aspect = appParams.sizeY / appParams.sizeX;
   QuadLayerParams quadLayersParams = {
-      .positions = {kDefaultPosition},
-      .sizes = {glm::vec2{appParams.sizeX, appParams.sizeY}},
-      .blendModes = {LayerBlendMode::AlphaBlend},
-      .imageWidth = kQuadLayerDefaultImageSize,
-      .imageHeight = static_cast<uint32_t>(kQuadLayerDefaultImageSize * aspect),
-  };
+      .layerInfo = {{
+#if USE_LOCAL_AR_SPACE
+          .position = {0.0f, 0.0f, -1.0f},
+#else
+          .position = {0.0f, 0.0f, 0.0f},
+#endif
+          .size = {appParams.sizeX, appParams.sizeY},
+          .blendMode = LayerBlendMode::AlphaBlend,
+          .imageWidth = kQuadLayerDefaultImageSize,
+          .imageHeight = static_cast<uint32_t>(kQuadLayerDefaultImageSize * aspect),
+      }}};
 
   if (appParams.quadLayerParamsGetter) {
     auto params = appParams.quadLayerParamsGetter();
@@ -533,21 +533,16 @@ void XrApp::updateQuadComposition() noexcept {
     }
   }
 
-  std::array<impl::SwapchainImageInfo, XrComposition::kNumViews> swapchainImageInfo;
-  swapchainImageInfo.fill({
-      .imageWidth = quadLayersParams.imageWidth,
-      .imageHeight = quadLayersParams.imageHeight,
-  });
-
+  std::array<impl::SwapchainImageInfo, XrComposition::kNumViews> swapchainImageInfo{};
   for (size_t i = 0; i < quadLayersParams.numQuads(); ++i) {
-    IGL_ASSERT(i < quadLayersParams.positions.size());
-    IGL_ASSERT(i < quadLayersParams.sizes.size());
-    IGL_ASSERT(i < quadLayersParams.blendModes.size());
+    swapchainImageInfo.fill({
+        .imageWidth = quadLayersParams.layerInfo[i].imageWidth,
+        .imageHeight = quadLayersParams.layerInfo[i].imageHeight,
+    });
+
     if (i < compositionLayers_.size()) {
       auto* quadLayer = static_cast<XrCompositionQuad*>(compositionLayers_[i].get());
-      quadLayer->updatePosition(quadLayersParams.positions[i]);
-      quadLayer->updateSize(quadLayersParams.sizes[i]);
-      quadLayer->updateBlendMode(quadLayersParams.blendModes[i]);
+      quadLayer->updateQuadLayerInfo(quadLayersParams.layerInfo[i]);
       quadLayer->updateSwapchainImageInfo(swapchainImageInfo);
     } else {
       compositionLayers_.emplace_back(
@@ -556,9 +551,7 @@ void XrApp::updateQuadComposition() noexcept {
                                               session_,
                                               useSinglePassStereo_,
                                               alphaBlendCompositionSupported(),
-                                              quadLayersParams.positions[i],
-                                              quadLayersParams.sizes[i],
-                                              quadLayersParams.blendModes[i]));
+                                              quadLayersParams.layerInfo[i]));
       compositionLayers_.back()->updateSwapchainImageInfo(swapchainImageInfo);
     }
   }
