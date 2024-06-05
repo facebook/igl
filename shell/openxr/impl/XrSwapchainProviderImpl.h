@@ -26,6 +26,11 @@ struct SwapchainImageInfo {
   uint32_t imageHeight = 0;
 };
 
+inline bool operator==(const SwapchainImageInfo& lhs, const SwapchainImageInfo& rhs) noexcept {
+  return (lhs.colorFormat == rhs.colorFormat && lhs.depthFormat == rhs.depthFormat &&
+          lhs.imageWidth == rhs.imageWidth && lhs.imageHeight == rhs.imageHeight);
+}
+
 class XrSwapchainProviderImpl {
  public:
   virtual ~XrSwapchainProviderImpl() noexcept = default;
