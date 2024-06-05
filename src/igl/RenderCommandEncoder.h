@@ -78,7 +78,11 @@ class IRenderCommandEncoder : public ICommandEncoder {
                     size_t vertexStart,
                     size_t vertexCount,
                     uint32_t instanceCount = 1,
-                    uint32_t baseInstance = 0) = 0;
+                    uint32_t baseInstance = 0) = 0; // old-n-sad
+  virtual void draw(size_t firstVertex,
+                    size_t vertexCount,
+                    uint32_t instanceCount = 1,
+                    uint32_t baseInstance = 0) {} // new-n-rad
   virtual void drawIndexed(PrimitiveType primitiveType,
                            size_t indexCount,
                            uint32_t instanceCount = 1,
