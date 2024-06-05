@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <openxr/openxr.h>
 #include <shell/openxr/XrPlatform.h>
 
 #include <vector>
@@ -19,9 +18,9 @@ class XrPassthrough final {
   XrPassthrough(XrInstance instance, XrSession session) noexcept;
   ~XrPassthrough() noexcept;
 
-  static std::vector<const char*>& getExtensions() noexcept;
+  [[nodiscard]] static const std::vector<const char*>& getExtensions() noexcept;
 
-  bool initialize() noexcept;
+  [[nodiscard]] bool initialize() noexcept;
 
   void setEnabled(bool enabled) noexcept;
 

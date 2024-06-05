@@ -20,9 +20,9 @@ class XrHands final {
   XrHands(XrInstance instance, XrSession session, bool handMeshSupported) noexcept;
   ~XrHands() noexcept;
 
-  static std::vector<const char*>& getExtensions() noexcept;
+  [[nodiscard]] static const std::vector<const char*>& getExtensions() noexcept;
 
-  bool initialize() noexcept;
+  [[nodiscard]] bool initialize() noexcept;
 
   void updateTracking(XrSpace currentSpace, std::array<HandTracking, 2>& handTracking) noexcept;
   void updateMeshes(std::array<HandMesh, 2>& handMeshes) noexcept;

@@ -44,7 +44,8 @@ XrPassthrough::~XrPassthrough() noexcept {
   }
 }
 
-std::vector<const char*>& XrPassthrough::getExtensions() noexcept {
+// NOLINTNEXTLINE(bugprone-exception-escape)
+const std::vector<const char*>& XrPassthrough::getExtensions() noexcept {
   static std::vector<const char*> kExtensions{XR_FB_PASSTHROUGH_EXTENSION_NAME};
   return kExtensions;
 }
