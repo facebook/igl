@@ -379,6 +379,27 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
 #endif // IGL_PLATFORM_IOS
 }
 
+void RenderCommandEncoder::draw(size_t firstVertex,
+                                size_t vertexCount,
+                                uint32_t instanceCount,
+                                uint32_t baseInstance) {
+  getCommandBuffer().incrementCurrentDrawCount();
+  IGL_ASSERT(encoder_);
+#if IGL_PLATFORM_IOS
+  if (@available(iOS 16, *)) {
+#endif // IGL_PLATFORM_IOS
+    [encoder_ drawPrimitives:metalPrimitive_
+                 vertexStart:firstVertex
+                 vertexCount:vertexCount
+               instanceCount:instanceCount
+                baseInstance:baseInstance];
+#if IGL_PLATFORM_IOS
+  } else {
+    [encoder_ drawPrimitives:metalPrimitive_ vertexStart:firstVertex vertexCount:vertexCount];
+  }
+#endif // IGL_PLATFORM_IOS
+}
+
 void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
                                        size_t indexCount,
                                        uint32_t instanceCount,
