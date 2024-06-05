@@ -88,7 +88,12 @@ class IRenderCommandEncoder : public ICommandEncoder {
                            uint32_t instanceCount = 1,
                            uint32_t firstIndex = 0,
                            int32_t vertexOffset = 0,
-                           uint32_t baseInstance = 0) = 0;
+                           uint32_t baseInstance = 0) = 0; // old-n-sad
+  virtual void drawIndexed(size_t indexCount,
+                           uint32_t instanceCount = 1,
+                           uint32_t firstIndex = 0,
+                           int32_t vertexOffset = 0,
+                           uint32_t baseInstance = 0) = 0; // new-n-rad
   virtual void multiDrawIndirect(IBuffer& indirectBuffer,
                                  size_t indirectBufferOffset,
                                  uint32_t drawCount = 1,
