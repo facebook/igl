@@ -745,11 +745,18 @@ XrFrameState XrApp::beginFrame() {
 }
 
 void XrApp::render() {
-  if (passthroughEnabled()) {
-    shellParams_->clearColorValue = igl::Color{0.0f, 0.0f, 0.0f, 0.0f};
-  } else {
-    shellParams_->clearColorValue.reset();
+  if (passthrough_) {
+    if (passthroughEnabled()) {
+      shellParams_->clearColorValue = igl::Color{0.0f, 0.0f, 0.0f, 0.0f};
+    } else {
+      shellParams_->clearColorValue.reset();
+    }
   }
+#if USE_FORCE_ZERO_CLEAR
+  else {
+    shellParams_->clearColorValue = igl::Color{0.0f, 0.0f, 0.0f, 0.0f};
+  }
+#endif
 
   for (size_t layerIndex = 0; layerIndex < compositionLayers_.size(); ++layerIndex) {
     if (!compositionLayers_[layerIndex]->isValid()) {
