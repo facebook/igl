@@ -18,6 +18,7 @@
 
 #include <shell/openxr/XrComposition.h>
 #include <shell/openxr/XrPlatform.h>
+#include <shell/openxr/XrRefreshRate.h>
 
 #include <glm/glm.hpp>
 
@@ -50,13 +51,7 @@ class XrApp {
   }
 
   struct InitParams {
-    enum RefreshRateMode {
-      UseDefault,
-      UseMaxRefreshRate,
-      UseSpecificRefreshRate,
-    };
-    RefreshRateMode refreshRateMode_ = RefreshRateMode::UseDefault;
-    float desiredSpecificRefreshRate_ = 90.0f;
+    XrRefreshRate::Params refreshRateParams;
   };
   bool initialize(const struct android_app* app, const InitParams& params);
 
@@ -102,18 +97,7 @@ class XrApp {
   void render();
   void endFrame(XrFrameState frameState);
 
-  float getCurrentRefreshRate();
-  float getMaxRefreshRate();
-  bool setRefreshRate(float refreshRate);
-  void setMaxRefreshRate();
-  bool isRefreshRateSupported(float refreshRate);
-  const std::vector<float>& getSupportedRefreshRates();
-
- private:
   void updateQuadComposition() noexcept;
-
-  void queryCurrentRefreshRate();
-  void querySupportedRefreshRates();
 
   [[nodiscard]] inline bool passthroughSupported() const noexcept;
   [[nodiscard]] inline bool passthroughEnabled() const noexcept;
@@ -172,13 +156,7 @@ class XrApp {
 
   std::unique_ptr<XrPassthrough> passthrough_;
   std::unique_ptr<XrHands> hands_;
-
-  std::vector<float> supportedRefreshRates_;
-  float currentRefreshRate_ = 0.0f;
-
-  PFN_xrGetDisplayRefreshRateFB xrGetDisplayRefreshRateFB_ = nullptr;
-  PFN_xrEnumerateDisplayRefreshRatesFB xrEnumerateDisplayRefreshRatesFB_ = nullptr;
-  PFN_xrRequestDisplayRefreshRateFB xrRequestDisplayRefreshRateFB_ = nullptr;
+  std::unique_ptr<XrRefreshRate> refreshRate_;
 
   std::unique_ptr<impl::XrAppImpl> impl_;
 

@@ -165,7 +165,7 @@ bool XrApp::checkExtensions() {
 #ifdef XR_FB_composition_layer_alpha_blend
       XR_FB_COMPOSITION_LAYER_ALPHA_BLEND_EXTENSION_NAME,
 #endif // XR_FB_composition_layer_alpha_blend
-      XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME};
+  };
 
   optionalExtensionsImpl.insert(optionalExtensionsImpl.end(),
                                 std::begin(XrPassthrough::getExtensions()),
@@ -174,6 +174,10 @@ bool XrApp::checkExtensions() {
   optionalExtensionsImpl.insert(optionalExtensionsImpl.end(),
                                 std::begin(XrHands::getExtensions()),
                                 std::end(XrHands::getExtensions()));
+
+  optionalExtensionsImpl.insert(optionalExtensionsImpl.end(),
+                                std::begin(XrRefreshRate::getExtensions()),
+                                std::end(XrRefreshRate::getExtensions()));
 
   optionalExtensionsImpl.insert(optionalExtensionsImpl.end(),
                                 std::begin(additionalOptionalExtensions),
@@ -231,21 +235,6 @@ bool XrApp::createInstance() {
                XR_VERSION_MAJOR(instanceProps_.runtimeVersion),
                XR_VERSION_MINOR(instanceProps_.runtimeVersion),
                XR_VERSION_PATCH(instanceProps_.runtimeVersion));
-
-  if (refreshRateExtensionSupported()) {
-    XR_CHECK(xrGetInstanceProcAddr(instance_,
-                                   "xrGetDisplayRefreshRateFB",
-                                   (PFN_xrVoidFunction*)(&xrGetDisplayRefreshRateFB_)));
-    IGL_ASSERT(xrGetDisplayRefreshRateFB_ != nullptr);
-    XR_CHECK(xrGetInstanceProcAddr(instance_,
-                                   "xrEnumerateDisplayRefreshRatesFB",
-                                   (PFN_xrVoidFunction*)(&xrEnumerateDisplayRefreshRatesFB_)));
-    IGL_ASSERT(xrEnumerateDisplayRefreshRatesFB_ != nullptr);
-    XR_CHECK(xrGetInstanceProcAddr(instance_,
-                                   "xrRequestDisplayRefreshRateFB",
-                                   (PFN_xrVoidFunction*)(&xrRequestDisplayRefreshRateFB_)));
-    IGL_ASSERT(xrRequestDisplayRefreshRateFB_ != nullptr);
-  }
 
   return true;
 } // namespace igl::shell::openxr
@@ -468,13 +457,9 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
     }
   }
   if (refreshRateExtensionSupported()) {
-    queryCurrentRefreshRate();
-    if (params.refreshRateMode_ == InitParams::UseMaxRefreshRate) {
-      setMaxRefreshRate();
-    } else if (params.refreshRateMode_ == InitParams::UseSpecificRefreshRate) {
-      setRefreshRate(params.desiredSpecificRefreshRate_);
-    } else {
-      // Do nothing. Use default refresh rate.
+    refreshRate_ = std::make_unique<XrRefreshRate>(instance_, session_);
+    if (!refreshRate_->initialize(params.refreshRateParams)) {
+      return false;
     }
   }
 
@@ -828,114 +813,6 @@ void XrApp::update() {
   auto frameState = beginFrame();
   render();
   endFrame(frameState);
-}
-
-float XrApp::getCurrentRefreshRate() {
-  if (!session_ || (currentRefreshRate_ > 0.0f) || !refreshRateExtensionSupported()) {
-    return currentRefreshRate_;
-  }
-
-  queryCurrentRefreshRate();
-  return currentRefreshRate_;
-}
-
-void XrApp::queryCurrentRefreshRate() {
-  const XrResult result = xrGetDisplayRefreshRateFB_(session_, &currentRefreshRate_);
-  if (result == XR_SUCCESS) {
-    IGL_LOG_INFO("getCurrentRefreshRate success, current Hz = %.2f.\n", currentRefreshRate_);
-  }
-}
-
-float XrApp::getMaxRefreshRate() {
-  if (!session_ || !refreshRateExtensionSupported()) {
-    return 0.0f;
-  }
-
-  const std::vector<float>& supportedRefreshRates = getSupportedRefreshRates();
-
-  if (supportedRefreshRates.empty()) {
-    return 0.0f;
-  }
-
-  const float maxRefreshRate = supportedRefreshRates.back();
-  IGL_LOG_INFO("getMaxRefreshRate Hz = %.2f.\n", maxRefreshRate);
-  return maxRefreshRate;
-}
-
-bool XrApp::setRefreshRate(float refreshRate) {
-  if (!session_ || (refreshRate == currentRefreshRate_) || !isRefreshRateSupported(refreshRate)) {
-    return false;
-  }
-
-  const XrResult result = xrRequestDisplayRefreshRateFB_(session_, refreshRate);
-  if (result != XR_SUCCESS) {
-    return false;
-  }
-
-  IGL_LOG_INFO("setRefreshRate SUCCESS, changed from %.2f Hz to %.2f Hz\n",
-               currentRefreshRate_,
-               refreshRate);
-  currentRefreshRate_ = refreshRate;
-
-  return true;
-}
-
-void XrApp::setMaxRefreshRate() {
-  if (!session_ || !refreshRateExtensionSupported()) {
-    return;
-  }
-
-  const float maxRefreshRate = getMaxRefreshRate();
-
-  if (maxRefreshRate > 0.0f) {
-    setRefreshRate(maxRefreshRate);
-  }
-}
-
-bool XrApp::isRefreshRateSupported(float refreshRate) {
-  if (!session_ || !refreshRateExtensionSupported()) {
-    return false;
-  }
-
-  const std::vector<float>& supportedRefreshRates = getSupportedRefreshRates();
-  return std::find(supportedRefreshRates.begin(), supportedRefreshRates.end(), refreshRate) !=
-         supportedRefreshRates.end();
-}
-
-const std::vector<float>& XrApp::getSupportedRefreshRates() {
-  if (!session_ || !refreshRateExtensionSupported()) {
-    return supportedRefreshRates_;
-  }
-
-  if (supportedRefreshRates_.empty()) {
-    querySupportedRefreshRates();
-  }
-
-  return supportedRefreshRates_;
-}
-
-void XrApp::querySupportedRefreshRates() {
-  if (!session_ || !supportedRefreshRates_.empty() || !refreshRateExtensionSupported()) {
-    return;
-  }
-
-  uint32_t numRefreshRates = 0;
-  XrResult result = xrEnumerateDisplayRefreshRatesFB_(session_, 0, &numRefreshRates, nullptr);
-
-  if ((result == XR_SUCCESS) && (numRefreshRates > 0)) {
-    supportedRefreshRates_.resize(numRefreshRates);
-    result = xrEnumerateDisplayRefreshRatesFB_(
-        session_, numRefreshRates, &numRefreshRates, supportedRefreshRates_.data());
-
-    if (result == XR_SUCCESS) {
-      std::sort(supportedRefreshRates_.begin(), supportedRefreshRates_.end());
-    }
-
-    for (float refreshRate : supportedRefreshRates_) {
-      (void)refreshRate;
-      IGL_LOG_INFO("querySupportedRefreshRates Hz = %.2f.\n", refreshRate);
-    }
-  }
 }
 
 bool XrApp::passthroughSupported() const noexcept {
