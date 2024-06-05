@@ -402,7 +402,7 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     uniformBuffer->bind(device, *pipelineState_, *commands);
 
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16, handsDrawParams_[i].indexBufferOffset);
-    commands->drawIndexed(PrimitiveType::Triangle, handsDrawParams_[i].indexCount);
+    commands->drawIndexed(handsDrawParams_[i].indexCount);
   }
 
   commands->popDebugGroupLabel();

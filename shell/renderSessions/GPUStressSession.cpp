@@ -893,7 +893,7 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
         vertUniformBuffer->bind(device, *pipelineState_, *commands);
       }
 
-      commands->drawIndexed(PrimitiveType::Triangle, indexData.size());
+      commands->drawIndexed(indexData.size());
     }
   }
 }

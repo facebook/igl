@@ -373,7 +373,7 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commands->bindRenderPipelineState(pipelineState_);
 
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
-  commands->drawIndexed(PrimitiveType::Triangle, 3u * 6u * 2u);
+  commands->drawIndexed(3u * 6u * 2u);
 
   commands->popDebugGroupLabel();
   commands->endEncoding();

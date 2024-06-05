@@ -418,7 +418,7 @@ void Textured3DCubeSession::update(igl::SurfaceTextures surfaceTextures) noexcep
   commands->bindRenderPipelineState(pipelineState_);
 
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
-  commands->drawIndexed(PrimitiveType::Triangle, 3u * 6u * 2u);
+  commands->drawIndexed(3u * 6u * 2u);
 
   commands->endEncoding();
 

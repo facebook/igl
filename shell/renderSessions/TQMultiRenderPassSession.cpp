@@ -163,7 +163,7 @@ static void render(std::shared_ptr<ICommandBuffer>& buffer,
   commands->bindSamplerState(textureUnit_, BindTarget::kFragment, samplerState.get());
   commands->bindVertexBuffer(0, *vertexBuffer);
   commands->bindIndexBuffer(*ib, IndexFormat::UInt16);
-  commands->drawIndexed(PrimitiveType::Triangle, 6);
+  commands->drawIndexed(6);
   commands->endEncoding();
 }
 
