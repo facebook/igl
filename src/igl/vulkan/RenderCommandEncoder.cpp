@@ -644,6 +644,41 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
       cmdBuffer_, (uint32_t)vertexCount, instanceCount, (uint32_t)vertexStart, baseInstance);
 }
 
+void RenderCommandEncoder::draw(size_t firstVertex,
+                                size_t vertexCount,
+                                uint32_t instanceCount,
+                                uint32_t baseInstance) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
+  IGL_PROFILER_ZONE_GPU_COLOR_VK("draw()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
+
+  ctx_.drawCallCount_ += drawCallCountEnabled_;
+
+  if (vertexCount == 0) {
+    // IGL/OpenGL tests rely on this behavior due to how state caching is organized over there.
+    // If we do not return here, Validation Layers will complain.
+    return;
+  }
+
+  IGL_ASSERT_MSG(rps_, "Did you forget to call bindRenderPipelineState()?");
+
+  ensureVertexBuffers();
+
+  dynamicState_.setTopology(
+      primitiveTypeToVkPrimitiveTopology(rps_->getRenderPipelineDesc().topology));
+  flushDynamicState();
+
+#if IGL_VULKAN_PRINT_COMMANDS
+  IGL_LOG_INFO("%p vkCmdDraw(%u, %u, %u, %u)\n",
+               cmdBuffer_,
+               (uint32_t)vertexCount,
+               instanceCount,
+               firstVertex,
+               baseInstance);
+#endif // IGL_VULKAN_PRINT_COMMANDS
+
+  ctx_.vf_.vkCmdDraw(cmdBuffer_, (uint32_t)vertexCount, instanceCount, firstVertex, baseInstance);
+}
+
 void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
                                        size_t indexCount,
                                        uint32_t instanceCount,
