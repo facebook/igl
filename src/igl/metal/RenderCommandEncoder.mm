@@ -379,9 +379,9 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
 #endif // IGL_PLATFORM_IOS
 }
 
-void RenderCommandEncoder::draw(size_t firstVertex,
-                                size_t vertexCount,
+void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t instanceCount,
+                                uint32_t firstVertex,
                                 uint32_t baseInstance) {
   getCommandBuffer().incrementCurrentDrawCount();
   IGL_ASSERT(encoder_);

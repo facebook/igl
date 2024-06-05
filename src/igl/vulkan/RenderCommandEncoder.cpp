@@ -644,9 +644,9 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
       cmdBuffer_, (uint32_t)vertexCount, instanceCount, (uint32_t)vertexStart, baseInstance);
 }
 
-void RenderCommandEncoder::draw(size_t firstVertex,
-                                size_t vertexCount,
+void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t instanceCount,
+                                uint32_t firstVertex,
                                 uint32_t baseInstance) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
   IGL_PROFILER_ZONE_GPU_COLOR_VK("draw()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
