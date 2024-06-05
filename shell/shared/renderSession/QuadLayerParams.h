@@ -21,7 +21,10 @@ enum class LayerBlendMode : uint8_t {
 struct QuadLayerParams {
   std::vector<glm::vec3> positions;
   std::vector<glm::vec2> sizes;
-  std::vector<LayerBlendMode> blendModes_;
+  std::vector<LayerBlendMode> blendModes;
+  uint32_t imageWidth = 1024;
+  uint32_t imageHeight = 1024;
+
   [[nodiscard]] size_t numQuads() const noexcept {
     return positions.size();
   }

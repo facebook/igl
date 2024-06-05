@@ -37,6 +37,8 @@
 #include <shell/shared/renderSession/DefaultSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
+#include <shell/openxr/XrCompositionProjection.h>
+#include <shell/openxr/XrCompositionQuad.h>
 #include <shell/openxr/XrHands.h>
 #include <shell/openxr/XrLog.h>
 #include <shell/openxr/XrPassthrough.h>
@@ -69,7 +71,7 @@ XrApp::~XrApp() {
     return;
 
   renderSession_.reset();
-  swapchainProviders_.clear();
+  compositionLayers_.clear();
   passthrough_.reset();
   hands_.reset();
 
@@ -307,10 +309,10 @@ bool XrApp::enumerateViewConfigurations() {
     XR_CHECK(xrEnumerateViewConfigurationViews(
         instance_, systemId_, viewConfigType, 0, &numViewports, nullptr));
 
-    if (!IGL_VERIFY(numViewports == kNumViews)) {
+    if (!IGL_VERIFY(numViewports == XrComposition::kNumViews)) {
       IGL_LOG_ERROR(
           "numViewports must be %d. Make sure XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO is used.\n",
-          kNumViews);
+          XrComposition::kNumViews);
       return false;
     }
 
@@ -383,32 +385,6 @@ void XrApp::enumerateBlendModes() {
                additiveBlendingSupported_ ? "supported" : "not supported");
 }
 
-void XrApp::updateSwapchainProviders() {
-  const size_t numSwapchainProviders = useSinglePassStereo_ ? numQuadLayersPerView_
-                                                            : kNumViews * numQuadLayersPerView_;
-  const auto numViewsPerSwapchain = static_cast<uint8_t>(useSinglePassStereo_ ? kNumViews : 1);
-  if (numSwapchainProviders != swapchainProviders_.size()) {
-    swapchainProviders_.clear();
-    swapchainProviders_.reserve(numSwapchainProviders);
-    const size_t viewCnt = useSinglePassStereo_ ? 1 : kNumViews;
-    for (size_t quadLayer = 0; quadLayer < numQuadLayersPerView_; quadLayer++) {
-      for (size_t view = 0; view < viewCnt; view++) {
-        swapchainProviders_.emplace_back(std::make_unique<XrSwapchainProvider>(
-            impl_->createSwapchainProviderImpl(),
-            platform_,
-            session_,
-            impl::SwapchainImageInfo{.imageWidth = viewports_[view].recommendedImageRectWidth,
-                                     .imageHeight = viewports_[view].recommendedImageRectHeight},
-            numViewsPerSwapchain));
-        if (!swapchainProviders_.back()->initialize()) {
-          IGL_ASSERT_MSG(false, "Failed to initialize swapchain provider");
-        }
-      }
-    }
-    IGL_ASSERT(numSwapchainProviders == swapchainProviders_.size());
-  }
-}
-
 bool XrApp::initialize(const struct android_app* app, const InitParams& params) {
   if (initialized_) {
     return false;
@@ -478,7 +454,6 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
   // The following are initialization steps that happen after XrSession is created.
   enumerateReferenceSpaces();
   enumerateBlendModes();
-  updateSwapchainProviders();
   createSpaces();
   if (passthroughSupported()) {
     passthrough_ = std::make_unique<XrPassthrough>(instance_, session_);
@@ -509,9 +484,87 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
 
   IGL_ASSERT(renderSession_ != nullptr);
   renderSession_->initialize();
-  initialized_ = true;
 
+  if (useQuadLayerComposition_) {
+    updateQuadComposition();
+  } else {
+    compositionLayers_.emplace_back(std::make_unique<XrCompositionProjection>(
+        *impl_, platform_, session_, useSinglePassStereo_));
+
+    compositionLayers_.back()->updateSwapchainImageInfo(
+        {impl::SwapchainImageInfo{
+             .imageWidth = viewports_[0].recommendedImageRectWidth,
+             .imageHeight = viewports_[0].recommendedImageRectHeight,
+         },
+         impl::SwapchainImageInfo{
+             .imageWidth = viewports_[1].recommendedImageRectWidth,
+             .imageHeight = viewports_[1].recommendedImageRectHeight,
+         }});
+  }
+
+  initialized_ = true;
   return initialized_;
+}
+
+// NOLINTNEXTLINE(bugprone-exception-escape)
+void XrApp::updateQuadComposition() noexcept {
+  const auto& appParams = renderSession_->appParams();
+
+  constexpr uint32_t kQuadLayerDefaultImageSize = 1024;
+#if USE_LOCAL_AR_SPACE
+  static glm::vec3 kDefaultPosition = {0.0f, 0.0f, -1.0f};
+#else
+  static glm::vec3 kDefaultPosition = {0.0f, 0.0f, 0.0f};
+#endif
+
+  const auto aspect = appParams.sizeY / appParams.sizeX;
+  QuadLayerParams quadLayersParams = {
+      .positions = {kDefaultPosition},
+      .sizes = {glm::vec2{appParams.sizeX, appParams.sizeY}},
+      .blendModes = {LayerBlendMode::AlphaBlend},
+      .imageWidth = kQuadLayerDefaultImageSize,
+      .imageHeight = static_cast<uint32_t>(kQuadLayerDefaultImageSize * aspect),
+  };
+
+  if (appParams.quadLayerParamsGetter) {
+    auto params = appParams.quadLayerParamsGetter();
+    if (params.numQuads() > 0) {
+      quadLayersParams = std::move(params);
+    }
+  }
+
+  std::array<impl::SwapchainImageInfo, XrComposition::kNumViews> swapchainImageInfo;
+  swapchainImageInfo.fill({
+      .imageWidth = quadLayersParams.imageWidth,
+      .imageHeight = quadLayersParams.imageHeight,
+  });
+
+  for (size_t i = 0; i < quadLayersParams.numQuads(); ++i) {
+    IGL_ASSERT(i < quadLayersParams.positions.size());
+    IGL_ASSERT(i < quadLayersParams.sizes.size());
+    IGL_ASSERT(i < quadLayersParams.blendModes.size());
+    if (i < compositionLayers_.size()) {
+      auto* quadLayer = static_cast<XrCompositionQuad*>(compositionLayers_[i].get());
+      quadLayer->updatePosition(quadLayersParams.positions[i]);
+      quadLayer->updateSize(quadLayersParams.sizes[i]);
+      quadLayer->updateBlendMode(quadLayersParams.blendModes[i]);
+      quadLayer->updateSwapchainImageInfo(swapchainImageInfo);
+    } else {
+      compositionLayers_.emplace_back(
+          std::make_unique<XrCompositionQuad>(*impl_,
+                                              platform_,
+                                              session_,
+                                              useSinglePassStereo_,
+                                              alphaBlendCompositionSupported(),
+                                              quadLayersParams.positions[i],
+                                              quadLayersParams.sizes[i],
+                                              quadLayersParams.blendModes[i]));
+      compositionLayers_.back()->updateSwapchainImageInfo(swapchainImageInfo);
+    }
+  }
+
+  // Remove any layers that are no longer needed.
+  compositionLayers_.resize(quadLayersParams.numQuads());
 }
 
 void XrApp::createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManager* assetMgr) {
@@ -660,15 +713,9 @@ XrFrameState XrApp::beginFrame() {
     passthrough_->setEnabled(passthroughEnabled());
   }
 
-  const auto& appParams = renderSession_->appParams();
-  if (appParams.quadLayerParamsGetter) {
-    quadLayersParams_ = appParams.quadLayerParamsGetter();
-    numQuadLayersPerView_ = quadLayersParams_.numQuads() > 0 ? quadLayersParams_.numQuads() : 1;
-  } else {
-    quadLayersParams_ = {};
-    numQuadLayersPerView_ = 1;
+  if (useQuadLayerComposition_) {
+    updateQuadComposition();
   }
-  updateSwapchainProviders();
 
   XrFrameWaitInfo waitFrameInfo = {XR_TYPE_FRAME_WAIT_INFO};
 
@@ -701,7 +748,7 @@ XrFrameState XrApp::beginFrame() {
   XR_CHECK(xrLocateViews(
       session_, &projectionInfo, &viewState, views_.size(), &numViews, views_.data()));
 
-  for (size_t i = 0; i < kNumViews; i++) {
+  for (size_t i = 0; i < XrComposition::kNumViews; i++) {
     XrPosef eyePose = views_[i].pose;
     XrPosef_Multiply(&viewStagePoses_[i], &headPose, &eyePose);
     XrPosef viewTransformXrPosef{};
@@ -719,15 +766,6 @@ XrFrameState XrApp::beginFrame() {
   return frameState;
 }
 
-namespace {
-void copyFov(igl::shell::Fov& dst, const XrFovf& src) {
-  dst.angleLeft = src.angleLeft;
-  dst.angleRight = src.angleRight;
-  dst.angleUp = src.angleUp;
-  dst.angleDown = src.angleDown;
-}
-} // namespace
-
 void XrApp::render() {
   if (passthroughEnabled()) {
     shellParams_->clearColorValue = igl::Color{0.0f, 0.0f, 0.0f, 0.0f};
@@ -735,200 +773,42 @@ void XrApp::render() {
     shellParams_->clearColorValue.reset();
   }
 
-  if (useSinglePassStereo_) {
-    for (size_t quadLayer = 0; quadLayer < numQuadLayersPerView_; quadLayer++) {
-      auto surfaceTextures = swapchainProviders_[quadLayer]->getSurfaceTextures();
-      for (size_t j = 0; j < shellParams_->viewParams.size(); j++) {
-        shellParams_->viewParams[j].viewMatrix = viewTransforms_[j];
-        shellParams_->viewParams[j].cameraPosition = cameraPositions_[j];
-        copyFov(shellParams_->viewParams[j].fov, views_[j].fov);
-      }
-      if (useQuadLayerComposition_) {
-        renderSession_->setCurrentQuadLayer(quadLayer);
-      }
+  for (size_t layerIndex = 0; layerIndex < compositionLayers_.size(); ++layerIndex) {
+    if (!compositionLayers_[layerIndex]->isValid()) {
+      continue;
+    }
+
+    for (uint32_t i = 0; i < compositionLayers_[layerIndex]->renderPassesCount(); ++i) {
+      auto surfaceTextures = compositionLayers_[layerIndex]->beginRendering(
+          i, views_, viewTransforms_, cameraPositions_, shellParams_->viewParams);
+
+      renderSession_->setCurrentQuadLayer(useQuadLayerComposition_ ? layerIndex : 0);
       renderSession_->update(std::move(surfaceTextures));
-      swapchainProviders_[quadLayer]->releaseSwapchainImages();
-    }
-  } else {
-    const uint32_t numSwapChains = numQuadLayersPerView_ * kNumViews;
-    for (uint32_t swapChainIndex = 0; swapChainIndex < numSwapChains; swapChainIndex++) {
-      const uint32_t view = swapChainIndex % kNumViews;
-      shellParams_->viewParams[0].viewMatrix = viewTransforms_[view];
-      copyFov(shellParams_->viewParams[0].fov, views_[view].fov);
-      auto surfaceTextures = swapchainProviders_[swapChainIndex]->getSurfaceTextures();
-      if (useQuadLayerComposition_) {
-        const uint32_t quadLayerIndexPerView = swapChainIndex / kNumViews;
-        renderSession_->setCurrentQuadLayer(quadLayerIndexPerView);
-      }
-      renderSession_->update(surfaceTextures);
-      swapchainProviders_[swapChainIndex]->releaseSwapchainImages();
+
+      compositionLayers_[layerIndex]->endRendering(i);
     }
   }
 }
 
-void XrApp::setupProjectionAndDepth(std::vector<XrCompositionLayerProjectionView>& projectionViews,
-                                    std::vector<XrCompositionLayerDepthInfoKHR>& depthInfos) {
-  const auto& appParams = renderSession_->appParams();
-  auto numQuadLayers = kNumViews * numQuadLayersPerView_;
-  projectionViews.resize(numQuadLayers);
-  depthInfos.resize(numQuadLayers);
-
-  size_t layer = 0;
-  for (size_t i = 0; i < numQuadLayersPerView_; i++) {
-    for (size_t view = 0; view < kNumViews; view++, layer++) {
-      depthInfos[layer] = {
-          XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR,
-          nullptr,
-      };
-      projectionViews[layer] = {
-          XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW,
-          &depthInfos[layer],
-          viewStagePoses_[view],
-          views_[view].fov,
-      };
-      const XrRect2Di imageRect = {{0, 0},
-                                   {
-                                       (int32_t)viewports_[view].recommendedImageRectWidth,
-                                       (int32_t)viewports_[view].recommendedImageRectHeight,
-                                   }};
-      auto swapChainIndex = useSinglePassStereo_ ? i : layer;
-      auto subImageIndex = useSinglePassStereo_ ? static_cast<uint32_t>(view) : 0;
-      projectionViews[layer].subImage = {
-          swapchainProviders_[swapChainIndex]->colorSwapchain(),
-          imageRect,
-          subImageIndex,
-      };
-      depthInfos[layer].subImage = {
-          swapchainProviders_[swapChainIndex]->depthSwapchain(),
-          imageRect,
-          subImageIndex,
-      };
-      depthInfos[layer].minDepth = appParams.depthParams.minDepth;
-      depthInfos[layer].maxDepth = appParams.depthParams.maxDepth;
-      depthInfos[layer].nearZ = appParams.depthParams.nearZ;
-      depthInfos[layer].farZ = appParams.depthParams.farZ;
-    }
-  }
-}
-
-void XrApp::endFrameProjectionComposition(XrFrameState frameState) {
-  std::vector<XrCompositionLayerProjectionView> projectionViews;
-  std::vector<XrCompositionLayerDepthInfoKHR> depthInfos;
-  setupProjectionAndDepth(projectionViews, depthInfos);
-
+void XrApp::endFrame(XrFrameState frameState) {
   XrCompositionLayerFlags compositionFlags = XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT;
   if (passthroughEnabled()) {
     compositionFlags |= XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
   }
 
-  XrCompositionLayerProjection projection = {
-      XR_TYPE_COMPOSITION_LAYER_PROJECTION,
-      nullptr,
-      compositionFlags,
-      currentSpace_,
-      static_cast<uint32_t>(kNumViews),
-      projectionViews.data(),
-  };
-
   std::vector<const XrCompositionLayerBaseHeader*> layers;
-  layers.reserve(2);
+  layers.reserve(1 + compositionLayers_.size() * (useQuadLayerComposition_ ? 2 : 1));
 
   if (passthroughEnabled()) {
     passthrough_->injectLayer(layers);
   }
-  layers.push_back(reinterpret_cast<const XrCompositionLayerBaseHeader*>(&projection));
 
-  const XrFrameEndInfo endFrameInfo{
-      .type = XR_TYPE_FRAME_END_INFO,
-      .next = nullptr,
-      .displayTime = frameState.predictedDisplayTime,
-      .environmentBlendMode = additiveBlendingSupported_ ? XR_ENVIRONMENT_BLEND_MODE_ADDITIVE
-                                                         : XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
-      .layerCount = static_cast<uint32_t>(layers.size()),
-      .layers = layers.data(),
-  };
-  XR_CHECK(xrEndFrame(session_, &endFrameInfo));
-}
-
-void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
   const auto& appParams = renderSession_->appParams();
-
-  std::vector<XrCompositionLayerQuad> quadLayers(static_cast<size_t>(kNumViews) *
-                                                 numQuadLayersPerView_);
-#ifdef XR_FB_composition_layer_alpha_blend
-  const auto isAlphaBlendCompositionSupported = alphaBlendCompositionSupported();
-  XrCompositionLayerAlphaBlendFB blendMode = {XR_TYPE_COMPOSITION_LAYER_ALPHA_BLEND_FB};
-  blendMode.srcFactorColor = XR_BLEND_FACTOR_ONE_MINUS_DST_ALPHA_FB;
-  blendMode.dstFactorColor = XR_BLEND_FACTOR_ONE_FB;
-  blendMode.srcFactorAlpha = XR_BLEND_FACTOR_ZERO_FB;
-  blendMode.dstFactorAlpha = XR_BLEND_FACTOR_ONE_FB;
-#endif
-
-  XrVector3f position = {0.f, 0.f, 0.f};
-#if USE_LOCAL_AR_SPACE
-  position.z = -1.f;
-#endif
-  XrExtent2Df size = {appParams.sizeX, appParams.sizeY};
-  size_t layer = 0;
-  for (size_t i = 0; i < numQuadLayersPerView_; i++) {
-    if (quadLayersParams_.numQuads() > 0) {
-      IGL_ASSERT(i < quadLayersParams_.positions.size());
-      IGL_ASSERT(i < quadLayersParams_.sizes.size());
-      auto glmPos = quadLayersParams_.positions[i];
-      auto glmSize = quadLayersParams_.sizes[i];
-      position = {glmPos.x, glmPos.y, glmPos.z};
-      size = {glmSize.x, glmSize.y};
-#if USE_LOCAL_AR_SPACE
-      position.z = -1.f;
-#endif
+  for (const auto& layer : compositionLayers_) {
+    if (layer->isValid()) {
+      layer->doComposition(
+          appParams.depthParams, views_, viewStagePoses_, currentSpace_, compositionFlags, layers);
     }
-
-    XrEyeVisibility eye = XR_EYE_VISIBILITY_LEFT;
-    for (size_t view = 0; view < kNumViews; view++, layer++) {
-#ifdef XR_FB_composition_layer_alpha_blend
-      quadLayers[layer].next =
-          (isAlphaBlendCompositionSupported && quadLayersParams_.numQuads() > 0 &&
-           quadLayersParams_.blendModes_[layer] == igl::shell::LayerBlendMode::AlphaAdditive)
-              ? &blendMode
-              : nullptr;
-#else
-      quadLayers[layer].next = nullptr;
-#endif
-
-      quadLayers[layer].type = XR_TYPE_COMPOSITION_LAYER_QUAD;
-      quadLayers[layer].layerFlags =
-          (quadLayersParams_.numQuads() > 0 &&
-           quadLayersParams_.blendModes_[i] == igl::shell::LayerBlendMode::AlphaBlend)
-              ? XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT
-              : 0;
-      quadLayers[layer].space = currentSpace_;
-      quadLayers[layer].eyeVisibility = eye;
-      memset(&quadLayers[layer].subImage, 0, sizeof(XrSwapchainSubImage));
-      quadLayers[layer].pose = {{0.f, 0.f, 0.f, 1.f}, position};
-      quadLayers[layer].size = size;
-      if (eye == XR_EYE_VISIBILITY_LEFT) {
-        eye = XR_EYE_VISIBILITY_RIGHT;
-      }
-    }
-  }
-
-  std::vector<XrCompositionLayerProjectionView> projectionViews;
-  std::vector<XrCompositionLayerDepthInfoKHR> depthInfos;
-  setupProjectionAndDepth(projectionViews, depthInfos);
-
-  IGL_ASSERT(quadLayers.size() == projectionViews.size());
-  for (size_t i = 0; i < quadLayers.size(); i++) {
-    quadLayers[i].subImage = projectionViews[i].subImage;
-  }
-
-  std::vector<const XrCompositionLayerBaseHeader*> layers;
-  layers.reserve(numQuadLayersPerView_ * static_cast<std::size_t>(kNumViews + 1));
-
-  if (passthroughEnabled()) {
-    passthrough_->injectLayer(layers);
-  }
-  for (auto& quadLayer : quadLayers) {
-    layers.push_back(reinterpret_cast<const XrCompositionLayerBaseHeader*>(&quadLayer));
   }
 
   const XrFrameEndInfo endFrameInfo{
@@ -941,14 +821,6 @@ void XrApp::endFrameQuadLayerComposition(XrFrameState frameState) {
       .layers = layers.data(),
   };
   XR_CHECK(xrEndFrame(session_, &endFrameInfo));
-}
-
-void XrApp::endFrame(XrFrameState frameState) {
-  if (useQuadLayerComposition_) {
-    endFrameQuadLayerComposition(frameState);
-  } else {
-    endFrameProjectionComposition(frameState);
-  }
 }
 
 void XrApp::update() {

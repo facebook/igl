@@ -16,6 +16,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include <shell/openxr/XrComposition.h>
 #include <shell/openxr/XrPlatform.h>
 
 #include <glm/glm.hpp>
@@ -109,14 +110,10 @@ class XrApp {
   const std::vector<float>& getSupportedRefreshRates();
 
  private:
-  static constexpr uint32_t kNumViews = 2; // 2 for stereo
+  void updateQuadComposition() noexcept;
 
   void queryCurrentRefreshRate();
   void querySupportedRefreshRates();
-  void setupProjectionAndDepth(std::vector<XrCompositionLayerProjectionView>& projectionViews,
-                               std::vector<XrCompositionLayerDepthInfoKHR>& depthInfos);
-  void endFrameProjectionComposition(XrFrameState frameState);
-  void endFrameQuadLayerComposition(XrFrameState frameState);
 
   [[nodiscard]] inline bool passthroughSupported() const noexcept;
   [[nodiscard]] inline bool passthroughEnabled() const noexcept;
@@ -156,26 +153,22 @@ class XrApp {
   XrSystemId systemId_ = XR_NULL_SYSTEM_ID;
   XrSession session_ = XR_NULL_HANDLE;
 
-  XrViewConfigurationProperties viewConfigProps_ = {.type = XR_TYPE_VIEW_CONFIGURATION_PROPERTIES};
-  std::array<XrViewConfigurationView, kNumViews> viewports_;
-  std::array<XrView, kNumViews> views_;
-  std::array<XrPosef, kNumViews> viewStagePoses_;
-  std::array<glm::mat4, kNumViews> viewTransforms_;
-  std::array<glm::vec3, kNumViews> cameraPositions_;
-
   bool useSinglePassStereo_ = true;
+  bool additiveBlendingSupported_ = false;
   bool useQuadLayerComposition_ = false;
-  uint32_t numQuadLayersPerView_ = 1;
-  igl::shell::QuadLayerParams quadLayersParams_;
 
-  // If useSinglePassStereo_ is true, only one XrSwapchainProvider will be created.
-  std::vector<std::unique_ptr<XrSwapchainProvider>> swapchainProviders_;
+  XrViewConfigurationProperties viewConfigProps_ = {.type = XR_TYPE_VIEW_CONFIGURATION_PROPERTIES};
+  std::array<XrViewConfigurationView, XrComposition::kNumViews> viewports_{};
+  std::array<XrView, XrComposition::kNumViews> views_{};
+  std::array<XrPosef, XrComposition::kNumViews> viewStagePoses_{};
+  std::array<glm::mat4, XrComposition::kNumViews> viewTransforms_{};
+  std::array<glm::vec3, XrComposition::kNumViews> cameraPositions_{};
+
+  std::vector<std::unique_ptr<XrComposition>> compositionLayers_;
 
   XrSpace headSpace_ = XR_NULL_HANDLE;
   XrSpace currentSpace_ = XR_NULL_HANDLE;
   bool stageSpaceSupported_ = false;
-
-  bool additiveBlendingSupported_ = false;
 
   std::unique_ptr<XrPassthrough> passthrough_;
   std::unique_ptr<XrHands> hands_;

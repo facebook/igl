@@ -31,7 +31,7 @@ void enumerateSwapchainImages(
     VkImageAspectFlags aspectMask,
     std::vector<std::shared_ptr<igl::vulkan::VulkanTexture>>& outVulkanTextures) {
   uint32_t numImages = 0;
-  XR_CHECK(xrEnumerateSwapchainImages(swapchain, 0, &numImages, NULL));
+  XR_CHECK(xrEnumerateSwapchainImages(swapchain, 0, &numImages, nullptr));
 
   IGL_LOG_INFO("XRSwapchain numImages: %d\n", numImages);
 
