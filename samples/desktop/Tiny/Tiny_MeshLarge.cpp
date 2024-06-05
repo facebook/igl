@@ -1927,7 +1927,7 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     }
 #else
     commands->bindIndexBuffer(*ib0_, igl::IndexFormat::UInt32);
-    commands->drawIndexed(PrimitiveType::Triangle, indexData_.size());
+    commands->drawIndexed(indexData_.size());
 #endif
     commands->popDebugGroupLabel();
     commands->endEncoding();
@@ -2021,10 +2021,10 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     commands->bindSamplerState(0, igl::BindTarget::kFragment, samplerShadow_.get());
     commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt32);
-    commands->drawIndexed(PrimitiveType::Triangle, indexData_.size());
+    commands->drawIndexed(indexData_.size());
     if (enableWireframe_) {
       commands->bindRenderPipelineState(renderPipelineState_MeshWireframe_);
-      commands->drawIndexed(PrimitiveType::Triangle, indexData_.size());
+      commands->drawIndexed(indexData_.size());
     }
 #endif
     commands->popDebugGroupLabel();

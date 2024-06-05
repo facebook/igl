@@ -548,7 +548,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
   for (uint32_t i = 0; i != kNumCubes; i++) {
     commands->bindBuffer(1, ubPerObject_[frameIndex], i * sizeof(UniformsPerObject));
-    commands->drawIndexed(PrimitiveType::Triangle, 3u * 6u * 2u);
+    commands->drawIndexed(3u * 6u * 2u);
   }
   commands->popDebugGroupLabel();
 #if IGL_WITH_IGLU
