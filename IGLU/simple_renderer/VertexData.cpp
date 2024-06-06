@@ -78,7 +78,7 @@ void VertexData::draw(igl::IRenderCommandEncoder& commandEncoder) {
 
   if (ib_) {
     commandEncoder.bindIndexBuffer(*ib_, ibFormat_, primitiveDesc_.offset);
-    commandEncoder.drawIndexed(primitiveDesc_.type, primitiveDesc_.numEntries);
+    commandEncoder.drawIndexed(primitiveDesc_.numEntries);
   } else {
     commandEncoder.draw(primitiveDesc_.type, primitiveDesc_.offset, primitiveDesc_.numEntries);
   }
