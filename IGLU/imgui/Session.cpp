@@ -189,7 +189,6 @@ struct DrawableData {
 
     iglu::vertexdata::PrimitiveDesc primitiveDesc;
     primitiveDesc.numEntries = 0;
-    primitiveDesc.type = igl::PrimitiveType::Triangle;
 
     vertexData = std::make_shared<iglu::vertexdata::VertexData>(
         inputState,

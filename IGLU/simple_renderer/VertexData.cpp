@@ -18,13 +18,15 @@ VertexData::VertexData(std::shared_ptr<igl::IVertexInputState> vis,
                        std::shared_ptr<igl::IBuffer> vertexBuffer,
                        std::shared_ptr<igl::IBuffer> indexBuffer,
                        igl::IndexFormat indexBufferFormat,
-                       const PrimitiveDesc& primitiveDesc) :
+                       const PrimitiveDesc& primitiveDesc,
+                       igl::PrimitiveType topology) :
   vis_(std::move(vis)),
   vb_(std::move(vertexBuffer)),
   ib_(std::move(indexBuffer)),
   ibFormat_(indexBufferFormat),
   primitiveDesc_(primitiveDesc),
-  usedBytes_(vb_->getSizeInBytes()) {}
+  usedBytes_(vb_->getSizeInBytes()),
+  topology_(topology) {}
 
 VertexData::VertexData(igl::IDevice& device,
                        const std::shared_ptr<igl::IVertexInputState>& vis,
@@ -37,14 +39,14 @@ VertexData::VertexData(igl::IDevice& device,
                                  nullptr),
              nullptr,
              igl::IndexFormat::UInt16,
-             {}) {
-  primitiveDesc_.type = igl::PrimitiveType::Point;
+             {},
+             igl::PrimitiveType::Point) {
   usedBytes_ = 0;
 }
 
 void VertexData::populatePipelineDescriptor(igl::RenderPipelineDesc& pipelineDesc) const {
   pipelineDesc.vertexInputState = vis_;
-  pipelineDesc.topology = primitiveDesc_.type;
+  pipelineDesc.topology = topology_;
   pipelineDesc.frontFaceWinding = primitiveDesc_.frontFaceWinding;
 }
 

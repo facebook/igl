@@ -68,14 +68,14 @@ std::shared_ptr<VertexData> create(igl::IDevice& device,
 
   PrimitiveDesc primitiveDesc;
   primitiveDesc.numEntries = sizeof(indexData) / sizeof(indexData[0]);
-  primitiveDesc.type = igl::PrimitiveType::TriangleStrip;
 
   std::shared_ptr<VertexData> vertData =
       std::make_shared<VertexData>(vertexInput,
                                    device.createBuffer(vbDesc, nullptr),
                                    device.createBuffer(ibDesc, nullptr),
                                    igl::IndexFormat::UInt16,
-                                   primitiveDesc);
+                                   primitiveDesc,
+                                   igl::PrimitiveType::TriangleStrip);
   return vertData;
 }
 

@@ -20,7 +20,6 @@ namespace vertexdata {
 struct PrimitiveDesc {
   size_t numEntries = 0;
   size_t offset = 0;
-  igl::PrimitiveType type = igl::PrimitiveType::Triangle;
   igl::WindingMode frontFaceWinding = igl::WindingMode::CounterClockwise;
 };
 
@@ -48,7 +47,8 @@ class VertexData final {
              std::shared_ptr<igl::IBuffer> vertexBuffer,
              std::shared_ptr<igl::IBuffer> indexBuffer,
              igl::IndexFormat indexBufferFormat,
-             const PrimitiveDesc& primitiveDesc);
+             const PrimitiveDesc& primitiveDesc,
+             igl::PrimitiveType topology = igl::PrimitiveType::Triangle);
   VertexData(igl::IDevice& device,
              const std::shared_ptr<igl::IVertexInputState>& vis,
              size_t bufferSize);
@@ -78,6 +78,7 @@ class VertexData final {
   igl::IndexFormat ibFormat_ = igl::IndexFormat::UInt16;
   PrimitiveDesc primitiveDesc_;
   size_t usedBytes_ = 0;
+  const igl::PrimitiveType topology_ = igl::PrimitiveType::Triangle;
 };
 
 } // namespace vertexdata
