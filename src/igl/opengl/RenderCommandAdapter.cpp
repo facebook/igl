@@ -274,6 +274,16 @@ void RenderCommandAdapter::drawElements(GLenum mode,
   didDraw();
 }
 
+void RenderCommandAdapter::drawElementsInstanced(GLenum mode, 
+                                                 GLsizei indexCount,
+                                                 GLenum indexType,
+                                                 const GLvoid* indexOffset,
+                                                 GLsizei instancecount){
+  willDraw();
+  getContext().drawElementsInstanced(toMockWireframeMode(mode), indexCount, indexType, indexOffset, instancecount);
+  didDraw();
+}
+
 void RenderCommandAdapter::drawElementsIndirect(GLenum mode,
                                                 GLenum indexType,
                                                 Buffer& indirectBuffer,

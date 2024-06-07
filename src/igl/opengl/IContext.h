@@ -201,6 +201,7 @@ class IContext {
   void drawArrays(GLenum mode, GLint first, GLsizei count);
   void drawBuffers(GLsizei n, GLenum* buffers);
   void drawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices);
+  void drawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei instancecount);
   void drawElementsIndirect(GLenum mode, GLenum type, const GLvoid* indirect);
   virtual void enable(GLenum cap);
   void enableVertexAttribArray(GLuint index);

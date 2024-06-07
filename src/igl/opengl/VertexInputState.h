@@ -26,6 +26,8 @@ struct OGLAttribute {
   GLint numComponents = 0;
   GLenum componentType = GL_FLOAT;
   GLboolean normalized = false;
+  VertexSampleFunction sampleFunction = VertexSampleFunction::PerVertex;
+  size_t sampleRate = 1;
 
   OGLAttribute() = default;
 };

@@ -303,7 +303,13 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
         reinterpret_cast<const char*>(attribute.bufferOffset) + bufferOffset);
 
     if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::VertexAttribDivisor)) {
-      getContext().vertexAttribDivisor(location, 0);
+        if (attribute.sampleFunction == igl::VertexSampleFunction::PerVertex){
+            getContext().vertexAttribDivisor(location, 0);
+        } else if (attribute.sampleFunction == igl::VertexSampleFunction::Instance){
+            getContext().vertexAttribDivisor(location, attribute.sampleRate);
+        } else {
+            getContext().vertexAttribDivisor(location, 0);
+        }
     }
   }
 }
