@@ -109,4 +109,30 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkGetAttachmentReference **************************************************************
+
+class AttachmentReferenceTest
+  : public ::testing::TestWithParam<std::tuple<uint32_t, VkImageLayout>> {};
+
+TEST_P(AttachmentReferenceTest, GetAttachmentDescription) {
+  const uint32_t attachmentId = std::get<0>(GetParam());
+  const VkImageLayout layout = std::get<1>(GetParam());
+
+  const auto attachmentReference = ivkGetAttachmentReference(attachmentId, layout);
+  EXPECT_EQ(attachmentReference.attachment, attachmentId);
+  EXPECT_EQ(attachmentReference.layout, layout);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    AttachmentReferenceTest,
+    ::testing::Combine(::testing::Values(0, 1),
+                       ::testing::Values(VK_IMAGE_LAYOUT_UNDEFINED,
+                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)),
+    [](const testing::TestParamInfo<AttachmentReferenceTest::ParamType>& info) {
+      const std::string name = "attachment_" + std::to_string(std::get<0>(info.param)) +
+                               "__layout_" + std::to_string(std::get<1>(info.param));
+      return name;
+    });
+
 } // namespace igl::tests
