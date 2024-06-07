@@ -135,4 +135,18 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkGetSubpassDependency **************************************************************
+
+class SubpassDependencyTest : public ::testing::Test {};
+
+TEST_F(SubpassDependencyTest, GetAttachmentDescription) {
+  const auto subpassDependency = ivkGetSubpassDependency();
+  EXPECT_EQ(subpassDependency.srcSubpass, 0);
+  EXPECT_EQ(subpassDependency.dstSubpass, VK_SUBPASS_EXTERNAL);
+  EXPECT_EQ(subpassDependency.srcStageMask, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+  EXPECT_EQ(subpassDependency.dstStageMask, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+  EXPECT_EQ(subpassDependency.srcAccessMask, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+  EXPECT_EQ(subpassDependency.dstAccessMask, VK_ACCESS_SHADER_READ_BIT);
+}
+
 } // namespace igl::tests
