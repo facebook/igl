@@ -471,6 +471,9 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
   case InternalFeatures::VertexAttribDivisor:
     return hasDesktopOrESVersion(*this, GLVersion::v3_3, GLVersion::v3_0_ES) ||
            hasExtension(Extensions::VertexAttribDivisor);
+          
+  case InternalFeatures::DrawElementsInstanced:
+    return hasDesktopOrESVersion(*this, GLVersion::v3_1, GLVersion::v3_0_ES);
   }
   return false;
 }

@@ -1546,7 +1546,7 @@ void IContext::drawElementsInstanced(GLenum mode, GLsizei count, GLenum type, co
 
     IGL_PROFILER_ZONE_GPU_COLOR_OGL("drawElementsInstanced()", IGL_PROFILER_COLOR_DRAW);
 
-    GLCALL(DrawElementsInstanced)(mode, count, type, indices, instancecount);
+    IGLCALL(DrawElementsInstanced)(mode, count, type, indices, instancecount);
 
     APILOG("glDrawElementsInstanced(%s, %u, %s, %p, %u)\n",
            GL_ENUM_TO_STRING(mode),
