@@ -189,7 +189,7 @@ void HelloWorldSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commands->bindViewport(viewport);
   commands->bindScissorRect(scissor);
   commands->pushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
-  commands->draw(PrimitiveType::Triangle, 0, 3);
+  commands->draw(3);
   commands->popDebugGroupLabel();
   commands->endEncoding();
 
