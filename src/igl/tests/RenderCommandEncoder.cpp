@@ -149,6 +149,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
 
     // Initialize Render Pipeline Descriptor, but leave the creation
     // to the individual tests in case further customization is required
+    RenderPipelineDesc renderPipelineDesc_;
     renderPipelineDesc_.vertexInputState = vertexInputState_;
     renderPipelineDesc_.shaderStages = shaderStages_;
     renderPipelineDesc_.targetDesc.colorAttachments.resize(1);
@@ -170,9 +171,27 @@ class RenderCommandEncoderTest : public ::testing::Test {
     const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
     texture_->upload(rangeDesc, data::texture::TEX_RGBA_GRAY_4x4);
 
-    renderPipelineState_ = iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
+    auto createPipeline =
+        [&renderPipelineDesc_, &ret, this](
+            igl::PrimitiveType topology) -> std::shared_ptr<igl::IRenderPipelineState> {
+      renderPipelineDesc_.topology = topology;
+      return iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
+    };
+    renderPipelineState_Point_ = createPipeline(PrimitiveType::Point);
     ASSERT_TRUE(ret.isOk());
-    ASSERT_TRUE(renderPipelineState_ != nullptr);
+    ASSERT_TRUE(renderPipelineState_Point_ != nullptr);
+    renderPipelineState_Line_ = createPipeline(PrimitiveType::Line);
+    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(renderPipelineState_Line_ != nullptr);
+    renderPipelineState_LineStrip_ = createPipeline(PrimitiveType::LineStrip);
+    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(renderPipelineState_LineStrip_ != nullptr);
+    renderPipelineState_Triangle_ = createPipeline(PrimitiveType::Triangle);
+    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(renderPipelineState_Triangle_ != nullptr);
+    renderPipelineState_TriangleStrip_ = createPipeline(PrimitiveType::TriangleStrip);
+    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(renderPipelineState_TriangleStrip_ != nullptr);
 
     depthStencilState_ = iglDev_->createDepthStencilState({}, &ret);
     ASSERT_TRUE(ret.isOk());
@@ -194,7 +213,6 @@ class RenderCommandEncoderTest : public ::testing::Test {
     encoder->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
     encoder->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
 
-    encoder->bindRenderPipelineState(renderPipelineState_);
     encoder->bindDepthStencilState(depthStencilState_);
 
     const igl::Viewport viewport = {
@@ -301,10 +319,13 @@ class RenderCommandEncoderTest : public ::testing::Test {
 
   std::shared_ptr<ISamplerState> samp_;
 
-  RenderPipelineDesc renderPipelineDesc_;
   std::shared_ptr<ITexture> texture_;
 
-  std::shared_ptr<IRenderPipelineState> renderPipelineState_;
+  std::shared_ptr<IRenderPipelineState> renderPipelineState_Point_;
+  std::shared_ptr<IRenderPipelineState> renderPipelineState_Line_;
+  std::shared_ptr<IRenderPipelineState> renderPipelineState_LineStrip_;
+  std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
+  std::shared_ptr<IRenderPipelineState> renderPipelineState_TriangleStrip_;
   std::shared_ptr<IDepthStencilState> depthStencilState_;
 
   const std::string backend_ = IGL_BACKEND_TYPE;
@@ -319,8 +340,9 @@ TEST_F(RenderCommandEncoderTest, shouldDrawAPoint) {
       { 0.5, 0.5 } // clang-format on
   );
 
-  encodeAndSubmit([](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
-    encoder->draw(PrimitiveType::Point, 0, 1);
+  encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+    encoder->bindRenderPipelineState(renderPipelineState_Point_);
+    encoder->draw(1);
   });
 
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
@@ -349,8 +371,9 @@ TEST_F(RenderCommandEncoderTest, shouldDrawALine) {
       } // clang-format on
   );
 
-  encodeAndSubmit([](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
-    encoder->draw(PrimitiveType::Line, 0, 2);
+  encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+    encoder->bindRenderPipelineState(renderPipelineState_Line_);
+    encoder->draw(2);
   });
 
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
@@ -383,8 +406,9 @@ TEST_F(RenderCommandEncoderTest, shouldDrawLineStrip) {
       } // clang-format on
   );
 
-  encodeAndSubmit([](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
-    encoder->draw(PrimitiveType::LineStrip, 0, 4);
+  encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+    encoder->bindRenderPipelineState(renderPipelineState_LineStrip_);
+    encoder->draw(4);
   });
 
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
@@ -415,8 +439,9 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangle) {
       } // clang-format on
   );
 
-  encodeAndSubmit([](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
-    encoder->draw(PrimitiveType::Triangle, 0, 3);
+  encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+    encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
+    encoder->draw(3);
   });
 
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
@@ -448,8 +473,9 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStrip) {
       } // clang-format on
   );
 
-  encodeAndSubmit([](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
-    encoder->draw(PrimitiveType::TriangleStrip, 0, 4);
+  encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+    encoder->bindRenderPipelineState(renderPipelineState_TriangleStrip_);
+    encoder->draw(4);
   });
 
   verifyFrameBuffer([](const std::vector<uint32_t>& pixels) {
@@ -480,12 +506,17 @@ TEST_F(RenderCommandEncoderTest, shouldNotDraw) {
       } // clang-format on
   );
 
-  encodeAndSubmit([](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
-    encoder->draw(PrimitiveType::Point, 0, 0);
-    encoder->draw(PrimitiveType::Line, 0, 0);
-    encoder->draw(PrimitiveType::LineStrip, 0, 0);
-    encoder->draw(PrimitiveType::Triangle, 0, 0);
-    encoder->draw(PrimitiveType::TriangleStrip, 0, 0);
+  encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+    encoder->bindRenderPipelineState(renderPipelineState_Point_);
+    encoder->draw(0);
+    encoder->bindRenderPipelineState(renderPipelineState_Line_);
+    encoder->draw(0);
+    encoder->bindRenderPipelineState(renderPipelineState_LineStrip_);
+    encoder->draw(0);
+    encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
+    encoder->draw(0);
+    encoder->bindRenderPipelineState(renderPipelineState_TriangleStrip_);
+    encoder->draw(0);
   });
 
   verifyFrameBuffer([](const std::vector<uint32_t>& pixels) {
