@@ -135,6 +135,64 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkGetSubpassDescription **************************************************************
+
+// Parameter list:
+//   1. Number of attachments (total, including color, resolve, and depth)
+//   2. MSAA enabled. Resolve attachments are created if true
+//   3. Depth attachment present?
+class SubpassDescriptionTest : public ::testing::TestWithParam<std::tuple<uint32_t, bool, bool>> {};
+
+TEST_P(SubpassDescriptionTest, GetSubpassDescription) {
+  const uint32_t numColorAttachments = std::get<0>(GetParam());
+  const bool withResolveAttachments = std::get<1>(GetParam());
+  const bool withDepthAttachment = std::get<2>(GetParam());
+
+  std::vector<VkAttachmentReference> colorAttachmentReferences(numColorAttachments);
+  std::vector<VkAttachmentReference> resolveAttachmentReferences(numColorAttachments);
+  VkAttachmentReference depthAttachment =
+      ivkGetAttachmentReference(numColorAttachments, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+  for (uint32_t i = 0; i < numColorAttachments; ++i) {
+    colorAttachmentReferences.emplace_back(
+        ivkGetAttachmentReference(i, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
+    if (withResolveAttachments) {
+      resolveAttachmentReferences.emplace_back(
+          ivkGetAttachmentReference(i, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
+    }
+  }
+
+  const auto subpassDescription = ivkGetSubpassDescription(
+      numColorAttachments,
+      colorAttachmentReferences.data(),
+      withResolveAttachments ? resolveAttachmentReferences.data() : nullptr,
+      withDepthAttachment ? &depthAttachment : nullptr);
+
+  EXPECT_EQ(subpassDescription.flags, 0);
+  EXPECT_EQ(subpassDescription.pipelineBindPoint, VK_PIPELINE_BIND_POINT_GRAPHICS);
+  EXPECT_EQ(subpassDescription.inputAttachmentCount, 0);
+  EXPECT_EQ(subpassDescription.pInputAttachments, nullptr);
+  EXPECT_EQ(subpassDescription.colorAttachmentCount, numColorAttachments);
+  EXPECT_EQ(subpassDescription.pColorAttachments, colorAttachmentReferences.data());
+  EXPECT_EQ(subpassDescription.pResolveAttachments,
+            withResolveAttachments ? resolveAttachmentReferences.data() : nullptr);
+  EXPECT_EQ(subpassDescription.pDepthStencilAttachment,
+            withDepthAttachment ? &depthAttachment : nullptr);
+  EXPECT_EQ(subpassDescription.preserveAttachmentCount, 0);
+  EXPECT_EQ(subpassDescription.pPreserveAttachments, nullptr);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    SubpassDescriptionTest,
+    ::testing::Combine(::testing::Values(1, 2), ::testing::Bool(), ::testing::Bool()),
+    [](const testing::TestParamInfo<SubpassDescriptionTest::ParamType>& info) {
+      const std::string name = "numberOfAttachments_" + std::to_string(std::get<0>(info.param)) +
+                               "__withResolveAttachment_" +
+                               std::to_string(std::get<1>(info.param)) + "__withDepthAttachment_" +
+                               std::to_string(std::get<2>(info.param));
+      return name;
+    });
+
 // ivkGetSubpassDependency **************************************************************
 
 class SubpassDependencyTest : public ::testing::Test {};
