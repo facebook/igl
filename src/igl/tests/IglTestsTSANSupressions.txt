@@ -1,0 +1,2 @@
+# Use this file to suppress TSAN issues from 3rd party libraries
+# https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
