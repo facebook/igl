@@ -100,7 +100,7 @@
         // @fb-only
         // @fb-only
     // @fb-only
-//  }
+  }
 // @fb-only
   default:
     IGL_ASSERT_MSG(0, "IGL Samples not set up for backend(%d)", (int)backendType_);
