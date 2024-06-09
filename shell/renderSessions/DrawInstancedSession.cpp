@@ -51,9 +51,10 @@ static std::string getMetalShaderSource() {
           vertex VertexOut vertexShader(uint vid [[vertex_id]], ushort iid [[instance_id]],
         constant VertexIn * vertices [[buffer(1)]], VertexIn in [[stage_in]]) {
             VertexOut out;
-            //方式一：
+            //method one：
             //out.position = float4(pos[vid] + vertices[iid].offset, 0.0, 1.0);
-            //方式二：
+            
+            //method second：
             out.position = float4(pos[vid] + in.offset, 0.0, 1.0);
             out.uvw = col[vid];
             return out;
@@ -69,8 +70,7 @@ static std::string getMetalShaderSource() {
 }
 
 static const char* getVulkanVertexShaderSource() {
-  return R"(
-#version 460
+  return R"(#version 460
 layout (location=0) in vec2 offset;
 layout (location=0) out vec3 color;
 const vec2 pos[6] = vec2[6](
@@ -96,8 +96,9 @@ void main() {
 )";
 }
 static const char* getVulkanFragmentShaderSource() {
-  return R"(
-#version 460
+  return R"(#version 460
+precision mediump float;
+precision highp int;
 layout (location=0) in vec3 color;
 layout (location=0) out vec4 out_FragColor;
 void main() {
@@ -132,11 +133,19 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
     auto glVersion =
         static_cast<igl::opengl::Device&>(device).getContext().deviceFeatures().getGLVersion();
     if (glVersion > igl::opengl::GLVersion::v2_1) {
+        auto usesOpenGLES =
+        static_cast<igl::opengl::Device&>(device).getContext().deviceFeatures().usesOpenGLES();
       auto codeVS1 = std::regex_replace(
           getVulkanVertexShaderSource(), std::regex("gl_VertexIndex"), "gl_VertexID");
-      auto codeVS2 = std::regex_replace(codeVS1.c_str(), std::regex("460"), "410");
+      auto codeVS2 = std::regex_replace(codeVS1.c_str(), std::regex("460"), !usesOpenGLES ? "410" : "300 es");
 
-      auto codeFS = std::regex_replace(getVulkanFragmentShaderSource(), std::regex("460"), "410");
+      auto codeFS = std::regex_replace(getVulkanFragmentShaderSource(), std::regex("460"), !usesOpenGLES ? "410" : "300 es");
+        
+        if (usesOpenGLES){
+            codeVS2 = std::regex_replace(codeVS2.c_str(), std::regex("layout \\(location=0\\) out"), "out");
+            codeFS = std::regex_replace(codeFS.c_str(), std::regex("layout \\(location=0\\) out"), "out");
+            codeFS = std::regex_replace(codeFS.c_str(), std::regex("layout \\(location=0\\) in"), "in");
+        }
 
       return igl::ShaderStagesCreator::fromModuleStringInput(
           device, codeVS2.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
