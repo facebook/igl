@@ -27,7 +27,7 @@ class DrawInstancedSession : public RenderSession {
   RenderPassDesc renderPass_;
   std::shared_ptr<IFramebuffer> framebuffer_;
   std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
-    std::shared_ptr<IBuffer> vertex_buffer_;
+  std::shared_ptr<IBuffer> vertex_buffer_;
 };
 
 } // namespace igl::shell

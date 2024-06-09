@@ -123,8 +123,8 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
                                                            nullptr);
     return nullptr;
   // @fb-only
-    // @fb-only
-    // @fb-only
+  // @fb-only
+  // @fb-only
   case igl::BackendType::Metal:
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
@@ -133,19 +133,23 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
     auto glVersion =
         static_cast<igl::opengl::Device&>(device).getContext().deviceFeatures().getGLVersion();
     if (glVersion > igl::opengl::GLVersion::v2_1) {
-        auto usesOpenGLES =
-        static_cast<igl::opengl::Device&>(device).getContext().deviceFeatures().usesOpenGLES();
+      auto usesOpenGLES =
+          static_cast<igl::opengl::Device&>(device).getContext().deviceFeatures().usesOpenGLES();
       auto codeVS1 = std::regex_replace(
           getVulkanVertexShaderSource(), std::regex("gl_VertexIndex"), "gl_VertexID");
-      auto codeVS2 = std::regex_replace(codeVS1.c_str(), std::regex("460"), !usesOpenGLES ? "410" : "300 es");
+      auto codeVS2 =
+          std::regex_replace(codeVS1.c_str(), std::regex("460"), !usesOpenGLES ? "410" : "300 es");
 
-      auto codeFS = std::regex_replace(getVulkanFragmentShaderSource(), std::regex("460"), !usesOpenGLES ? "410" : "300 es");
-        
-        if (usesOpenGLES){
-            codeVS2 = std::regex_replace(codeVS2.c_str(), std::regex("layout \\(location=0\\) out"), "out");
-            codeFS = std::regex_replace(codeFS.c_str(), std::regex("layout \\(location=0\\) out"), "out");
-            codeFS = std::regex_replace(codeFS.c_str(), std::regex("layout \\(location=0\\) in"), "in");
-        }
+      auto codeFS = std::regex_replace(
+          getVulkanFragmentShaderSource(), std::regex("460"), !usesOpenGLES ? "410" : "300 es");
+
+      if (usesOpenGLES) {
+        codeVS2 =
+            std::regex_replace(codeVS2.c_str(), std::regex("layout \\(location=0\\) out"), "out");
+        codeFS =
+            std::regex_replace(codeFS.c_str(), std::regex("layout \\(location=0\\) out"), "out");
+        codeFS = std::regex_replace(codeFS.c_str(), std::regex("layout \\(location=0\\) in"), "in");
+      }
 
       return igl::ShaderStagesCreator::fromModuleStringInput(
           device, codeVS2.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
@@ -183,18 +187,17 @@ void DrawInstancedSession::update(igl::SurfaceTextures surfaceTextures) noexcept
   IGL_ASSERT(framebuffer_);
 
   if (!renderPipelineState_Triangle_) {
-      VertexInputStateDesc inputDesc;
-      inputDesc.numAttributes = 1;
-      inputDesc.attributes[0] = VertexAttribute(
-          1, VertexAttributeFormat::Float2, 0, "offset", 0);
-      inputDesc.numInputBindings = 1;
-      inputDesc.inputBindings[1].stride = sizeof(float)*2;
-      inputDesc.inputBindings[1].sampleFunction = igl::VertexSampleFunction::Instance;
-      auto vertexInput0_ = getPlatform().getDevice().createVertexInputState(inputDesc, nullptr);
-      IGL_ASSERT(vertexInput0_ != nullptr);
-      
+    VertexInputStateDesc inputDesc;
+    inputDesc.numAttributes = 1;
+    inputDesc.attributes[0] = VertexAttribute(1, VertexAttributeFormat::Float2, 0, "offset", 0);
+    inputDesc.numInputBindings = 1;
+    inputDesc.inputBindings[1].stride = sizeof(float) * 2;
+    inputDesc.inputBindings[1].sampleFunction = igl::VertexSampleFunction::Instance;
+    auto vertexInput0_ = getPlatform().getDevice().createVertexInputState(inputDesc, nullptr);
+    IGL_ASSERT(vertexInput0_ != nullptr);
+
     RenderPipelineDesc desc;
-      desc.vertexInputState = vertexInput0_;
+    desc.vertexInputState = vertexInput0_;
 
     desc.targetDesc.colorAttachments.resize(1);
 
@@ -212,29 +215,27 @@ void DrawInstancedSession::update(igl::SurfaceTextures surfaceTextures) noexcept
     renderPipelineState_Triangle_ = getPlatform().getDevice().createRenderPipeline(desc, nullptr);
     IGL_ASSERT(renderPipelineState_Triangle_);
   }
-    
-    if (!vertex_buffer_){
-        glm::vec2 translations[100];
-        int index = 0;
-        float offset = 0.1f;
-        for (int y = -10; y < 10; y += 2)
-        {
-            for (int x = -10; x < 10; x += 2)
-            {
-                glm::vec2 translation;
-                translation.x = (float)x / 10.0f + offset;
-                translation.y = (float)y / 10.0f + offset;
-                translations[index++] = translation;
-            }
-        }
-        
-        BufferDesc desc;
-        desc.type = BufferDesc::BufferTypeBits::Vertex;
-        desc.length = sizeof(glm::vec2) * 100;
-        desc.data = translations;
-        vertex_buffer_ = getPlatform().getDevice().createBuffer(desc, nullptr);
-        IGL_ASSERT(vertex_buffer_);
+
+  if (!vertex_buffer_) {
+    glm::vec2 translations[100];
+    int index = 0;
+    float offset = 0.1f;
+    for (int y = -10; y < 10; y += 2) {
+      for (int x = -10; x < 10; x += 2) {
+        glm::vec2 translation;
+        translation.x = (float)x / 10.0f + offset;
+        translation.y = (float)y / 10.0f + offset;
+        translations[index++] = translation;
+      }
     }
+
+    BufferDesc desc;
+    desc.type = BufferDesc::BufferTypeBits::Vertex;
+    desc.length = sizeof(glm::vec2) * 100;
+    desc.data = translations;
+    vertex_buffer_ = getPlatform().getDevice().createBuffer(desc, nullptr);
+    IGL_ASSERT(vertex_buffer_);
+  }
 
   framebuffer_->updateDrawable(surfaceTextures.color);
 
