@@ -84,7 +84,6 @@ enum class InternalFeatures {
   VertexArrayObject,         // VAOS are available
   VertexAttribDivisor,       // glVertexAttribDivisor is supported
   DrawElementsInstanced,     // glDrawElementsInstanced is supported
-  DrawArraysInstanced,       // glDrawArraysInstanced is supported
 };
 // clang-format on
 

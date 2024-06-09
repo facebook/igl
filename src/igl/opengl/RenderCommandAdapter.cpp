@@ -265,16 +265,6 @@ void RenderCommandAdapter::drawArrays(GLenum mode, GLint first, GLsizei count) {
   didDraw();
 }
 
-void RenderCommandAdapter::drawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount) {
-  willDraw();
-  if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DrawArraysInstanced)) {
-    getContext().drawArraysInstanced(toMockWireframeMode(mode), first, count, instancecount);
-  }else {
-    IGL_ASSERT_NOT_IMPLEMENTED();
-  }
-  didDraw();
-}
-
 void RenderCommandAdapter::drawElements(GLenum mode,
                                         GLsizei indexCount,
                                         GLenum indexType,

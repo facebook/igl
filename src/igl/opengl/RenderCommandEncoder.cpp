@@ -350,14 +350,13 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
   (void)instanceCount;
   (void)baseInstance;
 
+  IGL_ASSERT_MSG(instanceCount == 1, "Instancing is not implemented");
+  IGL_ASSERT_MSG(baseInstance == 0, "Instancing is not implemented");
+
   if (IGL_VERIFY(adapter_)) {
     getCommandBuffer().incrementCurrentDrawCount();
     auto mode = toGlPrimitive(primitiveType);
-    if (instanceCount > 1){
-      adapter_->drawArraysInstanced(mode, (GLsizei)vertexStart, (GLsizei)vertexCount, (GLsizei)instanceCount);
-    } else {
-      adapter_->drawArrays(mode, (GLsizei)vertexStart, (GLsizei)vertexCount);
-    }
+    adapter_->drawArrays(mode, (GLsizei)vertexStart, (GLsizei)vertexCount);
   }
 }
 
@@ -368,14 +367,13 @@ void RenderCommandEncoder::draw(size_t vertexCount,
   (void)instanceCount;
   (void)baseInstance;
 
+  IGL_ASSERT_MSG(instanceCount == 1, "Instancing is not implemented");
+  IGL_ASSERT_MSG(baseInstance == 0, "Instancing is not implemented");
+
   if (IGL_VERIFY(adapter_)) {
     getCommandBuffer().incrementCurrentDrawCount();
     auto mode = toGlPrimitive(adapter_->pipelineState().getRenderPipelineDesc().topology);
-    if (instanceCount > 1){
-      adapter_->drawArraysInstanced(mode, (GLsizei)firstVertex, (GLsizei)vertexCount, (GLsizei)instanceCount);
-    } else {
-      adapter_->drawArrays(mode, (GLsizei)firstVertex, (GLsizei)vertexCount);
-    }
+    adapter_->drawArrays(mode, (GLsizei)firstVertex, (GLsizei)vertexCount);
   }
 }
 
