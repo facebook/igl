@@ -303,4 +303,74 @@ INSTANTIATE_TEST_SUITE_P(AllCombinations,
                            return name;
                          });
 
+// ivkGetImageCreateInfo ***************************************************
+
+class ImageCreateInfoTest : public ::testing::TestWithParam<std::tuple<VkImageType,
+                                                                       VkFormat,
+                                                                       VkImageTiling,
+                                                                       VkImageUsageFlags,
+                                                                       VkExtent3D,
+                                                                       uint32_t,
+                                                                       uint32_t,
+                                                                       VkImageCreateFlags,
+                                                                       VkSampleCountFlags>> {};
+
+TEST_P(ImageCreateInfoTest, GetImageCreateInfo) {
+  const VkImageType imageType = std::get<0>(GetParam());
+  const VkFormat format = std::get<1>(GetParam());
+  const VkImageTiling tiling = std::get<2>(GetParam());
+  const VkImageUsageFlags usage = std::get<3>(GetParam());
+  const VkExtent3D extent = std::get<4>(GetParam());
+  const uint32_t mipLevels = std::get<5>(GetParam());
+  const uint32_t arrayLayers = std::get<6>(GetParam());
+  const VkImageCreateFlags flags = std::get<7>(GetParam());
+  const VkSampleCountFlags samples = std::get<8>(GetParam());
+
+  const auto imageCreateInfo = ivkGetImageCreateInfo(
+      imageType, format, tiling, usage, extent, mipLevels, arrayLayers, flags, samples);
+  EXPECT_EQ(imageCreateInfo.sType, VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
+  EXPECT_EQ(imageCreateInfo.pNext, nullptr);
+  EXPECT_EQ(imageCreateInfo.flags, flags);
+  EXPECT_EQ(imageCreateInfo.imageType, imageType);
+  EXPECT_EQ(imageCreateInfo.format, format);
+  EXPECT_EQ(imageCreateInfo.extent.width, extent.width);
+  EXPECT_EQ(imageCreateInfo.extent.height, extent.height);
+  EXPECT_EQ(imageCreateInfo.extent.depth, extent.depth);
+  EXPECT_EQ(imageCreateInfo.mipLevels, mipLevels);
+  EXPECT_EQ(imageCreateInfo.arrayLayers, arrayLayers);
+  EXPECT_EQ(imageCreateInfo.samples, samples);
+  EXPECT_EQ(imageCreateInfo.tiling, tiling);
+  EXPECT_EQ(imageCreateInfo.sharingMode, VK_SHARING_MODE_EXCLUSIVE);
+  EXPECT_EQ(imageCreateInfo.queueFamilyIndexCount, 0);
+  EXPECT_EQ(imageCreateInfo.pQueueFamilyIndices, nullptr);
+  EXPECT_EQ(imageCreateInfo.initialLayout, VK_IMAGE_LAYOUT_UNDEFINED);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    ImageCreateInfoTest,
+    ::testing::Combine(::testing::Values(VK_IMAGE_TYPE_1D, VK_IMAGE_TYPE_2D),
+                       ::testing::Values(VK_FORMAT_R8G8B8_UNORM, VK_FORMAT_R8G8B8A8_SRGB),
+                       ::testing::Values(VK_IMAGE_TILING_LINEAR, VK_IMAGE_TILING_OPTIMAL),
+                       ::testing::Values(VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_USAGE_STORAGE_BIT),
+                       ::testing::Values(VkExtent3D{50, 50, 1}, VkExtent3D{100, 100, 1}),
+                       ::testing::Values(1, 2),
+                       ::testing::Values(1, 2),
+                       ::testing::Values(0, VK_IMAGE_CREATE_SPARSE_BINDING_BIT),
+                       ::testing::Values(VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_4_BIT)),
+    [](const testing::TestParamInfo<ImageCreateInfoTest::ParamType>& info) {
+      const std::string name = "imageType_" + std::to_string(std::get<0>(info.param)) +
+                               "__format_" + std::to_string(std::get<1>(info.param)) + "__tiling_" +
+                               std::to_string(std::get<2>(info.param)) + "__usage_" +
+                               std::to_string(std::get<3>(info.param)) + "__extent_" +
+                               std::to_string(std::get<4>(info.param).width) + "_" +
+                               std::to_string(std::get<4>(info.param).height) + "_" +
+                               std::to_string(std::get<4>(info.param).depth) + "__mipLevels_" +
+                               std::to_string(std::get<5>(info.param)) + "__arrayLayers_" +
+                               std::to_string(std::get<6>(info.param)) + "__flags_" +
+                               std::to_string(std::get<7>(info.param)) + "__sampleCount_" +
+                               std::to_string(std::get<8>(info.param));
+      return name;
+    });
+
 } // namespace igl::tests
