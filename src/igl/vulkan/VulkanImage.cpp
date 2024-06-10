@@ -129,7 +129,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   isDepthFormat_(isDepthFormat(format)),
   isStencilFormat_(isStencilFormat(format)),
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
-  isCubemap_((createFlags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) != 0) {
+  isCubemap_((createFlags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) != 0),
+  tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ASSERT_MSG(mipLevels_ > 0, "The image must contain at least one mip level");
@@ -236,7 +237,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   isDepthFormat_(isDepthFormat(format)),
   isStencilFormat_(isStencilFormat(format)),
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
-  isImported_(true) {
+  isImported_(true),
+  tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ASSERT_MSG(mipLevels_ > 0, "The image must contain at least one mip level");
@@ -357,7 +359,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   isDepthFormat_(isDepthFormat(format)),
   isStencilFormat_(isStencilFormat(format)),
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
-  isImported_(true) {
+  isImported_(true),
+  tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ASSERT_MSG(mipLevels_ > 0, "The image must contain at least one mip level");
@@ -520,7 +523,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   isDepthFormat_(isDepthFormat(format)),
   isStencilFormat_(isStencilFormat(format)),
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
-  isExported_(true) {
+  isExported_(true),
+  tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ASSERT_MSG(mipLevels_ > 0, "The image must contain at least one mip level");
