@@ -174,7 +174,7 @@ void DrawInstancedSession::initialize() noexcept {
   renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
 
   // Create Index Buffer
-  int16_t indexes[6] = {0, 1, 2, 3, 4, 5};
+  const int16_t indexes[6] = {0, 1, 2, 3, 4, 5};
 
   BufferDesc buffer_desc;
   buffer_desc.type = BufferDesc::BufferTypeBits::Index;
@@ -262,7 +262,7 @@ void DrawInstancedSession::update(igl::SurfaceTextures surfaceTextures) noexcept
   commands->pushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
   commands->bindVertexBuffer(1, *vertex_buffer_);
   commands->bindIndexBuffer(*index_buffer_, IndexFormat::UInt16);
-  commands->drawIndexed(PrimitiveType::Triangle, 6, 100);
+  commands->drawIndexed(6, 100);
   commands->popDebugGroupLabel();
   commands->endEncoding();
 
