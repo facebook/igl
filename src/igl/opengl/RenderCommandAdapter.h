@@ -89,6 +89,9 @@ class RenderCommandAdapter final : public WithContext {
                         Result* outResult = nullptr);
 
   void drawArrays(GLenum mode, GLint first, GLsizei count);
+  void drawArraysIndirect(GLenum mode,
+                          Buffer& indirectBuffer,
+                          const GLvoid* indirectBufferOffset);
   void drawElements(GLenum mode, GLsizei indexCount, GLenum indexType, const GLvoid* indexOffset);
   void drawElementsIndirect(GLenum mode,
                             GLenum indexType,
