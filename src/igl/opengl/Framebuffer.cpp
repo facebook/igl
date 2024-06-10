@@ -233,10 +233,27 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
   attachAsColor(*itexture, 0, toReadAttachmentParams(range, FramebufferMode::Mono));
   checkFramebufferStatus(getContext(), true);
 
-  if (bytesPerRow == 0) {
-    bytesPerRow = itexture->getProperties().getBytesPerRow(range);
+  const bool packRowLengthSupported =
+      getContext().deviceFeatures().hasInternalFeature(InternalFeatures::PackRowLength);
+  // The bytesPerRow value is used to decide both the alignment and the row length. We will only use
+  // usePackRowLength when bytesPerRow is set and is a multiple of the block size.
+  const bool usePackRowLength = packRowLengthSupported && bytesPerRow != 0 &&
+                                bytesPerRow % itexture->getProperties().bytesPerBlock == 0;
+
+  if (usePackRowLength) {
+    const int packRowLength =
+        static_cast<int>(bytesPerRow / itexture->getProperties().bytesPerBlock);
+    getContext().pixelStorei(GL_PACK_ROW_LENGTH, packRowLength);
+    getContext().pixelStorei(GL_PACK_ALIGNMENT, 1);
+  } else {
+    const int finalBytesPerRow = bytesPerRow == 0 ? itexture->getProperties().getBytesPerRow(range)
+                                                  : bytesPerRow;
+    if (packRowLengthSupported) {
+      getContext().pixelStorei(GL_PACK_ROW_LENGTH, 0);
+    }
+    getContext().pixelStorei(GL_PACK_ALIGNMENT,
+                             texture.getAlignment(finalBytesPerRow, range.mipLevel));
   }
-  getContext().pixelStorei(GL_PACK_ALIGNMENT, texture.getAlignment(bytesPerRow, range.mipLevel));
 
   // Note read out format is based on
   // (https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glReadPixels.xml)
@@ -319,6 +336,14 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
     getContext().readPixels(
         rangeX, rangeY, rangeWidth, rangeHeight, GL_RGBA, GL_UNSIGNED_BYTE, pixelBytes);
   }
+
+  // Reset the GL_PACK_ROW_LENGTH
+  if (usePackRowLength) {
+    getContext().pixelStorei(GL_PACK_ROW_LENGTH, 0);
+  }
+  // Reset the GL_PACK_ALIGNMENT (default value for GL_PACK_ALIGNMENT is 4)
+  getContext().pixelStorei(GL_PACK_ALIGNMENT, 4);
+
   getContext().checkForErrors(nullptr, 0);
   auto error = getContext().getLastError();
   IGL_ASSERT_MSG(error.isOk(), error.message.c_str());
