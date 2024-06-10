@@ -5,16 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only
-
 #include "DrawInstancedSession.h"
 
 #include <igl/opengl/Device.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/RenderCommandEncoder.h>
-#include <regex>
 
 namespace igl::shell {
+
+[[maybe_unused]] void stringReplaceAll(std::string& s,
+                                       const std::string& searchString,
+                                       const std::string& replaceString) {
+  size_t pos = 0;
+  while ((pos = s.find(searchString, pos)) != std::string::npos) {
+    s.replace(pos, searchString.length(), replaceString);
+  }
+}
 
 static std::string getMetalShaderSource() {
   return R"(
@@ -48,13 +54,9 @@ static std::string getMetalShaderSource() {
             float3 uvw;
           };
 
-          vertex VertexOut vertexShader(uint vid [[vertex_id]], ushort iid [[instance_id]],
-        constant VertexIn * vertices [[buffer(1)]], VertexIn in [[stage_in]]) {
+          vertex VertexOut vertexShader(uint vid [[vertex_id]], constant VertexIn * vertices [[buffer(1)]],
+                                        VertexIn in [[stage_in]]) {
             VertexOut out;
-            //method one：
-            //out.position = float4(pos[vid] + vertices[iid].offset, 0.0, 1.0);
-            
-            //method second：
             out.position = float4(pos[vid] + in.offset, 0.0, 1.0);
             out.uvw = col[vid];
             return out;
@@ -122,9 +124,6 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
                                                            "",
                                                            nullptr);
     return nullptr;
-  // @fb-only
-  // @fb-only
-  // @fb-only
   case igl::BackendType::Metal:
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
@@ -135,24 +134,21 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
     if (glVersion > igl::opengl::GLVersion::v2_1) {
       auto usesOpenGLES =
           static_cast<igl::opengl::Device&>(device).getContext().deviceFeatures().usesOpenGLES();
-      auto codeVS1 = std::regex_replace(
-          getVulkanVertexShaderSource(), std::regex("gl_VertexIndex"), "gl_VertexID");
-      auto codeVS2 =
-          std::regex_replace(codeVS1.c_str(), std::regex("460"), !usesOpenGLES ? "410" : "300 es");
+      std::string codeVS(getVulkanVertexShaderSource());
+      stringReplaceAll(codeVS, "gl_VertexIndex", "gl_VertexID");
+      stringReplaceAll(codeVS, "460", usesOpenGLES ? "300 es" : "410");
 
-      auto codeFS = std::regex_replace(
-          getVulkanFragmentShaderSource(), std::regex("460"), !usesOpenGLES ? "410" : "300 es");
+      std::string codeFS(getVulkanFragmentShaderSource());
+      stringReplaceAll(codeFS, "460", usesOpenGLES ? "300 es" : "410");
 
       if (usesOpenGLES) {
-        codeVS2 =
-            std::regex_replace(codeVS2.c_str(), std::regex("layout \\(location=0\\) out"), "out");
-        codeFS =
-            std::regex_replace(codeFS.c_str(), std::regex("layout \\(location=0\\) out"), "out");
-        codeFS = std::regex_replace(codeFS.c_str(), std::regex("layout \\(location=0\\) in"), "in");
+        stringReplaceAll(codeVS, "layout (location=0) out", "out");
+        stringReplaceAll(codeFS, "layout (location=0) out", "out");
+        stringReplaceAll(codeFS, "layout (location=0) in", "in");
       }
 
       return igl::ShaderStagesCreator::fromModuleStringInput(
-          device, codeVS2.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
+          device, codeVS.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
     } else {
       IGL_ASSERT_MSG(0, "This sample is incompatible with OpenGL 2.1");
       return nullptr;
