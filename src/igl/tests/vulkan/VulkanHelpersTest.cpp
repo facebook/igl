@@ -373,4 +373,22 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkGetPipelineVertexInputStateCreateInfo_Empty ***********************************************
+
+class PipelineVertexInpusStateCreateInfoTest_Empty : public ::testing::Test {};
+
+TEST_F(PipelineVertexInpusStateCreateInfoTest_Empty, GetPipelineVertexInputStateCreateInfo_Empty) {
+  const VkPipelineVertexInputStateCreateInfo pipelineVertexInputCreateInfo =
+      ivkGetPipelineVertexInputStateCreateInfo_Empty();
+
+  EXPECT_EQ(pipelineVertexInputCreateInfo.sType,
+            VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
+  EXPECT_EQ(pipelineVertexInputCreateInfo.pNext, nullptr);
+  EXPECT_EQ(pipelineVertexInputCreateInfo.flags, 0);
+  EXPECT_EQ(pipelineVertexInputCreateInfo.vertexBindingDescriptionCount, 0);
+  EXPECT_EQ(pipelineVertexInputCreateInfo.pVertexBindingDescriptions, nullptr);
+  EXPECT_EQ(pipelineVertexInputCreateInfo.vertexAttributeDescriptionCount, 0);
+  EXPECT_EQ(pipelineVertexInputCreateInfo.pVertexAttributeDescriptions, nullptr);
+}
+
 } // namespace igl::tests
