@@ -136,7 +136,7 @@ Result Texture::getBytes(const TextureRangeDesc& range, void* outData, size_t by
   auto tmpBuffer = std::make_unique<uint8_t[]>(bytesPerImage);
 
   [get() getBytes:tmpBuffer.get()
-        bytesPerRow:toMetalBytesPerRow(bytesPerRow)
+        bytesPerRow:toMetalBytesPerRow(properties.getBytesPerRow(range))
       bytesPerImage:bytesPerImage
          fromRegion:region
         mipmapLevel:range.mipLevel
@@ -144,7 +144,8 @@ Result Texture::getBytes(const TextureRangeDesc& range, void* outData, size_t by
 
   /// Metal textures are up-side down compared to OGL textures. IGL follows
   /// the OGL convention and this function flips the texture vertically
-  repackData(properties, range, tmpBuffer.get(), 0, static_cast<uint8_t*>(outData), 0, true);
+  repackData(
+      properties, range, tmpBuffer.get(), 0, static_cast<uint8_t*>(outData), bytesPerRow, true);
 
   igl::TextureFormat f = getFormat();
   TextureFormatProperties props = TextureFormatProperties::fromTextureFormat(f);

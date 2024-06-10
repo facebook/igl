@@ -521,7 +521,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
     ITexture::repackData(properties, range, src, 0, dst, bytesPerRow, flipImageVertical);
   } else {
     if (flipImageVertical) {
-      ITexture::repackData(properties, range, src, 0, dst, 0, true);
+      ITexture::repackData(properties, range, src, bytesPerRow, dst, bytesPerRow, true);
     } else {
       checked_memcpy(dst, storageSize, src, storageSize);
     }
