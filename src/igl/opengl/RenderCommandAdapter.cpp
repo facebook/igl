@@ -468,7 +468,7 @@ void RenderCommandAdapter::bindBufferWithShaderStorageBufferOverride(
     Buffer& buffer,
     GLenum overrideTargetForShaderStorageBuffer) {
   auto& arrayBuffer = static_cast<ArrayBuffer&>(buffer);
-  if (arrayBuffer.getTarget() == GL_SHADER_STORAGE_BUFFER) {
+  if (arrayBuffer.getTarget() == GL_SHADER_STORAGE_BUFFER || overrideTargetForShaderStorageBuffer == GL_DRAW_INDIRECT_BUFFER) {
     arrayBuffer.bindForTarget(overrideTargetForShaderStorageBuffer);
   } else {
     arrayBuffer.bind();
