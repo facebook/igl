@@ -249,6 +249,10 @@ class VulkanImage final {
     return (mappedPtr_ != nullptr) && ((tiling_ & VK_IMAGE_TILING_LINEAR) != 0);
   }
 
+  bool isCoherentMemory() const {
+    return isCoherentMemory_;
+  }
+
  public:
   const VulkanContext* ctx_ = nullptr;
   VkPhysicalDevice physicalDevice_ = VK_NULL_HANDLE;
@@ -282,6 +286,7 @@ class VulkanImage final {
 
  private:
   VkImageTiling tiling_ = VK_IMAGE_TILING_OPTIMAL;
+  bool isCoherentMemory_ = false;
 
 #if IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
   /**

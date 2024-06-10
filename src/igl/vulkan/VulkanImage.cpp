@@ -166,9 +166,15 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                     imageFormat_);
     }
 
+    VkMemoryRequirements memRequirements;
+    ctx_->vf_.vkGetImageMemoryRequirements(device, vkImage_, &memRequirements);
+
     // handle memory-mapped buffers
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
       vmaMapMemory((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, &mappedPtr_);
+      if (memRequirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+        isCoherentMemory_ = true;
+      }
     }
 
     if (vmaAllocation_) {
@@ -180,26 +186,27 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
     // create image
     VK_ASSERT(ctx_->vf_.vkCreateImage(device_, &ci, nullptr, &vkImage_));
 
+    VkMemoryRequirements memRequirements;
     // back the image with some memory
-    {
-      VkMemoryRequirements memRequirements;
-      ctx_->vf_.vkGetImageMemoryRequirements(device, vkImage_, &memRequirements);
+    ctx_->vf_.vkGetImageMemoryRequirements(device, vkImage_, &memRequirements);
 
-      VK_ASSERT(ivkAllocateMemory(&ctx_->vf_,
-                                  physicalDevice_,
-                                  device_,
-                                  &memRequirements,
-                                  memFlags,
-                                  ctx.config_.enableBufferDeviceAddress,
-                                  &vkMemory_));
-      VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_, 0));
+    VK_ASSERT(ivkAllocateMemory(&ctx_->vf_,
+                                physicalDevice_,
+                                device_,
+                                &memRequirements,
+                                memFlags,
+                                ctx.config_.enableBufferDeviceAddress,
+                                &vkMemory_));
+    VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_, 0));
 
-      allocatedSize = memRequirements.size;
-    }
+    allocatedSize = memRequirements.size;
 
     // handle memory-mapped images
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
       VK_ASSERT(ctx_->vf_.vkMapMemory(device_, vkMemory_, 0, VK_WHOLE_SIZE, 0, &mappedPtr_));
+      if (memRequirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+        isCoherentMemory_ = true;
+      }
     }
   }
 
