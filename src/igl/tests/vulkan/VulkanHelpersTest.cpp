@@ -228,4 +228,29 @@ TEST_F(RenderPassMultiviewCreateInfoTest, GetRenderPassMultiviewCreateInfo) {
   EXPECT_EQ(renderPassMultiviewCreateInfo.pCorrelationMasks, &correlationMask);
 }
 
+// ivkGetClearColorValue ***************************************************
+
+class ClearColorValueTest
+  : public ::testing::TestWithParam<std::tuple<float, float, float, float>> {};
+
+TEST_P(ClearColorValueTest, GetClearColorValue) {
+  const float r = std::get<0>(GetParam());
+  const float g = std::get<1>(GetParam());
+  const float b = std::get<2>(GetParam());
+  const float a = std::get<3>(GetParam());
+
+  const auto clearValue = ivkGetClearColorValue(r, g, b, a);
+  EXPECT_EQ(clearValue.color.float32[0], r);
+  EXPECT_EQ(clearValue.color.float32[1], g);
+  EXPECT_EQ(clearValue.color.float32[2], b);
+  EXPECT_EQ(clearValue.color.float32[3], a);
+}
+
+INSTANTIATE_TEST_SUITE_P(AllCombinations,
+                         ClearColorValueTest,
+                         ::testing::Combine(::testing::Values(0.f, 1.0f),
+                                            ::testing::Values(0.f, 1.0f),
+                                            ::testing::Values(0.f, 1.0f),
+                                            ::testing::Values(0.f, 1.0f)));
+
 } // namespace igl::tests
