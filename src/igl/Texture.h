@@ -453,6 +453,16 @@ struct TextureDesc {
 
   using TextureUsage = uint8_t;
 
+  /**
+   * @brief Flag for texture image storage (Vulkan Only)
+   *
+   *  Optimal - Image layout for best texture read performance
+   *            Corresponds to VK_IMAGE_TILING_OPTIMAL
+   *  Linear - Image layout for linearly storing texture data
+   *           Corresponds to VK_IMAGE_TILING_LINEAR
+   */
+  enum class TextureTiling : uint8_t { Optimal, Linear };
+
   size_t width = 1;
   size_t height = 1;
   size_t depth = 1;
@@ -463,6 +473,7 @@ struct TextureDesc {
   TextureType type = TextureType::Invalid;
   TextureFormat format = TextureFormat::Invalid;
   ResourceStorage storage = ResourceStorage::Invalid;
+  TextureTiling tiling = TextureTiling::Optimal;
 
   std::string debugName = "";
 
@@ -494,6 +505,7 @@ struct TextureDesc {
                        TextureType::TwoD,
                        format,
                        ResourceStorage::Invalid,
+                       TextureTiling::Optimal,
                        debugName ? debugName : ""};
   }
 
@@ -525,6 +537,7 @@ struct TextureDesc {
         TextureType::TwoDArray,
         format,
         ResourceStorage::Invalid,
+        TextureTiling::Optimal,
         debugName ? debugName : "",
     };
   }
@@ -554,6 +567,7 @@ struct TextureDesc {
                        TextureType::Cube,
                        format,
                        ResourceStorage::Invalid,
+                       TextureTiling::Optimal,
                        debugName ? debugName : ""};
   }
 
@@ -584,6 +598,7 @@ struct TextureDesc {
                        TextureType::ThreeD,
                        format,
                        ResourceStorage::Invalid,
+                       TextureTiling::Optimal,
                        debugName ? debugName : ""};
   }
 
@@ -611,6 +626,7 @@ struct TextureDesc {
                        TextureType::ExternalImage,
                        format,
                        ResourceStorage::Invalid,
+                       TextureTiling::Optimal,
                        debugName ? debugName : ""};
   }
 
