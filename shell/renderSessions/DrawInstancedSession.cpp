@@ -172,6 +172,16 @@ void DrawInstancedSession::initialize() noexcept {
   renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
   renderPass_.colorAttachments[0].clearColor = getPlatform().getDevice().backendDebugColor();
   renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
+
+  // Create Index Buffer
+  int16_t indexes[6] = {0, 1, 2, 3, 4, 5};
+
+  BufferDesc buffer_desc;
+  buffer_desc.type = BufferDesc::BufferTypeBits::Index;
+  buffer_desc.length = sizeof(indexes);
+  buffer_desc.data = &indexes;
+  index_buffer_ = getPlatform().getDevice().createBuffer(buffer_desc, nullptr);
+  IGL_ASSERT(index_buffer_);
 }
 
 void DrawInstancedSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
@@ -251,7 +261,8 @@ void DrawInstancedSession::update(igl::SurfaceTextures surfaceTextures) noexcept
   commands->bindScissorRect(scissor);
   commands->pushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
   commands->bindVertexBuffer(1, *vertex_buffer_);
-  commands->draw(6, 100);
+  commands->bindIndexBuffer(*index_buffer_, IndexFormat::UInt16);
+  commands->drawIndexed(PrimitiveType::Triangle, 6, 100);
   commands->popDebugGroupLabel();
   commands->endEncoding();
 
