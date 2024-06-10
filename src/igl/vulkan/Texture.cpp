@@ -149,6 +149,10 @@ Result Texture::create(const TextureDesc& desc) {
     return Result(Result::Code::Unimplemented, "Unimplemented or unsupported texture type.");
   }
 
+  const VkImageTiling tiling = desc.tiling == TextureDesc::TextureTiling::Optimal
+                                   ? VK_IMAGE_TILING_OPTIMAL
+                                   : VK_IMAGE_TILING_LINEAR;
+
   Result result;
   auto image = ctx.createImage(
       imageType,
@@ -156,7 +160,7 @@ Result Texture::create(const TextureDesc& desc) {
       vkFormat,
       (uint32_t)desc_.numMipLevels,
       arrayLayerCount,
-      VK_IMAGE_TILING_OPTIMAL,
+      tiling,
       usageFlags,
       memFlags,
       createFlags,
