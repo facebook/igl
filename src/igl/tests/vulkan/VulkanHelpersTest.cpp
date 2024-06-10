@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 #include <igl/vulkan/Common.h>
+#include <vulkan/vulkan_core.h>
 
 #ifdef __ANDROID__
 #include <vulkan/vulkan_android.h>
@@ -269,5 +270,37 @@ TEST_P(ClearDepthStencilValueTest, GetClearDepthStencilValue) {
 INSTANTIATE_TEST_SUITE_P(AllCombinations,
                          ClearDepthStencilValueTest,
                          ::testing::Combine(::testing::Values(0.f, 1.0f), ::testing::Values(0, 1)));
+
+// ivkGetBufferCreateInfo ***************************************************
+
+class BufferCreateInfoTest
+  : public ::testing::TestWithParam<std::tuple<uint64_t, VkBufferUsageFlags>> {};
+
+TEST_P(BufferCreateInfoTest, GetBufferCreateInfo) {
+  const uint64_t size = std::get<0>(GetParam());
+  const VkBufferUsageFlags usage = std::get<1>(GetParam());
+
+  const auto bufferCreateInfo = ivkGetBufferCreateInfo(size, usage);
+  EXPECT_EQ(bufferCreateInfo.sType, VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO);
+  EXPECT_EQ(bufferCreateInfo.pNext, nullptr);
+  EXPECT_EQ(bufferCreateInfo.flags, 0);
+  EXPECT_EQ(bufferCreateInfo.size, size);
+  EXPECT_EQ(bufferCreateInfo.usage, usage);
+  EXPECT_EQ(bufferCreateInfo.sharingMode, VK_SHARING_MODE_EXCLUSIVE);
+  EXPECT_EQ(bufferCreateInfo.queueFamilyIndexCount, 0);
+  EXPECT_EQ(bufferCreateInfo.pQueueFamilyIndices, nullptr);
+}
+
+INSTANTIATE_TEST_SUITE_P(AllCombinations,
+                         BufferCreateInfoTest,
+                         ::testing::Combine(::testing::Values(100, 1'000),
+                                            ::testing::Values(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                                              VK_BUFFER_USAGE_TRANSFER_DST_BIT)),
+                         [](const testing::TestParamInfo<BufferCreateInfoTest::ParamType>& info) {
+                           const std::string name =
+                               "size_" + std::to_string(std::get<0>(info.param)) + "__usageFlags_" +
+                               std::to_string(std::get<1>(info.param));
+                           return name;
+                         });
 
 } // namespace igl::tests
