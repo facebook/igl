@@ -253,4 +253,21 @@ INSTANTIATE_TEST_SUITE_P(AllCombinations,
                                             ::testing::Values(0.f, 1.0f),
                                             ::testing::Values(0.f, 1.0f)));
 
+// ivkGetClearDepthStencilValue ***************************************************
+
+class ClearDepthStencilValueTest : public ::testing::TestWithParam<std::tuple<float, uint32_t>> {};
+
+TEST_P(ClearDepthStencilValueTest, GetClearDepthStencilValue) {
+  const float depth = std::get<0>(GetParam());
+  const uint32_t stencil = std::get<1>(GetParam());
+
+  const auto clearValue = ivkGetClearDepthStencilValue(depth, stencil);
+  EXPECT_EQ(clearValue.depthStencil.depth, depth);
+  EXPECT_EQ(clearValue.depthStencil.stencil, stencil);
+}
+
+INSTANTIATE_TEST_SUITE_P(AllCombinations,
+                         ClearDepthStencilValueTest,
+                         ::testing::Combine(::testing::Values(0.f, 1.0f), ::testing::Values(0, 1)));
+
 } // namespace igl::tests
