@@ -391,4 +391,35 @@ TEST_F(PipelineVertexInpusStateCreateInfoTest_Empty, GetPipelineVertexInputState
   EXPECT_EQ(pipelineVertexInputCreateInfo.pVertexAttributeDescriptions, nullptr);
 }
 
+// ivkGetPipelineInputAssemblyStateCreateInfo ***************************************************
+
+class PipelineInputAssemblyStateCreateInfoTest
+  : public ::testing::TestWithParam<std::tuple<VkPrimitiveTopology, VkBool32>> {};
+
+TEST_P(PipelineInputAssemblyStateCreateInfoTest, GetImageCreateInfo) {
+  const VkPrimitiveTopology topology = std::get<0>(GetParam());
+  const VkBool32 primitiveRestart = std::get<1>(GetParam());
+
+  const auto pipelineInputAssemblyStateCreateInfo =
+      ivkGetPipelineInputAssemblyStateCreateInfo(topology, primitiveRestart);
+  EXPECT_EQ(pipelineInputAssemblyStateCreateInfo.sType,
+            VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
+  EXPECT_EQ(pipelineInputAssemblyStateCreateInfo.pNext, nullptr);
+  EXPECT_EQ(pipelineInputAssemblyStateCreateInfo.flags, 0);
+  EXPECT_EQ(pipelineInputAssemblyStateCreateInfo.topology, topology);
+  EXPECT_EQ(pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable, primitiveRestart);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    PipelineInputAssemblyStateCreateInfoTest,
+    ::testing::Combine(::testing::Values(VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+                                         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST),
+                       ::testing::Values(VK_TRUE, VK_FALSE)),
+    [](const testing::TestParamInfo<PipelineInputAssemblyStateCreateInfoTest::ParamType>& info) {
+      const std::string name = "topology_" + std::to_string(std::get<0>(info.param)) +
+                               "__primitiveType_" + std::to_string(std::get<1>(info.param));
+      return name;
+    });
+
 } // namespace igl::tests
