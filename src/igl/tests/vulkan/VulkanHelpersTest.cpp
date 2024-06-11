@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <array>
 #include <gtest/gtest.h>
 #include <igl/vulkan/Common.h>
 #include <vulkan/vulkan_core.h>
@@ -419,6 +420,34 @@ INSTANTIATE_TEST_SUITE_P(
     [](const testing::TestParamInfo<PipelineInputAssemblyStateCreateInfoTest::ParamType>& info) {
       const std::string name = "topology_" + std::to_string(std::get<0>(info.param)) +
                                "__primitiveType_" + std::to_string(std::get<1>(info.param));
+      return name;
+    });
+
+// ivkGetPipelineDynamicStateCreateInfo ***************************************************
+
+class PipelineDynamicStateCreateInfoTest : public ::testing::TestWithParam<std::tuple<uint32_t>> {};
+
+TEST_P(PipelineDynamicStateCreateInfoTest, GetImageCreateInfo) {
+  const uint32_t dynamicStateCount = std::get<0>(GetParam());
+  EXPECT_LE(dynamicStateCount, 2);
+  const std::array<VkDynamicState, 2> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
+                                                       VK_DYNAMIC_STATE_SCISSOR};
+
+  const auto pipelineDynamicStateCreateInfo =
+      ivkGetPipelineDynamicStateCreateInfo(dynamicStateCount, dynamicStates.data());
+  EXPECT_EQ(pipelineDynamicStateCreateInfo.sType,
+            VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
+  EXPECT_EQ(pipelineDynamicStateCreateInfo.pNext, nullptr);
+  EXPECT_EQ(pipelineDynamicStateCreateInfo.dynamicStateCount, dynamicStateCount);
+  EXPECT_EQ(pipelineDynamicStateCreateInfo.pDynamicStates, dynamicStates.data());
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    PipelineDynamicStateCreateInfoTest,
+    ::testing::Combine(::testing::Values(1, 2)),
+    [](const testing::TestParamInfo<PipelineDynamicStateCreateInfoTest::ParamType>& info) {
+      const std::string name = "dynamicStateCount_" + std::to_string(std::get<0>(info.param));
       return name;
     });
 
