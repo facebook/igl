@@ -398,7 +398,7 @@ TEST_F(PipelineVertexInpusStateCreateInfoTest_Empty, GetPipelineVertexInputState
 class PipelineInputAssemblyStateCreateInfoTest
   : public ::testing::TestWithParam<std::tuple<VkPrimitiveTopology, VkBool32>> {};
 
-TEST_P(PipelineInputAssemblyStateCreateInfoTest, GetImageCreateInfo) {
+TEST_P(PipelineInputAssemblyStateCreateInfoTest, GetPipelineInputAssemblyStateCreateInfo) {
   const VkPrimitiveTopology topology = std::get<0>(GetParam());
   const VkBool32 primitiveRestart = std::get<1>(GetParam());
 
