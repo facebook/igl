@@ -520,8 +520,10 @@ void iglDispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_gro
 
 #if defined(GL_VERSION_4_0) || defined(GL_ES_VERSION_3_1) || defined(GL_ARB_draw_indirect)
 #define CAN_CALL_glDrawElementsIndirect CAN_CALL
+#define CAN_CALL_glDrawArraysIndirect CAN_CALL
 #else
 #define CAN_CALL_glDrawElementsIndirect 0
+#define CAN_CALL_glDrawArraysIndirect 0
 #endif
 
 void iglDrawElementsIndirect(GLenum mode, GLenum type, const GLvoid* indirect) {
@@ -530,6 +532,14 @@ void iglDrawElementsIndirect(GLenum mode, GLenum type, const GLvoid* indirect) {
                           PFNIGLDRAWELEMENTSINDIRECTPROC,
                           mode,
                           type,
+                          indirect);
+}
+
+void iglDrawArraysIndirect(GLenum mode, const GLvoid* indirect) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glDrawArraysIndirect,
+                          glDrawArraysIndirect,
+                          PFNIGLDRAWARRAYSINDIRECTPROC,
+                          mode,
                           indirect);
 }
 
