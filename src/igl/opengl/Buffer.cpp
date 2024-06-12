@@ -82,6 +82,8 @@ void ArrayBuffer::initialize(const BufferDesc& desc, Result* outResult) {
     target_ = GL_ARRAY_BUFFER;
   } else if (desc.type & BufferDesc::BufferTypeBits::Index) {
     target_ = GL_ELEMENT_ARRAY_BUFFER;
+  } else if (desc.type & BufferDesc::BufferTypeBits::Indirect) {
+    target_ = GL_DRAW_INDIRECT_BUFFER;
   } else {
     IGL_ASSERT_NOT_IMPLEMENTED();
   }
