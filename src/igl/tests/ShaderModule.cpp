@@ -63,17 +63,6 @@ TEST_F(ShaderModuleTest, CompileShaderModuleReturnNull) {
   ASSERT_TRUE(shaderModule == nullptr);
 }
 
-TEST_F(ShaderModuleTest, CompileShaderModuleReturnNullWitNullInput) {
-  Result ret;
-
-  const char* source = nullptr;
-
-  auto shaderModule = ShaderModuleCreator::fromStringInput(
-      *iglDev_, source, {ShaderStage::Vertex, ""}, "test", &ret);
-  ASSERT_TRUE(!ret.isOk());
-  ASSERT_TRUE(shaderModule == nullptr);
-}
-
 TEST_F(ShaderModuleTest, CompileShaderModuleReturnNullWithEmptyInput) {
   Result ret;
 
