@@ -129,7 +129,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   isDepthFormat_(isDepthFormat(format)),
   isStencilFormat_(isStencilFormat(format)),
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
-  isCubemap_((createFlags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) != 0) {
+  isCubemap_((createFlags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) != 0),
+  tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ASSERT_MSG(mipLevels_ > 0, "The image must contain at least one mip level");
@@ -165,9 +166,15 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                     imageFormat_);
     }
 
+    VkMemoryRequirements memRequirements;
+    ctx_->vf_.vkGetImageMemoryRequirements(device, vkImage_, &memRequirements);
+
     // handle memory-mapped buffers
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
       vmaMapMemory((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, &mappedPtr_);
+      if (memRequirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+        isCoherentMemory_ = true;
+      }
     }
 
     if (vmaAllocation_) {
@@ -179,26 +186,27 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
     // create image
     VK_ASSERT(ctx_->vf_.vkCreateImage(device_, &ci, nullptr, &vkImage_));
 
+    VkMemoryRequirements memRequirements;
     // back the image with some memory
-    {
-      VkMemoryRequirements memRequirements;
-      ctx_->vf_.vkGetImageMemoryRequirements(device, vkImage_, &memRequirements);
+    ctx_->vf_.vkGetImageMemoryRequirements(device, vkImage_, &memRequirements);
 
-      VK_ASSERT(ivkAllocateMemory(&ctx_->vf_,
-                                  physicalDevice_,
-                                  device_,
-                                  &memRequirements,
-                                  memFlags,
-                                  ctx.config_.enableBufferDeviceAddress,
-                                  &vkMemory_));
-      VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_, 0));
+    VK_ASSERT(ivkAllocateMemory(&ctx_->vf_,
+                                physicalDevice_,
+                                device_,
+                                &memRequirements,
+                                memFlags,
+                                ctx.config_.enableBufferDeviceAddress,
+                                &vkMemory_));
+    VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_, 0));
 
-      allocatedSize = memRequirements.size;
-    }
+    allocatedSize = memRequirements.size;
 
     // handle memory-mapped images
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
       VK_ASSERT(ctx_->vf_.vkMapMemory(device_, vkMemory_, 0, VK_WHOLE_SIZE, 0, &mappedPtr_));
+      if (memRequirements.memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+        isCoherentMemory_ = true;
+      }
     }
   }
 
@@ -236,7 +244,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   isDepthFormat_(isDepthFormat(format)),
   isStencilFormat_(isStencilFormat(format)),
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
-  isImported_(true) {
+  isImported_(true),
+  tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ASSERT_MSG(mipLevels_ > 0, "The image must contain at least one mip level");
@@ -357,7 +366,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   isDepthFormat_(isDepthFormat(format)),
   isStencilFormat_(isStencilFormat(format)),
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
-  isImported_(true) {
+  isImported_(true),
+  tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ASSERT_MSG(mipLevels_ > 0, "The image must contain at least one mip level");
@@ -520,7 +530,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   isDepthFormat_(isDepthFormat(format)),
   isStencilFormat_(isStencilFormat(format)),
   isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
-  isExported_(true) {
+  isExported_(true),
+  tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   IGL_ASSERT_MSG(mipLevels_ > 0, "The image must contain at least one mip level");
