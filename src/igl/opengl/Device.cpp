@@ -37,6 +37,7 @@ std::unique_ptr<Buffer> allocateBuffer(BufferDesc::BufferType bufferType,
 
   if ((bufferType & BufferDesc::BufferTypeBits::Index) ||
       (bufferType & BufferDesc::BufferTypeBits::Vertex) ||
+      (bufferType & BufferDesc::BufferTypeBits::Indirect) ||
       (bufferType & BufferDesc::BufferTypeBits::Storage)) {
     resource = std::make_unique<ArrayBuffer>(context, requestedApiHints, bufferType);
   } else if (bufferType & BufferDesc::BufferTypeBits::Uniform) {
