@@ -387,7 +387,6 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
   (void)vertexOffset;
   (void)baseInstance;
 
-  IGL_ASSERT_MSG(instanceCount == 1, "Instancing is not implemented");
   IGL_ASSERT_MSG(vertexOffset == 0, "vertexOffset is not implemented");
   IGL_ASSERT_MSG(baseInstance == 0, "Instancing is not implemented");
   IGL_ASSERT_MSG(indexType_, "No index buffer bound");
@@ -398,8 +397,16 @@ void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
   if (IGL_VERIFY(adapter_ && indexType_)) {
     getCommandBuffer().incrementCurrentDrawCount();
     auto mode = toGlPrimitive(primitiveType);
-    adapter_->drawElements(
-        mode, (GLsizei)indexCount, indexType_, (uint8_t*)indexBufferOffset_ + indexOffsetBytes);
+    if (instanceCount > 1) {
+      adapter_->drawElementsInstanced(mode,
+                                      (GLsizei)indexCount,
+                                      indexType_,
+                                      (uint8_t*)indexBufferOffset_ + indexOffsetBytes,
+                                      instanceCount);
+    } else {
+      adapter_->drawElements(
+          mode, (GLsizei)indexCount, indexType_, (uint8_t*)indexBufferOffset_ + indexOffsetBytes);
+    }
   }
 }
 
