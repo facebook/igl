@@ -629,5 +629,85 @@ TEST_F(FramebufferTest, UpdateDrawableWithDepthAndStencilTest) {
   ASSERT_EQ(framebuffer_->getStencilAttachment(), stencilAttachment);
 }
 
+TEST_F(FramebufferTest, GetColorAttachmentTest) {
+  const bool backendOpenGL = iglDev_->getBackendType() == igl::BackendType::OpenGL;
+
+  if (backendOpenGL) {
+#if IGL_BACKEND_OPENGL
+    if (!iglDev_->getPlatformDevice<igl::opengl::PlatformDevice>()
+             ->getContext()
+             .deviceFeatures()
+             .hasInternalFeature(opengl::InternalFeatures::PackRowLength)) {
+      GTEST_SKIP() << "Framebuffer PackRowLength is not supported";
+    }
+#endif
+  }
+
+  // Create a texture to be used as color attachment
+  const int textureWidth = 3;
+  const int textureHeight = 2;
+  const int channelCount = 4;
+  const int channelSize = sizeof(uint8_t);
+  const int textureElementPerRow = textureWidth * channelCount;
+  TextureDesc const texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 textureWidth,
+                                                 textureHeight,
+                                                 TextureDesc::TextureUsageBits::Sampled |
+                                                     TextureDesc::TextureUsageBits::Attachment);
+
+  Result ret;
+  auto outputTexture = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(outputTexture != nullptr);
+
+  // Create framebuffer using the texture
+  FramebufferDesc framebufferDesc;
+  framebufferDesc.colorAttachments[0].texture = outputTexture;
+  framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(framebuffer_ != nullptr);
+
+  //----------------
+  // Create Pipeline
+  //----------------
+  cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(cmdBuf_ != nullptr);
+
+  renderPass_.colorAttachments[0].clearColor = {0.501f, 0.501f, 0.501f, 0.501f};
+
+  auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
+  cmds->endEncoding();
+
+  cmdQueue_->submit(*cmdBuf_);
+
+  cmdBuf_->waitUntilCompleted();
+
+  //----------------------
+  // Read back framebuffer
+  //----------------------
+  const int outputImageWidth = textureWidth + 2;
+  const int outputImageHeight = textureHeight;
+  const int outputElementPerRow = outputImageWidth * channelCount;
+  auto pixels = std::vector<uint8_t>(static_cast<size_t>(outputElementPerRow * textureHeight), 0);
+
+  const auto rangeDesc = igl::TextureRangeDesc::new2D(0, 0, textureWidth, textureHeight);
+  framebuffer_->copyBytesColorAttachment(*cmdQueue_,
+                                         0,
+                                         pixels.data(),
+                                         rangeDesc,
+                                         static_cast<size_t>(outputElementPerRow * channelSize));
+
+  for (int i = 0; i < outputImageHeight; i++) {
+    for (int j = 0; j < outputElementPerRow; j++) {
+      if (j < textureElementPerRow) {
+        EXPECT_EQ(pixels[i * outputElementPerRow + j], 128);
+      } else {
+        EXPECT_EQ(pixels[i * outputElementPerRow + j], 0);
+      }
+    }
+  }
+}
+
 } // namespace tests
 } // namespace igl
