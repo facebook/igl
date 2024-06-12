@@ -280,6 +280,9 @@ using PFNIGLUNMAPBUFFERPROC = void (*)(GLenum target);
 
 using PFNIGLVERTEXATTRIBDIVISORPROC = void (*)(GLuint index, GLuint divisor);
 
+using PFNIGLDRAWELEMENTSINSTANCEDPROC =
+    void (*)(GLenum mode, GLsizei count, GLenum type, const void* indices, GLsizei primcount);
+
 ///--------------------------------------
 /// MARK: - OpenGL ES / OpenGL
 
@@ -349,6 +352,11 @@ void iglTexSubImage3D(GLenum target,
                       const GLvoid* pixels);
 void iglUnmapBuffer(GLenum target);
 void iglVertexAttribDivisor(GLuint index, GLuint divisor);
+void iglDrawElementsInstanced(GLenum mode,
+                              GLsizei count,
+                              GLenum type,
+                              const void* indices,
+                              GLsizei instancecount);
 
 ///--------------------------------------
 /// MARK: - GL_APPLE_framebuffer_multisample
