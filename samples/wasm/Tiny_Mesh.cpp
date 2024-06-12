@@ -408,11 +408,12 @@ void onDraw(void*) {
   commands->bindTexture(0, igl::BindTarget::kFragment, texture0_.get());
   commands->bindTexture(1, igl::BindTarget::kFragment, texture1_.get());
   commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
+  commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
   // Draw 2 cubes: we use uniform buffer to update matrices
   for (uint32_t i = 0; i != kNumCubes; i++) {
     commands->bindBuffer(
         1, BindTarget::kAllGraphics, ubPerObject_[frameIndex], i * sizeof(UniformsPerObject));
-    commands->drawIndexed(PrimitiveType::Triangle, 3 * 6 * 2, IndexFormat::UInt16, *ib0_.get(), 0);
+    commands->drawIndexed(3u * 6u * 2u);
   }
   commands->popDebugGroupLabel();
   commands->endEncoding();
