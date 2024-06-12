@@ -105,6 +105,7 @@ using PFNIGLDISPATCHCOMPUTEPROC = void (*)(GLuint num_groups_x,
                                            GLuint num_groups_z);
 using PFNIGLDRAWBUFFERSPROC = void (*)(GLsizei, const GLenum*);
 using PFNIGLDRAWELEMENTSINDIRECTPROC = void (*)(GLenum mode, GLenum type, const GLvoid* indirect);
+using PFNIGLDRAWARRAYSINDIRECTPROC = void (*)(GLenum mode, const GLvoid* indirect);
 using PFNIGLFENCESYNCPROC = GLsync (*)(GLenum condition, GLbitfield flags);
 using PFNIGLFRAMEBUFFERRENDERBUFFERPROC = void (*)(GLenum target,
                                                    GLenum attachment,
@@ -389,6 +390,8 @@ void iglDispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_gro
 /// MARK: - GL_ARB_draw_indirect
 
 void iglDrawElementsIndirect(GLenum mode, GLenum type, const GLvoid* indirect);
+
+void iglDrawArraysIndirect(GLenum mode, const GLvoid* indirect);
 
 ///--------------------------------------
 /// MARK: - GL_ARB_ES2_compatibility
