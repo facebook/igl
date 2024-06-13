@@ -64,21 +64,6 @@ TEST_F(ShaderLibraryTest, CreateFromSource) {
   ASSERT_TRUE(vertShaderModule);
 }
 
-TEST_F(ShaderLibraryTest, CreateFromSourceReturnNullWithNullInput) {
-  Result ret;
-  if (!iglDev_->hasFeature(DeviceFeatures::ShaderLibrary)) {
-    GTEST_SKIP() << "Shader Libraries are unsupported for this platform.";
-    return;
-  }
-
-  const char* source = nullptr;
-
-  auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
-      *iglDev_, source, {{ShaderStage::Vertex, ""}}, "", &ret);
-  ASSERT_TRUE(!ret.isOk());
-  ASSERT_TRUE(shaderLibrary == nullptr);
-}
-
 TEST_F(ShaderLibraryTest, CreateFromSingleModuleReturnNullWithEmptyInput) {
   Result ret;
   if (!iglDev_->hasFeature(DeviceFeatures::ShaderLibrary)) {

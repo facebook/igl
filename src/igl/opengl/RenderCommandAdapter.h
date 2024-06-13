@@ -90,7 +90,13 @@ class RenderCommandAdapter final : public WithContext {
 
   void drawArrays(GLenum mode, GLint first, GLsizei count);
   void drawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount);
+  void drawArraysIndirect(GLenum mode, Buffer& indirectBuffer, const GLvoid* indirectBufferOffset);
   void drawElements(GLenum mode, GLsizei indexCount, GLenum indexType, const GLvoid* indexOffset);
+  void drawElementsInstanced(GLenum mode,
+                             GLsizei indexCount,
+                             GLenum indexType,
+                             const GLvoid* indexOffset,
+                             GLsizei instancecount);
   void drawElementsIndirect(GLenum mode,
                             GLenum indexType,
                             Buffer& indirectBuffer,

@@ -275,12 +275,40 @@ void RenderCommandAdapter::drawArraysInstanced(GLenum mode, GLint first, GLsizei
   didDraw();
 }
 
+void RenderCommandAdapter::drawArraysIndirect(GLenum mode,
+                                              Buffer& indirectBuffer,
+                                              const GLvoid* indirectBufferOffset) {
+  willDraw();
+  if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DrawArraysIndirect)) {
+    bindBufferWithShaderStorageBufferOverride(indirectBuffer, GL_DRAW_INDIRECT_BUFFER);
+    getContext().drawArraysIndirect(toMockWireframeMode(mode), indirectBufferOffset);
+  } else {
+    IGL_ASSERT_NOT_IMPLEMENTED();
+  }
+  didDraw();
+}
+
 void RenderCommandAdapter::drawElements(GLenum mode,
                                         GLsizei indexCount,
                                         GLenum indexType,
                                         const GLvoid* indexOffset) {
   willDraw();
   getContext().drawElements(toMockWireframeMode(mode), indexCount, indexType, indexOffset);
+  didDraw();
+}
+
+void RenderCommandAdapter::drawElementsInstanced(GLenum mode,
+                                                 GLsizei indexCount,
+                                                 GLenum indexType,
+                                                 const GLvoid* indexOffset,
+                                                 GLsizei instancecount) {
+  willDraw();
+  if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DrawElementsInstanced)) {
+    getContext().drawElementsInstanced(
+        toMockWireframeMode(mode), indexCount, indexType, indexOffset, instancecount);
+  } else {
+    IGL_ASSERT_NOT_IMPLEMENTED();
+  }
   didDraw();
 }
 

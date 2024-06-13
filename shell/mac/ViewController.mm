@@ -313,6 +313,8 @@ using namespace igl;
     vulkanContextConfig.enhancedShaderDebugging = false;
     // Disables OS Level Color Management to achieve parity with OpenGL
     vulkanContextConfig.swapChainColorSpace = igl::ColorSpace::PASS_THROUGH;
+    vulkanContextConfig.requestedSwapChainTextureFormat =
+        shellParams_.defaultColorFramebufferFormat;
 
     auto context =
         igl::vulkan::HWDevice::createContext(vulkanContextConfig, (__bridge void*)vulkanView);

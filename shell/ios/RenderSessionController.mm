@@ -133,11 +133,11 @@
 }
 
 - (void)tick {
+  igl::DeviceScope scope(platform_->getDevice());
+
   // @fb-only
   IglSurfaceTexturesAdapter* adapter = [surfaceTexturesProvider_ createSurfaceTextures];
   // @fb-only
-
-  igl::DeviceScope scope(platform_->getDevice());
 
   // process user input
   platform_->getInputDispatcher().processEvents();

@@ -475,6 +475,13 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
   case InternalFeatures::DrawArraysInstanced:
     return hasDesktopOrESVersion(*this, GLVersion::v3_1, GLVersion::v3_0_ES);
 
+  case InternalFeatures::DrawElementsInstanced:
+    return hasDesktopOrESVersion(*this, GLVersion::v3_1, GLVersion::v3_0_ES);
+
+  case InternalFeatures::DrawArraysIndirect:
+    return hasDesktopOrESVersionOrExtension(
+        *this, GLVersion::v4_0, GLVersion::v3_1_ES, "GL_ARB_draw_indirect");
+
   case InternalFeatures::PackRowLength:
     return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES);
   }
