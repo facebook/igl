@@ -10,6 +10,7 @@
 #include <igl/opengl/Device.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/RenderCommandEncoder.h>
+#include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl::shell {
 
@@ -266,7 +267,9 @@ void DrawInstancedSession::update(igl::SurfaceTextures surfaceTextures) noexcept
   commands->popDebugGroupLabel();
   commands->endEncoding();
 
-  buffer->present(surfaceTextures.color);
+  if (shellParams().shouldPresent) {
+    buffer->present(surfaceTextures.color);
+  }
 
   commandQueue_->submit(*buffer);
   RenderSession::update(surfaceTextures);
