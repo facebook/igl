@@ -357,9 +357,9 @@ void RenderCommandEncoder::draw(PrimitiveType primitiveType,
     auto mode = toGlPrimitive(primitiveType);
     if (instanceCount > 1) {
       adapter_->drawArraysInstanced(
-          mode, (GLsizei)firstVertex, (GLsizei)vertexCount, (GLsizei)instanceCount);
+          mode, (GLsizei)vertexStart, (GLsizei)vertexCount, (GLsizei)instanceCount);
     } else {
-      adapter_->drawArrays(mode, (GLsizei)firstVertex, (GLsizei)vertexCount);
+      adapter_->drawArrays(mode, (GLsizei)vertexStart, (GLsizei)vertexCount);
     }
   }
 }
