@@ -11,6 +11,7 @@
 
 #include <igl/CommandBuffer.h>
 #include <igl/RenderPass.h>
+#include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl {
 namespace shell {
@@ -52,7 +53,9 @@ void ImguiSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   }
 
   encoder->endEncoding();
-  cmdBuffer->present(surfaceTextures.color);
+  if (shellParams().shouldPresent) {
+    cmdBuffer->present(surfaceTextures.color);
+  }
 
   _commandQueue->submit(*cmdBuffer);
 }

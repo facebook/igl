@@ -13,6 +13,7 @@
 #include <igl/opengl/GLIncludes.h>
 #include <shell/renderSessions/ColorSession.h>
 #include <shell/shared/renderSession/RenderSession.h>
+#include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl {
 namespace shell {
@@ -338,7 +339,10 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   }
 
   IGL_ASSERT(buffer != nullptr);
-  buffer->present(drawableSurface);
+
+  if (shellParams().shouldPresent) {
+    buffer->present(drawableSurface);
+  }
 
   IGL_ASSERT(commandQueue_ != nullptr);
   commandQueue_->submit(*buffer);

@@ -962,8 +962,10 @@ void GPUStressSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   commands->endEncoding();
 
-  buffer->present(kUseMSAA ? framebuffer_->getResolveColorAttachment(0)
+  if (shellParams().shouldPresent) {
+    buffer->present(kUseMSAA ? framebuffer_->getResolveColorAttachment(0)
                            : framebuffer_->getColorAttachment(0));
+  }
 
   commandQueue_->submit(*buffer); // Guarantees ordering between command buffers
 }
