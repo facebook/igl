@@ -86,6 +86,7 @@ enum class InternalFeatures {
   DrawArraysIndirect,        // glDrawArraysIndirect is supported
   PackRowLength,             // GL_PACK_ROW_LENGTH is supported with glPixelStorei
   DrawElementsInstanced,     // glDrawElementsInstanced is supported
+  DrawArraysInstanced,       // glDrawArraysInstanced is supported
 };
 // clang-format on
 
