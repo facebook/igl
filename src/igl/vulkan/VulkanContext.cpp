@@ -23,6 +23,8 @@
 #define VOLK_IMPLEMENTATION
 #endif // IGL_CMAKE_BUILD
 
+#include <igl/glslang/GlslCompiler.h>
+
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/EnhancedShaderDebuggingStore.h>
@@ -361,7 +363,7 @@ VulkanContext::VulkanContext(const VulkanContextConfig& config,
 
   vulkan::functions::initialize(*tableImpl_);
 
-  glslang_initialize_process();
+  glslang::initializeCompiler();
 
   createInstance(numExtraInstanceExtensions, extraInstanceExtensions);
 
@@ -452,7 +454,7 @@ VulkanContext::~VulkanContext() {
 #endif // defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID
   vf_.vkDestroyInstance(vkInstance_, nullptr);
 
-  glslang_finalize_process();
+  glslang::finalizeCompiler();
 
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
   if (config_.enableExtraLogs) {
