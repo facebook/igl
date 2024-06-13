@@ -284,6 +284,11 @@ using PFNIGLVERTEXATTRIBDIVISORPROC = void (*)(GLuint index, GLuint divisor);
 using PFNIGLDRAWELEMENTSINSTANCEDPROC =
     void (*)(GLenum mode, GLsizei count, GLenum type, const void* indices, GLsizei primcount);
 
+using PFNIGLDRAWARRAYSINSTANCEDPROC = void (*)(GLenum mode,
+                                               GLint first,
+                                               GLsizei count,
+                                               GLsizei primcount);
+
 ///--------------------------------------
 /// MARK: - OpenGL ES / OpenGL
 
@@ -358,6 +363,7 @@ void iglDrawElementsInstanced(GLenum mode,
                               GLenum type,
                               const void* indices,
                               GLsizei instancecount);
+void iglDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount);
 
 ///--------------------------------------
 /// MARK: - GL_APPLE_framebuffer_multisample

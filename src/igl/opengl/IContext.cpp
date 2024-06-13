@@ -1517,6 +1517,21 @@ void IContext::drawArraysIndirect(GLenum mode, const GLvoid* indirect) {
   APILOG_DEC_DRAW_COUNT();
 }
 
+void IContext::drawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount) {
+  drawCallCount_++;
+
+  IGL_PROFILER_ZONE_GPU_OGL("drawArraysInstanced()");
+
+  IGLCALL(DrawArraysInstanced)(mode, first, count, instancecount);
+  APILOG("glDrawArraysInstanced(%s, %d, %u, %u)\n",
+         GL_ENUM_TO_STRING(mode),
+         first,
+         count,
+         instancecount);
+  GLCHECK_ERRORS();
+  APILOG_DEC_DRAW_COUNT();
+}
+
 void IContext::drawBuffers(GLsizei n, GLenum* buffers) {
   if (drawBuffersProc_ == nullptr) {
     if (deviceFeatureSet_.hasFeature(DeviceFeatures::MultipleRenderTargets)) {
