@@ -178,5 +178,13 @@
         "url": "https://github.com/KhronosGroup/OpenXR-SDK.git",
         "sha1": "49e81bbd919af7c0cf513517a730d12253c28902"
     }
+},
+{
+    "name": "SPIRV-Cross",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/KhronosGroup/SPIRV-Cross.git",
+        "revision": "2ccc81fd826e4dd4a2db2f94b8e6eb738a89f5f1"
+    }
 }
 ]
