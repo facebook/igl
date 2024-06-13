@@ -205,7 +205,7 @@ bool XrApp::createInstance() {
   appInfo.applicationVersion = 0;
   strcpy(appInfo.engineName, kEngineName);
   appInfo.engineVersion = 0;
-  appInfo.apiVersion = XR_MAKE_VERSION(1, 0, 34);
+  appInfo.apiVersion = XR_API_VERSION_1_0;
 
   XrInstanceCreateInfo instanceCreateInfo = {
       .type = XR_TYPE_INSTANCE_CREATE_INFO,
