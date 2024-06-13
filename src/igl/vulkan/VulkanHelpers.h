@@ -424,10 +424,6 @@ VkBufferImageCopy ivkGetBufferImageCopy3D(uint32_t bufferOffset,
                                           const VkExtent3D extent,
                                           VkImageSubresourceLayers imageSubresource);
 
-glslang_input_t ivkGetGLSLangInput(VkShaderStageFlagBits stage,
-                                   const glslang_resource_t* resource,
-                                   const char* shaderCode);
-
 void ivkImageMemoryBarrier(const struct VulkanFunctionTable* vt,
                            VkCommandBuffer buffer,
                            VkImage image,
@@ -517,8 +513,7 @@ VkResult ivkVmaCreateAllocator(const struct VulkanFunctionTable* vt,
                                VkDeviceSize preferredLargeHeapBlockSize,
                                VmaAllocator* outVma);
 
-void ivkGlslangResource(glslang_resource_t* glslangResource,
-                        const VkPhysicalDeviceProperties* deviceProperties);
+void ivkUpdateGlslangResource(glslang_resource_t* res, const VkPhysicalDeviceProperties* props);
 
 #ifdef __cplusplus
 }

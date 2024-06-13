@@ -8,6 +8,8 @@
 #include <igl/vulkan/Device.h>
 
 #include <cstring>
+#include <igl/glslang/GlslCompiler.h>
+#include <igl/glslang/GlslangHelpers.h>
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandQueue.h>
 #include <igl/vulkan/Common.h>
@@ -370,12 +372,12 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
     source = sourcePatched.c_str();
   }
 
-  glslang_resource_t glslangResource;
-  ivkGlslangResource(&glslangResource, &ctx_->getVkPhysicalDeviceProperties());
+  glslang_resource_t glslangResource = {};
+  glslangGetDefaultResource(&glslangResource);
+  ivkUpdateGlslangResource(&glslangResource, &ctx_->getVkPhysicalDeviceProperties());
 
   std::vector<uint32_t> spirv;
-  const Result result =
-      igl::vulkan::compileShader(ctx_->vf_, device, vkStage, source, spirv, &glslangResource);
+  const Result result = glslang::compileShader(stage, source, spirv, &glslangResource);
 
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
   VK_ASSERT(ivkCreateShaderModuleFromSPIRV(
