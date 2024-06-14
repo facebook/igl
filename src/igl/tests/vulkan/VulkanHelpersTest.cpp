@@ -547,4 +547,25 @@ TEST_F(GetPipelineDepthStencilStateCreateInfo_NoDepthStencilTestsTest,
   EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.reference, 0);
 }
 
+// ivkGetPipelineColorBlendAttachmentState_NoBlending *******************************************
+
+class GetPipelineColorBlendAttachmentState_NoBlendingTest : public ::testing::Test {};
+
+TEST_F(GetPipelineColorBlendAttachmentState_NoBlendingTest,
+       GetPipelineColorBlendAttachmentState_NoBlending) {
+  const VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState =
+      ivkGetPipelineColorBlendAttachmentState_NoBlending();
+
+  EXPECT_EQ(pipelineColorBlendAttachmentState.blendEnable, VK_FALSE);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.srcColorBlendFactor, VK_BLEND_FACTOR_ONE);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.dstColorBlendFactor, VK_BLEND_FACTOR_ZERO);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.colorBlendOp, VK_BLEND_OP_ADD);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.srcAlphaBlendFactor, VK_BLEND_FACTOR_ONE);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.dstAlphaBlendFactor, VK_BLEND_FACTOR_ZERO);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.alphaBlendOp, VK_BLEND_OP_ADD);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.colorWriteMask,
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+                VK_COLOR_COMPONENT_A_BIT);
+}
+
 } // namespace igl::tests
