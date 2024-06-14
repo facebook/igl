@@ -509,4 +509,42 @@ TEST_F(GetPipelineMultisampleStateCreateInfo_Empty, GetPipelineMultisampleStateC
   EXPECT_EQ(pipelineMultisampleStateCreateInfo.alphaToOneEnable, VK_FALSE);
 }
 
+// ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests *******************************
+
+class GetPipelineDepthStencilStateCreateInfo_NoDepthStencilTestsTest : public ::testing::Test {};
+
+TEST_F(GetPipelineDepthStencilStateCreateInfo_NoDepthStencilTestsTest,
+       GetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests) {
+  const VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo =
+      ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests();
+
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.sType,
+            VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.pNext, nullptr);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.flags, 0);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.depthTestEnable, VK_FALSE);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.depthWriteEnable, VK_FALSE);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.depthCompareOp, VK_COMPARE_OP_LESS);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.depthBoundsTestEnable, VK_FALSE);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.stencilTestEnable, VK_FALSE);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.minDepthBounds, 0.0f);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.maxDepthBounds, 1.0f);
+
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.front.failOp, VK_STENCIL_OP_KEEP);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.front.passOp, VK_STENCIL_OP_KEEP);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.front.depthFailOp, VK_STENCIL_OP_KEEP);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.front.compareOp, VK_COMPARE_OP_NEVER);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.front.compareMask, 0);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.front.writeMask, 0);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.front.reference, 0);
+
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.failOp, VK_STENCIL_OP_KEEP);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.passOp, VK_STENCIL_OP_KEEP);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.depthFailOp, VK_STENCIL_OP_KEEP);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.compareOp, VK_COMPARE_OP_NEVER);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.compareMask, 0);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.writeMask, 0);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.reference, 0);
+}
+
 } // namespace igl::tests
