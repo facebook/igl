@@ -490,4 +490,23 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkGetPipelineMultisampleStateCreateInfo_Empty ***********************************************
+
+class GetPipelineMultisampleStateCreateInfo_Empty : public ::testing::Test {};
+
+TEST_F(GetPipelineMultisampleStateCreateInfo_Empty, GetPipelineMultisampleStateCreateInfo_Empty) {
+  const VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo =
+      ivkGetPipelineMultisampleStateCreateInfo_Empty();
+
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.sType,
+            VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.pNext, nullptr);
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.rasterizationSamples, VK_SAMPLE_COUNT_1_BIT);
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.sampleShadingEnable, VK_FALSE);
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.minSampleShading, 1.0f);
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.pSampleMask, nullptr);
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.alphaToCoverageEnable, VK_FALSE);
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.alphaToOneEnable, VK_FALSE);
+}
+
 } // namespace igl::tests
