@@ -568,4 +568,68 @@ TEST_F(GetPipelineColorBlendAttachmentState_NoBlendingTest,
                 VK_COLOR_COMPONENT_A_BIT);
 }
 
+// ivkGetPipelineColorBlendAttachmentState ***************************************************
+
+class PipelineColorBlendAttachmentStateTest
+  : public ::testing::TestWithParam<std::tuple<bool,
+                                               VkBlendFactor,
+                                               VkBlendFactor,
+                                               VkBlendOp,
+                                               VkBlendFactor,
+                                               VkBlendFactor,
+                                               VkBlendOp,
+                                               VkColorComponentFlags>> {};
+
+TEST_P(PipelineColorBlendAttachmentStateTest, GetPipelineColorBlendAttachmentState) {
+  const bool blendEnabled = std::get<0>(GetParam());
+  const VkBlendFactor srcColorBlendFactor = std::get<1>(GetParam());
+  const VkBlendFactor dstColorBlendFactor = std::get<2>(GetParam());
+  const VkBlendOp colorBlendOp = std::get<3>(GetParam());
+  const VkBlendFactor srcAlphaBlendFactor = std::get<4>(GetParam());
+  const VkBlendFactor dstAlphaBlendFactor = std::get<5>(GetParam());
+  const VkBlendOp alphaBlendOp = std::get<6>(GetParam());
+  const VkColorComponentFlags colorWriteMask = std::get<7>(GetParam());
+
+  const auto pipelineColorBlendAttachmentState =
+      ivkGetPipelineColorBlendAttachmentState(blendEnabled,
+                                              srcColorBlendFactor,
+                                              dstColorBlendFactor,
+                                              colorBlendOp,
+                                              srcAlphaBlendFactor,
+                                              dstAlphaBlendFactor,
+                                              alphaBlendOp,
+                                              colorWriteMask);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.blendEnable, blendEnabled);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.srcColorBlendFactor, srcColorBlendFactor);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.dstColorBlendFactor, dstColorBlendFactor);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.colorBlendOp, colorBlendOp);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.srcAlphaBlendFactor, srcAlphaBlendFactor);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.dstAlphaBlendFactor, dstAlphaBlendFactor);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.alphaBlendOp, alphaBlendOp);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.colorWriteMask, colorWriteMask);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    PipelineColorBlendAttachmentStateTest,
+    ::testing::Combine(::testing::Bool(),
+                       ::testing::Values(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO),
+                       ::testing::Values(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO),
+                       ::testing::Values(VK_BLEND_OP_ADD, VK_BLEND_OP_SUBTRACT),
+                       ::testing::Values(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO),
+                       ::testing::Values(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO),
+                       ::testing::Values(VK_BLEND_OP_ADD, VK_BLEND_OP_SUBTRACT),
+                       ::testing::Values(VK_COLOR_COMPONENT_R_BIT, VK_COLOR_COMPONENT_A_BIT)),
+    [](const testing::TestParamInfo<PipelineColorBlendAttachmentStateTest::ParamType>& info) {
+      const std::string name = "_blendEnable_" + std::to_string(std::get<0>(info.param)) +
+                               "__srcColorBlendFactor_" + std::to_string(std::get<1>(info.param)) +
+                               "__dstColorBlendFactor_" + std::to_string(std::get<2>(info.param)) +
+                               "__colorBlendOp_" + std::to_string(std::get<3>(info.param)) +
+                               "__srcAlphaBlendFactor_" + std::to_string(std::get<4>(info.param)) +
+                               "__dstAlphaBlendFactor_" + std::to_string(std::get<5>(info.param)) +
+                               "__alphaBlendOp_" + std::to_string(std::get<6>(info.param)) +
+                               "__colorWriteMask_" + std::to_string(std::get<7>(info.param));
+      return name;
+    });
+
 } // namespace igl::tests
