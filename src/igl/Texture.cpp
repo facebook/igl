@@ -337,6 +337,7 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     DEPTH_STENCIL(S8_UInt_Z32_UNorm, 2, 8)
 #endif
     STENCIL(S_UInt8, 1, 1)
+    COMPRESSED(YUV_NV12, 3, 16, 1, 1, 1, 1, 1, 1, 0)
   }
   IGL_UNREACHABLE_RETURN(TextureFormatProperties{})
 }
