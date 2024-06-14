@@ -183,6 +183,14 @@ VkResult ivkAllocateMemory(const struct VulkanFunctionTable* vt,
                            bool enableBufferDeviceAddress,
                            VkDeviceMemory* outMemory);
 
+VkResult ivkAllocateMemory2(const struct VulkanFunctionTable* vt,
+                            VkPhysicalDevice physDev,
+                            VkDevice device,
+                            const VkMemoryRequirements2* memRequirements,
+                            VkMemoryPropertyFlags props,
+                            bool enableBufferDeviceAddress,
+                            VkDeviceMemory* outMemory);
+
 bool ivkIsHostVisibleSingleHeapMemory(const struct VulkanFunctionTable* vt,
                                       VkPhysicalDevice physDev);
 
