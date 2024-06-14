@@ -171,7 +171,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(CAEAGLLay
       TextureDesc::TextureUsageBits::Attachment,
       1,
       TextureType::TwoD,
-      TextureFormat::Z_UNorm16,
+      TextureFormat::S8_UInt_Z24_UNorm,
   };
   desc.storage = ResourceStorage::Private;
   return owner_.createTexture(desc, outResult);

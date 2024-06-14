@@ -129,7 +129,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(Result* o
       TextureDesc::TextureUsageBits::Attachment,
       1, // numMipLevels
       TextureType::TwoD,
-      TextureFormat::Z_UNorm24,
+      TextureFormat::S8_UInt_Z24_UNorm,
       ResourceStorage::Private,
   };
   auto texture = std::make_shared<ViewTextureTarget>(getContext(), desc.format);
