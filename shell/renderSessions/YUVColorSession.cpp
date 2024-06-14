@@ -12,6 +12,7 @@
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/GLIncludes.h>
 #include <shell/renderSessions/YUVColorSession.h>
+#include <shell/shared/fileLoader/FileLoader.h>
 #include <shell/shared/renderSession/RenderSession.h>
 
 namespace igl::shell {
@@ -202,13 +203,26 @@ void YUVColorSession::initialize() noexcept {
   IGL_ASSERT(vertexInput0_ != nullptr);
 
   // Sampler & Texture
-  SamplerStateDesc samplerDesc;
-  samplerDesc.minFilter = samplerDesc.magFilter = SamplerMinMagFilter::Linear;
-  samplerDesc.debugName = "Sampler: linear";
-  samp0_ = device.createSamplerState(samplerDesc, nullptr);
+  samp0_ = device.createSamplerState(SamplerStateDesc::newLinear(), nullptr);
   IGL_ASSERT(samp0_ != nullptr);
 
-  tex0_ = getPlatform().loadTexture("macbeth.png", false /* calculateMipmapLevels */);
+  // https://github.com/facebook/igl/blob/main/shell/resources/images/output_frame_900.txt
+  const auto fileData = getPlatform().getFileLoader().loadBinaryData("output_frame_900.yuv");
+
+  const uint32_t width = 1920;
+  const uint32_t height = 1080;
+
+  const igl::TextureDesc textureDesc =
+      igl::TextureDesc::new2D(igl::TextureFormat::R_UNorm8,
+                              width,
+                              height,
+                              TextureDesc::TextureUsageBits::Sampled,
+                              "YUV texture");
+  IGL_ASSERT(textureDesc.width * textureDesc.height + textureDesc.width * textureDesc.height / 2 ==
+             fileData.length);
+  tex0_ = device.createTexture(textureDesc, nullptr);
+  tex0_->upload(TextureRangeDesc{0, 0, 0, textureDesc.width, textureDesc.height},
+                fileData.data.get());
 
   shaderStages_ = getShaderStagesForBackend(device);
   IGL_ASSERT(shaderStages_ != nullptr);
@@ -255,30 +269,23 @@ void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   const size_t _textureUnit = 0;
 
   // Graphics pipeline
-  if (pipelineState_ == nullptr) {
-    RenderPipelineDesc graphicsDesc;
-    graphicsDesc.vertexInputState = vertexInput0_;
-    graphicsDesc.shaderStages = shaderStages_;
-    graphicsDesc.targetDesc.colorAttachments.resize(1);
-    graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
+  if (!pipelineState_) {
+    RenderPipelineDesc desc;
+    desc.vertexInputState = vertexInput0_;
+    desc.shaderStages = shaderStages_;
+    desc.targetDesc.colorAttachments.resize(1);
+    desc.targetDesc.colorAttachments[0].textureFormat =
         framebuffer_->getColorAttachment(0)->getProperties().format;
-    graphicsDesc.targetDesc.depthAttachmentFormat =
+    desc.targetDesc.depthAttachmentFormat =
         framebuffer_->getDepthAttachment()->getProperties().format;
-    graphicsDesc.fragmentUnitSamplerMap[_textureUnit] = IGL_NAMEHANDLE("inputImage");
-    graphicsDesc.cullMode = igl::CullMode::Back;
-    graphicsDesc.frontFaceWinding = igl::WindingMode::Clockwise;
-    graphicsDesc.targetDesc.colorAttachments[0].blendEnabled = true;
-    graphicsDesc.targetDesc.colorAttachments[0].rgbBlendOp = BlendOp::Add;
-    graphicsDesc.targetDesc.colorAttachments[0].alphaBlendOp = BlendOp::Add;
-    graphicsDesc.targetDesc.colorAttachments[0].srcRGBBlendFactor = BlendFactor::SrcAlpha;
-    graphicsDesc.targetDesc.colorAttachments[0].srcAlphaBlendFactor = BlendFactor::SrcAlpha;
-    graphicsDesc.targetDesc.colorAttachments[0].dstRGBBlendFactor = BlendFactor::OneMinusSrcAlpha;
-    graphicsDesc.targetDesc.colorAttachments[0].dstAlphaBlendFactor = BlendFactor::OneMinusSrcAlpha;
+    desc.fragmentUnitSamplerMap[_textureUnit] = IGL_NAMEHANDLE("inputImage");
+    desc.cullMode = igl::CullMode::Back;
+    desc.frontFaceWinding = igl::WindingMode::Clockwise;
 
-    pipelineState_ = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
+    pipelineState_ = getPlatform().getDevice().createRenderPipeline(desc, nullptr);
     IGL_ASSERT(pipelineState_ != nullptr);
 
-    // Set up uniformdescriptors
+    // Set up uniform descriptors
     fragmentUniformDescriptors_.emplace_back();
   }
 
@@ -291,10 +298,6 @@ void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   // Uniform: "color"
   if (!fragmentUniformDescriptors_.empty()) {
-    if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
-      fragmentUniformDescriptors_.back().location =
-          pipelineState_->getIndexByName("color", igl::ShaderStage::Fragment);
-    }
     fragmentUniformDescriptors_.back().type = UniformType::Float3;
     fragmentUniformDescriptors_.back().offset = offsetof(FragmentFormat, color);
   }
@@ -304,19 +307,10 @@ void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_ASSERT(commands != nullptr);
   if (commands) {
+    commands->bindVertexBuffer(0, *vb0_);
     commands->bindVertexBuffer(1, *vb0_);
     commands->bindRenderPipelineState(pipelineState_);
-    if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
-      // Bind non block uniforms
-      for (const auto& uniformDesc : fragmentUniformDescriptors_) {
-        commands->bindUniform(uniformDesc, &fragmentParameters_);
-      }
-    } else if (getPlatform().getDevice().hasFeature(DeviceFeatures::UniformBlocks)) {
-      commands->bindBuffer(0, fragmentParamBuffer_, 0);
-    } else {
-      IGL_ASSERT_NOT_REACHED();
-    }
-
+    commands->bindBuffer(0, fragmentParamBuffer_, 0);
     commands->bindTexture(_textureUnit, BindTarget::kFragment, tex0_.get());
     commands->bindSamplerState(_textureUnit, BindTarget::kFragment, samp0_.get());
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
