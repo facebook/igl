@@ -428,7 +428,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 class PipelineDynamicStateCreateInfoTest : public ::testing::TestWithParam<std::tuple<uint32_t>> {};
 
-TEST_P(PipelineDynamicStateCreateInfoTest, GetImageCreateInfo) {
+TEST_P(PipelineDynamicStateCreateInfoTest, GetPipelineDyncStateCreateInfo) {
   const uint32_t dynamicStateCount = std::get<0>(GetParam());
   EXPECT_LE(dynamicStateCount, 2);
   const std::array<VkDynamicState, 2> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
