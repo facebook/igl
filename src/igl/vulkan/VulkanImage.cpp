@@ -1072,12 +1072,15 @@ VulkanImage& VulkanImage::operator=(VulkanImage&& other) {
   allocatedSize = std::move(other.allocatedSize);
   imageLayout_ = std::move(other.imageLayout_);
   isImported_ = std::move(other.isImported_);
+  isCubemap_ = other.isCubemap_;
   isExported_ = std::move(other.isExported_);
   exportedMemoryHandle_ = std::move(other.exportedMemoryHandle_);
   exportedFd_ = std::move(other.exportedFd_);
 #if defined(IGL_DEBUG)
   name_ = std::move(other.name_);
 #endif
+  tiling_ = other.tiling_;
+  isCoherentMemory_ = other.isCoherentMemory_;
 
   other.ctx_ = nullptr;
   other.vkImage_ = VK_NULL_HANDLE;
