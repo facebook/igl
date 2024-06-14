@@ -715,6 +715,9 @@ MTLPixelFormat Texture::textureFormatToMTLPixelFormat(TextureFormat value) {
     return MTLPixelFormatDepth32Float_Stencil8;
   case TextureFormat::S_UInt8:
     return MTLPixelFormatStencil8;
+
+  case TextureFormat::YUV_NV12:
+    return MTLPixelFormatInvalid;
   }
 }
 
