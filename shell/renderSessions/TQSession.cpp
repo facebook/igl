@@ -12,6 +12,7 @@
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/GLIncludes.h>
 #include <shell/renderSessions/TQSession.h>
+#include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl {
 namespace shell {
@@ -327,7 +328,9 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   }
 
   IGL_ASSERT(buffer != nullptr);
-  buffer->present(drawableSurface);
+  if (shellParams().shouldPresent) {
+    buffer->present(drawableSurface);
+  }
 
   IGL_ASSERT(_commandQueue != nullptr);
   _commandQueue->submit(*buffer);

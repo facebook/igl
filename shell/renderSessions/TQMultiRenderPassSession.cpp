@@ -13,6 +13,7 @@
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/GLIncludes.h>
 #include <shell/renderSessions/TQMultiRenderPassSession.h>
+#include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl {
 namespace shell {
@@ -340,7 +341,9 @@ void TQMultiRenderPassSession::update(igl::SurfaceTextures surfaceTextures) noex
          fragmentUniformDescriptors_,
          fragmentParameters_);
 
-  buffer->present(drawableSurface);
+  if (shellParams().shouldPresent) {
+    buffer->present(drawableSurface);
+  }
 
   commandQueue_->submit(*buffer);
 }

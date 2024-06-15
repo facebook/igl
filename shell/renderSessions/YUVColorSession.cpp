@@ -14,6 +14,7 @@
 #include <shell/renderSessions/YUVColorSession.h>
 #include <shell/shared/fileLoader/FileLoader.h>
 #include <shell/shared/renderSession/RenderSession.h>
+#include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl::shell {
 
@@ -320,7 +321,9 @@ void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   }
 
   IGL_ASSERT(buffer != nullptr);
-  buffer->present(drawableSurface);
+  if (shellParams().shouldPresent) {
+    buffer->present(drawableSurface);
+  }
 
   IGL_ASSERT(commandQueue_ != nullptr);
   commandQueue_->submit(*buffer);
