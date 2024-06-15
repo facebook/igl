@@ -11,6 +11,7 @@
 #include <igl/Common.h>
 #endif
 #include <shell/shared/platform/Platform.h>
+#include <shell/shared/renderSession/ShellParams.h>
 
 // ===============================================================
 // Mock gtest symbols
@@ -74,7 +75,9 @@ void BasicFramebufferSession::update(igl::SurfaceTextures surfaceTextures) noexc
   ASSERT_TRUE(commands != nullptr);
   commands->endEncoding();
   IGL_ASSERT(commandQueue_ != nullptr);
-  buffer->present(framebuffer_->getColorAttachment(0));
+  if (shellParams().shouldPresent) {
+    buffer->present(framebuffer_->getColorAttachment(0));
+  }
   commandQueue_->submit(*buffer);
 }
 
