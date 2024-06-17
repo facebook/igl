@@ -5,10 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "data/TextureData.h"
 #include "util/Common.h"
-
-#include <string>
 
 namespace igl {
 namespace tests {
@@ -38,7 +35,6 @@ class ResourceTest : public ::testing::Test {
  public:
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
-  std::shared_ptr<ICommandBuffer> cmdBuf_;
 
   struct FragmentFormat {
     simd::float3 color;

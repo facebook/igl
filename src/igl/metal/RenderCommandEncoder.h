@@ -52,11 +52,6 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   void bindTexture(size_t index, uint8_t target, ITexture* texture) override;
   void bindUniform(const UniformDesc& uniformDesc, const void* data) override;
 
-  void draw(PrimitiveType primitiveType,
-            size_t vertexStart,
-            size_t vertexCount,
-            uint32_t instanceCount,
-            uint32_t baseInstance) override;
   void draw(size_t vertexCount,
             uint32_t instanceCount,
             uint32_t firstVertex,

@@ -217,6 +217,31 @@ VkResult ivkAllocateMemory(const struct VulkanFunctionTable* vt,
   return vt->vkAllocateMemory(device, &ai, NULL, outMemory);
 }
 
+VkResult ivkAllocateMemory2(const struct VulkanFunctionTable* vt,
+                            VkPhysicalDevice physDev,
+                            VkDevice device,
+                            const VkMemoryRequirements2* memRequirements,
+                            VkMemoryPropertyFlags props,
+                            bool enableBufferDeviceAddress,
+                            VkDeviceMemory* outMemory) {
+  assert(memRequirements);
+
+  const VkMemoryAllocateFlagsInfo memoryAllocateFlagsInfo = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
+      .flags = enableBufferDeviceAddress ? VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR : 0,
+  };
+
+  const VkMemoryAllocateInfo ai = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+      .pNext = &memoryAllocateFlagsInfo,
+      .allocationSize = memRequirements->memoryRequirements.size,
+      .memoryTypeIndex =
+          ivkFindMemoryType(vt, physDev, memRequirements->memoryRequirements.memoryTypeBits, props),
+  };
+
+  return vt->vkAllocateMemory(device, &ai, NULL, outMemory);
+}
+
 bool ivkIsHostVisibleSingleHeapMemory(const struct VulkanFunctionTable* vt,
                                       VkPhysicalDevice physDev) {
   VkPhysicalDeviceMemoryProperties memProperties;

@@ -19,6 +19,7 @@
 #include <igl/opengl/Device.h>
 #include <igl/opengl/GLIncludes.h>
 #include <shell/renderSessions/MRTSession.h>
+#include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl {
 namespace shell {
@@ -449,7 +450,10 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
 
   // clang-format on
   commands->endEncoding();
-  buffer->present(surfaceTextures.color);
+
+  if (shellParams().shouldPresent) {
+    buffer->present(surfaceTextures.color);
+  }
 
   commandQueue_->submit(*buffer); // Guarantees ordering between command buffers
 }
