@@ -21,7 +21,6 @@ class Device;
 /// @brief This class stores all mutable pipeline parameters as member variables and serves as a
 /// hash key for the `RenderPipelineState` class
 class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
-  uint32_t topology_ : 4;
   uint32_t depthCompareOp_ : 3;
 
   // Ignore modernize-use-default-member-init
@@ -63,7 +62,6 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
   RenderPipelineDynamicState() {
     // memset makes sure all padding bits are zero
     std::memset(this, 0, sizeof(*this));
-    topology_ = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     // depth and stencil default state values should be based on DepthStencilStateDesc and
     // StencilStateDesc in graphics/igl/src/igl/DepthStencilState.h
     depthCompareOp_ = VK_COMPARE_OP_ALWAYS;
@@ -78,15 +76,6 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
     renderPassIndex_ = 0;
     depthBiasEnable_ = false;
     depthWriteEnable_ = false;
-  }
-
-  VkPrimitiveTopology getTopology() const {
-    return static_cast<VkPrimitiveTopology>(topology_);
-  }
-
-  void setTopology(VkPrimitiveTopology topology) {
-    IGL_ASSERT_MSG((topology & 0xF) == topology, "Invalid VkPrimitiveTopology.");
-    topology_ = topology & 0xF;
   }
 
   VkCompareOp getDepthCompareOp() const {

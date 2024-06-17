@@ -93,23 +93,6 @@ VkIndexType indexFormatToVkIndexType(igl::IndexFormat fmt) {
   return VK_INDEX_TYPE_NONE_KHR;
 }
 
-VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(igl::PrimitiveType t) {
-  switch (t) {
-  case igl::PrimitiveType::Point:
-    return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-  case igl::PrimitiveType::Line:
-    return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-  case igl::PrimitiveType::LineStrip:
-    return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-  case igl::PrimitiveType::Triangle:
-    return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-  case igl::PrimitiveType::TriangleStrip:
-    return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-  }
-  IGL_ASSERT_MSG(false, "Implement PrimitiveType = %u", (uint32_t)t);
-  return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
-}
-
 } // namespace
 
 namespace igl {
@@ -629,8 +612,6 @@ void RenderCommandEncoder::draw(size_t vertexCount,
 
   ensureVertexBuffers();
 
-  dynamicState_.setTopology(
-      primitiveTypeToVkPrimitiveTopology(rps_->getRenderPipelineDesc().topology));
   flushDynamicState();
 
 #if IGL_VULKAN_PRINT_COMMANDS
@@ -666,8 +647,6 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
 
   ensureVertexBuffers();
 
-  dynamicState_.setTopology(
-      primitiveTypeToVkPrimitiveTopology(rps_->getRenderPipelineDesc().topology));
   flushDynamicState();
 
 #if IGL_VULKAN_PRINT_COMMANDS
@@ -695,8 +674,6 @@ void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
 
   ensureVertexBuffers();
 
-  dynamicState_.setTopology(
-      primitiveTypeToVkPrimitiveTopology(rps_->getRenderPipelineDesc().topology));
   flushDynamicState();
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
@@ -722,8 +699,6 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
 
   ensureVertexBuffers();
 
-  dynamicState_.setTopology(
-      primitiveTypeToVkPrimitiveTopology(rps_->getRenderPipelineDesc().topology));
   flushDynamicState();
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
