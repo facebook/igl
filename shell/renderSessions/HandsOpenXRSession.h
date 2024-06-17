@@ -11,11 +11,11 @@
 
 #include <shell/shared/renderSession/RenderSession.h>
 
+#include <IGLU/shaderCross/ShaderCrossUniformBuffer.h>
 #include <array>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <igl/IGL.h>
-#include <memory>
 #include <shell/shared/platform/Platform.h>
 
 namespace igl::shell {
@@ -42,6 +42,7 @@ class HandsOpenXRSession : public RenderSession {
   std::shared_ptr<IShaderStages> shaderStages_;
   std::shared_ptr<IBuffer> vb0_, ib0_;
   std::shared_ptr<IFramebuffer> framebuffer_;
+  std::shared_ptr<iglu::ShaderCrossUniformBuffer> ubo_;
 
   std::array<std::array<glm::mat4, kMaxJoints>, 2> jointInvBindMatrix_;
 
