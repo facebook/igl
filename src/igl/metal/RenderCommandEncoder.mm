@@ -356,29 +356,6 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
   }
 }
 
-void RenderCommandEncoder::draw(PrimitiveType primitiveType,
-                                size_t vertexStart,
-                                size_t vertexCount,
-                                uint32_t instanceCount,
-                                uint32_t baseInstance) {
-  getCommandBuffer().incrementCurrentDrawCount();
-  IGL_ASSERT(encoder_);
-  MTLPrimitiveType metalPrimitive = convertPrimitiveType(primitiveType);
-#if IGL_PLATFORM_IOS
-  if (@available(iOS 16, *)) {
-#endif // IGL_PLATFORM_IOS
-    [encoder_ drawPrimitives:metalPrimitive
-                 vertexStart:vertexStart
-                 vertexCount:vertexCount
-               instanceCount:instanceCount
-                baseInstance:baseInstance];
-#if IGL_PLATFORM_IOS
-  } else {
-    [encoder_ drawPrimitives:metalPrimitive vertexStart:vertexStart vertexCount:vertexCount];
-  }
-#endif // IGL_PLATFORM_IOS
-}
-
 void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t instanceCount,
                                 uint32_t firstVertex,

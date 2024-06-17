@@ -74,11 +74,6 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   /// implement!
   void bindUniform(const UniformDesc& uniformDesc, const void* data) override;
 
-  void draw(PrimitiveType primitiveType,
-            size_t vertexStart,
-            size_t vertexCount,
-            uint32_t instanceCount,
-            uint32_t baseInstance) override;
   void draw(size_t vertexCount,
             uint32_t instanceCount,
             uint32_t firstVertex,

@@ -342,28 +342,6 @@ void RenderCommandEncoder::bindTexture(size_t index, uint8_t bindTarget, ITextur
   }
 }
 
-void RenderCommandEncoder::draw(PrimitiveType primitiveType,
-                                size_t vertexStart,
-                                size_t vertexCount,
-                                uint32_t instanceCount,
-                                uint32_t baseInstance) {
-  (void)instanceCount;
-  (void)baseInstance;
-
-  IGL_ASSERT_MSG(baseInstance == 0, "Instancing is not implemented");
-
-  if (IGL_VERIFY(adapter_)) {
-    getCommandBuffer().incrementCurrentDrawCount();
-    auto mode = toGlPrimitive(primitiveType);
-    if (instanceCount > 1) {
-      adapter_->drawArraysInstanced(
-          mode, (GLsizei)vertexStart, (GLsizei)vertexCount, (GLsizei)instanceCount);
-    } else {
-      adapter_->drawArrays(mode, (GLsizei)vertexStart, (GLsizei)vertexCount);
-    }
-  }
-}
-
 void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t instanceCount,
                                 uint32_t firstVertex,

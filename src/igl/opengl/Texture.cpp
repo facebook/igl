@@ -913,6 +913,8 @@ bool Texture::toFormatDescGL(IContext& ctx,
       internalFormat = GL_DEPTH_STENCIL;
     }
     return true;
+  case TextureFormat::YUV_NV12:
+    return false;
   }
 
   return false;

@@ -428,7 +428,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 class PipelineDynamicStateCreateInfoTest : public ::testing::TestWithParam<std::tuple<uint32_t>> {};
 
-TEST_P(PipelineDynamicStateCreateInfoTest, GetImageCreateInfo) {
+TEST_P(PipelineDynamicStateCreateInfoTest, GetPipelineDyncStateCreateInfo) {
   const uint32_t dynamicStateCount = std::get<0>(GetParam());
   EXPECT_LE(dynamicStateCount, 2);
   const std::array<VkDynamicState, 2> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
@@ -487,6 +487,148 @@ INSTANTIATE_TEST_SUITE_P(
     [](const testing::TestParamInfo<PipelineRasterizationStateCreateInfoTest::ParamType>& info) {
       const std::string name = "polygonMode_" + std::to_string(std::get<0>(info.param)) +
                                "__cullMode_" + std::to_string(std::get<1>(info.param));
+      return name;
+    });
+
+// ivkGetPipelineMultisampleStateCreateInfo_Empty ***********************************************
+
+class GetPipelineMultisampleStateCreateInfo_Empty : public ::testing::Test {};
+
+TEST_F(GetPipelineMultisampleStateCreateInfo_Empty, GetPipelineMultisampleStateCreateInfo_Empty) {
+  const VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo =
+      ivkGetPipelineMultisampleStateCreateInfo_Empty();
+
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.sType,
+            VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.pNext, nullptr);
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.rasterizationSamples, VK_SAMPLE_COUNT_1_BIT);
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.sampleShadingEnable, VK_FALSE);
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.minSampleShading, 1.0f);
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.pSampleMask, nullptr);
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.alphaToCoverageEnable, VK_FALSE);
+  EXPECT_EQ(pipelineMultisampleStateCreateInfo.alphaToOneEnable, VK_FALSE);
+}
+
+// ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests *******************************
+
+class GetPipelineDepthStencilStateCreateInfo_NoDepthStencilTestsTest : public ::testing::Test {};
+
+TEST_F(GetPipelineDepthStencilStateCreateInfo_NoDepthStencilTestsTest,
+       GetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests) {
+  const VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo =
+      ivkGetPipelineDepthStencilStateCreateInfo_NoDepthStencilTests();
+
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.sType,
+            VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.pNext, nullptr);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.flags, 0);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.depthTestEnable, VK_FALSE);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.depthWriteEnable, VK_FALSE);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.depthCompareOp, VK_COMPARE_OP_LESS);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.depthBoundsTestEnable, VK_FALSE);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.stencilTestEnable, VK_FALSE);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.minDepthBounds, 0.0f);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.maxDepthBounds, 1.0f);
+
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.front.failOp, VK_STENCIL_OP_KEEP);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.front.passOp, VK_STENCIL_OP_KEEP);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.front.depthFailOp, VK_STENCIL_OP_KEEP);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.front.compareOp, VK_COMPARE_OP_NEVER);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.front.compareMask, 0);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.front.writeMask, 0);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.front.reference, 0);
+
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.failOp, VK_STENCIL_OP_KEEP);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.passOp, VK_STENCIL_OP_KEEP);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.depthFailOp, VK_STENCIL_OP_KEEP);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.compareOp, VK_COMPARE_OP_NEVER);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.compareMask, 0);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.writeMask, 0);
+  EXPECT_EQ(pipelineDepthStencilStateCreateInfo.back.reference, 0);
+}
+
+// ivkGetPipelineColorBlendAttachmentState_NoBlending *******************************************
+
+class GetPipelineColorBlendAttachmentState_NoBlendingTest : public ::testing::Test {};
+
+TEST_F(GetPipelineColorBlendAttachmentState_NoBlendingTest,
+       GetPipelineColorBlendAttachmentState_NoBlending) {
+  const VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState =
+      ivkGetPipelineColorBlendAttachmentState_NoBlending();
+
+  EXPECT_EQ(pipelineColorBlendAttachmentState.blendEnable, VK_FALSE);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.srcColorBlendFactor, VK_BLEND_FACTOR_ONE);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.dstColorBlendFactor, VK_BLEND_FACTOR_ZERO);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.colorBlendOp, VK_BLEND_OP_ADD);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.srcAlphaBlendFactor, VK_BLEND_FACTOR_ONE);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.dstAlphaBlendFactor, VK_BLEND_FACTOR_ZERO);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.alphaBlendOp, VK_BLEND_OP_ADD);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.colorWriteMask,
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+                VK_COLOR_COMPONENT_A_BIT);
+}
+
+// ivkGetPipelineColorBlendAttachmentState ***************************************************
+
+class PipelineColorBlendAttachmentStateTest
+  : public ::testing::TestWithParam<std::tuple<bool,
+                                               VkBlendFactor,
+                                               VkBlendFactor,
+                                               VkBlendOp,
+                                               VkBlendFactor,
+                                               VkBlendFactor,
+                                               VkBlendOp,
+                                               VkColorComponentFlags>> {};
+
+TEST_P(PipelineColorBlendAttachmentStateTest, GetPipelineColorBlendAttachmentState) {
+  const bool blendEnabled = std::get<0>(GetParam());
+  const VkBlendFactor srcColorBlendFactor = std::get<1>(GetParam());
+  const VkBlendFactor dstColorBlendFactor = std::get<2>(GetParam());
+  const VkBlendOp colorBlendOp = std::get<3>(GetParam());
+  const VkBlendFactor srcAlphaBlendFactor = std::get<4>(GetParam());
+  const VkBlendFactor dstAlphaBlendFactor = std::get<5>(GetParam());
+  const VkBlendOp alphaBlendOp = std::get<6>(GetParam());
+  const VkColorComponentFlags colorWriteMask = std::get<7>(GetParam());
+
+  const auto pipelineColorBlendAttachmentState =
+      ivkGetPipelineColorBlendAttachmentState(blendEnabled,
+                                              srcColorBlendFactor,
+                                              dstColorBlendFactor,
+                                              colorBlendOp,
+                                              srcAlphaBlendFactor,
+                                              dstAlphaBlendFactor,
+                                              alphaBlendOp,
+                                              colorWriteMask);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.blendEnable, blendEnabled);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.srcColorBlendFactor, srcColorBlendFactor);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.dstColorBlendFactor, dstColorBlendFactor);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.colorBlendOp, colorBlendOp);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.srcAlphaBlendFactor, srcAlphaBlendFactor);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.dstAlphaBlendFactor, dstAlphaBlendFactor);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.alphaBlendOp, alphaBlendOp);
+  EXPECT_EQ(pipelineColorBlendAttachmentState.colorWriteMask, colorWriteMask);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    PipelineColorBlendAttachmentStateTest,
+    ::testing::Combine(::testing::Bool(),
+                       ::testing::Values(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO),
+                       ::testing::Values(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO),
+                       ::testing::Values(VK_BLEND_OP_ADD, VK_BLEND_OP_SUBTRACT),
+                       ::testing::Values(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO),
+                       ::testing::Values(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO),
+                       ::testing::Values(VK_BLEND_OP_ADD, VK_BLEND_OP_SUBTRACT),
+                       ::testing::Values(VK_COLOR_COMPONENT_R_BIT, VK_COLOR_COMPONENT_A_BIT)),
+    [](const testing::TestParamInfo<PipelineColorBlendAttachmentStateTest::ParamType>& info) {
+      const std::string name = "_blendEnable_" + std::to_string(std::get<0>(info.param)) +
+                               "__srcColorBlendFactor_" + std::to_string(std::get<1>(info.param)) +
+                               "__dstColorBlendFactor_" + std::to_string(std::get<2>(info.param)) +
+                               "__colorBlendOp_" + std::to_string(std::get<3>(info.param)) +
+                               "__srcAlphaBlendFactor_" + std::to_string(std::get<4>(info.param)) +
+                               "__dstAlphaBlendFactor_" + std::to_string(std::get<5>(info.param)) +
+                               "__alphaBlendOp_" + std::to_string(std::get<6>(info.param)) +
+                               "__colorWriteMask_" + std::to_string(std::get<7>(info.param));
       return name;
     });
 

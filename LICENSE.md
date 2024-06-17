@@ -32,6 +32,9 @@ https://casual-effects.com/data/
 bc7env
 https://github.com/richgel999/bc7enc/blob/master/LICENSE
 
+Big Buck Bunny - the Peach open movie project
+https://peach.blender.org/about/
+
 Bootstrap
 https://github.com/corporateshark/bootstrapping/blob/master/LICENSE
 
