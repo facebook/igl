@@ -79,7 +79,13 @@ set(SPIRV_CROSS_ENABLE_REFLECT OFF CACHE BOOL "")
 set(SPIRV_CROSS_SKIP_INSTALL   ON  CACHE BOOL "")
 
 add_subdirectory(${IGL_ROOT_DIR}/third-party/deps/src/SPIRV-Cross "SPIRV-Cross")
+
+igl_set_folder(spirv-cross-core "third-party/spirv-cross/spirv-cross-core")
+igl_set_folder(spirv-cross-glsl "third-party/spirv-cross/spirv-cross-glsl")
+igl_set_folder(spirv-cross-msl  "third-party/spirv-cross/spirv-cross-msl")
+igl_set_folder(spirv-cross-util "third-party/spirv-cross/spirv-cross-util")
+igl_set_folder(spirv-cross-c    "third-party/spirv-cross/spirv-cross-c")
 # cmake-format: on
 
-target_include_directories(IGLUshaderCross PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/SPIRV-Cross")
-target_link_libraries(IGLUshaderCross PRIVATE IGLUmanagedUniformBuffer spirv-cross-core spirv-cross-glsl spirv-cross-msl)
+target_include_directories(IGLUshaderCross PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/SPIRV-Cross" "${IGL_ROOT_DIR}/third-party/deps/src/glslang")
+target_link_libraries(IGLUshaderCross PRIVATE IGLGlslang IGLUmanagedUniformBuffer spirv-cross-core spirv-cross-glsl spirv-cross-msl spirv-cross-util spirv-cross-c)
