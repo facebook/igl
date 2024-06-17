@@ -450,9 +450,13 @@ VulkanContext::~VulkanContext() {
 
   device_.reset(nullptr); // Device has to be destroyed prior to Instance
 #if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID
-  vf_.vkDestroyDebugUtilsMessengerEXT(vkInstance_, vkDebugUtilsMessenger_, nullptr);
+  if (vf_.vkDestroyDebugUtilsMessengerEXT != nullptr) {
+    vf_.vkDestroyDebugUtilsMessengerEXT(vkInstance_, vkDebugUtilsMessenger_, nullptr);
+  }
 #endif // defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID
-  vf_.vkDestroyInstance(vkInstance_, nullptr);
+  if (vf_.vkDestroyInstance != nullptr) {
+    vf_.vkDestroyInstance(vkInstance_, nullptr);
+  }
 
   glslang::finalizeCompiler();
 
@@ -530,6 +534,11 @@ igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
 
   // Physical devices
   uint32_t deviceCount = 0;
+
+  if (vf_.vkEnumeratePhysicalDevices == nullptr) {
+    return Result(Result::Code::Unsupported, "Vulkan functions are not loaded");
+  }
+
   VK_ASSERT_RETURN(vf_.vkEnumeratePhysicalDevices(vkInstance_, &deviceCount, nullptr));
   std::vector<VkPhysicalDevice> vkDevices(deviceCount);
   VK_ASSERT_RETURN(vf_.vkEnumeratePhysicalDevices(vkInstance_, &deviceCount, vkDevices.data()));
