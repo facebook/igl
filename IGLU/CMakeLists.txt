@@ -32,6 +32,7 @@ add_iglu_module(managedUniformBuffer)
 add_iglu_module(sentinel)
 add_iglu_module(simple_renderer)
 add_iglu_module(state_pool)
+add_iglu_module(shaderCross)
 add_iglu_module(texture_accessor)
 add_iglu_module(texture_loader)
 add_iglu_module(uniform)
@@ -63,3 +64,22 @@ if(UNIX)
     target_compile_options(IGLUimgui PUBLIC "-Wno-volatile")
   endif()
 endif()
+
+# SPIRV-Cross
+# cmake-format: off
+set(SPIRV_CROSS_SHARED         OFF CACHE BOOL "")
+set(SPIRV_CROSS_STATIC         ON  CACHE BOOL "")
+set(SPIRV_CROSS_CLI            OFF CACHE BOOL "")
+set(SPIRV_CROSS_ENABLE_TESTS   OFF CACHE BOOL "")
+set(SPIRV_CROSS_ENABLE_GLSL    ON  CACHE BOOL "")
+set(SPIRV_CROSS_ENABLE_HLSL    OFF CACHE BOOL "")
+set(SPIRV_CROSS_ENABLE_MSL     ON  CACHE BOOL "")
+set(SPIRV_CROSS_ENABLE_CPP     OFF CACHE BOOL "")
+set(SPIRV_CROSS_ENABLE_REFLECT OFF CACHE BOOL "")
+set(SPIRV_CROSS_SKIP_INSTALL   ON  CACHE BOOL "")
+
+add_subdirectory(${IGL_ROOT_DIR}/third-party/deps/src/SPIRV-Cross "SPIRV-Cross")
+# cmake-format: on
+
+target_include_directories(IGLUshaderCross PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/SPIRV-Cross")
+target_link_libraries(IGLUshaderCross PRIVATE IGLUmanagedUniformBuffer spirv-cross-core spirv-cross-glsl spirv-cross-msl)
