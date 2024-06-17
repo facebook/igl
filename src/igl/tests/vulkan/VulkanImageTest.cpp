@@ -85,13 +85,8 @@ class VulkanImageTest : public ::testing::Test {
           *ctx, igl::HWDeviceQueryDesc(igl::HWDeviceType::IntegratedGpu), nullptr);
     }
 
-    return devices.empty() ? nullptr
-                           : igl::vulkan::HWDevice::create(std::move(ctx),
-                                                           devices[0],
-                                                           0,
-                                                           0,
-                                                           deviceExtensions.size(),
-                                                           deviceExtensions.data());
+    return igl::vulkan::HWDevice::create(
+        std::move(ctx), devices[0], 0, 0, deviceExtensions.size(), deviceExtensions.data());
   }
 
   std::unique_ptr<IDevice> device_;
