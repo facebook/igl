@@ -54,6 +54,9 @@ if(ANDROID)
   set(IGL_WITH_OPENGL OFF)
   set(IGL_WITH_VULKAN ON)
   set(IGL_WITH_WEBGL OFF)
+  # disable for all targets due to warnings in third-party code
+  add_definitions(-Wno-nullability-completeness)
+  add_definitions(-Wno-deprecated-volatile)
 endif()
 
 if(EMSCRIPTEN)
@@ -263,7 +266,7 @@ if(IGL_WITH_SAMPLES)
       add_subdirectory(samples/desktop)
       igl_set_folder(glfw "third-party/GLFW3")
     endif()
-    endif()
+  endif()
 endif()
 
 if (IGL_WITH_VULKAN OR IGL_WITH_IGLU OR IGL_WITH_SAMPLES)
