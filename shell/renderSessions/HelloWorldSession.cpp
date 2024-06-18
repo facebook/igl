@@ -13,6 +13,7 @@
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/RenderCommandEncoder.h>
 #include <regex>
+#include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl::shell {
 
@@ -193,7 +194,9 @@ void HelloWorldSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commands->popDebugGroupLabel();
   commands->endEncoding();
 
-  buffer->present(surfaceTextures.color);
+  if (shellParams().shouldPresent) {
+    buffer->present(surfaceTextures.color);
+  }
 
   commandQueue_->submit(*buffer);
   RenderSession::update(surfaceTextures);
