@@ -37,7 +37,7 @@ class PlatformDevice : public opengl::PlatformDevice {
                                                             Result* outResult);
 
   /// Returns a texture representing the EGL depth texture associated with this device's context.
-  std::shared_ptr<ITexture> createTextureFromNativeDepth(Result* outResult);
+  std::shared_ptr<ITexture> createTextureFromNativeDepth(TextureFormat depthTextureFormat,Result* outResult);
 
 #if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
 
