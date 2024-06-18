@@ -632,4 +632,41 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkGetPipelineViewportStateCreateInfo *******************************
+
+// Parameters:
+//   bool: true if viewport is nullptr
+//   bool: true if scissor is nullptr
+class GetPipelineViewportStateCreateInfoTest
+  : public ::testing::TestWithParam<std::tuple<bool, bool>> {};
+
+TEST_P(GetPipelineViewportStateCreateInfoTest, GetPipelineViewportStateCreateInfo) {
+  const bool useViewportPtr = std::get<0>(GetParam());
+  const bool useScissorPtr = std::get<1>(GetParam());
+  constexpr VkViewport viewport{};
+  constexpr VkRect2D scissor{};
+  const VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo =
+      ivkGetPipelineViewportStateCreateInfo(useViewportPtr ? &viewport : nullptr,
+                                            useScissorPtr ? &scissor : nullptr);
+
+  EXPECT_EQ(pipelineViewportStateCreateInfo.sType,
+            VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
+  EXPECT_EQ(pipelineViewportStateCreateInfo.pNext, nullptr);
+  EXPECT_EQ(pipelineViewportStateCreateInfo.flags, 0);
+  EXPECT_EQ(pipelineViewportStateCreateInfo.viewportCount, 1);
+  EXPECT_EQ(pipelineViewportStateCreateInfo.pViewports, useViewportPtr ? &viewport : nullptr);
+  EXPECT_EQ(pipelineViewportStateCreateInfo.scissorCount, 1);
+  EXPECT_EQ(pipelineViewportStateCreateInfo.pScissors, useScissorPtr ? &scissor : nullptr);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    GetPipelineViewportStateCreateInfoTest,
+    ::testing::Combine(::testing::Bool(), ::testing::Bool()),
+    [](const testing::TestParamInfo<GetPipelineViewportStateCreateInfoTest::ParamType>& info) {
+      const std::string name = "_useViewportPtr_" + std::to_string(std::get<0>(info.param)) +
+                               "__useScissorPtr_" + std::to_string(std::get<1>(info.param));
+      return name;
+    });
+
 } // namespace igl::tests
