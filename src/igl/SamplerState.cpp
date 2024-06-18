@@ -18,7 +18,7 @@ bool SamplerStateDesc::operator==(const SamplerStateDesc& rhs) const {
          (addressModeV == rhs.addressModeV) && (addressModeW == rhs.addressModeW) &&
          (depthCompareFunction == rhs.depthCompareFunction) && (mipLodMin == rhs.mipLodMin) &&
          (mipLodMax == rhs.mipLodMax) && (maxAnisotropic == rhs.maxAnisotropic) &&
-         (depthCompareEnabled == rhs.depthCompareEnabled);
+         (depthCompareEnabled == rhs.depthCompareEnabled) && (isYUV_NV12 == rhs.isYUV_NV12);
 }
 
 bool SamplerStateDesc::operator!=(const SamplerStateDesc& rhs) const {
@@ -48,7 +48,8 @@ size_t std::hash<igl::SamplerStateDesc>::operator()(igl::SamplerStateDesc const&
                 key.mipLodMin << 14 |                     // [0, 15]: 4 bit field
                 key.mipLodMax << 18 |                     // [0, 15]: 4 bit field
                 igl::EnumToValue(key.depthCompareFunction) << 22 | // [0, 7]: 3 bit field
-                key.depthCompareEnabled << 25;            // 0,1: 1 bit field
+                (key.depthCompareEnabled ? 1u : 0u) << 25 |        // 0,1: 1 bit field
+                (key.isYUV_NV12 ? 1u : 0u) << 26;                  // 0,1: 1 bit field
   // clang-format on
 
   return hash;

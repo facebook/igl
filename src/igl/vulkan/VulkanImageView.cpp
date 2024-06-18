@@ -30,11 +30,15 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
 
   VkDevice device = ctx_->getVkDevice();
 
-  const VkImageViewCreateInfo ci = ivkGetImageViewCreateInfo(
+  VkImageViewCreateInfo ci = ivkGetImageViewCreateInfo(
       image,
       type,
       format,
       VkImageSubresourceRange{aspectMask, baseLevel, numLevels, baseLayer, numLayers});
+
+  if (format == VK_FORMAT_G8_B8R8_2PLANE_420_UNORM) {
+    ci.pNext = &ctx.ycbcrConversionInfo_;
+  }
 
   VK_ASSERT(ctx_->vf_.vkCreateImageView(device, &ci, nullptr, &vkImageView_));
 

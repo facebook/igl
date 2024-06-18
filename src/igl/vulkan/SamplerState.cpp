@@ -114,6 +114,7 @@ Result SamplerState::create(const SamplerStateDesc& desc) {
   Result result;
   sampler_ = ctx.createSampler(
       samplerStateDescToVkSamplerCreateInfo(desc, ctx.getVkPhysicalDeviceProperties().limits),
+      desc.isYUV_NV12,
       &result,
       desc_.debugName.c_str());
 

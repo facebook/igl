@@ -119,6 +119,8 @@ struct SamplerStateDesc {
    */
   std::string debugName = "";
 
+  bool isYUV_NV12 = false;
+
   /**
    * @brief Creates a new SamplerStateDesc instance set up for linearly interpolating within mipmap
    * level 0.

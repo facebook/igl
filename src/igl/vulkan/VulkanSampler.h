@@ -33,6 +33,7 @@ class VulkanSampler final {
   VulkanSampler(const VulkanContext& ctx,
                 VkDevice device,
                 const VkSamplerCreateInfo& ci,
+                bool isYUV_NV12,
                 const char* debugName = nullptr);
   ~VulkanSampler();
 
