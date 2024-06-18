@@ -669,4 +669,33 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkGetImageSubresourceRange *******************************
+
+// Parameters:
+//   bool: true if viewport is nullptr
+//   bool: true if scissor is nullptr
+class GetImageSubresourceRangeTest
+  : public ::testing::TestWithParam<std::tuple<VkImageAspectFlags>> {};
+
+TEST_P(GetImageSubresourceRangeTest, GetImageSubresourceRange) {
+  const VkImageAspectFlags aspectFlag = std::get<0>(GetParam());
+
+  const VkImageSubresourceRange imageSubresourceRange = ivkGetImageSubresourceRange(aspectFlag);
+
+  EXPECT_EQ(imageSubresourceRange.aspectMask, aspectFlag);
+  EXPECT_EQ(imageSubresourceRange.baseMipLevel, 0);
+  EXPECT_EQ(imageSubresourceRange.levelCount, 1);
+  EXPECT_EQ(imageSubresourceRange.baseArrayLayer, 0);
+  EXPECT_EQ(imageSubresourceRange.layerCount, 1);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    GetImageSubresourceRangeTest,
+    ::testing::Combine(::testing::Values(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_ASPECT_DEPTH_BIT)),
+    [](const testing::TestParamInfo<GetImageSubresourceRangeTest::ParamType>& info) {
+      const std::string name = "_aspectFlag_" + std::to_string(std::get<0>(info.param));
+      return name;
+    });
+
 } // namespace igl::tests
