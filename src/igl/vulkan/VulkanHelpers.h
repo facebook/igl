@@ -145,15 +145,12 @@ VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
 
 VkSamplerYcbcrConversionCreateInfo ivkGetSamplerYcbcrCreateInfo(VkFormat format);
 
-/// @brief Creates a Vulkan Image View with the R, G, B, and A components mapped to themselves
+/// @brief Returns VkImageViewCreateInfo with the R, G, B, and A components mapped to themselves
 /// (identity)
-VkResult ivkCreateImageView(const struct VulkanFunctionTable* vt,
-                            VkDevice device,
-                            VkImage image,
-                            VkImageViewType type,
-                            VkFormat imageFormat,
-                            VkImageSubresourceRange range,
-                            VkImageView* outImageView);
+VkImageViewCreateInfo ivkGetImageViewCreateInfo(VkImage image,
+                                                VkImageViewType type,
+                                                VkFormat imageFormat,
+                                                VkImageSubresourceRange range);
 
 VkResult ivkCreateFramebuffer(const struct VulkanFunctionTable* vt,
                               VkDevice device,

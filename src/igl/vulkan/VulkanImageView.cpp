@@ -30,14 +30,13 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
 
   VkDevice device = ctx_->getVkDevice();
 
-  VK_ASSERT(ivkCreateImageView(
-      &ctx_->vf_,
-      device,
+  const VkImageViewCreateInfo ci = ivkGetImageViewCreateInfo(
       image,
       type,
       format,
-      VkImageSubresourceRange{aspectMask, baseLevel, numLevels, baseLayer, numLayers},
-      &vkImageView_));
+      VkImageSubresourceRange{aspectMask, baseLevel, numLevels, baseLayer, numLayers});
+
+  VK_ASSERT(ctx_->vf_.vkCreateImageView(device, &ci, nullptr, &vkImageView_));
 
   VK_ASSERT(ivkSetDebugObjectName(
       &ctx_->vf_, device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vkImageView_, debugName));

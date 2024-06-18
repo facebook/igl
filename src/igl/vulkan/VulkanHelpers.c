@@ -676,13 +676,10 @@ VkSamplerYcbcrConversionCreateInfo ivkGetSamplerYcbcrCreateInfo(VkFormat format)
   return ci;
 }
 
-VkResult ivkCreateImageView(const struct VulkanFunctionTable* vt,
-                            VkDevice device,
-                            VkImage image,
-                            VkImageViewType type,
-                            VkFormat imageFormat,
-                            VkImageSubresourceRange range,
-                            VkImageView* outImageView) {
+VkImageViewCreateInfo ivkGetImageViewCreateInfo(VkImage image,
+                                                VkImageViewType type,
+                                                VkFormat imageFormat,
+                                                VkImageSubresourceRange range) {
   const VkImageViewCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
       .image = image,
@@ -694,8 +691,7 @@ VkResult ivkCreateImageView(const struct VulkanFunctionTable* vt,
                      .a = VK_COMPONENT_SWIZZLE_IDENTITY},
       .subresourceRange = range,
   };
-
-  return vt->vkCreateImageView(device, &ci, NULL, outImageView);
+  return ci;
 }
 
 VkResult ivkCreateFramebuffer(const struct VulkanFunctionTable* vt,
