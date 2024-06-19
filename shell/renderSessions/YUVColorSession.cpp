@@ -204,7 +204,9 @@ void YUVColorSession::initialize() noexcept {
   IGL_ASSERT(vertexInput0_ != nullptr);
 
   // Sampler & Texture
-  samp0_ = device.createSamplerState(SamplerStateDesc::newLinear(), nullptr);
+  SamplerStateDesc samplerDesc = SamplerStateDesc::newLinear();
+  samplerDesc.isYUV_NV12 = true;
+  samp0_ = device.createSamplerState(samplerDesc, nullptr);
   IGL_ASSERT(samp0_ != nullptr);
 
   // https://github.com/facebook/igl/blob/main/shell/resources/images/output_frame_900.txt
@@ -214,7 +216,7 @@ void YUVColorSession::initialize() noexcept {
   const uint32_t height = 1080;
 
   const igl::TextureDesc textureDesc =
-      igl::TextureDesc::new2D(igl::TextureFormat::R_UNorm8,
+      igl::TextureDesc::new2D(igl::TextureFormat::YUV_NV12,
                               width,
                               height,
                               TextureDesc::TextureUsageBits::Sampled,
@@ -282,6 +284,7 @@ void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     desc.fragmentUnitSamplerMap[_textureUnit] = IGL_NAMEHANDLE("inputImage");
     desc.cullMode = igl::CullMode::Back;
     desc.frontFaceWinding = igl::WindingMode::Clockwise;
+    desc.immutableSamplers[_textureUnit] = samp0_; // Ycbcr sampler
 
     pipelineState_ = getPlatform().getDevice().createRenderPipeline(desc, nullptr);
     IGL_ASSERT(pipelineState_ != nullptr);
