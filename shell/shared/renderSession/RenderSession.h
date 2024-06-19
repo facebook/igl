@@ -26,7 +26,7 @@ class RenderSession {
   virtual void initialize() noexcept {}
   // NOLINTNEXTLINE(performance-unnecessary-value-param)
   virtual void update(IGL_MAYBE_UNUSED igl::SurfaceTextures surfaceTextures) noexcept {}
-  virtual void dispose() noexcept {}
+  virtual void teardown() noexcept {}
 
   void updateDisplayScale(float scale) noexcept;
 

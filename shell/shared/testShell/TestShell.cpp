@@ -78,7 +78,7 @@ void TestShell::run(igl::shell::RenderSession& session, size_t numFrames) {
   for (size_t i = 0; i < numFrames; ++i) {
     session.update({offscreenTexture_, offscreenDepthTexture_});
   }
-  session.dispose();
+  session.teardown();
 }
 
 } // namespace igl::shell
