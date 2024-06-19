@@ -86,6 +86,12 @@ bool RenderPipelineDesc::operator==(const RenderPipelineDesc& other) const {
     return false;
   }
 
+  for (size_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
+    if (immutableSamplers[i] != other.immutableSamplers[i]) {
+      return false;
+    }
+  }
+
   if (debugName != other.debugName) {
     return false;
   }
@@ -121,6 +127,9 @@ size_t std::hash<RenderPipelineDesc>::operator()(RenderPipelineDesc const& key) 
     hash ^= std::hash<size_t>()(i.first);
     hash ^= std::hash<igl::NameHandle>()(i.second.first);
     hash ^= std::hash<igl::NameHandle>()(i.second.second);
+  }
+  for (const auto& i : key.immutableSamplers) {
+    hash ^= std::hash<uintptr_t>()(reinterpret_cast<uintptr_t>(i.get()));
   }
 
   return hash;

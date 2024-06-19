@@ -203,7 +203,11 @@ struct RenderPipelineDesc {
    */
   std::unordered_map<size_t, std::pair<igl::NameHandle, igl::NameHandle>> uniformBlockBindingMap;
 
-  int sampleCount = 1;
+  int sampleCount = 1; // MSAA
+
+  // Vulkan only: immutable samplers per each binding slot (for example, Ycbcr conversion etc)
+  // @fb-only
+  std::shared_ptr<ISamplerState> immutableSamplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
 
   igl::NameHandle debugName;
 

@@ -14,8 +14,9 @@
 namespace igl {
 namespace vulkan {
 
-class VulkanSampler;
 class Device;
+class PipelineState;
+class VulkanSampler;
 
 /**
  * @brief Encapsulates a VulkanSampler class and its descriptor, along with a vulkan::Device for
@@ -50,6 +51,7 @@ class SamplerState final : public ISamplerState {
   Result create(const SamplerStateDesc& desc);
 
  private:
+  friend class PipelineState;
   friend class ResourcesBinder;
 
   /** @brief The device used to create the resource */

@@ -23,7 +23,10 @@ class VulkanPipelineLayout;
 
 class PipelineState {
  public:
-  PipelineState(const VulkanContext& ctx, IShaderStages* stages, const char* debugName);
+  PipelineState(const VulkanContext& ctx,
+                IShaderStages* stages,
+                std::shared_ptr<ISamplerState> immutableSamplers[IGL_TEXTURE_SAMPLERS_MAX],
+                const char* debugName);
   virtual ~PipelineState() = default;
 
   VkPipelineLayout getVkPipelineLayout() const;
