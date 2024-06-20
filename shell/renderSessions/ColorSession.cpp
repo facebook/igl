@@ -106,22 +106,22 @@ static std::string getOpenGLFragmentShaderSource() {
 }
 
 static std::string getVulkanVertexShaderSource() {
-  return R"(
-                layout(location = 0) in vec3 position;
-                layout(location = 1) in vec2 uv_in;
-                layout(location = 0) out vec2 uv;
-                layout(location = 1) out vec3 color;
+  return R"(precision highp float;
+            layout(location = 0) in vec3 position;
+            layout(location = 1) in vec2 uv_in;
+            layout(location = 0) out vec2 uv;
+            layout(location = 1) out vec3 color;
 
-                layout (set = 1, binding = 0, std140) uniform UniformsPerObject {
-                  vec3 color;
-                } perObject;
+            layout (set = 1, binding = 0, std140) uniform UniformsPerObject {
+              vec3 color;
+            } perObject;
 
-                void main() {
-                  gl_Position = vec4(position, 1.0);
-                  uv = uv_in;
-                  color = perObject.color;
-                }
-                )";
+            void main() {
+              gl_Position = vec4(position, 1.0);
+              uv = uv_in;
+              color = perObject.color;
+            }
+            )";
 }
 
 static std::string getVulkanFragmentShaderSource() {
@@ -145,15 +145,23 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
   case igl::BackendType::Invalid:
     IGL_ASSERT_NOT_REACHED();
     return nullptr;
-  case igl::BackendType::Vulkan:
+  case igl::BackendType::Vulkan: {
+    auto vertexSource = getVulkanVertexShaderSource();
+    if (device.hasFeature(DeviceFeatures::Multiview)) {
+      vertexSource = R"(#version 450
+                        #extension GL_OVR_multiview2 : require
+                        layout(num_views = 2) in;)" +
+                     vertexSource;
+    }
     return igl::ShaderStagesCreator::fromModuleStringInput(device,
-                                                           getVulkanVertexShaderSource().c_str(),
+                                                           vertexSource.c_str(),
                                                            "main",
                                                            "",
                                                            getVulkanFragmentShaderSource().c_str(),
                                                            "main",
                                                            "",
                                                            nullptr);
+  }
   // @fb-only
     // @fb-only
         // @fb-only
@@ -251,6 +259,8 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     igl::FramebufferDesc framebufferDesc;
     framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
     framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
+    framebufferDesc.mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
+                                                                     : FramebufferMode::Mono;
     IGL_ASSERT(ret.isOk());
     framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
     IGL_ASSERT(ret.isOk());
