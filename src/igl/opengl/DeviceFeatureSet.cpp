@@ -168,6 +168,8 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
     return hasESExtension(*this, "GL_EXT_multisampled_render_to_texture");
   case Extensions::MultiSampleImg:
     return hasESExtension(*this, "GL_IMG_multisampled_render_to_texture");
+  case Extensions::MultiViewMultiSample:
+    return hasESExtension(*this, "GL_OVR_multiview_multisampled_render_to_texture");
   case Extensions::RequiredInternalFormat:
     return hasESExtension(*this, "GL_OES_required_internalformat");
   case Extensions::ShaderImageLoadStore:

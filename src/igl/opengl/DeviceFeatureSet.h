@@ -40,6 +40,7 @@ enum class Extensions {
   MultiSampleApple,           // GL_APPLE_framebuffer_multisample is supported
   MultiSampleExt,             // GL_EXT_multisampled_render_to_texture is supported
   MultiSampleImg,             // GL_IMG_multisampled_render_to_texture is supported
+  MultiViewMultiSample,       // GL_OVR_multiview_multisampled_render_to_texture is supported
   RequiredInternalFormat,     // GL_OES_required_internalformat is supported
   ShaderImageLoadStore,       // GL_EXT_shader_image_load_store is supported
   Srgb,                       // GL_EXT_sRGB is supported
