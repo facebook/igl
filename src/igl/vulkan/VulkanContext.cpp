@@ -977,26 +977,37 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
 
   // create default descriptor set layout which is going to be shared by graphics pipelines
   constexpr uint32_t kNumBindings = 7;
+  constexpr VkShaderStageFlags stageFlags =
+      VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
   const std::array<VkDescriptorSetLayoutBinding, kNumBindings> bindings = {
       ivkGetDescriptorSetLayoutBinding(kBinding_Texture2D,
                                        VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                       pimpl_->currentMaxBindlessTextures_),
+                                       pimpl_->currentMaxBindlessTextures_,
+                                       stageFlags),
       ivkGetDescriptorSetLayoutBinding(kBinding_Texture2DArray,
                                        VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                       pimpl_->currentMaxBindlessTextures_),
+                                       pimpl_->currentMaxBindlessTextures_,
+                                       stageFlags),
       ivkGetDescriptorSetLayoutBinding(kBinding_Texture3D,
                                        VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                       pimpl_->currentMaxBindlessTextures_),
+                                       pimpl_->currentMaxBindlessTextures_,
+                                       stageFlags),
       ivkGetDescriptorSetLayoutBinding(kBinding_TextureCube,
                                        VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                       pimpl_->currentMaxBindlessTextures_),
-      ivkGetDescriptorSetLayoutBinding(
-          kBinding_Sampler, VK_DESCRIPTOR_TYPE_SAMPLER, pimpl_->currentMaxBindlessSamplers_),
-      ivkGetDescriptorSetLayoutBinding(
-          kBinding_SamplerShadow, VK_DESCRIPTOR_TYPE_SAMPLER, pimpl_->currentMaxBindlessSamplers_),
+                                       pimpl_->currentMaxBindlessTextures_,
+                                       stageFlags),
+      ivkGetDescriptorSetLayoutBinding(kBinding_Sampler,
+                                       VK_DESCRIPTOR_TYPE_SAMPLER,
+                                       pimpl_->currentMaxBindlessSamplers_,
+                                       stageFlags),
+      ivkGetDescriptorSetLayoutBinding(kBinding_SamplerShadow,
+                                       VK_DESCRIPTOR_TYPE_SAMPLER,
+                                       pimpl_->currentMaxBindlessSamplers_,
+                                       stageFlags),
       ivkGetDescriptorSetLayoutBinding(kBinding_StorageImages,
                                        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                       pimpl_->currentMaxBindlessTextures_),
+                                       pimpl_->currentMaxBindlessTextures_,
+                                       stageFlags),
   };
   const uint32_t flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
                          VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |

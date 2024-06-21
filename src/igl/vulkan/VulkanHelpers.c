@@ -766,13 +766,13 @@ VkResult ivkCreateRenderPass(const struct VulkanFunctionTable* vt,
 
 VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
                                                               VkDescriptorType descriptorType,
-                                                              uint32_t descriptorCount) {
+                                                              uint32_t descriptorCount,
+                                                              VkShaderStageFlags stageFlags) {
   const VkDescriptorSetLayoutBinding bind = {
       .binding = binding,
       .descriptorType = descriptorType,
       .descriptorCount = descriptorCount,
-      .stageFlags =
-          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+      .stageFlags = stageFlags,
       .pImmutableSamplers = NULL,
   };
   return bind;

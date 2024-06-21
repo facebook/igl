@@ -33,14 +33,15 @@ TEST_P(DescriptorSetLayoutTest, GetDescriptorSetLayoutBinding) {
   const VkDescriptorType descriptorType = std::get<1>(GetParam());
   const uint32_t count = std::get<2>(GetParam());
 
-  const auto descSetLayoutBinding =
-      ivkGetDescriptorSetLayoutBinding(binding, descriptorType, count);
+  const VkShaderStageFlags flags =
+      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+
+  const VkDescriptorSetLayoutBinding descSetLayoutBinding =
+      ivkGetDescriptorSetLayoutBinding(binding, descriptorType, count, flags);
   EXPECT_EQ(descSetLayoutBinding.binding, binding);
   EXPECT_EQ(descSetLayoutBinding.descriptorType, descriptorType);
   EXPECT_EQ(descSetLayoutBinding.descriptorCount, count);
-  EXPECT_EQ(descSetLayoutBinding.stageFlags,
-            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
-                VK_SHADER_STAGE_COMPUTE_BIT);
+  EXPECT_EQ(descSetLayoutBinding.stageFlags, flags);
   EXPECT_EQ(descSetLayoutBinding.pImmutableSamplers, nullptr);
 }
 

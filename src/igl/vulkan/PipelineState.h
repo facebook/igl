@@ -42,6 +42,7 @@ class PipelineState {
   igl::vulkan::util::SpvModuleInfo info_;
 
   VkPushConstantRange pushConstantRange_ = {};
+  VkShaderStageFlags stageFlags_ = 0;
 
   mutable std::unique_ptr<igl::vulkan::VulkanPipelineLayout> pipelineLayout_;
 

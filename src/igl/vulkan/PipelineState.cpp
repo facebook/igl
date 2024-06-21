@@ -32,6 +32,8 @@ void PipelineState::initializeSpvModuleInfoFromShaderStages(const VulkanContext&
     if (info_.hasPushConstants) {
       pushConstantMask |= VK_SHADER_STAGE_COMPUTE_BIT;
     }
+
+    stageFlags_ = VK_SHADER_STAGE_COMPUTE_BIT;
   } else {
     auto* smVert = static_cast<igl::vulkan::ShaderModule*>(stages->getVertexModule().get());
     auto* smFrag = static_cast<igl::vulkan::ShaderModule*>(stages->getFragmentModule().get());
@@ -51,6 +53,8 @@ void PipelineState::initializeSpvModuleInfoFromShaderStages(const VulkanContext&
     }
 
     info_ = util::mergeReflectionData(infoVert, infoFrag);
+
+    stageFlags_ = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
   }
 
   if (pushConstantMask) {
@@ -85,8 +89,8 @@ PipelineState::PipelineState(
     bindings.reserve(info_.textures.size());
     for (const auto& t : info_.textures) {
       const uint32_t loc = t.bindingLocation;
-      bindings.emplace_back(
-          ivkGetDescriptorSetLayoutBinding(loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1));
+      bindings.emplace_back(ivkGetDescriptorSetLayoutBinding(
+          loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, stageFlags_));
       if (loc < IGL_TEXTURE_SAMPLERS_MAX && immutableSamplers && immutableSamplers[loc]) {
         auto* sampler = static_cast<igl::vulkan::SamplerState*>(immutableSamplers[loc].get());
         bindings.back().pImmutableSamplers = &sampler->sampler_->vkSampler_;
@@ -108,7 +112,7 @@ PipelineState::PipelineState(
     bindings.reserve(info_.uniformBuffers.size());
     for (const auto& b : info_.uniformBuffers) {
       bindings.emplace_back(ivkGetDescriptorSetLayoutBinding(
-          b.bindingLocation, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+          b.bindingLocation, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, stageFlags_));
     }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
     dslUniformBuffers_ = std::make_unique<VulkanDescriptorSetLayout>(
@@ -126,7 +130,7 @@ PipelineState::PipelineState(
     bindings.reserve(info_.storageBuffers.size());
     for (const auto& b : info_.storageBuffers) {
       bindings.emplace_back(ivkGetDescriptorSetLayoutBinding(
-          b.bindingLocation, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1));
+          b.bindingLocation, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, stageFlags_));
     }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
     dslStorageBuffers_ = std::make_unique<VulkanDescriptorSetLayout>(

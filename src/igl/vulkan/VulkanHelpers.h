@@ -244,11 +244,11 @@ VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
                                       const VkDescriptorBindingFlags* bindingFlags,
                                       VkDescriptorSetLayout* outLayout);
 
-/// @brief Creates a VkDescriptorSetLayoutBinding structure. The binding specifies that the
-/// resource is accessible at the vertex, fragment, and compute shader stages.
+/// @brief Creates a VkDescriptorSetLayoutBinding structure
 VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
                                                               VkDescriptorType descriptorType,
-                                                              uint32_t descriptorCount);
+                                                              uint32_t descriptorCount,
+                                                              VkShaderStageFlags stageFlags);
 
 /// @brief Creates a VkAttachmentDescription structure with load and store operations for the
 /// stencil attachment as "Don't Care"
