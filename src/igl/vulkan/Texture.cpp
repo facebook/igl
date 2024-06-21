@@ -233,9 +233,16 @@ Result Texture::uploadInternal(TextureType /*type*/,
     return Result{};
   }
 
+  const auto& vulkanImage = texture_->getVulkanImage();
+  if (vulkanImage.isMappedPtrAccessible()) {
+    checked_memcpy(
+        vulkanImage.mappedPtr_, vulkanImage.allocatedSize, data, bytesPerRow * range.width);
+    vulkanImage.flushMappedMemory();
+    return Result();
+  }
+
   const VulkanContext& ctx = device_.getVulkanContext();
-  ctx.stagingDevice_->imageData(
-      texture_->getVulkanImage(), desc_.type, range, getProperties(), bytesPerRow, data);
+  ctx.stagingDevice_->imageData(vulkanImage, desc_.type, range, getProperties(), bytesPerRow, data);
 
   return Result();
 }
