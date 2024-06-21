@@ -113,6 +113,10 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
 
   } else if (extensionType == ExtensionType::Device) {
 #if IGL_PLATFORM_ANDROID
+    enable(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, ExtensionType::Device);
+    enable(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, ExtensionType::Device);
+    enable(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME,
+           ExtensionType::Device);
     if (config.enableDescriptorIndexing) {
 #endif
       // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are
