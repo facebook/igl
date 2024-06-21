@@ -1251,6 +1251,25 @@ VulkanImage& VulkanImage::operator=(VulkanImage&& other) {
   return *this;
 }
 
+void VulkanImage::flushMappedMemory() const {
+  if (!isMappedPtrAccessible() || isCoherentMemory()) {
+    return;
+  }
+
+  if (IGL_VULKAN_USE_VMA) {
+    vmaFlushAllocation((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, 0, VK_WHOLE_SIZE);
+  } else {
+    const VkMappedMemoryRange memoryRange{
+        VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+        nullptr,
+        vkMemory_,
+        0,
+        VK_WHOLE_SIZE,
+    };
+    ctx_->vf_.vkFlushMappedMemoryRanges(device_, 1, &memoryRange);
+  }
+}
+
 } // namespace vulkan
 
 } // namespace igl

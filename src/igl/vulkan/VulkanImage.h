@@ -260,6 +260,8 @@ class VulkanImage final {
     return isCoherentMemory_;
   }
 
+  void flushMappedMemory() const;
+
  public:
   const VulkanContext* ctx_ = nullptr;
   VkPhysicalDevice physicalDevice_ = VK_NULL_HANDLE;
