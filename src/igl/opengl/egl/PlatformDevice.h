@@ -44,7 +44,7 @@ class PlatformDevice : public opengl::PlatformDevice {
   /// returns a android::NativeHWTextureBuffer on platforms supporting it
   /// this texture allows CPU and GPU to both read/write memory
   std::shared_ptr<ITexture> createTextureWithSharedMemory(const TextureDesc& desc,
-                                                          Result* outResult);
+                                                          Result* outResult) const;
 
 #endif
 

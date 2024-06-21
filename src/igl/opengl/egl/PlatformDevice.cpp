@@ -150,7 +150,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(Result* o
 /// returns a android::NativeHWTextureBuffer on platforms supporting it
 /// this texture allows CPU and GPU to both read/write memory
 std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const TextureDesc& desc,
-                                                                        Result* outResult) {
+                                                                        Result* outResult) const {
   auto context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No EGL context found!");
