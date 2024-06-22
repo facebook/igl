@@ -39,6 +39,70 @@ struct AHardwareBufferContext {
   EGLImageKHR elgImage;
 };
 
+namespace {
+
+uint32_t toNativeHWFormat(TextureFormat iglFomrat) {
+  // note that Native HW buffer has compute specific format but is not added here.
+  switch (iglFomrat) {
+  case TextureFormat::RGBX_UNorm8:
+    return AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM;
+
+  case TextureFormat::RGBA_UNorm8:
+    return AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
+
+  case TextureFormat::B5G6R5_UNorm:
+    return AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM;
+
+  case TextureFormat::RGBA_F16:
+    return AHARDWAREBUFFER_FORMAT_R16G16B16A16_FLOAT;
+
+  case TextureFormat::RGB10_A2_UNorm_Rev:
+    return AHARDWAREBUFFER_FORMAT_R10G10B10A2_UNORM;
+
+  case TextureFormat::Z_UNorm16:
+    return AHARDWAREBUFFER_FORMAT_D16_UNORM;
+
+  case TextureFormat::Z_UNorm24:
+    return AHARDWAREBUFFER_FORMAT_D24_UNORM;
+
+  case TextureFormat::Z_UNorm32:
+    return AHARDWAREBUFFER_FORMAT_D32_FLOAT;
+
+  case TextureFormat::S8_UInt_Z24_UNorm:
+    return AHARDWAREBUFFER_FORMAT_D24_UNORM_S8_UINT;
+
+    // format mismatch
+    //  case TextureFormat::S8_UInt_Z32_UNorm:
+    //    return AHARDWAREBUFFER_FORMAT_D32_FLOAT_S8_UINT;
+
+  case TextureFormat::S_UInt8:
+    return AHARDWAREBUFFER_FORMAT_S8_UINT;
+
+  default:
+    return 0;
+  }
+  return 0;
+}
+
+uint32_t getBufferUsage(TextureDesc::TextureUsage usage) {
+  uint64_t bufferUsage = 0;
+
+  if (usage & TextureDesc::TextureUsageBits::Sampled) {
+    bufferUsage |= AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
+  }
+
+  if (usage & TextureDesc::TextureUsageBits::Storage) {
+    bufferUsage |= AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN;
+  }
+
+  if (usage & TextureDesc::TextureUsageBits::Attachment) {
+    bufferUsage |= AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT;
+  }
+  return bufferUsage;
+}
+
+} // namespace
+
 NativeHWTextureBuffer::~NativeHWTextureBuffer() {
   GLuint textureID = getId();
   if (textureID != 0) {
@@ -75,17 +139,27 @@ Result NativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
   if (getTextureId() != 0) {
     return Result{Result::Code::RuntimeError, "NativeHWTextureBuffer alreayd created"};
   }
-  auto nativeHWFormat = igl::android::getNativeHWFormat(desc.format);
+  auto nativeHWFormat = toNativeHWFormat(desc.format);
   auto isValid = desc.numLayers == 1 && desc.numSamples == 1 && desc.numMipLevels == 1 &&
                  desc.type == TextureType::TwoD && nativeHWFormat > 0 &&
                  hasStorageAlready == false && desc.storage == ResourceStorage::Shared;
   auto result = Super::create(desc, false);
 
   if (result.isOk() && nativeHWFormat > 0 && isValid) {
-    auto allocationResult =
-        igl::android::allocateNativeHWBuffer(desc, surfaceComposite, &hwBuffer_);
-    if (!allocationResult.isOk()) {
-      return allocationResult;
+    AHardwareBuffer_Desc descHW = {};
+    descHW.format = nativeHWFormat;
+    descHW.width = desc.width;
+    descHW.height = desc.height;
+    descHW.layers = 1;
+    descHW.usage = getBufferUsage(desc.usage);
+// USAGE_COMPOSER_OVERLAY API 33
+#if __ANDROID_MIN_SDK_VERSION__ >= 33
+    descHW.usage |= surfaceComposite ? AHARDWAREBUFFER_USAGE_COMPOSER_OVERLAY : 0;
+#endif
+
+    auto hwResult = AHardwareBuffer_allocate(&descHW, &hwBuffer_);
+    if (hwResult != 0) {
+      return Result{Result::Code::RuntimeError, "AHardwareBuffer allocation failed"};
     }
 
     EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(hwBuffer_);
@@ -176,7 +250,7 @@ Result NativeHWTextureBuffer::uploadInternal(TextureType /*type*/,
   // not optimal pass
 
   std::byte* dst = nullptr;
-  INativeHWTextureBuffer::RangeDesc outRange;
+  NativeHWTextureBuffer::RangeDesc outRange;
   auto result = lockHWBuffer(reinterpret_cast<std::byte**>(&dst), outRange);
   auto internalBpr = getProperties().getBytesPerRow(outRange.stride);
 
@@ -198,8 +272,40 @@ Result NativeHWTextureBuffer::uploadInternal(TextureType /*type*/,
   return Result{Result::Code::Unsupported, "NativeHWTextureBuffer upload not supported"};
 }
 
+Result NativeHWTextureBuffer::lockHWBuffer(std::byte* _Nullable* _Nonnull dst,
+                                           RangeDesc& outRange) const {
+  AHardwareBuffer_Desc hwbDesc;
+  AHardwareBuffer_describe(hwBuffer_, &hwbDesc);
+  if (AHardwareBuffer_lock(hwBuffer_,
+                           AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN,
+                           -1,
+                           nullptr,
+                           reinterpret_cast<void**>(dst))) {
+    IGL_ASSERT_MSG(0, "Failed to lock hardware buffer");
+
+    return Result{Result::Code::RuntimeError, "Failed to lock hardware buffer"};
+  }
+
+  outRange.width = hwbDesc.width;
+  outRange.height = hwbDesc.height;
+  outRange.layer = 1;
+  outRange.mipLevel = 1;
+  outRange.stride = hwbDesc.stride;
+
+  return Result{};
+}
+
+Result NativeHWTextureBuffer::unlockHWBuffer() const {
+  if (AHardwareBuffer_unlock(hwBuffer_, nullptr)) {
+    IGL_ASSERT_MSG(0, "Failed to unlock hardware buffer");
+
+    return Result{Result::Code::RuntimeError, "Failed to unlock hardware buffer"};
+  }
+  return Result{};
+}
+
 bool NativeHWTextureBuffer::isValidFormat(TextureFormat format) {
-  return igl::android::getNativeHWFormat(format) > 0;
+  return toNativeHWFormat(format) > 0;
 }
 
 } // namespace igl::opengl::egl::android

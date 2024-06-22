@@ -7,39 +7,44 @@
 
 #pragma once
 
-#include <igl/android/NativeHWBuffer.h>
 #include <igl/opengl/TextureBufferBase.h>
 
 #if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+
+struct AHardwareBuffer;
 
 namespace igl::opengl::egl::android {
 
 typedef void AHardwareBufferHelper;
 
 // TextureBuffer encapsulates OpenGL textures
-class NativeHWTextureBuffer : public igl::android::INativeHWTextureBuffer,
-                              public TextureBufferBase {
+class NativeHWTextureBuffer : public TextureBufferBase {
   using Super = TextureBufferBase;
 
  public:
+  struct RangeDesc : TextureRangeDesc {
+    size_t stride = 0;
+  };
+
   NativeHWTextureBuffer(IContext& context, TextureFormat format) : Super(context, format) {}
   ~NativeHWTextureBuffer() override;
 
   // Texture overrides
   Result create(const TextureDesc& desc, bool hasStorageAlready) override;
-
+  Result createHWBuffer(const TextureDesc& desc, bool hasStorageAlready, bool surfaceComposite);
   void bind() override;
   void bindImage(size_t unit) override;
+  Result lockHWBuffer(std::byte* IGL_NULLABLE* IGL_NONNULL dst, RangeDesc& outRange) const;
+  Result unlockHWBuffer() const;
   uint64_t getTextureId() const override;
-
-  // INativeHWTextureBuffer overrides
-  Result createHWBuffer(const TextureDesc& desc,
-                        bool hasStorageAlready,
-                        bool surfaceComposite) override;
 
   bool supportsUpload() const final;
 
   static bool isValidFormat(TextureFormat format);
+
+  // exported to use on Java side via JNI into an Android HardwareBuffer
+  // Use with great care!
+  AHardwareBuffer* hwBuffer_ = nullptr;
 
  private:
   Result uploadInternal(TextureType type,
@@ -51,5 +56,4 @@ class NativeHWTextureBuffer : public igl::android::INativeHWTextureBuffer,
 };
 
 } // namespace igl::opengl::egl::android
-
 #endif
