@@ -188,6 +188,17 @@ VkResult ivkAllocateMemory2(const struct VulkanFunctionTable* vt,
                             bool enableBufferDeviceAddress,
                             VkDeviceMemory* outMemory);
 
+VkImagePlaneMemoryRequirementsInfo ivkGetImagePlaneMemoryRequirementsInfo(
+    VkImageAspectFlagBits plane);
+
+VkImageMemoryRequirementsInfo2 ivkGetImageMemoryRequirementsInfo2(
+    const VkImagePlaneMemoryRequirementsInfo* next,
+    VkImage image);
+
+VkBindImageMemoryInfo ivkGetBindImageMemoryInfo(const VkBindImagePlaneMemoryInfo* next,
+                                                VkImage image,
+                                                VkDeviceMemory memory);
+
 bool ivkIsHostVisibleSingleHeapMemory(const struct VulkanFunctionTable* vt,
                                       VkPhysicalDevice physDev);
 

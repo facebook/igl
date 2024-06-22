@@ -242,6 +242,40 @@ VkResult ivkAllocateMemory2(const struct VulkanFunctionTable* vt,
   return vt->vkAllocateMemory(device, &ai, NULL, outMemory);
 }
 
+VkImagePlaneMemoryRequirementsInfo ivkGetImagePlaneMemoryRequirementsInfo(
+    VkImageAspectFlagBits plane) {
+  const VkImagePlaneMemoryRequirementsInfo info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO,
+      .pNext = NULL,
+      .planeAspect = plane,
+  };
+  return info;
+}
+
+VkImageMemoryRequirementsInfo2 ivkGetImageMemoryRequirementsInfo2(
+    const VkImagePlaneMemoryRequirementsInfo* next,
+    VkImage image) {
+  const VkImageMemoryRequirementsInfo2 info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+      .pNext = next,
+      .image = image,
+  };
+  return info;
+}
+
+VkBindImageMemoryInfo ivkGetBindImageMemoryInfo(const VkBindImagePlaneMemoryInfo* next,
+                                                VkImage image,
+                                                VkDeviceMemory memory) {
+  const VkBindImageMemoryInfo info = {
+      .sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
+      .pNext = next,
+      .image = image,
+      .memory = memory,
+      .memoryOffset = 0,
+  };
+  return info;
+}
+
 bool ivkIsHostVisibleSingleHeapMemory(const struct VulkanFunctionTable* vt,
                                       VkPhysicalDevice physDev) {
   VkPhysicalDeviceMemoryProperties memProperties;
