@@ -484,6 +484,8 @@ VkPipeline RenderPipelineState::getVkPipeline(
                  &pipeline,
                  desc_.debugName.c_str()));
 
+  IGL_ASSERT(pipeline != VK_NULL_HANDLE);
+
   pipelines_[dynamicState] = pipeline;
 
   // @fb-only
