@@ -12,8 +12,7 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 PlatformDevice::PlatformDevice(Device& device) : device_(device) {}
 
@@ -23,7 +22,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t 
   IGL_PROFILER_FUNCTION();
 
   const auto& ctx = device_.getVulkanContext();
-  auto& swapChain = ctx.swapchain_;
+  const auto& swapChain = ctx.swapchain_;
 
   if (!ctx.hasSwapchain()) {
     nativeDepthTexture_ = nullptr;
@@ -76,7 +75,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
     return nullptr;
   };
 
-  auto& swapChain = ctx.swapchain_;
+  const auto& swapChain = ctx.swapchain_;
 
   auto vkTex = swapChain->getCurrentVulkanTexture();
 
@@ -164,7 +163,7 @@ int PlatformDevice::getFenceFdFromSubmitHandle(SubmitHandle handle) const {
   int fenceFd = -1;
   const auto& ctx = device_.getVulkanContext();
   VkDevice vkDevice = ctx.device_->getVkDevice();
-  VkResult result = ctx.vf_.vkGetFenceFdKHR(vkDevice, &getFdInfo, &fenceFd);
+  const VkResult result = ctx.vf_.vkGetFenceFdKHR(vkDevice, &getFdInfo, &fenceFd);
   if (result != VK_SUCCESS) {
     IGL_LOG_ERROR("Unable to get fence fd from submit handle: %lu", handle);
   }
@@ -173,5 +172,4 @@ int PlatformDevice::getFenceFdFromSubmitHandle(SubmitHandle handle) const {
 }
 #endif // defined(IGL_PLATFORM_ANDROID)
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

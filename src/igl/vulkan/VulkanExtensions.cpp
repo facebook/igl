@@ -12,8 +12,7 @@
 #include <algorithm>
 #include <iterator>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 VulkanExtensions::VulkanExtensions() {
   extensions_.resize(kNumberOfExtensionTypes);
@@ -170,5 +169,4 @@ std::vector<const char*> VulkanExtensions::allEnabled(ExtensionType extensionTyp
   return returnList;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

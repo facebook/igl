@@ -117,8 +117,7 @@ VkImageUsageFlags chooseUsageFlags(const VulkanFunctionTable& vf,
 
 } // namespace
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint32_t height) :
   ctx_(ctx),
@@ -289,5 +288,4 @@ Result VulkanSwapchain::present(VkSemaphore waitSemaphore) {
   return Result();
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

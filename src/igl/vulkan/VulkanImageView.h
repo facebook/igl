@@ -12,8 +12,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanContext;
 
@@ -74,7 +73,7 @@ class VulkanImageView final {
   /**
    * @brief Returns Vulkan's opaque handle to the imageView object
    */
-  VkImageView getVkImageView() const {
+  [[nodiscard]] VkImageView getVkImageView() const {
     return vkImageView_;
   }
   /**
@@ -90,5 +89,4 @@ class VulkanImageView final {
   void destroy();
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

@@ -11,8 +11,7 @@
 #include <igl/SamplerState.h>
 #include <igl/vulkan/Common.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class Device;
 class PipelineState;
@@ -42,7 +41,7 @@ class SamplerState final : public ISamplerState {
    * This ID is intended for bindless rendering. See the ResourcesBinder and VulkanContext classes
    * for more information
    */
-  uint32_t getSamplerId() const;
+  [[nodiscard]] uint32_t getSamplerId() const;
 
  private:
   /**
@@ -62,5 +61,4 @@ class SamplerState final : public ISamplerState {
   std::shared_ptr<VulkanSampler> sampler_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

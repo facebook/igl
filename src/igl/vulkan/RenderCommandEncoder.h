@@ -97,7 +97,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   void setBlendColor(Color color) override;
   void setDepthBias(float depthBias, float slopeScale, float clamp) override;
 
-  VkCommandBuffer getVkCommandBuffer() const {
+  [[nodiscard]] VkCommandBuffer getVkCommandBuffer() const {
     return cmdBuffer_;
   }
 

@@ -7,8 +7,7 @@
 
 #include "VulkanPipelineBuilder.h"
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 uint32_t VulkanPipelineBuilder::numPipelinesCreated_ = 0;
 uint32_t VulkanComputePipelineBuilder::numPipelinesCreated_ = 0;
@@ -33,7 +32,7 @@ VulkanPipelineBuilder& VulkanPipelineBuilder::depthWriteEnable(bool enable) {
 }
 
 VulkanPipelineBuilder& VulkanPipelineBuilder::depthCompareOp(VkCompareOp compareOp) {
-  depthStencilState_.depthTestEnable = compareOp != VK_COMPARE_OP_ALWAYS;
+  depthStencilState_.depthTestEnable = static_cast<VkBool32>(compareOp != VK_COMPARE_OP_ALWAYS);
   depthStencilState_.depthCompareOp = compareOp;
   return *this;
 }
@@ -195,5 +194,4 @@ VkResult VulkanComputePipelineBuilder::build(const VulkanFunctionTable& vf,
       &vf, device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)*outPipeline, debugName);
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

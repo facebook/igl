@@ -11,9 +11,7 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 VulkanTexture::VulkanTexture(VulkanImage&& image, VulkanImageView&& imageView) :
   image_(std::move(image)), imageView_(std::move(imageView)) {
@@ -23,6 +21,4 @@ VulkanTexture::VulkanTexture(VulkanImage&& image, VulkanImageView&& imageView) :
   IGL_ASSERT(imageView_.valid());
 }
 
-} // namespace vulkan
-
-} // namespace igl
+} // namespace igl::vulkan

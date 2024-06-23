@@ -15,8 +15,7 @@
 #include <igl/vulkan/VulkanPipelineLayout.h>
 #include <utility>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
                                            ComputePipelineDesc desc) :
@@ -96,5 +95,4 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
   return pipeline_;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

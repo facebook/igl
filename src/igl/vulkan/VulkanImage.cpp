@@ -47,9 +47,7 @@ constexpr auto kHandleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
 } // namespace
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 VulkanImage::VulkanImage(const VulkanContext& ctx,
                          VkDevice device,
@@ -158,7 +156,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
     ciAlloc.usage = memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT ? VMA_MEMORY_USAGE_CPU_TO_GPU
                                                                    : VMA_MEMORY_USAGE_AUTO;
 
-    VkResult result = vmaCreateImage(
+    const VkResult result = vmaCreateImage(
         (VmaAllocator)ctx_->getVmaAllocator(), &ci, &ciAlloc, &vkImage_, &vmaAllocation_, nullptr);
 
     if (!IGL_VERIFY(result == VK_SUCCESS)) {
@@ -345,7 +343,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   //  - multiple times into a given vk instance.
   // in all cases, each import operation must create a distinct vkdevicememory object
 
-  VkImageMemoryRequirementsInfo2 memoryRequirementInfo = {
+  const VkImageMemoryRequirementsInfo2 memoryRequirementInfo = {
       VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, nullptr, vkImage_};
 
   VkMemoryRequirements2 memoryRequirements = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
@@ -359,7 +357,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                                     VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR,
                                     importedFd};
 
-  VkMemoryAllocateInfo memoryAllocateInfo = {
+  const VkMemoryAllocateInfo memoryAllocateInfo = {
       VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
       &fdInfo,
       memoryAllocationSize,
@@ -963,8 +961,8 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
         }
         return VK_FILTER_NEAREST;
       }(isDepthOrStencilFormat_,
-        formatProperties_.optimalTilingFeatures &
-            VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT);
+        (formatProperties_.optimalTilingFeatures &
+         VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) != 0u);
 
   const VkImageAspectFlags imageAspectFlags = getImageAspectFlags();
 
@@ -1110,7 +1108,7 @@ bool VulkanImage::valid() const {
   return ctx_ != nullptr;
 }
 
-VulkanImage& VulkanImage::operator=(VulkanImage&& other) {
+VulkanImage& VulkanImage::operator=(VulkanImage&& other) noexcept {
   destroy();
   ctx_ = std::move(other.ctx_);
   physicalDevice_ = std::move(other.physicalDevice_);
@@ -1134,9 +1132,9 @@ VulkanImage& VulkanImage::operator=(VulkanImage&& other) {
   imageLayout_ = std::move(other.imageLayout_);
   isImported_ = std::move(other.isImported_);
   isCubemap_ = other.isCubemap_;
-  isExported_ = std::move(other.isExported_);
-  exportedMemoryHandle_ = std::move(other.exportedMemoryHandle_);
-  exportedFd_ = std::move(other.exportedFd_);
+  isExported_ = other.isExported_;
+  exportedMemoryHandle_ = other.exportedMemoryHandle_;
+  exportedFd_ = other.exportedFd_;
 #if defined(IGL_DEBUG)
   name_ = std::move(other.name_);
 #endif
@@ -1172,6 +1170,4 @@ void VulkanImage::flushMappedMemory() const {
   }
 }
 
-} // namespace vulkan
-
-} // namespace igl
+} // namespace igl::vulkan

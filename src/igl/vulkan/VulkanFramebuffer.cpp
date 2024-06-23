@@ -9,8 +9,7 @@
 
 #include "VulkanContext.h"
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 VulkanFramebuffer::VulkanFramebuffer(const VulkanContext& ctx,
                                      VkDevice device,
                                      uint32_t width,
@@ -37,5 +36,4 @@ VulkanFramebuffer::~VulkanFramebuffer() {
       }));
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

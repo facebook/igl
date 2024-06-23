@@ -22,7 +22,7 @@ struct VulkanQueueDescriptor {
   uint32_t queueIndex = INVALID;
   uint32_t familyIndex = INVALID;
 
-  bool isValid() const {
+  [[nodiscard]] bool isValid() const {
     return queueIndex != INVALID && familyIndex != INVALID;
   }
 
@@ -45,7 +45,7 @@ class VulkanQueuePool final {
   explicit VulkanQueuePool(std::set<VulkanQueueDescriptor> availableDescriptors);
 
   /* Find a queue descriptor that conforms to give queue flags. */
-  VulkanQueueDescriptor findQueueDescriptor(VkQueueFlags flags) const;
+  [[nodiscard]] VulkanQueueDescriptor findQueueDescriptor(VkQueueFlags flags) const;
 
   /* Reserve the given queue. Reserved queues will not be visible in future
    * find requests and they will participate in resulting queue creation infos.
@@ -53,7 +53,7 @@ class VulkanQueuePool final {
   void reserveQueue(const VulkanQueueDescriptor& queueDescriptor);
 
   /* Create the queue creation infos for reserved queues. */
-  std::vector<VkDeviceQueueCreateInfo> getQueueCreationInfos() const;
+  [[nodiscard]] std::vector<VkDeviceQueueCreateInfo> getQueueCreationInfos() const;
 
  private:
   std::set<VulkanQueueDescriptor> availableDescriptors_;

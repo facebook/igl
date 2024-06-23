@@ -10,9 +10,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 VulkanImageView::VulkanImageView(const VulkanContext& ctx,
                                  VkImage image,
@@ -47,7 +45,7 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
 }
 
 VulkanImageView::VulkanImageView(const VulkanContext& ctx,
-                                 VkDevice device,
+                                 VkDevice /*device*/,
                                  VkImage image,
                                  const VulkanImageViewCreateInfo& createInfo,
                                  const char* debugName) :
@@ -92,6 +90,4 @@ void VulkanImageView::destroy() {
   }
 }
 
-} // namespace vulkan
-
-} // namespace igl
+} // namespace igl::vulkan

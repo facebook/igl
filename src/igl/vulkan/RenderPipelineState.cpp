@@ -279,13 +279,11 @@ VkColorComponentFlags colorWriteMaskToVkColorComponentFlags(igl::ColorWriteMask 
 
 } // namespace
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
                                          RenderPipelineDesc desc) :
-  IRenderPipelineState(std::move(desc)),
+  IRenderPipelineState(desc),
   PipelineState(device.getVulkanContext(),
                 desc.shaderStages.get(),
                 desc.immutableSamplers,
@@ -513,11 +511,11 @@ std::shared_ptr<igl::IRenderPipelineReflection> RenderPipelineState::renderPipel
 
 void RenderPipelineState::setRenderPipelineReflection(
     const IRenderPipelineReflection& renderPipelineReflection) {
-  auto& vulkanReflection = static_cast<const RenderPipelineReflection&>(renderPipelineReflection);
+  const auto& vulkanReflection =
+      static_cast<const RenderPipelineReflection&>(renderPipelineReflection);
   auto copy = RenderPipelineReflection(vulkanReflection);
 
   reflection_ = std::make_shared<RenderPipelineReflection>(std::move(copy));
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

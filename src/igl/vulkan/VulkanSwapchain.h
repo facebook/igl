@@ -15,8 +15,7 @@
 #include <igl/vulkan/VulkanTexture.h>
 #include <vector>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanContext;
 class VulkanSemaphore;
@@ -107,11 +106,10 @@ class VulkanSwapchain final {
   uint32_t currentImageIndex_ = 0;
   uint64_t frameNumber_ = 0;
   bool getNextImage_ = true;
-  VkSwapchainKHR swapchain_;
+  VkSwapchainKHR swapchain_{};
   std::unique_ptr<std::shared_ptr<VulkanTexture>[]> swapchainTextures_;
   mutable std::shared_ptr<VulkanTexture> depthTexture_;
-  VkSurfaceFormatKHR surfaceFormat_;
+  VkSurfaceFormatKHR surfaceFormat_{};
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

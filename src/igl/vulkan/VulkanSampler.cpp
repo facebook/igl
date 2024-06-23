@@ -10,9 +10,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 VulkanSampler::VulkanSampler(const VulkanContext& ctx,
                              VkDevice device,
@@ -59,6 +57,4 @@ void VulkanSampler::setDebugName(const std::string& debugName) noexcept {
 #endif
 }
 
-} // namespace vulkan
-
-} // namespace igl
+} // namespace igl::vulkan

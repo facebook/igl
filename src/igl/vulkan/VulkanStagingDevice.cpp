@@ -21,9 +21,7 @@ using VulkanSubmitHandle = igl::vulkan::VulkanImmediateCommands::SubmitHandle;
 
 constexpr VkDeviceSize kMinStagingBufferSize = static_cast<const VkDeviceSize>(1024u) * 1024u;
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
   IGL_PROFILER_FUNCTION();
@@ -76,7 +74,7 @@ void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
     // do the transfer
     const VkBufferCopy copy = {memoryChunk.offset, chunkDstOffset, copySize};
 
-    auto& wrapper = immediate_->acquire();
+    const auto& wrapper = immediate_->acquire();
     ctx_.vf_.vkCmdCopyBuffer(
         wrapper.cmdBuf_, stagingBuffer->getVkBuffer(), buffer.getVkBuffer(), 1, &copy);
     memoryChunk.handle = immediate_->submit(wrapper); // store the submit handle with the allocation
@@ -258,7 +256,7 @@ void VulkanStagingDevice::getBufferSubData(const VulkanBuffer& buffer,
     // do the transfer
     const VkBufferCopy copy = {chunkSrcOffset, memoryChunk.offset, copySize};
 
-    auto& wrapper = immediate_->acquire();
+    const auto& wrapper = immediate_->acquire();
 
     auto& stagingBuffer = stagingBuffers_[memoryChunk.stagingBufferIndex];
 
@@ -312,7 +310,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
   // 1. Copy the pixel data into the host visible staging buffer
   stagingBuffer->bufferSubData(memoryChunk.offset, storageSize, data);
 
-  auto& wrapper = immediate_->acquire();
+  const auto& wrapper = immediate_->acquire();
   const uint32_t initialLayer = getVkLayer(type, range.face, range.layer);
   const uint32_t numLayers = getVkLayer(type, range.numFaces, range.numLayers);
 
@@ -534,7 +532,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                                          const uint32_t layer,
                                          const VkRect2D& imageRegion,
                                          TextureFormatProperties properties,
-                                         VkFormat format,
+                                         VkFormat /*format*/,
                                          VkImageLayout layout,
                                          void* data,
                                          uint32_t bytesPerRow,
@@ -542,7 +540,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   IGL_PROFILER_FUNCTION();
   IGL_ASSERT(layout != VK_IMAGE_LAYOUT_UNDEFINED);
 
-  bool mustRepack = bytesPerRow != 0 && bytesPerRow % properties.bytesPerBlock != 0;
+  const bool mustRepack = bytesPerRow != 0 && bytesPerRow % properties.bytesPerBlock != 0;
 
   const auto range =
       TextureRangeDesc::new2D(0, 0, imageRegion.extent.width, imageRegion.extent.height);
@@ -559,10 +557,10 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
 #endif
 
   // get next staging buffer free offset
-  MemoryRegion const memoryChunk = nextFreeBlock(storageSize, true);
+  const MemoryRegion memoryChunk = nextFreeBlock(storageSize, true);
 
   IGL_ASSERT(memoryChunk.size >= storageSize);
-  auto& wrapper1 = immediate_->acquire();
+  const auto& wrapper1 = immediate_->acquire();
 
   // 1. Transition to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
   ivkImageMemoryBarrier(&ctx_.vf_,
@@ -617,7 +615,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   }
 
   // 4. Transition back to the initial image layout
-  auto& wrapper2 = immediate_->acquire();
+  const auto& wrapper2 = immediate_->acquire();
 
   ivkImageMemoryBarrier(&ctx_.vf_,
                         wrapper2.cmdBuf_,
@@ -720,5 +718,4 @@ void VulkanStagingDevice::allocateStagingBuffer(VkDeviceSize minimumSize) {
   freeStagingBufferSize_ += stagingBufferSize;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

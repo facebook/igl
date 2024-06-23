@@ -17,9 +17,7 @@
 #include <igl/vulkan/VulkanPipelineLayout.h>
 #include <igl/vulkan/VulkanTexture.h>
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 ResourcesBinder::ResourcesBinder(const std::shared_ptr<CommandBuffer>& commandBuffer,
                                  const VulkanContext& ctx,
@@ -206,5 +204,4 @@ void ResourcesBinder::bindPipeline(VkPipeline pipeline, const util::SpvModuleInf
   }
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

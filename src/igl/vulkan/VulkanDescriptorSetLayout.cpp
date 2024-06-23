@@ -10,9 +10,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanPipelineLayout.h>
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const VulkanFunctionTable& vf,
                                                      VkDevice device,
@@ -39,6 +37,4 @@ VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout() {
   vf_.vkDestroyDescriptorSetLayout(device_, vkDescriptorSetLayout_, nullptr);
 }
 
-} // namespace vulkan
-
-} // namespace igl
+} // namespace igl::vulkan

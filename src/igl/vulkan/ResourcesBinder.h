@@ -83,7 +83,7 @@ class ResourcesBinder final {
  private:
   friend class VulkanContext;
 
-  bool isGraphics() const {
+  [[nodiscard]] bool isGraphics() const {
     return bindPoint_ == VK_PIPELINE_BIND_POINT_GRAPHICS;
   }
 

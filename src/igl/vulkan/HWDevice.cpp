@@ -11,8 +11,7 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 std::unique_ptr<VulkanContext> HWDevice::createContext(const VulkanContextConfig& config,
                                                        void* window,
@@ -59,5 +58,4 @@ std::unique_ptr<IDevice> HWDevice::create(std::unique_ptr<VulkanContext> ctx,
   return result.isOk() ? std::make_unique<igl::vulkan::Device>(std::move(ctx)) : nullptr;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

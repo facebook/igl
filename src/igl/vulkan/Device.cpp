@@ -97,7 +97,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   }
 
   const auto uploadResult = buffer->upload(desc.data, BufferRange(desc.length, 0u));
-  IGL_VERIFY(uploadResult.isOk());
+  IGL_ASSERT(uploadResult.isOk());
   Result::setResult(outResult, uploadResult);
 
   return buffer;

@@ -19,8 +19,7 @@
 #include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanTexture.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 CommandBuffer::CommandBuffer(VulkanContext& ctx, CommandBufferDesc desc) :
   ctx_(ctx), wrapper_(ctx_.immediate_->acquire()), desc_(std::move(desc)) {
@@ -155,5 +154,4 @@ std::shared_ptr<ITexture> CommandBuffer::getPresentedSurface() const {
   return presentedSurface_;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

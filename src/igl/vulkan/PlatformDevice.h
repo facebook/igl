@@ -57,7 +57,7 @@ class PlatformDevice : public IPlatformDevice {
 #endif
 
  protected:
-  bool isType(PlatformDeviceType t) const noexcept override {
+  [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override {
     return t == Type;
   }
 

@@ -15,8 +15,7 @@
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImageView.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanContext;
 
@@ -46,5 +45,4 @@ class VulkanTexture final {
   uint32_t textureId_ = 0;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

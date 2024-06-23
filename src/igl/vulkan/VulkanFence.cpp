@@ -10,8 +10,7 @@
 #include <igl/vulkan/Common.h>
 #include <utility> // std::swap
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 VulkanFence::VulkanFence(const VulkanFunctionTable& vf,
                          VkDevice device,
@@ -72,5 +71,4 @@ bool VulkanFence::signal(VkQueue queue) {
   return result == VK_SUCCESS;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

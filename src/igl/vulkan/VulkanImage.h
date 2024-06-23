@@ -14,8 +14,7 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImageView.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanContext;
 class VulkanImageView;
@@ -179,10 +178,10 @@ class VulkanImage final {
   VulkanImage(const VulkanImage&) = delete;
   VulkanImage& operator=(const VulkanImage&) = delete;
 
-  VulkanImage(VulkanImage&& other) {
+  VulkanImage(VulkanImage&& other) noexcept {
     *this = std::move(other);
   }
-  VulkanImage& operator=(VulkanImage&& other);
+  VulkanImage& operator=(VulkanImage&& other) noexcept;
 
   VkImage getVkImage() const {
     return vkImage_;
@@ -231,7 +230,7 @@ class VulkanImage final {
    * the `srcStageMask` and the `dstStageMask` parameters. Not not all `VkPipelineStageFlags` are
    * supported.
    */
-  void transitionLayout(VkCommandBuffer commandBuffer,
+  void transitionLayout(VkCommandBuffer cmdBuf,
                         VkImageLayout newImageLayout,
                         VkPipelineStageFlags srcStageMask,
                         VkPipelineStageFlags dstStageMask,
@@ -332,5 +331,4 @@ class VulkanImage final {
   void destroy();
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

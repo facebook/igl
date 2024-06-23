@@ -27,8 +27,7 @@
 #include <igl/vulkan/util/SpvReflection.h>
 #include <igl/vulkan/util/TextureFormat.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 Result getResultFromVkResult(VkResult result) {
   if (result == VK_SUCCESS) {
@@ -625,6 +624,4 @@ uint32_t getNumImagePlanes(VkFormat format) {
     return 1;
   }
 }
-
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

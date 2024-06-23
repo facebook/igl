@@ -9,8 +9,7 @@
 
 #include <igl/VertexInputState.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class Device;
 class RenderCommandEncoder;
@@ -29,5 +28,4 @@ class VertexInputState final : public IVertexInputState {
   VertexInputStateDesc desc_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

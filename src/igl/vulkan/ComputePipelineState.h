@@ -12,8 +12,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/PipelineState.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class Device;
 
@@ -39,5 +38,4 @@ class ComputePipelineState final : public IComputePipelineState, public vulkan::
   mutable VkPipeline pipeline_ = VK_NULL_HANDLE;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

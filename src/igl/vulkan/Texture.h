@@ -15,8 +15,7 @@
 
 #include <vector>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class Device;
 class VulkanImage;
@@ -69,7 +68,7 @@ class Texture final : public ITexture {
   VkImage getVkImage() const;
   VulkanTexture& getVulkanTexture() const {
     IGL_ASSERT(texture_);
-    return *texture_.get();
+    return *texture_;
   }
 
   uint32_t getNumVkLayers() const;
@@ -99,5 +98,4 @@ class Texture final : public ITexture {
   mutable std::vector<VulkanImageView> imageViewsForFramebufferStereo_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

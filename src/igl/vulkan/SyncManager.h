@@ -12,8 +12,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanContext;
 
@@ -49,5 +48,4 @@ class SyncManager final {
   std::vector<SubmitHandle> submitHandles_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

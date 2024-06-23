@@ -95,8 +95,7 @@ VkIndexType indexFormatToVkIndexType(igl::IndexFormat fmt) {
 
 } // namespace
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 RenderCommandEncoder::RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer,
                                            VulkanContext& ctx) :
@@ -429,7 +428,7 @@ void RenderCommandEncoder::bindDepthStencilState(
       // do not update anything if we don't have an actual state
       return;
     }
-    dynamicState_.setStencilStateOps(faceMask,
+    dynamicState_.setStencilStateOps(faceMask != 0u,
                                      stencilOperationToVkStencilOp(desc.stencilFailureOperation),
                                      stencilOperationToVkStencilOp(desc.depthStencilPassOperation),
                                      stencilOperationToVkStencilOp(desc.depthFailureOperation),
@@ -742,7 +741,7 @@ bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {
   IGL_PROFILER_FUNCTION();
 
   const auto returnVal = drawCallCountEnabled_ > 0;
-  drawCallCountEnabled_ = value;
+  drawCallCountEnabled_ = static_cast<uint32_t>(value);
   return returnVal;
 }
 
@@ -933,5 +932,4 @@ void RenderCommandEncoder::processDependencies(const Dependencies& dependencies)
   }
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

@@ -19,9 +19,7 @@
 #include <igl/IGLSafeC.h>
 #include <memory>
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 Buffer::Buffer(const igl::vulkan::Device& device) : device_(device) {}
 
@@ -78,10 +76,10 @@ Result Buffer::create(const BufferDesc& desc) {
   bufferPatches_ = std::make_unique<BufferRange[]>(bufferCount_);
   Result result;
   for (size_t bufferIndex = 0; bufferIndex < bufferCount_; ++bufferIndex) {
-    std::string bufferName = desc_.debugName + " - sub-buffer " + std::to_string(bufferIndex);
+    const std::string bufferName = desc_.debugName + " - sub-buffer " + std::to_string(bufferIndex);
     buffers_[bufferIndex] =
         ctx.createBuffer(desc_.length, usageFlags, memFlags, &result, bufferName.c_str());
-    IGL_VERIFY(result.isOk());
+    IGL_ASSERT(result.isOk());
   }
 
   // allocate local data for ring-buffer only if Vulkan Buffers are not mapped to the CPU
@@ -114,10 +112,10 @@ BufferRange Buffer::getUpdateRange() const {
 
   // If there is no new data, return an empty range to indicate that no data is available
   if (start == std::numeric_limits<size_t>::max()) {
-    return BufferRange();
+    return {};
   }
 
-  return BufferRange(end - start, start);
+  return {end - start, start};
 }
 
 void Buffer::extendUpdateRange(uint32_t ringBufferIndex, const BufferRange& range) {
@@ -310,5 +308,4 @@ ResourceStorage Buffer::storage() const noexcept {
   return desc_.storage;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

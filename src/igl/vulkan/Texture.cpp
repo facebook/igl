@@ -16,8 +16,7 @@
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <igl/vulkan/VulkanTexture.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 Texture::Texture(const igl::vulkan::Device& device, TextureFormat format) :
   ITexture(format), device_(device) {}
@@ -368,5 +367,4 @@ void Texture::clearColorTexture(const igl::Color& rgba) {
   img.ctx_->immediate_->submit(wrapper);
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

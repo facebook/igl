@@ -13,8 +13,7 @@
 #include <igl/vulkan/RenderPipelineReflection.h>
 #include <unordered_map>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class Device;
 
@@ -78,7 +77,7 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
     depthWriteEnable_ = false;
   }
 
-  VkCompareOp getDepthCompareOp() const {
+  [[nodiscard]] VkCompareOp getDepthCompareOp() const {
     return static_cast<VkCompareOp>(depthCompareOp_);
   }
 
@@ -87,19 +86,19 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
     depthCompareOp_ = depthCompareOp & 0x7;
   }
 
-  VkStencilOp getStencilStateFailOp(bool front) const {
+  [[nodiscard]] VkStencilOp getStencilStateFailOp(bool front) const {
     return static_cast<VkStencilOp>(front ? stencilFrontFailOp_ : stencilBackFailOp_);
   }
 
-  VkStencilOp getStencilStatePassOp(bool front) const {
+  [[nodiscard]] VkStencilOp getStencilStatePassOp(bool front) const {
     return static_cast<VkStencilOp>(front ? stencilFrontPassOp_ : stencilBackPassOp_);
   }
 
-  VkStencilOp getStencilStateDepthFailOp(bool front) const {
+  [[nodiscard]] VkStencilOp getStencilStateDepthFailOp(bool front) const {
     return static_cast<VkStencilOp>(front ? stencilFrontDepthFailOp_ : stencilBackDepthFailOp_);
   }
 
-  VkCompareOp getStencilStateCompareOp(bool front) const {
+  [[nodiscard]] VkCompareOp getStencilStateCompareOp(bool front) const {
     return static_cast<VkCompareOp>(front ? stencilFrontCompareOp_ : stencilBackCompareOp_);
   }
 
@@ -179,7 +178,7 @@ class RenderPipelineState final : public IRenderPipelineState, public vulkan::Pi
  private:
   const igl::vulkan::Device& device_;
 
-  VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo_;
+  VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo_{};
 
   std::vector<VkVertexInputBindingDescription> vkBindings_;
   std::array<VkVertexInputAttributeDescription, IGL_VERTEX_ATTRIBUTES_MAX> vkAttributes_{};
@@ -193,5 +192,4 @@ class RenderPipelineState final : public IRenderPipelineState, public vulkan::Pi
       pipelines_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

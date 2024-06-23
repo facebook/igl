@@ -9,8 +9,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanContext;
 
@@ -35,7 +34,7 @@ class VulkanFramebuffer final {
   VulkanFramebuffer(const VulkanFramebuffer&) = delete;
   VulkanFramebuffer& operator=(const VulkanFramebuffer&) = delete;
 
-  VkFramebuffer getVkFramebuffer() const {
+  [[nodiscard]] VkFramebuffer getVkFramebuffer() const {
     return vkFramebuffer_;
   }
 
@@ -45,5 +44,4 @@ class VulkanFramebuffer final {
   VkFramebuffer vkFramebuffer_ = VK_NULL_HANDLE;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

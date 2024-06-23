@@ -15,8 +15,7 @@
 #include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 struct VulkanContextConfig;
 
@@ -53,7 +52,8 @@ class VulkanExtensions final {
 
   /// @brief Returns all available extensions of a type
   /// @param extensionType The type of the extensions
-  const std::vector<std::string>& allAvailableExtensions(ExtensionType extensionType) const;
+  [[nodiscard]] const std::vector<std::string>& allAvailableExtensions(
+      ExtensionType extensionType) const;
 
   /// @brief Returns true if the extension with name equal to `extensionName` of the type
   /// `extensionType` is available and false otherwise
@@ -91,7 +91,7 @@ class VulkanExtensions final {
   /// @return A vector of `const char *` with all enabled extensions of type `extensionType`. The
   /// return value must not outlive the instance of this class, as the pointers in the returned
   /// vector point to the strings stored internally in this class
-  std::vector<const char*> allEnabled(ExtensionType extensionType) const;
+  [[nodiscard]] std::vector<const char*> allEnabled(ExtensionType extensionType) const;
 
  private:
   static constexpr size_t kNumberOfExtensionTypes = 2;
@@ -106,5 +106,4 @@ class VulkanExtensions final {
   std::vector<std::unordered_set<std::string>> enabledExtensions_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

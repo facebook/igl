@@ -9,6 +9,7 @@
 #include <cstring>
 #include <memory>
 #include <set>
+#include <utility>
 #include <vector>
 
 #include <igl/IGLSafeC.h>
@@ -196,8 +197,7 @@ bool validateImageLimits(VkImageType imageType,
 
 } // namespace
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 // @fb-only
 class DescriptorPoolsArena final {
@@ -343,12 +343,14 @@ struct VulkanContextImpl final {
   }
 };
 
-VulkanContext::VulkanContext(const VulkanContextConfig& config,
+VulkanContext::VulkanContext(VulkanContextConfig config,
                              void* window,
                              size_t numExtraInstanceExtensions,
                              const char** extraInstanceExtensions,
                              void* display) :
-  tableImpl_(std::make_unique<VulkanFunctionTable>()), vf_(*tableImpl_), config_(config) {
+  tableImpl_(std::make_unique<VulkanFunctionTable>()),
+  vf_(*tableImpl_),
+  config_(std::move(config)) {
   IGL_PROFILER_THREAD("MainThread");
 
   pimpl_ = std::make_unique<VulkanContextImpl>();
@@ -1729,5 +1731,4 @@ VkDescriptorSet VulkanContext::getBindlessVkDescriptorSet() const {
   return config_.enableDescriptorIndexing ? pimpl_->dsBindless_ : VK_NULL_HANDLE;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

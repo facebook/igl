@@ -11,8 +11,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class Buffer;
 class VulkanContext;
@@ -93,5 +92,4 @@ class CommandBuffer final : public ICommandBuffer,
   VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

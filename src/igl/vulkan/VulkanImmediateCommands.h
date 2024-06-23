@@ -15,8 +15,7 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanSemaphore.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 /// @brief This class provides a simplified interface for obtaining and submitting Command Buffers,
 /// while providing features to help manage their synchronization.
@@ -66,13 +65,13 @@ class VulkanImmediateCommands final {
 
     /// @brief Checks whether the structure is empty and has not been associates with a command
     /// buffer submission yet
-    bool empty() const {
+    [[nodiscard]] bool empty() const {
       return submitId_ == 0;
     }
 
     /// @brief Returns a unique identifiable handle, which is made of the `submitId_` and the
     /// `bufferIndex_` member variables
-    uint64_t handle() const {
+    [[nodiscard]] uint64_t handle() const {
       return (uint64_t(submitId_) << 32) + bufferIndex_;
     }
   };
@@ -127,7 +126,7 @@ class VulkanImmediateCommands final {
   VkSemaphore acquireLastSubmitSemaphore();
 
   /// @brief Returns the last SubmitHandle, which was submitted when `submit()` was last called
-  SubmitHandle getLastSubmitHandle() const;
+  [[nodiscard]] SubmitHandle getLastSubmitHandle() const;
 
   /// @brief Checks whether the SubmitHandle is recycled. A recycled SubmitHandle is a handle that
   /// has a submit id greater than the submit id associated with the same command buffer stored
@@ -184,5 +183,4 @@ class VulkanImmediateCommands final {
   uint32_t submitCounter_ = 1;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

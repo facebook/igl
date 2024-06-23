@@ -11,8 +11,7 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <memory>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanPipelineLayout;
 
@@ -36,7 +35,7 @@ class VulkanDescriptorSetLayout final {
   VulkanDescriptorSetLayout(const VulkanDescriptorSetLayout&) = delete;
   VulkanDescriptorSetLayout& operator=(const VulkanDescriptorSetLayout&) = delete;
 
-  VkDescriptorSetLayout getVkDescriptorSetLayout() const {
+  [[nodiscard]] VkDescriptorSetLayout getVkDescriptorSetLayout() const {
     return vkDescriptorSetLayout_;
   }
 
@@ -47,5 +46,4 @@ class VulkanDescriptorSetLayout final {
   uint32_t numBindings_ = 0;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

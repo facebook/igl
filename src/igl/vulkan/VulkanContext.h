@@ -27,8 +27,7 @@
 #include "tracy/TracyVulkan.hpp"
 #endif
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 namespace util {
 struct SpvModuleInfo;
 } // namespace util
@@ -121,7 +120,7 @@ struct VulkanContextConfig {
 
 class VulkanContext final {
  public:
-  VulkanContext(const VulkanContextConfig& config,
+  VulkanContext(VulkanContextConfig config,
                 void* window,
                 size_t numExtraInstanceExtensions,
                 const char** extraInstanceExtensions,
@@ -239,7 +238,7 @@ class VulkanContext final {
 #endif
 
  private:
-  void createInstance(const size_t numExtraExtensions, const char** extraExtensions);
+  void createInstance(size_t numExtraExtensions, const char** extraExtensions);
   void createSurface(void* window, void* display);
   void checkAndUpdateDescriptorSets();
   void querySurfaceCapabilities();
@@ -279,7 +278,7 @@ class VulkanContext final {
 
   std::vector<VkFormat> deviceDepthFormats_;
   std::vector<VkSurfaceFormatKHR> deviceSurfaceFormats_;
-  VkSurfaceCapabilitiesKHR deviceSurfaceCaps_;
+  VkSurfaceCapabilitiesKHR deviceSurfaceCaps_{};
   std::vector<VkPresentModeKHR> devicePresentModes_;
 
   // Provided by VK_VERSION_1_2
@@ -389,5 +388,4 @@ class VulkanContext final {
   std::unique_ptr<SyncManager> syncManager_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan
