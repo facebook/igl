@@ -243,6 +243,7 @@ struct TextureFormatProperties {
   const uint8_t minBlocksX = 1;
   const uint8_t minBlocksY = 1;
   const uint8_t minBlocksZ = 1;
+  const uint8_t numPlanes = 1;
   const uint8_t flags = 0;
 
   /**
