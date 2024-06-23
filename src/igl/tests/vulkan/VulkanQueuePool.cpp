@@ -23,9 +23,9 @@ using namespace vulkan;
 
 TEST(VulkanQueuePoolTest, ReturnDedicatedComputeQueueWhenComputeQueueIsRequested) {
   // Given a dedicated compute queue
-  VulkanQueueDescriptor computeQueueDescriptor{
+  const VulkanQueueDescriptor computeQueueDescriptor{
       .queueFlags = VK_QUEUE_COMPUTE_BIT, .queueIndex = 0, .familyIndex = 1};
-  VulkanQueuePool queuePool({computeQueueDescriptor});
+  const VulkanQueuePool queuePool({computeQueueDescriptor});
 
   // When compute queue is requested
   auto queueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_COMPUTE_BIT);
@@ -37,9 +37,9 @@ TEST(VulkanQueuePoolTest, ReturnDedicatedComputeQueueWhenComputeQueueIsRequested
 
 TEST(VulkanQueuePoolTest, ReturnDedicatedTransferQueueWhenTransferQueueIsRequested) {
   // Given a dedicated transfer queue
-  VulkanQueueDescriptor transferQueueDescriptor{
+  const VulkanQueueDescriptor transferQueueDescriptor{
       .queueFlags = VK_QUEUE_TRANSFER_BIT, .queueIndex = 0, .familyIndex = 1};
-  VulkanQueuePool queuePool({transferQueueDescriptor});
+  const VulkanQueuePool queuePool({transferQueueDescriptor});
 
   // When transfer queue is requested
   auto queueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_TRANSFER_BIT);
@@ -51,11 +51,11 @@ TEST(VulkanQueuePoolTest, ReturnDedicatedTransferQueueWhenTransferQueueIsRequest
 
 TEST(VulkanQueuePoolTest, ReturnAllInOneQueueWhenComputeQueueIsRequested) {
   // Given an all in one queue
-  VulkanQueueDescriptor allInOneQueueDescriptor{
+  const VulkanQueueDescriptor allInOneQueueDescriptor{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
       .queueIndex = 0,
       .familyIndex = 1};
-  VulkanQueuePool queuePool({allInOneQueueDescriptor});
+  const VulkanQueuePool queuePool({allInOneQueueDescriptor});
 
   // When compute queue is requested
   auto queueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_COMPUTE_BIT);
@@ -67,11 +67,11 @@ TEST(VulkanQueuePoolTest, ReturnAllInOneQueueWhenComputeQueueIsRequested) {
 
 TEST(VulkanQueuePoolTest, ReturnAllInOneQueueWhenTransferQueueIsRequested) {
   // Given an all in one queue
-  VulkanQueueDescriptor allInOneQueueDescriptor{
+  const VulkanQueueDescriptor allInOneQueueDescriptor{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
       .queueIndex = 0,
       .familyIndex = 1};
-  VulkanQueuePool queuePool({allInOneQueueDescriptor});
+  const VulkanQueuePool queuePool({allInOneQueueDescriptor});
 
   // When transfer queue is requested
   auto queueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_TRANSFER_BIT);
@@ -83,13 +83,13 @@ TEST(VulkanQueuePoolTest, ReturnAllInOneQueueWhenTransferQueueIsRequested) {
 
 TEST(VulkanQueuePoolTest, PreferDedicatedComputeQueueOverAllInOneQueue) {
   // Given a dedicated compute queue and an all in one queue
-  VulkanQueueDescriptor computeQueueDescriptor{
+  const VulkanQueueDescriptor computeQueueDescriptor{
       .queueFlags = VK_QUEUE_COMPUTE_BIT, .queueIndex = 0, .familyIndex = 1};
-  VulkanQueueDescriptor allInOneQueueDescriptor{
+  const VulkanQueueDescriptor allInOneQueueDescriptor{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
       .queueIndex = 0,
       .familyIndex = 2};
-  VulkanQueuePool queuePool({allInOneQueueDescriptor, computeQueueDescriptor});
+  const VulkanQueuePool queuePool({allInOneQueueDescriptor, computeQueueDescriptor});
 
   // When compute queue is requested
   auto queueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_COMPUTE_BIT);
@@ -101,13 +101,13 @@ TEST(VulkanQueuePoolTest, PreferDedicatedComputeQueueOverAllInOneQueue) {
 
 TEST(VulkanQueuePoolTest, PreferDedicatedTransferQueueOverAllInOneQueue) {
   // Given a dedicated transfer queue and an all in one queue
-  VulkanQueueDescriptor transferQueueDescriptor{
+  const VulkanQueueDescriptor transferQueueDescriptor{
       .queueFlags = VK_QUEUE_TRANSFER_BIT, .queueIndex = 0, .familyIndex = 1};
-  VulkanQueueDescriptor allInOneQueueDescriptor{
+  const VulkanQueueDescriptor allInOneQueueDescriptor{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
       .queueIndex = 0,
       .familyIndex = 2};
-  VulkanQueuePool queuePool({allInOneQueueDescriptor, transferQueueDescriptor});
+  const VulkanQueuePool queuePool({allInOneQueueDescriptor, transferQueueDescriptor});
 
   // When transfer queue is requested
   auto queueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_TRANSFER_BIT);
@@ -119,15 +119,15 @@ TEST(VulkanQueuePoolTest, PreferDedicatedTransferQueueOverAllInOneQueue) {
 
 TEST(VulkanQueuePoolTest, IfUnreservedUseSameQueueForQueueRequests) {
   // Given 2 all in one queues
-  VulkanQueueDescriptor allInOneQueueDescriptor1{
+  const VulkanQueueDescriptor allInOneQueueDescriptor1{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
       .queueIndex = 0,
       .familyIndex = 1};
-  VulkanQueueDescriptor allInOneQueueDescriptor2{
+  const VulkanQueueDescriptor allInOneQueueDescriptor2{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
       .queueIndex = 0,
       .familyIndex = 2};
-  VulkanQueuePool queuePool({allInOneQueueDescriptor1, allInOneQueueDescriptor2});
+  const VulkanQueuePool queuePool({allInOneQueueDescriptor1, allInOneQueueDescriptor2});
 
   // When graphics queue and compute queue are requested
   auto graphicsQueueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_GRAPHICS_BIT);
@@ -142,11 +142,11 @@ TEST(VulkanQueuePoolTest, IfUnreservedUseSameQueueForQueueRequests) {
 
 TEST(VulkanQueuePoolTest, DoNotUseReservedQueuesForFurtherQueueRequests) {
   // Given a 2 all in one queues
-  VulkanQueueDescriptor allInOneQueueDescriptor1{
+  const VulkanQueueDescriptor allInOneQueueDescriptor1{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
       .queueIndex = 0,
       .familyIndex = 1};
-  VulkanQueueDescriptor allInOneQueueDescriptor2{
+  const VulkanQueueDescriptor allInOneQueueDescriptor2{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
       .queueIndex = 0,
       .familyIndex = 2};
@@ -166,9 +166,9 @@ TEST(VulkanQueuePoolTest, DoNotUseReservedQueuesForFurtherQueueRequests) {
 
 TEST(VulkanQueuePoolTest, DoNotReturnQueueCreationInfosIfNothingIsReserved) {
   // Given a queue
-  VulkanQueueDescriptor graphicsDescriptor{
+  const VulkanQueueDescriptor graphicsDescriptor{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT, .queueIndex = 0, .familyIndex = 1};
-  VulkanQueuePool queuePool({graphicsDescriptor});
+  const VulkanQueuePool queuePool({graphicsDescriptor});
 
   // When a queue is requested but not reserved
   auto queueDescriptor = queuePool.findQueueDescriptor(VK_QUEUE_GRAPHICS_BIT);
@@ -181,7 +181,7 @@ TEST(VulkanQueuePoolTest, DoNotReturnQueueCreationInfosIfNothingIsReserved) {
 
 TEST(VulkanQueuePoolTest, ReturnQueueCreationInfoIfAnyQueueIsReserved) {
   // Given a queue
-  VulkanQueueDescriptor graphicsQueueDescriptor{
+  const VulkanQueueDescriptor graphicsQueueDescriptor{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT, .queueIndex = 0, .familyIndex = 1};
   VulkanQueuePool queuePool({graphicsQueueDescriptor});
 
@@ -201,9 +201,9 @@ TEST(VulkanQueuePoolTest, ReturnQueueCreationInfoIfAnyQueueIsReserved) {
 
 TEST(VulkanQueuePoolTest, ReturnSingleQueueCreationInfoForSameQueueFamily) {
   // Given 2 queues from same family
-  VulkanQueueDescriptor graphicsQueueDescriptor1{
+  const VulkanQueueDescriptor graphicsQueueDescriptor1{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT, .queueIndex = 0, .familyIndex = 1};
-  VulkanQueueDescriptor graphicsQueueDescriptor2{
+  const VulkanQueueDescriptor graphicsQueueDescriptor2{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT, .queueIndex = 1, .familyIndex = 1};
   VulkanQueuePool queuePool({graphicsQueueDescriptor1, graphicsQueueDescriptor2});
 
@@ -224,9 +224,9 @@ TEST(VulkanQueuePoolTest, ReturnSingleQueueCreationInfoForSameQueueFamily) {
 
 TEST(VulkanQueuePoolTest, ReturnMultipleQueueCreationInfosForDifferentQueueFamilies) {
   // Given 2 queues from different families
-  VulkanQueueDescriptor graphicsQueueDescriptor1{
+  const VulkanQueueDescriptor graphicsQueueDescriptor1{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT, .queueIndex = 0, .familyIndex = 1};
-  VulkanQueueDescriptor graphicsQueueDescriptor2{
+  const VulkanQueueDescriptor graphicsQueueDescriptor2{
       .queueFlags = VK_QUEUE_GRAPHICS_BIT, .queueIndex = 0, .familyIndex = 2};
   VulkanQueuePool queuePool({graphicsQueueDescriptor1, graphicsQueueDescriptor2});
 

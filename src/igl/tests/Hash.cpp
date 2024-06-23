@@ -12,8 +12,7 @@
 
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 class TestShaderStages : public IShaderStages {
  public:
@@ -237,5 +236,4 @@ TEST_F(HashTest, DepthStencilState1) {
             std::hash<DepthStencilStateDesc>()(descTwo));
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

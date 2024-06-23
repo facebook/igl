@@ -18,15 +18,14 @@
 #include <memory>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 // Picking this just to match the texture we will use. If you use a different
 // size texture, then you will have to either create a new offscreenTexture_
 // and the framebuffer object in your test, so know exactly what the end result
 // would be after sampling
-#define OFFSCREEN_TEX_WIDTH 2
-#define OFFSCREEN_TEX_HEIGHT 2
+constexpr size_t OFFSCREEN_TEX_WIDTH = 2;
+constexpr size_t OFFSCREEN_TEX_HEIGHT = 2;
 
 //
 // BackendTest
@@ -59,11 +58,11 @@ class BackendTest : public ::testing::Test {
     ASSERT_TRUE(cmdQueue_ != nullptr);
 
     // Create an offscreen texture to render to
-    TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                             OFFSCREEN_TEX_WIDTH,
-                                             OFFSCREEN_TEX_HEIGHT,
-                                             TextureDesc::TextureUsageBits::Sampled |
-                                                 TextureDesc::TextureUsageBits::Attachment);
+    const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                   OFFSCREEN_TEX_WIDTH,
+                                                   OFFSCREEN_TEX_HEIGHT,
+                                                   TextureDesc::TextureUsageBits::Sampled |
+                                                       TextureDesc::TextureUsageBits::Attachment);
 
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);
@@ -142,7 +141,7 @@ class BackendTest : public ::testing::Test {
     ASSERT_TRUE(uv_ != nullptr);
 
     // Initialize sampler state
-    SamplerStateDesc samplerDesc;
+    const SamplerStateDesc samplerDesc;
     samp_ = iglDev_->createSamplerState(samplerDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(samp_ != nullptr);
@@ -207,10 +206,10 @@ TEST_F(BackendTest, DISABLED_CoordinateSystem) {
   //-------------------------------------
   // Create input texture and upload data
   //-------------------------------------
-  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           OFFSCREEN_TEX_WIDTH,
-                                           OFFSCREEN_TEX_HEIGHT,
-                                           TextureDesc::TextureUsageBits::Sampled);
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 OFFSCREEN_TEX_WIDTH,
+                                                 OFFSCREEN_TEX_HEIGHT,
+                                                 TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
@@ -249,7 +248,7 @@ TEST_F(BackendTest, DISABLED_CoordinateSystem) {
   bufDesc.data = zAdjustedQuad;
   bufDesc.length = sizeof(data::vertex_index::QUAD_VERT);
 
-  std::shared_ptr<IBuffer> zAdjustedVertexBuffer = iglDev_->createBuffer(bufDesc, &ret);
+  const std::shared_ptr<IBuffer> zAdjustedVertexBuffer = iglDev_->createBuffer(bufDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(zAdjustedVertexBuffer != nullptr);
   //-------
@@ -292,5 +291,4 @@ TEST_F(BackendTest, DISABLED_CoordinateSystem) {
   }
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

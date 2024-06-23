@@ -9,8 +9,7 @@
 #include <igl/IGL.h>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 TEST(CommonTest, BackendTypeToStringTest) {
   ASSERT_EQ(BackendTypeToString(BackendType::OpenGL), "OpenGL");
@@ -19,5 +18,4 @@ TEST(CommonTest, BackendTypeToStringTest) {
   // @fb-only
 };
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

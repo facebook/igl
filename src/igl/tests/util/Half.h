@@ -33,7 +33,8 @@ struct Half {
   uint16_t data_ = 0;
 
   template<typename charT, typename traits>
-  friend std::basic_ostream<charT, traits>& operator<<(std::basic_ostream<charT, traits>&, Half);
+  friend std::basic_ostream<charT, traits>& operator<<(std::basic_ostream<charT, traits>& /*out*/,
+                                                       Half /*arg*/);
 };
 
 template<typename charT, typename traits>

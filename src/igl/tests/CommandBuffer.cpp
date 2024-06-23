@@ -8,8 +8,7 @@
 #include "util/Common.h"
 #include "util/TestDevice.h"
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 //
 // CommandBufferTest
@@ -54,5 +53,4 @@ TEST_F(CommandBufferTest, pushPopDebugGroupLabel) {
   cmdBuf_->popDebugGroupLabel();
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

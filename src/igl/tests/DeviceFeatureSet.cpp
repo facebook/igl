@@ -13,8 +13,7 @@
 #include <igl/opengl/PlatformDevice.h>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 // DeviceFeatureSetTest
 // This test exercises the igl::ICapabilities API.
@@ -47,12 +46,12 @@ class DeviceFeatureSetTest : public ::testing::Test {
 TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
   EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::StandardDerivative));
 
-  bool backendOpenGL = iglDev_->getBackendType() == igl::BackendType::OpenGL;
+  const bool backendOpenGL = iglDev_->getBackendType() == igl::BackendType::OpenGL;
 
   if (backendOpenGL) {
 #if IGL_BACKEND_OPENGL
     auto& context = iglDev_->getPlatformDevice<igl::opengl::PlatformDevice>()->getContext();
-    bool usesOpenGLES = igl::opengl::DeviceFeatureSet::usesOpenGLES();
+    const bool usesOpenGLES = igl::opengl::DeviceFeatureSet::usesOpenGLES();
     const auto& deviceFeatures = context.deviceFeatures();
     auto glVersion = deviceFeatures.getGLVersion();
 
@@ -288,5 +287,4 @@ TEST_F(DeviceFeatureSetTest, getTextureFormatCapabilities) {
   EXPECT_TRUE(contains(capability, ICapabilities::TextureFormatCapabilityBits::Sampled));
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

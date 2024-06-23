@@ -11,8 +11,7 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 class ShaderLibraryTest : public ::testing::Test {
  private:
@@ -133,5 +132,4 @@ TEST_F(ShaderLibraryTest, CreateFromSourceNoResult) {
   auto vertShaderModule = shaderLibrary->getShaderModule("vertexShader");
   ASSERT_TRUE(vertShaderModule);
 }
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

@@ -16,8 +16,7 @@
 #include <igl/vulkan/VulkanContext.h>
 #endif
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 class DeviceVulkanTest : public ::testing::Test {
  public:
@@ -45,7 +44,7 @@ class DeviceVulkanTest : public ::testing::Test {
 /// this is just here as a proof of concept.
 TEST_F(DeviceVulkanTest, CreateCommandQueue) {
   Result ret;
-  CommandQueueDesc desc;
+  CommandQueueDesc desc{};
 
   desc.type = CommandQueueType::Graphics;
 
@@ -75,12 +74,12 @@ TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
   size_t maxBufferLength = 0;
   iglDev_->getFeatureLimits(DeviceFeatureLimits::MaxStorageBufferBytes, maxBufferLength);
 
-  for (size_t sizeIdx = 0; sizeIdx < kDesiredBufferSizes.size(); ++sizeIdx) {
-    bufferDesc.length = std::min<VkDeviceSize>(kDesiredBufferSizes[sizeIdx], maxBufferLength);
+  for (auto kDesiredBufferSize : kDesiredBufferSizes) {
+    bufferDesc.length = std::min<VkDeviceSize>(kDesiredBufferSize, maxBufferLength);
 
     ASSERT_TRUE(bufferDesc.length % 2 == 0);
 
-    std::shared_ptr<IBuffer> const buffer = iglDev_->createBuffer(bufferDesc, &ret);
+    const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(buffer != nullptr);
@@ -142,13 +141,13 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
 
   Result ret;
 
-  std::vector<HWDeviceDesc> devices = igl::vulkan::HWDevice::queryDevices(
-      *ctx.get(), HWDeviceQueryDesc(HWDeviceType::Unknown), &ret);
+  std::vector<HWDeviceDesc> devices =
+      igl::vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::Unknown), &ret);
 
   ASSERT_TRUE(!devices.empty());
 
   if (ret.isOk()) {
-    std::vector<const char*> extraDeviceExtensions;
+    const std::vector<const char*> extraDeviceExtensions;
     iglDev = igl::vulkan::HWDevice::create(std::move(ctx),
                                            devices[0],
                                            0, // width
@@ -165,8 +164,9 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
   ASSERT_TRUE(ret.isOk());
   ASSERT_NE(iglDev, nullptr);
 
-  if (!iglDev)
+  if (!iglDev) {
     return;
+  }
 
   auto buffer = iglDev->createBuffer(
       BufferDesc(BufferDesc::BufferTypeBits::Uniform, nullptr, 256, ResourceStorage::Shared), &ret);
@@ -174,8 +174,9 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
   ASSERT_TRUE(ret.isOk());
   ASSERT_NE(buffer, nullptr);
 
-  if (!buffer)
+  if (!buffer) {
     return;
+  }
 
   ASSERT_NE(buffer->gpuAddress(), 0u);
 }
@@ -204,13 +205,13 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
 
   Result ret;
 
-  std::vector<HWDeviceDesc> devices = igl::vulkan::HWDevice::queryDevices(
-      *ctx.get(), HWDeviceQueryDesc(HWDeviceType::Unknown), &ret);
+  std::vector<HWDeviceDesc> devices =
+      igl::vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::Unknown), &ret);
 
   ASSERT_TRUE(!devices.empty());
 
   if (ret.isOk()) {
-    std::vector<const char*> extraDeviceExtensions;
+    const std::vector<const char*> extraDeviceExtensions;
     iglDev = igl::vulkan::HWDevice::create(std::move(ctx),
                                            devices[0],
                                            0, // width
@@ -227,8 +228,9 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
   ASSERT_TRUE(ret.isOk());
   ASSERT_NE(iglDev, nullptr);
 
-  if (!iglDev)
+  if (!iglDev) {
     return;
+  }
 
   const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
                                                  1,
@@ -240,12 +242,12 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_NE(texture, nullptr);
 
-  if (!texture)
+  if (!texture) {
     return;
+  }
 
   ASSERT_NE(texture->getTextureId(), 0u);
 }
 #endif
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

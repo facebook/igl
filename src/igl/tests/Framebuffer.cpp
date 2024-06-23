@@ -17,12 +17,11 @@
 #include <igl/opengl/PlatformDevice.h>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 // Use a 1x1 Framebuffer for this test
-#define OFFSCREEN_RT_WIDTH 1
-#define OFFSCREEN_RT_HEIGHT 1
+constexpr size_t OFFSCREEN_RT_WIDTH = 1;
+constexpr size_t OFFSCREEN_RT_HEIGHT = 1;
 
 //
 // FramebufferTest
@@ -55,11 +54,11 @@ class FramebufferTest : public ::testing::Test {
     ASSERT_TRUE(cmdQueue_ != nullptr);
 
     // Create an offscreen texture to render to
-    TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                             OFFSCREEN_RT_WIDTH,
-                                             OFFSCREEN_RT_HEIGHT,
-                                             TextureDesc::TextureUsageBits::Sampled |
-                                                 TextureDesc::TextureUsageBits::Attachment);
+    const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                   OFFSCREEN_RT_WIDTH,
+                                                   OFFSCREEN_RT_HEIGHT,
+                                                   TextureDesc::TextureUsageBits::Sampled |
+                                                       TextureDesc::TextureUsageBits::Attachment);
 
     auto depthFormat = TextureFormat::S8_UInt_Z32_UNorm;
 
@@ -167,7 +166,7 @@ class FramebufferTest : public ::testing::Test {
     ASSERT_TRUE(uv_ != nullptr);
 
     // Initialize sampler state
-    SamplerStateDesc samplerDesc;
+    const SamplerStateDesc samplerDesc;
     samp_ = iglDev_->createSamplerState(samplerDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(samp_ != nullptr);
@@ -367,7 +366,7 @@ TEST_F(FramebufferTest, Clear) {
 // on Metal
 //
 TEST_F(FramebufferTest, blitFramebufferColor) {
-  auto* platformDevice = iglDev_.get()->getPlatformDevice<opengl::PlatformDevice>();
+  auto* platformDevice = iglDev_->getPlatformDevice<opengl::PlatformDevice>();
   if (platformDevice) {
     ASSERT_TRUE(backend_ == util::BACKEND_OGL);
 
@@ -392,13 +391,13 @@ TEST_F(FramebufferTest, blitFramebufferColor) {
     //-----------------------------------------
     // Create an offscreen texture to render to
     //-----------------------------------------
-    TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                             OFFSCREEN_RT_WIDTH,
-                                             OFFSCREEN_RT_HEIGHT,
-                                             TextureDesc::TextureUsageBits::Sampled |
-                                                 TextureDesc::TextureUsageBits::Attachment);
+    const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                   OFFSCREEN_RT_WIDTH,
+                                                   OFFSCREEN_RT_HEIGHT,
+                                                   TextureDesc::TextureUsageBits::Sampled |
+                                                       TextureDesc::TextureUsageBits::Attachment);
 
-    std::shared_ptr<ITexture> offscreenTexture2 = iglDev_->createTexture(texDesc, &ret);
+    const std::shared_ptr<ITexture> offscreenTexture2 = iglDev_->createTexture(texDesc, &ret);
     ASSERT_TRUE(ret.isOk());
     ASSERT_TRUE(offscreenTexture2 != nullptr);
 
@@ -408,7 +407,8 @@ TEST_F(FramebufferTest, blitFramebufferColor) {
     FramebufferDesc framebufferDesc;
 
     framebufferDesc.colorAttachments[0].texture = offscreenTexture2;
-    std::shared_ptr<IFramebuffer> framebuffer2 = iglDev_->createFramebuffer(framebufferDesc, &ret);
+    const std::shared_ptr<IFramebuffer> framebuffer2 =
+        iglDev_->createFramebuffer(framebufferDesc, &ret);
     ASSERT_TRUE(ret.isOk());
     ASSERT_TRUE(framebuffer2 != nullptr);
 
@@ -552,11 +552,11 @@ TEST_F(FramebufferTest, DrawableBindCount) {
   ASSERT_EQ(numOfAttachments, 1);
 
   // Create another texture
-  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           OFFSCREEN_RT_WIDTH,
-                                           OFFSCREEN_RT_HEIGHT,
-                                           TextureDesc::TextureUsageBits::Sampled |
-                                               TextureDesc::TextureUsageBits::Attachment);
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 OFFSCREEN_RT_WIDTH,
+                                                 OFFSCREEN_RT_HEIGHT,
+                                                 TextureDesc::TextureUsageBits::Sampled |
+                                                     TextureDesc::TextureUsageBits::Attachment);
 
   Result ret;
   auto newTex = iglDev_->createTexture(texDesc, &ret);
@@ -649,7 +649,7 @@ TEST_F(FramebufferTest, GetColorAttachmentTest) {
   const int channelCount = 4;
   const int channelSize = sizeof(uint8_t);
   const int textureElementPerRow = textureWidth * channelCount;
-  TextureDesc const texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
                                                  textureWidth,
                                                  textureHeight,
                                                  TextureDesc::TextureUsageBits::Sampled |
@@ -709,5 +709,4 @@ TEST_F(FramebufferTest, GetColorAttachmentTest) {
   }
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

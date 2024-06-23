@@ -10,8 +10,7 @@
 #include <igl/NameHandle.h>
 #include <set>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 namespace {
 NameHandle a = IGL_NAMEHANDLE("a");
 NameHandle b = IGL_NAMEHANDLE("b");
@@ -61,5 +60,4 @@ TEST(NameHandleTests, set) {
   EXPECT_EQ(s.find(c), s.end());
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

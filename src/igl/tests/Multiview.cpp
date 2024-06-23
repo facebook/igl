@@ -19,8 +19,7 @@
 #include <igl/opengl/PlatformDevice.h>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 // Use a 1x1 Framebuffer for this test
 constexpr size_t kOffScreenWidth = 1;
@@ -44,7 +43,7 @@ class MultiviewTest : public ::testing::Test {
                                                                         igl::Result* /*result*/) {
     std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer = nullptr;
 
-    iglu::ManagedUniformBufferInfo ubInfo = {
+    const iglu::ManagedUniformBufferInfo ubInfo = {
         1,
         sizeof(Colors),
         {
@@ -72,7 +71,7 @@ class MultiviewTest : public ::testing::Test {
   void SetUp() override {
     setDebugBreakEnabled(false);
 
-    std::vector<igl::DeviceFeatures> requestedFeatures{igl::DeviceFeatures::Multiview};
+    const std::vector<igl::DeviceFeatures> requestedFeatures{igl::DeviceFeatures::Multiview};
 
     util::createDeviceAndQueue(iglDev_, cmdQueue_);
     ASSERT_NE(iglDev_, nullptr);
@@ -90,12 +89,12 @@ class MultiviewTest : public ::testing::Test {
 #endif
 
     // Create an offscreen texture to render to
-    TextureDesc texDesc = TextureDesc::new2DArray(TextureFormat::RGBA_UNorm8,
-                                                  kOffScreenWidth,
-                                                  kOffScreenHeight,
-                                                  2,
-                                                  TextureDesc::TextureUsageBits::Sampled |
-                                                      TextureDesc::TextureUsageBits::Attachment);
+    const TextureDesc texDesc = TextureDesc::new2DArray(
+        TextureFormat::RGBA_UNorm8,
+        kOffScreenWidth,
+        kOffScreenHeight,
+        2,
+        TextureDesc::TextureUsageBits::Sampled | TextureDesc::TextureUsageBits::Attachment);
 
     auto depthFormat = TextureFormat::S8_UInt_Z32_UNorm;
 
@@ -261,7 +260,7 @@ TEST_F(MultiviewTest, SinglePassStereo) {
   ASSERT_NE(framebuffer_, nullptr);
 
   Result result{};
-  auto vertUniformBuffer = createVertexUniformBuffer(*iglDev_.get(), &result);
+  auto vertUniformBuffer = createVertexUniformBuffer(*iglDev_, &result);
   ASSERT_TRUE(result.isOk());
 
   colors_[0].r = 1.0f;
@@ -295,7 +294,7 @@ TEST_F(MultiviewTest, SinglePassStereo) {
   cmds->bindDepthStencilState(depthStencilState);
 
   cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
-  vertUniformBuffer->bind(*iglDev_.get(), *pipelineState, *cmds.get());
+  vertUniformBuffer->bind(*iglDev_, *pipelineState, *cmds);
 
   cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
   cmds->drawIndexed(6);
@@ -319,5 +318,4 @@ TEST_F(MultiviewTest, SinglePassStereo) {
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
   EXPECT_EQ(pixels[0], 0xffffff00);
 }
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests
