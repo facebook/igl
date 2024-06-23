@@ -13,8 +13,7 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 class PlatformDeviceMetalTest : public ::testing::Test {
  public:
@@ -38,9 +37,8 @@ class PlatformDeviceMetalTest : public ::testing::Test {
 
 // Test Cases
 TEST_F(PlatformDeviceMetalTest, GetPlatformDeviceParentCls) {
-  auto pd = iglDev_.get()->getPlatformDevice<metal::PlatformDevice>();
+  auto* pd = iglDev_->getPlatformDevice<metal::PlatformDevice>();
   ASSERT_NE(pd, nullptr);
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

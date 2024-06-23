@@ -17,8 +17,7 @@
 #include <igl/IGL.h>
 #include <igl/metal/Shader.h>
 #include <igl/metal/VertexInputState.h>
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 class RenderPipelineStateMTLTest : public ::testing::Test {
  public:
@@ -181,5 +180,4 @@ TEST_F(RenderPipelineStateMTLTest, ConvertColorWriteMaskAlpha) {
   ASSERT_EQ(mask, MTLColorWriteMaskAlpha);
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

@@ -12,8 +12,7 @@
 #include <memory>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 // VertexInputStateMTLTest
 //
@@ -41,10 +40,10 @@ class VertexInputStateMTLTest : public ::testing::Test {
 TEST_F(VertexInputStateMTLTest, testDefaultVertexInputDesc) {
   ASSERT_TRUE(iglDev_ != nullptr);
 
-  VertexInputStateDesc inputDesc;
+  const VertexInputStateDesc inputDesc;
   Result ret;
 
-  std::shared_ptr<IVertexInputState> vertexInputState =
+  const std::shared_ptr<IVertexInputState> vertexInputState =
       iglDev_->createVertexInputState(inputDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -57,7 +56,7 @@ TEST_F(VertexInputStateMTLTest, testWithNumAttributesTooLarge) {
   inputDesc.numAttributes = IGL_VERTEX_ATTRIBUTES_MAX + 1;
   Result ret;
 
-  std::shared_ptr<IVertexInputState> vertexInputState =
+  const std::shared_ptr<IVertexInputState> vertexInputState =
       iglDev_->createVertexInputState(inputDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::ArgumentOutOfRange);
@@ -72,7 +71,7 @@ TEST_F(VertexInputStateMTLTest, testWithNumBindingsTooLarge) {
   inputDesc.numInputBindings = IGL_VERTEX_BINDINGS_MAX + 1;
   Result ret;
 
-  std::shared_ptr<IVertexInputState> vertexInputState =
+  const std::shared_ptr<IVertexInputState> vertexInputState =
       iglDev_->createVertexInputState(inputDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::ArgumentOutOfRange);
@@ -95,7 +94,7 @@ TEST_F(VertexInputStateMTLTest, testOneAttribute) {
   inputDesc.numInputBindings = 0;
   Result ret;
 
-  std::shared_ptr<IVertexInputState> vertexInputState =
+  const std::shared_ptr<IVertexInputState> vertexInputState =
       iglDev_->createVertexInputState(inputDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::ArgumentInvalid);
@@ -115,7 +114,7 @@ TEST_F(VertexInputStateMTLTest, testNegativeBufferIndex) {
   inputDesc.numInputBindings = 1;
   Result ret;
 
-  std::shared_ptr<IVertexInputState> vertexInputState =
+  const std::shared_ptr<IVertexInputState> vertexInputState =
       iglDev_->createVertexInputState(inputDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::ArgumentOutOfRange);
@@ -135,7 +134,7 @@ TEST_F(VertexInputStateMTLTest, testNegativeLocation) {
   inputDesc.numInputBindings = 1;
   Result ret;
 
-  std::shared_ptr<IVertexInputState> vertexInputState =
+  const std::shared_ptr<IVertexInputState> vertexInputState =
       iglDev_->createVertexInputState(inputDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::ArgumentOutOfRange);
@@ -163,7 +162,7 @@ TEST_F(VertexInputStateMTLTest, testLocationUnique) {
   inputDesc.numInputBindings = 1;
   Result ret;
 
-  std::shared_ptr<IVertexInputState> vertexInputState =
+  const std::shared_ptr<IVertexInputState> vertexInputState =
       iglDev_->createVertexInputState(inputDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::ArgumentInvalid);
@@ -191,7 +190,7 @@ TEST_F(VertexInputStateMTLTest, testLocationNonSequential) {
   inputDesc.numInputBindings = 1;
   Result ret;
 
-  std::shared_ptr<IVertexInputState> vertexInputState =
+  const std::shared_ptr<IVertexInputState> vertexInputState =
       iglDev_->createVertexInputState(inputDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -218,7 +217,7 @@ TEST_F(VertexInputStateMTLTest, testTwoAttributesZeroBinding) {
   inputDesc.numInputBindings = 0;
   Result ret;
 
-  std::shared_ptr<IVertexInputState> vertexInputState =
+  const std::shared_ptr<IVertexInputState> vertexInputState =
       iglDev_->createVertexInputState(inputDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::ArgumentInvalid);
@@ -246,7 +245,7 @@ TEST_F(VertexInputStateMTLTest, testTwoAttributesNotCovering) {
   inputDesc.numInputBindings = 1;
   Result ret;
 
-  std::shared_ptr<IVertexInputState> vertexInputState =
+  const std::shared_ptr<IVertexInputState> vertexInputState =
       iglDev_->createVertexInputState(inputDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::ArgumentInvalid);
@@ -277,13 +276,13 @@ TEST_F(VertexInputStateMTLTest, testTwoAttributesOneBuffer) {
   inputDesc.inputBindings[0].sampleRate = 2;
   Result ret;
 
-  std::shared_ptr<IVertexInputState> vertexInputState =
+  const std::shared_ptr<IVertexInputState> vertexInputState =
       iglDev_->createVertexInputState(inputDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(vertexInputState != nullptr);
 
-  std::shared_ptr<::igl::metal::VertexInputState> metalVertexInputState =
+  const std::shared_ptr<::igl::metal::VertexInputState> metalVertexInputState =
       std::static_pointer_cast<::igl::metal::VertexInputState>(vertexInputState);
   ASSERT_TRUE(metalVertexInputState != nullptr);
 
@@ -398,5 +397,4 @@ TEST(VertexInputStateMTLStaticTest, testConvertSampleFunction) {
             MTLVertexStepFunctionPerInstance);
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

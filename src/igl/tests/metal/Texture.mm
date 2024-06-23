@@ -14,8 +14,7 @@
 #include <gtest/gtest.h>
 #include <utility>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 #define OFFSCREEN_TEX_WIDTH 2
 #define OFFSCREEN_TEX_HEIGHT 2
@@ -78,7 +77,7 @@ TEST_F(TextureMTLTest, ConstructionFromMTLTexture) {
 // Test upload
 TEST_F(TextureMTLTest, Upload) {
   const auto texRangeDesc = TextureRangeDesc();
-  Result res = texture_->upload(texRangeDesc, nullptr);
+  const Result res = texture_->upload(texRangeDesc, nullptr);
   ASSERT_TRUE(res.isOk());
 }
 
@@ -103,15 +102,15 @@ TEST_F(TextureMTLTest, GetMipmapsCount) {
   }
 
   miptexDesc.numMipLevels = targetlevel; // log(16) - 1
-  std::shared_ptr<ITexture> mipTexture = device_->createTexture(miptexDesc, &res);
+  const std::shared_ptr<ITexture> mipTexture = device_->createTexture(miptexDesc, &res);
   ASSERT_TRUE(res.isOk());
 
   auto mtlTexture = std::static_pointer_cast<metal::Texture>(mipTexture);
   mtlTexture->generateMipmap(*cmdQueue_);
 
   // Wait for completion
-  CommandBufferDesc desc = {};
-  std::shared_ptr<ICommandBuffer> cmdBuf = cmdQueue_->createCommandBuffer(desc, &res);
+  const CommandBufferDesc desc = {};
+  const std::shared_ptr<ICommandBuffer> cmdBuf = cmdQueue_->createCommandBuffer(desc, &res);
   id<MTLCommandBuffer> mtlCmdBuf = static_cast<igl::metal::CommandBuffer&>(*cmdBuf).get();
   [mtlCmdBuf commit];
   cmdBuf->waitUntilCompleted();
@@ -171,19 +170,19 @@ static std::shared_ptr<igl::ITexture> createCVPixelBufferTextureWithSize(
     const size_t height,
     const std::shared_ptr<igl::IDevice>& device,
     Result& outResult) {
-  igl::BackendType backend = device->getBackendType();
+  const igl::BackendType backend = device->getBackendType();
   CVPixelBufferRef pixelBuffer = nullptr;
   NSDictionary* bufferAttributes = @{
     (NSString*)kCVPixelBufferIOSurfacePropertiesKey : @{},
     (NSString*)kCVPixelBufferMetalCompatibilityKey : @(backend == igl::BackendType::Metal),
   };
 
-  CVReturn result = CVPixelBufferCreate(kCFAllocatorDefault,
-                                        width,
-                                        height,
-                                        kCVPixelFormatType_32BGRA,
-                                        (__bridge CFDictionaryRef)(bufferAttributes),
-                                        &pixelBuffer);
+  const CVReturn result = CVPixelBufferCreate(kCFAllocatorDefault,
+                                              width,
+                                              height,
+                                              kCVPixelFormatType_32BGRA,
+                                              (__bridge CFDictionaryRef)(bufferAttributes),
+                                              &pixelBuffer);
   if (result != kCVReturnSuccess) {
     Result::setResult(&outResult,
                       Result::Code::RuntimeError,
@@ -191,7 +190,7 @@ static std::shared_ptr<igl::ITexture> createCVPixelBufferTextureWithSize(
     return nullptr;
   }
 
-  auto platformDevice = device->getPlatformDevice<igl::metal::PlatformDevice>();
+  auto* platformDevice = device->getPlatformDevice<igl::metal::PlatformDevice>();
   std::shared_ptr<igl::ITexture> texture =
       platformDevice->createTextureFromNativePixelBuffer(pixelBuffer, format, 0, &outResult);
   if (!outResult.isOk()) {
@@ -225,7 +224,7 @@ TEST_F(TextureMTLTest, createTextureFromNativePixelBufferWithInvalidFormat) {
 }
 
 TEST_F(TextureMTLTest, ConvertTextureFormats) {
-  std::vector<TextureFormat> inputFormats = {
+  const std::vector<TextureFormat> inputFormats = {
       TextureFormat::A_UNorm8,
       TextureFormat::R_UNorm8,
       TextureFormat::R_F16,
@@ -303,7 +302,7 @@ TEST_F(TextureMTLTest, ConvertTextureFormats) {
       TextureFormat::S8_UInt_Z32_UNorm,
       TextureFormat::S_UInt8};
 
-  std::vector<TextureFormat> invalidTextureFormats = {
+  const std::vector<TextureFormat> invalidTextureFormats = {
       TextureFormat::Invalid,
       TextureFormat::L_UNorm8,
 #if IGL_PLATFORM_MACOS
@@ -374,5 +373,4 @@ TEST_F(TextureMTLTest, ConvertTextureFormats) {
   }
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

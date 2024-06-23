@@ -9,8 +9,7 @@
 
 #include "../util/Common.h"
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 // DepthStencilStateMTLTest
 //
@@ -35,11 +34,11 @@ TEST_F(DepthStencilStateMTLTest, StencilOpConversionToMTL) {
     igl::StencilOperation igl = StencilOperation::Keep;
     MTLStencilOperation mtl = MTLStencilOperationKeep;
   };
-  MTLStencilOperation MTLStencilOperation =
+  const MTLStencilOperation MTLStencilOperation =
       metal::DepthStencilState::convertStencilOperation(StencilOperation::Keep);
   ASSERT_EQ(MTLStencilOperation, MTLStencilOperationKeep);
 
-  std::vector<StencilOpConversion> conversions{
+  const std::vector<StencilOpConversion> conversions{
       StencilOpConversion{igl::StencilOperation::Keep, MTLStencilOperationKeep},
       StencilOpConversion{igl::StencilOperation::Zero, MTLStencilOperationZero},
       StencilOpConversion{igl::StencilOperation::Replace, MTLStencilOperationReplace},
@@ -67,7 +66,7 @@ TEST_F(DepthStencilStateMTLTest, CompareFunctionToMTL) {
     MTLCompareFunction mtl = MTLCompareFunctionNever;
   };
 
-  std::vector<CompareFuncConversion> conversions{
+  const std::vector<CompareFuncConversion> conversions{
       CompareFuncConversion{igl::CompareFunction::Never, MTLCompareFunctionNever},
       CompareFuncConversion{igl::CompareFunction::Less, MTLCompareFunctionLess},
       CompareFuncConversion{igl::CompareFunction::Equal, MTLCompareFunctionEqual},
@@ -79,10 +78,9 @@ TEST_F(DepthStencilStateMTLTest, CompareFunctionToMTL) {
   };
 
   for (auto data : conversions) {
-    MTLCompareFunction mtl = metal::DepthStencilState::convertCompareFunction(data.igl);
+    const MTLCompareFunction mtl = metal::DepthStencilState::convertCompareFunction(data.igl);
     ASSERT_EQ(mtl, data.mtl);
   }
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests
