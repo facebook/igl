@@ -20,8 +20,8 @@ class TextureBufferIosTest : public util::TextureFormatTestBase {
   ~TextureBufferIosTest() override = default;
 
   std::shared_ptr<igl::ITexture> createCVPixelBufferTextureWithSize(OSType pixelFormat,
-                                                                    const size_t width,
-                                                                    const size_t height,
+                                                                    size_t width,
+                                                                    size_t height,
                                                                     TextureDesc::TextureUsage usage,
                                                                     Result& outResult);
 };
@@ -32,19 +32,19 @@ std::shared_ptr<igl::ITexture> TextureBufferIosTest::createCVPixelBufferTextureW
     const size_t height,
     TextureDesc::TextureUsage usage,
     Result& outResult) {
-  igl::BackendType backend = iglDev_->getBackendType();
+  const igl::BackendType backend = iglDev_->getBackendType();
   CVPixelBufferRef pixelBuffer = nullptr;
   NSDictionary* bufferAttributes = @{
     (NSString*)kCVPixelBufferIOSurfacePropertiesKey : @{},
     (NSString*)kCVPixelFormatOpenGLESCompatibility : @(backend == igl::BackendType::OpenGL),
   };
 
-  CVReturn result = CVPixelBufferCreate(kCFAllocatorDefault,
-                                        width,
-                                        height,
-                                        pixelFormat,
-                                        (__bridge CFDictionaryRef)(bufferAttributes),
-                                        &pixelBuffer);
+  const CVReturn result = CVPixelBufferCreate(kCFAllocatorDefault,
+                                              width,
+                                              height,
+                                              pixelFormat,
+                                              (__bridge CFDictionaryRef)(bufferAttributes),
+                                              &pixelBuffer);
   if (result != kCVReturnSuccess) {
     Result::setResult(&outResult,
                       Result::Code::RuntimeError,
@@ -52,9 +52,9 @@ std::shared_ptr<igl::ITexture> TextureBufferIosTest::createCVPixelBufferTextureW
     return nullptr;
   }
 
-  auto platformDevice = iglDev_->getPlatformDevice<igl::opengl::ios::PlatformDevice>();
+  auto* platformDevice = iglDev_->getPlatformDevice<igl::opengl::ios::PlatformDevice>();
   auto& context = static_cast<igl::opengl::ios::Context&>(platformDevice->getContext());
-  auto textureCache = context.getTextureCache();
+  auto* textureCache = context.getTextureCache();
   std::shared_ptr<igl::ITexture> texture = platformDevice->createTextureFromNativePixelBuffer(
       pixelBuffer, textureCache, 0, usage, &outResult);
   if (!outResult.isOk()) {
@@ -74,7 +74,7 @@ std::shared_ptr<igl::ITexture> TextureBufferIosTest::createCVPixelBufferTextureW
   { pf, #pf }
 
 TEST_F(TextureBufferIosTest, createTextureFromNativePixelBuffer) {
-  std::vector<std::pair<OSType, const char*>> pixelFormats = {
+  const std::vector<std::pair<OSType, const char*>> pixelFormats = {
       PIXEL_FORMAT(kCVPixelFormatType_32BGRA),
       // TODO: These currently returns kCVReturnPixelBufferNotOpenGLCompatible
       // PIXEL_FORMAT(kCVPixelFormatType_64RGBAHalf),

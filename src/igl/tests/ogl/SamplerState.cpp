@@ -13,8 +13,7 @@
 #include <igl/opengl/SamplerState.h>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 #ifndef GL_CLAMP_TO_BORDER
 #define GL_CLAMP_TO_BORDER 0x812D
@@ -38,7 +37,7 @@ class SamplerStateOGLTest : public ::testing::Test {
     ASSERT_TRUE(context_ != nullptr);
   }
 
-  opengl::IContext* context_;
+  opengl::IContext* context_{};
 };
 
 //
@@ -159,5 +158,4 @@ TEST_F(SamplerStateOGLTest, SamplerStateConvertAddressMode) {
             GL_MIRRORED_REPEAT);
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

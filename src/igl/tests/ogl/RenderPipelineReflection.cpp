@@ -37,11 +37,11 @@ class RenderPipelineReflectionTest : public ::testing::Test {
     ASSERT_TRUE(cmdQueue_ != nullptr);
 
     // Create an offscreen texture to render to
-    TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                             OFFSCREEN_TEX_WIDTH,
-                                             OFFSCREEN_TEX_HEIGHT,
-                                             TextureDesc::TextureUsageBits::Sampled |
-                                                 TextureDesc::TextureUsageBits::Attachment);
+    const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                   OFFSCREEN_TEX_WIDTH,
+                                                   OFFSCREEN_TEX_HEIGHT,
+                                                   TextureDesc::TextureUsageBits::Sampled |
+                                                       TextureDesc::TextureUsageBits::Attachment);
 
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);
@@ -113,7 +113,7 @@ class RenderPipelineReflectionTest : public ::testing::Test {
 
   std::shared_ptr<IVertexInputState> vertexInputState_;
   std::shared_ptr<IRenderPipelineState> pipelineState_;
-  opengl::RenderPipelineReflection* pipeRef_;
+  opengl::RenderPipelineReflection* pipeRef_{};
 };
 
 TEST_F(RenderPipelineReflectionTest, GetIndexByName) {
@@ -161,9 +161,10 @@ TEST_F(RenderPipelineReflectionTest, UniformBlocks) {
     GTEST_SKIP() << "Uniform blocks not supported";
     return;
   }
-  auto context = &static_cast<opengl::Device&>(*iglDev_).getContext();
-  bool isGles3 = (opengl::DeviceFeatureSet::usesOpenGLES() &&
-                  context->deviceFeatures().getGLVersion() >= igl::opengl::GLVersion::v3_0_ES);
+  auto* context = &static_cast<opengl::Device&>(*iglDev_).getContext();
+  const bool isGles3 =
+      (opengl::DeviceFeatureSet::usesOpenGLES() &&
+       context->deviceFeatures().getGLVersion() >= igl::opengl::GLVersion::v3_0_ES);
   if (!isGles3) {
     return;
   }
@@ -192,7 +193,7 @@ TEST_F(RenderPipelineReflectionTest, UniformBlocks) {
   ASSERT_TRUE(ret.isOk());
   ASSERT_TRUE(pipelineState != nullptr);
 
-  auto pipeRef = static_cast<opengl::RenderPipelineReflection*>(
+  auto* pipeRef = static_cast<opengl::RenderPipelineReflection*>(
       pipelineState->renderPipelineReflection().get());
   ASSERT_TRUE(pipeRef != nullptr);
 

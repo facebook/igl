@@ -12,8 +12,7 @@
 #include <igl/opengl/Device.h>
 #include <igl/opengl/ViewTextureTarget.h>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 //
 // ViewTextureTargetOGLTest
@@ -40,7 +39,7 @@ class ViewTextureTargetOGLTest : public ::testing::Test {
 
   // Member variables
  public:
-  opengl::IContext* context_;
+  opengl::IContext* context_{};
   std::shared_ptr<::igl::IDevice> device_;
 };
 
@@ -76,5 +75,4 @@ TEST_F(ViewTextureTargetOGLTest, NoOpFunctions) {
   viewTextureTarget->attachAsStencil(opengl::Texture::AttachmentParams{});
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

@@ -9,8 +9,7 @@
 #include <igl/IGL.h>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 //
 // MemcpyTest
@@ -65,5 +64,4 @@ TEST_F(MemcpyOGLTest, optimizedMemcpyAlignmentPermutation) {
   }
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

@@ -51,8 +51,7 @@
 #define OFFSCREEN_RT_WIDTH 1
 #define OFFSCREEN_RT_HEIGHT 1
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 class PlatformDeviceTest : public ::testing::Test {
  public:
@@ -76,12 +75,12 @@ class PlatformDeviceTest : public ::testing::Test {
 
 // Test Cases
 TEST_F(PlatformDeviceTest, GetPlatformDeviceParentCls) {
-  auto pd = iglDev_.get()->getPlatformDevice<opengl::PlatformDevice>();
+  auto* pd = iglDev_->getPlatformDevice<opengl::PlatformDevice>();
   ASSERT_NE(pd, nullptr);
 }
 
 TEST_F(PlatformDeviceTest, GetPlatformDeviceChildCls) {
-  auto pd = iglDev_.get()->getPlatformDevice<PLATFORM_DEVICE>();
+  auto* pd = iglDev_->getPlatformDevice<PLATFORM_DEVICE>();
   ASSERT_NE(pd, nullptr);
 }
 
@@ -89,7 +88,7 @@ TEST_F(PlatformDeviceTest, GetPlatformDeviceChildCls) {
 // Since this API creates an empty container with the settings provided, we can
 // simply check that the settings provided are what are actually set.
 TEST_F(PlatformDeviceTest, CreateTextureBufferExternal) {
-  auto pd = iglDev_.get()->getPlatformDevice<opengl::PlatformDevice>();
+  auto* pd = iglDev_->getPlatformDevice<opengl::PlatformDevice>();
   ASSERT_NE(pd, nullptr);
 
   std::unique_ptr<igl::opengl::TextureBufferExternal> textureBuffer =
@@ -110,7 +109,7 @@ TEST_F(PlatformDeviceTest, CreateTextureBufferExternal) {
 // This test will exercise CreateCurrentFrameBuffer() API.
 // It simply checks whether CreateCurrentFrameBuffer() does not return null pointer.
 TEST_F(PlatformDeviceTest, CreateCurrentFrameBuffer) {
-  auto pd = iglDev_.get()->getPlatformDevice<opengl::PlatformDevice>();
+  auto* pd = iglDev_->getPlatformDevice<opengl::PlatformDevice>();
   ASSERT_NE(pd, nullptr);
 
   auto frameBuffer = pd->createCurrentFramebuffer();
@@ -121,7 +120,7 @@ TEST_F(PlatformDeviceTest, CreateCurrentFrameBuffer) {
 // Test ITexture::getEstimatedSizeInBytes with external textures
 //
 TEST_F(PlatformDeviceTest, GetEstimatedSizeInBytesExternal) {
-  auto pd = iglDev_.get()->getPlatformDevice<opengl::PlatformDevice>();
+  auto* pd = iglDev_->getPlatformDevice<opengl::PlatformDevice>();
 
   auto calcSize = [&](size_t width, size_t height, TextureFormat format) -> size_t {
     auto texture = pd->createTextureBufferExternal(1, // Not actually using it
@@ -142,5 +141,4 @@ TEST_F(PlatformDeviceTest, GetEstimatedSizeInBytesExternal) {
   ASSERT_EQ(calcSize(128, 333, TextureFormat::RG_UNorm8), 85248); // 128 * 333 * 2
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

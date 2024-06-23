@@ -15,8 +15,7 @@
 #include <igl/opengl/RenderPipelineState.h>
 #include <utility>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 // Use a 4x4 texture for this test
 #define OFFSCREEN_TEX_WIDTH 4
@@ -53,11 +52,11 @@ class PipelineStateOGLTest : public ::testing::Test {
     ASSERT_TRUE(cmdQueue_ != nullptr);
 
     // Create an offscreen texture to render to
-    TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                             OFFSCREEN_TEX_WIDTH,
-                                             OFFSCREEN_TEX_HEIGHT,
-                                             TextureDesc::TextureUsageBits::Sampled |
-                                                 TextureDesc::TextureUsageBits::Attachment);
+    const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                   OFFSCREEN_TEX_WIDTH,
+                                                   OFFSCREEN_TEX_HEIGHT,
+                                                   TextureDesc::TextureUsageBits::Sampled |
+                                                       TextureDesc::TextureUsageBits::Attachment);
 
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);
@@ -175,7 +174,7 @@ TEST_F(PipelineStateOGLTest, ConvertOps) {
   //----------------
   // BlendOp
   //----------------
-  std::vector<std::pair<BlendOp, GLenum>> inputAndExpectedBlendOp = {
+  const std::vector<std::pair<BlendOp, GLenum>> inputAndExpectedBlendOp = {
       std::make_pair(BlendOp::Add, GL_FUNC_ADD),
       std::make_pair(BlendOp::Subtract, GL_FUNC_SUBTRACT),
       std::make_pair(BlendOp::ReverseSubtract, GL_FUNC_REVERSE_SUBTRACT),
@@ -190,7 +189,7 @@ TEST_F(PipelineStateOGLTest, ConvertOps) {
   //----------------
   // BlendFactor
   //----------------
-  std::vector<std::pair<BlendFactor, GLenum>> inputAndExpectedBlendFactor = {
+  const std::vector<std::pair<BlendFactor, GLenum>> inputAndExpectedBlendFactor = {
       std::make_pair(BlendFactor::Zero, GL_ZERO),
       std::make_pair(BlendFactor::One, GL_ONE),
       std::make_pair(BlendFactor::SrcColor, GL_SRC_COLOR),
@@ -218,5 +217,4 @@ TEST_F(PipelineStateOGLTest, ConvertOps) {
   }
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

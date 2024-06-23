@@ -17,8 +17,7 @@
 #define DUMMY_FILE_NAME "dummy_file_name"
 #define DUMMY_LINE_NUM 0
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 class ContextOGLTest : public ::testing::Test {
  public:
@@ -42,7 +41,7 @@ class ContextOGLTest : public ::testing::Test {
   void TearDown() override {}
 
  public:
-  opengl::IContext* context_;
+  opengl::IContext* context_{};
   std::shared_ptr<::igl::IDevice> device_;
 };
 
@@ -203,7 +202,7 @@ TEST_F(ContextOGLTest, StateCacheInvalidateFramebufferCacheWhenSettingGLReadFram
 /// This test is a sanity check that we should not have a GL error out of
 /// the blue.
 TEST_F(ContextOGLTest, CheckForErrorsNoError) {
-  GLenum ret = context_->checkForErrors(DUMMY_FILE_NAME, DUMMY_LINE_NUM);
+  const GLenum ret = context_->checkForErrors(DUMMY_FILE_NAME, DUMMY_LINE_NUM);
   ASSERT_EQ(ret, GL_NO_ERROR);
 }
 
@@ -211,7 +210,7 @@ TEST_F(ContextOGLTest, CheckForErrorsInvalidEnum) {
   // GL_INVALID_ENUM
   context_->activeTexture(GL_SRC_ALPHA);
 
-  GLenum ret = context_->checkForErrors(DUMMY_FILE_NAME, DUMMY_LINE_NUM);
+  const GLenum ret = context_->checkForErrors(DUMMY_FILE_NAME, DUMMY_LINE_NUM);
   ASSERT_EQ(ret, GL_INVALID_ENUM);
 }
 
@@ -224,7 +223,7 @@ TEST_F(ContextOGLTest, CheckForErrorsInvalidOperation) {
   GLuint textureMap;
   context_->genTextures(1, &textureMap);
   context_->bindTexture(GL_TEXTURE_2D, textureMap);
-  context_->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  context_->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
   context_->bindTexture(GL_TEXTURE_2D, 0);
 
   GLuint framebufferId;
@@ -243,7 +242,7 @@ TEST_F(ContextOGLTest, CheckForErrorsInvalidOperation) {
   char data[100];
   context_->readPixels(1, 1, 1, 1, GL_RED, GL_UNSIGNED_SHORT_4_4_4_4, data);
 
-  GLenum ret = context_->checkForErrors(DUMMY_FILE_NAME, DUMMY_LINE_NUM);
+  const GLenum ret = context_->checkForErrors(DUMMY_FILE_NAME, DUMMY_LINE_NUM);
   ASSERT_EQ(ret, GL_INVALID_OPERATION);
 
   // Clean up
@@ -262,7 +261,7 @@ TEST_F(ContextOGLTest, CheckForErrorsInvalidValue) {
   GLuint textureMap;
   context_->genTextures(1, &textureMap);
   context_->bindTexture(GL_TEXTURE_2D, textureMap);
-  context_->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  context_->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
   context_->bindTexture(GL_TEXTURE_2D, 0);
 
   GLuint framebufferId;
@@ -278,7 +277,7 @@ TEST_F(ContextOGLTest, CheckForErrorsInvalidValue) {
   // GL_INVALID_VALUE is generated if any bit other than the eligible bits is set in mask.
   context_->clear(0XFFFFFFFF);
 
-  GLenum ret = context_->checkForErrors(DUMMY_FILE_NAME, DUMMY_LINE_NUM);
+  const GLenum ret = context_->checkForErrors(DUMMY_FILE_NAME, DUMMY_LINE_NUM);
   ASSERT_EQ(ret, GL_INVALID_VALUE);
 
   // Clean up
@@ -303,7 +302,7 @@ TEST_F(ContextOGLTest, CheckForErrorsInvalidFrameBufferOperation) {
   if (context_->checkFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
     context_->clear(GL_COLOR_BUFFER_BIT);
 
-    GLenum ret = context_->checkForErrors(DUMMY_FILE_NAME, DUMMY_LINE_NUM);
+    const GLenum ret = context_->checkForErrors(DUMMY_FILE_NAME, DUMMY_LINE_NUM);
     ASSERT_EQ(ret, GL_INVALID_FRAMEBUFFER_OPERATION);
   }
 
@@ -373,5 +372,4 @@ TEST_F(ContextOGLTest, BasicSharedContexts) {
   ASSERT_FALSE(unsharedContext->isTexture(glTextureId));
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

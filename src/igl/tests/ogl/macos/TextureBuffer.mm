@@ -19,8 +19,8 @@ class TextureBufferMacTest : public util::TextureFormatTestBase {
   ~TextureBufferMacTest() override = default;
 
   std::shared_ptr<igl::ITexture> createCVPixelBufferTextureWithSize(OSType pixelFormat,
-                                                                    const size_t width,
-                                                                    const size_t height,
+                                                                    size_t width,
+                                                                    size_t height,
                                                                     TextureDesc::TextureUsage usage,
                                                                     Result& outResult);
 };
@@ -31,19 +31,19 @@ std::shared_ptr<igl::ITexture> TextureBufferMacTest::createCVPixelBufferTextureW
     const size_t height,
     TextureDesc::TextureUsage usage,
     Result& outResult) {
-  igl::BackendType backend = iglDev_->getBackendType();
+  const igl::BackendType backend = iglDev_->getBackendType();
   CVPixelBufferRef pixelBuffer = nullptr;
   NSDictionary* bufferAttributes = @{
     (NSString*)kCVPixelBufferIOSurfacePropertiesKey : @{},
     (NSString*)kCVPixelBufferOpenGLCompatibilityKey : @(backend == igl::BackendType::OpenGL),
   };
 
-  CVReturn result = CVPixelBufferCreate(kCFAllocatorDefault,
-                                        width,
-                                        height,
-                                        pixelFormat,
-                                        (__bridge CFDictionaryRef)(bufferAttributes),
-                                        &pixelBuffer);
+  const CVReturn result = CVPixelBufferCreate(kCFAllocatorDefault,
+                                              width,
+                                              height,
+                                              pixelFormat,
+                                              (__bridge CFDictionaryRef)(bufferAttributes),
+                                              &pixelBuffer);
   if (result != kCVReturnSuccess) {
     Result::setResult(&outResult,
                       Result::Code::RuntimeError,
@@ -51,9 +51,9 @@ std::shared_ptr<igl::ITexture> TextureBufferMacTest::createCVPixelBufferTextureW
     return nullptr;
   }
 
-  auto platformDevice = iglDev_->getPlatformDevice<igl::opengl::macos::PlatformDevice>();
+  auto* platformDevice = iglDev_->getPlatformDevice<igl::opengl::macos::PlatformDevice>();
   auto& context = static_cast<igl::opengl::macos::Context&>(platformDevice->getContext());
-  auto textureCache = context.createTextureCache();
+  auto* textureCache = context.createTextureCache();
   std::shared_ptr<igl::ITexture> texture = platformDevice->createTextureFromNativePixelBuffer(
       pixelBuffer, textureCache, usage, &outResult);
   if (!outResult.isOk()) {
@@ -74,7 +74,7 @@ std::shared_ptr<igl::ITexture> TextureBufferMacTest::createCVPixelBufferTextureW
   { pf, #pf }
 
 TEST_F(TextureBufferMacTest, createTextureFromNativePixelBuffer) {
-  std::vector<std::pair<OSType, const char*>> pixelFormats = {
+  const std::vector<std::pair<OSType, const char*>> pixelFormats = {
       PIXEL_FORMAT(kCVPixelFormatType_32BGRA), PIXEL_FORMAT(kCVPixelFormatType_OneComponent8),
       // TODO: Figure out how to test YUV textures
       // PIXEL_FORMAT(kCVPixelFormatType_420YpCbCr8BiPlanarFullRange),
