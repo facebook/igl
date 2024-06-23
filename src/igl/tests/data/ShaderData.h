@@ -10,10 +10,7 @@
 #include <cstddef> // For size_t/
 #include <igl/opengl/Macros.h>
 
-namespace igl {
-namespace tests {
-namespace data {
-namespace shader {
+namespace igl::tests::data::shader {
 
 //-----------------------------------------------------------------------------
 // Defines names of inputs and functions for the shaders in this file
@@ -583,7 +580,4 @@ const char VULKAN_SIMPLE_FRAG_SHADER_MULTIVIEW[] =
       });
 
 // clang-format on
-} // namespace shader
-} // namespace data
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests::data::shader
