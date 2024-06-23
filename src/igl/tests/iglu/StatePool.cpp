@@ -15,8 +15,7 @@
 #include <igl/NameHandle.h>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 //
 // StatePoolTest
@@ -204,5 +203,4 @@ TEST_F(StatePoolTest, renderPipelineDescCachingLRU1) {
   renderPipelineDesc3_.cullMode = renderPipelineDesc1_.cullMode; // restore change
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

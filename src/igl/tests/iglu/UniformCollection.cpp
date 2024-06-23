@@ -16,8 +16,7 @@
 #include <igl/IGL.h>
 #include <string>
 
-namespace iglu {
-namespace tests {
+namespace iglu::tests {
 
 //
 // UniformCollectionTest
@@ -349,5 +348,4 @@ TEST_F(UniformCollectionTest, DescriptorVector) {
   TestUniformData(mat4Vector, c.getOrCreate<std::vector<glm::mat4>>(mat4UniformNameHandle));
 }
 
-} // namespace tests
-} // namespace iglu
+} // namespace iglu::tests

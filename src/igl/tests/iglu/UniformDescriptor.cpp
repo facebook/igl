@@ -16,8 +16,7 @@
 #include <igl/IGL.h>
 #include <string>
 
-namespace iglu {
-namespace tests {
+namespace iglu::tests {
 
 //
 // UniformDescriptorTest
@@ -273,5 +272,4 @@ TEST_F(UniformDescriptorTest, DescriptorVector) {
   TestUniformData(mat4Vector, mat4Uniform);
 }
 
-} // namespace tests
-} // namespace iglu
+} // namespace iglu::tests
