@@ -304,14 +304,14 @@ igl::ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace) {
   }
 }
 
-bool isTextureFormatRGB(const VkFormat& textureFormat) {
-  return textureFormat == VK_FORMAT_R8G8B8A8_UNORM || textureFormat == VK_FORMAT_R8G8B8A8_SRGB ||
-         textureFormat == VK_FORMAT_A2R10G10B10_UNORM_PACK32;
+bool isTextureFormatRGB(VkFormat format) {
+  return format == VK_FORMAT_R8G8B8A8_UNORM || format == VK_FORMAT_R8G8B8A8_SRGB ||
+         format == VK_FORMAT_A2R10G10B10_UNORM_PACK32;
 }
 
-bool isTextureFormatBGR(const VkFormat& textureFormat) {
-  return textureFormat == VK_FORMAT_B8G8R8A8_UNORM || textureFormat == VK_FORMAT_B8G8R8A8_SRGB ||
-         textureFormat == VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+bool isTextureFormatBGR(VkFormat format) {
+  return format == VK_FORMAT_B8G8R8A8_UNORM || format == VK_FORMAT_B8G8R8A8_SRGB ||
+         format == VK_FORMAT_A2B10G10R10_UNORM_PACK32;
 }
 
 igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
@@ -610,6 +610,19 @@ void ensureShaderModule(IShaderModule* sm) {
           kBindPoint_BuffersStorage);
       continue;
     }
+  }
+}
+
+uint32_t getNumImagePlanes(VkFormat format) {
+  switch (format) {
+  case VK_FORMAT_UNDEFINED:
+    return 0;
+  case VK_FORMAT_G8_B8R8_2PLANE_420_UNORM:
+    return 2;
+  case VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM:
+    return 3;
+  default:
+    return 1;
   }
 }
 

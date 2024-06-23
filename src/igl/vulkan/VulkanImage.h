@@ -261,8 +261,9 @@ class VulkanImage final {
   VkDevice device_ = VK_NULL_HANDLE;
   VkImage vkImage_ = VK_NULL_HANDLE;
   VkImageUsageFlags usageFlags_ = 0;
-  VkDeviceMemory vkMemory_ = VK_NULL_HANDLE;
-  VkDeviceMemory vkMemoryCbCr_ = VK_NULL_HANDLE;
+  // Separate VkDeviceMemory objects to support disjoint multiplanar images
+  // @fb-only
+  VkDeviceMemory vkMemory_[3] = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
   VmaAllocation vmaAllocation_ = VK_NULL_HANDLE;
   VkFormatProperties formatProperties_{};
   void* mappedPtr_ = nullptr;

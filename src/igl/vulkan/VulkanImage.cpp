@@ -190,82 +190,64 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
     // Ignore clang-diagnostic-missing-field-initializers
     // @lint-ignore CLANGTIDY
-    VkMemoryRequirements2 memRequirements0 = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, nullptr};
-    // Ignore clang-diagnostic-missing-field-initializers
-    // @lint-ignore CLANGTIDY
-    VkMemoryRequirements2 memRequirements1 = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, nullptr};
+    VkMemoryRequirements2 memRequirements[3] = {
+        {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2},
+        {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2},
+        {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2},
+    };
 
     // back the image with some memory
     {
-      const VkImagePlaneMemoryRequirementsInfo planeInfo0 = {
-          VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO,
-          nullptr,
-          VK_IMAGE_ASPECT_PLANE_0_BIT};
-      const VkImagePlaneMemoryRequirementsInfo planeInfo1 = {
-          VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO,
-          nullptr,
-          VK_IMAGE_ASPECT_PLANE_1_BIT};
-      const VkImageMemoryRequirementsInfo2 imgRequirements0 = {
-          VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
-          isDisjoint ? &planeInfo0 : nullptr,
-          vkImage_,
+      constexpr uint32_t kMaxImagePlanes = IGL_ARRAY_NUM_ELEMENTS(vkMemory_);
+      const uint32_t numPlanes = igl::vulkan::getNumImagePlanes(format);
+      IGL_ASSERT(numPlanes > 0 && numPlanes <= kMaxImagePlanes);
+      // @fb-only
+      const VkImagePlaneMemoryRequirementsInfo planes[kMaxImagePlanes] = {
+          ivkGetImagePlaneMemoryRequirementsInfo(VK_IMAGE_ASPECT_PLANE_0_BIT),
+          ivkGetImagePlaneMemoryRequirementsInfo(VK_IMAGE_ASPECT_PLANE_1_BIT),
+          ivkGetImagePlaneMemoryRequirementsInfo(VK_IMAGE_ASPECT_PLANE_2_BIT),
       };
-      const VkImageMemoryRequirementsInfo2 imgRequirements1 = {
-          VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
-          isDisjoint ? &planeInfo1 : nullptr,
-          vkImage_,
+      // @fb-only
+      const VkImageMemoryRequirementsInfo2 imgRequirements[kMaxImagePlanes] = {
+          ivkGetImageMemoryRequirementsInfo2(numPlanes > 0 ? &planes[0] : nullptr, vkImage_),
+          ivkGetImageMemoryRequirementsInfo2(numPlanes > 1 ? &planes[1] : nullptr, vkImage_),
+          ivkGetImageMemoryRequirementsInfo2(numPlanes > 2 ? &planes[2] : nullptr, vkImage_),
       };
-      ctx_->vf_.vkGetImageMemoryRequirements2(device, &imgRequirements0, &memRequirements0);
-      if (isDisjoint) {
-        ctx_->vf_.vkGetImageMemoryRequirements2(device, &imgRequirements1, &memRequirements1);
-      }
-
-      VK_ASSERT(ivkAllocateMemory2(
-          &ctx_->vf_, physicalDevice_, device_, &memRequirements0, memFlags, false, &vkMemory_));
-      if (isDisjoint) {
+      for (uint32_t p = 0; p != numPlanes; p++) {
+        ctx_->vf_.vkGetImageMemoryRequirements2(device, &imgRequirements[p], &memRequirements[p]);
         VK_ASSERT(ivkAllocateMemory2(&ctx_->vf_,
                                      physicalDevice_,
                                      device_,
-                                     &memRequirements1,
+                                     &memRequirements[p],
                                      memFlags,
                                      false,
-                                     &vkMemoryCbCr_));
+                                     &vkMemory_[p]));
       }
-
-      const VkBindImagePlaneMemoryInfo bindImagePlaneMemoryInfo0 = {
-          VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, nullptr, VK_IMAGE_ASPECT_PLANE_0_BIT};
-      const VkBindImagePlaneMemoryInfo bindImagePlaneMemoryInfo1 = {
-          VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, nullptr, VK_IMAGE_ASPECT_PLANE_1_BIT};
       // @fb-only
-      const VkBindImageMemoryInfo bindInfo[2] = {
-          {
-              // Luminance
-              VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
-              isDisjoint ? &bindImagePlaneMemoryInfo0 : nullptr,
-              vkImage_,
-              vkMemory_,
-              0,
-          },
-          {
-              // CbCr
-              VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
-              &bindImagePlaneMemoryInfo1,
-              vkImage_,
-              vkMemoryCbCr_,
-              0,
-          }};
-      VK_ASSERT(ctx_->vf_.vkBindImageMemory2(device_, isDisjoint ? 2 : 1, bindInfo));
+      const VkBindImagePlaneMemoryInfo bindImagePlaneMemoryInfo[kMaxImagePlanes] = {
+          {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, nullptr, VK_IMAGE_ASPECT_PLANE_0_BIT},
+          {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, nullptr, VK_IMAGE_ASPECT_PLANE_1_BIT},
+          {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, nullptr, VK_IMAGE_ASPECT_PLANE_2_BIT},
+      };
+      // @fb-only
+      const VkBindImageMemoryInfo bindInfo[kMaxImagePlanes] = {
+          ivkGetBindImageMemoryInfo(
+              isDisjoint ? &bindImagePlaneMemoryInfo[0] : nullptr, vkImage_, vkMemory_[0]),
+          ivkGetBindImageMemoryInfo(&bindImagePlaneMemoryInfo[1], vkImage_, vkMemory_[1]),
+          ivkGetBindImageMemoryInfo(&bindImagePlaneMemoryInfo[2], vkImage_, vkMemory_[2]),
+      };
+      VK_ASSERT(ctx_->vf_.vkBindImageMemory2(device_, numPlanes, bindInfo));
 
-      allocatedSize =
-          memRequirements0.memoryRequirements.size + memRequirements1.memoryRequirements.size;
+      allocatedSize = memRequirements[0].memoryRequirements.size +
+                      memRequirements[1].memoryRequirements.size +
+                      memRequirements[2].memoryRequirements.size;
     }
 
     // handle memory-mapped images
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-      VK_ASSERT(ctx_->vf_.vkMapMemory(device_, vkMemory_, 0, VK_WHOLE_SIZE, 0, &mappedPtr_));
-      const uint32_t memoryTypeBits =
-          memRequirements0.memoryRequirements.memoryTypeBits &
-          (isDisjoint ? memRequirements1.memoryRequirements.memoryTypeBits : 0xffffffff);
+      // map only the first image plane
+      VK_ASSERT(ctx_->vf_.vkMapMemory(device_, vkMemory_[0], 0, VK_WHOLE_SIZE, 0, &mappedPtr_));
+      const uint32_t memoryTypeBits = memRequirements[0].memoryRequirements.memoryTypeBits;
       if (memoryTypeBits & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
         isCoherentMemory_ = true;
       }
@@ -396,8 +378,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       // @fb-only
   // @fb-only
 // @fb-only
-  VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_));
-  VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_, 0));
+  VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_[0]));
+  VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_[0], 0));
 // @fb-only
 }
 
@@ -488,8 +470,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                memoryRequirements.memoryRequirements.memoryTypeBits,
                memoryAllocateInfo.memoryTypeIndex);
 
-  VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_));
-  VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_, 0));
+  VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_[0]));
+  VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_[0], 0));
 }
 #endif // IGL_PLATFORM_WIN
 
@@ -663,17 +645,17 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                memoryRequirements.memoryRequirements.memoryTypeBits,
                memoryAllocateInfo.memoryTypeIndex);
 
-  VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_));
-  VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_, 0));
+  VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_[0]));
+  VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_[0], 0));
 
 #if IGL_PLATFORM_WIN
   const VkMemoryGetWin32HandleInfoKHR getHandleInfo{
-      VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR, nullptr, vkMemory_, kHandleType};
+      VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR, nullptr, vkMemory_[0], kHandleType};
   VK_ASSERT(ctx_->vf_.vkGetMemoryWin32HandleKHR(device_, &getHandleInfo, &exportedMemoryHandle_));
 #else
   VkMemoryGetFdInfoKHR getFdInfo{.sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR,
                                  .pNext = nullptr,
-                                 .memory = vkMemory_,
+                                 .memory = vkMemory_[0],
                                  .handleType = kHandleType};
   VK_ASSERT(ctx_->vf_.vkGetMemoryFdKHR(device_, &getFdInfo, &exportedFd_));
 #endif
@@ -691,7 +673,7 @@ void VulkanImage::destroy() {
   }
 
   if (!isExternallyManaged_) {
-    if (vkMemoryCbCr_ == VK_NULL_HANDLE) {
+    if (vkMemory_[1] == VK_NULL_HANDLE) {
       if (IGL_VULKAN_USE_VMA && !isImported_ && !isExported_) {
         if (mappedPtr_) {
           vmaUnmapMemory((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_);
@@ -702,10 +684,10 @@ void VulkanImage::destroy() {
             }));
       } else {
         if (mappedPtr_) {
-          ctx_->vf_.vkUnmapMemory(device_, vkMemory_);
+          ctx_->vf_.vkUnmapMemory(device_, vkMemory_[0]);
         }
         ctx_->deferredTask(std::packaged_task<void()>(
-            [vf = &ctx_->vf_, device = device_, image = vkImage_, memory = vkMemory_]() {
+            [vf = &ctx_->vf_, device = device_, image = vkImage_, memory = vkMemory_[0]]() {
               vf->vkDestroyImage(device, image, nullptr);
               if (memory != VK_NULL_HANDLE) {
                 vf->vkFreeMemory(device, memory, nullptr);
@@ -715,16 +697,18 @@ void VulkanImage::destroy() {
     } else {
       // this never uses VMA
       if (mappedPtr_) {
-        ctx_->vf_.vkUnmapMemory(device_, vkMemory_);
+        ctx_->vf_.vkUnmapMemory(device_, vkMemory_[0]);
       }
       ctx_->deferredTask(std::packaged_task<void()>([vf = &ctx_->vf_,
                                                      device = device_,
                                                      image = vkImage_,
-                                                     memory0 = vkMemory_,
-                                                     memory1 = vkMemoryCbCr_]() {
+                                                     memory0 = vkMemory_[0],
+                                                     memory1 = vkMemory_[1],
+                                                     memory2 = vkMemory_[2]]() {
         vf->vkDestroyImage(device, image, nullptr);
         vf->vkFreeMemory(device, memory0, nullptr);
         vf->vkFreeMemory(device, memory1, nullptr);
+        vf->vkFreeMemory(device, memory2, nullptr);
       }));
     }
   }
@@ -1133,8 +1117,6 @@ VulkanImage& VulkanImage::operator=(VulkanImage&& other) {
   device_ = std::move(other.device_);
   vkImage_ = std::move(other.vkImage_);
   usageFlags_ = std::move(other.usageFlags_);
-  vkMemory_ = std::move(other.vkMemory_);
-  vkMemoryCbCr_ = std::move(other.vkMemoryCbCr_);
   vmaAllocation_ = std::move(other.vmaAllocation_);
   formatProperties_ = std::move(other.formatProperties_);
   mappedPtr_ = std::move(other.mappedPtr_);
@@ -1161,6 +1143,10 @@ VulkanImage& VulkanImage::operator=(VulkanImage&& other) {
   tiling_ = other.tiling_;
   isCoherentMemory_ = other.isCoherentMemory_;
 
+  for (size_t i = 0; i != IGL_ARRAY_NUM_ELEMENTS(vkMemory_); i++) {
+    vkMemory_[i] = other.vkMemory_[i];
+  }
+
   other.ctx_ = nullptr;
   other.vkImage_ = VK_NULL_HANDLE;
 
@@ -1178,7 +1164,7 @@ void VulkanImage::flushMappedMemory() const {
     const VkMappedMemoryRange memoryRange{
         VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
         nullptr,
-        vkMemory_,
+        vkMemory_[0],
         0,
         VK_WHOLE_SIZE,
     };
