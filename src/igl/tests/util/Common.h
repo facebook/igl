@@ -16,9 +16,7 @@
 #else
 #include "simdstub.h"
 #endif
-namespace igl {
-namespace tests {
-namespace util {
+namespace igl::tests::util {
 
 const std::string BACKEND_OGL("ogl");
 const std::string BACKEND_MTL("metal");
@@ -46,6 +44,4 @@ void createSimpleShaderStages(const std::shared_ptr<IDevice>& dev,
                               std::unique_ptr<IShaderStages>& stages,
                               TextureFormat outputFormat = TextureFormat::Invalid);
 
-} // namespace util
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests::util

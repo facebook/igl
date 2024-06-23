@@ -13,9 +13,7 @@
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/Device.h>
 
-namespace igl {
-namespace tests {
-namespace util {
+namespace igl::tests::util {
 
 //
 // Creates an IGL device and a command queue
@@ -28,7 +26,7 @@ void createDeviceAndQueue(std::shared_ptr<IDevice>& dev, std::shared_ptr<IComman
   ASSERT_TRUE(dev != nullptr);
 
   // Create Command Queue
-  CommandQueueDesc cqDesc = {CommandQueueType::Graphics};
+  const CommandQueueDesc cqDesc = {CommandQueueType::Graphics};
   cq = dev->createCommandQueue(cqDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -69,16 +67,17 @@ void createSimpleShaderStages(const std::shared_ptr<IDevice>& dev,
 
   if (backend == igl::BackendType::OpenGL) {
 #if IGL_BACKEND_OPENGL
-    auto context = &static_cast<opengl::Device&>(*dev).getContext();
-    bool isGles3 = (opengl::DeviceFeatureSet::usesOpenGLES() &&
-                    context->deviceFeatures().getGLVersion() >= igl::opengl::GLVersion::v3_0_ES);
+    auto* context = &static_cast<opengl::Device&>(*dev).getContext();
+    const bool isGles3 =
+        (opengl::DeviceFeatureSet::usesOpenGLES() &&
+         context->deviceFeatures().getGLVersion() >= igl::opengl::GLVersion::v3_0_ES);
 #else
     bool isGles3 = false;
 #endif // IGL_BACKEND_OPENGL
-    auto vertexShader = isGles3 ? igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER_ES3
-                                : igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER;
-    auto fragmentShader = isGles3 ? igl::tests::data::shader::OGL_SIMPLE_FRAG_SHADER_ES3
-                                  : igl::tests::data::shader::OGL_SIMPLE_FRAG_SHADER;
+    const auto* vertexShader = isGles3 ? igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER_ES3
+                                       : igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER;
+    const auto* fragmentShader = isGles3 ? igl::tests::data::shader::OGL_SIMPLE_FRAG_SHADER_ES3
+                                         : igl::tests::data::shader::OGL_SIMPLE_FRAG_SHADER;
 
     createShaderStages(dev,
                        vertexShader,
@@ -163,6 +162,4 @@ void createSimpleShaderStages(const std::shared_ptr<IDevice>& dev,
   }
 }
 
-} // namespace util
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests::util

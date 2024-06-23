@@ -10,9 +10,7 @@
 
 #include <igl/tests/util/device/TestDevice.h>
 
-namespace igl {
-namespace tests {
-namespace util {
+namespace igl::tests::util {
 
 //
 // createTestDevice
@@ -22,13 +20,13 @@ namespace util {
 // IGL_UNIT_TESTS_GLES_VERSION compiler flag.
 //
 std::shared_ptr<::igl::IDevice> createTestDevice() {
-  std::string backend(IGL_BACKEND_TYPE);
+  const std::string backend(IGL_BACKEND_TYPE);
 
   if (backend == "ogl") {
 #ifdef IGL_UNIT_TESTS_GLES_VERSION
     std::string backendApi(IGL_UNIT_TESTS_GLES_VERSION);
 #else
-    std::string backendApi("2.0");
+    const std::string backendApi("2.0");
 #endif
     return device::createTestDevice(::igl::BackendType::OpenGL, backendApi);
   } else if (backend == "metal") {
@@ -42,6 +40,4 @@ std::shared_ptr<::igl::IDevice> createTestDevice() {
   }
 }
 
-} // namespace util
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests::util
