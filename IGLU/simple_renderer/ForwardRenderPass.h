@@ -15,8 +15,7 @@
 #include <string>
 #include <vector>
 
-namespace iglu {
-namespace renderpass {
+namespace iglu::renderpass {
 
 /// A simple "render pass" abstraction that hides low level graphics API details
 /// like command queue, command encoder, render pipeline state and presentation.
@@ -62,5 +61,4 @@ class ForwardRenderPass final {
   std::unique_ptr<igl::IRenderCommandEncoder> _commandEncoder;
 };
 
-} // namespace renderpass
-} // namespace iglu
+} // namespace iglu::renderpass

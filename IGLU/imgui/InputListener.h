@@ -13,8 +13,7 @@
 
 #include "imgui.h"
 
-namespace iglu {
-namespace imgui {
+namespace iglu::imgui {
 
 class InputListener : public igl::shell::IMouseListener, public igl::shell::ITouchListener {
  public:
@@ -33,5 +32,4 @@ class InputListener : public igl::shell::IMouseListener, public igl::shell::ITou
   void makeCurrentContext() const;
 };
 
-} // namespace imgui
-} // namespace iglu
+} // namespace iglu::imgui

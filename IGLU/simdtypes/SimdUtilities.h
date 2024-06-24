@@ -10,8 +10,7 @@
 #include <IGLU/simdtypes/SimdTypes.h>
 #include <cmath>
 
-namespace iglu {
-namespace simdtypes {
+namespace iglu::simdtypes {
 
 #if defined(__APPLE__)
 
@@ -54,7 +53,7 @@ inline float1 fract(float1 x) {
 }
 
 inline float4x4 inverse(const float4x4& m) {
-  float4x4 result;
+  float4x4 result{};
 
   result.columns[0][0] = m.columns[1][1] * m.columns[2][2] * m.columns[3][3] -
                          m.columns[1][1] * m.columns[2][3] * m.columns[3][2] -
@@ -177,9 +176,9 @@ inline float4x4 inverse(const float4x4& m) {
 
   det = 1.0f / det;
 
-  for (int i = 0; i < 4; i++) {
+  for (auto& column : result.columns) {
     for (int j = 0; j < 4; j++) {
-      result.columns[i][j] *= det;
+      column[j] *= det;
     }
   }
 
@@ -202,7 +201,7 @@ inline float4 multiply(const float4x4& m, const float4& v) {
 
 // result = m1 * m2
 inline float4x4 multiply(const float4x4& m1, const float4x4& m2) {
-  float4x4 result;
+  float4x4 result{};
   result.columns[0] = multiply(m1, m2.columns[0]);
   result.columns[1] = multiply(m1, m2.columns[1]);
   result.columns[2] = multiply(m1, m2.columns[2]);
@@ -210,5 +209,4 @@ inline float4x4 multiply(const float4x4& m1, const float4x4& m2) {
   return result;
 }
 #endif
-} // namespace simdtypes
-} // namespace iglu
+} // namespace iglu::simdtypes

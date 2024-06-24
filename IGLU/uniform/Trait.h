@@ -12,8 +12,7 @@
 #include <igl/Buffer.h>
 #include <igl/Uniform.h>
 
-namespace iglu {
-namespace uniform {
+namespace iglu::uniform {
 
 // ----------------------------------------------------------------------------
 
@@ -99,9 +98,9 @@ struct Trait<glm::mat3> {
   using Aligned = std::array<glm::vec4, 3>; // each row of matrix is 16-byte aligned
   static_assert(sizeof(Aligned) == 3 * sizeof(glm::vec4), "Aligned is the wrong size!");
   static void toAligned(Aligned& outData, const glm::mat3& src) noexcept {
-    auto srcMatrix = static_cast<const float*>(glm::value_ptr(src));
+    const auto* srcMatrix = static_cast<const float*>(glm::value_ptr(src));
     for (int i = 0; i < 3; i++) {
-      auto outRow = static_cast<float*>(glm::value_ptr(outData[i]));
+      auto* outRow = static_cast<float*>(glm::value_ptr(outData[i]));
       for (int j = 0; j < 3; j++) {
         *outRow++ = *srcMatrix++;
       }
@@ -118,5 +117,4 @@ struct Trait<glm::mat4> {
   static constexpr size_t kPadding = 0;
 };
 
-} // namespace uniform
-} // namespace iglu
+} // namespace iglu::uniform

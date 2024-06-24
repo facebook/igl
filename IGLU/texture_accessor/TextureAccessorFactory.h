@@ -12,8 +12,7 @@
 #include <igl/IGL.h>
 #include <igl/Texture.h>
 
-namespace iglu {
-namespace textureaccessor {
+namespace iglu::textureaccessor {
 
 class TextureAccessorFactory {
  public:
@@ -23,5 +22,4 @@ class TextureAccessorFactory {
       igl::IDevice& device);
 };
 
-} // namespace textureaccessor
-} // namespace iglu
+} // namespace iglu::textureaccessor

@@ -15,8 +15,7 @@
 #include <igl/Uniform.h>
 #include <memory>
 
-namespace iglu {
-namespace uniform {
+namespace iglu::uniform {
 
 // ----------------------------------------------------------------------------
 
@@ -30,13 +29,13 @@ struct PackedValue {
   static_assert(Trait<T>::kPadding == 0, "!");
 
   PackedValue() = default;
-  PackedValue(T v) : value(std::move(v)) {}
+  explicit PackedValue(T v) : value(std::move(v)) {}
 
   void* data(Alignment /*unused*/) noexcept {
     return &value;
   }
 
-  const void* data(Alignment /*unused*/) const noexcept {
+  [[nodiscard]] const void* data(Alignment /*unused*/) const noexcept {
     return &value;
   }
 };
@@ -49,13 +48,13 @@ struct AlignedValue {
   uint8_t padding[Trait<T>::kPadding]; // pads the end of the struct to ensure alignment
 
   AlignedValue() = default;
-  AlignedValue(T v) : value(std::move(v)) {}
+  explicit AlignedValue(T v) : value(std::move(v)) {}
 
   void* data(Alignment /*unused*/) noexcept {
     return &value;
   }
 
-  const void* data(Alignment /*unused*/) const noexcept {
+  [[nodiscard]] const void* data(Alignment /*unused*/) const noexcept {
     return &value;
   }
 };
@@ -76,7 +75,7 @@ struct AlignedElement<glm::mat3> {
   mutable AlignedMat3 valueAligned; // padded element shadows value
 
   AlignedElement() = default;
-  AlignedElement(glm::mat3 v) : value(v) {}
+  explicit AlignedElement(glm::mat3 v) : value(v) {}
 
   void* data(Alignment alignment) noexcept {
     return const_cast<void*>(static_cast<const Self*>(this)->data(alignment));
@@ -131,22 +130,22 @@ struct AlignedElementInVector<glm::mat3> : PackedValue<typename Trait<glm::mat3>
 // To submit this uniform to the GPU, use uniform::Encoder.
 struct Descriptor {
  protected:
-  Descriptor(igl::UniformType type);
+  explicit Descriptor(igl::UniformType type);
 
  public:
   virtual ~Descriptor() = default;
 
-  virtual const void* data(Alignment alignment) const noexcept = 0;
+  [[nodiscard]] virtual const void* data(Alignment alignment) const noexcept = 0;
 
-  virtual size_t numBytes(Alignment alignment) const noexcept = 0;
+  [[nodiscard]] virtual size_t numBytes(Alignment alignment) const noexcept = 0;
 
-  virtual size_t size() const noexcept {
+  [[nodiscard]] virtual size_t size() const noexcept {
     return 1;
   }
 
-  igl::UniformType getType() const noexcept;
+  [[nodiscard]] igl::UniformType getType() const noexcept;
 
-  int getIndex(igl::ShaderStage stage) const noexcept;
+  [[nodiscard]] int getIndex(igl::ShaderStage stage) const noexcept;
   void setIndex(igl::ShaderStage stage, int newValue) noexcept;
 
   using Indices = std::array<int, 2>;
@@ -190,13 +189,13 @@ class DescriptorValue : public Descriptor {
   using Self = DescriptorValue<T>;
 
   DescriptorValue() : Descriptor(Trait<T>::kValue) {}
-  DescriptorValue(T value) : Descriptor(Trait<T>::kValue), element_(std::move(value)) {}
+  explicit DescriptorValue(T value) : Descriptor(Trait<T>::kValue), element_(std::move(value)) {}
 
-  const void* data(Alignment alignment) const noexcept override {
+  [[nodiscard]] const void* data(Alignment alignment) const noexcept override {
     return element_.data(alignment);
   }
 
-  size_t numBytes(Alignment alignment) const noexcept override {
+  [[nodiscard]] size_t numBytes(Alignment alignment) const noexcept override {
     IGL_ASSERT(sizeForUniformType(getType()) <= sizeof(Element));
 
     // NOTE: Any padding required for T to be aligned will be present in Element
@@ -244,17 +243,17 @@ class DescriptorVector : public Descriptor {
   struct PackedContainer {
     Vector values;
     PackedContainer() = default;
-    PackedContainer(Vector vec) : values(std::move(vec)) {}
+    explicit PackedContainer(Vector vec) : values(std::move(vec)) {}
 
     void* data(Alignment /*unused*/) noexcept {
       return values.data();
     }
 
-    const void* data(Alignment /*unused*/) const noexcept {
+    [[nodiscard]] const void* data(Alignment /*unused*/) const noexcept {
       return values.data();
     }
 
-    size_t elementSize(Alignment /*unused*/) const noexcept {
+    [[nodiscard]] size_t elementSize(Alignment /*unused*/) const noexcept {
       return sizeof(T);
     }
   };
@@ -267,7 +266,7 @@ class DescriptorVector : public Descriptor {
     mutable std::vector<AlignedElementInVector<T>> valuesAligned;
 
     DualContainer() = default;
-    DualContainer(Vector vec) : values(std::move(vec)) {}
+    explicit DualContainer(Vector vec) : values(std::move(vec)) {}
 
     void* data(Alignment /*alignment*/) noexcept {
       return const_cast<void*>(static_cast<const Self*>(this)->data());
@@ -300,19 +299,20 @@ class DescriptorVector : public Descriptor {
   using Self = DescriptorVector<T>;
 
   DescriptorVector() : Descriptor(Trait<T>::kValue) {}
-  DescriptorVector(Vector values) : Descriptor(Trait<T>::kValue), container_(std::move(values)) {}
+  explicit DescriptorVector(Vector values) :
+    Descriptor(Trait<T>::kValue), container_(std::move(values)) {}
 
-  const void* data(Alignment alignment) const noexcept override {
+  [[nodiscard]] const void* data(Alignment alignment) const noexcept override {
     return container_.data(alignment);
   }
 
-  size_t numBytes(Alignment alignment) const noexcept override {
+  [[nodiscard]] size_t numBytes(Alignment alignment) const noexcept override {
     size_t elementSize = container_.elementSize(alignment);
     IGL_ASSERT(sizeForUniformType(getType()) <= elementSize);
     return container_.values.size() * elementSize;
   }
 
-  size_t size() const noexcept override {
+  [[nodiscard]] size_t size() const noexcept override {
     return container_.values.size();
   }
 
@@ -330,5 +330,4 @@ class DescriptorVector : public Descriptor {
 
 // ----------------------------------------------------------------------------
 
-} // namespace uniform
-} // namespace iglu
+} // namespace iglu::uniform

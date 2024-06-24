@@ -13,8 +13,7 @@
 #include <IGLU/simple_renderer/Material.h>
 #include <igl/ShaderCreator.h>
 
-namespace iglu {
-namespace imgui {
+namespace iglu::imgui {
 
 /* internal renderer -- based on imgui_impl_metal.mm */
 
@@ -156,8 +155,8 @@ static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevic
   }
   case igl::BackendType::OpenGL: {
     auto shaderVersion = device.getShaderVersion();
-    std::string vertexStr = getOpenGLVertexShaderSource(shaderVersion);
-    std::string fragmentStr = getOpenGLFragmentShaderSource(shaderVersion);
+    const std::string vertexStr = getOpenGLVertexShaderSource(shaderVersion);
+    const std::string fragmentStr = getOpenGLFragmentShaderSource(shaderVersion);
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device, vertexStr.c_str(), "main", "", fragmentStr.c_str(), "main", "", &result);
     break;
@@ -203,7 +202,7 @@ struct DrawableData {
 
 class Session::Renderer {
  public:
-  Renderer(igl::IDevice& device);
+  explicit Renderer(igl::IDevice& device);
   ~Renderer();
 
   void newFrame(const igl::FramebufferDesc& desc);
@@ -275,7 +274,7 @@ Session::Renderer::Renderer(igl::IDevice& device) {
 }
 
 Session::Renderer::~Renderer() {
-  ImGuiIO& io = ImGui::GetIO();
+  const ImGuiIO& io = ImGui::GetIO();
   _fontTexture = nullptr;
   io.Fonts->TexID = nullptr;
 }
@@ -299,15 +298,15 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
                                        ImDrawData* drawData) {
   // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates !=
   // framebuffer coordinates)
-  int fb_width = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
-  int fb_height = (int)(drawData->DisplaySize.y * drawData->FramebufferScale.y);
+  const int fb_width = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
+  const int fb_height = (int)(drawData->DisplaySize.y * drawData->FramebufferScale.y);
   if (fb_width <= 0 || fb_height <= 0 || drawData->CmdListsCount == 0) {
     return;
   }
 
   cmdEncoder.pushDebugGroupLabel("ImGui Rendering", igl::Color(0, 1, 0));
 
-  igl::Viewport viewport = {
+  const igl::Viewport viewport = {
       /*.x = */ 0.0,
       /*.y = */ 0.0,
       /*.width = */ (drawData->DisplaySize.x * drawData->FramebufferScale.x),
@@ -319,10 +318,10 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
   float4x4 orthoProjection{};
 
   { // setup projection matrix
-    float L = drawData->DisplayPos.x;
-    float R = drawData->DisplayPos.x + drawData->DisplaySize.x;
-    float T = drawData->DisplayPos.y;
-    float B = drawData->DisplayPos.y + drawData->DisplaySize.y;
+    const float L = drawData->DisplayPos.x;
+    const float R = drawData->DisplayPos.x + drawData->DisplaySize.x;
+    const float T = drawData->DisplayPos.y;
+    const float B = drawData->DisplayPos.y + drawData->DisplaySize.y;
     orthoProjection.columns[0] = float4{2.0f / (R - L), 0.0f, 0.0f, 0.0f};
     orthoProjection.columns[1] = float4{0.0f, 2.0f / (T - B), 0.0f, 0.0f};
     orthoProjection.columns[2] = float4{0.0f, 0.0f, -1.0f, 0.0f};
@@ -333,8 +332,8 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
     }
   }
 
-  ImVec2 clip_off = drawData->DisplayPos; // (0,0) unless using multi-viewports
-  ImVec2 clip_scale =
+  const ImVec2 clip_off = drawData->DisplayPos; // (0,0) unless using multi-viewports
+  const ImVec2 clip_scale =
       drawData->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
   // Since vertex buffers are updated every frame, we must use triple buffering for Metal to work
@@ -352,7 +351,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
     if (n >= curFrameDrawables.size()) {
       curFrameDrawables.emplace_back(device, _vertexInputState, _material);
     }
-    DrawableData& drawableData = curFrameDrawables[n];
+    const DrawableData& drawableData = curFrameDrawables[n];
 
     // Upload vertex/index buffers
     drawableData.vertexData->vertexBuffer().upload(
@@ -421,7 +420,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
 Session::Session(igl::IDevice& device,
                  igl::shell::InputDispatcher& inputDispatcher,
                  bool needInitializeSession /* = true */) :
-  _inputDispatcher(inputDispatcher), _isInitialized(false) {
+  _inputDispatcher(inputDispatcher) {
   _context = ImGui::CreateContext();
   makeCurrentContext();
 
@@ -481,5 +480,4 @@ void Session::makeCurrentContext() const {
   ImGui::SetCurrentContext(_context);
 }
 
-} // namespace imgui
-} // namespace iglu
+} // namespace iglu::imgui

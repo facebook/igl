@@ -13,8 +13,7 @@
 
 #include <igl/NameHandle.h>
 
-namespace iglu {
-namespace material {
+namespace iglu::material {
 
 #define CHECK_RESULT(res, outResPtr)                \
   if (!res.isOk()) {                                \
@@ -73,5 +72,4 @@ void ShaderProgram::populatePipelineDescriptor(igl::RenderPipelineDesc& pipeline
   }
 }
 
-} // namespace material
-} // namespace iglu
+} // namespace iglu::material

@@ -16,8 +16,7 @@ class IRenderCommandEncoder;
 class IComputeCommandEncoder;
 } // namespace igl
 
-namespace iglu {
-namespace uniform {
+namespace iglu::uniform {
 
 struct Descriptor;
 
@@ -30,7 +29,7 @@ struct Descriptor;
 // igl::IComputeCommandEncoder::bindUniform()
 class Encoder {
  public:
-  Encoder(igl::BackendType backendType);
+  explicit Encoder(igl::BackendType backendType);
   void operator()(igl::IRenderCommandEncoder& encoder,
                   uint8_t bindTarget,
                   const Descriptor& uniform) const noexcept;
@@ -41,5 +40,4 @@ class Encoder {
   igl::BackendType backendType_;
 };
 
-} // namespace uniform
-} // namespace iglu
+} // namespace iglu::uniform

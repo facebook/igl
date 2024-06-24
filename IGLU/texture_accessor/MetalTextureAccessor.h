@@ -13,8 +13,7 @@
 #include <igl/IGL.h>
 #include <igl/Texture.h>
 
-namespace iglu {
-namespace textureaccessor {
+namespace iglu::textureaccessor {
 
 class MetalTextureAccessor : public ITextureAccessor {
  public:
@@ -37,5 +36,4 @@ class MetalTextureAccessor : public ITextureAccessor {
   std::shared_ptr<igl::ICommandBuffer> lastRequestCommandBuffer = nullptr;
 };
 
-} // namespace textureaccessor
-} // namespace iglu
+} // namespace iglu::textureaccessor

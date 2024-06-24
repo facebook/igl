@@ -13,8 +13,7 @@
 #include <IGLU/simple_renderer/VertexData.h>
 #include <memory>
 
-namespace iglu {
-namespace drawable {
+namespace iglu::drawable {
 
 /// A drawable aggregates all the data and configurations for a single draw call.
 ///
@@ -44,5 +43,4 @@ class Drawable final {
   size_t _lastPipelineDescHash = 0;
 };
 
-} // namespace drawable
-} // namespace iglu
+} // namespace iglu::drawable

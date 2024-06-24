@@ -13,8 +13,7 @@
 #include <memory>
 #include <vector>
 
-namespace iglu {
-namespace vertexdata {
+namespace iglu::vertexdata {
 
 /// Describes how the underlying APIs should interpret the buffers when drawing.
 struct PrimitiveDesc {
@@ -63,12 +62,12 @@ class VertexData final {
 
   igl::IBuffer& indexBuffer() {
     IGL_ASSERT(ib_);
-    return *ib_.get();
+    return *ib_;
   }
 
   igl::IBuffer& vertexBuffer() {
     IGL_ASSERT(vb_);
-    return *vb_.get();
+    return *vb_;
   }
 
  protected:
@@ -81,5 +80,4 @@ class VertexData final {
   const igl::PrimitiveType topology_ = igl::PrimitiveType::Triangle;
 };
 
-} // namespace vertexdata
-} // namespace iglu
+} // namespace iglu::vertexdata

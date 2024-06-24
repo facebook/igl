@@ -14,8 +14,7 @@
 #include <memory>
 #include <unordered_map>
 
-namespace iglu {
-namespace uniform {
+namespace iglu::uniform {
 
 class Encoder;
 
@@ -134,5 +133,4 @@ struct Collection {
   std::vector<igl::NameHandle> names_;
 };
 
-} // namespace uniform
-} // namespace iglu
+} // namespace iglu::uniform

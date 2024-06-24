@@ -11,8 +11,7 @@
 
 #include <utility>
 
-namespace iglu {
-namespace vertexdata {
+namespace iglu::vertexdata {
 
 VertexData::VertexData(std::shared_ptr<igl::IVertexInputState> vis,
                        std::shared_ptr<igl::IBuffer> vertexBuffer,
@@ -94,5 +93,4 @@ std::shared_ptr<igl::IVertexInputState> VertexData::vertexInputState() {
   return vis_;
 }
 
-} // namespace vertexdata
-} // namespace iglu
+} // namespace iglu::vertexdata
