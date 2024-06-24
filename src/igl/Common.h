@@ -77,7 +77,7 @@ struct Color {
   constexpr Color(float r, float g, float b) : r(r), g(g), b(b), a(1.0f) {}
   constexpr Color(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
 
-  const float* IGL_NONNULL toFloatPtr() const {
+  [[nodiscard]] const float* IGL_NONNULL toFloatPtr() const {
     return &r;
   }
 };
@@ -111,7 +111,7 @@ struct Result {
     code(code), message(message) {}
   explicit Result(Code code, std::string message) : code(code), message(std::move(message)) {}
 
-  bool isOk() const {
+  [[nodiscard]] bool isOk() const {
     return code == Result::Code::Ok;
   }
 
@@ -170,7 +170,7 @@ struct Rect {
   T width{}; // zero-initialize
   T height{}; // zero-initialize
 
-  bool isNull() const {
+  [[nodiscard]] bool isNull() const {
     return kNullValue == x && kNullValue == y;
   }
 };
@@ -453,8 +453,9 @@ class Pool {
     return Handle<ObjectType>(idx, objects_[idx].gen_);
   }
   void destroy(Handle<ObjectType> handle) noexcept {
-    if (handle.empty())
+    if (handle.empty()) {
       return;
+    }
     IGL_ASSERT_MSG(numObjects_ > 0, "Double deletion");
     const uint32_t index = handle.index();
     IGL_ASSERT(index < objects_.size());
@@ -477,8 +478,9 @@ class Pool {
     numObjects_--;
   }
   [[nodiscard]] const ImplObjectType* IGL_NULLABLE get(Handle<ObjectType> handle) const noexcept {
-    if (handle.empty())
+    if (handle.empty()) {
       return nullptr;
+    }
 
     const uint32_t index = handle.index();
     IGL_ASSERT(index < objects_.size());
@@ -486,8 +488,9 @@ class Pool {
     return &objects_[index].obj_;
   }
   [[nodiscard]] ImplObjectType* IGL_NULLABLE get(Handle<ObjectType> handle) noexcept {
-    if (handle.empty())
+    if (handle.empty()) {
       return nullptr;
+    }
 
     const uint32_t index = handle.index();
     IGL_ASSERT(index < objects_.size());
@@ -495,8 +498,9 @@ class Pool {
     return &objects_[index].obj_;
   }
   [[nodiscard]] Handle<ObjectType> findObject(const ImplObjectType* IGL_NULLABLE obj) noexcept {
-    if (!obj)
+    if (!obj) {
       return {};
+    }
 
     for (size_t idx = 0; idx != objects_.size(); idx++) {
       if (objects_[idx].obj_ == *obj) {

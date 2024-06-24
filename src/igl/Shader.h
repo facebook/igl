@@ -101,7 +101,7 @@ struct ShaderInput {
    *   * length is greater than 0, and
    *   * source is nullptr.
    */
-  bool isValid() const noexcept;
+  [[nodiscard]] bool isValid() const noexcept;
 
   bool operator==(const ShaderInput& other) const;
   bool operator!=(const ShaderInput& other) const;
@@ -191,7 +191,7 @@ class IShaderModule : public ITrackedResource<IShaderModule> {
 
  public:
   /** @brief Returns metadata about the shader module */
-  const ShaderModuleInfo& info() const noexcept;
+  [[nodiscard]] const ShaderModuleInfo& info() const noexcept;
 
  private:
   const ShaderModuleInfo info_;
@@ -276,25 +276,25 @@ class IShaderStages : public ITrackedResource<IShaderStages> {
   /**
    * @brief The type of shader stages: render or compute.
    */
-  ShaderStagesType getType() const noexcept;
+  [[nodiscard]] ShaderStagesType getType() const noexcept;
 
   /**
    * @brief The vertex shader in this set of shader stages.
    * @return Vertex shader module.
    */
-  const std::shared_ptr<IShaderModule>& getVertexModule() const noexcept;
+  [[nodiscard]] const std::shared_ptr<IShaderModule>& getVertexModule() const noexcept;
 
   /**
    * @brief The fragment shader in this set of shader stages.
    * @return Fragment shader module.
    */
-  const std::shared_ptr<IShaderModule>& getFragmentModule() const noexcept;
+  [[nodiscard]] const std::shared_ptr<IShaderModule>& getFragmentModule() const noexcept;
 
   /**
    * @brief The compute shader in this set of shader stages.
    * @return Compute shader module.
    */
-  const std::shared_ptr<IShaderModule>& getComputeModule() const noexcept;
+  [[nodiscard]] const std::shared_ptr<IShaderModule>& getComputeModule() const noexcept;
 
   /**
    * @brief Checks if the IShaderStages object is valid.
@@ -302,7 +302,7 @@ class IShaderStages : public ITrackedResource<IShaderStages> {
    * has a compute module for compute stages.
    * @return True if valid; false otherwise.
    */
-  bool isValid() const noexcept;
+  [[nodiscard]] bool isValid() const noexcept;
 
  private:
   ShaderStagesDesc desc_;
@@ -315,27 +315,27 @@ namespace std {
 
 template<>
 struct hash<igl::ShaderCompilerOptions> {
-  size_t operator()(igl::ShaderCompilerOptions const& /*key*/) const;
+  size_t operator()(const igl::ShaderCompilerOptions& /*key*/) const;
 };
 
 template<>
 struct hash<igl::ShaderModuleInfo> {
-  size_t operator()(igl::ShaderModuleInfo const& /*key*/) const;
+  size_t operator()(const igl::ShaderModuleInfo& /*key*/) const;
 };
 
 template<>
 struct hash<igl::ShaderInput> {
-  size_t operator()(igl::ShaderInput const& /*key*/) const;
+  size_t operator()(const igl::ShaderInput& /*key*/) const;
 };
 
 template<>
 struct hash<igl::ShaderModuleDesc> {
-  size_t operator()(igl::ShaderModuleDesc const& /*key*/) const;
+  size_t operator()(const igl::ShaderModuleDesc& /*key*/) const;
 };
 
 template<>
 struct hash<igl::ShaderLibraryDesc> {
-  size_t operator()(igl::ShaderLibraryDesc const& /*key*/) const;
+  size_t operator()(const igl::ShaderLibraryDesc& /*key*/) const;
 };
 
 } // namespace std

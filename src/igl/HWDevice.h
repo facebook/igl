@@ -42,7 +42,9 @@ struct HWDeviceQueryDesc {
   /** @brief Reserved */
   uint32_t flags;
 
-  HWDeviceQueryDesc(HWDeviceType hardwareType, uintptr_t displayId = 0L, uint32_t flags = 0L) :
+  explicit HWDeviceQueryDesc(HWDeviceType hardwareType,
+                             uintptr_t displayId = 0L,
+                             uint32_t flags = 0L) :
     hardwareType(hardwareType), displayId(displayId), flags(flags) {}
 };
 

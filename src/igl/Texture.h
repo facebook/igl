@@ -476,7 +476,7 @@ struct TextureDesc {
   ResourceStorage storage = ResourceStorage::Invalid;
   TextureTiling tiling = TextureTiling::Optimal;
 
-  std::string debugName = "";
+  std::string debugName;
 
   bool operator==(const TextureDesc& rhs) const;
   bool operator!=(const TextureDesc& rhs) const;
@@ -658,7 +658,7 @@ class ITexture : public ITrackedResource<ITexture> {
  public:
   explicit ITexture(TextureFormat format) :
     properties_(TextureFormatProperties::fromTextureFormat(format)) {}
-  virtual ~ITexture() = default;
+  ~ITexture() override = default;
 
   /**
    * @brief Indicates if this type of texture supports upload.
@@ -956,7 +956,7 @@ namespace std {
 template<>
 struct hash<igl::TextureFormat> {
   // Declare member
-  size_t operator()(igl::TextureFormat const& /*key*/) const;
+  size_t operator()(const igl::TextureFormat& /*key*/) const;
 };
 
 } // namespace std

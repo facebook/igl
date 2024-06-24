@@ -118,7 +118,7 @@ struct SamplerStateDesc {
    * @brief A user-readable debug name associated with this sampler.
    *
    */
-  std::string debugName = "";
+  std::string debugName;
 
   igl::TextureFormat yuvFormat = igl::TextureFormat::Invalid;
 
@@ -180,7 +180,7 @@ class ISamplerState : public ITrackedResource<ISamplerState> {
   ISamplerState() = default;
 
  public:
-  virtual ~ISamplerState() = default;
+  ~ISamplerState() override = default;
 };
 
 } // namespace igl
@@ -196,6 +196,6 @@ struct hash<igl::SamplerStateDesc> {
    *
    * The hash value is based on all properties in the igl::SamplerStateDesc;
    */
-  size_t operator()(igl::SamplerStateDesc const& /*key*/) const;
+  size_t operator()(const igl::SamplerStateDesc& /*key*/) const;
 };
 } // namespace std

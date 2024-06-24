@@ -127,7 +127,7 @@ bool VertexInputBinding::operator==(const VertexInputBinding& other) const {
          other.stride == stride;
 }
 
-size_t std::hash<VertexInputBinding>::operator()(VertexInputBinding const& key) const {
+size_t std::hash<VertexInputBinding>::operator()(const VertexInputBinding& key) const {
   size_t hash = 0;
   hash ^= std::hash<int>()(static_cast<int>(key.sampleRate));
   hash ^= std::hash<int>()(EnumToValue(key.sampleFunction));
@@ -139,7 +139,7 @@ bool VertexAttribute::operator!=(const VertexAttribute& other) const {
   return !(*this == other);
 }
 
-size_t std::hash<VertexAttribute>::operator()(VertexAttribute const& key) const {
+size_t std::hash<VertexAttribute>::operator()(const VertexAttribute& key) const {
   size_t hash = 0;
   hash ^= std::hash<std::string>()(key.name);
   hash ^= std::hash<int>()(key.location);
@@ -159,7 +159,7 @@ bool VertexInputStateDesc::operator!=(const VertexInputStateDesc& other) const {
 }
 
 bool VertexInputStateDesc::operator==(const VertexInputStateDesc& other) const {
-  if (!(other.numAttributes == numAttributes && other.numInputBindings == numInputBindings)) {
+  if (other.numAttributes != numAttributes || other.numInputBindings != numInputBindings) {
     return false;
   }
 
@@ -178,7 +178,7 @@ bool VertexInputStateDesc::operator==(const VertexInputStateDesc& other) const {
   return true;
 }
 
-size_t std::hash<VertexInputStateDesc>::operator()(VertexInputStateDesc const& key) const {
+size_t std::hash<VertexInputStateDesc>::operator()(const VertexInputStateDesc& key) const {
   size_t hash = 0;
   hash ^= std::hash<size_t>()(key.numInputBindings);
   hash ^= std::hash<size_t>()(key.numAttributes);

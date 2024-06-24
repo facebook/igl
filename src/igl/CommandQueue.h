@@ -62,7 +62,7 @@ class ICommandQueue {
   virtual std::shared_ptr<ICommandBuffer> createCommandBuffer(const CommandBufferDesc& desc,
                                                               Result* IGL_NULLABLE outResult) = 0;
   virtual SubmitHandle submit(const ICommandBuffer& commandBuffer, bool endOfFrame = false) = 0;
-  uint32_t getLastFrameDrawCount() const {
+  [[nodiscard]] uint32_t getLastFrameDrawCount() const {
     return statistics.lastFrameDrawCount;
   }
   void endFrame() {

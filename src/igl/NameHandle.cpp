@@ -95,7 +95,7 @@ uint32_t igl::iglCrc32(const char* data, size_t /*length*/) {
 #if IGL_DEBUG
 namespace igl {
 bool NameHandle::checkIsValidCrcCompare(const NameHandle& nh) const {
-  bool res = nh.crc32_ == crc32_ && nh.name_ != name_;
+  const bool res = nh.crc32_ == crc32_ && nh.name_ != name_;
   IGL_ASSERT_MSG(!res,
                  "NameHandle CRC check fails: name1 (%s %x) name2 (%s %x)\n",
                  name_.c_str(),
@@ -109,7 +109,7 @@ bool NameHandle::checkIsValidCrcCompare(const NameHandle& nh) const {
 #endif // IGL_DEBUG
 
 size_t std::hash<std::vector<igl::NameHandle>>::operator()(
-    std::vector<igl::NameHandle> const& key) const {
+    const std::vector<igl::NameHandle>& key) const {
   size_t hash = 0;
   for (const auto& elem : key) {
     hash ^= std::hash<uint32_t>()(elem.getCrc32());

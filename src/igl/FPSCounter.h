@@ -25,7 +25,7 @@ class FPSCounter {
     IGL_ASSERT(avgIntervalInSeconds > 0);
   }
 
-  float getAverageFPS() const noexcept {
+  [[nodiscard]] float getAverageFPS() const noexcept {
     return avgFPS_;
   }
 
