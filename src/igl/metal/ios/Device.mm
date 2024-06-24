@@ -9,9 +9,7 @@
 
 #include <igl/metal/ios/Framebuffer.h>
 
-namespace igl {
-namespace metal {
-namespace ios {
+namespace igl::metal::ios {
 
 Device::Device(id<MTLDevice> device) : metal::Device(device) {}
 
@@ -25,6 +23,4 @@ std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& d
   return resource;
 }
 
-} // namespace ios
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal::ios

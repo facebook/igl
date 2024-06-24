@@ -11,9 +11,7 @@
 #include <igl/metal/Texture.h>
 #include <vector>
 
-namespace igl {
-namespace metal {
-namespace macos {
+namespace igl::metal::macos {
 
 Framebuffer::Framebuffer(const FramebufferDesc& value) : metal::Framebuffer(value) {}
 
@@ -24,7 +22,7 @@ Framebuffer::Framebuffer(const FramebufferDesc& value) : metal::Framebuffer(valu
 bool Framebuffer::canCopy(ICommandQueue& cmdQueue,
                           id<MTLTexture> texture,
                           const TextureRangeDesc& range) const {
-  bool result = texture.storageMode == MTLStorageModeManaged;
+  const bool result = texture.storageMode == MTLStorageModeManaged;
   auto iglMtlCmdQueue = static_cast<CommandQueue&>(cmdQueue);
 
   if (result) {
@@ -39,6 +37,4 @@ bool Framebuffer::canCopy(ICommandQueue& cmdQueue,
   return result;
 }
 
-} // namespace macos
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal::macos

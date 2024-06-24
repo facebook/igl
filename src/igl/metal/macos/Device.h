@@ -10,9 +10,7 @@
 #import <Metal/Metal.h>
 #include <igl/metal/Device.h>
 
-namespace igl {
-namespace metal {
-namespace macos {
+namespace igl::metal::macos {
 
 class Device final : public ::igl::metal::Device {
  public:
@@ -23,6 +21,4 @@ class Device final : public ::igl::metal::Device {
                                                   Result* outResult) override;
 };
 
-} // namespace macos
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal::macos

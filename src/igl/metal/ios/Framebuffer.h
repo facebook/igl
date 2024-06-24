@@ -10,9 +10,7 @@
 #import <Metal/MTLCommandQueue.h>
 #include <igl/metal/Framebuffer.h>
 
-namespace igl {
-namespace metal {
-namespace ios {
+namespace igl::metal::ios {
 
 class Framebuffer final : public ::igl::metal::Framebuffer {
  public:
@@ -25,6 +23,4 @@ class Framebuffer final : public ::igl::metal::Framebuffer {
                const TextureRangeDesc& range) const override;
 };
 
-} // namespace ios
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal::ios

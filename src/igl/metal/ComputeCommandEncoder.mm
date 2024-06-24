@@ -16,8 +16,7 @@
 #include <igl/metal/SamplerState.h>
 #include <igl/metal/Texture.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 ComputeCommandEncoder::ComputeCommandEncoder(id<MTLCommandBuffer> buffer) {
   id<MTLComputeCommandEncoder> computeEncoder = [buffer computeCommandEncoder];
@@ -118,5 +117,4 @@ void ComputeCommandEncoder::bindPushConstants(const void* /*data*/,
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

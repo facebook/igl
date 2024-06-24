@@ -13,19 +13,18 @@
 #include <map>
 #include <vector>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 class RenderPipelineReflection final : public IRenderPipelineReflection {
  public:
   explicit RenderPipelineReflection(MTLRenderPipelineReflection* /*refl*/);
   ~RenderPipelineReflection() override;
 
-  int getIndexByName(const std::string& name, ShaderStage sh) const;
+  [[nodiscard]] int getIndexByName(const std::string& name, ShaderStage sh) const;
 
-  const std::vector<BufferArgDesc>& allUniformBuffers() const override;
-  const std::vector<SamplerArgDesc>& allSamplers() const override;
-  const std::vector<TextureArgDesc>& allTextures() const override;
+  [[nodiscard]] const std::vector<BufferArgDesc>& allUniformBuffers() const override;
+  [[nodiscard]] const std::vector<SamplerArgDesc>& allSamplers() const override;
+  [[nodiscard]] const std::vector<TextureArgDesc>& allTextures() const override;
 
  private:
   struct ArgIndex {
@@ -37,7 +36,7 @@ class RenderPipelineReflection final : public IRenderPipelineReflection {
   };
 
   bool createArgDesc(MTLArgument* arg, ShaderStage sh);
-  const std::map<std::string, ArgIndex>& getDictionary(ShaderStage sh) const;
+  [[nodiscard]] const std::map<std::string, ArgIndex>& getDictionary(ShaderStage sh) const;
 
   std::map<std::string, ArgIndex> vertexArgDictionary_;
   std::map<std::string, ArgIndex> fragmentArgDictionary_;
@@ -47,5 +46,4 @@ class RenderPipelineReflection final : public IRenderPipelineReflection {
   std::vector<TextureArgDesc> textureArguments_;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

@@ -35,7 +35,7 @@ void BufferSynchronizationManager::markCommandBufferAsEndOfFrame(
         // GPU work is complete
         // Signal the semaphore to start the CPU work
         // Increment the counting semaphore
-        if (semaphore) {
+        if (semaphore != nullptr) {
           dispatch_semaphore_signal(semaphore);
         }
       }];

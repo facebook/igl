@@ -110,13 +110,13 @@ class PlatformDevice final : public IPlatformDevice {
   CVMetalTextureCacheRef getTextureCache();
 
  protected:
-  bool isType(PlatformDeviceType t) const noexcept override {
+  [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override {
     return t == Type;
   }
 
  private:
   Device& device_;
-  CVMetalTextureCacheRef textureCache_;
+  CVMetalTextureCacheRef textureCache_ = nullptr;
 };
 
 } // namespace metal

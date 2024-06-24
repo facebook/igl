@@ -24,12 +24,12 @@ class Framebuffer : public IFramebuffer {
   ~Framebuffer() override = default;
 
   // Accessors
-  std::vector<size_t> getColorAttachmentIndices() const override;
-  std::shared_ptr<ITexture> getColorAttachment(size_t index) const override;
-  std::shared_ptr<ITexture> getResolveColorAttachment(size_t index) const override;
-  std::shared_ptr<ITexture> getDepthAttachment() const override;
-  std::shared_ptr<ITexture> getResolveDepthAttachment() const override;
-  std::shared_ptr<ITexture> getStencilAttachment() const override;
+  [[nodiscard]] std::vector<size_t> getColorAttachmentIndices() const override;
+  [[nodiscard]] std::shared_ptr<ITexture> getColorAttachment(size_t index) const override;
+  [[nodiscard]] std::shared_ptr<ITexture> getResolveColorAttachment(size_t index) const override;
+  [[nodiscard]] std::shared_ptr<ITexture> getDepthAttachment() const override;
+  [[nodiscard]] std::shared_ptr<ITexture> getResolveDepthAttachment() const override;
+  [[nodiscard]] std::shared_ptr<ITexture> getStencilAttachment() const override;
   [[nodiscard]] FramebufferMode getMode() const override;
   [[nodiscard]] bool isSwapchainBound() const override;
 

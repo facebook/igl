@@ -9,8 +9,7 @@
 
 using namespace igl;
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 SamplerState::SamplerState(id<MTLSamplerState> value) : value_(value) {}
 
@@ -45,5 +44,4 @@ MTLSamplerAddressMode SamplerState::convertAddressMode(SamplerAddressMode value)
   }
 }
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

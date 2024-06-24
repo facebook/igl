@@ -10,8 +10,7 @@
 #include <Metal/Metal.h>
 #include <igl/DepthStencilState.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 class DepthStencilState final : public IDepthStencilState {
   friend class Device;
@@ -29,5 +28,4 @@ class DepthStencilState final : public IDepthStencilState {
   id<MTLDepthStencilState> value_;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

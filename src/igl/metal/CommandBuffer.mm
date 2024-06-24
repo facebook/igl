@@ -14,8 +14,7 @@
 #include <igl/metal/RenderCommandEncoder.h>
 #include <igl/metal/Texture.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 CommandBuffer::CommandBuffer(id<MTLCommandBuffer> value) : value_(value) {}
 
@@ -59,5 +58,4 @@ void CommandBuffer::waitUntilCompleted() {
   [value_ waitUntilCompleted];
 }
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

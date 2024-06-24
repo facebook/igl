@@ -9,8 +9,7 @@
 
 #include <igl/metal/Shader.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 metal::ShaderModule::ShaderModule(ShaderModuleInfo info, id<MTLFunction> value) :
   IShaderModule(std::move(info)), value_(value) {}
@@ -20,5 +19,4 @@ metal::ShaderLibrary::ShaderLibrary(std::vector<std::shared_ptr<IShaderModule>> 
 
 metal::ShaderStages::ShaderStages(ShaderStagesDesc desc) : IShaderStages(std::move(desc)) {}
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

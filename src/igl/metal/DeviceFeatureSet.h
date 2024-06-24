@@ -10,21 +10,21 @@
 #include <igl/DeviceFeatures.h>
 #include <igl/metal/PlatformDevice.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 class DeviceFeatureSet final {
  public:
   explicit DeviceFeatureSet(id<MTLDevice> device);
   ~DeviceFeatureSet() = default;
 
-  bool hasFeature(DeviceFeatures feature) const;
+  [[nodiscard]] bool hasFeature(DeviceFeatures feature) const;
 
-  bool hasRequirement(DeviceRequirement requirement) const;
+  [[nodiscard]] bool hasRequirement(DeviceRequirement requirement) const;
 
   bool getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const;
 
-  ICapabilities::TextureFormatCapabilities getTextureFormatCapabilities(TextureFormat format) const;
+  [[nodiscard]] ICapabilities::TextureFormatCapabilities getTextureFormatCapabilities(
+      TextureFormat format) const;
 
  private:
   // Apple GPU family as defined by MTLGPUFamily and the docs:
@@ -48,5 +48,4 @@ class DeviceFeatureSet final {
   bool supports32BitFloatFiltering_ = false;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

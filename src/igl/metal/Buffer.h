@@ -11,8 +11,7 @@
 #include <igl/Buffer.h>
 #include <igl/metal/Device.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 class BufferSynchronizationManager;
 
@@ -29,11 +28,11 @@ class Buffer : public igl::IBuffer {
   void* map(const BufferRange& range, Result* outResult) override;
   void unmap() override;
 
-  BufferDesc::BufferAPIHint requestedApiHints() const noexcept override;
-  BufferDesc::BufferAPIHint acceptedApiHints() const noexcept override;
-  ResourceStorage storage() const noexcept override;
+  [[nodiscard]] BufferDesc::BufferAPIHint requestedApiHints() const noexcept override;
+  [[nodiscard]] BufferDesc::BufferAPIHint acceptedApiHints() const noexcept override;
+  [[nodiscard]] ResourceStorage storage() const noexcept override;
 
-  size_t getSizeInBytes() const override;
+  [[nodiscard]] size_t getSizeInBytes() const override;
   [[nodiscard]] uint64_t gpuAddress(size_t offset) const override;
 
   [[nodiscard]] BufferDesc::BufferType getBufferType() const override {
@@ -75,5 +74,4 @@ class RingBuffer final : public Buffer {
   std::shared_ptr<const BufferSynchronizationManager> syncManager_;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

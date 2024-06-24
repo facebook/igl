@@ -50,8 +50,7 @@ igl::UniformType metalDataTypeToIGLUniformType(MTLDataType type) {
 
 } // namespace
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 RenderPipelineReflection::RenderPipelineReflection(MTLRenderPipelineReflection* refl) {
   if (refl != nullptr) {
     for (MTLArgument* arg in refl.vertexArguments) {
@@ -169,5 +168,4 @@ const std::vector<igl::TextureArgDesc>& RenderPipelineReflection::allTextures() 
   return textureArguments_;
 }
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

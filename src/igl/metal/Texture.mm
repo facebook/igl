@@ -22,8 +22,7 @@ void bgrToRgb(unsigned char* dstImg, size_t width, size_t height, size_t bytesPe
 }
 } // namespace
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 Texture::Texture(id<MTLTexture> texture, const ICapabilities& capabilities) :
   ITexture(mtlPixelFormatToTextureFormat([texture pixelFormat])),
@@ -132,7 +131,7 @@ Result Texture::getBytes(const TextureRangeDesc& range, void* outData, size_t by
   }
 
   const size_t bytesPerImage = properties.getBytesPerRange(range);
-  MTLRegion region = {{range.x, range.y, 0}, {range.width, range.height, 1}};
+  const MTLRegion region = {{range.x, range.y, 0}, {range.width, range.height, 1}};
   auto tmpBuffer = std::make_unique<uint8_t[]>(bytesPerImage);
 
   [get() getBytes:tmpBuffer.get()
@@ -147,8 +146,8 @@ Result Texture::getBytes(const TextureRangeDesc& range, void* outData, size_t by
   repackData(
       properties, range, tmpBuffer.get(), 0, static_cast<uint8_t*>(outData), bytesPerRow, true);
 
-  igl::TextureFormat f = getFormat();
-  TextureFormatProperties props = TextureFormatProperties::fromTextureFormat(f);
+  const igl::TextureFormat f = getFormat();
+  const TextureFormatProperties props = TextureFormatProperties::fromTextureFormat(f);
   auto bytesPerPixel = props.bytesPerBlock;
   if (f == TextureFormat::BGRA_SRGB || f == TextureFormat::BGRA_UNorm8) {
     bgrToRgb(static_cast<unsigned char*>(outData), range.width, range.height, bytesPerPixel);
@@ -894,5 +893,4 @@ TextureRangeDesc Texture::atMetalSlice(TextureType type,
                                    : range.atLayer(static_cast<uint32_t>(metalSlice));
 }
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

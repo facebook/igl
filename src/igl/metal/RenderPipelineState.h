@@ -12,8 +12,7 @@
 #include <igl/RenderPipelineState.h>
 #include <igl/metal/RenderPipelineReflection.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 class RenderPipelineState final : public IRenderPipelineState {
   friend class Device;
@@ -27,20 +26,20 @@ class RenderPipelineState final : public IRenderPipelineState {
   IGL_INLINE id<MTLRenderPipelineState> get() {
     return value_;
   }
-  int getIndexByName(const igl::NameHandle& name, ShaderStage stage) const override;
-  int getIndexByName(const std::string& name, ShaderStage stage) const override;
+  [[nodiscard]] int getIndexByName(const igl::NameHandle& name, ShaderStage stage) const override;
+  [[nodiscard]] int getIndexByName(const std::string& name, ShaderStage stage) const override;
 
   std::shared_ptr<IRenderPipelineReflection> renderPipelineReflection() override;
   void setRenderPipelineReflection(
       const IRenderPipelineReflection& renderPipelineReflection) override;
 
-  CullMode getCullMode() const {
+  [[nodiscard]] CullMode getCullMode() const {
     return desc_.cullMode;
   }
-  WindingMode getWindingMode() const {
+  [[nodiscard]] WindingMode getWindingMode() const {
     return desc_.frontFaceWinding;
   }
-  PolygonFillMode getPolygonFillMode() const {
+  [[nodiscard]] PolygonFillMode getPolygonFillMode() const {
     return desc_.polygonFillMode;
   }
   static MTLColorWriteMask convertColorWriteMask(ColorWriteMask value);
@@ -50,5 +49,4 @@ class RenderPipelineState final : public IRenderPipelineState {
   std::shared_ptr<RenderPipelineReflection> reflection_;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

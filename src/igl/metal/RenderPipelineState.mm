@@ -9,8 +9,7 @@
 
 using namespace igl;
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 RenderPipelineState::RenderPipelineState(id<MTLRenderPipelineState> value,
                                          MTLRenderPipelineReflection* reflection,
@@ -59,5 +58,4 @@ MTLColorWriteMask RenderPipelineState::convertColorWriteMask(ColorWriteMask valu
   }
   return result;
 }
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

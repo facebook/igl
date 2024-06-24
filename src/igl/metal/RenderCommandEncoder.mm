@@ -17,8 +17,7 @@
 #include <igl/metal/SamplerState.h>
 #include <igl/metal/Texture.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 RenderCommandEncoder::RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer) :
   IRenderCommandEncoder::IRenderCommandEncoder(commandBuffer) {}
 
@@ -69,7 +68,7 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
       metalColorAttachment.resolveTexture = static_cast<Texture&>(*iglResolveTexture).get();
     }
 
-    auto& iglColorAttachment = renderPass.colorAttachments[index];
+    const auto& iglColorAttachment = renderPass.colorAttachments[index];
     metalColorAttachment.loadAction = convertLoadAction(iglColorAttachment.loadAction);
     metalColorAttachment.storeAction = convertStoreAction(iglColorAttachment.storeAction);
     metalColorAttachment.clearColor = convertClearColor(iglColorAttachment.clearColor);
@@ -155,18 +154,18 @@ void RenderCommandEncoder::popDebugGroupLabel() const {
 
 void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
   IGL_ASSERT(encoder_);
-  MTLViewport metalViewport = {viewport.x,
-                               viewport.y,
-                               viewport.width,
-                               viewport.height,
-                               viewport.minDepth,
-                               viewport.maxDepth};
+  const MTLViewport metalViewport = {viewport.x,
+                                     viewport.y,
+                                     viewport.width,
+                                     viewport.height,
+                                     viewport.minDepth,
+                                     viewport.maxDepth};
   [encoder_ setViewport:metalViewport];
 }
 
 void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
   IGL_ASSERT(encoder_);
-  MTLScissorRect scissorRect = {rect.x, rect.y, rect.width, rect.height};
+  const MTLScissorRect scissorRect = {rect.x, rect.y, rect.width, rect.height};
   [encoder_ setScissorRect:scissorRect];
 }
 
@@ -189,8 +188,8 @@ void RenderCommandEncoder::bindCullMode(const CullMode& cullMode) {
 
 void RenderCommandEncoder::bindFrontFacingWinding(const WindingMode& frontFaceWinding) {
   IGL_ASSERT(encoder_);
-  MTLWinding mode = (frontFaceWinding == WindingMode::Clockwise) ? MTLWindingClockwise
-                                                                 : MTLWindingCounterClockwise;
+  const MTLWinding mode = (frontFaceWinding == WindingMode::Clockwise) ? MTLWindingClockwise
+                                                                       : MTLWindingCounterClockwise;
 
   [encoder_ setFrontFacingWinding:mode];
 }
@@ -510,5 +509,4 @@ MTLClearColor RenderCommandEncoder::convertClearColor(Color value) {
   return MTLClearColorMake(value.r, value.g, value.b, value.a);
 }
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

@@ -14,8 +14,7 @@
 #include <igl/RenderPipelineState.h>
 #include <igl/metal/CommandBuffer.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 class Buffer;
 
 class RenderCommandEncoder final : public IRenderCommandEncoder {
@@ -102,5 +101,4 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   MTLPrimitiveType metalPrimitive_ = MTLPrimitiveTypeTriangle;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal
