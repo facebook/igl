@@ -20,13 +20,12 @@ class ITexture;
 class ISamplerState;
 } // namespace igl
 
-namespace iglu {
-namespace kit {
+namespace iglu::kit {
 
 class TinyRenderable : public IRenderable {
  public:
-  virtual ~TinyRenderable() = default;
-  const nlohmann::json& getProperties() const override;
+  ~TinyRenderable() override = default;
+  [[nodiscard]] const nlohmann::json& getProperties() const override;
   void initialize(igl::IDevice& device, const igl::IFramebuffer& framebuffer) override;
   void update(igl::IDevice& device) override;
   void submit(igl::IRenderCommandEncoder& cmds) override;
@@ -45,5 +44,4 @@ class TinyRenderable : public IRenderable {
   // std::shared_ptr<igl::IBuffer> uniformBuffer_;
 };
 
-} // namespace kit
-} // namespace iglu
+} // namespace iglu::kit

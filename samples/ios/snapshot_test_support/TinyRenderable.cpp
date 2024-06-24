@@ -26,10 +26,11 @@ std::shared_ptr<igl::ITexture> createCheckerboardTexture(igl::IDevice& device) {
   };
 
   igl::Result result;
-  igl::TextureDesc desc = igl::TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
-                                                  kWidth,
-                                                  kHeight,
-                                                  igl::TextureDesc::TextureUsageBits::Sampled);
+  const igl::TextureDesc desc =
+      igl::TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
+                              kWidth,
+                              kHeight,
+                              igl::TextureDesc::TextureUsageBits::Sampled);
   auto texture = device.createTexture(desc, &result);
   IGL_ASSERT_MSG(result.isOk(), "Create texture failed: %s\n", result.message.c_str());
 
@@ -141,8 +142,7 @@ const size_t kTextureUnit = 0;
 
 // ----------------------------------------------------------------------------
 
-namespace iglu {
-namespace kit {
+namespace iglu::kit {
 
 const nlohmann::json& TinyRenderable::getProperties() const {
   static const nlohmann::json j;
@@ -179,7 +179,7 @@ void TinyRenderable::initialize(igl::IDevice& device, const igl::IFramebuffer& f
       {{0.9f, -0.9f, 0.0}, {kMax, 0.0}},
   };
 
-  igl::BufferDesc vbDesc =
+  const igl::BufferDesc vbDesc =
       igl::BufferDesc(igl::BufferDesc::BufferTypeBits::Vertex, kVertexData, sizeof(kVertexData));
   vertexBuffer_ = device.createBuffer(vbDesc, &result);
   IGL_ASSERT_MSG(result.isOk(), "create buffer failed: %s\n", result.message.c_str());
@@ -209,7 +209,7 @@ void TinyRenderable::initialize(igl::IDevice& device, const igl::IFramebuffer& f
   samplerDesc.addressModeV = igl::SamplerAddressMode::Repeat;
   samplerDesc.minFilter = samplerDesc.magFilter = igl::SamplerMinMagFilter::Nearest;
   samplerDesc.magFilter = samplerDesc.magFilter = igl::SamplerMinMagFilter::Nearest;
-  sampler_ = device.createSamplerState(samplerDesc, NULL);
+  sampler_ = device.createSamplerState(samplerDesc, nullptr);
   texture_ = createCheckerboardTexture(device);
 
   igl::RenderPipelineDesc graphicsDesc;
@@ -255,5 +255,4 @@ void TinyRenderable::submit(igl::IRenderCommandEncoder& cmds) {
   // clang-format on
 }
 
-} // namespace kit
-} // namespace iglu
+} // namespace iglu::kit
