@@ -10,8 +10,7 @@
 #include <igl/opengl/ComputePipelineState.h>
 #include <igl/opengl/Texture.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 ComputePipelineState::ComputePipelineState(IContext& context) : WithContext(context) {}
 ComputePipelineState::~ComputePipelineState() = default;
 
@@ -58,9 +57,9 @@ Result ComputePipelineState::create(const ComputePipelineDesc& desc) {
     IGL_ASSERT(!bufferName.toString().empty());
     const int loc = reflection_->getIndexByName(bufferName);
     if (IGL_VERIFY(loc >= 0)) {
-      if (auto& ssboDictionary = reflection_->getShaderStorageBufferObjectDictionary();
+      if (const auto& ssboDictionary = reflection_->getShaderStorageBufferObjectDictionary();
           ssboDictionary.find(bufferName) != ssboDictionary.end()) {
-        GLint index = getContext().getProgramResourceIndex(
+        const GLint index = getContext().getProgramResourceIndex(
             shaderStages_->getProgramID(), GL_SHADER_STORAGE_BLOCK, bufferName.c_str());
         if (IGL_VERIFY(index != GL_INVALID_INDEX)) {
           bufferUnitMap_[bufferUnit] = loc;
@@ -111,7 +110,7 @@ Result ComputePipelineState::bindTextureUnit(const size_t unit, Texture* texture
     return Result{Result::Code::ArgumentInvalid, "Image unit specified greater than maximum\n"};
   }
 
-  GLint samplerUnit(imageUnitMap_[unit]);
+  const GLint samplerUnit(imageUnitMap_[unit]);
 
   if (samplerUnit < 0) {
     return Result{Result::Code::RuntimeError, "Unable to find image location\n"};
@@ -131,7 +130,7 @@ Result ComputePipelineState::bindBuffer(const size_t unit, Buffer* buffer) {
     return Result{Result::Code::ArgumentInvalid, "Buffer unit specified greater than maximum\n"};
   }
 
-  GLint bufferLocation(bufferUnitMap_[unit]);
+  const GLint bufferLocation(bufferUnitMap_[unit]);
 
   if (bufferLocation < 0) {
     return Result{Result::Code::RuntimeError, "Unable to find buffer location\n"};
@@ -146,5 +145,4 @@ Result ComputePipelineState::bindBuffer(const size_t unit, Buffer* buffer) {
 int ComputePipelineState::getIndexByName(const NameHandle& name) const {
   return reflection_ ? reflection_->getIndexByName(name) : -1;
 }
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

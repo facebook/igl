@@ -12,8 +12,7 @@
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/RenderCommandEncoder.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 CommandBuffer::CommandBuffer(std::shared_ptr<IContext> context) : context_(std::move(context)) {}
 
@@ -47,7 +46,7 @@ void CommandBuffer::waitUntilCompleted() {
 void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& /*color*/) const {
   IGL_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
-    std::string_view labelSV(label);
+    const std::string_view labelSV(label);
     getContext().pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, labelSV.length(), labelSV.data());
   } else {
     IGL_LOG_ERROR_ONCE("CommandBuffer::pushDebugGroupLabel not supported in this context!\n");
@@ -66,5 +65,4 @@ IContext& CommandBuffer::getContext() const {
   return *context_;
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

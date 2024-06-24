@@ -10,9 +10,7 @@
 #include <igl/opengl/empty/Context.h>
 #include <igl/opengl/empty/Device.h>
 
-namespace igl {
-namespace opengl {
-namespace empty {
+namespace igl::opengl::empty {
 
 std::unique_ptr<IContext> HWDevice::createContext(RenderingAPI api,
                                                   EGLNativeWindowType /*nativeWindow*/,
@@ -31,6 +29,4 @@ std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<ICon
   return std::make_unique<opengl::empty::Device>(std::move(context));
 }
 
-} // namespace empty
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::empty

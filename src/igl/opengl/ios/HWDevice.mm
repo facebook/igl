@@ -9,9 +9,7 @@
 
 #include <igl/opengl/ios/Context.h>
 
-namespace igl {
-namespace opengl {
-namespace ios {
+namespace igl::opengl::ios {
 
 ///--------------------------------------
 /// MARK: - opengl::HWDevice
@@ -33,6 +31,4 @@ std::unique_ptr<opengl::Device> HWDevice::createWithContext(std::unique_ptr<ICon
   return std::make_unique<Device>(std::move(context));
 }
 
-} // namespace ios
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::ios

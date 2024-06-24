@@ -9,8 +9,7 @@
 
 #include <memory.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 class IContext;
 
 class WithContext {
@@ -22,11 +21,10 @@ class WithContext {
   WithContext(const WithContext&) = delete;
   WithContext& operator=(const WithContext&) = delete;
 
-  IContext& getContext() const;
+  [[nodiscard]] IContext& getContext() const;
 
  private:
   IContext* context_;
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

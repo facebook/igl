@@ -10,9 +10,7 @@
 #include <igl/opengl/HWDevice.h>
 #include <igl/opengl/ios/Device.h>
 
-namespace igl {
-namespace opengl {
-namespace ios {
+namespace igl::opengl::ios {
 
 class HWDevice final : public ::igl::opengl::HWDevice {
  public:
@@ -24,6 +22,4 @@ class HWDevice final : public ::igl::opengl::HWDevice {
                                                     Result* outResult) const override;
 };
 
-} // namespace ios
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::ios

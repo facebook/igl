@@ -46,7 +46,7 @@ Result checkFramebufferStatus(IContext& context, bool read) {
     framebufferTarget = read ? GL_READ_FRAMEBUFFER : GL_DRAW_FRAMEBUFFER;
   }
   // check that we've created a proper frame buffer
-  GLenum status = context.checkFramebufferStatus(framebufferTarget);
+  const GLenum status = context.checkFramebufferStatus(framebufferTarget);
   if (status != GL_FRAMEBUFFER_COMPLETE) {
     code = Result::Code::RuntimeError;
 
@@ -217,7 +217,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
     return;
   }
 
-  FramebufferBindingGuard const guard(getContext());
+  const FramebufferBindingGuard guard(getContext());
 
   CustomFramebuffer extraFramebuffer(getContext());
 
@@ -373,7 +373,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& /*cmdQueue*/,
     return;
   }
 
-  FramebufferBindingGuard guard(getContext());
+  const FramebufferBindingGuard guard(getContext());
 
   bindBufferForRead();
 
@@ -480,7 +480,7 @@ void CustomFramebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures,
   updateDepthStencil = updateDepthStencil && (depthAttachment != surfaceTextures.depth ||
                                               stencilAttachment != surfaceTextures.depth);
   if (updateColor || updateDepthStencil) {
-    FramebufferBindingGuard guard(getContext());
+    const FramebufferBindingGuard guard(getContext());
     bindBuffer();
     if (updateColor) {
       if (!surfaceTextures.color) {
@@ -542,7 +542,7 @@ void CustomFramebuffer::initialize(const FramebufferDesc& desc, Result* outResul
   renderTarget_ = desc;
 
   // Restore framebuffer binding
-  FramebufferBindingGuard guard(getContext());
+  const FramebufferBindingGuard guard(getContext());
   if (!desc.debugName.empty() &&
       getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
     getContext().objectLabel(
@@ -779,7 +779,7 @@ void CustomFramebuffer::unbind() const {
   }
 
   if (numAttachments > 0) {
-    auto& features = getContext().deviceFeatures();
+    const auto& features = getContext().deviceFeatures();
     if (features.hasInternalFeature(InternalFeatures::InvalidateFramebuffer)) {
       getContext().invalidateFramebuffer(GL_FRAMEBUFFER, numAttachments, attachments);
     }

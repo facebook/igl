@@ -9,14 +9,13 @@
 
 #include <igl/opengl/IContext.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 std::vector<HWDeviceDesc> HWDevice::queryDevices(const HWDeviceQueryDesc& /*desc*/,
                                                  Result* outResult) {
   std::vector<HWDeviceDesc> devices;
 
-  HWDeviceDesc defaultDevice(1L, HWDeviceType::DiscreteGpu, 0, "Default");
+  const HWDeviceDesc defaultDevice(1L, HWDeviceType::DiscreteGpu, 0, "Default");
   devices.push_back(defaultDevice);
 
   Result::setOk(outResult);
@@ -36,5 +35,4 @@ std::unique_ptr<IDevice> HWDevice::create(const HWDeviceDesc& /*desc*/,
   return createWithContext(std::move(context), outResult);
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

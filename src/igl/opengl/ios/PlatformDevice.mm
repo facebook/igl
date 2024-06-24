@@ -47,9 +47,7 @@ _IGLRenderBufferHolder* GetAssociatedRenderBufferHolder(CAEAGLLayer* nativeDrawa
 
 } // namespace
 
-namespace igl {
-namespace opengl {
-namespace ios {
+namespace igl::opengl::ios {
 
 PlatformDevice::PlatformDevice(Device& owner) : opengl::PlatformDevice(owner) {}
 
@@ -67,10 +65,10 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
 
   Result::setOk(outResult);
 
-  CGFloat scale = nativeDrawable.contentsScale;
+  const CGFloat scale = nativeDrawable.contentsScale;
 
-  CGRect bounds = [nativeDrawable bounds];
-  CGRect resolution = CGRectMake(
+  const CGRect bounds = [nativeDrawable bounds];
+  const CGRect resolution = CGRectMake(
       bounds.origin.x, bounds.origin.y, bounds.size.width * scale, bounds.size.height * scale);
 
   _IGLRenderBufferHolder* renderBufferHolder = GetAssociatedRenderBufferHolder(nativeDrawable);
@@ -122,7 +120,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
 
     auto texture = std::make_shared<TextureTarget>(getContext(), desc.format);
     if (texture != nullptr) {
-      Result result = texture->create(desc, true);
+      const Result result = texture->create(desc, true);
 
       texture->bind();
       [[EAGLContext currentContext] renderbufferStorage:GL_RENDERBUFFER
@@ -156,10 +154,10 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(CAEAGLLay
 
   Result::setOk(outResult);
 
-  CGFloat scale = nativeDrawable.contentsScale;
+  const CGFloat scale = nativeDrawable.contentsScale;
 
-  CGRect bounds = [nativeDrawable bounds];
-  CGRect resolution = CGRectMake(
+  const CGRect bounds = [nativeDrawable bounds];
+  const CGRect resolution = CGRectMake(
       bounds.origin.x, bounds.origin.y, bounds.size.width * scale, bounds.size.height * scale);
 
   TextureDesc desc = {
@@ -183,9 +181,9 @@ Size PlatformDevice::getNativeDrawableSize(CAEAGLLayer* nativeDrawable, Result* 
     return {0, 0};
   }
   Result::setOk(outResult);
-  auto const screenScale = nativeDrawable.contentsScale;
-  auto const bounds = nativeDrawable.bounds;
-  auto const resolution = CGRectMake(bounds.origin.x,
+  const auto screenScale = nativeDrawable.contentsScale;
+  const auto bounds = nativeDrawable.bounds;
+  const auto resolution = CGRectMake(bounds.origin.x,
                                      bounds.origin.y,
                                      bounds.size.width * screenScale,
                                      bounds.size.height * screenScale);
@@ -209,7 +207,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
     Result* outResult) {
   auto textureBuffer =
       std::make_unique<TextureBuffer>(getContext(), sourceImage, textureCache, planeIndex, usage);
-  Result result = textureBuffer->createWithSize(width, height);
+  const Result result = textureBuffer->createWithSize(width, height);
 
   Result::setResult(outResult, result.code, result.message);
   if (!result.isOk()) {
@@ -229,7 +227,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBuffer(
     Result* outResult) {
   auto textureBuffer =
       std::make_unique<TextureBuffer>(getContext(), sourceImage, textureCache, planeIndex, usage);
-  Result result = textureBuffer->create();
+  const Result result = textureBuffer->create();
 
   Result::setResult(outResult, result.code, result.message);
   if (!result.isOk()) {
@@ -250,7 +248,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
     Result* outResult) {
   auto textureBuffer = std::make_unique<TextureBuffer>(
       getContext(), sourceImage, getTextureCache(), planeIndex, usage);
-  Result result = textureBuffer->createWithSize(width, height);
+  const Result result = textureBuffer->createWithSize(width, height);
 
   Result::setResult(outResult, result.code, result.message);
   if (!result.isOk()) {
@@ -269,7 +267,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBuffer(
     Result* outResult) {
   auto textureBuffer = std::make_unique<TextureBuffer>(
       getContext(), sourceImage, getTextureCache(), planeIndex, usage);
-  Result result = textureBuffer->create();
+  const Result result = textureBuffer->create();
 
   Result::setResult(outResult, result.code, result.message);
   if (!result.isOk()) {
@@ -290,9 +288,7 @@ CVOpenGLESTextureCacheRef PlatformDevice::getTextureCache() {
   return context->getTextureCache();
 }
 
-} // namespace ios
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::ios
 
 namespace {
 _IGLRenderBufferHolder* GetAssociatedRenderBufferHolder(CAEAGLLayer* nativeDrawable) {

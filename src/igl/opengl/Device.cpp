@@ -26,8 +26,7 @@
 #include <igl/opengl/UniformBuffer.h>
 #include <igl/opengl/VertexInputState.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 namespace {
 std::unique_ptr<Buffer> allocateBuffer(BufferDesc::BufferType bufferType,
@@ -305,7 +304,7 @@ void Device::beginScope() {
 void Device::endScope() {
   if (cachedUnbindPolicy_ == UnbindPolicy::EndScope) {
     // Ensure state on exit is consistent, for any external rendering that happens later.
-    context_->colorMask(true, true, true, true);
+    context_->colorMask(1u, 1u, 1u, 1u);
     context_->blendFunc(GL_ONE, GL_ZERO);
     context_->bindBuffer(GL_ARRAY_BUFFER, 0);
     context_->bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -332,5 +331,4 @@ size_t Device::getCurrentDrawCount() const {
   return context_->getCurrentDrawCount();
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

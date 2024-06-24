@@ -15,8 +15,7 @@
 #include <igl/opengl/SamplerState.h>
 #include <igl/opengl/TextureBufferExternal.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 std::shared_ptr<Framebuffer> PlatformDevice::createFramebuffer(const FramebufferDesc& desc,
                                                                Result* outResult) const {
@@ -55,7 +54,7 @@ std::unique_ptr<TextureBufferExternal> PlatformDevice::createTextureBufferExtern
 }
 
 DestructionGuard PlatformDevice::getDestructionGuard() const {
-  return DestructionGuard(owner_.getSharedContext());
+  return {owner_.getSharedContext()};
 }
 
 IContext& PlatformDevice::getContext() const {
@@ -134,7 +133,7 @@ void PlatformDevice::blitFramebuffer(const std::shared_ptr<IFramebuffer>& src,
 #endif
 
   if (ctx.deviceFeatures().hasInternalFeature(InternalFeatures::FramebufferBlit)) {
-    FramebufferBindingGuard guard(ctx);
+    const FramebufferBindingGuard guard(ctx);
     ctx.bindFramebuffer(GL_DRAW_FRAMEBUFFER, to.getId());
     ctx.bindFramebuffer(GL_READ_FRAMEBUFFER, from.getId());
 
@@ -182,5 +181,4 @@ void PlatformDevice::blitFramebuffer(const std::shared_ptr<IFramebuffer>& src,
                                                outResult);
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

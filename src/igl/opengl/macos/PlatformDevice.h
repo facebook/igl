@@ -62,7 +62,7 @@ class PlatformDevice : public opengl::PlatformDevice {
       Result* outResult = nullptr);
 
  protected:
-  bool isType(PlatformDeviceType t) const noexcept override;
+  [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override;
 
  private:
   std::shared_ptr<ViewTextureTarget> drawableTexture_;

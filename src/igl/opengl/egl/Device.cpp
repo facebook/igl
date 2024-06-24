@@ -14,9 +14,7 @@
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/egl/Context.h>
 
-namespace igl {
-namespace opengl {
-namespace egl {
+namespace igl::opengl::egl {
 
 Device::Device(std::unique_ptr<IContext> context) :
   opengl::Device(std::move(context)), platformDevice_(*this) {}
@@ -30,6 +28,4 @@ void Device::updateSurface(void* nativeWindowType) {
       ->updateSurface((NativeWindowType)nativeWindowType);
 }
 
-} // namespace egl
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::egl

@@ -28,8 +28,7 @@
 #define CLEAR_DIRTY(dirtyMap, index) dirtyMap.reset(index)
 #define IS_DIRTY(dirtyMap, index) dirtyMap[index]
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 RenderCommandAdapter::RenderCommandAdapter(IContext& context) :
   WithContext(context),
   uniformAdapter_(UniformAdapter(context, UniformAdapter::PipelineType::Render)),
@@ -78,7 +77,7 @@ void RenderCommandAdapter::setViewport(const Viewport& viewport) {
 }
 
 void RenderCommandAdapter::setScissorRect(const ScissorRect& rect) {
-  bool scissorEnabled = !rect.isNull();
+  const bool scissorEnabled = !rect.isNull();
   getContext().setEnabled(scissorEnabled, GL_SCISSOR_TEST);
   if (scissorEnabled) {
     getContext().scissor(rect.x, rect.y, rect.width, rect.height);
@@ -222,13 +221,13 @@ void RenderCommandAdapter::setFragmentSamplerState(ISamplerState* samplerState,
 void RenderCommandAdapter::clearDependentResources(
     const std::shared_ptr<IRenderPipelineState>& newValue,
     Result* outResult) {
-  auto curStateOpenGL = static_cast<opengl::RenderPipelineState*>(pipelineState_.get());
+  auto* curStateOpenGL = static_cast<opengl::RenderPipelineState*>(pipelineState_.get());
   if (!IGL_VERIFY(curStateOpenGL)) {
     Result::setResult(outResult, Result::Code::RuntimeError, "pipeline state is null");
     return;
   }
 
-  auto newStateOpenGL = static_cast<opengl::RenderPipelineState*>(newValue.get());
+  auto* newStateOpenGL = static_cast<opengl::RenderPipelineState*>(newValue.get());
 
   if (!newStateOpenGL || !curStateOpenGL->matchesShaderProgram(*newStateOpenGL)) {
     // Don't use previously set resources. Uniforms/texture locations not same between programs
@@ -352,7 +351,7 @@ void RenderCommandAdapter::endEncoding() {
 
 void RenderCommandAdapter::willDraw() {
   Result ret;
-  auto pipelineState = static_cast<RenderPipelineState*>(pipelineState_.get());
+  auto* pipelineState = static_cast<RenderPipelineState*>(pipelineState_.get());
 
   // Vertex Buffers must be bound before pipelineState->bind()
   if (pipelineState) {
@@ -371,7 +370,7 @@ void RenderCommandAdapter::willDraw() {
     }
   }
 
-  auto depthStencilState = static_cast<DepthStencilState*>(depthStencilState_.get());
+  auto* depthStencilState = static_cast<DepthStencilState*>(depthStencilState_.get());
   if (depthStencilState && isDirty(StateMask::DEPTH_STENCIL)) {
     depthStencilState->bind();
     clearDirty(StateMask::DEPTH_STENCIL);
@@ -392,8 +391,8 @@ void RenderCommandAdapter::willDraw() {
   // These should be considered client bugs, so an assert fires in local dev builds.
 
   // this is actually compile time defined and doesn't change, cached these statically.
-  static size_t kVertexTextureStatesSize = vertexTextureStates_.size();
-  static size_t kFragmentTextureStatesSize = fragmentTextureStates_.size();
+  static const size_t kVertexTextureStatesSize = vertexTextureStates_.size();
+  static const size_t kFragmentTextureStatesSize = fragmentTextureStates_.size();
   if (pipelineState) {
     // Bind uniforms to be used for render
     uniformAdapter_.bindToPipeline(getContext());
@@ -461,7 +460,7 @@ void RenderCommandAdapter::unbindTextures(IContext& context,
 
 GLenum RenderCommandAdapter::toMockWireframeMode(GLenum mode) const {
 #if defined(IGL_OPENGL_ES)
-  const auto pipelineState = static_cast<RenderPipelineState*>(pipelineState_.get());
+  auto* const pipelineState = static_cast<RenderPipelineState*>(pipelineState_.get());
   const bool modeNeedsConversion = mode == GL_TRIANGLES || mode != GL_TRIANGLE_STRIP;
   if (pipelineState->getPolygonFillMode() == igl::PolygonFillMode::Line && modeNeedsConversion) {
     return GL_LINE_STRIP;
@@ -476,7 +475,7 @@ void RenderCommandAdapter::didDraw() {
 }
 
 void RenderCommandAdapter::unbindVertexAttributes() {
-  auto pipelineState = static_cast<RenderPipelineState*>(pipelineState_.get());
+  auto* pipelineState = static_cast<RenderPipelineState*>(pipelineState_.get());
   if (pipelineState) {
     pipelineState->unbindVertexAttributes();
   }
@@ -491,13 +490,13 @@ void RenderCommandAdapter::unbindResources() {
 
   // TODO: unbind uniform blocks when we add support?
 
-  auto depthStencilState = static_cast<DepthStencilState*>(depthStencilState_.get());
+  auto* depthStencilState = static_cast<DepthStencilState*>(depthStencilState_.get());
   if (depthStencilState) {
     depthStencilState->unbind();
     setDirty(StateMask::DEPTH_STENCIL);
   }
 
-  auto pipelineState = static_cast<RenderPipelineState*>(pipelineState_.get());
+  auto* pipelineState = static_cast<RenderPipelineState*>(pipelineState_.get());
   if (pipelineState) {
     unbindVertexAttributes();
     pipelineState->unbind();
@@ -515,5 +514,4 @@ void RenderCommandAdapter::bindBufferWithShaderStorageBufferOverride(
     arrayBuffer.bind();
   }
 }
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

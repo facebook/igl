@@ -32,7 +32,7 @@ namespace error_checking {
 EGLint checkForEGLErrors(IGL_MAYBE_UNUSED const char* fileName,
                          IGL_MAYBE_UNUSED const char* callerName,
                          IGL_MAYBE_UNUSED size_t lineNum) {
-  EGLint errorCode = eglGetError();
+  const EGLint errorCode = eglGetError();
   if (errorCode != EGL_SUCCESS) {
     IGL_MAYBE_UNUSED const char* errorStr;
     switch (errorCode) {
@@ -71,13 +71,11 @@ EGLint checkForEGLErrors(IGL_MAYBE_UNUSED const char* fileName,
 FOLLY_PUSH_WARNING
 FOLLY_GNU_DISABLE_WARNING("-Wzero-as-null-pointer-constant")
 
-namespace igl {
-namespace opengl {
-namespace egl {
+namespace igl::opengl::egl {
 
 namespace {
 EGLDisplay getDefaultEGLDisplay() {
-  auto display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  auto* display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   CHECK_EGL_ERRORS();
   return display;
 }
@@ -137,7 +135,7 @@ std::pair<EGLDisplay, EGLContext> newEGLContext(EGLDisplay display,
 EGLConfig chooseConfig(EGLDisplay display) {
   EGLConfig config{nullptr};
   EGLint numConfigs{0};
-  EGLBoolean status = eglChooseConfig(display, attribs, &config, 1, &numConfigs);
+  const EGLBoolean status = eglChooseConfig(display, attribs, &config, 1, &numConfigs);
   CHECK_EGL_ERRORS();
   if (!status) {
     IGL_ASSERT_MSG(status == EGL_TRUE, "eglChooseConfig failed");
@@ -248,7 +246,7 @@ Context::Context(RenderingAPI api,
   initialize();
 }
 
-std::unique_ptr<IContext> Context::createShareContext(Result* outResult) {
+std::unique_ptr<IContext> Context::createShareContext(Result* /*outResult*/) {
   return std::make_unique<Context>(*this);
 }
 
@@ -299,7 +297,7 @@ void Context::clearCurrentContext() const {
 }
 
 bool Context::isCurrentContext() const {
-  auto curContext = eglGetCurrentContext();
+  auto* curContext = eglGetCurrentContext();
   return curContext == context_;
   CHECK_EGL_ERRORS();
 }
@@ -364,7 +362,7 @@ void Context::updateSurfaces(EGLSurface readSurface, EGLSurface drawSurface) {
 }
 
 EGLSurface Context::createSurface(NativeWindowType window) {
-  auto surface = eglCreateWindowSurface(display_, chooseConfig(display_), window, nullptr);
+  auto* surface = eglCreateWindowSurface(display_, chooseConfig(display_), window, nullptr);
   CHECK_EGL_ERRORS();
   return surface;
 }
@@ -441,7 +439,5 @@ void Context::imageTargetTexture(EGLImageKHR eglImage, GLenum target) const {
 }
 #endif
 
-} // namespace egl
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::egl
 FOLLY_POP_WARNING

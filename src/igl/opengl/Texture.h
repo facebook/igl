@@ -25,16 +25,16 @@ class Texture : public WithContext, public ITexture {
 
  public:
   // Accessors
-  Dimensions getDimensions() const override;
-  size_t getNumLayers() const override;
-  uint32_t getSamples() const override;
+  [[nodiscard]] Dimensions getDimensions() const override;
+  [[nodiscard]] size_t getNumLayers() const override;
+  [[nodiscard]] uint32_t getSamples() const override;
   void generateMipmap(ICommandQueue& cmdQueue,
                       const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
   void generateMipmap(ICommandBuffer& cmdBuffer,
                       const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
-  uint32_t getNumMipLevels() const override;
-  bool isRequiredGenerateMipmap() const override;
-  uint64_t getTextureId() const override;
+  [[nodiscard]] uint32_t getNumMipLevels() const override;
+  [[nodiscard]] bool isRequiredGenerateMipmap() const override;
+  [[nodiscard]] uint64_t getTextureId() const override;
   [[nodiscard]] bool isSwapchainTexture() const override;
 
   virtual Result create(const TextureDesc& desc, bool hasStorageAlready);
@@ -60,7 +60,7 @@ class Texture : public WithContext, public ITexture {
   virtual void attachAsStencil(const AttachmentParams& params) = 0;
   virtual void detachAsStencil(bool read) = 0;
 
-  virtual bool isImplicitStorage() const;
+  [[nodiscard]] virtual bool isImplicitStorage() const;
 
   [[nodiscard]] GLenum toGLTarget(TextureType type) const;
   static TextureFormat glInternalFormatToTextureFormat(GLuint glTexInternalFormat,
@@ -69,19 +69,19 @@ class Texture : public WithContext, public ITexture {
 
   // @fb-only
   // @fb-only
-  virtual GLuint getId() const = 0;
+  [[nodiscard]] virtual GLuint getId() const = 0;
 
-  GLint getAlignment(size_t stride, size_t mipLevel = 0) const;
+  [[nodiscard]] GLint getAlignment(size_t stride, size_t mipLevel = 0) const;
 
   void setSamplerHash(size_t newValue) {
     samplerHash_ = newValue;
   }
 
-  size_t getSamplerHash() const {
+  [[nodiscard]] size_t getSamplerHash() const {
     return samplerHash_;
   }
 
-  GLenum getGLInternalTextureFormat() const {
+  [[nodiscard]] GLenum getGLInternalTextureFormat() const {
     IGL_ASSERT(glInternalFormat_ != 0);
     return glInternalFormat_;
   }
@@ -120,9 +120,9 @@ class Texture : public WithContext, public ITexture {
 
   /// @returns true if the format is usable as a TextureTarget format.
   /// @remark Does not take into account whether a particular context supports it or not.
-  bool isTextureTargetFormat(TextureFormat textureFormat) const;
+  [[nodiscard]] bool isTextureTargetFormat(TextureFormat textureFormat) const;
 
-  GLenum glInternalFormat_;
+  GLenum glInternalFormat_{};
   uint32_t numMipLevels_ = 1;
   TextureType type_ = TextureType::Invalid;
 

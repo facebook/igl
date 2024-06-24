@@ -17,8 +17,7 @@
 #include <igl/opengl/Shader.h>
 #include <memory>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 namespace {
 // There's a non-zero chance of unexpected behavior if limit is larger than available stack size
 const size_t kAllocSizeLimit = 512;
@@ -156,9 +155,9 @@ void UniformBuffer::bindUniform(IContext& context,
       // expects the data to be packed. However, since glUniform1*() expects
       // each boolean to be passed in as GLint, we unpack the byte array
       // into GLint array.
-      std::unique_ptr<GLint[]> boolArray(new GLint[count]);
+      const std::unique_ptr<GLint[]> boolArray(new GLint[count]);
       for (size_t i = 0; i < count; i++) {
-        boolArray[i] = !!*(start + i);
+        boolArray[i] = static_cast<int>(!!*(start + i));
       }
       context.uniform1iv(shaderLocation, count, boolArray.get());
 
@@ -177,13 +176,13 @@ void UniformBuffer::bindUniform(IContext& context,
       context.uniform4fv(shaderLocation, count, uniformFloats);
       break;
     case UniformType::Mat2x2:
-      context.uniformMatrix2fv(shaderLocation, count, false, uniformFloats);
+      context.uniformMatrix2fv(shaderLocation, count, 0u, uniformFloats);
       break;
     case UniformType::Mat3x3:
-      context.uniformMatrix3fv(shaderLocation, count, false, uniformFloats);
+      context.uniformMatrix3fv(shaderLocation, count, 0u, uniformFloats);
       break;
     case UniformType::Mat4x4:
-      context.uniformMatrix4fv(shaderLocation, count, false, uniformFloats);
+      context.uniformMatrix4fv(shaderLocation, count, 0u, uniformFloats);
       break;
     case UniformType::Invalid:
       IGL_ASSERT_MSG(false, "Invalid Uniform Type");
@@ -198,7 +197,7 @@ void UniformBuffer::bindUniformArray(IContext& context,
                                      const uint8_t* start,
                                      size_t numElements,
                                      size_t stride) {
-  size_t packedSize = igl::sizeForUniformType(uniformType);
+  const size_t packedSize = igl::sizeForUniformType(uniformType);
   size_t primitivesPerElement = 0;
   UniformBaseType baseType;
   if (packedSize == stride) {
@@ -260,7 +259,7 @@ void UniformBuffer::bindUniformArray(IContext& context,
     case UniformBaseType::Boolean: {
       auto packedIntArray = IGL_MAYBE_STACK_ALLOC(GLint, numElements);
       for (int i = 0; i < numElements; i++) {
-        packedIntArray[i] = !!*(start);
+        packedIntArray[i] = static_cast<int>(!!*(start));
         start += stride;
       }
       UniformBuffer::bindUniform(
@@ -295,7 +294,7 @@ void UniformBuffer::bindUniformArray(IContext& context,
           IGL_MAYBE_STACK_ALLOC(GLfloat, primitivesPerElement * primitivesPerElement * numElements);
       for (int i = 0; i < numElements; i++) {
         for (int j = 0; j < primitivesPerElement; j++) {
-          size_t bytesToCopy = primitivesPerElement * sizeof(GLfloat);
+          const size_t bytesToCopy = primitivesPerElement * sizeof(GLfloat);
           memcpy(&packedFloatArray[i * primitivesPerElement * primitivesPerElement +
                                    j * primitivesPerElement],
                  start,
@@ -311,5 +310,4 @@ void UniformBuffer::bindUniformArray(IContext& context,
     }
   }
 }
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

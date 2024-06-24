@@ -11,8 +11,7 @@
 #include <igl/opengl/Errors.h>
 #include <utility>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 namespace {
 // maps TextureCube::CubeFace to GL target type for cube map faces
@@ -42,7 +41,7 @@ void swapTextureChannelsForFormat(igl::opengl::IContext& context,
 } // namespace
 
 TextureBuffer::~TextureBuffer() {
-  GLuint textureID = getId();
+  const GLuint textureID = getId();
   if (textureID != 0) {
     if (textureHandle_ != 0) {
       getContext().makeTextureHandleNonResident(textureHandle_);
@@ -512,5 +511,4 @@ bool TextureBuffer::supportsTexStorage() const {
                   ICapabilities::TextureFormatCapabilityBits::Storage);
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

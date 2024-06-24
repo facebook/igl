@@ -20,8 +20,7 @@ typedef void CAEAGLLayer;
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/PlatformDevice.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 class TextureTarget;
 
 namespace ios {
@@ -93,9 +92,8 @@ class PlatformDevice final : public opengl::PlatformDevice {
   CVOpenGLESTextureCacheRef getTextureCache();
 
  protected:
-  bool isType(PlatformDeviceType t) const noexcept override;
+  [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override;
 };
 
 } // namespace ios
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

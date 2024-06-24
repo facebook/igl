@@ -9,8 +9,7 @@
 
 #include <igl/opengl/Errors.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 TextureType TextureBufferBase::getType() const {
   // TODO: Handle compressed texture type
@@ -182,5 +181,4 @@ bool TextureBufferBase::isValidForTexImage(const TextureRangeDesc& range) const 
           range.numLayers == getNumLayers());
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

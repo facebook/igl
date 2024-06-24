@@ -9,8 +9,7 @@
 
 #include <igl/opengl/TextureBufferBase.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 // TextureBufferExternal encapsulates OpenGL textures without the guarantee of the lifecycle
 // Specifically, this class does not delete the GL texture it encapsulates on destruction
@@ -23,10 +22,9 @@ class TextureBufferExternal : public TextureBufferBase {
     Super(context, format) {}
   ~TextureBufferExternal() override = default;
 
-  bool supportsUpload() const final {
+  [[nodiscard]] bool supportsUpload() const final {
     return false;
   }
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

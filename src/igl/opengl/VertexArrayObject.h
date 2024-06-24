@@ -21,7 +21,7 @@ class VertexArrayObject final : public WithContext {
 
  public:
   explicit VertexArrayObject(IContext& context) : WithContext(context) {}
-  virtual ~VertexArrayObject();
+  ~VertexArrayObject() override;
 
   Result create();
   void bind() const;

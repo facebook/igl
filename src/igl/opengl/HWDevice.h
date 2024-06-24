@@ -28,8 +28,7 @@
 #define IGL_EGL_NULL_WINDOW nullptr
 #endif
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 class HWDevice {
  public:
@@ -52,5 +51,4 @@ class HWDevice {
                                   Result* outResult = nullptr);
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

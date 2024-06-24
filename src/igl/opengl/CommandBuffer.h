@@ -9,8 +9,7 @@
 
 #include <igl/CommandBuffer.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 class ComputeCommandEncoder;
 class IContext;
 class PipelineState;
@@ -47,5 +46,4 @@ class CommandBuffer final : public ICommandBuffer,
   std::shared_ptr<IContext> context_;
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

@@ -15,9 +15,7 @@
 #include <igl/opengl/Texture.h>
 #import <objc/runtime.h>
 
-namespace igl {
-namespace opengl {
-namespace ios {
+namespace igl::opengl::ios {
 namespace {
 EAGLContext* createEAGLContext(RenderingAPI api, EAGLSharegroup* sharegroup) {
   if (api == RenderingAPI::GLES3) {
@@ -140,6 +138,4 @@ CVOpenGLESTextureCacheRef Context::getTextureCache() {
   return textureCache_;
 }
 
-} // namespace ios
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::ios

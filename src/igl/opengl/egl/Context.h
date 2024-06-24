@@ -19,8 +19,7 @@
 
 namespace igl {
 class ITexture;
-namespace opengl {
-namespace egl {
+namespace opengl::egl {
 
 class Context final : public IContext {
  public:
@@ -101,6 +100,5 @@ class Context final : public IContext {
   std::shared_ptr<std::vector<EGLContext>> sharegroup_;
 };
 
-} // namespace egl
-} // namespace opengl
+} // namespace opengl::egl
 } // namespace igl

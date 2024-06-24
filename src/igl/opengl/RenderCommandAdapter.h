@@ -108,7 +108,7 @@ class RenderCommandAdapter final : public WithContext {
                   const std::shared_ptr<IFramebuffer>& framebuffer,
                   Result* outResult);
 
-  const igl::IRenderPipelineState& pipelineState() const {
+  [[nodiscard]] const igl::IRenderPipelineState& pipelineState() const {
     IGL_ASSERT_MSG(pipelineState_, "No rendering pipeline is bound");
     return *pipelineState_;
   }
@@ -131,7 +131,7 @@ class RenderCommandAdapter final : public WithContext {
                              TextureStates& states,
                              std::bitset<IGL_TEXTURE_SAMPLERS_MAX>& dirtyFlags);
 
-  bool isDirty(StateMask mask) const {
+  [[nodiscard]] bool isDirty(StateMask mask) const {
     return (dirtyStateBits_ & EnumToValue(mask)) != 0;
   }
   void setDirty(StateMask mask) {
@@ -143,7 +143,7 @@ class RenderCommandAdapter final : public WithContext {
 
   // @brief OpenGL ES doesn't support glPolygonMode. To support rendering wireframe with it
   // we change all triangle drawing modes to GL_LINE_STRIP
-  GLenum toMockWireframeMode(GLenum mode) const;
+  [[nodiscard]] GLenum toMockWireframeMode(GLenum mode) const;
 
  private:
   std::array<BufferState, IGL_VERTEX_BUFFER_MAX> vertexBuffers_;

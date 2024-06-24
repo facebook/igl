@@ -13,9 +13,7 @@
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/empty/Context.h>
 
-namespace igl {
-namespace opengl {
-namespace empty {
+namespace igl::opengl::empty {
 
 Device::Device(std::unique_ptr<IContext> context) :
   opengl::Device(std::move(context)), platformDevice_(*this) {}
@@ -24,6 +22,4 @@ const PlatformDevice& Device::getPlatformDevice() const noexcept {
   return platformDevice_;
 }
 
-} // namespace empty
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::empty

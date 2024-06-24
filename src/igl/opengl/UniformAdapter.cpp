@@ -9,8 +9,7 @@
 #include <igl/opengl/UniformAdapter.h>
 #include <igl/opengl/UniformBuffer.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 UniformAdapter::UniformAdapter(const IContext& context, PipelineType type) : pipelineType_(type) {
   const auto& deviceFeatures = context.deviceFeatures();
@@ -150,7 +149,7 @@ void UniformAdapter::bindToPipeline(IContext& context) {
     const auto& uniformDesc = uniform.desc;
     IGL_ASSERT(uniformDesc.location >= 0);
     IGL_ASSERT_MSG(uniformData_.data(), "Uniform data must be non-null");
-    auto start = uniformData_.data() + uniform.dataOffset;
+    auto* start = uniformData_.data() + uniform.dataOffset;
     if (uniformDesc.numElements > 1 || uniformDesc.type == UniformType::Mat3x3) {
       IGL_ASSERT_MSG(uniformDesc.elementStride > 0,
                      "stride has to be larger than 0 for uniform at offset %zu",
@@ -186,5 +185,4 @@ void UniformAdapter::bindToPipeline(IContext& context) {
   uniformBuffersDirtyMask_ = 0;
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

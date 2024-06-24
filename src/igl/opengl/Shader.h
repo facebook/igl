@@ -27,15 +27,15 @@ class ShaderModule : public WithContext, public IShaderModule {
   ~ShaderModule() override;
   Result create(const ShaderModuleDesc& desc);
 
-  inline GLenum getShaderType() const {
+  [[nodiscard]] inline GLenum getShaderType() const {
     return shaderType_;
   }
 
-  inline GLuint getShaderID() const {
+  [[nodiscard]] inline GLuint getShaderID() const {
     return shaderID_;
   }
 
-  inline size_t getHash() const {
+  [[nodiscard]] inline size_t getHash() const {
     return hash_;
   }
 
@@ -65,7 +65,7 @@ class ShaderStages final : public IShaderStages, public WithContext {
   void bind();
   void unbind();
 
-  GLuint getProgramID() const {
+  [[nodiscard]] GLuint getProgramID() const {
     return programID_;
   }
 
@@ -75,7 +75,7 @@ class ShaderStages final : public IShaderStages, public WithContext {
   std::string getProgramInfoLog(GLuint programID);
 
   // the GL shader program ID
-  GLuint programID_;
+  GLuint programID_ = 0;
 };
 
 } // namespace opengl

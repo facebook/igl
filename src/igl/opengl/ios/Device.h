@@ -10,21 +10,17 @@
 #include <igl/opengl/Device.h>
 #include <igl/opengl/ios/PlatformDevice.h>
 
-namespace igl {
-namespace opengl {
-namespace ios {
+namespace igl::opengl::ios {
 
 class Device final : public opengl::Device {
  public:
   explicit Device(std::unique_ptr<IContext> context);
   ~Device() override = default;
 
-  const PlatformDevice& getPlatformDevice() const noexcept override;
+  [[nodiscard]] const PlatformDevice& getPlatformDevice() const noexcept override;
 
  private:
   PlatformDevice platformDevice_;
 };
 
-} // namespace ios
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::ios
