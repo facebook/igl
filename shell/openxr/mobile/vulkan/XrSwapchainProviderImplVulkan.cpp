@@ -83,7 +83,7 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
     VkFormat externalTextureFormat,
     std::vector<std::shared_ptr<igl::ITexture>>& inOutTextures) {
   uint32_t imageIndex;
-  XrSwapchainImageAcquireInfo acquireInfo{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
+  const XrSwapchainImageAcquireInfo acquireInfo{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
   XR_CHECK(xrAcquireSwapchainImage(swapchain, &acquireInfo, &imageIndex));
 
   XrSwapchainImageWaitInfo waitInfo{XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};

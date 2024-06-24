@@ -15,8 +15,7 @@
 #include <shell/renderSessions/TQMultiRenderPassSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 struct VertexPosUv {
   iglu::simdtypes::float3 position; // SIMD 128b aligned
   iglu::simdtypes::float2 uv; // SIMD 128b aligned
@@ -147,7 +146,7 @@ static void render(std::shared_ptr<ICommandBuffer>& buffer,
                    std::vector<igl::UniformDesc>& fragmentUniformDescriptors,
                    FragmentFormat fragmentParameters) {
   // Submit commands
-  std::shared_ptr<igl::IRenderCommandEncoder> commands =
+  const std::shared_ptr<igl::IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass, framebuffer);
 
   commands->bindRenderPipelineState(pipelineState);
@@ -172,13 +171,14 @@ void TQMultiRenderPassSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Vertex buffer, Index buffer and Vertex Input
-  BufferDesc vb0Desc =
+  const BufferDesc vb0Desc =
       BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData0, sizeof(vertexData0));
   vb0_ = device.createBuffer(vb0Desc, nullptr);
-  BufferDesc vb1Desc =
+  const BufferDesc vb1Desc =
       BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData1, sizeof(vertexData1));
   vb1_ = device.createBuffer(vb1Desc, nullptr);
-  BufferDesc ibDesc = BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
+  const BufferDesc ibDesc =
+      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
   VertexInputStateDesc inputDesc;
@@ -234,7 +234,7 @@ void TQMultiRenderPassSession::update(igl::SurfaceTextures surfaceTextures) noex
   igl::Result ret;
   if (framebuffer0_ == nullptr) {
     const auto dimensions = surfaceTextures.color->getDimensions();
-    igl::TextureDesc desc1 =
+    const igl::TextureDesc desc1 =
         igl::TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
                                 dimensions.width,
                                 dimensions.height,
@@ -266,7 +266,7 @@ void TQMultiRenderPassSession::update(igl::SurfaceTextures surfaceTextures) noex
     IGL_ASSERT(ret.isOk());
     IGL_ASSERT(framebuffer1_ != nullptr);
   }
-  size_t _textureUnit = 0;
+  const size_t _textureUnit = 0;
 
   // Graphics pipeline
   if (pipelineState0_ == nullptr) {
@@ -295,7 +295,7 @@ void TQMultiRenderPassSession::update(igl::SurfaceTextures surfaceTextures) noex
   }
 
   // Command buffer
-  CommandBufferDesc cbDesc;
+  const CommandBufferDesc cbDesc;
   auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
 
   // Draw render pass 0
@@ -348,5 +348,4 @@ void TQMultiRenderPassSession::update(igl::SurfaceTextures surfaceTextures) noex
   commandQueue_->submit(*buffer);
 }
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

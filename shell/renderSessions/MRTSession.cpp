@@ -21,8 +21,7 @@
 #include <shell/renderSessions/MRTSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 struct VertexPosUv {
   iglu::simdtypes::float3 position; // SIMD 128b aligned
   iglu::simdtypes::float2 uv; // SIMD 128b aligned
@@ -54,11 +53,11 @@ static std::string getPrecisionProlog(ShaderPrecision precision) {
 #if IGL_OPENGL_ES
   switch (precision) {
   case ShaderPrecision::Low:
-    return std::string("precision lowp float;");
+    return {"precision lowp float;"};
   case ShaderPrecision::Medium:
-    return std::string("precision mediump float;");
+    return {"precision mediump float;"};
   case ShaderPrecision::High:
-    return std::string("precision highp float;");
+    return {"precision highp float;"};
   }
 #else
   return std::string();
@@ -67,7 +66,7 @@ static std::string getPrecisionProlog(ShaderPrecision precision) {
 
 static std::string getVersionProlog() {
 #if IGL_OPENGL_ES
-  return std::string("#version 300 es\n");
+  return {"#version 300 es\n"};
 #else
   return std::string("#version 410\n");
 #endif
@@ -289,13 +288,14 @@ void MRTSession::initialize() noexcept {
   }
 
   // Vertex buffer, Index buffer and Vertex Input
-  BufferDesc vb0Desc =
+  const BufferDesc vb0Desc =
       BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData0, sizeof(vertexData0));
   vb0_ = device.createBuffer(vb0Desc, nullptr);
-  BufferDesc vb1Desc =
+  const BufferDesc vb1Desc =
       BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData1, sizeof(vertexData1));
   vb1_ = device.createBuffer(vb1Desc, nullptr);
-  BufferDesc ibDesc = BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
+  const BufferDesc ibDesc =
+      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
   ib0_ = device.createBuffer(ibDesc, nullptr);
 
   VertexInputStateDesc inputDesc;
@@ -349,7 +349,7 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
 
   createOrUpdateFramebufferMRT(surfaceTextures);
 
-  size_t textureUnit = 0;
+  const size_t textureUnit = 0;
 
   // Graphics pipeline: state batch that fully configures GPU for rendering
   if (pipelineStateMRT_ == nullptr) {
@@ -385,8 +385,9 @@ void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Command buffers (1-N per thread): create, submit and forget
-  CommandBufferDesc cbDesc;
-  std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  const CommandBufferDesc cbDesc;
+  const std::shared_ptr<ICommandBuffer> buffer =
+      commandQueue_->createCommandBuffer(cbDesc, nullptr);
 
   auto commands = buffer->createRenderCommandEncoder(renderPassMRT_, framebufferMRT_);
 
@@ -503,5 +504,4 @@ void MRTSession::createOrUpdateFramebufferMRT(const igl::SurfaceTextures& surfac
   framebufferMRT_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, nullptr);
 }
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

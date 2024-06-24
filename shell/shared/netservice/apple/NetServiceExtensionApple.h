@@ -21,10 +21,10 @@ class NetServiceExtensionApple final : public NetServiceExtension {
 
   bool initialize(igl::shell::Platform& platform) noexcept final;
 
-  std::unique_ptr<NetService> create(std::string_view domain,
-                                     std::string_view type,
-                                     std::string_view name,
-                                     int port) const noexcept final;
+  [[nodiscard]] std::unique_ptr<NetService> create(std::string_view domain,
+                                                   std::string_view type,
+                                                   std::string_view name,
+                                                   int port) const noexcept final;
 
   void search(std::string_view domain, std::string_view type) const noexcept final;
   void stopSearch() const noexcept;

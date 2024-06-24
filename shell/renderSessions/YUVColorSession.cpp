@@ -40,11 +40,11 @@ const uint16_t indexData[] = {
     2,
 };
 
-const std::string getVersion() {
+std::string getVersion() {
   return "#version 300 es";
 }
 
-const std::string getMetalShaderSource() {
+std::string getMetalShaderSource() {
   return R"(
               using namespace metal;
 
@@ -80,7 +80,7 @@ const std::string getMetalShaderSource() {
     )";
 }
 
-const std::string getOpenGLVertexShaderSource() {
+std::string getOpenGLVertexShaderSource() {
   return getVersion() + R"(
                 precision highp float;
                 in vec3 position;
@@ -94,7 +94,7 @@ const std::string getOpenGLVertexShaderSource() {
                 })";
 }
 
-const std::string getOpenGLFragmentShaderSource() {
+std::string getOpenGLFragmentShaderSource() {
   return getVersion() + std::string(R"(
                 #extension GL_EXT_YUV_target : require
                 precision highp float;
@@ -110,7 +110,7 @@ const std::string getOpenGLFragmentShaderSource() {
                 })");
 }
 
-const std::string getVulkanVertexShaderSource() {
+std::string getVulkanVertexShaderSource() {
   return R"(
                 layout(location = 0) in vec3 position;
                 layout(location = 1) in vec2 uv_in;
@@ -129,7 +129,7 @@ const std::string getVulkanVertexShaderSource() {
                 )";
 }
 
-const std::string getVulkanFragmentShaderSource() {
+std::string getVulkanFragmentShaderSource() {
   return R"(
                 layout(location = 0) in vec2 uv;
                 layout(location = 1) in vec3 color;
@@ -302,7 +302,7 @@ void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Submit commands
-  std::shared_ptr<igl::IRenderCommandEncoder> commands =
+  const std::shared_ptr<igl::IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_ASSERT(commands != nullptr);
   if (commands) {

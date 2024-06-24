@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <glm/detail/qualifier.hpp>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
@@ -43,7 +44,7 @@ VertexPosUvw vertexData0[] = {
 uint16_t indexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
                         5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};
 
-static const char* getVulkanFragmentShaderSource() {
+const char* getVulkanFragmentShaderSource() {
   return R"(#version 450
             precision highp float;
             precision highp sampler2D;
@@ -58,7 +59,7 @@ static const char* getVulkanFragmentShaderSource() {
             })";
 }
 
-static const char* getVulkanVertexShaderSource() {
+const char* getVulkanVertexShaderSource() {
   return R"(#version 450
             #extension GL_OVR_multiview2 : require
             layout(num_views = 2) in;
@@ -269,8 +270,8 @@ void HelloOpenXRSession::setVertexParams() {
     ss *= -1.0f;
   }
 
-  glm::mat4 rotMat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)) *
-                     glm::rotate(glm::mat4(1.0f), -0.2f, glm::vec3(1.0f, 0.0f, 0.0f));
+  const glm::mat4 rotMat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)) *
+                           glm::rotate(glm::mat4(1.0f), -0.2f, glm::vec3(1.0f, 0.0f, 0.0f));
   vertexParameters_.modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.f, -8.0f)) *
                                   rotMat *
                                   glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, scaleZ));
@@ -343,7 +344,7 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commands->bindRenderPipelineState(pipelineState_);
 
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
-  commands->drawIndexed(3u * 6u * 2u);
+  commands->drawIndexed(static_cast<size_t>(3u * 6u * 2u));
 
   commands->popDebugGroupLabel();
   commands->endEncoding();

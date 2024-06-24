@@ -16,12 +16,11 @@
 #include <igl/IGL.h>
 #include <shell/shared/platform/Platform.h>
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 
 struct VertexFormat {
   glm::mat4 mvpMatrix;
-  float scaleZ;
+  float scaleZ{};
 };
 
 class Textured3DCubeSession : public RenderSession {
@@ -48,5 +47,4 @@ class Textured3DCubeSession : public RenderSession {
   void setVertexParams(float aspectRatio);
 };
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

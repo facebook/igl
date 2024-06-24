@@ -10,8 +10,7 @@
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 
 class EmptySession : public RenderSession {
  public:
@@ -22,5 +21,4 @@ class EmptySession : public RenderSession {
  private:
 };
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

@@ -257,7 +257,7 @@ void DrawInstancedSession::update(igl::SurfaceTextures surfaceTextures) noexcept
   framebuffer_->updateDrawable(surfaceTextures.color);
 
   // Command buffers (1-N per thread): create, submit and forget
-  std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
+  const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
   const igl::Viewport viewport = {
       0.0f, 0.0f, (float)dimensions.width, (float)dimensions.height, 0.0f, +1.0f};

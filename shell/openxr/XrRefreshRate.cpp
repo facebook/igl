@@ -47,7 +47,7 @@ bool XrRefreshRate::initialize(const Params& params) noexcept {
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 const std::vector<const char*>& XrRefreshRate::getExtensions() noexcept {
-  static std::vector<const char*> kExtensions{XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME};
+  static const std::vector<const char*> kExtensions{XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME};
   return kExtensions;
 }
 

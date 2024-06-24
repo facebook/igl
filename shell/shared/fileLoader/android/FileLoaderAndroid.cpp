@@ -41,7 +41,7 @@ FileLoader::FileData FileLoaderAndroid::loadBinaryData(const std::string& fileNa
     return {};
   }
 
-  off64_t length = AAsset_getLength64(asset);
+  const off64_t length = AAsset_getLength64(asset);
   if (IGL_UNEXPECTED(length > std::numeric_limits<uint32_t>::max())) {
     AAsset_close(asset);
     return {};
@@ -61,7 +61,7 @@ FileLoader::FileData FileLoaderAndroid::loadBinaryData(const std::string& fileNa
 }
 
 bool FileLoaderAndroid::fileExists(const std::string& fileName) const {
-  std::vector<uint8_t> data;
+  const std::vector<uint8_t> data;
   if (fileName.empty()) {
     IGL_LOG_ERROR("Error in fileExists(): Empty fileName\n");
     return false;
@@ -86,7 +86,7 @@ std::string FileLoaderAndroid::basePath() const {
     AAssetDir* assetDir = AAssetManager_openDir(assetManager_, "");
     if (assetDir != nullptr) {
       const char* fileName = AAssetDir_getNextFileName(assetDir);
-      std::filesystem::path filePath(fileName);
+      const std::filesystem::path filePath(fileName);
       basePath = filePath.root_path();
       AAssetDir_close(assetDir);
     }

@@ -23,12 +23,12 @@ class ImageLoaderAndroid final : public ImageLoader {
   void setAssetManager(AAssetManager* mgr) {
     assetManager_ = mgr;
   }
-  AAssetManager* getAssetManager() const noexcept {
+  [[nodiscard]] AAssetManager* getAssetManager() const noexcept {
     return assetManager_;
   }
 
  private:
-  AAssetManager* assetManager_;
+  AAssetManager* assetManager_{};
 };
 
 } // namespace igl::shell

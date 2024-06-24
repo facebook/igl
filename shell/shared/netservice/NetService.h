@@ -32,8 +32,8 @@ class NetService {
   virtual ~NetService() = default;
   virtual void publish() noexcept = 0;
 
-  virtual std::shared_ptr<InputStream> getInputStream() const noexcept = 0;
-  virtual std::shared_ptr<OutputStream> getOutputStream() const noexcept = 0;
+  [[nodiscard]] virtual std::shared_ptr<InputStream> getInputStream() const noexcept = 0;
+  [[nodiscard]] virtual std::shared_ptr<OutputStream> getOutputStream() const noexcept = 0;
   [[nodiscard]] virtual std::string getName() const noexcept = 0;
 
   [[nodiscard]] Delegate* delegate() const noexcept {

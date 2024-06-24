@@ -122,7 +122,7 @@
 #if IGL_BACKEND_METAL
   case igl::BackendType::Metal: {
     IGL_ASSERT(backendType_ == igl::BackendType::Metal);
-    auto platformDevice = device.getPlatformDevice<igl::metal::PlatformDevice>();
+    auto *platformDevice = device.getPlatformDevice<igl::metal::PlatformDevice>();
     IGL_ASSERT(platformDevice);
     return igl::SurfaceTextures{
         .color = platformDevice->createTextureFromNativeDrawable(currentDrawable_, nullptr),
@@ -134,7 +134,7 @@
 #if IGL_BACKEND_OPENGL
   case igl::BackendType::OpenGL: {
     IGL_ASSERT(backendType_ == igl::BackendType::OpenGL);
-    auto platformDevice = device.getPlatformDevice<igl::opengl::ios::PlatformDevice>();
+    auto *platformDevice = device.getPlatformDevice<igl::opengl::ios::PlatformDevice>();
     IGL_ASSERT(platformDevice);
     return igl::SurfaceTextures{
         .color = platformDevice->createTextureFromNativeDrawable((CAEAGLLayer*)layer_, nullptr),

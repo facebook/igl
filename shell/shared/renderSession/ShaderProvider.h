@@ -18,9 +18,9 @@ namespace igl::shell {
 
 class IShaderProvider {
  public:
-  virtual ShaderStage getStage() const = 0;
-  virtual std::string getShaderText(const IDevice& device) const = 0;
-  virtual std::vector<uint32_t> getShaderBinary(const IDevice& device) const = 0;
+  [[nodiscard]] virtual ShaderStage getStage() const = 0;
+  [[nodiscard]] virtual std::string getShaderText(const IDevice& device) const = 0;
+  [[nodiscard]] virtual std::vector<uint32_t> getShaderBinary(const IDevice& device) const = 0;
   virtual ~IShaderProvider() = default;
 };
 

@@ -19,10 +19,10 @@ class NetServiceExtensionZeroMQ final : public NetServiceExtension {
 
   bool initialize(igl::shell::Platform& platform) noexcept override;
 
-  std::unique_ptr<NetService> create(std::string_view domain,
-                                     std::string_view type,
-                                     std::string_view name,
-                                     int port) const noexcept override;
+  [[nodiscard]] std::unique_ptr<NetService> create(std::string_view domain,
+                                                   std::string_view type,
+                                                   std::string_view name,
+                                                   int port) const noexcept override;
 
   void search(std::string_view domain, std::string_view type) const noexcept override;
   void stopSearch() noexcept;

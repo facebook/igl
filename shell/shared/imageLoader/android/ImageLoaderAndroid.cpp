@@ -36,7 +36,7 @@ ImageData ImageLoaderAndroid::loadImageData(const std::string& imageName) noexce
     return {};
   }
 
-  off64_t length = AAsset_getLength64(asset);
+  const off64_t length = AAsset_getLength64(asset);
   if (IGL_UNEXPECTED(length > std::numeric_limits<int>::max())) {
     AAsset_close(asset);
     return {};

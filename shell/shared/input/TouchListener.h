@@ -7,8 +7,7 @@
 
 #pragma once
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 
 struct TouchEvent {
   bool isDown;
@@ -29,5 +28,4 @@ class ITouchListener {
   virtual ~ITouchListener() = default;
 };
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

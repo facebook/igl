@@ -11,8 +11,7 @@
 #include "MouseListener.h"
 #include "TouchListener.h"
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 
 void InputDispatcher::processEvents() {
   const std::lock_guard guard(_mutex);
@@ -196,5 +195,4 @@ void InputDispatcher::queueEvent(const KeyEvent& event) {
   _events.push(evt);
 }
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

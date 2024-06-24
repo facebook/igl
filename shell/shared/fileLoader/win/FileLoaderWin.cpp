@@ -41,7 +41,7 @@ std::string findSubdir(const char* subdir, const std::string& fileName) {
     return fullPath.string();
   }
 
-  return std::string();
+  return {};
 }
 
 } // namespace

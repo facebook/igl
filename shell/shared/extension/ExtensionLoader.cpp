@@ -30,7 +30,7 @@ Extension* ExtensionLoader::create(const std::string& name) noexcept {
 
 Extension* ExtensionLoader::createAndInitialize(const std::string& name,
                                                 Platform& platform) noexcept {
-  auto extension = create(name);
+  auto* extension = create(name);
   if (extension) {
     extension->initialize(platform); // initialize extension
   } else {

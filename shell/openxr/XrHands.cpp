@@ -80,7 +80,7 @@ XrHands::~XrHands() noexcept {
 
 // NOLINTNEXTLINE(bugprone-exception-escape)
 const std::vector<const char*>& XrHands::getExtensions() noexcept {
-  static std::vector<const char*> kExtensions{
+  static const std::vector<const char*> kExtensions{
       XR_EXT_HAND_TRACKING_EXTENSION_NAME,
       XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME,
   };

@@ -345,7 +345,7 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commands->bindDepthStencilState(depthStencilState_);
 
   for (int i = 0; i < 2; ++i) {
-    auto& handTracking = shellParams().handTracking[i];
+    const auto& handTracking = shellParams().handTracking[i];
     IGL_ASSERT(handTracking.jointPose.size() <= kMaxJoints);
     for (size_t j = 0; j < handTracking.jointPose.size(); ++j) {
       ub_.jointMatrices[j] = poseToMat4(handTracking.jointPose[j]) * jointInvBindMatrix_[i][j];
