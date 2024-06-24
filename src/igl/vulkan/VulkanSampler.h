@@ -32,7 +32,7 @@ class VulkanSampler final {
   VulkanSampler(const VulkanContext& ctx,
                 VkDevice device,
                 const VkSamplerCreateInfo& ci,
-                bool isYUV_NV12,
+                VkFormat yuvVkFormat = VK_FORMAT_UNDEFINED,
                 const char* debugName = nullptr);
   ~VulkanSampler();
 

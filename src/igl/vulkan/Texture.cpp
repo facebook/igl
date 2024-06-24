@@ -152,7 +152,8 @@ Result Texture::create(const TextureDesc& desc) {
                                    ? VK_IMAGE_TILING_OPTIMAL
                                    : VK_IMAGE_TILING_LINEAR;
 
-  if (desc.format == TextureFormat::YUV_NV12) {
+  if (getProperties().numPlanes > 1) {
+    // some constraints for multiplanar image formats
     IGL_ASSERT(imageType == VK_IMAGE_TYPE_2D);
     IGL_ASSERT(samples == VK_SAMPLE_COUNT_1_BIT);
     IGL_ASSERT(tiling == VK_IMAGE_TILING_OPTIMAL);

@@ -204,8 +204,9 @@ void YUVColorSession::initialize() noexcept {
   IGL_ASSERT(vertexInput0_ != nullptr);
 
   // Sampler & Texture
+  const igl::TextureFormat yuvFormat = igl::TextureFormat::YUV_NV12;
   SamplerStateDesc samplerDesc = SamplerStateDesc::newLinear();
-  samplerDesc.isYUV_NV12 = true;
+  samplerDesc.yuvFormat = yuvFormat;
   samp0_ = device.createSamplerState(samplerDesc, nullptr);
   IGL_ASSERT(samp0_ != nullptr);
 
@@ -215,17 +216,11 @@ void YUVColorSession::initialize() noexcept {
   const uint32_t width = 1920;
   const uint32_t height = 1080;
 
-  const igl::TextureDesc textureDesc =
-      igl::TextureDesc::new2D(igl::TextureFormat::YUV_NV12,
-                              width,
-                              height,
-                              TextureDesc::TextureUsageBits::Sampled,
-                              "YUV texture");
-  IGL_ASSERT(textureDesc.width * textureDesc.height + textureDesc.width * textureDesc.height / 2 ==
-             fileData.length);
+  const igl::TextureDesc textureDesc = igl::TextureDesc::new2D(
+      yuvFormat, width, height, TextureDesc::TextureUsageBits::Sampled, "YUV texture");
+  IGL_ASSERT(width * height + width * height / 2 == fileData.length);
   tex0_ = device.createTexture(textureDesc, nullptr);
-  tex0_->upload(TextureRangeDesc{0, 0, 0, textureDesc.width, textureDesc.height},
-                fileData.data.get());
+  tex0_->upload(TextureRangeDesc{0, 0, 0, width, height}, fileData.data.get());
 
   shaderStages_ = getShaderStagesForBackend(device);
   IGL_ASSERT(shaderStages_ != nullptr);

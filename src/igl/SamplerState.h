@@ -10,6 +10,7 @@
 #include <igl/Common.h>
 #include <igl/DepthStencilState.h>
 #include <igl/ITrackedResource.h>
+#include <igl/TextureFormat.h>
 
 namespace igl {
 
@@ -119,7 +120,7 @@ struct SamplerStateDesc {
    */
   std::string debugName = "";
 
-  bool isYUV_NV12 = false;
+  igl::TextureFormat yuvFormat = igl::TextureFormat::Invalid;
 
   /**
    * @brief Creates a new SamplerStateDesc instance set up for linearly interpolating within mipmap
