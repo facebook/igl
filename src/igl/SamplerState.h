@@ -155,6 +155,21 @@ struct SamplerStateDesc {
   }
 
   /**
+   * @brief Creates a new SamplerStateDesc instance set up for YUV conversion
+   */
+  static SamplerStateDesc newYUV(igl::TextureFormat yuvFormat, const char* debugName) {
+    SamplerStateDesc desc;
+    desc.minFilter = desc.magFilter = SamplerMinMagFilter::Linear;
+    desc.mipFilter = SamplerMipFilter::Disabled;
+    desc.addressModeU = SamplerAddressMode::Clamp;
+    desc.addressModeV = SamplerAddressMode::Clamp;
+    desc.addressModeW = SamplerAddressMode::Clamp;
+    desc.debugName = debugName;
+    desc.yuvFormat = yuvFormat;
+    return desc;
+  }
+
+  /**
    * @brief Compares two SamplerStateDesc objects for equality.
    *
    * Returns true if all descriptor properties are identical.
