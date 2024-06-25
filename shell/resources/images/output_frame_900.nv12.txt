@@ -1,6 +1,6 @@
 The frame #900 from the Big Buck Bunny movie. 1920x1080 NV12 YUV
 
-> ffmpeg -i bbb_sunflower_1080p_30fps_normal.mp4 -vf "select=eq(n\,899)" -vframes 1 -c:v rawvideo -pix_fmt nv12 output_frame_900.yuv
+> ffmpeg -i bbb_sunflower_1080p_30fps_normal.mp4 -vf "select=eq(n\,899)" -vframes 1 -c:v rawvideo -pix_fmt nv12 output_frame_900.nv12.yuv
 
 https://peach.blender.org/about/
 

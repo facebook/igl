@@ -210,8 +210,8 @@ void YUVColorSession::initialize() noexcept {
   samp0_ = device.createSamplerState(samplerDesc, nullptr);
   IGL_ASSERT(samp0_ != nullptr);
 
-  // https://github.com/facebook/igl/blob/main/shell/resources/images/output_frame_900.txt
-  const auto fileData = getPlatform().getFileLoader().loadBinaryData("output_frame_900.yuv");
+  // https://github.com/facebook/igl/blob/main/shell/resources/images/output_frame_900.nv12.txt
+  const auto fileData = getPlatform().getFileLoader().loadBinaryData("output_frame_900.nv12.yuv");
 
   const uint32_t width = 1920;
   const uint32_t height = 1080;
