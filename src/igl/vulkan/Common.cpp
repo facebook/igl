@@ -259,6 +259,8 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
     return VK_FORMAT_S8_UINT;
   case TextureFormat::YUV_NV12:
     return VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+  case TextureFormat::YUV_420p:
+    return VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
   }
   IGL_UNREACHABLE_RETURN(VK_FORMAT_UNDEFINED)
 }

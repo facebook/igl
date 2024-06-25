@@ -350,6 +350,7 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
 #endif
     STENCIL(S_UInt8, 1, 1)
     MULTIPLANAR(YUV_NV12, 3, 16, 2)
+    MULTIPLANAR(YUV_420p, 3, 16, 3)
   }
   IGL_UNREACHABLE_RETURN(TextureFormatProperties{})
 }

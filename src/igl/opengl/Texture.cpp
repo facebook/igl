@@ -913,6 +913,7 @@ bool Texture::toFormatDescGL(IContext& ctx,
     }
     return true;
   case TextureFormat::YUV_NV12:
+  case TextureFormat::YUV_420p:
     return false;
   }
 

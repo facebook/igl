@@ -478,6 +478,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
   case TextureFormat::R_EAC_UNorm:
   case TextureFormat::R_EAC_SNorm:
   case TextureFormat::YUV_NV12:
+  case TextureFormat::YUV_420p:
     return unsupported;
   }
 }

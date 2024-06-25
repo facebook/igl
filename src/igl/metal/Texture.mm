@@ -716,6 +716,7 @@ MTLPixelFormat Texture::textureFormatToMTLPixelFormat(TextureFormat value) {
     return MTLPixelFormatStencil8;
 
   case TextureFormat::YUV_NV12:
+  case TextureFormat::YUV_420p:
     return MTLPixelFormatInvalid;
   }
 }
