@@ -11,7 +11,9 @@
 #include "TestDevice.h"
 #include <gtest/gtest.h>
 #include <igl/ShaderCreator.h>
+#if IGL_BACKEND_OPENGL
 #include <igl/opengl/Device.h>
+#endif // IGL_BACKEND_OPENGL
 
 namespace igl::tests::util {
 

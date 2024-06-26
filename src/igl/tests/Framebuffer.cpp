@@ -13,8 +13,10 @@
 
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
+#if IGL_BACKEND_OPENGL
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/PlatformDevice.h>
+#endif // #IGL_BACKEND_OPENGL
 #include <string>
 
 namespace igl::tests {
@@ -365,6 +367,7 @@ TEST_F(FramebufferTest, Clear) {
 // the device's getPlatformDevice() function, which should return nullptr
 // on Metal
 //
+#if IGL_BACKEND_OPENGL
 TEST_F(FramebufferTest, blitFramebufferColor) {
   auto* platformDevice = iglDev_->getPlatformDevice<opengl::PlatformDevice>();
   if (platformDevice) {
@@ -462,7 +465,6 @@ TEST_F(FramebufferTest, blitFramebufferColor) {
     framebuffer2->copyBytesColorAttachment(*cmdQueue_, 0, pixels2.data(), rangeDesc);
     ASSERT_EQ(pixels2[0], 0);
 
-#if IGL_BACKEND_OPENGL
     if (platformDevice->getContext().deviceFeatures().hasInternalFeature(
             opengl::InternalFeatures::FramebufferBlit)) {
       //--------------------------------------------------------------
@@ -491,11 +493,11 @@ TEST_F(FramebufferTest, blitFramebufferColor) {
       ASSERT_EQ(pixels[0], pixels2[0]);
       ASSERT_EQ(pixels2[0], 0x80808080);
     }
-#endif // IGL_BACKEND_OPENGL
   } else {
     ASSERT_TRUE(backend_ != util::BACKEND_OGL);
   }
 }
+#endif // IGL_BACKEND_OPENGL
 
 //
 // Framebuffer Drawable Unbind Test

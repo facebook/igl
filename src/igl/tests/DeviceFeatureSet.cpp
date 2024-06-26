@@ -8,9 +8,11 @@
 #include "data/TextureData.h"
 #include "util/Common.h"
 #include "util/TestDevice.h"
+#if IGL_BACKEND_OPENGL
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/PlatformDevice.h>
+#endif // IGL_BACKEND_OPENGL
 #include <string>
 
 namespace igl::tests {

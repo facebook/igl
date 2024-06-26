@@ -10,11 +10,10 @@
 #include <igl/Common.h>
 #include <igl/Macros.h>
 
-#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOS || IGL_PLATFORM_LINUX
+#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOS || IGL_PLATFORM_IOS || \
+    IGL_PLATFORM_LINUX
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
-#else
-#error "Unsupported testing platform"
 #endif
 
 #if IGL_PLATFORM_MACOS

@@ -7,7 +7,6 @@
 
 #include "util/Common.h"
 #include "util/TestDevice.h"
-#include <igl/opengl/Device.h>
 
 #include <string>
 

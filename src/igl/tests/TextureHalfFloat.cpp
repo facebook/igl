@@ -31,7 +31,6 @@
 #include <igl/IGL.h>
 #include <igl/Macros.h>
 #include <igl/NameHandle.h>
-#include <igl/opengl/Device.h>
 #include <string>
 
 namespace igl::tests {

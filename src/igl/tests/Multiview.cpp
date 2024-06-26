@@ -6,7 +6,6 @@
  */
 
 #include "data/ShaderData.h"
-#include "data/TextureData.h"
 #include "data/VertexIndexData.h"
 #include "util/Common.h"
 #include "util/TestDevice.h"
@@ -15,8 +14,6 @@
 #include <glm/glm.hpp>
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
-#include <igl/opengl/IContext.h>
-#include <igl/opengl/PlatformDevice.h>
 #include <string>
 
 namespace igl::tests {
