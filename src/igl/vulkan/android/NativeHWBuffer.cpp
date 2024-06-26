@@ -26,27 +26,9 @@ NativeHWTextureBuffer::NativeHWTextureBuffer(const igl::vulkan::Device& device,
 
 NativeHWTextureBuffer::~NativeHWTextureBuffer() {}
 
-Result NativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
-                                             bool hasStorageAlready,
-                                             bool surfaceComposite) {
-  if (texture_) {
-    return Result{Result::Code::RuntimeError, "NativeHWTextureBuffer already created"};
-  }
-
-  auto isValid = desc.numLayers == 1 && desc.numSamples == 1 && desc.numMipLevels == 1 &&
-                 desc.usage != 0 && desc.type == TextureType::TwoD &&
-                 desc.tiling == igl::TextureDesc::TextureTiling::Optimal &&
-                 igl::android::getNativeHWFormat(desc.format) > 0 && hasStorageAlready == false &&
-                 desc.storage == ResourceStorage::Shared;
-  if (!isValid) {
-    return Result(Result::Code::Unsupported, "Invalid texture description");
-  }
-
-  auto allocationResult = igl::android::allocateNativeHWBuffer(desc, surfaceComposite, &hwBuffer_);
-  if (!allocationResult.isOk()) {
-    return allocationResult;
-  }
-
+Result NativeHWTextureBuffer::createTextureInternal(const TextureDesc& desc,
+                                                    struct AHardwareBuffer* buffer,
+                                                    bool isHwBufferExternal) {
   const VkImageUsageFlags usageFlags =
       VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
       VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -65,7 +47,7 @@ Result NativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
       usageFlags,
       0,
       VK_SAMPLE_COUNT_1_BIT,
-      hwBuffer_,
+      buffer,
       "Image: SurfaceTexture");
 
   if (vulkanImage.getVkImage() == VK_NULL_HANDLE) {
@@ -85,9 +67,12 @@ Result NativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
   auto vkTexture = device_.getVulkanContext().createTexture(
       std::move(vulkanImage), std::move(vulkanImageView), "SurfaceTexture");
 
-  if (vkTexture->getTextureId() == 0) {
+  if (!vkTexture) {
     return Result(Result::Code::RuntimeError, "Failed to create vulkan texture");
   }
+
+  hwBuffer_ = buffer;
+  isHwBufferExternal_ = isHwBufferExternal;
 
   desc_ = std::move(desc);
   texture_ = std::move(vkTexture);

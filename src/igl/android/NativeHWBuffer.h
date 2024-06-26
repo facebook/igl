@@ -26,16 +26,19 @@ class INativeHWTextureBuffer {
 
   virtual ~INativeHWTextureBuffer();
 
-  virtual Result createHWBuffer(const TextureDesc& desc,
-                                bool hasStorageAlready,
-                                bool surfaceComposite) = 0;
+  Result attachHWBuffer(struct AHardwareBuffer* buffer);
+  Result createHWBuffer(const TextureDesc& desc, bool hasStorageAlready, bool surfaceComposite);
 
-  virtual Result lockHWBuffer(std::byte* IGL_NULLABLE* IGL_NONNULL dst, RangeDesc& outRange) const;
-  virtual Result unlockHWBuffer() const;
+  Result lockHWBuffer(std::byte* IGL_NULLABLE* IGL_NONNULL dst, RangeDesc& outRange) const;
+  Result unlockHWBuffer() const;
 
   AHardwareBuffer* getHardwareBuffer();
 
  protected:
+  virtual Result createTextureInternal(const TextureDesc& desc,
+                                       struct AHardwareBuffer* buffer,
+                                       bool isHwBufferExternal) = 0;
+
   AHardwareBuffer* hwBuffer_ = nullptr;
   bool isHwBufferExternal_ = false;
 };
@@ -43,7 +46,11 @@ class INativeHWTextureBuffer {
 // utils
 
 uint32_t getNativeHWFormat(TextureFormat iglFormat);
-uint32_t getNativeHWBufferUsage(TextureDesc::TextureUsage usage);
+uint32_t getNativeHWBufferUsage(TextureDesc::TextureUsage iglUsage);
+
+TextureFormat getIglFormat(uint32_t nativeFormat);
+TextureDesc::TextureUsage getIglBufferUsage(uint32_t nativeUsage);
+
 Result allocateNativeHWBuffer(const TextureDesc& desc,
                               bool surfaceComposite,
                               AHardwareBuffer** buffer);

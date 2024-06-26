@@ -51,17 +51,72 @@ uint32_t getNativeHWFormat(TextureFormat iglFormat) {
   }
 }
 
-uint32_t getNativeHWBufferUsage(TextureDesc::TextureUsage usage) {
+uint32_t getNativeHWBufferUsage(TextureDesc::TextureUsage iglUsage) {
   uint64_t bufferUsage = 0;
 
-  if (usage & TextureDesc::TextureUsageBits::Sampled) {
+  if (iglUsage & TextureDesc::TextureUsageBits::Sampled) {
     bufferUsage |= AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
   }
-  if (usage & TextureDesc::TextureUsageBits::Storage) {
+  if (iglUsage & TextureDesc::TextureUsageBits::Storage) {
     bufferUsage |= AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN;
   }
-  if (usage & TextureDesc::TextureUsageBits::Attachment) {
+  if (iglUsage & TextureDesc::TextureUsageBits::Attachment) {
     bufferUsage |= AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT;
+  }
+
+  return bufferUsage;
+}
+
+TextureFormat getIglFormat(uint32_t nativeFormat) {
+  // note that Native HW buffer has compute specific format but is not added here.
+  switch (nativeFormat) {
+  case AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM:
+    return TextureFormat::RGBX_UNorm8;
+
+  case AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM:
+    return TextureFormat::RGBA_UNorm8;
+
+  case AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM:
+    return TextureFormat::B5G6R5_UNorm;
+
+  case AHARDWAREBUFFER_FORMAT_R16G16B16A16_FLOAT:
+    return TextureFormat::RGBA_F16;
+
+  case AHARDWAREBUFFER_FORMAT_R10G10B10A2_UNORM:
+    return TextureFormat::RGB10_A2_UNorm_Rev;
+
+  case AHARDWAREBUFFER_FORMAT_D16_UNORM:
+    return TextureFormat::Z_UNorm16;
+
+  case AHARDWAREBUFFER_FORMAT_D24_UNORM:
+    return TextureFormat::Z_UNorm24;
+
+  case AHARDWAREBUFFER_FORMAT_D32_FLOAT:
+    return TextureFormat::Z_UNorm32;
+
+  case AHARDWAREBUFFER_FORMAT_D24_UNORM_S8_UINT:
+    return TextureFormat::S8_UInt_Z24_UNorm;
+
+  case AHARDWAREBUFFER_FORMAT_S8_UINT:
+    return TextureFormat::S_UInt8;
+
+  default:
+    return TextureFormat::Invalid;
+  }
+}
+
+TextureDesc::TextureUsage getIglBufferUsage(uint32_t nativeUsage) {
+  TextureDesc::TextureUsage bufferUsage = 0;
+
+  if (nativeUsage & AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE) {
+    bufferUsage |= TextureDesc::TextureUsageBits::Sampled;
+  }
+  if (nativeUsage &
+      (AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN | AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN)) {
+    bufferUsage |= TextureDesc::TextureUsageBits::Storage;
+  }
+  if (nativeUsage & AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT) {
+    bufferUsage |= TextureDesc::TextureUsageBits::Attachment;
   }
 
   return bufferUsage;
@@ -96,6 +151,59 @@ INativeHWTextureBuffer::~INativeHWTextureBuffer() {
     AHardwareBuffer_release(hwBuffer_);
     hwBuffer_ = nullptr;
   }
+}
+
+Result INativeHWTextureBuffer::attachHWBuffer(struct AHardwareBuffer* buffer) {
+  if (hwBuffer_) {
+    return Result{Result::Code::InvalidOperation,
+                  isHwBufferExternal_ ? "Hardware buffer already attached"
+                                      : "Hardware buffer already created"};
+  }
+
+  AHardwareBuffer_Desc hwbDesc;
+  AHardwareBuffer_describe(buffer, &hwbDesc);
+
+  auto desc = TextureDesc::newNativeHWBufferImage(igl::android::getIglFormat(hwbDesc.format),
+                                                  igl::android::getIglBufferUsage(hwbDesc.usage),
+                                                  hwbDesc.width,
+                                                  hwbDesc.height);
+  const bool isValid = desc.format != TextureFormat::Invalid && desc.usage != 0;
+  if (!isValid) {
+    return Result(Result::Code::Unsupported, "Can not create texture for hardware buffer");
+  }
+
+  return createTextureInternal(desc, buffer, true);
+}
+
+Result INativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
+                                              bool hasStorageAlready,
+                                              bool surfaceComposite) {
+  if (hwBuffer_) {
+    return Result{Result::Code::InvalidOperation,
+                  isHwBufferExternal_ ? "Hardware buffer already attached"
+                                      : "Hardware buffer already created"};
+  }
+
+  const bool isValid = desc.numLayers == 1 && desc.numSamples == 1 && desc.numMipLevels == 1 &&
+                       desc.usage != 0 && desc.type == TextureType::TwoD &&
+                       desc.tiling == igl::TextureDesc::TextureTiling::Optimal &&
+                       igl::android::getNativeHWFormat(desc.format) > 0 && !hasStorageAlready &&
+                       desc.storage == ResourceStorage::Shared;
+  if (!isValid) {
+    return Result(Result::Code::Unsupported, "Invalid texture description");
+  }
+
+  AHardwareBuffer* buffer = nullptr;
+  auto allocationResult = igl::android::allocateNativeHWBuffer(desc, surfaceComposite, &buffer);
+  if (!allocationResult.isOk()) {
+    return allocationResult;
+  }
+
+  Result result = createTextureInternal(desc, buffer, false);
+  if (!result.isOk()) {
+    AHardwareBuffer_release(buffer);
+  }
+  return result;
 }
 
 Result INativeHWTextureBuffer::lockHWBuffer(std::byte* _Nullable* _Nonnull dst,

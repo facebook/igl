@@ -30,14 +30,14 @@ class NativeHWTextureBuffer : public igl::android::INativeHWTextureBuffer, publi
   NativeHWTextureBuffer(const igl::vulkan::Device& device, TextureFormat format);
   ~NativeHWTextureBuffer() override;
 
-  // INativeHWTextureBuffer overrides
-  Result createHWBuffer(const TextureDesc& desc,
-                        bool hasStorageAlready,
-                        bool surfaceComposite) override;
-
  protected:
   // Texture overrides
   Result create(const TextureDesc& desc) override;
+
+  // INativeHWTextureBuffer overrides
+  Result createTextureInternal(const TextureDesc& desc,
+                               struct AHardwareBuffer* buffer,
+                               bool isHwBufferExternal) override;
 };
 
 } // namespace igl::vulkan::android
