@@ -37,6 +37,7 @@ namespace igl {
  * MultiSample                Supports multisample textures
  * MultiSampleResolve         Supports GPU multisampled texture resolve
  * Multiview                  Supports multiview
+ * MultiViewMultisample       Supports multisampled multiview
  * PushConstants              Supports push constants(Vulkan)
  * ReadWriteFramebuffer       Supports separate FB reading/writing binding
  * SamplerMinMaxLod           Supports constraining the min and max texture LOD when sampling
@@ -81,6 +82,7 @@ enum class DeviceFeatures {
   MultiSample,
   MultiSampleResolve,
   Multiview,
+  MultiViewMultisample,
   PushConstants,
   ReadWriteFramebuffer,
   SamplerMinMaxLod,

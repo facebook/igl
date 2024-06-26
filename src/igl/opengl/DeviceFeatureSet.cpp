@@ -338,6 +338,9 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
     return hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES) &&
            isSupported("GL_OVR_multiview2");
 
+  case DeviceFeatures::MultiViewMultisample:
+    return hasExtension(Extensions::MultiViewMultiSample);
+
   case DeviceFeatures::TexturePartialMipChain:
     return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
            hasESExtension(*this, "GL_APPLE_texture_max_level");

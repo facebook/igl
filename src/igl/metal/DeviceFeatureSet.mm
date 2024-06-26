@@ -170,6 +170,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::BufferDeviceAddress:
     return false;
   case DeviceFeatures::Multiview:
+  case DeviceFeatures::MultiViewMultisample:
     return false;
   case DeviceFeatures::BindUniform:
     return false;
