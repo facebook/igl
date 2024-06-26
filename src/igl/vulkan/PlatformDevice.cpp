@@ -12,6 +12,10 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 
+#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#include <igl/vulkan/android/NativeHWBuffer.h>
+#endif
+
 namespace igl::vulkan {
 
 PlatformDevice::PlatformDevice(Device& device) : device_(device) {}
@@ -118,6 +122,27 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
 
   return nativeDrawableTextures_[currentImageIndex];
 }
+
+#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+
+/// returns a android::NativeHWTextureBuffer on platforms supporting it
+/// this texture allows CPU and GPU to both read/write memory
+std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const TextureDesc& desc,
+                                                                        Result* outResult) const {
+  Result subResult;
+
+  auto texture =
+      std::make_shared<igl::vulkan::android::NativeHWTextureBuffer>(device_, desc.format);
+  subResult = texture->create(desc);
+  Result::setResult(outResult, subResult.code, subResult.message);
+  if (!subResult.isOk()) {
+    return nullptr;
+  }
+
+  return std::move(texture);
+}
+
+#endif
 
 VkFence PlatformDevice::getVkFenceFromSubmitHandle(SubmitHandle handle) const {
   if (handle == 0) {

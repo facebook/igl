@@ -41,6 +41,11 @@ class PlatformDevice : public IPlatformDevice {
   /// @return pointer to generated Texture or nullptr
   std::shared_ptr<ITexture> createTextureFromNativeDrawable(Result* outResult);
 
+#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+  std::shared_ptr<ITexture> createTextureWithSharedMemory(const TextureDesc& desc,
+                                                          Result* outResult) const;
+#endif
+
   /// @param handle The handle to the GPU Fence
   /// @return The Vulkan fence associated with the handle
   [[nodiscard]] VkFence getVkFenceFromSubmitHandle(SubmitHandle handle) const;

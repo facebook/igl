@@ -23,7 +23,7 @@ class VulkanTexture;
 class PlatformDevice;
 
 /// @brief Implements the igl::ITexture interface
-class Texture final : public ITexture {
+class Texture : public ITexture {
   friend class Device;
   friend class PlatformDevice;
 
@@ -74,10 +74,6 @@ class Texture final : public ITexture {
   uint32_t getNumVkLayers() const;
 
  private:
-  /// @brief Creates the resource on the device given the properties in `desc`. This function should
-  /// only be called by the `Device` class, from its `vulkan::Device::createTexture()`
-  Result create(const TextureDesc& desc);
-
   [[nodiscard]] bool needsRepacking(const TextureRangeDesc& range, size_t bytesPerRow) const final;
 
   /// @brief Uploads the texture's data to the device using the staging device in the context. This
@@ -96,6 +92,10 @@ class Texture final : public ITexture {
   std::shared_ptr<VulkanTexture> texture_;
   mutable std::vector<VulkanImageView> imageViewsForFramebufferMono_;
   mutable std::vector<VulkanImageView> imageViewsForFramebufferStereo_;
+
+  /// @brief Creates the resource on the device given the properties in `desc`. This function should
+  /// only be called by the `Device` class, from its `vulkan::Device::createTexture()`
+  virtual Result create(const TextureDesc& desc);
 };
 
 } // namespace igl::vulkan
