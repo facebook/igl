@@ -631,6 +631,37 @@ struct TextureDesc {
                        debugName ? debugName : ""};
   }
 
+#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+  /**
+   * @brief Utility to create a new image texture with linked hardware buffer
+   *
+   * @param format The format of the texture
+   * @param usage A combination of TextureUsage flags
+   * @param width  The width of the texture
+   * @param height The height of the texture
+   * @param debugName An optional debug name
+   * @return TextureDesc
+   */
+  static TextureDesc newNativeHWBufferImage(TextureFormat format,
+                                            TextureUsage usage,
+                                            size_t width,
+                                            size_t height,
+                                            const char* IGL_NULLABLE debugName = nullptr) {
+    return TextureDesc{width,
+                       height,
+                       1,
+                       1,
+                       1,
+                       usage,
+                       1,
+                       TextureType::TwoD,
+                       format,
+                       ResourceStorage::Shared,
+                       TextureTiling::Optimal,
+                       debugName ? debugName : ""};
+  }
+#endif
+
   /**
    * @brief Creates a TextureRangeDesc equivalent to descriptor.
    *
