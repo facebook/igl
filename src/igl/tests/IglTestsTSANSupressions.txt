@@ -1,2 +1,5 @@
 # Use this file to suppress TSAN issues from 3rd party libraries
 # https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
+
+# vkDestroyDevice called in igl::vulkan::Device::~Device() causes false-positive in TSAN because of some swiftshader issue
+race:igl::vulkan::Device::~Device()
