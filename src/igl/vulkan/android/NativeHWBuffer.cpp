@@ -10,7 +10,6 @@
 #if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
 
 #include <android/hardware_buffer.h>
-#include <android/native_window.h>
 #include <vulkan/vulkan_android.h>
 
 #include <igl/vulkan/Device.h>
@@ -27,8 +26,7 @@ NativeHWTextureBuffer::NativeHWTextureBuffer(const igl::vulkan::Device& device,
 NativeHWTextureBuffer::~NativeHWTextureBuffer() {}
 
 Result NativeHWTextureBuffer::createTextureInternal(const TextureDesc& desc,
-                                                    struct AHardwareBuffer* buffer,
-                                                    bool isHwBufferExternal) {
+                                                    AHardwareBuffer* buffer) {
   const VkImageUsageFlags usageFlags =
       VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
       VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -70,9 +68,6 @@ Result NativeHWTextureBuffer::createTextureInternal(const TextureDesc& desc,
   if (!vkTexture) {
     return Result(Result::Code::RuntimeError, "Failed to create vulkan texture");
   }
-
-  hwBuffer_ = buffer;
-  isHwBufferExternal_ = isHwBufferExternal;
 
   desc_ = std::move(desc);
   texture_ = std::move(vkTexture);

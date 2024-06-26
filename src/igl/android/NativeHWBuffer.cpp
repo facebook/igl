@@ -147,18 +147,18 @@ Result allocateNativeHWBuffer(const TextureDesc& desc,
 }
 
 INativeHWTextureBuffer::~INativeHWTextureBuffer() {
-  if (!isHwBufferExternal_) {
+  if (hwBuffer_ != nullptr) {
     AHardwareBuffer_release(hwBuffer_);
     hwBuffer_ = nullptr;
   }
 }
 
-Result INativeHWTextureBuffer::attachHWBuffer(struct AHardwareBuffer* buffer) {
+Result INativeHWTextureBuffer::attachHWBuffer(AHardwareBuffer* buffer) {
   if (hwBuffer_) {
-    return Result{Result::Code::InvalidOperation,
-                  isHwBufferExternal_ ? "Hardware buffer already attached"
-                                      : "Hardware buffer already created"};
+    return Result{Result::Code::InvalidOperation, "Hardware buffer already provided"};
   }
+
+  AHardwareBuffer_acquire(buffer);
 
   AHardwareBuffer_Desc hwbDesc;
   AHardwareBuffer_describe(buffer, &hwbDesc);
@@ -169,19 +169,20 @@ Result INativeHWTextureBuffer::attachHWBuffer(struct AHardwareBuffer* buffer) {
                                                   hwbDesc.height);
   const bool isValid = desc.format != TextureFormat::Invalid && desc.usage != 0;
   if (!isValid) {
+    AHardwareBuffer_release(buffer);
     return Result(Result::Code::Unsupported, "Can not create texture for hardware buffer");
   }
 
-  return createTextureInternal(desc, buffer, true);
+  hwBuffer_ = buffer;
+
+  return createTextureInternal(desc, buffer);
 }
 
 Result INativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
                                               bool hasStorageAlready,
                                               bool surfaceComposite) {
   if (hwBuffer_) {
-    return Result{Result::Code::InvalidOperation,
-                  isHwBufferExternal_ ? "Hardware buffer already attached"
-                                      : "Hardware buffer already created"};
+    return Result{Result::Code::InvalidOperation, "Hardware buffer already provided"};
   }
 
   const bool isValid = desc.numLayers == 1 && desc.numSamples == 1 && desc.numMipLevels == 1 &&
@@ -199,10 +200,13 @@ Result INativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
     return allocationResult;
   }
 
-  Result result = createTextureInternal(desc, buffer, false);
+  Result result = createTextureInternal(desc, buffer);
   if (!result.isOk()) {
     AHardwareBuffer_release(buffer);
+  } else {
+    hwBuffer_ = buffer;
   }
+
   return result;
 }
 

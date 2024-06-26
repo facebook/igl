@@ -13,6 +13,7 @@
 #include <igl/vulkan/VulkanSwapchain.h>
 
 #if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#include <android/hardware_buffer.h>
 #include <igl/vulkan/android/NativeHWBuffer.h>
 #endif
 
@@ -124,7 +125,6 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
 }
 
 #if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
-
 /// returns a android::NativeHWTextureBuffer on platforms supporting it
 /// this texture allows CPU and GPU to both read/write memory
 std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const TextureDesc& desc,
@@ -133,7 +133,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const Te
 
   auto texture =
       std::make_shared<igl::vulkan::android::NativeHWTextureBuffer>(device_, desc.format);
-  subResult = texture->create(desc);
+  subResult = texture->createHWBuffer(desc, false, false);
   Result::setResult(outResult, subResult.code, subResult.message);
   if (!subResult.isOk()) {
     return nullptr;
@@ -142,6 +142,24 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const Te
   return std::move(texture);
 }
 
+std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(
+    struct AHardwareBuffer* buffer,
+    Result* outResult) const {
+  Result subResult;
+
+  AHardwareBuffer_Desc hwbDesc;
+  AHardwareBuffer_describe(buffer, &hwbDesc);
+
+  auto texture = std::make_shared<igl::vulkan::android::NativeHWTextureBuffer>(
+      device_, igl::android::getIglFormat(hwbDesc.format));
+  subResult = texture->attachHWBuffer(buffer);
+  Result::setResult(outResult, subResult.code, subResult.message);
+  if (!subResult.isOk()) {
+    return nullptr;
+  }
+
+  return std::move(texture);
+}
 #endif
 
 VkFence PlatformDevice::getVkFenceFromSubmitHandle(SubmitHandle handle) const {

@@ -13,8 +13,6 @@
 
 #include <igl/vulkan/Texture.h>
 
-#include <jni.h>
-
 struct AHardwareBuffer;
 
 namespace igl::vulkan::android {
@@ -35,9 +33,7 @@ class NativeHWTextureBuffer : public igl::android::INativeHWTextureBuffer, publi
   Result create(const TextureDesc& desc) override;
 
   // INativeHWTextureBuffer overrides
-  Result createTextureInternal(const TextureDesc& desc,
-                               struct AHardwareBuffer* buffer,
-                               bool isHwBufferExternal) override;
+  Result createTextureInternal(const TextureDesc& desc, AHardwareBuffer* buffer) override;
 };
 
 } // namespace igl::vulkan::android

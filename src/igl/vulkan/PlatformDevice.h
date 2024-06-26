@@ -11,6 +11,10 @@
 #include <igl/Texture.h>
 #include <igl/vulkan/Common.h>
 
+#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+struct AHardwareBuffer;
+#endif
+
 namespace igl {
 class ITexture;
 
@@ -43,6 +47,8 @@ class PlatformDevice : public IPlatformDevice {
 
 #if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
   std::shared_ptr<ITexture> createTextureWithSharedMemory(const TextureDesc& desc,
+                                                          Result* outResult) const;
+  std::shared_ptr<ITexture> createTextureWithSharedMemory(AHardwareBuffer* buffer,
                                                           Result* outResult) const;
 #endif
 
