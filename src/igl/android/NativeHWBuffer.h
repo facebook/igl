@@ -20,6 +20,21 @@ namespace igl::android {
 
 class INativeHWTextureBuffer {
  public:
+  struct LockGuard {
+   public:
+    ~LockGuard();
+
+    LockGuard(const LockGuard&) = delete;
+    LockGuard(LockGuard&& g);
+
+   private:
+    friend class INativeHWTextureBuffer;
+
+    LockGuard(const INativeHWTextureBuffer* hwBufferOwner = nullptr);
+
+    const INativeHWTextureBuffer* hwBufferOwner_;
+  };
+
   struct RangeDesc : TextureRangeDesc {
     size_t stride = 0;
   };
@@ -28,6 +43,10 @@ class INativeHWTextureBuffer {
 
   Result attachHWBuffer(AHardwareBuffer* buffer);
   Result createHWBuffer(const TextureDesc& desc, bool hasStorageAlready, bool surfaceComposite);
+
+  LockGuard lockHWBuffer(std::byte* IGL_NULLABLE* IGL_NONNULL dst,
+                         RangeDesc& outRange,
+                         Result* outResult) const;
 
   Result lockHWBuffer(std::byte* IGL_NULLABLE* IGL_NONNULL dst, RangeDesc& outRange) const;
   Result unlockHWBuffer() const;
