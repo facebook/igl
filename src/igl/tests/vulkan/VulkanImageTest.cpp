@@ -106,6 +106,9 @@ TEST_F(VulkanImageTest, CreateImageWithExportedMemory) {
       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
       0, /* createFlags */
       VK_SAMPLE_COUNT_1_BIT,
+#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+      nullptr,
+#endif
       "Image: vulkan export memory");
   ASSERT_NE(vulkanImage.valid(), false);
   EXPECT_TRUE(vulkanImage.isExported_);
