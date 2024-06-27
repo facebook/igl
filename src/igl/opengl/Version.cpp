@@ -171,9 +171,9 @@ std::pair<uint32_t, uint32_t> parseVersionString(const char* version) {
   }
   uint32_t majorVersion, minorVersion;
 #if IGL_OPENGL_ES
-  const auto versionFormat = "OpenGL ES %d.%d";
+  constexpr char versionFormat[] = "OpenGL ES %d.%d";
 #else
-  const auto versionFormat = "%d.%d";
+  constexpr char versionFormat[] = "%d.%d";
 #endif // IGL_OPENGL_ES
 #ifdef _MSC_VER
   const int ret = sscanf_s(version, versionFormat, &majorVersion, &minorVersion);

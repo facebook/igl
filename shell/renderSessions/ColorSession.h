@@ -14,8 +14,7 @@
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 
 class ColorSession : public RenderSession {
   struct FragmentFormat {
@@ -42,11 +41,10 @@ class ColorSession : public RenderSession {
   std::shared_ptr<ITexture> tex0_;
   RenderPassDesc renderPass_;
   // clang-tidy off
-  FragmentFormat fragmentParameters_;
+  FragmentFormat fragmentParameters_{};
   // clang-tidy on
   std::vector<UniformDesc> fragmentUniformDescriptors_;
   std::vector<UniformDesc> vertexUniformDescriptors_;
 };
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

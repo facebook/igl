@@ -33,7 +33,7 @@ class ComputeCommandAdapter final : public WithContext {
 
   struct BufferState {
     std::shared_ptr<Buffer> resource;
-    size_t offset;
+    size_t offset{};
   };
 
   using TextureState = ITexture*;
@@ -66,7 +66,7 @@ class ComputeCommandAdapter final : public WithContext {
   void willDispatch();
   void didDispatch();
 
-  bool isDirty(StateMask mask) const {
+  [[nodiscard]] bool isDirty(StateMask mask) const {
     return (dirtyStateBits_ & EnumToValue(mask)) != 0;
   }
   void setDirty(StateMask mask) {
@@ -80,7 +80,7 @@ class ComputeCommandAdapter final : public WithContext {
   std::array<BufferState, IGL_VERTEX_BUFFER_MAX> buffers_;
   std::bitset<IGL_VERTEX_BUFFER_MAX> buffersDirty_;
   std::bitset<IGL_TEXTURE_SAMPLERS_MAX> textureStatesDirty_;
-  TextureStates textureStates_;
+  TextureStates textureStates_{};
   UniformAdapter uniformAdapter_;
   StateBits dirtyStateBits_ = EnumToValue(StateMask::NONE);
   std::shared_ptr<IComputePipelineState> pipelineState_;

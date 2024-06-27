@@ -26,8 +26,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
   Size requiredSize;
   NSView* view = [[NSOpenGLContext currentContext] view];
   if (IGL_VERIFY(view)) {
-    NSRect bounds = view.bounds;
-    NSSize sizeInPixels = [view convertSizeToBacking:bounds.size];
+    const NSRect bounds = view.bounds;
+    const NSSize sizeInPixels = [view convertSizeToBacking:bounds.size];
     requiredSize =
         Size(static_cast<float>(sizeInPixels.width), static_cast<float>(sizeInPixels.height));
   } else {
@@ -36,7 +36,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
   }
 
   if (!drawableTexture_ || drawableTexture_->getSize() != requiredSize) {
-    TextureDesc desc = {
+    const TextureDesc desc = {
         (size_t)requiredSize.width,
         (size_t)requiredSize.height,
         1,
@@ -63,7 +63,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(Result* o
   NSSize sizeInPixels;
   NSView* view = [[NSOpenGLContext currentContext] view];
   if (IGL_VERIFY(view)) {
-    NSRect bounds = view.bounds;
+    const NSRect bounds = view.bounds;
     sizeInPixels = [view convertSizeToBacking:bounds.size];
   } else {
     Result::setResult(outResult, Result::Code::RuntimeError);
@@ -100,7 +100,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(Result* o
     return nullptr;
   }
 
-  TextureDesc desc = {
+  const TextureDesc desc = {
       static_cast<size_t>(sizeInPixels.width),
       static_cast<size_t>(sizeInPixels.height),
       1,

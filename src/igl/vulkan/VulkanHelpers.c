@@ -242,6 +242,40 @@ VkResult ivkAllocateMemory2(const struct VulkanFunctionTable* vt,
   return vt->vkAllocateMemory(device, &ai, NULL, outMemory);
 }
 
+VkImagePlaneMemoryRequirementsInfo ivkGetImagePlaneMemoryRequirementsInfo(
+    VkImageAspectFlagBits plane) {
+  const VkImagePlaneMemoryRequirementsInfo info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO,
+      .pNext = NULL,
+      .planeAspect = plane,
+  };
+  return info;
+}
+
+VkImageMemoryRequirementsInfo2 ivkGetImageMemoryRequirementsInfo2(
+    const VkImagePlaneMemoryRequirementsInfo* next,
+    VkImage image) {
+  const VkImageMemoryRequirementsInfo2 info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+      .pNext = next,
+      .image = image,
+  };
+  return info;
+}
+
+VkBindImageMemoryInfo ivkGetBindImageMemoryInfo(const VkBindImagePlaneMemoryInfo* next,
+                                                VkImage image,
+                                                VkDeviceMemory memory) {
+  const VkBindImageMemoryInfo info = {
+      .sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
+      .pNext = next,
+      .image = image,
+      .memory = memory,
+      .memoryOffset = 0,
+  };
+  return info;
+}
+
 bool ivkIsHostVisibleSingleHeapMemory(const struct VulkanFunctionTable* vt,
                                       VkPhysicalDevice physDev) {
   VkPhysicalDeviceMemoryProperties memProperties;
@@ -428,7 +462,7 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
   return vt->vkCreateDevice(physicalDevice, &ci, NULL, outDevice);
 }
 
-#if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_MACCATALYST
+#if defined(VK_EXT_debug_utils) && !IGL_PLATFORM_ANDROID && !IGL_PLATFORM_MACCATALYST
 #define VK_EXT_DEBUG_UTILS_SUPPORTED 1
 #else
 #define VK_EXT_DEBUG_UTILS_SUPPORTED 0
@@ -676,13 +710,10 @@ VkSamplerYcbcrConversionCreateInfo ivkGetSamplerYcbcrCreateInfo(VkFormat format)
   return ci;
 }
 
-VkResult ivkCreateImageView(const struct VulkanFunctionTable* vt,
-                            VkDevice device,
-                            VkImage image,
-                            VkImageViewType type,
-                            VkFormat imageFormat,
-                            VkImageSubresourceRange range,
-                            VkImageView* outImageView) {
+VkImageViewCreateInfo ivkGetImageViewCreateInfo(VkImage image,
+                                                VkImageViewType type,
+                                                VkFormat imageFormat,
+                                                VkImageSubresourceRange range) {
   const VkImageViewCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
       .image = image,
@@ -694,8 +725,7 @@ VkResult ivkCreateImageView(const struct VulkanFunctionTable* vt,
                      .a = VK_COMPONENT_SWIZZLE_IDENTITY},
       .subresourceRange = range,
   };
-
-  return vt->vkCreateImageView(device, &ci, NULL, outImageView);
+  return ci;
 }
 
 VkResult ivkCreateFramebuffer(const struct VulkanFunctionTable* vt,
@@ -770,13 +800,13 @@ VkResult ivkCreateRenderPass(const struct VulkanFunctionTable* vt,
 
 VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
                                                               VkDescriptorType descriptorType,
-                                                              uint32_t descriptorCount) {
+                                                              uint32_t descriptorCount,
+                                                              VkShaderStageFlags stageFlags) {
   const VkDescriptorSetLayoutBinding bind = {
       .binding = binding,
       .descriptorType = descriptorType,
       .descriptorCount = descriptorCount,
-      .stageFlags =
-          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+      .stageFlags = stageFlags,
       .pImmutableSamplers = NULL,
   };
   return bind;

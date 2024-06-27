@@ -31,57 +31,11 @@ const VertexPosUv vertexData[] = {
     {{-1.f, -1.f, 0.0}, {0.0, 1.0}},
     {{1.f, -1.f, 0.0}, {1.0, 1.0}},
 };
-const uint16_t indexData[] = {
-    0,
-    1,
-    2,
-    1,
-    3,
-    2,
-};
+const uint16_t indexData[] = {0, 1, 2, 1, 3, 2};
 
-const std::string getVersion() {
-  return "#version 300 es";
-}
-
-const std::string getMetalShaderSource() {
+std::string getOpenGLVertexShaderSource() {
   return R"(
-              using namespace metal;
-
-              typedef struct { float3 color; } UniformBlock;
-
-              typedef struct {
-                float3 position [[attribute(0)]];
-                float2 uv [[attribute(1)]];
-              } VertexIn;
-
-              typedef struct {
-                float4 position [[position]];
-                float2 uv;
-              } VertexOut;
-
-              vertex VertexOut vertexShader(
-                  uint vid [[vertex_id]], constant VertexIn * vertices [[buffer(1)]]) {
-                VertexOut out;
-                out.position = float4(vertices[vid].position, 1.0);
-                out.uv = vertices[vid].uv;
-                return out;
-              }
-
-              fragment float4 fragmentShader(
-                  VertexOut IN [[stage_in]],
-                  texture2d<float> diffuseTex [[texture(0)]],
-                  sampler linearSampler [[sampler(0)]],
-                  constant UniformBlock * color [[buffer(0)]]) {
-                float4 tex = diffuseTex.sample(linearSampler, IN.uv);
-                return float4(color->color.r, color->color.g, color->color.b, 1.0) *
-                      tex;
-              }
-    )";
-}
-
-const std::string getOpenGLVertexShaderSource() {
-  return getVersion() + R"(
+                #version 300 es
                 precision highp float;
                 in vec3 position;
                 in vec2 uv_in;
@@ -94,8 +48,9 @@ const std::string getOpenGLVertexShaderSource() {
                 })";
 }
 
-const std::string getOpenGLFragmentShaderSource() {
-  return getVersion() + std::string(R"(
+std::string getOpenGLFragmentShaderSource() {
+  return std::string(R"(
+                #version 300 es
                 #extension GL_EXT_YUV_target : require
                 precision highp float;
                 uniform vec3 color;
@@ -110,7 +65,7 @@ const std::string getOpenGLFragmentShaderSource() {
                 })");
 }
 
-const std::string getVulkanVertexShaderSource() {
+std::string getVulkanVertexShaderSource() {
   return R"(
                 layout(location = 0) in vec3 position;
                 layout(location = 1) in vec2 uv_in;
@@ -129,7 +84,7 @@ const std::string getVulkanVertexShaderSource() {
                 )";
 }
 
-const std::string getVulkanFragmentShaderSource() {
+std::string getVulkanFragmentShaderSource() {
   return R"(
                 layout(location = 0) in vec2 uv;
                 layout(location = 1) in vec3 color;
@@ -145,8 +100,9 @@ const std::string getVulkanFragmentShaderSource() {
 
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
-  case igl::BackendType::Invalid:
   // @fb-only
+  case igl::BackendType::Invalid:
+  case igl::BackendType::Metal:
     IGL_ASSERT_NOT_REACHED();
     return nullptr;
   case igl::BackendType::Vulkan:
@@ -158,9 +114,6 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
                                                            "main",
                                                            "",
                                                            nullptr);
-  case igl::BackendType::Metal:
-    return igl::ShaderStagesCreator::fromLibraryStringInput(
-        device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
   case igl::BackendType::OpenGL:
     return igl::ShaderStagesCreator::fromModuleStringInput(device,
                                                            getOpenGLVertexShaderSource().c_str(),
@@ -177,7 +130,13 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
 } // namespace
 
 YUVColorSession::YUVColorSession(std::shared_ptr<Platform> platform) :
-  RenderSession(std::move(platform)) {}
+  RenderSession(std::move(platform)) {
+  listener_ = std::make_shared<Listener>(*this);
+  getPlatform().getInputDispatcher().addKeyListener(listener_);
+  getPlatform().getInputDispatcher().addMouseListener(listener_);
+  imguiSession_ = std::make_unique<iglu::imgui::Session>(getPlatform().getDevice(),
+                                                         getPlatform().getInputDispatcher());
+}
 
 // clang-tidy off
 void YUVColorSession::initialize() noexcept {
@@ -203,27 +162,35 @@ void YUVColorSession::initialize() noexcept {
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
   IGL_ASSERT(vertexInput0_ != nullptr);
 
-  // Sampler & Texture
-  samp0_ = device.createSamplerState(SamplerStateDesc::newLinear(), nullptr);
-  IGL_ASSERT(samp0_ != nullptr);
+  // Samplers & Textures
 
-  // https://github.com/facebook/igl/blob/main/shell/resources/images/output_frame_900.txt
-  const auto fileData = getPlatform().getFileLoader().loadBinaryData("output_frame_900.yuv");
+  auto createYUVDemo = [this](igl::IDevice& device,
+                              const char* demoName,
+                              igl::TextureFormat yuvFormat,
+                              const char* fileName) {
+    const uint32_t width = 1920;
+    const uint32_t height = 1080;
 
-  const uint32_t width = 1920;
-  const uint32_t height = 1080;
+    auto sampler =
+        device.createSamplerState(SamplerStateDesc::newYUV(yuvFormat, "YUVSampler"), nullptr);
+    IGL_ASSERT(sampler != nullptr);
 
-  const igl::TextureDesc textureDesc =
-      igl::TextureDesc::new2D(igl::TextureFormat::R_UNorm8,
-                              width,
-                              height,
-                              TextureDesc::TextureUsageBits::Sampled,
-                              "YUV texture");
-  IGL_ASSERT(textureDesc.width * textureDesc.height + textureDesc.width * textureDesc.height / 2 ==
-             fileData.length);
-  tex0_ = device.createTexture(textureDesc, nullptr);
-  tex0_->upload(TextureRangeDesc{0, 0, 0, textureDesc.width, textureDesc.height},
-                fileData.data.get());
+    auto& fileLoader = getPlatform().getFileLoader();
+    const auto fileData = fileLoader.loadBinaryData(fileName);
+    IGL_ASSERT_MSG(fileData.data && fileData.length, "Cannot load texture file");
+
+    const igl::TextureDesc textureDesc = igl::TextureDesc::new2D(
+        yuvFormat, width, height, TextureDesc::TextureUsageBits::Sampled, "YUV texture");
+    IGL_ASSERT(width * height + width * height / 2 == fileData.length);
+    auto texture = device.createTexture(textureDesc, nullptr);
+    IGL_ASSERT(texture);
+    texture->upload(TextureRangeDesc{0, 0, 0, width, height}, fileData.data.get());
+
+    this->yuvFormatDemos_.push_back(YUVFormatDemo{demoName, sampler, texture, nullptr});
+  };
+
+  createYUVDemo(device, "YUV 420p", igl::TextureFormat::YUV_420p, "output_frame_900.420p.yuv");
+  createYUVDemo(device, "YUV NV12", igl::TextureFormat::YUV_NV12, "output_frame_900.nv12.yuv");
 
   shaderStages_ = getShaderStagesForBackend(device);
   IGL_ASSERT(shaderStages_ != nullptr);
@@ -255,12 +222,11 @@ void YUVColorSession::initialize() noexcept {
 
 void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   igl::Result ret;
+  framebufferDesc_.colorAttachments[0].texture = surfaceTextures.color;
   if (framebuffer_ == nullptr) {
-    igl::FramebufferDesc framebufferDesc;
-    framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
-    framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
     IGL_ASSERT(ret.isOk());
-    framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
+    framebufferDesc_.depthAttachment.texture = surfaceTextures.depth;
+    framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc_, &ret);
     IGL_ASSERT(ret.isOk());
     IGL_ASSERT(framebuffer_ != nullptr);
   } else {
@@ -269,8 +235,9 @@ void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   const size_t _textureUnit = 0;
 
-  // Graphics pipeline
-  if (!pipelineState_) {
+  YUVFormatDemo& demo = yuvFormatDemos_[currentDemo_];
+
+  if (!demo.pipelineState) {
     RenderPipelineDesc desc;
     desc.vertexInputState = vertexInput0_;
     desc.shaderStages = shaderStages_;
@@ -282,12 +249,10 @@ void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     desc.fragmentUnitSamplerMap[_textureUnit] = IGL_NAMEHANDLE("inputImage");
     desc.cullMode = igl::CullMode::Back;
     desc.frontFaceWinding = igl::WindingMode::Clockwise;
+    desc.immutableSamplers[_textureUnit] = demo.sampler; // Ycbcr sampler
 
-    pipelineState_ = getPlatform().getDevice().createRenderPipeline(desc, nullptr);
-    IGL_ASSERT(pipelineState_ != nullptr);
-
-    // Set up uniform descriptors
-    fragmentUniformDescriptors_.emplace_back();
+    demo.pipelineState = getPlatform().getDevice().createRenderPipeline(desc, nullptr);
+    IGL_ASSERT(demo.pipelineState != nullptr);
   }
 
   // Command Buffers
@@ -304,18 +269,35 @@ void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Submit commands
-  std::shared_ptr<igl::IRenderCommandEncoder> commands =
+  const std::shared_ptr<igl::IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_ASSERT(commands != nullptr);
   if (commands) {
     commands->bindVertexBuffer(0, *vb0_);
     commands->bindVertexBuffer(1, *vb0_);
-    commands->bindRenderPipelineState(pipelineState_);
+    commands->bindRenderPipelineState(demo.pipelineState);
     commands->bindBuffer(0, fragmentParamBuffer_, 0);
-    commands->bindTexture(_textureUnit, BindTarget::kFragment, tex0_.get());
-    commands->bindSamplerState(_textureUnit, BindTarget::kFragment, samp0_.get());
+    commands->bindTexture(_textureUnit, BindTarget::kFragment, demo.texture.get());
+    commands->bindSamplerState(_textureUnit, BindTarget::kFragment, demo.sampler.get());
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
     commands->drawIndexed(6);
+
+    // draw the YUV format name using ImGui
+    {
+      imguiSession_->beginFrame(framebufferDesc_,
+                                getPlatform().getDisplayContext().pixelsPerPoint * 2);
+      const ImGuiWindowFlags flags =
+          ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+          ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
+          ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove;
+      ImGui::SetNextWindowPos({15.0f, 15.0f});
+      ImGui::SetNextWindowBgAlpha(0.30f);
+      ImGui::Begin("##FormatYUV", nullptr, flags);
+      ImGui::Text("%s", demo.name);
+      ImGui::Text("Press any key to change");
+      ImGui::End();
+      imguiSession_->endFrame(getPlatform().getDevice(), *commands);
+    }
 
     commands->endEncoding();
   }
@@ -328,6 +310,32 @@ void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   IGL_ASSERT(commandQueue_ != nullptr);
   commandQueue_->submit(*buffer);
   RenderSession::update(surfaceTextures);
+}
+
+void YUVColorSession::nextFormatDemo() {
+  currentDemo_ = (currentDemo_ + 1) % yuvFormatDemos_.size();
+}
+
+bool YUVColorSession::Listener::process(const KeyEvent& event) {
+  if (!event.isDown) {
+    session.nextFormatDemo();
+  }
+  return true;
+}
+
+bool YUVColorSession::Listener::process(const MouseButtonEvent& event) {
+  if (!event.isDown) {
+    session.nextFormatDemo();
+  }
+  return true;
+}
+
+bool YUVColorSession::Listener::process(const MouseMotionEvent& /*event*/) {
+  return false;
+}
+
+bool YUVColorSession::Listener::process(const MouseWheelEvent& /*event*/) {
+  return false;
 }
 
 } // namespace igl::shell

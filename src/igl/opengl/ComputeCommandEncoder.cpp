@@ -19,8 +19,7 @@
 #include <igl/opengl/Shader.h>
 #include <igl/opengl/Texture.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 ///----------------------------------------------------------------------------
 /// MARK: - ComputeCommandEncoder
@@ -65,7 +64,7 @@ void ComputeCommandEncoder::pushDebugGroupLabel(const char* label,
                                                 const igl::Color& /*color*/) const {
   IGL_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
-    std::string_view labelSV(label);
+    const std::string_view labelSV(label);
     getContext().pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, labelSV.length(), labelSV.data());
   } else {
     IGL_LOG_ERROR_ONCE(
@@ -77,7 +76,7 @@ void ComputeCommandEncoder::insertDebugEventLabel(const char* label,
                                                   const igl::Color& /*color*/) const {
   IGL_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
-    std::string_view labelSV(label);
+    const std::string_view labelSV(label);
     getContext().debugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
                                     GL_DEBUG_TYPE_MARKER,
                                     0,
@@ -137,5 +136,4 @@ void ComputeCommandEncoder::bindPushConstants(const void* /*data*/,
   IGL_ASSERT_NOT_IMPLEMENTED();
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

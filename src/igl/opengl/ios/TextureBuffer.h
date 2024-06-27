@@ -11,9 +11,7 @@
 #include <CoreVideo/CVPixelBuffer.h>
 #include <igl/opengl/TextureBuffer.h>
 
-namespace igl {
-namespace opengl {
-namespace ios {
+namespace igl::opengl::ios {
 
 class TextureBuffer final : public opengl::TextureBuffer {
   using Super = opengl::TextureBuffer;
@@ -58,6 +56,4 @@ class TextureBuffer final : public opengl::TextureBuffer {
   bool isCreated_ = false;
 };
 
-} // namespace ios
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::ios

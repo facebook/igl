@@ -16,8 +16,7 @@
 bool operator==(const VkAttachmentDescription& a, const VkAttachmentDescription& b);
 bool operator==(const VkAttachmentReference& a, const VkAttachmentReference& b);
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 /// @brief A helper class to build VkRenderPass objects.
 class VulkanRenderPassBuilder final {
@@ -55,8 +54,7 @@ class VulkanRenderPassBuilder final {
       VkAttachmentStoreOp stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
       VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
       VkImageLayout finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-  VulkanRenderPassBuilder& setMultiviewMasks(const uint32_t viewMask,
-                                             const uint32_t correlationMask);
+  VulkanRenderPassBuilder& setMultiviewMasks(uint32_t viewMask, uint32_t correlationMask);
 
   // comparison operator and a hash function for std::unordered_map<>
   bool operator==(const VulkanRenderPassBuilder& other) const;
@@ -84,5 +82,4 @@ class VulkanRenderPassBuilder final {
   uint32_t correlationMask_ = 0;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

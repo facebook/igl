@@ -15,8 +15,7 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/util/SpvReflection.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 /**
  * @brief RAII wrapper for a Vulkan shader module.
@@ -31,11 +30,11 @@ class VulkanShaderModule final {
   ~VulkanShaderModule();
 
   /** @brief Returns the underlying Vulkan shader module */
-  VkShaderModule getVkShaderModule() const {
+  [[nodiscard]] VkShaderModule getVkShaderModule() const {
     return vkShaderModule_;
   }
 
-  const util::SpvModuleInfo& getSpvModuleInfo() const {
+  [[nodiscard]] const util::SpvModuleInfo& getSpvModuleInfo() const {
     return moduleInfo_;
   }
 
@@ -46,5 +45,4 @@ class VulkanShaderModule final {
   util::SpvModuleInfo moduleInfo_ = {};
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

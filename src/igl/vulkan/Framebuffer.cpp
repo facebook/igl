@@ -142,9 +142,9 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   const auto& ctx = device_.getVulkanContext();
 
   // Extract the underlying VkCommandBuffer
-  CommandBufferDesc cbDesc;
-  std::shared_ptr<ICommandBuffer> buffer = cmdQueue.createCommandBuffer(cbDesc, nullptr);
-  CommandBuffer& vulkanBuffer = static_cast<CommandBuffer&>(*buffer);
+  const CommandBufferDesc cbDesc;
+  const std::shared_ptr<ICommandBuffer> buffer = cmdQueue.createCommandBuffer(cbDesc, nullptr);
+  const auto& vulkanBuffer = static_cast<CommandBuffer&>(*buffer);
   VkCommandBuffer cmdBuf = vulkanBuffer.getVkCommandBuffer();
 
   const std::shared_ptr<igl::ITexture>& srcTexture = getColorAttachment(index);
@@ -223,8 +223,9 @@ void Framebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
 }
 
 void Framebuffer::updateResolveAttachment(std::shared_ptr<ITexture> texture) {
-  if (getColorAttachment(0) && getResolveColorAttachment(0) != texture)
+  if (getColorAttachment(0) && getResolveColorAttachment(0) != texture) {
     desc_.colorAttachments[0].resolveTexture = std::move(texture);
+  }
 }
 
 void Framebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepthStencil) {

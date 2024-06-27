@@ -70,7 +70,7 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   void bindPushConstants(const void* data, size_t length, size_t offset) override;
 
   /// @brief Returns the underlying Vulkan command buffer handle
-  VkCommandBuffer getVkCommandBuffer() const {
+  [[nodiscard]] VkCommandBuffer getVkCommandBuffer() const {
     return cmdBuffer_;
   }
 

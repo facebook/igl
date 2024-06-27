@@ -37,12 +37,11 @@
     }                          \
   } while (0)
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 
 void BasicFramebufferSession::initialize() noexcept {
   // Create commandQueue
-  igl::CommandQueueDesc desc{igl::CommandQueueType::Graphics};
+  const igl::CommandQueueDesc desc{igl::CommandQueueType::Graphics};
   commandQueue_ = getPlatform().getDevice().createCommandQueue(desc, nullptr);
   ASSERT_TRUE(commandQueue_ != nullptr);
 
@@ -67,7 +66,7 @@ void BasicFramebufferSession::update(igl::SurfaceTextures surfaceTextures) noexc
   }
 
   // Create/submit command buffer
-  igl::CommandBufferDesc cbDesc;
+  const igl::CommandBufferDesc cbDesc;
   auto buffer = commandQueue_->createCommandBuffer(cbDesc, &ret);
   ASSERT_TRUE(buffer != nullptr);
   ASSERT_TRUE(ret.isOk());
@@ -81,5 +80,4 @@ void BasicFramebufferSession::update(igl::SurfaceTextures surfaceTextures) noexc
   commandQueue_->submit(*buffer);
 }
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

@@ -15,8 +15,7 @@
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 
 struct VertexPosUv {
   iglu::simdtypes::float3 position;
@@ -106,22 +105,22 @@ static std::string getOpenGLFragmentShaderSource() {
 }
 
 static std::string getVulkanVertexShaderSource() {
-  return R"(
-                layout(location = 0) in vec3 position;
-                layout(location = 1) in vec2 uv_in;
-                layout(location = 0) out vec2 uv;
-                layout(location = 1) out vec3 color;
+  return R"(precision highp float;
+            layout(location = 0) in vec3 position;
+            layout(location = 1) in vec2 uv_in;
+            layout(location = 0) out vec2 uv;
+            layout(location = 1) out vec3 color;
 
-                layout (set = 1, binding = 0, std140) uniform UniformsPerObject {
-                  vec3 color;
-                } perObject;
+            layout (set = 1, binding = 0, std140) uniform UniformsPerObject {
+              vec3 color;
+            } perObject;
 
-                void main() {
-                  gl_Position = vec4(position, 1.0);
-                  uv = uv_in;
-                  color = perObject.color;
-                }
-                )";
+            void main() {
+              gl_Position = vec4(position, 1.0);
+              uv = uv_in;
+              color = perObject.color;
+            }
+            )";
 }
 
 static std::string getVulkanFragmentShaderSource() {
@@ -145,15 +144,23 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
   case igl::BackendType::Invalid:
     IGL_ASSERT_NOT_REACHED();
     return nullptr;
-  case igl::BackendType::Vulkan:
+  case igl::BackendType::Vulkan: {
+    auto vertexSource = getVulkanVertexShaderSource();
+    if (device.hasFeature(DeviceFeatures::Multiview)) {
+      vertexSource = R"(#version 450
+                        #extension GL_OVR_multiview2 : require
+                        layout(num_views = 2) in;)" +
+                     vertexSource;
+    }
     return igl::ShaderStagesCreator::fromModuleStringInput(device,
-                                                           getVulkanVertexShaderSource().c_str(),
+                                                           vertexSource.c_str(),
                                                            "main",
                                                            "",
                                                            getVulkanFragmentShaderSource().c_str(),
                                                            "main",
                                                            "",
                                                            nullptr);
+  }
   // @fb-only
     // @fb-only
         // @fb-only
@@ -189,11 +196,12 @@ void ColorSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Vertex & Index buffer
-  BufferDesc vbDesc =
+  const BufferDesc vbDesc =
       BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData));
   vb0_ = device.createBuffer(vbDesc, nullptr);
   IGL_ASSERT(vb0_ != nullptr);
-  BufferDesc ibDesc = BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
+  const BufferDesc ibDesc =
+      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
   ib0_ = device.createBuffer(ibDesc, nullptr);
   IGL_ASSERT(ib0_ != nullptr);
 
@@ -251,6 +259,8 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     igl::FramebufferDesc framebufferDesc;
     framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
     framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
+    framebufferDesc.mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
+                                                                     : FramebufferMode::Mono;
     IGL_ASSERT(ret.isOk());
     framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
     IGL_ASSERT(ret.isOk());
@@ -259,7 +269,7 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     framebuffer_->updateDrawable(surfaceTextures.color);
   }
 
-  size_t _textureUnit = 0;
+  const size_t _textureUnit = 0;
 
   // Graphics pipeline
   if (pipelineState_ == nullptr) {
@@ -290,7 +300,7 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Command Buffers
-  CommandBufferDesc cbDesc;
+  const CommandBufferDesc cbDesc;
   auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
   IGL_ASSERT(buffer != nullptr);
   auto drawableSurface = framebuffer_->getColorAttachment(0);
@@ -313,7 +323,7 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Submit commands
-  std::shared_ptr<igl::IRenderCommandEncoder> commands =
+  const std::shared_ptr<igl::IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_ASSERT(commands != nullptr);
   if (commands) {
@@ -349,5 +359,4 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   RenderSession::update(surfaceTextures);
 }
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

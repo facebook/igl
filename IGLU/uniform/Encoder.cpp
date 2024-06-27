@@ -12,8 +12,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-namespace iglu {
-namespace uniform {
+namespace iglu::uniform {
 
 // ----------------------------------------------------------------------------
 
@@ -49,7 +48,7 @@ void encodeRenderUniform(igl::IRenderCommandEncoder& encoder,
                          const Descriptor& uniform,
                          Alignment alignment) {
   const void* data = uniform.data(alignment);
-  size_t numBytes = uniform.numBytes(alignment);
+  const size_t numBytes = uniform.numBytes(alignment);
   IGL_ASSERT_MSG(numBytes <= 4 * 1024,
                  "bindBytes should only be used for uniforms smaller than 4kb");
   encoder.bindBytes(bufferIndex, bindTarget, data, static_cast<int>(numBytes));
@@ -59,7 +58,7 @@ void encodeAlignedCompute(igl::IComputeCommandEncoder& encoder,
                           int bufferIndex,
                           const Descriptor& uniform) {
   const void* data = uniform.data(Alignment::Aligned);
-  size_t numBytes = uniform.numBytes(Alignment::Aligned);
+  const size_t numBytes = uniform.numBytes(Alignment::Aligned);
   IGL_ASSERT_MSG(numBytes <= 4 * 1024,
                  "bindBytes should only be used for uniforms smaller than 4kb");
   encoder.bindBytes(bufferIndex, data, static_cast<int>(numBytes));
@@ -74,7 +73,7 @@ Encoder::Encoder(igl::BackendType backendType) : backendType_(backendType) {}
 void Encoder::operator()(igl::IRenderCommandEncoder& encoder,
                          uint8_t bindTarget,
                          const Descriptor& uniform) const noexcept {
-  int bufferIndex =
+  const int bufferIndex =
       uniform.getIndex(bindTarget == igl::BindTarget::kVertex ? igl::ShaderStage::Vertex
                                                               : igl::ShaderStage::Fragment);
   if (!IGL_VERIFY(bufferIndex >= 0)) {
@@ -100,7 +99,7 @@ void Encoder::operator()(igl::IRenderCommandEncoder& encoder,
 
 void Encoder::operator()(igl::IComputeCommandEncoder& encoder,
                          const Descriptor& uniform) const noexcept {
-  int bufferIndex = uniform.getIndex(igl::ShaderStage::Compute);
+  const int bufferIndex = uniform.getIndex(igl::ShaderStage::Compute);
   if (!IGL_VERIFY(bufferIndex >= 0)) {
     return;
   }
@@ -120,5 +119,4 @@ void Encoder::operator()(igl::IComputeCommandEncoder& encoder,
   }
 }
 
-} // namespace uniform
-} // namespace iglu
+} // namespace iglu::uniform

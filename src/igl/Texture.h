@@ -243,6 +243,7 @@ struct TextureFormatProperties {
   const uint8_t minBlocksX = 1;
   const uint8_t minBlocksY = 1;
   const uint8_t minBlocksZ = 1;
+  const uint8_t numPlanes = 1;
   const uint8_t flags = 0;
 
   /**
@@ -475,7 +476,7 @@ struct TextureDesc {
   ResourceStorage storage = ResourceStorage::Invalid;
   TextureTiling tiling = TextureTiling::Optimal;
 
-  std::string debugName = "";
+  std::string debugName;
 
   bool operator==(const TextureDesc& rhs) const;
   bool operator!=(const TextureDesc& rhs) const;
@@ -630,6 +631,37 @@ struct TextureDesc {
                        debugName ? debugName : ""};
   }
 
+#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+  /**
+   * @brief Utility to create a new image texture with linked hardware buffer
+   *
+   * @param format The format of the texture
+   * @param usage A combination of TextureUsage flags
+   * @param width  The width of the texture
+   * @param height The height of the texture
+   * @param debugName An optional debug name
+   * @return TextureDesc
+   */
+  static TextureDesc newNativeHWBufferImage(TextureFormat format,
+                                            TextureUsage usage,
+                                            size_t width,
+                                            size_t height,
+                                            const char* IGL_NULLABLE debugName = nullptr) {
+    return TextureDesc{width,
+                       height,
+                       1,
+                       1,
+                       1,
+                       usage,
+                       1,
+                       TextureType::TwoD,
+                       format,
+                       ResourceStorage::Shared,
+                       TextureTiling::Optimal,
+                       debugName ? debugName : ""};
+  }
+#endif
+
   /**
    * @brief Creates a TextureRangeDesc equivalent to descriptor.
    *
@@ -657,7 +689,7 @@ class ITexture : public ITrackedResource<ITexture> {
  public:
   explicit ITexture(TextureFormat format) :
     properties_(TextureFormatProperties::fromTextureFormat(format)) {}
-  virtual ~ITexture() = default;
+  ~ITexture() override = default;
 
   /**
    * @brief Indicates if this type of texture supports upload.
@@ -955,7 +987,7 @@ namespace std {
 template<>
 struct hash<igl::TextureFormat> {
   // Declare member
-  size_t operator()(igl::TextureFormat const& /*key*/) const;
+  size_t operator()(const igl::TextureFormat& /*key*/) const;
 };
 
 } // namespace std

@@ -58,7 +58,7 @@
   }
 
   if (owner_) {
-    auto& observer = owner_->stream()->observer();
+    const auto& observer = owner_->stream()->observer();
     if (observer) {
       observer(*owner_->stream(), event);
     }
@@ -80,7 +80,7 @@ StreamAdapterApple::~StreamAdapterApple() {
 
 bool StreamAdapterApple::initialize(Stream* owner, NSStream* stream) noexcept {
   IGL_ASSERT(owner && stream);
-  bool result = IGL_VERIFY(nullptr == owner_ && nil == stream_);
+  const bool result = IGL_VERIFY(nullptr == owner_ && nil == stream_);
   if (result) {
     owner_ = owner;
     stream_ = stream;

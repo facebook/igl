@@ -41,7 +41,7 @@ std::string findSubdir(const char* subdir, const std::string& fileName) {
     return fullPath.string();
   }
 
-  return std::string();
+  return {};
 }
 
 } // namespace
@@ -96,6 +96,7 @@ std::string FileLoaderWin::fullPath(const std::string& fileName) const {
       "samples/resources/fonts/",
       "samples/resources/fonts/optimistic",
       // @fb-only
+      // @fb-only
   };
 
   // find folders somewhere above our current directory
@@ -105,8 +106,7 @@ std::string FileLoaderWin::fullPath(const std::string& fileName) const {
     }
   }
 
-  IGL_ASSERT_NOT_REACHED();
-  return "";
+  return fileName;
 }
 
 } // namespace igl::shell

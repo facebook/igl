@@ -14,8 +14,7 @@
 #include <igl/opengl/TextureTarget.h>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 // Picking this just to match the texture we will use. If you use a different
 // size texture, then you will have to either create a new offscreenTexture_
@@ -56,7 +55,7 @@ class TextureTargetOGLTest : public ::testing::Test {
 
   // Member variables
  public:
-  opengl::IContext* context_;
+  opengl::IContext* context_{};
   std::shared_ptr<::igl::IDevice> device_;
 };
 
@@ -142,12 +141,12 @@ TEST_F(TextureTargetOGLTest, TextureCreation) {
 //                           attachAsStencil()
 //
 TEST_F(TextureTargetOGLTest, TextureBindAndAttachAndDetach) {
-  std::unique_ptr<igl::opengl::TextureTarget> textureTarget_;
+  const std::unique_ptr<igl::opengl::TextureTarget> textureTarget_;
   Result ret;
-  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           OFFSCREEN_TEX_WIDTH,
-                                           OFFSCREEN_TEX_HEIGHT,
-                                           TextureDesc::TextureUsageBits::Attachment);
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 OFFSCREEN_TEX_WIDTH,
+                                                 OFFSCREEN_TEX_HEIGHT,
+                                                 TextureDesc::TextureUsageBits::Attachment);
 
   // Create 3 types of targets
   auto colorTarget_ = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
@@ -262,7 +261,7 @@ TEST_F(TextureTargetOGLTest, TextureBindAndAttachAndDetach) {
 }
 
 TEST_F(TextureTargetOGLTest, CreateWithDebugName) {
-  std::unique_ptr<igl::opengl::TextureTarget> textureTarget_;
+  const std::unique_ptr<igl::opengl::TextureTarget> textureTarget_;
   Result ret;
   TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
                                            OFFSCREEN_TEX_WIDTH,
@@ -277,5 +276,4 @@ TEST_F(TextureTargetOGLTest, CreateWithDebugName) {
   ret = target_->create(texDesc, false);
   ASSERT_EQ(ret.code, Result::Code::Ok);
 }
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

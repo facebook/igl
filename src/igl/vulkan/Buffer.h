@@ -10,8 +10,7 @@
 #include <igl/Buffer.h>
 #include <igl/vulkan/Common.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class Device;
 class VulkanBuffer;
@@ -33,18 +32,18 @@ class Buffer final : public igl::IBuffer {
 
   void unmap() override;
 
-  BufferDesc::BufferAPIHint requestedApiHints() const noexcept override;
-  BufferDesc::BufferAPIHint acceptedApiHints() const noexcept override;
-  ResourceStorage storage() const noexcept override;
+  [[nodiscard]] BufferDesc::BufferAPIHint requestedApiHints() const noexcept override;
+  [[nodiscard]] BufferDesc::BufferAPIHint acceptedApiHints() const noexcept override;
+  [[nodiscard]] ResourceStorage storage() const noexcept override;
 
-  size_t getSizeInBytes() const override;
-  uint64_t gpuAddress(size_t offset) const override;
+  [[nodiscard]] size_t getSizeInBytes() const override;
+  [[nodiscard]] uint64_t gpuAddress(size_t offset) const override;
 
-  BufferDesc::BufferType getBufferType() const override {
+  [[nodiscard]] BufferDesc::BufferType getBufferType() const override {
     return desc_.type;
   }
 
-  VkBuffer getVkBuffer() const;
+  [[nodiscard]] VkBuffer getVkBuffer() const;
   [[nodiscard]] VkBufferUsageFlags getBufferUsageFlags() const;
 
   /// @brief Returns the current active VulkanBuffer object managed by this class. Since this class
@@ -75,5 +74,4 @@ class Buffer final : public igl::IBuffer {
   BufferDesc::BufferAPIHint requestedApiHints_ = 0;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

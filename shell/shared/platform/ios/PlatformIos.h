@@ -19,10 +19,10 @@ class PlatformIos : public Platform {
   ~PlatformIos() override = default;
   PlatformIos(std::shared_ptr<igl::IDevice> device);
   igl::IDevice& getDevice() noexcept override;
-  std::shared_ptr<igl::IDevice> getDevicePtr() const noexcept override;
+  [[nodiscard]] std::shared_ptr<igl::IDevice> getDevicePtr() const noexcept override;
   ImageLoader& getImageLoader() noexcept override;
   [[nodiscard]] const ImageWriter& getImageWriter() const noexcept override;
-  FileLoader& getFileLoader() const noexcept override;
+  [[nodiscard]] FileLoader& getFileLoader() const noexcept override;
 
  private:
   std::shared_ptr<igl::IDevice> device_;

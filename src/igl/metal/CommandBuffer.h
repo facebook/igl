@@ -10,8 +10,7 @@
 #include <Metal/Metal.h>
 #include <igl/CommandBuffer.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 class CommandBuffer final : public ICommandBuffer,
                             public std::enable_shared_from_this<CommandBuffer> {
@@ -45,5 +44,4 @@ class CommandBuffer final : public ICommandBuffer,
   id<MTLCommandBuffer> value_;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

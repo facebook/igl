@@ -68,12 +68,12 @@ void OpenGLTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
     auto& glTexture = static_cast<igl::opengl::Texture&>(*texture_);
     auto& context = glTexture.getContext();
 
-    auto oglFrameBuffer = static_cast<igl::opengl::Framebuffer*>(&(*frameBuffer_));
+    auto* oglFrameBuffer = static_cast<igl::opengl::Framebuffer*>(&(*frameBuffer_));
     oglFrameBuffer->bindBuffer();
 
     oglFrameBuffer->bindBufferForRead();
     if (!textureAttached_) {
-      igl::opengl::Texture::AttachmentParams params;
+      igl::opengl::Texture::AttachmentParams params{};
       params.read = true;
       params.face = 0;
       params.layer = 0;
@@ -138,7 +138,7 @@ size_t OpenGLTextureAccessor::copyBytes(unsigned char* ptr, size_t length) {
     auto& texture = static_cast<igl::opengl::Texture&>(*texture_);
     auto& context = texture.getContext();
     context.bindBuffer(GL_PIXEL_PACK_BUFFER, pboId_);
-    auto bytes =
+    auto* bytes =
         context.mapBufferRange(GL_PIXEL_PACK_BUFFER, 0, textureBytesPerImage_, GL_MAP_READ_BIT);
     if (IGL_VERIFY(bytes)) {
       checked_memcpy_robust(ptr, length, bytes, textureBytesPerImage_, textureBytesPerImage_);

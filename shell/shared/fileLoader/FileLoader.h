@@ -26,13 +26,13 @@ class FileLoader {
   virtual FileData loadBinaryData(const std::string& /* filename */) {
     return {};
   }
-  virtual bool fileExists(const std::string& /* filename */) const {
+  [[nodiscard]] virtual bool fileExists(const std::string& /* filename */) const {
     return false;
   }
-  virtual std::string basePath() const {
+  [[nodiscard]] virtual std::string basePath() const {
     return ".";
   }
-  virtual std::string fullPath(const std::string& /* filename */) const {
+  [[nodiscard]] virtual std::string fullPath(const std::string& /* filename */) const {
     return "";
   }
 

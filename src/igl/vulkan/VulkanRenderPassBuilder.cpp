@@ -19,8 +19,7 @@ bool operator==(const VkAttachmentReference& a, const VkAttachmentReference& b) 
   return a.attachment == b.attachment && a.layout == b.layout;
 }
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
                                         VkDevice device,
@@ -185,5 +184,4 @@ uint64_t VulkanRenderPassBuilder::HashFunction::operator()(
   return hash;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

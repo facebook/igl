@@ -17,8 +17,7 @@
 #include <igl/metal/Shader.h>
 #include <igl/metal/VertexInputState.h>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 class RenderPipelineReflectionMTLTest : public ::testing::Test {
  public:
@@ -147,5 +146,4 @@ TEST_F(RenderPipelineReflectionMTLTest, VerifySamplers) {
   ASSERT_EQ(theOneSampler.name, "linearSampler");
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

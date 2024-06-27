@@ -14,8 +14,7 @@
 #include <igl/IGL.h>
 #include <string>
 
-namespace iglu {
-namespace tests {
+namespace iglu::tests {
 
 namespace {
 
@@ -35,10 +34,10 @@ struct Compare<glm::mat3> {
   static void VerifyAligned(const glm::mat3* expected, const void* aligned) {
     const auto& alignedValue =
         *static_cast<const typename uniform::Trait<glm::mat3>::Aligned*>(aligned);
-    auto expectedPtr = static_cast<const float*>(glm::value_ptr(*expected));
+    const auto* expectedPtr = static_cast<const float*>(glm::value_ptr(*expected));
     for (int i = 0; i < 3; i++) {
       // base of each row
-      auto alignedRowPtr = static_cast<const float*>(glm::value_ptr(alignedValue[i]));
+      const auto* alignedRowPtr = static_cast<const float*>(glm::value_ptr(alignedValue[i]));
       for (int j = 0; j < 3; j++) {
         ASSERT_EQ(*expectedPtr++, *alignedRowPtr++);
       }
@@ -46,7 +45,7 @@ struct Compare<glm::mat3> {
   }
 };
 
-void TestIndex(uniform::Descriptor& uniform) {
+inline void TestIndex(uniform::Descriptor& uniform) {
   ASSERT_EQ(uniform.getIndex(igl::ShaderStage::Fragment), -1);
   ASSERT_EQ(uniform.getIndex(igl::ShaderStage::Vertex), -1);
 
@@ -111,5 +110,4 @@ void TestUniformData(const std::vector<T>& expected, uniform::DescriptorVector<T
 }
 
 } // namespace
-} // namespace tests
-} // namespace iglu
+} // namespace iglu::tests

@@ -14,6 +14,18 @@
 #include <cstdarg>
 #include <igl/Macros.h>
 
+#ifdef LOG_INFO
+#undef LOG_INFO
+#endif
+
+#ifdef LOG_WARNING
+#undef LOG_WARNING
+#endif
+
+#ifdef LOG_ERROR
+#undef LOG_ERROR
+#endif
+
 enum class IGLLogLevel {
   LOG_ERROR = 1,
   LOG_WARNING,

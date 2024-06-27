@@ -23,8 +23,7 @@ constexpr uint32_t kIGLMetalBeginCommandBufferToCapture = 0;
 constexpr uint32_t kIGLMetalEndCommandBufferToCapture =
     kIGLMetalBeginCommandBufferToCapture + kIGLMetalNumberCommandBuffersToCapture;
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 CommandQueue::CommandQueue(id<MTLCommandQueue> value,
                            std::shared_ptr<BufferSynchronizationManager> syncManager,
@@ -88,5 +87,4 @@ void CommandQueue::stopCapture() {
   [captureManager stopCapture];
 }
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

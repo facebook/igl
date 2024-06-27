@@ -29,8 +29,7 @@
 #error "Unsupported testing platform"
 #endif
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 class HWDeviceOGLTest : public ::testing::Test {
  public:
@@ -76,10 +75,10 @@ class HWDeviceOGLTest : public ::testing::Test {
 
 /// This test ensures devices are returned correctly when being queried
 TEST_F(HWDeviceOGLTest, QueryDevicesSanityTest) {
-  HWDeviceQueryDesc queryDesc(HWDeviceType::DiscreteGpu);
+  const HWDeviceQueryDesc queryDesc(HWDeviceType::DiscreteGpu);
   Result result;
 
-  std::vector<HWDeviceDesc> devices = iglHWDev_->queryDevices(queryDesc, &result);
+  const std::vector<HWDeviceDesc> devices = iglHWDev_->queryDevices(queryDesc, &result);
 
   // Currently HWDevice always returns ok when being queried
   ASSERT_TRUE(result.isOk());
@@ -87,18 +86,17 @@ TEST_F(HWDeviceOGLTest, QueryDevicesSanityTest) {
 
 /// This test ensures a device can be created when calling create()
 TEST_F(HWDeviceOGLTest, DeviceCreationSanityTest) {
-  uintptr_t guid = 0;
-  HWDeviceType type = HWDeviceType::Unknown;
-  HWDeviceDesc deviceDesc(guid, type);
+  const uintptr_t guid = 0;
+  const HWDeviceType type = HWDeviceType::Unknown;
+  const HWDeviceDesc deviceDesc(guid, type);
 
   auto renderingAPI = util::device::opengl::getOpenGLRenderingAPI();
   Result result;
-  std::unique_ptr<IDevice> device =
+  const std::unique_ptr<IDevice> device =
       iglHWDev_->create(deviceDesc, renderingAPI, IGL_EGL_NULL_WINDOW, &result);
 
   // Ensure the result of the device creation is ok
   ASSERT_TRUE(result.isOk());
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

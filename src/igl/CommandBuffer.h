@@ -123,7 +123,7 @@ class ICommandBuffer {
    * @returns the number of draw operations tracked by this CommandBuffer. This is tracked manually
    * via calls to incrementCurrentDrawCount().
    */
-  uint32_t getCurrentDrawCount() const {
+  [[nodiscard]] uint32_t getCurrentDrawCount() const {
     return statistics_.currentDrawCount;
   }
   /**

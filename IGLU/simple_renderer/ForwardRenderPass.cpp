@@ -11,11 +11,10 @@
 
 #include <utility>
 
-namespace iglu {
-namespace renderpass {
+namespace iglu::renderpass {
 
 ForwardRenderPass::ForwardRenderPass(igl::IDevice& device) {
-  igl::CommandQueueDesc desc;
+  const igl::CommandQueueDesc desc{};
   _commandQueue = device.createCommandQueue(desc, nullptr);
   _backendType = device.getBackendType();
 }
@@ -45,7 +44,7 @@ void ForwardRenderPass::begin(std::shared_ptr<igl::IFramebuffer> target,
   const igl::RenderPassDesc* finalDesc = renderPassDescOverride ? renderPassDescOverride
                                                                 : &defaultRenderPassDesc;
 
-  igl::CommandBufferDesc cbDesc;
+  const igl::CommandBufferDesc cbDesc;
   _commandBuffer = _commandQueue->createCommandBuffer(cbDesc, nullptr);
   _commandEncoder =
       _commandBuffer->createRenderCommandEncoder(*finalDesc, _framebuffer, {}, nullptr);
@@ -98,5 +97,4 @@ igl::IRenderCommandEncoder& ForwardRenderPass::activeCommandEncoder() {
   return *_commandEncoder;
 }
 
-} // namespace renderpass
-} // namespace iglu
+} // namespace iglu::renderpass

@@ -207,5 +207,6 @@ enum class TextureFormat : uint8_t {
   S_UInt8,
 
   YUV_NV12, // Semi-planar 8-bit YUV 4:2:0 NV12; 2 planes in a single image
+  YUV_420p, // Tri-planar  8-bit YUV 4:2:0;      3 planes in a single image
 };
 } // namespace igl

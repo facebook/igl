@@ -22,9 +22,7 @@
 
 namespace igl::shell::openxr::mobile {
 namespace {
-void enumerateSwapchainImages(igl::IDevice& device,
-                              XrSwapchain swapchain,
-                              std::vector<uint32_t>& outImages) {
+void enumerateSwapchainImages(XrSwapchain swapchain, std::vector<uint32_t>& outImages) {
   uint32_t numImages = 0;
   XR_CHECK(xrEnumerateSwapchainImages(swapchain, 0, &numImages, nullptr));
 
@@ -63,7 +61,7 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
     igl::TextureFormat externalTextureFormat,
     std::vector<std::shared_ptr<igl::ITexture>>& inOutTextures) {
   uint32_t imageIndex;
-  XrSwapchainImageAcquireInfo acquireInfo{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
+  const XrSwapchainImageAcquireInfo acquireInfo{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
   XR_CHECK(xrAcquireSwapchainImage(swapchain, &acquireInfo, &imageIndex));
 
   XrSwapchainImageWaitInfo waitInfo{XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
@@ -79,7 +77,7 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
   auto texture = inOutTextures[imageIndex];
   if (!texture || swapchainImageInfo.imageWidth != texture->getSize().width ||
       swapchainImageInfo.imageHeight != texture->getSize().height) {
-    const auto platformDevice = device.getPlatformDevice<igl::opengl::PlatformDevice>();
+    auto* const platformDevice = device.getPlatformDevice<igl::opengl::PlatformDevice>();
     texture = platformDevice->createTextureBufferExternal(
         glTexture,
         numViews > 1 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D,
@@ -105,8 +103,8 @@ void XrSwapchainProviderImplGLES::enumerateImages(
     XrSwapchain depthSwapchain,
     const impl::SwapchainImageInfo& /* swapchainImageInfo */,
     uint8_t /* numViews */) noexcept {
-  enumerateSwapchainImages(device, colorSwapchain, colorImages_);
-  enumerateSwapchainImages(device, depthSwapchain, depthImages_);
+  enumerateSwapchainImages(colorSwapchain, colorImages_);
+  enumerateSwapchainImages(depthSwapchain, depthImages_);
 }
 
 igl::SurfaceTextures XrSwapchainProviderImplGLES::getSurfaceTextures(

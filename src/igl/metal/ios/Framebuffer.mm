@@ -10,9 +10,7 @@
 #include <igl/metal/Texture.h>
 #include <vector>
 
-namespace igl {
-namespace metal {
-namespace ios {
+namespace igl::metal::ios {
 
 Framebuffer::Framebuffer(const FramebufferDesc& value) : metal::Framebuffer(value) {}
 
@@ -22,6 +20,4 @@ bool Framebuffer::canCopy(ICommandQueue& /* unused */,
   return texture.storageMode == MTLStorageModeShared;
 }
 
-} // namespace ios
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal::ios

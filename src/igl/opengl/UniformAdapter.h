@@ -14,8 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 class IContext;
 
 class UniformAdapter {
@@ -35,7 +34,7 @@ class UniformAdapter {
                         int index,
                         Result* outResult);
 
-  uint32_t getMaxUniforms() const {
+  [[nodiscard]] uint32_t getMaxUniforms() const {
     return maxUniforms_;
   }
 
@@ -71,5 +70,4 @@ class UniformAdapter {
 #endif // IGL_DEBUG
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

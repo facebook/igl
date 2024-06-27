@@ -20,28 +20,28 @@ struct ShellParams;
 
 class RenderSession {
  public:
-  RenderSession(std::shared_ptr<Platform> platform);
+  explicit RenderSession(std::shared_ptr<Platform> platform);
   virtual ~RenderSession() noexcept = default;
 
   virtual void initialize() noexcept {}
   // NOLINTNEXTLINE(performance-unnecessary-value-param)
   virtual void update(IGL_MAYBE_UNUSED igl::SurfaceTextures surfaceTextures) noexcept {}
-  virtual void dispose() noexcept {}
+  virtual void teardown() noexcept {}
 
   void updateDisplayScale(float scale) noexcept;
 
-  float pixelsPerPoint() const noexcept;
+  [[nodiscard]] float pixelsPerPoint() const noexcept;
   void setPixelsPerPoint(float scale) noexcept;
 
   virtual void setShellParams(const ShellParams& shellParams) noexcept;
 
   /// @brief Params provided to the session by the host
   /// @remark Params may vary each frame.
-  const ShellParams& shellParams() const noexcept;
+  [[nodiscard]] const ShellParams& shellParams() const noexcept;
 
   /// @brief Params provided by the session to the host.
   /// @remark Params may vary each frame.
-  const AppParams& appParams() const noexcept;
+  [[nodiscard]] const AppParams& appParams() const noexcept;
 
   void setCurrentQuadLayer(size_t layer) noexcept {
     currentQuadLayer_ = layer;
@@ -49,9 +49,9 @@ class RenderSession {
 
  protected:
   Platform& getPlatform() noexcept;
-  const Platform& getPlatform() const noexcept;
+  [[nodiscard]] const Platform& getPlatform() const noexcept;
 
-  const std::shared_ptr<Platform>& platform() const noexcept;
+  [[nodiscard]] const std::shared_ptr<Platform>& platform() const noexcept;
 
   AppParams& appParamsRef() noexcept;
 

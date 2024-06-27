@@ -11,8 +11,7 @@
 
 #include <utility>
 
-namespace iglu {
-namespace material {
+namespace iglu::material {
 
 Material::Material(igl::IDevice& device, std::string name) : name(std::move(name)) {
   setDepthTestConfig(device, _depthTestConfig);
@@ -77,5 +76,4 @@ void Material::bind(igl::IDevice& device,
   commandEncoder.bindDepthStencilState(_depthState);
 }
 
-} // namespace material
-} // namespace iglu
+} // namespace iglu::material

@@ -11,8 +11,7 @@
 #include <igl/CommandQueue.h>
 #include <igl/metal/Device.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 class BufferSynchronizationManager;
 class DeviceStatistics;
@@ -39,5 +38,4 @@ class CommandQueue final : public ICommandQueue {
   DeviceStatistics& deviceStatistics_;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

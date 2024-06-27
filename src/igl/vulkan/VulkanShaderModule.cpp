@@ -7,8 +7,7 @@
 
 #include <igl/vulkan/VulkanShaderModule.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 VulkanShaderModule::VulkanShaderModule(const VulkanFunctionTable& vf,
                                        VkDevice device,
@@ -20,5 +19,4 @@ VulkanShaderModule::~VulkanShaderModule() {
   vf_.vkDestroyShaderModule(device_, vkShaderModule_, nullptr);
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

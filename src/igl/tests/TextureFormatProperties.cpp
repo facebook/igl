@@ -16,7 +16,6 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 #include <igl/NameHandle.h>
-#include <igl/opengl/Device.h>
 #include <string>
 
 namespace igl::tests {
@@ -143,7 +142,7 @@ class TextureTest : public ::testing::Test {
     ASSERT_TRUE(uv_ != nullptr);
 
     // Initialize sampler state
-    SamplerStateDesc samplerDesc;
+    const SamplerStateDesc samplerDesc;
     samp_ = iglDev_->createSamplerState(samplerDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(samp_ != nullptr);

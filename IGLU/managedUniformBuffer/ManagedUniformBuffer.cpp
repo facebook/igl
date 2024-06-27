@@ -208,7 +208,7 @@ bool ManagedUniformBuffer::updateData(const char* name, const void* data, size_t
       // This could mean the user knows only a portion of the uniform data needs updating
       // However, if dataSize is larger than or equal to what we expect for this uniform, we will
       // only copy data up to the expected data size for this uniform
-      size_t uniformDataSize = getUniformDataSizeInternal(uniform);
+      const size_t uniformDataSize = getUniformDataSizeInternal(uniform);
       if (dataSize > uniformDataSize) {
         dataSize = uniformDataSize;
 #if IGL_DEBUG
@@ -236,9 +236,9 @@ size_t ManagedUniformBuffer::getUniformDataSize(const char* name) {
 }
 
 size_t ManagedUniformBuffer::getUniformDataSizeInternal(igl::UniformDesc& uniform) {
-  size_t uniformDataSize = uniform.elementStride != 0
-                               ? uniform.numElements * uniform.elementStride
-                               : uniform.numElements * igl::sizeForUniformType(uniform.type);
+  const size_t uniformDataSize = uniform.elementStride != 0
+                                     ? uniform.numElements * uniform.elementStride
+                                     : uniform.numElements * igl::sizeForUniformType(uniform.type);
   return uniformDataSize;
 }
 

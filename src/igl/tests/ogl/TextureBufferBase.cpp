@@ -15,8 +15,7 @@
 #include <igl/opengl/TextureBufferBase.h>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 #ifndef GL_TEXTURE_BINDING_RECTANGLE
 #define GL_TEXTURE_BINDING_RECTANGLE 0x84F6
@@ -55,7 +54,7 @@ class TextureBufferBaseOGLTest : public ::testing::Test {
 
   // Member variables
  public:
-  opengl::IContext* context_;
+  opengl::IContext* context_{};
   std::shared_ptr<::igl::IDevice> device_;
 };
 
@@ -182,7 +181,7 @@ TEST_F(TextureBufferBaseOGLTest, TextureAttach) {
 
   // Multiple Render Targets
   if (context_->deviceFeatures().hasFeature(DeviceFeatures::MultipleRenderTargets)) {
-    GLuint colorAttachment1 = GL_COLOR_ATTACHMENT1;
+    const GLuint colorAttachment1 = GL_COLOR_ATTACHMENT1;
     textureBufferBase_->attachAsColor(1, opengl::Texture::AttachmentParams{});
     context_->getFramebufferAttachmentParameteriv(
         GL_FRAMEBUFFER, colorAttachment1, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
@@ -285,5 +284,4 @@ TEST_F(TextureBufferBaseOGLTest, TextureMipmapGen) {
   ASSERT_EQ(textureBufferBase2_->getNumMipLevels(), targetlevel);
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

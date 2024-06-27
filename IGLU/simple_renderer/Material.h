@@ -15,8 +15,7 @@
 #include <igl/IGL.h>
 #include <string>
 
-namespace iglu {
-namespace material {
+namespace iglu::material {
 
 enum class DepthTestConfig {
   Disable,
@@ -51,21 +50,21 @@ class BlendMode {
     opAlpha(opAlpha) {}
 
   static BlendMode Opaque() {
-    return BlendMode(igl::BlendFactor::One, igl::BlendFactor::Zero);
+    return {igl::BlendFactor::One, igl::BlendFactor::Zero};
   }
   static BlendMode Translucent() {
-    return BlendMode(igl::BlendFactor::SrcAlpha,
-                     igl::BlendFactor::OneMinusSrcAlpha,
-                     igl::BlendOp::Add,
-                     igl::BlendFactor::One,
-                     igl::BlendFactor::OneMinusSrcAlpha,
-                     igl::BlendOp::Add);
+    return {igl::BlendFactor::SrcAlpha,
+            igl::BlendFactor::OneMinusSrcAlpha,
+            igl::BlendOp::Add,
+            igl::BlendFactor::One,
+            igl::BlendFactor::OneMinusSrcAlpha,
+            igl::BlendOp::Add};
   }
   static BlendMode Additive() {
-    return BlendMode(igl::BlendFactor::SrcAlpha, igl::BlendFactor::One);
+    return {igl::BlendFactor::SrcAlpha, igl::BlendFactor::One};
   }
   static BlendMode Premultiplied() {
-    return BlendMode(igl::BlendFactor::One, igl::BlendFactor::OneMinusSrcAlpha);
+    return {igl::BlendFactor::One, igl::BlendFactor::OneMinusSrcAlpha};
   }
 
   bool operator==(const BlendMode& other) const {
@@ -86,14 +85,14 @@ class Material final {
   BlendMode blendMode = BlendMode::Opaque();
   igl::CullMode cullMode = igl::CullMode::Back;
 
-  std::shared_ptr<ShaderProgram> shaderProgram() const;
+  [[nodiscard]] std::shared_ptr<ShaderProgram> shaderProgram() const;
   void setShaderProgram(igl::IDevice& device, const std::shared_ptr<ShaderProgram>& shaderProgram);
 
   /// There's a 1-to-1 correspondence between the ShaderProgram and the ShaderUniforms object.
   /// Don't cache this returned object, as changing the shader program will create a new one.
-  ShaderUniforms& shaderUniforms() const;
+  [[nodiscard]] ShaderUniforms& shaderUniforms() const;
 
-  DepthTestConfig depthTestConfig() const;
+  [[nodiscard]] DepthTestConfig depthTestConfig() const;
   void setDepthTestConfig(igl::IDevice& device, const DepthTestConfig& config);
 
   /// Populates a pipeline descriptor for drawing using this Material.
@@ -114,5 +113,4 @@ class Material final {
   DepthTestConfig _depthTestConfig = DepthTestConfig::Disable;
 };
 
-} // namespace material
-} // namespace iglu
+} // namespace iglu::material

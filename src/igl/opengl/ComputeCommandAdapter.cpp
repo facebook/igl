@@ -27,8 +27,7 @@
 #define CLEAR_DIRTY(dirtyMap, index) dirtyMap.reset(index)
 #define IS_DIRTY(dirtyMap, index) dirtyMap[index]
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 ComputeCommandAdapter::ComputeCommandAdapter(IContext& context) :
   WithContext(context), uniformAdapter_(context, UniformAdapter::PipelineType::Compute) {}
@@ -97,7 +96,7 @@ void ComputeCommandAdapter::clearDependentResources(
 
 void ComputeCommandAdapter::willDispatch() {
   Result ret;
-  auto pipelineState = static_cast<ComputePipelineState*>(pipelineState_.get());
+  auto* pipelineState = static_cast<ComputePipelineState*>(pipelineState_.get());
 
   IGL_ASSERT_MSG(pipelineState, "ComputePipelineState is nullptr");
   if (pipelineState == nullptr) {
@@ -147,7 +146,7 @@ void ComputeCommandAdapter::didDispatch() {
   if (pipelineState_ == nullptr) {
     return;
   }
-  auto pipelineState = static_cast<ComputePipelineState*>(pipelineState_.get());
+  auto* pipelineState = static_cast<ComputePipelineState*>(pipelineState_.get());
   IGL_ASSERT_MSG(pipelineState, "ComputePipelineState is nullptr");
   if (pipelineState == nullptr) {
     return;
@@ -170,5 +169,4 @@ void ComputeCommandAdapter::endEncoding() {
   uniformAdapter_.clearUniformBuffers();
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

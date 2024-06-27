@@ -22,10 +22,10 @@ class NetServiceExtension : public igl::shell::Extension {
   using DidFindService = std::function<
       bool(NetServiceExtension& sender, std::unique_ptr<NetService> service, bool moreComing)>;
 
-  virtual std::unique_ptr<NetService> create(std::string_view domain,
-                                             std::string_view type,
-                                             std::string_view name,
-                                             int port) const noexcept = 0;
+  [[nodiscard]] virtual std::unique_ptr<NetService> create(std::string_view domain,
+                                                           std::string_view type,
+                                                           std::string_view name,
+                                                           int port) const noexcept = 0;
 
   virtual void search(std::string_view domain, std::string_view type) const noexcept = 0;
 

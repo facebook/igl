@@ -97,7 +97,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   }
 
   const auto uploadResult = buffer->upload(desc.data, BufferRange(desc.length, 0u));
-  IGL_VERIFY(uploadResult.isOk());
+  IGL_ASSERT(uploadResult.isOk());
   Result::setResult(outResult, uploadResult);
 
   return buffer;
@@ -532,6 +532,9 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     return true;
   case DeviceFeatures::Multiview:
     return ctx_->vkPhysicalDeviceMultiviewFeatures_.multiview == VK_TRUE;
+  case DeviceFeatures::MultiViewMultisample:
+    return ctx_->vkPhysicalDeviceMultiviewFeatures_.multiview == VK_TRUE &&
+           deviceProperties.limits.framebufferColorSampleCounts > VK_SAMPLE_COUNT_1_BIT;
   case DeviceFeatures::BindUniform:
     return false;
   case DeviceFeatures::TexturePartialMipChain:

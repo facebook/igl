@@ -75,11 +75,11 @@ std::vector<HWDeviceDesc> HWDevice::queryDevices(IGL_MAYBE_UNUSED const HWDevice
     id<MTLDevice> displayDevice =
         CGDirectDisplayCopyCurrentMetalDevice(static_cast<CGDirectDisplayID>(desc.displayId));
     if (displayDevice) {
-      uintptr_t deviceNative = (uintptr_t)(__bridge void*)displayDevice;
-      HWDeviceDesc deviceDesc(deviceNative,
-                              getDeviceType(displayDevice),
-                              0,
-                              std::string([displayDevice.name UTF8String]));
+      const uintptr_t deviceNative = (uintptr_t)(__bridge void*)displayDevice;
+      const HWDeviceDesc deviceDesc(deviceNative,
+                                    getDeviceType(displayDevice),
+                                    0,
+                                    std::string([displayDevice.name UTF8String]));
       devices.push_back(deviceDesc);
     }
     Result::setOk(outResult);
@@ -91,37 +91,37 @@ std::vector<HWDeviceDesc> HWDevice::queryDevices(IGL_MAYBE_UNUSED const HWDevice
   // Loop through all devices and return matching ones
   for (id<MTLDevice> device in deviceList) {
     // We don't need __bridge_retained here as iOS always provides the same ptr
-    uintptr_t deviceNative = (uintptr_t)(__bridge void*)device;
+    const uintptr_t deviceNative = (uintptr_t)(__bridge void*)device;
 
     // If we requested an unknown device type, then return
     // all the available devices
-    uint32_t vendorId = 0;
+    const uint32_t vendorId = 0;
     if (desc.hardwareType == HWDeviceType::Unknown) {
-      HWDeviceDesc deviceDesc(
+      const HWDeviceDesc deviceDesc(
           deviceNative, desc.hardwareType, vendorId, std::string([device.name UTF8String]));
       devices.push_back(deviceDesc);
     } else if (device.lowPower) {
       if (desc.hardwareType == HWDeviceType::IntegratedGpu) {
-        HWDeviceDesc deviceDesc(deviceNative,
-                                HWDeviceType::IntegratedGpu,
-                                vendorId,
-                                std::string([device.name UTF8String]));
+        const HWDeviceDesc deviceDesc(deviceNative,
+                                      HWDeviceType::IntegratedGpu,
+                                      vendorId,
+                                      std::string([device.name UTF8String]));
         devices.push_back(deviceDesc);
       }
     } else if (isRemovable(device)) {
       if (desc.hardwareType == HWDeviceType::ExternalGpu) {
-        HWDeviceDesc deviceDesc(deviceNative,
-                                HWDeviceType::ExternalGpu,
-                                vendorId,
-                                std::string([device.name UTF8String]));
+        const HWDeviceDesc deviceDesc(deviceNative,
+                                      HWDeviceType::ExternalGpu,
+                                      vendorId,
+                                      std::string([device.name UTF8String]));
         devices.push_back(deviceDesc);
       }
     } else { // Device is NOT Integrated NOR External
       if (desc.hardwareType == HWDeviceType::DiscreteGpu) {
-        HWDeviceDesc deviceDesc(deviceNative,
-                                HWDeviceType::DiscreteGpu,
-                                vendorId,
-                                std::string([device.name UTF8String]));
+        const HWDeviceDesc deviceDesc(deviceNative,
+                                      HWDeviceType::DiscreteGpu,
+                                      vendorId,
+                                      std::string([device.name UTF8String]));
         devices.push_back(deviceDesc);
       }
     }

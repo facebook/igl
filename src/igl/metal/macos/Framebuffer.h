@@ -9,9 +9,7 @@
 
 #include <igl/metal/Framebuffer.h>
 
-namespace igl {
-namespace metal {
-namespace macos {
+namespace igl::metal::macos {
 
 class Framebuffer final : public ::igl::metal::Framebuffer {
  public:
@@ -24,6 +22,4 @@ class Framebuffer final : public ::igl::metal::Framebuffer {
                const TextureRangeDesc& range) const override;
 };
 
-} // namespace macos
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal::macos

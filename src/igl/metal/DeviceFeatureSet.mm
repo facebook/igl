@@ -15,7 +15,7 @@ static size_t getGPUFamily(id<MTLDevice> device) {
   // the new supportsFamily API is applicable to both iOS and macOS
   if (@available(macOS 10.15, iOS 13.0, *)) {
     typedef std::pair<MTLGPUFamily, size_t> GPUFamilyPair;
-    std::vector<GPUFamilyPair> const gpuFamilies = {
+    const std::vector<GPUFamilyPair> gpuFamilies = {
         // @fb-only
         // @fb-only
         {MTLGPUFamilyApple8, 8},
@@ -90,8 +90,7 @@ static size_t getGPUFamily(id<MTLDevice> device) {
   return 0;
 }
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 DeviceFeatureSet::DeviceFeatureSet(id<MTLDevice> device) {
   gpuFamily_ = getGPUFamily(device);
@@ -171,6 +170,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::BufferDeviceAddress:
     return false;
   case DeviceFeatures::Multiview:
+  case DeviceFeatures::MultiViewMultisample:
     return false;
   case DeviceFeatures::BindUniform:
     return false;
@@ -479,9 +479,9 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
   case TextureFormat::R_EAC_UNorm:
   case TextureFormat::R_EAC_SNorm:
   case TextureFormat::YUV_NV12:
+  case TextureFormat::YUV_420p:
     return unsupported;
   }
 }
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

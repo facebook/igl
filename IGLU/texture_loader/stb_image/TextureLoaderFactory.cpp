@@ -89,8 +89,8 @@ bool TextureLoader::shouldGenerateMipmaps() const noexcept {
 std::unique_ptr<IData> TextureLoader::loadInternal(
     igl::Result* IGL_NULLABLE outResult) const noexcept {
   const auto r = reader();
-  int length = r.length() > std::numeric_limits<int>::max() ? std::numeric_limits<int>::max()
-                                                            : static_cast<int>(r.length());
+  const int length = r.length() > std::numeric_limits<int>::max() ? std::numeric_limits<int>::max()
+                                                                  : static_cast<int>(r.length());
 
   int x, y, comp;
   void* data = nullptr;
@@ -125,9 +125,9 @@ bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
 std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     DataReader reader,
     igl::Result* IGL_NULLABLE outResult) const noexcept {
-  int length = reader.length() > std::numeric_limits<int>::max()
-                   ? std::numeric_limits<int>::max()
-                   : static_cast<int>(reader.length());
+  const int length = reader.length() > std::numeric_limits<int>::max()
+                         ? std::numeric_limits<int>::max()
+                         : static_cast<int>(reader.length());
 
   int x, y, comp;
   if (stbi_info_from_memory(reader.data(), length, &x, &y, &comp) == 0) {

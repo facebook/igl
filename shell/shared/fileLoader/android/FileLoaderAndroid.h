@@ -20,19 +20,19 @@ class FileLoaderAndroid final : public FileLoader {
   FileLoaderAndroid() = default;
   ~FileLoaderAndroid() override = default;
   FileData loadBinaryData(const std::string& fileName) override;
-  bool fileExists(const std::string& fileName) const override;
-  std::string basePath() const override;
-  std::string fullPath(const std::string& fileName) const override;
+  [[nodiscard]] bool fileExists(const std::string& fileName) const override;
+  [[nodiscard]] std::string basePath() const override;
+  [[nodiscard]] std::string fullPath(const std::string& fileName) const override;
 
   void setAssetManager(AAssetManager* mgr) {
     assetManager_ = mgr;
   }
-  AAssetManager* getAssetManager() const noexcept {
+  [[nodiscard]] AAssetManager* getAssetManager() const noexcept {
     return assetManager_;
   }
 
  private:
-  AAssetManager* assetManager_;
+  AAssetManager* assetManager_{};
 };
 
 } // namespace igl::shell

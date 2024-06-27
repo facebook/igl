@@ -54,7 +54,7 @@ class IComputePipelineState {
   using IComputePipelineReflection = IRenderPipelineReflection;
   virtual std::shared_ptr<IComputePipelineReflection> computePipelineReflection() = 0;
   virtual ~IComputePipelineState() = default;
-  virtual int getIndexByName(const NameHandle& /* name */) const {
+  [[nodiscard]] virtual int getIndexByName(const NameHandle& /* name */) const {
     return -1;
   }
 };

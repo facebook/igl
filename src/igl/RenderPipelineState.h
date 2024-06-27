@@ -203,7 +203,11 @@ struct RenderPipelineDesc {
    */
   std::unordered_map<size_t, std::pair<igl::NameHandle, igl::NameHandle>> uniformBlockBindingMap;
 
-  int sampleCount = 1;
+  int sampleCount = 1; // MSAA
+
+  // Vulkan only: immutable samplers per each binding slot (for example, Ycbcr conversion etc)
+  // @fb-only
+  std::shared_ptr<ISamplerState> immutableSamplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
 
   igl::NameHandle debugName;
 
@@ -213,7 +217,7 @@ struct RenderPipelineDesc {
 
 class IRenderPipelineState {
  public:
-  explicit IRenderPipelineState(const RenderPipelineDesc& desc) : desc_(desc) {}
+  explicit IRenderPipelineState(RenderPipelineDesc desc) : desc_(std::move(desc)) {}
   virtual ~IRenderPipelineState() = default;
 
   virtual std::shared_ptr<IRenderPipelineReflection> renderPipelineReflection() = 0;
@@ -244,17 +248,17 @@ namespace std {
 
 template<>
 struct hash<igl::RenderPipelineDesc> {
-  size_t operator()(igl::RenderPipelineDesc const& /*key*/) const;
+  size_t operator()(const igl::RenderPipelineDesc& /*key*/) const;
 };
 
 template<>
 struct hash<igl::RenderPipelineDesc::TargetDesc> {
-  size_t operator()(igl::RenderPipelineDesc::TargetDesc const& /*key*/) const;
+  size_t operator()(const igl::RenderPipelineDesc::TargetDesc& /*key*/) const;
 };
 
 template<>
 struct hash<igl::RenderPipelineDesc::TargetDesc::ColorAttachment> {
-  size_t operator()(igl::RenderPipelineDesc::TargetDesc::ColorAttachment const& /*key*/) const;
+  size_t operator()(const igl::RenderPipelineDesc::TargetDesc::ColorAttachment& /*key*/) const;
 };
 
 } // namespace std

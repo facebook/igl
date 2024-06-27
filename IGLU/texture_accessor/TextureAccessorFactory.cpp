@@ -16,8 +16,7 @@
 #include "MetalTextureAccessor.h"
 #endif
 
-namespace iglu {
-namespace textureaccessor {
+namespace iglu::textureaccessor {
 
 std::unique_ptr<ITextureAccessor> TextureAccessorFactory::createTextureAccessor(
     igl::BackendType backendType,
@@ -42,5 +41,4 @@ std::unique_ptr<ITextureAccessor> TextureAccessorFactory::createTextureAccessor(
   }
 }
 
-} // namespace textureaccessor
-} // namespace iglu
+} // namespace iglu::textureaccessor

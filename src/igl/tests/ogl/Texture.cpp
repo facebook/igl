@@ -14,8 +14,7 @@
 #include <igl/opengl/TextureTarget.h>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 // Picking this just to match the texture we will use. If you use a different
 // size texture, then you will have to either create a new offscreenTexture_
@@ -55,7 +54,7 @@ class TextureOGLTest : public ::testing::Test {
 
   // Member variables
  public:
-  opengl::IContext* context_;
+  opengl::IContext* context_{};
   std::shared_ptr<::igl::IDevice> device_;
 };
 
@@ -129,7 +128,7 @@ TEST_F(TextureOGLTest, TextureCreation) {
 TEST_F(TextureOGLTest, TextureFormats) {
   // Set up inputs and expected outputs for Texture::toTextureFormat
   // {glTexInternalFormat, glTexFormat, glTexType, expected output TextureFormat}
-  std::vector<TextureFormatData> texFormats{
+  const std::vector<TextureFormatData> texFormats{
       TextureFormatData{GL_COMPRESSED_RGBA_ASTC_4x4_KHR, 0, 0, TextureFormat::RGBA_ASTC_4x4},
       TextureFormatData{
           GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR, 0, 0, TextureFormat::SRGB8_A8_ASTC_4x4},
@@ -253,7 +252,7 @@ TEST_F(TextureOGLTest, TextureFormats) {
   };
 
   for (auto data : texFormats) {
-    TextureFormat const output = igl::opengl::Texture::glInternalFormatToTextureFormat(
+    const TextureFormat output = igl::opengl::Texture::glInternalFormatToTextureFormat(
         data.glTexInternalFormat, data.glTexFormat, data.glTexType);
     ASSERT_EQ(output, data.texFormatOutput)
         << "IGL Format: "
@@ -274,7 +273,7 @@ TEST_F(TextureOGLTest, TextureAlignment) {
     constexpr size_t bytesPerPixel = 4;
     Result ret;
 
-    TextureDesc texDesc = TextureDesc::new2D(
+    const TextureDesc texDesc = TextureDesc::new2D(
         TextureFormat::RGBA_UNorm8, width, width, TextureDesc::TextureUsageBits::Sampled);
 
     auto texture = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
@@ -295,7 +294,7 @@ TEST_F(TextureOGLTest, TextureAlignment) {
     constexpr size_t bytesPerPixel = 4;
     Result ret;
 
-    TextureDesc texDesc = TextureDesc::new2D(
+    const TextureDesc texDesc = TextureDesc::new2D(
         TextureFormat::RGBA_UNorm8, width, width, TextureDesc::TextureUsageBits::Sampled);
 
     auto texture = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
@@ -309,5 +308,4 @@ TEST_F(TextureOGLTest, TextureAlignment) {
   }
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

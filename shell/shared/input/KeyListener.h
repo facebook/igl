@@ -7,8 +7,7 @@
 
 #pragma once
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 
 struct KeyEvent {
   int key;
@@ -25,5 +24,4 @@ class IKeyListener {
   virtual ~IKeyListener() = default;
 };
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

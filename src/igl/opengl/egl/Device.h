@@ -10,22 +10,18 @@
 #include <igl/opengl/Device.h>
 #include <igl/opengl/egl/PlatformDevice.h>
 
-namespace igl {
-namespace opengl {
-namespace egl {
+namespace igl::opengl::egl {
 
 class Device final : public opengl::Device {
  public:
   explicit Device(std::unique_ptr<IContext> context);
   ~Device() override = default;
 
-  const PlatformDevice& getPlatformDevice() const noexcept override;
+  [[nodiscard]] const PlatformDevice& getPlatformDevice() const noexcept override;
   void updateSurface(void* nativeWindowType) override;
 
  private:
   PlatformDevice platformDevice_;
 };
 
-} // namespace egl
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::egl

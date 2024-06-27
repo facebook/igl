@@ -18,8 +18,7 @@
 #define OFFSCREEN_TEX_HEIGHT 2
 #define OFFSCREEN_TEX_WIDTH 2
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 //
 // TextureAccessorTest
@@ -68,7 +67,7 @@ class TextureAccessorTest : public ::testing::Test {
   std::shared_ptr<ITexture> texture_;
   TextureDesc texDesc_;
   std::shared_ptr<iglu::textureaccessor::ITextureAccessor> textureAccessor_;
-  int textureSizeInBytes_;
+  int textureSizeInBytes_{};
 };
 
 //
@@ -151,5 +150,4 @@ TEST_F(TextureAccessorTest, reuseTextureAccessor) {
     }
   }
 }
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

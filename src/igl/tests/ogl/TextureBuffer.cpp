@@ -15,8 +15,7 @@
 #include <igl/opengl/TextureBuffer.h>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 // Picking this just to match the texture we will use. If you use a different
 // size texture, then you will have to either create a new offscreenTexture_
@@ -64,7 +63,7 @@ class TextureBufferOGLTest : public ::testing::Test {
 
   // Member variables
  public:
-  opengl::IContext* context_;
+  opengl::IContext* context_{};
   std::shared_ptr<::igl::IDevice> device_;
 };
 
@@ -118,8 +117,8 @@ TEST_F(TextureBufferOGLTest, TextureMipmapGen) {
                                            MIPMAP_TEX_HEIGHT,
                                            TextureDesc::TextureUsageBits::Sampled);
 
-  size_t maxDim = std::max<size_t>(texDesc.width, texDesc.height);
-  int targetlevel = std::floor(log2(maxDim)) + 1;
+  const size_t maxDim = std::max<size_t>(texDesc.width, texDesc.height);
+  const int targetlevel = std::floor(log2(maxDim)) + 1;
 
   texDesc.numMipLevels = targetlevel; // log(16) + 1
   textureBuffer_ = std::make_unique<igl::opengl::TextureBuffer>(*context_, texDesc.format);
@@ -131,5 +130,4 @@ TEST_F(TextureBufferOGLTest, TextureMipmapGen) {
   ASSERT_EQ(textureBuffer_->getNumMipLevels(), targetlevel);
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

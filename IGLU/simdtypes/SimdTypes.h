@@ -16,8 +16,7 @@
 
 /// Polyfill to make it so we don't have to have ifdefs in code
 
-namespace iglu {
-namespace simdtypes {
+namespace iglu::simdtypes {
 
 // Use Apple-provided simd if available.
 #if defined(__APPLE__)
@@ -259,5 +258,4 @@ struct float2x2 {
 
 #endif // defined(__APPLE__)
 
-} // namespace simdtypes
-} // namespace iglu
+} // namespace iglu::simdtypes

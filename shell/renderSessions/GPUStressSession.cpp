@@ -105,8 +105,8 @@ std::vector<uint16_t> indexData = indexData0;
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 std::string getLightingFunc(const char* matrixProj, const char* matrixMod) {
-  std::string const var1 = matrixProj;
-  std::string const var2 = matrixMod;
+  const std::string var1 = matrixProj;
+  const std::string var2 = matrixMod;
   auto func = std::string(
       R"(
 
@@ -268,7 +268,7 @@ void addNormalsToCube() {
         auto vertex = vertexData0.at(oldIndex);
         vertex.base_color = glm::vec4(normal, 1.0);
         vertexData.push_back(vertex);
-        size_t const nextIndex = (vertexData.size() - 1);
+        const size_t nextIndex = (vertexData.size() - 1);
         indexData.at(i) = nextIndex;
         normalSet[nextIndex] = true;
         indexremap.at(oldIndex) = nextIndex;
@@ -295,7 +295,7 @@ bool isDeviceCompatible(IDevice& device) noexcept {
 int setCurrentThreadAffinityMask(int mask) {
 #if IGL_PLATFORM_ANDROID
   int err, syscallres;
-  pid_t const pid = gettid();
+  const pid_t pid = gettid();
   syscallres = syscall(__NR_sched_setaffinity, pid, sizeof(mask), &mask);
   if (syscallres) {
     err = errno;
@@ -317,8 +317,8 @@ double calcPi(int numberOfDivisions, int core) {
     setCurrentThreadAffinityMask((1 << core));
   }
   for (int i = 0; i <= numberOfDivisions; ++i) {
-    double const numerator = 1.0;
-    double const denominator = std::sqrt(1.0 + std::pow(-1.0, i));
+    const double numerator = 1.0;
+    const double denominator = std::sqrt(1.0 + std::pow(-1.0, i));
     if (denominator > 0.f) {
       pi += numerator / denominator;
     }
@@ -370,7 +370,7 @@ float doReadWrite(std::vector<std::vector<std::vector<float>>>& memBlock,
   if (threadId != -1) {
     setCurrentThreadAffinityMask(1 << threadId);
   }
-  std::random_device const rd;
+  const std::random_device rd;
   std::mt19937 gen(0);
   std::uniform_int_distribution<> randBlocks(0, numBlocks - 1);
   std::uniform_int_distribution<> randRows(0, numRows - 1);
@@ -491,10 +491,10 @@ glm::vec3 animateCube(int counter, float x, float y, float scale, int frameCount
   } else if (kDropFrameX && (frameCount % kDropFrameX) == kDropFrameCount) {
     velocityScale = 1.f + (float)kDropFrameCount;
   }
-  glm::vec3 const pos =
+  const glm::vec3 pos =
       animations[counter].lastPos + animations[counter].velocity * velocityScale * scale * .005f;
   // check for collisons;
-  float const radius = .75 * scale;
+  const float radius = .75 * scale;
   if (pos.x + radius > 1.f) {
     animations[counter].velocity.x = -1.f;
   }
@@ -542,12 +542,12 @@ void GPUStressSession::createCubes() {
   const int vertexCount = vertexData.size();
   const int indexCount = indexData.size();
 
-  std::random_device const rd;
+  const std::random_device rd;
   std::mt19937 gen(0);
   std::uniform_real_distribution<> dis(0, 1.f);
-  float const scale = 1.f / grid;
+  const float scale = 1.f / grid;
 
-  int const uvScale = 1.f / grid;
+  const int uvScale = 1.f / grid;
   glm::vec2 offset = glm::vec2(0.f, 0.f);
 
   // Vertex buffer, Index buffer and Vertex Input
@@ -705,13 +705,13 @@ void GPUStressSession::setModelViewMatrix(float angle,
     offsetY = 0.f;
   }
 
-  float const cosAngle = std::cos(angle);
-  float const sinAngle = std::sin(angle);
-  glm::vec4 const v0(cosAngle / divisor, 0.f, -sinAngle / divisor, 0.f);
-  glm::vec4 const v1(0.f, 1.f / divisor, 0.f, 0.f);
-  glm::vec4 const v2(sinAngle / divisor, 0.f, cosAngle / divisor, 0.f);
-  glm::vec4 const v3(offsetX, offsetY, 1.f + offsetZ, 1.f);
-  glm::mat4 const test(v0, v1, v2, v3);
+  const float cosAngle = std::cos(angle);
+  const float sinAngle = std::sin(angle);
+  const glm::vec4 v0(cosAngle / divisor, 0.f, -sinAngle / divisor, 0.f);
+  const glm::vec4 v1(0.f, 1.f / divisor, 0.f, 0.f);
+  const glm::vec4 v2(sinAngle / divisor, 0.f, cosAngle / divisor, 0.f);
+  const glm::vec4 v3(offsetX, offsetY, 1.f + offsetZ, 1.f);
+  const glm::mat4 test(v0, v1, v2, v3);
 
   vertexParameters_.modelViewMatrix = test;
   vertexParameters_.scaleZ = scaleZ;
@@ -731,7 +731,7 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
     if (kUseMSAA) {
       const auto dimensions = surfaceTextures.color->getDimensions();
 
-      TextureDesc const fbTexDesc = {
+      const TextureDesc fbTexDesc = {
           dimensions.width,
           dimensions.height,
           1,
@@ -748,7 +748,7 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
 
       framebufferDesc.colorAttachments[0].resolveTexture = surfaceTextures.color;
 
-      igl::TextureDesc const depthDesc = {
+      const igl::TextureDesc depthDesc = {
           dimensions.width,
           dimensions.height,
           1,
@@ -825,7 +825,7 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
   constexpr uint32_t textureUnit = 0;
   constexpr uint32_t textureUnit1 = 1;
   const int grid = static_cast<int>(std::ceil(std::sqrt(static_cast<float>(kDrawCount))));
-  float const divisor = .5 / static_cast<float>(grid);
+  const float divisor = .5 / static_cast<float>(grid);
   const float scale = 1.f / std::ceil(std::pow(kCubeCount, 1.0f / 3.0f));
 
   int counter = 0;
@@ -848,7 +848,7 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
         y = offset.y;
       }
 
-      setModelViewMatrix((kTestOverdraw || kRotateCubes == false) ? 0.f : angle, scaleZ, x, y, 0.f);
+      setModelViewMatrix((kTestOverdraw || !kRotateCubes) ? 0.f : angle, scaleZ, x, y, 0.f);
 
       // note that we are deliberately binding redundant state - the goal here
       // is to tax the driver.  The giant vertex buffer (kCubeCount) will stress

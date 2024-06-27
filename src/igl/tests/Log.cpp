@@ -11,8 +11,7 @@
 #include <string>
 #include <thread>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 TEST(LogTest, LogOnceRaceCondition) {
   auto logSomethingUniqueManyTimes = []() {
@@ -39,5 +38,4 @@ TEST(LogTest, LogOnceRaceCondition) {
   t4.join();
 };
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

@@ -7,7 +7,7 @@
 
 // @fb-only
 
-#include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
+#include <IGLU/shaderCross/ShaderCross.h>
 
 #include <algorithm>
 #include <cmath>
@@ -34,113 +34,54 @@ struct Vertex {
 
 namespace {
 
-std::string getProlog(igl::IDevice& device) {
-#if IGL_BACKEND_OPENGL
-  const auto shaderVersion = device.getShaderVersion();
-  if (shaderVersion.majorVersion >= 3 || shaderVersion.minorVersion >= 30) {
-    std::string prependVersionString = igl::opengl::getStringFromShaderVersion(shaderVersion);
-    prependVersionString += "\n#extension GL_OVR_multiview2 : require\n";
-    prependVersionString += "\nprecision highp float;\n";
-    return prependVersionString;
-  }
-#endif // IGL_BACKEND_OPENGL
-  return "";
-};
-
-std::string getOpenGLFragmentShaderSource(igl::IDevice& device) {
-  return getProlog(device) + std::string(R"(
-                      precision highp float;
-                      in vec3 worldNormal;
-                      out vec4 fragmentColor;
-                      void main() {
-                        float att = max(dot(worldNormal, -normalize(vec3(-0.1, -1, 0))), 0.3);
-                        fragmentColor = vec4(att, att, att, 1.0);
-                      })");
-}
-
-std::string getOpenGLVertexShaderSource(igl::IDevice& device) {
-  return getProlog(device) + R"(
-                      layout(num_views = 2) in;
-                      precision highp float;
-
-                      in vec3 position;
-                      in vec3 normal;
-                      in vec4 weight;
-                      in vec4 joint;
-
-                      #define XR_HAND_JOINT_COUNT_EXT 26
-                      uniform mat4 jointMatrices[XR_HAND_JOINT_COUNT_EXT];
-
-                      uniform mat4 viewProjectionMatrix[2];
-
-                      out vec3 worldNormal;
-
-                      void main() {
-                        vec4 p1 = jointMatrices[int(joint.x)] * vec4(position, 1.0);
-                        vec4 p2 = jointMatrices[int(joint.y)] * vec4(position, 1.0);
-                        vec4 p3 = jointMatrices[int(joint.z)] * vec4(position, 1.0);
-                        vec4 p4 = jointMatrices[int(joint.w)] * vec4(position, 1.0);
-                        vec4 worldPos = p1 * weight.x + p2 * weight.y + p3 * weight.z + p4 * weight.w;
-
-                        vec4 n1 = jointMatrices[int(joint.x)] * vec4(normal, 0.0);
-                        vec4 n2 = jointMatrices[int(joint.y)] * vec4(normal, 0.0);
-                        vec4 n3 = jointMatrices[int(joint.z)] * vec4(normal, 0.0);
-                        vec4 n4 = jointMatrices[int(joint.w)] * vec4(normal, 0.0);
-                        worldNormal = (n1 * weight.x + n2 * weight.y + n3 * weight.z + n4 * weight.w).xyz;
-
-                        gl_Position = viewProjectionMatrix[gl_ViewID_OVR] * vec4(worldPos.xyz, 1.0);
-                      })";
-}
-
 const char* getVulkanFragmentShaderSource() {
-  return R"(
-                      precision highp float;
-                      layout(location = 0) in vec3 worldNormal;
-                      layout(location = 0) out vec4 fragmentColor;
-                      void main() {
-                        float att = max(dot(worldNormal, -normalize(vec3(-0.1, -1, 0))), 0.3);
-                        fragmentColor = vec4(att, att, att, 1.0);
-                      })";
+  return R"(#version 450
+            precision highp float;
+            layout(location = 0) in vec3 worldNormal;
+            layout(location = 0) out vec4 fragmentColor;
+            void main() {
+              float att = max(dot(worldNormal, -normalize(vec3(-0.1, -1, 0))), 0.3);
+              fragmentColor = vec4(att, att, att, 1.0);
+            })";
 }
 
 const char* getVulkanVertexShaderSource() {
-  return R"(
-                      #extension GL_OVR_multiview2 : require
-                      layout(num_views = 2) in;
-                      precision highp float;
+  return R"(#version 450
+            #extension GL_OVR_multiview2 : require
+            layout(num_views = 2) in;
+            precision highp float;
 
-                      layout(location = 0) in vec3 position;
-                      layout(location = 1) in vec3 normal;
-                      layout(location = 2) in vec4 weight;
-                      layout(location = 3) in vec4 joint;
+            layout(location = 0) in vec3 position;
+            layout(location = 1) in vec3 normal;
+            layout(location = 2) in vec4 weight;
+            layout(location = 3) in vec4 joint;
 
-                      #define XR_HAND_JOINT_COUNT_EXT 26
-                      layout (set = 1, binding = 1, std140) uniform PerFrame {
-                        mat4 jointMatrices[XR_HAND_JOINT_COUNT_EXT];
-                        mat4 viewProjectionMatrix[2];
-                      } perFrame;
+            #define XR_HAND_JOINT_COUNT_EXT 26
+            layout (set = 1, binding = 1, std140) uniform PerFrame {
+              mat4 jointMatrices[XR_HAND_JOINT_COUNT_EXT];
+              mat4 viewProjectionMatrix[2];
+            } perFrame;
 
-                      layout(location = 0) out vec3 worldNormal;
+            layout(location = 0) out vec3 worldNormal;
 
-                      void main() {
-                        vec4 p1 = perFrame.jointMatrices[int(joint.x)] * vec4(position, 1.0);
-                        vec4 p2 = perFrame.jointMatrices[int(joint.y)] * vec4(position, 1.0);
-                        vec4 p3 = perFrame.jointMatrices[int(joint.z)] * vec4(position, 1.0);
-                        vec4 p4 = perFrame.jointMatrices[int(joint.w)] * vec4(position, 1.0);
-                        vec4 worldPos = p1 * weight.x + p2 * weight.y + p3 * weight.z + p4 * weight.w;
-
-                        vec4 n1 = perFrame.jointMatrices[int(joint.x)] * vec4(normal, 0.0);
-                        vec4 n2 = perFrame.jointMatrices[int(joint.y)] * vec4(normal, 0.0);
-                        vec4 n3 = perFrame.jointMatrices[int(joint.z)] * vec4(normal, 0.0);
-                        vec4 n4 = perFrame.jointMatrices[int(joint.w)] * vec4(normal, 0.0);
-                        worldNormal = (n1 * weight.x + n2 * weight.y + n3 * weight.z + n4 * weight.w).xyz;
-
-                        gl_Position = perFrame.viewProjectionMatrix[gl_ViewID_OVR] * vec4(worldPos.xyz, 1.0);
-                      })";
+            void main() {
+              mat4 world = perFrame.jointMatrices[int(joint.x)] * mat4(weight.x) +
+                           perFrame.jointMatrices[int(joint.y)] * mat4(weight.y) +
+                           perFrame.jointMatrices[int(joint.z)] * mat4(weight.z) +
+                           perFrame.jointMatrices[int(joint.w)] * mat4(weight.w);
+              worldNormal = (world * vec4(normal, 0.0)).xyz;
+              vec4 worldPos = world * vec4(position, 1.0);
+              gl_Position = perFrame.viewProjectionMatrix[int(gl_ViewID_OVR)] * vec4(worldPos.xyz, 1.0);
+            })";
 }
 
-std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
+[[nodiscard]] std::unique_ptr<IShaderStages> getShaderStagesForBackend(
+    igl::IDevice& device,
+    const iglu::ShaderCross& shaderCross) noexcept {
   switch (device.getBackendType()) {
+  case igl::BackendType::Metal:
+    IGL_ASSERT_MSG(false, "Metal is not supported");
+    return nullptr;
   // @fb-only
     // @fb-only
     // @fb-only
@@ -153,27 +94,39 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
                                                            "main",
                                                            "",
                                                            nullptr);
-  case igl::BackendType::OpenGL:
+  case igl::BackendType::OpenGL: {
+    igl::Result res;
+    const auto vs = shaderCross.crossCompileFromVulkanSource(
+        getVulkanVertexShaderSource(), igl::ShaderStage::Vertex, &res);
+    IGL_ASSERT_MSG(res.isOk(), res.message.c_str());
+
+    const auto fs = shaderCross.crossCompileFromVulkanSource(
+        getVulkanFragmentShaderSource(), igl::ShaderStage::Fragment, &res);
+    IGL_ASSERT_MSG(res.isOk(), res.message.c_str());
+
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,
-        getOpenGLVertexShaderSource(device).c_str(),
-        "main",
+        vs.c_str(),
+        shaderCross.entryPointName(igl::ShaderStage::Vertex),
         "",
-        getOpenGLFragmentShaderSource(device).c_str(),
-        "main",
+        fs.c_str(),
+        shaderCross.entryPointName(igl::ShaderStage::Fragment),
         "",
         nullptr);
+  }
   default:
     IGL_ASSERT_NOT_REACHED();
     return nullptr;
   }
 }
 
-bool isDeviceCompatible(IDevice& device) noexcept {
+[[nodiscard]] bool isDeviceCompatible(IDevice& device) noexcept {
   return device.hasFeature(DeviceFeatures::Multiview);
 }
 
-glm::mat4 perspectiveAsymmetricFovRH(const igl::shell::Fov& fov, float nearZ, float farZ) {
+[[nodiscard]] glm::mat4 perspectiveAsymmetricFovRH(const igl::shell::Fov& fov,
+                                                   float nearZ,
+                                                   float farZ) noexcept {
   glm::mat4 mat;
 
   const float tanLeft = tanf(fov.angleLeft);
@@ -207,7 +160,7 @@ glm::mat4 perspectiveAsymmetricFovRH(const igl::shell::Fov& fov, float nearZ, fl
   return mat;
 }
 
-inline glm::mat4 poseToMat4(const Pose& pose) noexcept {
+[[nodiscard]] inline glm::mat4 poseToMat4(const Pose& pose) noexcept {
   return glm::translate(glm::mat4(1.0), glm::vec3(pose.position)) * glm::toMat4(pose.orientation);
 }
 } // namespace
@@ -283,7 +236,8 @@ void HandsOpenXRSession::initialize() noexcept {
   inputDesc.inputBindings[0].stride = sizeof(Vertex);
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
 
-  shaderStages_ = getShaderStagesForBackend(device);
+  const iglu::ShaderCross shaderCross(device);
+  shaderStages_ = getShaderStagesForBackend(device, shaderCross);
 
   // Command queue: backed by different types of GPU HW queues
   const CommandQueueDesc desc{igl::CommandQueueType::Graphics};
@@ -299,6 +253,28 @@ void HandsOpenXRSession::initialize() noexcept {
 #endif
   renderPass_.depthAttachment.loadAction = LoadAction::Clear;
   renderPass_.depthAttachment.clearDepth = 1.0;
+
+  iglu::ManagedUniformBufferInfo info;
+  info.index = 1;
+  info.length = sizeof(UniformBlock);
+  info.uniforms = std::vector<igl::UniformDesc>{
+      igl::UniformDesc{
+          "jointMatrices",
+          -1,
+          igl::UniformType::Mat4x4,
+          kMaxJoints,
+          offsetof(UniformBlock, jointMatrices),
+          sizeof(glm::mat4),
+      },
+      igl::UniformDesc{"viewProjectionMatrix",
+                       -1,
+                       igl::UniformType::Mat4x4,
+                       2,
+                       offsetof(UniformBlock, viewProjectionMatrix),
+                       sizeof(glm::mat4)},
+  };
+  ubo_ = std::make_shared<iglu::ShaderCrossUniformBuffer>(device, "perFrame", info);
+  IGL_ASSERT(ubo_->result.isOk());
 }
 
 void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
@@ -365,41 +341,18 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   commands->bindVertexBuffer(0, *vb0_);
 
-  iglu::ManagedUniformBufferInfo info;
-  info.index = 1;
-  info.length = sizeof(UniformBlock);
-  info.uniforms = std::vector<igl::UniformDesc>{
-      igl::UniformDesc{
-          "jointMatrices",
-          -1,
-          igl::UniformType::Mat4x4,
-          kMaxJoints,
-          offsetof(UniformBlock, jointMatrices),
-          sizeof(glm::mat4),
-      },
-      igl::UniformDesc{"viewProjectionMatrix",
-                       -1,
-                       igl::UniformType::Mat4x4,
-                       2,
-                       offsetof(UniformBlock, viewProjectionMatrix),
-                       sizeof(glm::mat4)},
-  };
-
   commands->bindRenderPipelineState(pipelineState_);
   commands->bindDepthStencilState(depthStencilState_);
 
   for (int i = 0; i < 2; ++i) {
-    auto& handTracking = shellParams().handTracking[i];
+    const auto& handTracking = shellParams().handTracking[i];
     IGL_ASSERT(handTracking.jointPose.size() <= kMaxJoints);
     for (size_t j = 0; j < handTracking.jointPose.size(); ++j) {
       ub_.jointMatrices[j] = poseToMat4(handTracking.jointPose[j]) * jointInvBindMatrix_[i][j];
     }
 
-    const auto uniformBuffer = std::make_shared<iglu::ManagedUniformBuffer>(device, info);
-    IGL_ASSERT(uniformBuffer->result.isOk());
-    *static_cast<UniformBlock*>(uniformBuffer->getData()) = ub_;
-
-    uniformBuffer->bind(device, *pipelineState_, *commands);
+    *static_cast<UniformBlock*>(ubo_->getData()) = ub_;
+    ubo_->bind(device, *pipelineState_, *commands);
 
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16, handsDrawParams_[i].indexBufferOffset);
     commands->drawIndexed(handsDrawParams_[i].indexCount);

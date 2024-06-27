@@ -145,15 +145,12 @@ VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
 
 VkSamplerYcbcrConversionCreateInfo ivkGetSamplerYcbcrCreateInfo(VkFormat format);
 
-/// @brief Creates a Vulkan Image View with the R, G, B, and A components mapped to themselves
+/// @brief Returns VkImageViewCreateInfo with the R, G, B, and A components mapped to themselves
 /// (identity)
-VkResult ivkCreateImageView(const struct VulkanFunctionTable* vt,
-                            VkDevice device,
-                            VkImage image,
-                            VkImageViewType type,
-                            VkFormat imageFormat,
-                            VkImageSubresourceRange range,
-                            VkImageView* outImageView);
+VkImageViewCreateInfo ivkGetImageViewCreateInfo(VkImage image,
+                                                VkImageViewType type,
+                                                VkFormat imageFormat,
+                                                VkImageSubresourceRange range);
 
 VkResult ivkCreateFramebuffer(const struct VulkanFunctionTable* vt,
                               VkDevice device,
@@ -190,6 +187,17 @@ VkResult ivkAllocateMemory2(const struct VulkanFunctionTable* vt,
                             VkMemoryPropertyFlags props,
                             bool enableBufferDeviceAddress,
                             VkDeviceMemory* outMemory);
+
+VkImagePlaneMemoryRequirementsInfo ivkGetImagePlaneMemoryRequirementsInfo(
+    VkImageAspectFlagBits plane);
+
+VkImageMemoryRequirementsInfo2 ivkGetImageMemoryRequirementsInfo2(
+    const VkImagePlaneMemoryRequirementsInfo* next,
+    VkImage image);
+
+VkBindImageMemoryInfo ivkGetBindImageMemoryInfo(const VkBindImagePlaneMemoryInfo* next,
+                                                VkImage image,
+                                                VkDeviceMemory memory);
 
 bool ivkIsHostVisibleSingleHeapMemory(const struct VulkanFunctionTable* vt,
                                       VkPhysicalDevice physDev);
@@ -247,11 +255,11 @@ VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,
                                       const VkDescriptorBindingFlags* bindingFlags,
                                       VkDescriptorSetLayout* outLayout);
 
-/// @brief Creates a VkDescriptorSetLayoutBinding structure. The binding specifies that the
-/// resource is accessible at the vertex, fragment, and compute shader stages.
+/// @brief Creates a VkDescriptorSetLayoutBinding structure
 VkDescriptorSetLayoutBinding ivkGetDescriptorSetLayoutBinding(uint32_t binding,
                                                               VkDescriptorType descriptorType,
-                                                              uint32_t descriptorCount);
+                                                              uint32_t descriptorCount,
+                                                              VkShaderStageFlags stageFlags);
 
 /// @brief Creates a VkAttachmentDescription structure with load and store operations for the
 /// stencil attachment as "Don't Care"
@@ -420,16 +428,16 @@ VkPipelineShaderStageCreateInfo ivkGetPipelineShaderStageCreateInfo(VkShaderStag
 
 VkImageCopy ivkGetImageCopy2D(VkOffset2D srcDstOffset,
                               VkImageSubresourceLayers srcDstImageSubresource,
-                              const VkExtent2D imageRegion);
+                              VkExtent2D imageRegion);
 
 VkBufferImageCopy ivkGetBufferImageCopy2D(uint32_t bufferOffset,
                                           uint32_t bufferRowLength,
-                                          const VkRect2D imageRegion,
+                                          VkRect2D imageRegion,
                                           VkImageSubresourceLayers imageSubresource);
 VkBufferImageCopy ivkGetBufferImageCopy3D(uint32_t bufferOffset,
                                           uint32_t bufferRowLength,
-                                          const VkOffset3D offset,
-                                          const VkExtent3D extent,
+                                          VkOffset3D offset,
+                                          VkExtent3D extent,
                                           VkImageSubresourceLayers imageSubresource);
 
 void ivkImageMemoryBarrier(const struct VulkanFunctionTable* vt,

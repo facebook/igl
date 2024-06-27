@@ -13,8 +13,7 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 //
 // CommandBufferMTLTest
@@ -60,5 +59,4 @@ TEST_F(BufferSynchronizationManagerMTLTest, BufferSynchronizationManagerEndOfFra
   ASSERT_EQ(bufferSyncManager_->getCurrentInFlightBufferIndex(), 1);
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

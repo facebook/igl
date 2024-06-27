@@ -7,8 +7,7 @@
 
 #include <igl/metal/VertexInputState.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 metal::VertexInputState::VertexInputState(MTLVertexDescriptor* value) : value_(value) {}
 
@@ -141,5 +140,4 @@ MTLVertexStepFunction VertexInputState::convertSampleFunction(VertexSampleFuncti
     return MTLVertexStepFunctionPerInstance;
   }
 }
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

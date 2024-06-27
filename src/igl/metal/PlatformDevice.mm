@@ -19,10 +19,9 @@
 #include <igl/metal/SamplerState.h>
 #include <igl/metal/Texture.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
-PlatformDevice::PlatformDevice(Device& device) : device_(device), textureCache_(nullptr) {}
+PlatformDevice::PlatformDevice(Device& device) : device_(device) {}
 
 PlatformDevice::~PlatformDevice() {
   if (textureCache_) {
@@ -128,7 +127,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBuffer(
     TextureFormat format,
     size_t planeIndex,
     Result* outResult) {
-  const bool isPlanar = CVPixelBufferIsPlanar(sourceImage);
+  const bool isPlanar = CVPixelBufferIsPlanar(sourceImage) != 0u;
   const size_t width = (isPlanar ? CVPixelBufferGetWidthOfPlane(sourceImage, planeIndex)
                                  : CVPixelBufferGetWidth(sourceImage));
   const size_t height = (isPlanar ? CVPixelBufferGetHeightOfPlane(sourceImage, planeIndex)
@@ -150,7 +149,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
   CVMetalTextureCacheRef textureCache = getTextureCache();
   if (textureCache) {
     // Use the user provided texture instead
-    MTLPixelFormat const metalFormat = Texture::textureFormatToMTLPixelFormat(format);
+    const MTLPixelFormat metalFormat = Texture::textureFormatToMTLPixelFormat(format);
     if (metalFormat == MTLPixelFormatInvalid) {
       Result::setResult(outResult,
                         Result::Code::Unsupported,
@@ -161,15 +160,15 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
     }
 
     CVMetalTextureRef cvMetalTexture = nullptr;
-    CVReturn result = CVMetalTextureCacheCreateTextureFromImage(kCFAllocatorDefault,
-                                                                textureCache,
-                                                                sourceImage,
-                                                                nil,
-                                                                metalFormat,
-                                                                width,
-                                                                height,
-                                                                planeIndex,
-                                                                &cvMetalTexture);
+    const CVReturn result = CVMetalTextureCacheCreateTextureFromImage(kCFAllocatorDefault,
+                                                                      textureCache,
+                                                                      sourceImage,
+                                                                      nil,
+                                                                      metalFormat,
+                                                                      width,
+                                                                      height,
+                                                                      planeIndex,
+                                                                      &cvMetalTexture);
     IGL_ASSERT_MSG(result == kCVReturnSuccess, "Failed to created Metal texture from PixelBuffer");
 
     if (result != kCVReturnSuccess) {
@@ -195,8 +194,8 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
 Size PlatformDevice::getNativeDrawableSize(CALayer* nativeDrawable, Result* outResult) {
 #if (!TARGET_OS_SIMULATOR || __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000)
   Result::setOk(outResult);
-  return Size((float)CGRectGetWidth(nativeDrawable.bounds),
-              (float)CGRectGetHeight(nativeDrawable.bounds));
+  return {(float)CGRectGetWidth(nativeDrawable.bounds),
+          (float)CGRectGetHeight(nativeDrawable.bounds)};
 #else
   Result::setResult(outResult, Result::Code::Unsupported, "Metal not supported on iOS simulator.");
   return {};
@@ -228,7 +227,7 @@ TextureFormat PlatformDevice::getNativeDrawableTextureFormat(CALayer* nativeDraw
 CVMetalTextureCacheRef PlatformDevice::getTextureCache() {
 #if (!TARGET_OS_SIMULATOR || __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000)
   if (textureCache_ == nullptr && device_.get() != nullptr) {
-    CVReturn result =
+    const CVReturn result =
         CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, device_.get(), nil, &textureCache_);
     IGL_ASSERT_MSG(result == kCVReturnSuccess, "Failed to created texture cache");
 
@@ -250,5 +249,4 @@ void PlatformDevice::flushNativeTextureCache() const {
 #endif
 }
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

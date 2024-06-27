@@ -13,8 +13,7 @@
 #include <string>
 #include <vector>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 Result VertexArrayObject::create() {
   getContext().genVertexArrays(1, &vertexAttriuteObject_);
@@ -35,5 +34,4 @@ void VertexArrayObject::unbind() const {
 VertexArrayObject::~VertexArrayObject() {
   getContext().deleteVertexArrays(1, &vertexAttriuteObject_);
 }
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

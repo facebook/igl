@@ -17,9 +17,9 @@ namespace igl::vulkan {
 /// implements the igl::IRenderPipelineReflection interface
 class RenderPipelineReflection final : public IRenderPipelineReflection {
  public:
-  const std::vector<BufferArgDesc>& allUniformBuffers() const override;
-  const std::vector<SamplerArgDesc>& allSamplers() const override;
-  const std::vector<TextureArgDesc>& allTextures() const override;
+  [[nodiscard]] const std::vector<BufferArgDesc>& allUniformBuffers() const override;
+  [[nodiscard]] const std::vector<SamplerArgDesc>& allSamplers() const override;
+  [[nodiscard]] const std::vector<TextureArgDesc>& allTextures() const override;
 
   RenderPipelineReflection();
   RenderPipelineReflection(std::vector<BufferArgDesc> bufferArguments,

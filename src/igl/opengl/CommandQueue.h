@@ -9,8 +9,7 @@
 
 #include <igl/CommandQueue.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 class IContext;
 class Device;
 
@@ -27,5 +26,4 @@ class CommandQueue final : public ICommandQueue {
   uint32_t activeCommandBuffers_ = 0;
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

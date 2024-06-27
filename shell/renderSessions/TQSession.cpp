@@ -14,8 +14,7 @@
 #include <shell/renderSessions/TQSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 
 struct VertexPosUv {
   iglu::simdtypes::float3 position;
@@ -37,7 +36,7 @@ static uint16_t indexData[] = {
 };
 
 static std::string getVersion() {
-  return std::string("#version 100");
+  return {"#version 100"};
 }
 
 static std::string getMetalShaderSource() {
@@ -186,11 +185,12 @@ void TQSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Vertex & Index buffer
-  BufferDesc vbDesc =
+  const BufferDesc vbDesc =
       BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData));
   _vb0 = device.createBuffer(vbDesc, nullptr);
   IGL_ASSERT(_vb0 != nullptr);
-  BufferDesc ibDesc = BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
+  const BufferDesc ibDesc =
+      BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
   _ib0 = device.createBuffer(ibDesc, nullptr);
   IGL_ASSERT(_ib0 != nullptr);
 
@@ -202,14 +202,14 @@ void TQSession::initialize() noexcept {
       VertexAttribute(1, VertexAttributeFormat::Float2, offsetof(VertexPosUv, uv), "uv_in", 1);
   inputDesc.numInputBindings = 1;
   inputDesc.inputBindings[1].stride = sizeof(VertexPosUv);
-  _vertexInput0 = device.createVertexInputState(inputDesc, NULL);
+  _vertexInput0 = device.createVertexInputState(inputDesc, nullptr);
   IGL_ASSERT(_vertexInput0 != nullptr);
 
   // Sampler & Texture
   SamplerStateDesc samplerDesc;
   samplerDesc.minFilter = samplerDesc.magFilter = SamplerMinMagFilter::Linear;
   samplerDesc.debugName = "Sampler: linear";
-  _samp0 = device.createSamplerState(samplerDesc, NULL);
+  _samp0 = device.createSamplerState(samplerDesc, nullptr);
   IGL_ASSERT(_samp0 != nullptr);
   _tex0 = getPlatform().loadTexture("igl.png");
 
@@ -218,7 +218,7 @@ void TQSession::initialize() noexcept {
 
   // Command queue
   const CommandQueueDesc desc{igl::CommandQueueType::Graphics};
-  _commandQueue = device.createCommandQueue(desc, NULL);
+  _commandQueue = device.createCommandQueue(desc, nullptr);
   IGL_ASSERT(_commandQueue != nullptr);
 
   _renderPass.colorAttachments.resize(1);
@@ -255,7 +255,7 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     _framebuffer->updateDrawable(surfaceTextures.color);
   }
 
-  size_t _textureUnit = 0;
+  const size_t _textureUnit = 0;
 
   // Graphics pipeline
   if (_pipelineState == nullptr) {
@@ -279,7 +279,7 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Command Buffers
-  CommandBufferDesc cbDesc;
+  const CommandBufferDesc cbDesc;
   auto buffer = _commandQueue->createCommandBuffer(cbDesc, nullptr);
   IGL_ASSERT(buffer != nullptr);
   auto drawableSurface = _framebuffer->getColorAttachment(0);
@@ -302,7 +302,7 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   }
 
   // Submit commands
-  std::shared_ptr<igl::IRenderCommandEncoder> commands =
+  const std::shared_ptr<igl::IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(_renderPass, _framebuffer);
   IGL_ASSERT(commands != nullptr);
   if (commands) {
@@ -337,5 +337,4 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   RenderSession::update(surfaceTextures);
 }
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

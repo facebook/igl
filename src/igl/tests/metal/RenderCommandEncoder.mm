@@ -12,8 +12,7 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 // Use a 1x1 Framebuffer for this test
 #define OFFSCREEN_RT_WIDTH 1
 #define OFFSCREEN_RT_HEIGHT 1
@@ -40,7 +39,7 @@ class RenderCommandEncoderMTLTest : public ::testing::Test {
     ASSERT_NE(commandQueue_, nullptr);
     // Test instantiation and constructor of CommandBuffer.
     Result res;
-    CommandBufferDesc desc;
+    const CommandBufferDesc desc;
     commandBuffer_ = commandQueue_->createCommandBuffer(desc, &res);
     ASSERT_TRUE(res.isOk());
   }
@@ -60,13 +59,13 @@ class RenderCommandEncoderMTLTest : public ::testing::Test {
 // Test successful creation of MTLRenderCommandEncoder, adding attachment for depth and stencil
 //
 TEST_F(RenderCommandEncoderMTLTest, CreateRenderCommandEncoderAll) {
-  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           OFFSCREEN_RT_WIDTH,
-                                           OFFSCREEN_RT_HEIGHT,
-                                           TextureDesc::TextureUsageBits::Sampled |
-                                               TextureDesc::TextureUsageBits::Attachment);
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 OFFSCREEN_RT_WIDTH,
+                                                 OFFSCREEN_RT_HEIGHT,
+                                                 TextureDesc::TextureUsageBits::Sampled |
+                                                     TextureDesc::TextureUsageBits::Attachment);
   Result ret;
-  std::shared_ptr<ITexture> offscreenTexture = device_->createTexture(texDesc, &ret);
+  const std::shared_ptr<ITexture> offscreenTexture = device_->createTexture(texDesc, &ret);
   ASSERT_TRUE(ret.isOk());
   ASSERT_TRUE(offscreenTexture != nullptr);
   // Create framebuffer using the offscreen texture
@@ -78,7 +77,7 @@ TEST_F(RenderCommandEncoderMTLTest, CreateRenderCommandEncoderAll) {
   ASSERT_TRUE(ret.isOk());
   ASSERT_TRUE(framebuffer != nullptr);
 
-  RenderPassDesc rpDesc;
+  const RenderPassDesc rpDesc;
   auto encoder = commandBuffer_->createRenderCommandEncoder(rpDesc, framebuffer);
   ASSERT_TRUE(encoder != nullptr);
 
@@ -93,7 +92,7 @@ TEST_F(RenderCommandEncoderMTLTest, CreateRenderCommandEncoderAll) {
 }
 
 TEST_F(RenderCommandEncoderMTLTest, ToMTLPrimitiveType) {
-  std::vector<std::pair<PrimitiveType, MTLPrimitiveType>> inputAndExpectedList = {
+  const std::vector<std::pair<PrimitiveType, MTLPrimitiveType>> inputAndExpectedList = {
       std::make_pair(PrimitiveType::Line, MTLPrimitiveTypeLine),
       std::make_pair(PrimitiveType::LineStrip, MTLPrimitiveTypeLineStrip),
       std::make_pair(PrimitiveType::Triangle, MTLPrimitiveTypeTriangle),
@@ -109,7 +108,7 @@ TEST_F(RenderCommandEncoderMTLTest, ToMTLPrimitiveType) {
 }
 
 TEST_F(RenderCommandEncoderMTLTest, ToMTLIndexType) {
-  std::vector<std::pair<IndexFormat, MTLIndexType>> inputAndExpectedList = {
+  const std::vector<std::pair<IndexFormat, MTLIndexType>> inputAndExpectedList = {
       std::make_pair(IndexFormat::UInt16, MTLIndexTypeUInt16),
       std::make_pair(IndexFormat::UInt32, MTLIndexTypeUInt32)};
 
@@ -122,7 +121,7 @@ TEST_F(RenderCommandEncoderMTLTest, ToMTLIndexType) {
 }
 
 TEST_F(RenderCommandEncoderMTLTest, ToMTLLoadAction) {
-  std::vector<std::pair<LoadAction, MTLLoadAction>> inputAndExpectedList = {
+  const std::vector<std::pair<LoadAction, MTLLoadAction>> inputAndExpectedList = {
       std::make_pair(LoadAction::DontCare, MTLLoadActionDontCare),
       std::make_pair(LoadAction::Load, MTLLoadActionLoad),
       std::make_pair(LoadAction::Clear, MTLLoadActionClear)};
@@ -136,7 +135,7 @@ TEST_F(RenderCommandEncoderMTLTest, ToMTLLoadAction) {
 }
 
 TEST_F(RenderCommandEncoderMTLTest, ToMTLStoreAction) {
-  std::vector<std::pair<StoreAction, MTLStoreAction>> inputAndExpectedList = {
+  const std::vector<std::pair<StoreAction, MTLStoreAction>> inputAndExpectedList = {
       std::make_pair(StoreAction::DontCare, MTLStoreActionDontCare),
       std::make_pair(StoreAction::Store, MTLStoreActionStore),
       std::make_pair(StoreAction::MsaaResolve, MTLStoreActionMultisampleResolve)};
@@ -149,5 +148,4 @@ TEST_F(RenderCommandEncoderMTLTest, ToMTLStoreAction) {
   }
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

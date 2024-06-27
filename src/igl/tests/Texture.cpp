@@ -48,10 +48,10 @@ TEST_F(TextureTest, Passthrough) {
   //-------------------------------------
   // Create input texture and upload data
   //-------------------------------------
-  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           kOffscreenTexWidth,
-                                           kOffscreenTexHeight,
-                                           TextureDesc::TextureUsageBits::Sampled);
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 kOffscreenTexWidth,
+                                                 kOffscreenTexHeight,
+                                                 TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
@@ -113,10 +113,10 @@ TEST_F(TextureTest, PassthroughSubTexture) {
   //------------------------------------------------------
   // Create input texture and sub-texture, and upload data
   //------------------------------------------------------
-  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                           kOffscreenTexWidth,
-                                           kOffscreenTexHeight,
-                                           TextureDesc::TextureUsageBits::Sampled);
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 kOffscreenTexWidth,
+                                                 kOffscreenTexHeight,
+                                                 TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);

@@ -19,8 +19,7 @@
 #include <variant>
 #include <vector>
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 
 class InputDispatcher {
  public:
@@ -88,5 +87,4 @@ class InputDispatcher {
   std::queue<Event> _events;
 };
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

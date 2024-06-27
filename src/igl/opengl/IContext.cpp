@@ -3573,7 +3573,7 @@ GLenum IContext::checkForErrors(IGL_MAYBE_UNUSED const char* callerName,
       IGL_SCOPE_EXIT {
         gettingMessageLog = false;
       };
-      GLuint count = getDebugMessageLog(
+      const GLuint count = getDebugMessageLog(
           1, messageLength, &source, &type, &id, &severity, &length, messageBuffer.data());
 
       if (IGL_VERIFY(count == 1)) {
@@ -3610,7 +3610,7 @@ void IContext::resetCounters() {
 }
 
 bool IContext::addRef() {
-  bool ret = isLikelyValidObject();
+  const bool ret = isLikelyValidObject();
   if (ret) {
     ++refCount_;
   }
@@ -3618,7 +3618,7 @@ bool IContext::addRef() {
 }
 
 bool IContext::releaseRef() {
-  bool ret = isLikelyValidObject();
+  const bool ret = isLikelyValidObject();
   if (ret) {
     --refCount_;
   }
@@ -3670,7 +3670,7 @@ void IContext::initialize(Result* result) {
     getIntegerv(GL_NUM_EXTENSIONS, &n);
     if (IGL_VERIFY(n >= 0)) {
       for (GLuint i = 0; i < static_cast<GLuint>(n); i++) {
-        auto ext = reinterpret_cast<const char*>(getStringi(GL_EXTENSIONS, i));
+        const auto* ext = reinterpret_cast<const char*>(getStringi(GL_EXTENSIONS, i));
         if (ext) {
           supportedExtensions.insert(ext);
         }
@@ -3795,7 +3795,7 @@ void IContext::SynchronizedDeletionQueues::flushDeletionQueue(IContext& context)
 }
 
 void IContext::SynchronizedDeletionQueues::swapScratchDeletionQueues() {
-  std::lock_guard<std::mutex> guard(deletionQueueMutex_);
+  const std::lock_guard<std::mutex> guard(deletionQueueMutex_);
 
   std::swap(scratchBuffersQueue_, buffersQueue_);
   std::swap(scratchUnbindBuffersQueue_, unbindBuffersQueue_);
@@ -3808,20 +3808,20 @@ void IContext::SynchronizedDeletionQueues::swapScratchDeletionQueues() {
 }
 
 void IContext::SynchronizedDeletionQueues::queueDeleteBuffers(GLsizei n, const GLuint* buffers) {
-  std::lock_guard<std::mutex> guard(deletionQueueMutex_);
+  const std::lock_guard<std::mutex> guard(deletionQueueMutex_);
   for (GLsizei i = 0; i < n; ++i) {
     buffersQueue_.push_back(buffers[i]);
   }
 }
 
 void IContext::SynchronizedDeletionQueues::queueUnbindBuffer(GLenum target) {
-  std::lock_guard<std::mutex> guard(deletionQueueMutex_);
+  const std::lock_guard<std::mutex> guard(deletionQueueMutex_);
   unbindBuffersQueue_.insert(target);
 }
 
 void IContext::SynchronizedDeletionQueues::queueDeleteFramebuffers(GLsizei n,
                                                                    const GLuint* framebuffers) {
-  std::lock_guard<std::mutex> guard(deletionQueueMutex_);
+  const std::lock_guard<std::mutex> guard(deletionQueueMutex_);
   for (GLsizei i = 0; i < n; ++i) {
     framebuffersQueue_.push_back(framebuffers[i]);
   }
@@ -3829,7 +3829,7 @@ void IContext::SynchronizedDeletionQueues::queueDeleteFramebuffers(GLsizei n,
 
 void IContext::SynchronizedDeletionQueues::queueDeleteRenderbuffers(GLsizei n,
                                                                     const GLuint* renderbuffers) {
-  std::lock_guard<std::mutex> guard(deletionQueueMutex_);
+  const std::lock_guard<std::mutex> guard(deletionQueueMutex_);
   for (GLsizei i = 0; i < n; ++i) {
     renderbuffersQueue_.push_back(renderbuffers[i]);
   }
@@ -3837,25 +3837,25 @@ void IContext::SynchronizedDeletionQueues::queueDeleteRenderbuffers(GLsizei n,
 
 void IContext::SynchronizedDeletionQueues::queueDeleteVertexArrays(GLsizei n,
                                                                    const GLuint* vertexArrays) {
-  std::lock_guard<std::mutex> guard(deletionQueueMutex_);
+  const std::lock_guard<std::mutex> guard(deletionQueueMutex_);
   for (GLsizei i = 0; i < n; ++i) {
     vertexArraysQueue_.push_back(vertexArrays[i]);
   }
 }
 
 void IContext::SynchronizedDeletionQueues::queueDeleteProgram(GLuint program) {
-  std::lock_guard<std::mutex> guard(deletionQueueMutex_);
+  const std::lock_guard<std::mutex> guard(deletionQueueMutex_);
   programQueue_.push_back(program);
 }
 
 void IContext::SynchronizedDeletionQueues::queueDeleteShader(GLuint shaderId) {
-  std::lock_guard<std::mutex> guard(deletionQueueMutex_);
+  const std::lock_guard<std::mutex> guard(deletionQueueMutex_);
   shaderQueue_.push_back(shaderId);
 }
 
 void IContext::SynchronizedDeletionQueues::queueDeleteTextures(
     const std::vector<GLuint>& textures) {
-  std::lock_guard<std::mutex> guard(deletionQueueMutex_);
+  const std::lock_guard<std::mutex> guard(deletionQueueMutex_);
   texturesQueue_.insert(std::end(texturesQueue_), std::begin(textures), std::end(textures));
 }
 } // namespace igl::opengl

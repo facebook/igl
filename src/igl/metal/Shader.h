@@ -12,9 +12,7 @@
 #include <string>
 #include <vector>
 
-namespace igl {
-
-namespace metal {
+namespace igl::metal {
 
 class ShaderModule final : public IShaderModule {
   friend class Device;
@@ -40,5 +38,4 @@ class ShaderStages final : public IShaderStages {
   explicit ShaderStages(ShaderStagesDesc desc);
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

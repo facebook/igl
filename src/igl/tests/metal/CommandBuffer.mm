@@ -12,8 +12,7 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 //
 // CommandBufferMTLTest
@@ -34,7 +33,7 @@ class CommandBufferMTLTest : public ::testing::Test {
 
     // Test instantiation and constructor of CommandBuffer.
     Result res;
-    CommandBufferDesc desc;
+    const CommandBufferDesc desc;
     commandBuffer_ = commandQueue_->createCommandBuffer(desc, &res);
     ASSERT_TRUE(res.isOk());
   }
@@ -80,16 +79,15 @@ TEST_F(CommandBufferMTLTest, CreateComputeCommandEncoder) {
 TEST_F(CommandBufferMTLTest, CreateRenderCommandEncoderSimple) {
   Result res;
 
-  FramebufferDesc fbDesc;
+  const FramebufferDesc fbDesc;
   auto frameBuffer = device_->createFramebuffer(fbDesc, &res);
   ASSERT_TRUE(res.isOk());
 
-  RenderPassDesc rpDesc;
+  const RenderPassDesc rpDesc;
   auto encoder = commandBuffer_->createRenderCommandEncoder(rpDesc, frameBuffer);
   ASSERT_NE(encoder, nullptr);
 
   // MTLCommandEncoder must always call endEncoding before being released.
   encoder->endEncoding();
 }
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

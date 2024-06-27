@@ -13,8 +13,7 @@
 #include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 /**
  * @brief Semaphores are used to synchronize GPU-GPU tasks. The VulkanSemaphore class encapsulates
@@ -45,5 +44,4 @@ class VulkanSemaphore final {
   VkSemaphore vkSemaphore_ = VK_NULL_HANDLE;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

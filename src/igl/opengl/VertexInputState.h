@@ -25,7 +25,7 @@ struct OGLAttribute {
   uintptr_t bufferOffset = 0;
   GLint numComponents = 0;
   GLenum componentType = GL_FLOAT;
-  GLboolean normalized = false;
+  GLboolean normalized = 0u;
   VertexSampleFunction sampleFunction = VertexSampleFunction::PerVertex;
   size_t sampleRate = 1;
 
@@ -43,7 +43,8 @@ class VertexInputState final : public IVertexInputState {
   const std::vector<OGLAttribute>& getAssociatedAttributes(size_t bufferIndex);
 
   // Returns a read-only reference to the bufferOGLAttribMap_
-  const std::unordered_map<size_t, std::vector<OGLAttribute>>& getBufferAttribMap() const {
+  [[nodiscard]] const std::unordered_map<size_t, std::vector<OGLAttribute>>& getBufferAttribMap()
+      const {
     return bufferOGLAttribMap_;
   }
 

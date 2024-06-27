@@ -11,14 +11,12 @@
 
 namespace igl {
 class IDevice;
-namespace tests {
-namespace util {
+namespace tests::util {
 
 /**
  Create and return an igl::Device that is suitable for running tests against.
  */
 std::shared_ptr<::igl::IDevice> createTestDevice();
 
-} // namespace util
-} // namespace tests
+} // namespace tests::util
 } // namespace igl

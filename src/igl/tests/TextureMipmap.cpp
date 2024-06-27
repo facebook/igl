@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <cstddef>
+
 #include "Texture.h"
 
 namespace igl::tests {
@@ -346,7 +348,7 @@ TEST_F(TextureTest, GetEstimatedSizeInBytes) {
   const size_t formatBytes = iglDev_->getBackendType() == BackendType::OpenGL ? 2 : 4;
 
   size_t bytes;
-  bytes = static_cast<size_t>(12 * 34 * formatBytes);
+  bytes = (12 * 34 * formatBytes);
   ASSERT_EQ(calcSize(12, 34, format, 1), bytes);
   bytes = static_cast<size_t>((16 + 8 + 4 + 2 + 1) * formatBytes);
   ASSERT_EQ(calcSize(16, 1, format, 5), bytes);

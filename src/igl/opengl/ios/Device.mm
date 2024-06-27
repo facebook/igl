@@ -15,9 +15,7 @@
 #include <igl/opengl/VertexInputState.h>
 #include <igl/opengl/ios/Context.h>
 
-namespace igl {
-namespace opengl {
-namespace ios {
+namespace igl::opengl::ios {
 
 Device::Device(std::unique_ptr<IContext> context) :
   opengl::Device(std::move(context)), platformDevice_(*this) {}
@@ -26,6 +24,4 @@ const PlatformDevice& Device::getPlatformDevice() const noexcept {
   return platformDevice_;
 }
 
-} // namespace ios
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl::ios

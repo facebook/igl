@@ -9,8 +9,7 @@
 
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 //
 // VertexInputStateTest
@@ -252,5 +251,4 @@ TEST_F(VertexInputStateTest, VertexInputStateDescEquality) {
   ASSERT_EQ(desc1, desc2);
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

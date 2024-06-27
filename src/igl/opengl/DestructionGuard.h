@@ -9,8 +9,7 @@
 
 #include <memory>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 class IContext;
 
@@ -32,5 +31,4 @@ class DestructionGuard final {
   std::shared_ptr<IContext> context_;
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

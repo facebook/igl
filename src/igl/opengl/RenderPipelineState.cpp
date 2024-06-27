@@ -10,8 +10,7 @@
 #include <igl/RenderCommandEncoder.h> // for igl::BindTarget
 #include <igl/opengl/VertexInputState.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 namespace {
 
@@ -196,7 +195,7 @@ Result RenderPipelineState::create() {
   }
 
   if (!mFramebufferDesc.colorAttachments.empty()) {
-    ColorWriteMask const colorWriteMask = mFramebufferDesc.colorAttachments[0].colorWriteMask;
+    const ColorWriteMask colorWriteMask = mFramebufferDesc.colorAttachments[0].colorWriteMask;
     colorMask_[0] = static_cast<GLboolean>((colorWriteMask & ColorWriteBitsRed) != 0);
     colorMask_[1] = static_cast<GLboolean>((colorWriteMask & ColorWriteBitsGreen) != 0);
     colorMask_[2] = static_cast<GLboolean>((colorWriteMask & ColorWriteBitsBlue) != 0);
@@ -397,5 +396,4 @@ std::unordered_map<int, size_t>& RenderPipelineState::uniformBlockBindingMap() {
   return uniformBlockBindingMap_;
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

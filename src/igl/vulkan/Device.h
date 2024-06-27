@@ -64,25 +64,26 @@ class Device final : public IDevice {
                                                   Result* outResult) override;
 
   // Platform-specific extensions
-  const PlatformDevice& getPlatformDevice() const noexcept override;
+  [[nodiscard]] const PlatformDevice& getPlatformDevice() const noexcept override;
 
   // ICapabilities
-  bool hasFeature(DeviceFeatures feature) const override;
-  bool hasRequirement(DeviceRequirement requirement) const override;
+  [[nodiscard]] bool hasFeature(DeviceFeatures feature) const override;
+  [[nodiscard]] bool hasRequirement(DeviceRequirement requirement) const override;
   bool getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const override;
-  TextureFormatCapabilities getTextureFormatCapabilities(TextureFormat format) const override;
-  ShaderVersion getShaderVersion() const override;
+  [[nodiscard]] TextureFormatCapabilities getTextureFormatCapabilities(
+      TextureFormat format) const override;
+  [[nodiscard]] ShaderVersion getShaderVersion() const override;
 
-  BackendType getBackendType() const override {
+  [[nodiscard]] BackendType getBackendType() const override {
     return BackendType::Vulkan;
   }
-  size_t getCurrentDrawCount() const override;
+  [[nodiscard]] size_t getCurrentDrawCount() const override;
 
   VulkanContext& getVulkanContext() {
-    return *ctx_.get();
+    return *ctx_;
   }
-  const VulkanContext& getVulkanContext() const {
-    return *ctx_.get();
+  [[nodiscard]] const VulkanContext& getVulkanContext() const {
+    return *ctx_;
   }
 
  private:

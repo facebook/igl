@@ -26,7 +26,7 @@ class TinyRenderer final {
   void init(AAssetManager* mgr, ANativeWindow* nativeWindow, BackendTypeID backendTypeID);
   void render(float displayScale);
   void onSurfacesChanged(ANativeWindow* nativeWindow, int width, int height);
-  void onSurfaceDestroyed(ANativeWindow* nativeWindow);
+  void onSurfaceDestroyed(ANativeWindow* surface);
   void touchEvent(bool isDown, float x, float y, float dx, float dy);
 
  private:

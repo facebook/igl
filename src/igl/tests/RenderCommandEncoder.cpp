@@ -29,8 +29,7 @@
 #define OFFSCREEN_TEX_WIDTH 4
 #define OFFSCREEN_TEX_HEIGHT 4
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 const auto quarterPixel = (float)(0.5 / OFFSCREEN_RT_WIDTH);
 const float backgroundColor = 0.501f;
@@ -142,7 +141,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
     ASSERT_TRUE(vertexInputState_ != nullptr);
 
     // Initialize sampler state
-    SamplerStateDesc samplerDesc;
+    const SamplerStateDesc samplerDesc;
     samp_ = iglDev_->createSamplerState(samplerDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(samp_ != nullptr);
@@ -347,7 +346,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawAPoint) {
 
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
-  std::vector<uint32_t> expectedPixels {
+  std::vector<uint32_t> const expectedPixels {
     backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
     backgroundColorHex, backgroundColorHex, grayColor,          backgroundColorHex,
     backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
@@ -378,7 +377,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawALine) {
 
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
-  std::vector<uint32_t> expectedPixels {
+  std::vector<uint32_t> const expectedPixels {
     backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
     backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
     backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
@@ -413,7 +412,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawLineStrip) {
 
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
-  std::vector<uint32_t> expectedPixels {
+  std::vector<uint32_t> const expectedPixels {
     backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
     backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
     backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
@@ -446,7 +445,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangle) {
 
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
-  std::vector<uint32_t> expectedPixels {
+  std::vector<uint32_t> const expectedPixels {
     backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
     backgroundColorHex, backgroundColorHex, grayColor,          grayColor,
     backgroundColorHex, grayColor,          grayColor,          grayColor,
@@ -479,7 +478,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStrip) {
   });
 
   verifyFrameBuffer([](const std::vector<uint32_t>& pixels) {
-    for (auto& pixel : pixels) {
+    for (const auto& pixel : pixels) {
       ASSERT_EQ(pixel, data::texture::TEX_RGBA_GRAY_4x4[0]);
     }
   });
@@ -520,11 +519,10 @@ TEST_F(RenderCommandEncoderTest, shouldNotDraw) {
   });
 
   verifyFrameBuffer([](const std::vector<uint32_t>& pixels) {
-    for (auto& pixel : pixels) {
+    for (const auto& pixel : pixels) {
       ASSERT_EQ(pixel, backgroundColorHex);
     }
   });
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

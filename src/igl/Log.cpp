@@ -36,7 +36,7 @@ static IGLLogHandlerFunc* GetHandle() {
 IGL_API int IGLLog(IGLLogLevel logLevel, const char* IGL_RESTRICT format, ...) {
   va_list ap;
   va_start(ap, format);
-  int result = IGLLogV(logLevel, format, ap);
+  const int result = IGLLogV(logLevel, format, ap);
   va_end(ap);
   return result;
 }
@@ -57,9 +57,9 @@ IGL_API int IGLLogOnce(IGLLogLevel logLevel, const char* IGL_RESTRICT format, ..
   FOLLY_POP_WARNING
   va_end(ap);
 
-  std::string msg(buffer);
+  const std::string msg(buffer);
   {
-    std::lock_guard<std::mutex> guard(s_loggedMessagesMutex);
+    const std::lock_guard<std::mutex> guard(s_loggedMessagesMutex);
     if (s_loggedMessages.count(msg) == 0) {
       result = IGLLogV(logLevel, format, apCopy);
       s_loggedMessages.insert(msg);
@@ -74,7 +74,7 @@ IGL_API int IGLLogV(IGLLogLevel logLevel, const char* IGL_RESTRICT format, va_li
   return (*GetHandle())(logLevel, format, ap);
 }
 
-IGL_API int IGLLogDefaultHandler(IGLLogLevel logLevel,
+IGL_API int IGLLogDefaultHandler(IGLLogLevel /*logLevel*/,
                                  const char* IGL_RESTRICT format,
                                  va_list ap) {
   FOLLY_PUSH_WARNING

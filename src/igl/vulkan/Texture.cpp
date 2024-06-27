@@ -16,8 +16,7 @@
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <igl/vulkan/VulkanTexture.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 Texture::Texture(const igl::vulkan::Device& device, TextureFormat format) :
   ITexture(format), device_(device) {}
@@ -153,6 +152,17 @@ Result Texture::create(const TextureDesc& desc) {
                                    ? VK_IMAGE_TILING_OPTIMAL
                                    : VK_IMAGE_TILING_LINEAR;
 
+  if (getProperties().numPlanes > 1) {
+    // some constraints for multiplanar image formats
+    IGL_ASSERT(imageType == VK_IMAGE_TYPE_2D);
+    IGL_ASSERT(samples == VK_SAMPLE_COUNT_1_BIT);
+    IGL_ASSERT(tiling == VK_IMAGE_TILING_OPTIMAL);
+    IGL_ASSERT(desc.numLayers == 1);
+    IGL_ASSERT(desc.numMipLevels == 1);
+    createFlags |= VK_IMAGE_CREATE_DISJOINT_BIT | VK_IMAGE_CREATE_ALIAS_BIT |
+                   VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+  }
+
   Result result;
   auto image = ctx.createImage(
       imageType,
@@ -223,9 +233,16 @@ Result Texture::uploadInternal(TextureType /*type*/,
     return Result{};
   }
 
+  const auto& vulkanImage = texture_->getVulkanImage();
+  if (vulkanImage.isMappedPtrAccessible()) {
+    checked_memcpy(
+        vulkanImage.mappedPtr_, vulkanImage.allocatedSize, data, bytesPerRow * range.width);
+    vulkanImage.flushMappedMemory();
+    return Result();
+  }
+
   const VulkanContext& ctx = device_.getVulkanContext();
-  ctx.stagingDevice_->imageData(
-      texture_->getVulkanImage(), desc_.type, range, getProperties(), bytesPerRow, data);
+  ctx.stagingDevice_->imageData(vulkanImage, desc_.type, range, getProperties(), bytesPerRow, data);
 
   return Result();
 }
@@ -351,5 +368,4 @@ void Texture::clearColorTexture(const igl::Color& rgba) {
   img.ctx_->immediate_->submit(wrapper);
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

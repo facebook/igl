@@ -12,8 +12,7 @@
 #include <algorithm>
 #include <iterator>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 VulkanExtensions::VulkanExtensions() {
   extensions_.resize(kNumberOfExtensionTypes);
@@ -113,6 +112,10 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
 
   } else if (extensionType == ExtensionType::Device) {
 #if IGL_PLATFORM_ANDROID
+    enable(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, ExtensionType::Device);
+    enable(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, ExtensionType::Device);
+    enable(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME,
+           ExtensionType::Device);
     if (config.enableDescriptorIndexing) {
 #endif
       // On Android, vkEnumerateInstanceExtensionProperties crashes when validation layers are
@@ -170,5 +173,4 @@ std::vector<const char*> VulkanExtensions::allEnabled(ExtensionType extensionTyp
   return returnList;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

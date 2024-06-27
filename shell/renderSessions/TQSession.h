@@ -14,8 +14,7 @@
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 
 struct FragmentFormat {
   iglu::simdtypes::float3 color;
@@ -41,10 +40,9 @@ class TQSession : public RenderSession {
   std::shared_ptr<ITexture> _tex0;
   RenderPassDesc _renderPass;
   std::shared_ptr<IFramebuffer> _framebuffer;
-  FragmentFormat _fragmentParameters;
+  FragmentFormat _fragmentParameters{};
   std::vector<UniformDesc> _fragmentUniformDescriptors;
   std::vector<UniformDesc> _vertexUniformDescriptors;
 };
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

@@ -15,8 +15,7 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanBuffer;
 class VulkanContext;
@@ -69,8 +68,8 @@ class VulkanStagingDevice final {
    * upon return
    */
   void getImageData2D(VkImage srcImage,
-                      const uint32_t level,
-                      const uint32_t layer,
+                      uint32_t level,
+                      uint32_t layer,
                       const VkRect2D& imageRegion,
                       TextureFormatProperties properties,
                       VkFormat format,
@@ -161,5 +160,4 @@ class VulkanStagingDevice final {
   std::deque<MemoryRegion> regions_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

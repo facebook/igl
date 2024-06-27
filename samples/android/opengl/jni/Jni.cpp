@@ -13,8 +13,7 @@
 #include <igl/samples/android/opengl/TinyRenderer.h>
 #include <memory>
 
-namespace igl_samples {
-namespace android {
+namespace igl_samples::android {
 
 namespace {
 std::unique_ptr<TinyRenderer> renderer;
@@ -28,23 +27,22 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_sample_opengl_SampleLib_render(JNIE
                                                                             jobject obj);
 };
 
-JNIEXPORT void JNICALL Java_com_facebook_igl_sample_opengl_SampleLib_init(JNIEnv* env,
-                                                                          jobject obj) {
+JNIEXPORT void JNICALL Java_com_facebook_igl_sample_opengl_SampleLib_init(JNIEnv* /*env*/,
+                                                                          jobject /*obj*/) {
   renderer = std::make_unique<TinyRenderer>();
   renderer->init();
 }
 
-JNIEXPORT void JNICALL Java_com_facebook_igl_sample_opengl_SampleLib_surfaceChanged(JNIEnv* env,
-                                                                                    jobject obj) {
+JNIEXPORT void JNICALL
+Java_com_facebook_igl_sample_opengl_SampleLib_surfaceChanged(JNIEnv* /*env*/, jobject /*obj*/) {
   renderer->onSurfacesChanged();
 }
 
-JNIEXPORT void JNICALL Java_com_facebook_igl_sample_opengl_SampleLib_render(JNIEnv* env,
-                                                                            jobject obj) {
+JNIEXPORT void JNICALL Java_com_facebook_igl_sample_opengl_SampleLib_render(JNIEnv* /*env*/,
+                                                                            jobject /*obj*/) {
   if (renderer != nullptr) {
     renderer->render();
   }
 }
 
-} // namespace android
-} // namespace igl_samples
+} // namespace igl_samples::android

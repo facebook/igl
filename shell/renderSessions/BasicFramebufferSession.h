@@ -9,8 +9,7 @@
 #include <memory>
 #include <shell/shared/renderSession/RenderSession.h>
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 
 class BasicFramebufferSession : public RenderSession {
  public:
@@ -25,5 +24,4 @@ class BasicFramebufferSession : public RenderSession {
   igl::RenderPassDesc renderPass_;
 };
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

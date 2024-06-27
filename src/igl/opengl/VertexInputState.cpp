@@ -14,8 +14,7 @@
 #include <string>
 #include <vector>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 //
 // A utility function to convert an IGL attribute to an OGL attribute
@@ -332,7 +331,7 @@ Result VertexInputState::create(const VertexInputStateDesc& desc) {
 
   if (desc.numInputBindings == 1) {
     // All the attributed should have the same bufferIndex
-    int bufferIndex = desc.attributes[0].bufferIndex;
+    const int bufferIndex = desc.attributes[0].bufferIndex;
     for (int i = 1; i < desc.numAttributes; i++) {
       if (desc.attributes[i].bufferIndex != bufferIndex) {
         return Result{
@@ -346,7 +345,7 @@ Result VertexInputState::create(const VertexInputStateDesc& desc) {
   for (size_t i = 0; i < desc.numAttributes; i++) {
     OGLAttribute attribInfo;
 
-    size_t bufferIndex = desc.attributes[i].bufferIndex;
+    const size_t bufferIndex = desc.attributes[i].bufferIndex;
 
     attribInfo.name = desc.attributes[i].name;
     attribInfo.stride = desc.inputBindings[bufferIndex].stride;
@@ -370,5 +369,4 @@ const std::vector<OGLAttribute>& VertexInputState::getAssociatedAttributes(size_
   return bufferOGLAttribMap_[bufferIndex];
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

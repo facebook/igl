@@ -12,8 +12,7 @@
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/PlatformDevice.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 class ViewTextureTarget;
 
@@ -26,7 +25,7 @@ class PlatformDevice : public opengl::PlatformDevice {
  public:
   static constexpr igl::PlatformDeviceType Type = igl::PlatformDeviceType::OpenGLEgl;
 
-  PlatformDevice(Device& owner);
+  explicit PlatformDevice(Device& owner);
   ~PlatformDevice() override = default;
 
   /// Returns a texture representing the EGL Surface associated with this device's context.
@@ -59,7 +58,7 @@ class PlatformDevice : public opengl::PlatformDevice {
   void setPresentationTime(long long presentationTimeNs, Result* outResult);
 
  protected:
-  bool isType(PlatformDeviceType t) const noexcept override;
+  [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override;
 
  private:
   std::shared_ptr<ViewTextureTarget> drawableTexture_;
@@ -68,5 +67,4 @@ class PlatformDevice : public opengl::PlatformDevice {
 };
 
 } // namespace egl
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

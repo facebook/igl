@@ -86,18 +86,20 @@ bool RenderPipelineDesc::operator==(const RenderPipelineDesc& other) const {
     return false;
   }
 
-  if (debugName != other.debugName) {
-    return false;
+  for (size_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
+    if (immutableSamplers[i] != other.immutableSamplers[i]) {
+      return false;
+    }
   }
 
-  return true;
+  return debugName == other.debugName;
 }
 
 /// The underlying assumption for this hash is all of the shared pointers in
 /// this structure can uniquely identify the object they are pointing to.
 /// It is the responsibility of the caller of this function to make sure
 /// that is the case.
-size_t std::hash<RenderPipelineDesc>::operator()(RenderPipelineDesc const& key) const {
+size_t std::hash<RenderPipelineDesc>::operator()(const RenderPipelineDesc& key) const {
   size_t hash = std::hash<uintptr_t>()(reinterpret_cast<uintptr_t>(key.vertexInputState.get()));
 
   hash ^= std::hash<int>()(EnumToValue(key.topology));
@@ -122,12 +124,15 @@ size_t std::hash<RenderPipelineDesc>::operator()(RenderPipelineDesc const& key) 
     hash ^= std::hash<igl::NameHandle>()(i.second.first);
     hash ^= std::hash<igl::NameHandle>()(i.second.second);
   }
+  for (const auto& i : key.immutableSamplers) {
+    hash ^= std::hash<uintptr_t>()(reinterpret_cast<uintptr_t>(i.get()));
+  }
 
   return hash;
 }
 
 size_t std::hash<RenderPipelineDesc::TargetDesc>::operator()(
-    RenderPipelineDesc::TargetDesc const& key) const {
+    const RenderPipelineDesc::TargetDesc& key) const {
   size_t hash = std::hash<int>()(EnumToValue(key.depthAttachmentFormat));
 
   hash ^= std::hash<int>()(EnumToValue(key.stencilAttachmentFormat));
@@ -141,7 +146,7 @@ size_t std::hash<RenderPipelineDesc::TargetDesc>::operator()(
 }
 
 size_t std::hash<RenderPipelineDesc::TargetDesc::ColorAttachment>::operator()(
-    RenderPipelineDesc::TargetDesc::ColorAttachment const& key) const {
+    const RenderPipelineDesc::TargetDesc::ColorAttachment& key) const {
   size_t hash = std::hash<int>()(EnumToValue(key.textureFormat));
   hash ^= std::hash<uint8_t>()(key.colorWriteMask);
   hash ^= std::hash<bool>()(key.blendEnabled);

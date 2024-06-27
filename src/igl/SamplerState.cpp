@@ -18,7 +18,7 @@ bool SamplerStateDesc::operator==(const SamplerStateDesc& rhs) const {
          (addressModeV == rhs.addressModeV) && (addressModeW == rhs.addressModeW) &&
          (depthCompareFunction == rhs.depthCompareFunction) && (mipLodMin == rhs.mipLodMin) &&
          (mipLodMax == rhs.mipLodMax) && (maxAnisotropic == rhs.maxAnisotropic) &&
-         (depthCompareEnabled == rhs.depthCompareEnabled);
+         (depthCompareEnabled == rhs.depthCompareEnabled) && (yuvFormat == rhs.yuvFormat);
 }
 
 bool SamplerStateDesc::operator!=(const SamplerStateDesc& rhs) const {
@@ -27,7 +27,7 @@ bool SamplerStateDesc::operator!=(const SamplerStateDesc& rhs) const {
 
 } // namespace igl
 
-size_t std::hash<igl::SamplerStateDesc>::operator()(igl::SamplerStateDesc const& key) const {
+size_t std::hash<igl::SamplerStateDesc>::operator()(const igl::SamplerStateDesc& key) const {
   IGL_ASSERT_MSG(key.maxAnisotropic >= 1 && key.maxAnisotropic <= 16,
                  "[IGL] SamplerStateDesc::maxAnisotropic is out of range: %su",
                  key.maxAnisotropic);
@@ -38,7 +38,7 @@ size_t std::hash<igl::SamplerStateDesc>::operator()(igl::SamplerStateDesc const&
                  key.mipLodMax);
 
   // clang-format off
-  size_t hash = igl::EnumToValue(key.minFilter) |         // 0,1: 1 bit field
+  const size_t hash = igl::EnumToValue(key.minFilter) |         // 0,1: 1 bit field
                 igl::EnumToValue(key.magFilter) << 1 |    // 0,1: 1 bit field
                 igl::EnumToValue(key.mipFilter) << 2 |    // 0,1: 1 bit field
                 igl::EnumToValue(key.addressModeU) << 4 | // 0,1,2: 2 bit field
@@ -48,7 +48,8 @@ size_t std::hash<igl::SamplerStateDesc>::operator()(igl::SamplerStateDesc const&
                 key.mipLodMin << 14 |                     // [0, 15]: 4 bit field
                 key.mipLodMax << 18 |                     // [0, 15]: 4 bit field
                 igl::EnumToValue(key.depthCompareFunction) << 22 | // [0, 7]: 3 bit field
-                key.depthCompareEnabled << 25;            // 0,1: 1 bit field
+                (key.depthCompareEnabled ? 1u : 0u) << 25 | // 0,1: 1 bit field
+                igl::EnumToValue(key.yuvFormat) << 26;      // 0,255: 8 bit field
   // clang-format on
 
   return hash;

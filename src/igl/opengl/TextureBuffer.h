@@ -9,8 +9,7 @@
 
 #include <igl/opengl/TextureBufferBase.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 // TextureBuffer encapsulates OpenGL textures
 class TextureBuffer : public TextureBufferBase {
@@ -62,5 +61,4 @@ class TextureBuffer : public TextureBufferBase {
   mutable uint64_t textureHandle_ = 0;
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

@@ -11,9 +11,7 @@
 #include <igl/vulkan/Common.h>
 #include <vector>
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 class Device;
 class VulkanShaderModule;
@@ -24,7 +22,7 @@ class ShaderModule final : public IShaderModule {
   ShaderModule(ShaderModuleInfo info, std::shared_ptr<VulkanShaderModule> shaderModule);
   ~ShaderModule() override = default;
 
-  const VulkanShaderModule& getVulkanShaderModule() const {
+  [[nodiscard]] const VulkanShaderModule& getVulkanShaderModule() const {
     return *module_;
   }
 
@@ -47,5 +45,4 @@ class ShaderLibrary : public IShaderLibrary {
   explicit ShaderLibrary(std::vector<std::shared_ptr<IShaderModule>> modules);
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

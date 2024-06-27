@@ -20,7 +20,6 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 #include <igl/NameHandle.h>
-#include <igl/opengl/Device.h>
 #include <string>
 
 namespace igl::tests {
@@ -98,11 +97,11 @@ class TextureArrayTest : public ::testing::Test {
     }
 
     // Create an offscreen texture to render to
-    TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                             kOffscreenTexWidth,
-                                             kOffscreenTexHeight,
-                                             TextureDesc::TextureUsageBits::Sampled |
-                                                 TextureDesc::TextureUsageBits::Attachment);
+    const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                   kOffscreenTexWidth,
+                                                   kOffscreenTexHeight,
+                                                   TextureDesc::TextureUsageBits::Sampled |
+                                                       TextureDesc::TextureUsageBits::Attachment);
 
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);
@@ -225,7 +224,7 @@ class TextureArrayTest : public ::testing::Test {
     ASSERT_TRUE(uv_ != nullptr);
 
     // Initialize sampler state
-    SamplerStateDesc samplerDesc;
+    const SamplerStateDesc samplerDesc;
     samp_ = iglDev_->createSamplerState(samplerDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(samp_ != nullptr);
@@ -333,17 +332,17 @@ void runUploadTest(IDevice& device,
                    bool singleUpload,
                    bool modifyTexture) {
   Result ret;
-  std::shared_ptr<IRenderPipelineState> pipelineState;
+  const std::shared_ptr<IRenderPipelineState> pipelineState;
 
   //-------------------------------------
   // Create input texture and upload data
   //-------------------------------------
-  TextureDesc texDesc = TextureDesc::new2DArray(TextureFormat::RGBA_UNorm8,
-                                                kOffscreenTexWidth,
-                                                kOffscreenTexHeight,
-                                                kNumLayers,
-                                                TextureDesc::TextureUsageBits::Sampled |
-                                                    TextureDesc::TextureUsageBits::Attachment);
+  const TextureDesc texDesc = TextureDesc::new2DArray(
+      TextureFormat::RGBA_UNorm8,
+      kOffscreenTexWidth,
+      kOffscreenTexHeight,
+      kNumLayers,
+      TextureDesc::TextureUsageBits::Sampled | TextureDesc::TextureUsageBits::Attachment);
   auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(tex != nullptr);
@@ -545,13 +544,13 @@ TEST_F(TextureArrayTest, Passthrough_SampleFromArray) {
     cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
 
     Result result{};
-    auto vertUniformBuffer = createVertexUniformBuffer(*iglDev_.get(), &result);
+    auto vertUniformBuffer = createVertexUniformBuffer(*iglDev_, &result);
     ASSERT_TRUE(result.isOk());
 
     vertexUniforms_.layer = static_cast<int>(layer);
 
     *static_cast<VertexUniforms*>(vertUniformBuffer->getData()) = vertexUniforms_;
-    vertUniformBuffer->bind(*iglDev_.get(), *pipelineState, *cmds.get());
+    vertUniformBuffer->bind(*iglDev_, *pipelineState, *cmds);
 
     cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
     cmds->drawIndexed(6);

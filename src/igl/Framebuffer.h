@@ -51,21 +51,21 @@ struct FramebufferDesc {
  */
 class IFramebuffer : public ITrackedResource<IFramebuffer> {
  public:
-  virtual ~IFramebuffer() = default;
+  ~IFramebuffer() override = default;
 
   // Accessors
   /** @brief Retrieve array of all valid color and resolve color attachment indices */
-  virtual std::vector<size_t> getColorAttachmentIndices() const = 0;
+  [[nodiscard]] virtual std::vector<size_t> getColorAttachmentIndices() const = 0;
   /** @brief Retrieve a specific color attachment by index */
-  virtual std::shared_ptr<ITexture> getColorAttachment(size_t index) const = 0;
+  [[nodiscard]] virtual std::shared_ptr<ITexture> getColorAttachment(size_t index) const = 0;
   /** @brief Retrieve a specific resolve color attachment by index */
-  virtual std::shared_ptr<ITexture> getResolveColorAttachment(size_t index) const = 0;
+  [[nodiscard]] virtual std::shared_ptr<ITexture> getResolveColorAttachment(size_t index) const = 0;
   /** @brief Retrieve depth attachment */
-  virtual std::shared_ptr<ITexture> getDepthAttachment() const = 0;
+  [[nodiscard]] virtual std::shared_ptr<ITexture> getDepthAttachment() const = 0;
   /** @brief Retrieve resolve depth attachment */
-  virtual std::shared_ptr<ITexture> getResolveDepthAttachment() const = 0;
+  [[nodiscard]] virtual std::shared_ptr<ITexture> getResolveDepthAttachment() const = 0;
   /** @brief Retrieve the stencil attachment */
-  virtual std::shared_ptr<ITexture> getStencilAttachment() const = 0;
+  [[nodiscard]] virtual std::shared_ptr<ITexture> getStencilAttachment() const = 0;
   /** @brief Retrieve the mode that this framebuffer was created in. */
   [[nodiscard]] virtual FramebufferMode getMode() const = 0;
   /** @brief Retrieve the flag checking if framebuffer is bound to swapchain. */

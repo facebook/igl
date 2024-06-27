@@ -28,11 +28,11 @@ class NetServiceApple final : public NetService {
   [[nodiscard]] std::shared_ptr<OutputStream> getOutputStream() const noexcept final;
   [[nodiscard]] std::string getName() const noexcept final;
 
-  InputStreamApple& inputStream() const noexcept {
+  [[nodiscard]] InputStreamApple& inputStream() const noexcept {
     return *inputStream_;
   }
 
-  OutputStreamApple& outputStream() const noexcept {
+  [[nodiscard]] OutputStreamApple& outputStream() const noexcept {
     return *outputStream_;
   }
 

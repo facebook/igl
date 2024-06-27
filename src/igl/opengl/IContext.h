@@ -532,7 +532,7 @@ class IContext {
   void unbindBuffer(GLenum target);
 
   // Log the next N frames
-  void apiLogNextNDraws(const unsigned int n);
+  void apiLogNextNDraws(unsigned int n);
 
   // Log everything between start() and end()
   void apiLogStart();

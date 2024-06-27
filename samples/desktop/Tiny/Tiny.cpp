@@ -24,8 +24,8 @@
 #include <GLFW/glfw3native.h>
 
 #include <cassert>
+#include <cstdio>
 #include <regex>
-#include <stdio.h>
 
 #include <igl/IGL.h>
 
@@ -223,11 +223,11 @@ static void initIGL() {
 #error Unsupported OS
 #endif
 
-    std::vector<HWDeviceDesc> devices = vulkan::HWDevice::queryDevices(
-        *ctx.get(), HWDeviceQueryDesc(HWDeviceType::DiscreteGpu), nullptr);
+    std::vector<HWDeviceDesc> devices =
+        vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::DiscreteGpu), nullptr);
     if (devices.empty()) {
       devices = vulkan::HWDevice::queryDevices(
-          *ctx.get(), HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
+          *ctx, HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
     }
     device_ =
         vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
@@ -236,7 +236,7 @@ static void initIGL() {
   }
 
   // Command queue: backed by different types of GPU HW queues
-  CommandQueueDesc desc{CommandQueueType::Graphics};
+  const CommandQueueDesc desc{CommandQueueType::Graphics};
   commandQueue_ = device_->createCommandQueue(desc, nullptr);
 
   // first color attachment
@@ -343,8 +343,9 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
   }
 
   // Command buffers (1-N per thread): create, submit and forget
-  CommandBufferDesc cbDesc;
-  std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  const CommandBufferDesc cbDesc;
+  const std::shared_ptr<ICommandBuffer> buffer =
+      commandQueue_->createCommandBuffer(cbDesc, nullptr);
 
   const igl::Viewport viewport = {0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f};
   const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
@@ -365,7 +366,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable) {
   commandQueue_->submit(*buffer);
 }
 
-int main(int argc, char* argv[]) {
+int main(int /*argc*/, char* /*argv*/[]) {
   renderPass_.colorAttachments.resize(kNumColorAttachments);
   initWindow(&window_);
   initIGL();

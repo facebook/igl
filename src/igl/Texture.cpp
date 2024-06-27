@@ -231,20 +231,32 @@ bool TextureRangeDesc::operator!=(const TextureRangeDesc& rhs) const noexcept {
   return !operator==(rhs);
 }
 
-#define PROPERTIES(fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs) \
-  case TextureFormat::fmt:                                         \
-    return TextureFormatProperties{                                \
-        IGL_TO_STRING(fmt), TextureFormat::fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs};
+#define PROPERTIES(fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs, planes) \
+  case TextureFormat::fmt:                                                 \
+    return TextureFormatProperties{IGL_TO_STRING(fmt),                     \
+                                   TextureFormat::fmt,                     \
+                                   cpp,                                    \
+                                   bpb,                                    \
+                                   bw,                                     \
+                                   bh,                                     \
+                                   bd,                                     \
+                                   mbx,                                    \
+                                   mby,                                    \
+                                   mbz,                                    \
+                                   planes,                                 \
+                                   flgs};
 
-#define INVALID(fmt) PROPERTIES(fmt, 1, 1, 1, 1, 1, 1, 1, 1, 0)
-#define COLOR(fmt, cpp, bpb, flgs) PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, flgs)
+#define INVALID(fmt) PROPERTIES(fmt, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0)
+#define COLOR(fmt, cpp, bpb, flgs) PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, flgs, 1)
 #define COMPRESSED(fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs) \
-  PROPERTIES(fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs | Flags::Compressed)
-#define DEPTH(fmt, cpp, bpb) PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, Flags::Depth)
+  PROPERTIES(fmt, cpp, bpb, bw, bh, bd, mbx, mby, mbz, flgs | Flags::Compressed, 1)
+#define DEPTH(fmt, cpp, bpb) PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, Flags::Depth, 1)
 #define DEPTH_STENCIL(fmt, cpp, bpb) \
-  PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, Flags::Depth | Flags::Stencil)
+  PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, Flags::Depth | Flags::Stencil, 1)
 #define STENCIL(fmt, cpp, bpb) \
-  PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, Flags::Stencil | Flags::Integer)
+  PROPERTIES(fmt, cpp, bpb, 1, 1, 1, 1, 1, 1, Flags::Stencil | Flags::Integer, 1)
+#define MULTIPLANAR(fmt, cpp, bpb, planes) \
+  PROPERTIES(fmt, cpp, 0, 1, 1, 1, 1, 1, 1, Flags::Compressed, planes)
 
 TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat format) {
   switch (format) {
@@ -337,7 +349,8 @@ TextureFormatProperties TextureFormatProperties::fromTextureFormat(TextureFormat
     DEPTH_STENCIL(S8_UInt_Z32_UNorm, 2, 8)
 #endif
     STENCIL(S_UInt8, 1, 1)
-    COMPRESSED(YUV_NV12, 3, 16, 1, 1, 1, 1, 1, 1, 0)
+    MULTIPLANAR(YUV_NV12, 3, 16, 2)
+    MULTIPLANAR(YUV_420p, 3, 16, 3)
   }
   IGL_UNREACHABLE_RETURN(TextureFormatProperties{})
 }

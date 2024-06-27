@@ -77,14 +77,14 @@ class IRenderPipelineReflection {
    *
    * @return An array of BufferArgDesc that describes the buffer argument.
    */
-  virtual const std::vector<BufferArgDesc>& allUniformBuffers() const = 0;
+  [[nodiscard]] virtual const std::vector<BufferArgDesc>& allUniformBuffers() const = 0;
   /**
    * @brief A function that returns an array of SamplerArgDesc that describe the sampler arguments
    * to the RenderPipelineState.
    *
    * @return An array of SamplerArgDesc that describes the sampler argument.
    */
-  virtual const std::vector<SamplerArgDesc>& allSamplers() const = 0;
+  [[nodiscard]] virtual const std::vector<SamplerArgDesc>& allSamplers() const = 0;
 
   /**
    * @brief A function that returns an array of TextureArgDesc that describe the texture arguments
@@ -92,7 +92,7 @@ class IRenderPipelineReflection {
    *
    * @return An array of TextureArgDesc that describes the texture argument.
    */
-  virtual const std::vector<TextureArgDesc>& allTextures() const = 0;
+  [[nodiscard]] virtual const std::vector<TextureArgDesc>& allTextures() const = 0;
 
   /**
    * @brief Destroy the IRenderPipelineReflection object

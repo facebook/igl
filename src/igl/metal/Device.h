@@ -13,8 +13,7 @@
 #include <igl/metal/DeviceStatistics.h>
 #include <igl/metal/PlatformDevice.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 class BufferSynchronizationManager;
 
@@ -58,27 +57,28 @@ class Device : public IDevice {
                                                     Result* outResult) const override;
 
   // Platform-specific extensions
-  const PlatformDevice& getPlatformDevice() const noexcept override;
+  [[nodiscard]] const PlatformDevice& getPlatformDevice() const noexcept override;
 
   IGL_INLINE id<MTLDevice> get() const {
     return device_;
   }
 
   // ICapabilities
-  bool hasFeature(DeviceFeatures feature) const override;
-  bool hasRequirement(DeviceRequirement requirement) const override;
+  [[nodiscard]] bool hasFeature(DeviceFeatures feature) const override;
+  [[nodiscard]] bool hasRequirement(DeviceRequirement requirement) const override;
   bool getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const override;
-  TextureFormatCapabilities getTextureFormatCapabilities(TextureFormat format) const override;
-  ShaderVersion getShaderVersion() const override;
+  [[nodiscard]] TextureFormatCapabilities getTextureFormatCapabilities(
+      TextureFormat format) const override;
+  [[nodiscard]] ShaderVersion getShaderVersion() const override;
 
   // Device Statistics
-  size_t getCurrentDrawCount() const override;
+  [[nodiscard]] size_t getCurrentDrawCount() const override;
 
-  BackendType getBackendType() const override {
+  [[nodiscard]] BackendType getBackendType() const override {
     return BackendType::Metal;
   }
 
-  NormalizedZRange getNormalizedZRange() const override {
+  [[nodiscard]] NormalizedZRange getNormalizedZRange() const override {
     return NormalizedZRange::ZeroToOne;
   }
 
@@ -99,5 +99,4 @@ class Device : public IDevice {
   DeviceStatistics deviceStatistics_;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

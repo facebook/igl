@@ -7,12 +7,7 @@
 
 #include <IGLU/uniform/Descriptor.h>
 
-#if IGL_BACKEND_OPENGL
-#include <igl/opengl/RenderCommandAdapter.h>
-#endif
-
-namespace iglu {
-namespace uniform {
+namespace iglu::uniform {
 
 Descriptor::Descriptor(igl::UniformType type) : type_(type) {}
 
@@ -38,5 +33,4 @@ void Descriptor::toUniformDescriptor(int location, igl::UniformDesc& outDescript
 }
 #endif
 
-} // namespace uniform
-} // namespace iglu
+} // namespace iglu::uniform

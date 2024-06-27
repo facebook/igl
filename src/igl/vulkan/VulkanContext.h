@@ -27,8 +27,7 @@
 #include "tracy/TracyVulkan.hpp"
 #endif
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 namespace util {
 struct SpvModuleInfo;
 } // namespace util
@@ -121,7 +120,7 @@ struct VulkanContextConfig {
 
 class VulkanContext final {
  public:
-  VulkanContext(const VulkanContextConfig& config,
+  VulkanContext(VulkanContextConfig config,
                 void* window,
                 size_t numExtraInstanceExtensions,
                 const char** extraInstanceExtensions,
@@ -176,6 +175,7 @@ class VulkanContext final {
       const char* debugName) const;
 
   std::shared_ptr<VulkanSampler> createSampler(const VkSamplerCreateInfo& ci,
+                                               VkFormat yuvVkFormat,
                                                igl::Result* outResult,
                                                const char* debugName = nullptr) const;
 
@@ -231,6 +231,8 @@ class VulkanContext final {
 
   void* getVmaAllocator() const;
 
+  VkSamplerYcbcrConversionInfo getOrCreateYcbcrConversionInfo(VkFormat format) const;
+
 #if defined(IGL_WITH_TRACY_GPU)
   TracyVkCtx tracyCtx_ = nullptr;
   std::unique_ptr<VulkanCommandPool> profilingCommandPool_;
@@ -238,7 +240,7 @@ class VulkanContext final {
 #endif
 
  private:
-  void createInstance(const size_t numExtraExtensions, const char** extraExtensions);
+  void createInstance(size_t numExtraExtensions, const char** extraExtensions);
   void createSurface(void* window, void* display);
   void checkAndUpdateDescriptorSets();
   void querySurfaceCapabilities();
@@ -278,7 +280,7 @@ class VulkanContext final {
 
   std::vector<VkFormat> deviceDepthFormats_;
   std::vector<VkSurfaceFormatKHR> deviceSurfaceFormats_;
-  VkSurfaceCapabilitiesKHR deviceSurfaceCaps_;
+  VkSurfaceCapabilitiesKHR deviceSurfaceCaps_{};
   std::vector<VkPresentModeKHR> devicePresentModes_;
 
   // Provided by VK_VERSION_1_2
@@ -324,6 +326,8 @@ class VulkanContext final {
   std::unique_ptr<VulkanContextImpl> pimpl_;
 
   VkPipelineCache pipelineCache_ = VK_NULL_HANDLE;
+
+  mutable std::unordered_map<VkFormat, VkSamplerYcbcrConversionInfo> ycbcrConversionInfos_;
 
   // 1. Textures can be safely deleted once they are not in use by GPU, hence our Vulkan context
   // owns all allocated textures (images+image views). The IGL interface vulkan::Texture does not
@@ -382,5 +386,4 @@ class VulkanContext final {
   std::unique_ptr<SyncManager> syncManager_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

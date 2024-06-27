@@ -7,30 +7,29 @@
 
 #include <igl/opengl/Texture.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 class DummyTexture : public ITexture {
  public:
   explicit DummyTexture(Size size, TextureFormat format = TextureFormat::BGRA_UNorm8) :
     ITexture(format), size_(size) {}
   ~DummyTexture() override = default;
 
-  Dimensions getDimensions() const override {
+  [[nodiscard]] Dimensions getDimensions() const override {
     return Dimensions{static_cast<size_t>(size_.width), static_cast<size_t>(size_.height), 1};
   }
 
-  size_t getNumLayers() const override {
+  [[nodiscard]] size_t getNumLayers() const override {
     return 1;
   }
-  TextureType getType() const override {
+  [[nodiscard]] TextureType getType() const override {
     IGL_ASSERT_NOT_REACHED();
     return TextureType::TwoDArray;
   }
-  TextureDesc::TextureUsage getUsage() const override {
+  [[nodiscard]] TextureDesc::TextureUsage getUsage() const override {
     IGL_ASSERT_NOT_REACHED();
     return 0;
   }
-  uint32_t getSamples() const override {
+  [[nodiscard]] uint32_t getSamples() const override {
     IGL_ASSERT_NOT_REACHED();
     return 1;
   }
@@ -42,14 +41,14 @@ class DummyTexture : public ITexture {
                       const TextureRangeDesc* IGL_NULLABLE /* unused */) const override {
     IGL_ASSERT_NOT_REACHED();
   }
-  uint32_t getNumMipLevels() const override {
+  [[nodiscard]] uint32_t getNumMipLevels() const override {
     IGL_ASSERT_NOT_REACHED();
     return 1;
   }
-  bool isRequiredGenerateMipmap() const override {
+  [[nodiscard]] bool isRequiredGenerateMipmap() const override {
     return false;
   }
-  uint64_t getTextureId() const override {
+  [[nodiscard]] uint64_t getTextureId() const override {
     IGL_ASSERT_NOT_REACHED();
     return 0;
   }
@@ -57,5 +56,4 @@ class DummyTexture : public ITexture {
  private:
   Size size_;
 };
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

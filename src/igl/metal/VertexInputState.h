@@ -10,8 +10,7 @@
 #include <Metal/Metal.h>
 #include <igl/VertexInputState.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 class VertexInputState final : public IVertexInputState {
   friend class Device;
@@ -30,5 +29,4 @@ class VertexInputState final : public IVertexInputState {
   MTLVertexDescriptor* value_;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

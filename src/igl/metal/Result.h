@@ -10,8 +10,7 @@
 #import <Metal/Metal.h>
 #include <igl/IGL.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 IGL_INLINE void setResultFrom(Result* outResult, const NSError* error) {
   if (outResult != nullptr) {
@@ -26,5 +25,4 @@ IGL_INLINE void setResultFrom(Result* outResult, const NSError* error) {
   }
 }
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

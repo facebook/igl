@@ -10,8 +10,7 @@
 #include <IGLU/uniform/Collection.h>
 #include <IGLU/uniform/Encoder.h>
 
-namespace iglu {
-namespace uniform {
+namespace iglu::uniform {
 
 CollectionEncoder::CollectionEncoder(igl::BackendType backendType) : backendType_(backendType) {}
 
@@ -20,11 +19,10 @@ void CollectionEncoder::operator()(
     igl::IRenderCommandEncoder& commandEncoder,
     uint8_t bindTarget,
     const std::vector<igl::NameHandle>& uniformNames) const noexcept {
-  Encoder uniformEncoder(backendType_);
+  const Encoder uniformEncoder(backendType_);
   for (const auto& name : uniformNames) {
     uniformEncoder(commandEncoder, bindTarget, collection.get(name));
   }
 }
 
-} // namespace uniform
-} // namespace iglu
+} // namespace iglu::uniform

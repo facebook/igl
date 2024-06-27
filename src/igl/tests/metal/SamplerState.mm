@@ -10,8 +10,7 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 class SamplerStateMTLTest : public ::testing::Test {
  public:
@@ -65,5 +64,4 @@ TEST_F(SamplerStateMTLTest, ConvertAddressMode) {
   ASSERT_EQ(res, MTLSamplerAddressModeMirrorRepeat);
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

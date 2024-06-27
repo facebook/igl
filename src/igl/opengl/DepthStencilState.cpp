@@ -11,8 +11,7 @@
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/GLIncludes.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 DepthStencilState::DepthStencilState(IContext& context) : WithContext(context) {}
 
@@ -76,7 +75,7 @@ GLenum DepthStencilState::convertStencilOperation(igl::StencilOperation value) {
 }
 
 void DepthStencilState::bind() {
-  getContext().depthMask(desc_.isDepthWriteEnabled);
+  getContext().depthMask(static_cast<GLboolean>(desc_.isDepthWriteEnabled));
 
   // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDepthFunc.xhtml
   // In order to unconditionally write to the depth buffer, the depth test should
@@ -92,9 +91,11 @@ void DepthStencilState::bind() {
       desc_.backFaceStencil != igl::StencilStateDesc()) {
     getContext().enable(GL_STENCIL_TEST);
 
-    GLuint mask{0xff};
-    GLenum frontCompareFunc = convertCompareFunction(desc_.frontFaceStencil.stencilCompareFunction);
-    GLenum backCompareFunc = convertCompareFunction(desc_.backFaceStencil.stencilCompareFunction);
+    const GLuint mask{0xff};
+    const GLenum frontCompareFunc =
+        convertCompareFunction(desc_.frontFaceStencil.stencilCompareFunction);
+    const GLenum backCompareFunc =
+        convertCompareFunction(desc_.backFaceStencil.stencilCompareFunction);
     getContext().stencilFuncSeparate(
         GL_FRONT, frontCompareFunc, desc_.frontFaceStencil.readMask, mask);
     getContext().stencilFuncSeparate(
@@ -119,5 +120,4 @@ void DepthStencilState::bind() {
 
 void DepthStencilState::unbind() {}
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

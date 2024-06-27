@@ -38,7 +38,7 @@ VkSamplerMipmapMode samplerMipFilterToVkSamplerMipmapMode(igl::SamplerMipFilter 
   return VK_SAMPLER_MIPMAP_MODE_NEAREST;
 }
 
-static VkSamplerAddressMode samplerAddressModeToVkSamplerAddressMode(igl::SamplerAddressMode mode) {
+VkSamplerAddressMode samplerAddressModeToVkSamplerAddressMode(igl::SamplerAddressMode mode) {
   switch (mode) {
   case igl::SamplerAddressMode::Repeat:
     return VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -98,9 +98,7 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
 }
 } // namespace
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 SamplerState::SamplerState(const igl::vulkan::Device& device) : device_(device) {}
 
@@ -114,6 +112,7 @@ Result SamplerState::create(const SamplerStateDesc& desc) {
   Result result;
   sampler_ = ctx.createSampler(
       samplerStateDescToVkSamplerCreateInfo(desc, ctx.getVkPhysicalDeviceProperties().limits),
+      textureFormatToVkFormat(desc.yuvFormat),
       &result,
       desc_.debugName.c_str());
 
@@ -129,6 +128,4 @@ uint32_t SamplerState::getSamplerId() const {
   return sampler_ ? sampler_->samplerId_ : 0;
 }
 
-} // namespace vulkan
-
-} // namespace igl
+} // namespace igl::vulkan

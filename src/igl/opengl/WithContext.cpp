@@ -9,8 +9,7 @@
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/WithContext.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 WithContext::WithContext(IContext& context) : context_(&context) {
   if (!context_->addRef()) {
@@ -35,5 +34,4 @@ IContext& WithContext::getContext() const {
   return *context_;
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

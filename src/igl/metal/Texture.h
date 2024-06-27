@@ -17,8 +17,7 @@
 NS_ASSUME_NONNULL_BEGIN
 #endif
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 class PlatformDevice;
 
 class Texture final : public ITexture {
@@ -33,18 +32,18 @@ class Texture final : public ITexture {
   Result getBytes(const TextureRangeDesc& range, void* outData, size_t bytesPerRow = 0) const;
 
   // Accessors
-  Dimensions getDimensions() const override;
-  size_t getNumLayers() const override;
-  TextureType getType() const override;
-  TextureDesc::TextureUsage getUsage() const override;
-  uint32_t getSamples() const override;
-  uint32_t getNumMipLevels() const override;
+  [[nodiscard]] Dimensions getDimensions() const override;
+  [[nodiscard]] size_t getNumLayers() const override;
+  [[nodiscard]] TextureType getType() const override;
+  [[nodiscard]] TextureDesc::TextureUsage getUsage() const override;
+  [[nodiscard]] uint32_t getSamples() const override;
+  [[nodiscard]] uint32_t getNumMipLevels() const override;
   void generateMipmap(ICommandQueue& cmdQueue,
                       const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
   void generateMipmap(ICommandBuffer& cmdBuffer,
                       const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
-  bool isRequiredGenerateMipmap() const override;
-  uint64_t getTextureId() const override;
+  [[nodiscard]] bool isRequiredGenerateMipmap() const override;
+  [[nodiscard]] uint64_t getTextureId() const override;
 
   IGL_INLINE id<MTLTexture> _Nullable get() const {
     return (drawable_) ? drawable_.texture : value_;
@@ -76,15 +75,14 @@ class Texture final : public ITexture {
 
   // Given bytes per row of an input texture, return bytesPerRow value
   // accepted by Texture::upload and MTL replaceRegion.
-  size_t toMetalBytesPerRow(size_t bytesPerRow) const;
+  [[nodiscard]] size_t toMetalBytesPerRow(size_t bytesPerRow) const;
 
   id<MTLTexture> _Nullable value_;
   id<CAMetalDrawable> _Nullable drawable_;
   const ICapabilities& capabilities_;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal
 
 #if IGL_PLATFORM_APPLE
 NS_ASSUME_NONNULL_END

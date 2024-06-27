@@ -10,8 +10,7 @@
 #include "../util/Common.h"
 #include "../util/TestDevice.h"
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 //
 // ResourceOGLTest
@@ -118,7 +117,7 @@ TEST_F(ResourceOGLTest, UniformBufferUpload) {
 
   Result res;
   char data[150];
-  BufferDesc desc =
+  const BufferDesc desc =
       BufferDesc(BufferDesc::BufferTypeBits::Uniform, &data, sizeof(data), ResourceStorage::Shared);
   auto framebuffer = ResourceOGLTest::iglDev_->createBuffer(desc, &res);
 
@@ -208,5 +207,4 @@ TEST_F(ResourceOGLTest, ShaderCreate1) {
   ASSERT_TRUE(pipelineState != nullptr);
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

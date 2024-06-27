@@ -12,8 +12,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanContext;
 
@@ -57,7 +56,7 @@ class VulkanBuffer {
   }
 
   /// @brief Whether the buffer's memory has been mapped.
-  bool isMapped() const {
+  [[nodiscard]] bool isMapped() const {
     return mappedPtr_ != nullptr;
   }
 
@@ -67,17 +66,17 @@ class VulkanBuffer {
   /// @brief Invalidates the mapped memory range to make it visible to the CPU.
   void invalidateMappedMemory(VkDeviceSize offset, VkDeviceSize size) const;
 
-  VkBuffer getVkBuffer() const {
+  [[nodiscard]] VkBuffer getVkBuffer() const {
     return vkBuffer_;
   }
-  VkDeviceAddress getVkDeviceAddress() const {
+  [[nodiscard]] VkDeviceAddress getVkDeviceAddress() const {
     IGL_ASSERT_MSG(vkDeviceAddress_, "Make sure config.enableBufferDeviceAddress is enabled");
     return vkDeviceAddress_;
   }
-  VkDeviceSize getSize() const {
+  [[nodiscard]] VkDeviceSize getSize() const {
     return bufferSize_;
   }
-  VkMemoryPropertyFlags getMemoryPropertyFlags() const {
+  [[nodiscard]] VkMemoryPropertyFlags getMemoryPropertyFlags() const {
     return memFlags_;
   }
   [[nodiscard]] VkBufferUsageFlags getBufferUsageFlags() const {
@@ -101,5 +100,4 @@ class VulkanBuffer {
   bool isCoherentMemory_ = false;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

@@ -8,8 +8,7 @@
 #include <IGLU/uniform/Collection.h>
 #include <IGLU/uniform/Descriptor.h>
 
-namespace iglu {
-namespace uniform {
+namespace iglu::uniform {
 
 void Collection::update(const Collection& changes) {
   for (const auto& [key, value] : changes.descriptors_) {
@@ -38,7 +37,7 @@ std::vector<igl::NameHandle> Collection::getNames() const noexcept {
   IGL_LOG_INFO_ONCE("Collection::getNames() is deprecated. Use Collection::names() instead\n");
   std::vector<igl::NameHandle> ret;
   ret.reserve(descriptors_.size());
-  for (auto& desc : descriptors_) {
+  for (const auto& desc : descriptors_) {
     ret.push_back(desc.first);
   }
   return ret;
@@ -67,5 +66,4 @@ bool Collection::operator!=(const Collection& rhs) const noexcept {
   return !operator==(rhs);
 }
 
-} // namespace uniform
-} // namespace iglu
+} // namespace iglu::uniform

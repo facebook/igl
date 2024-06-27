@@ -59,11 +59,11 @@ class ComputeCommandEncoderTest : public ::testing::Test {
       return;
     }
 
-    BufferDesc vbInDesc = BufferDesc(
+    const BufferDesc vbInDesc = BufferDesc(
         BufferDesc::BufferTypeBits::Storage, dataIn.data(), sizeof(float) * dataIn.size());
     bufferIn_ = iglDev_->createBuffer(vbInDesc, nullptr);
     ASSERT_TRUE(bufferIn_ != nullptr);
-    BufferDesc bufferOutDesc =
+    const BufferDesc bufferOutDesc =
         BufferDesc(BufferDesc::BufferTypeBits::Storage, nullptr, sizeof(float) * dataIn.size());
     bufferOut0_ = iglDev_->createBuffer(bufferOutDesc, nullptr);
     ASSERT_TRUE(bufferOut0_ != nullptr);
@@ -114,8 +114,8 @@ class ComputeCommandEncoderTest : public ::testing::Test {
     computeEncoder->bindBuffer(igl::tests::data::shader::simpleComputeInputIndex, bufferIn, 0);
     computeEncoder->bindBuffer(igl::tests::data::shader::simpleComputeOutputIndex, bufferOut, 0);
 
-    Dimensions threadgroupSize(dataIn.size(), 1, 1);
-    Dimensions threadgroupCount(1, 1, 1);
+    const Dimensions threadgroupSize(dataIn.size(), 1, 1);
+    const Dimensions threadgroupCount(1, 1, 1);
     computeEncoder->dispatchThreadGroups(threadgroupCount, threadgroupSize);
     computeEncoder->endEncoding();
   }
@@ -141,7 +141,7 @@ TEST_F(ComputeCommandEncoderTest, canEncodeBasicBufferOperation) {
 
   ASSERT_TRUE(cmdQueue_ != nullptr);
 
-  CommandBufferDesc cbDesc;
+  const CommandBufferDesc cbDesc;
   auto cmdBuffer = cmdQueue_->createCommandBuffer(cbDesc, nullptr);
   ASSERT_TRUE(cmdBuffer != nullptr);
 
@@ -176,7 +176,7 @@ TEST_F(ComputeCommandEncoderTest, canUseOutputBufferFromOnePassAsInputToNext) {
 
   ASSERT_TRUE(cmdQueue_ != nullptr);
 
-  CommandBufferDesc cbDesc;
+  const CommandBufferDesc cbDesc;
   auto cmdBuffer = cmdQueue_->createCommandBuffer(cbDesc, nullptr);
   ASSERT_TRUE(cmdBuffer != nullptr);
 

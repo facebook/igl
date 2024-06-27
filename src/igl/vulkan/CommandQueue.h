@@ -11,8 +11,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class CommandBuffer;
 
@@ -39,11 +38,11 @@ class CommandQueue final : public ICommandQueue {
   /// before the command buffer is executed. It will also execute the shader debugging render pass
   /// by calling `enhancedShaderDebuggingPass()`. If the enhanced shader debugging is enabled,
   /// presenting the image is disabled.
-  /// @param commandBuffer The command buffer to be submitted.
+  /// @param cmdBuffer The command buffer to be submitted.
   /// @param endOfFrame Not used
-  SubmitHandle submit(const ICommandBuffer& commandBuffer, bool endOfFrame = false) override;
+  SubmitHandle submit(const ICommandBuffer& cmdBuffer, bool endOfFrame = false) override;
 
-  const CommandQueueDesc& getCommandQueueDesc() const {
+  [[nodiscard]] const CommandQueueDesc& getCommandQueueDesc() const {
     return desc_;
   }
 
@@ -75,5 +74,4 @@ class CommandQueue final : public ICommandQueue {
   bool isInsideFrame_ = false;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

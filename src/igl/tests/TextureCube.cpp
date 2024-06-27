@@ -85,12 +85,12 @@ class TextureCubeTest : public ::testing::Test {
     ASSERT_TRUE(iglDev_ != nullptr);
     ASSERT_TRUE(cmdQueue_ != nullptr);
 
-    TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                             kOffscreenTexWidth,
-                                             kOffscreenTexHeight,
-                                             TextureDesc::TextureUsageBits::Sampled |
-                                                 TextureDesc::TextureUsageBits::Attachment,
-                                             "TextureCubeTest::SetUp::offscreenTexture");
+    const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                   kOffscreenTexWidth,
+                                                   kOffscreenTexHeight,
+                                                   TextureDesc::TextureUsageBits::Sampled |
+                                                       TextureDesc::TextureUsageBits::Attachment,
+                                                   "TextureCubeTest::SetUp::offscreenTexture");
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
@@ -192,7 +192,7 @@ class TextureCubeTest : public ::testing::Test {
     ASSERT_TRUE(uv_ != nullptr);
 
     // Initialize sampler state
-    SamplerStateDesc samplerDesc;
+    const SamplerStateDesc samplerDesc;
     samp_ = iglDev_->createSamplerState(samplerDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(samp_ != nullptr);
@@ -467,13 +467,13 @@ TEST_F(TextureCubeTest, Passthrough_SampleFromCube) {
     cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
 
     Result result{};
-    auto vertUniformBuffer = createVertexUniformBuffer(*iglDev_.get(), &result);
+    auto vertUniformBuffer = createVertexUniformBuffer(*iglDev_, &result);
     ASSERT_TRUE(result.isOk());
 
     vertexUniforms_.viewDirection = kViewDirection[face];
 
     *static_cast<VertexUniforms*>(vertUniformBuffer->getData()) = vertexUniforms_;
-    vertUniformBuffer->bind(*iglDev_.get(), *pipelineState, *cmds.get());
+    vertUniformBuffer->bind(*iglDev_, *pipelineState, *cmds);
 
     cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
     cmds->drawIndexed(6);

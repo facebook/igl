@@ -9,8 +9,7 @@
 
 #include <igl/metal/DepthStencilState.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 DepthStencilState::DepthStencilState(id<MTLDepthStencilState> value) : value_(value) {}
 
@@ -66,5 +65,4 @@ MTLStencilDescriptor* DepthStencilState::convertStencilDescriptor(const StencilS
   metalDesc.writeMask = desc.writeMask;
   return metalDesc;
 }
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

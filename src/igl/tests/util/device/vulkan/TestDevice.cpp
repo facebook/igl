@@ -10,11 +10,10 @@
 #include <igl/Common.h>
 #include <igl/Macros.h>
 
-#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOS || IGL_PLATFORM_LINUX
+#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOS || IGL_PLATFORM_IOS || \
+    IGL_PLATFORM_LINUX
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
-#else
-#error "Unsupported testing platform"
 #endif
 
 #if IGL_PLATFORM_MACOS
@@ -59,8 +58,8 @@ std::shared_ptr<::igl::IDevice> createTestDevice(bool enableValidation) {
 
   auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
 
-  std::vector<HWDeviceDesc> devices = igl::vulkan::HWDevice::queryDevices(
-      *ctx.get(), HWDeviceQueryDesc(HWDeviceType::Unknown), &ret);
+  std::vector<HWDeviceDesc> devices =
+      igl::vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::Unknown), &ret);
 
   if (ret.isOk()) {
     std::vector<const char*> extraDeviceExtensions;

@@ -9,8 +9,7 @@
 
 #include <igl/opengl/Texture.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 // TextureTarget encapsulates OpenGL renderbuffers
 class TextureTarget final : public Texture {
@@ -21,8 +20,8 @@ class TextureTarget final : public Texture {
   ~TextureTarget() override;
 
   // ITexture overrides
-  TextureType getType() const override;
-  TextureDesc::TextureUsage getUsage() const override;
+  [[nodiscard]] TextureType getType() const override;
+  [[nodiscard]] TextureDesc::TextureUsage getUsage() const override;
 
   // Texture overrides
   Result create(const TextureDesc& desc, bool hasStorageAlready) override;
@@ -38,7 +37,7 @@ class TextureTarget final : public Texture {
   void detachAsStencil(bool read) override;
 
   // @fb-only
-  GLuint getId() const override {
+  [[nodiscard]] GLuint getId() const override {
     IGL_ASSERT_NOT_REACHED();
     return 0;
   }
@@ -54,5 +53,4 @@ class TextureTarget final : public Texture {
   GLuint renderBufferID_ = 0;
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

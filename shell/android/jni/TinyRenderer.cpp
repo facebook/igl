@@ -40,7 +40,7 @@ void TinyRenderer::init(AAssetManager* mgr,
                         BackendTypeID backendTypeID) {
   backendTypeID_ = backendTypeID;
   Result result;
-  igl::HWDeviceQueryDesc queryDesc(HWDeviceType::IntegratedGpu);
+  const igl::HWDeviceQueryDesc queryDesc(HWDeviceType::IntegratedGpu);
   std::unique_ptr<IDevice> d;
 
   switch (backendTypeID_) {
@@ -67,7 +67,7 @@ void TinyRenderer::init(AAssetManager* mgr,
     auto ctx = vulkan::HWDevice::createContext(config, nativeWindow);
 
     auto devices = vulkan::HWDevice::queryDevices(
-        *ctx.get(), HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), &result);
+        *ctx, HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), &result);
 
     IGL_ASSERT(result.isOk());
     width_ = static_cast<uint32_t>(ANativeWindow_getWidth(nativeWindow));
@@ -143,13 +143,13 @@ void TinyRenderer::render(float displayScale) {
   session_->update(std::move(surfaceTextures));
 }
 
-void TinyRenderer::onSurfacesChanged(ANativeWindow* surface, int width, int height) {
+void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int height) {
   width_ = static_cast<uint32_t>(width);
   height_ = static_cast<uint32_t>(height);
 #if IGL_BACKEND_OPENGL
   if (backendTypeID_ == BackendTypeID::GLES2 || backendTypeID_ == BackendTypeID::GLES3) {
-    auto readSurface = eglGetCurrentSurface(EGL_READ);
-    auto drawSurface = eglGetCurrentSurface(EGL_DRAW);
+    auto* readSurface = eglGetCurrentSurface(EGL_READ);
+    auto* drawSurface = eglGetCurrentSurface(EGL_DRAW);
 
     IGL_ASSERT(platform_ != nullptr);
     Result result;

@@ -93,27 +93,9 @@ VkIndexType indexFormatToVkIndexType(igl::IndexFormat fmt) {
   return VK_INDEX_TYPE_NONE_KHR;
 }
 
-VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(igl::PrimitiveType t) {
-  switch (t) {
-  case igl::PrimitiveType::Point:
-    return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-  case igl::PrimitiveType::Line:
-    return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-  case igl::PrimitiveType::LineStrip:
-    return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-  case igl::PrimitiveType::Triangle:
-    return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-  case igl::PrimitiveType::TriangleStrip:
-    return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-  }
-  IGL_ASSERT_MSG(false, "Implement PrimitiveType = %u", (uint32_t)t);
-  return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
-}
-
 } // namespace
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 RenderCommandEncoder::RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer,
                                            VulkanContext& ctx) :
@@ -446,7 +428,7 @@ void RenderCommandEncoder::bindDepthStencilState(
       // do not update anything if we don't have an actual state
       return;
     }
-    dynamicState_.setStencilStateOps(faceMask,
+    dynamicState_.setStencilStateOps(faceMask != 0u,
                                      stencilOperationToVkStencilOp(desc.stencilFailureOperation),
                                      stencilOperationToVkStencilOp(desc.depthStencilPassOperation),
                                      stencilOperationToVkStencilOp(desc.depthFailureOperation),
@@ -629,8 +611,6 @@ void RenderCommandEncoder::draw(size_t vertexCount,
 
   ensureVertexBuffers();
 
-  dynamicState_.setTopology(
-      primitiveTypeToVkPrimitiveTopology(rps_->getRenderPipelineDesc().topology));
   flushDynamicState();
 
 #if IGL_VULKAN_PRINT_COMMANDS
@@ -643,44 +623,6 @@ void RenderCommandEncoder::draw(size_t vertexCount,
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
   ctx_.vf_.vkCmdDraw(cmdBuffer_, (uint32_t)vertexCount, instanceCount, firstVertex, baseInstance);
-}
-
-void RenderCommandEncoder::drawIndexed(PrimitiveType primitiveType,
-                                       size_t indexCount,
-                                       uint32_t instanceCount,
-                                       uint32_t firstIndex,
-                                       int32_t vertexOffset,
-                                       uint32_t baseInstance) {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DRAW);
-  IGL_PROFILER_ZONE_GPU_COLOR_VK(
-      "drawIndexed()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
-
-  ctx_.drawCallCount_ += drawCallCountEnabled_;
-
-  if (indexCount == 0) {
-    // IGL/OpenGL tests rely on this behavior due to how state caching is organized over there.
-    // If we do not return here, Validation Layers will complain.
-    return;
-  }
-
-  IGL_ASSERT_MSG(rps_, "Did you forget to call bindRenderPipelineState()?");
-
-  ensureVertexBuffers();
-
-  dynamicState_.setTopology(primitiveTypeToVkPrimitiveTopology(primitiveType));
-  flushDynamicState();
-
-#if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p vkCmdDrawIndexed(%u, %u, %u, %i, %u)\n",
-               cmdBuffer_,
-               (uint32_t)indexCount,
-               instanceCount,
-               firstIndex,
-               vertexOffset,
-               baseInstance);
-#endif // IGL_VULKAN_PRINT_COMMANDS
-  ctx_.vf_.vkCmdDrawIndexed(
-      cmdBuffer_, (uint32_t)indexCount, instanceCount, firstIndex, vertexOffset, baseInstance);
 }
 
 void RenderCommandEncoder::drawIndexed(size_t indexCount,
@@ -704,8 +646,6 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
 
   ensureVertexBuffers();
 
-  dynamicState_.setTopology(
-      primitiveTypeToVkPrimitiveTopology(rps_->getRenderPipelineDesc().topology));
   flushDynamicState();
 
 #if IGL_VULKAN_PRINT_COMMANDS
@@ -733,8 +673,6 @@ void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
 
   ensureVertexBuffers();
 
-  dynamicState_.setTopology(
-      primitiveTypeToVkPrimitiveTopology(rps_->getRenderPipelineDesc().topology));
   flushDynamicState();
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
@@ -760,8 +698,6 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
 
   ensureVertexBuffers();
 
-  dynamicState_.setTopology(
-      primitiveTypeToVkPrimitiveTopology(rps_->getRenderPipelineDesc().topology));
   flushDynamicState();
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
@@ -805,7 +741,7 @@ bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {
   IGL_PROFILER_FUNCTION();
 
   const auto returnVal = drawCallCountEnabled_ > 0;
-  drawCallCountEnabled_ = value;
+  drawCallCountEnabled_ = static_cast<uint32_t>(value);
   return returnVal;
 }
 
@@ -996,5 +932,4 @@ void RenderCommandEncoder::processDependencies(const Dependencies& dependencies)
   }
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

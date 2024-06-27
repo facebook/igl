@@ -7,8 +7,7 @@
 
 #include <igl/opengl/ViewTextureTarget.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 TextureType ViewTextureTarget::getType() const {
   return TextureType::TwoD;
@@ -58,5 +57,4 @@ bool ViewTextureTarget::isImplicitStorage() const {
   return true;
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

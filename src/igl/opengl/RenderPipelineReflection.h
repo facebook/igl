@@ -13,8 +13,7 @@
 #include <igl/opengl/Shader.h>
 #include <unordered_map>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 class RenderPipelineReflection final : public IRenderPipelineReflection {
  public:
@@ -33,23 +32,24 @@ class RenderPipelineReflection final : public IRenderPipelineReflection {
       GLint offset = 0;
     };
 
-    GLint size;
-    GLint blockIndex;
+    GLint size{};
+    GLint blockIndex{};
     GLint bindingIndex = -1; // the block binding location, when set directly in the shader
     std::unordered_map<NameHandle, UniformBlockMemberDesc> members;
   };
 
-  const std::vector<BufferArgDesc>& allUniformBuffers() const override;
-  const std::vector<SamplerArgDesc>& allSamplers() const override;
-  const std::vector<TextureArgDesc>& allTextures() const override;
+  [[nodiscard]] const std::vector<BufferArgDesc>& allUniformBuffers() const override;
+  [[nodiscard]] const std::vector<SamplerArgDesc>& allSamplers() const override;
+  [[nodiscard]] const std::vector<TextureArgDesc>& allTextures() const override;
 
-  int getIndexByName(const NameHandle& name) const;
+  [[nodiscard]] int getIndexByName(const NameHandle& name) const;
 
-  const std::unordered_map<NameHandle, UniformDesc>& getUniformDictionary() const {
+  [[nodiscard]] const std::unordered_map<NameHandle, UniformDesc>& getUniformDictionary() const {
     return uniformDictionary_;
   }
 
-  const std::unordered_map<NameHandle, UniformBlockDesc>& getUniformBlocksDictionary() const {
+  [[nodiscard]] const std::unordered_map<NameHandle, UniformBlockDesc>& getUniformBlocksDictionary()
+      const {
     return uniformBlocksDictionary_;
   }
 
@@ -57,11 +57,12 @@ class RenderPipelineReflection final : public IRenderPipelineReflection {
     return uniformBlocksDictionary_;
   }
 
-  const std::unordered_map<std::string, int>& getAttributeDictionary() const {
+  [[nodiscard]] const std::unordered_map<std::string, int>& getAttributeDictionary() const {
     return attributeDictionary_;
   }
 
-  const std::unordered_map<NameHandle, int>& getShaderStorageBufferObjectDictionary() const {
+  [[nodiscard]] const std::unordered_map<NameHandle, int>& getShaderStorageBufferObjectDictionary()
+      const {
     return shaderStorageBufferObjectDictionary_;
   }
 
@@ -85,5 +86,4 @@ class RenderPipelineReflection final : public IRenderPipelineReflection {
   std::vector<TextureArgDesc> textureArguments_;
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

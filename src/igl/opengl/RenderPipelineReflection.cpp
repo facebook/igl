@@ -80,8 +80,7 @@ igl::TextureType toIGLTextureType(GLenum type) {
 
 } // namespace
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 RenderPipelineReflection::RenderPipelineReflection(IContext& context, const ShaderStages& stages) {
   if (context.deviceFeatures().hasFeature(DeviceFeatures::UniformBlocks)) {
@@ -118,7 +117,7 @@ void RenderPipelineReflection::generateUniformDictionary(IContext& context, GLui
 
 #ifdef GL_UNIFORM_NAME_LENGTH
   auto glVersion = context.deviceFeatures().getGLVersion();
-  bool supportsGetActiveUniformsiv =
+  const bool supportsGetActiveUniformsiv =
       glVersion == GLVersion::v3_0_ES || glVersion == GLVersion::v3_1_ES ||
       glVersion == GLVersion::v3_2_ES || glVersion >= GLVersion::v3_1;
   if (supportsGetActiveUniformsiv) {
@@ -143,7 +142,7 @@ void RenderPipelineReflection::generateUniformDictionary(IContext& context, GLui
     GLenum type = GL_NONE;
 
     context.getActiveUniform(pid, i, maxUniformNameLength, &length, &size, &type, cname.data());
-    GLint location = context.getUniformLocation(pid, cname.data());
+    const GLint location = context.getUniformLocation(pid, cname.data());
     if (location < 0) {
       // this uniform belongs to a block;
       continue;
@@ -153,7 +152,7 @@ void RenderPipelineReflection::generateUniformDictionary(IContext& context, GLui
       length = length - 3; // remove '[0]' for arrays
     }
     auto name = std::string(cname.data(), cname.data() + length);
-    UniformDesc u(size, location, type);
+    const UniformDesc u(size, location, type);
     uniformDictionary_.insert(std::make_pair(igl::genNameHandle(name), u));
   }
 }
@@ -189,8 +188,8 @@ void RenderPipelineReflection::generateUniformBlocksDictionary(IContext& context
                                       maxBlockNameLength,
                                       &blockNameLength,
                                       uniformBlockNameData.data());
-    std::string uniformBlockName(uniformBlockNameData.begin(),
-                                 uniformBlockNameData.begin() + blockNameLength);
+    const std::string uniformBlockName(uniformBlockNameData.begin(),
+                                       uniformBlockNameData.begin() + blockNameLength);
 
     context.getActiveUniformBlockiv(
         pid, blockDesc.blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockDesc.size);
@@ -238,7 +237,7 @@ void RenderPipelineReflection::generateUniformBlocksDictionary(IContext& context
       if (it != end) {
         start = it + 1;
       }
-      std::string uniformName(start, end);
+      const std::string uniformName(start, end);
 
       blockDesc.members.insert(std::make_pair(igl::genNameHandle(uniformName), memberDesc));
     }
@@ -264,7 +263,7 @@ void RenderPipelineReflection::generateAttributeDictionary(IContext& context, GL
     context.getActiveAttrib(
         pid, i, maxAttributeNameLength, &length, &size, &type, attribName.data());
     auto name = std::string(attribName.data(), attribName.data() + length);
-    GLint location = context.getAttribLocation(pid, name.c_str());
+    const GLint location = context.getAttribLocation(pid, name.c_str());
 
     attributeDictionary_.insert(std::make_pair(name, location));
   }
@@ -287,7 +286,8 @@ void RenderPipelineReflection::generateShaderStorageBufferObjectDictionary(ICont
       GLsizei length = 0;
       context.getProgramResourceName(
           pid, GL_SHADER_STORAGE_BLOCK, i, maxSSBONameLength, &length, cname.data());
-      GLint location = context.getProgramResourceIndex(pid, GL_SHADER_STORAGE_BLOCK, cname.data());
+      const GLint location =
+          context.getProgramResourceIndex(pid, GL_SHADER_STORAGE_BLOCK, cname.data());
 
       auto name = std::string(cname.data(), cname.data() + length);
       shaderStorageBufferObjectDictionary_.insert(
@@ -332,11 +332,11 @@ void RenderPipelineReflection::cacheDescriptors() {
 
   for (const auto& entry : uniformDictionary_) {
     const UniformDesc& glDesc = entry.second;
-    igl::TextureType textureType = toIGLTextureType(glDesc.type);
+    const igl::TextureType textureType = toIGLTextureType(glDesc.type);
 
     // buffers
     if (textureType == igl::TextureType::Invalid) {
-      igl::UniformType uniformType = toIGLUniformType(glDesc.type);
+      const igl::UniformType uniformType = toIGLUniformType(glDesc.type);
 
       igl::BufferArgDesc bufferDesc;
       bufferDesc.name = entry.first;
@@ -387,7 +387,7 @@ void RenderPipelineReflection::cacheDescriptors() {
 
     for (const auto& uniformEntry : blockDesc.members) {
       const auto& uniformDesc = uniformEntry.second;
-      igl::UniformType uniformType = toIGLUniformType(uniformDesc.type);
+      const igl::UniformType uniformType = toIGLUniformType(uniformDesc.type);
 
       igl::BufferArgDesc::BufferMemberDesc iglMemberDesc{
           uniformEntry.first,
@@ -413,5 +413,4 @@ const std::vector<igl::TextureArgDesc>& RenderPipelineReflection::allTextures() 
   return textureArguments_;
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

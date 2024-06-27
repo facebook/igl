@@ -14,11 +14,9 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 #include <igl/NameHandle.h>
-#include <igl/opengl/Device.h>
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 // Picking this just to match the texture we will use. If you use a different
 // size texture, then you will have to either create a new offscreenTexture_
@@ -58,11 +56,11 @@ class sRGBTest : public ::testing::Test {
     ASSERT_TRUE(cmdQueue_ != nullptr);
 
     // Create an offscreen texture to render to
-    TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
-                                             OFFSCREEN_TEX_WIDTH,
-                                             OFFSCREEN_TEX_HEIGHT,
-                                             TextureDesc::TextureUsageBits::Sampled |
-                                                 TextureDesc::TextureUsageBits::Attachment);
+    const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
+                                                   OFFSCREEN_TEX_WIDTH,
+                                                   OFFSCREEN_TEX_HEIGHT,
+                                                   TextureDesc::TextureUsageBits::Sampled |
+                                                       TextureDesc::TextureUsageBits::Attachment);
 
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);
@@ -141,7 +139,7 @@ class sRGBTest : public ::testing::Test {
     ASSERT_TRUE(uv_ != nullptr);
 
     // Initialize sampler state
-    SamplerStateDesc samplerDesc;
+    const SamplerStateDesc samplerDesc;
     samp_ = iglDev_->createSamplerState(samplerDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(samp_ != nullptr);
@@ -192,17 +190,17 @@ class sRGBTest : public ::testing::Test {
 //
 TEST_F(sRGBTest, TextureisSRGB) {
   Result ret;
-  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
-                                           OFFSCREEN_TEX_WIDTH,
-                                           OFFSCREEN_TEX_HEIGHT,
-                                           TextureDesc::TextureUsageBits::Sampled);
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
+                                                 OFFSCREEN_TEX_WIDTH,
+                                                 OFFSCREEN_TEX_HEIGHT,
+                                                 TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_TRUE(inputTexture_->getProperties().isSRGB());
 
-  TextureDesc texDesc2 = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                            OFFSCREEN_TEX_WIDTH,
-                                            OFFSCREEN_TEX_HEIGHT,
-                                            TextureDesc::TextureUsageBits::Sampled);
+  const TextureDesc texDesc2 = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                  OFFSCREEN_TEX_WIDTH,
+                                                  OFFSCREEN_TEX_HEIGHT,
+                                                  TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_FALSE(!inputTexture_->getProperties().isSRGB());
 }
@@ -220,10 +218,10 @@ TEST_F(sRGBTest, Passthrough) {
   //-------------------------------------
   // Create input texture and upload data
   //-------------------------------------
-  TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
-                                           OFFSCREEN_TEX_WIDTH,
-                                           OFFSCREEN_TEX_HEIGHT,
-                                           TextureDesc::TextureUsageBits::Sampled);
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
+                                                 OFFSCREEN_TEX_WIDTH,
+                                                 OFFSCREEN_TEX_HEIGHT,
+                                                 TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
@@ -279,5 +277,4 @@ TEST_F(sRGBTest, Passthrough) {
   }
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

@@ -12,8 +12,12 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 
-namespace igl {
-namespace vulkan {
+#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#include <android/hardware_buffer.h>
+#include <igl/vulkan/android/NativeHWBuffer.h>
+#endif
+
+namespace igl::vulkan {
 
 PlatformDevice::PlatformDevice(Device& device) : device_(device) {}
 
@@ -23,7 +27,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t 
   IGL_PROFILER_FUNCTION();
 
   const auto& ctx = device_.getVulkanContext();
-  auto& swapChain = ctx.swapchain_;
+  const auto& swapChain = ctx.swapchain_;
 
   if (!ctx.hasSwapchain()) {
     nativeDepthTexture_ = nullptr;
@@ -76,7 +80,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
     return nullptr;
   };
 
-  auto& swapChain = ctx.swapchain_;
+  const auto& swapChain = ctx.swapchain_;
 
   auto vkTex = swapChain->getCurrentVulkanTexture();
 
@@ -119,6 +123,44 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
 
   return nativeDrawableTextures_[currentImageIndex];
 }
+
+#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+/// returns a android::NativeHWTextureBuffer on platforms supporting it
+/// this texture allows CPU and GPU to both read/write memory
+std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const TextureDesc& desc,
+                                                                        Result* outResult) const {
+  Result subResult;
+
+  auto texture =
+      std::make_shared<igl::vulkan::android::NativeHWTextureBuffer>(device_, desc.format);
+  subResult = texture->createHWBuffer(desc, false, false);
+  Result::setResult(outResult, subResult.code, subResult.message);
+  if (!subResult.isOk()) {
+    return nullptr;
+  }
+
+  return std::move(texture);
+}
+
+std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(
+    struct AHardwareBuffer* buffer,
+    Result* outResult) const {
+  Result subResult;
+
+  AHardwareBuffer_Desc hwbDesc;
+  AHardwareBuffer_describe(buffer, &hwbDesc);
+
+  auto texture = std::make_shared<igl::vulkan::android::NativeHWTextureBuffer>(
+      device_, igl::android::getIglFormat(hwbDesc.format));
+  subResult = texture->attachHWBuffer(buffer);
+  Result::setResult(outResult, subResult.code, subResult.message);
+  if (!subResult.isOk()) {
+    return nullptr;
+  }
+
+  return std::move(texture);
+}
+#endif
 
 VkFence PlatformDevice::getVkFenceFromSubmitHandle(SubmitHandle handle) const {
   if (handle == 0) {
@@ -164,7 +206,7 @@ int PlatformDevice::getFenceFdFromSubmitHandle(SubmitHandle handle) const {
   int fenceFd = -1;
   const auto& ctx = device_.getVulkanContext();
   VkDevice vkDevice = ctx.device_->getVkDevice();
-  VkResult result = ctx.vf_.vkGetFenceFdKHR(vkDevice, &getFdInfo, &fenceFd);
+  const VkResult result = ctx.vf_.vkGetFenceFdKHR(vkDevice, &getFdInfo, &fenceFd);
   if (result != VK_SUCCESS) {
     IGL_LOG_ERROR("Unable to get fence fd from submit handle: %lu", handle);
   }
@@ -173,5 +215,4 @@ int PlatformDevice::getFenceFdFromSubmitHandle(SubmitHandle handle) const {
 }
 #endif // defined(IGL_PLATFORM_ANDROID)
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

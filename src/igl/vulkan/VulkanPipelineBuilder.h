@@ -12,8 +12,7 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <vector>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanPipelineBuilder final {
  public:
@@ -88,5 +87,4 @@ class VulkanComputePipelineBuilder final {
   static uint32_t numPipelinesCreated_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

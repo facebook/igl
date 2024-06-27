@@ -10,6 +10,7 @@
 #include <igl/Common.h>
 #include <igl/DepthStencilState.h>
 #include <igl/ITrackedResource.h>
+#include <igl/TextureFormat.h>
 
 namespace igl {
 
@@ -117,7 +118,9 @@ struct SamplerStateDesc {
    * @brief A user-readable debug name associated with this sampler.
    *
    */
-  std::string debugName = "";
+  std::string debugName;
+
+  igl::TextureFormat yuvFormat = igl::TextureFormat::Invalid;
 
   /**
    * @brief Creates a new SamplerStateDesc instance set up for linearly interpolating within mipmap
@@ -152,6 +155,21 @@ struct SamplerStateDesc {
   }
 
   /**
+   * @brief Creates a new SamplerStateDesc instance set up for YUV conversion
+   */
+  static SamplerStateDesc newYUV(igl::TextureFormat yuvFormat, const char* debugName) {
+    SamplerStateDesc desc;
+    desc.minFilter = desc.magFilter = SamplerMinMagFilter::Linear;
+    desc.mipFilter = SamplerMipFilter::Disabled;
+    desc.addressModeU = SamplerAddressMode::Clamp;
+    desc.addressModeV = SamplerAddressMode::Clamp;
+    desc.addressModeW = SamplerAddressMode::Clamp;
+    desc.debugName = debugName;
+    desc.yuvFormat = yuvFormat;
+    return desc;
+  }
+
+  /**
    * @brief Compares two SamplerStateDesc objects for equality.
    *
    * Returns true if all descriptor properties are identical.
@@ -177,7 +195,7 @@ class ISamplerState : public ITrackedResource<ISamplerState> {
   ISamplerState() = default;
 
  public:
-  virtual ~ISamplerState() = default;
+  ~ISamplerState() override = default;
 };
 
 } // namespace igl
@@ -193,6 +211,6 @@ struct hash<igl::SamplerStateDesc> {
    *
    * The hash value is based on all properties in the igl::SamplerStateDesc;
    */
-  size_t operator()(igl::SamplerStateDesc const& /*key*/) const;
+  size_t operator()(const igl::SamplerStateDesc& /*key*/) const;
 };
 } // namespace std

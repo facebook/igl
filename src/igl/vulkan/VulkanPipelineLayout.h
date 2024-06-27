@@ -26,7 +26,7 @@ class VulkanPipelineLayout final {
   VulkanPipelineLayout(const VulkanPipelineLayout&) = delete;
   VulkanPipelineLayout& operator=(const VulkanPipelineLayout&) = delete;
 
-  VkPipelineLayout getVkPipelineLayout() const {
+  [[nodiscard]] VkPipelineLayout getVkPipelineLayout() const {
     return vkPipelineLayout_;
   }
 

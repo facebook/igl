@@ -11,8 +11,7 @@
 #include <igl/Device.h>
 #include <igl/opengl/Errors.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 // ********************************
 // ****  ArrayBuffer
@@ -99,10 +98,10 @@ void ArrayBuffer::initialize(const BufferDesc& desc, Result* outResult) {
 
   if (!desc.debugName.empty() &&
       getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
-    GLenum identifier = getContext().deviceFeatures().hasInternalRequirement(
-                            InternalRequirement::DebugLabelExtEnumsReq)
-                            ? GL_BUFFER_OBJECT_EXT
-                            : GL_BUFFER;
+    const GLenum identifier = getContext().deviceFeatures().hasInternalRequirement(
+                                  InternalRequirement::DebugLabelExtEnumsReq)
+                                  ? GL_BUFFER_OBJECT_EXT
+                                  : GL_BUFFER;
     getContext().objectLabel(identifier, iD_, desc.debugName.size(), desc.debugName.c_str());
   }
 
@@ -227,5 +226,4 @@ void UniformBlockBuffer::bindRange(size_t index, size_t offset, Result* outResul
   }
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

@@ -9,8 +9,7 @@
 
 #include <igl/opengl/Texture.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 // TextureBufferBase encapsulates OpenGL textures
 class TextureBufferBase : public Texture {
@@ -20,8 +19,8 @@ class TextureBufferBase : public Texture {
   TextureBufferBase(IContext& context, TextureFormat format) : Super(context, format) {}
 
   // ITexture overrides
-  TextureType getType() const override;
-  TextureDesc::TextureUsage getUsage() const override;
+  [[nodiscard]] TextureType getType() const override;
+  [[nodiscard]] TextureDesc::TextureUsage getUsage() const override;
 
   void bind() override;
   void bindImage(size_t unit) override {}
@@ -36,13 +35,13 @@ class TextureBufferBase : public Texture {
                       const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
   void generateMipmap(ICommandBuffer& cmdBuffer,
                       const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
-  bool isRequiredGenerateMipmap() const override;
+  [[nodiscard]] bool isRequiredGenerateMipmap() const override;
 
-  GLuint getId() const override {
+  [[nodiscard]] GLuint getId() const override {
     return textureID_;
   }
 
-  GLuint getTarget() const {
+  [[nodiscard]] GLuint getTarget() const {
     return target_;
   }
 
@@ -71,5 +70,4 @@ class TextureBufferBase : public Texture {
   TextureDesc::TextureUsage usage_ = 0;
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

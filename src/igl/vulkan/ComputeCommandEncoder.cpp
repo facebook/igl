@@ -17,8 +17,7 @@
 #include <igl/vulkan/VulkanPipelineLayout.h>
 #include <igl/vulkan/VulkanTexture.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 ComputeCommandEncoder::ComputeCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer,
                                              VulkanContext& ctx) :
@@ -235,5 +234,4 @@ void ComputeCommandEncoder::bindPushConstants(const void* data, size_t length, s
                               data);
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

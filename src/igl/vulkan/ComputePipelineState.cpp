@@ -15,12 +15,14 @@
 #include <igl/vulkan/VulkanPipelineLayout.h>
 #include <utility>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
                                            ComputePipelineDesc desc) :
-  PipelineState(device.getVulkanContext(), desc.shaderStages.get(), desc.debugName.c_str()),
+  PipelineState(device.getVulkanContext(),
+                desc.shaderStages.get(),
+                nullptr,
+                desc.debugName.c_str()),
   device_(device),
   desc_(std::move(desc)) {}
 
@@ -93,5 +95,4 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
   return pipeline_;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

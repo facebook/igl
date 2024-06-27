@@ -7,8 +7,7 @@
 
 #include "util/Common.h"
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 //
 // ResourceTest
@@ -39,7 +38,7 @@ class ResourceTest : public ::testing::Test {
   struct FragmentFormat {
     simd::float3 color;
   };
-  FragmentFormat fragmentParameters;
+  FragmentFormat fragmentParameters{};
 };
 
 //
@@ -52,7 +51,7 @@ class ResourceTest : public ::testing::Test {
 TEST_F(ResourceTest, CreateRenderPipelineReturnNull) {
   Result ret;
 
-  RenderPipelineDesc desc;
+  const RenderPipelineDesc desc;
   std::shared_ptr<IRenderPipelineState> rps;
 
   // Sending in the blank desc should give an error since the shader modules
@@ -71,7 +70,7 @@ TEST_F(ResourceTest, CreateRenderPipelineReturnNull) {
 TEST_F(ResourceTest, DepthStencilCreate) {
   Result ret;
 
-  DepthStencilStateDesc dsDesc = {};
+  const DepthStencilStateDesc dsDesc = {};
   std::shared_ptr<IDepthStencilState> ds;
 
   ds = iglDev_->createDepthStencilState(dsDesc, &ret);
@@ -88,9 +87,9 @@ TEST_F(ResourceTest, DepthStencilCreate) {
 TEST_F(ResourceTest, VertexBuffer) {
   Result ret;
   float vertexData[] = {1.0};
-  BufferDesc bufferDesc =
+  const BufferDesc bufferDesc =
       BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData));
-  std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
+  const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(buffer != nullptr);
@@ -105,9 +104,9 @@ TEST_F(ResourceTest, UninitializedVertexBuffer) {
   Result ret;
 
   const int bufferLength = 64;
-  BufferDesc bufferDesc = BufferDesc(
+  const BufferDesc bufferDesc = BufferDesc(
       BufferDesc::BufferTypeBits::Vertex, nullptr, bufferLength, ResourceStorage::Shared);
-  std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
+  const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(buffer != nullptr);
@@ -129,9 +128,9 @@ TEST_F(ResourceTest, IndexBuffer) {
       3,
       2,
   };
-  BufferDesc bufferDesc =
+  const BufferDesc bufferDesc =
       BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
-  std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
+  const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(buffer != nullptr);
@@ -151,11 +150,10 @@ TEST_F(ResourceTest, UniformBuffer) {
   bufferDesc.data = &fragmentParameters;
   bufferDesc.length = sizeof(fragmentParameters);
 
-  std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
+  const std::shared_ptr<IBuffer> buffer = iglDev_->createBuffer(bufferDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(buffer != nullptr);
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

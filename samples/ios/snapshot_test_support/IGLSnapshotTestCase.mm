@@ -51,7 +51,7 @@
 
   igl::Result result;
   igl::DeviceScope scope(*_device);
-  igl::CommandQueueDesc desc;
+  igl::CommandQueueDesc desc{};
   _commandQueue = _device->createCommandQueue(desc, &result);
   IGL_ASSERT_MSG(
       result.isOk(), "Simple sample create command queue failed: %s\n", result.message.c_str());

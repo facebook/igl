@@ -39,7 +39,7 @@
            didFindService:(NSNetService*)netService
                moreComing:(BOOL)moreComing {
   IGL_ASSERT(owner_);
-  auto& delegate = owner_->delegate();
+  const auto& delegate = owner_->delegate();
   bool keepSearching = moreComing;
   if (delegate) {
     auto service = std::make_unique<igl::shell::netservice::NetServiceApple>(netService);
@@ -111,7 +111,7 @@ void NetServiceExtensionApple::stopSearch() const noexcept {
 }
 
 IGL_API IGLShellExtension* IGLShellExtension_NewIglShellNetService() {
-  auto extension = new NetServiceExtensionApple;
+  auto* extension = new NetServiceExtensionApple;
   return static_cast<IGLShellExtension*>(extension);
 }
 

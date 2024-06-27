@@ -168,6 +168,8 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
     return hasESExtension(*this, "GL_EXT_multisampled_render_to_texture");
   case Extensions::MultiSampleImg:
     return hasESExtension(*this, "GL_IMG_multisampled_render_to_texture");
+  case Extensions::MultiViewMultiSample:
+    return hasESExtension(*this, "GL_OVR_multiview_multisampled_render_to_texture");
   case Extensions::RequiredInternalFormat:
     return hasESExtension(*this, "GL_OES_required_internalformat");
   case Extensions::ShaderImageLoadStore:
@@ -335,6 +337,9 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
   case DeviceFeatures::Multiview:
     return hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES) &&
            isSupported("GL_OVR_multiview2");
+
+  case DeviceFeatures::MultiViewMultisample:
+    return hasExtension(Extensions::MultiViewMultiSample);
 
   case DeviceFeatures::TexturePartialMipChain:
     return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES) ||
@@ -1047,6 +1052,14 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     return true;
   case DeviceFeatureLimits::BufferAlignment:
     result = 16;
+#ifdef GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT
+    if (hasFeature(DeviceFeatures::UniformBlocks)) {
+      if (glContext_.isCurrentContext()) {
+        glContext_.getIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &tsize);
+        result = std::max((size_t)tsize, result);
+      }
+    }
+#endif
     return true;
   case DeviceFeatureLimits::BufferNoCopyAlignment:
     result = 0;

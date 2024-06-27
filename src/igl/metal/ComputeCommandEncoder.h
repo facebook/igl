@@ -10,8 +10,7 @@
 #include <Metal/Metal.h>
 #include <igl/ComputeCommandEncoder.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 class Buffer;
 
 class ComputeCommandEncoder final : public IComputeCommandEncoder {
@@ -47,5 +46,4 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
   static constexpr uint32_t MAX_RECOMMENDED_BYTES = 4 * 1024;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

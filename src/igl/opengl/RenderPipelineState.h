@@ -15,8 +15,7 @@
 #include <igl/opengl/Shader.h>
 #include <unordered_map>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 struct BlendMode {
   GLenum blendOpColor;
@@ -42,31 +41,31 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
 
   void bind();
   void unbind();
-  Result bindTextureUnit(const size_t unit, uint8_t bindTarget);
+  Result bindTextureUnit(size_t unit, uint8_t bindTarget);
 
   void bindVertexAttributes(size_t bufferIndex, size_t offset);
   void unbindVertexAttributes();
 
-  bool matchesShaderProgram(const RenderPipelineState& rhs) const;
-  bool matchesVertexInputState(const RenderPipelineState& rhs) const;
+  [[nodiscard]] bool matchesShaderProgram(const RenderPipelineState& rhs) const;
+  [[nodiscard]] bool matchesVertexInputState(const RenderPipelineState& rhs) const;
 
-  int getIndexByName(const NameHandle& name, ShaderStage stage) const override;
-  int getIndexByName(const std::string& name, ShaderStage stage) const override;
+  [[nodiscard]] int getIndexByName(const NameHandle& name, ShaderStage stage) const override;
+  [[nodiscard]] int getIndexByName(const std::string& name, ShaderStage stage) const override;
 
-  int getUniformBlockBindingPoint(const NameHandle& uniformBlockName) const;
+  [[nodiscard]] int getUniformBlockBindingPoint(const NameHandle& uniformBlockName) const;
   std::shared_ptr<IRenderPipelineReflection> renderPipelineReflection() override;
   void setRenderPipelineReflection(
       const IRenderPipelineReflection& renderPipelineReflection) override;
 
   static GLenum convertBlendOp(BlendOp value);
   static GLenum convertBlendFactor(BlendFactor value);
-  CullMode getCullMode() const {
+  [[nodiscard]] CullMode getCullMode() const {
     return desc_.cullMode;
   }
-  WindingMode getWindingMode() const {
+  [[nodiscard]] WindingMode getWindingMode() const {
     return desc_.frontFaceWinding;
   }
-  PolygonFillMode getPolygonFillMode() const {
+  [[nodiscard]] PolygonFillMode getPolygonFillMode() const {
     return desc_.polygonFillMode;
   }
 
@@ -78,7 +77,7 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
 
   std::shared_ptr<RenderPipelineReflection> reflection_;
   std::unordered_map<size_t, size_t> vertexTextureUnitRemap;
-  std::array<GLint, IGL_TEXTURE_SAMPLERS_MAX> unitSamplerLocationMap_;
+  std::array<GLint, IGL_TEXTURE_SAMPLERS_MAX> unitSamplerLocationMap_{};
   std::unordered_map<int, size_t> uniformBlockBindingMap_;
   std::array<GLboolean, 4> colorMask_ = {GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE};
   std::vector<int> activeAttributesLocations_;
@@ -86,5 +85,4 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
   bool blendEnabled_ = false;
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

@@ -10,23 +10,23 @@
 UIImage* IGLRGBABytesToUIImage(void* bytes, size_t width, size_t height) {
   auto data = [NSData dataWithBytes:bytes length:width * height * 4];
 
-  const auto colorSpace = CGColorSpaceCreateDeviceRGB();
-  auto const provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)data);
-  auto const cgImage = CGImageCreate(width,
-                                     height,
-                                     8,
-                                     32,
-                                     width * 4,
-                                     colorSpace,
-                                     kCGImageAlphaLast,
-                                     provider,
-                                     nullptr,
-                                     NO,
-                                     kCGRenderingIntentDefault);
+  auto* const colorSpace = CGColorSpaceCreateDeviceRGB();
+  auto* const provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)data);
+  auto* const cgImage = CGImageCreate(width,
+                                      height,
+                                      8,
+                                      32,
+                                      width * 4,
+                                      colorSpace,
+                                      kCGImageAlphaLast,
+                                      provider,
+                                      nullptr,
+                                      NO,
+                                      kCGRenderingIntentDefault);
   CGColorSpaceRelease(colorSpace);
   CGDataProviderRelease(provider);
 
-  CGRect bounds = CGRectMake(0, 0, width, height);
+  const CGRect bounds = CGRectMake(0, 0, width, height);
   UIGraphicsBeginImageContextWithOptions(bounds.size, NO, 0);
   CGContextRef context = UIGraphicsGetCurrentContext();
   CGContextSaveGState(context);

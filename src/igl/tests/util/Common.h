@@ -9,22 +9,24 @@
 
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
+#if IGL_BACKEND_OPENGL
 #include <igl/opengl/IContext.h>
+#endif // IGL_BACKEND_OPENGL
 
 #if IGL_PLATFORM_IOS || IGL_PLATFORM_MACOS
 #include "simd/simd.h"
 #else
 #include "simdstub.h"
 #endif
-namespace igl {
-namespace tests {
-namespace util {
+namespace igl::tests::util {
 
 const std::string BACKEND_OGL("ogl");
 const std::string BACKEND_MTL("metal");
 const std::string BACKEND_VUL("vulkan");
 
+#if IGL_BACKEND_OPENGL
 igl::opengl::RenderingAPI getOpenGLRenderingAPI();
+#endif // IGL_BACKEND_OPENGL
 
 // Creates an IGL device and a command queue
 void createDeviceAndQueue(std::shared_ptr<IDevice>& dev, std::shared_ptr<ICommandQueue>& cq);
@@ -46,6 +48,4 @@ void createSimpleShaderStages(const std::shared_ptr<IDevice>& dev,
                               std::unique_ptr<IShaderStages>& stages,
                               TextureFormat outputFormat = TextureFormat::Invalid);
 
-} // namespace util
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests::util

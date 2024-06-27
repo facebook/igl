@@ -16,8 +16,7 @@
 #include <igl/opengl/PlatformDevice.h>
 #include <igl/opengl/UnbindPolicy.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 class CommandQueue;
 class Texture;
 
@@ -34,7 +33,7 @@ class Device : public IDevice {
                                                     Result* outResult) override;
 
   // Backend type query
-  BackendType getBackendType() const override {
+  [[nodiscard]] BackendType getBackendType() const override {
     return BackendType::OpenGL;
   }
 
@@ -74,21 +73,22 @@ class Device : public IDevice {
   void pushMarker(int len, const char* name);
   void popMarker();
 
-  const PlatformDevice& getPlatformDevice() const noexcept override = 0;
+  [[nodiscard]] const PlatformDevice& getPlatformDevice() const noexcept override = 0;
 
-  IContext& getContext() const {
+  [[nodiscard]] IContext& getContext() const {
     return *context_;
   }
 
   // ICapabilities
-  bool hasFeature(DeviceFeatures capability) const override;
-  bool hasRequirement(DeviceRequirement requirement) const override;
+  [[nodiscard]] bool hasFeature(DeviceFeatures capability) const override;
+  [[nodiscard]] bool hasRequirement(DeviceRequirement requirement) const override;
   bool getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result) const override;
-  TextureFormatCapabilities getTextureFormatCapabilities(TextureFormat format) const override;
-  ShaderVersion getShaderVersion() const override;
+  [[nodiscard]] TextureFormatCapabilities getTextureFormatCapabilities(
+      TextureFormat format) const override;
+  [[nodiscard]] ShaderVersion getShaderVersion() const override;
 
   // Device Statistics
-  size_t getCurrentDrawCount() const override;
+  [[nodiscard]] size_t getCurrentDrawCount() const override;
 
   bool verifyScope() override;
 
@@ -98,14 +98,14 @@ class Device : public IDevice {
   void beginScope() override;
   void endScope() override;
 
-  const std::shared_ptr<IContext>& getSharedContext() const {
+  [[nodiscard]] const std::shared_ptr<IContext>& getSharedContext() const {
     return context_;
   }
 
  private:
-  GLint defaultFrameBufferID_;
-  GLint defaultFrameBufferWidth_;
-  GLint defaultFrameBufferHeight_;
+  GLint defaultFrameBufferID_{};
+  GLint defaultFrameBufferWidth_{};
+  GLint defaultFrameBufferHeight_{};
   const std::shared_ptr<IContext> context_;
   // on OpenGL we only need one command queue
   std::shared_ptr<CommandQueue> commandQueue_;
@@ -113,5 +113,4 @@ class Device : public IDevice {
   UnbindPolicy cachedUnbindPolicy_;
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

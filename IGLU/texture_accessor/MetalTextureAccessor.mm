@@ -20,8 +20,7 @@
 #include <secure_lib/secure_string.h>
 #endif
 
-namespace iglu {
-namespace textureaccessor {
+namespace iglu::textureaccessor {
 
 MetalTextureAccessor::MetalTextureAccessor(std::shared_ptr<igl::ITexture> texture,
                                            igl::IDevice& device) :
@@ -61,7 +60,7 @@ void MetalTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
   auto metalReadBuffer = static_cast<igl::metal::Buffer&>(*readBuffer_).get();
 
   igl::Result res;
-  igl::CommandBufferDesc desc;
+  const igl::CommandBufferDesc desc;
   auto iglMtlCommandBuffer = commandQueue.createCommandBuffer(desc, &res);
   IGL_ASSERT(res.isOk());
   auto metalCmdBuffer = static_cast<igl::metal::CommandBuffer&>(*iglMtlCommandBuffer).get();
@@ -114,5 +113,4 @@ std::vector<unsigned char>& MetalTextureAccessor::getBytes() {
   return latestBytesRead_;
 }
 
-} // namespace textureaccessor
-} // namespace iglu
+} // namespace iglu::textureaccessor

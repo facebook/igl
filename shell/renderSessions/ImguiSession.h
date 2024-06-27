@@ -15,8 +15,7 @@
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 
 class ImguiSession : public RenderSession {
  public:
@@ -30,5 +29,4 @@ class ImguiSession : public RenderSession {
   std::unique_ptr<iglu::imgui::Session> _imguiSession;
 };
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

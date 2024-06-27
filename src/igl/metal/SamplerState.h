@@ -10,8 +10,7 @@
 #include <Metal/Metal.h>
 #include <igl/SamplerState.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 class SamplerState final : public ISamplerState {
  public:
@@ -28,5 +27,4 @@ class SamplerState final : public ISamplerState {
   id<MTLSamplerState> value_;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

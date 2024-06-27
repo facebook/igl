@@ -29,7 +29,6 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 #include <igl/NameHandle.h>
-#include <igl/opengl/Device.h>
 #include <string>
 
 namespace igl::tests {
@@ -237,7 +236,7 @@ class TextureArrayFloatTest : public ::testing::Test {
     ASSERT_TRUE(uv_ != nullptr);
 
     // Initialize sampler state
-    SamplerStateDesc const samplerDesc;
+    const SamplerStateDesc samplerDesc;
     samp_ = iglDev_->createSamplerState(samplerDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(samp_ != nullptr);
@@ -555,7 +554,7 @@ TEST_F(TextureArrayFloatTest, Passthrough_SampleFromArray) {
     vertexUniforms_.layer = static_cast<int>(layer);
 
     *static_cast<VertexUniforms*>(vertUniformBuffer->getData()) = vertexUniforms_;
-    vertUniformBuffer->bind(*iglDev_, *pipelineState, *cmds.get());
+    vertUniformBuffer->bind(*iglDev_, *pipelineState, *cmds);
 
     cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
     cmds->drawIndexed(6);

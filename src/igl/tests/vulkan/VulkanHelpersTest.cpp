@@ -33,14 +33,15 @@ TEST_P(DescriptorSetLayoutTest, GetDescriptorSetLayoutBinding) {
   const VkDescriptorType descriptorType = std::get<1>(GetParam());
   const uint32_t count = std::get<2>(GetParam());
 
-  const auto descSetLayoutBinding =
-      ivkGetDescriptorSetLayoutBinding(binding, descriptorType, count);
+  const VkShaderStageFlags flags =
+      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+
+  const VkDescriptorSetLayoutBinding descSetLayoutBinding =
+      ivkGetDescriptorSetLayoutBinding(binding, descriptorType, count, flags);
   EXPECT_EQ(descSetLayoutBinding.binding, binding);
   EXPECT_EQ(descSetLayoutBinding.descriptorType, descriptorType);
   EXPECT_EQ(descSetLayoutBinding.descriptorCount, count);
-  EXPECT_EQ(descSetLayoutBinding.stageFlags,
-            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
-                VK_SHADER_STAGE_COMPUTE_BIT);
+  EXPECT_EQ(descSetLayoutBinding.stageFlags, flags);
   EXPECT_EQ(descSetLayoutBinding.pImmutableSamplers, nullptr);
 }
 
@@ -629,6 +630,115 @@ INSTANTIATE_TEST_SUITE_P(
                                "__dstAlphaBlendFactor_" + std::to_string(std::get<5>(info.param)) +
                                "__alphaBlendOp_" + std::to_string(std::get<6>(info.param)) +
                                "__colorWriteMask_" + std::to_string(std::get<7>(info.param));
+      return name;
+    });
+
+// ivkGetPipelineViewportStateCreateInfo *******************************
+
+// Parameters:
+//   bool: true if viewport is nullptr
+//   bool: true if scissor is nullptr
+class GetPipelineViewportStateCreateInfoTest
+  : public ::testing::TestWithParam<std::tuple<bool, bool>> {};
+
+TEST_P(GetPipelineViewportStateCreateInfoTest, GetPipelineViewportStateCreateInfo) {
+  const bool useViewportPtr = std::get<0>(GetParam());
+  const bool useScissorPtr = std::get<1>(GetParam());
+  constexpr VkViewport viewport{};
+  constexpr VkRect2D scissor{};
+  const VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo =
+      ivkGetPipelineViewportStateCreateInfo(useViewportPtr ? &viewport : nullptr,
+                                            useScissorPtr ? &scissor : nullptr);
+
+  EXPECT_EQ(pipelineViewportStateCreateInfo.sType,
+            VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
+  EXPECT_EQ(pipelineViewportStateCreateInfo.pNext, nullptr);
+  EXPECT_EQ(pipelineViewportStateCreateInfo.flags, 0);
+  EXPECT_EQ(pipelineViewportStateCreateInfo.viewportCount, 1);
+  EXPECT_EQ(pipelineViewportStateCreateInfo.pViewports, useViewportPtr ? &viewport : nullptr);
+  EXPECT_EQ(pipelineViewportStateCreateInfo.scissorCount, 1);
+  EXPECT_EQ(pipelineViewportStateCreateInfo.pScissors, useScissorPtr ? &scissor : nullptr);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    GetPipelineViewportStateCreateInfoTest,
+    ::testing::Combine(::testing::Bool(), ::testing::Bool()),
+    [](const testing::TestParamInfo<GetPipelineViewportStateCreateInfoTest::ParamType>& info) {
+      const std::string name = "_useViewportPtr_" + std::to_string(std::get<0>(info.param)) +
+                               "__useScissorPtr_" + std::to_string(std::get<1>(info.param));
+      return name;
+    });
+
+// ivkGetImageSubresourceRange *******************************
+
+// Parameters:
+//   bool: true if viewport is nullptr
+//   bool: true if scissor is nullptr
+class GetImageSubresourceRangeTest
+  : public ::testing::TestWithParam<std::tuple<VkImageAspectFlags>> {};
+
+TEST_P(GetImageSubresourceRangeTest, GetImageSubresourceRange) {
+  const VkImageAspectFlags aspectFlag = std::get<0>(GetParam());
+
+  const VkImageSubresourceRange imageSubresourceRange = ivkGetImageSubresourceRange(aspectFlag);
+
+  EXPECT_EQ(imageSubresourceRange.aspectMask, aspectFlag);
+  EXPECT_EQ(imageSubresourceRange.baseMipLevel, 0);
+  EXPECT_EQ(imageSubresourceRange.levelCount, 1);
+  EXPECT_EQ(imageSubresourceRange.baseArrayLayer, 0);
+  EXPECT_EQ(imageSubresourceRange.layerCount, 1);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    GetImageSubresourceRangeTest,
+    ::testing::Combine(::testing::Values(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_ASPECT_DEPTH_BIT)),
+    [](const testing::TestParamInfo<GetImageSubresourceRangeTest::ParamType>& info) {
+      const std::string name = "_aspectFlag_" + std::to_string(std::get<0>(info.param));
+      return name;
+    });
+
+// ivkGetWriteDescriptorSet_ImageInfo *******************************
+class GetWriteDescriptorSet_ImageInfoTest
+  : public ::testing::TestWithParam<std::tuple<uint32_t, VkDescriptorType, uint32_t>> {};
+
+TEST_P(GetWriteDescriptorSet_ImageInfoTest, GetWriteDescriptorSet_ImageInfo) {
+  constexpr VkDescriptorSet descSet = VK_NULL_HANDLE;
+  const uint32_t dstBinding = std::get<0>(GetParam());
+  const VkDescriptorType descType = std::get<1>(GetParam());
+  const uint32_t numDescs = std::get<2>(GetParam());
+
+  const std::array<VkDescriptorImageInfo, 2> pImageInfo = {
+      VkDescriptorImageInfo{VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED},
+      VkDescriptorImageInfo{VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED}};
+
+  const VkWriteDescriptorSet imageDescSet = ivkGetWriteDescriptorSet_ImageInfo(
+      descSet, dstBinding, descType, numDescs, pImageInfo.data());
+
+  EXPECT_EQ(imageDescSet.sType, VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
+  EXPECT_EQ(imageDescSet.pNext, nullptr);
+  EXPECT_EQ(imageDescSet.dstSet, descSet);
+  EXPECT_EQ(imageDescSet.dstBinding, dstBinding);
+  EXPECT_EQ(imageDescSet.dstArrayElement, 0);
+  EXPECT_EQ(imageDescSet.descriptorCount, numDescs);
+  EXPECT_EQ(imageDescSet.descriptorType, descType);
+  EXPECT_EQ(imageDescSet.pImageInfo, pImageInfo.data());
+  EXPECT_EQ(imageDescSet.pBufferInfo, nullptr);
+  EXPECT_EQ(imageDescSet.pTexelBufferView, nullptr);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    GetWriteDescriptorSet_ImageInfoTest,
+    ::testing::Combine(::testing::Values(0, 1),
+                       ::testing::Values(VK_DESCRIPTOR_TYPE_SAMPLER,
+                                         VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE),
+                       ::testing::Values(1, 2)),
+    [](const testing::TestParamInfo<GetWriteDescriptorSet_ImageInfoTest::ParamType>& info) {
+      const std::string name = "_dstBinding_" + std::to_string(std::get<0>(info.param)) +
+                               "__descriptorType_" + std::to_string(std::get<1>(info.param)) +
+                               "__numberDescriptors_" + std::to_string(std::get<2>(info.param));
       return name;
     });
 

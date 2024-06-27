@@ -13,8 +13,7 @@
 #include <igl/Device.h>
 #include <igl/HWDevice.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanContext;
 struct VulkanContextConfig;
@@ -62,5 +61,4 @@ class HWDevice final {
                                          Result* outResult = nullptr);
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

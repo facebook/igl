@@ -347,7 +347,7 @@ void TextureFormatTestBase::testUpload(std::shared_ptr<ITexture> texture) {
   const auto size = texture->getEstimatedSizeInBytes();
   std::vector<uint8_t> data(size);
   const auto range = texture->getFullRange();
-  Result result = texture->upload(range, data.data());
+  const Result result = texture->upload(range, data.data());
   ASSERT_TRUE(result.isOk()) << texture->getProperties().name;
 }
 

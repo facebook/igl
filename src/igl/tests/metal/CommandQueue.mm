@@ -12,8 +12,7 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 class CommandQueueTest : public ::testing::Test {
  public:
@@ -50,7 +49,6 @@ TEST_F(CommandQueueTest, Submit) {
   cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(cmdBuf_ != nullptr);
-  cmdQueue_->submit(*(cmdBuf_.get()));
+  cmdQueue_->submit(*(cmdBuf_));
 }
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

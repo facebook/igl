@@ -52,7 +52,7 @@ std::unique_ptr<igl::IDevice> XrAppImplGLES::initIGL(XrInstance instance, XrSyst
   auto hwDevice = opengl::wgl::HWDevice();
   constexpr igl::opengl::RenderingAPI kRenderingApi = igl::opengl::RenderingAPI::GL;
 #else
-  PFN_xrGetOpenGLESGraphicsRequirementsKHR pfnGetOpenGLESGraphicsRequirementsKHR = NULL;
+  PFN_xrGetOpenGLESGraphicsRequirementsKHR pfnGetOpenGLESGraphicsRequirementsKHR = nullptr;
   XR_CHECK(xrGetInstanceProcAddr(instance,
                                  "xrGetOpenGLESGraphicsRequirementsKHR",
                                  (PFN_xrVoidFunction*)(&pfnGetOpenGLESGraphicsRequirementsKHR)));
@@ -94,7 +94,7 @@ XrSession XrAppImplGLES::initXrSession(XrInstance instance,
   };
 #endif // IGL_WGL
 
-  XrSessionCreateInfo sessionCreateInfo = {
+  const XrSessionCreateInfo sessionCreateInfo = {
       .type = XR_TYPE_SESSION_CREATE_INFO,
       .next = &graphicsBindingGL,
       .createFlags = 0,

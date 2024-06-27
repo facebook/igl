@@ -27,10 +27,10 @@ class FramebufferBindingGuard {
 
  private:
   IContext& context_;
-  GLuint currentRenderbuffer_;
-  GLuint currentFramebuffer_;
-  GLuint currentReadFramebuffer_;
-  GLuint currentDrawFramebuffer_;
+  GLuint currentRenderbuffer_ = 0;
+  GLuint currentFramebuffer_ = 0;
+  GLuint currentReadFramebuffer_ = 0;
+  GLuint currentDrawFramebuffer_ = 0;
 };
 
 // Framebuffer encapsulates an immutable render target (attachments) and per-render pass state.

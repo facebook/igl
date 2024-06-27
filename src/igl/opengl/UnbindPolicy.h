@@ -7,8 +7,7 @@
 
 #pragma once
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 enum class UnbindPolicy : uint8_t {
   Default, // Do nothing
@@ -17,5 +16,4 @@ enum class UnbindPolicy : uint8_t {
   ClearContext,
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

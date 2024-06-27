@@ -11,8 +11,7 @@
 
 #include <string>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 //
 // VertexInputStateTest
@@ -139,5 +138,4 @@ TEST_F(VertexInputStateOGLTest, TwoAttribTwoBinding) {
   ASSERT_TRUE(vertexInputState != nullptr);
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

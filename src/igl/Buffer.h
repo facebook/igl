@@ -85,8 +85,13 @@ struct BufferDesc {
              size_t length = 0,
              ResourceStorage storageIn = ResourceStorage::Invalid,
              BufferAPIHint hint = 0,
-             const std::string& debugName = std::string()) :
-    data(data), length(length), storage(storageIn), hint(hint), type(type), debugName(debugName) {
+             std::string debugName = std::string()) :
+    data(data),
+    length(length),
+    storage(storageIn),
+    hint(hint),
+    type(type),
+    debugName(std::move(debugName)) {
     if (storage == ResourceStorage::Invalid) {
 #if IGL_PLATFORM_MACOS
       storage = ResourceStorage::Managed;
@@ -136,24 +141,24 @@ class IBuffer : public ITrackedResource<IBuffer> {
    * @remark It is NOT guaranteed that all of these hints were accepted and used. Use
    * acceptedApiHints to get those.
    */
-  virtual BufferDesc::BufferAPIHint requestedApiHints() const noexcept = 0;
+  [[nodiscard]] virtual BufferDesc::BufferAPIHint requestedApiHints() const noexcept = 0;
 
   /**
    * @brief Returns the API hints that were accepted and used in the buffer's creation.
    */
-  virtual BufferDesc::BufferAPIHint acceptedApiHints() const noexcept = 0;
+  [[nodiscard]] virtual BufferDesc::BufferAPIHint acceptedApiHints() const noexcept = 0;
 
   /**
    * @brief Returns the storage mode for the buffer.
    */
-  virtual ResourceStorage storage() const noexcept = 0;
+  [[nodiscard]] virtual ResourceStorage storage() const noexcept = 0;
 
   /**
    * @brief Returns current size of IBuffer
    *
    * @return Current allocated size
    */
-  virtual size_t getSizeInBytes() const = 0;
+  [[nodiscard]] virtual size_t getSizeInBytes() const = 0;
 
   /**
    * @brief Returns a buffer id suitable for bindless rendering (buffer_device_address on Vulkan and
@@ -161,14 +166,14 @@ class IBuffer : public ITrackedResource<IBuffer> {
    *
    * @return uint64_t
    */
-  virtual uint64_t gpuAddress(size_t offset = 0) const = 0;
+  [[nodiscard]] virtual uint64_t gpuAddress(size_t offset = 0) const = 0;
 
   /**
    * @brief Returns the underlying buffer type which is a mask of igl::BufferDesc::BufferTypeBits
    *
    * @return igl::BufferDesc::BufferType
    */
-  virtual BufferDesc::BufferType getBufferType() const = 0;
+  [[nodiscard]] virtual BufferDesc::BufferType getBufferType() const = 0;
 
  protected:
   IBuffer() = default;

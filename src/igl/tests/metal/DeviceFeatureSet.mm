@@ -13,8 +13,7 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 class DeviceFeatureSetMTLTest : public ::testing::Test {
  public:
@@ -37,7 +36,7 @@ class DeviceFeatureSetMTLTest : public ::testing::Test {
 // Test Cases
 
 TEST_F(DeviceFeatureSetMTLTest, HasFeatureTest) {
-  auto const mtlDeviceFeatureSet = metal::DeviceFeatureSet(mtlDevice_);
+  const auto mtlDeviceFeatureSet = metal::DeviceFeatureSet(mtlDevice_);
 
   // We currently expect all these to be "true", i.e. available features on Metal
   ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::MultiSample), true);
@@ -76,7 +75,7 @@ TEST_F(DeviceFeatureSetMTLTest, HasFeatureTest) {
 }
 
 TEST_F(DeviceFeatureSetMTLTest, HasRequirementTest) {
-  auto const mtlDeviceFeatureSet = metal::DeviceFeatureSet(mtlDevice_);
+  const auto mtlDeviceFeatureSet = metal::DeviceFeatureSet(mtlDevice_);
 
   // We expect these to fail on Metal because the requirements here are OpenGL extensions.
   ASSERT_EQ(mtlDeviceFeatureSet.hasRequirement(DeviceRequirement::StandardDerivativeExtReq), false);
@@ -84,5 +83,4 @@ TEST_F(DeviceFeatureSetMTLTest, HasRequirementTest) {
   ASSERT_EQ(mtlDeviceFeatureSet.hasRequirement(DeviceRequirement::ShaderTextureLodExtReq), false);
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

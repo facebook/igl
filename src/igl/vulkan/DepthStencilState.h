@@ -9,15 +9,14 @@
 
 #include <igl/DepthStencilState.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 /// @brief Implements the igl::IDepthStencilState interface
 class DepthStencilState final : public IDepthStencilState {
  public:
   explicit DepthStencilState(const DepthStencilStateDesc& desc) : desc_(desc) {}
 
-  const DepthStencilStateDesc& getDepthStencilStateDesc() const {
+  [[nodiscard]] const DepthStencilStateDesc& getDepthStencilStateDesc() const {
     return desc_;
   }
 
@@ -25,5 +24,4 @@ class DepthStencilState final : public IDepthStencilState {
   DepthStencilStateDesc desc_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

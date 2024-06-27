@@ -9,12 +9,10 @@
 
 using namespace igl;
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 ComputePipelineState::ComputePipelineState(id<MTLComputePipelineState> value,
                                            MTLComputePipelineReflection* reflection) :
   value_(value), reflection_(reflection) {}
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

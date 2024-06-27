@@ -11,8 +11,7 @@
 #include <igl/Common.h>
 #include <igl/ComputePipelineState.h>
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 
 class ComputePipelineState final : public IComputePipelineState {
   friend class Device;
@@ -35,5 +34,4 @@ class ComputePipelineState final : public IComputePipelineState {
   MTLComputePipelineReflection* reflection_;
 };
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

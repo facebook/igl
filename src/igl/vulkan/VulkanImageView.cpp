@@ -10,9 +10,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanContext.h>
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 VulkanImageView::VulkanImageView(const VulkanContext& ctx,
                                  VkImage image,
@@ -30,21 +28,27 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
 
   VkDevice device = ctx_->getVkDevice();
 
-  VK_ASSERT(ivkCreateImageView(
-      &ctx_->vf_,
-      device,
+  VkImageViewCreateInfo ci = ivkGetImageViewCreateInfo(
       image,
       type,
       format,
-      VkImageSubresourceRange{aspectMask, baseLevel, numLevels, baseLayer, numLayers},
-      &vkImageView_));
+      VkImageSubresourceRange{aspectMask, baseLevel, numLevels, baseLayer, numLayers});
+
+  VkSamplerYcbcrConversionInfo info{};
+
+  if (igl::vulkan::getNumImagePlanes(format) > 1) {
+    info = ctx.getOrCreateYcbcrConversionInfo(format);
+    ci.pNext = &info;
+  }
+
+  VK_ASSERT(ctx_->vf_.vkCreateImageView(device, &ci, nullptr, &vkImageView_));
 
   VK_ASSERT(ivkSetDebugObjectName(
       &ctx_->vf_, device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vkImageView_, debugName));
 }
 
 VulkanImageView::VulkanImageView(const VulkanContext& ctx,
-                                 VkDevice device,
+                                 VkDevice /*device*/,
                                  VkImage image,
                                  const VulkanImageViewCreateInfo& createInfo,
                                  const char* debugName) :
@@ -89,6 +93,4 @@ void VulkanImageView::destroy() {
   }
 }
 
-} // namespace vulkan
-
-} // namespace igl
+} // namespace igl::vulkan

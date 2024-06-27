@@ -9,8 +9,7 @@
 
 #include <igl/opengl/Errors.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 TextureTarget::~TextureTarget() {
   if (renderBufferID_ != 0) {
@@ -158,5 +157,4 @@ bool TextureTarget::toRenderBufferFormatGL(TextureDesc::TextureUsage usage,
   return true;
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

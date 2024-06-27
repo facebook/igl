@@ -9,10 +9,7 @@
 
 #include <cstdint> // For uint16_t
 
-namespace igl {
-namespace tests {
-namespace data {
-namespace vertex_index {
+namespace igl::tests::data::vertex_index {
 // clang-format off
 
 // Using float 4 to alleviate packing issues
@@ -39,7 +36,4 @@ static uint16_t QUAD_IND[] = {
 };
 
 // clang-format on
-} // namespace vertex_index
-} // namespace data
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests::data::vertex_index

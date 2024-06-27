@@ -47,7 +47,7 @@ class IPlatformDevice {
    * @brief Check the type of an IPlatformDevice.
    * @returns true if the IPlatformDevice is a given PlatformDeviceType t, otherwise false.
    */
-  virtual bool isType(PlatformDeviceType t) const noexcept = 0;
+  [[nodiscard]] virtual bool isType(PlatformDeviceType t) const noexcept = 0;
 
  public:
   virtual ~IPlatformDevice() = default;

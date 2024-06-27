@@ -16,8 +16,7 @@
 #include <igl/IGL.h>
 #include <string>
 
-namespace iglu {
-namespace tests {
+namespace iglu::tests {
 
 //
 // UniformDescriptorTest
@@ -44,62 +43,62 @@ class UniformDescriptorTest : public ::testing::Test {
 // Value Test
 //
 TEST_F(UniformDescriptorTest, DescriptorValue) {
-  bool boolValue = true;
+  const bool boolValue = true;
   uniform::DescriptorValue<bool> boolUniform(boolValue);
   TestIndex(boolUniform);
   TestUniformData(boolValue, boolUniform);
 
-  int intValue = 1;
+  const int intValue = 1;
   uniform::DescriptorValue<int> intUniform(intValue);
   TestIndex(intUniform);
   TestUniformData(intValue, intUniform);
 
-  glm::ivec2 ivec2Value(2);
+  const glm::ivec2 ivec2Value(2);
   uniform::DescriptorValue<glm::ivec2> ivec2Uniform(ivec2Value);
   TestIndex(ivec2Uniform);
   TestUniformData(ivec2Value, ivec2Uniform);
 
-  glm::ivec3 ivec3Value(3);
+  const glm::ivec3 ivec3Value(3);
   uniform::DescriptorValue<glm::ivec3> ivec3Uniform(ivec3Value);
   TestIndex(ivec3Uniform);
   TestUniformData(ivec3Value, ivec3Uniform);
 
-  glm::ivec4 ivec4Value(4);
+  const glm::ivec4 ivec4Value(4);
   uniform::DescriptorValue<glm::ivec4> ivec4Uniform(ivec4Value);
   TestIndex(ivec4Uniform);
   TestUniformData(ivec4Value, ivec4Uniform);
 
-  float floatValue(1.f);
+  const float floatValue(1.f);
   uniform::DescriptorValue<float> floatUniform(floatValue);
   TestIndex(floatUniform);
   TestUniformData(floatValue, floatUniform);
 
-  glm::vec2 vec2Value(2.f);
+  const glm::vec2 vec2Value(2.f);
   uniform::DescriptorValue<glm::vec2> vec2Uniform(vec2Value);
   TestIndex(vec2Uniform);
   TestUniformData(vec2Value, vec2Uniform);
 
-  glm::vec3 vec3Value(3.f);
+  const glm::vec3 vec3Value(3.f);
   uniform::DescriptorValue<glm::vec3> vec3Uniform(vec3Value);
   TestIndex(vec3Uniform);
   TestUniformData(vec3Value, vec3Uniform);
 
-  glm::vec4 vec4Value(4.f);
+  const glm::vec4 vec4Value(4.f);
   uniform::DescriptorValue<glm::vec4> vec4Uniform(vec4Value);
   TestIndex(vec4Uniform);
   TestUniformData(vec4Value, vec4Uniform);
 
-  glm::mat2 mat2Value(2.f);
+  const glm::mat2 mat2Value(2.f);
   uniform::DescriptorValue<glm::mat2> mat2Uniform(mat2Value);
   TestIndex(mat2Uniform);
   TestUniformData(mat2Value, mat2Uniform);
 
-  glm::mat3 mat3Value(3.f);
+  const glm::mat3 mat3Value(3.f);
   uniform::DescriptorValue<glm::mat3> mat3Uniform(mat3Value);
   TestIndex(mat3Uniform);
   TestUniformData(mat3Value, mat3Uniform);
 
-  glm::mat4 mat4Value(4.f);
+  const glm::mat4 mat4Value(4.f);
   uniform::DescriptorValue<glm::mat4> mat4Uniform(mat4Value);
   TestIndex(mat4Uniform);
   TestUniformData(mat4Value, mat4Uniform);
@@ -115,62 +114,62 @@ TEST_F(UniformDescriptorTest, DescriptorVector) {
   // TestIndex(boolUniform);
   // TestUniformData(boolVector, boolUniform);
 
-  std::vector<int> intVector = {1, 2, 3, 4, 5, -5, -4, -3, -2 - 1, 0};
+  const std::vector<int> intVector = {1, 2, 3, 4, 5, -5, -4, -3, -2 - 1, 0};
   uniform::DescriptorVector<int> intUniform(intVector);
   TestIndex(intUniform);
   TestUniformData(intVector, intUniform);
 
-  std::vector<glm::ivec2> ivec2Vector = {glm::ivec2(2),
-                                         glm::ivec2(3),
-                                         glm::ivec2(4),
-                                         glm::ivec2(5),
-                                         glm::ivec2(6),
-                                         glm::ivec2(-5),
-                                         glm::ivec2(-4),
-                                         glm::ivec2(-3),
-                                         glm::ivec2(-2),
-                                         glm::ivec2(-1),
-                                         glm::ivec2(0)};
+  const std::vector<glm::ivec2> ivec2Vector = {glm::ivec2(2),
+                                               glm::ivec2(3),
+                                               glm::ivec2(4),
+                                               glm::ivec2(5),
+                                               glm::ivec2(6),
+                                               glm::ivec2(-5),
+                                               glm::ivec2(-4),
+                                               glm::ivec2(-3),
+                                               glm::ivec2(-2),
+                                               glm::ivec2(-1),
+                                               glm::ivec2(0)};
   uniform::DescriptorVector<glm::ivec2> ivec2Uniform(ivec2Vector);
   TestIndex(ivec2Uniform);
   TestUniformData(ivec2Vector, ivec2Uniform);
 
-  std::vector<glm::ivec3> ivec3Vector = {glm::ivec3(3),
-                                         glm::ivec3(4),
-                                         glm::ivec3(5),
-                                         glm::ivec3(6),
-                                         glm::ivec3(7),
-                                         glm::ivec3(-5),
-                                         glm::ivec3(-4),
-                                         glm::ivec3(-3),
-                                         glm::ivec3(-2),
-                                         glm::ivec3(-1),
-                                         glm::ivec3(0)};
+  const std::vector<glm::ivec3> ivec3Vector = {glm::ivec3(3),
+                                               glm::ivec3(4),
+                                               glm::ivec3(5),
+                                               glm::ivec3(6),
+                                               glm::ivec3(7),
+                                               glm::ivec3(-5),
+                                               glm::ivec3(-4),
+                                               glm::ivec3(-3),
+                                               glm::ivec3(-2),
+                                               glm::ivec3(-1),
+                                               glm::ivec3(0)};
   uniform::DescriptorVector<glm::ivec3> ivec3Uniform(ivec3Vector);
   TestIndex(ivec3Uniform);
   TestUniformData(ivec3Vector, ivec3Uniform);
 
-  std::vector<glm::ivec4> ivec4Vector = {glm::ivec4(4),
-                                         glm::ivec4(5),
-                                         glm::ivec4(6),
-                                         glm::ivec4(7),
-                                         glm::ivec4(8),
-                                         glm::ivec4(-5),
-                                         glm::ivec4(-4),
-                                         glm::ivec4(-3),
-                                         glm::ivec4(-2),
-                                         glm::ivec4(-1),
-                                         glm::ivec4(0)};
+  const std::vector<glm::ivec4> ivec4Vector = {glm::ivec4(4),
+                                               glm::ivec4(5),
+                                               glm::ivec4(6),
+                                               glm::ivec4(7),
+                                               glm::ivec4(8),
+                                               glm::ivec4(-5),
+                                               glm::ivec4(-4),
+                                               glm::ivec4(-3),
+                                               glm::ivec4(-2),
+                                               glm::ivec4(-1),
+                                               glm::ivec4(0)};
   uniform::DescriptorVector<glm::ivec4> ivec4Uniform(ivec4Vector);
   TestIndex(ivec4Uniform);
   TestUniformData(ivec4Vector, ivec4Uniform);
 
-  std::vector<float> floatVector = {1.f, 2.f, 3.f, 4.f, 5.f, -5.f, -4.f, -3.f, -2 - 1.f, 0.f};
+  const std::vector<float> floatVector = {1.f, 2.f, 3.f, 4.f, 5.f, -5.f, -4.f, -3.f, -2 - 1.f, 0.f};
   uniform::DescriptorVector<float> floatUniform(floatVector);
   TestIndex(floatUniform);
   TestUniformData(floatVector, floatUniform);
 
-  std::vector<glm::vec2> vec2Vector = {
+  const std::vector<glm::vec2> vec2Vector = {
       glm::vec2(2.f),
       glm::vec2(3.f),
       glm::vec2(4.f),
@@ -187,7 +186,7 @@ TEST_F(UniformDescriptorTest, DescriptorVector) {
   TestIndex(vec2Uniform);
   TestUniformData(vec2Vector, vec2Uniform);
 
-  std::vector<glm::vec3> vec3Vector = {
+  const std::vector<glm::vec3> vec3Vector = {
       glm::vec3(3.f),
       glm::vec3(4.f),
       glm::vec3(5.f),
@@ -204,7 +203,7 @@ TEST_F(UniformDescriptorTest, DescriptorVector) {
   TestIndex(vec3Uniform);
   TestUniformData(vec3Vector, vec3Uniform);
 
-  std::vector<glm::vec4> vec4Vector = {
+  const std::vector<glm::vec4> vec4Vector = {
       glm::vec4(4.f),
       glm::vec4(5.f),
       glm::vec4(6.f),
@@ -221,7 +220,7 @@ TEST_F(UniformDescriptorTest, DescriptorVector) {
   TestIndex(vec4Uniform);
   TestUniformData(vec4Vector, vec4Uniform);
 
-  std::vector<glm::mat2> mat2Vector = {
+  const std::vector<glm::mat2> mat2Vector = {
       glm::mat2(2.f),
       glm::mat2(3.f),
       glm::mat2(4.f),
@@ -238,7 +237,7 @@ TEST_F(UniformDescriptorTest, DescriptorVector) {
   TestIndex(mat2Uniform);
   TestUniformData(mat2Vector, mat2Uniform);
 
-  std::vector<glm::mat3> mat3Vector = {
+  const std::vector<glm::mat3> mat3Vector = {
       glm::mat3(3.f),
       glm::mat3(4.f),
       glm::mat3(5.f),
@@ -255,7 +254,7 @@ TEST_F(UniformDescriptorTest, DescriptorVector) {
   TestIndex(mat3Uniform);
   TestUniformData(mat3Vector, mat3Uniform);
 
-  std::vector<glm::mat4> mat4Vector = {
+  const std::vector<glm::mat4> mat4Vector = {
       glm::mat4(4.f),
       glm::mat4(5.f),
       glm::mat4(6.f),
@@ -273,5 +272,4 @@ TEST_F(UniformDescriptorTest, DescriptorVector) {
   TestUniformData(mat4Vector, mat4Uniform);
 }
 
-} // namespace tests
-} // namespace iglu
+} // namespace iglu::tests

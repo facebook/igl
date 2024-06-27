@@ -11,8 +11,7 @@
 #include <igl/IGL.h>
 #include <igl/Texture.h>
 
-namespace iglu {
-namespace textureaccessor {
+namespace iglu::textureaccessor {
 
 enum class RequestStatus : uint8_t {
   Ready = 0,
@@ -67,7 +66,7 @@ class ITextureAccessor {
     return copyBytes(ptr, length);
   }
 
-  std::shared_ptr<igl::ITexture> getTexture() const {
+  [[nodiscard]] std::shared_ptr<igl::ITexture> getTexture() const {
     return texture_;
   }
 
@@ -75,5 +74,4 @@ class ITextureAccessor {
   std::shared_ptr<igl::ITexture> texture_;
 };
 
-} // namespace textureaccessor
-} // namespace iglu
+} // namespace iglu::textureaccessor

@@ -30,21 +30,21 @@ class UniformBuffer final : public Buffer {
   void* map(const BufferRange& range, Result* outResult) override;
   void unmap() override;
 
-  BufferDesc::BufferAPIHint acceptedApiHints() const noexcept override {
+  [[nodiscard]] BufferDesc::BufferAPIHint acceptedApiHints() const noexcept override {
     return 0;
   }
 
-  ResourceStorage storage() const noexcept override {
+  [[nodiscard]] ResourceStorage storage() const noexcept override {
     return ResourceStorage::Shared;
   }
 
-  size_t getSizeInBytes() const override {
+  [[nodiscard]] size_t getSizeInBytes() const override {
     return uniformData_.size();
   }
 
   void initialize(const BufferDesc& desc, Result* outResult) override;
 
-  Type getType() const noexcept override {
+  [[nodiscard]] Type getType() const noexcept override {
     return Type::Uniform;
   }
 

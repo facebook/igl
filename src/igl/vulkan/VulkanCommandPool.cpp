@@ -8,8 +8,7 @@
 #include <igl/vulkan/VulkanCommandPool.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 VulkanCommandPool::VulkanCommandPool(const VulkanFunctionTable& vf,
                                      VkDevice device,
@@ -34,5 +33,4 @@ VulkanCommandPool ::~VulkanCommandPool() {
   vf_.vkDestroyCommandPool(device_, commandPool_, nullptr);
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

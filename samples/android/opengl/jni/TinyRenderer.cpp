@@ -24,8 +24,7 @@
 #define IGL_SAMPLE_LOG_ERROR(...) \
   __android_log_print(ANDROID_LOG_ERROR, "libsampleOpenGLJni", __VA_ARGS__)
 
-namespace igl_samples {
-namespace android {
+namespace igl_samples::android {
 
 using namespace igl;
 
@@ -69,7 +68,7 @@ const std::string kFragmentShader = R"(
 void TinyRenderer::init() {
   Result result;
   { // Initialize the device
-    igl::HWDeviceQueryDesc queryDesc(HWDeviceType::IntegratedGpu);
+    const igl::HWDeviceQueryDesc queryDesc(HWDeviceType::IntegratedGpu);
     auto hwDevice = opengl::egl::HWDevice();
     auto hwDevices = hwDevice.queryDevices(queryDesc, &result);
     throwOnBadResult(result);
@@ -97,12 +96,12 @@ void TinyRenderer::init() {
         2,
     };
 
-    BufferDesc vertexBufferDesc =
+    const BufferDesc vertexBufferDesc =
         BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData));
     vertexBuffer_ = device_->createBuffer(vertexBufferDesc, &result);
     throwOnBadResult(result);
 
-    BufferDesc indexBufferDesc =
+    const BufferDesc indexBufferDesc =
         BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
     indexBuffer_ = device_->createBuffer(indexBufferDesc, &result);
     throwOnBadResult(result);
@@ -126,7 +125,7 @@ void TinyRenderer::init() {
   }
 
   { // Initialize command queue
-    CommandQueueDesc commandQueueDesc = {CommandQueueType::Graphics};
+    const CommandQueueDesc commandQueueDesc = {CommandQueueType::Graphics};
     commandQueue_ = device_->createCommandQueue(commandQueueDesc, &result);
     throwOnBadResult(result);
   }
@@ -180,8 +179,8 @@ void TinyRenderer::render() {
   }
 
   // Create and submit command buffers
-  CommandBufferDesc commandBufferDesc;
-  std::shared_ptr<ICommandBuffer> buffer =
+  const CommandBufferDesc commandBufferDesc;
+  const std::shared_ptr<ICommandBuffer> buffer =
       commandQueue_->createCommandBuffer(commandBufferDesc, &result);
   throwOnBadResult(result);
 
@@ -199,8 +198,8 @@ void TinyRenderer::render() {
 }
 
 void TinyRenderer::onSurfacesChanged() {
-  auto readSurface = eglGetCurrentSurface(EGL_READ);
-  auto drawSurface = eglGetCurrentSurface(EGL_DRAW);
+  auto* readSurface = eglGetCurrentSurface(EGL_READ);
+  auto* drawSurface = eglGetCurrentSurface(EGL_DRAW);
 
   Result result;
   device_->getPlatformDevice<opengl::egl::PlatformDevice>()->updateSurfaces(
@@ -208,5 +207,4 @@ void TinyRenderer::onSurfacesChanged() {
   throwOnBadResult(result);
 }
 
-} // namespace android
-} // namespace igl_samples
+} // namespace igl_samples::android

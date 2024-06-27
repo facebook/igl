@@ -20,7 +20,7 @@ class BufferSynchronizationManager {
    * @brief Returns the current inFlight buffer index
    * @return the current inFlight buffer index
    */
-  size_t getCurrentInFlightBufferIndex() const noexcept {
+  [[nodiscard]] size_t getCurrentInFlightBufferIndex() const noexcept {
     return currentInFlightBufferIndex_;
   }
 
@@ -32,7 +32,7 @@ class BufferSynchronizationManager {
    * (like Metal) will support more than one in flight buffers.
    * @return max inFlight buffers
    */
-  size_t getMaxInflightBuffers() const noexcept {
+  [[nodiscard]] size_t getMaxInflightBuffers() const noexcept {
     return maxInFlightBuffers_;
   }
 

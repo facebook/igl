@@ -15,13 +15,13 @@ namespace igl::shell::netservice {
 class NetServiceFactory {
  public:
   virtual ~NetServiceFactory() = default;
-  virtual std::unique_ptr<NetService> create(std::string domain,
-                                             std::string type,
-                                             std::string name,
-                                             int port) const noexcept = 0;
+  [[nodiscard]] virtual std::unique_ptr<NetService> create(std::string domain,
+                                                           std::string type,
+                                                           std::string name,
+                                                           int port) const noexcept = 0;
 
-  virtual std::unique_ptr<NetService> search(std::string domain,
-                                             std::string type) const noexcept = 0;
+  [[nodiscard]] virtual std::unique_ptr<NetService> search(std::string domain,
+                                                           std::string type) const noexcept = 0;
 };
 
 } // namespace igl::shell::netservice

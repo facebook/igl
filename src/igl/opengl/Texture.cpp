@@ -14,8 +14,7 @@
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/util/TextureFormat.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 Dimensions Texture::getDimensions() const {
   return Dimensions{
@@ -205,9 +204,9 @@ bool Texture::toFormatDescGL(IContext& ctx,
     }
   }
 
-  bool sampled = (usage & TextureDesc::TextureUsageBits::Sampled) != 0;
+  const bool sampled = (usage & TextureDesc::TextureUsageBits::Sampled) != 0;
   bool attachment = (usage & TextureDesc::TextureUsageBits::Attachment) != 0;
-  bool storage = (usage & TextureDesc::TextureUsageBits::Storage) != 0;
+  const bool storage = (usage & TextureDesc::TextureUsageBits::Storage) != 0;
   bool sampledAttachment = sampled && attachment;
   bool sampledOnly = sampled && !attachment;
   bool attachmentOnly = attachment && !sampled;
@@ -914,11 +913,11 @@ bool Texture::toFormatDescGL(IContext& ctx,
     }
     return true;
   case TextureFormat::YUV_NV12:
+  case TextureFormat::YUV_420p:
     return false;
   }
 
   return false;
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

@@ -133,7 +133,7 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
 
 void HelloWorldSession::initialize() noexcept {
   // Command queue: backed by different types of GPU HW queues
-  CommandQueueDesc desc{CommandQueueType::Graphics};
+  const CommandQueueDesc desc{CommandQueueType::Graphics};
   commandQueue_ = getPlatform().getDevice().createCommandQueue(desc, nullptr);
 
   renderPass_.colorAttachments.resize(1);
@@ -176,8 +176,9 @@ void HelloWorldSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   framebuffer_->updateDrawable(surfaceTextures.color);
 
   // Command buffers (1-N per thread): create, submit and forget
-  CommandBufferDesc cbDesc;
-  std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  const CommandBufferDesc cbDesc;
+  const std::shared_ptr<ICommandBuffer> buffer =
+      commandQueue_->createCommandBuffer(cbDesc, nullptr);
 
   const igl::Viewport viewport = {
       0.0f, 0.0f, (float)dimensions.width, (float)dimensions.height, 0.0f, +1.0f};

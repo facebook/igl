@@ -10,8 +10,7 @@
 #include <igl/Common.h>
 #include <igl/opengl/Texture.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 namespace egl {
 class PlatformDevice;
@@ -38,8 +37,8 @@ class ViewTextureTarget final : public Texture {
   ViewTextureTarget(IContext& context, TextureFormat format) : Super(context, format) {}
 
   // ITexture overrides
-  TextureType getType() const override;
-  TextureDesc::TextureUsage getUsage() const override;
+  [[nodiscard]] TextureType getType() const override;
+  [[nodiscard]] TextureDesc::TextureUsage getUsage() const override;
 
   // Texture overrides
   void bind() override;
@@ -52,14 +51,13 @@ class ViewTextureTarget final : public Texture {
   void attachAsStencil(const AttachmentParams& params) override;
   void detachAsStencil(bool read) override;
 
-  bool isImplicitStorage() const override;
+  [[nodiscard]] bool isImplicitStorage() const override;
 
   // @fb-only
-  GLuint getId() const override {
+  [[nodiscard]] GLuint getId() const override {
     IGL_ASSERT_NOT_REACHED();
     return 0;
   }
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

@@ -15,8 +15,7 @@
 #include "../util/TestDevice.h"
 #include "../util/TestErrorGuard.h"
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 /// Helper to create just any render pipeline in a valid way
 std::shared_ptr<IRenderPipelineState> createRenderPipeline(
@@ -47,7 +46,7 @@ class DeviceOGLTest : public ::testing::Test {
 
   // Member variables
  public:
-  opengl::IContext* context_;
+  opengl::IContext* context_{};
   std::shared_ptr<IDevice> iglDev_;
 };
 
@@ -63,11 +62,11 @@ TEST_F(DeviceOGLTest, EndScope) {
   // Create a DeviceScope in a new scope to trigger iglDev_->beginScope and iglDev_->endScope when
   // the scope exits and the DeviceScope is destroyed
   {
-    DeviceScope deviceScope(*iglDev_);
+    const DeviceScope deviceScope(*iglDev_);
     ASSERT_TRUE(iglDev_->verifyScope());
 
     // Artificially set values that will be restored when endScope is called
-    context_->colorMask(false, false, false, false);
+    context_->colorMask(0u, 0u, 0u, 0u);
     context_->blendFunc(GL_SRC_COLOR, GL_DST_COLOR);
 
     context_->bindBuffer(GL_ARRAY_BUFFER, 1);
@@ -158,18 +157,18 @@ TEST_F(DeviceOGLTest, EndScope_ClearContext) {
   { // Clear current context, one level deep
     context_->clearCurrentContext();
 
-    DeviceScope deviceScope(*iglDev_);
+    const DeviceScope deviceScope(*iglDev_);
     ASSERT_TRUE(iglDev_->verifyScope());
     ASSERT_TRUE(context_->isCurrentContext());
   }
   ASSERT_FALSE(context_->isCurrentContext());
 
   { // Clear current context, one level deep
-    DeviceScope scope1(*iglDev_);
+    const DeviceScope scope1(*iglDev_);
     ASSERT_TRUE(iglDev_->verifyScope());
     ASSERT_TRUE(context_->isCurrentContext());
     {
-      DeviceScope scope2(*iglDev_);
+      const DeviceScope scope2(*iglDev_);
       ASSERT_TRUE(iglDev_->verifyScope());
       ASSERT_TRUE(context_->isCurrentContext());
     }
@@ -181,7 +180,7 @@ TEST_F(DeviceOGLTest, EndScope_ClearContext) {
 }
 
 TEST_F(DeviceOGLTest, DeletionTest) {
-  igl::tests::util::TestErrorGuard testErrorGuard;
+  const igl::tests::util::TestErrorGuard testErrorGuard;
 
   auto iglDev2 = util::createTestDevice();
 
@@ -197,10 +196,10 @@ TEST_F(DeviceOGLTest, DeletionTest) {
   std::shared_ptr<IShaderModule> shaderModule; // Used to trigger deleteShader
 
   {
-    DeviceScope scope1(*iglDev_);
+    const DeviceScope scope1(*iglDev_);
 
     // deleteBuffers
-    BufferDesc desc =
+    const BufferDesc desc =
         BufferDesc(BufferDesc::BufferTypeBits::Vertex, nullptr, 0, ResourceStorage::Shared);
     Result res;
     buffer = iglDev_->createBuffer(desc, &res);
@@ -231,7 +230,7 @@ TEST_F(DeviceOGLTest, DeletionTest) {
     ASSERT_TRUE(renderbufferTexture != nullptr);
 
     // To get it to create a VAO and then delete it
-    CommandQueueDesc cqDesc = {};
+    const CommandQueueDesc cqDesc = {};
     auto cq = iglDev_->createCommandQueue(cqDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(cq != nullptr); // Shouldn't trigger if above is okay
@@ -257,7 +256,7 @@ TEST_F(DeviceOGLTest, DeletionTest) {
 
   // Force scope to change (workaround for leaving device scope not clearing current eagl scope)
   {
-    DeviceScope scope2(*iglDev2);
+    const DeviceScope scope2(*iglDev2);
     ASSERT_TRUE(iglDev2->verifyScope());
     ASSERT_FALSE(iglDev_->verifyScope());
   }
@@ -272,7 +271,7 @@ TEST_F(DeviceOGLTest, DeletionTest) {
   shaderModule = nullptr;
 
   // Entering main scope again to flush deletion queue
-  { DeviceScope scope3(*iglDev_); }
+  { const DeviceScope scope3(*iglDev_); }
 }
 
 std::shared_ptr<IRenderPipelineState> createRenderPipeline(
@@ -347,5 +346,4 @@ TEST_F(DeviceOGLTest, CreateShaderModuleUnknownTypeFails) {
   EXPECT_TRUE(vertShader == nullptr) << "invalid stage to compile should result in null result";
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

@@ -78,34 +78,34 @@ Java_com_facebook_igl_shell_openxr_gles_MainActivity_onActionView(JNIEnv* env,
 using namespace igl::shell::openxr;
 
 void handleInitWindow(const struct android_app* app) {
-  auto xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
+  auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setNativeWindow(app->window);
   }
 }
 void handleTermWindow(const struct android_app* app) {
-  auto xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
+  auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setNativeWindow(nullptr);
   }
 }
 
 void handleResume(const struct android_app* app) {
-  auto xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
+  auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setResumed(true);
   }
 }
 
 void handlePause(const struct android_app* app) {
-  auto xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
+  auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setResumed(false);
   }
 }
 
 void handleDestroy(const struct android_app* app) {
-  auto xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
+  auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setNativeWindow(nullptr);
   }

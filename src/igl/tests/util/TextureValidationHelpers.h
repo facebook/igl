@@ -11,7 +11,6 @@
 
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
-#include <igl/opengl/IContext.h>
 
 #if IGL_PLATFORM_IOS || IGL_PLATFORM_MACOS
 #include "simd/simd.h"

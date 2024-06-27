@@ -15,8 +15,7 @@ namespace igl {
 class IRenderCommandEncoder;
 } // namespace igl
 
-namespace iglu {
-namespace uniform {
+namespace iglu::uniform {
 
 struct Collection;
 class Encoder;
@@ -27,7 +26,7 @@ class Encoder;
 //
 class CollectionEncoder {
  public:
-  CollectionEncoder(igl::BackendType backendType);
+  explicit CollectionEncoder(igl::BackendType backendType);
 
   void operator()(const Collection& collection,
                   igl::IRenderCommandEncoder& commandEncoder,
@@ -38,5 +37,4 @@ class CollectionEncoder {
   igl::BackendType backendType_;
 };
 
-} // namespace uniform
-} // namespace iglu
+} // namespace iglu::uniform

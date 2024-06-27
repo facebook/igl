@@ -17,8 +17,7 @@
 #define OFFSCREEN_RT_WIDTH 1
 #define OFFSCREEN_RT_HEIGHT 1
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 //
 // DeviceTest
@@ -40,11 +39,11 @@ class DeviceTest : public ::testing::Test {
     util::createDeviceAndQueue(iglDev_, cmdQueue_);
 
     // Create an offscreen texture to render to
-    TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                             OFFSCREEN_RT_WIDTH,
-                                             OFFSCREEN_RT_HEIGHT,
-                                             TextureDesc::TextureUsageBits::Sampled |
-                                                 TextureDesc::TextureUsageBits::Attachment);
+    const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                   OFFSCREEN_RT_WIDTH,
+                                                   OFFSCREEN_RT_HEIGHT,
+                                                   TextureDesc::TextureUsageBits::Sampled |
+                                                       TextureDesc::TextureUsageBits::Attachment);
 
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);
@@ -210,5 +209,4 @@ TEST_F(DeviceTest, GetBackendType) {
   }
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

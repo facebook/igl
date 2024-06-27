@@ -13,8 +13,7 @@
 #include <string> // For storing the debug name
 #endif
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 class VulkanContext;
 
@@ -33,6 +32,7 @@ class VulkanSampler final {
   VulkanSampler(const VulkanContext& ctx,
                 VkDevice device,
                 const VkSamplerCreateInfo& ci,
+                VkFormat yuvVkFormat = VK_FORMAT_UNDEFINED,
                 const char* debugName = nullptr);
   ~VulkanSampler();
 
@@ -42,11 +42,11 @@ class VulkanSampler final {
   /**
    * @brief Returns Vulkan's opaque handle to the sampler object
    */
-  VkSampler getVkSampler() const {
+  [[nodiscard]] VkSampler getVkSampler() const {
     return vkSampler_;
   }
 
-  uint32_t getSamplerId() const {
+  [[nodiscard]] uint32_t getSamplerId() const {
     return samplerId_;
   }
 
@@ -68,5 +68,4 @@ class VulkanSampler final {
 #endif
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

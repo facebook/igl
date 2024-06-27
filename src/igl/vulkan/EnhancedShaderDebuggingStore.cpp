@@ -22,8 +22,7 @@
 #include <igl/vulkan/Framebuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 EnhancedShaderDebuggingStore::EnhancedShaderDebuggingStore() {
 #if !IGL_PLATFORM_ANDROID
@@ -311,7 +310,7 @@ void main() {
 void EnhancedShaderDebuggingStore::installBufferBarrier(
     const igl::ICommandBuffer& commandBuffer) const {
   if (enabled_) {
-    auto cmdBuffer = static_cast<const vulkan::CommandBuffer*>(&commandBuffer);
+    const auto* cmdBuffer = static_cast<const vulkan::CommandBuffer*>(&commandBuffer);
     auto* buffer = static_cast<vulkan::Buffer*>(vertexBuffer().get());
     const auto& ctx = device_->getVulkanContext();
     ivkBufferMemoryBarrier(&ctx.vf_,
@@ -328,7 +327,7 @@ void EnhancedShaderDebuggingStore::installBufferBarrier(
 
 uint64_t EnhancedShaderDebuggingStore::hashFramebufferFormats(
     const std::shared_ptr<igl::IFramebuffer>& framebuffer) const {
-  std::hash<igl::TextureFormat> hashFun;
+  const std::hash<igl::TextureFormat> hashFun;
 
   uint64_t hashValue = 0;
 
@@ -350,5 +349,4 @@ uint64_t EnhancedShaderDebuggingStore::hashFramebufferFormats(
   return hashValue;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

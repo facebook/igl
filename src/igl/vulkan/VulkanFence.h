@@ -13,8 +13,7 @@
 #include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 /**
  * @brief Fences are used to synchronize CPU-GPU tasks. The VulkanFence class encapsulates the
@@ -55,5 +54,4 @@ class VulkanFence final {
   bool exportable_ = false;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

@@ -12,8 +12,7 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 
-namespace igl {
-namespace tests {
+namespace igl::tests {
 
 class DeviceMetalTest : public ::testing::Test {
  public:
@@ -40,5 +39,4 @@ TEST_F(DeviceMetalTest, GetShaderVersion) {
   ASSERT_GT(iglShaderVersion.minorVersion, 0);
 }
 
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests

@@ -7,10 +7,11 @@
 
 // @fb-only
 
-#include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
+#include <IGLU/shaderCross/ShaderCross.h>
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <glm/detail/qualifier.hpp>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
@@ -43,96 +44,53 @@ VertexPosUvw vertexData0[] = {
 uint16_t indexData[] = {0, 1, 2, 1, 3, 2, 1, 4, 3, 4, 6, 3, 4, 5, 6, 5, 7, 6,
                         5, 0, 7, 0, 2, 7, 5, 4, 0, 4, 1, 0, 2, 3, 7, 3, 6, 7};
 
-std::string getProlog(igl::IDevice& device) {
-#if IGL_BACKEND_OPENGL
-  const auto shaderVersion = device.getShaderVersion();
-  if (shaderVersion.majorVersion >= 3 || shaderVersion.minorVersion >= 30) {
-    std::string prependVersionString = igl::opengl::getStringFromShaderVersion(shaderVersion);
-    prependVersionString += "\n#extension GL_OVR_multiview2 : require\n";
-    prependVersionString += "\nprecision highp float;\n";
-    return prependVersionString;
-  }
-#endif // IGL_BACKEND_OPENGL
-  return "";
-};
+const char* getVulkanFragmentShaderSource() {
+  return R"(#version 450
+            precision highp float;
+            precision highp sampler2D;
 
-std::string getOpenGLFragmentShaderSource(igl::IDevice& device) {
-  return getProlog(device) + std::string(R"(
-                      precision highp float;
-                      precision highp sampler2D;
-                      in vec3 uvw;
-                      in vec3 color;
-                      uniform sampler2D inputImage;
-                      out vec4 fragmentColor;
-                      void main() {
-                        fragmentColor = texture(inputImage, uvw.xy) * vec4(color, 1.0);
-                      })");
+            layout(location = 0) in vec3 uvw;
+            layout(location = 1) in vec3 color;
+            layout(set = 0, binding = 0) uniform sampler2D inputImage;
+            layout(location = 0) out vec4 fragmentColor;
+
+            void main() {
+              fragmentColor = texture(inputImage, uvw.xy) * vec4(color, 1.0);
+            })";
 }
 
-std::string getOpenGLVertexShaderSource(igl::IDevice& device) {
-  return getProlog(device) + R"(
-                      layout(num_views = 2) in;
-                      precision highp float;
+const char* getVulkanVertexShaderSource() {
+  return R"(#version 450
+            #extension GL_OVR_multiview2 : require
+            layout(num_views = 2) in;
+            precision highp float;
 
-                      uniform mat4 modelMatrix;
-                      uniform mat4 viewProjectionMatrix[2];
-                      uniform float scaleZ;
+            layout (set = 1, binding = 1, std140) uniform PerFrame {
+              mat4 modelMatrix;
+              mat4 viewProjectionMatrix[2];
+              float scaleZ;
+            } perFrame;
 
-                      in vec3 position;
-                      in vec3 uvw_in;
-                      out vec3 uvw;
-                      out vec3 color;
+            layout(location = 0) in vec3 position;
+            layout(location = 1) in vec3 uvw_in;
+            layout(location = 0) out vec3 uvw;
+            layout(location = 1) out vec3 color;
 
-                      void main() {
-                        mat4 mvpMatrix = viewProjectionMatrix[gl_ViewID_OVR] * modelMatrix;
-                        gl_Position = mvpMatrix * vec4(position, 1.0);
-                        uvw = vec3(uvw_in.x, uvw_in.y, (uvw_in.z - 0.5) * scaleZ + 0.5);
-                        color = vec3(1.0, 1.0, 0.0);
-                      })";
+            void main() {
+              mat4 mvpMatrix = perFrame.viewProjectionMatrix[int(gl_ViewID_OVR)] * perFrame.modelMatrix;
+              gl_Position = mvpMatrix * vec4(position, 1.0);
+              uvw = vec3(uvw_in.x, uvw_in.y, (uvw_in.z - 0.5) * perFrame.scaleZ + 0.5);
+              color = vec3(1.0, 1.0, 0.0);
+            })";
 }
 
-static const char* getVulkanFragmentShaderSource() {
-  return R"(
-                      precision highp float;
-                      precision highp sampler2D;
-
-                      layout(location = 0) in vec3 uvw;
-                      layout(location = 1) in vec3 color;
-                      layout(set = 0, binding = 0) uniform sampler2D inputImage;
-                      layout(location = 0) out vec4 fragmentColor;
-
-                      void main() {
-                        fragmentColor = texture(inputImage, uvw.xy) * vec4(color, 1.0);
-                      })";
-}
-
-static const char* getVulkanVertexShaderSource() {
-  return R"(
-                      #extension GL_OVR_multiview2 : require
-                      layout(num_views = 2) in;
-                      precision highp float;
-
-                      layout (set = 1, binding = 1, std140) uniform PerFrame {
-                        mat4 modelMatrix;
-                        mat4 viewProjectionMatrix[2];
-                        float scaleZ;
-                      } perFrame;
-
-                      layout(location = 0) in vec3 position;
-                      layout(location = 1) in vec3 uvw_in;
-                      layout(location = 0) out vec3 uvw;
-                      layout(location = 1) out vec3 color;
-
-                      void main() {
-                        mat4 mvpMatrix = perFrame.viewProjectionMatrix[gl_ViewID_OVR] * perFrame.modelMatrix;
-                        gl_Position = mvpMatrix * vec4(position, 1.0);
-                        uvw = vec3(uvw_in.x, uvw_in.y, (uvw_in.z - 0.5) * perFrame.scaleZ + 0.5);
-                        color = vec3(1.0, 1.0, 0.0);
-                      })";
-}
-
-std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
+[[nodiscard]] std::unique_ptr<IShaderStages> getShaderStagesForBackend(
+    igl::IDevice& device,
+    const iglu::ShaderCross& shaderCross) noexcept {
   switch (device.getBackendType()) {
+  case igl::BackendType::Metal:
+    IGL_ASSERT_MSG(false, "Metal is not supported");
+    return nullptr;
   // @fb-only
     // @fb-only
     // @fb-only
@@ -145,27 +103,39 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
                                                            "main",
                                                            "",
                                                            nullptr);
-  case igl::BackendType::OpenGL:
+  case igl::BackendType::OpenGL: {
+    igl::Result res;
+    const auto vs = shaderCross.crossCompileFromVulkanSource(
+        getVulkanVertexShaderSource(), igl::ShaderStage::Vertex, &res);
+    IGL_ASSERT_MSG(res.isOk(), res.message.c_str());
+
+    const auto fs = shaderCross.crossCompileFromVulkanSource(
+        getVulkanFragmentShaderSource(), igl::ShaderStage::Fragment, &res);
+    IGL_ASSERT_MSG(res.isOk(), res.message.c_str());
+
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,
-        getOpenGLVertexShaderSource(device).c_str(),
-        "main",
+        vs.c_str(),
+        shaderCross.entryPointName(igl::ShaderStage::Vertex),
         "",
-        getOpenGLFragmentShaderSource(device).c_str(),
-        "main",
+        fs.c_str(),
+        shaderCross.entryPointName(igl::ShaderStage::Fragment),
         "",
         nullptr);
+  }
   default:
     IGL_ASSERT_NOT_REACHED();
     return nullptr;
   }
 }
 
-bool isDeviceCompatible(IDevice& device) noexcept {
+[[nodiscard]] bool isDeviceCompatible(IDevice& device) noexcept {
   return device.hasFeature(DeviceFeatures::Multiview);
 }
 
-glm::mat4 perspectiveAsymmetricFovRH(const igl::shell::Fov& fov, float nearZ, float farZ) {
+[[nodiscard]] glm::mat4 perspectiveAsymmetricFovRH(const igl::shell::Fov& fov,
+                                                   float nearZ,
+                                                   float farZ) noexcept {
   glm::mat4 mat;
 
   const float tanLeft = tanf(fov.angleLeft);
@@ -242,7 +212,8 @@ void HelloOpenXRSession::initialize() noexcept {
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
 
   createSamplerAndTextures(device);
-  shaderStages_ = getShaderStagesForBackend(device);
+  const iglu::ShaderCross shaderCross(device);
+  shaderStages_ = getShaderStagesForBackend(device, shaderCross);
 
   // Command queue: backed by different types of GPU HW queues
   const CommandQueueDesc desc{igl::CommandQueueType::Graphics};
@@ -261,6 +232,32 @@ void HelloOpenXRSession::initialize() noexcept {
 #endif
   renderPass_.depthAttachment.loadAction = LoadAction::Clear;
   renderPass_.depthAttachment.clearDepth = 1.0;
+
+  iglu::ManagedUniformBufferInfo info;
+  info.index = 1;
+  info.length = sizeof(VertexFormat);
+  info.uniforms = std::vector<igl::UniformDesc>{
+      igl::UniformDesc{
+          "modelMatrix", -1, igl::UniformType::Mat4x4, 1, offsetof(VertexFormat, modelMatrix), 0},
+      igl::UniformDesc{
+          "viewProjectionMatrix",
+          -1,
+          igl::UniformType::Mat4x4,
+          2,
+          offsetof(VertexFormat, viewProjectionMatrix),
+          sizeof(glm::mat4),
+      },
+      igl::UniformDesc{
+          "scaleZ",
+          -1,
+          igl::UniformType::Float,
+          1,
+          offsetof(VertexFormat, scaleZ),
+          0,
+      }};
+
+  ubo_ = std::make_shared<iglu::ShaderCrossUniformBuffer>(device, "perFrame", info);
+  IGL_ASSERT(ubo_->result.isOk());
 }
 
 void HelloOpenXRSession::setVertexParams() {
@@ -273,8 +270,8 @@ void HelloOpenXRSession::setVertexParams() {
     ss *= -1.0f;
   }
 
-  glm::mat4 rotMat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)) *
-                     glm::rotate(glm::mat4(1.0f), -0.2f, glm::vec3(1.0f, 0.0f, 0.0f));
+  const glm::mat4 rotMat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)) *
+                           glm::rotate(glm::mat4(1.0f), -0.2f, glm::vec3(1.0f, 0.0f, 0.0f));
   vertexParameters_.modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.f, -8.0f)) *
                                   rotMat *
                                   glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, scaleZ));
@@ -338,34 +335,8 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   commands->bindVertexBuffer(0, *vb0_);
 
-  // Bind Vertex Uniform Data
-  iglu::ManagedUniformBufferInfo info;
-  info.index = 1;
-  info.length = sizeof(VertexFormat);
-  info.uniforms = std::vector<igl::UniformDesc>{
-      igl::UniformDesc{
-          "modelMatrix", -1, igl::UniformType::Mat4x4, 1, offsetof(VertexFormat, modelMatrix), 0},
-      igl::UniformDesc{
-          "viewProjectionMatrix",
-          -1,
-          igl::UniformType::Mat4x4,
-          2,
-          offsetof(VertexFormat, viewProjectionMatrix),
-          sizeof(glm::mat4),
-      },
-      igl::UniformDesc{
-          "scaleZ",
-          -1,
-          igl::UniformType::Float,
-          1,
-          offsetof(VertexFormat, scaleZ),
-          0,
-      }};
-
-  const auto vertUniformBuffer = std::make_shared<iglu::ManagedUniformBuffer>(device, info);
-  IGL_ASSERT(vertUniformBuffer->result.isOk());
-  *static_cast<VertexFormat*>(vertUniformBuffer->getData()) = vertexParameters_;
-  vertUniformBuffer->bind(device, *pipelineState_, *commands);
+  *static_cast<VertexFormat*>(ubo_->getData()) = vertexParameters_;
+  ubo_->bind(device, *pipelineState_, *commands);
 
   commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());
   commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
@@ -373,7 +344,7 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commands->bindRenderPipelineState(pipelineState_);
 
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
-  commands->drawIndexed(3u * 6u * 2u);
+  commands->drawIndexed(static_cast<size_t>(3u * 6u * 2u));
 
   commands->popDebugGroupLabel();
   commands->endEncoding();

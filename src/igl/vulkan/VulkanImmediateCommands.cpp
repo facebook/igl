@@ -10,8 +10,7 @@
 #include <igl/vulkan/Common.h>
 #include <utility>
 
-namespace igl {
-namespace vulkan {
+namespace igl::vulkan {
 
 VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
                                                  VkDevice device,
@@ -264,5 +263,4 @@ VkFence VulkanImmediateCommands::getVkFenceFromSubmitHandle(SubmitHandle handle)
   return buffers_[handle.bufferIndex_].fence_.vkFence_;
 }
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

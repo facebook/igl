@@ -9,8 +9,7 @@
 
 #include <igl/opengl/IContext.h>
 
-namespace igl {
-namespace opengl {
+namespace igl::opengl {
 
 DestructionGuard::DestructionGuard(std::shared_ptr<IContext> context) :
   context_(std::move(context)) {
@@ -25,5 +24,4 @@ DestructionGuard::~DestructionGuard() {
   }
 }
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

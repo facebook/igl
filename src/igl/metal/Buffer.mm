@@ -76,11 +76,11 @@ igl::Result copyFromPreviousBufferInstance(std::vector<id<MTLBuffer>>& buffers,
     return igl::Result();
   }
 
-  size_t prevIdx = bufferIdx == 0 ? buffers.size() - 1 : bufferIdx - 1;
+  const size_t prevIdx = bufferIdx == 0 ? buffers.size() - 1 : bufferIdx - 1;
   IGL_ASSERT([buffers[bufferIdx] length] == [buffers[prevIdx] length]);
 
   auto length = [buffers[bufferIdx] length];
-  auto srcContents = [buffers[prevIdx] contents];
+  auto* srcContents = [buffers[prevIdx] contents];
   return ::upload(buffers,
                   bufferIdx,
                   srcContents,
@@ -90,8 +90,7 @@ igl::Result copyFromPreviousBufferInstance(std::vector<id<MTLBuffer>>& buffers,
 }
 } // namespace
 
-namespace igl {
-namespace metal {
+namespace igl::metal {
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 Buffer::Buffer(id<MTLBuffer> value,
                MTLResourceOptions options,
@@ -145,7 +144,7 @@ size_t Buffer::getSizeInBytes() const {
   return [mtlBuffers_[0] length];
 }
 
-uint64_t Buffer::gpuAddress(size_t) const {
+uint64_t Buffer::gpuAddress(size_t /*offset*/) const {
   // TODO: implement via gpuResourceID
   IGL_ASSERT_NOT_IMPLEMENTED();
   return 0;
@@ -212,5 +211,4 @@ id<MTLBuffer> RingBuffer::get() {
   return mtlBuffers_[bufferIdx];
 }
 
-} // namespace metal
-} // namespace igl
+} // namespace igl::metal

@@ -7,8 +7,7 @@
 
 #pragma once
 
-namespace igl {
-namespace shell {
+namespace igl::shell {
 
 enum MouseButton {
   Left = 0,
@@ -53,5 +52,4 @@ class IMouseListener {
   virtual ~IMouseListener() = default;
 };
 
-} // namespace shell
-} // namespace igl
+} // namespace igl::shell

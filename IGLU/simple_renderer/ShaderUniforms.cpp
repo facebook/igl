@@ -63,7 +63,7 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
 
   const bool isSuballocated = device_.getBackendType() == igl::BackendType::Vulkan;
   for (const igl::BufferArgDesc& iglDesc : reflection.allUniformBuffers()) {
-    size_t length = iglDesc.bufferDataSize;
+    const size_t length = iglDesc.bufferDataSize;
     IGL_ASSERT_MSG(length > 0, "unexpected buffer with size 0");
     IGL_ASSERT_MSG(length <= MAX_SUBALLOCATED_BUFFER_SIZE_BYTES &&
                        (uniformBufferLimit == 0 || length <= uniformBufferLimit),
@@ -124,8 +124,8 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
     }
 
     for (int i = 0; i < static_cast<int>(iglDesc.members.size()); ++i) {
-      auto& uniformDesc = iglDesc.members[i];
-      UniformDesc uniform{uniformDesc, bufferDesc};
+      const auto& uniformDesc = iglDesc.members[i];
+      const UniformDesc uniform{uniformDesc, bufferDesc};
       _allUniformsByName.insert({uniformDesc.name, uniform});
       bufferDesc->uniforms.push_back(uniform);
       bufferDesc->memberIndices[uniformDesc.name] = i;
@@ -147,10 +147,10 @@ ShaderUniforms::~ShaderUniforms() {
 }
 
 igl::NameHandle ShaderUniforms::MemoizedQualifiedMemberNameCalculator::getQualifiedMemberName(
-    const igl::NameHandle& blockTypeName,
+    const igl::NameHandle& /*blockTypeName*/,
     const igl::NameHandle& blockInstanceName,
     const igl::NameHandle& memberName) const {
-  std::pair<igl::NameHandle, igl::NameHandle> key = {blockInstanceName, memberName};
+  const std::pair<igl::NameHandle, igl::NameHandle> key = {blockInstanceName, memberName};
   auto it = qualifiedMemberNameCache_.find(key);
   if (it != qualifiedMemberNameCache_.end()) {
     return it->second;
@@ -241,7 +241,7 @@ void ShaderUniforms::setUniformBytes(const UniformDesc& uniformDesc,
   if (strongBuffer->isSuballocated && strongBuffer->currentAllocation >= 0) {
     subAllocatedOffset = strongBuffer->currentAllocation * strongBuffer->suballocationsSize;
   }
-  uintptr_t offset =
+  const uintptr_t offset =
       uniformDesc.iglMemberDesc.offset + elementSize * arrayIndex + subAllocatedOffset;
 
   auto err = try_checked_memcpy((uint8_t*)strongBuffer->allocation->ptr + offset, // destination
@@ -543,7 +543,7 @@ void ShaderUniforms::setFloat3x3(const igl::NameHandle& uniformName,
     // simdtypes::float3x3 has an extra float per float-vector.
     // Remove it so we can send the packed version to OpenGL
     float packedMatrix[9] = {0.0f};
-    auto paddedMatrixPtr = reinterpret_cast<const float*>(&value);
+    const auto* paddedMatrixPtr = reinterpret_cast<const float*>(&value);
     float* packedMatrixPtr = packedMatrix;
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
@@ -574,8 +574,8 @@ void ShaderUniforms::setFloat3x3(const igl::NameHandle& blockTypeName,
   } else {
     // simdtypes::float3x3 has an extra float per float-vector.
     // Remove it so we can send the packed version to OpenGL
-    std::array<float, 9> packedMatrix;
-    auto paddedMatrixPtr = reinterpret_cast<const float*>(&value);
+    std::array<float, 9> packedMatrix{};
+    const auto* paddedMatrixPtr = reinterpret_cast<const float*>(&value);
     float* packedMatrixPtr = packedMatrix.data();
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
@@ -603,9 +603,9 @@ void ShaderUniforms::setFloat3x3Array(const igl::NameHandle& uniformName,
   } else {
     // simdtypes::float3x3 has an extra float per float-vector.
     // Remove it so we can send the packed version to OpenGL
-    auto paddedMatrixPtr = reinterpret_cast<const float*>(value);
-    auto packedMatrix = new float[9 * count];
-    auto packedMatrixPtr = packedMatrix;
+    const auto* paddedMatrixPtr = reinterpret_cast<const float*>(value);
+    auto* packedMatrix = new float[9 * count];
+    auto* packedMatrixPtr = packedMatrix;
     for (int n = 0; n < count; n++) {
       for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {

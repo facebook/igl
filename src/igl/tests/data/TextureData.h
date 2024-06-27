@@ -9,10 +9,7 @@
 
 #include <cstdint>
 
-namespace igl {
-namespace tests {
-namespace data {
-namespace texture {
+namespace igl::tests::data::texture {
 // clang-format off
 
 constexpr uint32_t TEX_RGBA_2x2[] = {0x11223344, 0x11111111,
@@ -55,7 +52,4 @@ constexpr uint32_t TEX_RGBA_GRAY_5x5[] = {0x80808080, 0x80808080, 0x80808080, 0x
                                           0x80808080, 0x80808080, 0x80808080, 0x80808080, 0x80808080};
 
 // clang-format on
-} // namespace texture
-} // namespace data
-} // namespace tests
-} // namespace igl
+} // namespace igl::tests::data::texture

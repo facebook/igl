@@ -38,7 +38,7 @@ std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSy
   // Get the API requirements.
   // XR_ERROR_GRAPHICS_REQUIREMENTS_CALL_MISSING is returned on calls to xrCreateSession
   // if this function has not been called for the instance and systemId before xrCreateSession.
-  PFN_xrGetVulkanGraphicsRequirementsKHR pfnGetVulkanGraphicsRequirementsKHR = NULL;
+  PFN_xrGetVulkanGraphicsRequirementsKHR pfnGetVulkanGraphicsRequirementsKHR = nullptr;
   XR_CHECK(xrGetInstanceProcAddr(instance,
                                  "xrGetVulkanGraphicsRequirementsKHR",
                                  (PFN_xrVoidFunction*)(&pfnGetVulkanGraphicsRequirementsKHR)));
@@ -46,13 +46,13 @@ std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSy
   XR_CHECK(pfnGetVulkanGraphicsRequirementsKHR(instance, systemId, &graphicsRequirements_));
 
   // Get required instance extensions
-  PFN_xrGetVulkanInstanceExtensionsKHR pfnGetVulkanInstanceExtensionsKHR = NULL;
+  PFN_xrGetVulkanInstanceExtensionsKHR pfnGetVulkanInstanceExtensionsKHR = nullptr;
   XR_CHECK(xrGetInstanceProcAddr(instance,
                                  "xrGetVulkanInstanceExtensionsKHR",
                                  (PFN_xrVoidFunction*)(&pfnGetVulkanInstanceExtensionsKHR)));
 
   uint32_t bufferSize = 0;
-  XR_CHECK(pfnGetVulkanInstanceExtensionsKHR(instance, systemId, 0, &bufferSize, NULL));
+  XR_CHECK(pfnGetVulkanInstanceExtensionsKHR(instance, systemId, 0, &bufferSize, nullptr));
 
   requiredVkInstanceExtensionsBuffer_.resize(bufferSize);
   XR_CHECK(pfnGetVulkanInstanceExtensionsKHR(
@@ -63,12 +63,12 @@ std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSy
 
   // Get the required device extensions.
   bufferSize = 0;
-  PFN_xrGetVulkanDeviceExtensionsKHR pfnGetVulkanDeviceExtensionsKHR = NULL;
+  PFN_xrGetVulkanDeviceExtensionsKHR pfnGetVulkanDeviceExtensionsKHR = nullptr;
   XR_CHECK(xrGetInstanceProcAddr(instance,
                                  "xrGetVulkanDeviceExtensionsKHR",
                                  (PFN_xrVoidFunction*)(&pfnGetVulkanDeviceExtensionsKHR)));
 
-  XR_CHECK(pfnGetVulkanDeviceExtensionsKHR(instance, systemId, 0, &bufferSize, NULL));
+  XR_CHECK(pfnGetVulkanDeviceExtensionsKHR(instance, systemId, 0, &bufferSize, nullptr));
 
   requiredVkDeviceExtensionsBuffer_.resize(bufferSize);
   XR_CHECK(pfnGetVulkanDeviceExtensionsKHR(
@@ -81,7 +81,7 @@ std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSy
                                                       requiredVkInstanceExtensions_.size(),
                                                       requiredVkInstanceExtensions_.data());
 
-  PFN_xrGetVulkanGraphicsDeviceKHR pfnGetVulkanGraphicsDeviceKHR = NULL;
+  PFN_xrGetVulkanGraphicsDeviceKHR pfnGetVulkanGraphicsDeviceKHR = nullptr;
   XR_CHECK(xrGetInstanceProcAddr(instance,
                                  "xrGetVulkanGraphicsDeviceKHR",
                                  (PFN_xrVoidFunction*)(&pfnGetVulkanGraphicsDeviceKHR)));
@@ -128,7 +128,7 @@ XrSession XrAppImplVulkan::initXrSession(XrInstance instance,
   // Bind Vulkan to XR session
   XrGraphicsBindingVulkanKHR graphicsBinding = {
       XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR,
-      NULL,
+      nullptr,
       vkDevice.getVulkanContext().getVkInstance(),
       vkDevice.getVulkanContext().getVkPhysicalDevice(),
       vkDevice.getVulkanContext().device_->getVkDevice(),
@@ -136,7 +136,7 @@ XrSession XrAppImplVulkan::initXrSession(XrInstance instance,
       0,
   };
 
-  XrSessionCreateInfo sessionCreateInfo = {
+  const XrSessionCreateInfo sessionCreateInfo = {
       .type = XR_TYPE_SESSION_CREATE_INFO,
       .next = &graphicsBinding,
       .createFlags = 0,

@@ -14,8 +14,7 @@
 #include <IGLU/simdtypes/SimdTypes.h>
 #include <memory>
 
-namespace iglu {
-namespace vertexdata {
+namespace iglu::vertexdata {
 
 // [Convention] UV origin is bottom left and +Y points up.
 
@@ -60,5 +59,4 @@ std::shared_ptr<VertexData> create(igl::IDevice& device,
 
 } // namespace RenderToTextureQuad
 
-} // namespace vertexdata
-} // namespace iglu
+} // namespace iglu::vertexdata

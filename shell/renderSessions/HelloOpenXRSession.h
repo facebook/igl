@@ -11,6 +11,7 @@
 
 #include <shell/shared/renderSession/RenderSession.h>
 
+#include <IGLU/shaderCross/ShaderCrossUniformBuffer.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <igl/IGL.h>
@@ -40,6 +41,7 @@ class HelloOpenXRSession : public RenderSession {
   std::shared_ptr<ITexture> tex0_;
   std::shared_ptr<ISamplerState> samp0_;
   std::shared_ptr<IFramebuffer> framebuffer_;
+  std::shared_ptr<iglu::ShaderCrossUniformBuffer> ubo_;
 
   VertexFormat vertexParameters_;
 
