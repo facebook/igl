@@ -327,10 +327,15 @@ VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
     imageViews.resize(index + 1);
   }
 
+  const VkFormat vkFormat =
+      getProperties().isDepthOrStencil()
+          ? device_.getVulkanContext().getClosestDepthStencilFormat(desc_.format)
+          : textureFormatToVkFormat(desc_.format);
+
   const VkImageAspectFlags flags = texture_->getVulkanImage().getImageAspectFlags();
   imageViews[index] = texture_->getVulkanImage().createImageView(
       isStereo ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D,
-      textureFormatToVkFormat(desc_.format),
+      vkFormat,
       flags,
       mipLevel,
       1u,
