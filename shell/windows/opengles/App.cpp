@@ -7,25 +7,16 @@
 
 // @fb-only
 
-#if defined(_WIN32)
-#define GLFW_EXPOSE_NATIVE_WIN32
-#else
-#define GLFW_EXPOSE_NATIVE_X11
-#endif // _WIN32
-
-#define GLFW_EXPOSE_NATIVE_EGL
-#define GLFW_INCLUDE_NONE
-
-#include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
 #include <igl/Core.h>
 #include <igl/IGL.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/PlatformDevice.h>
 #include <igl/opengl/Version.h>
+#if IGL_ANGLE
 #include <igl/opengl/egl/Context.h>
 #include <igl/opengl/egl/Device.h>
 #include <igl/opengl/egl/PlatformDevice.h>
+#endif // IGL_ANGLE
 #include <memory>
 #include <shell/shared/platform/win/PlatformWin.h>
 #include <shell/shared/renderSession/AppParams.h>
@@ -34,6 +25,20 @@
 #include <sstream>
 #include <stdexcept>
 #include <stdio.h>
+
+#if defined(_WIN32)
+#define GLFW_EXPOSE_NATIVE_WIN32
+#else
+#define GLFW_EXPOSE_NATIVE_X11
+#endif // _WIN32
+
+#if IGL_ANGLE
+#define GLFW_EXPOSE_NATIVE_EGL
+#endif // IGL_ANGLE
+#define GLFW_INCLUDE_NONE
+
+#include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 
 using namespace igl;
 
@@ -145,6 +150,7 @@ GLFWwindow* initGLESWindow(uint32_t majorVersion, uint32_t minorVersion) {
 }
 
 igl::SurfaceTextures createSurfaceTextures(igl::IDevice& device) {
+#if IGL_ANGLE
   if (IGL_VERIFY(device.getBackendType() == igl::BackendType::OpenGL)) {
     auto platformDevice = device.getPlatformDevice<igl::opengl::egl::PlatformDevice>();
     IGL_ASSERT(platformDevice != nullptr);
@@ -154,7 +160,7 @@ igl::SurfaceTextures createSurfaceTextures(igl::IDevice& device) {
       return igl::SurfaceTextures{std::move(color), std::move(depth)};
     }
   }
-
+#endif // IGL_ANGLE
   return igl::SurfaceTextures{};
 }
 
@@ -172,6 +178,7 @@ int main(int argc, char* argv[]) {
   if (!glesWindow.get())
     return 0;
 
+#if IGL_ANGLE
   auto glesDevice = std::make_unique</*EGLDevice*/ igl::opengl::egl::Device>(
       std::make_unique<::igl::opengl::egl::Context>(glfwGetEGLDisplay(),
                                                     glfwGetEGLContext(glesWindow.get()),
@@ -179,6 +186,8 @@ int main(int argc, char* argv[]) {
                                                     glfwGetEGLSurface(glesWindow.get())));
 
   glesShellPlatform_ = std::make_shared<igl::shell::PlatformWin>(std::move(glesDevice));
+#endif // IGL_ANGLE
+  IGL_ASSERT(glesShellPlatform_);
 
   glesSession_ = igl::shell::createDefaultRenderSession(glesShellPlatform_);
   IGL_ASSERT_MSG(glesSession_, "createDefaultRenderSession() must return a valid session");
