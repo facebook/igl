@@ -1052,6 +1052,14 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     return true;
   case DeviceFeatureLimits::BufferAlignment:
     result = 16;
+#ifdef GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT
+    if (hasFeature(DeviceFeatures::UniformBlocks)) {
+      if (glContext_.isCurrentContext()) {
+        glContext_.getIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &tsize);
+        result = std::max((size_t)tsize, result);
+      }
+    }
+#endif
     return true;
   case DeviceFeatureLimits::BufferNoCopyAlignment:
     result = 0;
