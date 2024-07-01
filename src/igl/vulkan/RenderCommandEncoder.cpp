@@ -235,8 +235,19 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   dynamicState_.renderPassIndex_ = renderPassHandle.index;
   dynamicState_.depthBiasEnable_ = false;
 
-  const VkRenderPassBeginInfo bi = fb.getRenderPassBeginInfo(
+  VkRenderPassBeginInfo bi = fb.getRenderPassBeginInfo(
       renderPassHandle.pass, mipLevel, layer, (uint32_t)clearValues.size(), clearValues.data());
+
+  // clang-format off
+  // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+  // @fb-only
+  // clang-format on
+  // @fb-only
+    // @fb-only
+  // @fb-only
 
   const uint32_t width = std::max(fb.getWidth() >> mipLevel, 1u);
   const uint32_t height = std::max(fb.getHeight() >> mipLevel, 1u);

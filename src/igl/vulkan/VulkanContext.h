@@ -94,6 +94,7 @@ struct VulkanContextConfig {
   bool enableBufferDeviceAddress = false;
   bool enableExtraLogs = true;
   bool enableDescriptorIndexing = false;
+  // @fb-only
 
   igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
   igl::TextureFormat requestedSwapChainTextureFormat = igl::TextureFormat::RGBA_UNorm8;
