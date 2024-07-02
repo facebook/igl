@@ -157,6 +157,8 @@ class RenderCommandAdapter final : public WithContext {
   std::shared_ptr<IRenderPipelineState> pipelineState_;
   std::shared_ptr<IDepthStencilState> depthStencilState_;
   std::shared_ptr<VertexArrayObject> activeVAO_ = nullptr;
+  uint32_t frontStencilReferenceValue_ = 0;
+  uint32_t backStencilReferenceValue_ = 0;
 
   UnbindPolicy cachedUnbindPolicy_;
   bool useVAO_ = false;
