@@ -91,12 +91,9 @@ void RenderCommandAdapter::setDepthStencilState(
 }
 
 void RenderCommandAdapter::setStencilReferenceValue(uint32_t value, Result* outResult) {
-  if (!IGL_VERIFY(depthStencilState_)) {
-    Result::setResult(outResult, Result::Code::InvalidOperation, "depth stencil state is null");
-    return;
-  }
-  auto& depthStencilState = static_cast<DepthStencilState&>(*depthStencilState_);
-  depthStencilState.setStencilReferenceValue(value);
+  frontStencilReferenceValue_ = value;
+  backStencilReferenceValue_ = value;
+    
   setDirty(StateMask::DEPTH_STENCIL);
   Result::setOk(outResult);
 }
@@ -104,12 +101,8 @@ void RenderCommandAdapter::setStencilReferenceValue(uint32_t value, Result* outR
 void RenderCommandAdapter::setStencilReferenceValues(uint32_t frontValue,
                                                      uint32_t backValue,
                                                      Result* outResult) {
-  if (!IGL_VERIFY(depthStencilState_)) {
-    Result::setResult(outResult, Result::Code::InvalidOperation, "depth stencil state is null");
-    return;
-  }
-  auto& depthStencilState = static_cast<DepthStencilState&>(*depthStencilState_);
-  depthStencilState.setStencilReferenceValues(frontValue, backValue);
+  frontStencilReferenceValue_ = frontValue;
+  backStencilReferenceValue_ = backValue;
   setDirty(StateMask::DEPTH_STENCIL);
   Result::setOk(outResult);
 }
@@ -372,7 +365,7 @@ void RenderCommandAdapter::willDraw() {
 
   auto* depthStencilState = static_cast<DepthStencilState*>(depthStencilState_.get());
   if (depthStencilState && isDirty(StateMask::DEPTH_STENCIL)) {
-    depthStencilState->bind();
+    depthStencilState->bind(frontStencilReferenceValue_, backStencilReferenceValue_);
     clearDirty(StateMask::DEPTH_STENCIL);
   }
 

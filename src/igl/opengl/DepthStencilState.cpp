@@ -43,15 +43,6 @@ GLenum DepthStencilState::convertCompareFunction(igl::CompareFunction value) {
   IGL_UNREACHABLE_RETURN(GL_ALWAYS)
 }
 
-void DepthStencilState::setStencilReferenceValue(uint32_t value) {
-  desc_.backFaceStencil.readMask = desc_.frontFaceStencil.readMask = value;
-}
-
-void DepthStencilState::setStencilReferenceValues(uint32_t frontValue, uint32_t backValue) {
-  desc_.backFaceStencil.readMask = backValue;
-  desc_.frontFaceStencil.readMask = frontValue;
-}
-
 GLenum DepthStencilState::convertStencilOperation(igl::StencilOperation value) {
   switch (value) {
   case StencilOperation::Keep:
@@ -74,7 +65,7 @@ GLenum DepthStencilState::convertStencilOperation(igl::StencilOperation value) {
   IGL_UNREACHABLE_RETURN(GL_ZERO)
 }
 
-void DepthStencilState::bind() {
+void DepthStencilState::bind(uint32_t frontStencilReferenceValue, uint32_t backStencilReferenceValue) {
   getContext().depthMask(static_cast<GLboolean>(desc_.isDepthWriteEnabled));
 
   // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glDepthFunc.xhtml
@@ -91,15 +82,14 @@ void DepthStencilState::bind() {
       desc_.backFaceStencil != igl::StencilStateDesc()) {
     getContext().enable(GL_STENCIL_TEST);
 
-    const GLuint mask{0xff};
     const GLenum frontCompareFunc =
         convertCompareFunction(desc_.frontFaceStencil.stencilCompareFunction);
     const GLenum backCompareFunc =
         convertCompareFunction(desc_.backFaceStencil.stencilCompareFunction);
     getContext().stencilFuncSeparate(
-        GL_FRONT, frontCompareFunc, desc_.frontFaceStencil.readMask, mask);
+        GL_FRONT, frontCompareFunc, frontStencilReferenceValue, desc_.frontFaceStencil.readMask);
     getContext().stencilFuncSeparate(
-        GL_BACK, backCompareFunc, desc_.backFaceStencil.readMask, mask);
+        GL_BACK, backCompareFunc, backStencilReferenceValue, desc_.backFaceStencil.readMask);
 
     GLenum sfail = convertStencilOperation(desc_.backFaceStencil.stencilFailureOperation);
     GLenum dpfail = convertStencilOperation(desc_.backFaceStencil.depthFailureOperation);
