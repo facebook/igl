@@ -16,7 +16,7 @@
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/GLIncludes.h>
 
-#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 #if defined(IGL_API_LOG) && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
 #define APILOG_DEC_DRAW_COUNT() \
@@ -190,4 +190,4 @@ bool NativeHWTextureBuffer::isValidFormat(TextureFormat format) {
 
 } // namespace igl::opengl::egl::android
 
-#endif
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)

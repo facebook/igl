@@ -403,7 +403,7 @@ EGLConfig Context::getConfig() const {
   return config_;
 }
 
-#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 EGLImageKHR Context::createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) const {
   EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(hwb);
   EGLint attribs[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE, EGL_NONE, EGL_NONE};
@@ -437,7 +437,7 @@ void Context::imageTargetTexture(EGLImageKHR eglImage, GLenum target) const {
                 static_cast<GLeglImageOES>(eglImage));
   this->checkForErrors(__FUNCTION__, __LINE__);
 }
-#endif
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 } // namespace igl::opengl::egl
 FOLLY_POP_WARNING

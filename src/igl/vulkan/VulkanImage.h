@@ -14,9 +14,9 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImageView.h>
 
-#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 struct AHardwareBuffer;
-#endif
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 namespace igl::vulkan {
 
@@ -174,9 +174,9 @@ class VulkanImage final {
                                             VkImageUsageFlags usageFlags,
                                             VkImageCreateFlags createFlags,
                                             VkSampleCountFlagBits samples,
-#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
                                             AHardwareBuffer* hwBuffer,
-#endif // IGL_PLATFORM_ANDROID
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
                                             const char* debugName = nullptr);
 #endif // IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
 
@@ -329,9 +329,9 @@ class VulkanImage final {
               VkImageCreateFlags createFlags,
               VkSampleCountFlagBits samples,
               VkExternalMemoryHandleTypeFlags compatibleHandleTypes,
-#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
               AHardwareBuffer* hwBuffer,
-#endif // IGL_PLATFORM_ANDROID
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
               const char* debugName);
 #endif // IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
 

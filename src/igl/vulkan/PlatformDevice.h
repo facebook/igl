@@ -11,9 +11,9 @@
 #include <igl/Texture.h>
 #include <igl/vulkan/Common.h>
 
-#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 struct AHardwareBuffer;
-#endif
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 namespace igl {
 class ITexture;
@@ -45,12 +45,12 @@ class PlatformDevice : public IPlatformDevice {
   /// @return pointer to generated Texture or nullptr
   std::shared_ptr<ITexture> createTextureFromNativeDrawable(Result* outResult);
 
-#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
   std::shared_ptr<ITexture> createTextureWithSharedMemory(const TextureDesc& desc,
                                                           Result* outResult) const;
   std::shared_ptr<ITexture> createTextureWithSharedMemory(AHardwareBuffer* buffer,
                                                           Result* outResult) const;
-#endif
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
   /// @param handle The handle to the GPU Fence
   /// @return The Vulkan fence associated with the handle

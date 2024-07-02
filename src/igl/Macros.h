@@ -88,6 +88,11 @@
   #define IGL_PLATFORM_ANDROID 1
   #define IGL_PLATFORM_LINUX 0
   #define IGL_PLATFORM_EMSCRIPTEN 0
+
+#if __ANDROID_MIN_SDK_VERSION__ >= 26
+  #define IGL_ANDROID_HWBUFFER_SUPPORTED
+#endif // __ANDROID_MIN_SDK_VERSION__ >= 26
+
 // Linux
 #elif defined(__linux__)
   #define IGL_PLATFORM_WIN 0

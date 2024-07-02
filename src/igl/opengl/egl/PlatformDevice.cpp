@@ -10,10 +10,10 @@
 #include <igl/opengl/egl/Context.h>
 #include <igl/opengl/egl/Device.h>
 #include <igl/opengl/egl/PlatformDevice.h>
-#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 #include <android/hardware_buffer.h>
 #include <igl/opengl/egl/android/NativeHWBuffer.h>
-#endif
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 #include <sstream>
 #include <utility>
 
@@ -144,7 +144,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(Result* o
   return texture;
 }
 
-#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 /// returns a android::NativeHWTextureBuffer on platforms supporting it
 /// this texture allows CPU and GPU to both read/write memory
 std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const TextureDesc& desc,
@@ -198,7 +198,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(AHardwar
 
   return texture;
 }
-#endif
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 void PlatformDevice::updateSurfaces(EGLSurface readSurface,
                                     EGLSurface drawSurface,

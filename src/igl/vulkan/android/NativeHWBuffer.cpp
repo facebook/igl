@@ -7,7 +7,7 @@
 
 #include "NativeHWBuffer.h"
 
-#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 #include <android/hardware_buffer.h>
 #include <vulkan/vulkan_android.h>
@@ -81,4 +81,4 @@ Result NativeHWTextureBuffer::create(const TextureDesc& desc) {
 
 } // namespace igl::vulkan::android
 
-#endif
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)

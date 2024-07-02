@@ -7,7 +7,7 @@
 
 #include "NativeHWBuffer.h"
 
-#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 #include <android/hardware_buffer.h>
 
@@ -270,4 +270,4 @@ AHardwareBuffer* INativeHWTextureBuffer::getHardwareBuffer() {
 
 } // namespace igl::android
 
-#endif
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)

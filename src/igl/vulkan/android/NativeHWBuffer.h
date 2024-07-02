@@ -9,7 +9,7 @@
 
 #include <igl/android/NativeHWBuffer.h>
 
-#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 #include <igl/vulkan/Texture.h>
 
@@ -38,4 +38,4 @@ class NativeHWTextureBuffer : public igl::android::INativeHWTextureBuffer, publi
 
 } // namespace igl::vulkan::android
 
-#endif
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)

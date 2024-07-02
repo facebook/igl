@@ -631,7 +631,7 @@ struct TextureDesc {
                        debugName ? debugName : ""};
   }
 
-#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
   /**
    * @brief Utility to create a new image texture with linked hardware buffer
    *
@@ -660,7 +660,7 @@ struct TextureDesc {
                        TextureTiling::Optimal,
                        debugName ? debugName : ""};
   }
-#endif
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
   /**
    * @brief Creates a TextureRangeDesc equivalent to descriptor.
