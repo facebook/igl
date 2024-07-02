@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId "com.facebook.igl.shell.openxr.vulkan"
-        minSdk 24
+        minSdk 26
         targetSdk 33
         versionCode 1
         versionName "1.0"
@@ -81,5 +81,15 @@ android {
 
     buildFeatures {
         viewBinding true
+    }
+
+    def enableGfxReconstruct = false
+    if (project.hasProperty('igl.enableGfxReconstruct')) {
+        enableGfxReconstruct = project.getProperty('igl.enableGfxReconstruct')
+    }
+    if (enableGfxReconstruct) {
+        dependencies {
+            implementation project(':VkLayer_gfxreconstruct')
+        }
     }
 }
