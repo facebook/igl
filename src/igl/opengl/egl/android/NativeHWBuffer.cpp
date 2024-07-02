@@ -161,10 +161,12 @@ Result NativeHWTextureBuffer::uploadInternal(TextureType /*type*/,
 
   std::byte* dst = nullptr;
   INativeHWTextureBuffer::RangeDesc outRange;
-  auto result = lockHWBuffer(reinterpret_cast<std::byte**>(&dst), outRange);
+  Result outResult;
+  auto lockGuard
+      [[maybe_unused]] = lockHWBuffer(reinterpret_cast<std::byte**>(&dst), outRange, &outResult);
   auto internalBpr = getProperties().getBytesPerRow(outRange.stride);
 
-  if (result.isOk() && dst != nullptr && bytesPerRow <= internalBpr &&
+  if (outResult.isOk() && dst != nullptr && bytesPerRow <= internalBpr &&
       range.width == outRange.width && range.height == outRange.height) {
     const std::byte* src = (const std::byte*)data;
     uint32_t srcOffset = 0;
