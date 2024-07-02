@@ -176,7 +176,7 @@
     "source": {
         "type": "git",
         "url": "https://github.com/KhronosGroup/OpenXR-SDK.git",
-        "sha1": "49e81bbd919af7c0cf513517a730d12253c28902"
+        "sha1": "be392bf6949adeeabad5082aa79d12aacbda781f"
     }
 },
 {
@@ -185,6 +185,14 @@
         "type": "git",
         "url": "https://github.com/KhronosGroup/SPIRV-Cross.git",
         "revision": "2ccc81fd826e4dd4a2db2f94b8e6eb738a89f5f1"
+    }
+},
+{
+    "name": "gfxreconstruct",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/facebook/gfxreconstruct.git",
+        "revision": "e7b3d9fb23049786f2e11313f129f8590c87ff00"
     }
 }
 ]
