@@ -439,14 +439,12 @@ void RenderCommandEncoder::bindDepthStencilState(
       // do not update anything if we don't have an actual state
       return;
     }
-    dynamicState_.setStencilStateOps(faceMask != 0u,
+    dynamicState_.setStencilStateOps(faceMask == VK_STENCIL_FACE_FRONT_BIT,
                                      stencilOperationToVkStencilOp(desc.stencilFailureOperation),
                                      stencilOperationToVkStencilOp(desc.depthStencilPassOperation),
                                      stencilOperationToVkStencilOp(desc.depthFailureOperation),
                                      compareFunctionToVkCompareOp(desc.stencilCompareFunction));
-    // this is what the IGL/OGL backend does with masks
-    ctx_.vf_.vkCmdSetStencilReference(cmdBuffer_, faceMask, desc.readMask);
-    ctx_.vf_.vkCmdSetStencilCompareMask(cmdBuffer_, faceMask, 0xFF);
+    ctx_.vf_.vkCmdSetStencilCompareMask(cmdBuffer_, faceMask, desc.readMask);
     ctx_.vf_.vkCmdSetStencilWriteMask(cmdBuffer_, faceMask, desc.writeMask);
   };
 
