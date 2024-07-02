@@ -37,6 +37,7 @@ class PlatformDevice final : public opengl::PlatformDevice {
   std::shared_ptr<ITexture> createTextureFromNativeDrawable(CAEAGLLayer* nativeDrawable,
                                                             Result* outResult);
   std::shared_ptr<ITexture> createTextureFromNativeDepth(CAEAGLLayer* nativeDrawable,
+                                                         TextureFormat depthTextureFormat,
                                                          Result* outResult);
 
   Size getNativeDrawableSize(CAEAGLLayer* nativeDrawable, Result* outResult);
