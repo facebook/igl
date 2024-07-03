@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # CMake 3.16 can load Vulkan SDK
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.19)
 
 project(IGLVulkan CXX C)
 
