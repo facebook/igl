@@ -164,7 +164,7 @@ TEST_F(DepthStencilStateTest, Passthrough) {
   // No asserts, just test the passthroughs are successful
   cmdEncoder->bindDepthStencilState(idss);
   auto dss = std::static_pointer_cast<igl::opengl::DepthStencilState>(idss);
-  dss->bind(); // Test bind passthrough
+  dss->bind(0,0); // Test bind passthrough
   dss->unbind();
 }
 
