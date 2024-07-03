@@ -645,6 +645,11 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                         VulkanExtensions::ExtensionType::Device));
   }
 
+  // @fb-only
+    // @fb-only
+                       // @fb-only
+  // @fb-only
+
   VulkanQueuePool queuePool(vf_, vkPhysicalDevice_);
 
   // Reserve IGL Vulkan queues

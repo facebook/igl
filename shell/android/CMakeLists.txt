@@ -9,7 +9,7 @@ set(PROJECT_NAME "Android")
 
 file(GLOB PLATFORM_SHARED_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
      ../shared/imageLoader/android/*.cpp ../shared/imageWriter/android/*.cpp ../shared/imageWriter/stb/*.cpp ../shared/fileLoader/android/*.cpp
-     ../shared/platform/android/*.cpp ../../src/igl/android/*.cpp)
+     ../shared/platform/android/*.cpp)
 file(GLOB PLATFORM_SHARED_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
      ../shared/imageLoader/android/*.h ../shared/imageWriter/android/*.h ../shared/fileLoader/android/*.h
      ../shared/platform/android/*.h)

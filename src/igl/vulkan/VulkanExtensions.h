@@ -73,7 +73,7 @@ class VulkanExtensions final {
   /// extension is available. If an instance or physical device deoesn't support the
   /// extension, this method is a no-op
   /// @param extensionName The name of the extension
-  /// @param extensionType The type of the extensions
+  /// @param extensionType The type of the extension
   /// @return True if the extension is available, false otherwise
   bool enable(const char* extensionName, ExtensionType extensionType);
 
@@ -83,6 +83,12 @@ class VulkanExtensions final {
   /// @param extensionName The name of the extension
   /// @return True if the extension has been enabled, false otherwise
   bool enabled(const char* extensionName) const;
+
+  /// @brief Enables the extension with name `extensionName` of the type `extensionType`.
+  /// Use this method to enable prorietory extensions which are not reported in the extensions list.
+  /// @param extensionName The name of the extension
+  /// @param extensionType The type of the extension
+  void forceEnable(const char* extensionName, ExtensionType extensionType);
 
   /// @brief Returns a vector of `const char *` of all enabled extensions for an instance or phyical
   /// device. This method is particularly useful because Vulkan expects an

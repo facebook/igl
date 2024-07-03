@@ -21,6 +21,21 @@
 extern "C" {
 #endif
 
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+// @fb-only
+
 const char* ivkGetVulkanResultString(VkResult result);
 
 /// @brief Creates a Vulkan instance with the given parameters. For platforms other than Android,

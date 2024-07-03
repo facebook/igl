@@ -12,6 +12,10 @@
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/PlatformDevice.h>
 
+#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+struct AHardwareBuffer;
+#endif
+
 namespace igl::opengl {
 
 class ViewTextureTarget;
@@ -39,12 +43,12 @@ class PlatformDevice : public opengl::PlatformDevice {
   std::shared_ptr<ITexture> createTextureFromNativeDepth(TextureFormat depthTextureFormat,Result* outResult);
 
 #if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
-
   /// returns a android::NativeHWTextureBuffer on platforms supporting it
   /// this texture allows CPU and GPU to both read/write memory
   std::shared_ptr<ITexture> createTextureWithSharedMemory(const TextureDesc& desc,
-                                                          Result* outResult);
-
+                                                          Result* outResult) const;
+  std::shared_ptr<ITexture> createTextureWithSharedMemory(AHardwareBuffer* buffer,
+                                                          Result* outResult) const;
 #endif
 
   /// This function must be called every time the currently bound EGL read and/or draw surfaces
