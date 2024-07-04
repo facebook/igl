@@ -725,7 +725,8 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
 void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
   IGL_PROFILER_FUNCTION();
 
-  setStencilReferenceValues(value, value);
+  ctx_.vf_.vkCmdSetStencilReference(
+      cmdBuffer_, VK_STENCIL_FACE_FRONT_BIT | VK_STENCIL_FACE_BACK_BIT, value);
 }
 
 void RenderCommandEncoder::setStencilReferenceValues(uint32_t frontValue, uint32_t backValue) {
