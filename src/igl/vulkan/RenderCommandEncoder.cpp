@@ -816,7 +816,6 @@ void RenderCommandEncoder::blitColorImage(const igl::vulkan::VulkanImage& srcIma
                                           const igl::vulkan::VulkanImage& destImage,
                                           const igl::TextureRangeDesc& srcRange,
                                           const igl::TextureRangeDesc& destRange) {
-  const auto& wrapper = ctx_.immediate_->acquire();
   const VkImageSubresourceRange srcResourceRange = {
       srcImage.getImageAspectFlags(),
       static_cast<uint32_t>(srcRange.mipLevel),
@@ -831,13 +830,13 @@ void RenderCommandEncoder::blitColorImage(const igl::vulkan::VulkanImage& srcIma
       static_cast<uint32_t>(destRange.layer),
       static_cast<uint32_t>(destRange.numLayers),
   };
-  srcImage.transitionLayout(wrapper.cmdBuf_,
+  srcImage.transitionLayout(cmdBuffer_,
                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                             VK_PIPELINE_STAGE_TRANSFER_BIT,
                             srcResourceRange);
 
-  destImage.transitionLayout(wrapper.cmdBuf_,
+  destImage.transitionLayout(cmdBuffer_,
                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                              VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                              VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -854,7 +853,7 @@ void RenderCommandEncoder::blitColorImage(const igl::vulkan::VulkanImage& srcIma
         static_cast<int32_t>(destRange.height + destRange.y),
         1}}};
   ivkCmdBlitImage(&ctx_.vf_,
-                  wrapper.cmdBuf_,
+                  cmdBuffer_,
                   srcImage.getVkImage(),
                   destImage.getVkImage(),
                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -886,7 +885,7 @@ void RenderCommandEncoder::blitColorImage(const igl::vulkan::VulkanImage& srcIma
   IGL_ASSERT_MSG(targetLayout != VK_IMAGE_LAYOUT_UNDEFINED, "Missing usage flags");
 
   // 3. Transition TRANSFER_DST_OPTIMAL into `targetLayout`
-  destImage.transitionLayout(wrapper.cmdBuf_,
+  destImage.transitionLayout(cmdBuffer_,
                              targetLayout,
                              VK_PIPELINE_STAGE_TRANSFER_BIT,
                              VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
