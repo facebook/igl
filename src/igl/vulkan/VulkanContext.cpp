@@ -975,8 +975,7 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
       flags, flags, flags, flags, flags, flags, flags};
   IGL_ASSERT(bindingFlags.back() == flags);
   pimpl_->dslBindless_ = std::make_unique<VulkanDescriptorSetLayout>(
-      vf_,
-      device,
+      *this,
       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
       kNumBindings,
       bindings.data(),
@@ -1752,6 +1751,12 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
   ycbcrConversionInfos_[format] = info;
 
   return info;
+}
+
+void VulkanContext::freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout dsl) const {
+  pimpl_->arenaBuffersStorage_.erase(dsl);
+  pimpl_->arenaBuffersUniform_.erase(dsl);
+  pimpl_->arenaCombinedImageSamplers_.erase(dsl);
 }
 
 } // namespace igl::vulkan

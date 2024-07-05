@@ -98,8 +98,7 @@ PipelineState::PipelineState(
     }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
     dslCombinedImageSamplers_ = std::make_unique<VulkanDescriptorSetLayout>(
-        ctx.vf_,
-        ctx.getVkDevice(),
+        ctx,
         VkDescriptorSetLayoutCreateFlags{},
         static_cast<uint32_t>(bindings.size()),
         bindings.data(),
@@ -116,8 +115,7 @@ PipelineState::PipelineState(
     }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
     dslUniformBuffers_ = std::make_unique<VulkanDescriptorSetLayout>(
-        ctx.vf_,
-        ctx.getVkDevice(),
+        ctx,
         VkDescriptorSetLayoutCreateFlags{},
         static_cast<uint32_t>(bindings.size()),
         bindings.data(),
@@ -134,8 +132,7 @@ PipelineState::PipelineState(
     }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
     dslStorageBuffers_ = std::make_unique<VulkanDescriptorSetLayout>(
-        ctx.vf_,
-        ctx.getVkDevice(),
+        ctx,
         VkDescriptorSetLayoutCreateFlags{},
         static_cast<uint32_t>(bindings.size()),
         bindings.data(),

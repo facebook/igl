@@ -234,6 +234,8 @@ class VulkanContext final {
 
   VkSamplerYcbcrConversionInfo getOrCreateYcbcrConversionInfo(VkFormat format) const;
 
+  void freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout dsl) const;
+
 #if defined(IGL_WITH_TRACY_GPU)
   TracyVkCtx tracyCtx_ = nullptr;
   std::unique_ptr<VulkanCommandPool> profilingCommandPool_;

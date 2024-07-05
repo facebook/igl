@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <memory>
@@ -18,13 +19,12 @@ class VulkanPipelineLayout;
 /// @brief A wrapper around a VkDescriptorSetLayout
 class VulkanDescriptorSetLayout final {
  public:
-  /** @brief Construct a new VulkanDescriptorSetLayout object with the given function table, device,
+  /** @brief Construct a new VulkanDescriptorSetLayout object with the given context,
    * descriptor set layout create info, and optional debug name. `bindings` is a pointer to an
    * array of VkDescriptorSetLayoutBinding and `bindingFlags` is a pointer to an array of
    * VkDescriptorBindingFlags. The number of elements in each array must be equal to `numBindings`.
    */
-  VulkanDescriptorSetLayout(const VulkanFunctionTable& vf,
-                            VkDevice device,
+  VulkanDescriptorSetLayout(const VulkanContext& ctx,
                             VkDescriptorSetLayoutCreateFlags flags,
                             uint32_t numBindings,
                             const VkDescriptorSetLayoutBinding* bindings,
@@ -40,8 +40,7 @@ class VulkanDescriptorSetLayout final {
   }
 
  public:
-  const VulkanFunctionTable& vf_;
-  VkDevice device_ = VK_NULL_HANDLE;
+  const VulkanContext& ctx_;
   VkDescriptorSetLayout vkDescriptorSetLayout_ = VK_NULL_HANDLE;
   uint32_t numBindings_ = 0;
 };
