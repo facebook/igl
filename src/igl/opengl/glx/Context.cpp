@@ -146,8 +146,6 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
   static int visualAttribs[] = {None};
   int contextAttribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB, 4, GLX_CONTEXT_MINOR_VERSION_ARB, 6, None};
 
-  int fbcount = 0;
-  GLXFBConfig* fbc = NULL;
   GLXPbuffer pbuf;
 
   if (display_ = module_->XOpenDisplay(0); display_ != nullptr) {
