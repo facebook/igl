@@ -193,9 +193,15 @@ Result INativeHWTextureBuffer::attachHWBuffer(AHardwareBuffer* buffer) {
     return Result(Result::Code::Unsupported, "Can not create texture for hardware buffer");
   }
 
-  hwBuffer_ = buffer;
+  Result result = createTextureInternal(desc, buffer);
+  if (!result.isOk()) {
+    AHardwareBuffer_release(buffer);
+  } else {
+    hwBuffer_ = buffer;
+    textureDesc_ = desc;
+  }
 
-  return createTextureInternal(desc, buffer);
+  return result;
 }
 
 Result INativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
@@ -225,6 +231,7 @@ Result INativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
     AHardwareBuffer_release(buffer);
   } else {
     hwBuffer_ = buffer;
+    textureDesc_ = desc;
   }
 
   return result;
@@ -270,8 +277,12 @@ Result INativeHWTextureBuffer::unlockHWBuffer() const {
   return Result();
 }
 
-AHardwareBuffer* INativeHWTextureBuffer::getHardwareBuffer() {
+AHardwareBuffer* INativeHWTextureBuffer::getHardwareBuffer() const {
   return hwBuffer_;
+}
+
+TextureDesc INativeHWTextureBuffer::getTextureDesc() const {
+  return textureDesc_;
 }
 
 } // namespace igl::android
