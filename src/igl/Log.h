@@ -14,17 +14,14 @@
 #include <cstdarg>
 #include <igl/Macros.h>
 
-#ifdef LOG_INFO
+#pragma push_macro("LOG_INFO")
 #undef LOG_INFO
-#endif
 
-#ifdef LOG_WARNING
+#pragma push_macro("LOG_WARNING")
 #undef LOG_WARNING
-#endif
 
-#ifdef LOG_ERROR
+#pragma push_macro("LOG_ERROR")
 #undef LOG_ERROR
-#endif
 
 enum class IGLLogLevel {
   LOG_ERROR = 1,
@@ -70,3 +67,7 @@ IGL_API IGLLogHandlerFunc IGLLogGetHandler(void);
 #define IGL_LOG_INFO_ONCE(format, ...) static_cast<void>(0)
 #define IGL_DEBUG_LOG(format, ...) static_cast<void>(0)
 #endif
+
+#pragma pop_macro("LOG_INFO")
+#pragma pop_macro("LOG_WARNING")
+#pragma pop_macro("LOG_ERROR")
