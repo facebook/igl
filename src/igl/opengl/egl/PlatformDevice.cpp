@@ -105,7 +105,9 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(int wi
   return drawableTexture_;
 }
 
-std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(Result* outResult) {
+std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(
+    TextureFormat depthTextureFormat,
+    Result* outResult) {
   auto* context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No EGL context found!");
@@ -128,7 +130,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(Result* o
       TextureDesc::TextureUsageBits::Attachment,
       1, // numMipLevels
       TextureType::TwoD,
-      TextureFormat::Z_UNorm24,
+      depthTextureFormat,
       ResourceStorage::Private,
   };
   auto texture = std::make_shared<ViewTextureTarget>(getContext(), desc.format);

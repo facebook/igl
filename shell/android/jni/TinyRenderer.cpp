@@ -119,7 +119,8 @@ void TinyRenderer::render(float displayScale) {
   case BackendTypeID::GLES3: {
     auto* platformDevice = platform_->getDevice().getPlatformDevice<opengl::egl::PlatformDevice>();
     surfaceTextures.color = platformDevice->createTextureFromNativeDrawable(&result);
-    surfaceTextures.depth = platformDevice->createTextureFromNativeDepth(&result);
+    surfaceTextures.depth =
+        platformDevice->createTextureFromNativeDepth(igl::TextureFormat::Z_UNorm24, &result);
     break;
   }
 #endif

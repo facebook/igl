@@ -201,7 +201,7 @@ enum class TextureFormat : uint8_t {
   Z_UNorm24,
   Z_UNorm32, // NA on iOS/GLES but works on iOS Metal. The client has to account for
              // this!
-  S8_UInt_Z24_UNorm, // NA on iOS
+  S8_UInt_Z24_UNorm,
   S8_UInt_Z32_UNorm, // NA on iOS/GLES but works on iOS Metal. The client has to
                      // account for this!
   S_UInt8,

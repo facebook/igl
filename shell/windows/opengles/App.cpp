@@ -156,7 +156,8 @@ igl::SurfaceTextures createSurfaceTextures(igl::IDevice& device) {
     IGL_ASSERT(platformDevice != nullptr);
     if (IGL_VERIFY(platformDevice)) {
       auto color = platformDevice->createTextureFromNativeDrawable(nullptr);
-      auto depth = platformDevice->createTextureFromNativeDepth(nullptr);
+      auto depth =
+          platformDevice->createTextureFromNativeDepth(igl::TextureFormat::Z_UNorm24, nullptr);
       return igl::SurfaceTextures{std::move(color), std::move(depth)};
     }
   }

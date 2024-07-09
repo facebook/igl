@@ -145,8 +145,10 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
   }
 }
 
-std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(CAEAGLLayer* nativeDrawable,
-                                                                       Result* outResult) {
+std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(
+    CAEAGLLayer* nativeDrawable,
+    TextureFormat depthTextureFormat,
+    Result* outResult) {
   if (!nativeDrawable) {
     Result::setResult(outResult, Result::Code::ArgumentNull, "Invalid native drawable");
     return nullptr;
@@ -169,7 +171,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(CAEAGLLay
       TextureDesc::TextureUsageBits::Attachment,
       1,
       TextureType::TwoD,
-      TextureFormat::Z_UNorm16,
+      depthTextureFormat,
   };
   desc.storage = ResourceStorage::Private;
   return owner_.createTexture(desc, outResult);
