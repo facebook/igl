@@ -11,6 +11,10 @@
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
+#if !defined(AHARDWAREBUFFER_FORMAT_YCbCr_420_SP_VENUS)
+#define AHARDWAREBUFFER_FORMAT_YCbCr_420_SP_VENUS 0x7FA30C06
+#endif
+
 #include <igl/Texture.h>
 #include <igl/TextureFormat.h>
 

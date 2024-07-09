@@ -46,6 +46,9 @@ uint32_t getNativeHWFormat(TextureFormat iglFormat) {
   case TextureFormat::S_UInt8:
     return AHARDWAREBUFFER_FORMAT_S8_UINT;
 
+  case TextureFormat::YUV_NV12:
+    return AHARDWAREBUFFER_FORMAT_YCbCr_420_SP_VENUS;
+
   default:
     return 0;
   }
@@ -99,6 +102,9 @@ TextureFormat getIglFormat(uint32_t nativeFormat) {
 
   case AHARDWAREBUFFER_FORMAT_S8_UINT:
     return TextureFormat::S_UInt8;
+
+  case AHARDWAREBUFFER_FORMAT_YCbCr_420_SP_VENUS:
+    return TextureFormat::YUV_NV12;
 
   default:
     return TextureFormat::Invalid;

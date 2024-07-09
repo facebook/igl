@@ -262,6 +262,9 @@ class VulkanImage final {
   void flushMappedMemory() const;
 
  public:
+  // Vulkan as for v1.3.210 supports max 3 planes for multi-plane images.
+  static constexpr uint8_t kMaxImagePlanes = 3;
+
   const VulkanContext* ctx_ = nullptr;
   VkPhysicalDevice physicalDevice_ = VK_NULL_HANDLE;
   VkDevice device_ = VK_NULL_HANDLE;
@@ -269,7 +272,7 @@ class VulkanImage final {
   VkImageUsageFlags usageFlags_ = 0;
   // Separate VkDeviceMemory objects to support disjoint multiplanar images
   // @fb-only
-  VkDeviceMemory vkMemory_[3] = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
+  VkDeviceMemory vkMemory_[kMaxImagePlanes] = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
   VmaAllocation vmaAllocation_ = VK_NULL_HANDLE;
   VkFormatProperties formatProperties_{};
   void* mappedPtr_ = nullptr;

@@ -200,7 +200,6 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
     // back the image with some memory
     {
-      constexpr uint32_t kMaxImagePlanes = IGL_ARRAY_NUM_ELEMENTS(vkMemory_);
       const uint32_t numPlanes = igl::vulkan::getNumImagePlanes(format);
       IGL_ASSERT(numPlanes > 0 && numPlanes <= kMaxImagePlanes);
       // @fb-only
@@ -664,7 +663,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   VkPhysicalDeviceMemoryProperties vulkanMemoryProperties;
   ctx_->vf_.vkGetPhysicalDeviceMemoryProperties(physicalDevice_, &vulkanMemoryProperties);
 
-  // create image.. importing external memory cannot use VMA
+  // create VkImage importing external memory cannot use VMA
   VK_ASSERT(ctx_->vf_.vkCreateImage(device_, &ci, nullptr, &vkImage_));
   VK_ASSERT(ivkSetDebugObjectName(
       &ctx_->vf_, device_, VK_OBJECT_TYPE_IMAGE, (uint64_t)vkImage_, debugName));
@@ -702,27 +701,46 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       compatibleHandleTypes,
   };
 
-  const VkImageMemoryRequirementsInfo2 memoryRequirementInfo = {
-      VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, nullptr, vkImage_};
+  std::array<VkBindImagePlaneMemoryInfo, kMaxImagePlanes> bindImagePlaneMemoryInfo{};
+  std::array<VkBindImageMemoryInfo, kMaxImagePlanes> bindInfo{};
+  const uint32_t numPlanes = igl::vulkan::getNumImagePlanes(format);
+  IGL_ASSERT(numPlanes > 0 && numPlanes <= kMaxImagePlanes);
+  for (uint32_t p = 0; p != numPlanes; p++) {
+    auto imagePlaneMemoryRequirementsInfo = ivkGetImagePlaneMemoryRequirementsInfo(
+        (VkImageAspectFlagBits)(VK_IMAGE_ASPECT_PLANE_0_BIT << p));
 
-  VkMemoryRequirements2 memoryRequirements = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
-  ctx_->vf_.vkGetImageMemoryRequirements2(device_, &memoryRequirementInfo, &memoryRequirements);
+    const VkImageMemoryRequirementsInfo2 imageMemoryRequirementInfo = {
+        VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+        &imagePlaneMemoryRequirementsInfo,
+        vkImage_};
 
-  const VkMemoryAllocateInfo memoryAllocateInfo = {
-      VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-      &externalMemoryAllocateInfo,
-      memoryRequirements.memoryRequirements.size,
-      ivkGetMemoryTypeIndex(
-          vulkanMemoryProperties, memoryRequirements.memoryRequirements.memoryTypeBits, memFlags)};
+    VkMemoryRequirements2 memoryRequirements = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, nullptr};
+    ctx_->vf_.vkGetImageMemoryRequirements2(
+        device_, &imageMemoryRequirementInfo, &memoryRequirements);
 
-  IGL_LOG_INFO("Creating image to be exported with memoryAllocationSize %" PRIu64
-               ", requirements 0x%08X, ends up index 0x%08X",
-               memoryRequirements.memoryRequirements.size,
-               memoryRequirements.memoryRequirements.memoryTypeBits,
-               memoryAllocateInfo.memoryTypeIndex);
+    const VkMemoryAllocateInfo memoryAllocateInfo = {
+        VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        &externalMemoryAllocateInfo,
+        memoryRequirements.memoryRequirements.size,
+        ivkGetMemoryTypeIndex(vulkanMemoryProperties,
+                              memoryRequirements.memoryRequirements.memoryTypeBits,
+                              memFlags)};
 
-  VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_[0]));
-  VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_[0], 0));
+    IGL_LOG_INFO("Creating image to be exported with memoryAllocationSize %" PRIu64
+                 ", requirements 0x%08X, ends up index 0x%08X",
+                 memoryRequirements.memoryRequirements.size,
+                 memoryRequirements.memoryRequirements.memoryTypeBits,
+                 memoryAllocateInfo.memoryTypeIndex);
+
+    VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_[p]));
+
+    bindImagePlaneMemoryInfo[p] =
+        VkBindImagePlaneMemoryInfo{VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO,
+                                   nullptr,
+                                   (VkImageAspectFlagBits)(VK_IMAGE_ASPECT_PLANE_0_BIT << p)};
+    bindInfo[p] = ivkGetBindImageMemoryInfo(&bindImagePlaneMemoryInfo[p], vkImage_, vkMemory_[p]);
+  }
+  VK_ASSERT(ctx_->vf_.vkBindImageMemory2(device_, numPlanes, bindInfo.data()));
 
 #if IGL_PLATFORM_WIN
   const VkMemoryGetWin32HandleInfoKHR getHandleInfo{
