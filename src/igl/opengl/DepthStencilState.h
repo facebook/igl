@@ -25,14 +25,11 @@ class DepthStencilState final : public WithContext, public IDepthStencilState {
   ~DepthStencilState() override = default;
 
   Result create(const DepthStencilStateDesc& desc);
-  void bind();
+  void bind(uint32_t frontStencilReferenceValue, uint32_t backStencilReferenceValue);
   void unbind();
 
   static GLenum convertCompareFunction(igl::CompareFunction value);
   static GLenum convertStencilOperation(igl::StencilOperation value);
-
-  void setStencilReferenceValue(uint32_t value);
-  void setStencilReferenceValues(uint32_t frontValue, uint32_t backValue);
 
  private:
   DepthStencilStateDesc desc_;
