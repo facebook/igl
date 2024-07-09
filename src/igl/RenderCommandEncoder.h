@@ -74,6 +74,10 @@ class IRenderCommandEncoder : public ICommandEncoder {
   /// Binds an individual uniform. Exclusively for use when uniform blocks are not supported.
   virtual void bindUniform(const UniformDesc& uniformDesc, const void* data) = 0;
 
+  virtual void bindBindGroup(BindGroupTextureHandle handle) {}
+  virtual void bindBindGroup(BindGroupUniformBufferHandle handle) {}
+  virtual void bindBindGroup(BindGroupStorageBufferHandle handle) {}
+
   virtual void draw(size_t vertexCount,
                     uint32_t instanceCount = 1,
                     uint32_t firstVertex = 0,

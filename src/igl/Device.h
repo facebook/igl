@@ -17,7 +17,9 @@
 
 namespace igl {
 
-struct BindGroupDesc;
+struct BindGroupUniformBufferDesc;
+struct BindGroupStorageBufferDesc;
+struct BindGroupTextureDesc;
 struct BufferDesc;
 struct CommandQueueDesc;
 struct ComputePipelineDesc;
@@ -74,25 +76,42 @@ class IDevice : public ICapabilities {
  public:
   ~IDevice() override = default;
 
-  virtual Holder<igl::BindGroupHandle> createBindGroup(const BindGroupDesc& desc,
-                                                       Result* IGL_NULLABLE outResult) {
+  virtual Holder<igl::BindGroupTextureHandle> createBindGroup(const BindGroupTextureDesc& desc,
+                                                              Result* IGL_NULLABLE outResult) {
     (void)desc;
 
     IGL_ASSERT_NOT_IMPLEMENTED();
 
     Result::setResult(outResult,
                       Result(Result::Code::Unimplemented, "Bind groups are not implemented (yet)"));
+    return {};
+  }
+  virtual Holder<igl::BindGroupUniformBufferHandle> createBindGroup(
+      const BindGroupUniformBufferDesc& desc,
+      Result* IGL_NULLABLE outResult) {
+    (void)desc;
 
+    IGL_ASSERT_NOT_IMPLEMENTED();
+
+    Result::setResult(outResult,
+                      Result(Result::Code::Unimplemented, "Bind groups are not implemented (yet)"));
+    return {};
+  }
+  virtual Holder<igl::BindGroupStorageBufferHandle> createBindGroup(
+      const BindGroupStorageBufferDesc& desc,
+      Result* IGL_NULLABLE outResult) {
+    (void)desc;
+
+    IGL_ASSERT_NOT_IMPLEMENTED();
+
+    Result::setResult(outResult,
+                      Result(Result::Code::Unimplemented, "Bind groups are not implemented (yet)"));
     return {};
   }
 
-  virtual void destroy(igl::BindGroupHandle handle) {
-    if (!handle) {
-      return;
-    }
-
-    IGL_ASSERT_NOT_IMPLEMENTED();
-  }
+  virtual void destroy(igl::BindGroupTextureHandle handle) {}
+  virtual void destroy(igl::BindGroupUniformBufferHandle handle) {}
+  virtual void destroy(igl::BindGroupStorageBufferHandle handle) {}
 
   /**
    * @brief Creates a command queue.
