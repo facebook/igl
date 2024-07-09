@@ -273,7 +273,9 @@ Framebuffer::Framebuffer(const Device& device, FramebufferDesc desc) :
       IGL_ASSERT(height_ == attachmentHeight);
     }
 
-    IGL_ASSERT_MSG(tex.getVkFormat() != VK_FORMAT_UNDEFINED, "Invalid texture format");
+    IGL_ASSERT_MSG(tex.getVkFormat() != VK_FORMAT_UNDEFINED,
+                   "Invalid texture format: %d",
+                   static_cast<int>(tex.getVkFormat()));
   };
 
   for (const auto& attachment : desc_.colorAttachments) {
