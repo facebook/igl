@@ -218,9 +218,9 @@ class DescriptorPoolsArena final {
   ~DescriptorPoolsArena() {
     extinct_.push_back({pool_, {}});
     ctx_.deferredTask(std::packaged_task<void()>(
-        [extinct_ = std::move(extinct_), vf_ = ctx_.vf_, device_ = device_]() {
-          for (const auto& p : extinct_) {
-            vf_.vkDestroyDescriptorPool(device_, p.pool_, nullptr);
+        [extinct = std::move(extinct_), vf = ctx_.vf_, device = device_]() {
+          for (const auto& p : extinct) {
+            vf.vkDestroyDescriptorPool(device, p.pool_, nullptr);
           }
         }));
   }
