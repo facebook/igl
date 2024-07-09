@@ -206,7 +206,7 @@ class DescriptorPoolsArena final {
                        VkDescriptorSetLayout dsl,
                        uint32_t numDescriptorsPerDSet,
                        const char* debugName) :
-    vf_(ctx.vf_),
+    ctx_(ctx),
     device_(ctx.getVkDevice()),
     type_(type),
     numDescriptorsPerDSet_(numDescriptorsPerDSet),
@@ -216,12 +216,13 @@ class DescriptorPoolsArena final {
     switchToNewDescriptorPool(*ctx.immediate_, {});
   }
   ~DescriptorPoolsArena() {
-    // arenas are destroyed by VulkanContext after the GPU has been synchronized, so we do not have
-    // to defer the destruction
     extinct_.push_back({pool_, {}});
-    for (const auto& p : extinct_) {
-      vf_.vkDestroyDescriptorPool(device_, p.pool_, nullptr);
-    }
+    ctx_.deferredTask(std::packaged_task<void()>(
+        [extinct_ = std::move(extinct_), vf_ = ctx_.vf_, device_ = device_]() {
+          for (const auto& p : extinct_) {
+            vf_.vkDestroyDescriptorPool(device_, p.pool_, nullptr);
+          }
+        }));
   }
   [[nodiscard]] VkDescriptorSetLayout getVkDescriptorSetLayout() const {
     return dsl_;
@@ -233,7 +234,7 @@ class DescriptorPoolsArena final {
     if (!numRemainingDSetsInPool_) {
       switchToNewDescriptorPool(ic, lastSubmitHandle);
     }
-    VK_ASSERT(ivkAllocateDescriptorSet(&vf_, device_, pool_, dsl_, &dset));
+    VK_ASSERT(ivkAllocateDescriptorSet(&ctx_.vf_, device_, pool_, dsl_, &dset));
     numRemainingDSetsInPool_--;
     return dset;
   }
@@ -252,22 +253,27 @@ class DescriptorPoolsArena final {
       if (ic.isRecycled(p.handle_)) {
         pool_ = p.pool_;
         extinct_.pop_front();
-        VK_ASSERT(vf_.vkResetDescriptorPool(device_, pool_, VkDescriptorPoolResetFlags{}));
+        VK_ASSERT(ctx_.vf_.vkResetDescriptorPool(device_, pool_, VkDescriptorPoolResetFlags{}));
         return;
       }
     }
     const VkDescriptorPoolSize poolSize = VkDescriptorPoolSize{
         type_, numDescriptorsPerDSet_ ? kNumDSetsPerPool_ * numDescriptorsPerDSet_ : 1u};
-    VK_ASSERT(ivkCreateDescriptorPool(
-        &vf_, device_, VkDescriptorPoolCreateFlags{}, kNumDSetsPerPool_, 1, &poolSize, &pool_));
+    VK_ASSERT(ivkCreateDescriptorPool(&ctx_.vf_,
+                                      device_,
+                                      VkDescriptorPoolCreateFlags{},
+                                      kNumDSetsPerPool_,
+                                      1,
+                                      &poolSize,
+                                      &pool_));
     VK_ASSERT(ivkSetDebugObjectName(
-        &vf_, device_, VK_OBJECT_TYPE_DESCRIPTOR_POOL, (uint64_t)pool_, dpDebugName_.c_str()));
+        &ctx_.vf_, device_, VK_OBJECT_TYPE_DESCRIPTOR_POOL, (uint64_t)pool_, dpDebugName_.c_str()));
   }
 
  private:
   static constexpr uint32_t kNumDSetsPerPool_ = 256;
 
-  const VulkanFunctionTable& vf_;
+  const VulkanContext& ctx_;
   VkDevice device_ = VK_NULL_HANDLE;
   VkDescriptorPool pool_ = VK_NULL_HANDLE;
   const VkDescriptorType type_ = VK_DESCRIPTOR_TYPE_MAX_ENUM;
