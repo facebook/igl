@@ -65,24 +65,18 @@ void optimizedMemcpy(void* dst, const void* src, size_t size) {
 }
 
 void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupTextureHandle handle) {
-  IGL_ASSERT(device);
-
   if (device) {
     device->destroy(handle);
   }
 }
 
 void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupBufferHandle handle) {
-  IGL_ASSERT(device);
-
   if (device) {
     device->destroy(handle);
   }
 }
 
 void destroy(igl::IDevice* IGL_NULLABLE device, igl::TextureHandle handle) {
-  IGL_ASSERT(device);
-
   if (device) {
     // do nothing until we transition all textures to handles
     (void)handle;
@@ -90,8 +84,6 @@ void destroy(igl::IDevice* IGL_NULLABLE device, igl::TextureHandle handle) {
 }
 
 void destroy(igl::IDevice* IGL_NULLABLE device, igl::SamplerHandle handle) {
-  IGL_ASSERT(device);
-
   if (device) {
     // do nothing until we transition all samplers to handles
     (void)handle;
