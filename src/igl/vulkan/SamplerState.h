@@ -43,6 +43,11 @@ class SamplerState final : public ISamplerState {
    */
   [[nodiscard]] uint32_t getSamplerId() const;
 
+  /**
+   * @brief Returns true if this sampler is a YUV sampler.
+   */
+  [[nodiscard]] bool isYUV() const noexcept override;
+
  private:
   /**
    * @brief Creates the internal object instances based on the descriptor passed in as a parameter

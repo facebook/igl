@@ -23,6 +23,11 @@ class SamplerState final : public ISamplerState {
   static MTLSamplerMipFilter convertMipFilter(SamplerMipFilter value);
   static MTLSamplerAddressMode convertAddressMode(SamplerAddressMode value);
 
+  /**
+   * @brief Returns true if this sampler is a YUV sampler.
+   */
+  [[nodiscard]] bool isYUV() const noexcept override;
+
  private:
   id<MTLSamplerState> value_;
 };

@@ -128,4 +128,8 @@ uint32_t SamplerState::getSamplerId() const {
   return sampler_ ? sampler_->samplerId_ : 0;
 }
 
+bool SamplerState::isYUV() const noexcept {
+  return desc_.yuvFormat != igl::TextureFormat::Invalid;
+}
+
 } // namespace igl::vulkan

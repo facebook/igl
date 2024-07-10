@@ -196,6 +196,8 @@ class ISamplerState : public ITrackedResource<ISamplerState> {
 
  public:
   ~ISamplerState() override = default;
+
+  [[nodiscard]] virtual bool isYUV() const noexcept = 0;
 };
 
 } // namespace igl

@@ -44,4 +44,9 @@ MTLSamplerAddressMode SamplerState::convertAddressMode(SamplerAddressMode value)
   }
 }
 
+bool SamplerState::isYUV() const noexcept {
+  // Not supported in this API.
+  return false;
+}
+
 } // namespace igl::metal

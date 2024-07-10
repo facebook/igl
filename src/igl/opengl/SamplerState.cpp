@@ -31,7 +31,8 @@ SamplerState::SamplerState(IContext& context, const SamplerStateDesc& desc) :
   addressV_(convertAddressMode(desc.addressModeV)),
   addressW_(convertAddressMode(desc.addressModeW)),
   depthCompareFunction_(DepthStencilState::convertCompareFunction(desc.depthCompareFunction)),
-  depthCompareEnabled_(desc.depthCompareEnabled) {
+  depthCompareEnabled_(desc.depthCompareEnabled),
+  isYUV_(desc.yuvFormat != igl::TextureFormat::Invalid) {
   const std::hash<SamplerStateDesc> h;
   hash_ = h(desc);
 }
@@ -254,6 +255,10 @@ SamplerAddressMode SamplerState::convertGLAddressMode(GLint glAddressMode) {
   }
 
   return addressMode;
+}
+
+bool SamplerState::isYUV() const noexcept {
+  return isYUV_;
 }
 
 } // namespace igl::opengl

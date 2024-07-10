@@ -28,6 +28,11 @@ class SamplerState final : public WithContext, public ISamplerState {
   static SamplerMinMagFilter convertGLMinFilter(GLint minFilter);
   static SamplerMipFilter convertGLMipFilter(GLint minFilter);
 
+  /**
+   * @brief Returns true if this sampler is a YUV sampler.
+   */
+  [[nodiscard]] bool isYUV() const noexcept override;
+
  private:
   size_t hash_ = std::numeric_limits<size_t>::max();
   GLint minMipFilter_;
@@ -42,6 +47,7 @@ class SamplerState final : public WithContext, public ISamplerState {
 
   GLint depthCompareFunction_;
   bool depthCompareEnabled_;
+  bool isYUV_;
 };
 
 } // namespace opengl
