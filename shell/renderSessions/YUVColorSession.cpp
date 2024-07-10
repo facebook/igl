@@ -53,15 +53,13 @@ std::string getOpenGLFragmentShaderSource() {
                 #version 300 es
                 #extension GL_EXT_YUV_target : require
                 precision highp float;
-                uniform vec3 color;
-                uniform sampler2D inputImage;
+                uniform __samplerExternal2DY2YEXT inputImage;
 
                 in vec2 uv;
                 layout (yuv) out vec4 outColor;
 
                 void main() {
-                  outColor =
-                      vec4(color, 1.0) * texture(inputImage, uv);
+                  outColor = texture(inputImage, uv);
                 })");
 }
 
@@ -70,16 +68,10 @@ std::string getVulkanVertexShaderSource() {
                 layout(location = 0) in vec3 position;
                 layout(location = 1) in vec2 uv_in;
                 layout(location = 0) out vec2 uv;
-                layout(location = 1) out vec3 color;
-
-                layout (set = 1, binding = 0, std140) uniform UniformsPerObject {
-                  vec3 color;
-                } perObject;
 
                 void main() {
                   gl_Position = vec4(position, 1.0);
                   uv = uv_in;
-                  color = perObject.color;
                 }
                 )";
 }
@@ -87,13 +79,12 @@ std::string getVulkanVertexShaderSource() {
 std::string getVulkanFragmentShaderSource() {
   return R"(
                 layout(location = 0) in vec2 uv;
-                layout(location = 1) in vec3 color;
                 layout(location = 0) out vec4 out_FragColor;
 
                 layout(set = 0, binding = 0) uniform sampler2D in_texture;
 
                 void main() {
-                  out_FragColor = vec4(color, 1.0) * texture(in_texture, uv);
+                  out_FragColor = texture(in_texture, uv);
                 }
                 )";
 }
@@ -206,18 +197,6 @@ void YUVColorSession::initialize() noexcept {
   renderPass_.colorAttachments[0].clearColor = getPlatform().getDevice().backendDebugColor();
   renderPass_.depthAttachment.loadAction = LoadAction::Clear;
   renderPass_.depthAttachment.clearDepth = 1.0;
-
-  // init uniforms
-  fragmentParameters_ = FragmentFormat{{1.0f, 1.0f, 1.0f}};
-
-  BufferDesc fpDesc;
-  fpDesc.type = BufferDesc::BufferTypeBits::Uniform;
-  fpDesc.data = &fragmentParameters_;
-  fpDesc.length = sizeof(fragmentParameters_);
-  fpDesc.storage = ResourceStorage::Shared;
-
-  fragmentParamBuffer_ = device.createBuffer(fpDesc, nullptr);
-  IGL_ASSERT(fragmentParamBuffer_ != nullptr);
 }
 
 void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
@@ -262,12 +241,6 @@ void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   framebuffer_->updateDrawable(drawableSurface);
 
-  // Uniform: "color"
-  if (!fragmentUniformDescriptors_.empty()) {
-    fragmentUniformDescriptors_.back().type = UniformType::Float3;
-    fragmentUniformDescriptors_.back().offset = offsetof(FragmentFormat, color);
-  }
-
   // Submit commands
   const std::shared_ptr<igl::IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
@@ -276,7 +249,6 @@ void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     commands->bindVertexBuffer(0, *vb0_);
     commands->bindVertexBuffer(1, *vb0_);
     commands->bindRenderPipelineState(demo.pipelineState);
-    commands->bindBuffer(0, fragmentParamBuffer_, 0);
     commands->bindTexture(_textureUnit, BindTarget::kFragment, demo.texture.get());
     commands->bindSamplerState(_textureUnit, BindTarget::kFragment, demo.sampler.get());
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);

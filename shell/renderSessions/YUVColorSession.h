@@ -18,10 +18,6 @@
 namespace igl::shell {
 
 class YUVColorSession : public RenderSession {
-  struct FragmentFormat {
-    iglu::simdtypes::float3 color;
-  };
-
  public:
   YUVColorSession(std::shared_ptr<Platform> platform);
   // clang-tidy off
@@ -37,15 +33,8 @@ class YUVColorSession : public RenderSession {
   std::shared_ptr<IShaderStages> shaderStages_;
   std::shared_ptr<IBuffer> vb0_;
   std::shared_ptr<IBuffer> ib0_;
-  std::shared_ptr<IBuffer> fragmentParamBuffer_;
   std::shared_ptr<ITexture> depthTexture_;
   RenderPassDesc renderPass_;
-  // clang-tidy off
-  FragmentFormat fragmentParameters_{};
-  // clang-tidy on
-  std::vector<UniformDesc> fragmentUniformDescriptors_;
-  std::vector<UniformDesc> vertexUniformDescriptors_;
-
   igl::FramebufferDesc framebufferDesc_;
   std::unique_ptr<iglu::imgui::Session> imguiSession_;
 
