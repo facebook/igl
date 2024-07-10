@@ -38,7 +38,10 @@ VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const VulkanContext& ctx,
 VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   ctx_.freeResourcesForDescriptorSetLayout(vkDescriptorSetLayout_);
-  ctx_.vf_.vkDestroyDescriptorSetLayout(ctx_.getVkDevice(), vkDescriptorSetLayout_, nullptr);
+  ctx_.deferredTask(std::packaged_task<void()>(
+      [vf = &ctx_.vf_, device = ctx_.getVkDevice(), layout = vkDescriptorSetLayout_] {
+        vf->vkDestroyDescriptorSetLayout(device, layout, nullptr);
+      }));
 }
 
 } // namespace igl::vulkan
