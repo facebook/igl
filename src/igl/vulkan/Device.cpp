@@ -707,4 +707,56 @@ ShaderVersion Device::getShaderVersion() const {
   return {ShaderFamily::SpirV, 1, 5, 0};
 }
 
+Holder<igl::BindGroupTextureHandle> Device::createBindGroup(const igl::BindGroupTextureDesc& desc,
+                                                            Result* IGL_NULLABLE outResult) {
+  IGL_ASSERT(ctx_);
+  IGL_ASSERT_MSG(!desc.debugName.empty(), "Each bind group should have a debug name");
+
+  BindGroupTextureDesc description(desc);
+
+  const auto handle = ctx_->bindGroupTexturesPool_.create(std::move(description));
+
+  Result::setResult(outResult,
+                    handle.empty() ? Result(Result::Code::RuntimeError, "Cannot create bind group")
+                                   : Result());
+
+  return {this, handle};
+}
+
+Holder<igl::BindGroupBufferHandle> Device::createBindGroup(const igl::BindGroupBufferDesc& desc,
+                                                           Result* IGL_NULLABLE outResult) {
+  IGL_ASSERT(ctx_);
+  IGL_ASSERT_MSG(!desc.debugName.empty(), "Each bind group should have a debug name");
+
+  BindGroupBufferDesc description(desc);
+
+  const auto handle = ctx_->bindGroupBuffersPool_.create(std::move(description));
+
+  Result::setResult(outResult,
+                    handle.empty() ? Result(Result::Code::RuntimeError, "Cannot create bind group")
+                                   : Result());
+
+  return {this, handle};
+}
+
+void Device::destroy(igl::BindGroupTextureHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+
+  IGL_ASSERT(ctx_);
+
+  ctx_->bindGroupTexturesPool_.destroy(handle);
+}
+
+void Device::destroy(igl::BindGroupBufferHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+
+  IGL_ASSERT(ctx_);
+
+  ctx_->bindGroupBuffersPool_.destroy(handle);
+}
+
 } // namespace igl::vulkan

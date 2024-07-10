@@ -75,8 +75,7 @@ class IRenderCommandEncoder : public ICommandEncoder {
   virtual void bindUniform(const UniformDesc& uniformDesc, const void* data) = 0;
 
   virtual void bindBindGroup(BindGroupTextureHandle handle) {}
-  virtual void bindBindGroup(BindGroupUniformBufferHandle handle) {}
-  virtual void bindBindGroup(BindGroupStorageBufferHandle handle) {}
+  virtual void bindBindGroup(BindGroupBufferHandle handle) {}
 
   virtual void draw(size_t vertexCount,
                     uint32_t instanceCount = 1,

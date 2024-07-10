@@ -74,6 +74,9 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   /// implement!
   void bindUniform(const UniformDesc& uniformDesc, const void* data) override;
 
+  void bindBindGroup(BindGroupTextureHandle handle) override;
+  void bindBindGroup(BindGroupBufferHandle handle) override;
+
   void draw(size_t vertexCount,
             uint32_t instanceCount,
             uint32_t firstVertex,

@@ -44,18 +44,12 @@ struct BindGroupTextureDesc {
   std::shared_ptr<ISamplerState> samplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
   std::string debugName;
 };
-struct BindGroupUniformBufferDesc {
-  std::shared_ptr<IBuffer> buffersUniform[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
+struct BindGroupBufferDesc {
+  std::shared_ptr<IBuffer> buffers[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
   size_t offset[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
   size_t size[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {}; // 0 means the remaining size from `offset` to
                                                     // the end of the buffer
-  std::string debugName;
-};
-struct BindGroupStorageBufferDesc {
-  std::shared_ptr<IBuffer> buffersStorage[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
-  size_t offset[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
-  size_t size[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {}; // 0 means the remaining size from `offset` to
-                                                    // the end of the buffer
+  bool isDynamic[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
   std::string debugName;
 };
 

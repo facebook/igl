@@ -72,15 +72,7 @@ void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupTextureHandle hand
   }
 }
 
-void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupUniformBufferHandle handle) {
-  IGL_ASSERT(device);
-
-  if (device) {
-    device->destroy(handle);
-  }
-}
-
-void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupStorageBufferHandle handle) {
+void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupBufferHandle handle) {
   IGL_ASSERT(device);
 
   if (device) {

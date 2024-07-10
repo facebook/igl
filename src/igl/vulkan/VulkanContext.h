@@ -12,6 +12,7 @@
 #include <memory>
 #include <unordered_map>
 
+#include <igl/CommandEncoder.h>
 #include <igl/HWDevice.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanDevice.h>
@@ -341,6 +342,8 @@ class VulkanContext final {
   mutable Pool<SamplerTag, std::shared_ptr<VulkanSampler>> samplers_;
   // a texture/sampler was created since the last descriptor set update
   mutable bool awaitingCreation_ = false;
+  Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
+  Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
 
   mutable size_t drawCallCount_ = 0;
 

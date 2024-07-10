@@ -943,4 +943,36 @@ void RenderCommandEncoder::processDependencies(const Dependencies& dependencies)
   }
 }
 
+void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+
+  // this is a dummy placeholder code to be replaced with actual Vulkan descriptors management
+  const BindGroupTextureDesc* desc = ctx_.bindGroupTexturesPool_.get(handle);
+
+  for (uint32_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
+    if (desc->textures[i]) {
+      IGL_ASSERT(desc->samplers[i]);
+      bindTexture(i, BindTarget::kAllGraphics, desc->textures[i].get());
+      bindSamplerState(i, BindTarget::kAllGraphics, desc->samplers[i].get());
+    }
+  }
+}
+
+void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+
+  // this is a dummy placeholder code to be replaced with actual Vulkan descriptors management
+  const BindGroupBufferDesc* desc = ctx_.bindGroupBuffersPool_.get(handle);
+
+  for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
+    if (desc->buffers[i]) {
+      bindBuffer(i, desc->buffers[i], desc->offset[i], desc->size[i]);
+    }
+  }
+}
+
 } // namespace igl::vulkan
