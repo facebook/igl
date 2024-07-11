@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <igl/CommandEncoder.h>
 #include <igl/Common.h>
 #include <igl/DeviceFeatures.h>
 #include <igl/PlatformDevice.h>
@@ -602,6 +603,10 @@ class IContext {
   // Called to check if the last OGL call resulted in an error.
   GLenum checkForErrors(const char* callerName, size_t lineNum) const;
   Result getLastError() const;
+
+ public:
+  mutable Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
+  mutable Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
 
  protected:
   static std::unordered_map<void*, IContext*>& getExistingContexts();

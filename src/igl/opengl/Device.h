@@ -28,9 +28,18 @@ class Device : public IDevice {
   Device(std::unique_ptr<IContext> context);
   ~Device() override;
 
+  [[nodiscard]] Holder<igl::BindGroupTextureHandle> createBindGroup(
+      const BindGroupTextureDesc& desc,
+      Result* IGL_NULLABLE outResult) override;
+  [[nodiscard]] Holder<igl::BindGroupBufferHandle> createBindGroup(const BindGroupBufferDesc& desc,
+                                                                   Result* IGL_NULLABLE
+                                                                       outResult) override;
+  void destroy(igl::BindGroupTextureHandle handle) override;
+  void destroy(igl::BindGroupBufferHandle handle) override;
+
   // Command Queue
   std::shared_ptr<ICommandQueue> createCommandQueue(const CommandQueueDesc& desc,
-                                                    Result* outResult) override;
+                                                    Result* IGL_NULLABLE outResult) override;
 
   // Backend type query
   [[nodiscard]] BackendType getBackendType() const override {
@@ -39,38 +48,43 @@ class Device : public IDevice {
 
   // Resources
   std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
-                                        Result* outResult) const noexcept override;
+                                        Result* IGL_NULLABLE outResult) const noexcept override;
   std::shared_ptr<IDepthStencilState> createDepthStencilState(const DepthStencilStateDesc& desc,
-                                                              Result* outResult) const override;
+                                                              Result* IGL_NULLABLE
+                                                                  outResult) const override;
   std::shared_ptr<ISamplerState> createSamplerState(const SamplerStateDesc& desc,
-                                                    Result* outResult) const override;
+                                                    Result* IGL_NULLABLE outResult) const override;
   std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,
-                                          Result* outResult) const noexcept override;
+                                          Result* IGL_NULLABLE outResult) const noexcept override;
 
   std::shared_ptr<IVertexInputState> createVertexInputState(const VertexInputStateDesc& desc,
-                                                            Result* outResult) const override;
+                                                            Result* IGL_NULLABLE
+                                                                outResult) const override;
 
   // Pipelines
   std::shared_ptr<IComputePipelineState> createComputePipeline(const ComputePipelineDesc& desc,
-                                                               Result* outResult) const override;
+                                                               Result* IGL_NULLABLE
+                                                                   outResult) const override;
   std::shared_ptr<IRenderPipelineState> createRenderPipeline(const RenderPipelineDesc& desc,
-                                                             Result* outResult) const override;
+                                                             Result* IGL_NULLABLE
+                                                                 outResult) const override;
 
   // Shaders
   std::unique_ptr<IShaderLibrary> createShaderLibrary(const ShaderLibraryDesc& desc,
-                                                      Result* outResult) const override;
+                                                      Result* IGL_NULLABLE
+                                                          outResult) const override;
 
   std::shared_ptr<IShaderModule> createShaderModule(const ShaderModuleDesc& desc,
-                                                    Result* outResult) const override;
+                                                    Result* IGL_NULLABLE outResult) const override;
 
   std::unique_ptr<IShaderStages> createShaderStages(const ShaderStagesDesc& desc,
-                                                    Result* outResult) const override;
+                                                    Result* IGL_NULLABLE outResult) const override;
 
   std::shared_ptr<IFramebuffer> createFramebuffer(const FramebufferDesc& desc,
-                                                  Result* outResult) override;
+                                                  Result* IGL_NULLABLE outResult) override;
 
   // debug markers useful in GPU captures
-  void pushMarker(int len, const char* name);
+  void pushMarker(int len, const char* IGL_NULLABLE name);
   void popMarker();
 
   [[nodiscard]] const PlatformDevice& getPlatformDevice() const noexcept override = 0;
@@ -92,7 +106,7 @@ class Device : public IDevice {
 
   bool verifyScope() override;
 
-  void updateSurface(void* nativeWindowType) override;
+  void updateSurface(void* IGL_NULLABLE nativeWindowType) override;
 
  protected:
   void beginScope() override;

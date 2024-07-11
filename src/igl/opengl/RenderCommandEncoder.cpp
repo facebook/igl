@@ -445,4 +445,34 @@ void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float
   }
 }
 
+void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+
+  const BindGroupTextureDesc* desc = getContext().bindGroupTexturesPool_.get(handle);
+
+  for (uint32_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
+    if (desc->textures[i]) {
+      IGL_ASSERT(desc->samplers[i]);
+      bindTexture(i, BindTarget::kAllGraphics, desc->textures[i].get());
+      bindSamplerState(i, BindTarget::kAllGraphics, desc->samplers[i].get());
+    }
+  }
+}
+
+void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+
+  const BindGroupBufferDesc* desc = getContext().bindGroupBuffersPool_.get(handle);
+
+  for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
+    if (desc->buffers[i]) {
+      bindBuffer(i, desc->buffers[i], desc->offset[i], desc->size[i]);
+    }
+  }
+}
+
 } // namespace igl::opengl
