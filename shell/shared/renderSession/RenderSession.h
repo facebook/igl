@@ -33,7 +33,9 @@ class RenderSession {
   [[nodiscard]] float pixelsPerPoint() const noexcept;
   void setPixelsPerPoint(float scale) noexcept;
 
-  virtual void setShellParams(const ShellParams& shellParams) noexcept;
+  virtual void setShellParams(const ShellParams& shellParams) noexcept {
+    shellParams_ = &shellParams;
+  }
 
   /// @brief Params provided to the session by the host
   /// @remark Params may vary each frame.

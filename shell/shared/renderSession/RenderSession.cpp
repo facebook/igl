@@ -25,10 +25,6 @@ void RenderSession::setPixelsPerPoint(float scale) noexcept {
   platform_->getDisplayContext().pixelsPerPoint = scale;
 }
 
-void RenderSession::setShellParams(const ShellParams& shellParams) noexcept {
-  shellParams_ = &shellParams;
-}
-
 const ShellParams& RenderSession::shellParams() const noexcept {
   static const ShellParams kSentinelParams = {};
   return shellParams_ ? *shellParams_ : kSentinelParams;
