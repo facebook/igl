@@ -14,7 +14,11 @@ namespace {
 
 int g_argc = 0;
 char** g_argv = nullptr;
+#if IGL_PLATFORM_ANDROID
+bool g_argsInitialized = true; // Android has no argc/argv to initialize with
+#else
 bool g_argsInitialized = false;
+#endif
 
 } // namespace
 
