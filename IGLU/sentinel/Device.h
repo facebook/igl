@@ -22,6 +22,15 @@ class Device final : public igl::IDevice {
  public:
   explicit Device(bool shouldAssert = true);
 
+  [[nodiscard]] igl::Holder<igl::BindGroupTextureHandle> createBindGroup(
+      const igl::BindGroupTextureDesc& desc,
+      igl::Result* IGL_NULLABLE outResult) final;
+  [[nodiscard]] igl::Holder<igl::BindGroupBufferHandle> createBindGroup(
+      const igl::BindGroupBufferDesc& desc,
+      igl::Result* IGL_NULLABLE outResult) final;
+  void destroy(igl::BindGroupTextureHandle handle) final;
+  void destroy(igl::BindGroupBufferHandle handle) final;
+
   [[nodiscard]] bool hasFeature(igl::DeviceFeatures feature) const final;
   [[nodiscard]] bool hasRequirement(igl::DeviceRequirement requirement) const final;
   [[nodiscard]] TextureFormatCapabilities getTextureFormatCapabilities(

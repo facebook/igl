@@ -75,29 +75,15 @@ class IDevice : public ICapabilities {
  public:
   ~IDevice() override = default;
 
-  virtual Holder<igl::BindGroupTextureHandle> createBindGroup(const BindGroupTextureDesc& desc,
-                                                              Result* IGL_NULLABLE outResult) {
-    (void)desc;
+  virtual Holder<BindGroupTextureHandle> createBindGroup(
+      const BindGroupTextureDesc& desc,
+      Result* IGL_NULLABLE outResult = nullptr) = 0;
+  virtual Holder<BindGroupBufferHandle> createBindGroup(
+      const BindGroupBufferDesc& desc,
+      Result* IGL_NULLABLE outResult = nullptr) = 0;
 
-    IGL_ASSERT_NOT_IMPLEMENTED();
-
-    Result::setResult(outResult,
-                      Result(Result::Code::Unimplemented, "Bind groups are not implemented (yet)"));
-    return {};
-  }
-  virtual Holder<igl::BindGroupBufferHandle> createBindGroup(const BindGroupBufferDesc& desc,
-                                                             Result* IGL_NULLABLE outResult) {
-    (void)desc;
-
-    IGL_ASSERT_NOT_IMPLEMENTED();
-
-    Result::setResult(outResult,
-                      Result(Result::Code::Unimplemented, "Bind groups are not implemented (yet)"));
-    return {};
-  }
-
-  virtual void destroy(igl::BindGroupTextureHandle handle) {}
-  virtual void destroy(igl::BindGroupBufferHandle handle) {}
+  virtual void destroy(igl::BindGroupTextureHandle handle) = 0;
+  virtual void destroy(igl::BindGroupBufferHandle handle) = 0;
 
   /**
    * @brief Creates a command queue.

@@ -151,4 +151,28 @@ std::unique_ptr<igl::IShaderStages> Device::createShaderStages(
   return nullptr;
 }
 
+igl::Holder<igl::BindGroupTextureHandle> Device::createBindGroup(
+    const igl::BindGroupTextureDesc& /*desc*/,
+    igl::Result* IGL_NULLABLE /*outResult*/) {
+  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
+
+  return {};
+}
+
+igl::Holder<igl::BindGroupBufferHandle> Device::createBindGroup(
+    const igl::BindGroupBufferDesc& /*desc*/,
+    igl::Result* IGL_NULLABLE /*outResult*/) {
+  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
+
+  return {};
+}
+
+void Device::destroy(igl::BindGroupTextureHandle /*handle*/) {
+  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
+}
+
+void Device::destroy(igl::BindGroupBufferHandle /*handle*/) {
+  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
+}
+
 } // namespace iglu::sentinel
