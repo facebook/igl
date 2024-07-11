@@ -12,6 +12,7 @@
 #include <igl/RenderPass.h>
 #include <igl/metal/Buffer.h>
 #include <igl/metal/DepthStencilState.h>
+#include <igl/metal/Device.h>
 #include <igl/metal/Framebuffer.h>
 #include <igl/metal/RenderPipelineState.h>
 #include <igl/metal/SamplerState.h>
@@ -19,7 +20,7 @@
 
 namespace igl::metal {
 RenderCommandEncoder::RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer) :
-  IRenderCommandEncoder::IRenderCommandEncoder(commandBuffer) {}
+  IRenderCommandEncoder::IRenderCommandEncoder(commandBuffer), device_(commandBuffer->device()) {}
 
 void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& commandBuffer,
                                       const RenderPassDesc& renderPass,
@@ -507,6 +508,36 @@ MTLStoreAction RenderCommandEncoder::convertStoreAction(StoreAction value) {
 
 MTLClearColor RenderCommandEncoder::convertClearColor(Color value) {
   return MTLClearColorMake(value.r, value.g, value.b, value.a);
+}
+
+void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+
+  const BindGroupTextureDesc* desc = device_.bindGroupTexturesPool_.get(handle);
+
+  for (uint32_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
+    if (desc->textures[i]) {
+      IGL_ASSERT(desc->samplers[i]);
+      bindTexture(i, BindTarget::kAllGraphics, desc->textures[i].get());
+      bindSamplerState(i, BindTarget::kAllGraphics, desc->samplers[i].get());
+    }
+  }
+}
+
+void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+
+  const BindGroupBufferDesc* desc = device_.bindGroupBuffersPool_.get(handle);
+
+  for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
+    if (desc->buffers[i]) {
+      bindBuffer(i, desc->buffers[i], desc->offset[i], desc->size[i]);
+    }
+  }
 }
 
 } // namespace igl::metal

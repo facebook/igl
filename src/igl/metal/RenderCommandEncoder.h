@@ -16,6 +16,7 @@
 
 namespace igl::metal {
 class Buffer;
+class Device;
 
 class RenderCommandEncoder final : public IRenderCommandEncoder {
  public:
@@ -50,6 +51,9 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   void bindSamplerState(size_t index, uint8_t target, ISamplerState* samplerState) override;
   void bindTexture(size_t index, uint8_t target, ITexture* texture) override;
   void bindUniform(const UniformDesc& uniformDesc, const void* data) override;
+
+  void bindBindGroup(BindGroupTextureHandle handle) override;
+  void bindBindGroup(BindGroupBufferHandle handle) override;
 
   void draw(size_t vertexCount,
             uint32_t instanceCount,
@@ -99,6 +103,8 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   static constexpr uint32_t MAX_RECOMMENDED_BYTES = 4 * 1024;
 
   MTLPrimitiveType metalPrimitive_ = MTLPrimitiveTypeTriangle;
+
+  igl::metal::Device& device_;
 };
 
 } // namespace igl::metal

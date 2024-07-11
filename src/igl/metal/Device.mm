@@ -42,7 +42,7 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc
                                                           Result* outResult) {
   id<MTLCommandQueue> metalObject = [device_ newCommandQueue];
   auto resource =
-      std::make_shared<CommandQueue>(metalObject, bufferSyncManager_, deviceStatistics_);
+      std::make_shared<CommandQueue>(*this, metalObject, bufferSyncManager_, deviceStatistics_);
   Result::setOk(outResult);
   return resource;
 }
@@ -671,4 +671,51 @@ MTLResourceOptions Device::toMTLResourceStorageMode(ResourceStorage storage) {
 #endif
   }
 }
+
+Holder<igl::BindGroupTextureHandle> Device::createBindGroup(const BindGroupTextureDesc& desc,
+                                                            Result* IGL_NULLABLE outResult) {
+  IGL_ASSERT_MSG(!desc.debugName.empty(), "Each bind group should have a debug name");
+
+  BindGroupTextureDesc description(desc);
+
+  const auto handle = bindGroupTexturesPool_.create(std::move(description));
+
+  Result::setResult(outResult,
+                    handle.empty() ? Result(Result::Code::RuntimeError, "Cannot create bind group")
+                                   : Result());
+
+  return {this, handle};
+}
+
+Holder<igl::BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc& desc,
+                                                           Result* IGL_NULLABLE outResult) {
+  IGL_ASSERT_MSG(!desc.debugName.empty(), "Each bind group should have a debug name");
+
+  BindGroupBufferDesc description(desc);
+
+  const auto handle = bindGroupBuffersPool_.create(std::move(description));
+
+  Result::setResult(outResult,
+                    handle.empty() ? Result(Result::Code::RuntimeError, "Cannot create bind group")
+                                   : Result());
+
+  return {this, handle};
+}
+
+void Device::destroy(igl::BindGroupTextureHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+
+  bindGroupTexturesPool_.destroy(handle);
+}
+
+void Device::destroy(igl::BindGroupBufferHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+
+  bindGroupBuffersPool_.destroy(handle);
+}
+
 } // namespace igl::metal
