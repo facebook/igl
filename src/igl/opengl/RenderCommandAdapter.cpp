@@ -153,7 +153,7 @@ void RenderCommandAdapter::setUniformBuffer(const std::shared_ptr<Buffer>& buffe
                                             size_t offset,
                                             int index,
                                             Result* outResult) {
-  uniformAdapter_.setUniformBuffer(buffer, offset, index, outResult);
+  uniformAdapter_.setUniformBuffer(buffer.get(), offset, index, outResult);
 }
 
 void RenderCommandAdapter::clearVertexTexture() {
