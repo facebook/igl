@@ -34,7 +34,7 @@ ComputeCommandAdapter::ComputeCommandAdapter(IContext& context) :
 
 void ComputeCommandAdapter::clearTextures() {}
 
-void ComputeCommandAdapter::setTexture(ITexture* texture, size_t index) {
+void ComputeCommandAdapter::setTexture(ITexture* texture, uint32_t index) {
   if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     return;
   }

@@ -43,7 +43,7 @@ class ComputeCommandAdapter final : public WithContext {
   ComputeCommandAdapter(IContext& context);
 
   void clearTextures();
-  void setTexture(ITexture* texture, size_t index);
+  void setTexture(ITexture* texture, uint32_t index);
 
   void clearBuffers();
   void setBuffer(std::shared_ptr<Buffer> buffer, size_t offset, int index);

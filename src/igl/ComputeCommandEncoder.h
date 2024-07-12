@@ -61,7 +61,7 @@ class IComputeCommandEncoder : public ICommandEncoder {
    * @param index An index in the texture argument table.
    * @param texture The texture to set in the texture argument table.
    */
-  virtual void bindTexture(size_t index, ITexture* texture) = 0;
+  virtual void bindTexture(uint32_t index, ITexture* texture) = 0;
   /**
    * @brief Sets a buffer for the compute function
    *

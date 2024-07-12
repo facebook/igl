@@ -102,7 +102,7 @@ void ComputeCommandEncoder::bindUniform(const UniformDesc& uniformDesc, const vo
   }
 }
 
-void ComputeCommandEncoder::bindTexture(size_t index, ITexture* texture) {
+void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
   if (IGL_VERIFY(adapter_)) {
     adapter_->setTexture(texture, index);
   }

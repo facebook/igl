@@ -54,7 +54,7 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
 
   /// @brief Binds a texture and transitions it to `VK_IMAGE_LAYOUT_GENERAL`. If the texture is not
   /// a storage texture, this function is a no-op
-  void bindTexture(size_t index, ITexture* texture) override;
+  void bindTexture(uint32_t index, ITexture* texture) override;
 
   /// @brief Binds a buffer. If the buffer is not a storage buffer, this function is a no-op
   void bindBuffer(size_t index,

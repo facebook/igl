@@ -32,7 +32,7 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
   void insertDebugEventLabel(const char* label, const igl::Color& color) const override;
   void popDebugGroupLabel() const override;
   void bindUniform(const UniformDesc& uniformDesc, const void* data) override;
-  void bindTexture(size_t index, ITexture* texture) override;
+  void bindTexture(uint32_t index, ITexture* texture) override;
   void bindBuffer(size_t index,
                   const std::shared_ptr<IBuffer>& buffer,
                   size_t offset,
