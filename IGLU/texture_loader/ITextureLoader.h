@@ -40,6 +40,15 @@ class ITextureLoader {
                                                       igl::Result* IGL_NULLABLE
                                                           outResult) const noexcept;
   [[nodiscard]] std::shared_ptr<igl::ITexture> create(const igl::IDevice& device,
+                                                      igl::TextureFormat preferredFormat,
+                                                      igl::Result* IGL_NULLABLE
+                                                          outResult) const noexcept;
+  [[nodiscard]] std::shared_ptr<igl::ITexture> create(const igl::IDevice& device,
+                                                      igl::TextureFormat preferredFormat,
+                                                      igl::TextureDesc::TextureUsage usage,
+                                                      igl::Result* IGL_NULLABLE
+                                                          outResult) const noexcept;
+  [[nodiscard]] std::shared_ptr<igl::ITexture> create(const igl::IDevice& device,
                                                       igl::TextureDesc::TextureUsage usage,
                                                       igl::Result* IGL_NULLABLE
                                                           outResult) const noexcept;

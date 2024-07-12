@@ -28,6 +28,7 @@ class TextureLoaderFactory : public ITextureLoaderFactory {
 
   [[nodiscard]] std::unique_ptr<ITextureLoader> tryCreateInternal(
       DataReader reader,
+      igl::TextureFormat preferredFormat,
       igl::Result* IGL_NULLABLE outResult) const noexcept final;
 
  private:

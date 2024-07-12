@@ -31,6 +31,7 @@ class TextureLoaderFactory : public ITextureLoaderFactory {
  private:
   [[nodiscard]] std::unique_ptr<ITextureLoader> tryCreateInternal(
       DataReader reader,
+      igl::TextureFormat preferredFormat, // Ignored for KTX textures
       igl::Result* IGL_NULLABLE outResult) const noexcept final;
 };
 

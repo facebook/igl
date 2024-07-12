@@ -35,9 +35,10 @@ bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
 
 std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     DataReader reader,
+    igl::TextureFormat preferredFormat,
     igl::Result* IGL_NULLABLE outResult) const noexcept {
   for (const auto& factory : factories_) {
-    auto loader = factory->tryCreate(reader, nullptr);
+    auto loader = factory->tryCreate(reader, preferredFormat, nullptr);
     if (loader) {
       return loader;
     }

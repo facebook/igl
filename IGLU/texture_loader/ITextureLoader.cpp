@@ -74,14 +74,30 @@ bool ITextureLoader::isSupported(const igl::ICapabilities& capabilities,
 std::shared_ptr<igl::ITexture> ITextureLoader::create(const igl::IDevice& device,
                                                       igl::Result* IGL_NULLABLE
                                                           outResult) const noexcept {
-  return create(device, desc_.usage, outResult);
+  return create(device, desc_.format, desc_.usage, outResult);
+}
+
+std::shared_ptr<igl::ITexture> ITextureLoader::create(const igl::IDevice& device,
+                                                      igl::TextureFormat preferredFormat,
+                                                      igl::Result* IGL_NULLABLE
+                                                          outResult) const noexcept {
+  return create(device, preferredFormat, desc_.usage, outResult);
 }
 
 std::shared_ptr<igl::ITexture> ITextureLoader::create(const igl::IDevice& device,
                                                       igl::TextureDesc::TextureUsage usage,
                                                       igl::Result* IGL_NULLABLE
                                                           outResult) const noexcept {
+  return create(device, igl::TextureFormat::Invalid, usage, outResult);
+}
+
+std::shared_ptr<igl::ITexture> ITextureLoader::create(const igl::IDevice& device,
+                                                      igl::TextureFormat preferredFormat,
+                                                      igl::TextureDesc::TextureUsage usage,
+                                                      igl::Result* IGL_NULLABLE
+                                                          outResult) const noexcept {
   igl::TextureDesc desc = desc_;
+  desc.format = preferredFormat == igl::TextureFormat::Invalid ? desc_.format : preferredFormat;
   desc.usage = usage;
   IGL_ASSERT(isSupported(device, usage));
   return device.createTexture(desc, outResult);

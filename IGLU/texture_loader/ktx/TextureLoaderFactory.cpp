@@ -119,6 +119,7 @@ void TextureLoader::loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
 
 std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
     DataReader reader,
+    igl::TextureFormat /*preferredFormat*/,
     igl::Result* IGL_NULLABLE outResult) const noexcept {
   const auto range = textureRange(reader);
   auto result = range.validate();

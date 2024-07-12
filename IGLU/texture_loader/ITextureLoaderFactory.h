@@ -32,7 +32,16 @@ class ITextureLoaderFactory {
                                                           uint32_t length,
                                                           igl::Result* IGL_NULLABLE
                                                               outResult) const noexcept;
+  [[nodiscard]] std::unique_ptr<ITextureLoader> tryCreate(const uint8_t* IGL_NONNULL data,
+                                                          uint32_t length,
+                                                          igl::TextureFormat preferredFormat,
+                                                          igl::Result* IGL_NULLABLE
+                                                              outResult) const noexcept;
   [[nodiscard]] std::unique_ptr<ITextureLoader> tryCreate(DataReader reader,
+                                                          igl::Result* IGL_NULLABLE
+                                                              outResult) const noexcept;
+  [[nodiscard]] std::unique_ptr<ITextureLoader> tryCreate(DataReader reader,
+                                                          igl::TextureFormat preferredFormat,
                                                           igl::Result* IGL_NULLABLE
                                                               outResult) const noexcept;
 
@@ -42,6 +51,7 @@ class ITextureLoaderFactory {
                                                    outResult) const noexcept = 0;
   [[nodiscard]] virtual std::unique_ptr<ITextureLoader> tryCreateInternal(
       DataReader reader,
+      igl::TextureFormat preferredFormat,
       igl::Result* IGL_NULLABLE outResult) const noexcept = 0;
 };
 

@@ -40,22 +40,37 @@ std::unique_ptr<ITextureLoader> ITextureLoaderFactory::tryCreate(const uint8_t* 
                                                                  uint32_t length,
                                                                  igl::Result* IGL_NULLABLE
                                                                      outResult) const noexcept {
+  return tryCreate(data, length, igl::TextureFormat::Invalid, outResult);
+}
+
+std::unique_ptr<ITextureLoader> ITextureLoaderFactory::tryCreate(const uint8_t* IGL_NONNULL data,
+                                                                 uint32_t length,
+                                                                 igl::TextureFormat preferredFormat,
+                                                                 igl::Result* IGL_NULLABLE
+                                                                     outResult) const noexcept {
   auto maybeReader = DataReader::tryCreate(data, length, outResult);
   if (!maybeReader.has_value()) {
     return nullptr;
   }
 
-  return tryCreate(*maybeReader, outResult);
+  return tryCreate(*maybeReader, preferredFormat, outResult);
 }
 
 std::unique_ptr<ITextureLoader> ITextureLoaderFactory::tryCreate(DataReader reader,
+                                                                 igl::Result* IGL_NULLABLE
+                                                                     outResult) const noexcept {
+  return tryCreate(reader, igl::TextureFormat::Invalid, outResult);
+}
+
+std::unique_ptr<ITextureLoader> ITextureLoaderFactory::tryCreate(DataReader reader,
+                                                                 igl::TextureFormat preferredFormat,
                                                                  igl::Result* IGL_NULLABLE
                                                                      outResult) const noexcept {
   if (!canCreate(reader, outResult)) {
     return nullptr;
   }
 
-  return tryCreateInternal(reader, outResult);
+  return tryCreateInternal(reader, preferredFormat, outResult);
 }
 
 } // namespace iglu::textureloader
