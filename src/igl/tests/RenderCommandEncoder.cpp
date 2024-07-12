@@ -78,11 +78,11 @@ class RenderCommandEncoderTest : public ::testing::Test {
 
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message;
     ASSERT_TRUE(offscreenTexture_ != nullptr);
 
     depthStencilTexture_ = iglDev_->createTexture(depthTexDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message;
     ASSERT_TRUE(depthStencilTexture_ != nullptr);
 
     // Create framebuffer using the offscreen texture
@@ -93,7 +93,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
     framebufferDesc.stencilAttachment.texture = depthStencilTexture_;
 
     framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(framebuffer_ != nullptr);
 
     // Initialize render pass descriptor
@@ -137,7 +137,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
     inputDesc.numAttributes = inputDesc.numInputBindings = 2;
 
     vertexInputState_ = iglDev_->createVertexInputState(inputDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(vertexInputState_ != nullptr);
 
     // Initialize sampler state
@@ -177,23 +177,23 @@ class RenderCommandEncoderTest : public ::testing::Test {
       return iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
     };
     renderPipelineState_Point_ = createPipeline(PrimitiveType::Point);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(renderPipelineState_Point_ != nullptr);
     renderPipelineState_Line_ = createPipeline(PrimitiveType::Line);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(renderPipelineState_Line_ != nullptr);
     renderPipelineState_LineStrip_ = createPipeline(PrimitiveType::LineStrip);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(renderPipelineState_LineStrip_ != nullptr);
     renderPipelineState_Triangle_ = createPipeline(PrimitiveType::Triangle);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(renderPipelineState_Triangle_ != nullptr);
     renderPipelineState_TriangleStrip_ = createPipeline(PrimitiveType::TriangleStrip);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(renderPipelineState_TriangleStrip_ != nullptr);
 
     depthStencilState_ = iglDev_->createDepthStencilState({}, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(depthStencilState_ != nullptr);
   }
 
@@ -202,7 +202,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
     Result ret;
 
     auto cmdBuffer = cmdQueue_->createCommandBuffer({}, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(cmdBuffer != nullptr);
 
     auto encoder = cmdBuffer->createRenderCommandEncoder(renderPass_, framebuffer_);
@@ -287,7 +287,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
 
     Result ret;
     vb_ = iglDev_->createBuffer(bufDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(vb_ != nullptr);
 
     bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
@@ -295,7 +295,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
     bufDesc.length = sizeof(float) * uvs.size();
 
     uv_ = iglDev_->createBuffer(bufDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(uv_ != nullptr);
   }
 

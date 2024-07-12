@@ -58,7 +58,7 @@ void TestShellBase::SetUp(ScreenSize screenSize) {
       screenSize.height,
       igl::TextureDesc::TextureUsageBits::Sampled | igl::TextureDesc::TextureUsageBits::Attachment);
   offscreenTexture_ = platform_->getDevice().createTexture(texDesc, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(offscreenTexture_ != nullptr);
   igl::TextureDesc depthDextureDesc = igl::TextureDesc::new2D(
       igl::TextureFormat::Z_UNorm24,
@@ -67,7 +67,7 @@ void TestShellBase::SetUp(ScreenSize screenSize) {
       igl::TextureDesc::TextureUsageBits::Sampled | igl::TextureDesc::TextureUsageBits::Attachment);
   depthDextureDesc.storage = igl::ResourceStorage::Private;
   offscreenDepthTexture_ = platform_->getDevice().createTexture(depthDextureDesc, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(offscreenDepthTexture_ != nullptr);
 };
 

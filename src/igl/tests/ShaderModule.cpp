@@ -87,7 +87,7 @@ TEST_F(ShaderModuleTest, CompileShaderModule) {
 
   auto shaderModule = ShaderModuleCreator::fromStringInput(
       *iglDev_, source, {ShaderStage::Vertex, "vertexShader"}, "test", &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(shaderModule != nullptr);
 }
 

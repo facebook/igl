@@ -402,7 +402,7 @@ class UniformBufferTest : public ::testing::Test {
 
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(offscreenTexture_ != nullptr);
 
     // Create input texture
@@ -411,7 +411,7 @@ class UniformBufferTest : public ::testing::Test {
                                  OFFSCREEN_TEX_HEIGHT,
                                  TextureDesc::TextureUsageBits::Sampled);
     inputTexture_ = iglDev_->createTexture(texDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(inputTexture_ != nullptr);
 
     // Create framebuffer using the offscreen texture
@@ -419,7 +419,7 @@ class UniformBufferTest : public ::testing::Test {
 
     framebufferDesc.colorAttachments[0].texture = offscreenTexture_;
     framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(framebuffer_ != nullptr);
 
     // Initialize render pass descriptor
@@ -449,7 +449,7 @@ class UniformBufferTest : public ::testing::Test {
     inputDesc.numAttributes = inputDesc.numInputBindings = 2;
 
     vertexInputState_ = iglDev_->createVertexInputState(inputDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(vertexInputState_ != nullptr);
 
     // Initialize index buffer
@@ -460,7 +460,7 @@ class UniformBufferTest : public ::testing::Test {
     bufDesc.length = sizeof(data::vertex_index::QUAD_IND);
 
     ib_ = iglDev_->createBuffer(bufDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(ib_ != nullptr);
 
     // Initialize vertex and sampler buffers
@@ -469,7 +469,7 @@ class UniformBufferTest : public ::testing::Test {
     bufDesc.length = sizeof(data::vertex_index::QUAD_VERT);
 
     vb_ = iglDev_->createBuffer(bufDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(vb_ != nullptr);
 
     bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
@@ -477,7 +477,7 @@ class UniformBufferTest : public ::testing::Test {
     bufDesc.length = sizeof(data::vertex_index::QUAD_UV);
 
     uv_ = iglDev_->createBuffer(bufDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(uv_ != nullptr);
 
     // Initialize sampler state
@@ -584,7 +584,7 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
   // Create Pipeline
   //----------------
   pipelineState = iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(pipelineState != nullptr);
 
   //-------------------------------------
@@ -737,11 +737,11 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
   fragmentParameters_.unsetInt = {42};
 
   fragmentParamBuffer_ = iglDev_->createBuffer(fpDesc, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(fragmentParamBuffer_ != nullptr);
 
   cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   std::shared_ptr<igl::IRenderCommandEncoder> cmds =
@@ -779,7 +779,7 @@ TEST_F(UniformBufferTest, UniformBufferBinding) {
   // Bind the uniform buffer
   //----------------
   cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
@@ -927,7 +927,7 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   // Create Pipeline
   //----------------
   pipelineState = iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(pipelineState != nullptr);
 
   //-------------------------------------
@@ -1140,11 +1140,11 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   fragmentParameters_.unsetInt[2] = {0};
 
   fragmentParamBuffer_ = iglDev_->createBuffer(fpDesc, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(fragmentParamBuffer_ != nullptr);
 
   cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   std::shared_ptr<igl::IRenderCommandEncoder> cmds =
@@ -1182,7 +1182,7 @@ TEST_F(UniformBufferTest, UniformArrayBinding) {
   // Bind the uniform buffer
   //----------------
   cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(cmdBuf_ != nullptr);
 
   cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);

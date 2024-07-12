@@ -49,7 +49,7 @@ TEST_F(DeviceVulkanTest, CreateCommandQueue) {
   desc.type = CommandQueueType::Graphics;
 
   auto cmdQueue = iglDev_->createCommandQueue(desc, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(cmdQueue, nullptr);
 }
 
@@ -161,7 +161,7 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
     }
   }
 
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(iglDev, nullptr);
 
   if (!iglDev) {
@@ -171,7 +171,7 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
   auto buffer = iglDev->createBuffer(
       BufferDesc(BufferDesc::BufferTypeBits::Uniform, nullptr, 256, ResourceStorage::Shared), &ret);
 
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(buffer, nullptr);
 
   if (!buffer) {
@@ -225,7 +225,7 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
     }
   }
 
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(iglDev, nullptr);
 
   if (!iglDev) {

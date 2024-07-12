@@ -157,7 +157,7 @@ TEST_F(ComputeCommandEncoderTest, canEncodeBasicBufferOperation) {
   igl::Result ret;
   auto* data = bufferOut0_->map(range, &ret);
   ASSERT_TRUE(data != nullptr);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   memcpy(bytes.data(), data, sizeof(float) * dataIn.size());
   ASSERT_EQ(dataIn.size() > 0, true);
   for (int i = 0; i < dataIn.size(); i++) {
@@ -192,7 +192,7 @@ TEST_F(ComputeCommandEncoderTest, canUseOutputBufferFromOnePassAsInputToNext) {
   igl::Result ret;
   auto* data = bufferOut2_->map(range, &ret);
   ASSERT_TRUE(data != nullptr);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   memcpy(bytes.data(), data, sizeof(float) * dataIn.size());
   ASSERT_EQ(dataIn.size() > 0, true);
   for (int i = 0; i < dataIn.size(); i++) {

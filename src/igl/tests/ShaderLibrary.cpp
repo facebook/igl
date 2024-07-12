@@ -56,7 +56,7 @@ TEST_F(ShaderLibraryTest, CreateFromSource) {
 
   auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
       *iglDev_, source, {{ShaderStage::Vertex, "vertexShader"}}, "", &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(shaderLibrary != nullptr);
 
   auto vertShaderModule = shaderLibrary->getShaderModule("vertexShader");
@@ -100,7 +100,7 @@ TEST_F(ShaderLibraryTest, CreateFromSourceMultipleModules) {
                                             "",
                                             &ret);
 
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(shaderLibrary != nullptr);
 
   auto vertShaderModule = shaderLibrary->getShaderModule("vertexShader");

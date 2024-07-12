@@ -66,7 +66,7 @@ TEST_F(RenderCommandEncoderMTLTest, CreateRenderCommandEncoderAll) {
                                                      TextureDesc::TextureUsageBits::Attachment);
   Result ret;
   const std::shared_ptr<ITexture> offscreenTexture = device_->createTexture(texDesc, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(offscreenTexture != nullptr);
   // Create framebuffer using the offscreen texture
   FramebufferDesc framebufferDesc;
@@ -74,7 +74,7 @@ TEST_F(RenderCommandEncoderMTLTest, CreateRenderCommandEncoderAll) {
   framebufferDesc.depthAttachment.texture = offscreenTexture;
   framebufferDesc.stencilAttachment.texture = offscreenTexture;
   auto framebuffer = device_->createFramebuffer(framebufferDesc, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(framebuffer != nullptr);
 
   const RenderPassDesc rpDesc;

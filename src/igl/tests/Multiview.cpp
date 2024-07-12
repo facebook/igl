@@ -145,7 +145,7 @@ class MultiviewTest : public ::testing::Test {
     inputDesc.numAttributes = inputDesc.numInputBindings = 1;
 
     vertexInputState_ = iglDev_->createVertexInputState(inputDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(vertexInputState_, nullptr);
 
     // Initialize index buffer
@@ -156,7 +156,7 @@ class MultiviewTest : public ::testing::Test {
     bufDesc.length = sizeof(data::vertex_index::QUAD_IND);
 
     ib_ = iglDev_->createBuffer(bufDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(ib_, nullptr);
 
     // Initialize vertex and sampler buffers
@@ -165,7 +165,7 @@ class MultiviewTest : public ::testing::Test {
     bufDesc.length = sizeof(data::vertex_index::QUAD_VERT);
 
     vb_ = iglDev_->createBuffer(bufDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_NE(vb_, nullptr);
 
     // Initialize Render Pipeline Descriptor, but leave the creation
@@ -253,7 +253,7 @@ TEST_F(MultiviewTest, SinglePassStereo) {
 
   Result ret;
   framebuffer_ = iglDev_->createFramebuffer(framebufferDesc, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(framebuffer_, nullptr);
 
   Result result{};
@@ -273,17 +273,17 @@ TEST_F(MultiviewTest, SinglePassStereo) {
   *static_cast<Colors*>(vertUniformBuffer->getData()) = colors_;
 
   const auto pipelineState = iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(pipelineState, nullptr);
 
   DepthStencilStateDesc desc;
   desc.isDepthWriteEnabled = true;
   const auto depthStencilState = iglDev_->createDepthStencilState(desc, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(depthStencilState, nullptr);
 
   cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(cmdBuf_, nullptr);
   auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
 

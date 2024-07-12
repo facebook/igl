@@ -45,7 +45,7 @@ class RenderPipelineReflectionTest : public ::testing::Test {
 
     Result ret;
     offscreenTexture_ = iglDev_->createTexture(texDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(offscreenTexture_ != nullptr);
 
     // Initialize input to vertex shader
@@ -69,7 +69,7 @@ class RenderPipelineReflectionTest : public ::testing::Test {
     inputDesc.numAttributes = inputDesc.numInputBindings = 2;
 
     vertexInputState_ = iglDev_->createVertexInputState(inputDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(vertexInputState_ != nullptr);
 
     std::unique_ptr<IShaderStages> stages;
@@ -94,7 +94,7 @@ class RenderPipelineReflectionTest : public ::testing::Test {
     // Create Pipeline
     //----------------
     pipelineState_ = iglDev_->createRenderPipeline(renderPipelineDesc, &ret);
-    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(pipelineState_ != nullptr);
 
     pipeRef_ = static_cast<opengl::RenderPipelineReflection*>(
@@ -190,7 +190,7 @@ TEST_F(RenderPipelineReflectionTest, UniformBlocks) {
   //----------------
   Result ret;
   auto pipelineState = iglDev_->createRenderPipeline(renderPipelineDesc, &ret);
-  ASSERT_TRUE(ret.isOk());
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(pipelineState != nullptr);
 
   auto* pipeRef = static_cast<opengl::RenderPipelineReflection*>(
