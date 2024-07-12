@@ -83,10 +83,10 @@ uint32_t getTotalDataSize(uint32_t vkFormat,
 void putDfd(std::vector<uint8_t>& buffer, uint32_t vkFormat, uint32_t numMipLevels) {
   const uint32_t dfdMetadataffset = kHeaderSize + numMipLevels * kMipmapMetadataSize;
 
-  constexpr uint32_t VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG = 1000054004u;
+  constexpr uint32_t VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG = 1000054000u;
   constexpr uint32_t VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK = 147u;
 
-  ASSERT_TRUE(vkFormat == VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG ||
+  ASSERT_TRUE(vkFormat == VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG ||
               vkFormat == VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK);
 
   const auto format =
@@ -101,7 +101,7 @@ void putDfd(std::vector<uint8_t>& buffer, uint32_t vkFormat, uint32_t numMipLeve
   const uint8_t transferFunction =
       properties.isSRGB() ? 1 /*KHR_DF_TRANSFER_SRGB*/ : 2 /*KHR_DF_TRANSFER_LINEAR*/;
   const uint8_t colorPrimaries = 1 /*KHR_DF_PRIMARIES_BT709*/;
-  const uint8_t colorModel = vkFormat == VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG
+  const uint8_t colorModel = vkFormat == VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG
                                  ? 164 /*KHR_DF_MODEL_PVRTC*/
                                  : 160 /*KHR_DF_MODEL_ETC1*/;
   const uint8_t texelBlockDimension3 = 0;
@@ -244,7 +244,7 @@ TEST_F(Ktx2TextureLoaderTest, EmptyBuffer_Fails) {
   const uint32_t height = 32u;
   const uint32_t numMipLevels = 1u;
   const uint32_t bytesOfKeyValueData = 0u;
-  const uint32_t vkFormat = 1000054004u; /* VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG */
+  const uint32_t vkFormat = 1000054000u; /* VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG */
   const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 
@@ -264,7 +264,7 @@ TEST_F(Ktx2TextureLoaderTest, MinimumValidHeader_Succeeds) {
   const uint32_t numMipLevels = 1u;
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 512u;
-  const uint32_t vkFormat = 1000054004u; /* VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG */
+  const uint32_t vkFormat = 1000054000u; /* VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG */
   const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 
@@ -285,7 +285,7 @@ TEST_F(Ktx2TextureLoaderTest, HeaderWithMipLevels_Succeeds) {
   const uint32_t height = 32u;
   const uint32_t numMipLevels = 5u;
   const uint32_t bytesOfKeyValueData = 0u;
-  const uint32_t vkFormat = 1000054004u; /* VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG */
+  const uint32_t vkFormat = 1000054000u; /* VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG */
   const uint32_t imageSize = 512u; // For first mip level
   const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
@@ -314,7 +314,7 @@ TEST_F(Ktx2TextureLoaderTest, ValidHeaderWithExtraData_Succeeds) {
   const uint32_t numMipLevels = 1u;
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 512u;
-  const uint32_t vkFormat = 1000054004u; /* VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG */
+  const uint32_t vkFormat = 1000054000u; /* VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG */
   const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 
@@ -336,7 +336,7 @@ TEST_F(Ktx2TextureLoaderTest, InsufficientData_Fails) {
   const uint32_t numMipLevels = 1u;
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 512u;
-  const uint32_t vkFormat = 1000054004u; /* VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG */
+  const uint32_t vkFormat = 1000054000u; /* VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG */
   const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 
@@ -357,7 +357,7 @@ TEST_F(Ktx2TextureLoaderTest, InsufficientDataWithMipLevels_Fails) {
   const uint32_t height = 32u;
   const uint32_t numMipLevels = 6u;
   const uint32_t bytesOfKeyValueData = 0u;
-  const uint32_t vkFormat = 1000054004u; /* VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG */
+  const uint32_t vkFormat = 1000054000u; /* VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG */
   const uint32_t imageSize = 512; // For first mip level
   const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
@@ -409,7 +409,7 @@ TEST_F(Ktx2TextureLoaderTest, InvalidHeaderWithExcessiveImageSize_Fails) {
   const uint32_t numMipLevels = 1u;
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 4294967290u;
-  const uint32_t vkFormat = 1000054004u; /* VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG */
+  const uint32_t vkFormat = 1000054000u; /* VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG */
   const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 
@@ -431,7 +431,7 @@ TEST_F(Ktx2TextureLoaderTest, InvalidHeaderWithExcessiveMipLevels_Fails) {
   const uint32_t numMipLevels = 4294967290u;
   const uint32_t bytesOfKeyValueData = 0u;
   const uint32_t imageSize = 512u;
-  const uint32_t vkFormat = 1000054004u; /* VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG */
+  const uint32_t vkFormat = 1000054000u; /* VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG */
   const uint32_t totalHeaderSize = getTotalHeaderSize(6u, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, 6u);
 
@@ -459,7 +459,7 @@ TEST_F(Ktx2TextureLoaderTest, InvalidHeaderWithExcessiveKeyValueData_Fails) {
   const uint32_t numMipLevels = 1u;
   const uint32_t bytesOfKeyValueData = 4294967290u;
   const uint32_t imageSize = 512u;
-  const uint32_t vkFormat = 1000054004u; /* VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG */
+  const uint32_t vkFormat = 1000054000u; /* VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG */
   const uint32_t totalHeaderSize = getTotalHeaderSize(numMipLevels, bytesOfKeyValueData);
   const uint32_t totalDataSize = getTotalDataSize(vkFormat, width, height, numMipLevels);
 

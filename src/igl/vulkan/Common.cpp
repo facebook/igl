@@ -156,69 +156,69 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
   case TextureFormat::RGBA_F32:
     return VK_FORMAT_R32G32B32A32_SFLOAT;
   case TextureFormat::RGBA_ASTC_4x4:
-    return VK_FORMAT_ASTC_4x4_SRGB_BLOCK;
+    return VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
   case TextureFormat::SRGB8_A8_ASTC_4x4:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_ASTC_4x4_SRGB_BLOCK;
   case TextureFormat::RGBA_ASTC_5x4:
-    return VK_FORMAT_ASTC_5x4_SRGB_BLOCK;
+    return VK_FORMAT_ASTC_5x4_UNORM_BLOCK;
   case TextureFormat::SRGB8_A8_ASTC_5x4:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_ASTC_5x4_SRGB_BLOCK;
   case TextureFormat::RGBA_ASTC_5x5:
-    return VK_FORMAT_ASTC_5x5_SRGB_BLOCK;
+    return VK_FORMAT_ASTC_5x5_UNORM_BLOCK;
   case TextureFormat::SRGB8_A8_ASTC_5x5:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_ASTC_5x5_SRGB_BLOCK;
   case TextureFormat::RGBA_ASTC_6x5:
-    return VK_FORMAT_ASTC_6x5_SRGB_BLOCK;
+    return VK_FORMAT_ASTC_6x5_UNORM_BLOCK;
   case TextureFormat::SRGB8_A8_ASTC_6x5:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_ASTC_6x5_SRGB_BLOCK;
   case TextureFormat::RGBA_ASTC_6x6:
-    return VK_FORMAT_ASTC_6x6_SRGB_BLOCK;
+    return VK_FORMAT_ASTC_6x6_UNORM_BLOCK;
   case TextureFormat::SRGB8_A8_ASTC_6x6:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_ASTC_6x6_SRGB_BLOCK;
   case TextureFormat::RGBA_ASTC_8x5:
-    return VK_FORMAT_ASTC_8x5_SRGB_BLOCK;
+    return VK_FORMAT_ASTC_8x5_UNORM_BLOCK;
   case TextureFormat::SRGB8_A8_ASTC_8x5:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_ASTC_8x5_SRGB_BLOCK;
   case TextureFormat::RGBA_ASTC_8x6:
-    return VK_FORMAT_ASTC_8x6_SRGB_BLOCK;
+    return VK_FORMAT_ASTC_8x6_UNORM_BLOCK;
   case TextureFormat::SRGB8_A8_ASTC_8x6:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_ASTC_8x6_SRGB_BLOCK;
   case TextureFormat::RGBA_ASTC_8x8:
-    return VK_FORMAT_ASTC_8x8_SRGB_BLOCK;
+    return VK_FORMAT_ASTC_8x8_UNORM_BLOCK;
   case TextureFormat::SRGB8_A8_ASTC_8x8:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_ASTC_8x8_SRGB_BLOCK;
   case TextureFormat::RGBA_ASTC_10x5:
-    return VK_FORMAT_ASTC_10x5_SRGB_BLOCK;
+    return VK_FORMAT_ASTC_10x5_UNORM_BLOCK;
   case TextureFormat::SRGB8_A8_ASTC_10x5:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_ASTC_10x5_SRGB_BLOCK;
   case TextureFormat::RGBA_ASTC_10x6:
-    return VK_FORMAT_ASTC_10x6_SRGB_BLOCK;
+    return VK_FORMAT_ASTC_10x6_UNORM_BLOCK;
   case TextureFormat::SRGB8_A8_ASTC_10x6:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_ASTC_10x6_SRGB_BLOCK;
   case TextureFormat::RGBA_ASTC_10x8:
-    return VK_FORMAT_ASTC_10x8_SRGB_BLOCK;
+    return VK_FORMAT_ASTC_10x8_UNORM_BLOCK;
   case TextureFormat::SRGB8_A8_ASTC_10x8:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_ASTC_10x8_SRGB_BLOCK;
   case TextureFormat::RGBA_ASTC_10x10:
-    return VK_FORMAT_ASTC_10x10_SRGB_BLOCK;
+    return VK_FORMAT_ASTC_10x10_UNORM_BLOCK;
   case TextureFormat::SRGB8_A8_ASTC_10x10:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_ASTC_10x10_SRGB_BLOCK;
   case TextureFormat::RGBA_ASTC_12x10:
-    return VK_FORMAT_ASTC_12x10_SRGB_BLOCK;
+    return VK_FORMAT_ASTC_12x10_UNORM_BLOCK;
   case TextureFormat::SRGB8_A8_ASTC_12x10:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_ASTC_12x10_SRGB_BLOCK;
   case TextureFormat::RGBA_ASTC_12x12:
-    return VK_FORMAT_ASTC_12x12_SRGB_BLOCK;
+    return VK_FORMAT_ASTC_12x12_UNORM_BLOCK;
   case TextureFormat::SRGB8_A8_ASTC_12x12:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_ASTC_12x12_SRGB_BLOCK;
   case TextureFormat::RGBA_PVRTC_2BPPV1:
-    return VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG;
+    return VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
   case TextureFormat::RGB_PVRTC_2BPPV1:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
   case TextureFormat::RGBA_PVRTC_4BPPV1:
-    return VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG;
+    return VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG;
   case TextureFormat::RGB_PVRTC_4BPPV1:
-    return VK_FORMAT_UNDEFINED;
+    return VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG;
   case TextureFormat::RGB8_ETC1:
     return VK_FORMAT_UNDEFINED;
   case TextureFormat::RGB8_ETC2:
