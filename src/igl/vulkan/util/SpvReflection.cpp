@@ -33,6 +33,7 @@ struct ImageDimensionality {
     DimCube = 3,
     DimRect = 4,
     Dim2dExternal = 666, // Doesn't exist in SPIR-V, but needed for Android.
+    Dim2dExternalYUV = 667, // Doesn't exist in SPIR-V, but needed for Android.
   };
 };
 
@@ -45,6 +46,7 @@ TextureType getIGLTextureType(uint32_t dim, bool isArrayed) {
   case ImageDimensionality::DimCube:
     return TextureType::Cube;
   case ImageDimensionality::Dim2dExternal:
+  case ImageDimensionality::Dim2dExternalYUV:
     return TextureType::ExternalImage;
 
   case ImageDimensionality::DimRect:
