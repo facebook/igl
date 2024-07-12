@@ -209,12 +209,8 @@ TextureFormat vkTextureFormatToTextureFormat(int32_t vkFormat) {
     return TextureFormat::SRGB8_A8_ASTC_12x12;
   case VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG:
     return TextureFormat::RGBA_PVRTC_2BPPV1;
-  case VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG:
-    return TextureFormat::RGB_PVRTC_2BPPV1;
   case VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG:
     return TextureFormat::RGBA_PVRTC_4BPPV1;
-  case VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG:
-    return TextureFormat::RGB_PVRTC_4BPPV1;
   case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK:
     return TextureFormat::RGB8_ETC2;
   case VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK:

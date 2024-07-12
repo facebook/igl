@@ -214,11 +214,11 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
   case TextureFormat::RGBA_PVRTC_2BPPV1:
     return VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
   case TextureFormat::RGB_PVRTC_2BPPV1:
-    return VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG;
+    return VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG;
   case TextureFormat::RGBA_PVRTC_4BPPV1:
     return VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG;
   case TextureFormat::RGB_PVRTC_4BPPV1:
-    return VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG;
+    return VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG;
   case TextureFormat::RGB8_ETC1:
     return VK_FORMAT_UNDEFINED;
   case TextureFormat::RGB8_ETC2:
