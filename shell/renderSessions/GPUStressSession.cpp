@@ -370,7 +370,6 @@ float doReadWrite(std::vector<std::vector<std::vector<float>>>& memBlock,
   if (threadId != -1) {
     setCurrentThreadAffinityMask(1 << threadId);
   }
-  const std::random_device rd;
   std::mt19937 gen(0);
   std::uniform_int_distribution<> randBlocks(0, numBlocks - 1);
   std::uniform_int_distribution<> randRows(0, numRows - 1);
@@ -542,7 +541,6 @@ void GPUStressSession::createCubes() {
   const int vertexCount = vertexData.size();
   const int indexCount = indexData.size();
 
-  const std::random_device rd;
   std::mt19937 gen(0);
   std::uniform_real_distribution<> dis(0, 1.f);
   const float scale = 1.f / grid;
