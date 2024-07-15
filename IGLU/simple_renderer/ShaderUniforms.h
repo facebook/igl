@@ -257,7 +257,9 @@ class ShaderUniforms final {
                                          const igl::NameHandle& blockInstanceName,
                                          const igl::NameHandle& memberName);
 
-  ShaderUniforms(igl::IDevice& device, const igl::IRenderPipelineReflection& reflection);
+  ShaderUniforms(igl::IDevice& device,
+                 const igl::IRenderPipelineReflection& reflection,
+                 bool enableSuballocationforVulkan = true);
   ~ShaderUniforms();
 
  private:

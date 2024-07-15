@@ -49,7 +49,8 @@ uint8_t bindTargetForShaderStage(igl::ShaderStage stage) {
 namespace iglu::material {
 
 ShaderUniforms::ShaderUniforms(igl::IDevice& device,
-                               const igl::IRenderPipelineReflection& reflection) :
+                               const igl::IRenderPipelineReflection& reflection,
+                               bool enableSuballocationforVulkan) :
   device_(device) {
   bool hasBindBytesFeature = device.hasFeature(igl::DeviceFeatures::BindBytes);
   size_t bindBytesLimit = 0;
@@ -61,7 +62,8 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
   size_t uniformBufferLimit = 0;
   device.getFeatureLimits(igl::DeviceFeatureLimits::MaxUniformBufferBytes, uniformBufferLimit);
 
-  const bool isSuballocated = device_.getBackendType() == igl::BackendType::Vulkan;
+  const bool isSuballocated = enableSuballocationforVulkan &&
+                              device_.getBackendType() == igl::BackendType::Vulkan;
   for (const igl::BufferArgDesc& iglDesc : reflection.allUniformBuffers()) {
     const size_t length = iglDesc.bufferDataSize;
     IGL_ASSERT_MSG(length > 0, "unexpected buffer with size 0");
