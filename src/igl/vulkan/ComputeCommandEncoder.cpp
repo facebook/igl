@@ -184,8 +184,8 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
   binder_.bindTexture(index, static_cast<igl::vulkan::Texture*>(texture));
 }
 
-void ComputeCommandEncoder::bindBuffer(size_t index,
-                                       const std::shared_ptr<IBuffer>& buffer,
+void ComputeCommandEncoder::bindBuffer(uint32_t index,
+                                       IBuffer* buffer,
                                        size_t offset,
                                        size_t bufferSize) {
   IGL_PROFILER_FUNCTION();
@@ -194,7 +194,7 @@ void ComputeCommandEncoder::bindBuffer(size_t index,
     return;
   }
 
-  auto* buf = static_cast<igl::vulkan::Buffer*>(buffer.get());
+  auto* buf = static_cast<igl::vulkan::Buffer*>(buffer);
 
   const bool isStorageBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0;
 
@@ -205,7 +205,7 @@ void ComputeCommandEncoder::bindBuffer(size_t index,
     return;
   }
 
-  binder_.bindStorageBuffer((int)index, buf, offset, bufferSize);
+  binder_.bindStorageBuffer(index, buf, offset, bufferSize);
 }
 
 void ComputeCommandEncoder::bindBytes(size_t /*index*/, const void* /*data*/, size_t /*length*/) {

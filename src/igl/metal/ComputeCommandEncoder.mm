@@ -86,8 +86,8 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
   }
 }
 
-void ComputeCommandEncoder::bindBuffer(size_t index,
-                                       const std::shared_ptr<IBuffer>& buffer,
+void ComputeCommandEncoder::bindBuffer(uint32_t index,
+                                       IBuffer* buffer,
                                        size_t offset,
                                        size_t bufferSize) {
   (void)bufferSize;

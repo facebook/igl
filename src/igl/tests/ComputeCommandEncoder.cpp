@@ -111,8 +111,8 @@ class ComputeCommandEncoderTest : public ::testing::Test {
     ASSERT_TRUE(computeEncoder != nullptr);
 
     computeEncoder->bindComputePipelineState(computePipelineState);
-    computeEncoder->bindBuffer(igl::tests::data::shader::simpleComputeInputIndex, bufferIn, 0);
-    computeEncoder->bindBuffer(igl::tests::data::shader::simpleComputeOutputIndex, bufferOut, 0);
+    computeEncoder->bindBuffer(igl::tests::data::shader::simpleComputeInputIndex, bufferIn.get());
+    computeEncoder->bindBuffer(igl::tests::data::shader::simpleComputeOutputIndex, bufferOut.get());
 
     const Dimensions threadgroupSize(dataIn.size(), 1, 1);
     const Dimensions threadgroupCount(1, 1, 1);

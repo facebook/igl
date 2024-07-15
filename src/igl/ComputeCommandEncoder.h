@@ -71,9 +71,9 @@ class IComputeCommandEncoder : public ICommandEncoder {
    * @param bufferSize The size of the buffer to bind used for additional validation (0 means the
    * remaining size starting from `offset`)
    */
-  virtual void bindBuffer(size_t index,
-                          const std::shared_ptr<IBuffer>& buffer,
-                          size_t offset,
+  virtual void bindBuffer(uint32_t index,
+                          IBuffer* buffer,
+                          size_t offset = 0,
                           size_t bufferSize = 0) = 0;
   /**
    * @brief Sets a block of data for the compute function. A buffer will be created behind the

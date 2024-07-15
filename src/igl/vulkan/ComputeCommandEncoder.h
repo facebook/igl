@@ -57,10 +57,7 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   void bindTexture(uint32_t index, ITexture* texture) override;
 
   /// @brief Binds a buffer. If the buffer is not a storage buffer, this function is a no-op
-  void bindBuffer(size_t index,
-                  const std::shared_ptr<IBuffer>& buffer,
-                  size_t offset,
-                  size_t bufferSize) override;
+  void bindBuffer(uint32_t index, IBuffer* buffer, size_t offset, size_t bufferSize) override;
 
   /// @brief Not implemented
   void bindBytes(size_t index, const void* data, size_t length) override;

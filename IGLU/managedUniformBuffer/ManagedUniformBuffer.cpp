@@ -164,7 +164,7 @@ void ManagedUniformBuffer::bind(const igl::IDevice& device, igl::IComputeCommand
         data = nullptr;
       }
       buffer_->upload(data, {buffer_->getSizeInBytes(), 0});
-      encoder.bindBuffer(uniformInfo.index, buffer_, 0);
+      encoder.bindBuffer(uniformInfo.index, buffer_.get());
     }
   }
 }

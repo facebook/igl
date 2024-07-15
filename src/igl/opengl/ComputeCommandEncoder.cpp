@@ -108,14 +108,14 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
   }
 }
 
-void ComputeCommandEncoder::bindBuffer(size_t index,
-                                       const std::shared_ptr<IBuffer>& buffer,
+void ComputeCommandEncoder::bindBuffer(uint32_t index,
+                                       IBuffer* buffer,
                                        size_t offset,
                                        size_t bufferSize) {
   (void)bufferSize;
 
   if (IGL_VERIFY(adapter_) && buffer) {
-    auto glBuffer = std::static_pointer_cast<Buffer>(buffer);
+    auto* glBuffer = static_cast<Buffer*>(buffer);
     adapter_->setBuffer(glBuffer, offset, static_cast<int>(index));
   }
 }

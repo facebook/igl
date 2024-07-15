@@ -46,11 +46,10 @@ void ComputeCommandAdapter::clearBuffers() {
   buffersDirty_.reset();
 }
 
-void ComputeCommandAdapter::setBuffer(std::shared_ptr<Buffer> buffer, size_t offset, int index) {
-  IGL_ASSERT_MSG(index >= 0, "Invalid index passed to setVertexBuffer");
+void ComputeCommandAdapter::setBuffer(Buffer* buffer, size_t offset, uint32_t index) {
   IGL_ASSERT_MSG(index < IGL_VERTEX_BUFFER_MAX,
                  "Buffer index is beyond max, may want to increase limit");
-  if (index >= 0 && index < uniformAdapter_.getMaxUniforms() && buffer) {
+  if (index < uniformAdapter_.getMaxUniforms() && buffer) {
     buffers_[index] = {std::move(buffer), offset};
     SET_DIRTY(buffersDirty_, index);
   }
@@ -66,11 +65,11 @@ void ComputeCommandAdapter::setUniform(const UniformDesc& uniformDesc,
   uniformAdapter_.setUniform(uniformDesc, data, outResult);
 }
 
-void ComputeCommandAdapter::setBlockUniform(const std::shared_ptr<Buffer>& buffer,
+void ComputeCommandAdapter::setBlockUniform(Buffer* buffer,
                                             size_t offset,
                                             int index,
                                             Result* outResult) {
-  uniformAdapter_.setUniformBuffer(buffer.get(), offset, index, outResult);
+  uniformAdapter_.setUniformBuffer(buffer, offset, index, outResult);
 }
 
 void ComputeCommandAdapter::dispatchThreadGroups(const Dimensions& threadgroupCount,
@@ -103,12 +102,12 @@ void ComputeCommandAdapter::willDispatch() {
     return;
   }
 
-  for (size_t bufferIndex = 0; bufferIndex < IGL_VERTEX_BUFFER_MAX; ++bufferIndex) {
+  for (uint32_t bufferIndex = 0; bufferIndex < IGL_VERTEX_BUFFER_MAX; ++bufferIndex) {
     if (!IS_DIRTY(buffersDirty_, bufferIndex)) {
       continue;
     }
     auto& bufferState = buffers_[bufferIndex];
-    ret = pipelineState->bindBuffer(bufferIndex, bufferState.resource.get());
+    ret = pipelineState->bindBuffer(bufferIndex, bufferState.resource);
     CLEAR_DIRTY(buffersDirty_, bufferIndex);
     if (!ret.isOk()) {
       IGL_LOG_INFO_ONCE(ret.message.c_str());
