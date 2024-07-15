@@ -37,40 +37,40 @@ class Device final : public IDevice {
 
   // Command Queue
   std::shared_ptr<ICommandQueue> createCommandQueue(const CommandQueueDesc& desc,
-                                                    Result* outResult) override;
+                                                    Result* IGL_NULLABLE outResult) override;
   // Resources
   std::unique_ptr<IBuffer> createBuffer(const BufferDesc& desc,
-                                        Result* outResult) const noexcept override;
+                                        Result* IGL_NULLABLE outResult) const noexcept override;
 
   std::shared_ptr<IDepthStencilState> createDepthStencilState(const DepthStencilStateDesc& desc,
-                                                              Result* outResult) const override;
+                                                              Result* IGL_NULLABLE outResult) const override;
 
   std::unique_ptr<IShaderStages> createShaderStages(const ShaderStagesDesc& desc,
-                                                    Result* outResult) const override;
+                                                    Result* IGL_NULLABLE outResult) const override;
 
   std::shared_ptr<ISamplerState> createSamplerState(const SamplerStateDesc& desc,
-                                                    Result* outResult) const override;
+                                                    Result* IGL_NULLABLE outResult) const override;
   std::shared_ptr<ITexture> createTexture(const TextureDesc& desc,
-                                          Result* outResult) const noexcept override;
+                                          Result* IGL_NULLABLE outResult) const noexcept override;
 
   std::shared_ptr<IVertexInputState> createVertexInputState(const VertexInputStateDesc& desc,
-                                                            Result* outResult) const override;
+                                                            Result* IGL_NULLABLE outResult) const override;
 
   // Pipelines
   std::shared_ptr<IComputePipelineState> createComputePipeline(const ComputePipelineDesc& desc,
-                                                               Result* outResult) const override;
+                                                               Result* IGL_NULLABLE outResult) const override;
   std::shared_ptr<IRenderPipelineState> createRenderPipeline(const RenderPipelineDesc& desc,
-                                                             Result* outResult) const override;
+                                                             Result* IGL_NULLABLE outResult) const override;
 
   // Shaders
   std::unique_ptr<IShaderLibrary> createShaderLibrary(const ShaderLibraryDesc& desc,
-                                                      Result* outResult) const override;
+                                                      Result* IGL_NULLABLE outResult) const override;
 
   std::shared_ptr<IShaderModule> createShaderModule(const ShaderModuleDesc& desc,
-                                                    Result* outResult) const override;
+                                                    Result* IGL_NULLABLE outResult) const override;
 
   std::shared_ptr<IFramebuffer> createFramebuffer(const FramebufferDesc& desc,
-                                                  Result* outResult) override;
+                                                  Result* IGL_NULLABLE outResult) override;
 
   // Platform-specific extensions
   [[nodiscard]] const PlatformDevice& getPlatformDevice() const noexcept override;
@@ -96,14 +96,14 @@ class Device final : public IDevice {
   }
 
  private:
-  std::shared_ptr<VulkanShaderModule> createShaderModule(const void* data,
+  std::shared_ptr<VulkanShaderModule> createShaderModule(const void* IGL_NONNULL data,
                                                          size_t length,
                                                          const std::string& debugName,
-                                                         Result* outResult) const;
+                                                         Result* IGL_NULLABLE outResult) const;
   std::shared_ptr<VulkanShaderModule> createShaderModule(ShaderStage stage,
-                                                         const char* source,
+                                                         const char* IGL_NONNULL source,
                                                          const std::string& debugName,
-                                                         Result* outResult) const;
+                                                         Result* IGL_NULLABLE outResult) const;
 
   std::unique_ptr<VulkanContext> ctx_;
 
