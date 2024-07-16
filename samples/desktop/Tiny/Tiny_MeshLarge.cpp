@@ -1918,8 +1918,8 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     const int ubPerFrameShadowIdx = 0;
     const int ubPerObjectIdx = 1;
 #endif
-    commands->bindBuffer(ubPerFrameShadowIdx, ubPerFrameShadow_[frameIndex], 0);
-    commands->bindBuffer(ubPerObjectIdx, ubPerObject_[frameIndex], 0);
+    commands->bindBuffer(ubPerFrameShadowIdx, ubPerFrameShadow_[frameIndex].get());
+    commands->bindBuffer(ubPerObjectIdx, ubPerObject_[frameIndex].get());
 
 #if USE_OPENGL_BACKEND
     int start = 0;
@@ -1972,9 +1972,9 @@ void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex
     const int ubPerObjectIdx = 1;
     const int sbIdx = 2;
 #endif
-    commands->bindBuffer(ubPerFrameIdx, ubPerFrame_[frameIndex], 0);
-    commands->bindBuffer(ubPerObjectIdx, ubPerObject_[frameIndex], 0);
-    commands->bindBuffer(sbIdx, sbMaterials_, 0);
+    commands->bindBuffer(ubPerFrameIdx, ubPerFrame_[frameIndex].get());
+    commands->bindBuffer(ubPerObjectIdx, ubPerObject_[frameIndex].get());
+    commands->bindBuffer(sbIdx, sbMaterials_.get());
     commands->bindTexture(0, igl::BindTarget::kFragment, fbShadowMap_->getDepthAttachment().get());
     commands->bindTexture(4, igl::BindTarget::kFragment, skyboxTextureIrradiance_.get());
     commands->bindSamplerState(0, igl::BindTarget::kFragment, samplerShadow_.get());

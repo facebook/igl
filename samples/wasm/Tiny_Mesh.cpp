@@ -404,15 +404,14 @@ void onDraw(void*) {
   commands->pushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
   commands->bindVertexBuffer(0, vb0_);
   commands->bindDepthStencilState(depthStencilState_);
-  commands->bindBuffer(0, BindTarget::kAllGraphics, ubPerFrame_[frameIndex], 0);
+  commands->bindBuffer(0, ubPerFrame_[frameIndex].get());
   commands->bindTexture(0, igl::BindTarget::kFragment, texture0_.get());
   commands->bindTexture(1, igl::BindTarget::kFragment, texture1_.get());
   commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
   // Draw 2 cubes: we use uniform buffer to update matrices
   for (uint32_t i = 0; i != kNumCubes; i++) {
-    commands->bindBuffer(
-        1, BindTarget::kAllGraphics, ubPerObject_[frameIndex], i * sizeof(UniformsPerObject));
+    commands->bindBuffer(1, ubPerObject_[frameIndex].get(), i * sizeof(UniformsPerObject));
     commands->drawIndexed(3u * 6u * 2u);
   }
   commands->popDebugGroupLabel();
