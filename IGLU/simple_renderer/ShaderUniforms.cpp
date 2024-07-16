@@ -852,8 +852,7 @@ void ShaderUniforms::bindBuffer(igl::IDevice& device,
       const auto& glPipelineState =
           static_cast<const igl::opengl::RenderPipelineState&>(pipelineState);
       encoder.bindBuffer(glPipelineState.getUniformBlockBindingPoint(uniformName),
-                         buffer->allocation->iglBuffer,
-                         0);
+                         buffer->allocation->iglBuffer.get());
     } else {
       // not a uniform block
       IGL_ASSERT(buffer->iglBufferDesc.name == buffer->iglBufferDesc.members[0].name);
@@ -875,8 +874,9 @@ void ShaderUniforms::bindBuffer(igl::IDevice& device,
 
       buffer->allocation->iglBuffer->upload((uint8_t*)buffer->allocation->ptr + subAllocatedOffset,
                                             igl::BufferRange(uploadSize, subAllocatedOffset));
-      encoder.bindBuffer(
-          buffer->iglBufferDesc.bufferIndex, buffer->allocation->iglBuffer, subAllocatedOffset);
+      encoder.bindBuffer(buffer->iglBufferDesc.bufferIndex,
+                         buffer->allocation->iglBuffer.get(),
+                         subAllocatedOffset);
     } else {
       encoder.bindBytes(buffer->iglBufferDesc.bufferIndex,
                         bindTargetForShaderStage(buffer->iglBufferDesc.shaderStage),
