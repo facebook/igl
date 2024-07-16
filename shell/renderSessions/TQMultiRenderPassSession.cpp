@@ -152,7 +152,7 @@ static void render(std::shared_ptr<ICommandBuffer>& buffer,
   commands->bindRenderPipelineState(pipelineState);
 
   if (backend != igl::BackendType::OpenGL) {
-    commands->bindBuffer(0, fragmentParamBuffer, 0);
+    commands->bindBuffer(0, fragmentParamBuffer.get());
   } else {
     // Bind non block uniforms
     for (const auto& uniformDesc : fragmentUniformDescriptors) {

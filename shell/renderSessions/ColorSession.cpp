@@ -335,7 +335,7 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
         commands->bindUniform(uniformDesc, &fragmentParameters_);
       }
     } else if (getPlatform().getDevice().hasFeature(DeviceFeatures::UniformBlocks)) {
-      commands->bindBuffer(0, fragmentParamBuffer_, 0);
+      commands->bindBuffer(0, fragmentParamBuffer_.get());
     } else {
       IGL_ASSERT_NOT_REACHED();
     }
