@@ -48,3 +48,6 @@ add_demo("Tiny_MeshLarge")
 
 target_sources(Tiny_MeshLarge
                PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/3D-Graphics-Rendering-Cookbook/shared/UtilsCubemap.cpp")
+if(NOT IGL_WITH_VULKAN)
+  target_sources(Tiny_MeshLarge PUBLIC "${IGL_ROOT_DIR}/src/igl/vulkan/util/TextureFormat.cpp")
+endif()
