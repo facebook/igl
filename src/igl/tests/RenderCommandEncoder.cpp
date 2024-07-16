@@ -476,6 +476,46 @@ TEST_F(RenderCommandEncoderTest, drawIndexedFirstIndex) {
   verifyFrameBuffer(expectedPixels);
 }
 
+TEST_F(RenderCommandEncoderTest, drawInstanced) {
+  initializeBuffers(
+      // clang-format off
+      {
+        -1.0f - quarterPixel, -1.0f,                0.0f, 1.0f,
+         1.0f,                -1.0f,                0.0f, 1.0f,
+         1.0f,                 1.0f + quarterPixel, 0.0f, 1.0f,
+      },
+      {
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f,
+      },
+      {
+         0, 1, 2,
+      } // clang-format on
+  );
+
+  ASSERT_TRUE(ib_ != nullptr);
+
+  encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+    encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
+    // draw 2 indentical instances, one on top of another; this will trigger drawElementsInstanced()
+    // in OpenGL
+    encoder->drawIndexed(3, 2);
+  });
+
+  const auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  // clang-format off
+  const std::vector<uint32_t> expectedPixels {
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
+    backgroundColorHex, backgroundColorHex, grayColor,          grayColor,
+    backgroundColorHex, grayColor,          grayColor,          grayColor,
+    grayColor,          grayColor,          grayColor,          grayColor,
+  };
+  // clang-format on
+
+  verifyFrameBuffer(expectedPixels);
+}
+
 TEST_F(RenderCommandEncoderTest, shouldDrawATriangle) {
   initializeBuffers(
       // clang-format off
