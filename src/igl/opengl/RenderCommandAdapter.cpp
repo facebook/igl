@@ -149,11 +149,11 @@ void RenderCommandAdapter::setUniform(const UniformDesc& uniformDesc,
   uniformAdapter_.setUniform(uniformDesc, data, outResult);
 }
 
-void RenderCommandAdapter::setUniformBuffer(const std::shared_ptr<Buffer>& buffer,
+void RenderCommandAdapter::setUniformBuffer(Buffer* buffer,
                                             size_t offset,
-                                            int index,
+                                            uint32_t index,
                                             Result* outResult) {
-  uniformAdapter_.setUniformBuffer(buffer.get(), offset, index, outResult);
+  uniformAdapter_.setUniformBuffer(buffer, offset, index, outResult);
 }
 
 void RenderCommandAdapter::clearVertexTexture() {

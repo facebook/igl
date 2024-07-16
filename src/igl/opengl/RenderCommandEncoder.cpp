@@ -273,6 +273,24 @@ void RenderCommandEncoder::bindBuffer(int index,
     if (bufferType == Buffer::Type::Uniform) {
       IGL_ASSERT_NOT_IMPLEMENTED();
     } else if (bufferType == Buffer::Type::UniformBlock) {
+      adapter_->setUniformBuffer(glBuffer.get(), offset, index);
+    }
+  }
+}
+
+void RenderCommandEncoder::bindBuffer(uint32_t index,
+                                      IBuffer* buffer,
+                                      size_t offset,
+                                      size_t bufferSize) {
+  (void)bufferSize;
+
+  if (IGL_VERIFY(adapter_) && buffer) {
+    auto* glBuffer = static_cast<Buffer*>(buffer);
+    auto bufferType = glBuffer->getType();
+
+    if (bufferType == Buffer::Type::Uniform) {
+      IGL_ASSERT_NOT_IMPLEMENTED();
+    } else if (bufferType == Buffer::Type::UniformBlock) {
       adapter_->setUniformBuffer(glBuffer, offset, index);
     }
   }
@@ -470,7 +488,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle) {
 
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
     if (desc->buffers[i]) {
-      bindBuffer(i, desc->buffers[i], desc->offset[i], desc->size[i]);
+      bindBuffer(i, desc->buffers[i].get(), desc->offset[i], desc->size[i]);
     }
   }
 }
