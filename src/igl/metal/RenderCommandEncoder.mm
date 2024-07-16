@@ -266,6 +266,22 @@ void RenderCommandEncoder::bindBuffer(int index,
   }
 }
 
+void RenderCommandEncoder::bindBuffer(uint32_t index,
+                                      IBuffer* buffer,
+                                      size_t offset,
+                                      size_t bufferSize) {
+  (void)bufferSize;
+
+  IGL_ASSERT(encoder_);
+  IGL_ASSERT(index < IGL_VERTEX_BUFFER_MAX);
+
+  if (buffer) {
+    auto& metalBuffer = static_cast<Buffer&>(*buffer);
+    [encoder_ setVertexBuffer:metalBuffer.get() offset:offset atIndex:index];
+    [encoder_ setFragmentBuffer:metalBuffer.get() offset:offset atIndex:index];
+  }
+}
+
 void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, size_t bufferOffset) {
   IGL_ASSERT(encoder_);
   IGL_ASSERT(index < IGL_VERTEX_BUFFER_MAX);
@@ -535,7 +551,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle) {
 
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
     if (desc->buffers[i]) {
-      bindBuffer(i, desc->buffers[i], desc->offset[i], desc->size[i]);
+      bindBuffer(i, desc->buffers[i].get(), desc->offset[i], desc->size[i]);
     }
   }
 }
