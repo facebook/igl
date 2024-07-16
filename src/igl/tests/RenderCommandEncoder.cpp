@@ -214,6 +214,10 @@ class RenderCommandEncoderTest : public ::testing::Test {
 
     encoder->bindDepthStencilState(depthStencilState_);
 
+    if (ib_) {
+      encoder->bindIndexBuffer(*ib_, IndexFormat::UInt32);
+    }
+
     const igl::Viewport viewport = {
         0.0f, 0.0f, (float)OFFSCREEN_RT_WIDTH, (float)OFFSCREEN_RT_HEIGHT, 0.0f, +1.0f};
     const igl::ScissorRect scissor = {
@@ -278,7 +282,9 @@ class RenderCommandEncoderTest : public ::testing::Test {
     IGL_DEBUG_LOG("\nFrameBuffer ends.\n");
   }
 
-  void initializeBuffers(const std::vector<float>& verts, const std::vector<float>& uvs) {
+  void initializeBuffers(const std::vector<float>& verts,
+                         const std::vector<float>& uvs,
+                         const std::vector<uint32_t>& indices = {}) {
     BufferDesc bufDesc;
 
     bufDesc.type = BufferDesc::BufferTypeBits::Vertex;
@@ -297,6 +303,15 @@ class RenderCommandEncoderTest : public ::testing::Test {
     uv_ = iglDev_->createBuffer(bufDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(uv_ != nullptr);
+
+    if (!indices.empty()) {
+      bufDesc.type = BufferDesc::BufferTypeBits::Index;
+      bufDesc.data = indices.data();
+      bufDesc.length = sizeof(uint32_t) * indices.size();
+      ib_ = iglDev_->createBuffer(bufDesc, &ret);
+      ASSERT_TRUE(ret.isOk());
+      ASSERT_TRUE(ib_ != nullptr);
+    }
   }
 
   void TearDown() override {}
@@ -314,7 +329,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
   std::shared_ptr<IShaderStages> shaderStages_;
 
   std::shared_ptr<IVertexInputState> vertexInputState_;
-  std::shared_ptr<IBuffer> vb_, uv_;
+  std::shared_ptr<IBuffer> vb_, uv_, ib_;
 
   std::shared_ptr<ISamplerState> samp_;
 
@@ -416,6 +431,44 @@ TEST_F(RenderCommandEncoderTest, shouldDrawLineStrip) {
     backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
     backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
     backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
+    grayColor,          grayColor,          grayColor,          grayColor,
+  };
+  // clang-format on
+
+  verifyFrameBuffer(expectedPixels);
+}
+
+TEST_F(RenderCommandEncoderTest, drawIndexedFirstIndex) {
+  initializeBuffers(
+      // clang-format off
+      {
+        -1.0f - quarterPixel, -1.0f,                0.0f, 1.0f,
+         1.0f,                -1.0f,                0.0f, 1.0f,
+         1.0f,                 1.0f + quarterPixel, 0.0f, 1.0f,
+      },
+      {
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f,
+      },
+      {
+         0, 0, 0, 0, 1, 2, // the first 3 indices are dummies
+      } // clang-format on
+  );
+
+  ASSERT_TRUE(ib_ != nullptr);
+
+  encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+    encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
+    encoder->drawIndexed(3, 1, 3); // skip the first 3 dummy indices
+  });
+
+  const auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  // clang-format off
+  const std::vector<uint32_t> expectedPixels {
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
+    backgroundColorHex, backgroundColorHex, grayColor,          grayColor,
+    backgroundColorHex, grayColor,          grayColor,          grayColor,
     grayColor,          grayColor,          grayColor,          grayColor,
   };
   // clang-format on
