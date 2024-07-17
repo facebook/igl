@@ -439,6 +439,10 @@ TEST_F(RenderCommandEncoderTest, shouldDrawLineStrip) {
 }
 
 TEST_F(RenderCommandEncoderTest, drawIndexedFirstIndex) {
+  if (!iglDev_->hasFeature(igl::DeviceFeatures::DrawFirstIndexFirstVertex)) {
+    GTEST_SKIP();
+    return;
+  }
   initializeBuffers(
       // clang-format off
       {
@@ -477,6 +481,10 @@ TEST_F(RenderCommandEncoderTest, drawIndexedFirstIndex) {
 }
 
 TEST_F(RenderCommandEncoderTest, drawInstanced) {
+  if (!iglDev_->hasFeature(igl::DeviceFeatures::DrawFirstIndexFirstVertex)) {
+    GTEST_SKIP();
+    return;
+  }
   initializeBuffers(
       // clang-format off
       {
