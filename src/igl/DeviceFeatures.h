@@ -27,6 +27,7 @@ namespace igl {
  * Compute                    Supports compute
  * DepthCompare               Supports setting depth compare function
  * DepthShaderRead            Supports reading depth texture from a shader
+ * DrawFirstIndexFirstVertex  Supports firstIndex/firstVertex parameters in IRenderCommandEncoder::drawIndexed()
  * DrawIndexedIndirect        Supports IRenderCommandEncoder::drawIndexedIndirect
  * ExplicitBinding,           Supports uniforms block explicit binding in shaders
  * ExplicitBindingExt,        Supports uniforms block explicit binding in shaders via an extension
@@ -72,6 +73,7 @@ enum class DeviceFeatures {
   Compute,
   DepthCompare,
   DepthShaderRead,
+  DrawFirstIndexFirstVertex,
   DrawIndexedIndirect,
   ExplicitBinding,
   ExplicitBindingExt,

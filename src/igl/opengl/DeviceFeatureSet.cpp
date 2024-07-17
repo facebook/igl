@@ -372,6 +372,10 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
   case DeviceFeatures::SamplerMinMaxLod:
     return hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES);
 
+  case DeviceFeatures::DrawFirstIndexFirstVertex:
+    // https://registry.khronos.org/OpenGL-Refpages/es3/html/glDrawElementsInstancedBaseVertex.xhtml
+    return hasDesktopOrESVersion(*this, GLVersion::v4_0, GLVersion::v3_2_ES);
+
   case DeviceFeatures::DrawIndexedIndirect:
     return hasDesktopOrESVersionOrExtension(
         *this, GLVersion::v4_0, GLVersion::v3_1_ES, "GL_ARB_draw_indirect");

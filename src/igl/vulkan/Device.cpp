@@ -556,6 +556,8 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     return false;
   case DeviceFeatures::SamplerMinMaxLod:
     return true;
+  case DeviceFeatures::DrawFirstIndexFirstVertex:
+    return true;
   case DeviceFeatures::DrawIndexedIndirect:
     return true;
   case DeviceFeatures::ValidationLayersEnabled:
