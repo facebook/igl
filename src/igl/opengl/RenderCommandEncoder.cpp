@@ -258,26 +258,6 @@ void RenderCommandEncoder::bindUniform(const UniformDesc& uniformDesc, const voi
   }
 }
 
-void RenderCommandEncoder::bindBuffer(int index,
-                                      const std::shared_ptr<IBuffer>& buffer,
-                                      size_t offset,
-                                      size_t bufferSize) {
-  (void)bufferSize;
-
-  IGL_ASSERT_MSG(index >= 0, "Invalid index passed to bindBuffer: %d", index);
-
-  if (IGL_VERIFY(adapter_) && buffer) {
-    auto glBuffer = std::static_pointer_cast<Buffer>(buffer);
-    auto bufferType = glBuffer->getType();
-
-    if (bufferType == Buffer::Type::Uniform) {
-      IGL_ASSERT_NOT_IMPLEMENTED();
-    } else if (bufferType == Buffer::Type::UniformBlock) {
-      adapter_->setUniformBuffer(glBuffer.get(), offset, index);
-    }
-  }
-}
-
 void RenderCommandEncoder::bindBuffer(uint32_t index,
                                       IBuffer* buffer,
                                       size_t offset,

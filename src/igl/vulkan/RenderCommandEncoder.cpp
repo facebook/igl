@@ -452,44 +452,6 @@ void RenderCommandEncoder::bindDepthStencilState(
   setStencilState(VK_STENCIL_FACE_BACK_BIT, desc.backFaceStencil);
 }
 
-void RenderCommandEncoder::bindBuffer(int index,
-                                      const std::shared_ptr<IBuffer>& buffer,
-                                      size_t bufferOffset,
-                                      size_t bufferSize) {
-  IGL_PROFILER_FUNCTION();
-  IGL_PROFILER_ZONE_GPU_VK("bindBuffer()", ctx_.tracyCtx_, cmdBuffer_);
-
-#if IGL_VULKAN_PRINT_COMMANDS
-  IGL_LOG_INFO("%p  bindBuffer(%i, %u)\n", cmdBuffer_, index, (uint32_t)bufferOffset);
-#endif // IGL_VULKAN_PRINT_COMMANDS
-
-  if (!IGL_VERIFY(buffer != nullptr)) {
-    return;
-  }
-
-  auto* buf = static_cast<igl::vulkan::Buffer*>(buffer.get());
-
-  const bool isUniformBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) > 0;
-  const bool isStorageBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) > 0;
-  const bool isUniformOrStorageBuffer = isUniformBuffer || isStorageBuffer;
-
-  IGL_ASSERT_MSG(isUniformOrStorageBuffer, "Must be a uniform or a storage buffer");
-
-  if (!IGL_VERIFY(isUniformOrStorageBuffer)) {
-    return;
-  }
-  if (isUniformBuffer) {
-    binder_.bindUniformBuffer(index, buf, bufferOffset, bufferSize);
-  }
-  if (isStorageBuffer) {
-    if (ctx_.enhancedShaderDebuggingStore_) {
-      IGL_ASSERT_MSG(index < (IGL_UNIFORM_BLOCKS_BINDING_MAX - 1),
-                     "The last buffer index is reserved for enhanced debugging features");
-    }
-    binder_.bindStorageBuffer(index, buf, bufferOffset, bufferSize);
-  }
-}
-
 void RenderCommandEncoder::bindBuffer(uint32_t index,
                                       IBuffer* buffer,
                                       size_t bufferOffset,

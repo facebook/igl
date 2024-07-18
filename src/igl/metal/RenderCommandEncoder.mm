@@ -250,22 +250,6 @@ void RenderCommandEncoder::setStencilReferenceValues(uint32_t frontValue, uint32
   [encoder_ setStencilFrontReferenceValue:frontValue backReferenceValue:backValue];
 }
 
-void RenderCommandEncoder::bindBuffer(int index,
-                                      const std::shared_ptr<IBuffer>& buffer,
-                                      size_t offset,
-                                      size_t bufferSize) {
-  (void)bufferSize;
-
-  IGL_ASSERT(encoder_);
-  IGL_ASSERT(index < IGL_VERTEX_BUFFER_MAX);
-
-  if (buffer) {
-    auto& metalBuffer = static_cast<Buffer&>(*buffer);
-    [encoder_ setVertexBuffer:metalBuffer.get() offset:offset atIndex:index];
-    [encoder_ setFragmentBuffer:metalBuffer.get() offset:offset atIndex:index];
-  }
-}
-
 void RenderCommandEncoder::bindBuffer(uint32_t index,
                                       IBuffer* buffer,
                                       size_t offset,
