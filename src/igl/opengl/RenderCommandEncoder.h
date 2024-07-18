@@ -68,7 +68,9 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
   void bindTexture(size_t index, uint8_t target, ITexture* texture) override;
 
   void bindBindGroup(BindGroupTextureHandle handle) override;
-  void bindBindGroup(BindGroupBufferHandle handle) override;
+  void bindBindGroup(BindGroupBufferHandle handle,
+                     uint32_t numDynamicOffsets,
+                     const uint32_t* dynamicOffsets) override;
 
   void draw(size_t vertexCount,
             uint32_t instanceCount,

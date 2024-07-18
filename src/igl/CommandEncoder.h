@@ -49,7 +49,7 @@ struct BindGroupBufferDesc {
   size_t offset[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
   size_t size[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {}; // 0 means the remaining size from `offset` to
                                                     // the end of the buffer
-  bool isDynamic[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
+  uint32_t isDynamicBufferMask = 0; // one bit per each buffer
   std::string debugName;
 };
 

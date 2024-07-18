@@ -50,7 +50,9 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   void bindUniform(const UniformDesc& uniformDesc, const void* data) override;
 
   void bindBindGroup(BindGroupTextureHandle handle) override;
-  void bindBindGroup(BindGroupBufferHandle handle) override;
+  void bindBindGroup(BindGroupBufferHandle handle,
+                     uint32_t numDynamicOffsets,
+                     const uint32_t* dynamicOffsets) override;
 
   void draw(size_t vertexCount,
             uint32_t instanceCount,

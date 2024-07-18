@@ -958,7 +958,9 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
   }
 }
 
-void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle) {
+void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
+                                         uint32_t numDynamicOffsets,
+                                         const uint32_t* dynamicOffsets) {
   if (handle.empty()) {
     return;
   }
@@ -966,11 +968,24 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle) {
   // this is a dummy placeholder code to be replaced with actual Vulkan descriptors management
   const BindGroupBufferDesc* desc = ctx_.bindGroupBuffersPool_.get(handle);
 
+  uint32_t dynamicOffset = 0;
+
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
     if (desc->buffers[i]) {
-      bindBuffer(i, desc->buffers[i].get(), desc->offset[i], desc->size[i]);
+      if (desc->isDynamicBufferMask & (1 << i)) {
+        IGL_ASSERT_MSG(dynamicOffsets, "No dynamic offsets provided");
+        IGL_ASSERT_MSG(dynamicOffset < numDynamicOffsets, "Not enough dynamic offsets provided");
+        bindBuffer(i,
+                   desc->buffers[i].get(),
+                   desc->offset[i] + dynamicOffsets[dynamicOffset++],
+                   desc->size[i]);
+      } else {
+        bindBuffer(i, desc->buffers[i].get(), desc->offset[i], desc->size[i]);
+      }
     }
   }
+
+  IGL_ASSERT_MSG(dynamicOffset == numDynamicOffsets, "Not all dynamic offsets were consumed");
 }
 
 } // namespace igl::vulkan
