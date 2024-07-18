@@ -1646,6 +1646,9 @@ void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle
   if (handle.empty()) {
     handle = immediate_->getLastSubmitHandle();
   }
+
+  std::lock_guard<std::mutex> lockGuard(deferredTasksMutex_);
+
   deferredTasks_.emplace_back(std::move(task), handle);
   deferredTasks_.back().frameId_ = this->getFrameNumber();
 }
@@ -1664,6 +1667,8 @@ void VulkanContext::processDeferredTasks() const {
   const uint64_t frameId = getFrameNumber();
   constexpr uint64_t kNumWaitFrames = 1u;
 
+  std::lock_guard<std::mutex> lockGuard(deferredTasksMutex_);
+
   while (!deferredTasks_.empty() && immediate_->isRecycled(deferredTasks_.front().handle_)) {
     if (frameId && frameId <= deferredTasks_.front().frameId_ + kNumWaitFrames) {
       // do not check anything if it is not yet older than kNumWaitFrames
@@ -1676,6 +1681,8 @@ void VulkanContext::processDeferredTasks() const {
 
 void VulkanContext::waitDeferredTasks() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
+
+  std::lock_guard<std::mutex> lockGuard(deferredTasksMutex_);
 
   for (auto& task : deferredTasks_) {
     immediate_->wait(task.handle_);

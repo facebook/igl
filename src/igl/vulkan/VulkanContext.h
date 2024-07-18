@@ -389,6 +389,8 @@ class VulkanContext final {
 
   mutable std::deque<DeferredTask> deferredTasks_;
 
+  mutable std::mutex deferredTasksMutex_;
+
   std::unique_ptr<SyncManager> syncManager_;
 };
 
