@@ -213,7 +213,7 @@ Result Texture::create(const TextureDesc& desc) {
   if (aspect == VK_IMAGE_ASPECT_COLOR_BIT && samples == VK_SAMPLE_COUNT_1_BIT &&
       (usageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0) {
     // always clear color attachments by default
-    clearColorTexture({0, 0, 0, 1});
+    clearColorTexture({0, 0, 0, 0});
   }
 
   return Result();
