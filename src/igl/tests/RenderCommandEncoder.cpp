@@ -195,10 +195,15 @@ class RenderCommandEncoderTest : public ::testing::Test {
     depthStencilState_ = iglDev_->createDepthStencilState({}, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(depthStencilState_ != nullptr);
+
+    bindGroupTexture_ =
+        iglDev_->createBindGroup(igl::BindGroupTextureDesc{{texture_}, {samp_}}, &ret);
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   }
 
   void encodeAndSubmit(
-      const std::function<void(const std::unique_ptr<igl::IRenderCommandEncoder>&)>& func) {
+      const std::function<void(const std::unique_ptr<igl::IRenderCommandEncoder>&)>& func,
+      bool useBindGroup = false) {
     Result ret;
 
     auto cmdBuffer = cmdQueue_->createCommandBuffer({}, &ret);
@@ -206,8 +211,13 @@ class RenderCommandEncoderTest : public ::testing::Test {
     ASSERT_TRUE(cmdBuffer != nullptr);
 
     auto encoder = cmdBuffer->createRenderCommandEncoder(renderPass_, framebuffer_);
-    encoder->bindTexture(textureUnit_, BindTarget::kFragment, texture_.get());
-    encoder->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
+
+    if (useBindGroup) {
+      encoder->bindBindGroup(bindGroupTexture_);
+    } else {
+      encoder->bindTexture(textureUnit_, BindTarget::kFragment, texture_.get());
+      encoder->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
+    }
 
     encoder->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
     encoder->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
@@ -341,6 +351,7 @@ class RenderCommandEncoderTest : public ::testing::Test {
   std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
   std::shared_ptr<IRenderPipelineState> renderPipelineState_TriangleStrip_;
   std::shared_ptr<IDepthStencilState> depthStencilState_;
+  igl::Holder<BindGroupTextureHandle> bindGroupTexture_;
 
   const std::string backend_ = IGL_BACKEND_TYPE;
 
@@ -624,6 +635,40 @@ TEST_F(RenderCommandEncoderTest, shouldNotDraw) {
       ASSERT_EQ(pixel, backgroundColorHex);
     }
   });
+}
+
+TEST_F(RenderCommandEncoderTest, shouldDrawATriangleBindGroup) {
+  initializeBuffers(
+      // clang-format off
+      {
+        -1.0f - quarterPixel, -1.0f,                0.0f, 1.0f,
+         1.0f,                -1.0f,                0.0f, 1.0f,
+         1.0f,                 1.0f + quarterPixel, 0.0f, 1.0f,
+      },
+      {
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f,
+      } // clang-format on
+  );
+
+  encodeAndSubmit(
+      [this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+        encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
+        encoder->draw(3);
+      },
+      true);
+
+  auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  // clang-format off
+  std::vector<uint32_t> const expectedPixels {
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
+    backgroundColorHex, backgroundColorHex, grayColor,          grayColor,
+    backgroundColorHex, grayColor,          grayColor,          grayColor,
+    grayColor,          grayColor,          grayColor,          grayColor,
+  };
+
+  verifyFrameBuffer(expectedPixels);
 }
 
 } // namespace igl::tests
