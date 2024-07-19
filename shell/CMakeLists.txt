@@ -82,6 +82,7 @@ endmacro()
 
 if(IGL_WITH_SAMPLES)
   add_shell_session(BasicFramebufferSession "")
+  add_shell_session(BindGroupSession "")
   add_shell_session(ColorSession "")
   add_shell_session(EmptySession "")
   add_shell_session(GPUStressSession "")
