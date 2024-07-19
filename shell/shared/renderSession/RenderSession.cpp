@@ -7,6 +7,7 @@
 
 #include <shell/shared/renderSession/RenderSession.h>
 
+#include <chrono>
 #include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl::shell {
@@ -47,6 +48,18 @@ const Platform& RenderSession::getPlatform() const noexcept {
 
 const std::shared_ptr<Platform>& RenderSession::platform() const noexcept {
   return platform_;
+}
+
+float RenderSession::getDeltaSeconds() noexcept {
+  const double newTime = getSeconds();
+  const float deltaSeconds = float(newTime - lastTime_);
+  lastTime_ = newTime;
+  return deltaSeconds;
+}
+
+double RenderSession::getSeconds() noexcept {
+  return std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch())
+      .count();
 }
 
 } // namespace igl::shell

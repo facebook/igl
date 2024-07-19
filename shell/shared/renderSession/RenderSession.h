@@ -49,6 +49,11 @@ class RenderSession {
     currentQuadLayer_ = layer;
   }
 
+  /// return the number of seconds since the last call
+  float getDeltaSeconds() noexcept;
+
+  static double getSeconds() noexcept;
+
  protected:
   Platform& getPlatform() noexcept;
   [[nodiscard]] const Platform& getPlatform() const noexcept;
@@ -60,6 +65,7 @@ class RenderSession {
   std::shared_ptr<IFramebuffer> framebuffer_;
   std::shared_ptr<ICommandQueue> commandQueue_;
   size_t currentQuadLayer_ = 0;
+  double lastTime_ = getSeconds();
 
  private:
   std::shared_ptr<Platform> platform_;

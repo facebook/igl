@@ -10,7 +10,6 @@
 #include "GPUStressSession.h"
 #include <IGLU/imgui/Session.h>
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
-#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -634,9 +633,6 @@ void GPUStressSession::initialize() noexcept {
   //  changed pixels we send to the delphi.
   appParamsRef().sizeX = .5f;
   appParamsRef().sizeY = .5f;
-  lastTime_ = std::chrono::duration_cast<std::chrono::microseconds>(
-                  std::chrono::high_resolution_clock::now().time_since_epoch())
-                  .count();
   auto& device = getPlatform().getDevice();
   if (!isDeviceCompatible(device)) {
     return;
@@ -897,10 +893,6 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
 }
 
 void GPUStressSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
-  const long long newTime = std::chrono::duration_cast<std::chrono::microseconds>(
-                                std::chrono::high_resolution_clock::now().time_since_epoch())
-                                .count();
-
   auto& device = getPlatform().getDevice();
   if (!isDeviceCompatible(device)) {
     return;
@@ -915,9 +907,7 @@ void GPUStressSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   thrashCPU();
   thrashMemory();
 
-  const long long delta = (newTime - lastTime_);
-  fps_.updateFPS((double)delta / 1000000.0);
-  lastTime_ = newTime;
+  fps_.updateFPS(getDeltaSeconds());
 
   initState(surfaceTextures);
 

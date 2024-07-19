@@ -99,7 +99,6 @@ class GPUStressSession : public RenderSession {
   void initSystemSettings();
 
   igl::FPSCounter fps_;
-  unsigned long long lastTime_{0};
   std::atomic<bool> forceReset_{false};
 };
 
