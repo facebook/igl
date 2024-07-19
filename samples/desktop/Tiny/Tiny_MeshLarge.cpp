@@ -2647,30 +2647,8 @@ int main(int /*argc*/, char* /*argv*/[]) {
                            ImVec2(ImGui::GetIO().DisplaySize.x, 32));
         ImGui::End();
       }
-      // a nice FPS counter
-      {
-        const ImGuiWindowFlags flags =
-            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
-            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
-            ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove;
-        const ImGuiViewport* v = ImGui::GetMainViewport();
-        IGL_ASSERT(v);
-        ImGui::SetNextWindowPos(
-            {
-                v->WorkPos.x + v->WorkSize.x - 15.0f,
-                v->WorkPos.y + 15.0f,
-            },
-            ImGuiCond_Always,
-            {1.0f, 0.0f});
-        ImGui::SetNextWindowBgAlpha(0.30f);
-        ImGui::SetNextWindowSize(ImVec2(ImGui::CalcTextSize("FPS : _______").x, 0));
-        if (ImGui::Begin("##FPS", nullptr, flags)) {
-          ImGui::Text("FPS : %i", (int)fps_.getAverageFPS());
-          ImGui::Text("Ms  : %.1f", 1000.0 / fps_.getAverageFPS());
-        }
-        ImGui::End();
-      }
 
+      imguiSession_->drawFPS(fps_.getAverageFPS());
 #endif // IGL_WITH_IGLU
     }
 

@@ -552,6 +552,7 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   }
   commands->popDebugGroupLabel();
 #if IGL_WITH_IGLU
+  imguiSession_->drawFPS(fps_.getAverageFPS());
   imguiSession_->endFrame(*device_.get(), *commands);
 #endif // IGL_WITH_IGLU
   commands->endEncoding();
