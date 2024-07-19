@@ -480,4 +480,28 @@ void Session::makeCurrentContext() const {
   ImGui::SetCurrentContext(_context);
 }
 
+void Session::drawFPS(float fps) const {
+  // a nice FPS counter
+  const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+                                 ImGuiWindowFlags_NoSavedSettings |
+                                 ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
+                                 ImGuiWindowFlags_NoMove;
+  const ImGuiViewport* v = ImGui::GetMainViewport();
+  IGL_ASSERT(v);
+  ImGui::SetNextWindowPos(
+      {
+          v->WorkPos.x + v->WorkSize.x - 15.0f,
+          v->WorkPos.y + 15.0f,
+      },
+      ImGuiCond_Always,
+      {1.0f, 0.0f});
+  ImGui::SetNextWindowBgAlpha(0.30f);
+  ImGui::SetNextWindowSize(ImVec2(ImGui::CalcTextSize("FPS : _______").x, 0));
+  if (ImGui::Begin("##FPS", nullptr, flags)) {
+    ImGui::Text("FPS : %i", (int)fps);
+    ImGui::Text("Ms  : %.1f", 1000.0 / fps);
+  }
+  ImGui::End();
+}
+
 } // namespace iglu::imgui

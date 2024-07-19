@@ -31,6 +31,7 @@ class Session {
   ~Session();
 
   void initialize(igl::IDevice& device);
+  void drawFPS(float fps) const;
 
  private:
   class Renderer;
