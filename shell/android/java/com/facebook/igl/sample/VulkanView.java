@@ -22,7 +22,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 // Simple view that sets up a Vulkan Render view
-class VulkanView extends SurfaceView
+public class VulkanView extends SurfaceView
     implements SurfaceHolder.Callback2, Choreographer.FrameCallback {
   private static String TAG = "VulkanView";
   private float lastTouchX = 0.0f;

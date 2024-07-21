@@ -22,7 +22,7 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.opengles.GL10;
 
 /// Simple view that sets up a GLES 2.0 rendering context
-class SampleView extends GLSurfaceView {
+public class SampleView extends GLSurfaceView {
   private static String TAG = "SampleView";
   private float lastTouchX = 0.0f;
   private float lastTouchY = 0.0f;
