@@ -42,6 +42,7 @@ add_demo("Tiny")
 if(IGL_WITH_VULKAN)
   # this demo app does not work without Vulkan (yet)
   add_demo("Tiny_Mesh")
+  add_demo("Tiny_Mesh_BindGroups")
 endif()
 
 add_demo("Tiny_MeshLarge")
