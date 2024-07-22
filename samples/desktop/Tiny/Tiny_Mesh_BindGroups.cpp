@@ -118,8 +118,10 @@ std::shared_ptr<IBuffer> vb0_, ib0_; // buffers for vertices and indices
 std::vector<std::shared_ptr<IBuffer>> ubPerFrame_, ubPerObject_;
 std::shared_ptr<IVertexInputState> vertexInput0_;
 std::shared_ptr<IDepthStencilState> depthStencilState_;
-std::shared_ptr<ITexture> texture0_, texture1_;
-std::shared_ptr<ISamplerState> sampler_;
+std::shared_ptr<ITexture> texture1_;
+igl::Holder<igl::BindGroupTextureHandle> bindGroupTextures_;
+igl::Holder<igl::BindGroupTextureHandle> bindGroupNoTexture1_;
+std::vector<igl::Holder<igl::BindGroupBufferHandle>> bindGroupBuffers_;
 
 struct VertexPosUvw {
   vec3 position;
@@ -200,7 +202,12 @@ static bool initWindow(GLFWwindow** outWindow) {
       glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
     if (key == GLFW_KEY_T && action == GLFW_PRESS) {
-      texture1_.reset();
+      if (!bindGroupNoTexture1_.empty()) {
+        bindGroupTextures_ = std::move(bindGroupNoTexture1_);
+        // make sure we deallocate texture1
+        bindGroupNoTexture1_ = nullptr;
+        texture1_.reset();
+      }
     }
   });
 
@@ -330,6 +337,8 @@ static void initIGL() {
     depthStencilState_ = device_->createDepthStencilState(desc, nullptr);
   }
 
+  std::shared_ptr<igl::ITexture> texture0;
+  std::shared_ptr<igl::ISamplerState> sampler;
   {
     const uint32_t texWidth = 256;
     const uint32_t texHeight = 256;
@@ -338,7 +347,7 @@ static void initIGL() {
                                                 texHeight,
                                                 TextureDesc::TextureUsageBits::Sampled,
                                                 "XOR pattern");
-    texture0_ = device_->createTexture(desc, nullptr);
+    texture0 = device_->createTexture(desc, nullptr);
     std::vector<uint32_t> pixels(texWidth * texHeight);
     for (uint32_t y = 0; y != texHeight; y++) {
       for (uint32_t x = 0; x != texWidth; x++) {
@@ -346,7 +355,7 @@ static void initIGL() {
         pixels[y * texWidth + x] = 0xFF000000 + ((x ^ y) << 16) + ((x ^ y) << 8) + (x ^ y);
       }
     }
-    texture0_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels.data());
+    texture0->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels.data());
   }
   {
     using namespace std::filesystem;
@@ -385,7 +394,26 @@ static void initIGL() {
     desc.addressModeU = igl::SamplerAddressMode::Repeat;
     desc.addressModeV = igl::SamplerAddressMode::Repeat;
     desc.debugName = "Sampler: linear";
-    sampler_ = device_->createSamplerState(desc, nullptr);
+    sampler = device_->createSamplerState(desc, nullptr);
+  }
+
+  bindGroupTextures_ = device_->createBindGroup({
+      .textures = {texture0, texture1_},
+      .samplers = {sampler, sampler},
+      .debugName = "bindGroup_",
+  });
+  bindGroupNoTexture1_ = device_->createBindGroup({
+      .textures = {texture0},
+      .samplers = {sampler},
+      .debugName = "bindGroupNoTexture1_",
+  });
+
+  for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
+    bindGroupBuffers_.push_back(device_->createBindGroup({
+        .buffers{ubPerFrame_[i], ubPerObject_[i]},
+        .isDynamicBufferMask = 0b10,
+        .debugName = IGL_FORMAT("bindGroupBuffers_[{}]", i),
+    }));
   }
 
   // Command queue: backed by different types of GPU HW queues
@@ -539,15 +567,12 @@ static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t fra
   commands->pushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
   commands->bindVertexBuffer(0, *vb0_);
   commands->bindDepthStencilState(depthStencilState_);
-  commands->bindBuffer(0, ubPerFrame_[frameIndex].get());
-  commands->bindTexture(0, igl::BindTarget::kFragment, texture0_.get());
-  commands->bindTexture(1, igl::BindTarget::kFragment, texture1_.get());
-  commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
-  commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
+  commands->bindBindGroup(bindGroupTextures_);
   // Draw 2 cubes: we use uniform buffer to update matrices
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
   for (uint32_t i = 0; i != kNumCubes; i++) {
-    commands->bindBuffer(1, ubPerObject_[frameIndex].get(), i * sizeof(UniformsPerObject));
+    const uint32_t dynamicOffset = i * sizeof(UniformsPerObject);
+    commands->bindBindGroup(bindGroupBuffers_[frameIndex], 1, &dynamicOffset);
     commands->drawIndexed(3u * 6u * 2u);
   }
   commands->popDebugGroupLabel();
@@ -597,9 +622,10 @@ int main(int argc, char* argv[]) {
   ubPerFrame_.clear();
   ubPerObject_.clear();
   renderPipelineState_Mesh_ = nullptr;
-  texture0_ = nullptr;
   texture1_ = nullptr;
-  sampler_ = nullptr;
+  bindGroupTextures_ = nullptr;
+  bindGroupNoTexture1_ = nullptr;
+  bindGroupBuffers_.clear();
   framebufferDesc_ = {};
   framebuffer_ = nullptr;
   device_.reset(nullptr);
