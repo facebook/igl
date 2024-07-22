@@ -46,6 +46,8 @@ public class SampleLib {
 
   public static native void touchEvent(boolean isDown, float x, float y, float dx, float dy);
 
+  public static native void setClearColorValue(float r, float g, float b, float a);
+
   public static native void surfaceDestroyed(Surface surface);
 
   protected static class BackendTypeContext {

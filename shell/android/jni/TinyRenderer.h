@@ -28,6 +28,7 @@ class TinyRenderer final {
   void onSurfacesChanged(ANativeWindow* nativeWindow, int width, int height);
   void onSurfaceDestroyed(ANativeWindow* surface);
   void touchEvent(bool isDown, float x, float y, float dx, float dy);
+  void setClearColorValue(float r, float g, float b, float a);
 
  private:
   BackendTypeID backendTypeID_;

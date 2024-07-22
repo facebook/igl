@@ -55,6 +55,12 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_touchEvent(JNIEnv* 
                                                                         jfloat y,
                                                                         jfloat dx,
                                                                         jfloat dy);
+JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_setClearColorValue(JNIEnv* env,
+                                                                                jobject obj,
+                                                                                jfloat r,
+                                                                                jfloat g,
+                                                                                jfloat b,
+                                                                                jfloat a);
 };
 
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
@@ -138,6 +144,17 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_touchEvent(JNIEnv* 
                                                                         jfloat dy) {
   if (renderers[activeBackendTypeID] != nullptr) {
     renderers[activeBackendTypeID]->touchEvent(isDown != 0u, x, y, dx, dy);
+  }
+}
+
+JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_setClearColorValue(JNIEnv* /*env*/,
+                                                                                jobject /*obj*/,
+                                                                                jfloat r,
+                                                                                jfloat g,
+                                                                                jfloat b,
+                                                                                jfloat a) {
+  if (renderers[activeBackendTypeID] != nullptr) {
+    renderers[activeBackendTypeID]->setClearColorValue(r, g, b, a);
   }
 }
 

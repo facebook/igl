@@ -44,6 +44,15 @@ public class SampleView extends GLSurfaceView {
   }
 
   @Override
+  public void setBackgroundColor(int color) {
+    int A = (color >> 24) & 0xff;
+    int R = (color >> 16) & 0xff;
+    int G = (color >> 8) & 0xff;
+    int B = (color) & 0xff;
+    SampleLib.setClearColorValue(R, G, B, A);
+  }
+
+  @Override
   public boolean onTouchEvent(MotionEvent e) {
     float x = e.getX();
     float y = e.getY();
