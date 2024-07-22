@@ -80,7 +80,7 @@
                                // @fb-only
                                // @fb-only
   // @fb-only
-  [self.tabViewController addTabViewItem:tinyOGL2TabViewItem];// @fb-only
+  // @fb-only
   // @fb-only
 #endif
 
