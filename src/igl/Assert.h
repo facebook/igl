@@ -88,6 +88,9 @@ static inline const T& _IGLVerify(const T& cond,
 
 #define IGL_UNEXPECTED(cond) \
   (!::igl::_IGLVerify(0 == !!(cond), IGL_FUNCTION, __FILE__, __LINE__, #cond))
+#define IGL_UNEXPECTED_MSG(cond, format, ...) \
+  (!::igl::_IGLVerify(0 == !!(cond), IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__))
+
 #define IGL_VERIFY(cond) ::igl::_IGLVerify((cond), IGL_FUNCTION, __FILE__, __LINE__, #cond)
 #define IGL_ASSERT(cond) (void)IGL_VERIFY(cond)
 #define IGL_ASSERT_MSG(cond, format, ...) \
@@ -96,6 +99,7 @@ static inline const T& _IGLVerify(const T& cond,
 #else
 
 #define IGL_UNEXPECTED(cond) (cond)
+#define IGL_UNEXPECTED_MSG(cond, format, ...) (cond)
 #define IGL_VERIFY(cond) (cond)
 #define IGL_ASSERT(cond) static_cast<void>(0)
 #define IGL_ASSERT_MSG(cond, format, ...) static_cast<void>(0)
