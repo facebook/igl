@@ -21,7 +21,7 @@ namespace fs = boost::filesystem;
 namespace igl::shell {
 
 FileLoader::FileData FileLoader::loadBinaryDataInternal(const std::string& filePath) {
-  if (IGL_UNEXPECTED(!fs::exists(filePath))) {
+  if (IGL_UNEXPECTED_MSG(!fs::exists(filePath), "Couldn't find file: %s", filePath.c_str())) {
     return {};
   }
   const uintmax_t length = fs::file_size(filePath);
