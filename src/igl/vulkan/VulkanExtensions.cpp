@@ -117,6 +117,9 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
 #endif
 
   } else if (extensionType == ExtensionType::Device) {
+#if defined(VK_KHR_shader_float16_int8) && VK_KHR_shader_float16_int8
+    enable(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, ExtensionType::Device);
+#endif
 #if IGL_PLATFORM_ANDROID
     enable(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, ExtensionType::Device);
     enable(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, ExtensionType::Device);
