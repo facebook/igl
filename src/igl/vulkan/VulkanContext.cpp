@@ -208,7 +208,24 @@ class DescriptorPoolsArena final {
                        const char* debugName) :
     ctx_(ctx),
     device_(ctx.getVkDevice()),
-    type_(type),
+    numTypes_(1),
+    types_{type},
+    numDescriptorsPerDSet_(numDescriptorsPerDSet),
+    dsl_(dsl) {
+    IGL_ASSERT(debugName);
+    dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
+    switchToNewDescriptorPool(*ctx.immediate_, {});
+  }
+  DescriptorPoolsArena(const VulkanContext& ctx,
+                       VkDescriptorType type0,
+                       VkDescriptorType type1,
+                       VkDescriptorSetLayout dsl,
+                       uint32_t numDescriptorsPerDSet,
+                       const char* debugName) :
+    ctx_(ctx),
+    device_(ctx.getVkDevice()),
+    numTypes_(2),
+    types_{type0, type1},
     numDescriptorsPerDSet_(numDescriptorsPerDSet),
     dsl_(dsl) {
     IGL_ASSERT(debugName);
@@ -257,14 +274,18 @@ class DescriptorPoolsArena final {
         return;
       }
     }
-    const VkDescriptorPoolSize poolSize = VkDescriptorPoolSize{
-        type_, numDescriptorsPerDSet_ ? kNumDSetsPerPool_ * numDescriptorsPerDSet_ : 1u};
+    // @fb-only
+    VkDescriptorPoolSize poolSizes[IGL_ARRAY_NUM_ELEMENTS(types_)];
+    for (uint32_t i = 0; i != numTypes_; i++) {
+      poolSizes[i] = VkDescriptorPoolSize{
+          types_[i], numDescriptorsPerDSet_ ? kNumDSetsPerPool_ * numDescriptorsPerDSet_ : 1u};
+    }
     VK_ASSERT(ivkCreateDescriptorPool(&ctx_.vf_,
                                       device_,
                                       VkDescriptorPoolCreateFlags{},
                                       kNumDSetsPerPool_,
-                                      1,
-                                      &poolSize,
+                                      numTypes_,
+                                      poolSizes,
                                       &pool_));
     VK_ASSERT(ivkSetDebugObjectName(
         &ctx_.vf_, device_, VK_OBJECT_TYPE_DESCRIPTOR_POOL, (uint64_t)pool_, dpDebugName_.c_str()));
@@ -276,7 +297,8 @@ class DescriptorPoolsArena final {
   const VulkanContext& ctx_;
   VkDevice device_ = VK_NULL_HANDLE;
   VkDescriptorPool pool_ = VK_NULL_HANDLE;
-  const VkDescriptorType type_ = VK_DESCRIPTOR_TYPE_MAX_ENUM;
+  const uint32_t numTypes_ = 0;
+  VkDescriptorType types_[2] = {VK_DESCRIPTOR_TYPE_MAX_ENUM, VK_DESCRIPTOR_TYPE_MAX_ENUM};
   const uint32_t numDescriptorsPerDSet_ = 0;
   uint32_t numRemainingDSetsInPool_ = 0;
   std::string dpDebugName_;
@@ -298,9 +320,7 @@ struct VulkanContextImpl final {
   std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<igl::vulkan::DescriptorPoolsArena>>
       arenaCombinedImageSamplers_;
   std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<igl::vulkan::DescriptorPoolsArena>>
-      arenaBuffersUniform_;
-  std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<igl::vulkan::DescriptorPoolsArena>>
-      arenaBuffersStorage_;
+      arenaBuffers_;
   std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBindless_; // everything
   VkDescriptorPool dpBindless_ = VK_NULL_HANDLE;
   VkDescriptorSet dsBindless_ = VK_NULL_HANDLE;
@@ -324,27 +344,20 @@ struct VulkanContextImpl final {
                                                "arenaCombinedImageSamplers_");
     return *arenaCombinedImageSamplers_[dsl].get();
   }
-  igl::vulkan::DescriptorPoolsArena& getOrCreateArena_UniformBuffers(const VulkanContext& ctx,
-                                                                     VkDescriptorSetLayout dsl,
-                                                                     uint32_t numBindings) {
-    auto it = arenaBuffersUniform_.find(dsl);
-    if (it != arenaBuffersUniform_.end()) {
+  igl::vulkan::DescriptorPoolsArena& getOrCreateArena_Buffers(const VulkanContext& ctx,
+                                                              VkDescriptorSetLayout dsl,
+                                                              uint32_t numBindings) {
+    auto it = arenaBuffers_.find(dsl);
+    if (it != arenaBuffers_.end()) {
       return *it->second;
     }
-    arenaBuffersUniform_[dsl] = std::make_unique<DescriptorPoolsArena>(
-        ctx, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, dsl, numBindings, "arenaBuffersUniform_");
-    return *arenaBuffersUniform_[dsl].get();
-  }
-  igl::vulkan::DescriptorPoolsArena& getOrCreateArena_StorageBuffers(const VulkanContext& ctx,
-                                                                     VkDescriptorSetLayout dsl,
-                                                                     uint32_t numBindings) {
-    auto it = arenaBuffersStorage_.find(dsl);
-    if (it != arenaBuffersStorage_.end()) {
-      return *it->second;
-    }
-    arenaBuffersStorage_[dsl] = std::make_unique<DescriptorPoolsArena>(
-        ctx, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, dsl, numBindings, "arenaBuffersStorage_");
-    return *arenaBuffersStorage_[dsl].get();
+    arenaBuffers_[dsl] = std::make_unique<DescriptorPoolsArena>(ctx,
+                                                                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                                                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                                                dsl,
+                                                                numBindings,
+                                                                "arenaBuffers_");
+    return *arenaBuffers_[dsl].get();
   }
 };
 
@@ -446,8 +459,7 @@ VulkanContext::~VulkanContext() {
       }
     }
     pimpl_->arenaCombinedImageSamplers_.clear();
-    pimpl_->arenaBuffersUniform_.clear();
-    pimpl_->arenaBuffersStorage_.clear();
+    pimpl_->arenaBuffers_.clear();
     vf_.vkDestroyPipelineCache(device, pipelineCache_, nullptr);
   }
 
@@ -1546,37 +1558,36 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
   }
 }
 
-void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
-                                                 VkPipelineLayout layout,
-                                                 VkPipelineBindPoint bindPoint,
-                                                 BindingsBuffers& data,
-                                                 const VulkanDescriptorSetLayout& dsl,
-                                                 const util::SpvModuleInfo& info) const {
+void VulkanContext::updateBindingsBuffers(VkCommandBuffer cmdBuf,
+                                          VkPipelineLayout layout,
+                                          VkPipelineBindPoint bindPoint,
+                                          BindingsBuffers& data,
+                                          const VulkanDescriptorSetLayout& dsl,
+                                          const util::SpvModuleInfo& info) const {
   IGL_PROFILER_FUNCTION();
 
-  DescriptorPoolsArena& arena = pimpl_->getOrCreateArena_UniformBuffers(
-      *this, dsl.getVkDescriptorSetLayout(), dsl.numBindings_);
+  DescriptorPoolsArena& arena =
+      pimpl_->getOrCreateArena_Buffers(*this, dsl.getVkDescriptorSetLayout(), dsl.numBindings_);
 
-  VkDescriptorSet dsetBufUniform =
-      arena.getNextDescriptorSet(*immediate_, pimpl_->lastSubmitHandle_);
+  VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, pimpl_->lastSubmitHandle_);
 
   // @fb-only
   VkWriteDescriptorSet writes[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
   uint32_t numWrites = 0;
 
-  for (const util::BufferDescription& b : info.uniformBuffers) {
-    IGL_ASSERT(b.descriptorSet == kBindPoint_BuffersUniform);
+  for (const util::BufferDescription& b : info.buffers) {
+    IGL_ASSERT(b.descriptorSet == kBindPoint_Buffers);
     IGL_ASSERT_MSG(
         data.buffers[b.bindingLocation].buffer != VK_NULL_HANDLE,
-        IGL_FORMAT(
-            "Did you forget to call bindBuffer() for a uniform buffer at the binding location {}?",
-            b.bindingLocation)
+        IGL_FORMAT("Did you forget to call bindBuffer() for a buffer at the binding location {}?",
+                   b.bindingLocation)
             .c_str());
-    writes[numWrites++] = ivkGetWriteDescriptorSet_BufferInfo(dsetBufUniform,
-                                                              b.bindingLocation,
-                                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                                              1,
-                                                              &data.buffers[b.bindingLocation]);
+    writes[numWrites++] = ivkGetWriteDescriptorSet_BufferInfo(
+        dset,
+        b.bindingLocation,
+        b.isStorage ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        1,
+        &data.buffers[b.bindingLocation]);
   }
 
   if (numWrites) {
@@ -1585,56 +1596,10 @@ void VulkanContext::updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
     IGL_PROFILER_ZONE_END();
 
 #if IGL_VULKAN_PRINT_COMMANDS
-    IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - uniform buffers\n", cmdBuf, bindPoint);
+    IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - buffers\n", cmdBuf, bindPoint);
 #endif // IGL_VULKAN_PRINT_COMMANDS
     vf_.vkCmdBindDescriptorSets(
-        cmdBuf, bindPoint, layout, kBindPoint_BuffersUniform, 1, &dsetBufUniform, 0, nullptr);
-  }
-}
-
-void VulkanContext::updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
-                                                 VkPipelineLayout layout,
-                                                 VkPipelineBindPoint bindPoint,
-                                                 BindingsBuffers& data,
-                                                 const VulkanDescriptorSetLayout& dsl,
-                                                 const util::SpvModuleInfo& info) const {
-  IGL_PROFILER_FUNCTION();
-
-  DescriptorPoolsArena& arena = pimpl_->getOrCreateArena_StorageBuffers(
-      *this, dsl.getVkDescriptorSetLayout(), dsl.numBindings_);
-
-  VkDescriptorSet dsetBufStorage =
-      arena.getNextDescriptorSet(*immediate_, pimpl_->lastSubmitHandle_);
-
-  // @fb-only
-  VkWriteDescriptorSet writes[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
-  uint32_t numWrites = 0;
-
-  for (const util::BufferDescription& b : info.storageBuffers) {
-    IGL_ASSERT(b.descriptorSet == kBindPoint_BuffersStorage);
-    IGL_ASSERT_MSG(
-        data.buffers[b.bindingLocation].buffer != VK_NULL_HANDLE,
-        IGL_FORMAT(
-            "Did you forget to call bindBuffer() for a storage buffer at the binding location {}?",
-            b.bindingLocation)
-            .c_str());
-    writes[numWrites++] = ivkGetWriteDescriptorSet_BufferInfo(dsetBufStorage,
-                                                              b.bindingLocation,
-                                                              VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                                              1,
-                                                              &data.buffers[b.bindingLocation]);
-  }
-
-  if (numWrites) {
-    IGL_PROFILER_ZONE("vkUpdateDescriptorSets()", IGL_PROFILER_COLOR_UPDATE);
-    vf_.vkUpdateDescriptorSets(device_->getVkDevice(), numWrites, writes, 0, nullptr);
-    IGL_PROFILER_ZONE_END();
-
-#if IGL_VULKAN_PRINT_COMMANDS
-    IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - storage buffers\n", cmdBuf, bindPoint);
-#endif // IGL_VULKAN_PRINT_COMMANDS
-    vf_.vkCmdBindDescriptorSets(
-        cmdBuf, bindPoint, layout, kBindPoint_BuffersStorage, 1, &dsetBufStorage, 0, nullptr);
+        cmdBuf, bindPoint, layout, kBindPoint_Buffers, 1, &dset, 0, nullptr);
   }
 }
 
@@ -1760,8 +1725,7 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
 }
 
 void VulkanContext::freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout dsl) const {
-  pimpl_->arenaBuffersStorage_.erase(dsl);
-  pimpl_->arenaBuffersUniform_.erase(dsl);
+  pimpl_->arenaBuffers_.erase(dsl);
   pimpl_->arenaCombinedImageSamplers_.erase(dsl);
 }
 

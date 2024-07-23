@@ -105,39 +105,25 @@ PipelineState::PipelineState(
         bindingFlags.data(),
         IGL_FORMAT("Descriptor Set Layout (COMBINED_IMAGE_SAMPLER): {}", debugName).c_str());
   }
-  // 1. Uniform buffers
+  // 1. Buffers
   {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-    bindings.reserve(info_.uniformBuffers.size());
-    for (const auto& b : info_.uniformBuffers) {
+    bindings.reserve(info_.buffers.size());
+    for (const auto& b : info_.buffers) {
       bindings.emplace_back(ivkGetDescriptorSetLayoutBinding(
-          b.bindingLocation, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, stageFlags_));
+          b.bindingLocation,
+          b.isStorage ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+          1,
+          stageFlags_));
     }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
-    dslUniformBuffers_ = std::make_unique<VulkanDescriptorSetLayout>(
+    dslBuffers_ = std::make_unique<VulkanDescriptorSetLayout>(
         ctx,
         VkDescriptorSetLayoutCreateFlags{},
         static_cast<uint32_t>(bindings.size()),
         bindings.data(),
         bindingFlags.data(),
-        IGL_FORMAT("Descriptor Set Layout (UNIFORM_BUFFER): {}", debugName).c_str());
-  }
-  // 2. Storage buffers
-  {
-    std::vector<VkDescriptorSetLayoutBinding> bindings;
-    bindings.reserve(info_.storageBuffers.size());
-    for (const auto& b : info_.storageBuffers) {
-      bindings.emplace_back(ivkGetDescriptorSetLayoutBinding(
-          b.bindingLocation, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, stageFlags_));
-    }
-    std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
-    dslStorageBuffers_ = std::make_unique<VulkanDescriptorSetLayout>(
-        ctx,
-        VkDescriptorSetLayoutCreateFlags{},
-        static_cast<uint32_t>(bindings.size()),
-        bindings.data(),
-        bindingFlags.data(),
-        IGL_FORMAT("Descriptor Set Layout (STORAGE_BUFFER): {}", debugName).c_str());
+        IGL_FORMAT("Descriptor Set Layout (BUFFERS): {}", debugName).c_str());
   }
 }
 

@@ -63,8 +63,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
   // @fb-only
   const VkDescriptorSetLayout DSLs[] = {
       dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
-      dslUniformBuffers_->getVkDescriptorSetLayout(),
-      dslStorageBuffers_->getVkDescriptorSetLayout(),
+      dslBuffers_->getVkDescriptorSetLayout(),
       ctx.getBindlessVkDescriptorSetLayout(),
   };
 

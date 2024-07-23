@@ -129,7 +129,7 @@ void CommandQueue::enhancedShaderDebuggingPass(const igl::vulkan::VulkanContext&
   {
     // Bind the line buffer
     auto* vkEncoder = static_cast<RenderCommandEncoder*>(cmdEncoder.get());
-    vkEncoder->binder().bindStorageBuffer(
+    vkEncoder->binder().bindBuffer(
         EnhancedShaderDebuggingStore::kBufferIndex,
         static_cast<igl::vulkan::Buffer*>(debugger->vertexBuffer().get()),
         sizeof(EnhancedShaderDebuggingStore::Header),

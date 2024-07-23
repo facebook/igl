@@ -594,21 +594,12 @@ void ensureShaderModule(IShaderModule* sm) {
       continue;
     }
   }
-  for (const auto& b : info.uniformBuffers) {
-    if (!IGL_VERIFY(b.descriptorSet == kBindPoint_BuffersUniform)) {
+  for (const auto& b : info.buffers) {
+    if (!IGL_VERIFY(b.descriptorSet == kBindPoint_Buffers)) {
       IGL_LOG_ERROR(
-          "Missing descriptor set id for uniform buffers: the shader should contain \"layout(set = "
+          "Missing descriptor set id for buffers: the shader should contain \"layout(set = "
           "%u, ...)\"",
-          kBindPoint_BuffersUniform);
-      continue;
-    }
-  }
-  for (const auto& b : info.storageBuffers) {
-    if (!IGL_VERIFY(b.descriptorSet == kBindPoint_BuffersStorage)) {
-      IGL_LOG_ERROR(
-          "Missing descriptor set id for storage buffers: the shader should contain \"layout(set = "
-          "%u, ...)\"",
-          kBindPoint_BuffersStorage);
+          kBindPoint_Buffers);
       continue;
     }
   }

@@ -50,8 +50,7 @@ class PipelineState {
   mutable VkDescriptorSetLayout lastBindlessVkDescriptorSetLayout_ = VK_NULL_HANDLE;
 
   std::unique_ptr<VulkanDescriptorSetLayout> dslCombinedImageSamplers_;
-  std::unique_ptr<VulkanDescriptorSetLayout> dslUniformBuffers_;
-  std::unique_ptr<VulkanDescriptorSetLayout> dslStorageBuffers_;
+  std::unique_ptr<VulkanDescriptorSetLayout> dslBuffers_;
 };
 
 } // namespace igl::vulkan

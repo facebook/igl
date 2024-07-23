@@ -26,11 +26,11 @@ struct TextureDescription {
 struct BufferDescription {
   uint32_t bindingLocation = kNoBindingLocation;
   uint32_t descriptorSet = kNoDescriptorSet;
+  bool isStorage = false;
 };
 
 struct SpvModuleInfo {
-  std::vector<BufferDescription> uniformBuffers;
-  std::vector<BufferDescription> storageBuffers;
+  std::vector<BufferDescription> buffers;
   std::vector<TextureDescription> textures;
   bool hasPushConstants = false;
 };

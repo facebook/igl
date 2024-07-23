@@ -205,7 +205,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index,
     return;
   }
 
-  binder_.bindStorageBuffer(index, buf, offset, bufferSize);
+  binder_.bindBuffer(index, buf, offset, bufferSize);
 }
 
 void ComputeCommandEncoder::bindBytes(size_t /*index*/, const void* /*data*/, size_t /*length*/) {

@@ -218,8 +218,8 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 #ifdef VULKAN
 // kBinding_StorageImages in VulkanContext.cpp
-layout (set = 3, binding = 6, rgba8) uniform readonly  image2D kTextures2Din[];
-layout (set = 3, binding = 6, rgba8) uniform writeonly image2D kTextures2Dout[];
+layout (set = 2, binding = 6, rgba8) uniform readonly  image2D kTextures2Din[];
+layout (set = 2, binding = 6, rgba8) uniform writeonly image2D kTextures2Dout[];
 
 layout(push_constant) uniform PushConstants {
   uint textureId;
@@ -321,7 +321,7 @@ layout(set = 1, binding = 1, std140) uniform PerObject {
   UniformsPerObject perObject;
 };
 
-layout(set = 2, binding = 2, std430) readonly buffer Materials {
+layout(set = 1, binding = 2, std430) readonly buffer Materials {
   Material mtl[];
 } mat;
 #else

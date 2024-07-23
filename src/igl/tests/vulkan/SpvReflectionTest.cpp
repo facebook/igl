@@ -931,10 +931,11 @@ TEST(SpvReflectionTest, UniformBufferTest) {
   SpvModuleInfo spvModuleInfo = getReflectionData(kUniformBufferSpvWords.data(),
                                                   kUniformBufferSpvWords.size() * sizeof(uint32_t));
 
-  ASSERT_EQ(spvModuleInfo.uniformBuffers.size(), 2);
-  EXPECT_EQ(spvModuleInfo.uniformBuffers[0].bindingLocation, 0);
-  EXPECT_EQ(spvModuleInfo.uniformBuffers[1].bindingLocation, 3);
-  EXPECT_EQ(spvModuleInfo.storageBuffers.size(), 0);
+  ASSERT_EQ(spvModuleInfo.buffers.size(), 2);
+  EXPECT_EQ(spvModuleInfo.buffers[0].bindingLocation, 0);
+  EXPECT_EQ(spvModuleInfo.buffers[1].bindingLocation, 3);
+  EXPECT_EQ(spvModuleInfo.buffers[0].isStorage, false);
+  EXPECT_EQ(spvModuleInfo.buffers[1].isStorage, false);
 }
 
 TEST(SpvReflectionTest, TextureTest) {
@@ -942,8 +943,7 @@ TEST(SpvReflectionTest, TextureTest) {
   SpvModuleInfo spvModuleInfo =
       getReflectionData(kTextureSpvWords.data(), kTextureSpvWords.size() * sizeof(uint32_t));
 
-  ASSERT_EQ(spvModuleInfo.uniformBuffers.size(), 0);
-  EXPECT_EQ(spvModuleInfo.storageBuffers.size(), 0);
+  ASSERT_EQ(spvModuleInfo.buffers.size(), 0);
   EXPECT_EQ(spvModuleInfo.textures.size(), 4);
   EXPECT_EQ(spvModuleInfo.textures[0].bindingLocation, kNoBindingLocation);
   EXPECT_EQ(spvModuleInfo.textures[0].descriptorSet, kNoDescriptorSet);
@@ -966,8 +966,7 @@ TEST(SpvReflectionTest, TextureDescriptorSetTest) {
       getReflectionData(kTextureWithDescriptorSetSpvWords.data(),
                         kTextureWithDescriptorSetSpvWords.size() * sizeof(uint32_t));
 
-  ASSERT_EQ(spvModuleInfo.uniformBuffers.size(), 0);
-  EXPECT_EQ(spvModuleInfo.storageBuffers.size(), 0);
+  ASSERT_EQ(spvModuleInfo.buffers.size(), 0);
   EXPECT_EQ(spvModuleInfo.textures.size(), 2);
   EXPECT_EQ(spvModuleInfo.textures[0].bindingLocation, 1);
   EXPECT_EQ(spvModuleInfo.textures[0].descriptorSet, 0);
@@ -983,11 +982,11 @@ TEST(SpvReflectionTest, TinyMeshFragmentShaderTest) {
   SpvModuleInfo spvModuleInfo = getReflectionData(
       kTinyMeshFragmentShader.data(), kTinyMeshFragmentShader.size() * sizeof(uint32_t));
 
-  ASSERT_EQ(spvModuleInfo.uniformBuffers.size(), 1);
-  ASSERT_EQ(spvModuleInfo.storageBuffers.size(), 0);
+  ASSERT_EQ(spvModuleInfo.buffers.size(), 1);
   EXPECT_EQ(spvModuleInfo.textures.size(), 2);
-  EXPECT_EQ(spvModuleInfo.uniformBuffers[0].bindingLocation, 0);
-  EXPECT_EQ(spvModuleInfo.uniformBuffers[0].descriptorSet, 1);
+  EXPECT_EQ(spvModuleInfo.buffers[0].bindingLocation, 0);
+  EXPECT_EQ(spvModuleInfo.buffers[0].descriptorSet, 1);
+  EXPECT_EQ(spvModuleInfo.buffers[0].isStorage, false);
   EXPECT_EQ(spvModuleInfo.textures[0].bindingLocation, 0);
   EXPECT_EQ(spvModuleInfo.textures[0].descriptorSet, 0);
   EXPECT_EQ(spvModuleInfo.textures[1].bindingLocation, 4);

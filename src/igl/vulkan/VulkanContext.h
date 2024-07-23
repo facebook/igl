@@ -59,15 +59,13 @@ struct VulkanImageViewCreateInfo;
 /*
  * Descriptor sets:
  *  0 - combined image samplers
- *  1 - uniform buffers
- *  2 - storage buffers
- *  3 - bindless textures/samplers  <--  optional
+ *  1 - uniform/storage buffers
+ *  2 - bindless textures/samplers  <--  optional
  */
 enum {
   kBindPoint_CombinedImageSamplers = 0,
-  kBindPoint_BuffersUniform = 1,
-  kBindPoint_BuffersStorage = 2,
-  kBindPoint_Bindless = 3,
+  kBindPoint_Buffers = 1,
+  kBindPoint_Bindless = 2,
 };
 
 struct DeviceQueues {
@@ -365,18 +363,12 @@ class VulkanContext final {
                               const BindingsTextures& data,
                               const VulkanDescriptorSetLayout& dsl,
                               const util::SpvModuleInfo& info) const;
-  void updateBindingsUniformBuffers(VkCommandBuffer cmdBuf,
-                                    VkPipelineLayout layout,
-                                    VkPipelineBindPoint bindPoint,
-                                    BindingsBuffers& data,
-                                    const VulkanDescriptorSetLayout& dsl,
-                                    const util::SpvModuleInfo& info) const;
-  void updateBindingsStorageBuffers(VkCommandBuffer cmdBuf,
-                                    VkPipelineLayout layout,
-                                    VkPipelineBindPoint bindPoint,
-                                    BindingsBuffers& data,
-                                    const VulkanDescriptorSetLayout& dsl,
-                                    const util::SpvModuleInfo& info) const;
+  void updateBindingsBuffers(VkCommandBuffer cmdBuf,
+                             VkPipelineLayout layout,
+                             VkPipelineBindPoint bindPoint,
+                             BindingsBuffers& data,
+                             const VulkanDescriptorSetLayout& dsl,
+                             const util::SpvModuleInfo& info) const;
   void markSubmitted(const SubmitHandle& handle) const;
 
   struct DeferredTask {
