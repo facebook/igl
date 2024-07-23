@@ -141,6 +141,7 @@ GLFWwindow* initWindow() {
 
 std::shared_ptr<igl::shell::PlatformWin> createPlatform(GLFWwindow* window) {
   igl::vulkan::VulkanContextConfig cfg = igl::vulkan::VulkanContextConfig();
+  cfg.requestedSwapChainTextureFormat = shellParams_.defaultColorFramebufferFormat;
 #if defined(_MSC_VER) && !IGL_DEBUG
   cfg.enableValidation = false;
 #endif
