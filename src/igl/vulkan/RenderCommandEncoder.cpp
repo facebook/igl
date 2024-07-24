@@ -942,7 +942,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
   }
 
   // this is a dummy placeholder code to be replaced with actual Vulkan descriptors management
-  const BindGroupTextureDesc* desc = ctx_.bindGroupTexturesPool_.get(handle);
+  const BindGroupTextureDesc* desc = ctx_.getBindGroupDesc(handle);
 
   for (uint32_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
     if (desc->textures[i]) {
@@ -961,7 +961,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
   }
 
   // this is a dummy placeholder code to be replaced with actual Vulkan descriptors management
-  const BindGroupBufferDesc* desc = ctx_.bindGroupBuffersPool_.get(handle);
+  const BindGroupBufferDesc* desc = ctx_.getBindGroupDesc(handle);
 
   uint32_t dynamicOffset = 0;
 

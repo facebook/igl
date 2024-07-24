@@ -249,6 +249,15 @@ class VulkanContext final {
   void processDeferredTasks() const;
   void waitDeferredTasks();
   void growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t newMaxSamplers);
+  igl::BindGroupTextureHandle createBindGroup(const BindGroupTextureDesc& desc, Result* outResult);
+  igl::BindGroupBufferHandle createBindGroup(const BindGroupBufferDesc& desc, Result* outResult);
+  void destroy(igl::BindGroupTextureHandle handle);
+  void destroy(igl::BindGroupBufferHandle handle);
+  const BindGroupTextureDesc* getBindGroupDesc(
+      igl::BindGroupTextureHandle handle) const; // temporary
+                                                 // helper
+  const BindGroupBufferDesc* getBindGroupDesc(igl::BindGroupBufferHandle handle) const; // temporary
+                                                                                        // helper
 
  private:
   friend class igl::vulkan::Device;
@@ -340,8 +349,6 @@ class VulkanContext final {
   mutable Pool<SamplerTag, std::shared_ptr<VulkanSampler>> samplers_;
   // a texture/sampler was created since the last descriptor set update
   mutable bool awaitingCreation_ = false;
-  Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
-  Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
 
   mutable size_t drawCallCount_ = 0;
 

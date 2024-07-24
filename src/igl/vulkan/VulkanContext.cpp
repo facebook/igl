@@ -328,6 +328,9 @@ struct VulkanContextImpl final {
   uint32_t currentMaxBindlessTextures_ = 8;
   uint32_t currentMaxBindlessSamplers_ = 8;
 
+  Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
+  Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
+
   igl::vulkan::DescriptorPoolsArena& getOrCreateArena_CombinedImageSamplers(
       const VulkanContext& ctx,
       VkDescriptorSetLayout dsl,
@@ -1727,6 +1730,58 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
 void VulkanContext::freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout dsl) const {
   pimpl_->arenaBuffers_.erase(dsl);
   pimpl_->arenaCombinedImageSamplers_.erase(dsl);
+}
+
+igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc& desc,
+                                                           Result* outResult) {
+  BindGroupTextureDesc description(desc);
+
+  const auto handle = pimpl_->bindGroupTexturesPool_.create(std::move(description));
+
+  Result::setResult(outResult,
+                    handle.empty() ? Result(Result::Code::RuntimeError, "Cannot create bind group")
+                                   : Result());
+
+  return handle;
+}
+
+igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferDesc& desc,
+                                                          Result* outResult) {
+  BindGroupBufferDesc description(desc);
+
+  const auto handle = pimpl_->bindGroupBuffersPool_.create(std::move(description));
+
+  Result::setResult(outResult,
+                    handle.empty() ? Result(Result::Code::RuntimeError, "Cannot create bind group")
+                                   : Result());
+
+  return handle;
+}
+
+void VulkanContext::destroy(igl::BindGroupTextureHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+
+  pimpl_->bindGroupTexturesPool_.destroy(handle);
+}
+
+void VulkanContext::destroy(igl::BindGroupBufferHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+
+  pimpl_->bindGroupBuffersPool_.destroy(handle);
+}
+
+const BindGroupTextureDesc* VulkanContext::getBindGroupDesc(
+    igl::BindGroupTextureHandle handle) const {
+  return pimpl_->bindGroupTexturesPool_.get(handle);
+}
+
+const BindGroupBufferDesc* VulkanContext::getBindGroupDesc(
+    igl::BindGroupBufferHandle handle) const {
+  return pimpl_->bindGroupBuffersPool_.get(handle);
 }
 
 } // namespace igl::vulkan
