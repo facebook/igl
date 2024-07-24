@@ -41,7 +41,7 @@ void ResourcesBinder::bindBuffer(uint32_t index,
   IGL_ASSERT_MSG(isUniformBuffer ||
                      ((buffer->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0),
                  "The buffer must be a uniform or storage buffer");
-
+#if 0
   if (isUniformBuffer && bufferOffset) {
     const uint32_t alignment = static_cast<uint32_t>(
         ctx_.getVkPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment);
@@ -54,6 +54,9 @@ void ResourcesBinder::bindBuffer(uint32_t index,
       return;
     }
   }
+#else
+  (void)isUniformBuffer;
+#endif
 
   VkBuffer buf = buffer ? buffer->getVkBuffer() : ctx_.dummyUniformBuffer_->getVkBuffer();
   VkDescriptorBufferInfo& slot = bindingsBuffers_.buffers[index];
