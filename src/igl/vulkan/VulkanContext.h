@@ -121,16 +121,16 @@ struct VulkanContextConfig {
 class VulkanContext final {
  public:
   VulkanContext(VulkanContextConfig config,
-                void* window,
+                void* IGL_NULLABLE window,
                 size_t numExtraInstanceExtensions,
-                const char** extraInstanceExtensions,
-                void* display = nullptr);
+                const char** IGL_NULLABLE extraInstanceExtensions,
+                void* IGL_NULLABLE display = nullptr);
   ~VulkanContext();
 
   igl::Result queryDevices(const HWDeviceQueryDesc& desc, std::vector<HWDeviceDesc>& outDevices);
   igl::Result initContext(const HWDeviceDesc& desc,
                           size_t numExtraDeviceExtensions = 0,
-                          const char** extraDeviceExtensions = nullptr);
+                          const char** IGL_NULLABLE extraDeviceExtensions = nullptr);
 
   igl::Result initSwapchain(uint32_t width, uint32_t height);
   VkExtent2D getSwapchainExtent() const;
@@ -145,39 +145,40 @@ class VulkanContext final {
                           VkMemoryPropertyFlags memFlags,
                           VkImageCreateFlags flags,
                           VkSampleCountFlagBits samples,
-                          igl::Result* outResult,
-                          const char* debugName = nullptr) const;
-  std::unique_ptr<VulkanImage> createImageFromFileDescriptor(int32_t fileDescriptor,
-                                                             uint64_t memoryAllocationSize,
-                                                             VkImageType imageType,
-                                                             VkExtent3D extent,
-                                                             VkFormat format,
-                                                             uint32_t mipLevels,
-                                                             uint32_t arrayLayers,
-                                                             VkImageTiling tiling,
-                                                             VkImageUsageFlags usageFlags,
-                                                             VkImageCreateFlags flags,
-                                                             VkSampleCountFlagBits samples,
-                                                             igl::Result* outResult,
-                                                             const char* debugName = nullptr) const;
+                          igl::Result* IGL_NULLABLE outResult,
+                          const char* IGL_NULLABLE debugName = nullptr) const;
+  std::unique_ptr<VulkanImage> createImageFromFileDescriptor(
+      int32_t fileDescriptor,
+      uint64_t memoryAllocationSize,
+      VkImageType imageType,
+      VkExtent3D extent,
+      VkFormat format,
+      uint32_t mipLevels,
+      uint32_t arrayLayers,
+      VkImageTiling tiling,
+      VkImageUsageFlags usageFlags,
+      VkImageCreateFlags flags,
+      VkSampleCountFlagBits samples,
+      igl::Result* IGL_NULLABLE outResult,
+      const char* IGL_NULLABLE debugName = nullptr) const;
   std::unique_ptr<VulkanBuffer> createBuffer(VkDeviceSize bufferSize,
                                              VkBufferUsageFlags usageFlags,
                                              VkMemoryPropertyFlags memFlags,
-                                             igl::Result* outResult,
-                                             const char* debugName = nullptr) const;
+                                             igl::Result* IGL_NULLABLE outResult,
+                                             const char* IGL_NULLABLE debugName = nullptr) const;
   std::shared_ptr<VulkanTexture> createTexture(VulkanImage&& image,
                                                VulkanImageView&& imageView,
-                                               const char* debugName) const;
+                                               const char* IGL_NULLABLE debugName) const;
   std::shared_ptr<VulkanTexture> createTextureFromVkImage(
       VkImage vkImage,
       VulkanImageCreateInfo imageCreateInfo,
       VulkanImageViewCreateInfo imageViewCreateInfo,
-      const char* debugName) const;
+      const char* IGL_NULLABLE debugName) const;
 
   std::shared_ptr<VulkanSampler> createSampler(const VkSamplerCreateInfo& ci,
                                                VkFormat yuvVkFormat,
-                                               igl::Result* outResult,
-                                               const char* debugName = nullptr) const;
+                                               igl::Result* IGL_NULLABLE outResult,
+                                               const char* IGL_NULLABLE debugName = nullptr) const;
 
   bool hasSwapchain() const noexcept {
     return swapchain_ != nullptr;
@@ -229,7 +230,7 @@ class VulkanContext final {
 
   bool areValidationLayersEnabled() const;
 
-  void* getVmaAllocator() const;
+  void* IGL_NULLABLE getVmaAllocator() const;
 
   VkSamplerYcbcrConversionInfo getOrCreateYcbcrConversionInfo(VkFormat format) const;
 
@@ -242,8 +243,8 @@ class VulkanContext final {
 #endif
 
  private:
-  void createInstance(size_t numExtraExtensions, const char** extraExtensions);
-  void createSurface(void* window, void* display);
+  void createInstance(size_t numExtraExtensions, const char** IGL_NULLABLE extraExtensions);
+  void createSurface(void* window, void* IGL_NULLABLE display);
   void checkAndUpdateDescriptorSets();
   void querySurfaceCapabilities();
   void processDeferredTasks() const;

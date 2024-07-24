@@ -365,10 +365,10 @@ struct VulkanContextImpl final {
 };
 
 VulkanContext::VulkanContext(VulkanContextConfig config,
-                             void* window,
+                             void* IGL_NULLABLE window,
                              size_t numExtraInstanceExtensions,
-                             const char** extraInstanceExtensions,
-                             void* display) :
+                             const char** IGL_NULLABLE extraInstanceExtensions,
+                             void* IGL_NULLABLE display) :
   tableImpl_(std::make_unique<VulkanFunctionTable>()),
   vf_(*tableImpl_),
   config_(std::move(config)) {
@@ -497,7 +497,8 @@ VulkanContext::~VulkanContext() {
 #endif // IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
 }
 
-void VulkanContext::createInstance(const size_t numExtraExtensions, const char** extraExtensions) {
+void VulkanContext::createInstance(const size_t numExtraExtensions,
+                                   const char** IGL_NULLABLE extraExtensions) {
   // Enumerate all instance extensions
   extensions_.enumerate(vf_);
   extensions_.enableCommonExtensions(VulkanExtensions::ExtensionType::Instance, config_);
@@ -547,7 +548,7 @@ void VulkanContext::createInstance(const size_t numExtraExtensions, const char**
 #endif
 }
 
-void VulkanContext::createSurface(void* window, void* display) {
+void VulkanContext::createSurface(void* window, void* IGL_NULLABLE display) {
   [[maybe_unused]] void* layer = nullptr;
 #if IGL_PLATFORM_APPLE
   layer = igl::vulkan::getCAMetalLayer(window);
@@ -615,7 +616,7 @@ igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
 
 igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                        size_t numExtraDeviceExtensions,
-                                       const char** extraDeviceExtensions) {
+                                       const char** IGL_NULLABLE extraDeviceExtensions) {
   if (desc.guid == 0UL) {
     IGL_LOG_ERROR("Invalid hardwareGuid(%lu)", desc.guid);
     return Result(Result::Code::Unsupported, "Vulkan is not supported");
@@ -1083,8 +1084,9 @@ Result VulkanContext::present() const {
 std::unique_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSize,
                                                           VkBufferUsageFlags usageFlags,
                                                           VkMemoryPropertyFlags memFlags,
-                                                          igl::Result* outResult,
-                                                          const char* debugName) const {
+                                                          igl::Result* IGL_NULLABLE outResult,
+                                                          const char* IGL_NULLABLE
+                                                              debugName) const {
   IGL_PROFILER_FUNCTION();
 
 #define ENSURE_BUFFER_SIZE(flag, maxSize)                                                      \
@@ -1119,8 +1121,8 @@ VulkanImage VulkanContext::createImage(VkImageType imageType,
                                        VkMemoryPropertyFlags memFlags,
                                        VkImageCreateFlags flags,
                                        VkSampleCountFlagBits samples,
-                                       igl::Result* outResult,
-                                       const char* debugName) const {
+                                       igl::Result* IGL_NULLABLE outResult,
+                                       const char* IGL_NULLABLE debugName) const {
   IGL_PROFILER_FUNCTION();
 
   if (!validateImageLimits(
@@ -1155,8 +1157,8 @@ std::unique_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
     VkImageUsageFlags usageFlags,
     VkImageCreateFlags flags,
     VkSampleCountFlagBits samples,
-    igl::Result* outResult,
-    const char* debugName) const {
+    igl::Result* IGL_NULLABLE outResult,
+    const char* IGL_NULLABLE debugName) const {
   if (!validateImageLimits(
           imageType, samples, extent, getVkPhysicalDeviceProperties().limits, outResult)) {
     return nullptr;
@@ -1330,7 +1332,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
 std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
     VulkanImage&& image,
     VulkanImageView&& imageView,
-    [[maybe_unused]] const char* debugName) const {
+    [[maybe_unused]] const char* IGL_NULLABLE debugName) const {
   IGL_PROFILER_FUNCTION();
 
   const TextureHandle handle =
@@ -1353,7 +1355,7 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTextureFromVkImage(
     VkImage vkImage,
     VulkanImageCreateInfo imageCreateInfo,
     VulkanImageViewCreateInfo imageViewCreateInfo,
-    const char* debugName) const {
+    const char* IGL_NULLABLE debugName) const {
   auto iglImage = VulkanImage(*this, device_->getVkDevice(), vkImage, imageCreateInfo, debugName);
   auto imageView = iglImage.createImageView(imageViewCreateInfo, debugName);
   return createTexture(std::move(iglImage), std::move(imageView), debugName);
@@ -1361,8 +1363,9 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTextureFromVkImage(
 
 std::shared_ptr<VulkanSampler> VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
                                                             VkFormat yuvVkFormat,
-                                                            igl::Result* outResult,
-                                                            const char* debugName) const {
+                                                            igl::Result* IGL_NULLABLE outResult,
+                                                            const char* IGL_NULLABLE
+                                                                debugName) const {
   IGL_PROFILER_FUNCTION();
 
   const SamplerHandle handle = samplers_.create(
@@ -1622,7 +1625,7 @@ bool VulkanContext::areValidationLayersEnabled() const {
   return config_.enableValidation;
 }
 
-void* VulkanContext::getVmaAllocator() const {
+void* IGL_NULLABLE VulkanContext::getVmaAllocator() const {
   return pimpl_->vma_;
 }
 
