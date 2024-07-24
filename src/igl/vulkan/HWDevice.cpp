@@ -14,17 +14,18 @@
 namespace igl::vulkan {
 
 std::unique_ptr<VulkanContext> HWDevice::createContext(const VulkanContextConfig& config,
-                                                       void* window,
+                                                       void* IGL_NULLABLE window,
                                                        size_t numExtraInstanceExtensions,
-                                                       const char** extraInstanceExtensions,
-                                                       void* display) {
+                                                       const char** IGL_NULLABLE
+                                                           extraInstanceExtensions,
+                                                       void* IGL_NULLABLE display) {
   return std::make_unique<VulkanContext>(
       config, window, numExtraInstanceExtensions, extraInstanceExtensions, display);
 }
 
 std::vector<HWDeviceDesc> HWDevice::queryDevices(VulkanContext& ctx,
                                                  const HWDeviceQueryDesc& desc,
-                                                 Result* outResult) {
+                                                 Result* IGL_NULLABLE outResult) {
   std::vector<HWDeviceDesc> outDevices;
 
   Result::setResult(outResult, ctx.queryDevices(desc, outDevices));
@@ -37,8 +38,8 @@ std::unique_ptr<IDevice> HWDevice::create(std::unique_ptr<VulkanContext> ctx,
                                           uint32_t width,
                                           uint32_t height,
                                           size_t numExtraDeviceExtensions,
-                                          const char** extraDeviceExtensions,
-                                          Result* outResult) {
+                                          const char** IGL_NULLABLE extraDeviceExtensions,
+                                          Result* IGL_NULLABLE outResult) {
   IGL_ASSERT(ctx);
 
   auto result = ctx->initContext(desc, numExtraDeviceExtensions, extraDeviceExtensions);
