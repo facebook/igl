@@ -672,8 +672,10 @@ MTLResourceOptions Device::toMTLResourceStorageMode(ResourceStorage storage) {
   }
 }
 
-Holder<igl::BindGroupTextureHandle> Device::createBindGroup(const BindGroupTextureDesc& desc,
-                                                            Result* IGL_NULLABLE outResult) {
+Holder<igl::BindGroupTextureHandle> Device::createBindGroup(
+    const BindGroupTextureDesc& desc,
+    const IRenderPipelineState* IGL_NULLABLE /*compatiblePipeline*/,
+    Result* IGL_NULLABLE outResult) {
   IGL_ASSERT_MSG(!desc.debugName.empty(), "Each bind group should have a debug name");
 
   BindGroupTextureDesc description(desc);

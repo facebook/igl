@@ -715,11 +715,13 @@ ShaderVersion Device::getShaderVersion() const {
 }
 
 Holder<igl::BindGroupTextureHandle> Device::createBindGroup(const igl::BindGroupTextureDesc& desc,
+                                                            const IRenderPipelineState* IGL_NULLABLE
+                                                                compatiblePipeline,
                                                             Result* IGL_NULLABLE outResult) {
   IGL_ASSERT(ctx_);
   IGL_ASSERT_MSG(!desc.debugName.empty(), "Each bind group should have a debug name");
 
-  return {this, ctx_->createBindGroup(desc, outResult)};
+  return {this, ctx_->createBindGroup(desc, compatiblePipeline, outResult)};
 }
 
 Holder<igl::BindGroupBufferHandle> Device::createBindGroup(const igl::BindGroupBufferDesc& desc,

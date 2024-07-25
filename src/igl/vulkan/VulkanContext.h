@@ -250,7 +250,9 @@ class VulkanContext final {
   void processDeferredTasks() const;
   void waitDeferredTasks();
   void growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t newMaxSamplers);
-  igl::BindGroupTextureHandle createBindGroup(const BindGroupTextureDesc& desc, Result* outResult);
+  igl::BindGroupTextureHandle createBindGroup(const BindGroupTextureDesc& desc,
+                                              const IRenderPipelineState* compatiblePipeline,
+                                              Result* outResult);
   igl::BindGroupBufferHandle createBindGroup(const BindGroupBufferDesc& desc, Result* outResult);
   void destroy(igl::BindGroupTextureHandle handle);
   void destroy(igl::BindGroupBufferHandle handle);

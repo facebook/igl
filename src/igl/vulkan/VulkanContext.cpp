@@ -1735,8 +1735,12 @@ void VulkanContext::freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout ds
   pimpl_->arenaCombinedImageSamplers_.erase(dsl);
 }
 
-igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc& desc,
-                                                           Result* outResult) {
+igl::BindGroupTextureHandle VulkanContext::createBindGroup(
+    const BindGroupTextureDesc& desc,
+    const IRenderPipelineState* compatiblePipeline,
+    Result* outResult) {
+  (void)compatiblePipeline;
+
   BindGroupTextureDesc description(desc);
 
   const auto handle = pimpl_->bindGroupTexturesPool_.create(std::move(description));

@@ -24,6 +24,7 @@ class Device final : public igl::IDevice {
 
   [[nodiscard]] igl::Holder<igl::BindGroupTextureHandle> createBindGroup(
       const igl::BindGroupTextureDesc& desc,
+      const igl::IRenderPipelineState* IGL_NULLABLE compatiblePipeline,
       igl::Result* IGL_NULLABLE outResult) final;
   [[nodiscard]] igl::Holder<igl::BindGroupBufferHandle> createBindGroup(
       const igl::BindGroupBufferDesc& desc,

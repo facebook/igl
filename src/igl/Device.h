@@ -75,8 +75,18 @@ class IDevice : public ICapabilities {
  public:
   ~IDevice() override = default;
 
+  /*
+   * Create a new BindGroup for textures.
+   *
+   * Vulkan: If `compatiblePipeline` is provided, the resulting BindGroup will be populated with
+   * additional (dummy) textures and samplers in the binding slots where none were specified but are
+   * expected by GLSL shaders. This ensures that the BindGroup is compatible with GLSL shaders from
+   * the specified pipeline. If there's no pipeline specified, users must ensure all
+   * textures/samplers expected by shaders are provided in the BindGroup description.
+   */
   virtual Holder<BindGroupTextureHandle> createBindGroup(
       const BindGroupTextureDesc& desc,
+      const IRenderPipelineState* IGL_NULLABLE compatiblePipeline = nullptr,
       Result* IGL_NULLABLE outResult = nullptr) = 0;
   virtual Holder<BindGroupBufferHandle> createBindGroup(
       const BindGroupBufferDesc& desc,

@@ -17,6 +17,7 @@ class ICommandBuffer;
 class IDevice;
 
 class IBuffer;
+class IRenderPipelineState;
 class ISamplerState;
 class ITexture;
 

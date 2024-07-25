@@ -30,6 +30,7 @@ class Device : public IDevice {
 
   [[nodiscard]] Holder<igl::BindGroupTextureHandle> createBindGroup(
       const BindGroupTextureDesc& desc,
+      const IRenderPipelineState* IGL_NULLABLE compatiblePipeline,
       Result* IGL_NULLABLE outResult) override;
   [[nodiscard]] Holder<igl::BindGroupBufferHandle> createBindGroup(const BindGroupBufferDesc& desc,
                                                                    Result* IGL_NULLABLE

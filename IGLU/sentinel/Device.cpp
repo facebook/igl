@@ -153,6 +153,7 @@ std::unique_ptr<igl::IShaderStages> Device::createShaderStages(
 
 igl::Holder<igl::BindGroupTextureHandle> Device::createBindGroup(
     const igl::BindGroupTextureDesc& /*desc*/,
+    const igl::IRenderPipelineState* IGL_NULLABLE /*compatiblePipeline*/,
     igl::Result* IGL_NULLABLE /*outResult*/) {
   IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
 
