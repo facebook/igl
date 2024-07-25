@@ -60,7 +60,7 @@
 #endif
 
 #if IGL_BACKEND_OPENGL
-  // OpenGL 4.1 tab
+  // OpenGL tab
   NSTabViewItem* tinyOGL4TabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
   viewController = [[ViewController alloc] initWithFrame:frame
                                              backendType:igl::BackendType::OpenGL
@@ -70,8 +70,6 @@
 
   tinyOGL4TabViewItem.label = @"OGL 4.1";
   [self.tabViewController addTabViewItem:tinyOGL4TabViewItem];
-
-  // @fb-only
   // @fb-only
   // @fb-only
   // @fb-only
@@ -79,7 +77,6 @@
                                 // @fb-only
                                // @fb-only
                                // @fb-only
-  // @fb-only
   // @fb-only
   // @fb-only
 #endif
