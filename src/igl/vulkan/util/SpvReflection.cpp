@@ -235,6 +235,13 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
     }
   }
 
+  for (const auto& desc : info.buffers) {
+    info.usageMaskBuffers |= 1ul << desc.bindingLocation;
+  }
+  for (const auto& desc : info.textures) {
+    info.usageMaskTextures |= 1ul << desc.bindingLocation;
+  }
+
   return info;
 }
 
@@ -265,6 +272,8 @@ SpvModuleInfo mergeReflectionData(const SpvModuleInfo& info1, const SpvModuleInf
   combineDescriptions(result.textures, info1.textures, info2.textures);
 
   result.hasPushConstants = info1.hasPushConstants || info2.hasPushConstants;
+  result.usageMaskBuffers = info1.usageMaskBuffers | info2.usageMaskBuffers;
+  result.usageMaskTextures = info1.usageMaskTextures | info2.usageMaskTextures;
 
   return result;
 }
