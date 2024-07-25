@@ -101,7 +101,7 @@ class EnhancedShaderDebuggingStore {
   /** @brief If a framebuffer has been been created with the resolveAttachment as a color attachment
    * the cached framebuffer is returned. Otherwise a new one will be created and returned.
    */
-  std::shared_ptr<igl::IFramebuffer> framebuffer(
+  const std::shared_ptr<igl::IFramebuffer>& framebuffer(
       igl::vulkan::Device& device,
       const std::shared_ptr<igl::ITexture>& resolveAttachment) const;
 

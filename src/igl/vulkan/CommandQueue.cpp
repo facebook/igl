@@ -107,7 +107,7 @@ void CommandQueue::enhancedShaderDebuggingPass(const igl::vulkan::VulkanContext&
   const auto min = std::min_element(indices.begin(), indices.end());
 
   const auto resolveAttachment = cmdBuffer->getFramebuffer()->getResolveColorAttachment(*min);
-  const std::shared_ptr<igl::IFramebuffer> framebuffer =
+  const std::shared_ptr<igl::IFramebuffer>& framebuffer =
       resolveAttachment ? debugger->framebuffer(device_, resolveAttachment)
                         : cmdBuffer->getFramebuffer();
 

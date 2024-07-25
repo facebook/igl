@@ -157,7 +157,7 @@ igl::RenderPassDesc EnhancedShaderDebuggingStore::renderPassDesc(
   return desc;
 }
 
-std::shared_ptr<igl::IFramebuffer> EnhancedShaderDebuggingStore::framebuffer(
+const std::shared_ptr<igl::IFramebuffer>& EnhancedShaderDebuggingStore::framebuffer(
     igl::vulkan::Device& device,
     const std::shared_ptr<igl::ITexture>& resolveAttachment) const {
   auto foundFramebuffer = framebuffers_.find(resolveAttachment);
