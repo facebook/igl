@@ -60,17 +60,17 @@ class ICommandBuffer {
    */
   virtual std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
       const RenderPassDesc& renderPass,
-      std::shared_ptr<IFramebuffer> framebuffer,
+      const std::shared_ptr<IFramebuffer>& framebuffer,
       const Dependencies& dependencies,
       Result* IGL_NULLABLE outResult) = 0;
 
   // Use an overload here instead of a default parameter in a pure virtual function.
   std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
       const RenderPassDesc& renderPass,
-      std::shared_ptr<IFramebuffer> framebuffer,
+      const std::shared_ptr<IFramebuffer>& framebuffer,
       const Dependencies* IGL_NULLABLE dependencies = nullptr) {
     return createRenderCommandEncoder(
-        renderPass, std::move(framebuffer), dependencies ? *dependencies : Dependencies{}, nullptr);
+        renderPass, framebuffer, dependencies ? *dependencies : Dependencies{}, nullptr);
   }
 
   /**
@@ -86,7 +86,7 @@ class ICommandBuffer {
    * @param surface takes a texture param representing a drawable that depends on the results of the
    * GPU commands. Note: this param is unused when using the OpenGL backend.
    */
-  virtual void present(std::shared_ptr<ITexture> surface) const = 0;
+  virtual void present(const std::shared_ptr<ITexture>& surface) const = 0;
 
   /**
    * @brief Blocks execution of the current thread until the commands encoded in this

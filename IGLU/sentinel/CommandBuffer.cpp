@@ -16,7 +16,7 @@ CommandBuffer::CommandBuffer(bool shouldAssert) : shouldAssert_(shouldAssert) {}
 
 std::unique_ptr<igl::IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder(
     const igl::RenderPassDesc& /*renderPass*/,
-    std::shared_ptr<igl::IFramebuffer> /*framebuffer*/,
+    const std::shared_ptr<igl::IFramebuffer>& /*framebuffer*/,
     const igl::Dependencies& /*dependencies*/,
     igl::Result* IGL_NULLABLE /*outResult*/) {
   IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
@@ -28,7 +28,7 @@ std::unique_ptr<igl::IComputeCommandEncoder> CommandBuffer::createComputeCommand
   return nullptr;
 }
 
-void CommandBuffer::present(std::shared_ptr<igl::ITexture> /*surface*/) const {
+void CommandBuffer::present(const std::shared_ptr<igl::ITexture>& /*surface*/) const {
   IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
 }
 

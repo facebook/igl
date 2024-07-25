@@ -24,13 +24,13 @@ class CommandBuffer final : public ICommandBuffer,
 
   std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
       const RenderPassDesc& renderPass,
-      std::shared_ptr<IFramebuffer> framebuffer,
+      const std::shared_ptr<IFramebuffer>& framebuffer,
       const Dependencies& dependencies,
       Result* outResult) override;
 
   std::unique_ptr<IComputeCommandEncoder> createComputeCommandEncoder() override;
 
-  void present(std::shared_ptr<ITexture> surface) const override;
+  void present(const std::shared_ptr<ITexture>& surface) const override;
 
   void waitUntilScheduled() override;
 

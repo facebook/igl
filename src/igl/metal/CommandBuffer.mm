@@ -25,13 +25,13 @@ std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncod
 
 std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder(
     const RenderPassDesc& renderPass,
-    std::shared_ptr<IFramebuffer> framebuffer,
+    const std::shared_ptr<IFramebuffer>& framebuffer,
     const Dependencies& /*dependencies*/,
     Result* outResult) {
   return RenderCommandEncoder::create(shared_from_this(), renderPass, framebuffer, outResult);
 }
 
-void CommandBuffer::present(std::shared_ptr<ITexture> surface) const {
+void CommandBuffer::present(const std::shared_ptr<ITexture>& surface) const {
   IGL_ASSERT(surface);
   if (!surface) {
     return;

@@ -24,11 +24,11 @@ class CommandBuffer final : public igl::ICommandBuffer {
 
   [[nodiscard]] std::unique_ptr<igl::IRenderCommandEncoder> createRenderCommandEncoder(
       const igl::RenderPassDesc& /*renderPass*/,
-      std::shared_ptr<igl::IFramebuffer> /*framebuffer*/,
+      const std::shared_ptr<igl::IFramebuffer>& /*framebuffer*/,
       const igl::Dependencies& /*dependencies*/,
       igl::Result* IGL_NULLABLE /*outResult*/) final;
   [[nodiscard]] std::unique_ptr<igl::IComputeCommandEncoder> createComputeCommandEncoder() final;
-  void present(std::shared_ptr<igl::ITexture> /*surface*/) const final;
+  void present(const std::shared_ptr<igl::ITexture>& /*surface*/) const final;
   void waitUntilScheduled() final;
   void waitUntilCompleted() final;
   void pushDebugGroupLabel(const char* IGL_NONNULL /*label*/,

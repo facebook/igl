@@ -20,7 +20,7 @@ CommandBuffer::~CommandBuffer() = default;
 
 std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder(
     const RenderPassDesc& renderPass,
-    std::shared_ptr<IFramebuffer> framebuffer,
+    const std::shared_ptr<IFramebuffer>& framebuffer,
     const Dependencies& dependencies,
     Result* outResult) {
   return RenderCommandEncoder::create(
@@ -31,7 +31,7 @@ std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncod
   return std::make_unique<ComputeCommandEncoder>(shared_from_this()->getContext());
 }
 
-void CommandBuffer::present(std::shared_ptr<ITexture> surface) const {
+void CommandBuffer::present(const std::shared_ptr<ITexture>& surface) const {
   context_->present(surface);
 }
 
