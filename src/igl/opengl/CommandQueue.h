@@ -19,7 +19,7 @@ class CommandQueue final : public ICommandQueue {
                                                       Result* outResult) override;
   SubmitHandle submit(const ICommandBuffer& commandBuffer, bool endOfFrame = false) override;
 
-  void setInitialContext(std::shared_ptr<IContext> context);
+  void setInitialContext(const std::shared_ptr<IContext>& context);
 
  private:
   std::shared_ptr<IContext> context_;

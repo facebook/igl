@@ -21,7 +21,7 @@ class CommandQueue final : public ICommandQueue {
  public:
   CommandQueue(igl::metal::Device& device,
                id<MTLCommandQueue> value,
-               std::shared_ptr<BufferSynchronizationManager> syncManager,
+               const std::shared_ptr<BufferSynchronizationManager>& syncManager,
                DeviceStatistics& deviceStatistics) noexcept;
   std::shared_ptr<ICommandBuffer> createCommandBuffer(const CommandBufferDesc& desc,
                                                       Result* outResult) override;

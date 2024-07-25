@@ -27,10 +27,10 @@ namespace igl::metal {
 
 CommandQueue::CommandQueue(igl::metal::Device& device,
                            id<MTLCommandQueue> value,
-                           std::shared_ptr<BufferSynchronizationManager> syncManager,
+                           const std::shared_ptr<BufferSynchronizationManager>& syncManager,
                            DeviceStatistics& deviceStatistics) noexcept :
   value_(value),
-  bufferSyncManager_(std::move(syncManager)),
+  bufferSyncManager_(syncManager),
   deviceStatistics_(deviceStatistics),
   device_(device) {
   if constexpr (kIGLMetalNumberCommandBuffersToCapture > 0 &&
