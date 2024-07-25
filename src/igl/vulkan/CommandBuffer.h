@@ -73,9 +73,9 @@ class CommandBuffer final : public ICommandBuffer,
     return isFromSwapchain_;
   }
 
-  std::shared_ptr<igl::IFramebuffer> getFramebuffer() const;
+  const std::shared_ptr<igl::IFramebuffer>& getFramebuffer() const;
 
-  std::shared_ptr<ITexture> getPresentedSurface() const;
+  const std::shared_ptr<ITexture>& getPresentedSurface() const;
 
  private:
   friend class CommandQueue;

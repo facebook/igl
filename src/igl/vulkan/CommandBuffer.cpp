@@ -146,11 +146,11 @@ void CommandBuffer::waitUntilCompleted() {
 
 void CommandBuffer::waitUntilScheduled() {}
 
-std::shared_ptr<igl::IFramebuffer> CommandBuffer::getFramebuffer() const {
+const std::shared_ptr<igl::IFramebuffer>& CommandBuffer::getFramebuffer() const {
   return framebuffer_;
 }
 
-std::shared_ptr<ITexture> CommandBuffer::getPresentedSurface() const {
+const std::shared_ptr<ITexture>& CommandBuffer::getPresentedSurface() const {
   return presentedSurface_;
 }
 
