@@ -131,7 +131,9 @@ void UniformAdapter::setUniformBuffer(IBuffer* buffer,
                                       uint32_t bindingIndex,
                                       Result* outResult) {
   IGL_ASSERT_MSG(bindingIndex <= IGL_UNIFORM_BLOCKS_BINDING_MAX,
-                 "Uniform buffer index is beyond max");
+                 "Uniform buffer index %u is beyond max %u",
+                 bindingIndex,
+                 IGL_UNIFORM_BLOCKS_BINDING_MAX);
   IGL_ASSERT_MSG(buffer, "invalid buffer passed to setUniformBuffer");
   if (bindingIndex < IGL_UNIFORM_BLOCKS_BINDING_MAX && buffer) {
     uniformBufferBindingMap_[bindingIndex] = {buffer, offset};
