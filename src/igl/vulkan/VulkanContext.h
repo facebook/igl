@@ -256,9 +256,8 @@ class VulkanContext final {
   igl::BindGroupBufferHandle createBindGroup(const BindGroupBufferDesc& desc, Result* outResult);
   void destroy(igl::BindGroupTextureHandle handle);
   void destroy(igl::BindGroupBufferHandle handle);
-  const BindGroupTextureDesc* getBindGroupDesc(
-      igl::BindGroupTextureHandle handle) const; // temporary
-                                                 // helper
+  VkDescriptorSet getBindGroupDescriptorSet(igl::BindGroupTextureHandle handle) const;
+  uint32_t getBindGroupUsageMask(igl::BindGroupTextureHandle handle) const;
   const BindGroupBufferDesc* getBindGroupDesc(igl::BindGroupBufferHandle handle) const; // temporary
                                                                                         // helper
 

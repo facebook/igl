@@ -577,6 +577,10 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
 void RenderCommandEncoder::bindTexture(size_t index, uint8_t target, ITexture* texture) {
   IGL_PROFILER_FUNCTION();
 
+  IGL_ASSERT_MSG(pendingBindGroupTexture_.empty(),
+                 "A texture BindGroup was already bound to this command encoder. You can bind "
+                 "individual textures again only after a draw call.");
+
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p  bindTexture(%u, %u)\n", cmdBuffer_, (uint32_t)index, (uint32_t)target);
 #endif // IGL_VULKAN_PRINT_COMMANDS
@@ -752,6 +756,40 @@ bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {
 
 void RenderCommandEncoder::flushDynamicState() {
   binder_.bindPipeline(rps_->getVkPipeline(dynamicState_), &rps_->getSpvModuleInfo());
+
+  if (!pendingBindGroupTexture_.empty()) {
+    VkDescriptorSet dset = ctx_.getBindGroupDescriptorSet(pendingBindGroupTexture_);
+    VkPipelineLayout layout = rps_->getVkPipelineLayout();
+
+    const uint32_t usageMaskPipeline = rps_->getSpvModuleInfo().usageMaskTextures;
+    const uint32_t usageMaskBindGroup = ctx_.getBindGroupUsageMask(pendingBindGroupTexture_);
+
+    if (!IGL_VERIFY(usageMaskPipeline == usageMaskBindGroup)) {
+      IGL_LOG_ERROR(
+          "Texture bind group is not compatible with the current IRenderPipelineState '%s'\n",
+          rps_->getRenderPipelineDesc().debugName.c_str());
+      IGL_LOG_INFO(IGL_FORMAT("Bind group textures mask: {:b}\n", usageMaskBindGroup).c_str());
+      IGL_LOG_INFO(IGL_FORMAT("Pipeline expects        : {:b}\n", usageMaskPipeline).c_str());
+      return;
+    }
+
+#if IGL_VULKAN_PRINT_COMMANDS
+    IGL_LOG_INFO("%p vkCmdBindDescriptorSets(%u) - textures bind group\n", cmdBuffer_);
+#endif // IGL_VULKAN_PRINT_COMMANDS
+    ctx_.vf_.vkCmdBindDescriptorSets(cmdBuffer_,
+                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                     layout,
+                                     kBindPoint_CombinedImageSamplers,
+                                     1,
+                                     &dset,
+                                     0,
+                                     nullptr);
+    // This is necessary to support a mix of BindGroups and bindTexture() calls in the same command
+    // encoder. A typical use case for that is running ImGui rendering etc.
+    binder_.isDirtyFlags_ &= ~igl::vulkan::ResourcesBinder::DirtyFlagBits_Textures;
+    pendingBindGroupTexture_ = {}; // reset
+  }
+
   binder_.updateBindings(rps_->getVkPipelineLayout(), *rps_);
 
   if (ctx_.config_.enableDescriptorIndexing) {
@@ -937,20 +975,9 @@ void RenderCommandEncoder::processDependencies(const Dependencies& dependencies)
 }
 
 void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
-  if (handle.empty()) {
-    return;
-  }
+  IGL_ASSERT(!handle.empty());
 
-  // this is a dummy placeholder code to be replaced with actual Vulkan descriptors management
-  const BindGroupTextureDesc* desc = ctx_.getBindGroupDesc(handle);
-
-  for (uint32_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
-    if (desc->textures[i]) {
-      IGL_ASSERT(desc->samplers[i]);
-      bindTexture(i, BindTarget::kAllGraphics, desc->textures[i].get());
-      bindSamplerState(i, BindTarget::kAllGraphics, desc->samplers[i].get());
-    }
-  }
+  pendingBindGroupTexture_ = handle;
 }
 
 void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,

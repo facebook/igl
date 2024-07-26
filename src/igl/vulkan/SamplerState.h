@@ -15,6 +15,7 @@ namespace igl::vulkan {
 
 class Device;
 class PipelineState;
+class VulkanContext;
 class VulkanSampler;
 
 /**
@@ -57,6 +58,7 @@ class SamplerState final : public ISamplerState {
  private:
   friend class PipelineState;
   friend class ResourcesBinder;
+  friend class VulkanContext;
 
   /** @brief The device used to create the resource */
   const igl::vulkan::Device& device_;

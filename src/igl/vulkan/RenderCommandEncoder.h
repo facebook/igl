@@ -152,6 +152,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   Dependencies dependencies_ = {};
 
   const igl::vulkan::RenderPipelineState* rps_ = nullptr;
+  igl::BindGroupTextureHandle pendingBindGroupTexture_ = {};
 };
 
 } // namespace igl::vulkan

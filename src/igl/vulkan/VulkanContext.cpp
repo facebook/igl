@@ -26,10 +26,14 @@
 
 #include <igl/glslang/GlslCompiler.h>
 
+#include <igl/SamplerState.h>
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/EnhancedShaderDebuggingStore.h>
+#include <igl/vulkan/RenderPipelineState.h>
+#include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/SyncManager.h>
+#include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>
@@ -313,6 +317,19 @@ class DescriptorPoolsArena final {
   std::deque<ExtinctDescriptorPool> extinct_;
 };
 
+namespace {
+
+struct BindGroupMetadataTextures {
+  // cold
+  BindGroupTextureDesc desc = {};
+  VkDescriptorPool pool = VK_NULL_HANDLE;
+  // hot
+  VkDescriptorSet dset = VK_NULL_HANDLE;
+  uint32_t usageMask = 0;
+};
+
+} // namespace
+
 struct VulkanContextImpl final {
   // Vulkan Memory Allocator
   VmaAllocator vma_ = VK_NULL_HANDLE;
@@ -329,7 +346,7 @@ struct VulkanContextImpl final {
   uint32_t currentMaxBindlessSamplers_ = 8;
 
   Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
-  Pool<BindGroupTextureTag, BindGroupTextureDesc> bindGroupTexturesPool_;
+  Pool<BindGroupTextureTag, BindGroupMetadataTextures> bindGroupTexturesPool_;
 
   igl::vulkan::DescriptorPoolsArena& getOrCreateArena_CombinedImageSamplers(
       const VulkanContext& ctx,
@@ -413,6 +430,20 @@ VulkanContext::~VulkanContext() {
 
   dummyStorageBuffer_.reset();
   dummyUniformBuffer_.reset();
+
+#if IGL_DEBUG
+  for (const auto& t : pimpl_->bindGroupTexturesPool_.objects_) {
+    if (t.obj_.dset != VK_NULL_HANDLE) {
+      IGL_ASSERT_MSG(
+          false, "Leaked texture bind group detected! %s", t.obj_.desc.debugName.c_str());
+    }
+  }
+#endif // IGL_DEBUG
+
+  // BindGroups can hold shared pointers to textures/samplers/buffers. Release them here.
+  pimpl_->bindGroupTexturesPool_.clear();
+  pimpl_->bindGroupBuffersPool_.clear();
+
 #if IGL_DEBUG
   for (const auto& t : textures_.objects_) {
     if (t.obj_.use_count() > 1) {
@@ -1739,17 +1770,130 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(
     const BindGroupTextureDesc& desc,
     const IRenderPipelineState* compatiblePipeline,
     Result* outResult) {
-  (void)compatiblePipeline;
+  VkDevice device = getVkDevice();
 
-  BindGroupTextureDesc description(desc);
+  BindGroupMetadataTextures metadata{desc};
 
-  const auto handle = pimpl_->bindGroupTexturesPool_.create(std::move(description));
+  // @fb-only
+  VkDescriptorSetLayoutBinding bindings[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
+  uint32_t numBindings = 0;
 
-  Result::setResult(outResult,
-                    handle.empty() ? Result(Result::Code::RuntimeError, "Cannot create bind group")
-                                   : Result());
+  const VkShaderStageFlags stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
-  return handle;
+  const uint32_t usageMaskPipeline =
+      compatiblePipeline ? static_cast<const igl::vulkan::RenderPipelineState&>(*compatiblePipeline)
+                               .getSpvModuleInfo()
+                               .usageMaskTextures
+                         : 0ul;
+
+  for (uint32_t loc = 0; loc != IGL_ARRAY_NUM_ELEMENTS(desc.textures); loc++) {
+    const bool isInPipeline = (usageMaskPipeline & (1ul << loc)) != 0;
+    if (compatiblePipeline ? isInPipeline : desc.samplers[loc] != nullptr) {
+      IGL_ASSERT(compatiblePipeline || desc.samplers[loc]);
+      bindings[numBindings++] = ivkGetDescriptorSetLayoutBinding(
+          loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, stageFlags);
+      metadata.usageMask |= 1ul << loc;
+    }
+  }
+
+  VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
+
+  {
+    // @fb-only
+    const VkDescriptorBindingFlags bindingFlags[IGL_TEXTURE_SAMPLERS_MAX] = {};
+
+    VK_ASSERT(ivkCreateDescriptorSetLayout(&vf_,
+                                           device,
+                                           VkDescriptorSetLayoutCreateFlags{},
+                                           numBindings,
+                                           bindings,
+                                           bindingFlags,
+                                           &dsl));
+    VK_ASSERT(ivkSetDebugObjectName(
+        &vf_,
+        device,
+        VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
+        (uint64_t)dsl,
+        IGL_FORMAT("Descriptor Set Layout (COMBINED_IMAGE_SAMPLER): BindGroup = {}", desc.debugName)
+            .c_str()));
+
+    const VkDescriptorPoolSize poolSize =
+        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numBindings};
+
+    VK_ASSERT(ivkCreateDescriptorPool(
+        &vf_, device, VkDescriptorPoolCreateFlags{}, 1u, 1u, &poolSize, &metadata.pool));
+    VK_ASSERT(ivkSetDebugObjectName(
+        &vf_,
+        device,
+        VK_OBJECT_TYPE_DESCRIPTOR_POOL,
+        (uint64_t)metadata.pool,
+        IGL_FORMAT("Descriptor Pool (COMBINED_IMAGE_SAMPLER): BindGroup = {}", desc.debugName)
+            .c_str()));
+
+    VK_ASSERT(ivkAllocateDescriptorSet(&vf_, device, metadata.pool, dsl, &metadata.dset));
+  }
+
+  // make sure the guard values are always there
+  IGL_ASSERT(!textures_.objects_.empty());
+  IGL_ASSERT(!samplers_.objects_.empty());
+  // use the dummy texture to ensure pipeline compatibility
+  VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
+
+  // @fb-only
+  VkDescriptorImageInfo images[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
+  // @fb-only
+  VkWriteDescriptorSet writes[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
+  uint32_t numWrites = 0;
+
+  for (uint32_t loc = 0; loc != IGL_ARRAY_NUM_ELEMENTS(desc.textures); loc++) {
+    if (compatiblePipeline ? (usageMaskPipeline & (1ul << loc)) == 0
+                           : desc.textures[loc] == nullptr) {
+      continue;
+    }
+    const igl::vulkan::VulkanTexture& texture =
+        desc.textures[loc]
+            ? static_cast<igl::vulkan::Texture*>(desc.textures[loc].get())->getVulkanTexture()
+            : *textures_.objects_[0].obj_; // use a dummy texture when necessary
+    const igl::vulkan::VulkanSampler& sampler =
+        desc.samplers[loc] ? *static_cast<igl::vulkan::SamplerState&>(*desc.samplers[loc]).sampler_
+                           : *samplers_.objects_[0].obj_; // use a dummy sampler when necessary
+
+    // multisampled images cannot be directly accessed from shaders
+    const bool isTextureAvailable =
+        (texture.image_.samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
+    const bool isSampledImage = isTextureAvailable && texture.image_.isSampledImage();
+
+    if (!IGL_VERIFY(isSampledImage)) {
+      IGL_LOG_ERROR("Each bound texture should have TextureUsageBits::Sampled (slot = %u)", loc);
+      continue;
+    }
+
+    writes[numWrites] = ivkGetWriteDescriptorSet_ImageInfo(
+        metadata.dset, loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &images[numWrites]);
+    images[numWrites++] = {
+        sampler.getVkSampler(),
+        isSampledImage ? texture.imageView_.getVkImageView() : dummyImageView,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
+  }
+
+  if (!IGL_VERIFY(numWrites)) {
+    IGL_LOG_ERROR("Cannot create an empty bind group");
+    Result::setResult(outResult,
+                      Result(Result::Code::RuntimeError, "Cannot create an empty bind group"));
+    return {};
+  }
+
+  IGL_PROFILER_ZONE("vkUpdateDescriptorSets() - textures bind group", IGL_PROFILER_COLOR_UPDATE);
+  vf_.vkUpdateDescriptorSets(device_->getVkDevice(), numWrites, writes, 0, nullptr);
+  IGL_PROFILER_ZONE_END();
+
+  // once a descriptor set has been updated, destroy the DSL
+  vf_.vkDestroyDescriptorSetLayout(device, dsl, nullptr);
+
+  Result::setOk(outResult);
+
+  return pimpl_->bindGroupTexturesPool_.create(std::move(metadata));
 }
 
 igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferDesc& desc,
@@ -1770,6 +1914,11 @@ void VulkanContext::destroy(igl::BindGroupTextureHandle handle) {
     return;
   }
 
+  deferredTask(std::packaged_task<void()>(
+      [vf = &vf_, device = getVkDevice(), pool = pimpl_->bindGroupTexturesPool_.get(handle)->pool] {
+        vf->vkDestroyDescriptorPool(device, pool, nullptr);
+      }));
+
   pimpl_->bindGroupTexturesPool_.destroy(handle);
 }
 
@@ -1781,9 +1930,12 @@ void VulkanContext::destroy(igl::BindGroupBufferHandle handle) {
   pimpl_->bindGroupBuffersPool_.destroy(handle);
 }
 
-const BindGroupTextureDesc* VulkanContext::getBindGroupDesc(
-    igl::BindGroupTextureHandle handle) const {
-  return pimpl_->bindGroupTexturesPool_.get(handle);
+VkDescriptorSet VulkanContext::getBindGroupDescriptorSet(igl::BindGroupTextureHandle handle) const {
+  return handle.empty() ? VK_NULL_HANDLE : pimpl_->bindGroupTexturesPool_.get(handle)->dset;
+}
+
+uint32_t VulkanContext::getBindGroupUsageMask(igl::BindGroupTextureHandle handle) const {
+  return handle.empty() ? 0 : pimpl_->bindGroupTexturesPool_.get(handle)->usageMask;
 }
 
 const BindGroupBufferDesc* VulkanContext::getBindGroupDesc(
