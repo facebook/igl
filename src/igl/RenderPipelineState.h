@@ -205,6 +205,9 @@ struct RenderPipelineDesc {
 
   int sampleCount = 1; // MSAA
 
+  // Vulkan only: specify if buffer binding locations correspond to Vulkan dynamic buffers
+  uint32_t isDynamicBufferMask = 0; // one bit per each buffer
+
   // Vulkan only: immutable samplers per each binding slot (for example, Ycbcr conversion etc)
   // @fb-only
   std::shared_ptr<ISamplerState> immutableSamplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
