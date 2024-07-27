@@ -337,6 +337,58 @@ static void initIGL() {
     depthStencilState_ = device_->createDepthStencilState(desc, nullptr);
   }
 
+  // Command queue: backed by different types of GPU HW queues
+  CommandQueueDesc desc{CommandQueueType::Graphics};
+  commandQueue_ = device_->createCommandQueue(desc, nullptr);
+
+  renderPass_.colorAttachments.push_back(igl::RenderPassDesc::ColorAttachmentDesc{});
+  renderPass_.colorAttachments.back().loadAction = LoadAction::Clear;
+  renderPass_.colorAttachments.back().storeAction = StoreAction::Store;
+  renderPass_.colorAttachments.back().clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
+#if TINY_TEST_USE_DEPTH_BUFFER
+  renderPass_.depthAttachment.loadAction = LoadAction::Clear;
+  renderPass_.depthAttachment.storeAction =
+      StoreAction::Store; // save it so we can display it via ImGui
+  renderPass_.depthAttachment.clearDepth = 1.0;
+#else
+  renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
+#endif // TINY_TEST_USE_DEPTH_BUFFER
+
+  // initialize random rotation axes for all cubes
+  for (uint32_t i = 0; i != kNumCubes; i++) {
+    axis_[i] = glm::sphericalRand(1.0f);
+  }
+}
+
+static void createRenderPipeline() {
+  if (renderPipelineState_Mesh_) {
+    return;
+  }
+
+  IGL_ASSERT(framebuffer_);
+
+  RenderPipelineDesc desc;
+
+  desc.targetDesc.colorAttachments.resize(1);
+  desc.targetDesc.colorAttachments[0].textureFormat =
+      framebuffer_->getColorAttachment(0)->getFormat();
+
+  if (framebuffer_->getDepthAttachment()) {
+    desc.targetDesc.depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat();
+  }
+
+  desc.vertexInputState = vertexInput0_;
+  desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(
+      *device_, codeVS, "main", "", codeFS, "main", "", nullptr);
+
+#if !TINY_TEST_USE_DEPTH_BUFFER
+  desc.cullMode = igl::CullMode::Back;
+#endif // TINY_TEST_USE_DEPTH_BUFFER
+
+  desc.frontFaceWinding = igl::WindingMode::Clockwise;
+  desc.debugName = igl::genNameHandle("Pipeline: mesh");
+  renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
+
   std::shared_ptr<igl::ITexture> texture0;
   std::shared_ptr<igl::ISamplerState> sampler;
   {
@@ -397,76 +449,28 @@ static void initIGL() {
     sampler = device_->createSamplerState(desc, nullptr);
   }
 
-  bindGroupTextures_ = device_->createBindGroup({
-      .textures = {texture0, texture1_},
-      .samplers = {sampler, sampler},
-      .debugName = "bindGroup_",
-  });
-  bindGroupNoTexture1_ = device_->createBindGroup({
-      .textures = {texture0},
-      .samplers = {sampler},
-      .debugName = "bindGroupNoTexture1_",
-  });
-
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
     bindGroupBuffers_.push_back(device_->createBindGroup({
         .buffers{ubPerFrame_[i], ubPerObject_[i]},
+        .size{sizeof(UniformsPerFrame), sizeof(UniformsPerObject)},
         .isDynamicBufferMask = 0b10,
         .debugName = IGL_FORMAT("bindGroupBuffers_[{}]", i),
     }));
   }
 
-  // Command queue: backed by different types of GPU HW queues
-  CommandQueueDesc desc{CommandQueueType::Graphics};
-  commandQueue_ = device_->createCommandQueue(desc, nullptr);
-
-  renderPass_.colorAttachments.push_back(igl::RenderPassDesc::ColorAttachmentDesc{});
-  renderPass_.colorAttachments.back().loadAction = LoadAction::Clear;
-  renderPass_.colorAttachments.back().storeAction = StoreAction::Store;
-  renderPass_.colorAttachments.back().clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
-#if TINY_TEST_USE_DEPTH_BUFFER
-  renderPass_.depthAttachment.loadAction = LoadAction::Clear;
-  renderPass_.depthAttachment.storeAction =
-      StoreAction::Store; // save it so we can display it via ImGui
-  renderPass_.depthAttachment.clearDepth = 1.0;
-#else
-  renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
-#endif // TINY_TEST_USE_DEPTH_BUFFER
-
-  // initialize random rotation axes for all cubes
-  for (uint32_t i = 0; i != kNumCubes; i++) {
-    axis_[i] = glm::sphericalRand(1.0f);
-  }
-}
-
-static void createRenderPipeline() {
-  if (renderPipelineState_Mesh_) {
-    return;
-  }
-
-  IGL_ASSERT(framebuffer_);
-
-  RenderPipelineDesc desc;
-
-  desc.targetDesc.colorAttachments.resize(1);
-  desc.targetDesc.colorAttachments[0].textureFormat =
-      framebuffer_->getColorAttachment(0)->getFormat();
-
-  if (framebuffer_->getDepthAttachment()) {
-    desc.targetDesc.depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat();
-  }
-
-  desc.vertexInputState = vertexInput0_;
-  desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(
-      *device_, codeVS, "main", "", codeFS, "main", "", nullptr);
-
-#if !TINY_TEST_USE_DEPTH_BUFFER
-  desc.cullMode = igl::CullMode::Back;
-#endif // TINY_TEST_USE_DEPTH_BUFFER
-
-  desc.frontFaceWinding = igl::WindingMode::Clockwise;
-  desc.debugName = igl::genNameHandle("Pipeline: mesh");
-  renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
+  bindGroupTextures_ = device_->createBindGroup({
+      .textures = {texture0, texture1_},
+      .samplers = {sampler, sampler},
+      .debugName = "bindGroup_",
+  });
+  bindGroupNoTexture1_ = device_->createBindGroup(
+      {
+          .textures = {texture0},
+          .samplers = {sampler},
+          .debugName = "bindGroupNoTexture1_",
+      },
+      // as we don't provide all necessary textures, let IGL/Vulkan add dummies where necessary
+      renderPipelineState_Mesh_.get());
 }
 
 static std::shared_ptr<ITexture> getVulkanNativeDrawable() {
