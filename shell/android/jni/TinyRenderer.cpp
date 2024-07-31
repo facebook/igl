@@ -168,7 +168,7 @@ void TinyRenderer::onSurfaceDestroyed(ANativeWindow* surface) {
 }
 
 void TinyRenderer::touchEvent(bool isDown, float x, float y, float dx, float dy) {
-  const float scale = platform_->getDisplayContext().scale;
+  const float scale = platform_->getDisplayContext().pixelsPerPoint;
   IGL_ASSERT(scale > 0.0f);
   platform_->getInputDispatcher().queueEvent(
       igl::shell::TouchEvent(isDown, x / scale, y / scale, dx / scale, dy / scale));
