@@ -105,6 +105,8 @@ void TinyRenderer::init(AAssetManager* mgr,
 }
 
 void TinyRenderer::render(float displayScale) {
+  igl::DeviceScope const scope(platform_->getDevice());
+
   // process user input
   IGL_ASSERT(platform_ != nullptr);
   platform_->getInputDispatcher().processEvents();
@@ -145,6 +147,8 @@ void TinyRenderer::render(float displayScale) {
 }
 
 void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int height) {
+  igl::DeviceScope const scope(platform_->getDevice());
+
   width_ = static_cast<uint32_t>(width);
   height_ = static_cast<uint32_t>(height);
 #if IGL_BACKEND_OPENGL
@@ -163,6 +167,8 @@ void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int 
 }
 
 void TinyRenderer::onSurfaceDestroyed(ANativeWindow* surface) {
+  igl::DeviceScope const scope(platform_->getDevice());
+
   IGL_ASSERT(backendTypeID_ == BackendTypeID::Vulkan);
   IGL_ASSERT(surface != nullptr);
 }
