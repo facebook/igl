@@ -82,8 +82,6 @@ class Context final : public IContext {
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
   void imageTargetTexture2DOES(EGLImageKHR eglImage, GLenum target) const;
   EGLClientBuffer getNativeClientBufferANDROID(AHardwareBuffer* hwb) const;
-  void imageTargetTexture(EGLImageKHR eglImage, GLenum target) const;
-  EGLImageKHR createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) const;
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
  private:
   Context(RenderingAPI api,

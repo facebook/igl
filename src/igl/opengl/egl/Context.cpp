@@ -428,40 +428,6 @@ bool Context::destroyImageKHR(EGLImageKHR eglImage) const {
 #endif // !(IGL_PLATFORM_WIN)
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
-EGLImageKHR Context::createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) const {
-  EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(hwb);
-  EGLint attribs[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE, EGL_NONE, EGL_NONE};
-
-  EGLDisplay display = this->getDisplay();
-  // eglCreateImageKHR will add a ref to the AHardwareBuffer
-  EGLImageKHR eglImage =
-      eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID, clientBuffer, attribs);
-  IGL_DEBUG_LOG("eglCreateImageKHR(%p, %x, %x, %p, {%d, %d, %d, %d, %d})\n",
-                display,
-                EGL_NO_CONTEXT,
-                EGL_NATIVE_BUFFER_ANDROID,
-                clientBuffer,
-                attribs[0],
-                attribs[1],
-                attribs[2],
-                attribs[3],
-                attribs[4]);
-
-  this->checkForErrors(__FUNCTION__, __LINE__);
-
-  IGL_REPORT_ERROR(this->isCurrentContext() || this->isCurrentSharegroup());
-
-  return eglImage;
-}
-
-void Context::imageTargetTexture(EGLImageKHR eglImage, GLenum target) const {
-  glEGLImageTargetTexture2DOES(target, static_cast<GLeglImageOES>(eglImage));
-  IGL_DEBUG_LOG("glEGLImageTargetTexture2DOES(%u, %#x)\n",
-                GL_TEXTURE_2D,
-                static_cast<GLeglImageOES>(eglImage));
-  this->checkForErrors(__FUNCTION__, __LINE__);
-}
-
 EGLClientBuffer Context::getNativeClientBufferANDROID(AHardwareBuffer* hwb) const {
   EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(hwb);
 
