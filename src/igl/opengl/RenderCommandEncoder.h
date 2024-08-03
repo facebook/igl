@@ -28,7 +28,7 @@ class CommandBuffer;
 class RenderCommandEncoder final : public IRenderCommandEncoder, public WithContext {
  public:
   static std::unique_ptr<RenderCommandEncoder> create(
-      std::shared_ptr<CommandBuffer> commandBuffer,
+      const std::shared_ptr<CommandBuffer>& commandBuffer,
       const RenderPassDesc& renderPass,
       const std::shared_ptr<IFramebuffer>& framebuffer,
       const Dependencies& dependencies,
@@ -37,7 +37,7 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
   ~RenderCommandEncoder() override;
 
  private:
-  explicit RenderCommandEncoder(std::shared_ptr<CommandBuffer> commandBuffer);
+  explicit RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer);
   void beginEncoding(const RenderPassDesc& renderPass,
                      const std::shared_ptr<IFramebuffer>& framebuffer,
                      Result* outResult);
