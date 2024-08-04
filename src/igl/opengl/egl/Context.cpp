@@ -403,30 +403,6 @@ EGLConfig Context::getConfig() const {
   return config_;
 }
 
-#if !(IGL_PLATFORM_WIN)
-EGLImageKHR Context::createImageKHR(EGLContext context,
-                                    EGLenum target,
-                                    EGLClientBuffer buffer,
-                                    const EGLint* attribute_list) const {
-  EGLImageKHR eglImage = eglCreateImageKHR(display_, context, target, buffer, attribute_list);
-  IGL_DEBUG_LOG("eglCreateImageKHR(%p, %p, %x, %p)\n", display_, context, target, buffer);
-  this->checkForErrors(__FUNCTION__, __LINE__);
-
-  IGL_REPORT_ERROR(this->isCurrentContext() || this->isCurrentSharegroup());
-
-  return eglImage;
-}
-
-bool Context::destroyImageKHR(EGLImageKHR eglImage) const {
-  EGLBoolean result = eglDestroyImageKHR(display_, eglImage);
-  IGL_DEBUG_LOG("eglDestroyImageKHR(%p, %p)\n", display_, eglImage);
-  this->checkForErrors(__FUNCTION__, __LINE__);
-
-  IGL_REPORT_ERROR(this->isCurrentContext() || this->isCurrentSharegroup());
-  return result;
-}
-#endif // !(IGL_PLATFORM_WIN)
-
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 EGLImageKHR Context::createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) const {
   EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(hwb);
@@ -460,24 +436,6 @@ void Context::imageTargetTexture(EGLImageKHR eglImage, GLenum target) const {
                 GL_TEXTURE_2D,
                 static_cast<GLeglImageOES>(eglImage));
   this->checkForErrors(__FUNCTION__, __LINE__);
-}
-
-EGLClientBuffer Context::getNativeClientBufferANDROID(AHardwareBuffer* hwb) const {
-  EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(hwb);
-
-  IGL_DEBUG_LOG("eglGetNativeClientBufferANDROID(%p)\n", hwb);
-  this->checkForErrors(__FUNCTION__, __LINE__);
-  IGL_REPORT_ERROR(this->isCurrentContext() || this->isCurrentSharegroup());
-
-  return clientBuffer;
-}
-
-void Context::imageTargetTexture2DOES(EGLImageKHR eglImage, GLenum target) const {
-  glEGLImageTargetTexture2DOES(target, static_cast<GLeglImageOES>(eglImage));
-  IGL_DEBUG_LOG(
-      "glEGLImageTargetTexture2DOES(%#x, %#x)\n", target, static_cast<GLeglImageOES>(eglImage));
-  this->checkForErrors(__FUNCTION__, __LINE__);
-  IGL_REPORT_ERROR(this->isCurrentContext() || this->isCurrentSharegroup());
 }
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 

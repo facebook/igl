@@ -71,17 +71,7 @@ class Context final : public IContext {
   /// Mark this context as belonging to a sharegroup with another context.
   void markSharegroup(Context& context);
 
-#if !(IGL_PLATFORM_WIN)
-  EGLImageKHR createImageKHR(EGLContext context,
-                             EGLenum target,
-                             EGLClientBuffer buffer,
-                             const EGLint* attribute_list) const;
-  bool destroyImageKHR(EGLImageKHR eglImage) const;
-#endif // !(IGL_PLATFORM_WIN)
-
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
-  void imageTargetTexture2DOES(EGLImageKHR eglImage, GLenum target) const;
-  EGLClientBuffer getNativeClientBufferANDROID(AHardwareBuffer* hwb) const;
   void imageTargetTexture(EGLImageKHR eglImage, GLenum target) const;
   EGLImageKHR createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) const;
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
