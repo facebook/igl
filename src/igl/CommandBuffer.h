@@ -66,8 +66,9 @@ class ICommandBuffer {
 
   std::unique_ptr<IRenderCommandEncoder> createRenderCommandEncoder(
       const RenderPassDesc& renderPass,
-      const std::shared_ptr<IFramebuffer>& framebuffer) {
-    return createRenderCommandEncoder(renderPass, framebuffer, Dependencies{});
+      const std::shared_ptr<IFramebuffer>& framebuffer,
+      Result* IGL_NULLABLE outResult = nullptr) {
+    return createRenderCommandEncoder(renderPass, framebuffer, Dependencies(), outResult);
   }
 
   /**
