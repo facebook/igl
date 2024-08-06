@@ -430,6 +430,14 @@ void RenderCommandAdapter::willDraw() {
         CLEAR_DIRTY(fragmentTextureStatesDirty_, index);
       }
     }
+
+    if (getContext().shouldValidateShaders()) {
+      const auto* stages = pipelineState->getShaderStages();
+      if (stages) {
+        const auto result = stages->validate();
+        IGL_ASSERT_MSG(result.isOk(), result.message.c_str());
+      }
+    }
   }
 }
 

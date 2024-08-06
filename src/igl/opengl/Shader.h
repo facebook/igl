@@ -61,7 +61,7 @@ class ShaderStages final : public IShaderStages, public WithContext {
 
   Result create(const ShaderStagesDesc& /*desc*/);
 
-  Result validate();
+  Result validate() const;
   void bind();
   void unbind();
 
@@ -72,7 +72,7 @@ class ShaderStages final : public IShaderStages, public WithContext {
  private:
   void createRenderProgram(Result* result);
   void createComputeProgram(Result* result);
-  std::string getProgramInfoLog(GLuint programID);
+  std::string getProgramInfoLog(GLuint programID) const;
 
   // the GL shader program ID
   GLuint programID_ = 0;

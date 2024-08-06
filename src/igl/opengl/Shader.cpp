@@ -173,7 +173,7 @@ Result ShaderStages::create(const ShaderStagesDesc& /*desc*/) {
   return result;
 }
 
-Result ShaderStages::validate() {
+Result ShaderStages::validate() const {
   getContext().validateProgram(programID_);
   GLint status;
   getContext().getProgramiv(programID_, GL_VALIDATE_STATUS, &status);
@@ -187,10 +187,6 @@ Result ShaderStages::validate() {
 }
 
 void ShaderStages::bind() {
-  if (getContext().shouldValidateShaders()) {
-    const auto result = validate();
-    IGL_ASSERT_MSG(result.isOk(), result.message.c_str());
-  }
   getContext().useProgram(programID_);
 }
 
@@ -329,7 +325,7 @@ Result ShaderModule::create(const ShaderModuleDesc& desc) {
   return Result();
 }
 
-std::string ShaderStages::getProgramInfoLog(GLuint programID) {
+std::string ShaderStages::getProgramInfoLog(GLuint programID) const {
   // Get the size of log
   GLsizei logSize = 0;
   getContext().getProgramiv(programID, GL_INFO_LOG_LENGTH, &logSize);

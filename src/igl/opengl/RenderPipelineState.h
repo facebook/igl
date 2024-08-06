@@ -71,6 +71,10 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
 
   std::unordered_map<int, size_t>& uniformBlockBindingMap();
 
+  const ShaderStages* getShaderStages() const {
+    return static_cast<ShaderStages*>(desc_.shaderStages.get());
+  }
+
  private:
   // Tracks a list of attribute locations associated with a bufferIndex
   std::vector<int> bufferAttribLocations_[IGL_VERTEX_BUFFER_MAX];
