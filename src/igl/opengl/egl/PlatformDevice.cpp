@@ -154,6 +154,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const Te
   auto context = static_cast<Context*>(getSharedContext().get());
   if (context == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "No EGL context found!");
+    IGL_LOG_ERROR("No EGL context found!");
     return nullptr;
   }
 
@@ -164,6 +165,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const Te
   texture->setTextureUsage(desc.usage);
   Result::setResult(outResult, subResult.code, subResult.message);
   if (!subResult.isOk()) {
+    IGL_LOG_ERROR("sub result failed");
     return nullptr;
   }
 

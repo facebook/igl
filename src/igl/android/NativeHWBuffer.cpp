@@ -208,6 +208,7 @@ Result INativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
                                               bool hasStorageAlready,
                                               bool surfaceComposite) {
   if (hwBuffer_) {
+    IGL_LOG_ERROR("hw already provided");
     return Result{Result::Code::InvalidOperation, "Hardware buffer already provided"};
   }
 
@@ -217,17 +218,35 @@ Result INativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
                        igl::android::getNativeHWFormat(desc.format) > 0 && !hasStorageAlready &&
                        desc.storage == ResourceStorage::Shared;
   if (!isValid) {
+    IGL_LOG_ERROR("invalid desc for HW");
+    // failed on (1 1 1) (5 1 0) (1 0 0)
+    IGL_LOG_ERROR("DESC: (%d %d %d) (%d %d %d) (%d %d %d)",
+                  desc.numLayers, // 1
+                  desc.numSamples, // 1
+                  desc.numMipLevels, // 1
+
+                  desc.usage, // != 0
+                  desc.type, // 1 = TwoD
+                  desc.tiling, // 0 = Optimal
+
+                  igl::android::getNativeHWFormat(desc.format),
+                  (int)hasStorageAlready,
+                  desc.storage // 2 = shared
+    );
+
     return Result(Result::Code::Unsupported, "Invalid texture description");
   }
 
   AHardwareBuffer* buffer = nullptr;
   auto allocationResult = igl::android::allocateNativeHWBuffer(desc, surfaceComposite, &buffer);
   if (!allocationResult.isOk()) {
+    IGL_LOG_ERROR("HW alloc failed");
     return allocationResult;
   }
 
   Result result = createTextureInternal(desc, buffer);
   if (!result.isOk()) {
+    IGL_LOG_ERROR("HW internal failed");
     AHardwareBuffer_release(buffer);
   } else {
     hwBuffer_ = buffer;
