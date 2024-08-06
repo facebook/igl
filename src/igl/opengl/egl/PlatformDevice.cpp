@@ -161,6 +161,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(const Te
 
   auto texture = std::make_shared<android::NativeHWTextureBuffer>(getContext(), desc.format);
   subResult = texture->createHWBuffer(desc, false, false);
+  texture->setTextureUsage(desc.usage);
   Result::setResult(outResult, subResult.code, subResult.message);
   if (!subResult.isOk()) {
     return nullptr;

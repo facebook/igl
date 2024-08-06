@@ -34,6 +34,10 @@ class NativeHWTextureBuffer : public igl::android::INativeHWTextureBuffer,
   bool supportsUpload() const final;
   static bool isValidFormat(TextureFormat format);
 
+  IGL_INLINE void setTextureUsage(TextureDesc::TextureUsage usage) {
+    setUsage(usage);
+  }
+
  protected:
   Result createTextureInternal(const TextureDesc& desc, AHardwareBuffer* buffer) override;
 
