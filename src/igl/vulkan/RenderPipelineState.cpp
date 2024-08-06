@@ -287,6 +287,7 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
   PipelineState(device.getVulkanContext(),
                 desc.shaderStages.get(),
                 desc.immutableSamplers,
+                desc.isDynamicBufferMask,
                 desc.debugName.c_str()),
   device_(device),
   reflection_(std::make_shared<RenderPipelineReflection>()) {

@@ -22,6 +22,7 @@ ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
   PipelineState(device.getVulkanContext(),
                 desc.shaderStages.get(),
                 nullptr,
+                0,
                 desc.debugName.c_str()),
   device_(device),
   desc_(std::move(desc)) {}

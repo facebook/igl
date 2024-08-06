@@ -76,6 +76,7 @@ PipelineState::PipelineState(
     const VulkanContext& ctx,
     IShaderStages* stages,
     std::shared_ptr<ISamplerState> immutableSamplers[IGL_TEXTURE_SAMPLERS_MAX],
+    uint32_t isDynamicBufferMask,
     const char* debugName) {
   IGL_ASSERT(stages);
 
@@ -110,11 +111,14 @@ PipelineState::PipelineState(
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     bindings.reserve(info_.buffers.size());
     for (const auto& b : info_.buffers) {
-      bindings.emplace_back(ivkGetDescriptorSetLayoutBinding(
-          b.bindingLocation,
-          b.isStorage ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-          1,
-          stageFlags_));
+      const bool isDynamic = (isDynamicBufferMask & (1ul << b.bindingLocation)) != 0;
+      const VkDescriptorType type = b.isStorage
+                                        ? (isDynamic ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC
+                                                     : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+                                        : (isDynamic ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
+                                                     : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+      bindings.emplace_back(
+          ivkGetDescriptorSetLayoutBinding(b.bindingLocation, type, 1, stageFlags_));
     }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
     dslBuffers_ = std::make_unique<VulkanDescriptorSetLayout>(

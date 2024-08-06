@@ -26,6 +26,7 @@ class PipelineState {
   PipelineState(const VulkanContext& ctx,
                 IShaderStages* stages,
                 std::shared_ptr<ISamplerState> immutableSamplers[IGL_TEXTURE_SAMPLERS_MAX],
+                uint32_t isDynamicBufferMask,
                 const char* debugName);
   virtual ~PipelineState() = default;
 
