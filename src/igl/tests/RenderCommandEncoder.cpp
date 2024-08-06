@@ -281,15 +281,15 @@ class RenderCommandEncoderTest : public ::testing::Test {
   }
 
   void debugLog(const std::vector<uint32_t>& pixels) {
-    IGL_DEBUG_LOG("\nFrameBuffer begins.\n");
-    IGL_DEBUG_LOG("%s\n", ::testing::UnitTest::GetInstance()->current_test_info()->name());
+    IGL_LOG_DEBUG("\nFrameBuffer begins.\n");
+    IGL_LOG_DEBUG("%s\n", ::testing::UnitTest::GetInstance()->current_test_info()->name());
     for (int i = OFFSCREEN_RT_HEIGHT - 1; i >= 0; i--) {
       for (int j = 0; j < OFFSCREEN_RT_WIDTH; j++) {
-        IGL_DEBUG_LOG("%x, ", pixels[i * OFFSCREEN_RT_WIDTH + j]);
+        IGL_LOG_DEBUG("%x, ", pixels[i * OFFSCREEN_RT_WIDTH + j]);
       }
-      IGL_DEBUG_LOG("\n");
+      IGL_LOG_DEBUG("\n");
     }
-    IGL_DEBUG_LOG("\nFrameBuffer ends.\n");
+    IGL_LOG_DEBUG("\nFrameBuffer ends.\n");
   }
 
   void initializeBuffers(const std::vector<float>& verts,

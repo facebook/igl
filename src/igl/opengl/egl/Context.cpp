@@ -412,7 +412,7 @@ EGLImageKHR Context::createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) 
   // eglCreateImageKHR will add a ref to the AHardwareBuffer
   EGLImageKHR eglImage =
       eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID, clientBuffer, attribs);
-  IGL_DEBUG_LOG("eglCreateImageKHR(%p, %x, %x, %p, {%d, %d, %d, %d, %d})\n",
+  IGL_LOG_DEBUG("eglCreateImageKHR(%p, %x, %x, %p, {%d, %d, %d, %d, %d})\n",
                 display,
                 EGL_NO_CONTEXT,
                 EGL_NATIVE_BUFFER_ANDROID,
@@ -432,7 +432,7 @@ EGLImageKHR Context::createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) 
 
 void Context::imageTargetTexture(EGLImageKHR eglImage, GLenum target) const {
   glEGLImageTargetTexture2DOES(target, static_cast<GLeglImageOES>(eglImage));
-  IGL_DEBUG_LOG("glEGLImageTargetTexture2DOES(%u, %#x)\n",
+  IGL_LOG_DEBUG("glEGLImageTargetTexture2DOES(%u, %#x)\n",
                 GL_TEXTURE_2D,
                 static_cast<GLeglImageOES>(eglImage));
   this->checkForErrors(__FUNCTION__, __LINE__);

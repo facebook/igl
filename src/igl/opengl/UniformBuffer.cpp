@@ -116,12 +116,12 @@ void UniformBuffer::printUniforms(GLint program) {
 
   getContext().getProgramiv(program, GL_ACTIVE_UNIFORMS, &count);
 
-  IGL_DEBUG_LOG("Active Uniforms: %d\n", count);
+  IGL_LOG_DEBUG("Active Uniforms: %d\n", count);
 
   for (i = 0; i < count; i++) {
     getContext().getActiveUniform(program, (GLuint)i, bufSize, &length, &size, &type, name);
 
-    IGL_DEBUG_LOG("Uniform #%d Type: %u Name: %s\n", i, type, name);
+    IGL_LOG_DEBUG("Uniform #%d Type: %u Name: %s\n", i, type, name);
   }
 }
 

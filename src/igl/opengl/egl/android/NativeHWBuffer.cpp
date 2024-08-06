@@ -25,7 +25,7 @@
   }
 #define APILOG(format, ...)                 \
   if (apiLogDrawsLeft_ || apiLogEnabled_) { \
-    IGL_DEBUG_LOG(format, ##__VA_ARGS__);   \
+    IGL_LOG_DEBUG(format, ##__VA_ARGS__);   \
   }
 #else
 #define APILOG_DEC_DRAW_COUNT() static_cast<void>(0)

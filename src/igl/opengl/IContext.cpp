@@ -35,7 +35,7 @@
   }
 #define APILOG(format, ...)                 \
   if (apiLogDrawsLeft_ || apiLogEnabled_) { \
-    IGL_DEBUG_LOG(format, ##__VA_ARGS__);   \
+    IGL_LOG_DEBUG(format, ##__VA_ARGS__);   \
   }
 namespace {
 uint32_t logSourceChunk(uint32_t line, const char* string, size_t length) {
@@ -44,7 +44,7 @@ uint32_t logSourceChunk(uint32_t line, const char* string, size_t length) {
   while (length > 0) {
     if (*string == '\r' || *string == '\n') {
       if (printLen > 0) {
-        IGL_DEBUG_LOG("%3u: %.*s\n", line++, printLen, lineString);
+        IGL_LOG_DEBUG("%3u: %.*s\n", line++, printLen, lineString);
       }
       printLen = 0;
       lineString = string + 1;
@@ -55,7 +55,7 @@ uint32_t logSourceChunk(uint32_t line, const char* string, size_t length) {
     --length;
   }
   if (printLen > 0) {
-    IGL_DEBUG_LOG("%3u: %.*s\n", line++, printLen, lineString);
+    IGL_LOG_DEBUG("%3u: %.*s\n", line++, printLen, lineString);
   }
   return line;
 }
