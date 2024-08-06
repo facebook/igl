@@ -32,6 +32,14 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
     return;
   }
   MTLRenderPassDescriptor* metalRenderPassDesc = [MTLRenderPassDescriptor renderPassDescriptor];
+  if (!metalRenderPassDesc) {
+    static const char* kFailedToCreateRenderPassDesc =
+        "Failed to create Metal render pass descriptor";
+    IGL_ASSERT_MSG(false, kFailedToCreateRenderPassDesc);
+    Result::setResult(outResult, Result::Code::RuntimeError, kFailedToCreateRenderPassDesc);
+    return;
+  }
+
   const FramebufferDesc& desc = static_cast<const Framebuffer&>(*framebuffer).get();
 
   // Colors
