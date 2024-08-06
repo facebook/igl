@@ -102,6 +102,9 @@ using namespace igl;
 }
 
 - (void)teardown {
+  if (session_) {
+    session_->teardown();
+  }
   session_ = nullptr;
   shellPlatform_ = nullptr;
 }
