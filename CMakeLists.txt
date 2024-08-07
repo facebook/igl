@@ -218,6 +218,7 @@ if(IGL_WITH_IGLU OR IGL_WITH_SAMPLES)
   add_library(IGLstb third-party/deps/patches/stb_impl/stb_image.c third-party/deps/patches/stb_impl/stb_image_resize.c
                      third-party/deps/patches/stb_impl/stb_image_write.c)
   target_include_directories(IGLstb PUBLIC "third-party/deps/src/stb")
+  target_include_directories(IGLstb PUBLIC "third-party/deps/src")
   igl_set_folder(IGLstb "IGL")
 endif()
 if (IGL_WITH_IGLU)

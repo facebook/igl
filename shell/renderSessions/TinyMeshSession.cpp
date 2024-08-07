@@ -38,9 +38,11 @@ namespace fs = std::filesystem;
 namespace fs = boost::filesystem;
 #endif
 
+#if defined(__clang__)
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough"
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wunused-function"
+#endif // __clang__
 #include <chrono>
 #include <stb/stb_image.h>
 #define TINY_TEST_USE_DEPTH_BUFFER 1
@@ -169,42 +171,53 @@ layout (location=2) in vec2 st;
 layout (location=0) out vec3 color;
 layout (location=1) out vec2 uv;
 
-struct UniformsPerFrame {
+#if VULKAN
+layout (set = 1, binding = 0, std140)
+#else
+layout (binding = 0, std140)
+#endif
+uniform UniformsPerFrame {
   mat4 proj;
   mat4 view;
-};
+} perFrame;
 
-struct UniformsPerObject {
+#if VULKAN
+layout (set = 1, binding = 1, std140)
+#else
+layout (binding = 1, std140)
+#endif
+uniform UniformsPerObject {
   mat4 model;
-};
-
-layout(std430, buffer_reference) readonly buffer PerFrame {
-  UniformsPerFrame perFrame;
-};
-
-layout(std430, buffer_reference) readonly buffer PerObject {
-  UniformsPerObject perObject;
-};
+} perObject;
 
 void main() {
-  mat4 proj = PerFrame(getBuffer(0)).perFrame.proj;
-  mat4 view = PerFrame(getBuffer(0)).perFrame.view;
-  mat4 model = PerObject(getBuffer(1)).perObject.model;
+  mat4 proj = perFrame.proj;
+  mat4 view = perFrame.view;
+  mat4 model = perObject.model;
   gl_Position = proj * view * model * vec4(pos, 1.0);
   color = col;
   uv = st;
 }
 )";
 }
+
 static const char* getVulkanFragmentShaderSource() {
   return R"(
 layout (location=0) in vec3 color;
 layout (location=1) in vec2 uv;
 layout (location=0) out vec4 out_FragColor;
 
+#if VULKAN
+layout (set = 0, binding = 0) uniform sampler2D uTex0;
+layout (set = 0, binding = 1) uniform sampler2D uTex1;
+#else
+layout (binding = 0) uniform sampler2D uTex0;
+layout (binding = 1) uniform sampler2D uTex1;
+#endif
+
 void main() {
-  vec4 t0 = textureSample2D(0, 0, 2.0*uv);
-  vec4 t1 = textureSample2D(1, 0, uv);
+  vec4 t0 = texture(uTex0, 2.0 * uv);
+  vec4 t1 = texture(uTex1,  uv);
   out_FragColor = vec4(color * (t0.rgb + t1.rgb), 1.0);
 };
 )";
@@ -288,20 +301,22 @@ void TinyMeshSession::initialize() noexcept {
                                nullptr);
   // create an Uniform buffers to store uniforms for 2 objects
   for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
-    ubPerFrame_.push_back(device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
-                                                           &perFrame,
-                                                           sizeof(UniformsPerFrame),
-                                                           ResourceStorage::Shared,
-                                                           0,
-                                                           "Buffer: uniforms (per frame)"),
-                                                nullptr));
-    ubPerObject_.push_back(device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
-                                                            perObject,
-                                                            kNumCubes * sizeof(UniformsPerObject),
-                                                            ResourceStorage::Shared,
-                                                            0,
-                                                            "Buffer: uniforms (per object)"),
-                                                 nullptr));
+    ubPerFrame_.push_back(
+        device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
+                                         &perFrame,
+                                         sizeof(UniformsPerFrame),
+                                         ResourceStorage::Shared,
+                                         BufferDesc::BufferAPIHintBits::UniformBlock,
+                                         "Buffer: uniforms (per frame)"),
+                              nullptr));
+    ubPerObject_.push_back(
+        device_->createBuffer(BufferDesc(BufferDesc::BufferTypeBits::Uniform,
+                                         perObject,
+                                         kNumCubes * sizeof(UniformsPerObject),
+                                         ResourceStorage::Shared,
+                                         BufferDesc::BufferAPIHintBits::UniformBlock,
+                                         "Buffer: uniforms (per object)"),
+                              nullptr));
   }
 
   {
@@ -309,14 +324,17 @@ void TinyMeshSession::initialize() noexcept {
     desc.numAttributes = 3;
     desc.attributes[0].format = VertexAttributeFormat::Float3;
     desc.attributes[0].offset = offsetof(VertexPosUvw, position);
+    desc.attributes[0].name = "pos";
     desc.attributes[0].bufferIndex = 0;
     desc.attributes[0].location = 0;
     desc.attributes[1].format = VertexAttributeFormat::Float3;
     desc.attributes[1].offset = offsetof(VertexPosUvw, color);
+    desc.attributes[1].name = "col";
     desc.attributes[1].bufferIndex = 0;
     desc.attributes[1].location = 1;
     desc.attributes[2].format = VertexAttributeFormat::Float2;
     desc.attributes[2].offset = offsetof(VertexPosUvw, uv);
+    desc.attributes[2].name = "st";
     desc.attributes[2].bufferIndex = 0;
     desc.attributes[2].location = 2;
     desc.numInputBindings = 1;
@@ -413,20 +431,22 @@ void TinyMeshSession::initialize() noexcept {
 
 std::shared_ptr<ITexture> TinyMeshSession::getVulkanNativeDepth() {
 #if IGL_BACKEND_VULKAN
-  const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
+  if (device_->getBackendType() == BackendType::Vulkan) {
+    const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
 
-  IGL_ASSERT(vkPlatformDevice != nullptr);
+    IGL_ASSERT(vkPlatformDevice != nullptr);
 
-  Result ret;
-  std::shared_ptr<ITexture> drawable =
-      vkPlatformDevice->createTextureFromNativeDepth(width_, height_, &ret);
+    Result ret;
+    std::shared_ptr<ITexture> drawable =
+        vkPlatformDevice->createTextureFromNativeDepth(width_, height_, &ret);
 
-  IGL_ASSERT(ret.isOk());
-  return drawable;
-#else
-  // TODO: unhardcode vulkan assumption above
-  return nullptr;
+    IGL_ASSERT(ret.isOk());
+    return drawable;
+  }
 #endif // IGL_BACKEND_VULKAN
+
+  // TODO: unhardcode Vulkan assumption above
+  return nullptr;
 }
 
 void TinyMeshSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
@@ -470,6 +490,8 @@ void TinyMeshSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   desc.frontFaceWinding = igl::WindingMode::Clockwise;
   desc.debugName = igl::genNameHandle("Pipeline: mesh");
+  desc.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("uTex0");
+  desc.fragmentUnitSamplerMap[1] = IGL_NAMEHANDLE("uTex1");
   renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
 
   framebuffer_->updateDrawable(surfaceTextures.color);
@@ -520,11 +542,12 @@ void TinyMeshSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commands->bindTexture(0, igl::BindTarget::kFragment, texture0_.get());
   commands->bindTexture(1, igl::BindTarget::kFragment, texture1_.get());
   commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
+  commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
   // Draw 2 cubes: we use uniform buffer to update matrices
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
   for (uint32_t i = 0; i != kNumCubes; i++) {
     commands->bindBuffer(1, ubPerObject_[frameIndex_].get(), i * sizeof(UniformsPerObject));
-    commands->drawIndexed(static_cast<size_t>(3u * 6u * 2u));
+    commands->drawIndexed(3u * 6u * 2u);
   }
   commands->popDebugGroupLabel();
   commands->endEncoding();
