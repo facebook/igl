@@ -328,6 +328,15 @@ struct BindGroupMetadataTextures {
   uint32_t usageMask = 0;
 };
 
+struct BindGroupMetadataBuffers {
+  // cold
+  BindGroupBufferDesc desc = {};
+  VkDescriptorPool pool = VK_NULL_HANDLE;
+  // hot
+  VkDescriptorSet dset = VK_NULL_HANDLE;
+  uint32_t usageMask = 0;
+};
+
 } // namespace
 
 struct VulkanContextImpl final {
@@ -345,7 +354,7 @@ struct VulkanContextImpl final {
   uint32_t currentMaxBindlessTextures_ = 8;
   uint32_t currentMaxBindlessSamplers_ = 8;
 
-  Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool_;
+  Pool<BindGroupBufferTag, BindGroupMetadataBuffers> bindGroupBuffersPool_;
   Pool<BindGroupTextureTag, BindGroupMetadataTextures> bindGroupTexturesPool_;
 
   igl::vulkan::DescriptorPoolsArena& getOrCreateArena_CombinedImageSamplers(
@@ -436,6 +445,11 @@ VulkanContext::~VulkanContext() {
     if (t.obj_.dset != VK_NULL_HANDLE) {
       IGL_ASSERT_MSG(
           false, "Leaked texture bind group detected! %s", t.obj_.desc.debugName.c_str());
+    }
+  }
+  for (const auto& t : pimpl_->bindGroupBuffersPool_.objects_) {
+    if (t.obj_.dset != VK_NULL_HANDLE) {
+      IGL_ASSERT_MSG(false, "Leaked buffer bind group detected! %s", t.obj_.desc.debugName.c_str());
     }
   }
 #endif // IGL_DEBUG
@@ -1898,15 +1912,141 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(
 
 igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferDesc& desc,
                                                           Result* outResult) {
-  BindGroupBufferDesc description(desc);
+  VkDevice device = getVkDevice();
 
-  const auto handle = pimpl_->bindGroupBuffersPool_.create(std::move(description));
+  BindGroupMetadataBuffers metadata{desc};
 
-  Result::setResult(outResult,
-                    handle.empty() ? Result(Result::Code::RuntimeError, "Cannot create bind group")
-                                   : Result());
+  // @fb-only
+  VkDescriptorSetLayoutBinding bindings[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
+  uint32_t numBindings = 0;
 
-  return handle;
+  // @fb-only
+  VkDescriptorPoolSize poolSizes[] = {
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 0},
+      VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0},
+  };
+
+  const VkShaderStageFlags stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+  for (uint32_t loc = 0; loc != IGL_ARRAY_NUM_ELEMENTS(desc.buffers); loc++) {
+    if (!desc.buffers[loc]) {
+      continue;
+    }
+    auto* buf = static_cast<igl::vulkan::Buffer*>(desc.buffers[loc].get());
+    const bool isDynamic = (desc.isDynamicBufferMask & (1ul << loc)) != 0;
+    const bool isUniform = ((buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0);
+    const VkDescriptorType type =
+        isUniform
+            ? (isDynamic
+                   ? (poolSizes[0].descriptorCount++, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
+                   : (poolSizes[1].descriptorCount++, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER))
+            : (isDynamic
+                   ? (poolSizes[2].descriptorCount++, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
+                   : (poolSizes[3].descriptorCount++, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER));
+    if (isDynamic && !desc.size[loc]) {
+      IGL_LOG_ERROR(
+          "A buffer at the binding location '%u' is marked as dynamic but the corresponding size "
+          "value is 0. You have to specify the binding size for all dynamic buffers.",
+          loc);
+    }
+    bindings[numBindings++] = ivkGetDescriptorSetLayoutBinding(loc, type, 1, stageFlags);
+    metadata.usageMask |= 1ul << loc;
+  }
+
+  // construct a dense array of non-zero VkDescriptorPoolSize elements
+  qsort(poolSizes,
+        IGL_ARRAY_NUM_ELEMENTS(poolSizes),
+        sizeof(VkDescriptorPoolSize),
+        [](const void* a, const void* b) {
+          return ((VkDescriptorPoolSize*)a)->descriptorCount <
+                         ((VkDescriptorPoolSize*)b)->descriptorCount
+                     ? 1
+                     : 0;
+        });
+  uint32_t numPoolSizes = 0;
+  while (numPoolSizes < IGL_ARRAY_NUM_ELEMENTS(poolSizes) &&
+         poolSizes[numPoolSizes].descriptorCount > 0) {
+    numPoolSizes++;
+  }
+  IGL_ASSERT(numPoolSizes);
+
+  VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
+
+  {
+    // @fb-only
+    const VkDescriptorBindingFlags bindingFlags[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
+
+    VK_ASSERT(ivkCreateDescriptorSetLayout(&vf_,
+                                           device,
+                                           VkDescriptorSetLayoutCreateFlags{},
+                                           numBindings,
+                                           bindings,
+                                           bindingFlags,
+                                           &dsl));
+    VK_ASSERT(ivkSetDebugObjectName(
+        &vf_,
+        device,
+        VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
+        (uint64_t)dsl,
+        IGL_FORMAT("Descriptor Set Layout (BUFFERS): BindGroup = {}", desc.debugName).c_str()));
+
+    VK_ASSERT(ivkCreateDescriptorPool(
+        &vf_, device, VkDescriptorPoolCreateFlags{}, 1u, numPoolSizes, poolSizes, &metadata.pool));
+    VK_ASSERT(ivkSetDebugObjectName(
+        &vf_,
+        device,
+        VK_OBJECT_TYPE_DESCRIPTOR_POOL,
+        (uint64_t)metadata.pool,
+        IGL_FORMAT("Descriptor Pool (BUFFERS): BindGroup = {}", desc.debugName).c_str()));
+
+    VK_ASSERT(ivkAllocateDescriptorSet(&vf_, device, metadata.pool, dsl, &metadata.dset));
+  }
+
+  // @fb-only
+  VkDescriptorBufferInfo buffers[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
+  // @fb-only
+  VkWriteDescriptorSet writes[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
+  uint32_t numWrites = 0;
+
+  for (uint32_t loc = 0; loc != IGL_ARRAY_NUM_ELEMENTS(desc.buffers); loc++) {
+    if (!desc.buffers[loc]) {
+      continue;
+    }
+    auto* buf = static_cast<igl::vulkan::Buffer*>(desc.buffers[loc].get());
+    const bool isDynamic = (desc.isDynamicBufferMask & (1ul << loc)) != 0;
+    const bool isUniform = ((buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0);
+    const VkDescriptorType type = isUniform ? (isDynamic ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
+                                                         : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+                                            : (isDynamic ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC
+                                                         : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    writes[numWrites] =
+        ivkGetWriteDescriptorSet_BufferInfo(metadata.dset, loc, type, 1, &buffers[numWrites]);
+    buffers[numWrites++] = VkDescriptorBufferInfo{
+        buf->getVkBuffer(),
+        desc.offset[loc],
+        desc.size[loc] ? desc.size[loc] : VK_WHOLE_SIZE,
+    };
+  }
+
+  if (!IGL_VERIFY(numWrites)) {
+    IGL_LOG_ERROR("Cannot create an empty bind group");
+    Result::setResult(outResult,
+                      Result(Result::Code::RuntimeError, "Cannot create an empty bind group"));
+    return {};
+  }
+
+  IGL_PROFILER_ZONE("vkUpdateDescriptorSets() - textures bind group", IGL_PROFILER_COLOR_UPDATE);
+  vf_.vkUpdateDescriptorSets(device_->getVkDevice(), numWrites, writes, 0, nullptr);
+  IGL_PROFILER_ZONE_END();
+
+  // once a descriptor set has been updated, destroy the DSL
+  vf_.vkDestroyDescriptorSetLayout(device, dsl, nullptr);
+
+  Result::setOk(outResult);
+
+  return pimpl_->bindGroupBuffersPool_.create(std::move(metadata));
 }
 
 void VulkanContext::destroy(igl::BindGroupTextureHandle handle) {
@@ -1927,20 +2067,28 @@ void VulkanContext::destroy(igl::BindGroupBufferHandle handle) {
     return;
   }
 
+  deferredTask(std::packaged_task<void()>(
+      [vf = &vf_, device = getVkDevice(), pool = pimpl_->bindGroupBuffersPool_.get(handle)->pool] {
+        vf->vkDestroyDescriptorPool(device, pool, nullptr);
+      }));
+
   pimpl_->bindGroupBuffersPool_.destroy(handle);
 }
 
 VkDescriptorSet VulkanContext::getBindGroupDescriptorSet(igl::BindGroupTextureHandle handle) const {
-  return handle.empty() ? VK_NULL_HANDLE : pimpl_->bindGroupTexturesPool_.get(handle)->dset;
+  return handle.valid() ? pimpl_->bindGroupTexturesPool_.get(handle)->dset : VK_NULL_HANDLE;
 }
 
 uint32_t VulkanContext::getBindGroupUsageMask(igl::BindGroupTextureHandle handle) const {
-  return handle.empty() ? 0 : pimpl_->bindGroupTexturesPool_.get(handle)->usageMask;
+  return handle.valid() ? pimpl_->bindGroupTexturesPool_.get(handle)->usageMask : 0;
 }
 
-const BindGroupBufferDesc* VulkanContext::getBindGroupDesc(
-    igl::BindGroupBufferHandle handle) const {
-  return pimpl_->bindGroupBuffersPool_.get(handle);
+VkDescriptorSet VulkanContext::getBindGroupDescriptorSet(igl::BindGroupBufferHandle handle) const {
+  return handle.valid() ? pimpl_->bindGroupBuffersPool_.get(handle)->dset : VK_NULL_HANDLE;
+}
+
+uint32_t VulkanContext::getBindGroupUsageMask(igl::BindGroupBufferHandle handle) const {
+  return handle.valid() ? pimpl_->bindGroupBuffersPool_.get(handle)->usageMask : 0;
 }
 
 } // namespace igl::vulkan

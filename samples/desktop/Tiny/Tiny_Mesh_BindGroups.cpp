@@ -386,6 +386,7 @@ static void createRenderPipeline() {
 #endif // TINY_TEST_USE_DEPTH_BUFFER
 
   desc.frontFaceWinding = igl::WindingMode::Clockwise;
+  desc.isDynamicBufferMask = 0b10;
   desc.debugName = igl::genNameHandle("Pipeline: mesh");
   renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
 

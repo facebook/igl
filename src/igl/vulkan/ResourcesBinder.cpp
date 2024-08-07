@@ -159,6 +159,8 @@ void ResourcesBinder::updateBindings(VkPipelineLayout layout, const vulkan::Pipe
 }
 
 void ResourcesBinder::bindPipeline(VkPipeline pipeline, const util::SpvModuleInfo* info) {
+  IGL_PROFILER_FUNCTION();
+
   if (lastPipelineBound_ == pipeline) {
     return;
   }
