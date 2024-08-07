@@ -24,4 +24,8 @@
 #if !defined(VK_NO_PROTOTYPES)
 #define VK_NO_PROTOTYPES
 #endif // !defined(VK_NO_PROTOTYPES)
+#if defined(IGL_CMAKE_BUILD)
 #include <vk_mem_alloc.h>
+#else
+#include <vk_mem_alloc_instantiated.h>
+#endif // IGL_CMAKE_BUILD

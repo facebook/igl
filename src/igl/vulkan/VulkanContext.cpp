@@ -16,7 +16,9 @@
 
 // For vk_mem_alloc.h, define this before including VulkanContext.h in exactly
 // one CPP file
+#if defined(IGL_CMAKE_BUILD)
 #define VMA_IMPLEMENTATION
+#endif // IGL_CMAKE_BUILD
 
 // For volk.h, define this before including volk.h in exactly one CPP file.
 // @fb-only
