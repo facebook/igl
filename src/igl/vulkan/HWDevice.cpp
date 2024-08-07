@@ -16,7 +16,7 @@ namespace igl::vulkan {
 std::unique_ptr<VulkanContext> HWDevice::createContext(const VulkanContextConfig& config,
                                                        void* IGL_NULLABLE window,
                                                        size_t numExtraInstanceExtensions,
-                                                       const char** IGL_NULLABLE
+                                                       const char* IGL_NULLABLE* IGL_NULLABLE
                                                            extraInstanceExtensions,
                                                        void* IGL_NULLABLE display) {
   return std::make_unique<VulkanContext>(
@@ -38,7 +38,8 @@ std::unique_ptr<IDevice> HWDevice::create(std::unique_ptr<VulkanContext> ctx,
                                           uint32_t width,
                                           uint32_t height,
                                           size_t numExtraDeviceExtensions,
-                                          const char** IGL_NULLABLE extraDeviceExtensions,
+                                          const char* IGL_NULLABLE* IGL_NULLABLE
+                                              extraDeviceExtensions,
                                           Result* IGL_NULLABLE outResult) {
   IGL_ASSERT(ctx);
 

@@ -123,14 +123,14 @@ class VulkanContext final {
   VulkanContext(VulkanContextConfig config,
                 void* IGL_NULLABLE window,
                 size_t numExtraInstanceExtensions,
-                const char** IGL_NULLABLE extraInstanceExtensions,
+                const char* IGL_NULLABLE* IGL_NULLABLE extraInstanceExtensions,
                 void* IGL_NULLABLE display = nullptr);
   ~VulkanContext();
 
   igl::Result queryDevices(const HWDeviceQueryDesc& desc, std::vector<HWDeviceDesc>& outDevices);
   igl::Result initContext(const HWDeviceDesc& desc,
                           size_t numExtraDeviceExtensions = 0,
-                          const char** IGL_NULLABLE extraDeviceExtensions = nullptr);
+                          const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions = nullptr);
 
   igl::Result initSwapchain(uint32_t width, uint32_t height);
   VkExtent2D getSwapchainExtent() const;
@@ -243,7 +243,8 @@ class VulkanContext final {
 #endif
 
  private:
-  void createInstance(size_t numExtraExtensions, const char** IGL_NULLABLE extraExtensions);
+  void createInstance(size_t numExtraExtensions,
+                      const char* IGL_NULLABLE* IGL_NULLABLE extraExtensions);
   void createSurface(void* window, void* IGL_NULLABLE display);
   void checkAndUpdateDescriptorSets();
   void querySurfaceCapabilities();

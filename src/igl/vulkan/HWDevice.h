@@ -38,7 +38,7 @@ class HWDevice final {
       const VulkanContextConfig& config,
       void* IGL_NULLABLE window,
       size_t numExtraInstanceExtensions = 0,
-      const char** IGL_NULLABLE extraInstanceExtensions = nullptr,
+      const char* IGL_NULLABLE* IGL_NULLABLE extraInstanceExtensions = nullptr,
       void* IGL_NULLABLE display = nullptr);
 
   static std::vector<HWDeviceDesc> queryDevices(VulkanContext& ctx,
@@ -52,13 +52,14 @@ class HWDevice final {
    * height are greater than 0, this functions also initializes the swapchain.
    */
 
-  static std::unique_ptr<IDevice> create(std::unique_ptr<VulkanContext> ctx,
-                                         const HWDeviceDesc& desc,
-                                         uint32_t width,
-                                         uint32_t height,
-                                         size_t numExtraDeviceExtensions = 0,
-                                         const char** IGL_NULLABLE extraDeviceExtensions = nullptr,
-                                         Result* IGL_NULLABLE outResult = nullptr);
+  static std::unique_ptr<IDevice> create(
+      std::unique_ptr<VulkanContext> ctx,
+      const HWDeviceDesc& desc,
+      uint32_t width,
+      uint32_t height,
+      size_t numExtraDeviceExtensions = 0,
+      const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions = nullptr,
+      Result* IGL_NULLABLE outResult = nullptr);
 };
 
 } // namespace igl::vulkan

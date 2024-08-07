@@ -395,7 +395,7 @@ struct VulkanContextImpl final {
 VulkanContext::VulkanContext(VulkanContextConfig config,
                              void* IGL_NULLABLE window,
                              size_t numExtraInstanceExtensions,
-                             const char** IGL_NULLABLE extraInstanceExtensions,
+                             const char* IGL_NULLABLE* IGL_NULLABLE extraInstanceExtensions,
                              void* IGL_NULLABLE display) :
   tableImpl_(std::make_unique<VulkanFunctionTable>()),
   vf_(*tableImpl_),
@@ -545,7 +545,7 @@ VulkanContext::~VulkanContext() {
 }
 
 void VulkanContext::createInstance(const size_t numExtraExtensions,
-                                   const char** IGL_NULLABLE extraExtensions) {
+                                   const char* IGL_NULLABLE* IGL_NULLABLE extraExtensions) {
   // Enumerate all instance extensions
   extensions_.enumerate(vf_);
   extensions_.enableCommonExtensions(VulkanExtensions::ExtensionType::Instance, config_);
@@ -663,7 +663,8 @@ igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
 
 igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                        size_t numExtraDeviceExtensions,
-                                       const char** IGL_NULLABLE extraDeviceExtensions) {
+                                       const char* IGL_NULLABLE* IGL_NULLABLE
+                                           extraDeviceExtensions) {
   if (desc.guid == 0UL) {
     IGL_LOG_ERROR("Invalid hardwareGuid(%lu)", desc.guid);
     return Result(Result::Code::Unsupported, "Vulkan is not supported");
