@@ -7,9 +7,6 @@
 
 #pragma once
 
-/* Configuration defines for vk_mem_alloc.h */
-#define VMA_VULKAN_VERSION 1002000
-
 /* The following defines tell VMA to load Vulkan functions dynamically
  * For this to work, we need to provide pointers to vkGetInstanceProcAddr and vkGetDeviceProcAddr to
  * VMA using the functions VmaVulkanFunctions::vkGetInstanceProcAddr and
@@ -25,6 +22,10 @@
 #define VK_NO_PROTOTYPES
 #endif // !defined(VK_NO_PROTOTYPES)
 #if defined(IGL_CMAKE_BUILD)
+
+/* Configuration defines for vk_mem_alloc.h */
+#define VMA_VULKAN_VERSION 1002000
+
 #include <vk_mem_alloc.h>
 #else
 #include <vk_mem_alloc_instantiated.h>
