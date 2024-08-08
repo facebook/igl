@@ -90,21 +90,11 @@ void RenderCommandAdapter::setDepthStencilState(
   setDirty(StateMask::DEPTH_STENCIL);
 }
 
-void RenderCommandAdapter::setStencilReferenceValue(uint32_t value, Result* outResult) {
+void RenderCommandAdapter::setStencilReferenceValue(uint32_t value) {
   frontStencilReferenceValue_ = value;
   backStencilReferenceValue_ = value;
 
   setDirty(StateMask::DEPTH_STENCIL);
-  Result::setOk(outResult);
-}
-
-void RenderCommandAdapter::setStencilReferenceValues(uint32_t frontValue,
-                                                     uint32_t backValue,
-                                                     Result* outResult) {
-  frontStencilReferenceValue_ = frontValue;
-  backStencilReferenceValue_ = backValue;
-  setDirty(StateMask::DEPTH_STENCIL);
-  Result::setOk(outResult);
 }
 
 void RenderCommandAdapter::setBlendColor(Color color) {

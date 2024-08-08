@@ -253,11 +253,6 @@ void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
   [encoder_ setStencilReferenceValue:value];
 }
 
-void RenderCommandEncoder::setStencilReferenceValues(uint32_t frontValue, uint32_t backValue) {
-  IGL_ASSERT(encoder_);
-  [encoder_ setStencilFrontReferenceValue:frontValue backReferenceValue:backValue];
-}
-
 void RenderCommandEncoder::bindBuffer(uint32_t index,
                                       IBuffer* buffer,
                                       size_t offset,

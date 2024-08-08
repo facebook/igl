@@ -728,13 +728,6 @@ void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
       cmdBuffer_, VK_STENCIL_FACE_FRONT_BIT | VK_STENCIL_FACE_BACK_BIT, value);
 }
 
-void RenderCommandEncoder::setStencilReferenceValues(uint32_t frontValue, uint32_t backValue) {
-  IGL_PROFILER_FUNCTION();
-
-  ctx_.vf_.vkCmdSetStencilReference(cmdBuffer_, VK_STENCIL_FACE_FRONT_BIT, frontValue);
-  ctx_.vf_.vkCmdSetStencilReference(cmdBuffer_, VK_STENCIL_FACE_BACK_BIT, backValue);
-}
-
 void RenderCommandEncoder::setBlendColor(Color color) {
   IGL_PROFILER_FUNCTION();
 

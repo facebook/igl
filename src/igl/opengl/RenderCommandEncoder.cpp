@@ -424,12 +424,6 @@ void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
   }
 }
 
-void RenderCommandEncoder::setStencilReferenceValues(uint32_t frontValue, uint32_t backValue) {
-  if (IGL_VERIFY(adapter_)) {
-    adapter_->setStencilReferenceValues(frontValue, backValue);
-  }
-}
-
 void RenderCommandEncoder::setBlendColor(Color color) {
   if (IGL_VERIFY(adapter_)) {
     adapter_->setBlendColor(color);

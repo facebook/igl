@@ -73,7 +73,6 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
                                 uint32_t stride) override;
 
   void setStencilReferenceValue(uint32_t value) override;
-  void setStencilReferenceValues(uint32_t frontValue, uint32_t backValue) override;
   void setBlendColor(Color color) override;
   void setDepthBias(float depthBias, float slopeScale, float clamp) override;
 

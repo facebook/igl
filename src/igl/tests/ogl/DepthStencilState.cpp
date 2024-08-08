@@ -373,8 +373,7 @@ TEST_F(DepthStencilStateTest, SetStencilReferenceValueAndCheck) {
   cmdEncoder->bindRenderPipelineState(pipelineState);
   cmdEncoder->bindDepthStencilState(idss);
 
-  cmdEncoder->setStencilReferenceValue(1);
-  cmdEncoder->setStencilReferenceValues(2, 3);
+  cmdEncoder->setStencilReferenceValue(2);
 
   cmdEncoder->bindIndexBuffer(*ib_, IndexFormat::UInt16);
   cmdEncoder->drawIndexed(0);

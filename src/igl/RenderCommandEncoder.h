@@ -100,7 +100,6 @@ class IRenderCommandEncoder : public ICommandEncoder {
                                         uint32_t stride = 0) = 0;
 
   virtual void setStencilReferenceValue(uint32_t value) = 0;
-  virtual void setStencilReferenceValues(uint32_t frontValue, uint32_t backValue) = 0;
   virtual void setBlendColor(Color color) = 0;
   virtual void setDepthBias(float depthBias, float slopeScale, float clamp) = 0;
 };
