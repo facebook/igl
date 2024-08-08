@@ -28,7 +28,6 @@
 #include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 #endif // IGL_BACKEND_VULKAN
-#include <regex>
 
 #if defined(IGL_CMAKE_BUILD)
 #include <filesystem>
@@ -43,9 +42,24 @@ namespace fs = boost::filesystem;
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wunused-function"
 #endif // __clang__
-#include <chrono>
 #include <stb/stb_image.h>
 #define TINY_TEST_USE_DEPTH_BUFFER 1
+
+namespace {
+
+[[maybe_unused]] std::string stringReplaceAll(const char* input,
+                                              const char* searchString,
+                                              const char* replaceString) {
+  std::string s(input);
+  const size_t len = strlen(searchString);
+  size_t pos = 0;
+  while ((pos = s.find(searchString, pos)) != std::string::npos) {
+    s.replace(pos, len, replaceString);
+  }
+  return s;
+}
+
+} // namespace
 
 namespace igl::shell {
 
@@ -59,7 +73,6 @@ constexpr uint32_t kNumBufferedFrames = 3;
 
 int width_ = 0;
 int height_ = 0;
-igl::FPSCounter fps_;
 
 constexpr uint32_t kNumCubes = 16;
 
@@ -260,16 +273,15 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
         static_cast<igl::opengl::Device&>(device).getContext().deviceFeatures().getGLVersion();
 
     if (glVersion > igl::opengl::GLVersion::v2_1) {
-      auto codeVS1 = std::regex_replace(
-          getVulkanVertexShaderSource(), std::regex("gl_VertexIndex"), "gl_VertexID");
-      auto codeVS2 = std::regex_replace(codeVS1.c_str(), std::regex("460"), "410");
-
-      auto codeFS = std::regex_replace(getVulkanFragmentShaderSource(), std::regex("460"), "410");
+      const std::string codeVS1 =
+          stringReplaceAll(getVulkanVertexShaderSource(), "gl_VertexIndex", "gl_VertexID");
+      auto codeVS2 = "#version 460\n" + codeVS1;
+      auto codeFS = "#version 460\n" + std::string(getVulkanFragmentShaderSource());
 
       return igl::ShaderStagesCreator::fromModuleStringInput(
           device, codeVS2.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
     } else {
-      IGL_ASSERT_MSG(0, "This sample is icompatible with OpenGL 2.1");
+      IGL_ASSERT_MSG(0, "This sample is incompatible with OpenGL 2.1");
       return nullptr;
     }
   }
@@ -279,6 +291,14 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
     IGL_ASSERT_NOT_IMPLEMENTED();
     return nullptr;
   }
+}
+
+TinyMeshSession::TinyMeshSession(std::shared_ptr<Platform> platform) :
+  RenderSession(std::move(platform)) {
+  listener_ = std::make_shared<Listener>(*this);
+  getPlatform().getInputDispatcher().addKeyListener(listener_);
+  imguiSession_ = std::make_unique<iglu::imgui::Session>(getPlatform().getDevice(),
+                                                         getPlatform().getInputDispatcher());
 }
 
 void TinyMeshSession::initialize() noexcept {
@@ -352,7 +372,7 @@ void TinyMeshSession::initialize() noexcept {
   {
     const uint32_t texWidth = 256;
     const uint32_t texHeight = 256;
-    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::BGRA_UNorm8,
+    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::BGRA_SRGB,
                                                 texWidth,
                                                 texHeight,
                                                 TextureDesc::TextureUsageBits::Sampled,
@@ -391,7 +411,7 @@ void TinyMeshSession::initialize() noexcept {
                                 4);
     IGL_ASSERT_MSG(pixels,
                    "Cannot load textures. Run `deploy_content.py` before running this app.");
-    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
+    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::RGBA_SRGB,
                                                 texWidth,
                                                 texHeight,
                                                 TextureDesc::TextureUsageBits::Sampled,
@@ -409,13 +429,12 @@ void TinyMeshSession::initialize() noexcept {
   }
 
   // Command queue: backed by different types of GPU HW queues
-  const CommandQueueDesc desc{CommandQueueType::Graphics};
-  commandQueue_ = device_->createCommandQueue(desc, nullptr);
+  commandQueue_ = device_->createCommandQueue({CommandQueueType::Graphics}, nullptr);
 
   renderPass_.colorAttachments.emplace_back();
   renderPass_.colorAttachments.back().loadAction = LoadAction::Clear;
   renderPass_.colorAttachments.back().storeAction = StoreAction::Store;
-  renderPass_.colorAttachments.back().clearColor = getPlatform().getDevice().backendDebugColor();
+  renderPass_.colorAttachments.back().clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
 #if TINY_TEST_USE_DEPTH_BUFFER
   renderPass_.depthAttachment.loadAction = LoadAction::Clear;
   renderPass_.depthAttachment.clearDepth = 1.0;
@@ -453,46 +472,54 @@ void TinyMeshSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   width_ = surfaceTextures.color->getSize().width;
   height_ = surfaceTextures.color->getSize().height;
 
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
+  const float deltaSeconds = getDeltaSeconds();
+
+  fps_.updateFPS(deltaSeconds);
+  currentTime_ += deltaSeconds;
+
+  if (!framebuffer_) {
+    framebufferDesc_.colorAttachments[0].texture = surfaceTextures.color;
 
 #if TINY_TEST_USE_DEPTH_BUFFER
-  framebufferDesc.depthAttachment.texture = getVulkanNativeDepth();
+    framebufferDesc_.depthAttachment.texture = getVulkanNativeDepth();
 #endif // TINY_TEST_USE_DEPTH_BUFFER
+    framebuffer_ = device_->createFramebuffer(framebufferDesc_, nullptr);
+    IGL_ASSERT(framebuffer_);
 
-  framebuffer_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(framebuffer_);
+    RenderPipelineDesc desc;
 
-  RenderPipelineDesc desc;
+    desc.targetDesc.colorAttachments.resize(1);
+    desc.targetDesc.colorAttachments[0].textureFormat =
+        framebuffer_->getColorAttachment(0)->getProperties().format;
 
-  desc.targetDesc.colorAttachments.resize(1);
-  desc.targetDesc.colorAttachments[0].textureFormat =
-      framebuffer_->getColorAttachment(0)->getProperties().format;
+    if (framebuffer_->getDepthAttachment()) {
+      desc.targetDesc.depthAttachmentFormat =
+          framebuffer_->getDepthAttachment()->getProperties().format;
+    }
 
-  if (framebuffer_->getDepthAttachment()) {
-    desc.targetDesc.depthAttachmentFormat =
-        framebuffer_->getDepthAttachment()->getProperties().format;
-  }
-
-  desc.vertexInputState = vertexInput0_;
-  desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(*device_,
-                                                                 getVulkanVertexShaderSource(),
-                                                                 "main",
-                                                                 "",
-                                                                 getVulkanFragmentShaderSource(),
-                                                                 "main",
-                                                                 "",
-                                                                 nullptr);
+    desc.vertexInputState = vertexInput0_;
+    desc.shaderStages = getShaderStagesForBackend(*device_);
+    /*
+    desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(*device_,
+                                                                   getVulkanVertexShaderSource(),
+                                                                   "main",
+                                                                   "",
+                                                                   getVulkanFragmentShaderSource(),
+                                                                   "main",
+                                                                   "",
+                                                                   nullptr);
+                                                                   */
 
 #if !TINY_TEST_USE_DEPTH_BUFFER
-  desc.cullMode = igl::CullMode::Back;
+    desc.cullMode = igl::CullMode::Back;
 #endif // TINY_TEST_USE_DEPTH_BUFFER
 
-  desc.frontFaceWinding = igl::WindingMode::Clockwise;
-  desc.debugName = igl::genNameHandle("Pipeline: mesh");
-  desc.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("uTex0");
-  desc.fragmentUnitSamplerMap[1] = IGL_NAMEHANDLE("uTex1");
-  renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
+    desc.frontFaceWinding = igl::WindingMode::Clockwise;
+    desc.debugName = igl::genNameHandle("Pipeline: mesh");
+    desc.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("uTex0");
+    desc.fragmentUnitSamplerMap[1] = IGL_NAMEHANDLE("uTex1");
+    renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
+  }
 
   framebuffer_->updateDrawable(surfaceTextures.color);
 
@@ -513,18 +540,14 @@ void TinyMeshSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
         vec3(-1.5f * sqrt(kNumCubes) + 4.0f * static_cast<float>(i % cubesInLine),
              -1.5f * sqrt(kNumCubes) + 4.0f * floor(static_cast<float>(i) / cubesInLine),
              0);
-    const float currentTimeSeconds =
-        std::chrono::duration<float>(std::chrono::steady_clock::now().time_since_epoch()).count();
     perObject[i].model =
-        glm::rotate(glm::translate(mat4(1.0f), offset), direction * currentTimeSeconds, axis_[i]);
+        glm::rotate(glm::translate(mat4(1.0f), offset), float(direction * currentTime_), axis_[i]);
   }
 
   ubPerObject_[frameIndex_]->upload(&perObject, igl::BufferRange(sizeof(perObject)));
 
   // Command buffers (1-N per thread): create, submit and forget
-  const CommandBufferDesc cbDesc;
-  const std::shared_ptr<ICommandBuffer> buffer =
-      commandQueue_->createCommandBuffer(cbDesc, nullptr);
+  const std::shared_ptr<ICommandBuffer> buffer = commandQueue_->createCommandBuffer({}, nullptr);
 
   const igl::Viewport viewport = {0.0f, 0.0f, (float)width_, (float)height_, 0.0f, +1.0f};
   const igl::ScissorRect scissor = {0, 0, (uint32_t)width_, (uint32_t)height_};
@@ -550,6 +573,15 @@ void TinyMeshSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     commands->drawIndexed(3u * 6u * 2u);
   }
   commands->popDebugGroupLabel();
+  {
+    imguiSession_->beginFrame(framebufferDesc_,
+                              getPlatform().getDisplayContext().pixelsPerPoint * 2);
+    ImGui::Begin("Texture Viewer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Image(ImTextureID(texture1_.get()), ImVec2(512, 512));
+    ImGui::End();
+    imguiSession_->drawFPS(fps_.getAverageFPS());
+    imguiSession_->endFrame(getPlatform().getDevice(), *commands);
+  }
   commands->endEncoding();
 
   buffer->present(surfaceTextures.color);
@@ -557,6 +589,15 @@ void TinyMeshSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commandQueue_->submit(*buffer);
 
   frameIndex_ = (frameIndex_ + 1) % kNumBufferedFrames;
+}
+
+bool TinyMeshSession::Listener::process(const KeyEvent& event) {
+  if (!event.isDown) {
+    if (event.key == 84) { // VK_T
+      session.texture1_.reset();
+    }
+  }
+  return true;
 }
 
 } // namespace igl::shell
