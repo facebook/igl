@@ -154,21 +154,20 @@ Result RenderPipelineState::create() {
   }
 
   for (const auto& [bindingIndex, names] : desc_.uniformBlockBindingMap) {
-    const auto& [blockName, instanceName] = names;
-    auto& uniformBlockDict = reflection_->getUniformBlocksDictionary();
-    auto blockDescIt = uniformBlockDict.find(blockName);
-    if (blockDescIt != uniformBlockDict.end()) {
-      auto blockIndex = blockDescIt->second.blockIndex;
-      if (blockDescIt->second.bindingIndex > 0) {
-        //  avoid overriding explicit binding points from shaders because we observed
-        //  crashes when doing so on some Adreno devices.
-        uniformBlockBindingMap_[blockIndex] = blockDescIt->second.bindingIndex;
-      } else {
-        uniformBlockBindingMap_[blockIndex] = bindingIndex;
-        blockDescIt->second.bindingIndex = bindingIndex;
+    for (auto& [blockName, instanceName] : names) {
+      auto& uniformBlockDict = reflection_->getUniformBlocksDictionary();
+      auto blockDescIt = uniformBlockDict.find(blockName);
+      if (blockDescIt != uniformBlockDict.end()) {
+        auto blockIndex = blockDescIt->second.blockIndex;
+        if (blockDescIt->second.bindingIndex > 0) {
+          //  avoid overriding explicit binding points from shaders because we observed
+          //  crashes when doing so on some Adreno devices.
+          uniformBlockBindingMap_[blockIndex] = blockDescIt->second.bindingIndex;
+        } else {
+          uniformBlockBindingMap_[blockIndex] = bindingIndex;
+          blockDescIt->second.bindingIndex = bindingIndex;
+        }
       }
-    } else {
-      IGL_LOG_ERROR("Uniform block (%s) not found in shader.\n", blockName.c_str());
     }
   }
 

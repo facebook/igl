@@ -1527,11 +1527,17 @@ void createRenderPipelines() {
 // @fb-only
 #if USE_OPENGL_BACKEND
     desc.uniformBlockBindingMap.emplace(
-        0, std::make_pair(IGL_NAMEHANDLE("PerFrame"), igl::NameHandle{}));
+        0,
+        std::vector<std::pair<igl::NameHandle, igl::NameHandle>>{
+            std::make_pair(IGL_NAMEHANDLE("PerFrame"), igl::NameHandle{})});
     desc.uniformBlockBindingMap.emplace(
-        1, std::make_pair(IGL_NAMEHANDLE("PerObject"), igl::NameHandle{}));
+        1,
+        std::vector<std::pair<igl::NameHandle, igl::NameHandle>>{
+            std::make_pair(IGL_NAMEHANDLE("PerObject"), igl::NameHandle{})});
     desc.uniformBlockBindingMap.emplace(
-        2, std::make_pair(IGL_NAMEHANDLE("MeshMaterials"), igl::NameHandle{}));
+        2,
+        std::vector<std::pair<igl::NameHandle, igl::NameHandle>>{
+            std::make_pair(IGL_NAMEHANDLE("MeshMaterials"), igl::NameHandle{})});
 #endif
     desc.cullMode = igl::CullMode::Back;
     desc.frontFaceWinding = igl::WindingMode::CounterClockwise;
@@ -1555,9 +1561,13 @@ void createRenderPipelines() {
     desc.fragmentUnitSamplerMap.clear();
     desc.uniformBlockBindingMap.clear();
     desc.uniformBlockBindingMap.emplace(
-        0, std::make_pair(IGL_NAMEHANDLE("PerFrame"), igl::NameHandle{}));
+        0,
+        std::vector<std::pair<igl::NameHandle, igl::NameHandle>>{
+            std::make_pair(IGL_NAMEHANDLE("PerFrame"), igl::NameHandle{})});
     desc.uniformBlockBindingMap.emplace(
-        1, std::make_pair(IGL_NAMEHANDLE("PerObject"), igl::NameHandle{}));
+        1,
+        std::vector<std::pair<igl::NameHandle, igl::NameHandle>>{
+            std::make_pair(IGL_NAMEHANDLE("PerObject"), igl::NameHandle{})});
 #endif
     desc.shaderStages =
         ShaderStagesCreator::fromModuleStringInput(*device_,

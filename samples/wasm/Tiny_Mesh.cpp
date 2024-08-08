@@ -357,8 +357,8 @@ static void createRenderPipeline() {
   desc.debugName = igl::genNameHandle("Pipeline: mesh");
   desc.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("texture0");
   desc.fragmentUnitSamplerMap[1] = IGL_NAMEHANDLE("texture1");
-  desc.uniformBlockBindingMap[0] = std::make_pair(IGL_NAMEHANDLE("perFrame"), igl::NameHandle{});
-  desc.uniformBlockBindingMap[1] = std::make_pair(IGL_NAMEHANDLE("perObject"), igl::NameHandle{});
+  desc.uniformBlockBindingMap[0] = {std::make_pair(IGL_NAMEHANDLE("PerFrame"), igl::NameHandle{})};
+  desc.uniformBlockBindingMap[1] = {std::make_pair(IGL_NAMEHANDLE("PerObject"), igl::NameHandle{})};
 
   renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
 }

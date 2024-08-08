@@ -126,8 +126,10 @@ size_t std::hash<RenderPipelineDesc>::operator()(const RenderPipelineDesc& key) 
   }
   for (const auto& i : key.uniformBlockBindingMap) {
     hash ^= std::hash<size_t>()(i.first);
-    hash ^= std::hash<igl::NameHandle>()(i.second.first);
-    hash ^= std::hash<igl::NameHandle>()(i.second.second);
+    for (const auto& names : i.second) {
+      hash ^= std::hash<igl::NameHandle>()(names.first);
+      hash ^= std::hash<igl::NameHandle>()(names.second);
+    }
   }
   for (const auto& i : key.immutableSamplers) {
     hash ^= std::hash<uintptr_t>()(reinterpret_cast<uintptr_t>(i.get()));
