@@ -222,7 +222,7 @@ bool ManagedUniformBuffer::updateData(const char* name, const void* data, size_t
       return true;
     }
   }
-  IGL_ASSERT_MSG(0, "call to updateData: uniform with name %s not found, skipping update\n");
+  IGL_ASSERT_MSG(0, "call to updateData: uniform with name %s not found, skipping update\n", name);
   return false;
 }
 
