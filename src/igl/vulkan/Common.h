@@ -120,6 +120,7 @@ uint32_t getNumImagePlanes(VkFormat format);
 VkColorSpaceKHR colorSpaceToVkColorSpace(igl::ColorSpace colorSpace);
 VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorage resourceStorage);
 VkCompareOp compareFunctionToVkCompareOp(igl::CompareFunction func);
+VkStencilOp stencilOperationToVkStencilOp(igl::StencilOperation op);
 VkSampleCountFlagBits getVulkanSampleCountFlags(size_t numSamples);
 VkSurfaceFormatKHR colorSpaceToVkSurfaceFormat(igl::ColorSpace colorSpace, bool isBGR);
 uint32_t getVkLayer(igl::TextureType type, uint32_t face, uint32_t layer);

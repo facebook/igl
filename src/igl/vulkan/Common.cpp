@@ -85,6 +85,29 @@ VkFormat invertRedAndBlue(VkFormat format) {
   }
 }
 
+VkStencilOp stencilOperationToVkStencilOp(igl::StencilOperation op) {
+  switch (op) {
+  case igl::StencilOperation::Keep:
+    return VK_STENCIL_OP_KEEP;
+  case igl::StencilOperation::Zero:
+    return VK_STENCIL_OP_ZERO;
+  case igl::StencilOperation::Replace:
+    return VK_STENCIL_OP_REPLACE;
+  case igl::StencilOperation::IncrementClamp:
+    return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+  case igl::StencilOperation::DecrementClamp:
+    return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+  case igl::StencilOperation::Invert:
+    return VK_STENCIL_OP_INVERT;
+  case igl::StencilOperation::IncrementWrap:
+    return VK_STENCIL_OP_INCREMENT_AND_WRAP;
+  case igl::StencilOperation::DecrementWrap:
+    return VK_STENCIL_OP_DECREMENT_AND_WRAP;
+  }
+  IGL_ASSERT_NOT_REACHED();
+  return VK_STENCIL_OP_KEEP;
+}
+
 VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
   using TextureFormat = ::igl::TextureFormat;
   switch (format) {

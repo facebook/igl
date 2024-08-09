@@ -61,29 +61,6 @@ VkAttachmentStoreOp storeActionToVkAttachmentStoreOp(igl::StoreAction a) {
   return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 }
 
-VkStencilOp stencilOperationToVkStencilOp(igl::StencilOperation op) {
-  switch (op) {
-  case igl::StencilOperation::Keep:
-    return VK_STENCIL_OP_KEEP;
-  case igl::StencilOperation::Zero:
-    return VK_STENCIL_OP_ZERO;
-  case igl::StencilOperation::Replace:
-    return VK_STENCIL_OP_REPLACE;
-  case igl::StencilOperation::IncrementClamp:
-    return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
-  case igl::StencilOperation::DecrementClamp:
-    return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
-  case igl::StencilOperation::Invert:
-    return VK_STENCIL_OP_INVERT;
-  case igl::StencilOperation::IncrementWrap:
-    return VK_STENCIL_OP_INCREMENT_AND_WRAP;
-  case igl::StencilOperation::DecrementWrap:
-    return VK_STENCIL_OP_DECREMENT_AND_WRAP;
-  }
-  IGL_ASSERT(false);
-  return VK_STENCIL_OP_KEEP;
-}
-
 VkIndexType indexFormatToVkIndexType(igl::IndexFormat fmt) {
   switch (fmt) {
   case igl::IndexFormat::UInt16:
