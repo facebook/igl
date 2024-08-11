@@ -68,71 +68,79 @@ enum class TextureCubeFace : uint8_t { PosX = 0, NegX, PosY, NegY, PosZ, NegZ };
  *  numFaces     - number of cube texture faces in the range
  */
 struct TextureRangeDesc {
-  size_t x = 0;
-  size_t y = 0;
-  size_t z = 0;
-  size_t width = 1;
-  size_t height = 1;
-  size_t depth = 1;
-  size_t layer = 0;
-  size_t numLayers = 1;
-  size_t mipLevel = 0;
-  size_t numMipLevels = 1;
-  size_t face = 0;
-  size_t numFaces = 1;
+  uint32_t x = 0;
+  uint32_t y = 0;
+  uint32_t z = 0;
+  uint32_t width = 1;
+  uint32_t height = 1;
+  uint32_t depth = 1;
+  uint32_t layer = 0;
+  uint32_t numLayers = 1;
+  uint32_t mipLevel = 0;
+  uint32_t numMipLevels = 1;
+  uint32_t face = 0;
+  uint32_t numFaces = 1;
 
-  static TextureRangeDesc new1D(size_t x,
-                                size_t width,
-                                size_t mipLevel = 0,
-                                size_t numMipLevels = 1);
-  static TextureRangeDesc new1DArray(size_t x,
-                                     size_t width,
-                                     size_t layer,
-                                     size_t numLayers,
-                                     size_t mipLevel = 0,
-                                     size_t numMipLevels = 1);
-  static TextureRangeDesc new2D(size_t x,
-                                size_t y,
-                                size_t width,
-                                size_t height,
-                                size_t mipLevel = 0,
-                                size_t numMipLevels = 1);
-  static TextureRangeDesc new2DArray(size_t x,
-                                     size_t y,
-                                     size_t width,
-                                     size_t height,
-                                     size_t layer,
-                                     size_t numLayers,
-                                     size_t mipLevel = 0,
-                                     size_t numMipLevels = 1);
-  static TextureRangeDesc new3D(size_t x,
-                                size_t y,
-                                size_t z,
-                                size_t width,
-                                size_t height,
-                                size_t depth,
-                                size_t mipLevel = 0,
-                                size_t numMipLevels = 1);
-  static TextureRangeDesc newCube(size_t x,
-                                  size_t y,
-                                  size_t width,
-                                  size_t height,
-                                  size_t mipLevel = 0,
-                                  size_t numMipLevels = 1);
-  static TextureRangeDesc newCubeFace(size_t x,
-                                      size_t y,
-                                      size_t width,
-                                      size_t height,
-                                      size_t face,
-                                      size_t mipLevel = 0,
-                                      size_t numMipLevels = 1);
-  static TextureRangeDesc newCubeFace(size_t x,
-                                      size_t y,
-                                      size_t width,
-                                      size_t height,
+  // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+  static TextureRangeDesc new1D(uint32_t x,
+                                uint32_t width,
+                                uint32_t mipLevel = 0,
+                                uint32_t numMipLevels = 1);
+  // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+  static TextureRangeDesc new1DArray(uint32_t x,
+                                     uint32_t width,
+                                     uint32_t layer,
+                                     uint32_t numLayers,
+                                     uint32_t mipLevel = 0,
+                                     uint32_t numMipLevels = 1);
+  // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+  static TextureRangeDesc new2D(uint32_t x,
+                                uint32_t y,
+                                uint32_t width,
+                                uint32_t height,
+                                uint32_t mipLevel = 0,
+                                uint32_t numMipLevels = 1);
+  // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+  static TextureRangeDesc new2DArray(uint32_t x,
+                                     uint32_t y,
+                                     uint32_t width,
+                                     uint32_t height,
+                                     uint32_t layer,
+                                     uint32_t numLayers,
+                                     uint32_t mipLevel = 0,
+                                     uint32_t numMipLevels = 1);
+  // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+  static TextureRangeDesc new3D(uint32_t x,
+                                uint32_t y,
+                                uint32_t z,
+                                uint32_t width,
+                                uint32_t height,
+                                uint32_t depth,
+                                uint32_t mipLevel = 0,
+                                uint32_t numMipLevels = 1);
+  // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+  static TextureRangeDesc newCube(uint32_t x,
+                                  uint32_t y,
+                                  uint32_t width,
+                                  uint32_t height,
+                                  uint32_t mipLevel = 0,
+                                  uint32_t numMipLevels = 1);
+  // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+  static TextureRangeDesc newCubeFace(uint32_t x,
+                                      uint32_t y,
+                                      uint32_t width,
+                                      uint32_t height,
+                                      uint32_t face,
+                                      uint32_t mipLevel = 0,
+                                      uint32_t numMipLevels = 1);
+  // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+  static TextureRangeDesc newCubeFace(uint32_t x,
+                                      uint32_t y,
+                                      uint32_t width,
+                                      uint32_t height,
                                       TextureCubeFace face,
-                                      size_t mipLevel = 0,
-                                      size_t numMipLevels = 1);
+                                      uint32_t mipLevel = 0,
+                                      uint32_t numMipLevels = 1);
 
   /**
    * @brief Returns a new TextureRangeDesc based on this one but reduced to the specified mipLevel.
@@ -140,35 +148,35 @@ struct TextureRangeDesc {
    * @param newMipLevel The mip level of the returned range.
    * @remark The returned range only has 1 mip level.
    */
-  [[nodiscard]] TextureRangeDesc atMipLevel(size_t newMipLevel) const noexcept;
+  [[nodiscard]] TextureRangeDesc atMipLevel(uint32_t newMipLevel) const noexcept;
   /**
    * @brief Returns a new TextureRangeDesc based on this one but with the specified number of
    * mip levels.
    *
    * @param newNumMipLevels The number of mip levels in the returned range.
    */
-  [[nodiscard]] TextureRangeDesc withNumMipLevels(size_t newNumMipLevels) const noexcept;
+  [[nodiscard]] TextureRangeDesc withNumMipLevels(uint32_t newNumMipLevels) const noexcept;
   /**
    * @brief Returns a new TextureRangeDesc based on this one but reduced to the specified layer.
    *
    * @param newLayer The layer of the returned range.
    * @remark The returned range only has 1 layer.
    */
-  [[nodiscard]] TextureRangeDesc atLayer(size_t newLayer) const noexcept;
+  [[nodiscard]] TextureRangeDesc atLayer(uint32_t newLayer) const noexcept;
   /**
    * @brief Returns a new TextureRangeDesc based on this one but with the specified number of
    * layers.
    *
    * @param newNumLayers The number of layers in the returned range.
    */
-  [[nodiscard]] TextureRangeDesc withNumLayers(size_t newNumLayers) const noexcept;
+  [[nodiscard]] TextureRangeDesc withNumLayers(uint32_t newNumLayers) const noexcept;
   /**
    * @brief Returns a new TextureRangeDesc based on this one but reduced to the specified face.
    *
    * @param newFace The face of the returned range.
    * @remark The returned range only has 1 face.
    */
-  [[nodiscard]] TextureRangeDesc atFace(size_t newFace) const noexcept;
+  [[nodiscard]] TextureRangeDesc atFace(uint32_t newFace) const noexcept;
   /**
    * @brief Returns a new TextureRangeDesc based on this one but reduced to the specified face.
    *
@@ -181,7 +189,7 @@ struct TextureRangeDesc {
    *
    * @param newNumFaces The number of faces in the returned range.
    */
-  [[nodiscard]] TextureRangeDesc withNumFaces(size_t newNumFaces) const noexcept;
+  [[nodiscard]] TextureRangeDesc withNumFaces(uint32_t newNumFaces) const noexcept;
 
   /**
    * Validates the range.
@@ -317,7 +325,7 @@ struct TextureFormatProperties {
    * dimensions.
    * @return Calculated number of rows of texture data for the texture format.
    */
-  [[nodiscard]] size_t getRows(TextureRangeDesc range) const noexcept;
+  [[nodiscard]] uint32_t getRows(TextureRangeDesc range) const noexcept;
 
   /**
    * @brief Utility function to calculate the size in bytes per row for a texture format.
@@ -327,7 +335,7 @@ struct TextureFormatProperties {
    * subrange and/or mip level, which may be be less than the full texture width.
    * @return Calculated total size in bytes of a row of texture data for the texture format.
    */
-  [[nodiscard]] size_t getBytesPerRow(size_t texWidth) const noexcept;
+  [[nodiscard]] uint32_t getBytesPerRow(uint32_t texWidth) const noexcept;
 
   /**
    * @brief Utility function to calculate the size in bytes per row for a texture format.
@@ -337,7 +345,7 @@ struct TextureFormatProperties {
    * subrange and/or mip level, which may be be less than the full texture width.
    * @return Calculated total size in bytes of a row of texture data for the texture format.
    */
-  [[nodiscard]] size_t getBytesPerRow(TextureRangeDesc range) const noexcept;
+  [[nodiscard]] uint32_t getBytesPerRow(TextureRangeDesc range) const noexcept;
 
   /**
    * @brief Utility function to calculate the size in bytes per texture layer for a texture format.
@@ -351,10 +359,10 @@ struct TextureFormatProperties {
    * subrange and/or mip level, which may be be less than the full texture dimensions.
    * @return Calculated total size in bytes of a layer of texture data for the texture format.
    */
-  [[nodiscard]] size_t getBytesPerLayer(size_t texWidth,
-                                        size_t texHeight,
-                                        size_t texDepth,
-                                        size_t bytesPerRow = 0) const noexcept;
+  [[nodiscard]] size_t getBytesPerLayer(uint32_t texWidth,
+                                        uint32_t texHeight,
+                                        uint32_t texDepth,
+                                        uint32_t bytesPerRow = 0) const noexcept;
 
   /**
    * @brief Utility function to calculate the size in bytes per texture layer for a texture format.
@@ -369,7 +377,7 @@ struct TextureFormatProperties {
    * @return Calculated total size in bytes of a layer of texture data for the texture format.
    */
   [[nodiscard]] size_t getBytesPerLayer(TextureRangeDesc range,
-                                        size_t bytesPerRow = 0) const noexcept;
+                                        uint32_t bytesPerRow = 0) const noexcept;
 
   /**
    * @brief Utility function to calculate the size in bytes per texture range for a texture format.
@@ -384,7 +392,7 @@ struct TextureFormatProperties {
    * @return Calculated total size in bytes of a the range of texture data for the texture format.
    */
   [[nodiscard]] size_t getBytesPerRange(TextureRangeDesc range,
-                                        size_t bytesPerRow = 0) const noexcept;
+                                        uint32_t bytesPerRow = 0) const noexcept;
 
   /**
    * @brief Utility function to calculate the number of mip levels given a total size in bytes of
@@ -394,9 +402,9 @@ struct TextureFormatProperties {
    * @param texHeight  The height of the first mip level of the texture.
    * @return Calculated number of mip levels.
    */
-  [[nodiscard]] size_t getNumMipLevels(size_t texWidth,
-                                       size_t texHeight,
-                                       size_t totalBytes) const noexcept;
+  [[nodiscard]] uint32_t getNumMipLevels(uint32_t texWidth,
+                                         uint32_t texHeight,
+                                         size_t totalBytes) const noexcept;
 
   /**
    * @brief Utility function to calculate the byte offset of the start of a subrange within a block
@@ -421,7 +429,7 @@ struct TextureFormatProperties {
    * @return The byte offset within the full block of data for the start of the subrange. */
   [[nodiscard]] size_t getSubRangeByteOffset(const TextureRangeDesc& range,
                                              const TextureRangeDesc& subRange,
-                                             size_t bytesPerRow = 0) const noexcept;
+                                             uint32_t bytesPerRow = 0) const noexcept;
 };
 
 /**

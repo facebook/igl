@@ -101,12 +101,12 @@ bool TextureLoaderFactory::validate(DataReader reader,
         std::lcm(static_cast<uint32_t>(properties.bytesPerBlock), 4u);
 
     size_t rangeBytesAsSizeT = 0;
-    for (size_t mipLevel = 0; mipLevel < range.numMipLevels; ++mipLevel) {
+    for (uint32_t mipLevel = 0; mipLevel < range.numMipLevels; ++mipLevel) {
       rangeBytesAsSizeT += align(properties.getBytesPerRange(range.atMipLevel(mipLevel)),
                                  static_cast<size_t>(mipLevelAlignment));
     }
 
-    if (rangeBytesAsSizeT > static_cast<size_t>(length)) {
+    if (rangeBytesAsSizeT > length) {
       igl::Result::setResult(
           outResult, igl::Result::Code::InvalidOperation, "Length is too short.");
       return false;
@@ -117,7 +117,7 @@ bool TextureLoaderFactory::validate(DataReader reader,
     //   UInt64 byteOffset
     //   UInt64 byteLength
     //   UInt64 uncompressedByteLength
-    const uint32_t mipmapMetadataLength = static_cast<uint32_t>(range.numMipLevels) * 24u;
+    const uint32_t mipmapMetadataLength = range.numMipLevels * 24u;
 
     const uint32_t preSupercompressionMetadataLength =
         kHeaderLength + mipmapMetadataLength + header->dfdByteLength + header->kvdByteLength;
@@ -135,11 +135,11 @@ bool TextureLoaderFactory::validate(DataReader reader,
       return false;
     }
 
-    for (size_t i = 0; i < range.numMipLevels; ++i) {
+    for (uint32_t i = 0; i < range.numMipLevels; ++i) {
       // ktx2 stores actual mip data in 'reverse' order (smallest images to largest) but the
       // metadata in 'normal' order (largest to smallest). We process the list in the same order the
       // data is stored to simplify the bookkeeping validation.
-      const size_t mipLevel = range.numMipLevels - i - 1;
+      const uint32_t mipLevel = range.numMipLevels - i - 1;
 
       const uint32_t offset = kHeaderLength + static_cast<uint32_t>(mipLevel) * 24u;
       const uint64_t byteOffset = reader.readAt<uint64_t>(offset);

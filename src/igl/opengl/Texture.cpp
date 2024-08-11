@@ -110,7 +110,7 @@ GLint Texture::getAlignment(size_t stride, size_t mipLevel) const {
   }
 
   // Clamp to 1 to account for non-square textures.
-  const auto srcWidth = std::max(getDimensions().width >> mipLevel, static_cast<size_t>(1));
+  const auto srcWidth = std::max(getDimensions().width >> mipLevel, 1u);
 
   const auto pixelBytesPerRow = getProperties().getBytesPerRow(srcWidth);
 

@@ -191,13 +191,13 @@ struct Size {
 struct Dimensions {
   Dimensions() = default;
   Dimensions(size_t w, size_t h, size_t d) {
-    width = w;
-    height = h;
-    depth = d;
+    width = static_cast<uint32_t>(w);
+    height = static_cast<uint32_t>(h);
+    depth = static_cast<uint32_t>(d);
   }
-  size_t width;
-  size_t height;
-  size_t depth;
+  uint32_t width;
+  uint32_t height;
+  uint32_t depth;
 };
 
 inline bool operator==(const Dimensions& lhs, const Dimensions& rhs) {
