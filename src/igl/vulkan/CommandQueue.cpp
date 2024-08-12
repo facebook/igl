@@ -70,7 +70,7 @@ SubmitHandle CommandQueue::endCommandBuffer(const igl::vulkan::VulkanContext& ct
   const bool shouldPresent = isGraphicsQueue && ctx.hasSwapchain() &&
                              cmdBuffer->isFromSwapchain() && present;
   if (shouldPresent) {
-    ctx.immediate_->waitSemaphore(ctx.swapchain_->acquireSemaphore_->vkSemaphore_);
+    ctx.immediate_->waitSemaphore(ctx.swapchain_->getSemaphore());
   }
 
   cmdBuffer->lastSubmitHandle_ = ctx.immediate_->submit(cmdBuffer->wrapper_);

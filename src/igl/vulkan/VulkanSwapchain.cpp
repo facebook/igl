@@ -134,9 +134,6 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
           .name,
       colorSpaceToString(vkColorSpaceToColorSpace(surfaceFormat_.colorSpace)));
 
-  acquireSemaphore_ = std::make_unique<igl::vulkan::VulkanSemaphore>(
-      ctx_.vf_, device_, false, "Semaphore: swapchain-acquire");
-
   IGL_ASSERT_MSG(
       ctx.vkSurface_ != VK_NULL_HANDLE,
       "You are trying to create a swapchain but your OS surface is empty. Did you want to "
@@ -159,10 +156,12 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
   const VkImageUsageFlags usageFlags =
       chooseUsageFlags(ctx.vf_, ctx.getVkPhysicalDevice(), ctx.vkSurface_, surfaceFormat_.format);
 
+  const uint32_t swapchainImageCount = chooseSwapImageCount(ctx.deviceSurfaceCaps_);
+
   VK_ASSERT(ivkCreateSwapchain(&ctx_.vf_,
                                device_,
                                ctx.vkSurface_,
-                               chooseSwapImageCount(ctx.deviceSurfaceCaps_),
+                               swapchainImageCount,
                                surfaceFormat_,
                                chooseSwapPresentMode(ctx.devicePresentModes_),
                                &ctx.deviceSurfaceCaps_,
@@ -202,6 +201,18 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
                                            1,
                                            IGL_FORMAT("Image View: swapchain #{}", i).c_str());
     swapchainTextures_[i] = std::make_shared<VulkanTexture>(std::move(image), std::move(imageView));
+  }
+
+  // Create semaphores and sfence used to check the status of the acquire semaphore
+  for (uint32_t i = 0; i < swapchainImageCount; ++i) {
+    acquireSemaphores_.emplace_back(
+        ctx_.vf_, device_, false, IGL_FORMAT("Semaphore: swapchain-acquire #{}", i).c_str());
+
+    acquireFences_.emplace_back(ctx_.vf_,
+                                device_,
+                                VK_FENCE_CREATE_SIGNALED_BIT,
+                                false,
+                                IGL_FORMAT("Fence: swapchain-acquire #{}", i).c_str());
   }
 }
 
@@ -254,19 +265,34 @@ void VulkanSwapchain::lazyAllocateDepthBuffer() const {
   depthTexture_ = std::make_shared<VulkanTexture>(std::move(depthImage), std::move(depthImageView));
 }
 
+VkSemaphore VulkanSwapchain::getSemaphore() const noexcept {
+  return acquireSemaphores_[currentSemaphoreIndex_].vkSemaphore_;
+}
+
 VulkanSwapchain::~VulkanSwapchain() {
   ctx_.vf_.vkDestroySwapchainKHR(device_, swapchain_, nullptr);
 }
 
 Result VulkanSwapchain::acquireNextImage() {
   IGL_PROFILER_FUNCTION();
+
+  // Check whether the semaphore can be used for acquiring by waiting on the acquireFence_
+  //   If semaphore is not VK_NULL_HANDLE it must not have any uncompleted signal or wait operations
+  //   pending
+  //   (https://vulkan.lunarg.com/doc/view/1.3.275.0/windows/1.3-extensions/vkspec.html#VUID-vkAcquireNextImageKHR-semaphore-01779)
+  acquireFences_[currentImageIndex_].wait();
+  acquireFences_[currentImageIndex_].reset();
+
+  currentSemaphoreIndex_ = currentImageIndex_;
+
   // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
-  VK_ASSERT_RETURN(ctx_.vf_.vkAcquireNextImageKHR(device_,
-                                                  swapchain_,
-                                                  UINT64_MAX,
-                                                  acquireSemaphore_->vkSemaphore_,
-                                                  VK_NULL_HANDLE,
-                                                  &currentImageIndex_));
+  VK_ASSERT_RETURN(
+      ctx_.vf_.vkAcquireNextImageKHR(device_,
+                                     swapchain_,
+                                     UINT64_MAX,
+                                     acquireSemaphores_[currentImageIndex_].vkSemaphore_,
+                                     acquireFences_[currentImageIndex_].vkFence_,
+                                     &currentImageIndex_));
   // increase the frame number every time we acquire a new swapchain image
   frameNumber_++;
   return Result();

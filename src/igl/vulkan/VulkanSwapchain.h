@@ -8,6 +8,7 @@
 #pragma once
 
 #include <igl/vulkan/Common.h>
+#include <igl/vulkan/VulkanFence.h>
 #include <igl/vulkan/VulkanFramebuffer.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImage.h>
@@ -86,6 +87,8 @@ class VulkanSwapchain final {
     return currentImageIndex_;
   }
 
+  [[nodiscard]] VkSemaphore getSemaphore() const noexcept;
+
   uint64_t getFrameNumber() const {
     return frameNumber_;
   }
@@ -93,8 +96,12 @@ class VulkanSwapchain final {
  private:
   void lazyAllocateDepthBuffer() const;
 
- public:
-  std::unique_ptr<igl::vulkan::VulkanSemaphore> acquireSemaphore_;
+ private:
+  std::vector<VulkanSemaphore> acquireSemaphores_;
+  // Used to check whether the acquire semaphore can be used for acquiring
+  // Based on
+  // https://github.com/corporateshark/lightweightvk/blob/36597fae5c79ad6b310e4ed8c00e8acfa38b5aca/lvk/vulkan/VulkanClasses.h#L146
+  std::vector<VulkanFence> acquireFences_;
 
  private:
   const VulkanContext& ctx_;
@@ -104,6 +111,10 @@ class VulkanSwapchain final {
   uint32_t height_ = 0;
   uint32_t numSwapchainImages_ = 0;
   uint32_t currentImageIndex_ = 0;
+  // Because the next acquired image's index is obtained _after_ requesting it (along with
+  // semaphores and fences), the index of the semaphore and fence used to synchronize the current
+  // swapchain image is different than the `currentImageIndex_`
+  uint32_t currentSemaphoreIndex_ = 0;
   uint64_t frameNumber_ = 0;
   bool getNextImage_ = true;
   VkSwapchainKHR swapchain_{};
