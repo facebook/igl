@@ -184,7 +184,7 @@ Result TextureRangeDesc::validate() const noexcept {
   const uint32_t maxMipLevels = TextureDesc::calcNumMipLevels(width, height, depth);
   if (IGL_UNEXPECTED(numMipLevels > maxMipLevels)) {
     return Result{Result::Code::ArgumentInvalid,
-                  "`numMipLevels` must not exceed `maxMipLevels` for width, height and depth."};
+                  "`numMipLevels` must not exceed max mip levels for width, height and depth."};
   }
 
   if (IGL_UNEXPECTED(face > 5 || numFaces > 6)) {
