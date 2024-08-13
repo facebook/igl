@@ -1681,7 +1681,7 @@ void VulkanContext::processDeferredTasks() const {
   IGL_PROFILER_FUNCTION();
 
   const uint64_t frameId = getFrameNumber();
-  constexpr uint64_t kNumWaitFrames = 1u;
+  constexpr uint64_t kNumWaitFrames = 3u;
 
   while (!deferredTasks_.empty() && immediate_->isRecycled(deferredTasks_.front().handle_)) {
     if (frameId && frameId <= deferredTasks_.front().frameId_ + kNumWaitFrames) {
