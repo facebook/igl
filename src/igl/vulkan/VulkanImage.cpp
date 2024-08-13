@@ -738,7 +738,8 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
         VkBindImagePlaneMemoryInfo{VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO,
                                    nullptr,
                                    (VkImageAspectFlagBits)(VK_IMAGE_ASPECT_PLANE_0_BIT << p)};
-    bindInfo[p] = ivkGetBindImageMemoryInfo(&bindImagePlaneMemoryInfo[p], vkImage_, vkMemory_[p]);
+    bindInfo[p] = ivkGetBindImageMemoryInfo(
+        numPlanes > 1 ? &bindImagePlaneMemoryInfo[p] : nullptr, vkImage_, vkMemory_[p]);
   }
   VK_ASSERT(ctx_->vf_.vkBindImageMemory2(device_, numPlanes, bindInfo.data()));
 
