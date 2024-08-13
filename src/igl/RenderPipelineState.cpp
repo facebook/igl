@@ -110,7 +110,7 @@ size_t std::hash<RenderPipelineDesc>::operator()(const RenderPipelineDesc& key) 
   hash ^= std::hash<uintptr_t>()(reinterpret_cast<uintptr_t>(key.shaderStages.get()));
   hash ^= std::hash<RenderPipelineDesc::TargetDesc>()(key.targetDesc);
   hash ^= std::hash<int>()(EnumToValue(key.cullMode));
-  hash ^= std::hash<int>()(key.sampleCount);
+  hash ^= std::hash<uint32_t>()(key.sampleCount);
   hash ^= std::hash<int>()(EnumToValue(key.frontFaceWinding));
   hash ^= std::hash<int>()(EnumToValue(key.polygonFillMode));
   hash ^= std::hash<uint32_t>()(key.isDynamicBufferMask);

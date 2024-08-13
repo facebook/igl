@@ -203,7 +203,7 @@ struct RenderPipelineDesc {
   std::unordered_map<size_t, std::vector<std::pair<igl::NameHandle, igl::NameHandle>>>
       uniformBlockBindingMap;
 
-  int sampleCount = 1; // MSAA
+  uint32_t sampleCount = 1u; // MSAA
 
   // Vulkan only: specify if buffer binding locations correspond to Vulkan dynamic buffers
   uint32_t isDynamicBufferMask = 0; // one bit per each buffer

@@ -221,8 +221,8 @@ std::shared_ptr<igl::IRenderPipelineState> EnhancedShaderDebuggingStore::pipelin
     }
 
     // Only check for MSAA while desc.sampleCount == 1. Otherwise we already checked and updated it
-    if (desc.sampleCount == 1 && framebuffer->getResolveColorAttachment(index)) {
-      desc.sampleCount = (int)framebuffer->getColorAttachment(index)->getSamples();
+    if (desc.sampleCount == 1u && framebuffer->getResolveColorAttachment(index)) {
+      desc.sampleCount = framebuffer->getColorAttachment(index)->getSamples();
     }
 
     desc.targetDesc.colorAttachments[index].textureFormat =
