@@ -92,8 +92,8 @@ igl::SurfaceTextures createSurfaceTextures(igl::IDevice& device) {
     igl::opengl::Device& oglDevice = static_cast<igl::opengl::Device&>(device);
     oglDevice.getContext().setCurrent();
     TextureDesc desc = {
-        static_cast<size_t>(shellParams_.viewportSize.x),
-        static_cast<size_t>(shellParams_.viewportSize.y),
+        static_cast<uint32_t>(shellParams_.viewportSize.x),
+        static_cast<uint32_t>(shellParams_.viewportSize.y),
         1,
         1,
         1,

@@ -256,7 +256,7 @@ VkFormat Texture::getVkFormat() const {
   return texture_ ? texture_->getVulkanImage().imageFormat_ : VK_FORMAT_UNDEFINED;
 }
 
-size_t Texture::getNumLayers() const {
+uint32_t Texture::getNumLayers() const {
   return desc_.numLayers;
 }
 

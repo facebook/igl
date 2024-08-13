@@ -69,8 +69,8 @@ void createTestDeviceAndQueue(std::shared_ptr<IDevice>& dev, std::shared_ptr<ICo
 }
 
 igl::SurfaceTextures createSurfaceTextures(igl::IDevice& device,
-                                           size_t width,
-                                           size_t height,
+                                           uint32_t width,
+                                           uint32_t height,
                                            igl::TextureFormat format) {
   if (IGL_VERIFY(device.getBackendType() == igl::BackendType::OpenGL)) {
     igl::opengl::Device& oglDevice = static_cast<igl::opengl::Device&>(device);
@@ -99,8 +99,8 @@ igl::SurfaceTextures createSurfaceTextures(igl::IDevice& device,
   return igl::SurfaceTextures{};
 }
 
-// Windows spawns a window through glfw and this doesn't seem to fly with validation.
-// This mode is similar to what is being done to the unittests where we spawn a device but no
+// Windows spawns a window through GLFW and this doesn't seem to fly with validation.
+// This mode is similar to what is being done to the unit tests where we spawn a device but no
 // window.
 void RunScreenshotTestsMode(igl::shell::ShellParams shellParams) {
   std::shared_ptr<IDevice> iglDev_;
@@ -115,8 +115,8 @@ void RunScreenshotTestsMode(igl::shell::ShellParams shellParams) {
     glSession->initialize();
 
     auto surfaceTextures = createSurfaceTextures(glShellPlatform->getDevice(),
-                                                 static_cast<size_t>(shellParams.viewportSize.x),
-                                                 static_cast<size_t>(shellParams.viewportSize.y),
+                                                 static_cast<uint32_t>(shellParams.viewportSize.x),
+                                                 static_cast<uint32_t>(shellParams.viewportSize.y),
                                                  shellParams.defaultColorFramebufferFormat);
     IGL_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
 

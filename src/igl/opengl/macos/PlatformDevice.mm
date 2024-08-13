@@ -37,8 +37,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
 
   if (!drawableTexture_ || drawableTexture_->getSize() != requiredSize) {
     const TextureDesc desc = {
-        (size_t)requiredSize.width,
-        (size_t)requiredSize.height,
+        static_cast<uint32_t>(requiredSize.width),
+        static_cast<uint32_t>(requiredSize.height),
         1,
         1,
         1,
@@ -101,8 +101,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(Result* o
   }
 
   const TextureDesc desc = {
-      static_cast<size_t>(sizeInPixels.width),
-      static_cast<size_t>(sizeInPixels.height),
+      static_cast<uint32_t>(sizeInPixels.width),
+      static_cast<uint32_t>(sizeInPixels.height),
       1,
       1,
       1,

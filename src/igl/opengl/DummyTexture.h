@@ -15,10 +15,10 @@ class DummyTexture : public ITexture {
   ~DummyTexture() override = default;
 
   [[nodiscard]] Dimensions getDimensions() const override {
-    return Dimensions{static_cast<size_t>(size_.width), static_cast<size_t>(size_.height), 1};
+    return Dimensions{static_cast<uint32_t>(size_.width), static_cast<uint32_t>(size_.height), 1u};
   }
 
-  [[nodiscard]] size_t getNumLayers() const override {
+  [[nodiscard]] uint32_t getNumLayers() const override {
     return 1;
   }
   [[nodiscard]] TextureType getType() const override {

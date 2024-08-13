@@ -18,10 +18,10 @@ namespace igl::opengl {
 
 Dimensions Texture::getDimensions() const {
   return Dimensions{
-      static_cast<size_t>(width_), static_cast<size_t>(height_), static_cast<size_t>(depth_)};
+      static_cast<uint32_t>(width_), static_cast<uint32_t>(height_), static_cast<uint32_t>(depth_)};
 }
 
-size_t Texture::getNumLayers() const {
+uint32_t Texture::getNumLayers() const {
   return numLayers_;
 }
 

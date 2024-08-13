@@ -509,8 +509,8 @@ TextureRangeDesc TextureDesc::asRange() const noexcept {
   return range;
 }
 
-uint32_t TextureDesc::calcNumMipLevels(size_t width, size_t height, size_t depth) {
-  if (width == 0 || height == 0 || depth == 0) {
+uint32_t TextureDesc::calcNumMipLevels(uint32_t width, uint32_t height, uint32_t depth) {
+  if (!width || !height || !depth) {
     return 0;
   }
 
@@ -546,12 +546,12 @@ Size ITexture::getSize() const {
   return Size{static_cast<float>(dimensions.width), static_cast<float>(dimensions.height)};
 }
 
-size_t ITexture::getDepth() const {
+uint32_t ITexture::getDepth() const {
   return getDimensions().depth;
 }
 
-size_t ITexture::getNumFaces() const {
-  return getType() == TextureType::Cube ? 6 : 1;
+uint32_t ITexture::getNumFaces() const {
+  return getType() == TextureType::Cube ? 6u : 1u;
 }
 
 size_t ITexture::getEstimatedSizeInBytes() const {

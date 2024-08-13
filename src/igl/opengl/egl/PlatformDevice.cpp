@@ -40,8 +40,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
   }
 
   const TextureDesc desc = {
-      dimensions.first < 0 ? 0 : static_cast<size_t>(dimensions.first),
-      dimensions.second < 0 ? 0 : static_cast<size_t>(dimensions.second),
+      dimensions.first < 0 ? 0 : static_cast<uint32_t>(dimensions.first),
+      dimensions.second < 0 ? 0 : static_cast<uint32_t>(dimensions.second),
       1, // depth
       1, // numLayers
       1, // numSamples
@@ -80,8 +80,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(int wi
   }
 
   const TextureDesc desc = {
-      static_cast<size_t>(width),
-      static_cast<size_t>(height),
+      static_cast<uint32_t>(width),
+      static_cast<uint32_t>(height),
       1, // depth
       1, // numLayers
       1, // numSamples
@@ -122,8 +122,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(
   }
 
   const TextureDesc desc = {
-      dimensions.first < 0 ? 0 : static_cast<size_t>(dimensions.first),
-      dimensions.second < 0 ? 0 : static_cast<size_t>(dimensions.second),
+      dimensions.first < 0 ? 0 : static_cast<uint32_t>(dimensions.first),
+      dimensions.second < 0 ? 0 : static_cast<uint32_t>(dimensions.second),
       1, // depth
       1, // numLayers
       1, // numSamples

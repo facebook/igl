@@ -163,8 +163,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(
       bounds.origin.x, bounds.origin.y, bounds.size.width * scale, bounds.size.height * scale);
 
   TextureDesc desc = {
-      static_cast<size_t>(resolution.size.width),
-      static_cast<size_t>(resolution.size.height),
+      static_cast<uint32_t>(resolution.size.width),
+      static_cast<uint32_t>(resolution.size.height),
       1,
       1,
       1,

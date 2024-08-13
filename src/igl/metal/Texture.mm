@@ -169,10 +169,12 @@ size_t Texture::toMetalBytesPerRow(size_t bytesPerRow) const {
 
 Dimensions Texture::getDimensions() const {
   auto texture = get();
-  return Dimensions{[texture width], [texture height], [texture depth]};
+  return Dimensions{static_cast<uint32_t>([texture width]),
+                    static_cast<uint32_t>([texture height]),
+                    static_cast<uint32_t>([texture depth])};
 }
 
-size_t Texture::getNumLayers() const {
+uint32_t Texture::getNumLayers() const {
   return [get() arrayLength];
 }
 

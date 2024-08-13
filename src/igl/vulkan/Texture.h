@@ -43,7 +43,7 @@ class Texture : public ITexture {
 
   // Accessors
   Dimensions getDimensions() const override;
-  size_t getNumLayers() const override;
+  uint32_t getNumLayers() const override;
   TextureType getType() const override;
   TextureDesc::TextureUsage getUsage() const override;
   uint32_t getSamples() const override;

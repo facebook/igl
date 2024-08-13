@@ -472,10 +472,10 @@ struct TextureDesc {
    */
   enum class TextureTiling : uint8_t { Optimal, Linear };
 
-  size_t width = 1;
-  size_t height = 1;
-  size_t depth = 1;
-  size_t numLayers = 1;
+  uint32_t width = 1;
+  uint32_t height = 1;
+  uint32_t depth = 1;
+  uint32_t numLayers = 1;
   uint32_t numSamples = 1;
   TextureUsage usage = 0;
   uint32_t numMipLevels = 1;
@@ -500,8 +500,8 @@ struct TextureDesc {
    * @return TextureDesc
    */
   static TextureDesc new2D(TextureFormat format,
-                           size_t width,
-                           size_t height,
+                           uint32_t width,
+                           uint32_t height,
                            TextureUsage usage,
                            const char* IGL_NULLABLE debugName = nullptr) {
     return TextureDesc{width,
@@ -530,9 +530,9 @@ struct TextureDesc {
    * @return TextureDesc
    */
   static TextureDesc new2DArray(TextureFormat format,
-                                size_t width,
-                                size_t height,
-                                size_t numLayers,
+                                uint32_t width,
+                                uint32_t height,
+                                uint32_t numLayers,
                                 TextureUsage usage,
                                 const char* IGL_NULLABLE debugName = nullptr) {
     return TextureDesc{
@@ -562,8 +562,8 @@ struct TextureDesc {
    * @return TextureDesc
    */
   static TextureDesc newCube(TextureFormat format,
-                             size_t width,
-                             size_t height,
+                             uint32_t width,
+                             uint32_t height,
                              TextureUsage usage,
                              const char* IGL_NULLABLE debugName = nullptr) {
     return TextureDesc{width,
@@ -592,9 +592,9 @@ struct TextureDesc {
    * @return TextureDesc
    */
   static TextureDesc new3D(TextureFormat format,
-                           size_t width,
-                           size_t height,
-                           size_t depth,
+                           uint32_t width,
+                           uint32_t height,
+                           uint32_t depth,
                            TextureUsage usage,
                            const char* IGL_NULLABLE debugName = nullptr) {
     return TextureDesc{width,
@@ -621,8 +621,8 @@ struct TextureDesc {
    * @return TextureDesc
    */
   static TextureDesc newExternalImage(TextureFormat format,
-                                      size_t width,
-                                      size_t height,
+                                      uint32_t width,
+                                      uint32_t height,
                                       TextureUsage usage,
                                       const char* IGL_NULLABLE debugName = nullptr) {
     return TextureDesc{width,
@@ -652,8 +652,8 @@ struct TextureDesc {
    */
   static TextureDesc newNativeHWBufferImage(TextureFormat format,
                                             TextureUsage usage,
-                                            size_t width,
-                                            size_t height,
+                                            uint32_t width,
+                                            uint32_t height,
                                             const char* IGL_NULLABLE debugName = nullptr) {
     return TextureDesc{width,
                        height,
@@ -685,7 +685,7 @@ struct TextureDesc {
    * @param depth The depth of the texture
    * @return uint32_t
    */
-  static uint32_t calcNumMipLevels(size_t width, size_t height, size_t depth = 1);
+  static uint32_t calcNumMipLevels(uint32_t width, uint32_t height, uint32_t depth = 1);
 };
 
 /**
@@ -755,7 +755,7 @@ class ITexture : public ITrackedResource<ITexture> {
    *
    * @return size_t
    */
-  [[nodiscard]] size_t getDepth() const;
+  [[nodiscard]] uint32_t getDepth() const;
   /**
    * @brief Returns dimensions (width, height and depth) of the texture.
    *
@@ -768,14 +768,14 @@ class ITexture : public ITrackedResource<ITexture> {
    *
    * @return size_t
    */
-  [[nodiscard]] virtual size_t getNumLayers() const = 0;
+  [[nodiscard]] virtual uint32_t getNumLayers() const = 0;
   /**
    * @brief Returns the number of faces the texture has
    * For non-cube textures, return 1
    *
    * @return size_t
    */
-  [[nodiscard]] size_t getNumFaces() const;
+  [[nodiscard]] uint32_t getNumFaces() const;
   /**
    * @brief Returns texture format properties of the texture
    *
