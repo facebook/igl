@@ -711,7 +711,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
     const VkImageMemoryRequirementsInfo2 imageMemoryRequirementInfo = {
         VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
-        &imagePlaneMemoryRequirementsInfo,
+        numPlanes > 1 ? &imagePlaneMemoryRequirementsInfo : nullptr,
         vkImage_};
 
     VkMemoryRequirements2 memoryRequirements = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, nullptr};
