@@ -775,7 +775,7 @@ void VulkanImage::destroy() {
 
   if (!isExternallyManaged_) {
     if (vkMemory_[1] == VK_NULL_HANDLE) {
-      if (IGL_VULKAN_USE_VMA && !isImported_ && !isExported_) {
+      if (vmaAllocation_) {
         if (mappedPtr_) {
           vmaUnmapMemory((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_);
         }
@@ -1259,7 +1259,7 @@ void VulkanImage::flushMappedMemory() const {
     return;
   }
 
-  if (IGL_VULKAN_USE_VMA) {
+  if (vmaAllocation_) {
     vmaFlushAllocation((VmaAllocator)ctx_->getVmaAllocator(), vmaAllocation_, 0, VK_WHOLE_SIZE);
   } else {
     const VkMappedMemoryRange memoryRange{
