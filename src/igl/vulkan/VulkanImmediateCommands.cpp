@@ -115,23 +115,31 @@ const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::ac
   return *current;
 }
 
-void VulkanImmediateCommands::wait(const SubmitHandle handle, uint64_t timeoutNanoseconds) {
+VkResult VulkanImmediateCommands::wait(const SubmitHandle handle, uint64_t timeoutNanoseconds) {
   if (isReady(handle)) {
-    return;
+    return VK_SUCCESS;
   }
 
   if (!IGL_VERIFY(!buffers_[handle.bufferIndex_].isEncoding_)) {
     // we are waiting for a buffer which has not been submitted - this is probably a logic error
     // somewhere in the calling code
-    return;
+    return VK_ERROR_UNKNOWN;
   }
 
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
 
-  VK_ASSERT(vf_.vkWaitForFences(
-      device_, 1, &buffers_[handle.bufferIndex_].fence_.vkFence_, VK_TRUE, timeoutNanoseconds));
+  const VkResult fenceResult = vf_.vkWaitForFences(
+      device_, 1, &buffers_[handle.bufferIndex_].fence_.vkFence_, VK_TRUE, timeoutNanoseconds);
+
+  if (fenceResult != VK_SUCCESS) {
+    IGL_LOG_ERROR_ONCE(
+        "VulkanImmediateCommands::wait - Waiting for command buffer fence failed with error %i",
+        int(fenceResult));
+  }
 
   purge();
+
+  return fenceResult;
 }
 
 void VulkanImmediateCommands::waitAll() {

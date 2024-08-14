@@ -1228,10 +1228,10 @@ std::unique_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
                                        debugName);
 }
 
-void VulkanContext::checkAndUpdateDescriptorSets() {
+VkResult VulkanContext::checkAndUpdateDescriptorSets() {
   if (!awaitingCreation_) {
     // nothing to update here
-    return;
+    return VK_SUCCESS;
   }
 
   // newly created resources can be used immediately - make sure they are put into descriptor sets
@@ -1265,7 +1265,7 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
 
   // update Vulkan bindless descriptor sets here
   if (!config_.enableDescriptorIndexing) {
-    return;
+    return VK_SUCCESS;
   }
 
   uint32_t newMaxTextures = pimpl_->currentMaxBindlessTextures_;
@@ -1369,12 +1369,20 @@ void VulkanContext::checkAndUpdateDescriptorSets() {
 #if IGL_VULKAN_PRINT_COMMANDS
     IGL_LOG_INFO("Updating descriptor set dsBindless_\n");
 #endif // IGL_VULKAN_PRINT_COMMANDS
-    immediate_->wait(std::exchange(pimpl_->lastSubmitHandle_, immediate_->getLastSubmitHandle()));
+    const VkResult vkResult = immediate_->wait(
+        std::exchange(pimpl_->lastSubmitHandle_, immediate_->getLastSubmitHandle()),
+        config_.fenceTimeoutNanoseconds);
+    if (vkResult != VK_SUCCESS) {
+      IGL_LOG_ERROR("wait command failed with result %i", int(vkResult));
+      return vkResult;
+    }
+
     vf_.vkUpdateDescriptorSets(
         device_->getVkDevice(), static_cast<uint32_t>(write.size()), write.data(), 0, nullptr);
   }
 
   awaitingCreation_ = false;
+  return VK_SUCCESS;
 }
 
 std::shared_ptr<VulkanTexture> VulkanContext::createTexture(

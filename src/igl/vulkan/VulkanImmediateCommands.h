@@ -142,9 +142,9 @@ class VulkanImmediateCommands final {
   [[nodiscard]] bool isReady(SubmitHandle handle) const;
 
   /// @brief If the SubmitHandle is not ready, this function waits for the fence associated with the
-  /// command buffer referred by the handle to become signaled. The maximum wait time is
-  /// `UINT64_MAX` nanoseconds
-  void wait(SubmitHandle handle, uint64_t timeoutNanoseconds = UINT64_MAX);
+  /// command buffer referred by the handle to become signaled. The default wait time is
+  /// `UINT64_MAX` nanoseconds. Returns a result code if the wait was successful or not.
+  VkResult wait(SubmitHandle handle, uint64_t timeoutNanoseconds = UINT64_MAX);
 
   /// @brief Wait for _all_ fences for all command buffers stored in `VulkanImmediateCommands` to
   /// become signaled. The maximum wait time is `UINT64_MAX` nanoseconds

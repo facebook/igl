@@ -116,6 +116,9 @@ struct VulkanContextConfig {
   // Using a smaller heap size would increase the chance of memory deallocation and result in less
   // memory wastage.
   size_t vmaPreferredLargeHeapBlockSize = 0;
+
+  // Specifies a default fence timeout value.
+  uint64_t fenceTimeoutNanoseconds = UINT64_MAX;
 };
 
 class VulkanContext final {
@@ -246,7 +249,7 @@ class VulkanContext final {
   void createInstance(size_t numExtraExtensions,
                       const char* IGL_NULLABLE* IGL_NULLABLE extraExtensions);
   void createSurface(void* window, void* IGL_NULLABLE display);
-  void checkAndUpdateDescriptorSets();
+  VkResult checkAndUpdateDescriptorSets();
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void waitDeferredTasks();
