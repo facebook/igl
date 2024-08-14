@@ -270,6 +270,9 @@ VkSemaphore VulkanSwapchain::getSemaphore() const noexcept {
 }
 
 VulkanSwapchain::~VulkanSwapchain() {
+  for (auto& fence : acquireFences_) {
+    fence.wait();
+  }
   ctx_.vf_.vkDestroySwapchainKHR(device_, swapchain_, nullptr);
 }
 
