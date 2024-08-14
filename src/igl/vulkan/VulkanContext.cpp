@@ -1705,7 +1705,7 @@ void VulkanContext::waitDeferredTasks() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
 
   for (auto& task : deferredTasks_) {
-    immediate_->wait(task.handle_);
+    immediate_->wait(task.handle_, config_.fenceTimeoutNanoseconds);
     task.task_();
   }
   deferredTasks_.clear();

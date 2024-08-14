@@ -264,7 +264,7 @@ void VulkanStagingDevice::getBufferSubData(const VulkanBuffer& buffer,
         wrapper.cmdBuf_, buffer.getVkBuffer(), stagingBuffer->getVkBuffer(), 1, &copy);
 
     // Wait for command to finish
-    immediate_->wait(immediate_->submit(wrapper));
+    immediate_->wait(immediate_->submit(wrapper), ctx_.config_.fenceTimeoutNanoseconds);
 
     // Copy data into data
     const uint8_t* src = stagingBuffer->getMappedPtr() + memoryChunk.offset;
@@ -611,7 +611,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                                   &copy);
 
   // Wait for command to finish
-  immediate_->wait(immediate_->submit(wrapper1));
+  immediate_->wait(immediate_->submit(wrapper1), ctx_.config_.fenceTimeoutNanoseconds);
 
   // 3. Copy data from staging buffer into data
   if (!IGL_VERIFY(stagingBuffer->getMappedPtr())) {
@@ -649,7 +649,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                         VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, level, 1, layer, 1});
 
   // the data should be available as we get out of this function
-  immediate_->wait(immediate_->submit(wrapper2));
+  immediate_->wait(immediate_->submit(wrapper2), ctx_.config_.fenceTimeoutNanoseconds);
   regions_.push_back(memoryChunk);
 }
 
@@ -662,7 +662,7 @@ void VulkanStagingDevice::waitAndReset() {
   IGL_PROFILER_FUNCTION();
 
   for (const auto region : regions_) {
-    immediate_->wait(region.handle);
+    immediate_->wait(region.handle, ctx_.config_.fenceTimeoutNanoseconds);
   }
 
   regions_.clear();

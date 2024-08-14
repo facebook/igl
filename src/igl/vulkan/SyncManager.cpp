@@ -33,7 +33,7 @@ void SyncManager::acquireNext() noexcept {
   currentIndex_ = (currentIndex_ + 1) % maxResourceCount_;
 
   // Wait for the current buffer to become available
-  ctx_.immediate_->wait(submitHandles_[currentIndex_]);
+  ctx_.immediate_->wait(submitHandles_[currentIndex_], ctx_.config_.fenceTimeoutNanoseconds);
 }
 
 void SyncManager::markSubmitted(SubmitHandle handle) noexcept {
