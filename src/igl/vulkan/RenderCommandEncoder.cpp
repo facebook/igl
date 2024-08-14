@@ -857,17 +857,17 @@ void RenderCommandEncoder::blitColorImage(const igl::vulkan::VulkanImage& srcIma
                                           const igl::TextureRangeDesc& destRange) {
   const VkImageSubresourceRange srcResourceRange = {
       srcImage.getImageAspectFlags(),
-      static_cast<uint32_t>(srcRange.mipLevel),
-      static_cast<uint32_t>(srcRange.numMipLevels),
-      static_cast<uint32_t>(srcRange.layer),
-      static_cast<uint32_t>(srcRange.numLayers),
+      srcRange.mipLevel,
+      srcRange.numMipLevels,
+      srcRange.layer,
+      srcRange.numLayers,
   };
   const VkImageSubresourceRange destSubresourceRange = {
       destImage.getImageAspectFlags(),
-      static_cast<uint32_t>(destRange.mipLevel),
-      static_cast<uint32_t>(destRange.numMipLevels),
-      static_cast<uint32_t>(destRange.layer),
-      static_cast<uint32_t>(destRange.numLayers),
+      destRange.mipLevel,
+      destRange.numMipLevels,
+      destRange.layer,
+      destRange.numLayers,
   };
   srcImage.transitionLayout(cmdBuffer_,
                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -899,8 +899,7 @@ void RenderCommandEncoder::blitColorImage(const igl::vulkan::VulkanImage& srcIma
                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                   srcOffsets.data(),
                   dstOffsets.data(),
-                  VkImageSubresourceLayers{
-                      VK_IMAGE_ASPECT_COLOR_BIT, static_cast<uint32_t>(srcRange.mipLevel), 0, 1},
+                  VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, srcRange.mipLevel, 0, 1},
                   VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
                   VK_FILTER_LINEAR);
 
