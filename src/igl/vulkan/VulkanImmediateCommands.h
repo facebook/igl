@@ -82,8 +82,8 @@ class VulkanImmediateCommands final {
   /// @brief The CommandBufferWrapper structure encapsulates all the information needed to manage
   /// the synchronization of a command buffer along with a command buffer
   struct CommandBufferWrapper {
-    CommandBufferWrapper(VulkanFence&& fence, VulkanSemaphore&& semaphore) :
-      fence_(std::move(fence)), semaphore_(std::move(semaphore)) {}
+    CommandBufferWrapper(VulkanFence&& fence, VulkanSemaphore&& semaphore, bool isValid = true) :
+      fence_(std::move(fence)), semaphore_(std::move(semaphore)), isValid_(isValid) {}
 
     /// @brief The command buffer handle. It is initialied to VK_NULL_HANDLE. The command buffer
     /// handle stored in `cmdBufAllocated_` is copied into `cmdBuf_` when the command buffer is
@@ -101,7 +101,13 @@ class VulkanImmediateCommands final {
     /// execution.
     VulkanSemaphore semaphore_;
     bool isEncoding_ = false;
+
+    /// @brief Tells a valid non-empty command buffer wrapper from an empty one apart. It is used
+    /// as a safe way to handle failures to acquire a command buffer.
+    const bool isValid_ = true;
   };
+
+  [[nodiscard]] bool canAcquire();
 
   /// @brief Returns a `CommandBufferWrapper` object with the current command buffer (creates one if
   /// it does not exist) and its associated synchronization objects
@@ -167,6 +173,10 @@ class VulkanImmediateCommands final {
   VulkanCommandPool commandPool_;
   std::string debugName_;
   std::vector<CommandBufferWrapper> buffers_;
+
+  /// @brief The null/invalid command buffer wrapper that is returned when a command buffer cannot
+  /// be acquired.
+  const CommandBufferWrapper emptyCommandBufferWrapper_;
 
   /// @brief The last submitted handle. Updated on `submit()`
   SubmitHandle lastSubmitHandle_ = SubmitHandle();
