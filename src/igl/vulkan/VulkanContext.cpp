@@ -166,7 +166,7 @@ bool validateImageLimits(VkImageType imageType,
                          VkSampleCountFlagBits samples,
                          const VkExtent3D& extent,
                          const VkPhysicalDeviceLimits& limits,
-                         igl::Result* outResult) {
+                         igl::Result* IGL_NULLABLE outResult) {
   using igl::Result;
 
   if (samples != VK_SAMPLE_COUNT_1_BIT && !IGL_VERIFY(imageType == VK_IMAGE_TYPE_2D)) {
@@ -211,7 +211,7 @@ class DescriptorPoolsArena final {
                        VkDescriptorType type,
                        VkDescriptorSetLayout dsl,
                        uint32_t numDescriptorsPerDSet,
-                       const char* debugName) :
+                       const char* IGL_NULLABLE debugName) :
     ctx_(ctx),
     device_(ctx.getVkDevice()),
     numTypes_(1),
@@ -595,7 +595,7 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
 #endif
 }
 
-void VulkanContext::createSurface(void* window, void* IGL_NULLABLE display) {
+void VulkanContext::createSurface(void* IGL_NULLABLE window, void* IGL_NULLABLE display) {
   [[maybe_unused]] void* layer = nullptr;
 #if IGL_PLATFORM_APPLE
   layer = igl::vulkan::getCAMetalLayer(window);
@@ -1554,7 +1554,7 @@ uint64_t VulkanContext::getFrameNumber() const {
   return swapchain_ ? swapchain_->getFrameNumber() : 0u;
 }
 
-void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
+void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
                                            VkPipelineLayout layout,
                                            VkPipelineBindPoint bindPoint,
                                            const BindingsTextures& data,
@@ -1620,7 +1620,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
   }
 }
 
-void VulkanContext::updateBindingsBuffers(VkCommandBuffer cmdBuf,
+void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
                                           VkPipelineLayout layout,
                                           VkPipelineBindPoint bindPoint,
                                           BindingsBuffers& data,
@@ -1711,12 +1711,12 @@ void VulkanContext::waitDeferredTasks() {
   deferredTasks_.clear();
 }
 
-VkDescriptorSetLayout VulkanContext::getBindlessVkDescriptorSetLayout() const {
+VkDescriptorSetLayout IGL_NULLABLE VulkanContext::getBindlessVkDescriptorSetLayout() const {
   return config_.enableDescriptorIndexing ? pimpl_->dslBindless_->getVkDescriptorSetLayout()
                                           : VK_NULL_HANDLE;
 }
 
-VkDescriptorSet VulkanContext::getBindlessVkDescriptorSet() const {
+VkDescriptorSet IGL_NULLABLE VulkanContext::getBindlessVkDescriptorSet() const {
   return config_.enableDescriptorIndexing ? pimpl_->dsBindless_ : VK_NULL_HANDLE;
 }
 
@@ -1793,8 +1793,8 @@ void VulkanContext::freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout ds
 
 igl::BindGroupTextureHandle VulkanContext::createBindGroup(
     const BindGroupTextureDesc& desc,
-    const IRenderPipelineState* compatiblePipeline,
-    Result* outResult) {
+    const IRenderPipelineState* IGL_NULLABLE compatiblePipeline,
+    Result* IGL_NULLABLE outResult) {
   VkDevice device = getVkDevice();
 
   BindGroupMetadataTextures metadata{desc};
@@ -2086,7 +2086,7 @@ void VulkanContext::destroy(igl::BindGroupBufferHandle handle) {
   pimpl_->bindGroupBuffersPool_.destroy(handle);
 }
 
-VkDescriptorSet VulkanContext::getBindGroupDescriptorSet(igl::BindGroupTextureHandle handle) const {
+VkDescriptorSet IGL_NULLABLE VulkanContext::getBindGroupDescriptorSet(igl::BindGroupTextureHandle handle) const {
   return handle.valid() ? pimpl_->bindGroupTexturesPool_.get(handle)->dset : VK_NULL_HANDLE;
 }
 
@@ -2094,7 +2094,7 @@ uint32_t VulkanContext::getBindGroupUsageMask(igl::BindGroupTextureHandle handle
   return handle.valid() ? pimpl_->bindGroupTexturesPool_.get(handle)->usageMask : 0;
 }
 
-VkDescriptorSet VulkanContext::getBindGroupDescriptorSet(igl::BindGroupBufferHandle handle) const {
+VkDescriptorSet IGL_NULLABLE VulkanContext::getBindGroupDescriptorSet(igl::BindGroupBufferHandle handle) const {
   return handle.valid() ? pimpl_->bindGroupBuffersPool_.get(handle)->dset : VK_NULL_HANDLE;
 }
 
