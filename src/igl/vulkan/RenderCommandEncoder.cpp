@@ -419,10 +419,6 @@ void RenderCommandEncoder::bindDepthStencilState(
   dynamicState_.setDepthCompareOp(compareFunctionToVkCompareOp(desc.compareFunction));
 
   auto setStencilState = [this](VkStencilFaceFlagBits faceMask, const igl::StencilStateDesc& desc) {
-    if (desc == igl::StencilStateDesc()) {
-      // do not update anything if we don't have an actual state
-      return;
-    }
     dynamicState_.setStencilStateOps(faceMask == VK_STENCIL_FACE_FRONT_BIT,
                                      stencilOperationToVkStencilOp(desc.stencilFailureOperation),
                                      stencilOperationToVkStencilOp(desc.depthStencilPassOperation),
