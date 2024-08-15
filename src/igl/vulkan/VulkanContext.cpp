@@ -220,7 +220,7 @@ class DescriptorPoolsArena final {
     dsl_(dsl) {
     IGL_ASSERT(debugName);
     dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
-    switchToNewDescriptorPool(*ctx.immediate_, {});
+    switchToNewDescriptorPool(*ctx.immediate_, ctx.immediate_->getLastSubmitHandle());
   }
   DescriptorPoolsArena(const VulkanContext& ctx,
                        VkDescriptorType type0,
@@ -236,7 +236,7 @@ class DescriptorPoolsArena final {
     dsl_(dsl) {
     IGL_ASSERT(debugName);
     dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
-    switchToNewDescriptorPool(*ctx.immediate_, {});
+    switchToNewDescriptorPool(*ctx.immediate_, ctx.immediate_->getLastSubmitHandle());
   }
   ~DescriptorPoolsArena() {
     extinct_.push_back({pool_, {}});
@@ -273,7 +273,7 @@ class DescriptorPoolsArena final {
     // first, let's try to reuse the oldest extinct pool
     if (extinct_.size() > 1) {
       const ExtinctDescriptorPool p = extinct_.front();
-      if (ic.isRecycled(p.handle_)) {
+      if (ic.isReady(p.handle_)) {
         pool_ = p.pool_;
         extinct_.pop_front();
         VK_ASSERT(ctx_.vf_.vkResetDescriptorPool(device_, pool_, VkDescriptorPoolResetFlags{}));
