@@ -1691,7 +1691,7 @@ void VulkanContext::processDeferredTasks() const {
   const uint64_t frameId = getFrameNumber();
   constexpr uint64_t kNumWaitFrames = 3u;
 
-  while (!deferredTasks_.empty() && immediate_->isRecycled(deferredTasks_.front().handle_)) {
+  while (!deferredTasks_.empty() && immediate_->isReady(deferredTasks_.front().handle_)) {
     if (frameId && frameId <= deferredTasks_.front().frameId_ + kNumWaitFrames) {
       // do not check anything if it is not yet older than kNumWaitFrames
       break;
