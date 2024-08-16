@@ -73,8 +73,8 @@ struct DeviceQueues {
   uint32_t graphicsQueueFamilyIndex = INVALID;
   uint32_t computeQueueFamilyIndex = INVALID;
 
-  VkQueue graphicsQueue = VK_NULL_HANDLE;
-  VkQueue computeQueue = VK_NULL_HANDLE;
+  VkQueue IGL_NULLABLE graphicsQueue = VK_NULL_HANDLE;
+  VkQueue IGL_NULLABLE computeQueue = VK_NULL_HANDLE;
 
   DeviceQueues() = default;
 };
@@ -103,7 +103,7 @@ struct VulkanContextConfig {
   uint32_t maxResourceCount = 3u;
 
   // owned by the application - should be alive until initContext() returns
-  const void* pipelineCacheData = nullptr;
+  const void* IGL_NULLABLE pipelineCacheData = nullptr;
   size_t pipelineCacheDataSize = 0;
 
   // This enables fences generated at the end of submission to be exported to the client.
@@ -210,13 +210,13 @@ class VulkanContext final {
   RenderPassHandle getRenderPass(uint8_t index) const;
 
   // OpenXR needs Vulkan instance to find physical device
-  VkInstance getVkInstance() const {
+  VkInstance IGL_NULLABLE getVkInstance() const {
     return vkInstance_;
   }
-  VkDevice getVkDevice() const {
+  VkDevice IGL_NULLABLE getVkDevice() const {
     return device_->getVkDevice();
   }
-  VkPhysicalDevice getVkPhysicalDevice() const {
+  VkPhysicalDevice IGL_NULLABLE getVkPhysicalDevice() const {
     return vkPhysicalDevice_;
   }
   VkDescriptorSetLayout getBindlessVkDescriptorSetLayout() const;
@@ -248,16 +248,18 @@ class VulkanContext final {
  private:
   void createInstance(size_t numExtraExtensions,
                       const char* IGL_NULLABLE* IGL_NULLABLE extraExtensions);
-  void createSurface(void* window, void* IGL_NULLABLE display);
+  void createSurface(void* IGL_NULLABLE window, void* IGL_NULLABLE display);
   VkResult checkAndUpdateDescriptorSets();
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void waitDeferredTasks();
   void growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t newMaxSamplers);
   igl::BindGroupTextureHandle createBindGroup(const BindGroupTextureDesc& desc,
-                                              const IRenderPipelineState* compatiblePipeline,
-                                              Result* outResult);
-  igl::BindGroupBufferHandle createBindGroup(const BindGroupBufferDesc& desc, Result* outResult);
+                                              const IRenderPipelineState* IGL_NULLABLE
+                                                  compatiblePipeline,
+                                              Result* IGL_NULLABLE outResult);
+  igl::BindGroupBufferHandle createBindGroup(const BindGroupBufferDesc& desc,
+                                             Result* IGL_NULLABLE outResult);
   void destroy(igl::BindGroupTextureHandle handle);
   void destroy(igl::BindGroupBufferHandle handle);
   VkDescriptorSet getBindGroupDescriptorSet(igl::BindGroupTextureHandle handle) const;
@@ -276,10 +278,10 @@ class VulkanContext final {
   // should be kept on the heap, otherwise global Vulkan functions can cause arbitrary crashes.
   std::unique_ptr<VulkanFunctionTable> tableImpl_;
 
-  VkInstance vkInstance_ = VK_NULL_HANDLE;
+  VkInstance IGL_NULLABLE vkInstance_ = VK_NULL_HANDLE;
   VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;
   VkSurfaceKHR vkSurface_ = VK_NULL_HANDLE;
-  VkPhysicalDevice vkPhysicalDevice_ = VK_NULL_HANDLE;
+  VkPhysicalDevice IGL_NULLABLE vkPhysicalDevice_ = VK_NULL_HANDLE;
   FOLLY_PUSH_WARNING
   FOLLY_GNU_DISABLE_WARNING("-Wmissing-field-initializers")
   VkPhysicalDeviceDescriptorIndexingPropertiesEXT vkPhysicalDeviceDescriptorIndexingProperties_ = {
@@ -370,13 +372,13 @@ class VulkanContext final {
   // Enhanced shader debug: line drawing
   std::unique_ptr<EnhancedShaderDebuggingStore> enhancedShaderDebuggingStore_;
 
-  void updateBindingsTextures(VkCommandBuffer cmdBuf,
+  void updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
                               VkPipelineLayout layout,
                               VkPipelineBindPoint bindPoint,
                               const BindingsTextures& data,
                               const VulkanDescriptorSetLayout& dsl,
                               const util::SpvModuleInfo& info) const;
-  void updateBindingsBuffers(VkCommandBuffer cmdBuf,
+  void updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
                              VkPipelineLayout layout,
                              VkPipelineBindPoint bindPoint,
                              BindingsBuffers& data,

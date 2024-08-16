@@ -166,7 +166,7 @@ bool validateImageLimits(VkImageType imageType,
                          VkSampleCountFlagBits samples,
                          const VkExtent3D& extent,
                          const VkPhysicalDeviceLimits& limits,
-                         igl::Result* outResult) {
+                         igl::Result* IGL_NULLABLE outResult) {
   using igl::Result;
 
   if (samples != VK_SAMPLE_COUNT_1_BIT && !IGL_VERIFY(imageType == VK_IMAGE_TYPE_2D)) {
@@ -211,7 +211,7 @@ class DescriptorPoolsArena final {
                        VkDescriptorType type,
                        VkDescriptorSetLayout dsl,
                        uint32_t numDescriptorsPerDSet,
-                       const char* debugName) :
+                       const char* IGL_NULLABLE debugName) :
     ctx_(ctx),
     device_(ctx.getVkDevice()),
     numTypes_(1),
@@ -595,7 +595,7 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
 #endif
 }
 
-void VulkanContext::createSurface(void* window, void* IGL_NULLABLE display) {
+void VulkanContext::createSurface(void* IGL_NULLABLE window, void* IGL_NULLABLE display) {
   [[maybe_unused]] void* layer = nullptr;
 #if IGL_PLATFORM_APPLE
   layer = igl::vulkan::getCAMetalLayer(window);
@@ -1554,7 +1554,7 @@ uint64_t VulkanContext::getFrameNumber() const {
   return swapchain_ ? swapchain_->getFrameNumber() : 0u;
 }
 
-void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
+void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
                                            VkPipelineLayout layout,
                                            VkPipelineBindPoint bindPoint,
                                            const BindingsTextures& data,
@@ -1620,7 +1620,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer cmdBuf,
   }
 }
 
-void VulkanContext::updateBindingsBuffers(VkCommandBuffer cmdBuf,
+void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
                                           VkPipelineLayout layout,
                                           VkPipelineBindPoint bindPoint,
                                           BindingsBuffers& data,
@@ -1791,10 +1791,10 @@ void VulkanContext::freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout ds
   pimpl_->arenaCombinedImageSamplers_.erase(dsl);
 }
 
-igl::BindGroupTextureHandle VulkanContext::createBindGroup(
-    const BindGroupTextureDesc& desc,
-    const IRenderPipelineState* compatiblePipeline,
-    Result* outResult) {
+igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc& desc,
+                                                           const IRenderPipelineState* IGL_NULLABLE
+                                                               compatiblePipeline,
+                                                           Result* IGL_NULLABLE outResult) {
   VkDevice device = getVkDevice();
 
   BindGroupMetadataTextures metadata{desc};
