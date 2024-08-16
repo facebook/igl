@@ -24,14 +24,8 @@ CommandQueue::CommandQueue(Device& device, const CommandQueueDesc& desc) :
 }
 
 std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandBufferDesc& desc,
-                                                                  Result* outResult) {
+                                                                  Result* /*outResult*/) {
   IGL_PROFILER_FUNCTION();
-
-  const VulkanContext& ctx = device_.getVulkanContext();
-  if (!ctx.immediate_->canAcquire()) {
-    Result::setResult(outResult, Result::Code::RuntimeError, "Could not acquire a command buffer");
-    return nullptr;
-  }
 
   // for now, we want only 1 command buffer
   IGL_ASSERT(!isInsideFrame_);

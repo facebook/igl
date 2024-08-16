@@ -12,8 +12,6 @@
 
 namespace igl::vulkan {
 
-static constexpr uint32_t kMaxAcquireAttempt = 32;
-
 VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
                                                  VkDevice device,
                                                  uint32_t queueFamilyIndex,
@@ -27,18 +25,7 @@ VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
                    VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
                queueFamilyIndex,
                debugName),
-  debugName_(debugName),
-  emptyCommandBufferWrapper_(
-      VulkanFence(vf_,
-                  device_,
-                  VkFenceCreateFlagBits{},
-                  exportableFences,
-                  "Fence: emptyCommandBuffer"),
-      VulkanSemaphore(vf_,
-                      device,
-                      false,
-                      IGL_FORMAT("Semaphore: {} for emptyCommandBuffer", debugName).c_str()),
-      /* isValid */ false) {
+  debugName_(debugName) {
   IGL_PROFILER_FUNCTION();
 
   vf_.vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue_);
@@ -87,31 +74,18 @@ void VulkanImmediateCommands::purge() {
   }
 }
 
-bool VulkanImmediateCommands::canAcquire() {
+const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::acquire() {
   IGL_PROFILER_FUNCTION();
 
   if (!numAvailableCommandBuffers_) {
     purge();
   }
 
-  uint32_t acquireAttempt = /* copy */ kMaxAcquireAttempt;
-  while (!numAvailableCommandBuffers_ && acquireAttempt) {
+  while (!numAvailableCommandBuffers_) {
     IGL_LOG_INFO("Waiting for command buffers...\n");
     IGL_PROFILER_ZONE("Waiting for command buffers...", IGL_PROFILER_COLOR_WAIT);
     purge();
     IGL_PROFILER_ZONE_END();
-    acquireAttempt--;
-  }
-
-  return numAvailableCommandBuffers_ != 0;
-}
-
-const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::acquire() {
-  IGL_PROFILER_FUNCTION();
-
-  if (!IGL_VERIFY(canAcquire())) {
-    IGL_ASSERT_MSG(numAvailableCommandBuffers_, "No available command buffers");
-    return emptyCommandBufferWrapper_;
   }
 
   VulkanImmediateCommands::CommandBufferWrapper* current = nullptr;
@@ -124,11 +98,11 @@ const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::ac
     }
   }
 
-  if (!IGL_VERIFY(current)) {
-    IGL_ASSERT_MSG(current, "No available command buffers");
-    return emptyCommandBufferWrapper_;
-  }
+  // make clang happy
+  assert(current);
 
+  IGL_ASSERT_MSG(numAvailableCommandBuffers_, "No available command buffers");
+  IGL_ASSERT_MSG(current, "No available command buffers");
   IGL_ASSERT(current->cmdBufAllocated_ != VK_NULL_HANDLE);
 
   current->handle_.submitId_ = submitCounter_;
@@ -228,11 +202,6 @@ bool VulkanImmediateCommands::isReady(const SubmitHandle handle) const {
 VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     const CommandBufferWrapper& wrapper) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
-
-  if (!IGL_VERIFY(wrapper.isValid_)) {
-    return {}; // empty handle
-  }
-
   IGL_ASSERT(wrapper.isEncoding_);
   VK_ASSERT(ivkEndCommandBuffer(&vf_, wrapper.cmdBuf_));
 

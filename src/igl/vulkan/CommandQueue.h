@@ -29,8 +29,7 @@ class CommandQueue final : public ICommandQueue {
   ~CommandQueue() override = default;
 
   /// @brief Create a new command buffer. Sets the internal flag that tracks an active command
-  /// buffer has been created. If we cannot create a command buffer, this function will return
-  /// null.
+  /// buffer has been created.
   std::shared_ptr<ICommandBuffer> createCommandBuffer(const CommandBufferDesc& desc,
                                                       Result* outResult) override;
 

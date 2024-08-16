@@ -848,10 +848,6 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
                                    VkPipelineStageFlags srcStageMask,
                                    VkPipelineStageFlags dstStageMask,
                                    const VkImageSubresourceRange& subresourceRange) const {
-  if (!IGL_VERIFY(cmdBuf)) {
-    return;
-  }
-
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_TRANSITION);
 
   VkAccessFlags srcAccessMask = 0;
@@ -976,9 +972,6 @@ void VulkanImage::clearColorImage(VkCommandBuffer commandBuffer,
   IGL_ASSERT(usageFlags_ & VK_IMAGE_USAGE_TRANSFER_DST_BIT);
   IGL_ASSERT(samples_ == VK_SAMPLE_COUNT_1_BIT);
   IGL_ASSERT(!isDepthOrStencilFormat_);
-  if (!IGL_VERIFY(commandBuffer)) {
-    return;
-  }
 
   const VkImageLayout oldLayout = imageLayout_;
 
@@ -1041,9 +1034,6 @@ VkImageAspectFlags VulkanImage::getImageAspectFlags() const {
 void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
                                  const TextureRangeDesc& range) const {
   IGL_PROFILER_FUNCTION();
-  if (!IGL_VERIFY(commandBuffer)) {
-    return;
-  }
 
   // Check if device supports downscaling for color or depth/stencil buffer based on image format
   {
