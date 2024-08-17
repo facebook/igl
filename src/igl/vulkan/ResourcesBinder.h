@@ -50,7 +50,7 @@ struct BindingsTextures {
  */
 class ResourcesBinder final {
  public:
-  ResourcesBinder(const std::shared_ptr<CommandBuffer>& commandBuffer,
+  ResourcesBinder(CommandBuffer& commandBuffer,
                   const VulkanContext& ctx,
                   VkPipelineBindPoint bindPoint);
 
@@ -98,6 +98,7 @@ class ResourcesBinder final {
   BindingsTextures bindingsTextures_;
   BindingsBuffers bindingsBuffers_;
   VkPipelineBindPoint bindPoint_ = VK_PIPELINE_BIND_POINT_GRAPHICS;
+  VulkanImmediateCommands::SubmitHandle nextSubmitHandle_ = {};
 };
 
 } // namespace igl::vulkan

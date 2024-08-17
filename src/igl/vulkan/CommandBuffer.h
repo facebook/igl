@@ -69,6 +69,10 @@ class CommandBuffer final : public ICommandBuffer,
     return wrapper_.cmdBuf_;
   }
 
+  VulkanImmediateCommands::SubmitHandle getNextSubmitHandle() const {
+    return wrapper_.handle_;
+  }
+
   bool isFromSwapchain() const {
     return isFromSwapchain_;
   }

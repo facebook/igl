@@ -220,7 +220,6 @@ class DescriptorPoolsArena final {
     dsl_(dsl) {
     IGL_ASSERT(debugName);
     dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
-    switchToNewDescriptorPool(*ctx.immediate_, ctx.immediate_->getLastSubmitHandle());
   }
   DescriptorPoolsArena(const VulkanContext& ctx,
                        VkDescriptorType type0,
@@ -236,7 +235,6 @@ class DescriptorPoolsArena final {
     dsl_(dsl) {
     IGL_ASSERT(debugName);
     dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
-    switchToNewDescriptorPool(*ctx.immediate_, ctx.immediate_->getLastSubmitHandle());
   }
   ~DescriptorPoolsArena() {
     extinct_.push_back({pool_, {}});
@@ -252,10 +250,12 @@ class DescriptorPoolsArena final {
   }
   [[nodiscard]] VkDescriptorSet getNextDescriptorSet(
       VulkanImmediateCommands& ic,
-      VulkanImmediateCommands::SubmitHandle lastSubmitHandle) {
+      VulkanImmediateCommands::SubmitHandle nextSubmitHandle) {
+    IGL_ASSERT(!nextSubmitHandle.empty());
+
     VkDescriptorSet dset = VK_NULL_HANDLE;
     if (!numRemainingDSetsInPool_) {
-      switchToNewDescriptorPool(ic, lastSubmitHandle);
+      switchToNewDescriptorPool(ic, nextSubmitHandle);
     }
     VK_ASSERT(ivkAllocateDescriptorSet(&ctx_.vf_, device_, pool_, dsl_, &dset));
     numRemainingDSetsInPool_--;
@@ -264,14 +264,14 @@ class DescriptorPoolsArena final {
 
  private:
   void switchToNewDescriptorPool(VulkanImmediateCommands& ic,
-                                 VulkanImmediateCommands::SubmitHandle lastSubmitHandle) {
+                                 VulkanImmediateCommands::SubmitHandle nextSubmitHandle) {
     numRemainingDSetsInPool_ = kNumDSetsPerPool_;
 
     if (pool_ != VK_NULL_HANDLE) {
-      extinct_.push_back({pool_, lastSubmitHandle});
+      extinct_.push_back({pool_, nextSubmitHandle});
     }
     // first, let's try to reuse the oldest extinct pool
-    if (extinct_.size() > 1) {
+    if (extinct_.size() > 1 && extinct_.front().handle_ != nextSubmitHandle) {
       const ExtinctDescriptorPool p = extinct_.front();
       if (ic.isReady(p.handle_)) {
         pool_ = p.pool_;
@@ -298,7 +298,7 @@ class DescriptorPoolsArena final {
   }
 
  private:
-  static constexpr uint32_t kNumDSetsPerPool_ = 256;
+  static constexpr uint32_t kNumDSetsPerPool_ = 64;
 
   const VulkanContext& ctx_;
   VkDevice device_ = VK_NULL_HANDLE;
@@ -352,7 +352,6 @@ struct VulkanContextImpl final {
   std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBindless_; // everything
   VkDescriptorPool dpBindless_ = VK_NULL_HANDLE;
   VkDescriptorSet dsBindless_ = VK_NULL_HANDLE;
-  VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
   uint32_t currentMaxBindlessTextures_ = 8;
   uint32_t currentMaxBindlessSamplers_ = 8;
 
@@ -1369,9 +1368,8 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
 #if IGL_VULKAN_PRINT_COMMANDS
     IGL_LOG_INFO("Updating descriptor set dsBindless_\n");
 #endif // IGL_VULKAN_PRINT_COMMANDS
-    const VkResult vkResult = immediate_->wait(
-        std::exchange(pimpl_->lastSubmitHandle_, immediate_->getLastSubmitHandle()),
-        config_.fenceTimeoutNanoseconds);
+    const VkResult vkResult =
+        immediate_->wait(immediate_->getLastSubmitHandle(), config_.fenceTimeoutNanoseconds);
     if (vkResult != VK_SUCCESS) {
       IGL_LOG_ERROR("wait command failed with result %i", int(vkResult));
       return vkResult;
@@ -1557,6 +1555,7 @@ uint64_t VulkanContext::getFrameNumber() const {
 void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
                                            VkPipelineLayout layout,
                                            VkPipelineBindPoint bindPoint,
+                                           VulkanImmediateCommands::SubmitHandle nextSubmitHandle,
                                            const BindingsTextures& data,
                                            const VulkanDescriptorSetLayout& dsl,
                                            const util::SpvModuleInfo& info) const {
@@ -1565,7 +1564,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
   DescriptorPoolsArena& arena = pimpl_->getOrCreateArena_CombinedImageSamplers(
       *this, dsl.getVkDescriptorSetLayout(), dsl.numBindings_);
 
-  VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, pimpl_->lastSubmitHandle_);
+  VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, nextSubmitHandle);
 
   // @fb-only
   VkDescriptorImageInfo infoSampledImages[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
@@ -1623,6 +1622,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
 void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
                                           VkPipelineLayout layout,
                                           VkPipelineBindPoint bindPoint,
+                                          VulkanImmediateCommands::SubmitHandle nextSubmitHandle,
                                           BindingsBuffers& data,
                                           const VulkanDescriptorSetLayout& dsl,
                                           const util::SpvModuleInfo& info) const {
@@ -1631,7 +1631,7 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
   DescriptorPoolsArena& arena =
       pimpl_->getOrCreateArena_Buffers(*this, dsl.getVkDescriptorSetLayout(), dsl.numBindings_);
 
-  VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, pimpl_->lastSubmitHandle_);
+  VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, nextSubmitHandle);
 
   // @fb-only
   VkWriteDescriptorSet writes[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
@@ -1663,10 +1663,6 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
     vf_.vkCmdBindDescriptorSets(
         cmdBuf, bindPoint, layout, kBindPoint_Buffers, 1, &dset, 0, nullptr);
   }
-}
-
-void VulkanContext::markSubmitted(const VulkanImmediateCommands::SubmitHandle& handle) const {
-  pimpl_->lastSubmitHandle_ = handle;
 }
 
 void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) const {
