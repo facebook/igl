@@ -74,6 +74,13 @@ class VulkanImmediateCommands final {
     [[nodiscard]] uint64_t handle() const {
       return (uint64_t(submitId_) << 32) + bufferIndex_;
     }
+
+    [[nodiscard]] bool operator==(const SubmitHandle& rhs) const {
+      return bufferIndex_ == rhs.bufferIndex_ && submitId_ == rhs.submitId_;
+    }
+    [[nodiscard]] bool operator!=(const SubmitHandle& rhs) const {
+      return !(*this == rhs);
+    }
   };
 
   /// Ensures that the `SubmitHandle` structure size is not larger than a `uint64_t`
