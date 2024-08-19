@@ -79,48 +79,6 @@ struct DeviceQueues {
   DeviceQueues() = default;
 };
 
-struct VulkanContextConfig {
-  bool terminateOnValidationError = false; // invoke std::terminate() on any validation error
-
-  // enable/disable enhanced shader debugging capabilities (line drawing)
-  bool enhancedShaderDebugging = false;
-
-  bool enableConcurrentVkDevicesSupport = false;
-
-  bool enableValidation = true;
-  bool enableGPUAssistedValidation = true;
-  bool enableSynchronizationValidation = false;
-  bool enableBufferDeviceAddress = false;
-  bool enableExtraLogs = true;
-  bool enableDescriptorIndexing = false;
-  // @fb-only
-
-  igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
-  igl::TextureFormat requestedSwapChainTextureFormat = igl::TextureFormat::RGBA_UNorm8;
-
-  std::vector<CommandQueueType> userQueues;
-
-  uint32_t maxResourceCount = 3u;
-
-  // owned by the application - should be alive until initContext() returns
-  const void* IGL_NULLABLE pipelineCacheData = nullptr;
-  size_t pipelineCacheDataSize = 0;
-
-  // This enables fences generated at the end of submission to be exported to the client.
-  // The client can then use the SubmitHandle to wait for the completion of the GPU work.
-  bool exportableFences = false;
-
-  // Size for VulkanMemoryAllocator's default pool block size parameter.
-  // Only relevant if VMA is used for memory allocation.
-  // Passing 0 will prompt VMA to a large default value (currently 256 MB).
-  // Using a smaller heap size would increase the chance of memory deallocation and result in less
-  // memory wastage.
-  size_t vmaPreferredLargeHeapBlockSize = 0;
-
-  // Specifies a default fence timeout value.
-  uint64_t fenceTimeoutNanoseconds = UINT64_MAX;
-};
-
 class VulkanContext final {
  public:
   VulkanContext(VulkanContextConfig config,
