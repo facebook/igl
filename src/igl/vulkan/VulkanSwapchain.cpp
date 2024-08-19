@@ -296,6 +296,34 @@ Result VulkanSwapchain::acquireNextImage() {
                                      acquireSemaphores_[currentImageIndex_].vkSemaphore_,
                                      acquireFences_[currentImageIndex_].vkFence_,
                                      &currentImageIndex_));
+
+  IGL_ASSERT_MSG(currentImageIndex_ <= numSwapchainImages_,
+                 "currentImageIndex_ is out of range by more than 1 image and this scenario is not "
+                 "yet supported.");
+
+  // The number of swapchain images requested is the _minimum_ number of images that the swapchain
+  // should contain. The actual number of images in the swapchain may be larger, but there isn't an
+  // easy way to query that number. Because of that, if the currentImageIndex_ is out of range
+  // we need to create new semaphores and fences to handle the new images.
+  if (currentImageIndex_ > numSwapchainImages_) {
+    acquireSemaphores_.emplace_back(
+        ctx_.vf_,
+        device_,
+        false,
+        IGL_FORMAT("Semaphore: swapchain-acquire #{}", currentImageIndex_).c_str());
+
+    acquireFences_.emplace_back(
+        ctx_.vf_,
+        device_,
+        VK_FENCE_CREATE_SIGNALED_BIT,
+        false,
+        IGL_FORMAT("Fence: swapchain-acquire #{}", currentImageIndex_).c_str());
+
+    // The difference between the currentImageIndex_ and numSwapchainImages_ should be at most 1
+    // due to the assert above.
+    ++numSwapchainImages_;
+  }
+
   // increase the frame number every time we acquire a new swapchain image
   frameNumber_++;
   return Result();
