@@ -510,6 +510,11 @@ void CustomFramebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures,
         if (surfaceTextures.depth->getProperties().hasStencil()) {
           attachAsStencil(*surfaceTextures.depth, defaultWriteAttachmentParams(renderTarget_.mode));
           renderTarget_.stencilAttachment.texture = surfaceTextures.depth;
+        } else {
+          if (stencilAttachment) {
+            static_cast<Texture&>(*stencilAttachment).detachAsStencil(false);
+          }
+          renderTarget_.stencilAttachment.texture = nullptr;
         }
         renderTarget_.depthAttachment.texture = std::move(surfaceTextures.depth);
       }
