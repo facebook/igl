@@ -352,7 +352,7 @@ VkResult ivkCreateFence(const struct VulkanFunctionTable* vt,
   return vt->vkCreateFence(device, &ci, NULL, outFence);
 }
 
-static void ivkAddNext(void* node, const void* next) {
+void ivkAddNext(void* node, const void* next) {
   if (!node || !next) {
     return;
   }

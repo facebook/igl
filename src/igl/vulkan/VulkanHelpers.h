@@ -36,6 +36,9 @@ extern "C" {
   // @fb-only
 // @fb-only
 
+/// @brief Adds a node to the linked list of next nodes
+void ivkAddNext(void* node, const void* next);
+
 const char* ivkGetVulkanResultString(VkResult result);
 
 /// @brief Creates a Vulkan instance with the given parameters. For platforms other than Android,
