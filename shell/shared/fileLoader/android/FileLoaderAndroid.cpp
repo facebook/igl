@@ -86,11 +86,14 @@ std::string FileLoaderAndroid::basePath() const {
     AAssetDir* assetDir = AAssetManager_openDir(assetManager_, "");
     if (assetDir != nullptr) {
       const char* fileName = AAssetDir_getNextFileName(assetDir);
-      const std::filesystem::path filePath(fileName);
-      basePath = filePath.root_path();
+      if (fileName != nullptr) {
+        const std::filesystem::path filePath(fileName);
+        basePath = filePath.root_path();
+      }
       AAssetDir_close(assetDir);
     }
-  } else {
+  }
+  if (basePath.empty()) {
     basePath = std::filesystem::current_path().string();
   }
   return basePath;
