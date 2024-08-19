@@ -75,11 +75,11 @@ class VulkanImmediateCommands final {
       return (uint64_t(submitId_) << 32) + bufferIndex_;
     }
 
-    bool operator==(const SubmitHandle& other) const {
-      return bufferIndex_ == other.bufferIndex_ && submitId_ == other.submitId_;
+    [[nodiscard]] bool operator==(const SubmitHandle& rhs) const {
+      return bufferIndex_ == rhs.bufferIndex_ && submitId_ == rhs.submitId_;
     }
-    bool operator!=(const SubmitHandle& other) const {
-      return bufferIndex_ != other.bufferIndex_ || submitId_ != other.submitId_;
+    [[nodiscard]] bool operator!=(const SubmitHandle& rhs) const {
+      return !(*this == rhs);
     }
   };
 
