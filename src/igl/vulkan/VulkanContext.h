@@ -17,6 +17,7 @@
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanExtensions.h>
+#include <igl/vulkan/VulkanFeatures.h>
 #include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
@@ -197,6 +198,8 @@ class VulkanContext final {
 
   void freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout dsl) const;
 
+  const VulkanFeatures& features() const noexcept;
+
 #if defined(IGL_WITH_TRACY_GPU)
   TracyVkCtx tracyCtx_ = nullptr;
   std::unique_ptr<VulkanCommandPool> profilingCommandPool_;
@@ -285,6 +288,8 @@ class VulkanContext final {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
       &vkPhysicalDeviceSamplerYcbcrConversionFeatures_};
   FOLLY_POP_WARNING
+
+  VulkanFeatures features_;
 
  public:
   const VulkanFunctionTable& vf_;

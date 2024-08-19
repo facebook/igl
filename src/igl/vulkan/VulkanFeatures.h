@@ -69,6 +69,8 @@ class VulkanFeatures final {
   [[nodiscard]] igl::Result checkSelectedFeatures(
       const VulkanFeatures& availableFeatures) const noexcept;
 
+  FOLLY_PUSH_WARNING
+  FOLLY_GNU_DISABLE_WARNING("-Wmissing-field-initializers")
   // Vulkan 1.1
   VkPhysicalDeviceFeatures2 VkPhysicalDeviceFeatures2_ = {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
@@ -102,6 +104,7 @@ class VulkanFeatures final {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR,
       nullptr};
 #endif
+  FOLLY_POP_WARNING
 
  public:
   // A copy of the config used by the VulkanContext
