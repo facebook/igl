@@ -785,4 +785,44 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkGetPipelineLayoutCreateInfo *******************************
+class GetPipelineLayoutCreateInfoTest
+  : public ::testing::TestWithParam<std::tuple<uint32_t, VkShaderStageFlags, bool>> {};
+
+TEST_P(GetPipelineLayoutCreateInfoTest, GetPipelineLayoutCreateInfo) {
+  const uint32_t numLayouts = std::get<0>(GetParam());
+  const VkShaderStageFlags shaderFlags = std::get<1>(GetParam());
+  const bool addPushContantRange = std::get<2>(GetParam());
+
+  const std::array<VkDescriptorSetLayout, 2> pDescSetLayout = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+
+  const VkPushConstantRange pPushConstants = {shaderFlags, 0, 0};
+
+  const VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = ivkGetPipelineLayoutCreateInfo(
+      numLayouts, pDescSetLayout.data(), addPushContantRange ? &pPushConstants : nullptr);
+
+  EXPECT_EQ(pipelineLayoutCreateInfo.sType, VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
+  EXPECT_EQ(pipelineLayoutCreateInfo.pNext, nullptr);
+  EXPECT_EQ(pipelineLayoutCreateInfo.flags, 0);
+  EXPECT_EQ(pipelineLayoutCreateInfo.setLayoutCount, numLayouts);
+  EXPECT_EQ(pipelineLayoutCreateInfo.pSetLayouts, pDescSetLayout.data());
+  EXPECT_EQ(pipelineLayoutCreateInfo.pushConstantRangeCount,
+            static_cast<uint32_t>(addPushContantRange));
+  EXPECT_EQ(pipelineLayoutCreateInfo.pPushConstantRanges,
+            addPushContantRange ? &pPushConstants : nullptr);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    GetPipelineLayoutCreateInfoTest,
+    ::testing::Combine(::testing::Values(0, 1, 2),
+                       ::testing::Values(VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT),
+                       ::testing::Bool()),
+    [](const testing::TestParamInfo<GetPipelineLayoutCreateInfoTest::ParamType>& info) {
+      const std::string name = "_numLayouts_" + std::to_string(std::get<0>(info.param)) +
+                               "__shaderFlagBits_" + std::to_string(std::get<1>(info.param)) +
+                               "__addPushConstantRange_" + std::to_string(std::get<2>(info.param));
+      return name;
+    });
+
 } // namespace igl::tests
