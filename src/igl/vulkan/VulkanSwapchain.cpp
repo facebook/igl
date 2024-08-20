@@ -305,7 +305,7 @@ Result VulkanSwapchain::acquireNextImage() {
   // should contain. The actual number of images in the swapchain may be larger, but there isn't an
   // easy way to query that number. Because of that, if the currentImageIndex_ is out of range
   // we need to create new semaphores and fences to handle the new images.
-  if (currentImageIndex_ > numSwapchainImages_) {
+  if (currentImageIndex_ >= numSwapchainImages_) {
     acquireSemaphores_.emplace_back(
         ctx_.vf_,
         device_,
