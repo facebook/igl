@@ -93,6 +93,11 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                                       Result* outResult) {
   IGL_PROFILER_FUNCTION();
 
+  if (!IGL_VERIFY(cmdBuffer_)) {
+    Result::setResult(outResult, Result::Code::ArgumentNull);
+    return;
+  }
+
   processDependencies(dependencies);
 
   framebuffer_ = framebuffer;
