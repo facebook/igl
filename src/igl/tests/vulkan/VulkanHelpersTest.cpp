@@ -742,4 +742,47 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkGetWriteDescriptorSet_BufferInfo *******************************
+class GetWriteDescriptorSet_BufferInfoTest
+  : public ::testing::TestWithParam<std::tuple<uint32_t, VkDescriptorType, uint32_t>> {};
+
+TEST_P(GetWriteDescriptorSet_BufferInfoTest, GetWriteDescriptorSet_BufferInfo) {
+  constexpr VkDescriptorSet descSet = VK_NULL_HANDLE;
+  const uint32_t dstBinding = std::get<0>(GetParam());
+  const VkDescriptorType descType = std::get<1>(GetParam());
+  const uint32_t numDescs = std::get<2>(GetParam());
+
+  const std::array<VkDescriptorBufferInfo, 2> pBufferInfo = {
+      VkDescriptorBufferInfo{VK_NULL_HANDLE, 0, VK_WHOLE_SIZE},
+      VkDescriptorBufferInfo{VK_NULL_HANDLE, 0, VK_WHOLE_SIZE}};
+
+  const VkWriteDescriptorSet bufferDescSet = ivkGetWriteDescriptorSet_BufferInfo(
+      descSet, dstBinding, descType, numDescs, pBufferInfo.data());
+
+  EXPECT_EQ(bufferDescSet.sType, VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
+  EXPECT_EQ(bufferDescSet.pNext, nullptr);
+  EXPECT_EQ(bufferDescSet.dstSet, descSet);
+  EXPECT_EQ(bufferDescSet.dstBinding, dstBinding);
+  EXPECT_EQ(bufferDescSet.dstArrayElement, 0);
+  EXPECT_EQ(bufferDescSet.descriptorCount, numDescs);
+  EXPECT_EQ(bufferDescSet.descriptorType, descType);
+  EXPECT_EQ(bufferDescSet.pImageInfo, nullptr);
+  EXPECT_EQ(bufferDescSet.pBufferInfo, pBufferInfo.data());
+  EXPECT_EQ(bufferDescSet.pTexelBufferView, nullptr);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    GetWriteDescriptorSet_BufferInfoTest,
+    ::testing::Combine(::testing::Values(0, 1),
+                       ::testing::Values(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER),
+                       ::testing::Values(1, 2)),
+    [](const testing::TestParamInfo<GetWriteDescriptorSet_BufferInfoTest::ParamType>& info) {
+      const std::string name = "_dstBinding_" + std::to_string(std::get<0>(info.param)) +
+                               "__descriptorType_" + std::to_string(std::get<1>(info.param)) +
+                               "__numberDescriptors_" + std::to_string(std::get<2>(info.param));
+      return name;
+    });
+
 } // namespace igl::tests
