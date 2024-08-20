@@ -39,7 +39,7 @@ uint32_t iglCrc32ImplARM8(const char* s, uint32_t crc, size_t length) {
     crc = __crc32b(crc, *s);
   }
 
-  for (; length > 8; s += 8, length -= 8) {
+  for (; length > 8 && isAligned<uint64_t>(s); s += 8, length -= 8) {
     crc = __crc32d(crc, *(const uint64_t*)(s));
   }
 
