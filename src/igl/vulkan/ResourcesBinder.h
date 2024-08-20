@@ -50,7 +50,7 @@ struct BindingsTextures {
  */
 class ResourcesBinder final {
  public:
-  ResourcesBinder(const std::shared_ptr<CommandBuffer>& commandBuffer,
+  ResourcesBinder(const CommandBuffer* commandBuffer,
                   const VulkanContext& ctx,
                   VkPipelineBindPoint bindPoint);
 

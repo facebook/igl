@@ -81,7 +81,7 @@ RenderCommandEncoder::RenderCommandEncoder(const std::shared_ptr<CommandBuffer>&
   IRenderCommandEncoder::IRenderCommandEncoder(commandBuffer),
   ctx_(ctx),
   cmdBuffer_(commandBuffer ? commandBuffer->getVkCommandBuffer() : VK_NULL_HANDLE),
-  binder_(commandBuffer, ctx, VK_PIPELINE_BIND_POINT_GRAPHICS) {
+  binder_(commandBuffer.get(), ctx, VK_PIPELINE_BIND_POINT_GRAPHICS) {
   IGL_PROFILER_FUNCTION();
   IGL_ASSERT(commandBuffer);
   IGL_ASSERT(cmdBuffer_ != VK_NULL_HANDLE);

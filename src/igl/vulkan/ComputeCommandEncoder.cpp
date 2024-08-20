@@ -23,7 +23,7 @@ ComputeCommandEncoder::ComputeCommandEncoder(const std::shared_ptr<CommandBuffer
                                              VulkanContext& ctx) :
   ctx_(ctx),
   cmdBuffer_(commandBuffer ? commandBuffer->getVkCommandBuffer() : VK_NULL_HANDLE),
-  binder_(commandBuffer, ctx_, VK_PIPELINE_BIND_POINT_COMPUTE) {
+  binder_(commandBuffer.get(), ctx_, VK_PIPELINE_BIND_POINT_COMPUTE) {
   IGL_PROFILER_FUNCTION();
 
   IGL_ASSERT(commandBuffer);

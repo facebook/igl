@@ -19,10 +19,12 @@
 
 namespace igl::vulkan {
 
-ResourcesBinder::ResourcesBinder(const std::shared_ptr<CommandBuffer>& commandBuffer,
+ResourcesBinder::ResourcesBinder(const CommandBuffer* commandBuffer,
                                  const VulkanContext& ctx,
                                  VkPipelineBindPoint bindPoint) :
-  ctx_(ctx), cmdBuffer_(commandBuffer->getVkCommandBuffer()), bindPoint_(bindPoint) {}
+  ctx_(ctx),
+  cmdBuffer_(commandBuffer ? commandBuffer->getVkCommandBuffer() : VK_NULL_HANDLE),
+  bindPoint_(bindPoint) {}
 
 void ResourcesBinder::bindBuffer(uint32_t index,
                                  igl::vulkan::Buffer* buffer,
