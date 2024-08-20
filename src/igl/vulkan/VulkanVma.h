@@ -21,8 +21,8 @@
 #if !defined(VK_NO_PROTOTYPES)
 #define VK_NO_PROTOTYPES
 #endif // !defined(VK_NO_PROTOTYPES)
+#if defined(IGL_CMAKE_BUILD)
 
-#if defined(IGL_CMAKE_BUILD) || defined(IGL_PLATFORM_WIN)
 /* Configuration defines for vk_mem_alloc.h */
 #define VMA_VULKAN_VERSION 1002000
 
