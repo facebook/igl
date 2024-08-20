@@ -24,6 +24,7 @@
 @implementation AppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification*)aNotification {
+  [self.window setColorSpace:[NSColorSpace sRGBColorSpace]];
   [self setupViewController];
   [self.window makeKeyAndOrderFront:nil];
   [self.window makeFirstResponder:self.tabViewController.view];
