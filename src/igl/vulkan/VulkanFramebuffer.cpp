@@ -21,6 +21,13 @@ VulkanFramebuffer::VulkanFramebuffer(const VulkanContext& ctx,
   ctx_(ctx), device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
+  if (!IGL_VERIFY(renderPass != VK_NULL_HANDLE)) {
+    return;
+  }
+  if (!IGL_VERIFY(attachments)) {
+    return;
+  }
+
   VK_ASSERT(ivkCreateFramebuffer(
       &ctx_.vf_, device_, width, height, renderPass, numAttachments, attachments, &vkFramebuffer_));
   VK_ASSERT(ivkSetDebugObjectName(
