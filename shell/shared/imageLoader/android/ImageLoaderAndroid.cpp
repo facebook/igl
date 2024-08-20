@@ -33,7 +33,7 @@ ImageData ImageLoaderAndroid::loadImageData(
 
   // Load file
   AAsset* asset = AAssetManager_open(assetManager_, imageName.c_str(), AASSET_MODE_BUFFER);
-  if (IGL_UNEXPECTED(asset == nullptr)) {
+  if (asset == nullptr) {
     IGL_LOG_ERROR("Error in loadImageData(): failed to open file %s\n", imageName.c_str());
     return {};
   }
