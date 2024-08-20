@@ -57,28 +57,36 @@ ImageLoader::ImageLoader(FileLoader& fileLoader) :
   fileLoader_(fileLoader),
   factory_(std::make_unique<iglu::textureloader::TextureLoaderFactory>(createLoaderFactories())) {}
 
-ImageData ImageLoader::defaultLoadImageData(const std::string& imageName) noexcept {
+ImageData ImageLoader::defaultLoadImageData(
+    const std::string& imageName,
+    std::optional<igl::TextureFormat> preferredFormat) noexcept {
   const std::string fullName = fileLoader().fullPath(imageName);
 
-  return loadImageDataFromFile(fullName);
+  return loadImageDataFromFile(fullName, preferredFormat);
 }
 
-ImageData ImageLoader::loadImageDataFromFile(const std::string& fileName) noexcept {
+ImageData ImageLoader::loadImageDataFromFile(
+    const std::string& fileName,
+    std::optional<igl::TextureFormat> preferredFormat) noexcept {
   auto [data, length] = fileLoader_.loadBinaryData(fileName);
   if (IGL_VERIFY(data && length > 0)) {
-    return loadImageDataFromMemory(data.get(), length);
+    return loadImageDataFromMemory(data.get(), length, preferredFormat);
   }
 
   return {};
 }
 
-ImageData ImageLoader::loadImageDataFromMemory(const uint8_t* data, uint32_t length) noexcept {
+ImageData ImageLoader::loadImageDataFromMemory(
+    const uint8_t* data,
+    uint32_t length,
+    std::optional<igl::TextureFormat> preferredFormat) noexcept {
   if (IGL_UNEXPECTED(data == nullptr)) {
     return {};
   }
 
   Result result;
-  auto loader = factory_->tryCreate(data, length, &result);
+  auto loader = preferredFormat ? factory_->tryCreate(data, length, *preferredFormat, &result)
+                                : factory_->tryCreate(data, length, &result);
   if (loader == nullptr || !result.isOk()) {
     return {};
   }
