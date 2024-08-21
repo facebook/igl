@@ -24,7 +24,9 @@ ResourcesBinder::ResourcesBinder(const CommandBuffer* commandBuffer,
                                  VkPipelineBindPoint bindPoint) :
   ctx_(ctx),
   cmdBuffer_(commandBuffer ? commandBuffer->getVkCommandBuffer() : VK_NULL_HANDLE),
-  bindPoint_(bindPoint) {}
+  bindPoint_(bindPoint),
+  nextSubmitHandle_(commandBuffer ? commandBuffer->getNextSubmitHandle()
+                                  : VulkanImmediateCommands::SubmitHandle{}) {}
 
 void ResourcesBinder::bindBuffer(uint32_t index,
                                  igl::vulkan::Buffer* buffer,

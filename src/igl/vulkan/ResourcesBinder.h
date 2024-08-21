@@ -98,6 +98,7 @@ class ResourcesBinder final {
   BindingsTextures bindingsTextures_;
   BindingsBuffers bindingsBuffers_;
   VkPipelineBindPoint bindPoint_ = VK_PIPELINE_BIND_POINT_GRAPHICS;
+  VulkanImmediateCommands::SubmitHandle nextSubmitHandle_ = {};
 };
 
 } // namespace igl::vulkan
