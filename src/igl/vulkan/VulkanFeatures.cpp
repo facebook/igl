@@ -142,12 +142,15 @@ igl::Result VulkanFeatures::checkSelectedFeatures(
                          shaderDrawParameters)
 #undef ENABLE_FEATURE_1_1_EXT
 
+#if defined(VK_VERSION_1_2)
 #define ENABLE_FEATURE_1_2_EXT(requestedFeatureStruct, availableFeatureStruct, feature) \
   ENABLE_VULKAN_FEATURE(requestedFeatureStruct, availableFeatureStruct, feature, "1.2")
   ENABLE_FEATURE_1_2_EXT(VkPhysicalDeviceShaderFloat16Int8Features_,
                          availableFeatures.VkPhysicalDeviceShaderFloat16Int8Features_,
                          shaderFloat16)
 #undef ENABLE_FEATURE_1_2_EXT
+#endif
+
 #undef ENABLE_VULKAN_FEATURE
 
   if (!missingFeatures.empty()) {
@@ -175,13 +178,18 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   VkPhysicalDeviceSamplerYcbcrConversionFeatures_.pNext = nullptr;
   VkPhysicalDeviceShaderDrawParametersFeatures_.pNext = nullptr;
   VkPhysicalDeviceMultiviewFeatures_.pNext = nullptr;
+
+#if defined(VK_VERSION_1_2)
   VkPhysicalDeviceShaderFloat16Int8Features_.pNext = nullptr;
+#endif
 
   // Add the required and optional features to the VkPhysicalDeviceFetaures2_
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceSamplerYcbcrConversionFeatures_);
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceShaderDrawParametersFeatures_);
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceMultiviewFeatures_);
+#if defined(VK_VERSION_1_2)
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceShaderFloat16Int8Features_);
+#endif
 #if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.pNext = nullptr;
   if (config.enableBufferDeviceAddress) {
