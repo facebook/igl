@@ -914,4 +914,38 @@ INSTANTIATE_TEST_SUITE_P(AllCombinations,
                            return name;
                          });
 
+// ivkGeivkGetPipelineShaderStageCreateInfotRect2D *******************************
+class GetPipelineShaderStageCreateInfoTest
+  : public ::testing::TestWithParam<std::tuple<VkShaderStageFlagBits, bool>> {};
+
+TEST_P(GetPipelineShaderStageCreateInfoTest, GetPipelineShaderStageCreateInfo) {
+  const VkShaderStageFlagBits stage = std::get<0>(GetParam());
+  const VkShaderModule shaderModule = VK_NULL_HANDLE;
+  const bool addEntryPoint = std::get<1>(GetParam());
+  const char* entryPoint = "main";
+
+  const VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo =
+      ivkGetPipelineShaderStageCreateInfo(
+          stage, shaderModule, addEntryPoint ? entryPoint : nullptr);
+
+  EXPECT_EQ(pipelineShaderStageCreateInfo.sType,
+            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
+  EXPECT_EQ(pipelineShaderStageCreateInfo.flags, 0);
+  EXPECT_EQ(pipelineShaderStageCreateInfo.stage, stage);
+  EXPECT_EQ(pipelineShaderStageCreateInfo.module, shaderModule);
+  EXPECT_EQ(strcmp(pipelineShaderStageCreateInfo.pName, entryPoint), 0);
+  EXPECT_EQ(pipelineShaderStageCreateInfo.pSpecializationInfo, nullptr);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    GetPipelineShaderStageCreateInfoTest,
+    ::testing::Combine(::testing::Values(VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT),
+                       ::testing::Bool()),
+    [](const testing::TestParamInfo<GetPipelineShaderStageCreateInfoTest::ParamType>& info) {
+      const std::string name = "_stage_" + std::to_string(std::get<0>(info.param)) +
+                               "__addEntryPoint_" + std::to_string(std::get<1>(info.param));
+      return name;
+    });
+
 } // namespace igl::tests
