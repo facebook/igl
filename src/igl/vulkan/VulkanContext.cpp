@@ -220,7 +220,6 @@ class DescriptorPoolsArena final {
     dsl_(dsl) {
     IGL_ASSERT(debugName);
     dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
-    switchToNewDescriptorPool(*ctx.immediate_, ctx.immediate_->getLastSubmitHandle());
   }
   DescriptorPoolsArena(const VulkanContext& ctx,
                        VkDescriptorType type0,
@@ -236,7 +235,6 @@ class DescriptorPoolsArena final {
     dsl_(dsl) {
     IGL_ASSERT(debugName);
     dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
-    switchToNewDescriptorPool(*ctx.immediate_, ctx.immediate_->getLastSubmitHandle());
   }
   ~DescriptorPoolsArena() {
     extinct_.push_back({pool_, {}});
