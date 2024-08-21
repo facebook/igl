@@ -1962,6 +1962,19 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
           "value is 0. You have to specify the binding size for all dynamic buffers.",
           loc);
     }
+    if (desc.offset[loc]) {
+      const auto& limits = getVkPhysicalDeviceProperties().limits;
+      const uint32_t alignment =
+          static_cast<uint32_t>(isUniform ? limits.minUniformBufferOffsetAlignment
+                                          : limits.minStorageBufferOffsetAlignment);
+      if (!IGL_VERIFY((alignment == 0) || (desc.offset[loc] % alignment == 0))) {
+        IGL_LOG_ERROR(
+            "`desc.offset[loc] = %u` must be a multiple of `VkPhysicalDeviceLimits::%s = %u`",
+            static_cast<uint32_t>(desc.offset[loc]),
+            isUniform ? "minUniformBufferOffsetAlignment" : "minStorageBufferOffsetAlignment",
+            alignment);
+      }
+    }
     bindings[numBindings++] = ivkGetDescriptorSetLayoutBinding(loc, type, 1, stageFlags);
     metadata.usageMask |= 1ul << loc;
   }
