@@ -144,7 +144,7 @@ class CustomFramebuffer final : public Framebuffer {
   void unbind() const override;
 
  private:
-  void prepareResource(Result* outResult);
+  void prepareResource(const std::string& debugName, Result* outResult);
   void updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepthStencil);
 
   bool initialized_ = false;

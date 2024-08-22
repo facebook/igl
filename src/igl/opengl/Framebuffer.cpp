@@ -548,20 +548,15 @@ void CustomFramebuffer::initialize(const FramebufferDesc& desc, Result* outResul
 
   // Restore framebuffer binding
   const FramebufferBindingGuard guard(getContext());
-  if (!desc.debugName.empty() &&
-      getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
-    getContext().objectLabel(
-        GL_FRAMEBUFFER, frameBufferID_, desc.debugName.size(), desc.debugName.c_str());
-  }
   if (hasImplicitColorAttachment()) {
     // Don't generate framebuffer id. Use implicit framebuffer supplied by containing view
     Result::setOk(outResult);
   } else {
-    prepareResource(outResult);
+    prepareResource(desc.debugName, outResult);
   }
 }
 
-void CustomFramebuffer::prepareResource(Result* outResult) {
+void CustomFramebuffer::prepareResource(const std::string& debugName, Result* outResult) {
   // create a new frame buffer if we don't already have one
   getContext().genFramebuffers(1, &frameBufferID_);
   if (IGL_UNEXPECTED(frameBufferID_ == 0)) {
@@ -570,6 +565,11 @@ void CustomFramebuffer::prepareResource(Result* outResult) {
   }
 
   bindBuffer();
+
+  if (!debugName.empty() &&
+      getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
+    getContext().objectLabel(GL_FRAMEBUFFER, frameBufferID_, debugName.size(), debugName.c_str());
+  }
 
   std::vector<GLenum> drawBuffers;
 
