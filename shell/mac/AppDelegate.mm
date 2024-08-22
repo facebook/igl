@@ -48,6 +48,18 @@
   [self.tabViewController addTabViewItem:tinyHeadlessTabViewItem];
 #endif
 
+// @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+                                             // @fb-only
+                                     // @fb-only
+  // @fb-only
+
+  // @fb-only
+  // @fb-only
+// @fb-only
+
 #if IGL_BACKEND_METAL
   // Metal tab
   NSTabViewItem* tinyMetalTabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
@@ -81,18 +93,6 @@
   // @fb-only
   // @fb-only
 #endif
-
-// @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-                                             // @fb-only
-                                     // @fb-only
-  // @fb-only
-
-  // @fb-only
-  // @fb-only
-// @fb-only
 
 #if IGL_BACKEND_VULKAN
   // Vulkan tab
