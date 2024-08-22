@@ -156,20 +156,22 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
   const VkImageUsageFlags usageFlags =
       chooseUsageFlags(ctx.vf_, ctx.getVkPhysicalDevice(), ctx.vkSurface_, surfaceFormat_.format);
 
-  const uint32_t swapchainImageCount = chooseSwapImageCount(ctx.deviceSurfaceCaps_);
+  {
+    const uint32_t requestedSwapchainImageCount = chooseSwapImageCount(ctx.deviceSurfaceCaps_);
 
-  VK_ASSERT(ivkCreateSwapchain(&ctx_.vf_,
-                               device_,
-                               ctx.vkSurface_,
-                               swapchainImageCount,
-                               surfaceFormat_,
-                               chooseSwapPresentMode(ctx.devicePresentModes_),
-                               &ctx.deviceSurfaceCaps_,
-                               usageFlags,
-                               ctx.deviceQueues_.graphicsQueueFamilyIndex,
-                               width,
-                               height,
-                               &swapchain_));
+    VK_ASSERT(ivkCreateSwapchain(&ctx_.vf_,
+                                 device_,
+                                 ctx.vkSurface_,
+                                 requestedSwapchainImageCount,
+                                 surfaceFormat_,
+                                 chooseSwapPresentMode(ctx.devicePresentModes_),
+                                 &ctx.deviceSurfaceCaps_,
+                                 usageFlags,
+                                 ctx.deviceQueues_.graphicsQueueFamilyIndex,
+                                 width,
+                                 height,
+                                 &swapchain_));
+  }
   VK_ASSERT(ctx.vf_.vkGetSwapchainImagesKHR(device_, swapchain_, &numSwapchainImages_, nullptr));
   std::vector<VkImage> swapchainImages(numSwapchainImages_);
   swapchainImages.resize(numSwapchainImages_);
@@ -204,7 +206,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
   }
 
   // Create semaphores and sfence used to check the status of the acquire semaphore
-  for (uint32_t i = 0; i < swapchainImageCount; ++i) {
+  for (uint32_t i = 0; i < numSwapchainImages_; ++i) {
     acquireSemaphores_.emplace_back(
         ctx_.vf_, device_, false, IGL_FORMAT("Semaphore: swapchain-acquire #{}", i).c_str());
 
@@ -296,33 +298,6 @@ Result VulkanSwapchain::acquireNextImage() {
                                      acquireSemaphores_[currentImageIndex_].vkSemaphore_,
                                      acquireFences_[currentImageIndex_].vkFence_,
                                      &currentImageIndex_));
-
-  IGL_ASSERT_MSG(currentImageIndex_ <= numSwapchainImages_,
-                 "currentImageIndex_ is out of range by more than 1 image and this scenario is not "
-                 "yet supported.");
-
-  // The number of swapchain images requested is the _minimum_ number of images that the swapchain
-  // should contain. The actual number of images in the swapchain may be larger, but there isn't an
-  // easy way to query that number. Because of that, if the currentImageIndex_ is out of range
-  // we need to create new semaphores and fences to handle the new images.
-  if (currentImageIndex_ >= numSwapchainImages_) {
-    acquireSemaphores_.emplace_back(
-        ctx_.vf_,
-        device_,
-        false,
-        IGL_FORMAT("Semaphore: swapchain-acquire #{}", currentImageIndex_).c_str());
-
-    acquireFences_.emplace_back(
-        ctx_.vf_,
-        device_,
-        VK_FENCE_CREATE_SIGNALED_BIT,
-        false,
-        IGL_FORMAT("Fence: swapchain-acquire #{}", currentImageIndex_).c_str());
-
-    // The difference between the currentImageIndex_ and numSwapchainImages_ should be at most 1
-    // due to the assert above.
-    ++numSwapchainImages_;
-  }
 
   // increase the frame number every time we acquire a new swapchain image
   frameNumber_++;
