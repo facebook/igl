@@ -914,7 +914,7 @@ INSTANTIATE_TEST_SUITE_P(AllCombinations,
                            return name;
                          });
 
-// ivkGeivkGetPipelineShaderStageCreateInfotRect2D *******************************
+// ivkGetPipelineShaderStageCreateInfo *******************************
 class GetPipelineShaderStageCreateInfoTest
   : public ::testing::TestWithParam<std::tuple<VkShaderStageFlagBits, bool>> {};
 
