@@ -338,12 +338,14 @@ class VulkanContext final {
   void updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
                               VkPipelineLayout layout,
                               VkPipelineBindPoint bindPoint,
+                              VulkanImmediateCommands::SubmitHandle nextSubmitHandle,
                               const BindingsTextures& data,
                               const VulkanDescriptorSetLayout& dsl,
                               const util::SpvModuleInfo& info) const;
   void updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
                              VkPipelineLayout layout,
                              VkPipelineBindPoint bindPoint,
+                             VulkanImmediateCommands::SubmitHandle nextSubmitHandle,
                              BindingsBuffers& data,
                              const VulkanDescriptorSetLayout& dsl,
                              const util::SpvModuleInfo& info) const;

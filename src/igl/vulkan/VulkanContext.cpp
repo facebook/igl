@@ -250,10 +250,12 @@ class DescriptorPoolsArena final {
   }
   [[nodiscard]] VkDescriptorSet getNextDescriptorSet(
       VulkanImmediateCommands& ic,
-      VulkanImmediateCommands::SubmitHandle lastSubmitHandle) {
+      VulkanImmediateCommands::SubmitHandle nextSubmitHandle) {
+    IGL_ASSERT(!nextSubmitHandle.empty());
+
     VkDescriptorSet dset = VK_NULL_HANDLE;
     if (!numRemainingDSetsInPool_) {
-      switchToNewDescriptorPool(ic, lastSubmitHandle);
+      switchToNewDescriptorPool(ic, nextSubmitHandle);
     }
     VK_ASSERT(ivkAllocateDescriptorSet(&ctx_.vf_, device_, pool_, dsl_, &dset));
     numRemainingDSetsInPool_--;
@@ -262,14 +264,14 @@ class DescriptorPoolsArena final {
 
  private:
   void switchToNewDescriptorPool(VulkanImmediateCommands& ic,
-                                 VulkanImmediateCommands::SubmitHandle lastSubmitHandle) {
+                                 VulkanImmediateCommands::SubmitHandle nextSubmitHandle) {
     numRemainingDSetsInPool_ = kNumDSetsPerPool_;
 
     if (pool_ != VK_NULL_HANDLE) {
-      extinct_.push_back({pool_, lastSubmitHandle});
+      extinct_.push_back({pool_, nextSubmitHandle});
     }
     // first, let's try to reuse the oldest extinct pool
-    if (extinct_.size() > 1) {
+    if (extinct_.size() > 1 && extinct_.front().handle_ != nextSubmitHandle) {
       const ExtinctDescriptorPool p = extinct_.front();
       if (ic.isReady(p.handle_)) {
         pool_ = p.pool_;
@@ -1556,6 +1558,7 @@ uint64_t VulkanContext::getFrameNumber() const {
 void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
                                            VkPipelineLayout layout,
                                            VkPipelineBindPoint bindPoint,
+                                           VulkanImmediateCommands::SubmitHandle nextSubmitHandle,
                                            const BindingsTextures& data,
                                            const VulkanDescriptorSetLayout& dsl,
                                            const util::SpvModuleInfo& info) const {
@@ -1564,7 +1567,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
   DescriptorPoolsArena& arena = pimpl_->getOrCreateArena_CombinedImageSamplers(
       *this, dsl.getVkDescriptorSetLayout(), dsl.numBindings_);
 
-  VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, pimpl_->lastSubmitHandle_);
+  VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, nextSubmitHandle);
 
   // @fb-only
   VkDescriptorImageInfo infoSampledImages[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
@@ -1622,6 +1625,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
 void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
                                           VkPipelineLayout layout,
                                           VkPipelineBindPoint bindPoint,
+                                          VulkanImmediateCommands::SubmitHandle nextSubmitHandle,
                                           BindingsBuffers& data,
                                           const VulkanDescriptorSetLayout& dsl,
                                           const util::SpvModuleInfo& info) const {
@@ -1630,7 +1634,7 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
   DescriptorPoolsArena& arena =
       pimpl_->getOrCreateArena_Buffers(*this, dsl.getVkDescriptorSetLayout(), dsl.numBindings_);
 
-  VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, pimpl_->lastSubmitHandle_);
+  VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, nextSubmitHandle);
 
   // @fb-only
   VkWriteDescriptorSet writes[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
