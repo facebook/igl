@@ -270,7 +270,8 @@ class DescriptorPoolsArena final {
     if (pool_ != VK_NULL_HANDLE) {
       extinct_.push_back({pool_, nextSubmitHandle});
     }
-    // first, let's try to reuse the oldest extinct pool
+    // first, let's try to reuse the oldest extinct pool (never reuse pools that are tagged with the
+    // same SubmitHandle because they have not yet been submitted)
     if (extinct_.size() > 1 && extinct_.front().handle_ != nextSubmitHandle) {
       const ExtinctDescriptorPool p = extinct_.front();
       if (ic.isReady(p.handle_)) {
