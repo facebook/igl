@@ -64,7 +64,7 @@
   {                                                         \
     const VkResult vk_assert_result = func;                 \
     if (vk_assert_result != VK_SUCCESS) {                   \
-      IGLLog(IGLLogLevel::LOG_ERROR,                        \
+      IGLLog(IGLLogError,                                   \
              "Vulkan API call failed: %s:%i\n  %s\n  %s\n", \
              __FILE__,                                      \
              __LINE__,                                      \

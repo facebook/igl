@@ -13,11 +13,11 @@ namespace {
 
 android_LogPriority logPriorityFromLogLevel(IGLLogLevel logLevel) noexcept {
   switch (logLevel) {
-  case IGLLogLevel::LOG_ERROR:
+  case IGLLogError:
     return ANDROID_LOG_ERROR;
-  case IGLLogLevel::LOG_WARNING:
+  case IGLLogWarning:
     return ANDROID_LOG_WARN;
-  case IGLLogLevel::LOG_INFO:
+  case IGLLogInfo:
     return ANDROID_LOG_INFO;
   }
 }

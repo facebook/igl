@@ -24,7 +24,7 @@ TEST(LogTest, LogOnceRaceCondition) {
       for (int i = 0; i < len; ++i) {
         msg[i] = static_cast<char>(distribution(generator));
       }
-      IGLLogOnce(IGLLogLevel::LOG_INFO, "%s", msg.c_str());
+      IGLLogOnce(IGLLogInfo, "%s", msg.c_str());
     }
   };
 

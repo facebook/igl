@@ -44,7 +44,7 @@ void _IGLDebugBreak() {
     raise(SIGTRAP);
 #elif IGL_PLATFORM_WIN
     if (!IsDebuggerPresent()) {
-      IGLLog(IGLLogLevel::LOG_ERROR, "[IGL] Skipping debug break - debugger not present");
+      IGLLog(IGLLogError, "[IGL] Skipping debug break - debugger not present");
       return;
     }
     __debugbreak();

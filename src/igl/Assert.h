@@ -70,12 +70,12 @@ static inline const T& _IGLVerify(const T& cond,
                                   const char* format,
                                   ...) {
   if (!cond) {
-    IGLLog(IGLLogLevel::LOG_ERROR, "[IGL] Assert failed in '%s' (%s:%d): ", func, file, line);
+    IGLLog(IGLLogError, "[IGL] Assert failed in '%s' (%s:%d): ", func, file, line);
     va_list ap;
     va_start(ap, format);
-    IGLLogV(IGLLogLevel::LOG_ERROR, format, ap);
+    IGLLogV(IGLLogError, format, ap);
     va_end(ap);
-    IGLLog(IGLLogLevel::LOG_ERROR, IGL_NEWLINE);
+    IGLLog(IGLLogError, IGL_NEWLINE);
     if (igl::isDebugBreakEnabled()) {
       _IGLDebugBreak();
     }

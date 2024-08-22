@@ -19,7 +19,7 @@ void ImageWriterSTB::writeImage(const std::string& imageAbsolutePath,
                                 const ImageData& imageData) const noexcept {
   if (imageData.desc.width * 4 > std::numeric_limits<int>::max() ||
       imageData.desc.height > std::numeric_limits<int>::max()) {
-    IGLLog(IGLLogLevel::LOG_ERROR, "Failed saving the file: %s", imageAbsolutePath.c_str());
+    IGLLog(IGLLogError, "Failed saving the file: %s", imageAbsolutePath.c_str());
     return;
   }
   stbi_flip_vertically_on_write(1);
@@ -30,7 +30,7 @@ void ImageWriterSTB::writeImage(const std::string& imageAbsolutePath,
                             imageData.data->data(),
                             /*int stride_in_bytes*/ 4 * static_cast<int>(imageData.desc.width));
   if (!ret) {
-    IGLLog(IGLLogLevel::LOG_ERROR, "Failed saving the file: %s", imageAbsolutePath.c_str());
+    IGLLog(IGLLogError, "Failed saving the file: %s", imageAbsolutePath.c_str());
   }
 }
 

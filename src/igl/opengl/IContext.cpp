@@ -638,9 +638,8 @@ void logDebugMessage(GLenum source,
                      GLsizei length,
                      const GLchar* message) {
   const auto logLevel = severity == GL_DEBUG_SEVERITY_HIGH
-                            ? IGLLogLevel::LOG_ERROR
-                            : (severity == GL_DEBUG_SEVERITY_MEDIUM ? IGLLogLevel::LOG_WARNING
-                                                                    : IGLLogLevel::LOG_INFO);
+                            ? IGLLogError
+                            : (severity == GL_DEBUG_SEVERITY_MEDIUM ? IGLLogWarning : IGLLogInfo);
   IGLLog(logLevel,
          "%s %s %u %s: %.*s\n",
          GLDebugSourceToString(source),
