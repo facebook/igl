@@ -948,4 +948,75 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkGetImageCopy2D *******************************
+class GetImageCopy2DTest : public ::testing::TestWithParam<std::tuple<uint32_t,
+                                                                      uint32_t,
+                                                                      VkImageAspectFlags,
+                                                                      uint32_t,
+                                                                      uint32_t,
+                                                                      uint32_t,
+                                                                      uint32_t,
+                                                                      uint32_t>> {};
+
+TEST_P(GetImageCopy2DTest, GetImageCopy2D) {
+  const auto x = std::get<0>(GetParam());
+  const auto y = std::get<1>(GetParam());
+  const auto aspectMask = std::get<2>(GetParam());
+  const auto mipLevel = std::get<3>(GetParam());
+  const auto baseArrayLayer = std::get<4>(GetParam());
+  const auto layerCount = std::get<5>(GetParam());
+  const auto width = std::get<6>(GetParam());
+  const auto height = std::get<7>(GetParam());
+
+  const VkOffset2D srcDstOffset = {static_cast<int32_t>(x), static_cast<int32_t>(y)};
+  const VkExtent2D imageRegion = {width, height};
+  const VkImageSubresourceLayers srcDstImageSubresource = {
+      aspectMask, mipLevel, baseArrayLayer, layerCount};
+
+  const VkImageCopy imageCopy =
+      ivkGetImageCopy2D(srcDstOffset, srcDstImageSubresource, imageRegion);
+
+  EXPECT_EQ(imageCopy.srcSubresource.aspectMask, aspectMask);
+  EXPECT_EQ(imageCopy.srcSubresource.mipLevel, mipLevel);
+  EXPECT_EQ(imageCopy.srcSubresource.baseArrayLayer, baseArrayLayer);
+  EXPECT_EQ(imageCopy.srcSubresource.layerCount, layerCount);
+  EXPECT_EQ(imageCopy.dstSubresource.aspectMask, aspectMask);
+  EXPECT_EQ(imageCopy.dstSubresource.mipLevel, mipLevel);
+  EXPECT_EQ(imageCopy.dstSubresource.baseArrayLayer, baseArrayLayer);
+  EXPECT_EQ(imageCopy.dstSubresource.layerCount, layerCount);
+  EXPECT_EQ(imageCopy.srcOffset.x, x);
+  EXPECT_EQ(imageCopy.srcOffset.y, y);
+  EXPECT_EQ(imageCopy.srcOffset.z, 0);
+  EXPECT_EQ(imageCopy.dstOffset.x, x);
+  EXPECT_EQ(imageCopy.dstOffset.y, y);
+  EXPECT_EQ(imageCopy.dstOffset.z, 0);
+  EXPECT_EQ(imageCopy.extent.width, width);
+  EXPECT_EQ(imageCopy.extent.height, height);
+  EXPECT_EQ(imageCopy.extent.depth, 1);
+}
+
+INSTANTIATE_TEST_SUITE_P(AllCombinations,
+                         GetImageCopy2DTest,
+                         ::testing::Combine(::testing::Values(0, 50),
+                                            ::testing::Values(0, 50),
+                                            ::testing::Values(VK_IMAGE_ASPECT_COLOR_BIT,
+                                                              VK_IMAGE_ASPECT_DEPTH_BIT),
+                                            ::testing::Values(0, 5),
+                                            ::testing::Values(0, 3),
+                                            ::testing::Values(1, 5),
+                                            ::testing::Values(100, 500),
+                                            ::testing::Values(100, 500)),
+                         [](const testing::TestParamInfo<GetImageCopy2DTest::ParamType>& info) {
+                           const std::string name =
+                               "_x_" + std::to_string(std::get<0>(info.param)) + "__y_" +
+                               std::to_string(std::get<1>(info.param)) + "__aspectMask_" +
+                               std::to_string(std::get<2>(info.param)) + "__mipLevel_" +
+                               std::to_string(std::get<3>(info.param)) + "__baseArrayLayer_" +
+                               std::to_string(std::get<4>(info.param)) + "__layerCount_" +
+                               std::to_string(std::get<5>(info.param)) + "__width_" +
+                               std::to_string(std::get<6>(info.param)) + "__height_" +
+                               std::to_string(std::get<7>(info.param));
+                           return name;
+                         });
+
 } // namespace igl::tests
