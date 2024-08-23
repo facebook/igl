@@ -1085,4 +1085,71 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkGetBufferImageCopy3D *******************************
+class GetBufferImageCopy3DTest : public ::testing::TestWithParam<std::tuple<uint32_t,
+                                                                            uint32_t,
+                                                                            VkImageAspectFlags,
+                                                                            uint32_t,
+                                                                            uint32_t,
+                                                                            uint32_t,
+                                                                            uint32_t,
+                                                                            uint32_t>> {};
+
+TEST_P(GetBufferImageCopy3DTest, GetBufferImageCopy3D) {
+  const auto x = 0u;
+  const auto y = 0u;
+  const auto z = 0u;
+  const auto aspectMask = std::get<0>(GetParam());
+  const auto mipLevel = std::get<1>(GetParam());
+  const auto baseArrayLayer = std::get<2>(GetParam());
+  const auto layerCount = std::get<3>(GetParam());
+  const auto width = std::get<4>(GetParam());
+  const auto height = std::get<5>(GetParam());
+  const auto depth = std::get<5>(GetParam()); // duplicate height as depth
+  const auto bufferOffset = std::get<6>(GetParam());
+  const auto bufferRowLength = std::get<7>(GetParam());
+
+  const VkOffset3D offset = {static_cast<int32_t>(x), static_cast<int32_t>(y), z};
+  const VkExtent3D extent = {width, height, depth};
+  const VkImageSubresourceLayers imageSubresource = {
+      aspectMask, mipLevel, baseArrayLayer, layerCount};
+
+  const VkBufferImageCopy bufferCopy =
+      ivkGetBufferImageCopy3D(bufferOffset, bufferRowLength, offset, extent, imageSubresource);
+
+  EXPECT_EQ(bufferCopy.imageSubresource.aspectMask, aspectMask);
+  EXPECT_EQ(bufferCopy.imageSubresource.mipLevel, mipLevel);
+  EXPECT_EQ(bufferCopy.imageSubresource.baseArrayLayer, baseArrayLayer);
+  EXPECT_EQ(bufferCopy.imageSubresource.layerCount, layerCount);
+  EXPECT_EQ(bufferCopy.imageOffset.x, x);
+  EXPECT_EQ(bufferCopy.imageOffset.y, y);
+  EXPECT_EQ(bufferCopy.imageOffset.z, z);
+  EXPECT_EQ(bufferCopy.imageExtent.width, width);
+  EXPECT_EQ(bufferCopy.imageExtent.height, height);
+  EXPECT_EQ(bufferCopy.imageExtent.depth, depth);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    GetBufferImageCopy3DTest,
+    ::testing::Combine(::testing::Values(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_ASPECT_DEPTH_BIT),
+                       ::testing::Values(0, 5),
+                       ::testing::Values(0, 3),
+                       ::testing::Values(1, 5),
+                       ::testing::Values(100, 500),
+                       ::testing::Values(100, 500),
+                       ::testing::Values(0, 50),
+                       ::testing::Values(1000, 2000)),
+    [](const testing::TestParamInfo<GetBufferImageCopy3DTest::ParamType>& info) {
+      const std::string name = "_aspectMask_" + std::to_string(std::get<0>(info.param)) +
+                               "__mipLevel_" + std::to_string(std::get<1>(info.param)) +
+                               "__baseArrayLayer_" + std::to_string(std::get<2>(info.param)) +
+                               "__layerCount_" + std::to_string(std::get<3>(info.param)) +
+                               "__width_" + std::to_string(std::get<4>(info.param)) + "__height_" +
+                               std::to_string(std::get<5>(info.param)) + "__bufferOffset_" +
+                               std::to_string(std::get<6>(info.param)) + "__bufferRowLength_" +
+                               std::to_string(std::get<7>(info.param));
+      return name;
+    });
+
 } // namespace igl::tests
