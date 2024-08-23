@@ -73,6 +73,8 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
                                          surface ? ANativeWindow_fromSurface(env, surface)
                                                  : nullptr,
                                          activeBackendTypeID);
+  } else if(activeBackendTypeID == BackendTypeID::Vulkan){
+      renderers[activeBackendTypeID]->recreateSwapchain(ANativeWindow_fromSurface(env, surface));
   }
 }
 
@@ -122,17 +124,7 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_render(JNIEnv* /*en
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_surfaceDestroyed(JNIEnv* env,
                                                                               jobject /*obj*/,
                                                                               jobject surface) {
-  // For Vulkan we deallocate the whole renderer and recreate it when surface is re-created.
-  // This is done because we currently don't have an easy way to destroy the surface + swapchain
-  // independent of the whole device.
-  // This is not needed for GL
-  if (activeBackendTypeID == BackendTypeID::Vulkan && renderers[activeBackendTypeID] != nullptr) {
-    renderers[activeBackendTypeID]->onSurfaceDestroyed(
-        surface ? ANativeWindow_fromSurface(env, surface) : nullptr);
-    auto& renderer = renderers[activeBackendTypeID];
-    renderer.reset();
-    renderers[activeBackendTypeID] = nullptr;
-  }
+
 }
 
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_touchEvent(JNIEnv* /*env*/,

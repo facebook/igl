@@ -54,6 +54,10 @@ class RenderSession {
 
   static double getSeconds() noexcept;
 
+  void releaseFramebuffer() {
+      framebuffer_ = nullptr;
+  }
+
  protected:
   Platform& getPlatform() noexcept;
   [[nodiscard]] const Platform& getPlatform() const noexcept;

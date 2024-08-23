@@ -104,6 +104,26 @@ void TinyRenderer::init(AAssetManager* mgr,
   }
 }
 
+void TinyRenderer::recreateSwapchain(ANativeWindow* nativeWindow){
+#if IGL_BACKEND_VULKAN
+    width_ = static_cast<uint32_t>(ANativeWindow_getWidth(nativeWindow));
+    height_ = static_cast<uint32_t>(ANativeWindow_getHeight(nativeWindow));
+
+    auto* platform_device =platform_->getDevice().getPlatformDevice<igl::vulkan::PlatformDevice>();
+    //need clear the cached textures before recreate swap chain.
+    platform_device->clear();
+
+    igl::vulkan::Device & vulkan_device = static_cast<igl::vulkan::Device&>(platform_->getDevice());
+    auto & vk_context = vulkan_device.getVulkanContext();
+
+    vk_context.createSurface(nativeWindow, nullptr);
+    vk_context.initSwapchain(width_, height_);
+
+    //need release frame buffer when recreate swap chain
+    session_->releaseFramebuffer();
+#endif
+}
+
 void TinyRenderer::render(float displayScale) {
   igl::DeviceScope const scope(platform_->getDevice());
 
