@@ -52,6 +52,10 @@ enable_testing()
 add_executable(IGLTests ${SRC_FILES} ${HEADER_FILES})
 
 if(WIN32)
+  if(MSVC)
+    target_compile_options(IGLTests PRIVATE /bigobj)
+  endif()
+
   target_compile_definitions(IGLTests PRIVATE -DNOMINMAX)
   target_compile_definitions(IGLTests PRIVATE -DIGL_UNIT_TESTS_GLES_VERSION="3.0")
   target_include_directories(IGLTests PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/glew/include")
