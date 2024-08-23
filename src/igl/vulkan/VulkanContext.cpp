@@ -299,7 +299,7 @@ class DescriptorPoolsArena final {
   }
 
  private:
-  static constexpr uint32_t kNumDSetsPerPool_ = 256;
+  static constexpr uint32_t kNumDSetsPerPool_ = 64;
 
   const VulkanContext& ctx_;
   VkDevice device_ = VK_NULL_HANDLE;
