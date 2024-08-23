@@ -1183,4 +1183,38 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkGetVertexInputAttributeDescription *******************************
+class GetVertexInputAttributeDescriptionTest
+  : public ::testing::TestWithParam<std::tuple<uint32_t, uint32_t, VkFormat, uint32_t>> {};
+
+TEST_P(GetVertexInputAttributeDescriptionTest, GetVertexInputAttributeDescription) {
+  const auto location = std::get<0>(GetParam());
+  const auto binding = std::get<1>(GetParam());
+  const auto format = std::get<2>(GetParam());
+  const auto offset = std::get<3>(GetParam());
+
+  const VkVertexInputAttributeDescription vtxInputAttrDesc =
+      ivkGetVertexInputAttributeDescription(location, binding, format, offset);
+
+  EXPECT_EQ(vtxInputAttrDesc.location, location);
+  EXPECT_EQ(vtxInputAttrDesc.binding, binding);
+  EXPECT_EQ(vtxInputAttrDesc.format, format);
+  EXPECT_EQ(vtxInputAttrDesc.offset, offset);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    GetVertexInputAttributeDescriptionTest,
+    ::testing::Combine(::testing::Values(0, 1),
+                       ::testing::Values(0, 1),
+                       ::testing::Values(VK_FORMAT_R8G8B8_UNORM, VK_FORMAT_R8G8B8_SNORM),
+                       ::testing::Values(0, 16)),
+    [](const testing::TestParamInfo<GetVertexInputAttributeDescriptionTest::ParamType>& info) {
+      const std::string name = "_location_" + std::to_string(std::get<0>(info.param)) +
+                               "__binding_" + std::to_string(std::get<1>(info.param)) +
+                               "__format_" + std::to_string(std::get<2>(info.param)) + "__offset_" +
+                               std::to_string(std::get<3>(info.param));
+      return name;
+    });
+
 } // namespace igl::tests
