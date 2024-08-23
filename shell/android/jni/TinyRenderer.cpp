@@ -186,13 +186,6 @@ void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int 
 #endif
 }
 
-void TinyRenderer::onSurfaceDestroyed(ANativeWindow* surface) {
-  igl::DeviceScope const scope(platform_->getDevice());
-
-  IGL_ASSERT(backendTypeID_ == BackendTypeID::Vulkan);
-  IGL_ASSERT(surface != nullptr);
-}
-
 void TinyRenderer::touchEvent(bool isDown, float x, float y, float dx, float dy) {
   const float scale = platform_->getDisplayContext().pixelsPerPoint;
   IGL_ASSERT(scale > 0.0f);
