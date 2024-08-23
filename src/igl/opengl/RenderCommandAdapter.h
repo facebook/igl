@@ -115,7 +115,6 @@ class RenderCommandAdapter final : public WithContext {
   void willDraw();
   void didDraw();
   void unbindVertexAttributes();
-  void unbindResources();
 
   void bindBufferWithShaderStorageBufferOverride(Buffer& buffer,
                                                  GLenum overrideTargetForShaderStorageBuffer);
