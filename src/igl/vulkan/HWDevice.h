@@ -17,6 +17,7 @@ namespace igl::vulkan {
 
 class VulkanContext;
 struct VulkanContextConfig;
+class VulkanFeatures;
 
 /// @brief This class provides convenience functions to query, and create devices, as well as to
 /// create a VulkanContext object.
@@ -59,6 +60,7 @@ class HWDevice final {
       uint32_t height,
       size_t numExtraDeviceExtensions = 0,
       const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions = nullptr,
+      const igl::vulkan::VulkanFeatures* IGL_NULLABLE features = nullptr,
       Result* IGL_NULLABLE outResult = nullptr);
 };
 

@@ -71,6 +71,7 @@ std::shared_ptr<::igl::IDevice> createTestDevice(bool enableValidation) {
                                            0, // height,
                                            extraDeviceExtensions.size(),
                                            extraDeviceExtensions.data(),
+                                           nullptr,
                                            &ret);
 
     if (!ret.isOk()) {

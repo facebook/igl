@@ -154,6 +154,7 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
                                            0, // height,
                                            0,
                                            nullptr,
+                                           nullptr,
                                            &ret);
 
     if (!ret.isOk()) {
@@ -217,6 +218,7 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
                                            0, // width
                                            0, // height,
                                            0,
+                                           nullptr,
                                            nullptr,
                                            &ret);
 

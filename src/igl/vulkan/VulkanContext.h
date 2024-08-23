@@ -92,7 +92,8 @@ class VulkanContext final {
   igl::Result queryDevices(const HWDeviceQueryDesc& desc, std::vector<HWDeviceDesc>& outDevices);
   igl::Result initContext(const HWDeviceDesc& desc,
                           size_t numExtraDeviceExtensions = 0,
-                          const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions = nullptr);
+                          const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions = nullptr,
+                          const VulkanFeatures* IGL_NULLABLE requestedFeatures = nullptr);
 
   igl::Result initSwapchain(uint32_t width, uint32_t height);
   VkExtent2D getSwapchainExtent() const;

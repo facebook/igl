@@ -665,8 +665,8 @@ igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
 
 igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                        size_t numExtraDeviceExtensions,
-                                       const char* IGL_NULLABLE* IGL_NULLABLE
-                                           extraDeviceExtensions) {
+                                       const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions,
+                                       const VulkanFeatures* IGL_NULLABLE requestedFeatures) {
   if (desc.guid == 0UL) {
     IGL_LOG_ERROR("Invalid hardwareGuid(%lu)", desc.guid);
     return Result(Result::Code::Unsupported, "Vulkan is not supported");
@@ -675,6 +675,25 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   vkPhysicalDevice_ = (VkPhysicalDevice)desc.guid;
 
   useStagingForBuffers_ = !ivkIsHostVisibleSingleHeapMemory(&vf_, vkPhysicalDevice_);
+
+  // Get the available physical device features
+  VulkanFeatures availableFeatures(features_.version_, config_);
+  availableFeatures.populateWithAvailablePhysicalDeviceFeatures(*this, vkPhysicalDevice_);
+
+  // Use the requested features passed to the function (if any) or use the default features
+  if (requestedFeatures != nullptr) {
+    features_ = *requestedFeatures;
+  } else {
+    features_.enableDefaultFeatures1_1();
+  }
+  // ... and check whether they are available in the physical device (they should be)
+  {
+    const auto featureCheckResult = features_.checkSelectedFeatures(availableFeatures);
+    if (!featureCheckResult.isOk()) {
+      IGL_LOG_INFO("Some requested features are not present: %s\n",
+                   featureCheckResult.message.c_str());
+    }
+  }
 
   vf_.vkGetPhysicalDeviceFeatures2(vkPhysicalDevice_, &vkPhysicalDeviceFeatures2_);
   vf_.vkGetPhysicalDeviceProperties2(vkPhysicalDevice_, &vkPhysicalDeviceProperties2_);
