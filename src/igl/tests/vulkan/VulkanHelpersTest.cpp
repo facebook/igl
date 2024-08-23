@@ -1152,4 +1152,35 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkGetVertexInputBindingDescription *******************************
+class GetVertexInputBindingDescriptionTest
+  : public ::testing::TestWithParam<std::tuple<uint32_t, uint32_t, VkVertexInputRate>> {};
+
+TEST_P(GetVertexInputBindingDescriptionTest, GetVertexInputBindingDescription) {
+  const auto binding = std::get<0>(GetParam());
+  const auto stride = std::get<1>(GetParam());
+  const auto inputRate = std::get<2>(GetParam());
+
+  const VkVertexInputBindingDescription vtxInputBindingDesc =
+      ivkGetVertexInputBindingDescription(binding, stride, inputRate);
+
+  EXPECT_EQ(vtxInputBindingDesc.binding, binding);
+  EXPECT_EQ(vtxInputBindingDesc.stride, stride);
+  EXPECT_EQ(vtxInputBindingDesc.inputRate, inputRate);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    GetVertexInputBindingDescriptionTest,
+    ::testing::Combine(::testing::Values(0, 1),
+                       ::testing::Values(0, 16),
+                       ::testing::Values(VK_VERTEX_INPUT_RATE_VERTEX,
+                                         VK_VERTEX_INPUT_RATE_INSTANCE)),
+    [](const testing::TestParamInfo<GetVertexInputBindingDescriptionTest::ParamType>& info) {
+      const std::string name = "_binding_" + std::to_string(std::get<0>(info.param)) + "__stride_" +
+                               std::to_string(std::get<1>(info.param)) + "__inputRate_" +
+                               std::to_string(std::get<2>(info.param));
+      return name;
+    });
+
 } // namespace igl::tests
