@@ -147,8 +147,6 @@ void TinyRenderer::render(float displayScale) {
 }
 
 void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int height) {
-  igl::DeviceScope const scope(platform_->getDevice());
-
   width_ = static_cast<uint32_t>(width);
   height_ = static_cast<uint32_t>(height);
 #if IGL_BACKEND_OPENGL
