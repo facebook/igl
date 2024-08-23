@@ -353,7 +353,6 @@ struct VulkanContextImpl final {
   std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBindless_; // everything
   VkDescriptorPool dpBindless_ = VK_NULL_HANDLE;
   VkDescriptorSet dsBindless_ = VK_NULL_HANDLE;
-  VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
   uint32_t currentMaxBindlessTextures_ = 8;
   uint32_t currentMaxBindlessSamplers_ = 8;
 
@@ -1382,14 +1381,7 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
 #if IGL_VULKAN_PRINT_COMMANDS
     IGL_LOG_INFO("Updating descriptor set dsBindless_\n");
 #endif // IGL_VULKAN_PRINT_COMMANDS
-    const VkResult vkResult = immediate_->wait(
-        std::exchange(pimpl_->lastSubmitHandle_, immediate_->getLastSubmitHandle()),
-        config_.fenceTimeoutNanoseconds);
-    if (vkResult != VK_SUCCESS) {
-      IGL_LOG_ERROR("wait command failed with result %i", int(vkResult));
-      return vkResult;
-    }
-
+    VK_ASSERT(immediate_->wait(immediate_->getLastSubmitHandle()));
     vf_.vkUpdateDescriptorSets(
         device_->getVkDevice(), static_cast<uint32_t>(write.size()), write.data(), 0, nullptr);
   }
@@ -1678,10 +1670,6 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
     vf_.vkCmdBindDescriptorSets(
         cmdBuf, bindPoint, layout, kBindPoint_Buffers, 1, &dset, 0, nullptr);
   }
-}
-
-void VulkanContext::markSubmitted(const VulkanImmediateCommands::SubmitHandle& handle) const {
-  pimpl_->lastSubmitHandle_ = handle;
 }
 
 void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) const {

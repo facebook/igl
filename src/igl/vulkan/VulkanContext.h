@@ -350,7 +350,6 @@ class VulkanContext final {
                              BindingsBuffers& data,
                              const VulkanDescriptorSetLayout& dsl,
                              const util::SpvModuleInfo& info) const;
-  void markSubmitted(const SubmitHandle& handle) const;
 
   struct DeferredTask {
     DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) :
