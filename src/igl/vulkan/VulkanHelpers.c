@@ -372,22 +372,17 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
                          const VkDeviceQueueCreateInfo* queueCreateInfos,
                          size_t numDeviceExtensions,
                          const char** deviceExtensions,
-                         VkBool32 enableMultiview,
-                         VkBool32 enableShaderFloat16,
-                         VkBool32 enableBufferDeviceAddress,
-                         VkBool32 enableDescriptorIndexing,
-                         VkBool32 enableDrawParameters,
-                         VkBool32 enableYcbcr,
-                         const VkPhysicalDeviceFeatures* supported,
+                         const VkPhysicalDeviceFeatures2* supported,
                          VkDevice* outDevice) {
   assert(numQueueCreateInfos >= 1);
   const VkPhysicalDeviceFeatures deviceFeatures10 = {
-      .dualSrcBlend = supported ? supported->dualSrcBlend : VK_TRUE,
-      .multiDrawIndirect = supported ? supported->multiDrawIndirect : VK_TRUE,
-      .drawIndirectFirstInstance = supported ? supported->drawIndirectFirstInstance : VK_TRUE,
-      .depthBiasClamp = supported ? supported->depthBiasClamp : VK_TRUE,
-      .fillModeNonSolid = supported ? supported->fillModeNonSolid : VK_TRUE,
-      .shaderInt16 = supported ? supported->shaderInt16 : VK_TRUE,
+      .dualSrcBlend = supported ? supported->features.dualSrcBlend : VK_TRUE,
+      .multiDrawIndirect = supported ? supported->features.multiDrawIndirect : VK_TRUE,
+      .drawIndirectFirstInstance = supported ? supported->features.drawIndirectFirstInstance
+                                             : VK_TRUE,
+      .depthBiasClamp = supported ? supported->features.depthBiasClamp : VK_TRUE,
+      .fillModeNonSolid = supported ? supported->features.fillModeNonSolid : VK_TRUE,
+      .shaderInt16 = supported ? supported->features.shaderInt16 : VK_TRUE,
   };
   VkDeviceCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
@@ -397,67 +392,9 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
       .ppEnabledExtensionNames = deviceExtensions,
       .pEnabledFeatures = &deviceFeatures10,
   };
-  const VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeature = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
-      .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
-      .descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE,
-      .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
-      .descriptorBindingStorageImageUpdateAfterBind = VK_TRUE,
-      .descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE,
-      .descriptorBindingUpdateUnusedWhilePending = VK_TRUE,
-      .descriptorBindingPartiallyBound = VK_TRUE,
-      .runtimeDescriptorArray = VK_TRUE,
-  };
-  if (enableDescriptorIndexing) {
-    ivkAddNext(&ci, &descriptorIndexingFeature);
-  }
 
-  const VkPhysicalDevice16BitStorageFeatures float16StorageBuffersFeature = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,
-      .storageBuffer16BitAccess = VK_TRUE,
-  };
-  const VkPhysicalDeviceShaderFloat16Int8Features float16ArithmeticFeature = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES,
-      .shaderFloat16 = VK_TRUE,
-  };
-  if (enableShaderFloat16) {
-    ivkAddNext(&ci, &float16ArithmeticFeature);
-    ivkAddNext(&ci, &float16StorageBuffersFeature);
-  }
-
-#if defined(VK_KHR_buffer_device_address)
-  const VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeature = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
-      .bufferDeviceAddress = VK_TRUE,
-  };
-  if (enableBufferDeviceAddress) {
-    ivkAddNext(&ci, &bufferDeviceAddressFeature);
-  }
-#endif // defined(VK_KHR_buffer_device_address)
-
-  // Note this must exist outside of the if statement below
-  // due to scope issues.
-  VkPhysicalDeviceMultiviewFeatures multiviewFeature = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
-      .multiview = VK_TRUE,
-  };
-  if (enableMultiview) {
-    ivkAddNext(&ci, &multiviewFeature);
-  }
-  VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcrFeature = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES,
-      .samplerYcbcrConversion = VK_TRUE,
-  };
-  if (enableYcbcr) {
-    ivkAddNext(&ci, &ycbcrFeature);
-  }
-  VkPhysicalDeviceShaderDrawParameterFeatures shaderDrawParameterFeature = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETER_FEATURES,
-      .shaderDrawParameters = VK_TRUE,
-  };
-  if (enableDrawParameters) {
-    ivkAddNext(&ci, &shaderDrawParameterFeature);
-  }
+  // Append all feature structs being requested for this device
+  ci.pNext = supported->pNext;
 
   return vt->vkCreateDevice(physicalDevice, &ci, NULL, outDevice);
 }

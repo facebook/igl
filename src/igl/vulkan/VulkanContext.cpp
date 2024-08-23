@@ -690,12 +690,10 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   {
     const auto featureCheckResult = features_.checkSelectedFeatures(availableFeatures);
     if (!featureCheckResult.isOk()) {
-      IGL_LOG_INFO("Some requested features are not present: %s\n",
-                   featureCheckResult.message.c_str());
+      return featureCheckResult;
     }
   }
 
-  vf_.vkGetPhysicalDeviceFeatures2(vkPhysicalDevice_, &vkPhysicalDeviceFeatures2_);
   vf_.vkGetPhysicalDeviceProperties2(vkPhysicalDevice_, &vkPhysicalDeviceProperties2_);
 
   const uint32_t apiVersion = vkPhysicalDeviceProperties2_.properties.apiVersion;
@@ -795,13 +793,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                       qcis.data(),
                       extensions_.allEnabled(VulkanExtensions::ExtensionType::Device).size(),
                       extensions_.allEnabled(VulkanExtensions::ExtensionType::Device).data(),
-                      vkPhysicalDeviceMultiviewFeatures_.multiview,
-                      vkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16,
-                      config_.enableBufferDeviceAddress,
-                      config_.enableDescriptorIndexing,
-                      vkPhysicalDeviceShaderDrawParametersFeatures_.shaderDrawParameters,
-                      vkPhysicalDeviceSamplerYcbcrConversionFeatures_.samplerYcbcrConversion,
-                      &vkPhysicalDeviceFeatures2_.features,
+                      &features_.VkPhysicalDeviceFeatures2_,
                       &device));
   if (!config_.enableConcurrentVkDevicesSupport) {
     // Do not remove for backward compatibility with projects using global functions.
