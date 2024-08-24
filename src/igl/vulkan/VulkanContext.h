@@ -143,6 +143,8 @@ class VulkanContext final {
                                                igl::Result* IGL_NULLABLE outResult,
                                                const char* IGL_NULLABLE debugName = nullptr) const;
 
+  void createSurface(void* IGL_NULLABLE window, void* IGL_NULLABLE display);
+
   bool hasSwapchain() const noexcept {
     return swapchain_ != nullptr;
   }
@@ -210,7 +212,6 @@ class VulkanContext final {
  private:
   void createInstance(size_t numExtraExtensions,
                       const char* IGL_NULLABLE* IGL_NULLABLE extraExtensions);
-  void createSurface(void* IGL_NULLABLE window, void* IGL_NULLABLE display);
   VkResult checkAndUpdateDescriptorSets();
   void querySurfaceCapabilities();
   void processDeferredTasks() const;

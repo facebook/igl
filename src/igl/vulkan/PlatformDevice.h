@@ -67,6 +67,12 @@ class PlatformDevice : public IPlatformDevice {
   [[nodiscard]] int getFenceFdFromSubmitHandle(SubmitHandle handle) const;
 #endif
 
+  /// Clear the cached textures
+  void clear() {
+    nativeDrawableTextures_.clear();
+    nativeDepthTexture_ = nullptr;
+  }
+
  protected:
   [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override {
     return t == Type;
