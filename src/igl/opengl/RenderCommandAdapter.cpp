@@ -472,29 +472,6 @@ void RenderCommandAdapter::unbindVertexAttributes() {
   }
 }
 
-void RenderCommandAdapter::unbindResources() {
-  unbindTextures(getContext(), fragmentTextureStates_, fragmentTextureStatesDirty_);
-  unbindTextures(getContext(), vertexTextureStates_, vertexTextureStatesDirty_);
-
-  // Restore to default active texture
-  getContext().activeTexture(GL_TEXTURE0);
-
-  // TODO: unbind uniform blocks when we add support?
-
-  auto* depthStencilState = static_cast<DepthStencilState*>(depthStencilState_.get());
-  if (depthStencilState) {
-    depthStencilState->unbind();
-    setDirty(StateMask::DEPTH_STENCIL);
-  }
-
-  auto* pipelineState = static_cast<RenderPipelineState*>(pipelineState_.get());
-  if (pipelineState) {
-    unbindVertexAttributes();
-    pipelineState->unbind();
-    setDirty(StateMask::PIPELINE);
-  }
-}
-
 void RenderCommandAdapter::bindBufferWithShaderStorageBufferOverride(
     Buffer& buffer,
     GLenum overrideTargetForShaderStorageBuffer) {
