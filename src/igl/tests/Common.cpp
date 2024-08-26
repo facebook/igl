@@ -103,4 +103,9 @@ TEST(CommonTest, ViewportTest) {
   Viewport viewport2;
   ASSERT_TRUE(viewport == viewport2);
 };
+
+TEST(CommonTest, EnumToValueTest) {
+  auto val = EnumToValue(BackendType::Vulkan);
+  ASSERT_EQ(val, 3);
+};
 } // namespace igl::tests
