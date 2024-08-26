@@ -80,4 +80,20 @@ TEST(CommonTest, SizeTest) {
   ASSERT_FALSE(size == size2);
   ASSERT_FALSE(size2 != size2);
 };
+
+TEST(CommonTest, DimensionTest) {
+  Dimensions dimension;
+  ASSERT_EQ(dimension.height, 0);
+  ASSERT_EQ(dimension.width, 0);
+  ASSERT_EQ(dimension.depth, 0);
+  Dimensions dimension2(2, 2, 2);
+  ASSERT_EQ(dimension2.height, 2);
+  ASSERT_EQ(dimension2.width, 2);
+  ASSERT_EQ(dimension2.depth, 2);
+
+  ASSERT_TRUE(dimension != dimension2);
+  ASSERT_TRUE(dimension2 == dimension2);
+  ASSERT_FALSE(dimension == dimension2);
+  ASSERT_FALSE(dimension2 != dimension2);
+};
 } // namespace igl::tests
