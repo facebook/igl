@@ -40,4 +40,23 @@ TEST(CommonTest, ColorTest) {
   ASSERT_EQ(floatPtr[3], 1.0f);
 };
 
+TEST(CommonTest, ResultTest) {
+  Result testResult;
+  Result testResult2(Result::Code::Ok, "test message2");
+  Result testResult3(Result::Code::Ok, std::string("test message3"));
+  ASSERT_STREQ(testResult2.message.c_str(), "test message2");
+  ASSERT_TRUE(testResult2.isOk());
+  ASSERT_STREQ(testResult3.message.c_str(), "test message3");
+  ASSERT_TRUE(testResult3.isOk());
+
+  Result::setResult(&testResult, Result::Code::ArgumentInvalid, std::string("new test message"));
+  ASSERT_STREQ(testResult.message.c_str(), "new test message");
+  ASSERT_FALSE(testResult.isOk());
+
+  Result::setResult(&testResult3, testResult);
+  ASSERT_FALSE(testResult3.isOk());
+
+  Result::setResult(&testResult2, std::move(testResult));
+  ASSERT_FALSE(testResult2.isOk());
+};
 } // namespace igl::tests
