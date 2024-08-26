@@ -82,18 +82,6 @@
   // @fb-only
 #endif
 
-#if IGL_BACKEND_VULKAN
-  // Vulkan tab
-  NSTabViewItem* tinyVulkanTabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
-  viewController = [[ViewController alloc] initWithFrame:frame
-                                             backendType:igl::BackendType::Vulkan
-                                     preferLatestVersion:true];
-
-  tinyVulkanTabViewItem.viewController = viewController;
-  tinyVulkanTabViewItem.label = @"Vulkan";
-  [self.tabViewController addTabViewItem:tinyVulkanTabViewItem];
-#endif
-
 // @fb-only
   // @fb-only
   // @fb-only
@@ -105,6 +93,18 @@
   // @fb-only
   // @fb-only
 // @fb-only
+
+#if IGL_BACKEND_VULKAN
+  // Vulkan tab
+  NSTabViewItem* tinyVulkanTabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
+  viewController = [[ViewController alloc] initWithFrame:frame
+                                             backendType:igl::BackendType::Vulkan
+                                     preferLatestVersion:true];
+
+  tinyVulkanTabViewItem.viewController = viewController;
+  tinyVulkanTabViewItem.label = @"Vulkan";
+  [self.tabViewController addTabViewItem:tinyVulkanTabViewItem];
+#endif
 
   self.window.contentViewController = self.tabViewController;
   [self.window setFrame:viewController.frame display:YES animate:false];
