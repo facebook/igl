@@ -96,4 +96,11 @@ TEST(CommonTest, DimensionTest) {
   ASSERT_FALSE(dimension == dimension2);
   ASSERT_FALSE(dimension2 != dimension2);
 };
+
+TEST(CommonTest, ViewportTest) {
+  Viewport viewport;
+  ASSERT_TRUE(viewport != kInvalidViewport);
+  Viewport viewport2;
+  ASSERT_TRUE(viewport == viewport2);
+};
 } // namespace igl::tests
