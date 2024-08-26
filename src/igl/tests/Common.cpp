@@ -66,4 +66,18 @@ TEST(CommonTest, RectTest) {
   const ScissorRect testRect2{0, 0, 1, 1};
   ASSERT_FALSE(testRect2.isNull());
 };
+
+TEST(CommonTest, SizeTest) {
+  Size size;
+  ASSERT_EQ(size.height, 0.0f);
+  ASSERT_EQ(size.width, 0.0f);
+  Size size2(2, 2);
+  ASSERT_EQ(size2.height, 2.0f);
+  ASSERT_EQ(size2.width, 2.0f);
+
+  ASSERT_TRUE(size != size2);
+  ASSERT_TRUE(size2 == size2);
+  ASSERT_FALSE(size == size2);
+  ASSERT_FALSE(size2 != size2);
+};
 } // namespace igl::tests
