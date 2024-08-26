@@ -239,6 +239,7 @@ struct TextureFormatProperties {
     Compressed = 1 << 2,
     sRGB = 1 << 3,
     Integer = 1 << 4,
+    HDR = 1 << 5, // Color format with more than 8 bits per component
   };
 
   const char* IGL_NONNULL name = "Invalid";
@@ -277,6 +278,12 @@ struct TextureFormatProperties {
    */
   [[nodiscard]] bool isSRGB() const noexcept {
     return (flags & Flags::sRGB) != 0;
+  }
+  /**
+   * @brief true for high precision color texture formats.
+   */
+  [[nodiscard]] bool isHDR() const noexcept {
+    return (flags & Flags::HDR) != 0;
   }
 
   [[nodiscard]] bool hasDepth() const noexcept {
