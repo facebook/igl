@@ -59,4 +59,11 @@ TEST(CommonTest, ResultTest) {
   Result::setResult(&testResult2, std::move(testResult));
   ASSERT_FALSE(testResult2.isOk());
 };
+
+TEST(CommonTest, RectTest) {
+  const ScissorRect testRect;
+  ASSERT_TRUE(testRect.isNull());
+  const ScissorRect testRect2{0, 0, 1, 1};
+  ASSERT_FALSE(testRect2.isNull());
+};
 } // namespace igl::tests
