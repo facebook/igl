@@ -12,6 +12,7 @@
 namespace igl::tests {
 
 TEST(CommonTest, BackendTypeToStringTest) {
+  ASSERT_EQ(BackendTypeToString(BackendType::Invalid), "Invalid");
   ASSERT_EQ(BackendTypeToString(BackendType::OpenGL), "OpenGL");
   ASSERT_EQ(BackendTypeToString(BackendType::Metal), "Metal");
   ASSERT_EQ(BackendTypeToString(BackendType::Vulkan), "Vulkan");
