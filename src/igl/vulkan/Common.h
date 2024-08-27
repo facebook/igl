@@ -196,4 +196,12 @@ void ensureShaderModule(IShaderModule* sm);
 
 } // namespace igl::vulkan
 
+namespace igl::vulkan::functions {
+
+void initialize(VulkanFunctionTable& table);
+void loadInstanceFunctions(VulkanFunctionTable& table, VkInstance instance);
+void loadDeviceFunctions(VulkanFunctionTable& table, VkDevice device);
+
+} // namespace igl::vulkan::functions
+
 #endif // IGL_VULKAN_COMMON_H

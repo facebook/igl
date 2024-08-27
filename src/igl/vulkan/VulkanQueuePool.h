@@ -11,7 +11,6 @@
 #include <vector>
 
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/VulkanFunctions.h>
 
 namespace igl::vulkan {
 

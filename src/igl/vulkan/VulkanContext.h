@@ -18,7 +18,6 @@
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanExtensions.h>
 #include <igl/vulkan/VulkanFeatures.h>
-#include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
 #include <igl/vulkan/VulkanQueuePool.h>

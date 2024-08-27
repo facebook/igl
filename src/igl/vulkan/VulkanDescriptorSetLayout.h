@@ -8,7 +8,6 @@
 #pragma once
 
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanFunctions.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <memory>
 
