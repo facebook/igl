@@ -72,13 +72,22 @@ void TinyRenderer::init(AAssetManager* mgr,
     IGL_ASSERT(result.isOk());
     width_ = static_cast<uint32_t>(ANativeWindow_getWidth(nativeWindow));
     height_ = static_cast<uint32_t>(ANativeWindow_getHeight(nativeWindow));
+
+    // https://github.com/gpuweb/gpuweb/issues/4283
+    // Only 49.5% of Android devices support dualSrcBlend.
+    // Android devices that do not support dualSrcBlend primarily use ARM, ImgTec, and Qualcomm GPUs.
+    // https://vulkan.gpuinfo.org/listdevicescoverage.php?feature=dualSrcBlend&platform=android&option=not
+    igl::vulkan::VulkanFeatures vulkanFeatures(VK_API_VERSION_1_1, config);
+    vulkanFeatures.enableDefaultFeatures1_1();
+    vulkanFeatures.VkPhysicalDeviceFeatures2_.features.dualSrcBlend = VK_FALSE;
+
     d = vulkan::HWDevice::create(std::move(ctx),
                                  devices[0],
                                  width_, // width
                                  height_, // height,,
                                  0,
                                  nullptr,
-                                 nullptr,
+                                 &vulkanFeatures,
                                  &result);
     break;
   }
