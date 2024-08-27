@@ -12,6 +12,8 @@
 #include <shell/shared/imageWriter/ImageWriter.h>
 #include <shell/shared/imageWriter/android/ImageWriterAndroid.h>
 
+#include <glm/gtc/matrix_transform.hpp>
+
 namespace igl::shell {
 
 PlatformAndroid::PlatformAndroid(std::shared_ptr<igl::IDevice> device, bool useFakeLoader) :
@@ -22,6 +24,13 @@ PlatformAndroid::PlatformAndroid(std::shared_ptr<igl::IDevice> device, bool useF
   } else {
     imageLoader_ = std::make_unique<igl::shell::ImageLoaderAndroid>(*fileLoader_);
     imageWriter_ = std::make_unique<igl::shell::ImageWriterAndroid>();
+  }
+
+  float rotate_angle[kSurfaceTransformRotateNum] = {0, -90, 180, -270};
+  for (int i = 0; i != kSurfaceTransformRotateNum; ++i) {
+    glm::mat4x4 pre_rotate_mat = glm::mat4x4(1.0f);
+    glm::vec3 rotation_axis = glm::vec3(0.0f, 0.0f, 1.0f);
+    surfaceTransformRotateMatrix_[i] = glm::rotate(pre_rotate_mat, glm::radians(rotate_angle[i]), rotation_axis);
   }
 }
 
@@ -43,6 +52,12 @@ const ImageWriter& PlatformAndroid::getImageWriter() const noexcept {
 
 FileLoader& PlatformAndroid::getFileLoader() const noexcept {
   return *fileLoader_;
+}
+
+void PlatformAndroid::preRotateMVPMatrix(glm::mat4x4 & mvp){
+    if (kSurfaceTransformRotate0 != surfaceTransformRotate_) {
+        mvp = surfaceTransformRotateMatrix_[surfaceTransformRotate_] * mvp;
+    }
 }
 
 } // namespace igl::shell

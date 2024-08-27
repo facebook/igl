@@ -16,6 +16,14 @@ namespace igl {
 class IDevice;
 }
 
+enum SurfaceTransformRotate {
+    kSurfaceTransformRotate0,
+    kSurfaceTransformRotate90,
+    kSurfaceTransformRotate180,
+    kSurfaceTransformRotate270,
+    kSurfaceTransformRotateNum,
+};
+
 namespace igl::shell {
 
 class Extension;
@@ -42,6 +50,8 @@ class Platform {
   virtual DisplayContext& getDisplayContext() noexcept {
     return displayContext_;
   }
+
+  virtual void preRotateMVPMatrix(glm::mat4x4 & mvp) {}
 
   std::shared_ptr<ITexture> loadTexture(
       const char* filename,

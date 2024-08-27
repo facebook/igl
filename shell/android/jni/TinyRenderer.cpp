@@ -39,6 +39,7 @@ void TinyRenderer::init(AAssetManager* mgr,
                         ANativeWindow* nativeWindow,
                         BackendTypeID backendTypeID) {
   backendTypeID_ = backendTypeID;
+  nativeWindow_ = nativeWindow;
   Result result;
   const igl::HWDeviceQueryDesc queryDesc(HWDeviceType::IntegratedGpu);
   std::unique_ptr<IDevice> d;
@@ -61,6 +62,7 @@ void TinyRenderer::init(AAssetManager* mgr,
 
 #if IGL_BACKEND_VULKAN
   case BackendTypeID::Vulkan: {
+    isSurfaceCreated_ = true;
     IGL_ASSERT(nativeWindow != nullptr);
     vulkan::VulkanContextConfig config;
     config.terminateOnValidationError = true;
@@ -96,6 +98,11 @@ void TinyRenderer::init(AAssetManager* mgr,
   if (d) {
     platform_ = std::make_shared<igl::shell::PlatformAndroid>(std::move(d));
     IGL_ASSERT(platform_ != nullptr);
+
+#if IGL_BACKEND_VULKAN
+    updateSurfaceTransformRotate(platform_->getDevice());
+#endif
+
     static_cast<igl::shell::ImageLoaderAndroid&>(platform_->getImageLoader()).setAssetManager(mgr);
     static_cast<igl::shell::FileLoaderAndroid&>(platform_->getFileLoader()).setAssetManager(mgr);
     session_ = igl::shell::createDefaultRenderSession(platform_);
@@ -105,8 +112,9 @@ void TinyRenderer::init(AAssetManager* mgr,
   }
 }
 
-void TinyRenderer::recreateSwapchain(ANativeWindow* nativeWindow) {
+void TinyRenderer::recreateSwapchain(ANativeWindow* nativeWindow, bool createSurface) {
 #if IGL_BACKEND_VULKAN
+  nativeWindow_ = nativeWindow;
   width_ = static_cast<uint32_t>(ANativeWindow_getWidth(nativeWindow));
   height_ = static_cast<uint32_t>(ANativeWindow_getHeight(nativeWindow));
 
@@ -117,7 +125,9 @@ void TinyRenderer::recreateSwapchain(ANativeWindow* nativeWindow) {
   auto& vulkan_device = static_cast<igl::vulkan::Device&>(platform_->getDevice());
   auto& vk_context = vulkan_device.getVulkanContext();
 
-  vk_context.createSurface(nativeWindow, nullptr);
+  if (createSurface) {
+      vk_context.createSurface(nativeWindow, nullptr);
+  }
   vk_context.initSwapchain(width_, height_);
 
   // need release frame buffer when recreate swap chain
@@ -184,6 +194,55 @@ void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int 
     IGL_ASSERT(result.isOk());
     IGL_REPORT_ERROR(result.isOk());
   }
+#endif
+
+#if IGL_BACKEND_VULKAN
+  if (backendTypeID_ == BackendTypeID::Vulkan){
+      if (isSurfaceCreated_){
+          isSurfaceCreated_ = false;
+          return;
+      }
+
+      recreateSwapchain(nativeWindow_, false);
+
+      updateSurfaceTransformRotate(platform_->getDevice());
+  }
+#endif
+}
+
+void TinyRenderer::updateSurfaceTransformRotate(igl::IDevice& device) {
+#if IGL_BACKEND_VULKAN
+    if (backendTypeID_ != BackendTypeID::Vulkan){
+        return;
+    }
+    igl::vulkan::Device& vulkan_device = static_cast<igl::vulkan::Device&>(device);
+    igl::vulkan::VulkanContext& vk_context = vulkan_device.getVulkanContext();
+    const VkSurfaceCapabilitiesKHR& surface_capabilities = vk_context.getSurfaceCapabilities();
+
+    SurfaceTransformRotate surfaceTransformRotate = kSurfaceTransformRotate0;
+
+    switch (surface_capabilities.currentTransform) {
+        case VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR:
+            surfaceTransformRotate = kSurfaceTransformRotate0;
+            break;
+
+        case VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR:
+            surfaceTransformRotate = kSurfaceTransformRotate90;
+            break;
+
+        case VK_SURFACE_TRANSFORM_ROTATE_180_BIT_KHR:
+            surfaceTransformRotate = kSurfaceTransformRotate180;
+            break;
+
+        case VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR:
+            surfaceTransformRotate = kSurfaceTransformRotate270;
+            break;
+
+        default:
+            break;
+    }
+
+    platform_->updateSurfaceTransformRotate(surfaceTransformRotate);
 #endif
 }
 

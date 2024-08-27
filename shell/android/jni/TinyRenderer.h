@@ -24,11 +24,14 @@ enum class BackendTypeID { GLES3, GLES2, Vulkan };
 class TinyRenderer final {
  public:
   void init(AAssetManager* mgr, ANativeWindow* nativeWindow, BackendTypeID backendTypeID);
-  void recreateSwapchain(ANativeWindow* nativeWindow); // only for Vulkan
+  void recreateSwapchain(ANativeWindow* nativeWindow, bool createSurface); // only for Vulkan
   void render(float displayScale);
   void onSurfacesChanged(ANativeWindow* nativeWindow, int width, int height);
   void touchEvent(bool isDown, float x, float y, float dx, float dy);
   void setClearColorValue(float r, float g, float b, float a);
+
+ private:
+  void updateSurfaceTransformRotate(igl::IDevice& device);
 
  private:
   BackendTypeID backendTypeID_;
@@ -38,6 +41,8 @@ class TinyRenderer final {
   shell::ShellParams shellParams_;
   uint32_t width_ = 0;
   uint32_t height_ = 0;
+  bool isSurfaceCreated_ = true;
+  ANativeWindow* nativeWindow_ = NULL;
 };
 
 } // namespace igl::samples
