@@ -27,7 +27,9 @@ void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
 
 void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
   auto& features = VkPhysicalDeviceFeatures2_.features;
+#if !IGL_PLATFORM_ANDROID
   features.dualSrcBlend = VK_TRUE;
+#endif
   features.shaderInt16 = VK_TRUE;
   features.multiDrawIndirect = VK_TRUE;
   features.drawIndirectFirstInstance = VK_TRUE;
