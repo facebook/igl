@@ -24,7 +24,7 @@ class VulktanTexture;
 
 class VulkanSwapchain final {
  public:
-  VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint32_t height);
+  VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height);
   ~VulkanSwapchain();
 
   Result acquireNextImage();
@@ -104,7 +104,7 @@ class VulkanSwapchain final {
   std::vector<VulkanFence> acquireFences_;
 
  private:
-  const VulkanContext& ctx_;
+    VulkanContext& ctx_;
   VkDevice device_;
   VkQueue graphicsQueue_;
   uint32_t width_ = 0;

@@ -94,10 +94,10 @@ VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& mode
 VkImageUsageFlags chooseUsageFlags(const VulkanFunctionTable& vf,
                                    VkPhysicalDevice pd,
                                    VkSurfaceKHR surface,
-                                   VkFormat format) {
+                                   VkFormat format,
+                                   VkSurfaceCapabilitiesKHR &caps) {
   VkImageUsageFlags usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                                  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-  VkSurfaceCapabilitiesKHR caps = {};
   VK_ASSERT(vf.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(pd, surface, &caps));
 
   const bool isStorageSupported = (caps.supportedUsageFlags & VK_IMAGE_USAGE_STORAGE_BIT) > 0;
@@ -119,7 +119,7 @@ VkImageUsageFlags chooseUsageFlags(const VulkanFunctionTable& vf,
 
 namespace igl::vulkan {
 
-VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint32_t height) :
+VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height) :
   ctx_(ctx),
   device_(ctx.device_->getVkDevice()),
   graphicsQueue_(ctx.deviceQueues_.graphicsQueue),
@@ -154,7 +154,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint3
 #endif
 
   const VkImageUsageFlags usageFlags =
-      chooseUsageFlags(ctx.vf_, ctx.getVkPhysicalDevice(), ctx.vkSurface_, surfaceFormat_.format);
+      chooseUsageFlags(ctx.vf_, ctx.getVkPhysicalDevice(), ctx.vkSurface_, surfaceFormat_.format, ctx.deviceSurfaceCaps_);
 
   {
     const uint32_t requestedSwapchainImageCount = chooseSwapImageCount(ctx.deviceSurfaceCaps_);
@@ -308,8 +308,18 @@ Result VulkanSwapchain::present(VkSemaphore waitSemaphore) {
   IGL_PROFILER_FUNCTION();
 
   IGL_PROFILER_ZONE("vkQueuePresent()", IGL_PROFILER_COLOR_PRESENT);
-  VK_ASSERT_RETURN(
-      ivkQueuePresent(&ctx_.vf_, graphicsQueue_, waitSemaphore, swapchain_, currentImageIndex_));
+  auto ret = ivkQueuePresent(&ctx_.vf_, graphicsQueue_, waitSemaphore, swapchain_, currentImageIndex_);
+  //when screen orientation changed, return VK_SUBOPTIMAL_KHR
+  //https://android-developers.googleblog.com/2020/02/handling-device-orientation-efficiently.html
+  if(VK_SUCCESS != ret && VK_SUBOPTIMAL_KHR != ret){
+      IGL_LOG_ERROR("Vulkan API call failed: %s:%i\n  %s\n  %s\n",
+                    __FILE__,
+                    __LINE__,
+                    "ivkQueuePresent",
+                    ivkGetVulkanResultString(ret));
+      IGL_ASSERT(false);
+      return getResultFromVkResult(ret);
+  }
   IGL_PROFILER_ZONE_END();
 
   // Ready to call acquireNextImage() on the next getCurrentVulkanTexture();
