@@ -90,11 +90,11 @@ RenderCommandEncoder::RenderCommandEncoder(const std::shared_ptr<CommandBuffer>&
 void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                                       const std::shared_ptr<IFramebuffer>& framebuffer,
                                       const Dependencies& dependencies,
-                                      Result* outResult) {
+                                      Result& outResult) {
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_VERIFY(cmdBuffer_)) {
-    Result::setResult(outResult, Result::Code::ArgumentNull);
+    Result::setResult(&outResult, Result::Code::ArgumentNull);
     return;
   }
 
@@ -103,10 +103,10 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   framebuffer_ = framebuffer;
   dependencies_ = dependencies;
 
-  Result::setOk(outResult);
+  Result::setOk(&outResult);
 
   if (!IGL_VERIFY(framebuffer)) {
-    Result::setResult(outResult, Result::Code::ArgumentNull);
+    Result::setResult(&outResult, Result::Code::ArgumentNull);
     return;
   }
 
@@ -139,7 +139,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
     if (i >= renderPass.colorAttachments.size()) {
       IGL_ASSERT(false);
       Result::setResult(
-          outResult,
+          &outResult,
           Result::Code::ArgumentInvalid,
           "Framebuffer color attachment count larger than renderPass color attachment count");
       return;
@@ -244,7 +244,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   VkResult const vkResult = ctx_.checkAndUpdateDescriptorSets();
   if (vkResult != VK_SUCCESS) {
     IGL_LOG_ERROR("checkAndUpdateDescriptorSets returned a non-successful result: %d", vkResult);
-    Result::setResult(outResult, Result::Code::RuntimeError, "Failed to update descriptor sets");
+    Result::setResult(&outResult, Result::Code::RuntimeError, "Failed to update descriptor sets");
     return;
   }
 
@@ -252,7 +252,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
 
   isEncoding_ = true;
 
-  Result::setOk(outResult);
+  Result::setOk(&outResult);
 }
 
 std::unique_ptr<RenderCommandEncoder> RenderCommandEncoder::create(
@@ -267,7 +267,7 @@ std::unique_ptr<RenderCommandEncoder> RenderCommandEncoder::create(
   Result ret;
 
   std::unique_ptr<RenderCommandEncoder> encoder(new RenderCommandEncoder(commandBuffer, ctx));
-  encoder->initialize(renderPass, framebuffer, dependencies, &ret);
+  encoder->initialize(renderPass, framebuffer, dependencies, ret);
 
   Result::setResult(outResult, ret);
   return ret.isOk() ? std::move(encoder) : nullptr;
