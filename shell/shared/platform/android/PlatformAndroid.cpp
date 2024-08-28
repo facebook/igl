@@ -26,7 +26,7 @@ PlatformAndroid::PlatformAndroid(std::shared_ptr<igl::IDevice> device, bool useF
     imageWriter_ = std::make_unique<igl::shell::ImageWriterAndroid>();
   }
 
-  float rotate_angle[kSurfaceTransformRotateNum] = {0, -90, 180, -270};
+  float rotate_angle[kSurfaceTransformRotateNum] = {0, -90, -180, -270};
   for (int i = 0; i != kSurfaceTransformRotateNum; ++i) {
     glm::mat4x4 pre_rotate_mat = glm::mat4x4(1.0f);
     glm::vec3 rotation_axis = glm::vec3(0.0f, 0.0f, 1.0f);
