@@ -36,18 +36,6 @@
   (void)frame;
   ViewController* viewController = nullptr;
 
-// @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-                                             // @fb-only
-                                     // @fb-only
-  // @fb-only
-
-  // @fb-only
-  // @fb-only
-// @fb-only
-
 #if IGL_BACKEND_HEADLESS
   // Headless tab
   NSTabViewItem* tinyHeadlessTabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
@@ -93,6 +81,18 @@
   // @fb-only
   // @fb-only
 #endif
+
+// @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+                                             // @fb-only
+                                     // @fb-only
+  // @fb-only
+
+  // @fb-only
+  // @fb-only
+// @fb-only
 
 #if IGL_BACKEND_VULKAN
   // Vulkan tab
