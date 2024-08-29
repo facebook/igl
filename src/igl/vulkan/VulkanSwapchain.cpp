@@ -299,7 +299,7 @@ Result VulkanSwapchain::acquireNextImage() {
                                      acquireFences_[currentImageIndex_].vkFence_,
                                      &currentImageIndex_);
   if (acquireResult == VK_SUBOPTIMAL_KHR) {
-    IGL_LOG_INFO(
+    IGL_LOG_INFO_ONCE(
         "vkAcquireNextImageKHR returned VK_SUBOPTIMAL_KHR. The Vulkan swapchain is no longer "
         "compatible with the surface");
   } else {
@@ -315,8 +315,15 @@ Result VulkanSwapchain::present(VkSemaphore waitSemaphore) {
   IGL_PROFILER_FUNCTION();
 
   IGL_PROFILER_ZONE("vkQueuePresent()", IGL_PROFILER_COLOR_PRESENT);
-  VK_ASSERT_RETURN(
-      ivkQueuePresent(&ctx_.vf_, graphicsQueue_, waitSemaphore, swapchain_, currentImageIndex_));
+  const auto presentResult =
+      ivkQueuePresent(&ctx_.vf_, graphicsQueue_, waitSemaphore, swapchain_, currentImageIndex_);
+  if (presentResult == VK_SUBOPTIMAL_KHR) {
+    IGL_LOG_INFO_ONCE(
+        "vkQueuePresent returned VK_SUBOPTIMAL_KHR. The Vulkan swapchain is no longer compatible "
+        "with the surface");
+  } else {
+    VK_ASSERT_RETURN(presentResult);
+  }
   IGL_PROFILER_ZONE_END();
 
   // Ready to call acquireNextImage() on the next getCurrentVulkanTexture();
