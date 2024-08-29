@@ -291,13 +291,20 @@ Result VulkanSwapchain::acquireNextImage() {
   currentSemaphoreIndex_ = currentImageIndex_;
 
   // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
-  VK_ASSERT_RETURN(
+  const auto acquireResult =
       ctx_.vf_.vkAcquireNextImageKHR(device_,
                                      swapchain_,
                                      UINT64_MAX,
                                      acquireSemaphores_[currentImageIndex_].vkSemaphore_,
                                      acquireFences_[currentImageIndex_].vkFence_,
-                                     &currentImageIndex_));
+                                     &currentImageIndex_);
+  if (acquireResult == VK_SUBOPTIMAL_KHR) {
+    IGL_LOG_INFO(
+        "vkAcquireNextImageKHR returned VK_SUBOPTIMAL_KHR. The Vulkan swapchain is no longer "
+        "compatible with the surface");
+  } else {
+    VK_ASSERT_RETURN(acquireResult);
+  }
 
   // increase the frame number every time we acquire a new swapchain image
   frameNumber_++;
