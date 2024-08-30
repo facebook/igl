@@ -116,4 +116,27 @@ TEST(CommonTest, ScopeGuardTest) {
   }
   ASSERT_EQ(testValue, 1);
 };
+
+TEST(CommonTest, OptimizedMemCopyTest) {
+  uint8_t buffer1[] = {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16,
+                       17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
+  uint8_t buffer2[] = {0};
+
+  optimizedMemcpy(buffer1, buffer2, 4);
+  ASSERT_EQ(*reinterpret_cast<uint32_t*>(buffer1), *reinterpret_cast<uint32_t*>(buffer2));
+  optimizedMemcpy(buffer1, buffer2, 8);
+  ASSERT_EQ(*reinterpret_cast<uint64_t*>(buffer1), *reinterpret_cast<uint64_t*>(buffer2));
+  optimizedMemcpy(buffer1, buffer2, 16);
+  ASSERT_EQ(*reinterpret_cast<uint64_t*>(buffer1), *reinterpret_cast<uint64_t*>(buffer2));
+  ASSERT_EQ(*(reinterpret_cast<uint64_t*>(buffer1) + 1),
+            *(reinterpret_cast<uint64_t*>(buffer2) + 1));
+  optimizedMemcpy(buffer1, buffer2, 32);
+  ASSERT_EQ(*reinterpret_cast<uint64_t*>(buffer1), *reinterpret_cast<uint64_t*>(buffer2));
+  ASSERT_EQ(*(reinterpret_cast<uint64_t*>(buffer1) + 1),
+            *(reinterpret_cast<uint64_t*>(buffer2) + 1));
+  ASSERT_EQ(*(reinterpret_cast<uint64_t*>(buffer1) + 2),
+            *(reinterpret_cast<uint64_t*>(buffer2) + 2));
+  ASSERT_EQ(*(reinterpret_cast<uint64_t*>(buffer1) + 3),
+            *(reinterpret_cast<uint64_t*>(buffer2) + 3));
+};
 } // namespace igl::tests
