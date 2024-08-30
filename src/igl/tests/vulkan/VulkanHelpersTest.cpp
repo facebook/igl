@@ -23,6 +23,55 @@ namespace igl::tests {
 // Unit tests for functions in VulkanHelpers.{h|c}.
 //
 
+// ivkGetSamplerCreateInfo ***********************************************************************
+class GetSamplerCreateInfoTest
+  : public ::testing::TestWithParam<
+        std::tuple<VkFilter, VkSamplerMipmapMode, VkSamplerAddressMode, float, float>> {};
+
+TEST_P(GetSamplerCreateInfoTest, GetSamplerCreateInfo) {
+  const VkFilter minFilter = std::get<0>(GetParam());
+  const VkFilter magFilter =
+      static_cast<VkFilter>(1 - minFilter); // the opposite value of minFilter
+  const VkSamplerMipmapMode mipmapMode = std::get<1>(GetParam());
+  const VkSamplerAddressMode addressModeU = std::get<2>(GetParam());
+  const VkSamplerAddressMode addressModeVW = static_cast<VkSamplerAddressMode>(
+      1 - addressModeU); // the opposite of U; used for both V and W
+  const float minLod = std::get<3>(GetParam());
+  const float maxLod = std::get<4>(GetParam());
+
+  const VkSamplerCreateInfo samplerCreateInfo = ivkGetSamplerCreateInfo(
+      minFilter, magFilter, mipmapMode, addressModeU, addressModeVW, addressModeVW, minLod, maxLod);
+
+  EXPECT_EQ(samplerCreateInfo.sType, VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO);
+  EXPECT_EQ(samplerCreateInfo.pNext, nullptr);
+  EXPECT_EQ(samplerCreateInfo.flags, 0);
+  EXPECT_EQ(samplerCreateInfo.magFilter, magFilter);
+  EXPECT_EQ(samplerCreateInfo.minFilter, minFilter);
+  EXPECT_EQ(samplerCreateInfo.mipmapMode, mipmapMode);
+  EXPECT_EQ(samplerCreateInfo.addressModeU, addressModeU);
+  EXPECT_EQ(samplerCreateInfo.addressModeV, addressModeVW);
+  EXPECT_EQ(samplerCreateInfo.addressModeW, addressModeVW);
+  EXPECT_EQ(samplerCreateInfo.mipLodBias, 0.0f);
+  EXPECT_EQ(samplerCreateInfo.anisotropyEnable, VK_FALSE);
+  EXPECT_EQ(samplerCreateInfo.maxAnisotropy, 0.0f);
+  EXPECT_EQ(samplerCreateInfo.compareEnable, VK_FALSE);
+  EXPECT_EQ(samplerCreateInfo.compareOp, VK_COMPARE_OP_ALWAYS);
+  EXPECT_EQ(samplerCreateInfo.minLod, minLod);
+  EXPECT_EQ(samplerCreateInfo.maxLod, maxLod);
+  EXPECT_EQ(samplerCreateInfo.borderColor, VK_BORDER_COLOR_INT_OPAQUE_BLACK);
+  EXPECT_EQ(samplerCreateInfo.unnormalizedCoordinates, VK_FALSE);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllCombinations,
+    GetSamplerCreateInfoTest,
+    ::testing::Combine(
+        ::testing::Values(VK_FILTER_LINEAR, VK_FILTER_NEAREST),
+        ::testing::Values(VK_SAMPLER_MIPMAP_MODE_NEAREST, VK_SAMPLER_MIPMAP_MODE_LINEAR),
+        ::testing::Values(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT),
+        ::testing::Values(0.0f, 1.0f),
+        ::testing::Values(3.0f, 4.0f)));
+
 // ivkGetDescriptorSetLayoutBinding **************************************************************
 
 class DescriptorSetLayoutTest
