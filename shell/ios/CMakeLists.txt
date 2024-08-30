@@ -30,8 +30,9 @@ function(ADD_SHELL_SESSION_WITH_SRCS target srcs libs)
   file(GLOB PLATFORM_SHELL_SRC_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/*.mm
                                                             ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/*.m)
   file(GLOB PLATFORM_SHELL_HEADER_FILES LIST_DIRECTORIES false ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/*.h)
+  file(GLOB RESOURCES LIST_DIRECTORIES false ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../resources/images/*.png)
 
-  add_executable(${target} MACOSX_BUNDLE ${srcs} "${PLATFORM_SHELL_SRC_FILES}" "${PLATFORM_SHELL_HEADER_FILES}")
+  add_executable(${target} MACOSX_BUNDLE ${srcs} "${PLATFORM_SHELL_SRC_FILES}" "${PLATFORM_SHELL_HEADER_FILES}" "${RESOURCES}")
   igl_set_folder(${target} "IGL Shell Sessions")
   igl_set_cxxstd(${target} 17)
   target_compile_definitions(${target} PRIVATE "IGL_SHELL_SESSION=${target}")
