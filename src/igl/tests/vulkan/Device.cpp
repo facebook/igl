@@ -14,6 +14,7 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
+#include <igl/vulkan/VulkanFeatures.h>
 #endif
 
 namespace igl::tests {
@@ -139,6 +140,15 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
 
   auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
 
+  igl::vulkan::VulkanFeatures availableFeatures(VK_MAKE_VERSION(1, 1, 0), config);
+  availableFeatures.populateWithAvailablePhysicalDeviceFeatures(*ctx, ctx->getVkPhysicalDevice());
+
+  // If the device doesn't support buffer device address, we can't use it for testing
+  if (availableFeatures.VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress ==
+      VK_FALSE) {
+    return;
+  }
+
   Result ret;
 
   std::vector<HWDeviceDesc> devices =
@@ -154,7 +164,7 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
                                            0, // height,
                                            0,
                                            nullptr,
-                                           nullptr,
+                                           &availableFeatures,
                                            &ret);
 
     if (!ret.isOk()) {
@@ -162,7 +172,14 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
     }
   }
 
-  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  const bool deviceSupportsBufferDeviceAddress =
+      ret.message.empty() ||
+      ret.message.find("VK_KHR_buffer_device_address is not supported") == std::string::npos;
+  if (!deviceSupportsBufferDeviceAddress) {
+    return;
+  }
+
+  EXPECT_TRUE(ret.isOk());
   ASSERT_NE(iglDev, nullptr);
 
   if (!iglDev) {
@@ -204,6 +221,16 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
 
   auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
 
+  igl::vulkan::VulkanFeatures availableFeatures(VK_MAKE_VERSION(1, 1, 0), config);
+  availableFeatures.populateWithAvailablePhysicalDeviceFeatures(*ctx, ctx->getVkPhysicalDevice());
+
+  // If the device doesn't support descriptor binding uniform buffer update after bind, we can't use
+  // it for testing
+  if (availableFeatures.VkPhysicalDeviceDescriptorIndexingFeaturesEXT_
+          .descriptorBindingUniformBufferUpdateAfterBind == VK_FALSE) {
+    return;
+  }
+
   Result ret;
 
   std::vector<HWDeviceDesc> devices =
@@ -219,7 +246,7 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
                                            0, // height,
                                            0,
                                            nullptr,
-                                           nullptr,
+                                           &availableFeatures,
                                            &ret);
 
     if (!ret.isOk()) {
