@@ -146,4 +146,8 @@ TEST(CommonTest, HandleTest) {
   const Holder<TextureHandle> textureHandle;
   const Holder<SamplerHandle> samplerHandle;
 };
+
+TEST(CommonTest, PoolTest) {
+  Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool;
+};
 } // namespace igl::tests
