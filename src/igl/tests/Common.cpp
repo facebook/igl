@@ -108,4 +108,12 @@ TEST(CommonTest, EnumToValueTest) {
   auto val = EnumToValue(BackendType::Vulkan);
   ASSERT_EQ(val, 3);
 };
+
+TEST(CommonTest, ScopeGuardTest) {
+  int testValue = 0;
+  {
+    auto scopeGuard = ScopeGuardOnExit() + [&]() { ++testValue; };
+  }
+  ASSERT_EQ(testValue, 1);
+};
 } // namespace igl::tests
