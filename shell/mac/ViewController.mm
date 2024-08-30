@@ -522,12 +522,36 @@ using namespace igl;
   return NSMakePoint(pos.x, contentRect.size.height - pos.y);
 }
 
+static uint32_t getModifiers(NSEvent* event) {
+  uint32_t modifiers = igl::shell::KeyEventModifierNone;
+  NSUInteger flags = [event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;
+
+  if (flags & NSEventModifierFlagShift) {
+    modifiers |= igl::shell::KeyEventModifierShift;
+  }
+  if (flags & NSEventModifierFlagCapsLock) {
+    modifiers |= igl::shell::KeyEventModifierCapslock;
+  }
+  if (flags & NSEventModifierFlagControl) {
+    modifiers |= igl::shell::KeyEventModifierControl;
+  }
+  if (flags & NSEventModifierFlagOption) {
+    modifiers |= igl::shell::KeyEventModifierOption;
+  }
+  if (flags & NSCommandKeyMask) {
+    modifiers |= igl::shell::KeyEventModifierCommand;
+  }
+  return modifiers;
+}
+
 - (void)keyUp:(NSEvent*)event {
-  shellPlatform_->getInputDispatcher().queueEvent(igl::shell::KeyEvent(false, event.keyCode));
+  shellPlatform_->getInputDispatcher().queueEvent(
+      igl::shell::KeyEvent(false, event.keyCode, getModifiers(event)));
 }
 
 - (void)keyDown:(NSEvent*)event {
-  shellPlatform_->getInputDispatcher().queueEvent(igl::shell::KeyEvent(true, event.keyCode));
+  shellPlatform_->getInputDispatcher().queueEvent(
+      igl::shell::KeyEvent(true, event.keyCode, getModifiers(event)));
 }
 
 - (void)mouseDown:(NSEvent*)event {
