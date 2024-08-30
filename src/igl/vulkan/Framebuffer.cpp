@@ -90,7 +90,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
       itexture->getSamples() == 1 ? *itexture : *getResolveColorAttachment(index));
   const VkRect2D imageRegion = {
       VkOffset2D{static_cast<int32_t>(range.x), static_cast<int32_t>(range.y)},
-      VkExtent2D{static_cast<uint32_t>(range.width), static_cast<uint32_t>(range.height)},
+      VkExtent2D{range.width, range.height},
   };
 
   if (bytesPerRow == 0) {
@@ -99,12 +99,11 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
   // Vulkan uses array layer to represent either cube face or array layer. IGL's TextureRangeDesc
   // represents these separately. This gets the correct vulkan array layer for the either the
   // range's cube face or array layer.
-  const auto layer = getVkLayer(
-      itexture->getType(), static_cast<uint32_t>(range.face), static_cast<uint32_t>(range.layer));
+  const auto layer = getVkLayer(itexture->getType(), range.face, range.layer);
 
   const VulkanContext& ctx = device_.getVulkanContext();
   ctx.stagingDevice_->getImageData2D(vkTex.getVkImage(),
-                                     static_cast<uint32_t>(range.mipLevel),
+                                     range.mipLevel,
                                      layer, // Layer is either cube face or array layer
                                      imageRegion,
                                      vkTex.getProperties(),
@@ -181,10 +180,10 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
       VK_PIPELINE_STAGE_TRANSFER_BIT,
       VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
   // 3. Copy Image
-  const VkImageCopy copy = ivkGetImageCopy2D(
-      VkOffset2D{static_cast<int32_t>(range.x), static_cast<int32_t>(range.y)},
-      VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-      VkExtent2D{static_cast<uint32_t>(range.width), static_cast<uint32_t>(range.height)});
+  const VkImageCopy copy =
+      ivkGetImageCopy2D(VkOffset2D{static_cast<int32_t>(range.x), static_cast<int32_t>(range.y)},
+                        VkImageSubresourceLayers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                        VkExtent2D{range.width, range.height});
 
   ctx.vf_.vkCmdCopyImage(cmdBuf,
                          srcVkTex.getVkImage(),
@@ -257,8 +256,8 @@ Framebuffer::Framebuffer(const Device& device, FramebufferDesc desc) :
   device_(device), desc_(std::move(desc)) {
   IGL_PROFILER_FUNCTION();
   auto ensureSize = [this](const vulkan::Texture& tex) {
-    const uint32_t attachmentWidth = static_cast<uint32_t>(tex.getDimensions().width);
-    const uint32_t attachmentHeight = static_cast<uint32_t>(tex.getDimensions().height);
+    const uint32_t attachmentWidth = tex.getDimensions().width;
+    const uint32_t attachmentHeight = tex.getDimensions().height;
 
     IGL_ASSERT(attachmentWidth);
     IGL_ASSERT(attachmentHeight);

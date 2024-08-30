@@ -118,7 +118,7 @@ Result Texture::create(const TextureDesc& desc) {
       !desc_.debugName.empty() ? IGL_FORMAT("Image View: {}", desc_.debugName.c_str()) : "";
 
   VkImageCreateFlags createFlags = 0;
-  uint32_t arrayLayerCount = static_cast<uint32_t>(desc_.numLayers);
+  uint32_t arrayLayerCount = desc_.numLayers;
   VkImageViewType imageViewType;
   VkImageType imageType;
   VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
@@ -355,7 +355,7 @@ bool Texture::isSwapchainTexture() const {
 }
 
 uint32_t Texture::getNumVkLayers() const {
-  return desc_.type == TextureType::Cube ? 6u : static_cast<uint32_t>(desc_.numLayers);
+  return desc_.type == TextureType::Cube ? 6u : desc_.numLayers;
 }
 
 void Texture::clearColorTexture(const igl::Color& rgba) {
