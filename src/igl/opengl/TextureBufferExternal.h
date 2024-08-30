@@ -18,8 +18,9 @@ class TextureBufferExternal : public TextureBufferBase {
   friend class PlatformDevice; // So that PlatformDevice can do setTextureBufferProperties
 
  public:
-  explicit TextureBufferExternal(IContext& context, TextureFormat format) :
-    Super(context, format) {}
+  explicit TextureBufferExternal(IContext& context,
+                                 TextureFormat format,
+                                 TextureDesc::TextureUsage usage);
   ~TextureBufferExternal() override = default;
 
   [[nodiscard]] bool supportsUpload() const final {

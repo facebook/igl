@@ -32,7 +32,12 @@ void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
   features.multiDrawIndirect = VK_TRUE;
   features.drawIndirectFirstInstance = VK_TRUE;
   features.depthBiasClamp = VK_TRUE;
+#ifdef IGL_PLATFORM_ANDROID
+  // fillModeNonSolid is not well supported on Android, only enable by default when it's not android
+  features.fillModeNonSolid = VK_FALSE;
+#else
   features.fillModeNonSolid = VK_TRUE;
+#endif
 
 #if defined(VK_EXT_descriptor_indexing) && VK_EXT_descriptor_indexing
   if (config_.enableDescriptorIndexing) {

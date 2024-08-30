@@ -536,9 +536,9 @@ bool Device::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::BufferDeviceAddress:
     return true;
   case DeviceFeatures::Multiview:
-    return ctx_->vkPhysicalDeviceMultiviewFeatures_.multiview == VK_TRUE;
+    return ctx_->features().VkPhysicalDeviceMultiviewFeatures_.multiview == VK_TRUE;
   case DeviceFeatures::MultiViewMultisample:
-    return ctx_->vkPhysicalDeviceMultiviewFeatures_.multiview == VK_TRUE &&
+    return ctx_->features().VkPhysicalDeviceMultiviewFeatures_.multiview == VK_TRUE &&
            deviceProperties.limits.framebufferColorSampleCounts > VK_SAMPLE_COUNT_1_BIT;
   case DeviceFeatures::BindUniform:
     return false;

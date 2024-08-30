@@ -43,9 +43,8 @@ std::unique_ptr<TextureBufferExternal> PlatformDevice::createTextureBufferExtern
     GLsizei height,
     TextureFormat format,
     GLsizei numLayers) const {
-  auto textureBuffer = std::make_unique<TextureBufferExternal>(getContext(), format);
+  auto textureBuffer = std::make_unique<TextureBufferExternal>(getContext(), format, usage);
   textureBuffer->setTextureBufferProperties(textureID, target);
-  textureBuffer->setUsage(usage);
   textureBuffer->setTextureProperties(width, height, numLayers);
   if (auto resourceTracker = owner_.getResourceTracker()) {
     textureBuffer->initResourceTracker(resourceTracker);

@@ -291,13 +291,20 @@ Result VulkanSwapchain::acquireNextImage() {
   currentSemaphoreIndex_ = currentImageIndex_;
 
   // when timeout is set to UINT64_MAX, we wait until the next image has been acquired
-  VK_ASSERT_RETURN(
+  const auto acquireResult =
       ctx_.vf_.vkAcquireNextImageKHR(device_,
                                      swapchain_,
                                      UINT64_MAX,
                                      acquireSemaphores_[currentImageIndex_].vkSemaphore_,
                                      acquireFences_[currentImageIndex_].vkFence_,
-                                     &currentImageIndex_));
+                                     &currentImageIndex_);
+  if (acquireResult == VK_SUBOPTIMAL_KHR) {
+    IGL_LOG_INFO_ONCE(
+        "vkAcquireNextImageKHR returned VK_SUBOPTIMAL_KHR. The Vulkan swapchain is no longer "
+        "compatible with the surface");
+  } else {
+    VK_ASSERT_RETURN(acquireResult);
+  }
 
   // increase the frame number every time we acquire a new swapchain image
   frameNumber_++;
@@ -308,17 +315,15 @@ Result VulkanSwapchain::present(VkSemaphore waitSemaphore) {
   IGL_PROFILER_FUNCTION();
 
   IGL_PROFILER_ZONE("vkQueuePresent()", IGL_PROFILER_COLOR_PRESENT);
-  auto ret = ivkQueuePresent(&ctx_.vf_, graphicsQueue_, waitSemaphore, swapchain_, currentImageIndex_);
-  //when screen orientation changed, return VK_SUBOPTIMAL_KHR
-  //https://android-developers.googleblog.com/2020/02/handling-device-orientation-efficiently.html
-  if(VK_SUCCESS != ret && VK_SUBOPTIMAL_KHR != ret){
-      IGL_LOG_ERROR("Vulkan API call failed: %s:%i\n  %s\n  %s\n",
-                    __FILE__,
-                    __LINE__,
-                    "ivkQueuePresent",
-                    ivkGetVulkanResultString(ret));
-      IGL_ASSERT(false);
-      return getResultFromVkResult(ret);
+
+  const auto presentResult =
+      ivkQueuePresent(&ctx_.vf_, graphicsQueue_, waitSemaphore, swapchain_, currentImageIndex_);
+  if (presentResult == VK_SUBOPTIMAL_KHR) {
+    IGL_LOG_INFO_ONCE(
+        "vkQueuePresent returned VK_SUBOPTIMAL_KHR. The Vulkan swapchain is no longer compatible "
+        "with the surface");
+  } else {
+    VK_ASSERT_RETURN(presentResult);
   }
   IGL_PROFILER_ZONE_END();
 
