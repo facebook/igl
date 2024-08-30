@@ -106,6 +106,10 @@ class VulkanFeatures final {
 #endif
   FOLLY_POP_WARNING
 
+  // Assignment operator. We need to reassemble the feature chain because of the
+  // pNext pointers
+  VulkanFeatures& operator=(const VulkanFeatures& other) noexcept;
+
  public:
   // A copy of the config used by the VulkanContext
   VulkanContextConfig config_;
