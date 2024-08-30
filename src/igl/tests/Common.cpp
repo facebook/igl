@@ -139,4 +139,11 @@ TEST(CommonTest, OptimizedMemCopyTest) {
   ASSERT_EQ(*(reinterpret_cast<uint64_t*>(buffer1) + 3),
             *(reinterpret_cast<uint64_t*>(buffer2) + 3));
 };
+
+TEST(CommonTest, HandleTest) {
+  const Holder<BindGroupTextureHandle> bindGroupHandle;
+  const Holder<BindGroupBufferHandle> bindGroupBufferHandle;
+  const Holder<TextureHandle> textureHandle;
+  const Holder<SamplerHandle> samplerHandle;
+};
 } // namespace igl::tests
