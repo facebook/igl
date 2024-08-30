@@ -155,10 +155,6 @@ class VulkanContext final {
     return vkPhysicalDeviceProperties2_.properties;
   }
 
-  const VkPhysicalDeviceFeatures2& getVkPhysicalDeviceFeatures2() const {
-    return vkPhysicalDeviceFeatures2_;
-  }
-
   VkFormat getClosestDepthStencilFormat(igl::TextureFormat desiredFormat) const;
 
   struct RenderPassHandle {
@@ -264,30 +260,11 @@ class VulkanContext final {
   VkSurfaceCapabilitiesKHR deviceSurfaceCaps_{};
   std::vector<VkPresentModeKHR> devicePresentModes_;
 
-  // Provided by VK_VERSION_1_2
-  VkPhysicalDeviceShaderFloat16Int8Features vkPhysicalDeviceShaderFloat16Int8Features_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR,
-      nullptr};
-
   // Provided by VK_VERSION_1_1
   VkPhysicalDeviceProperties2 vkPhysicalDeviceProperties2_ = {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
       &vkPhysicalDeviceDriverProperties_,
       VkPhysicalDeviceProperties{}};
-  VkPhysicalDeviceMultiviewFeatures vkPhysicalDeviceMultiviewFeatures_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
-      &vkPhysicalDeviceShaderFloat16Int8Features_};
-  VkPhysicalDeviceShaderDrawParametersFeatures vkPhysicalDeviceShaderDrawParametersFeatures_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
-      &vkPhysicalDeviceMultiviewFeatures_,
-  };
-  VkPhysicalDeviceSamplerYcbcrConversionFeatures vkPhysicalDeviceSamplerYcbcrConversionFeatures_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES,
-      &vkPhysicalDeviceShaderDrawParametersFeatures_,
-  };
-  VkPhysicalDeviceFeatures2 vkPhysicalDeviceFeatures2_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-      &vkPhysicalDeviceSamplerYcbcrConversionFeatures_};
   FOLLY_POP_WARNING
 
   VulkanFeatures features_;

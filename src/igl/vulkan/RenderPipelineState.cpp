@@ -390,8 +390,9 @@ VkPipeline RenderPipelineState::getVkPipeline(
       info_.hasPushConstants ? &pushConstantRange_ : nullptr,
       IGL_FORMAT("Pipeline Layout: {}", desc_.debugName.c_str()).c_str());
 
-  const VkPhysicalDeviceFeatures2& deviceFeatures = ctx.getVkPhysicalDeviceFeatures2();
-  VkBool32 dualSrcBlendSupported = deviceFeatures.features.dualSrcBlend;
+  const auto& deviceFeatures = ctx.features();
+  const VkBool32 dualSrcBlendSupported =
+      deviceFeatures.VkPhysicalDeviceFeatures2_.features.dualSrcBlend;
 
   // build a new Vulkan pipeline
   VkRenderPass renderPass = ctx.getRenderPass(dynamicState.renderPassIndex_).pass;

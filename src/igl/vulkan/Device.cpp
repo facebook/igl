@@ -337,7 +337,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
         EnhancedShaderDebuggingStore::recordLineShaderCode(
             ctx_->enhancedShaderDebuggingStore_ != nullptr, ctx_->extensions_);
 
-    if (ctx_->vkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16 == VK_TRUE) {
+    if (ctx_->features().VkPhysicalDeviceShaderFloat16Int8Features_.shaderFloat16 == VK_TRUE) {
       extraExtensions += "#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require\n";
     }
 
