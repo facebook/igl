@@ -131,6 +131,7 @@ struct VulkanContextConfig {
 
   std::vector<CommandQueueType> userQueues;
 
+  // the number of resources to support BufferAPIHintBits::Ring
   uint32_t maxResourceCount = 3u;
 
   // owned by the application - should be alive until initContext() returns
