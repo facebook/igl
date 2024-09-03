@@ -82,4 +82,14 @@ android {
     buildFeatures {
         viewBinding true
     }
+
+    def enableGfxReconstruct = false
+    if (project.hasProperty('igl.enableGfxReconstruct')) {
+        enableGfxReconstruct = project.getProperty('igl.enableGfxReconstruct').toBoolean()
+    }
+    if (enableGfxReconstruct) {
+        dependencies {
+            implementation project(':VkLayer_gfxreconstruct')
+        }
+    }
 }
