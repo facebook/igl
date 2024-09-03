@@ -79,6 +79,12 @@ class TextureCubeTest : public ::testing::Test {
   // something more appropriate.
   //
   void SetUp() override {
+#if IGL_PLATFORM_LINUX_SWIFTSHADER && IGL_BACKEND_VULKAN
+    // Leak sanitizer crashes with "LeakSanitizer has encountered a fatal error" in these tests
+    // for SwiftShader Vulkan in Linux.
+    GTEST_SKIP() << "Leak sanitizer crashes for these tests if SwiftShader is in use.";
+#endif
+
     setDebugBreakEnabled(false);
 
     util::createDeviceAndQueue(iglDev_, cmdQueue_);
