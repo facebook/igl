@@ -193,7 +193,9 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceShaderDrawParametersFeatures_);
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceMultiviewFeatures_);
 #if defined(VK_VERSION_1_2)
-  ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceShaderFloat16Int8Features_);
+  if (version_ >= VK_API_VERSION_1_2) {
+    ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceShaderFloat16Int8Features_);
+  }
 #endif // VK_VERSION_1_2
 #if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.pNext = nullptr;
