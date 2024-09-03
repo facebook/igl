@@ -122,7 +122,13 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
 
     if (isSuballocated) {
       bufferDesc->isSuballocated = true;
-      bufferDesc->suballocationsSize = length;
+      // In Vulkan, Uniform buffers must have offets that are a multiple of
+      // VkPhysicalDeviceLimits::minUniformBufferOffsetAlignment
+      size_t alignement;
+      device.getFeatureLimits(igl::DeviceFeatureLimits::BufferAlignment, alignement);
+
+      // Align the suballocation size to the physical device alignment
+      bufferDesc->suballocationsSize = (length + alignement - 1) & ~(alignement - 1);
     }
 
     for (int i = 0; i < static_cast<int>(iglDesc.members.size()); ++i) {
