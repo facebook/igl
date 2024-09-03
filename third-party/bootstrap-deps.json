@@ -186,5 +186,13 @@
         "url": "https://github.com/KhronosGroup/SPIRV-Cross.git",
         "revision": "2ccc81fd826e4dd4a2db2f94b8e6eb738a89f5f1"
     }
+},
+{
+    "name": "gfxreconstruct",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/facebook/gfxreconstruct.git",
+        "revision": "99a2ac03e7386c9773804c7b25a3712fd867f458"
+    }
 }
 ]
