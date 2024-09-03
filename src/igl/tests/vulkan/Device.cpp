@@ -221,16 +221,6 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
 
   auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
 
-  igl::vulkan::VulkanFeatures availableFeatures(VK_MAKE_VERSION(1, 1, 0), config);
-  availableFeatures.populateWithAvailablePhysicalDeviceFeatures(*ctx, ctx->getVkPhysicalDevice());
-
-  // If the device doesn't support descriptor binding uniform buffer update after bind, we can't use
-  // it for testing
-  if (availableFeatures.VkPhysicalDeviceDescriptorIndexingFeaturesEXT_
-          .descriptorBindingUniformBufferUpdateAfterBind == VK_FALSE) {
-    return;
-  }
-
   Result ret;
 
   std::vector<HWDeviceDesc> devices =
@@ -239,6 +229,21 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
   ASSERT_TRUE(!devices.empty());
 
   if (ret.isOk()) {
+    igl::vulkan::VulkanFeatures features(VK_API_VERSION_1_1, config);
+    features.populateWithAvailablePhysicalDeviceFeatures(*ctx, (VkPhysicalDevice)devices[0].guid);
+
+    const VkPhysicalDeviceDescriptorIndexingFeaturesEXT& diFeatures =
+        features.VkPhysicalDeviceDescriptorIndexingFeaturesEXT_;
+    if (!diFeatures.shaderSampledImageArrayNonUniformIndexing ||
+        !diFeatures.descriptorBindingUniformBufferUpdateAfterBind ||
+        !diFeatures.descriptorBindingSampledImageUpdateAfterBind ||
+        !diFeatures.descriptorBindingStorageImageUpdateAfterBind ||
+        !diFeatures.descriptorBindingStorageBufferUpdateAfterBind ||
+        !diFeatures.descriptorBindingUpdateUnusedWhilePending ||
+        !diFeatures.descriptorBindingPartiallyBound || !diFeatures.runtimeDescriptorArray) {
+      return;
+    }
+
     const std::vector<const char*> extraDeviceExtensions;
     iglDev = igl::vulkan::HWDevice::create(std::move(ctx),
                                            devices[0],
@@ -246,7 +251,7 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
                                            0, // height,
                                            0,
                                            nullptr,
-                                           &availableFeatures,
+                                           &features,
                                            &ret);
 
     if (!ret.isOk()) {
