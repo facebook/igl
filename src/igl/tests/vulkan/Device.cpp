@@ -140,15 +140,6 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
 
   auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
 
-  igl::vulkan::VulkanFeatures availableFeatures(VK_MAKE_VERSION(1, 1, 0), config);
-  availableFeatures.populateWithAvailablePhysicalDeviceFeatures(*ctx, ctx->getVkPhysicalDevice());
-
-  // If the device doesn't support buffer device address, we can't use it for testing
-  if (availableFeatures.VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress ==
-      VK_FALSE) {
-    return;
-  }
-
   Result ret;
 
   std::vector<HWDeviceDesc> devices =
@@ -157,6 +148,15 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
   ASSERT_TRUE(!devices.empty());
 
   if (ret.isOk()) {
+    igl::vulkan::VulkanFeatures features(VK_API_VERSION_1_1, config);
+    features.populateWithAvailablePhysicalDeviceFeatures(*ctx, (VkPhysicalDevice)devices[0].guid);
+
+    const VkPhysicalDeviceBufferDeviceAddressFeaturesKHR& bdaFeatures =
+        features.VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_;
+    if (!bdaFeatures.bufferDeviceAddress) {
+      return;
+    }
+
     const std::vector<const char*> extraDeviceExtensions;
     iglDev = igl::vulkan::HWDevice::create(std::move(ctx),
                                            devices[0],
@@ -164,7 +164,7 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
                                            0, // height,
                                            0,
                                            nullptr,
-                                           &availableFeatures,
+                                           &features,
                                            &ret);
 
     if (!ret.isOk()) {
