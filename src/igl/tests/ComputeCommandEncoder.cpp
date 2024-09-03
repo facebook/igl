@@ -96,7 +96,8 @@ class ComputeCommandEncoderTest : public ::testing::Test {
    */
   void encodeCompute(const std::shared_ptr<igl::ICommandBuffer>& cmdBuffer,
                      const std::shared_ptr<igl::IBuffer>& bufferIn,
-                     const std::shared_ptr<igl::IBuffer>& bufferOut) {
+                     const std::shared_ptr<igl::IBuffer>& bufferOut,
+                     std::shared_ptr<IComputePipelineState>& ret) {
     ASSERT_TRUE(computeStages_ != nullptr);
     ComputePipelineDesc computeDesc;
     computeDesc.shaderStages = computeStages_;
@@ -118,6 +119,7 @@ class ComputeCommandEncoderTest : public ::testing::Test {
     const Dimensions threadgroupCount(1, 1, 1);
     computeEncoder->dispatchThreadGroups(threadgroupCount, threadgroupSize);
     computeEncoder->endEncoding();
+    ret = computePipelineState;
   }
 
   void TearDown() override {}
@@ -129,6 +131,7 @@ class ComputeCommandEncoderTest : public ::testing::Test {
   std::shared_ptr<IShaderStages> computeStages_;
 
   std::shared_ptr<IBuffer> bufferIn_, bufferOut0_, bufferOut1_, bufferOut2_;
+  std::shared_ptr<IComputePipelineState> cps1_, cps2_, cps3_;
 };
 
 TEST_F(ComputeCommandEncoderTest, canEncodeBasicBufferOperation) {
@@ -145,7 +148,7 @@ TEST_F(ComputeCommandEncoderTest, canEncodeBasicBufferOperation) {
   auto cmdBuffer = cmdQueue_->createCommandBuffer(cbDesc, nullptr);
   ASSERT_TRUE(cmdBuffer != nullptr);
 
-  encodeCompute(cmdBuffer, bufferIn_, bufferOut0_);
+  encodeCompute(cmdBuffer, bufferIn_, bufferOut0_, cps1_);
 
   ASSERT_TRUE(cmdQueue_ != nullptr);
   cmdQueue_->submit(*cmdBuffer);
@@ -176,16 +179,34 @@ TEST_F(ComputeCommandEncoderTest, canUseOutputBufferFromOnePassAsInputToNext) {
 
   ASSERT_TRUE(cmdQueue_ != nullptr);
 
-  const CommandBufferDesc cbDesc;
-  auto cmdBuffer = cmdQueue_->createCommandBuffer(cbDesc, nullptr);
-  ASSERT_TRUE(cmdBuffer != nullptr);
+  {
+    const CommandBufferDesc cbDesc;
+    auto cmdBuffer = cmdQueue_->createCommandBuffer(cbDesc, nullptr);
+    ASSERT_TRUE(cmdBuffer != nullptr);
 
-  encodeCompute(cmdBuffer, bufferIn_, bufferOut0_);
-  encodeCompute(cmdBuffer, bufferOut0_, bufferOut1_);
-  encodeCompute(cmdBuffer, bufferOut1_, bufferOut2_);
+    encodeCompute(cmdBuffer, bufferIn_, bufferOut0_, cps1_);
 
-  cmdQueue_->submit(*cmdBuffer);
-  cmdBuffer->waitUntilCompleted();
+    cmdQueue_->submit(*cmdBuffer);
+    cmdBuffer->waitUntilCompleted();
+  }
+  {
+    const CommandBufferDesc cbDesc;
+    auto cmdBuffer = cmdQueue_->createCommandBuffer(cbDesc, nullptr);
+    ASSERT_TRUE(cmdBuffer != nullptr);
+
+    encodeCompute(cmdBuffer, bufferOut0_, bufferOut1_, cps2_);
+    cmdQueue_->submit(*cmdBuffer);
+    cmdBuffer->waitUntilCompleted();
+  }
+  {
+    const CommandBufferDesc cbDesc;
+    auto cmdBuffer = cmdQueue_->createCommandBuffer(cbDesc, nullptr);
+    ASSERT_TRUE(cmdBuffer != nullptr);
+
+    encodeCompute(cmdBuffer, bufferOut1_, bufferOut2_, cps3_);
+    cmdQueue_->submit(*cmdBuffer);
+    cmdBuffer->waitUntilCompleted();
+  }
 
   std::vector<float> bytes(dataIn.size());
   auto range = BufferRange(sizeof(float) * dataIn.size(), 0);
