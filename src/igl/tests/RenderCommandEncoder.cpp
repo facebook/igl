@@ -196,8 +196,8 @@ class RenderCommandEncoderTest : public ::testing::Test {
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
     ASSERT_TRUE(depthStencilState_ != nullptr);
 
-    bindGroupTexture_ =
-        iglDev_->createBindGroup(igl::BindGroupTextureDesc{{texture_}, {samp_}}, nullptr, &ret);
+    bindGroupTexture_ = iglDev_->createBindGroup(
+        igl::BindGroupTextureDesc{{texture_}, {samp_}, "Offscreen texture test"}, nullptr, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   }
 
