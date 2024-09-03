@@ -66,7 +66,7 @@ std::shared_ptr<::igl::IDevice> createTestDevice(bool enableValidation) {
     std::vector<const char*> extraDeviceExtensions;
     extraDeviceExtensions.emplace_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
 
-    igl::vulkan::VulkanFeatures features(VK_MAKE_VERSION(1, 1, 0), config);
+    igl::vulkan::VulkanFeatures features(VK_API_VERSION_1_1, config);
     features.populateWithAvailablePhysicalDeviceFeatures(*ctx, (VkPhysicalDevice)devices[0].guid);
 
     iglDev = igl::vulkan::HWDevice::create(std::move(ctx),
