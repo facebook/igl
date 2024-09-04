@@ -264,6 +264,8 @@ bool XrApp::createSystem() {
   IGL_LOG_INFO("System Tracking Properties: OrientationTracking=%s PositionTracking=%s\n",
                systemProps_.trackingProperties.orientationTracking ? "True" : "False",
                systemProps_.trackingProperties.positionTracking ? "True" : "False");
+  IGL_LOG_INFO("System Hand Tracking Properties: Supported=%s\n",
+               handTrackingSystemProps_.supportsHandTracking ? "True" : "False");
   return true;
 }
 
@@ -837,7 +839,8 @@ bool XrApp::passthroughEnabled() const noexcept {
 
 bool XrApp::handTrackingSupported() const noexcept {
 #if IGL_PLATFORM_ANDROID
-  return supportedOptionalXrExtensions_.count(XR_EXT_HAND_TRACKING_EXTENSION_NAME) != 0;
+  return supportedOptionalXrExtensions_.count(XR_EXT_HAND_TRACKING_EXTENSION_NAME) != 0 &&
+         handTrackingSystemProps_.supportsHandTracking != 0u;
 #endif // IGL_PLATFORM_ANDROID
   return false;
 }

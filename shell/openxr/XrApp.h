@@ -120,9 +120,13 @@ class XrApp {
       .next = nullptr,
   };
 
+  XrSystemHandTrackingPropertiesEXT handTrackingSystemProps_ = {
+      .type = XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_EXT,
+      .next = nullptr,
+  };
   XrSystemProperties systemProps_ = {
       .type = XR_TYPE_SYSTEM_PROPERTIES,
-      .next = nullptr,
+      .next = &handTrackingSystemProps_,
   };
 
 #if IGL_PLATFORM_ANDROID
