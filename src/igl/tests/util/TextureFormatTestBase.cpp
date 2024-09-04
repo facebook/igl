@@ -29,6 +29,7 @@ void TextureFormatTestBase::SetUp() {
                                            OFFSCREEN_TEX_WIDTH,
                                            OFFSCREEN_TEX_HEIGHT,
                                            TextureDesc::TextureUsageBits::Sampled);
+  texDesc.debugName = "TextureFormatTestBase rgba unorm8 sampled";
 
   Result ret;
   sampledTexture_ = iglDev_->createTexture(texDesc, &ret);
@@ -349,6 +350,11 @@ void TextureFormatTestBase::testUpload(std::shared_ptr<ITexture> texture) {
   const auto range = texture->getFullRange();
   const Result result = texture->upload(range, data.data());
   ASSERT_TRUE(result.isOk()) << texture->getProperties().name;
+  // flush upload
+  Result ret;
+  auto cmdBuf = cmdQueue_->createCommandBuffer(CommandBufferDesc{}, &ret);
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
 }
 
 // Attempts to render into texture.
