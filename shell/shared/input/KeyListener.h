@@ -14,10 +14,11 @@ namespace igl::shell {
 enum {
   KeyEventModifierNone = 0,
   KeyEventModifierShift = 1 << 0,
-  KeyEventModifierCapslock = 1 << 1,
-  KeyEventModifierControl = 1 << 2,
-  KeyEventModifierOption = 1 << 3,
-  KeyEventModifierCommand = 1 << 4,
+  KeyEventModifierControl = 1 << 1,
+  KeyEventModifierOption = 1 << 2,
+  KeyEventModifierCapsLock = 1 << 3,
+  KeyEventModifierNumLock = 1 << 4,
+  KeyEventModifierCommand = 1 << 5,
 };
 
 struct KeyEvent {

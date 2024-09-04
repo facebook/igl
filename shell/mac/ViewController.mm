@@ -530,7 +530,7 @@ static uint32_t getModifiers(NSEvent* event) {
     modifiers |= igl::shell::KeyEventModifierShift;
   }
   if (flags & NSEventModifierFlagCapsLock) {
-    modifiers |= igl::shell::KeyEventModifierCapslock;
+    modifiers |= igl::shell::KeyEventModifierCapsLock;
   }
   if (flags & NSEventModifierFlagControl) {
     modifiers |= igl::shell::KeyEventModifierControl;
@@ -540,6 +540,9 @@ static uint32_t getModifiers(NSEvent* event) {
   }
   if (flags & NSCommandKeyMask) {
     modifiers |= igl::shell::KeyEventModifierCommand;
+  }
+  if (flags & NSEventModifierFlagNumericPad) {
+    modifiers |= igl::shell::KeyEventModifierNumLock;
   }
   return modifiers;
 }
