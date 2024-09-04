@@ -410,7 +410,7 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
   // Do not remove for backward compatibility with projects using global functions.
   if (result != VK_SUCCESS) {
     IGL_LOG_ERROR("volkInitialize() failed with error code %d\n", static_cast<int>(result));
-    exit(255);
+    abort();
   };
 
   vulkan::functions::initialize(*tableImpl_);
