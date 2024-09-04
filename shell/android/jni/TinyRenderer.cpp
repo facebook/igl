@@ -39,6 +39,7 @@ void TinyRenderer::init(AAssetManager* mgr,
                         ANativeWindow* nativeWindow,
                         BackendTypeID backendTypeID) {
   backendTypeID_ = backendTypeID;
+  nativeWindow_ = nativeWindow;
   Result result;
   const igl::HWDeviceQueryDesc queryDesc(HWDeviceType::IntegratedGpu);
   std::unique_ptr<IDevice> d;
@@ -115,20 +116,23 @@ void TinyRenderer::init(AAssetManager* mgr,
   }
 }
 
-void TinyRenderer::recreateSwapchain(ANativeWindow* nativeWindow) {
+void TinyRenderer::recreateSwapchain(ANativeWindow* nativeWindow, bool createSurface) {
 #if IGL_BACKEND_VULKAN
+  nativeWindow_ = nativeWindow;
   width_ = static_cast<uint32_t>(ANativeWindow_getWidth(nativeWindow));
   height_ = static_cast<uint32_t>(ANativeWindow_getHeight(nativeWindow));
 
-  auto* platform_device = platform_->getDevice().getPlatformDevice<igl::vulkan::PlatformDevice>();
+  auto* platformDevice = platform_->getDevice().getPlatformDevice<igl::vulkan::PlatformDevice>();
   // need clear the cached textures before recreate swap chain.
-  platform_device->clear();
+  platformDevice->clear();
 
-  auto& vulkan_device = static_cast<igl::vulkan::Device&>(platform_->getDevice());
-  auto& vk_context = vulkan_device.getVulkanContext();
+  auto& vulkanDevice = static_cast<igl::vulkan::Device&>(platform_->getDevice());
+  auto& vkContext = vulkanDevice.getVulkanContext();
 
-  vk_context.createSurface(nativeWindow, nullptr);
-  vk_context.initSwapchain(width_, height_);
+  if (createSurface) {
+    vkContext.createSurface(nativeWindow, nullptr);
+  }
+  vkContext.initSwapchain(width_, height_);
 
   // need release frame buffer when recreate swap chain
   session_->releaseFramebuffer();
@@ -193,6 +197,12 @@ void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int 
         readSurface, drawSurface, &result);
     IGL_ASSERT(result.isOk());
     IGL_REPORT_ERROR(result.isOk());
+  }
+#endif
+
+#if IGL_BACKEND_VULKAN
+  if (backendTypeID_ == BackendTypeID::Vulkan) {
+    recreateSwapchain(nativeWindow_, false);
   }
 #endif
 }

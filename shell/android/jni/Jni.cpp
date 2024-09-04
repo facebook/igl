@@ -74,7 +74,8 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
                                                  : nullptr,
                                          activeBackendTypeID);
   } else if (activeBackendTypeID == BackendTypeID::Vulkan) {
-    renderers[activeBackendTypeID]->recreateSwapchain(ANativeWindow_fromSurface(env, surface));
+    renderers[activeBackendTypeID]->recreateSwapchain(ANativeWindow_fromSurface(env, surface),
+                                                      true);
   }
 }
 
