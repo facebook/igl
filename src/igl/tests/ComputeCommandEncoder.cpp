@@ -24,17 +24,6 @@ namespace igl::tests {
 
 static std::vector<float> dataIn = {1.0, 2.0, 3.0, 4.0, 5.0f, 6.0f};
 
-static bool isDeviceCompatible(IDevice& device) noexcept {
-  const auto backendtype = device.getBackendType();
-  if (backendtype == BackendType::OpenGL) {
-    return device.hasFeature(DeviceFeatures::Compute);
-  } else if (backendtype == BackendType::Vulkan) {
-    return false;
-  }
-
-  return true;
-}
-
 /**
  * @brief ComputeCommandEncoderTest is a test fixture for all the tests in this file.
  * It takes care of common initialization and allocating of common resources.
@@ -55,7 +44,7 @@ class ComputeCommandEncoderTest : public ::testing::Test {
     ASSERT_TRUE(iglDev_ != nullptr);
     ASSERT_TRUE(cmdQueue_ != nullptr);
 
-    if (!isDeviceCompatible(*iglDev_)) {
+    if (!iglDev_->hasFeature(DeviceFeatures::Compute)) {
       return;
     }
 
@@ -144,7 +133,7 @@ TEST_F(ComputeCommandEncoderTest, canEncodeBasicBufferOperation) {
 #if IGL_PLATFORM_LINUX && !IGL_PLATFORM_LINUX_USE_EGL
   GTEST_SKIP() << "Fix this test on Linux";
 #endif
-  if (!isDeviceCompatible(*iglDev_)) {
+  if (!iglDev_->hasFeature(DeviceFeatures::Compute)) {
     return;
   }
 
@@ -179,7 +168,7 @@ TEST_F(ComputeCommandEncoderTest, canUseOutputBufferFromOnePassAsInputToNext) {
 #if IGL_PLATFORM_LINUX && !IGL_PLATFORM_LINUX_USE_EGL
   GTEST_SKIP() << "Fix this test on Linux";
 #endif
-  if (!isDeviceCompatible(*iglDev_)) {
+  if (!iglDev_->hasFeature(DeviceFeatures::Compute)) {
     return;
   }
 
