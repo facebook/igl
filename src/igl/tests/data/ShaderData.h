@@ -582,5 +582,20 @@ const char VULKAN_SIMPLE_FRAG_SHADER_MULTIVIEW[] =
         out_FragColor = color_in;
       });
 
+const char VULKAN_SIMPLE_COMPUTE_SHADER[] =
+  IGL_TO_STRING(
+        layout (local_size_x = 6, local_size_y = 1, local_size_z = 1) in;
+        layout (std430, binding = 0, set = 1) readonly buffer floatsIn {
+          float fIn[];
+        };
+        layout (std430, binding = 1, set = 1) writeonly buffer floatsOut {
+          float fOut[];
+        };
+
+        void main() {
+            uint id = gl_LocalInvocationIndex;
+
+            fOut[id] = fIn[id] * 2.0f;
+        });
 // clang-format on
 } // namespace igl::tests::data::shader

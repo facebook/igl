@@ -73,18 +73,24 @@ class ComputeCommandEncoderTest : public ::testing::Test {
     ASSERT_TRUE(bufferOut2_ != nullptr);
 
     { // Compile CS
+      const char* entryName = nullptr;
       const char* source = nullptr;
       if (iglDev_->getBackendType() == igl::BackendType::OpenGL) {
         source = igl::tests::data::shader::OGL_SIMPLE_COMPUTE_SHADER;
+        entryName = igl::tests::data::shader::simpleComputeFunc;
+      } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
+        source = igl::tests::data::shader::VULKAN_SIMPLE_COMPUTE_SHADER;
+        entryName = "main"; // entry point is not pipelined. Hardcoding to main for now.
       } else if (iglDev_->getBackendType() == igl::BackendType::Metal) {
         source = igl::tests::data::shader::MTL_SIMPLE_COMPUTE_SHADER;
+        entryName = igl::tests::data::shader::simpleComputeFunc;
       } else {
         IGL_ASSERT_NOT_REACHED();
       }
 
       igl::Result ret;
-      computeStages_ = ShaderStagesCreator::fromModuleStringInput(
-          *iglDev_, source, igl::tests::data::shader::simpleComputeFunc, "", &ret);
+      computeStages_ =
+          ShaderStagesCreator::fromModuleStringInput(*iglDev_, source, entryName, "", &ret);
       ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
       ASSERT_TRUE(computeStages_ != nullptr);
     }
