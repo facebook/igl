@@ -14,6 +14,8 @@
 #include <igl/vulkan/VulkanImage.h>
 #include <memory>
 
+#include <igl/tests/util/device/TestDevice.h>
+
 #ifdef __ANDROID__
 #include <vulkan/vulkan_android.h>
 #endif
@@ -40,7 +42,7 @@ class VulkanImageTest : public ::testing::Test {
     // Turn off debug break so unit tests can run
     igl::setDebugBreakEnabled(false);
 
-    device_ = createDevice();
+    device_ = igl::tests::util::device::createTestDevice(igl::BackendType::Vulkan);
     ASSERT_TRUE(device_ != nullptr);
     auto& device = static_cast<igl::vulkan::Device&>(*device_);
     context_ = &device.getVulkanContext();
@@ -85,11 +87,13 @@ class VulkanImageTest : public ::testing::Test {
           *ctx, igl::HWDeviceQueryDesc(igl::HWDeviceType::IntegratedGpu), nullptr);
     }
 
+    IGL_ASSERT(!devices.empty());
+
     return igl::vulkan::HWDevice::create(
         std::move(ctx), devices[0], 0, 0, deviceExtensions.size(), deviceExtensions.data());
   }
 
-  std::unique_ptr<IDevice> device_;
+  std::shared_ptr<IDevice> device_;
   vulkan::VulkanContext* context_ = nullptr;
 };
 
