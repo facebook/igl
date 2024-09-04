@@ -128,12 +128,28 @@ GLFWwindow* initWindow() {
             iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
       });
 
-  glfwSetKeyCallback(windowHandle, [](GLFWwindow* window, int key, int, int action, int) {
+  glfwSetKeyCallback(windowHandle, [](GLFWwindow* window, int key, int, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
       glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
+    uint32_t modifiers = 0;
+    if (mods & GLFW_MOD_SHIFT) {
+      modifiers |= igl::shell::KeyEventModifierShift;
+    }
+    if (mods & GLFW_MOD_CONTROL) {
+      modifiers |= igl::shell::KeyEventModifierControl;
+    }
+    if (mods & GLFW_MOD_ALT) {
+      modifiers |= igl::shell::KeyEventModifierOption;
+    }
+    if (mods & GLFW_MOD_CAPS_LOCK) {
+      modifiers |= igl::shell::KeyEventModifierCapsLock;
+    }
+    if (mods & GLFW_MOD_NUM_LOCK) {
+      modifiers |= igl::shell::KeyEventModifierNumLock;
+    }
     vulkanShellPlatform_->getInputDispatcher().queueEvent(
-        igl::shell::KeyEvent(action == GLFW_PRESS, key));
+        igl::shell::KeyEvent(action == GLFW_PRESS, key, modifiers));
   });
 
   return windowHandle;
