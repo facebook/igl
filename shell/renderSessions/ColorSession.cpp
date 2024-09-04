@@ -44,7 +44,10 @@ static std::string getMetalShaderSource() {
   return R"(
               using namespace metal;
 
-              typedef struct { float3 color; } UniformBlock;
+              typedef struct {
+                 float4x4 mvp;
+                 float3 color;
+               } UniformBlock;
 
               typedef struct {
                 float3 position [[attribute(0)]];
@@ -112,11 +115,12 @@ static std::string getVulkanVertexShaderSource() {
             layout(location = 1) out vec3 color;
 
             layout (set = 1, binding = 0, std140) uniform UniformsPerObject {
+              mat4 mvp;
               vec3 color;
             } perObject;
 
             void main() {
-              gl_Position = vec4(position, 1.0);
+              gl_Position = perObject.mvp * vec4(position, 1.0);
               uv = uv_in;
               color = perObject.color;
             }
@@ -241,7 +245,9 @@ void ColorSession::initialize() noexcept {
   renderPass_.depthAttachment.clearDepth = 1.0;
 
   // init uniforms
-  fragmentParameters_ = FragmentFormat{{1.0f, 1.0f, 1.0f}};
+  glm::mat4x4 mvp(1.0f);
+  memcpy(&fragmentParameters_.mvp, &mvp, sizeof(mvp));
+  fragmentParameters_.color = {1.0f, 1.0f, 1.0f};
 
   BufferDesc fpDesc;
   fpDesc.type = BufferDesc::BufferTypeBits::Uniform;
@@ -321,6 +327,10 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     fragmentUniformDescriptors_.back().type = UniformType::Float3;
     fragmentUniformDescriptors_.back().offset = offsetof(FragmentFormat, color);
   }
+
+  glm::mat4x4 mvp = getPlatform().getPreRotationMatrix();
+  memcpy(&fragmentParameters_.mvp, &mvp, sizeof(mvp));
+  fragmentParamBuffer_->upload(&fragmentParameters_, {sizeof(fragmentParameters_)});
 
   // Submit commands
   const std::shared_ptr<igl::IRenderCommandEncoder> commands =
