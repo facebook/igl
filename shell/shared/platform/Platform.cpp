@@ -70,4 +70,9 @@ void Platform::initializeCommandLineArgs(int argc, char** argv) {
   g_argsInitialized = true;
 }
 
+const glm::mat4x4& Platform::getPreRotationMatrix() const noexcept {
+  static const glm::mat4x4 kIdentity(1.0f);
+  return kIdentity;
+}
+
 } // namespace igl::shell

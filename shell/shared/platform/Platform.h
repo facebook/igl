@@ -43,6 +43,8 @@ class Platform {
     return displayContext_;
   }
 
+  [[nodiscard]] virtual const glm::mat4x4& getPreRotationMatrix() const noexcept;
+
   std::shared_ptr<ITexture> loadTexture(
       const char* filename,
       bool calculateMipmapLevels = true,
