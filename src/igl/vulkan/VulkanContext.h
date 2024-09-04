@@ -198,6 +198,10 @@ class VulkanContext final {
 
   const VulkanFeatures& features() const noexcept;
 
+  const VkSurfaceCapabilitiesKHR& getSurfaceCapabilities() const noexcept {
+    return deviceSurfaceCaps_;
+  }
+
 #if defined(IGL_WITH_TRACY_GPU)
   TracyVkCtx tracyCtx_ = nullptr;
   std::unique_ptr<VulkanCommandPool> profilingCommandPool_;

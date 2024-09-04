@@ -24,7 +24,7 @@ class VulktanTexture;
 
 class VulkanSwapchain final {
  public:
-  VulkanSwapchain(const VulkanContext& ctx, uint32_t width, uint32_t height);
+  VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height);
   ~VulkanSwapchain();
 
   Result acquireNextImage();
