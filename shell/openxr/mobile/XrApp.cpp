@@ -451,8 +451,8 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
       return false;
     }
   }
-  if (handsTrackingSupported()) {
-    hands_ = std::make_unique<XrHands>(instance_, session_, handsTrackingMeshSupported());
+  if (handTrackingSupported()) {
+    hands_ = std::make_unique<XrHands>(instance_, session_, handTrackingMeshSupported());
     if (!hands_->initialize()) {
       return false;
     }
@@ -835,14 +835,14 @@ bool XrApp::passthroughEnabled() const noexcept {
   return appParams.passthroughGetter ? appParams.passthroughGetter() : useQuadLayerComposition_;
 }
 
-bool XrApp::handsTrackingSupported() const noexcept {
+bool XrApp::handTrackingSupported() const noexcept {
 #if IGL_PLATFORM_ANDROID
   return supportedOptionalXrExtensions_.count(XR_EXT_HAND_TRACKING_EXTENSION_NAME) != 0;
 #endif // IGL_PLATFORM_ANDROID
   return false;
 }
 
-bool XrApp::handsTrackingMeshSupported() const noexcept {
+bool XrApp::handTrackingMeshSupported() const noexcept {
 #if IGL_PLATFORM_ANDROID
   return supportedOptionalXrExtensions_.count(XR_FB_HAND_TRACKING_MESH_EXTENSION_NAME) != 0;
 #endif // IGL_PLATFORM_ANDROID

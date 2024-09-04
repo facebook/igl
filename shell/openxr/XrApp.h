@@ -102,8 +102,8 @@ class XrApp {
   [[nodiscard]] inline bool passthroughSupported() const noexcept;
   [[nodiscard]] inline bool passthroughEnabled() const noexcept;
 
-  [[nodiscard]] inline bool handsTrackingSupported() const noexcept;
-  [[nodiscard]] inline bool handsTrackingMeshSupported() const noexcept;
+  [[nodiscard]] inline bool handTrackingSupported() const noexcept;
+  [[nodiscard]] inline bool handTrackingMeshSupported() const noexcept;
   [[nodiscard]] inline bool refreshRateExtensionSupported() const noexcept;
   [[nodiscard]] inline bool instanceCreateInfoAndroidSupported() const noexcept;
   [[nodiscard]] inline bool alphaBlendCompositionSupported() const noexcept;
