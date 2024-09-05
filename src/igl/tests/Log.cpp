@@ -36,6 +36,6 @@ TEST(LogTest, LogOnceRaceCondition) {
   t2.join();
   t3.join();
   t4.join();
-};
+}
 
 } // namespace igl::tests

@@ -69,7 +69,7 @@ void TestShellBase::SetUp(ScreenSize screenSize) {
   offscreenDepthTexture_ = platform_->getDevice().createTexture(depthDextureDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_TRUE(offscreenDepthTexture_ != nullptr);
-};
+}
 
 void TestShell::run(igl::shell::RenderSession& session, size_t numFrames) {
   ShellParams shellParams;

@@ -79,7 +79,7 @@ std::string getProlog(igl::IDevice& device) {
   }
 #endif // IGL_BACKEND_OPENGL
   return "";
-};
+}
 
 std::string getMetalShaderSource() {
   return R"(

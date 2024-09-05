@@ -17,7 +17,7 @@ TEST(CommonTest, BackendTypeToStringTest) {
   ASSERT_EQ(BackendTypeToString(BackendType::Metal), "Metal");
   ASSERT_EQ(BackendTypeToString(BackendType::Vulkan), "Vulkan");
   // @fb-only
-};
+}
 
 TEST(CommonTest, ColorTest) {
   const Color testColor(1.0f, 0.5f, 0.0f);
@@ -38,7 +38,7 @@ TEST(CommonTest, ColorTest) {
   ASSERT_EQ(floatPtr[1], 0.5f);
   ASSERT_EQ(floatPtr[2], 0.0f);
   ASSERT_EQ(floatPtr[3], 1.0f);
-};
+}
 
 TEST(CommonTest, ResultTest) {
   Result testResult;
@@ -58,14 +58,14 @@ TEST(CommonTest, ResultTest) {
 
   Result::setResult(&testResult2, std::move(testResult));
   ASSERT_FALSE(testResult2.isOk());
-};
+}
 
 TEST(CommonTest, RectTest) {
   const ScissorRect testRect;
   ASSERT_TRUE(testRect.isNull());
   const ScissorRect testRect2{0, 0, 1, 1};
   ASSERT_FALSE(testRect2.isNull());
-};
+}
 
 TEST(CommonTest, SizeTest) {
   Size size;
@@ -79,7 +79,7 @@ TEST(CommonTest, SizeTest) {
   ASSERT_TRUE(size2 == size2);
   ASSERT_FALSE(size == size2);
   ASSERT_FALSE(size2 != size2);
-};
+}
 
 TEST(CommonTest, DimensionTest) {
   Dimensions dimension;
@@ -95,19 +95,19 @@ TEST(CommonTest, DimensionTest) {
   ASSERT_TRUE(dimension2 == dimension2);
   ASSERT_FALSE(dimension == dimension2);
   ASSERT_FALSE(dimension2 != dimension2);
-};
+}
 
 TEST(CommonTest, ViewportTest) {
   Viewport viewport;
   ASSERT_TRUE(viewport != kInvalidViewport);
   Viewport viewport2;
   ASSERT_TRUE(viewport == viewport2);
-};
+}
 
 TEST(CommonTest, EnumToValueTest) {
   auto val = EnumToValue(BackendType::Vulkan);
   ASSERT_EQ(val, 3);
-};
+}
 
 TEST(CommonTest, ScopeGuardTest) {
   int testValue = 0;
@@ -115,7 +115,7 @@ TEST(CommonTest, ScopeGuardTest) {
     auto scopeGuard = ScopeGuardOnExit() + [&]() { ++testValue; };
   }
   ASSERT_EQ(testValue, 1);
-};
+}
 
 TEST(CommonTest, OptimizedMemCopyTest) {
   uint8_t buffer1[] = {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16,
@@ -138,16 +138,16 @@ TEST(CommonTest, OptimizedMemCopyTest) {
             *(reinterpret_cast<uint64_t*>(buffer2) + 2));
   ASSERT_EQ(*(reinterpret_cast<uint64_t*>(buffer1) + 3),
             *(reinterpret_cast<uint64_t*>(buffer2) + 3));
-};
+}
 
 TEST(CommonTest, HandleTest) {
   const Holder<BindGroupTextureHandle> bindGroupHandle;
   const Holder<BindGroupBufferHandle> bindGroupBufferHandle;
   const Holder<TextureHandle> textureHandle;
   const Holder<SamplerHandle> samplerHandle;
-};
+}
 
 TEST(CommonTest, PoolTest) {
   Pool<BindGroupBufferTag, BindGroupBufferDesc> bindGroupBuffersPool;
-};
+}
 } // namespace igl::tests

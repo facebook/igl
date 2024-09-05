@@ -42,7 +42,7 @@ class TestShell : public ::testing::Test, public igl::shell::TestShellBase {
 
   void TearDown() override {
     igl::shell::TestShellBase::TearDown();
-  };
+  }
 
   void run(igl::shell::RenderSession& session, size_t numFrames);
 };

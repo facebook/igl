@@ -54,7 +54,7 @@ static std::string getProlog(igl::IDevice& device) {
   }
 #endif // IGL_BACKEND_OPENGL
   return "";
-};
+}
 
 static std::string getMetalShaderSource() {
   return R"(

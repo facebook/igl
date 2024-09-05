@@ -21,15 +21,15 @@ PlatformIos::PlatformIos(std::shared_ptr<igl::IDevice> device) : device_(std::mo
 
 igl::IDevice& PlatformIos::getDevice() noexcept {
   return *device_;
-};
+}
 
 std::shared_ptr<igl::IDevice> PlatformIos::getDevicePtr() const noexcept {
   return device_;
-};
+}
 
 ImageLoader& PlatformIos::getImageLoader() noexcept {
   return *imageLoader_;
-};
+}
 
 const ImageWriter& PlatformIos::getImageWriter() const noexcept {
   return *imageWriter_;

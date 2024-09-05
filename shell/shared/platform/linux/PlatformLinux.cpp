@@ -19,20 +19,20 @@ PlatformLinux::PlatformLinux(std::shared_ptr<igl::IDevice> device) : device_(std
 
 igl::IDevice& PlatformLinux::getDevice() noexcept {
   return *device_;
-};
+}
 
 std::shared_ptr<igl::IDevice> PlatformLinux::getDevicePtr() const noexcept {
   return device_;
-};
+}
 
 ImageLoader& PlatformLinux::getImageLoader() noexcept {
   return *imageLoader_;
-};
+}
 
 const ImageWriter& PlatformLinux::getImageWriter() const noexcept {
   IGL_ASSERT_NOT_IMPLEMENTED();
   return *imageWriter_;
-};
+}
 
 FileLoader& PlatformLinux::getFileLoader() const noexcept {
   return *fileLoader_;

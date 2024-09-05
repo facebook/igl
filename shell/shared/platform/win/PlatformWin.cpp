@@ -21,19 +21,19 @@ PlatformWin::PlatformWin(std::shared_ptr<igl::IDevice> device) : device_(std::mo
 
 igl::IDevice& PlatformWin::getDevice() noexcept {
   return *device_;
-};
+}
 
 std::shared_ptr<igl::IDevice> PlatformWin::getDevicePtr() const noexcept {
   return device_;
-};
+}
 
 ImageLoader& PlatformWin::getImageLoader() noexcept {
   return *imageLoader_;
-};
+}
 
 const ImageWriter& PlatformWin::getImageWriter() const noexcept {
   return *imageWriter_;
-};
+}
 
 FileLoader& PlatformWin::getFileLoader() const noexcept {
   return *fileLoader_;

@@ -45,7 +45,7 @@ MetalTextureAccessor::MetalTextureAccessor(std::shared_ptr<igl::ITexture> textur
   readBuffer_ = device.createBuffer(readBufferDesc, &res);
   IGL_ASSERT(res.isOk());
   IGL_ASSERT(static_cast<igl::metal::Buffer&>(*readBuffer_).get() != nullptr);
-};
+}
 
 void MetalTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
                                         std::shared_ptr<igl::ITexture> texture) {
@@ -104,7 +104,7 @@ size_t MetalTextureAccessor::copyBytes(unsigned char* ptr, size_t length) {
 
 RequestStatus MetalTextureAccessor::getRequestStatus() {
   return status_;
-};
+}
 
 std::vector<unsigned char>& MetalTextureAccessor::getBytes() {
   if (status_ == RequestStatus::InProgress) {

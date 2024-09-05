@@ -56,7 +56,7 @@ PlatformAndroid::PlatformAndroid(std::shared_ptr<igl::IDevice> device, bool useF
 
 igl::IDevice& PlatformAndroid::getDevice() noexcept {
   return *device_;
-};
+}
 
 std::shared_ptr<igl::IDevice> PlatformAndroid::getDevicePtr() const noexcept {
   return device_;
@@ -64,11 +64,11 @@ std::shared_ptr<igl::IDevice> PlatformAndroid::getDevicePtr() const noexcept {
 
 ImageLoader& PlatformAndroid::getImageLoader() noexcept {
   return *imageLoader_;
-};
+}
 
 const ImageWriter& PlatformAndroid::getImageWriter() const noexcept {
   return *imageWriter_;
-};
+}
 
 FileLoader& PlatformAndroid::getFileLoader() const noexcept {
   return *fileLoader_;

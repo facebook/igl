@@ -216,6 +216,6 @@ void TinyRenderer::touchEvent(bool isDown, float x, float y, float dx, float dy)
 
 void TinyRenderer::setClearColorValue(float r, float g, float b, float a) {
   shellParams_.clearColorValue = {r, g, b, a};
-};
+}
 
 } // namespace igl::samples

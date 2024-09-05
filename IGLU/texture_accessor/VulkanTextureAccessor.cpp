@@ -89,7 +89,7 @@ size_t VulkanTextureAccessor::copyBytes(unsigned char* ptr, size_t length) {
 
 RequestStatus VulkanTextureAccessor::getRequestStatus() {
   return status_;
-};
+}
 
 std::vector<unsigned char>& VulkanTextureAccessor::getBytes() {
   copyBytes(latestBytesRead_.data(), latestBytesRead_.size());

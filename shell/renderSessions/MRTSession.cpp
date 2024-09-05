@@ -62,7 +62,7 @@ static std::string getPrecisionProlog(ShaderPrecision precision) {
 #else
   return std::string();
 #endif
-};
+}
 
 static std::string getVersionProlog() {
 #if IGL_OPENGL_ES
@@ -70,7 +70,7 @@ static std::string getVersionProlog() {
 #else
   return std::string("#version 410\n");
 #endif
-};
+}
 
 static std::string getMetalShaderSource(int metalShaderIdx) {
   switch (metalShaderIdx) {
