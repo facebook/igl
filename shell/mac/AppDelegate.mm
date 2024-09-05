@@ -79,7 +79,7 @@
 // @fb-only
   // @fb-only
   // @fb-only
-  viewController =
+  // @fb-only
       // @fb-only
                              // @fb-only
   // @fb-only
