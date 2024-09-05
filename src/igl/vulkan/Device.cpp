@@ -714,6 +714,13 @@ ShaderVersion Device::getShaderVersion() const {
   return {ShaderFamily::SpirV, 1, 5, 0};
 }
 
+BackendVersion Device::getBackendVersion() const {
+  const uint32_t apiVersion = ctx_->vkPhysicalDeviceProperties2_.properties.apiVersion;
+  return {BackendFlavor::Vulkan,
+          static_cast<uint8_t>(VK_API_VERSION_MAJOR(apiVersion)),
+          static_cast<uint8_t>(VK_API_VERSION_MINOR(apiVersion))};
+}
+
 Holder<igl::BindGroupTextureHandle> Device::createBindGroup(const igl::BindGroupTextureDesc& desc,
                                                             const IRenderPipelineState* IGL_NULLABLE
                                                                 compatiblePipeline,

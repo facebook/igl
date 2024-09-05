@@ -197,6 +197,7 @@ class DeviceFeatureSet final {
   // @fb-only
   [[nodiscard]] GLVersion getGLVersion() const noexcept;
   [[nodiscard]] ShaderVersion getShaderVersion() const;
+  [[nodiscard]] BackendVersion getBackendVersion() const;
 
   bool isSupported(const std::string& extensionName) const;
 

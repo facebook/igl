@@ -42,6 +42,11 @@ igl::ShaderVersion Device::getShaderVersion() const {
   return {};
 }
 
+igl::BackendVersion Device::getBackendVersion() const {
+  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
+  return {};
+}
+
 std::shared_ptr<igl::ICommandQueue> Device::createCommandQueue(
     const igl::CommandQueueDesc& /*desc*/,
     igl::Result* IGL_NULLABLE /*outResult*/) {

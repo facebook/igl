@@ -39,6 +39,8 @@ class Device final : public igl::IDevice {
   [[nodiscard]] bool getFeatureLimits(igl::DeviceFeatureLimits featureLimits,
                                       size_t& result) const final;
   [[nodiscard]] igl::ShaderVersion getShaderVersion() const final;
+  [[nodiscard]] igl::BackendVersion getBackendVersion() const final;
+
   [[nodiscard]] std::shared_ptr<igl::ICommandQueue> createCommandQueue(
       const igl::CommandQueueDesc& desc,
       igl::Result* IGL_NULLABLE outResult) final;

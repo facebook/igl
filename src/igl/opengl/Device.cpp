@@ -291,6 +291,11 @@ ShaderVersion Device::getShaderVersion() const {
   return deviceFeatureSet_.getShaderVersion();
 }
 
+BackendVersion Device::getBackendVersion() const {
+  IGL_ASSERT(context_);
+  return deviceFeatureSet_.getBackendVersion();
+}
+
 void Device::beginScope() {
   IDevice::beginScope();
 

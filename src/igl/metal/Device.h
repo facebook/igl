@@ -86,6 +86,7 @@ class Device : public IDevice {
   [[nodiscard]] TextureFormatCapabilities getTextureFormatCapabilities(
       TextureFormat format) const override;
   [[nodiscard]] ShaderVersion getShaderVersion() const override;
+  [[nodiscard]] BackendVersion getBackendVersion() const override;
 
   // Device Statistics
   [[nodiscard]] size_t getCurrentDrawCount() const override;

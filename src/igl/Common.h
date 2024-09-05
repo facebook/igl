@@ -151,6 +151,16 @@ enum class BackendType {
   Vulkan,
   // @fb-only
 };
+
+enum class BackendFlavor : uint8_t {
+  Invalid,
+  OpenGL,
+  OpenGL_ES,
+  Metal,
+  Vulkan,
+  // @fb-only
+};
+
 std::string BackendTypeToString(BackendType backendType);
 
 ///--------------------------------------

@@ -201,6 +201,24 @@ struct ShaderVersion {
 };
 
 /**
+ * @brief BackendVersion provides information on the backend flavor and version
+ */
+struct BackendVersion {
+  BackendFlavor flavor = BackendFlavor::Invalid;
+  uint8_t majorVersion = 0;
+  uint8_t minorVersion = 0;
+
+  bool operator==(const BackendVersion& other) const {
+    return flavor == other.flavor && majorVersion == other.majorVersion &&
+           minorVersion == other.minorVersion;
+  }
+
+  bool operator!=(const BackendVersion& other) const {
+    return !(*this == other);
+  }
+};
+
+/**
  * @brief ICapabilities defines the capabilities interface. Currently, it is IDevice
  * which implements this interface.
  */
@@ -276,6 +294,12 @@ class ICapabilities {
    * @return ShaderVersion
    */
   [[nodiscard]] virtual ShaderVersion getShaderVersion() const = 0;
+
+  /**
+   * @brief Gets the latest backend version supported by this device.
+   * @return BackendVersion
+   */
+  [[nodiscard]] virtual BackendVersion getBackendVersion() const = 0;
 
  protected:
   virtual ~ICapabilities() = default;

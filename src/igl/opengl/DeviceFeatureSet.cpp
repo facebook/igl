@@ -118,6 +118,49 @@ ShaderVersion DeviceFeatureSet::getShaderVersion() const {
   return ::igl::opengl::getShaderVersion(version_);
 }
 
+BackendVersion DeviceFeatureSet::getBackendVersion() const {
+  switch (version_) {
+  case GLVersion::v2_0:
+    return {BackendFlavor::OpenGL, 2, 0};
+  case GLVersion::v2_1:
+    return {BackendFlavor::OpenGL, 2, 1};
+  case GLVersion::v3_0:
+    return {BackendFlavor::OpenGL, 3, 0};
+  case GLVersion::v3_1:
+    return {BackendFlavor::OpenGL, 3, 1};
+  case GLVersion::v3_2:
+    return {BackendFlavor::OpenGL, 3, 2};
+  case GLVersion::v3_3:
+    return {BackendFlavor::OpenGL, 3, 3};
+  case GLVersion::v4_0:
+    return {BackendFlavor::OpenGL, 4, 0};
+  case GLVersion::v4_1:
+    return {BackendFlavor::OpenGL, 4, 1};
+  case GLVersion::v4_2:
+    return {BackendFlavor::OpenGL, 4, 2};
+  case GLVersion::v4_3:
+    return {BackendFlavor::OpenGL, 4, 3};
+  case GLVersion::v4_4:
+    return {BackendFlavor::OpenGL, 4, 4};
+  case GLVersion::v4_5:
+    return {BackendFlavor::OpenGL, 4, 5};
+  case GLVersion::v4_6:
+    return {BackendFlavor::OpenGL, 4, 6};
+  case GLVersion::v2_0_ES:
+    return {BackendFlavor::OpenGL_ES, 2, 0};
+  case GLVersion::v3_0_ES:
+    return {BackendFlavor::OpenGL_ES, 3, 0};
+  case GLVersion::v3_1_ES:
+    return {BackendFlavor::OpenGL_ES, 3, 1};
+  case GLVersion::v3_2_ES:
+    return {BackendFlavor::OpenGL_ES, 3, 2};
+  case GLVersion::NotAvailable:
+    IGL_ASSERT_NOT_REACHED();
+    return {usesOpenGLES() ? BackendFlavor::OpenGL_ES : BackendFlavor::OpenGL, 2, 0};
+  }
+  IGL_UNREACHABLE_RETURN({});
+}
+
 bool DeviceFeatureSet::isSupported(const std::string& extensionName) const {
   if (!extensions_.empty()) {
     return extensions_.find(extensionName) != std::string::npos;
