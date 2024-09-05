@@ -50,49 +50,6 @@ class VulkanImageTest : public ::testing::Test {
   }
 
  protected:
-  std::unique_ptr<igl::IDevice> createDevice() {
-    igl::vulkan::VulkanContextConfig config;
-#if IGL_DEBUG
-    config.enableValidation = true;
-    config.terminateOnValidationError = true;
-#else
-    config.enableValidation = false;
-    config.terminateOnValidationError = false;
-#endif // IGL_DEBUG
-#ifdef IGL_DISABLE_VALIDATION
-    config.enableValidation = false;
-    config.terminateOnValidationError = false;
-#endif
-
-#if IGL_PLATFORM_WIN
-    config.enableGPUAssistedValidation = true;
-#else // !IGL_PLATFORM_WIN
-    config.enableGPUAssistedValidation = false;
-#endif // IGL_PLATFORM_WIN
-
-    std::vector<const char*> deviceExtensions;
-#if IGL_PLATFORM_ANDROID
-    deviceExtensions.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-    deviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-    deviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
-#endif // IGL_PLATFORM_ANDROID
-
-    auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
-
-    std::vector<igl::HWDeviceDesc> devices = igl::vulkan::HWDevice::queryDevices(
-        *ctx, igl::HWDeviceQueryDesc(igl::HWDeviceType::DiscreteGpu), nullptr);
-
-    if (devices.empty()) {
-      devices = igl::vulkan::HWDevice::queryDevices(
-          *ctx, igl::HWDeviceQueryDesc(igl::HWDeviceType::IntegratedGpu), nullptr);
-    }
-
-    IGL_ASSERT(!devices.empty());
-
-    return igl::vulkan::HWDevice::create(
-        std::move(ctx), devices[0], 0, 0, deviceExtensions.size(), deviceExtensions.data());
-  }
-
   std::shared_ptr<IDevice> device_;
   vulkan::VulkanContext* context_ = nullptr;
 };
