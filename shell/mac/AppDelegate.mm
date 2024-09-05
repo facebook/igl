@@ -40,8 +40,7 @@
   // Headless tab
   NSTabViewItem* tinyHeadlessTabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
   viewController = [[ViewController alloc] initWithFrame:frame
-                                             backendType:igl::BackendType::Invalid
-                                     preferLatestVersion:true];
+                                          backendVersion:{igl::BackendFlavor::Invalid, 0, 0}];
 
   tinyHeadlessTabViewItem.viewController = viewController;
   tinyHeadlessTabViewItem.label = @"Headless";
@@ -52,8 +51,7 @@
   // Metal tab
   NSTabViewItem* tinyMetalTabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
   viewController = [[ViewController alloc] initWithFrame:frame
-                                             backendType:igl::BackendType::Metal
-                                     preferLatestVersion:true];
+                                          backendVersion:{igl::BackendFlavor::Metal, 3, 0}];
   tinyMetalTabViewItem.viewController = viewController;
 
   tinyMetalTabViewItem.label = @"Metal";
@@ -64,9 +62,7 @@
   // OpenGL tab
   NSTabViewItem* tinyOGL4TabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
   viewController = [[ViewController alloc] initWithFrame:frame
-                                             backendType:igl::BackendType::OpenGL
-                                            majorVersion:4
-                                            minorVersion:1];
+                                          backendVersion:{igl::BackendFlavor::OpenGL, 4, 1}];
   tinyOGL4TabViewItem.viewController = viewController;
 
   tinyOGL4TabViewItem.label = @"OGL 4.1";
@@ -75,9 +71,7 @@
   // @fb-only
   // @fb-only
       // @fb-only
-                                // @fb-only
-                               // @fb-only
-                               // @fb-only
+                             // @fb-only
   // @fb-only
   // @fb-only
 #endif
@@ -85,9 +79,9 @@
 // @fb-only
   // @fb-only
   // @fb-only
-  // @fb-only
-                                             // @fb-only
-                                     // @fb-only
+  viewController =
+      // @fb-only
+                             // @fb-only
   // @fb-only
 
   // @fb-only
@@ -98,8 +92,7 @@
   // Vulkan tab
   NSTabViewItem* tinyVulkanTabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
   viewController = [[ViewController alloc] initWithFrame:frame
-                                             backendType:igl::BackendType::Vulkan
-                                     preferLatestVersion:true];
+                                          backendVersion:{igl::BackendFlavor::Vulkan, 1, 3}];
 
   tinyVulkanTabViewItem.viewController = viewController;
   tinyVulkanTabViewItem.label = @"Vulkan";

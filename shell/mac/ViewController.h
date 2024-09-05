@@ -8,6 +8,7 @@
 #import <Cocoa/Cocoa.h>
 #import <MetalKit/MetalKit.h>
 #import <igl/Common.h>
+#import <igl/DeviceFeatures.h>
 
 NS_ASSUME_NONNULL_BEGIN
 @interface ViewController : NSViewController <MTKViewDelegate>
@@ -15,14 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) NSView* iglView;
 
 - (instancetype)initWithFrame:(CGRect)frame
-                  backendType:(igl::BackendType)backendType
-          preferLatestVersion:(bool)preferLatestVersion NS_DESIGNATED_INITIALIZER;
-
-// For openGL only
-- (instancetype)initWithFrame:(CGRect)frame
-                  backendType:(igl::BackendType)backendType
-                 majorVersion:(int)majorVersion
-                 minorVersion:(int)minorVersion;
+               backendVersion:(igl::BackendVersion)backendType NS_DESIGNATED_INITIALIZER;
 
 // Explicitly disable superclass' designated initializers
 - (instancetype)initWithNibName:(nullable NSNibName)nibNameOrNil

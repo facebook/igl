@@ -47,7 +47,7 @@
 using namespace igl;
 
 @interface ViewController () {
-  igl::BackendType backendType_;
+  igl::BackendVersion backendVersion_;
   igl::shell::ShellParams shellParams_;
   CGRect frame_;
   CVDisplayLinkRef displayLink_; // For OpenGL only
@@ -55,9 +55,6 @@ using namespace igl;
   id<MTLTexture> depthStencilTexture_;
   std::shared_ptr<igl::shell::Platform> shellPlatform_;
   std::unique_ptr<igl::shell::RenderSession> session_;
-  bool preferLatestVersion_;
-  int majorVersion_;
-  int minorVersion_;
   float kMouseSpeed_;
 }
 @end
@@ -68,15 +65,13 @@ using namespace igl;
 /// MARK: - Init
 ///--------------------------------------
 
-- (instancetype)initWithFrame:(CGRect)frame
-                  backendType:(igl::BackendType)backendType
-          preferLatestVersion:(bool)preferLatestVersion {
+- (instancetype)initWithFrame:(CGRect)frame backendVersion:(igl::BackendVersion)backendVersion {
   self = [super initWithNibName:nil bundle:nil];
   if (!self) {
     return self;
   }
 
-  backendType_ = backendType;
+  backendVersion_ = backendVersion;
   shellParams_ = igl::shell::ShellParams();
   frame.size.width = shellParams_.viewportSize.x;
   frame.size.height = shellParams_.viewportSize.y;
@@ -84,18 +79,8 @@ using namespace igl;
   kMouseSpeed_ = 0.05f;
   currentDrawable_ = nil;
   depthStencilTexture_ = nil;
-  preferLatestVersion_ = preferLatestVersion;
 
   return self;
-}
-
-- (instancetype)initWithFrame:(CGRect)frame
-                  backendType:(igl::BackendType)backendType
-                 majorVersion:(int)majorVersion
-                 minorVersion:(int)minorVersion {
-  majorVersion_ = majorVersion;
-  minorVersion_ = minorVersion;
-  return [self initWithFrame:frame backendType:backendType preferLatestVersion:false];
 }
 
 - (void)initModule {
@@ -121,7 +106,8 @@ using namespace igl;
   shellPlatform_->getInputDispatcher().processEvents();
 
   igl::SurfaceTextures surfaceTextures;
-  if (backendType_ != igl::BackendType::Invalid && shellPlatform_->getDevicePtr() != nullptr) {
+  if (backendVersion_.flavor != igl::BackendFlavor::Invalid &&
+      shellPlatform_->getDevicePtr() != nullptr) {
 // @fb-only
     // @fb-only
     // @fb-only
@@ -161,8 +147,8 @@ using namespace igl;
   // return something that works
   HWDeviceQueryDesc queryDesc(HWDeviceType::Unknown);
 
-  switch (backendType_) {
-  case igl::BackendType::Invalid: {
+  switch (backendVersion_.flavor) {
+  case igl::BackendFlavor::Invalid: {
     auto headlessView = [[HeadlessView alloc] initWithFrame:frame_];
     self.view = headlessView;
 
@@ -177,7 +163,7 @@ using namespace igl;
   }
 
 #if IGL_BACKEND_METAL
-  case igl::BackendType::Metal: {
+  case igl::BackendFlavor::Metal: {
     auto hwDevices = metal::HWDevice().queryDevices(queryDesc, nullptr);
     auto device = metal::HWDevice().create(hwDevices[0], nullptr);
 
@@ -210,9 +196,9 @@ using namespace igl;
 #endif
 
 #if IGL_BACKEND_OPENGL
-  case igl::BackendType::OpenGL: {
+  case igl::BackendFlavor::OpenGL: {
     NSOpenGLPixelFormat* pixelFormat;
-    if (preferLatestVersion_) {
+    if (backendVersion_.majorVersion == 4 && backendVersion_.minorVersion == 1) {
       static NSOpenGLPixelFormatAttribute attributes[] = {
           NSOpenGLPFADoubleBuffer,
           NSOpenGLPFAAllowOfflineRenderers,
@@ -232,65 +218,49 @@ using namespace igl;
       };
       pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
       IGL_ASSERT_MSG(pixelFormat, "Requested attributes not supported");
+    } else if (backendVersion_.majorVersion == 3 && backendVersion_.minorVersion == 2) {
+      static NSOpenGLPixelFormatAttribute attributes[] = {
+          NSOpenGLPFADoubleBuffer,
+          NSOpenGLPFAAllowOfflineRenderers,
+          NSOpenGLPFAMultisample,
+          1,
+          NSOpenGLPFASampleBuffers,
+          1,
+          NSOpenGLPFASamples,
+          4,
+          NSOpenGLPFAColorSize,
+          32,
+          NSOpenGLPFADepthSize,
+          24,
+          NSOpenGLPFAOpenGLProfile,
+          NSOpenGLProfileVersion3_2Core,
+          0,
+      };
+      pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
+    } else if (backendVersion_.majorVersion == 2 && backendVersion_.minorVersion == 1) {
+      static NSOpenGLPixelFormatAttribute attributes[] = {
+          NSOpenGLPFADoubleBuffer,
+          NSOpenGLPFAAllowOfflineRenderers,
+          NSOpenGLPFAMultisample,
+          1,
+          NSOpenGLPFASampleBuffers,
+          1,
+          NSOpenGLPFASamples,
+          4,
+          NSOpenGLPFAColorSize,
+          32,
+          NSOpenGLPFADepthSize,
+          24,
+          NSOpenGLPFAOpenGLProfile,
+          NSOpenGLProfileVersionLegacy,
+          0,
+      };
+      pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
     } else {
-      if (majorVersion_ >= 4 && minorVersion_ >= 1) {
-        static NSOpenGLPixelFormatAttribute attributes[] = {
-            NSOpenGLPFADoubleBuffer,
-            NSOpenGLPFAAllowOfflineRenderers,
-            NSOpenGLPFAMultisample,
-            1,
-            NSOpenGLPFASampleBuffers,
-            1,
-            NSOpenGLPFASamples,
-            4,
-            NSOpenGLPFAColorSize,
-            32,
-            NSOpenGLPFADepthSize,
-            24,
-            NSOpenGLPFAOpenGLProfile,
-            NSOpenGLProfileVersion4_1Core,
-            0,
-        };
-        pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
-      } else if (majorVersion_ >= 3 && minorVersion_ >= 2) {
-        static NSOpenGLPixelFormatAttribute attributes[] = {
-            NSOpenGLPFADoubleBuffer,
-            NSOpenGLPFAAllowOfflineRenderers,
-            NSOpenGLPFAMultisample,
-            1,
-            NSOpenGLPFASampleBuffers,
-            1,
-            NSOpenGLPFASamples,
-            4,
-            NSOpenGLPFAColorSize,
-            32,
-            NSOpenGLPFADepthSize,
-            24,
-            NSOpenGLPFAOpenGLProfile,
-            NSOpenGLProfileVersion3_2Core,
-            0,
-        };
-        pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
-      } else {
-        static NSOpenGLPixelFormatAttribute attributes[] = {
-            NSOpenGLPFADoubleBuffer,
-            NSOpenGLPFAAllowOfflineRenderers,
-            NSOpenGLPFAMultisample,
-            1,
-            NSOpenGLPFASampleBuffers,
-            1,
-            NSOpenGLPFASamples,
-            4,
-            NSOpenGLPFAColorSize,
-            32,
-            NSOpenGLPFADepthSize,
-            24,
-            NSOpenGLPFAOpenGLProfile,
-            NSOpenGLProfileVersionLegacy,
-            0,
-        };
-        pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
-      }
+      IGL_ASSERT_MSG(false,
+                     "Unsupported OpenGL version: %u.%u\n",
+                     backendVersion_.majorVersion,
+                     backendVersion_.minorVersion);
     }
     auto openGLView = [[GLView alloc] initWithFrame:frame_ pixelFormat:pixelFormat];
     igl::Result result;
@@ -304,7 +274,7 @@ using namespace igl;
 #endif
 
 #if IGL_BACKEND_VULKAN
-  case igl::BackendType::Vulkan: {
+  case igl::BackendFlavor::Vulkan: {
     auto vulkanView = [[VulkanView alloc] initWithFrame:frame_];
 
     self.view = vulkanView;
@@ -411,9 +381,9 @@ using namespace igl;
 }
 
 - (std::shared_ptr<igl::ITexture>)createTextureFromNativeDrawable {
-  switch (backendType_) {
+  switch (backendVersion_.flavor) {
 #if IGL_BACKEND_METAL
-  case igl::BackendType::Metal: {
+  case igl::BackendFlavor::Metal: {
     auto& device = shellPlatform_->getDevice();
     auto* platformDevice = device.getPlatformDevice<igl::metal::PlatformDevice>();
     IGL_ASSERT(platformDevice);
@@ -424,7 +394,7 @@ using namespace igl;
 #endif
 
 #if IGL_BACKEND_OPENGL
-  case igl::BackendType::OpenGL: {
+  case igl::BackendFlavor::OpenGL: {
     auto& device = shellPlatform_->getDevice();
     auto* platformDevice = device.getPlatformDevice<igl::opengl::macos::PlatformDevice>();
     IGL_ASSERT(platformDevice);
@@ -434,7 +404,7 @@ using namespace igl;
 #endif
 
 #if IGL_BACKEND_VULKAN
-  case igl::BackendType::Vulkan: {
+  case igl::BackendFlavor::Vulkan: {
     auto& device = shellPlatform_->getDevice();
     auto* platformDevice = device.getPlatformDevice<igl::vulkan::PlatformDevice>();
     IGL_ASSERT(platformDevice);
@@ -461,9 +431,9 @@ using namespace igl;
 }
 
 - (std::shared_ptr<igl::ITexture>)createTextureFromNativeDepth {
-  switch (backendType_) {
+  switch (backendVersion_.flavor) {
 #if IGL_BACKEND_METAL
-  case igl::BackendType::Metal: {
+  case igl::BackendFlavor::Metal: {
     auto& device = shellPlatform_->getDevice();
     auto* platformDevice = device.getPlatformDevice<igl::metal::PlatformDevice>();
     IGL_ASSERT(platformDevice);
@@ -473,7 +443,7 @@ using namespace igl;
 #endif
 
 #if IGL_BACKEND_OPENGL
-  case igl::BackendType::OpenGL: {
+  case igl::BackendFlavor::OpenGL: {
     auto& device = shellPlatform_->getDevice();
     auto* platformDevice = device.getPlatformDevice<igl::opengl::macos::PlatformDevice>();
     IGL_ASSERT(platformDevice);
@@ -483,7 +453,7 @@ using namespace igl;
 #endif
 
 #if IGL_BACKEND_VULKAN
-  case igl::BackendType::Vulkan: {
+  case igl::BackendFlavor::Vulkan: {
     auto& device = static_cast<igl::vulkan::Device&>(shellPlatform_->getDevice());
     auto extents = device.getVulkanContext().getSwapchainExtent();
     auto* platformDevice =
