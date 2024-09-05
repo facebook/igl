@@ -199,6 +199,7 @@ TEST_F(BufferTest, mapBufferRangeIndexBuffer) {
   for (int i = 0; i < numElementsToMap; ++i) {
     ASSERT_EQ(bufferPartialData[i], indexData[i + numElementsToSkip]);
   }
+  buffer->unmap();
 }
 
 TEST_F(BufferTest, copyBytesErrorsIndexBuffer) {

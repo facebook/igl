@@ -366,7 +366,7 @@ TEST(TextureFormatProperties, getSubRangeByteOffset) {
       EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(1).atLayer(1)), 900);
 
       // Custom row length
-      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atLayer(1), 50), 500);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.withNumMipLevels(1).atLayer(1), 50), 500);
     }
 
     {
@@ -394,7 +394,7 @@ TEST(TextureFormatProperties, getSubRangeByteOffset) {
       EXPECT_EQ(props.getSubRangeByteOffset(range, range.atMipLevel(1).atFace(1)), 2500);
 
       // Custom row length
-      EXPECT_EQ(props.getSubRangeByteOffset(range, range.atFace(1), 50), 500);
+      EXPECT_EQ(props.getSubRangeByteOffset(range, range.withNumMipLevels(1).atFace(1), 50), 500);
     }
   }
   {
