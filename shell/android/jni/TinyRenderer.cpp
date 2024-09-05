@@ -31,6 +31,42 @@
 #include <memory>
 #include <sstream>
 
+namespace {
+
+// Stores the current EGL context when created, and restores it when destroyed.
+struct ContextGuard {
+  ContextGuard(const igl::IDevice& device) {
+#if IGL_BACKEND_OPENGL
+    backend = device.getBackendType();
+    if (backend == igl::BackendType::OpenGL) {
+      display = eglGetCurrentDisplay();
+      context = eglGetCurrentContext();
+      readSurface = eglGetCurrentSurface(EGL_READ);
+      drawSurface = eglGetCurrentSurface(EGL_DRAW);
+    }
+#endif
+  }
+
+  ~ContextGuard() {
+#if IGL_BACKEND_OPENGL
+    if (backend == igl::BackendType::OpenGL) {
+      eglMakeCurrent(display, readSurface, drawSurface, context);
+    }
+#endif
+  }
+
+ private:
+#if IGL_BACKEND_OPENGL
+  igl::BackendType backend;
+  EGLDisplay display;
+  EGLContext context;
+  EGLSurface readSurface;
+  EGLSurface drawSurface;
+#endif
+};
+
+} // namespace
+
 namespace igl::samples {
 
 using namespace igl;
@@ -109,6 +145,9 @@ void TinyRenderer::init(AAssetManager* mgr,
     IGL_ASSERT(platform_ != nullptr);
     static_cast<igl::shell::ImageLoaderAndroid&>(platform_->getImageLoader()).setAssetManager(mgr);
     static_cast<igl::shell::FileLoaderAndroid&>(platform_->getFileLoader()).setAssetManager(mgr);
+
+    const ContextGuard guard(platform_->getDevice()); // wrap 'session_' operations
+
     session_ = igl::shell::createDefaultRenderSession(platform_);
     session_->setShellParams(shellParams_);
     IGL_ASSERT(session_ != nullptr);
@@ -140,8 +179,6 @@ void TinyRenderer::recreateSwapchain(ANativeWindow* nativeWindow, bool createSur
 }
 
 void TinyRenderer::render(float displayScale) {
-  igl::DeviceScope const scope(platform_->getDevice());
-
   // process user input
   IGL_ASSERT(platform_ != nullptr);
   platform_->getInputDispatcher().processEvents();
@@ -177,13 +214,14 @@ void TinyRenderer::render(float displayScale) {
   }
   IGL_ASSERT(result.isOk());
   IGL_REPORT_ERROR(result.isOk());
+
+  const ContextGuard guard(platform_->getDevice()); // wrap 'session_' operations
+
   session_->setPixelsPerPoint(displayScale);
   session_->update(std::move(surfaceTextures));
 }
 
 void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int height) {
-  igl::DeviceScope const scope(platform_->getDevice());
-
   width_ = static_cast<uint32_t>(width);
   height_ = static_cast<uint32_t>(height);
 #if IGL_BACKEND_OPENGL
