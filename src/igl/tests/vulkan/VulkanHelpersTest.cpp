@@ -104,7 +104,7 @@ INSTANTIATE_TEST_SUITE_P(
                                          VK_FORMAT_R8G8B8A8_SRGB)),
 
     [](const testing::TestParamInfo<GetSamplerYcbcrCreateInfoTest::ParamType>& info) {
-      const std::string name = "format_" + std::to_string(std::get<0>(info.param));
+      const std::string name = std::to_string(std::get<0>(info.param));
       return name;
     });
 
@@ -161,13 +161,12 @@ INSTANTIATE_TEST_SUITE_P(
                        ::testing::Values(0, 1),
                        ::testing::Values(1, 2)),
     [](const testing::TestParamInfo<GetImageViewCreateInfoTest::ParamType>& info) {
-      const std::string name = "imageViewType_" + std::to_string(std::get<0>(info.param)) +
-                               "__format_" + std::to_string(std::get<1>(info.param)) +
-                               "__aspectMask_" + std::to_string(std::get<2>(info.param)) +
-                               "__baseMipLevel_" + std::to_string(std::get<3>(info.param)) +
-                               "__levelCount_" + std::to_string(std::get<4>(info.param)) +
-                               "__baseArrayLayer_" + std::to_string(std::get<5>(info.param)) +
-                               "__layerCount_" + std::to_string(std::get<6>(info.param));
+      const std::string name =
+          std::to_string(std::get<0>(info.param)) + "_" + std::to_string(std::get<1>(info.param)) +
+          "_" + std::to_string(std::get<2>(info.param)) + "_" +
+          std::to_string(std::get<3>(info.param)) + "_" + std::to_string(std::get<4>(info.param)) +
+          "_" + std::to_string(std::get<5>(info.param)) + "_" +
+          std::to_string(std::get<6>(info.param));
       return name;
     });
 
@@ -203,9 +202,9 @@ INSTANTIATE_TEST_SUITE_P(
                                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER),
                        ::testing::Values(0, 1, 2)),
     [](const testing::TestParamInfo<DescriptorSetLayoutTest::ParamType>& info) {
-      const std::string name = "binding_" + std::to_string(std::get<0>(info.param)) +
-                               "__descriptorType_" + std::to_string(std::get<1>(info.param)) +
-                               "__count_" + std::to_string(std::get<2>(info.param));
+      const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
+                               std::to_string(std::get<1>(info.param)) + "_" +
+                               std::to_string(std::get<2>(info.param));
       return name;
     });
 
@@ -251,12 +250,11 @@ INSTANTIATE_TEST_SUITE_P(
         ::testing::Values(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
         ::testing::Values(VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_4_BIT)),
     [](const testing::TestParamInfo<AttachmentDescriptionTest::ParamType>& info) {
-      const std::string name = "format_" + std::to_string(std::get<0>(info.param)) + "__loadOp_" +
-                               std::to_string(std::get<1>(info.param)) + "__storeOp_" +
-                               std::to_string(std::get<2>(info.param)) + "__initialLayout_" +
-                               std::to_string(std::get<3>(info.param)) + "__finalLayout_" +
-                               std::to_string(std::get<4>(info.param)) + "__samples_" +
-                               std::to_string(std::get<5>(info.param));
+      const std::string name =
+          std::to_string(std::get<0>(info.param)) + "_" + std::to_string(std::get<1>(info.param)) +
+          "_" + std::to_string(std::get<2>(info.param)) + "_" +
+          std::to_string(std::get<3>(info.param)) + "_" + std::to_string(std::get<4>(info.param)) +
+          "_" + std::to_string(std::get<5>(info.param));
       return name;
     });
 
@@ -281,8 +279,8 @@ INSTANTIATE_TEST_SUITE_P(
                        ::testing::Values(VK_IMAGE_LAYOUT_UNDEFINED,
                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)),
     [](const testing::TestParamInfo<AttachmentReferenceTest::ParamType>& info) {
-      const std::string name = "attachment_" + std::to_string(std::get<0>(info.param)) +
-                               "__layout_" + std::to_string(std::get<1>(info.param));
+      const std::string name =
+          std::to_string(std::get<0>(info.param)) + "_" + std::to_string(std::get<1>(info.param));
       return name;
     });
 
@@ -332,17 +330,17 @@ TEST_P(SubpassDescriptionTest, GetSubpassDescription) {
   EXPECT_EQ(subpassDescription.pPreserveAttachments, nullptr);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    AllCombinations,
-    SubpassDescriptionTest,
-    ::testing::Combine(::testing::Values(1, 2), ::testing::Bool(), ::testing::Bool()),
-    [](const testing::TestParamInfo<SubpassDescriptionTest::ParamType>& info) {
-      const std::string name = "numberOfAttachments_" + std::to_string(std::get<0>(info.param)) +
-                               "__withResolveAttachment_" +
-                               std::to_string(std::get<1>(info.param)) + "__withDepthAttachment_" +
-                               std::to_string(std::get<2>(info.param));
-      return name;
-    });
+INSTANTIATE_TEST_SUITE_P(AllCombinations,
+                         SubpassDescriptionTest,
+                         ::testing::Combine(::testing::Values(1, 2),
+                                            ::testing::Bool(),
+                                            ::testing::Bool()),
+                         [](const testing::TestParamInfo<SubpassDescriptionTest::ParamType>& info) {
+                           const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
+                                                    std::to_string(std::get<1>(info.param)) + "_" +
+                                                    std::to_string(std::get<2>(info.param));
+                           return name;
+                         });
 
 // ivkGetSubpassDependency **************************************************************
 
@@ -447,9 +445,8 @@ INSTANTIATE_TEST_SUITE_P(AllCombinations,
                                             ::testing::Values(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                                               VK_BUFFER_USAGE_TRANSFER_DST_BIT)),
                          [](const testing::TestParamInfo<BufferCreateInfoTest::ParamType>& info) {
-                           const std::string name =
-                               "size_" + std::to_string(std::get<0>(info.param)) + "__usageFlags_" +
-                               std::to_string(std::get<1>(info.param));
+                           const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
+                                                    std::to_string(std::get<1>(info.param));
                            return name;
                          });
 
@@ -509,17 +506,16 @@ INSTANTIATE_TEST_SUITE_P(
                        ::testing::Values(0, VK_IMAGE_CREATE_SPARSE_BINDING_BIT),
                        ::testing::Values(VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_4_BIT)),
     [](const testing::TestParamInfo<ImageCreateInfoTest::ParamType>& info) {
-      const std::string name = "imageType_" + std::to_string(std::get<0>(info.param)) +
-                               "__format_" + std::to_string(std::get<1>(info.param)) + "__tiling_" +
-                               std::to_string(std::get<2>(info.param)) + "__usage_" +
-                               std::to_string(std::get<3>(info.param)) + "__extent_" +
-                               std::to_string(std::get<4>(info.param).width) + "_" +
-                               std::to_string(std::get<4>(info.param).height) + "_" +
-                               std::to_string(std::get<4>(info.param).depth) + "__mipLevels_" +
-                               std::to_string(std::get<5>(info.param)) + "__arrayLayers_" +
-                               std::to_string(std::get<6>(info.param)) + "__flags_" +
-                               std::to_string(std::get<7>(info.param)) + "__sampleCount_" +
-                               std::to_string(std::get<8>(info.param));
+      const std::string name =
+          std::to_string(std::get<0>(info.param)) + "_" + std::to_string(std::get<1>(info.param)) +
+          "_" + std::to_string(std::get<2>(info.param)) + "_" +
+          std::to_string(std::get<3>(info.param)) + "_" +
+          std::to_string(std::get<4>(info.param).width) + "_" +
+          std::to_string(std::get<4>(info.param).height) + "_" +
+          std::to_string(std::get<4>(info.param).depth) + "_" +
+          std::to_string(std::get<5>(info.param)) + "_" + std::to_string(std::get<6>(info.param)) +
+          "_" + std::to_string(std::get<7>(info.param)) + "_" +
+          std::to_string(std::get<8>(info.param));
       return name;
     });
 
@@ -567,8 +563,8 @@ INSTANTIATE_TEST_SUITE_P(
                                          VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST),
                        ::testing::Values(VK_TRUE, VK_FALSE)),
     [](const testing::TestParamInfo<PipelineInputAssemblyStateCreateInfoTest::ParamType>& info) {
-      const std::string name = "topology_" + std::to_string(std::get<0>(info.param)) +
-                               "__primitiveType_" + std::to_string(std::get<1>(info.param));
+      const std::string name =
+          std::to_string(std::get<0>(info.param)) + "_" + std::to_string(std::get<1>(info.param));
       return name;
     });
 
@@ -633,8 +629,8 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Combine(::testing::Values(VK_POLYGON_MODE_FILL, VK_POLYGON_MODE_LINE),
                        ::testing::Values(VK_CULL_MODE_FRONT_BIT, VK_CULL_MODE_BACK_BIT)),
     [](const testing::TestParamInfo<PipelineRasterizationStateCreateInfoTest::ParamType>& info) {
-      const std::string name = "polygonMode_" + std::to_string(std::get<0>(info.param)) +
-                               "__cullMode_" + std::to_string(std::get<1>(info.param));
+      const std::string name =
+          std::to_string(std::get<0>(info.param)) + "_" + std::to_string(std::get<1>(info.param));
       return name;
     });
 
@@ -769,14 +765,13 @@ INSTANTIATE_TEST_SUITE_P(
                        ::testing::Values(VK_BLEND_OP_ADD, VK_BLEND_OP_SUBTRACT),
                        ::testing::Values(VK_COLOR_COMPONENT_R_BIT, VK_COLOR_COMPONENT_A_BIT)),
     [](const testing::TestParamInfo<PipelineColorBlendAttachmentStateTest::ParamType>& info) {
-      const std::string name = "_blendEnable_" + std::to_string(std::get<0>(info.param)) +
-                               "__srcColorBlendFactor_" + std::to_string(std::get<1>(info.param)) +
-                               "__dstColorBlendFactor_" + std::to_string(std::get<2>(info.param)) +
-                               "__colorBlendOp_" + std::to_string(std::get<3>(info.param)) +
-                               "__srcAlphaBlendFactor_" + std::to_string(std::get<4>(info.param)) +
-                               "__dstAlphaBlendFactor_" + std::to_string(std::get<5>(info.param)) +
-                               "__alphaBlendOp_" + std::to_string(std::get<6>(info.param)) +
-                               "__colorWriteMask_" + std::to_string(std::get<7>(info.param));
+      const std::string name =
+          "_" + std::to_string(std::get<0>(info.param)) + "_" +
+          std::to_string(std::get<1>(info.param)) + "_" + std::to_string(std::get<2>(info.param)) +
+          "_" + std::to_string(std::get<3>(info.param)) + "_" +
+          std::to_string(std::get<4>(info.param)) + "_" + std::to_string(std::get<5>(info.param)) +
+          "_" + std::to_string(std::get<6>(info.param)) + "_" +
+          std::to_string(std::get<7>(info.param));
       return name;
     });
 
@@ -812,8 +807,8 @@ INSTANTIATE_TEST_SUITE_P(
     GetPipelineViewportStateCreateInfoTest,
     ::testing::Combine(::testing::Bool(), ::testing::Bool()),
     [](const testing::TestParamInfo<GetPipelineViewportStateCreateInfoTest::ParamType>& info) {
-      const std::string name = "_useViewportPtr_" + std::to_string(std::get<0>(info.param)) +
-                               "__useScissorPtr_" + std::to_string(std::get<1>(info.param));
+      const std::string name =
+          std::to_string(std::get<0>(info.param)) + "_" + std::to_string(std::get<1>(info.param));
       return name;
     });
 
@@ -842,7 +837,7 @@ INSTANTIATE_TEST_SUITE_P(
     GetImageSubresourceRangeTest,
     ::testing::Combine(::testing::Values(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_ASPECT_DEPTH_BIT)),
     [](const testing::TestParamInfo<GetImageSubresourceRangeTest::ParamType>& info) {
-      const std::string name = "_aspectFlag_" + std::to_string(std::get<0>(info.param));
+      const std::string name = std::to_string(std::get<0>(info.param));
       return name;
     });
 
@@ -883,9 +878,9 @@ INSTANTIATE_TEST_SUITE_P(
                                          VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE),
                        ::testing::Values(1, 2)),
     [](const testing::TestParamInfo<GetWriteDescriptorSet_ImageInfoTest::ParamType>& info) {
-      const std::string name = "_dstBinding_" + std::to_string(std::get<0>(info.param)) +
-                               "__descriptorType_" + std::to_string(std::get<1>(info.param)) +
-                               "__numberDescriptors_" + std::to_string(std::get<2>(info.param));
+      const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
+                               std::to_string(std::get<1>(info.param)) + "_" +
+                               std::to_string(std::get<2>(info.param));
       return name;
     });
 
@@ -926,9 +921,9 @@ INSTANTIATE_TEST_SUITE_P(
                                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER),
                        ::testing::Values(1, 2)),
     [](const testing::TestParamInfo<GetWriteDescriptorSet_BufferInfoTest::ParamType>& info) {
-      const std::string name = "_dstBinding_" + std::to_string(std::get<0>(info.param)) +
-                               "__descriptorType_" + std::to_string(std::get<1>(info.param)) +
-                               "__numberDescriptors_" + std::to_string(std::get<2>(info.param));
+      const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
+                               std::to_string(std::get<1>(info.param)) + "_" +
+                               std::to_string(std::get<2>(info.param));
       return name;
     });
 
@@ -966,9 +961,9 @@ INSTANTIATE_TEST_SUITE_P(
                        ::testing::Values(VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT),
                        ::testing::Bool()),
     [](const testing::TestParamInfo<GetPipelineLayoutCreateInfoTest::ParamType>& info) {
-      const std::string name = "_numLayouts_" + std::to_string(std::get<0>(info.param)) +
-                               "__shaderFlagBits_" + std::to_string(std::get<1>(info.param)) +
-                               "__addPushConstantRange_" + std::to_string(std::get<2>(info.param));
+      const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
+                               std::to_string(std::get<1>(info.param)) + "_" +
+                               std::to_string(std::get<2>(info.param));
       return name;
     });
 
@@ -996,8 +991,8 @@ INSTANTIATE_TEST_SUITE_P(
                        ::testing::Values(0, 100),
                        ::testing::Values(1000, 2000)),
     [](const testing::TestParamInfo<GetPushConstantRangeTest::ParamType>& info) {
-      const std::string name = "_shaderStageFlags_" + std::to_string(std::get<0>(info.param)) +
-                               "__offset_" + std::to_string(std::get<1>(info.param)) + "__size_" +
+      const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
+                               std::to_string(std::get<1>(info.param)) + "_" +
                                std::to_string(std::get<2>(info.param));
       return name;
     });
@@ -1053,11 +1048,10 @@ INSTANTIATE_TEST_SUITE_P(AllCombinations,
                                             ::testing::Values(100, 500),
                                             ::testing::Values(100, 500)),
                          [](const testing::TestParamInfo<GetRect2DTest::ParamType>& info) {
-                           const std::string name =
-                               "_x_" + std::to_string(std::get<0>(info.param)) + "__y_" +
-                               std::to_string(std::get<1>(info.param)) + "__width_" +
-                               std::to_string(std::get<2>(info.param)) + "__height_" +
-                               std::to_string(std::get<3>(info.param));
+                           const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
+                                                    std::to_string(std::get<1>(info.param)) + "_" +
+                                                    std::to_string(std::get<2>(info.param)) + "_" +
+                                                    std::to_string(std::get<3>(info.param));
                            return name;
                          });
 
@@ -1090,8 +1084,8 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Combine(::testing::Values(VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT),
                        ::testing::Bool()),
     [](const testing::TestParamInfo<GetPipelineShaderStageCreateInfoTest::ParamType>& info) {
-      const std::string name = "_stage_" + std::to_string(std::get<0>(info.param)) +
-                               "__addEntryPoint_" + std::to_string(std::get<1>(info.param));
+      const std::string name =
+          std::to_string(std::get<0>(info.param)) + "_" + std::to_string(std::get<1>(info.param));
       return name;
     });
 
@@ -1154,15 +1148,14 @@ INSTANTIATE_TEST_SUITE_P(AllCombinations,
                                             ::testing::Values(100, 500),
                                             ::testing::Values(100, 500)),
                          [](const testing::TestParamInfo<GetImageCopy2DTest::ParamType>& info) {
-                           const std::string name =
-                               "_x_" + std::to_string(std::get<0>(info.param)) + "__y_" +
-                               std::to_string(std::get<1>(info.param)) + "__aspectMask_" +
-                               std::to_string(std::get<2>(info.param)) + "__mipLevel_" +
-                               std::to_string(std::get<3>(info.param)) + "__baseArrayLayer_" +
-                               std::to_string(std::get<4>(info.param)) + "__layerCount_" +
-                               std::to_string(std::get<5>(info.param)) + "__width_" +
-                               std::to_string(std::get<6>(info.param)) + "__height_" +
-                               std::to_string(std::get<7>(info.param));
+                           const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
+                                                    std::to_string(std::get<1>(info.param)) + "_" +
+                                                    std::to_string(std::get<2>(info.param)) + "_" +
+                                                    std::to_string(std::get<3>(info.param)) + "_" +
+                                                    std::to_string(std::get<4>(info.param)) + "_" +
+                                                    std::to_string(std::get<5>(info.param)) + "_" +
+                                                    std::to_string(std::get<6>(info.param)) + "_" +
+                                                    std::to_string(std::get<7>(info.param));
                            return name;
                          });
 
@@ -1221,14 +1214,12 @@ INSTANTIATE_TEST_SUITE_P(
                        ::testing::Values(0, 50),
                        ::testing::Values(1000, 2000)),
     [](const testing::TestParamInfo<GetBufferImageCopy2DTest::ParamType>& info) {
-      const std::string name = "_aspectMask_" + std::to_string(std::get<0>(info.param)) +
-                               "__mipLevel_" + std::to_string(std::get<1>(info.param)) +
-                               "__baseArrayLayer_" + std::to_string(std::get<2>(info.param)) +
-                               "__layerCount_" + std::to_string(std::get<3>(info.param)) +
-                               "__width_" + std::to_string(std::get<4>(info.param)) + "__height_" +
-                               std::to_string(std::get<5>(info.param)) + "__bufferOffset_" +
-                               std::to_string(std::get<6>(info.param)) + "__bufferRowLength_" +
-                               std::to_string(std::get<7>(info.param));
+      const std::string name =
+          std::to_string(std::get<0>(info.param)) + "_" + std::to_string(std::get<1>(info.param)) +
+          "_" + std::to_string(std::get<2>(info.param)) + "_" +
+          std::to_string(std::get<3>(info.param)) + "_" + std::to_string(std::get<4>(info.param)) +
+          "_" + std::to_string(std::get<5>(info.param)) + "_" +
+          std::to_string(std::get<6>(info.param)) + "_" + std::to_string(std::get<7>(info.param));
       return name;
     });
 
@@ -1288,14 +1279,12 @@ INSTANTIATE_TEST_SUITE_P(
                        ::testing::Values(0, 50),
                        ::testing::Values(1000, 2000)),
     [](const testing::TestParamInfo<GetBufferImageCopy3DTest::ParamType>& info) {
-      const std::string name = "_aspectMask_" + std::to_string(std::get<0>(info.param)) +
-                               "__mipLevel_" + std::to_string(std::get<1>(info.param)) +
-                               "__baseArrayLayer_" + std::to_string(std::get<2>(info.param)) +
-                               "__layerCount_" + std::to_string(std::get<3>(info.param)) +
-                               "__width_" + std::to_string(std::get<4>(info.param)) + "__height_" +
-                               std::to_string(std::get<5>(info.param)) + "__bufferOffset_" +
-                               std::to_string(std::get<6>(info.param)) + "__bufferRowLength_" +
-                               std::to_string(std::get<7>(info.param));
+      const std::string name =
+          std::to_string(std::get<0>(info.param)) + "_" + std::to_string(std::get<1>(info.param)) +
+          "_" + std::to_string(std::get<2>(info.param)) + "_" +
+          std::to_string(std::get<3>(info.param)) + "_" + std::to_string(std::get<4>(info.param)) +
+          "_" + std::to_string(std::get<5>(info.param)) + "_" +
+          std::to_string(std::get<6>(info.param)) + "_" + std::to_string(std::get<7>(info.param));
       return name;
     });
 
@@ -1324,8 +1313,8 @@ INSTANTIATE_TEST_SUITE_P(
                        ::testing::Values(VK_VERTEX_INPUT_RATE_VERTEX,
                                          VK_VERTEX_INPUT_RATE_INSTANCE)),
     [](const testing::TestParamInfo<GetVertexInputBindingDescriptionTest::ParamType>& info) {
-      const std::string name = "_binding_" + std::to_string(std::get<0>(info.param)) + "__stride_" +
-                               std::to_string(std::get<1>(info.param)) + "__inputRate_" +
+      const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
+                               std::to_string(std::get<1>(info.param)) + "_" +
                                std::to_string(std::get<2>(info.param));
       return name;
     });
@@ -1357,9 +1346,9 @@ INSTANTIATE_TEST_SUITE_P(
                        ::testing::Values(VK_FORMAT_R8G8B8_UNORM, VK_FORMAT_R8G8B8_SNORM),
                        ::testing::Values(0, 16)),
     [](const testing::TestParamInfo<GetVertexInputAttributeDescriptionTest::ParamType>& info) {
-      const std::string name = "_location_" + std::to_string(std::get<0>(info.param)) +
-                               "__binding_" + std::to_string(std::get<1>(info.param)) +
-                               "__format_" + std::to_string(std::get<2>(info.param)) + "__offset_" +
+      const std::string name = std::to_string(std::get<0>(info.param)) + "_" +
+                               std::to_string(std::get<1>(info.param)) + "_" +
+                               std::to_string(std::get<2>(info.param)) + "_" +
                                std::to_string(std::get<3>(info.param));
       return name;
     });
