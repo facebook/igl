@@ -14,6 +14,10 @@
 - (void)touchMoved:(UITouch*)touch;
 @end
 
+@protocol ViewSizeChangeDelegate <NSObject>
+- (void)onViewSizeChange;
+@end
+
 @interface BaseView : UIView
 - (instancetype)initWithTouchDelegate:(id<TouchDelegate>)delegate;
 @end
@@ -23,4 +27,5 @@
 @end
 
 @interface OpenGLView : BaseView
+@property (nonatomic, weak, nullable) id<ViewSizeChangeDelegate> viewSizeChangeDelegate;
 @end

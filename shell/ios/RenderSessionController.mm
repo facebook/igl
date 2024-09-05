@@ -152,6 +152,12 @@
   session_->update(adapter ? std::move(adapter->surfaceTextures) : igl::SurfaceTextures{});
 }
 
+- (void)releaseSessionFrameBuffer{
+    if (session_){
+        session_->releaseFramebuffer();
+    }
+}
+
 - (void)setFrame:(CGRect)frame {
   frame_ = frame;
 }

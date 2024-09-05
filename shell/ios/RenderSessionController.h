@@ -38,6 +38,7 @@ typedef int IglOpenglRenderingAPI;
 - (void)start;
 - (void)stop;
 - (void)tick;
+- (void)releaseSessionFrameBuffer;
 
 - (void)setFrame:(CGRect)frame;
 @end
