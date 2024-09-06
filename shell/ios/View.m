@@ -79,6 +79,13 @@
 
 @implementation OpenGLView
 
+- (void)layoutSubviews {
+  [super layoutSubviews];
+  if (self.viewSizeChangeDelegate) {
+    [self.viewSizeChangeDelegate onViewSizeChange];
+  }
+}
+
 + (Class)layerClass {
   return [CAEAGLLayer class];
 }

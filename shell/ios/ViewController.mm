@@ -42,7 +42,7 @@
 // @fb-only
 // @fb-only
 
-@interface ViewController () <TouchDelegate, IglSurfaceTexturesProvider> {
+@interface ViewController () <TouchDelegate, ViewSizeChangeDelegate, IglSurfaceTexturesProvider> {
   igl::BackendType backendType_;
 #if IGL_BACKEND_OPENGL
   igl::opengl::RenderingAPI openglRenderingAPI_;
@@ -68,6 +68,11 @@
 }
 
 - (void)mtkView:(nonnull MTKView*)view drawableSizeWillChange:(CGSize)size {
+  [renderSessionController_ releaseSessionFrameBuffer];
+}
+
+- (void)onViewSizeChange {
+  [renderSessionController_ releaseSessionFrameBuffer];
 }
 
 - (instancetype)initForMetal:(CGRect)frame {
@@ -188,11 +193,14 @@
 #endif
     break;
   }
-  case igl::BackendType::OpenGL:
+  case igl::BackendType::OpenGL: {
 #if IGL_BACKEND_OPENGL
-    self.view = [[OpenGLView alloc] initWithTouchDelegate:self];
+    auto openGLView = [[OpenGLView alloc] initWithTouchDelegate:self];
+    openGLView.viewSizeChangeDelegate = self;
+    self.view = openGLView;
 #endif
     break;
+  }
   case igl::BackendType::Vulkan:
     IGL_ASSERT_MSG(0, "IGL Samples not set up for Vulkan backend");
     break;

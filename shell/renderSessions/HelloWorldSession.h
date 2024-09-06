@@ -25,7 +25,6 @@ class HelloWorldSession : public RenderSession {
  private:
   std::shared_ptr<ICommandQueue> commandQueue_;
   RenderPassDesc renderPass_;
-  std::shared_ptr<IFramebuffer> framebuffer_;
   std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
 };
 

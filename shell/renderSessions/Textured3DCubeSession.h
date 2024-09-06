@@ -38,7 +38,6 @@ class Textured3DCubeSession : public RenderSession {
   std::shared_ptr<IBuffer> vb0_, ib0_; // Buffers for vertices and indices (or constants)
   std::shared_ptr<ITexture> tex0_;
   std::shared_ptr<ISamplerState> samp0_;
-  std::shared_ptr<IFramebuffer> framebuffer_;
 
   VertexFormat vertexParameters_;
 
