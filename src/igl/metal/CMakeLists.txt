@@ -24,7 +24,7 @@ add_library(IGLMetal ${SRC_FILES} ${HEADER_FILES})
 
 target_link_libraries(IGLMetal PRIVATE IGLLibrary "-framework Metal" "-framework QuartzCore")
 
-igl_set_cxxstd(IGLMetal 17)
+igl_set_cxxstd(IGLMetal 20)
 igl_set_folder(IGLMetal "IGL")
 
 set(OBJC_EXTRA_FLAGS -fobjc-arc -fobjc-weak)
