@@ -24,6 +24,7 @@
 #include <igl/Common.h>
 #include <igl/DepthStencilState.h>
 #include <igl/Texture.h>
+#include <igl/VertexInputState.h>
 #include <igl/vulkan/VulkanHelpers.h>
 
 // libc++'s implementation of std::format has a large binary size impact
@@ -199,6 +200,13 @@ void ensureShaderModule(IShaderModule* sm);
 struct DepthStencilState final : public IDepthStencilState {
   explicit DepthStencilState(const DepthStencilStateDesc& desc) : desc_(desc) {}
   const DepthStencilStateDesc desc_;
+};
+
+/// @brief Implements the igl::IVertexInputState interface
+struct VertexInputState final : public IVertexInputState {
+ public:
+  explicit VertexInputState(const VertexInputStateDesc& desc) : desc_(desc) {}
+  const VertexInputStateDesc desc_;
 };
 
 } // namespace igl::vulkan

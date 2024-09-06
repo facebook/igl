@@ -17,7 +17,6 @@
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/Texture.h>
-#include <igl/vulkan/VertexInputState.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>

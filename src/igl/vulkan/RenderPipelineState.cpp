@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/ShaderModule.h>
-#include <igl/vulkan/VertexInputState.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>
 #include <igl/vulkan/VulkanDevice.h>
