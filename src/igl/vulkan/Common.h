@@ -195,6 +195,12 @@ void overrideImageLayout(ITexture* texture, VkImageLayout layout);
 /// function doesn't assert at some point, the shader bindings are correct. Only for debugging.
 void ensureShaderModule(IShaderModule* sm);
 
+/// @brief Implements the igl::IDepthStencilState interface
+struct DepthStencilState final : public IDepthStencilState {
+  explicit DepthStencilState(const DepthStencilStateDesc& desc) : desc_(desc) {}
+  const DepthStencilStateDesc desc_;
+};
+
 } // namespace igl::vulkan
 
 namespace igl::vulkan::functions {

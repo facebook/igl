@@ -12,8 +12,8 @@
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/CommandQueue.h>
+#include <igl/vulkan/Common.h>
 #include <igl/vulkan/ComputePipelineState.h>
-#include <igl/vulkan/DepthStencilState.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/RenderPipelineState.h>

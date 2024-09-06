@@ -13,7 +13,6 @@
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/DepthStencilState.h>
 #include <igl/vulkan/Framebuffer.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/SamplerState.h>
@@ -418,7 +417,7 @@ void RenderCommandEncoder::bindDepthStencilState(
   const igl::vulkan::DepthStencilState* state =
       static_cast<igl::vulkan::DepthStencilState*>(depthStencilState.get());
 
-  const igl::DepthStencilStateDesc& desc = state->getDepthStencilStateDesc();
+  const igl::DepthStencilStateDesc& desc = state->desc_;
 
   dynamicState_.depthWriteEnable_ = desc.isDepthWriteEnabled;
   dynamicState_.setDepthCompareOp(compareFunctionToVkCompareOp(desc.compareFunction));

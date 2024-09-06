@@ -14,7 +14,6 @@
 #include <igl/vulkan/CommandQueue.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/ComputePipelineState.h>
-#include <igl/vulkan/DepthStencilState.h>
 #include <igl/vulkan/EnhancedShaderDebuggingStore.h>
 #include <igl/vulkan/Framebuffer.h>
 #include <igl/vulkan/PlatformDevice.h>
