@@ -115,7 +115,17 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
       enable(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, ExtensionType::Instance);
     }
 #endif
-
+    if (config.swapChainColorSpace != igl::ColorSpace::SRGB_NONLINEAR) {
+#if defined(VK_EXT_swapchain_colorspace)
+      const bool enabledExtension =
+          enable(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME, ExtensionType::Instance);
+#else
+      const bool enabledExtension = false;
+#endif
+      if (!enabledExtension) {
+        IGL_LOG_ERROR("VK_EXT_swapchain_colorspace extension not supported");
+      }
+    }
   } else if (extensionType == ExtensionType::Device) {
 #if defined(VK_KHR_shader_float16_int8) && VK_KHR_shader_float16_int8
     enable(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, ExtensionType::Device);
