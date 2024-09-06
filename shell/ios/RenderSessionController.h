@@ -13,7 +13,7 @@
 #import "IglShellPlatformAdapter.h"
 #import "IglSurfaceTexturesAdapter.h"
 
-typedef int IglBackendType;
+typedef int IglBackendFlavor;
 typedef int IglOpenglRenderingAPI;
 
 @protocol IglSurfaceTexturesProvider <NSObject>
@@ -25,13 +25,10 @@ typedef int IglOpenglRenderingAPI;
 @end
 
 @interface RenderSessionController : NSObject <IglShellPlatformAdapter>
-- (instancetype)initWithIglBackend:(IglBackendType)backendType
-                   surfaceProvider:(id<IglSurfaceTexturesProvider>)provider;
-
-#if IGL_BACKEND_OPENGL
-- (instancetype)initWithOpenGLRenderingAPI:(IglOpenglRenderingAPI)renderingAPI
-                           surfaceProvider:(id<IglSurfaceTexturesProvider>)provider;
-#endif
+- (instancetype)initWithBackendFlavor:(IglBackendFlavor)backendFlavor
+                         majorVersion:(uint32_t)majorVersion
+                         minorVersion:(uint32_t)minorVersion
+                      surfaceProvider:(id<IglSurfaceTexturesProvider>)provider;
 
 - (void)initializeDevice;
 

@@ -43,10 +43,7 @@
 // @fb-only
 
 @interface ViewController () <TouchDelegate, ViewSizeChangeDelegate, IglSurfaceTexturesProvider> {
-  igl::BackendType backendType_;
-#if IGL_BACKEND_OPENGL
-  igl::opengl::RenderingAPI openglRenderingAPI_;
-#endif
+  igl::BackendVersion backendVersion_;
   CALayer* layer_;
   CGRect frame_;
   id<CAMetalDrawable> currentDrawable_;
@@ -75,31 +72,18 @@
   [renderSessionController_ releaseSessionFrameBuffer];
 }
 
-- (instancetype)initForMetal:(CGRect)frame {
+- (instancetype)init:(igl::BackendVersion)backendVersion frame:(CGRect)frame {
   if (self = [super initWithNibName:nil bundle:nil]) {
-    backendType_ = igl::BackendType::Metal;
+    backendVersion_ = backendVersion;
     frame_ = frame;
     renderSessionController_ =
-        [[RenderSessionController alloc] initWithIglBackend:(IglBackendType)backendType_
+        [[RenderSessionController alloc] initWithIglBackend:(IglBackendFlavor)backendVersion_.flavor
+                                               majorVersion:backendVersion_.majorVersion
+                                               minorVersion:backendVersion_.minorVersion
                                             surfaceProvider:self];
   }
   return self;
 }
-
-#if IGL_BACKEND_OPENGL
-- (instancetype)initForOpenGL:(igl::opengl::RenderingAPI)renderingAPI frame:(CGRect)frame {
-  if (self = [super initWithNibName:nil bundle:nil]) {
-    backendType_ = igl::BackendType::OpenGL;
-    openglRenderingAPI_ = renderingAPI;
-    frame_ = frame;
-
-    renderSessionController_ = [[RenderSessionController alloc]
-        initWithOpenGLRenderingAPI:(IglOpenglRenderingAPI)openglRenderingAPI_
-                   surfaceProvider:self];
-  }
-  return self;
-}
-#endif
 
 - (void)initRenderSessionController {
   IGL_ASSERT(renderSessionController_);
@@ -123,10 +107,9 @@
 // clang-format off
 - (igl::SurfaceTextures)createSurfaceTexturesInternal {
   [[maybe_unused]] auto& device = [self platform]->getDevice();
-  switch (backendType_) {
+  switch (backendVersion_.flavor) {
 #if IGL_BACKEND_METAL
-  case igl::BackendType::Metal: {
-    IGL_ASSERT(backendType_ == igl::BackendType::Metal);
+  case igl::BackendFlavor::Metal: {
     auto *platformDevice = device.getPlatformDevice<igl::metal::PlatformDevice>();
     IGL_ASSERT(platformDevice);
     return igl::SurfaceTextures{
@@ -137,8 +120,7 @@
 #endif
 
 #if IGL_BACKEND_OPENGL
-  case igl::BackendType::OpenGL: {
-    IGL_ASSERT(backendType_ == igl::BackendType::OpenGL);
+  case igl::BackendFlavor::OpenGL_ES: {
     auto *platformDevice = device.getPlatformDevice<igl::opengl::ios::PlatformDevice>();
     IGL_ASSERT(platformDevice);
     return igl::SurfaceTextures{
@@ -174,11 +156,11 @@
 }
 
 - (void)loadView {
-  switch (backendType_) {
-  case igl::BackendType::Invalid:
+  switch (backendVersion_.flavor) {
+  case igl::BackendFlavor::Invalid:
     IGL_ASSERT_NOT_REACHED();
     break;
-  case igl::BackendType::Metal: {
+  case igl::BackendFlavor::Metal: {
 #if IGL_BACKEND_METAL
     [self initRenderSessionController];
     auto d = static_cast<igl::metal::Device&>([self platform]->getDevice()).get();
@@ -193,7 +175,7 @@
 #endif
     break;
   }
-  case igl::BackendType::OpenGL: {
+  case igl::BackendFlavor::OpenGL_ES: {
 #if IGL_BACKEND_OPENGL
     auto openGLView = [[OpenGLView alloc] initWithTouchDelegate:self];
     openGLView.viewSizeChangeDelegate = self;
@@ -201,7 +183,10 @@
 #endif
     break;
   }
-  case igl::BackendType::Vulkan:
+  case igl::BackendFlavor::OpenGL:
+    IGL_ASSERT_MSG(0, "IGL Samples not set up for Desktop OpenGL backend");
+    break;
+  case igl::BackendFlavor::Vulkan:
     IGL_ASSERT_MSG(0, "IGL Samples not set up for Vulkan backend");
     break;
   // @fb-only
@@ -213,7 +198,7 @@
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  if (backendType_ != igl::BackendType::Metal) {
+  if (backendVersion_.flavor != igl::BackendFlavor::Metal) {
     layer_ = self.view.layer;
     [self initRenderSessionController];
   }
@@ -224,7 +209,7 @@
 // @fb-only
   // @fb-only
 // @fb-only
-  if (backendType_ != igl::BackendType::Metal) {
+  if (backendVersion_.flavor != igl::BackendFlavor::Metal) {
     IGL_ASSERT(renderSessionController_);
     [renderSessionController_ start];
   }
@@ -236,7 +221,7 @@
   // @fb-only
 // @fb-only
 
-  if (backendType_ != igl::BackendType::Metal) {
+  if (backendVersion_.flavor != igl::BackendFlavor::Metal) {
     IGL_ASSERT(renderSessionController_);
     [renderSessionController_ stop];
   }

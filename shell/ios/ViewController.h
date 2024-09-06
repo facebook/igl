@@ -8,15 +8,9 @@
 #import <MetalKit/MetalKit.h>
 #import <UIKit/UIKit.h>
 #import <igl/IGL.h>
-#if IGL_BACKEND_OPENGL
-#import <igl/opengl/IContext.h>
-#endif
 
 @interface ViewController : UIViewController <MTKViewDelegate>
 
-- (instancetype)initForMetal:(CGRect)frame;
-#if IGL_BACKEND_OPENGL
-- (instancetype)initForOpenGL:(igl::opengl::RenderingAPI)renderingAPI frame:(CGRect)frame;
-#endif
+- (instancetype)init:(igl::BackendVersion)backendVersion frame:(CGRect)frame;
 
 @end

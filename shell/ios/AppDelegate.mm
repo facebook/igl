@@ -26,7 +26,8 @@
 
 #if IGL_BACKEND_METAL
   { // Metal
-    UIViewController* viewController = [[ViewController alloc] initForMetal:self.window.frame];
+    UIViewController* viewController =
+        [[ViewController alloc] init:{igl::BackendFlavor::Metal, 3, 0} frame:self.window.frame];
     viewController.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"Metal" image:nil tag:0];
     [viewControllers addObject:viewController];
   }
@@ -36,17 +37,19 @@
 #if GL_ES_VERSION_3_0
   { // OpenGL ES 3
     UIViewController* viewController =
-        [[ViewController alloc] initForOpenGL:igl::opengl::RenderingAPI::GLES3
-                                        frame:self.window.frame];
-    viewController.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"OpenGL ES 3" image:nil tag:1];
+        [[ViewController alloc] init:{igl::BackendFlavor::OpenGL_ES, 3, 0} frame:self.window.frame];
+    viewController.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"OpenGL ES 3.0"
+                                                              image:nil
+                                                                tag:1];
     [viewControllers addObject:viewController];
   }
 #endif
   { // OpenGL ES 2
     UIViewController* viewController =
-        [[ViewController alloc] initForOpenGL:igl::opengl::RenderingAPI::GLES2
-                                        frame:self.window.frame];
-    viewController.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"OpenGL ES 2" image:nil tag:2];
+        [[ViewController alloc] init:{igl::BackendFlavor::OpenGL_ES, 2, 0} frame:self.window.frame];
+    viewController.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"OpenGL ES 2.0"
+                                                              image:nil
+                                                                tag:2];
     [viewControllers addObject:viewController];
   }
 #endif

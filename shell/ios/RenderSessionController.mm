@@ -35,10 +35,7 @@
 #include <shell/shared/renderSession/RenderSession.h>
 
 @interface RenderSessionController () {
-  igl::BackendType backendType_;
-#if IGL_BACKEND_OPENGL
-  igl::opengl::RenderingAPI openglRenderingAPI_;
-#endif
+  igl::BackendVersion backendVersion_;
   CGRect frame_;
   CADisplayLink* renderTimer_;
   std::unique_ptr<igl::shell::RenderSession> session_;
@@ -50,10 +47,14 @@
 
 @implementation RenderSessionController
 
-- (instancetype)initWithIglBackend:(IglBackendType)backendType
-                   surfaceProvider:(id<IglSurfaceTexturesProvider>)provider {
+- (instancetype)initWithBackendFlavor:(IglBackendFlavor)backendFlavor
+                         majorVersion:(uint32_t)majorVersion
+                         minorVersion:(uint32_t)minorVersion
+                      surfaceProvider:(id<IglSurfaceTexturesProvider>)provider {
   if (self = [super init]) {
-    backendType_ = (igl::BackendType)backendType;
+    backendVersion_ = {(igl::BackendFlavor)backendFlavor,
+                       static_cast<uint8_t>(majorVersion),
+                       static_cast<uint8_t>(minorVersion)};
 
     frame_ = CGRectMake(0, 0, 1024, 768); // choose some default
 
@@ -63,20 +64,12 @@
   return self;
 }
 
-- (instancetype)initWithOpenGLRenderingAPI:(IglOpenglRenderingAPI)renderingAPI
-                           surfaceProvider:(id<IglSurfaceTexturesProvider>)provider {
-  if (self = [self initWithIglBackend:(int)igl::BackendType::OpenGL surfaceProvider:provider]) {
-    openglRenderingAPI_ = (igl::opengl::RenderingAPI)renderingAPI;
-  }
-  return self;
-}
-
 - (void)initializeDevice {
   igl::HWDeviceQueryDesc queryDesc(igl::HWDeviceType::DiscreteGpu);
   std::unique_ptr<igl::IDevice> device;
 
-  switch (backendType_) {
-  case igl::BackendType::Metal: {
+  switch (backendVersion_.flavor) {
+  case igl::BackendFlavor::Metal: {
 #if IGL_BACKEND_METAL
     igl::metal::HWDevice hwDevice;
     auto hwDevices = hwDevice.queryDevices(queryDesc, nullptr);
@@ -84,10 +77,12 @@
 #endif
     break;
   }
-  case igl::BackendType::OpenGL: {
+  case igl::BackendFlavor::OpenGL_ES: {
 #if IGL_BACKEND_OPENGL
     auto hwDevices = igl::opengl::ios::HWDevice().queryDevices(queryDesc, nullptr);
-    device = igl::opengl::ios::HWDevice().create(hwDevices[0], openglRenderingAPI_, nullptr);
+    const auto renderingApi = backendVersion_.majorVersion == 2 ? igl::opengl::RenderingAPI::GLES2
+                                                                : igl::opengl::RenderingAPI::GLES3;
+    device = igl::opengl::ios::HWDevice().create(hwDevices[0], renderingApi, nullptr);
 #endif
     break;
   }
@@ -104,7 +99,7 @@
   // @fb-only
 // @fb-only
   default:
-    IGL_ASSERT_MSG(0, "IGL Samples not set up for backend(%d)", (int)backendType_);
+    IGL_ASSERT_MSG(0, "IGL Samples not set up for backend(%d)", (int)backendVersion_.flavor);
     break;
   }
 
@@ -121,7 +116,7 @@
 }
 
 - (void)start {
-  if (backendType_ != igl::BackendType::Metal) {
+  if (backendVersion_.flavor != igl::BackendFlavor::Metal) {
     // Render at 60hz
     renderTimer_ = [CADisplayLink displayLinkWithTarget:self selector:@selector(tick)];
     [renderTimer_ addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
@@ -137,6 +132,7 @@
   igl::DeviceScope scope(platform_->getDevice());
 
   // @fb-only
+             // @fb-only
   IglSurfaceTexturesAdapter* adapter = [surfaceTexturesProvider_ createSurfaceTextures];
   // @fb-only
 
@@ -144,9 +140,9 @@
   platform_->getInputDispatcher().processEvents();
 
   // draw
-  if (backendType_ == igl::BackendType::Metal) {
+  if (backendVersion_.flavor == igl::BackendFlavor::Metal) {
     session_->setPixelsPerPoint((float)[UIScreen mainScreen].scale);
-  } else if (backendType_ == igl::BackendType::OpenGL) {
+  } else if (backendVersion_.flavor == igl::BackendFlavor::OpenGL) {
     session_->setPixelsPerPoint(1.0f);
   }
   session_->update(adapter ? std::move(adapter->surfaceTextures) : igl::SurfaceTextures{});
