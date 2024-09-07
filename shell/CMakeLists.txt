@@ -35,7 +35,7 @@ target_link_libraries(IGLShellShared PUBLIC IGLUuniform)
 target_link_libraries(IGLShellShared PUBLIC IGLstb)
 
 igl_set_folder(IGLShellShared "IGL")
-igl_set_cxxstd(IGLShellShared 17)
+igl_set_cxxstd(IGLShellShared 20)
 
 if(WIN32 OR UNIX AND NOT APPLE AND NOT ANDROID)
   add_subdirectory(windows)

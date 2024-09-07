@@ -21,7 +21,7 @@ target_link_libraries(IGLShellPlatform PUBLIC IGLLibrary)
 target_include_directories(IGLShellPlatform PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src")
 
 igl_set_folder(IGLShellPlatform "IGL")
-igl_set_cxxstd(IGLShellPlatform 17)
+igl_set_cxxstd(IGLShellPlatform 20)
 
 find_library(log-lib log)
 find_library(android-lib android)

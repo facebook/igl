@@ -10,7 +10,7 @@ set(PROJECT_NAME "IGL Samples")
 macro(ADD_DEMO app shellHTML)
   add_executable(${app} "${app}.cpp" "Common.cpp")
   set(CMAKE_EXECUTABLE_SUFFIX ".html")
-  igl_set_cxxstd(${app} 17)
+  igl_set_cxxstd(${app} 20)
   igl_set_folder(${app} ${PROJECT_NAME})
   target_link_libraries(${app} PUBLIC IGLLibrary)
   set_target_properties(

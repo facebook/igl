@@ -19,7 +19,7 @@ add_library(IGLShellPlatform ${PLATFORM_SHARED_SRC_CPP_FILES} ${PLATFORM_SHARED_
 target_link_libraries(IGLShellPlatform PUBLIC IGLLibrary)
 
 igl_set_folder(IGLShellPlatform "IGL")
-igl_set_cxxstd(IGLShellPlatform 17)
+igl_set_cxxstd(IGLShellPlatform 20)
 
 if(CMAKE_GENERATOR STREQUAL "Xcode")
   set_target_properties(IGLShellShared PROPERTIES XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_WEAK YES)
@@ -40,7 +40,7 @@ function(ADD_SHELL_SESSION_WITH_SRCS target srcs libs)
   add_executable(${target} MACOSX_BUNDLE ${srcs} "${SHELL_SESSION_SRC_FILES}" "${SHELL_SESSION_SHELL_HEADER_FILES}"
                                          "${XIBFILE}" "${RESOURCES}")
   igl_set_folder(${target} "IGL Shell Sessions")
-  igl_set_cxxstd(${target} 17)
+  igl_set_cxxstd(${target} 20)
   target_compile_definitions(${target} PRIVATE "IGL_SHELL_SESSION=${target}")
   target_link_libraries(${target} PUBLIC ${libs})
   target_link_libraries(${target} PUBLIC IGLShellShared)
