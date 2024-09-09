@@ -272,7 +272,7 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     framebuffer_->updateDrawable(surfaceTextures.color);
   }
 
-  const size_t _textureUnit = 0;
+  const size_t textureUnit = 0;
 
   // Graphics pipeline
   if (pipelineState_ == nullptr) {
@@ -284,7 +284,7 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
         framebuffer_->getColorAttachment(0)->getProperties().format;
     graphicsDesc.targetDesc.depthAttachmentFormat =
         framebuffer_->getDepthAttachment()->getProperties().format;
-    graphicsDesc.fragmentUnitSamplerMap[_textureUnit] = IGL_NAMEHANDLE("inputImage");
+    graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("inputImage");
     graphicsDesc.cullMode = igl::CullMode::Back;
     graphicsDesc.frontFaceWinding = igl::WindingMode::Clockwise;
     graphicsDesc.targetDesc.colorAttachments[0].blendEnabled = true;
@@ -347,8 +347,8 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
       IGL_ASSERT_NOT_REACHED();
     }
 
-    commands->bindTexture(_textureUnit, BindTarget::kFragment, tex0_.get());
-    commands->bindSamplerState(_textureUnit, BindTarget::kFragment, samp0_.get());
+    commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());
+    commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
     commands->drawIndexed(6);
 
