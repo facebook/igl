@@ -27,22 +27,22 @@ class TQSession : public RenderSession {
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
 
  private:
-  std::shared_ptr<ICommandQueue> _commandQueue;
-  std::shared_ptr<IRenderPipelineState> _pipelineState;
-  std::shared_ptr<IVertexInputState> _vertexInput0;
-  std::shared_ptr<ISamplerState> _samp0;
+  std::shared_ptr<ICommandQueue> commandQueue_;
+  std::shared_ptr<IRenderPipelineState> pipelineState_;
+  std::shared_ptr<IVertexInputState> vertexInput0_;
+  std::shared_ptr<ISamplerState> samp0_;
 
-  std::shared_ptr<IShaderStages> _shaderStages;
-  std::shared_ptr<IBuffer> _vb0;
-  std::shared_ptr<IBuffer> _ib0;
-  std::shared_ptr<IBuffer> _fragmentParamBuffer;
-  std::shared_ptr<ITexture> _depthTexture;
-  std::shared_ptr<ITexture> _tex0;
-  RenderPassDesc _renderPass;
-  std::shared_ptr<IFramebuffer> _framebuffer;
-  FragmentFormat _fragmentParameters{};
-  std::vector<UniformDesc> _fragmentUniformDescriptors;
-  std::vector<UniformDesc> _vertexUniformDescriptors;
+  std::shared_ptr<IShaderStages> shaderStages_;
+  std::shared_ptr<IBuffer> vb0_;
+  std::shared_ptr<IBuffer> ib0_;
+  std::shared_ptr<IBuffer> fragmentParamBuffer_;
+  std::shared_ptr<ITexture> depthTexture_;
+  std::shared_ptr<ITexture> tex0_;
+  RenderPassDesc renderPass_;
+  std::shared_ptr<IFramebuffer> framebuffer_;
+  FragmentFormat fragmentParameters_{};
+  std::vector<UniformDesc> fragmentUniformDescriptors_;
+  std::vector<UniformDesc> vertexUniformDescriptors_;
 };
 
 } // namespace igl::shell

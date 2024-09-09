@@ -187,12 +187,12 @@ void TQSession::initialize() noexcept {
   // Vertex & Index buffer
   const BufferDesc vbDesc =
       BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData));
-  _vb0 = device.createBuffer(vbDesc, nullptr);
-  IGL_ASSERT(_vb0 != nullptr);
+  vb0_ = device.createBuffer(vbDesc, nullptr);
+  IGL_ASSERT(vb0_ != nullptr);
   const BufferDesc ibDesc =
       BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
-  _ib0 = device.createBuffer(ibDesc, nullptr);
-  IGL_ASSERT(_ib0 != nullptr);
+  ib0_ = device.createBuffer(ibDesc, nullptr);
+  IGL_ASSERT(ib0_ != nullptr);
 
   VertexInputStateDesc inputDesc;
   inputDesc.numAttributes = 2;
@@ -202,126 +202,126 @@ void TQSession::initialize() noexcept {
       VertexAttribute(1, VertexAttributeFormat::Float2, offsetof(VertexPosUv, uv), "uv_in", 1);
   inputDesc.numInputBindings = 1;
   inputDesc.inputBindings[1].stride = sizeof(VertexPosUv);
-  _vertexInput0 = device.createVertexInputState(inputDesc, nullptr);
-  IGL_ASSERT(_vertexInput0 != nullptr);
+  vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
+  IGL_ASSERT(vertexInput0_ != nullptr);
 
   // Sampler & Texture
   SamplerStateDesc samplerDesc;
   samplerDesc.minFilter = samplerDesc.magFilter = SamplerMinMagFilter::Linear;
   samplerDesc.debugName = "Sampler: linear";
-  _samp0 = device.createSamplerState(samplerDesc, nullptr);
-  IGL_ASSERT(_samp0 != nullptr);
-  _tex0 = getPlatform().loadTexture("igl.png");
+  samp0_ = device.createSamplerState(samplerDesc, nullptr);
+  IGL_ASSERT(samp0_ != nullptr);
+  tex0_ = getPlatform().loadTexture("igl.png");
 
-  _shaderStages = getShaderStagesForBackend(device);
-  IGL_ASSERT(_shaderStages != nullptr);
+  shaderStages_ = getShaderStagesForBackend(device);
+  IGL_ASSERT(shaderStages_ != nullptr);
 
   // Command queue
   const CommandQueueDesc desc{igl::CommandQueueType::Graphics};
-  _commandQueue = device.createCommandQueue(desc, nullptr);
-  IGL_ASSERT(_commandQueue != nullptr);
+  commandQueue_ = device.createCommandQueue(desc, nullptr);
+  IGL_ASSERT(commandQueue_ != nullptr);
 
-  _renderPass.colorAttachments.resize(1);
-  _renderPass.colorAttachments[0].loadAction = LoadAction::Clear;
-  _renderPass.colorAttachments[0].storeAction = StoreAction::Store;
-  _renderPass.colorAttachments[0].clearColor = getPlatform().getDevice().backendDebugColor();
-  _renderPass.depthAttachment.loadAction = LoadAction::Clear;
-  _renderPass.depthAttachment.clearDepth = 1.0;
+  renderPass_.colorAttachments.resize(1);
+  renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
+  renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
+  renderPass_.colorAttachments[0].clearColor = getPlatform().getDevice().backendDebugColor();
+  renderPass_.depthAttachment.loadAction = LoadAction::Clear;
+  renderPass_.depthAttachment.clearDepth = 1.0;
 
   // init uniforms
-  _fragmentParameters = FragmentFormat{{1.0f, 1.0f, 1.0f}};
+  fragmentParameters_ = FragmentFormat{{1.0f, 1.0f, 1.0f}};
 
   BufferDesc fpDesc;
   fpDesc.type = BufferDesc::BufferTypeBits::Uniform;
-  fpDesc.data = &_fragmentParameters;
-  fpDesc.length = sizeof(_fragmentParameters);
+  fpDesc.data = &fragmentParameters_;
+  fpDesc.length = sizeof(fragmentParameters_);
   fpDesc.storage = ResourceStorage::Shared;
 
-  _fragmentParamBuffer = device.createBuffer(fpDesc, nullptr);
-  IGL_ASSERT(_fragmentParamBuffer != nullptr);
+  fragmentParamBuffer_ = device.createBuffer(fpDesc, nullptr);
+  IGL_ASSERT(fragmentParamBuffer_ != nullptr);
 }
 
 void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   igl::Result ret;
-  if (_framebuffer == nullptr) {
+  if (framebuffer_ == nullptr) {
     igl::FramebufferDesc framebufferDesc;
     framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
     framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
     IGL_ASSERT(ret.isOk());
-    _framebuffer = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
+    framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
     IGL_ASSERT(ret.isOk());
-    IGL_ASSERT(_framebuffer != nullptr);
+    IGL_ASSERT(framebuffer_ != nullptr);
   } else {
-    _framebuffer->updateDrawable(surfaceTextures.color);
+    framebuffer_->updateDrawable(surfaceTextures.color);
   }
 
-  const size_t _textureUnit = 0;
+  const size_t textureUnit = 0;
 
   // Graphics pipeline
-  if (_pipelineState == nullptr) {
+  if (pipelineState_ == nullptr) {
     RenderPipelineDesc graphicsDesc;
-    graphicsDesc.vertexInputState = _vertexInput0;
-    graphicsDesc.shaderStages = _shaderStages;
+    graphicsDesc.vertexInputState = vertexInput0_;
+    graphicsDesc.shaderStages = shaderStages_;
     graphicsDesc.targetDesc.colorAttachments.resize(1);
     graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
-        _framebuffer->getColorAttachment(0)->getProperties().format;
+        framebuffer_->getColorAttachment(0)->getProperties().format;
     graphicsDesc.targetDesc.depthAttachmentFormat =
-        _framebuffer->getDepthAttachment()->getProperties().format;
-    graphicsDesc.fragmentUnitSamplerMap[_textureUnit] = IGL_NAMEHANDLE("inputImage");
+        framebuffer_->getDepthAttachment()->getProperties().format;
+    graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("inputImage");
     graphicsDesc.cullMode = igl::CullMode::Back;
     graphicsDesc.frontFaceWinding = igl::WindingMode::Clockwise;
 
-    _pipelineState = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
-    IGL_ASSERT(_pipelineState != nullptr);
+    pipelineState_ = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
+    IGL_ASSERT(pipelineState_ != nullptr);
 
     // Set up uniformdescriptors
-    _fragmentUniformDescriptors.emplace_back();
+    fragmentUniformDescriptors_.emplace_back();
   }
 
   // Command Buffers
   const CommandBufferDesc cbDesc;
-  auto buffer = _commandQueue->createCommandBuffer(cbDesc, nullptr);
+  auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
   IGL_ASSERT(buffer != nullptr);
-  auto drawableSurface = _framebuffer->getColorAttachment(0);
+  auto drawableSurface = framebuffer_->getColorAttachment(0);
 
-  _framebuffer->updateDrawable(drawableSurface);
+  framebuffer_->updateDrawable(drawableSurface);
 
   // Uniform: "color"
-  if (!_fragmentUniformDescriptors.empty()) {
+  if (!fragmentUniformDescriptors_.empty()) {
     // @fb-only
       // @fb-only
       // @fb-only
       // @fb-only
     // @fb-only
       if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
-        _fragmentUniformDescriptors.back().location =
-            _pipelineState->getIndexByName("color", igl::ShaderStage::Fragment);
+        fragmentUniformDescriptors_.back().location =
+            pipelineState_->getIndexByName("color", igl::ShaderStage::Fragment);
       }
-    _fragmentUniformDescriptors.back().type = UniformType::Float3;
-    _fragmentUniformDescriptors.back().offset = offsetof(FragmentFormat, color);
+    fragmentUniformDescriptors_.back().type = UniformType::Float3;
+    fragmentUniformDescriptors_.back().offset = offsetof(FragmentFormat, color);
   }
 
   // Submit commands
   const std::shared_ptr<igl::IRenderCommandEncoder> commands =
-      buffer->createRenderCommandEncoder(_renderPass, _framebuffer);
+      buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
   IGL_ASSERT(commands != nullptr);
   if (commands) {
-    commands->bindVertexBuffer(1, *_vb0);
-    commands->bindRenderPipelineState(_pipelineState);
+    commands->bindVertexBuffer(1, *vb0_);
+    commands->bindRenderPipelineState(pipelineState_);
     if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
       // Bind non block uniforms
-      for (const auto& uniformDesc : _fragmentUniformDescriptors) {
-        commands->bindUniform(uniformDesc, &_fragmentParameters);
+      for (const auto& uniformDesc : fragmentUniformDescriptors_) {
+        commands->bindUniform(uniformDesc, &fragmentParameters_);
       }
     } else if (getPlatform().getDevice().hasFeature(DeviceFeatures::UniformBlocks)) {
-      commands->bindBuffer(0, _fragmentParamBuffer.get());
+      commands->bindBuffer(0, fragmentParamBuffer_.get());
     } else {
       IGL_ASSERT_NOT_REACHED();
     }
 
-    commands->bindTexture(_textureUnit, BindTarget::kFragment, _tex0.get());
-    commands->bindSamplerState(_textureUnit, BindTarget::kFragment, _samp0.get());
-    commands->bindIndexBuffer(*_ib0, IndexFormat::UInt16);
+    commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());
+    commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
+    commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
     commands->drawIndexed(6);
 
     commands->endEncoding();
@@ -332,8 +332,8 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     buffer->present(drawableSurface);
   }
 
-  IGL_ASSERT(_commandQueue != nullptr);
-  _commandQueue->submit(*buffer);
+  IGL_ASSERT(commandQueue_ != nullptr);
+  commandQueue_->submit(*buffer);
   RenderSession::update(surfaceTextures);
 }
 
