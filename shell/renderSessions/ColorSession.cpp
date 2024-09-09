@@ -191,9 +191,6 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
   IGL_UNREACHABLE_RETURN(nullptr)
 }
 
-ColorSession::ColorSession(std::shared_ptr<Platform> platform) :
-  RenderSession(std::move(platform)) {}
-
 // clang-tidy off
 void ColorSession::initialize() noexcept {
   // clang-tidy on
