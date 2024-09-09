@@ -135,11 +135,6 @@ class VulkanImmediateCommands final {
   /// @brief Returns the last SubmitHandle, which was submitted when `submit()` was last called
   [[nodiscard]] SubmitHandle getLastSubmitHandle() const;
 
-  /// @brief Checks whether the SubmitHandle is recycled. A recycled SubmitHandle is a handle that
-  /// has a submit id greater than the submit id associated with the same command buffer stored
-  /// internally in `VulkanImmediateCommands`. A SubmitHandle handle is also recycled if it's empty
-  [[nodiscard]] bool isRecycled(SubmitHandle handle) const;
-
   /** @brief Checks whether a SubmitHandle is ready. A SubmitHandle is ready if it is recycled or
    * empty. If it has not been recycled and is not empty, a SubmitHandle is ready if the fence
    * associated with the command buffer referred by the SubmitHandle structure has been signaled.
@@ -166,6 +161,10 @@ class VulkanImmediateCommands final {
   /// encoded, and have completed execution by the GPU (their fences have been signaled). Resets the
   /// number of available command buffers.
   void purge();
+  /// @brief Checks whether the SubmitHandle is recycled. A recycled SubmitHandle is a handle that
+  /// has a submit id greater than the submit id associated with the same command buffer stored
+  /// internally in `VulkanImmediateCommands`. A SubmitHandle handle is also recycled if it's empty
+  [[nodiscard]] bool isRecycled(SubmitHandle handle) const;
 
  private:
   const VulkanFunctionTable& vf_;
