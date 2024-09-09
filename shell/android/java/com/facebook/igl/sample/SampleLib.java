@@ -19,6 +19,29 @@ public class SampleLib {
     System.loadLibrary("sampleJni");
   }
 
+  // Must match igl/Common.h
+  public static enum BackendFlavor {
+    Invalid,
+    OpenGL,
+    OpenGL_ES,
+    Metal,
+    Vulkan,
+    // @fb-only
+  }
+
+  // Must match igl/DeviceFeatures.h
+  public static class BackendVersion {
+    BackendFlavor flavor;
+    byte majorVersion;
+    byte minorVersion;
+
+    BackendVersion(BackendFlavor flavor, byte majorVersion, byte minorVersion) {
+      this.flavor = flavor;
+      this.majorVersion = majorVersion;
+      this.minorVersion = minorVersion;
+    }
+  }
+
   // should match with IDs in TinyRenderer.h
   protected static final int gl3ID = 0;
   protected static final int gl2ID = 1;
@@ -29,16 +52,20 @@ public class SampleLib {
 
   protected static final BackendTypeContext[] backendTypeContexts =
       new BackendTypeContext[] {
-        new BackendTypeContext(gl3ID, gl3Label),
-        new BackendTypeContext(gl2ID, gl2Label),
-        new BackendTypeContext(vulkanID, vulkanLabel),
+        new BackendTypeContext(
+            new BackendVersion(BackendFlavor.OpenGL_ES, (byte) 3, (byte) 0), gl3Label),
+        new BackendTypeContext(
+            new BackendVersion(BackendFlavor.OpenGL_ES, (byte) 2, (byte) 0), gl2Label),
+        new BackendTypeContext(
+            new BackendVersion(BackendFlavor.Vulkan, (byte) 1, (byte) 3), vulkanLabel),
       };
 
-  public static native void init(AssetManager assetManager, Surface surface);
+  public static native void init(
+      BackendVersion backendVersion, AssetManager assetManager, Surface surface);
 
-  public static native boolean isBackendTypeIDSupported(int backendTypeID);
+  public static native boolean isBackendVersionSupported(BackendVersion backendVersion);
 
-  public static native void setActiveBackendTypeID(int backendTypeID);
+  public static native void setActiveBackendVersion(BackendVersion backendVersion);
 
   public static native void surfaceChanged(Surface surface, int width, int height);
 
@@ -51,11 +78,11 @@ public class SampleLib {
   public static native void surfaceDestroyed(Surface surface);
 
   protected static class BackendTypeContext {
-    int ID;
+    BackendVersion version;
     String label;
 
-    protected BackendTypeContext(int ID, String label) {
-      this.ID = ID;
+    protected BackendTypeContext(BackendVersion version, String label) {
+      this.version = version;
       this.label = label;
     }
   }

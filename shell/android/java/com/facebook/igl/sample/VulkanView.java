@@ -29,8 +29,9 @@ public class VulkanView extends SurfaceView
   private float lastTouchY = 0.0f;
   Context mContext;
   RenderThread mRenderThread;
+  private final SampleLib.BackendVersion mBackendVersion;
 
-  public VulkanView(Context context) {
+  public VulkanView(Context context, SampleLib.BackendVersion backendVersion) {
 
     super(context);
 
@@ -39,6 +40,7 @@ public class VulkanView extends SurfaceView
     this.getHolder().addCallback(this);
 
     mContext = context;
+    mBackendVersion = backendVersion;
   }
 
   @Override
@@ -74,7 +76,7 @@ public class VulkanView extends SurfaceView
   @Override
   public void surfaceCreated(SurfaceHolder surfaceHolder) {
     // Start rendering on the RenderThread
-    mRenderThread = new RenderThread(mContext, surfaceHolder);
+    mRenderThread = new RenderThread(mContext, surfaceHolder, mBackendVersion);
     mRenderThread.setName("Vulkan Render Thread");
     mRenderThread.start();
     mRenderThread.waitUntilReady();
@@ -137,10 +139,13 @@ public class VulkanView extends SurfaceView
 
     private Object mStartLock = new Object();
     private boolean mReady = false;
+    private final SampleLib.BackendVersion mBackendVersion;
 
-    public RenderThread(Context context, SurfaceHolder surfaceHolder) {
+    public RenderThread(
+        Context context, SurfaceHolder surfaceHolder, SampleLib.BackendVersion backendVersion) {
       mContext = context;
       mSurfaceHolder = surfaceHolder;
+      mBackendVersion = backendVersion;
     }
 
     public RenderHandler getHandler() {
@@ -181,7 +186,7 @@ public class VulkanView extends SurfaceView
     public void surfaceCreated() {
       Log.d(TAG, "SurfaceCreated");
       Surface surface = mSurfaceHolder.getSurface();
-      SampleLib.init(mContext.getAssets(), surface);
+      SampleLib.init(mBackendVersion, mContext.getAssets(), surface);
     }
 
     public void surfaceChanged(int width, int height) {

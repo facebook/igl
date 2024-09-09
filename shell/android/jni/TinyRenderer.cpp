@@ -73,23 +73,22 @@ using namespace igl;
 
 void TinyRenderer::init(AAssetManager* mgr,
                         ANativeWindow* nativeWindow,
-                        BackendTypeID backendTypeID) {
-  backendTypeID_ = backendTypeID;
+                        BackendVersion backendVersion) {
+  backendVersion_ = backendVersion;
   nativeWindow_ = nativeWindow;
   Result result;
   const igl::HWDeviceQueryDesc queryDesc(HWDeviceType::IntegratedGpu);
   std::unique_ptr<IDevice> d;
 
-  switch (backendTypeID_) {
+  switch (backendVersion_.flavor) {
 #if IGL_BACKEND_OPENGL
-  case BackendTypeID::GLES2:
-  case BackendTypeID::GLES3: {
+  case igl::BackendFlavor::OpenGL_ES: {
     auto hwDevice = opengl::egl::HWDevice();
     auto hwDevices = hwDevice.queryDevices(queryDesc, &result);
     IGL_ASSERT(result.isOk());
     // Decide which backend api to use, default as GLES3
-    auto backendType = (backendTypeID_ == BackendTypeID::GLES3) ? igl::opengl::RenderingAPI::GLES3
-                                                                : igl::opengl::RenderingAPI::GLES2;
+    auto backendType = (backendVersion_.majorVersion == 3) ? igl::opengl::RenderingAPI::GLES3
+                                                           : igl::opengl::RenderingAPI::GLES2;
     d = hwDevice.create(hwDevices[0], backendType, nullptr, &result);
     shellParams_.shouldPresent = false;
     break;
@@ -97,7 +96,7 @@ void TinyRenderer::init(AAssetManager* mgr,
 #endif
 
 #if IGL_BACKEND_VULKAN
-  case BackendTypeID::Vulkan: {
+  case igl::BackendFlavor::Vulkan: {
     IGL_ASSERT(nativeWindow != nullptr);
     vulkan::VulkanContextConfig config;
     config.terminateOnValidationError = true;
@@ -187,10 +186,9 @@ void TinyRenderer::render(float displayScale) {
   Result result;
   igl::SurfaceTextures surfaceTextures;
 
-  switch (backendTypeID_) {
+  switch (backendVersion_.flavor) {
 #if IGL_BACKEND_OPENGL
-  case BackendTypeID::GLES2:
-  case BackendTypeID::GLES3: {
+  case igl::BackendFlavor::OpenGL_ES: {
     auto* platformDevice = platform_->getDevice().getPlatformDevice<opengl::egl::PlatformDevice>();
     surfaceTextures.color = platformDevice->createTextureFromNativeDrawable(&result);
     surfaceTextures.depth =
@@ -200,7 +198,7 @@ void TinyRenderer::render(float displayScale) {
 #endif
 
 #if IGL_BACKEND_VULKAN
-  case BackendTypeID::Vulkan: {
+  case igl::BackendFlavor::Vulkan: {
     auto* platformDevice = platform_->getDevice().getPlatformDevice<vulkan::PlatformDevice>();
     surfaceTextures.color = platformDevice->createTextureFromNativeDrawable(&result);
     surfaceTextures.depth = platformDevice->createTextureFromNativeDepth(width_, height_, &result);
@@ -225,7 +223,7 @@ void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int 
   width_ = static_cast<uint32_t>(width);
   height_ = static_cast<uint32_t>(height);
 #if IGL_BACKEND_OPENGL
-  if (backendTypeID_ == BackendTypeID::GLES2 || backendTypeID_ == BackendTypeID::GLES3) {
+  if (backendVersion_.flavor == igl::BackendFlavor::OpenGL_ES) {
     auto* readSurface = eglGetCurrentSurface(EGL_READ);
     auto* drawSurface = eglGetCurrentSurface(EGL_DRAW);
 
@@ -239,7 +237,7 @@ void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int 
 #endif
 
 #if IGL_BACKEND_VULKAN
-  if (backendTypeID_ == BackendTypeID::Vulkan) {
+  if (backendVersion_.flavor == igl::BackendFlavor::Vulkan) {
     recreateSwapchain(nativeWindow_, false);
   }
 #endif

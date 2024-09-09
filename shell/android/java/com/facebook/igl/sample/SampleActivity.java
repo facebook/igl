@@ -51,7 +51,7 @@ public class SampleActivity extends Activity implements View.OnClickListener {
     mBackendViewFrame = new FrameLayout(this);
     mTabBackendViewMap = new HashMap<String, SurfaceView>();
     for (int i = 0; i < SampleLib.backendTypeContexts.length; i++) {
-      if (!SampleLib.isBackendTypeIDSupported(SampleLib.backendTypeContexts[i].ID)) {
+      if (!SampleLib.isBackendVersionSupported(SampleLib.backendTypeContexts[i].version)) {
         continue;
       }
 
@@ -65,10 +65,10 @@ public class SampleActivity extends Activity implements View.OnClickListener {
 
       // initialize sampleView for each backend type
       SurfaceView backendView;
-      if (SampleLib.backendTypeContexts[i].ID == SampleLib.vulkanID) {
-        backendView = new VulkanView(getApplication());
+      if (SampleLib.backendTypeContexts[i].version.flavor == SampleLib.BackendFlavor.Vulkan) {
+        backendView = new VulkanView(getApplication(), SampleLib.backendTypeContexts[i].version);
       } else {
-        backendView = new SampleView(getApplication(), SampleLib.backendTypeContexts[i].ID);
+        backendView = new SampleView(getApplication(), SampleLib.backendTypeContexts[i].version);
         ((SampleView) backendView).onPause();
       }
 
@@ -112,7 +112,7 @@ public class SampleActivity extends Activity implements View.OnClickListener {
         mBackendViewFrame.removeAllViews();
         SurfaceView surfaceView = mTabBackendViewMap.get(curBackendType);
         mBackendViewFrame.addView(surfaceView);
-        SampleLib.setActiveBackendTypeID(i);
+        SampleLib.setActiveBackendVersion(SampleLib.backendTypeContexts[i].version);
         if (!curBackendType.equals(SampleLib.vulkanLabel)) {
           ((SampleView) mTabBackendViewMap.get(curBackendType)).onResume();
         }

@@ -27,20 +27,20 @@ public class SampleView extends GLSurfaceView {
   private float lastTouchX = 0.0f;
   private float lastTouchY = 0.0f;
 
-  public SampleView(Context context, int backendTypeID) {
+  public SampleView(Context context, SampleLib.BackendVersion backendVersion) {
 
     super(context);
     // Uncomment to attach debugging
     // android.os.Debug.waitForDebugger();
 
-    setEGLContextFactory(new ContextFactory(backendTypeID));
+    setEGLContextFactory(new ContextFactory(backendVersion));
 
     // Set the view to be transluscent since we provide an alpha channel below.
     this.getHolder().setFormat(PixelFormat.TRANSLUCENT);
 
-    setEGLConfigChooser(new ConfigChooser(backendTypeID));
+    setEGLConfigChooser(new ConfigChooser(backendVersion));
 
-    setRenderer(new Renderer(context));
+    setRenderer(new Renderer(context, backendVersion));
   }
 
   @Override
@@ -82,16 +82,16 @@ public class SampleView extends GLSurfaceView {
   /// Context factory: handles creating the EGL context for this view with the correct settings.
   private static class ContextFactory implements GLSurfaceView.EGLContextFactory {
 
-    private final int mBackendTypeID;
+    private final SampleLib.BackendVersion mBackendVersion;
 
-    public ContextFactory(int backendTypeID) {
-      mBackendTypeID = backendTypeID;
+    public ContextFactory(SampleLib.BackendVersion version) {
+      mBackendVersion = version;
     }
 
     public EGLContext createContext(EGL10 egl, EGLDisplay display, EGLConfig eglConfig) {
       final int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
       int[] attrib_list = {
-        EGL_CONTEXT_CLIENT_VERSION, (mBackendTypeID == SampleLib.gl3ID) ? 3 : 2, EGL10.EGL_NONE
+        EGL_CONTEXT_CLIENT_VERSION, mBackendVersion.majorVersion, EGL10.EGL_NONE
       };
       EGLContext context =
           egl.eglCreateContext(display, eglConfig, EGL10.EGL_NO_CONTEXT, attrib_list);
@@ -115,10 +115,10 @@ public class SampleView extends GLSurfaceView {
   // correct one.
   private static class ConfigChooser implements GLSurfaceView.EGLConfigChooser {
 
-    private final int mBackendTypeID;
+    private final SampleLib.BackendVersion mBackendVersion;
 
-    public ConfigChooser(int backendTypeID) {
-      mBackendTypeID = backendTypeID;
+    public ConfigChooser(SampleLib.BackendVersion version) {
+      mBackendVersion = version;
     }
 
     public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display) {
@@ -132,7 +132,9 @@ public class SampleView extends GLSurfaceView {
         EGL10.EGL_ALPHA_SIZE, 8,
         EGL10.EGL_DEPTH_SIZE, 16,
         EGL10.EGL_RENDERABLE_TYPE,
-            (mBackendTypeID == SampleLib.gl3ID) ? EGL15.EGL_OPENGL_ES3_BIT : EGL_OPENGL_ES2_BIT,
+            (mBackendVersion.majorVersion == (byte) 3)
+                ? EGL15.EGL_OPENGL_ES3_BIT
+                : EGL_OPENGL_ES2_BIT,
         EGL10.EGL_NONE
       };
 
@@ -153,13 +155,15 @@ public class SampleView extends GLSurfaceView {
   /// Renderer: This class communicates with our JNI library to implement the OpenGL rendering.
   private static class Renderer implements GLSurfaceView.Renderer {
     private final Context mContext;
+    private final SampleLib.BackendVersion mBackendVersion;
 
-    Renderer(Context context) {
+    Renderer(Context context, SampleLib.BackendVersion backendVersion) {
       mContext = context;
+      mBackendVersion = backendVersion;
     }
 
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-      SampleLib.init(mContext.getAssets(), null);
+      SampleLib.init(mBackendVersion, mContext.getAssets(), null);
     }
 
     public void onSurfaceChanged(GL10 gl, int width, int height) {
