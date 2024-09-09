@@ -8,6 +8,7 @@
 // @fb-only
 
 #include <IGLU/shaderCross/ShaderCross.h>
+#include <IGLU/shaderCross/ShaderCrossUniformBuffer.h>
 
 #include <algorithm>
 #include <cmath>
@@ -45,12 +46,23 @@ const char* getVulkanFragmentShaderSource() {
             })";
 }
 
-const char* getVulkanVertexShaderSource() {
-  return R"(#version 450
-            #extension GL_OVR_multiview2 : require
-            layout(num_views = 2) in;
-            precision highp float;
+std::string getVertexShaderProlog(bool stereoRendering) {
+  return stereoRendering ? R"(#version 450
+    #extension GL_OVR_multiview2 : require
+    layout(num_views = 2) in;
+    precision highp float;
 
+    #define VIEW_ID int(gl_ViewID_OVR)
+  )"
+                         : R"(#version 450
+    precision highp float;
+
+    #define VIEW_ID perFrame.viewId
+  )";
+}
+
+std::string getVulkanVertexShaderSource(bool stereoRendering) {
+  return getVertexShaderProlog(stereoRendering) + R"(
             layout(location = 0) in vec3 position;
             layout(location = 1) in vec3 normal;
             layout(location = 2) in vec4 weight;
@@ -60,6 +72,7 @@ const char* getVulkanVertexShaderSource() {
             layout (set = 1, binding = 1, std140) uniform PerFrame {
               mat4 jointMatrices[XR_HAND_JOINT_COUNT_EXT];
               mat4 viewProjectionMatrix[2];
+              int viewId;
             } perFrame;
 
             layout(location = 0) out vec3 worldNormal;
@@ -71,13 +84,14 @@ const char* getVulkanVertexShaderSource() {
                            perFrame.jointMatrices[int(joint.w)] * mat4(weight.w);
               worldNormal = (world * vec4(normal, 0.0)).xyz;
               vec4 worldPos = world * vec4(position, 1.0);
-              gl_Position = perFrame.viewProjectionMatrix[int(gl_ViewID_OVR)] * vec4(worldPos.xyz, 1.0);
+              gl_Position = perFrame.viewProjectionMatrix[VIEW_ID] * vec4(worldPos.xyz, 1.0);
             })";
 }
 
 [[nodiscard]] std::unique_ptr<IShaderStages> getShaderStagesForBackend(
     igl::IDevice& device,
-    const iglu::ShaderCross& shaderCross) noexcept {
+    const iglu::ShaderCross& shaderCross,
+    bool stereoRendering) noexcept {
   switch (device.getBackendType()) {
   case igl::BackendType::Metal:
     IGL_ASSERT_MSG(false, "Metal is not supported");
@@ -86,18 +100,19 @@ const char* getVulkanVertexShaderSource() {
     // @fb-only
     // @fb-only
   case igl::BackendType::Vulkan:
-    return igl::ShaderStagesCreator::fromModuleStringInput(device,
-                                                           getVulkanVertexShaderSource(),
-                                                           "main",
-                                                           "",
-                                                           getVulkanFragmentShaderSource(),
-                                                           "main",
-                                                           "",
-                                                           nullptr);
+    return igl::ShaderStagesCreator::fromModuleStringInput(
+        device,
+        getVulkanVertexShaderSource(stereoRendering).c_str(),
+        "main",
+        "",
+        getVulkanFragmentShaderSource(),
+        "main",
+        "",
+        nullptr);
   case igl::BackendType::OpenGL: {
     igl::Result res;
     const auto vs = shaderCross.crossCompileFromVulkanSource(
-        getVulkanVertexShaderSource(), igl::ShaderStage::Vertex, &res);
+        getVulkanVertexShaderSource(stereoRendering).c_str(), igl::ShaderStage::Vertex, &res);
     IGL_ASSERT_MSG(res.isOk(), res.message.c_str());
 
     const auto fs = shaderCross.crossCompileFromVulkanSource(
@@ -176,6 +191,8 @@ void HandsOpenXRSession::initialize() noexcept {
     return;
   }
 
+  const bool stereoRendering = shellParams().viewParams.size() > 1;
+
   const auto& handMeshes = shellParams().handMeshes;
   std::vector<Vertex> vertexData;
   std::vector<uint16_t> indices;
@@ -237,7 +254,7 @@ void HandsOpenXRSession::initialize() noexcept {
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
 
   const iglu::ShaderCross shaderCross(device);
-  shaderStages_ = getShaderStagesForBackend(device, shaderCross);
+  shaderStages_ = getShaderStagesForBackend(device, shaderCross, stereoRendering);
 
   // Command queue: backed by different types of GPU HW queues
   const CommandQueueDesc desc{igl::CommandQueueType::Graphics};
@@ -253,28 +270,6 @@ void HandsOpenXRSession::initialize() noexcept {
 #endif
   renderPass_.depthAttachment.loadAction = LoadAction::Clear;
   renderPass_.depthAttachment.clearDepth = 1.0;
-
-  iglu::ManagedUniformBufferInfo info;
-  info.index = 1;
-  info.length = sizeof(UniformBlock);
-  info.uniforms = std::vector<igl::UniformDesc>{
-      igl::UniformDesc{
-          "jointMatrices",
-          -1,
-          igl::UniformType::Mat4x4,
-          kMaxJoints,
-          offsetof(UniformBlock, jointMatrices),
-          sizeof(glm::mat4),
-      },
-      igl::UniformDesc{"viewProjectionMatrix",
-                       -1,
-                       igl::UniformType::Mat4x4,
-                       2,
-                       offsetof(UniformBlock, viewProjectionMatrix),
-                       sizeof(glm::mat4)},
-  };
-  ubo_ = std::make_shared<iglu::ShaderCrossUniformBuffer>(device, "perFrame", info);
-  IGL_ASSERT(ubo_->result.isOk());
 }
 
 void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
@@ -290,13 +285,18 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   // Update uniforms.
   for (size_t i = 0; i < std::min(shellParams().viewParams.size(), size_t(2)); ++i) {
-    ub_.viewProjectionMatrix[i] =
+    const auto currentViewId = shellParams().viewParams[i].viewIndex;
+    ub_.viewProjectionMatrix[currentViewId] =
         perspectiveAsymmetricFovRH(shellParams().viewParams[i].fov, 0.1f, 100.0f) *
         shellParams().viewParams[i].viewMatrix;
+    ub_.viewId = currentViewId;
   }
 
+  IGL_ASSERT(!shellParams().viewParams.empty());
+  const auto viewIndex = shellParams().viewParams[0].viewIndex;
+
   igl::Result ret;
-  if (framebuffer_ == nullptr) {
+  if (framebuffer_[viewIndex] == nullptr) {
     igl::FramebufferDesc framebufferDesc;
     framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
     framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
@@ -304,11 +304,11 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     framebufferDesc.mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
                                                                      : FramebufferMode::Mono;
 
-    framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
+    framebuffer_[viewIndex] = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
     IGL_ASSERT(ret.isOk());
-    IGL_ASSERT(framebuffer_ != nullptr);
+    IGL_ASSERT(framebuffer_[viewIndex] != nullptr);
   } else {
-    framebuffer_->updateDrawable(surfaceTextures.color);
+    framebuffer_[viewIndex]->updateDrawable(surfaceTextures.color);
   }
 
   if (pipelineState_ == nullptr) {
@@ -317,9 +317,9 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     graphicsDesc.shaderStages = shaderStages_;
     graphicsDesc.targetDesc.colorAttachments.resize(1);
     graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
-        framebuffer_->getColorAttachment(0)->getProperties().format;
+        framebuffer_[viewIndex]->getColorAttachment(0)->getProperties().format;
     graphicsDesc.targetDesc.depthAttachmentFormat =
-        framebuffer_->getDepthAttachment()->getProperties().format;
+        framebuffer_[viewIndex]->getDepthAttachment()->getProperties().format;
     graphicsDesc.cullMode = igl::CullMode::Back;
     graphicsDesc.frontFaceWinding = igl::WindingMode::CounterClockwise;
     pipelineState_ = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
@@ -336,7 +336,7 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   // Command buffers (1-N per thread): create, submit and forget
   auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
   const std::shared_ptr<igl::IRenderCommandEncoder> commands =
-      buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+      buffer->createRenderCommandEncoder(renderPass_, framebuffer_[viewIndex]);
   commands->pushDebugGroupLabel("HandsOpenXRSession Commands", igl::Color(0.0f, 1.0f, 0.0f));
 
   commands->bindVertexBuffer(0, *vb0_);
@@ -344,6 +344,34 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commands->bindRenderPipelineState(pipelineState_);
   commands->bindDepthStencilState(depthStencilState_);
 
+  iglu::ManagedUniformBufferInfo info;
+  info.index = 1;
+  info.length = sizeof(UniformBlock);
+  info.uniforms =
+      std::vector<igl::UniformDesc>{igl::UniformDesc{
+                                        "jointMatrices",
+                                        -1,
+                                        igl::UniformType::Mat4x4,
+                                        kMaxJoints,
+                                        offsetof(UniformBlock, jointMatrices),
+                                        sizeof(glm::mat4),
+                                    },
+                                    igl::UniformDesc{"viewProjectionMatrix",
+                                                     -1,
+                                                     igl::UniformType::Mat4x4,
+                                                     2,
+                                                     offsetof(UniformBlock, viewProjectionMatrix),
+                                                     sizeof(glm::mat4)},
+                                    igl::UniformDesc{
+                                        "viewId",
+                                        -1,
+                                        igl::UniformType::Int,
+                                        1,
+                                        offsetof(UniformBlock, viewId),
+                                        0,
+                                    }};
+
+  std::shared_ptr<iglu::ShaderCrossUniformBuffer> ubos[2];
   for (int i = 0; i < 2; ++i) {
     const auto& handTracking = shellParams().handTracking[i];
     IGL_ASSERT(handTracking.jointPose.size() <= kMaxJoints);
@@ -351,8 +379,11 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
       ub_.jointMatrices[j] = poseToMat4(handTracking.jointPose[j]) * jointInvBindMatrix_[i][j];
     }
 
-    *static_cast<UniformBlock*>(ubo_->getData()) = ub_;
-    ubo_->bind(device, *pipelineState_, *commands);
+    ubos[i] = std::make_shared<iglu::ShaderCrossUniformBuffer>(device, "perFrame", info);
+    IGL_ASSERT(ubos[i]->result.isOk());
+    *static_cast<UniformBlock*>(ubos[i]->getData()) = ub_;
+
+    ubos[i]->bind(device, *pipelineState_, *commands);
 
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16, handsDrawParams_[i].indexBufferOffset);
     commands->drawIndexed(handsDrawParams_[i].indexCount);
@@ -362,7 +393,7 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commands->endEncoding();
 
   if (shellParams().shouldPresent) {
-    buffer->present(framebuffer_->getColorAttachment(0));
+    buffer->present(framebuffer_[viewIndex]->getColorAttachment(0));
   }
 
   commandQueue_->submit(*buffer); // Guarantees ordering between command buffers

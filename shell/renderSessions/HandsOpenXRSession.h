@@ -11,7 +11,6 @@
 
 #include <shell/shared/renderSession/RenderSession.h>
 
-#include <IGLU/shaderCross/ShaderCrossUniformBuffer.h>
 #include <array>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -25,6 +24,7 @@ constexpr int kMaxJoints = 26;
 struct UniformBlock {
   glm::mat4 jointMatrices[kMaxJoints]{};
   glm::mat4 viewProjectionMatrix[2]{};
+  int viewId = 0;
 };
 
 class HandsOpenXRSession : public RenderSession {
@@ -41,8 +41,7 @@ class HandsOpenXRSession : public RenderSession {
   std::shared_ptr<IVertexInputState> vertexInput0_;
   std::shared_ptr<IShaderStages> shaderStages_;
   std::shared_ptr<IBuffer> vb0_, ib0_;
-  std::shared_ptr<IFramebuffer> framebuffer_;
-  std::shared_ptr<iglu::ShaderCrossUniformBuffer> ubo_;
+  std::shared_ptr<IFramebuffer> framebuffer_[2];
 
   std::array<std::array<glm::mat4, kMaxJoints>, 2> jointInvBindMatrix_;
 
