@@ -8,6 +8,7 @@
 // @fb-only
 
 #include <IGLU/shaderCross/ShaderCross.h>
+#include <IGLU/shaderCross/ShaderCrossUniformBuffer.h>
 
 #include <algorithm>
 #include <cmath>
@@ -59,16 +60,28 @@ const char* getVulkanFragmentShaderSource() {
             })";
 }
 
-const char* getVulkanVertexShaderSource() {
-  return R"(#version 450
-            #extension GL_OVR_multiview2 : require
-            layout(num_views = 2) in;
-            precision highp float;
+std::string getVertexShaderProlog(bool stereoRendering) {
+  return stereoRendering ? R"(#version 450
+    #extension GL_OVR_multiview2 : require
+    layout(num_views = 2) in;
+    precision highp float;
 
+    #define VIEW_ID int(gl_ViewID_OVR)
+  )"
+                         : R"(#version 450
+    precision highp float;
+
+    #define VIEW_ID perFrame.viewId
+  )";
+}
+
+std::string getVulkanVertexShaderSource(bool stereoRendering) {
+  return getVertexShaderProlog(stereoRendering) + R"(
             layout (set = 1, binding = 1, std140) uniform PerFrame {
               mat4 modelMatrix;
               mat4 viewProjectionMatrix[2];
               float scaleZ;
+              int viewId;
             } perFrame;
 
             layout(location = 0) in vec3 position;
@@ -77,7 +90,7 @@ const char* getVulkanVertexShaderSource() {
             layout(location = 1) out vec3 color;
 
             void main() {
-              mat4 mvpMatrix = perFrame.viewProjectionMatrix[int(gl_ViewID_OVR)] * perFrame.modelMatrix;
+              mat4 mvpMatrix = perFrame.viewProjectionMatrix[VIEW_ID] * perFrame.modelMatrix;
               gl_Position = mvpMatrix * vec4(position, 1.0);
               uvw = vec3(uvw_in.x, uvw_in.y, (uvw_in.z - 0.5) * perFrame.scaleZ + 0.5);
               color = vec3(1.0, 1.0, 0.0);
@@ -86,7 +99,8 @@ const char* getVulkanVertexShaderSource() {
 
 [[nodiscard]] std::unique_ptr<IShaderStages> getShaderStagesForBackend(
     igl::IDevice& device,
-    const iglu::ShaderCross& shaderCross) noexcept {
+    const iglu::ShaderCross& shaderCross,
+    bool stereoRendering) noexcept {
   switch (device.getBackendType()) {
   case igl::BackendType::Metal:
     IGL_ASSERT_MSG(false, "Metal is not supported");
@@ -95,18 +109,19 @@ const char* getVulkanVertexShaderSource() {
     // @fb-only
     // @fb-only
   case igl::BackendType::Vulkan:
-    return igl::ShaderStagesCreator::fromModuleStringInput(device,
-                                                           getVulkanVertexShaderSource(),
-                                                           "main",
-                                                           "",
-                                                           getVulkanFragmentShaderSource(),
-                                                           "main",
-                                                           "",
-                                                           nullptr);
+    return igl::ShaderStagesCreator::fromModuleStringInput(
+        device,
+        getVulkanVertexShaderSource(stereoRendering).c_str(),
+        "main",
+        "",
+        getVulkanFragmentShaderSource(),
+        "main",
+        "",
+        nullptr);
   case igl::BackendType::OpenGL: {
     igl::Result res;
     const auto vs = shaderCross.crossCompileFromVulkanSource(
-        getVulkanVertexShaderSource(), igl::ShaderStage::Vertex, &res);
+        getVulkanVertexShaderSource(stereoRendering).c_str(), igl::ShaderStage::Vertex, &res);
     IGL_ASSERT_MSG(res.isOk(), res.message.c_str());
 
     const auto fs = shaderCross.crossCompileFromVulkanSource(
@@ -211,16 +226,18 @@ void HelloOpenXRSession::initialize() noexcept {
   inputDesc.inputBindings[0].stride = sizeof(VertexPosUvw);
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
 
+  const bool stereoRendering = shellParams().viewParams.size() > 1;
+
   createSamplerAndTextures(device);
   const iglu::ShaderCross shaderCross(device);
-  shaderStages_ = getShaderStagesForBackend(device, shaderCross);
+  shaderStages_ = getShaderStagesForBackend(device, shaderCross, stereoRendering);
 
   // Command queue: backed by different types of GPU HW queues
   const CommandQueueDesc desc{igl::CommandQueueType::Graphics};
   commandQueue_ = device.createCommandQueue(desc, nullptr);
 
   // Set up vertex uniform data
-  vertexParameters_.scaleZ = 1.0f;
+  ub_.scaleZ = 1.0f;
 
   renderPass_.colorAttachments.resize(1);
   renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
@@ -232,35 +249,9 @@ void HelloOpenXRSession::initialize() noexcept {
 #endif
   renderPass_.depthAttachment.loadAction = LoadAction::Clear;
   renderPass_.depthAttachment.clearDepth = 1.0;
-
-  iglu::ManagedUniformBufferInfo info;
-  info.index = 1;
-  info.length = sizeof(VertexFormat);
-  info.uniforms = std::vector<igl::UniformDesc>{
-      igl::UniformDesc{
-          "modelMatrix", -1, igl::UniformType::Mat4x4, 1, offsetof(VertexFormat, modelMatrix), 0},
-      igl::UniformDesc{
-          "viewProjectionMatrix",
-          -1,
-          igl::UniformType::Mat4x4,
-          2,
-          offsetof(VertexFormat, viewProjectionMatrix),
-          sizeof(glm::mat4),
-      },
-      igl::UniformDesc{
-          "scaleZ",
-          -1,
-          igl::UniformType::Float,
-          1,
-          offsetof(VertexFormat, scaleZ),
-          0,
-      }};
-
-  ubo_ = std::make_shared<iglu::ShaderCrossUniformBuffer>(device, "perFrame", info);
-  IGL_ASSERT(ubo_->result.isOk());
 }
 
-void HelloOpenXRSession::setVertexParams() {
+void HelloOpenXRSession::updateUniformBlock() {
   // rotating animation
   static float angle = 0.0f, scaleZ = 1.0f, ss = 0.005f;
   angle += 0.005f;
@@ -272,16 +263,18 @@ void HelloOpenXRSession::setVertexParams() {
 
   const glm::mat4 rotMat = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)) *
                            glm::rotate(glm::mat4(1.0f), -0.2f, glm::vec3(1.0f, 0.0f, 0.0f));
-  vertexParameters_.modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.f, -8.0f)) *
-                                  rotMat *
-                                  glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, scaleZ));
+  ub_.modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.f, -8.0f)) * rotMat *
+                    glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, scaleZ));
   for (size_t i = 0; i < std::min(shellParams().viewParams.size(), size_t(2)); ++i) {
-    vertexParameters_.viewProjectionMatrix[i] =
+    const auto viewIndex = shellParams().viewParams[i].viewIndex;
+
+    ub_.viewProjectionMatrix[viewIndex] =
         perspectiveAsymmetricFovRH(shellParams().viewParams[i].fov, 0.1f, 100.0f) *
         shellParams().viewParams[i].viewMatrix;
+    ub_.viewId = viewIndex;
   }
 
-  vertexParameters_.scaleZ = scaleZ;
+  ub_.scaleZ = scaleZ;
 }
 
 void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
@@ -290,11 +283,13 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     return;
   }
 
-  // cube animation
-  setVertexParams();
+  updateUniformBlock();
+
+  IGL_ASSERT(!shellParams().viewParams.empty());
+  const auto viewIndex = shellParams().viewParams[0].viewIndex;
 
   igl::Result ret;
-  if (framebuffer_ == nullptr) {
+  if (framebuffer_[viewIndex] == nullptr) {
     igl::FramebufferDesc framebufferDesc;
     framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
     framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
@@ -302,11 +297,11 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     framebufferDesc.mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
                                                                      : FramebufferMode::Mono;
 
-    framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
+    framebuffer_[viewIndex] = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
     IGL_ASSERT(ret.isOk());
-    IGL_ASSERT(framebuffer_ != nullptr);
+    IGL_ASSERT(framebuffer_[viewIndex] != nullptr);
   } else {
-    framebuffer_->updateDrawable(surfaceTextures.color);
+    framebuffer_[viewIndex]->updateDrawable(surfaceTextures.color);
   }
 
   constexpr uint32_t textureUnit = 0;
@@ -318,9 +313,9 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     graphicsDesc.shaderStages = shaderStages_;
     graphicsDesc.targetDesc.colorAttachments.resize(1);
     graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
-        framebuffer_->getColorAttachment(0)->getProperties().format;
+        framebuffer_[viewIndex]->getColorAttachment(0)->getProperties().format;
     graphicsDesc.targetDesc.depthAttachmentFormat =
-        framebuffer_->getDepthAttachment()->getProperties().format;
+        framebuffer_[viewIndex]->getDepthAttachment()->getProperties().format;
     graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("inputImage");
     graphicsDesc.cullMode = igl::CullMode::Back;
     graphicsDesc.frontFaceWinding = igl::WindingMode::CounterClockwise;
@@ -330,13 +325,47 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   // Command buffers (1-N per thread): create, submit and forget
   auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
   const std::shared_ptr<igl::IRenderCommandEncoder> commands =
-      buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+      buffer->createRenderCommandEncoder(renderPass_, framebuffer_[viewIndex]);
   commands->pushDebugGroupLabel("HelloOpenXRSession Commands", igl::Color(0.0f, 1.0f, 0.0f));
 
   commands->bindVertexBuffer(0, *vb0_);
 
-  *static_cast<VertexFormat*>(ubo_->getData()) = vertexParameters_;
-  ubo_->bind(device, *pipelineState_, *commands);
+  iglu::ManagedUniformBufferInfo info;
+  info.index = 1;
+  info.length = sizeof(UniformBlock);
+  info.uniforms = std::vector<igl::UniformDesc>{
+      igl::UniformDesc{
+          "modelMatrix", -1, igl::UniformType::Mat4x4, 1, offsetof(UniformBlock, modelMatrix), 0},
+      igl::UniformDesc{
+          "viewProjectionMatrix",
+          -1,
+          igl::UniformType::Mat4x4,
+          2,
+          offsetof(UniformBlock, viewProjectionMatrix),
+          sizeof(glm::mat4),
+      },
+      igl::UniformDesc{
+          "scaleZ",
+          -1,
+          igl::UniformType::Float,
+          1,
+          offsetof(UniformBlock, scaleZ),
+          0,
+      },
+      igl::UniformDesc{
+          "viewId",
+          -1,
+          igl::UniformType::Int,
+          1,
+          offsetof(UniformBlock, viewId),
+          0,
+      }};
+
+  const auto ubo = std::make_shared<iglu::ShaderCrossUniformBuffer>(device, "perFrame", info);
+  IGL_ASSERT(ubo->result.isOk());
+  *static_cast<UniformBlock*>(ubo->getData()) = ub_;
+
+  ubo->bind(device, *pipelineState_, *commands);
 
   commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());
   commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
@@ -350,7 +379,7 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commands->endEncoding();
 
   if (shellParams().shouldPresent) {
-    buffer->present(framebuffer_->getColorAttachment(0));
+    buffer->present(framebuffer_[viewIndex]->getColorAttachment(0));
   }
 
   commandQueue_->submit(*buffer); // Guarantees ordering between command buffers

@@ -11,7 +11,6 @@
 
 #include <shell/shared/renderSession/RenderSession.h>
 
-#include <IGLU/shaderCross/ShaderCrossUniformBuffer.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <igl/IGL.h>
@@ -19,10 +18,11 @@
 
 namespace igl::shell {
 
-struct VertexFormat {
+struct UniformBlock {
   glm::mat4 modelMatrix = glm::mat4(1.0);
   glm::mat4 viewProjectionMatrix[2]{};
   float scaleZ{};
+  int viewId = 0;
 };
 
 class HelloOpenXRSession : public RenderSession {
@@ -40,14 +40,13 @@ class HelloOpenXRSession : public RenderSession {
   std::shared_ptr<IBuffer> vb0_, ib0_; // Buffers for vertices and indices (or constants)
   std::shared_ptr<ITexture> tex0_;
   std::shared_ptr<ISamplerState> samp0_;
-  std::shared_ptr<IFramebuffer> framebuffer_;
-  std::shared_ptr<iglu::ShaderCrossUniformBuffer> ubo_;
+  std::shared_ptr<IFramebuffer> framebuffer_[2];
 
-  VertexFormat vertexParameters_;
+  UniformBlock ub_;
 
   // utility fns
   void createSamplerAndTextures(const IDevice& /*device*/);
-  void setVertexParams();
+  void updateUniformBlock();
 };
 
 } // namespace igl::shell
