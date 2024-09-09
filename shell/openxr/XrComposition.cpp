@@ -79,12 +79,14 @@ igl::SurfaceTextures XrComposition::beginRendering(
     for (uint8_t i = 0; i < kNumViews; ++i) {
       viewParams[i].viewMatrix = viewTransforms[i];
       viewParams[i].cameraPosition = cameraPositions[i];
+      viewParams[i].viewIndex = i;
       copyFov(viewParams[i].fov, views[i].fov);
     }
   } else {
     IGL_ASSERT(viewParams.size() == 1);
     viewParams[0].viewMatrix = viewTransforms[renderPassIndex];
     viewParams[0].cameraPosition = cameraPositions[renderPassIndex];
+    viewParams[0].viewIndex = static_cast<uint8_t>(renderPassIndex);
     copyFov(viewParams[0].fov, views[renderPassIndex].fov);
   }
   return swapchainProviders_[renderPassIndex]->getSurfaceTextures();

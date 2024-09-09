@@ -15,5 +15,6 @@ struct ViewParams {
   glm::mat4 viewMatrix = glm::mat4(1);
   glm::vec3 cameraPosition = glm::vec3(0);
   Fov fov;
+  uint8_t viewIndex = 0;
 };
 } // namespace igl::shell
