@@ -35,7 +35,7 @@ public class SampleLib {
     byte majorVersion;
     byte minorVersion;
 
-    BackendVersion(BackendFlavor flavor, byte majorVersion, byte minorVersion) {
+    public BackendVersion(BackendFlavor flavor, byte majorVersion, byte minorVersion) {
       this.flavor = flavor;
       this.majorVersion = majorVersion;
       this.minorVersion = minorVersion;
