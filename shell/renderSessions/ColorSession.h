@@ -18,8 +18,8 @@ namespace igl::shell {
 
 class ColorSession : public RenderSession {
   struct FragmentFormat {
-    iglu::simdtypes::float4x4 mvp;
     iglu::simdtypes::float3 color;
+    iglu::simdtypes::float4x4 mvp;
   };
 
  public:

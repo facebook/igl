@@ -45,8 +45,8 @@ static std::string getMetalShaderSource() {
               using namespace metal;
 
               typedef struct {
-                 float4x4 mvp;
                  float3 color;
+                 float4x4 mvp;
                } UniformBlock;
 
               typedef struct {
@@ -115,8 +115,8 @@ static std::string getVulkanVertexShaderSource() {
             layout(location = 1) out vec3 color;
 
             layout (set = 1, binding = 0, std140) uniform UniformsPerObject {
-              mat4 mvp;
               vec3 color;
+              mat4 mvp;
             } perObject;
 
             void main() {
