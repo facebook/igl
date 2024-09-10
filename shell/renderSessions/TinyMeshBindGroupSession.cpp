@@ -29,13 +29,8 @@
 #include <igl/vulkan/VulkanContext.h>
 #endif // IGL_BACKEND_VULKAN
 
-#if defined(IGL_CMAKE_BUILD)
 #include <filesystem>
 namespace fs = std::filesystem;
-#else
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#endif
 
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough"
@@ -46,6 +41,8 @@ namespace fs = boost::filesystem;
 #define TINY_TEST_USE_DEPTH_BUFFER 1
 
 namespace {
+
+const uint32_t kDynamicBufferMask = 0b10;
 
 [[maybe_unused]] std::string stringReplaceAll(const char* input,
                                               const char* searchString,
@@ -74,7 +71,7 @@ constexpr uint32_t kNumBufferedFrames = 3;
 int width_ = 0;
 int height_ = 0;
 
-constexpr uint32_t kNumCubes = 16;
+constexpr uint32_t kNumCubes = 256;
 
 struct VertexPosUvw {
   vec3 position;
@@ -369,65 +366,6 @@ void TinyMeshBindGroupSession::initialize() noexcept {
     depthStencilState_ = device_->createDepthStencilState(desc, nullptr);
   }
 
-  {
-    const uint32_t texWidth = 256;
-    const uint32_t texHeight = 256;
-    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::BGRA_SRGB,
-                                                texWidth,
-                                                texHeight,
-                                                TextureDesc::TextureUsageBits::Sampled,
-                                                "XOR pattern");
-    texture0_ = device_->createTexture(desc, nullptr);
-    std::vector<uint32_t> pixels(
-        static_cast<std::vector<unsigned int>::size_type>(texWidth * texHeight));
-
-    for (uint32_t y = 0; y != texHeight; y++) {
-      for (uint32_t x = 0; x != texWidth; x++) {
-        // create a XOR pattern
-        pixels[y * texWidth + x] = 0xFF000000 + ((x ^ y) << 16) + ((x ^ y) << 8) + (x ^ y);
-      }
-    }
-    texture0_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels.data());
-  }
-  {
-    fs::path dir = fs::current_path();
-    // find IGLU somewhere above our current directory
-    // @fb-only
-    const char* contentFolder = "third-party/content/src/";
-    // @fb-only
-    while (dir != fs::current_path().root_path() && !fs::exists(dir / fs::path(contentFolder))) {
-      dir = dir.parent_path();
-    }
-    int32_t texWidth = 0;
-    int32_t texHeight = 0;
-    int32_t channels = 0;
-    uint8_t* pixels = stbi_load((dir / fs::path(contentFolder) /
-                                 fs::path("bistro/BuildingTextures/wood_polished_01_diff.png"))
-                                    .string()
-                                    .c_str(),
-                                &texWidth,
-                                &texHeight,
-                                &channels,
-                                4);
-    IGL_ASSERT_MSG(pixels,
-                   "Cannot load textures. Run `deploy_content.py` before running this app.");
-    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::RGBA_SRGB,
-                                                texWidth,
-                                                texHeight,
-                                                TextureDesc::TextureUsageBits::Sampled,
-                                                "wood_polished_01_diff.png");
-    texture1_ = device_->createTexture(desc, nullptr);
-    texture1_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels);
-    stbi_image_free(pixels);
-  }
-  {
-    igl::SamplerStateDesc desc = igl::SamplerStateDesc::newLinear();
-    desc.addressModeU = igl::SamplerAddressMode::Repeat;
-    desc.addressModeV = igl::SamplerAddressMode::Repeat;
-    desc.debugName = "Sampler: linear";
-    sampler_ = device_->createSamplerState(desc, nullptr);
-  }
-
   // Command queue: backed by different types of GPU HW queues
   commandQueue_ = device_->createCommandQueue({CommandQueueType::Graphics}, nullptr);
 
@@ -446,6 +384,120 @@ void TinyMeshBindGroupSession::initialize() noexcept {
   for (auto& axi : axis_) {
     axi = glm::sphericalRand(1.0f);
   }
+}
+
+void TinyMeshBindGroupSession::createRenderPipeline() {
+  if (renderPipelineState_Mesh_) {
+    return;
+  }
+
+  IGL_ASSERT(framebuffer_);
+
+  RenderPipelineDesc desc;
+
+  desc.targetDesc.colorAttachments.resize(1);
+  desc.targetDesc.colorAttachments[0].textureFormat =
+      framebuffer_->getColorAttachment(0)->getProperties().format;
+
+  if (framebuffer_->getDepthAttachment()) {
+    desc.targetDesc.depthAttachmentFormat =
+        framebuffer_->getDepthAttachment()->getProperties().format;
+  }
+
+  desc.vertexInputState = vertexInput0_;
+  desc.shaderStages = getShaderStagesForBackend(*device_);
+
+#if !TINY_TEST_USE_DEPTH_BUFFER
+  desc.cullMode = igl::CullMode::Back;
+#endif // TINY_TEST_USE_DEPTH_BUFFER
+
+  desc.frontFaceWinding = igl::WindingMode::Clockwise;
+  desc.isDynamicBufferMask = kDynamicBufferMask;
+  desc.debugName = igl::genNameHandle("Pipeline: mesh");
+  desc.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("uTex0");
+  desc.fragmentUnitSamplerMap[1] = IGL_NAMEHANDLE("uTex1");
+  renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
+
+  {
+    const uint32_t texWidth = 256;
+    const uint32_t texHeight = 256;
+    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::BGRA_SRGB,
+                                                texWidth,
+                                                texHeight,
+                                                TextureDesc::TextureUsageBits::Sampled,
+                                                "XOR pattern");
+    texture0_ = device_->createTexture(desc, nullptr);
+    std::vector<uint32_t> pixels(texWidth * texHeight);
+    for (uint32_t y = 0; y != texHeight; y++) {
+      for (uint32_t x = 0; x != texWidth; x++) {
+        // create a XOR pattern
+        pixels[y * texWidth + x] = 0xFF000000 + ((x ^ y) << 16) + ((x ^ y) << 8) + (x ^ y);
+      }
+    }
+    texture0_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels.data());
+  }
+  {
+    using namespace std::filesystem;
+    path dir = current_path();
+    // find IGLU somewhere above our current directory
+    // @fb-only
+    const char* contentFolder = "third-party/content/src/";
+    // @fb-only
+    while (dir != current_path().root_path() && !exists(dir / path(contentFolder))) {
+      dir = dir.parent_path();
+    }
+    int32_t texWidth = 0;
+    int32_t texHeight = 0;
+    int32_t channels = 0;
+    uint8_t* pixels = stbi_load(
+        (dir / path(contentFolder) / path("bistro/BuildingTextures/wood_polished_01_diff.png"))
+            .string()
+            .c_str(),
+        &texWidth,
+        &texHeight,
+        &channels,
+        4);
+    IGL_ASSERT_MSG(pixels,
+                   "Cannot load textures. Run `deploy_content.py` before running this app.");
+    const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::BGRA_SRGB,
+                                                texWidth,
+                                                texHeight,
+                                                TextureDesc::TextureUsageBits::Sampled,
+                                                "wood_polished_01_diff.png");
+    texture1_ = device_->createTexture(desc, nullptr);
+    texture1_->upload(TextureRangeDesc::new2D(0, 0, texWidth, texHeight), pixels);
+    stbi_image_free(pixels);
+  }
+  {
+    igl::SamplerStateDesc desc = igl::SamplerStateDesc::newLinear();
+    desc.addressModeU = igl::SamplerAddressMode::Repeat;
+    desc.addressModeV = igl::SamplerAddressMode::Repeat;
+    desc.debugName = "Sampler: linear";
+    sampler_ = device_->createSamplerState(desc, nullptr);
+  }
+
+  for (uint32_t i = 0; i != kNumBufferedFrames; i++) {
+    bindGroupBuffers_.push_back(device_->createBindGroup({
+        .buffers{ubPerFrame_[i], ubPerObject_[i]},
+        .size{sizeof(UniformsPerFrame), sizeof(UniformsPerObject)},
+        .isDynamicBufferMask = kDynamicBufferMask,
+        .debugName = IGL_FORMAT("bindGroupBuffers_[{}]", i),
+    }));
+  }
+
+  bindGroupTextures_ = device_->createBindGroup({
+      .textures = {texture0_, texture1_},
+      .samplers = {sampler_, sampler_},
+      .debugName = "bindGroup_",
+  });
+  bindGroupNoTexture1_ = device_->createBindGroup(
+      {
+          .textures = {texture0_},
+          .samplers = {sampler_},
+          .debugName = "bindGroupNoTexture1_",
+      },
+      // as we don't provide all necessary textures, let IGL/Vulkan add dummies where necessary
+      renderPipelineState_Mesh_.get());
 }
 
 std::shared_ptr<ITexture> TinyMeshBindGroupSession::getVulkanNativeDepth() {
@@ -486,39 +538,7 @@ void TinyMeshBindGroupSession::update(igl::SurfaceTextures surfaceTextures) noex
     framebuffer_ = device_->createFramebuffer(framebufferDesc_, nullptr);
     IGL_ASSERT(framebuffer_);
 
-    RenderPipelineDesc desc;
-
-    desc.targetDesc.colorAttachments.resize(1);
-    desc.targetDesc.colorAttachments[0].textureFormat =
-        framebuffer_->getColorAttachment(0)->getProperties().format;
-
-    if (framebuffer_->getDepthAttachment()) {
-      desc.targetDesc.depthAttachmentFormat =
-          framebuffer_->getDepthAttachment()->getProperties().format;
-    }
-
-    desc.vertexInputState = vertexInput0_;
-    desc.shaderStages = getShaderStagesForBackend(*device_);
-    /*
-    desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(*device_,
-                                                                   getVulkanVertexShaderSource(),
-                                                                   "main",
-                                                                   "",
-                                                                   getVulkanFragmentShaderSource(),
-                                                                   "main",
-                                                                   "",
-                                                                   nullptr);
-                                                                   */
-
-#if !TINY_TEST_USE_DEPTH_BUFFER
-    desc.cullMode = igl::CullMode::Back;
-#endif // TINY_TEST_USE_DEPTH_BUFFER
-
-    desc.frontFaceWinding = igl::WindingMode::Clockwise;
-    desc.debugName = igl::genNameHandle("Pipeline: mesh");
-    desc.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("uTex0");
-    desc.fragmentUnitSamplerMap[1] = IGL_NAMEHANDLE("uTex1");
-    renderPipelineState_Mesh_ = device_->createRenderPipeline(desc, nullptr);
+    createRenderPipeline();
   }
 
   framebuffer_->updateDrawable(surfaceTextures.color);
@@ -562,14 +582,12 @@ void TinyMeshBindGroupSession::update(igl::SurfaceTextures surfaceTextures) noex
   commands->bindVertexBuffer(0, *vb0_);
   commands->bindDepthStencilState(depthStencilState_);
   commands->bindBuffer(0, ubPerFrame_[frameIndex_].get());
-  commands->bindTexture(0, igl::BindTarget::kFragment, texture0_.get());
-  commands->bindTexture(1, igl::BindTarget::kFragment, texture1_.get());
-  commands->bindSamplerState(0, igl::BindTarget::kFragment, sampler_.get());
-  commands->bindSamplerState(1, igl::BindTarget::kFragment, sampler_.get());
+  commands->bindBindGroup(bindGroupTextures_);
   // Draw 2 cubes: we use uniform buffer to update matrices
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
   for (uint32_t i = 0; i != kNumCubes; i++) {
-    commands->bindBuffer(1, ubPerObject_[frameIndex_].get(), i * sizeof(UniformsPerObject));
+    const uint32_t dynamicOffset = i * sizeof(UniformsPerObject);
+    commands->bindBindGroup(bindGroupBuffers_[frameIndex_], 1, &dynamicOffset);
     commands->drawIndexed(3u * 6u * 2u);
   }
   commands->popDebugGroupLabel();
@@ -594,7 +612,12 @@ void TinyMeshBindGroupSession::update(igl::SurfaceTextures surfaceTextures) noex
 bool TinyMeshBindGroupSession::Listener::process(const KeyEvent& event) {
   if (!event.isDown) {
     if (event.key == 84) { // VK_T
-      session.texture1_.reset();
+      if (!session.bindGroupNoTexture1_.empty()) {
+        session.bindGroupTextures_ = std::move(session.bindGroupNoTexture1_);
+        // make sure we deallocate texture1
+        session.bindGroupNoTexture1_ = nullptr;
+        session.texture1_.reset();
+      }
     }
   }
   return true;

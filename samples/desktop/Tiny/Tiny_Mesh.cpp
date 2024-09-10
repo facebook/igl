@@ -42,7 +42,7 @@
 
 #define TINY_TEST_USE_DEPTH_BUFFER 1
 
-constexpr uint32_t kNumCubes = 256;
+constexpr uint32_t kNumCubes = 16;
 
 #if IGL_WITH_IGLU
 #include <IGLU/imgui/Session.h>

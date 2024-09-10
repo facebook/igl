@@ -23,6 +23,7 @@ class TinyMeshBindGroupSession : public RenderSession {
   void initialize() noexcept override;
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
   std::shared_ptr<ITexture> getVulkanNativeDepth();
+  void createRenderPipeline();
 
  private:
   IDevice* device_{};
@@ -36,7 +37,10 @@ class TinyMeshBindGroupSession : public RenderSession {
   std::shared_ptr<IVertexInputState> vertexInput0_;
   std::shared_ptr<IDepthStencilState> depthStencilState_;
   std::shared_ptr<ITexture> texture0_, texture1_;
-  std::shared_ptr<ISamplerState> sampler_;
+  std::shared_ptr<igl::ISamplerState> sampler_;
+  igl::Holder<igl::BindGroupTextureHandle> bindGroupTextures_;
+  igl::Holder<igl::BindGroupTextureHandle> bindGroupNoTexture1_;
+  std::vector<igl::Holder<igl::BindGroupBufferHandle>> bindGroupBuffers_;
   uint32_t frameIndex_{0};
 
   std::unique_ptr<iglu::imgui::Session> imguiSession_;
