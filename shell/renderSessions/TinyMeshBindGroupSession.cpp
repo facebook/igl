@@ -40,6 +40,18 @@ namespace fs = std::filesystem;
 #include <stb/stb_image.h>
 #define TINY_TEST_USE_DEPTH_BUFFER 1
 
+// libc++'s implementation of std::format has a large binary size impact
+// (https://github.com/llvm/llvm-project/issues/64180), so avoid it on Android.
+#if !defined(IGL_FORMAT)
+#if defined(__cpp_lib_format) && !defined(__ANDROID__)
+#include <format>
+#define IGL_FORMAT std::format
+#else
+#include <fmt/core.h>
+#define IGL_FORMAT fmt::format
+#endif // __cpp_lib_format
+#endif // !defined(IGL_FORMAT)
+
 namespace {
 
 const uint32_t kDynamicBufferMask = 0b10;
