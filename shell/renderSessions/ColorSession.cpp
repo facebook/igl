@@ -224,7 +224,7 @@ void ColorSession::initialize() noexcept {
   samp0_ = device.createSamplerState(samplerDesc, nullptr);
   IGL_ASSERT(samp0_ != nullptr);
 
-  tex0_ = getPlatform().loadTexture("macbeth.png", false /* calculateMipmapLevels */);
+  tex0_ = getPlatform().loadTexture("macbeth.png");
 
   shaderStages_ = getShaderStagesForBackend(device);
   IGL_ASSERT(shaderStages_ != nullptr);
