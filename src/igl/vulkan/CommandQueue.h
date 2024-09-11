@@ -56,14 +56,14 @@ class CommandQueue final : public ICommandQueue {
    * if an image should be presented. Finally, it signals the context to process deferred tasks (for
    * more details about deferred tasks, please refer to the igl::vulkan::VulkanContext class).
    */
-  SubmitHandle endCommandBuffer(const igl::vulkan::VulkanContext& ctx,
+  SubmitHandle endCommandBuffer(igl::vulkan::VulkanContext& ctx,
                                 igl::vulkan::CommandBuffer* cmdBuffer,
                                 bool present);
 
   /// @brief Executes the shader debugging render pass. Also presents the image if the command
   /// buffer being submitted was from a swapchain.
-  void enhancedShaderDebuggingPass(const igl::vulkan::VulkanContext& ctx,
-                                   const igl::vulkan::CommandBuffer* cmdBuffer);
+  void enhancedShaderDebuggingPass(igl::vulkan::VulkanContext& ctx,
+                                   igl::vulkan::CommandBuffer* cmdBuffer);
 
  private:
   igl::vulkan::Device& device_;

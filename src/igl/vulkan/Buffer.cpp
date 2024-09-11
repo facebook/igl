@@ -9,7 +9,6 @@
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
-#include <igl/vulkan/SyncManager.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
@@ -70,7 +69,7 @@ Result Buffer::create(const BufferDesc& desc) {
   // Store the flag that determines if this buffer contains sub-allocations (i.e. is a ring-buffer)
   isRingBuffer_ = ((desc_.hint & BufferDesc::BufferAPIHintBits::Ring) != 0);
 
-  bufferCount_ = isRingBuffer_ ? device_.getVulkanContext().syncManager_->maxResourceCount() : 1u;
+  bufferCount_ = isRingBuffer_ ? device_.getVulkanContext().config_.maxResourceCount : 1u;
 
   buffers_ = std::make_unique<std::unique_ptr<VulkanBuffer>[]>(bufferCount_);
   bufferPatches_ = std::make_unique<BufferRange[]>(bufferCount_);
@@ -93,7 +92,7 @@ Result Buffer::create(const BufferDesc& desc) {
 
 const std::unique_ptr<VulkanBuffer>& Buffer::currentVulkanBuffer() const {
   IGL_ASSERT_MSG(buffers_, "There are no sub-allocations available for this buffer");
-  return buffers_[isRingBuffer_ ? device_.getVulkanContext().syncManager_->currentIndex() : 0u];
+  return buffers_[isRingBuffer_ ? device_.getVulkanContext().currentSyncIndex() : 0u];
 }
 
 BufferRange Buffer::getUpdateRange() const {
@@ -147,7 +146,7 @@ igl::Result Buffer::upload(const void* data, const BufferRange& range) {
   const VulkanContext& ctx = device_.getVulkanContext();
   if (isRingBuffer_) {
     // get the current ring buffer index
-    const auto currentBufferIndex = device_.getVulkanContext().syncManager_->currentIndex();
+    const uint32_t currentBufferIndex = device_.getVulkanContext().currentSyncIndex();
     uint8_t* prevDataPtr = nullptr; // pointer to the previous local copy of the data
     BufferRange currentUpdateRange = range;
     if (currentBufferIndex != previousBufferIndex_) {

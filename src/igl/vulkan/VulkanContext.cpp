@@ -34,7 +34,6 @@
 #include <igl/vulkan/EnhancedShaderDebuggingStore.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/SamplerState.h>
-#include <igl/vulkan/SyncManager.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
@@ -823,7 +822,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                                              deviceQueues_.graphicsQueueFamilyIndex,
                                                              config_.exportableFences,
                                                              "VulkanContext::immediate_");
-  syncManager_ = std::make_unique<SyncManager>(*this, config_.maxResourceCount);
+  IGL_ASSERT_MSG(config_.maxResourceCount > 0, "Max resource count needs to be greater than zero");
+  syncSubmitHandles_.resize(config_.maxResourceCount);
 
   // create Vulkan pipeline cache
   {
@@ -2124,6 +2124,23 @@ uint32_t VulkanContext::getBindGroupUsageMask(igl::BindGroupBufferHandle handle)
 
 const VulkanFeatures& VulkanContext::features() const noexcept {
   return features_;
+}
+
+void VulkanContext::syncAcquireNext() noexcept {
+  IGL_PROFILER_FUNCTION();
+
+  syncCurrentIndex_ = (syncCurrentIndex_ + 1) % config_.maxResourceCount;
+
+  // Wait for the current buffer to become available
+  immediate_->wait(syncSubmitHandles_[syncCurrentIndex_], config_.fenceTimeoutNanoseconds);
+}
+
+void VulkanContext::syncMarkSubmitted(VulkanImmediateCommands::SubmitHandle handle) noexcept {
+  IGL_PROFILER_FUNCTION();
+
+  syncSubmitHandles_[syncCurrentIndex_] = handle;
+
+  syncAcquireNext();
 }
 
 } // namespace igl::vulkan

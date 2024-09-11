@@ -10,7 +10,6 @@
 #include <igl/vulkan/CommandQueue.h>
 #include <igl/vulkan/EnhancedShaderDebuggingStore.h>
 #include <igl/vulkan/RenderCommandEncoder.h>
-#include <igl/vulkan/SyncManager.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanHelpers.h>
@@ -59,7 +58,7 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& cmdBuffer, bool /* endOf
   return submitHandle;
 }
 
-SubmitHandle CommandQueue::endCommandBuffer(const igl::vulkan::VulkanContext& ctx,
+SubmitHandle CommandQueue::endCommandBuffer(igl::vulkan::VulkanContext& ctx,
                                             igl::vulkan::CommandBuffer* cmdBuffer,
                                             bool present) {
   IGL_PROFILER_FUNCTION();
@@ -78,7 +77,7 @@ SubmitHandle CommandQueue::endCommandBuffer(const igl::vulkan::VulkanContext& ct
   if (shouldPresent) {
     ctx.present();
   }
-  ctx.syncManager_->markSubmitted(cmdBuffer->lastSubmitHandle_);
+  ctx.syncMarkSubmitted(cmdBuffer->lastSubmitHandle_);
   ctx.processDeferredTasks();
   ctx.stagingDevice_->mergeRegionsAndFreeBuffers();
 
@@ -87,8 +86,8 @@ SubmitHandle CommandQueue::endCommandBuffer(const igl::vulkan::VulkanContext& ct
   return cmdBuffer->lastSubmitHandle_.handle();
 }
 
-void CommandQueue::enhancedShaderDebuggingPass(const igl::vulkan::VulkanContext& ctx,
-                                               const igl::vulkan::CommandBuffer* cmdBuffer) {
+void CommandQueue::enhancedShaderDebuggingPass(igl::vulkan::VulkanContext& ctx,
+                                               igl::vulkan::CommandBuffer* cmdBuffer) {
   IGL_PROFILER_FUNCTION();
 
   const auto& debugger = ctx.enhancedShaderDebuggingStore_;

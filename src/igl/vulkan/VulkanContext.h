@@ -38,7 +38,6 @@ class EnhancedShaderDebuggingStore;
 class CommandQueue;
 class ComputeCommandEncoder;
 class RenderCommandEncoder;
-class SyncManager;
 class VulkanBuffer;
 class VulkanDevice;
 class VulkanDescriptorSetLayout;
@@ -150,6 +149,14 @@ class VulkanContext final {
 
   Result waitIdle() const;
   Result present() const;
+
+  /// @brief Returns the index of the current resource being used.
+  ///        Its range is [0, config.maxResourceCount).
+  [[nodiscard]] uint32_t currentSyncIndex() const noexcept {
+    return syncCurrentIndex_;
+  }
+  void syncAcquireNext() noexcept;
+  void syncMarkSubmitted(VulkanImmediateCommands::SubmitHandle handle) noexcept;
 
   const VkPhysicalDeviceProperties& getVkPhysicalDeviceProperties() const {
     return vkPhysicalDeviceProperties2_.properties;
@@ -342,7 +349,9 @@ class VulkanContext final {
 
   mutable std::deque<DeferredTask> deferredTasks_;
 
-  std::unique_ptr<SyncManager> syncManager_;
+  // sync resources
+  uint32_t syncCurrentIndex_ = 0u;
+  std::vector<SubmitHandle> syncSubmitHandles_;
 };
 
 } // namespace igl::vulkan
