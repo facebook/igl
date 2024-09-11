@@ -356,7 +356,6 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   }
 
   IGL_ASSERT(buffer != nullptr);
-
   if (shellParams().shouldPresent) {
     buffer->present(drawableSurface);
   }
