@@ -76,11 +76,11 @@
   if (self = [super initWithNibName:nil bundle:nil]) {
     backendVersion_ = backendVersion;
     frame_ = frame;
-    renderSessionController_ =
-        [[RenderSessionController alloc] initWithIglBackend:(IglBackendFlavor)backendVersion_.flavor
-                                               majorVersion:backendVersion_.majorVersion
-                                               minorVersion:backendVersion_.minorVersion
-                                            surfaceProvider:self];
+    renderSessionController_ = [[RenderSessionController alloc]
+        initWithBackendFlavor:(IglBackendFlavor)backendVersion_.flavor
+                 majorVersion:backendVersion_.majorVersion
+                 minorVersion:backendVersion_.minorVersion
+              surfaceProvider:self];
   }
   return self;
 }
