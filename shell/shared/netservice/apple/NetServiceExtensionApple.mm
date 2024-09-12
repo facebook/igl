@@ -110,19 +110,9 @@ void NetServiceExtensionApple::stopSearch() const noexcept {
   }
 }
 
-IGL_API IGLShellExtension* IGLShellExtension_NewIglShellNetService() {
+IGL_API __attribute((retain, used)) IGLShellExtension* IGLShellExtension_NewIglShellNetService() {
   auto* extension = new NetServiceExtensionApple;
   return static_cast<IGLShellExtension*>(extension);
 }
 
 } // namespace igl::shell::netservice
-
-// TODO: Find better way to prevent stripping
-@interface IglShellApple_NetServiceExtension : NSObject
-@end
-
-@implementation IglShellApple_NetServiceExtension
-+ (IGLShellExtension_NewCFunction)cFunc {
-  return igl::shell::netservice::IGLShellExtension_NewIglShellNetService;
-}
-@end
