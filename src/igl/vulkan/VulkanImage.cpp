@@ -895,6 +895,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
     srcRemainingMask &= ~VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
   }
 
+  (void)srcRemainingMask;
   IGL_ASSERT_MSG(
       srcRemainingMask == 0,
       "Automatic access mask deduction is not implemented (yet) for this srcStageMask = %u",
@@ -942,6 +943,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
     dstRemainingMask &= ~VK_PIPELINE_STAGE_TRANSFER_BIT;
   }
 
+  (void)dstRemainingMask;
   IGL_ASSERT_MSG(
       dstRemainingMask == 0,
       "Automatic access mask deduction is not implemented (yet) for this dstStageMask = %u",
