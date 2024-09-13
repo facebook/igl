@@ -1677,7 +1677,8 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
 
 void VulkanContext::deferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) const {
   if (handle.empty()) {
-    handle = immediate_->getLastSubmitHandle();
+    handle = immediate_->currentCmdBufWrapper_ ? immediate_->currentCmdBufWrapper_->handle_
+                                               : immediate_->getLastSubmitHandle();
   }
   deferredTasks_.emplace_back(std::move(task), handle);
   deferredTasks_.back().frameId_ = this->getFrameNumber();
