@@ -39,6 +39,8 @@ class VulkanStagingDevice final {
   VulkanStagingDevice(const VulkanStagingDevice&) = delete;
   VulkanStagingDevice& operator=(const VulkanStagingDevice&) = delete;
 
+  std::unique_ptr<VulkanImmediateCommands> immediate_;
+
   /** @brief Uploads the data at location `data` with the provided size (in bytes) to the
    * VulkanBuffer object on the device at offset `dstOffset`. The upload operation is asynchronous
    * and the data may or may not be available to the GPU when the function returns
@@ -139,7 +141,6 @@ class VulkanStagingDevice final {
  private:
   VulkanContext& ctx_;
   std::vector<std::unique_ptr<VulkanBuffer>> stagingBuffers_;
-  std::unique_ptr<VulkanImmediateCommands> immediate_;
 
   /// @brief available free memory in staging buffer
   VkDeviceSize freeStagingBufferSize_ = 0;
