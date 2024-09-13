@@ -16,4 +16,6 @@
 - (void)stopTimer;
 - (void)prepareVulkan:(std::shared_ptr<igl::shell::Platform>)platform;
 - (void)viewDidChangeBackingProperties;
+- (void)frameDidChange:(NSNotification*)notification;
+- (void)updateSwapchain;
 @end

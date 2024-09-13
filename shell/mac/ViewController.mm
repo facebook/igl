@@ -99,7 +99,10 @@ using namespace igl;
     return;
   }
 
-  shellParams_.viewportSize = glm::vec2(self.view.frame.size.width, self.view.frame.size.height);
+  const NSRect contentRect = self.view.frame;
+  const NSRect imageRect = [self.view convertRectToBacking:contentRect];
+
+  shellParams_.viewportSize = glm::vec2(imageRect.size.width, imageRect.size.height);
   shellParams_.viewportScale = self.view.window.backingScaleFactor;
   session_->setShellParams(shellParams_);
   // process user input

@@ -42,6 +42,12 @@
   ViewController* controller = (ViewController*)item.viewController;
   self.viewController = controller;
   shellPlatform_ = platform;
+  self.postsFrameChangedNotifications = YES;
+
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(frameDidChange:)
+                                               name:NSViewFrameDidChangeNotification
+                                             object:self];
 
   [controller initModule];
 
@@ -85,6 +91,10 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
 }
 
 - (void)viewDidChangeBackingProperties {
+  [self updateSwapchain];
+}
+
+- (void)updateSwapchain {
   const NSRect contentRect = [self frame];
   const NSRect imageRect = [self convertRectToBacking:contentRect];
   const float xscale = imageRect.size.width / contentRect.size.width;
@@ -101,6 +111,10 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
     device.getVulkanContext().initSwapchain(imageRect.size.width, imageRect.size.height);
   }
 #endif // IGL_BACKEND_VULKAN
+}
+
+- (void)frameDidChange:(NSNotification*)notification {
+  [self updateSwapchain];
 }
 
 /** Returns a Metal-compatible layer. */
