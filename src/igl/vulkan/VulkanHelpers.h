@@ -76,12 +76,6 @@ VkResult ivkCreateSemaphore(const struct VulkanFunctionTable* vt,
                             bool exportable,
                             VkSemaphore* outSemaphore);
 
-VkResult ivkCreateFence(const struct VulkanFunctionTable* vt,
-                        VkDevice device,
-                        VkFlags flags,
-                        bool exportable,
-                        VkFence* outFence);
-
 /** @brief Creates a platform specific VkSurfaceKHR object. The surface creation functions
  * conditionally-compiled and guarded by their respective platform specific extension macros defined
  * by the Vulkan API. The current supported platforms, and their macros, are:

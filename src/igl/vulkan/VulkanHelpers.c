@@ -334,24 +334,6 @@ VkResult ivkCreateSemaphore(const struct VulkanFunctionTable* vt,
   return vt->vkCreateSemaphore(device, &ci, NULL, outSemaphore);
 }
 
-VkResult ivkCreateFence(const struct VulkanFunctionTable* vt,
-                        VkDevice device,
-                        VkFlags flags,
-                        const bool exportable,
-                        VkFence* outFence) {
-  const VkExportFenceCreateInfo exportInfo = {
-      .sType = VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO,
-      .handleTypes = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT,
-  };
-
-  const VkFenceCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-      .pNext = exportable ? &exportInfo : NULL,
-      .flags = flags,
-  };
-  return vt->vkCreateFence(device, &ci, NULL, outFence);
-}
-
 void ivkAddNext(void* node, const void* next) {
   if (!node || !next) {
     return;

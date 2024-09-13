@@ -20,7 +20,18 @@ VulkanFence::VulkanFence(const VulkanFunctionTable& vf,
   vf_(&vf), device_(device), exportable_(exportable) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  VK_ASSERT(ivkCreateFence(vf_, device_, flags, exportable, &vkFence_));
+  const VkExportFenceCreateInfo exportInfo = {
+      .sType = VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO,
+      .handleTypes = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT,
+  };
+
+  const VkFenceCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+      .pNext = exportable ? &exportInfo : nullptr,
+      .flags = flags,
+  };
+  VK_ASSERT(vf_->vkCreateFence(device, &ci, nullptr, &vkFence_));
+
   VK_ASSERT(
       ivkSetDebugObjectName(vf_, device_, VK_OBJECT_TYPE_FENCE, (uint64_t)vkFence_, debugName));
 }
