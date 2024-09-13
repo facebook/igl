@@ -76,6 +76,15 @@ void VulkanImmediateCommands::purge() {
 
 const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::acquire() {
   IGL_PROFILER_FUNCTION();
+  IGL_ASSERT_MSG(!currentCmdBufWrapper_,
+                 "VulkanImmediateCommands::acquire() is not reentrant. You should submit() the "
+                 "previous buffer before calling acquire() again.");
+
+  if (IGL_UNEXPECTED(currentCmdBufWrapper_)) {
+    IGL_LOG_ERROR(
+        "VulkanImmediateCommands::acquire() is not reentrant. You should submit() the "
+        "previous buffer before calling acquire() again.");
+  }
 
   if (!numAvailableCommandBuffers_) {
     purge();
@@ -112,6 +121,7 @@ const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::ac
   current->isEncoding_ = true;
   VK_ASSERT(ivkBeginCommandBuffer(&vf_, current->cmdBuf_));
 
+  currentCmdBufWrapper_ = current;
   return *current;
 }
 
@@ -202,6 +212,8 @@ bool VulkanImmediateCommands::isReady(const SubmitHandle handle) const {
 VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     const CommandBufferWrapper& wrapper) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
+  IGL_ASSERT(wrapper.cmdBuf_ == currentCmdBufWrapper_->cmdBuf_ &&
+             wrapper.handle_.handle() == currentCmdBufWrapper_->handle_.handle());
   IGL_ASSERT(wrapper.isEncoding_);
   VK_ASSERT(ivkEndCommandBuffer(&vf_, wrapper.cmdBuf_));
 
@@ -244,6 +256,8 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     // skip the 0 value - when uint32_t wraps around (null SubmitHandle)
     submitCounter_++;
   }
+
+  currentCmdBufWrapper_ = nullptr;
 
   return lastSubmitHandle_;
 }

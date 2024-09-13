@@ -156,6 +156,8 @@ class VulkanImmediateCommands final {
   /// Returns `VK_NULL_HANDLE` otherwise.
   VkFence getVkFenceFromSubmitHandle(SubmitHandle handle);
 
+  VulkanImmediateCommands::CommandBufferWrapper* currentCmdBufWrapper_ = nullptr;
+
  private:
   /// @brief Resets all commands buffers and their associated fences that are valid, are not being
   /// encoded, and have completed execution by the GPU (their fences have been signaled). Resets the
