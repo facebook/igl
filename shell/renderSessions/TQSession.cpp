@@ -252,7 +252,7 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     IGL_ASSERT(ret.isOk());
     IGL_ASSERT(framebuffer_ != nullptr);
   } else {
-    framebuffer_->updateDrawable(surfaceTextures.color);
+    framebuffer_->updateDrawable(surfaceTextures);
   }
 
   const size_t textureUnit = 0;
@@ -283,8 +283,6 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
   IGL_ASSERT(buffer != nullptr);
   auto drawableSurface = framebuffer_->getColorAttachment(0);
-
-  framebuffer_->updateDrawable(drawableSurface);
 
   // Uniform: "color"
   if (!fragmentUniformDescriptors_.empty()) {
