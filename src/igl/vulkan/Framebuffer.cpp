@@ -223,36 +223,52 @@ void Framebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
 void Framebuffer::updateResolveAttachment(std::shared_ptr<ITexture> texture) {
   if (getColorAttachment(0) && getResolveColorAttachment(0) != texture) {
     desc_.colorAttachments[0].resolveTexture = std::move(texture);
+    validateAttachments();
   }
 }
 
 void Framebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepthStencil) {
   IGL_PROFILER_FUNCTION();
 
+  bool updated = false;
   if (getColorAttachment(0) != surfaceTextures.color) {
     if (!surfaceTextures.color) {
       desc_.colorAttachments[0] = {};
     } else {
       desc_.colorAttachments[0].texture = std::move(surfaceTextures.color);
     }
+    updated = true;
   }
 
   if (updateDepthStencil) {
     if (surfaceTextures.depth && surfaceTextures.depth->getProperties().hasStencil()) {
       if (getStencilAttachment() != surfaceTextures.depth) {
         desc_.stencilAttachment.texture = surfaceTextures.depth;
+        updated = true;
       }
     } else {
       desc_.stencilAttachment.texture = nullptr;
+      updated = true;
     }
     if (getDepthAttachment() != surfaceTextures.depth) {
       desc_.depthAttachment.texture = std::move(surfaceTextures.depth);
+      updated = true;
     }
+  }
+  if (updated) {
+    validateAttachments();
   }
 }
 
 Framebuffer::Framebuffer(const Device& device, FramebufferDesc desc) :
   device_(device), desc_(std::move(desc)) {
+  validateAttachments();
+}
+
+void Framebuffer::validateAttachments() {
+  width_ = 0u;
+  height_ = 0u;
+
   IGL_PROFILER_FUNCTION();
   auto ensureSize = [this](const vulkan::Texture& tex) {
     const uint32_t attachmentWidth = tex.getDimensions().width;
