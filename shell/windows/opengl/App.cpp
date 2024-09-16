@@ -25,9 +25,14 @@
 #if defined(_WIN32)
   #include <GL/glew.h>
 #endif // _WIN32
+
+// clang-format on
+
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
+#include "AutoContextReleaseDevice.h"
+#include "ImageTestApp.h"
 #include <igl/Core.h>
 #include <igl/IGL.h>
 #include <igl/opengl/Device.h>
@@ -37,14 +42,14 @@
 #include <memory>
 #include <shell/shared/platform/win/PlatformWin.h>
 #include <shell/shared/renderSession/AppParams.h>
-#include <shell/shared/renderSession/DefaultSession.h>
+#include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
+#include <shell/shared/renderSession/IRenderSessionFactory.h>
+#include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <shell/shared/renderSession/transition/TransitionRenderSessionFactory.h>
 #include <sstream>
 #include <stdexcept>
 #include <stdio.h>
-#include "AutoContextReleaseDevice.h"
-#include "ImageTestApp.h"
-// clang-format on
 
 using namespace igl;
 
@@ -186,7 +191,9 @@ GLFWwindow* initGLWindow(uint32_t majorVersion, uint32_t minorVersion) {
 }
 
 // This mode is the normal running mode when running samples as applications.
-static void RunApplicationMode(uint32_t majorVersion, uint32_t minorVersion) {
+static void RunApplicationMode(uint32_t majorVersion,
+                               uint32_t minorVersion,
+                               std::unique_ptr<igl::shell::IRenderSessionFactory> factory) {
   shellParams_ = initShellParams();
   using WindowPtr = std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)>;
   WindowPtr glWindow(initGLWindow(majorVersion, minorVersion), &glfwDestroyWindow);
@@ -213,8 +220,9 @@ static void RunApplicationMode(uint32_t majorVersion, uint32_t minorVersion) {
 #endif
   {
     std::unique_ptr<igl::shell::RenderSession> glSession_;
-    glSession_ = igl::shell::createDefaultRenderSession(glShellPlatform_);
-    IGL_ASSERT_MSG(glSession_, "createDefaultRenderSession() must return a valid session");
+    glSession_ = factory->createRenderSession(glShellPlatform_);
+    IGL_ASSERT_MSG(glSession_,
+                   "IRenderSessionFactory::createRenderSession() must return a valid session");
     glSession_->setShellParams(shellParams_);
     glSession_->initialize();
 
@@ -246,6 +254,8 @@ static void RunApplicationMode(uint32_t majorVersion, uint32_t minorVersion) {
 int main(int argc, char* argv[]) {
   igl::shell::Platform::initializeCommandLineArgs(argc, argv);
 
+  auto factory = igl::shell::createDefaultRenderSessionFactory();
+
   uint32_t majorVersion = 4;
   uint32_t minorVersion = 6;
   if (argc == 2) {
@@ -255,9 +265,9 @@ int main(int argc, char* argv[]) {
   const char* screenshotTestsOutPath = std::getenv("SCREENSHOT_TESTS_OUT");
 
   if (screenshotTestsOutPath) {
-    shell::util::RunScreenshotTestsMode(shellParams_);
+    shell::util::RunScreenshotTestsMode(shellParams_, std::move(factory));
   } else {
-    RunApplicationMode(majorVersion, minorVersion);
+    RunApplicationMode(majorVersion, minorVersion, std::move(factory));
   }
 
   return 0;

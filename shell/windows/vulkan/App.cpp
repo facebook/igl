@@ -23,11 +23,13 @@
 #include <memory>
 #include <shell/shared/platform/win/PlatformWin.h>
 #include <shell/shared/renderSession/AppParams.h>
-#include <shell/shared/renderSession/DefaultSession.h>
+#include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
+#include <shell/shared/renderSession/IRenderSessionFactory.h>
+#include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <shell/shared/renderSession/transition/TransitionRenderSessionFactory.h>
 #include <sstream>
 #include <stdexcept>
-#include <stdio.h>
 
 using namespace igl;
 
@@ -210,6 +212,8 @@ int main(int argc, char* argv[]) {
   shellParams_ = initShellParams();
   igl::shell::Platform::initializeCommandLineArgs(argc, argv);
 
+  auto factory = igl::shell::createDefaultRenderSessionFactory();
+
   using WindowPtr = std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)>;
 
   WindowPtr vulkanWindow(initWindow(), &glfwDestroyWindow);
@@ -218,9 +222,10 @@ int main(int argc, char* argv[]) {
   }
 
   vulkanShellPlatform_ = createPlatform(vulkanWindow.get());
-  vulkanSession_ = igl::shell::createDefaultRenderSession(vulkanShellPlatform_);
+  vulkanSession_ = factory->createRenderSession(vulkanShellPlatform_);
 
-  IGL_ASSERT_MSG(vulkanSession_, "createDefaultRenderSession() must return a valid session");
+  IGL_ASSERT_MSG(vulkanSession_,
+                 "IRenderSessionFactory::createRenderSession() must return a valid session");
   vulkanSession_->setShellParams(shellParams_);
   vulkanSession_->initialize();
 

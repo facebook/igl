@@ -17,7 +17,12 @@
 #include <igl/opengl/wgl/HWDevice.h>
 #endif // FORCE_USE_ANGLE
 
+#include <igl/opengl/ViewTextureTarget.h>
 #include <memory>
+#include <shell/shared/platform/win/PlatformWin.h>
+#include <shell/shared/renderSession/IRenderSessionFactory.h>
+#include <shell/shared/renderSession/RenderSession.h>
+#include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl::shell::util {
 template<typename THWDevice>
@@ -102,7 +107,8 @@ igl::SurfaceTextures createSurfaceTextures(igl::IDevice& device,
 // Windows spawns a window through GLFW and this doesn't seem to fly with validation.
 // This mode is similar to what is being done to the unit tests where we spawn a device but no
 // window.
-void RunScreenshotTestsMode(igl::shell::ShellParams shellParams) {
+void RunScreenshotTestsMode(igl::shell::ShellParams shellParams,
+                            std::unique_ptr<igl::shell::IRenderSessionFactory> factory) {
   std::shared_ptr<IDevice> iglDev_;
   std::shared_ptr<ICommandQueue> cmdQueue_;
   createTestDeviceAndQueue(iglDev_, cmdQueue_);
@@ -110,8 +116,9 @@ void RunScreenshotTestsMode(igl::shell::ShellParams shellParams) {
 
   {
     std::unique_ptr<igl::shell::RenderSession> glSession;
-    glSession = igl::shell::createDefaultRenderSession(glShellPlatform);
-    IGL_ASSERT_MSG(glSession, "createDefaultRenderSession() must return a valid session");
+    glSession = factory->createRenderSession(glShellPlatform);
+    IGL_ASSERT_MSG(glSession,
+                   "IRenderSessionFactory::createRenderSession() must return a valid session");
     glSession->initialize();
 
     auto surfaceTextures = createSurfaceTextures(glShellPlatform->getDevice(),

@@ -20,8 +20,10 @@
 #include <memory>
 #include <shell/shared/platform/win/PlatformWin.h>
 #include <shell/shared/renderSession/AppParams.h>
+#include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/DefaultSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <shell/shared/renderSession/transition/TransitionRenderSessionFactory.h>
 #include <sstream>
 #include <stdexcept>
 #include <stdio.h>
@@ -168,6 +170,8 @@ igl::SurfaceTextures createSurfaceTextures(igl::IDevice& device) {
 int main(int argc, char* argv[]) {
   igl::shell::Platform::initializeCommandLineArgs(argc, argv);
 
+  auto factory = igl::shell::createDefaultRenderSessionFactory();
+
   uint32_t majorVersion = 3;
   uint32_t minorVersion = 1;
   if (argc == 2) {
@@ -190,8 +194,9 @@ int main(int argc, char* argv[]) {
 #endif // IGL_ANGLE
   IGL_ASSERT(glesShellPlatform_);
 
-  glesSession_ = igl::shell::createDefaultRenderSession(glesShellPlatform_);
-  IGL_ASSERT_MSG(glesSession_, "createDefaultRenderSession() must return a valid session");
+  glesSession_ = factory->createRenderSession(glesShellPlatform_);
+  IGL_ASSERT_MSG(glesSession_,
+                 "IRenderSessionFactory::createRenderSession() must return a valid session");
   glesSession_->initialize();
 
   auto surfaceTextures = createSurfaceTextures(glesShellPlatform_->getDevice());
