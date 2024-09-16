@@ -32,7 +32,6 @@
 #include <GLFW/glfw3native.h>
 
 #include "AutoContextReleaseDevice.h"
-#include "ImageTestApp.h"
 #include <igl/Core.h>
 #include <igl/IGL.h>
 #include <igl/opengl/Device.h>
@@ -193,10 +192,10 @@ GLFWwindow* initGLWindow(const shell::RenderSessionConfig& config) {
 }
 
 // This mode is the normal running mode when running samples as applications.
-static void RunApplicationMode(uint32_t majorVersion,
-                               uint32_t minorVersion,
-                               std::unique_ptr<igl::shell::IRenderSessionFactory> factory,
-                               const shell::RenderSessionConfig& config) {
+static void run(uint32_t majorVersion,
+                uint32_t minorVersion,
+                std::unique_ptr<igl::shell::IRenderSessionFactory> factory,
+                const shell::RenderSessionConfig& config) {
   shellParams_ = initShellParams();
   using WindowPtr = std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)>;
   WindowPtr glWindow(initGLWindow(config), &glfwDestroyWindow);
@@ -286,13 +285,7 @@ int main(int argc, char* argv[]) {
 
   IGL_ASSERT(requestedConfigs[0].backendVersion.flavor == BackendFlavor::OpenGL);
 
-  const char* screenshotTestsOutPath = std::getenv("SCREENSHOT_TESTS_OUT");
-
-  if (screenshotTestsOutPath) {
-    shell::util::RunScreenshotTestsMode(shellParams_, std::move(factory));
-  } else {
-    RunApplicationMode(majorVersion, minorVersion, std::move(factory), requestedConfigs[0]);
-  }
+  run(majorVersion, minorVersion, std::move(factory), requestedConfigs[0]);
 
   return 0;
 }
