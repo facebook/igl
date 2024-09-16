@@ -75,28 +75,18 @@ igl::shell::MouseButton getIGLMouseButton(int button) {
 
 } // namespace
 
-GLFWwindow* initWindow() {
+GLFWwindow* initWindow(const shell::RenderSessionConfig& config) {
   glfwSetErrorCallback(glfwErrorHandler);
   if (!glfwInit())
     return nullptr;
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+  glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
+  glfwWindowHint(GLFW_MAXIMIZED, config.fullscreen);
 
-  const bool overrideDefaults = shellParams_.viewportSize == igl::shell::ShellParams().viewportSize;
-
-  int x = 0;
-  int y = 0;
-  int w = shellParams_.viewportSize.x;
-  int h = shellParams_.viewportSize.y;
-
-  if (overrideDefaults) {
-    // override defaults
-    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-    glfwGetMonitorWorkarea(monitor, &x, &y, &w, &h);
-  }
-
-  GLFWwindow* windowHandle = glfwCreateWindow(w, h, "Hello IGL Vulkan", nullptr, nullptr);
+  GLFWwindow* windowHandle =
+      glfwCreateWindow(config.width, config.height, config.displayName.c_str(), nullptr, nullptr);
   if (!windowHandle) {
     glfwTerminate();
     return nullptr;
@@ -106,10 +96,6 @@ GLFWwindow* initWindow() {
   glfwGetFramebufferSize(windowHandle, &width, &height);
   shellParams_.viewportSize.x = width;
   shellParams_.viewportSize.y = height;
-
-  if (overrideDefaults) {
-    glfwSetWindowPos(windowHandle, x, y);
-  }
 
   glfwSetCursorPosCallback(windowHandle, [](GLFWwindow* window, double xpos, double ypos) {
     vulkanShellPlatform_->getInputDispatcher().queueEvent(
@@ -214,9 +200,27 @@ int main(int argc, char* argv[]) {
 
   auto factory = igl::shell::createDefaultRenderSessionFactory();
 
+  std::vector<shell::RenderSessionConfig> suggestedConfigs = {
+      {
+          .displayName = "Vulkan 1.1",
+          .backendVersion = {.flavor = BackendFlavor::Vulkan, .majorVersion = 1, .minorVersion = 1},
+          .colorFramebufferFormat = TextureFormat::BGRA_UNorm8,
+          .width = 1024,
+          .height = 768,
+          .fullscreen = false,
+      },
+  };
+
+  const auto requestedConfigs = factory->requestedConfigs(std::move(suggestedConfigs));
+  if (IGL_UNEXPECTED(requestedConfigs.size() != 1)) {
+    return -1;
+  }
+
+  IGL_ASSERT(requestedConfigs[0].backendVersion.flavor == BackendFlavor::Vulkan);
+
   using WindowPtr = std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)>;
 
-  WindowPtr vulkanWindow(initWindow(), &glfwDestroyWindow);
+  WindowPtr vulkanWindow(initWindow(requestedConfigs[0]), &glfwDestroyWindow);
   if (!vulkanWindow.get()) {
     return 0;
   }

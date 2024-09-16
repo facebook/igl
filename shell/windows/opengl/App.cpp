@@ -122,25 +122,27 @@ igl::SurfaceTextures createSurfaceTextures(igl::IDevice& device) {
 
 } // namespace
 
-GLFWwindow* initGLWindow(uint32_t majorVersion, uint32_t minorVersion) {
+GLFWwindow* initGLWindow(const shell::RenderSessionConfig& config) {
   glfwSetErrorCallback(glfwErrorHandler);
   if (!glfwInit()) {
     IGLLog(IGLLogError, "initGLWindow> glfwInit failed");
     return nullptr;
   }
 
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, majorVersion);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minorVersion);
-  if (majorVersion > 3 || (majorVersion == 3 && minorVersion >= 2)) {
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, config.backendVersion.majorVersion);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, config.backendVersion.minorVersion);
+  if (config.backendVersion.majorVersion > 3 ||
+      (config.backendVersion.majorVersion == 3 && config.backendVersion.minorVersion >= 2)) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   }
   glfwWindowHint(GLFW_VISIBLE, true);
   glfwWindowHint(GLFW_DOUBLEBUFFER, true);
   glfwWindowHint(GLFW_RESIZABLE, true);
   glfwWindowHint(GLFW_SRGB_CAPABLE, true);
+  glfwWindowHint(GLFW_MAXIMIZED, config.fullscreen);
 
-  GLFWwindow* windowHandle = glfwCreateWindow(
-      shellParams_.viewportSize.x, shellParams_.viewportSize.y, "Hello igl", NULL, NULL);
+  GLFWwindow* windowHandle =
+      glfwCreateWindow(config.width, config.height, config.displayName.c_str(), NULL, NULL);
   if (!windowHandle) {
     IGLLog(IGLLogError, "initGLWindow> we couldn't create the window");
     glfwTerminate();
@@ -193,10 +195,11 @@ GLFWwindow* initGLWindow(uint32_t majorVersion, uint32_t minorVersion) {
 // This mode is the normal running mode when running samples as applications.
 static void RunApplicationMode(uint32_t majorVersion,
                                uint32_t minorVersion,
-                               std::unique_ptr<igl::shell::IRenderSessionFactory> factory) {
+                               std::unique_ptr<igl::shell::IRenderSessionFactory> factory,
+                               const shell::RenderSessionConfig& config) {
   shellParams_ = initShellParams();
   using WindowPtr = std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)>;
-  WindowPtr glWindow(initGLWindow(majorVersion, minorVersion), &glfwDestroyWindow);
+  WindowPtr glWindow(initGLWindow(config), &glfwDestroyWindow);
 
   if (!glWindow.get())
     return;
@@ -262,12 +265,33 @@ int main(int argc, char* argv[]) {
     std::tie(majorVersion, minorVersion) = igl::opengl::parseVersionString(argv[1]);
   }
 
+  std::vector<shell::RenderSessionConfig> suggestedConfigs = {
+      {
+          .displayName =
+              "OpenGL " + std::to_string(majorVersion) + "." + std::to_string(minorVersion),
+          .backendVersion = {.flavor = BackendFlavor::OpenGL,
+                             .majorVersion = static_cast<uint8_t>(majorVersion),
+                             .minorVersion = static_cast<uint8_t>(minorVersion)},
+          .colorFramebufferFormat = TextureFormat::RGBA_SRGB,
+          .width = 1024,
+          .height = 768,
+          .fullscreen = false,
+      },
+  };
+
+  const auto requestedConfigs = factory->requestedConfigs(std::move(suggestedConfigs));
+  if (IGL_UNEXPECTED(requestedConfigs.size() != 1)) {
+    return -1;
+  }
+
+  IGL_ASSERT(requestedConfigs[0].backendVersion.flavor == BackendFlavor::OpenGL);
+
   const char* screenshotTestsOutPath = std::getenv("SCREENSHOT_TESTS_OUT");
 
   if (screenshotTestsOutPath) {
     shell::util::RunScreenshotTestsMode(shellParams_, std::move(factory));
   } else {
-    RunApplicationMode(majorVersion, minorVersion, std::move(factory));
+    RunApplicationMode(majorVersion, minorVersion, std::move(factory), requestedConfigs[0]);
   }
 
   return 0;

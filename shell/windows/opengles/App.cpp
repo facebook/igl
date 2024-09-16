@@ -93,22 +93,23 @@ class EGLDevice final : public ::igl::opengl::Device {
   ::igl::opengl::PlatformDevice platformDevice_;
 };
 
-GLFWwindow* initGLESWindow(uint32_t majorVersion, uint32_t minorVersion) {
+GLFWwindow* initGLESWindow(const shell::RenderSessionConfig& config) {
   glfwSetErrorCallback(glfwErrorHandler);
   if (!glfwInit())
     return nullptr;
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
   glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, majorVersion);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minorVersion);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, config.backendVersion.majorVersion);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, config.backendVersion.minorVersion);
   glfwWindowHint(GLFW_VISIBLE, true);
   glfwWindowHint(GLFW_DOUBLEBUFFER, true);
   glfwWindowHint(GLFW_RESIZABLE, true);
   glfwWindowHint(GLFW_SRGB_CAPABLE, true);
+  glfwWindowHint(GLFW_MAXIMIZED, config.fullscreen);
 
-  GLFWwindow* windowHandle = glfwCreateWindow(
-      shellParams_.viewportSize.x, shellParams_.viewportSize.y, "Hello igl", NULL, NULL);
+  GLFWwindow* windowHandle =
+      glfwCreateWindow(config.width, config.height, config.displayName.c_str(), NULL, NULL);
   if (!windowHandle) {
     glfwTerminate();
     return nullptr;
@@ -178,8 +179,29 @@ int main(int argc, char* argv[]) {
     std::tie(majorVersion, minorVersion) = igl::opengl::parseVersionString(argv[1]);
   }
 
+  std::vector<shell::RenderSessionConfig> suggestedConfigs = {
+      {
+          .displayName =
+              "OpenGL ES " + std::to_string(majorVersion) + "." + std::to_string(minorVersion),
+          .backendVersion = {.flavor = BackendFlavor::OpenGL_ES,
+                             .majorVersion = static_cast<uint8_t>(majorVersion),
+                             .minorVersion = static_cast<uint8_t>(minorVersion)},
+          .colorFramebufferFormat = TextureFormat::RGBA_UNorm8,
+          .width = 1024,
+          .height = 768,
+          .fullscreen = false,
+      },
+  };
+
+  const auto requestedConfigs = factory->requestedConfigs(std::move(suggestedConfigs));
+  if (IGL_UNEXPECTED(requestedConfigs.size() != 1)) {
+    return -1;
+  }
+
+  IGL_ASSERT(requestedConfigs[0].backendVersion.flavor == BackendFlavor::OpenGL_ES);
+
   using WindowPtr = std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)>;
-  WindowPtr glesWindow(initGLESWindow(majorVersion, minorVersion), &glfwDestroyWindow);
+  WindowPtr glesWindow(initGLESWindow(requestedConfigs[0]), &glfwDestroyWindow);
   if (!glesWindow.get())
     return 0;
 
