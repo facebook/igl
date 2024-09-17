@@ -10,7 +10,6 @@
 #include <cstdint>
 #include <igl/Common.h>
 #include <igl/Macros.h>
-#include <igl/TextureFormat.h>
 
 namespace igl {
 
