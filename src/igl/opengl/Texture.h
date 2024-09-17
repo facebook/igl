@@ -71,7 +71,15 @@ class Texture : public WithContext, public ITexture {
   // @fb-only
   [[nodiscard]] virtual GLuint getId() const = 0;
 
-  [[nodiscard]] GLint getAlignment(size_t stride, size_t mipLevel = 0) const;
+  /// @brief Calculates a value for GL_PACK_ALIGNMENT or GL_UNPACK_ALIGNMENT for the given byte
+  /// stride.
+  /// @param stride The byte stride of a row of data in the texture data source or destination.
+  /// @param mipLevel The texture mip level the data is being read from or written to.
+  /// @param widthAtMipLevel The width, in pixels, at mipLevel of the data being read from or
+  /// written to.
+  [[nodiscard]] GLint getAlignment(uint32_t stride,
+                                   uint32_t mipLevel = 0,
+                                   uint32_t widthAtMipLevel = 0) const;
 
   void setSamplerHash(size_t newValue) {
     samplerHash_ = newValue;

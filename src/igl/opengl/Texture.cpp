@@ -8,7 +8,6 @@
 #include <igl/opengl/Texture.h>
 
 #include <algorithm>
-#include <cstdlib>
 #include <igl/opengl/CommandBuffer.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/Errors.h>
@@ -102,7 +101,7 @@ Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
 // openGL only uses alignment instead of stride when reading/writing pixels so it will not support
 // padding that is not 8, 4, 2, or 1 byte aligned to the actual pixel data
 
-GLint Texture::getAlignment(size_t stride, size_t mipLevel) const {
+GLint Texture::getAlignment(uint32_t stride, uint32_t mipLevel, uint32_t widthAtMipLevel) const {
   IGL_ASSERT(mipLevel < numMipLevels_);
 
   if (getProperties().isCompressed()) {
@@ -110,9 +109,14 @@ GLint Texture::getAlignment(size_t stride, size_t mipLevel) const {
   }
 
   // Clamp to 1 to account for non-square textures.
-  const auto srcWidth = std::max(getDimensions().width >> mipLevel, 1u);
+  const auto maxWidthAtMipLevel = std::max(getDimensions().width >> mipLevel, 1u);
+  if (widthAtMipLevel == 0) {
+    widthAtMipLevel = maxWidthAtMipLevel;
+  } else if (IGL_UNEXPECTED(widthAtMipLevel > maxWidthAtMipLevel)) {
+    widthAtMipLevel = maxWidthAtMipLevel;
+  }
 
-  const auto pixelBytesPerRow = getProperties().getBytesPerRow(srcWidth);
+  const auto pixelBytesPerRow = getProperties().getBytesPerRow(widthAtMipLevel);
 
   if (stride == 0 || !IGL_VERIFY(pixelBytesPerRow <= stride)) {
     return 1;

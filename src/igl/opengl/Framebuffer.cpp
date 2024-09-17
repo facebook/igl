@@ -252,7 +252,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
       getContext().pixelStorei(GL_PACK_ROW_LENGTH, 0);
     }
     getContext().pixelStorei(GL_PACK_ALIGNMENT,
-                             texture.getAlignment(finalBytesPerRow, range.mipLevel));
+                             texture.getAlignment(finalBytesPerRow, range.mipLevel, range.width));
   }
 
   // Note read out format is based on

@@ -279,6 +279,8 @@ TEST_F(TextureOGLTest, TextureAlignment) {
     auto texture = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
     ret = texture->create(texDesc, false);
 
+    ASSERT_EQ(texture->getAlignment((width >> 0) * bytesPerPixel), 8);
+
     ASSERT_EQ(texture->getAlignment((width >> 0) * bytesPerPixel, 0), 8);
     ASSERT_EQ(texture->getAlignment((width >> 1) * bytesPerPixel, 1), 8);
     ASSERT_EQ(texture->getAlignment((width >> 2) * bytesPerPixel, 2), 8);
@@ -287,6 +289,23 @@ TEST_F(TextureOGLTest, TextureAlignment) {
     ASSERT_EQ(texture->getAlignment((width >> 5) * bytesPerPixel, 5), 8);
     ASSERT_EQ(texture->getAlignment((width >> 6) * bytesPerPixel, 6), 8);
     ASSERT_EQ(texture->getAlignment((width >> 7) * bytesPerPixel, 7), 4);
+
+    ASSERT_EQ(texture->getAlignment((width >> 0) * bytesPerPixel, 0, width >> 0), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 1) * bytesPerPixel, 1, width >> 1), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 2) * bytesPerPixel, 2, width >> 2), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 3) * bytesPerPixel, 3, width >> 3), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 4) * bytesPerPixel, 4, width >> 4), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 5) * bytesPerPixel, 5, width >> 5), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 6) * bytesPerPixel, 6, width >> 6), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 7) * bytesPerPixel, 7, width >> 7), 4);
+
+    ASSERT_EQ(texture->getAlignment((width >> 1) * bytesPerPixel, 0, width >> 1), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 2) * bytesPerPixel, 1, width >> 2), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 3) * bytesPerPixel, 2, width >> 3), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 4) * bytesPerPixel, 3, width >> 4), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 5) * bytesPerPixel, 4, width >> 5), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 6) * bytesPerPixel, 5, width >> 6), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 7) * bytesPerPixel, 6, width >> 7), 4);
   }
 
   {
@@ -300,11 +319,24 @@ TEST_F(TextureOGLTest, TextureAlignment) {
     auto texture = std::make_unique<igl::opengl::TextureTarget>(*context_, texDesc.format);
     ret = texture->create(texDesc, false);
 
+    ASSERT_EQ(texture->getAlignment((width >> 0) * bytesPerPixel), 8);
+
     ASSERT_EQ(texture->getAlignment((width >> 0) * bytesPerPixel, 0), 8);
     ASSERT_EQ(texture->getAlignment((width >> 1) * bytesPerPixel, 1), 8);
     ASSERT_EQ(texture->getAlignment((width >> 2) * bytesPerPixel, 2), 8);
     ASSERT_EQ(texture->getAlignment((width >> 3) * bytesPerPixel, 3), 4);
     ASSERT_EQ(texture->getAlignment((width >> 4) * bytesPerPixel, 4), 4);
+
+    ASSERT_EQ(texture->getAlignment((width >> 0) * bytesPerPixel, 0, width >> 0), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 1) * bytesPerPixel, 1, width >> 1), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 2) * bytesPerPixel, 2, width >> 2), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 3) * bytesPerPixel, 3, width >> 3), 4);
+    ASSERT_EQ(texture->getAlignment((width >> 4) * bytesPerPixel, 4, width >> 4), 4);
+
+    ASSERT_EQ(texture->getAlignment((width >> 1) * bytesPerPixel, 0, width >> 1), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 2) * bytesPerPixel, 1, width >> 2), 8);
+    ASSERT_EQ(texture->getAlignment((width >> 3) * bytesPerPixel, 2, width >> 3), 4);
+    ASSERT_EQ(texture->getAlignment((width >> 4) * bytesPerPixel, 3, width >> 4), 4);
   }
 }
 

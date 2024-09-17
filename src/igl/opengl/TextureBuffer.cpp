@@ -460,7 +460,8 @@ Result TextureBuffer::uploadInternal(GLenum target,
     if (unpackRowLengthSupported) {
       getContext().pixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     }
-    getContext().pixelStorei(GL_UNPACK_ALIGNMENT, this->getAlignment(bytesPerRow, range.mipLevel));
+    getContext().pixelStorei(GL_UNPACK_ALIGNMENT,
+                             this->getAlignment(bytesPerRow, range.mipLevel, range.width));
   }
 
   Result result;

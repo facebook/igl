@@ -84,7 +84,7 @@ void OpenGLTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
     }
     const auto& properties = glTexture.getProperties();
     context.pixelStorei(GL_PACK_ALIGNMENT,
-                        glTexture.getAlignment(properties.getBytesPerRow(textureWidth_), 0));
+                        glTexture.getAlignment(properties.getBytesPerRow(textureWidth_)));
 
     // Start transferring from framebuffer -> PBO
     context.bindBuffer(GL_PIXEL_PACK_BUFFER, pboId_);

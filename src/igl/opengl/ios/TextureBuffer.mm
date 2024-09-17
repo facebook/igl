@@ -138,7 +138,7 @@ Result TextureBuffer::createWithSize(size_t width, size_t height) {
     getContext().getIntegerv(GL_UNPACK_ALIGNMENT, &prevUnpackAlignment);
 
     const size_t bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer_);
-    getContext().pixelStorei(GL_UNPACK_ALIGNMENT, this->getAlignment(bytesPerRow, 0));
+    getContext().pixelStorei(GL_UNPACK_ALIGNMENT, this->getAlignment(bytesPerRow));
 
     BOOL requiresLineByLineUpload = NO;
     const auto bytesPerPixel = getProperties().bytesPerBlock;
