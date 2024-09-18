@@ -12,6 +12,7 @@
 #include <shell/shared/renderSession/RenderSession.h>
 
 #include <IGLU/imgui/Session.h>
+#include <atomic>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <igl/FPSCounter.h>

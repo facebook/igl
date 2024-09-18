@@ -8,6 +8,8 @@
 #include <IGLU/uniform/Collection.h>
 #include <IGLU/uniform/Descriptor.h>
 
+#include <algorithm>
+
 namespace iglu::uniform {
 
 void Collection::update(const Collection& changes) {

@@ -7,6 +7,14 @@
 
 // @fb-only
 
+#include <igl/Macros.h>
+
+#if defined(FORCE_USE_ANGLE) || IGL_PLATFORM_LINUX
+#include <igl/opengl/egl/HWDevice.h>
+#else
+#include <igl/opengl/wgl/HWDevice.h>
+#endif // FORCE_USE_ANGLE
+
 // clang-format off
 #if defined(_WIN32)
   #define GLFW_EXPOSE_NATIVE_WIN32

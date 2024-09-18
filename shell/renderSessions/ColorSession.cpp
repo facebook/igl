@@ -7,6 +7,8 @@
 
 // @fb-only
 
+#include <cstring>
+
 #include <IGLU/simdtypes/SimdTypes.h>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
