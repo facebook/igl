@@ -256,8 +256,7 @@ void YUVColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
     // draw the YUV format name using ImGui
     {
-      imguiSession_->beginFrame(framebufferDesc_,
-                                getPlatform().getDisplayContext().pixelsPerPoint * 2);
+      imguiSession_->beginFrame(framebufferDesc_, getPlatform().getDisplayContext().pixelsPerPoint);
       const ImGuiWindowFlags flags =
           ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
           ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |

@@ -564,8 +564,7 @@ void TinyMeshSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   }
   commands->popDebugGroupLabel();
   {
-    imguiSession_->beginFrame(framebufferDesc_,
-                              getPlatform().getDisplayContext().pixelsPerPoint * 2);
+    imguiSession_->beginFrame(framebufferDesc_, getPlatform().getDisplayContext().pixelsPerPoint);
     ImGui::Begin("Texture Viewer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::Image(ImTextureID(texture1_.get()), ImVec2(512, 512));
     ImGui::End();

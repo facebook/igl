@@ -400,7 +400,7 @@ void BindGroupSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
   commands->drawIndexed(static_cast<size_t>(3u * 6u * 2u));
 
-  imguiSession_->beginFrame(framebufferDesc_, getPlatform().getDisplayContext().pixelsPerPoint * 2);
+  imguiSession_->beginFrame(framebufferDesc_, getPlatform().getDisplayContext().pixelsPerPoint);
   imguiSession_->drawFPS(fps_.getAverageFPS());
   imguiSession_->endFrame(device, *commands);
 
