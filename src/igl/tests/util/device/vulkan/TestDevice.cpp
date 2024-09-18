@@ -53,8 +53,7 @@ std::shared_ptr<::igl::IDevice> createTestDevice(bool enableValidation) {
   config.enableValidation = false;
   config.terminateOnValidationError = false;
 #endif
-  // Disables OS Level Color Management to achieve parity with OpenGL
-  config.swapChainColorSpace = igl::ColorSpace::PASS_THROUGH;
+  config.swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
   config.enableExtraLogs = enableValidation;
 
   auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
