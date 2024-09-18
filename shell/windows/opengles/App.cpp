@@ -139,6 +139,9 @@ GLFWwindow* initGLESWindow(const shell::RenderSessionConfig& config) {
 
   glfwSetKeyCallback(windowHandle,
                      [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+                       if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+                         glfwSetWindowShouldClose(window, GLFW_TRUE);
+                       }
                        if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE) {
                          angleBackend = !angleBackend;
                          IGL_LOG_INFO("%s\n", angleBackend ? "Angle" : "Vulkan");
