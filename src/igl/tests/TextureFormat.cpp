@@ -17,39 +17,19 @@ class TextureFormatTest : public util::TextureFormatTestBase {
 };
 
 TEST_F(TextureFormatTest, Sampled) {
-#if IGL_PLATFORM_LINUX_SWIFTSHADER && IGL_BACKEND_VULKAN
-  // Leak sanitizer crashes with "LeakSanitizer has encountered a fatal error" in these tests
-  // for SwiftShader Vulkan in Linux.
-  GTEST_SKIP() << "Leak sanitizer crashes for these tests if SwiftShader is in use.";
-#endif
   testUsage(TextureDesc::TextureUsageBits::Sampled, "Sampled");
 }
 
 TEST_F(TextureFormatTest, SampledAttachment) {
-#if IGL_PLATFORM_LINUX_SWIFTSHADER && IGL_BACKEND_VULKAN
-  // Leak sanitizer crashes with "LeakSanitizer has encountered a fatal error" in these tests
-  // for SwiftShader Vulkan in Linux.
-  GTEST_SKIP() << "Leak sanitizer crashes for these tests if SwiftShader is in use.";
-#endif
   testUsage(TextureDesc::TextureUsageBits::Sampled | TextureDesc::TextureUsageBits::Attachment,
             "SampledAttachment");
 }
 
 TEST_F(TextureFormatTest, Attachment) {
-#if IGL_PLATFORM_LINUX_SWIFTSHADER && IGL_BACKEND_VULKAN
-  // Leak sanitizer crashes with "LeakSanitizer has encountered a fatal error" in these tests
-  // for SwiftShader Vulkan in Linux.
-  GTEST_SKIP() << "Leak sanitizer crashes for these tests if SwiftShader is in use.";
-#endif
   testUsage(TextureDesc::TextureUsageBits::Attachment, "Attachment");
 }
 
 TEST_F(TextureFormatTest, Storage) {
-#if IGL_PLATFORM_LINUX_SWIFTSHADER && IGL_BACKEND_VULKAN
-  // Leak sanitizer crashes with "LeakSanitizer has encountered a fatal error" in these tests
-  // for SwiftShader Vulkan in Linux.
-  GTEST_SKIP() << "Leak sanitizer crashes for these tests if SwiftShader is in use.";
-#endif
   testUsage(TextureDesc::TextureUsageBits::Storage, "Storage");
 }
 
