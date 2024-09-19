@@ -650,7 +650,9 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
 
   // the data should be available as we get out of this function
   immediate_->wait(immediate_->submit(wrapper2), ctx_.config_.fenceTimeoutNanoseconds);
+
   regions_.push_back(memoryChunk);
+  freeStagingBufferSize_ += memoryChunk.size;
 }
 
 VkDeviceSize VulkanStagingDevice::getAlignedSize(VkDeviceSize size) const {
@@ -686,8 +688,8 @@ bool VulkanStagingDevice::shouldAllocateStagingBuffer(VkDeviceSize sizeNeeded,
   if (sizeNeeded <= freeStagingBufferSize_) {
     // loop over empty regions to find a block that is large enough
     auto regionItr = regions_.begin();
-    while (regionItr != regions_.end() && regionItr->handle.empty()) {
-      if (regionItr->size >= sizeNeeded) {
+    while (regionItr != regions_.end()) {
+      if (regionItr->size >= sizeNeeded && regionItr->handle.empty()) {
         return false;
       }
       regionItr++;
