@@ -16,6 +16,7 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanTexture.h>
+#include <igl/vulkan/util/TextureFormat.h>
 
 namespace igl::vulkan::android {
 
@@ -30,7 +31,7 @@ Result NativeHWTextureBuffer::createTextureInternal(const TextureDesc& desc,
   const VkImageUsageFlags usageFlags =
       VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
       VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-  const VkFormat format = igl::vulkan::textureFormatToVkFormat(desc.format);
+  const VkFormat format = igl::vulkan::util::textureFormatToVkFormat(desc.format);
   const uint32_t mipLevels = igl::TextureDesc::calcNumMipLevels(desc.width, desc.height);
 
   auto vulkanImage = VulkanImage::createWithExportMemory(

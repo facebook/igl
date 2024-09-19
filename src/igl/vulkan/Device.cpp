@@ -27,6 +27,7 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanShaderModule.h>
+#include <igl/vulkan/util/TextureFormat.h>
 
 // Writes the shader code to disk for debugging. Used in `Device::createShaderModule()`
 #if IGL_SHADER_DUMP && IGL_DEBUG
@@ -657,7 +658,7 @@ ICapabilities::TextureFormatCapabilities Device::getTextureFormatCapabilities(
     TextureFormat format) const {
   IGL_PROFILER_FUNCTION();
 
-  const VkFormat vkFormat = igl::vulkan::textureFormatToVkFormat(format);
+  const VkFormat vkFormat = igl::vulkan::util::textureFormatToVkFormat(format);
 
   if (vkFormat == VK_FORMAT_UNDEFINED) {
     return TextureFormatCapabilityBits::Unsupported;

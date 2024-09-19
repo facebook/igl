@@ -159,8 +159,6 @@ struct VulkanContextConfig {
 
 Result getResultFromVkResult(VkResult result);
 void setResultFrom(Result* outResult, VkResult result);
-VkFormat textureFormatToVkFormat(igl::TextureFormat format);
-igl::TextureFormat vkFormatToTextureFormat(VkFormat format);
 igl::ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace);
 uint32_t getNumImagePlanes(VkFormat format);
 VkColorSpaceKHR colorSpaceToVkColorSpace(igl::ColorSpace colorSpace);
