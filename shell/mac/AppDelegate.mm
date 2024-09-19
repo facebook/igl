@@ -31,18 +31,6 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
     return [NSColorSpace extendedSRGBColorSpace];
   case igl::ColorSpace::DCI_P3_NONLINEAR:
     return [NSColorSpace displayP3ColorSpace];
-  case igl::ColorSpace::BT709_LINEAR:
-    IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
-  case igl::ColorSpace::BT709_NONLINEAR:
-    IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
-  case igl::ColorSpace::BT2020_LINEAR:
-    IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
-  case igl::ColorSpace::HDR10_ST2084:
-    IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
-  case igl::ColorSpace::DOLBYVISION:
-    IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
-  case igl::ColorSpace::HDR10_HLG:
-    IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
   case igl::ColorSpace::ADOBERGB_LINEAR:
     return [NSColorSpace adobeRGB1998ColorSpace];
   case igl::ColorSpace::ADOBERGB_NONLINEAR:
@@ -53,11 +41,18 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
     return [NSColorSpace extendedSRGBColorSpace];
   case igl::ColorSpace::DISPLAY_NATIVE_AMD:
     return [NSColorSpace deviceRGBColorSpace];
+  case igl::ColorSpace::BT709_LINEAR:
+  case igl::ColorSpace::BT709_NONLINEAR:
+  case igl::ColorSpace::BT2020_LINEAR:
+  case igl::ColorSpace::HDR10_ST2084:
+  case igl::ColorSpace::DOLBYVISION:
+  case igl::ColorSpace::HDR10_HLG:
   case igl::ColorSpace::BT2020_NONLINEAR:
   case igl::ColorSpace::BT601_NONLINEAR:
   case igl::ColorSpace::BT2100_HLG_NONLINEAR:
   case igl::ColorSpace::BT2100_PQ_NONLINEAR:
-    IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
+    IGL_ASSERT_NOT_IMPLEMENTED();
+    return [NSColorSpace sRGBColorSpace];
   }
   IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
 }
