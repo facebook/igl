@@ -16,6 +16,8 @@
 #include <igl/metal/ColorSpace.h>
 
 namespace {
+
+#if IGL_BACKEND_OPENGL
 NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
   switch (colorSpace) {
   case igl::ColorSpace::SRGB_LINEAR:
@@ -60,6 +62,7 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
   }
   IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
 }
+#endif
 } // namespace
 
 @interface AppDelegate ()
