@@ -13,7 +13,6 @@
 #import "ViewController.h"
 
 #import <igl/Common.h>
-#include <igl/metal/ColorSpace.h>
 
 namespace {
 
