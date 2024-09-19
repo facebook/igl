@@ -8,12 +8,19 @@
 #pragma once
 
 #include <cstdint>
+#include <igl/Macros.h>
 #include <igl/TextureFormat.h>
+
+#if !defined(IGL_CMAKE_BUILD)
+#include <vulkan/vulkan_core.h>
+#else
+#include <volk/volk.h>
+#endif
 
 namespace igl::vulkan::util {
 
 /// Converts Vulkan texture format to an IGL TextureFormat.
 /// @return The corresponding IGL format if known; otherwise returns TextureFormat::Invalid.
-TextureFormat vkTextureFormatToTextureFormat(int32_t vkFormat);
+TextureFormat vkTextureFormatToTextureFormat(VkFormat vkFormat);
 
 } // namespace igl::vulkan::util

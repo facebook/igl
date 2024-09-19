@@ -9,7 +9,7 @@
 
 #include <IGLU/texture_loader/ktx2/Header.h>
 #include <igl/IGLSafeC.h>
-#include <igl/vulkan/util/TextureFormat.h>
+#include <igl/vulkan/util/TextureFormatInt.h>
 #include <ktx.h>
 #include <numeric>
 #include <vector>
@@ -49,8 +49,8 @@ bool TextureLoaderFactory::canCreateInternal(DataReader headerReader,
   // In either case, we need to process the DFD to understand whether we can really handle the
   // format or not.
   if (header->vkFormat != 0 &&
-      igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat)) ==
-          igl::TextureFormat::Invalid) {
+      igl::vulkan::util::intVkTextureFormatToTextureFormat(
+          static_cast<int32_t>(header->vkFormat)) == igl::TextureFormat::Invalid) {
     igl::Result::setResult(
         outResult, igl::Result::Code::InvalidOperation, "Unrecognized texture format.");
     return false;
@@ -93,8 +93,8 @@ bool TextureLoaderFactory::validate(DataReader reader,
   }
 
   if (header->vkFormat != 0u) {
-    const auto format =
-        igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat));
+    const auto format = igl::vulkan::util::intVkTextureFormatToTextureFormat(
+        static_cast<int32_t>(header->vkFormat));
     const auto properties = igl::TextureFormatProperties::fromTextureFormat(format);
 
     const uint32_t mipLevelAlignment =
@@ -178,7 +178,7 @@ bool TextureLoaderFactory::validate(DataReader reader,
 igl::TextureFormat TextureLoaderFactory::textureFormat(const ktxTexture* texture) const noexcept {
   if (texture->classId == ktxTexture2_c) {
     const auto* texture2 = reinterpret_cast<const ktxTexture2*>(texture);
-    return igl::vulkan::util::vkTextureFormatToTextureFormat(
+    return igl::vulkan::util::intVkTextureFormatToTextureFormat(
         static_cast<int32_t>(texture2->vkFormat));
   }
 
