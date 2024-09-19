@@ -11,6 +11,7 @@
 #include <optional>
 #include <vector>
 
+#include <igl/ColorSpace.h>
 #include <igl/Common.h>
 #include <igl/TextureFormat.h>
 #include <shell/shared/renderSession/Hands.h>
@@ -26,6 +27,7 @@ struct ShellParams {
   glm::vec2 viewportSize = glm::vec2(1024.0f, 768.0f);
   glm::ivec2 nativeSurfaceDimensions = glm::ivec2(2048, 1536);
   igl::TextureFormat defaultColorFramebufferFormat = igl::TextureFormat::BGRA_SRGB;
+  igl::ColorSpace swapchainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
   float viewportScale = 1.f;
   bool shouldPresent = true;
   std::optional<igl::Color> clearColorValue = {};

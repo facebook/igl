@@ -13,6 +13,54 @@
 #import "ViewController.h"
 
 #import <igl/Common.h>
+#include <igl/metal/ColorSpace.h>
+
+namespace {
+NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
+  switch (colorSpace) {
+  case igl::ColorSpace::SRGB_LINEAR:
+    return [NSColorSpace sRGBColorSpace]; // closest thing to linear srgb
+  case igl::ColorSpace::SRGB_NONLINEAR:
+    return [NSColorSpace sRGBColorSpace];
+  case igl::ColorSpace::DISPLAY_P3_NONLINEAR:
+    return [NSColorSpace displayP3ColorSpace];
+  case igl::ColorSpace::DISPLAY_P3_LINEAR:
+    return [NSColorSpace displayP3ColorSpace];
+  case igl::ColorSpace::EXTENDED_SRGB_LINEAR:
+    return [NSColorSpace extendedSRGBColorSpace];
+  case igl::ColorSpace::DCI_P3_NONLINEAR:
+    return [NSColorSpace displayP3ColorSpace];
+  case igl::ColorSpace::BT709_LINEAR:
+    IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
+  case igl::ColorSpace::BT709_NONLINEAR:
+    IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
+  case igl::ColorSpace::BT2020_LINEAR:
+    IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
+  case igl::ColorSpace::HDR10_ST2084:
+    IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
+  case igl::ColorSpace::DOLBYVISION:
+    IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
+  case igl::ColorSpace::HDR10_HLG:
+    IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
+  case igl::ColorSpace::ADOBERGB_LINEAR:
+    return [NSColorSpace adobeRGB1998ColorSpace];
+  case igl::ColorSpace::ADOBERGB_NONLINEAR:
+    return [NSColorSpace adobeRGB1998ColorSpace];
+  case igl::ColorSpace::PASS_THROUGH:
+    return nil;
+  case igl::ColorSpace::EXTENDED_SRGB_NONLINEAR:
+    return [NSColorSpace extendedSRGBColorSpace];
+  case igl::ColorSpace::DISPLAY_NATIVE_AMD:
+    return [NSColorSpace deviceRGBColorSpace];
+  case igl::ColorSpace::BT2020_NONLINEAR:
+  case igl::ColorSpace::BT601_NONLINEAR:
+  case igl::ColorSpace::BT2100_HLG_NONLINEAR:
+  case igl::ColorSpace::BT2100_PQ_NONLINEAR:
+    IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
+  }
+  IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);
+}
+} // namespace
 
 @interface AppDelegate ()
 
@@ -24,7 +72,6 @@
 @implementation AppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification*)aNotification {
-  [self.window setColorSpace:[NSColorSpace sRGBColorSpace]];
   [self setupViewController];
   [self.window makeKeyAndOrderFront:nil];
   [self.window makeFirstResponder:self.tabViewController.view];
@@ -74,6 +121,9 @@
                              // @fb-only
   // @fb-only
   // @fb-only
+
+  NSColorSpace* metalColorSpace = colorSpaceToNSColorSpace(viewController.colorSpace);
+  [self.window setColorSpace:metalColorSpace];
 #endif
 
 // @fb-only

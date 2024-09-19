@@ -27,5 +27,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)render;
 - (void)teardown;
 - (CGRect)frame;
+- (igl::ColorSpace)colorSpace;
 @end
 NS_ASSUME_NONNULL_END

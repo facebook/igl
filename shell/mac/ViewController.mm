@@ -18,6 +18,7 @@
 #import <igl/Common.h>
 #import <igl/IGL.h>
 #if IGL_BACKEND_METAL
+#include <igl/metal/ColorSpace.h>
 #import <igl/metal/HWDevice.h>
 #import <igl/metal/Texture.h>
 #import <igl/metal/macos/Device.h>
@@ -178,16 +179,7 @@ using namespace igl;
 
     metalView.colorPixelFormat =
         metal::Texture::textureFormatToMTLPixelFormat(shellParams_.defaultColorFramebufferFormat);
-    // !!!WARNING must be called after setting the colorPixelFormat WARNING!!!
-    //
-    // Disables OS Level Color Management to achieve parity with OpenGL
-    // Without this, the OS will try to "color convert" the resulting framebuffer
-    // to the monitor's color profile which is fine but doesn't seem to be
-    // supported under OpenGL which results in discrepancies between Metal
-    // and OpenGL. This feature is equivalent to using MoltenVK colorSpace
-    // VK_COLOR_SPACE_PASS_THROUGH_EXT
-    // Must be called after set colorPixelFormat since it resets the colorspace
-    metalView.colorspace = nil;
+    metalView.colorspace = metal::colorSpaceToCGColorSpace(shellParams_.swapchainColorSpace);
 
     metalView.framebufferOnly = NO;
     [metalView setViewController:self];
@@ -289,8 +281,7 @@ using namespace igl;
     vulkanContextConfig.enhancedShaderDebugging = false;
     vulkanContextConfig.enableBufferDeviceAddress = true;
 
-    // Disables OS Level Color Management to achieve parity with OpenGL
-    vulkanContextConfig.swapChainColorSpace = igl::ColorSpace::PASS_THROUGH;
+    vulkanContextConfig.swapChainColorSpace = shellParams_.swapchainColorSpace;
     vulkanContextConfig.requestedSwapChainTextureFormat =
         shellParams_.defaultColorFramebufferFormat;
 
@@ -596,6 +587,10 @@ static uint32_t getModifiers(NSEvent* event) {
 
 - (CGRect)frame {
   return frame_;
+}
+
+- (igl::ColorSpace)colorSpace {
+  return shellParams_.swapchainColorSpace;
 }
 
 @end
