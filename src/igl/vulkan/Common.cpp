@@ -316,10 +316,6 @@ igl::ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace) {
   }
 }
 
-igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
-  return util::vkTextureFormatToTextureFormat(format);
-}
-
 VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorage resourceStorage) {
   VkMemoryPropertyFlags memFlags{0};
 
