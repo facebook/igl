@@ -146,15 +146,37 @@ GLFWwindow* initGLWindow(const shell::RenderSessionConfig& config) {
   glfwWindowHint(GLFW_DOUBLEBUFFER, true);
   glfwWindowHint(GLFW_RESIZABLE, true);
   glfwWindowHint(GLFW_SRGB_CAPABLE, true);
-  glfwWindowHint(GLFW_MAXIMIZED, config.screenMode != shell::ScreenMode::Windowed);
+
+  int posX = 0;
+  int posY = 0;
+  int width = config.width;
+  int height = config.height;
+
+  if (config.screenMode == shell::ScreenMode::FullscreenNoTaskbar) {
+    // render full screen without overlapping the task bar
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    glfwGetMonitorWorkarea(monitor, &posX, &posY, &width, &height);
+  } else if (config.screenMode == shell::ScreenMode::Fullscreen) {
+    glfwWindowHint(GLFW_MAXIMIZED, true);
+  }
 
   GLFWwindow* windowHandle =
-      glfwCreateWindow(config.width, config.height, config.displayName.c_str(), NULL, NULL);
+      glfwCreateWindow(width, height, config.displayName.c_str(), nullptr, nullptr);
   if (!windowHandle) {
     IGLLog(IGLLogError, "initGLWindow> we couldn't create the window");
     glfwTerminate();
     return nullptr;
   }
+
+  if (config.screenMode == shell::ScreenMode::FullscreenNoTaskbar) {
+    glfwSetWindowPos(windowHandle, posX, posY);
+  }
+
+  glfwGetFramebufferSize(windowHandle, &width, &height);
+  shellParams_.viewportSize.x = width;
+  shellParams_.viewportSize.y = height;
 
   int result = glfwGetWindowAttrib(windowHandle, GLFW_CLIENT_API);
 
@@ -285,7 +307,7 @@ int main(int argc, char* argv[]) {
           .colorFramebufferFormat = TextureFormat::RGBA_SRGB,
           .width = 1024,
           .height = 768,
-          .screenMode = shell::ScreenMode::Windowed,
+          .screenMode = shell::ScreenMode::FullscreenNoTaskbar,
       },
   };
 
