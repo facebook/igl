@@ -83,7 +83,7 @@ GLFWwindow* initWindow(const shell::RenderSessionConfig& config) {
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
   glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
-  glfwWindowHint(GLFW_MAXIMIZED, config.fullscreen);
+  glfwWindowHint(GLFW_MAXIMIZED, config.screenMode != shell::ScreenMode::Windowed);
 
   GLFWwindow* windowHandle =
       glfwCreateWindow(config.width, config.height, config.displayName.c_str(), nullptr, nullptr);
@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) {
           .colorFramebufferFormat = TextureFormat::BGRA_UNorm8,
           .width = 1024,
           .height = 768,
-          .fullscreen = false,
+          .screenMode = shell::ScreenMode::Windowed,
       },
   };
 

@@ -146,7 +146,7 @@ GLFWwindow* initGLWindow(const shell::RenderSessionConfig& config) {
   glfwWindowHint(GLFW_DOUBLEBUFFER, true);
   glfwWindowHint(GLFW_RESIZABLE, true);
   glfwWindowHint(GLFW_SRGB_CAPABLE, true);
-  glfwWindowHint(GLFW_MAXIMIZED, config.fullscreen);
+  glfwWindowHint(GLFW_MAXIMIZED, config.screenMode != shell::ScreenMode::Windowed);
 
   GLFWwindow* windowHandle =
       glfwCreateWindow(config.width, config.height, config.displayName.c_str(), NULL, NULL);
@@ -285,7 +285,7 @@ int main(int argc, char* argv[]) {
           .colorFramebufferFormat = TextureFormat::RGBA_SRGB,
           .width = 1024,
           .height = 768,
-          .fullscreen = false,
+          .screenMode = shell::ScreenMode::Windowed,
       },
   };
 
