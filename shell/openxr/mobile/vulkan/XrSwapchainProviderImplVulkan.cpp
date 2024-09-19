@@ -12,11 +12,11 @@
 #include <fmt/core.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/Texture.h>
+#include <igl/vulkan/TextureFormat.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImageView.h>
-#include <igl/vulkan/util/TextureFormat.h>
 
 #include <shell/openxr/XrLog.h>
 
@@ -98,7 +98,7 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
   }
 
   const auto& actualDevice = static_cast<igl::vulkan::Device&>(device);
-  const auto iglFormat = vulkan::util::vkTextureFormatToTextureFormat(externalTextureFormat);
+  const auto iglFormat = vulkan::vkTextureFormatToTextureFormat(externalTextureFormat);
   const auto texture = inOutTextures[imageIndex];
   // allocate new drawable textures if its null or mismatches in size or format
   if (!texture || swapchainImageInfo.imageWidth != texture->getSize().width ||

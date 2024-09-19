@@ -7,11 +7,11 @@
 
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/SamplerState.h>
+#include <igl/vulkan/TextureFormat.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanSampler.h>
-#include <igl/vulkan/util/TextureFormat.h>
 
 #define IGL_VULKAN_DEBUG_SAMPLER_STATE 1
 
@@ -113,7 +113,7 @@ Result SamplerState::create(const SamplerStateDesc& desc) {
   Result result;
   sampler_ = ctx.createSampler(
       samplerStateDescToVkSamplerCreateInfo(desc, ctx.getVkPhysicalDeviceProperties().limits),
-      util::textureFormatToVkFormat(desc.yuvFormat),
+      textureFormatToVkFormat(desc.yuvFormat),
       &result,
       desc_.debugName.c_str());
 

@@ -25,6 +25,7 @@
 
 #include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/Texture.h>
+#include <igl/vulkan/TextureFormat.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImage.h>
@@ -32,7 +33,6 @@
 #include <igl/vulkan/VulkanShaderModule.h>
 #include <igl/vulkan/VulkanTexture.h>
 #include <igl/vulkan/util/SpvReflection.h>
-#include <igl/vulkan/util/TextureFormat.h>
 
 namespace igl::vulkan {
 

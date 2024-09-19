@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/vulkan/util/TextureFormat.h>
+#include <igl/vulkan/TextureFormat.h>
 
 #define IGL_COMMON_SKIP_CHECK
 #include <igl/Assert.h>
 
-namespace igl::vulkan::util {
+namespace igl::vulkan {
 
 VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
   using TextureFormat = ::igl::TextureFormat;
@@ -367,4 +367,4 @@ VkFormat invertRedAndBlue(VkFormat format) {
   }
 }
 
-} // namespace igl::vulkan::util
+} // namespace igl::vulkan

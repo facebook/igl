@@ -29,7 +29,8 @@
 
 #include <igl/FPSCounter.h>
 #include <igl/IGL.h>
-#include <igl/vulkan/util/TextureFormatInt.h>
+
+#include <IGLU/texture_loader/util/VkTextureFormat.h>
 
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
@@ -2294,12 +2295,12 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
     texRefRange.numMipLevels = TextureDesc::calcNumMipLevels(texRefRange.width, texRefRange.height);
   }
 
-  auto desc =
-      TextureDesc::newCube(igl::vulkan::util::intVkTextureFormatToTextureFormat(texture->vkFormat),
-                           texRefRange.width,
-                           texRefRange.height,
-                           TextureDesc::TextureUsageBits::Sampled,
-                           fileNameKTX.c_str());
+  auto desc = TextureDesc::newCube(
+      iglu::textureloader::util::vkTextureFormatToTextureFormat(texture->vkFormat),
+      texRefRange.width,
+      texRefRange.height,
+      TextureDesc::TextureUsageBits::Sampled,
+      fileNameKTX.c_str());
   desc.numMipLevels = texRefRange.numMipLevels;
   tex = device_->createTexture(desc, nullptr);
   IGL_ASSERT(tex);

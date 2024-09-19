@@ -10,7 +10,7 @@
 #include <IGLU/texture_loader/stb_jpeg/Header.h>
 #include <IGLU/texture_loader/stb_jpeg/TextureLoaderFactory.h>
 #include <cstring>
-#include <igl/vulkan/util/TextureFormat.h>
+#include <igl/vulkan/TextureFormat.h>
 #include <numeric>
 #include <vector>
 
