@@ -73,25 +73,6 @@ void setResultFrom(Result* outResult, VkResult result) {
   *outResult = getResultFromVkResult(result);
 }
 
-VkFormat invertRedAndBlue(VkFormat format) {
-  switch (format) {
-  case VK_FORMAT_B8G8R8A8_UNORM:
-    return VK_FORMAT_R8G8B8A8_UNORM;
-  case VK_FORMAT_R8G8B8A8_UNORM:
-    return VK_FORMAT_B8G8R8A8_UNORM;
-  case VK_FORMAT_R8G8B8A8_SRGB:
-    return VK_FORMAT_B8G8R8A8_SRGB;
-  case VK_FORMAT_B8G8R8A8_SRGB:
-    return VK_FORMAT_R8G8B8A8_SRGB;
-  case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
-    return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
-  case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
-    return VK_FORMAT_A2R10G10B10_UNORM_PACK32;
-  default:
-    IGL_UNREACHABLE_RETURN(format);
-  }
-}
-
 VkStencilOp stencilOperationToVkStencilOp(igl::StencilOperation op) {
   switch (op) {
   case igl::StencilOperation::Keep:
@@ -333,16 +314,6 @@ igl::ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace) {
     IGL_ASSERT_NOT_REACHED();
     return ColorSpace::SRGB_NONLINEAR;
   }
-}
-
-bool isTextureFormatRGB(VkFormat format) {
-  return format == VK_FORMAT_R8G8B8A8_UNORM || format == VK_FORMAT_R8G8B8A8_SRGB ||
-         format == VK_FORMAT_A2R10G10B10_UNORM_PACK32;
-}
-
-bool isTextureFormatBGR(VkFormat format) {
-  return format == VK_FORMAT_B8G8R8A8_UNORM || format == VK_FORMAT_B8G8R8A8_SRGB ||
-         format == VK_FORMAT_A2B10G10R10_UNORM_PACK32;
 }
 
 igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {

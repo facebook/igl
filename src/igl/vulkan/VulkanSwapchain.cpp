@@ -14,6 +14,7 @@
 #include <igl/vulkan/VulkanRenderPassBuilder.h>
 #include <igl/vulkan/VulkanSemaphore.h>
 #include <igl/vulkan/VulkanTexture.h>
+#include <igl/vulkan/util/TextureFormat.h>
 
 namespace {
 
@@ -34,10 +35,10 @@ bool isNativeSwapChainBGR(const std::vector<VkSurfaceFormatKHR>& formats) {
     // The preferred format should be the one which is closer to the beginning of the formats
     // container. If BGR is encountered earlier, it should be picked as the format of choice. If RGB
     // happens to be earlier, take it.
-    if (igl::vulkan::isTextureFormatRGB(format.format)) {
+    if (igl::vulkan::util::isTextureFormatRGB(format.format)) {
       return false;
     }
-    if (igl::vulkan::isTextureFormatBGR(format.format)) {
+    if (igl::vulkan::util::isTextureFormatBGR(format.format)) {
       return true;
     }
   }
@@ -51,9 +52,9 @@ VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>
 
   const bool isNativeSwapchainBGR = isNativeSwapChainBGR(formats);
   auto vulkanTextureFormat = igl::vulkan::textureFormatToVkFormat(textureFormat);
-  const bool isRequestedFormatBGR = igl::vulkan::isTextureFormatBGR(vulkanTextureFormat);
+  const bool isRequestedFormatBGR = igl::vulkan::util::isTextureFormatBGR(vulkanTextureFormat);
   if (isNativeSwapchainBGR != isRequestedFormatBGR) {
-    vulkanTextureFormat = igl::vulkan::invertRedAndBlue(vulkanTextureFormat);
+    vulkanTextureFormat = igl::vulkan::util::invertRedAndBlue(vulkanTextureFormat);
   }
   const auto preferred =
       VkSurfaceFormatKHR{vulkanTextureFormat, igl::vulkan::colorSpaceToVkColorSpace(colorSpace)};
