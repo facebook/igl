@@ -7,15 +7,20 @@
 
 #pragma once
 
-#include <igl/DeviceFeatures.h>
-#include <string>
+#include <cstdint>
 
 namespace igl::shell {
 
-struct RenderSessionConfig {
-  std::string displayName;
-  BackendVersion backendVersion;
-  igl::TextureFormat colorFramebufferFormat = igl::TextureFormat::BGRA_UNorm8;
+enum class WindowMode {
+  Window,
+  MaximizedWindow,
+  Fullscreen,
+};
+
+struct RenderSessionWindowConfig {
+  uint32_t width = 1024;
+  uint32_t height = 768;
+  WindowMode windowMode = WindowMode::Window;
 };
 
 } // namespace igl::shell

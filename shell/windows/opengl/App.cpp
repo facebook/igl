@@ -147,18 +147,20 @@ int main(int argc, char* argv[]) {
     std::tie(majorVersion, minorVersion) = igl::opengl::parseVersionString(argv[1]);
   }
 
+  igl::shell::RenderSessionWindowConfig suggestedWindowConfig = {
+      .width = 1024,
+      .height = 768,
+      .windowMode = shell::WindowMode::Window,
+  };
   igl::shell::RenderSessionConfig suggestedConfig = {
       .displayName = "OpenGL " + std::to_string(majorVersion) + "." + std::to_string(minorVersion),
       .backendVersion = {.flavor = BackendFlavor::OpenGL,
                          .majorVersion = static_cast<uint8_t>(majorVersion),
                          .minorVersion = static_cast<uint8_t>(minorVersion)},
       .colorFramebufferFormat = TextureFormat::RGBA_SRGB,
-      .width = 1024,
-      .height = 768,
-      .windowMode = shell::WindowMode::Window,
   };
 
-  if (!shell.initialize(argc, argv, std::move(suggestedConfig))) {
+  if (!shell.initialize(argc, argv, suggestedWindowConfig, std::move(suggestedConfig))) {
     shell.teardown();
     return -1;
   }

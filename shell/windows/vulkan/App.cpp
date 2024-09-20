@@ -87,16 +87,18 @@ igl::SurfaceTextures VulkanShell::createSurfaceTextures() noexcept {
 int main(int argc, char* argv[]) {
   igl::shell::VulkanShell shell;
 
-  igl::shell::RenderSessionConfig suggestedConfig = {
-      .displayName = "Vulkan 1.1",
-      .backendVersion = {.flavor = BackendFlavor::Vulkan, .majorVersion = 1, .minorVersion = 1},
-      .colorFramebufferFormat = TextureFormat::BGRA_SRGB,
+  igl::shell::RenderSessionWindowConfig suggestedWindowConfig = {
       .width = 1024,
       .height = 768,
       .windowMode = shell::WindowMode::MaximizedWindow,
   };
+  igl::shell::RenderSessionConfig suggestedConfig = {
+      .displayName = "Vulkan 1.1",
+      .backendVersion = {.flavor = BackendFlavor::Vulkan, .majorVersion = 1, .minorVersion = 1},
+      .colorFramebufferFormat = TextureFormat::BGRA_SRGB,
+  };
 
-  if (!shell.initialize(argc, argv, std::move(suggestedConfig))) {
+  if (!shell.initialize(argc, argv, suggestedWindowConfig, std::move(suggestedConfig))) {
     shell.teardown();
     return -1;
   }

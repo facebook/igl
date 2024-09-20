@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
+#include <shell/shared/renderSession/RenderSessionWindowConfig.h>
 #include <vector>
 
 namespace igl::shell {
@@ -20,7 +21,14 @@ class IRenderSessionFactory {
  public:
   virtual ~IRenderSessionFactory() noexcept = default;
 
-  virtual std::vector<RenderSessionConfig> requestedConfigs(
+  // Used on desktop platforms to configure the window hosting render sessions
+  virtual RenderSessionWindowConfig requestedWindowConfig(
+      RenderSessionWindowConfig suggestedConfig) {
+    return suggestedConfig;
+  }
+
+  // Used to configure individual render sessions
+  virtual std::vector<RenderSessionConfig> requestedSessionConfigs(
       std::vector<RenderSessionConfig> suggestedConfigs) {
     return suggestedConfigs;
   }

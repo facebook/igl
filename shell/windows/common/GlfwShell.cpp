@@ -54,6 +54,10 @@ const Platform& GlfwShell::platform() const noexcept {
   return *platform_;
 }
 
+const RenderSessionWindowConfig& GlfwShell::windowConfig() const noexcept {
+  return windowConfig_;
+}
+
 const RenderSessionConfig& GlfwShell::sessionConfig() const noexcept {
   return sessionConfig_;
 }
@@ -70,20 +74,20 @@ bool GlfwShell::createWindow() noexcept {
   glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
   glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
   glfwWindowHint(GLFW_DECORATED,
-                 sessionConfig_.windowMode == shell::WindowMode::Window ? GLFW_TRUE : GLFW_FALSE);
+                 windowConfig_.windowMode == shell::WindowMode::Window ? GLFW_TRUE : GLFW_FALSE);
 
   int posX = 0;
   int posY = 0;
-  int width = sessionConfig_.width;
-  int height = sessionConfig_.height;
+  int width = windowConfig_.width;
+  int height = windowConfig_.height;
 
   GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 
-  if (sessionConfig_.windowMode == WindowMode::Fullscreen) {
+  if (windowConfig_.windowMode == WindowMode::Fullscreen) {
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
     width = mode->width;
     height = mode->height;
-  } else if (sessionConfig_.windowMode == shell::WindowMode::MaximizedWindow) {
+  } else if (windowConfig_.windowMode == WindowMode::MaximizedWindow) {
     // render full screen without overlapping the task bar
     glfwGetMonitorWorkarea(monitor, &posX, &posY, &width, &height);
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
@@ -102,7 +106,7 @@ bool GlfwShell::createWindow() noexcept {
   window_.reset(windowHandle);
 
   glfwSetWindowUserPointer(windowHandle, this);
-  if (sessionConfig_.windowMode == shell::WindowMode::MaximizedWindow) {
+  if (windowConfig_.windowMode == WindowMode::MaximizedWindow) {
     glfwSetWindowPos(windowHandle, posX, posY);
   }
 
@@ -163,12 +167,14 @@ bool GlfwShell::createWindow() noexcept {
 
 bool GlfwShell::initialize(int argc,
                            char* argv[],
+                           RenderSessionWindowConfig suggestedWindowConfig,
                            RenderSessionConfig suggestedSessionConfig) noexcept {
   igl::shell::Platform::initializeCommandLineArgs(argc, argv);
 
   auto factory = igl::shell::createDefaultRenderSessionFactory();
 
-  const auto requestedConfigs = factory->requestedConfigs({suggestedSessionConfig});
+  windowConfig_ = factory->requestedWindowConfig(suggestedWindowConfig);
+  const auto requestedConfigs = factory->requestedSessionConfigs({suggestedSessionConfig});
   if (IGL_UNEXPECTED(requestedConfigs.size() != 1) ||
       IGL_UNEXPECTED(suggestedSessionConfig.backendVersion.flavor !=
                      requestedConfigs[0].backendVersion.flavor)) {

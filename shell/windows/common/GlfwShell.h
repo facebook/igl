@@ -34,6 +34,7 @@
 #include <GLFW/glfw3native.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
+#include <shell/shared/renderSession/RenderSessionWindowConfig.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl::shell {
@@ -44,7 +45,10 @@ class GlfwShell {
 
   virtual ~GlfwShell() noexcept = default;
 
-  bool initialize(int argc, char* argv[], RenderSessionConfig suggestedSessionConfig) noexcept;
+  bool initialize(int argc,
+                  char* argv[],
+                  RenderSessionWindowConfig suggestedWindowConfig,
+                  RenderSessionConfig suggestedSessionConfig) noexcept;
   void run() noexcept;
   void teardown() noexcept;
 
@@ -55,6 +59,7 @@ class GlfwShell {
   const GLFWwindow& window() const noexcept;
   Platform& platform() noexcept;
   const Platform& platform() const noexcept;
+  const RenderSessionWindowConfig& windowConfig() const noexcept;
   const RenderSessionConfig& sessionConfig() const noexcept;
 
   virtual igl::SurfaceTextures createSurfaceTextures() noexcept = 0;
@@ -70,6 +75,7 @@ class GlfwShell {
 
   std::shared_ptr<Platform> platform_;
   ShellParams shellParams_;
+  RenderSessionWindowConfig windowConfig_;
   RenderSessionConfig sessionConfig_;
   std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window_;
   std::unique_ptr<RenderSession> session_;
