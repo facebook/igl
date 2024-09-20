@@ -11,7 +11,6 @@
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSwapchain.h>
-#include <igl/vulkan/util/TextureFormat.h>
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 #include <android/hardware_buffer.h>
@@ -46,7 +45,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t 
   IGL_ASSERT_MSG(vkTex->getVulkanImage().imageFormat_ != VK_FORMAT_UNDEFINED,
                  "Invalid image format");
 
-  const auto iglFormat = util::vkTextureFormatToTextureFormat(vkTex->getVulkanImage().imageFormat_);
+  const auto iglFormat = vkFormatToTextureFormat(vkTex->getVulkanImage().imageFormat_);
   if (!IGL_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {
     Result::setResult(outResult, Result::Code::RuntimeError, "Invalid surface depth format");
     return nullptr;
@@ -93,7 +92,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
   IGL_ASSERT_MSG(vkTex->getVulkanImage().imageFormat_ != VK_FORMAT_UNDEFINED,
                  "Invalid image format");
 
-  const auto iglFormat = util::vkTextureFormatToTextureFormat(vkTex->getVulkanImage().imageFormat_);
+  const auto iglFormat = vkFormatToTextureFormat(vkTex->getVulkanImage().imageFormat_);
   if (!IGL_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {
     Result::setResult(outResult, Result::Code::RuntimeError, "Invalid surface color format");
     return nullptr;

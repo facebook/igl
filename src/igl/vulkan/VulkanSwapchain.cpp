@@ -130,11 +130,11 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
   surfaceFormat_ = chooseSwapSurfaceFormat(ctx.deviceSurfaceFormats_,
                                            ctx.config_.requestedSwapChainTextureFormat,
                                            ctx.config_.swapChainColorSpace);
-  IGL_LOG_DEBUG("Swapchain format: %s; colorSpace: %s\n",
-                TextureFormatProperties::fromTextureFormat(
-                    util::vkTextureFormatToTextureFormat(surfaceFormat_.format))
-                    .name,
-                colorSpaceToString(vkColorSpaceToColorSpace(surfaceFormat_.colorSpace)));
+  IGL_LOG_DEBUG(
+      "Swapchain format: %s; colorSpace: %s\n",
+      TextureFormatProperties::fromTextureFormat(vkFormatToTextureFormat(surfaceFormat_.format))
+          .name,
+      colorSpaceToString(vkColorSpaceToColorSpace(surfaceFormat_.colorSpace)));
 
   IGL_ASSERT_MSG(
       ctx.vkSurface_ != VK_NULL_HANDLE,

@@ -276,6 +276,10 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
   IGL_UNREACHABLE_RETURN(VK_FORMAT_UNDEFINED)
 }
 
+igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
+  return util::vkTextureFormatToTextureFormat(format);
+}
+
 VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorage resourceStorage) {
   VkMemoryPropertyFlags memFlags{0};
 
