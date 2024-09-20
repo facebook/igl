@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
       .colorFramebufferFormat = TextureFormat::RGBA_UNorm8,
       .width = 1024,
       .height = 768,
-      .screenMode = shell::ScreenMode::FullscreenNoTaskbar,
+      .windowMode = shell::WindowMode::Window,
   };
 
   if (!shell.initialize(argc, argv, std::move(suggestedConfig))) {

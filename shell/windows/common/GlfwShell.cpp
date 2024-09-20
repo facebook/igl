@@ -69,34 +69,40 @@ bool GlfwShell::createWindow() noexcept {
   glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
   glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
   glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+  glfwWindowHint(GLFW_DECORATED,
+                 sessionConfig_.windowMode == shell::WindowMode::Window ? GLFW_TRUE : GLFW_FALSE);
 
   int posX = 0;
   int posY = 0;
   int width = sessionConfig_.width;
   int height = sessionConfig_.height;
 
-  if (sessionConfig_.screenMode == shell::ScreenMode::FullscreenNoTaskbar) {
-    // render full screen without overlapping the task bar
-    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+  GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 
+  if (sessionConfig_.windowMode == WindowMode::Fullscreen) {
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    width = mode->width;
+    height = mode->height;
+  } else if (sessionConfig_.windowMode == shell::WindowMode::MaximizedWindow) {
+    // render full screen without overlapping the task bar
     glfwGetMonitorWorkarea(monitor, &posX, &posY, &width, &height);
-  } else if (sessionConfig_.screenMode == shell::ScreenMode::Fullscreen) {
-    glfwWindowHint(GLFW_MAXIMIZED, true);
+    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+    monitor = nullptr;
+  } else {
+    monitor = nullptr;
   }
 
   willCreateWindow();
 
   GLFWwindow* windowHandle =
-      glfwCreateWindow(width, height, sessionConfig_.displayName.c_str(), nullptr, nullptr);
+      glfwCreateWindow(width, height, sessionConfig_.displayName.c_str(), monitor, nullptr);
   if (!windowHandle) {
     return false;
   }
   window_.reset(windowHandle);
 
   glfwSetWindowUserPointer(windowHandle, this);
-
-  if (sessionConfig_.screenMode == shell::ScreenMode::FullscreenNoTaskbar) {
+  if (sessionConfig_.windowMode == shell::WindowMode::MaximizedWindow) {
     glfwSetWindowPos(windowHandle, posX, posY);
   }
 

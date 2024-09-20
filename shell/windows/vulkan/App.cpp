@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
       .colorFramebufferFormat = TextureFormat::BGRA_SRGB,
       .width = 1024,
       .height = 768,
-      .screenMode = shell::ScreenMode::FullscreenNoTaskbar,
+      .windowMode = shell::WindowMode::MaximizedWindow,
   };
 
   if (!shell.initialize(argc, argv, std::move(suggestedConfig))) {

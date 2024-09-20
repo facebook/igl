@@ -12,9 +12,9 @@
 
 namespace igl::shell {
 
-enum class ScreenMode {
-  Windowed,
-  FullscreenNoTaskbar,
+enum class WindowMode {
+  Window,
+  MaximizedWindow,
   Fullscreen,
 };
 
@@ -24,7 +24,7 @@ struct RenderSessionConfig {
   igl::TextureFormat colorFramebufferFormat = igl::TextureFormat::BGRA_UNorm8;
   uint32_t width = 1024;
   uint32_t height = 768;
-  ScreenMode screenMode = ScreenMode::Windowed;
+  WindowMode windowMode = WindowMode::Window;
 };
 
 } // namespace igl::shell
