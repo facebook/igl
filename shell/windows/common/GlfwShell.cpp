@@ -1,0 +1,217 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+#include <shell/windows/common/GlfwShell.h>
+
+#include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
+#include <shell/shared/renderSession/IRenderSessionFactory.h>
+#include <shell/shared/renderSession/transition/TransitionRenderSessionFactory.h>
+
+namespace igl::shell {
+namespace {
+void glfwErrorHandler(int error, const char* description) {
+  IGL_LOG_ERROR("GLFW Error: %s\n", description);
+}
+
+igl::shell::MouseButton getIGLMouseButton(int button) {
+  if (button == GLFW_MOUSE_BUTTON_LEFT)
+    return igl::shell::MouseButton::Left;
+
+  if (button == GLFW_MOUSE_BUTTON_RIGHT)
+    return igl::shell::MouseButton::Right;
+
+  return igl::shell::MouseButton::Middle;
+}
+} // namespace
+
+GlfwShell::GlfwShell() : window_(nullptr, &glfwDestroyWindow) {}
+
+ShellParams& GlfwShell::shellParams() noexcept {
+  return shellParams_;
+}
+
+const ShellParams& GlfwShell::shellParams() const noexcept {
+  return shellParams_;
+}
+
+GLFWwindow& GlfwShell::window() noexcept {
+  return *window_;
+}
+
+const GLFWwindow& GlfwShell::window() const noexcept {
+  return *window_;
+}
+
+Platform& GlfwShell::platform() noexcept {
+  return *platform_;
+}
+
+const Platform& GlfwShell::platform() const noexcept {
+  return *platform_;
+}
+
+const RenderSessionConfig& GlfwShell::sessionConfig() const noexcept {
+  return sessionConfig_;
+}
+
+bool GlfwShell::createWindow() noexcept {
+  glfwSetErrorCallback(glfwErrorHandler);
+
+  if (!glfwInit()) {
+    IGL_LOG_ERROR("glfwInit failed");
+    return false;
+  }
+
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+  glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
+  glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+
+  int posX = 0;
+  int posY = 0;
+  int width = sessionConfig_.width;
+  int height = sessionConfig_.height;
+
+  if (sessionConfig_.screenMode == shell::ScreenMode::FullscreenNoTaskbar) {
+    // render full screen without overlapping the task bar
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    glfwGetMonitorWorkarea(monitor, &posX, &posY, &width, &height);
+  } else if (sessionConfig_.screenMode == shell::ScreenMode::Fullscreen) {
+    glfwWindowHint(GLFW_MAXIMIZED, true);
+  }
+
+  willCreateWindow();
+
+  GLFWwindow* windowHandle =
+      glfwCreateWindow(width, height, sessionConfig_.displayName.c_str(), nullptr, nullptr);
+  if (!windowHandle) {
+    return false;
+  }
+  window_.reset(windowHandle);
+
+  glfwSetWindowUserPointer(windowHandle, this);
+
+  if (sessionConfig_.screenMode == shell::ScreenMode::FullscreenNoTaskbar) {
+    glfwSetWindowPos(windowHandle, posX, posY);
+  }
+
+  glfwGetFramebufferSize(windowHandle, &width, &height);
+  shellParams_.viewportSize.x = width;
+  shellParams_.viewportSize.y = height;
+  glfwSetCursorPosCallback(windowHandle, [](GLFWwindow* window, double xpos, double ypos) {
+    auto* shell = static_cast<GlfwShell*>(glfwGetWindowUserPointer(window));
+    shell->platform_->getInputDispatcher().queueEvent(
+        igl::shell::MouseMotionEvent((float)xpos, (float)ypos, 0, 0));
+  });
+
+  glfwSetScrollCallback(windowHandle, [](GLFWwindow* window, double xoffset, double yoffset) {
+    auto* shell = static_cast<GlfwShell*>(glfwGetWindowUserPointer(window));
+    shell->platform_->getInputDispatcher().queueEvent(
+        igl::shell::MouseWheelEvent((float)xoffset, (float)yoffset));
+  });
+
+  glfwSetMouseButtonCallback(
+      windowHandle, [](GLFWwindow* window, int button, int action, int mods) {
+        auto* shell = static_cast<GlfwShell*>(glfwGetWindowUserPointer(window));
+        igl::shell::MouseButton iglButton = getIGLMouseButton(button);
+        double xpos, ypos;
+        glfwGetCursorPos(window, &xpos, &ypos);
+        shell->platform_->getInputDispatcher().queueEvent(igl::shell::MouseButtonEvent(
+            iglButton, action == GLFW_PRESS, (float)xpos, (float)ypos));
+      });
+
+  glfwSetKeyCallback(windowHandle, [](GLFWwindow* window, int key, int, int action, int mods) {
+    auto* shell = static_cast<GlfwShell*>(glfwGetWindowUserPointer(window));
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+      glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+    uint32_t modifiers = 0;
+    if (mods & GLFW_MOD_SHIFT) {
+      modifiers |= igl::shell::KeyEventModifierShift;
+    }
+    if (mods & GLFW_MOD_CONTROL) {
+      modifiers |= igl::shell::KeyEventModifierControl;
+    }
+    if (mods & GLFW_MOD_ALT) {
+      modifiers |= igl::shell::KeyEventModifierOption;
+    }
+    if (mods & GLFW_MOD_CAPS_LOCK) {
+      modifiers |= igl::shell::KeyEventModifierCapsLock;
+    }
+    if (mods & GLFW_MOD_NUM_LOCK) {
+      modifiers |= igl::shell::KeyEventModifierNumLock;
+    }
+    shell->platform_->getInputDispatcher().queueEvent(
+        igl::shell::KeyEvent(action == GLFW_PRESS, key, modifiers));
+  });
+
+  didCreateWindow();
+
+  return windowHandle;
+}
+
+bool GlfwShell::initialize(int argc,
+                           char* argv[],
+                           RenderSessionConfig suggestedSessionConfig) noexcept {
+  igl::shell::Platform::initializeCommandLineArgs(argc, argv);
+
+  auto factory = igl::shell::createDefaultRenderSessionFactory();
+
+  const auto requestedConfigs = factory->requestedConfigs({suggestedSessionConfig});
+  if (IGL_UNEXPECTED(requestedConfigs.size() != 1) ||
+      IGL_UNEXPECTED(suggestedSessionConfig.backendVersion.flavor !=
+                     requestedConfigs[0].backendVersion.flavor)) {
+    return false;
+  }
+
+  sessionConfig_ = requestedConfigs[0];
+
+  if (!createWindow()) {
+    return false;
+  }
+
+  platform_ = createPlatform();
+  if (IGL_UNEXPECTED(!platform_)) {
+    return false;
+  }
+  session_ = factory->createRenderSession(platform_);
+  if (IGL_UNEXPECTED(!session_)) {
+    return false;
+  }
+
+  session_->setShellParams(shellParams_);
+  session_->initialize();
+
+  return true;
+}
+
+void GlfwShell::run() noexcept {
+  while (!glfwWindowShouldClose(window_.get()) && !session_->appParams().exitRequested) {
+    willTick();
+    auto surfaceTextures = createSurfaceTextures();
+    IGL_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
+
+    platform_->getInputDispatcher().processEvents();
+    session_->update(std::move(surfaceTextures));
+    glfwPollEvents();
+  }
+}
+
+void GlfwShell::teardown() noexcept {
+  // Explicitly destroy all objects before exiting in order to make sure that
+  // whatever else global destructors may there, will be called after these. One
+  // example is a graphics resource tracker in the client code, which otherwise
+  // would not be guaranteed to be called after the graphics resources release.
+  session_.reset();
+  platform_.reset();
+  window_.reset();
+
+  glfwTerminate();
+}
+
+} // namespace igl::shell

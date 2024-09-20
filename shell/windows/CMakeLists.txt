@@ -12,10 +12,10 @@ add_definitions("-D_USE_MATH_DEFINES=1")
 
 file(GLOB PLATFORM_SHARED_SRC_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
      ../shared/fileLoader/win/*.cpp ../shared/imageWriter/win/*.cpp
-     ../shared/imageWriter/stb/*.cpp ../shared/platform/win/*.cpp)
+     ../shared/imageWriter/stb/*.cpp ../shared/platform/win/*.cpp common/*.cpp)
 file(GLOB PLATFORM_SHARED_HEADER_FILES LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
      ../shared/fileLoader/win/*.h ../shared/imageWriter/win/*.h ../shared/imageWriter/stb/*.h
-     ../shared/platform/win/*.h)
+     ../shared/platform/win/*.h common/*.h)
 
 add_library(IGLShellPlatform ${PLATFORM_SHARED_SRC_FILES} ${PLATFORM_SHARED_HEADER_FILES})
 target_link_libraries(IGLShellPlatform PUBLIC IGLLibrary)
