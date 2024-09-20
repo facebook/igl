@@ -10,7 +10,7 @@
 #include <IGLU/texture_loader/ktx2/Header.h>
 #include <IGLU/texture_loader/ktx2/TextureLoaderFactory.h>
 #include <cstring>
-#include <igl/vulkan/util/TextureFormatInt.h>
+#include <igl/vulkan/util/TextureFormat.h>
 #include <numeric>
 #include <vector>
 
@@ -60,7 +60,7 @@ uint32_t getTotalDataSize(uint32_t vkFormat,
                           uint32_t height,
                           uint32_t numMipLevels) {
   const auto format =
-      igl::vulkan::util::intVkTextureFormatToTextureFormat(static_cast<int32_t>(vkFormat));
+      igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(vkFormat));
   const auto properties = igl::TextureFormatProperties::fromTextureFormat(format);
 
   const auto range = igl::TextureRangeDesc::new2D(0, 0, std::max(width, 1u), std::max(height, 1u));
@@ -90,7 +90,7 @@ void putDfd(std::vector<uint8_t>& buffer, uint32_t vkFormat, uint32_t numMipLeve
               vkFormat == VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK);
 
   const auto format =
-      igl::vulkan::util::intVkTextureFormatToTextureFormat(static_cast<int32_t>(vkFormat));
+      igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(vkFormat));
   const auto properties = igl::TextureFormatProperties::fromTextureFormat(format);
 
   const uint16_t descriptorType = 0;
@@ -155,7 +155,7 @@ void putDfd(std::vector<uint8_t>& buffer, uint32_t vkFormat, uint32_t numMipLeve
 void putMipLevel(std::vector<uint8_t>& buffer, uint32_t mipLevel, uint32_t imageSize) {
   const auto* header = reinterpret_cast<const iglu::textureloader::ktx2::Header*>(buffer.data());
   const auto format =
-      igl::vulkan::util::intVkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat));
+      igl::vulkan::util::vkTextureFormatToTextureFormat(static_cast<int32_t>(header->vkFormat));
   const auto properties = igl::TextureFormatProperties::fromTextureFormat(format);
 
   const auto range = igl::TextureRangeDesc::new2D(

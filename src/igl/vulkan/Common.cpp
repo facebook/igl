@@ -306,7 +306,7 @@ bool isTextureFormatBGR(VkFormat format) {
 }
 
 igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
-  return util::vkTextureFormatToTextureFormat(format);
+  return util::vkTextureFormatToTextureFormat(static_cast<int32_t>(format));
 }
 
 VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorage resourceStorage) {

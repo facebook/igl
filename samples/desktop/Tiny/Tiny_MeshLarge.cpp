@@ -29,7 +29,7 @@
 
 #include <igl/FPSCounter.h>
 #include <igl/IGL.h>
-#include <igl/vulkan/util/TextureFormatInt.h>
+#include <igl/vulkan/util/TextureFormat.h>
 
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
@@ -2295,7 +2295,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
   }
 
   auto desc =
-      TextureDesc::newCube(igl::vulkan::util::intVkTextureFormatToTextureFormat(texture->vkFormat),
+      TextureDesc::newCube(igl::vulkan::util::vkTextureFormatToTextureFormat(texture->vkFormat),
                            texRefRange.width,
                            texRefRange.height,
                            TextureDesc::TextureUsageBits::Sampled,
