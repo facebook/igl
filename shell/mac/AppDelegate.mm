@@ -13,6 +13,9 @@
 #import "ViewController.h"
 
 #import <igl/Common.h>
+#include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
+#include <shell/shared/renderSession/RenderSessionConfig.h>
+#include <shell/shared/renderSession/transition/TransitionRenderSessionFactory.h>
 
 namespace {
 
@@ -63,7 +66,11 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
 
 @property (weak) IBOutlet NSWindow* window;
 @property NSTabViewController* tabViewController;
+@property std::shared_ptr<igl::shell::IRenderSessionFactory> factory;
 
+- (void)addTab:(igl::shell::RenderSessionWindowConfig)windowConfig
+    sessionConfig:(igl::shell::RenderSessionConfig)sessionConfig
+            frame:(CGRect)frame;
 @end
 
 @implementation AppDelegate
@@ -76,75 +83,136 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
 
 - (void)setupViewController {
   self.tabViewController = [[NSTabViewController alloc] init];
-  auto frame = [self.window frame];
-  (void)frame;
-  ViewController* viewController = nullptr;
+  self.factory = igl::shell::createDefaultRenderSessionFactory();
 
+  igl::shell::RenderSessionWindowConfig suggestedWindowConfig = {
+      .width = 1024,
+      .height = 768,
+      .windowMode = igl::shell::WindowMode::Window,
+  };
+  std::vector<igl::shell::RenderSessionConfig> suggestedSessionConfigs = {
 #if IGL_BACKEND_HEADLESS
-  // Headless tab
-  NSTabViewItem* tinyHeadlessTabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
-  viewController = [[ViewController alloc] initWithFrame:frame
-                                          backendVersion:{igl::BackendFlavor::Invalid, 0, 0}];
-
-  tinyHeadlessTabViewItem.viewController = viewController;
-  tinyHeadlessTabViewItem.label = @"Headless";
-  [self.tabViewController addTabViewItem:tinyHeadlessTabViewItem];
+      {
+          .displayName = "Headless",
+          .backendVersion = {.flavor = igl::BackendFlavor::Invalid,
+                             .majorVersion = 0,
+                             .minorVersion = 0},
+          .colorFramebufferFormat = igl::TextureFormat::RGBA_SRGB,
+      },
 #endif
-
 #if IGL_BACKEND_METAL
-  // Metal tab
-  NSTabViewItem* tinyMetalTabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
-  viewController = [[ViewController alloc] initWithFrame:frame
-                                          backendVersion:{igl::BackendFlavor::Metal, 3, 0}];
-  tinyMetalTabViewItem.viewController = viewController;
-
-  tinyMetalTabViewItem.label = @"Metal";
-  [self.tabViewController addTabViewItem:tinyMetalTabViewItem];
+      {
+          .displayName = "Metal",
+          .backendVersion = {.flavor = igl::BackendFlavor::Metal,
+                             .majorVersion = 3,
+                             .minorVersion = 0},
+          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+      },
 #endif
-
 #if IGL_BACKEND_OPENGL
-  // OpenGL tab
-  NSTabViewItem* tinyOGL4TabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
-  viewController = [[ViewController alloc] initWithFrame:frame
-                                          backendVersion:{igl::BackendFlavor::OpenGL, 4, 1}];
-  tinyOGL4TabViewItem.viewController = viewController;
-
-  tinyOGL4TabViewItem.label = @"OGL 4.1";
-  [self.tabViewController addTabViewItem:tinyOGL4TabViewItem];
-  // @fb-only
-  // @fb-only
-  // @fb-only
+      {
+          .displayName = "OGL 4.1",
+          .backendVersion = {.flavor = igl::BackendFlavor::OpenGL,
+                             .majorVersion = 4,
+                             .minorVersion = 1},
+          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+      },
+      // clang-format off
       // @fb-only
+          // clang-format on
+          // @fb-only
+          // @fb-only
                              // @fb-only
-  // @fb-only
-  // @fb-only
-
-  NSColorSpace* metalColorSpace = colorSpaceToNSColorSpace(viewController.colorSpace);
-  [self.window setColorSpace:metalColorSpace];
+                             // @fb-only
+          // @fb-only
+      // @fb-only
 #endif
-
 // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
+      // clang-format off
       // @fb-only
+          // clang-format on
+          // @fb-only
+          // @fb-only
                              // @fb-only
-  // @fb-only
-
-  // @fb-only
-  // @fb-only
+                             // @fb-only
+          // @fb-only
+      // @fb-only
 // @fb-only
-
 #if IGL_BACKEND_VULKAN
-  // Vulkan tab
-  NSTabViewItem* tinyVulkanTabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
-  viewController = [[ViewController alloc] initWithFrame:frame
-                                          backendVersion:{igl::BackendFlavor::Vulkan, 1, 3}];
-
-  tinyVulkanTabViewItem.viewController = viewController;
-  tinyVulkanTabViewItem.label = @"Vulkan";
-  [self.tabViewController addTabViewItem:tinyVulkanTabViewItem];
+      {
+          .displayName = "Vulkan",
+          .backendVersion = {.flavor = igl::BackendFlavor::Vulkan,
+                             .majorVersion = 1,
+                             .minorVersion = 1},
+          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+      },
 #endif
+  };
+
+  const auto requestedWindowConfig = self.factory->requestedWindowConfig(suggestedWindowConfig);
+
+  IGL_ASSERT(requestedWindowConfig.windowMode == igl::shell::WindowMode::Window ||
+             requestedWindowConfig.windowMode == igl::shell::WindowMode::MaximizedWindow);
+
+  CGRect frame = requestedWindowConfig.windowMode == igl::shell::WindowMode::Window
+                     ? [self.window frame]
+                     : [[NSScreen mainScreen] frame];
+  if (requestedWindowConfig.windowMode == igl::shell::WindowMode::Window) {
+    frame.size = CGSizeMake(requestedWindowConfig.width, requestedWindowConfig.height);
+  }
+
+  const auto requestedSessionConfigs =
+      self.factory->requestedSessionConfigs(std::move(suggestedSessionConfigs));
+  for (const auto& sessionConfig : requestedSessionConfigs) {
+    [self addTab:requestedWindowConfig sessionConfig:sessionConfig frame:frame];
+  }
+}
+
+- (void)addTab:(igl::shell::RenderSessionWindowConfig)windowConfig
+    sessionConfig:(igl::shell::RenderSessionConfig)sessionConfig
+            frame:(CGRect)frame {
+  ViewController* viewController = nullptr;
+  bool supported = false;
+#if IGL_BACKEND_HEADLESS
+  if (sessionConfig.backendVersion.flavor == igl::BackendFlavor::Invalid) {
+    supported = true;
+  }
+#endif
+#if IGL_BACKEND_METAL
+  if (sessionConfig.backendVersion.flavor == igl::BackendFlavor::Metal) {
+    supported = true;
+  }
+#endif
+#if IGL_BACKEND_OPENGL
+  if (sessionConfig.backendVersion.flavor == igl::BackendFlavor::OpenGL) {
+    supported = true;
+    NSColorSpace* metalColorSpace = colorSpaceToNSColorSpace(viewController.colorSpace);
+    [self.window setColorSpace:metalColorSpace];
+  }
+#endif
+// @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
+// @fb-only
+#if IGL_BACKEND_VULKAN
+  if (sessionConfig.backendVersion.flavor == igl::BackendFlavor::Vulkan) {
+    supported = true;
+  }
+#endif
+  if (!IGL_VERIFY(supported)) {
+    return;
+  }
+
+  NSTabViewItem* tabViewItem = [[NSTabViewItem alloc] initWithIdentifier:nil];
+
+  viewController = [[ViewController alloc] initWithFrame:frame
+                                                 factory:*self.factory
+                                                  config:sessionConfig];
+
+  tabViewItem.viewController = viewController;
+  tabViewItem.label = [NSString stringWithUTF8String:sessionConfig.displayName.c_str()];
+  [self.tabViewController addTabViewItem:tabViewItem];
 
   self.window.contentViewController = self.tabViewController;
   [self.window setFrame:viewController.frame display:YES animate:false];

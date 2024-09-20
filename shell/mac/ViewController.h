@@ -9,6 +9,7 @@
 #import <MetalKit/MetalKit.h>
 #import <igl/Common.h>
 #import <igl/DeviceFeatures.h>
+#import <shell/shared/renderSession/IRenderSessionFactory.h>
 
 NS_ASSUME_NONNULL_BEGIN
 @interface ViewController : NSViewController <MTKViewDelegate>
@@ -16,7 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) NSView* iglView;
 
 - (instancetype)initWithFrame:(CGRect)frame
-               backendVersion:(igl::BackendVersion)backendType NS_DESIGNATED_INITIALIZER;
+                      factory:(igl::shell::IRenderSessionFactory&)factory
+                       config:(igl::shell::RenderSessionConfig)config;
 
 // Explicitly disable superclass' designated initializers
 - (instancetype)initWithNibName:(nullable NSNibName)nibNameOrNil
