@@ -11,9 +11,13 @@
 #include <igl/Macros.h>
 #include <igl/TextureFormat.h>
 
-#include <igl/vulkan/VulkanFunctionTable.h>
+#if !defined(IGL_CMAKE_BUILD)
+#include <vulkan/vulkan_core.h>
+#else
+#include <volk/volk.h>
+#endif
 
-namespace igl::vulkan {
+namespace igl::vulkan::util {
 
 /// Converts Vulkan texture format to an IGL TextureFormat.
 /// @return The corresponding IGL format if known; otherwise returns TextureFormat::Invalid.
@@ -31,4 +35,4 @@ inline bool isTextureFormatBGR(VkFormat format) {
   return format == VK_FORMAT_B8G8R8A8_UNORM || format == VK_FORMAT_B8G8R8A8_SRGB ||
          format == VK_FORMAT_A2B10G10R10_UNORM_PACK32;
 }
-} // namespace igl::vulkan
+} // namespace igl::vulkan::util

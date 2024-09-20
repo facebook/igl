@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <igl/TextureFormat.h>
 
-namespace iglu::textureloader::util {
-igl::TextureFormat vkTextureFormatToTextureFormat(int32_t vkFormat);
-} // namespace iglu::textureloader::util
+namespace igl::vulkan::util {
+
+TextureFormat intVkTextureFormatToTextureFormat(int32_t vkFormat);
+} // namespace igl::vulkan::util
