@@ -169,24 +169,4 @@ TextureFormat vkTextureFormatToTextureFormat(VkFormat vkFormat) {
   return TextureFormat::Invalid;
 }
 
-VkFormat invertRedAndBlue(VkFormat format) {
-  switch (format) {
-  case VK_FORMAT_B8G8R8A8_UNORM:
-    return VK_FORMAT_R8G8B8A8_UNORM;
-  case VK_FORMAT_R8G8B8A8_UNORM:
-    return VK_FORMAT_B8G8R8A8_UNORM;
-  case VK_FORMAT_R8G8B8A8_SRGB:
-    return VK_FORMAT_B8G8R8A8_SRGB;
-  case VK_FORMAT_B8G8R8A8_SRGB:
-    return VK_FORMAT_R8G8B8A8_SRGB;
-  case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
-    return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
-  case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
-    return VK_FORMAT_A2R10G10B10_UNORM_PACK32;
-  default:
-    IGL_ASSERT_NOT_REACHED();
-    return format;
-  }
-}
-
 } // namespace igl::vulkan::util

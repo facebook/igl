@@ -13,4 +13,5 @@
 namespace igl::vulkan::util {
 
 TextureFormat intVkTextureFormatToTextureFormat(int32_t vkFormat);
+
 } // namespace igl::vulkan::util
