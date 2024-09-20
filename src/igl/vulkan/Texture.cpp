@@ -15,7 +15,6 @@
 #include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <igl/vulkan/VulkanTexture.h>
-#include <igl/vulkan/util/TextureFormat.h>
 
 namespace igl::vulkan {
 
@@ -29,7 +28,7 @@ Result Texture::create(const TextureDesc& desc) {
 
   const VkFormat vkFormat = getProperties().isDepthOrStencil()
                                 ? ctx.getClosestDepthStencilFormat(desc_.format)
-                                : util::textureFormatToVkFormat(desc_.format);
+                                : textureFormatToVkFormat(desc_.format);
 
   const igl::TextureType type = desc_.type;
   if (!IGL_VERIFY(type == TextureType::TwoD || type == TextureType::TwoDArray ||
@@ -331,7 +330,7 @@ VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
   const VkFormat vkFormat =
       getProperties().isDepthOrStencil()
           ? device_.getVulkanContext().getClosestDepthStencilFormat(desc_.format)
-          : util::textureFormatToVkFormat(desc_.format);
+          : textureFormatToVkFormat(desc_.format);
 
   const VkImageAspectFlags flags = texture_->getVulkanImage().getImageAspectFlags();
   imageViews[index] = texture_->getVulkanImage().createImageView(

@@ -25,7 +25,6 @@
 #include <igl/vulkan/VulkanShaderModule.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/util/SpvReflection.h>
-#include <igl/vulkan/util/TextureFormat.h>
 
 #include <igl/IGLSafeC.h>
 
@@ -163,7 +162,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
     const auto initialLayout = descColor.loadAction == igl::LoadAction::Load
                                    ? colorTexture.getVulkanTexture().getVulkanImage().imageLayout_
                                    : VK_IMAGE_LAYOUT_UNDEFINED;
-    builder.addColor(util::textureFormatToVkFormat(colorTexture.getFormat()),
+    builder.addColor(textureFormatToVkFormat(colorTexture.getFormat()),
                      loadActionToVkAttachmentLoadOp(descColor.loadAction),
                      storeActionToVkAttachmentStoreOp(descColor.storeAction),
                      initialLayout,
@@ -174,7 +173,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
       IGL_ASSERT_MSG(attachment.resolveTexture,
                      "Framebuffer attachment should contain a resolve texture");
       const auto& colorResolveTexture = static_cast<vulkan::Texture&>(*attachment.resolveTexture);
-      builder.addColorResolve(util::textureFormatToVkFormat(colorResolveTexture.getFormat()),
+      builder.addColorResolve(textureFormatToVkFormat(colorResolveTexture.getFormat()),
                               VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                               VK_ATTACHMENT_STORE_OP_STORE);
       clearValues.push_back(ivkGetClearColorValue(descColor.clearColor.r,

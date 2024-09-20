@@ -22,7 +22,6 @@ namespace igl::vulkan::util {
 /// Converts Vulkan texture format to an IGL TextureFormat.
 /// @return The corresponding IGL format if known; otherwise returns TextureFormat::Invalid.
 TextureFormat vkTextureFormatToTextureFormat(VkFormat vkFormat);
-VkFormat textureFormatToVkFormat(igl::TextureFormat format);
 
 VkFormat invertRedAndBlue(VkFormat format);
 

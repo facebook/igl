@@ -159,6 +159,8 @@ struct VulkanContextConfig {
 
 Result getResultFromVkResult(VkResult result);
 void setResultFrom(Result* outResult, VkResult result);
+VkFormat textureFormatToVkFormat(igl::TextureFormat format);
+igl::TextureFormat vkFormatToTextureFormat(VkFormat format);
 uint32_t getNumImagePlanes(VkFormat format);
 VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorage resourceStorage);
 VkCompareOp compareFunctionToVkCompareOp(igl::CompareFunction func);
