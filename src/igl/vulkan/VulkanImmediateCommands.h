@@ -134,6 +134,7 @@ class VulkanImmediateCommands final {
 
   /// @brief Returns the last SubmitHandle, which was submitted when `submit()` was last called
   [[nodiscard]] SubmitHandle getLastSubmitHandle() const;
+  [[nodiscard]] SubmitHandle getNextSubmitHandle() const;
 
   /** @brief Checks whether a SubmitHandle is ready. A SubmitHandle is ready if it is recycled or
    * empty. If it has not been recycled and is not empty, a SubmitHandle is ready if the fence
@@ -156,8 +157,6 @@ class VulkanImmediateCommands final {
   /// Returns `VK_NULL_HANDLE` otherwise.
   VkFence getVkFenceFromSubmitHandle(SubmitHandle handle);
 
-  VulkanImmediateCommands::CommandBufferWrapper* currentCmdBufWrapper_ = nullptr;
-
  private:
   /// @brief Resets all commands buffers and their associated fences that are valid, are not being
   /// encoded, and have completed execution by the GPU (their fences have been signaled). Resets the
@@ -178,6 +177,7 @@ class VulkanImmediateCommands final {
 
   /// @brief The last submitted handle. Updated on `submit()`
   SubmitHandle lastSubmitHandle_ = SubmitHandle();
+  SubmitHandle nextSubmitHandle_ = SubmitHandle();
 
   /// @brief The semaphore submitted with the last command buffer. Updated on `submit()`
   VkSemaphore lastSubmitSemaphore_ = VK_NULL_HANDLE;
