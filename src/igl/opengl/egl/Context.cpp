@@ -202,6 +202,11 @@ Context::Context(RenderingAPI api,
                  bool offscreen,
                  EGLNativeWindowType window,
                  std::pair<EGLint, EGLint> dimensions) {
+  IGL_ASSERT_MSG(
+      (shareContext == EGL_NO_CONTEXT && sharegroup == nullptr) ||
+          (shareContext != EGL_NO_CONTEXT && sharegroup != nullptr &&
+           std::find(sharegroup->begin(), sharegroup->end(), shareContext) != sharegroup->end()),
+      "shareContext and sharegroup values must be consistent");
   EGLConfig config{nullptr};
   auto contextDisplay = newEGLContext(getDefaultEGLDisplay(), shareContext, &config);
   IGL_ASSERT_MSG(contextDisplay.second != EGL_NO_CONTEXT, "newEGLContext failed");
@@ -241,7 +246,7 @@ Context::Context(RenderingAPI api,
   } else {
     sharegroup_ = std::make_shared<std::vector<EGLContext>>();
   }
-  sharegroup_->push_back(context_);
+  sharegroup_->emplace_back(context_);
 
   initialize();
 }
