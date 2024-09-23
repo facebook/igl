@@ -13,7 +13,6 @@
 #include <android/log.h>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
-#include <cmath>
 #include <igl/IGL.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/egl/HWDevice.h>
@@ -21,7 +20,6 @@
 #endif
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/imageLoader/android/ImageLoaderAndroid.h>
-#include <shell/shared/renderSession/DefaultSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #if IGL_BACKEND_VULKAN
 #include <igl/vulkan/Device.h>
@@ -29,7 +27,6 @@
 #include <igl/vulkan/VulkanContext.h>
 #endif
 #include <memory>
-#include <sstream>
 
 namespace {
 
@@ -73,6 +70,7 @@ using namespace igl;
 
 void TinyRenderer::init(AAssetManager* mgr,
                         ANativeWindow* nativeWindow,
+                        shell::IRenderSessionFactory& factory,
                         BackendVersion backendVersion) {
   backendVersion_ = backendVersion;
   nativeWindow_ = nativeWindow;
@@ -132,7 +130,7 @@ void TinyRenderer::init(AAssetManager* mgr,
 
   default: {
     IGL_ASSERT_NOT_IMPLEMENTED();
-    break;
+    return;
   }
   }
 
@@ -147,7 +145,7 @@ void TinyRenderer::init(AAssetManager* mgr,
 
     const ContextGuard guard(platform_->getDevice()); // wrap 'session_' operations
 
-    session_ = igl::shell::createDefaultRenderSession(platform_);
+    session_ = factory.createRenderSession(platform_);
     session_->setShellParams(shellParams_);
     IGL_ASSERT(session_ != nullptr);
     session_->initialize();

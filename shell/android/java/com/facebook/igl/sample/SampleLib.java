@@ -42,28 +42,10 @@ public class SampleLib {
     }
   }
 
-  // should match with IDs in TinyRenderer.h
-  protected static final int gl3ID = 0;
-  protected static final int gl2ID = 1;
-  protected static final int vulkanID = 2;
-  protected static final String gl3Label = "OpenGL ES 3";
-  protected static final String gl2Label = "OpenGL ES 2";
-  protected static final String vulkanLabel = "Vulkan";
-
-  protected static final BackendTypeContext[] backendTypeContexts =
-      new BackendTypeContext[] {
-        new BackendTypeContext(
-            new BackendVersion(BackendFlavor.OpenGL_ES, (byte) 3, (byte) 0), gl3Label),
-        new BackendTypeContext(
-            new BackendVersion(BackendFlavor.OpenGL_ES, (byte) 2, (byte) 0), gl2Label),
-        new BackendTypeContext(
-            new BackendVersion(BackendFlavor.Vulkan, (byte) 1, (byte) 3), vulkanLabel),
-      };
+  public static native RenderSessionConfig[] getRenderSessionConfigs();
 
   public static native void init(
       BackendVersion backendVersion, AssetManager assetManager, Surface surface);
-
-  public static native boolean isBackendVersionSupported(BackendVersion backendVersion);
 
   public static native void setActiveBackendVersion(BackendVersion backendVersion);
 
@@ -77,13 +59,13 @@ public class SampleLib {
 
   public static native void surfaceDestroyed(Surface surface);
 
-  protected static class BackendTypeContext {
+  public static class RenderSessionConfig {
+    String displayName;
     BackendVersion version;
-    String label;
 
-    protected BackendTypeContext(BackendVersion version, String label) {
+    public RenderSessionConfig(String displayName, BackendVersion version) {
+      this.displayName = displayName;
       this.version = version;
-      this.label = label;
     }
   }
 }

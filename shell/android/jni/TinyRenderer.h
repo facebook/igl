@@ -14,6 +14,7 @@
 #include <igl/IGL.h>
 #include <memory>
 #include <shell/shared/platform/android/PlatformAndroid.h>
+#include <shell/shared/renderSession/IRenderSessionFactory.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
@@ -21,7 +22,10 @@ namespace igl::samples {
 
 class TinyRenderer final {
  public:
-  void init(AAssetManager* mgr, ANativeWindow* nativeWindow, BackendVersion backendVersion);
+  void init(AAssetManager* mgr,
+            ANativeWindow* nativeWindow,
+            shell::IRenderSessionFactory& factor,
+            BackendVersion backendVersion);
   void recreateSwapchain(ANativeWindow* nativeWindow, bool createSurface); // only for Vulkan
   void render(float displayScale);
   void onSurfacesChanged(ANativeWindow* nativeWindow, int width, int height);

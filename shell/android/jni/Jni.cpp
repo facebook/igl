@@ -15,7 +15,10 @@
 #include <android/log.h>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
+#include <igl/Common.h>
 #include <memory>
+#include <shell/shared/renderSession/IRenderSessionFactory.h>
+#include <shell/shared/renderSession/transition/TransitionRenderSessionFactory.h>
 
 namespace igl::samples {
 
@@ -60,14 +63,37 @@ namespace {
   return std::to_string(*rendererIndex);
 }
 
+std::unique_ptr<shell::IRenderSessionFactory> factory;
 std::vector<std::unique_ptr<TinyRenderer>> renderers;
 std::optional<BackendVersion> activeBackendVersion;
+
+constexpr auto* kBackendFlavorClassName = "com/facebook/igl/shell/SampleLib$BackendFlavor";
+constexpr auto* kBackendVersionClassName = "com/facebook/igl/shell/SampleLib$BackendVersion";
+constexpr auto* kRenderSessionConfigClassName =
+    "com/facebook/igl/shell/SampleLib$RenderSessionConfig";
+
+std::string toTypeSignature(const char* className) {
+  return std::string("L") + className + std::string(";");
+}
 
 BackendFlavor toBackendFlavor(JNIEnv* env, jobject jbackendVersion) {
   auto* jclass = env->GetObjectClass(jbackendVersion);
   auto* jordinal = env->GetMethodID(jclass, "ordinal", "()I");
   const auto ordinal = env->CallIntMethod(jbackendVersion, jordinal);
   return static_cast<BackendFlavor>(static_cast<int>(ordinal));
+}
+
+jobject toJava(JNIEnv* env, BackendFlavor backendFlavor) {
+  jclass jclass = env->FindClass(kBackendFlavorClassName);
+  std::string returnType = std::string("()[") + toTypeSignature(kBackendFlavorClassName);
+  jmethodID values = env->GetStaticMethodID(jclass, "values", returnType.c_str());
+  jobjectArray backendFlavorValues = (jobjectArray)env->CallStaticObjectMethod(jclass, values);
+
+  jobject backendFlavorValue =
+      env->GetObjectArrayElement(backendFlavorValues, static_cast<int>(backendFlavor));
+
+  env->DeleteLocalRef(backendFlavorValues);
+  return backendFlavorValue;
 }
 
 std::optional<BackendVersion> toBackendVersion(JNIEnv* env, jobject jbackendVersion) {
@@ -77,13 +103,54 @@ std::optional<BackendVersion> toBackendVersion(JNIEnv* env, jobject jbackendVers
 
   auto* jclass = env->GetObjectClass(jbackendVersion);
   auto* jflavor =
-      env->GetFieldID(jclass, "flavor", "Lcom/facebook/igl/shell/SampleLib$BackendFlavor;");
+      env->GetFieldID(jclass, "flavor", toTypeSignature(kBackendFlavorClassName).c_str());
   auto* jmajorVersion = env->GetFieldID(jclass, "majorVersion", "B");
   auto* jminorVersion = env->GetFieldID(jclass, "minorVersion", "B");
 
   return BackendVersion{toBackendFlavor(env, env->GetObjectField(jbackendVersion, jflavor)),
                         static_cast<uint8_t>(env->GetByteField(jbackendVersion, jmajorVersion)),
                         static_cast<uint8_t>(env->GetByteField(jbackendVersion, jminorVersion))};
+}
+
+jobject toJava(JNIEnv* env, BackendVersion backendVersion) {
+  jclass jclass = env->FindClass(kBackendVersionClassName);
+  std::string methodSignature =
+      std::string("(") + toTypeSignature(kBackendFlavorClassName) + "BB)V";
+  jmethodID constructor = env->GetMethodID(jclass, "<init>", methodSignature.c_str());
+
+  jobject jbackendFlavor = toJava(env, backendVersion.flavor);
+  jobject ret = env->NewObject(jclass,
+                               constructor,
+                               jbackendFlavor,
+                               backendVersion.majorVersion,
+                               backendVersion.minorVersion);
+  env->DeleteLocalRef(jbackendFlavor);
+  return ret;
+}
+
+jobject toJava(JNIEnv* env, shell::RenderSessionConfig config) {
+  jclass jclass = env->FindClass(kRenderSessionConfigClassName);
+  std::string methodSignature =
+      std::string("(Ljava/lang/String;") + toTypeSignature(kBackendVersionClassName) + ")V";
+  jmethodID constructor = env->GetMethodID(jclass, "<init>", methodSignature.c_str());
+
+  jstring jdisplayName = env->NewStringUTF(config.displayName.c_str());
+  jobject jbackendVersion = toJava(env, config.backendVersion);
+  jobject ret = env->NewObject(jclass, constructor, jdisplayName, jbackendVersion);
+  env->DeleteLocalRef(jdisplayName);
+  env->DeleteLocalRef(jbackendVersion);
+  return ret;
+}
+
+jobjectArray toJava(JNIEnv* env, const std::vector<shell::RenderSessionConfig>& configs) {
+  jobjectArray ret;
+  auto* jclass = env->FindClass(kRenderSessionConfigClassName);
+  ret = env->NewObjectArray(configs.size(), jclass, nullptr);
+  for (size_t i = 0; i < configs.size(); ++i) {
+    env->SetObjectArrayElement(ret, i, toJava(env, configs[i]));
+  }
+
+  return ret;
 }
 
 std::optional<size_t> findRendererIndex(std::optional<BackendVersion> backendVersion) {
@@ -102,15 +169,13 @@ std::optional<size_t> findRendererIndex(std::optional<BackendVersion> backendVer
 } // namespace
 
 extern "C" {
+JNIEXPORT jobjectArray JNICALL
+Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobject obj);
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
                                                                   jobject obj,
                                                                   jobject jbackendVersion,
                                                                   jobject java_asset_manager,
                                                                   jobject surface);
-JNIEXPORT jboolean JNICALL
-Java_com_facebook_igl_shell_SampleLib_isBackendVersionSupported(JNIEnv* env,
-                                                                jobject obj,
-                                                                jobject jbackendVersion);
 JNIEXPORT void JNICALL
 Java_com_facebook_igl_shell_SampleLib_setActiveBackendVersion(JNIEnv* env,
                                                               jobject obj,
@@ -141,6 +206,44 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_setClearColorValue(
                                                                                 jfloat a);
 };
 
+JNIEXPORT jobjectArray JNICALL
+Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobject /*obj*/) {
+  if (!factory) {
+    factory = shell::createDefaultRenderSessionFactory();
+  }
+
+  std::vector<igl::shell::RenderSessionConfig> suggestedConfigs = {
+#if IGL_BACKEND_OPENGL
+      {
+          .displayName = "OpenGL ES 3",
+          .backendVersion = {.flavor = igl::BackendFlavor::OpenGL_ES,
+                             .majorVersion = 3,
+                             .minorVersion = 0},
+          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+      },
+      {
+          .displayName = "OpenGL ES 2",
+          .backendVersion = {.flavor = igl::BackendFlavor::OpenGL_ES,
+                             .majorVersion = 2,
+                             .minorVersion = 0},
+          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+      },
+#endif
+#if IGL_BACKEND_VULKAN
+      {
+          .displayName = "Vulkan",
+          .backendVersion = {.flavor = igl::BackendFlavor::Vulkan,
+                             .majorVersion = 1,
+                             .minorVersion = 1},
+          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+      },
+#endif
+  };
+
+  const auto requestedConfigs = factory->requestedSessionConfigs(std::move(suggestedConfigs));
+  return toJava(env, requestedConfigs);
+}
+
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
                                                                   jobject /*obj*/,
                                                                   jobject jbackendVersion,
@@ -153,6 +256,7 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
     auto renderer = std::make_unique<TinyRenderer>();
     renderer->init(AAssetManager_fromJava(env, java_asset_manager),
                    surface ? ANativeWindow_fromSurface(env, surface) : nullptr,
+                   *factory,
                    *backendVersion);
     renderers.emplace_back(std::move(renderer));
     IGL_LOG_INFO("init: creating backend renderer: %s\n", toString(backendVersion).c_str());
