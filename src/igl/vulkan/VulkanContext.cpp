@@ -9,6 +9,7 @@
 #include <cstring>
 #include <memory>
 #include <set>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -342,6 +343,8 @@ struct BindGroupMetadataBuffers {
 } // namespace
 
 struct VulkanContextImpl final {
+  const std::thread::id contextThread = std::this_thread::get_id();
+
   // Vulkan Memory Allocator
   VmaAllocator vma_ = VK_NULL_HANDLE;
   // :)
