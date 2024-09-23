@@ -10,8 +10,10 @@
 #import <CoreGraphics/CGGeometry.h>
 #import <Foundation/NSObject.h>
 
+#import "BackendVersion.h"
 #import "IglShellPlatformAdapter.h"
 #import "IglSurfaceTexturesAdapter.h"
+#import "RenderSessionFactoryProvider.h"
 
 typedef int IglBackendFlavor;
 typedef int IglOpenglRenderingAPI;
@@ -25,10 +27,9 @@ typedef int IglOpenglRenderingAPI;
 @end
 
 @interface RenderSessionController : NSObject <IglShellPlatformAdapter>
-- (instancetype)initWithBackendFlavor:(IglBackendFlavor)backendFlavor
-                         majorVersion:(uint32_t)majorVersion
-                         minorVersion:(uint32_t)minorVersion
-                      surfaceProvider:(id<IglSurfaceTexturesProvider>)provider;
+- (instancetype)initWithBackendVersion:(BackendVersion*)backendVersion
+                       factoryProvider:(RenderSessionFactoryProvider*)factoryProvider
+                       surfaceProvider:(id<IglSurfaceTexturesProvider>)provider;
 
 - (void)initializeDevice;
 

@@ -5,12 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import "RenderSessionFactoryProvider.h"
 #import <MetalKit/MetalKit.h>
 #import <UIKit/UIKit.h>
-#import <igl/IGL.h>
+#import <shell/shared/renderSession/RenderSessionConfig.h>
 
 @interface ViewController : UIViewController <MTKViewDelegate>
 
-- (instancetype)init:(igl::BackendVersion)backendVersion frame:(CGRect)frame;
+- (instancetype)init:(igl::shell::RenderSessionConfig)config
+     factoryProvider:(RenderSessionFactoryProvider*)factoryProvider
+               frame:(CGRect)frame;
 
 @end

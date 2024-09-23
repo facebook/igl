@@ -9,6 +9,7 @@
 
 #import "ViewController.h"
 
+#import "BackendVersion.h"
 #import "IglShellPlatformAdapterInternal.hpp"
 #import "IglSurfaceTexturesAdapterInternal.hpp"
 #import "RenderSessionController.h"
@@ -33,6 +34,7 @@
 // @fb-only
 // @fb-only
 
+#include <igl/DeviceFeatures.h>
 #include <memory>
 #include <shell/shared/platform/ios/PlatformIos.h>
 #include <shell/shared/renderSession/DefaultSession.h>
@@ -43,7 +45,7 @@
 // @fb-only
 
 @interface ViewController () <TouchDelegate, ViewSizeChangeDelegate, IglSurfaceTexturesProvider> {
-  igl::BackendVersion backendVersion_;
+  igl::shell::RenderSessionConfig config_;
   CALayer* layer_;
   CGRect frame_;
   id<CAMetalDrawable> currentDrawable_;
@@ -52,6 +54,7 @@
   RenderSessionController* renderSessionController_;
   IglSurfaceTexturesAdapter surfaceTexturesAdapter_;
 }
+- (BackendVersion*)toBackendVersion:(igl::BackendVersion)iglBackendVersion;
 @end
 
 @implementation ViewController
@@ -72,15 +75,16 @@
   [renderSessionController_ releaseSessionFrameBuffer];
 }
 
-- (instancetype)init:(igl::BackendVersion)backendVersion frame:(CGRect)frame {
+- (instancetype)init:(igl::shell::RenderSessionConfig)config
+     factoryProvider:(RenderSessionFactoryProvider*)factoryProvider
+               frame:(CGRect)frame {
   if (self = [super initWithNibName:nil bundle:nil]) {
-    backendVersion_ = backendVersion;
+    config_ = config;
     frame_ = frame;
     renderSessionController_ = [[RenderSessionController alloc]
-        initWithBackendFlavor:(IglBackendFlavor)backendVersion_.flavor
-                 majorVersion:backendVersion_.majorVersion
-                 minorVersion:backendVersion_.minorVersion
-              surfaceProvider:self];
+        initWithBackendVersion:[self toBackendVersion:config.backendVersion]
+               factoryProvider:factoryProvider
+               surfaceProvider:self];
   }
   return self;
 }
@@ -107,7 +111,7 @@
 // clang-format off
 - (igl::SurfaceTextures)createSurfaceTexturesInternal {
   [[maybe_unused]] auto& device = [self platform]->getDevice();
-  switch (backendVersion_.flavor) {
+  switch (config_.backendVersion.flavor) {
 #if IGL_BACKEND_METAL
   case igl::BackendFlavor::Metal: {
     auto *platformDevice = device.getPlatformDevice<igl::metal::PlatformDevice>();
@@ -156,7 +160,7 @@
 }
 
 - (void)loadView {
-  switch (backendVersion_.flavor) {
+  switch (config_.backendVersion.flavor) {
   case igl::BackendFlavor::Invalid:
     IGL_ASSERT_NOT_REACHED();
     break;
@@ -198,7 +202,7 @@
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  if (backendVersion_.flavor != igl::BackendFlavor::Metal) {
+  if (config_.backendVersion.flavor != igl::BackendFlavor::Metal) {
     layer_ = self.view.layer;
     [self initRenderSessionController];
   }
@@ -209,7 +213,7 @@
 // @fb-only
   // @fb-only
 // @fb-only
-  if (backendVersion_.flavor != igl::BackendFlavor::Metal) {
+  if (config_.backendVersion.flavor != igl::BackendFlavor::Metal) {
     IGL_ASSERT(renderSessionController_);
     [renderSessionController_ start];
   }
@@ -221,7 +225,7 @@
   // @fb-only
 // @fb-only
 
-  if (backendVersion_.flavor != igl::BackendFlavor::Metal) {
+  if (config_.backendVersion.flavor != igl::BackendFlavor::Metal) {
     IGL_ASSERT(renderSessionController_);
     [renderSessionController_ stop];
   }
@@ -246,6 +250,12 @@
   CGPoint lastPoint = [touch previousLocationInView:self.view];
   [self platform]->getInputDispatcher().queueEvent(igl::shell::TouchEvent(
       true, curPoint.x, curPoint.y, curPoint.x - lastPoint.x, curPoint.y - lastPoint.y));
+}
+
+- (BackendVersion*)toBackendVersion:(igl::BackendVersion)iglBackendVersion {
+  return [[BackendVersion alloc] init:static_cast<BackendFlavor>(iglBackendVersion.flavor)
+                         majorVersion:iglBackendVersion.majorVersion
+                         minorVersion:iglBackendVersion.minorVersion];
 }
 
 @end

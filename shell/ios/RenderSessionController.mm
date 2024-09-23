@@ -11,6 +11,7 @@
 
 #import "IglShellPlatformAdapterInternal.hpp"
 #import "IglSurfaceTexturesAdapterInternal.hpp"
+#import "RenderSessionFactoryAdapterInternal.hpp"
 #import <QuartzCore/CADisplayLink.h>
 #import <UIKit/UIKit.h>
 #import <igl/IGL.h>
@@ -32,7 +33,9 @@
 #include <memory>
 #include <shell/shared/platform/ios/PlatformIos.h>
 #include <shell/shared/renderSession/DefaultSession.h>
+#include <shell/shared/renderSession/IRenderSessionFactory.h>
 #include <shell/shared/renderSession/RenderSession.h>
+#include <shell/shared/renderSession/RenderSessionConfig.h>
 
 @interface RenderSessionController () {
   igl::BackendVersion backendVersion_;
@@ -41,21 +44,20 @@
   std::unique_ptr<igl::shell::RenderSession> session_;
   std::shared_ptr<igl::shell::Platform> platform_;
   IglShellPlatformAdapter platformAdapter_;
+  igl::shell::IRenderSessionFactory* factory_;
   id<IglSurfaceTexturesProvider> surfaceTexturesProvider_;
 }
+- (igl::BackendVersion)toBackendVersion:(BackendVersion*)version;
 @end
 
 @implementation RenderSessionController
 
-- (instancetype)initWithBackendFlavor:(IglBackendFlavor)backendFlavor
-                         majorVersion:(uint32_t)majorVersion
-                         minorVersion:(uint32_t)minorVersion
-                      surfaceProvider:(id<IglSurfaceTexturesProvider>)provider {
+- (instancetype)initWithBackendVersion:(BackendVersion*)backendVersion
+                       factoryProvider:(RenderSessionFactoryProvider*)factoryProvider
+                       surfaceProvider:(id<IglSurfaceTexturesProvider>)provider {
   if (self = [super init]) {
-    backendVersion_ = {(igl::BackendFlavor)backendFlavor,
-                       static_cast<uint8_t>(majorVersion),
-                       static_cast<uint8_t>(minorVersion)};
-
+    backendVersion_ = [self toBackendVersion:backendVersion];
+    factory_ = [factoryProvider adapter]->factory;
     frame_ = CGRectMake(0, 0, 1024, 768); // choose some default
 
     // @fb-only
@@ -106,7 +108,7 @@
 
   platform_ = std::make_shared<igl::shell::PlatformIos>(std::move(device));
   platformAdapter_.platform = platform_.get();
-  session_ = igl::shell::createDefaultRenderSession(platform_);
+  session_ = factory_->createRenderSession(platform_);
   IGL_ASSERT_MSG(session_, "createDefaultRenderSession() must return a valid session");
   session_->initialize();
 }
@@ -157,6 +159,12 @@
 
 - (void)setFrame:(CGRect)frame {
   frame_ = frame;
+}
+
+- (igl::BackendVersion)toBackendVersion:(BackendVersion*)version {
+  return {.flavor = static_cast<igl::BackendFlavor>(version.flavor),
+          .majorVersion = version.majorVersion,
+          .minorVersion = version.minorVersion};
 }
 
 @end
