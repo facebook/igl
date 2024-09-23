@@ -76,11 +76,12 @@ void VulkanImmediateCommands::purge() {
 
 const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::acquire() {
   IGL_PROFILER_FUNCTION();
-  IGL_ASSERT_MSG(nextSubmitHandle_.empty(),
-                 "VulkanImmediateCommands::acquire() is not reentrant. You should submit() the "
-                 "previous buffer before calling acquire() again.");
+  // IGL_ASSERT_MSG(nextSubmitHandle_.empty(),
+  //                "VulkanImmediateCommands::acquire() is not reentrant. You should submit() the "
+  //                "previous buffer before calling acquire() again.");
 
-  if (IGL_UNEXPECTED(!nextSubmitHandle_.empty())) {
+  // if (IGL_UNEXPECTED(!nextSubmitHandle_.empty())) {
+  if (!nextSubmitHandle_.empty()) {
     IGL_LOG_ERROR(
         "VulkanImmediateCommands::acquire() is not reentrant. You should submit() the "
         "previous buffer before calling acquire() again.");
