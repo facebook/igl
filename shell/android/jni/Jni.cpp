@@ -85,9 +85,9 @@ BackendFlavor toBackendFlavor(JNIEnv* env, jobject jbackendVersion) {
 
 jobject toJava(JNIEnv* env, BackendFlavor backendFlavor) {
   jclass jclass = env->FindClass(kBackendFlavorClassName);
-  std::string returnType = std::string("()[") + toTypeSignature(kBackendFlavorClassName);
+  const std::string returnType = std::string("()[") + toTypeSignature(kBackendFlavorClassName);
   jmethodID values = env->GetStaticMethodID(jclass, "values", returnType.c_str());
-  jobjectArray backendFlavorValues = (jobjectArray)env->CallStaticObjectMethod(jclass, values);
+  auto backendFlavorValues = (jobjectArray)env->CallStaticObjectMethod(jclass, values);
 
   jobject backendFlavorValue =
       env->GetObjectArrayElement(backendFlavorValues, static_cast<int>(backendFlavor));
@@ -114,7 +114,7 @@ std::optional<BackendVersion> toBackendVersion(JNIEnv* env, jobject jbackendVers
 
 jobject toJava(JNIEnv* env, BackendVersion backendVersion) {
   jclass jclass = env->FindClass(kBackendVersionClassName);
-  std::string methodSignature =
+  const std::string methodSignature =
       std::string("(") + toTypeSignature(kBackendFlavorClassName) + "BB)V";
   jmethodID constructor = env->GetMethodID(jclass, "<init>", methodSignature.c_str());
 
@@ -128,9 +128,9 @@ jobject toJava(JNIEnv* env, BackendVersion backendVersion) {
   return ret;
 }
 
-jobject toJava(JNIEnv* env, shell::RenderSessionConfig config) {
+jobject toJava(JNIEnv* env, const shell::RenderSessionConfig& config) {
   jclass jclass = env->FindClass(kRenderSessionConfigClassName);
-  std::string methodSignature =
+  const std::string methodSignature =
       std::string("(Ljava/lang/String;") + toTypeSignature(kBackendVersionClassName) + ")V";
   jmethodID constructor = env->GetMethodID(jclass, "<init>", methodSignature.c_str());
 
