@@ -247,6 +247,9 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     igl::FramebufferDesc framebufferDesc;
     framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
     framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
+    if (surfaceTextures.depth && surfaceTextures.depth->getProperties().hasStencil()) {
+      framebufferDesc.stencilAttachment.texture = surfaceTextures.depth;
+    }
     IGL_ASSERT(ret.isOk());
     framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
     IGL_ASSERT(ret.isOk());
@@ -264,9 +267,11 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     graphicsDesc.shaderStages = shaderStages_;
     graphicsDesc.targetDesc.colorAttachments.resize(1);
     graphicsDesc.targetDesc.colorAttachments[0].textureFormat =
-        framebuffer_->getColorAttachment(0)->getProperties().format;
-    graphicsDesc.targetDesc.depthAttachmentFormat =
-        framebuffer_->getDepthAttachment()->getProperties().format;
+        framebuffer_->getColorAttachment(0)->getFormat();
+    graphicsDesc.targetDesc.depthAttachmentFormat = framebuffer_->getDepthAttachment()->getFormat();
+    graphicsDesc.targetDesc.stencilAttachmentFormat =
+        framebuffer_->getStencilAttachment() ? framebuffer_->getStencilAttachment()->getFormat()
+                                             : igl::TextureFormat::Invalid;
     graphicsDesc.fragmentUnitSamplerMap[textureUnit] = IGL_NAMEHANDLE("inputImage");
     graphicsDesc.cullMode = igl::CullMode::Back;
     graphicsDesc.frontFaceWinding = igl::WindingMode::Clockwise;
