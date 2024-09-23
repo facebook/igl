@@ -15,9 +15,11 @@
 namespace igl::shell::openxr::mobile {
 class XrSwapchainProviderImplVulkan final : public impl::XrSwapchainProviderImpl {
  public:
+  explicit XrSwapchainProviderImplVulkan(igl::TextureFormat preferredColorFormat);
+
   // NOLINTNEXTLINE(bugprone-exception-escape)
   [[nodiscard]] std::vector<int64_t> preferredColorFormats() const noexcept final {
-    return {VK_FORMAT_R8G8B8A8_SRGB};
+    return {preferredColorFormat_};
   }
   // NOLINTNEXTLINE(bugprone-exception-escape)
   [[nodiscard]] std::vector<int64_t> preferredDepthFormats() const noexcept final {
@@ -38,6 +40,7 @@ class XrSwapchainProviderImplVulkan final : public impl::XrSwapchainProviderImpl
       uint8_t numViews) noexcept final;
 
  private:
+  int64_t preferredColorFormat_;
   std::vector<std::shared_ptr<igl::vulkan::VulkanTexture>> vulkanColorTextures_;
   std::vector<std::shared_ptr<igl::vulkan::VulkanTexture>> vulkanDepthTextures_;
 };

@@ -8,13 +8,14 @@
 #pragma once
 
 #include <shell/openxr/XrPlatform.h>
-
 #include <shell/openxr/impl/XrAppImpl.h>
+#include <shell/shared/renderSession/RenderSessionConfig.h>
 
 namespace igl::shell::openxr::mobile {
 
 class XrAppImplGLES final : public impl::XrAppImpl {
  public:
+  [[nodiscard]] RenderSessionConfig suggestedSessionConfig() const override;
   [[nodiscard]] std::vector<const char*> getXrRequiredExtensions() const override;
   [[nodiscard]] std::vector<const char*> getXrOptionalExtensions() const override;
 
@@ -22,7 +23,8 @@ class XrAppImplGLES final : public impl::XrAppImpl {
                                                       XrSystemId systemId) override;
   [[nodiscard]] XrSession initXrSession(XrInstance instance,
                                         XrSystemId systemId,
-                                        igl::IDevice& device) override;
+                                        igl::IDevice& device,
+                                        const RenderSessionConfig& sessionConfig) override;
   [[nodiscard]] std::unique_ptr<impl::XrSwapchainProviderImpl> createSwapchainProviderImpl()
       const override;
 
@@ -36,5 +38,7 @@ class XrAppImplGLES final : public impl::XrAppImpl {
       .type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_ES_KHR,
   };
 #endif // IGL_WGL
+  igl::IDevice* device_ = nullptr;
+  RenderSessionConfig sessionConfig_;
 };
 } // namespace igl::shell::openxr::mobile

@@ -7,25 +7,26 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-
-#include <shell/openxr/XrPlatform.h>
-
 #include <igl/Device.h>
+#include <memory>
+#include <shell/openxr/XrPlatform.h>
+#include <shell/shared/renderSession/RenderSessionConfig.h>
+#include <vector>
 
 namespace igl::shell::openxr::impl {
 class XrSwapchainProviderImpl;
 class XrAppImpl {
  public:
   virtual ~XrAppImpl() = default;
+  [[nodiscard]] virtual RenderSessionConfig suggestedSessionConfig() const = 0;
   [[nodiscard]] virtual std::vector<const char*> getXrRequiredExtensions() const = 0;
   [[nodiscard]] virtual std::vector<const char*> getXrOptionalExtensions() const = 0;
   [[nodiscard]] virtual std::unique_ptr<igl::IDevice> initIGL(XrInstance instance,
                                                               XrSystemId systemId) = 0;
   [[nodiscard]] virtual XrSession initXrSession(XrInstance instance,
                                                 XrSystemId systemId,
-                                                igl::IDevice& device) = 0;
+                                                igl::IDevice& device,
+                                                const RenderSessionConfig& sessionConfig) = 0;
   [[nodiscard]] virtual std::unique_ptr<impl::XrSwapchainProviderImpl> createSwapchainProviderImpl()
       const = 0;
 };

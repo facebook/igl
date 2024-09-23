@@ -107,7 +107,7 @@ class Texture : public WithContext, public ITexture {
                       TextureDesc::TextureUsage usage,
                       FormatDescGL& outFormatGL) const;
 
-  static bool toFormatDescGL(IContext& ctx,
+  static bool toFormatDescGL(const IContext& ctx,
                              TextureFormat textureFormat,
                              TextureDesc::TextureUsage usage,
                              FormatDescGL& outFormatGL);

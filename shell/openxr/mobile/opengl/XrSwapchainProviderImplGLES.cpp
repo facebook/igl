@@ -97,6 +97,19 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
 }
 } // namespace
 
+XrSwapchainProviderImplGLES::XrSwapchainProviderImplGLES(const igl::IDevice& device,
+                                                         igl::TextureFormat preferredColorFormat) {
+  const auto& openglDevice = static_cast<const igl::opengl::Device&>(device);
+  igl::opengl::Texture::FormatDescGL formatDescGL;
+  igl::opengl::Texture::toFormatDescGL(openglDevice.getContext(),
+                                       preferredColorFormat,
+                                       TextureDesc::TextureUsageBits::Attachment |
+                                           TextureDesc::TextureUsageBits::Sampled,
+                                       formatDescGL);
+
+  preferredColorFormat_ = formatDescGL.internalFormat;
+}
+
 void XrSwapchainProviderImplGLES::enumerateImages(
     igl::IDevice& device,
     XrSwapchain colorSwapchain,

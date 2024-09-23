@@ -34,8 +34,9 @@
 
 #include <shell/shared/input/IntentListener.h>
 #include <shell/shared/renderSession/AppParams.h>
-#include <shell/shared/renderSession/DefaultSession.h>
+#include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/ShellParams.h>
+#include <shell/shared/renderSession/transition/TransitionRenderSessionFactory.h>
 
 #include <shell/openxr/XrCompositionProjection.h>
 #include <shell/openxr/XrCompositionQuad.h>
@@ -437,7 +438,7 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
   createShellSession(std::move(device), nullptr);
 #endif
 
-  session_ = impl_->initXrSession(instance_, systemId_, platform_->getDevice());
+  session_ = impl_->initXrSession(instance_, systemId_, platform_->getDevice(), sessionConfig_);
   if (session_ == XR_NULL_HANDLE) {
     IGL_LOG_ERROR("Failed to initialize graphics system\n");
     return false;
@@ -561,7 +562,15 @@ void XrApp::createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManag
   platform_ = std::make_shared<igl::shell::PlatformWin>(std::move(device));
 #endif
 
-  renderSession_ = igl::shell::createDefaultRenderSession(platform_);
+  auto factory = igl::shell::createDefaultRenderSessionFactory();
+  const auto requestedSessionConfigs =
+      factory->requestedSessionConfigs({impl_->suggestedSessionConfig()});
+  if (IGL_UNEXPECTED(requestedSessionConfigs.size() != 1)) {
+    return;
+  }
+  sessionConfig_ = requestedSessionConfigs[0];
+
+  renderSession_ = factory->createRenderSession(platform_);
   shellParams_->shellControlsViewParams = true;
   shellParams_->rightHandedCoordinateSystem = true;
   shellParams_->renderMode = useSinglePassStereo_ ? RenderMode::SinglePassStereo

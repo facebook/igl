@@ -127,6 +127,11 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
 }
 } // namespace
 
+XrSwapchainProviderImplVulkan::XrSwapchainProviderImplVulkan(
+    igl::TextureFormat preferredColorFormat) {
+  preferredColorFormat_ = vulkan::textureFormatToVkFormat(preferredColorFormat);
+}
+
 void XrSwapchainProviderImplVulkan::enumerateImages(
     igl::IDevice& device,
     XrSwapchain colorSwapchain,

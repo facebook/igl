@@ -182,7 +182,7 @@ bool Texture::toFormatDescGL(TextureFormat textureFormat,
                              FormatDescGL& outFormatGL) const {
   return toFormatDescGL(getContext(), textureFormat, usage, outFormatGL);
 }
-bool Texture::toFormatDescGL(IContext& ctx,
+bool Texture::toFormatDescGL(const IContext& ctx,
                              TextureFormat textureFormat,
                              TextureDesc::TextureUsage usage,
                              FormatDescGL& outFormatGL) {

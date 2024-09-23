@@ -19,6 +19,14 @@
 #include <shell/openxr/mobile/vulkan/XrSwapchainProviderImplVulkan.h>
 
 namespace igl::shell::openxr::mobile {
+RenderSessionConfig XrAppImplVulkan::suggestedSessionConfig() const {
+  return {.displayName = "Vulkan 1.1",
+          .backendVersion = {.flavor = igl::BackendFlavor::Vulkan,
+                             .majorVersion = 1,
+                             .minorVersion = 1},
+          .colorFramebufferFormat = igl::TextureFormat::RGBA_SRGB};
+}
+
 std::vector<const char*> XrAppImplVulkan::getXrRequiredExtensions() const {
   return {
       XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
@@ -123,7 +131,10 @@ std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSy
 
 XrSession XrAppImplVulkan::initXrSession(XrInstance instance,
                                          XrSystemId systemId,
-                                         igl::IDevice& device) {
+                                         igl::IDevice& device,
+                                         const RenderSessionConfig& sessionConfig) {
+  IGL_ASSERT(sessionConfig.backendVersion.flavor == igl::BackendFlavor::Vulkan);
+  sessionConfig_ = sessionConfig;
   const auto& vkDevice = static_cast<igl::vulkan::Device&>(device); // Downcast is safe here
 
   // Bind Vulkan to XR session
@@ -158,7 +169,7 @@ XrSession XrAppImplVulkan::initXrSession(XrInstance instance,
 
 std::unique_ptr<impl::XrSwapchainProviderImpl> XrAppImplVulkan::createSwapchainProviderImpl()
     const {
-  return std::make_unique<XrSwapchainProviderImplVulkan>();
+  return std::make_unique<XrSwapchainProviderImplVulkan>(sessionConfig_.colorFramebufferFormat);
 }
 
 std::vector<const char*> XrAppImplVulkan::processExtensionsBuffer(std::vector<char>& buffer) {

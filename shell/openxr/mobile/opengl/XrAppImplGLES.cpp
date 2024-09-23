@@ -23,6 +23,14 @@
 #include <shell/openxr/mobile/opengl/XrSwapchainProviderImplGLES.h>
 
 namespace igl::shell::openxr::mobile {
+RenderSessionConfig XrAppImplGLES::suggestedSessionConfig() const {
+  return {.displayName = "OpenGL ES 3.2",
+          .backendVersion = {.flavor = igl::BackendFlavor::OpenGL_ES,
+                             .majorVersion = 3,
+                             .minorVersion = 2},
+          .colorFramebufferFormat = igl::TextureFormat::RGBA_SRGB};
+}
+
 std::vector<const char*> XrAppImplGLES::getXrRequiredExtensions() const {
   return {
 #if IGL_WGL
@@ -71,7 +79,11 @@ std::unique_ptr<igl::IDevice> XrAppImplGLES::initIGL(XrInstance instance, XrSyst
 
 XrSession XrAppImplGLES::initXrSession(XrInstance instance,
                                        XrSystemId systemId,
-                                       igl::IDevice& device) {
+                                       igl::IDevice& device,
+                                       const RenderSessionConfig& sessionConfig) {
+  IGL_ASSERT(sessionConfig.backendVersion.flavor == igl::BackendFlavor::OpenGL_ES);
+  sessionConfig_ = sessionConfig;
+  device_ = &device;
   const auto& glDevice = static_cast<igl::opengl::Device&>(device); // Downcast is safe here
 
 #if IGL_WGL
@@ -114,6 +126,11 @@ XrSession XrAppImplGLES::initXrSession(XrInstance instance,
 }
 
 std::unique_ptr<impl::XrSwapchainProviderImpl> XrAppImplGLES::createSwapchainProviderImpl() const {
-  return std::make_unique<XrSwapchainProviderImplGLES>();
+  if (IGL_VERIFY(device_)) {
+    return std::make_unique<XrSwapchainProviderImplGLES>(*device_,
+                                                         sessionConfig_.colorFramebufferFormat);
+  }
+
+  return nullptr;
 }
 } // namespace igl::shell::openxr::mobile
