@@ -20,6 +20,7 @@
 #if IGL_BACKEND_METAL
 #import <Metal/Metal.h>
 #import <igl/metal/HWDevice.h>
+#include <igl/metal/Texture.h>
 #endif
 
 #if IGL_BACKEND_OPENGL
@@ -170,6 +171,8 @@
     auto d = static_cast<igl::metal::Device&>([self platform]->getDevice()).get();
 
     auto metalView = [[MetalView alloc] initWithFrame:frame_ device:d];
+    metalView.colorPixelFormat =
+        igl::metal::Texture::textureFormatToMTLPixelFormat(config_.colorFramebufferFormat);
     metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
 
     metalView.delegate = self;
