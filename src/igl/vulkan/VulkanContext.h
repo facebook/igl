@@ -236,6 +236,8 @@ class VulkanContext final {
   uint32_t getBindGroupUsageMask(igl::BindGroupTextureHandle handle) const;
   uint32_t getBindGroupUsageMask(igl::BindGroupBufferHandle handle) const;
 
+  void ensureCurrentContextThread() const;
+
  private:
   friend class igl::vulkan::Device;
   friend class igl::vulkan::VulkanStagingDevice;

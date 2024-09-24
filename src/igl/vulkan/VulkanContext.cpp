@@ -2146,4 +2146,10 @@ void VulkanContext::syncMarkSubmitted(VulkanImmediateCommands::SubmitHandle hand
   syncAcquireNext();
 }
 
+void VulkanContext::ensureCurrentContextThread() const {
+  IGL_ASSERT_MSG(
+      pimpl_->contextThread == std::this_thread::get_id(),
+      "IGL/Vulkan functions can be called only from the same thread which created VulkanContext");
+}
+
 } // namespace igl::vulkan
