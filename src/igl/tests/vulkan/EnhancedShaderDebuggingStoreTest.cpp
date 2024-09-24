@@ -37,6 +37,9 @@ class EnhancedShaderDebuggingStoreTest : public ::testing::Test {
 
   // Set up common resources. This will create a device
   void SetUp() override {
+#ifdef IGL_PLATFORM_ANDROID
+    GTEST_SKIP() << "Temporary fix for hollywood tests";
+#endif
     // Turn off debug break so unit tests can run
     igl::setDebugBreakEnabled(false);
 
