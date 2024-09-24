@@ -38,7 +38,6 @@
 #include <igl/DeviceFeatures.h>
 #include <memory>
 #include <shell/shared/platform/ios/PlatformIos.h>
-#include <shell/shared/renderSession/DefaultSession.h>
 #include <shell/shared/renderSession/RenderSession.h>
 
 // @fb-only

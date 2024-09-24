@@ -32,7 +32,6 @@
 // @fb-only
 #include <memory>
 #include <shell/shared/platform/ios/PlatformIos.h>
-#include <shell/shared/renderSession/DefaultSession.h>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
