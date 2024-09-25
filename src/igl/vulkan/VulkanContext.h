@@ -209,6 +209,8 @@ class VulkanContext final {
     return deviceSurfaceCaps_;
   }
 
+  void ensureCurrentContextThread() const;
+
 #if defined(IGL_WITH_TRACY_GPU)
   TracyVkCtx tracyCtx_ = nullptr;
   std::unique_ptr<VulkanCommandPool> profilingCommandPool_;
@@ -235,8 +237,6 @@ class VulkanContext final {
   VkDescriptorSet getBindGroupDescriptorSet(igl::BindGroupBufferHandle handle) const;
   uint32_t getBindGroupUsageMask(igl::BindGroupTextureHandle handle) const;
   uint32_t getBindGroupUsageMask(igl::BindGroupBufferHandle handle) const;
-
-  void ensureCurrentContextThread() const;
 
  private:
   friend class igl::vulkan::Device;
