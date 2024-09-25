@@ -10,6 +10,7 @@
 #include <memory>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
 #include <shell/shared/renderSession/RenderSessionWindowConfig.h>
+#include <shell/shared/renderSession/ShellType.h>
 #include <vector>
 
 namespace igl::shell {
@@ -23,12 +24,14 @@ class IRenderSessionFactory {
 
   // Used on desktop platforms to configure the window hosting render sessions
   virtual RenderSessionWindowConfig requestedWindowConfig(
+      ShellType /* shellType */,
       RenderSessionWindowConfig suggestedConfig) {
     return suggestedConfig;
   }
 
   // Used to configure individual render sessions
   virtual std::vector<RenderSessionConfig> requestedSessionConfigs(
+      ShellType /* shellType */,
       std::vector<RenderSessionConfig> suggestedConfigs) {
     return suggestedConfigs;
   }

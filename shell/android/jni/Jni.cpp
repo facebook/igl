@@ -240,7 +240,8 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
 #endif
   };
 
-  const auto requestedConfigs = factory->requestedSessionConfigs(std::move(suggestedConfigs));
+  const auto requestedConfigs =
+      factory->requestedSessionConfigs(shell::ShellType::Android, std::move(suggestedConfigs));
   return toJava(env, requestedConfigs);
 }
 

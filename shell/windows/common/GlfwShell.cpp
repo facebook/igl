@@ -172,8 +172,10 @@ bool GlfwShell::initialize(int argc,
 
   auto factory = igl::shell::createDefaultRenderSessionFactory();
 
-  windowConfig_ = factory->requestedWindowConfig(suggestedWindowConfig);
-  const auto requestedConfigs = factory->requestedSessionConfigs({suggestedSessionConfig});
+  windowConfig_ =
+      factory->requestedWindowConfig(igl::shell::ShellType::Windows, suggestedWindowConfig);
+  const auto requestedConfigs =
+      factory->requestedSessionConfigs(igl::shell::ShellType::Windows, {suggestedSessionConfig});
   if (IGL_UNEXPECTED(requestedConfigs.size() != 1) ||
       IGL_UNEXPECTED(suggestedSessionConfig.backendVersion.flavor !=
                      requestedConfigs[0].backendVersion.flavor)) {

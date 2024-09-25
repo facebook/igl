@@ -76,7 +76,7 @@
   };
 
   const auto requestedSessionConfigs = factoryProvider_.adapter->factory->requestedSessionConfigs(
-      std::move(suggestedSessionConfigs));
+      igl::shell::ShellType::iOS, std::move(suggestedSessionConfigs));
   for (const auto& sessionConfig : requestedSessionConfigs) {
     [self addTab:sessionConfig viewControllers:viewControllers];
   }

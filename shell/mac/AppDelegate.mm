@@ -148,7 +148,8 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
 #endif
   };
 
-  const auto requestedWindowConfig = self.factory->requestedWindowConfig(suggestedWindowConfig);
+  const auto requestedWindowConfig =
+      self.factory->requestedWindowConfig(igl::shell::ShellType::Mac, suggestedWindowConfig);
 
   IGL_ASSERT(requestedWindowConfig.windowMode == igl::shell::WindowMode::Window ||
              requestedWindowConfig.windowMode == igl::shell::WindowMode::MaximizedWindow);
@@ -160,8 +161,8 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
     frame.size = CGSizeMake(requestedWindowConfig.width, requestedWindowConfig.height);
   }
 
-  const auto requestedSessionConfigs =
-      self.factory->requestedSessionConfigs(std::move(suggestedSessionConfigs));
+  const auto requestedSessionConfigs = self.factory->requestedSessionConfigs(
+      igl::shell::ShellType::Mac, std::move(suggestedSessionConfigs));
   for (const auto& sessionConfig : requestedSessionConfigs) {
     [self addTab:requestedWindowConfig sessionConfig:sessionConfig frame:frame];
   }

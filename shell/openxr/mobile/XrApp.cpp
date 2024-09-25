@@ -563,7 +563,7 @@ void XrApp::createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManag
 
   auto factory = igl::shell::createDefaultRenderSessionFactory();
   const auto requestedSessionConfigs =
-      factory->requestedSessionConfigs({impl_->suggestedSessionConfig()});
+      factory->requestedSessionConfigs(shell::ShellType::OpenXR, {impl_->suggestedSessionConfig()});
   if (IGL_UNEXPECTED(requestedSessionConfigs.size() != 1)) {
     return;
   }
