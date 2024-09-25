@@ -12,11 +12,20 @@
 #define IGL_SHELL_PATH <shell/renderSessions/IGL_SHELL_SESSION.h>
 
 #include IGL_SHELL_PATH
-#include <shell/shared/renderSession/DefaultSession.h>
+#include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 
 namespace igl::shell {
 
-std::unique_ptr<RenderSession> createDefaultRenderSession(std::shared_ptr<Platform> platform) {
+class RenderSessionFactory final : public IRenderSessionFactory {
+ public:
+  std::unique_ptr<RenderSession> createRenderSession(
+      std::shared_ptr<Platform> platform) noexcept final;
+};
+std::unique_ptr<IRenderSessionFactory> createDefaultRenderSessionFactory() {
+  return std::make_unique<RenderSessionFactory>();
+}
+std::unique_ptr<RenderSession> RenderSessionFactory::createRenderSession(
+    std::shared_ptr<Platform> platform) noexcept {
   return std::make_unique<IGL_SHELL_SESSION>(std::move(platform));
 }
 

@@ -9,7 +9,6 @@
 
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
-#include <shell/shared/renderSession/transition/TransitionRenderSessionFactory.h>
 
 namespace igl::shell {
 namespace {

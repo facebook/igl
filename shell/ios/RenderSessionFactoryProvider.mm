@@ -12,7 +12,6 @@
 #import "RenderSessionFactoryAdapterInternal.hpp"
 #include <memory>
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
-#include <shell/shared/renderSession/transition/TransitionRenderSessionFactory.h>
 
 @interface RenderSessionFactoryProvider () {
   std::unique_ptr<igl::shell::IRenderSessionFactory> factory_;

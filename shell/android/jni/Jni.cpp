@@ -17,8 +17,8 @@
 #include <android/native_window_jni.h>
 #include <igl/Common.h>
 #include <memory>
+#include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
-#include <shell/shared/renderSession/transition/TransitionRenderSessionFactory.h>
 
 namespace igl::samples {
 

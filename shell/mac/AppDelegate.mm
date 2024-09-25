@@ -15,7 +15,6 @@
 #import <igl/Common.h>
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
-#include <shell/shared/renderSession/transition/TransitionRenderSessionFactory.h>
 
 namespace {
 

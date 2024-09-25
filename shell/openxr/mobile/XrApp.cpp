@@ -36,7 +36,6 @@
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/ShellParams.h>
-#include <shell/shared/renderSession/transition/TransitionRenderSessionFactory.h>
 
 #include <shell/openxr/XrCompositionProjection.h>
 #include <shell/openxr/XrCompositionQuad.h>
