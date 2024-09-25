@@ -33,7 +33,14 @@ class IRenderSessionFactory {
   virtual std::vector<RenderSessionConfig> requestedSessionConfigs(
       ShellType /* shellType */,
       std::vector<RenderSessionConfig> suggestedConfigs) {
-    return suggestedConfigs;
+    std::vector<RenderSessionConfig> requestedConfigs;
+    requestedConfigs.reserve(suggestedConfigs.size());
+    for (auto& suggestedConfig : suggestedConfigs) {
+      if (suggestedConfig.backendVersion.flavor != igl::BackendFlavor::Invalid) {
+        requestedConfigs.push_back(suggestedConfig);
+      }
+    }
+    return requestedConfigs;
   }
 
   virtual std::unique_ptr<RenderSession> createRenderSession(
