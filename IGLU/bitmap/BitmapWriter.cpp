@@ -7,6 +7,7 @@
 
 #include <IGLU/bitmap/BitmapWriter.h>
 
+#include <IGLU/texture_accessor/TextureAccessorFactory.h>
 #include <fstream>
 #include <igl/Common.h>
 
@@ -34,7 +35,102 @@ struct BMPHeader {
   uint32_t importantColors = 0; // Number of important colors used
 } __attribute__((packed));
 
+bool shouldFlipY(const igl::IDevice& device) {
+  return device.getBackendType() != igl::BackendType::OpenGL;
+}
+
+struct BufferOffsets {
+  size_t r;
+  size_t g;
+  size_t b;
+};
+
+BufferOffsets getBufferOffsets(igl::TextureFormat format) {
+  switch (format) {
+  case igl::TextureFormat::RGBA_UNorm8:
+  case igl::TextureFormat::RGBX_UNorm8:
+  case igl::TextureFormat::RGBA_SRGB: {
+    return {.r = 0, .g = 1, .b = 2};
+  }
+
+  case igl::TextureFormat::BGRA_UNorm8:
+  case igl::TextureFormat::BGRA_SRGB: {
+    return {.r = 2, .g = 1, .b = 0};
+  }
+
+  default:
+    IGL_ASSERT_NOT_IMPLEMENTED();
+    return {.r = 0, .g = 1, .b = 2};
+  }
+}
+
 } // namespace
+
+bool isSupportedBitmapTextureFormat(igl::TextureFormat format) {
+  switch (format) {
+  case igl::TextureFormat::RGBA_UNorm8:
+  case igl::TextureFormat::RGBX_UNorm8:
+  case igl::TextureFormat::RGBA_SRGB:
+  case igl::TextureFormat::BGRA_UNorm8:
+  case igl::TextureFormat::BGRA_SRGB:
+    return true;
+
+  default:
+    return false;
+  }
+}
+
+void writeBitmap(const char* filename,
+                 std::shared_ptr<igl::ITexture> texture,
+                 igl::IDevice& device) {
+  IGL_ASSERT(texture);
+  IGL_ASSERT(texture->getType() == igl::TextureType::TwoD);
+  IGL_ASSERT(isSupportedBitmapTextureFormat(texture->getFormat()));
+
+  const auto textureAccessor =
+      ::iglu::textureaccessor::TextureAccessorFactory::createTextureAccessor(
+          device.getBackendType(), texture, device);
+
+  const igl::CommandQueueDesc desc{igl::CommandQueueType::Graphics};
+  igl::Result result;
+  const auto commandQueue = device.createCommandQueue(desc, &result);
+  if (!IGL_VERIFY(result.isOk()) || !IGL_VERIFY(commandQueue)) {
+    return;
+  }
+
+  textureAccessor->requestBytes(*commandQueue, nullptr);
+
+  const auto& buffer = textureAccessor->getBytes();
+  const auto size = texture->getSize();
+
+  TextureRangeDesc textureRange = texture->getFullRange();
+  const auto& properties = texture->getProperties();
+  uint32_t bytesPerRow = properties.getBytesPerRow(textureRange);
+
+  std::vector<uint8_t> imageData;
+  imageData.reserve(size.width * size.height * 3);
+
+  IGL_ASSERT(buffer.size() == size.height * bytesPerRow);
+
+  const auto bufferOffsets = getBufferOffsets(texture->getFormat());
+  const bool flipY = shouldFlipY(device);
+
+  for (size_t y = 0; y < size.height; ++y) {
+    size_t row = flipY ? size.height - y - 1 : y;
+    for (size_t byte = 0; byte < bytesPerRow; byte += 4) {
+      const size_t index = row * bytesPerRow + byte;
+      const uint8_t r = buffer[index + bufferOffsets.r];
+      const uint8_t g = buffer[index + bufferOffsets.g];
+      const uint8_t b = buffer[index + bufferOffsets.b];
+
+      imageData.push_back(b);
+      imageData.push_back(g);
+      imageData.push_back(r);
+    }
+  }
+
+  writeBitmap(filename, static_cast<const uint8_t*>(imageData.data()), size.width, size.height);
+}
 
 void writeBitmap(const char* filename, const uint8_t* imageData, uint32_t width, uint32_t height) {
   std::ofstream file;

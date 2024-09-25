@@ -8,8 +8,17 @@
 #pragma once
 
 #include <cstdint>
+#include <igl/IGL.h>
 
 namespace igl::iglu {
+
+// Check if a texture format is supported by the bitmap writer
+bool isSupportedBitmapTextureFormat(igl::TextureFormat format);
+
+// Write the contents of a texture to a bitmap file
+void writeBitmap(const char* filename,
+                 std::shared_ptr<igl::ITexture> texture,
+                 igl::IDevice& device);
 
 void writeBitmap(const char* filename, const uint8_t* imageData, uint32_t width, uint32_t height);
 
