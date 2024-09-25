@@ -73,6 +73,8 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc
                                                           Result* IGL_NULLABLE outResult) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
+
   Result::setOk(outResult);
   auto resource = std::make_shared<CommandQueue>(*this, desc);
   return resource;
@@ -81,6 +83,8 @@ std::shared_ptr<ICommandQueue> Device::createCommandQueue(const CommandQueueDesc
 std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
                                               Result* IGL_NULLABLE outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   auto buffer = std::make_unique<vulkan::Buffer>(*this);
 
@@ -106,6 +110,8 @@ std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
     Result* IGL_NULLABLE outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
+
   Result::setOk(outResult);
   return std::make_shared<vulkan::DepthStencilState>(desc);
 }
@@ -113,6 +119,8 @@ std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
 std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc& desc,
                                                           Result* IGL_NULLABLE outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   auto shaderStages = std::make_unique<ShaderStages>(desc);
   if (shaderStages == nullptr) {
@@ -132,6 +140,8 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
                                                           Result* IGL_NULLABLE outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
+
   auto samplerState = std::make_shared<vulkan::SamplerState>(*this);
 
   Result::setResult(outResult, samplerState->create(desc));
@@ -142,6 +152,8 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
 std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
                                                 Result* IGL_NULLABLE outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   const auto sanitized = sanitize(desc);
 
@@ -159,6 +171,8 @@ std::shared_ptr<IVertexInputState> Device::createVertexInputState(const VertexIn
                                                                       outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
+
   // VertexInputState is compiled into the RenderPipelineState at a later stage. For now, we just
   // have to store the description.
   Result::setOk(outResult);
@@ -170,6 +184,8 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     const ComputePipelineDesc& desc,
     Result* IGL_NULLABLE outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   if (IGL_UNEXPECTED(desc.shaderStages == nullptr)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
@@ -192,6 +208,8 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
                                                                    Result* IGL_NULLABLE
                                                                        outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   if (IGL_UNEXPECTED(desc.shaderStages == nullptr)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
@@ -227,6 +245,8 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
                                                           Result* IGL_NULLABLE outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
+
   std::shared_ptr<VulkanShaderModule> vulkanShaderModule;
   Result result;
   if (desc.input.type == ShaderInputType::Binary) {
@@ -251,6 +271,8 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* IGL_N
                                                                Result* IGL_NULLABLE
                                                                    outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   VkDevice device = ctx_->device_->getVkDevice();
 
@@ -308,6 +330,8 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
                                                                Result* IGL_NULLABLE
                                                                    outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   VkDevice device = ctx_->device_->getVkDevice();
   const VkShaderStageFlagBits vkStage = shaderStageToVkShaderStage(stage);
@@ -413,6 +437,8 @@ std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& d
                                                         Result* IGL_NULLABLE outResult) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
+
   auto resource = std::make_shared<Framebuffer>(*this, desc);
   Result::setOk(outResult);
   return resource;
@@ -430,6 +456,8 @@ std::unique_ptr<igl::IShaderLibrary> Device::createShaderLibrary(const ShaderLib
                                                                  Result* IGL_NULLABLE
                                                                      outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   if (IGL_UNEXPECTED(desc.moduleInfo.empty())) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
@@ -725,6 +753,7 @@ Holder<igl::BindGroupTextureHandle> Device::createBindGroup(const igl::BindGroup
                                                             Result* IGL_NULLABLE outResult) {
   IGL_ASSERT(ctx_);
   IGL_ASSERT_MSG(!desc.debugName.empty(), "Each bind group should have a debug name");
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   return {this, ctx_->createBindGroup(desc, compatiblePipeline, outResult)};
 }
@@ -733,18 +762,21 @@ Holder<igl::BindGroupBufferHandle> Device::createBindGroup(const igl::BindGroupB
                                                            Result* IGL_NULLABLE outResult) {
   IGL_ASSERT(ctx_);
   IGL_ASSERT_MSG(!desc.debugName.empty(), "Each bind group should have a debug name");
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   return {this, ctx_->createBindGroup(desc, outResult)};
 }
 
 void Device::destroy(igl::BindGroupTextureHandle handle) {
   IGL_ASSERT(ctx_);
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   ctx_->destroy(handle);
 }
 
 void Device::destroy(igl::BindGroupBufferHandle handle) {
   IGL_ASSERT(ctx_);
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   ctx_->destroy(handle);
 }
