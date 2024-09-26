@@ -137,7 +137,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   if (resource) {
     resource->initialize(desc, outResult);
     if (getResourceTracker()) {
-      resource->initResourceTracker(getResourceTracker());
+      resource->initResourceTracker(getResourceTracker(), desc.debugName);
     }
   } else {
     Result::setResult(outResult, Result::Code::RuntimeError, "Could not instantiate buffer.");
@@ -156,7 +156,7 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
                                                           Result* outResult) const {
   auto resource = std::make_shared<SamplerState>(getContext(), desc);
   if (getResourceTracker()) {
-    resource->initResourceTracker(getResourceTracker());
+    resource->initResourceTracker(getResourceTracker(), desc.debugName);
   }
   Result::setOk(outResult);
   return resource;
@@ -198,7 +198,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
     if (!result.isOk()) {
       texture = nullptr;
     } else if (getResourceTracker()) {
-      texture->initResourceTracker(getResourceTracker());
+      texture->initResourceTracker(getResourceTracker(), desc.debugName);
     }
 
     Result::setResult(outResult, std::move(result));
@@ -246,7 +246,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
                                                           Result* outResult) const {
   auto sm = createSharedResource<ShaderModule>(desc, outResult, getContext(), desc.info);
   if (auto resourceTracker = getResourceTracker(); sm && resourceTracker) {
-    sm->initResourceTracker(resourceTracker);
+    sm->initResourceTracker(resourceTracker, desc.debugName);
   }
   return sm;
 }
@@ -258,7 +258,7 @@ std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc
   // The second instance is so it also gets passed to the ShaderStages constructor.
   auto stages = createUniqueResource<ShaderStages>(desc, outResult, desc, getContext());
   if (auto resourceTracker = getResourceTracker(); stages && resourceTracker) {
-    stages->initResourceTracker(resourceTracker);
+    stages->initResourceTracker(resourceTracker, desc.debugName);
   }
   return stages;
 }

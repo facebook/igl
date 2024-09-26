@@ -75,9 +75,9 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
 
   id<MTLBuffer> metalObject = createMetalBuffer(device_, desc, options);
   std::unique_ptr<IBuffer> resource = std::make_unique<Buffer>(
-      std::move(metalObject), options, desc.hint, 0 /* No accepted hints */, desc.type);
+      metalObject, options, desc.hint, 0 /* No accepted hints */, desc.type);
   if (getResourceTracker()) {
-    resource->initResourceTracker(getResourceTracker());
+    resource->initResourceTracker(getResourceTracker(), desc.debugName);
   }
   Result::setOk(outResult);
   return resource;
@@ -98,7 +98,7 @@ std::unique_ptr<IBuffer> Device::createRingBuffer(const BufferDesc& desc,
       std::move(bufferRing), options, bufferSyncManager_, desc.hint, desc.type);
 
   if (getResourceTracker()) {
-    resource->initResourceTracker(getResourceTracker());
+    resource->initResourceTracker(getResourceTracker(), desc.debugName);
   }
   Result::setOk(outResult);
   return resource;
@@ -119,7 +119,7 @@ std::unique_ptr<IBuffer> Device::createBufferNoCopy(const BufferDesc& desc,
   std::unique_ptr<IBuffer> resource = std::make_unique<Buffer>(
       metalObject, options, desc.hint, BufferDesc::BufferAPIHintBits::NoCopy, desc.type);
   if (getResourceTracker()) {
-    resource->initResourceTracker(getResourceTracker());
+    resource->initResourceTracker(getResourceTracker(), desc.debugName);
   }
   Result::setOk(outResult);
   return resource;
@@ -194,7 +194,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   metalObject.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
   auto iglObject = std::make_shared<Texture>(metalObject, *this);
   if (getResourceTracker()) {
-    iglObject->initResourceTracker(getResourceTracker());
+    iglObject->initResourceTracker(getResourceTracker(), desc.debugName);
   }
   Result::setOk(outResult);
 
@@ -514,13 +514,13 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
     modules.emplace_back(std::make_shared<metal::ShaderModule>(info, metalFunction));
 
     if (auto resourceTracker = getResourceTracker(); resourceTracker && !modules.empty()) {
-      modules.back()->initResourceTracker(resourceTracker);
+      modules.back()->initResourceTracker(resourceTracker, desc.debugName);
     }
   }
 
   auto shaderLibrary = std::make_unique<ShaderLibrary>(std::move(modules));
   if (auto resourceTracker = getResourceTracker()) {
-    shaderLibrary->initResourceTracker(resourceTracker);
+    shaderLibrary->initResourceTracker(resourceTracker, desc.debugName);
   }
   Result::setOk(outResult);
 
@@ -546,7 +546,7 @@ std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc
   const Result result;
   auto stages = std::make_unique<ShaderStages>(desc);
   if (auto resourceTracker = getResourceTracker()) {
-    stages->initResourceTracker(resourceTracker);
+    stages->initResourceTracker(resourceTracker, desc.debugName);
   }
   Result::setResult(outResult, result.code, result.message);
   if (!result.isOk()) {

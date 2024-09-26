@@ -17,7 +17,7 @@ std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& d
                                                         Result* outResult) {
   auto resource = std::make_shared<Framebuffer>(desc);
   if (getResourceTracker()) {
-    resource->initResourceTracker(getResourceTracker());
+    resource->initResourceTracker(getResourceTracker(), desc.debugName);
   }
   Result::setOk(outResult);
   return resource;

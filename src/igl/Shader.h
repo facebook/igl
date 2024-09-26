@@ -46,6 +46,8 @@ struct ShaderModuleInfo {
   ShaderStage stage = ShaderStage::Fragment;
   /** @brief The module's entry point. */
   std::string entryPoint;
+    
+  std::string debugName;
 
   bool operator==(const ShaderModuleInfo& other) const;
   bool operator!=(const ShaderModuleInfo& other) const;
@@ -263,6 +265,9 @@ struct ShaderStagesDesc {
   std::shared_ptr<IShaderModule> computeModule;
   /** @brief The type of shader stages: render or compute. */
   ShaderStagesType type = ShaderStagesType::Render;
+    
+  /** @brief Identifier used for debugging */
+  std::string debugName;
 };
 
 /**

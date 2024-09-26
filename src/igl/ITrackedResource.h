@@ -33,14 +33,17 @@ class ITrackedResource {
    * @brief initResourceTracker() sets up tracking with the tracker
    * When the resource is destroyed, it will automatically deregister itself with the tracker
    */
-  void initResourceTracker(std::shared_ptr<IResourceTracker> tracker) {
+  void initResourceTracker(std::shared_ptr<IResourceTracker> tracker, const std::string & name = "") {
     if (IGL_VERIFY(!resourceTracker_)) {
       resourceTracker_ = std::move(tracker);
+      resourceName_ = name;
       if (resourceTracker_) {
         resourceTracker_->didCreate(static_cast<T*>(this));
       }
     }
   }
+    
+  virtual const std::string & getResourceName() const { return resourceName_;}
 
  private:
   // ITrackedResource destructor is called after the `T` object is partially destructed
@@ -61,6 +64,7 @@ class ITrackedResource {
   }
 
   std::shared_ptr<IResourceTracker> resourceTracker_;
+  std::string resourceName_;
 };
 
 } // namespace igl
