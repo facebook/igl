@@ -156,8 +156,10 @@ void RenderCommandAdapter::setVertexTexture(ITexture* texture, size_t index, Res
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     return;
   }
-  vertexTextureStates_[index].first = texture;
-  SET_DIRTY(vertexTextureStatesDirty_, index);
+  if (vertexTextureStates_[index].first != texture){
+    vertexTextureStates_[index].first = texture;
+    SET_DIRTY(vertexTextureStatesDirty_, index);
+  }
   Result::setOk(outResult);
 }
 
@@ -168,8 +170,10 @@ void RenderCommandAdapter::setVertexSamplerState(ISamplerState* samplerState,
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     return;
   }
-  vertexTextureStates_[index].second = samplerState;
-  SET_DIRTY(vertexTextureStatesDirty_, index);
+  if (vertexTextureStates_[index].second != samplerState){
+    vertexTextureStates_[index].second = samplerState;
+    SET_DIRTY(vertexTextureStatesDirty_, index);
+  }
   Result::setOk(outResult);
 }
 
@@ -183,8 +187,10 @@ void RenderCommandAdapter::setFragmentTexture(ITexture* texture, size_t index, R
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     return;
   }
-  fragmentTextureStates_[index].first = texture;
-  SET_DIRTY(fragmentTextureStatesDirty_, index);
+  if (fragmentTextureStates_[index].first != texture){
+    fragmentTextureStates_[index].first = texture;
+    SET_DIRTY(fragmentTextureStatesDirty_, index);
+  }
   Result::setOk(outResult);
 }
 
@@ -195,8 +201,10 @@ void RenderCommandAdapter::setFragmentSamplerState(ISamplerState* samplerState,
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     return;
   }
-  fragmentTextureStates_[index].second = samplerState;
-  SET_DIRTY(fragmentTextureStatesDirty_, index);
+  if (fragmentTextureStates_[index].second != samplerState){
+    fragmentTextureStates_[index].second = samplerState;
+    SET_DIRTY(fragmentTextureStatesDirty_, index);
+  }
   Result::setOk(outResult);
 }
 
