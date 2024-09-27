@@ -27,6 +27,7 @@ ComputeCommandEncoder::ComputeCommandEncoder(const std::shared_ptr<CommandBuffer
   IGL_PROFILER_FUNCTION();
 
   IGL_ASSERT(commandBuffer);
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
 
   ctx_.checkAndUpdateDescriptorSets();
 
@@ -35,6 +36,8 @@ ComputeCommandEncoder::ComputeCommandEncoder(const std::shared_ptr<CommandBuffer
 
 void ComputeCommandEncoder::endEncoding() {
   IGL_PROFILER_FUNCTION();
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
 
   if (!isEncoding_) {
     return;
@@ -133,6 +136,8 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
                                                  const Dimensions& /*threadgroupSize*/,
                                                  const Dependencies& dependencies) {
   IGL_PROFILER_FUNCTION();
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
 
   if (!cps_) {
     IGL_ASSERT_MSG(false, "Did you forget to call bindComputePipelineState()?");

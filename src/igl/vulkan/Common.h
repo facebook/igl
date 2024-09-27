@@ -101,7 +101,7 @@
 // VK_SUCCESS and returns VK_NULL_HANDLE
 #define VK_ASSERT_RETURN_NULL_HANDLE(func) VK_ASSERT_RETURN_VALUE(func, VK_NULL_HANDLE)
 
-#define IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx) ctx->ensureCurrentContextThread()
+#define IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx) (ctx)->ensureCurrentContextThread()
 
 namespace igl::vulkan {
 
