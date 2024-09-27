@@ -210,6 +210,7 @@ class VulkanContext final {
   }
 
   void ensureCurrentContextThread() const;
+  void setCurrentContextThread();
 
 #if defined(IGL_WITH_TRACY_GPU)
   TracyVkCtx tracyCtx_ = nullptr;

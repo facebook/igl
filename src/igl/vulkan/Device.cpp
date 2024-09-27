@@ -749,4 +749,11 @@ void Device::destroy(igl::BindGroupBufferHandle handle) {
   ctx_->destroy(handle);
 }
 
+void Device::setCurrentThread() {
+  IGL_PROFILER_FUNCTION();
+  IGL_ASSERT(ctx_);
+
+  ctx_->setCurrentContextThread();
+}
+
 } // namespace igl::vulkan

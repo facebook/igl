@@ -343,7 +343,7 @@ struct BindGroupMetadataBuffers {
 } // namespace
 
 struct VulkanContextImpl final {
-  const std::thread::id contextThread = std::this_thread::get_id();
+  std::thread::id contextThread = std::this_thread::get_id();
 
   // Vulkan Memory Allocator
   VmaAllocator vma_ = VK_NULL_HANDLE;
@@ -2147,9 +2147,13 @@ void VulkanContext::syncMarkSubmitted(VulkanImmediateCommands::SubmitHandle hand
 }
 
 void VulkanContext::ensureCurrentContextThread() const {
-  IGL_ASSERT_MSG(
-      pimpl_->contextThread == std::this_thread::get_id(),
-      "IGL/Vulkan functions can be called only from the same thread which created VulkanContext");
+  IGL_ASSERT_MSG(pimpl_->contextThread == std::this_thread::get_id(),
+                 "IGL/Vulkan functions can only be accessed by 1 thread at a time. Call "
+                 "`setCurrentContextThread()` to mark the current thread as the `owning` thread.");
+}
+
+void VulkanContext::setCurrentContextThread() {
+  pimpl_->contextThread = std::this_thread::get_id();
 }
 
 } // namespace igl::vulkan

@@ -95,6 +95,8 @@ class Device final : public IDevice {
   }
   [[nodiscard]] size_t getCurrentDrawCount() const override;
 
+  void setCurrentThread() override;
+
   VulkanContext& getVulkanContext() {
     return *ctx_;
   }
