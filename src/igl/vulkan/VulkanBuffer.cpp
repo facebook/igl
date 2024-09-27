@@ -173,6 +173,8 @@ void VulkanBuffer::invalidateMappedMemory(VkDeviceSize offset, VkDeviceSize size
 }
 
 void VulkanBuffer::getBufferSubData(size_t offset, size_t size, void* data) const {
+  IGL_PROFILER_FUNCTION();
+
   // Only mapped host-visible buffers can be downloaded this way. All other
   // GPU buffers should use a temporary staging buffer
 
@@ -193,6 +195,8 @@ void VulkanBuffer::getBufferSubData(size_t offset, size_t size, void* data) cons
 }
 
 void VulkanBuffer::bufferSubData(size_t offset, size_t size, const void* data) {
+  IGL_PROFILER_FUNCTION();
+
   // Only mapped host-visible buffers can be uploaded this way. All other GPU buffers should use a
   // temporary staging buffer
 

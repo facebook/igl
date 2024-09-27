@@ -723,6 +723,7 @@ Holder<igl::BindGroupTextureHandle> Device::createBindGroup(const igl::BindGroup
                                                             const IRenderPipelineState* IGL_NULLABLE
                                                                 compatiblePipeline,
                                                             Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_ASSERT(ctx_);
   IGL_ASSERT_MSG(!desc.debugName.empty(), "Each bind group should have a debug name");
 
@@ -731,6 +732,7 @@ Holder<igl::BindGroupTextureHandle> Device::createBindGroup(const igl::BindGroup
 
 Holder<igl::BindGroupBufferHandle> Device::createBindGroup(const igl::BindGroupBufferDesc& desc,
                                                            Result* IGL_NULLABLE outResult) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_ASSERT(ctx_);
   IGL_ASSERT_MSG(!desc.debugName.empty(), "Each bind group should have a debug name");
 
@@ -738,12 +740,14 @@ Holder<igl::BindGroupBufferHandle> Device::createBindGroup(const igl::BindGroupB
 }
 
 void Device::destroy(igl::BindGroupTextureHandle handle) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   IGL_ASSERT(ctx_);
 
   ctx_->destroy(handle);
 }
 
 void Device::destroy(igl::BindGroupBufferHandle handle) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
   IGL_ASSERT(ctx_);
 
   ctx_->destroy(handle);
