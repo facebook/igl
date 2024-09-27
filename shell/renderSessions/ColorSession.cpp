@@ -246,7 +246,7 @@ void ColorSession::initialize() noexcept {
   // init uniforms
   glm::mat4x4 mvp(1.0f);
   memcpy(&fragmentParameters_.mvp, &mvp, sizeof(mvp));
-  fragmentParameters_.color = {1.0f, 1.0f, 1.0f};
+  fragmentParameters_.color = iglu::simdtypes::float3{1.0f, 1.0f, 1.0f};
 
   BufferDesc fpDesc;
   fpDesc.type = BufferDesc::BufferTypeBits::Uniform;

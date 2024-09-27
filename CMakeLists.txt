@@ -57,6 +57,10 @@ if(ANDROID)
   # disable for all targets due to warnings in third-party code
   add_definitions(-Wno-nullability-completeness)
   add_definitions(-Wno-deprecated-volatile)
+elseif(UNIX)
+  # disable for all targets due to warnings in third-party code
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-volatile>)
+  add_definitions(-Wno-attributes)
 endif()
 
 if(EMSCRIPTEN)
