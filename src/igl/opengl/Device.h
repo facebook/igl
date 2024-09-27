@@ -90,6 +90,8 @@ class Device : public IDevice {
 
   [[nodiscard]] const PlatformDevice& getPlatformDevice() const noexcept override = 0;
 
+  void setCurrentThread() override;
+
   [[nodiscard]] IContext& getContext() const {
     return *context_;
   }

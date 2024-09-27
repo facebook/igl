@@ -379,7 +379,8 @@ class IDevice : public ICapabilities {
    * IGL can only be accessed by 1 thread at a time. Call this function to mark the current thread
    * as the "owning" thread.
    */
-  virtual void setCurrentThread() {} // NOTE: for now, this is implemented only in IGL/Vulkan
+  virtual void setCurrentThread() {
+  } // NOTE: for now, this is implemented only in IGL/Vulkan and IGL/OpenGL
 
  protected:
   virtual void beginScope();

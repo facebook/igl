@@ -390,4 +390,8 @@ void Device::destroy(igl::BindGroupBufferHandle handle) {
   context_->bindGroupBuffersPool_.destroy(handle);
 }
 
+void Device::setCurrentThread() {
+  getContext().setCurrent();
+}
+
 } // namespace igl::opengl
