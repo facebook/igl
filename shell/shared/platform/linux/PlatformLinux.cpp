@@ -9,12 +9,14 @@
 #include <shell/shared/platform/linux/PlatformLinux.h>
 
 #include <shell/shared/fileLoader/linux/FileLoaderLinux.h>
+#include <shell/shared/imageWriter/linux/ImageWriterLinux.h>
 
 namespace igl::shell {
 
 PlatformLinux::PlatformLinux(std::shared_ptr<igl::IDevice> device) : device_(std::move(device)) {
   fileLoader_ = std::make_unique<igl::shell::FileLoaderLinux>();
   imageLoader_ = std::make_unique<igl::shell::ImageLoader>(*fileLoader_);
+  imageWriter_ = std::make_unique<igl::shell::ImageWriterLinux>();
 }
 
 igl::IDevice& PlatformLinux::getDevice() noexcept {
@@ -30,7 +32,6 @@ ImageLoader& PlatformLinux::getImageLoader() noexcept {
 }
 
 const ImageWriter& PlatformLinux::getImageWriter() const noexcept {
-  IGL_ASSERT_NOT_IMPLEMENTED();
   return *imageWriter_;
 }
 
