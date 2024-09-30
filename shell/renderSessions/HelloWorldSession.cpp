@@ -17,7 +17,8 @@
 
 namespace igl::shell {
 
-static std::string getMetalShaderSource() {
+namespace {
+std::string getMetalShaderSource() {
   return R"(
           #include <metal_stdlib>
           #include <simd/simd.h>
@@ -55,9 +56,8 @@ static std::string getMetalShaderSource() {
         )";
 }
 
-static const char* getVulkanVertexShaderSource() {
-  return R"(
-#version 460
+const char* getVulkanVertexShaderSource() {
+  return R"(#version 460
 layout (location=0) out vec3 color;
 const vec2 pos[3] = vec2[3](
 	vec2(-0.6, -0.4),
@@ -75,9 +75,8 @@ void main() {
 }
 )";
 }
-static const char* getVulkanFragmentShaderSource() {
-  return R"(
-#version 460
+const char* getVulkanFragmentShaderSource() {
+  return R"(#version 460
 layout (location=0) in vec3 color;
 layout (location=0) out vec4 out_FragColor;
 void main() {
@@ -85,6 +84,38 @@ void main() {
 }
 )";
 }
+
+const char* getOpenGLESVertexShaderSource() {
+  return R"(#version 300 es
+out vec3 color;
+const vec2 pos[3] = vec2[3](
+	vec2(-0.6, -0.4),
+	vec2( 0.6, -0.4),
+	vec2( 0.0,  0.6)
+);
+const vec3 col[3] = vec3[3](
+	vec3(1.0, 0.0, 0.0),
+	vec3(0.0, 1.0, 0.0),
+	vec3(0.0, 0.0, 1.0)
+);
+void main() {
+	gl_Position = vec4(pos[gl_VertexID], 0.0, 1.0);
+	color = col[gl_VertexID];
+}
+)";
+}
+
+const char* getOpenGLESFragmentShaderSource() {
+  return R"(#version 300 es
+  precision highp float;
+  in vec3 color;
+  out vec4 out_FragColor;
+  void main() {
+	out_FragColor = vec4(color, 1.0);
+}
+)";
+}
+} // namespace
 
 static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
@@ -112,11 +143,24 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
     auto glVersion =
         static_cast<igl::opengl::Device&>(device).getContext().deviceFeatures().getGLVersion();
     if (glVersion > igl::opengl::GLVersion::v2_1) {
+      std::string version = "410";
+      if (glVersion == igl::opengl::GLVersion::v3_0_ES ||
+          glVersion == igl::opengl::GLVersion::v3_1_ES ||
+          glVersion == igl::opengl::GLVersion::v3_2_ES) {
+        return igl::ShaderStagesCreator::fromModuleStringInput(device,
+                                                               getOpenGLESVertexShaderSource(),
+                                                               "main",
+                                                               "",
+                                                               getOpenGLESFragmentShaderSource(),
+                                                               "main",
+                                                               "",
+                                                               nullptr);
+      }
       auto codeVS1 = std::regex_replace(
           getVulkanVertexShaderSource(), std::regex("gl_VertexIndex"), "gl_VertexID");
-      auto codeVS2 = std::regex_replace(codeVS1.c_str(), std::regex("460"), "410");
+      auto codeVS2 = std::regex_replace(codeVS1.c_str(), std::regex("460"), version);
 
-      auto codeFS = std::regex_replace(getVulkanFragmentShaderSource(), std::regex("460"), "410");
+      auto codeFS = std::regex_replace(getVulkanFragmentShaderSource(), std::regex("460"), version);
 
       return igl::ShaderStagesCreator::fromModuleStringInput(
           device, codeVS2.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);

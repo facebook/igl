@@ -80,8 +80,10 @@ using glm::vec4;
 
 constexpr uint32_t kNumBufferedFrames = 3;
 
+namespace {
 int width_ = 0;
 int height_ = 0;
+} // namespace
 
 constexpr uint32_t kNumCubes = 256;
 
@@ -140,10 +142,11 @@ static uint16_t indexData[] = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
                                8,  9,  10, 10, 11, 8,  12, 13, 14, 14, 15, 12,
                                16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
 
+namespace {
 UniformsPerFrame perFrame;
 UniformsPerObject perObject[kNumCubes];
-
 vec3 axis_[kNumCubes];
+} // namespace
 
 #if IGL_BACKEND_METAL
 static std::string getMetalShaderSource() {

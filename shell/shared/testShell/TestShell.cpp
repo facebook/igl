@@ -11,6 +11,7 @@
 #include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/platform/android/PlatformAndroid.h>
 #include <shell/shared/platform/ios/PlatformIos.h>
+#include <shell/shared/platform/linux/PlatformLinux.h>
 #include <shell/shared/platform/mac/PlatformMac.h>
 #include <shell/shared/platform/win/PlatformWin.h>
 #include <shell/shared/renderSession/ShellParams.h>
@@ -35,19 +36,18 @@ void TestShellBase::SetUp(ScreenSize screenSize) {
   // Create platform shell to run the tests with
 #if defined(IGL_PLATFORM_MACOS) && IGL_PLATFORM_MACOS
   platform_ = std::make_shared<igl::shell::PlatformMac>(std::move(iglDevice));
-  IGL_ASSERT(platform_);
 #elif defined(IGL_PLATFORM_IOS) && IGL_PLATFORM_IOS
   platform_ = std::make_shared<igl::shell::PlatformIos>(std::move(iglDevice));
-  IGL_ASSERT(platform_);
 #elif defined(IGL_PLATFORM_WIN) && IGL_PLATFORM_WIN
   platform_ = std::make_shared<igl::shell::PlatformWin>(std::move(iglDevice));
-  IGL_ASSERT(platform_);
 #elif defined(IGL_PLATFORM_ANDROID) && IGL_PLATFORM_ANDROID
   platform_ =
       std::make_shared<igl::shell::PlatformAndroid>(std::move(iglDevice), true /*useFakeLoader*/);
-  IGL_ASSERT(platform_);
+#elif defined(IGL_PLATFORM_LINUX) && IGL_PLATFORM_LINUX
+  platform_ = std::make_shared<igl::shell::PlatformLinux>(std::move(iglDevice));
 #endif
 
+  IGL_ASSERT(platform_);
   // Create an offscreen texture to render to
   igl::Result ret;
   igl::TextureDesc texDesc = igl::TextureDesc::new2D(
