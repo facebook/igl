@@ -118,6 +118,13 @@ TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
   }
 }
 
+TEST_F(DeviceVulkanTest, CurrentThreadIdTest) {
+  igl::vulkan::VulkanContext& ctx =
+      static_cast<igl::vulkan::Device*>(iglDev_.get())->getVulkanContext();
+
+  ctx.ensureCurrentContextThread();
+}
+
 GTEST_TEST(VulkanContext, BufferDeviceAddress) {
   std::shared_ptr<igl::IDevice> iglDev = nullptr;
 
