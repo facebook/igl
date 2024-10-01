@@ -22,7 +22,7 @@ std::shared_ptr<Framebuffer> PlatformDevice::createFramebuffer(const Framebuffer
   auto resource = std::make_shared<CustomFramebuffer>(getContext());
   resource->initialize(desc, outResult);
   if (auto resourceTracker = owner_.getResourceTracker()) {
-    resource->initResourceTracker(resourceTracker);
+    resource->initResourceTracker(resourceTracker, desc.debugName);
   }
   return resource;
 }
