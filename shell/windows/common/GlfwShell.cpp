@@ -7,6 +7,7 @@
 
 #include <shell/windows/common/GlfwShell.h>
 
+#include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
 

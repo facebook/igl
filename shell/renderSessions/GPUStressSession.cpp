@@ -26,6 +26,7 @@
 
 #include <memory>
 #include <random>
+#include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/QuadLayerParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
