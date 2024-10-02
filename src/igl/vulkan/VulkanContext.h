@@ -205,7 +205,7 @@ class VulkanContext final {
 
   const VulkanFeatures& features() const noexcept;
 
-  const VkSurfaceCapabilitiesKHR& getSurfaceCapabilities() const noexcept {
+  [[nodiscard]] const VkSurfaceCapabilitiesKHR& getSurfaceCapabilities() const noexcept {
     return deviceSurfaceCaps_;
   }
 

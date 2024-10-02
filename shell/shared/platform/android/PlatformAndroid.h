@@ -22,17 +22,12 @@ class PlatformAndroid : public Platform {
   ImageLoader& getImageLoader() noexcept override;
   [[nodiscard]] const ImageWriter& getImageWriter() const noexcept override;
   [[nodiscard]] FileLoader& getFileLoader() const noexcept override;
-  [[nodiscard]] const glm::mat4x4& getPreRotationMatrix() const noexcept override;
 
  private:
   std::shared_ptr<igl::IDevice> device_;
   std::shared_ptr<FileLoader> fileLoader_;
   std::shared_ptr<ImageWriter> imageWriter_;
   std::shared_ptr<ImageLoader> imageLoader_;
-
-#if IGL_BACKEND_VULKAN
-  glm::mat4x4 surfaceTransformRotateMatrix_[3]{};
-#endif
 };
 
 } // namespace igl::shell

@@ -8,6 +8,7 @@
 #include <shell/shared/renderSession/RenderSession.h>
 
 #include <chrono>
+#include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
 

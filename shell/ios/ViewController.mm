@@ -16,6 +16,7 @@
 #import "View.h"
 
 #import <igl/IGL.h>
+#import <shell/shared/input/InputDispatcher.h>
 
 #if IGL_BACKEND_METAL
 #import <Metal/Metal.h>

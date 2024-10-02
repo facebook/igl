@@ -23,9 +23,9 @@
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/GLIncludes.h>
-
 #include <memory>
 #include <random>
+#include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/QuadLayerParams.h>
 #include <shell/shared/renderSession/ShellParams.h>

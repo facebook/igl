@@ -11,6 +11,7 @@
 #include <shell/shared/imageLoader/android/ImageLoaderAndroid.h>
 #include <shell/shared/imageWriter/ImageWriter.h>
 #include <shell/shared/imageWriter/android/ImageWriterAndroid.h>
+#include <shell/shared/platform/DisplayContext.h>
 
 #if IGL_BACKEND_VULKAN
 #include <igl/vulkan/Device.h>
@@ -21,15 +22,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace igl::shell {
-
-#if IGL_BACKEND_VULKAN
-enum SurfaceTransformRotate {
-  kSurfaceTransformRotate90 = 0,
-  kSurfaceTransformRotate180,
-  kSurfaceTransformRotate270,
-  kSurfaceTransformRotateNum,
-};
-#endif
 
 PlatformAndroid::PlatformAndroid(std::shared_ptr<igl::IDevice> device, bool useFakeLoader) :
   device_(std::move(device)) {
@@ -42,15 +34,28 @@ PlatformAndroid::PlatformAndroid(std::shared_ptr<igl::IDevice> device, bool useF
   }
 
 #if IGL_BACKEND_VULKAN
-  static_assert(kSurfaceTransformRotateNum ==
-                sizeof(surfaceTransformRotateMatrix_) / sizeof(surfaceTransformRotateMatrix_[0]));
-  const float kRotateAngle[kSurfaceTransformRotateNum] = {-90, -180, -270};
-  for (int i = 0; i != kSurfaceTransformRotateNum; ++i) {
-    const glm::mat4x4 preRotateMat = glm::mat4x4(1.0f);
-    const glm::vec3 rotationAxis = glm::vec3(0.0f, 0.0f, 1.0f);
-    surfaceTransformRotateMatrix_[i] =
-        glm::rotate(preRotateMat, glm::radians(kRotateAngle[i]), rotationAxis);
-  }
+  // Get the surface transform matrix
+  getDisplayContext().preRotationMatrix = [&device = *device_]() -> glm::mat4 {
+    igl::vulkan::Device& vulkanDevice = static_cast<igl::vulkan::Device&>(device);
+
+    float angle = 0.0f;
+    switch (vulkanDevice.getVulkanContext().getSurfaceCapabilities().currentTransform) {
+    case VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR:
+      angle = -90.0f;
+      break;
+    case VK_SURFACE_TRANSFORM_ROTATE_180_BIT_KHR:
+      angle = -180.0f;
+      break;
+    case VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR:
+      angle = -270.0f;
+      break;
+    case VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR:
+    default:
+      return glm::mat4(1.0f);
+      break;
+    }
+    return glm::rotate(glm::mat4(1.0f), glm::radians(rotationAngle), glm::vec3(0.0f, 0.0f, 1.0f));
+  }();
 #endif
 }
 
@@ -72,41 +77,6 @@ const ImageWriter& PlatformAndroid::getImageWriter() const noexcept {
 
 FileLoader& PlatformAndroid::getFileLoader() const noexcept {
   return *fileLoader_;
-}
-
-const glm::mat4x4& PlatformAndroid::getPreRotationMatrix() const noexcept {
-  static const glm::mat4x4 kIdentity(1.0f);
-  if (!device_) {
-    return kIdentity;
-  }
-
-  if (device_->getBackendType() != igl::BackendType::Vulkan) {
-    return kIdentity;
-  }
-
-#if IGL_BACKEND_VULKAN
-  igl::vulkan::Device& vulkanDevice = static_cast<igl::vulkan::Device&>(*device_);
-  igl::vulkan::VulkanContext& context = vulkanDevice.getVulkanContext();
-  const VkSurfaceCapabilitiesKHR& surfaceCapabilities = context.getSurfaceCapabilities();
-
-  switch (surfaceCapabilities.currentTransform) {
-  case VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR:
-    return kIdentity;
-
-  case VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR:
-    return surfaceTransformRotateMatrix_[kSurfaceTransformRotate90];
-
-  case VK_SURFACE_TRANSFORM_ROTATE_180_BIT_KHR:
-    return surfaceTransformRotateMatrix_[kSurfaceTransformRotate180];
-
-  case VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR:
-    return surfaceTransformRotateMatrix_[kSurfaceTransformRotate270];
-
-  default:
-    break;
-  }
-#endif
-  return kIdentity;
 }
 
 } // namespace igl::shell

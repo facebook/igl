@@ -5,10 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include "Platform.h"
+
 #include <shell/shared/extension/Extension.h>
 #include <shell/shared/extension/ExtensionLoader.h>
 #include <shell/shared/imageLoader/ImageLoader.h>
-#include <shell/shared/platform/Platform.h>
+#include <shell/shared/input/InputDispatcher.h>
+#include <shell/shared/platform/DisplayContext.h>
 
 namespace {
 
@@ -24,14 +27,26 @@ bool g_argsInitialized = false;
 
 namespace igl::shell {
 
+struct Platform::State {
+  ExtensionLoader extensionLoader;
+  InputDispatcher inputDispatcher;
+  DisplayContext displayContext;
+};
+
+Platform::Platform() noexcept : state_(std::make_unique<State>()) {}
+
 Platform::~Platform() = default;
 
 Extension* Platform::createAndInitializeExtension(const char* name) noexcept {
-  return extensionLoader_.createAndInitialize(name, *this);
+  return state_->extensionLoader.createAndInitialize(name, *this);
 }
 
 InputDispatcher& Platform::getInputDispatcher() noexcept {
-  return inputDispatcher_;
+  return state_->inputDispatcher;
+}
+
+[[nodiscard]] DisplayContext& Platform::getDisplayContext() noexcept {
+  return state_->displayContext;
 }
 
 std::shared_ptr<ITexture> Platform::loadTexture(const char* filename,
@@ -68,11 +83,6 @@ void Platform::initializeCommandLineArgs(int argc, char** argv) {
   g_argc = argc;
   g_argv = argv;
   g_argsInitialized = true;
-}
-
-const glm::mat4x4& Platform::getPreRotationMatrix() const noexcept {
-  static const glm::mat4x4 kIdentity(1.0f);
-  return kIdentity;
 }
 
 } // namespace igl::shell

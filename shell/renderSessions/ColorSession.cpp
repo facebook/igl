@@ -14,6 +14,7 @@
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/GLIncludes.h>
 #include <shell/renderSessions/ColorSession.h>
+#include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
@@ -327,7 +328,7 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     fragmentUniformDescriptors_.back().offset = offsetof(FragmentFormat, color);
   }
 
-  glm::mat4x4 mvp = getPlatform().getPreRotationMatrix();
+  const auto& mvp = getPlatform().getDisplayContext().preRotationMatrix;
   memcpy(&fragmentParameters_.mvp, &mvp, sizeof(mvp));
   fragmentParamBuffer_->upload(&fragmentParameters_, {sizeof(fragmentParameters_)});
 

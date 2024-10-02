@@ -14,6 +14,7 @@
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/RenderCommandEncoder.h>
 #include <shell/shared/imageLoader/ImageLoader.h>
+#include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #if defined(IGL_PLATFORM_UWP)
 #include "BindGroupSession.h"

@@ -17,8 +17,9 @@
 
 #import <igl/Common.h>
 #import <igl/IGL.h>
+#import <shell/shared/input/InputDispatcher.h>
 #if IGL_BACKEND_METAL
-#include <igl/metal/ColorSpace.h>
+#import <igl/metal/ColorSpace.h>
 #import <igl/metal/HWDevice.h>
 #import <igl/metal/Texture.h>
 #import <igl/metal/macos/Device.h>
