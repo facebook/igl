@@ -91,6 +91,8 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                                       Result& outResult) {
   IGL_PROFILER_FUNCTION();
 
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
+
   if (!IGL_VERIFY(cmdBuffer_)) {
     Result::setResult(&outResult, Result::Code::ArgumentNull);
     return;
@@ -273,6 +275,8 @@ std::unique_ptr<RenderCommandEncoder> RenderCommandEncoder::create(
 
 void RenderCommandEncoder::endEncoding() {
   IGL_PROFILER_FUNCTION();
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
 
   if (!isEncoding_) {
     return;
