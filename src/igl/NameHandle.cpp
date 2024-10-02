@@ -35,15 +35,15 @@ bool isAligned(const void* p) {
 }
 namespace {
 uint32_t iglCrc32ImplARM8(const char* s, uint32_t crc, size_t length) {
-  for (; !isAligned<uint32_t>(s) && length > 0; s++, length--) {
+  for (; !isAligned<uint64_t>(s) && length > 0; s++, length--) {
     crc = __crc32b(crc, *s);
   }
 
-  for (; length > 8 && isAligned<uint64_t>(s); s += 8, length -= 8) {
+  for (; length >= 8; s += 8, length -= 8) {
     crc = __crc32d(crc, *(const uint64_t*)(s));
   }
 
-  for (; length > 4; s += 4, length -= 4) {
+  for (; length >= 4; s += 4, length -= 4) {
     crc = __crc32w(crc, *(const uint32_t*)(s));
   }
 
