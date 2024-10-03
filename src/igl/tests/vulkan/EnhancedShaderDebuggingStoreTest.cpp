@@ -202,6 +202,24 @@ TEST_F(EnhancedShaderDebuggingStoreTest, InitializeBuffer) {
   EXPECT_NE(store.vertexBuffer(), nullptr);
 }
 
+TEST_F(EnhancedShaderDebuggingStoreTest, createFramebuffer) {
+  // Create an instance of the EnhancedShaderDebuggingStore
+  EnhancedShaderDebuggingStore store;
+  store.initialize(device_);
+
+  // Verify that the buffer has been created
+  EXPECT_NE(store.vertexBuffer(), nullptr);
+
+  auto fb = store.framebuffer(*device_, offscreenTexture_);
+  ASSERT_TRUE(fb != nullptr);
+
+  auto renderPass = store.renderPassDesc(framebuffer_);
+  ASSERT_TRUE(renderPass.colorAttachments.size() == 1);
+
+  store.pipeline(*device_, framebuffer_);
+  // ASSERT_TRUE(pipeline != nullptr);
+}
+
 TEST_F(EnhancedShaderDebuggingStoreTest, DepthStencilState) {
   // Create an instance of the EnhancedShaderDebuggingStore
   EnhancedShaderDebuggingStore store;
