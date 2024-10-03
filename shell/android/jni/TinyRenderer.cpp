@@ -20,6 +20,8 @@
 #endif
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/imageLoader/android/ImageLoaderAndroid.h>
+#include <shell/shared/input/InputDispatcher.h>
+#include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #if IGL_BACKEND_VULKAN
 #include <igl/vulkan/Device.h>
