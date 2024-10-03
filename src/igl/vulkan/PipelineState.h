@@ -30,6 +30,11 @@ class PipelineState {
                 const char* debugName);
   virtual ~PipelineState() = default;
 
+  PipelineState(const PipelineState&) = delete;
+  PipelineState(PipelineState&&) = delete;
+  PipelineState& operator=(const PipelineState&) = delete;
+  PipelineState& operator=(PipelineState&&) = delete;
+
   VkPipelineLayout getVkPipelineLayout() const;
 
   const util::SpvModuleInfo& getSpvModuleInfo() const {
