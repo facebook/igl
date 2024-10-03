@@ -8,7 +8,6 @@
 #include "VulkanDescriptorSetLayout.h"
 
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/VulkanPipelineLayout.h>
 
 namespace igl::vulkan {
 
