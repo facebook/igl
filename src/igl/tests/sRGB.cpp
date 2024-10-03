@@ -18,24 +18,17 @@
 
 namespace igl::tests {
 
-// Picking this just to match the texture we will use. If you use a different
-// size texture, then you will have to either create a new offscreenTexture_
-// and the framebuffer object in your test, so know exactly what the end result
-// would be after sampling
-constexpr size_t OFFSCREEN_TEX_WIDTH = 2;
-constexpr size_t OFFSCREEN_TEX_HEIGHT = 2;
-
 //
 // sRGBTest
 //
 // Test fixture for all the tests in this file. Takes care of common
 // initialization and allocating of common resources.
 //
-class sRGBTest : public ::testing::Test {
+class sRGBBaseTest : public ::testing::Test {
  private:
  public:
-  sRGBTest() = default;
-  ~sRGBTest() override = default;
+  sRGBBaseTest() = default;
+  ~sRGBBaseTest() override = default;
 
   //
   // SetUp()
@@ -57,8 +50,8 @@ class sRGBTest : public ::testing::Test {
 
     // Create an offscreen texture to render to
     const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
-                                                   OFFSCREEN_TEX_WIDTH,
-                                                   OFFSCREEN_TEX_HEIGHT,
+                                                   offscreenTexWidth,
+                                                   offscreenTexHeight,
                                                    TextureDesc::TextureUsageBits::Sampled |
                                                        TextureDesc::TextureUsageBits::Attachment);
 
@@ -182,24 +175,45 @@ class sRGBTest : public ::testing::Test {
 
   RenderPipelineDesc renderPipelineDesc_;
   size_t textureUnit_ = 0;
+
+  // Picking this just to match the texture we will use. If you use a different
+  // size texture, then you will have to either create a new offscreenTexture_
+  // and the framebuffer object in your test, so know exactly what the end result
+  // would be after sampling
+  size_t offscreenTexWidth = 2;
+  size_t offscreenTexHeight = 2;
+};
+
+class sRGBSmallTest : public sRGBBaseTest {
+  void SetUp() override {
+    sRGBBaseTest::SetUp();
+  }
+};
+
+class sRGBBigTest : public sRGBBaseTest {
+  void SetUp() override {
+    offscreenTexWidth = 4096;
+    offscreenTexHeight = 4096;
+    sRGBBaseTest::SetUp();
+  }
 };
 //
 // isSRGB test
 //
 // This test checks whether the texture format can be detected as sRGB or not
 //
-TEST_F(sRGBTest, TextureisSRGB) {
+TEST_F(sRGBSmallTest, TextureisSRGB) {
   Result ret;
   const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
-                                                 OFFSCREEN_TEX_WIDTH,
-                                                 OFFSCREEN_TEX_HEIGHT,
+                                                 offscreenTexWidth,
+                                                 offscreenTexHeight,
                                                  TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_TRUE(inputTexture_->getProperties().isSRGB());
 
   const TextureDesc texDesc2 = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
-                                                  OFFSCREEN_TEX_WIDTH,
-                                                  OFFSCREEN_TEX_HEIGHT,
+                                                  offscreenTexWidth,
+                                                  offscreenTexHeight,
                                                   TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_FALSE(!inputTexture_->getProperties().isSRGB());
@@ -211,7 +225,7 @@ TEST_F(sRGBTest, TextureisSRGB) {
 // This test uses a simple shader to copy the input texture to a same
 // sized output texture (offscreenTexture_) and make sure colors are being preserved
 //
-TEST_F(sRGBTest, Passthrough) {
+TEST_F(sRGBSmallTest, Passthrough) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
@@ -219,14 +233,14 @@ TEST_F(sRGBTest, Passthrough) {
   // Create input texture and upload data
   //-------------------------------------
   const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
-                                                 OFFSCREEN_TEX_WIDTH,
-                                                 OFFSCREEN_TEX_HEIGHT,
+                                                 offscreenTexWidth,
+                                                 offscreenTexHeight,
                                                  TextureDesc::TextureUsageBits::Sampled);
   inputTexture_ = iglDev_->createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);
   ASSERT_TRUE(inputTexture_ != nullptr);
 
-  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, OFFSCREEN_TEX_WIDTH, OFFSCREEN_TEX_HEIGHT);
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, offscreenTexWidth, offscreenTexHeight);
 
   inputTexture_->upload(rangeDesc, data::texture::TEX_RGBA_2x2);
 
@@ -265,15 +279,96 @@ TEST_F(sRGBTest, Passthrough) {
   //----------------------
   // Read back framebuffer
   //----------------------
-  auto pixels = std::vector<uint32_t>(OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT);
+  auto pixels = std::vector<uint32_t>(offscreenTexWidth * offscreenTexHeight);
 
   framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
 
   //--------------------------------
   // Verify against original texture
   //--------------------------------
-  for (size_t i = 0; i < OFFSCREEN_TEX_WIDTH * OFFSCREEN_TEX_HEIGHT; i++) {
+  for (size_t i = 0; i < offscreenTexWidth * offscreenTexHeight; i++) {
     ASSERT_EQ(pixels[i], data::texture::TEX_RGBA_2x2[i]);
+  }
+}
+
+TEST_F(sRGBBigTest, Passthrough) {
+  Result ret;
+  std::shared_ptr<IRenderPipelineState> pipelineState;
+
+  //-------------------------------------
+  // Create input texture and upload data
+  //-------------------------------------
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
+                                                 offscreenTexWidth,
+                                                 offscreenTexHeight,
+                                                 TextureDesc::TextureUsageBits::Sampled);
+  inputTexture_ = iglDev_->createTexture(texDesc, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(inputTexture_ != nullptr);
+
+  const auto rangeDesc = TextureRangeDesc::new2D(0, 0, offscreenTexWidth, offscreenTexHeight);
+
+  const size_t kAllColorsCount = 256ul * 256ul * 256ul;
+  ASSERT_TRUE(kAllColorsCount == offscreenTexWidth * offscreenTexHeight);
+  std::vector<uint32_t> allColorsBuffer(offscreenTexWidth * offscreenTexHeight);
+  size_t index = 0;
+  for (size_t r = 0; r < 256ul; ++r) {
+    for (size_t g = 0; g < 256ul; ++g) {
+      for (size_t b = 0; b < 256ul; ++b) {
+        ASSERT_TRUE(index < kAllColorsCount);
+        allColorsBuffer[index] = (r << 24) | (g << 16) | (b << 8) | 0xFF;
+        ++index;
+      }
+    }
+  }
+  inputTexture_->upload(rangeDesc, allColorsBuffer.data());
+
+  //----------------
+  // Create Pipeline
+  //----------------
+  pipelineState = iglDev_->createRenderPipeline(renderPipelineDesc_, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(pipelineState != nullptr);
+
+  //-------
+  // Render
+  //-------
+  cmdBuf_ = cmdQueue_->createCommandBuffer(cbDesc_, &ret);
+  ASSERT_EQ(ret.code, Result::Code::Ok);
+  ASSERT_TRUE(cmdBuf_ != nullptr);
+
+  auto cmds = cmdBuf_->createRenderCommandEncoder(renderPass_, framebuffer_);
+  cmds->bindVertexBuffer(data::shader::simplePosIndex, *vb_);
+  cmds->bindVertexBuffer(data::shader::simpleUvIndex, *uv_);
+
+  cmds->bindRenderPipelineState(pipelineState);
+
+  cmds->bindTexture(textureUnit_, BindTarget::kFragment, inputTexture_.get());
+  cmds->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
+
+  cmds->bindIndexBuffer(*ib_, IndexFormat::UInt16);
+  cmds->drawIndexed(6);
+
+  cmds->endEncoding();
+
+  cmdQueue_->submit(*cmdBuf_);
+
+  cmdBuf_->waitUntilCompleted();
+
+  //----------------------
+  // Read back framebuffer
+  //----------------------
+  auto pixels = std::vector<uint32_t>(offscreenTexWidth * offscreenTexHeight);
+
+  framebuffer_->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), rangeDesc);
+
+  //--------------------------------
+  // Verify against original texture
+  //--------------------------------
+  for (size_t i = 0; i < offscreenTexWidth * offscreenTexHeight; i++) {
+    auto pixelColor = pixels[i];
+    auto testColor = allColorsBuffer[i];
+    ASSERT_EQ(pixelColor, testColor);
   }
 }
 
