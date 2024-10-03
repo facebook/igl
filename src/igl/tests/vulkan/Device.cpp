@@ -13,8 +13,12 @@
 #if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOS || IGL_PLATFORM_LINUX
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
+#include <igl/vulkan/PlatformDevice.h>
+#include <igl/vulkan/SamplerState.h>
+#include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanFeatures.h>
+#include <igl/vulkan/VulkanTexture.h>
 #endif
 
 namespace igl::tests {
@@ -52,6 +56,63 @@ TEST_F(DeviceVulkanTest, CreateCommandQueue) {
   auto cmdQueue = iglDev_->createCommandQueue(desc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(cmdQueue, nullptr);
+}
+
+TEST_F(DeviceVulkanTest, PlatformDevice) {
+  auto& platformDevice = iglDev_->getPlatformDevice();
+  auto& vulkanPlatformDevice = static_cast<vulkan::PlatformDevice&>(platformDevice);
+  Result ret;
+  auto depthTexture = vulkanPlatformDevice.createTextureFromNativeDepth(2, 2, &ret);
+  ASSERT_TRUE(ret.isOk());
+  // ASSERT_TRUE(depthTexture != nullptr); // no swapchain so null
+  auto texture = vulkanPlatformDevice.createTextureFromNativeDrawable(&ret);
+  ASSERT_TRUE(ret.isOk());
+  // ASSERT_TRUE(texture != nullptr); // no swapchain so null
+
+  CommandQueueDesc desc{};
+
+  desc.type = CommandQueueType::Graphics;
+
+  auto cmdQueue = iglDev_->createCommandQueue(desc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(cmdQueue, nullptr);
+  auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+  auto submitHandle = cmdQueue->submit(*cmdBuf);
+
+  auto fence1 = vulkanPlatformDevice.getVkFenceFromSubmitHandle(submitHandle);
+  ASSERT_NE(fence1, VK_NULL_HANDLE);
+
+  vulkanPlatformDevice.waitOnSubmitHandle(submitHandle);
+}
+
+TEST_F(DeviceVulkanTest, PlatformDeviceSampler) {
+  Result ret;
+  TextureDesc textureDesc = TextureDesc::new2D(
+      igl::TextureFormat::RGBA_UNorm8, 2, 2, TextureDesc::TextureUsageBits::Sampled);
+  auto texture = iglDev_->createTexture(textureDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_TRUE(texture != nullptr);
+  auto* vulkanTexture = static_cast<vulkan::Texture*>(texture.get());
+  auto& innerVulkanTexture = vulkanTexture->getVulkanTexture();
+  innerVulkanTexture.getVulkanImageView();
+  innerVulkanTexture.getTextureId();
+  SamplerStateDesc samplerDesc;
+  auto samplerState = iglDev_->createSamplerState(samplerDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  auto* vulkanSamplerState = static_cast<vulkan::SamplerState*>(samplerState.get());
+  auto samplerId = vulkanSamplerState->getSamplerId();
+  ASSERT_EQ(samplerId, 1);
+  ASSERT_FALSE(vulkanSamplerState->isYUV());
+
+  CommandQueueDesc cmdQueueDesc{};
+
+  cmdQueueDesc.type = CommandQueueType::Graphics;
+
+  auto cmdQueue = iglDev_->createCommandQueue(cmdQueueDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(cmdQueue, nullptr);
+  auto cmdBuf = cmdQueue->createCommandBuffer(CommandBufferDesc(), &ret);
+  cmdQueue->submit(*cmdBuf);
 }
 
 #if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOS || IGL_PLATFORM_LINUX
