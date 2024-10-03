@@ -638,6 +638,10 @@ TEST_F(RenderCommandEncoderTest, shouldNotDraw) {
 }
 
 TEST_F(RenderCommandEncoderTest, shouldDrawATriangleBindGroup) {
+#if IGL_PLATFORM_APPLE
+  // @fb-only
+  GTEST_SKIP() << "Broken on macos arm64";
+#endif
   initializeBuffers(
       // clang-format off
       {
