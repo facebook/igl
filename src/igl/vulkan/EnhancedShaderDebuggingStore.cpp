@@ -239,7 +239,7 @@ std::shared_ptr<igl::IRenderPipelineState> EnhancedShaderDebuggingStore::pipelin
 
   // Create a shader stage, along with a vertex and fragment shader modules, if they haven't been
   // created yet
-  if (shaderStage_ == nullptr) {
+  if (shaderStage_ == nullptr && device.getVulkanContext().config_.enableBufferDeviceAddress) {
     const auto vscode = renderLineVSCode();
     const auto fscode = renderLineFSCode();
 
