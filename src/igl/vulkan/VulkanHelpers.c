@@ -1623,7 +1623,7 @@ VkResult ivkVmaCreateAllocator(const struct VulkanFunctionTable* vt,
 
 void ivkUpdateGlslangResource(glslang_resource_t* res, const VkPhysicalDeviceProperties* props) {
   const VkPhysicalDeviceLimits* limits = props ? &props->limits : NULL;
-  if (!limits) {
+  if (!limits || !res) {
     return;
   }
 
