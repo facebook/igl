@@ -12,6 +12,7 @@
 #include <igl/Common.h>
 #include <iterator>
 #include <string>
+#include <tools/cxx/Resources.h> //@fb-only
 
 namespace {
 
@@ -91,6 +92,14 @@ std::string FileLoaderLinux::fullPath(const std::string& fileName) const {
       return p;
     }
   }
+
+// @fb-only
+  // @fb-only
+      // @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
+// @fb-only
 
   IGL_ASSERT_NOT_REACHED();
   return "";
