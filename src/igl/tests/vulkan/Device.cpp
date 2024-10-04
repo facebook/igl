@@ -186,6 +186,46 @@ TEST_F(DeviceVulkanTest, CurrentThreadIdTest) {
   ctx.ensureCurrentContextThread();
 }
 
+TEST_F(DeviceVulkanTest, UpdateGlslangResource) {
+  const igl::vulkan::VulkanContext& ctx =
+      static_cast<const igl::vulkan::Device*>(iglDev_.get())->getVulkanContext();
+
+  ivkUpdateGlslangResource(nullptr, nullptr);
+
+  glslang_resource_t res = {};
+  const VkPhysicalDeviceProperties& props = ctx.getVkPhysicalDeviceProperties();
+
+  ivkUpdateGlslangResource(&res, &props);
+
+  ASSERT_EQ(res.max_vertex_attribs, (int)props.limits.maxVertexInputAttributes);
+  ASSERT_EQ(res.max_clip_distances, (int)props.limits.maxClipDistances);
+  ASSERT_EQ(res.max_compute_work_group_count_x, (int)props.limits.maxComputeWorkGroupCount[0]);
+  ASSERT_EQ(res.max_compute_work_group_count_y, (int)props.limits.maxComputeWorkGroupCount[1]);
+  ASSERT_EQ(res.max_compute_work_group_count_z, (int)props.limits.maxComputeWorkGroupCount[2]);
+  ASSERT_EQ(res.max_compute_work_group_size_x, (int)props.limits.maxComputeWorkGroupSize[0]);
+  ASSERT_EQ(res.max_compute_work_group_size_y, (int)props.limits.maxComputeWorkGroupSize[1]);
+  ASSERT_EQ(res.max_compute_work_group_size_z, (int)props.limits.maxComputeWorkGroupSize[2]);
+  ASSERT_EQ(res.max_vertex_output_components, (int)props.limits.maxVertexOutputComponents);
+  ASSERT_EQ(res.max_geometry_input_components, (int)props.limits.maxGeometryInputComponents);
+  ASSERT_EQ(res.max_geometry_output_components, (int)props.limits.maxGeometryOutputComponents);
+  ASSERT_EQ(res.max_fragment_input_components, (int)props.limits.maxFragmentInputComponents);
+  ASSERT_EQ(res.max_geometry_output_vertices, (int)props.limits.maxGeometryOutputVertices);
+  ASSERT_EQ(res.max_geometry_total_output_components,
+            (int)props.limits.maxGeometryTotalOutputComponents);
+  ASSERT_EQ(res.max_tess_control_input_components,
+            (int)props.limits.maxTessellationControlPerVertexInputComponents);
+  ASSERT_EQ(res.max_tess_control_output_components,
+            (int)props.limits.maxTessellationControlPerVertexOutputComponents);
+  ASSERT_EQ(res.max_tess_evaluation_input_components,
+            (int)props.limits.maxTessellationEvaluationInputComponents);
+  ASSERT_EQ(res.max_tess_evaluation_output_components,
+            (int)props.limits.maxTessellationEvaluationOutputComponents);
+  ASSERT_EQ(res.max_viewports, (int)props.limits.maxViewports);
+  ASSERT_EQ(res.max_cull_distances, (int)props.limits.maxCullDistances);
+  ASSERT_EQ(res.max_combined_clip_and_cull_distances,
+            (int)props.limits.maxCombinedClipAndCullDistances);
+}
+
 GTEST_TEST(VulkanContext, BufferDeviceAddress) {
   std::shared_ptr<igl::IDevice> iglDev = nullptr;
 
