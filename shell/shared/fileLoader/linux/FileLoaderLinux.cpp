@@ -12,7 +12,7 @@
 #include <igl/Common.h>
 #include <iterator>
 #include <string>
-#include <tools/cxx/Resources.h> //@fb-only
+// @fb-only
 
 namespace {
 
