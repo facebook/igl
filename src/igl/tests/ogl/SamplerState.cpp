@@ -31,12 +31,13 @@ class SamplerStateOGLTest : public ::testing::Test {
     // Turn off debug break so unit tests can run
     igl::setDebugBreakEnabled(false);
 
-    auto device = util::createTestDevice();
-    context_ = &static_cast<opengl::Device&>(*device).getContext();
+    device_ = util::createTestDevice();
+    context_ = &static_cast<opengl::Device&>(*device_.get()).getContext();
 
     ASSERT_TRUE(context_ != nullptr);
   }
 
+  std::shared_ptr<::igl::IDevice> device_;
   opengl::IContext* context_{};
 };
 

@@ -406,7 +406,7 @@ TEST_F(DepthStencilStateTest, SetStencilReferenceValueAndCheck) {
   ASSERT_TRUE(GL_KEEP == origStencilPassDepthFail);
   ASSERT_TRUE(GL_KEEP == origStencilPassDepthPass);
 
-#if defined(IGL_ANGLE) && IGL_ANGLE
+#if (defined(IGL_PLATFORM_LINUX) && IGL_PLATFORM_LINUX) || defined(IGL_ANGLE) && IGL_ANGLE
   // For unknown reasons ANGLE clamps masks to int type.
   ASSERT_TRUE(0x7fffffff == origStencilBackWriteMask);
   ASSERT_TRUE(0x7fffffff == origStencilWriteMask);

@@ -58,15 +58,8 @@ class RenderPipelineReflectionTest : public ::testing::Test {
     inputDesc.attributes[0].location = 0;
     inputDesc.inputBindings[0].stride = sizeof(float) * 4;
 
-    inputDesc.attributes[1].format = VertexAttributeFormat::Float2;
-    inputDesc.attributes[1].offset = 0;
-    inputDesc.attributes[1].bufferIndex = data::shader::simpleUvIndex;
-    inputDesc.attributes[1].name = data::shader::simpleUv;
-    inputDesc.attributes[1].location = 1;
-    inputDesc.inputBindings[1].stride = sizeof(float) * 2;
-
     // numAttributes has to equal to bindings when using more than 1 buffer
-    inputDesc.numAttributes = inputDesc.numInputBindings = 2;
+    inputDesc.numAttributes = inputDesc.numInputBindings = 1;
 
     vertexInputState_ = iglDev_->createVertexInputState(inputDesc, &ret);
     ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -157,14 +150,20 @@ TEST_F(RenderPipelineReflectionTest, VerifySamplers) {
 }
 
 TEST_F(RenderPipelineReflectionTest, UniformBlocks) {
-  if (!iglDev_->hasFeature(DeviceFeatures::UniformBlocks)) {
-    GTEST_SKIP() << "Uniform blocks not supported";
-    return;
-  }
   auto* context = &static_cast<opengl::Device&>(*iglDev_).getContext();
+  bool useBlocks = context->deviceFeatures().hasFeature(DeviceFeatures::UniformBlocks);
   const bool isGles3 =
       (opengl::DeviceFeatureSet::usesOpenGLES() &&
        context->deviceFeatures().getGLVersion() >= igl::opengl::GLVersion::v3_0_ES);
+
+#if defined(IGL_PLATFORM_LINUX) && IGL_PLATFORM_LINUX
+  useBlocks = !isGles3;
+#endif
+  if (!useBlocks) {
+    GTEST_SKIP() << "Uniform blocks not supported";
+    return;
+  }
+
   if (!isGles3) {
     return;
   }

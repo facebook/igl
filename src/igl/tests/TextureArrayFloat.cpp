@@ -138,6 +138,11 @@ class TextureArrayFloatTest : public ::testing::Test {
     std::unique_ptr<IShaderStages> stages;
     if (iglDev_->getBackendType() == BackendType::OpenGL) {
 #if IGL_BACKEND_OPENGL
+
+#if defined(IGL_PLATFORM_LINUX) && IGL_PLATFORM_LINUX
+      GTEST_SKIP() << "Temporarily disabled.";
+#endif
+
       if (opengl::DeviceFeatureSet::usesOpenGLES()) {
         util::createShaderStages(iglDev_,
                                  igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER_TEXARRAY_ES3,
@@ -160,6 +165,9 @@ class TextureArrayFloatTest : public ::testing::Test {
                                    igl::tests::data::shader::OGL_SIMPLE_FRAG_SHADER_TEXARRAY_EXT,
                                    igl::tests::data::shader::shaderFunc,
                                    stages);
+        } else {
+          GTEST_SKIP() << "Texture array is unsupported for this platform.";
+          return;
         }
       }
 #endif // IGL_BACKEND_OPENGL

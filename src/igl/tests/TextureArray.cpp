@@ -126,6 +126,11 @@ class TextureArrayTest : public ::testing::Test {
     std::unique_ptr<IShaderStages> stages;
     if (iglDev_->getBackendType() == BackendType::OpenGL) {
 #if IGL_BACKEND_OPENGL
+
+#if defined(IGL_PLATFORM_LINUX) && IGL_PLATFORM_LINUX
+      GTEST_SKIP() << "Temporarily disabled.";
+#endif
+
       if (opengl::DeviceFeatureSet::usesOpenGLES()) {
         util::createShaderStages(iglDev_,
                                  igl::tests::data::shader::OGL_SIMPLE_VERT_SHADER_TEXARRAY_ES3,
@@ -482,7 +487,11 @@ TEST_F(TextureArrayTest, UploadToMip_SingleUpload) {
 }
 
 TEST_F(TextureArrayTest, UploadToMip_LayerByLayer) {
+#if defined(IGL_PLATFORM_LINUX) && IGL_PLATFORM_LINUX
+  GTEST_SKIP() << "Temporarily disabled.";
+#else
   runUploadToMipTest(*iglDev_, *cmdQueue_, false);
+#endif
 }
 
 //

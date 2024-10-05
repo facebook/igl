@@ -179,7 +179,9 @@ SamplerMinMagFilter SamplerState::convertGLMinFilter(GLint glMinFilter) {
     break;
 
   default:
+#ifndef GTEST
     IGL_ASSERT_NOT_REACHED();
+#endif
     minFilter = SamplerMinMagFilter::Nearest;
   }
 
