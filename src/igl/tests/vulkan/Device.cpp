@@ -179,6 +179,14 @@ TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
   }
 }
 
+TEST_F(DeviceVulkanTest, DestroyEmptyHandles) {
+  igl::destroy(iglDev_.get(), igl::BindGroupTextureHandle{});
+  igl::destroy(iglDev_.get(), igl::BindGroupBufferHandle{});
+  igl::destroy(iglDev_.get(), igl::TextureHandle{});
+  igl::destroy(iglDev_.get(), igl::SamplerHandle{});
+  igl::destroy(iglDev_.get(), igl::DepthStencilStateHandle{});
+}
+
 TEST_F(DeviceVulkanTest, CurrentThreadIdTest) {
   igl::vulkan::VulkanContext& ctx =
       static_cast<igl::vulkan::Device*>(iglDev_.get())->getVulkanContext();
