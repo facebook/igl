@@ -349,6 +349,7 @@ using BindGroupTextureHandle = igl::Handle<struct BindGroupTextureTag>;
 using BindGroupBufferHandle = igl::Handle<struct BindGroupBufferTag>;
 using TextureHandle = igl::Handle<struct TextureTag>;
 using SamplerHandle = igl::Handle<struct SamplerTag>;
+using DepthStencilStateHandle = igl::Handle<struct DepthStencilStateTag>;
 
 class IDevice;
 
@@ -357,6 +358,7 @@ void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupTextureHandle hand
 void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupBufferHandle handle);
 void destroy(igl::IDevice* IGL_NULLABLE device, igl::TextureHandle handle);
 void destroy(igl::IDevice* IGL_NULLABLE device, igl::SamplerHandle handle);
+void destroy(igl::IDevice* IGL_NULLABLE device, igl::DepthStencilStateHandle handle);
 
 ///--------------------------------------
 /// MARK: - Holder

@@ -90,4 +90,11 @@ void destroy(igl::IDevice* IGL_NULLABLE device, igl::SamplerHandle handle) {
   }
 }
 
+void destroy(igl::IDevice* IGL_NULLABLE device, igl::DepthStencilStateHandle handle) {
+  if (device) {
+    // do nothing until we transition depth-stencil states to handles
+    (void)handle;
+  }
+}
+
 } // namespace igl
