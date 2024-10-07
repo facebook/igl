@@ -93,13 +93,11 @@ std::string FileLoaderLinux::fullPath(const std::string& fileName) const {
     }
   }
 
-// @fb-only
   // @fb-only
       // @fb-only
   // @fb-only
     // @fb-only
   // @fb-only
-// @fb-only
 
   IGL_ASSERT_NOT_REACHED();
   return "";
