@@ -56,6 +56,18 @@
 
 #include <igl/Log.h>
 
+#if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
+#define IGL_VERIFY_ENABLED 1
+#else
+#define IGL_VERIFY_ENABLED 0
+#endif
+
+#if IGL_DEBUG
+#define IGL_DEBUG_BREAK_ENABLED 1
+#else
+#define IGL_DEBUG_BREAK_ENABLED 0
+#endif
+
 IGL_API void _IGLDebugBreak();
 
 namespace igl {
@@ -70,6 +82,7 @@ static inline const T& _IGLVerify(const T& cond,
                                   int line,
                                   const char* format,
                                   ...) {
+#if IGL_VERIFY_ENABLED
   if (!cond) {
     IGLLog(IGLLogError, "[IGL] %s in '%s' (%s:%d): ", reason, func, file, line);
     va_list ap;
@@ -77,15 +90,14 @@ static inline const T& _IGLVerify(const T& cond,
     IGLLogV(IGLLogError, format, ap);
     va_end(ap);
     IGLLog(IGLLogError, IGL_NEWLINE);
-    if (igl::isDebugBreakEnabled()) {
-      _IGLDebugBreak();
-    }
+    _IGLDebugBreak();
   }
+#endif // IGL_VERIFY_ENABLED
   return cond;
 }
 } // namespace igl
 
-#if IGL_DEBUG
+#if IGL_VERIFY_ENABLED
 
 #define _IGL_DEBUG_ABORT(cond, format, ...) \
   (void)::igl::_IGLVerify(                  \
@@ -108,7 +120,7 @@ static inline const T& _IGLVerify(const T& cond,
 #define _IGL_DEBUG_VERIFY(cond, format, ...) (cond)
 #define _IGL_DEBUG_VERIFY_NOT(cond, format, ...) (cond)
 
-#endif
+#endif // IGL_VERIFY_ENABLED
 
 #define IGL_DEBUG_ABORT(format, ...) _IGL_DEBUG_ABORT(false, (format), ##__VA_ARGS__)
 
