@@ -77,4 +77,25 @@ TEST(CommonTest, SetResultFromTest) {
   EXPECT_EQ(result.code, Result::Code::ArgumentOutOfRange);
 }
 
+// stencilOperationToVkStencilOp
+// ***********************************************************************
+TEST(CommonTest, StencilOperationToVkStencilOpTest) {
+  EXPECT_EQ(igl::vulkan::stencilOperationToVkStencilOp(igl::StencilOperation::Keep),
+            VK_STENCIL_OP_KEEP);
+  EXPECT_EQ(igl::vulkan::stencilOperationToVkStencilOp(igl::StencilOperation::Zero),
+            VK_STENCIL_OP_ZERO);
+  EXPECT_EQ(igl::vulkan::stencilOperationToVkStencilOp(igl::StencilOperation::Replace),
+            VK_STENCIL_OP_REPLACE);
+  EXPECT_EQ(igl::vulkan::stencilOperationToVkStencilOp(igl::StencilOperation::IncrementClamp),
+            VK_STENCIL_OP_INCREMENT_AND_CLAMP);
+  EXPECT_EQ(igl::vulkan::stencilOperationToVkStencilOp(igl::StencilOperation::DecrementClamp),
+            VK_STENCIL_OP_DECREMENT_AND_CLAMP);
+  EXPECT_EQ(igl::vulkan::stencilOperationToVkStencilOp(igl::StencilOperation::Invert),
+            VK_STENCIL_OP_INVERT);
+  EXPECT_EQ(igl::vulkan::stencilOperationToVkStencilOp(igl::StencilOperation::IncrementWrap),
+            VK_STENCIL_OP_INCREMENT_AND_WRAP);
+  EXPECT_EQ(igl::vulkan::stencilOperationToVkStencilOp(igl::StencilOperation::DecrementWrap),
+            VK_STENCIL_OP_DECREMENT_AND_WRAP);
+}
+
 } // namespace igl::tests
