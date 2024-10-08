@@ -64,13 +64,14 @@ void setDebugBreakEnabled(bool enabled);
 
 template<typename T>
 static inline const T& _IGLVerify(const T& cond,
+                                  const char* reason,
                                   const char* func,
                                   const char* file,
                                   int line,
                                   const char* format,
                                   ...) {
   if (!cond) {
-    IGLLog(IGLLogError, "[IGL] Assert failed in '%s' (%s:%d): ", func, file, line);
+    IGLLog(IGLLogError, "[IGL] %s in '%s' (%s:%d): ", reason, func, file, line);
     va_list ap;
     va_start(ap, format);
     IGLLogV(IGLLogError, format, ap);
@@ -86,15 +87,32 @@ static inline const T& _IGLVerify(const T& cond,
 
 #if IGL_DEBUG
 
-#define IGL_UNEXPECTED(cond) \
-  (!::igl::_IGLVerify(0 == !!(cond), IGL_FUNCTION, __FILE__, __LINE__, #cond))
-#define IGL_UNEXPECTED_MSG(cond, format, ...) \
-  (!::igl::_IGLVerify(0 == !!(cond), IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__))
+#define _IGL_DEBUG_ABORT(cond, reason, format, ...) \
+  (void)::igl::_IGLVerify(cond, reason, IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
 
-#define IGL_VERIFY(cond) ::igl::_IGLVerify((cond), IGL_FUNCTION, __FILE__, __LINE__, #cond)
+#else
+
+#define _IGL_DEBUG_ABORT(cond, reason, format, ...) static_cast<void>(0)
+
+#endif
+
+#define IGL_DEBUG_ABORT(format, ...) \
+  _IGL_DEBUG_ABORT(false, "Abort requested", (format), ##__VA_ARGS__)
+
+#if IGL_DEBUG
+
+#define IGL_UNEXPECTED(cond) \
+  (!::igl::_IGLVerify(0 == !!(cond), "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, #cond))
+#define IGL_UNEXPECTED_MSG(cond, format, ...) \
+  (!::igl::_IGLVerify(                        \
+      0 == !!(cond), "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__))
+
+#define IGL_VERIFY(cond) \
+  ::igl::_IGLVerify((cond), "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, #cond)
 #define IGL_ASSERT(cond) (void)IGL_VERIFY(cond)
 #define IGL_ASSERT_MSG(cond, format, ...) \
-  (void)::igl::_IGLVerify((cond), IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
+  (void)::igl::_IGLVerify(                \
+      (cond), "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
 
 #else
 
