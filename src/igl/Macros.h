@@ -268,6 +268,33 @@
 #define _IGL_TO_STRING_WRAPPER(a) #a
 
 ///--------------------------------------
+/// MARK: - Macro Helpers
+
+#define _IGL_EXPAND(x) x
+#define _IGL_ECHO(...) __VA_ARGS__
+#define _IGL_CALL(macro, args) macro args
+
+// Returns the 64th argument.
+// clang-format off
+#define _IGL_ARG_64(_,\
+   _64,_63,_62,_61,_60,_59,_58,_57,_56,_55,_54,_53,_52,_51,_50,_49, \
+   _48,_47,_46,_45,_44,_43,_42,_41,_40,_39,_38,_37,_36,_35,_34,_33, \
+   _32,_31,_30,_29,_28,_27,_26,_25,_24,_23,_22,_21,_20,_19,_18,_17, \
+   _16,_15,_14,_13,_12,_11,_10,_9,_8,_7,_6,_5,_4,_3,_2,ARG,...) ARG
+// clang-format on
+
+// Returns 0 if __VA_ARGS__ has a comma, 1 otherwise
+// Does NOT handle the case when __VA_ARGS__ is empty
+// Handles up to 64 arguments
+// clang-format off
+#define _IGL_HAS_COMMA(...) _IGL_EXPAND(_IGL_ARG_64(__VA_ARGS__, \
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, \
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, \
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,1, \
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0))
+// clang-format on
+
+///--------------------------------------
 /// MARK: - Linkage
 
 #if defined(__cplusplus)

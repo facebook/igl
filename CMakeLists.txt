@@ -134,7 +134,7 @@ find_package(Python3 COMPONENTS Interpreter)
 
 message(STATUS "IGL_ROOT_DIR = " ${IGL_ROOT_DIR})
 
-# Enables multithreaded compilation on visual studio
+# Enables multithreaded compilation and a conformant preprocessor on visual studio
 if(MSVC)
   SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} /MP")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")

@@ -22,16 +22,16 @@
 // * logs to console and/or debugger console: failing expression, function signature, file/line
 // * allows you to continue execution during debugging after a failing assert, instead of exiting
 //
-// ## IGL_ASSERT/IGL_ASSERT_MSG vs IGL_VERIFY/IGL_UNEXPECTED
+// ## IGL_ASSERT vs IGL_VERIFY/IGL_UNEXPECTED
 //
 // Use IGL_ASSERT for debug-only assertions. On release builds, the expressions
-// expand to no-op's, so no perf penalty. IGL_ASSERT logs failed expression to
-// console. To customize, use IGL_ASSERT_MSG which supports printf semantics:
+// expand to no-op's, so no perf penalty. IGL_ASSERT logs failed the  expression to
+// console. To customize, provide a format argment with printf semantics:
 //
 //   int i = 42;
 //   auto p = std::make_shared<int>(i);
 //   IGL_ASSERT(p);
-//   IGL_ASSERT_MSG(*p == i, "*p is wrong value. Got %d. Expected %d.", *p, i);
+//   IGL_ASSERT(*p == i, "*p is wrong value. Got %d. Expected %d.", *p, i);
 //
 // Use IGL_VERIFY and IGL_UNEXPECTED to evaluate expressions and catch asserts on debug builds.
 // Typically, you'd wrap an expressions inside an `if` statement with IGL_VERIFY. IGL_UNEXPECTED
@@ -99,6 +99,15 @@ static inline const T& _IGLVerify(const T& cond,
 #define IGL_DEBUG_ABORT(format, ...) \
   _IGL_DEBUG_ABORT(false, "Abort requested", (format), ##__VA_ARGS__)
 
+#define _IGL_ASSERT_0(cond) _IGL_DEBUG_ABORT(cond, "Assert failed", #cond)
+#define _IGL_ASSERT_1(cond, format, ...) \
+  _IGL_DEBUG_ABORT(cond, "Assert failed", (format), ##__VA_ARGS__)
+// Supported variations:
+// IGL_ASSERT(cond)
+// IGL_ASSERT(cond, format, ...)
+#define IGL_ASSERT(...) \
+  _IGL_CALL(IGL_CONCAT(_IGL_ASSERT_, _IGL_HAS_COMMA(__VA_ARGS__)), _IGL_ECHO((__VA_ARGS__)))
+
 #if IGL_DEBUG
 
 #define IGL_UNEXPECTED(cond) \
@@ -109,7 +118,6 @@ static inline const T& _IGLVerify(const T& cond,
 
 #define IGL_VERIFY(cond) \
   ::igl::_IGLVerify((cond), "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, #cond)
-#define IGL_ASSERT(cond) (void)IGL_VERIFY(cond)
 #define IGL_ASSERT_MSG(cond, format, ...) \
   (void)::igl::_IGLVerify(                \
       (cond), "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
@@ -119,7 +127,6 @@ static inline const T& _IGLVerify(const T& cond,
 #define IGL_UNEXPECTED(cond) (cond)
 #define IGL_UNEXPECTED_MSG(cond, format, ...) (cond)
 #define IGL_VERIFY(cond) (cond)
-#define IGL_ASSERT(cond) static_cast<void>(0)
 #define IGL_ASSERT_MSG(cond, format, ...) static_cast<void>(0)
 
 #endif // IGL_DEBUG
