@@ -992,24 +992,21 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
   IGL_LOG_INFO("growBindlessDescriptorPool(%u, %u)\n", newMaxTextures, newMaxSamplers);
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
-  if (!IGL_DEBUG_VERIFY(newMaxTextures <= vkPhysicalDeviceDescriptorIndexingProperties_
-                                              .maxDescriptorSetUpdateAfterBindSampledImages)) {
-    // macOS: MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS is required when using this with MoltenVK
-    IGL_LOG_ERROR(
-        "Max Textures exceeded: %u (hardware max %u)",
-        newMaxTextures,
-        vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSampledImages);
-  }
+  // macOS: MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS is required when using this with MoltenVK
+  IGL_DEBUG_ASSERT(
+      newMaxTextures <= vkPhysicalDeviceDescriptorIndexingProperties_
+                            .maxDescriptorSetUpdateAfterBindSampledImages,
+      "Max Textures exceeded: %u (hardware max %u)",
+      newMaxTextures,
+      vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSampledImages);
 
-  if (!IGL_DEBUG_VERIFY(
-          newMaxSamplers <=
-          vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers)) {
-    // macOS: MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS is required when using this with MoltenVK
-    IGL_LOG_ERROR(
-        "Max Samplers exceeded %u (hardware max %u)",
-        newMaxSamplers,
-        vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers);
-  }
+  // macOS: MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS is required when using this with MoltenVK
+  IGL_DEBUG_ASSERT(
+      newMaxSamplers <=
+          vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers,
+      "Max Samplers exceeded %u (hardware max %u)",
+      newMaxSamplers,
+      vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers);
 
   VkDevice device = getVkDevice();
 

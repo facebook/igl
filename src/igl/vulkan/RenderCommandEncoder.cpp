@@ -458,9 +458,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
   const bool isStorageBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) > 0;
   const bool isUniformOrStorageBuffer = isUniformBuffer || isStorageBuffer;
 
-  IGL_DEBUG_ASSERT(isUniformOrStorageBuffer, "Must be a uniform or a storage buffer");
-
-  if (!IGL_DEBUG_VERIFY(isUniformOrStorageBuffer)) {
+  if (!IGL_DEBUG_VERIFY(isUniformOrStorageBuffer, "Must be a uniform or a storage buffer")) {
     return;
   }
   if (ctx_.enhancedShaderDebuggingStore_) {
@@ -553,9 +551,9 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
   if (!IGL_DEBUG_VERIFY(target == igl::BindTarget::kFragment ||
-                        target == igl::BindTarget::kVertex ||
-                        target == igl::BindTarget::kAllGraphics)) {
-    IGL_DEBUG_ABORT("Invalid sampler target");
+                            target == igl::BindTarget::kVertex ||
+                            target == igl::BindTarget::kAllGraphics,
+                        "Invalid sampler target")) {
     return;
   }
 
@@ -574,9 +572,9 @@ void RenderCommandEncoder::bindTexture(size_t index, uint8_t target, ITexture* t
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
   if (!IGL_DEBUG_VERIFY(target == igl::BindTarget::kFragment ||
-                        target == igl::BindTarget::kVertex ||
-                        target == igl::BindTarget::kAllGraphics)) {
-    IGL_DEBUG_ABORT("Invalid texture target");
+                            target == igl::BindTarget::kVertex ||
+                            target == igl::BindTarget::kAllGraphics,
+                        "Invalid texture target")) {
     return;
   }
 
