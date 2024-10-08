@@ -39,7 +39,7 @@ VkAttachmentLoadOp loadActionToVkAttachmentLoadOp(igl::LoadAction a) {
   case LoadAction::Clear:
     return VK_ATTACHMENT_LOAD_OP_CLEAR;
   }
-  IGL_ASSERT(false);
+  IGL_ASSERT_NOT_REACHED();
   return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 }
 
@@ -54,7 +54,7 @@ VkAttachmentStoreOp storeActionToVkAttachmentStoreOp(igl::StoreAction a) {
     // for MSAA resolve, we have to store data into a special "resolve" attachment
     return VK_ATTACHMENT_STORE_OP_DONT_CARE;
   }
-  IGL_ASSERT(false);
+  IGL_ASSERT_NOT_REACHED();
   return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 }
 
@@ -65,7 +65,7 @@ VkIndexType indexFormatToVkIndexType(igl::IndexFormat fmt) {
   case igl::IndexFormat::UInt32:
     return VK_INDEX_TYPE_UINT32;
   };
-  IGL_ASSERT(false);
+  IGL_ASSERT_NOT_REACHED();
   return VK_INDEX_TYPE_NONE_KHR;
 }
 
@@ -136,11 +136,11 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
     // Specifically using renderPass.colorAttachments.size() in case we somehow
     // get into this loop even when renderPass.colorAttachments.empty() == true
     if (i >= renderPass.colorAttachments.size()) {
-      IGL_ASSERT(false);
       Result::setResult(
           &outResult,
           Result::Code::ArgumentInvalid,
           "Framebuffer color attachment count larger than renderPass color attachment count");
+      IGL_ASSERT_MSG(false, outResult.message.c_str());
       return;
     }
 
@@ -400,8 +400,7 @@ void RenderCommandEncoder::bindRenderPipelineState(
 
   const bool hasDepthAttachment = desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid;
 
-  if (hasDepthAttachment != hasDepthAttachment_) {
-    IGL_ASSERT(false);
+  if (IGL_UNEXPECTED(hasDepthAttachment != hasDepthAttachment_)) {
     IGL_LOG_ERROR(
         "Make sure your render pass and render pipeline both have matching depth attachments");
   }
