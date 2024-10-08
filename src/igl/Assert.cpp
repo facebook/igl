@@ -39,6 +39,7 @@ void setDebugBreakEnabled(bool enabled) {
 #endif
 
 void _IGLDebugBreak() {
+#if IGL_DEBUG_BREAK_ENABLED
   if (igl::isDebugBreakEnabled()) {
 #ifdef IGL_DEBUGGER_SIGTRAP
     raise(SIGTRAP);
@@ -52,6 +53,7 @@ void _IGLDebugBreak() {
 #warning "IGLDebugBreak() not implemented on this platform"
 #endif
   }
+#endif // IGL_DEBUG_BREAK_ENABLED
 }
 
 // ----------------------------------------------------------------------------
