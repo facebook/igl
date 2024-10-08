@@ -298,8 +298,8 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
 
   // We don't support uploading image data in small chunks. If the total upload size exceeds the
   // the maximum allowed staging buffer size, we can't upload it
-  IGL_ASSERT_MSG(storageSize <= maxStagingBufferSize_,
-                 "Image size exceeds maximum size of staging buffer");
+  IGL_ASSERT(storageSize <= maxStagingBufferSize_,
+             "Image size exceeds maximum size of staging buffer");
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
   IGL_LOG_INFO("Image upload requested for data with %u bytes\n", storageSize);
@@ -515,7 +515,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
                                            ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
                                            : VK_IMAGE_LAYOUT_UNDEFINED)));
 
-  IGL_ASSERT_MSG(targetLayout != VK_IMAGE_LAYOUT_UNDEFINED, "Missing usage flags");
+  IGL_ASSERT(targetLayout != VK_IMAGE_LAYOUT_UNDEFINED, "Missing usage flags");
 
   const VkAccessFlags dstAccessMask =
       isSampled
@@ -569,8 +569,8 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
 
   // We don't support uploading image data in small chunks. If the total upload size exceeds the
   // the maximum allowed staging buffer size, we can't upload it
-  IGL_ASSERT_MSG(storageSize <= maxStagingBufferSize_,
-                 "Image size exceeds maximum size of staging buffer");
+  IGL_ASSERT(storageSize <= maxStagingBufferSize_,
+             "Image size exceeds maximum size of staging buffer");
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
   IGL_LOG_INFO("Image download requested for data with %u bytes\n", storageSize);

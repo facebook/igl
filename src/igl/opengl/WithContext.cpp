@@ -27,9 +27,9 @@ WithContext::~WithContext() {
 }
 
 IContext& WithContext::getContext() const {
-  IGL_ASSERT_MSG(context_->isLikelyValidObject(),
-                 "Accessing invalid IContext reference."
-                 // @fb-only
+  IGL_ASSERT(context_->isLikelyValidObject(),
+             "Accessing invalid IContext reference."
+             // @fb-only
   );
   return *context_;
 }

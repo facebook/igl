@@ -22,5 +22,5 @@ void getRenderingBufferSize(int& width, int& height) {
   width = cssWidth * devicePixelRatio;
   height = cssHeight * devicePixelRatio;
 
-  IGL_ASSERT_MSG(width > 0 && height > 0, "zero or negative size");
+  IGL_ASSERT(width > 0 && height > 0, "zero or negative size");
 }

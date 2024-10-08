@@ -42,8 +42,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t 
     return nullptr;
   }
 
-  IGL_ASSERT_MSG(vkTex->getVulkanImage().imageFormat_ != VK_FORMAT_UNDEFINED,
-                 "Invalid image format");
+  IGL_ASSERT(vkTex->getVulkanImage().imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid image format");
 
   const auto iglFormat = vkFormatToTextureFormat(vkTex->getVulkanImage().imageFormat_);
   if (!IGL_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {
@@ -89,8 +88,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
     return nullptr;
   }
 
-  IGL_ASSERT_MSG(vkTex->getVulkanImage().imageFormat_ != VK_FORMAT_UNDEFINED,
-                 "Invalid image format");
+  IGL_ASSERT(vkTex->getVulkanImage().imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid image format");
 
   const auto iglFormat = vkFormatToTextureFormat(vkTex->getVulkanImage().imageFormat_);
   if (!IGL_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {

@@ -54,7 +54,7 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
   if (depthTex) {
     const auto& vkDepthTex = static_cast<Texture&>(*depthTex);
     const auto& depthImg = vkDepthTex.getVulkanTexture().getVulkanImage();
-    IGL_ASSERT_MSG(depthImg.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid depth attachment format");
+    IGL_ASSERT(depthImg.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid depth attachment format");
     const VkImageAspectFlags flags =
         vkDepthTex.getVulkanTexture().getVulkanImage().getImageAspectFlags();
     depthImg.transitionLayout(

@@ -135,11 +135,10 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
           .name,
       colorSpaceToString(vkColorSpaceToColorSpace(surfaceFormat_.colorSpace)));
 
-  IGL_ASSERT_MSG(
-      ctx.vkSurface_ != VK_NULL_HANDLE,
-      "You are trying to create a swapchain but your OS surface is empty. Did you want to "
-      "create an offscreen rendering context? If so, set 'width' and 'height' to 0 when you "
-      "create your igl::IDevice");
+  IGL_ASSERT(ctx.vkSurface_ != VK_NULL_HANDLE,
+             "You are trying to create a swapchain but your OS surface is empty. Did you want to "
+             "create an offscreen rendering context? If so, set 'width' and 'height' to 0 when you "
+             "create your igl::IDevice");
 
 #if defined(VK_KHR_surface)
   if (ctx.extensions_.enabled(VK_KHR_SURFACE_EXTENSION_NAME)) {
@@ -149,8 +148,8 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
                                                       ctx.deviceQueues_.graphicsQueueFamilyIndex,
                                                       ctx.vkSurface_,
                                                       &queueFamilySupportsPresentation));
-    IGL_ASSERT_MSG(queueFamilySupportsPresentation == VK_TRUE,
-                   "The queue family used with the swapchain does not support presentation");
+    IGL_ASSERT(queueFamilySupportsPresentation == VK_TRUE,
+               "The queue family used with the swapchain does not support presentation");
   }
 #endif
 

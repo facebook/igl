@@ -69,7 +69,7 @@ struct GLXSharedModule {
       }
     }
 
-    IGL_ASSERT_MSG(module_ != nullptr, "[IGL] Failed to initialize GLX");
+    IGL_ASSERT(module_ != nullptr, "[IGL] Failed to initialize GLX");
 
     XOpenDisplay = loadFunction<PFNXOPENDISPLAY>("XOpenDisplay");
     XCloseDisplay = loadFunction<PFNXCLOSEDISPLAY>("XCloseDisplay");
@@ -99,7 +99,7 @@ struct GLXSharedModule {
   template<typename T>
   T loadFunction(const char* func) {
     auto f = reinterpret_cast<T>(dlsym(module_, func));
-    IGL_ASSERT_MSG(f != nullptr, "[IGL] Failed to initialize GLX, %s is not found", func);
+    IGL_ASSERT(f != nullptr, "[IGL] Failed to initialize GLX, %s is not found", func);
     return f;
   }
 
@@ -179,7 +179,7 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
       // Initialize through base class.
       igl::Result result;
       initialize(&result);
-      IGL_ASSERT_MSG(result.isOk(), result.message.c_str());
+      IGL_ASSERT(result.isOk(), result.message.c_str());
     } else {
       IGL_DEBUG_ABORT("[IGL] Failed to get GLX framebuffer configs");
     }
@@ -209,7 +209,7 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
   // Initialize through base class.
   igl::Result result;
   initialize(&result);
-  IGL_ASSERT_MSG(result.isOk(), result.message.c_str());
+  IGL_ASSERT(result.isOk(), result.message.c_str());
 }
 
 Context::~Context() {
@@ -246,7 +246,7 @@ void Context::setCurrent() {
 
 void Context::clearCurrentContext() const {
   if (!module_->glXMakeCurrent(display_, None, nullptr)) {
-    IGL_ASSERT_MSG(
+    IGL_ASSERT(
         false, "[IGL] Failed to clear OpenGL render context. GLX error 0x%08X:\n", GetLastError());
   }
 }

@@ -66,10 +66,10 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
                               device_.getBackendType() == igl::BackendType::Vulkan;
   for (const igl::BufferArgDesc& iglDesc : reflection.allUniformBuffers()) {
     const size_t length = iglDesc.bufferDataSize;
-    IGL_ASSERT_MSG(length > 0, "unexpected buffer with size 0");
-    IGL_ASSERT_MSG(length <= MAX_SUBALLOCATED_BUFFER_SIZE_BYTES &&
-                       (uniformBufferLimit == 0 || length <= uniformBufferLimit),
-                   "buffer size exceeds limits");
+    IGL_ASSERT(length > 0, "unexpected buffer with size 0");
+    IGL_ASSERT(length <= MAX_SUBALLOCATED_BUFFER_SIZE_BYTES &&
+                   (uniformBufferLimit == 0 || length <= uniformBufferLimit),
+               "buffer size exceeds limits");
     const size_t bufferAllocationLength =
         std::min(isSuballocated ? MAX_SUBALLOCATED_BUFFER_SIZE_BYTES : length,
                  uniformBufferLimit != 0 ? uniformBufferLimit : std::numeric_limits<size_t>::max());
@@ -781,7 +781,7 @@ void ShaderUniforms::setTexture(const std::string& name,
                                 const std::shared_ptr<igl::ITexture>& value,
                                 const std::shared_ptr<igl::ISamplerState>& sampler,
                                 IGL_MAYBE_UNUSED size_t arrayIndex) {
-  IGL_ASSERT_MSG(arrayIndex == 0, "texture arrays not supported");
+  IGL_ASSERT(arrayIndex == 0, "texture arrays not supported");
   auto it = _allTexturesByName.find(name);
   if (it == _allTexturesByName.end()) {
     IGL_LOG_ERROR_ONCE("[IGL][Error] Invalid texture name: %s\n", name.c_str());

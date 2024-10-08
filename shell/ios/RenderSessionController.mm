@@ -109,7 +109,7 @@
   platform_ = std::make_shared<igl::shell::PlatformIos>(std::move(device));
   platformAdapter_.platform = platform_.get();
   session_ = factory_->createRenderSession(platform_);
-  IGL_ASSERT_MSG(session_, "createDefaultRenderSession() must return a valid session");
+  IGL_ASSERT(session_, "createDefaultRenderSession() must return a valid session");
   session_->initialize();
 }
 

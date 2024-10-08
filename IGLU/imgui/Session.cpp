@@ -172,7 +172,7 @@ struct DrawableData {
   DrawableData(igl::IDevice& device,
                const std::shared_ptr<igl::IVertexInputState>& inputState,
                const std::shared_ptr<iglu::material::Material>& material) {
-    IGL_ASSERT_MSG(sizeof(ImDrawIdx) == 2, "The constants below may not work with the ImGui data.");
+    IGL_ASSERT(sizeof(ImDrawIdx) == 2, "The constants below may not work with the ImGui data.");
     const size_t kMaxVertices = (1l << 16);
     const size_t kMaxVertexBufferSize = kMaxVertices * sizeof(ImDrawVert);
     const size_t kMaxIndexBufferSize = kMaxVertices * sizeof(ImDrawIdx);

@@ -118,16 +118,12 @@ static inline const T& _IGLVerify(const T& cond,
 
 #define IGL_VERIFY(cond) \
   ::igl::_IGLVerify((cond), "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, #cond)
-#define IGL_ASSERT_MSG(cond, format, ...) \
-  (void)::igl::_IGLVerify(                \
-      (cond), "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
 
 #else
 
 #define IGL_UNEXPECTED(cond) (cond)
 #define IGL_UNEXPECTED_MSG(cond, format, ...) (cond)
 #define IGL_VERIFY(cond) (cond)
-#define IGL_ASSERT_MSG(cond, format, ...) static_cast<void>(0)
 
 #endif // IGL_DEBUG
 
@@ -160,7 +156,7 @@ IGL_API IGLReportErrorFunc IGLReportErrorGetHandler(void);
 #define IGL_REPORT_ERROR_MSG(cond, format, ...)                                           \
   do {                                                                                    \
     bool cachedCond = (cond);                                                             \
-    IGL_ASSERT_MSG(cachedCond, format, ##__VA_ARGS__);                                    \
+    IGL_ASSERT(cachedCond, format, ##__VA_ARGS__);                                        \
     if (!cachedCond) {                                                                    \
       IGLReportErrorGetHandler()(                                                         \
           __FILE__, IGL_FUNCTION, __LINE__, IGL_ERROR_CATEGORY, (format), ##__VA_ARGS__); \

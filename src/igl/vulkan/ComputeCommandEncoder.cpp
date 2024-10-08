@@ -220,11 +220,11 @@ void ComputeCommandEncoder::bindPushConstants(const void* data, size_t length, s
 
   IGL_ASSERT(length % 4 == 0); // VUID-vkCmdPushConstants-size-00369: size must be a multiple of 4
 
-  IGL_ASSERT_MSG(cps_, "Did you forget to call bindComputePipelineState()?");
-  IGL_ASSERT_MSG(cps_->pushConstantRange_.size,
-                 "Currently bound compute pipeline state has no push constants");
-  IGL_ASSERT_MSG(offset + length <= cps_->pushConstantRange_.offset + cps_->pushConstantRange_.size,
-                 "Push constants size exceeded");
+  IGL_ASSERT(cps_, "Did you forget to call bindComputePipelineState()?");
+  IGL_ASSERT(cps_->pushConstantRange_.size,
+             "Currently bound compute pipeline state has no push constants");
+  IGL_ASSERT(offset + length <= cps_->pushConstantRange_.offset + cps_->pushConstantRange_.size,
+             "Push constants size exceeded");
 
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkCmdPushConstants(%u) - COMPUTE\n", cmdBuffer_, length);

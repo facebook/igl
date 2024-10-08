@@ -36,7 +36,7 @@ NSOpenGLContext* createOpenGLContext(igl::opengl::RenderingAPI api) {
         0,
     };
     auto pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
-    IGL_ASSERT_MSG(pixelFormat, "Requested attributes not supported");
+    IGL_ASSERT(pixelFormat, "Requested attributes not supported");
     if (pixelFormat) {
       format = pixelFormat;
     }
@@ -65,7 +65,7 @@ std::unique_ptr<Context> Context::createShareContext(Context& existingContext, R
   auto newGLContext = [[NSOpenGLContext alloc] initWithFormat:existingNSContext.pixelFormat
                                                  shareContext:existingNSContext];
 
-  IGL_ASSERT_MSG(existingContext.sharegroup_, "Sharegroup must exist");
+  IGL_ASSERT(existingContext.sharegroup_, "Sharegroup must exist");
 
   igl::Result result;
   auto context = std::unique_ptr<Context>(new Context(newGLContext, existingContext.sharegroup_));
@@ -140,7 +140,7 @@ bool Context::isCurrentContext() const {
 }
 
 bool Context::isCurrentSharegroup() const {
-  IGL_ASSERT_MSG(sharegroup_ != nullptr, "Sharegroup must exist");
+  IGL_ASSERT(sharegroup_ != nullptr, "Sharegroup must exist");
   auto it = std::find(sharegroup_->begin(), sharegroup_->end(), [NSOpenGLContext currentContext]);
   return it != sharegroup_->end();
 }
@@ -161,7 +161,7 @@ NSOpenGLPixelFormat* Context::preferredPixelFormat() {
       0,
   };
   NSOpenGLPixelFormat* format = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
-  IGL_ASSERT_MSG(format, "Requested attributes not supported");
+  IGL_ASSERT(format, "Requested attributes not supported");
   return format;
 }
 

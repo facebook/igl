@@ -753,7 +753,7 @@ Holder<igl::BindGroupTextureHandle> Device::createBindGroup(const igl::BindGroup
                                                             Result* IGL_NULLABLE outResult) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_ASSERT(ctx_);
-  IGL_ASSERT_MSG(!desc.debugName.empty(), "Each bind group should have a debug name");
+  IGL_ASSERT(!desc.debugName.empty(), "Each bind group should have a debug name");
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   return {this, ctx_->createBindGroup(desc, compatiblePipeline, outResult)};
@@ -763,7 +763,7 @@ Holder<igl::BindGroupBufferHandle> Device::createBindGroup(const igl::BindGroupB
                                                            Result* IGL_NULLABLE outResult) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_ASSERT(ctx_);
-  IGL_ASSERT_MSG(!desc.debugName.empty(), "Each bind group should have a debug name");
+  IGL_ASSERT(!desc.debugName.empty(), "Each bind group should have a debug name");
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
   return {this, ctx_->createBindGroup(desc, outResult)};

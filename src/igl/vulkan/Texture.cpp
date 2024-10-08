@@ -90,7 +90,7 @@ Result Texture::create(const TextureDesc& desc) {
     usageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
   }
   if (desc_.usage & TextureDesc::TextureUsageBits::Storage) {
-    IGL_ASSERT_MSG(desc_.numSamples <= 1, "Storage images cannot be multisampled");
+    IGL_ASSERT(desc_.numSamples <= 1, "Storage images cannot be multisampled");
     usageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
   }
   if (desc_.usage & TextureDesc::TextureUsageBits::Attachment) {
@@ -108,7 +108,7 @@ Result Texture::create(const TextureDesc& desc) {
     usageFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
   }
 
-  IGL_ASSERT_MSG(usageFlags != 0, "Invalid usage flags");
+  IGL_ASSERT(usageFlags != 0, "Invalid usage flags");
 
   const VkMemoryPropertyFlags memFlags = resourceStorageToVkMemoryPropertyFlags(desc_.storage);
 
@@ -302,8 +302,8 @@ bool Texture::isRequiredGenerateMipmap() const {
 
 uint64_t Texture::getTextureId() const {
   const auto& config = device_.getVulkanContext().config_;
-  IGL_ASSERT_MSG(config.enableDescriptorIndexing,
-                 "Make sure config.enableDescriptorIndexing is enabled.");
+  IGL_ASSERT(config.enableDescriptorIndexing,
+             "Make sure config.enableDescriptorIndexing is enabled.");
   return texture_ && config.enableDescriptorIndexing ? texture_->getTextureId() : 0;
 }
 

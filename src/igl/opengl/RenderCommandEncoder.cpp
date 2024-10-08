@@ -248,10 +248,10 @@ void RenderCommandEncoder::bindDepthStencilState(
 }
 
 void RenderCommandEncoder::bindUniform(const UniformDesc& uniformDesc, const void* data) {
-  IGL_ASSERT_MSG(uniformDesc.location >= 0,
-                 "Invalid location passed to bindUniformBuffer: %d",
-                 uniformDesc.location);
-  IGL_ASSERT_MSG(data != nullptr, "Data cannot be null");
+  IGL_ASSERT(uniformDesc.location >= 0,
+             "Invalid location passed to bindUniformBuffer: %d",
+             uniformDesc.location);
+  IGL_ASSERT(data != nullptr, "Data cannot be null");
   if (IGL_VERIFY(adapter_) && data) {
     adapter_->setUniform(uniformDesc, data);
   }
@@ -338,7 +338,7 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t baseInstance) {
   (void)baseInstance;
 
-  IGL_ASSERT_MSG(baseInstance == 0, "Instancing is not implemented");
+  IGL_ASSERT(baseInstance == 0, "Instancing is not implemented");
 
   if (IGL_VERIFY(adapter_)) {
     getCommandBuffer().incrementCurrentDrawCount();
@@ -360,9 +360,9 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   (void)vertexOffset;
   (void)baseInstance;
 
-  IGL_ASSERT_MSG(vertexOffset == 0, "vertexOffset is not implemented");
-  IGL_ASSERT_MSG(baseInstance == 0, "Instancing is not implemented");
-  IGL_ASSERT_MSG(indexType_, "No index buffer bound");
+  IGL_ASSERT(vertexOffset == 0, "vertexOffset is not implemented");
+  IGL_ASSERT(baseInstance == 0, "Instancing is not implemented");
+  IGL_ASSERT(indexType_, "No index buffer bound");
 
   const size_t indexOffsetBytes =
       static_cast<size_t>(firstIndex) * (indexType_ == GL_UNSIGNED_INT ? 4u : 2u);
@@ -402,7 +402,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
                                                     size_t indirectBufferOffset,
                                                     uint32_t drawCount,
                                                     uint32_t stride) {
-  IGL_ASSERT_MSG(indexType_, "No index buffer bound");
+  IGL_ASSERT(indexType_, "No index buffer bound");
 
   // TODO: use glMultiDrawElementsIndirect() when available
 
@@ -466,8 +466,8 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
     if (desc->buffers[i]) {
       if (desc->isDynamicBufferMask & (1 << i)) {
-        IGL_ASSERT_MSG(dynamicOffsets, "No dynamic offsets provided");
-        IGL_ASSERT_MSG(dynamicOffset < numDynamicOffsets, "Not enough dynamic offsets provided");
+        IGL_ASSERT(dynamicOffsets, "No dynamic offsets provided");
+        IGL_ASSERT(dynamicOffset < numDynamicOffsets, "Not enough dynamic offsets provided");
         bindBuffer(i,
                    desc->buffers[i].get(),
                    desc->offset[i] + dynamicOffsets[dynamicOffset++],
@@ -478,7 +478,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
     }
   }
 
-  IGL_ASSERT_MSG(dynamicOffset == numDynamicOffsets, "Not all dynamic offsets were consumed");
+  IGL_ASSERT(dynamicOffset == numDynamicOffsets, "Not all dynamic offsets were consumed");
 }
 
 } // namespace igl::opengl

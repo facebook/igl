@@ -214,8 +214,7 @@ void UniformBlockBuffer::bindRange(size_t index, size_t offset, Result* outResul
       return;
     }
     getContext().bindBuffer(target_, iD_);
-    IGL_ASSERT_MSG(
-        offset < getSizeInBytes(), "Offset is invalid! (%d %d)", offset, getSizeInBytes());
+    IGL_ASSERT(offset < getSizeInBytes(), "Offset is invalid! (%d %d)", offset, getSizeInBytes());
     getContext().bindBufferRange(
         target_, (GLuint)index, iD_, (GLintptr)offset, getSizeInBytes() - offset);
     Result::setOk(outResult);

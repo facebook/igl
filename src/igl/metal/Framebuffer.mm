@@ -64,9 +64,9 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
                                            const TextureRangeDesc& range,
                                            size_t bytesPerRow) const {
   IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
-  IGL_ASSERT_MSG(range.numFaces == 1, "range.numFaces MUST be 1");
-  IGL_ASSERT_MSG(range.numLayers == 1, "range.numLayers MUST be 1");
-  IGL_ASSERT_MSG(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
+  IGL_ASSERT(range.numFaces == 1, "range.numFaces MUST be 1");
+  IGL_ASSERT(range.numLayers == 1, "range.numLayers MUST be 1");
+  IGL_ASSERT(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
   const auto& colorAttachment = value_.colorAttachments[index];
 
   if (IGL_VERIFY(colorAttachment.texture != nullptr)) {

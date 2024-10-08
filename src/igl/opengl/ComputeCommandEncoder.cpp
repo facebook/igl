@@ -93,10 +93,10 @@ void ComputeCommandEncoder::popDebugGroupLabel() const {
 }
 
 void ComputeCommandEncoder::bindUniform(const UniformDesc& uniformDesc, const void* data) {
-  IGL_ASSERT_MSG(uniformDesc.location >= 0,
-                 "Invalid location passed to bindUniformBuffer: %d",
-                 uniformDesc.location);
-  IGL_ASSERT_MSG(data != nullptr, "Data cannot be null");
+  IGL_ASSERT(uniformDesc.location >= 0,
+             "Invalid location passed to bindUniformBuffer: %d",
+             uniformDesc.location);
+  IGL_ASSERT(data != nullptr, "Data cannot be null");
   if (IGL_VERIFY(adapter_) && data) {
     adapter_->setUniform(uniformDesc, data);
   }

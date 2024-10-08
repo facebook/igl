@@ -334,8 +334,7 @@ bool XrApp::enumerateViewConfigurations() {
     break;
   }
 
-  IGL_ASSERT_MSG(
-      foundViewConfig, "XrViewConfigurationType %d not found.", kSupportedViewConfigType);
+  IGL_ASSERT(foundViewConfig, "XrViewConfigurationType %d not found.", kSupportedViewConfigType);
 
   return true;
 }

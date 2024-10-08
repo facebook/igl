@@ -122,11 +122,11 @@ std::string getVulkanVertexShaderSource(bool stereoRendering) {
     igl::Result res;
     const auto vs = shaderCross.crossCompileFromVulkanSource(
         getVulkanVertexShaderSource(stereoRendering).c_str(), igl::ShaderStage::Vertex, &res);
-    IGL_ASSERT_MSG(res.isOk(), res.message.c_str());
+    IGL_ASSERT(res.isOk(), res.message.c_str());
 
     const auto fs = shaderCross.crossCompileFromVulkanSource(
         getVulkanFragmentShaderSource(), igl::ShaderStage::Fragment, &res);
-    IGL_ASSERT_MSG(res.isOk(), res.message.c_str());
+    IGL_ASSERT(res.isOk(), res.message.c_str());
 
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,

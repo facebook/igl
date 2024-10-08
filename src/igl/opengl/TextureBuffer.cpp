@@ -80,7 +80,7 @@ void TextureBuffer::bindImage(size_t unit) {
   // Here we used to have this condition:
   //    getUsage() & TextureUsage::kShaderWrite ? GL_WRITE_ONLY : GL_READ_ONLY,
   // So it is safe to replace it with GL_READ_WRITE
-  IGL_ASSERT_MSG(getUsage() & TextureDesc::TextureUsageBits::Storage, "Should be a storage image");
+  IGL_ASSERT(getUsage() & TextureDesc::TextureUsageBits::Storage, "Should be a storage image");
   getContext().bindImageTexture((GLuint)unit,
                                 getId(),
                                 0,

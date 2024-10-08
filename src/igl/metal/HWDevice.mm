@@ -133,7 +133,7 @@ std::vector<HWDeviceDesc> HWDevice::queryDevices(IGL_MAYBE_UNUSED const HWDevice
 }
 
 std::unique_ptr<IDevice> HWDevice::create(const HWDeviceDesc& desc, Result* outResult) {
-  IGL_ASSERT_MSG(desc.guid != 0L, "Invalid hardwareGuid(%lu)", desc.guid);
+  IGL_ASSERT(desc.guid != 0L, "Invalid hardwareGuid(%lu)", desc.guid);
   if (desc.guid == 0L) {
     Result::setResult(outResult, Result::Code::Unsupported, "Metal is not supported!");
     return nullptr;

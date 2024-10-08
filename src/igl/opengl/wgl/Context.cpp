@@ -63,9 +63,9 @@ Context::Context(RenderingAPI api) : contextOwned_(true) {
                                  window_class.hInstance,
                                  nullptr);
 
-  IGL_ASSERT_MSG(dummyWindow_ != nullptr,
-                 "[IGL] Failed to create dummy OpenGL window. WGL error 0x%08X:\n",
-                 GetLastError());
+  IGL_ASSERT(dummyWindow_ != nullptr,
+             "[IGL] Failed to create dummy OpenGL window. WGL error 0x%08X:\n",
+             GetLastError());
 
   deviceContext_ = GetDC(dummyWindow_);
 
@@ -81,9 +81,9 @@ Context::Context(RenderingAPI api) : contextOwned_(true) {
   pfd.iLayerType = PFD_MAIN_PLANE;
 
   int pixel_format = ChoosePixelFormat(deviceContext_, &pfd);
-  IGL_ASSERT_MSG(pixel_format != 0,
-                 "[IGL] Failed to find a suitable pixel format. WGL error 0x%08X:\n",
-                 GetLastError());
+  IGL_ASSERT(pixel_format != 0,
+             "[IGL] Failed to find a suitable pixel format. WGL error 0x%08X:\n",
+             GetLastError());
 
   if (!SetPixelFormat(deviceContext_, pixel_format, &pfd)) {
     IGL_DEBUG_ABORT("[IGL] Failed to set the pixel format. WGL error 0x%08X:\n", GetLastError());

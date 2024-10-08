@@ -21,7 +21,7 @@ ForwardRenderPass::ForwardRenderPass(igl::IDevice& device) {
 
 void ForwardRenderPass::begin(std::shared_ptr<igl::IFramebuffer> target,
                               const igl::RenderPassDesc* renderPassDescOverride) {
-  IGL_ASSERT_MSG(!isActive(), "Drawing already in progress");
+  IGL_ASSERT(!isActive(), "Drawing already in progress");
 
   _framebuffer = std::move(target);
 
@@ -51,12 +51,12 @@ void ForwardRenderPass::begin(std::shared_ptr<igl::IFramebuffer> target,
 }
 
 void ForwardRenderPass::draw(drawable::Drawable& drawable, igl::IDevice& device) const {
-  IGL_ASSERT_MSG(isActive(), "Drawing not in progress");
+  IGL_ASSERT(isActive(), "Drawing not in progress");
   drawable.draw(device, *_commandEncoder, _renderPipelineDesc);
 }
 
 void ForwardRenderPass::end(bool shouldPresent) {
-  IGL_ASSERT_MSG(isActive(), "Drawing not in progress");
+  IGL_ASSERT(isActive(), "Drawing not in progress");
 
   _commandEncoder->endEncoding();
 
@@ -72,7 +72,7 @@ void ForwardRenderPass::end(bool shouldPresent) {
 }
 
 void ForwardRenderPass::bindViewport(const igl::Viewport& viewport, const igl::Size& surfaceSize) {
-  IGL_ASSERT_MSG(isActive(), "Drawing not in progress");
+  IGL_ASSERT(isActive(), "Drawing not in progress");
   if (_backendType == igl::BackendType::Metal) {
     // In Metal, framebuffer origin is top left but the argument assumes bottom left
     igl::Viewport flippedViewport = viewport;
@@ -88,12 +88,12 @@ bool ForwardRenderPass::isActive() const {
 }
 
 igl::IFramebuffer& ForwardRenderPass::activeTarget() {
-  IGL_ASSERT_MSG(isActive(), "No valid target when not active");
+  IGL_ASSERT(isActive(), "No valid target when not active");
   return *_framebuffer;
 }
 
 igl::IRenderCommandEncoder& ForwardRenderPass::activeCommandEncoder() {
-  IGL_ASSERT_MSG(isActive(), "No valid command encoder when not active");
+  IGL_ASSERT(isActive(), "No valid command encoder when not active");
   return *_commandEncoder;
 }
 

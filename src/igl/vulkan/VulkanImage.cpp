@@ -135,10 +135,10 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  IGL_ASSERT_MSG(mipLevels_ > 0, "The image must contain at least one mip level");
-  IGL_ASSERT_MSG(arrayLayers_ > 0, "The image must contain at least one layer");
-  IGL_ASSERT_MSG(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
-  IGL_ASSERT_MSG(samples_ > 0, "The image must contain at least one sample");
+  IGL_ASSERT(mipLevels_ > 0, "The image must contain at least one mip level");
+  IGL_ASSERT(arrayLayers_ > 0, "The image must contain at least one layer");
+  IGL_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
+  IGL_ASSERT(samples_ > 0, "The image must contain at least one sample");
 
   setName(debugName);
 
@@ -293,10 +293,10 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  IGL_ASSERT_MSG(mipLevels_ > 0, "The image must contain at least one mip level");
-  IGL_ASSERT_MSG(arrayLayers_ > 0, "The image must contain at least one layer");
-  IGL_ASSERT_MSG(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
-  IGL_ASSERT_MSG(samples_ > 0, "The image must contain at least one sample");
+  IGL_ASSERT(mipLevels_ > 0, "The image must contain at least one mip level");
+  IGL_ASSERT(arrayLayers_ > 0, "The image must contain at least one layer");
+  IGL_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
+  IGL_ASSERT(samples_ > 0, "The image must contain at least one sample");
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
   IGL_DEBUG_ABORT("You can only import a VulkanImage on non-windows environments");
@@ -419,10 +419,10 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  IGL_ASSERT_MSG(mipLevels_ > 0, "The image must contain at least one mip level");
-  IGL_ASSERT_MSG(arrayLayers_ > 0, "The image must contain at least one layer");
-  IGL_ASSERT_MSG(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
-  IGL_ASSERT_MSG(samples_ > 0, "The image must contain at least one sample");
+  IGL_ASSERT(mipLevels_ > 0, "The image must contain at least one mip level");
+  IGL_ASSERT(arrayLayers_ > 0, "The image must contain at least one layer");
+  IGL_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
+  IGL_ASSERT(samples_ > 0, "The image must contain at least one sample");
 
   VkImageCreateInfo ci = ivkGetImageCreateInfo(type,
                                                imageFormat_,
@@ -606,10 +606,10 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  IGL_ASSERT_MSG(mipLevels_ > 0, "The image must contain at least one mip level");
-  IGL_ASSERT_MSG(arrayLayers_ > 0, "The image must contain at least one layer");
-  IGL_ASSERT_MSG(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
-  IGL_ASSERT_MSG(samples_ > 0, "The image must contain at least one sample");
+  IGL_ASSERT(mipLevels_ > 0, "The image must contain at least one mip level");
+  IGL_ASSERT(arrayLayers_ > 0, "The image must contain at least one layer");
+  IGL_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
+  IGL_ASSERT(samples_ > 0, "The image must contain at least one sample");
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
   VkExternalFormatANDROID externalFormat = {
@@ -896,10 +896,9 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
   }
 
   (void)srcRemainingMask;
-  IGL_ASSERT_MSG(
-      srcRemainingMask == 0,
-      "Automatic access mask deduction is not implemented (yet) for this srcStageMask = %u",
-      srcRemainingMask);
+  IGL_ASSERT(srcRemainingMask == 0,
+             "Automatic access mask deduction is not implemented (yet) for this srcStageMask = %u",
+             srcRemainingMask);
 
   if (dstStageMask & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) {
     dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
@@ -944,10 +943,9 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
   }
 
   (void)dstRemainingMask;
-  IGL_ASSERT_MSG(
-      dstRemainingMask == 0,
-      "Automatic access mask deduction is not implemented (yet) for this dstStageMask = %u",
-      dstRemainingMask);
+  IGL_ASSERT(dstRemainingMask == 0,
+             "Automatic access mask deduction is not implemented (yet) for this dstStageMask = %u",
+             dstRemainingMask);
 
 #if IGL_DEBUG_ENFORCE_FULL_IMAGE_BARRIER
   // full image barrier
@@ -1085,8 +1083,8 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
 
   IGL_ASSERT(originalImageLayout != VK_IMAGE_LAYOUT_UNDEFINED);
 
-  IGL_ASSERT_MSG(!isCubemap_ || arrayLayers_ % 6u == 0,
-                 "Cubemaps must have a multiple of 6 array layers!");
+  IGL_ASSERT(!isCubemap_ || arrayLayers_ % 6u == 0,
+             "Cubemaps must have a multiple of 6 array layers!");
   const uint32_t multiplier = isCubemap_ ? arrayLayers_ / 6u : 1u;
 
   // 0: Transition the first mip-level - all layers - to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL

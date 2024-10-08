@@ -114,8 +114,8 @@ void RenderCommandAdapter::setVertexBuffer(Buffer& buffer,
                                            size_t offset,
                                            size_t index,
                                            Result* outResult) {
-  IGL_ASSERT_MSG(index < IGL_VERTEX_BUFFER_MAX,
-                 "Buffer index is beyond max, may want to increase limit");
+  IGL_ASSERT(index < IGL_VERTEX_BUFFER_MAX,
+             "Buffer index is beyond max, may want to increase limit");
   if (index < IGL_VERTEX_BUFFER_MAX) {
     vertexBuffers_[index] = {&buffer, offset};
     SET_DIRTY(vertexBuffersDirty_, index);
@@ -433,7 +433,7 @@ void RenderCommandAdapter::willDraw() {
       const auto* stages = pipelineState->getShaderStages();
       if (stages) {
         const auto result = stages->validate();
-        IGL_ASSERT_MSG(result.isOk(), result.message.c_str());
+        IGL_ASSERT(result.isOk(), result.message.c_str());
       }
     }
   }

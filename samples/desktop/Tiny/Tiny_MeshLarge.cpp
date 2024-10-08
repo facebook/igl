@@ -994,7 +994,7 @@ void initIGL() {
         devices =
             vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(fallbackHardwareType), nullptr);
       }
-      IGL_ASSERT_MSG(!devices.empty(), "GPU is not found");
+      IGL_ASSERT(!devices.empty(), "GPU is not found");
       device_ =
           vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
 #endif
@@ -1190,7 +1190,7 @@ bool loadAndCache(const char* cacheFileName) {
                        (contentRootFolder + "src/bistro/Exterior/").c_str());
 
   if (!IGL_VERIFY(ret)) {
-    IGL_ASSERT_MSG(ret, "Did you read the tutorial at the top of this file?");
+    IGL_ASSERT(ret, "Did you read the tutorial at the top of this file?");
     return false;
   }
 
@@ -1750,7 +1750,7 @@ std::shared_ptr<ITexture> getNativeDrawable() {
   IGL_ASSERT(platformDevice != nullptr);
   drawable = platformDevice->createTextureFromNativeDrawable(&ret);
 #endif
-  IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
+  IGL_ASSERT(ret.isOk(), ret.message.c_str());
   IGL_ASSERT(drawable != nullptr);
   return drawable;
 }
@@ -1774,7 +1774,7 @@ std::shared_ptr<ITexture> getNativeDepthDrawable() {
   IGL_ASSERT(platformDevice != nullptr);
   drawable = platformDevice->createTextureFromNativeDepth(width_, height_, &ret);
 #endif
-  IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
+  IGL_ASSERT(ret.isOk(), ret.message.c_str());
   IGL_ASSERT(drawable != nullptr);
   return drawable;
 }

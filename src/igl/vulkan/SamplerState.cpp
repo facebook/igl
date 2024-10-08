@@ -53,10 +53,10 @@ VkSamplerAddressMode samplerAddressModeToVkSamplerAddressMode(igl::SamplerAddres
 
 VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStateDesc& desc,
                                                           const VkPhysicalDeviceLimits& limits) {
-  IGL_ASSERT_MSG(desc.mipLodMax >= desc.mipLodMin,
-                 "mipLodMax (%d) must be greater than or equal to mipLodMin (%d)",
-                 (int)desc.mipLodMax,
-                 (int)desc.mipLodMin);
+  IGL_ASSERT(desc.mipLodMax >= desc.mipLodMin,
+             "mipLodMax (%d) must be greater than or equal to mipLodMin (%d)",
+             (int)desc.mipLodMax,
+             (int)desc.mipLodMin);
 
   VkSamplerCreateInfo ci =
       ivkGetSamplerCreateInfo(samplerMinMagFilterToVkFilter(desc.minFilter),
@@ -74,8 +74,8 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
 
   if (desc.maxAnisotropic > 1) {
     const bool isAnisotropicFilteringSupported = limits.maxSamplerAnisotropy > 1;
-    IGL_ASSERT_MSG(isAnisotropicFilteringSupported,
-                   "Anisotropic filtering is not supported by the device.");
+    IGL_ASSERT(isAnisotropicFilteringSupported,
+               "Anisotropic filtering is not supported by the device.");
     ci.anisotropyEnable = isAnisotropicFilteringSupported ? VK_TRUE : VK_FALSE;
 
 #ifdef IGL_VULKAN_DEBUG_SAMPLER_STATE

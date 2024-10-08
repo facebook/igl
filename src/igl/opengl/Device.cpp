@@ -171,11 +171,11 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   if (sanitized.type == TextureType::TwoD || sanitized.type == TextureType::TwoDArray) {
     size_t textureSizeLimit;
     getFeatureLimits(DeviceFeatureLimits::MaxTextureDimension1D2D, textureSizeLimit);
-    IGL_ASSERT_MSG(sanitized.width <= textureSizeLimit && sanitized.height <= textureSizeLimit,
-                   "Texture limit size %zu is smaller than texture size %zux%zu",
-                   textureSizeLimit,
-                   sanitized.width,
-                   sanitized.height);
+    IGL_ASSERT(sanitized.width <= textureSizeLimit && sanitized.height <= textureSizeLimit,
+               "Texture limit size %zu is smaller than texture size %zux%zu",
+               textureSizeLimit,
+               sanitized.width,
+               sanitized.height);
   }
 #endif
 
@@ -341,7 +341,7 @@ Holder<igl::BindGroupTextureHandle> Device::createBindGroup(
     const IRenderPipelineState* IGL_NULLABLE /*compatiblePipeline*/,
     Result* IGL_NULLABLE outResult) {
   IGL_ASSERT(context_);
-  IGL_ASSERT_MSG(!desc.debugName.empty(), "Each bind group should have a debug name");
+  IGL_ASSERT(!desc.debugName.empty(), "Each bind group should have a debug name");
 
   BindGroupTextureDesc description(desc);
 
@@ -357,7 +357,7 @@ Holder<igl::BindGroupTextureHandle> Device::createBindGroup(
 Holder<igl::BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc& desc,
                                                            Result* IGL_NULLABLE outResult) {
   IGL_ASSERT(context_);
-  IGL_ASSERT_MSG(!desc.debugName.empty(), "Each bind group should have a debug name");
+  IGL_ASSERT(!desc.debugName.empty(), "Each bind group should have a debug name");
 
   BindGroupBufferDesc description(desc);
 

@@ -91,7 +91,7 @@ Result Buffer::create(const BufferDesc& desc) {
 }
 
 const std::unique_ptr<VulkanBuffer>& Buffer::currentVulkanBuffer() const {
-  IGL_ASSERT_MSG(buffers_, "There are no sub-allocations available for this buffer");
+  IGL_ASSERT(buffers_, "There are no sub-allocations available for this buffer");
   return buffers_[isRingBuffer_ ? device_.getVulkanContext().currentSyncIndex() : 0u];
 }
 
@@ -228,8 +228,8 @@ size_t Buffer::getSizeInBytes() const {
 }
 
 uint64_t Buffer::gpuAddress(size_t offset) const {
-  IGL_ASSERT_MSG((offset & 7) == 0,
-                 "Buffer offset must be 8 bytes aligned as per GLSL_EXT_buffer_reference spec.");
+  IGL_ASSERT((offset & 7) == 0,
+             "Buffer offset must be 8 bytes aligned as per GLSL_EXT_buffer_reference spec.");
 
   return (uint64_t)currentVulkanBuffer()->getVkDeviceAddress() + offset;
 }
@@ -243,7 +243,7 @@ VkBufferUsageFlags Buffer::getBufferUsageFlags() const {
 }
 
 void* Buffer::map(const BufferRange& range, igl::Result* outResult) {
-  IGL_ASSERT_MSG(!isRingBuffer_, "Buffer::map() operation not supported for ring buffer");
+  IGL_ASSERT(!isRingBuffer_, "Buffer::map() operation not supported for ring buffer");
 
   // Sanity check
   if ((range.size > desc_.length) || (range.offset > desc_.length - range.size)) {
@@ -277,8 +277,8 @@ void* Buffer::map(const BufferRange& range, igl::Result* outResult) {
 }
 
 void Buffer::unmap() {
-  IGL_ASSERT_MSG(!isRingBuffer_, "Buffer::unmap() operation not supported for ring buffer");
-  IGL_ASSERT_MSG(mappedRange_.size, "Called Buffer::unmap() without Buffer::map()");
+  IGL_ASSERT(!isRingBuffer_, "Buffer::unmap() operation not supported for ring buffer");
+  IGL_ASSERT(mappedRange_.size, "Called Buffer::unmap() without Buffer::map()");
 
   const auto& buffer = currentVulkanBuffer();
   const BufferRange range(tmpBuffer_.size(), mappedRange_.offset);

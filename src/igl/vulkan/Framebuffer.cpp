@@ -71,9 +71,9 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
                                            void* pixelBytes,
                                            const TextureRangeDesc& range,
                                            size_t bytesPerRow) const {
-  IGL_ASSERT_MSG(range.numFaces == 1, "range.numFaces MUST be 1");
-  IGL_ASSERT_MSG(range.numLayers == 1, "range.numLayers MUST be 1");
-  IGL_ASSERT_MSG(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
+  IGL_ASSERT(range.numFaces == 1, "range.numFaces MUST be 1");
+  IGL_ASSERT(range.numLayers == 1, "range.numLayers MUST be 1");
+  IGL_ASSERT(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
   IGL_PROFILER_FUNCTION();
   if (!IGL_VERIFY(pixelBytes)) {
     return;
@@ -287,9 +287,9 @@ void Framebuffer::validateAttachments() {
       IGL_ASSERT(height_ == attachmentHeight);
     }
 
-    IGL_ASSERT_MSG(tex.getVkFormat() != VK_FORMAT_UNDEFINED,
-                   "Invalid texture format: %d",
-                   static_cast<int>(tex.getVkFormat()));
+    IGL_ASSERT(tex.getVkFormat() != VK_FORMAT_UNDEFINED,
+               "Invalid texture format: %d",
+               static_cast<int>(tex.getVkFormat()));
   };
 
   for (const auto& attachment : desc_.colorAttachments) {

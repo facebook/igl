@@ -564,8 +564,8 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
                          instanceExtensions.data(),
                          &vkInstance_));
 
-  IGL_ASSERT_MSG(creationErrorCode != VK_ERROR_LAYER_NOT_PRESENT,
-                 "ivkCreateInstance() failed. Did you forget to install the Vulkan SDK?");
+  IGL_ASSERT(creationErrorCode != VK_ERROR_LAYER_NOT_PRESENT,
+             "ivkCreateInstance() failed. Did you forget to install the Vulkan SDK?");
 
   VK_ASSERT(creationErrorCode);
 
@@ -820,7 +820,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                                              deviceQueues_.graphicsQueueFamilyIndex,
                                                              config_.exportableFences,
                                                              "VulkanContext::immediate_");
-  IGL_ASSERT_MSG(config_.maxResourceCount > 0, "Max resource count needs to be greater than zero");
+  IGL_ASSERT(config_.maxResourceCount > 0, "Max resource count needs to be greater than zero");
   syncSubmitHandles_.resize(config_.maxResourceCount);
 
   // create Vulkan pipeline cache
@@ -964,7 +964,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
         getVkPhysicalDevice(), getVkDevice(), deviceQueues_.graphicsQueue, profilingCommandBuffer_);
   }
 
-  IGL_ASSERT_MSG(tracyCtx_, "Failed to create Tracy GPU profiling context");
+  IGL_ASSERT(tracyCtx_, "Failed to create Tracy GPU profiling context");
 #endif // IGL_WITH_TRACY_GPU
 
   // enables/disables enhanced shader debugging
@@ -1598,7 +1598,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
     IGL_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
     igl::vulkan::VulkanTexture* texture = data.textures[loc];
     if (texture && isGraphics) {
-      IGL_ASSERT_MSG(data.samplers[loc], "A sampler should be bound to every bound texture slot");
+      IGL_ASSERT(data.samplers[loc], "A sampler should be bound to every bound texture slot");
     }
     VkSampler sampler = data.samplers[loc] ? data.samplers[loc]->getVkSampler() : dummySampler;
     // multisampled images cannot be directly accessed from shaders
@@ -1647,7 +1647,7 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
 
   for (const util::BufferDescription& b : info.buffers) {
     IGL_ASSERT(b.descriptorSet == kBindPoint_Buffers);
-    IGL_ASSERT_MSG(
+    IGL_ASSERT(
         data.buffers[b.bindingLocation].buffer != VK_NULL_HANDLE,
         IGL_FORMAT("Did you forget to call bindBuffer() for a buffer at the binding location {}?",
                    b.bindingLocation)
@@ -1746,7 +1746,7 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
       (props.optimalTilingFeatures & VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT) != 0;
 
   if (!IGL_VERIFY(cosited || midpoint)) {
-    IGL_ASSERT_MSG(cosited || midpoint, "Unsupported Ycbcr feature");
+    IGL_ASSERT(cosited || midpoint, "Unsupported Ycbcr feature");
     return {};
   }
 
@@ -2142,9 +2142,9 @@ void VulkanContext::syncMarkSubmitted(VulkanImmediateCommands::SubmitHandle hand
 }
 
 void VulkanContext::ensureCurrentContextThread() const {
-  IGL_ASSERT_MSG(pimpl_->contextThread == std::this_thread::get_id(),
-                 "IGL/Vulkan functions can only be accessed by 1 thread at a time. Call "
-                 "`setCurrentContextThread()` to mark the current thread as the `owning` thread.");
+  IGL_ASSERT(pimpl_->contextThread == std::this_thread::get_id(),
+             "IGL/Vulkan functions can only be accessed by 1 thread at a time. Call "
+             "`setCurrentContextThread()` to mark the current thread as the `owning` thread.");
 }
 
 void VulkanContext::setCurrentContextThread() {

@@ -103,7 +103,7 @@ class RenderCommandAdapter final : public WithContext {
                   Result* outResult);
 
   [[nodiscard]] const igl::IRenderPipelineState& pipelineState() const {
-    IGL_ASSERT_MSG(pipelineState_, "No rendering pipeline is bound");
+    IGL_ASSERT(pipelineState_, "No rendering pipeline is bound");
     return *pipelineState_;
   }
 

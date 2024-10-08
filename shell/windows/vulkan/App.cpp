@@ -54,7 +54,7 @@ std::shared_ptr<Platform> VulkanShell::createPlatform() noexcept {
     devices = vulkan::HWDevice::queryDevices(
         *ctx.get(), HWDeviceQueryDesc(HWDeviceType::Unknown), nullptr);
   }
-  IGL_ASSERT_MSG(devices.size() > 0, "Could not find Vulkan device with requested capabilities");
+  IGL_ASSERT(devices.size() > 0, "Could not find Vulkan device with requested capabilities");
 
   auto vulkanDevice = vulkan::HWDevice::create(std::move(ctx),
                                                devices[0],

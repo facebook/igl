@@ -169,7 +169,7 @@ void YUVColorSession::initialize() noexcept {
 
     auto& fileLoader = getPlatform().getFileLoader();
     const auto fileData = fileLoader.loadBinaryData(fileName);
-    IGL_ASSERT_MSG(fileData.data && fileData.length, "Cannot load texture file");
+    IGL_ASSERT(fileData.data && fileData.length, "Cannot load texture file");
 
     const igl::TextureDesc textureDesc = igl::TextureDesc::new2D(
         yuvFormat, width, height, TextureDesc::TextureUsageBits::Sampled, "YUV texture");

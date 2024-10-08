@@ -413,8 +413,7 @@ void TinyMeshSession::initialize() noexcept {
                                 &texHeight,
                                 &channels,
                                 4);
-    IGL_ASSERT_MSG(pixels,
-                   "Cannot load textures. Run `deploy_content.py` before running this app.");
+    IGL_ASSERT(pixels, "Cannot load textures. Run `deploy_content.py` before running this app.");
     const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::RGBA_SRGB,
                                                 texWidth,
                                                 texHeight,

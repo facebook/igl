@@ -167,7 +167,7 @@ static std::shared_ptr<ITexture> getNativeDrawable() {
   std::shared_ptr<ITexture> drawable =
       platformDevice->createTextureFromNativeDrawable(width_, height_, &ret);
 
-  IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
+  IGL_ASSERT(ret.isOk(), ret.message.c_str());
   IGL_ASSERT(drawable != nullptr);
   return drawable;
 }

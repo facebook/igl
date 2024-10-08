@@ -106,7 +106,7 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
       constexpr uint32_t kOpDecorateDecoration = 2;
       constexpr uint32_t kOpDecorateOperandIds = 3;
 
-      IGL_ASSERT_MSG(words + kOpDecorateDecoration <= spirv + size, "OpDecorate out of bounds");
+      IGL_ASSERT(words + kOpDecorateDecoration <= spirv + size, "OpDecorate out of bounds");
 
       const uint32_t decoration = words[kOpDecorateDecoration];
       const uint32_t targetId = words[kOpDecorateTargetId];
@@ -114,12 +114,12 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
 
       switch (decoration) {
       case SpvDecorationBinding: {
-        IGL_ASSERT_MSG(words + kOpDecorateOperandIds <= spirv + size, "OpDecorate out of bounds");
+        IGL_ASSERT(words + kOpDecorateOperandIds <= spirv + size, "OpDecorate out of bounds");
         ids[targetId].binding = words[kOpDecorateOperandIds];
         break;
       }
       case SpvDecorationDescriptorSet: {
-        IGL_ASSERT_MSG(words + kOpDecorateOperandIds <= spirv + size, "OpDecorate out of bounds");
+        IGL_ASSERT(words + kOpDecorateOperandIds <= spirv + size, "OpDecorate out of bounds");
         ids[targetId].dset = words[kOpDecorateOperandIds];
         break;
       }
@@ -133,7 +133,7 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
     case SpvOpTypeSampler:
     case SpvOpTypeSampledImage: {
       constexpr uint32_t kOpTypeResultId = 1;
-      IGL_ASSERT_MSG(words + kOpTypeResultId <= spirv + size, "OpTypeImage out of bounds");
+      IGL_ASSERT(words + kOpTypeResultId <= spirv + size, "OpTypeImage out of bounds");
       const uint32_t targetId = words[kOpTypeResultId];
       IGL_ASSERT(targetId < kBound);
       IGL_ASSERT(ids[targetId].opCode == 0);
@@ -145,7 +145,7 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
         constexpr uint32_t kOpTypeImageTypeId = 1;
         constexpr uint32_t kOpTypeImageDim = 3;
         constexpr uint32_t kOpTypeImageArrayed = 5;
-        IGL_ASSERT_MSG(words + kOpTypeImageArrayed <= spirv + size, "OpTypeImage out of bounds");
+        IGL_ASSERT(words + kOpTypeImageArrayed <= spirv + size, "OpTypeImage out of bounds");
         const uint32_t imageTypeId = words[kOpTypeImageTypeId];
         const uint32_t dim = words[kOpTypeImageDim];
         const bool isArray = words[kOpTypeImageArrayed] == 1u;
@@ -158,8 +158,7 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
       constexpr uint32_t kOpTypePointerTargetId = 1;
       constexpr uint32_t kOpTypePointerStorageClassId = 2;
       constexpr uint32_t kOpTypePointerObjectTypeId = 3;
-      IGL_ASSERT_MSG(words + kOpTypePointerObjectTypeId <= spirv + size,
-                     "OpTypePointer out of bounds");
+      IGL_ASSERT(words + kOpTypePointerObjectTypeId <= spirv + size, "OpTypePointer out of bounds");
       const uint32_t targetId = words[kOpTypePointerTargetId];
       IGL_ASSERT(targetId < kBound);
       IGL_ASSERT(ids[targetId].opCode == 0);
@@ -171,7 +170,7 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
     case SpvOpConstant: {
       constexpr uint32_t kOpConstantTypeId = 1;
       constexpr uint32_t kOpConstantTargetId = 2;
-      IGL_ASSERT_MSG(words + kOpConstantTargetId <= spirv + size, "OpTypePointer out of bounds");
+      IGL_ASSERT(words + kOpConstantTargetId <= spirv + size, "OpTypePointer out of bounds");
       const uint32_t targetId = words[kOpConstantTargetId];
       IGL_ASSERT(targetId < kBound);
       IGL_ASSERT(ids[targetId].opCode == 0);
@@ -183,7 +182,7 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
       constexpr uint32_t kOpVariableTypeId = 1;
       constexpr uint32_t kOpVariableTargetId = 2;
       constexpr uint32_t kOpVariableStorageClass = 3;
-      IGL_ASSERT_MSG(words + kOpVariableStorageClass <= spirv + size, "OpVariable out of bounds");
+      IGL_ASSERT(words + kOpVariableStorageClass <= spirv + size, "OpVariable out of bounds");
       const uint32_t targetId = words[kOpVariableTargetId];
       IGL_ASSERT(targetId < kBound);
       IGL_ASSERT(ids[targetId].opCode == 0);

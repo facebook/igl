@@ -70,7 +70,7 @@ class VulkanBuffer {
     return vkBuffer_;
   }
   [[nodiscard]] VkDeviceAddress getVkDeviceAddress() const {
-    IGL_ASSERT_MSG(vkDeviceAddress_, "Make sure config.enableBufferDeviceAddress is enabled");
+    IGL_ASSERT(vkDeviceAddress_, "Make sure config.enableBufferDeviceAddress is enabled");
     return vkDeviceAddress_;
   }
   [[nodiscard]] VkDeviceSize getSize() const {

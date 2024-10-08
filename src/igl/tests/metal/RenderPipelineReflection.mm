@@ -81,7 +81,7 @@ class RenderPipelineReflectionMTLTest : public ::testing::Test {
     metalDesc.vertexDescriptor =
         static_cast<igl::metal::VertexInputState*>(vertexInputState_.get())->get();
     metalDesc.vertexFunction = static_cast<igl::metal::ShaderModule*>(vertShader_.get())->get();
-    IGL_ASSERT_MSG(metalDesc.vertexFunction, "RenderPipeline requires non-null vertex function");
+    IGL_ASSERT(metalDesc.vertexFunction, "RenderPipeline requires non-null vertex function");
     metalDesc.fragmentFunction = static_cast<igl::metal::ShaderModule*>(fragShader_.get())->get();
     metalDesc.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
     metalDesc.stencilAttachmentPixelFormat = MTLPixelFormatDepth32Float_Stencil8;

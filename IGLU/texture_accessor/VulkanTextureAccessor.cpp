@@ -62,7 +62,7 @@ void VulkanTextureAccessor::requestBytes(igl::ICommandQueue& /*commandQueue*/,
     latestBytesRead_.resize(numBytesRequired_);
   }
 
-  IGL_ASSERT_MSG(texture_ != nullptr, "texture_ is nullptr");
+  IGL_ASSERT(texture_ != nullptr, "texture_ is nullptr");
 
   status_ = RequestStatus::Ready;
 }

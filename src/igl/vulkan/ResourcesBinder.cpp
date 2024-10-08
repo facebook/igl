@@ -41,9 +41,9 @@ void ResourcesBinder::bindBuffer(uint32_t index,
   const bool isUniformBuffer =
       ((buffer->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0);
 
-  IGL_ASSERT_MSG(isUniformBuffer ||
-                     ((buffer->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0),
-                 "The buffer must be a uniform or storage buffer");
+  IGL_ASSERT(isUniformBuffer ||
+                 ((buffer->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0),
+             "The buffer must be a uniform or storage buffer");
   if (bufferOffset) {
     const auto& limits = ctx_.getVkPhysicalDeviceProperties().limits;
     const uint32_t alignment =
@@ -117,8 +117,8 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
 #if IGL_DEBUG
   if (newTexture) {
     const auto& img = newTexture->getVulkanImage();
-    IGL_ASSERT_MSG(img.samples_ == VK_SAMPLE_COUNT_1_BIT,
-                   "Multisampled images cannot be sampled in shaders");
+    IGL_ASSERT(img.samples_ == VK_SAMPLE_COUNT_1_BIT,
+               "Multisampled images cannot be sampled in shaders");
     if (bindPoint_ == VK_PIPELINE_BIND_POINT_GRAPHICS) {
       // If you trip this assert, then you are likely using an IGL texture
       // that was not rendered to by IGL. If that's the case, then make sure

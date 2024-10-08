@@ -64,7 +64,7 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
         metalRenderPassDesc.colorAttachments[index];
 
     static const char* kNullColorAttachmentMsg = "Render pass color attachment cannot be null";
-    IGL_ASSERT_MSG(iglTexture, kNullColorAttachmentMsg);
+    IGL_ASSERT(iglTexture, kNullColorAttachmentMsg);
     if (iglTexture) {
       metalColorAttachment.texture = static_cast<Texture&>(*iglTexture).get();
     } else {
@@ -291,10 +291,10 @@ void RenderCommandEncoder::bindBytes(size_t index,
                                      const void* data,
                                      size_t length) {
   IGL_ASSERT(encoder_);
-  IGL_ASSERT_MSG(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
-                     bindTarget == BindTarget::kAllGraphics,
-                 "Bind target is not valid: %d",
-                 bindTarget);
+  IGL_ASSERT(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
+                 bindTarget == BindTarget::kAllGraphics,
+             "Bind target is not valid: %d",
+             bindTarget);
   if (data) {
     if (length > MAX_RECOMMENDED_BYTES) {
       IGL_LOG_INFO(
@@ -318,10 +318,10 @@ void RenderCommandEncoder::bindPushConstants(const void* /*data*/,
 
 void RenderCommandEncoder::bindTexture(size_t index, uint8_t bindTarget, ITexture* texture) {
   IGL_ASSERT(encoder_);
-  IGL_ASSERT_MSG(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
-                     bindTarget == BindTarget::kAllGraphics,
-                 "Bind target is not valid: %d",
-                 bindTarget);
+  IGL_ASSERT(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
+                 bindTarget == BindTarget::kAllGraphics,
+             "Bind target is not valid: %d",
+             bindTarget);
 
   auto* iglTexture = static_cast<Texture*>(texture);
   auto metalTexture = iglTexture ? iglTexture->get() : nil;
@@ -344,10 +344,10 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t bindTarget,
                                             ISamplerState* samplerState) {
   IGL_ASSERT(encoder_);
-  IGL_ASSERT_MSG(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
-                     bindTarget == BindTarget::kAllGraphics,
-                 "Bind target is not valid: %d",
-                 bindTarget);
+  IGL_ASSERT(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
+                 bindTarget == BindTarget::kAllGraphics,
+             "Bind target is not valid: %d",
+             bindTarget);
 
   auto* metalSamplerState = static_cast<SamplerState*>(samplerState);
 
@@ -387,7 +387,7 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
                                        uint32_t baseInstance) {
   getCommandBuffer().incrementCurrentDrawCount();
   IGL_ASSERT(encoder_);
-  IGL_ASSERT_MSG(indexBuffer_, "No index buffer bound");
+  IGL_ASSERT(indexBuffer_, "No index buffer bound");
   if (!IGL_VERIFY(encoder_ && indexBuffer_)) {
     return;
   }
@@ -442,7 +442,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
                                                     uint32_t drawCount,
                                                     uint32_t stride) {
   IGL_ASSERT(encoder_);
-  IGL_ASSERT_MSG(indexBuffer_, "No index buffer bound");
+  IGL_ASSERT(indexBuffer_, "No index buffer bound");
   if (!IGL_VERIFY(encoder_ && indexBuffer_)) {
     return;
   }
@@ -543,8 +543,8 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
     if (desc->buffers[i]) {
       if (desc->isDynamicBufferMask & (1 << i)) {
-        IGL_ASSERT_MSG(dynamicOffsets, "No dynamic offsets provided");
-        IGL_ASSERT_MSG(dynamicOffset < numDynamicOffsets, "Not enough dynamic offsets provided");
+        IGL_ASSERT(dynamicOffsets, "No dynamic offsets provided");
+        IGL_ASSERT(dynamicOffset < numDynamicOffsets, "Not enough dynamic offsets provided");
         bindBuffer(i,
                    desc->buffers[i].get(),
                    desc->offset[i] + dynamicOffsets[dynamicOffset++],
@@ -555,7 +555,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
     }
   }
 
-  IGL_ASSERT_MSG(dynamicOffset == numDynamicOffsets, "Not all dynamic offsets were consumed");
+  IGL_ASSERT(dynamicOffset == numDynamicOffsets, "Not all dynamic offsets were consumed");
 }
 
 } // namespace igl::metal

@@ -95,9 +95,9 @@ Texture::AttachmentParams defaultWriteAttachmentParams(FramebufferMode mode) {
 
 Texture::AttachmentParams toReadAttachmentParams(const TextureRangeDesc& range,
                                                  FramebufferMode mode) {
-  IGL_ASSERT_MSG(range.numLayers == 1, "range.numLayers must be 1.");
-  IGL_ASSERT_MSG(range.numMipLevels == 1, "range.numMipLevels must be 1.");
-  IGL_ASSERT_MSG(range.numFaces == 1, "range.numFaces must be 1.");
+  IGL_ASSERT(range.numLayers == 1, "range.numLayers must be 1.");
+  IGL_ASSERT(range.numMipLevels == 1, "range.numMipLevels must be 1.");
+  IGL_ASSERT(range.numFaces == 1, "range.numFaces must be 1.");
 
   Texture::AttachmentParams params{};
   params.face = static_cast<uint32_t>(range.face);
@@ -207,9 +207,9 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
     IGL_DEBUG_ABORT("Invalid index: %d", index);
     return;
   }
-  IGL_ASSERT_MSG(range.numFaces == 1, "range.numFaces MUST be 1");
-  IGL_ASSERT_MSG(range.numLayers == 1, "range.numLayers MUST be 1");
-  IGL_ASSERT_MSG(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
+  IGL_ASSERT(range.numFaces == 1, "range.numFaces MUST be 1");
+  IGL_ASSERT(range.numLayers == 1, "range.numLayers MUST be 1");
+  IGL_ASSERT(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
 
   auto itexture = getColorAttachment(index);
   if (itexture == nullptr) {
@@ -227,7 +227,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
   FramebufferDesc desc;
   desc.colorAttachments[0].texture = itexture;
   extraFramebuffer.initialize(desc, &ret);
-  IGL_ASSERT_MSG(ret.isOk(), ret.message.c_str());
+  IGL_ASSERT(ret.isOk(), ret.message.c_str());
 
   extraFramebuffer.bindBufferForRead();
   attachAsColor(*itexture, 0, toReadAttachmentParams(range, FramebufferMode::Mono));
@@ -346,7 +346,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
 
   getContext().checkForErrors(nullptr, 0);
   auto error = getContext().getLastError();
-  IGL_ASSERT_MSG(error.isOk(), error.message.c_str());
+  IGL_ASSERT(error.isOk(), error.message.c_str());
 }
 
 void Framebuffer::copyBytesDepthAttachment(ICommandQueue& /* unused */,
@@ -598,7 +598,7 @@ void CustomFramebuffer::prepareResource(const std::string& debugName, Result* ou
   }
 
   Result result = checkFramebufferStatus(getContext(), false);
-  IGL_ASSERT_MSG(result.isOk(), result.message.c_str());
+  IGL_ASSERT(result.isOk(), result.message.c_str());
   if (outResult) {
     *outResult = result;
   }
@@ -673,8 +673,8 @@ Viewport CustomFramebuffer::getViewport() const {
 void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
   // Cache renderPass for unbind
   renderPass_ = renderPass;
-  IGL_ASSERT_MSG(renderTarget_.mode != FramebufferMode::Multiview,
-                 "FramebufferMode::Multiview not supported");
+  IGL_ASSERT(renderTarget_.mode != FramebufferMode::Multiview,
+             "FramebufferMode::Multiview not supported");
 
   bindBuffer();
 

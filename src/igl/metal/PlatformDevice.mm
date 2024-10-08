@@ -169,7 +169,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
                                                                       height,
                                                                       planeIndex,
                                                                       &cvMetalTexture);
-    IGL_ASSERT_MSG(result == kCVReturnSuccess, "Failed to created Metal texture from PixelBuffer");
+    IGL_ASSERT(result == kCVReturnSuccess, "Failed to created Metal texture from PixelBuffer");
 
     if (result != kCVReturnSuccess) {
       NSLog(@"Failed to created Metal texture from PixelBuffer");
@@ -229,7 +229,7 @@ CVMetalTextureCacheRef PlatformDevice::getTextureCache() {
   if (textureCache_ == nullptr && device_.get() != nullptr) {
     const CVReturn result =
         CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, device_.get(), nil, &textureCache_);
-    IGL_ASSERT_MSG(result == kCVReturnSuccess, "Failed to created texture cache");
+    IGL_ASSERT(result == kCVReturnSuccess, "Failed to created texture cache");
 
     if (result != kCVReturnSuccess) {
       NSLog(@"Failed to created texture cache");

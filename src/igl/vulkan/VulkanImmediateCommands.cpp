@@ -76,7 +76,7 @@ void VulkanImmediateCommands::purge() {
 
 const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::acquire() {
   IGL_PROFILER_FUNCTION();
-  // IGL_ASSERT_MSG(nextSubmitHandle_.empty(),
+  // IGL_ASSERT(nextSubmitHandle_.empty(),
   //                "VulkanImmediateCommands::acquire() is not reentrant. You should submit() the "
   //                "previous buffer before calling acquire() again.");
 
@@ -111,8 +111,8 @@ const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::ac
   // make clang happy
   assert(current);
 
-  IGL_ASSERT_MSG(numAvailableCommandBuffers_, "No available command buffers");
-  IGL_ASSERT_MSG(current, "No available command buffers");
+  IGL_ASSERT(numAvailableCommandBuffers_, "No available command buffers");
+  IGL_ASSERT(current, "No available command buffers");
   IGL_ASSERT(current->cmdBufAllocated_ != VK_NULL_HANDLE);
 
   current->handle_.submitId_ = submitCounter_;

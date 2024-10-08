@@ -28,14 +28,14 @@ bool SamplerStateDesc::operator!=(const SamplerStateDesc& rhs) const {
 } // namespace igl
 
 size_t std::hash<igl::SamplerStateDesc>::operator()(const igl::SamplerStateDesc& key) const {
-  IGL_ASSERT_MSG(key.maxAnisotropic >= 1 && key.maxAnisotropic <= 16,
-                 "[IGL] SamplerStateDesc::maxAnisotropic is out of range: %su",
-                 key.maxAnisotropic);
-  IGL_ASSERT_MSG(
+  IGL_ASSERT(key.maxAnisotropic >= 1 && key.maxAnisotropic <= 16,
+             "[IGL] SamplerStateDesc::maxAnisotropic is out of range: %su",
+             key.maxAnisotropic);
+  IGL_ASSERT(
       key.mipLodMin < 16, "[IGL] SamplerStateDesc::mipLodMin is out of range: %su", key.mipLodMin);
-  IGL_ASSERT_MSG(key.mipLodMax < 16 && key.mipLodMin <= key.mipLodMax,
-                 "[IGL] SamplerStateDesc::mipLodMax is out of range: %su",
-                 key.mipLodMax);
+  IGL_ASSERT(key.mipLodMax < 16 && key.mipLodMin <= key.mipLodMax,
+             "[IGL] SamplerStateDesc::mipLodMax is out of range: %su",
+             key.mipLodMax);
 
   // clang-format off
   const size_t hash = igl::EnumToValue(key.minFilter) |         // 0,1: 1 bit field

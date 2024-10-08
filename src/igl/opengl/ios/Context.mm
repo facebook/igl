@@ -26,8 +26,7 @@ EAGLContext* createEAGLContext(RenderingAPI api, EAGLSharegroup* sharegroup) {
     }
     return context;
   } else {
-    IGL_ASSERT_MSG(api == RenderingAPI::GLES2,
-                   "IGL: unacceptable enum for rendering API for iOS\n");
+    IGL_ASSERT(api == RenderingAPI::GLES2, "IGL: unacceptable enum for rendering API for iOS\n");
     return [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:sharegroup];
   }
 }

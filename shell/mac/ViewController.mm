@@ -216,7 +216,7 @@ using namespace igl;
           0,
       };
       pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
-      IGL_ASSERT_MSG(pixelFormat, "Requested attributes not supported");
+      IGL_ASSERT(pixelFormat, "Requested attributes not supported");
     } else if (config_.backendVersion.majorVersion == 3 &&
                config_.backendVersion.minorVersion == 2) {
       static NSOpenGLPixelFormatAttribute attributes[] = {
@@ -336,7 +336,7 @@ using namespace igl;
   }
 
   session_ = factory_->createRenderSession(shellPlatform_);
-  IGL_ASSERT_MSG(session_, "createDefaultRenderSession() must return a valid session");
+  IGL_ASSERT(session_, "createDefaultRenderSession() must return a valid session");
   // Get initial native surface dimensions
   shellParams_.nativeSurfaceDimensions = glm::ivec2(2048, 1536);
   session_->initialize();
