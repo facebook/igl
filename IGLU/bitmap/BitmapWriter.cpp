@@ -83,9 +83,9 @@ bool isSupportedBitmapTextureFormat(igl::TextureFormat format) {
 void writeBitmap(const char* filename,
                  std::shared_ptr<igl::ITexture> texture,
                  igl::IDevice& device) {
-  IGL_ASSERT(texture);
-  IGL_ASSERT(texture->getType() == igl::TextureType::TwoD);
-  IGL_ASSERT(isSupportedBitmapTextureFormat(texture->getFormat()));
+  IGL_DEBUG_ASSERT(texture);
+  IGL_DEBUG_ASSERT(texture->getType() == igl::TextureType::TwoD);
+  IGL_DEBUG_ASSERT(isSupportedBitmapTextureFormat(texture->getFormat()));
 
   const auto textureAccessor =
       ::iglu::textureaccessor::TextureAccessorFactory::createTextureAccessor(
@@ -110,7 +110,7 @@ void writeBitmap(const char* filename,
   std::vector<uint8_t> imageData;
   imageData.reserve(size.width * size.height * 3);
 
-  IGL_ASSERT(buffer.size() == size.height * bytesPerRow);
+  IGL_DEBUG_ASSERT(buffer.size() == size.height * bytesPerRow);
 
   const auto bufferOffsets = getBufferOffsets(texture->getFormat());
   const bool flipY = shouldFlipY(device);

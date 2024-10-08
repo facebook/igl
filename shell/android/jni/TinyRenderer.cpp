@@ -85,7 +85,7 @@ void TinyRenderer::init(AAssetManager* mgr,
   case igl::BackendFlavor::OpenGL_ES: {
     auto hwDevice = opengl::egl::HWDevice();
     auto hwDevices = hwDevice.queryDevices(queryDesc, &result);
-    IGL_ASSERT(result.isOk());
+    IGL_DEBUG_ASSERT(result.isOk());
     // Decide which backend api to use, default as GLES3
     auto backendType = (backendVersion_.majorVersion == 3) ? igl::opengl::RenderingAPI::GLES3
                                                            : igl::opengl::RenderingAPI::GLES2;
@@ -97,7 +97,7 @@ void TinyRenderer::init(AAssetManager* mgr,
 
 #if IGL_BACKEND_VULKAN
   case igl::BackendFlavor::Vulkan: {
-    IGL_ASSERT(nativeWindow != nullptr);
+    IGL_DEBUG_ASSERT(nativeWindow != nullptr);
     vulkan::VulkanContextConfig config;
     config.terminateOnValidationError = true;
     auto ctx = vulkan::HWDevice::createContext(config, nativeWindow);
@@ -105,7 +105,7 @@ void TinyRenderer::init(AAssetManager* mgr,
     auto devices = vulkan::HWDevice::queryDevices(
         *ctx, HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), &result);
 
-    IGL_ASSERT(result.isOk());
+    IGL_DEBUG_ASSERT(result.isOk());
     width_ = static_cast<uint32_t>(ANativeWindow_getWidth(nativeWindow));
     height_ = static_cast<uint32_t>(ANativeWindow_getHeight(nativeWindow));
 
@@ -136,12 +136,12 @@ void TinyRenderer::init(AAssetManager* mgr,
   }
   }
 
-  IGL_ASSERT(d != nullptr);
+  IGL_DEBUG_ASSERT(d != nullptr);
   // We want to catch failed device creation instead of letting implicitly fail
   IGL_REPORT_ERROR(result.isOk());
   if (d) {
     platform_ = std::make_shared<igl::shell::PlatformAndroid>(std::move(d));
-    IGL_ASSERT(platform_ != nullptr);
+    IGL_DEBUG_ASSERT(platform_ != nullptr);
     static_cast<igl::shell::ImageLoaderAndroid&>(platform_->getImageLoader()).setAssetManager(mgr);
     static_cast<igl::shell::FileLoaderAndroid&>(platform_->getFileLoader()).setAssetManager(mgr);
 
@@ -149,7 +149,7 @@ void TinyRenderer::init(AAssetManager* mgr,
 
     session_ = factory.createRenderSession(platform_);
     session_->setShellParams(shellParams_);
-    IGL_ASSERT(session_ != nullptr);
+    IGL_DEBUG_ASSERT(session_ != nullptr);
     session_->initialize();
   }
 }
@@ -179,7 +179,7 @@ void TinyRenderer::recreateSwapchain(ANativeWindow* nativeWindow, bool createSur
 
 void TinyRenderer::render(float displayScale) {
   // process user input
-  IGL_ASSERT(platform_ != nullptr);
+  IGL_DEBUG_ASSERT(platform_ != nullptr);
   platform_->getInputDispatcher().processEvents();
 
   // draw
@@ -210,7 +210,7 @@ void TinyRenderer::render(float displayScale) {
     Result::setResult(&result, Result::Code::Unsupported, "Invalid backend");
     break;
   }
-  IGL_ASSERT(result.isOk());
+  IGL_DEBUG_ASSERT(result.isOk());
   IGL_REPORT_ERROR(result.isOk());
 
   const ContextGuard guard(platform_->getDevice()); // wrap 'session_' operations
@@ -227,11 +227,11 @@ void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int 
     auto* readSurface = eglGetCurrentSurface(EGL_READ);
     auto* drawSurface = eglGetCurrentSurface(EGL_DRAW);
 
-    IGL_ASSERT(platform_ != nullptr);
+    IGL_DEBUG_ASSERT(platform_ != nullptr);
     Result result;
     platform_->getDevice().getPlatformDevice<opengl::egl::PlatformDevice>()->updateSurfaces(
         readSurface, drawSurface, &result);
-    IGL_ASSERT(result.isOk());
+    IGL_DEBUG_ASSERT(result.isOk());
     IGL_REPORT_ERROR(result.isOk());
   }
 #endif
@@ -245,7 +245,7 @@ void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int 
 
 void TinyRenderer::touchEvent(bool isDown, float x, float y, float dx, float dy) {
   const float scale = platform_->getDisplayContext().pixelsPerPoint;
-  IGL_ASSERT(scale > 0.0f);
+  IGL_DEBUG_ASSERT(scale > 0.0f);
   platform_->getInputDispatcher().queueEvent(
       igl::shell::TouchEvent(isDown, x / scale, y / scale, dx / scale, dy / scale));
 }

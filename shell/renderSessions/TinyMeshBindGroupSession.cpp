@@ -407,7 +407,7 @@ void TinyMeshBindGroupSession::createRenderPipeline() {
     return;
   }
 
-  IGL_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer_);
 
   RenderPipelineDesc desc;
 
@@ -473,7 +473,8 @@ void TinyMeshBindGroupSession::createRenderPipeline() {
         &texHeight,
         &channels,
         4);
-    IGL_ASSERT(pixels, "Cannot load textures. Run `deploy_content.py` before running this app.");
+    IGL_DEBUG_ASSERT(pixels,
+                     "Cannot load textures. Run `deploy_content.py` before running this app.");
     const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::BGRA_SRGB,
                                                 texWidth,
                                                 texHeight,
@@ -520,13 +521,13 @@ std::shared_ptr<ITexture> TinyMeshBindGroupSession::getVulkanNativeDepth() {
   if (device_->getBackendType() == BackendType::Vulkan) {
     const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
 
-    IGL_ASSERT(vkPlatformDevice != nullptr);
+    IGL_DEBUG_ASSERT(vkPlatformDevice != nullptr);
 
     Result ret;
     std::shared_ptr<ITexture> drawable =
         vkPlatformDevice->createTextureFromNativeDepth(width_, height_, &ret);
 
-    IGL_ASSERT(ret.isOk());
+    IGL_DEBUG_ASSERT(ret.isOk());
     return drawable;
   }
 #endif // IGL_BACKEND_VULKAN
@@ -551,7 +552,7 @@ void TinyMeshBindGroupSession::update(igl::SurfaceTextures surfaceTextures) noex
     framebufferDesc_.depthAttachment.texture = getVulkanNativeDepth();
 #endif // TINY_TEST_USE_DEPTH_BUFFER
     framebuffer_ = device_->createFramebuffer(framebufferDesc_, nullptr);
-    IGL_ASSERT(framebuffer_);
+    IGL_DEBUG_ASSERT(framebuffer_);
 
     createRenderPipeline();
   }

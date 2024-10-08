@@ -61,12 +61,12 @@ class VertexData final {
   bool appendData(const void* data, size_t size, size_t numPrimitives);
 
   igl::IBuffer& indexBuffer() {
-    IGL_ASSERT(ib_);
+    IGL_DEBUG_ASSERT(ib_);
     return *ib_;
   }
 
   igl::IBuffer& vertexBuffer() {
-    IGL_ASSERT(vb_);
+    IGL_DEBUG_ASSERT(vb_);
     return *vb_;
   }
 

@@ -10,4 +10,4 @@
 #include <igl/Common.h>
 
 #define IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert) \
-  IGL_ASSERT(!(shouldAssert), "Sentinel implementation should NOT be reached")
+  IGL_DEBUG_ASSERT(!(shouldAssert), "Sentinel implementation should NOT be reached")

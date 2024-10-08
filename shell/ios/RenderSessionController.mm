@@ -61,6 +61,7 @@
     frame_ = CGRectMake(0, 0, 1024, 768); // choose some default
 
     // @fb-only
+                     // @fb-only
     surfaceTexturesProvider_ = provider;
   }
   return self;
@@ -109,7 +110,7 @@
   platform_ = std::make_shared<igl::shell::PlatformIos>(std::move(device));
   platformAdapter_.platform = platform_.get();
   session_ = factory_->createRenderSession(platform_);
-  IGL_ASSERT(session_, "createDefaultRenderSession() must return a valid session");
+  IGL_DEBUG_ASSERT(session_, "createDefaultRenderSession() must return a valid session");
   session_->initialize();
 }
 
@@ -135,9 +136,10 @@
   igl::DeviceScope scope(platform_->getDevice());
 
   // @fb-only
-             // @fb-only
+                   // @fb-only
   IglSurfaceTexturesAdapter* adapter = [surfaceTexturesProvider_ createSurfaceTextures];
   // @fb-only
+                   // @fb-only
 
   // process user input
   platform_->getInputDispatcher().processEvents();

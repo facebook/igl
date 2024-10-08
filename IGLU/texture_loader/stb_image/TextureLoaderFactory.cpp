@@ -39,7 +39,7 @@ StbImageData::StbImageData(uint8_t* data, uint32_t length) :
   data_(std::unique_ptr<uint8_t, StbImageDeleter>(data)), length_(length) {}
 
 [[nodiscard]] const uint8_t* IGL_NONNULL StbImageData::data() const noexcept {
-  IGL_ASSERT(data_ != nullptr);
+  IGL_DEBUG_ASSERT(data_ != nullptr);
   return data_.get();
 }
 

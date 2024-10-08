@@ -466,10 +466,10 @@ class Pool {
     if (handle.empty()) {
       return;
     }
-    IGL_ASSERT(numObjects_ > 0, "Double deletion");
+    IGL_DEBUG_ASSERT(numObjects_ > 0, "Double deletion");
     const uint32_t index = handle.index();
-    IGL_ASSERT(index < objects_.size());
-    IGL_ASSERT(handle.gen() == objects_[index].gen_, "Double deletion");
+    IGL_DEBUG_ASSERT(index < objects_.size());
+    IGL_DEBUG_ASSERT(handle.gen() == objects_[index].gen_, "Double deletion");
     objects_[index].obj_ = ImplObjectType{};
     objects_[index].gen_++;
     objects_[index].nextFree_ = freeListHead_;
@@ -479,8 +479,8 @@ class Pool {
   // this is a helper function to simplify migration to handles (should be deprecated after the
   // migration is completed)
   void destroy(uint32_t index) noexcept {
-    IGL_ASSERT(numObjects_ > 0, "Double deletion");
-    IGL_ASSERT(index < objects_.size());
+    IGL_DEBUG_ASSERT(numObjects_ > 0, "Double deletion");
+    IGL_DEBUG_ASSERT(index < objects_.size());
     objects_[index].obj_ = ImplObjectType{};
     objects_[index].gen_++;
     objects_[index].nextFree_ = freeListHead_;
@@ -493,8 +493,8 @@ class Pool {
     }
 
     const uint32_t index = handle.index();
-    IGL_ASSERT(index < objects_.size());
-    IGL_ASSERT(handle.gen() == objects_[index].gen_, "Accessing a deleted object");
+    IGL_DEBUG_ASSERT(index < objects_.size());
+    IGL_DEBUG_ASSERT(handle.gen() == objects_[index].gen_, "Accessing a deleted object");
     return &objects_[index].obj_;
   }
   [[nodiscard]] ImplObjectType* IGL_NULLABLE get(Handle<ObjectType> handle) noexcept {
@@ -503,8 +503,8 @@ class Pool {
     }
 
     const uint32_t index = handle.index();
-    IGL_ASSERT(index < objects_.size());
-    IGL_ASSERT(handle.gen() == objects_[index].gen_, "Accessing a deleted object");
+    IGL_DEBUG_ASSERT(index < objects_.size());
+    IGL_DEBUG_ASSERT(handle.gen() == objects_[index].gen_, "Accessing a deleted object");
     return &objects_[index].obj_;
   }
   [[nodiscard]] Handle<ObjectType> findObject(const ImplObjectType* IGL_NULLABLE obj) noexcept {

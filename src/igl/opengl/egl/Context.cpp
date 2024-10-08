@@ -137,7 +137,7 @@ EGLConfig chooseConfig(EGLDisplay display) {
   const EGLBoolean status = eglChooseConfig(display, attribs, &config, 1, &numConfigs);
   CHECK_EGL_ERRORS();
   if (!status) {
-    IGL_ASSERT(status == EGL_TRUE, "eglChooseConfig failed");
+    IGL_DEBUG_ASSERT(status == EGL_TRUE, "eglChooseConfig failed");
   }
   return config;
 }
@@ -201,14 +201,14 @@ Context::Context(RenderingAPI api,
                  bool offscreen,
                  EGLNativeWindowType window,
                  std::pair<EGLint, EGLint> dimensions) {
-  IGL_ASSERT(
+  IGL_DEBUG_ASSERT(
       (shareContext == EGL_NO_CONTEXT && sharegroup == nullptr) ||
           (shareContext != EGL_NO_CONTEXT && sharegroup != nullptr &&
            std::find(sharegroup->begin(), sharegroup->end(), shareContext) != sharegroup->end()),
       "shareContext and sharegroup values must be consistent");
   EGLConfig config{nullptr};
   auto contextDisplay = newEGLContext(getDefaultEGLDisplay(), shareContext, &config);
-  IGL_ASSERT(contextDisplay.second != EGL_NO_CONTEXT, "newEGLContext failed");
+  IGL_DEBUG_ASSERT(contextDisplay.second != EGL_NO_CONTEXT, "newEGLContext failed");
 
   contextOwned_ = true;
   api_ = api;

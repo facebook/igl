@@ -90,7 +90,7 @@ Result Texture::create(const TextureDesc& desc) {
     usageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
   }
   if (desc_.usage & TextureDesc::TextureUsageBits::Storage) {
-    IGL_ASSERT(desc_.numSamples <= 1, "Storage images cannot be multisampled");
+    IGL_DEBUG_ASSERT(desc_.numSamples <= 1, "Storage images cannot be multisampled");
     usageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
   }
   if (desc_.usage & TextureDesc::TextureUsageBits::Attachment) {
@@ -108,7 +108,7 @@ Result Texture::create(const TextureDesc& desc) {
     usageFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
   }
 
-  IGL_ASSERT(usageFlags != 0, "Invalid usage flags");
+  IGL_DEBUG_ASSERT(usageFlags != 0, "Invalid usage flags");
 
   const VkMemoryPropertyFlags memFlags = resourceStorageToVkMemoryPropertyFlags(desc_.storage);
 
@@ -154,11 +154,11 @@ Result Texture::create(const TextureDesc& desc) {
 
   if (getProperties().numPlanes > 1) {
     // some constraints for multiplanar image formats
-    IGL_ASSERT(imageType == VK_IMAGE_TYPE_2D);
-    IGL_ASSERT(samples == VK_SAMPLE_COUNT_1_BIT);
-    IGL_ASSERT(tiling == VK_IMAGE_TILING_OPTIMAL);
-    IGL_ASSERT(desc.numLayers == 1);
-    IGL_ASSERT(desc.numMipLevels == 1);
+    IGL_DEBUG_ASSERT(imageType == VK_IMAGE_TYPE_2D);
+    IGL_DEBUG_ASSERT(samples == VK_SAMPLE_COUNT_1_BIT);
+    IGL_DEBUG_ASSERT(tiling == VK_IMAGE_TILING_OPTIMAL);
+    IGL_DEBUG_ASSERT(desc.numLayers == 1);
+    IGL_DEBUG_ASSERT(desc.numMipLevels == 1);
     createFlags |= VK_IMAGE_CREATE_DISJOINT_BIT | VK_IMAGE_CREATE_ALIAS_BIT |
                    VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
   }
@@ -252,7 +252,7 @@ Dimensions Texture::getDimensions() const {
 }
 
 VkFormat Texture::getVkFormat() const {
-  IGL_ASSERT(texture_);
+  IGL_DEBUG_ASSERT(texture_);
   return texture_ ? texture_->getVulkanImage().imageFormat_ : VK_FORMAT_UNDEFINED;
 }
 
@@ -302,8 +302,8 @@ bool Texture::isRequiredGenerateMipmap() const {
 
 uint64_t Texture::getTextureId() const {
   const auto& config = device_.getVulkanContext().config_;
-  IGL_ASSERT(config.enableDescriptorIndexing,
-             "Make sure config.enableDescriptorIndexing is enabled.");
+  IGL_DEBUG_ASSERT(config.enableDescriptorIndexing,
+                   "Make sure config.enableDescriptorIndexing is enabled.");
   return texture_ && config.enableDescriptorIndexing ? texture_->getTextureId() : 0;
 }
 
@@ -364,7 +364,7 @@ void Texture::clearColorTexture(const igl::Color& rgba) {
   }
 
   const igl::vulkan::VulkanImage& img = texture_->getVulkanImage();
-  IGL_ASSERT(img.valid());
+  IGL_DEBUG_ASSERT(img.valid());
 
   const auto& wrapper = img.ctx_->stagingDevice_->immediate_->acquire();
 

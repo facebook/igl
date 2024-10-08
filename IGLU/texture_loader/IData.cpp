@@ -27,7 +27,7 @@ ByteData::ByteData(std::unique_ptr<uint8_t[]> data, size_t length) noexcept :
   data_(std::move(data)), length_(length) {}
 
 const uint8_t* IGL_NONNULL ByteData::data() const noexcept {
-  IGL_ASSERT(data_ != nullptr);
+  IGL_DEBUG_ASSERT(data_ != nullptr);
   return data_.get();
 }
 

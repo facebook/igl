@@ -22,7 +22,7 @@ void CommandQueue::setInitialContext(const std::shared_ptr<IContext>& context) {
 
 std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandBufferDesc& /*desc*/,
                                                                   Result* outResult) {
-  //  IGL_ASSERT(
+  //  IGL_DEBUG_ASSERT(
   //      activeCommandBuffers_ == 0,
   //      "OpenGL does not currently support creating multiple commandBuffers at the same time");
   if (context_ == nullptr) {

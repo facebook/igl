@@ -53,12 +53,12 @@
   igl::DeviceScope scope(*_device);
   igl::CommandQueueDesc desc{};
   _commandQueue = _device->createCommandQueue(desc, &result);
-  IGL_ASSERT(
+  IGL_DEBUG_ASSERT(
       result.isOk(), "Simple sample create command queue failed: %s\n", result.message.c_str());
 }
 
 - (std::shared_ptr<igl::ITexture>)createOrUpdateFramebuffer {
-  IGL_ASSERT(_device->verifyScope());
+  IGL_DEBUG_ASSERT(_device->verifyScope());
 
   auto texDesc = igl::TextureDesc::new2D(
       igl::TextureFormat::RGBA_UNorm8, 720, 1280, igl::TextureDesc::TextureUsageBits::Attachment);
@@ -71,7 +71,7 @@
     igl::FramebufferDesc framebufferDesc;
     framebufferDesc.colorAttachments[0].texture = targetTexture;
     _framebuffer = _device->createFramebuffer(framebufferDesc, &result);
-    IGL_ASSERT(result.isOk(), "Could not create framebuffer %s\n", result.message.c_str());
+    IGL_DEBUG_ASSERT(result.isOk(), "Could not create framebuffer %s\n", result.message.c_str());
 
     _renderable->initialize(*_device, *_framebuffer);
   }
@@ -85,7 +85,7 @@
   igl::Result result;
   igl::CommandBufferDesc cbDesc;
   auto commandBuffer = _commandQueue->createCommandBuffer(cbDesc, &result);
-  IGL_ASSERT(result.isOk(), "Could not create cmd buffer %s\n", result.message.c_str());
+  IGL_DEBUG_ASSERT(result.isOk(), "Could not create cmd buffer %s\n", result.message.c_str());
 
   igl::RenderPassDesc renderPass;
   renderPass.colorAttachments.resize(1);

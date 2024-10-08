@@ -98,12 +98,12 @@ class ICommandEncoder {
   virtual void popDebugGroupLabel() const = 0;
 
   ICommandBuffer& getCommandBuffer() {
-    IGL_ASSERT(commandBuffer_);
+    IGL_DEBUG_ASSERT(commandBuffer_);
     return *commandBuffer_;
   }
 
   [[nodiscard]] const std::shared_ptr<ICommandBuffer>& getCommandBufferPtr() const {
-    IGL_ASSERT(commandBuffer_);
+    IGL_DEBUG_ASSERT(commandBuffer_);
     return commandBuffer_;
   }
 

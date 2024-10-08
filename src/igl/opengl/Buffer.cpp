@@ -144,7 +144,7 @@ void* ArrayBuffer::map(const BufferRange& range, Result* outResult) {
 
   void* srcData = nullptr;
   srcData = getContext().mapBufferRange(target_, range.offset, range.size, GL_MAP_READ_BIT);
-  IGL_ASSERT(srcData != nullptr);
+  IGL_DEBUG_ASSERT(srcData != nullptr);
   if (srcData == nullptr) {
     Result::setResult(outResult, Result::Code::InvalidOperation);
     return nullptr;
@@ -214,7 +214,8 @@ void UniformBlockBuffer::bindRange(size_t index, size_t offset, Result* outResul
       return;
     }
     getContext().bindBuffer(target_, iD_);
-    IGL_ASSERT(offset < getSizeInBytes(), "Offset is invalid! (%d %d)", offset, getSizeInBytes());
+    IGL_DEBUG_ASSERT(
+        offset < getSizeInBytes(), "Offset is invalid! (%d %d)", offset, getSizeInBytes());
     getContext().bindBufferRange(
         target_, (GLuint)index, iD_, (GLintptr)offset, getSizeInBytes() - offset);
     Result::setOk(outResult);

@@ -48,7 +48,7 @@ bool isNativeSwapChainBGR(const std::vector<VkSurfaceFormatKHR>& formats) {
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats,
                                            igl::TextureFormat textureFormat,
                                            igl::ColorSpace colorSpace) {
-  IGL_ASSERT(!formats.empty());
+  IGL_DEBUG_ASSERT(!formats.empty());
 
   const bool isNativeSwapchainBGR = isNativeSwapChainBGR(formats);
   auto vulkanTextureFormat = igl::vulkan::textureFormatToVkFormat(textureFormat);
@@ -135,10 +135,11 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
           .name,
       colorSpaceToString(vkColorSpaceToColorSpace(surfaceFormat_.colorSpace)));
 
-  IGL_ASSERT(ctx.vkSurface_ != VK_NULL_HANDLE,
-             "You are trying to create a swapchain but your OS surface is empty. Did you want to "
-             "create an offscreen rendering context? If so, set 'width' and 'height' to 0 when you "
-             "create your igl::IDevice");
+  IGL_DEBUG_ASSERT(
+      ctx.vkSurface_ != VK_NULL_HANDLE,
+      "You are trying to create a swapchain but your OS surface is empty. Did you want to "
+      "create an offscreen rendering context? If so, set 'width' and 'height' to 0 when you "
+      "create your igl::IDevice");
 
 #if defined(VK_KHR_surface)
   if (ctx.extensions_.enabled(VK_KHR_SURFACE_EXTENSION_NAME)) {
@@ -148,8 +149,8 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
                                                       ctx.deviceQueues_.graphicsQueueFamilyIndex,
                                                       ctx.vkSurface_,
                                                       &queueFamilySupportsPresentation));
-    IGL_ASSERT(queueFamilySupportsPresentation == VK_TRUE,
-               "The queue family used with the swapchain does not support presentation");
+    IGL_DEBUG_ASSERT(queueFamilySupportsPresentation == VK_TRUE,
+                     "The queue family used with the swapchain does not support presentation");
   }
 #endif
 
@@ -181,7 +182,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
   VK_ASSERT(ctx.vf_.vkGetSwapchainImagesKHR(
       device_, swapchain_, &numSwapchainImages_, swapchainImages.data()));
 
-  IGL_ASSERT(numSwapchainImages_ > 0);
+  IGL_DEBUG_ASSERT(numSwapchainImages_ > 0);
 
   // Prevent underflow when doing (frameNumber_ - numSwapchainImages_).
   // Every resource submitted in the frame (frameNumber_ - numSwapchainImages_) or earlier is
@@ -236,7 +237,7 @@ VkImageView VulkanSwapchain::getDepthVkImageView() const {
 }
 
 void VulkanSwapchain::lazyAllocateDepthBuffer() const {
-  IGL_ASSERT(!depthTexture_);
+  IGL_DEBUG_ASSERT(!depthTexture_);
 
   const VkFormat depthFormat =
 #if IGL_PLATFORM_APPLE

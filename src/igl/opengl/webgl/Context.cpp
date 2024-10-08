@@ -44,7 +44,7 @@ void Context::initialize(EmscriptenWebGLContextAttributes& attributes,
     igl::Result result;
     // Initialize through base class.
     IContext::initialize(&result);
-    IGL_ASSERT(result.isOk());
+    IGL_DEBUG_ASSERT(result.isOk());
   }
 }
 

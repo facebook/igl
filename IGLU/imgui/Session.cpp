@@ -172,7 +172,8 @@ struct DrawableData {
   DrawableData(igl::IDevice& device,
                const std::shared_ptr<igl::IVertexInputState>& inputState,
                const std::shared_ptr<iglu::material::Material>& material) {
-    IGL_ASSERT(sizeof(ImDrawIdx) == 2, "The constants below may not work with the ImGui data.");
+    IGL_DEBUG_ASSERT(sizeof(ImDrawIdx) == 2,
+                     "The constants below may not work with the ImGui data.");
     const size_t kMaxVertices = (1l << 16);
     const size_t kMaxVertexBufferSize = kMaxVertices * sizeof(ImDrawVert);
     const size_t kMaxIndexBufferSize = kMaxVertices * sizeof(ImDrawIdx);
@@ -280,7 +281,7 @@ Session::Renderer::~Renderer() {
 }
 
 void Session::Renderer::newFrame(const igl::FramebufferDesc& desc) {
-  IGL_ASSERT(desc.colorAttachments[0].texture);
+  IGL_DEBUG_ASSERT(desc.colorAttachments[0].texture);
   _renderPipelineDesc.targetDesc.colorAttachments.resize(1);
   _renderPipelineDesc.targetDesc.colorAttachments[0].textureFormat =
       desc.colorAttachments[0].texture->getFormat();
@@ -361,7 +362,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
 
     for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++) {
       const ImDrawCmd cmd = cmd_list->CmdBuffer[cmd_i];
-      IGL_ASSERT(cmd.UserCallback == nullptr);
+      IGL_DEBUG_ASSERT(cmd.UserCallback == nullptr);
 
       const ImVec2 clipMin((cmd.ClipRect.x - clip_off.x) * clip_scale.x,
                            (cmd.ClipRect.y - clip_off.y) * clip_scale.y);
@@ -455,7 +456,7 @@ Session::~Session() {
 void Session::beginFrame(const igl::FramebufferDesc& desc, float displayScale) {
   makeCurrentContext();
 
-  IGL_ASSERT(desc.colorAttachments[0].texture);
+  IGL_DEBUG_ASSERT(desc.colorAttachments[0].texture);
 
   const igl::Size size = desc.colorAttachments[0].texture->getSize();
 
@@ -487,7 +488,7 @@ void Session::drawFPS(float fps) const {
                                  ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
                                  ImGuiWindowFlags_NoMove;
   const ImGuiViewport* v = ImGui::GetMainViewport();
-  IGL_ASSERT(v);
+  IGL_DEBUG_ASSERT(v);
   ImGui::SetNextWindowPos(
       {
           v->WorkPos.x + v->WorkSize.x - 15.0f,

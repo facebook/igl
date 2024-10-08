@@ -80,8 +80,8 @@ RenderCommandEncoder::RenderCommandEncoder(const std::shared_ptr<CommandBuffer>&
   cmdBuffer_(commandBuffer ? commandBuffer->getVkCommandBuffer() : VK_NULL_HANDLE),
   binder_(commandBuffer.get(), ctx, VK_PIPELINE_BIND_POINT_GRAPHICS) {
   IGL_PROFILER_FUNCTION();
-  IGL_ASSERT(commandBuffer);
-  IGL_ASSERT(cmdBuffer_ != VK_NULL_HANDLE);
+  IGL_DEBUG_ASSERT(commandBuffer);
+  IGL_DEBUG_ASSERT(cmdBuffer_ != VK_NULL_HANDLE);
 }
 
 void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
@@ -151,11 +151,12 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                                                 descColor.clearColor.a));
     const auto colorLayer = getVkLayer(colorTexture.getType(), descColor.face, descColor.layer);
     if (mipLevel) {
-      IGL_ASSERT(descColor.mipLevel == mipLevel,
-                 "All color attachments should have the same mip-level");
+      IGL_DEBUG_ASSERT(descColor.mipLevel == mipLevel,
+                       "All color attachments should have the same mip-level");
     }
     if (layer) {
-      IGL_ASSERT(colorLayer == layer, "All color attachments should have the same face or layer");
+      IGL_DEBUG_ASSERT(colorLayer == layer,
+                       "All color attachments should have the same face or layer");
     }
     mipLevel = descColor.mipLevel;
     layer = colorLayer;
@@ -170,8 +171,8 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                      colorTexture.getVulkanTexture().getVulkanImage().samples_);
     // handle MSAA
     if (descColor.storeAction == StoreAction::MsaaResolve) {
-      IGL_ASSERT(attachment.resolveTexture,
-                 "Framebuffer attachment should contain a resolve texture");
+      IGL_DEBUG_ASSERT(attachment.resolveTexture,
+                       "Framebuffer attachment should contain a resolve texture");
       const auto& colorResolveTexture = static_cast<vulkan::Texture&>(*attachment.resolveTexture);
       builder.addColorResolve(textureFormatToVkFormat(colorResolveTexture.getFormat()),
                               VK_ATTACHMENT_LOAD_OP_DONT_CARE,
@@ -191,10 +192,10 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   if (framebuffer->getDepthAttachment()) {
     const auto& depthTexture = static_cast<vulkan::Texture&>(*(framebuffer->getDepthAttachment()));
     hasDepthAttachment_ = true;
-    IGL_ASSERT(descDepth.mipLevel == mipLevel,
-               "Depth attachment should have the same mip-level as color attachments");
-    IGL_ASSERT(getVkLayer(depthTexture.getType(), descDepth.face, descDepth.layer) == layer,
-               "Depth attachment should have the same face or layer as color attachments");
+    IGL_DEBUG_ASSERT(descDepth.mipLevel == mipLevel,
+                     "Depth attachment should have the same mip-level as color attachments");
+    IGL_DEBUG_ASSERT(getVkLayer(depthTexture.getType(), descDepth.face, descDepth.layer) == layer,
+                     "Depth attachment should have the same face or layer as color attachments");
     clearValues.push_back(
         ivkGetClearDepthStencilValue(descDepth.clearDepth, descStencil.clearStencil));
     const auto initialLayout = descDepth.loadAction == igl::LoadAction::Load
@@ -336,12 +337,12 @@ void RenderCommandEncoder::endEncoding() {
 }
 
 void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const igl::Color& color) const {
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
 void RenderCommandEncoder::insertDebugEventLabel(const char* label, const igl::Color& color) const {
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   ivkCmdInsertDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
@@ -390,7 +391,7 @@ void RenderCommandEncoder::bindRenderPipelineState(
 
   rps_ = static_cast<igl::vulkan::RenderPipelineState*>(pipelineState.get());
 
-  IGL_ASSERT(rps_);
+  IGL_DEBUG_ASSERT(rps_);
 
   const RenderPipelineDesc& desc = rps_->getRenderPipelineDesc();
 
@@ -457,14 +458,14 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
   const bool isStorageBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) > 0;
   const bool isUniformOrStorageBuffer = isUniformBuffer || isStorageBuffer;
 
-  IGL_ASSERT(isUniformOrStorageBuffer, "Must be a uniform or a storage buffer");
+  IGL_DEBUG_ASSERT(isUniformOrStorageBuffer, "Must be a uniform or a storage buffer");
 
   if (!IGL_VERIFY(isUniformOrStorageBuffer)) {
     return;
   }
   if (ctx_.enhancedShaderDebuggingStore_) {
-    IGL_ASSERT(index < (IGL_UNIFORM_BLOCKS_BINDING_MAX - 1),
-               "The last buffer index is reserved for enhanced debugging features");
+    IGL_DEBUG_ASSERT(index < (IGL_UNIFORM_BLOCKS_BINDING_MAX - 1),
+                     "The last buffer index is reserved for enhanced debugging features");
   }
   binder_.bindBuffer(index, buf, bufferOffset, bufferSize);
 }
@@ -497,8 +498,8 @@ void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
                                            size_t bufferOffset) {
   const auto& buf = static_cast<igl::vulkan::Buffer&>(buffer);
 
-  IGL_ASSERT(buf.getBufferUsageFlags() & VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-             "Did you forget to specify BufferTypeBits::Index on your buffer?");
+  IGL_DEBUG_ASSERT(buf.getBufferUsageFlags() & VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                   "Did you forget to specify BufferTypeBits::Index on your buffer?");
 
   const VkIndexType type = indexFormatToVkIndexType(format);
 
@@ -516,13 +517,15 @@ void RenderCommandEncoder::bindPushConstants(const void* data, size_t length, si
   IGL_PROFILER_FUNCTION();
   IGL_PROFILER_ZONE_GPU_VK("bindPushConstants()", ctx_.tracyCtx_, cmdBuffer_);
 
-  IGL_ASSERT(length % 4 == 0); // VUID-vkCmdPushConstants-size-00369: size must be a multiple of 4
+  IGL_DEBUG_ASSERT(length % 4 == 0); // VUID-vkCmdPushConstants-size-00369: size must be a multiple
+                                     // of 4
 
-  IGL_ASSERT(rps_, "Did you forget to call bindRenderPipelineState()?");
-  IGL_ASSERT(rps_->pushConstantRange_.size,
-             "Currently bound render pipeline state has no push constants");
-  IGL_ASSERT(offset + length <= rps_->pushConstantRange_.offset + rps_->pushConstantRange_.size,
-             "Push constants size exceeded");
+  IGL_DEBUG_ASSERT(rps_, "Did you forget to call bindRenderPipelineState()?");
+  IGL_DEBUG_ASSERT(rps_->pushConstantRange_.size,
+                   "Currently bound render pipeline state has no push constants");
+  IGL_DEBUG_ASSERT(offset + length <=
+                       rps_->pushConstantRange_.offset + rps_->pushConstantRange_.size,
+                   "Push constants size exceeded");
 
   if (!rps_->pipelineLayout_) {
     // bring a pipeline layout into existence - we don't really care about the dynamic state here
@@ -561,9 +564,9 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
 void RenderCommandEncoder::bindTexture(size_t index, uint8_t target, ITexture* texture) {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT(pendingBindGroupTexture_.empty(),
-             "A texture BindGroup was already bound to this command encoder. You can bind "
-             "individual textures again only after a draw call.");
+  IGL_DEBUG_ASSERT(pendingBindGroupTexture_.empty(),
+                   "A texture BindGroup was already bound to this command encoder. You can bind "
+                   "individual textures again only after a draw call.");
 
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p  bindTexture(%u, %u)\n", cmdBuffer_, (uint32_t)index, (uint32_t)target);
@@ -599,7 +602,7 @@ void RenderCommandEncoder::draw(size_t vertexCount,
     return;
   }
 
-  IGL_ASSERT(rps_, "Did you forget to call bindRenderPipelineState()?");
+  IGL_DEBUG_ASSERT(rps_, "Did you forget to call bindRenderPipelineState()?");
 
   ensureVertexBuffers();
 
@@ -634,7 +637,7 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
     return;
   }
 
-  IGL_ASSERT(rps_, "Did you forget to call bindRenderPipelineState()?");
+  IGL_DEBUG_ASSERT(rps_, "Did you forget to call bindRenderPipelineState()?");
 
   ensureVertexBuffers();
 
@@ -661,7 +664,7 @@ void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
   IGL_PROFILER_ZONE_GPU_COLOR_VK(
       "multiDrawIndirect()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
 
-  IGL_ASSERT(rps_, "Did you forget to call bindRenderPipelineState()?");
+  IGL_DEBUG_ASSERT(rps_, "Did you forget to call bindRenderPipelineState()?");
 
   ensureVertexBuffers();
 
@@ -686,7 +689,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
   IGL_PROFILER_ZONE_GPU_COLOR_VK(
       "multiDrawIndexedIndirect()", ctx_.tracyCtx_, cmdBuffer_, IGL_PROFILER_COLOR_DRAW);
 
-  IGL_ASSERT(rps_, "Did you forget to call bindRenderPipelineState()?");
+  IGL_DEBUG_ASSERT(rps_, "Did you forget to call bindRenderPipelineState()?");
 
   ensureVertexBuffers();
 
@@ -834,7 +837,7 @@ void RenderCommandEncoder::ensureVertexBuffers() {
 
   const VertexInputStateDesc& desc = vi->desc_;
 
-  IGL_ASSERT(desc.numInputBindings <= IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_));
+  IGL_DEBUG_ASSERT(desc.numInputBindings <= IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_));
 
   const size_t numBindings =
       std::min(desc.numInputBindings, IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_));
@@ -920,7 +923,7 @@ void RenderCommandEncoder::blitColorImage(const igl::vulkan::VulkanImage& srcIma
                                            ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
                                            : VK_IMAGE_LAYOUT_UNDEFINED)));
 
-  IGL_ASSERT(targetLayout != VK_IMAGE_LAYOUT_UNDEFINED, "Missing usage flags");
+  IGL_DEBUG_ASSERT(targetLayout != VK_IMAGE_LAYOUT_UNDEFINED, "Missing usage flags");
 
   // 3. Transition TRANSFER_DST_OPTIMAL into `targetLayout`
   destImage.transitionLayout(cmdBuffer_,
@@ -982,7 +985,7 @@ void RenderCommandEncoder::processDependencies(const Dependencies& dependencies)
 }
 
 void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
-  IGL_ASSERT(!handle.empty());
+  IGL_DEBUG_ASSERT(!handle.empty());
 
   pendingBindGroupTexture_ = handle;
 }
@@ -990,14 +993,14 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
 void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
                                          uint32_t numDynamicOffsets,
                                          const uint32_t* dynamicOffsets) {
-  IGL_ASSERT(!handle.empty());
+  IGL_DEBUG_ASSERT(!handle.empty());
 
   pendingBindGroupBuffer_ = handle;
   numDynamicOffsets_ = numDynamicOffsets;
 
   if (numDynamicOffsets) {
-    IGL_ASSERT(dynamicOffsets);
-    IGL_ASSERT(numDynamicOffsets <= IGL_UNIFORM_BLOCKS_BINDING_MAX);
+    IGL_DEBUG_ASSERT(dynamicOffsets);
+    IGL_DEBUG_ASSERT(numDynamicOffsets <= IGL_UNIFORM_BLOCKS_BINDING_MAX);
 
     checked_memcpy(dynamicOffsets_,
                    sizeof(dynamicOffsets_),

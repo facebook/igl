@@ -260,7 +260,7 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     return true;
   }
   case DeviceFeatureLimits::BufferNoCopyAlignment: {
-    IGL_ASSERT(getpagesize() > 0);
+    IGL_DEBUG_ASSERT(getpagesize() > 0);
     result = static_cast<size_t>(getpagesize());
     return true;
   }

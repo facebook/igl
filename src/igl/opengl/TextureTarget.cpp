@@ -99,10 +99,10 @@ void TextureTarget::attachAsColor(uint32_t index, const AttachmentParams& params
 void TextureTarget::attach(GLenum attachment,
                            const AttachmentParams& params,
                            GLuint renderBufferId) {
-  IGL_ASSERT(params.stereo == false);
-  IGL_ASSERT(params.face == 0);
-  IGL_ASSERT(params.layer == 0);
-  IGL_ASSERT(params.mipLevel == 0);
+  IGL_DEBUG_ASSERT(params.stereo == false);
+  IGL_DEBUG_ASSERT(params.face == 0);
+  IGL_DEBUG_ASSERT(params.layer == 0);
+  IGL_DEBUG_ASSERT(params.mipLevel == 0);
 
   GLenum framebufferTarget = GL_FRAMEBUFFER;
   if (getContext().deviceFeatures().hasFeature(DeviceFeatures::ReadWriteFramebuffer)) {

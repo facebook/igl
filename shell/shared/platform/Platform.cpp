@@ -62,24 +62,25 @@ std::shared_ptr<ITexture> Platform::loadTexture(const char* filename,
 
   Result res;
   auto tex = getDevice().createTexture(texDesc, &res);
-  IGL_ASSERT(res.isOk(), res.message.c_str());
-  IGL_ASSERT(tex != nullptr, "createTexture returned null for some reason");
+  IGL_DEBUG_ASSERT(res.isOk(), res.message.c_str());
+  IGL_DEBUG_ASSERT(tex != nullptr, "createTexture returned null for some reason");
   tex->upload(tex->getFullRange(), imageData.data->data());
   return tex;
 }
 
 int Platform::argc() {
-  IGL_ASSERT(g_argsInitialized, "Accessing command line args before they are initialized.");
+  IGL_DEBUG_ASSERT(g_argsInitialized, "Accessing command line args before they are initialized.");
   return g_argc;
 }
 
 char** Platform::argv() {
-  IGL_ASSERT(g_argsInitialized, "Accessing command line args before they are initialized.");
+  IGL_DEBUG_ASSERT(g_argsInitialized, "Accessing command line args before they are initialized.");
   return g_argv;
 }
 
 void Platform::initializeCommandLineArgs(int argc, char** argv) {
-  IGL_ASSERT(!g_argsInitialized, "Must not initialize command line arguments more than once.");
+  IGL_DEBUG_ASSERT(!g_argsInitialized,
+                   "Must not initialize command line arguments more than once.");
   g_argc = argc;
   g_argv = argv;
   g_argsInitialized = true;

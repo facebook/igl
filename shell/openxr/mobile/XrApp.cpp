@@ -334,7 +334,8 @@ bool XrApp::enumerateViewConfigurations() {
     break;
   }
 
-  IGL_ASSERT(foundViewConfig, "XrViewConfigurationType %d not found.", kSupportedViewConfigType);
+  IGL_DEBUG_ASSERT(
+      foundViewConfig, "XrViewConfigurationType %d not found.", kSupportedViewConfigType);
 
   return true;
 }
@@ -470,7 +471,7 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
     hands_->updateMeshes(shellParams_->handMeshes);
   }
 
-  IGL_ASSERT(renderSession_ != nullptr);
+  IGL_DEBUG_ASSERT(renderSession_ != nullptr);
   renderSession_->initialize();
 
   if (useQuadLayerComposition_) {
@@ -551,7 +552,7 @@ void XrApp::updateQuadComposition() noexcept {
 void XrApp::createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManager* assetMgr) {
 #if IGL_PLATFORM_ANDROID
   platform_ = std::make_shared<igl::shell::PlatformAndroid>(std::move(device));
-  IGL_ASSERT(platform_ != nullptr);
+  IGL_DEBUG_ASSERT(platform_ != nullptr);
   static_cast<igl::shell::ImageLoaderAndroid&>(platform_->getImageLoader())
       .setAssetManager(assetMgr);
   static_cast<igl::shell::FileLoaderAndroid&>(platform_->getFileLoader()).setAssetManager(assetMgr);

@@ -24,7 +24,7 @@ std::shared_ptr<IShaderModule> ShaderModuleCreator::fromStringInput(const IDevic
                                                                         outResult) {
   Result localResult;
   Result* result = outResult ? outResult : &localResult;
-  IGL_ASSERT(result);
+  IGL_DEBUG_ASSERT(result);
 
   const auto desc =
       igl::ShaderModuleDesc::fromStringInput(source, std::move(info), std::move(debugName));
@@ -48,7 +48,7 @@ std::shared_ptr<IShaderModule> ShaderModuleCreator::fromBinaryInput(const IDevic
 
   Result localResult;
   Result* result = outResult ? outResult : &localResult;
-  IGL_ASSERT(result);
+  IGL_DEBUG_ASSERT(result);
 
   const auto desc = igl::ShaderModuleDesc::fromBinaryInput(
       data, dataLength, std::move(info), std::move(debugName));
@@ -72,7 +72,7 @@ std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromStringInput(
 
   Result localResult;
   Result* result = outResult ? outResult : &localResult;
-  IGL_ASSERT(result);
+  IGL_DEBUG_ASSERT(result);
 
   const auto libraryDesc = igl::ShaderLibraryDesc::fromStringInput(
       librarySource,
@@ -96,7 +96,7 @@ std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromBinaryInput(
     Result* IGL_NULLABLE outResult) {
   Result localResult;
   Result* result = outResult ? outResult : &localResult;
-  IGL_ASSERT(result);
+  IGL_DEBUG_ASSERT(result);
 
   const auto libraryDesc = igl::ShaderLibraryDesc::fromBinaryInput(
       libraryData,
@@ -119,7 +119,7 @@ std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromStringInput(
     Result* IGL_NULLABLE outResult) {
   Result localResult;
   Result* result = outResult ? outResult : &localResult;
-  IGL_ASSERT(result);
+  IGL_DEBUG_ASSERT(result);
 
   const auto libraryDesc = igl::ShaderLibraryDesc::fromStringInput(
       librarySource, std::move(moduleInfo), std::move(libraryDebugName));
@@ -137,7 +137,7 @@ std::unique_ptr<IShaderLibrary> ShaderLibraryCreator::fromBinaryInput(
     Result* IGL_NULLABLE outResult) {
   Result localResult;
   Result* result = outResult ? outResult : &localResult;
-  IGL_ASSERT(result);
+  IGL_DEBUG_ASSERT(result);
 
   const auto libraryDesc = igl::ShaderLibraryDesc::fromBinaryInput(
       libraryData, libraryDataLength, std::move(moduleInfo), std::move(libraryDebugName));
@@ -157,7 +157,7 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleStringInput(
     Result* IGL_NULLABLE outResult) {
   Result localResult;
   Result* result = outResult ? outResult : &localResult;
-  IGL_ASSERT(result);
+  IGL_DEBUG_ASSERT(result);
 
   std::shared_ptr<IShaderModule> vertexModule, fragmentModule;
   vertexModule =
@@ -193,7 +193,7 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleBinaryInput(
     Result* IGL_NULLABLE outResult) {
   Result localResult;
   Result* result = outResult ? outResult : &localResult;
-  IGL_ASSERT(result);
+  IGL_DEBUG_ASSERT(result);
 
   std::shared_ptr<IShaderModule> vertexModule, fragmentModule;
   vertexModule =
@@ -264,7 +264,7 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleStringInput(
     Result* IGL_NULLABLE outResult) {
   Result localResult;
   Result* result = outResult ? outResult : &localResult;
-  IGL_ASSERT(result);
+  IGL_DEBUG_ASSERT(result);
 
   auto computeModule =
       ShaderModuleCreator::fromStringInput(device,
@@ -284,7 +284,7 @@ std::unique_ptr<IShaderStages> ShaderStagesCreator::fromModuleBinaryInput(
     Result* IGL_NULLABLE outResult) {
   Result localResult;
   Result* result = outResult ? outResult : &localResult;
-  IGL_ASSERT(result);
+  IGL_DEBUG_ASSERT(result);
 
   auto computeModule =
       ShaderModuleCreator::fromBinaryInput(device,
@@ -320,8 +320,8 @@ std::unique_ptr<IShaderStages> fromLibraryDesc(const IDevice& device,
                                                Result* IGL_NULLABLE outResult) {
   Result localResult;
   Result* result = outResult ? outResult : &localResult;
-  IGL_ASSERT(result);
-  IGL_ASSERT(libraryDesc.moduleInfo.size() == 2);
+  IGL_DEBUG_ASSERT(result);
+  IGL_DEBUG_ASSERT(libraryDesc.moduleInfo.size() == 2);
 
   auto library = device.createShaderLibrary(libraryDesc, result);
   if (!result->isOk()) {

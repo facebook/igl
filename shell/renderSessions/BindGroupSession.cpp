@@ -355,8 +355,8 @@ void BindGroupSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     framebufferDesc_.colorAttachments[0].texture = surfaceTextures.color;
     framebufferDesc_.depthAttachment.texture = surfaceTextures.depth;
     framebuffer_ = device.createFramebuffer(framebufferDesc_, &ret);
-    IGL_ASSERT(ret.isOk());
-    IGL_ASSERT(framebuffer_ != nullptr);
+    IGL_DEBUG_ASSERT(ret.isOk());
+    IGL_DEBUG_ASSERT(framebuffer_ != nullptr);
   } else {
     framebuffer_->updateDrawable(surfaceTextures.color);
   }
@@ -375,7 +375,7 @@ void BindGroupSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     desc.cullMode = igl::CullMode::Back;
     desc.frontFaceWinding = igl::WindingMode::Clockwise;
     pipelineState_ = device.createRenderPipeline(desc, &ret);
-    IGL_ASSERT(ret.isOk());
+    IGL_DEBUG_ASSERT(ret.isOk());
   }
 
   auto buffer = commandQueue_->createCommandBuffer({}, nullptr);
@@ -392,7 +392,7 @@ void BindGroupSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   const std::shared_ptr<iglu::ManagedUniformBuffer> vertUniformBuffer =
       std::make_shared<iglu::ManagedUniformBuffer>(device, info);
-  IGL_ASSERT(vertUniformBuffer->result.isOk());
+  IGL_DEBUG_ASSERT(vertUniformBuffer->result.isOk());
   *static_cast<VertexFormat*>(vertUniformBuffer->getData()) = vertexParameters_;
   vertUniformBuffer->bind(device, *pipelineState_, *commands);
   commands->bindBindGroup(bindGroupTextures_);

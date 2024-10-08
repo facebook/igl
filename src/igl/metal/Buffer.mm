@@ -17,7 +17,7 @@ igl::Result upload(const std::vector<id<MTLBuffer>>& buffers,
                    const igl::BufferRange& range,
                    MTLResourceOptions resourceOptions,
                    igl::BufferDesc::BufferAPIHint acceptedApiHints) {
-  IGL_ASSERT(bufferIdx < buffers.size());
+  IGL_DEBUG_ASSERT(bufferIdx < buffers.size());
   const auto& buffer = buffers[bufferIdx];
   auto length = [buffer length];
   if (!IGL_VERIFY(range.offset + range.size <= length)) {
@@ -55,7 +55,7 @@ void* map(const std::vector<id<MTLBuffer>>& buffers,
     return nullptr;
   }
 
-  IGL_ASSERT(bufferIdx < buffers.size());
+  IGL_DEBUG_ASSERT(bufferIdx < buffers.size());
   const auto& buffer = buffers[bufferIdx];
   if ([buffer length] < (range.size + range.offset)) {
     igl::Result::setResult(outResult,
@@ -77,7 +77,7 @@ igl::Result copyFromPreviousBufferInstance(std::vector<id<MTLBuffer>>& buffers,
   }
 
   const size_t prevIdx = bufferIdx == 0 ? buffers.size() - 1 : bufferIdx - 1;
-  IGL_ASSERT([buffers[bufferIdx] length] == [buffers[prevIdx] length]);
+  IGL_DEBUG_ASSERT([buffers[bufferIdx] length] == [buffers[prevIdx] length]);
 
   auto length = [buffers[bufferIdx] length];
   auto* srcContents = [buffers[prevIdx] contents];
@@ -196,7 +196,7 @@ void RingBuffer::unmap() {
 
 id<MTLBuffer> RingBuffer::get() {
   auto bufferIdx = syncManager_->getCurrentInFlightBufferIndex();
-  IGL_ASSERT(bufferIdx < mtlBuffers_.size());
+  IGL_DEBUG_ASSERT(bufferIdx < mtlBuffers_.size());
   if (bufferIdx != lastUpdatedBufferIdx_) {
     // client hasn't updated the buffer at this idx; Update from the previous buffer instance
     auto result =

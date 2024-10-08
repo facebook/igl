@@ -122,11 +122,11 @@ std::string getVulkanVertexShaderSource(bool stereoRendering) {
     igl::Result res;
     const auto vs = shaderCross.crossCompileFromVulkanSource(
         getVulkanVertexShaderSource(stereoRendering).c_str(), igl::ShaderStage::Vertex, &res);
-    IGL_ASSERT(res.isOk(), res.message.c_str());
+    IGL_DEBUG_ASSERT(res.isOk(), res.message.c_str());
 
     const auto fs = shaderCross.crossCompileFromVulkanSource(
         getVulkanFragmentShaderSource(), igl::ShaderStage::Fragment, &res);
-    IGL_ASSERT(res.isOk(), res.message.c_str());
+    IGL_DEBUG_ASSERT(res.isOk(), res.message.c_str());
 
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,
@@ -285,7 +285,7 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   updateUniformBlock();
 
-  IGL_ASSERT(!shellParams().viewParams.empty());
+  IGL_DEBUG_ASSERT(!shellParams().viewParams.empty());
   const auto viewIndex = shellParams().viewParams[0].viewIndex;
 
   igl::Result ret;
@@ -298,8 +298,8 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
                                                                      : FramebufferMode::Mono;
 
     framebuffer_[viewIndex] = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
-    IGL_ASSERT(ret.isOk());
-    IGL_ASSERT(framebuffer_[viewIndex] != nullptr);
+    IGL_DEBUG_ASSERT(ret.isOk());
+    IGL_DEBUG_ASSERT(framebuffer_[viewIndex] != nullptr);
   } else {
     framebuffer_[viewIndex]->updateDrawable(surfaceTextures.color);
   }
@@ -362,7 +362,7 @@ void HelloOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
       }};
 
   const auto ubo = std::make_shared<iglu::ShaderCrossUniformBuffer>(device, "perFrame", info);
-  IGL_ASSERT(ubo->result.isOk());
+  IGL_DEBUG_ASSERT(ubo->result.isOk());
   *static_cast<UniformBlock*>(ubo->getData()) = ub_;
 
   ubo->bind(device, *pipelineState_, *commands);

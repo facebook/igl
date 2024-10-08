@@ -24,27 +24,27 @@ ComputeCommandEncoder::ComputeCommandEncoder(id<MTLCommandBuffer> buffer) {
 }
 
 void ComputeCommandEncoder::endEncoding() {
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
   [encoder_ endEncoding];
   encoder_ = nil;
 }
 
 void ComputeCommandEncoder::pushDebugGroupLabel(const char* label,
                                                 const igl::Color& /*color*/) const {
-  IGL_ASSERT(encoder_);
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   [encoder_ pushDebugGroup:[NSString stringWithUTF8String:label] ?: @""];
 }
 
 void ComputeCommandEncoder::insertDebugEventLabel(const char* label,
                                                   const igl::Color& /*color*/) const {
-  IGL_ASSERT(encoder_);
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   [encoder_ insertDebugSignpost:[NSString stringWithUTF8String:label] ?: @""];
 }
 
 void ComputeCommandEncoder::popDebugGroupLabel() const {
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
   [encoder_ popDebugGroup];
 }
 
@@ -78,7 +78,7 @@ void ComputeCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, cons
 }
 
 void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
 
   if (texture) {
     auto& iglTexture = static_cast<Texture&>(*texture);
@@ -92,7 +92,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index,
                                        size_t bufferSize) {
   (void)bufferSize;
 
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
   if (buffer) {
     auto& iglBuffer = static_cast<Buffer&>(*buffer);
     [encoder_ setBuffer:iglBuffer.get() offset:offset atIndex:index];
@@ -100,7 +100,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index,
 }
 
 void ComputeCommandEncoder::bindBytes(size_t index, const void* data, size_t length) {
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
   if (data) {
     if (length > MAX_RECOMMENDED_BYTES) {
       IGL_LOG_INFO(

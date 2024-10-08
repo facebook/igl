@@ -839,7 +839,7 @@ bool DeviceFeatureSet::isTextureFeatureSupported(TextureFeatures feature) const 
 
 bool DeviceFeatureSet::hasExtension(Extensions extension) const {
   const uint64_t extensionIndex = static_cast<uint64_t>(extension);
-  IGL_ASSERT(extensionIndex < 64);
+  IGL_DEBUG_ASSERT(extensionIndex < 64);
   const uint64_t extensionBit = 1ull << extensionIndex;
   if ((extensionCacheInitialized_ & extensionBit) == 0) {
     if (isExtensionSupported(extension)) {
@@ -853,7 +853,7 @@ bool DeviceFeatureSet::hasExtension(Extensions extension) const {
 
 bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   const uint64_t featureIndex = static_cast<uint64_t>(feature);
-  IGL_ASSERT(featureIndex < 64);
+  IGL_DEBUG_ASSERT(featureIndex < 64);
   const uint64_t featureBit = 1ull << featureIndex;
   if ((featureCacheInitialized_ & featureBit) == 0) {
     if (isFeatureSupported(feature)) {
@@ -867,7 +867,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
 
 bool DeviceFeatureSet::hasInternalFeature(InternalFeatures feature) const {
   const uint32_t featureIndex = static_cast<uint32_t>(feature);
-  IGL_ASSERT(featureIndex < 32);
+  IGL_DEBUG_ASSERT(featureIndex < 32);
   const uint32_t featureBit = 1u << featureIndex;
   if ((internalFeatureCacheInitialized_ & featureBit) == 0) {
     if (isInternalFeatureSupported(feature)) {
@@ -881,7 +881,7 @@ bool DeviceFeatureSet::hasInternalFeature(InternalFeatures feature) const {
 
 bool DeviceFeatureSet::hasTextureFeature(TextureFeatures feature) const {
   const uint64_t featureIndex = static_cast<uint64_t>(feature);
-  IGL_ASSERT(featureIndex < 64);
+  IGL_DEBUG_ASSERT(featureIndex < 64);
   const uint64_t featureBit = 1ull << featureIndex;
   if ((textureFeatureCacheInitialized_ & featureBit) == 0) {
     if (isTextureFeatureSupported(feature)) {

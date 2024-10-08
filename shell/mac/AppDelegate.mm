@@ -151,8 +151,8 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
   const auto requestedWindowConfig =
       self.factory->requestedWindowConfig(igl::shell::ShellType::Mac, suggestedWindowConfig);
 
-  IGL_ASSERT(requestedWindowConfig.windowMode == igl::shell::WindowMode::Window ||
-             requestedWindowConfig.windowMode == igl::shell::WindowMode::MaximizedWindow);
+  IGL_DEBUG_ASSERT(requestedWindowConfig.windowMode == igl::shell::WindowMode::Window ||
+                   requestedWindowConfig.windowMode == igl::shell::WindowMode::MaximizedWindow);
 
   CGRect frame = requestedWindowConfig.windowMode == igl::shell::WindowMode::Window
                      ? [self.window frame]

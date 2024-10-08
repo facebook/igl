@@ -129,8 +129,8 @@ NetServiceApple::NetServiceApple(NSNetService* netService) : netService_(netServ
   NSInputStream* inputStream = nil;
   NSOutputStream* outputStream = nil;
   [netService_ getInputStream:&inputStream outputStream:&outputStream];
-  IGL_ASSERT(inputStream);
-  IGL_ASSERT(outputStream);
+  IGL_DEBUG_ASSERT(inputStream);
+  IGL_DEBUG_ASSERT(outputStream);
 
   inputStream_->initialize(inputStream);
   outputStream_->initialize(outputStream);

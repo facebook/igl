@@ -47,7 +47,7 @@ void TestShellBase::SetUp(ScreenSize screenSize) {
   platform_ = std::make_shared<igl::shell::PlatformLinux>(std::move(iglDevice));
 #endif
 
-  IGL_ASSERT(platform_);
+  IGL_DEBUG_ASSERT(platform_);
   // Create an offscreen texture to render to
   igl::Result ret;
   igl::TextureDesc texDesc = igl::TextureDesc::new2D(

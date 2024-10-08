@@ -156,14 +156,14 @@ static std::shared_ptr<ITexture> getNativeDrawable() {
   auto platformDevice = static_cast<igl::IDevice*>(device_.get())
                             ->getPlatformDevice<igl::opengl::webgl::PlatformDevice>();
 
-  IGL_ASSERT(platformDevice != nullptr);
+  IGL_DEBUG_ASSERT(platformDevice != nullptr);
 
   getRenderingBufferSize(width_, height_);
   std::shared_ptr<ITexture> drawable =
       platformDevice->createTextureFromNativeDrawable(width_, height_, &ret);
 
-  IGL_ASSERT(ret.isOk(), ret.message.c_str());
-  IGL_ASSERT(drawable != nullptr);
+  IGL_DEBUG_ASSERT(ret.isOk(), ret.message.c_str());
+  IGL_DEBUG_ASSERT(drawable != nullptr);
 
   return drawable;
 }
@@ -173,7 +173,7 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   framebufferDesc.colorAttachments[0].texture = nativeDrawable;
   framebuffer_ = device_->createFramebuffer(framebufferDesc, nullptr);
 
-  IGL_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer_);
 }
 
 bool initialize() {
@@ -338,7 +338,7 @@ static void createRenderPipeline() {
     return;
   }
 
-  IGL_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer_);
   RenderPipelineDesc desc;
 
   desc.targetDesc.colorAttachments.resize(1);

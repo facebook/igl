@@ -18,15 +18,15 @@ namespace igl::shell::openxr {
 XrRefreshRate::XrRefreshRate(XrInstance instance, XrSession session) noexcept : session_(session) {
   XR_CHECK(xrGetInstanceProcAddr(
       instance, "xrGetDisplayRefreshRateFB", (PFN_xrVoidFunction*)(&xrGetDisplayRefreshRateFB_)));
-  IGL_ASSERT(xrGetDisplayRefreshRateFB_ != nullptr);
+  IGL_DEBUG_ASSERT(xrGetDisplayRefreshRateFB_ != nullptr);
   XR_CHECK(xrGetInstanceProcAddr(instance,
                                  "xrEnumerateDisplayRefreshRatesFB",
                                  (PFN_xrVoidFunction*)(&xrEnumerateDisplayRefreshRatesFB_)));
-  IGL_ASSERT(xrEnumerateDisplayRefreshRatesFB_ != nullptr);
+  IGL_DEBUG_ASSERT(xrEnumerateDisplayRefreshRatesFB_ != nullptr);
   XR_CHECK(xrGetInstanceProcAddr(instance,
                                  "xrRequestDisplayRefreshRateFB",
                                  (PFN_xrVoidFunction*)(&xrRequestDisplayRefreshRateFB_)));
-  IGL_ASSERT(xrRequestDisplayRefreshRateFB_ != nullptr);
+  IGL_DEBUG_ASSERT(xrRequestDisplayRefreshRateFB_ != nullptr);
 }
 
 XrRefreshRate::~XrRefreshRate() noexcept = default;

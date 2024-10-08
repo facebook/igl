@@ -188,11 +188,11 @@ void TQSession::initialize() noexcept {
   const BufferDesc vbDesc =
       BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData));
   vb0_ = device.createBuffer(vbDesc, nullptr);
-  IGL_ASSERT(vb0_ != nullptr);
+  IGL_DEBUG_ASSERT(vb0_ != nullptr);
   const BufferDesc ibDesc =
       BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
   ib0_ = device.createBuffer(ibDesc, nullptr);
-  IGL_ASSERT(ib0_ != nullptr);
+  IGL_DEBUG_ASSERT(ib0_ != nullptr);
 
   VertexInputStateDesc inputDesc;
   inputDesc.numAttributes = 2;
@@ -203,23 +203,23 @@ void TQSession::initialize() noexcept {
   inputDesc.numInputBindings = 1;
   inputDesc.inputBindings[1].stride = sizeof(VertexPosUv);
   vertexInput0_ = device.createVertexInputState(inputDesc, nullptr);
-  IGL_ASSERT(vertexInput0_ != nullptr);
+  IGL_DEBUG_ASSERT(vertexInput0_ != nullptr);
 
   // Sampler & Texture
   SamplerStateDesc samplerDesc;
   samplerDesc.minFilter = samplerDesc.magFilter = SamplerMinMagFilter::Linear;
   samplerDesc.debugName = "Sampler: linear";
   samp0_ = device.createSamplerState(samplerDesc, nullptr);
-  IGL_ASSERT(samp0_ != nullptr);
+  IGL_DEBUG_ASSERT(samp0_ != nullptr);
   tex0_ = getPlatform().loadTexture("igl.png");
 
   shaderStages_ = getShaderStagesForBackend(device);
-  IGL_ASSERT(shaderStages_ != nullptr);
+  IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
 
   // Command queue
   const CommandQueueDesc desc{igl::CommandQueueType::Graphics};
   commandQueue_ = device.createCommandQueue(desc, nullptr);
-  IGL_ASSERT(commandQueue_ != nullptr);
+  IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 
   renderPass_.colorAttachments.resize(1);
   renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
@@ -238,7 +238,7 @@ void TQSession::initialize() noexcept {
   fpDesc.storage = ResourceStorage::Shared;
 
   fragmentParamBuffer_ = device.createBuffer(fpDesc, nullptr);
-  IGL_ASSERT(fragmentParamBuffer_ != nullptr);
+  IGL_DEBUG_ASSERT(fragmentParamBuffer_ != nullptr);
 }
 
 void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
@@ -250,10 +250,10 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     if (surfaceTextures.depth && surfaceTextures.depth->getProperties().hasStencil()) {
       framebufferDesc.stencilAttachment.texture = surfaceTextures.depth;
     }
-    IGL_ASSERT(ret.isOk());
+    IGL_DEBUG_ASSERT(ret.isOk());
     framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
-    IGL_ASSERT(ret.isOk());
-    IGL_ASSERT(framebuffer_ != nullptr);
+    IGL_DEBUG_ASSERT(ret.isOk());
+    IGL_DEBUG_ASSERT(framebuffer_ != nullptr);
   } else {
     framebuffer_->updateDrawable(surfaceTextures);
   }
@@ -277,7 +277,7 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     graphicsDesc.frontFaceWinding = igl::WindingMode::Clockwise;
 
     pipelineState_ = getPlatform().getDevice().createRenderPipeline(graphicsDesc, nullptr);
-    IGL_ASSERT(pipelineState_ != nullptr);
+    IGL_DEBUG_ASSERT(pipelineState_ != nullptr);
 
     // Set up uniformdescriptors
     fragmentUniformDescriptors_.emplace_back();
@@ -286,7 +286,7 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   // Command Buffers
   const CommandBufferDesc cbDesc;
   auto buffer = commandQueue_->createCommandBuffer(cbDesc, nullptr);
-  IGL_ASSERT(buffer != nullptr);
+  IGL_DEBUG_ASSERT(buffer != nullptr);
   auto drawableSurface = framebuffer_->getColorAttachment(0);
 
   // Uniform: "color"
@@ -307,7 +307,7 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   // Submit commands
   const std::shared_ptr<igl::IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
-  IGL_ASSERT(commands != nullptr);
+  IGL_DEBUG_ASSERT(commands != nullptr);
   if (commands) {
     commands->bindVertexBuffer(1, *vb0_);
     commands->bindRenderPipelineState(pipelineState_);
@@ -330,12 +330,12 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     commands->endEncoding();
   }
 
-  IGL_ASSERT(buffer != nullptr);
+  IGL_DEBUG_ASSERT(buffer != nullptr);
   if (shellParams().shouldPresent) {
     buffer->present(drawableSurface);
   }
 
-  IGL_ASSERT(commandQueue_ != nullptr);
+  IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
   commandQueue_->submit(*buffer);
   RenderSession::update(surfaceTextures);
 }

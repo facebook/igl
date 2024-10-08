@@ -164,7 +164,7 @@ void RenderCommandEncoder::endEncoding() {
         width = static_cast<int>(stencilDimensions.width);
         height = static_cast<int>(stencilDimensions.height);
       }
-      IGL_ASSERT(mask != 0);
+      IGL_DEBUG_ASSERT(mask != 0);
 
       if (sizeMatch) {
         igl::opengl::PlatformDevice::blitFramebuffer(framebuffer_,
@@ -189,8 +189,8 @@ void RenderCommandEncoder::endEncoding() {
 
 void RenderCommandEncoder::pushDebugGroupLabel(const char* label,
                                                const igl::Color& /*color*/) const {
-  IGL_ASSERT(adapter_);
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(adapter_);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
     getContext().pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, label);
   } else {
@@ -201,8 +201,8 @@ void RenderCommandEncoder::pushDebugGroupLabel(const char* label,
 
 void RenderCommandEncoder::insertDebugEventLabel(const char* label,
                                                  const igl::Color& /*color*/) const {
-  IGL_ASSERT(adapter_);
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(adapter_);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
     getContext().debugMessageInsert(
         GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_MARKER, 0, GL_DEBUG_SEVERITY_LOW, -1, label);
@@ -213,7 +213,7 @@ void RenderCommandEncoder::insertDebugEventLabel(const char* label,
 }
 
 void RenderCommandEncoder::popDebugGroupLabel() const {
-  IGL_ASSERT(adapter_);
+  IGL_DEBUG_ASSERT(adapter_);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
     getContext().popDebugGroup();
   } else {
@@ -248,10 +248,10 @@ void RenderCommandEncoder::bindDepthStencilState(
 }
 
 void RenderCommandEncoder::bindUniform(const UniformDesc& uniformDesc, const void* data) {
-  IGL_ASSERT(uniformDesc.location >= 0,
-             "Invalid location passed to bindUniformBuffer: %d",
-             uniformDesc.location);
-  IGL_ASSERT(data != nullptr, "Data cannot be null");
+  IGL_DEBUG_ASSERT(uniformDesc.location >= 0,
+                   "Invalid location passed to bindUniformBuffer: %d",
+                   uniformDesc.location);
+  IGL_DEBUG_ASSERT(data != nullptr, "Data cannot be null");
   if (IGL_VERIFY(adapter_) && data) {
     adapter_->setUniform(uniformDesc, data);
   }
@@ -279,7 +279,7 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, siz
   if (IGL_VERIFY(adapter_)) {
     Buffer& glBuffer = static_cast<Buffer&>(buffer);
 
-    IGL_ASSERT(glBuffer.getType() == Buffer::Type::Attribute);
+    IGL_DEBUG_ASSERT(glBuffer.getType() == Buffer::Type::Attribute);
 
     adapter_->setVertexBuffer(glBuffer, bufferOffset, static_cast<int>(index));
   }
@@ -338,7 +338,7 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t baseInstance) {
   (void)baseInstance;
 
-  IGL_ASSERT(baseInstance == 0, "Instancing is not implemented");
+  IGL_DEBUG_ASSERT(baseInstance == 0, "Instancing is not implemented");
 
   if (IGL_VERIFY(adapter_)) {
     getCommandBuffer().incrementCurrentDrawCount();
@@ -360,9 +360,9 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   (void)vertexOffset;
   (void)baseInstance;
 
-  IGL_ASSERT(vertexOffset == 0, "vertexOffset is not implemented");
-  IGL_ASSERT(baseInstance == 0, "Instancing is not implemented");
-  IGL_ASSERT(indexType_, "No index buffer bound");
+  IGL_DEBUG_ASSERT(vertexOffset == 0, "vertexOffset is not implemented");
+  IGL_DEBUG_ASSERT(baseInstance == 0, "Instancing is not implemented");
+  IGL_DEBUG_ASSERT(indexType_, "No index buffer bound");
 
   const size_t indexOffsetBytes =
       static_cast<size_t>(firstIndex) * (indexType_ == GL_UNSIGNED_INT ? 4u : 2u);
@@ -402,7 +402,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
                                                     size_t indirectBufferOffset,
                                                     uint32_t drawCount,
                                                     uint32_t stride) {
-  IGL_ASSERT(indexType_, "No index buffer bound");
+  IGL_DEBUG_ASSERT(indexType_, "No index buffer bound");
 
   // TODO: use glMultiDrawElementsIndirect() when available
 
@@ -445,7 +445,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
 
   for (uint32_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
     if (desc->textures[i]) {
-      IGL_ASSERT(desc->samplers[i]);
+      IGL_DEBUG_ASSERT(desc->samplers[i]);
       bindTexture(i, BindTarget::kAllGraphics, desc->textures[i].get());
       bindSamplerState(i, BindTarget::kAllGraphics, desc->samplers[i].get());
     }
@@ -466,8 +466,8 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
     if (desc->buffers[i]) {
       if (desc->isDynamicBufferMask & (1 << i)) {
-        IGL_ASSERT(dynamicOffsets, "No dynamic offsets provided");
-        IGL_ASSERT(dynamicOffset < numDynamicOffsets, "Not enough dynamic offsets provided");
+        IGL_DEBUG_ASSERT(dynamicOffsets, "No dynamic offsets provided");
+        IGL_DEBUG_ASSERT(dynamicOffset < numDynamicOffsets, "Not enough dynamic offsets provided");
         bindBuffer(i,
                    desc->buffers[i].get(),
                    desc->offset[i] + dynamicOffsets[dynamicOffset++],
@@ -478,7 +478,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
     }
   }
 
-  IGL_ASSERT(dynamicOffset == numDynamicOffsets, "Not all dynamic offsets were consumed");
+  IGL_DEBUG_ASSERT(dynamicOffset == numDynamicOffsets, "Not all dynamic offsets were consumed");
 }
 
 } // namespace igl::opengl

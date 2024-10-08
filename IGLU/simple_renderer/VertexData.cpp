@@ -50,7 +50,7 @@ void VertexData::populatePipelineDescriptor(igl::RenderPipelineDesc& pipelineDes
 }
 
 bool VertexData::appendData(const void* data, size_t size, size_t numPrimitives) {
-  IGL_ASSERT(vb_);
+  IGL_DEBUG_ASSERT(vb_);
 
   if (!vb_) {
     return false;

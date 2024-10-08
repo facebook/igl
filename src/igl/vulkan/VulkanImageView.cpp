@@ -23,7 +23,7 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
                                  uint32_t numLayers,
                                  const char* debugName) :
   ctx_(&ctx) {
-  IGL_ASSERT(ctx_);
+  IGL_DEBUG_ASSERT(ctx_);
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   VkDevice device = ctx_->getVkDevice();

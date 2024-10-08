@@ -64,7 +64,7 @@ Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
   }
   if (IGL_VERIFY(!isCreated_)) {
     isCreated_ = true;
-    IGL_ASSERT(desc.format != TextureFormat::Invalid && desc.format == getFormat());
+    IGL_DEBUG_ASSERT(desc.format != TextureFormat::Invalid && desc.format == getFormat());
     const bool isSampled = (desc.usage & TextureDesc::TextureUsageBits::Sampled) != 0;
 
     if (isSampled && hasStorageAlready) {
@@ -102,7 +102,7 @@ Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
 // padding that is not 8, 4, 2, or 1 byte aligned to the actual pixel data
 
 GLint Texture::getAlignment(uint32_t stride, uint32_t mipLevel, uint32_t widthAtMipLevel) const {
-  IGL_ASSERT(mipLevel < numMipLevels_);
+  IGL_DEBUG_ASSERT(mipLevel < numMipLevels_);
 
   if (getProperties().isCompressed()) {
     return 1;

@@ -90,7 +90,7 @@ class Texture : public WithContext, public ITexture {
   }
 
   [[nodiscard]] GLenum getGLInternalTextureFormat() const {
-    IGL_ASSERT(glInternalFormat_ != 0);
+    IGL_DEBUG_ASSERT(glInternalFormat_ != 0);
     return glInternalFormat_;
   }
 

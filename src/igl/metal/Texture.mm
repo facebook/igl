@@ -267,7 +267,7 @@ MTLTextureUsage Texture::toMTLTextureUsage(TextureDesc::TextureUsage usage) {
 }
 
 MTLTextureType Texture::convertType(TextureType value, size_t numSamples) {
-  IGL_ASSERT(value != TextureType::Invalid && value != TextureType::ExternalImage);
+  IGL_DEBUG_ASSERT(value != TextureType::Invalid && value != TextureType::ExternalImage);
 
   switch (value) {
   case TextureType::ExternalImage:

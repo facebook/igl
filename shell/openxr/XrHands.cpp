@@ -54,18 +54,18 @@ XrHands::XrHands(XrInstance instance, XrSession session, bool handMeshSupported)
   instance_(instance), session_(session), handMeshSupported_(handMeshSupported) {
   XR_CHECK(xrGetInstanceProcAddr(
       instance_, "xrCreateHandTrackerEXT", (PFN_xrVoidFunction*)(&xrCreateHandTrackerEXT_)));
-  IGL_ASSERT(xrCreateHandTrackerEXT_ != nullptr);
+  IGL_DEBUG_ASSERT(xrCreateHandTrackerEXT_ != nullptr);
   XR_CHECK(xrGetInstanceProcAddr(
       instance_, "xrDestroyHandTrackerEXT", (PFN_xrVoidFunction*)(&xrDestroyHandTrackerEXT_)));
-  IGL_ASSERT(xrDestroyHandTrackerEXT_ != nullptr);
+  IGL_DEBUG_ASSERT(xrDestroyHandTrackerEXT_ != nullptr);
   XR_CHECK(xrGetInstanceProcAddr(
       instance_, "xrLocateHandJointsEXT", (PFN_xrVoidFunction*)(&xrLocateHandJointsEXT_)));
-  IGL_ASSERT(xrLocateHandJointsEXT_ != nullptr);
+  IGL_DEBUG_ASSERT(xrLocateHandJointsEXT_ != nullptr);
 
   if (handMeshSupported) {
     XR_CHECK(xrGetInstanceProcAddr(
         instance_, "xrGetHandMeshFB", (PFN_xrVoidFunction*)(&xrGetHandMeshFB_)));
-    IGL_ASSERT(xrGetHandMeshFB_ != nullptr);
+    IGL_DEBUG_ASSERT(xrGetHandMeshFB_ != nullptr);
   }
 }
 
@@ -136,7 +136,7 @@ void XrHands::updateMeshes(std::array<HandMesh, 2>& handMeshes) noexcept {
       continue;
     }
 
-    IGL_ASSERT(mesh.jointCountOutput <= XR_HAND_JOINT_COUNT_EXT);
+    IGL_DEBUG_ASSERT(mesh.jointCountOutput <= XR_HAND_JOINT_COUNT_EXT);
     XrPosef jointBindPoses[XR_HAND_JOINT_COUNT_EXT]{};
     XrHandJointEXT jointParents[XR_HAND_JOINT_COUNT_EXT]{};
     float jointRadii[XR_HAND_JOINT_COUNT_EXT]{};

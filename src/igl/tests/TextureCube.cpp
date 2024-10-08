@@ -62,7 +62,7 @@ class TextureCubeTest : public ::testing::Test {
 
     vertUniformBuffer = std::make_shared<iglu::ManagedUniformBuffer>(device, info);
 
-    IGL_ASSERT(vertUniformBuffer->result.isOk());
+    IGL_DEBUG_ASSERT(vertUniformBuffer->result.isOk());
 
     return vertUniformBuffer;
   }

@@ -43,7 +43,7 @@ class DataReader {
   template<typename T>
   [[nodiscard]] const T* IGL_NONNULL as() const noexcept {
     static_assert(sizeof(T) <= std::numeric_limits<uint32_t>::max());
-    IGL_ASSERT(length_ >= static_cast<uint32_t>(sizeof(T)));
+    IGL_DEBUG_ASSERT(length_ >= static_cast<uint32_t>(sizeof(T)));
     return reinterpret_cast<const T*>(data_);
   }
 
@@ -61,7 +61,7 @@ class DataReader {
   template<typename T>
   [[nodiscard]] const T* IGL_NONNULL asAt(uint32_t offset) const noexcept {
     static_assert(sizeof(T) <= std::numeric_limits<uint32_t>::max());
-    IGL_ASSERT(length_ >= offset + static_cast<uint32_t>(sizeof(T)));
+    IGL_DEBUG_ASSERT(length_ >= offset + static_cast<uint32_t>(sizeof(T)));
     return reinterpret_cast<const T*>(data_ + offset);
   }
 

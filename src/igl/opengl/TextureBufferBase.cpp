@@ -46,17 +46,17 @@ TextureDesc::TextureUsage TextureBufferBase::getUsage() const {
 
 // bind this as a source texture for rendering from
 void TextureBufferBase::bind() {
-  IGL_ASSERT(getUsage() & TextureDesc::TextureUsageBits::Sampled);
+  IGL_DEBUG_ASSERT(getUsage() & TextureDesc::TextureUsageBits::Sampled);
   getContext().bindTexture(target_, textureID_);
 }
 
 void TextureBufferBase::unbind() {
-  IGL_ASSERT(getUsage() & TextureDesc::TextureUsageBits::Sampled);
+  IGL_DEBUG_ASSERT(getUsage() & TextureDesc::TextureUsageBits::Sampled);
   getContext().bindTexture(target_, 0);
 }
 
 void TextureBufferBase::attachAsColor(uint32_t index, const AttachmentParams& params) {
-  IGL_ASSERT(getUsage() & TextureDesc::TextureUsageBits::Attachment);
+  IGL_DEBUG_ASSERT(getUsage() & TextureDesc::TextureUsageBits::Attachment);
   if (IGL_VERIFY(textureID_)) {
     attach(GL_COLOR_ATTACHMENT0 + index, params, textureID_);
   }
@@ -76,10 +76,11 @@ void TextureBufferBase::attach(GLenum attachment,
   const auto numLayers = getNumLayers();
 
   if (numSamples > 1) {
-    IGL_ASSERT(attachment == GL_COLOR_ATTACHMENT0 || attachment == GL_DEPTH_ATTACHMENT ||
-                   attachment == GL_STENCIL_ATTACHMENT,
-               "Multisample framebuffer can only use GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT "
-               "or GL_STENCIL_ATTACHMENT");
+    IGL_DEBUG_ASSERT(
+        attachment == GL_COLOR_ATTACHMENT0 || attachment == GL_DEPTH_ATTACHMENT ||
+            attachment == GL_STENCIL_ATTACHMENT,
+        "Multisample framebuffer can only use GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT "
+        "or GL_STENCIL_ATTACHMENT");
     if (params.stereo) {
       getContext().framebufferTextureMultisampleMultiview(framebufferTarget,
                                                           attachment,

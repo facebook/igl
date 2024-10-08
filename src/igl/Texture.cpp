@@ -422,10 +422,11 @@ size_t TextureFormatProperties::getBytesPerLayer(TextureRangeDesc range,
 
 size_t TextureFormatProperties::getBytesPerRange(TextureRangeDesc range,
                                                  uint32_t bytesPerRow) const noexcept {
-  IGL_ASSERT(range.x % blockWidth == 0);
-  IGL_ASSERT(range.y % blockHeight == 0);
-  IGL_ASSERT(range.z % blockDepth == 0);
-  IGL_ASSERT(bytesPerRow == 0 || bytesPerRow == getBytesPerRow(range) || range.numMipLevels == 1);
+  IGL_DEBUG_ASSERT(range.x % blockWidth == 0);
+  IGL_DEBUG_ASSERT(range.y % blockHeight == 0);
+  IGL_DEBUG_ASSERT(range.z % blockDepth == 0);
+  IGL_DEBUG_ASSERT(bytesPerRow == 0 || bytesPerRow == getBytesPerRow(range) ||
+                   range.numMipLevels == 1);
 
   size_t bytes = 0;
   for (size_t i = 0; i < range.numMipLevels; ++i) {
@@ -456,26 +457,27 @@ size_t TextureFormatProperties::getSubRangeByteOffset(const TextureRangeDesc& ra
                                                       const TextureRangeDesc& subRange,
                                                       uint32_t bytesPerRow) const noexcept {
   // Ensure subRange's layer, face and mipLevel range is a subset of range's.
-  IGL_ASSERT(subRange.layer >= range.layer &&
-             (subRange.layer + subRange.numLayers) <= (range.layer + range.numLayers));
-  IGL_ASSERT(subRange.face >= range.face &&
-             (subRange.face + subRange.numFaces) <= (range.face + range.numFaces));
-  IGL_ASSERT(subRange.mipLevel >= range.mipLevel &&
-             (subRange.mipLevel + subRange.numMipLevels) <= (range.mipLevel + range.numMipLevels));
+  IGL_DEBUG_ASSERT(subRange.layer >= range.layer &&
+                   (subRange.layer + subRange.numLayers) <= (range.layer + range.numLayers));
+  IGL_DEBUG_ASSERT(subRange.face >= range.face &&
+                   (subRange.face + subRange.numFaces) <= (range.face + range.numFaces));
+  IGL_DEBUG_ASSERT(subRange.mipLevel >= range.mipLevel &&
+                   (subRange.mipLevel + subRange.numMipLevels) <=
+                       (range.mipLevel + range.numMipLevels));
 
   // Ensure subRange's dimensions are equal to the full dimensions of range's at subRange's first
   // mip level.
-  IGL_ASSERT(subRange.x == range.atMipLevel(subRange.mipLevel).x &&
-             subRange.width == range.atMipLevel(subRange.mipLevel).width);
-  IGL_ASSERT(subRange.y == range.atMipLevel(subRange.mipLevel).y &&
-             subRange.height == range.atMipLevel(subRange.mipLevel).height);
-  IGL_ASSERT(subRange.z == range.atMipLevel(subRange.mipLevel).z &&
-             subRange.depth == range.atMipLevel(subRange.mipLevel).depth);
+  IGL_DEBUG_ASSERT(subRange.x == range.atMipLevel(subRange.mipLevel).x &&
+                   subRange.width == range.atMipLevel(subRange.mipLevel).width);
+  IGL_DEBUG_ASSERT(subRange.y == range.atMipLevel(subRange.mipLevel).y &&
+                   subRange.height == range.atMipLevel(subRange.mipLevel).height);
+  IGL_DEBUG_ASSERT(subRange.z == range.atMipLevel(subRange.mipLevel).z &&
+                   subRange.depth == range.atMipLevel(subRange.mipLevel).depth);
 
   // Ensure bytes per row is either 0 OR subrange covers only the base mip level of range.
-  IGL_ASSERT(bytesPerRow == 0 ||
-             (subRange.mipLevel == range.mipLevel && subRange.numMipLevels == 1) ||
-             bytesPerRow == getBytesPerRow(subRange));
+  IGL_DEBUG_ASSERT(bytesPerRow == 0 ||
+                   (subRange.mipLevel == range.mipLevel && subRange.numMipLevels == 1) ||
+                   bytesPerRow == getBytesPerRow(subRange));
 
   size_t offset = 0;
   auto workingRange = range;
@@ -611,21 +613,21 @@ TextureRangeDesc ITexture::getFullMipRange() const noexcept {
 TextureRangeDesc ITexture::getCubeFaceRange(size_t face,
                                             size_t mipLevel,
                                             size_t numMipLevels) const noexcept {
-  IGL_ASSERT(getType() == TextureType::Cube);
+  IGL_DEBUG_ASSERT(getType() == TextureType::Cube);
   return getFullRange(mipLevel, numMipLevels).atFace(face);
 }
 
 TextureRangeDesc ITexture::getCubeFaceRange(TextureCubeFace face,
                                             size_t mipLevel,
                                             size_t numMipLevels) const noexcept {
-  IGL_ASSERT(getType() == TextureType::Cube);
+  IGL_DEBUG_ASSERT(getType() == TextureType::Cube);
   return getCubeFaceRange(static_cast<size_t>(face), mipLevel, numMipLevels);
 }
 
 TextureRangeDesc ITexture::getLayerRange(size_t layer,
                                          size_t mipLevel,
                                          size_t numMipLevels) const noexcept {
-  IGL_ASSERT(getType() == TextureType::TwoDArray);
+  IGL_DEBUG_ASSERT(getType() == TextureType::TwoDArray);
   return getFullRange(mipLevel, numMipLevels).atLayer(layer);
 }
 

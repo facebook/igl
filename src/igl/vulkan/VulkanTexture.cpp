@@ -17,8 +17,8 @@ VulkanTexture::VulkanTexture(VulkanImage&& image, VulkanImageView&& imageView) :
   image_(std::move(image)), imageView_(std::move(imageView)) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  IGL_ASSERT(image_.valid());
-  IGL_ASSERT(imageView_.valid());
+  IGL_DEBUG_ASSERT(image_.valid());
+  IGL_DEBUG_ASSERT(imageView_.valid());
 }
 
 } // namespace igl::vulkan

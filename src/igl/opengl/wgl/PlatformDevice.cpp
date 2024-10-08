@@ -77,7 +77,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(int width
                                        "NativeDepth");
 
   auto texture = std::make_shared<ViewTextureTarget>(getContext(), desc.format);
-  IGL_ASSERT(texture);
+  IGL_DEBUG_ASSERT(texture);
   const Result subResult = texture->create(desc, true);
   Result::setResult(outResult, subResult.code, subResult.message);
   if (!subResult.isOk()) {

@@ -40,7 +40,7 @@ const uint8_t* IGL_NULLABLE DataReader::tryAt(uint32_t offset,
 }
 
 const uint8_t* IGL_NONNULL DataReader::at(uint32_t offset) const noexcept {
-  IGL_ASSERT(length_ >= offset);
+  IGL_DEBUG_ASSERT(length_ >= offset);
   return data_ + offset;
 }
 
@@ -64,7 +64,7 @@ bool DataReader::ensureLength(uint32_t requestedLength,
 }
 
 void DataReader::advance(uint32_t bytesToAdvance) noexcept {
-  IGL_ASSERT(length_ >= bytesToAdvance);
+  IGL_DEBUG_ASSERT(length_ >= bytesToAdvance);
 
   data_ += bytesToAdvance;
   length_ -= bytesToAdvance;

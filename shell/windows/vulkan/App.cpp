@@ -54,7 +54,7 @@ std::shared_ptr<Platform> VulkanShell::createPlatform() noexcept {
     devices = vulkan::HWDevice::queryDevices(
         *ctx.get(), HWDeviceQueryDesc(HWDeviceType::Unknown), nullptr);
   }
-  IGL_ASSERT(devices.size() > 0, "Could not find Vulkan device with requested capabilities");
+  IGL_DEBUG_ASSERT(devices.size() > 0, "Could not find Vulkan device with requested capabilities");
 
   auto vulkanDevice = vulkan::HWDevice::create(std::move(ctx),
                                                devices[0],
@@ -69,14 +69,14 @@ igl::SurfaceTextures VulkanShell::createSurfaceTextures() noexcept {
   auto& device = platform().getDevice();
   const auto& vkPlatformDevice = device.getPlatformDevice<igl::vulkan::PlatformDevice>();
 
-  IGL_ASSERT(vkPlatformDevice != nullptr);
+  IGL_DEBUG_ASSERT(vkPlatformDevice != nullptr);
 
   Result ret;
   auto color = vkPlatformDevice->createTextureFromNativeDrawable(&ret);
-  IGL_ASSERT(ret.isOk());
+  IGL_DEBUG_ASSERT(ret.isOk());
   auto depth = vkPlatformDevice->createTextureFromNativeDepth(
       shellParams().viewportSize.x, shellParams().viewportSize.y, &ret);
-  IGL_ASSERT(ret.isOk());
+  IGL_DEBUG_ASSERT(ret.isOk());
 
   return igl::SurfaceTextures{std::move(color), std::move(depth)};
 }

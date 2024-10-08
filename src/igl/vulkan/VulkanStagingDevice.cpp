@@ -37,7 +37,7 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
       ctx_.deviceQueues_.graphicsQueueFamilyIndex,
       ctx_.config_.exportableFences,
       "VulkanStagingDevice::immediate_");
-  IGL_ASSERT(immediate_.get());
+  IGL_DEBUG_ASSERT(immediate_.get());
 }
 
 void VulkanStagingDevice::bufferSubData(VulkanBuffer& buffer,
@@ -163,7 +163,7 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
     allocateStagingBuffer(nextSize(requestedAlignedSize));
   }
 
-  IGL_ASSERT(!regions_.empty());
+  IGL_DEBUG_ASSERT(!regions_.empty());
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
   IGL_LOG_INFO("nextFreeBlock() with %u bytes, aligned %u bytes\n", size, requestedAlignedSize);
@@ -181,7 +181,7 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
     regionItr++;
   }
 
-  IGL_ASSERT(allocatedSize);
+  IGL_DEBUG_ASSERT(allocatedSize);
 
   if (allocatedSize) {
     const uint32_t newSize = regionItr->size - allocatedSize;
@@ -222,7 +222,7 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
 
   // try to allocate a new staging buffer
   allocateStagingBuffer(nextSize(requestedAlignedSize));
-  IGL_ASSERT(!regions_.empty());
+  IGL_DEBUG_ASSERT(!regions_.empty());
 
   if (!regions_.empty()) { // if a valid region is available, return it
     freeStagingBufferSize_ -= requestedAlignedSize;
@@ -294,12 +294,12 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
       is420 ? image.extent_.width * image.extent_.height * 3u / 2u
             : static_cast<uint32_t>(properties.getBytesPerRange(range, bytesPerRow));
 
-  IGL_ASSERT(storageSize);
+  IGL_DEBUG_ASSERT(storageSize);
 
   // We don't support uploading image data in small chunks. If the total upload size exceeds the
   // the maximum allowed staging buffer size, we can't upload it
-  IGL_ASSERT(storageSize <= maxStagingBufferSize_,
-             "Image size exceeds maximum size of staging buffer");
+  IGL_DEBUG_ASSERT(storageSize <= maxStagingBufferSize_,
+                   "Image size exceeds maximum size of staging buffer");
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
   IGL_LOG_INFO("Image upload requested for data with %u bytes\n", storageSize);
@@ -308,7 +308,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
   // get next staging buffer free offset
   MemoryRegion memoryChunk = nextFreeBlock(storageSize, true);
 
-  IGL_ASSERT(memoryChunk.size >= storageSize);
+  IGL_DEBUG_ASSERT(memoryChunk.size >= storageSize);
   auto& stagingBuffer = stagingBuffers_[memoryChunk.stagingBufferIndex];
 
   // 1. Copy the pixel data into the host visible staging buffer
@@ -324,11 +324,11 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
   // @fb-only
   if (is420) {
     // this is a prototype support implemented for a couple of multiplanar image formats
-    IGL_ASSERT(range.face == 0 && range.layer == 0 && range.mipLevel == 0);
-    IGL_ASSERT(range.numFaces == 1 && range.numLayers == 1 && range.numMipLevels == 1);
-    IGL_ASSERT(range.x == 0 && range.y == 0 && range.z == 0);
-    IGL_ASSERT(image.type_ == VK_IMAGE_TYPE_2D);
-    IGL_ASSERT(image.extent_.width == range.width && image.extent_.height == range.height);
+    IGL_DEBUG_ASSERT(range.face == 0 && range.layer == 0 && range.mipLevel == 0);
+    IGL_DEBUG_ASSERT(range.numFaces == 1 && range.numLayers == 1 && range.numMipLevels == 1);
+    IGL_DEBUG_ASSERT(range.x == 0 && range.y == 0 && range.z == 0);
+    IGL_DEBUG_ASSERT(image.type_ == VK_IMAGE_TYPE_2D);
+    IGL_DEBUG_ASSERT(image.extent_.width == range.width && image.extent_.height == range.height);
     const uint32_t w = image.extent_.width;
     const uint32_t h = image.extent_.height;
     ivkCmdBeginDebugUtilsLabel(&ctx_.vf_,
@@ -515,7 +515,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
                                            ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
                                            : VK_IMAGE_LAYOUT_UNDEFINED)));
 
-  IGL_ASSERT(targetLayout != VK_IMAGE_LAYOUT_UNDEFINED, "Missing usage flags");
+  IGL_DEBUG_ASSERT(targetLayout != VK_IMAGE_LAYOUT_UNDEFINED, "Missing usage flags");
 
   const VkAccessFlags dstAccessMask =
       isSampled
@@ -558,7 +558,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
                                          uint32_t bytesPerRow,
                                          bool flipImageVertical) {
   IGL_PROFILER_FUNCTION();
-  IGL_ASSERT(layout != VK_IMAGE_LAYOUT_UNDEFINED);
+  IGL_DEBUG_ASSERT(layout != VK_IMAGE_LAYOUT_UNDEFINED);
 
   const bool mustRepack = bytesPerRow != 0 && bytesPerRow % properties.bytesPerBlock != 0;
 
@@ -569,8 +569,8 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
 
   // We don't support uploading image data in small chunks. If the total upload size exceeds the
   // the maximum allowed staging buffer size, we can't upload it
-  IGL_ASSERT(storageSize <= maxStagingBufferSize_,
-             "Image size exceeds maximum size of staging buffer");
+  IGL_DEBUG_ASSERT(storageSize <= maxStagingBufferSize_,
+                   "Image size exceeds maximum size of staging buffer");
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
   IGL_LOG_INFO("Image download requested for data with %u bytes\n", storageSize);
@@ -579,7 +579,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   // get next staging buffer free offset
   const MemoryRegion memoryChunk = nextFreeBlock(storageSize, true);
 
-  IGL_ASSERT(memoryChunk.size >= storageSize);
+  IGL_DEBUG_ASSERT(memoryChunk.size >= storageSize);
   const auto& wrapper1 = immediate_->acquire();
 
   // 1. Transition to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
@@ -708,7 +708,7 @@ VkDeviceSize VulkanStagingDevice::nextSize(VkDeviceSize requestedSize) const {
 void VulkanStagingDevice::allocateStagingBuffer(VkDeviceSize minimumSize) {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT(minimumSize <= maxStagingBufferSize_);
+  IGL_DEBUG_ASSERT(minimumSize <= maxStagingBufferSize_);
 
 #if IGL_VULKAN_DEBUG_STAGING_DEVICE
   IGL_LOG_INFO("Allocating a new staging buffer of size %u bytes\n", minimumSize);
@@ -728,7 +728,7 @@ void VulkanStagingDevice::allocateStagingBuffer(VkDeviceSize minimumSize) {
       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
       IGL_FORMAT("Buffer: staging buffer #{} with {}B", stagingBufferCounter_, stagingBufferSize)
           .c_str()));
-  IGL_ASSERT(stagingBuffers_.back().get());
+  IGL_DEBUG_ASSERT(stagingBuffers_.back().get());
 
   // Add region that represents the entire buffer
   regions_.push_front({0,

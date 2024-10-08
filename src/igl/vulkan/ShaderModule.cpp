@@ -16,7 +16,7 @@ namespace igl::vulkan {
 ShaderModule::ShaderModule(ShaderModuleInfo info,
                            std::shared_ptr<VulkanShaderModule> shaderModule) :
   IShaderModule(std::move(info)), module_(std::move(shaderModule)) {
-  IGL_ASSERT(module_);
+  IGL_DEBUG_ASSERT(module_);
 }
 
 VkShaderModule ShaderModule::getVkShaderModule(const std::shared_ptr<IShaderModule>& shaderModule) {

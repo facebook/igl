@@ -25,7 +25,7 @@ ComputeCommandEncoder::ComputeCommandEncoder(const std::shared_ptr<CommandBuffer
   binder_(commandBuffer.get(), ctx_, VK_PIPELINE_BIND_POINT_COMPUTE) {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT(commandBuffer);
+  IGL_DEBUG_ASSERT(commandBuffer);
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
 
   ctx_.checkAndUpdateDescriptorSets();
@@ -152,13 +152,13 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
 }
 
 void ComputeCommandEncoder::pushDebugGroupLabel(const char* label, const igl::Color& color) const {
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
 void ComputeCommandEncoder::insertDebugEventLabel(const char* label,
                                                   const igl::Color& color) const {
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   ivkCmdInsertDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
@@ -175,7 +175,7 @@ void ComputeCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, cons
 void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT(texture);
+  IGL_DEBUG_ASSERT(texture);
 
   const igl::vulkan::Texture* tex = static_cast<igl::vulkan::Texture*>(texture);
   const igl::vulkan::VulkanTexture& vkTex = tex->getVulkanTexture();
@@ -218,13 +218,15 @@ void ComputeCommandEncoder::bindBytes(size_t /*index*/, const void* /*data*/, si
 void ComputeCommandEncoder::bindPushConstants(const void* data, size_t length, size_t offset) {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT(length % 4 == 0); // VUID-vkCmdPushConstants-size-00369: size must be a multiple of 4
+  IGL_DEBUG_ASSERT(length % 4 == 0); // VUID-vkCmdPushConstants-size-00369: size must be a multiple
+                                     // of 4
 
-  IGL_ASSERT(cps_, "Did you forget to call bindComputePipelineState()?");
-  IGL_ASSERT(cps_->pushConstantRange_.size,
-             "Currently bound compute pipeline state has no push constants");
-  IGL_ASSERT(offset + length <= cps_->pushConstantRange_.offset + cps_->pushConstantRange_.size,
-             "Push constants size exceeded");
+  IGL_DEBUG_ASSERT(cps_, "Did you forget to call bindComputePipelineState()?");
+  IGL_DEBUG_ASSERT(cps_->pushConstantRange_.size,
+                   "Currently bound compute pipeline state has no push constants");
+  IGL_DEBUG_ASSERT(offset + length <=
+                       cps_->pushConstantRange_.offset + cps_->pushConstantRange_.size,
+                   "Push constants size exceeded");
 
 #if IGL_VULKAN_PRINT_COMMANDS
   IGL_LOG_INFO("%p vkCmdPushConstants(%u) - COMPUTE\n", cmdBuffer_, length);

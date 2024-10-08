@@ -115,7 +115,7 @@ static void initIGL() {
         std::make_unique<igl::opengl::webgl::Context>(igl::opengl::RenderingAPI::GLES3, "#canvas");
     device_ = std::make_unique<igl::opengl::webgl::Device>(std::move(ctx));
 
-    IGL_ASSERT(device_);
+    IGL_DEBUG_ASSERT(device_);
   }
 
   // Command queue: backed by different types of GPU HW queues
@@ -135,7 +135,7 @@ static void createRenderPipeline() {
     return;
   }
 
-  IGL_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer_);
 
   RenderPipelineDesc desc;
 
@@ -154,12 +154,12 @@ static void createRenderPipeline() {
   desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(
       *device_, codeVS, "main", "", codeFS, "main", "", nullptr);
   renderPipelineState_Triangle_ = device_->createRenderPipeline(desc, nullptr);
-  IGL_ASSERT(renderPipelineState_Triangle_);
+  IGL_DEBUG_ASSERT(renderPipelineState_Triangle_);
 }
 
 static std::shared_ptr<ITexture> getNativeDrawable() {
   const auto& platformDevice = device_->getPlatformDevice<opengl::webgl::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
+  IGL_DEBUG_ASSERT(platformDevice != nullptr);
 
   getRenderingBufferSize(width_, height_);
 
@@ -167,8 +167,8 @@ static std::shared_ptr<ITexture> getNativeDrawable() {
   std::shared_ptr<ITexture> drawable =
       platformDevice->createTextureFromNativeDrawable(width_, height_, &ret);
 
-  IGL_ASSERT(ret.isOk(), ret.message.c_str());
-  IGL_ASSERT(drawable != nullptr);
+  IGL_DEBUG_ASSERT(ret.isOk(), ret.message.c_str());
+  IGL_DEBUG_ASSERT(drawable != nullptr);
   return drawable;
 }
 
@@ -185,7 +185,7 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
 
   framebufferDesc.colorAttachments[1].texture = device_->createTexture(desc, nullptr);
   framebuffer_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer_);
 }
 
 static void render(const std::shared_ptr<ITexture>& nativeDrawable) {

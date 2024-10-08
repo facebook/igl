@@ -60,7 +60,7 @@ class VulkanImmediateCommands final {
     /// @brief Creates a SubmitHandle object from an existing handle
     explicit SubmitHandle(uint64_t handle) :
       bufferIndex_(uint32_t(handle & 0xffffffff)), submitId_(uint32_t(handle >> 32)) {
-      IGL_ASSERT(submitId_);
+      IGL_DEBUG_ASSERT(submitId_);
     }
 
     /// @brief Checks whether the structure is empty and has not been associates with a command

@@ -67,7 +67,7 @@ class Texture : public ITexture {
                                                                         // only into 1 mip-level
   VkImage getVkImage() const;
   VulkanTexture& getVulkanTexture() const {
-    IGL_ASSERT(texture_);
+    IGL_DEBUG_ASSERT(texture_);
     return *texture_;
   }
 

@@ -35,7 +35,7 @@ Result ComputePipelineState::create(const ComputePipelineDesc& desc) {
     const auto textureUnit = unitSampler.first;
     const auto& imageName = unitSampler.second;
 
-    IGL_ASSERT(!imageName.toString().empty());
+    IGL_DEBUG_ASSERT(!imageName.toString().empty());
     const int loc = reflection_->getIndexByName(imageName);
     if (IGL_VERIFY(loc >= 0)) {
       GLint unit = 0;
@@ -54,7 +54,7 @@ Result ComputePipelineState::create(const ComputePipelineDesc& desc) {
     const auto bufferUnit = buffer.first;
     const auto& bufferName = buffer.second;
 
-    IGL_ASSERT(!bufferName.toString().empty());
+    IGL_DEBUG_ASSERT(!bufferName.toString().empty());
     const int loc = reflection_->getIndexByName(bufferName);
     if (IGL_VERIFY(loc >= 0)) {
       if (const auto& ssboDictionary = reflection_->getShaderStorageBufferObjectDictionary();

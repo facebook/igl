@@ -42,7 +42,7 @@ std::unique_ptr<IDevice> HWDevice::create(std::unique_ptr<VulkanContext> ctx,
                                               extraDeviceExtensions,
                                           const igl::vulkan::VulkanFeatures* IGL_NULLABLE features,
                                           Result* IGL_NULLABLE outResult) {
-  IGL_ASSERT(ctx);
+  IGL_DEBUG_ASSERT(ctx);
 
   auto result = ctx->initContext(desc, numExtraDeviceExtensions, extraDeviceExtensions, features);
 

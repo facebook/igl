@@ -232,7 +232,7 @@ static void initIGL() {
     device_ =
         vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
 #endif
-    IGL_ASSERT(device_);
+    IGL_DEBUG_ASSERT(device_);
   }
 
   // Command queue: backed by different types of GPU HW queues
@@ -258,7 +258,7 @@ static void createRenderPipeline() {
     return;
   }
 
-  IGL_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer_);
 
   RenderPipelineDesc desc;
 
@@ -283,7 +283,7 @@ static void createRenderPipeline() {
   desc.shaderStages = ShaderStagesCreator::fromModuleStringInput(
       *device_, codeVS.c_str(), "main", "", codeFS, "main", "", nullptr);
   renderPipelineState_Triangle_ = device_->createRenderPipeline(desc, nullptr);
-  IGL_ASSERT(renderPipelineState_Triangle_);
+  IGL_DEBUG_ASSERT(renderPipelineState_Triangle_);
 }
 
 static std::shared_ptr<ITexture> getNativeDrawable() {
@@ -292,19 +292,19 @@ static std::shared_ptr<ITexture> getNativeDrawable() {
 #if USE_OPENGL_BACKEND
 #if IGL_PLATFORM_WIN
   const auto& platformDevice = device_->getPlatformDevice<opengl::wgl::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
+  IGL_DEBUG_ASSERT(platformDevice != nullptr);
   drawable = platformDevice->createTextureFromNativeDrawable(&ret);
 #elif IGL_PLATFORM_LINUX
   const auto& platformDevice = device_->getPlatformDevice<opengl::glx::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
+  IGL_DEBUG_ASSERT(platformDevice != nullptr);
   drawable = platformDevice->createTextureFromNativeDrawable(width_, height_, &ret);
 #endif
 #else
   const auto& platformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
+  IGL_DEBUG_ASSERT(platformDevice != nullptr);
   drawable = platformDevice->createTextureFromNativeDrawable(&ret);
 #endif
-  IGL_ASSERT(ret.isOk(), ret.message.c_str());
+  IGL_DEBUG_ASSERT(ret.isOk(), ret.message.c_str());
   return drawable;
 }
 
@@ -327,7 +327,7 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
     framebufferDesc.colorAttachments[i].texture = device_->createTexture(desc, nullptr);
   }
   framebuffer_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer_);
 }
 
 static void render(const std::shared_ptr<ITexture>& nativeDrawable) {

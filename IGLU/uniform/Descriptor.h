@@ -86,7 +86,7 @@ struct AlignedElement<glm::mat3> {
       Trait<glm::mat3>::toAligned(valueAligned, value); // Sync from source of truth
       return &valueAligned;
     }
-    IGL_ASSERT(Alignment::Packed == alignment);
+    IGL_DEBUG_ASSERT(Alignment::Packed == alignment);
     return &value;
   }
 };
@@ -196,7 +196,7 @@ class DescriptorValue : public Descriptor {
   }
 
   [[nodiscard]] size_t numBytes(Alignment alignment) const noexcept override {
-    IGL_ASSERT(sizeForUniformType(getType()) <= sizeof(Element));
+    IGL_DEBUG_ASSERT(sizeForUniformType(getType()) <= sizeof(Element));
 
     // NOTE: Any padding required for T to be aligned will be present in Element
     return sizeof(T) + (Alignment::Packed == alignment ? 0 : Trait<T>::kPadding);
@@ -284,7 +284,7 @@ class DescriptorVector : public Descriptor {
         }
         return valuesAligned.data();
       }
-      IGL_ASSERT(Alignment::Packed == alignment);
+      IGL_DEBUG_ASSERT(Alignment::Packed == alignment);
       return values.data();
     }
 
@@ -308,7 +308,7 @@ class DescriptorVector : public Descriptor {
 
   [[nodiscard]] size_t numBytes(Alignment alignment) const noexcept override {
     size_t elementSize = container_.elementSize(alignment);
-    IGL_ASSERT(sizeForUniformType(getType()) <= elementSize);
+    IGL_DEBUG_ASSERT(sizeForUniformType(getType()) <= elementSize);
     return container_.values.size() * elementSize;
   }
 

@@ -96,12 +96,12 @@ uint32_t igl::iglCrc32(const char* data, size_t /*length*/) {
 namespace igl {
 bool NameHandle::checkIsValidCrcCompare(const NameHandle& nh) const {
   const bool res = nh.crc32_ == crc32_ && nh.name_ != name_;
-  IGL_ASSERT(!res,
-             "NameHandle CRC check fails: name1 (%s %x) name2 (%s %x)\n",
-             name_.c_str(),
-             crc32_,
-             nh.name_.c_str(),
-             nh.crc32_);
+  IGL_DEBUG_ASSERT(!res,
+                   "NameHandle CRC check fails: name1 (%s %x) name2 (%s %x)\n",
+                   name_.c_str(),
+                   crc32_,
+                   nh.name_.c_str(),
+                   nh.crc32_);
 
   return res;
 }

@@ -99,7 +99,7 @@ void initIGL() {
       *ctx.get(), HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
   device_ =
       vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
-  IGL_ASSERT(device_);
+  IGL_DEBUG_ASSERT(device_);
 
   // Command queue: backed by different types of GPU HW queues
   CommandQueueDesc desc{CommandQueueType::Graphics};
@@ -116,7 +116,7 @@ void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   FramebufferDesc framebufferDesc;
   framebufferDesc.colorAttachments[0].texture = nativeDrawable;
   framebuffer_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer_);
 }
 
 void createRenderPipeline() {
@@ -124,7 +124,7 @@ void createRenderPipeline() {
     return;
   }
 
-  IGL_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer_);
 
   RenderPipelineDesc desc;
 
@@ -145,12 +145,12 @@ void createRenderPipeline() {
 std::shared_ptr<ITexture> getVulkanNativeDrawable() {
   const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
 
-  IGL_ASSERT(vkPlatformDevice != nullptr);
+  IGL_DEBUG_ASSERT(vkPlatformDevice != nullptr);
 
   Result ret;
   std::shared_ptr<ITexture> drawable = vkPlatformDevice->createTextureFromNativeDrawable(&ret);
 
-  IGL_ASSERT(ret.isOk());
+  IGL_DEBUG_ASSERT(ret.isOk());
   return drawable;
 }
 

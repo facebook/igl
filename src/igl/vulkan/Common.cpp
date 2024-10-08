@@ -430,7 +430,7 @@ void transitionToColorAttachment(VkCommandBuffer cmdBuf, ITexture* colorTex) {
     IGL_LOG_ERROR("Color attachments cannot have depth/stencil formats");
     return;
   }
-  IGL_ASSERT(img.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
+  IGL_DEBUG_ASSERT(img.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
   if (!IGL_VERIFY((img.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0)) {
     IGL_DEBUG_ABORT("Did you forget to specify TextureUsageBit::Attachment usage bit?");
     IGL_LOG_ERROR("Did you forget to specify TextureUsageBit::Attachment usage bit?");
@@ -463,7 +463,7 @@ void transitionToDepthStencilAttachment(VkCommandBuffer cmdBuf, ITexture* depthS
     IGL_LOG_ERROR("Only depth/stencil formats are accepted");
     return;
   }
-  IGL_ASSERT(img.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
+  IGL_DEBUG_ASSERT(img.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
   if (!IGL_VERIFY((img.usageFlags_ & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0)) {
     IGL_DEBUG_ABORT("Did you forget to specify TextureUsageBit::Attachment usage bit?");
     IGL_LOG_ERROR("Did you forget to specify TextureUsageBit::Attachment usage bit?");
@@ -524,7 +524,7 @@ void overrideImageLayout(ITexture* texture, VkImageLayout layout) {
 }
 
 void ensureShaderModule(IShaderModule* sm) {
-  IGL_ASSERT(sm);
+  IGL_DEBUG_ASSERT(sm);
 
   const igl::vulkan::util::SpvModuleInfo& info =
       static_cast<igl::vulkan::ShaderModule*>(sm)->getVulkanShaderModule().getSpvModuleInfo();
@@ -601,18 +601,18 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
 
 void initialize(VulkanFunctionTable& table) {
   table.vkGetInstanceProcAddr = getVkGetInstanceProcAddr();
-  IGL_ASSERT(table.vkGetInstanceProcAddr != nullptr);
+  IGL_DEBUG_ASSERT(table.vkGetInstanceProcAddr != nullptr);
 
   loadVulkanLoaderFunctions(&table, table.vkGetInstanceProcAddr);
 }
 
 void loadInstanceFunctions(VulkanFunctionTable& table, VkInstance instance) {
-  IGL_ASSERT(table.vkGetInstanceProcAddr != nullptr);
+  IGL_DEBUG_ASSERT(table.vkGetInstanceProcAddr != nullptr);
   loadVulkanInstanceFunctions(&table, instance, table.vkGetInstanceProcAddr);
 }
 
 void loadDeviceFunctions(VulkanFunctionTable& table, VkDevice device) {
-  IGL_ASSERT(table.vkGetDeviceProcAddr != nullptr);
+  IGL_DEBUG_ASSERT(table.vkGetDeviceProcAddr != nullptr);
   loadVulkanDeviceFunctions(&table, device, table.vkGetDeviceProcAddr);
 }
 

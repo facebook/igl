@@ -267,7 +267,7 @@ static void initIGL() {
     }
     device_ =
         vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
-    IGL_ASSERT(device_);
+    IGL_DEBUG_ASSERT(device_);
   }
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.
@@ -369,7 +369,8 @@ static void initIGL() {
         &texHeight,
         &channels,
         4);
-    IGL_ASSERT(pixels, "Cannot load textures. Run `deploy_content.py` before running this app.");
+    IGL_DEBUG_ASSERT(pixels,
+                     "Cannot load textures. Run `deploy_content.py` before running this app.");
     const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
                                                 texWidth,
                                                 texHeight,
@@ -415,7 +416,7 @@ static void createRenderPipeline() {
     return;
   }
 
-  IGL_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer_);
 
   RenderPipelineDesc desc;
 
@@ -443,25 +444,25 @@ static void createRenderPipeline() {
 static std::shared_ptr<ITexture> getVulkanNativeDrawable() {
   const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
 
-  IGL_ASSERT(vkPlatformDevice != nullptr);
+  IGL_DEBUG_ASSERT(vkPlatformDevice != nullptr);
 
   Result ret;
   std::shared_ptr<ITexture> drawable = vkPlatformDevice->createTextureFromNativeDrawable(&ret);
 
-  IGL_ASSERT(ret.isOk());
+  IGL_DEBUG_ASSERT(ret.isOk());
   return drawable;
 }
 
 static std::shared_ptr<ITexture> getVulkanNativeDepth() {
   const auto& vkPlatformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
 
-  IGL_ASSERT(vkPlatformDevice != nullptr);
+  IGL_DEBUG_ASSERT(vkPlatformDevice != nullptr);
 
   Result ret;
   std::shared_ptr<ITexture> drawable =
       vkPlatformDevice->createTextureFromNativeDepth(width_, height_, &ret);
 
-  IGL_ASSERT(ret.isOk());
+  IGL_DEBUG_ASSERT(ret.isOk());
   return drawable;
 }
 
@@ -473,7 +474,7 @@ static void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
 #endif // TINY_TEST_USE_DEPTH_BUFFER
 
   framebuffer_ = device_->createFramebuffer(framebufferDesc_, nullptr);
-  IGL_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer_);
 }
 
 static void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {

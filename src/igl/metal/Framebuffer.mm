@@ -30,12 +30,12 @@ std::vector<size_t> Framebuffer::getColorAttachmentIndices() const {
 }
 
 std::shared_ptr<ITexture> Framebuffer::getColorAttachment(size_t index) const {
-  IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
+  IGL_DEBUG_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
   return value_.colorAttachments[index].texture;
 }
 
 std::shared_ptr<ITexture> Framebuffer::getResolveColorAttachment(size_t index) const {
-  IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
+  IGL_DEBUG_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
   return value_.colorAttachments[index].resolveTexture;
 }
 
@@ -63,10 +63,10 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
                                            void* pixelBytes,
                                            const TextureRangeDesc& range,
                                            size_t bytesPerRow) const {
-  IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
-  IGL_ASSERT(range.numFaces == 1, "range.numFaces MUST be 1");
-  IGL_ASSERT(range.numLayers == 1, "range.numLayers MUST be 1");
-  IGL_ASSERT(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
+  IGL_DEBUG_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
+  IGL_DEBUG_ASSERT(range.numFaces == 1, "range.numFaces MUST be 1");
+  IGL_DEBUG_ASSERT(range.numLayers == 1, "range.numLayers MUST be 1");
+  IGL_DEBUG_ASSERT(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
   const auto& colorAttachment = value_.colorAttachments[index];
 
   if (IGL_VERIFY(colorAttachment.texture != nullptr)) {
@@ -99,7 +99,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
                                              size_t index,
                                              std::shared_ptr<ITexture> destTexture,
                                              const TextureRangeDesc& range) const {
-  IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
+  IGL_DEBUG_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
   const auto& colorAttachment = value_.colorAttachments[index];
 
   if (IGL_VERIFY(colorAttachment.texture != nullptr)) {

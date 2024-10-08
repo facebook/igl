@@ -22,7 +22,7 @@ class FPSCounter {
   /// the console. The default is 1 second
   explicit FPSCounter(bool printToConsole = true, float avgIntervalInSeconds = 1.0f) :
     printToConsole_(printToConsole), avgIntervalInSeconds_(avgIntervalInSeconds) {
-    IGL_ASSERT(avgIntervalInSeconds > 0);
+    IGL_DEBUG_ASSERT(avgIntervalInSeconds > 0);
   }
 
   [[nodiscard]] float getAverageFPS() const noexcept {

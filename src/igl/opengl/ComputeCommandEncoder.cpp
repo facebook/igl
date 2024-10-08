@@ -62,7 +62,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
 
 void ComputeCommandEncoder::pushDebugGroupLabel(const char* label,
                                                 const igl::Color& /*color*/) const {
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
     getContext().pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, label);
   } else {
@@ -73,7 +73,7 @@ void ComputeCommandEncoder::pushDebugGroupLabel(const char* label,
 
 void ComputeCommandEncoder::insertDebugEventLabel(const char* label,
                                                   const igl::Color& /*color*/) const {
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
     getContext().debugMessageInsert(
         GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_MARKER, 0, GL_DEBUG_SEVERITY_LOW, -1, label);
@@ -93,10 +93,10 @@ void ComputeCommandEncoder::popDebugGroupLabel() const {
 }
 
 void ComputeCommandEncoder::bindUniform(const UniformDesc& uniformDesc, const void* data) {
-  IGL_ASSERT(uniformDesc.location >= 0,
-             "Invalid location passed to bindUniformBuffer: %d",
-             uniformDesc.location);
-  IGL_ASSERT(data != nullptr, "Data cannot be null");
+  IGL_DEBUG_ASSERT(uniformDesc.location >= 0,
+                   "Invalid location passed to bindUniformBuffer: %d",
+                   uniformDesc.location);
+  IGL_DEBUG_ASSERT(data != nullptr, "Data cannot be null");
   if (IGL_VERIFY(adapter_) && data) {
     adapter_->setUniform(uniformDesc, data);
   }

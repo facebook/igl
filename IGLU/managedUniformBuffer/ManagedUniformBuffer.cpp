@@ -191,7 +191,7 @@ static int findUniformByName(const std::vector<igl::UniformDesc>& uniforms, cons
 }
 
 bool ManagedUniformBuffer::updateData(const char* name, const void* data, size_t dataSize) {
-  IGL_ASSERT(name);
+  IGL_DEBUG_ASSERT(name);
 
   int index = -1;
   if (uniformLUT_) {

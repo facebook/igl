@@ -95,7 +95,7 @@ RenderPipelineReflection::RenderPipelineReflection(IContext& context, const Shad
 RenderPipelineReflection::~RenderPipelineReflection() = default;
 
 void RenderPipelineReflection::generateUniformDictionary(IContext& context, GLuint pid) {
-  IGL_ASSERT(pid != 0);
+  IGL_DEBUG_ASSERT(pid != 0);
   uniformDictionary_.clear();
 
   GLint count = 0;
@@ -158,7 +158,7 @@ void RenderPipelineReflection::generateUniformDictionary(IContext& context, GLui
 }
 
 void RenderPipelineReflection::generateUniformBlocksDictionary(IContext& context, GLuint pid) {
-  IGL_ASSERT(pid != 0);
+  IGL_DEBUG_ASSERT(pid != 0);
   uniformBlocksDictionary_.clear();
 
   GLint numBlocks = 0;
@@ -246,7 +246,7 @@ void RenderPipelineReflection::generateUniformBlocksDictionary(IContext& context
 }
 
 void RenderPipelineReflection::generateAttributeDictionary(IContext& context, GLuint pid) {
-  IGL_ASSERT(pid != 0);
+  IGL_DEBUG_ASSERT(pid != 0);
 
   attributeDictionary_.clear();
   GLint maxAttributeNameLength = 0;
@@ -272,7 +272,7 @@ void RenderPipelineReflection::generateAttributeDictionary(IContext& context, GL
 void RenderPipelineReflection::generateShaderStorageBufferObjectDictionary(IContext& context,
                                                                            GLuint pid) {
   if (context.deviceFeatures().hasFeature(DeviceFeatures::Compute)) {
-    IGL_ASSERT(pid != 0);
+    IGL_DEBUG_ASSERT(pid != 0);
     shaderStorageBufferObjectDictionary_.clear();
 
     GLint maxSSBONameLength = 0;

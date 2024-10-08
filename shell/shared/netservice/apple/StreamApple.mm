@@ -23,7 +23,7 @@
 @implementation IGLShellStreamDelegateAdapter
 
 - (instancetype)initWithOwner:(igl::shell::netservice::StreamAdapterApple*)owner {
-  IGL_ASSERT(owner);
+  IGL_DEBUG_ASSERT(owner);
   self = [super init];
   if (self) {
     owner_ = owner;
@@ -34,7 +34,7 @@
 - (void)stream:(NSStream*)stream handleEvent:(NSStreamEvent)eventCode {
   using namespace igl::shell::netservice;
 
-  IGL_ASSERT(stream == owner_->nsStream());
+  IGL_DEBUG_ASSERT(stream == owner_->nsStream());
   Stream::Event event = Stream::Event::None;
   switch (eventCode) {
   case NSStreamEventNone:
@@ -79,7 +79,7 @@ StreamAdapterApple::~StreamAdapterApple() {
 }
 
 bool StreamAdapterApple::initialize(Stream* owner, NSStream* stream) noexcept {
-  IGL_ASSERT(owner && stream);
+  IGL_DEBUG_ASSERT(owner && stream);
   const bool result = IGL_VERIFY(nullptr == owner_ && nil == stream_);
   if (result) {
     owner_ = owner;
@@ -126,12 +126,12 @@ void StreamAdapterApple::close() noexcept {
 // ----------------------------------------------------------------------------
 
 int InputStreamApple::read(uint8_t* outBuffer, size_t maxLength) const noexcept {
-  IGL_ASSERT(outBuffer);
+  IGL_DEBUG_ASSERT(outBuffer);
   return [inputStream() read:outBuffer maxLength:maxLength];
 }
 
 bool InputStreamApple::getBuffer(uint8_t*& outBuffer, size_t& outLength) const noexcept {
-  IGL_ASSERT(outBuffer);
+  IGL_DEBUG_ASSERT(outBuffer);
   return [inputStream() getBuffer:&outBuffer length:&outLength];
 }
 
@@ -142,7 +142,7 @@ bool InputStreamApple::hasBytesAvailable() const noexcept {
 // ----------------------------------------------------------------------------
 
 int OutputStreamApple::write(const uint8_t* buffer, size_t maxLength) noexcept {
-  IGL_ASSERT(buffer);
+  IGL_DEBUG_ASSERT(buffer);
   return [outputStream() write:buffer maxLength:maxLength];
 }
 

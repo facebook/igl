@@ -217,7 +217,7 @@ class DescriptorPoolsArena final {
     types_{type},
     numDescriptorsPerDSet_(numDescriptorsPerDSet),
     dsl_(dsl) {
-    IGL_ASSERT(debugName);
+    IGL_DEBUG_ASSERT(debugName);
     dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
   }
   DescriptorPoolsArena(const VulkanContext& ctx,
@@ -232,7 +232,7 @@ class DescriptorPoolsArena final {
     types_{type0, type1},
     numDescriptorsPerDSet_(numDescriptorsPerDSet),
     dsl_(dsl) {
-    IGL_ASSERT(debugName);
+    IGL_DEBUG_ASSERT(debugName);
     dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
   }
   ~DescriptorPoolsArena() {
@@ -250,7 +250,7 @@ class DescriptorPoolsArena final {
   [[nodiscard]] VkDescriptorSet getNextDescriptorSet(
       VulkanImmediateCommands& ic,
       VulkanImmediateCommands::SubmitHandle nextSubmitHandle) {
-    IGL_ASSERT(!nextSubmitHandle.empty());
+    IGL_DEBUG_ASSERT(!nextSubmitHandle.empty());
 
     VkDescriptorSet dset = VK_NULL_HANDLE;
     if (!numRemainingDSetsInPool_) {
@@ -564,8 +564,8 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
                          instanceExtensions.data(),
                          &vkInstance_));
 
-  IGL_ASSERT(creationErrorCode != VK_ERROR_LAYER_NOT_PRESENT,
-             "ivkCreateInstance() failed. Did you forget to install the Vulkan SDK?");
+  IGL_DEBUG_ASSERT(creationErrorCode != VK_ERROR_LAYER_NOT_PRESENT,
+                   "ivkCreateInstance() failed. Did you forget to install the Vulkan SDK?");
 
   VK_ASSERT(creationErrorCode);
 
@@ -820,7 +820,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                                              deviceQueues_.graphicsQueueFamilyIndex,
                                                              config_.exportableFences,
                                                              "VulkanContext::immediate_");
-  IGL_ASSERT(config_.maxResourceCount > 0, "Max resource count needs to be greater than zero");
+  IGL_DEBUG_ASSERT(config_.maxResourceCount > 0,
+                   "Max resource count needs to be greater than zero");
   syncSubmitHandles_.resize(config_.maxResourceCount);
 
   // create Vulkan pipeline cache
@@ -901,7 +902,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     }
     const TextureHandle dummyTexture =
         textures_.create(std::make_shared<VulkanTexture>(std::move(image), std::move(imageView)));
-    IGL_ASSERT(textures_.numObjects() == 1);
+    IGL_DEBUG_ASSERT(textures_.numObjects() == 1);
     const uint32_t pixel = 0xFF000000;
     stagingDevice_->imageData(
         (*textures_.get(dummyTexture))->getVulkanImage(),
@@ -926,7 +927,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                                               0.0f),
                                       VK_FORMAT_UNDEFINED,
                                       "Sampler: default"));
-  IGL_ASSERT(samplers_.numObjects() == 1);
+  IGL_DEBUG_ASSERT(samplers_.numObjects() == 1);
 
   growBindlessDescriptorPool(pimpl_->currentMaxBindlessTextures_,
                              pimpl_->currentMaxBindlessSamplers_);
@@ -964,7 +965,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
         getVkPhysicalDevice(), getVkDevice(), deviceQueues_.graphicsQueue, profilingCommandBuffer_);
   }
 
-  IGL_ASSERT(tracyCtx_, "Failed to create Tracy GPU profiling context");
+  IGL_DEBUG_ASSERT(tracyCtx_, "Failed to create Tracy GPU profiling context");
 #endif // IGL_WITH_TRACY_GPU
 
   // enables/disables enhanced shader debugging
@@ -1056,7 +1057,7 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
                          VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
   const std::array<VkDescriptorBindingFlags, kNumBindings> bindingFlags = {
       flags, flags, flags, flags, flags, flags, flags};
-  IGL_ASSERT(bindingFlags.back() == flags);
+  IGL_DEBUG_ASSERT(bindingFlags.back() == flags);
   pimpl_->dslBindless_ = std::make_unique<VulkanDescriptorSetLayout>(
       *this,
       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
@@ -1296,8 +1297,8 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
   }
 
   // make sure the guard values are always there
-  IGL_ASSERT(!textures_.objects_.empty());
-  IGL_ASSERT(!samplers_.objects_.empty());
+  IGL_DEBUG_ASSERT(!textures_.objects_.empty());
+  IGL_DEBUG_ASSERT(!samplers_.objects_.empty());
 
   // 1. Sampled and storage images
   std::vector<VkDescriptorImageInfo> infoSampledImages;
@@ -1331,8 +1332,8 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
       infoStorageImages.push_back(
           VkDescriptorImageInfo{VK_NULL_HANDLE, dummyImageView, VK_IMAGE_LAYOUT_GENERAL});
     }
-    IGL_ASSERT(infoSampledImages.back().imageView != VK_NULL_HANDLE);
-    IGL_ASSERT(infoStorageImages.back().imageView != VK_NULL_HANDLE);
+    IGL_DEBUG_ASSERT(infoSampledImages.back().imageView != VK_NULL_HANDLE);
+    IGL_DEBUG_ASSERT(infoStorageImages.back().imageView != VK_NULL_HANDLE);
   }
 
   // 2. Samplers
@@ -1494,7 +1495,7 @@ void VulkanContext::querySurfaceCapabilities() {
 }
 
 VkFormat VulkanContext::getClosestDepthStencilFormat(igl::TextureFormat desiredFormat) const {
-  IGL_ASSERT(!deviceDepthFormats_.empty());
+  IGL_DEBUG_ASSERT(!deviceDepthFormats_.empty());
   // get a list of compatible depth formats for a given desired format
   // The list will contain depth format that are ordered from most to least closest
   const std::vector<VkFormat> compatibleDepthStencilFormatList =
@@ -1531,7 +1532,7 @@ VulkanContext::RenderPassHandle VulkanContext::findRenderPass(
 
   const size_t index = renderPasses_.size();
 
-  IGL_ASSERT(index <= 255);
+  IGL_DEBUG_ASSERT(index <= 255);
 
   renderPassesHash_[builder] = uint8_t(index);
   // @fb-only
@@ -1583,8 +1584,8 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
   uint32_t numWrites = 0;
 
   // make sure the guard value is always there
-  IGL_ASSERT(!textures_.objects_.empty());
-  IGL_ASSERT(!samplers_.objects_.empty());
+  IGL_DEBUG_ASSERT(!textures_.objects_.empty());
+  IGL_DEBUG_ASSERT(!samplers_.objects_.empty());
 
   // use the dummy texture/sampler to avoid sparse array
   VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
@@ -1593,12 +1594,12 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
   for (const util::TextureDescription& d : info.textures) {
-    IGL_ASSERT(d.descriptorSet == kBindPoint_CombinedImageSamplers);
+    IGL_DEBUG_ASSERT(d.descriptorSet == kBindPoint_CombinedImageSamplers);
     const uint32_t loc = d.bindingLocation;
-    IGL_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
+    IGL_DEBUG_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
     igl::vulkan::VulkanTexture* texture = data.textures[loc];
     if (texture && isGraphics) {
-      IGL_ASSERT(data.samplers[loc], "A sampler should be bound to every bound texture slot");
+      IGL_DEBUG_ASSERT(data.samplers[loc], "A sampler should be bound to every bound texture slot");
     }
     VkSampler sampler = data.samplers[loc] ? data.samplers[loc]->getVkSampler() : dummySampler;
     // multisampled images cannot be directly accessed from shaders
@@ -1646,8 +1647,8 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
   uint32_t numWrites = 0;
 
   for (const util::BufferDescription& b : info.buffers) {
-    IGL_ASSERT(b.descriptorSet == kBindPoint_Buffers);
-    IGL_ASSERT(
+    IGL_DEBUG_ASSERT(b.descriptorSet == kBindPoint_Buffers);
+    IGL_DEBUG_ASSERT(
         data.buffers[b.bindingLocation].buffer != VK_NULL_HANDLE,
         IGL_FORMAT("Did you forget to call bindBuffer() for a buffer at the binding location {}?",
                    b.bindingLocation)
@@ -1746,7 +1747,7 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
       (props.optimalTilingFeatures & VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT) != 0;
 
   if (!IGL_VERIFY(cosited || midpoint)) {
-    IGL_ASSERT(cosited || midpoint, "Unsupported Ycbcr feature");
+    IGL_DEBUG_ASSERT(cosited || midpoint, "Unsupported Ycbcr feature");
     return {};
   }
 
@@ -1784,7 +1785,7 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
   vkGetPhysicalDeviceImageFormatProperties2(
       getVkPhysicalDevice(), &imageFormatInfo, &imageFormatProps);
 
-  IGL_ASSERT(samplerYcbcrConversionImageFormatProps.combinedImageSamplerDescriptorCount <= 3);
+  IGL_DEBUG_ASSERT(samplerYcbcrConversionImageFormatProps.combinedImageSamplerDescriptorCount <= 3);
 
   ycbcrConversionInfos_[format] = info;
 
@@ -1819,7 +1820,7 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
   for (uint32_t loc = 0; loc != IGL_ARRAY_NUM_ELEMENTS(desc.textures); loc++) {
     const bool isInPipeline = (usageMaskPipeline & (1ul << loc)) != 0;
     if (compatiblePipeline ? isInPipeline : desc.samplers[loc] != nullptr) {
-      IGL_ASSERT(compatiblePipeline || desc.samplers[loc]);
+      IGL_DEBUG_ASSERT(compatiblePipeline || desc.samplers[loc]);
       bindings[numBindings++] = ivkGetDescriptorSetLayoutBinding(
           loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, stageFlags);
       metadata.usageMask |= 1ul << loc;
@@ -1864,8 +1865,8 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
   }
 
   // make sure the guard values are always there
-  IGL_ASSERT(!textures_.objects_.empty());
-  IGL_ASSERT(!samplers_.objects_.empty());
+  IGL_DEBUG_ASSERT(!textures_.objects_.empty());
+  IGL_DEBUG_ASSERT(!samplers_.objects_.empty());
   // use the dummy texture to ensure pipeline compatibility
   VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
 
@@ -1999,7 +2000,7 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
          poolSizes[numPoolSizes].descriptorCount > 0) {
     numPoolSizes++;
   }
-  IGL_ASSERT(numPoolSizes);
+  IGL_DEBUG_ASSERT(numPoolSizes);
 
   VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
 
@@ -2142,9 +2143,10 @@ void VulkanContext::syncMarkSubmitted(VulkanImmediateCommands::SubmitHandle hand
 }
 
 void VulkanContext::ensureCurrentContextThread() const {
-  IGL_ASSERT(pimpl_->contextThread == std::this_thread::get_id(),
-             "IGL/Vulkan functions can only be accessed by 1 thread at a time. Call "
-             "`setCurrentContextThread()` to mark the current thread as the `owning` thread.");
+  IGL_DEBUG_ASSERT(
+      pimpl_->contextThread == std::this_thread::get_id(),
+      "IGL/Vulkan functions can only be accessed by 1 thread at a time. Call "
+      "`setCurrentContextThread()` to mark the current thread as the `owning` thread.");
 }
 
 void VulkanContext::setCurrentContextThread() {

@@ -135,7 +135,7 @@ Result RenderPipelineState::create() {
         if (loc < 0) {
           IGL_LOG_ERROR("Vertex attribute (%s) not found in shader.", attrib.name.c_str());
         }
-        IGL_ASSERT(index < IGL_VERTEX_BUFFER_MAX);
+        IGL_DEBUG_ASSERT(index < IGL_VERTEX_BUFFER_MAX);
         if (index < IGL_VERTEX_BUFFER_MAX) {
           bufferAttribLocations_[index].push_back(loc);
         }
@@ -279,7 +279,7 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
   auto& locations = bufferAttribLocations_[bufferIndex];
 
   // attributeList and locations should have an 1-to-1 correspondence
-  IGL_ASSERT(attribList.size() == locations.size());
+  IGL_DEBUG_ASSERT(attribList.size() == locations.size());
 
   for (size_t i = 0, iLen = attribList.size(); i < iLen; i++) {
     auto location = locations[i];
@@ -287,7 +287,7 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
       // Location not found
       continue;
     }
-    IGL_ASSERT(location < sMaxNumVertexAttribs);
+    IGL_DEBUG_ASSERT(location < sMaxNumVertexAttribs);
     activeAttributesLocations_.push_back(location);
 
     getContext().enableVertexAttribArray(location);

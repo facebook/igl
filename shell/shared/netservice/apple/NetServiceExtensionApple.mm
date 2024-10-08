@@ -19,7 +19,7 @@
 @implementation IGLShellNetBrowserServiceDelegateAdapter
 
 - (instancetype)initWithOwner:(igl::shell::netservice::NetServiceExtensionApple*)owner {
-  IGL_ASSERT(owner);
+  IGL_DEBUG_ASSERT(owner);
   self = [super init];
   if (self) {
     owner_ = owner;
@@ -31,14 +31,14 @@
 }
 
 - (void)netServiceBrowser:(NSNetServiceBrowser*)browser didNotSearch:(NSDictionary*)errorDict {
-  IGL_ASSERT(owner_);
+  IGL_DEBUG_ASSERT(owner_);
   owner_->stopSearch();
 }
 
 - (void)netServiceBrowser:(NSNetServiceBrowser*)browser
            didFindService:(NSNetService*)netService
                moreComing:(BOOL)moreComing {
-  IGL_ASSERT(owner_);
+  IGL_DEBUG_ASSERT(owner_);
   const auto& delegate = owner_->delegate();
   bool keepSearching = moreComing;
   if (delegate) {
@@ -53,7 +53,7 @@
 - (void)netServiceBrowser:(NSNetServiceBrowser*)browser
          didRemoveService:(NSNetService*)netService
                moreComing:(BOOL)moreComing {
-  IGL_ASSERT(owner_);
+  IGL_DEBUG_ASSERT(owner_);
   auto delegate = owner_->delegate();
   if (delegate) {
     // delegate->didRemoveService(*owner_, service);

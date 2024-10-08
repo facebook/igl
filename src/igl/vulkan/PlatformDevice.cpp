@@ -42,7 +42,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t 
     return nullptr;
   }
 
-  IGL_ASSERT(vkTex->getVulkanImage().imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid image format");
+  IGL_DEBUG_ASSERT(vkTex->getVulkanImage().imageFormat_ != VK_FORMAT_UNDEFINED,
+                   "Invalid image format");
 
   const auto iglFormat = vkFormatToTextureFormat(vkTex->getVulkanImage().imageFormat_);
   if (!IGL_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {
@@ -88,7 +89,8 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
     return nullptr;
   }
 
-  IGL_ASSERT(vkTex->getVulkanImage().imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid image format");
+  IGL_DEBUG_ASSERT(vkTex->getVulkanImage().imageFormat_ != VK_FORMAT_UNDEFINED,
+                   "Invalid image format");
 
   const auto iglFormat = vkFormatToTextureFormat(vkTex->getVulkanImage().imageFormat_);
   if (!IGL_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {
@@ -194,7 +196,7 @@ int PlatformDevice::getFenceFdFromSubmitHandle(SubmitHandle handle) const {
   }
 
   VkFence vkFence = getVkFenceFromSubmitHandle(handle);
-  IGL_ASSERT(vkFence != VK_NULL_HANDLE);
+  IGL_DEBUG_ASSERT(vkFence != VK_NULL_HANDLE);
 
   VkFenceGetFdInfoKHR getFdInfo = {};
   getFdInfo.sType = VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR;

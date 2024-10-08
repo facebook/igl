@@ -96,7 +96,8 @@ std::string EnhancedShaderDebuggingStore::recordLineShaderCode(bool includeFunct
 }
 
 void EnhancedShaderDebuggingStore::initializeBuffer() const {
-  IGL_ASSERT(device_ != nullptr, "Device is null. This object needs to be initialized to be used");
+  IGL_DEBUG_ASSERT(device_ != nullptr,
+                   "Device is null. This object needs to be initialized to be used");
 
   constexpr size_t lineStructureSizeBytes = sizeof(Line);
   constexpr size_t bufferSizeBytes = lineStructureSizeBytes * kNumberOfLines;
@@ -143,8 +144,8 @@ igl::RenderPassDesc EnhancedShaderDebuggingStore::renderPassDesc(
   for (auto index = 0; index <= *max; ++index) {
     const auto colorAttachment = framebuffer->getColorAttachment(index);
     if (colorAttachment) {
-      IGL_ASSERT(!framebuffer->getResolveColorAttachment(index),
-                 "Shader lines drawing does not work with multisampled framebuffers");
+      IGL_DEBUG_ASSERT(!framebuffer->getResolveColorAttachment(index),
+                       "Shader lines drawing does not work with multisampled framebuffers");
       desc.colorAttachments[index].loadAction = LoadAction::Load;
       desc.colorAttachments[index].storeAction = StoreAction::Store;
     }
@@ -206,7 +207,7 @@ std::shared_ptr<igl::IRenderPipelineState> EnhancedShaderDebuggingStore::pipelin
   }
 
   const auto attachments = framebuffer->getColorAttachmentIndices();
-  IGL_ASSERT(!attachments.empty());
+  IGL_DEBUG_ASSERT(!attachments.empty());
 
   RenderPipelineDesc desc;
 
@@ -261,7 +262,8 @@ std::shared_ptr<igl::IRenderPipelineState> EnhancedShaderDebuggingStore::pipelin
 }
 
 void EnhancedShaderDebuggingStore::initializeDepthState() const {
-  IGL_ASSERT(device_ != nullptr, "Device is null. This object needs to be initialized to be used");
+  IGL_DEBUG_ASSERT(device_ != nullptr,
+                   "Device is null. This object needs to be initialized to be used");
 
   DepthStencilStateDesc desc;
   desc.isDepthWriteEnabled = kDepthWriteEnabled;

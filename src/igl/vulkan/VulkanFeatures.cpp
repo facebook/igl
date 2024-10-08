@@ -19,8 +19,8 @@ VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noe
 void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
     const VulkanContext& context,
     VkPhysicalDevice physicalDevice) noexcept {
-  IGL_ASSERT(context.vf_.vkGetPhysicalDeviceFeatures2 != nullptr,
-             "Pointer to function vkGetPhysicalDeviceFeatures2() is nullptr");
+  IGL_DEBUG_ASSERT(context.vf_.vkGetPhysicalDeviceFeatures2 != nullptr,
+                   "Pointer to function vkGetPhysicalDeviceFeatures2() is nullptr");
 
   context.vf_.vkGetPhysicalDeviceFeatures2(physicalDevice, &VkPhysicalDeviceFeatures2_);
 }
@@ -67,9 +67,9 @@ void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
 
 igl::Result VulkanFeatures::checkSelectedFeatures(
     const VulkanFeatures& availableFeatures) const noexcept {
-  IGL_ASSERT(availableFeatures.version_ == version_,
-             "The API versions don't match between the requested features and the ones that "
-             "are available");
+  IGL_DEBUG_ASSERT(availableFeatures.version_ == version_,
+                   "The API versions don't match between the requested features and the ones that "
+                   "are available");
 
   // Stores missing features
   std::string missingFeatures;

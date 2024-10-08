@@ -197,13 +197,13 @@ void loadKtxTexture(const igl::IDevice& device,
   }
 
   if (!texture) {
-    IGL_ASSERT(loader->isSupported(device));
+    IGL_DEBUG_ASSERT(loader->isSupported(device));
     texture = loader->create(device, &result);
     if (!IGL_VERIFY(texture && result.isOk())) {
       return;
     }
   }
-  IGL_ASSERT(loader->isSupported(device, texture->getUsage()));
+  IGL_DEBUG_ASSERT(loader->isSupported(device, texture->getUsage()));
   loader->upload(*texture, &result);
   if (IGL_VERIFY(result.isOk())) {
     if (generateMipmaps) {
@@ -994,11 +994,11 @@ void initIGL() {
         devices =
             vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(fallbackHardwareType), nullptr);
       }
-      IGL_ASSERT(!devices.empty(), "GPU is not found");
+      IGL_DEBUG_ASSERT(!devices.empty(), "GPU is not found");
       device_ =
           vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
 #endif
-      IGL_ASSERT(device_);
+      IGL_DEBUG_ASSERT(device_);
     }
   }
 // @fb-only
@@ -1190,7 +1190,7 @@ bool loadAndCache(const char* cacheFileName) {
                        (contentRootFolder + "src/bistro/Exterior/").c_str());
 
   if (!IGL_VERIFY(ret)) {
-    IGL_ASSERT(ret, "Did you read the tutorial at the top of this file?");
+    IGL_DEBUG_ASSERT(ret, "Did you read the tutorial at the top of this file?");
     return false;
   }
 
@@ -1202,7 +1202,7 @@ bool loadAndCache(const char* cacheFileName) {
   for (auto& shape : shapes) {
     size_t index_offset = 0;
     for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
-      IGL_ASSERT(shape.mesh.num_face_vertices[f] == 3);
+      IGL_DEBUG_ASSERT(shape.mesh.num_face_vertices[f] == 3);
 
       for (size_t v = 0; v < 3; v++) {
         const tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
@@ -1226,7 +1226,7 @@ bool loadAndCache(const char* cacheFileName) {
 
         const int mtlIndex = shape.mesh.material_ids[f];
 
-        IGL_ASSERT(mtlIndex >= 0 && mtlIndex < materials.size());
+        IGL_DEBUG_ASSERT(mtlIndex >= 0 && mtlIndex < materials.size());
 
         if (prevIndex != mtlIndex) {
           resplitShapes[prevIndex].insert(
@@ -1291,10 +1291,10 @@ bool loadAndCache(const char* cacheFileName) {
     CachedMaterial mtl;
     mtl.ambient = vec3(m.ambient[0], m.ambient[1], m.ambient[2]);
     mtl.diffuse = vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
-    IGL_ASSERT(m.name.length() < MAX_MATERIAL_NAME);
-    IGL_ASSERT(m.ambient_texname.length() < MAX_MATERIAL_NAME);
-    IGL_ASSERT(m.diffuse_texname.length() < MAX_MATERIAL_NAME);
-    IGL_ASSERT(m.alpha_texname.length() < MAX_MATERIAL_NAME);
+    IGL_DEBUG_ASSERT(m.name.length() < MAX_MATERIAL_NAME);
+    IGL_DEBUG_ASSERT(m.ambient_texname.length() < MAX_MATERIAL_NAME);
+    IGL_DEBUG_ASSERT(m.diffuse_texname.length() < MAX_MATERIAL_NAME);
+    IGL_DEBUG_ASSERT(m.alpha_texname.length() < MAX_MATERIAL_NAME);
     strcat(mtl.name, m.name.c_str());
     normalizeName(m.ambient_texname);
     normalizeName(m.diffuse_texname);
@@ -1453,7 +1453,7 @@ void createRenderPipelines() {
     return;
   }
 
-  IGL_ASSERT(fbMain_);
+  IGL_DEBUG_ASSERT(fbMain_);
 
   {
     RenderPipelineDesc desc;
@@ -1649,7 +1649,7 @@ void createRenderPipelineSkybox() {
     return;
   }
 
-  IGL_ASSERT(fbMain_);
+  IGL_DEBUG_ASSERT(fbMain_);
 
   RenderPipelineDesc desc;
   desc.targetDesc.colorAttachments.resize(1);
@@ -1738,20 +1738,20 @@ std::shared_ptr<ITexture> getNativeDrawable() {
 #if USE_OPENGL_BACKEND
 #if IGL_PLATFORM_WIN
   const auto& platformDevice = device_->getPlatformDevice<opengl::wgl::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
+  IGL_DEBUG_ASSERT(platformDevice != nullptr);
   drawable = platformDevice->createTextureFromNativeDrawable(&ret);
 #elif IGL_PLATFORM_LINUX
   const auto& platformDevice = device_->getPlatformDevice<opengl::glx::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
+  IGL_DEBUG_ASSERT(platformDevice != nullptr);
   drawable = platformDevice->createTextureFromNativeDrawable(width_, height_, &ret);
 #endif
 #else
   const auto& platformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
+  IGL_DEBUG_ASSERT(platformDevice != nullptr);
   drawable = platformDevice->createTextureFromNativeDrawable(&ret);
 #endif
-  IGL_ASSERT(ret.isOk(), ret.message.c_str());
-  IGL_ASSERT(drawable != nullptr);
+  IGL_DEBUG_ASSERT(ret.isOk(), ret.message.c_str());
+  IGL_DEBUG_ASSERT(drawable != nullptr);
   return drawable;
 }
 
@@ -1762,20 +1762,20 @@ std::shared_ptr<ITexture> getNativeDepthDrawable() {
 #if USE_OPENGL_BACKEND
 #if IGL_PLATFORM_WIN
   const auto& platformDevice = device_->getPlatformDevice<opengl::wgl::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
+  IGL_DEBUG_ASSERT(platformDevice != nullptr);
   drawable = platformDevice->createTextureFromNativeDepth(width_, height_, &ret);
 #elif IGL_PLATFORM_LINUX
   const auto& platformDevice = device_->getPlatformDevice<opengl::glx::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
+  IGL_DEBUG_ASSERT(platformDevice != nullptr);
   drawable = platformDevice->createTextureFromNativeDepth(width_, height_, &ret);
 #endif
 #else
   const auto& platformDevice = device_->getPlatformDevice<igl::vulkan::PlatformDevice>();
-  IGL_ASSERT(platformDevice != nullptr);
+  IGL_DEBUG_ASSERT(platformDevice != nullptr);
   drawable = platformDevice->createTextureFromNativeDepth(width_, height_, &ret);
 #endif
-  IGL_ASSERT(ret.isOk(), ret.message.c_str());
-  IGL_ASSERT(drawable != nullptr);
+  IGL_DEBUG_ASSERT(ret.isOk(), ret.message.c_str());
+  IGL_DEBUG_ASSERT(drawable != nullptr);
   return drawable;
 }
 
@@ -1784,7 +1784,7 @@ void createFramebuffer(const std::shared_ptr<ITexture>& nativeDrawable) {
   framebufferDesc.colorAttachments[0].texture = nativeDrawable;
   framebufferDesc.depthAttachment.texture = getNativeDepthDrawable();
   fbMain_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(fbMain_);
+  IGL_DEBUG_ASSERT(fbMain_);
 }
 
 void createShadowMap() {
@@ -1799,12 +1799,12 @@ void createShadowMap() {
   desc.numMipLevels = TextureDesc::calcNumMipLevels(w, h);
   Result ret;
   const std::shared_ptr<ITexture> shadowMap = device_->createTexture(desc, &ret);
-  IGL_ASSERT(ret.isOk());
+  IGL_DEBUG_ASSERT(ret.isOk());
 
   FramebufferDesc framebufferDesc;
   framebufferDesc.depthAttachment.texture = shadowMap;
   fbShadowMap_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(fbShadowMap_);
+  IGL_DEBUG_ASSERT(fbShadowMap_);
 }
 
 void createOffscreenFramebuffer() {
@@ -1825,7 +1825,7 @@ void createOffscreenFramebuffer() {
     descDepth.storage = ResourceStorage::Memoryless;
   }
   const std::shared_ptr<ITexture> texDepth = device_->createTexture(descDepth, &ret);
-  IGL_ASSERT(ret.isOk());
+  IGL_DEBUG_ASSERT(ret.isOk());
 
   TextureDesc::TextureUsage usage =
       TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled;
@@ -1843,7 +1843,7 @@ void createOffscreenFramebuffer() {
     descColor.storage = ResourceStorage::Memoryless;
   }
   const std::shared_ptr<ITexture> texColor = device_->createTexture(descColor, &ret);
-  IGL_ASSERT(ret.isOk());
+  IGL_DEBUG_ASSERT(ret.isOk());
 
   FramebufferDesc framebufferDesc;
   framebufferDesc.colorAttachments[0].texture = texColor;
@@ -1854,11 +1854,11 @@ void createOffscreenFramebuffer() {
     descColorResolve.usage = usage;
     const std::shared_ptr<ITexture> texResolveColor =
         device_->createTexture(descColorResolve, &ret);
-    IGL_ASSERT(ret.isOk());
+    IGL_DEBUG_ASSERT(ret.isOk());
     framebufferDesc.colorAttachments[0].resolveTexture = texResolveColor;
   }
   fbOffscreen_ = device_->createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(fbOffscreen_);
+  IGL_DEBUG_ASSERT(fbOffscreen_);
 }
 
 void render(const std::shared_ptr<ITexture>& nativeDrawable, uint32_t frameIndex) {
@@ -2141,7 +2141,7 @@ void generateCompressedTexture(const LoadedImage& img) {
 
   ktxTexture2* texture = nullptr;
   auto error = ktxTexture2_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &texture);
-  IGL_ASSERT(error == KTX_SUCCESS);
+  IGL_DEBUG_ASSERT(error == KTX_SUCCESS);
 
   IGL_SCOPE_EXIT {
     ktxTexture_Destroy(ktxTexture(texture));
@@ -2196,7 +2196,7 @@ LoadedImage loadImage(const char* fileName, int channels) {
     const auto it = imagesCache_.find(debugName);
 
     if (it != imagesCache_.end()) {
-      IGL_ASSERT(channels == it->second.channels);
+      IGL_DEBUG_ASSERT(channels == it->second.channels);
       return it->second;
     }
   }
@@ -2275,7 +2275,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
   ktxTexture2* texture;
   auto error = ktxTexture2_CreateFromNamedFile(
       fileNameKTX.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
-  IGL_ASSERT(error == KTX_SUCCESS);
+  IGL_DEBUG_ASSERT(error == KTX_SUCCESS);
 
   IGL_SCOPE_EXIT {
     ktxTexture_Destroy(ktxTexture(texture));
@@ -2302,12 +2302,12 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
                            fileNameKTX.c_str());
   desc.numMipLevels = texRefRange.numMipLevels;
   tex = device_->createTexture(desc, nullptr);
-  IGL_ASSERT(tex);
+  IGL_DEBUG_ASSERT(tex);
   for (uint8_t face = 0; face < 6; ++face) {
     for (size_t i = 0; i < desc.numMipLevels; ++i) {
       size_t offset;
       error = ktxTexture_GetImageOffset(ktxTexture(texture), i, 0, face, &offset);
-      IGL_ASSERT(error == KTX_SUCCESS);
+      IGL_DEBUG_ASSERT(error == KTX_SUCCESS);
 
       tex->upload(tex->getCubeFaceRange(face, i), texture->pData + offset);
     }
@@ -2320,9 +2320,9 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
 }
 
 ktxTexture2* bitmapToCube(Bitmap& bmp) {
-  IGL_ASSERT(bmp.comp_ == 3); // RGB
-  IGL_ASSERT(bmp.type_ == eBitmapType_Cube);
-  IGL_ASSERT(bmp.fmt_ == eBitmapFormat_Float);
+  IGL_DEBUG_ASSERT(bmp.comp_ == 3); // RGB
+  IGL_DEBUG_ASSERT(bmp.type_ == eBitmapType_Cube);
+  IGL_DEBUG_ASSERT(bmp.fmt_ == eBitmapFormat_Float);
 
   const int w = bmp.w_;
   const int h = bmp.h_;
@@ -2345,7 +2345,7 @@ ktxTexture2* bitmapToCube(Bitmap& bmp) {
 
   ktxTexture2* texture = nullptr;
   auto error = ktxTexture2_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &texture);
-  IGL_ASSERT(error == KTX_SUCCESS);
+  IGL_DEBUG_ASSERT(error == KTX_SUCCESS);
 
   const size_t numFacePixels = static_cast<size_t>(w) * static_cast<size_t>(h);
 
@@ -2392,7 +2392,7 @@ void generateMipmaps(const std::string& outFilename, ktxTexture2* cubemap) {
       size_t prevOffset;
       auto error =
           ktxTexture_GetImageOffset(ktxTexture(cubemap), miplevel - 1, 0, face, &prevOffset);
-      IGL_ASSERT(error == KTX_SUCCESS);
+      IGL_DEBUG_ASSERT(error == KTX_SUCCESS);
 
       stbir_resize_float(reinterpret_cast<const float*>(cubemap->pData + prevOffset),
                          prevWidth,
@@ -2530,7 +2530,7 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
     for (size_t i = 0; i < desc.numMipLevels; ++i) {
       size_t offset;
       error = ktxTexture_GetImageOffset(ktxTexture(texture), i, 0, 0, &offset);
-      IGL_ASSERT(error == KTX_SUCCESS);
+      IGL_DEBUG_ASSERT(error == KTX_SUCCESS);
 
       tex->upload(rangeDesc.atMipLevel(i), texture->pData + offset);
     }
@@ -2569,9 +2569,9 @@ void processLoadedMaterials() {
   materials_[mtl.idx].texAmbient = tex.ambient ? (uint32_t)tex.ambient->getTextureId() : 0;
   materials_[mtl.idx].texDiffuse = tex.diffuse ? (uint32_t)tex.diffuse->getTextureId() : 0;
   materials_[mtl.idx].texAlpha = tex.alpha ? (uint32_t)tex.alpha->getTextureId() : 0;
-  IGL_ASSERT(materials_[mtl.idx].texAmbient >= 0);
-  IGL_ASSERT(materials_[mtl.idx].texDiffuse >= 0);
-  IGL_ASSERT(materials_[mtl.idx].texAlpha >= 0);
+  IGL_DEBUG_ASSERT(materials_[mtl.idx].texAmbient >= 0);
+  IGL_DEBUG_ASSERT(materials_[mtl.idx].texDiffuse >= 0);
+  IGL_DEBUG_ASSERT(materials_[mtl.idx].texAlpha >= 0);
 #endif
   sbMaterials_->upload(materials_.data(), BufferRange(sizeof(GPUMaterial) * materials_.size()));
 }

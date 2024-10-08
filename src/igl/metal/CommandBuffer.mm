@@ -32,7 +32,7 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
 }
 
 void CommandBuffer::present(const std::shared_ptr<ITexture>& surface) const {
-  IGL_ASSERT(surface);
+  IGL_DEBUG_ASSERT(surface);
   if (!surface) {
     return;
   }
@@ -43,7 +43,7 @@ void CommandBuffer::present(const std::shared_ptr<ITexture>& surface) const {
 }
 
 void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& /*color*/) const {
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   [value_ pushDebugGroup:[NSString stringWithUTF8String:label] ?: @""];
 }
 

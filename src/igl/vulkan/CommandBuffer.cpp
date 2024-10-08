@@ -23,7 +23,7 @@ namespace igl::vulkan {
 
 CommandBuffer::CommandBuffer(VulkanContext& ctx, CommandBufferDesc desc) :
   ctx_(ctx), wrapper_(ctx_.immediate_->acquire()), desc_(std::move(desc)) {
-  IGL_ASSERT(wrapper_.cmdBuf_ != VK_NULL_HANDLE);
+  IGL_DEBUG_ASSERT(wrapper_.cmdBuf_ != VK_NULL_HANDLE);
 }
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {
@@ -36,7 +36,7 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     const Dependencies& dependencies,
     Result* outResult) {
   IGL_PROFILER_FUNCTION();
-  IGL_ASSERT(framebuffer);
+  IGL_DEBUG_ASSERT(framebuffer);
 
   framebuffer_ = framebuffer;
 
@@ -54,7 +54,8 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
   if (depthTex) {
     const auto& vkDepthTex = static_cast<Texture&>(*depthTex);
     const auto& depthImg = vkDepthTex.getVulkanTexture().getVulkanImage();
-    IGL_ASSERT(depthImg.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid depth attachment format");
+    IGL_DEBUG_ASSERT(depthImg.imageFormat_ != VK_FORMAT_UNDEFINED,
+                     "Invalid depth attachment format");
     const VkImageAspectFlags flags =
         vkDepthTex.getVulkanTexture().getVulkanImage().getImageAspectFlags();
     depthImg.transitionLayout(
@@ -82,7 +83,7 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
 void CommandBuffer::present(const std::shared_ptr<ITexture>& surface) const {
   IGL_PROFILER_FUNCTION();
 
-  IGL_ASSERT(surface);
+  IGL_DEBUG_ASSERT(surface);
 
   presentedSurface_ = surface;
 
@@ -128,7 +129,7 @@ void CommandBuffer::present(const std::shared_ptr<ITexture>& surface) const {
 }
 
 void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& color) const {
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, wrapper_.cmdBuf_, label, color.toFloatPtr());
 }
 

@@ -75,7 +75,7 @@ igl::SurfaceTextures OpenGlEsShell::createSurfaceTextures() noexcept {
   auto& device = platform().getDevice();
   if (IGL_VERIFY(device.getBackendType() == igl::BackendType::OpenGL)) {
     auto platformDevice = device.getPlatformDevice<igl::opengl::egl::PlatformDevice>();
-    IGL_ASSERT(platformDevice != nullptr);
+    IGL_DEBUG_ASSERT(platformDevice != nullptr);
     if (IGL_VERIFY(platformDevice)) {
       auto color = platformDevice->createTextureFromNativeDrawable(nullptr);
       auto depth =

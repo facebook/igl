@@ -192,7 +192,7 @@ void DrawInstancedSession::initialize() noexcept {
   buffer_desc.length = sizeof(indexes);
   buffer_desc.data = &indexes;
   index_buffer_ = getPlatform().getDevice().createBuffer(buffer_desc, nullptr);
-  IGL_ASSERT(index_buffer_);
+  IGL_DEBUG_ASSERT(index_buffer_);
 }
 
 void DrawInstancedSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
@@ -201,7 +201,7 @@ void DrawInstancedSession::update(igl::SurfaceTextures surfaceTextures) noexcept
 
   const auto dimensions = surfaceTextures.color->getDimensions();
   framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer_);
 
   if (!renderPipelineState_Triangle_) {
     VertexInputStateDesc inputDesc;
@@ -211,7 +211,7 @@ void DrawInstancedSession::update(igl::SurfaceTextures surfaceTextures) noexcept
     inputDesc.inputBindings[1].stride = sizeof(float) * 2;
     inputDesc.inputBindings[1].sampleFunction = igl::VertexSampleFunction::Instance;
     auto vertexInput0_ = getPlatform().getDevice().createVertexInputState(inputDesc, nullptr);
-    IGL_ASSERT(vertexInput0_ != nullptr);
+    IGL_DEBUG_ASSERT(vertexInput0_ != nullptr);
 
     RenderPipelineDesc desc;
     desc.vertexInputState = vertexInput0_;
@@ -230,7 +230,7 @@ void DrawInstancedSession::update(igl::SurfaceTextures surfaceTextures) noexcept
 
     desc.shaderStages = getShaderStagesForBackend(getPlatform().getDevice());
     renderPipelineState_Triangle_ = getPlatform().getDevice().createRenderPipeline(desc, nullptr);
-    IGL_ASSERT(renderPipelineState_Triangle_);
+    IGL_DEBUG_ASSERT(renderPipelineState_Triangle_);
   }
 
   if (!vertex_buffer_) {
@@ -251,7 +251,7 @@ void DrawInstancedSession::update(igl::SurfaceTextures surfaceTextures) noexcept
     desc.length = sizeof(glm::vec2) * 100;
     desc.data = translations;
     vertex_buffer_ = getPlatform().getDevice().createBuffer(desc, nullptr);
-    IGL_ASSERT(vertex_buffer_);
+    IGL_DEBUG_ASSERT(vertex_buffer_);
   }
 
   framebuffer_->updateDrawable(surfaceTextures.color);

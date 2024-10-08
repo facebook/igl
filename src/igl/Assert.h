@@ -22,16 +22,16 @@
 // * logs to console and/or debugger console: failing expression, function signature, file/line
 // * allows you to continue execution during debugging after a failing assert, instead of exiting
 //
-// ## IGL_ASSERT vs IGL_VERIFY/IGL_UNEXPECTED
+// ## IGL_DEBUG_ASSERT vs IGL_VERIFY/IGL_UNEXPECTED
 //
-// Use IGL_ASSERT for debug-only assertions. On release builds, the expressions
-// expand to no-op's, so no perf penalty. IGL_ASSERT logs failed the  expression to
+// Use IGL_DEBUG_ASSERT for debug-only assertions. On release builds, the expressions
+// expand to no-op's, so no perf penalty. IGL_DEBUG_ASSERT logs failed the  expression to
 // console. To customize, provide a format argment with printf semantics:
 //
 //   int i = 42;
 //   auto p = std::make_shared<int>(i);
-//   IGL_ASSERT(p);
-//   IGL_ASSERT(*p == i, "*p is wrong value. Got %d. Expected %d.", *p, i);
+//   IGL_DEBUG_ASSERT(p);
+//   IGL_DEBUG_ASSERT(*p == i, "*p is wrong value. Got %d. Expected %d.", *p, i);
 //
 // Use IGL_VERIFY and IGL_UNEXPECTED to evaluate expressions and catch asserts on debug builds.
 // Typically, you'd wrap an expressions inside an `if` statement with IGL_VERIFY. IGL_UNEXPECTED
@@ -99,14 +99,14 @@ static inline const T& _IGLVerify(const T& cond,
 #define IGL_DEBUG_ABORT(format, ...) \
   _IGL_DEBUG_ABORT(false, "Abort requested", (format), ##__VA_ARGS__)
 
-#define _IGL_ASSERT_0(cond) _IGL_DEBUG_ABORT(cond, "Assert failed", #cond)
-#define _IGL_ASSERT_1(cond, format, ...) \
+#define _IGL_DEBUG_ASSERT_0(cond) _IGL_DEBUG_ABORT(cond, "Assert failed", #cond)
+#define _IGL_DEBUG_ASSERT_1(cond, format, ...) \
   _IGL_DEBUG_ABORT(cond, "Assert failed", (format), ##__VA_ARGS__)
 // Supported variations:
-// IGL_ASSERT(cond)
-// IGL_ASSERT(cond, format, ...)
-#define IGL_ASSERT(...) \
-  _IGL_CALL(IGL_CONCAT(_IGL_ASSERT_, _IGL_HAS_COMMA(__VA_ARGS__)), _IGL_ECHO((__VA_ARGS__)))
+// IGL_DEBUG_ASSERT(cond)
+// IGL_DEBUG_ASSERT(cond, format, ...)
+#define IGL_DEBUG_ASSERT(...) \
+  _IGL_CALL(IGL_CONCAT(_IGL_DEBUG_ASSERT_, _IGL_HAS_COMMA(__VA_ARGS__)), _IGL_ECHO((__VA_ARGS__)))
 
 #if IGL_DEBUG
 
@@ -156,7 +156,7 @@ IGL_API IGLReportErrorFunc IGLReportErrorGetHandler(void);
 #define IGL_REPORT_ERROR_MSG(cond, format, ...)                                           \
   do {                                                                                    \
     bool cachedCond = (cond);                                                             \
-    IGL_ASSERT(cachedCond, format, ##__VA_ARGS__);                                        \
+    IGL_DEBUG_ASSERT(cachedCond, format, ##__VA_ARGS__);                                  \
     if (!cachedCond) {                                                                    \
       IGLReportErrorGetHandler()(                                                         \
           __FILE__, IGL_FUNCTION, __LINE__, IGL_ERROR_CATEGORY, (format), ##__VA_ARGS__); \

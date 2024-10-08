@@ -95,9 +95,9 @@ Texture::AttachmentParams defaultWriteAttachmentParams(FramebufferMode mode) {
 
 Texture::AttachmentParams toReadAttachmentParams(const TextureRangeDesc& range,
                                                  FramebufferMode mode) {
-  IGL_ASSERT(range.numLayers == 1, "range.numLayers must be 1.");
-  IGL_ASSERT(range.numMipLevels == 1, "range.numMipLevels must be 1.");
-  IGL_ASSERT(range.numFaces == 1, "range.numFaces must be 1.");
+  IGL_DEBUG_ASSERT(range.numLayers == 1, "range.numLayers must be 1.");
+  IGL_DEBUG_ASSERT(range.numMipLevels == 1, "range.numMipLevels must be 1.");
+  IGL_DEBUG_ASSERT(range.numFaces == 1, "range.numFaces must be 1.");
 
   Texture::AttachmentParams params{};
   params.face = static_cast<uint32_t>(range.face);
@@ -158,7 +158,7 @@ void Framebuffer::attachAsColor(igl::ITexture& texture,
                                 uint32_t index,
                                 const Texture::AttachmentParams& params) const {
   static_cast<Texture&>(texture).attachAsColor(index, params);
-  IGL_ASSERT(index >= 0 && index < kNumCachedStates);
+  IGL_DEBUG_ASSERT(index >= 0 && index < kNumCachedStates);
   colorCachedState_[index].updateCache(params.stereo ? FramebufferMode::Stereo
                                                      : FramebufferMode::Mono,
                                        params.layer,
@@ -207,9 +207,9 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
     IGL_DEBUG_ABORT("Invalid index: %d", index);
     return;
   }
-  IGL_ASSERT(range.numFaces == 1, "range.numFaces MUST be 1");
-  IGL_ASSERT(range.numLayers == 1, "range.numLayers MUST be 1");
-  IGL_ASSERT(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
+  IGL_DEBUG_ASSERT(range.numFaces == 1, "range.numFaces MUST be 1");
+  IGL_DEBUG_ASSERT(range.numLayers == 1, "range.numLayers MUST be 1");
+  IGL_DEBUG_ASSERT(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
 
   auto itexture = getColorAttachment(index);
   if (itexture == nullptr) {
@@ -227,7 +227,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
   FramebufferDesc desc;
   desc.colorAttachments[0].texture = itexture;
   extraFramebuffer.initialize(desc, &ret);
-  IGL_ASSERT(ret.isOk(), ret.message.c_str());
+  IGL_DEBUG_ASSERT(ret.isOk(), ret.message.c_str());
 
   extraFramebuffer.bindBufferForRead();
   attachAsColor(*itexture, 0, toReadAttachmentParams(range, FramebufferMode::Mono));
@@ -346,7 +346,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
 
   getContext().checkForErrors(nullptr, 0);
   auto error = getContext().getLastError();
-  IGL_ASSERT(error.isOk(), error.message.c_str());
+  IGL_DEBUG_ASSERT(error.isOk(), error.message.c_str());
 }
 
 void Framebuffer::copyBytesDepthAttachment(ICommandQueue& /* unused */,
@@ -431,12 +431,12 @@ std::vector<size_t> CustomFramebuffer::getColorAttachmentIndices() const {
 }
 
 std::shared_ptr<ITexture> CustomFramebuffer::getColorAttachment(size_t index) const {
-  IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
+  IGL_DEBUG_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
   return renderTarget_.colorAttachments[index].texture;
 }
 
 std::shared_ptr<ITexture> CustomFramebuffer::getResolveColorAttachment(size_t index) const {
-  IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
+  IGL_DEBUG_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
   return renderTarget_.colorAttachments[index].resolveTexture;
 }
 
@@ -598,7 +598,7 @@ void CustomFramebuffer::prepareResource(const std::string& debugName, Result* ou
   }
 
   Result result = checkFramebufferStatus(getContext(), false);
-  IGL_ASSERT(result.isOk(), result.message.c_str());
+  IGL_DEBUG_ASSERT(result.isOk(), result.message.c_str());
   if (outResult) {
     *outResult = result;
   }
@@ -673,8 +673,8 @@ Viewport CustomFramebuffer::getViewport() const {
 void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
   // Cache renderPass for unbind
   renderPass_ = renderPass;
-  IGL_ASSERT(renderTarget_.mode != FramebufferMode::Multiview,
-             "FramebufferMode::Multiview not supported");
+  IGL_DEBUG_ASSERT(renderTarget_.mode != FramebufferMode::Multiview,
+                   "FramebufferMode::Multiview not supported");
 
   bindBuffer();
 
@@ -694,12 +694,12 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
     }
 #endif
     const size_t index = i;
-    IGL_ASSERT(index >= 0 && index < renderPass.colorAttachments.size());
+    IGL_DEBUG_ASSERT(index >= 0 && index < renderPass.colorAttachments.size());
     const auto& renderPassAttachment = renderPass.colorAttachments[index];
     // When setting up a framebuffer, we attach textures as though they were a non-array
     // texture with and set layer, mip-level and face equal to 0.
     // If any of these assumptions are not true, we need to reattach with proper values.
-    IGL_ASSERT(index >= 0 && index < kNumCachedStates);
+    IGL_DEBUG_ASSERT(index >= 0 && index < kNumCachedStates);
     if (colorCachedState_[index].needsUpdate(renderTarget_.mode,
                                              renderPassAttachment.layer,
                                              renderPassAttachment.face,

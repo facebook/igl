@@ -40,7 +40,7 @@ bool isRemovable(id<MTLDevice> device) {
 HWDeviceType getDeviceType(id<MTLDevice> device);
 
 HWDeviceType getDeviceType(id<MTLDevice> device) {
-  IGL_ASSERT(device != nullptr);
+  IGL_DEBUG_ASSERT(device != nullptr);
 
 #if IGL_PLATFORM_IOS
   return HWDeviceType::DiscreteGpu;
@@ -133,7 +133,7 @@ std::vector<HWDeviceDesc> HWDevice::queryDevices(IGL_MAYBE_UNUSED const HWDevice
 }
 
 std::unique_ptr<IDevice> HWDevice::create(const HWDeviceDesc& desc, Result* outResult) {
-  IGL_ASSERT(desc.guid != 0L, "Invalid hardwareGuid(%lu)", desc.guid);
+  IGL_DEBUG_ASSERT(desc.guid != 0L, "Invalid hardwareGuid(%lu)", desc.guid);
   if (desc.guid == 0L) {
     Result::setResult(outResult, Result::Code::Unsupported, "Metal is not supported!");
     return nullptr;

@@ -113,11 +113,11 @@ std::string getVulkanVertexShaderSource(bool stereoRendering) {
     igl::Result res;
     const auto vs = shaderCross.crossCompileFromVulkanSource(
         getVulkanVertexShaderSource(stereoRendering).c_str(), igl::ShaderStage::Vertex, &res);
-    IGL_ASSERT(res.isOk(), res.message.c_str());
+    IGL_DEBUG_ASSERT(res.isOk(), res.message.c_str());
 
     const auto fs = shaderCross.crossCompileFromVulkanSource(
         getVulkanFragmentShaderSource(), igl::ShaderStage::Fragment, &res);
-    IGL_ASSERT(res.isOk(), res.message.c_str());
+    IGL_DEBUG_ASSERT(res.isOk(), res.message.c_str());
 
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,
@@ -292,7 +292,7 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     ub_.viewId = currentViewId;
   }
 
-  IGL_ASSERT(!shellParams().viewParams.empty());
+  IGL_DEBUG_ASSERT(!shellParams().viewParams.empty());
   const auto viewIndex = shellParams().viewParams[0].viewIndex;
 
   igl::Result ret;
@@ -305,8 +305,8 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
                                                                      : FramebufferMode::Mono;
 
     framebuffer_[viewIndex] = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
-    IGL_ASSERT(ret.isOk());
-    IGL_ASSERT(framebuffer_[viewIndex] != nullptr);
+    IGL_DEBUG_ASSERT(ret.isOk());
+    IGL_DEBUG_ASSERT(framebuffer_[viewIndex] != nullptr);
   } else {
     framebuffer_[viewIndex]->updateDrawable(surfaceTextures.color);
   }
@@ -374,13 +374,13 @@ void HandsOpenXRSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   std::shared_ptr<iglu::ShaderCrossUniformBuffer> ubos[2];
   for (int i = 0; i < 2; ++i) {
     const auto& handTracking = shellParams().handTracking[i];
-    IGL_ASSERT(handTracking.jointPose.size() <= kMaxJoints);
+    IGL_DEBUG_ASSERT(handTracking.jointPose.size() <= kMaxJoints);
     for (size_t j = 0; j < handTracking.jointPose.size(); ++j) {
       ub_.jointMatrices[j] = poseToMat4(handTracking.jointPose[j]) * jointInvBindMatrix_[i][j];
     }
 
     ubos[i] = std::make_shared<iglu::ShaderCrossUniformBuffer>(device, "perFrame", info);
-    IGL_ASSERT(ubos[i]->result.isOk());
+    IGL_DEBUG_ASSERT(ubos[i]->result.isOk());
     *static_cast<UniformBlock*>(ubos[i]->getData()) = ub_;
 
     ubos[i]->bind(device, *pipelineState_, *commands);

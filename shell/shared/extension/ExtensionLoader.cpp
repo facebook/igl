@@ -20,7 +20,7 @@ ExtensionLoader::ExtensionLoader() : ExtensionLoader(kDefaultPrefix) {}
 ExtensionLoader::ExtensionLoader(std::string prefix) : prefix_(std::move(prefix)) {}
 
 Extension* ExtensionLoader::create(const std::string& name) noexcept {
-  IGL_ASSERT(name.length() > 0);
+  IGL_DEBUG_ASSERT(name.length() > 0);
 
   const std::string symbolName = prefix_ + name;
   auto factoryFunc = SymbolFactoryLoader::find(symbolName);

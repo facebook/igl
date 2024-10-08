@@ -15,7 +15,7 @@ Context::Context(RenderingAPI /*api*/) {
   igl::Result result;
   // Initialize through base class.
   initialize(&result);
-  IGL_ASSERT(result.isOk());
+  IGL_DEBUG_ASSERT(result.isOk());
 }
 
 void Context::setCurrent() {

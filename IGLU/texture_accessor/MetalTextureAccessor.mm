@@ -26,7 +26,7 @@ MetalTextureAccessor::MetalTextureAccessor(std::shared_ptr<igl::ITexture> textur
                                            igl::IDevice& device) :
   ITextureAccessor(std::move(texture)) {
   auto& iglMetalTexture = static_cast<igl::metal::Texture&>(*texture_);
-  IGL_ASSERT(iglMetalTexture.get() != nullptr);
+  IGL_DEBUG_ASSERT(iglMetalTexture.get() != nullptr);
 
   const auto dimensions = iglMetalTexture.getDimensions();
   textureWidth_ = dimensions.width;
@@ -43,26 +43,26 @@ MetalTextureAccessor::MetalTextureAccessor(std::shared_ptr<igl::ITexture> textur
   readBufferDesc.length = textureBytesPerImage_;
   igl::Result res;
   readBuffer_ = device.createBuffer(readBufferDesc, &res);
-  IGL_ASSERT(res.isOk());
-  IGL_ASSERT(static_cast<igl::metal::Buffer&>(*readBuffer_).get() != nullptr);
+  IGL_DEBUG_ASSERT(res.isOk());
+  IGL_DEBUG_ASSERT(static_cast<igl::metal::Buffer&>(*readBuffer_).get() != nullptr);
 }
 
 void MetalTextureAccessor::requestBytes(igl::ICommandQueue& commandQueue,
                                         std::shared_ptr<igl::ITexture> texture) {
   if (texture) {
-    IGL_ASSERT(textureWidth_ == texture->getDimensions().width &&
-               textureHeight_ == texture->getDimensions().height);
+    IGL_DEBUG_ASSERT(textureWidth_ == texture->getDimensions().width &&
+                     textureHeight_ == texture->getDimensions().height);
     texture_ = std::move(texture);
   }
 
   auto metalTexture = static_cast<igl::metal::Texture&>(*texture_).get();
-  IGL_ASSERT(metalTexture != nullptr);
+  IGL_DEBUG_ASSERT(metalTexture != nullptr);
   auto metalReadBuffer = static_cast<igl::metal::Buffer&>(*readBuffer_).get();
 
   igl::Result res;
   const igl::CommandBufferDesc desc;
   auto iglMtlCommandBuffer = commandQueue.createCommandBuffer(desc, &res);
-  IGL_ASSERT(res.isOk());
+  IGL_DEBUG_ASSERT(res.isOk());
   auto metalCmdBuffer = static_cast<igl::metal::CommandBuffer&>(*iglMtlCommandBuffer).get();
 
   id<MTLBlitCommandEncoder> blitEncoder = [metalCmdBuffer blitCommandEncoder];

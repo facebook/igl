@@ -44,7 +44,7 @@ void CommandBuffer::waitUntilCompleted() {
 }
 
 void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& /*color*/) const {
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugMessage)) {
     getContext().pushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, label);
   } else {

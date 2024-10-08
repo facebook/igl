@@ -209,7 +209,7 @@ void GlfwShell::run() noexcept {
   while (!glfwWindowShouldClose(window_.get()) && !session_->appParams().exitRequested) {
     willTick();
     auto surfaceTextures = createSurfaceTextures();
-    IGL_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
+    IGL_DEBUG_ASSERT(surfaceTextures.color != nullptr && surfaceTextures.depth != nullptr);
 
     platform_->getInputDispatcher().processEvents();
     session_->update(std::move(surfaceTextures));

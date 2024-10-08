@@ -45,12 +45,12 @@ std::vector<size_t> Framebuffer::getColorAttachmentIndices() const {
 }
 
 std::shared_ptr<igl::ITexture> Framebuffer::getColorAttachment(size_t index) const {
-  IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
+  IGL_DEBUG_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
   return desc_.colorAttachments[index].texture;
 }
 
 std::shared_ptr<ITexture> Framebuffer::getResolveColorAttachment(size_t index) const {
-  IGL_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
+  IGL_DEBUG_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
   return desc_.colorAttachments[index].resolveTexture;
 }
 
@@ -71,9 +71,9 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
                                            void* pixelBytes,
                                            const TextureRangeDesc& range,
                                            size_t bytesPerRow) const {
-  IGL_ASSERT(range.numFaces == 1, "range.numFaces MUST be 1");
-  IGL_ASSERT(range.numLayers == 1, "range.numLayers MUST be 1");
-  IGL_ASSERT(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
+  IGL_DEBUG_ASSERT(range.numFaces == 1, "range.numFaces MUST be 1");
+  IGL_DEBUG_ASSERT(range.numLayers == 1, "range.numLayers MUST be 1");
+  IGL_DEBUG_ASSERT(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
   IGL_PROFILER_FUNCTION();
   if (!IGL_VERIFY(pixelBytes)) {
     return;
@@ -274,8 +274,8 @@ void Framebuffer::validateAttachments() {
     const uint32_t attachmentWidth = tex.getDimensions().width;
     const uint32_t attachmentHeight = tex.getDimensions().height;
 
-    IGL_ASSERT(attachmentWidth);
-    IGL_ASSERT(attachmentHeight);
+    IGL_DEBUG_ASSERT(attachmentWidth);
+    IGL_DEBUG_ASSERT(attachmentHeight);
 
     // Initialize width/height
     if (!width_ || !height_) {
@@ -283,13 +283,13 @@ void Framebuffer::validateAttachments() {
       height_ = attachmentHeight;
     } else {
       // We expect all subsequent color attachments to have the same size.
-      IGL_ASSERT(width_ == attachmentWidth);
-      IGL_ASSERT(height_ == attachmentHeight);
+      IGL_DEBUG_ASSERT(width_ == attachmentWidth);
+      IGL_DEBUG_ASSERT(height_ == attachmentHeight);
     }
 
-    IGL_ASSERT(tex.getVkFormat() != VK_FORMAT_UNDEFINED,
-               "Invalid texture format: %d",
-               static_cast<int>(tex.getVkFormat()));
+    IGL_DEBUG_ASSERT(tex.getVkFormat() != VK_FORMAT_UNDEFINED,
+                     "Invalid texture format: %d",
+                     static_cast<int>(tex.getVkFormat()));
   };
 
   for (const auto& attachment : desc_.colorAttachments) {
@@ -318,8 +318,8 @@ void Framebuffer::validateAttachments() {
     }
   }
 
-  IGL_ASSERT(width_);
-  IGL_ASSERT(height_);
+  IGL_DEBUG_ASSERT(width_);
+  IGL_DEBUG_ASSERT(height_);
 }
 
 VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel,
@@ -336,14 +336,14 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel,
     if (!colorAttachment.texture) {
       continue;
     }
-    IGL_ASSERT(colorAttachment.texture);
+    IGL_DEBUG_ASSERT(colorAttachment.texture);
 
     const auto& colorTexture = static_cast<vulkan::Texture&>(*colorAttachment.texture);
     attachments.attachments_.push_back(
         colorTexture.getVkImageViewForFramebuffer(mipLevel, layer, desc_.mode));
     // handle color MSAA
     if (colorAttachment.resolveTexture) {
-      IGL_ASSERT(mipLevel == 0);
+      IGL_DEBUG_ASSERT(mipLevel == 0);
       const auto& colorResolveTexture =
           static_cast<vulkan::Texture&>(*colorAttachment.resolveTexture);
       attachments.attachments_.push_back(

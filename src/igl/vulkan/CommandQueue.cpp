@@ -19,7 +19,8 @@ namespace igl::vulkan {
 
 CommandQueue::CommandQueue(Device& device, const CommandQueueDesc& desc) :
   device_(device), desc_(desc) {
-  IGL_ASSERT(desc_.type == CommandQueueType::Graphics || desc_.type == CommandQueueType::Compute);
+  IGL_DEBUG_ASSERT(desc_.type == CommandQueueType::Graphics ||
+                   desc_.type == CommandQueueType::Compute);
 }
 
 std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandBufferDesc& desc,
@@ -27,7 +28,7 @@ std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandB
   IGL_PROFILER_FUNCTION();
 
   // for now, we want only 1 command buffer
-  IGL_ASSERT(!isInsideFrame_);
+  IGL_DEBUG_ASSERT(!isInsideFrame_);
 
   isInsideFrame_ = true;
 
@@ -44,7 +45,7 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& cmdBuffer, bool /* endOf
 
   incrementDrawCount(cmdBuffer.getCurrentDrawCount());
 
-  IGL_ASSERT(isInsideFrame_);
+  IGL_DEBUG_ASSERT(isInsideFrame_);
 
   auto* vkCmdBuffer =
       const_cast<vulkan::CommandBuffer*>(static_cast<const vulkan::CommandBuffer*>(&cmdBuffer));

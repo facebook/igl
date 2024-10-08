@@ -49,7 +49,8 @@ void encodeRenderUniform(igl::IRenderCommandEncoder& encoder,
                          Alignment alignment) {
   const void* data = uniform.data(alignment);
   const size_t numBytes = uniform.numBytes(alignment);
-  IGL_ASSERT(numBytes <= 4 * 1024, "bindBytes should only be used for uniforms smaller than 4kb");
+  IGL_DEBUG_ASSERT(numBytes <= 4 * 1024,
+                   "bindBytes should only be used for uniforms smaller than 4kb");
   encoder.bindBytes(bufferIndex, bindTarget, data, static_cast<int>(numBytes));
 }
 
@@ -58,7 +59,8 @@ void encodeAlignedCompute(igl::IComputeCommandEncoder& encoder,
                           const Descriptor& uniform) {
   const void* data = uniform.data(Alignment::Aligned);
   const size_t numBytes = uniform.numBytes(Alignment::Aligned);
-  IGL_ASSERT(numBytes <= 4 * 1024, "bindBytes should only be used for uniforms smaller than 4kb");
+  IGL_DEBUG_ASSERT(numBytes <= 4 * 1024,
+                   "bindBytes should only be used for uniforms smaller than 4kb");
   encoder.bindBytes(bufferIndex, data, static_cast<int>(numBytes));
 }
 

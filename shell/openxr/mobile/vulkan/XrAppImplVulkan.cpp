@@ -133,7 +133,7 @@ XrSession XrAppImplVulkan::initXrSession(XrInstance instance,
                                          XrSystemId systemId,
                                          igl::IDevice& device,
                                          const RenderSessionConfig& sessionConfig) {
-  IGL_ASSERT(sessionConfig.backendVersion.flavor == igl::BackendFlavor::Vulkan);
+  IGL_DEBUG_ASSERT(sessionConfig.backendVersion.flavor == igl::BackendFlavor::Vulkan);
   sessionConfig_ = sessionConfig;
   const auto& vkDevice = static_cast<igl::vulkan::Device&>(device); // Downcast is safe here
 

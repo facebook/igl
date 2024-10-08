@@ -78,7 +78,7 @@ PipelineState::PipelineState(
     std::shared_ptr<ISamplerState> immutableSamplers[IGL_TEXTURE_SAMPLERS_MAX],
     uint32_t isDynamicBufferMask,
     const char* debugName) {
-  IGL_ASSERT(stages);
+  IGL_DEBUG_ASSERT(stages);
 
   initializeSpvModuleInfoFromShaderStages(ctx, stages);
 
@@ -132,7 +132,7 @@ PipelineState::PipelineState(
 }
 
 VkPipelineLayout PipelineState::getVkPipelineLayout() const {
-  IGL_ASSERT(pipelineLayout_);
+  IGL_DEBUG_ASSERT(pipelineLayout_);
 
   return pipelineLayout_->getVkPipelineLayout();
 }

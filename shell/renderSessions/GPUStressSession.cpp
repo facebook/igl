@@ -761,8 +761,8 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
 
     framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, &ret);
 
-    IGL_ASSERT(ret.isOk());
-    IGL_ASSERT(framebuffer_ != nullptr);
+    IGL_DEBUG_ASSERT(ret.isOk());
+    IGL_DEBUG_ASSERT(framebuffer_ != nullptr);
   }
 
   if (kUseMSAA) {
@@ -882,7 +882,7 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
                   "scaleZ", -1, igl::UniformType::Float, 1, offsetof(VertexFormat, scaleZ), 0}};
 
           vertUniformBuffer = std::make_shared<iglu::ManagedUniformBuffer>(device, info);
-          IGL_ASSERT(vertUniformBuffer->result.isOk());
+          IGL_DEBUG_ASSERT(vertUniformBuffer->result.isOk());
         }
         *static_cast<VertexFormat*>(vertUniformBuffer->getData()) = vertexParameters_;
         vertUniformBuffer->bind(device, *pipelineState_, *commands);

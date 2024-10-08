@@ -162,12 +162,12 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   // value must be 1. Support for different sample count values varies by device. Call the
   // supportsTextureSampleCount: method to determine if your desired sample count value is
   // supported.
-  IGL_ASSERT(sanitized.numSamples > 0, "Texture : Samples cannot be zero");
+  IGL_DEBUG_ASSERT(sanitized.numSamples > 0, "Texture : Samples cannot be zero");
   metalDesc.sampleCount = 1;
   if (metalDesc.textureType == MTLTextureType2DMultisample) {
     metalDesc.mipmapLevelCount = 1;
     if (sanitized.numSamples > 0) {
-      IGL_ASSERT([device_ supportsTextureSampleCount:sanitized.numSamples]);
+      IGL_DEBUG_ASSERT([device_ supportsTextureSampleCount:sanitized.numSamples]);
       metalDesc.sampleCount = sanitized.numSamples;
     }
   }
@@ -200,7 +200,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 
   // sanity check to ensure that the Result value and the returned object are in sync
   // i.e. we never have a valid Result with a nullptr return value, or vice versa
-  IGL_ASSERT(outResult == nullptr || (outResult->isOk() == (iglObject != nullptr)));
+  IGL_DEBUG_ASSERT(outResult == nullptr || (outResult->isOk() == (iglObject != nullptr)));
 
   return iglObject;
 }
@@ -487,7 +487,7 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
   }
 
   if (!metalLibrary) {
-    IGL_ASSERT(!error, "%s\n", [error.localizedDescription UTF8String]);
+    IGL_DEBUG_ASSERT(!error, "%s\n", [error.localizedDescription UTF8String]);
     setResultFrom(outResult, error);
     return nullptr;
   }
@@ -695,7 +695,7 @@ Holder<igl::BindGroupTextureHandle> Device::createBindGroup(
     const BindGroupTextureDesc& desc,
     const IRenderPipelineState* IGL_NULLABLE /*compatiblePipeline*/,
     Result* IGL_NULLABLE outResult) {
-  IGL_ASSERT(!desc.debugName.empty(), "Each bind group should have a debug name");
+  IGL_DEBUG_ASSERT(!desc.debugName.empty(), "Each bind group should have a debug name");
 
   BindGroupTextureDesc description(desc);
 
@@ -710,7 +710,7 @@ Holder<igl::BindGroupTextureHandle> Device::createBindGroup(
 
 Holder<igl::BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc& desc,
                                                            Result* IGL_NULLABLE outResult) {
-  IGL_ASSERT(!desc.debugName.empty(), "Each bind group should have a debug name");
+  IGL_DEBUG_ASSERT(!desc.debugName.empty(), "Each bind group should have a debug name");
 
   BindGroupBufferDesc description(desc);
 

@@ -64,7 +64,7 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
         metalRenderPassDesc.colorAttachments[index];
 
     static const char* kNullColorAttachmentMsg = "Render pass color attachment cannot be null";
-    IGL_ASSERT(iglTexture, kNullColorAttachmentMsg);
+    IGL_DEBUG_ASSERT(iglTexture, kNullColorAttachmentMsg);
     if (iglTexture) {
       metalColorAttachment.texture = static_cast<Texture&>(*iglTexture).get();
     } else {
@@ -144,25 +144,25 @@ void RenderCommandEncoder::endEncoding() {
 
 void RenderCommandEncoder::pushDebugGroupLabel(const char* label,
                                                const igl::Color& /*color*/) const {
-  IGL_ASSERT(encoder_);
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   [encoder_ pushDebugGroup:[NSString stringWithUTF8String:label] ?: @""];
 }
 
 void RenderCommandEncoder::insertDebugEventLabel(const char* label,
                                                  const igl::Color& /*color*/) const {
-  IGL_ASSERT(encoder_);
-  IGL_ASSERT(label != nullptr && *label);
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(label != nullptr && *label);
   [encoder_ insertDebugSignpost:[NSString stringWithUTF8String:label] ?: @""];
 }
 
 void RenderCommandEncoder::popDebugGroupLabel() const {
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
   [encoder_ popDebugGroup];
 }
 
 void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
   const MTLViewport metalViewport = {viewport.x,
                                      viewport.y,
                                      viewport.width,
@@ -173,13 +173,13 @@ void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
 }
 
 void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
   const MTLScissorRect scissorRect = {rect.x, rect.y, rect.width, rect.height};
   [encoder_ setScissorRect:scissorRect];
 }
 
 void RenderCommandEncoder::bindCullMode(const CullMode& cullMode) {
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
   MTLCullMode mode = MTLCullModeNone;
   switch (cullMode) {
   case CullMode::Disabled:
@@ -196,7 +196,7 @@ void RenderCommandEncoder::bindCullMode(const CullMode& cullMode) {
 }
 
 void RenderCommandEncoder::bindFrontFacingWinding(const WindingMode& frontFaceWinding) {
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
   const MTLWinding mode = (frontFaceWinding == WindingMode::Clockwise) ? MTLWindingClockwise
                                                                        : MTLWindingCounterClockwise;
 
@@ -204,7 +204,7 @@ void RenderCommandEncoder::bindFrontFacingWinding(const WindingMode& frontFaceWi
 }
 
 void RenderCommandEncoder::bindPolygonFillMode(const PolygonFillMode& polygonFillMode) {
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
 
   if (polygonFillMode == PolygonFillMode::Fill) {
     return;
@@ -215,8 +215,8 @@ void RenderCommandEncoder::bindPolygonFillMode(const PolygonFillMode& polygonFil
 
 void RenderCommandEncoder::bindRenderPipelineState(
     const std::shared_ptr<IRenderPipelineState>& pipelineState) {
-  IGL_ASSERT(encoder_);
-  IGL_ASSERT(pipelineState);
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(pipelineState);
   if (!pipelineState) {
     return;
   }
@@ -233,7 +233,7 @@ void RenderCommandEncoder::bindRenderPipelineState(
 
 void RenderCommandEncoder::bindDepthStencilState(
     const std::shared_ptr<IDepthStencilState>& depthStencilState) {
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
   if (depthStencilState) {
     [encoder_ setDepthStencilState:static_cast<DepthStencilState&>(*depthStencilState).get()];
   }
@@ -244,12 +244,12 @@ void RenderCommandEncoder::setBlendColor(Color color) {
 }
 
 void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float clamp) {
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
   [encoder_ setDepthBias:depthBias slopeScale:slopeScale clamp:clamp];
 }
 
 void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
   [encoder_ setStencilReferenceValue:value];
 }
 
@@ -259,8 +259,8 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
                                       size_t bufferSize) {
   (void)bufferSize;
 
-  IGL_ASSERT(encoder_);
-  IGL_ASSERT(index < IGL_VERTEX_BUFFER_MAX);
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(index < IGL_VERTEX_BUFFER_MAX);
 
   if (buffer) {
     auto& metalBuffer = static_cast<Buffer&>(*buffer);
@@ -270,8 +270,8 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
 }
 
 void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, size_t bufferOffset) {
-  IGL_ASSERT(encoder_);
-  IGL_ASSERT(index < IGL_VERTEX_BUFFER_MAX);
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(index < IGL_VERTEX_BUFFER_MAX);
 
   auto& metalBuffer = static_cast<Buffer&>(buffer);
   [encoder_ setVertexBuffer:metalBuffer.get() offset:bufferOffset atIndex:index];
@@ -290,11 +290,11 @@ void RenderCommandEncoder::bindBytes(size_t index,
                                      uint8_t bindTarget,
                                      const void* data,
                                      size_t length) {
-  IGL_ASSERT(encoder_);
-  IGL_ASSERT(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
-                 bindTarget == BindTarget::kAllGraphics,
-             "Bind target is not valid: %d",
-             bindTarget);
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
+                       bindTarget == BindTarget::kAllGraphics,
+                   "Bind target is not valid: %d",
+                   bindTarget);
   if (data) {
     if (length > MAX_RECOMMENDED_BYTES) {
       IGL_LOG_INFO(
@@ -317,11 +317,11 @@ void RenderCommandEncoder::bindPushConstants(const void* /*data*/,
 }
 
 void RenderCommandEncoder::bindTexture(size_t index, uint8_t bindTarget, ITexture* texture) {
-  IGL_ASSERT(encoder_);
-  IGL_ASSERT(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
-                 bindTarget == BindTarget::kAllGraphics,
-             "Bind target is not valid: %d",
-             bindTarget);
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
+                       bindTarget == BindTarget::kAllGraphics,
+                   "Bind target is not valid: %d",
+                   bindTarget);
 
   auto* iglTexture = static_cast<Texture*>(texture);
   auto metalTexture = iglTexture ? iglTexture->get() : nil;
@@ -343,11 +343,11 @@ void RenderCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t bindTarget,
                                             ISamplerState* samplerState) {
-  IGL_ASSERT(encoder_);
-  IGL_ASSERT(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
-                 bindTarget == BindTarget::kAllGraphics,
-             "Bind target is not valid: %d",
-             bindTarget);
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(bindTarget == BindTarget::kVertex || bindTarget == BindTarget::kFragment ||
+                       bindTarget == BindTarget::kAllGraphics,
+                   "Bind target is not valid: %d",
+                   bindTarget);
 
   auto* metalSamplerState = static_cast<SamplerState*>(samplerState);
 
@@ -364,7 +364,7 @@ void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t firstVertex,
                                 uint32_t baseInstance) {
   getCommandBuffer().incrementCurrentDrawCount();
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
 #if IGL_PLATFORM_IOS
   if (@available(iOS 16, *)) {
 #endif // IGL_PLATFORM_IOS
@@ -386,8 +386,8 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
                                        int32_t vertexOffset,
                                        uint32_t baseInstance) {
   getCommandBuffer().incrementCurrentDrawCount();
-  IGL_ASSERT(encoder_);
-  IGL_ASSERT(indexBuffer_, "No index buffer bound");
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(indexBuffer_, "No index buffer bound");
   if (!IGL_VERIFY(encoder_ && indexBuffer_)) {
     return;
   }
@@ -423,7 +423,7 @@ void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
                                              size_t indirectBufferOffset,
                                              uint32_t drawCount,
                                              uint32_t stride) {
-  IGL_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(encoder_);
   stride = stride ? stride : sizeof(MTLDrawPrimitivesIndirectArguments);
   auto& indirectBufferRef = (Buffer&)(indirectBuffer);
 
@@ -441,8 +441,8 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
                                                     size_t indirectBufferOffset,
                                                     uint32_t drawCount,
                                                     uint32_t stride) {
-  IGL_ASSERT(encoder_);
-  IGL_ASSERT(indexBuffer_, "No index buffer bound");
+  IGL_DEBUG_ASSERT(encoder_);
+  IGL_DEBUG_ASSERT(indexBuffer_, "No index buffer bound");
   if (!IGL_VERIFY(encoder_ && indexBuffer_)) {
     return;
   }
@@ -522,7 +522,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
 
   for (uint32_t i = 0; i != IGL_TEXTURE_SAMPLERS_MAX; i++) {
     if (desc->textures[i]) {
-      IGL_ASSERT(desc->samplers[i]);
+      IGL_DEBUG_ASSERT(desc->samplers[i]);
       bindTexture(i, BindTarget::kAllGraphics, desc->textures[i].get());
       bindSamplerState(i, BindTarget::kAllGraphics, desc->samplers[i].get());
     }
@@ -543,8 +543,8 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
   for (uint32_t i = 0; i != IGL_UNIFORM_BLOCKS_BINDING_MAX; i++) {
     if (desc->buffers[i]) {
       if (desc->isDynamicBufferMask & (1 << i)) {
-        IGL_ASSERT(dynamicOffsets, "No dynamic offsets provided");
-        IGL_ASSERT(dynamicOffset < numDynamicOffsets, "Not enough dynamic offsets provided");
+        IGL_DEBUG_ASSERT(dynamicOffsets, "No dynamic offsets provided");
+        IGL_DEBUG_ASSERT(dynamicOffset < numDynamicOffsets, "Not enough dynamic offsets provided");
         bindBuffer(i,
                    desc->buffers[i].get(),
                    desc->offset[i] + dynamicOffsets[dynamicOffset++],
@@ -555,7 +555,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupBufferHandle handle,
     }
   }
 
-  IGL_ASSERT(dynamicOffset == numDynamicOffsets, "Not all dynamic offsets were consumed");
+  IGL_DEBUG_ASSERT(dynamicOffset == numDynamicOffsets, "Not all dynamic offsets were consumed");
 }
 
 } // namespace igl::metal

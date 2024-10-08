@@ -26,7 +26,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
   memFlags_(memFlags) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  IGL_ASSERT(bufferSize > 0);
+  IGL_DEBUG_ASSERT(bufferSize > 0);
 
   // Initialize Buffer Info
   const VkBufferCreateInfo ci = ivkGetBufferCreateInfo(bufferSize, usageFlags);
@@ -61,7 +61,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
 
     vmaCreateBuffer(
         (VmaAllocator)ctx_.getVmaAllocator(), &ci, &ciAlloc, &vkBuffer_, &vmaAllocation_, nullptr);
-    IGL_ASSERT(vmaAllocation_ != nullptr);
+    IGL_DEBUG_ASSERT(vmaAllocation_ != nullptr);
 
     // handle memory-mapped buffers
     if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
@@ -95,7 +95,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
     }
   }
 
-  IGL_ASSERT(vkBuffer_ != VK_NULL_HANDLE);
+  IGL_DEBUG_ASSERT(vkBuffer_ != VK_NULL_HANDLE);
 
   // set debug name
   VK_ASSERT(ivkSetDebugObjectName(
@@ -106,7 +106,7 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
     const VkBufferDeviceAddressInfo ai = {
         VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR, nullptr, vkBuffer_};
     vkDeviceAddress_ = ctx_.vf_.vkGetBufferDeviceAddressKHR(device_, &ai);
-    IGL_ASSERT(vkDeviceAddress_);
+    IGL_DEBUG_ASSERT(vkDeviceAddress_);
   }
 }
 
@@ -178,13 +178,13 @@ void VulkanBuffer::getBufferSubData(size_t offset, size_t size, void* data) cons
   // Only mapped host-visible buffers can be downloaded this way. All other
   // GPU buffers should use a temporary staging buffer
 
-  IGL_ASSERT(mappedPtr_);
+  IGL_DEBUG_ASSERT(mappedPtr_);
 
   if (!mappedPtr_) {
     return;
   }
 
-  IGL_ASSERT(offset + size <= bufferSize_);
+  IGL_DEBUG_ASSERT(offset + size <= bufferSize_);
 
   if (!isCoherentMemory_) {
     invalidateMappedMemory(offset, size);
@@ -200,13 +200,13 @@ void VulkanBuffer::bufferSubData(size_t offset, size_t size, const void* data) {
   // Only mapped host-visible buffers can be uploaded this way. All other GPU buffers should use a
   // temporary staging buffer
 
-  IGL_ASSERT(mappedPtr_);
+  IGL_DEBUG_ASSERT(mappedPtr_);
 
   if (!mappedPtr_) {
     return;
   }
 
-  IGL_ASSERT(offset + size <= bufferSize_);
+  IGL_DEBUG_ASSERT(offset + size <= bufferSize_);
 
   if (data) {
     checked_memcpy((uint8_t*)mappedPtr_ + offset, bufferSize_ - offset, data, size);

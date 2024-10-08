@@ -353,7 +353,7 @@ class IDevice : public ICapabilities {
    */
   bool testDevelopmentFlags(InDevelopementFeatures featureEnum) {
     const uint8_t pos = static_cast<uint8_t>(featureEnum);
-    IGL_ASSERT(pos < 64);
+    IGL_DEBUG_ASSERT(pos < 64);
 
     return (inDevelopmentFlags_ & (1ull << pos)) != 0u;
   }
@@ -366,7 +366,7 @@ class IDevice : public ICapabilities {
    */
   void setDevelopmentFlags(InDevelopementFeatures featureEnum, bool val) {
     const uint8_t pos = static_cast<uint8_t>(featureEnum);
-    IGL_ASSERT(pos < 64);
+    IGL_DEBUG_ASSERT(pos < 64);
 
     if (val) {
       inDevelopmentFlags_ |= 1ull << pos;

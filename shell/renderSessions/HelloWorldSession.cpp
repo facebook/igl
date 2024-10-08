@@ -195,7 +195,7 @@ void HelloWorldSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   const auto dimensions = surfaceTextures.color->getDimensions();
   framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, nullptr);
-  IGL_ASSERT(framebuffer_);
+  IGL_DEBUG_ASSERT(framebuffer_);
 
   if (!renderPipelineState_Triangle_) {
     RenderPipelineDesc desc;
@@ -214,7 +214,7 @@ void HelloWorldSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
     desc.shaderStages = getShaderStagesForBackend(getPlatform().getDevice());
     renderPipelineState_Triangle_ = getPlatform().getDevice().createRenderPipeline(desc, nullptr);
-    IGL_ASSERT(renderPipelineState_Triangle_);
+    IGL_DEBUG_ASSERT(renderPipelineState_Triangle_);
   }
 
   framebuffer_->updateDrawable(surfaceTextures.color);

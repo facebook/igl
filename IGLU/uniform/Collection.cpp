@@ -15,8 +15,8 @@ namespace iglu::uniform {
 void Collection::update(const Collection& changes) {
   for (const auto& [key, value] : changes.descriptors_) {
     // Update should only modify values already in receiver; catch caller error otherwise
-    IGL_ASSERT(descriptors_.find(key) != descriptors_.cend());
-    IGL_ASSERT(descriptors_.find(key)->second->getType() == value->getType());
+    IGL_DEBUG_ASSERT(descriptors_.find(key) != descriptors_.cend());
+    IGL_DEBUG_ASSERT(descriptors_.find(key)->second->getType() == value->getType());
     auto indices = descriptors_[key]->getIndices(); // grab before old desc is nuked
     descriptors_[key] = value;
     descriptors_[key]->setIndices(indices); // propagate indices to descriptors
@@ -51,8 +51,8 @@ bool Collection::contains(const igl::NameHandle& name) const {
 
 const Descriptor& Collection::get(const igl::NameHandle& name) const {
   auto it = descriptors_.find(name);
-  IGL_ASSERT(descriptors_.cend() != it); // already exists
-  IGL_ASSERT(it->second); // unique_ptr not null
+  IGL_DEBUG_ASSERT(descriptors_.cend() != it); // already exists
+  IGL_DEBUG_ASSERT(it->second); // unique_ptr not null
   return *(it->second);
 }
 

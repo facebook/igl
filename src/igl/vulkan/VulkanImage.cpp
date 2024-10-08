@@ -135,10 +135,10 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  IGL_ASSERT(mipLevels_ > 0, "The image must contain at least one mip level");
-  IGL_ASSERT(arrayLayers_ > 0, "The image must contain at least one layer");
-  IGL_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
-  IGL_ASSERT(samples_ > 0, "The image must contain at least one sample");
+  IGL_DEBUG_ASSERT(mipLevels_ > 0, "The image must contain at least one mip level");
+  IGL_DEBUG_ASSERT(arrayLayers_ > 0, "The image must contain at least one layer");
+  IGL_DEBUG_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
+  IGL_DEBUG_ASSERT(samples_ > 0, "The image must contain at least one sample");
 
   setName(debugName);
 
@@ -201,7 +201,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
     // back the image with some memory
     {
       const uint32_t numPlanes = igl::vulkan::getNumImagePlanes(format);
-      IGL_ASSERT(numPlanes > 0 && numPlanes <= kMaxImagePlanes);
+      IGL_DEBUG_ASSERT(numPlanes > 0 && numPlanes <= kMaxImagePlanes);
       // @fb-only
       const VkImagePlaneMemoryRequirementsInfo planes[kMaxImagePlanes] = {
           ivkGetImagePlaneMemoryRequirementsInfo(VK_IMAGE_ASPECT_PLANE_0_BIT),
@@ -293,10 +293,10 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  IGL_ASSERT(mipLevels_ > 0, "The image must contain at least one mip level");
-  IGL_ASSERT(arrayLayers_ > 0, "The image must contain at least one layer");
-  IGL_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
-  IGL_ASSERT(samples_ > 0, "The image must contain at least one sample");
+  IGL_DEBUG_ASSERT(mipLevels_ > 0, "The image must contain at least one mip level");
+  IGL_DEBUG_ASSERT(arrayLayers_ > 0, "The image must contain at least one layer");
+  IGL_DEBUG_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
+  IGL_DEBUG_ASSERT(samples_ > 0, "The image must contain at least one sample");
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
   IGL_DEBUG_ABORT("You can only import a VulkanImage on non-windows environments");
@@ -333,7 +333,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 #ifndef VK_USE_PLATFORM_WIN32_KHR
   importedFd = dup(undupedFileDescriptor);
 #endif
-  IGL_ASSERT(importedFd >= 0);
+  IGL_DEBUG_ASSERT(importedFd >= 0);
 
   // NOTE: Importing memory from a file descriptor transfers ownership of the fd from the
   // app to the Vk implementation. The app must not perform any operations on the fd after
@@ -419,10 +419,10 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  IGL_ASSERT(mipLevels_ > 0, "The image must contain at least one mip level");
-  IGL_ASSERT(arrayLayers_ > 0, "The image must contain at least one layer");
-  IGL_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
-  IGL_ASSERT(samples_ > 0, "The image must contain at least one sample");
+  IGL_DEBUG_ASSERT(mipLevels_ > 0, "The image must contain at least one mip level");
+  IGL_DEBUG_ASSERT(arrayLayers_ > 0, "The image must contain at least one layer");
+  IGL_DEBUG_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
+  IGL_DEBUG_ASSERT(samples_ > 0, "The image must contain at least one sample");
 
   VkImageCreateInfo ci = ivkGetImageCreateInfo(type,
                                                imageFormat_,
@@ -544,11 +544,11 @@ VulkanImage VulkanImage::createWithExportMemory(const VulkanContext& ctx,
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
   if (hwBuffer != nullptr) {
-    IGL_ASSERT(compatibleHandleTypes &
-               VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID);
+    IGL_DEBUG_ASSERT(compatibleHandleTypes &
+                     VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID);
   } else {
 #endif
-    IGL_ASSERT(compatibleHandleTypes & kHandleType);
+    IGL_DEBUG_ASSERT(compatibleHandleTypes & kHandleType);
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
   }
 #endif
@@ -606,10 +606,10 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   tiling_(tiling) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  IGL_ASSERT(mipLevels_ > 0, "The image must contain at least one mip level");
-  IGL_ASSERT(arrayLayers_ > 0, "The image must contain at least one layer");
-  IGL_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
-  IGL_ASSERT(samples_ > 0, "The image must contain at least one sample");
+  IGL_DEBUG_ASSERT(mipLevels_ > 0, "The image must contain at least one mip level");
+  IGL_DEBUG_ASSERT(arrayLayers_ > 0, "The image must contain at least one layer");
+  IGL_DEBUG_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
+  IGL_DEBUG_ASSERT(samples_ > 0, "The image must contain at least one sample");
 
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
   VkExternalFormatANDROID externalFormat = {
@@ -708,7 +708,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   std::array<VkBindImagePlaneMemoryInfo, kMaxImagePlanes> bindImagePlaneMemoryInfo{};
   std::array<VkBindImageMemoryInfo, kMaxImagePlanes> bindInfo{};
   const uint32_t numPlanes = igl::vulkan::getNumImagePlanes(format);
-  IGL_ASSERT(numPlanes > 0 && numPlanes <= kMaxImagePlanes);
+  IGL_DEBUG_ASSERT(numPlanes > 0 && numPlanes <= kMaxImagePlanes);
   for (uint32_t p = 0; p != numPlanes; p++) {
     auto imagePlaneMemoryRequirementsInfo = ivkGetImagePlaneMemoryRequirementsInfo(
         (VkImageAspectFlagBits)(VK_IMAGE_ASPECT_PLANE_0_BIT << p));
@@ -896,9 +896,10 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
   }
 
   (void)srcRemainingMask;
-  IGL_ASSERT(srcRemainingMask == 0,
-             "Automatic access mask deduction is not implemented (yet) for this srcStageMask = %u",
-             srcRemainingMask);
+  IGL_DEBUG_ASSERT(
+      srcRemainingMask == 0,
+      "Automatic access mask deduction is not implemented (yet) for this srcStageMask = %u",
+      srcRemainingMask);
 
   if (dstStageMask & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) {
     dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
@@ -943,9 +944,10 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
   }
 
   (void)dstRemainingMask;
-  IGL_ASSERT(dstRemainingMask == 0,
-             "Automatic access mask deduction is not implemented (yet) for this dstStageMask = %u",
-             dstRemainingMask);
+  IGL_DEBUG_ASSERT(
+      dstRemainingMask == 0,
+      "Automatic access mask deduction is not implemented (yet) for this dstStageMask = %u",
+      dstRemainingMask);
 
 #if IGL_DEBUG_ENFORCE_FULL_IMAGE_BARRIER
   // full image barrier
@@ -973,9 +975,9 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
 void VulkanImage::clearColorImage(VkCommandBuffer commandBuffer,
                                   const igl::Color& rgba,
                                   const VkImageSubresourceRange* subresourceRange) const {
-  IGL_ASSERT(usageFlags_ & VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-  IGL_ASSERT(samples_ == VK_SAMPLE_COUNT_1_BIT);
-  IGL_ASSERT(!isDepthOrStencilFormat_);
+  IGL_DEBUG_ASSERT(usageFlags_ & VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+  IGL_DEBUG_ASSERT(samples_ == VK_SAMPLE_COUNT_1_BIT);
+  IGL_DEBUG_ASSERT(!isDepthOrStencilFormat_);
 
   const VkImageLayout oldLayout = imageLayout_;
 
@@ -1081,10 +1083,10 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
 
   const VkImageLayout originalImageLayout = imageLayout_;
 
-  IGL_ASSERT(originalImageLayout != VK_IMAGE_LAYOUT_UNDEFINED);
+  IGL_DEBUG_ASSERT(originalImageLayout != VK_IMAGE_LAYOUT_UNDEFINED);
 
-  IGL_ASSERT(!isCubemap_ || arrayLayers_ % 6u == 0,
-             "Cubemaps must have a multiple of 6 array layers!");
+  IGL_DEBUG_ASSERT(!isCubemap_ || arrayLayers_ % 6u == 0,
+                   "Cubemaps must have a multiple of 6 array layers!");
   const uint32_t multiplier = isCubemap_ ? arrayLayers_ / 6u : 1u;
 
   // 0: Transition the first mip-level - all layers - to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL

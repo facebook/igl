@@ -129,7 +129,7 @@ class TextureHalfFloatTest : public ::testing::Test {
 
     vertUniformBuffer = std::make_shared<iglu::ManagedUniformBuffer>(device, vertInfo);
 
-    IGL_ASSERT(vertUniformBuffer->result.isOk());
+    IGL_DEBUG_ASSERT(vertUniformBuffer->result.isOk());
     return vertUniformBuffer;
   }
 
