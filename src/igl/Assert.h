@@ -75,13 +75,13 @@ bool isDebugBreakEnabled();
 void setDebugBreakEnabled(bool enabled);
 
 template<typename T>
-static inline const T& _IGLVerify(const T& cond,
-                                  [[maybe_unused]] const char* reason,
-                                  [[maybe_unused]] const char* func,
-                                  [[maybe_unused]] const char* file,
-                                  [[maybe_unused]] int line,
-                                  [[maybe_unused]] const char* format,
-                                  ...) {
+[[nodiscard]] static inline const T& _IGLVerify(const T& cond,
+                                                [[maybe_unused]] const char* reason,
+                                                [[maybe_unused]] const char* func,
+                                                [[maybe_unused]] const char* file,
+                                                [[maybe_unused]] int line,
+                                                [[maybe_unused]] const char* format,
+                                                ...) {
 #if IGL_VERIFY_ENABLED
   if (!cond) {
     IGLLog(IGLLogError, "[IGL] %s in '%s' (%s:%d): ", reason, func, file, line);

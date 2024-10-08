@@ -158,7 +158,7 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
     enable(VK_KHR_SWAPCHAIN_EXTENSION_NAME, ExtensionType::Device);
 
 #if IGL_PLATFORM_MACOS
-    IGL_DEBUG_VERIFY(enable("VK_KHR_portability_subset", ExtensionType::Device));
+    std::ignore = IGL_DEBUG_VERIFY(enable("VK_KHR_portability_subset", ExtensionType::Device));
 #endif
 
 #if IGL_PLATFORM_WIN
