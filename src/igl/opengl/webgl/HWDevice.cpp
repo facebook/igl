@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #include <igl/opengl/webgl/Context.h>
 #include <igl/opengl/webgl/Device.h>
 #include <igl/opengl/webgl/HWDevice.h>
