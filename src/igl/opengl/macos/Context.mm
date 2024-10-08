@@ -178,7 +178,7 @@ CVOpenGLTextureCacheRef Context::createTextureCache() {
                                                      nullptr,
                                                      &textureCache);
   if (result != kCVReturnSuccess) {
-    IGL_ASSERT_MSG(false, "CVOpenGLTextureCacheCreate failed to create texture cache");
+    IGL_DEBUG_ABORT("CVOpenGLTextureCacheCreate failed to create texture cache");
   }
   return textureCache;
 }

@@ -139,7 +139,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
 
   if (!cps_) {
-    IGL_ASSERT_MSG(false, "Did you forget to call bindComputePipelineState()?");
+    IGL_DEBUG_ABORT("Did you forget to call bindComputePipelineState()?");
     return;
   }
 
@@ -203,8 +203,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index,
   const bool isStorageBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0;
 
   if (!isStorageBuffer) {
-    IGL_ASSERT_MSG(
-        false,
+    IGL_DEBUG_ABORT(
         "Did you forget to specify igl::BufferDesc::BufferTypeBits::Storage on your buffer?");
     return;
   }

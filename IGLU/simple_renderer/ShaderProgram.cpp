@@ -15,14 +15,14 @@
 
 namespace iglu::material {
 
-#define CHECK_RESULT(res, outResPtr)                \
-  if (!res.isOk()) {                                \
-    if (outResPtr != nullptr) {                     \
-      *outResPtr = res;                             \
-    } else {                                        \
-      IGL_ASSERT_MSG(0, "%s", res.message.c_str()); \
-    }                                               \
-    return;                                         \
+#define CHECK_RESULT(res, outResPtr)              \
+  if (!res.isOk()) {                              \
+    if (outResPtr != nullptr) {                   \
+      *outResPtr = res;                           \
+    } else {                                      \
+      IGL_DEBUG_ABORT("%s", res.message.c_str()); \
+    }                                             \
+    return;                                       \
   }
 
 ShaderProgram::ShaderProgram(igl::IDevice& device,

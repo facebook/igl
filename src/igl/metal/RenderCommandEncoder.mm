@@ -35,7 +35,7 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
   if (!metalRenderPassDesc) {
     static const char* kFailedToCreateRenderPassDesc =
         "Failed to create Metal render pass descriptor";
-    IGL_ASSERT_MSG(false, kFailedToCreateRenderPassDesc);
+    IGL_DEBUG_ABORT(kFailedToCreateRenderPassDesc);
     Result::setResult(outResult, Result::Code::RuntimeError, kFailedToCreateRenderPassDesc);
     return;
   }
@@ -53,7 +53,7 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
     if (index >= renderPass.colorAttachments.size() || index >= IGL_COLOR_ATTACHMENTS_MAX) {
       static const char* kNotEnoughRenderPassColorAttachments =
           "Framebuffer color attachment count larger than renderPass color attachment count";
-      IGL_ASSERT_MSG(false, kNotEnoughRenderPassColorAttachments);
+      IGL_DEBUG_ABORT(kNotEnoughRenderPassColorAttachments);
       Result::setResult(
           outResult, Result::Code::ArgumentInvalid, kNotEnoughRenderPassColorAttachments);
       break;

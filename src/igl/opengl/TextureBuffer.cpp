@@ -203,7 +203,7 @@ Result TextureBuffer::initializeWithTexStorage() const {
         target, range.numMipLevels, glInternalFormat_, (GLsizei)range.width, (GLsizei)range.height);
     break;
   default:
-    IGL_ASSERT_MSG(false, "Unknown texture type");
+    IGL_DEBUG_ABORT("Unknown texture type");
     return Result{Result::Code::InvalidOperation, "Unknown texture type"};
   }
   return getContext().getLastError();

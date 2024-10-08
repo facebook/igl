@@ -174,7 +174,7 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
     enable(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, ExtensionType::Device);
 #endif
   } else {
-    IGL_ASSERT_MSG(false, "Unrecognized extension type when enabling common extensions.");
+    IGL_DEBUG_ABORT("Unrecognized extension type when enabling common extensions.");
   }
 }
 

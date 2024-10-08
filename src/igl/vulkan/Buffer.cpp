@@ -256,7 +256,7 @@ void* Buffer::map(const BufferRange& range, igl::Result* outResult) {
   // If the buffer is currently mapped, then unmap it first
   if (mappedRange_.size &&
       (mappedRange_.size != range.size || mappedRange_.offset != range.offset)) {
-    IGL_ASSERT_MSG(false, "Buffer::map() is called more than once without Buffer::unmap()");
+    IGL_DEBUG_ABORT("Buffer::map() is called more than once without Buffer::unmap()");
     unmap();
   }
 

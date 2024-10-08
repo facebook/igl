@@ -204,7 +204,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
                                            size_t bytesPerRow) const {
   // Only support attachment 0 because that's what glReadPixels supports
   if (index != 0) {
-    IGL_ASSERT_MSG(0, "Invalid index: %d", index);
+    IGL_DEBUG_ABORT("Invalid index: %d", index);
     return;
   }
   IGL_ASSERT_MSG(range.numFaces == 1, "range.numFaces MUST be 1");
@@ -213,7 +213,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
 
   auto itexture = getColorAttachment(index);
   if (itexture == nullptr) {
-    IGL_ASSERT_MSG(0, "The framebuffer does not have any color attachment at index %d", index);
+    IGL_DEBUG_ABORT("The framebuffer does not have any color attachment at index %d", index);
     return;
   }
 
@@ -369,7 +369,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& /*cmdQueue*/,
                                              const TextureRangeDesc& range) const {
   // Only support attachment 0 because that's what glCopyTexImage2D supports
   if (index != 0 || getColorAttachment(index) == nullptr) {
-    IGL_ASSERT_MSG(0, "Invalid index: %d", index);
+    IGL_DEBUG_ABORT("Invalid index: %d", index);
     return;
   }
 
@@ -661,7 +661,7 @@ Viewport CustomFramebuffer::getViewport() const {
   }
 
   if (texture == nullptr) {
-    IGL_ASSERT_MSG(0, "No color/depth attachments in CustomFrameBuffer at index 0");
+    IGL_DEBUG_ABORT("No color/depth attachments in CustomFrameBuffer at index 0");
     return {0, 0, 0, 0};
   }
 

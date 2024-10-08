@@ -314,7 +314,7 @@ VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorag
 
   switch (resourceStorage) {
   case ResourceStorage::Invalid:
-    IGL_ASSERT_MSG(false, "Invalid storage type");
+    IGL_DEBUG_ABORT("Invalid storage type");
     break;
   case ResourceStorage::Private:
     memFlags |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -352,7 +352,7 @@ VkCompareOp compareFunctionToVkCompareOp(igl::CompareFunction func) {
   case igl::CompareFunction::AlwaysPass:
     return VK_COMPARE_OP_ALWAYS;
   }
-  IGL_ASSERT_MSG(false, "CompareFunction value not handled: %d", (int)func);
+  IGL_DEBUG_ABORT("CompareFunction value not handled: %d", (int)func);
   return VK_COMPARE_OP_ALWAYS;
 }
 
@@ -397,7 +397,7 @@ void transitionToGeneral(VkCommandBuffer cmdBuf, ITexture* texture) {
   const vulkan::VulkanImage& img = tex.getVulkanTexture().getVulkanImage();
 
   if (!img.isStorageImage()) {
-    IGL_ASSERT_MSG(false, "Did you forget to specify TextureUsageBits::Storage on your texture?");
+    IGL_DEBUG_ABORT("Did you forget to specify TextureUsageBits::Storage on your texture?");
     return;
   }
 
@@ -426,13 +426,13 @@ void transitionToColorAttachment(VkCommandBuffer cmdBuf, ITexture* colorTex) {
   const auto& vkTex = static_cast<Texture&>(*colorTex);
   const auto& img = vkTex.getVulkanTexture().getVulkanImage();
   if (IGL_UNEXPECTED(img.isDepthFormat_ || img.isStencilFormat_)) {
-    IGL_ASSERT_MSG(false, "Color attachments cannot have depth/stencil formats");
+    IGL_DEBUG_ABORT("Color attachments cannot have depth/stencil formats");
     IGL_LOG_ERROR("Color attachments cannot have depth/stencil formats");
     return;
   }
   IGL_ASSERT_MSG(img.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
   if (!IGL_VERIFY((img.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0)) {
-    IGL_ASSERT_MSG(false, "Did you forget to specify TextureUsageBit::Attachment usage bit?");
+    IGL_DEBUG_ABORT("Did you forget to specify TextureUsageBit::Attachment usage bit?");
     IGL_LOG_ERROR("Did you forget to specify TextureUsageBit::Attachment usage bit?");
   }
   if (img.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
@@ -459,13 +459,13 @@ void transitionToDepthStencilAttachment(VkCommandBuffer cmdBuf, ITexture* depthS
   const auto& vkTex = static_cast<Texture&>(*depthStencilTex);
   const auto& img = vkTex.getVulkanTexture().getVulkanImage();
   if (IGL_UNEXPECTED(!img.isDepthFormat_ && !img.isStencilFormat_)) {
-    IGL_ASSERT_MSG(false, "Only depth/stencil formats are accepted");
+    IGL_DEBUG_ABORT("Only depth/stencil formats are accepted");
     IGL_LOG_ERROR("Only depth/stencil formats are accepted");
     return;
   }
   IGL_ASSERT_MSG(img.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
   if (!IGL_VERIFY((img.usageFlags_ & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0)) {
-    IGL_ASSERT_MSG(false, "Did you forget to specify TextureUsageBit::Attachment usage bit?");
+    IGL_DEBUG_ABORT("Did you forget to specify TextureUsageBit::Attachment usage bit?");
     IGL_LOG_ERROR("Did you forget to specify TextureUsageBit::Attachment usage bit?");
   }
   if (img.usageFlags_ & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {

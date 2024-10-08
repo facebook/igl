@@ -275,7 +275,7 @@ Result INativeHWTextureBuffer::lockHWBuffer(std::byte* IGL_NULLABLE* IGL_NONNULL
                            -1,
                            nullptr,
                            reinterpret_cast<void**>(dst))) {
-    IGL_ASSERT_MSG(0, "Failed to lock hardware buffer");
+    IGL_DEBUG_ABORT("Failed to lock hardware buffer");
     return Result(Result::Code::RuntimeError, "Failed to lock hardware buffer");
   }
 
@@ -290,7 +290,7 @@ Result INativeHWTextureBuffer::lockHWBuffer(std::byte* IGL_NULLABLE* IGL_NONNULL
 
 Result INativeHWTextureBuffer::unlockHWBuffer() const {
   if (AHardwareBuffer_unlock(hwBuffer_, nullptr)) {
-    IGL_ASSERT_MSG(0, "Failed to unlock hardware buffer");
+    IGL_DEBUG_ABORT("Failed to unlock hardware buffer");
     return Result(Result::Code::RuntimeError, "Failed to unlock hardware buffer");
   }
   return Result();

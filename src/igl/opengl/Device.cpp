@@ -58,7 +58,7 @@ Ptr verifyResult(Ptr resource, Result inResult, Result* outResult) {
   if (inResult.isOk()) {
     Result::setOk(outResult);
   } else {
-    IGL_ASSERT_MSG(0, inResult.message.c_str());
+    IGL_DEBUG_ABORT(inResult.message.c_str());
     resource = {};
     Result::setResult(outResult, std::move(inResult));
   }

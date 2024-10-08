@@ -34,7 +34,7 @@ void ResourcesBinder::bindBuffer(uint32_t index,
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_VERIFY(index < IGL_UNIFORM_BLOCKS_BINDING_MAX)) {
-    IGL_ASSERT_MSG(false, "Buffer index should not exceed kMaxBindingSlots");
+    IGL_DEBUG_ABORT("Buffer index should not exceed kMaxBindingSlots");
     return;
   }
 
@@ -72,7 +72,7 @@ void ResourcesBinder::bindSamplerState(uint32_t index, igl::vulkan::SamplerState
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
-    IGL_ASSERT_MSG(false, "Invalid sampler index");
+    IGL_DEBUG_ABORT("Invalid sampler index");
     return;
   }
 
@@ -88,7 +88,7 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
-    IGL_ASSERT_MSG(false, "Invalid texture index");
+    IGL_DEBUG_ABORT("Invalid texture index");
     return;
   }
 
@@ -100,15 +100,14 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
 
     if (isGraphics()) {
       if (!IGL_VERIFY(isSampled || isStorage)) {
-        IGL_ASSERT_MSG(false,
-                       "Did you forget to specify TextureUsageBits::Sampled or "
-                       "TextureUsageBits::Storage on your texture? `Sampled` is used for sampling; "
-                       "`Storage` is used for load/store operations");
+        IGL_DEBUG_ABORT(
+            "Did you forget to specify TextureUsageBits::Sampled or "
+            "TextureUsageBits::Storage on your texture? `Sampled` is used for sampling; "
+            "`Storage` is used for load/store operations");
       }
     } else {
       if (!IGL_VERIFY(isStorage)) {
-        IGL_ASSERT_MSG(false,
-                       "Did you forget to specify TextureUsageBits::Storage on your texture?");
+        IGL_DEBUG_ABORT("Did you forget to specify TextureUsageBits::Storage on your texture?");
       }
     }
   }

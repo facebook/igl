@@ -186,12 +186,12 @@ Result RingBuffer::upload(const void* data, const BufferRange& range) {
 }
 
 void* RingBuffer::map(const BufferRange& /* unused */, Result* /* unused */) {
-  IGL_ASSERT_MSG(0, "map() operation not supported for RingBuffer");
+  IGL_DEBUG_ABORT("map() operation not supported for RingBuffer");
   return nullptr;
 }
 
 void RingBuffer::unmap() {
-  IGL_ASSERT_MSG(0, "unmap() operation not supported for RingBuffer");
+  IGL_DEBUG_ABORT("unmap() operation not supported for RingBuffer");
 }
 
 id<MTLBuffer> RingBuffer::get() {
@@ -202,7 +202,7 @@ id<MTLBuffer> RingBuffer::get() {
     auto result =
         copyFromPreviousBufferInstance(mtlBuffers_, bufferIdx, resourceOptions_, acceptedApiHints_);
     if (!result.isOk()) {
-      IGL_ASSERT_MSG(0, "Failed to copy buffer");
+      IGL_DEBUG_ABORT("Failed to copy buffer");
       return nullptr;
     }
 

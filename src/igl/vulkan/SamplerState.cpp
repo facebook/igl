@@ -22,7 +22,7 @@ VkFilter samplerMinMagFilterToVkFilter(igl::SamplerMinMagFilter filter) {
   case igl::SamplerMinMagFilter::Linear:
     return VK_FILTER_LINEAR;
   }
-  IGL_ASSERT_MSG(false, "SamplerMinMagFilter value not handled: %d", (int)filter);
+  IGL_DEBUG_ABORT("SamplerMinMagFilter value not handled: %d", (int)filter);
   return VK_FILTER_LINEAR;
 }
 
@@ -34,7 +34,7 @@ VkSamplerMipmapMode samplerMipFilterToVkSamplerMipmapMode(igl::SamplerMipFilter 
   case igl::SamplerMipFilter::Linear:
     return VK_SAMPLER_MIPMAP_MODE_LINEAR;
   }
-  IGL_ASSERT_MSG(false, "SamplerMipFilter value not handled: %d", (int)filter);
+  IGL_DEBUG_ABORT("SamplerMipFilter value not handled: %d", (int)filter);
   return VK_SAMPLER_MIPMAP_MODE_NEAREST;
 }
 
@@ -47,7 +47,7 @@ VkSamplerAddressMode samplerAddressModeToVkSamplerAddressMode(igl::SamplerAddres
   case igl::SamplerAddressMode::MirrorRepeat:
     return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
   }
-  IGL_ASSERT_MSG(false, "SamplerAddressMode value not handled: %d", (int)mode);
+  IGL_DEBUG_ABORT("SamplerAddressMode value not handled: %d", (int)mode);
   return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
 

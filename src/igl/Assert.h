@@ -124,8 +124,8 @@ static inline const T& _IGLVerify(const T& cond,
 
 #endif // IGL_DEBUG
 
-#define IGL_ASSERT_NOT_REACHED() IGL_ASSERT_MSG(0, "Code should NOT be reached")
-#define IGL_ASSERT_NOT_IMPLEMENTED() IGL_ASSERT_MSG(0, "Code NOT implemented")
+#define IGL_ASSERT_NOT_REACHED() IGL_DEBUG_ABORT("Code should NOT be reached")
+#define IGL_ASSERT_NOT_IMPLEMENTED() IGL_DEBUG_ABORT("Code NOT implemented")
 
 ///--------------------------------------
 /// MARK: - Custom

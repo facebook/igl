@@ -737,7 +737,7 @@ void IContext::registerContext(void* glContext, IContext* context) {
 #if IGL_PLATFORM_ANDROID
     IGL_LOG_ERROR(errorMessage);
 #else
-    IGL_ASSERT_MSG(0, errorMessage);
+    IGL_DEBUG_ABORT(errorMessage);
 #endif
   }
   IContext::getExistingContexts().insert({glContext, context});

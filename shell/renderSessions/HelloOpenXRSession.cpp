@@ -103,7 +103,7 @@ std::string getVulkanVertexShaderSource(bool stereoRendering) {
     bool stereoRendering) noexcept {
   switch (device.getBackendType()) {
   case igl::BackendType::Metal:
-    IGL_ASSERT_MSG(false, "Metal is not supported");
+    IGL_DEBUG_ABORT("Metal is not supported");
     return nullptr;
   // @fb-only
     // @fb-only

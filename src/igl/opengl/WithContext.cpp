@@ -13,15 +13,15 @@ namespace igl::opengl {
 
 WithContext::WithContext(IContext& context) : context_(&context) {
   if (!context_->addRef()) {
-    IGL_ASSERT_MSG(0, "Object created with an invalid IContext reference.");
+    IGL_DEBUG_ABORT("Object created with an invalid IContext reference.");
   }
 }
 
 WithContext::~WithContext() {
   if (!context_->releaseRef()) {
-    IGL_ASSERT_MSG(0,
-                   "Object destroyed after the IContext."
-                   // @fb-only
+    IGL_DEBUG_ABORT(
+        "Object destroyed after the IContext."
+        // @fb-only
     );
   }
 }

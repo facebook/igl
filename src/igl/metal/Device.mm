@@ -149,7 +149,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
         Result::Code::Unsupported,
         "Invalid Texture Format : " +
             std::string(TextureFormatProperties::fromTextureFormat(sanitized.format).name));
-    IGL_ASSERT_MSG(0, outResult->message.c_str());
+    IGL_DEBUG_ABORT(outResult->message.c_str());
     return nullptr;
   }
   metalDesc.width = sanitized.width;
@@ -188,7 +188,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   id<MTLTexture> metalObject = [device_ newTextureWithDescriptor:metalDesc];
   if (!metalObject) {
     Result::setResult(outResult, Result::Code::RuntimeError, "Failed to create Metal texture");
-    IGL_ASSERT_MSG(0, outResult->message.c_str());
+    IGL_DEBUG_ABORT(outResult->message.c_str());
     return nullptr;
   }
   metalObject.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
@@ -213,7 +213,7 @@ std::shared_ptr<igl::IVertexInputState> Device::createVertexInputState(
     Result::setResult(outResult,
                       Result::Code::ArgumentOutOfRange,
                       "numAttributes is too large in VertexInputStateDesc");
-    IGL_ASSERT_MSG(0, outResult->message.c_str());
+    IGL_DEBUG_ABORT(outResult->message.c_str());
     return nullptr;
   }
 
@@ -222,7 +222,7 @@ std::shared_ptr<igl::IVertexInputState> Device::createVertexInputState(
     Result::setResult(outResult,
                       Result::Code::ArgumentOutOfRange,
                       "numInputBindings is too large in VertexInputStateDesc");
-    IGL_ASSERT_MSG(0, outResult->message.c_str());
+    IGL_DEBUG_ABORT(outResult->message.c_str());
     return nullptr;
   }
 
@@ -233,7 +233,7 @@ std::shared_ptr<igl::IVertexInputState> Device::createVertexInputState(
     size_t bufferIndex = desc.attributes[i].bufferIndex;
     if (bufferIndex >= IGL_VERTEX_BINDINGS_MAX) {
       Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "bufferIndex out of range");
-      IGL_ASSERT_MSG(0, outResult->message.c_str());
+      IGL_DEBUG_ABORT(outResult->message.c_str());
       return nullptr;
     }
 
@@ -241,7 +241,7 @@ std::shared_ptr<igl::IVertexInputState> Device::createVertexInputState(
     if (attribLocation < 0 || attribLocation >= IGL_VERTEX_ATTRIBUTES_MAX) {
       Result::setResult(
           outResult, Result::Code::ArgumentOutOfRange, "attribute location out of range");
-      IGL_ASSERT_MSG(0, outResult->message.c_str());
+      IGL_DEBUG_ABORT(outResult->message.c_str());
       return nullptr;
     }
 
@@ -255,7 +255,7 @@ std::shared_ptr<igl::IVertexInputState> Device::createVertexInputState(
     msg << "desc.numInputBindings : expected value is " << bufferIndexSet.size()
         << ", but actual value is " << desc.numInputBindings;
     Result::setResult(outResult, Result::Code::ArgumentInvalid, msg.str());
-    IGL_ASSERT_MSG(0, outResult->message.c_str());
+    IGL_DEBUG_ABORT(outResult->message.c_str());
     return nullptr;
   }
 
@@ -267,7 +267,7 @@ std::shared_ptr<igl::IVertexInputState> Device::createVertexInputState(
         << ", but actual value is " << desc.numAttributes;
     Result::setResult(
         outResult, Result::Code::ArgumentInvalid, "attribute locations are not unique");
-    IGL_ASSERT_MSG(0, outResult->message.c_str());
+    IGL_DEBUG_ABORT(outResult->message.c_str());
     return nullptr;
   }
 
@@ -275,7 +275,7 @@ std::shared_ptr<igl::IVertexInputState> Device::createVertexInputState(
   if (metalDesc == nil) {
     Result::setResult(
         outResult, Result::Code::RuntimeError, "failed to create MTLVertexDescriptor");
-    IGL_ASSERT_MSG(0, outResult->message.c_str());
+    IGL_DEBUG_ABORT(outResult->message.c_str());
     return nullptr;
   }
 
@@ -506,7 +506,7 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
 
     auto metalFunction = [metalLibrary newFunctionWithName:shaderEntrypoint];
     if (!metalFunction) {
-      IGL_ASSERT_MSG(0, "Could not find function '%s' in library\n", info.entryPoint.c_str());
+      IGL_DEBUG_ABORT("Could not find function '%s' in library\n", info.entryPoint.c_str());
       Result::setResult(
           outResult, Result::Code::RuntimeError, "Could not find function in library");
       return nullptr;

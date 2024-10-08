@@ -294,7 +294,7 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
       return igl::ShaderStagesCreator::fromModuleStringInput(
           device, codeVS2.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
     } else {
-      IGL_ASSERT_MSG(0, "This sample is incompatible with OpenGL 2.1");
+      IGL_DEBUG_ABORT("This sample is incompatible with OpenGL 2.1");
       return nullptr;
     }
   }

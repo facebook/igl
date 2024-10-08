@@ -299,8 +299,8 @@ void Framebuffer::validateAttachments() {
     const auto& colorTexture = static_cast<vulkan::Texture&>(*attachment.texture);
     ensureSize(colorTexture);
     if (!IGL_VERIFY((colorTexture.getUsage() & TextureDesc::TextureUsageBits::Attachment) != 0)) {
-      IGL_ASSERT_MSG(
-          false, "Did you forget to specify TextureUsageBits::Attachment on your color texture?");
+      IGL_DEBUG_ABORT(
+          "Did you forget to specify TextureUsageBits::Attachment on your color texture?");
       IGL_LOG_ERROR(
           "Did you forget to specify TextureUsageBits::Attachment on your color texture?");
     }
@@ -311,8 +311,8 @@ void Framebuffer::validateAttachments() {
   if (depthTexture) {
     ensureSize(*depthTexture);
     if (!IGL_VERIFY((depthTexture->getUsage() & TextureDesc::TextureUsageBits::Attachment) != 0)) {
-      IGL_ASSERT_MSG(
-          false, "Did you forget to specify TextureUsageBits::Attachment on your depth texture?");
+      IGL_DEBUG_ABORT(
+          "Did you forget to specify TextureUsageBits::Attachment on your depth texture?");
       IGL_LOG_ERROR(
           "Did you forget to specify TextureUsageBits::Attachment on your depth texture?");
     }

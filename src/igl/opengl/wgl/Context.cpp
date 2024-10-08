@@ -46,7 +46,7 @@ Context::Context(RenderingAPI api) : contextOwned_(true) {
   if (!RegisterClassA(&window_class)) {
     auto lastError = GetLastError();
     if (lastError != ERROR_CLASS_ALREADY_EXISTS) {
-      IGL_ASSERT_MSG(0, "[IGL] WGL error 0x%08X:\n", GetLastError());
+      IGL_DEBUG_ABORT("[IGL] WGL error 0x%08X:\n", GetLastError());
     }
   }
 
@@ -86,14 +86,13 @@ Context::Context(RenderingAPI api) : contextOwned_(true) {
                  GetLastError());
 
   if (!SetPixelFormat(deviceContext_, pixel_format, &pfd)) {
-    IGL_ASSERT_MSG(0, "[IGL] Failed to set the pixel format. WGL error 0x%08X:\n", GetLastError());
+    IGL_DEBUG_ABORT("[IGL] Failed to set the pixel format. WGL error 0x%08X:\n", GetLastError());
   }
 
   renderContext_ = wglCreateContext(deviceContext_);
   if (!renderContext_) {
-    IGL_ASSERT_MSG(0,
-                   "[IGL] Failed to create a dummy OpenGL rendering context. WGL error 0x%08X:\n",
-                   GetLastError());
+    IGL_DEBUG_ABORT("[IGL] Failed to create a dummy OpenGL rendering context. WGL error 0x%08X:\n",
+                    GetLastError());
   }
 
   IContext::registerContext((void*)renderContext_, this);
@@ -163,8 +162,8 @@ Context::~Context() {
 
 void Context::setCurrent() {
   if (!wglMakeCurrent(deviceContext_, renderContext_)) {
-    IGL_ASSERT_MSG(
-        0, "[IGL] Failed to activate OpenGL render context. WGL error 0x%08X:\n", GetLastError());
+    IGL_DEBUG_ABORT("[IGL] Failed to activate OpenGL render context. WGL error 0x%08X:\n",
+                    GetLastError());
   }
   flushDeletionQueue();
 
@@ -179,8 +178,8 @@ void Context::setCurrent() {
 
 void Context::clearCurrentContext() const {
   if (!wglMakeCurrent(nullptr, nullptr)) {
-    IGL_ASSERT_MSG(
-        0, "[IGL] Failed to clear OpenGL render context. WGL error 0x%08X:\n", GetLastError());
+    IGL_DEBUG_ABORT("[IGL] Failed to clear OpenGL render context. WGL error 0x%08X:\n",
+                    GetLastError());
   }
 }
 

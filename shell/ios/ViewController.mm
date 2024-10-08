@@ -191,10 +191,10 @@
     break;
   }
   case igl::BackendFlavor::OpenGL:
-    IGL_ASSERT_MSG(0, "IGL Samples not set up for Desktop OpenGL backend");
+    IGL_DEBUG_ABORT("IGL Samples not set up for Desktop OpenGL backend");
     break;
   case igl::BackendFlavor::Vulkan:
-    IGL_ASSERT_MSG(0, "IGL Samples not set up for Vulkan backend");
+    IGL_DEBUG_ABORT("IGL Samples not set up for Vulkan backend");
     break;
   // @fb-only
     // @fb-only

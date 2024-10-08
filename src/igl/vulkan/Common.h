@@ -53,10 +53,9 @@
                     __LINE__,                                      \
                     #func,                                         \
                     ivkGetVulkanResultString(vk_assert_result));   \
-      IGL_ASSERT_MSG(false,                                        \
-                     "Vulkan API call failed: %s\n  %s\n",         \
-                     #func,                                        \
-                     ivkGetVulkanResultString(vk_assert_result));  \
+      IGL_DEBUG_ABORT("Vulkan API call failed: %s\n  %s\n",        \
+                      #func,                                       \
+                      ivkGetVulkanResultString(vk_assert_result)); \
     }                                                              \
   }
 
@@ -64,21 +63,20 @@
 // location of failure when the result is not VK_SUCCESS, along with a stringified version of the
 // result value. Asserts at the end of the code block. The check remains even in build modes other
 // than DEBUG
-#define VK_ASSERT_FORCE_LOG(func)                                 \
-  {                                                               \
-    const VkResult vk_assert_result = func;                       \
-    if (vk_assert_result != VK_SUCCESS) {                         \
-      IGLLog(IGLLogError,                                         \
-             "Vulkan API call failed: %s:%i\n  %s\n  %s\n",       \
-             __FILE__,                                            \
-             __LINE__,                                            \
-             #func,                                               \
-             ivkGetVulkanResultString(vk_assert_result));         \
-      IGL_ASSERT_MSG(false,                                       \
-                     "Vulkan API call failed: %s\n  %s\n",        \
-                     #func,                                       \
-                     ivkGetVulkanResultString(vk_assert_result)); \
-    }                                                             \
+#define VK_ASSERT_FORCE_LOG(func)                                  \
+  {                                                                \
+    const VkResult vk_assert_result = func;                        \
+    if (vk_assert_result != VK_SUCCESS) {                          \
+      IGLLog(IGLLogError,                                          \
+             "Vulkan API call failed: %s:%i\n  %s\n  %s\n",        \
+             __FILE__,                                             \
+             __LINE__,                                             \
+             #func,                                                \
+             ivkGetVulkanResultString(vk_assert_result));          \
+      IGL_DEBUG_ABORT("Vulkan API call failed: %s\n  %s\n",        \
+                      #func,                                       \
+                      ivkGetVulkanResultString(vk_assert_result)); \
+    }                                                              \
   }
 
 // Macro that encapsulates a function call and check its return value against VK_SUCCESS. Prints
@@ -94,10 +92,9 @@
                     __LINE__,                                      \
                     #func,                                         \
                     ivkGetVulkanResultString(vk_assert_result));   \
-      IGL_ASSERT_MSG(false,                                        \
-                     "Vulkan API call failed: %s\n  %s\n",         \
-                     #func,                                        \
-                     ivkGetVulkanResultString(vk_assert_result));  \
+      IGL_DEBUG_ABORT("Vulkan API call failed: %s\n  %s\n",        \
+                      #func,                                       \
+                      ivkGetVulkanResultString(vk_assert_result)); \
       return value;                                                \
     }                                                              \
   }

@@ -76,7 +76,7 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
     }
 
     if (spirv[0] != SpvMagicNumber) {
-      IGL_ASSERT_MSG(false, "Invalid SPIR-V magic word");
+      IGL_DEBUG_ABORT("Invalid SPIR-V magic word");
       return {};
     }
   }

@@ -148,7 +148,7 @@ void NativeHWTextureBuffer::bind() {
 }
 
 void NativeHWTextureBuffer::bindImage(size_t unit) {
-  IGL_ASSERT_MSG(0, "bindImage not Native Hardware Buffer Textuees.");
+  IGL_DEBUG_ABORT("bindImage not Native Hardware Buffer Textuees.");
 }
 
 // upload data into the given mip level
@@ -180,7 +180,7 @@ Result NativeHWTextureBuffer::uploadInternal(TextureType /*type*/,
     return Result{};
   }
 
-  IGL_ASSERT_MSG(0, "Cannot upload buffer for HW texture for Native Hardware Buffer Textuees.");
+  IGL_DEBUG_ABORT("Cannot upload buffer for HW texture for Native Hardware Buffer Textuees.");
   return Result{Result::Code::Unsupported, "NativeHWTextureBuffer upload not supported"};
 }
 

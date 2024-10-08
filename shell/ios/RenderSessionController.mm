@@ -102,7 +102,7 @@
   // @fb-only
 // @fb-only
   default:
-    IGL_ASSERT_MSG(0, "IGL Samples not set up for backend(%d)", (int)backendVersion_.flavor);
+    IGL_DEBUG_ABORT("IGL Samples not set up for backend(%d)", (int)backendVersion_.flavor);
     break;
   }
 

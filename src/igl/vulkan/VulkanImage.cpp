@@ -299,7 +299,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   IGL_ASSERT_MSG(samples_ > 0, "The image must contain at least one sample");
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-  IGL_ASSERT_MSG(false, "You can only import a VulkanImage on non-windows environments");
+  IGL_DEBUG_ABORT("You can only import a VulkanImage on non-windows environments");
 #endif
 
   setName(debugName);
@@ -1050,10 +1050,9 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
         ((formatProperties_.optimalTilingFeatures & formatFeatureMask) == formatFeatureMask);
 
     if (!IGL_VERIFY(hardwareDownscalingSupported)) {
-      IGL_ASSERT_MSG(false,
-                     IGL_FORMAT("Doesn't support hardware downscaling of this image format: {}",
-                                uint32_t(imageFormat_))
-                         .c_str());
+      IGL_DEBUG_ABORT(IGL_FORMAT("Doesn't support hardware downscaling of this image format: {}",
+                                 uint32_t(imageFormat_))
+                          .c_str());
       return;
     }
   }

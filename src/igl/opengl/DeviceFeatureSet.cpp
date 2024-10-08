@@ -1115,9 +1115,9 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     result = 0;
     return true;
   default:
-    IGL_ASSERT_MSG(0,
-                   "invalid feature limit query: feature limit query is not implemented or does "
-                   "not exist\n");
+    IGL_DEBUG_ABORT(
+        "invalid feature limit query: feature limit query is not implemented or does "
+        "not exist\n");
     return false;
   }
 }

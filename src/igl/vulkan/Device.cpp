@@ -595,7 +595,7 @@ bool Device::hasFeature(DeviceFeatures feature) const {
     return ctx_->areValidationLayersEnabled();
   }
 
-  IGL_ASSERT_MSG(0, "DeviceFeatures value not handled: %d", (int)feature);
+  IGL_DEBUG_ABORT("DeviceFeatures value not handled: %d", (int)feature);
 
   return false;
 }
@@ -676,7 +676,7 @@ bool Device::getFeatureLimits(DeviceFeatureLimits featureLimits, size_t& result)
     return true;
   }
 
-  IGL_ASSERT_MSG(0, "DeviceFeatureLimits value not handled: %d", (int)featureLimits);
+  IGL_DEBUG_ABORT("DeviceFeatureLimits value not handled: %d", (int)featureLimits);
   result = 0;
   return false;
 }

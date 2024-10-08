@@ -59,7 +59,7 @@ static size_t getGPUFamily(id<MTLDevice> device) {
       featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily2_v2, 2);
       featureSets.emplace_back(MTLFeatureSet_iOS_GPUFamily1_v2, 1);
     } else {
-      IGL_ASSERT_MSG(0, "IGL iOS deployment target is 9.0+");
+      IGL_DEBUG_ABORT("IGL iOS deployment target is 9.0+");
       return 0;
     }
 #elif IGL_PLATFORM_MACOS
@@ -73,7 +73,7 @@ static size_t getGPUFamily(id<MTLDevice> device) {
     } else if (@available(macOS 10.11, *)) {
       featureSets.emplace_back(MTLFeatureSet_macOS_GPUFamily1_v1, 1);
     } else {
-      IGL_ASSERT_MSG(0, "IGL macOS deployment target is 10.11+");
+      IGL_DEBUG_ABORT("IGL macOS deployment target is 10.11+");
       return 0;
     }
 #endif
@@ -268,8 +268,7 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
     result = 4096;
     return true;
   default:
-    IGL_ASSERT_MSG(
-        0,
+    IGL_DEBUG_ABORT(
         "invalid feature limit query: feature limit query is not implemented or does not exist\n");
     return false;
   }

@@ -30,12 +30,12 @@ uint32_t Texture::getSamples() const {
 
 void Texture::generateMipmap(ICommandQueue& /* unused */,
                              const TextureRangeDesc* IGL_NULLABLE /* unused */) const {
-  IGL_ASSERT_MSG(0, "Can only generate mipmap for R/W texture (eg. TextureBuffer).");
+  IGL_DEBUG_ABORT("Can only generate mipmap for R/W texture (eg. TextureBuffer).");
 }
 
 void Texture::generateMipmap(ICommandBuffer& /* unused */,
                              const TextureRangeDesc* IGL_NULLABLE /* unused */) const {
-  IGL_ASSERT_MSG(0, "Can only generate mipmap for R/W texture (eg. TextureBuffer).");
+  IGL_DEBUG_ABORT("Can only generate mipmap for R/W texture (eg. TextureBuffer).");
 }
 
 uint32_t Texture::getNumMipLevels() const {
@@ -159,7 +159,7 @@ GLenum Texture::toGLTarget(TextureType type) const {
   case TextureType::Invalid:
     break;
   }
-  IGL_ASSERT_MSG(0, "Unsupported OGL Texture Type: %d", type);
+  IGL_DEBUG_ABORT("Unsupported OGL Texture Type: %d", type);
 
   return 0;
 }

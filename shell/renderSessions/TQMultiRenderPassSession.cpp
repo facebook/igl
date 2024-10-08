@@ -111,7 +111,7 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
     IGL_ASSERT_NOT_REACHED();
     return nullptr;
   case igl::BackendType::Vulkan:
-    IGL_ASSERT_MSG(0, "IGLSamples not set up for Vulkan");
+    IGL_DEBUG_ABORT("IGLSamples not set up for Vulkan");
     return nullptr;
   // @fb-only
     // @fb-only

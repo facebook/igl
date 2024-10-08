@@ -367,7 +367,7 @@ void VulkanStagingDevice::imageData(const VulkanImage& image,
                                   VkImageSubresourceLayers{VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 0, 1}));
 
     } else {
-      IGL_ASSERT_MSG(false, "Unimplemented multiplanar image format");
+      IGL_DEBUG_ABORT("Unimplemented multiplanar image format");
       return;
     }
 

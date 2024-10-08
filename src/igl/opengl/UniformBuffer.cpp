@@ -185,7 +185,7 @@ void UniformBuffer::bindUniform(IContext& context,
       context.uniformMatrix4fv(shaderLocation, count, 0u, uniformFloats);
       break;
     case UniformType::Invalid:
-      IGL_ASSERT_MSG(false, "Invalid Uniform Type");
+      IGL_DEBUG_ABORT("Invalid Uniform Type");
       return;
     }
   }
@@ -252,7 +252,7 @@ void UniformBuffer::bindUniformArray(IContext& context,
       baseType = UniformBaseType::FloatMatrix;
       break;
     case UniformType::Invalid:
-      IGL_ASSERT_MSG(false, "Invalid Uniform Type");
+      IGL_DEBUG_ABORT("Invalid Uniform Type");
       return;
     }
     switch (baseType) {

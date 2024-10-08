@@ -24,7 +24,7 @@ namespace {
   case igl::ShaderStage::Compute:
     return GLSLANG_STAGE_COMPUTE;
   default:
-    IGL_ASSERT_MSG(false, "Not supported shader stage (%d)", static_cast<int>(stage));
+    IGL_DEBUG_ABORT("Not supported shader stage (%d)", static_cast<int>(stage));
   };
   return GLSLANG_STAGE_COUNT;
 }
@@ -92,7 +92,7 @@ igl::Result compileShader(igl::ShaderStage stage,
     IGL_LOG_ERROR("  %s\n", glslang_shader_get_info_log(shader));
     IGL_LOG_ERROR("  %s\n", glslang_shader_get_info_debug_log(shader));
     logShaderSource(code);
-    IGL_ASSERT_MSG(false, "glslang_shader_preprocess() failed");
+    IGL_DEBUG_ABORT("glslang_shader_preprocess() failed");
     return Result(Result::Code::InvalidOperation, "glslang_shader_preprocess() failed");
   }
 
@@ -101,7 +101,7 @@ igl::Result compileShader(igl::ShaderStage stage,
     IGL_LOG_ERROR("  %s\n", glslang_shader_get_info_log(shader));
     IGL_LOG_ERROR("  %s\n", glslang_shader_get_info_debug_log(shader));
     logShaderSource(glslang_shader_get_preprocessed_code(shader));
-    IGL_ASSERT_MSG(false, "glslang_shader_parse() failed");
+    IGL_DEBUG_ABORT("glslang_shader_parse() failed");
     return Result(Result::Code::InvalidOperation, "glslang_shader_parse() failed");
   }
 
@@ -116,7 +116,7 @@ igl::Result compileShader(igl::ShaderStage stage,
     IGL_LOG_ERROR("Shader linking failed:\n");
     IGL_LOG_ERROR("  %s\n", glslang_program_get_info_log(program));
     IGL_LOG_ERROR("  %s\n", glslang_program_get_info_debug_log(program));
-    IGL_ASSERT_MSG(false, "glslang_program_link() failed");
+    IGL_DEBUG_ABORT("glslang_program_link() failed");
     return Result(Result::Code::InvalidOperation, "glslang_program_link() failed");
   }
 

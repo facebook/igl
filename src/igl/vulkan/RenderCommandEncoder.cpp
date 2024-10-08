@@ -121,7 +121,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
     if (desc.mode == FramebufferMode::Stereo) {
       builder.setMultiviewMasks(0x00000003, 0x00000003);
     } else {
-      IGL_ASSERT_MSG(0, "FramebufferMode::Multiview is not implemented.");
+      IGL_DEBUG_ABORT("FramebufferMode::Multiview is not implemented.");
     }
   }
 
@@ -140,7 +140,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
           &outResult,
           Result::Code::ArgumentInvalid,
           "Framebuffer color attachment count larger than renderPass color attachment count");
-      IGL_ASSERT_MSG(false, outResult.message.c_str());
+      IGL_DEBUG_ABORT(outResult.message.c_str());
       return;
     }
 
@@ -552,7 +552,7 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
 
   if (!IGL_VERIFY(target == igl::BindTarget::kFragment || target == igl::BindTarget::kVertex ||
                   target == igl::BindTarget::kAllGraphics)) {
-    IGL_ASSERT_MSG(false, "Invalid sampler target");
+    IGL_DEBUG_ABORT("Invalid sampler target");
     return;
   }
 
@@ -572,7 +572,7 @@ void RenderCommandEncoder::bindTexture(size_t index, uint8_t target, ITexture* t
 
   if (!IGL_VERIFY(target == igl::BindTarget::kFragment || target == igl::BindTarget::kVertex ||
                   target == igl::BindTarget::kAllGraphics)) {
-    IGL_ASSERT_MSG(false, "Invalid texture target");
+    IGL_DEBUG_ABORT("Invalid texture target");
     return;
   }
 
@@ -843,7 +843,7 @@ void RenderCommandEncoder::ensureVertexBuffers() {
   for (size_t i = 0; i != numBindings; i++) {
     if (!isVertexBufferBound_[i]) {
       // TODO: fix client apps and uncomment
-      // IGL_ASSERT_MSG(false,
+      // IGL_DEBUG_ABORT(
       //                "Did you forget to call bindBuffer() for one of your vertex input
       //                buffers?");
       IGL_LOG_ERROR_ONCE(

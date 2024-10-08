@@ -39,7 +39,7 @@ uint8_t bindTargetForShaderStage(igl::ShaderStage stage) {
   case igl::ShaderStage::Fragment:
     return igl::BindTarget::kFragment;
   default:
-    IGL_ASSERT_MSG(0, "invalid shader stage for rendering: %d", (int)stage);
+    IGL_DEBUG_ABORT("invalid shader stage for rendering: %d", (int)stage);
     return 0;
   }
 }

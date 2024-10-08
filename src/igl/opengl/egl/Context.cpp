@@ -55,13 +55,12 @@ EGLint checkForEGLErrors(IGL_MAYBE_UNUSED const char* fileName,
       errorStr = "<unknown EGL error>";
       break;
     }
-    IGL_ASSERT_MSG(false,
-                   "[IGL] EGL error [%s:%zu] in function: %s 0x%04X: %s\n",
-                   fileName,
-                   lineNum,
-                   callerName,
-                   errorCode,
-                   errorStr);
+    IGL_DEBUG_ABORT("[IGL] EGL error [%s:%zu] in function: %s 0x%04X: %s\n",
+                    fileName,
+                    lineNum,
+                    callerName,
+                    errorCode,
+                    errorStr);
   }
   return errorCode;
 }
@@ -117,7 +116,7 @@ std::pair<EGLDisplay, EGLContext> newEGLContext(EGLDisplay display,
   }
 
   if (!config) {
-    IGL_ASSERT_MSG(0, "config is nullptr");
+    IGL_DEBUG_ABORT("config is nullptr");
     return std::make_pair(EGL_NO_DISPLAY, EGL_NO_CONTEXT);
   }
 

@@ -36,7 +36,7 @@ TextureType TextureBufferBase::getType() const {
     }
     break;
   }
-  IGL_ASSERT_MSG(0, "Unsupported OGL Texture Target: 0x%x", target_);
+  IGL_DEBUG_ABORT("Unsupported OGL Texture Target: 0x%x", target_);
   return TextureType::Invalid;
 }
 

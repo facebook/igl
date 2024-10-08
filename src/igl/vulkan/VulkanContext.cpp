@@ -447,13 +447,12 @@ VulkanContext::~VulkanContext() {
 #if IGL_DEBUG
   for (const auto& t : pimpl_->bindGroupTexturesPool_.objects_) {
     if (t.obj_.dset != VK_NULL_HANDLE) {
-      IGL_ASSERT_MSG(
-          false, "Leaked texture bind group detected! %s", t.obj_.desc.debugName.c_str());
+      IGL_DEBUG_ABORT("Leaked texture bind group detected! %s", t.obj_.desc.debugName.c_str());
     }
   }
   for (const auto& t : pimpl_->bindGroupBuffersPool_.objects_) {
     if (t.obj_.dset != VK_NULL_HANDLE) {
-      IGL_ASSERT_MSG(false, "Leaked buffer bind group detected! %s", t.obj_.desc.debugName.c_str());
+      IGL_DEBUG_ABORT("Leaked buffer bind group detected! %s", t.obj_.desc.debugName.c_str());
     }
   }
 #endif // IGL_DEBUG
@@ -465,18 +464,15 @@ VulkanContext::~VulkanContext() {
 #if IGL_DEBUG
   for (const auto& t : textures_.objects_) {
     if (t.obj_.use_count() > 1) {
-      IGL_ASSERT_MSG(false,
-                     "Leaked texture detected! %u %s",
-                     t.obj_->getTextureId(),
-                     t.obj_->getVulkanImage().name_.c_str());
+      IGL_DEBUG_ABORT("Leaked texture detected! %u %s",
+                      t.obj_->getTextureId(),
+                      t.obj_->getVulkanImage().name_.c_str());
     }
   }
   for (const auto& s : samplers_.objects_) {
     if (s.obj_.use_count() > 1) {
-      IGL_ASSERT_MSG(false,
-                     "Leaked sampler detected! %u %s",
-                     s.obj_->getSamplerId(),
-                     s.obj_->debugName_.c_str());
+      IGL_DEBUG_ABORT(
+          "Leaked sampler detected! %u %s", s.obj_->getSamplerId(), s.obj_->debugName_.c_str());
     }
   }
 #endif // IGL_DEBUG
@@ -1737,7 +1733,7 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
 
   if (!IGL_VERIFY(
           features_.VkPhysicalDeviceSamplerYcbcrConversionFeatures_.samplerYcbcrConversion)) {
-    IGL_ASSERT_MSG(false, "Ycbcr samplers are not supported");
+    IGL_DEBUG_ABORT("Ycbcr samplers are not supported");
     return {};
   }
 

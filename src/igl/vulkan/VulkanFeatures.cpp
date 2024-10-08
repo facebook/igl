@@ -160,7 +160,7 @@ igl::Result VulkanFeatures::checkSelectedFeatures(
 
   if (!missingFeatures.empty()) {
 #if !IGL_PLATFORM_APPLE
-    IGL_ASSERT_MSG(false, "Missing Vulkan features: %s\n", missingFeatures.c_str());
+    IGL_DEBUG_ABORT("Missing Vulkan features: %s\n", missingFeatures.c_str());
     return Result(Result::Code::RuntimeError);
 #else
     IGL_LOG_INFO("Missing Vulkan features: %s\n", missingFeatures.c_str());

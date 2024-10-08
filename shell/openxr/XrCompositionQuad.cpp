@@ -29,7 +29,7 @@ inline XrBlendFactorFB iglToOpenXR(igl::BlendFactor factor) noexcept {
   case igl::BlendFactor::OneMinusDstAlpha:
     return XR_BLEND_FACTOR_ONE_MINUS_DST_ALPHA_FB;
   default:
-    IGL_ASSERT_MSG(false, "Not supported blend factor (%d)", static_cast<int>(factor));
+    IGL_DEBUG_ABORT("Not supported blend factor (%d)", static_cast<int>(factor));
     break;
   }
   return XR_BLEND_FACTOR_ZERO_FB;

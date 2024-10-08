@@ -33,23 +33,23 @@ Result Texture::create(const TextureDesc& desc) {
   const igl::TextureType type = desc_.type;
   if (!IGL_VERIFY(type == TextureType::TwoD || type == TextureType::TwoDArray ||
                   type == TextureType::Cube || type == TextureType::ThreeD)) {
-    IGL_ASSERT_MSG(false, "Only 1D, 1D array, 2D, 2D array, 3D and cubemap textures are supported");
+    IGL_DEBUG_ABORT("Only 1D, 1D array, 2D, 2D array, 3D and cubemap textures are supported");
     return Result(Result::Code::Unimplemented);
   }
 
   if (desc_.numMipLevels == 0) {
-    IGL_ASSERT_MSG(false, "The number of mip levels specified must be greater than 0");
+    IGL_DEBUG_ABORT("The number of mip levels specified must be greater than 0");
     desc_.numMipLevels = 1;
   }
 
   if (desc.numSamples > 1 && desc_.numMipLevels != 1) {
-    IGL_ASSERT_MSG(false, "The number of mip levels for multisampled images should be 1");
+    IGL_DEBUG_ABORT("The number of mip levels for multisampled images should be 1");
     return Result(Result::Code::ArgumentOutOfRange,
                   "The number of mip levels for multisampled images should be 1");
   }
 
   if (desc.numSamples > 1 && type == TextureType::ThreeD) {
-    IGL_ASSERT_MSG(false, "Multisampled 3D images are not supported");
+    IGL_DEBUG_ABORT("Multisampled 3D images are not supported");
     return Result(Result::Code::ArgumentOutOfRange, "Multisampled 3D images are not supported");
   }
 
@@ -66,7 +66,7 @@ Result Texture::create(const TextureDesc& desc) {
   }
 
   if (desc_.usage == 0) {
-    IGL_ASSERT_MSG(false, "Texture usage flags are not set");
+    IGL_DEBUG_ABORT("Texture usage flags are not set");
     desc_.usage = TextureDesc::TextureUsageBits::Sampled;
   }
   // a simple heuristic to determine proper storage as the storage type is almost never provided by

@@ -104,7 +104,7 @@ Result Texture::uploadInternal(TextureType type,
         break;
       }
       default:
-        IGL_ASSERT(false && "Unknown texture type");
+        IGL_DEBUG_ABORT("Unknown texture type");
         break;
       }
     }

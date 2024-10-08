@@ -158,7 +158,7 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
           contextHandle_ != nullptr) {
         IContext::registerContext((void*)contextHandle_, this);
       } else {
-        IGL_ASSERT_MSG(false, "[IGL] Failed to create GLX context");
+        IGL_DEBUG_ABORT("[IGL] Failed to create GLX context");
       }
 
       if (offscreen_) {
@@ -181,10 +181,10 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
       initialize(&result);
       IGL_ASSERT_MSG(result.isOk(), result.message.c_str());
     } else {
-      IGL_ASSERT_MSG(false, "[IGL] Failed to get GLX framebuffer configs");
+      IGL_DEBUG_ABORT("[IGL] Failed to get GLX framebuffer configs");
     }
   } else {
-    IGL_ASSERT_MSG(false, "[IGL] Failed to open display");
+    IGL_DEBUG_ABORT("[IGL] Failed to open display");
   }
 }
 
@@ -238,9 +238,8 @@ Context::~Context() {
 
 void Context::setCurrent() {
   if (!module_->glXMakeCurrent(display_, windowHandle_, contextHandle_)) {
-    IGL_ASSERT_MSG(false,
-                   "[IGL] Failed to activate OpenGL render context. GLX error 0x%08X:\n",
-                   GetLastError());
+    IGL_DEBUG_ABORT("[IGL] Failed to activate OpenGL render context. GLX error 0x%08X:\n",
+                    GetLastError());
   }
   flushDeletionQueue();
 }

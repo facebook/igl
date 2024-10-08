@@ -258,10 +258,9 @@ using namespace igl;
       };
       pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
     } else {
-      IGL_ASSERT_MSG(false,
-                     "Unsupported OpenGL version: %u.%u\n",
-                     config_.backendVersion.majorVersion,
-                     config_.backendVersion.minorVersion);
+      IGL_DEBUG_ABORT("Unsupported OpenGL version: %u.%u\n",
+                      config_.backendVersion.majorVersion,
+                      config_.backendVersion.minorVersion);
     }
     auto openGLView = [[GLView alloc] initWithFrame:frame_ pixelFormat:pixelFormat];
     igl::Result result;

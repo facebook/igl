@@ -30,7 +30,7 @@ VkPrimitiveTopology primitiveTypeToVkPrimitiveTopology(igl::PrimitiveType t) {
   case igl::PrimitiveType::TriangleStrip:
     return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
   }
-  IGL_ASSERT_MSG(false, "Implement PrimitiveType = %u", (uint32_t)t);
+  IGL_DEBUG_ABORT("Implement PrimitiveType = %u", (uint32_t)t);
   return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 }
 
@@ -41,7 +41,7 @@ VkPolygonMode polygonFillModeToVkPolygonMode(igl::PolygonFillMode mode) {
   case igl::PolygonFillMode::Line:
     return VK_POLYGON_MODE_LINE;
   }
-  IGL_ASSERT_MSG(false, "Implement a missing polygon fill mode");
+  IGL_DEBUG_ABORT("Implement a missing polygon fill mode");
   return VK_POLYGON_MODE_FILL;
 }
 
@@ -54,7 +54,7 @@ VkCullModeFlags cullModeToVkCullMode(igl::CullMode mode) {
   case igl::CullMode::Back:
     return VK_CULL_MODE_BACK_BIT;
   }
-  IGL_ASSERT_MSG(false, "Implement a missing cull mode");
+  IGL_DEBUG_ABORT("Implement a missing cull mode");
   return VK_CULL_MODE_NONE;
 }
 
@@ -65,7 +65,7 @@ VkFrontFace windingModeToVkFrontFace(igl::WindingMode mode) {
   case igl::WindingMode::CounterClockwise:
     return VK_FRONT_FACE_COUNTER_CLOCKWISE;
   }
-  IGL_ASSERT_MSG(false, "Wrong winding order (cannot be more than 2)");
+  IGL_DEBUG_ABORT("Wrong winding order (cannot be more than 2)");
   return VK_FRONT_FACE_CLOCKWISE;
 }
 

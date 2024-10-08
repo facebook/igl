@@ -155,7 +155,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBufferWith
                         Result::Code::Unsupported,
                         "Invalid Texture Format : " +
                             std::string(TextureFormatProperties::fromTextureFormat(format).name));
-      IGL_ASSERT_MSG(0, outResult->message.c_str());
+      IGL_DEBUG_ABORT(outResult->message.c_str());
       return nullptr;
     }
 

@@ -1388,7 +1388,7 @@ void initModel() {
 
   if (!loadFromCache(cacheFileName.c_str())) {
     if (!IGL_VERIFY(loadAndCache(cacheFileName.c_str()))) {
-      IGL_ASSERT_MSG(false, "Cannot load 3D model");
+      IGL_DEBUG_ABORT("Cannot load 3D model");
     }
   }
 
@@ -2282,7 +2282,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
   };
 
   if (!IGL_VERIFY(texture->vkFormat == VK_FORMAT_R32G32B32A32_SFLOAT)) {
-    IGL_ASSERT_MSG(false, "Texture format not supported");
+    IGL_DEBUG_ABORT("Texture format not supported");
     return;
   }
 
@@ -2434,7 +2434,7 @@ void processCubemap(const std::string& inFilename,
   };
 
   if (!IGL_VERIFY(pxs != nullptr)) {
-    IGL_ASSERT_MSG(false, "Did you read the tutorial at the top of Tiny_MeshLarge.cpp?");
+    IGL_DEBUG_ABORT("Did you read the tutorial at the top of Tiny_MeshLarge.cpp?");
     return;
   }
 
