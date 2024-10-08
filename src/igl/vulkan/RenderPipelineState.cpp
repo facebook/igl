@@ -493,14 +493,14 @@ VkPipeline RenderPipelineState::getVkPipeline(
 }
 
 int RenderPipelineState::getIndexByName(const igl::NameHandle& name, ShaderStage stage) const {
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   (void)name;
   (void)stage;
   return 0;
 }
 
 int RenderPipelineState::getIndexByName(const std::string& name, ShaderStage stage) const {
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   (void)name;
   (void)stage;
   return 0;

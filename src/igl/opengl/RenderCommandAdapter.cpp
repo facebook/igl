@@ -263,7 +263,7 @@ void RenderCommandAdapter::drawArraysIndirect(GLenum mode,
     bindBufferWithShaderStorageBufferOverride(indirectBuffer, GL_DRAW_INDIRECT_BUFFER);
     getContext().drawArraysIndirect(toMockWireframeMode(mode), indirectBufferOffset);
   } else {
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   }
   didDraw();
 }
@@ -276,7 +276,7 @@ void RenderCommandAdapter::drawArraysInstanced(GLenum mode,
   if (getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DrawArraysInstanced)) {
     getContext().drawArraysInstanced(toMockWireframeMode(mode), first, count, instancecount);
   } else {
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   }
   didDraw();
 }
@@ -300,7 +300,7 @@ void RenderCommandAdapter::drawElementsInstanced(GLenum mode,
     getContext().drawElementsInstanced(
         toMockWireframeMode(mode), indexCount, indexType, indexOffset, instancecount);
   } else {
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   }
   didDraw();
 }
@@ -314,7 +314,7 @@ void RenderCommandAdapter::drawElementsIndirect(GLenum mode,
     bindBufferWithShaderStorageBufferOverride(indirectBuffer, GL_DRAW_INDIRECT_BUFFER);
     getContext().drawElementsIndirect(toMockWireframeMode(mode), indexType, indirectBufferOffset);
   } else {
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   }
   didDraw();
 }

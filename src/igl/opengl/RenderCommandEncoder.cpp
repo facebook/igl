@@ -268,7 +268,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     auto bufferType = glBuffer->getType();
 
     if (bufferType == Buffer::Type::Uniform) {
-      IGL_ASSERT_NOT_IMPLEMENTED();
+      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     } else if (bufferType == Buffer::Type::UniformBlock) {
       adapter_->setUniformBuffer(glBuffer, offset, index);
     }
@@ -299,13 +299,13 @@ void RenderCommandEncoder::bindBytes(size_t /*index*/,
                                      uint8_t /*target*/,
                                      const void* /*data*/,
                                      size_t /*length*/) {
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 }
 
 void RenderCommandEncoder::bindPushConstants(const void* /*data*/,
                                              size_t /*length*/,
                                              size_t /*offset*/) {
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 }
 
 void RenderCommandEncoder::bindSamplerState(size_t index,

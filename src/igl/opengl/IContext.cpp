@@ -1039,7 +1039,7 @@ void IContext::compressedTexImage1D(IGL_MAYBE_UNUSED GLenum target,
          data);
   GLCHECK_ERRORS();
 #else
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 #endif
 }
 
@@ -1128,7 +1128,7 @@ void IContext::compressedTexSubImage1D(IGL_MAYBE_UNUSED GLenum target,
          data);
   GLCHECK_ERRORS();
 #else
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 #endif
 }
 
@@ -1759,7 +1759,7 @@ void IContext::polygonFillMode(IGL_MAYBE_UNUSED GLenum mode) {
   APILOG("glPolygonMode(%s)\n", GL_ENUM_TO_STRING(mode));
   GLCHECK_ERRORS();
 #else
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 #endif
 }
 
@@ -2811,7 +2811,7 @@ void IContext::texImage1D(IGL_MAYBE_UNUSED GLenum target,
          data);
   GLCHECK_ERRORS();
 #else
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 #endif
 }
 
@@ -2834,7 +2834,7 @@ void IContext::texSubImage1D(IGL_MAYBE_UNUSED GLenum target,
          pixels);
   GLCHECK_ERRORS();
 #else
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 #endif
 }
 
@@ -3648,7 +3648,7 @@ void IContext::initialize(Result* result) {
   } else {
     glVersion = ::igl::opengl::getGLVersion(version);
     if (glVersion == GLVersion::NotAvailable) {
-      IGL_ASSERT_NOT_IMPLEMENTED();
+      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
       Result::setResult(result, Result::Code::RuntimeError, "Unable to get GL version\n");
     }
   }

@@ -509,7 +509,7 @@ void RenderCommandEncoder::bindBytes(size_t /*index*/,
                                      uint8_t /*target*/,
                                      const void* /*data*/,
                                      size_t /*length*/) {
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 }
 
 void RenderCommandEncoder::bindPushConstants(const void* data, size_t length, size_t offset) {
@@ -581,7 +581,7 @@ void RenderCommandEncoder::bindTexture(size_t index, uint8_t target, ITexture* t
 void RenderCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const void* /*data*/) {
   // DO NOT IMPLEMENT!
   // This is only for backends that MUST use single uniforms in some situations.
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 }
 
 void RenderCommandEncoder::draw(size_t vertexCount,

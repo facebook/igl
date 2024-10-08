@@ -238,7 +238,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 std::unique_ptr<igl::IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& /*desc*/,
                                                                  Result* outResult) const {
   Result::setResult(outResult, Result::Code::Unsupported);
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   return nullptr;
 }
 

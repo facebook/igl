@@ -353,14 +353,14 @@ void Framebuffer::copyBytesDepthAttachment(ICommandQueue& /* unused */,
                                            void* /*pixelBytes*/,
                                            const TextureRangeDesc& /*range*/,
                                            size_t /*bytesPerRow*/) const {
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 }
 
 void Framebuffer::copyBytesStencilAttachment(ICommandQueue& /* unused */,
                                              void* /*pixelBytes*/,
                                              const TextureRangeDesc& /*range*/,
                                              size_t /*bytesPerRow*/) const {
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 }
 
 void Framebuffer::copyTextureColorAttachment(ICommandQueue& /*cmdQueue*/,

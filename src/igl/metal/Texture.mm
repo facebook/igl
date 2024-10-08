@@ -196,7 +196,7 @@ uint32_t Texture::getNumMipLevels() const {
 
 void Texture::generateMipmap(ICommandQueue& cmdQueue, const TextureRangeDesc* range) const {
   if (range) {
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   }
 
   if (value_.mipmapLevelCount > 1) {
@@ -212,7 +212,7 @@ void Texture::generateMipmap(ICommandQueue& cmdQueue, const TextureRangeDesc* ra
 
 void Texture::generateMipmap(ICommandBuffer& cmdBuffer, const TextureRangeDesc* range) const {
   if (range) {
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   }
 
   if (value_.mipmapLevelCount > 1) {
@@ -227,7 +227,7 @@ void Texture::generateMipmap(id<MTLCommandBuffer> cmdBuffer) const {
                              ICapabilities::TextureFormatCapabilityBits::SampledFiltered) != 0;
   if (!isFilterable) {
     // TODO: implement manual mip generation for required formats (e.g. RGBA32Float)
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return;
   }
 
@@ -242,7 +242,7 @@ bool Texture::isRequiredGenerateMipmap() const {
 
 uint64_t Texture::getTextureId() const {
   // TODO: implement via gpuResourceID
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   return 0;
 }
 

@@ -69,7 +69,7 @@ bool Context::isCurrentSharegroup() const {
 }
 
 std::unique_ptr<IContext> Context::createShareContext(Result* outResult) {
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   Result::setResult(outResult, Result::Code::Unimplemented, "Implement as needed");
   return nullptr;
 }

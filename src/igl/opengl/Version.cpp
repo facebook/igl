@@ -85,7 +85,7 @@ GLVersion getGLVersionEnum(uint32_t majorVersion, uint32_t minorVersion) {
     case 0:
       return GLVersion::v2_0_ES;
     default:
-      IGL_ASSERT_NOT_IMPLEMENTED();
+      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
       return GLVersion::v2_0_ES;
     }
   case 3:
@@ -97,11 +97,11 @@ GLVersion getGLVersionEnum(uint32_t majorVersion, uint32_t minorVersion) {
     case 2:
       return GLVersion::v3_2_ES;
     default:
-      IGL_ASSERT_NOT_IMPLEMENTED();
+      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
       return GLVersion::v3_0_ES;
     }
   default:
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return GLVersion::v2_0_ES;
   }
 
@@ -114,7 +114,7 @@ GLVersion getGLVersionEnum(uint32_t majorVersion, uint32_t minorVersion) {
     case 1:
       return GLVersion::v2_1;
     default:
-      IGL_ASSERT_NOT_IMPLEMENTED();
+      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
       return GLVersion::v2_0;
     }
 
@@ -129,7 +129,7 @@ GLVersion getGLVersionEnum(uint32_t majorVersion, uint32_t minorVersion) {
     case 3:
       return GLVersion::v3_3;
     default:
-      IGL_ASSERT_NOT_IMPLEMENTED();
+      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
       return GLVersion::v3_0;
     }
 
@@ -150,11 +150,11 @@ GLVersion getGLVersionEnum(uint32_t majorVersion, uint32_t minorVersion) {
     case 6:
       return GLVersion::v4_6;
     default:
-      IGL_ASSERT_NOT_IMPLEMENTED();
+      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
       return GLVersion::v4_0;
     }
   default:
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return GLVersion::v2_0;
   }
 #endif // IGL_OPENGL_ES
@@ -278,7 +278,7 @@ std::string getStringFromShaderVersion(ShaderVersion version) {
       } else if (version.minorVersion == 20) {
         return "#version 320 es";
       } else {
-        IGL_ASSERT_NOT_IMPLEMENTED();
+        IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
       }
     }
   } else {
@@ -314,7 +314,7 @@ std::string getStringFromShaderVersion(ShaderVersion version) {
       }
     }
   }
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   return "";
 }
 

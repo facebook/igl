@@ -977,7 +977,7 @@ class ITexture : public ITrackedResource<ITexture> {
                                               IGL_MAYBE_UNUSED const TextureRangeDesc& range,
                                               IGL_MAYBE_UNUSED const void* IGL_NULLABLE data,
                                               IGL_MAYBE_UNUSED size_t bytesPerRow = 0) const {
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return Result{Result::Code::Unimplemented, "Upload not implemented."};
   }
 

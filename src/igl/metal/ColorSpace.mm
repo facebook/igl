@@ -46,7 +46,7 @@ CGColorSpaceRef colorSpaceToCGColorSpace(igl::ColorSpace colorSpace) {
   case ColorSpace::BT2100_HLG_NONLINEAR:
   case ColorSpace::BT2100_PQ_NONLINEAR:
   default:
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
   }
   IGL_UNREACHABLE_RETURN(CGColorSpaceCreateWithName(kCGColorSpaceSRGB));

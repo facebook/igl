@@ -59,7 +59,7 @@ BufferOffsets getBufferOffsets(igl::TextureFormat format) {
   }
 
   default:
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return {.r = 0, .g = 1, .b = 2};
   }
 }

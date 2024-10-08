@@ -330,7 +330,7 @@ using namespace igl;
 // @fb-only
 
   default: {
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     break;
   }
   }
@@ -422,7 +422,7 @@ using namespace igl;
 // @fb-only
 
   default: {
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return nullptr;
   }
   }
@@ -474,7 +474,7 @@ using namespace igl;
 // @fb-only
 
   default: {
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return nullptr;
   }
   }

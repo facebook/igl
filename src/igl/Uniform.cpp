@@ -40,7 +40,7 @@ size_t sizeForUniformType(UniformType type) {
   case UniformType::Mat4x4:
     return sizeof(float[4][4]);
   default:
-    IGL_ASSERT_NOT_IMPLEMENTED(); // missing enum case
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED(); // missing enum case
     return 0;
   }
 }
@@ -70,7 +70,7 @@ size_t sizeForUniformElementType(UniformType type) {
     return sizeof(int32_t);
 
   default:
-    IGL_ASSERT_NOT_IMPLEMENTED(); // missing enum case
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED(); // missing enum case
     return 0;
   }
 }

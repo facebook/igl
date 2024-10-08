@@ -146,7 +146,7 @@ size_t Buffer::getSizeInBytes() const {
 
 uint64_t Buffer::gpuAddress(size_t /*offset*/) const {
   // TODO: implement via gpuResourceID
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   return 0;
 }
 

@@ -87,7 +87,7 @@ void TextureTarget::unbind() {
 }
 
 void TextureTarget::bindImage(size_t /*unit*/) {
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 }
 
 void TextureTarget::attachAsColor(uint32_t index, const AttachmentParams& params) {

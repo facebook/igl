@@ -141,7 +141,7 @@ void Framebuffer::copyBytes(ICommandQueue& cmdQueue,
     mtlTexture->getBytes(range, pixelBytes, bytesPerRow);
   } else {
     // Use MTLBlitCommandEncoder to copy into a non-private storage texture that can be read from
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   }
 }
 

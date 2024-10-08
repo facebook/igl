@@ -131,7 +131,7 @@ void TinyRenderer::init(AAssetManager* mgr,
 #endif
 
   default: {
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return;
   }
   }

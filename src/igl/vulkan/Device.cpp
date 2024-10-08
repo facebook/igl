@@ -470,7 +470,7 @@ std::unique_ptr<igl::IShaderLibrary> Device::createShaderLibrary(const ShaderLib
         createShaderModule(desc.input.data, desc.input.length, desc.debugName, &result);
   } else {
     if (desc.moduleInfo.size() > 1) {
-      IGL_ASSERT_NOT_IMPLEMENTED();
+      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
       Result::setResult(outResult, Result::Code::Unsupported);
       return nullptr;
     }

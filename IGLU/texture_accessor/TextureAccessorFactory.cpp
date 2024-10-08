@@ -36,7 +36,7 @@ std::unique_ptr<ITextureAccessor> TextureAccessorFactory::createTextureAccessor(
     return std::make_unique<VulkanTextureAccessor>(texture);
 #endif
   default:
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return nullptr;
   }
 }

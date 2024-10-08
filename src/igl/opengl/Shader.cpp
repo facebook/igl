@@ -207,7 +207,7 @@ ShaderModule::~ShaderModule() {
 // compile the shader from the given src shader code
 Result ShaderModule::create(const ShaderModuleDesc& desc) {
   if (desc.input.type == ShaderInputType::Binary) {
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return Result(Result::Code::Unimplemented);
   }
 

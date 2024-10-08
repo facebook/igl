@@ -53,7 +53,7 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
   case igl::ColorSpace::BT601_NONLINEAR:
   case igl::ColorSpace::BT2100_HLG_NONLINEAR:
   case igl::ColorSpace::BT2100_PQ_NONLINEAR:
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     return [NSColorSpace sRGBColorSpace];
   }
   IGL_UNREACHABLE_RETURN([NSColorSpace sRGBColorSpace]);

@@ -24,7 +24,7 @@ std::shared_ptr<IRenderPipelineReflection> RenderPipelineState::renderPipelineRe
 
 void RenderPipelineState::setRenderPipelineReflection(
     const IRenderPipelineReflection& renderPipelineReflection) {
-  IGL_ASSERT_NOT_IMPLEMENTED();
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   (void)renderPipelineReflection;
 }
 

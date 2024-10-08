@@ -73,7 +73,7 @@ void ArrayBuffer::initialize(const BufferDesc& desc, Result* outResult) {
     if (getContext().deviceFeatures().hasFeature(DeviceFeatures::Compute)) {
       target_ = GL_SHADER_STORAGE_BUFFER;
     } else {
-      IGL_ASSERT_NOT_IMPLEMENTED();
+      IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     }
   } else if (desc.type & BufferDesc::BufferTypeBits::Uniform) {
     target_ = GL_UNIFORM_BUFFER;
@@ -84,7 +84,7 @@ void ArrayBuffer::initialize(const BufferDesc& desc, Result* outResult) {
   } else if (desc.type & BufferDesc::BufferTypeBits::Indirect) {
     target_ = GL_DRAW_INDIRECT_BUFFER;
   } else {
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   }
 
   size_ = desc.length;

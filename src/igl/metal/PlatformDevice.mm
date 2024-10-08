@@ -101,7 +101,7 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(CALaye
   } else {
     // Layer is not CAMetalLayer
     // This should never hit, unless there's a new layer type that supports Metal
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     Result::setResult(outResult, Result::Code::Unsupported);
     return nullptr;
   }
@@ -214,7 +214,7 @@ TextureFormat PlatformDevice::getNativeDrawableTextureFormat(CALayer* nativeDraw
   } else {
     // Layer is not CAMetalLayer
     // This should never hit, unless there's a new layer type that supports Metal
-    IGL_ASSERT_NOT_IMPLEMENTED();
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     Result::setResult(outResult, Result::Code::Unsupported);
   }
 #else
