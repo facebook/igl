@@ -117,4 +117,15 @@ TEST(CommonTest, CompareFunctionToVkCompareOpTest) {
             VK_COMPARE_OP_ALWAYS);
 }
 
+// getVulkanSampleCountFlags **************************************************************
+TEST(CommonTest, GetVulkanSampleCountFlagsTest) {
+  EXPECT_EQ(igl::vulkan::getVulkanSampleCountFlags(1u), VK_SAMPLE_COUNT_1_BIT);
+  EXPECT_EQ(igl::vulkan::getVulkanSampleCountFlags(2u), VK_SAMPLE_COUNT_2_BIT);
+  EXPECT_EQ(igl::vulkan::getVulkanSampleCountFlags(4u), VK_SAMPLE_COUNT_4_BIT);
+  EXPECT_EQ(igl::vulkan::getVulkanSampleCountFlags(8u), VK_SAMPLE_COUNT_8_BIT);
+  EXPECT_EQ(igl::vulkan::getVulkanSampleCountFlags(16u), VK_SAMPLE_COUNT_16_BIT);
+  EXPECT_EQ(igl::vulkan::getVulkanSampleCountFlags(32u), VK_SAMPLE_COUNT_32_BIT);
+  EXPECT_EQ(igl::vulkan::getVulkanSampleCountFlags(64u), VK_SAMPLE_COUNT_64_BIT);
+}
+
 } // namespace igl::tests
