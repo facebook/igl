@@ -181,7 +181,7 @@ void RenderCommandEncoder::endEncoding() {
                                                      getContext(),
                                                      &outResult);
       } else {
-        IGL_ASSERT_NOT_REACHED();
+        IGL_DEBUG_ASSERT_NOT_REACHED();
       }
     }
   }

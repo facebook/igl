@@ -74,7 +74,7 @@ class ComputeCommandEncoderTest : public ::testing::Test {
         source = igl::tests::data::shader::MTL_SIMPLE_COMPUTE_SHADER;
         entryName = igl::tests::data::shader::simpleComputeFunc;
       } else {
-        IGL_ASSERT_NOT_REACHED();
+        IGL_DEBUG_ASSERT_NOT_REACHED();
       }
 
       igl::Result ret;

@@ -147,7 +147,7 @@
 // @fb-only
 
   default: {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return igl::SurfaceTextures{};
   }
   }
@@ -163,7 +163,7 @@
 - (void)loadView {
   switch (config_.backendVersion.flavor) {
   case igl::BackendFlavor::Invalid:
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     break;
   case igl::BackendFlavor::Metal: {
 #if IGL_BACKEND_METAL

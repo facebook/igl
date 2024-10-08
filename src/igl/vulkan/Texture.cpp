@@ -144,7 +144,7 @@ Result Texture::create(const TextureDesc& desc) {
     samples = getVulkanSampleCountFlags(desc_.numSamples);
     break;
   default:
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return Result(Result::Code::Unimplemented, "Unimplemented or unsupported texture type.");
   }
 

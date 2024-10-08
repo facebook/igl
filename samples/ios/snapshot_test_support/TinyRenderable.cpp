@@ -104,7 +104,7 @@ const char kGLSLShaderSourceFragment[] =
 std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
   case igl::BackendType::Vulkan:
     IGL_DEBUG_ABORT("IGLSamples not set up for Vulkan");

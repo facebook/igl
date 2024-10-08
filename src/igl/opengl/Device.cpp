@@ -47,7 +47,7 @@ std::unique_ptr<Buffer> allocateBuffer(BufferDesc::BufferType bufferType,
     }
 
   } else {
-    IGL_ASSERT_NOT_REACHED(); // desc.type is corrupt or new enum type was introduced
+    IGL_DEBUG_ASSERT_NOT_REACHED(); // desc.type is corrupt or new enum type was introduced
   }
 
   return resource;

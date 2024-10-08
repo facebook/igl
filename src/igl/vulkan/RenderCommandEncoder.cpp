@@ -39,7 +39,7 @@ VkAttachmentLoadOp loadActionToVkAttachmentLoadOp(igl::LoadAction a) {
   case LoadAction::Clear:
     return VK_ATTACHMENT_LOAD_OP_CLEAR;
   }
-  IGL_ASSERT_NOT_REACHED();
+  IGL_DEBUG_ASSERT_NOT_REACHED();
   return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 }
 
@@ -54,7 +54,7 @@ VkAttachmentStoreOp storeActionToVkAttachmentStoreOp(igl::StoreAction a) {
     // for MSAA resolve, we have to store data into a special "resolve" attachment
     return VK_ATTACHMENT_STORE_OP_DONT_CARE;
   }
-  IGL_ASSERT_NOT_REACHED();
+  IGL_DEBUG_ASSERT_NOT_REACHED();
   return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 }
 
@@ -65,7 +65,7 @@ VkIndexType indexFormatToVkIndexType(igl::IndexFormat fmt) {
   case igl::IndexFormat::UInt32:
     return VK_INDEX_TYPE_UINT32;
   };
-  IGL_ASSERT_NOT_REACHED();
+  IGL_DEBUG_ASSERT_NOT_REACHED();
   return VK_INDEX_TYPE_NONE_KHR;
 }
 

@@ -18,15 +18,15 @@ TextureDesc::TextureUsage ViewTextureTarget::getUsage() const {
 }
 
 void ViewTextureTarget::bind() {
-  IGL_ASSERT_NOT_REACHED();
+  IGL_DEBUG_ASSERT_NOT_REACHED();
 }
 
 void ViewTextureTarget::bindImage(size_t /*unit*/) {
-  IGL_ASSERT_NOT_REACHED();
+  IGL_DEBUG_ASSERT_NOT_REACHED();
 }
 
 void ViewTextureTarget::unbind() {
-  IGL_ASSERT_NOT_REACHED();
+  IGL_DEBUG_ASSERT_NOT_REACHED();
 }
 
 void ViewTextureTarget::attachAsColor(uint32_t /*index*/, const AttachmentParams& /*params*/) {

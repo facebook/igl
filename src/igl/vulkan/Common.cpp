@@ -111,7 +111,7 @@ VkStencilOp stencilOperationToVkStencilOp(igl::StencilOperation op) {
   case igl::StencilOperation::DecrementWrap:
     return VK_STENCIL_OP_DECREMENT_AND_WRAP;
   }
-  IGL_ASSERT_NOT_REACHED();
+  IGL_DEBUG_ASSERT_NOT_REACHED();
   return VK_STENCIL_OP_KEEP;
 }
 

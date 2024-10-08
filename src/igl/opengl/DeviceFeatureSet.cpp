@@ -155,7 +155,7 @@ BackendVersion DeviceFeatureSet::getBackendVersion() const {
   case GLVersion::v3_2_ES:
     return {BackendFlavor::OpenGL_ES, 3, 2};
   case GLVersion::NotAvailable:
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return {usesOpenGLES() ? BackendFlavor::OpenGL_ES : BackendFlavor::OpenGL, 2, 0};
   }
   IGL_UNREACHABLE_RETURN({});

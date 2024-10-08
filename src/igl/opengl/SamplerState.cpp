@@ -180,7 +180,7 @@ SamplerMinMagFilter SamplerState::convertGLMinFilter(GLint glMinFilter) {
 
   default:
 #ifndef GTEST
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
 #endif
     minFilter = SamplerMinMagFilter::Nearest;
   }
@@ -208,7 +208,7 @@ SamplerMipFilter SamplerState::convertGLMipFilter(GLint glMinFilter) {
     break;
 
   default:
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     mipFilter = SamplerMipFilter::Disabled;
   }
 

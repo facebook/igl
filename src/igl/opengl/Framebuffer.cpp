@@ -625,7 +625,7 @@ void CustomFramebuffer::prepareResource(const std::string& debugName, Result* ou
     }
   }
   if (createResolveFramebuffer && maskColorResolveAttachments != maskColorAttachments) {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     if (outResult) {
       *outResult = igl::Result(igl::Result::Code::ArgumentInvalid,
                                "If resolve texture is specified on a color attachment it must be "
@@ -813,14 +813,14 @@ std::vector<size_t> CurrentFramebuffer::getColorAttachmentIndices() const {
 
 std::shared_ptr<ITexture> CurrentFramebuffer::getColorAttachment(size_t index) const {
   if (index != 0) {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
   }
   return colorAttachment_;
 }
 
 std::shared_ptr<ITexture> CurrentFramebuffer::getResolveColorAttachment(size_t index) const {
   if (index != 0) {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
   }
   return colorAttachment_;
 }
@@ -838,15 +838,15 @@ std::shared_ptr<ITexture> CurrentFramebuffer::getStencilAttachment() const {
 }
 
 void CurrentFramebuffer::updateDrawable(std::shared_ptr<ITexture> /*texture*/) {
-  IGL_ASSERT_NOT_REACHED();
+  IGL_DEBUG_ASSERT_NOT_REACHED();
 }
 
 void CurrentFramebuffer::updateDrawable(SurfaceTextures /*surfaceTextures*/) {
-  IGL_ASSERT_NOT_REACHED();
+  IGL_DEBUG_ASSERT_NOT_REACHED();
 }
 
 void CurrentFramebuffer::updateResolveAttachment(std::shared_ptr<ITexture> /*texture*/) {
-  IGL_ASSERT_NOT_REACHED();
+  IGL_DEBUG_ASSERT_NOT_REACHED();
 }
 
 Viewport CurrentFramebuffer::getViewport() const {

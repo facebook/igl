@@ -95,7 +95,7 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   // @fb-only
   case igl::BackendType::Invalid:
   case igl::BackendType::Metal:
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(device,

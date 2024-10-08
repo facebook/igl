@@ -234,7 +234,7 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) n
         "",
         nullptr);
   default:
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
   }
 }

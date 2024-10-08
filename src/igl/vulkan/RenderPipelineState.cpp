@@ -174,7 +174,7 @@ VkFormat vertexAttributeFormatToVkFormat(igl::VertexAttributeFormat fmt) {
   case VertexAttributeFormat::Int_2_10_10_10_REV:
     return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
   }
-  IGL_ASSERT_NOT_REACHED();
+  IGL_DEBUG_ASSERT_NOT_REACHED();
   return VK_FORMAT_UNDEFINED;
 }
 
@@ -193,7 +193,7 @@ VkBlendOp blendOpToVkBlendOp(igl::BlendOp value) {
     return VK_BLEND_OP_MAX;
   }
 
-  IGL_ASSERT_NOT_REACHED();
+  IGL_DEBUG_ASSERT_NOT_REACHED();
   return VK_BLEND_OP_ADD;
 }
 
@@ -204,7 +204,7 @@ VkBool32 checkDualSrcBlendFactor(igl::BlendFactor value, VkBool32 dualSrcBlendSu
     case igl::BlendFactor::OneMinusSrc1Color:
     case igl::BlendFactor::Src1Alpha:
     case igl::BlendFactor::OneMinusSrc1Alpha:
-      IGL_ASSERT_NOT_REACHED();
+      IGL_DEBUG_ASSERT_NOT_REACHED();
       return VK_FALSE;
     default:
       return VK_TRUE;
@@ -255,7 +255,7 @@ VkBlendFactor blendFactorToVkBlendFactor(igl::BlendFactor value) {
   case BlendFactor::OneMinusSrc1Alpha:
     return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
   default:
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return VK_BLEND_FACTOR_ONE; // default for unsupported values
   }
 }

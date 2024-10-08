@@ -2591,7 +2591,7 @@ int main(int /*argc*/, char* /*argv*/[]) {
     }
     if (!exists(dir / subdir)) {
       printf("Cannot find the content directory. Run `deploy_content.py` before running this app.");
-      IGL_ASSERT_NOT_REACHED();
+      IGL_DEBUG_ASSERT_NOT_REACHED();
       return EXIT_FAILURE;
     }
     contentRootFolder = (dir / subdir).string();

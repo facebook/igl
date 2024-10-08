@@ -132,11 +132,11 @@ class IResourceTracker {
 
   template<typename T>
   void didCreate(IGL_MAYBE_UNUSED const ITrackedResource<T>* resource) noexcept {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
   }
   template<typename T>
   void willDelete(IGL_MAYBE_UNUSED const ITrackedResource<T>* resource) noexcept {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
   }
 
   /**

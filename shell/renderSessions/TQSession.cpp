@@ -144,7 +144,7 @@ static std::string getVulkanFragmentShaderSource() {
 static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return nullptr;
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(device,
@@ -319,7 +319,7 @@ void TQSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     } else if (getPlatform().getDevice().hasFeature(DeviceFeatures::UniformBlocks)) {
       commands->bindBuffer(0, fragmentParamBuffer_.get());
     } else {
-      IGL_ASSERT_NOT_REACHED();
+      IGL_DEBUG_ASSERT_NOT_REACHED();
     }
 
     commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());

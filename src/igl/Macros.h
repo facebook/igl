@@ -382,7 +382,7 @@
 // not all control paths return a value
 #if defined(_MSC_VER) || defined(__GNUC__)
 #define IGL_UNREACHABLE_RETURN(value) \
-  IGL_ASSERT_NOT_REACHED();           \
+  IGL_DEBUG_ASSERT_NOT_REACHED();     \
   return value;
 #else
 #define IGL_UNREACHABLE_RETURN(value)

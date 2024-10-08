@@ -101,7 +101,7 @@ void* getCAMetalLayer(void* window) {
     layer.delegate = contentView;
     view = nsWindow.contentView;
   } else {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return window;
   }
   view.layer = layer;

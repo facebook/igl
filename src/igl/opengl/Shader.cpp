@@ -167,7 +167,7 @@ Result ShaderStages::create(const ShaderStagesDesc& /*desc*/) {
   } else if (getType() == ShaderStagesType::Compute) {
     createComputeProgram(&result);
   } else {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
   }
 
   return result;

@@ -22,34 +22,34 @@ class DummyTexture : public ITexture {
     return 1;
   }
   [[nodiscard]] TextureType getType() const override {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return TextureType::TwoDArray;
   }
   [[nodiscard]] TextureDesc::TextureUsage getUsage() const override {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return 0;
   }
   [[nodiscard]] uint32_t getSamples() const override {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return 1;
   }
   void generateMipmap(ICommandQueue& /* unused */,
                       const TextureRangeDesc* IGL_NULLABLE /* unused */) const override {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
   }
   void generateMipmap(ICommandBuffer& /* unused */,
                       const TextureRangeDesc* IGL_NULLABLE /* unused */) const override {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
   }
   [[nodiscard]] uint32_t getNumMipLevels() const override {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return 1;
   }
   [[nodiscard]] bool isRequiredGenerateMipmap() const override {
     return false;
   }
   [[nodiscard]] uint64_t getTextureId() const override {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return 0;
   }
 

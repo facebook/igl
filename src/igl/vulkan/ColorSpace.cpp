@@ -89,7 +89,7 @@ igl::ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace) {
   case VK_COLOR_SPACE_DISPLAY_NATIVE_AMD:
     return ColorSpace::DISPLAY_NATIVE_AMD;
   default:
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return ColorSpace::SRGB_NONLINEAR;
   }
 }

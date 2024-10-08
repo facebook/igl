@@ -82,7 +82,7 @@ void Encoder::operator()(igl::IRenderCommandEncoder& encoder,
 #if IGL_BACKEND_OPENGL
     bindRenderUniform(encoder, bufferIndex, uniform);
 #else
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
 #endif
   } else if (backendType_ == igl::BackendType::Metal) {
     encodeRenderUniform(encoder, bufferIndex, bindTarget, uniform, Alignment::Aligned);
@@ -91,7 +91,7 @@ void Encoder::operator()(igl::IRenderCommandEncoder& encoder,
   // @fb-only
     // @fb-only
   } else {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
   }
 }
 
@@ -106,7 +106,7 @@ void Encoder::operator()(igl::IComputeCommandEncoder& encoder,
 #if IGL_BACKEND_OPENGL
     bindComputeUniform(encoder, bufferIndex, uniform);
 #else
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
 #endif
   } else if (backendType_ == igl::BackendType::Metal) {
     encodeAlignedCompute(encoder, bufferIndex, uniform);

@@ -51,7 +51,7 @@ TEST_F(ShaderLibraryTest, CreateFromSource) {
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     source = data::shader::VULKAN_SIMPLE_VERT_SHADER;
   } else {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
   }
 
   auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
@@ -122,7 +122,7 @@ TEST_F(ShaderLibraryTest, CreateFromSourceNoResult) {
   } else if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
     source = data::shader::VULKAN_SIMPLE_VERT_SHADER;
   } else {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
   }
 
   auto shaderLibrary = ShaderLibraryCreator::fromStringInput(

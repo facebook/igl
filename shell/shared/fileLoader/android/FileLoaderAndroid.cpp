@@ -117,7 +117,7 @@ std::string FileLoaderAndroid::fullPath(const std::string& fileName) const {
       return fullPath.string();
     }
 
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return "";
   }
 }

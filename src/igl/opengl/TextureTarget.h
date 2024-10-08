@@ -38,7 +38,7 @@ class TextureTarget final : public Texture {
 
   // @fb-only
   [[nodiscard]] GLuint getId() const override {
-    IGL_ASSERT_NOT_REACHED();
+    IGL_DEBUG_ASSERT_NOT_REACHED();
     return 0;
   }
 
