@@ -274,61 +274,71 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
                                     ? GL_HALF_FLOAT_OES
                                     : GL_HALF_FLOAT;
   if (textureFormat == TextureFormat::RGBA_UInt32) {
-    if (IGL_VERIFY(
+    if (IGL_DEBUG_VERIFY(
             getContext().deviceFeatures().hasTextureFeature(TextureFeatures::TextureInteger))) {
       getContext().readPixels(
           rangeX, rangeY, rangeWidth, rangeHeight, GL_RGBA_INTEGER, GL_UNSIGNED_INT, pixelBytes);
     }
   } else if (textureFormat == TextureFormat::R_UNorm8) {
-    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
+    if (IGL_DEBUG_VERIFY(
+            getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
       getContext().readPixels(
           rangeX, rangeY, rangeWidth, rangeHeight, GL_RED, GL_UNSIGNED_BYTE, pixelBytes);
     }
   } else if (textureFormat == TextureFormat::RG_UNorm8) {
-    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
+    if (IGL_DEBUG_VERIFY(
+            getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
       getContext().readPixels(
           rangeX, rangeY, rangeWidth, rangeHeight, GL_RG, GL_UNSIGNED_BYTE, pixelBytes);
     }
   } else if (textureFormat == TextureFormat::RGBA_F16) {
-    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureHalfFloat))) {
+    if (IGL_DEBUG_VERIFY(
+            getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureHalfFloat))) {
       getContext().readPixels(
           rangeX, rangeY, rangeWidth, rangeHeight, GL_RGBA, kHalfFloatFormat, pixelBytes);
     }
   } else if (textureFormat == TextureFormat::RGB_F16) {
-    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureHalfFloat))) {
+    if (IGL_DEBUG_VERIFY(
+            getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureHalfFloat))) {
       getContext().readPixels(
           rangeX, rangeY, rangeWidth, rangeHeight, GL_RGB, kHalfFloatFormat, pixelBytes);
     }
   } else if (textureFormat == TextureFormat::RG_F16) {
-    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureHalfFloat)) &&
-        IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
+    if (IGL_DEBUG_VERIFY(
+            getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureHalfFloat)) &&
+        IGL_DEBUG_VERIFY(
+            getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
       getContext().readPixels(
           rangeX, rangeY, rangeWidth, rangeHeight, GL_RG, kHalfFloatFormat, pixelBytes);
     }
   } else if (textureFormat == TextureFormat::R_F16) {
-    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureHalfFloat)) &&
-        IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
+    if (IGL_DEBUG_VERIFY(
+            getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureHalfFloat)) &&
+        IGL_DEBUG_VERIFY(
+            getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
       getContext().readPixels(
           rangeX, rangeY, rangeWidth, rangeHeight, GL_RED, kHalfFloatFormat, pixelBytes);
     }
   } else if (textureFormat == TextureFormat::RGBA_F32) {
-    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFloat))) {
+    if (IGL_DEBUG_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFloat))) {
       getContext().readPixels(
           rangeX, rangeY, rangeWidth, rangeHeight, GL_RGBA, GL_FLOAT, pixelBytes);
     }
   } else if (textureFormat == TextureFormat::RGB_F32) {
-    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFloat))) {
+    if (IGL_DEBUG_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFloat))) {
       getContext().readPixels(
           rangeX, rangeY, rangeWidth, rangeHeight, GL_RGB, GL_FLOAT, pixelBytes);
     }
   } else if (textureFormat == TextureFormat::RG_F32) {
-    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFloat)) &&
-        IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
+    if (IGL_DEBUG_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFloat)) &&
+        IGL_DEBUG_VERIFY(
+            getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
       getContext().readPixels(rangeX, rangeY, rangeWidth, rangeHeight, GL_RG, GL_FLOAT, pixelBytes);
     }
   } else if (textureFormat == TextureFormat::R_F32) {
-    if (IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFloat)) &&
-        IGL_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
+    if (IGL_DEBUG_VERIFY(getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFloat)) &&
+        IGL_DEBUG_VERIFY(
+            getContext().deviceFeatures().hasFeature(DeviceFeatures::TextureFormatRG))) {
       getContext().readPixels(
           rangeX, rangeY, rangeWidth, rangeHeight, GL_RED, GL_FLOAT, pixelBytes);
     }

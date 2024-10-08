@@ -59,7 +59,7 @@ TextureType getIGLTextureType(uint32_t dim, bool isArrayed) {
 } // namespace
 
 SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
-  if (!IGL_VERIFY(spirv)) {
+  if (!IGL_DEBUG_VERIFY(spirv)) {
     return {};
   }
 
@@ -86,7 +86,7 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
 
   // some reasonable upper bound so that we don't try to allocate a lot of memory in case the SPIR-V
   // header is broken
-  if (!IGL_VERIFY(kBound < 1024 * 1024)) {
+  if (!IGL_DEBUG_VERIFY(kBound < 1024 * 1024)) {
     return {};
   }
 

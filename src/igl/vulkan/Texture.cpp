@@ -31,8 +31,8 @@ Result Texture::create(const TextureDesc& desc) {
                                 : textureFormatToVkFormat(desc_.format);
 
   const igl::TextureType type = desc_.type;
-  if (!IGL_VERIFY(type == TextureType::TwoD || type == TextureType::TwoDArray ||
-                  type == TextureType::Cube || type == TextureType::ThreeD)) {
+  if (!IGL_DEBUG_VERIFY(type == TextureType::TwoD || type == TextureType::TwoDArray ||
+                        type == TextureType::Cube || type == TextureType::ThreeD)) {
     IGL_DEBUG_ABORT("Only 1D, 1D array, 2D, 2D array, 3D and cubemap textures are supported");
     return Result(Result::Code::Unimplemented);
   }
@@ -58,8 +58,8 @@ Result Texture::create(const TextureDesc& desc) {
                   "Array textures are only supported when type is TwoDArray."};
   }
 
-  if (!IGL_VERIFY(desc_.numMipLevels <=
-                  TextureDesc::calcNumMipLevels(desc_.width, desc_.height, desc_.height))) {
+  if (!IGL_DEBUG_VERIFY(desc_.numMipLevels <=
+                        TextureDesc::calcNumMipLevels(desc_.width, desc_.height, desc_.height))) {
     return Result(Result::Code::ArgumentOutOfRange,
                   "The number of specified mip levels is greater than the maximum possible "
                   "number of mip levels.");
@@ -177,10 +177,10 @@ Result Texture::create(const TextureDesc& desc) {
       samples,
       &result,
       debugNameImage.c_str());
-  if (!IGL_VERIFY(result.isOk())) {
+  if (!IGL_DEBUG_VERIFY(result.isOk())) {
     return result;
   }
-  if (!IGL_VERIFY(image.valid())) {
+  if (!IGL_DEBUG_VERIFY(image.valid())) {
     return Result(Result::Code::InvalidOperation, "Cannot create VulkanImage");
   }
 
@@ -204,7 +204,7 @@ Result Texture::create(const TextureDesc& desc) {
                                                     arrayLayerCount,
                                                     debugNameImageView.c_str());
 
-  if (!IGL_VERIFY(imageView.valid())) {
+  if (!IGL_DEBUG_VERIFY(imageView.valid())) {
     return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
   }
 

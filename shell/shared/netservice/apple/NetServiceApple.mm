@@ -137,7 +137,7 @@ NetServiceApple::NetServiceApple(NSNetService* netService) : netService_(netServ
 }
 
 void NetServiceApple::initialize() {
-  if (IGL_VERIFY(nil == netServiceDelegateAdapter_)) {
+  if (IGL_DEBUG_VERIFY(nil == netServiceDelegateAdapter_)) {
     netServiceDelegateAdapter_ = [[IGLShellNetServiceDelegateAdapter alloc] initWithOwner:this];
     [netService_ setDelegate:netServiceDelegateAdapter_];
 

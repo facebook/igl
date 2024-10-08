@@ -131,7 +131,7 @@ VkResult VulkanImmediateCommands::wait(const SubmitHandle handle, uint64_t timeo
     return VK_SUCCESS;
   }
 
-  if (!IGL_VERIFY(!buffers_[handle.bufferIndex_].isEncoding_)) {
+  if (!IGL_DEBUG_VERIFY(!buffers_[handle.bufferIndex_].isEncoding_)) {
     // we are waiting for a buffer which has not been submitted - this is probably a logic error
     // somewhere in the calling code
     return VK_ERROR_UNKNOWN;

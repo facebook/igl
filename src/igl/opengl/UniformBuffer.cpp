@@ -80,7 +80,7 @@ void UniformBuffer::initialize(const BufferDesc& desc, Result* outResult) {
 
 // upload data to the buffer at the given offset with the given size
 Result UniformBuffer::upload(const void* data, const BufferRange& range) {
-  if (!IGL_VERIFY(range.offset + range.size <= getSizeInBytes())) {
+  if (!IGL_DEBUG_VERIFY(range.offset + range.size <= getSizeInBytes())) {
     return Result{Result::Code::ArgumentOutOfRange, "Range size is larger than data size"};
   }
 
@@ -130,7 +130,7 @@ void UniformBuffer::bindUniform(IContext& context,
                                 UniformType uniformType,
                                 const uint8_t* start,
                                 size_t stCount) {
-  if (IGL_VERIFY(shaderLocation >= 0)) {
+  if (IGL_DEBUG_VERIFY(shaderLocation >= 0)) {
     // If a glerror is hit within and of the getContext().uniform*** methods,
     // renderCommandEncoder->bindBuffer()'s index parameter likely does not map to the correct
     // location in the shader

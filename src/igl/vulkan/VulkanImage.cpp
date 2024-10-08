@@ -163,7 +163,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
     const VkResult result = vmaCreateImage(
         (VmaAllocator)ctx_->getVmaAllocator(), &ci, &ciAlloc, &vkImage_, &vmaAllocation_, nullptr);
 
-    if (!IGL_VERIFY(result == VK_SUCCESS)) {
+    if (!IGL_DEBUG_VERIFY(result == VK_SUCCESS)) {
       IGL_LOG_ERROR("failed: error result: %d, memflags: %d,  imageformat: %d\n",
                     result,
                     memFlags,
@@ -1049,7 +1049,7 @@ void VulkanImage::generateMipmap(VkCommandBuffer commandBuffer,
     const bool hardwareDownscalingSupported =
         ((formatProperties_.optimalTilingFeatures & formatFeatureMask) == formatFeatureMask);
 
-    if (!IGL_VERIFY(hardwareDownscalingSupported)) {
+    if (!IGL_DEBUG_VERIFY(hardwareDownscalingSupported)) {
       IGL_DEBUG_ABORT(IGL_FORMAT("Doesn't support hardware downscaling of this image format: {}",
                                  uint32_t(imageFormat_))
                           .c_str());

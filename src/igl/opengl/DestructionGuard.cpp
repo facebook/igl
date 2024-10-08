@@ -13,7 +13,7 @@ namespace igl::opengl {
 
 DestructionGuard::DestructionGuard(std::shared_ptr<IContext> context) :
   context_(std::move(context)) {
-  if (IGL_VERIFY(context_)) {
+  if (IGL_DEBUG_VERIFY(context_)) {
     ++context_->lockCount_;
   }
 }

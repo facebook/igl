@@ -126,7 +126,7 @@ XrSession XrAppImplGLES::initXrSession(XrInstance instance,
 }
 
 std::unique_ptr<impl::XrSwapchainProviderImpl> XrAppImplGLES::createSwapchainProviderImpl() const {
-  if (IGL_VERIFY(device_)) {
+  if (IGL_DEBUG_VERIFY(device_)) {
     return std::make_unique<XrSwapchainProviderImplGLES>(*device_,
                                                          sessionConfig_.colorFramebufferFormat);
   }

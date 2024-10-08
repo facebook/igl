@@ -25,7 +25,7 @@ size_t RenderSessionRegistry::size() const noexcept {
 }
 
 RenderSessionLoader& RenderSessionRegistry::findLoader(const std::string& loaderName) noexcept {
-  if (auto it = loaders_.find(loaderName); IGL_VERIFY(it != loaders_.end())) {
+  if (auto it = loaders_.find(loaderName); IGL_DEBUG_VERIFY(it != loaders_.end())) {
     return it->second;
   }
   IGL_LOG_ERROR("Could not find RenderSessionLoader for (%s)\n", loaderName.c_str());

@@ -77,7 +77,7 @@ void UniformAdapter::setUniform(const UniformDesc& uniformDesc,
   length *= uniformDesc.numElements;
 
   // Make sure typeSize is not 0 and is a power of 2
-  if (!IGL_VERIFY((typeSize != 0) && ((typeSize - 1) & typeSize) == 0)) {
+  if (!IGL_DEBUG_VERIFY((typeSize != 0) && ((typeSize - 1) & typeSize) == 0)) {
     Result::setResult(
         outResult, Result::Code::InvalidOperation, "typeSize is 0 or not a power of 2");
     IGL_LOG_INFO_ONCE("IGL WARNING: Invalid typeSize (%zu) is used. Found 0 or not power of 2\n",
@@ -92,7 +92,7 @@ void UniformAdapter::setUniform(const UniformDesc& uniformDesc,
   const std::ptrdiff_t dataOffset = (usedUniformDataBytes_ + (typeSize - 1)) & ~(typeSize - 1);
 
   // Make sure dataOffset is typeSize aligned
-  if (!IGL_VERIFY((dataOffset & (typeSize - 1)) == 0)) {
+  if (!IGL_DEBUG_VERIFY((dataOffset & (typeSize - 1)) == 0)) {
     Result::setResult(
         outResult, Result::Code::InvalidOperation, "dataOffset is not typeSize aligned");
     IGL_LOG_INFO_ONCE(

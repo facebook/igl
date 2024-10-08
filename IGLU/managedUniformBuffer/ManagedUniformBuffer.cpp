@@ -32,7 +32,7 @@ ManagedUniformBuffer::ManagedUniformBuffer(igl::IDevice& device,
   igl::BufferDesc desc;
   desc.length = info.length;
 
-  if (!IGL_VERIFY(desc.length != 0)) {
+  if (!IGL_DEBUG_VERIFY(desc.length != 0)) {
     result.code = igl::Result::Code::ArgumentInvalid;
     return;
   }

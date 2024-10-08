@@ -327,11 +327,11 @@ std::shared_ptr<igl::IComputePipelineState> Device::createComputePipeline(
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
     return nullptr;
   }
-  if (!IGL_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Compute)) {
+  if (!IGL_DEBUG_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Compute)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader stages not for compute");
     return nullptr;
   }
-  if (!IGL_VERIFY(desc.shaderStages->getComputeModule())) {
+  if (!IGL_DEBUG_VERIFY(desc.shaderStages->getComputeModule())) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing compute shader");
     return nullptr;
   }
@@ -378,19 +378,19 @@ std::shared_ptr<igl::IRenderPipelineState> Device::createRenderPipeline(
 
   metalDesc.vertexDescriptor = metalVertexInput;
 
-  if (!IGL_VERIFY(desc.shaderStages)) {
+  if (!IGL_DEBUG_VERIFY(desc.shaderStages)) {
     Result::setResult(
         outResult, Result::Code::RuntimeError, "RenderPipeline requires shader stages");
     return nullptr;
   }
-  if (!IGL_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Render)) {
+  if (!IGL_DEBUG_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Render)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader stages not for render");
     return nullptr;
   }
 
   // Vertex shader is required
   auto vertexModule = desc.shaderStages->getVertexModule();
-  if (!IGL_VERIFY(vertexModule)) {
+  if (!IGL_DEBUG_VERIFY(vertexModule)) {
     Result::setResult(
         outResult, Result::Code::RuntimeError, "RenderPipeline requires vertex module");
     return nullptr;
@@ -399,7 +399,7 @@ std::shared_ptr<igl::IRenderPipelineState> Device::createRenderPipeline(
   auto* vertexFunc = static_cast<ShaderModule*>(vertexModule.get());
   metalDesc.vertexFunction = vertexFunc->get();
 
-  if (!IGL_VERIFY(metalDesc.vertexFunction)) {
+  if (!IGL_DEBUG_VERIFY(metalDesc.vertexFunction)) {
     Result::setResult(
         outResult, Result::Code::RuntimeError, "RenderPipeline requires non-null vertex function");
     return nullptr;

@@ -114,7 +114,7 @@
     // @fb-only
   // @fb-only
 // @fb-only
-  if (!IGL_VERIFY(supported)) {
+  if (!IGL_DEBUG_VERIFY(supported)) {
     return;
   }
 

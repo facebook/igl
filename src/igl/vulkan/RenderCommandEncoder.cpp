@@ -92,7 +92,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
 
-  if (!IGL_VERIFY(cmdBuffer_)) {
+  if (!IGL_DEBUG_VERIFY(cmdBuffer_)) {
     Result::setResult(&outResult, Result::Code::ArgumentNull);
     return;
   }
@@ -104,7 +104,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
 
   Result::setOk(&outResult);
 
-  if (!IGL_VERIFY(framebuffer)) {
+  if (!IGL_DEBUG_VERIFY(framebuffer)) {
     Result::setResult(&outResult, Result::Code::ArgumentNull);
     return;
   }
@@ -385,7 +385,7 @@ void RenderCommandEncoder::bindRenderPipelineState(
     const std::shared_ptr<IRenderPipelineState>& pipelineState) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(pipelineState != nullptr)) {
+  if (!IGL_DEBUG_VERIFY(pipelineState != nullptr)) {
     return;
   }
 
@@ -412,7 +412,7 @@ void RenderCommandEncoder::bindDepthStencilState(
     const std::shared_ptr<IDepthStencilState>& depthStencilState) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(depthStencilState != nullptr)) {
+  if (!IGL_DEBUG_VERIFY(depthStencilState != nullptr)) {
     return;
   }
   const igl::vulkan::DepthStencilState* state =
@@ -448,7 +448,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
   IGL_LOG_INFO("%p  bindBuffer(%u, %u)\n", cmdBuffer_, index, (uint32_t)bufferOffset);
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
-  if (!IGL_VERIFY(buffer != nullptr)) {
+  if (!IGL_DEBUG_VERIFY(buffer != nullptr)) {
     return;
   }
 
@@ -460,7 +460,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
 
   IGL_DEBUG_ASSERT(isUniformOrStorageBuffer, "Must be a uniform or a storage buffer");
 
-  if (!IGL_VERIFY(isUniformOrStorageBuffer)) {
+  if (!IGL_DEBUG_VERIFY(isUniformOrStorageBuffer)) {
     return;
   }
   if (ctx_.enhancedShaderDebuggingStore_) {
@@ -481,11 +481,11 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, siz
 
   const bool isVertexBuffer = (buffer.getBufferType() & BufferDesc::BufferTypeBits::Vertex) != 0;
 
-  if (!IGL_VERIFY(isVertexBuffer)) {
+  if (!IGL_DEBUG_VERIFY(isVertexBuffer)) {
     return;
   }
 
-  if (IGL_VERIFY(index < IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_))) {
+  if (IGL_DEBUG_VERIFY(index < IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_))) {
     isVertexBufferBound_[index] = true;
   }
   VkBuffer vkBuf = static_cast<igl::vulkan::Buffer&>(buffer).getVkBuffer();
@@ -552,8 +552,9 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
   IGL_LOG_INFO("%p  bindSamplerState(%u, %u)\n", cmdBuffer_, (uint32_t)index, (uint32_t)target);
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
-  if (!IGL_VERIFY(target == igl::BindTarget::kFragment || target == igl::BindTarget::kVertex ||
-                  target == igl::BindTarget::kAllGraphics)) {
+  if (!IGL_DEBUG_VERIFY(target == igl::BindTarget::kFragment ||
+                        target == igl::BindTarget::kVertex ||
+                        target == igl::BindTarget::kAllGraphics)) {
     IGL_DEBUG_ABORT("Invalid sampler target");
     return;
   }
@@ -572,8 +573,9 @@ void RenderCommandEncoder::bindTexture(size_t index, uint8_t target, ITexture* t
   IGL_LOG_INFO("%p  bindTexture(%u, %u)\n", cmdBuffer_, (uint32_t)index, (uint32_t)target);
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
-  if (!IGL_VERIFY(target == igl::BindTarget::kFragment || target == igl::BindTarget::kVertex ||
-                  target == igl::BindTarget::kAllGraphics)) {
+  if (!IGL_DEBUG_VERIFY(target == igl::BindTarget::kFragment ||
+                        target == igl::BindTarget::kVertex ||
+                        target == igl::BindTarget::kAllGraphics)) {
     IGL_DEBUG_ABORT("Invalid texture target");
     return;
   }
@@ -748,7 +750,7 @@ void RenderCommandEncoder::flushDynamicState() {
     const uint32_t usageMaskPipeline = rps_->getSpvModuleInfo().usageMaskTextures;
     const uint32_t usageMaskBindGroup = ctx_.getBindGroupUsageMask(pendingBindGroupTexture_);
 
-    if (!IGL_VERIFY(usageMaskPipeline == usageMaskBindGroup)) {
+    if (!IGL_DEBUG_VERIFY(usageMaskPipeline == usageMaskBindGroup)) {
       IGL_LOG_ERROR(
           "Texture bind group is not compatible with the current IRenderPipelineState '%s'\n",
           rps_->getRenderPipelineDesc().debugName.c_str());
@@ -775,7 +777,7 @@ void RenderCommandEncoder::flushDynamicState() {
     const uint32_t usageMaskPipeline = rps_->getSpvModuleInfo().usageMaskBuffers;
     const uint32_t usageMaskBindGroup = ctx_.getBindGroupUsageMask(pendingBindGroupBuffer_);
 
-    if (!IGL_VERIFY(usageMaskPipeline == usageMaskBindGroup)) {
+    if (!IGL_DEBUG_VERIFY(usageMaskPipeline == usageMaskBindGroup)) {
       IGL_LOG_ERROR(
           "Buffer bind group is not compatible with the current IRenderPipelineState '%s'\n",
           rps_->getRenderPipelineDesc().debugName.c_str());
@@ -823,7 +825,7 @@ void RenderCommandEncoder::flushDynamicState() {
 void RenderCommandEncoder::ensureVertexBuffers() {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(rps_)) {
+  if (!IGL_DEBUG_VERIFY(rps_)) {
     return;
   }
 

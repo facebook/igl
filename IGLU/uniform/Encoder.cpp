@@ -76,7 +76,7 @@ void Encoder::operator()(igl::IRenderCommandEncoder& encoder,
   const int bufferIndex =
       uniform.getIndex(bindTarget == igl::BindTarget::kVertex ? igl::ShaderStage::Vertex
                                                               : igl::ShaderStage::Fragment);
-  if (!IGL_VERIFY(bufferIndex >= 0)) {
+  if (!IGL_DEBUG_VERIFY(bufferIndex >= 0)) {
     return;
   }
 
@@ -100,7 +100,7 @@ void Encoder::operator()(igl::IRenderCommandEncoder& encoder,
 void Encoder::operator()(igl::IComputeCommandEncoder& encoder,
                          const Descriptor& uniform) const noexcept {
   const int bufferIndex = uniform.getIndex(igl::ShaderStage::Compute);
-  if (!IGL_VERIFY(bufferIndex >= 0)) {
+  if (!IGL_DEBUG_VERIFY(bufferIndex >= 0)) {
     return;
   }
 

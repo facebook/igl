@@ -302,7 +302,7 @@ bool XrApp::enumerateViewConfigurations() {
     XR_CHECK(xrEnumerateViewConfigurationViews(
         instance_, systemId_, viewConfigType, 0, &numViewports, nullptr));
 
-    if (!IGL_VERIFY(numViewports == XrComposition::kNumViews)) {
+    if (!IGL_DEBUG_VERIFY(numViewports == XrComposition::kNumViews)) {
       IGL_LOG_ERROR(
           "numViewports must be %d. Make sure XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO is used.\n",
           XrComposition::kNumViews);

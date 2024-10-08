@@ -37,7 +37,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t 
 
   std::shared_ptr<VulkanTexture> vkTex = swapChain->getCurrentDepthTexture();
 
-  if (!IGL_VERIFY(vkTex != nullptr)) {
+  if (!IGL_DEBUG_VERIFY(vkTex != nullptr)) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "Swapchain has no valid texture");
     return nullptr;
   }
@@ -46,7 +46,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t 
                    "Invalid image format");
 
   const auto iglFormat = vkFormatToTextureFormat(vkTex->getVulkanImage().imageFormat_);
-  if (!IGL_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {
+  if (!IGL_DEBUG_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {
     Result::setResult(outResult, Result::Code::RuntimeError, "Invalid surface depth format");
     return nullptr;
   }
@@ -84,7 +84,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
 
   auto vkTex = swapChain->getCurrentVulkanTexture();
 
-  if (!IGL_VERIFY(vkTex != nullptr)) {
+  if (!IGL_DEBUG_VERIFY(vkTex != nullptr)) {
     Result::setResult(outResult, Result::Code::InvalidOperation, "Swapchain has no valid texture");
     return nullptr;
   }
@@ -93,7 +93,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
                    "Invalid image format");
 
   const auto iglFormat = vkFormatToTextureFormat(vkTex->getVulkanImage().imageFormat_);
-  if (!IGL_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {
+  if (!IGL_DEBUG_VERIFY(iglFormat != igl::TextureFormat::Invalid)) {
     Result::setResult(outResult, Result::Code::RuntimeError, "Invalid surface color format");
     return nullptr;
   }

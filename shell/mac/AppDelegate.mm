@@ -200,7 +200,7 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
     supported = true;
   }
 #endif
-  if (!IGL_VERIFY(supported)) {
+  if (!IGL_DEBUG_VERIFY(supported)) {
     return;
   }
 

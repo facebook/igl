@@ -39,7 +39,7 @@ ComputeCommandEncoder::ComputeCommandEncoder(IContext& context) : WithContext(co
 ComputeCommandEncoder::~ComputeCommandEncoder() = default;
 
 void ComputeCommandEncoder::endEncoding() {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->endEncoding();
     getContext().getComputeAdapterPool().push_back(std::move(adapter_));
   }
@@ -47,7 +47,7 @@ void ComputeCommandEncoder::endEncoding() {
 
 void ComputeCommandEncoder::bindComputePipelineState(
     const std::shared_ptr<IComputePipelineState>& pipelineState) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->setPipelineState(pipelineState);
   }
 }
@@ -55,7 +55,7 @@ void ComputeCommandEncoder::bindComputePipelineState(
 void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCount,
                                                  const Dimensions& threadgroupSize,
                                                  const Dependencies& /*dependencies*/) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->dispatchThreadGroups(threadgroupCount, threadgroupSize);
   }
 }
@@ -97,13 +97,13 @@ void ComputeCommandEncoder::bindUniform(const UniformDesc& uniformDesc, const vo
                    "Invalid location passed to bindUniformBuffer: %d",
                    uniformDesc.location);
   IGL_DEBUG_ASSERT(data != nullptr, "Data cannot be null");
-  if (IGL_VERIFY(adapter_) && data) {
+  if (IGL_DEBUG_VERIFY(adapter_) && data) {
     adapter_->setUniform(uniformDesc, data);
   }
 }
 
 void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->setTexture(texture, index);
   }
 }
@@ -114,7 +114,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index,
                                        size_t bufferSize) {
   (void)bufferSize;
 
-  if (IGL_VERIFY(adapter_) && buffer) {
+  if (IGL_DEBUG_VERIFY(adapter_) && buffer) {
     auto* glBuffer = static_cast<Buffer*>(buffer);
     adapter_->setBuffer(glBuffer, offset, static_cast<int>(index));
   }

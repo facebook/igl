@@ -132,7 +132,7 @@ ShaderLibraryDesc ShaderLibraryDesc::fromStringInput(const char* IGL_NONNULL lib
   libraryDesc.input.source = librarySource;
   libraryDesc.debugName = std::move(libraryDebugName);
 
-  if (IGL_VERIFY(!moduleInfo.empty())) {
+  if (IGL_DEBUG_VERIFY(!moduleInfo.empty())) {
     libraryDesc.moduleInfo = std::move(moduleInfo);
   }
 
@@ -149,7 +149,7 @@ ShaderLibraryDesc ShaderLibraryDesc::fromBinaryInput(const void* IGL_NONNULL lib
   libraryDesc.input.length = libraryDataLength;
   libraryDesc.debugName = std::move(libraryDebugName);
 
-  if (IGL_VERIFY(!moduleInfo.empty())) {
+  if (IGL_DEBUG_VERIFY(!moduleInfo.empty())) {
     libraryDesc.moduleInfo = std::move(moduleInfo);
   }
 

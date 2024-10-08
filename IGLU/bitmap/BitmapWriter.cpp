@@ -94,7 +94,7 @@ void writeBitmap(const char* filename,
   const igl::CommandQueueDesc desc{igl::CommandQueueType::Graphics};
   igl::Result result;
   const auto commandQueue = device.createCommandQueue(desc, &result);
-  if (!IGL_VERIFY(result.isOk()) || !IGL_VERIFY(commandQueue)) {
+  if (!IGL_DEBUG_VERIFY(result.isOk()) || !IGL_DEBUG_VERIFY(commandQueue)) {
     return;
   }
 
@@ -135,7 +135,7 @@ void writeBitmap(const char* filename,
 void writeBitmap(const char* filename, const uint8_t* imageData, uint32_t width, uint32_t height) {
   std::ofstream file;
   file.open(filename, std::ios::out | std::ios::binary);
-  if (!IGL_VERIFY(file)) {
+  if (!IGL_DEBUG_VERIFY(file)) {
     return;
   }
 

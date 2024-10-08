@@ -35,7 +35,7 @@ class ITrackedResource {
    */
   void initResourceTracker(std::shared_ptr<IResourceTracker> tracker,
                            const std::string& name = "") {
-    if (IGL_VERIFY(!resourceTracker_)) {
+    if (IGL_DEBUG_VERIFY(!resourceTracker_)) {
       resourceTracker_ = std::move(tracker);
       resourceName_ = name;
       if (resourceTracker_) {

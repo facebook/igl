@@ -55,7 +55,7 @@ void RenderCommandAdapter::initialize(const RenderPassDesc& renderPass,
                                       Result* outResult) {
   cachedUnbindPolicy_ = getContext().getUnbindPolicy();
 
-  if (!IGL_VERIFY(framebuffer)) {
+  if (!IGL_DEBUG_VERIFY(framebuffer)) {
     Result::setResult(outResult, Result::Code::ArgumentNull, "framebuffer is null");
     return;
   }
@@ -152,7 +152,7 @@ void RenderCommandAdapter::clearVertexTexture() {
 }
 
 void RenderCommandAdapter::setVertexTexture(ITexture* texture, size_t index, Result* outResult) {
-  if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
+  if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     return;
   }
@@ -166,7 +166,7 @@ void RenderCommandAdapter::setVertexTexture(ITexture* texture, size_t index, Res
 void RenderCommandAdapter::setVertexSamplerState(ISamplerState* samplerState,
                                                  size_t index,
                                                  Result* outResult) {
-  if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
+  if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     return;
   }
@@ -183,7 +183,7 @@ void RenderCommandAdapter::clearFragmentTexture() {
 }
 
 void RenderCommandAdapter::setFragmentTexture(ITexture* texture, size_t index, Result* outResult) {
-  if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
+  if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     return;
   }
@@ -197,7 +197,7 @@ void RenderCommandAdapter::setFragmentTexture(ITexture* texture, size_t index, R
 void RenderCommandAdapter::setFragmentSamplerState(ISamplerState* samplerState,
                                                    size_t index,
                                                    Result* outResult) {
-  if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
+  if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     return;
   }
@@ -213,7 +213,7 @@ void RenderCommandAdapter::clearDependentResources(
     const std::shared_ptr<IRenderPipelineState>& newValue,
     Result* outResult) {
   auto* curStateOpenGL = static_cast<opengl::RenderPipelineState*>(pipelineState_.get());
-  if (!IGL_VERIFY(curStateOpenGL)) {
+  if (!IGL_DEBUG_VERIFY(curStateOpenGL)) {
     Result::setResult(outResult, Result::Code::RuntimeError, "pipeline state is null");
     return;
   }

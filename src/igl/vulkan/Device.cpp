@@ -90,7 +90,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
 
   const auto result = buffer->create(desc);
 
-  if (!IGL_VERIFY(result.isOk())) {
+  if (!IGL_DEBUG_VERIFY(result.isOk())) {
     return nullptr;
   }
 
@@ -191,11 +191,11 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
     return nullptr;
   }
-  if (!IGL_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Compute)) {
+  if (!IGL_DEBUG_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Compute)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader stages not for compute");
     return nullptr;
   }
-  if (!IGL_VERIFY(desc.shaderStages->getComputeModule())) {
+  if (!IGL_DEBUG_VERIFY(desc.shaderStages->getComputeModule())) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing compute shader");
     return nullptr;
   }
@@ -215,7 +215,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
     return nullptr;
   }
-  if (!IGL_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Render)) {
+  if (!IGL_DEBUG_VERIFY(desc.shaderStages->getType() == ShaderStagesType::Render)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Shader stages not for render");
     return nullptr;
   }
@@ -223,17 +223,17 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
   const bool hasColorAttachments = !desc.targetDesc.colorAttachments.empty();
   const bool hasDepthAttachment = desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid;
   const bool hasAnyAttachments = hasColorAttachments || hasDepthAttachment;
-  if (!IGL_VERIFY(hasAnyAttachments)) {
+  if (!IGL_DEBUG_VERIFY(hasAnyAttachments)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Need at least one attachment");
     return nullptr;
   }
 
-  if (!IGL_VERIFY(desc.shaderStages->getVertexModule())) {
+  if (!IGL_DEBUG_VERIFY(desc.shaderStages->getVertexModule())) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing vertex shader");
     return nullptr;
   }
 
-  if (!IGL_VERIFY(desc.shaderStages->getFragmentModule())) {
+  if (!IGL_DEBUG_VERIFY(desc.shaderStages->getFragmentModule())) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing fragment shader");
     return nullptr;
   }

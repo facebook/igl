@@ -114,7 +114,7 @@ void CommandQueue::enhancedShaderDebuggingPass(igl::vulkan::VulkanContext& ctx,
   auto lineDrawingCmdBuffer =
       createCommandBuffer({"Command buffer: line drawing enhanced debugging"}, &result);
 
-  if (!IGL_VERIFY(result.isOk())) {
+  if (!IGL_DEBUG_VERIFY(result.isOk())) {
     IGL_LOG_INFO("Error obtaining a new command buffer for drawing debug lines");
     return;
   }

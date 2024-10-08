@@ -140,7 +140,7 @@ size_t OpenGLTextureAccessor::copyBytes(unsigned char* ptr, size_t length) {
     context.bindBuffer(GL_PIXEL_PACK_BUFFER, pboId_);
     auto* bytes =
         context.mapBufferRange(GL_PIXEL_PACK_BUFFER, 0, textureBytesPerImage_, GL_MAP_READ_BIT);
-    if (IGL_VERIFY(bytes)) {
+    if (IGL_DEBUG_VERIFY(bytes)) {
       checked_memcpy_robust(ptr, length, bytes, textureBytesPerImage_, textureBytesPerImage_);
       length = textureBytesPerImage_;
       dataCopied_ = true;

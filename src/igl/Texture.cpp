@@ -727,7 +727,7 @@ Result ITexture::upload(const TextureRangeDesc& range,
 
   const bool isSampledOrStorage = (getUsage() & (TextureDesc::TextureUsageBits::Sampled |
                                                  TextureDesc::TextureUsageBits::Storage)) != 0;
-  if (!IGL_VERIFY(isSampledOrStorage)) {
+  if (!IGL_DEBUG_VERIFY(isSampledOrStorage)) {
     return Result(Result::Code::Unsupported,
                   "Texture must support either sampled or storage usage.");
   }

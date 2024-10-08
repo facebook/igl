@@ -32,14 +32,14 @@ ShaderStages::~ShaderStages() {
 }
 
 void ShaderStages::createRenderProgram(Result* result) {
-  if (!IGL_VERIFY(getVertexModule())) {
+  if (!IGL_DEBUG_VERIFY(getVertexModule())) {
     // we need a vertex shader and a fragment shader in order to link the program
     Result::setResult(
         result, Result::Code::ArgumentInvalid, "Missing required vertex shader stage");
     return;
   }
 
-  if (!IGL_VERIFY(getFragmentModule())) {
+  if (!IGL_DEBUG_VERIFY(getFragmentModule())) {
     // we need a vertex shader and a fragment shader in order to link the program
     Result::setResult(
         result, Result::Code::ArgumentInvalid, "Missing required fragment shader stage");
@@ -106,7 +106,7 @@ void ShaderStages::createRenderProgram(Result* result) {
 }
 
 void ShaderStages::createComputeProgram(Result* result) {
-  if (!IGL_VERIFY(getComputeModule())) {
+  if (!IGL_DEBUG_VERIFY(getComputeModule())) {
     // we need a vertex shader and a fragment shader in order to link the program
     Result::setResult(result, Result::Code::ArgumentInvalid, "Missing required compute shader");
     return;

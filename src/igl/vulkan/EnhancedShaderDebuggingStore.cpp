@@ -173,7 +173,7 @@ const std::shared_ptr<igl::IFramebuffer>& EnhancedShaderDebuggingStore::framebuf
   framebufferDesc.colorAttachments[0].texture = resolveAttachment;
   framebuffers_[resolveAttachment] = device.createFramebuffer(framebufferDesc, &result);
 
-  if (!IGL_VERIFY(result.isOk())) {
+  if (!IGL_DEBUG_VERIFY(result.isOk())) {
     IGL_LOG_INFO("Error creating a framebuffer for drawing debug lines from shaders");
   }
 

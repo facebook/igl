@@ -49,7 +49,7 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
                                               &dep,
                                               hasViewMask ? &ci : nullptr,
                                               outRenderPass);
-  if (!IGL_VERIFY(result == VK_SUCCESS)) {
+  if (!IGL_DEBUG_VERIFY(result == VK_SUCCESS)) {
     return result;
   }
 

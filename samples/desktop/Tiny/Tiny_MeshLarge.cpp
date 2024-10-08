@@ -176,7 +176,7 @@ void loadKtxTexture(const igl::IDevice& device,
 
   const auto size = std::filesystem::file_size(filename);
   FILE* file = std::fopen(filename.c_str(), "rb");
-  if (!IGL_VERIFY(file)) {
+  if (!IGL_DEBUG_VERIFY(file)) {
     return;
   }
   std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
@@ -192,20 +192,20 @@ void loadKtxTexture(const igl::IDevice& device,
                              : &factory1;
 
   auto loader = factory->tryCreate(data.get(), size, &result);
-  if (!IGL_VERIFY(loader && result.isOk())) {
+  if (!IGL_DEBUG_VERIFY(loader && result.isOk())) {
     return;
   }
 
   if (!texture) {
     IGL_DEBUG_ASSERT(loader->isSupported(device));
     texture = loader->create(device, &result);
-    if (!IGL_VERIFY(texture && result.isOk())) {
+    if (!IGL_DEBUG_VERIFY(texture && result.isOk())) {
       return;
     }
   }
   IGL_DEBUG_ASSERT(loader->isSupported(device, texture->getUsage()));
   loader->upload(*texture, &result);
-  if (IGL_VERIFY(result.isOk())) {
+  if (IGL_DEBUG_VERIFY(result.isOk())) {
     if (generateMipmaps) {
       texture->generateMipmap(commandQueue);
     }
@@ -1189,7 +1189,7 @@ bool loadAndCache(const char* cacheFileName) {
                        (contentRootFolder + "src/bistro/Exterior/exterior.obj").c_str(),
                        (contentRootFolder + "src/bistro/Exterior/").c_str());
 
-  if (!IGL_VERIFY(ret)) {
+  if (!IGL_DEBUG_VERIFY(ret)) {
     IGL_DEBUG_ASSERT(ret, "Did you read the tutorial at the top of this file?");
     return false;
   }
@@ -1387,7 +1387,7 @@ void initModel() {
   const std::string cacheFileName = contentRootFolder + "cache.data";
 
   if (!loadFromCache(cacheFileName.c_str())) {
-    if (!IGL_VERIFY(loadAndCache(cacheFileName.c_str()))) {
+    if (!IGL_DEBUG_VERIFY(loadAndCache(cacheFileName.c_str()))) {
       IGL_DEBUG_ABORT("Cannot load 3D model");
     }
   }
@@ -2281,7 +2281,7 @@ void loadCubemapTexture(const std::string& fileNameKTX, std::shared_ptr<ITexture
     ktxTexture_Destroy(ktxTexture(texture));
   };
 
-  if (!IGL_VERIFY(texture->vkFormat == VK_FORMAT_R32G32B32A32_SFLOAT)) {
+  if (!IGL_DEBUG_VERIFY(texture->vkFormat == VK_FORMAT_R32G32B32A32_SFLOAT)) {
     IGL_DEBUG_ABORT("Texture format not supported");
     return;
   }
@@ -2433,7 +2433,7 @@ void processCubemap(const std::string& inFilename,
     }
   };
 
-  if (!IGL_VERIFY(pxs != nullptr)) {
+  if (!IGL_DEBUG_VERIFY(pxs != nullptr)) {
     IGL_DEBUG_ABORT("Did you read the tutorial at the top of Tiny_MeshLarge.cpp?");
     return;
   }

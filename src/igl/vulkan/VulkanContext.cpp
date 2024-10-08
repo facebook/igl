@@ -168,27 +168,28 @@ bool validateImageLimits(VkImageType imageType,
                          igl::Result* IGL_NULLABLE outResult) {
   using igl::Result;
 
-  if (samples != VK_SAMPLE_COUNT_1_BIT && !IGL_VERIFY(imageType == VK_IMAGE_TYPE_2D)) {
+  if (samples != VK_SAMPLE_COUNT_1_BIT && !IGL_DEBUG_VERIFY(imageType == VK_IMAGE_TYPE_2D)) {
     Result::setResult(
         outResult,
         Result(Result::Code::InvalidOperation, "Multisampling is supported only for 2D images"));
     return false;
   }
 
-  if (imageType == VK_IMAGE_TYPE_1D && !IGL_VERIFY(extent.width <= limits.maxImageDimension1D)) {
+  if (imageType == VK_IMAGE_TYPE_1D &&
+      !IGL_DEBUG_VERIFY(extent.width <= limits.maxImageDimension1D)) {
     Result::setResult(outResult,
                       Result(Result::Code::InvalidOperation, "1D texture size exceeded"));
     return false;
   } else if (imageType == VK_IMAGE_TYPE_2D &&
-             !IGL_VERIFY(extent.width <= limits.maxImageDimension2D &&
-                         extent.height <= limits.maxImageDimension2D)) {
+             !IGL_DEBUG_VERIFY(extent.width <= limits.maxImageDimension2D &&
+                               extent.height <= limits.maxImageDimension2D)) {
     Result::setResult(outResult,
                       Result(Result::Code::InvalidOperation, "2D texture size exceeded"));
     return false;
   } else if (imageType == VK_IMAGE_TYPE_3D &&
-             !IGL_VERIFY(extent.width <= limits.maxImageDimension3D &&
-                         extent.height <= limits.maxImageDimension3D &&
-                         extent.depth <= limits.maxImageDimension3D)) {
+             !IGL_DEBUG_VERIFY(extent.width <= limits.maxImageDimension3D &&
+                               extent.height <= limits.maxImageDimension3D &&
+                               extent.depth <= limits.maxImageDimension3D)) {
     Result::setResult(outResult,
                       Result(Result::Code::InvalidOperation, "3D texture size exceeded"));
     return false;
@@ -883,10 +884,10 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                              VK_SAMPLE_COUNT_1_BIT,
                              &result,
                              "Image: dummy 1x1");
-    if (!IGL_VERIFY(result.isOk())) {
+    if (!IGL_DEBUG_VERIFY(result.isOk())) {
       return result;
     }
-    if (!IGL_VERIFY(image.valid())) {
+    if (!IGL_DEBUG_VERIFY(image.valid())) {
       return Result(Result::Code::InvalidOperation, "Cannot create VulkanImage");
     }
     auto imageView = image.createImageView(VK_IMAGE_VIEW_TYPE_2D,
@@ -897,7 +898,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                            0,
                                            1,
                                            "Image View: dummy 1x1");
-    if (!IGL_VERIFY(imageView.valid())) {
+    if (!IGL_DEBUG_VERIFY(imageView.valid())) {
       return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
     }
     const TextureHandle dummyTexture =
@@ -991,8 +992,8 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
   IGL_LOG_INFO("growBindlessDescriptorPool(%u, %u)\n", newMaxTextures, newMaxSamplers);
 #endif // IGL_VULKAN_PRINT_COMMANDS
 
-  if (!IGL_VERIFY(newMaxTextures <= vkPhysicalDeviceDescriptorIndexingProperties_
-                                        .maxDescriptorSetUpdateAfterBindSampledImages)) {
+  if (!IGL_DEBUG_VERIFY(newMaxTextures <= vkPhysicalDeviceDescriptorIndexingProperties_
+                                              .maxDescriptorSetUpdateAfterBindSampledImages)) {
     // macOS: MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS is required when using this with MoltenVK
     IGL_LOG_ERROR(
         "Max Textures exceeded: %u (hardware max %u)",
@@ -1000,7 +1001,7 @@ void VulkanContext::growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t
         vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSampledImages);
   }
 
-  if (!IGL_VERIFY(
+  if (!IGL_DEBUG_VERIFY(
           newMaxSamplers <=
           vkPhysicalDeviceDescriptorIndexingProperties_.maxDescriptorSetUpdateAfterBindSamplers)) {
     // macOS: MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS is required when using this with MoltenVK
@@ -1153,7 +1154,7 @@ std::unique_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSiz
 
 #define ENSURE_BUFFER_SIZE(flag, maxSize)                                                      \
   if (usageFlags & flag) {                                                                     \
-    if (!IGL_VERIFY(bufferSize <= maxSize)) {                                                  \
+    if (!IGL_DEBUG_VERIFY(bufferSize <= maxSize)) {                                            \
       IGL_LOG_INFO("Max size of buffer exceeded " #flag ": %llu > %llu", bufferSize, maxSize); \
       Result::setResult(outResult,                                                             \
                         Result(Result::Code::InvalidOperation, "Buffer size exceeded" #flag)); \
@@ -1403,7 +1404,7 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTexture(
 
   auto texture = *textures_.get(handle);
 
-  if (!IGL_VERIFY(texture)) {
+  if (!IGL_DEBUG_VERIFY(texture)) {
     return nullptr;
   }
 
@@ -1436,7 +1437,7 @@ std::shared_ptr<VulkanSampler> VulkanContext::createSampler(const VkSamplerCreat
 
   auto sampler = *samplers_.get(handle);
 
-  if (!IGL_VERIFY(sampler)) {
+  if (!IGL_DEBUG_VERIFY(sampler)) {
     Result::setResult(outResult, Result::Code::InvalidOperation);
     return nullptr;
   }
@@ -1732,7 +1733,7 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
     return it->second;
   }
 
-  if (!IGL_VERIFY(
+  if (!IGL_DEBUG_VERIFY(
           features_.VkPhysicalDeviceSamplerYcbcrConversionFeatures_.samplerYcbcrConversion)) {
     IGL_DEBUG_ABORT("Ycbcr samplers are not supported");
     return {};
@@ -1746,7 +1747,7 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
   const bool midpoint =
       (props.optimalTilingFeatures & VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT) != 0;
 
-  if (!IGL_VERIFY(cosited || midpoint)) {
+  if (!IGL_DEBUG_VERIFY(cosited || midpoint)) {
     IGL_DEBUG_ASSERT(cosited || midpoint, "Unsupported Ycbcr feature");
     return {};
   }
@@ -1894,7 +1895,7 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
         (texture.image_.samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT;
     const bool isSampledImage = isTextureAvailable && texture.image_.isSampledImage();
 
-    if (!IGL_VERIFY(isSampledImage)) {
+    if (!IGL_DEBUG_VERIFY(isSampledImage)) {
       IGL_LOG_ERROR("Each bound texture should have TextureUsageBits::Sampled (slot = %u)", loc);
       continue;
     }
@@ -1908,7 +1909,7 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
     };
   }
 
-  if (!IGL_VERIFY(numWrites)) {
+  if (!IGL_DEBUG_VERIFY(numWrites)) {
     IGL_LOG_ERROR("Cannot create an empty bind group");
     Result::setResult(outResult,
                       Result(Result::Code::RuntimeError, "Cannot create an empty bind group"));
@@ -1973,7 +1974,7 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
       const uint32_t alignment =
           static_cast<uint32_t>(isUniform ? limits.minUniformBufferOffsetAlignment
                                           : limits.minStorageBufferOffsetAlignment);
-      if (!IGL_VERIFY((alignment == 0) || (desc.offset[loc] % alignment == 0))) {
+      if (!IGL_DEBUG_VERIFY((alignment == 0) || (desc.offset[loc] % alignment == 0))) {
         IGL_LOG_ERROR(
             "`desc.offset[loc] = %u` must be a multiple of `VkPhysicalDeviceLimits::%s = %u`",
             static_cast<uint32_t>(desc.offset[loc]),
@@ -2060,7 +2061,7 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
     };
   }
 
-  if (!IGL_VERIFY(numWrites)) {
+  if (!IGL_DEBUG_VERIFY(numWrites)) {
     IGL_LOG_ERROR("Cannot create an empty bind group");
     Result::setResult(outResult,
                       Result(Result::Code::RuntimeError, "Cannot create an empty bind group"));

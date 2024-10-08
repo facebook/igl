@@ -614,7 +614,7 @@ void VulkanStagingDevice::getImageData2D(VkImage srcImage,
   immediate_->wait(immediate_->submit(wrapper1), ctx_.config_.fenceTimeoutNanoseconds);
 
   // 3. Copy data from staging buffer into data
-  if (!IGL_VERIFY(stagingBuffer->getMappedPtr())) {
+  if (!IGL_DEBUG_VERIFY(stagingBuffer->getMappedPtr())) {
     return;
   }
 

@@ -59,7 +59,7 @@ void _IGLDebugBreak() {
 #if IGL_REPORT_ERROR_ENABLED
 
 // Default handler is no-op.
-// If there's an error, IGL_VERIFY will trap in dev builds
+// If there's an error, IGL_DEBUG_VERIFY will trap in dev builds
 static void _IGLReportErrorDefault(const char* file,
                                    const char* func,
                                    int line,

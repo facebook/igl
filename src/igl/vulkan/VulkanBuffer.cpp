@@ -134,7 +134,7 @@ VulkanBuffer::~VulkanBuffer() {
 }
 
 void VulkanBuffer::flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) const {
-  if (!IGL_VERIFY(isMapped())) {
+  if (!IGL_DEBUG_VERIFY(isMapped())) {
     return;
   }
 
@@ -153,7 +153,7 @@ void VulkanBuffer::flushMappedMemory(VkDeviceSize offset, VkDeviceSize size) con
 }
 
 void VulkanBuffer::invalidateMappedMemory(VkDeviceSize offset, VkDeviceSize size) const {
-  if (!IGL_VERIFY(isMapped())) {
+  if (!IGL_DEBUG_VERIFY(isMapped())) {
     return;
   }
 

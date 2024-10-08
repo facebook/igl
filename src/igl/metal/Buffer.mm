@@ -20,7 +20,7 @@ igl::Result upload(const std::vector<id<MTLBuffer>>& buffers,
   IGL_DEBUG_ASSERT(bufferIdx < buffers.size());
   const auto& buffer = buffers[bufferIdx];
   auto length = [buffer length];
-  if (!IGL_VERIFY(range.offset + range.size <= length)) {
+  if (!IGL_DEBUG_VERIFY(range.offset + range.size <= length)) {
     return igl::Result(igl::Result::Code::ArgumentOutOfRange);
   }
 

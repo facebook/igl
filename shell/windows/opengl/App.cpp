@@ -52,7 +52,7 @@ class OpenGlShell final : public GlfwShell {
 
 igl::SurfaceTextures OpenGlShell::createSurfaceTextures() noexcept {
   auto& device = platform().getDevice();
-  if (IGL_VERIFY(device.getBackendType() == igl::BackendType::OpenGL)) {
+  if (IGL_DEBUG_VERIFY(device.getBackendType() == igl::BackendType::OpenGL)) {
     igl::opengl::Device& oglDevice = static_cast<igl::opengl::Device&>(device);
     oglDevice.getContext().setCurrent();
     TextureDesc desc = {

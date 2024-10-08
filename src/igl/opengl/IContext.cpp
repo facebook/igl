@@ -104,14 +104,14 @@ void logSource(const int count, const char** string, const int* length) {
 
 #define GLCALL_PROC(funcPtr, ...)                                \
   IGL_REPORT_ERROR(isCurrentContext() || isCurrentSharegroup()); \
-  if (IGL_VERIFY(funcPtr)) {                                     \
+  if (IGL_DEBUG_VERIFY(funcPtr)) {                               \
     callCounter_++;                                              \
     (*funcPtr)(__VA_ARGS__);                                     \
   }
 
 #define GLCALL_PROC_WITH_RETURN(ret, funcPtr, returnOnError, ...) \
   IGL_REPORT_ERROR(isCurrentContext() || isCurrentSharegroup());  \
-  if (IGL_VERIFY(funcPtr)) {                                      \
+  if (IGL_DEBUG_VERIFY(funcPtr)) {                                \
     callCounter_++;                                               \
     ret = (*funcPtr)(__VA_ARGS__);                                \
   } else {                                                        \
@@ -1336,7 +1336,7 @@ void IContext::debugMessageInsert(GLenum source,
 }
 
 void IContext::deleteBuffers(GLsizei n, const GLuint* buffers) {
-  if (isDestructionAllowed() && IGL_VERIFY(buffers != nullptr)) {
+  if (isDestructionAllowed() && IGL_DEBUG_VERIFY(buffers != nullptr)) {
     if (shouldQueueAPI()) {
       deletionQueues_.queueDeleteBuffers(n, buffers);
     } else {
@@ -1362,7 +1362,7 @@ void IContext::unbindBuffer(GLenum target) {
 }
 
 void IContext::deleteFramebuffers(GLsizei n, const GLuint* framebuffers) {
-  if (isDestructionAllowed() && IGL_VERIFY(framebuffers != nullptr)) {
+  if (isDestructionAllowed() && IGL_DEBUG_VERIFY(framebuffers != nullptr)) {
     if (shouldQueueAPI()) {
       deletionQueues_.queueDeleteFramebuffers(n, framebuffers);
     } else {
@@ -1386,7 +1386,7 @@ void IContext::deleteProgram(GLuint program) {
 }
 
 void IContext::deleteRenderbuffers(GLsizei n, const GLuint* renderbuffers) {
-  if (isDestructionAllowed() && IGL_VERIFY(renderbuffers != nullptr)) {
+  if (isDestructionAllowed() && IGL_DEBUG_VERIFY(renderbuffers != nullptr)) {
     if (shouldQueueAPI()) {
       deletionQueues_.queueDeleteRenderbuffers(n, renderbuffers);
     } else {
@@ -1408,7 +1408,7 @@ void IContext::deleteVertexArrays(GLsizei n, const GLuint* vertexArrays) {
     }
     IGL_DEBUG_ASSERT(deleteVertexArraysProc_, "No supported function for glDeleteVertexArrays\n");
   }
-  if (isDestructionAllowed() && IGL_VERIFY(vertexArrays != nullptr)) {
+  if (isDestructionAllowed() && IGL_DEBUG_VERIFY(vertexArrays != nullptr)) {
     if (shouldQueueAPI()) {
       deletionQueues_.queueDeleteVertexArrays(n, vertexArrays);
     } else {
@@ -3577,7 +3577,7 @@ GLenum IContext::checkForErrors(IGL_MAYBE_UNUSED const char* callerName,
       const GLuint count = getDebugMessageLog(
           1, messageLength, &source, &type, &id, &severity, &length, messageBuffer.data());
 
-      if (IGL_VERIFY(count == 1)) {
+      if (IGL_DEBUG_VERIFY(count == 1)) {
         logDebugMessage(source, type, id, severity, length, messageBuffer.data());
       }
     }
@@ -3669,7 +3669,7 @@ void IContext::initialize(Result* result) {
   } else {
     GLint n = 0;
     getIntegerv(GL_NUM_EXTENSIONS, &n);
-    if (IGL_VERIFY(n >= 0)) {
+    if (IGL_DEBUG_VERIFY(n >= 0)) {
       for (GLuint i = 0; i < static_cast<GLuint>(n); i++) {
         const auto* ext = reinterpret_cast<const char*>(getStringi(GL_EXTENSIONS, i));
         if (ext) {
@@ -3746,7 +3746,7 @@ bool IContext::shouldValidateShaders() const {
 }
 
 void IContext::SynchronizedDeletionQueues::flushDeletionQueue(IContext& context) {
-  if (IGL_VERIFY(context.isCurrentContext() || context.isCurrentSharegroup())) {
+  if (IGL_DEBUG_VERIFY(context.isCurrentContext() || context.isCurrentSharegroup())) {
     swapScratchDeletionQueues();
 
     if (!scratchBuffersQueue_.empty()) {

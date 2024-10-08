@@ -70,7 +70,7 @@ class LRUStatePool : public IStatePool<TDescriptor, TStateObject> {
       // Add new element to start of queue
       auto stateResource = createStateObject(dev, desc, outResult);
 
-      if (!IGL_VERIFY(stateResource != nullptr)) {
+      if (!IGL_DEBUG_VERIFY(stateResource != nullptr)) {
         return nullptr;
       }
 

@@ -116,7 +116,7 @@ Result SamplerState::create(const SamplerStateDesc& desc) {
       &result,
       desc_.debugName.c_str());
 
-  if (!IGL_VERIFY(result.isOk())) {
+  if (!IGL_DEBUG_VERIFY(result.isOk())) {
     return result;
   }
 

@@ -57,7 +57,7 @@ void TextureBufferBase::unbind() {
 
 void TextureBufferBase::attachAsColor(uint32_t index, const AttachmentParams& params) {
   IGL_DEBUG_ASSERT(getUsage() & TextureDesc::TextureUsageBits::Attachment);
-  if (IGL_VERIFY(textureID_)) {
+  if (IGL_DEBUG_VERIFY(textureID_)) {
     attach(GL_COLOR_ATTACHMENT0 + index, params, textureID_);
   }
 }
@@ -121,7 +121,7 @@ void TextureBufferBase::detachAsColor(uint32_t index, bool read) {
 }
 
 void TextureBufferBase::attachAsDepth(const AttachmentParams& params) {
-  if (IGL_VERIFY(textureID_)) {
+  if (IGL_DEBUG_VERIFY(textureID_)) {
     attach(GL_DEPTH_ATTACHMENT, params, textureID_);
   }
 }
@@ -133,7 +133,7 @@ void TextureBufferBase::detachAsDepth(bool read) {
 }
 
 void TextureBufferBase::attachAsStencil(const AttachmentParams& params) {
-  if (IGL_VERIFY(textureID_)) {
+  if (IGL_DEBUG_VERIFY(textureID_)) {
     attach(GL_STENCIL_ATTACHMENT, params, textureID_);
   }
 }

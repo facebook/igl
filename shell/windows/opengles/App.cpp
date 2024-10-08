@@ -73,10 +73,10 @@ void OpenGlEsShell::didCreateWindow() noexcept {
 igl::SurfaceTextures OpenGlEsShell::createSurfaceTextures() noexcept {
 #if IGL_ANGLE
   auto& device = platform().getDevice();
-  if (IGL_VERIFY(device.getBackendType() == igl::BackendType::OpenGL)) {
+  if (IGL_DEBUG_VERIFY(device.getBackendType() == igl::BackendType::OpenGL)) {
     auto platformDevice = device.getPlatformDevice<igl::opengl::egl::PlatformDevice>();
     IGL_DEBUG_ASSERT(platformDevice != nullptr);
-    if (IGL_VERIFY(platformDevice)) {
+    if (IGL_DEBUG_VERIFY(platformDevice)) {
       auto color = platformDevice->createTextureFromNativeDrawable(nullptr);
       auto depth =
           platformDevice->createTextureFromNativeDepth(igl::TextureFormat::Z_UNorm24, nullptr);

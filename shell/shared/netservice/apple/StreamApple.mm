@@ -80,7 +80,7 @@ StreamAdapterApple::~StreamAdapterApple() {
 
 bool StreamAdapterApple::initialize(Stream* owner, NSStream* stream) noexcept {
   IGL_DEBUG_ASSERT(owner && stream);
-  const bool result = IGL_VERIFY(nullptr == owner_ && nil == stream_);
+  const bool result = IGL_DEBUG_VERIFY(nullptr == owner_ && nil == stream_);
   if (result) {
     owner_ = owner;
     stream_ = stream;

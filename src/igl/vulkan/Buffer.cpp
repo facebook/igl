@@ -133,11 +133,11 @@ void Buffer::resetUpdateRange(uint32_t ringBufferIndex, const BufferRange& range
 igl::Result Buffer::upload(const void* data, const BufferRange& range) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(data)) {
+  if (!IGL_DEBUG_VERIFY(data)) {
     return igl::Result();
   }
 
-  if (!IGL_VERIFY(range.offset + range.size <= desc_.length)) {
+  if (!IGL_DEBUG_VERIFY(range.offset + range.size <= desc_.length)) {
     return igl::Result(Result::Code::ArgumentOutOfRange, "Out of range");
   }
 

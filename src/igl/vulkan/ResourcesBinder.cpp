@@ -33,7 +33,7 @@ void ResourcesBinder::bindBuffer(uint32_t index,
                                  size_t bufferSize) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(index < IGL_UNIFORM_BLOCKS_BINDING_MAX)) {
+  if (!IGL_DEBUG_VERIFY(index < IGL_UNIFORM_BLOCKS_BINDING_MAX)) {
     IGL_DEBUG_ABORT("Buffer index should not exceed kMaxBindingSlots");
     return;
   }
@@ -49,7 +49,7 @@ void ResourcesBinder::bindBuffer(uint32_t index,
     const uint32_t alignment =
         static_cast<uint32_t>(isUniformBuffer ? limits.minUniformBufferOffsetAlignment
                                               : limits.minStorageBufferOffsetAlignment);
-    if (!IGL_VERIFY((alignment == 0) || (bufferOffset % alignment == 0))) {
+    if (!IGL_DEBUG_VERIFY((alignment == 0) || (bufferOffset % alignment == 0))) {
       IGL_LOG_ERROR("`bufferOffset = %u` must be a multiple of `VkPhysicalDeviceLimits::%s = %u`",
                     static_cast<uint32_t>(bufferOffset),
                     isUniformBuffer ? "minUniformBufferOffsetAlignment"
@@ -71,7 +71,7 @@ void ResourcesBinder::bindBuffer(uint32_t index,
 void ResourcesBinder::bindSamplerState(uint32_t index, igl::vulkan::SamplerState* samplerState) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
+  if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     IGL_DEBUG_ABORT("Invalid sampler index");
     return;
   }
@@ -87,7 +87,7 @@ void ResourcesBinder::bindSamplerState(uint32_t index, igl::vulkan::SamplerState
 void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
+  if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     IGL_DEBUG_ABORT("Invalid texture index");
     return;
   }
@@ -99,14 +99,14 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
                                : false;
 
     if (isGraphics()) {
-      if (!IGL_VERIFY(isSampled || isStorage)) {
+      if (!IGL_DEBUG_VERIFY(isSampled || isStorage)) {
         IGL_DEBUG_ABORT(
             "Did you forget to specify TextureUsageBits::Sampled or "
             "TextureUsageBits::Storage on your texture? `Sampled` is used for sampling; "
             "`Storage` is used for load/store operations");
       }
     } else {
-      if (!IGL_VERIFY(isStorage)) {
+      if (!IGL_DEBUG_VERIFY(isStorage)) {
         IGL_DEBUG_ABORT("Did you forget to specify TextureUsageBits::Storage on your texture?");
       }
     }

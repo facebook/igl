@@ -27,7 +27,7 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
                                       const std::shared_ptr<IFramebuffer>& framebuffer,
                                       Result* outResult) {
   Result::setOk(outResult);
-  if (!IGL_VERIFY(framebuffer)) {
+  if (!IGL_DEBUG_VERIFY(framebuffer)) {
     Result::setResult(outResult, Result::Code::ArgumentNull);
     return;
   }
@@ -388,7 +388,7 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   getCommandBuffer().incrementCurrentDrawCount();
   IGL_DEBUG_ASSERT(encoder_);
   IGL_DEBUG_ASSERT(indexBuffer_, "No index buffer bound");
-  if (!IGL_VERIFY(encoder_ && indexBuffer_)) {
+  if (!IGL_DEBUG_VERIFY(encoder_ && indexBuffer_)) {
     return;
   }
 
@@ -443,7 +443,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
                                                     uint32_t stride) {
   IGL_DEBUG_ASSERT(encoder_);
   IGL_DEBUG_ASSERT(indexBuffer_, "No index buffer bound");
-  if (!IGL_VERIFY(encoder_ && indexBuffer_)) {
+  if (!IGL_DEBUG_VERIFY(encoder_ && indexBuffer_)) {
     return;
   }
   stride = stride ? stride : sizeof(MTLDrawIndexedPrimitivesIndirectArguments);

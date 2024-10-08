@@ -157,7 +157,7 @@ VkResult VulkanPipelineBuilder::build(const VulkanFunctionTable& vf,
                                                 renderPass,
                                                 outPipeline);
 
-  if (!IGL_VERIFY(result == VK_SUCCESS)) {
+  if (!IGL_DEBUG_VERIFY(result == VK_SUCCESS)) {
     return result;
   }
 
@@ -183,7 +183,7 @@ VkResult VulkanComputePipelineBuilder::build(const VulkanFunctionTable& vf,
   const VkResult result = ivkCreateComputePipeline(
       &vf, device, pipelineCache, &shaderStage_, pipelineLayout, outPipeline);
 
-  if (!IGL_VERIFY(result == VK_SUCCESS)) {
+  if (!IGL_DEBUG_VERIFY(result == VK_SUCCESS)) {
     return result;
   }
 

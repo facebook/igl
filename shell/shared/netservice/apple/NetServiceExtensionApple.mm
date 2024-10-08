@@ -97,7 +97,7 @@ std::unique_ptr<NetService> NetServiceExtensionApple::create(std::string_view do
 
 void NetServiceExtensionApple::search(std::string_view domain,
                                       std::string_view type) const noexcept {
-  if (IGL_VERIFY(!domain.empty())) {
+  if (IGL_DEBUG_VERIFY(!domain.empty())) {
     NSString* serviceType = fromStringView(type);
     NSString* serviceDomain = fromStringView(domain); // @"local."
     [netServiceBrowser_ searchForServicesOfType:serviceType inDomain:serviceDomain];
@@ -105,7 +105,7 @@ void NetServiceExtensionApple::search(std::string_view domain,
 }
 
 void NetServiceExtensionApple::stopSearch() const noexcept {
-  if (IGL_VERIFY(netServiceBrowser_)) {
+  if (IGL_DEBUG_VERIFY(netServiceBrowser_)) {
     [netServiceBrowser_ stop];
   }
 }

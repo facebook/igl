@@ -22,7 +22,7 @@
 // * logs to console and/or debugger console: failing expression, function signature, file/line
 // * allows you to continue execution during debugging after a failing assert, instead of exiting
 //
-// ## IGL_DEBUG_ASSERT vs IGL_VERIFY/IGL_DEBUG_VERIFY_NOT
+// ## IGL_DEBUG_ASSERT vs IGL_DEBUG_VERIFY/IGL_DEBUG_VERIFY_NOT
 //
 // Use IGL_DEBUG_ASSERT for debug-only assertions. On release builds, the expressions
 // expand to no-op's, so no perf penalty. IGL_DEBUG_ASSERT logs failed the  expression to
@@ -33,14 +33,14 @@
 //   IGL_DEBUG_ASSERT(p);
 //   IGL_DEBUG_ASSERT(*p == i, "*p is wrong value. Got %d. Expected %d.", *p, i);
 //
-// Use IGL_VERIFY and IGL_DEBUG_VERIFY_NOT to evaluate expressions and catch asserts on debug
-// builds. Typically, you'd wrap an expressions inside an `if` statement with IGL_VERIFY.
+// Use IGL_DEBUG_VERIFY and IGL_DEBUG_VERIFY_NOT to evaluate expressions and catch asserts on debug
+// builds. Typically, you'd wrap an expressions inside an `if` statement with IGL_DEBUG_VERIFY.
 // IGL_DEBUG_VERIFY_NOT is for `if` statements that check if an error condition is true. That way,
 // you can catch assertions on debug builds. On release builds, there's no overhead; they simply
 // expand to the original expression:
 //
 //   FILE* fp = std::fopen("test.txt", "r");
-//   if (IGL_VERIFY(fp)) {
+//   if (IGL_DEBUG_VERIFY(fp)) {
 //     printf("Success!\n");
 //   } else {
 //     printf("Failure!\n");
@@ -116,14 +116,14 @@ static inline const T& _IGLVerify(const T& cond,
   (!::igl::_IGLVerify(                        \
       0 == !!(cond), "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__))
 
-#define IGL_VERIFY(cond) \
+#define IGL_DEBUG_VERIFY(cond) \
   ::igl::_IGLVerify((cond), "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, #cond)
 
 #else
 
 #define IGL_DEBUG_VERIFY_NOT(cond) (cond)
 #define IGL_UNEXPECTED_MSG(cond, format, ...) (cond)
-#define IGL_VERIFY(cond) (cond)
+#define IGL_DEBUG_VERIFY(cond) (cond)
 
 #endif // IGL_DEBUG
 
@@ -148,7 +148,7 @@ IGL_API IGLReportErrorFunc IGLReportErrorGetHandler(void);
 
 #define IGL_REPORT_ERROR(cond)                                                                 \
   do {                                                                                         \
-    if (!IGL_VERIFY(cond)) {                                                                   \
+    if (!IGL_DEBUG_VERIFY(cond)) {                                                             \
       IGLReportErrorGetHandler()(__FILE__, IGL_FUNCTION, __LINE__, IGL_ERROR_CATEGORY, #cond); \
     }                                                                                          \
   } while (0)

@@ -170,7 +170,7 @@ void Context::setCurrent() {
 #ifdef DISABLE_WGL_VSYNC
   static PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT =
       (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
-  if (IGL_VERIFY(wglSwapIntervalEXT)) {
+  if (IGL_DEBUG_VERIFY(wglSwapIntervalEXT)) {
     wglSwapIntervalEXT(0);
   }
 #endif

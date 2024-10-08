@@ -25,7 +25,7 @@ PlatformDevice::PlatformDevice(Device& owner) : opengl::PlatformDevice(owner) {}
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result* outResult) {
   Size requiredSize;
   NSView* view = [[NSOpenGLContext currentContext] view];
-  if (IGL_VERIFY(view)) {
+  if (IGL_DEBUG_VERIFY(view)) {
     const NSRect bounds = view.bounds;
     const NSSize sizeInPixels = [view convertSizeToBacking:bounds.size];
     requiredSize =
@@ -62,7 +62,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
 std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(Result* outResult) {
   NSSize sizeInPixels;
   NSView* view = [[NSOpenGLContext currentContext] view];
-  if (IGL_VERIFY(view)) {
+  if (IGL_DEBUG_VERIFY(view)) {
     const NSRect bounds = view.bounds;
     sizeInPixels = [view convertSizeToBacking:bounds.size];
   } else {
@@ -72,7 +72,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(Result* o
 
   GLint depthBits;
   NSOpenGLPixelFormat* pixelFormat = [[NSOpenGLContext currentContext] pixelFormat];
-  if (IGL_VERIFY(pixelFormat)) {
+  if (IGL_DEBUG_VERIFY(pixelFormat)) {
     [pixelFormat getValues:&depthBits forAttribute:NSOpenGLPFADepthSize forVirtualScreen:0];
   } else {
     Result::setResult(outResult, Result::Code::RuntimeError);

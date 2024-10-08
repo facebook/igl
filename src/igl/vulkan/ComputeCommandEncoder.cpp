@@ -66,7 +66,7 @@ void ComputeCommandEncoder::bindComputePipelineState(
     const std::shared_ptr<IComputePipelineState>& pipelineState) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(pipelineState)) {
+  if (!IGL_DEBUG_VERIFY(pipelineState)) {
     return;
   }
 
@@ -194,7 +194,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index,
                                        size_t bufferSize) {
   IGL_PROFILER_FUNCTION();
 
-  if (!IGL_VERIFY(buffer != nullptr)) {
+  if (!IGL_DEBUG_VERIFY(buffer != nullptr)) {
     return;
   }
 

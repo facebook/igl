@@ -62,7 +62,7 @@ void PipelineState::initializeSpvModuleInfoFromShaderStages(const VulkanContext&
 
     constexpr uint32_t kPushConstantsSize = 128;
 
-    if (!IGL_VERIFY(kPushConstantsSize <= limits.maxPushConstantsSize)) {
+    if (!IGL_DEBUG_VERIFY(kPushConstantsSize <= limits.maxPushConstantsSize)) {
       IGL_LOG_ERROR("Push constants size exceeded %u (max %u bytes)",
                     kPushConstantsSize,
                     limits.maxPushConstantsSize);

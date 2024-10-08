@@ -431,7 +431,7 @@ void transitionToColorAttachment(VkCommandBuffer cmdBuf, ITexture* colorTex) {
     return;
   }
   IGL_DEBUG_ASSERT(img.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
-  if (!IGL_VERIFY((img.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0)) {
+  if (!IGL_DEBUG_VERIFY((img.usageFlags_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0)) {
     IGL_DEBUG_ABORT("Did you forget to specify TextureUsageBit::Attachment usage bit?");
     IGL_LOG_ERROR("Did you forget to specify TextureUsageBit::Attachment usage bit?");
   }
@@ -464,7 +464,7 @@ void transitionToDepthStencilAttachment(VkCommandBuffer cmdBuf, ITexture* depthS
     return;
   }
   IGL_DEBUG_ASSERT(img.imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid color attachment format");
-  if (!IGL_VERIFY((img.usageFlags_ & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0)) {
+  if (!IGL_DEBUG_VERIFY((img.usageFlags_ & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0)) {
     IGL_DEBUG_ABORT("Did you forget to specify TextureUsageBit::Attachment usage bit?");
     IGL_LOG_ERROR("Did you forget to specify TextureUsageBit::Attachment usage bit?");
   }
@@ -530,7 +530,7 @@ void ensureShaderModule(IShaderModule* sm) {
       static_cast<igl::vulkan::ShaderModule*>(sm)->getVulkanShaderModule().getSpvModuleInfo();
 
   for (const auto& t : info.textures) {
-    if (!IGL_VERIFY(t.descriptorSet == kBindPoint_CombinedImageSamplers)) {
+    if (!IGL_DEBUG_VERIFY(t.descriptorSet == kBindPoint_CombinedImageSamplers)) {
       IGL_LOG_ERROR(
           "Missing descriptor set id for textures: the shader should contain \"layout(set = "
           "%u, ...)\"",
@@ -539,7 +539,7 @@ void ensureShaderModule(IShaderModule* sm) {
     }
   }
   for (const auto& b : info.buffers) {
-    if (!IGL_VERIFY(b.descriptorSet == kBindPoint_Buffers)) {
+    if (!IGL_DEBUG_VERIFY(b.descriptorSet == kBindPoint_Buffers)) {
       IGL_LOG_ERROR(
           "Missing descriptor set id for buffers: the shader should contain \"layout(set = "
           "%u, ...)\"",

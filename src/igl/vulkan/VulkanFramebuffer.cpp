@@ -21,10 +21,10 @@ VulkanFramebuffer::VulkanFramebuffer(const VulkanContext& ctx,
   ctx_(ctx), device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  if (!IGL_VERIFY(renderPass != VK_NULL_HANDLE)) {
+  if (!IGL_DEBUG_VERIFY(renderPass != VK_NULL_HANDLE)) {
     return;
   }
-  if (!IGL_VERIFY(attachments)) {
+  if (!IGL_DEBUG_VERIFY(attachments)) {
     return;
   }
 

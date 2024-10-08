@@ -105,7 +105,7 @@ Result RenderPipelineState::create() {
   if (IGL_DEBUG_VERIFY_NOT(desc_.shaderStages == nullptr)) {
     return Result(Result::Code::ArgumentInvalid, "Missing shader stages");
   }
-  if (!IGL_VERIFY(desc_.shaderStages->getType() == ShaderStagesType::Render)) {
+  if (!IGL_DEBUG_VERIFY(desc_.shaderStages->getType() == ShaderStagesType::Render)) {
     return Result(Result::Code::ArgumentInvalid, "Shader stages not for render");
   }
   const auto& shaderStages = std::static_pointer_cast<ShaderStages>(desc_.shaderStages);

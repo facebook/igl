@@ -75,12 +75,12 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
   IGL_DEBUG_ASSERT(range.numLayers == 1, "range.numLayers MUST be 1");
   IGL_DEBUG_ASSERT(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
   IGL_PROFILER_FUNCTION();
-  if (!IGL_VERIFY(pixelBytes)) {
+  if (!IGL_DEBUG_VERIFY(pixelBytes)) {
     return;
   }
 
   const auto& itexture = getColorAttachment(index);
-  if (!IGL_VERIFY(itexture)) {
+  if (!IGL_DEBUG_VERIFY(itexture)) {
     return;
   }
 
@@ -133,7 +133,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
                                              const TextureRangeDesc& range) const {
   IGL_PROFILER_FUNCTION();
   // Currently doesn't support mipmaps
-  if (!IGL_VERIFY(range.mipLevel == 0 && range.numMipLevels == 1)) {
+  if (!IGL_DEBUG_VERIFY(range.mipLevel == 0 && range.numMipLevels == 1)) {
     return;
   }
 
@@ -146,14 +146,14 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   VkCommandBuffer cmdBuf = vulkanBuffer.getVkCommandBuffer();
 
   const std::shared_ptr<igl::ITexture>& srcTexture = getColorAttachment(index);
-  if (!IGL_VERIFY(srcTexture)) {
+  if (!IGL_DEBUG_VERIFY(srcTexture)) {
     return;
   }
   // If we're doing MSAA, we should be using the resolve color attachment
   const igl::vulkan::Texture& srcVkTex = static_cast<Texture&>(
       srcTexture->getSamples() == 1 ? *srcTexture : *getResolveColorAttachment(index));
 
-  if (!IGL_VERIFY(destTexture)) {
+  if (!IGL_DEBUG_VERIFY(destTexture)) {
     return;
   }
   const igl::vulkan::Texture& dstVkTex = static_cast<Texture&>(*destTexture);
@@ -298,7 +298,8 @@ void Framebuffer::validateAttachments() {
     }
     const auto& colorTexture = static_cast<vulkan::Texture&>(*attachment.texture);
     ensureSize(colorTexture);
-    if (!IGL_VERIFY((colorTexture.getUsage() & TextureDesc::TextureUsageBits::Attachment) != 0)) {
+    if (!IGL_DEBUG_VERIFY((colorTexture.getUsage() & TextureDesc::TextureUsageBits::Attachment) !=
+                          0)) {
       IGL_DEBUG_ABORT(
           "Did you forget to specify TextureUsageBits::Attachment on your color texture?");
       IGL_LOG_ERROR(
@@ -310,7 +311,8 @@ void Framebuffer::validateAttachments() {
 
   if (depthTexture) {
     ensureSize(*depthTexture);
-    if (!IGL_VERIFY((depthTexture->getUsage() & TextureDesc::TextureUsageBits::Attachment) != 0)) {
+    if (!IGL_DEBUG_VERIFY((depthTexture->getUsage() & TextureDesc::TextureUsageBits::Attachment) !=
+                          0)) {
       IGL_DEBUG_ABORT(
           "Did you forget to specify TextureUsageBits::Attachment on your depth texture?");
       IGL_LOG_ERROR(

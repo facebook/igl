@@ -117,7 +117,7 @@ void RenderCommandEncoder::beginEncoding(const RenderPassDesc& renderPass,
 }
 
 void RenderCommandEncoder::endEncoding() {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     // Restore caller state
     getContext().setEnabled(scissorEnabled_, GL_SCISSOR_TEST);
 
@@ -222,27 +222,27 @@ void RenderCommandEncoder::popDebugGroupLabel() const {
 }
 
 void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->setViewport(viewport);
   }
 }
 
 void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->setScissorRect(rect);
   }
 }
 
 void RenderCommandEncoder::bindRenderPipelineState(
     const std::shared_ptr<IRenderPipelineState>& pipelineState) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->setPipelineState(pipelineState);
   }
 }
 
 void RenderCommandEncoder::bindDepthStencilState(
     const std::shared_ptr<IDepthStencilState>& depthStencilState) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->setDepthStencilState(depthStencilState);
   }
 }
@@ -252,7 +252,7 @@ void RenderCommandEncoder::bindUniform(const UniformDesc& uniformDesc, const voi
                    "Invalid location passed to bindUniformBuffer: %d",
                    uniformDesc.location);
   IGL_DEBUG_ASSERT(data != nullptr, "Data cannot be null");
-  if (IGL_VERIFY(adapter_) && data) {
+  if (IGL_DEBUG_VERIFY(adapter_) && data) {
     adapter_->setUniform(uniformDesc, data);
   }
 }
@@ -263,7 +263,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
                                       size_t bufferSize) {
   (void)bufferSize;
 
-  if (IGL_VERIFY(adapter_) && buffer) {
+  if (IGL_DEBUG_VERIFY(adapter_) && buffer) {
     auto* glBuffer = static_cast<Buffer*>(buffer);
     auto bufferType = glBuffer->getType();
 
@@ -276,7 +276,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
 }
 
 void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, size_t bufferOffset) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     Buffer& glBuffer = static_cast<Buffer&>(buffer);
 
     IGL_DEBUG_ASSERT(glBuffer.getType() == Buffer::Type::Attribute);
@@ -288,7 +288,7 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, siz
 void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
                                            IndexFormat format,
                                            size_t bufferOffset) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     indexType_ = toGlType(format);
     indexBufferOffset_ = reinterpret_cast<void*>(bufferOffset);
     adapter_->setIndexBuffer((Buffer&)buffer);
@@ -311,7 +311,7 @@ void RenderCommandEncoder::bindPushConstants(const void* /*data*/,
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t bindTarget,
                                             ISamplerState* samplerState) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     if ((bindTarget & BindTarget::kVertex) != 0) {
       adapter_->setVertexSamplerState(samplerState, index);
     }
@@ -322,7 +322,7 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
 }
 
 void RenderCommandEncoder::bindTexture(size_t index, uint8_t bindTarget, ITexture* texture) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     if ((bindTarget & BindTarget::kVertex) != 0) {
       adapter_->setVertexTexture(texture, index);
     }
@@ -340,7 +340,7 @@ void RenderCommandEncoder::draw(size_t vertexCount,
 
   IGL_DEBUG_ASSERT(baseInstance == 0, "Instancing is not implemented");
 
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     getCommandBuffer().incrementCurrentDrawCount();
     auto mode = toGlPrimitive(adapter_->pipelineState().getRenderPipelineDesc().topology);
     if (instanceCount > 1) {
@@ -367,7 +367,7 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   const size_t indexOffsetBytes =
       static_cast<size_t>(firstIndex) * (indexType_ == GL_UNSIGNED_INT ? 4u : 2u);
 
-  if (IGL_VERIFY(adapter_ && indexType_)) {
+  if (IGL_DEBUG_VERIFY(adapter_ && indexType_)) {
     getCommandBuffer().incrementCurrentDrawCount();
     auto mode = toGlPrimitive(adapter_->pipelineState().getRenderPipelineDesc().topology);
     if (instanceCount > 1) {
@@ -387,7 +387,7 @@ void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
                                              size_t indirectBufferOffset,
                                              uint32_t drawCount,
                                              uint32_t stride) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     getCommandBuffer().incrementCurrentDrawCount();
     const auto mode = toGlPrimitive(adapter_->pipelineState().getRenderPipelineDesc().topology);
     const auto* indirectBufferOffsetPtr = reinterpret_cast<uint8_t*>(indirectBufferOffset);
@@ -406,7 +406,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
 
   // TODO: use glMultiDrawElementsIndirect() when available
 
-  if (IGL_VERIFY(adapter_ && indexType_)) {
+  if (IGL_DEBUG_VERIFY(adapter_ && indexType_)) {
     getCommandBuffer().incrementCurrentDrawCount();
     const auto mode = toGlPrimitive(adapter_->pipelineState().getRenderPipelineDesc().topology);
     const auto* indirectBufferOffsetPtr = reinterpret_cast<uint8_t*>(indirectBufferOffset);
@@ -419,19 +419,19 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
 }
 
 void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->setStencilReferenceValue(value);
   }
 }
 
 void RenderCommandEncoder::setBlendColor(Color color) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->setBlendColor(color);
   }
 }
 
 void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float /*clamp*/) {
-  if (IGL_VERIFY(adapter_)) {
+  if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->setDepthBias(depthBias, slopeScale);
   }
 }

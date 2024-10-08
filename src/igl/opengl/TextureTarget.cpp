@@ -91,7 +91,7 @@ void TextureTarget::bindImage(size_t /*unit*/) {
 }
 
 void TextureTarget::attachAsColor(uint32_t index, const AttachmentParams& params) {
-  if (IGL_VERIFY(renderBufferID_)) {
+  if (IGL_DEBUG_VERIFY(renderBufferID_)) {
     attach(GL_COLOR_ATTACHMENT0 + index, params, renderBufferID_);
   }
 }
@@ -124,7 +124,7 @@ void TextureTarget::detachAsColor(uint32_t index, bool read) {
 }
 
 void TextureTarget::attachAsDepth(const AttachmentParams& params) {
-  if (IGL_VERIFY(renderBufferID_)) {
+  if (IGL_DEBUG_VERIFY(renderBufferID_)) {
     attach(GL_DEPTH_ATTACHMENT, params, renderBufferID_);
   }
 }
@@ -136,7 +136,7 @@ void TextureTarget::detachAsDepth(bool read) {
 }
 
 void TextureTarget::attachAsStencil(const AttachmentParams& params) {
-  if (IGL_VERIFY(renderBufferID_)) {
+  if (IGL_DEBUG_VERIFY(renderBufferID_)) {
     attach(GL_STENCIL_ATTACHMENT, params, renderBufferID_);
   }
 }

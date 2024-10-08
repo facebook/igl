@@ -62,7 +62,7 @@ Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
     return Result{Result::Code::Unsupported,
                   "Array textures are only supported when type is TwoDArray."};
   }
-  if (IGL_VERIFY(!isCreated_)) {
+  if (IGL_DEBUG_VERIFY(!isCreated_)) {
     isCreated_ = true;
     IGL_DEBUG_ASSERT(desc.format != TextureFormat::Invalid && desc.format == getFormat());
     const bool isSampled = (desc.usage & TextureDesc::TextureUsageBits::Sampled) != 0;
@@ -118,7 +118,7 @@ GLint Texture::getAlignment(uint32_t stride, uint32_t mipLevel, uint32_t widthAt
 
   const auto pixelBytesPerRow = getProperties().getBytesPerRow(widthAtMipLevel);
 
-  if (stride == 0 || !IGL_VERIFY(pixelBytesPerRow <= stride)) {
+  if (stride == 0 || !IGL_DEBUG_VERIFY(pixelBytesPerRow <= stride)) {
     return 1;
   } else if (stride % 8 == 0) {
     return 8;

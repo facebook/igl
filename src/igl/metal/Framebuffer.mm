@@ -69,7 +69,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& cmdQueue,
   IGL_DEBUG_ASSERT(range.numMipLevels == 1, "range.numMipLevels MUST be 1");
   const auto& colorAttachment = value_.colorAttachments[index];
 
-  if (IGL_VERIFY(colorAttachment.texture != nullptr)) {
+  if (IGL_DEBUG_VERIFY(colorAttachment.texture != nullptr)) {
     auto texture = colorAttachment.texture;
     copyBytes(cmdQueue, texture, pixelBytes, range, bytesPerRow);
   }
@@ -102,11 +102,11 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   IGL_DEBUG_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
   const auto& colorAttachment = value_.colorAttachments[index];
 
-  if (IGL_VERIFY(colorAttachment.texture != nullptr)) {
+  if (IGL_DEBUG_VERIFY(colorAttachment.texture != nullptr)) {
     auto srcTexture = colorAttachment.texture;
     id<MTLTexture> srcMtlTexture = static_cast<Texture&>(*srcTexture).get();
     id<MTLTexture> dstMtlTexture = static_cast<Texture&>(*destTexture).get();
-    if (IGL_VERIFY(srcMtlTexture && dstMtlTexture)) {
+    if (IGL_DEBUG_VERIFY(srcMtlTexture && dstMtlTexture)) {
       auto iglMtlCmdQueue = static_cast<CommandQueue&>(cmdQueue);
 
       id<MTLCommandBuffer> cmdBuf = [iglMtlCmdQueue.get() commandBuffer];
@@ -137,7 +137,7 @@ void Framebuffer::copyBytes(ICommandQueue& cmdQueue,
   if (bytesPerRow == 0) {
     bytesPerRow = iglTexture->getProperties().getBytesPerRow(range);
   }
-  if (IGL_VERIFY(canCopy(cmdQueue, mtlTexture->get(), range))) {
+  if (IGL_DEBUG_VERIFY(canCopy(cmdQueue, mtlTexture->get(), range))) {
     mtlTexture->getBytes(range, pixelBytes, bytesPerRow);
   } else {
     // Use MTLBlitCommandEncoder to copy into a non-private storage texture that can be read from
