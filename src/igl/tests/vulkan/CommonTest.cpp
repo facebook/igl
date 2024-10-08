@@ -48,4 +48,33 @@ TEST(CommonTest, GetResultFromVkResultTest) {
   EXPECT_EQ(igl::vulkan::getResultFromVkResult(VK_ERROR_TOO_MANY_OBJECTS).code,
             Result::Code::ArgumentOutOfRange);
 }
+
+// setResultFrom ***********************************************************************
+TEST(CommonTest, SetResultFromTest) {
+  igl::Result result;
+  igl::vulkan::setResultFrom(&result, VK_SUCCESS);
+  EXPECT_TRUE(result.isOk());
+
+  igl::vulkan::setResultFrom(&result, VK_ERROR_LAYER_NOT_PRESENT);
+  EXPECT_EQ(result.code, Result::Code::Unimplemented);
+  igl::vulkan::setResultFrom(&result, VK_ERROR_EXTENSION_NOT_PRESENT);
+  EXPECT_EQ(result.code, Result::Code::Unimplemented);
+  igl::vulkan::setResultFrom(&result, VK_ERROR_FEATURE_NOT_PRESENT);
+  EXPECT_EQ(result.code, Result::Code::Unimplemented);
+
+  igl::vulkan::setResultFrom(&result, VK_ERROR_INCOMPATIBLE_DRIVER);
+  EXPECT_EQ(result.code, Result::Code::Unsupported);
+  igl::vulkan::setResultFrom(&result, VK_ERROR_FORMAT_NOT_SUPPORTED);
+  EXPECT_EQ(result.code, Result::Code::Unsupported);
+
+  igl::vulkan::setResultFrom(&result, VK_ERROR_OUT_OF_HOST_MEMORY);
+  EXPECT_EQ(result.code, Result::Code::ArgumentOutOfRange);
+  igl::vulkan::setResultFrom(&result, VK_ERROR_OUT_OF_DEVICE_MEMORY);
+  EXPECT_EQ(result.code, Result::Code::ArgumentOutOfRange);
+  igl::vulkan::setResultFrom(&result, VK_ERROR_OUT_OF_POOL_MEMORY);
+  EXPECT_EQ(result.code, Result::Code::ArgumentOutOfRange);
+  igl::vulkan::setResultFrom(&result, VK_ERROR_TOO_MANY_OBJECTS);
+  EXPECT_EQ(result.code, Result::Code::ArgumentOutOfRange);
+}
+
 } // namespace igl::tests
