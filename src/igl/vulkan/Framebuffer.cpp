@@ -298,18 +298,26 @@ void Framebuffer::validateAttachments() {
     }
     const auto& colorTexture = static_cast<vulkan::Texture&>(*attachment.texture);
     ensureSize(colorTexture);
-    IGL_DEBUG_ASSERT(
-        (colorTexture.getUsage() & TextureDesc::TextureUsageBits::Attachment) != 0,
-        "Did you forget to specify TextureUsageBits::Attachment on your color texture?");
+    if (!IGL_DEBUG_VERIFY((colorTexture.getUsage() & TextureDesc::TextureUsageBits::Attachment) !=
+                          0)) {
+      IGL_DEBUG_ABORT(
+          "Did you forget to specify TextureUsageBits::Attachment on your color texture?");
+      IGL_LOG_ERROR(
+          "Did you forget to specify TextureUsageBits::Attachment on your color texture?");
+    }
   }
 
   const auto* depthTexture = static_cast<vulkan::Texture*>(desc_.depthAttachment.texture.get());
 
   if (depthTexture) {
     ensureSize(*depthTexture);
-    IGL_DEBUG_ASSERT(
-        (depthTexture->getUsage() & TextureDesc::TextureUsageBits::Attachment) != 0,
-        "Did you forget to specify TextureUsageBits::Attachment on your depth texture?");
+    if (!IGL_DEBUG_VERIFY((depthTexture->getUsage() & TextureDesc::TextureUsageBits::Attachment) !=
+                          0)) {
+      IGL_DEBUG_ABORT(
+          "Did you forget to specify TextureUsageBits::Attachment on your depth texture?");
+      IGL_LOG_ERROR(
+          "Did you forget to specify TextureUsageBits::Attachment on your depth texture?");
+    }
   }
 
   IGL_DEBUG_ASSERT(width_);
