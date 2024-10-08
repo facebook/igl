@@ -77,8 +77,7 @@ TEST(CommonTest, SetResultFromTest) {
   EXPECT_EQ(result.code, Result::Code::ArgumentOutOfRange);
 }
 
-// stencilOperationToVkStencilOp
-// ***********************************************************************
+// stencilOperationToVkStencilOp ***********************************************************
 TEST(CommonTest, StencilOperationToVkStencilOpTest) {
   EXPECT_EQ(igl::vulkan::stencilOperationToVkStencilOp(igl::StencilOperation::Keep),
             VK_STENCIL_OP_KEEP);
@@ -96,6 +95,26 @@ TEST(CommonTest, StencilOperationToVkStencilOpTest) {
             VK_STENCIL_OP_INCREMENT_AND_WRAP);
   EXPECT_EQ(igl::vulkan::stencilOperationToVkStencilOp(igl::StencilOperation::DecrementWrap),
             VK_STENCIL_OP_DECREMENT_AND_WRAP);
+}
+
+// compareFunctionToVkCompareOp ********************************************************
+TEST(CommonTest, CompareFunctionToVkCompareOpTest) {
+  EXPECT_EQ(igl::vulkan::compareFunctionToVkCompareOp(igl::CompareFunction::Never),
+            VK_COMPARE_OP_NEVER);
+  EXPECT_EQ(igl::vulkan::compareFunctionToVkCompareOp(igl::CompareFunction::Less),
+            VK_COMPARE_OP_LESS);
+  EXPECT_EQ(igl::vulkan::compareFunctionToVkCompareOp(igl::CompareFunction::Equal),
+            VK_COMPARE_OP_EQUAL);
+  EXPECT_EQ(igl::vulkan::compareFunctionToVkCompareOp(igl::CompareFunction::LessEqual),
+            VK_COMPARE_OP_LESS_OR_EQUAL);
+  EXPECT_EQ(igl::vulkan::compareFunctionToVkCompareOp(igl::CompareFunction::Greater),
+            VK_COMPARE_OP_GREATER);
+  EXPECT_EQ(igl::vulkan::compareFunctionToVkCompareOp(igl::CompareFunction::NotEqual),
+            VK_COMPARE_OP_NOT_EQUAL);
+  EXPECT_EQ(igl::vulkan::compareFunctionToVkCompareOp(igl::CompareFunction::GreaterEqual),
+            VK_COMPARE_OP_GREATER_OR_EQUAL);
+  EXPECT_EQ(igl::vulkan::compareFunctionToVkCompareOp(igl::CompareFunction::AlwaysPass),
+            VK_COMPARE_OP_ALWAYS);
 }
 
 } // namespace igl::tests
