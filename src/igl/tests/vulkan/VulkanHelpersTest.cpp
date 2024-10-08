@@ -23,6 +23,110 @@ namespace igl::tests {
 // Unit tests for functions in VulkanHelpers.{h|c}.
 //
 
+// ivkGetVulkanResultString **********************************************************************
+class GetVulkanResultString : public ::testing::Test {};
+TEST_F(GetVulkanResultString, VulkanHelpersTest) {
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_SUCCESS), "VK_SUCCESS") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_NOT_READY), "VK_NOT_READY") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_TIMEOUT), "VK_TIMEOUT") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_EVENT_SET), "VK_EVENT_SET") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_EVENT_RESET), "VK_EVENT_RESET") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_INCOMPLETE), "VK_INCOMPLETE") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_OUT_OF_HOST_MEMORY),
+                     "VK_ERROR_OUT_OF_HOST_MEMORY") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_OUT_OF_DEVICE_MEMORY),
+                     "VK_ERROR_OUT_OF_DEVICE_MEMORY") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_INITIALIZATION_FAILED),
+                     "VK_ERROR_INITIALIZATION_FAILED") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_DEVICE_LOST), "VK_ERROR_DEVICE_LOST") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_MEMORY_MAP_FAILED),
+                     "VK_ERROR_MEMORY_MAP_FAILED") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_LAYER_NOT_PRESENT),
+                     "VK_ERROR_LAYER_NOT_PRESENT") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_EXTENSION_NOT_PRESENT),
+                     "VK_ERROR_EXTENSION_NOT_PRESENT") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_FEATURE_NOT_PRESENT),
+                     "VK_ERROR_FEATURE_NOT_PRESENT") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_INCOMPATIBLE_DRIVER),
+                     "VK_ERROR_INCOMPATIBLE_DRIVER") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_TOO_MANY_OBJECTS),
+                     "VK_ERROR_TOO_MANY_OBJECTS") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_FORMAT_NOT_SUPPORTED),
+                     "VK_ERROR_FORMAT_NOT_SUPPORTED") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_SURFACE_LOST_KHR),
+                     "VK_ERROR_SURFACE_LOST_KHR") == 0);
+  EXPECT_TRUE(
+      strcmp(ivkGetVulkanResultString(VK_ERROR_OUT_OF_DATE_KHR), "VK_ERROR_OUT_OF_DATE_KHR") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_INCOMPATIBLE_DISPLAY_KHR),
+                     "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_NATIVE_WINDOW_IN_USE_KHR),
+                     "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_VALIDATION_FAILED_EXT),
+                     "VK_ERROR_VALIDATION_FAILED_EXT") == 0);
+  EXPECT_TRUE(
+      strcmp(ivkGetVulkanResultString(VK_ERROR_FRAGMENTED_POOL), "VK_ERROR_FRAGMENTED_POOL") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_UNKNOWN), "VK_ERROR_UNKNOWN") == 0);
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_OUT_OF_POOL_MEMORY),
+                     "VK_ERROR_OUT_OF_POOL_MEMORY") == 0); // 1.1
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_INVALID_EXTERNAL_HANDLE),
+                     "VK_ERROR_INVALID_EXTERNAL_HANDLE") == 0); // 1.1
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_FRAGMENTATION), "VK_ERROR_FRAGMENTATION") ==
+              0); // 1.2
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS),
+                     "VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS") == 0); // 1.2
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_SUBOPTIMAL_KHR), "VK_SUBOPTIMAL_KHR") ==
+              0); // VK_KHR_swapchain
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_INVALID_SHADER_NV),
+                     "VK_ERROR_INVALID_SHADER_NV") == 0); // VK_NV_glsl_shader
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+                                                          // Provided by VK_KHR_video_queue
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR),
+                     "VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR") == 0);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+  // Provided by VK_KHR_video_queue
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR),
+                     "VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR") == 0);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+  // Provided by VK_KHR_video_queue
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR),
+                     "VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR") == 0);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+  // Provided by VK_KHR_video_queue
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR),
+                     "VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR") == 0);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+  // Provided by VK_KHR_video_queue
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR),
+                     "VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR") == 0);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+  // Provided by VK_KHR_video_queue
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR),
+                     "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR") == 0);
+#endif
+  EXPECT_TRUE(
+      strcmp(ivkGetVulkanResultString(VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT),
+             "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT") ==
+      0); // VK_EXT_image_drm_format_modifier
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_NOT_PERMITTED_KHR),
+                     "VK_ERROR_NOT_PERMITTED_KHR") == 0); // VK_KHR_global_priority
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT),
+                     "VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT") ==
+              0); // VK_EXT_full_screen_exclusive
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_THREAD_IDLE_KHR), "VK_THREAD_IDLE_KHR") ==
+              0); // VK_KHR_deferred_host_operations
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_THREAD_DONE_KHR), "VK_THREAD_DONE_KHR") ==
+              0); // VK_KHR_deferred_host_operations
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_OPERATION_DEFERRED_KHR),
+                     "VK_OPERATION_DEFERRED_KHR") == 0); // VK_KHR_deferred_host_operations
+  EXPECT_TRUE(strcmp(ivkGetVulkanResultString(VK_OPERATION_NOT_DEFERRED_KHR),
+                     "VK_OPERATION_NOT_DEFERRED_KHR") == 0); // VK_KHR_deferred_host_operations
+}
+
 // ivkGetSamplerCreateInfo ***********************************************************************
 class GetSamplerCreateInfoTest
   : public ::testing::TestWithParam<
