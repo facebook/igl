@@ -87,45 +87,56 @@ static inline const T& _IGLVerify(const T& cond,
 
 #if IGL_DEBUG
 
-#define _IGL_DEBUG_ABORT(cond, reason, format, ...) \
-  (void)::igl::_IGLVerify(cond, reason, IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
+#define _IGL_DEBUG_ABORT(cond, format, ...) \
+  (void)::igl::_IGLVerify(                  \
+      cond, "Abort requested", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
+#define _IGL_DEBUG_ASSERT(cond, format, ...) \
+  (void)::igl::_IGLVerify(                   \
+      cond, "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
+
+#define _IGL_DEBUG_VERIFY(cond, format, ...) \
+  ::igl::_IGLVerify(                         \
+      (cond), "Verify failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
+#define _IGL_DEBUG_VERIFY_NOT(cond, format, ...) \
+  (!::igl::_IGLVerify(                           \
+      0 == !!(cond), "Verify failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__))
 
 #else
 
-#define _IGL_DEBUG_ABORT(cond, reason, format, ...) static_cast<void>(0)
+#define _IGL_DEBUG_ABORT(cond, format, ...) static_cast<void>(0)
+#define _IGL_DEBUG_ASSERT(cond, format, ...) static_cast<void>(0)
+#define _IGL_DEBUG_VERIFY(cond, format, ...) (cond)
+#define _IGL_DEBUG_VERIFY_NOT(cond, format, ...) (cond)
 
 #endif
 
-#define IGL_DEBUG_ABORT(format, ...) \
-  _IGL_DEBUG_ABORT(false, "Abort requested", (format), ##__VA_ARGS__)
+#define IGL_DEBUG_ABORT(format, ...) _IGL_DEBUG_ABORT(false, (format), ##__VA_ARGS__)
 
-#define _IGL_DEBUG_ASSERT_0(cond) _IGL_DEBUG_ABORT(cond, "Assert failed", #cond)
-#define _IGL_DEBUG_ASSERT_1(cond, format, ...) \
-  _IGL_DEBUG_ABORT(cond, "Assert failed", (format), ##__VA_ARGS__)
+#define _IGL_DEBUG_ASSERT_0(cond) _IGL_DEBUG_ASSERT(cond, #cond)
+#define _IGL_DEBUG_ASSERT_1(cond, format, ...) _IGL_DEBUG_ASSERT(cond, (format), ##__VA_ARGS__)
 // Supported variations:
 // IGL_DEBUG_ASSERT(cond)
 // IGL_DEBUG_ASSERT(cond, format, ...)
 #define IGL_DEBUG_ASSERT(...) \
   _IGL_CALL(IGL_CONCAT(_IGL_DEBUG_ASSERT_, _IGL_HAS_COMMA(__VA_ARGS__)), _IGL_ECHO((__VA_ARGS__)))
 
-#if IGL_DEBUG
+#define _IGL_DEBUG_VERIFY_0(cond) _IGL_DEBUG_VERIFY(cond, #cond)
+#define _IGL_DEBUG_VERIFY_1(cond, format, ...) _IGL_DEBUG_VERIFY(cond, (format), ##__VA_ARGS__)
+// Supported variations:
+// IGL_DEBUG_VERIFY(cond)
+// IGL_DEBUG_VERIFY(cond, format, ...)
+#define IGL_DEBUG_VERIFY(...) \
+  _IGL_CALL(IGL_CONCAT(_IGL_DEBUG_VERIFY_, _IGL_HAS_COMMA(__VA_ARGS__)), _IGL_ECHO((__VA_ARGS__)))
 
-#define IGL_DEBUG_VERIFY_NOT(cond) \
-  (!::igl::_IGLVerify(0 == !!(cond), "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, #cond))
-#define IGL_UNEXPECTED_MSG(cond, format, ...) \
-  (!::igl::_IGLVerify(                        \
-      0 == !!(cond), "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__))
-
-#define IGL_DEBUG_VERIFY(cond) \
-  ::igl::_IGLVerify((cond), "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, #cond)
-
-#else
-
-#define IGL_DEBUG_VERIFY_NOT(cond) (cond)
-#define IGL_UNEXPECTED_MSG(cond, format, ...) (cond)
-#define IGL_DEBUG_VERIFY(cond) (cond)
-
-#endif // IGL_DEBUG
+#define _IGL_DEBUG_VERIFY_NOT_0(cond) _IGL_DEBUG_VERIFY_NOT(cond, "!(" #cond ")")
+#define _IGL_DEBUG_VERIFY_NOT_1(cond, format, ...) \
+  _IGL_DEBUG_VERIFY_NOT(cond, (format), ##__VA_ARGS__)
+// Supported variations:
+// IGL_DEBUG_VERIFY_NOT(cond)
+// IGL_DEBUG_VERIFY_NOT(cond, format, ...)
+#define IGL_DEBUG_VERIFY_NOT(...)                                            \
+  _IGL_CALL(IGL_CONCAT(_IGL_DEBUG_VERIFY_NOT_, _IGL_HAS_COMMA(__VA_ARGS__)), \
+            _IGL_ECHO((__VA_ARGS__)))
 
 #define IGL_DEBUG_ASSERT_NOT_REACHED() IGL_DEBUG_ABORT("Code should NOT be reached")
 #define IGL_DEBUG_ASSERT_NOT_IMPLEMENTED() IGL_DEBUG_ABORT("Code NOT implemented")
