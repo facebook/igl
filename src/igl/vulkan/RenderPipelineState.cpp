@@ -291,6 +291,8 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
                 desc.debugName.c_str()),
   device_(device),
   reflection_(std::make_shared<RenderPipelineReflection>()) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
   // Iterate and cache vertex input bindings and attributes
   const igl::vulkan::VertexInputState* vstate =
       static_cast<igl::vulkan::VertexInputState*>(desc_.vertexInputState.get());
@@ -331,6 +333,8 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
 }
 
 RenderPipelineState::~RenderPipelineState() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+
   const VulkanContext& ctx = device_.getVulkanContext();
   VkDevice device = ctx.device_->getVkDevice();
 
@@ -372,6 +376,8 @@ VkPipeline RenderPipelineState::getVkPipeline(
   if (it != pipelines_.end()) {
     return it->second;
   }
+
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   // @fb-only
   const VkDescriptorSetLayout DSLs[] = {

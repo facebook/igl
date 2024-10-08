@@ -28,6 +28,8 @@ ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
   desc_(std::move(desc)) {}
 
 ComputePipelineState ::~ComputePipelineState() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+
   if (pipeline_ != VK_NULL_HANDLE) {
     const auto& ctx = device_.getVulkanContext();
     ctx.deferredTask(std::packaged_task<void()>(
@@ -60,6 +62,8 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
   if (pipeline_ != VK_NULL_HANDLE) {
     return pipeline_;
   }
+
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   // @fb-only
   const VkDescriptorSetLayout DSLs[] = {
