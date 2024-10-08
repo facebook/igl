@@ -323,7 +323,7 @@ std::shared_ptr<igl::IComputePipelineState> Device::createComputePipeline(
     Result* outResult) const {
   NSError* error = nil;
 
-  if (IGL_UNEXPECTED(desc.shaderStages == nullptr)) {
+  if (IGL_DEBUG_VERIFY_NOT(desc.shaderStages == nullptr)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
     return nullptr;
   }
@@ -453,7 +453,7 @@ std::shared_ptr<igl::IRenderPipelineState> Device::createRenderPipeline(
 
 std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& desc,
                                                             Result* outResult) const {
-  if (IGL_UNEXPECTED(desc.moduleInfo.empty())) {
+  if (IGL_DEBUG_VERIFY_NOT(desc.moduleInfo.empty())) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     return nullptr;
   }

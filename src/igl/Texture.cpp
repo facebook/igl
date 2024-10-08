@@ -115,7 +115,7 @@ TextureRangeDesc TextureRangeDesc::atMipLevel(uint32_t newMipLevel) const noexce
   TextureRangeDesc newRange = *this;
   newRange.numMipLevels = 1;
   newRange.mipLevel = newMipLevel;
-  if (IGL_UNEXPECTED(newMipLevel < mipLevel) || newMipLevel == mipLevel) {
+  if (IGL_DEBUG_VERIFY_NOT(newMipLevel < mipLevel) || newMipLevel == mipLevel) {
     return newRange;
   }
 
@@ -174,26 +174,26 @@ TextureRangeDesc TextureRangeDesc::withNumFaces(uint32_t newNumFaces) const noex
 }
 
 Result TextureRangeDesc::validate() const noexcept {
-  if (IGL_UNEXPECTED(width == 0 || height == 0 || depth == 0 || numLayers == 0 ||
-                     numMipLevels == 0 || numFaces == 0)) {
+  if (IGL_DEBUG_VERIFY_NOT(width == 0 || height == 0 || depth == 0 || numLayers == 0 ||
+                           numMipLevels == 0 || numFaces == 0)) {
     return Result{
         Result::Code::ArgumentInvalid,
         "width, height, depth, numLayers, numMipLevels, and numFaces must be at least 1."};
   }
 
   const uint32_t maxMipLevels = TextureDesc::calcNumMipLevels(width, height, depth);
-  if (IGL_UNEXPECTED(numMipLevels > maxMipLevels)) {
+  if (IGL_DEBUG_VERIFY_NOT(numMipLevels > maxMipLevels)) {
     return Result{Result::Code::ArgumentInvalid,
                   "`numMipLevels` must not exceed max mip levels for width, height and depth."};
   }
 
-  if (IGL_UNEXPECTED(face > 5 || numFaces > 6)) {
+  if (IGL_DEBUG_VERIFY_NOT(face > 5 || numFaces > 6)) {
     return Result{Result::Code::ArgumentInvalid,
                   "`face` must be less than 6 and `numFaces` must not exceed 6."};
   }
 
   constexpr uint32_t kMax = std::numeric_limits<uint32_t>::max();
-  if (IGL_UNEXPECTED(
+  if (IGL_DEBUG_VERIFY_NOT(
           static_cast<size_t>(mipLevel) > kMax || static_cast<size_t>(x) + width > kMax ||
           static_cast<size_t>(y) + height > kMax || static_cast<size_t>(z) + depth > kMax ||
           static_cast<size_t>(layer) + numLayers > kMax)) {
@@ -638,19 +638,19 @@ void ITexture::repackData(const TextureFormatProperties& properties,
                           uint8_t* IGL_NONNULL repackedData,
                           size_t repackedBytesPerRow,
                           bool flipVertical) {
-  if (IGL_UNEXPECTED(originalData == nullptr || repackedData == nullptr)) {
+  if (IGL_DEBUG_VERIFY_NOT(originalData == nullptr || repackedData == nullptr)) {
     return;
   }
-  if (IGL_UNEXPECTED(range.numMipLevels > 1 &&
-                     (originalDataBytesPerRow > 0 || repackedBytesPerRow > 0))) {
+  if (IGL_DEBUG_VERIFY_NOT(range.numMipLevels > 1 &&
+                           (originalDataBytesPerRow > 0 || repackedBytesPerRow > 0))) {
     return;
   }
   const auto fullRangeBytesPerRow = properties.getBytesPerRow(range);
   if (originalDataBytesPerRow > 0 &&
-      IGL_UNEXPECTED(originalDataBytesPerRow < fullRangeBytesPerRow)) {
+      IGL_DEBUG_VERIFY_NOT(originalDataBytesPerRow < fullRangeBytesPerRow)) {
     return;
   }
-  if (repackedBytesPerRow > 0 && IGL_UNEXPECTED(repackedBytesPerRow < fullRangeBytesPerRow)) {
+  if (repackedBytesPerRow > 0 && IGL_DEBUG_VERIFY_NOT(repackedBytesPerRow < fullRangeBytesPerRow)) {
     return;
   }
 
@@ -696,7 +696,7 @@ const void* IGL_NULLABLE ITexture::getSubRangeStart(const void* IGL_NONNULL data
 Result ITexture::upload(const TextureRangeDesc& range,
                         const void* IGL_NULLABLE data,
                         size_t bytesPerRow) const {
-  if (IGL_UNEXPECTED(!supportsUpload())) {
+  if (IGL_DEBUG_VERIFY_NOT(!supportsUpload())) {
     return Result{Result::Code::InvalidOperation, "Texture doesn't support upload"};
   }
 
@@ -706,20 +706,20 @@ Result ITexture::upload(const TextureRangeDesc& range,
     return result;
   }
 
-  if (IGL_UNEXPECTED(type != TextureType::TwoD && type != TextureType::TwoDArray &&
-                     type != TextureType::Cube && type != TextureType::ThreeD)) {
+  if (IGL_DEBUG_VERIFY_NOT(type != TextureType::TwoD && type != TextureType::TwoDArray &&
+                           type != TextureType::Cube && type != TextureType::ThreeD)) {
     return Result{Result::Code::InvalidOperation, "Unknown texture type"};
   }
-  if (IGL_UNEXPECTED(range.face > 0 && type != TextureType::Cube)) {
+  if (IGL_DEBUG_VERIFY_NOT(range.face > 0 && type != TextureType::Cube)) {
     return Result(Result::Code::Unsupported, "face must be 0.");
   }
 
   const auto formatBytesPerRow = properties_.getBytesPerRow(range);
   if (bytesPerRow > 0) {
-    if (IGL_UNEXPECTED(bytesPerRow < formatBytesPerRow)) {
+    if (IGL_DEBUG_VERIFY_NOT(bytesPerRow < formatBytesPerRow)) {
       return Result(Result::Code::ArgumentInvalid, "bytesPerRow too small.");
     }
-    if (IGL_UNEXPECTED(range.numMipLevels > 1 && bytesPerRow != formatBytesPerRow)) {
+    if (IGL_DEBUG_VERIFY_NOT(range.numMipLevels > 1 && bytesPerRow != formatBytesPerRow)) {
       return Result(Result::Code::ArgumentInvalid,
                     "bytesPerRow MUST be 0 when uploading multiple mip levels.");
     }

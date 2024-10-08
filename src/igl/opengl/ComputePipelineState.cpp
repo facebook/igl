@@ -16,7 +16,7 @@ ComputePipelineState::~ComputePipelineState() = default;
 
 Result ComputePipelineState::create(const ComputePipelineDesc& desc) {
   Result result;
-  if (IGL_UNEXPECTED(desc.shaderStages == nullptr)) {
+  if (IGL_DEBUG_VERIFY_NOT(desc.shaderStages == nullptr)) {
     Result::setResult(&result, Result::Code::ArgumentInvalid, "Missing shader stages");
     return result;
   }

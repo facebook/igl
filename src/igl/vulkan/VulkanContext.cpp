@@ -116,7 +116,7 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
   }
 #endif
 
-  if (IGL_UNEXPECTED(isError)) {
+  if (IGL_DEBUG_VERIFY_NOT(isError)) {
     if (ctx->config_.terminateOnValidationError) {
       std::terminate();
     }

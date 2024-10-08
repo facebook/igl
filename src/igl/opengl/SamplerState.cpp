@@ -38,7 +38,7 @@ SamplerState::SamplerState(IContext& context, const SamplerStateDesc& desc) :
 }
 
 void SamplerState::bind(ITexture* t) {
-  if (IGL_UNEXPECTED(t == nullptr)) {
+  if (IGL_DEBUG_VERIFY_NOT(t == nullptr)) {
     return;
   }
 

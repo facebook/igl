@@ -36,20 +36,20 @@ FileLoader::FileData FileLoaderAndroid::loadBinaryData(const std::string& fileNa
 
   // Load file
   AAsset* asset = AAssetManager_open(assetManager_, fileName.c_str(), AASSET_MODE_BUFFER);
-  if (IGL_UNEXPECTED(asset == nullptr)) {
+  if (IGL_DEBUG_VERIFY_NOT(asset == nullptr)) {
     IGL_LOG_ERROR("Error in loadBinaryData(): failed to open file %s\n", fileName.c_str());
     return {};
   }
 
   const off64_t length = AAsset_getLength64(asset);
-  if (IGL_UNEXPECTED(length > std::numeric_limits<uint32_t>::max())) {
+  if (IGL_DEBUG_VERIFY_NOT(length > std::numeric_limits<uint32_t>::max())) {
     AAsset_close(asset);
     return {};
   }
 
   auto data = std::make_unique<uint8_t[]>(length);
   auto readSize = AAsset_read(asset, data.get(), length);
-  if (IGL_UNEXPECTED(readSize != length)) {
+  if (IGL_DEBUG_VERIFY_NOT(readSize != length)) {
     IGL_LOG_ERROR("Error in loadBinaryData(): read size mismatch (%ld != %zu) in %s\n",
                   readSize,
                   length,

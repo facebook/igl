@@ -2520,7 +2520,7 @@ std::shared_ptr<ITexture> createTexture(const LoadedImage& img) {
     ktxTexture* texture;
     auto error = ktxTexture_CreateFromNamedFile(
         img.compressedFileName.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
-    if (IGL_UNEXPECTED(error != KTX_SUCCESS)) {
+    if (IGL_DEBUG_VERIFY_NOT(error != KTX_SUCCESS)) {
       printf("Failed to load %s\n", img.compressedFileName.c_str());
     }
     IGL_SCOPE_EXIT {

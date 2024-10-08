@@ -187,7 +187,7 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
-  if (IGL_UNEXPECTED(desc.shaderStages == nullptr)) {
+  if (IGL_DEBUG_VERIFY_NOT(desc.shaderStages == nullptr)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
     return nullptr;
   }
@@ -211,7 +211,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
-  if (IGL_UNEXPECTED(desc.shaderStages == nullptr)) {
+  if (IGL_DEBUG_VERIFY_NOT(desc.shaderStages == nullptr)) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid, "Missing shader stages");
     return nullptr;
   }
@@ -459,7 +459,7 @@ std::unique_ptr<igl::IShaderLibrary> Device::createShaderLibrary(const ShaderLib
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
-  if (IGL_UNEXPECTED(desc.moduleInfo.empty())) {
+  if (IGL_DEBUG_VERIFY_NOT(desc.moduleInfo.empty())) {
     Result::setResult(outResult, Result::Code::ArgumentInvalid);
     return nullptr;
   }

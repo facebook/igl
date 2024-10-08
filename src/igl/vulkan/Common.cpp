@@ -425,7 +425,7 @@ void transitionToColorAttachment(VkCommandBuffer cmdBuf, ITexture* colorTex) {
 
   const auto& vkTex = static_cast<Texture&>(*colorTex);
   const auto& img = vkTex.getVulkanTexture().getVulkanImage();
-  if (IGL_UNEXPECTED(img.isDepthFormat_ || img.isStencilFormat_)) {
+  if (IGL_DEBUG_VERIFY_NOT(img.isDepthFormat_ || img.isStencilFormat_)) {
     IGL_DEBUG_ABORT("Color attachments cannot have depth/stencil formats");
     IGL_LOG_ERROR("Color attachments cannot have depth/stencil formats");
     return;
@@ -458,7 +458,7 @@ void transitionToDepthStencilAttachment(VkCommandBuffer cmdBuf, ITexture* depthS
 
   const auto& vkTex = static_cast<Texture&>(*depthStencilTex);
   const auto& img = vkTex.getVulkanTexture().getVulkanImage();
-  if (IGL_UNEXPECTED(!img.isDepthFormat_ && !img.isStencilFormat_)) {
+  if (IGL_DEBUG_VERIFY_NOT(!img.isDepthFormat_ && !img.isStencilFormat_)) {
     IGL_DEBUG_ABORT("Only depth/stencil formats are accepted");
     IGL_LOG_ERROR("Only depth/stencil formats are accepted");
     return;

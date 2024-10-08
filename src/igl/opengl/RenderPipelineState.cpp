@@ -102,7 +102,7 @@ GLenum RenderPipelineState::convertBlendFactor(BlendFactor value) {
 }
 
 Result RenderPipelineState::create() {
-  if (IGL_UNEXPECTED(desc_.shaderStages == nullptr)) {
+  if (IGL_DEBUG_VERIFY_NOT(desc_.shaderStages == nullptr)) {
     return Result(Result::Code::ArgumentInvalid, "Missing shader stages");
   }
   if (!IGL_VERIFY(desc_.shaderStages->getType() == ShaderStagesType::Render)) {

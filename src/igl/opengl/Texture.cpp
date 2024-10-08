@@ -112,7 +112,7 @@ GLint Texture::getAlignment(uint32_t stride, uint32_t mipLevel, uint32_t widthAt
   const auto maxWidthAtMipLevel = std::max(getDimensions().width >> mipLevel, 1u);
   if (widthAtMipLevel == 0) {
     widthAtMipLevel = maxWidthAtMipLevel;
-  } else if (IGL_UNEXPECTED(widthAtMipLevel > maxWidthAtMipLevel)) {
+  } else if (IGL_DEBUG_VERIFY_NOT(widthAtMipLevel > maxWidthAtMipLevel)) {
     widthAtMipLevel = maxWidthAtMipLevel;
   }
 

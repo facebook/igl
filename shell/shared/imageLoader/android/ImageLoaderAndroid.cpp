@@ -39,14 +39,14 @@ ImageData ImageLoaderAndroid::loadImageData(
   }
 
   const off64_t length = AAsset_getLength64(asset);
-  if (IGL_UNEXPECTED(length > std::numeric_limits<int>::max())) {
+  if (IGL_DEBUG_VERIFY_NOT(length > std::numeric_limits<int>::max())) {
     AAsset_close(asset);
     return {};
   }
 
   auto buffer = std::make_unique<uint8_t[]>(length);
   auto readSize = AAsset_read(asset, buffer.get(), length);
-  if (IGL_UNEXPECTED(readSize != length)) {
+  if (IGL_DEBUG_VERIFY_NOT(readSize != length)) {
     IGL_LOG_ERROR("Error in loadImageData(): read size mismatch (%ld != %zu) in %s\n",
                   readSize,
                   length,

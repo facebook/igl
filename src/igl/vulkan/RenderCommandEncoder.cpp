@@ -400,7 +400,7 @@ void RenderCommandEncoder::bindRenderPipelineState(
 
   const bool hasDepthAttachment = desc.targetDesc.depthAttachmentFormat != TextureFormat::Invalid;
 
-  if (IGL_UNEXPECTED(hasDepthAttachment != hasDepthAttachment_)) {
+  if (IGL_DEBUG_VERIFY_NOT(hasDepthAttachment != hasDepthAttachment_)) {
     IGL_LOG_ERROR(
         "Make sure your render pass and render pipeline both have matching depth attachments");
   }

@@ -178,9 +178,9 @@ bool GlfwShell::initialize(int argc,
       factory->requestedWindowConfig(igl::shell::ShellType::Windows, suggestedWindowConfig);
   const auto requestedConfigs =
       factory->requestedSessionConfigs(igl::shell::ShellType::Windows, {suggestedSessionConfig});
-  if (IGL_UNEXPECTED(requestedConfigs.size() != 1) ||
-      IGL_UNEXPECTED(suggestedSessionConfig.backendVersion.flavor !=
-                     requestedConfigs[0].backendVersion.flavor)) {
+  if (IGL_DEBUG_VERIFY_NOT(requestedConfigs.size() != 1) ||
+      IGL_DEBUG_VERIFY_NOT(suggestedSessionConfig.backendVersion.flavor !=
+                           requestedConfigs[0].backendVersion.flavor)) {
     return false;
   }
 
@@ -191,11 +191,11 @@ bool GlfwShell::initialize(int argc,
   }
 
   platform_ = createPlatform();
-  if (IGL_UNEXPECTED(!platform_)) {
+  if (IGL_DEBUG_VERIFY_NOT(!platform_)) {
     return false;
   }
   session_ = factory->createRenderSession(platform_);
-  if (IGL_UNEXPECTED(!session_)) {
+  if (IGL_DEBUG_VERIFY_NOT(!session_)) {
     return false;
   }
 
