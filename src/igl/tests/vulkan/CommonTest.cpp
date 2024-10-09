@@ -6,13 +6,21 @@
  */
 
 #include <gtest/gtest.h>
+#include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Common.h>
-#include <vulkan/vulkan_core.h>
+#include <igl/vulkan/Device.h>
+#include <igl/vulkan/Texture.h>
+#include <igl/vulkan/VulkanContext.h>
+#include <igl/vulkan/VulkanImage.h>
+#include <igl/vulkan/VulkanTexture.h>
+
+#include <igl/tests/util/device/TestDevice.h>
 
 #ifdef __ANDROID__
 #include <vulkan/vulkan_android.h>
 #endif
 
+#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
 namespace igl::tests {
 
 //
@@ -171,4 +179,54 @@ TEST(CommonTest, GetNumImagePlanesTest) {
   EXPECT_EQ(igl::vulkan::getNumImagePlanes(VK_FORMAT_R8G8B8A8_UINT), 1);
 }
 
+class CommonWithDeviceTest : public ::testing::Test {
+ public:
+  // Set up common resources.
+  void SetUp() override {
+    // Turn off debug break so unit tests can run
+    igl::setDebugBreakEnabled(false);
+
+    device_ = igl::tests::util::device::createTestDevice(igl::BackendType::Vulkan);
+    ASSERT_TRUE(device_ != nullptr);
+    auto& device = static_cast<igl::vulkan::Device&>(*device_);
+    context_ = &device.getVulkanContext();
+    ASSERT_TRUE(context_ != nullptr);
+  }
+
+ protected:
+  std::shared_ptr<IDevice> device_;
+  vulkan::VulkanContext* context_ = nullptr;
+};
+
+// transitionToGeneral ********************************************************
+TEST_F(CommonWithDeviceTest, TransitionToGeneralTest) {
+  igl::Result result;
+
+  const CommandQueueDesc queueDesc{CommandQueueType::Graphics};
+  auto commandQueue = device_->createCommandQueue(queueDesc, &result);
+  EXPECT_TRUE(result.isOk());
+
+  const CommandBufferDesc cmdBufferDesc{};
+  const auto cmdBuffer = commandQueue->createCommandBuffer(cmdBufferDesc, &result);
+  EXPECT_TRUE(result.isOk());
+
+  const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                 1,
+                                                 1,
+                                                 TextureDesc::TextureUsageBits::Sampled |
+                                                     TextureDesc::TextureUsageBits::Storage);
+  const auto texture = device_->createTexture(texDesc, &result);
+  EXPECT_TRUE(result.isOk());
+
+  igl::vulkan::transitionToGeneral(
+      static_cast<const igl::vulkan::CommandBuffer*>(cmdBuffer.get())->getVkCommandBuffer(),
+      texture.get());
+
+  const igl::vulkan::Texture& tex = static_cast<igl::vulkan::Texture&>(*texture);
+  const vulkan::VulkanImage& img = tex.getVulkanTexture().getVulkanImage();
+
+  EXPECT_EQ(img.imageLayout_, VK_IMAGE_LAYOUT_GENERAL);
+}
 } // namespace igl::tests
+
+#endif
