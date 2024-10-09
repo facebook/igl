@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #include "BasicFramebufferSession.h"
 
 #if !defined(IGL_PLATFORM_UWP)

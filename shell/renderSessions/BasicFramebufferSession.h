@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #include <igl/IGL.h>
 #include <memory>
 #include <shell/shared/renderSession/RenderSession.h>
