@@ -421,7 +421,9 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
 
   createInstance(numExtraInstanceExtensions, extraInstanceExtensions);
 
-  if (window) {
+  if (config_.headless) {
+    createHeadlessSurface();
+  } else if (window) {
     createSurface(window, display);
   }
 }
@@ -592,6 +594,16 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
     }
   }
 #endif
+}
+
+void VulkanContext::createHeadlessSurface() {
+  const VkHeadlessSurfaceCreateInfoEXT ci = {
+      .sType = VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT,
+      .pNext = nullptr,
+      .flags = 0,
+  };
+
+  VK_ASSERT(vf_.vkCreateHeadlessSurfaceEXT(vkInstance_, &ci, nullptr, &vkSurface_));
 }
 
 void VulkanContext::createSurface(void* IGL_NULLABLE window, void* IGL_NULLABLE display) {

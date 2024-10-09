@@ -142,6 +142,7 @@ class VulkanContext final {
                                                const char* IGL_NULLABLE debugName = nullptr) const;
 
   void createSurface(void* IGL_NULLABLE window, void* IGL_NULLABLE display);
+  void createHeadlessSurface();
 
   bool hasSwapchain() const noexcept {
     return swapchain_ != nullptr;

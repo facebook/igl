@@ -146,6 +146,9 @@ struct VulkanContextConfig {
   // The client can then use the SubmitHandle to wait for the completion of the GPU work.
   bool exportableFences = false;
 
+  // Use VK_EXT_headless_surface to create a headless swapchain
+  bool headless = false;
+
   // Size for VulkanMemoryAllocator's default pool block size parameter.
   // Only relevant if VMA is used for memory allocation.
   // Passing 0 will prompt VMA to a large default value (currently 256 MB).
