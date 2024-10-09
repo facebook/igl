@@ -11,7 +11,6 @@
 #include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>
-#include <igl/vulkan/VulkanPipelineLayout.h>
 #include <igl/vulkan/VulkanSampler.h>
 #include <igl/vulkan/VulkanShaderModule.h>
 
@@ -134,7 +133,7 @@ PipelineState::PipelineState(
 VkPipelineLayout PipelineState::getVkPipelineLayout() const {
   IGL_DEBUG_ASSERT(pipelineLayout_);
 
-  return pipelineLayout_->getVkPipelineLayout();
+  return pipelineLayout_;
 }
 
 } // namespace igl::vulkan
