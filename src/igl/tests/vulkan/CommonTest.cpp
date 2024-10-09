@@ -160,4 +160,15 @@ TEST(CommonTest, AtVkLayerTest) {
   }
 }
 
+// getNumImagePlanes ************************************************************************
+TEST(CommonTest, GetNumImagePlanesTest) {
+  EXPECT_EQ(igl::vulkan::getNumImagePlanes(VK_FORMAT_UNDEFINED), 0);
+  EXPECT_EQ(igl::vulkan::getNumImagePlanes(VK_FORMAT_G8_B8R8_2PLANE_420_UNORM), 2);
+  EXPECT_EQ(igl::vulkan::getNumImagePlanes(VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM), 3);
+  EXPECT_EQ(igl::vulkan::getNumImagePlanes(VK_FORMAT_R8G8B8A8_UNORM), 1);
+  EXPECT_EQ(igl::vulkan::getNumImagePlanes(VK_FORMAT_R8G8B8A8_SRGB), 1);
+  EXPECT_EQ(igl::vulkan::getNumImagePlanes(VK_FORMAT_R8G8B8A8_SINT), 1);
+  EXPECT_EQ(igl::vulkan::getNumImagePlanes(VK_FORMAT_R8G8B8A8_UINT), 1);
+}
+
 } // namespace igl::tests
