@@ -128,4 +128,36 @@ TEST(CommonTest, GetVulkanSampleCountFlagsTest) {
   EXPECT_EQ(igl::vulkan::getVulkanSampleCountFlags(64u), VK_SAMPLE_COUNT_64_BIT);
 }
 
+// atVkLayer *******************************************************************************
+TEST(CommonTest, AtVkLayerTest) {
+  const igl::TextureRangeDesc texRangeDesc = TextureRangeDesc::newCube(0, 0, 1, 1, 0, 1);
+  constexpr uint32_t layerOrFaceId = 7;
+
+  constexpr TextureType textureTypes[] = {
+      TextureType::Invalid,
+      TextureType::TwoD,
+      TextureType::TwoDArray,
+      TextureType::ThreeD,
+      TextureType::Cube,
+      TextureType::ExternalImage,
+  };
+
+  for (const auto textureType : textureTypes) {
+    const auto newTexRangeDesc = igl::vulkan::atVkLayer(textureType, texRangeDesc, layerOrFaceId);
+
+    EXPECT_EQ(newTexRangeDesc.face, textureType == TextureType::Cube ? layerOrFaceId : 0);
+    EXPECT_EQ(newTexRangeDesc.layer, textureType == TextureType::Cube ? 0 : layerOrFaceId);
+    EXPECT_EQ(newTexRangeDesc.numFaces, textureType == TextureType::Cube ? 1 : 6);
+    EXPECT_EQ(newTexRangeDesc.x, texRangeDesc.x);
+    EXPECT_EQ(newTexRangeDesc.y, texRangeDesc.y);
+    EXPECT_EQ(newTexRangeDesc.z, texRangeDesc.z);
+    EXPECT_EQ(newTexRangeDesc.width, texRangeDesc.width);
+    EXPECT_EQ(newTexRangeDesc.height, texRangeDesc.height);
+    EXPECT_EQ(newTexRangeDesc.depth, texRangeDesc.depth);
+    EXPECT_EQ(newTexRangeDesc.mipLevel, texRangeDesc.mipLevel);
+    EXPECT_EQ(newTexRangeDesc.numMipLevels, texRangeDesc.numMipLevels);
+    EXPECT_EQ(newTexRangeDesc.numLayers, 1);
+  }
+}
+
 } // namespace igl::tests
