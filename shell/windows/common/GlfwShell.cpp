@@ -159,6 +159,15 @@ bool GlfwShell::createWindow() noexcept {
     }
     shell->platform_->getInputDispatcher().queueEvent(
         igl::shell::KeyEvent(action == GLFW_PRESS, key, modifiers));
+    shell->platform_->getInputDispatcher().queueEvent(key <= 256 ? CharEvent{static_cast<char>(key)}
+                                                                 : CharEvent{});
+  });
+
+  glfwSetCharCallback(windowHandle, [](GLFWwindow* window, unsigned int codepoint) {
+    auto* shell = static_cast<GlfwShell*>(glfwGetWindowUserPointer(window));
+
+    shell->platform_->getInputDispatcher().queueEvent(
+        CharEvent{.character = static_cast<char>(codepoint)});
   });
 
   didCreateWindow();

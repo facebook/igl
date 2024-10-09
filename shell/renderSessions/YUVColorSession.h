@@ -54,6 +54,9 @@ class YUVColorSession : public RenderSession {
     bool process(const MouseMotionEvent& event) override;
     bool process(const MouseWheelEvent& event) override;
     bool process(const KeyEvent& event) override;
+    bool process(const CharEvent& event) override {
+      return false;
+    }
     YUVColorSession& session;
   };
 

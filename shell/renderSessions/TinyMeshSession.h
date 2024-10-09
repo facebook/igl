@@ -43,7 +43,10 @@ class TinyMeshSession : public RenderSession {
 
   struct Listener : public igl::shell::IKeyListener {
     explicit Listener(TinyMeshSession& session) : session(session) {}
-    bool process(const KeyEvent& event) override;
+    bool process(const KeyEvent& event) override {
+      return false;
+    }
+    bool process(const CharEvent& event) override;
     TinyMeshSession& session;
   };
 

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 namespace igl::shell {
 
@@ -31,9 +32,18 @@ struct KeyEvent {
     key(key), isDown(isDown), modifiers(modifiers) {}
 };
 
+struct CharEvent {
+  int character;
+};
+
 class IKeyListener {
  public:
-  virtual bool process(const KeyEvent& event) = 0;
+  virtual bool process(const KeyEvent& event) {
+    return false;
+  }
+  virtual bool process(const CharEvent& event) {
+    return false;
+  }
 
   virtual ~IKeyListener() = default;
 };

@@ -47,7 +47,7 @@ class TinyMeshBindGroupSession : public RenderSession {
 
   struct Listener : public igl::shell::IKeyListener {
     explicit Listener(TinyMeshBindGroupSession& session) : session(session) {}
-    bool process(const KeyEvent& event) override;
+    bool process(const CharEvent& event) override;
     TinyMeshBindGroupSession& session;
   };
 

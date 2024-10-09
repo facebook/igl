@@ -624,18 +624,17 @@ void TinyMeshBindGroupSession::update(igl::SurfaceTextures surfaceTextures) noex
   frameIndex_ = (frameIndex_ + 1) % kNumBufferedFrames;
 }
 
-bool TinyMeshBindGroupSession::Listener::process(const KeyEvent& event) {
-  if (!event.isDown) {
-    if (event.key == 84) { // VK_T
-      if (!session.bindGroupNoTexture1_.empty()) {
-        session.bindGroupTextures_ = std::move(session.bindGroupNoTexture1_);
-        // make sure we deallocate texture1
-        session.bindGroupNoTexture1_ = nullptr;
-        session.texture1_.reset();
-      }
+bool TinyMeshBindGroupSession::Listener::process(const CharEvent& event) {
+  if (event.character == 't') {
+    if (!session.bindGroupNoTexture1_.empty()) {
+      session.bindGroupTextures_ = std::move(session.bindGroupNoTexture1_);
+      // make sure we deallocate texture1
+      session.bindGroupNoTexture1_ = nullptr;
+      session.texture1_.reset();
     }
+    return true;
   }
-  return true;
+  return false;
 }
 
 } // namespace igl::shell

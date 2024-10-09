@@ -584,13 +584,12 @@ void TinyMeshSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   frameIndex_ = (frameIndex_ + 1) % kNumBufferedFrames;
 }
 
-bool TinyMeshSession::Listener::process(const KeyEvent& event) {
-  if (!event.isDown) {
-    if (event.key == 84) { // VK_T
-      session.texture1_.reset();
-    }
+bool TinyMeshSession::Listener::process(const CharEvent& event) {
+  if (event.character == 't') {
+    session.texture1_.reset();
+    return true;
   }
-  return true;
+  return false;
 }
 
 } // namespace igl::shell

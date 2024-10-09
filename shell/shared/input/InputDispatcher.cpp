@@ -47,6 +47,12 @@ void InputDispatcher::processEvents() {
           break;
         }
       }
+    } else if (event.type == EventType::Char) {
+      for (auto& listener : _keyListeners) {
+        if (listener->process(std::get<CharEvent>(event.data))) {
+          break;
+        }
+      }
     } else if (event.type == EventType::Ray) {
       for (auto& listener : _rayListeners) {
         if (listener->process(std::get<RayEvent>(event.data))) {
@@ -191,6 +197,15 @@ void InputDispatcher::queueEvent(const KeyEvent& event) {
 
   InputDispatcher::Event evt;
   evt.type = EventType::Key;
+  evt.data = event;
+  _events.push(evt);
+}
+
+void InputDispatcher::queueEvent(const CharEvent& event) {
+  const std::lock_guard guard(_mutex);
+
+  InputDispatcher::Event evt;
+  evt.type = EventType::Char;
   evt.data = event;
   _events.push(evt);
 }

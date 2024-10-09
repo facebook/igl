@@ -522,7 +522,11 @@ static uint32_t getModifiers(NSEvent* event) {
 
 - (void)keyDown:(NSEvent*)event {
   shellPlatform_->getInputDispatcher().queueEvent(
-      igl::shell::KeyEvent(true, event.keyCode, getModifiers(event)));
+      igl::shell::KeyEvent(false, event.keyCode, getModifiers(event)));
+  std::string characters([event.characters UTF8String]);
+  for (const auto& c : characters) {
+    shellPlatform_->getInputDispatcher().queueEvent(igl::shell::CharEvent{.character = c});
+  }
 }
 
 - (void)mouseDown:(NSEvent*)event {
