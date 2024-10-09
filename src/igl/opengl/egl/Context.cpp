@@ -429,7 +429,7 @@ EGLImageKHR Context::createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) 
 
   this->checkForErrors(__FUNCTION__, __LINE__);
 
-  IGL_REPORT_ERROR(this->isCurrentContext() || this->isCurrentSharegroup());
+  IGL_SOFT_ASSERT(this->isCurrentContext() || this->isCurrentSharegroup());
 
   return eglImage;
 }

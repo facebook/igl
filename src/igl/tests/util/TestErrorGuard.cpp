@@ -14,15 +14,15 @@
 #include <string>
 
 igl::tests::util::TestErrorGuard::TestErrorGuard() {
-#if IGL_REPORT_ERROR_ENABLED
-  savedErrorHandler_ = IGLReportErrorGetHandler();
-  IGLReportErrorSetHandler(ReportErrorHandler);
+#if IGL_SOFT_ERROR_ENABLED
+  savedErrorHandler_ = IGLGetSoftErrorHandler();
+  IGLSetSoftErrorHandler(ReportErrorHandler);
 #endif
 }
 
 igl::tests::util::TestErrorGuard::~TestErrorGuard() {
-#if IGL_REPORT_ERROR_ENABLED
-  IGLReportErrorSetHandler(savedErrorHandler_);
+#if IGL_SOFT_ERROR_ENABLED
+  IGLSetSoftErrorHandler(savedErrorHandler_);
 #endif
 }
 
@@ -32,7 +32,7 @@ void igl::tests::util::TestErrorGuard::ReportErrorHandler(const char* file,
                                                           const char* category,
                                                           const char* format,
                                                           ...) {
-#if IGL_REPORT_ERROR_ENABLED
+#if IGL_SOFT_ERROR_ENABLED
   va_list ap;
   va_start(ap, format);
 

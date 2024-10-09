@@ -82,35 +82,35 @@ void logSource(const int count, const char** string, const int* length) {
 #define APILOG_SOURCE(count, string, length) static_cast<void>(0)
 #endif // defined(IGL_API_LOG) && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
 
-#define GLCALL(funcName)                                         \
-  IGL_REPORT_ERROR(isCurrentContext() || isCurrentSharegroup()); \
-  callCounter_++;                                                \
+#define GLCALL(funcName)                                        \
+  IGL_SOFT_ASSERT(isCurrentContext() || isCurrentSharegroup()); \
+  callCounter_++;                                               \
   gl##funcName
 
-#define IGLCALL(funcName)                                        \
-  IGL_REPORT_ERROR(isCurrentContext() || isCurrentSharegroup()); \
-  callCounter_++;                                                \
+#define IGLCALL(funcName)                                       \
+  IGL_SOFT_ASSERT(isCurrentContext() || isCurrentSharegroup()); \
+  callCounter_++;                                               \
   igl##funcName
 
-#define GLCALL_WITH_RETURN(ret, funcName)                        \
-  IGL_REPORT_ERROR(isCurrentContext() || isCurrentSharegroup()); \
-  callCounter_++;                                                \
+#define GLCALL_WITH_RETURN(ret, funcName)                       \
+  IGL_SOFT_ASSERT(isCurrentContext() || isCurrentSharegroup()); \
+  callCounter_++;                                               \
   ret = gl##funcName
 
-#define IGLCALL_WITH_RETURN(ret, funcName)                       \
-  IGL_REPORT_ERROR(isCurrentContext() || isCurrentSharegroup()); \
-  callCounter_++;                                                \
+#define IGLCALL_WITH_RETURN(ret, funcName)                      \
+  IGL_SOFT_ASSERT(isCurrentContext() || isCurrentSharegroup()); \
+  callCounter_++;                                               \
   ret = igl##funcName
 
-#define GLCALL_PROC(funcPtr, ...)                                \
-  IGL_REPORT_ERROR(isCurrentContext() || isCurrentSharegroup()); \
-  if (IGL_DEBUG_VERIFY(funcPtr)) {                               \
-    callCounter_++;                                              \
-    (*funcPtr)(__VA_ARGS__);                                     \
+#define GLCALL_PROC(funcPtr, ...)                               \
+  IGL_SOFT_ASSERT(isCurrentContext() || isCurrentSharegroup()); \
+  if (IGL_DEBUG_VERIFY(funcPtr)) {                              \
+    callCounter_++;                                             \
+    (*funcPtr)(__VA_ARGS__);                                    \
   }
 
 #define GLCALL_PROC_WITH_RETURN(ret, funcPtr, returnOnError, ...) \
-  IGL_REPORT_ERROR(isCurrentContext() || isCurrentSharegroup());  \
+  IGL_SOFT_ASSERT(isCurrentContext() || isCurrentSharegroup());   \
   if (IGL_DEBUG_VERIFY(funcPtr)) {                                \
     callCounter_++;                                               \
     ret = (*funcPtr)(__VA_ARGS__);                                \
@@ -711,9 +711,9 @@ IContext::IContext() : deviceFeatureSet_(*this) {
 }
 
 IContext::~IContext() {
-  IGL_REPORT_ERROR_MSG(refCount_ == 0,
-                       "Dangling IContext reference left behind."
-                       // @fb-only
+  IGL_SOFT_ASSERT_MSG(refCount_ == 0,
+                      "Dangling IContext reference left behind."
+                      // @fb-only
   );
   // Clear the zombie guard explicitly so our "secret" stays secret.
   zombieGuard_ = 0;

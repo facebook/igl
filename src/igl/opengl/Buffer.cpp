@@ -171,7 +171,7 @@ void ArrayBuffer::unbind() {
 void ArrayBuffer::bindBase(IGL_MAYBE_UNUSED size_t index, Result* outResult) {
   if (target_ != GL_SHADER_STORAGE_BUFFER) {
     static const char* kErrorMsg = "Buffer should be GL_SHADER_STORAGE_BUFFER";
-    IGL_REPORT_ERROR_MSG(1, kErrorMsg);
+    IGL_SOFT_ASSERT_MSG(1, kErrorMsg);
     Result::setResult(outResult, Result::Code::InvalidOperation, kErrorMsg);
     return;
   }
@@ -192,7 +192,7 @@ void UniformBlockBuffer::bindBase(size_t index, Result* outResult) {
   if (getContext().deviceFeatures().hasFeature(DeviceFeatures::UniformBlocks)) {
     if (target_ != GL_UNIFORM_BUFFER) {
       static const char* kErrorMsg = "Buffer should be GL_UNIFORM_BUFFER";
-      IGL_REPORT_ERROR_MSG(1, kErrorMsg);
+      IGL_SOFT_ASSERT_MSG(1, kErrorMsg);
       Result::setResult(outResult, Result::Code::InvalidOperation, kErrorMsg);
       return;
     }
@@ -200,7 +200,7 @@ void UniformBlockBuffer::bindBase(size_t index, Result* outResult) {
     Result::setOk(outResult);
   } else {
     static const char* kErrorMsg = "Uniform Blocks are not supported";
-    IGL_REPORT_ERROR_MSG(1, kErrorMsg);
+    IGL_SOFT_ASSERT_MSG(1, kErrorMsg);
     Result::setResult(outResult, Result::Code::Unimplemented, kErrorMsg);
   }
 }
@@ -209,7 +209,7 @@ void UniformBlockBuffer::bindRange(size_t index, size_t offset, Result* outResul
   if (getContext().deviceFeatures().hasFeature(DeviceFeatures::UniformBlocks)) {
     if (target_ != GL_UNIFORM_BUFFER) {
       static const char* kErrorMsg = "Buffer should be GL_UNIFORM_BUFFER";
-      IGL_REPORT_ERROR_MSG(1, kErrorMsg);
+      IGL_SOFT_ASSERT_MSG(1, kErrorMsg);
       Result::setResult(outResult, Result::Code::InvalidOperation, kErrorMsg);
       return;
     }
@@ -221,7 +221,7 @@ void UniformBlockBuffer::bindRange(size_t index, size_t offset, Result* outResul
     Result::setOk(outResult);
   } else {
     static const char* kErrorMsg = "Uniform Blocks are not supported";
-    IGL_REPORT_ERROR_MSG(1, kErrorMsg);
+    IGL_SOFT_ASSERT_MSG(1, kErrorMsg);
     Result::setResult(outResult, Result::Code::Unimplemented, kErrorMsg);
   }
 }

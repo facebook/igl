@@ -58,7 +58,7 @@ void _IGLDebugBreak() {
 
 // ----------------------------------------------------------------------------
 
-#if IGL_REPORT_ERROR_ENABLED
+#if IGL_SOFT_ERROR_ENABLED
 
 // Default handler is no-op.
 // If there's an error, IGL_DEBUG_VERIFY will trap in dev builds
@@ -69,20 +69,20 @@ static void _IGLReportErrorDefault(const char* file,
                                    const char* format,
                                    ...) {}
 
-static IGLReportErrorFunc& GetErrorHandler() {
-  static IGLReportErrorFunc sHandler = _IGLReportErrorDefault;
+static IGLSoftErrorFunc& GetErrorHandler() {
+  static IGLSoftErrorFunc sHandler = _IGLReportErrorDefault;
   return sHandler;
 }
 
-IGL_API void IGLReportErrorSetHandler(IGLReportErrorFunc handler) {
+IGL_API void IGLSetSoftErrorHandler(IGLSoftErrorFunc handler) {
   if (!handler) {
     handler = _IGLReportErrorDefault; // prevent null handler
   }
   GetErrorHandler() = handler;
 }
 
-IGL_API IGLReportErrorFunc IGLReportErrorGetHandler(void) {
+IGL_API IGLSoftErrorFunc IGLGetSoftErrorHandler(void) {
   return GetErrorHandler();
 }
 
-#endif // IGL_REPORT_ERROR_ENABLED
+#endif // IGL_SOFT_ERROR_ENABLED

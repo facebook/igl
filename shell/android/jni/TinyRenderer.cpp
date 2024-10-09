@@ -138,7 +138,7 @@ void TinyRenderer::init(AAssetManager* mgr,
 
   IGL_DEBUG_ASSERT(d != nullptr);
   // We want to catch failed device creation instead of letting implicitly fail
-  IGL_REPORT_ERROR(result.isOk());
+  IGL_SOFT_ASSERT(result.isOk());
   if (d) {
     platform_ = std::make_shared<igl::shell::PlatformAndroid>(std::move(d));
     IGL_DEBUG_ASSERT(platform_ != nullptr);
@@ -211,7 +211,7 @@ void TinyRenderer::render(float displayScale) {
     break;
   }
   IGL_DEBUG_ASSERT(result.isOk());
-  IGL_REPORT_ERROR(result.isOk());
+  IGL_SOFT_ASSERT(result.isOk());
 
   const ContextGuard guard(platform_->getDevice()); // wrap 'session_' operations
 
@@ -232,7 +232,7 @@ void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int 
     platform_->getDevice().getPlatformDevice<opengl::egl::PlatformDevice>()->updateSurfaces(
         readSurface, drawSurface, &result);
     IGL_DEBUG_ASSERT(result.isOk());
-    IGL_REPORT_ERROR(result.isOk());
+    IGL_SOFT_ASSERT(result.isOk());
   }
 #endif
 

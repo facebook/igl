@@ -243,12 +243,12 @@
 // clang-format on
 
 // clang-format off
-#if !defined(IGL_REPORT_ERROR_ENABLED)
+#if !defined(IGL_SOFT_ERROR_ENABLED)
   // Either we have IGL_DEBUG, or Windows/Linux/etc, since we don't have good detection mechanism there.
   #if IGL_DEBUG || (!IGL_PLATFORM_APPLE && !IGL_PLATFORM_ANDROID)
-    #define IGL_REPORT_ERROR_ENABLED 1
+    #define IGL_SOFT_ERROR_ENABLED 1
   #else
-    #define IGL_REPORT_ERROR_ENABLED 0
+    #define IGL_SOFT_ERROR_ENABLED 0
   #endif
 #endif
 // clang-format on

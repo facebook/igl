@@ -156,39 +156,39 @@ template<typename T>
 ///--------------------------------------
 /// MARK: - Custom
 
-#if IGL_REPORT_ERROR_ENABLED
+#if IGL_SOFT_ERROR_ENABLED
 
 #define IGL_ERROR_CATEGORY "IGL"
 
-using IGLReportErrorFunc = void (*)(const char* file,
-                                    const char* func,
-                                    int line,
-                                    const char* category,
-                                    const char* format,
-                                    ...);
-IGL_API void IGLReportErrorSetHandler(IGLReportErrorFunc handler);
-IGL_API IGLReportErrorFunc IGLReportErrorGetHandler(void);
+using IGLSoftErrorFunc = void (*)(const char* file,
+                                  const char* func,
+                                  int line,
+                                  const char* category,
+                                  const char* format,
+                                  ...);
+IGL_API void IGLSetSoftErrorHandler(IGLSoftErrorFunc handler);
+IGL_API IGLSoftErrorFunc IGLGetSoftErrorHandler(void);
 
-#define IGL_REPORT_ERROR(cond)                                                                 \
-  do {                                                                                         \
-    if (!IGL_DEBUG_VERIFY(cond)) {                                                             \
-      IGLReportErrorGetHandler()(__FILE__, IGL_FUNCTION, __LINE__, IGL_ERROR_CATEGORY, #cond); \
-    }                                                                                          \
+#define IGL_SOFT_ASSERT(cond)                                                                \
+  do {                                                                                       \
+    if (!IGL_DEBUG_VERIFY(cond)) {                                                           \
+      IGLGetSoftErrorHandler()(__FILE__, IGL_FUNCTION, __LINE__, IGL_ERROR_CATEGORY, #cond); \
+    }                                                                                        \
   } while (0)
 
-#define IGL_REPORT_ERROR_MSG(cond, format, ...)                                           \
+#define IGL_SOFT_ASSERT_MSG(cond, format, ...)                                            \
   do {                                                                                    \
     bool cachedCond = (cond);                                                             \
     IGL_DEBUG_ASSERT(cachedCond, format, ##__VA_ARGS__);                                  \
     if (!cachedCond) {                                                                    \
-      IGLReportErrorGetHandler()(                                                         \
+      IGLGetSoftErrorHandler()(                                                           \
           __FILE__, IGL_FUNCTION, __LINE__, IGL_ERROR_CATEGORY, (format), ##__VA_ARGS__); \
     }                                                                                     \
   } while (0)
 
 #else
 
-#define IGL_REPORT_ERROR(condition) static_cast<void>(0)
-#define IGL_REPORT_ERROR_MSG(condition, format, ...) static_cast<void>(0)
+#define IGL_SOFT_ASSERT(condition) static_cast<void>(0)
+#define IGL_SOFT_ASSERT_MSG(condition, format, ...) static_cast<void>(0)
 
-#endif // IGL_REPORT_ERROR_ENABLED
+#endif // IGL_SOFT_ERROR_ENABLED

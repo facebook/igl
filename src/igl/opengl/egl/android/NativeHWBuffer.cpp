@@ -99,7 +99,7 @@ Result NativeHWTextureBuffer::createTextureInternal(const TextureDesc& desc,
   }
   getContext().checkForErrors(__FUNCTION__, __LINE__);
 
-  IGL_REPORT_ERROR(getContext().isCurrentContext() || getContext().isCurrentSharegroup());
+  IGL_SOFT_ASSERT(getContext().isCurrentContext() || getContext().isCurrentSharegroup());
 
   GLuint tid = 0;
   getContext().genTextures(1, &tid);
