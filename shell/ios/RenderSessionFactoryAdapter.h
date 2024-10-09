@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 // NOTE: This is a pure Obj-C compatible header (no C++) to simplify bridging with Swift
 
 // Opaque wrapper around C++ type
