@@ -58,7 +58,7 @@ TEST(ColorSpaceTest, colorSpaceToVkColorSpace) {
   ASSERT_EQ(VkColorSpaceKHR::VK_COLOR_SPACE_DISPLAY_NATIVE_AMD,
             colorSpaceToVkColorSpace(ColorSpace::DISPLAY_NATIVE_AMD));
 
-  /* asserts for IGL_ASSERT_NOT_IMPLEMENTED but would be avlid otherwise
+  /* asserts for IGL_DEBUG_ASSERT_NOT_IMPLEMENTED but would be valid otherwise
   ASSERT_EQ(VkColorSpaceKHR::VK_COLOR_SPACE_BT709_NONLINEAR_EXT,
             colorSpaceToVkColorSpace(ColorSpace::BT2020_NONLINEAR));
   ASSERT_EQ(VkColorSpaceKHR::VK_COLOR_SPACE_BT709_NONLINEAR_EXT,
