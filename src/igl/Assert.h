@@ -156,8 +156,6 @@ template<typename T>
 ///--------------------------------------
 /// MARK: - Custom
 
-#if IGL_SOFT_ERROR_ENABLED
-
 #define IGL_ERROR_CATEGORY "IGL"
 
 using IGLSoftErrorFunc = void (*)(const char* file,
@@ -168,23 +166,45 @@ using IGLSoftErrorFunc = void (*)(const char* file,
                                   ...);
 IGL_API void IGLSetSoftErrorHandler(IGLSoftErrorFunc handler);
 IGL_API IGLSoftErrorFunc IGLGetSoftErrorHandler(void);
+IGL_API void IGLSoftError(const char* file,
+                          const char* func,
+                          int line,
+                          const char* category,
+                          const char* format,
+                          ...);
+namespace igl {
+template<typename T, typename... Args>
+[[nodiscard]] static inline const T& _IGLSoftError(const T& cond,
+                                                   [[maybe_unused]] const char* reason,
+                                                   [[maybe_unused]] const char* func,
+                                                   [[maybe_unused]] const char* file,
+                                                   [[maybe_unused]] int line,
+                                                   [[maybe_unused]] const char* format,
+                                                   [[maybe_unused]] const Args&... args) {
+#if IGL_VERIFY_ENABLED
+  const auto& verifiedCond = _IGLVerify(cond, reason, func, file, line, format, args...);
+#else
+  const auto& verifiedCond = cond;
+#endif // IGL_VERIFY_ENABLED
 
-#define IGL_SOFT_ASSERT(cond)                                                                \
-  do {                                                                                       \
-    if (!IGL_DEBUG_VERIFY(cond)) {                                                           \
-      IGLGetSoftErrorHandler()(__FILE__, IGL_FUNCTION, __LINE__, IGL_ERROR_CATEGORY, #cond); \
-    }                                                                                        \
-  } while (0)
+#if IGL_SOFT_ERROR_ENABLED
+  if (!verifiedCond) {
+    IGLGetSoftErrorHandler()(file, func, line, IGL_ERROR_CATEGORY, format, args...);
+  }
+#endif // IGL_SOFT_ERROR_ENABLED
 
-#define IGL_SOFT_ASSERT_MSG(cond, format, ...)                                            \
-  do {                                                                                    \
-    bool cachedCond = (cond);                                                             \
-    IGL_DEBUG_ASSERT(cachedCond, format, ##__VA_ARGS__);                                  \
-    if (!cachedCond) {                                                                    \
-      IGLGetSoftErrorHandler()(                                                           \
-          __FILE__, IGL_FUNCTION, __LINE__, IGL_ERROR_CATEGORY, (format), ##__VA_ARGS__); \
-    }                                                                                     \
-  } while (0)
+  return verifiedCond;
+}
+} // namespace igl
+
+#if IGL_SOFT_ERROR_ENABLED
+
+#define IGL_SOFT_ASSERT(cond) \
+  (void)::igl::_IGLSoftError(cond, "Soft Assert failed", __FILE__, IGL_FUNCTION, __LINE__, #cond)
+
+#define IGL_SOFT_ASSERT_MSG(cond, format, ...) \
+  (void)::igl::_IGLSoftError(                  \
+      cond, "Soft Assert failed", __FILE__, IGL_FUNCTION, __LINE__, (format), ##__VA_ARGS__)
 
 #else
 
