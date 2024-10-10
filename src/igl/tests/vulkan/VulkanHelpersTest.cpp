@@ -316,6 +316,20 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
+// ivkGetAttachmentReferenceColor **************************************************************
+class AttachmentReferenceColorTest : public ::testing::Test {};
+
+TEST_F(AttachmentReferenceColorTest, GetAttachmentReferenceColor) {
+  for (uint32_t i = 0; i < 2; ++i) {
+    const auto attachmentRef = ivkGetAttachmentReferenceColor(i);
+    EXPECT_EQ(attachmentRef.sType, VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2);
+    EXPECT_EQ(attachmentRef.pNext, nullptr);
+    EXPECT_EQ(attachmentRef.attachment, i);
+    EXPECT_EQ(attachmentRef.layout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    EXPECT_EQ(attachmentRef.aspectMask, VK_IMAGE_ASPECT_COLOR_BIT);
+  }
+}
+
 // ivkGetDescriptorSetLayoutBinding **************************************************************
 class DescriptorSetLayoutTest
   : public ::testing::TestWithParam<std::tuple<uint32_t, VkDescriptorType, uint32_t>> {};
