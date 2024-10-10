@@ -27,6 +27,16 @@ class NativeHWBufferTest : public ::testing::Test {
   void TearDown() override {}
 };
 
+class NativeHWTextureBufferTest : public igl::android::INativeHWTextureBuffer {
+ public:
+  ~NativeHWTextureBufferTest() override {}
+
+ protected:
+  Result createTextureInternal(const TextureDesc& desc, AHardwareBuffer* buffer) override {
+    return Result();
+  }
+};
+
 TEST_F(NativeHWBufferTest, Basic_getNativeHWFormat) {
   EXPECT_EQ(getNativeHWFormat(TextureFormat::RGBX_UNorm8), AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM);
   EXPECT_EQ(getNativeHWFormat(TextureFormat::RGBA_UNorm8), AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
@@ -105,6 +115,39 @@ TEST_F(NativeHWBufferTest, allocateNativeHWBuffer) {
   EXPECT_EQ(hwbDesc.height, 100);
   EXPECT_EQ(hwbDesc.layers, 1);
   EXPECT_EQ(hwbDesc.usage, AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE);
+}
+
+TEST_F(NativeHWBufferTest, LockBuffer) {
+  AHardwareBuffer* hwBuffer;
+  EXPECT_TRUE(allocateNativeHWBuffer(
+                  TextureDesc::newNativeHWBufferImage(
+                      TextureFormat::RGBA_UNorm8, TextureDesc::TextureUsageBits::Sampled, 100, 100),
+                  false,
+                  &hwBuffer)
+                  .isOk());
+  EXPECT_NE(hwBuffer, nullptr);
+
+  {
+    NativeHWTextureBufferTest testTxBuffer;
+
+    EXPECT_TRUE(testTxBuffer.attachHWBuffer(hwBuffer).isOk());
+
+    std::byte* bytes = nullptr;
+    INativeHWTextureBuffer::RangeDesc outRange;
+    Result outResult;
+    auto lockGuard = testTxBuffer.lockHWBuffer(&bytes, outRange, &outResult);
+
+    EXPECT_TRUE(outResult.isOk());
+    EXPECT_NE(bytes, nullptr);
+    EXPECT_EQ(outRange.width, 100);
+    EXPECT_EQ(outRange.height, 100);
+    EXPECT_EQ(outRange.layer, 1);
+    EXPECT_EQ(outRange.mipLevel, 1);
+
+    lockGuard.~LockGuard();
+  }
+
+  AHardwareBuffer_release(hwBuffer);
 }
 
 } // namespace igl::tests
