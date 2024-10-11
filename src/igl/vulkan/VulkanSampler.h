@@ -24,6 +24,7 @@ class VulkanContext;
  */
 class VulkanSampler final {
  public:
+  VulkanSampler() = default;
   /**
    * @brief Creates the VulkanSampler object and stores the opaque handler to it. The sampler is
    * created from the device based on the configuration passed as a parameter with a name that can
@@ -38,6 +39,8 @@ class VulkanSampler final {
 
   VulkanSampler(const VulkanSampler&) = delete;
   VulkanSampler& operator=(const VulkanSampler&) = delete;
+  VulkanSampler(VulkanSampler&& /*other*/) noexcept;
+  VulkanSampler& operator=(VulkanSampler&& /*other*/) noexcept;
 
   /**
    * @brief Returns Vulkan's opaque handle to the sampler object
@@ -54,7 +57,7 @@ class VulkanSampler final {
   void setDebugName(const std::string& debugName) noexcept;
 
  public:
-  const VulkanContext& ctx_;
+  const VulkanContext* ctx_ = nullptr;
   VkDevice device_ = VK_NULL_HANDLE;
   VkSampler vkSampler_ = VK_NULL_HANDLE;
   /**
