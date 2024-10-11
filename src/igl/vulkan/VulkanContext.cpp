@@ -423,7 +423,7 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
 
   if (config_.headless) {
     createHeadlessSurface();
-  } else if (window) {
+  } else if (window || display) {
     createSurface(window, display);
   }
 }
