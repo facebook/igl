@@ -56,6 +56,10 @@ std::shared_ptr<::igl::IDevice> createTestDevice(bool enableValidation) {
   config.swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
   config.enableExtraLogs = enableValidation;
 
+#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
+  config.headless = true;
+#endif
+
   auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
 
   std::vector<HWDeviceDesc> devices =
