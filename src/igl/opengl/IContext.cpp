@@ -711,9 +711,9 @@ IContext::IContext() : deviceFeatureSet_(*this) {
 }
 
 IContext::~IContext() {
-  IGL_SOFT_ASSERT_MSG(refCount_ == 0,
-                      "Dangling IContext reference left behind."
-                      // @fb-only
+  IGL_SOFT_ASSERT(refCount_ == 0,
+                  "Dangling IContext reference left behind."
+                  // @fb-only
   );
   // Clear the zombie guard explicitly so our "secret" stays secret.
   zombieGuard_ = 0;

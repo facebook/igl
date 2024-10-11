@@ -199,16 +199,58 @@ template<typename T, typename... Args>
 
 #if IGL_SOFT_ERROR_ENABLED
 
-#define IGL_SOFT_ASSERT(cond) \
-  (void)::igl::_IGLSoftError(cond, "Soft Assert failed", __FILE__, IGL_FUNCTION, __LINE__, #cond)
+#define _IGL_SOFT_ERROR(cond, format, ...) \
+  (void)::igl::_IGLSoftError(              \
+      cond, "Soft error", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
+#define _IGL_SOFT_ASSERT(cond, format, ...) \
+  (void)::igl::_IGLSoftError(               \
+      cond, "Soft assert failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
 
-#define IGL_SOFT_ASSERT_MSG(cond, format, ...) \
-  (void)::igl::_IGLSoftError(                  \
-      cond, "Soft Assert failed", __FILE__, IGL_FUNCTION, __LINE__, (format), ##__VA_ARGS__)
+#define _IGL_SOFT_VERIFY(cond, format, ...) \
+  ::igl::_IGLSoftError(                     \
+      (cond), "Soft verify failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
+#define _IGL_SOFT_VERIFY_NOT(cond, format, ...) \
+  (!::igl::_IGLSoftError(0 == !!(cond),         \
+                         "Soft verify failed",  \
+                         IGL_FUNCTION,          \
+                         __FILE__,              \
+                         __LINE__,              \
+                         (format),              \
+                         ##__VA_ARGS__))
 
 #else
 
-#define IGL_SOFT_ASSERT(condition) static_cast<void>(0)
-#define IGL_SOFT_ASSERT_MSG(condition, format, ...) static_cast<void>(0)
+#define _IGL_SOFT_ERROR(cond, format, ...) static_cast<void>(0)
+#define _IGL_SOFT_ASSERT(cond, format, ...) static_cast<void>(0)
+#define _IGL_SOFT_VERIFY(cond, format, ...) (cond)
+#define _IGL_SOFT_VERIFY_NOT(cond, format, ...) (cond)
 
 #endif // IGL_SOFT_ERROR_ENABLED
+
+#define IGL_SOFT_ERROR(format, ...) _IGL_SOFT_ERROR(false, (format), ##__VA_ARGS__)
+
+#define _IGL_SOFT_ASSERT_0(cond) _IGL_SOFT_ASSERT(cond, #cond)
+#define _IGL_SOFT_ASSERT_1(cond, format, ...) _IGL_SOFT_ASSERT(cond, (format), ##__VA_ARGS__)
+// Supported variations:
+// IGL_SOFT_ASSERT(cond)
+// IGL_SOFT_ASSERT(cond, format, ...)
+#define IGL_SOFT_ASSERT(...) \
+  _IGL_CALL(IGL_CONCAT(_IGL_SOFT_ASSERT_, _IGL_HAS_COMMA(__VA_ARGS__)), _IGL_ECHO((__VA_ARGS__)))
+
+#define _IGL_SOFT_VERIFY_0(cond) _IGL_SOFT_VERIFY(cond, #cond)
+#define _IGL_SOFT_VERIFY_1(cond, format, ...) _IGL_SOFT_VERIFY(cond, (format), ##__VA_ARGS__)
+// Supported variations:
+// IGL_SOFT_VERIFY(cond)
+// IGL_SOFT_VERIFY(cond, format, ...)
+#define IGL_SOFT_VERIFY(...) \
+  _IGL_CALL(IGL_CONCAT(_IGL_SOFT_VERIFY_, _IGL_HAS_COMMA(__VA_ARGS__)), _IGL_ECHO((__VA_ARGS__)))
+
+#define _IGL_SOFT_VERIFY_NOT_0(cond) _IGL_SOFT_VERIFY_NOT(cond, "!(" #cond ")")
+#define _IGL_SOFT_VERIFY_NOT_1(cond, format, ...) \
+  _IGL_SOFT_VERIFY_NOT(cond, (format), ##__VA_ARGS__)
+// Supported variations:
+// IGL_SOFT_VERIFY_NOT(cond)
+// IGL_SOFT_VERIFY_NOT(cond, format, ...)
+#define IGL_SOFT_VERIFY_NOT(...)                                            \
+  _IGL_CALL(IGL_CONCAT(_IGL_SOFT_VERIFY_NOT_, _IGL_HAS_COMMA(__VA_ARGS__)), \
+            _IGL_ECHO((__VA_ARGS__)))
