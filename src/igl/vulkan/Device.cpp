@@ -785,6 +785,14 @@ void Device::destroy(igl::BindGroupBufferHandle handle) {
   ctx_->destroy(handle);
 }
 
+void Device::destroy(igl::SamplerHandle handle) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+  IGL_DEBUG_ASSERT(ctx_);
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
+
+  (void)handle;
+}
+
 void Device::setCurrentThread() {
   IGL_PROFILER_FUNCTION();
   IGL_DEBUG_ASSERT(ctx_);

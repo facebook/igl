@@ -37,6 +37,7 @@ class Device : public IDevice {
                                                                        outResult) override;
   void destroy(igl::BindGroupTextureHandle handle) override;
   void destroy(igl::BindGroupBufferHandle handle) override;
+  void destroy(igl::SamplerHandle handle) override;
 
   // Command Queue
   std::shared_ptr<ICommandQueue> createCommandQueue(const CommandQueueDesc& desc,

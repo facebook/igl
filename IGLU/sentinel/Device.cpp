@@ -181,4 +181,8 @@ void Device::destroy(igl::BindGroupBufferHandle /*handle*/) {
   IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
 }
 
+void Device::destroy(igl::SamplerHandle /*handle*/) {
+  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
+}
+
 } // namespace iglu::sentinel

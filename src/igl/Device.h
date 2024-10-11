@@ -94,6 +94,7 @@ class IDevice : public ICapabilities {
 
   virtual void destroy(igl::BindGroupTextureHandle handle) = 0;
   virtual void destroy(igl::BindGroupBufferHandle handle) = 0;
+  virtual void destroy(igl::SamplerHandle handle) = 0;
 
   /**
    * @brief Creates a command queue.

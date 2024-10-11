@@ -31,6 +31,7 @@ class Device final : public igl::IDevice {
       igl::Result* IGL_NULLABLE outResult) final;
   void destroy(igl::BindGroupTextureHandle handle) final;
   void destroy(igl::BindGroupBufferHandle handle) final;
+  void destroy(igl::SamplerHandle handle) final;
 
   [[nodiscard]] bool hasFeature(igl::DeviceFeatures feature) const final;
   [[nodiscard]] bool hasRequirement(igl::DeviceRequirement requirement) const final;

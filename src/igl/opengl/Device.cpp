@@ -390,6 +390,11 @@ void Device::destroy(igl::BindGroupBufferHandle handle) {
   context_->bindGroupBuffersPool_.destroy(handle);
 }
 
+void Device::destroy(igl::SamplerHandle handle) {
+  (void)handle;
+  // IGL/OpenGL is not using sampler handles
+}
+
 void Device::setCurrentThread() {
   getContext().setCurrent();
 }

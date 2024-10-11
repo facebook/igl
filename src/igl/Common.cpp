@@ -85,8 +85,7 @@ void destroy(igl::IDevice* IGL_NULLABLE device, igl::TextureHandle handle) {
 
 void destroy(igl::IDevice* IGL_NULLABLE device, igl::SamplerHandle handle) {
   if (device) {
-    // do nothing until we transition all samplers to handles
-    (void)handle;
+    device->destroy(handle);
   }
 }
 

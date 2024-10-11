@@ -739,4 +739,9 @@ void Device::destroy(igl::BindGroupBufferHandle handle) {
   bindGroupBuffersPool_.destroy(handle);
 }
 
+void Device::destroy(igl::SamplerHandle handle) {
+  (void)handle;
+  // IGL/Metal is not using sampler handles
+}
+
 } // namespace igl::metal
