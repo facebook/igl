@@ -33,8 +33,7 @@ inline void* checked_memcpy(void* destination,
                             size_t destination_size,
                             const void* source,
                             size_t count) {
-  if (destination_size < count) {
-    IGL_SOFT_ASSERT(false, "Aborting due to potential buffer overflow");
+  if (IGL_SOFT_VERIFY_NOT(destination_size < count, "potential buffer overflow")) {
     exit(EXIT_FAILURE);
   }
   return memcpy(destination, source, count);
@@ -45,8 +44,8 @@ inline void* checked_memcpy_robust(void* destination,
                                    const void* source,
                                    size_t source_size,
                                    size_t count) {
-  if (destination_size < count || source_size < count) {
-    IGL_SOFT_ASSERT(false, "Aborting due to potential buffer overflow");
+  if (IGL_SOFT_VERIFY_NOT(destination_size < count || source_size < count,
+                          "potential buffer overflow")) {
     exit(EXIT_FAILURE);
   }
   return memcpy(destination, source, count);
@@ -65,8 +64,7 @@ inline void* checked_memcpy_offset(void* destination,
 
   const size_t available_size = offset > destination_size ? 0 : destination_size - offset;
 
-  if (count > available_size) {
-    IGL_SOFT_ASSERT(false, "Aborting due to potential buffer overflow");
+  if (IGL_SOFT_VERIFY_NOT(count > available_size, "potential buffer overflow")) {
     exit(EXIT_FAILURE);
   }
 
@@ -79,8 +77,7 @@ inline int checked_strncmp(const char* str1,
                            const char* str2,
                            size_t str2_size,
                            size_t count) {
-  if (str1_size < count || str2_size < count) {
-    IGL_SOFT_ASSERT(false, "Aborting due to potential buffer overflow");
+  if (IGL_SOFT_VERIFY_NOT(str1_size < count || str2_size < count, "potential buffer overflow")) {
     exit(EXIT_FAILURE);
   }
 
