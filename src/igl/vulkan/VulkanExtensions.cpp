@@ -106,7 +106,7 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
 #if IGL_PLATFORM_MACOS
     // https://vulkan.lunarg.com/doc/sdk/1.3.216.0/mac/getting_started.html
     if (!enable(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, ExtensionType::Instance)) {
-      IGL_LOG_ERROR("VK_KHR_portability_enumeration extension not supported.");
+      IGL_LOG_ERROR("VK_KHR_portability_enumeration extension not supported\n");
     }
 #endif
 
@@ -134,7 +134,7 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
       const bool enabledExtension = false;
 #endif
       if (!enabledExtension) {
-        IGL_LOG_ERROR("VK_EXT_swapchain_colorspace extension not supported");
+        IGL_LOG_ERROR("VK_EXT_swapchain_colorspace extension not supported\n");
       }
     }
   } else if (extensionType == ExtensionType::Device) {
