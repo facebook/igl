@@ -790,7 +790,7 @@ void Device::destroy(igl::SamplerHandle handle) {
   IGL_DEBUG_ASSERT(ctx_);
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
-  (void)handle;
+  ctx_->destroy(handle);
 }
 
 void Device::setCurrentThread() {

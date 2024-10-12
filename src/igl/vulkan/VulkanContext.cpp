@@ -116,8 +116,8 @@ vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
   }
 #endif
 
-  if (IGL_DEBUG_VERIFY_NOT(isError)) {
-    if (ctx->config_.terminateOnValidationError) {
+  if (ctx->config_.terminateOnValidationError) {
+    if (IGL_DEBUG_VERIFY_NOT(isError)) {
       std::terminate();
     }
   }
@@ -2113,6 +2113,14 @@ void VulkanContext::destroy(igl::BindGroupBufferHandle handle) {
       }));
 
   pimpl_->bindGroupBuffersPool_.destroy(handle);
+}
+
+void VulkanContext::destroy(igl::SamplerHandle handle) {
+  if (handle.empty()) {
+    return;
+  }
+
+  samplers_.destroy(handle);
 }
 
 VkDescriptorSet VulkanContext::getBindGroupDescriptorSet(igl::BindGroupTextureHandle handle) const {
