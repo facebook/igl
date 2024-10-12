@@ -13,13 +13,13 @@
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
-#include <igl/vulkan/VulkanImageView.h>
+#include <igl/vulkan/VulkanSampler.h>
 #include <igl/vulkan/VulkanTexture.h>
 
 namespace igl::vulkan {
 
 ResourcesBinder::ResourcesBinder(const CommandBuffer* commandBuffer,
-                                 const VulkanContext& ctx,
+                                 VulkanContext& ctx,
                                  VkPipelineBindPoint bindPoint) :
   ctx_(ctx),
   cmdBuffer_(commandBuffer ? commandBuffer->getVkCommandBuffer() : VK_NULL_HANDLE),

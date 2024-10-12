@@ -51,7 +51,7 @@ struct BindingsTextures {
 class ResourcesBinder final {
  public:
   ResourcesBinder(const CommandBuffer* commandBuffer,
-                  const VulkanContext& ctx,
+                  VulkanContext& ctx,
                   VkPipelineBindPoint bindPoint);
 
   /// @brief Binds a uniform buffer with an offset to index equal to `index`
@@ -91,7 +91,7 @@ class ResourcesBinder final {
   };
 
  private:
-  const VulkanContext& ctx_;
+  VulkanContext& ctx_;
   VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
   VkPipeline lastPipelineBound_ = VK_NULL_HANDLE;
   uint32_t isDirtyFlags_ = DirtyFlagBits_Textures | DirtyFlagBits_Buffers;
