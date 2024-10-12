@@ -100,7 +100,7 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
 
 namespace igl::vulkan {
 
-SamplerState::SamplerState(const igl::vulkan::Device& device) : device_(device) {}
+SamplerState::SamplerState(igl::vulkan::Device& device) : device_(device) {}
 
 Result SamplerState::create(const SamplerStateDesc& desc) {
   IGL_PROFILER_FUNCTION();

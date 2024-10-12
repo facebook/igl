@@ -142,7 +142,7 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
-  auto samplerState = std::make_shared<vulkan::SamplerState>(*this);
+  auto samplerState = std::make_shared<vulkan::SamplerState>(const_cast<Device&>(*this));
 
   Result::setResult(outResult, samplerState->create(desc));
 
