@@ -42,17 +42,6 @@ class VulkanSampler final {
   VulkanSampler(VulkanSampler&& /*other*/) noexcept;
   VulkanSampler& operator=(VulkanSampler&& /*other*/) noexcept;
 
-  /**
-   * @brief Returns Vulkan's opaque handle to the sampler object
-   */
-  [[nodiscard]] VkSampler getVkSampler() const {
-    return vkSampler_;
-  }
-
-  [[nodiscard]] uint32_t getSamplerId() const {
-    return samplerId_;
-  }
-
   // No-op in all builds except DEBUG
   void setDebugName(const std::string& debugName) noexcept;
 

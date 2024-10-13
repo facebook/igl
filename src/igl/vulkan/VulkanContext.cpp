@@ -475,7 +475,7 @@ VulkanContext::~VulkanContext() {
   for (const auto& s : samplers_.objects_) {
     if (s.obj_.use_count() > 1) {
       IGL_DEBUG_ABORT(
-          "Leaked sampler detected! %u %s", s.obj_->getSamplerId(), s.obj_->debugName_.c_str());
+          "Leaked sampler detected! %u %s", s.obj_->samplerId_, s.obj_->debugName_.c_str());
     }
   }
 #endif // IGL_DEBUG
@@ -1318,7 +1318,7 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
 
   // use the dummy texture/sampler to avoid sparse array
   VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
-  VkSampler dummySampler = samplers_.objects_[0].obj_->getVkSampler();
+  VkSampler dummySampler = samplers_.objects_[0].obj_->vkSampler_;
 
   for (const auto& entry : textures_.objects_) {
     const VulkanTexture* texture = entry.obj_.get();
@@ -1352,9 +1352,8 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
 
   for (const auto& entry : samplers_.objects_) {
     const VulkanSampler* sampler = entry.obj_.get();
-    infoSamplers.push_back({sampler ? sampler->getVkSampler() : dummySampler,
-                            VK_NULL_HANDLE,
-                            VK_IMAGE_LAYOUT_UNDEFINED});
+    infoSamplers.push_back(
+        {sampler ? sampler->vkSampler_ : dummySampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED});
   }
 
   std::vector<VkWriteDescriptorSet> write;
@@ -1444,7 +1443,7 @@ std::shared_ptr<VulkanSampler> VulkanContext::createSampler(const VkSamplerCreat
   const SamplerHandle handle = samplers_.create(
       std::make_shared<VulkanSampler>(*this, device_->getVkDevice(), ci, yuvVkFormat, debugName));
 
-  auto sampler = *samplers_.get(handle);
+  std::shared_ptr<VulkanSampler> sampler = *samplers_.get(handle);
 
   if (!IGL_DEBUG_VERIFY(sampler)) {
     Result::setResult(outResult, Result::Code::InvalidOperation);
@@ -1599,7 +1598,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
 
   // use the dummy texture/sampler to avoid sparse array
   VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
-  VkSampler dummySampler = samplers_.objects_[0].obj_->getVkSampler();
+  VkSampler dummySampler = samplers_.objects_[0].obj_->vkSampler_;
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
@@ -1611,7 +1610,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
     if (texture && isGraphics) {
       IGL_DEBUG_ASSERT(data.samplers[loc], "A sampler should be bound to every bound texture slot");
     }
-    VkSampler sampler = data.samplers[loc] ? data.samplers[loc]->getVkSampler() : dummySampler;
+    VkSampler sampler = data.samplers[loc] ? data.samplers[loc]->vkSampler_ : dummySampler;
     // multisampled images cannot be directly accessed from shaders
     const bool isTextureAvailable =
         (texture != nullptr) &&
@@ -1912,7 +1911,7 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
     writes[numWrites] = ivkGetWriteDescriptorSet_ImageInfo(
         metadata.dset, loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &images[numWrites]);
     images[numWrites++] = {
-        sampler.getVkSampler(),
+        sampler.vkSampler_,
         isSampledImage ? texture.imageView_.getVkImageView() : dummyImageView,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
     };
