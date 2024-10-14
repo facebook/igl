@@ -135,7 +135,7 @@ class TextureHalfFloatTest : public ::testing::Test {
 
   void createPassthroughFrameBuffer(igl::TextureFormat format) {
     // Create an offscreen texture to render to
-    TextureDesc const texDesc = TextureDesc::new2D(
+    const TextureDesc texDesc = TextureDesc::new2D(
         format, kOffscreenTexWidth, kOffscreenTexHeight, TextureDesc::TextureUsageBits::Attachment);
 
     Result ret;
@@ -269,7 +269,7 @@ class TextureHalfFloatTest : public ::testing::Test {
     ASSERT_TRUE(uv_ != nullptr);
 
     // Initialize sampler state
-    SamplerStateDesc const samplerDesc;
+    const SamplerStateDesc samplerDesc;
     samp_ = iglDev_->createSamplerState(samplerDesc, &ret);
     ASSERT_EQ(ret.code, Result::Code::Ok);
     ASSERT_TRUE(samp_ != nullptr);
@@ -393,12 +393,12 @@ void runUploadTest(IDevice& device,
                    igl::TextureFormat format,
                    const ColorType* data) {
   Result ret;
-  std::shared_ptr<IRenderPipelineState> const pipelineState;
+  const std::shared_ptr<IRenderPipelineState> pipelineState;
 
   //-------------------------------------
   // Create input texture and upload data
   //-------------------------------------
-  TextureDesc const texDesc = TextureDesc::new2D(
+  const TextureDesc texDesc = TextureDesc::new2D(
       format, kOffscreenTexWidth, kOffscreenTexHeight, TextureDesc::TextureUsageBits::Sampled);
   auto tex = device.createTexture(texDesc, &ret);
   ASSERT_EQ(ret.code, Result::Code::Ok);

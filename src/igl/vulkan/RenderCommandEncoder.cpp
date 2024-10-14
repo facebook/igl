@@ -240,7 +240,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   bindViewport(viewport);
   bindScissorRect(scissor);
 
-  VkResult const vkResult = ctx_.checkAndUpdateDescriptorSets();
+  const VkResult vkResult = ctx_.checkAndUpdateDescriptorSets();
   if (vkResult != VK_SUCCESS) {
     IGL_LOG_ERROR("checkAndUpdateDescriptorSets returned a non-successful result: %d", vkResult);
     Result::setResult(&outResult, Result::Code::RuntimeError, "Failed to update descriptor sets");
