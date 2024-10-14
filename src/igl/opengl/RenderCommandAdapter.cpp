@@ -227,12 +227,9 @@ void RenderCommandAdapter::clearDependentResources(
     clearFragmentTexture();
   }
 
-  if (!newStateOpenGL || !curStateOpenGL->matchesVertexInputState(*newStateOpenGL)) {
-    // We do need to clear vertex attributes, when pipelinestate is modified.
-    // If we don't, subsequent draw calls might try to read from these locations
-    // and crashes might happen.
-    unbindVertexAttributes();
+  unbindVertexAttributes();
 
+  if (!newStateOpenGL || !curStateOpenGL->matchesVertexInputState(*newStateOpenGL)) {
     // Don't reuse previously set vertex buffers.
     clearVertexBuffers();
   }
