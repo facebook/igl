@@ -9,10 +9,6 @@
 
 #include <igl/vulkan/VulkanHelpers.h>
 
-#if defined(IGL_DEBUG)
-#include <string> // For storing the debug name
-#endif
-
 namespace igl::vulkan {
 
 class VulkanContext;
@@ -52,9 +48,6 @@ class VulkanSampler final {
    * of samplers maintained by the VulkanContext.
    */
   uint32_t samplerId_ = 0;
-#if defined(IGL_DEBUG)
-  std::string debugName_;
-#endif
 };
 
 } // namespace igl::vulkan

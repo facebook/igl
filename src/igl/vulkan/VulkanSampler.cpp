@@ -38,10 +38,6 @@ VulkanSampler::VulkanSampler(const VulkanContext& ctx,
   VK_ASSERT(ctx_->vf_.vkCreateSampler(device_, &cInfo, nullptr, &vkSampler_));
   VK_ASSERT(ivkSetDebugObjectName(
       &ctx_->vf_, device_, VK_OBJECT_TYPE_SAMPLER, (uint64_t)vkSampler_, debugName));
-
-#if defined(IGL_DEBUG)
-  debugName_ = debugName;
-#endif
 }
 
 VulkanSampler::~VulkanSampler() {
@@ -58,9 +54,6 @@ VulkanSampler::~VulkanSampler() {
 VulkanSampler::VulkanSampler(VulkanSampler&& other) noexcept :
   ctx_(other.ctx_), device_(other.device_), samplerId_(other.samplerId_) {
   std::swap(vkSampler_, other.vkSampler_);
-#if defined(IGL_DEBUG)
-  debugName_ = std::move(other.debugName_);
-#endif
 }
 
 VulkanSampler& VulkanSampler::operator=(VulkanSampler&& other) noexcept {
@@ -69,9 +62,6 @@ VulkanSampler& VulkanSampler::operator=(VulkanSampler&& other) noexcept {
   std::swap(device_, tmp.device_);
   std::swap(vkSampler_, tmp.vkSampler_);
   std::swap(samplerId_, tmp.samplerId_);
-#if defined(IGL_DEBUG)
-  std::swap(debugName_, tmp.debugName_);
-#endif
   return *this;
 }
 
