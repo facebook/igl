@@ -38,10 +38,10 @@ struct CharEvent {
 
 class IKeyListener {
  public:
-  virtual bool process(const KeyEvent& event) {
+  virtual bool process(const KeyEvent& /*event*/) {
     return false;
   }
-  virtual bool process(const CharEvent& event) {
+  virtual bool process(const CharEvent& /*event*/) {
     return false;
   }
 
