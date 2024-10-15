@@ -8,7 +8,6 @@
 // @fb-only
 
 #include <android/asset_manager.h>
-#include <android/asset_manager_jni.h>
 #include <filesystem>
 #include <igl/IGL.h>
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
