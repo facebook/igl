@@ -110,22 +110,25 @@ Result SamplerState::create(const SamplerStateDesc& desc) {
   const VulkanContext& ctx = device_.getVulkanContext();
 
   Result result;
-  sampler_ = ctx.createSampler(
-      samplerStateDescToVkSamplerCreateInfo(desc, ctx.getVkPhysicalDeviceProperties().limits),
-      textureFormatToVkFormat(desc.yuvFormat),
-      &result,
-      desc_.debugName.c_str());
+  sampler_ = igl::Holder<igl::SamplerHandle>(
+      &device_,
+      ctx.createSampler(
+          samplerStateDescToVkSamplerCreateInfo(desc, ctx.getVkPhysicalDeviceProperties().limits),
+          textureFormatToVkFormat(desc.yuvFormat),
+          &result,
+          desc_.debugName.c_str()));
 
   if (!IGL_DEBUG_VERIFY(result.isOk())) {
     return result;
   }
 
-  return sampler_ ? Result()
-                  : Result(Result::Code::InvalidOperation, "Cannot create VulkanSampler");
+  return sampler_.valid() ? Result()
+                          : Result(Result::Code::InvalidOperation, "Cannot create VulkanSampler");
 }
 
 uint32_t SamplerState::getSamplerId() const {
-  return sampler_ ? sampler_->samplerId_ : 0;
+  const VulkanSampler* sampler = device_.getVulkanContext().samplers_.get(sampler_);
+  return sampler ? sampler->samplerId_ : 0;
 }
 
 bool SamplerState::isYUV() const noexcept {

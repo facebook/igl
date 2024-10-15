@@ -472,11 +472,9 @@ VulkanContext::~VulkanContext() {
                       t.obj_->getVulkanImage().name_.c_str());
     }
   }
-  for (const auto& s : samplers_.objects_) {
-    if (s.obj_.use_count() > 1) {
-      IGL_DEBUG_ABORT(
-          "Leaked sampler detected! %u %s", s.obj_->samplerId_, s.obj_->debugName_.c_str());
-    }
+  if (samplers_.numObjects() > 1) {
+    // the dummy value is owned by the context
+    IGL_DEBUG_ABORT("Leaked %u samplers\n", samplers_.numObjects() - 1);
   }
 #endif // IGL_DEBUG
   textures_.clear();
@@ -927,31 +925,30 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   }
 
   // default sampler
-  (void)samplers_.create(
-      std::make_shared<VulkanSampler>(*this,
-                                      device,
-                                      VkSamplerCreateInfo{
-                                          .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-                                          .pNext = nullptr,
-                                          .flags = 0,
-                                          .magFilter = VK_FILTER_LINEAR,
-                                          .minFilter = VK_FILTER_LINEAR,
-                                          .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
-                                          .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                          .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                          .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                          .mipLodBias = 0.0f,
-                                          .anisotropyEnable = VK_FALSE,
-                                          .maxAnisotropy = 0.0f,
-                                          .compareEnable = VK_FALSE,
-                                          .compareOp = VK_COMPARE_OP_ALWAYS,
-                                          .minLod = 0.0f,
-                                          .maxLod = 0.0f,
-                                          .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
-                                          .unnormalizedCoordinates = VK_FALSE,
-                                      },
-                                      VK_FORMAT_UNDEFINED,
-                                      "Sampler: default"));
+  (void)samplers_.create(VulkanSampler(*this,
+                                       device,
+                                       VkSamplerCreateInfo{
+                                           .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+                                           .pNext = nullptr,
+                                           .flags = 0,
+                                           .magFilter = VK_FILTER_LINEAR,
+                                           .minFilter = VK_FILTER_LINEAR,
+                                           .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+                                           .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                           .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                           .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                           .mipLodBias = 0.0f,
+                                           .anisotropyEnable = VK_FALSE,
+                                           .maxAnisotropy = 0.0f,
+                                           .compareEnable = VK_FALSE,
+                                           .compareOp = VK_COMPARE_OP_ALWAYS,
+                                           .minLod = 0.0f,
+                                           .maxLod = 0.0f,
+                                           .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+                                           .unnormalizedCoordinates = VK_FALSE,
+                                       },
+                                       VK_FORMAT_UNDEFINED,
+                                       "Sampler: default"));
   IGL_DEBUG_ASSERT(samplers_.numObjects() == 1);
 
   growBindlessDescriptorPool(pimpl_->currentMaxBindlessTextures_,
@@ -1273,8 +1270,8 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
   // newly created resources can be used immediately - make sure they are put into descriptor sets
   IGL_PROFILER_FUNCTION();
 
-  // here we remove deleted textures and samplers - everything which has only 1 reference is owned
-  // by this context and can be released safely
+  // here we remove deleted textures - everything which has only 1 reference is owned by this
+  // context and can be released safely
 
   // textures
   {
@@ -1284,17 +1281,6 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
     for (uint32_t i = 1; i < (uint32_t)textures_.objects_.size(); i++) {
       if (textures_.objects_[i].obj_ && textures_.objects_[i].obj_.use_count() == 1) {
         textures_.destroy(i);
-      }
-    }
-  }
-  // samplers
-  {
-    while (samplers_.objects_.size() > 1 && samplers_.objects_.back().obj_.use_count() == 1) {
-      samplers_.objects_.pop_back();
-    }
-    for (uint32_t i = 1; i < (uint32_t)samplers_.objects_.size(); i++) {
-      if (samplers_.objects_[i].obj_ && samplers_.objects_[i].obj_.use_count() == 1) {
-        samplers_.destroy(i);
       }
     }
   }
@@ -1330,7 +1316,7 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
 
   // use the dummy texture/sampler to avoid sparse array
   VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
-  VkSampler dummySampler = samplers_.objects_[0].obj_->vkSampler_;
+  VkSampler dummySampler = samplers_.objects_[0].obj_.vkSampler_;
 
   for (const auto& entry : textures_.objects_) {
     const VulkanTexture* texture = entry.obj_.get();
@@ -1363,7 +1349,7 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
   infoSamplers.reserve(samplers_.objects_.size());
 
   for (const auto& entry : samplers_.objects_) {
-    const VulkanSampler* sampler = entry.obj_.get();
+    const VulkanSampler* sampler = &entry.obj_;
     infoSamplers.push_back(
         {sampler ? sampler->vkSampler_ : dummySampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED});
   }
@@ -1445,28 +1431,20 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTextureFromVkImage(
   return createTexture(std::move(iglImage), std::move(imageView), debugName);
 }
 
-std::shared_ptr<VulkanSampler> VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
-                                                            VkFormat yuvVkFormat,
-                                                            igl::Result* IGL_NULLABLE outResult,
-                                                            const char* IGL_NULLABLE
-                                                                debugName) const {
+SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
+                                           VkFormat yuvVkFormat,
+                                           igl::Result* IGL_NULLABLE outResult,
+                                           const char* IGL_NULLABLE debugName) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  const SamplerHandle handle = samplers_.create(
-      std::make_shared<VulkanSampler>(*this, device_->getVkDevice(), ci, yuvVkFormat, debugName));
+  const SamplerHandle handle =
+      samplers_.create(VulkanSampler(*this, device_->getVkDevice(), ci, yuvVkFormat, debugName));
 
-  std::shared_ptr<VulkanSampler> sampler = *samplers_.get(handle);
-
-  if (!IGL_DEBUG_VERIFY(sampler)) {
-    Result::setResult(outResult, Result::Code::InvalidOperation);
-    return nullptr;
-  }
-
-  sampler->samplerId_ = handle.index();
+  samplers_.get(handle)->samplerId_ = handle.index();
 
   awaitingCreation_ = true;
 
-  return sampler;
+  return handle;
 }
 
 void VulkanContext::querySurfaceCapabilities() {
@@ -1610,7 +1588,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
 
   // use the dummy texture/sampler to avoid sparse array
   VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
-  VkSampler dummySampler = samplers_.objects_[0].obj_->vkSampler_;
+  VkSampler dummySampler = samplers_.objects_[0].obj_.vkSampler_;
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
@@ -1910,8 +1888,9 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
             ? static_cast<igl::vulkan::Texture*>(desc.textures[loc].get())->getVulkanTexture()
             : *textures_.objects_[0].obj_; // use a dummy texture when necessary
     const igl::vulkan::VulkanSampler& sampler =
-        desc.samplers[loc] ? *static_cast<igl::vulkan::SamplerState&>(*desc.samplers[loc]).sampler_
-                           : *samplers_.objects_[0].obj_; // use a dummy sampler when necessary
+        desc.samplers[loc]
+            ? *samplers_.get(static_cast<igl::vulkan::SamplerState&>(*desc.samplers[loc]).sampler_)
+            : samplers_.objects_[0].obj_; // use a dummy sampler when necessary
 
     // multisampled images cannot be directly accessed from shaders
     const bool isTextureAvailable =

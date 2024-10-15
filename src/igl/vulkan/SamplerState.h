@@ -68,7 +68,7 @@ class SamplerState final : public ISamplerState {
   /** @brief The texture sampling configuration for accessing a texture */
   SamplerStateDesc desc_;
   /** @brief The VulkanSampler instance associated with this sampler */
-  std::shared_ptr<VulkanSampler> sampler_;
+  Holder<SamplerHandle> sampler_;
 };
 
 } // namespace igl::vulkan

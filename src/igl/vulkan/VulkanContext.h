@@ -136,10 +136,10 @@ class VulkanContext final {
       VulkanImageViewCreateInfo imageViewCreateInfo,
       const char* IGL_NULLABLE debugName) const;
 
-  std::shared_ptr<VulkanSampler> createSampler(const VkSamplerCreateInfo& ci,
-                                               VkFormat yuvVkFormat,
-                                               igl::Result* IGL_NULLABLE outResult,
-                                               const char* IGL_NULLABLE debugName = nullptr) const;
+  SamplerHandle createSampler(const VkSamplerCreateInfo& ci,
+                              VkFormat yuvVkFormat,
+                              igl::Result* IGL_NULLABLE outResult,
+                              const char* IGL_NULLABLE debugName = nullptr) const;
 
   void createSurface(void* IGL_NULLABLE window, void* IGL_NULLABLE display);
   void createHeadlessSurface();
@@ -311,7 +311,7 @@ class VulkanContext final {
   // deallocated. The context deallocates textures in a deferred way when it is safe to do so.
   // 2. Descriptor sets can be updated when they are not in use.
   mutable Pool<TextureTag, std::shared_ptr<VulkanTexture>> textures_;
-  mutable Pool<SamplerTag, std::shared_ptr<VulkanSampler>> samplers_;
+  mutable Pool<SamplerTag, VulkanSampler> samplers_;
   // a texture/sampler was created since the last descriptor set update
   mutable bool awaitingCreation_ = false;
 

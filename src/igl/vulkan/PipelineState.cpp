@@ -93,7 +93,7 @@ PipelineState::PipelineState(
           loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, stageFlags_));
       if (loc < IGL_TEXTURE_SAMPLERS_MAX && immutableSamplers && immutableSamplers[loc]) {
         auto* sampler = static_cast<igl::vulkan::SamplerState*>(immutableSamplers[loc].get());
-        bindings.back().pImmutableSamplers = &sampler->sampler_->vkSampler_;
+        bindings.back().pImmutableSamplers = &ctx.samplers_.get(sampler->sampler_)->vkSampler_;
       }
     }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());

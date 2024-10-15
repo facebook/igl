@@ -76,7 +76,8 @@ void ResourcesBinder::bindSamplerState(uint32_t index, igl::vulkan::SamplerState
     return;
   }
 
-  igl::vulkan::VulkanSampler* newSampler = samplerState ? samplerState->sampler_.get() : nullptr;
+  igl::vulkan::VulkanSampler* newSampler = samplerState ? ctx_.samplers_.get(samplerState->sampler_)
+                                                        : nullptr;
 
   if (bindingsTextures_.samplers[index] != newSampler) {
     bindingsTextures_.samplers[index] = newSampler;
