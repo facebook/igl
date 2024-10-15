@@ -42,9 +42,6 @@ class VulkanSampler final {
   VulkanSampler(VulkanSampler&& /*other*/) noexcept;
   VulkanSampler& operator=(VulkanSampler&& /*other*/) noexcept;
 
-  // No-op in all builds except DEBUG
-  void setDebugName(const std::string& debugName) noexcept;
-
  public:
   const VulkanContext* ctx_ = nullptr;
   VkDevice device_ = VK_NULL_HANDLE;
