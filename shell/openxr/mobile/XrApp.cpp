@@ -43,7 +43,6 @@
 #include <shell/openxr/XrHands.h>
 #include <shell/openxr/XrLog.h>
 #include <shell/openxr/XrPassthrough.h>
-#include <shell/openxr/XrSwapchainProvider.h>
 #include <shell/openxr/impl/XrAppImpl.h>
 #include <shell/openxr/impl/XrSwapchainProviderImpl.h>
 
@@ -103,7 +102,7 @@ XrSession XrApp::session() const {
 
 bool XrApp::checkExtensions() {
   XrResult result;
-  PFN_xrEnumerateInstanceExtensionProperties xrEnumerateInstanceExtensionProperties;
+  PFN_xrEnumerateInstanceExtensionProperties xrEnumerateInstanceExtensionProperties = nullptr;
   XR_CHECK(result =
                xrGetInstanceProcAddr(XR_NULL_HANDLE,
                                      "xrEnumerateInstanceExtensionProperties",
@@ -384,7 +383,7 @@ bool XrApp::initialize(const struct android_app* app, const InitParams& params) 
   }
 
 #if IGL_PLATFORM_ANDROID
-  PFN_xrInitializeLoaderKHR xrInitializeLoaderKHR;
+  PFN_xrInitializeLoaderKHR xrInitializeLoaderKHR = nullptr;
   XR_CHECK(xrGetInstanceProcAddr(
       XR_NULL_HANDLE, "xrInitializeLoaderKHR", (PFN_xrVoidFunction*)&xrInitializeLoaderKHR));
   if (xrInitializeLoaderKHR) {

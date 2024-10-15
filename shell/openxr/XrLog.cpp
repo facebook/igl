@@ -7,8 +7,6 @@
 
 #include "XrLog.h"
 
-#include <igl/Common.h>
-
 extern XrInstance getXrInstance();
 namespace igl::shell::openxr {
 #if IGL_DEBUG

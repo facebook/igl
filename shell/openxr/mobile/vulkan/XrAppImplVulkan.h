@@ -13,7 +13,7 @@
 #include <vector>
 
 namespace igl::shell::openxr::mobile {
-class XrSwapchainProvider;
+
 class XrAppImplVulkan : public impl::XrAppImpl {
  public:
   [[nodiscard]] RenderSessionConfig suggestedSessionConfig() const override;

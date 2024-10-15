@@ -105,7 +105,7 @@ XrSwapchain XrSwapchainProvider::createXrSwapchain(XrSwapchainUsageFlags extraUs
                                                      .arraySize = numViews_,
                                                      .mipCount = 1};
 
-  XrSwapchain swapchain;
+  XrSwapchain swapchain = nullptr;
   XR_CHECK(xrCreateSwapchain(session_, &swapChainCreateInfo, &swapchain));
   IGL_LOG_INFO("XrSwapchain created\n");
   IGL_LOG_INFO("XrSwapchain image width: %d\n", swapchainImageInfo_.imageWidth);
