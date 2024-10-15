@@ -27,7 +27,6 @@ class VulkanSampler final {
    * be used for debugging
    */
   VulkanSampler(const VulkanContext& ctx,
-                VkDevice device,
                 const VkSamplerCreateInfo& ci,
                 VkFormat yuvVkFormat = VK_FORMAT_UNDEFINED,
                 const char* debugName = nullptr);
@@ -40,7 +39,6 @@ class VulkanSampler final {
 
  public:
   const VulkanContext* ctx_ = nullptr;
-  VkDevice device_ = VK_NULL_HANDLE;
   VkSampler vkSampler_ = VK_NULL_HANDLE;
   /**
    * @brief The index into VulkanContext::samplers_. This index is intended to be used with bindless

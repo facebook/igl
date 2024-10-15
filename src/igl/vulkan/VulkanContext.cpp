@@ -926,7 +926,6 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   // default sampler
   (void)samplers_.create(VulkanSampler(*this,
-                                       device,
                                        VkSamplerCreateInfo{
                                            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
                                            .pNext = nullptr,
@@ -1437,8 +1436,7 @@ SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
                                            const char* IGL_NULLABLE debugName) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  const SamplerHandle handle =
-      samplers_.create(VulkanSampler(*this, device_->getVkDevice(), ci, yuvVkFormat, debugName));
+  const SamplerHandle handle = samplers_.create(VulkanSampler(*this, ci, yuvVkFormat, debugName));
 
   samplers_.get(handle)->samplerId_ = handle.index();
 

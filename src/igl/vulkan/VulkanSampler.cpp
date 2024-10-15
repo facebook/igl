@@ -13,12 +13,13 @@
 namespace igl::vulkan {
 
 VulkanSampler::VulkanSampler(const VulkanContext& ctx,
-                             VkDevice device,
                              const VkSamplerCreateInfo& ci,
                              VkFormat yuvVkFormat,
                              const char* debugName) :
-  ctx_(&ctx), device_(device) {
+  ctx_(&ctx) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  VkDevice device = ctx_->getVkDevice();
 
   VkSamplerCreateInfo cInfo = ci;
   VkSamplerYcbcrConversionInfo conversionInfo{};
@@ -35,31 +36,30 @@ VulkanSampler::VulkanSampler(const VulkanContext& ctx,
     cInfo.unnormalizedCoordinates = VK_FALSE;
   }
 
-  VK_ASSERT(ctx_->vf_.vkCreateSampler(device_, &cInfo, nullptr, &vkSampler_));
+  VK_ASSERT(ctx_->vf_.vkCreateSampler(device, &cInfo, nullptr, &vkSampler_));
   VK_ASSERT(ivkSetDebugObjectName(
-      &ctx_->vf_, device_, VK_OBJECT_TYPE_SAMPLER, (uint64_t)vkSampler_, debugName));
+      &ctx_->vf_, device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)vkSampler_, debugName));
 }
 
 VulkanSampler::~VulkanSampler() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
   if (ctx_ && vkSampler_) {
-    ctx_->deferredTask(
-        std::packaged_task<void()>([vf = &ctx_->vf_, device = device_, sampler = vkSampler_]() {
+    ctx_->deferredTask(std::packaged_task<void()>(
+        [vf = &ctx_->vf_, device = ctx_->getVkDevice(), sampler = vkSampler_]() {
           vf->vkDestroySampler(device, sampler, nullptr);
         }));
   }
 }
 
 VulkanSampler::VulkanSampler(VulkanSampler&& other) noexcept :
-  ctx_(other.ctx_), device_(other.device_), samplerId_(other.samplerId_) {
+  ctx_(other.ctx_), samplerId_(other.samplerId_) {
   std::swap(vkSampler_, other.vkSampler_);
 }
 
 VulkanSampler& VulkanSampler::operator=(VulkanSampler&& other) noexcept {
   VulkanSampler tmp(std::move(other));
   std::swap(ctx_, tmp.ctx_);
-  std::swap(device_, tmp.device_);
   std::swap(vkSampler_, tmp.vkSampler_);
   std::swap(samplerId_, tmp.samplerId_);
   return *this;
