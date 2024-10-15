@@ -10,7 +10,6 @@
 #include <igl/IGLSafeC.h>
 #include <ktx.h>
 #include <numeric>
-#include <vector>
 
 namespace iglu::textureloader::ktx {
 namespace {
@@ -79,7 +78,7 @@ void TextureLoader::uploadInternal(igl::ITexture& texture,
                                    igl::Result* IGL_NULLABLE outResult) const noexcept {
   const auto& desc = descriptor();
 
-  size_t offset;
+  size_t offset = 0;
   for (uint32_t mipLevel = 0; mipLevel < desc.numMipLevels && mipLevel < texture_->numLevels;
        ++mipLevel) {
     auto error = ktxTexture_GetImageOffset(ktxTexture(texture_.get()), mipLevel, 0, 0, &offset);
@@ -100,7 +99,7 @@ void TextureLoader::loadToExternalMemoryInternal(uint8_t* IGL_NONNULL data,
                                                      outResult) const noexcept {
   const auto& desc = descriptor();
 
-  size_t offset;
+  size_t offset = 0;
   for (uint32_t mipLevel = 0; mipLevel < desc.numMipLevels && mipLevel < texture_->numLevels;
        ++mipLevel) {
     auto error = ktxTexture_GetImageOffset(ktxTexture(texture_.get()), 0, 0, mipLevel, &offset);
