@@ -18,7 +18,6 @@ class IRenderCommandEncoder;
 namespace iglu::uniform {
 
 struct Collection;
-class Encoder;
 
 // CollectionEncoder
 //
