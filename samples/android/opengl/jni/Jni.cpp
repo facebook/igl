@@ -9,7 +9,6 @@
 
 #include <jni.h>
 
-#include <android/log.h>
 #include <igl/samples/android/opengl/TinyRenderer.h>
 #include <memory>
 
