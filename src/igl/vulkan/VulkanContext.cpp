@@ -946,7 +946,6 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                            .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
                                            .unnormalizedCoordinates = VK_FALSE,
                                        },
-                                       VK_FORMAT_UNDEFINED,
                                        "Sampler: default"));
   IGL_DEBUG_ASSERT(samplers_.numObjects() == 1);
 
@@ -1436,7 +1435,22 @@ SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
                                            const char* IGL_NULLABLE debugName) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  const SamplerHandle handle = samplers_.create(VulkanSampler(*this, ci, yuvVkFormat, debugName));
+  VkSamplerCreateInfo cInfo = ci;
+  VkSamplerYcbcrConversionInfo conversionInfo{};
+
+  if (yuvVkFormat != VK_FORMAT_UNDEFINED) {
+    conversionInfo = getOrCreateYcbcrConversionInfo(yuvVkFormat);
+    cInfo.pNext = &conversionInfo;
+    // must be CLAMP_TO_EDGE
+    // https://vulkan.lunarg.com/doc/view/1.3.268.0/windows/1.3-extensions/vkspec.html#VUID-VkSamplerCreateInfo-addressModeU-01646
+    cInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    cInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    cInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    cInfo.anisotropyEnable = VK_FALSE;
+    cInfo.unnormalizedCoordinates = VK_FALSE;
+  }
+
+  const SamplerHandle handle = samplers_.create(VulkanSampler(*this, cInfo, debugName));
 
   samplers_.get(handle)->samplerId_ = handle.index();
 

@@ -14,29 +14,13 @@ namespace igl::vulkan {
 
 VulkanSampler::VulkanSampler(const VulkanContext& ctx,
                              const VkSamplerCreateInfo& ci,
-                             VkFormat yuvVkFormat,
                              const char* debugName) :
   ctx_(&ctx) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   VkDevice device = ctx_->getVkDevice();
 
-  VkSamplerCreateInfo cInfo = ci;
-  VkSamplerYcbcrConversionInfo conversionInfo{};
-
-  if (yuvVkFormat != VK_FORMAT_UNDEFINED) {
-    conversionInfo = ctx_->getOrCreateYcbcrConversionInfo(yuvVkFormat);
-    cInfo.pNext = &conversionInfo;
-    // must be CLAMP_TO_EDGE
-    // https://vulkan.lunarg.com/doc/view/1.3.268.0/windows/1.3-extensions/vkspec.html#VUID-VkSamplerCreateInfo-addressModeU-01646
-    cInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    cInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    cInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    cInfo.anisotropyEnable = VK_FALSE;
-    cInfo.unnormalizedCoordinates = VK_FALSE;
-  }
-
-  VK_ASSERT(ctx_->vf_.vkCreateSampler(device, &cInfo, nullptr, &vkSampler_));
+  VK_ASSERT(ctx_->vf_.vkCreateSampler(device, &ci, nullptr, &vkSampler_));
   VK_ASSERT(ivkSetDebugObjectName(
       &ctx_->vf_, device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)vkSampler_, debugName));
 }

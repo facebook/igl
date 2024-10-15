@@ -28,7 +28,6 @@ class VulkanSampler final {
    */
   VulkanSampler(const VulkanContext& ctx,
                 const VkSamplerCreateInfo& ci,
-                VkFormat yuvVkFormat = VK_FORMAT_UNDEFINED,
                 const char* debugName = nullptr);
   ~VulkanSampler();
 
