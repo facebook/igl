@@ -26,9 +26,7 @@ class VulkanSampler final {
    * created from the device based on the configuration passed as a parameter with a name that can
    * be used for debugging
    */
-  VulkanSampler(const VulkanContext& ctx,
-                const VkSamplerCreateInfo& ci,
-                const char* debugName = nullptr);
+  explicit VulkanSampler(const VulkanContext& ctx);
   ~VulkanSampler();
 
   VulkanSampler(const VulkanSampler&) = delete;

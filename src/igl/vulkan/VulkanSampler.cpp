@@ -12,17 +12,8 @@
 
 namespace igl::vulkan {
 
-VulkanSampler::VulkanSampler(const VulkanContext& ctx,
-                             const VkSamplerCreateInfo& ci,
-                             const char* debugName) :
-  ctx_(&ctx) {
+VulkanSampler::VulkanSampler(const VulkanContext& ctx) : ctx_(&ctx) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
-
-  VkDevice device = ctx_->getVkDevice();
-
-  VK_ASSERT(ctx_->vf_.vkCreateSampler(device, &ci, nullptr, &vkSampler_));
-  VK_ASSERT(ivkSetDebugObjectName(
-      &ctx_->vf_, device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)vkSampler_, debugName));
 }
 
 VulkanSampler::~VulkanSampler() {
