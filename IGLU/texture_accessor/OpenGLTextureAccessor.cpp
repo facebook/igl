@@ -110,8 +110,8 @@ RequestStatus OpenGLTextureAccessor::getRequestStatus() {
     auto& texture = static_cast<igl::opengl::Texture&>(*texture_);
     auto& context = texture.getContext();
     // If a read is in progress, check whether it has completed
-    int result;
-    int valuesLength;
+    int result = 0;
+    int valuesLength = 0;
     context.getSynciv(sync_, GL_SYNC_STATUS, 1, &valuesLength, &result);
     IGL_DEBUG_ASSERT(valuesLength == 1);
     status_ = result == GL_SIGNALED ? RequestStatus::Ready : RequestStatus::InProgress;

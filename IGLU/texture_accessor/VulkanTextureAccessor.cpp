@@ -17,7 +17,8 @@
 #if defined(IGL_CMAKE_BUILD)
 #include <igl/IGLSafeC.h>
 #else
-#include <secure_lib/secure_string.h>
+
+#include <cstddef>
 #endif
 
 namespace iglu::textureaccessor {
@@ -38,8 +39,9 @@ void VulkanTextureAccessor::assignTexture(std::shared_ptr<igl::ITexture> texture
   ctx_ = vkImage.ctx_;
   const auto textureFormatProperties =
       igl::TextureFormatProperties::fromTextureFormat(texture->getFormat());
-  numBytesRequired_ = textureFormatProperties.getBytesPerRow(texture->getSize().width) *
-                      textureFormatProperties.getRows(texture->getFullRange());
+  numBytesRequired_ =
+      static_cast<size_t>(textureFormatProperties.getBytesPerRow(texture->getSize().width) *
+                          textureFormatProperties.getRows(texture->getFullRange()));
 
   textureWidth_ = texture->getSize().width;
   textureHeight_ = texture->getSize().height;

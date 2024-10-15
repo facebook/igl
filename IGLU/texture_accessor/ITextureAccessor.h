@@ -22,7 +22,8 @@ enum class RequestStatus : uint8_t {
 /// Interface for getting CPU access to GPU texture data
 class ITextureAccessor {
  public:
-  ITextureAccessor(std::shared_ptr<igl::ITexture> texture) : texture_(std::move(texture)) {}
+  explicit ITextureAccessor(std::shared_ptr<igl::ITexture> texture) :
+    texture_(std::move(texture)) {}
 
   virtual ~ITextureAccessor() = default;
 
