@@ -16,6 +16,9 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
+#include <shell/shared/platform/DisplayContext.h>
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
 #endif
 
 namespace igl::shell {
