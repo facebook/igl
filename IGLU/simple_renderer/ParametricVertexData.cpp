@@ -9,8 +9,6 @@
 
 #include "ParametricVertexData.h"
 
-#include <igl/IGL.h>
-
 namespace iglu::vertexdata {
 
 // Assumption: <name, location> for OpenGL and Metal, respectively
