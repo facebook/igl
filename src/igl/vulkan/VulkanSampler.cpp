@@ -16,17 +16,6 @@ VulkanSampler::VulkanSampler(const VulkanContext& ctx) : ctx_(&ctx) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 }
 
-VulkanSampler::~VulkanSampler() {
-  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
-
-  if (ctx_ && vkSampler_) {
-    ctx_->deferredTask(std::packaged_task<void()>(
-        [vf = &ctx_->vf_, device = ctx_->getVkDevice(), sampler = vkSampler_]() {
-          vf->vkDestroySampler(device, sampler, nullptr);
-        }));
-  }
-}
-
 VulkanSampler::VulkanSampler(VulkanSampler&& other) noexcept :
   ctx_(other.ctx_), samplerId_(other.samplerId_) {
   std::swap(vkSampler_, other.vkSampler_);

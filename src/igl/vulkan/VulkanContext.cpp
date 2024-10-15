@@ -361,6 +361,8 @@ struct VulkanContextImpl final {
   Pool<BindGroupBufferTag, BindGroupMetadataBuffers> bindGroupBuffersPool_;
   Pool<BindGroupTextureTag, BindGroupMetadataTextures> bindGroupTexturesPool_;
 
+  SamplerHandle dummySampler_ = {};
+
   igl::vulkan::DescriptorPoolsArena& getOrCreateArena_CombinedImageSamplers(
       const VulkanContext& ctx,
       VkDescriptorSetLayout dsl,
@@ -464,6 +466,8 @@ VulkanContext::~VulkanContext() {
   pimpl_->bindGroupTexturesPool_.clear();
   pimpl_->bindGroupBuffersPool_.clear();
 
+  destroy(pimpl_->dummySampler_);
+
 #if IGL_DEBUG
   for (const auto& t : textures_.objects_) {
     if (t.obj_.use_count() > 1) {
@@ -472,9 +476,8 @@ VulkanContext::~VulkanContext() {
                       t.obj_->getVulkanImage().name_.c_str());
     }
   }
-  if (samplers_.numObjects() > 1) {
-    // the dummy value is owned by the context
-    IGL_DEBUG_ABORT("Leaked %u samplers\n", samplers_.numObjects() - 1);
+  if (samplers_.numObjects()) {
+    IGL_LOG_ERROR("Leaked %u samplers\n", samplers_.numObjects());
   }
 #endif // IGL_DEBUG
   textures_.clear();
@@ -925,7 +928,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   }
 
   // default sampler
-  (void)createSampler(
+  pimpl_->dummySampler_ = createSampler(
       {
           .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
           .pNext = nullptr,
@@ -2128,9 +2131,16 @@ void VulkanContext::destroy(igl::BindGroupBufferHandle handle) {
 }
 
 void VulkanContext::destroy(igl::SamplerHandle handle) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+
   if (handle.empty()) {
     return;
   }
+
+  deferredTask(std::packaged_task<void()>(
+      [vf = &vf_, device = getVkDevice(), sampler = samplers_.get(handle)->vkSampler_]() {
+        vf->vkDestroySampler(device, sampler, nullptr);
+      }));
 
   samplers_.destroy(handle);
 }

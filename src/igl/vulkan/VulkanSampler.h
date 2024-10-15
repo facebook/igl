@@ -27,7 +27,7 @@ class VulkanSampler final {
    * be used for debugging
    */
   explicit VulkanSampler(const VulkanContext& ctx);
-  ~VulkanSampler();
+  ~VulkanSampler() = default;
 
   VulkanSampler(const VulkanSampler&) = delete;
   VulkanSampler& operator=(const VulkanSampler&) = delete;
