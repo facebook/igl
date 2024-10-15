@@ -12,8 +12,6 @@
 #include <EGL/egl.h>
 #include <android/log.h>
 #include <android/native_window.h>
-#include <android/native_window_jni.h>
-#include <igl/IGL.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/egl/HWDevice.h>
 #include <igl/opengl/egl/PlatformDevice.h>

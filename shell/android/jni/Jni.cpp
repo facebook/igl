@@ -7,13 +7,8 @@
 
 // @fb-only
 
-#include <jni.h>
-
 #include "TinyRenderer.h"
-#include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
-#include <android/log.h>
-#include <android/native_window.h>
 #include <android/native_window_jni.h>
 #include <igl/Common.h>
 #include <memory>
@@ -87,7 +82,7 @@ jobject toJava(JNIEnv* env, BackendFlavor backendFlavor) {
   jclass jclass = env->FindClass(kBackendFlavorClassName);
   const std::string returnType = std::string("()[") + toTypeSignature(kBackendFlavorClassName);
   jmethodID values = env->GetStaticMethodID(jclass, "values", returnType.c_str());
-  auto backendFlavorValues = (jobjectArray)env->CallStaticObjectMethod(jclass, values);
+  auto* backendFlavorValues = (jobjectArray)env->CallStaticObjectMethod(jclass, values);
 
   jobject backendFlavorValue =
       env->GetObjectArrayElement(backendFlavorValues, static_cast<int>(backendFlavor));
@@ -143,7 +138,7 @@ jobject toJava(JNIEnv* env, const shell::RenderSessionConfig& config) {
 }
 
 jobjectArray toJava(JNIEnv* env, const std::vector<shell::RenderSessionConfig>& configs) {
-  jobjectArray ret;
+  jobjectArray ret = nullptr;
   auto* jclass = env->FindClass(kRenderSessionConfigClassName);
   ret = env->NewObjectArray(configs.size(), jclass, nullptr);
   for (size_t i = 0; i < configs.size(); ++i) {
