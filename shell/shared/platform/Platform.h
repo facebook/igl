@@ -10,9 +10,7 @@
 #include <igl/Device.h>
 #include <memory>
 
-namespace igl {
-class IDevice;
-}
+namespace igl {}
 
 namespace igl::shell {
 
