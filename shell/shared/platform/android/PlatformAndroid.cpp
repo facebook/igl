@@ -13,9 +13,12 @@
 #include <shell/shared/imageWriter/android/ImageWriterAndroid.h>
 
 #if IGL_BACKEND_VULKAN
+#include <glm/ext.hpp>
+#include <glm/glm.hpp>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
+#include <shell/shared/platform/DisplayContext.h>
 #endif
 
 namespace igl::shell {
