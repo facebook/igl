@@ -11,31 +11,11 @@
 
 namespace igl::vulkan {
 
-class VulkanContext;
-
 /**
- * @brief Encapsulates a handle to a VkSampler and VkDevice used to create the resource. The class
- * also stores the sampler id, which is used for bindless rendering (see the ResourcesBinder and
- * VulkanContext classes for more information)
+ * @brief Encapsulates a handle to a VkSampler. The struct also stores the sampler id, which is used
+ * for bindless rendering (see the ResourcesBinder and VulkanContext classes for more information)
  */
-class VulkanSampler final {
- public:
-  VulkanSampler() = default;
-  /**
-   * @brief Creates the VulkanSampler object and stores the opaque handler to it. The sampler is
-   * created from the device based on the configuration passed as a parameter with a name that can
-   * be used for debugging
-   */
-  explicit VulkanSampler(const VulkanContext& ctx);
-  ~VulkanSampler() = default;
-
-  VulkanSampler(const VulkanSampler&) = delete;
-  VulkanSampler& operator=(const VulkanSampler&) = delete;
-  VulkanSampler(VulkanSampler&& /*other*/) noexcept;
-  VulkanSampler& operator=(VulkanSampler&& /*other*/) noexcept;
-
- public:
-  const VulkanContext* ctx_ = nullptr;
+struct VulkanSampler final {
   VkSampler vkSampler_ = VK_NULL_HANDLE;
   /**
    * @brief The index into VulkanContext::samplers_. This index is intended to be used with bindless

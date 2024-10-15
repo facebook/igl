@@ -1456,7 +1456,7 @@ SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
   }
 
   VkDevice device = getVkDevice();
-  VulkanSampler sampler(*this);
+  VulkanSampler sampler;
   VK_ASSERT(vf_.vkCreateSampler(device, &cInfo, nullptr, &sampler.vkSampler_));
   VK_ASSERT(ivkSetDebugObjectName(
       &vf_, device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.vkSampler_, debugName));
