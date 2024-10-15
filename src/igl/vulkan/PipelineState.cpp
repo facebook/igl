@@ -11,7 +11,6 @@
 #include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDescriptorSetLayout.h>
-#include <igl/vulkan/VulkanSampler.h>
 #include <igl/vulkan/VulkanShaderModule.h>
 
 namespace igl::vulkan {
@@ -93,7 +92,7 @@ PipelineState::PipelineState(
           loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, stageFlags_));
       if (loc < IGL_TEXTURE_SAMPLERS_MAX && immutableSamplers && immutableSamplers[loc]) {
         auto* sampler = static_cast<igl::vulkan::SamplerState*>(immutableSamplers[loc].get());
-        bindings.back().pImmutableSamplers = &ctx.samplers_.get(sampler->sampler_)->vkSampler_;
+        bindings.back().pImmutableSamplers = &ctx.samplers_.get(sampler->sampler_)->vkSampler;
       }
     }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());

@@ -10,7 +10,6 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanHelpers.h>
-#include <igl/vulkan/VulkanSampler.h>
 
 #define IGL_VULKAN_DEBUG_SAMPLER_STATE 1
 
@@ -128,7 +127,7 @@ Result SamplerState::create(const SamplerStateDesc& desc) {
 
 uint32_t SamplerState::getSamplerId() const {
   const VulkanSampler* sampler = device_.getVulkanContext().samplers_.get(sampler_);
-  return sampler ? sampler->samplerId_ : 0;
+  return sampler ? sampler->samplerId : 0;
 }
 
 bool SamplerState::isYUV() const noexcept {

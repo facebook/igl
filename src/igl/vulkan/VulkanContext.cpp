@@ -43,7 +43,6 @@
 #include <igl/vulkan/VulkanExtensions.h>
 #include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
-#include <igl/vulkan/VulkanSampler.h>
 #include <igl/vulkan/VulkanSemaphore.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/VulkanTexture.h>
@@ -1319,7 +1318,7 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
 
   // use the dummy texture/sampler to avoid sparse array
   VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
-  VkSampler dummySampler = samplers_.objects_[0].obj_.vkSampler_;
+  VkSampler dummySampler = samplers_.objects_[0].obj_.vkSampler;
 
   for (const auto& entry : textures_.objects_) {
     const VulkanTexture* texture = entry.obj_.get();
@@ -1354,7 +1353,7 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
   for (const auto& entry : samplers_.objects_) {
     const VulkanSampler* sampler = &entry.obj_;
     infoSamplers.push_back(
-        {sampler ? sampler->vkSampler_ : dummySampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED});
+        {sampler ? sampler->vkSampler : dummySampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED});
   }
 
   std::vector<VkWriteDescriptorSet> write;
@@ -1457,12 +1456,12 @@ SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
 
   VkDevice device = getVkDevice();
   VulkanSampler sampler;
-  VK_ASSERT(vf_.vkCreateSampler(device, &cInfo, nullptr, &sampler.vkSampler_));
+  VK_ASSERT(vf_.vkCreateSampler(device, &cInfo, nullptr, &sampler.vkSampler));
   VK_ASSERT(ivkSetDebugObjectName(
-      &vf_, device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.vkSampler_, debugName));
+      &vf_, device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.vkSampler, debugName));
   const SamplerHandle handle = samplers_.create(std::move(sampler));
 
-  samplers_.get(handle)->samplerId_ = handle.index();
+  samplers_.get(handle)->samplerId = handle.index();
 
   awaitingCreation_ = true;
 
@@ -1610,7 +1609,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
 
   // use the dummy texture/sampler to avoid sparse array
   VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
-  VkSampler dummySampler = samplers_.objects_[0].obj_.vkSampler_;
+  VkSampler dummySampler = samplers_.objects_[0].obj_.vkSampler;
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
@@ -1622,7 +1621,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
     if (texture && isGraphics) {
       IGL_DEBUG_ASSERT(data.samplers[loc], "A sampler should be bound to every bound texture slot");
     }
-    VkSampler sampler = data.samplers[loc] ? data.samplers[loc]->vkSampler_ : dummySampler;
+    VkSampler sampler = data.samplers[loc] ? data.samplers[loc]->vkSampler : dummySampler;
     // multisampled images cannot be directly accessed from shaders
     const bool isTextureAvailable =
         (texture != nullptr) &&
@@ -1927,7 +1926,7 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
     writes[numWrites] = ivkGetWriteDescriptorSet_ImageInfo(
         metadata.dset, loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &images[numWrites]);
     images[numWrites++] = {
-        sampler.vkSampler_,
+        sampler.vkSampler,
         isSampledImage ? texture.imageView_.getVkImageView() : dummyImageView,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
     };
@@ -2138,7 +2137,7 @@ void VulkanContext::destroy(igl::SamplerHandle handle) {
   }
 
   deferredTask(std::packaged_task<void()>(
-      [vf = &vf_, device = getVkDevice(), sampler = samplers_.get(handle)->vkSampler_]() {
+      [vf = &vf_, device = getVkDevice(), sampler = samplers_.get(handle)->vkSampler]() {
         vf->vkDestroySampler(device, sampler, nullptr);
       }));
 

@@ -160,6 +160,20 @@ struct VulkanContextConfig {
   uint64_t fenceTimeoutNanoseconds = UINT64_MAX;
 };
 
+/**
+ * @brief Encapsulates a handle to a VkSampler. The struct also stores the sampler id, which is used
+ * for bindless rendering (see the ResourcesBinder and VulkanContext classes for more information)
+ */
+struct VulkanSampler final {
+  VkSampler vkSampler = VK_NULL_HANDLE;
+  /**
+   * @brief The index into VulkanContext::samplers_. This index is intended to be used with bindless
+   * rendering. Its value is set by the context when the resource is created and added to the vector
+   * of samplers maintained by the VulkanContext.
+   */
+  uint32_t samplerId = 0;
+};
+
 // The functions below are convenience functions used to convert to and from Vulkan values to IGL
 // values
 
