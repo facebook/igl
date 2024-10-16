@@ -144,8 +144,6 @@ VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
                                             float minLod,
                                             float maxLod);
 
-VkSamplerYcbcrConversionCreateInfo ivkGetSamplerYcbcrCreateInfo(VkFormat format);
-
 /// @brief Returns VkImageViewCreateInfo with the R, G, B, and A components mapped to themselves
 /// (identity)
 VkImageViewCreateInfo ivkGetImageViewCreateInfo(VkImage image,

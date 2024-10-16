@@ -581,28 +581,6 @@ VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
   return ci;
 }
 
-VkSamplerYcbcrConversionCreateInfo ivkGetSamplerYcbcrCreateInfo(VkFormat format) {
-  const VkSamplerYcbcrConversionCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
-      .pNext = NULL,
-      .format = format,
-      .ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709,
-      .ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
-      .components =
-          {
-              VK_COMPONENT_SWIZZLE_IDENTITY,
-              VK_COMPONENT_SWIZZLE_IDENTITY,
-              VK_COMPONENT_SWIZZLE_IDENTITY,
-              VK_COMPONENT_SWIZZLE_IDENTITY,
-          },
-      .xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT,
-      .yChromaOffset = VK_CHROMA_LOCATION_MIDPOINT,
-      .chromaFilter = VK_FILTER_LINEAR,
-      .forceExplicitReconstruction = VK_FALSE,
-  };
-  return ci;
-}
-
 VkImageViewCreateInfo ivkGetImageViewCreateInfo(VkImage image,
                                                 VkImageViewType type,
                                                 VkFormat imageFormat,

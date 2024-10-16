@@ -1774,20 +1774,27 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
     return {};
   }
 
-  VkSamplerYcbcrConversionCreateInfo ciYcbcr = ivkGetSamplerYcbcrCreateInfo(format);
-
-  if (midpoint) {
-    ciYcbcr.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
-    ciYcbcr.yChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
-  } else {
-    ciYcbcr.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    ciYcbcr.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-  }
+  const VkSamplerYcbcrConversionCreateInfo ciYcbcr = {
+      .sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
+      .format = format,
+      .ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709,
+      .ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
+      .components =
+          {
+              VK_COMPONENT_SWIZZLE_IDENTITY,
+              VK_COMPONENT_SWIZZLE_IDENTITY,
+              VK_COMPONENT_SWIZZLE_IDENTITY,
+              VK_COMPONENT_SWIZZLE_IDENTITY,
+          },
+      .xChromaOffset = midpoint ? VK_CHROMA_LOCATION_MIDPOINT : VK_CHROMA_LOCATION_COSITED_EVEN,
+      .yChromaOffset = midpoint ? VK_CHROMA_LOCATION_MIDPOINT : VK_CHROMA_LOCATION_COSITED_EVEN,
+      .chromaFilter = VK_FILTER_LINEAR,
+      .forceExplicitReconstruction = VK_FALSE,
+  };
 
   VkSamplerYcbcrConversionInfo info = {
-      VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO,
-      nullptr,
-      VK_NULL_HANDLE,
+      .sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO,
+      .conversion = VK_NULL_HANDLE,
   };
   vf_.vkCreateSamplerYcbcrConversion(getVkDevice(), &ciYcbcr, nullptr, &info.conversion);
 

@@ -176,42 +176,6 @@ INSTANTIATE_TEST_SUITE_P(
         ::testing::Values(0.0f, 1.0f),
         ::testing::Values(3.0f, 4.0f)));
 
-// ivkGetSamplerYcbcrCreateInfo ******************************************************************
-class GetSamplerYcbcrCreateInfoTest : public ::testing::TestWithParam<std::tuple<VkFormat>> {};
-
-TEST_P(GetSamplerYcbcrCreateInfoTest, GetSamplerYcbcrCreateInfo) {
-  const VkFormat format = std::get<0>(GetParam());
-
-  const VkSamplerYcbcrConversionCreateInfo samplerYcbcrCreateInfo =
-      ivkGetSamplerYcbcrCreateInfo(format);
-
-  EXPECT_EQ(samplerYcbcrCreateInfo.sType, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO);
-  EXPECT_EQ(samplerYcbcrCreateInfo.pNext, nullptr);
-  EXPECT_EQ(samplerYcbcrCreateInfo.format, format);
-  EXPECT_EQ(samplerYcbcrCreateInfo.ycbcrModel, VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709);
-  EXPECT_EQ(samplerYcbcrCreateInfo.ycbcrRange, VK_SAMPLER_YCBCR_RANGE_ITU_FULL);
-  EXPECT_EQ(samplerYcbcrCreateInfo.components.r, VK_COMPONENT_SWIZZLE_IDENTITY);
-  EXPECT_EQ(samplerYcbcrCreateInfo.components.g, VK_COMPONENT_SWIZZLE_IDENTITY);
-  EXPECT_EQ(samplerYcbcrCreateInfo.components.b, VK_COMPONENT_SWIZZLE_IDENTITY);
-  EXPECT_EQ(samplerYcbcrCreateInfo.components.a, VK_COMPONENT_SWIZZLE_IDENTITY);
-  EXPECT_EQ(samplerYcbcrCreateInfo.xChromaOffset, VK_CHROMA_LOCATION_MIDPOINT);
-  EXPECT_EQ(samplerYcbcrCreateInfo.yChromaOffset, VK_CHROMA_LOCATION_MIDPOINT);
-  EXPECT_EQ(samplerYcbcrCreateInfo.chromaFilter, VK_FILTER_LINEAR);
-  EXPECT_EQ(samplerYcbcrCreateInfo.forceExplicitReconstruction, VK_FALSE);
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    AllCombinations,
-    GetSamplerYcbcrCreateInfoTest,
-    ::testing::Combine(::testing::Values(VK_FORMAT_R8G8B8A8_UNORM,
-                                         VK_FORMAT_R8G8B8_SRGB,
-                                         VK_FORMAT_R8G8B8A8_SRGB)),
-
-    [](const testing::TestParamInfo<GetSamplerYcbcrCreateInfoTest::ParamType>& info) {
-      const std::string name = std::to_string(std::get<0>(info.param));
-      return name;
-    });
-
 // ivkGetImageViewCreateInfo *********************************************************************
 class GetImageViewCreateInfoTest : public ::testing::TestWithParam<std::tuple<VkImageViewType,
                                                                               VkFormat,
