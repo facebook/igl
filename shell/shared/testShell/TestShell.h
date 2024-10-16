@@ -7,8 +7,6 @@
 
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
-#include <iglu/device/MetalFactory.h>
-#include <iglu/device/OpenGLFactory.h>
 #include <memory>
 #include <shell/shared/renderSession/RenderSession.h>
 

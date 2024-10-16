@@ -14,7 +14,9 @@
 #include <igl/Common.h>
 #include <iterator>
 #include <string>
-
+// @fb-only
+// @fb-only
+// @fb-only
 #if IGL_PLATFORM_WIN
 #include <windows.h>
 #endif
@@ -107,6 +109,18 @@ std::string FileLoaderWin::fullPath(const std::string& fileName) const {
       return p;
     }
   }
+
+// @fb-only
+  // @fb-only
+      // @fb-only
+  // @fb-only
+    // @fb-only
+        // @fb-only
+    // @fb-only
+      // @fb-only
+    // @fb-only
+  // @fb-only
+// @fb-only
 
   return fileName;
 }

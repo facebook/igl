@@ -120,6 +120,8 @@ ShaderVersion DeviceFeatureSet::getShaderVersion() const {
 
 BackendVersion DeviceFeatureSet::getBackendVersion() const {
   switch (version_) {
+  case GLVersion::v1_1:
+    return {BackendFlavor::OpenGL, 1, 1};
   case GLVersion::v2_0:
     return {BackendFlavor::OpenGL, 2, 0};
   case GLVersion::v2_1:

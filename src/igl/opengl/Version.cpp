@@ -107,6 +107,8 @@ GLVersion getGLVersionEnum(uint32_t majorVersion, uint32_t minorVersion) {
 
 #else
   switch (majorVersion) {
+  case 1:
+    return GLVersion::v1_1;
   case 2:
     switch (minorVersion) {
     case 0:
