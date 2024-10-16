@@ -10,7 +10,6 @@
 #include <shell/shared/imageLoader/android/ImageLoaderAndroid.h>
 
 #include <android/asset_manager.h>
-#include <android/asset_manager_jni.h>
 
 namespace igl::shell {
 
