@@ -290,12 +290,6 @@ VkResult ivkCreateDescriptorPool(const struct VulkanFunctionTable* vt,
                                  const VkDescriptorPoolSize* poolSizes,
                                  VkDescriptorPool* outDescriptorPool);
 
-/// @brief Starts recording a command buffer that will be submitted only once (i.e. it cannot be
-/// reused)
-VkResult ivkBeginCommandBuffer(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer);
-
-VkResult ivkEndCommandBuffer(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer);
-
 /// @brief Creates a VkSubmitInfo structure with an optional semaphore, used to signal when the
 /// command buffer for this batch have completed execution
 VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,

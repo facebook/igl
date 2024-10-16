@@ -781,19 +781,6 @@ VkResult ivkCreateDescriptorPool(const struct VulkanFunctionTable* vt,
   return vt->vkCreateDescriptorPool(device, &ci, NULL, outDescriptorPool);
 }
 
-VkResult ivkBeginCommandBuffer(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer) {
-  const VkCommandBufferBeginInfo bi = {
-      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-      .pNext = NULL,
-      .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-  };
-  return vt->vkBeginCommandBuffer(buffer, &bi);
-}
-
-VkResult ivkEndCommandBuffer(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer) {
-  return vt->vkEndCommandBuffer(buffer);
-}
-
 VkSubmitInfo ivkGetSubmitInfo(const VkCommandBuffer* buffer,
                               uint32_t numWaitSemaphores,
                               const VkSemaphore* waitSemaphores,
