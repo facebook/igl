@@ -14,15 +14,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <igl/Core.h>
+#include <igl/Null.h>
 #include <limits>
 #include <memory>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#define IGL_NULLABLE FOLLY_NULLABLE
-#define IGL_NONNULL FOLLY_NONNULL
 
 namespace igl {
 
