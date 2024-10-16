@@ -67,4 +67,13 @@ double RenderSession::getSeconds() noexcept {
       .count();
 }
 
+void RenderSession::setPreferredClearColor(const igl::Color& color) noexcept {
+  preferredClearColor_ = color;
+}
+
+igl::Color RenderSession::getPreferredClearColor() noexcept {
+  return preferredClearColor_.has_value() ? preferredClearColor_.value()
+                                          : platform()->getDevice().backendDebugColor();
+}
+
 } // namespace igl::shell

@@ -313,7 +313,7 @@ void Textured3DCubeSession::initialize() noexcept {
   renderPass_.colorAttachments.resize(1);
   renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
   renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass_.colorAttachments[0].clearColor = getPlatform().getDevice().backendDebugColor();
+  renderPass_.colorAttachments[0].clearColor = getPreferredClearColor();
   renderPass_.depthAttachment.loadAction = LoadAction::Clear;
   renderPass_.depthAttachment.clearDepth = 1.0;
 }

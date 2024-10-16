@@ -27,7 +27,7 @@ void BasicFramebufferSession::initialize() noexcept {
   renderPass_.colorAttachments.resize(1);
   renderPass_.colorAttachments[0].loadAction = igl::LoadAction::Clear;
   renderPass_.colorAttachments[0].storeAction = igl::StoreAction::Store;
-  renderPass_.colorAttachments[0].clearColor = getPlatform().getDevice().backendDebugColor();
+  renderPass_.colorAttachments[0].clearColor = getPreferredClearColor();
 }
 
 void BasicFramebufferSession::update(igl::SurfaceTextures surfaceTextures) noexcept {

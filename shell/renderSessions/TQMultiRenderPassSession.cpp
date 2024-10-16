@@ -207,14 +207,14 @@ void TQMultiRenderPassSession::initialize() noexcept {
   renderPass0_.colorAttachments.resize(1);
   renderPass0_.colorAttachments[0].loadAction = LoadAction::Clear;
   renderPass0_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass0_.colorAttachments[0].clearColor = getPlatform().getDevice().backendDebugColor();
+  renderPass0_.colorAttachments[0].clearColor = getPreferredClearColor();
   renderPass0_.depthAttachment.loadAction = LoadAction::Clear;
   renderPass0_.depthAttachment.clearDepth = 1.0;
 
   renderPass1_.colorAttachments.resize(1);
   renderPass1_.colorAttachments[0].loadAction = LoadAction::Clear;
   renderPass1_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass1_.colorAttachments[0].clearColor = getPlatform().getDevice().backendDebugColor();
+  renderPass1_.colorAttachments[0].clearColor = getPreferredClearColor();
   renderPass1_.depthAttachment.loadAction = LoadAction::Clear;
   renderPass1_.depthAttachment.clearDepth = 1.0;
 

@@ -329,16 +329,15 @@ void MRTSession::initialize() noexcept {
   renderPassMRT_.colorAttachments.resize(2);
   renderPassMRT_.colorAttachments[0].loadAction = LoadAction::Clear;
   renderPassMRT_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPassMRT_.colorAttachments[0].clearColor = getPlatform().getDevice().backendDebugColor();
+  renderPassMRT_.colorAttachments[0].clearColor = getPreferredClearColor();
   renderPassMRT_.colorAttachments[1].loadAction = LoadAction::Clear;
   renderPassMRT_.colorAttachments[1].storeAction = StoreAction::Store;
-  renderPassMRT_.colorAttachments[1].clearColor = getPlatform().getDevice().backendDebugColor();
+  renderPassMRT_.colorAttachments[1].clearColor = getPreferredClearColor();
 
   renderPassDisplayLast_.colorAttachments.resize(1);
   renderPassDisplayLast_.colorAttachments[0].loadAction = LoadAction::Clear;
   renderPassDisplayLast_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPassDisplayLast_.colorAttachments[0].clearColor =
-      getPlatform().getDevice().backendDebugColor();
+  renderPassDisplayLast_.colorAttachments[0].clearColor = getPreferredClearColor();
 }
 
 void MRTSession::update(const igl::SurfaceTextures surfaceTextures) noexcept {
