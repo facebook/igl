@@ -87,6 +87,7 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
   std::vector<int> activeAttributesLocations_;
   BlendMode blendMode_ = {GL_FUNC_ADD, GL_FUNC_ADD, GL_ONE, GL_ZERO, GL_ONE, GL_ZERO};
   bool blendEnabled_ = false;
+  bool hasLinkUniformBlockBindingPoint_ = false;
 };
 
 } // namespace igl::opengl
