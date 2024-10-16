@@ -10,9 +10,7 @@
 #include <igl/IGL.h>
 #include <vector>
 
-namespace igl {
-class IDevice;
-} // namespace igl
+namespace igl {} // namespace igl
 
 namespace iglu {
 struct ManagedUniformBufferInfo {
