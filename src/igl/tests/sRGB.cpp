@@ -8,6 +8,7 @@
 #include "data/ShaderData.h"
 #include "data/TextureData.h"
 #include "data/VertexIndexData.h"
+#include "util/Color.h"
 #include "util/Common.h"
 #include "util/TestDevice.h"
 
@@ -147,6 +148,12 @@ class sRGBBaseTest : public ::testing::Test {
     renderPipelineDesc_.fragmentUnitSamplerMap[textureUnit_] =
         IGL_NAMEHANDLE(data::shader::simpleSampler);
     renderPipelineDesc_.cullMode = igl::CullMode::Disabled;
+
+#if IGL_PLATFORM_LINUX_SWIFTSHADER
+    if (iglDev_->getBackendType() == BackendType::OpenGL) {
+      kTolerance = 1; // Swiftshader opengl is not accurate enough.
+    }
+#endif
   }
 
   void TearDown() override {}
@@ -182,6 +189,8 @@ class sRGBBaseTest : public ::testing::Test {
   // would be after sampling
   size_t offscreenTexWidth = 2;
   size_t offscreenTexHeight = 2;
+
+  uint8_t kTolerance = 0; // some platforms aren't perfect and need some tolerance
 };
 
 class sRGBSmallTest : public sRGBBaseTest {
@@ -287,7 +296,12 @@ TEST_F(sRGBSmallTest, Passthrough) {
   // Verify against original texture
   //--------------------------------
   for (size_t i = 0; i < offscreenTexWidth * offscreenTexHeight; i++) {
-    ASSERT_EQ(pixels[i], data::texture::TEX_RGBA_2x2[i]);
+    const util::sRGBColor currentColor(pixels[i]);
+    const util::sRGBColor testColor(data::texture::TEX_RGBA_2x2[i]);
+    ASSERT_LE(abs(currentColor.r - testColor.r), kTolerance);
+    ASSERT_LE(abs(currentColor.g - testColor.g), kTolerance);
+    ASSERT_LE(abs(currentColor.b - testColor.b), kTolerance);
+    ASSERT_LE(abs(currentColor.a - testColor.a), kTolerance);
   }
 }
 
@@ -366,9 +380,12 @@ TEST_F(sRGBBigTest, Passthrough) {
   // Verify against original texture
   //--------------------------------
   for (size_t i = 0; i < offscreenTexWidth * offscreenTexHeight; i++) {
-    auto pixelColor = pixels[i];
-    auto testColor = allColorsBuffer[i];
-    ASSERT_EQ(pixelColor, testColor);
+    const util::sRGBColor currentColor(pixels[i]);
+    const util::sRGBColor testColor(allColorsBuffer[i]);
+    ASSERT_LE(abs(currentColor.r - testColor.r), kTolerance);
+    ASSERT_LE(abs(currentColor.g - testColor.g), kTolerance);
+    ASSERT_LE(abs(currentColor.b - testColor.b), kTolerance);
+    ASSERT_LE(abs(currentColor.a - testColor.a), kTolerance);
   }
 }
 
