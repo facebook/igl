@@ -135,11 +135,6 @@ VkResult ivkCreateSwapchain(const struct VulkanFunctionTable* vt,
                             uint32_t height,
                             VkSwapchainKHR* outSwapchain);
 
-/// @brief Creates a Vulkan Sampler object with default values
-VkResult ivkCreateSampler(const struct VulkanFunctionTable* vt,
-                          VkDevice device,
-                          VkSampler* outSampler);
-
 VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
                                             VkFilter magFilter,
                                             VkSamplerMipmapMode mipmapMode,
