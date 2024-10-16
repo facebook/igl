@@ -135,15 +135,6 @@ VkResult ivkCreateSwapchain(const struct VulkanFunctionTable* vt,
                             uint32_t height,
                             VkSwapchainKHR* outSwapchain);
 
-VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
-                                            VkFilter magFilter,
-                                            VkSamplerMipmapMode mipmapMode,
-                                            VkSamplerAddressMode addressModeU,
-                                            VkSamplerAddressMode addressModeV,
-                                            VkSamplerAddressMode addressModeW,
-                                            float minLod,
-                                            float maxLod);
-
 /// @brief Returns VkImageViewCreateInfo with the R, G, B, and A components mapped to themselves
 /// (identity)
 VkImageViewCreateInfo ivkGetImageViewCreateInfo(VkImage image,

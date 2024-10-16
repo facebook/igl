@@ -550,37 +550,6 @@ VkResult ivkCreateHeadlessSurface(const struct VulkanFunctionTable* vt,
   return vt->vkCreateHeadlessSurfaceEXT(instance, &ci, NULL, outSurface);
 }
 
-VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
-                                            VkFilter magFilter,
-                                            VkSamplerMipmapMode mipmapMode,
-                                            VkSamplerAddressMode addressModeU,
-                                            VkSamplerAddressMode addressModeV,
-                                            VkSamplerAddressMode addressModeW,
-                                            float minLod,
-                                            float maxLod) {
-  const VkSamplerCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-      .pNext = NULL,
-      .flags = 0,
-      .magFilter = magFilter,
-      .minFilter = minFilter,
-      .mipmapMode = mipmapMode,
-      .addressModeU = addressModeU,
-      .addressModeV = addressModeV,
-      .addressModeW = addressModeW,
-      .mipLodBias = 0.0f,
-      .anisotropyEnable = VK_FALSE,
-      .maxAnisotropy = 0.0f,
-      .compareEnable = VK_FALSE,
-      .compareOp = VK_COMPARE_OP_ALWAYS,
-      .minLod = minLod,
-      .maxLod = maxLod,
-      .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
-      .unnormalizedCoordinates = VK_FALSE,
-  };
-  return ci;
-}
-
 VkImageViewCreateInfo ivkGetImageViewCreateInfo(VkImage image,
                                                 VkImageViewType type,
                                                 VkFormat imageFormat,
