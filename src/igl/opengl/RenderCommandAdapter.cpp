@@ -227,7 +227,9 @@ void RenderCommandAdapter::clearDependentResources(
     clearFragmentTexture();
   }
 
-  unbindVertexAttributes();
+  if (curStateOpenGL && newStateOpenGL){
+    newStateOpenGL->savePrePipelineStateAttributesLocations(*curStateOpenGL);
+  }
 
   if (!newStateOpenGL || !curStateOpenGL->matchesVertexInputState(*newStateOpenGL)) {
     // Don't reuse previously set vertex buffers.
@@ -343,6 +345,7 @@ void RenderCommandAdapter::willDraw() {
 
   // Vertex Buffers must be bound before pipelineState->bind()
   if (pipelineState) {
+    pipelineState->clearActiveAttributesLocations();
     for (size_t bufferIndex = 0; bufferIndex < IGL_VERTEX_BUFFER_MAX; ++bufferIndex) {
       if (IS_DIRTY(vertexBuffersDirty_, bufferIndex)) {
         auto& bufferState = vertexBuffers_[bufferIndex];
@@ -352,6 +355,7 @@ void RenderCommandAdapter::willDraw() {
         CLEAR_DIRTY(vertexBuffersDirty_, bufferIndex);
       }
     }
+    pipelineState->unbindPrePipelineVertexAttributes();
     if (isDirty(StateMask::PIPELINE)) {
       pipelineState->bind();
       clearDirty(StateMask::PIPELINE);
