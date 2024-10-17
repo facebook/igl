@@ -207,6 +207,7 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
     factory = shell::createDefaultRenderSessionFactory();
   }
 
+  constexpr igl::TextureFormat kSwapchainColorTextureFormat = igl::TextureFormat::BGRA_SRGB;
   std::vector<igl::shell::RenderSessionConfig> suggestedConfigs = {
 #if IGL_BACKEND_OPENGL
       {
@@ -214,14 +215,14 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
           .backendVersion = {.flavor = igl::BackendFlavor::OpenGL_ES,
                              .majorVersion = 3,
                              .minorVersion = 0},
-          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+          .colorFramebufferFormat = kSwapchainColorTextureFormat,
       },
       {
           .displayName = "OpenGL ES 2",
           .backendVersion = {.flavor = igl::BackendFlavor::OpenGL_ES,
                              .majorVersion = 2,
                              .minorVersion = 0},
-          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+          .colorFramebufferFormat = kSwapchainColorTextureFormat,
       },
 #endif
 #if IGL_BACKEND_VULKAN
@@ -230,7 +231,7 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
           .backendVersion = {.flavor = igl::BackendFlavor::Vulkan,
                              .majorVersion = 1,
                              .minorVersion = 1},
-          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+          .colorFramebufferFormat = kSwapchainColorTextureFormat,
       },
 #endif
   };
