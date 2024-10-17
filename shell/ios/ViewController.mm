@@ -189,7 +189,7 @@
 
     NSString* drawablePropertyColorFormat = kEAGLColorFormatRGBA8;
 
-    switch (config_.colorFramebufferFormat) {
+    switch (config_.swapchainColorTextureFormat) {
     case igl::TextureFormat::BGRA_UNorm8:
       drawablePropertyColorFormat = kEAGLColorFormatRGBA8;
       break;
