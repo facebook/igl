@@ -69,8 +69,6 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
     return desc_.polygonFillMode;
   }
 
-  std::unordered_map<int, size_t>& uniformBlockBindingMap();
-
   const ShaderStages* getShaderStages() const {
     return static_cast<ShaderStages*>(desc_.shaderStages.get());
   }
@@ -87,7 +85,7 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
   std::vector<int> activeAttributesLocations_;
   BlendMode blendMode_ = {GL_FUNC_ADD, GL_FUNC_ADD, GL_ONE, GL_ZERO, GL_ONE, GL_ZERO};
   bool blendEnabled_ = false;
-  bool hasLinkUniformBlockBindingPoint_ = false;
+  bool uniformBlockBindingPointSet_ = false;
 };
 
 } // namespace igl::opengl

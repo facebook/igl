@@ -220,13 +220,13 @@ void RenderPipelineState::bind() {
   if (desc_.shaderStages) {
     const auto& shaderStages = std::static_pointer_cast<ShaderStages>(desc_.shaderStages);
     shaderStages->bind();
-    if (!hasLinkUniformBlockBindingPoint_){
+    if (!uniformBlockBindingPointSet_){
       for (const auto& binding : uniformBlockBindingMap_) {
         const auto& blockIndex = binding.first;
         const auto& bindingIndex = binding.second;
         getContext().uniformBlockBinding(shaderStages->getProgramID(), blockIndex, bindingIndex);
       }
-      hasLinkUniformBlockBindingPoint_ = true;
+      uniformBlockBindingPointSet_ = true;
     }
   }
 
@@ -390,10 +390,6 @@ void RenderPipelineState::setRenderPipelineReflection(
     const IRenderPipelineReflection& renderPipelineReflection) {
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   (void)renderPipelineReflection;
-}
-
-std::unordered_map<int, size_t>& RenderPipelineState::uniformBlockBindingMap() {
-  return uniformBlockBindingMap_;
 }
 
 } // namespace igl::opengl
