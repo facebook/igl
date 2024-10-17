@@ -18,7 +18,16 @@ VulkanSemaphore::VulkanSemaphore(const VulkanFunctionTable& vf,
   vf_(&vf), device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  VK_ASSERT(ivkCreateSemaphore(vf_, device_, exportable, &vkSemaphore_));
+  const VkExportSemaphoreCreateInfo exportInfo = {
+      .sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO,
+      .handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
+  };
+  const VkSemaphoreCreateInfo ci = {
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+      .pNext = exportable ? &exportInfo : nullptr,
+      .flags = 0,
+  };
+  VK_ASSERT(vf_->vkCreateSemaphore(device, &ci, nullptr, &vkSemaphore_));
   VK_ASSERT(ivkSetDebugObjectName(
       vf_, device_, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)vkSemaphore_, debugName));
 }

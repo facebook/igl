@@ -316,24 +316,6 @@ uint32_t ivkFindMemoryType(const struct VulkanFunctionTable* vt,
   return 0;
 }
 
-VkResult ivkCreateSemaphore(const struct VulkanFunctionTable* vt,
-                            VkDevice device,
-                            bool exportable,
-                            VkSemaphore* outSemaphore) {
-  const VkExportSemaphoreCreateInfo exportInfo = {
-      .sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO,
-      .pNext = NULL,
-      .handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
-  };
-
-  const VkSemaphoreCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-      .pNext = exportable ? &exportInfo : NULL,
-      .flags = 0,
-  };
-  return vt->vkCreateSemaphore(device, &ci, NULL, outSemaphore);
-}
-
 void ivkAddNext(void* node, const void* next) {
   if (!node || !next) {
     return;
