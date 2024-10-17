@@ -27,7 +27,8 @@ public class SampleView extends GLSurfaceView {
   private float lastTouchX = 0.0f;
   private float lastTouchY = 0.0f;
 
-  public SampleView(Context context, SampleLib.BackendVersion backendVersion) {
+  public SampleView(
+      Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
 
     super(context);
     // Uncomment to attach debugging
@@ -40,7 +41,7 @@ public class SampleView extends GLSurfaceView {
 
     setEGLConfigChooser(new ConfigChooser(backendVersion));
 
-    setRenderer(new Renderer(context, backendVersion));
+    setRenderer(new Renderer(context, backendVersion, swapchainColorTextureFormat));
   }
 
   @Override
@@ -156,14 +157,17 @@ public class SampleView extends GLSurfaceView {
   private static class Renderer implements GLSurfaceView.Renderer {
     private final Context mContext;
     private final SampleLib.BackendVersion mBackendVersion;
+    private final int mSwapchainColorTextureFormat;
 
-    Renderer(Context context, SampleLib.BackendVersion backendVersion) {
+    Renderer(
+        Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
       mContext = context;
       mBackendVersion = backendVersion;
+      mSwapchainColorTextureFormat = swapchainColorTextureFormat;
     }
 
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-      SampleLib.init(mBackendVersion, mContext.getAssets(), null);
+      SampleLib.init(mBackendVersion, mSwapchainColorTextureFormat, mContext.getAssets(), null);
     }
 
     public void onSurfaceChanged(GL10 gl, int width, int height) {

@@ -45,7 +45,10 @@ public class SampleLib {
   public static native RenderSessionConfig[] getRenderSessionConfigs();
 
   public static native void init(
-      BackendVersion backendVersion, AssetManager assetManager, Surface surface);
+      BackendVersion backendVersion,
+      int swapchainColorTextureFormat,
+      AssetManager assetManager,
+      Surface surface);
 
   public static native void setActiveBackendVersion(BackendVersion backendVersion);
 
@@ -62,10 +65,13 @@ public class SampleLib {
   public static class RenderSessionConfig {
     String displayName;
     BackendVersion version;
+    int swapchainColorTextureFormat;
 
-    public RenderSessionConfig(String displayName, BackendVersion version) {
+    public RenderSessionConfig(
+        String displayName, BackendVersion version, int swapchainColorTextureFormat) {
       this.displayName = displayName;
       this.version = version;
+      this.swapchainColorTextureFormat = swapchainColorTextureFormat;
     }
   }
 }

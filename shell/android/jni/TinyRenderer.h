@@ -25,7 +25,8 @@ class TinyRenderer final {
   void init(AAssetManager* mgr,
             ANativeWindow* nativeWindow,
             shell::IRenderSessionFactory& factor,
-            BackendVersion backendVersion);
+            BackendVersion backendVersion,
+            TextureFormat swapchainColorTextureFormat);
   void recreateSwapchain(ANativeWindow* nativeWindow, bool createSurface); // only for Vulkan
   void render(float displayScale);
   void onSurfacesChanged(ANativeWindow* nativeWindow, int width, int height);
