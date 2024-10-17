@@ -42,10 +42,6 @@ class CommandQueue final : public ICommandQueue {
   /// @param endOfFrame Not used
   SubmitHandle submit(const ICommandBuffer& cmdBuffer, bool endOfFrame = false) override;
 
-  [[nodiscard]] const CommandQueueDesc& getCommandQueueDesc() const {
-    return desc_;
-  }
-
  private:
   /** @brief Ends the current command buffer and resets the internal flag tracking an active command
    * buffer. Determines if an image should be presented by (1) checking if this instance belongs to
