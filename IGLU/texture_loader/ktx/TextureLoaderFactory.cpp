@@ -49,11 +49,13 @@ TextureLoader::TextureLoader(DataReader reader,
   Super(reader), texture_(std::move(texture)) {
   auto& desc = mutableDescriptor();
   desc.format = format;
-  desc.numMipLevels = range.numMipLevels;
   desc.numLayers = range.numLayers;
   desc.width = range.width;
   desc.height = range.height;
   desc.depth = range.depth;
+  desc.numMipLevels = shouldGenerateMipmaps()
+                          ? igl::TextureDesc::calcNumMipLevels(desc.width, desc.height, desc.depth)
+                          : range.numMipLevels;
 
   if (range.numFaces == 6u) {
     desc.type = igl::TextureType::Cube;

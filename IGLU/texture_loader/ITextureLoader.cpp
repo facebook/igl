@@ -37,7 +37,7 @@ const igl::TextureDesc& ITextureLoader::descriptor() const noexcept {
   range.numFaces = desc_.type == igl::TextureType::Cube ? static_cast<size_t>(6)
                                                         : static_cast<size_t>(1);
   range.numLayers = desc_.numLayers;
-  range.numMipLevels = desc_.numMipLevels;
+  range.numMipLevels = shouldGenerateMipmaps() ? 1 : desc_.numMipLevels;
 
   return static_cast<uint32_t>(properties.getBytesPerRange(range));
 }
