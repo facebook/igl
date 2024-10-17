@@ -172,7 +172,7 @@
 
     auto metalView = [[MetalView alloc] initWithFrame:frame_ device:d];
     metalView.colorPixelFormat =
-        igl::metal::Texture::textureFormatToMTLPixelFormat(config_.colorFramebufferFormat);
+        igl::metal::Texture::textureFormatToMTLPixelFormat(config_.swapchainColorTextureFormat);
     metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
 
     metalView.delegate = self;

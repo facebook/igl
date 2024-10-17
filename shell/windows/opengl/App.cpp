@@ -64,7 +64,7 @@ igl::SurfaceTextures OpenGlShell::createSurfaceTextures() noexcept {
         TextureDesc::TextureUsageBits::Attachment,
         1,
         TextureType::TwoD,
-        sessionConfig().colorFramebufferFormat,
+        sessionConfig().swapchainColorTextureFormat,
     };
     auto color =
         std::make_shared<igl::opengl::ViewTextureTarget>(oglDevice.getContext(), desc.format);
@@ -157,7 +157,7 @@ int main(int argc, char* argv[]) {
       .backendVersion = {.flavor = BackendFlavor::OpenGL,
                          .majorVersion = static_cast<uint8_t>(majorVersion),
                          .minorVersion = static_cast<uint8_t>(minorVersion)},
-      .colorFramebufferFormat = TextureFormat::RGBA_SRGB,
+      .swapchainColorTextureFormat = TextureFormat::RGBA_SRGB,
   };
 
   if (!shell.initialize(argc, argv, suggestedWindowConfig, std::move(suggestedConfig))) {

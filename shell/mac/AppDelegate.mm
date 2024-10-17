@@ -97,9 +97,9 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
           .backendVersion = {.flavor = igl::BackendFlavor::Invalid,
                              .majorVersion = 0,
                              .minorVersion = 0},
-          .colorFramebufferFormat = igl::TextureFormat::RGBA_SRGB, // special case that should
-                                                                   // probably go through
-                                                                   // swiftshader instead
+          .swapchainColorTextureFormat = igl::TextureFormat::RGBA_SRGB, // special case that should
+                                                                        // probably go through
+                                                                        // swiftshader instead
       },
 #endif
 #if IGL_BACKEND_METAL
@@ -108,7 +108,7 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
           .backendVersion = {.flavor = igl::BackendFlavor::Metal,
                              .majorVersion = 3,
                              .minorVersion = 0},
-          .colorFramebufferFormat = kColorFramebufferFormat,
+          .swapchainColorTextureFormat = kColorFramebufferFormat,
       },
 #endif
 #if IGL_BACKEND_OPENGL
@@ -117,7 +117,7 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
           .backendVersion = {.flavor = igl::BackendFlavor::OpenGL,
                              .majorVersion = 4,
                              .minorVersion = 1},
-          .colorFramebufferFormat = kColorFramebufferFormat,
+          .swapchainColorTextureFormat = kColorFramebufferFormat,
       },
       // clang-format off
       // @fb-only
@@ -146,7 +146,7 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
           .backendVersion = {.flavor = igl::BackendFlavor::Vulkan,
                              .majorVersion = 1,
                              .minorVersion = 1},
-          .colorFramebufferFormat = kColorFramebufferFormat,
+          .swapchainColorTextureFormat = kColorFramebufferFormat,
       },
 #endif
   };

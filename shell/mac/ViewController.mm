@@ -183,7 +183,7 @@ using namespace igl;
     metalView.delegate = self;
 
     metalView.colorPixelFormat =
-        metal::Texture::textureFormatToMTLPixelFormat(config_.colorFramebufferFormat);
+        metal::Texture::textureFormatToMTLPixelFormat(config_.swapchainColorTextureFormat);
     metalView.colorspace = metal::colorSpaceToCGColorSpace(config_.swapchainColorSpace);
 
     metalView.framebufferOnly = NO;
@@ -288,7 +288,7 @@ using namespace igl;
     vulkanContextConfig.enableBufferDeviceAddress = true;
 
     vulkanContextConfig.swapChainColorSpace = config_.swapchainColorSpace;
-    vulkanContextConfig.requestedSwapChainTextureFormat = config_.colorFramebufferFormat;
+    vulkanContextConfig.requestedSwapChainTextureFormat = config_.swapchainColorTextureFormat;
 
     auto context =
         igl::vulkan::HWDevice::createContext(vulkanContextConfig, (__bridge void*)vulkanView);

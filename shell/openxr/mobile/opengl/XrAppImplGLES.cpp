@@ -28,7 +28,7 @@ RenderSessionConfig XrAppImplGLES::suggestedSessionConfig() const {
           .backendVersion = {.flavor = igl::BackendFlavor::OpenGL_ES,
                              .majorVersion = 3,
                              .minorVersion = 2},
-          .colorFramebufferFormat = igl::TextureFormat::RGBA_SRGB};
+          .swapchainColorTextureFormat = igl::TextureFormat::RGBA_SRGB};
 }
 
 std::vector<const char*> XrAppImplGLES::getXrRequiredExtensions() const {
@@ -127,8 +127,8 @@ XrSession XrAppImplGLES::initXrSession(XrInstance instance,
 
 std::unique_ptr<impl::XrSwapchainProviderImpl> XrAppImplGLES::createSwapchainProviderImpl() const {
   if (IGL_DEBUG_VERIFY(device_)) {
-    return std::make_unique<XrSwapchainProviderImplGLES>(*device_,
-                                                         sessionConfig_.colorFramebufferFormat);
+    return std::make_unique<XrSwapchainProviderImplGLES>(
+        *device_, sessionConfig_.swapchainColorTextureFormat);
   }
 
   return nullptr;

@@ -24,7 +24,7 @@ RenderSessionConfig XrAppImplVulkan::suggestedSessionConfig() const {
           .backendVersion = {.flavor = igl::BackendFlavor::Vulkan,
                              .majorVersion = 1,
                              .minorVersion = 1},
-          .colorFramebufferFormat = igl::TextureFormat::RGBA_SRGB};
+          .swapchainColorTextureFormat = igl::TextureFormat::RGBA_SRGB};
 }
 
 std::vector<const char*> XrAppImplVulkan::getXrRequiredExtensions() const {
@@ -169,7 +169,8 @@ XrSession XrAppImplVulkan::initXrSession(XrInstance instance,
 
 std::unique_ptr<impl::XrSwapchainProviderImpl> XrAppImplVulkan::createSwapchainProviderImpl()
     const {
-  return std::make_unique<XrSwapchainProviderImplVulkan>(sessionConfig_.colorFramebufferFormat);
+  return std::make_unique<XrSwapchainProviderImplVulkan>(
+      sessionConfig_.swapchainColorTextureFormat);
 }
 
 std::vector<const char*> XrAppImplVulkan::processExtensionsBuffer(std::vector<char>& buffer) {

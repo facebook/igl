@@ -132,7 +132,7 @@ jobject toJava(JNIEnv* env, const shell::RenderSessionConfig& config) {
 
   jstring jdisplayName = env->NewStringUTF(config.displayName.c_str());
   jobject jbackendVersion = toJava(env, config.backendVersion);
-  jint jswapchainColorTextureFormat = static_cast<int>(config.colorFramebufferFormat);
+  const jint jswapchainColorTextureFormat = static_cast<int>(config.swapchainColorTextureFormat);
   jobject ret = env->NewObject(
       jclass, constructor, jdisplayName, jbackendVersion, jswapchainColorTextureFormat);
   env->DeleteLocalRef(jdisplayName);
@@ -219,14 +219,14 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
           .backendVersion = {.flavor = igl::BackendFlavor::OpenGL_ES,
                              .majorVersion = 3,
                              .minorVersion = 0},
-          .colorFramebufferFormat = kSwapchainColorTextureFormat,
+          .swapchainColorTextureFormat = kSwapchainColorTextureFormat,
       },
       {
           .displayName = "OpenGL ES 2",
           .backendVersion = {.flavor = igl::BackendFlavor::OpenGL_ES,
                              .majorVersion = 2,
                              .minorVersion = 0},
-          .colorFramebufferFormat = kSwapchainColorTextureFormat,
+          .swapchainColorTextureFormat = kSwapchainColorTextureFormat,
       },
 #endif
 #if IGL_BACKEND_VULKAN
@@ -235,7 +235,7 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
           .backendVersion = {.flavor = igl::BackendFlavor::Vulkan,
                              .majorVersion = 1,
                              .minorVersion = 1},
-          .colorFramebufferFormat = kSwapchainColorTextureFormat,
+          .swapchainColorTextureFormat = kSwapchainColorTextureFormat,
       },
 #endif
   };
