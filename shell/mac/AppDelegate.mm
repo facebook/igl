@@ -89,6 +89,7 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
       .height = 768,
       .windowMode = igl::shell::WindowMode::Window,
   };
+  constexpr auto kColorFramebufferFormat = igl::TextureFormat::BGRA_SRGB;
   std::vector<igl::shell::RenderSessionConfig> suggestedSessionConfigs = {
 #if IGL_BACKEND_HEADLESS
       {
@@ -96,7 +97,9 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
           .backendVersion = {.flavor = igl::BackendFlavor::Invalid,
                              .majorVersion = 0,
                              .minorVersion = 0},
-          .colorFramebufferFormat = igl::TextureFormat::RGBA_SRGB,
+          .colorFramebufferFormat = igl::TextureFormat::RGBA_SRGB, // special case that should
+                                                                   // probably go through
+                                                                   // swiftshader instead
       },
 #endif
 #if IGL_BACKEND_METAL
@@ -105,7 +108,7 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
           .backendVersion = {.flavor = igl::BackendFlavor::Metal,
                              .majorVersion = 3,
                              .minorVersion = 0},
-          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+          .colorFramebufferFormat = kColorFramebufferFormat,
       },
 #endif
 #if IGL_BACKEND_OPENGL
@@ -114,7 +117,7 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
           .backendVersion = {.flavor = igl::BackendFlavor::OpenGL,
                              .majorVersion = 4,
                              .minorVersion = 1},
-          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+          .colorFramebufferFormat = kColorFramebufferFormat,
       },
       // clang-format off
       // @fb-only
@@ -127,7 +130,7 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
       // @fb-only
 #endif
 // @fb-only
-      // clang-format off
+         // clang-format off
       // @fb-only
           // clang-format on
           // @fb-only
@@ -143,7 +146,7 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
           .backendVersion = {.flavor = igl::BackendFlavor::Vulkan,
                              .majorVersion = 1,
                              .minorVersion = 1},
-          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+          .colorFramebufferFormat = kColorFramebufferFormat,
       },
 #endif
   };
