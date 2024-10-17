@@ -585,6 +585,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStrip) {
   );
 
   encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+    encoder->insertDebugEventLabel("Rendering a triangle strip...");
     encoder->bindRenderPipelineState(renderPipelineState_TriangleStrip_);
     encoder->draw(4);
   });
@@ -658,6 +659,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangleBindGroup) {
 
   encodeAndSubmit(
       [this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+        encoder->insertDebugEventLabel("Rendering a triangle...");
         encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
         encoder->draw(3);
       },
