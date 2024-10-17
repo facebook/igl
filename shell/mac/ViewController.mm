@@ -184,7 +184,7 @@ using namespace igl;
 
     metalView.colorPixelFormat =
         metal::Texture::textureFormatToMTLPixelFormat(config_.colorFramebufferFormat);
-    metalView.colorspace = metal::colorSpaceToCGColorSpace(shellParams_.swapchainColorSpace);
+    metalView.colorspace = metal::colorSpaceToCGColorSpace(config_.swapchainColorSpace);
 
     metalView.framebufferOnly = NO;
     [metalView setViewController:self];
@@ -287,7 +287,7 @@ using namespace igl;
     vulkanContextConfig.enhancedShaderDebugging = false;
     vulkanContextConfig.enableBufferDeviceAddress = true;
 
-    vulkanContextConfig.swapChainColorSpace = shellParams_.swapchainColorSpace;
+    vulkanContextConfig.swapChainColorSpace = config_.swapchainColorSpace;
     vulkanContextConfig.requestedSwapChainTextureFormat = config_.colorFramebufferFormat;
 
     auto context =
@@ -599,7 +599,7 @@ static uint32_t getModifiers(NSEvent* event) {
 }
 
 - (igl::ColorSpace)colorSpace {
-  return shellParams_.swapchainColorSpace;
+  return config_.swapchainColorSpace;
 }
 
 @end
