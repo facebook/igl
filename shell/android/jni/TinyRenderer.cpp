@@ -72,7 +72,7 @@ void TinyRenderer::init(AAssetManager* mgr,
                         ANativeWindow* nativeWindow,
                         shell::IRenderSessionFactory& factory,
                         BackendVersion backendVersion,
-                        TextureFormat /*swapchainColorTextureFormat*/) {
+                        TextureFormat swapchainColorTextureFormat) {
   backendVersion_ = backendVersion;
   nativeWindow_ = nativeWindow;
   Result result;
@@ -99,6 +99,7 @@ void TinyRenderer::init(AAssetManager* mgr,
     IGL_DEBUG_ASSERT(nativeWindow != nullptr);
     vulkan::VulkanContextConfig config;
     config.terminateOnValidationError = true;
+    config.requestedSwapChainTextureFormat = swapchainColorTextureFormat;
     auto ctx = vulkan::HWDevice::createContext(config, nativeWindow);
 
     auto devices = vulkan::HWDevice::queryDevices(
