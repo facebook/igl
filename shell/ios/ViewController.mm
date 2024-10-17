@@ -186,6 +186,26 @@
 #if IGL_BACKEND_OPENGL
     auto openGLView = [[OpenGLView alloc] initWithTouchDelegate:self];
     openGLView.viewSizeChangeDelegate = self;
+
+    NSString* drawablePropertyColorFormat = kEAGLColorFormatRGBA8;
+
+    switch (config_.colorFramebufferFormat) {
+    case igl::TextureFormat::BGRA_UNorm8:
+      drawablePropertyColorFormat = kEAGLColorFormatRGBA8;
+      break;
+
+    case igl::TextureFormat::BGRA_SRGB:
+      drawablePropertyColorFormat = kEAGLColorFormatSRGBA8;
+      break;
+
+    default:
+      break;
+    }
+
+    ((CAEAGLLayer*)openGLView.layer).drawableProperties =
+        [NSDictionary dictionaryWithObjectsAndKeys:drawablePropertyColorFormat,
+                                                   kEAGLDrawablePropertyColorFormat,
+                                                   nil];
     self.view = openGLView;
 #endif
     break;
