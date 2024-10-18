@@ -28,6 +28,7 @@ class IRenderPipelineState;
 
 namespace vulkan {
 
+class CommandQueue;
 class Device;
 class Framebuffer;
 class VulkanContext;
@@ -76,7 +77,7 @@ class EnhancedShaderDebuggingStore {
   explicit EnhancedShaderDebuggingStore();
 
   /** @brief Initialize the object and stores the `Device` needed to create resources */
-  void initialize(const igl::vulkan::Device* device);
+  void initialize(igl::vulkan::Device* device);
 
   /** @brief Returns the shader code that stores the line vertices in the buffer. This code can be
    * injected into all shaders compiled by the device.
@@ -120,6 +121,11 @@ class EnhancedShaderDebuggingStore {
    * render pass and the line drawing pass */
   void installBufferBarrier(const igl::ICommandBuffer& commandBuffer) const;
 
+  /// @brief Executes the shader debugging render pass. Also presents the image if the command
+  /// buffer being submitted was from a swapchain.
+  void enhancedShaderDebuggingPass(igl::vulkan::CommandQueue& queue,
+                                   igl::vulkan::CommandBuffer* cmdBuffer);
+
  private:
   /** @brief Initializes the vertex buffer */
   void initializeBuffer() const;
@@ -139,7 +145,7 @@ class EnhancedShaderDebuggingStore {
 
  private:
   bool enabled_ = false;
-  const igl::vulkan::Device* device_ = nullptr;
+  igl::vulkan::Device* device_ = nullptr;
   mutable std::shared_ptr<igl::IBuffer> vertexBuffer_;
   mutable std::shared_ptr<igl::IDepthStencilState> depthStencilState_;
 

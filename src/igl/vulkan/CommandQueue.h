@@ -42,7 +42,6 @@ class CommandQueue final : public ICommandQueue {
   /// @param endOfFrame Not used
   SubmitHandle submit(const ICommandBuffer& cmdBuffer, bool endOfFrame = false) override;
 
- private:
   /** @brief Ends the current command buffer and resets the internal flag tracking an active command
    * buffer. Determines if an image should be presented by (1) checking if this instance belongs to
    * a graphics queue, (2) the context has a swapchain object, (3) the command buffer is from a
@@ -55,11 +54,6 @@ class CommandQueue final : public ICommandQueue {
   SubmitHandle endCommandBuffer(igl::vulkan::VulkanContext& ctx,
                                 igl::vulkan::CommandBuffer* cmdBuffer,
                                 bool present);
-
-  /// @brief Executes the shader debugging render pass. Also presents the image if the command
-  /// buffer being submitted was from a swapchain.
-  void enhancedShaderDebuggingPass(igl::vulkan::VulkanContext& ctx,
-                                   igl::vulkan::CommandBuffer* cmdBuffer);
 
  private:
   igl::vulkan::Device& device_;
