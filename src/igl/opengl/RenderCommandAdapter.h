@@ -64,7 +64,7 @@ class RenderCommandAdapter final : public WithContext {
   void setIndexBuffer(Buffer& buffer);
 
   void clearUniformBuffers();
-  void setUniformBuffer(Buffer* buffer, size_t offset, uint32_t index, Result* outResult = nullptr);
+  void setUniformBuffer(Buffer* buffer, size_t offset, size_t size, uint32_t index, Result* outResult = nullptr);
   void setUniform(const UniformDesc& uniformDesc, const void* data, Result* outResult = nullptr);
 
   void clearVertexTexture();

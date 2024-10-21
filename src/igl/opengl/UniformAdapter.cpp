@@ -128,6 +128,7 @@ void UniformAdapter::setUniform(const UniformDesc& uniformDesc,
 
 void UniformAdapter::setUniformBuffer(IBuffer* buffer,
                                       size_t offset,
+                                      size_t size,
                                       uint32_t bindingIndex,
                                       Result* outResult) {
   IGL_DEBUG_ASSERT(bindingIndex <= IGL_UNIFORM_BLOCKS_BINDING_MAX,
@@ -136,7 +137,7 @@ void UniformAdapter::setUniformBuffer(IBuffer* buffer,
                    IGL_UNIFORM_BLOCKS_BINDING_MAX);
   IGL_DEBUG_ASSERT(buffer, "invalid buffer passed to setUniformBuffer");
   if (bindingIndex < IGL_UNIFORM_BLOCKS_BINDING_MAX && buffer) {
-    uniformBufferBindingMap_[bindingIndex] = {buffer, offset};
+    uniformBufferBindingMap_[bindingIndex] = {buffer, offset, size};
     uniformBuffersDirtyMask_ |= 1 << bindingIndex;
     Result::setOk(outResult);
   } else {
@@ -174,10 +175,12 @@ void UniformAdapter::bindToPipeline(IContext& context) {
   for (size_t bindingIndex = 0; bindingIndex < IGL_UNIFORM_BLOCKS_BINDING_MAX; ++bindingIndex) {
     if (uniformBuffersDirtyMask_ & (1 << bindingIndex)) {
       auto uniformBinding = uniformBufferBindingMap_.at(bindingIndex);
-      auto* bufferState = static_cast<UniformBlockBuffer*>(uniformBinding.first);
+      auto* bufferState = static_cast<UniformBlockBuffer*>(std::get<0>(uniformBinding));
+      auto offset = std::get<1>(uniformBinding);
+      auto size = std::get<2>(uniformBinding);
       IGL_DEBUG_ASSERT(bufferState);
-      if (uniformBinding.second) {
-        bufferState->bindRange(bindingIndex, uniformBinding.second, nullptr);
+      if (offset) {
+        bufferState->bindRange(bindingIndex, offset, size, nullptr);
       } else {
         bufferState->bindBase(bindingIndex, nullptr);
       }
