@@ -94,25 +94,23 @@ TEST_F(VulkanFeaturesTest, EnableDefaultFeatures_Vk_1_1) {
 #endif
 
 #if defined(VK_EXT_descriptor_indexing) && VK_EXT_descriptor_indexing
-  if (config.enableDescriptorIndexing) {
-    auto& descriptorIndexingFeatures = features.VkPhysicalDeviceDescriptorIndexingFeaturesEXT_;
-    EXPECT_TRUE(descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing);
-    EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind);
-    EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind);
-    EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind);
-    EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind);
-    EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingUpdateUnusedWhilePending);
-    EXPECT_TRUE(descriptorIndexingFeatures.descriptorBindingPartiallyBound);
-    EXPECT_TRUE(descriptorIndexingFeatures.runtimeDescriptorArray);
-  }
+  auto& descriptorIndexingFeatures = features.VkPhysicalDeviceDescriptorIndexingFeaturesEXT_;
+  ASSERT_FALSE(config.enableDescriptorIndexing);
+  EXPECT_FALSE(descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing);
+  EXPECT_FALSE(descriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind);
+  EXPECT_FALSE(descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind);
+  EXPECT_FALSE(descriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind);
+  EXPECT_FALSE(descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind);
+  EXPECT_FALSE(descriptorIndexingFeatures.descriptorBindingUpdateUnusedWhilePending);
+  EXPECT_FALSE(descriptorIndexingFeatures.descriptorBindingPartiallyBound);
+  EXPECT_FALSE(descriptorIndexingFeatures.runtimeDescriptorArray);
 #endif
 
   EXPECT_TRUE(features.VkPhysicalDevice16BitStorageFeatures_.storageBuffer16BitAccess);
 
 #if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
-  if (config.enableBufferDeviceAddress) {
-    EXPECT_TRUE(features.VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress);
-  }
+  ASSERT_FALSE(config.enableBufferDeviceAddress);
+  EXPECT_FALSE(features.VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress);
 #endif
   EXPECT_TRUE(features.VkPhysicalDeviceMultiviewFeatures_.multiview);
   EXPECT_TRUE(features.VkPhysicalDeviceSamplerYcbcrConversionFeatures_.samplerYcbcrConversion);
