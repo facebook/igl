@@ -175,12 +175,10 @@ void UniformAdapter::bindToPipeline(IContext& context) {
   for (size_t bindingIndex = 0; bindingIndex < IGL_UNIFORM_BLOCKS_BINDING_MAX; ++bindingIndex) {
     if (uniformBuffersDirtyMask_ & (1 << bindingIndex)) {
       auto uniformBinding = uniformBufferBindingMap_.at(bindingIndex);
-      auto* bufferState = static_cast<UniformBlockBuffer*>(std::get<0>(uniformBinding));
-      auto offset = std::get<1>(uniformBinding);
-      auto size = std::get<2>(uniformBinding);
+      auto* bufferState = static_cast<UniformBlockBuffer*>(uniformBinding.buffer);
       IGL_DEBUG_ASSERT(bufferState);
-      if (offset) {
-        bufferState->bindRange(bindingIndex, offset, size, nullptr);
+      if (uniformBinding.offset) {
+        bufferState->bindRange(bindingIndex, uniformBinding.offset, uniformBinding.size, nullptr);
       } else {
         bufferState->bindBase(bindingIndex, nullptr);
       }
