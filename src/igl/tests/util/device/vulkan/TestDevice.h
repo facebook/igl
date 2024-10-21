@@ -11,10 +11,24 @@
 
 namespace igl {
 class IDevice;
+namespace vulkan {
+struct VulkanContextConfig;
+} // namespace vulkan
+
 namespace tests::util::device::vulkan {
 
 /**
+ Configure and return a context configuration.
+ */
+igl::vulkan::VulkanContextConfig getContextConfig(bool enableValidation = true);
+
+/**
  Create and return an igl::Device that is suitable for running tests against.
+ */
+std::shared_ptr<::igl::IDevice> createTestDevice(const igl::vulkan::VulkanContextConfig& config);
+
+/**
+ Helper to create a Vulkan device with default configuration and optional validation.
  */
 std::shared_ptr<::igl::IDevice> createTestDevice(bool enableValidation = true);
 
