@@ -67,9 +67,10 @@ void ComputeCommandAdapter::setUniform(const UniformDesc& uniformDesc,
 
 void ComputeCommandAdapter::setBlockUniform(Buffer* buffer,
                                             size_t offset,
+                                            size_t size,
                                             int index,
                                             Result* outResult) {
-  uniformAdapter_.setUniformBuffer(buffer, offset, index, outResult);
+  uniformAdapter_.setUniformBuffer(buffer, offset, size, index, outResult);
 }
 
 void ComputeCommandAdapter::dispatchThreadGroups(const Dimensions& threadgroupCount,

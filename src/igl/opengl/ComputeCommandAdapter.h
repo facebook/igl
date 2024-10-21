@@ -49,7 +49,7 @@ class ComputeCommandAdapter final : public WithContext {
   void setBuffer(Buffer* buffer, size_t offset, uint32_t index);
 
   void clearUniformBuffers();
-  void setBlockUniform(Buffer* buffer, size_t offset, int index, Result* outResult = nullptr);
+  void setBlockUniform(Buffer* buffer, size_t offset, size_t size, int index, Result* outResult = nullptr);
   void setUniform(const UniformDesc& uniformDesc, const void* data, Result* outResult = nullptr);
 
   void setPipelineState(const std::shared_ptr<IComputePipelineState>& newValue);
