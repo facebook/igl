@@ -217,7 +217,7 @@ void UniformBlockBuffer::bindRange(size_t index, size_t offset, size_t size, Res
     IGL_DEBUG_ASSERT(
         (offset + size) <= getSizeInBytes(), "Offset or Size is invalid! (%d %d %d)", offset, size, getSizeInBytes());
     getContext().bindBufferRange(
-        target_, (GLuint)index, iD_, (GLintptr)offset, (GLsizeiptr)(size > 0 ? size : getSizeInBytes() - offset));
+        target_, (GLuint)index, iD_, (GLintptr)offset, (size > 0 ? size : getSizeInBytes() - offset));
     Result::setOk(outResult);
   } else {
     static const char* kErrorMsg = "Uniform Blocks are not supported";
