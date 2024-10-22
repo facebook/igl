@@ -261,8 +261,6 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
                                       IBuffer* buffer,
                                       size_t offset,
                                       size_t bufferSize) {
-  (void)bufferSize;
-
   if (IGL_DEBUG_VERIFY(adapter_) && buffer) {
     auto* glBuffer = static_cast<Buffer*>(buffer);
     auto bufferType = glBuffer->getType();
@@ -270,7 +268,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     if (bufferType == Buffer::Type::Uniform) {
       IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     } else if (bufferType == Buffer::Type::UniformBlock) {
-      adapter_->setUniformBuffer(glBuffer, offset, index);
+      adapter_->setUniformBuffer(glBuffer, offset, bufferSize, index);
     }
   }
 }

@@ -205,7 +205,7 @@ void UniformBlockBuffer::bindBase(size_t index, Result* outResult) {
   }
 }
 
-void UniformBlockBuffer::bindRange(size_t index, size_t offset, Result* outResult) {
+void UniformBlockBuffer::bindRange(size_t index, size_t offset, size_t size, Result* outResult) {
   if (getContext().deviceFeatures().hasFeature(DeviceFeatures::UniformBlocks)) {
     if (target_ != GL_UNIFORM_BUFFER) {
       static const char* kErrorMsg = "Buffer should be GL_UNIFORM_BUFFER";
@@ -214,10 +214,13 @@ void UniformBlockBuffer::bindRange(size_t index, size_t offset, Result* outResul
       return;
     }
     getContext().bindBuffer(target_, iD_);
-    IGL_DEBUG_ASSERT(
-        offset < getSizeInBytes(), "Offset is invalid! (%d %d)", offset, getSizeInBytes());
+    IGL_DEBUG_ASSERT((offset + size) <= getSizeInBytes(),
+                     "Offset or Size is invalid! (%d %d %d)",
+                     offset,
+                     size,
+                     getSizeInBytes());
     getContext().bindBufferRange(
-        target_, (GLuint)index, iD_, (GLintptr)offset, getSizeInBytes() - offset);
+        target_, (GLuint)index, iD_, (GLintptr)offset, size ? size : getSizeInBytes() - offset);
     Result::setOk(outResult);
   } else {
     static const char* kErrorMsg = "Uniform Blocks are not supported";
