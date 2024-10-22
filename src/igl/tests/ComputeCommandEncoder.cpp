@@ -114,7 +114,8 @@ class ComputeCommandEncoderTest : public ::testing::Test {
 
     const Dimensions threadgroupSize(dataIn.size(), 1, 1);
     const Dimensions threadgroupCount(1, 1, 1);
-    computeEncoder->dispatchThreadGroups(threadgroupCount, threadgroupSize);
+    computeEncoder->dispatchThreadGroups(
+        threadgroupCount, threadgroupSize, {.buffers = {bufferIn.get()}});
     computeEncoder->endEncoding();
     ret = computePipelineState;
   }
