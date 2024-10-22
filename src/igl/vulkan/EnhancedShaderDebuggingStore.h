@@ -127,12 +127,6 @@ class EnhancedShaderDebuggingStore {
                                    igl::vulkan::CommandBuffer* cmdBuffer);
 
  private:
-  /** @brief Initializes the vertex buffer */
-  void initializeBuffer() const;
-
-  /** @brief Initializes the depth stencil state */
-  void initializeDepthState() const;
-
   /** @brief Vertex shader code to render the lines */
   std::string renderLineVSCode() const;
 
@@ -154,8 +148,8 @@ class EnhancedShaderDebuggingStore {
   mutable std::unordered_map<uint64_t, std::shared_ptr<igl::IRenderPipelineState>> pipelineStates_;
 
   mutable std::shared_ptr<IShaderStages> shaderStage_;
-  mutable std::shared_ptr<IShaderModule> vertexShaderModule_;
-  mutable std::shared_ptr<IShaderModule> fragmentShaderModule_;
+  std::shared_ptr<IShaderModule> vertexShaderModule_;
+  std::shared_ptr<IShaderModule> fragmentShaderModule_;
 };
 
 } // namespace vulkan
