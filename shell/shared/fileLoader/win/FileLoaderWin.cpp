@@ -111,12 +111,17 @@ std::string FileLoaderWin::fullPath(const std::string& fileName) const {
   }
 
 // @fb-only
+  std::string resfolders[3] = {// @fb-only
+                               // @fb-only
+                               // @fb-only
+                               // @fb-only
   // @fb-only
+    // @fb-only
+    // @fb-only
       // @fb-only
-  // @fb-only
-    // @fb-only
+          // @fb-only
+      // @fb-only
         // @fb-only
-    // @fb-only
       // @fb-only
     // @fb-only
   // @fb-only
