@@ -22,7 +22,7 @@ struct ShellParams;
 class RenderSession {
  public:
   explicit RenderSession(std::shared_ptr<Platform> platform);
-  virtual ~RenderSession() noexcept;
+  virtual ~RenderSession() noexcept = default;
 
   virtual void initialize() noexcept {}
   // NOLINTNEXTLINE(performance-unnecessary-value-param)
@@ -77,7 +77,7 @@ class RenderSession {
 
  private:
   std::shared_ptr<Platform> platform_;
-  std::unique_ptr<AppParams> appParams_;
+  std::shared_ptr<AppParams> appParams_;
   std::optional<igl::Color> preferredClearColor_;
   const ShellParams* shellParams_ = nullptr;
 };

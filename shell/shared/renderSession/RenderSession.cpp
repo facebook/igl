@@ -15,9 +15,7 @@
 namespace igl::shell {
 
 RenderSession::RenderSession(std::shared_ptr<Platform> platform) :
-  platform_(std::move(platform)), appParams_(std::make_unique<AppParams>()) {}
-
-RenderSession::~RenderSession() noexcept = default;
+  platform_(std::move(platform)), appParams_(std::make_shared<AppParams>()) {}
 
 void RenderSession::updateDisplayScale(float scale) noexcept {
   platform_->getDisplayContext().scale = scale;
