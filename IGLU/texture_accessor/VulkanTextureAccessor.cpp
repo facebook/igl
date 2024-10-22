@@ -34,7 +34,7 @@ void VulkanTextureAccessor::assignTexture(std::shared_ptr<igl::ITexture> texture
   }
 #if IGL_BACKEND_VULKAN
   auto* vkTexture = static_cast<igl::vulkan::Texture*>(texture.get());
-  const auto& vkImage = vkTexture->getVulkanTexture().getVulkanImage();
+  const igl::vulkan::VulkanImage& vkImage = vkTexture->getVulkanTexture().image_;
   vkImage_ = vkImage.getVkImage();
   ctx_ = vkImage.ctx_;
   const auto textureFormatProperties =

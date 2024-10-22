@@ -7,17 +7,11 @@
 
 #pragma once
 
-#include <memory>
-
-#include <igl/ColorSpace.h>
 #include <igl/vulkan/Common.h>
-#include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanImageView.h>
 
 namespace igl::vulkan {
-
-class VulkanContext;
 
 class VulkanTexture final {
  public:
@@ -37,8 +31,7 @@ class VulkanTexture final {
     return textureId_;
   }
 
- private:
-  friend class VulkanContext;
+ public:
   VulkanImage image_;
   VulkanImageView imageView_;
   // an index into VulkanContext::textures_
