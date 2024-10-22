@@ -470,9 +470,8 @@ VulkanContext::~VulkanContext() {
 #if IGL_DEBUG
   for (const auto& t : textures_.objects_) {
     if (t.obj_.use_count() > 1) {
-      IGL_DEBUG_ABORT("Leaked texture detected! %u %s",
-                      t.obj_->getTextureId(),
-                      t.obj_->getVulkanImage().name_.c_str());
+      IGL_DEBUG_ABORT(
+          "Leaked texture detected! %u %s", t.obj_->textureId_, t.obj_->image_.name_.c_str());
     }
   }
   if (samplers_.numObjects()) {
@@ -918,7 +917,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     IGL_DEBUG_ASSERT(textures_.numObjects() == 1);
     const uint32_t pixel = 0xFF000000;
     stagingDevice_->imageData(
-        (*textures_.get(dummyTexture))->getVulkanImage(),
+        (*textures_.get(dummyTexture))->image_,
         TextureType::TwoD,
         TextureRangeDesc::new2D(0, 0, 1, 1),
         TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8),

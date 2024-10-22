@@ -7,10 +7,6 @@
 
 #include "VulkanTexture.h"
 
-#include <igl/vulkan/Common.h>
-#include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanImage.h>
-
 namespace igl::vulkan {
 
 VulkanTexture::VulkanTexture(VulkanImage&& image, VulkanImageView&& imageView) :

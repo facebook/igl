@@ -116,7 +116,7 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
 
 #if IGL_DEBUG
   if (newTexture) {
-    const auto& img = newTexture->getVulkanImage();
+    const igl::vulkan::VulkanImage& img = newTexture->image_;
     IGL_DEBUG_ASSERT(img.samples_ == VK_SAMPLE_COUNT_1_BIT,
                      "Multisampled images cannot be sampled in shaders");
     if (bindPoint_ == VK_PIPELINE_BIND_POINT_GRAPHICS) {

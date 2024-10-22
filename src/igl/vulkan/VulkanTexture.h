@@ -27,9 +27,6 @@ class VulkanTexture final {
   const VulkanImageView& getVulkanImageView() const {
     return imageView_;
   }
-  uint32_t getTextureId() const {
-    return textureId_;
-  }
 
  public:
   VulkanImage image_;
