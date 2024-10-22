@@ -110,11 +110,13 @@ std::string FileLoaderWin::fullPath(const std::string& fileName) const {
     }
   }
 
-// @fb-only
-  std::string resfolders[3] = {// @fb-only
-                               // @fb-only
-                               // @fb-only
-                               // @fb-only
+#if !defined(IGL_CMAKE_BUILD)
+  // @lint-ignore CLANGTIDY
+  const std::string resfolders[] = {
+      // @fb-only
+      // @fb-only
+      // @fb-only
+  };
   // @fb-only
     // @fb-only
     // @fb-only
@@ -125,7 +127,7 @@ std::string FileLoaderWin::fullPath(const std::string& fileName) const {
       // @fb-only
     // @fb-only
   // @fb-only
-// @fb-only
+#endif
 
   return fileName;
 }
