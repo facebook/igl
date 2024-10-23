@@ -209,8 +209,8 @@ std::shared_ptr<igl::IRenderPipelineState> EnhancedShaderDebuggingStore::pipelin
 
   const uint64_t hashedFramebufferFormats = hashFramebufferFormats(framebuffer);
 
-  auto result = pipelineStates_.find(hashedFramebufferFormats);
-  if (result != pipelineStates_.end()) {
+  if (auto result = pipelineStates_.find(hashedFramebufferFormats);
+      result != pipelineStates_.end()) {
     return result->second;
   }
 
@@ -264,9 +264,9 @@ std::shared_ptr<igl::IRenderPipelineState> EnhancedShaderDebuggingStore::pipelin
   desc.shaderStages = shaderStage_;
   desc.debugName = genNameHandle("Pipeline: debug lines");
 
-  pipelineStates_.insert({hashedFramebufferFormats, device.createRenderPipeline(desc, nullptr)});
-
-  return pipelineStates_[hashedFramebufferFormats];
+  return pipelineStates_
+      .insert_or_assign(hashedFramebufferFormats, device.createRenderPipeline(desc, nullptr))
+      .first->second;
 }
 
 std::string EnhancedShaderDebuggingStore::renderLineVSCode() const {

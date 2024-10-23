@@ -234,9 +234,9 @@ TEST_F(EnhancedShaderDebuggingStoreTest, Pipeline) {
   EnhancedShaderDebuggingStore store;
   store.initialize(device_);
 
-  const igl::vulkan::VulkanContextConfig config;
-  const igl::vulkan::VulkanFeatures features(VK_API_VERSION_1_1, config);
-  if (!config.enableBufferDeviceAddress) {
+  if (!device_->getVulkanContext()
+           .features()
+           .VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress) {
     GTEST_SKIP() << "BufferDeviceAddress not supported";
   }
 
@@ -281,9 +281,9 @@ TEST_F(EnhancedShaderDebuggingStoreTest, InstallBufferBarrier) {
   EnhancedShaderDebuggingStore store;
   store.initialize(device_);
 
-  const igl::vulkan::VulkanContextConfig config;
-  const igl::vulkan::VulkanFeatures features(VK_API_VERSION_1_1, config);
-  if (!config.enableBufferDeviceAddress) {
+  if (!device_->getVulkanContext()
+           .features()
+           .VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress) {
     GTEST_SKIP() << "BufferDeviceAddress not supported";
   }
 
