@@ -21,10 +21,6 @@ class VulkanTexture final {
   VulkanTexture(const VulkanTexture&) = delete;
   VulkanTexture& operator=(const VulkanTexture&) = delete;
 
-  const VulkanImage& getVulkanImage() const {
-    return image_;
-  }
-
  public:
   VulkanImage image_;
   VulkanImageView imageView_;
