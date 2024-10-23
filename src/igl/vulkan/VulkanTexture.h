@@ -24,9 +24,6 @@ class VulkanTexture final {
   const VulkanImage& getVulkanImage() const {
     return image_;
   }
-  const VulkanImageView& getVulkanImageView() const {
-    return imageView_;
-  }
 
  public:
   VulkanImage image_;
