@@ -57,6 +57,10 @@ class VulkanSwapchainTest : public ::testing::Test {
 };
 
 TEST_F(VulkanSwapchainTest, CreateVulkanSwapchain) {
+#if IGL_PLATFORM_WIN
+  GTEST_SKIP() << "Fix these tests on Windows, no headless surface support there.";
+#endif
+
   auto swapchain = std::make_unique<igl::vulkan::VulkanSwapchain>(*context_, kWidth, kHeight);
   ASSERT_NE(swapchain, nullptr);
 
