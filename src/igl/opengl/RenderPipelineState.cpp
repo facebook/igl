@@ -291,6 +291,10 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
     IGL_DEBUG_ASSERT(location < sMaxNumVertexAttribs);
     activeAttributesLocations_.push_back(location);
 
+    prePipelineStateAttributesLocations_.erase(std::remove(prePipelineStateAttributesLocations_.begin(),
+                                                           prePipelineStateAttributesLocations_.end(), location),
+                                               prePipelineStateAttributesLocations_.end());
+
     getContext().enableVertexAttribArray(location);
     const auto& attribute = attribList[i];
     getContext().vertexAttribPointer(
@@ -318,6 +322,13 @@ void RenderPipelineState::unbindVertexAttributes() {
     getContext().disableVertexAttribArray(l);
   }
   activeAttributesLocations_.clear();
+}
+
+void RenderPipelineState::unbindPrePipelineVertexAttributes() {
+  for (const auto& l : prePipelineStateAttributesLocations_) {
+    getContext().disableVertexAttribArray(l);
+  }
+  prePipelineStateAttributesLocations_.clear();
 }
 
 // Looks up the location the of the specified texture unit via its name,
