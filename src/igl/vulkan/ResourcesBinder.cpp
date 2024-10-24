@@ -131,8 +131,16 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
   }
 #endif // IGL_DEBUG
 
-  if (bindingsTextures_.textures[index] != newTexture) {
-    bindingsTextures_.textures[index] = newTexture;
+  // multisampled images cannot be directly accessed from shaders
+  const bool isTextureAvailable =
+      (newTexture != nullptr) &&
+      ((newTexture->image_.samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
+  const bool isSampledImage = isTextureAvailable && newTexture->image_.isSampledImage();
+
+  VkImageView imageView = isSampledImage ? newTexture->imageView_.vkImageView_ : VK_NULL_HANDLE;
+
+  if (bindingsTextures_.textures[index] != imageView) {
+    bindingsTextures_.textures[index] = imageView;
     isDirtyFlags_ |= DirtyFlagBits_Textures;
   }
 }

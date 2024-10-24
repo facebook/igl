@@ -32,7 +32,7 @@ struct BindingsBuffers {
 };
 
 struct BindingsTextures {
-  igl::vulkan::VulkanTexture* textures[IGL_TEXTURE_SAMPLERS_MAX] = {};
+  VkImageView textures[IGL_TEXTURE_SAMPLERS_MAX] = {};
   VkSampler samplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
 };
 
