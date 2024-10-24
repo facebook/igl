@@ -33,7 +33,7 @@ struct BindingsBuffers {
 
 struct BindingsTextures {
   igl::vulkan::VulkanTexture* textures[IGL_TEXTURE_SAMPLERS_MAX] = {};
-  igl::vulkan::VulkanSampler* samplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
+  VkSampler samplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
 };
 
 /** @brief Stores uniform and storage buffer bindings, as well as bindings for textures and sampler

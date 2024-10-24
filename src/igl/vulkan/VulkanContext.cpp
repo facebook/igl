@@ -1620,7 +1620,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
     if (texture && isGraphics) {
       IGL_DEBUG_ASSERT(data.samplers[loc], "A sampler should be bound to every bound texture slot");
     }
-    VkSampler sampler = data.samplers[loc] ? data.samplers[loc]->vkSampler : dummySampler;
+    VkSampler sampler = data.samplers[loc] ? data.samplers[loc] : dummySampler;
     // multisampled images cannot be directly accessed from shaders
     const bool isTextureAvailable =
         (texture != nullptr) &&
@@ -1631,10 +1631,11 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
     }
     writes[numWrites++] = ivkGetWriteDescriptorSet_ImageInfo(
         dset, loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &infoSampledImages[numImages]);
-    infoSampledImages[numImages++] = {isSampledImage ? sampler : dummySampler,
-                                      isSampledImage ? texture->imageView_.getVkImageView()
-                                                     : dummyImageView,
-                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    infoSampledImages[numImages++] = VkDescriptorImageInfo{
+        .sampler = isSampledImage ? sampler : dummySampler,
+        .imageView = isSampledImage ? texture->imageView_.getVkImageView() : dummyImageView,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
   }
 
   if (numWrites) {
