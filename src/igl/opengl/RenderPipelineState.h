@@ -69,8 +69,6 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
     return desc_.polygonFillMode;
   }
 
-  std::unordered_map<int, size_t>& uniformBlockBindingMap();
-
   const ShaderStages* getShaderStages() const {
     return static_cast<ShaderStages*>(desc_.shaderStages.get());
   }

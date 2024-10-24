@@ -389,8 +389,4 @@ void RenderPipelineState::setRenderPipelineReflection(
   (void)renderPipelineReflection;
 }
 
-std::unordered_map<int, size_t>& RenderPipelineState::uniformBlockBindingMap() {
-  return uniformBlockBindingMap_;
-}
-
 } // namespace igl::opengl
