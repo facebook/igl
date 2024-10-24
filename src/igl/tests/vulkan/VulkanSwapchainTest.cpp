@@ -57,7 +57,7 @@ class VulkanSwapchainTest : public ::testing::Test {
 };
 
 TEST_F(VulkanSwapchainTest, CreateVulkanSwapchain) {
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID
   GTEST_SKIP() << "Fix these tests on Windows, no headless surface support there.";
 #endif
 
