@@ -220,10 +220,13 @@ void RenderPipelineState::bind() {
   if (desc_.shaderStages) {
     const auto& shaderStages = std::static_pointer_cast<ShaderStages>(desc_.shaderStages);
     shaderStages->bind();
-    for (const auto& binding : uniformBlockBindingMap_) {
-      const auto& blockIndex = binding.first;
-      const auto& bindingIndex = binding.second;
-      getContext().uniformBlockBinding(shaderStages->getProgramID(), blockIndex, bindingIndex);
+    if (!uniformBlockBindingPointSet_) {
+      for (const auto& binding : uniformBlockBindingMap_) {
+        const auto& blockIndex = binding.first;
+        const auto& bindingIndex = binding.second;
+        getContext().uniformBlockBinding(shaderStages->getProgramID(), blockIndex, bindingIndex);
+      }
+      uniformBlockBindingPointSet_ = true;
     }
   }
 
