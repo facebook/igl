@@ -227,7 +227,11 @@ void ColorSession::initialize() noexcept {
   samp0_ = device.createSamplerState(samplerDesc, nullptr);
   IGL_DEBUG_ASSERT(samp0_ != nullptr);
 
-  tex0_ = getPlatform().loadTexture("macbeth.png");
+  if (colorTestModes_ == ColorTestModes::eMacbethTexture) {
+    tex0_ = getPlatform().loadTexture("macbeth.png");
+  } else if (colorTestModes_ == ColorTestModes::eOrangeTexture) {
+    tex0_ = getPlatform().loadTexture("orange.png");
+  }
 
   shaderStages_ = getShaderStagesForBackend(device);
   IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
