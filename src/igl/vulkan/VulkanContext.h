@@ -256,20 +256,16 @@ class VulkanContext final {
   VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;
   VkSurfaceKHR vkSurface_ = VK_NULL_HANDLE;
   VkPhysicalDevice IGL_NULLABLE vkPhysicalDevice_ = VK_NULL_HANDLE;
-  FOLLY_PUSH_WARNING
-  FOLLY_GNU_DISABLE_WARNING("-Wmissing-field-initializers")
   VkPhysicalDeviceDescriptorIndexingPropertiesEXT vkPhysicalDeviceDescriptorIndexingProperties_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT,
-      // Ignore clang-diagnostic-missing-field-initializers
-      // @lint-ignore CLANGTIDY
-      nullptr};
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT,
+      .pNext = nullptr,
+  };
 
   // Provided by VK_KHR_driver_properties
   VkPhysicalDeviceDriverPropertiesKHR vkPhysicalDeviceDriverProperties_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES_KHR,
-      // Ignore clang-diagnostic-missing-field-initializers
-      // @lint-ignore CLANGTIDY
-      &vkPhysicalDeviceDescriptorIndexingProperties_};
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES_KHR,
+      .pNext = &vkPhysicalDeviceDescriptorIndexingProperties_,
+  };
 
   std::vector<VkFormat> deviceDepthFormats_;
   std::vector<VkSurfaceFormatKHR> deviceSurfaceFormats_;
@@ -278,10 +274,9 @@ class VulkanContext final {
 
   // Provided by VK_VERSION_1_1
   VkPhysicalDeviceProperties2 vkPhysicalDeviceProperties2_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
-      &vkPhysicalDeviceDriverProperties_,
-      VkPhysicalDeviceProperties{}};
-  FOLLY_POP_WARNING
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+      .pNext = &vkPhysicalDeviceDriverProperties_,
+  };
 
   VulkanFeatures features_;
 
