@@ -39,7 +39,7 @@ class ColorSession : public RenderSession {
 
  private:
   ColorTestModes colorTestModes_ = ColorTestModes::eMacbethTexture;
-  ;
+
   std::shared_ptr<IRenderPipelineState> pipelineState_;
   std::shared_ptr<IVertexInputState> vertexInput0_;
   std::shared_ptr<ISamplerState> samp0_;
