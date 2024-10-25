@@ -361,6 +361,7 @@ struct VulkanContextImpl final {
   Pool<BindGroupTextureTag, BindGroupMetadataTextures> bindGroupTexturesPool_;
 
   SamplerHandle dummySampler_ = {};
+  TextureHandle dummyTexture_ = {};
 
   igl::vulkan::DescriptorPoolsArena& getOrCreateArena_CombinedImageSamplers(
       const VulkanContext& ctx,
@@ -466,13 +467,11 @@ VulkanContext::~VulkanContext() {
   pimpl_->bindGroupBuffersPool_.clear();
 
   destroy(pimpl_->dummySampler_);
+  destroy(pimpl_->dummyTexture_);
 
 #if IGL_DEBUG
-  for (const auto& t : textures_.objects_) {
-    if (t.obj_.use_count() > 1) {
-      IGL_DEBUG_ABORT(
-          "Leaked texture detected! %u %s", t.obj_->textureId_, t.obj_->image_.name_.c_str());
-    }
+  if (textures_.numObjects()) {
+    IGL_LOG_ERROR("Leaked %u textures\n", textures_.numObjects());
   }
   if (samplers_.numObjects()) {
     IGL_LOG_ERROR("Leaked %u samplers\n", samplers_.numObjects());
@@ -912,12 +911,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     if (!IGL_DEBUG_VERIFY(imageView.valid())) {
       return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
     }
-    const TextureHandle dummyTexture =
+    pimpl_->dummyTexture_ =
         textures_.create(std::make_shared<VulkanTexture>(std::move(image), std::move(imageView)));
     IGL_DEBUG_ASSERT(textures_.numObjects() == 1);
     const uint32_t pixel = 0xFF000000;
     stagingDevice_->imageData(
-        (*textures_.get(dummyTexture))->image_,
+        (*textures_.get(pimpl_->dummyTexture_))->image_,
         TextureType::TwoD,
         TextureRangeDesc::new2D(0, 0, 1, 1),
         TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8),
