@@ -9,7 +9,6 @@
 
 #include <igl/CommandBuffer.h>
 #include <igl/Device.h>
-#include <igl/opengl/Errors.h>
 
 namespace igl::opengl {
 

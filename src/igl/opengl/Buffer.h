@@ -16,7 +16,6 @@
 namespace igl {
 class ICommandBuffer;
 namespace opengl {
-class RenderPipelineState;
 
 class Buffer : public WithContext, public IBuffer {
  public:

@@ -10,7 +10,6 @@
 #include <igl/Texture.h>
 #include <igl/opengl/CommandBuffer.h>
 #include <igl/opengl/Device.h>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/RenderPipelineState.h>
 

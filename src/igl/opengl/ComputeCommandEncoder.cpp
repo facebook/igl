@@ -12,12 +12,8 @@
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/ComputeCommandAdapter.h>
 #include <igl/opengl/Device.h>
-#include <igl/opengl/Errors.h>
-#include <igl/opengl/Framebuffer.h>
 #include <igl/opengl/IContext.h>
-#include <igl/opengl/SamplerState.h>
 #include <igl/opengl/Shader.h>
-#include <igl/opengl/Texture.h>
 
 namespace igl::opengl {
 

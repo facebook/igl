@@ -40,7 +40,7 @@ class ComputeCommandAdapter final : public WithContext {
   using TextureStates = std::array<TextureState, IGL_TEXTURE_SAMPLERS_MAX>;
 
  public:
-  ComputeCommandAdapter(IContext& context);
+  explicit ComputeCommandAdapter(IContext& context);
 
   void clearTextures();
   void setTexture(ITexture* texture, uint32_t index);

@@ -7,9 +7,7 @@
 
 #include "DepthStencilState.h"
 
-#include <igl/opengl/CommandBuffer.h>
 #include <igl/opengl/Errors.h>
-#include <igl/opengl/GLIncludes.h>
 
 namespace igl::opengl {
 
