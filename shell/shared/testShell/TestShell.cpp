@@ -52,8 +52,7 @@ void TestShellBase::SetUp(ScreenSize screenSize) {
 #elif defined(IGL_PLATFORM_WIN) && IGL_PLATFORM_WIN
   platform_ = std::make_shared<igl::shell::PlatformWin>(std::move(iglDevice));
 #elif defined(IGL_PLATFORM_ANDROID) && IGL_PLATFORM_ANDROID
-  platform_ =
-      std::make_shared<igl::shell::PlatformAndroid>(std::move(iglDevice), true /*useFakeLoader*/);
+  platform_ = std::make_shared<igl::shell::PlatformAndroid>(std::move(iglDevice));
 #elif defined(IGL_PLATFORM_LINUX) && IGL_PLATFORM_LINUX
   platform_ = std::make_shared<igl::shell::PlatformLinux>(std::move(iglDevice));
 #endif
