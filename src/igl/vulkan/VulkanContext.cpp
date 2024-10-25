@@ -2144,6 +2144,16 @@ void VulkanContext::destroy(igl::SamplerHandle handle) {
   samplers_.destroy(handle);
 }
 
+void VulkanContext::destroy(igl::TextureHandle handle) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+
+  if (handle.empty()) {
+    return;
+  }
+
+  textures_.destroy(handle);
+}
+
 VkDescriptorSet VulkanContext::getBindGroupDescriptorSet(igl::BindGroupTextureHandle handle) const {
   return handle.valid() ? pimpl_->bindGroupTexturesPool_.get(handle)->dset : VK_NULL_HANDLE;
 }
