@@ -590,6 +590,9 @@ std::string GLenumToString(GLenum code) {
 } // namespace
 #endif // defined(IGL_API_LOG) && (IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS))
 
+// Debug logging is not included in code coverage
+// @MARK:COVERAGE_EXCLUDE_START
+
 namespace {
 
 #if IGL_DEBUG || defined(IGL_API_LOG)
@@ -662,6 +665,9 @@ void logOpenGlDebugMessage(GLenum source,
 #endif // defined(IGL_API_LOG)
 #endif // IGL_DEBUG || defined(IGL_API_LOG)
 } // namespace
+
+// @MARK:COVERAGE_EXCLUDE_END
+
 namespace igl::opengl {
 namespace {
 const char* GLerrorToString(GLenum error) {
