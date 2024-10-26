@@ -18,7 +18,7 @@
 
 namespace igl::vulkan {
 
-Texture::Texture(const igl::vulkan::Device& device, TextureFormat format) :
+Texture::Texture(igl::vulkan::Device& device, TextureFormat format) :
   ITexture(format), device_(device) {}
 
 Result Texture::create(const TextureDesc& desc) {
@@ -352,6 +352,11 @@ VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
 
 VkImage Texture::getVkImage() const {
   return texture_ ? texture_->image_.vkImage_ : VK_NULL_HANDLE;
+}
+
+VulkanTexture& Texture::getVulkanTexture() const {
+  IGL_DEBUG_ASSERT(texture_);
+  return *texture_;
 }
 
 bool Texture::isSwapchainTexture() const {

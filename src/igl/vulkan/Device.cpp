@@ -157,7 +157,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 
   const auto sanitized = sanitize(desc);
 
-  auto texture = std::make_shared<vulkan::Texture>(*this, desc.format);
+  auto texture = std::make_shared<vulkan::Texture>(const_cast<Device&>(*this), desc.format);
 
   const Result res = texture->create(sanitized);
 

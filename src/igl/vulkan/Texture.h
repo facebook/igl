@@ -30,12 +30,10 @@ class Texture : public ITexture {
  public:
   /// @brief Initializes an instance of the class, but does not create the resource on the device
   /// until `create()` is called
-  Texture(const igl::vulkan::Device& device, TextureFormat format);
+  Texture(igl::vulkan::Device& device, TextureFormat format);
 
   /// @brief Initializes an instance of the class with an existing VulkanTexture object.
-  Texture(const igl::vulkan::Device& device,
-          std::shared_ptr<VulkanTexture> vkTexture,
-          TextureDesc desc) :
+  Texture(igl::vulkan::Device& device, std::shared_ptr<VulkanTexture> vkTexture, TextureDesc desc) :
     Texture(device, desc.format) {
     texture_ = std::move(vkTexture);
     desc_ = std::move(desc);
@@ -66,10 +64,7 @@ class Texture : public ITexture {
                                            FramebufferMode mode) const; // framebuffers can render
                                                                         // only into 1 mip-level
   VkImage getVkImage() const;
-  VulkanTexture& getVulkanTexture() const {
-    IGL_DEBUG_ASSERT(texture_);
-    return *texture_;
-  }
+  VulkanTexture& getVulkanTexture() const;
 
   uint32_t getNumVkLayers() const;
 
@@ -86,7 +81,7 @@ class Texture : public ITexture {
   void clearColorTexture(const igl::Color& rgba);
 
  protected:
-  const igl::vulkan::Device& device_;
+  igl::vulkan::Device& device_;
   TextureDesc desc_;
 
   std::shared_ptr<VulkanTexture> texture_;

@@ -96,7 +96,7 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
     inOutTextures.resize((size_t)imageIndex + 1, nullptr);
   }
 
-  const auto& actualDevice = static_cast<igl::vulkan::Device&>(device);
+  auto& actualDevice = static_cast<igl::vulkan::Device&>(device);
   const auto iglFormat = vulkan::vkFormatToTextureFormat(externalTextureFormat);
   const auto texture = inOutTextures[imageIndex];
   // allocate new drawable textures if its null or mismatches in size or format
