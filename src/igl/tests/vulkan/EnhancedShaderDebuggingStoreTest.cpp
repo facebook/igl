@@ -198,6 +198,12 @@ TEST_F(EnhancedShaderDebuggingStoreTest, InitializeBuffer) {
   EnhancedShaderDebuggingStore store;
   store.initialize(device_);
 
+  if (!device_->getVulkanContext()
+           .features()
+           .VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress) {
+    GTEST_SKIP() << "BufferDeviceAddress not supported";
+  }
+
   // Verify that the buffer has been created
   EXPECT_NE(store.vertexBuffer(), nullptr);
 }
@@ -206,6 +212,12 @@ TEST_F(EnhancedShaderDebuggingStoreTest, createFramebuffer) {
   // Create an instance of the EnhancedShaderDebuggingStore
   EnhancedShaderDebuggingStore store;
   store.initialize(device_);
+
+  if (!device_->getVulkanContext()
+           .features()
+           .VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress) {
+    GTEST_SKIP() << "BufferDeviceAddress not supported";
+  }
 
   // Verify that the buffer has been created
   EXPECT_NE(store.vertexBuffer(), nullptr);
@@ -224,6 +236,12 @@ TEST_F(EnhancedShaderDebuggingStoreTest, DepthStencilState) {
   // Create an instance of the EnhancedShaderDebuggingStore
   EnhancedShaderDebuggingStore store;
   store.initialize(device_);
+
+  if (!device_->getVulkanContext()
+           .features()
+           .VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress) {
+    GTEST_SKIP() << "BufferDeviceAddress not supported";
+  }
 
   // Verify that the depth stencil state has been created
   EXPECT_NE(store.depthStencilState(), nullptr);
