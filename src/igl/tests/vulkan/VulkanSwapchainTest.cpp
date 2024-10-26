@@ -24,8 +24,8 @@
 namespace igl::tests {
 
 namespace {
-constexpr uint32_t kWidth = 1024;
-constexpr uint32_t kHeight = 1024;
+[[maybe_unused]] constexpr uint32_t kWidth = 1024;
+[[maybe_unused]] constexpr uint32_t kHeight = 1024;
 } // namespace
 
 //
@@ -37,7 +37,10 @@ class VulkanSwapchainTest : public ::testing::Test {
  public:
   // Set up common resources.
   void SetUp() override {
-    // Turn off debug break so unit tests can run
+#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID
+    // @fb-only
+    GTEST_SKIP() << "Fix these tests on Windows and Android, no headless surface support there.";
+#else
     igl::setDebugBreakEnabled(false);
 
     // Add headless config for creating swapchains without a window
@@ -49,6 +52,7 @@ class VulkanSwapchainTest : public ::testing::Test {
     auto& device = static_cast<igl::vulkan::Device&>(*device_);
     context_ = &device.getVulkanContext();
     ASSERT_TRUE(context_ != nullptr);
+#endif
   }
 
  protected:
@@ -58,9 +62,9 @@ class VulkanSwapchainTest : public ::testing::Test {
 
 TEST_F(VulkanSwapchainTest, CreateVulkanSwapchain) {
 #if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID
-  GTEST_SKIP() << "Fix these tests on Windows, no headless surface support there.";
-#endif
-
+  // @fb-only
+  GTEST_SKIP() << "Fix these tests on Windows and Android, no headless surface support there.";
+#else
   auto swapchain = std::make_unique<igl::vulkan::VulkanSwapchain>(*context_, kWidth, kHeight);
   ASSERT_NE(swapchain, nullptr);
 
@@ -76,6 +80,7 @@ TEST_F(VulkanSwapchainTest, CreateVulkanSwapchain) {
   ASSERT_GT(swapchain->getNumSwapchainImages(), 0);
 
   ASSERT_EQ(swapchain->getCurrentImageIndex(), 0);
+#endif
 }
 
 } // namespace igl::tests
