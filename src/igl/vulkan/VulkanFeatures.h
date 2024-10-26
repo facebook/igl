@@ -69,42 +69,31 @@ class VulkanFeatures final {
   [[nodiscard]] igl::Result checkSelectedFeatures(
       const VulkanFeatures& availableFeatures) const noexcept;
 
-  FOLLY_PUSH_WARNING
-  FOLLY_GNU_DISABLE_WARNING("-Wmissing-field-initializers")
   // Vulkan 1.1
   VkPhysicalDeviceFeatures2 VkPhysicalDeviceFeatures2_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-      nullptr};
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
   VkPhysicalDeviceSamplerYcbcrConversionFeatures VkPhysicalDeviceSamplerYcbcrConversionFeatures_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES,
-      nullptr};
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES};
   VkPhysicalDeviceShaderDrawParametersFeatures VkPhysicalDeviceShaderDrawParametersFeatures_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
-      nullptr};
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES};
   VkPhysicalDeviceMultiviewFeatures VkPhysicalDeviceMultiviewFeatures_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
-      nullptr};
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES};
 #if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
   VkPhysicalDeviceBufferDeviceAddressFeaturesKHR VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
-      nullptr};
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR};
 #endif
 #if defined(VK_EXT_descriptor_indexing) && VK_EXT_descriptor_indexing
   VkPhysicalDeviceDescriptorIndexingFeaturesEXT VkPhysicalDeviceDescriptorIndexingFeaturesEXT_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
-      nullptr};
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT};
 #endif
   VkPhysicalDevice16BitStorageFeatures VkPhysicalDevice16BitStorageFeatures_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,
-      nullptr};
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES};
 
   // Vulkan 1.2
 #if defined(VK_VERSION_1_2)
   VkPhysicalDeviceShaderFloat16Int8Features VkPhysicalDeviceShaderFloat16Int8Features_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR,
-      nullptr};
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR};
 #endif
-  FOLLY_POP_WARNING
 
   // Assignment operator. We need to reassemble the feature chain because of the
   // pNext pointers
