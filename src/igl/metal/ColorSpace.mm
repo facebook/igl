@@ -16,8 +16,6 @@ CGColorSpaceRef colorSpaceToCGColorSpace(igl::ColorSpace colorSpace) {
     return CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
   case ColorSpace::DISPLAY_P3_NONLINEAR:
     return CGColorSpaceCreateWithName(kCGColorSpaceDisplayP3);
-  case ColorSpace::DISPLAY_P3_LINEAR:
-    return CGColorSpaceCreateWithName(kCGColorSpaceLinearDisplayP3);
   case ColorSpace::EXTENDED_SRGB_LINEAR:
     return CGColorSpaceCreateWithName(kCGColorSpaceExtendedLinearSRGB);
   case ColorSpace::DCI_P3_NONLINEAR:
@@ -26,8 +24,6 @@ CGColorSpaceRef colorSpaceToCGColorSpace(igl::ColorSpace colorSpace) {
     return CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB);
   case ColorSpace::BT709_NONLINEAR:
     return CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
-  case ColorSpace::BT2020_LINEAR:
-    return CGColorSpaceCreateWithName(kCGColorSpaceLinearITUR_2020);
   case ColorSpace::ADOBERGB_LINEAR:
     return CGColorSpaceCreateWithName(kCGColorSpaceAdobeRGB1998);
   case ColorSpace::ADOBERGB_NONLINEAR:
@@ -38,6 +34,14 @@ CGColorSpaceRef colorSpaceToCGColorSpace(igl::ColorSpace colorSpace) {
     return CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
   case ColorSpace::BT2020_NONLINEAR:
     return CGColorSpaceCreateWithName(kCGColorSpaceITUR_2020);
+  case ColorSpace::DISPLAY_P3_LINEAR:
+    if (@available(macOS 12.0, iOS 15.0, *)){
+      return CGColorSpaceCreateWithName(kCGColorSpaceLinearDisplayP3);
+    }
+  case ColorSpace::BT2020_LINEAR:
+    if (@available(macOS 12.0, iOS 15.0, *)){
+      return CGColorSpaceCreateWithName(kCGColorSpaceLinearITUR_2020);
+    }
   case ColorSpace::HDR10_ST2084:
   case ColorSpace::DOLBYVISION:
   case ColorSpace::HDR10_HLG:
