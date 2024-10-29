@@ -32,6 +32,7 @@ class ColorSession : public RenderSession {
   enum class ColorTestModes {
     eMacbethTexture,
     eOrangeTexture,
+    eOrangeClear,
   };
   void setTestMode(ColorTestModes colorTestModes) noexcept {
     colorTestModes_ = colorTestModes;

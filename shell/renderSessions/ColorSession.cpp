@@ -10,15 +10,22 @@
 #include <cstring>
 
 #include <IGLU/simdtypes/SimdTypes.h>
+#include <glm/gtc/color_space.hpp>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/GLIncludes.h>
 #include <shell/renderSessions/ColorSession.h>
+#include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl::shell {
+
+const glm::vec3 kLinearOrangeColor = glm::convertSRGBToLinear(glm::dvec3{1.0, 0.5, 0.0});
+const iglu::simdtypes::float3 kGPULinearOrangeColor = {static_cast<float>(kLinearOrangeColor.x),
+                                                       static_cast<float>(kLinearOrangeColor.y),
+                                                       static_cast<float>(kLinearOrangeColor.z)};
 
 struct VertexPosUv {
   iglu::simdtypes::float3 position;
@@ -231,6 +238,10 @@ void ColorSession::initialize() noexcept {
     tex0_ = getPlatform().loadTexture("macbeth.png");
   } else if (colorTestModes_ == ColorTestModes::eOrangeTexture) {
     tex0_ = getPlatform().loadTexture("orange.png");
+  } else if (colorTestModes_ == ColorTestModes::eOrangeClear) {
+    tex0_ = getPlatform().loadTexture(igl::shell::ImageLoader::white());
+    setPreferredClearColor(
+        igl::Color{kLinearOrangeColor.x, kLinearOrangeColor.y, kLinearOrangeColor.z, 1.0f});
   }
 
   shaderStages_ = getShaderStagesForBackend(device);
@@ -251,7 +262,9 @@ void ColorSession::initialize() noexcept {
   // init uniforms
   glm::mat4x4 mvp(1.0f);
   memcpy(&fragmentParameters_.mvp, &mvp, sizeof(mvp));
-  fragmentParameters_.color = iglu::simdtypes::float3{1.0f, 1.0f, 1.0f};
+  fragmentParameters_.color = (colorTestModes_ == ColorTestModes::eOrangeClear)
+                                  ? kGPULinearOrangeColor
+                                  : iglu::simdtypes::float3{1.0f, 1.0f, 1.0f};
 
   BufferDesc fpDesc;
   fpDesc.type = BufferDesc::BufferTypeBits::Uniform;
@@ -353,9 +366,9 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     } else {
       IGL_DEBUG_ASSERT_NOT_REACHED();
     }
-
     commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());
     commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
+
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
     commands->drawIndexed(6);
 
