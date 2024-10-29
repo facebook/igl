@@ -1104,18 +1104,6 @@ VkPipelineShaderStageCreateInfo ivkGetPipelineShaderStageCreateInfo(VkShaderStag
   return ci;
 }
 
-VkViewport ivkGetViewport(float x, float y, float width, float height) {
-  const VkViewport viewport = {
-      .x = x,
-      .y = y,
-      .width = width,
-      .height = height,
-      .minDepth = 0.0f,
-      .maxDepth = +1.0f,
-  };
-  return viewport;
-}
-
 VkRect2D ivkGetRect2D(int32_t x, int32_t y, uint32_t width, uint32_t height) {
   const VkRect2D rect = {
       .offset = {.x = x, .y = y},

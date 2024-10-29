@@ -1072,32 +1072,6 @@ INSTANTIATE_TEST_SUITE_P(
       return name;
     });
 
-// ivkGetViewport *******************************
-class GetViewportTest : public ::testing::TestWithParam<std::tuple<float, float, float, float>> {};
-
-TEST_P(GetViewportTest, GetViewport) {
-  const float x = std::get<0>(GetParam());
-  const float y = std::get<1>(GetParam());
-  const float width = std::get<2>(GetParam());
-  const float height = std::get<3>(GetParam());
-
-  const VkViewport viewport = ivkGetViewport(x, y, width, height);
-
-  EXPECT_EQ(viewport.x, x);
-  EXPECT_EQ(viewport.y, y);
-  EXPECT_EQ(viewport.width, width);
-  EXPECT_EQ(viewport.height, height);
-  EXPECT_EQ(viewport.minDepth, 0.0f);
-  EXPECT_EQ(viewport.maxDepth, +1.0f);
-}
-
-INSTANTIATE_TEST_SUITE_P(AllCombinations,
-                         GetViewportTest,
-                         ::testing::Combine(::testing::Values(0.f, 50.f),
-                                            ::testing::Values(0.f, 50.f),
-                                            ::testing::Values(100.f, 500.f),
-                                            ::testing::Values(100.f, 500.f)));
-
 // ivkGetRect2D *******************************
 class GetRect2DTest
   : public ::testing::TestWithParam<std::tuple<uint32_t, uint32_t, uint32_t, uint32_t>> {};
