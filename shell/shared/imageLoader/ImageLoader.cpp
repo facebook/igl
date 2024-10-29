@@ -36,6 +36,14 @@ constexpr std::array<uint32_t, 64> kCheckerboard = {
     kBlack, kBlack, kWhite, kWhite, kWhite, kWhite, kBlack, kBlack, kWhite, kWhite, kBlack,
     kBlack, kWhite, kWhite, kBlack, kBlack, kWhite, kWhite, kBlack, kBlack,
 };
+constexpr std::array<uint32_t, 64> kWhiteTexture = {
+    kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite,
+    kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite,
+    kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite,
+    kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite,
+    kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite,
+    kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite, kWhite,
+};
 constexpr uint32_t kNumBytes = kWidth * kHeight * 4u;
 
 class CheckerboardData : public iglu::textureloader::IData {
@@ -49,6 +57,20 @@ const uint8_t* IGL_NONNULL CheckerboardData::data() const noexcept {
 }
 
 uint32_t CheckerboardData::length() const noexcept {
+  return kNumBytes;
+}
+
+class WhiteData : public iglu::textureloader::IData {
+ public:
+  [[nodiscard]] const uint8_t* IGL_NONNULL data() const noexcept final;
+  [[nodiscard]] uint32_t length() const noexcept final;
+};
+
+const uint8_t* IGL_NONNULL WhiteData::data() const noexcept {
+  return reinterpret_cast<const uint8_t*>(kWhiteTexture.data());
+}
+
+uint32_t WhiteData::length() const noexcept {
   return kNumBytes;
 }
 } // namespace
@@ -111,6 +133,16 @@ ImageData ImageLoader::checkerboard() noexcept {
                                       kHeight,
                                       TextureDesc::TextureUsageBits::Sampled,
                                       "Checkerboard");
+  imageData.desc.numMipLevels = TextureDesc::calcNumMipLevels(kWidth, kHeight);
+
+  return imageData;
+}
+
+ImageData ImageLoader::white() noexcept {
+  ImageData imageData;
+  imageData.data = std::make_unique<WhiteData>();
+  imageData.desc = TextureDesc::new2D(
+      TextureFormat::RGBA_UNorm8, kWidth, kHeight, TextureDesc::TextureUsageBits::Sampled, "White");
   imageData.desc.numMipLevels = TextureDesc::calcNumMipLevels(kWidth, kHeight);
 
   return imageData;
