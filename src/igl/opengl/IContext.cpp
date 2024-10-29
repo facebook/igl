@@ -786,12 +786,6 @@ void IContext::attachShader(GLuint program, GLuint shader) {
   GLCHECK_ERRORS();
 }
 
-void IContext::bindAttribLocation(GLuint program, GLuint index, const GLchar* name) {
-  GLCALL(BindAttribLocation)(program, index, name);
-  APILOG("glBindAttribLocation(%u, %u, %s)\n", program, index, name);
-  GLCHECK_ERRORS();
-}
-
 void IContext::bindBuffer(GLenum target, GLuint buffer) {
   GLCALL(BindBuffer)(target, buffer);
   APILOG("glBindBuffer(%s, %u)\n", GL_ENUM_TO_STRING(target), buffer);
@@ -1026,29 +1020,6 @@ void IContext::compileShader(GLuint shader) {
   GLCHECK_ERRORS();
 }
 
-void IContext::compressedTexImage1D(IGL_MAYBE_UNUSED GLenum target,
-                                    IGL_MAYBE_UNUSED GLint level,
-                                    IGL_MAYBE_UNUSED GLenum internalformat,
-                                    IGL_MAYBE_UNUSED GLsizei width,
-                                    IGL_MAYBE_UNUSED GLint border,
-                                    IGL_MAYBE_UNUSED GLsizei imageSize,
-                                    IGL_MAYBE_UNUSED const GLvoid* data) {
-#if IGL_OPENGL
-  GLCALL(CompressedTexImage1D)(target, level, internalformat, width, border, imageSize, data);
-  APILOG("glCompressedTexImage1D(%s, %d, %s, %u, %d, %u, %p)\n",
-         GL_ENUM_TO_STRING(target),
-         level,
-         GL_ENUM_TO_STRING(internalformat),
-         width,
-         border,
-         imageSize,
-         data);
-  GLCHECK_ERRORS();
-#else
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
-#endif
-}
-
 void IContext::compressedTexImage2D(GLenum target,
                                     GLint level,
                                     GLenum internalformat,
@@ -1114,29 +1085,6 @@ void IContext::compressedTexImage3D(GLenum target,
          imageSize,
          data);
   GLCHECK_ERRORS();
-}
-
-void IContext::compressedTexSubImage1D(IGL_MAYBE_UNUSED GLenum target,
-                                       IGL_MAYBE_UNUSED GLint level,
-                                       IGL_MAYBE_UNUSED GLint xoffset,
-                                       IGL_MAYBE_UNUSED GLsizei width,
-                                       IGL_MAYBE_UNUSED GLenum format,
-                                       IGL_MAYBE_UNUSED GLsizei imageSize,
-                                       IGL_MAYBE_UNUSED const GLvoid* data) {
-#if IGL_OPENGL
-  GLCALL(CompressedTexSubImage1D)(target, level, xoffset, width, format, imageSize, data);
-  APILOG("glCompressedTexSubImage1D(%s, %d, %d, %u, %s, %u, %p)\n",
-         GL_ENUM_TO_STRING(target),
-         level,
-         xoffset,
-         width,
-         GL_ENUM_TO_STRING(format),
-         imageSize,
-         data);
-  GLCHECK_ERRORS();
-#else
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
-#endif
 }
 
 void IContext::compressedTexSubImage2D(GLenum target,
@@ -1211,27 +1159,6 @@ void IContext::compressedTexSubImage3D(GLenum target,
          GL_ENUM_TO_STRING(format),
          imageSize,
          data);
-  GLCHECK_ERRORS();
-}
-
-void IContext::copyTexImage2D(GLenum target,
-                              GLint level,
-                              GLenum internalFormat,
-                              GLint x,
-                              GLint y,
-                              GLsizei width,
-                              GLsizei height,
-                              GLint border) {
-  GLCALL(CopyTexImage2D)(target, level, internalFormat, x, y, width, height, border);
-  APILOG("glCopyTexImage2D(%s, %d, %s, %d, %d, %u, %u, %d)\n",
-         GL_ENUM_TO_STRING(target),
-         level,
-         GL_ENUM_TO_STRING(internalFormat),
-         x,
-         y,
-         width,
-         height,
-         border);
   GLCHECK_ERRORS();
 }
 
@@ -1926,15 +1853,6 @@ void IContext::getActiveUniformBlockName(GLuint program,
   GLCHECK_ERRORS();
 }
 
-void IContext::getAttachedShaders(GLuint program,
-                                  GLsizei maxcount,
-                                  GLsizei* count,
-                                  GLuint* shaders) const {
-  GLCALL(GetAttachedShaders)(program, maxcount, count, shaders);
-  APILOG("glGetAttachedShaders(%u, %u, %p, %p)\n", program, maxcount, count, shaders);
-  GLCHECK_ERRORS();
-}
-
 GLint IContext::getAttribLocation(GLuint program, const GLchar* name) const {
   GLint ret;
 
@@ -2013,15 +1931,6 @@ GLuint IContext::getDebugMessageLog(GLuint count,
   return ret;
 }
 
-void IContext::getFloatv(GLenum pname, GLfloat* params) const {
-  GLCALL(GetFloatv)(pname, params);
-  APILOG("glGetFloatv(%s, %p) = %f\n",
-         GL_ENUM_TO_STRING(pname),
-         params,
-         params == nullptr ? 0.f : *params);
-  GLCHECK_ERRORS();
-}
-
 void IContext::getFramebufferAttachmentParameteriv(GLenum target,
                                                    GLenum attachment,
                                                    GLenum pname,
@@ -2086,29 +1995,6 @@ void IContext::getProgramInfoLog(GLuint program,
   GLCHECK_ERRORS();
 }
 
-void IContext::getProgramResourceiv(GLuint program,
-                                    GLenum programInterface,
-                                    GLuint index,
-                                    GLsizei propCount,
-                                    const GLenum* props,
-                                    GLsizei count,
-                                    GLsizei* length,
-                                    GLint* params) const {
-  IGLCALL(GetProgramResourceiv)
-  (program, programInterface, index, propCount, props, count, length, params);
-  APILOG("glGetProgramResourceiv(%u, %s, %u, %u, %p, %u, %p, %p) = (%u, %d)\n",
-         program,
-         GL_ENUM_TO_STRING(programInterface),
-         propCount,
-         props,
-         count,
-         length,
-         params,
-         length == nullptr ? 0 : *length,
-         params == nullptr ? 0 : *params);
-  GLCHECK_ERRORS();
-}
-
 GLuint IContext::getProgramResourceIndex(GLuint program,
                                          GLenum programInterface,
                                          const GLchar* name) const {
@@ -2146,16 +2032,6 @@ void IContext::getProgramResourceName(GLuint program,
   GLCHECK_ERRORS();
 }
 
-void IContext::getRenderbufferParameteriv(GLenum target, GLenum pname, GLint* params) const {
-  IGLCALL(GetRenderbufferParameteriv)(target, pname, params);
-  APILOG("glGetRenderbufferParameteriv(%s, %s, %p) = %d\n",
-         GL_ENUM_TO_STRING(target),
-         GL_ENUM_TO_STRING(pname),
-         params,
-         params == nullptr ? 0 : *params);
-  GLCHECK_ERRORS();
-}
-
 void IContext::getShaderiv(GLuint shader, GLenum pname, GLint* params) const {
   GLCALL(GetShaderiv)(shader, pname, params);
   APILOG("glGetShaderiv(%u, %s, %p) = %d\n",
@@ -2180,21 +2056,6 @@ void IContext::getShaderInfoLog(GLuint shader,
                               ? (infoLog == nullptr ? 0 : static_cast<int>(std::strlen(infoLog)))
                               : *length),
          infoLog == nullptr ? "" : infoLog);
-  GLCHECK_ERRORS();
-}
-
-void IContext::getShaderPrecisionFormat(GLenum shadertype,
-                                        GLenum precisiontype,
-                                        GLint* range,
-                                        GLint* precision) const {
-  GLCALL(GetShaderPrecisionFormat)(shadertype, precisiontype, range, precision);
-  APILOG("glGetShaderPrecisionFormat(%s, %s, %p, %p) = (%d, %d)\n",
-         GL_ENUM_TO_STRING(shadertype),
-         GL_ENUM_TO_STRING(precisiontype),
-         range,
-         precision,
-         range == nullptr ? 0 : *range,
-         precision == nullptr ? 0 : *precision);
   GLCHECK_ERRORS();
 }
 
@@ -2264,36 +2125,6 @@ void IContext::getSynciv(GLsync sync,
   GLCHECK_ERRORS();
 }
 
-void IContext::getTexParameterfv(GLenum target, GLenum pname, GLfloat* params) const {
-  GLCALL(GetTexParameterfv)(target, pname, params);
-  APILOG("glGetTexParameterfv(%s, %s, %p) = %f\n",
-         GL_ENUM_TO_STRING(target),
-         GL_ENUM_TO_STRING(pname),
-         params,
-         params == nullptr ? 0.f : *params);
-  GLCHECK_ERRORS();
-}
-
-void IContext::getTexParameteriv(GLenum target, GLenum pname, GLint* params) const {
-  GLCALL(GetTexParameteriv)(target, pname, params);
-  APILOG("glGetTexParameteriv(%s, %s, %p) = %d\n",
-         GL_ENUM_TO_STRING(target),
-         GL_ENUM_TO_STRING(pname),
-         params,
-         params == nullptr ? 0 : *params);
-  GLCHECK_ERRORS();
-}
-
-void IContext::getUniformfv(GLuint program, GLint location, GLfloat* params) const {
-  GLCALL(GetUniformfv)(program, location, params);
-  APILOG("glGetUniformfv(%u, %d, %p) = %f\n",
-         program,
-         location,
-         params,
-         params == nullptr ? 0.f : *params);
-  GLCHECK_ERRORS();
-}
-
 void IContext::getUniformiv(GLuint program, GLint location, GLint* params) const {
   GLCALL(GetUniformiv)(program, location, params);
   APILOG("glGetUniformiv(%u, %d, %p) = %d\n",
@@ -2304,14 +2135,6 @@ void IContext::getUniformiv(GLuint program, GLint location, GLint* params) const
   GLCHECK_ERRORS();
 }
 
-GLuint IContext::getUniformBlockIndex(GLuint program, const GLchar* name) const {
-  GLuint ret = GL_INVALID_INDEX;
-  IGLCALL_WITH_RETURN(ret, GetUniformBlockIndex)(program, name);
-  APILOG("glGetUniformBlockIndex(%u, %s) = %u\n", program, name, ret);
-  GLCHECK_ERRORS();
-  return ret;
-}
-
 GLint IContext::getUniformLocation(GLuint program, const GLchar* name) const {
   GLint ret;
 
@@ -2320,32 +2143,6 @@ GLint IContext::getUniformLocation(GLuint program, const GLchar* name) const {
   GLCHECK_ERRORS();
 
   return ret;
-}
-
-void IContext::getVertexAttribfv(GLuint index, GLenum pname, GLfloat* params) const {
-  GLCALL(GetVertexAttribfv)(index, pname, params);
-  APILOG("glGetVertexAttribfv(%u, %s, %p) = %f\n",
-         index,
-         GL_ENUM_TO_STRING(pname),
-         params,
-         params == nullptr ? 0.f : *params);
-  GLCHECK_ERRORS();
-}
-
-void IContext::getVertexAttribiv(GLuint index, GLenum pname, GLint* params) const {
-  GLCALL(GetVertexAttribiv)(index, pname, params);
-  APILOG("glGetVertexAttribiv(%u, %s, %p) = %d\n",
-         index,
-         GL_ENUM_TO_STRING(pname),
-         params,
-         params == nullptr ? 0 : *params);
-  GLCHECK_ERRORS();
-}
-
-void IContext::hint(GLenum target, GLenum mode) {
-  GLCALL(Hint)(target, mode);
-  APILOG("glHint(%s, %s)\n", GL_ENUM_TO_STRING(target), GL_ENUM_TO_STRING(mode));
-  GLCHECK_ERRORS();
 }
 
 void IContext::importMemoryFd(GLuint memory, GLuint64 size, GLenum handleType, GLint fd) {
@@ -2378,61 +2175,11 @@ void IContext::invalidateFramebuffer(IGL_MAYBE_UNUSED GLenum target,
   GLCHECK_ERRORS();
 }
 
-GLboolean IContext::isBuffer(GLuint buffer) {
-  GLboolean ret;
-
-  GLCALL_WITH_RETURN(ret, IsBuffer)(buffer);
-  APILOG("glIsBuffer(%u) = %s\n", buffer, GL_BOOL_TO_STRING(ret));
-  GLCHECK_ERRORS();
-
-  return ret;
-}
-
 GLboolean IContext::isEnabled(GLenum cap) {
   GLboolean ret;
 
   GLCALL_WITH_RETURN(ret, IsEnabled)(cap);
   APILOG("glIsEnabled(%s) = %s\n", GL_ENUM_TO_STRING(cap), GL_BOOL_TO_STRING(ret));
-  GLCHECK_ERRORS();
-
-  return ret;
-}
-
-GLboolean IContext::isFramebuffer(GLuint framebuffer) {
-  GLboolean ret;
-
-  IGLCALL_WITH_RETURN(ret, IsFramebuffer)(framebuffer);
-  APILOG("glIsFramebuffer(%u) = %s\n", framebuffer, GL_BOOL_TO_STRING(ret));
-  GLCHECK_ERRORS();
-
-  return ret;
-}
-
-GLboolean IContext::isProgram(GLuint program) {
-  GLboolean ret;
-
-  GLCALL_WITH_RETURN(ret, IsProgram)(program);
-  APILOG("glIsProgram(%u) = %s\n", program, GL_BOOL_TO_STRING(ret));
-  GLCHECK_ERRORS();
-
-  return ret;
-}
-
-GLboolean IContext::isRenderbuffer(GLuint renderbuffer) {
-  GLboolean ret;
-
-  GLCALL_WITH_RETURN(ret, IsRenderbuffer)(renderbuffer);
-  APILOG("glIsRenderbuffer(%u) = %s\n", renderbuffer, GL_BOOL_TO_STRING(ret));
-  GLCHECK_ERRORS();
-
-  return ret;
-}
-
-GLboolean IContext::isShader(GLuint shader) {
-  GLboolean ret;
-
-  GLCALL_WITH_RETURN(ret, IsShader)(shader);
-  APILOG("glIsShader(%u) = %s\n", shader, GL_BOOL_TO_STRING(ret));
   GLCHECK_ERRORS();
 
   return ret;
@@ -2446,12 +2193,6 @@ GLboolean IContext::isTexture(GLuint texture) {
   GLCHECK_ERRORS();
 
   return ret;
-}
-
-void IContext::lineWidth(GLfloat width) {
-  GLCALL(LineWidth)(width);
-  APILOG("glLineWidth(%f)\n", width);
-  GLCHECK_ERRORS();
 }
 
 void IContext::linkProgram(GLuint program) {
@@ -2615,12 +2356,6 @@ void IContext::readPixels(GLint x,
   GLCHECK_ERRORS();
 }
 
-void IContext::releaseShaderCompiler() {
-  GLCALL(ReleaseShaderCompiler)();
-  APILOG("glReleaseShaderCompiler()\n");
-  GLCHECK_ERRORS();
-}
-
 void IContext::renderbufferStorage(GLenum target,
                                    GLenum internalformat,
                                    GLsizei width,
@@ -2705,12 +2440,6 @@ void IContext::framebufferTextureMultisampleMultiview(GLenum target,
   GLCHECK_ERRORS();
 }
 
-void IContext::sampleCoverage(GLfloat value, GLboolean invert) {
-  GLCALL(SampleCoverage)(value, invert);
-  APILOG("glSampleCoverage(%f, %s)\n", value, GL_BOOL_TO_STRING(invert));
-  GLCHECK_ERRORS();
-}
-
 void IContext::scissor(GLint x, GLint y, GLsizei width, GLsizei height) {
   GLCALL(Scissor)(x, y, width, height);
   APILOG("glScissor(%d, %d, %u, %u)\n", x, y, width, height);
@@ -2728,21 +2457,6 @@ void IContext::setEnabled(bool shouldEnable, GLenum cap) {
   GLCHECK_ERRORS();
 }
 
-void IContext::shaderBinary(GLsizei n,
-                            const GLuint* shaders,
-                            GLenum binaryformat,
-                            const GLvoid* binary,
-                            GLsizei length) {
-  GLCALL(ShaderBinary)(n, shaders, binaryformat, binary, length);
-  APILOG("glShaderBinary(%u, %p, %s, %p, %u)\n",
-         n,
-         shaders,
-         GL_ENUM_TO_STRING(binaryformat),
-         binary,
-         length);
-  GLCHECK_ERRORS();
-}
-
 void IContext::shaderSource(GLuint shader,
                             GLsizei count,
                             const GLchar** string,
@@ -2750,12 +2464,6 @@ void IContext::shaderSource(GLuint shader,
   GLCALL(ShaderSource)(shader, count, string, length);
   APILOG("glShaderSource(%d, %u, %p, %p)\n", shader, count, string, length);
   APILOG_SOURCE(count, string, length);
-  GLCHECK_ERRORS();
-}
-
-void IContext::stencilFunc(GLenum func, GLint ref, GLuint mask) {
-  GLCALL(StencilFunc)(func, ref, mask);
-  APILOG("glStencilFunc(%s, %d, 0x%x)\n", GL_ENUM_TO_STRING(func), ref, mask);
   GLCHECK_ERRORS();
 }
 
@@ -2781,15 +2489,6 @@ void IContext::stencilMaskSeparate(GLenum face, GLuint mask) {
   GLCHECK_ERRORS();
 }
 
-void IContext::stencilOp(GLenum fail, GLenum zfail, GLenum zpass) {
-  GLCALL(StencilOp)(fail, zfail, zpass);
-  APILOG("glStencilOp(%s, %s, %s)\n",
-         GL_ENUM_TO_STRING(fail),
-         GL_ENUM_TO_STRING(zfail),
-         GL_ENUM_TO_STRING(zpass));
-  GLCHECK_ERRORS();
-}
-
 void IContext::stencilOpSeparate(GLenum face, GLenum fail, GLenum zfail, GLenum zpass) {
   GLCALL(StencilOpSeparate)(face, fail, zfail, zpass);
   APILOG("glStencilOpSeparate(%s, %s, %s, %s)\n",
@@ -2798,53 +2497,6 @@ void IContext::stencilOpSeparate(GLenum face, GLenum fail, GLenum zfail, GLenum 
          GL_ENUM_TO_STRING(zfail),
          GL_ENUM_TO_STRING(zpass));
   GLCHECK_ERRORS();
-}
-void IContext::texImage1D(IGL_MAYBE_UNUSED GLenum target,
-                          IGL_MAYBE_UNUSED GLint level,
-                          IGL_MAYBE_UNUSED GLint internalformat,
-                          IGL_MAYBE_UNUSED GLsizei width,
-                          IGL_MAYBE_UNUSED GLint border,
-                          IGL_MAYBE_UNUSED GLenum format,
-                          IGL_MAYBE_UNUSED GLenum type,
-                          IGL_MAYBE_UNUSED const GLvoid* data) {
-#if IGL_OPENGL
-  GLCALL(TexImage1D)(target, level, internalformat, width, border, format, type, data);
-  APILOG("glTexImage1D(%s, %d, %s, %u, %d, %s, %s, 0x%x)\n",
-         GL_ENUM_TO_STRING(target),
-         level,
-         GL_ENUM_TO_STRING(internalformat),
-         width,
-         border,
-         GL_ENUM_TO_STRING(format),
-         GL_ENUM_TO_STRING(type),
-         data);
-  GLCHECK_ERRORS();
-#else
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
-#endif
-}
-
-void IContext::texSubImage1D(IGL_MAYBE_UNUSED GLenum target,
-                             IGL_MAYBE_UNUSED GLint level,
-                             IGL_MAYBE_UNUSED GLint xoffset,
-                             IGL_MAYBE_UNUSED GLsizei width,
-                             IGL_MAYBE_UNUSED GLenum format,
-                             IGL_MAYBE_UNUSED GLenum type,
-                             IGL_MAYBE_UNUSED const GLvoid* pixels) {
-#if IGL_OPENGL
-  GLCALL(TexSubImage1D)(target, level, xoffset, width, format, type, pixels);
-  APILOG("glTexSubImage1D(%s, %d, %d, %u, %s, %s, 0x%x)\n",
-         GL_ENUM_TO_STRING(target),
-         level,
-         xoffset,
-         width,
-         GL_ENUM_TO_STRING(format),
-         GL_ENUM_TO_STRING(type),
-         pixels);
-  GLCHECK_ERRORS();
-#else
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
-#endif
 }
 
 void IContext::texImage2D(GLenum target,
@@ -2867,27 +2519,6 @@ void IContext::texImage2D(GLenum target,
          GL_ENUM_TO_STRING(format),
          GL_ENUM_TO_STRING(type),
          data);
-  GLCHECK_ERRORS();
-}
-
-void IContext::texStorage1D(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width) {
-  if (texStorage1DProc_ == nullptr) {
-    if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::TexStorageExtReq)) {
-      if (deviceFeatureSet_.hasExtension(Extensions::TexStorage)) {
-        texStorage1DProc_ = iglTexStorage1DEXT;
-      }
-    } else if (deviceFeatureSet_.hasInternalFeature(InternalFeatures::TexStorage)) {
-      texStorage1DProc_ = iglTexStorage1D;
-    }
-    IGL_DEBUG_ASSERT(texStorage1DProc_, "No supported function for glTexStorage1D\n");
-  }
-
-  GLCALL_PROC(texStorage1DProc_, target, levels, internalformat, width);
-  APILOG("TexStorage1D(%s, %u, %s, %u)\n",
-         GL_ENUM_TO_STRING(target),
-         levels,
-         GL_ENUM_TO_STRING(internalformat),
-         width);
   GLCHECK_ERRORS();
 }
 
@@ -3032,23 +2663,6 @@ void IContext::texImage3D(GLenum target,
   GLCHECK_ERRORS();
 }
 
-void IContext::texParameterf(GLenum target, GLenum pname, GLfloat param) {
-  GLCALL(TexParameterf)(target, pname, param);
-  APILOG(
-      "glTexParameterf(%s, %s, %f)\n", GL_ENUM_TO_STRING(target), GL_ENUM_TO_STRING(pname), param);
-  GLCHECK_ERRORS();
-}
-
-void IContext::texParameterfv(GLenum target, GLenum pname, const GLfloat* params) {
-  GLCALL(TexParameterfv)(target, pname, params);
-  APILOG("glTexParameterfv(%s, %s, %p [%f])\n",
-         GL_ENUM_TO_STRING(target),
-         GL_ENUM_TO_STRING(pname),
-         params,
-         params == nullptr ? 0.f : *params);
-  GLCHECK_ERRORS();
-}
-
 void IContext::texParameteri(GLenum target, GLenum pname, GLint param) {
   // GLCALL(TexParameteri, target, pname, param);
   GLCALL(TexParameteri)(target, pname, param);
@@ -3056,16 +2670,6 @@ void IContext::texParameteri(GLenum target, GLenum pname, GLint param) {
          GL_ENUM_TO_STRING(target),
          GL_ENUM_TO_STRING(pname),
          GL_ENUM_TO_STRING(param));
-  GLCHECK_ERRORS();
-}
-
-void IContext::texParameteriv(GLenum target, GLenum pname, const GLint* params) {
-  GLCALL(TexParameteriv)(target, pname, params);
-  APILOG("glTexParameteriv(%s, %s, %p [%d])\n",
-         GL_ENUM_TO_STRING(target),
-         GL_ENUM_TO_STRING(pname),
-         params,
-         params == nullptr ? 0 : *params);
   GLCHECK_ERRORS();
 }
 

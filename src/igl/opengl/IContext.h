@@ -63,7 +63,6 @@ class IContext {
   /// MARK: - GL APIs
   void activeTexture(GLenum texture);
   void attachShader(GLuint program, GLuint shader);
-  void bindAttribLocation(GLuint program, GLuint index, const GLchar* name);
   void bindBuffer(GLenum target, GLuint buffer);
   void bindBufferBase(GLenum target, GLuint index, GLuint buffer);
   void bindBufferRange(GLenum target,
@@ -106,13 +105,6 @@ class IContext {
   void clearStencil(GLint s);
   void colorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
   void compileShader(GLuint shader);
-  void compressedTexImage1D(GLenum target,
-                            GLint level,
-                            GLenum internalformat,
-                            GLsizei width,
-                            GLint border,
-                            GLsizei imageSize,
-                            const GLvoid* data);
   void compressedTexImage2D(GLenum target,
                             GLint level,
                             GLenum internalformat,
@@ -130,13 +122,6 @@ class IContext {
                             GLint border,
                             GLsizei imageSize,
                             const GLvoid* data);
-  void compressedTexSubImage1D(GLenum target,
-                               GLint level,
-                               GLint xoffset,
-                               GLsizei width,
-                               GLenum format,
-                               GLsizei imageSize,
-                               const GLvoid* data);
   void compressedTexSubImage2D(GLenum target,
                                GLint level,
                                GLint xoffset,
@@ -157,14 +142,6 @@ class IContext {
                                GLenum format,
                                GLsizei imageSize,
                                const GLvoid* data);
-  void copyTexImage2D(GLenum target,
-                      GLint level,
-                      GLenum internalFormat,
-                      GLint x,
-                      GLint y,
-                      GLsizei width,
-                      GLsizei height,
-                      GLint border);
   void copyTexSubImage2D(GLenum target,
                          GLint level,
                          GLint xoffset,
@@ -269,7 +246,6 @@ class IContext {
                                  GLsizei bufSize,
                                  GLsizei* length,
                                  GLchar* uniformBlockName) const;
-  void getAttachedShaders(GLuint program, GLsizei maxcount, GLsizei* count, GLuint* shaders) const;
   GLint getAttribLocation(GLuint program, const GLchar* name) const;
   void getBooleanv(GLenum pname, GLboolean* params) const;
   void getBufferParameteriv(GLenum target, GLenum pname, GLint* params) const;
@@ -282,7 +258,6 @@ class IContext {
                             GLsizei* lengths,
                             GLchar* messageLog) const;
   virtual GLenum getError() const;
-  void getFloatv(GLenum pname, GLfloat* params) const;
   void getFramebufferAttachmentParameteriv(GLenum target,
                                            GLenum attachment,
                                            GLenum pname,
@@ -294,14 +269,6 @@ class IContext {
                              GLenum pname,
                              GLint* params) const;
   void getProgramInfoLog(GLuint program, GLsizei bufsize, GLsizei* length, GLchar* infolog) const;
-  void getProgramResourceiv(GLuint program,
-                            GLenum programInterface,
-                            GLuint index,
-                            GLsizei propCount,
-                            const GLenum* props,
-                            GLsizei count,
-                            GLsizei* length,
-                            GLint* params) const;
   GLuint getProgramResourceIndex(GLuint program, GLenum programInterface, const GLchar* name) const;
   void getProgramResourceName(GLuint program,
                               GLenum programInterface,
@@ -309,36 +276,18 @@ class IContext {
                               GLsizei bufSize,
                               GLsizei* length,
                               char* name) const;
-  void getRenderbufferParameteriv(GLenum target, GLenum pname, GLint* params) const;
   void getShaderiv(GLuint shader, GLenum pname, GLint* params) const;
   void getShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* length, GLchar* infoLog) const;
-  void getShaderPrecisionFormat(GLenum shadertype,
-                                GLenum precisiontype,
-                                GLint* range,
-                                GLint* precision) const;
   void getShaderSource(GLuint shader, GLsizei bufsize, GLsizei* length, GLchar* source) const;
   virtual const GLubyte* getString(GLenum name) const;
   virtual const GLubyte* getStringi(GLenum name, GLuint index) const;
   void getSynciv(GLsync sync, GLenum pname, GLsizei bufSize, GLsizei* length, GLint* values) const;
-  void getTexParameterfv(GLenum target, GLenum pname, GLfloat* params) const;
-  void getTexParameteriv(GLenum target, GLenum pname, GLint* params) const;
-  void getUniformfv(GLuint program, GLint location, GLfloat* params) const;
   void getUniformiv(GLuint program, GLint location, GLint* params) const;
-  GLuint getUniformBlockIndex(GLuint program, const GLchar* name) const;
   GLint getUniformLocation(GLuint program, const GLchar* name) const;
-  void getVertexAttribfv(GLuint index, GLenum pname, GLfloat* params) const;
-  void getVertexAttribiv(GLuint index, GLenum pname, GLint* params) const;
-  void hint(GLenum target, GLenum mode);
   void importMemoryFd(GLuint memory, GLuint64 size, GLenum handleType, GLint fd);
   void invalidateFramebuffer(GLenum target, GLsizei numAttachments, const GLenum* attachments);
-  GLboolean isBuffer(GLuint buffer);
   GLboolean isEnabled(GLenum cap);
-  GLboolean isFramebuffer(GLuint framebuffer);
-  GLboolean isProgram(GLuint program);
-  GLboolean isRenderbuffer(GLuint renderbuffer);
-  GLboolean isShader(GLuint shader);
   GLboolean isTexture(GLuint texture);
-  void lineWidth(GLfloat width);
   void linkProgram(GLuint program);
   void* mapBuffer(GLenum target, GLbitfield access);
   void* mapBufferRange(GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access);
@@ -354,7 +303,6 @@ class IContext {
                   GLenum format,
                   GLenum type,
                   GLvoid* pixels);
-  void releaseShaderCompiler();
   void renderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
   void renderbufferStorageMultisample(GLenum target,
                                       GLsizei samples,
@@ -374,22 +322,13 @@ class IContext {
                                               GLsizei samples,
                                               GLint baseViewIndex,
                                               GLsizei numViews);
-  void sampleCoverage(GLfloat value, GLboolean invert);
   void scissor(GLint x, GLint y, GLsizei width, GLsizei height);
   virtual void setEnabled(bool shouldEnable, GLenum cap);
-  void shaderBinary(GLsizei n,
-                    const GLuint* shaders,
-                    GLenum binaryformat,
-                    const GLvoid* binary,
-                    GLsizei length);
   void shaderSource(GLuint shader, GLsizei count, const GLchar** string, const GLint* length);
-  void stencilFunc(GLenum func, GLint ref, GLuint mask);
   void stencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
   void stencilMask(GLuint mask);
   void stencilMaskSeparate(GLenum face, GLuint mask);
-  void stencilOp(GLenum fail, GLenum zfail, GLenum zpass);
   void stencilOpSeparate(GLenum face, GLenum fail, GLenum zfail, GLenum zpass);
-  void texStorage1D(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width);
   void texStorage2D(GLenum target,
                     GLsizei levels,
                     GLenum internalformat,
@@ -416,21 +355,6 @@ class IContext {
                        GLsizei depth,
                        GLuint memory,
                        GLuint64 offset);
-  void texImage1D(GLenum target,
-                  GLint level,
-                  GLint internalformat,
-                  GLsizei width,
-                  GLint border,
-                  GLenum format,
-                  GLenum type,
-                  const GLvoid* data);
-  void texSubImage1D(GLenum target,
-                     GLint level,
-                     GLint xoffset,
-                     GLsizei width,
-                     GLenum format,
-                     GLenum type,
-                     const GLvoid* pixels);
   void texImage2D(GLenum target,
                   GLint level,
                   GLint internalformat,
@@ -452,10 +376,7 @@ class IContext {
                   GLenum type,
                   const GLvoid* data);
 
-  void texParameterf(GLenum target, GLenum pname, GLfloat param);
-  void texParameterfv(GLenum target, GLenum pname, const GLfloat* params);
   void texParameteri(GLenum target, GLenum pname, GLint param);
-  void texParameteriv(GLenum target, GLenum pname, const GLint* params);
   void texSubImage2D(GLenum target,
                      GLint level,
                      GLint xoffset,
