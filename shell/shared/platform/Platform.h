@@ -17,6 +17,7 @@ namespace igl::shell {
 class Extension;
 class FileLoader;
 class ImageLoader;
+struct ImageData;
 class ImageWriter;
 class InputDispatcher;
 class DisplayContext;
@@ -40,6 +41,12 @@ class Platform {
       igl::TextureFormat format = igl::TextureFormat::RGBA_SRGB,
       igl::TextureDesc::TextureUsageBits usage = igl::TextureDesc::TextureUsageBits::Sampled);
 
+  std::shared_ptr<ITexture> loadTexture(
+      const ImageData& imageData,
+      bool calculateMipmapLevels = true,
+      igl::TextureFormat format = igl::TextureFormat::RGBA_SRGB,
+      igl::TextureDesc::TextureUsageBits usage = igl::TextureDesc::TextureUsageBits::Sampled,
+      const char* debugName = "");
   // 'argc' and 'argv' are the exact arguments received in 'main()'.
   static int argc();
   static char** argv();
