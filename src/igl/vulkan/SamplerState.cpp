@@ -8,8 +8,6 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
-#include <igl/vulkan/VulkanHelpers.h>
 
 #define IGL_VULKAN_DEBUG_SAMPLER_STATE 1
 

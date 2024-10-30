@@ -19,9 +19,7 @@
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanRenderPassBuilder.h>
-#include <igl/vulkan/VulkanShaderModule.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/util/SpvReflection.h>
 

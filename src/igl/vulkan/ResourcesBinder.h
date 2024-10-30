@@ -23,9 +23,6 @@ class Buffer;
 class PipelineState;
 class SamplerState;
 class Texture;
-class VulkanBuffer;
-class VulkanTexture;
-struct VulkanSampler;
 
 struct BindingsBuffers {
   VkDescriptorBufferInfo buffers[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
