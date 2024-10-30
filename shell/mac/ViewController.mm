@@ -268,6 +268,10 @@ using namespace igl;
     IGL_DEBUG_ASSERT(result.isOk());
     shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(
         opengl::macos::HWDevice().createWithContext(std::move(context), nullptr));
+
+    auto& device = shellPlatform_->getDevice();
+    auto* platformDevice = device.getPlatformDevice<igl::opengl::macos::PlatformDevice>();
+    platformDevice->setNativeDrawableTextureFormat(config_.swapchainColorTextureFormat, nullptr);
     self.view = openGLView;
     break;
   }
