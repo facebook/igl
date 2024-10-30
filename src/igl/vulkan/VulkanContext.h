@@ -223,6 +223,7 @@ class VulkanContext final {
   void createInstance(size_t numExtraExtensions,
                       const char* IGL_NULLABLE* IGL_NULLABLE extraExtensions);
   VkResult checkAndUpdateDescriptorSets();
+  void pruneTextures();
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void waitDeferredTasks();
