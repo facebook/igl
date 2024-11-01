@@ -58,6 +58,8 @@ VkAttachmentStoreOp storeActionToVkAttachmentStoreOp(igl::StoreAction a) {
 
 VkIndexType indexFormatToVkIndexType(igl::IndexFormat fmt) {
   switch (fmt) {
+  case igl::IndexFormat::UInt8:
+    return VK_INDEX_TYPE_UINT8_EXT;
   case igl::IndexFormat::UInt16:
     return VK_INDEX_TYPE_UINT16;
   case igl::IndexFormat::UInt32:

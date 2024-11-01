@@ -45,6 +45,8 @@ GLenum toGlPrimitive(PrimitiveType t) {
 
 int toGlType(IndexFormat format) {
   switch (format) {
+  case IndexFormat::UInt8:
+    return GL_UNSIGNED_BYTE;
   case IndexFormat::UInt16:
     return GL_UNSIGNED_SHORT;
   case IndexFormat::UInt32:
