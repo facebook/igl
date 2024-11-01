@@ -162,7 +162,7 @@ void RenderPipelineReflection::generateUniformBlocksDictionary(IContext& context
   uniformBlocksDictionary_.clear();
 
   GLint numBlocks = 0;
-  GLint maxBlockNameLength;
+  GLint maxBlockNameLength = 0;
   context.getProgramiv(pid, GL_ACTIVE_UNIFORM_BLOCKS, &numBlocks);
   if (numBlocks <= 0) {
     return;
@@ -197,7 +197,7 @@ void RenderPipelineReflection::generateUniformBlocksDictionary(IContext& context
         pid, blockDesc.blockIndex, GL_UNIFORM_BLOCK_BINDING, &blockDesc.bindingIndex);
 
     // get the number of uniforms in the block
-    GLint numActiveUniforms;
+    GLint numActiveUniforms = 0;
     context.getActiveUniformBlockiv(
         pid, blockDesc.blockIndex, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, &numActiveUniforms);
 
@@ -212,7 +212,7 @@ void RenderPipelineReflection::generateUniformBlocksDictionary(IContext& context
       UniformBlockDesc::UniformBlockMemberDesc memberDesc;
       // Get uniform block name, type, size
       nameData.assign(maxUniformNameLength, '\0');
-      GLsizei nameLength;
+      GLsizei nameLength = 0;
       // size  will be 1 for non-arrays; For arrays, it is the number of elements
       context.getActiveUniform(pid,
                                indices[k],

@@ -152,7 +152,7 @@ Result RenderPipelineState::create() {
   }
 
   for (const auto& [bindingIndex, names] : desc_.uniformBlockBindingMap) {
-    for (auto& [blockName, instanceName] : names) {
+    for (const auto& [blockName, instanceName] : names) {
       auto& uniformBlockDict = reflection_->getUniformBlocksDictionary();
       auto blockDescIt = uniformBlockDict.find(blockName);
       if (blockDescIt != uniformBlockDict.end()) {

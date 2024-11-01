@@ -9,7 +9,6 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <igl/opengl/CommandBuffer.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/Errors.h>
 #include <string>
@@ -76,7 +75,7 @@ void ShaderStages::createRenderProgram(Result* result) {
   getContext().detachShader(programID, fragmentShaderID);
 
   // check to see if the linking succeeded
-  GLint status;
+  GLint status = 0;
   getContext().getProgramiv(programID, GL_LINK_STATUS, &status);
   if (status == GL_FALSE) {
     // Get the size of log
@@ -139,7 +138,7 @@ void ShaderStages::createComputeProgram(Result* result) {
   getContext().detachShader(programID, shaderID);
 
   // check to see if the linking succeeded
-  GLint status;
+  GLint status = 0;
   getContext().getProgramiv(programID, GL_LINK_STATUS, &status);
   if (status == GL_FALSE) {
     const std::string errorLog = getProgramInfoLog(programID);
@@ -175,7 +174,7 @@ Result ShaderStages::create(const ShaderStagesDesc& /*desc*/) {
 
 Result ShaderStages::validate() const {
   getContext().validateProgram(programID_);
-  GLint status;
+  GLint status = 0;
   getContext().getProgramiv(programID_, GL_VALIDATE_STATUS, &status);
   if (status == GL_FALSE) {
     std::string errorLog = getProgramInfoLog(programID_);
@@ -288,7 +287,7 @@ Result ShaderModule::create(const ShaderModuleDesc& desc) {
   getContext().compileShader(shaderID);
 
   // see if the compilation succeeded
-  GLint status;
+  GLint status = 0;
   getContext().getShaderiv(shaderID, GL_COMPILE_STATUS, &status);
   if (status == GL_FALSE) {
     // Get the size of log

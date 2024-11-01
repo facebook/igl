@@ -26,8 +26,6 @@ struct BlendMode {
   GLenum dstAlpha;
 };
 
-class Device;
-
 class RenderPipelineState final : public WithContext, public IRenderPipelineState {
   friend class Device;
 

@@ -12,7 +12,6 @@
 #include <igl/opengl/IContext.h>
 
 namespace igl {
-class ITexture;
 namespace opengl {
 
 class SamplerState final : public WithContext, public ISamplerState {
