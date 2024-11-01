@@ -15,18 +15,14 @@
 namespace igl {
 
 class IFramebuffer;
-struct BufferDesc;
 struct FramebufferDesc;
-struct SamplerStateDesc;
 
 namespace opengl {
 
-class Buffer;
 class DestructionGuard;
 class Device;
 class Framebuffer;
 class IContext;
-class SamplerState;
 class TextureBufferExternal;
 
 /// opengl::PlatformDevice enables transitioning to IGL from legacy OpenGL code.

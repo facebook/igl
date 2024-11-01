@@ -112,7 +112,7 @@ class RenderCommandAdapter final : public WithContext {
   }
 
  private:
-  RenderCommandAdapter(IContext& context);
+  explicit RenderCommandAdapter(IContext& context);
 
   void clearDependentResources(const std::shared_ptr<IRenderPipelineState>& newValue,
                                Result* outResult = nullptr);

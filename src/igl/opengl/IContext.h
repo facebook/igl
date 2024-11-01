@@ -25,9 +25,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace igl {
-class ITexture;
-} // namespace igl
+namespace igl {} // namespace igl
 
 namespace igl::opengl {
 

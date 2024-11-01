@@ -18,11 +18,8 @@ namespace igl {
 class IDepthStencilState;
 class IRenderPipelineState;
 class ISamplerState;
-class ITexture;
-struct Dependencies;
 namespace opengl {
 
-class RenderCommandAdapter;
 class CommandBuffer;
 
 class RenderCommandEncoder final : public IRenderCommandEncoder, public WithContext {
