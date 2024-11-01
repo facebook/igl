@@ -7,9 +7,7 @@
 
 #include <igl/opengl/empty/Device.h>
 
-#include <cstdio>
 #include <cstring>
-#include <igl/Common.h>
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/empty/Context.h>
 

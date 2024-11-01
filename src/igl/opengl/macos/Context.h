@@ -17,7 +17,6 @@
 @class NSOpenGLContext;
 
 namespace igl {
-class ITexture;
 namespace opengl::macos {
 
 class Context final : public IContext {

@@ -13,7 +13,6 @@
 @class EAGLContext;
 
 namespace igl {
-class ITexture;
 namespace opengl::ios {
 
 class Context final : public IContext {

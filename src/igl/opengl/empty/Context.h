@@ -10,7 +10,6 @@
 #include <igl/opengl/IContext.h>
 
 namespace igl {
-class ITexture;
 namespace opengl::empty {
 
 class Context final : public IContext {

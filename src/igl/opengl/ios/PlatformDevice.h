@@ -21,7 +21,6 @@ typedef void CAEAGLLayer;
 #include <igl/opengl/PlatformDevice.h>
 
 namespace igl::opengl {
-class TextureTarget;
 
 namespace ios {
 

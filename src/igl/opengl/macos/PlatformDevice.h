@@ -19,7 +19,6 @@ class ViewTextureTarget;
 namespace macos {
 
 class Device;
-class TextureBuffer;
 
 class PlatformDevice : public opengl::PlatformDevice {
  public:
