@@ -16,7 +16,6 @@ namespace igl {
 
 class IComputeCommandEncoder;
 class ISamplerState;
-class ITexture;
 struct RenderPassDesc;
 
 /**
