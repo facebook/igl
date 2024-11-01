@@ -201,12 +201,6 @@ VkResult ivkCreateRenderPass(const struct VulkanFunctionTable* vt,
                              const VkRenderPassMultiviewCreateInfo* renderPassMultiview,
                              VkRenderPass* outRenderPass);
 
-VkResult ivkCreateShaderModuleFromSPIRV(const struct VulkanFunctionTable* vt,
-                                        VkDevice device,
-                                        const void* dataSPIRV,
-                                        size_t size,
-                                        VkShaderModule* outShaderModule);
-
 VkResult ivkCreateGraphicsPipeline(const struct VulkanFunctionTable* vt,
                                    VkDevice device,
                                    VkPipelineCache pipelineCache,

@@ -1112,19 +1112,6 @@ VkRect2D ivkGetRect2D(int32_t x, int32_t y, uint32_t width, uint32_t height) {
   return rect;
 }
 
-VkResult ivkCreateShaderModuleFromSPIRV(const struct VulkanFunctionTable* vt,
-                                        VkDevice device,
-                                        const void* dataSPIRV,
-                                        size_t size,
-                                        VkShaderModule* outShaderModule) {
-  const VkShaderModuleCreateInfo ci = {
-      .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-      .codeSize = size,
-      .pCode = dataSPIRV,
-  };
-  return vt->vkCreateShaderModule(device, &ci, NULL, outShaderModule);
-}
-
 VkResult ivkCreateGraphicsPipeline(const struct VulkanFunctionTable* vt,
                                    VkDevice device,
                                    VkPipelineCache pipelineCache,
