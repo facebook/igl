@@ -10,7 +10,6 @@
 #include <cstdarg>
 #include <cstdio>
 #include <igl/Core.h>
-#include <igl/Log.h>
 #include <mutex>
 #include <string>
 #include <unordered_set>
