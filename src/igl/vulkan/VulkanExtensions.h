@@ -98,6 +98,9 @@ class VulkanExtensions final {
   /// vector point to the strings stored internally in this class
   [[nodiscard]] std::vector<const char*> allEnabled(ExtensionType extensionType) const;
 
+ public:
+  bool has8BitIndices = false;
+
  private:
   static constexpr size_t kNumberOfExtensionTypes = 2;
   /// @brief a Vector of a vector of strings. The outer vector stores two vectors, one for each

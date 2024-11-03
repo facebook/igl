@@ -185,6 +185,10 @@ void VulkanExtensions::enableCommonExtensions(ExtensionType extensionType,
 #if defined(IGL_WITH_TRACY_GPU) && defined(VK_EXT_calibrated_timestamps)
     enable(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, ExtensionType::Device);
 #endif
+
+#if defined(VK_EXT_index_type_uint8)
+    has8BitIndices = enable(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, ExtensionType::Device);
+#endif
   } else {
     IGL_DEBUG_ABORT("Unrecognized extension type when enabling common extensions.");
   }
