@@ -879,18 +879,18 @@ void CurrentFramebuffer::bind(const RenderPassDesc& renderPass) const {
 
   // clear the buffers if we're not loading previous contents
   GLbitfield clearMask = 0;
-  if (renderPass.colorAttachments[0].loadAction != LoadAction::Load) {
+  if (renderPass.colorAttachments[0].loadAction == LoadAction::Clear) {
     clearMask |= GL_COLOR_BUFFER_BIT;
     auto clearColor = renderPass.colorAttachments[0].clearColor;
     getContext().colorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     getContext().clearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
   }
-  if (renderPass.depthAttachment.loadAction != LoadAction::Load) {
+  if (renderPass.depthAttachment.loadAction == LoadAction::Clear) {
     clearMask |= GL_DEPTH_BUFFER_BIT;
     getContext().depthMask(GL_TRUE);
     getContext().clearDepthf(renderPass.depthAttachment.clearDepth);
   }
-  if (renderPass.stencilAttachment.loadAction != LoadAction::Load) {
+  if (renderPass.stencilAttachment.loadAction == LoadAction::Clear) {
     clearMask |= GL_STENCIL_BUFFER_BIT;
     getContext().stencilMask(0xFF);
     getContext().clearStencil(renderPass.stencilAttachment.clearStencil);
