@@ -2986,69 +2986,6 @@ void IContext::validateProgram(GLuint program) {
   GLCHECK_ERRORS();
 }
 
-void IContext::vertexAttrib1f(GLuint indx, GLfloat x) {
-  GLCALL(VertexAttrib1f)(indx, x);
-  APILOG("glVertexAttrib1f(%d, %f)\n", indx, x);
-  GLCHECK_ERRORS();
-}
-
-void IContext::vertexAttrib1fv(GLuint indx, const GLfloat* values) {
-  GLCALL(VertexAttrib1fv)(indx, values);
-  APILOG("glVertexAttrib1fv(%d, %p [%f])\n", indx, values, values == nullptr ? 0.f : *values);
-  GLCHECK_ERRORS();
-}
-
-void IContext::vertexAttrib2f(GLuint indx, GLfloat x, GLfloat y) {
-  GLCALL(VertexAttrib2f)(indx, x, y);
-  APILOG("glVertexAttrib2f(%u, %f, %f)\n", indx, x, y);
-  GLCHECK_ERRORS();
-}
-
-void IContext::vertexAttrib2fv(GLuint indx, const GLfloat* values) {
-  GLCALL(VertexAttrib2fv)(indx, values);
-  APILOG("glVertexAttrib2fv(%u, %p [%f %f])\n",
-         indx,
-         values,
-         values == nullptr ? 0.f : values[0],
-         values == nullptr ? 0.f : values[1]);
-  GLCHECK_ERRORS();
-}
-
-void IContext::vertexAttrib3f(GLuint indx, GLfloat x, GLfloat y, GLfloat z) {
-  GLCALL(VertexAttrib3f)(indx, x, y, z);
-  APILOG("glVertexAttrib3f(%u, %f, %f, %f)\n", indx, x, y, z);
-  GLCHECK_ERRORS();
-}
-
-void IContext::vertexAttrib3fv(GLuint indx, const GLfloat* values) {
-  GLCALL(VertexAttrib3fv)(indx, values);
-  APILOG("glVertexAttrib3fv(%u, %p [%f %f %f])\n",
-         indx,
-         values,
-         values == nullptr ? 0.f : values[0],
-         values == nullptr ? 0.f : values[1],
-         values == nullptr ? 0.f : values[2]);
-  GLCHECK_ERRORS();
-}
-
-void IContext::vertexAttrib4f(GLuint indx, GLfloat x, GLfloat y, GLfloat z, GLfloat w) {
-  GLCALL(VertexAttrib4f)(indx, x, y, z, w);
-  APILOG("glVertexAttrib3f(%u, %f, %f, %f, %f)\n", indx, x, y, z, w);
-  GLCHECK_ERRORS();
-}
-
-void IContext::vertexAttrib4fv(GLuint indx, const GLfloat* values) {
-  GLCALL(VertexAttrib4fv)(indx, values);
-  APILOG("glVertexAttrib4fv(%u, %p [%f %f %f %f])\n",
-         indx,
-         values,
-         values == nullptr ? 0.f : values[0],
-         values == nullptr ? 0.f : values[1],
-         values == nullptr ? 0.f : values[2],
-         values == nullptr ? 0.f : values[3]);
-  GLCHECK_ERRORS();
-}
-
 void IContext::viewport(GLint x, GLint y, GLsizei width, GLsizei height) {
   GLCALL(Viewport)(x, y, width, height);
   APILOG("glViewport(%d, %d, %u, %u)\n", x, y, width, height);
