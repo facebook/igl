@@ -106,7 +106,7 @@ Result RenderPipelineState::create() {
   if (!IGL_DEBUG_VERIFY(desc_.shaderStages->getType() == ShaderStagesType::Render)) {
     return Result(Result::Code::ArgumentInvalid, "Shader stages not for render");
   }
-  const auto& shaderStages = std::static_pointer_cast<ShaderStages>(desc_.shaderStages);
+  const auto& shaderStages = static_cast<ShaderStages*>(desc_.shaderStages.get());
   if (!shaderStages) {
     return Result(Result::Code::ArgumentInvalid,
                   "Shader stages required to create pipeline state.");
@@ -122,7 +122,7 @@ Result RenderPipelineState::create() {
   const auto& mFramebufferDesc = desc_.targetDesc;
   // Get and cache all attribute locations, since this won't change throughout
   // the lifetime of this RenderPipelineState
-  const auto& vertexInputState = std::static_pointer_cast<VertexInputState>(desc_.vertexInputState);
+  const auto& vertexInputState = static_cast<VertexInputState*>(desc_.vertexInputState.get());
   if (desc_.vertexInputState != nullptr) {
     auto bufferAttribMap = vertexInputState->getBufferAttribMap();
 
@@ -218,7 +218,7 @@ Result RenderPipelineState::create() {
 
 void RenderPipelineState::bind() {
   if (desc_.shaderStages) {
-    const auto& shaderStages = std::static_pointer_cast<ShaderStages>(desc_.shaderStages);
+    const auto& shaderStages = static_cast<ShaderStages*>(desc_.shaderStages.get());
     shaderStages->bind();
     if (!uniformBlockBindingPointSet_) {
       for (const auto& binding : uniformBlockBindingMap_) {
@@ -260,7 +260,7 @@ void RenderPipelineState::bind() {
 
 void RenderPipelineState::unbind() {
   if (desc_.shaderStages) {
-    std::static_pointer_cast<ShaderStages>(desc_.shaderStages)->unbind();
+      static_cast<ShaderStages&>(*desc_.shaderStages).unbind();
   }
 }
 
@@ -275,8 +275,8 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
   }
 #endif
 
-  const auto& attribList = std::static_pointer_cast<VertexInputState>(desc_.vertexInputState)
-                               ->getAssociatedAttributes(bufferIndex);
+  const auto& attribList = static_cast<VertexInputState&>(*desc_.vertexInputState)
+                               .getAssociatedAttributes(bufferIndex);
   auto& locations = bufferAttribLocations_[bufferIndex];
 
   // attributeList and locations should have an 1-to-1 correspondence
@@ -356,8 +356,8 @@ Result RenderPipelineState::bindTextureUnit(const size_t unit, uint8_t bindTarge
 }
 
 bool RenderPipelineState::matchesShaderProgram(const RenderPipelineState& rhs) const {
-  return std::static_pointer_cast<ShaderStages>(desc_.shaderStages)->getProgramID() ==
-         std::static_pointer_cast<ShaderStages>(rhs.desc_.shaderStages)->getProgramID();
+  return static_cast<ShaderStages&>(*desc_.shaderStages).getProgramID() ==
+         static_cast<ShaderStages&>(*rhs.desc_.shaderStages).getProgramID();
 }
 
 bool RenderPipelineState::matchesVertexInputState(const RenderPipelineState& rhs) const {
