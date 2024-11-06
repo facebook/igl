@@ -16,6 +16,10 @@
   <uses-permission android:name="android.permission.INTERNET" />
   <uses-permission android:name="com.oculus.permission.HAND_TRACKING" />
 
+  <uses-sdk
+      android:minSdkVersion="29"
+      android:targetSdkVersion="32" />
+
     <queries>
         <provider android:authorities="org.khronos.openxr.runtime_broker;org.khronos.openxr.system_runtime_broker" />
     </queries>
@@ -26,6 +30,9 @@
       android:label="IGL Shell OpenXR Vulkan">
 
     <meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|quest3|questpro"/>
+    <meta-data
+        android:name="com.oculus.intent.category.VR"
+        android:value="vr_only"/>
 
     <activity android:name="com.facebook.igl.shell.openxr.vulkan.MainActivity"
               android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
