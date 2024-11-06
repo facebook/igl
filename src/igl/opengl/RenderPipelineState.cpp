@@ -218,7 +218,7 @@ Result RenderPipelineState::create() {
 
 void RenderPipelineState::bind() {
   if (desc_.shaderStages) {
-    const ShaderStages* shaderStages = static_cast<ShaderStages*>(desc_.shaderStages.get());
+    ShaderStages* shaderStages = static_cast<ShaderStages*>(desc_.shaderStages.get());
     shaderStages->bind();
     if (!uniformBlockBindingPointSet_) {
       for (const auto& binding : uniformBlockBindingMap_) {
@@ -275,7 +275,7 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
   }
 #endif
 
-  const VertexInputState* attribList = static_cast<VertexInputState*>(desc_.vertexInputState.get())
+  const auto& attribList = static_cast<VertexInputState*>(desc_.vertexInputState.get())
                                ->getAssociatedAttributes(bufferIndex);
   auto& locations = bufferAttribLocations_[bufferIndex];
 
