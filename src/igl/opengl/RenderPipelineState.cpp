@@ -260,7 +260,7 @@ void RenderPipelineState::bind() {
 
 void RenderPipelineState::unbind() {
   if (desc_.shaderStages) {
-      static_cast<ShaderStages&>(*desc_.shaderStages).unbind();
+      static_cast<ShaderStages*>(desc_.shaderStages.get())->unbind();
   }
 }
 
@@ -275,8 +275,8 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
   }
 #endif
 
-  const auto& attribList = static_cast<VertexInputState&>(*desc_.vertexInputState)
-                               .getAssociatedAttributes(bufferIndex);
+  const auto& attribList = static_cast<VertexInputState*>(desc_.vertexInputState.get())
+                               ->getAssociatedAttributes(bufferIndex);
   auto& locations = bufferAttribLocations_[bufferIndex];
 
   // attributeList and locations should have an 1-to-1 correspondence
@@ -356,8 +356,8 @@ Result RenderPipelineState::bindTextureUnit(const size_t unit, uint8_t bindTarge
 }
 
 bool RenderPipelineState::matchesShaderProgram(const RenderPipelineState& rhs) const {
-  return static_cast<ShaderStages&>(*desc_.shaderStages).getProgramID() ==
-         static_cast<ShaderStages&>(*rhs.desc_.shaderStages).getProgramID();
+  return static_cast<ShaderStages*>(desc_.shaderStages.get())->getProgramID() ==
+         static_cast<ShaderStages*>(rhs.desc_.shaderStages.get())->getProgramID();
 }
 
 bool RenderPipelineState::matchesVertexInputState(const RenderPipelineState& rhs) const {
