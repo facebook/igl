@@ -251,7 +251,7 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
   case Extensions::VertexAttribDivisor:
     return hasESExtension(*this, "GL_NV_instanced_arrays");
   case Extensions::PolygonOffsetClamp:
-    return hasESExtension(*this, "GL_ARB_polygon_offset_clamp");
+    return hasDesktopOrESExtension(*this, "GL_ARB_polygon_offset_clamp");
   }
   IGL_UNREACHABLE_RETURN(false)
 }
