@@ -1190,12 +1190,12 @@ void iglGenVertexArrays(GLsizei n, GLuint* vertexArrays) {
 #endif
 
 void iglPolygonOffsetClamp(float factor, float units, float clamp){
-  GLEXTENSION_METHOD_BODY_WITH_RETURN(CAN_CALL_glPolygonOffsetClamp,
-                                      glPolygonOffsetClamp,
-                                      PFNPOLYGONOFFSETCLAMPPROC,
-                                      factor,
-                                      units,
-                                      clamp);
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glPolygonOffsetClamp,
+                          glPolygonOffsetClamp,
+                          PFNPOLYGONOFFSETCLAMPPROC,
+                          factor,
+                          units,
+                          clamp);
 }
 
 ///--------------------------------------
