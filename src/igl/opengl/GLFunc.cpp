@@ -1181,6 +1181,24 @@ void iglGenVertexArrays(GLsizei n, GLuint* vertexArrays) {
 }
 
 ///--------------------------------------
+/// MARK: - GL_ARB_polygon_offset_clamp
+
+#if defined(GL_ARB_polygon_offset_clamp)
+#define CAN_CALL_glPolygonOffsetClamp CAN_CALL
+#else
+#define CAN_CALL_glPolygonOffsetClamp 0
+#endif
+
+void iglPolygonOffsetClamp(float factor, float units, float clamp){
+  GLEXTENSION_METHOD_BODY_WITH_RETURN(CAN_CALL_glPolygonOffsetClamp,
+                                      glPolygonOffsetClamp,
+                                      PFNPOLYGONOFFSETCLAMPPROC,
+                                      factor,
+                                      units,
+                                      clamp);
+}
+
+///--------------------------------------
 /// MARK: - GL_EXT_debug_label
 
 #if defined(GL_EXT_debug_label)

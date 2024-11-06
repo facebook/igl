@@ -2272,9 +2272,14 @@ void IContext::pixelStorei(GLenum pname, GLint param) {
   GLCHECK_ERRORS();
 }
 
-void IContext::polygonOffset(GLfloat factor, GLfloat units) {
-  GLCALL(PolygonOffset)(factor, units);
-  APILOG("glPolygonOffset(%f, %f)\n", factor, units);
+void IContext::polygonOffsetClamp(GLfloat factor, GLfloat units, float clamp){
+  if (deviceFeatureSet_.hasExtension(Extensions::PolygonOffsetClamp)){
+    iglPolygonOffsetClamp(factor, units, clamp);
+    APILOG("glPolygonOffsetClamp(%f, %f, %f)\n", factor, units, clamp);
+  } else {
+    GLCALL(PolygonOffset)(factor, units);
+    APILOG("glPolygonOffset(%f, %f)\n", factor, units);
+  }
   GLCHECK_ERRORS();
 }
 

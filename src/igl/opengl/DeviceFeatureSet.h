@@ -58,6 +58,7 @@ enum class Extensions {
   TextureType2_10_10_10_Rev,  // GL_EXT_texture_type_2_10_10_10_REV is supporteds
   VertexArrayObject,          // GL_OES_vertex_array_object is supported
   VertexAttribDivisor,        // GL_NV_instanced_arrays is supported
+  PolygonOffsetClamp,         // GL_ARB_polygon_offset_clamp is supported
 };
 // clang-format on
 
