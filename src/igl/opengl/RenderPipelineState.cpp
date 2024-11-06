@@ -106,7 +106,7 @@ Result RenderPipelineState::create() {
   if (!IGL_DEBUG_VERIFY(desc_.shaderStages->getType() == ShaderStagesType::Render)) {
     return Result(Result::Code::ArgumentInvalid, "Shader stages not for render");
   }
-  const auto& shaderStages = static_cast<ShaderStages*>(desc_.shaderStages.get());
+  auto shaderStages = static_cast<ShaderStages*>(desc_.shaderStages.get());
   if (!shaderStages) {
     return Result(Result::Code::ArgumentInvalid,
                   "Shader stages required to create pipeline state.");
@@ -122,7 +122,7 @@ Result RenderPipelineState::create() {
   const auto& mFramebufferDesc = desc_.targetDesc;
   // Get and cache all attribute locations, since this won't change throughout
   // the lifetime of this RenderPipelineState
-  const auto& vertexInputState = static_cast<VertexInputState*>(desc_.vertexInputState.get());
+  auto vertexInputState = static_cast<VertexInputState*>(desc_.vertexInputState.get());
   if (desc_.vertexInputState != nullptr) {
     auto bufferAttribMap = vertexInputState->getBufferAttribMap();
 
@@ -218,7 +218,7 @@ Result RenderPipelineState::create() {
 
 void RenderPipelineState::bind() {
   if (desc_.shaderStages) {
-    const auto& shaderStages = static_cast<ShaderStages*>(desc_.shaderStages.get());
+    auto shaderStages = static_cast<ShaderStages*>(desc_.shaderStages.get());
     shaderStages->bind();
     if (!uniformBlockBindingPointSet_) {
       for (const auto& binding : uniformBlockBindingMap_) {
@@ -275,7 +275,7 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
   }
 #endif
 
-  const auto& attribList = static_cast<VertexInputState*>(desc_.vertexInputState.get())
+  auto attribList = static_cast<VertexInputState*>(desc_.vertexInputState.get())
                                ->getAssociatedAttributes(bufferIndex);
   auto& locations = bufferAttribLocations_[bufferIndex];
 
