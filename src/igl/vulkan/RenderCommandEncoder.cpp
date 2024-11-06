@@ -56,19 +56,6 @@ VkAttachmentStoreOp storeActionToVkAttachmentStoreOp(igl::StoreAction a) {
   return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 }
 
-VkIndexType indexFormatToVkIndexType(igl::IndexFormat fmt) {
-  switch (fmt) {
-  case igl::IndexFormat::UInt8:
-    return VK_INDEX_TYPE_UINT8_EXT;
-  case igl::IndexFormat::UInt16:
-    return VK_INDEX_TYPE_UINT16;
-  case igl::IndexFormat::UInt32:
-    return VK_INDEX_TYPE_UINT32;
-  };
-  IGL_DEBUG_ASSERT_NOT_REACHED();
-  return VK_INDEX_TYPE_NONE_KHR;
-}
-
 } // namespace
 
 namespace igl::vulkan {
@@ -499,7 +486,20 @@ void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
   IGL_DEBUG_ASSERT(buf.getBufferUsageFlags() & VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                    "Did you forget to specify BufferTypeBits::Index on your buffer?");
 
-  const VkIndexType type = indexFormatToVkIndexType(format);
+  auto indexFormatToVkIndexType = [](igl::IndexFormat fmt, bool has8BitIndices) -> VkIndexType {
+    switch (fmt) {
+    case igl::IndexFormat::UInt8:
+      return IGL_DEBUG_VERIFY(has8BitIndices) ? VK_INDEX_TYPE_UINT8_EXT : VK_INDEX_TYPE_UINT16;
+    case igl::IndexFormat::UInt16:
+      return VK_INDEX_TYPE_UINT16;
+    case igl::IndexFormat::UInt32:
+      return VK_INDEX_TYPE_UINT32;
+    };
+    IGL_DEBUG_ASSERT_NOT_REACHED();
+    return VK_INDEX_TYPE_UINT16;
+  };
+
+  const VkIndexType type = indexFormatToVkIndexType(format, ctx_.extensions_.has8BitIndices);
 
   ctx_.vf_.vkCmdBindIndexBuffer(cmdBuffer_, buf.getVkBuffer(), bufferOffset, type);
 }
