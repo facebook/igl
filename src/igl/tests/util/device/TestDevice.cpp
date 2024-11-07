@@ -29,6 +29,14 @@
 #define IGL_VULKAN_SUPPORTED 0
 #endif
 
+// clang-format off
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// clang-format on
+// @fb-only
 #if IGL_METAL_SUPPORTED
 #include "metal/TestDevice.h"
 #endif
@@ -38,6 +46,9 @@
 #if IGL_VULKAN_SUPPORTED
 #include "vulkan/TestDevice.h"
 #endif
+// @fb-only
+// @fb-only
+// @fb-only
 
 namespace igl::tests::util::device {
 
@@ -82,6 +93,13 @@ std::shared_ptr<::igl::IDevice> createTestDevice(::igl::BackendType backendType,
     return nullptr;
 #endif
   }
+  // @fb-only
+// @fb-only
+    // @fb-only
+// @fb-only
+    // @fb-only
+// @fb-only
+  // @fb-only
   return nullptr;
 }
 
