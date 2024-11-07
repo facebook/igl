@@ -681,4 +681,30 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangleBindGroup) {
   verifyFrameBuffer(expectedPixels);
 }
 
+TEST_F(RenderCommandEncoderTest, DepthBiasShouldDrawAPoint) {
+  initializeBuffers(
+      // clang-format off
+      { quarterPixel, quarterPixel, 0.0f, 1.0f },
+      { 0.5, 0.5 } // clang-format on
+  );
+
+  encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+    encoder->bindRenderPipelineState(renderPipelineState_Point_);
+    encoder->setDepthBias(0, 0, 0);
+    encoder->draw(1);
+  });
+
+  auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  // clang-format off
+  std::vector<uint32_t> const expectedPixels {
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+    backgroundColorHex, backgroundColorHex, grayColor,          backgroundColorHex,
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+  };
+  // clang-format on
+
+  verifyFrameBuffer(expectedPixels);
+}
+
 } // namespace igl::tests

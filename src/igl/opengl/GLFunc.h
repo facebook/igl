@@ -289,6 +289,8 @@ using PFNIGLDRAWARRAYSINSTANCEDPROC = void (*)(GLenum mode,
                                                GLsizei count,
                                                GLsizei primcount);
 
+using PFNPOLYGONOFFSETCLAMPPROC = void (*)(float factor, float units, float clamp);
+
 ///--------------------------------------
 /// MARK: - OpenGL ES / OpenGL
 
@@ -547,6 +549,11 @@ void iglUniformBlockBinding(GLuint pid, GLuint uniformBlockIndex, GLuint uniform
 void iglBindVertexArray(GLuint vao);
 void iglDeleteVertexArrays(GLsizei n, const GLuint* vertexArrays);
 void iglGenVertexArrays(GLsizei n, GLuint* vertexArrays);
+
+///--------------------------------------
+/// MARK: - GL_ARB_polygon_offset_clamp
+
+void iglPolygonOffsetClamp(float factor, float units, float clamp);
 
 ///--------------------------------------
 /// MARK: - GL_EXT_debug_label

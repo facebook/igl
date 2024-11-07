@@ -97,9 +97,9 @@ void RenderCommandAdapter::setBlendColor(Color color) {
   getContext().blendColor(color.r, color.g, color.b, color.a);
 }
 
-void RenderCommandAdapter::setDepthBias(float depthBias, float slopeScale) {
+void RenderCommandAdapter::setDepthBias(float depthBias, float slopeScale, float clamp) {
   getContext().setEnabled(true, GL_POLYGON_OFFSET_FILL);
-  getContext().polygonOffset(slopeScale, depthBias);
+  getContext().polygonOffsetClamp(slopeScale, depthBias, clamp);
 }
 
 void RenderCommandAdapter::clearVertexBuffers() {
