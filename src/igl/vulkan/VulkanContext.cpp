@@ -549,7 +549,7 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
                                    const char* IGL_NULLABLE* IGL_NULLABLE extraExtensions) {
   // Enumerate all instance extensions
   extensions_.enumerate(vf_);
-  extensions_.enableCommonExtensions(VulkanExtensions::ExtensionType::Instance, config_);
+  extensions_.enableCommonInstanceExtensions(config_);
   for (size_t index = 0; index < numExtraExtensions; ++index) {
     extensions_.enable(extraExtensions[index], VulkanExtensions::ExtensionType::Instance);
   }
@@ -733,7 +733,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   }
 #endif
 
-  extensions_.enableCommonExtensions(VulkanExtensions::ExtensionType::Device, config_);
+  extensions_.enableCommonDeviceExtensions(config_);
   // Enable extra device extensions
   for (size_t i = 0; i < numExtraDeviceExtensions; i++) {
     extensions_.enable(extraDeviceExtensions[i], VulkanExtensions::ExtensionType::Device);
