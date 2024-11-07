@@ -53,6 +53,14 @@ class RenderSession {
 
   static double getSeconds() noexcept;
 
+  std::shared_ptr<ICommandQueue> getCommandQueue() noexcept {
+    return commandQueue_;
+  }
+
+  std::shared_ptr<IFramebuffer> getFramebuffer() noexcept {
+    return framebuffer_;
+  }
+
   void releaseFramebuffer() {
     framebuffer_ = nullptr;
   }
