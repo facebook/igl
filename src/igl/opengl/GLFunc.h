@@ -365,7 +365,7 @@ void iglDrawElementsInstanced(GLenum mode,
                               GLenum type,
                               const void* indices,
                               GLsizei instancecount);
-void iglDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount);
+void iglDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei primcount);
 
 ///--------------------------------------
 /// MARK: - GL_APPLE_framebuffer_multisample

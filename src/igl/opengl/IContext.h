@@ -25,8 +25,6 @@
 #include <unordered_set>
 #include <vector>
 
-namespace igl {} // namespace igl
-
 namespace igl::opengl {
 
 // We might extend this to other enums presenting API versions on desktops, etc.

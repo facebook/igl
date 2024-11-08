@@ -20,9 +20,7 @@ typedef void CAEAGLLayer;
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/PlatformDevice.h>
 
-namespace igl::opengl {
-
-namespace ios {
+namespace igl::opengl::ios {
 
 class Device;
 
@@ -95,5 +93,4 @@ class PlatformDevice final : public opengl::PlatformDevice {
   [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override;
 };
 
-} // namespace ios
-} // namespace igl::opengl
+} // namespace igl::opengl::ios
