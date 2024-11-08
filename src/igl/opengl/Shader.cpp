@@ -185,11 +185,11 @@ Result ShaderStages::validate() const {
   return Result{};
 }
 
-void ShaderStages::bind() {
+void ShaderStages::bind() const {
   getContext().useProgram(programID_);
 }
 
-void ShaderStages::unbind() {
+void ShaderStages::unbind() const {
   getContext().useProgram(0);
 }
 

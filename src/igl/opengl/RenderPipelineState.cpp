@@ -218,7 +218,7 @@ Result RenderPipelineState::create() {
 
 void RenderPipelineState::bind() {
   if (desc_.shaderStages) {
-    auto* const shaderStages = static_cast<ShaderStages*>(desc_.shaderStages.get());
+    const auto* shaderStages = static_cast<ShaderStages*>(desc_.shaderStages.get());
     shaderStages->bind();
     if (!uniformBlockBindingPointSet_) {
       for (const auto& binding : uniformBlockBindingMap_) {
