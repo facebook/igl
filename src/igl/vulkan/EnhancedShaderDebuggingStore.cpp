@@ -22,7 +22,6 @@
 #include <igl/vulkan/CommandQueue.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
-#include <igl/vulkan/Framebuffer.h>
 #include <igl/vulkan/RenderCommandEncoder.h>
 #include <igl/vulkan/VulkanContext.h>
 

@@ -11,8 +11,6 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
-#include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 
 #include <igl/IGLSafeC.h>

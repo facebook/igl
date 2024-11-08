@@ -20,7 +20,7 @@ VulkanExtensions::VulkanExtensions() {
 }
 
 void VulkanExtensions::enumerate(const VulkanFunctionTable& vf) {
-  uint32_t count;
+  uint32_t count = 0;
   VK_ASSERT(vf.vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
 
   std::vector<VkExtensionProperties> allExtensions(count);
@@ -37,7 +37,7 @@ void VulkanExtensions::enumerate(const VulkanFunctionTable& vf) {
 }
 
 void VulkanExtensions::enumerate(const VulkanFunctionTable& vf, VkPhysicalDevice device) {
-  uint32_t count;
+  uint32_t count = 0;
   VK_ASSERT(vf.vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr));
 
   std::vector<VkExtensionProperties> allExtensions(count);

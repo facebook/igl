@@ -19,7 +19,6 @@ namespace igl::vulkan {
 
 class VulkanContext;
 class VulkanDescriptorSetLayout;
-class VulkanPipelineLayout;
 
 class PipelineState {
  public:

@@ -25,7 +25,6 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanHelpers.h>
-#include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanShaderModule.h>
 
 // Writes the shader code to disk for debugging. Used in `Device::createShaderModule()`

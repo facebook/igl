@@ -9,22 +9,16 @@
 
 #include <igl/CommandBuffer.h>
 #include <igl/RenderPass.h>
-#include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/CommandQueue.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/Device.h>
-#include <igl/vulkan/PlatformDevice.h>
-#include <igl/vulkan/RenderPipelineState.h>
-#include <igl/vulkan/SamplerState.h>
-#include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanFramebuffer.h>
 #include <igl/vulkan/VulkanImage.h>
-#include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <igl/vulkan/VulkanTexture.h>
 

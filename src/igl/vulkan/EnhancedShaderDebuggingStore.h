@@ -21,16 +21,12 @@
 
 namespace igl {
 
-class IBuffer;
-class IDepthStencilState;
-class IFramebuffer;
 class IRenderPipelineState;
 
 namespace vulkan {
 
 class CommandQueue;
 class Device;
-class Framebuffer;
 class VulkanContext;
 class VulkanExtensions;
 
