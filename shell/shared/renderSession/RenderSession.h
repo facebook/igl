@@ -11,8 +11,6 @@
 #include <optional>
 #include <shell/shared/platform/Platform.h>
 
-namespace igl {} // namespace igl
-
 namespace igl::shell {
 struct AppParams;
 struct ShellParams;
