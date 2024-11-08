@@ -10,8 +10,6 @@
 #include <igl/Device.h>
 #include <memory>
 
-namespace igl {}
-
 namespace igl::shell {
 
 class Extension;
