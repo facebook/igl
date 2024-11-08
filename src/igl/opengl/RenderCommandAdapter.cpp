@@ -93,7 +93,7 @@ void RenderCommandAdapter::setStencilReferenceValue(uint32_t value) {
   setDirty(StateMask::DEPTH_STENCIL);
 }
 
-void RenderCommandAdapter::setBlendColor(Color color) {
+void RenderCommandAdapter::setBlendColor(const Color& color) {
   getContext().blendColor(color.r, color.g, color.b, color.a);
 }
 

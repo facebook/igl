@@ -713,7 +713,7 @@ void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
       cmdBuffer_, VK_STENCIL_FACE_FRONT_BIT | VK_STENCIL_FACE_BACK_BIT, value);
 }
 
-void RenderCommandEncoder::setBlendColor(Color color) {
+void RenderCommandEncoder::setBlendColor(const Color& color) {
   IGL_PROFILER_FUNCTION();
 
   ctx_.vf_.vkCmdSetBlendConstants(cmdBuffer_, color.toFloatPtr());

@@ -56,7 +56,7 @@ class RenderCommandAdapter final : public WithContext {
 
   void setDepthStencilState(const std::shared_ptr<IDepthStencilState>& newValue);
   void setStencilReferenceValue(uint32_t value);
-  void setBlendColor(Color color);
+  void setBlendColor(const Color& color);
   void setDepthBias(float depthBias, float slopeScale, float clamp);
 
   void clearVertexBuffers();

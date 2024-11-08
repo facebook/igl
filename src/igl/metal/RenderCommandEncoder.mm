@@ -239,7 +239,7 @@ void RenderCommandEncoder::bindDepthStencilState(
   }
 }
 
-void RenderCommandEncoder::setBlendColor(Color color) {
+void RenderCommandEncoder::setBlendColor(const Color& color) {
   [encoder_ setBlendColorRed:color.r green:color.g blue:color.b alpha:color.a];
 }
 

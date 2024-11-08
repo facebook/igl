@@ -421,7 +421,7 @@ void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
   }
 }
 
-void RenderCommandEncoder::setBlendColor(Color color) {
+void RenderCommandEncoder::setBlendColor(const Color& color) {
   if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->setBlendColor(color);
   }
