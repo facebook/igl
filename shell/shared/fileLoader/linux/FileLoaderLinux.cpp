@@ -97,10 +97,10 @@ std::string FileLoaderLinux::fullPath(const std::string& fileName) const {
   }
 
 // @fb-only
-  std::string resfolders[3] = {// @fb-only
-                               // @fb-only
-                               // @fb-only
-                               // @fb-only
+  const std::string resfolders[3] = {// @fb-only
+                                     // @fb-only
+                                     // @fb-only
+                                     // @fb-only
   // @fb-only
     // @fb-only
     // @fb-only
