@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <igl/ColorSpace.h>
 #include <igl/Macros.h>
 #include <igl/Texture.h>
 

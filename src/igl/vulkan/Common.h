@@ -22,6 +22,7 @@
 #include <vulkan/vulkan_metal.h>
 #endif
 
+#include <igl/ColorSpace.h>
 #include <igl/Common.h>
 #include <igl/DepthStencilState.h>
 #include <igl/Texture.h>
