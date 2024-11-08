@@ -10,8 +10,6 @@
 #include <igl/IGL.h>
 #include <vector>
 
-namespace igl {} // namespace igl
-
 namespace iglu {
 struct ManagedUniformBufferInfo {
   int index = -1;
