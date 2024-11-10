@@ -16,8 +16,7 @@
 
 @class NSOpenGLContext;
 
-namespace igl {
-namespace opengl::macos {
+namespace igl::opengl::macos {
 
 class Context final : public IContext {
  public:
@@ -61,5 +60,4 @@ class Context final : public IContext {
   std::shared_ptr<std::vector<NSOpenGLContext*>> sharegroup_;
 };
 
-} // namespace opengl::macos
-} // namespace igl
+} // namespace igl::opengl::macos

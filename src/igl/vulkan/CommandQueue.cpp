@@ -11,8 +11,6 @@
 #include <igl/vulkan/EnhancedShaderDebuggingStore.h>
 #include <igl/vulkan/RenderCommandEncoder.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
-#include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 
 namespace igl::vulkan {

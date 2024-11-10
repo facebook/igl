@@ -13,8 +13,6 @@
 
 namespace igl::vulkan {
 
-class VulkanPipelineLayout;
-
 /// @brief A wrapper around a VkDescriptorSetLayout
 class VulkanDescriptorSetLayout final {
  public:

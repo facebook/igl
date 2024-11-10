@@ -197,7 +197,8 @@ ShaderStagesDesc ShaderStagesDesc::fromRenderModules(
     std::shared_ptr<IShaderModule> vertexModule,
     std::shared_ptr<IShaderModule> fragmentModule) {
   ShaderStagesDesc desc;
-  desc.debugName = vertexModule->info().debugName + ", " + fragmentModule->info().debugName;
+  desc.debugName = (vertexModule ? vertexModule->info().debugName : std::string()) + ", " +
+                   (fragmentModule ? fragmentModule->info().debugName : std::string());
   desc.type = ShaderStagesType::Render;
   desc.vertexModule = std::move(vertexModule);
   desc.fragmentModule = std::move(fragmentModule);
@@ -206,7 +207,7 @@ ShaderStagesDesc ShaderStagesDesc::fromRenderModules(
 
 ShaderStagesDesc ShaderStagesDesc::fromComputeModule(std::shared_ptr<IShaderModule> computeModule) {
   ShaderStagesDesc desc;
-  desc.debugName = computeModule->info().debugName;
+  desc.debugName = computeModule ? computeModule->info().debugName : "igl/Shader.cpp";
   desc.type = ShaderStagesType::Compute;
   desc.computeModule = std::move(computeModule);
   return desc;

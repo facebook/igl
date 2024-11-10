@@ -11,8 +11,6 @@
 #include <optional>
 #include <shell/shared/platform/Platform.h>
 
-namespace igl {} // namespace igl
-
 namespace igl::shell {
 struct AppParams;
 struct ShellParams;
@@ -52,6 +50,14 @@ class RenderSession {
   float getDeltaSeconds() noexcept;
 
   static double getSeconds() noexcept;
+
+  std::shared_ptr<ICommandQueue> getCommandQueue() noexcept {
+    return commandQueue_;
+  }
+
+  std::shared_ptr<IFramebuffer> getFramebuffer() noexcept {
+    return framebuffer_;
+  }
 
   void releaseFramebuffer() {
     framebuffer_ = nullptr;

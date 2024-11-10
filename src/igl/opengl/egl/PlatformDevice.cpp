@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/opengl/TextureBuffer.h>
 #include <igl/opengl/ViewTextureTarget.h>
 #include <igl/opengl/egl/Context.h>
 #include <igl/opengl/egl/Device.h>

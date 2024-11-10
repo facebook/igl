@@ -16,12 +16,10 @@ struct AHardwareBuffer;
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 namespace igl {
-class ITexture;
 
 namespace vulkan {
 
 class Device;
-class VulkanTexture;
 
 /// @brief Implements the igl::IPlatformDevice interface
 class PlatformDevice : public IPlatformDevice {

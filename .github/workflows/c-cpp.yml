@@ -129,10 +129,10 @@ jobs:
             sudo apt-get install -y clang xorg-dev libxinerama-dev libxcursor-dev libgles2-mesa-dev libegl1-mesa-dev libglfw3-dev libglew-dev libstdc++-12-dev
 
         - name: Prepare Vulkan SDK
-          uses: humbletim/setup-vulkan-sdk@523828e49cd4afabce369c39c7ee6543a2b7a735
+          uses: humbletim/setup-vulkan-sdk@v1.2.0
           with:
-            vulkan-query-version: 1.3.268.0
-            vulkan-components: Vulkan-Headers, Vulkan-Loader, SPIRV-Headers
+            vulkan-query-version: 1.3.296.0
+            vulkan-components: Vulkan-Headers, Vulkan-Loader
             vulkan-use-cache: true
 
         - name: Get the number of CPU cores

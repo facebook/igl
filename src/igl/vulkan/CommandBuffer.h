@@ -13,7 +13,6 @@
 
 namespace igl::vulkan {
 
-class Buffer;
 class VulkanContext;
 
 /// @brief This class implements the igl::ICommandBuffer interface for Vulkan

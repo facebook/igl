@@ -12,8 +12,7 @@
 
 @class EAGLContext;
 
-namespace igl {
-namespace opengl::ios {
+namespace igl::opengl::ios {
 
 class Context final : public IContext {
  public:
@@ -41,5 +40,4 @@ class Context final : public IContext {
   CVOpenGLESTextureCacheRef textureCache_ = nullptr;
 };
 
-} // namespace opengl::ios
-} // namespace igl
+} // namespace igl::opengl::ios

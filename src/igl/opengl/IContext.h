@@ -25,8 +25,6 @@
 #include <unordered_set>
 #include <vector>
 
-namespace igl {} // namespace igl
-
 namespace igl::opengl {
 
 // We might extend this to other enums presenting API versions on desktops, etc.
@@ -291,7 +289,7 @@ class IContext {
   void* mapBufferRange(GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access);
   void objectLabel(GLenum identifier, GLuint name, GLsizei length, const char* label);
   void pixelStorei(GLenum pname, GLint param);
-  void polygonOffset(GLfloat factor, GLfloat units);
+  void polygonOffsetClamp(GLfloat factor, GLfloat units, float clamp);
   void popDebugGroup();
   void pushDebugGroup(GLenum source, GLuint id, GLsizei length, const GLchar* message);
   void readPixels(GLint x,

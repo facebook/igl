@@ -7,8 +7,6 @@
 
 #include "Common.h"
 
-#include <array>
-#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 
@@ -28,7 +26,6 @@
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanImage.h>
-#include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanShaderModule.h>
 #include <igl/vulkan/VulkanTexture.h>
 #include <igl/vulkan/util/SpvReflection.h>

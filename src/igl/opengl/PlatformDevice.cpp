@@ -9,10 +9,8 @@
 
 #include <igl/opengl/DestructionGuard.h>
 #include <igl/opengl/Device.h>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/Framebuffer.h>
 #include <igl/opengl/IContext.h>
-#include <igl/opengl/SamplerState.h>
 #include <igl/opengl/TextureBufferExternal.h>
 
 namespace igl::opengl {
@@ -93,10 +91,10 @@ void PlatformDevice::blitFramebuffer(const std::shared_ptr<IFramebuffer>& src,
           "the other doesn't.\n");
     }
     if (srcDepthTexture && dstDepthTexture) {
-      auto srcFormat = std::static_pointer_cast<igl::opengl::Texture>(srcDepthTexture)
-                           ->getGLInternalTextureFormat();
-      auto dstFormat = std::static_pointer_cast<igl::opengl::Texture>(dstDepthTexture)
-                           ->getGLInternalTextureFormat();
+      const GLenum srcFormat =
+          static_cast<igl::opengl::Texture*>(srcDepthTexture.get())->getGLInternalTextureFormat();
+      const GLenum dstFormat =
+          static_cast<igl::opengl::Texture*>(dstDepthTexture.get())->getGLInternalTextureFormat();
       if (srcFormat != dstFormat) {
         IGL_DEBUG_ABORT(
             "PlatformDevice::blitFramebuffer: Mismatch of framebuffer depth attachment "
@@ -116,10 +114,10 @@ void PlatformDevice::blitFramebuffer(const std::shared_ptr<IFramebuffer>& src,
           "the other doesn't.\n");
     }
     if (srcStencilTexture && dstStencilTexture) {
-      auto srcFormat = std::static_pointer_cast<igl::opengl::Texture>(srcStencilTexture)
-                           ->getGLInternalTextureFormat();
-      auto dstFormat = std::static_pointer_cast<igl::opengl::Texture>(dstStencilTexture)
-                           ->getGLInternalTextureFormat();
+      const GLenum srcFormat =
+          static_cast<igl::opengl::Texture*>(srcStencilTexture.get())->getGLInternalTextureFormat();
+      const GLenum dstFormat =
+          static_cast<igl::opengl::Texture*>(dstStencilTexture.get())->getGLInternalTextureFormat();
       if (srcFormat != dstFormat) {
         IGL_DEBUG_ABORT(
             "PlatformDevice::blitFramebuffer: Mismatch of framebuffer stencil "

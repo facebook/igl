@@ -11,6 +11,7 @@
 #define IGL_VULKAN_COMMON_H
 
 #include <cassert>
+#include <utility>
 
 // set to 1 to see very verbose debug console logs with Vulkan commands
 #define IGL_VULKAN_PRINT_COMMANDS 0
@@ -21,6 +22,7 @@
 #include <vulkan/vulkan_metal.h>
 #endif
 
+#include <igl/ColorSpace.h>
 #include <igl/Common.h>
 #include <igl/DepthStencilState.h>
 #include <igl/Texture.h>
@@ -223,7 +225,7 @@ struct DepthStencilState final : public IDepthStencilState {
 /// @brief Implements the igl::IVertexInputState interface
 struct VertexInputState final : public IVertexInputState {
  public:
-  explicit VertexInputState(const VertexInputStateDesc& desc) : desc_(desc) {}
+  explicit VertexInputState(VertexInputStateDesc desc) : desc_(std::move(desc)) {}
   const VertexInputStateDesc desc_;
 };
 

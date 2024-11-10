@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 // @fb-only
 
 #include <igl/opengl/GLFunc.h>
@@ -1178,6 +1179,24 @@ void iglDeleteVertexArrays(GLsizei n, const GLuint* vertexArrays) {
 void iglGenVertexArrays(GLsizei n, GLuint* vertexArrays) {
   GLEXTENSION_METHOD_BODY(
       CAN_CALL_glGenVertexArrays, glGenVertexArrays, PFNIGLGENVERTEXARRAYSPROC, n, vertexArrays);
+}
+
+///--------------------------------------
+/// MARK: - GL_ARB_polygon_offset_clamp
+
+#if defined(GL_ARB_polygon_offset_clamp)
+#define CAN_CALL_glPolygonOffsetClamp CAN_CALL
+#else
+#define CAN_CALL_glPolygonOffsetClamp 0
+#endif
+
+void iglPolygonOffsetClamp(float factor, float units, float clamp) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glPolygonOffsetClamp,
+                          glPolygonOffsetClamp,
+                          PFNPOLYGONOFFSETCLAMPPROC,
+                          factor,
+                          units,
+                          clamp);
 }
 
 ///--------------------------------------
