@@ -78,7 +78,7 @@ void ResourcesBinder::bindSamplerState(uint32_t index, igl::vulkan::SamplerState
   igl::vulkan::VulkanSampler* newSampler = samplerState ? ctx_.samplers_.get(samplerState->sampler_)
                                                         : nullptr;
 
-  if (bindingsTextures_.samplers[index] != newSampler->vkSampler) {
+  if (newSampler != nullptr && bindingsTextures_.samplers[index] != newSampler->vkSampler) {
     bindingsTextures_.samplers[index] = newSampler->vkSampler;
     isDirtyFlags_ |= DirtyFlagBits_Textures;
   }
