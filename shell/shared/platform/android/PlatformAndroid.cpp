@@ -80,6 +80,8 @@ PlatformAndroid::PlatformAndroid(std::shared_ptr<igl::IDevice> device, bool useF
   }
 
 #if IGL_BACKEND_VULKAN
+  if (device_->getBackendType() != igl::BackendType::Vulkan)
+    return;
   // Get the surface transform matrix
   getDisplayContext().preRotationMatrix = [&device = *device_]() -> glm::mat4 {
     igl::vulkan::Device& vulkanDevice = static_cast<igl::vulkan::Device&>(device);
