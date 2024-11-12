@@ -350,13 +350,14 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
                    "Bind target is not valid: %d",
                    bindTarget);
 
-  auto* metalSamplerState = static_cast<SamplerState*>(samplerState);
+  auto* iglSamplerState = static_cast<SamplerState*>(samplerState);
+  auto metalSamplerState = iglSamplerState ? iglSamplerState->get() : nil;
 
   if ((bindTarget & BindTarget::kVertex) != 0) {
-    [encoder_ setVertexSamplerState:metalSamplerState->get() atIndex:index];
+    [encoder_ setVertexSamplerState:metalSamplerState atIndex:index];
   }
   if ((bindTarget & BindTarget::kFragment) != 0) {
-    [encoder_ setFragmentSamplerState:metalSamplerState->get() atIndex:index];
+    [encoder_ setFragmentSamplerState:metalSamplerState atIndex:index];
   }
 }
 
