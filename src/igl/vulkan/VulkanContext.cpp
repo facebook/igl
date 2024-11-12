@@ -1228,6 +1228,46 @@ VulkanImage VulkanContext::createImage(VkImageType imageType,
           debugName};
 }
 
+// @fb-only
+// @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+  // @fb-only
+          // @fb-only
+          // @fb-only
+          // @fb-only
+          // @fb-only
+          // @fb-only
+    // @fb-only
+  // @fb-only
+  // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+// @fb-only
+// @fb-only
+
 std::unique_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
     int32_t fileDescriptor,
     uint64_t memoryAllocationSize,

@@ -95,6 +95,47 @@ class VulkanImage final {
               VkSampleCountFlagBits samples,
               const char* debugName = nullptr);
 
+// @fb-only
+  // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+   // @fb-only
+  // @fb-only
+              // @fb-only
+              // @fb-only
+              // @fb-only
+              // @fb-only
+              // @fb-only
+              // @fb-only
+              // @fb-only
+              // @fb-only
+              // @fb-only
+              // @fb-only
+              // @fb-only
+              // @fb-only
+              // @fb-only
+// @fb-only
+
   /**
    * @brief Constructs a `VulkanImage` object and a `VkImage` object from a file descriptor. The
    * `VkImage` object is backed by external memory. The handle type of the external memory used is
