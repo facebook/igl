@@ -80,7 +80,7 @@ bool isSupportedBitmapTextureFormat(igl::TextureFormat format) {
   }
 }
 
-void writeBitmap(const char* filename,
+void writeBitmap(std::ostream& stream,
                  std::shared_ptr<igl::ITexture> texture,
                  igl::IDevice& device) {
   IGL_DEBUG_ASSERT(texture);
@@ -129,16 +129,10 @@ void writeBitmap(const char* filename,
     }
   }
 
-  writeBitmap(filename, static_cast<const uint8_t*>(imageData.data()), size.width, size.height);
+  writeBitmap(stream, static_cast<const uint8_t*>(imageData.data()), size.width, size.height);
 }
 
-void writeBitmap(const char* filename, const uint8_t* imageData, uint32_t width, uint32_t height) {
-  std::ofstream file;
-  file.open(filename, std::ios::out | std::ios::binary);
-  if (!IGL_DEBUG_VERIFY(file)) {
-    return;
-  }
-
+void writeBitmap(std::ostream& stream, const uint8_t* imageData, uint32_t width, uint32_t height) {
   const uint32_t imageSize = width * height * 3;
 
   BMPHeader header{
@@ -148,9 +142,8 @@ void writeBitmap(const char* filename, const uint8_t* imageData, uint32_t width,
       .imageSizeBytes = static_cast<uint32_t>(imageSize),
   };
 
-  file.write(reinterpret_cast<const char*>(&header), sizeof(header));
-  file.write(reinterpret_cast<const char*>(imageData), imageSize);
-  file.close();
+  stream.write(reinterpret_cast<const char*>(&header), sizeof(header));
+  stream.write(reinterpret_cast<const char*>(imageData), imageSize);
 }
 
 } // namespace igl::iglu
