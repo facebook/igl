@@ -35,10 +35,6 @@ struct BMPHeader {
   uint32_t importantColors = 0; // Number of important colors used
 } __attribute__((packed));
 
-bool shouldFlipY(const igl::IDevice& device) {
-  return device.getBackendType() != igl::BackendType::OpenGL;
-}
-
 struct BufferOffsets {
   size_t r;
   size_t g;
@@ -82,7 +78,8 @@ bool isSupportedBitmapTextureFormat(igl::TextureFormat format) {
 
 void writeBitmap(std::ostream& stream,
                  std::shared_ptr<igl::ITexture> texture,
-                 igl::IDevice& device) {
+                 igl::IDevice& device,
+                 bool flipY) {
   IGL_DEBUG_ASSERT(texture);
   IGL_DEBUG_ASSERT(texture->getType() == igl::TextureType::TwoD);
   IGL_DEBUG_ASSERT(isSupportedBitmapTextureFormat(texture->getFormat()));
@@ -113,7 +110,6 @@ void writeBitmap(std::ostream& stream,
   IGL_DEBUG_ASSERT(buffer.size() == size.height * bytesPerRow);
 
   const auto bufferOffsets = getBufferOffsets(texture->getFormat());
-  const bool flipY = shouldFlipY(device);
 
   for (size_t y = 0; y < size.height; ++y) {
     const size_t row = flipY ? size.height - y - 1 : y;
