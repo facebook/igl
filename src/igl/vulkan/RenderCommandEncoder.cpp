@@ -557,6 +557,8 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
     return;
   }
 
+  IGL_DEBUG_ASSERT(samplerState);
+
   binder_.bindSamplerState(index, static_cast<igl::vulkan::SamplerState*>(samplerState));
 }
 
