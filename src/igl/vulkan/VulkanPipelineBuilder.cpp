@@ -31,8 +31,8 @@ VulkanPipelineBuilder& VulkanPipelineBuilder::depthWriteEnable(bool enable) {
   return *this;
 }
 
-VulkanPipelineBuilder& VulkanPipelineBuilder::depthCompareOp(VkCompareOp compareOp) {
-  depthStencilState_.depthTestEnable = static_cast<VkBool32>(compareOp != VK_COMPARE_OP_ALWAYS);
+VulkanPipelineBuilder& VulkanPipelineBuilder::depthCompareOp(VkCompareOp compareOp, bool writeDepthEnable) {
+  depthStencilState_.depthTestEnable = static_cast<VkBool32>(compareOp != VK_COMPARE_OP_ALWAYS || writeDepthEnable);
   depthStencilState_.depthCompareOp = compareOp;
   return *this;
 }

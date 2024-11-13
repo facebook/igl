@@ -20,7 +20,7 @@ class VulkanPipelineBuilder final {
 
   VulkanPipelineBuilder& depthBiasEnable(bool enable);
   VulkanPipelineBuilder& depthWriteEnable(bool enable);
-  VulkanPipelineBuilder& depthCompareOp(VkCompareOp compareOp);
+  VulkanPipelineBuilder& depthCompareOp(VkCompareOp compareOp, bool writeDepthEnable);
   VulkanPipelineBuilder& dynamicState(VkDynamicState state);
   VulkanPipelineBuilder& dynamicStates(const std::vector<VkDynamicState>& states);
   VulkanPipelineBuilder& primitiveTopology(VkPrimitiveTopology topology);
