@@ -63,6 +63,7 @@ namespace igl {
  * TextureNotPot              Supports non power-of-two textures
  * TexturePartialMipChain     Supports mip chains that do not go all the way to 1x1
  * UniformBlocks,             Supports uniform blocks
+ * Indices8Bit,               Supports uint8 vertex indices
  * ValidationLayersEnabled,   Validation layers are enabled
  */
 enum class DeviceFeatures {
@@ -79,6 +80,7 @@ enum class DeviceFeatures {
   ExplicitBinding,
   ExplicitBindingExt,
   ExternalMemoryObjects,
+  Indices8Bit,
   MapBufferRange,
   MinMaxBlend,
   MultipleRenderTargets,

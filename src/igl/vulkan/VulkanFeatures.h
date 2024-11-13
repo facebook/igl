@@ -94,6 +94,10 @@ class VulkanFeatures final {
   VkPhysicalDeviceShaderFloat16Int8Features VkPhysicalDeviceShaderFloat16Int8Features_ = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR};
 #endif
+#if defined(VK_EXT_index_type_uint8) && VK_EXT_index_type_uint8
+  VkPhysicalDeviceIndexTypeUint8FeaturesEXT VkPhysicalDeviceIndexTypeUint8Features_ = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT};
+#endif
 
   // Assignment operator. We need to reassemble the feature chain because of the
   // pNext pointers

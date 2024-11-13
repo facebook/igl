@@ -20,7 +20,7 @@ void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
     VkPhysicalDevice physicalDevice) noexcept {
   IGL_DEBUG_ASSERT(context.vf_.vkGetPhysicalDeviceFeatures2 != nullptr,
                    "Pointer to function vkGetPhysicalDeviceFeatures2() is nullptr");
-
+  assembleFeatureChain(context.config_);
   context.vf_.vkGetPhysicalDeviceFeatures2(physicalDevice, &VkPhysicalDeviceFeatures2_);
 }
 
@@ -182,6 +182,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   VkPhysicalDeviceSamplerYcbcrConversionFeatures_.pNext = nullptr;
   VkPhysicalDeviceShaderDrawParametersFeatures_.pNext = nullptr;
   VkPhysicalDeviceMultiviewFeatures_.pNext = nullptr;
+  VkPhysicalDeviceIndexTypeUint8Features_.pNext = nullptr;
 
 #if defined(VK_VERSION_1_2)
   VkPhysicalDeviceShaderFloat16Int8Features_.pNext = nullptr;
