@@ -15,26 +15,27 @@
 
 namespace igl::shell {
 
+namespace {
 struct VertexPosColor {
   iglu::simdtypes::float3 position;
   iglu::simdtypes::float4 color;
 };
-static VertexPosColor vertexData[] = {
+VertexPosColor vertexData[] = {
     {{-0.6f, -0.4f, 0.0}, {1.0, 0.0, 0.0, 1.0}},
     {{0.6f, -0.4f, 0.0}, {0.0, 1.0, 0.0, 1.0}},
     {{0.0f, 0.6f, 0.0}, {0.0, 0.0, 1.0, 1.0}},
 };
-static uint16_t indexData[] = {
+uint16_t indexData[] = {
     2,
     1,
     0,
 };
 
-static std::string getVersion() {
+std::string getVersion() {
   return {"#version 100"};
 }
 
-static std::string getMetalShaderSource() {
+std::string getMetalShaderSource() {
   return R"(
               using namespace metal;
 
@@ -63,7 +64,7 @@ static std::string getMetalShaderSource() {
     )";
 }
 
-static std::string getOpenGLVertexShaderSource() {
+std::string getOpenGLVertexShaderSource() {
   return getVersion() + R"(
                 precision highp float;
                 attribute vec3 position;
@@ -77,7 +78,7 @@ static std::string getOpenGLVertexShaderSource() {
                 })";
 }
 
-static std::string getOpenGLFragmentShaderSource() {
+std::string getOpenGLFragmentShaderSource() {
   return getVersion() + std::string(R"(
                 precision highp float;
 
@@ -88,7 +89,7 @@ static std::string getOpenGLFragmentShaderSource() {
                 })");
 }
 
-static std::string getVulkanVertexShaderSource() {
+std::string getVulkanVertexShaderSource() {
   return R"(
                 layout(location = 0) in vec3 position;
                 layout(location = 1) in vec4 color_in;
@@ -101,7 +102,7 @@ static std::string getVulkanVertexShaderSource() {
                 )";
 }
 
-static std::string getVulkanFragmentShaderSource() {
+std::string getVulkanFragmentShaderSource() {
   return R"(
                 layout(location = 0) in vec4 color;
                 layout(location = 0) out vec4 out_FragColor;
@@ -112,7 +113,7 @@ static std::string getVulkanFragmentShaderSource() {
                 )";
 }
 
-static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
+std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
     IGL_DEBUG_ASSERT_NOT_REACHED();
@@ -144,6 +145,7 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
   }
   IGL_UNREACHABLE_RETURN(nullptr)
 }
+} // namespace
 
 void HelloWorldSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();

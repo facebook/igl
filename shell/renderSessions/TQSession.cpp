@@ -15,18 +15,18 @@
 #include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl::shell {
-
+namespace {
 struct VertexPosUv {
   iglu::simdtypes::float3 position;
   iglu::simdtypes::float2 uv;
 };
-static VertexPosUv vertexData[] = {
+VertexPosUv vertexData[] = {
     {{-0.8f, 0.8f, 0.0}, {0.0, 0.0}},
     {{0.8f, 0.8f, 0.0}, {1.0, 0.0}},
     {{-0.8f, -0.8f, 0.0}, {0.0, 1.0}},
     {{0.8f, -0.8f, 0.0}, {1.0, 1.0}},
 };
-static uint16_t indexData[] = {
+uint16_t indexData[] = {
     0,
     1,
     2,
@@ -35,11 +35,11 @@ static uint16_t indexData[] = {
     2,
 };
 
-static std::string getVersion() {
+std::string getVersion() {
   return {"#version 100"};
 }
 
-static std::string getMetalShaderSource() {
+std::string getMetalShaderSource() {
   return R"(
               using namespace metal;
 
@@ -75,7 +75,7 @@ static std::string getMetalShaderSource() {
     )";
 }
 
-static std::string getOpenGLVertexShaderSource() {
+std::string getOpenGLVertexShaderSource() {
   return getVersion() + R"(
                 precision highp float;
                 attribute vec3 position;
@@ -89,7 +89,7 @@ static std::string getOpenGLVertexShaderSource() {
                 })";
 }
 
-static std::string getOpenGLFragmentShaderSource() {
+std::string getOpenGLFragmentShaderSource() {
   return getVersion() + std::string(R"(
                 precision highp float;
                 uniform vec3 color;
@@ -103,7 +103,7 @@ static std::string getOpenGLFragmentShaderSource() {
                 })");
 }
 
-static std::string getVulkanVertexShaderSource() {
+std::string getVulkanVertexShaderSource() {
   return R"(
                 layout(location = 0) in vec3 position;
                 layout(location = 1) in vec2 uv_in;
@@ -126,7 +126,7 @@ static std::string getVulkanVertexShaderSource() {
                 )";
 }
 
-static std::string getVulkanFragmentShaderSource() {
+std::string getVulkanFragmentShaderSource() {
   return R"(
                 layout(location = 0) in vec2 uv;
                 layout(location = 1) in vec3 color;
@@ -141,7 +141,7 @@ static std::string getVulkanFragmentShaderSource() {
 }
 // @fb-only
 
-static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
+std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
     IGL_DEBUG_ASSERT_NOT_REACHED();
@@ -180,6 +180,7 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
   }
   IGL_UNREACHABLE_RETURN(nullptr)
 }
+} // namespace
 
 void TQSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
