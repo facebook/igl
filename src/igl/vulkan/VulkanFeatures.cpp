@@ -12,7 +12,7 @@ namespace igl::vulkan {
 
 VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noexcept :
   config_(std::move(config)), version_(version) {
-  assembleFeatureChain(config_);
+  assembleFeatureChain(config_, false);
 }
 
 void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
@@ -20,7 +20,21 @@ void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
     VkPhysicalDevice physicalDevice) noexcept {
   IGL_DEBUG_ASSERT(context.vf_.vkGetPhysicalDeviceFeatures2 != nullptr,
                    "Pointer to function vkGetPhysicalDeviceFeatures2() is nullptr");
-  assembleFeatureChain(context.config_);
+  uint32_t numExtensions = 0;
+  context.vf_.vkEnumerateDeviceExtensionProperties(
+      physicalDevice, nullptr, &numExtensions, nullptr);
+  std::vector<VkExtensionProperties> extensions(numExtensions);
+  context.vf_.vkEnumerateDeviceExtensionProperties(
+      physicalDevice, nullptr, &numExtensions, extensions.data());
+  auto hasExtension = [&extensions](const char* ext) -> bool {
+    for (const VkExtensionProperties& props : extensions) {
+      if (strcmp(ext, props.extensionName) == 0) {
+        return true;
+      }
+    }
+    return false;
+  };
+  assembleFeatureChain(context.config_, hasExtension(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME));
   context.vf_.vkGetPhysicalDeviceFeatures2(physicalDevice, &VkPhysicalDeviceFeatures2_);
 }
 
@@ -172,7 +186,8 @@ igl::Result VulkanFeatures::checkSelectedFeatures(
   return igl::Result{};
 }
 
-void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noexcept {
+void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config,
+                                          bool enable8BitIndices) noexcept {
   // Versions 1.0 and 1.1 are always present
 
   // Reset all pNext pointers. We might be copying the chain from another VulkanFeatures object,
@@ -211,6 +226,12 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
 #endif
   VkPhysicalDevice16BitStorageFeatures_.pNext = nullptr;
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDevice16BitStorageFeatures_);
+
+#if defined(VK_EXT_index_type_uint8) && VK_EXT_index_type_uint8
+  if (enable8BitIndices) {
+    ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceIndexTypeUint8Features_);
+  }
+#endif
 }
 
 VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept {
@@ -248,7 +269,7 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   VkPhysicalDeviceShaderFloat16Int8Features_ = other.VkPhysicalDeviceShaderFloat16Int8Features_;
 #endif
 
-  assembleFeatureChain(config_);
+  assembleFeatureChain(config_, false);
 
   return *this;
 }

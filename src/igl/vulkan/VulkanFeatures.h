@@ -113,7 +113,7 @@ class VulkanFeatures final {
  private:
   /// @brief Assembles the feature chain for the VkPhysicalDeviceFeatures2 structure by connecting
   /// the existing/required feature structures and their pNext chain.
-  void assembleFeatureChain(const VulkanContextConfig& config) noexcept;
+  void assembleFeatureChain(const VulkanContextConfig& config, bool enable8BitIndices) noexcept;
 };
 
 } // namespace igl::vulkan
