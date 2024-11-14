@@ -472,7 +472,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
           })
           .primitiveTopology(primitiveTypeToVkPrimitiveTopology(desc_.topology))
           .depthBiasEnable(dynamicState.depthBiasEnable_)
-          .depthCompareOp(dynamicState.getDepthCompareOp())
+          .depthCompareOp(dynamicState.getDepthCompareOp(), dynamicState.depthWriteEnable_)
           .depthWriteEnable(dynamicState.depthWriteEnable_)
           .rasterizationSamples(getVulkanSampleCountFlags(desc_.sampleCount))
           .polygonMode(polygonFillModeToVkPolygonMode(desc_.polygonFillMode))
