@@ -12,7 +12,7 @@ namespace igl::vulkan {
 
 VulkanFeatures::VulkanFeatures(uint32_t version, VulkanContextConfig config) noexcept :
   config_(std::move(config)), version_(version) {
-  assembleFeatureChain(config_, false);
+  assembleFeatureChain(config_);
 }
 
 void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
@@ -23,19 +23,20 @@ void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
   uint32_t numExtensions = 0;
   context.vf_.vkEnumerateDeviceExtensionProperties(
       physicalDevice, nullptr, &numExtensions, nullptr);
-  std::vector<VkExtensionProperties> extensions(numExtensions);
+  extensions_.resize(numExtensions);
   context.vf_.vkEnumerateDeviceExtensionProperties(
-      physicalDevice, nullptr, &numExtensions, extensions.data());
-  auto hasExtension = [&extensions](const char* ext) -> bool {
-    for (const VkExtensionProperties& props : extensions) {
-      if (strcmp(ext, props.extensionName) == 0) {
-        return true;
-      }
-    }
-    return false;
-  };
-  assembleFeatureChain(context.config_, hasExtension(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME));
+      physicalDevice, nullptr, &numExtensions, extensions_.data());
+  assembleFeatureChain(context.config_);
   context.vf_.vkGetPhysicalDeviceFeatures2(physicalDevice, &VkPhysicalDeviceFeatures2_);
+}
+
+bool VulkanFeatures::hasExtension(const char* ext) const {
+  for (const VkExtensionProperties& props : extensions_) {
+    if (strcmp(ext, props.extensionName) == 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
@@ -186,8 +187,7 @@ igl::Result VulkanFeatures::checkSelectedFeatures(
   return igl::Result{};
 }
 
-void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config,
-                                          bool enable8BitIndices) noexcept {
+void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noexcept {
   // Versions 1.0 and 1.1 are always present
 
   // Reset all pNext pointers. We might be copying the chain from another VulkanFeatures object,
@@ -228,7 +228,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config,
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDevice16BitStorageFeatures_);
 
 #if defined(VK_EXT_index_type_uint8) && VK_EXT_index_type_uint8
-  if (enable8BitIndices) {
+  if (hasExtension(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)) {
     ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceIndexTypeUint8Features_);
   }
 #endif
@@ -269,7 +269,9 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
   VkPhysicalDeviceShaderFloat16Int8Features_ = other.VkPhysicalDeviceShaderFloat16Int8Features_;
 #endif
 
-  assembleFeatureChain(config_, false);
+  extensions_ = other.extensions_;
+
+  assembleFeatureChain(config_);
 
   return *this;
 }
