@@ -211,7 +211,7 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
     factory = shell::createDefaultRenderSessionFactory();
   }
 
-  constexpr igl::TextureFormat kSwapchainColorTextureFormat = igl::TextureFormat::BGRA_SRGB;
+  constexpr igl::TextureFormat kSwapchainColorTextureFormat = igl::TextureFormat::RGBA_UNorm8;
   std::vector<igl::shell::RenderSessionConfig> suggestedConfigs = {
 #if IGL_BACKEND_OPENGL
       {
