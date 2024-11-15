@@ -22,6 +22,7 @@ class PlatformAndroid : public Platform {
   ImageLoader& getImageLoader() noexcept override;
   [[nodiscard]] const ImageWriter& getImageWriter() const noexcept override;
   [[nodiscard]] FileLoader& getFileLoader() const noexcept override;
+  void updatePreRotationMatrix();
 
  private:
   std::shared_ptr<igl::IDevice> device_;

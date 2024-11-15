@@ -239,6 +239,7 @@ void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int 
 #if IGL_BACKEND_VULKAN
   if (backendVersion_.flavor == igl::BackendFlavor::Vulkan) {
     recreateSwapchain(nativeWindow_, false);
+    platform_->updatePreRotationMatrix();
   }
 #endif
 }
