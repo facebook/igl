@@ -11,6 +11,9 @@
 #include <filesystem>
 #include <igl/IGL.h>
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
+// @fb-only
+// @fb-only
+// @fb-only
 
 namespace igl::shell {
 
@@ -19,6 +22,16 @@ FileLoader::FileData FileLoaderAndroid::loadBinaryData(const std::string& fileNa
     IGL_LOG_ERROR("Error in loadBinaryData(): empty fileName\n");
     return {};
   }
+
+// @fb-only
+  // @fb-only
+    // @fb-only
+        // @fb-only
+    // @fb-only
+      // @fb-only
+    // @fb-only
+  // @fb-only
+// @fb-only
 
   // @fb-only
     auto path = std::filesystem::path("/data/local/tmp"); // Path for boltbench assets
