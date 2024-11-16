@@ -10,9 +10,6 @@
 #include <shell/shared/imageLoader/android/ImageLoaderAndroid.h>
 
 #include <android/asset_manager.h>
-// @fb-only
-// @fb-only
-// @fb-only
 
 namespace igl::shell {
 
@@ -25,12 +22,6 @@ ImageData ImageLoaderAndroid::loadImageData(
     IGL_LOG_ERROR("Error in loadBinaryData(): empty fileName\n");
     return {};
   }
-
-// @fb-only
-  // @fb-only
-    // @fb-only
-  // @fb-only
-// @fb-only
 
   if (assetManager_ == nullptr) {
     IGL_LOG_INFO("Asset manager not set!\n");

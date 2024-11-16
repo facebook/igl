@@ -9,9 +9,6 @@
 
 #import <Foundation/Foundation.h>
 #include <string>
-// @fb-only
-// @fb-only
-// @fb-only
 
 namespace igl::shell {
 namespace {
@@ -78,16 +75,6 @@ std::string FileLoaderApple::fullPath(const std::string& fileName) const {
   if (nsPath != nil) {
     return {[nsPath UTF8String]};
   }
-
-// @fb-only
-  // @fb-only
-    // @fb-only
-        // @fb-only
-    // @fb-only
-      // @fb-only
-    // @fb-only
-  // @fb-only
-// @fb-only
 
   return {};
 }
