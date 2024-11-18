@@ -10,6 +10,8 @@
 #include <igl/Device.h>
 #include <memory>
 
+class NVGcontext;
+
 namespace igl::shell {
 
 class Extension;
@@ -52,6 +54,8 @@ class Platform {
   // Don't call this from the application level. The shell framework will use this API to expose
   // command line arguments for the application.
   static void initializeCommandLineArgs(int argc, char** argv);
+    
+  NVGcontext* nanovgContext = NULL;
 
  public:
   Extension* createAndInitializeExtension(const char* name) noexcept;

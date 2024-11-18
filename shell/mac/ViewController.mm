@@ -46,6 +46,8 @@
 #import <cmath>
 #import <simd/simd.h>
 
+#include <IGLU/nanovg/nanovg_mtl.h>
+
 using namespace igl;
 
 @interface ViewController () {
@@ -190,6 +192,7 @@ using namespace igl;
     [metalView setViewController:self];
     self.view = metalView;
     shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(std::move(device));
+    shellPlatform_->nanovgContext = nvgCreateMTL((__bridge void *)(metalView.layer), NVG_ANTIALIAS | NVG_STENCIL_STROKES);
     break;
   }
 #endif
