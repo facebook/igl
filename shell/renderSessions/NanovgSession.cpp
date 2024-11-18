@@ -199,6 +199,13 @@ void NanovgSession::initialize() noexcept {
 }
 
 void NanovgSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
+    drawTriangle(surfaceTextures);
+    
+    const auto dimensions = surfaceTextures.color->getDimensions();
+    drawNanovg((float)dimensions.width, (float)dimensions.height);
+}
+
+void NanovgSession::drawTriangle(igl::SurfaceTextures surfaceTextures){
   FramebufferDesc framebufferDesc;
   framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
 
@@ -244,7 +251,7 @@ void NanovgSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commands->bindViewport(viewport);
   commands->bindScissorRect(scissor);
   commands->pushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
-//  commands->draw(3);
+  //commands->draw(3);
   commands->popDebugGroupLabel();
   commands->endEncoding();
     
@@ -254,24 +261,23 @@ void NanovgSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   commandQueue_->submit(*buffer);
   RenderSession::update(surfaceTextures);
-    
-  drawNanovg();
 }
 
-void NanovgSession::drawNanovg(){
+void NanovgSession::drawNanovg(float __width, float __height){
     NVGcontext* vg = nvgContext_;
     
-    int winWidth = 1200;
-    int winHeight = 600;
+    const float width = __width / 2.0f;
+    const float height = __height / 2.0f;
+    
     float pxRatio = 2.0f;
     int mx = 0;
     int my = 0;
     int blowup = 0;
     
-    nvgBeginFrame(vg, winWidth, winHeight, pxRatio);
+    nvgBeginFrame(vg, width,height, pxRatio);
 
     times_++;
-    renderDemo(vg, mx,my, winWidth,winHeight, times_ / 60.0f, blowup, &nvgDemoData_);
+    renderDemo(vg, mx,my, width,height, times_ / 60.0f, blowup, &nvgDemoData_);
     //renderGraph(vg, 5,5, &fps);
 
     nvgEndFrame(vg);

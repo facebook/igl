@@ -27,7 +27,8 @@ class NanovgSession : public RenderSession {
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
     
 private:
-    void drawNanovg();
+    void drawTriangle(igl::SurfaceTextures surfaceTextures);
+    void drawNanovg(float width, float height);
 
  private:
   std::shared_ptr<ICommandQueue> commandQueue_;
