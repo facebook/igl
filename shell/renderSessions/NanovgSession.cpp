@@ -187,8 +187,8 @@ void NanovgSession::initialize() noexcept {
   renderPass_.colorAttachments[0] = igl::RenderPassDesc::ColorAttachmentDesc{};
   renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
   renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass_.colorAttachments[0].clearColor = getPreferredClearColor();
-  renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
+  renderPass_.colorAttachments[0].clearColor = igl::Color(0.3f, 0.3f, 0.32f, 1.0f);//getPreferredClearColor();
+  renderPass_.depthAttachment.loadAction = LoadAction::Clear;
     
     nvgContext_ = getPlatform().nanovgContext;
     
@@ -244,16 +244,18 @@ void NanovgSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   commands->bindViewport(viewport);
   commands->bindScissorRect(scissor);
   commands->pushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
-  commands->draw(3);
+//  commands->draw(3);
   commands->popDebugGroupLabel();
   commands->endEncoding();
-
+    
   if (shellParams().shouldPresent) {
-    buffer->present(surfaceTextures.color);
+    //buffer->present(surfaceTextures.color);
   }
 
   commandQueue_->submit(*buffer);
   RenderSession::update(surfaceTextures);
+    
+  drawNanovg();
 }
 
 void NanovgSession::drawNanovg(){
