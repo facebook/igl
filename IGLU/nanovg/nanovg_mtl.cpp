@@ -275,6 +275,7 @@ public:
     std::shared_ptr<igl::IShaderModule> _vertexFunction;
     igl::TextureFormat piplelinePixelFormat;
     std::shared_ptr<igl::IRenderPipelineState> _pipelineState;
+    std::shared_ptr<igl::IRenderPipelineState> _pipelineStateTriangleStrip;
     std::shared_ptr<igl::IRenderPipelineState>
     _stencilOnlyPipelineState;
     std::shared_ptr<igl::ISamplerState> _pseudoSampler;
@@ -501,6 +502,7 @@ public:
 //            [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
 //                               vertexStart:call->strokeOffset
 //                               vertexCount:call->strokeCount];
+            _renderEncoder->bindRenderPipelineState(_pipelineStateTriangleStrip);
             _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
         }
     }
@@ -525,7 +527,7 @@ public:
         // Restores states.
         //todo
 //        [_renderEncoder setCullMode:MTLCullModeBack];
-        _renderEncoder->bindRenderPipelineState(_pipelineState);
+        _renderEncoder->bindRenderPipelineState(_pipelineStateTriangleStrip);
         
         // Draws anti-aliased fragments.
         setUniforms(call->uniformOffset ,call->image);
@@ -542,7 +544,7 @@ public:
 //        [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
 //                           vertexStart:call->triangleOffset
 //                           vertexCount:call->triangleCount];
-        _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
+        _renderEncoder->draw(call->triangleCount, 1, call->triangleOffset);
         _renderEncoder->bindDepthStencilState(_defaultStencilState);
     }
     
@@ -750,6 +752,7 @@ public:
         igl::DepthStencilStateDesc stencilDescriptor;
         
         // Default stencil state.
+        stencilDescriptor.debugName = "defaultStencilState";
         _defaultStencilState = device->createDepthStencilState(stencilDescriptor, &result);
         
         // Fill shape stencil.
@@ -775,6 +778,7 @@ public:
         
         stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
         stencilDescriptor.frontFaceStencil = frontFaceStencilDescriptor;
+        stencilDescriptor.debugName = "fillAntiAliasStencilState";
         _fillAntiAliasStencilState = device->createDepthStencilState(stencilDescriptor, &result);
         
         // Fill stencil.
@@ -787,6 +791,7 @@ public:
         
         stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
         stencilDescriptor.frontFaceStencil = frontFaceStencilDescriptor;
+        stencilDescriptor.debugName = "fillStencilState";
         _fillStencilState = device->createDepthStencilState(stencilDescriptor, &result);
         
         // Stroke shape stencil.
@@ -798,6 +803,7 @@ public:
         
         stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
         stencilDescriptor.frontFaceStencil = frontFaceStencilDescriptor;
+        stencilDescriptor.debugName = "strokeShapeStencilState";
         _strokeShapeStencilState = device->createDepthStencilState(stencilDescriptor, &result);
         
         // Stroke anti-aliased stencil.
@@ -806,6 +812,7 @@ public:
         
         stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
         stencilDescriptor.frontFaceStencil = frontFaceStencilDescriptor;
+        stencilDescriptor.debugName = "strokeAntiAliasStencilState";
         _strokeAntiAliasStencilState = device->createDepthStencilState(stencilDescriptor, &result);
         
         // Stroke clear stencil.
@@ -817,6 +824,7 @@ public:
         
         stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
         stencilDescriptor.frontFaceStencil = frontFaceStencilDescriptor;
+        stencilDescriptor.debugName = "strokeClearStencilState";
         _strokeClearStencilState = device->createDepthStencilState(stencilDescriptor, &result);
         return 1;
     }
@@ -1429,7 +1437,6 @@ public:
     }
     
     void setUniforms(int uniformOffset ,int image) {
-        //todo:
         //[_renderEncoder setFragmentBufferOffset:uniformOffset atIndex:0];
         _renderEncoder->bindBuffer(2, _buffers->uniformBuffer.get(), uniformOffset);
         
@@ -1452,7 +1459,7 @@ public:
             // Fills the stroke base without overlap.
             setUniforms(call->uniformOffset + _fragSize, call->image);
             _renderEncoder->bindDepthStencilState(_strokeShapeStencilState);
-            _renderEncoder->bindRenderPipelineState(_pipelineState);
+            _renderEncoder->bindRenderPipelineState(_pipelineStateTriangleStrip);
 //            _renderEncoder->drawPrimitives:MTLPrimitiveTypeTriangleStrip
 //                               vertexStart:call->strokeOffset
 //                               vertexCount:call->strokeCount];
@@ -1477,7 +1484,7 @@ public:
         } else {
             // Draws strokes.
             setUniforms(call->uniformOffset ,call->image);
-            _renderEncoder->bindRenderPipelineState(_pipelineState);
+            _renderEncoder->bindRenderPipelineState(_pipelineStateTriangleStrip);
 //            _renderEncoder->drawPrimitives:MTLPrimitiveTypeTriangleStrip
 //                               vertexStart:call->strokeOffset
 //                               vertexCount:call->strokeCount];
@@ -1535,13 +1542,24 @@ public:
         _blendFunc->dstAlpha = blend->dstAlpha;
         
         
+        pipelineStateDescriptor.topology = igl::PrimitiveType::Triangle;
+        pipelineStateDescriptor.cullMode = igl::CullMode::Disabled;
+        pipelineStateDescriptor.debugName = igl::genNameHandle("Triangle_CullNone");
         _pipelineState = device->createRenderPipeline(pipelineStateDescriptor,&result);
+        
+        pipelineStateDescriptor.topology = igl::PrimitiveType::TriangleStrip;
+        pipelineStateDescriptor.cullMode = igl::CullMode::Back;
+        pipelineStateDescriptor.debugName = igl::genNameHandle("TriangleStripe_CullBack");
+        _pipelineStateTriangleStrip = device->createRenderPipeline(pipelineStateDescriptor,&result);
         IGL_DEBUG_ASSERT(result.isOk());
 //        checkError:error withMessage:"init pipeline state"];
         
         pipelineStateDescriptor.shaderStages = igl::ShaderStagesCreator::fromRenderModules(*device, _vertexFunction, nullptr, &result);
         IGL_DEBUG_ASSERT(result.isOk());
         colorAttachmentDescriptor.colorWriteMask = igl::ColorWriteBits::ColorWriteBitsDisabled;
+        pipelineStateDescriptor.cullMode = igl::CullMode::Disabled;
+        pipelineStateDescriptor.topology = igl::PrimitiveType::Triangle;
+        pipelineStateDescriptor.debugName = igl::genNameHandle("stencilOnlyPipelineState");
         _stencilOnlyPipelineState = device->createRenderPipeline(pipelineStateDescriptor,&result);
         IGL_DEBUG_ASSERT(result.isOk());
 //        [self checkError:error withMessage:"init pipeline stencil only state"];
