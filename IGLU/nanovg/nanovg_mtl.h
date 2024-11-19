@@ -1,28 +1,7 @@
-// Copyright (c) 2017 Ollix
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-//
-// ---
-// Author: olliwang@ollix.com (Olli Wang)
-
 #ifndef NANOVG_MTL_H_
 #define NANOVG_MTL_H_
+
+#include <igl/IGL.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,7 +49,9 @@ typedef struct MNVGframebuffer MNVGframebuffer;
 // Creates a new NanoVG context. The `metalLayer` parameter should be a
 // `CAMetalLayer` object, and the `flags` should be combination of
 // `NVGcreateFlags` above.
-NVGcontext* nvgCreateMTL(void* metalLayer, int flags);
+NVGcontext* nvgCreateMTL(igl::IDevice * device, int flags);
+
+void nvgSetColorTexture(NVGcontext* ctx, std::shared_ptr<igl::ITexture> color);
 
 // Deletes the specified NanoVG context.
 void nvgDeleteMTL(NVGcontext* ctx);

@@ -194,7 +194,7 @@ using namespace igl;
     [metalView setViewController:self];
     self.view = metalView;
     shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(std::move(device));
-    shellPlatform_->nanovgContext = nvgCreateMTL((__bridge void *)(metalView.layer), NVG_ANTIALIAS | NVG_STENCIL_STROKES);
+    shellPlatform_->nanovgContext = nvgCreateMTL(&shellPlatform_->getDevice(), NVG_ANTIALIAS | NVG_STENCIL_STROKES);
     break;
   }
 #endif
