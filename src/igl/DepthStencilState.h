@@ -119,6 +119,11 @@ struct StencilStateDesc {
  */
 struct DepthStencilStateDesc {
   /**
+   * @brief debug name
+   */
+  std::string debugName;
+    
+  /**
    * @brief The comparison operation to use for depth testing.
    */
   CompareFunction compareFunction = CompareFunction::AlwaysPass;

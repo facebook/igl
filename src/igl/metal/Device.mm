@@ -305,13 +305,13 @@ std::shared_ptr<igl::IDepthStencilState> Device::createDepthStencilState(
     const DepthStencilStateDesc& desc,
     Result* outResult) const {
   MTLDepthStencilDescriptor* metalDesc = [MTLDepthStencilDescriptor new];
-
+  metalDesc.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
   metalDesc.depthCompareFunction = DepthStencilState::convertCompareFunction(desc.compareFunction);
   metalDesc.depthWriteEnabled = desc.isDepthWriteEnabled;
   metalDesc.frontFaceStencil = DepthStencilState::convertStencilDescriptor(desc.frontFaceStencil);
   metalDesc.backFaceStencil = DepthStencilState::convertStencilDescriptor(desc.backFaceStencil);
   id<MTLDepthStencilState> metalObject = [device_ newDepthStencilStateWithDescriptor:metalDesc];
-
+        
   std::shared_ptr<DepthStencilState> iglObject = std::make_shared<DepthStencilState>(metalObject);
 
   Result::setOk(outResult);
