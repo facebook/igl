@@ -1419,8 +1419,8 @@ public:
 //                     withBytes:bytes
 //                   bytesPerRow:bytesPerRow];
         
-        igl::TextureRangeDesc desc(x, y, width, height);
-        texture->upload(desc, bytes);
+        igl::TextureRangeDesc desc = igl::TextureRangeDesc::new2D(x, y, width, height);
+        texture->upload(desc, bytes, bytesPerRow);
 #endif
         
         return 1;
