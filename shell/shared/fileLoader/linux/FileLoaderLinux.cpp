@@ -98,9 +98,14 @@ std::string FileLoaderLinux::fullPath(const std::string& fileName) const {
 
 // @fb-only
   // clang-format off
+  // TODO: Remove hardcoded paths once there is a generic @fb-only
+  // solution for loading images. @fb-only
   // @fb-only
                                      // @fb-only
                                      // @fb-only
+                                     "ecos/screenshot_tests/models/models/",// @fb-only
+                                     "images/images/",// @fb-only
+                                     "models/models/",// @fb-only
                                      // @fb-only
   // clang-format on
   // @fb-only

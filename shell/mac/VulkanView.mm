@@ -23,8 +23,8 @@
 @interface VulkanView () {
   CVDisplayLinkRef displayLink_; // display link for managing rendering thread
   std::shared_ptr<igl::shell::Platform> shellPlatform_;
+  IBOutlet NSViewController* viewController;
 }
-@property (weak) ViewController* viewController;
 @end
 
 @implementation VulkanView
@@ -40,7 +40,7 @@
   NSTabViewItem* item = tabController.tabViewItems[tabController.selectedTabViewItemIndex];
 
   ViewController* controller = (ViewController*)item.viewController;
-  self.viewController = controller;
+  self->viewController = controller;
   shellPlatform_ = platform;
   self.postsFrameChangedNotifications = YES;
 
@@ -63,9 +63,9 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
 
                                     void* userdata) {
   auto view = (__bridge VulkanView*)userdata;
-  [view.viewController performSelectorOnMainThread:@selector(render)
-                                        withObject:nil
-                                     waitUntilDone:NO];
+  [view->viewController performSelectorOnMainThread:@selector(render)
+                                         withObject:nil
+                                      waitUntilDone:NO];
   return kCVReturnSuccess;
 }
 
@@ -130,6 +130,22 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
   CGFloat factor = [screen backingScaleFactor];
   layer.contentsScale = factor;
   return layer;
+}
+
+- (BOOL)acceptsFirstResponder {
+  return YES;
+}
+
+- (void)keyUp:(NSEvent*)event {
+  if (viewController) {
+    [viewController keyUp:event];
+  }
+}
+
+- (void)keyDown:(NSEvent*)event {
+  if (viewController) {
+    [viewController keyDown:event];
+  }
 }
 
 @end

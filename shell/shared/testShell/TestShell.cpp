@@ -19,6 +19,7 @@
 namespace igl::shell {
 
 namespace {
+
 std::shared_ptr<::igl::IDevice> createTestDevice() {
   const std::string backend(IGL_BACKEND_TYPE);
 
@@ -39,8 +40,27 @@ std::shared_ptr<::igl::IDevice> createTestDevice() {
     return nullptr;
   }
 }
+
+void ensureCommandLineArgsInitialized() {
+  // Fake initialization of command line args so sessions don't assert when accessing them.
+  // Only do it once, otherwise it triggers an internal assert.
+
+#if IGL_PLATFORM_ANDROID
+  static bool s_initialized = true; // Android prohibids initialization of command line args
+#else
+  static bool s_initialized = false;
+#endif
+  if (!s_initialized) {
+    s_initialized = true;
+    igl::shell::Platform::initializeCommandLineArgs(0, nullptr);
+  }
+}
+
 } // namespace
+
 void TestShellBase::SetUp(ScreenSize screenSize) {
+  ensureCommandLineArgsInitialized();
+
   // Create igl device for requested backend
   std::shared_ptr<igl::IDevice> iglDevice = createTestDevice();
   ASSERT_TRUE(iglDevice != nullptr);
@@ -62,7 +82,8 @@ void TestShellBase::SetUp(ScreenSize screenSize) {
   if (platform_->getDevice().getBackendType() == igl::BackendType::OpenGL) {
     auto version = platform_->getDevice().getBackendVersion();
     if (version.majorVersion < 2) {
-      GTEST_SKIP() << "OpenGL version is too low";
+      GTEST_SKIP() << "OpenGL version " << (int)version.majorVersion << "."
+                   << (int)version.minorVersion << " is too low";
     }
   }
   // Create an offscreen texture to render to
@@ -93,6 +114,7 @@ void TestShell::run(igl::shell::RenderSession& session, size_t numFrames) {
   session.setShellParams(shellParams);
   session.initialize();
   for (size_t i = 0; i < numFrames; ++i) {
+    const igl::DeviceScope scope(platform_->getDevice());
     session.update({offscreenTexture_, offscreenDepthTexture_});
   }
   session.teardown();

@@ -78,7 +78,9 @@ PlatformAndroid::PlatformAndroid(std::shared_ptr<igl::IDevice> device, bool useF
         // @fb-only
     imageWriter_ = std::make_unique<igl::shell::ImageWriterAndroid>();
   }
+}
 
+void PlatformAndroid::updatePreRotationMatrix() {
 #if IGL_BACKEND_VULKAN
   if (device_->getBackendType() != igl::BackendType::Vulkan)
     return;

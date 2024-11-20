@@ -114,6 +114,9 @@ class VulkanFeatures final {
   /// @brief Assembles the feature chain for the VkPhysicalDeviceFeatures2 structure by connecting
   /// the existing/required feature structures and their pNext chain.
   void assembleFeatureChain(const VulkanContextConfig& config) noexcept;
+  bool hasExtension(const char* ext) const;
+
+  std::vector<VkExtensionProperties> extensions_;
 };
 
 } // namespace igl::vulkan
