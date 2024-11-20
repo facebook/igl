@@ -251,7 +251,7 @@ void NanovgSession::drawTriangle(igl::SurfaceTextures surfaceTextures){
   commands->bindViewport(viewport);
   commands->bindScissorRect(scissor);
   commands->pushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
-  commands->draw(3);
+//  commands->draw(3);
   commands->popDebugGroupLabel();
   commands->endEncoding();
     
@@ -275,11 +275,42 @@ void NanovgSession::drawNanovg(float __width, float __height, igl::SurfaceTextur
     int blowup = 0;
     
     nvgBeginFrame(vg, width,height, pxRatio);
-    nvgSetColorTexture(vg, surfaceTextures.color);
+    nvgSetColorTexture(vg, surfaceTextures.color, surfaceTextures.depth);
 
     times_++;
     renderDemo(vg, mx,my, width,height, times_ / 60.0f, blowup, &nvgDemoData_);
     //renderGraph(vg, 5,5, &fps);
+    
+    {
+        //绘制一个矩形
+//        nvgBeginPath(vg);
+//        nvgRect(vg, 100,100, 120,30);
+//        nvgFillColor(vg, nvgRGBA(255,192,0,255));
+//        nvgFill(vg);
+        
+        //绘制扣洞矩形
+//        nvgBeginPath(vg);
+//        nvgRect(vg, 100,100, 500,500);
+//        nvgRect(vg, 200,200, 300,300);
+//        nvgPathWinding(vg, NVG_HOLE);    // Mark circle as a hole.
+//        nvgFillColor(vg, nvgRGBA(255,192,0,255));
+//        nvgFill(vg);
+        
+        //绘制图片
+//        NVGpaint imgPaint = nvgImagePattern(vg, 200, 200, 100,100, 0.0f/180.0f*NVG_PI, 2, 0.5);
+//        nvgBeginPath(vg);
+//        nvgRect(vg, 100,100, 500,500);
+//        nvgFillPaint(vg, imgPaint);
+//        nvgFill(vg);
+        
+        //绘制文字
+//        nvgFontSize(vg, 150.0f);
+//        nvgFontFace(vg, "sans-bold");
+//        nvgTextAlign(vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
+//        nvgFontBlur(vg,2);
+//        nvgFillColor(vg, nvgRGBA(256,0,0,128));
+//        nvgText(vg, 200, 100, "Hello", NULL);
+    }
 
     nvgEndFrame(vg);
 }
