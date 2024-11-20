@@ -116,6 +116,20 @@ struct MNVGbuffers{
     std::vector<unsigned char> uniforms;
      int cuniforms;
      int nuniforms;
+    
+    void uploadToGpu(){
+        if (vertBuffer){
+            vertBuffer->upload(verts.data(), igl::BufferRange(verts.size() * sizeof(NVGvertex)));
+        }
+        
+        if (indexBuffer){
+            indexBuffer->upload(indexes.data(), igl::BufferRange(indexes.size() * sizeof(uint32_t)));
+        }
+        
+        if (uniformBuffer){
+            uniformBuffer->upload(uniforms.data(), igl::BufferRange(uniforms.size()));
+        }
+    }
 };
 
 // Keeps the weak reference to the currently binded framebuffer.
@@ -1137,6 +1151,8 @@ public:
         }
         if (textureSize.x == 0 || textureSize.y == 0) return;
         updateStencilTextureToSize(&textureSize);
+        
+        _buffers->uploadToGpu();
         
 //        id<CAMetalDrawable> drawable = nullptr;
 //        if (colorTexture == nullptr) {
