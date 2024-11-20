@@ -194,7 +194,6 @@ using namespace igl;
     [metalView setViewController:self];
     self.view = metalView;
     shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(std::move(device));
-    shellPlatform_->nanovgContext = nvgCreateMTL(&shellPlatform_->getDevice(), NVG_ANTIALIAS | NVG_STENCIL_STROKES);
     break;
   }
 #endif
@@ -346,6 +345,7 @@ using namespace igl;
   }
   }
 
+  shellPlatform_->nanovgContext = nvgCreateMTL(&shellPlatform_->getDevice(), NVG_ANTIALIAS | NVG_STENCIL_STROKES);
   session_ = factory_->createRenderSession(shellPlatform_);
   IGL_DEBUG_ASSERT(session_, "createDefaultRenderSession() must return a valid session");
   // Get initial native surface dimensions

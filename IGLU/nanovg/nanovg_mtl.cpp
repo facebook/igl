@@ -13,6 +13,7 @@
 
 #include "nanovg.h"
 #include "shader_metal.h"
+#include "shader_opengl460.h"
 
 //#if TARGET_OS_SIMULATOR
 //#  include "mnvg_bitcode/simulator.h"
@@ -25,6 +26,9 @@
 //#else
 //#  define MNVG_INVALID_TARGET
 //#endif
+
+#define kVertexUniformBlockIndex 1
+#define kFragmentUniformBlockIndex 2
 
 typedef enum MNVGvertexInputIndex {
   MNVG_VERTEX_INPUT_INDEX_VERTICES = 0,
@@ -322,7 +326,10 @@ public:
 //                                                    newBufferWithLength:(_fragSize * cuniforms)
 //                                                    options:kMetalBufferOptions];
             
-            igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform, nullptr, _fragSize * cuniforms);
+            _buffers->uniforms.resize(_fragSize * cuniforms);
+            
+            igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform, _buffers->uniforms.data(), _fragSize * cuniforms);
+            desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
             std::shared_ptr<igl::IBuffer> buffer = device->createBuffer(desc, NULL);
             
 //            unsigned char* uniforms = NULL;// [buffer contents];
@@ -330,10 +337,10 @@ public:
 //                memcpy(uniforms, _buffers->uniforms.data(),
 //                       _fragSize * _buffers->nuniforms);
                 
-                buffer->upload(_buffers->uniforms.data(), igl::BufferRange(_fragSize * _buffers->nuniforms));
+                //buffer->upload(_buffers->uniforms.data(), igl::BufferRange(_fragSize * _buffers->nuniforms));
             }
             _buffers->uniformBuffer = buffer;
-            _buffers->uniforms.resize(_fragSize * cuniforms);
+            
             _buffers->cuniforms = cuniforms;
         }
         ret = _buffers->nuniforms * _fragSize;
@@ -349,16 +356,18 @@ public:
                                                     //newBufferWithLength:(_indexSize * cindexes)
                                                     //options:kMetalBufferOptions];
             
-            igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Index, nullptr, _indexSize * cindexes);
+            _buffers->indexes.resize(cindexes);
+            
+            igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Index, _buffers->indexes.data(), _indexSize * cindexes);
             std::shared_ptr<igl::IBuffer> buffer = device->createBuffer(desc, NULL);
             
 //            uint32_t* indexes ;// = [buffer contents];
             if (_buffers->indexBuffer != nullptr) {
 //                memcpy(indexes, _buffers->indexes.data(), _indexSize * _buffers->nindexes);
-                buffer->upload(_buffers->indexes.data(), igl::BufferRange(_indexSize * _buffers->nindexes));
+                //buffer->upload(_buffers->indexes.data(), igl::BufferRange(_indexSize * _buffers->nindexes));
             }
             _buffers->indexBuffer = buffer;
-            _buffers->indexes.resize(cindexes);
+            
             _buffers->cindexes = cindexes;
         }
         ret = _buffers->nindexes;
@@ -391,16 +400,18 @@ public:
                                                     //newBufferWithLength:(sizeof(NVGvertex) * cverts)
                                                     //options:kMetalBufferOptions];
             
-            igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Vertex, nullptr, sizeof(NVGvertex) * cverts);
+            _buffers->verts.resize(cverts);
+            
+            igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Vertex, _buffers->verts.data(), sizeof(NVGvertex) * cverts);
             std::shared_ptr<igl::IBuffer> buffer = device->createBuffer(desc, NULL);
             
 //            NVGvertex* verts ;//= [buffer contents];
             if (_buffers->vertBuffer != nullptr) {
 //                memcpy(verts, _buffers->verts, sizeof(NVGvertex) * _buffers->nverts);
-                buffer->upload(_buffers->verts.data(), igl::BufferRange(sizeof(NVGvertex) * _buffers->nverts));
+                //buffer->upload(_buffers->verts.data(), igl::BufferRange(sizeof(NVGvertex) * _buffers->nverts));
             }
             _buffers->vertBuffer = buffer;
-            _buffers->verts.resize(cverts);
+            
             _buffers->cverts = cverts;
         }
         ret = _buffers->nverts;
@@ -618,9 +629,9 @@ public:
         
         encoder->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *_buffers->vertBuffer, 0);
         
-        encoder->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VIEW_SIZE, *_buffers->viewSizeBuffer, 0);
+        encoder->bindBuffer(kVertexUniformBlockIndex, _buffers->viewSizeBuffer.get(), 0);
         
-        encoder->bindBuffer(2, _buffers->uniformBuffer.get(), 0);
+        encoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->uniformBuffer.get(), 0);
         return encoder;
     }
 
@@ -692,12 +703,27 @@ public:
         unsigned char* shader_source = NULL;
         unsigned int shader_length = 0;
 
-        std::unique_ptr<igl::IShaderLibrary> shader_library = igl::ShaderLibraryCreator::fromStringInput(*device, igl::nanovg::metal_shdader.c_str(), vertexFunction,fragmentFunction, "",
-                                                         &result);
-        
-        _vertexFunction = shader_library->getShaderModule(vertexFunction);
-        _fragmentFunction = shader_library->getShaderModule(fragmentFunction);
-        //shaderStages_ = igl::ShaderStagesCreator::fromRenderModules(*device, vertex_shader_module, fragment_shader_module, NULL);
+        if (device->getBackendType() == igl::BackendType::Metal){
+            std::unique_ptr<igl::IShaderLibrary> shader_library = igl::ShaderLibraryCreator::fromStringInput(*device, igl::nanovg::metal_shdader.c_str(), vertexFunction,fragmentFunction, "",
+                                                                                                             &result);
+            
+            _vertexFunction = shader_library->getShaderModule(vertexFunction);
+            _fragmentFunction = shader_library->getShaderModule(fragmentFunction);
+        } else if (device->getBackendType() == igl::BackendType::OpenGL){
+            std::unique_ptr<igl::IShaderStages> shader_stages = igl::ShaderStagesCreator::fromModuleStringInput(*device,
+                                                             igl::nanovg::opengl460_vertex_shdader.c_str(),
+                                                                   "main",
+                                                                   "",
+                                                             igl::nanovg::opengl460_fragment_shdader.c_str(),
+                                                                   "main",
+                                                                   "",
+                                                                   nullptr);
+            
+            _vertexFunction = shader_stages->getVertexModule();
+            _fragmentFunction = shader_stages->getFragmentModule();
+        } else {
+            
+        }
         
         igl::CommandQueueDesc queue_desc;
         queue_desc.type = igl::CommandQueueType::Graphics;
@@ -722,11 +748,13 @@ public:
 //        _vertexDescriptor = [MTLVertexDescriptor vertexDescriptor];
         _vertexDescriptor.numAttributes = 2;
         _vertexDescriptor.attributes[0].format = igl::VertexAttributeFormat::Float2;
+        _vertexDescriptor.attributes[0].name = "pos";
         _vertexDescriptor.attributes[0].bufferIndex = 0;
         _vertexDescriptor.attributes[0].offset = offsetof(NVGvertex, x);
         _vertexDescriptor.attributes[0].location = 0;
         
         _vertexDescriptor.attributes[1].format = igl::VertexAttributeFormat::Float2;
+        _vertexDescriptor.attributes[1].name = "tcoord";
         _vertexDescriptor.attributes[1].bufferIndex = 0;
         _vertexDescriptor.attributes[1].offset = offsetof(NVGvertex, u);
         _vertexDescriptor.attributes[1].location = 1;
@@ -1441,23 +1469,26 @@ public:
             }
         }
         
+        float viewSize[2] ;//= (float*)[_buffers->viewSizeBuffer contents];
+        viewSize[0] = width;
+        viewSize[1] = height;
+        
         // Initializes view size buffer for vertex function.
         if (_buffers->viewSizeBuffer == nullptr) {
 //            _buffers->viewSizeBuffer = [_metalLayer.device
 //                                       newBufferWithLength:sizeof(vector_float2)
 //                                       options:kMetalBufferOptions];
-            igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform, NULL, sizeof(vector_float2));
+            igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform, viewSize, sizeof(vector_float2));
+            desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
             _buffers->viewSizeBuffer = device->createBuffer(desc, NULL);
         }
-        float viewSize[2] ;//= (float*)[_buffers->viewSizeBuffer contents];
-        viewSize[0] = width;
-        viewSize[1] = height;
+
         _buffers->viewSizeBuffer->upload(viewSize, igl::BufferRange(sizeof(vector_float2)));
     }
     
     void setUniforms(int uniformOffset ,int image) {
         //[_renderEncoder setFragmentBufferOffset:uniformOffset atIndex:0];
-        _renderEncoder->bindBuffer(2, _buffers->uniformBuffer.get(), uniformOffset);
+        _renderEncoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->uniformBuffer.get(), uniformOffset);
         
         MNVGtexture* tex = (image == 0 ? nullptr : findTexture(image));
         if (tex != nullptr) {
@@ -1537,6 +1568,10 @@ public:
         
         igl::RenderPipelineDesc pipelineStateDescriptor;
         
+        pipelineStateDescriptor.fragmentUnitSamplerMap[0] = IGL_NAMEHANDLE("textureUnit");
+        pipelineStateDescriptor.uniformBlockBindingMap[kVertexUniformBlockIndex] = {std::make_pair(IGL_NAMEHANDLE("VertexUniformBlock"), igl::NameHandle{})};
+        pipelineStateDescriptor.uniformBlockBindingMap[kFragmentUniformBlockIndex] = {std::make_pair(IGL_NAMEHANDLE("FragmentUniformBlock"), igl::NameHandle{})};
+        
         pipelineStateDescriptor.targetDesc.colorAttachments.resize(1);
         igl::RenderPipelineDesc::TargetDesc::ColorAttachment & colorAttachmentDescriptor = pipelineStateDescriptor.targetDesc.colorAttachments[0];
         colorAttachmentDescriptor.textureFormat = pixelFormat;
@@ -1560,7 +1595,6 @@ public:
         _blendFunc->srcAlpha = blend->srcAlpha;
         _blendFunc->dstAlpha = blend->dstAlpha;
         
-        
         pipelineStateDescriptor.topology = igl::PrimitiveType::Triangle;
         pipelineStateDescriptor.cullMode = igl::CullMode::Disabled;
         pipelineStateDescriptor.debugName = igl::genNameHandle("Triangle_CullNone");
@@ -1571,9 +1605,10 @@ public:
         pipelineStateDescriptor.debugName = igl::genNameHandle("TriangleStripe_CullBack");
         _pipelineStateTriangleStrip = device->createRenderPipeline(pipelineStateDescriptor,&result);
         IGL_DEBUG_ASSERT(result.isOk());
-//        checkError:error withMessage:"init pipeline state"];
         
-        pipelineStateDescriptor.shaderStages = igl::ShaderStagesCreator::fromRenderModules(*device, _vertexFunction, nullptr, &result);
+        auto fragmentFunction = device->getBackendType() == igl::BackendType::Metal ? nullptr : _fragmentFunction;
+        pipelineStateDescriptor.shaderStages = igl::ShaderStagesCreator::fromRenderModules(*device, _vertexFunction, fragmentFunction, &result);
+        
         IGL_DEBUG_ASSERT(result.isOk());
         colorAttachmentDescriptor.colorWriteMask = igl::ColorWriteBits::ColorWriteBitsDisabled;
         pipelineStateDescriptor.cullMode = igl::CullMode::Disabled;
@@ -1586,7 +1621,6 @@ public:
         pipelineStateDescriptor.topology = igl::PrimitiveType::TriangleStrip;
         _stencilOnlyPipelineStateTriangleStrip = device->createRenderPipeline(pipelineStateDescriptor,&result);
         IGL_DEBUG_ASSERT(result.isOk());
-//        [self checkError:error withMessage:"init pipeline stencil only state"];
         
         piplelinePixelFormat = pixelFormat;
     }
