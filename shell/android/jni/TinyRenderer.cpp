@@ -102,9 +102,12 @@ void TinyRenderer::init(AAssetManager* mgr,
     config.requestedSwapChainTextureFormat = swapchainColorTextureFormat;
     auto ctx = vulkan::HWDevice::createContext(config, nativeWindow);
 
-    auto devices = vulkan::HWDevice::queryDevices(
-        *ctx, HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), &result);
+    auto devices =
+        vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::Unknown), &result);
 
+    if (!result.isOk()) {
+      __android_log_print(ANDROID_LOG_ERROR, "igl", "Error: %s\n", result.message.c_str());
+    }
     IGL_DEBUG_ASSERT(result.isOk());
     width_ = static_cast<uint32_t>(ANativeWindow_getWidth(nativeWindow));
     height_ = static_cast<uint32_t>(ANativeWindow_getHeight(nativeWindow));
