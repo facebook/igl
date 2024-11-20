@@ -131,6 +131,10 @@ struct VulkanContextConfig {
   bool enableExtraLogs = true;
   bool enableDescriptorIndexing = false;
   // @fb-only
+  bool enableShaderInt16 = true;
+  bool enableShaderDrawParameters = true;
+  bool enableStorageBuffer16BitAccess = true;
+  bool enableDualSrcBlend = true;
 
   igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
   igl::TextureFormat requestedSwapChainTextureFormat = igl::TextureFormat::RGBA_UNorm8;
