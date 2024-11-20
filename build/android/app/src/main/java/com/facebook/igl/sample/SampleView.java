@@ -118,7 +118,7 @@ public class SampleView extends GLSurfaceView {
   private static class SurfaceFactory implements GLSurfaceView.EGLWindowSurfaceFactory{
     final int EGL_GL_COLORSPACE_KHR = 0x309D;
     final int EGL_GL_COLORSPACE_SRGB_KHR = 0x3089;
-    final int EGL_GL_COLORSPACE_LINEAR_KHR =  0x308A;
+    final int EGL_GL_COLORSPACE_LINEAR_KHR = 0x308A;
 
     private boolean mIsSRGBColorSpace;
 
