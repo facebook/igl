@@ -291,8 +291,8 @@ public:
     igl::TextureFormat piplelinePixelFormat;
     std::shared_ptr<igl::IRenderPipelineState> _pipelineState;
     std::shared_ptr<igl::IRenderPipelineState> _pipelineStateTriangleStrip;
-    std::shared_ptr<igl::IRenderPipelineState>
-    _stencilOnlyPipelineState;
+    std::shared_ptr<igl::IRenderPipelineState> _stencilOnlyPipelineState;
+    std::shared_ptr<igl::IRenderPipelineState> _stencilOnlyPipelineStateTriangleStrip;
     std::shared_ptr<igl::ISamplerState> _pseudoSampler;
     std::shared_ptr<igl::ITexture> _pseudoTexture;
     igl::VertexInputStateDesc _vertexDescriptor;
@@ -1494,7 +1494,7 @@ public:
             
             // Clears stencil buffer.
             _renderEncoder->bindDepthStencilState(_strokeClearStencilState);
-            _renderEncoder->bindRenderPipelineState(_stencilOnlyPipelineState);
+            _renderEncoder->bindRenderPipelineState(_stencilOnlyPipelineStateTriangleStrip);
 //            _renderEncoder->drawPrimitives:MTLPrimitiveTypeTriangleStrip
 //                               vertexStart:call->strokeOffset
 //                               vertexCount:call->strokeCount];
@@ -1580,6 +1580,11 @@ public:
         pipelineStateDescriptor.topology = igl::PrimitiveType::Triangle;
         pipelineStateDescriptor.debugName = igl::genNameHandle("stencilOnlyPipelineState");
         _stencilOnlyPipelineState = device->createRenderPipeline(pipelineStateDescriptor,&result);
+        IGL_DEBUG_ASSERT(result.isOk());
+        
+        pipelineStateDescriptor.debugName = igl::genNameHandle("stencilOnlyPipelineStateTriangleStrip");
+        pipelineStateDescriptor.topology = igl::PrimitiveType::TriangleStrip;
+        _stencilOnlyPipelineStateTriangleStrip = device->createRenderPipeline(pipelineStateDescriptor,&result);
         IGL_DEBUG_ASSERT(result.isOk());
 //        [self checkError:error withMessage:"init pipeline stencil only state"];
         
