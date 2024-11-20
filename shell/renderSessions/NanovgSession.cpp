@@ -13,11 +13,17 @@
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/RenderCommandEncoder.h>
 #include <regex>
+#include <chrono>
 #include <shell/shared/renderSession/ShellParams.h>
 
 
 
 namespace igl::shell {
+
+double getMilliSeconds() {
+  return std::chrono::duration<double>(std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()).time_since_epoch())
+      .count();
+}
 
 namespace {
 std::string getMetalShaderSource() {
@@ -196,6 +202,10 @@ void NanovgSession::initialize() noexcept {
     if (loadDemoData(nvgContext_, &nvgDemoData_) == -1){
         assert(false);
     }
+    
+    initGraph(&fps, GRAPH_RENDER_FPS, "Frame Time");
+    initGraph(&cpuGraph, GRAPH_RENDER_MS, "CPU Time");
+    initGraph(&gpuGraph, GRAPH_RENDER_MS, "GPU Time");
 }
 
 void NanovgSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
@@ -274,12 +284,17 @@ void NanovgSession::drawNanovg(float __width, float __height, igl::SurfaceTextur
     int my = 0;
     int blowup = 0;
     
+    auto start_ms = getMilliSeconds();
+    
     nvgBeginFrame(vg, width,height, pxRatio);
     nvgSetColorTexture(vg, surfaceTextures.color, surfaceTextures.depth);
 
     times_++;
     renderDemo(vg, mx,my, width,height, times_ / 60.0f, blowup, &nvgDemoData_);
-    //renderGraph(vg, 5,5, &fps);
+
+    renderGraph(vg, 5,5, &fps);
+    renderGraph(vg, 5+200+5,5, &cpuGraph);
+    renderGraph(vg, 5+200+5+200+5,5, &gpuGraph);
     
     {
         //绘制一个矩形
@@ -313,6 +328,13 @@ void NanovgSession::drawNanovg(float __width, float __height, igl::SurfaceTextur
     }
 
     nvgEndFrame(vg);
+    
+    auto end_ms = getMilliSeconds();
+    
+    updateGraph(&fps, (start_ms - preTimestamp_));
+    updateGraph(&cpuGraph, (end_ms - start_ms));
+    
+    preTimestamp_ = start_ms;
 }
 
 } // namespace igl::shell

@@ -16,6 +16,7 @@
 #include <IGLU/nanovg/nanovg.h>
 #include <IGLU/nanovg/nanovg_mtl.h>
 #include <IGLU/nanovg/demo.h>
+#include <IGLU/nanovg/perf.h>
 
 namespace igl::shell {
 
@@ -38,6 +39,9 @@ private:
     NVGcontext *nvgContext_ = NULL;
     int times_;
     DemoData nvgDemoData_;
+    
+    PerfGraph fps, cpuGraph, gpuGraph;
+    double preTimestamp_;
 };
 
 } // namespace igl::shell
