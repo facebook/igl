@@ -100,16 +100,6 @@ void TinyRenderer::init(AAssetManager* mgr,
     vulkan::VulkanContextConfig config;
     config.terminateOnValidationError = true;
     config.requestedSwapChainTextureFormat = swapchainColorTextureFormat;
-    switch (swapchainColorTextureFormat) {
-    case igl::TextureFormat::BGRA_SRGB:
-      config.swapChainColorSpace = igl::ColorSpace::PASS_THROUGH;
-      break;
-    case igl::TextureFormat::RGBA_UNorm8:
-      config.swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
-      break;
-    default:
-      break;
-    }
     auto ctx = vulkan::HWDevice::createContext(config, nativeWindow);
 
     auto devices = vulkan::HWDevice::queryDevices(
