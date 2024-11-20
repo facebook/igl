@@ -141,7 +141,7 @@ MNVGframebuffer* s_framebuffer = NULL;
 #if TARGET_OS_SIMULATOR
 const igl::TextureFormat kStencilFormat = igl::TextureFormat::S8_UInt_Z32_UNorm;
 #else
-const igl::TextureFormat kStencilFormat = igl::TextureFormat::S_UInt8;
+const igl::TextureFormat kStencilFormat = igl::TextureFormat::S8_UInt_Z32_UNorm;
 #endif  // TARGET_OS_SIMULATOR
 
 static bool mtlnvg_convertBlendFuncFactor(int factor, igl::BlendFactor* result) {
@@ -263,6 +263,7 @@ public:
     bool clearBufferOnFlush;
     
     std::shared_ptr<igl::ITexture> colorTexture;
+    std::shared_ptr<igl::ITexture> stencilTexture;
     
     // Textures
     std::vector<MNVGtexture*> _textures;
@@ -584,8 +585,7 @@ public:
 //        dispatch_semaphore_signal(_semaphore);
     }
     
-    std::shared_ptr<igl::IRenderCommandEncoder> renderCommandEncoderWithColorTexture(
-    std::shared_ptr<igl::ITexture> colorTexture) {
+    std::shared_ptr<igl::IRenderCommandEncoder> renderCommandEncoderWithColorTexture() {
         igl::RenderPassDesc descriptor;
         
         descriptor.colorAttachments.resize(1);
@@ -603,7 +603,7 @@ public:
         
         igl::FramebufferDesc framebuffer_desc;
         framebuffer_desc.colorAttachments[0].texture = colorTexture;
-        framebuffer_desc.stencilAttachment.texture = _buffers->stencilTexture;
+        framebuffer_desc.stencilAttachment.texture = stencilTexture;
         
         std::shared_ptr<igl::IFramebuffer> framebuffer =device->createFramebuffer(framebuffer_desc, NULL);
         
@@ -777,11 +777,12 @@ public:
         
         igl::StencilStateDesc backFaceStencilDescriptor;
         backFaceStencilDescriptor.stencilCompareFunction = igl::CompareFunction::AlwaysPass;
-        backFaceStencilDescriptor.depthStencilPassOperation = igl::StencilOperation::IncrementWrap;
+        backFaceStencilDescriptor.depthStencilPassOperation = igl::StencilOperation::DecrementWrap;
         
         stencilDescriptor.compareFunction = igl::CompareFunction::AlwaysPass;
         stencilDescriptor.backFaceStencil = backFaceStencilDescriptor;
         stencilDescriptor.frontFaceStencil = frontFaceStencilDescriptor;
+        stencilDescriptor.debugName = "fillShapeStencilState";
         _fillShapeStencilState = device->createDepthStencilState(stencilDescriptor, &result);
         
         // Fill anti-aliased stencil.
@@ -1160,7 +1161,7 @@ public:
 //            drawable = _metalLayer.nextDrawable;
 //            colorTexture = drawable.texture;
 //        }
-        _renderEncoder = renderCommandEncoderWithColorTexture(colorTexture);
+        _renderEncoder = renderCommandEncoderWithColorTexture();
         if (_renderEncoder == nullptr) {
             return;
         }
@@ -1712,9 +1713,10 @@ static void mtlnvg__renderViewport(void* uptr, float width, float height,
               devicePixelRatio);
 }
 
-void nvgSetColorTexture(NVGcontext* ctx, std::shared_ptr<igl::ITexture> color){
+void nvgSetColorTexture(NVGcontext* ctx, std::shared_ptr<igl::ITexture> color, std::shared_ptr<igl::ITexture> stencil){
     MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
     mtl->colorTexture = color;
+    mtl->stencilTexture = stencil;
 }
 
 void mnvgClearWithColor(NVGcontext* ctx, NVGcolor color) {
