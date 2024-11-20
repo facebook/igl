@@ -883,7 +883,7 @@ public:
                 bytesPerRow = width;
             }
             
-            tex->tex->upload(igl::TextureRangeDesc(0, 0, width, height), data);
+            tex->tex->upload(igl::TextureRangeDesc::new2D(0, 0, width, height), data);
             
 #if 0 //没用了
             if (textureDescriptor.storageMode == MTLStorageModePrivate) {
