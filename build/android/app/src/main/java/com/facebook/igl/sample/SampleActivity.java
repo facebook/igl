@@ -18,7 +18,6 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import java.util.HashMap;
 
 public class SampleActivity extends Activity implements View.OnClickListener {
   // UI
@@ -27,8 +26,9 @@ public class SampleActivity extends Activity implements View.OnClickListener {
   FrameLayout mBackendViewFrame;
 
   // initialize runtime backend configuration / context
-  private String curBackendType = SampleLib.gl3Label;
-  private HashMap<String, SurfaceView> mTabBackendViewMap;
+  private int curConfig = 0;
+  private SampleLib.RenderSessionConfig[] mConfigs;
+  private SurfaceView[] mTabViews;
 
   private final int selectedTabColor = Color.BLUE;
   private final int unSelectedTabColor = Color.GRAY;
@@ -49,31 +49,32 @@ public class SampleActivity extends Activity implements View.OnClickListener {
 
     // set up tab and cached sample view for different backend types
     mBackendViewFrame = new FrameLayout(this);
-    mTabBackendViewMap = new HashMap<String, SurfaceView>();
-    for (int i = 0; i < SampleLib.backendTypeContexts.length; i++) {
-      if (!SampleLib.isBackendTypeIDSupported(SampleLib.backendTypeContexts[i].ID)) {
-        continue;
-      }
-
+    mConfigs = SampleLib.getRenderSessionConfigs();
+    mTabViews = new SurfaceView[mConfigs.length];
+    for (int i = 0; i < mConfigs.length; i++) {
       // configure and insert tab
       TextView item = new TextView(this);
       item.setId(i);
-      item.setText(SampleLib.backendTypeContexts[i].label);
+      item.setText(mConfigs[i].displayName);
       item.setPadding(20, 0, 20, 0);
       item.setOnClickListener(this);
       mTabBar.addView(item);
 
       // initialize sampleView for each backend type
-      SurfaceView backendView;
-      if (SampleLib.backendTypeContexts[i].ID == SampleLib.vulkanID) {
-        backendView = new VulkanView(getApplication());
-      } else {
-        backendView = new SampleView(getApplication(), SampleLib.backendTypeContexts[i].ID);
+      SurfaceView backendView = null;
+      if (mConfigs[i].version.flavor == SampleLib.BackendFlavor.Vulkan) {
+        backendView =
+            new VulkanView(
+                getApplication(), mConfigs[i].version, mConfigs[i].swapchainColorTextureFormat);
+      } else if (mConfigs[i].version.flavor == SampleLib.BackendFlavor.OpenGL_ES) {
+        backendView =
+            new SampleView(
+                getApplication(), mConfigs[i].version, mConfigs[i].swapchainColorTextureFormat);
         ((SampleView) backendView).onPause();
       }
 
       // set current backend tab as selected
-      if (SampleLib.backendTypeContexts[i].label.equals(curBackendType)) {
+      if (curConfig == i) {
         item.setTextColor(selectedTabColor);
         mBackendViewFrame.addView(backendView);
       } else {
@@ -81,7 +82,7 @@ public class SampleActivity extends Activity implements View.OnClickListener {
       }
 
       // cache sampleView in map for reference
-      mTabBackendViewMap.put(SampleLib.backendTypeContexts[i].label, backendView);
+      mTabViews[i] = backendView;
     }
 
     // setup and display the mainview
@@ -92,7 +93,7 @@ public class SampleActivity extends Activity implements View.OnClickListener {
 
   @Override
   public void onClick(View view) {
-    String prevBackendType = curBackendType;
+    int prevConfig = curConfig;
     for (int i = 0; i < mTabBar.getChildCount(); i++) {
       TextView item = (TextView) mTabBar.getChildAt(i);
 
@@ -103,18 +104,18 @@ public class SampleActivity extends Activity implements View.OnClickListener {
       }
 
       // reset main view if the selected backend is not the current
-      if (!prevBackendType.equals(item.getText().toString())) {
-        if (!prevBackendType.equals(SampleLib.vulkanLabel)) {
-          ((SampleView) mTabBackendViewMap.get(prevBackendType)).onPause();
+      if (prevConfig != i) {
+        if (mConfigs[prevConfig].version.flavor != SampleLib.BackendFlavor.Vulkan) {
+          ((SampleView) mTabViews[prevConfig]).onPause();
         }
         item.setTextColor(selectedTabColor);
-        curBackendType = item.getText().toString();
+        curConfig = i;
         mBackendViewFrame.removeAllViews();
-        SurfaceView surfaceView = mTabBackendViewMap.get(curBackendType);
+        SurfaceView surfaceView = mTabViews[curConfig];
         mBackendViewFrame.addView(surfaceView);
-        SampleLib.setActiveBackendTypeID(i);
-        if (!curBackendType.equals(SampleLib.vulkanLabel)) {
-          ((SampleView) mTabBackendViewMap.get(curBackendType)).onResume();
+        SampleLib.setActiveBackendVersion(mConfigs[curConfig].version);
+        if (mConfigs[curConfig].version.flavor != SampleLib.BackendFlavor.Vulkan) {
+          ((SampleView) mTabViews[curConfig]).onResume();
         }
       }
     }
@@ -123,16 +124,16 @@ public class SampleActivity extends Activity implements View.OnClickListener {
   @Override
   protected void onPause() {
     super.onPause();
-    if (!curBackendType.equals(SampleLib.vulkanLabel)) {
-      ((SampleView) mTabBackendViewMap.get(curBackendType)).onPause();
+    if (mConfigs[curConfig].version.flavor != SampleLib.BackendFlavor.Vulkan) {
+      ((SampleView) mTabViews[curConfig]).onPause();
     }
   }
 
   @Override
   protected void onResume() {
     super.onResume();
-    if (!curBackendType.equals(SampleLib.vulkanLabel)) {
-      ((SampleView) mTabBackendViewMap.get(curBackendType)).onResume();
+    if (mConfigs[curConfig].version.flavor != SampleLib.BackendFlavor.Vulkan) {
+      ((SampleView) mTabViews[curConfig]).onResume();
     }
   }
 }
