@@ -36,6 +36,7 @@
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
+#include <IGLU/nanovg/nanovg_mtl.h>
 
 @interface RenderSessionController () {
   igl::BackendVersion backendVersion_;
@@ -108,6 +109,7 @@
   }
 
   platform_ = std::make_shared<igl::shell::PlatformIos>(std::move(device));
+  platform_->nanovgContext = nvgCreateMTL(&platform_->getDevice(), NVG_ANTIALIAS | NVG_STENCIL_STROKES);
   platformAdapter_.platform = platform_.get();
   session_ = factory_->createRenderSession(platform_);
   IGL_DEBUG_ASSERT(session_, "createDefaultRenderSession() must return a valid session");

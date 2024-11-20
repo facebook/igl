@@ -15,8 +15,8 @@
 #include <regex>
 #include <chrono>
 #include <shell/shared/renderSession/ShellParams.h>
-
-
+#include <shell/shared/imageLoader/ImageLoader.h>
+#include <shell/shared/fileLoader/FileLoader.h>
 
 namespace igl::shell {
 
@@ -198,7 +198,14 @@ void NanovgSession::initialize() noexcept {
     
     nvgContext_ = getPlatform().nanovgContext;
     
-    times_ = 0;
+    auto bb = getPlatform().loadTexture("orange.png");
+    
+    auto aa = getPlatform().getImageLoader().fileLoader().fullPath("image1.jpg");
+    
+    SetImageFullPathCallback([this](const std::string & name){
+        return getPlatform().getImageLoader().fileLoader().fullPath(name);
+    });
+    
     if (loadDemoData(nvgContext_, &nvgDemoData_) == -1){
         assert(false);
     }
@@ -206,6 +213,7 @@ void NanovgSession::initialize() noexcept {
     initGraph(&fps, GRAPH_RENDER_FPS, "Frame Time");
     initGraph(&cpuGraph, GRAPH_RENDER_MS, "CPU Time");
     initGraph(&gpuGraph, GRAPH_RENDER_MS, "GPU Time");
+    times_ = 0;
 }
 
 void NanovgSession::update(igl::SurfaceTextures surfaceTextures) noexcept {

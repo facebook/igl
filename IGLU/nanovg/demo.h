@@ -2,6 +2,12 @@
 #define DEMO_H
 
 #include "nanovg.h"
+#include <string>
+#include <functional>
+
+using ImageFullPathCallback = std::function<std::string(const std::string &)>;
+
+void SetImageFullPathCallback(ImageFullPathCallback callback);
 
 #ifdef __cplusplus
 extern "C" {

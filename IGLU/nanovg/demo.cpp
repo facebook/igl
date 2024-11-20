@@ -17,6 +17,12 @@
 #include <iconv.h>
 #endif
 
+static ImageFullPathCallback imageFullPathCallback_ = nullptr;
+
+void SetImageFullPathCallback(ImageFullPathCallback callback){
+    imageFullPathCallback_ = callback;
+}
+
 #define ICON_SEARCH 0x1F50D
 #define ICON_CIRCLED_CROSS 0x2716
 #define ICON_CHEVRON_RIGHT 0xE75E
@@ -811,30 +817,32 @@ int loadDemoData(NVGcontext* vg, DemoData* data)
 
 	for (i = 0; i < 12; i++) {
 		char file[128];
-		snprintf(file, 128, "../example/images/image%d.jpg", i+1);
-		data->images[i] = nvgCreateImage(vg, file, 0);
+		snprintf(file, 128, "image%d.jpg", i+1);
+        
+        std::string full_file = imageFullPathCallback_(file);
+		data->images[i] = nvgCreateImage(vg, full_file.c_str(), 0);
 		if (data->images[i] == 0) {
 			printf("Could not load %s.\n", file);
 			return -1;
 		}
 	}
 
-	data->fontIcons = nvgCreateFont(vg, "icons", "../example/entypo.ttf");
+    data->fontIcons = nvgCreateFont(vg, "icons", imageFullPathCallback_("entypo.ttf").c_str());
 	if (data->fontIcons == -1) {
 		printf("Could not add font icons.\n");
 		return -1;
 	}
-	data->fontNormal = nvgCreateFont(vg, "sans", "../example/Roboto-Regular.ttf");
+	data->fontNormal = nvgCreateFont(vg, "sans", imageFullPathCallback_("Roboto-Regular.ttf").c_str());
 	if (data->fontNormal == -1) {
 		printf("Could not add font italic.\n");
 		return -1;
 	}
-	data->fontBold = nvgCreateFont(vg, "sans-bold", "../example/Roboto-Bold.ttf");
+	data->fontBold = nvgCreateFont(vg, "sans-bold", imageFullPathCallback_("Roboto-Bold.ttf").c_str());
 	if (data->fontBold == -1) {
 		printf("Could not add font bold.\n");
 		return -1;
 	}
-	data->fontEmoji = nvgCreateFont(vg, "emoji", "../example/NotoEmoji-Regular.ttf");
+	data->fontEmoji = nvgCreateFont(vg, "emoji", imageFullPathCallback_("NotoEmoji-Regular.ttf").c_str());
 	if (data->fontEmoji == -1) {
 		printf("Could not add font emoji.\n");
 		return -1;
