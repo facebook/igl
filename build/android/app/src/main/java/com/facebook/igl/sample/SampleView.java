@@ -19,6 +19,7 @@ import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
+import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
 /// Simple view that sets up a GLES 2.0 rendering context
@@ -38,6 +39,8 @@ public class SampleView extends GLSurfaceView {
 
     // Set the view to be transluscent since we provide an alpha channel below.
     this.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+
+    setEGLWindowSurfaceFactory(new SurfaceFactory(SampleLib.isSRGBTextureFormat(swapchainColorTextureFormat)));
 
     setEGLConfigChooser(new ConfigChooser(backendVersion));
 
@@ -109,6 +112,33 @@ public class SampleView extends GLSurfaceView {
     int error;
     while ((error = egl.eglGetError()) != EGL10.EGL_SUCCESS) {
       Log.e(TAG, String.format("%s: EGL error: 0x%x", prompt, error));
+    }
+  }
+
+  private static class SurfaceFactory implements GLSurfaceView.EGLWindowSurfaceFactory{
+    final int EGL_GL_COLORSPACE_KHR = 0x309D;
+    final int EGL_GL_COLORSPACE_SRGB_KHR = 0x3089;
+    final int EGL_GL_COLORSPACE_LINEAR_KHR =  0x308A;
+
+    private boolean mIsSRGBColorSpace;
+
+    SurfaceFactory(boolean isSRGB){
+      mIsSRGBColorSpace = isSRGB;
+    }
+
+    @Override
+    public EGLSurface createWindowSurface(EGL10 egl10, EGLDisplay eglDisplay, EGLConfig eglConfig, Object nativeWindow) {
+      int[] configAttribs = {
+              EGL_GL_COLORSPACE_KHR , (mIsSRGBColorSpace ? EGL_GL_COLORSPACE_SRGB_KHR : EGL_GL_COLORSPACE_LINEAR_KHR),
+              EGL10.EGL_NONE
+      };
+
+      return egl10.eglCreateWindowSurface(eglDisplay, eglConfig, nativeWindow, configAttribs);
+    }
+
+    @Override
+    public void destroySurface(EGL10 egl10, EGLDisplay eglDisplay, EGLSurface eglSurface) {
+      egl10.eglDestroySurface(eglDisplay, eglSurface);
     }
   }
 
