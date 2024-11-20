@@ -728,6 +728,7 @@ public:
         // Initializes default sampler descriptor.
 //        MTLSamplerDescriptor* samplerDescriptor = [MTLSamplerDescriptor new];
         igl::SamplerStateDesc samplerDescriptor;
+        samplerDescriptor.debugName = "pseudoSampler";
         _pseudoSampler = device->createSamplerState(samplerDescriptor, &result);
         
         // Initializes pseudo texture for macOS.
@@ -936,6 +937,7 @@ public:
             samplerDescriptor.addressModeV = igl::SamplerAddressMode::Clamp;
         }
         
+        samplerDescriptor.debugName = "textureSampler";
         tex->sampler = device->createSamplerState(samplerDescriptor, NULL);
         
         return tex->_id;
