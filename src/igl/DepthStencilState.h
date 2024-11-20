@@ -119,7 +119,7 @@ struct StencilStateDesc {
  */
 struct DepthStencilStateDesc {
   /**
-   * @brief debug name
+   * @brief Identifier used for debugging
    */
   std::string debugName;
     
