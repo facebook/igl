@@ -274,7 +274,6 @@ class IContext {
                               char* name) const;
   void getShaderiv(GLuint shader, GLenum pname, GLint* params) const;
   void getShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* length, GLchar* infoLog) const;
-  void getShaderSource(GLuint shader, GLsizei bufsize, GLsizei* length, GLchar* source) const;
   virtual const GLubyte* getString(GLenum name) const;
   virtual const GLubyte* getStringi(GLenum name, GLuint index) const;
   void getSynciv(GLsync sync, GLenum pname, GLsizei bufSize, GLsizei* length, GLint* values) const;

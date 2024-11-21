@@ -2059,23 +2059,6 @@ void IContext::getShaderInfoLog(GLuint shader,
   GLCHECK_ERRORS();
 }
 
-void IContext::getShaderSource(GLuint shader,
-                               GLsizei bufsize,
-                               GLsizei* length,
-                               GLchar* source) const {
-  GLCALL(GetShaderSource)(shader, bufsize, length, source);
-  APILOG("glGetShaderSource(%u, %u, %p, %p) = %.*s\n",
-         shader,
-         bufsize,
-         length,
-         source,
-         static_cast<int>(length == nullptr
-                              ? (source == nullptr ? 0 : static_cast<int>(std::strlen(source)))
-                              : *length),
-         source == nullptr ? "" : source);
-  GLCHECK_ERRORS();
-}
-
 const GLubyte* IContext::getString(GLenum name) const {
   const GLubyte* ret;
 
