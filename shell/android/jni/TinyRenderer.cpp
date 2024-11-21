@@ -8,7 +8,6 @@
 // @fb-only
 
 #include "TinyRenderer.h"
-
 #include <EGL/egl.h>
 #include <android/log.h>
 #include <android/native_window.h>
@@ -27,6 +26,7 @@
 #include <igl/vulkan/VulkanContext.h>
 #endif
 #include <memory>
+#include <IGLU/nanovg/nanovg_mtl.h>
 
 namespace {
 
@@ -141,6 +141,7 @@ void TinyRenderer::init(AAssetManager* mgr,
   IGL_SOFT_ASSERT(result.isOk());
   if (d) {
     platform_ = std::make_shared<igl::shell::PlatformAndroid>(std::move(d));
+    platform_->nanovgContext = nvgCreateMTL(&platform_->getDevice(), NVG_ANTIALIAS | NVG_STENCIL_STROKES);
     IGL_DEBUG_ASSERT(platform_ != nullptr);
     static_cast<igl::shell::ImageLoaderAndroid&>(platform_->getImageLoader()).setAssetManager(mgr);
     static_cast<igl::shell::FileLoaderAndroid&>(platform_->getFileLoader()).setAssetManager(mgr);
