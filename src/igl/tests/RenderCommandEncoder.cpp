@@ -323,6 +323,16 @@ class RenderCommandEncoderTest : public ::testing::Test {
       ASSERT_TRUE(ib_ != nullptr);
     }
   }
+  void initialize8BitIndices(const std::vector<uint8_t>& indices) {
+    BufferDesc desc;
+    desc.type = BufferDesc::BufferTypeBits::Index;
+    desc.data = indices.data();
+    desc.length = sizeof(uint8_t) * indices.size();
+    Result ret;
+    ib_ = iglDev_->createBuffer(desc, &ret);
+    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ib_ != nullptr);
+  }
 
   void TearDown() override {}
 
@@ -476,6 +486,47 @@ TEST_F(RenderCommandEncoderTest, drawIndexedFirstIndex) {
   encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
     encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
     encoder->drawIndexed(3, 1, 3); // skip the first 3 dummy indices
+  });
+
+  const auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  // clang-format off
+  const std::vector<uint32_t> expectedPixels {
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
+    backgroundColorHex, backgroundColorHex, grayColor,          grayColor,
+    backgroundColorHex, grayColor,          grayColor,          grayColor,
+    grayColor,          grayColor,          grayColor,          grayColor,
+  };
+  // clang-format on
+
+  verifyFrameBuffer(expectedPixels);
+}
+
+TEST_F(RenderCommandEncoderTest, drawIndexed8Bit) {
+  if (!iglDev_->hasFeature(igl::DeviceFeatures::Indices8Bit)) {
+    GTEST_SKIP();
+    return;
+  }
+  initializeBuffers(
+      // clang-format off
+      {
+        -1.0f - quarterPixel, -1.0f,                0.0f, 1.0f,
+         1.0f,                -1.0f,                0.0f, 1.0f,
+         1.0f,                 1.0f + quarterPixel, 0.0f, 1.0f,
+      },
+      {
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f,
+      } // clang-format on
+  );
+  initialize8BitIndices({0, 1, 2});
+
+  ASSERT_TRUE(ib_ != nullptr);
+
+  encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+    encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
+    encoder->bindIndexBuffer(*ib_, IndexFormat::UInt8);
+    encoder->drawIndexed(3);
   });
 
   const auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];

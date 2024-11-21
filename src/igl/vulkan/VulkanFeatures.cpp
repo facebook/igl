@@ -20,8 +20,23 @@ void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
     VkPhysicalDevice physicalDevice) noexcept {
   IGL_DEBUG_ASSERT(context.vf_.vkGetPhysicalDeviceFeatures2 != nullptr,
                    "Pointer to function vkGetPhysicalDeviceFeatures2() is nullptr");
+  uint32_t numExtensions = 0;
+  context.vf_.vkEnumerateDeviceExtensionProperties(
+      physicalDevice, nullptr, &numExtensions, nullptr);
+  extensions_.resize(numExtensions);
+  context.vf_.vkEnumerateDeviceExtensionProperties(
+      physicalDevice, nullptr, &numExtensions, extensions_.data());
   assembleFeatureChain(context.config_);
   context.vf_.vkGetPhysicalDeviceFeatures2(physicalDevice, &VkPhysicalDeviceFeatures2_);
+}
+
+bool VulkanFeatures::hasExtension(const char* ext) const {
+  for (const VkExtensionProperties& props : extensions_) {
+    if (strcmp(ext, props.extensionName) == 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
@@ -211,6 +226,12 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
 #endif
   VkPhysicalDevice16BitStorageFeatures_.pNext = nullptr;
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDevice16BitStorageFeatures_);
+
+#if defined(VK_EXT_index_type_uint8) && VK_EXT_index_type_uint8
+  if (hasExtension(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)) {
+    ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceIndexTypeUint8Features_);
+  }
+#endif
 }
 
 VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept {
@@ -247,6 +268,8 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
 #if defined(VK_VERSION_1_2)
   VkPhysicalDeviceShaderFloat16Int8Features_ = other.VkPhysicalDeviceShaderFloat16Int8Features_;
 #endif
+
+  extensions_ = other.extensions_;
 
   assembleFeatureChain(config_);
 

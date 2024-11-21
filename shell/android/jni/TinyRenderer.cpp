@@ -215,6 +215,7 @@ void TinyRenderer::render(float displayScale) {
 
   const ContextGuard guard(platform_->getDevice()); // wrap 'session_' operations
 
+  platform_->getDevice().setCurrentThread();
   session_->setPixelsPerPoint(displayScale);
   session_->update(std::move(surfaceTextures));
 }
@@ -239,6 +240,7 @@ void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int 
 #if IGL_BACKEND_VULKAN
   if (backendVersion_.flavor == igl::BackendFlavor::Vulkan) {
     recreateSwapchain(nativeWindow_, false);
+    platform_->updatePreRotationMatrix();
   }
 #endif
 }
