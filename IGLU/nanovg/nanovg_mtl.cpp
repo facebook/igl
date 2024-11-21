@@ -1909,11 +1909,11 @@ NVGcontext* nvgCreateMTL(igl::IDevice * device, int flags) {
   params.edgeAntiAlias = flags & NVG_ANTIALIAS ? 1 : 0;
 
   mtl->_flags = flags;
-#if TARGET_OS_OSX || TARGET_OS_SIMULATOR
+//#if TARGET_OS_OSX || TARGET_OS_SIMULATOR
   mtl->_fragSize = 256;
-#else
-  mtl->_fragSize = sizeof(MNVGfragUniforms);
-#endif  // TARGET_OS_OSX
+//#else
+//  mtl->_fragSize = sizeof(MNVGfragUniforms);
+//#endif  // TARGET_OS_OSX
   mtl->_indexSize = 4;  // MTLIndexTypeUInt32
   mtl->device = device;
 
