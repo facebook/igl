@@ -3,12 +3,12 @@
 
 namespace igl::nanovg{
 
-static std::string opengl460_vertex_shdader = R"(#version 410
+static std::string opengl460_vertex_shdader = R"(#version 300 es
 layout(location = 0) in vec2 pos;
 layout(location = 1) in vec2 tcoord;
 
-layout (location=0) out vec2 fpos;
-layout (location=1) out vec2 ftcoord;
+out vec2 fpos;
+out vec2 ftcoord;
 
 layout(std140) uniform VertexUniformBlock {
  vec2 viewSize;
@@ -18,17 +18,17 @@ void main() {
   ftcoord = tcoord;
   fpos = pos;
   gl_Position = vec4(2.0 * pos.x / uniforms.viewSize.x - 1.0,
-                   1.0 - 2.0 * pos.y / uniforms.viewSize.y,
+                     1.0 - 2.0 * pos.y / uniforms.viewSize.y,
                    0, 1);
 }
 )";
 
-static std::string opengl460_fragment_shdader = R"(#version 410
+static std::string opengl460_fragment_shdader = R"(#version 300 es
 precision highp int; 
 precision highp float;
 
-layout (location=0) in vec2 fpos;
-layout (location=1) in vec2 ftcoord;
+in vec2 fpos;
+in vec2 ftcoord;
 
 layout (location=0) out vec4 FragColor;
 
@@ -72,7 +72,7 @@ float strokeMask(vec2 ftcoord) {
 // Fragment function (No AA)
 vec4 main2() {
   float scissor = scissorMask(fpos);
-  if (scissor == 0)
+  if (scissor == 0.0)
     return vec4(0);
 
   if (uniforms.type == 0) {  // MNVG_SHADER_FILLGRAD
