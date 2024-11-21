@@ -246,7 +246,7 @@ void mnvgDeleteFramebuffer(MNVGframebuffer* framebuffer) {
 class MNVGcontext{
 public:
     igl::IDevice * device;
-    std::shared_ptr<igl::ICommandQueue> _commandQueue;
+//    std::shared_ptr<igl::ICommandQueue> _commandQueue;
     std::shared_ptr<igl::IRenderCommandEncoder> _renderEncoder;
     
     int _fragSize;
@@ -612,8 +612,10 @@ public:
 //        
 //        std::shared_ptr<igl::IFramebuffer> framebuffer =device->createFramebuffer(framebuffer_desc, NULL);
         
-        std::shared_ptr<igl::ICommandBuffer> commandBuffer = _buffers->commandBuffer;
-        std::unique_ptr<igl::IRenderCommandEncoder> encoder = commandBuffer->createRenderCommandEncoder(descriptor, framebuffer);
+//        std::shared_ptr<igl::ICommandBuffer> commandBuffer = _buffers->commandBuffer;
+//        std::unique_ptr<igl::IRenderCommandEncoder> encoder = commandBuffer->createRenderCommandEncoder(descriptor, framebuffer);
+        
+        auto & encoder = _renderEncoder;
         
         //todo:
         //[encoder setCullMode:MTLCullModeBack];
@@ -737,9 +739,9 @@ public:
             _fragmentFunction = shader_stages->getFragmentModule();
         }
         
-        igl::CommandQueueDesc queue_desc;
-        queue_desc.type = igl::CommandQueueType::Graphics;
-        _commandQueue = device->createCommandQueue(queue_desc, &result);
+//        igl::CommandQueueDesc queue_desc;
+//        queue_desc.type = igl::CommandQueueType::Graphics;
+//        _commandQueue = device->createCommandQueue(queue_desc, &result);
         
         // Initializes the number of available buffers.
         if (_flags & NVG_TRIPLE_BUFFER) {
@@ -1016,7 +1018,7 @@ public:
         }
         
         free(_blendFunc);
-        _commandQueue = nullptr;
+//        _commandQueue = nullptr;
         _renderEncoder = nullptr;
         _textures.clear();
         _cbuffers.clear();
@@ -1160,13 +1162,13 @@ public:
             return;
         }
         
-        igl::CommandBufferDesc commandBufferDesc;
-        commandBufferDesc.debugName = "iglNanoVG";
-        std::shared_ptr<igl::ICommandBuffer> commandBuffer = _commandQueue->createCommandBuffer(commandBufferDesc, NULL);
+//        igl::CommandBufferDesc commandBufferDesc;
+//        commandBufferDesc.debugName = "iglNanoVG";
+//        std::shared_ptr<igl::ICommandBuffer> commandBuffer = _commandQueue->createCommandBuffer(commandBufferDesc, NULL);
 //        std::shared_ptr<igl::ITexture> colorTexture = nullptr;;
         igl_vector_uint2 textureSize;
         
-        _buffers->commandBuffer = commandBuffer;
+//        _buffers->commandBuffer = commandBuffer;
         MNVGbuffers* buffers = _buffers;
 //        [commandBuffer enqueue];
 //        [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
@@ -1201,10 +1203,10 @@ public:
 //            drawable = _metalLayer.nextDrawable;
 //            colorTexture = drawable.texture;
 //        }
-        _renderEncoder = renderCommandEncoderWithColorTexture();
-        if (_renderEncoder == nullptr) {
-            return;
-        }
+        renderCommandEncoderWithColorTexture();
+//        if (_renderEncoder == nullptr) {
+//            return;
+//        }
         
         MNVGcall* call = &buffers->calls[0];
         for (int i = buffers->ncalls; i--; ++call) {
@@ -1232,10 +1234,10 @@ public:
             _renderEncoder->popDebugGroupLabel();
         }
         
-        _renderEncoder->endEncoding();
+//        _renderEncoder->endEncoding();
         
-        commandBuffer->present(framebuffer->getColorAttachment(0));
-        _commandQueue->submit(*commandBuffer, true);
+//        commandBuffer->present(framebuffer->getColorAttachment(0));
+//        _commandQueue->submit(*commandBuffer, true);
         
         {
             buffers->isBusy = false;
@@ -1248,7 +1250,7 @@ public:
             //            dispatch_semaphore_signal(self.semaphore);
         }
         
-        _renderEncoder = nullptr;
+//        _renderEncoder = nullptr;
         
 //        if (drawable && !_metalLayer.presentsWithTransaction) {
 //            [_buffers->commandBuffer presentDrawable:drawable];
@@ -1765,9 +1767,10 @@ static void mtlnvg__renderViewport(void* uptr, float width, float height,
               devicePixelRatio);
 }
 
-void nvgSetColorTexture(NVGcontext* ctx, std::shared_ptr<igl::IFramebuffer> framebuffer){
+void nvgSetColorTexture(NVGcontext* ctx, std::shared_ptr<igl::IFramebuffer> framebuffer ,std::shared_ptr<igl::IRenderCommandEncoder> command){
     MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
     mtl->framebuffer = framebuffer;
+    mtl->_renderEncoder = command;
 }
 
 void mnvgClearWithColor(NVGcontext* ctx, NVGcolor color) {
@@ -1781,8 +1784,9 @@ void mnvgClearWithColor(NVGcontext* ctx, NVGcolor color) {
 }
 
 void* mnvgCommandQueue(NVGcontext* ctx) {
-  MNVGcontext* mtl = ( MNVGcontext*)nvgInternalParams(ctx)->userPtr;
-  return (void*)mtl->_commandQueue.get();
+//  MNVGcontext* mtl = ( MNVGcontext*)nvgInternalParams(ctx)->userPtr;
+//  return (void*)mtl->_commandQueue.get();
+    return NULL;
 }
 
 int mnvgCreateImageFromHandle(NVGcontext* ctx, void* textureId, int imageFlags) {

@@ -51,7 +51,7 @@ typedef struct MNVGframebuffer MNVGframebuffer;
 // `NVGcreateFlags` above.
 NVGcontext* nvgCreateMTL(igl::IDevice * device, int flags);
 
-void nvgSetColorTexture(NVGcontext* ctx, std::shared_ptr<igl::IFramebuffer> framebuffer);
+void nvgSetColorTexture(NVGcontext* ctx, std::shared_ptr<igl::IFramebuffer> framebuffer, std::shared_ptr<igl::IRenderCommandEncoder>);
 
 // Deletes the specified NanoVG context.
 void nvgDeleteMTL(NVGcontext* ctx);

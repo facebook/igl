@@ -230,8 +230,8 @@ void NanovgSession::initialize() noexcept {
 void NanovgSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     drawTriangle(surfaceTextures);
     
-    const auto dimensions = surfaceTextures.color->getDimensions();
-    drawNanovg((float)dimensions.width, (float)dimensions.height, surfaceTextures);
+//    const auto dimensions = surfaceTextures.color->getDimensions();
+//    drawNanovg((float)dimensions.width, (float)dimensions.height, surfaceTextures);
 }
 
 void NanovgSession::drawTriangle(igl::SurfaceTextures surfaceTextures){
@@ -281,7 +281,7 @@ void NanovgSession::drawTriangle(igl::SurfaceTextures surfaceTextures){
   const igl::ScissorRect scissor = {0, 0, (uint32_t)dimensions.width, (uint32_t)dimensions.height};
 
   // This will clear the framebuffer
-  auto commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
+    std::shared_ptr<igl::IRenderCommandEncoder> commands = buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
   commands->bindRenderPipelineState(renderPipelineState_Triangle_);
   commands->bindViewport(viewport);
@@ -289,23 +289,27 @@ void NanovgSession::drawTriangle(igl::SurfaceTextures surfaceTextures){
   commands->pushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
 //  commands->draw(3);
   commands->popDebugGroupLabel();
+    
+    drawNanovg((float)dimensions.width, (float)dimensions.height, commands);
+    
   commands->endEncoding();
     
   if (shellParams().shouldPresent) {
-    //buffer->present(surfaceTextures.color);
+    buffer->present(surfaceTextures.color);
   }
 
   commandQueue_->submit(*buffer);
   RenderSession::update(surfaceTextures);
 }
 
-void NanovgSession::drawNanovg(float __width, float __height, igl::SurfaceTextures surfaceTextures){
+void NanovgSession::drawNanovg(float __width, float __height, std::shared_ptr<igl::IRenderCommandEncoder> command){
     NVGcontext* vg = nvgContext_;
     
-    const float width = __width / 2.0f;
-    const float height = __height / 2.0f;
-    
     float pxRatio = 2.0f;
+    
+    const float width = __width / pxRatio;
+    const float height = __height / pxRatio;
+
     int mx = 0;
     int my = 0;
     int blowup = 0;
@@ -313,14 +317,14 @@ void NanovgSession::drawNanovg(float __width, float __height, igl::SurfaceTextur
     auto start_ms = getMilliSeconds();
     
     nvgBeginFrame(vg, width,height, pxRatio);
-    nvgSetColorTexture(vg, framebuffer_);
+    nvgSetColorTexture(vg, framebuffer_, command);
 
     times_++;
     renderDemo(vg, mx,my, width,height, times_ / 60.0f, blowup, &nvgDemoData_);
 
-    renderGraph(vg, 5,5, &fps);
-    renderGraph(vg, 5+200+5,5, &cpuGraph);
-    renderGraph(vg, 5+200+5+200+5,5, &gpuGraph);
+//    renderGraph(vg, 5,5, &fps);
+//    renderGraph(vg, 5+200+5,5, &cpuGraph);
+//    renderGraph(vg, 5+200+5+200+5,5, &gpuGraph);
     
     {
 //        //绘制一个矩形

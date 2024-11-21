@@ -29,7 +29,7 @@ class NanovgSession : public RenderSession {
     
 private:
     void drawTriangle(igl::SurfaceTextures surfaceTextures);
-    void drawNanovg(float width, float height, igl::SurfaceTextures surfaceTextures);
+    void drawNanovg(float width, float height, std::shared_ptr<igl::IRenderCommandEncoder> command);
 
  private:
   std::shared_ptr<ICommandQueue> commandQueue_;
