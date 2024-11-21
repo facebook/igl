@@ -901,7 +901,7 @@ public:
 //        | MTLTextureUsageShaderWrite;
         
 #if TARGET_OS_SIMULATOR
-        textureDescriptor.storageMode = MTLStorageModePrivate;
+//        textureDescriptor.storageMode = MTLStorageModePrivate;
 #endif  // TARGET_OS_SIMULATOR
         tex->tex = device->createTexture(textureDescriptor, NULL);
         
@@ -1420,7 +1420,7 @@ public:
             bytes = (unsigned char*)data + y * bytesPerRow + x;
         }
         
-#if TARGET_OS_SIMULATOR
+#if 0//TARGET_OS_SIMULATOR
         const NSUInteger kBufferSize = bytesPerRow * height;
         std::shared_ptr<igl::IBuffer> buffer = [_metalLayer.device
                                                 newBufferWithLength:kBufferSize
@@ -1835,7 +1835,7 @@ void mnvgReadPixels(NVGcontext* ctx, int image, int x, int y, int width,
     }
   }
 
-#if TARGET_OS_SIMULATOR
+#if 0//TARGET_OS_SIMULATOR
   CAMetalLayer* metalLayer = mtl.metalLayer;
   const NSUInteger kBufferSize = bytesPerRow * height;
   std::shared_ptr<igl::IBuffer> buffer = [metalLayer.device
