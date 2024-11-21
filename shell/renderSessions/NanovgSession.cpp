@@ -204,7 +204,7 @@ void NanovgSession::initialize() noexcept {
     auto aa = getPlatform().getImageLoader().fileLoader().fullPath("image1.jpg");
     
     SetImageFullPathCallback([this](const std::string & name){
-#ifdef IGL_PLATFORM_ANDROID
+#if IGL_PLATFORM_ANDROID
         auto fullPath = std::filesystem::path("/data/data/com.facebook.igl.shell/files/") / name;
         if (std::filesystem::exists(fullPath)) {
             return fullPath.string();

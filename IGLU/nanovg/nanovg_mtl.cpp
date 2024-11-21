@@ -1,5 +1,6 @@
 #include "nanovg_mtl.h"
 #include <math.h>
+#include <regex>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -8,6 +9,7 @@
 #include <IGLU/simdtypes/SimdTypes.h>
 #include "nanovg.h"
 #include "shader_metal.h"
+#include "shader_opengl410.h"
 #include "shader_opengl460.h"
 
 #define kVertexUniformBlockIndex 1
@@ -310,13 +312,17 @@ public:
     int allocFragUniforms(int n) {
         int ret = 0;
         if (_buffers->nuniforms + n > _buffers->cuniforms) {
-            int cuniforms = mtlnvg__maxi(_buffers->nuniforms + n, 128) + _buffers->cuniforms / 2;
+            int cuniforms = mtlnvg__maxi(_buffers->nuniforms + n, 128) + _buffers->cuniforms / 4;
             //todo:
 //            std::shared_ptr<igl::IBuffer> buffer = [_metalLayer.device
 //                                                    newBufferWithLength:(_fragSize * cuniforms)
 //                                                    options:kMetalBufferOptions];
             
             _buffers->uniforms.resize(_fragSize * cuniforms);
+
+            if (device->getBackendType() == igl::BackendType::Vulkan){
+                IGL_DEBUG_ASSERT((_fragSize * cuniforms) < 65536);//vulkan max 65536;
+            }
             
             igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform, _buffers->uniforms.data(), _fragSize * cuniforms);
             desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
@@ -692,25 +698,43 @@ public:
         unsigned int shader_length = 0;
 
         if (device->getBackendType() == igl::BackendType::Metal){
-            std::unique_ptr<igl::IShaderLibrary> shader_library = igl::ShaderLibraryCreator::fromStringInput(*device, igl::nanovg::metal_shdader.c_str(), vertexFunction,fragmentFunction, "",
+            std::unique_ptr<igl::IShaderLibrary> shader_library = igl::ShaderLibraryCreator::fromStringInput(*device, igl::nanovg::metal_shader.c_str(), vertexFunction,fragmentFunction, "",
                                                                                                              &result);
             
             _vertexFunction = shader_library->getShaderModule(vertexFunction);
             _fragmentFunction = shader_library->getShaderModule(fragmentFunction);
         } else if (device->getBackendType() == igl::BackendType::OpenGL){
+#if IGL_PLATFORM_ANDROID || IGL_PLATFORM_IOS
+            auto codeVS = std::regex_replace(igl::nanovg::opengl_410_vertex_shader, std::regex("#version 410"), "#version 300 es");
+            auto codeFS = std::regex_replace(igl::nanovg::opengl_410_fragment_shader, std::regex("#version 410"), "#version 300 es");
+#else
+            auto & codeVS = igl::nanovg::opengl_410_vertex_shader;
+            auto & codeFS = igl::nanovg::opengl_410_fragment_shader;
+#endif
+            
             std::unique_ptr<igl::IShaderStages> shader_stages = igl::ShaderStagesCreator::fromModuleStringInput(*device,
-                                                             igl::nanovg::opengl460_vertex_shdader.c_str(),
+                                                                                                                codeVS.c_str(),
                                                                    "main",
                                                                    "",
-                                                             igl::nanovg::opengl460_fragment_shdader.c_str(),
+                                                                                                                codeFS.c_str(),
                                                                    "main",
                                                                    "",
                                                                    nullptr);
             
             _vertexFunction = shader_stages->getVertexModule();
             _fragmentFunction = shader_stages->getFragmentModule();
-        } else {
-            
+        } else if (device->getBackendType() == igl::BackendType::Vulkan){
+            std::unique_ptr<igl::IShaderStages> shader_stages = igl::ShaderStagesCreator::fromModuleStringInput(*device,
+                                                                                                                igl::nanovg::opengl_460_vertex_shader.c_str(),
+                                                                                                                "main",
+                                                                                                                "",
+                                                                                                                igl::nanovg::opengl_460_fragment_shader.c_str(),
+                                                                                                                "main",
+                                                                                                                "",
+                                                                                                                nullptr);
+
+            _vertexFunction = shader_stages->getVertexModule();
+            _fragmentFunction = shader_stages->getFragmentModule();
         }
         
         igl::CommandQueueDesc queue_desc;
@@ -1895,11 +1919,16 @@ NVGcontext* nvgCreateMTL(igl::IDevice * device, int flags) {
   params.edgeAntiAlias = flags & NVG_ANTIALIAS ? 1 : 0;
 
   mtl->_flags = flags;
-//#if TARGET_OS_OSX || TARGET_OS_SIMULATOR
+
+  auto aaa = sizeof(MNVGfragUniforms);
+  //目前sizeof(MNVGfragUniforms)=176
+
+#if TARGET_OS_OSX || TARGET_OS_SIMULATOR
   mtl->_fragSize = 256;
-//#else
-//  mtl->_fragSize = sizeof(MNVGfragUniforms);
-//#endif  // TARGET_OS_OSX
+#else
+  static_assert(64 * 3 > sizeof(MNVGfragUniforms));
+  mtl->_fragSize = 64 * 3;
+#endif  // TARGET_OS_OSX
   mtl->_indexSize = 4;  // MTLIndexTypeUInt32
   mtl->device = device;
 

@@ -3,14 +3,14 @@
 
 namespace igl::nanovg{
 
-static std::string opengl_460_vertex_shader = R"(#version 460
+static std::string opengl_410_vertex_shader = R"(#version 410
 layout(location = 0) in vec2 pos;
 layout(location = 1) in vec2 tcoord;
 
-layout (location=0) out vec2 fpos;
-layout (location=1) out vec2 ftcoord;
+out vec2 fpos;
+out vec2 ftcoord;
 
-layout(set = 1, binding = 1, std140) uniform VertexUniformBlock {
+layout(std140) uniform VertexUniformBlock {
  vec2 viewSize;
 }uniforms;
 
@@ -23,18 +23,18 @@ void main() {
 }
 )";
 
-static std::string opengl_460_fragment_shader = R"(#version 460
+static std::string opengl_410_fragment_shader = R"(#version 410
 precision highp int; 
 precision highp float;
 
-layout (location=0) in vec2 fpos;
-layout (location=1) in vec2 ftcoord;
+in vec2 fpos;
+in vec2 ftcoord;
 
 layout (location=0) out vec4 FragColor;
 
-layout(set = 0, binding = 0)  uniform lowp sampler2D textureUnit;
+uniform lowp sampler2D textureUnit;
 
-layout(set = 1, binding = 2, std140) uniform FragmentUniformBlock {
+layout(std140) uniform FragmentUniformBlock {
   mat3 scissorMat;
   mat3 paintMat;
   vec4 innerCol;

@@ -3,7 +3,7 @@
 
 namespace igl::nanovg{
 
-static std::string metal_shdader = R"(
+static std::string metal_shader = R"(
 #include <metal_stdlib>
 #include <simd/simd.h>
 
