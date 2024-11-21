@@ -52,8 +52,7 @@ layout(std140) uniform FragmentUniformBlock {
 
 float scissorMask(vec2 p) {
   vec2 sc = (abs((uniforms.scissorMat * vec3(p, 1.0f)).xy)
-                  - uniforms.scissorExt) \
-              * uniforms.scissorScale;
+                  - uniforms.scissorExt)  * uniforms.scissorScale;
   sc = clamp(vec2(0.5f) - sc, 0.0, 1.0);
   return sc.x * sc.y;
 }
@@ -65,8 +64,7 @@ float sdroundrect(vec2 pt) {
 }
 
 float strokeMask(vec2 ftcoord) {
-  return min(1.0, (1.0 - abs(ftcoord.x * 2.0 - 1.0)) * uniforms.strokeMult) \
-         * min(1.0, ftcoord.y);
+  return min(1.0, (1.0 - abs(ftcoord.x * 2.0 - 1.0)) * uniforms.strokeMult) * min(1.0, ftcoord.y);
 }
 
 // Fragment function (No AA)
