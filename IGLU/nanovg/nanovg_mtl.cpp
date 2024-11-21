@@ -266,8 +266,10 @@ public:
     igl::Color clearColor{1,1,1};
     bool clearBufferOnFlush;
     
-    std::shared_ptr<igl::ITexture> colorTexture;
-    std::shared_ptr<igl::ITexture> stencilTexture;
+//    std::shared_ptr<igl::ITexture> colorTexture;
+//    std::shared_ptr<igl::ITexture> stencilTexture;
+    
+    std::shared_ptr<igl::IFramebuffer> framebuffer;
     
     // Textures
     std::vector<MNVGtexture*> _textures;
@@ -612,11 +614,11 @@ public:
         descriptor.stencilAttachment.storeAction = igl::StoreAction::DontCare;
 //        descriptor.stencilAttachment.texture = _buffers->stencilTexture;
         
-        igl::FramebufferDesc framebuffer_desc;
-        framebuffer_desc.colorAttachments[0].texture = colorTexture;
-        framebuffer_desc.stencilAttachment.texture = stencilTexture;
-        
-        std::shared_ptr<igl::IFramebuffer> framebuffer =device->createFramebuffer(framebuffer_desc, NULL);
+//        igl::FramebufferDesc framebuffer_desc;
+//        framebuffer_desc.colorAttachments[0].texture = colorTexture;
+//        framebuffer_desc.stencilAttachment.texture = stencilTexture;
+//        
+//        std::shared_ptr<igl::IFramebuffer> framebuffer =device->createFramebuffer(framebuffer_desc, NULL);
         
         std::shared_ptr<igl::ICommandBuffer> commandBuffer = _buffers->commandBuffer;
         std::unique_ptr<igl::IRenderCommandEncoder> encoder = commandBuffer->createRenderCommandEncoder(descriptor, framebuffer);
@@ -1174,7 +1176,7 @@ public:
         } else {  // renders in framebuffer
             buffers->image = s_framebuffer->image;
             MNVGtexture* tex = findTexture(s_framebuffer->image);
-            colorTexture = tex->tex;
+            auto colorTexture = tex->tex;
             textureSize = (vector_uint2){(uint)colorTexture->getSize().width,
                 (uint)colorTexture->getSize().height};
         }
@@ -1197,7 +1199,8 @@ public:
         MNVGcall* call = &buffers->calls[0];
         for (int i = buffers->ncalls; i--; ++call) {
             MNVGblend* blend = &call->blendFunc;
-            updateRenderPipelineStatesForBlend(blend,colorTexture->getProperties().format);
+            
+            updateRenderPipelineStatesForBlend(blend);
             
             if (call->type == MNVG_FILL){
                 _renderEncoder->pushDebugGroupLabel("fill");
@@ -1221,7 +1224,7 @@ public:
         
         _renderEncoder->endEncoding();
         
-        commandBuffer->present(colorTexture);
+        commandBuffer->present(framebuffer->getColorAttachment(0));
         _commandQueue->submit(*commandBuffer, true);
         
         {
@@ -1488,7 +1491,7 @@ public:
     
     void setUniforms(int uniformOffset ,int image) {
         //[_renderEncoder setFragmentBufferOffset:uniformOffset atIndex:0];
-        _renderEncoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->uniformBuffer.get(), uniformOffset);
+        _renderEncoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->uniformBuffer.get(), uniformOffset, _fragSize);
         
         MNVGtexture* tex = (image == 0 ? nullptr : findTexture(image));
         if (tex != nullptr) {
@@ -1552,11 +1555,10 @@ public:
         _renderEncoder->draw(call->triangleCount, 1, call->triangleOffset);
     }
     
-    void updateRenderPipelineStatesForBlend(MNVGblend* blend,
-    igl::TextureFormat pixelFormat ){
+    void updateRenderPipelineStatesForBlend(MNVGblend* blend){
         if (_pipelineState != nullptr &&
             _stencilOnlyPipelineState != nullptr &&
-            piplelinePixelFormat == pixelFormat &&
+            piplelinePixelFormat == framebuffer->getColorAttachment(0)->getProperties().format &&
             _blendFunc->srcRGB == blend->srcRGB &&
             _blendFunc->dstRGB == blend->dstRGB &&
             _blendFunc->srcAlpha == blend->srcAlpha &&
@@ -1574,8 +1576,9 @@ public:
         
         pipelineStateDescriptor.targetDesc.colorAttachments.resize(1);
         igl::RenderPipelineDesc::TargetDesc::ColorAttachment & colorAttachmentDescriptor = pipelineStateDescriptor.targetDesc.colorAttachments[0];
-        colorAttachmentDescriptor.textureFormat = pixelFormat;
-        pipelineStateDescriptor.targetDesc.stencilAttachmentFormat = kStencilFormat;
+        colorAttachmentDescriptor.textureFormat = framebuffer->getColorAttachment(0)->getProperties().format;
+        pipelineStateDescriptor.targetDesc.stencilAttachmentFormat = framebuffer->getStencilAttachment()->getProperties().format;
+        pipelineStateDescriptor.targetDesc.depthAttachmentFormat = framebuffer->getDepthAttachment()->getProperties().format;
 //        pipelineStateDescriptor.fragmentFunction = _fragmentFunction;
 //        pipelineStateDescriptor.vertexFunction = _vertexFunction;
         pipelineStateDescriptor.shaderStages = igl::ShaderStagesCreator::fromRenderModules(*device, _vertexFunction, _fragmentFunction, &result);
@@ -1622,7 +1625,7 @@ public:
         _stencilOnlyPipelineStateTriangleStrip = device->createRenderPipeline(pipelineStateDescriptor,&result);
         IGL_DEBUG_ASSERT(result.isOk());
         
-        piplelinePixelFormat = pixelFormat;
+        piplelinePixelFormat = framebuffer->getColorAttachment(0)->getProperties().format;
     }
     
     // Re-creates stencil texture whenever the specified size is bigger.
@@ -1752,10 +1755,9 @@ static void mtlnvg__renderViewport(void* uptr, float width, float height,
               devicePixelRatio);
 }
 
-void nvgSetColorTexture(NVGcontext* ctx, std::shared_ptr<igl::ITexture> color, std::shared_ptr<igl::ITexture> stencil){
+void nvgSetColorTexture(NVGcontext* ctx, std::shared_ptr<igl::IFramebuffer> framebuffer){
     MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
-    mtl->colorTexture = color;
-    mtl->stencilTexture = stencil;
+    mtl->framebuffer = framebuffer;
 }
 
 void mnvgClearWithColor(NVGcontext* ctx, NVGcolor color) {

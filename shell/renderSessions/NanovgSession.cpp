@@ -226,6 +226,8 @@ void NanovgSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 void NanovgSession::drawTriangle(igl::SurfaceTextures surfaceTextures){
   FramebufferDesc framebufferDesc;
   framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
+  framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
+  framebufferDesc.stencilAttachment.texture = surfaceTextures.depth;
 
   const auto dimensions = surfaceTextures.color->getDimensions();
   framebuffer_ = getPlatform().getDevice().createFramebuffer(framebufferDesc, nullptr);
@@ -245,6 +247,11 @@ void NanovgSession::drawTriangle(igl::SurfaceTextures surfaceTextures){
       desc.targetDesc.depthAttachmentFormat =
           framebuffer_->getDepthAttachment()->getProperties().format;
     }
+      
+      if (framebuffer_->getStencilAttachment()) {
+        desc.targetDesc.stencilAttachmentFormat =
+            framebuffer_->getStencilAttachment()->getProperties().format;
+      }
 
     desc.shaderStages = getShaderStagesForBackend(getPlatform().getDevice());
     renderPipelineState_Triangle_ = getPlatform().getDevice().createRenderPipeline(desc, nullptr);
@@ -284,8 +291,8 @@ void NanovgSession::drawTriangle(igl::SurfaceTextures surfaceTextures){
 void NanovgSession::drawNanovg(float __width, float __height, igl::SurfaceTextures surfaceTextures){
     NVGcontext* vg = nvgContext_;
     
-    const float width = __width / 2.0f;
-    const float height = __height / 2.0f;
+    const float width = __width / 1.0f;
+    const float height = __height / 1.0f;
     
     float pxRatio = 2.0f;
     int mx = 0;
@@ -295,29 +302,29 @@ void NanovgSession::drawNanovg(float __width, float __height, igl::SurfaceTextur
     auto start_ms = getMilliSeconds();
     
     nvgBeginFrame(vg, width,height, pxRatio);
-    nvgSetColorTexture(vg, surfaceTextures.color, surfaceTextures.depth);
+    nvgSetColorTexture(vg, framebuffer_);
 
     times_++;
-    renderDemo(vg, mx,my, width,height, times_ / 60.0f, blowup, &nvgDemoData_);
-
-    renderGraph(vg, 5,5, &fps);
-    renderGraph(vg, 5+200+5,5, &cpuGraph);
-    renderGraph(vg, 5+200+5+200+5,5, &gpuGraph);
+//    renderDemo(vg, mx,my, width,height, times_ / 60.0f, blowup, &nvgDemoData_);
+//
+//    renderGraph(vg, 5,5, &fps);
+//    renderGraph(vg, 5+200+5,5, &cpuGraph);
+//    renderGraph(vg, 5+200+5+200+5,5, &gpuGraph);
     
     {
         //绘制一个矩形
-//        nvgBeginPath(vg);
-//        nvgRect(vg, 100,100, 120,30);
-//        nvgFillColor(vg, nvgRGBA(255,192,0,255));
-//        nvgFill(vg);
+        nvgBeginPath(vg);
+        nvgRect(vg, 100,100, 100,100);
+        nvgFillColor(vg, nvgRGBA(255,192,0,255));
+        nvgFill(vg);
         
         //绘制扣洞矩形
-//        nvgBeginPath(vg);
-//        nvgRect(vg, 100,100, 500,500);
-//        nvgRect(vg, 200,200, 300,300);
-//        nvgPathWinding(vg, NVG_HOLE);    // Mark circle as a hole.
-//        nvgFillColor(vg, nvgRGBA(255,192,0,255));
-//        nvgFill(vg);
+        nvgBeginPath(vg);
+        nvgRect(vg, 100,100, 500,500);
+        nvgRect(vg, 200,200, 300,300);
+        nvgPathWinding(vg, NVG_HOLE);    // Mark circle as a hole.
+        nvgFillColor(vg, nvgRGBA(255,192,0,255));
+        nvgFill(vg);
         
         //绘制图片
 //        NVGpaint imgPaint = nvgImagePattern(vg, 200, 200, 100,100, 0.0f/180.0f*NVG_PI, 2, 0.5);
