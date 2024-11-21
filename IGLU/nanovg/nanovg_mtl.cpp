@@ -1,34 +1,22 @@
 #include "nanovg_mtl.h"
-
 #include <math.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-
 #include <igl/IGL.h>
-//#import <QuartzCore/QuartzCore.h>
-#import <simd/simd.h>
-//#include <TargetConditionals.h>
-
+#include <IGLU/simdtypes/SimdTypes.h>
 #include "nanovg.h"
 #include "shader_metal.h"
 #include "shader_opengl460.h"
 
-//#if TARGET_OS_SIMULATOR
-//#  include "mnvg_bitcode/simulator.h"
-//#elif TARGET_OS_IOS
-//#  include "mnvg_bitcode/ios.h"
-//#elif TARGET_OS_OSX
-//#  include "mnvg_bitcode/macos.h"
-//#elif TARGET_OS_TV
-//#  include "mnvg_bitcode/tvos.h"
-//#else
-//#  define MNVG_INVALID_TARGET
-//#endif
-
 #define kVertexUniformBlockIndex 1
 #define kFragmentUniformBlockIndex 2
+
+struct igl_vector_uint2{
+    uint x;
+    uint y;
+};
 
 typedef enum MNVGvertexInputIndex {
   MNVG_VERTEX_INPUT_INDEX_VERTICES = 0,
@@ -74,13 +62,13 @@ struct MNVGcall {
 typedef struct MNVGcall MNVGcall;
 
 struct MNVGfragUniforms {
-  matrix_float3x3 scissorMat;
-  matrix_float3x3 paintMat;
-  vector_float4 innerCol;
-  vector_float4 outerCol;
-  vector_float2 scissorExt;
-  vector_float2 scissorScale;
-  vector_float2 extent;
+    iglu::simdtypes::float3x3 scissorMat;
+    iglu::simdtypes::float3x3 paintMat;
+    iglu::simdtypes::float4 innerCol;
+    iglu::simdtypes::float4 outerCol;
+    iglu::simdtypes::float2 scissorExt;
+    iglu::simdtypes::float2 scissorScale;
+    iglu::simdtypes::float2 extent;
   float radius;
   float feather;
   float strokeMult;
@@ -200,17 +188,17 @@ static int mtlnvg__maxVertCount(const NVGpath* paths, int npaths,
   return count;
 }
 
-static vector_float4 mtlnvg__premulColor(NVGcolor c) {
+static iglu::simdtypes::float4 mtlnvg__premulColor(NVGcolor c) {
   c.r *= c.a;
   c.g *= c.a;
   c.b *= c.a;
-  return (vector_float4){c.r, c.g, c.b, c.a};
+  return (iglu::simdtypes::float4){c.r, c.g, c.b, c.a};
 }
 
-static void mtlnvg__xformToMat3x3(matrix_float3x3* m3, float* t) {
-  *m3 = matrix_from_columns((vector_float3){t[0], t[1], 0.0f},
-                            (vector_float3){t[2], t[3], 0.0f},
-                            (vector_float3){t[4], t[5], 1.0f});
+static void mtlnvg__xformToMat3x3(iglu::simdtypes::float3x3* m3, float* t) {
+  *m3 = iglu::simdtypes::float3x3((iglu::simdtypes::float3){t[0], t[1], 0.0f},
+                            (iglu::simdtypes::float3){t[2], t[3], 0.0f},
+                            (iglu::simdtypes::float3){t[4], t[5], 1.0f});
 }
 
 static void mtlnvg__vset(NVGvertex* vtx, float x, float y, float u, float v) {
@@ -262,7 +250,7 @@ public:
     int _fragSize;
     int _indexSize;
     int _flags;
-    vector_uint2 viewPortSize;
+    igl_vector_uint2 viewPortSize;
     igl::Color clearColor{1,1,1};
     bool clearBufferOnFlush;
     
@@ -458,9 +446,7 @@ public:
         frag->outerCol = mtlnvg__premulColor(paint->outerColor);
         
         if (scissor->extent[0] < -0.5f || scissor->extent[1] < -0.5f) {
-            frag->scissorMat = matrix_from_rows((vector_float3){0, 0, 0},
-                                                (vector_float3){0, 0, 0},
-                                                (vector_float3){0, 0, 0});
+            frag->scissorMat = iglu::simdtypes::float3x3(0);
             frag->scissorExt.x = 1.0f;
             frag->scissorExt.y = 1.0f;
             frag->scissorScale.x = 1.0f;
@@ -474,7 +460,7 @@ public:
             frag->scissorScale.y = sqrtf(scissor->xform[1] * scissor->xform[1] + scissor->xform[3] * scissor->xform[3]) / fringe;
         }
         
-        frag->extent = (vector_float2){paint->extent[0], paint->extent[1]};
+        frag->extent = iglu::simdtypes::float2{paint->extent[0], paint->extent[1]};
         frag->strokeMult = (width * 0.5f + fringe * 0.5f) / fringe;
         frag->strokeThr = strokeThr;
         
@@ -1154,10 +1140,10 @@ public:
         commandBufferDesc.debugName = "iglNanoVG";
         std::shared_ptr<igl::ICommandBuffer> commandBuffer = _commandQueue->createCommandBuffer(commandBufferDesc, NULL);
 //        std::shared_ptr<igl::ITexture> colorTexture = nullptr;;
-        vector_uint2 textureSize;
+        igl_vector_uint2 textureSize;
         
         _buffers->commandBuffer = commandBuffer;
-        __block MNVGbuffers* buffers = _buffers;
+        MNVGbuffers* buffers = _buffers;
 //        [commandBuffer enqueue];
 //        [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
 //            buffers.isBusy = false;
@@ -1177,7 +1163,7 @@ public:
             buffers->image = s_framebuffer->image;
             MNVGtexture* tex = findTexture(s_framebuffer->image);
             auto colorTexture = tex->tex;
-            textureSize = (vector_uint2){(uint)colorTexture->getSize().width,
+            textureSize = (igl_vector_uint2){(uint)colorTexture->getSize().width,
                 (uint)colorTexture->getSize().height};
         }
         if (textureSize.x == 0 || textureSize.y == 0) return;
@@ -1460,7 +1446,7 @@ public:
     void renderViewportWithWidth(float width,
     float height,
     float devicePixelRatio) {
-        viewPortSize = (vector_uint2){(unsigned int)(width * devicePixelRatio),
+        viewPortSize = (igl_vector_uint2){(unsigned int)(width * devicePixelRatio),
             (unsigned int)(height * devicePixelRatio)};
         
         //dispatch_semaphore_wait(_semaphore, DISPATCH_TIME_FOREVER);
@@ -1481,12 +1467,12 @@ public:
 //            _buffers->viewSizeBuffer = [_metalLayer.device
 //                                       newBufferWithLength:sizeof(vector_float2)
 //                                       options:kMetalBufferOptions];
-            igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform, viewSize, sizeof(vector_float2));
+            igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform, viewSize, sizeof(iglu::simdtypes::float2));
             desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
             _buffers->viewSizeBuffer = device->createBuffer(desc, NULL);
         }
 
-        _buffers->viewSizeBuffer->upload(viewSize, igl::BufferRange(sizeof(vector_float2)));
+        _buffers->viewSizeBuffer->upload(viewSize, igl::BufferRange(sizeof(iglu::simdtypes::float2)));
     }
     
     void setUniforms(int uniformOffset ,int image) {
@@ -1629,7 +1615,7 @@ public:
     }
     
     // Re-creates stencil texture whenever the specified size is bigger.
-    void updateStencilTextureToSize(vector_uint2* size) {
+    void updateStencilTextureToSize(igl_vector_uint2* size) {
         if (_buffers->stencilTexture != nullptr &&
             (_buffers->stencilTexture->getSize().width < size->x ||
              _buffers->stencilTexture->getSize().height < size->y)) {
@@ -1878,7 +1864,7 @@ enum MNVGTarget mnvgTarget() {
 #elif TARGET_OS_TV
   return MNVG_TVOS;
 #else
-  return MNVG_UNKfalseWN;
+  return MNVG_UNKNOWN;
 #endif
 }
 
