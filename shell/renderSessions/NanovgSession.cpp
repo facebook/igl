@@ -17,6 +17,7 @@
 #include <shell/shared/renderSession/ShellParams.h>
 #include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/fileLoader/FileLoader.h>
+#include <filesystem>
 
 namespace igl::shell {
 
@@ -200,10 +201,20 @@ void NanovgSession::initialize() noexcept {
     
 //    auto bb = getPlatform().loadTexture("orange.png");
 //    
-//    auto aa = getPlatform().getImageLoader().fileLoader().fullPath("image1.jpg");
+    auto aa = getPlatform().getImageLoader().fileLoader().fullPath("image1.jpg");
     
     SetImageFullPathCallback([this](const std::string & name){
+#ifdef IGL_PLATFORM_ANDROID
+        auto fullPath = std::filesystem::path("/data/data/com.facebook.igl.shell/files/") / name;
+        if (std::filesystem::exists(fullPath)) {
+            return fullPath.string();
+        } else {
+            IGL_DEBUG_ASSERT(false);
+            return std::string("");
+        }
+#else
         return getPlatform().getImageLoader().fileLoader().fullPath(name);
+#endif
     });
     
     if (loadDemoData(nvgContext_, &nvgDemoData_) == -1){
