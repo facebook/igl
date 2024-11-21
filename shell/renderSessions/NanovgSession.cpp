@@ -198,9 +198,9 @@ void NanovgSession::initialize() noexcept {
     
     nvgContext_ = getPlatform().nanovgContext;
     
-    auto bb = getPlatform().loadTexture("orange.png");
-    
-    auto aa = getPlatform().getImageLoader().fileLoader().fullPath("image1.jpg");
+//    auto bb = getPlatform().loadTexture("orange.png");
+//    
+//    auto aa = getPlatform().getImageLoader().fileLoader().fullPath("image1.jpg");
     
     SetImageFullPathCallback([this](const std::string & name){
         return getPlatform().getImageLoader().fileLoader().fullPath(name);
@@ -291,8 +291,8 @@ void NanovgSession::drawTriangle(igl::SurfaceTextures surfaceTextures){
 void NanovgSession::drawNanovg(float __width, float __height, igl::SurfaceTextures surfaceTextures){
     NVGcontext* vg = nvgContext_;
     
-    const float width = __width / 1.0f;
-    const float height = __height / 1.0f;
+    const float width = __width / 2.0f;
+    const float height = __height / 2.0f;
     
     float pxRatio = 2.0f;
     int mx = 0;
@@ -305,35 +305,35 @@ void NanovgSession::drawNanovg(float __width, float __height, igl::SurfaceTextur
     nvgSetColorTexture(vg, framebuffer_);
 
     times_++;
-//    renderDemo(vg, mx,my, width,height, times_ / 60.0f, blowup, &nvgDemoData_);
-//
-//    renderGraph(vg, 5,5, &fps);
-//    renderGraph(vg, 5+200+5,5, &cpuGraph);
-//    renderGraph(vg, 5+200+5+200+5,5, &gpuGraph);
+    renderDemo(vg, mx,my, width,height, times_ / 60.0f, blowup, &nvgDemoData_);
+
+    renderGraph(vg, 5,5, &fps);
+    renderGraph(vg, 5+200+5,5, &cpuGraph);
+    renderGraph(vg, 5+200+5+200+5,5, &gpuGraph);
     
     {
-        //绘制一个矩形
-        nvgBeginPath(vg);
-        nvgRect(vg, 100,100, 100,100);
-        nvgFillColor(vg, nvgRGBA(255,192,0,255));
-        nvgFill(vg);
-        
-        //绘制扣洞矩形
-        nvgBeginPath(vg);
-        nvgRect(vg, 100,100, 500,500);
-        nvgRect(vg, 200,200, 300,300);
-        nvgPathWinding(vg, NVG_HOLE);    // Mark circle as a hole.
-        nvgFillColor(vg, nvgRGBA(255,192,0,255));
-        nvgFill(vg);
-        
-        //绘制图片
+//        //绘制一个矩形
+//        nvgBeginPath(vg);
+//        nvgRect(vg, 100,100, 10,10);
+//        nvgFillColor(vg, nvgRGBA(255,192,0,255));
+//        nvgFill(vg);
+//        
+//        //绘制扣洞矩形
+//        nvgBeginPath(vg);
+//        nvgRect(vg, 100,100, 50,50);
+//        nvgRect(vg, 110,110, 10,10);
+//        nvgPathWinding(vg, NVG_HOLE);    // Mark circle as a hole.
+//        nvgFillColor(vg, nvgRGBA(255,192,0,255));
+//        nvgFill(vg);
+//        
+//        //绘制图片
 //        NVGpaint imgPaint = nvgImagePattern(vg, 200, 200, 100,100, 0.0f/180.0f*NVG_PI, 2, 0.5);
 //        nvgBeginPath(vg);
 //        nvgRect(vg, 100,100, 500,500);
 //        nvgFillPaint(vg, imgPaint);
 //        nvgFill(vg);
-        
-        //绘制文字
+//        
+//        //绘制文字
 //        nvgFontSize(vg, 150.0f);
 //        nvgFontFace(vg, "sans-bold");
 //        nvgTextAlign(vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
