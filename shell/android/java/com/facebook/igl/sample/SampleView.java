@@ -130,6 +130,11 @@ public class SampleView extends GLSurfaceView {
     @Override
     public EGLSurface createWindowSurface(
         EGL10 egl10, EGLDisplay eglDisplay, EGLConfig eglConfig, Object nativeWindow) {
+
+      String eglExtensionString = egl10.eglQueryString(eglDisplay, egl10.EGL_EXTENSIONS);
+      if (!eglExtensionString.contains("EGL_KHR_gl_colorspace")) {
+        return egl10.eglCreateWindowSurface(eglDisplay, eglConfig, nativeWindow, null);
+      }
       int[] configAttribs = {
         EGL_GL_COLORSPACE_KHR,
         (mIsSRGBColorSpace ? EGL_GL_COLORSPACE_SRGB_KHR : EGL_GL_COLORSPACE_LINEAR_KHR),
