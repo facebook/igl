@@ -43,7 +43,7 @@ GLenum toGlPrimitive(PrimitiveType t) {
   return result;
 }
 
-int toGlType(IndexFormat format) {
+GLenum toGlType(IndexFormat format) {
   switch (format) {
   case IndexFormat::UInt8:
     return GL_UNSIGNED_BYTE;
@@ -55,7 +55,7 @@ int toGlType(IndexFormat format) {
   IGL_UNREACHABLE_RETURN(GL_UNSIGNED_INT)
 }
 
-uint8_t getIndexByteSize(int indexType) {
+uint8_t getIndexByteSize(GLenum indexType) {
   switch (indexType) {
   case GL_UNSIGNED_BYTE:
     return 1u;
