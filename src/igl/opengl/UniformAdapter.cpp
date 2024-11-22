@@ -25,6 +25,8 @@ UniformAdapter::UniformAdapter(const IContext& context, PipelineType type) : pip
   } else {
     maxUniforms_ = deviceFeatures.getMaxComputeUniforms();
   }
+    
+  deviceFeatures.getFeatureLimits(DeviceFeatureLimits::BufferAlignment, unformBufferAlignment_);
 
   uniformBuffersDirtyMask_ = 0;
 #if IGL_DEBUG
@@ -178,6 +180,11 @@ void UniformAdapter::bindToPipeline(IContext& context) {
       auto* bufferState = static_cast<UniformBlockBuffer*>(uniformBinding.buffer);
       IGL_DEBUG_ASSERT(bufferState);
       if (uniformBinding.offset) {
+        IGL_DEBUG_ASSERT(uniformBinding.offset % unformBufferAlignment_ == 0,
+                        "Offset{%d} must be a multiple of unformBufferAlignment{%d}",
+                        uniformBinding.offset,
+                        unformBufferAlignment_);
+          
         bufferState->bindRange(bindingIndex, uniformBinding.offset, uniformBinding.size, nullptr);
       } else {
         bufferState->bindBase(bindingIndex, nullptr);
