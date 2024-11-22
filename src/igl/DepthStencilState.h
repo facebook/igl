@@ -122,7 +122,7 @@ struct DepthStencilStateDesc {
    * @brief Identifier used for debugging
    */
   std::string debugName;
-    
+  
   /**
    * @brief The comparison operation to use for depth testing.
    */

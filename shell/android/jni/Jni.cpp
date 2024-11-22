@@ -203,6 +203,10 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_setClearColorValue(
                                                                                 jfloat g,
                                                                                 jfloat b,
                                                                                 jfloat a);
+
+JNIEXPORT bool JNICALL Java_com_facebook_igl_shell_SampleLib_isSRGBTextureFormat(JNIEnv* env,
+                                                                                 jobject obj,
+                                                                                 int textureFormat);
 };
 
 JNIEXPORT jobjectArray JNICALL
@@ -363,6 +367,14 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_setClearColorValue(
   }
 
   renderers[*activeRendererIndex]->setClearColorValue(r, g, b, a);
+}
+
+JNIEXPORT bool JNICALL
+Java_com_facebook_igl_shell_SampleLib_isSRGBTextureFormat(JNIEnv* env,
+                                                          jobject obj,
+                                                          int textureFormat) {
+  return textureFormat == (int)igl::TextureFormat::RGBA_SRGB ||
+         textureFormat == (int)igl::TextureFormat::BGRA_SRGB;
 }
 
 } // namespace igl::samples

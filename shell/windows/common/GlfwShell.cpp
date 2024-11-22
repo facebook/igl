@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #include <shell/windows/common/GlfwShell.h>
 
 #include <shell/shared/input/InputDispatcher.h>

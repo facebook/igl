@@ -7,6 +7,8 @@
 
 #pragma once
 
+// @fb-only
+
 #include <igl/Macros.h>
 
 #if IGL_PLATFORM_IOS_SIMULATOR || IGL_PLATFORM_IOS || IGL_PLATFORM_MACCATALYST || IGL_ANGLE || \

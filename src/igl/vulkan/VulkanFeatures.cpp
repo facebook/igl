@@ -41,8 +41,8 @@ bool VulkanFeatures::hasExtension(const char* ext) const {
 
 void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
   auto& features = VkPhysicalDeviceFeatures2_.features;
-  features.dualSrcBlend = VK_TRUE;
-  features.shaderInt16 = VK_TRUE;
+  features.dualSrcBlend = config_.enableDualSrcBlend ? VK_TRUE : VK_FALSE;
+  features.shaderInt16 = config_.enableShaderInt16 ? VK_TRUE : VK_FALSE;
   features.multiDrawIndirect = VK_TRUE;
   features.drawIndirectFirstInstance = VK_TRUE;
   features.depthBiasClamp = VK_TRUE;
@@ -67,7 +67,8 @@ void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
   }
 #endif
 
-  VkPhysicalDevice16BitStorageFeatures_.storageBuffer16BitAccess = VK_TRUE;
+  VkPhysicalDevice16BitStorageFeatures_.storageBuffer16BitAccess =
+      config_.enableStorageBuffer16BitAccess ? VK_TRUE : VK_FALSE;
 
 #if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
   if (config_.enableBufferDeviceAddress) {
@@ -76,7 +77,8 @@ void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
 #endif
   VkPhysicalDeviceMultiviewFeatures_.multiview = VK_TRUE;
   VkPhysicalDeviceSamplerYcbcrConversionFeatures_.samplerYcbcrConversion = VK_TRUE;
-  VkPhysicalDeviceShaderDrawParametersFeatures_.shaderDrawParameters = VK_TRUE;
+  VkPhysicalDeviceShaderDrawParametersFeatures_.shaderDrawParameters =
+      config_.enableShaderDrawParameters ? VK_TRUE : VK_FALSE;
 }
 
 igl::Result VulkanFeatures::checkSelectedFeatures(

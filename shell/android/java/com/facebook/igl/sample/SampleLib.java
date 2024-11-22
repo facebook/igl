@@ -60,6 +60,8 @@ public class SampleLib {
 
   public static native void setClearColorValue(float r, float g, float b, float a);
 
+  public static native boolean isSRGBTextureFormat(int textureFormat);
+
   public static native void surfaceDestroyed(Surface surface);
 
   public static class RenderSessionConfig {
