@@ -320,6 +320,13 @@ void RenderPipelineState::unbindVertexAttributes() {
   activeAttributesLocations_.clear();
 }
 
+void RenderPipelineState::unbindPrePipelineVertexAttributes() {
+  for (const auto& l : prevPipelineStateAttributesLocations_) {
+    getContext().disableVertexAttribArray(l);
+  }
+  prevPipelineStateAttributesLocations_.clear();
+}
+
 // Looks up the location the of the specified texture unit via its name,
 // bind the unit to the location, then activate the unit.
 //

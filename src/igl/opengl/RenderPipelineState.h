@@ -71,6 +71,16 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
     return static_cast<ShaderStages*>(desc_.shaderStages.get());
   }
 
+  void savePrePipelineStateAttributesLocations(RenderPipelineState& prevPipelineState) {
+    prevPipelineStateAttributesLocations_ = std::move(prevPipelineState.activeAttributesLocations_);
+  }
+
+  void clearActiveAttributesLocations() {
+    activeAttributesLocations_.clear();
+  }
+
+  void unbindPrePipelineVertexAttributes();
+
  private:
   // Tracks a list of attribute locations associated with a bufferIndex
   std::vector<int> bufferAttribLocations_[IGL_VERTEX_BUFFER_MAX];
@@ -80,6 +90,7 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
   std::array<GLint, IGL_TEXTURE_SAMPLERS_MAX> unitSamplerLocationMap_{};
   std::unordered_map<int, size_t> uniformBlockBindingMap_;
   std::array<GLboolean, 4> colorMask_ = {GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE};
+  std::vector<int> prevPipelineStateAttributesLocations_;
   std::vector<int> activeAttributesLocations_;
   BlendMode blendMode_ = {GL_FUNC_ADD, GL_FUNC_ADD, GL_ONE, GL_ZERO, GL_ONE, GL_ZERO};
   bool blendEnabled_ = false;
