@@ -322,9 +322,9 @@ void NanovgSession::drawNanovg(float __width, float __height, std::shared_ptr<ig
     times_++;
     renderDemo(vg, mx,my, width,height, times_ / 60.0f, blowup, &nvgDemoData_);
 
-//    renderGraph(vg, 5,5, &fps);
-//    renderGraph(vg, 5+200+5,5, &cpuGraph);
-//    renderGraph(vg, 5+200+5+200+5,5, &gpuGraph);
+    renderGraph(vg, 5,5, &fps);
+    renderGraph(vg, 5+200+5,5, &cpuGraph);
+    renderGraph(vg, 5+200+5+200+5,5, &gpuGraph);
     
     {
 //        //绘制一个矩形
@@ -347,8 +347,8 @@ void NanovgSession::drawNanovg(float __width, float __height, std::shared_ptr<ig
 //        nvgRect(vg, 100,100, 500,500);
 //        nvgFillPaint(vg, imgPaint);
 //        nvgFill(vg);
-//        
-//        //绘制文字
+////        
+////        //绘制文字
 //        nvgFontSize(vg, 150.0f);
 //        nvgFontFace(vg, "sans-bold");
 //        nvgTextAlign(vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);

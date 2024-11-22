@@ -16,7 +16,7 @@ import android.view.Surface;
 public class SampleLib {
 
   static {
-    System.loadLibrary("ColorSession");
+    System.loadLibrary("NanovgSession");
   }
 
   // Must match igl/Common.h

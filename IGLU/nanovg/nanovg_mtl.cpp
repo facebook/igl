@@ -326,6 +326,7 @@ public:
             
             igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform, _buffers->uniforms.data(), _fragSize * cuniforms);
             desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
+            desc.debugName = "fragment_uniform_buffer";
             std::shared_ptr<igl::IBuffer> buffer = device->createBuffer(desc, NULL);
             
 //            unsigned char* uniforms = NULL;// [buffer contents];
@@ -355,6 +356,7 @@ public:
             _buffers->indexes.resize(cindexes);
             
             igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Index, _buffers->indexes.data(), _indexSize * cindexes);
+            desc.debugName = "index_buffer";
             std::shared_ptr<igl::IBuffer> buffer = device->createBuffer(desc, NULL);
             
 //            uint32_t* indexes ;// = [buffer contents];
@@ -399,6 +401,7 @@ public:
             _buffers->verts.resize(cverts);
             
             igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Vertex, _buffers->verts.data(), sizeof(NVGvertex) * cverts);
+            desc.debugName = "vertex_buffer";
             std::shared_ptr<igl::IBuffer> buffer = device->createBuffer(desc, NULL);
             
 //            NVGvertex* verts ;//= [buffer contents];
@@ -503,10 +506,18 @@ public:
         return 1;
     }
     
+    void bindRenderPipeline(const std::shared_ptr<igl::IRenderPipelineState>& pipelineState){
+        _renderEncoder->bindRenderPipelineState(pipelineState);
+//        renderCommandEncoderWithColorTexture();
+        _renderEncoder->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *_buffers->vertBuffer, 0);
+        _renderEncoder->bindBuffer(kVertexUniformBlockIndex, _buffers->viewSizeBuffer.get(), 0);
+        _renderEncoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->uniformBuffer.get(), 0);
+    }
+    
     void convexFill(MNVGcall*call) {
         const int kIndexBufferOffset = call->indexOffset * _indexSize;
+        bindRenderPipeline(_pipelineState);
         setUniforms(call->uniformOffset,call->image);
-        _renderEncoder->bindRenderPipelineState(_pipelineState);
         if (call->indexCount > 0) {
 //            [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
 //                                       indexCount:call->indexCount
@@ -522,7 +533,7 @@ public:
 //            [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
 //                               vertexStart:call->strokeOffset
 //                               vertexCount:call->strokeCount];
-            _renderEncoder->bindRenderPipelineState(_pipelineStateTriangleStrip);
+            bindRenderPipeline(_pipelineStateTriangleStrip);
             _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
         }
     }
@@ -532,8 +543,8 @@ public:
         const int kIndexBufferOffset = call->indexOffset * _indexSize;
         //todo
 //        [_renderEncoder setCullMode:MTLCullModeNone];
+        bindRenderPipeline(_stencilOnlyPipelineState);
         _renderEncoder->bindDepthStencilState(_fillShapeStencilState);
-        _renderEncoder->bindRenderPipelineState(_stencilOnlyPipelineState);
         if (call->indexCount > 0) {
 //            [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
 //                                       indexCount:call->indexCount
@@ -547,7 +558,7 @@ public:
         // Restores states.
         //todo
 //        [_renderEncoder setCullMode:MTLCullModeBack];
-        _renderEncoder->bindRenderPipelineState(_pipelineStateTriangleStrip);
+        bindRenderPipeline(_pipelineStateTriangleStrip);
         
         // Draws anti-aliased fragments.
         setUniforms(call->uniformOffset ,call->image);
@@ -591,19 +602,19 @@ public:
     }
     
     std::shared_ptr<igl::IRenderCommandEncoder> renderCommandEncoderWithColorTexture() {
-        igl::RenderPassDesc descriptor;
-        
-        descriptor.colorAttachments.resize(1);
-        descriptor.colorAttachments[0].clearColor = clearColor;
-        descriptor.colorAttachments[0].loadAction = \
-        clearBufferOnFlush ? igl::LoadAction::Clear : igl::LoadAction::Load;
-        descriptor.colorAttachments[0].storeAction = igl::StoreAction::Store;
+//        igl::RenderPassDesc descriptor;
+//        
+//        descriptor.colorAttachments.resize(1);
+//        descriptor.colorAttachments[0].clearColor = clearColor;
+//        descriptor.colorAttachments[0].loadAction = \
+//        clearBufferOnFlush ? igl::LoadAction::Clear : igl::LoadAction::Load;
+//        descriptor.colorAttachments[0].storeAction = igl::StoreAction::Store;
 //        descriptor.colorAttachments[0].texture = colorTexture;
         clearBufferOnFlush = false;
         
-        descriptor.stencilAttachment.clearStencil = 0;
-        descriptor.stencilAttachment.loadAction = igl::LoadAction::Clear;
-        descriptor.stencilAttachment.storeAction = igl::StoreAction::DontCare;
+//        descriptor.stencilAttachment.clearStencil = 0;
+//        descriptor.stencilAttachment.loadAction = igl::LoadAction::Clear;
+//        descriptor.stencilAttachment.storeAction = igl::StoreAction::DontCare;
 //        descriptor.stencilAttachment.texture = _buffers->stencilTexture;
         
 //        igl::FramebufferDesc framebuffer_desc;
@@ -1495,6 +1506,7 @@ public:
 //                                       options:kMetalBufferOptions];
             igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform, viewSize, sizeof(iglu::simdtypes::float2));
             desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
+            desc.debugName = "vertex_viewSize_buffer";
             _buffers->viewSizeBuffer = device->createBuffer(desc, NULL);
         }
 
@@ -1522,9 +1534,10 @@ public:
         
         if (_flags & NVG_STENCIL_STROKES) {
             // Fills the stroke base without overlap.
+            bindRenderPipeline(_pipelineStateTriangleStrip);
             setUniforms(call->uniformOffset + _fragSize, call->image);
             _renderEncoder->bindDepthStencilState(_strokeShapeStencilState);
-            _renderEncoder->bindRenderPipelineState(_pipelineStateTriangleStrip);
+            
 //            _renderEncoder->drawPrimitives:MTLPrimitiveTypeTriangleStrip
 //                               vertexStart:call->strokeOffset
 //                               vertexCount:call->strokeCount];
@@ -1539,8 +1552,8 @@ public:
             _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
             
             // Clears stencil buffer.
+            bindRenderPipeline(_stencilOnlyPipelineStateTriangleStrip);
             _renderEncoder->bindDepthStencilState(_strokeClearStencilState);
-            _renderEncoder->bindRenderPipelineState(_stencilOnlyPipelineStateTriangleStrip);
 //            _renderEncoder->drawPrimitives:MTLPrimitiveTypeTriangleStrip
 //                               vertexStart:call->strokeOffset
 //                               vertexCount:call->strokeCount];
@@ -1548,8 +1561,8 @@ public:
             _renderEncoder->bindDepthStencilState(_defaultStencilState);
         } else {
             // Draws strokes.
+            bindRenderPipeline(_pipelineStateTriangleStrip);
             setUniforms(call->uniformOffset ,call->image);
-            _renderEncoder->bindRenderPipelineState(_pipelineStateTriangleStrip);
 //            _renderEncoder->drawPrimitives:MTLPrimitiveTypeTriangleStrip
 //                               vertexStart:call->strokeOffset
 //                               vertexCount:call->strokeCount];
@@ -1558,8 +1571,8 @@ public:
     }
     
     void triangles(MNVGcall*call) {
+        bindRenderPipeline(_pipelineState);
         setUniforms(call->uniformOffset, call->image);
-        _renderEncoder->bindRenderPipelineState(_pipelineState);
 //        _renderEncoder->drawPrimitives:MTLPrimitiveTypeTriangle
 //                           vertexStart:call->triangleOffset
 //                           vertexCount:call->triangleCount];
