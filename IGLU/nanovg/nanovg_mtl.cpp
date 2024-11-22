@@ -750,10 +750,6 @@ public:
             _fragmentFunction = shader_stages->getFragmentModule();
         }
         
-//        igl::CommandQueueDesc queue_desc;
-//        queue_desc.type = igl::CommandQueueType::Graphics;
-//        _commandQueue = device->createCommandQueue(queue_desc, &result);
-        
         // Initializes the number of available buffers.
         if (_flags & NVG_TRIPLE_BUFFER) {
             _maxBuffers = 3;
@@ -762,15 +758,14 @@ public:
         } else {
             _maxBuffers = 1;
         }
-        //_cbuffers = [NSMutableArray arrayWithCapacity:_maxBuffers];
+        _maxBuffers = 3;
+        
         for (int i = _maxBuffers; i--;) {
             _cbuffers.emplace_back( new MNVGbuffers() );
         }
         clearBufferOnFlush = false;
-//        _semaphore = dispatch_semaphore_create(_maxBuffers);
         
         // Initializes vertex descriptor.
-//        _vertexDescriptor = [MTLVertexDescriptor vertexDescriptor];
         _vertexDescriptor.numAttributes = 2;
         _vertexDescriptor.attributes[0].format = igl::VertexAttributeFormat::Float2;
         _vertexDescriptor.attributes[0].name = "pos";
@@ -790,10 +785,8 @@ public:
         
         // Initialzes textures.
         _textureId = 0;
-//        _textures = [NSMutableArray array];
         
         // Initializes default sampler descriptor.
-//        MTLSamplerDescriptor* samplerDescriptor = [MTLSamplerDescriptor new];
         igl::SamplerStateDesc samplerDescriptor;
         samplerDescriptor.debugName = "pseudoSampler";
         _pseudoSampler = device->createSamplerState(samplerDescriptor, &result);
@@ -1204,7 +1197,7 @@ public:
                 (uint)colorTexture->getSize().height};
         }
         if (textureSize.x == 0 || textureSize.y == 0) return;
-        updateStencilTextureToSize(&textureSize);
+//        updateStencilTextureToSize(&textureSize);
         
         _buffers->uploadToGpu();
         
@@ -1480,20 +1473,25 @@ public:
         return 1;
     }
     
+    int bufferIndex = 0;
+    
     void renderViewportWithWidth(float width,
     float height,
     float devicePixelRatio) {
         viewPortSize = (igl_vector_uint2){(unsigned int)(width * devicePixelRatio),
             (unsigned int)(height * devicePixelRatio)};
         
+        bufferIndex = (bufferIndex + 1)%3;
+        _buffers = _cbuffers[bufferIndex];
+        
         //dispatch_semaphore_wait(_semaphore, DISPATCH_TIME_FOREVER);
-        for (MNVGbuffers* buffers : _cbuffers) {
-            if (!buffers->isBusy) {
-                buffers->isBusy = true;
-                _buffers = buffers;
-                break;
-            }
-        }
+//        for (MNVGbuffers* buffers : _cbuffers) {
+//            if (!buffers->isBusy) {
+//                buffers->isBusy = true;
+//                _buffers = buffers;
+//                break;
+//            }
+//        }
         
         float viewSize[2] ;//= (float*)[_buffers->viewSizeBuffer contents];
         viewSize[0] = width;
