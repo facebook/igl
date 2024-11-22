@@ -196,6 +196,9 @@ void NanovgSession::initialize() noexcept {
   renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
   renderPass_.colorAttachments[0].clearColor = igl::Color(0.3f, 0.3f, 0.32f, 1.0f);//getPreferredClearColor();
   renderPass_.depthAttachment.loadAction = LoadAction::Clear;
+  renderPass_.depthAttachment.clearDepth = 1.0;
+  renderPass_.stencilAttachment.loadAction = LoadAction::Clear;
+  renderPass_.stencilAttachment.clearStencil = 0;
     
     nvgContext_ = getPlatform().nanovgContext;
     
