@@ -93,6 +93,8 @@ EGLint attribs[] = {
     // 16-bit depth
     EGL_DEPTH_SIZE,
     16,
+    EGL_STENCIL_SIZE,
+    8,
     EGL_SURFACE_TYPE,
     EGL_PBUFFER_BIT,
     // want opengl-es 2.x conformant CONTEXT
