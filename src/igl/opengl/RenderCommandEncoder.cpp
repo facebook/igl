@@ -43,7 +43,7 @@ GLenum toGlPrimitive(PrimitiveType t) {
   return result;
 }
 
-int toGlType(IndexFormat format) {
+GLenum toGlType(IndexFormat format) {
   switch (format) {
   case IndexFormat::UInt8:
     return GL_UNSIGNED_BYTE;
@@ -53,6 +53,18 @@ int toGlType(IndexFormat format) {
     return GL_UNSIGNED_INT;
   }
   IGL_UNREACHABLE_RETURN(GL_UNSIGNED_INT)
+}
+
+uint8_t getIndexByteSize(GLenum indexType) {
+  switch (indexType) {
+  case GL_UNSIGNED_BYTE:
+    return 1u;
+  case GL_UNSIGNED_SHORT:
+    return 2u;
+  case GL_UNSIGNED_INT:
+    return 4u;
+  }
+  IGL_UNREACHABLE_RETURN(4u)
 }
 
 } // namespace
@@ -361,8 +373,7 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   IGL_DEBUG_ASSERT(baseInstance == 0, "Instancing is not implemented");
   IGL_DEBUG_ASSERT(indexType_, "No index buffer bound");
 
-  const size_t indexOffsetBytes =
-      static_cast<size_t>(firstIndex) * (indexType_ == GL_UNSIGNED_INT ? 4u : 2u);
+  const size_t indexOffsetBytes = static_cast<size_t>(firstIndex) * getIndexByteSize(indexType_);
 
   if (IGL_DEBUG_VERIFY(adapter_ && indexType_)) {
     getCommandBuffer().incrementCurrentDrawCount();

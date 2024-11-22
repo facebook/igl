@@ -94,7 +94,7 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
  private:
   std::unique_ptr<RenderCommandAdapter> adapter_;
   bool scissorEnabled_ = false;
-  int indexType_ = 0;
+  GLenum indexType_ = 0;
   void* indexBufferOffset_ = nullptr;
   std::shared_ptr<igl::opengl::Framebuffer> resolveFramebuffer_;
   std::shared_ptr<igl::opengl::Framebuffer> framebuffer_;
