@@ -183,7 +183,7 @@ void UniformAdapter::bindToPipeline(IContext& context) {
         IGL_DEBUG_ASSERT(uniformBinding.offset % uniformBufferAlignment_ == 0,
                         "Offset{%d} must be a multiple of uniformBufferAlignment{%d}",
                         uniformBinding.offset,
-                        unformBufferAlignment_);
+                        uniformBufferAlignment_);
           
         bufferState->bindRange(bindingIndex, uniformBinding.offset, uniformBinding.size, nullptr);
       } else {
