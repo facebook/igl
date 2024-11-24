@@ -28,13 +28,11 @@ class NanovgSession : public RenderSession {
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
     
 private:
-    void drawTriangle(igl::SurfaceTextures surfaceTextures);
     void drawNanovg(float width, float height, std::shared_ptr<igl::IRenderCommandEncoder> command);
 
  private:
   std::shared_ptr<ICommandQueue> commandQueue_;
   RenderPassDesc renderPass_;
-  std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
     
     NVGcontext *nvgContext_ = NULL;
     int times_;
