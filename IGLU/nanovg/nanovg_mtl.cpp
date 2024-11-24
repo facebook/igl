@@ -129,14 +129,7 @@ struct MNVGbuffers{
 // Keeps the weak reference to the currently binded framebuffer.
 MNVGframebuffer* s_framebuffer = NULL;
 
-//const MTLResourceOptions kMetalBufferOptions = \
-//    (MTLResourceCPUCacheModeWriteCombined | MTLResourceStorageModeShared);
-
-#if TARGET_OS_SIMULATOR
 const igl::TextureFormat kStencilFormat = igl::TextureFormat::S8_UInt_Z32_UNorm;
-#else
-const igl::TextureFormat kStencilFormat = igl::TextureFormat::S8_UInt_Z32_UNorm;
-#endif  // TARGET_OS_SIMULATOR
 
 static bool mtlnvg_convertBlendFuncFactor(int factor, igl::BlendFactor* result) {
   if (factor == NVG_ZERO)
@@ -246,7 +239,6 @@ void mnvgDeleteFramebuffer(MNVGframebuffer* framebuffer) {
 class MNVGcontext{
 public:
     igl::IDevice * device;
-//    std::shared_ptr<igl::ICommandQueue> _commandQueue;
     std::shared_ptr<igl::IRenderCommandEncoder> _renderEncoder;
     
     int _fragSize;
@@ -255,9 +247,6 @@ public:
     igl_vector_uint2 viewPortSize;
     igl::Color clearColor{1,1,1};
     bool clearBufferOnFlush;
-    
-//    std::shared_ptr<igl::ITexture> colorTexture;
-//    std::shared_ptr<igl::ITexture> stencilTexture;
     
     std::shared_ptr<igl::IFramebuffer> framebuffer;
     
@@ -269,7 +258,6 @@ public:
     MNVGbuffers* _buffers;
     std::vector<MNVGbuffers*> _cbuffers;
     int _maxBuffers;
-//    dispatch_semaphore_t _semaphore;
     
     // Cached states.
     MNVGblend* _blendFunc;
@@ -296,11 +284,7 @@ public:
     MNVGcall* allocCall(){
         MNVGcall* ret = NULL;
         if (_buffers->ncalls + 1 > _buffers->ccalls) {
-//            MNVGcall* calls;
             int ccalls = mtlnvg__maxi(_buffers->ncalls + 1, 128) + _buffers->ccalls / 2;
-//            calls = (MNVGcall*)realloc(_buffers->calls, sizeof(MNVGcall) * ccalls);
-//            calls.resize(ccalls);
-//            if (calls == NULL) return NULL;
             _buffers->calls.resize(ccalls);
             _buffers->ccalls = ccalls;
         }
@@ -313,11 +297,6 @@ public:
         int ret = 0;
         if (_buffers->nuniforms + n > _buffers->cuniforms) {
             int cuniforms = mtlnvg__maxi(_buffers->nuniforms + n, 128) + _buffers->cuniforms / 4;
-            //todo:
-//            std::shared_ptr<igl::IBuffer> buffer = [_metalLayer.device
-//                                                    newBufferWithLength:(_fragSize * cuniforms)
-//                                                    options:kMetalBufferOptions];
-            
             _buffers->uniforms.resize(_fragSize * cuniforms);
 
             if (device->getBackendType() == igl::BackendType::Vulkan){
@@ -329,15 +308,7 @@ public:
             desc.debugName = "fragment_uniform_buffer";
             std::shared_ptr<igl::IBuffer> buffer = device->createBuffer(desc, NULL);
             
-//            unsigned char* uniforms = NULL;// [buffer contents];
-            if (_buffers->uniformBuffer != nullptr) {
-//                memcpy(uniforms, _buffers->uniforms.data(),
-//                       _fragSize * _buffers->nuniforms);
-                
-                //buffer->upload(_buffers->uniforms.data(), igl::BufferRange(_fragSize * _buffers->nuniforms));
-            }
             _buffers->uniformBuffer = buffer;
-            
             _buffers->cuniforms = cuniforms;
         }
         ret = _buffers->nuniforms * _fragSize;
@@ -349,23 +320,13 @@ public:
         int ret = 0;
         if (_buffers->nindexes + n > _buffers->cindexes) {
             int cindexes = mtlnvg__maxi(_buffers->nindexes + n, 4096) + _buffers->cindexes / 2;
-//            std::shared_ptr<igl::IBuffer> buffer ; //= [_metalLayer.device
-                                                    //newBufferWithLength:(_indexSize * cindexes)
-                                                    //options:kMetalBufferOptions];
-            
             _buffers->indexes.resize(cindexes);
             
             igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Index, _buffers->indexes.data(), _indexSize * cindexes);
             desc.debugName = "index_buffer";
             std::shared_ptr<igl::IBuffer> buffer = device->createBuffer(desc, NULL);
-            
-//            uint32_t* indexes ;// = [buffer contents];
-            if (_buffers->indexBuffer != nullptr) {
-//                memcpy(indexes, _buffers->indexes.data(), _indexSize * _buffers->nindexes);
-                //buffer->upload(_buffers->indexes.data(), igl::BufferRange(_indexSize * _buffers->nindexes));
-            }
+
             _buffers->indexBuffer = buffer;
-            
             _buffers->cindexes = cindexes;
         }
         ret = _buffers->nindexes;
@@ -394,23 +355,13 @@ public:
         int ret = 0;
         if (_buffers->nverts + n > _buffers->cverts) {
             int cverts = mtlnvg__maxi(_buffers->nverts + n, 4096) + _buffers->cverts / 2;
-//            std::shared_ptr<igl::IBuffer> buffer = ;//[_metalLayer.device
-                                                    //newBufferWithLength:(sizeof(NVGvertex) * cverts)
-                                                    //options:kMetalBufferOptions];
-            
             _buffers->verts.resize(cverts);
             
             igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Vertex, _buffers->verts.data(), sizeof(NVGvertex) * cverts);
             desc.debugName = "vertex_buffer";
             std::shared_ptr<igl::IBuffer> buffer = device->createBuffer(desc, NULL);
             
-//            NVGvertex* verts ;//= [buffer contents];
-            if (_buffers->vertBuffer != nullptr) {
-//                memcpy(verts, _buffers->verts, sizeof(NVGvertex) * _buffers->nverts);
-                //buffer->upload(_buffers->verts.data(), igl::BufferRange(sizeof(NVGvertex) * _buffers->nverts));
-            }
             _buffers->vertBuffer = buffer;
-            
             _buffers->cverts = cverts;
         }
         ret = _buffers->nverts;
@@ -431,14 +382,6 @@ public:
         }
         return blend;
     }
-    
-//    void checkError(NSError* erro, const char* message) {
-//        if ((_flags & NVG_DEBUG) == 0) return;
-////        if (error) {
-////            printf("Error occurs after %s: %s\n",
-////                   message, [[error localizedDescription] UTF8String]);
-////        }
-//    }
     
     int convertPaintForFrag(MNVGfragUniforms*frag,
     NVGpaint* paint,
@@ -508,7 +451,6 @@ public:
     
     void bindRenderPipeline(const std::shared_ptr<igl::IRenderPipelineState>& pipelineState){
         _renderEncoder->bindRenderPipelineState(pipelineState);
-//        renderCommandEncoderWithColorTexture();
         _renderEncoder->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *_buffers->vertBuffer, 0);
         _renderEncoder->bindBuffer(kVertexUniformBlockIndex, _buffers->viewSizeBuffer.get(), 0);
         _renderEncoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->uniformBuffer.get(), 0);
@@ -519,20 +461,12 @@ public:
         bindRenderPipeline(_pipelineState);
         setUniforms(call->uniformOffset,call->image);
         if (call->indexCount > 0) {
-//            [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-//                                       indexCount:call->indexCount
-//                                        indexType:MTLIndexTypeUInt32
-//                                      indexBuffer:_buffers->indexBuffer
-//                                indexBufferOffset:kIndexBufferOffset];
             _renderEncoder->bindIndexBuffer(*_buffers->indexBuffer, igl::IndexFormat::UInt32, kIndexBufferOffset);
             _renderEncoder->drawIndexed(call->indexCount);
         }
         
         // Draw fringes
         if (call->strokeCount > 0) {
-//            [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
-//                               vertexStart:call->strokeOffset
-//                               vertexCount:call->strokeCount];
             bindRenderPipeline(_pipelineStateTriangleStrip);
             _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
         }
@@ -541,40 +475,25 @@ public:
     void fill(MNVGcall*call) {
         // Draws shapes.
         const int kIndexBufferOffset = call->indexOffset * _indexSize;
-        //todo
-//        [_renderEncoder setCullMode:MTLCullModeNone];
         bindRenderPipeline(_stencilOnlyPipelineState);
         _renderEncoder->bindDepthStencilState(_fillShapeStencilState);
         if (call->indexCount > 0) {
-//            [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-//                                       indexCount:call->indexCount
-//                                        indexType:MTLIndexTypeUInt32
-//                                      indexBuffer:_buffers->indexBuffer
-//                                indexBufferOffset:kIndexBufferOffset];
             _renderEncoder->bindIndexBuffer(*_buffers->indexBuffer, igl::IndexFormat::UInt32, kIndexBufferOffset);
             _renderEncoder->drawIndexed(call->indexCount);
         }
         
         // Restores states.
-        //todo
-//        [_renderEncoder setCullMode:MTLCullModeBack];
         bindRenderPipeline(_pipelineStateTriangleStrip);
         
         // Draws anti-aliased fragments.
         setUniforms(call->uniformOffset ,call->image);
         if (_flags & NVG_ANTIALIAS && call->strokeCount > 0) {
             _renderEncoder->bindDepthStencilState(_fillAntiAliasStencilState);
-//            [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
-//                               vertexStart:call->strokeOffset
-//                               vertexCount:call->strokeCount];
             _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
         }
         
         // Draws fill.
         _renderEncoder->bindDepthStencilState(_fillStencilState);
-//        [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
-//                           vertexStart:call->triangleOffset
-//                           vertexCount:call->triangleCount];
         _renderEncoder->draw(call->triangleCount, 1, call->triangleOffset);
         _renderEncoder->bindDepthStencilState(_defaultStencilState);
     }
@@ -598,105 +517,21 @@ public:
         _buffers->nverts = 0;
         _buffers->ncalls = 0;
         _buffers->nuniforms = 0;
-//        dispatch_semaphore_signal(_semaphore);
     }
     
-    std::shared_ptr<igl::IRenderCommandEncoder> renderCommandEncoderWithColorTexture() {
-//        igl::RenderPassDesc descriptor;
-//        
-//        descriptor.colorAttachments.resize(1);
-//        descriptor.colorAttachments[0].clearColor = clearColor;
-//        descriptor.colorAttachments[0].loadAction = \
-//        clearBufferOnFlush ? igl::LoadAction::Clear : igl::LoadAction::Load;
-//        descriptor.colorAttachments[0].storeAction = igl::StoreAction::Store;
-//        descriptor.colorAttachments[0].texture = colorTexture;
+    void renderCommandEncoderWithColorTexture() {
         clearBufferOnFlush = false;
         
-//        descriptor.stencilAttachment.clearStencil = 0;
-//        descriptor.stencilAttachment.loadAction = igl::LoadAction::Clear;
-//        descriptor.stencilAttachment.storeAction = igl::StoreAction::DontCare;
-//        descriptor.stencilAttachment.texture = _buffers->stencilTexture;
-        
-//        igl::FramebufferDesc framebuffer_desc;
-//        framebuffer_desc.colorAttachments[0].texture = colorTexture;
-//        framebuffer_desc.stencilAttachment.texture = stencilTexture;
-//        
-//        std::shared_ptr<igl::IFramebuffer> framebuffer =device->createFramebuffer(framebuffer_desc, NULL);
-        
-//        std::shared_ptr<igl::ICommandBuffer> commandBuffer = _buffers->commandBuffer;
-//        std::unique_ptr<igl::IRenderCommandEncoder> encoder = commandBuffer->createRenderCommandEncoder(descriptor, framebuffer);
-        
-        auto & encoder = _renderEncoder;
-        
-        //todo:
-        //[encoder setCullMode:MTLCullModeBack];
-        //[encoder setFrontFacingWinding:MTLWindingCounterClockwise];
-        encoder->setStencilReferenceValue(0);
-        encoder->bindViewport({0.0, 0.0, (float)viewPortSize.x, (float)viewPortSize.y, 0.0, 1.0});
-        
-        encoder->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *_buffers->vertBuffer, 0);
-        
-        encoder->bindBuffer(kVertexUniformBlockIndex, _buffers->viewSizeBuffer.get(), 0);
-        
-        encoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->uniformBuffer.get(), 0);
-        return encoder;
+        _renderEncoder->setStencilReferenceValue(0);
+        _renderEncoder->bindViewport({0.0, 0.0, (float)viewPortSize.x, (float)viewPortSize.y, 0.0, 1.0});
+        _renderEncoder->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *_buffers->vertBuffer, 0);
+        _renderEncoder->bindBuffer(kVertexUniformBlockIndex, _buffers->viewSizeBuffer.get(), 0);
+        _renderEncoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->uniformBuffer.get(), 0);
     }
 
     int renderCreate() {
-//        if (_metalLayer.device == nullptr) {
-//            id<MTLDevice> device = MTLCreateSystemDefaultDevice();
-//            _metalLayer.device = device;
-//        }
-//#if TARGET_OS_OSX
-//        _metalLayer.opaque = false;
-//#endif  // TARGET_OS_OSX
-//        
-//        // Loads shaders from pre-compiled metal library..
-//        NSError* error;
-//        id<MTLDevice> device = _metalLayer.device;
-//#ifdef MNVG_INVALID_TARGET
-//        id<MTLLibrary> library = nullptr;
-//        return 0;
-//#endif
-        
         bool creates_pseudo_texture = false;
-        unsigned char* metal_library_bitcode;
-        unsigned int metal_library_bitcode_len;
-//#if TARGET_OS_SIMULATOR
-//        metal_library_bitcode = mnvg_bitcode_simulator;
-//        metal_library_bitcode_len = mnvg_bitcode_simulator_len;
-//#elif TARGET_OS_IOS
-//        if (@available(iOS 10, *)) {
-//        } else if (@available(iOS 8, *)) {
-//            creates_pseudo_texture = true;
-//        } else {
-//            return 0;
-//        }
-//        metal_library_bitcode = mnvg_bitcode_ios;
-//        metal_library_bitcode_len = mnvg_bitcode_ios_len;
-//#elif TARGET_OS_OSX
-//        if (@available(macOS 10.11, *)) {
-//            metal_library_bitcode = mnvg_bitcode_macos;
-//            metal_library_bitcode_len = mnvg_bitcode_macos_len;
-//        } else {
-//            return 0;
-//        }
-//#elif TARGET_OS_TV
-//        metal_library_bitcode = mnvg_bitcode_tvos;
-//        metal_library_bitcode_len = mnvg_bitcode_tvos_len;
-//#endif
-        
-//        dispatch_data_t data = dispatch_data_create(metal_library_bitcode,
-//                                                    metal_library_bitcode_len,
-//                                                    NULL,
-//                                                    DISPATCH_DATA_DESTRUCTOR_DEFAULT);
-//        id<MTLLibrary> library = [device newLibraryWithData:data error:&error];
-//        
-//        [self checkError:error withMessage:"init library"];
-//        if (library == nullptr) {
-//            return 0;
-//        }
-        
+
         const std::string vertexFunction = "vertexShader";
         std::string fragmentFunction;
         if (_flags & NVG_ANTIALIAS) {
@@ -835,7 +670,7 @@ public:
         frontFaceStencilDescriptor.stencilCompareFunction = igl::CompareFunction::Equal;
         frontFaceStencilDescriptor.stencilFailureOperation = igl::StencilOperation::Keep;
         frontFaceStencilDescriptor.depthFailureOperation = igl::StencilOperation::Keep;
-        frontFaceStencilDescriptor.depthStencilPassOperation = \
+        frontFaceStencilDescriptor.depthStencilPassOperation =
         igl::StencilOperation::Zero;
         
         stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
@@ -844,11 +679,11 @@ public:
         _fillAntiAliasStencilState = device->createDepthStencilState(stencilDescriptor, &result);
         
         // Fill stencil.
-        frontFaceStencilDescriptor.stencilCompareFunction = \
+        frontFaceStencilDescriptor.stencilCompareFunction =
         igl::CompareFunction::NotEqual;
         frontFaceStencilDescriptor.stencilFailureOperation = igl::StencilOperation::Zero;
         frontFaceStencilDescriptor.depthFailureOperation = igl::StencilOperation::Zero;
-        frontFaceStencilDescriptor.depthStencilPassOperation = \
+        frontFaceStencilDescriptor.depthStencilPassOperation =
         igl::StencilOperation::Zero;
         
         stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
@@ -860,7 +695,7 @@ public:
         frontFaceStencilDescriptor.stencilCompareFunction = igl::CompareFunction::Equal;
         frontFaceStencilDescriptor.stencilFailureOperation = igl::StencilOperation::Keep;
         frontFaceStencilDescriptor.depthFailureOperation = igl::StencilOperation::Keep;
-        frontFaceStencilDescriptor.depthStencilPassOperation = \
+        frontFaceStencilDescriptor.depthStencilPassOperation =
         igl::StencilOperation::IncrementClamp;
         
         stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
@@ -869,7 +704,7 @@ public:
         _strokeShapeStencilState = device->createDepthStencilState(stencilDescriptor, &result);
         
         // Stroke anti-aliased stencil.
-        frontFaceStencilDescriptor.depthStencilPassOperation = \
+        frontFaceStencilDescriptor.depthStencilPassOperation =
         igl::StencilOperation::Keep;
         
         stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
@@ -881,7 +716,7 @@ public:
         frontFaceStencilDescriptor.stencilCompareFunction = igl::CompareFunction::AlwaysPass;
         frontFaceStencilDescriptor.stencilFailureOperation = igl::StencilOperation::Zero;
         frontFaceStencilDescriptor.depthFailureOperation = igl::StencilOperation::Zero;
-        frontFaceStencilDescriptor.depthStencilPassOperation = \
+        frontFaceStencilDescriptor.depthStencilPassOperation =
         igl::StencilOperation::Zero;
         
         stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
@@ -908,17 +743,11 @@ public:
         tex->type = type;
         tex->flags = imageFlags;
         
+        //todo:
         //(imageFlags & NVG_IMAGE_GENERATE_MIPMAPS ? true : false)
         
         igl::TextureDesc textureDescriptor = igl::TextureDesc::new2D(pixelFormat,width,height, igl::TextureDesc::TextureUsageBits::Sampled);
         
-//        textureDescriptor.usage = MTLTextureUsageShaderRead
-//        | MTLTextureUsageRenderTarget
-//        | MTLTextureUsageShaderWrite;
-        
-#if TARGET_OS_SIMULATOR
-//        textureDescriptor.storageMode = MTLStorageModePrivate;
-#endif  // TARGET_OS_SIMULATOR
         tex->tex = device->createTexture(textureDescriptor, NULL);
         
         if (data != NULL) {
@@ -930,47 +759,6 @@ public:
             }
             
             tex->tex->upload(igl::TextureRangeDesc::new2D(0, 0, width, height), data);
-            
-#if 0 //没用了
-            if (textureDescriptor.storageMode == MTLStorageModePrivate) {
-                const NSUInteger kBufferSize = bytesPerRow * height;
-                std::shared_ptr<igl::IBuffer> buffer = [_metalLayer.device
-                                                        newBufferWithLength:kBufferSize
-                                                        options:MTLResourceStorageModeShared];
-                memcpy([buffer contents], data, kBufferSize);
-                
-                id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
-                id<MTLBlitCommandEncoder> blitCommandEncoder = [commandBuffer
-                                                                blitCommandEncoder];
-                [blitCommandEncoder copyFromBuffer:buffer
-                                      sourceOffset:0
-                                 sourceBytesPerRow:bytesPerRow
-                               sourceBytesPerImage:kBufferSize
-                                        sourceSize:MTLSizeMake(width, height, 1)
-                                         toTexture:tex->tex
-                                  destinationSlice:0
-                                  destinationLevel:0
-                                 destinationOrigin:MTLOriginMake(0, 0, 0)];
-                
-                [blitCommandEncoder endEncoding];
-                [commandBuffer commit];
-                [commandBuffer waitUntilCompleted];
-            } else {
-                [tex->tex replaceRegion:MTLRegionMake2D(0, 0, width, height)
-                            mipmapLevel:0
-                              withBytes:data
-                            bytesPerRow:bytesPerRow];
-            }
-            
-            if (imageFlags & NVG_IMAGE_GENERATE_MIPMAPS) {
-                id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
-                id<MTLBlitCommandEncoder> encoder = [commandBuffer blitCommandEncoder];
-                [encoder generateMipmapsForTexture:tex->tex];
-                [encoder endEncoding];
-                [commandBuffer commit];
-                [commandBuffer waitUntilCompleted];
-            }
-#endif
         }
         
         igl::SamplerStateDesc samplerDescriptor;
@@ -1013,7 +801,6 @@ public:
             buffers->indexBuffer = nullptr;
             buffers->vertBuffer = nullptr;
             buffers->uniformBuffer = nullptr;
-//            free(buffers->calls);
         }
         
         for (MNVGtexture* texture : _textures) {
@@ -1022,7 +809,6 @@ public:
         }
         
         free(_blendFunc);
-//        _commandQueue = nullptr;
         _renderEncoder = nullptr;
         _textures.clear();
         _cbuffers.clear();
@@ -1032,13 +818,10 @@ public:
         _strokeShapeStencilState = nullptr;
         _strokeAntiAliasStencilState = nullptr;
         _strokeClearStencilState = nullptr;
-//        _fragmentFunction = nullptr;
-//        _vertexFunction = nullptr;
         _pipelineState = nullptr;
         _stencilOnlyPipelineState = nullptr;
         _pseudoSampler = nullptr;
         _pseudoTexture = nullptr;
-//        _vertexDescriptor = nullptr;
         device = nullptr;
     }
     
@@ -1166,25 +949,9 @@ public:
             return;
         }
         
-//        igl::CommandBufferDesc commandBufferDesc;
-//        commandBufferDesc.debugName = "iglNanoVG";
-//        std::shared_ptr<igl::ICommandBuffer> commandBuffer = _commandQueue->createCommandBuffer(commandBufferDesc, NULL);
-//        std::shared_ptr<igl::ITexture> colorTexture = nullptr;;
         igl_vector_uint2 textureSize;
         
-//        _buffers->commandBuffer = commandBuffer;
         MNVGbuffers* buffers = _buffers;
-//        [commandBuffer enqueue];
-//        [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
-//            buffers.isBusy = false;
-//            buffers.commandBuffer = nullptr;
-//            buffers.image = 0;
-//            buffers.nindexes = 0;
-//            buffers.nverts = 0;
-//            buffers.ncalls = 0;
-//            buffers.nuniforms = 0;
-//            dispatch_semaphore_signal(self.semaphore);
-//        }];
         
         if (s_framebuffer == NULL ||
             nvgInternalParams(s_framebuffer->ctx)->userPtr != ( void*)this) {
@@ -1197,20 +964,10 @@ public:
                 (uint)colorTexture->getSize().height};
         }
         if (textureSize.x == 0 || textureSize.y == 0) return;
-//        updateStencilTextureToSize(&textureSize);
         
         _buffers->uploadToGpu();
         
-//        id<CAMetalDrawable> drawable = nullptr;
-//        if (colorTexture == nullptr) {
-            //todo:
-//            drawable = _metalLayer.nextDrawable;
-//            colorTexture = drawable.texture;
-//        }
         renderCommandEncoderWithColorTexture();
-//        if (_renderEncoder == nullptr) {
-//            return;
-//        }
         
         MNVGcall* call = &buffers->calls[0];
         for (int i = buffers->ncalls; i--; ++call) {
@@ -1238,11 +995,6 @@ public:
             _renderEncoder->popDebugGroupLabel();
         }
         
-//        _renderEncoder->endEncoding();
-        
-//        commandBuffer->present(framebuffer->getColorAttachment(0));
-//        _commandQueue->submit(*commandBuffer, true);
-        
         {
             buffers->isBusy = false;
             buffers->commandBuffer = nullptr;
@@ -1251,31 +1003,7 @@ public:
             buffers->nverts = 0;
             buffers->ncalls = 0;
             buffers->nuniforms = 0;
-            //            dispatch_semaphore_signal(self.semaphore);
         }
-        
-//        _renderEncoder = nullptr;
-        
-//        if (drawable && !_metalLayer.presentsWithTransaction) {
-//            [_buffers->commandBuffer presentDrawable:drawable];
-//        }
-//        
-//#if TARGET_OS_OSX
-//        // Makes mnvgReadPixels() work as expected on Mac.
-//        if (s_framebuffer != NULL) {
-//            id<MTLBlitCommandEncoder> blitCommandEncoder = [_buffers->commandBuffer
-//                                                            blitCommandEncoder];
-//            [blitCommandEncoder synchronizeResource:colorTexture];
-//            [blitCommandEncoder endEncoding];
-//        }
-//#endif  // TARGET_OS_OSX
-//        
-//        [_buffers->commandBuffer commit];
-//        
-//        if (drawable && _metalLayer.presentsWithTransaction) {
-//            [_buffers->commandBuffer waitUntilScheduled];
-//            [drawable present];
-//        }
     }
     
     int renderGetTextureSizeForImage(int image,
@@ -1436,39 +1164,9 @@ public:
             bytes = (unsigned char*)data + y * bytesPerRow + x;
         }
         
-#if 0//TARGET_OS_SIMULATOR
-        const NSUInteger kBufferSize = bytesPerRow * height;
-        std::shared_ptr<igl::IBuffer> buffer = [_metalLayer.device
-                                                newBufferWithLength:kBufferSize
-                                                options:MTLResourceStorageModeShared];
-        memcpy([buffer contents], bytes, kBufferSize);
-        
-        id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
-        id<MTLBlitCommandEncoder> blitCommandEncoder = [commandBuffer
-                                                        blitCommandEncoder];
-        [blitCommandEncoder copyFromBuffer:buffer
-                              sourceOffset:0
-                         sourceBytesPerRow:bytesPerRow
-                       sourceBytesPerImage:kBufferSize
-                                sourceSize:MTLSizeMake(width, height, 1)
-                                 toTexture:tex->tex
-                          destinationSlice:0
-                          destinationLevel:0
-                         destinationOrigin:MTLOriginMake(x, y, 0)];
-        
-        [blitCommandEncoder endEncoding];
-        [commandBuffer commit];
-        [commandBuffer waitUntilCompleted];
-#else
         std::shared_ptr<igl::ITexture> texture = tex->tex;
-//        [texture replaceRegion:MTLRegionMake2D(x, y, width, height)
-//                   mipmapLevel:0
-//                     withBytes:bytes
-//                   bytesPerRow:bytesPerRow];
-        
         igl::TextureRangeDesc desc = igl::TextureRangeDesc::new2D(x, y, width, height);
         texture->upload(desc, bytes, bytesPerRow);
-#endif
         
         return 1;
     }
@@ -1484,24 +1182,12 @@ public:
         bufferIndex = (bufferIndex + 1)%3;
         _buffers = _cbuffers[bufferIndex];
         
-        //dispatch_semaphore_wait(_semaphore, DISPATCH_TIME_FOREVER);
-//        for (MNVGbuffers* buffers : _cbuffers) {
-//            if (!buffers->isBusy) {
-//                buffers->isBusy = true;
-//                _buffers = buffers;
-//                break;
-//            }
-//        }
-        
-        float viewSize[2] ;//= (float*)[_buffers->viewSizeBuffer contents];
+        float viewSize[2] ;
         viewSize[0] = width;
         viewSize[1] = height;
         
         // Initializes view size buffer for vertex function.
         if (_buffers->viewSizeBuffer == nullptr) {
-//            _buffers->viewSizeBuffer = [_metalLayer.device
-//                                       newBufferWithLength:sizeof(vector_float2)
-//                                       options:kMetalBufferOptions];
             igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform, viewSize, sizeof(iglu::simdtypes::float2));
             desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
             desc.debugName = "vertex_viewSize_buffer";
@@ -1512,7 +1198,6 @@ public:
     }
     
     void setUniforms(int uniformOffset ,int image) {
-        //[_renderEncoder setFragmentBufferOffset:uniformOffset atIndex:0];
         _renderEncoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->uniformBuffer.get(), uniformOffset, _fragSize);
         
         MNVGtexture* tex = (image == 0 ? nullptr : findTexture(image));
@@ -1536,34 +1221,22 @@ public:
             setUniforms(call->uniformOffset + _fragSize, call->image);
             _renderEncoder->bindDepthStencilState(_strokeShapeStencilState);
             
-//            _renderEncoder->drawPrimitives:MTLPrimitiveTypeTriangleStrip
-//                               vertexStart:call->strokeOffset
-//                               vertexCount:call->strokeCount];
             _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
             
             // Draws anti-aliased fragments.
             setUniforms(call->uniformOffset ,call->image);
             _renderEncoder->bindDepthStencilState(_strokeAntiAliasStencilState);
-//            _renderEncoder->drawPrimitives:MTLPrimitiveTypeTriangleStrip
-//                               vertexStart:call->strokeOffset
-//                               vertexCount:call->strokeCount];
             _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
             
             // Clears stencil buffer.
             bindRenderPipeline(_stencilOnlyPipelineStateTriangleStrip);
             _renderEncoder->bindDepthStencilState(_strokeClearStencilState);
-//            _renderEncoder->drawPrimitives:MTLPrimitiveTypeTriangleStrip
-//                               vertexStart:call->strokeOffset
-//                               vertexCount:call->strokeCount];
             _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
             _renderEncoder->bindDepthStencilState(_defaultStencilState);
         } else {
             // Draws strokes.
             bindRenderPipeline(_pipelineStateTriangleStrip);
             setUniforms(call->uniformOffset ,call->image);
-//            _renderEncoder->drawPrimitives:MTLPrimitiveTypeTriangleStrip
-//                               vertexStart:call->strokeOffset
-//                               vertexCount:call->strokeCount];
             _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
         }
     }
@@ -1571,10 +1244,6 @@ public:
     void triangles(MNVGcall*call) {
         bindRenderPipeline(_pipelineState);
         setUniforms(call->uniformOffset, call->image);
-//        _renderEncoder->drawPrimitives:MTLPrimitiveTypeTriangle
-//                           vertexStart:call->triangleOffset
-//                           vertexCount:call->triangleCount];
-        
         _renderEncoder->draw(call->triangleCount, 1, call->triangleOffset);
     }
     
@@ -1602,8 +1271,6 @@ public:
         colorAttachmentDescriptor.textureFormat = framebuffer->getColorAttachment(0)->getProperties().format;
         pipelineStateDescriptor.targetDesc.stencilAttachmentFormat = framebuffer->getStencilAttachment()->getProperties().format;
         pipelineStateDescriptor.targetDesc.depthAttachmentFormat = framebuffer->getDepthAttachment()->getProperties().format;
-//        pipelineStateDescriptor.fragmentFunction = _fragmentFunction;
-//        pipelineStateDescriptor.vertexFunction = _vertexFunction;
         pipelineStateDescriptor.shaderStages = igl::ShaderStagesCreator::fromRenderModules(*device, _vertexFunction, _fragmentFunction, &result);
         IGL_DEBUG_ASSERT(result.isOk());
         
@@ -1665,12 +1332,6 @@ public:
             stencilTextureDescriptor.storage = igl::ResourceStorage::Private;
 #endif
             _buffers->stencilTexture = device->createTexture(stencilTextureDescriptor, NULL);
-            
-//            stencilTextureDescriptor.usage = MTLTextureUsageRenderTarget;
-//#if TARGET_OS_OSX || TARGET_OS_SIMULATOR || TARGET_OS_MACCATALYST
-//            stencilTextureDescriptor.storageMode = MTLStorageModePrivate;
-//#endif  // TARGET_OS_OSX || TARGET_OS_SIMULATOR || TARGET_OS_MACCATALYST
-            
         }
     }
 };
@@ -1795,8 +1456,6 @@ void mnvgClearWithColor(NVGcontext* ctx, NVGcolor color) {
 }
 
 void* mnvgCommandQueue(NVGcontext* ctx) {
-//  MNVGcontext* mtl = ( MNVGcontext*)nvgInternalParams(ctx)->userPtr;
-//  return (void*)mtl->_commandQueue.get();
     return NULL;
 }
 
@@ -1860,37 +1519,11 @@ void mnvgReadPixels(NVGcontext* ctx, int image, int x, int y, int width,
     }
   }
 
-#if 0//TARGET_OS_SIMULATOR
-  CAMetalLayer* metalLayer = mtl.metalLayer;
-  const NSUInteger kBufferSize = bytesPerRow * height;
-  std::shared_ptr<igl::IBuffer> buffer = [metalLayer.device
-      newBufferWithLength:kBufferSize
-      options:MTLResourceStorageModeShared];
-
-  id<MTLCommandBuffer> commandBuffer = [mtl.commandQueue commandBuffer];
-  id<MTLBlitCommandEncoder> blitCommandEncoder = [commandBuffer
-      blitCommandEncoder];
-  [blitCommandEncoder copyFromTexture:tex->tex
-      sourceSlice:0
-      sourceLevel:0
-      sourceOrigin:MTLOriginMake(x, y, 0)
-      sourceSize:MTLSizeMake(width, height, 1)
-      toBuffer:buffer
-      destinationOffset:0
-      destinationBytesPerRow:bytesPerRow
-      destinationBytesPerImage:kBufferSize];
-
-  [blitCommandEncoder endEncoding];
-  [commandBuffer commit];
-  [commandBuffer waitUntilCompleted];
-  memcpy(data, [buffer contents], kBufferSize);
-#else
     //todo:
 //  [tex->tex getBytes:data
 //         bytesPerRow:bytesPerRow
 //          fromRegion:MTLRegionMake2D(x, y, width, height)
 //         mipmapLevel:0];
-#endif  // TARGET_OS_SIMULATOR
 }
 
 enum MNVGTarget mnvgTarget() {
@@ -1936,7 +1569,7 @@ NVGcontext* nvgCreateMTL(igl::IDevice * device, int flags) {
   mtl->_flags = flags;
 
   auto aaa = sizeof(MNVGfragUniforms);
-  //目前sizeof(MNVGfragUniforms)=176
+  //sizeof(MNVGfragUniforms)=176
 
 #if TARGET_OS_OSX || TARGET_OS_SIMULATOR
   mtl->_fragSize = 256;

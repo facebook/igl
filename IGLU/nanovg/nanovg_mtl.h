@@ -1,12 +1,5 @@
-#ifndef NANOVG_MTL_H_
-#define NANOVG_MTL_H_
-
+#pragma once
 #include <igl/IGL.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "nanovg.h"
 
 // Create flags
@@ -46,8 +39,7 @@ struct MNVGframebuffer {
 };
 typedef struct MNVGframebuffer MNVGframebuffer;
 
-// Creates a new NanoVG context. The `metalLayer` parameter should be a
-// `CAMetalLayer` object, and the `flags` should be combination of
+// Creates a new NanoVG context.  The `flags` should be combination of
 // `NVGcreateFlags` above.
 NVGcontext* nvgCreateMTL(igl::IDevice * device, int flags);
 
@@ -95,9 +87,3 @@ void mnvgReadPixels(NVGcontext* ctx, int image, int x, int y, int width,
 
 // Returns the current OS target.
 enum MNVGTarget mnvgTarget();
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif  // NANOVG_MTL_H_
