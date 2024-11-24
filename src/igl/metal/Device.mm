@@ -311,6 +311,7 @@ std::shared_ptr<igl::IDepthStencilState> Device::createDepthStencilState(
   metalDesc.frontFaceStencil = DepthStencilState::convertStencilDescriptor(desc.frontFaceStencil);
   metalDesc.backFaceStencil = DepthStencilState::convertStencilDescriptor(desc.backFaceStencil);
   id<MTLDepthStencilState> metalObject = [device_ newDepthStencilStateWithDescriptor:metalDesc];
+
   std::shared_ptr<DepthStencilState> iglObject = std::make_shared<DepthStencilState>(metalObject);
 
   Result::setOk(outResult);
