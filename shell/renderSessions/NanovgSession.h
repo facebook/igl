@@ -15,8 +15,8 @@
 
 #include <nanovg.h>
 #include <IGLU/nanovg/nanovg_igl.h>
-#include <IGLU/nanovg/demo.h>
-#include <IGLU/nanovg/perf.h>
+#include "NanovgSession/demo.h"
+#include "NanovgSession/perf.h"
 
 namespace igl::shell {
 
