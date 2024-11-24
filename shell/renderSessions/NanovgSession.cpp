@@ -28,6 +28,55 @@ double getMilliSeconds() {
       .count();
 }
 
+using ImageFullPathCallback = std::function<std::string(const std::string &)>;
+
+static ImageFullPathCallback imageFullPathCallback_ = nullptr;
+
+int loadDemoData22(NVGcontext* vg, DemoData* data)
+{
+    int i;
+
+    if (vg == NULL)
+        return -1;
+
+    for (i = 0; i < 12; i++) {
+        char file[128];
+        snprintf(file, 128, "image%d.jpg", i+1);
+        
+        std::string full_file = imageFullPathCallback_(file);
+        data->images[i] = nvgCreateImage(vg, full_file.c_str(), 0);
+        if (data->images[i] == 0) {
+            printf("Could not load %s.\n", file);
+            return -1;
+        }
+    }
+
+    data->fontIcons = nvgCreateFont(vg, "icons", imageFullPathCallback_("entypo.ttf").c_str());
+    if (data->fontIcons == -1) {
+        printf("Could not add font icons.\n");
+        return -1;
+    }
+    data->fontNormal = nvgCreateFont(vg, "sans", imageFullPathCallback_("Roboto-Regular.ttf").c_str());
+    if (data->fontNormal == -1) {
+        printf("Could not add font italic.\n");
+        return -1;
+    }
+    data->fontBold = nvgCreateFont(vg, "sans-bold", imageFullPathCallback_("Roboto-Bold.ttf").c_str());
+    if (data->fontBold == -1) {
+        printf("Could not add font bold.\n");
+        return -1;
+    }
+    data->fontEmoji = nvgCreateFont(vg, "emoji", imageFullPathCallback_("NotoEmoji-Regular.ttf").c_str());
+    if (data->fontEmoji == -1) {
+        printf("Could not add font emoji.\n");
+        return -1;
+    }
+    nvgAddFallbackFontId(vg, data->fontNormal, data->fontEmoji);
+    nvgAddFallbackFontId(vg, data->fontBold, data->fontEmoji);
+
+    return 0;
+}
+
 void NanovgSession::initialize() noexcept {
   // Command queue: backed by different types of GPU HW queues
   const CommandQueueDesc desc{CommandQueueType::Graphics};
@@ -47,7 +96,7 @@ void NanovgSession::initialize() noexcept {
 
   nvgContext_ = getPlatform().nanovgContext;
 
-  SetImageFullPathCallback([this](const std::string& name) {
+  imageFullPathCallback_ = ([this](const std::string& name) {
 #if IGL_PLATFORM_ANDROID
     auto fullPath = std::filesystem::path("/data/data/com.facebook.igl.shell/files/") / name;
     if (std::filesystem::exists(fullPath)) {
@@ -61,7 +110,7 @@ void NanovgSession::initialize() noexcept {
 #endif
   });
 
-  if (loadDemoData(nvgContext_, &nvgDemoData_) == -1) {
+  if (loadDemoData22(nvgContext_, &nvgDemoData_) == -1) {
     assert(false);
   }
 
