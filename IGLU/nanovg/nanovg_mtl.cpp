@@ -32,7 +32,7 @@ typedef enum MNVGshaderType {
 } MNVGshaderType;
 
 enum MNVGcallType {
-  MNVG_falseNE = 0,
+  MNVG_NONE = 0,
   MNVG_FILL,
   MNVG_CONVEXFILL,
   MNVG_STROKE,
