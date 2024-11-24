@@ -26,7 +26,7 @@
 #include <igl/vulkan/VulkanContext.h>
 #endif
 #include <memory>
-#include <IGLU/nanovg/nanovg_mtl.h>
+#include <IGLU/nanovg/nanovg_igl.h>
 
 namespace {
 
