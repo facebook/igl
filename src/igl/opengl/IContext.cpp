@@ -3256,7 +3256,7 @@ void IContext::initialize(Result* result) {
 #endif // IGL_DEBUG || defined(IGL_API_LOG)
 
 #if defined(IGL_WITH_TRACY_GPU)
-  constexpr std::string_view kTracyContextName = "IGL OpenGL";
+  [[maybe_unused]] constexpr std::string_view kTracyContextName = "IGL OpenGL";
   TracyGpuContext;
   TracyGpuContextName(kTracyContextName.data(), kTracyContextName.size());
 #endif
