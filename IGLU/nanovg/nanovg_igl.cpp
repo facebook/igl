@@ -23,8 +23,8 @@
 #define kFragmentUniformBlockIndex 2
 
 struct igl_vector_uint2 {
-  uint x;
-  uint y;
+  uint32_t x;
+  uint32_t y;
 };
 
 typedef enum MNVGvertexInputIndex {
@@ -973,8 +973,8 @@ class MNVGcontext {
       buffers->image = s_framebuffer->image;
       MNVGtexture* tex = findTexture(s_framebuffer->image);
       auto colorTexture = tex->tex;
-      textureSize = (igl_vector_uint2){(uint)colorTexture->getSize().width,
-                                       (uint)colorTexture->getSize().height};
+      textureSize = (igl_vector_uint2){(uint32_t)colorTexture->getSize().width,
+                                       (uint32_t)colorTexture->getSize().height};
     }
     if (textureSize.x == 0 || textureSize.y == 0)
       return;
@@ -1173,8 +1173,8 @@ class MNVGcontext {
   int bufferIndex = 0;
 
   void renderViewportWithWidth(float width, float height, float devicePixelRatio) {
-    viewPortSize = (igl_vector_uint2){(unsigned int)(width * devicePixelRatio),
-                                      (unsigned int)(height * devicePixelRatio)};
+    viewPortSize = (igl_vector_uint2){(uint32_t)(width * devicePixelRatio),
+                                      (uint32_t)(height * devicePixelRatio)};
 
     bufferIndex = (bufferIndex + 1) % 3;
     _buffers = _cbuffers[bufferIndex];
