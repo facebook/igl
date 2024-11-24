@@ -13,7 +13,7 @@
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
 
-#include <IGLU/nanovg/nanovg.h>
+#include <nanovg.h>
 #include <IGLU/nanovg/nanovg_igl.h>
 #include <IGLU/nanovg/demo.h>
 #include <IGLU/nanovg/perf.h>

@@ -26,6 +26,7 @@ macro(ADD_IGLU_MODULE module)
   target_include_directories(IGLU${module} PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include_${module}")
   target_include_directories(IGLU${module} PUBLIC "${IGL_ROOT_DIR}")
   target_include_directories(IGLU${module} PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/stb")
+  target_include_directories(IGLU${module} PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/nanovg/src")
 endmacro()
 
 add_iglu_module(imgui)
@@ -62,6 +63,9 @@ target_sources(IGLUimgui PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/img
 target_sources(IGLUimgui PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_widgets.cpp")
 target_include_directories(IGLUimgui PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/imgui")
 target_include_directories(IGLUtexture_accessor PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/glew/include")
+
+# Nanovg
+target_sources(IGLUnanovg PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/nanovg/src/nanovg.c")
 
 if(UNIX)
   if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
