@@ -201,7 +201,12 @@ static iglu::simdtypes::float4 mtlnvg__premulColor(NVGcolor c) {
   c.r *= c.a;
   c.g *= c.a;
   c.b *= c.a;
-  return (iglu::simdtypes::float4){c.r, c.g, c.b, c.a};
+    iglu::simdtypes::float4 ret;
+    ret.x = c.r,
+    ret.y = c.g,
+    ret.z = c.b,
+    ret.w = c.a;
+    return ret;
 }
 
 static void mtlnvg__xformToMat3x3(iglu::simdtypes::float3x3* m3, float* t) {
