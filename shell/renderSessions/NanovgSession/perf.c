@@ -1,3 +1,4 @@
+// clang-format off
 #include "perf.h"
 #include <stdio.h>
 #include <string.h>
@@ -188,3 +189,5 @@ void renderGraph(NVGcontext* vg, float x, float y, PerfGraph* fps)
 		nvgText(vg, x+w-3,y+3, str, NULL);
 	}
 }
+
+// clang-format on

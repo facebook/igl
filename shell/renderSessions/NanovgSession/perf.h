@@ -1,3 +1,4 @@
+// clang-format off
 #ifndef PERF_H
 #define PERF_H
 
@@ -44,3 +45,4 @@ int stopGPUTimer(GPUtimer* timer, float* times, int maxTimes);
 #endif
 
 #endif // PERF_H
+// clang-format on

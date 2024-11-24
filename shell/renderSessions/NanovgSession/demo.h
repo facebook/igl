@@ -1,3 +1,4 @@
+// clang-format off
 #ifndef DEMO_H
 #define DEMO_H
 
@@ -30,3 +31,4 @@ void saveScreenShot(int w, int h, int premult, const char* name);
 #endif
 
 #endif // DEMO_H
+// clang-format on

@@ -1,3 +1,4 @@
+// clang-format off
 #include "demo.h"
 #include <stdio.h>
 #include <string.h>
@@ -1236,3 +1237,4 @@ void saveScreenShot(int w, int h, int premult, const char* name)
  	free(image);
 #endif
 }
+// clang-format on
