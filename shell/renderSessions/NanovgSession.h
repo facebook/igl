@@ -13,33 +13,32 @@
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
 
-#include <nanovg.h>
-#include <IGLU/nanovg/nanovg_igl.h>
 #include "NanovgSession/demo.h"
 #include "NanovgSession/perf.h"
+#include <IGLU/nanovg/nanovg_igl.h>
+#include <nanovg.h>
 
 namespace igl::shell {
 
 class NanovgSession : public RenderSession {
  public:
-  explicit NanovgSession(std::shared_ptr<Platform> platform) :
-    RenderSession(std::move(platform)) {}
+  explicit NanovgSession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {}
   void initialize() noexcept override;
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
-    
-private:
-    void drawNanovg(float width, float height, std::shared_ptr<igl::IRenderCommandEncoder> command);
+
+ private:
+  void drawNanovg(float width, float height, std::shared_ptr<igl::IRenderCommandEncoder> command);
 
  private:
   std::shared_ptr<ICommandQueue> commandQueue_;
   RenderPassDesc renderPass_;
-    
-    NVGcontext *nvgContext_ = NULL;
-    int times_;
-    DemoData nvgDemoData_;
-    
-    PerfGraph fps, cpuGraph, gpuGraph;
-    double preTimestamp_;
+
+  NVGcontext* nvgContext_ = NULL;
+  int times_;
+  DemoData nvgDemoData_;
+
+  PerfGraph fps, cpuGraph, gpuGraph;
+  double preTimestamp_;
 };
 
 } // namespace igl::shell

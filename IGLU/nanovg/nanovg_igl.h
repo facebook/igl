@@ -22,8 +22,8 @@
 //
 
 #pragma once
-#include <igl/IGL.h>
 #include "nanovg.h"
+#include <igl/IGL.h>
 
 // Create flags
 enum NVGcreateFlags {
@@ -64,9 +64,11 @@ typedef struct MNVGframebuffer MNVGframebuffer;
 
 // Creates a new NanoVG context.  The `flags` should be combination of
 // `NVGcreateFlags` above.
-NVGcontext* nvgCreateMTL(igl::IDevice * device, int flags);
+NVGcontext* nvgCreateMTL(igl::IDevice* device, int flags);
 
-void nvgSetColorTexture(NVGcontext* ctx, std::shared_ptr<igl::IFramebuffer> framebuffer, std::shared_ptr<igl::IRenderCommandEncoder>);
+void nvgSetColorTexture(NVGcontext* ctx,
+                        std::shared_ptr<igl::IFramebuffer> framebuffer,
+                        std::shared_ptr<igl::IRenderCommandEncoder>);
 
 // Deletes the specified NanoVG context.
 void nvgDeleteMTL(NVGcontext* ctx);
@@ -79,8 +81,7 @@ void nvgDeleteMTL(NVGcontext* ctx);
 void mnvgBindFramebuffer(MNVGframebuffer* framebuffer);
 
 // Creates a new framebuffer.
-MNVGframebuffer* mnvgCreateFramebuffer(NVGcontext* ctx, int width,
-                                       int height, int imageFlags);
+MNVGframebuffer* mnvgCreateFramebuffer(NVGcontext* ctx, int width, int height, int imageFlags);
 
 // Deletes the specified framebuffer.
 void mnvgDeleteFramebuffer(MNVGframebuffer* framebuffer);
@@ -105,8 +106,7 @@ void* mnvgDevice(NVGcontext* ctx);
 void* mnvgImageHandle(NVGcontext* ctx, int image);
 
 // Copies the pixels from the specified image into the specified `data`.
-void mnvgReadPixels(NVGcontext* ctx, int image, int x, int y, int width,
-                    int height, void* data);
+void mnvgReadPixels(NVGcontext* ctx, int image, int x, int y, int width, int height, void* data);
 
 // Returns the current OS target.
 enum MNVGTarget mnvgTarget();
