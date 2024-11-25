@@ -238,107 +238,106 @@ static void mtlnvg__vset(NVGvertex* vtx, float x, float y, float u, float v) {
 
 class MNVGcontext {
  public:
-  igl::IDevice* device;
-    igl::IRenderCommandEncoder* _renderEncoder = nullptr;
+  igl::IDevice* device_;
+  igl::IRenderCommandEncoder* renderEncoder_ = nullptr;
 
-  int _fragSize;
-  int _indexSize;
-  int _flags;
-  igl_vector_uint2 viewPortSize;
-  igl::Color clearColor{1, 1, 1};
-  bool clearBufferOnFlush;
+  int fragmentUniformBufferSize_;
+  int indexSize_;
+  int flags_;
+  igl_vector_uint2 viewPortSize_;
 
-    igl::IFramebuffer* framebuffer = nullptr;
+  igl::IFramebuffer* framebuffer_ = nullptr;
 
   // Textures
-  std::vector<MNVGtexture*> _textures;
-  int _textureId;
+  std::vector<MNVGtexture*> textures_;
+  int textureId_;
 
   // Per frame buffers
-  MNVGbuffers* _buffers;
-  std::vector<MNVGbuffers*> _cbuffers;
-  int _maxBuffers;
+  MNVGbuffers* curBuffers_;
+  std::vector<MNVGbuffers*> allBuffers_;
+  int maxBuffers_;
 
   // Cached states.
   MNVGblend* _blendFunc;
-  std::shared_ptr<igl::IDepthStencilState> _defaultStencilState;
-  std::shared_ptr<igl::IDepthStencilState> _fillShapeStencilState;
-  std::shared_ptr<igl::IDepthStencilState> _fillAntiAliasStencilState;
-  std::shared_ptr<igl::IDepthStencilState> _fillStencilState;
-  std::shared_ptr<igl::IDepthStencilState> _strokeShapeStencilState;
-  std::shared_ptr<igl::IDepthStencilState> _strokeAntiAliasStencilState;
-  std::shared_ptr<igl::IDepthStencilState> _strokeClearStencilState;
-  std::shared_ptr<igl::IShaderModule> _fragmentFunction;
-  std::shared_ptr<igl::IShaderModule> _vertexFunction;
-  igl::TextureFormat piplelinePixelFormat;
-  std::shared_ptr<igl::IRenderPipelineState> _pipelineState;
-  std::shared_ptr<igl::IRenderPipelineState> _pipelineStateTriangleStrip;
-  std::shared_ptr<igl::IRenderPipelineState> _stencilOnlyPipelineState;
-  std::shared_ptr<igl::IRenderPipelineState> _stencilOnlyPipelineStateTriangleStrip;
-  std::shared_ptr<igl::ISamplerState> _pseudoSampler;
-  std::shared_ptr<igl::ITexture> _pseudoTexture;
-  igl::VertexInputStateDesc _vertexDescriptor;
+  std::shared_ptr<igl::IDepthStencilState> defaultStencilState_;
+  std::shared_ptr<igl::IDepthStencilState> fillShapeStencilState_;
+  std::shared_ptr<igl::IDepthStencilState> fillAntiAliasStencilState_;
+  std::shared_ptr<igl::IDepthStencilState> fillStencilState_;
+  std::shared_ptr<igl::IDepthStencilState> strokeShapeStencilState_;
+  std::shared_ptr<igl::IDepthStencilState> strokeAntiAliasStencilState_;
+  std::shared_ptr<igl::IDepthStencilState> strokeClearStencilState_;
+  std::shared_ptr<igl::IShaderModule> fragmentFunction_;
+  std::shared_ptr<igl::IShaderModule> vertexFunction_;
+  igl::TextureFormat piplelinePixelFormat_;
+  std::shared_ptr<igl::IRenderPipelineState> pipelineState_;
+  std::shared_ptr<igl::IRenderPipelineState> pipelineStateTriangleStrip_;
+  std::shared_ptr<igl::IRenderPipelineState> stencilOnlyPipelineState_;
+  std::shared_ptr<igl::IRenderPipelineState> stencilOnlyPipelineStateTriangleStrip_;
+  std::shared_ptr<igl::ISamplerState> pseudoSampler_;
+  std::shared_ptr<igl::ITexture> pseudoTexture_;
+  igl::VertexInputStateDesc vertexDescriptor_;
 
   MNVGcall* allocCall() {
     MNVGcall* ret = NULL;
-    if (_buffers->ncalls + 1 > _buffers->ccalls) {
-      int ccalls = mtlnvg__maxi(_buffers->ncalls + 1, 128) + _buffers->ccalls / 2;
-      _buffers->calls.resize(ccalls);
-      _buffers->ccalls = ccalls;
+    if (curBuffers_->ncalls + 1 > curBuffers_->ccalls) {
+      int ccalls = mtlnvg__maxi(curBuffers_->ncalls + 1, 128) + curBuffers_->ccalls / 2;
+      curBuffers_->calls.resize(ccalls);
+      curBuffers_->ccalls = ccalls;
     }
-    ret = &_buffers->calls[_buffers->ncalls++];
+    ret = &curBuffers_->calls[curBuffers_->ncalls++];
     memset(ret, 0, sizeof(MNVGcall));
     return ret;
   }
 
   int allocFragUniforms(int n) {
     int ret = 0;
-    if (_buffers->nuniforms + n > _buffers->cuniforms) {
-      int cuniforms = mtlnvg__maxi(_buffers->nuniforms + n, 128) + _buffers->cuniforms / 4;
-      _buffers->fragmentUniforms.resize(_fragSize * cuniforms);
+    if (curBuffers_->nuniforms + n > curBuffers_->cuniforms) {
+      int cuniforms = mtlnvg__maxi(curBuffers_->nuniforms + n, 128) + curBuffers_->cuniforms / 4;
+      curBuffers_->fragmentUniforms.resize(fragmentUniformBufferSize_ * cuniforms);
 
-      if (device->getBackendType() == igl::BackendType::Vulkan) {
-        IGL_DEBUG_ASSERT((_fragSize * cuniforms) < 65536); // vulkan max 65536;
+      if (device_->getBackendType() == igl::BackendType::Vulkan) {
+        IGL_DEBUG_ASSERT((fragmentUniformBufferSize_ * cuniforms) < 65536); // vulkan max 65536;
       }
 
       igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform,
-                           _buffers->fragmentUniforms.data(),
-                           _fragSize * cuniforms);
+                           curBuffers_->fragmentUniforms.data(),
+                           fragmentUniformBufferSize_ * cuniforms);
       desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
       desc.debugName = "fragment_uniform_buffer";
-      std::shared_ptr<igl::IBuffer> buffer = device->createBuffer(desc, NULL);
+      std::shared_ptr<igl::IBuffer> buffer = device_->createBuffer(desc, NULL);
 
-      _buffers->fragmentUniformBuffer = buffer;
-      _buffers->cuniforms = cuniforms;
+      curBuffers_->fragmentUniformBuffer = buffer;
+      curBuffers_->cuniforms = cuniforms;
     }
-    ret = _buffers->nuniforms * _fragSize;
-    _buffers->nuniforms += n;
+    ret = curBuffers_->nuniforms * fragmentUniformBufferSize_;
+    curBuffers_->nuniforms += n;
     return ret;
   }
 
   int allocIndexes(int n) {
     int ret = 0;
-    if (_buffers->nindexes + n > _buffers->cindexes) {
-      int cindexes = mtlnvg__maxi(_buffers->nindexes + n, 4096) + _buffers->cindexes / 2;
-      _buffers->indexes.resize(cindexes);
+    if (curBuffers_->nindexes + n > curBuffers_->cindexes) {
+      int cindexes = mtlnvg__maxi(curBuffers_->nindexes + n, 4096) + curBuffers_->cindexes / 2;
+      curBuffers_->indexes.resize(cindexes);
 
-      igl::BufferDesc desc(
-          igl::BufferDesc::BufferTypeBits::Index, _buffers->indexes.data(), _indexSize * cindexes);
+      igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Index,
+                           curBuffers_->indexes.data(),
+                           indexSize_ * cindexes);
       desc.debugName = "index_buffer";
-      std::shared_ptr<igl::IBuffer> buffer = device->createBuffer(desc, NULL);
+      std::shared_ptr<igl::IBuffer> buffer = device_->createBuffer(desc, NULL);
 
-      _buffers->indexBuffer = buffer;
-      _buffers->cindexes = cindexes;
+      curBuffers_->indexBuffer = buffer;
+      curBuffers_->cindexes = cindexes;
     }
-    ret = _buffers->nindexes;
-    _buffers->nindexes += n;
+    ret = curBuffers_->nindexes;
+    curBuffers_->nindexes += n;
     return ret;
   }
 
   MNVGtexture* allocTexture() {
     MNVGtexture* tex = nullptr;
 
-    for (MNVGtexture* texture : _textures) {
+    for (MNVGtexture* texture : textures_) {
       if (texture->_id == 0) {
         tex = texture;
         break;
@@ -346,29 +345,29 @@ class MNVGcontext {
     }
     if (tex == nullptr) {
       tex = new MNVGtexture();
-      _textures.emplace_back(tex);
+      textures_.emplace_back(tex);
     }
-    tex->_id = ++_textureId;
+    tex->_id = ++textureId_;
     return tex;
   }
 
   int allocVerts(int n) {
     int ret = 0;
-    if (_buffers->nverts + n > _buffers->cverts) {
-      int cverts = mtlnvg__maxi(_buffers->nverts + n, 4096) + _buffers->cverts / 2;
-      _buffers->verts.resize(cverts);
+    if (curBuffers_->nverts + n > curBuffers_->cverts) {
+      int cverts = mtlnvg__maxi(curBuffers_->nverts + n, 4096) + curBuffers_->cverts / 2;
+      curBuffers_->verts.resize(cverts);
 
       igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Vertex,
-                           _buffers->verts.data(),
+                           curBuffers_->verts.data(),
                            sizeof(NVGvertex) * cverts);
       desc.debugName = "vertex_buffer";
-      std::shared_ptr<igl::IBuffer> buffer = device->createBuffer(desc, NULL);
+      std::shared_ptr<igl::IBuffer> buffer = device_->createBuffer(desc, NULL);
 
-      _buffers->vertBuffer = buffer;
-      _buffers->cverts = cverts;
+      curBuffers_->vertBuffer = buffer;
+      curBuffers_->cverts = cverts;
     }
-    ret = _buffers->nverts;
-    _buffers->nverts += n;
+    ret = curBuffers_->nverts;
+    curBuffers_->nverts += n;
     return ret;
   }
 
@@ -458,59 +457,59 @@ class MNVGcontext {
   }
 
   void bindRenderPipeline(const std::shared_ptr<igl::IRenderPipelineState>& pipelineState) {
-    _renderEncoder->bindRenderPipelineState(pipelineState);
-    _renderEncoder->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *_buffers->vertBuffer, 0);
-    _renderEncoder->bindBuffer(kVertexUniformBlockIndex, _buffers->vertexUniformBuffer.get(), 0);
-    _renderEncoder->bindBuffer(
-        kFragmentUniformBlockIndex, _buffers->fragmentUniformBuffer.get(), 0);
+    renderEncoder_->bindRenderPipelineState(pipelineState);
+    renderEncoder_->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *curBuffers_->vertBuffer, 0);
+    renderEncoder_->bindBuffer(kVertexUniformBlockIndex, curBuffers_->vertexUniformBuffer.get(), 0);
+    renderEncoder_->bindBuffer(
+        kFragmentUniformBlockIndex, curBuffers_->fragmentUniformBuffer.get(), 0);
   }
 
   void convexFill(MNVGcall* call) {
-    const int kIndexBufferOffset = call->indexOffset * _indexSize;
-    bindRenderPipeline(_pipelineState);
+    const int kIndexBufferOffset = call->indexOffset * indexSize_;
+    bindRenderPipeline(pipelineState_);
     setUniforms(call->uniformOffset, call->image);
     if (call->indexCount > 0) {
-      _renderEncoder->bindIndexBuffer(
-          *_buffers->indexBuffer, igl::IndexFormat::UInt32, kIndexBufferOffset);
-      _renderEncoder->drawIndexed(call->indexCount);
+      renderEncoder_->bindIndexBuffer(
+          *curBuffers_->indexBuffer, igl::IndexFormat::UInt32, kIndexBufferOffset);
+      renderEncoder_->drawIndexed(call->indexCount);
     }
 
     // Draw fringes
     if (call->strokeCount > 0) {
-      bindRenderPipeline(_pipelineStateTriangleStrip);
-      _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
+      bindRenderPipeline(pipelineStateTriangleStrip_);
+      renderEncoder_->draw(call->strokeCount, 1, call->strokeOffset);
     }
   }
 
   void fill(MNVGcall* call) {
     // Draws shapes.
-    const int kIndexBufferOffset = call->indexOffset * _indexSize;
-    bindRenderPipeline(_stencilOnlyPipelineState);
-    _renderEncoder->bindDepthStencilState(_fillShapeStencilState);
+    const int kIndexBufferOffset = call->indexOffset * indexSize_;
+    bindRenderPipeline(stencilOnlyPipelineState_);
+    renderEncoder_->bindDepthStencilState(fillShapeStencilState_);
     if (call->indexCount > 0) {
-      _renderEncoder->bindIndexBuffer(
-          *_buffers->indexBuffer, igl::IndexFormat::UInt32, kIndexBufferOffset);
-      _renderEncoder->drawIndexed(call->indexCount);
+      renderEncoder_->bindIndexBuffer(
+          *curBuffers_->indexBuffer, igl::IndexFormat::UInt32, kIndexBufferOffset);
+      renderEncoder_->drawIndexed(call->indexCount);
     }
 
     // Restores states.
-    bindRenderPipeline(_pipelineStateTriangleStrip);
+    bindRenderPipeline(pipelineStateTriangleStrip_);
 
     // Draws anti-aliased fragments.
     setUniforms(call->uniformOffset, call->image);
-    if (_flags & NVG_ANTIALIAS && call->strokeCount > 0) {
-      _renderEncoder->bindDepthStencilState(_fillAntiAliasStencilState);
-      _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
+    if (flags_ & NVG_ANTIALIAS && call->strokeCount > 0) {
+      renderEncoder_->bindDepthStencilState(fillAntiAliasStencilState_);
+      renderEncoder_->draw(call->strokeCount, 1, call->strokeOffset);
     }
 
     // Draws fill.
-    _renderEncoder->bindDepthStencilState(_fillStencilState);
-    _renderEncoder->draw(call->triangleCount, 1, call->triangleOffset);
-    _renderEncoder->bindDepthStencilState(_defaultStencilState);
+    renderEncoder_->bindDepthStencilState(fillStencilState_);
+    renderEncoder_->draw(call->triangleCount, 1, call->triangleOffset);
+    renderEncoder_->bindDepthStencilState(defaultStencilState_);
   }
 
   MNVGtexture* findTexture(int _id) {
-    for (MNVGtexture* texture : _textures) {
+    for (MNVGtexture* texture : textures_) {
       if (texture->_id == _id)
         return texture;
     }
@@ -518,28 +517,26 @@ class MNVGcontext {
   }
 
   FragmentUniforms* fragUniformAtIndex(int index) {
-    return (FragmentUniforms*)&_buffers->fragmentUniforms[index];
+    return (FragmentUniforms*)&curBuffers_->fragmentUniforms[index];
   }
 
   void renderCancel() {
-    _buffers->image = 0;
-    _buffers->isBusy = false;
-    _buffers->nindexes = 0;
-    _buffers->nverts = 0;
-    _buffers->ncalls = 0;
-    _buffers->nuniforms = 0;
+    curBuffers_->image = 0;
+    curBuffers_->isBusy = false;
+    curBuffers_->nindexes = 0;
+    curBuffers_->nverts = 0;
+    curBuffers_->ncalls = 0;
+    curBuffers_->nuniforms = 0;
   }
 
   void renderCommandEncoderWithColorTexture() {
-    clearBufferOnFlush = false;
-
-    _renderEncoder->setStencilReferenceValue(0);
-    _renderEncoder->bindViewport(
-        {0.0, 0.0, (float)viewPortSize.x, (float)viewPortSize.y, 0.0, 1.0});
-    _renderEncoder->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *_buffers->vertBuffer, 0);
-    _renderEncoder->bindBuffer(kVertexUniformBlockIndex, _buffers->vertexUniformBuffer.get(), 0);
-    _renderEncoder->bindBuffer(
-        kFragmentUniformBlockIndex, _buffers->fragmentUniformBuffer.get(), 0);
+    renderEncoder_->setStencilReferenceValue(0);
+    renderEncoder_->bindViewport(
+        {0.0, 0.0, (float)viewPortSize_.x, (float)viewPortSize_.y, 0.0, 1.0});
+    renderEncoder_->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *curBuffers_->vertBuffer, 0);
+    renderEncoder_->bindBuffer(kVertexUniformBlockIndex, curBuffers_->vertexUniformBuffer.get(), 0);
+    renderEncoder_->bindBuffer(
+        kFragmentUniformBlockIndex, curBuffers_->fragmentUniformBuffer.get(), 0);
   }
 
   int renderCreate() {
@@ -547,7 +544,7 @@ class MNVGcontext {
 
     const std::string vertexFunction = "vertexShader";
     std::string fragmentFunction;
-    if (_flags & NVG_ANTIALIAS) {
+    if (flags_ & NVG_ANTIALIAS) {
       fragmentFunction = "fragmentShaderAA";
     } else {
       fragmentFunction = "fragmentShader";
@@ -558,18 +555,18 @@ class MNVGcontext {
     unsigned char* shader_source = NULL;
     unsigned int shader_length = 0;
 
-    if (device->getBackendType() == igl::BackendType::Metal) {
+    if (device_->getBackendType() == igl::BackendType::Metal) {
       std::unique_ptr<igl::IShaderLibrary> shader_library =
-          igl::ShaderLibraryCreator::fromStringInput(*device,
+          igl::ShaderLibraryCreator::fromStringInput(*device_,
                                                      iglu::nanovg::metalShader.c_str(),
                                                      vertexFunction,
                                                      fragmentFunction,
                                                      "",
                                                      &result);
 
-      _vertexFunction = shader_library->getShaderModule(vertexFunction);
-      _fragmentFunction = shader_library->getShaderModule(fragmentFunction);
-    } else if (device->getBackendType() == igl::BackendType::OpenGL) {
+      vertexFunction_ = shader_library->getShaderModule(vertexFunction);
+      fragmentFunction_ = shader_library->getShaderModule(fragmentFunction);
+    } else if (device_->getBackendType() == igl::BackendType::OpenGL) {
 #if IGL_PLATFORM_ANDROID || IGL_PLATFORM_IOS
       auto codeVS = std::regex_replace(
           iglu::nanovg::opengl410VertexShaderHeader, std::regex("#version 410"), "#version 300 es");
@@ -589,11 +586,11 @@ class MNVGcontext {
 
       std::unique_ptr<igl::IShaderStages> shader_stages =
           igl::ShaderStagesCreator::fromModuleStringInput(
-              *device, codeVS.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
+              *device_, codeVS.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
 
-      _vertexFunction = shader_stages->getVertexModule();
-      _fragmentFunction = shader_stages->getFragmentModule();
-    } else if (device->getBackendType() == igl::BackendType::Vulkan) {
+      vertexFunction_ = shader_stages->getVertexModule();
+      fragmentFunction_ = shader_stages->getFragmentModule();
+    } else if (device_->getBackendType() == igl::BackendType::Vulkan) {
       auto codeVS =
           iglu::nanovg::opengl460VertexShaderHeader + iglu::nanovg::openglVertexShaderBody;
       auto codeFS =
@@ -601,50 +598,49 @@ class MNVGcontext {
 
       std::unique_ptr<igl::IShaderStages> shader_stages =
           igl::ShaderStagesCreator::fromModuleStringInput(
-              *device, codeVS.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
+              *device_, codeVS.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
 
-      _vertexFunction = shader_stages->getVertexModule();
-      _fragmentFunction = shader_stages->getFragmentModule();
+      vertexFunction_ = shader_stages->getVertexModule();
+      fragmentFunction_ = shader_stages->getFragmentModule();
     }
 
-    _maxBuffers = 3;
+    maxBuffers_ = 3;
 
-    for (int i = _maxBuffers; i--;) {
-      _cbuffers.emplace_back(new MNVGbuffers());
+    for (int i = maxBuffers_; i--;) {
+      allBuffers_.emplace_back(new MNVGbuffers());
     }
-    clearBufferOnFlush = false;
 
     // Initializes vertex descriptor.
-    _vertexDescriptor.numAttributes = 2;
-    _vertexDescriptor.attributes[0].format = igl::VertexAttributeFormat::Float2;
-    _vertexDescriptor.attributes[0].name = "pos";
-    _vertexDescriptor.attributes[0].bufferIndex = 0;
-    _vertexDescriptor.attributes[0].offset = offsetof(NVGvertex, x);
-    _vertexDescriptor.attributes[0].location = 0;
+    vertexDescriptor_.numAttributes = 2;
+    vertexDescriptor_.attributes[0].format = igl::VertexAttributeFormat::Float2;
+    vertexDescriptor_.attributes[0].name = "pos";
+    vertexDescriptor_.attributes[0].bufferIndex = 0;
+    vertexDescriptor_.attributes[0].offset = offsetof(NVGvertex, x);
+    vertexDescriptor_.attributes[0].location = 0;
 
-    _vertexDescriptor.attributes[1].format = igl::VertexAttributeFormat::Float2;
-    _vertexDescriptor.attributes[1].name = "tcoord";
-    _vertexDescriptor.attributes[1].bufferIndex = 0;
-    _vertexDescriptor.attributes[1].offset = offsetof(NVGvertex, u);
-    _vertexDescriptor.attributes[1].location = 1;
+    vertexDescriptor_.attributes[1].format = igl::VertexAttributeFormat::Float2;
+    vertexDescriptor_.attributes[1].name = "tcoord";
+    vertexDescriptor_.attributes[1].bufferIndex = 0;
+    vertexDescriptor_.attributes[1].offset = offsetof(NVGvertex, u);
+    vertexDescriptor_.attributes[1].location = 1;
 
-    _vertexDescriptor.numInputBindings = 1;
-    _vertexDescriptor.inputBindings[0].stride = sizeof(NVGvertex);
-    _vertexDescriptor.inputBindings[0].sampleFunction = igl::VertexSampleFunction::PerVertex;
+    vertexDescriptor_.numInputBindings = 1;
+    vertexDescriptor_.inputBindings[0].stride = sizeof(NVGvertex);
+    vertexDescriptor_.inputBindings[0].sampleFunction = igl::VertexSampleFunction::PerVertex;
 
     // Initialzes textures.
-    _textureId = 0;
+    textureId_ = 0;
 
     // Initializes default sampler descriptor.
     igl::SamplerStateDesc samplerDescriptor;
     samplerDescriptor.debugName = "pseudoSampler";
-    _pseudoSampler = device->createSamplerState(samplerDescriptor, &result);
+    pseudoSampler_ = device_->createSamplerState(samplerDescriptor, &result);
 
     // Initializes pseudo texture for macOS.
     if (creates_pseudo_texture) {
       const int kPseudoTextureImage = renderCreateTextureWithType(NVG_TEXTURE_ALPHA, 1, 1, 0, NULL);
       MNVGtexture* tex = findTexture(kPseudoTextureImage);
-      _pseudoTexture = tex->tex;
+      pseudoTexture_ = tex->tex;
     }
 
     // Initializes default blend states.
@@ -659,7 +655,7 @@ class MNVGcontext {
 
     // Default stencil state.
     stencilDescriptor.debugName = "defaultStencilState";
-    _defaultStencilState = device->createDepthStencilState(stencilDescriptor, &result);
+    defaultStencilState_ = device_->createDepthStencilState(stencilDescriptor, &result);
 
     // Fill shape stencil.
     igl::StencilStateDesc frontFaceStencilDescriptor;
@@ -674,7 +670,7 @@ class MNVGcontext {
     stencilDescriptor.backFaceStencil = backFaceStencilDescriptor;
     stencilDescriptor.frontFaceStencil = frontFaceStencilDescriptor;
     stencilDescriptor.debugName = "fillShapeStencilState";
-    _fillShapeStencilState = device->createDepthStencilState(stencilDescriptor, &result);
+    fillShapeStencilState_ = device_->createDepthStencilState(stencilDescriptor, &result);
 
     // Fill anti-aliased stencil.
     frontFaceStencilDescriptor.stencilCompareFunction = igl::CompareFunction::Equal;
@@ -685,7 +681,7 @@ class MNVGcontext {
     stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
     stencilDescriptor.frontFaceStencil = frontFaceStencilDescriptor;
     stencilDescriptor.debugName = "fillAntiAliasStencilState";
-    _fillAntiAliasStencilState = device->createDepthStencilState(stencilDescriptor, &result);
+    fillAntiAliasStencilState_ = device_->createDepthStencilState(stencilDescriptor, &result);
 
     // Fill stencil.
     frontFaceStencilDescriptor.stencilCompareFunction = igl::CompareFunction::NotEqual;
@@ -696,7 +692,7 @@ class MNVGcontext {
     stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
     stencilDescriptor.frontFaceStencil = frontFaceStencilDescriptor;
     stencilDescriptor.debugName = "fillStencilState";
-    _fillStencilState = device->createDepthStencilState(stencilDescriptor, &result);
+    fillStencilState_ = device_->createDepthStencilState(stencilDescriptor, &result);
 
     // Stroke shape stencil.
     frontFaceStencilDescriptor.stencilCompareFunction = igl::CompareFunction::Equal;
@@ -707,7 +703,7 @@ class MNVGcontext {
     stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
     stencilDescriptor.frontFaceStencil = frontFaceStencilDescriptor;
     stencilDescriptor.debugName = "strokeShapeStencilState";
-    _strokeShapeStencilState = device->createDepthStencilState(stencilDescriptor, &result);
+    strokeShapeStencilState_ = device_->createDepthStencilState(stencilDescriptor, &result);
 
     // Stroke anti-aliased stencil.
     frontFaceStencilDescriptor.depthStencilPassOperation = igl::StencilOperation::Keep;
@@ -715,7 +711,7 @@ class MNVGcontext {
     stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
     stencilDescriptor.frontFaceStencil = frontFaceStencilDescriptor;
     stencilDescriptor.debugName = "strokeAntiAliasStencilState";
-    _strokeAntiAliasStencilState = device->createDepthStencilState(stencilDescriptor, &result);
+    strokeAntiAliasStencilState_ = device_->createDepthStencilState(stencilDescriptor, &result);
 
     // Stroke clear stencil.
     frontFaceStencilDescriptor.stencilCompareFunction = igl::CompareFunction::AlwaysPass;
@@ -726,7 +722,7 @@ class MNVGcontext {
     stencilDescriptor.backFaceStencil = igl::StencilStateDesc();
     stencilDescriptor.frontFaceStencil = frontFaceStencilDescriptor;
     stencilDescriptor.debugName = "strokeClearStencilState";
-    _strokeClearStencilState = device->createDepthStencilState(stencilDescriptor, &result);
+    strokeClearStencilState_ = device_->createDepthStencilState(stencilDescriptor, &result);
     return 1;
   }
 
@@ -754,7 +750,7 @@ class MNVGcontext {
     igl::TextureDesc textureDescriptor = igl::TextureDesc::new2D(
         pixelFormat, width, height, igl::TextureDesc::TextureUsageBits::Sampled);
 
-    tex->tex = device->createTexture(textureDescriptor, NULL);
+    tex->tex = device_->createTexture(textureDescriptor, NULL);
 
     if (data != NULL) {
       int bytesPerRow = 0;
@@ -793,13 +789,13 @@ class MNVGcontext {
     }
 
     samplerDescriptor.debugName = "textureSampler";
-    tex->sampler = device->createSamplerState(samplerDescriptor, NULL);
+    tex->sampler = device_->createSamplerState(samplerDescriptor, NULL);
 
     return tex->_id;
   }
 
   void renderDelete() {
-    for (MNVGbuffers* buffers : _cbuffers) {
+    for (MNVGbuffers* buffers : allBuffers_) {
       buffers->commandBuffer = nullptr;
       buffers->vertexUniformBuffer = nullptr;
       buffers->stencilTexture = nullptr;
@@ -808,30 +804,30 @@ class MNVGcontext {
       buffers->fragmentUniformBuffer = nullptr;
     }
 
-    for (MNVGtexture* texture : _textures) {
+    for (MNVGtexture* texture : textures_) {
       texture->tex = nullptr;
       texture->sampler = nullptr;
     }
 
     free(_blendFunc);
-    _renderEncoder = nullptr;
-    _textures.clear();
-    _cbuffers.clear();
-    _defaultStencilState = nullptr;
-    _fillShapeStencilState = nullptr;
-    _fillAntiAliasStencilState = nullptr;
-    _strokeShapeStencilState = nullptr;
-    _strokeAntiAliasStencilState = nullptr;
-    _strokeClearStencilState = nullptr;
-    _pipelineState = nullptr;
-    _stencilOnlyPipelineState = nullptr;
-    _pseudoSampler = nullptr;
-    _pseudoTexture = nullptr;
-    device = nullptr;
+    renderEncoder_ = nullptr;
+    textures_.clear();
+    allBuffers_.clear();
+    defaultStencilState_ = nullptr;
+    fillShapeStencilState_ = nullptr;
+    fillAntiAliasStencilState_ = nullptr;
+    strokeShapeStencilState_ = nullptr;
+    strokeAntiAliasStencilState_ = nullptr;
+    strokeClearStencilState_ = nullptr;
+    pipelineState_ = nullptr;
+    stencilOnlyPipelineState_ = nullptr;
+    pseudoSampler_ = nullptr;
+    pseudoTexture_ = nullptr;
+    device_ = nullptr;
   }
 
   int renderDeleteTexture(int image) {
-    for (MNVGtexture* texture : _textures) {
+    for (MNVGtexture* texture : textures_) {
       if (texture->_id == image) {
         if (texture->tex != nullptr && (texture->flags & NVG_IMAGE_NODELETE) == 0) {
           texture->tex = nullptr;
@@ -876,8 +872,8 @@ class MNVGcontext {
     if (vertOffset == -1) {
       // We get here if call alloc was ok, but something else is not.
       // Roll back the last call to prevent drawing it.
-      if (_buffers->ncalls > 0)
-        _buffers->ncalls--;
+      if (curBuffers_->ncalls > 0)
+        curBuffers_->ncalls--;
       return;
     }
 
@@ -885,23 +881,23 @@ class MNVGcontext {
     if (indexOffset == -1) {
       // We get here if call alloc was ok, but something else is not.
       // Roll back the last call to prevent drawing it.
-      if (_buffers->ncalls > 0)
-        _buffers->ncalls--;
+      if (curBuffers_->ncalls > 0)
+        curBuffers_->ncalls--;
       return;
     }
     call->indexOffset = indexOffset;
     call->indexCount = indexCount;
-    uint32_t* index = &_buffers->indexes[indexOffset];
+    uint32_t* index = &curBuffers_->indexes[indexOffset];
 
     int strokeVertOffset = vertOffset + (maxverts - strokeCount);
     call->strokeOffset = strokeVertOffset + 1;
     call->strokeCount = strokeCount - 2;
-    NVGvertex* strokeVert = _buffers->verts.data() + strokeVertOffset;
+    NVGvertex* strokeVert = curBuffers_->verts.data() + strokeVertOffset;
 
     NVGpath* path = (NVGpath*)&paths[0];
     for (int i = npaths; i--; ++path) {
       if (path->nfill > 2) {
-        memcpy(&_buffers->verts[vertOffset], path->fill, sizeof(NVGvertex) * path->nfill);
+        memcpy(&curBuffers_->verts[vertOffset], path->fill, sizeof(NVGvertex) * path->nfill);
 
         int hubVertOffset = vertOffset++;
         for (int j = 2; j < path->nfill; j++) {
@@ -925,7 +921,7 @@ class MNVGcontext {
     if (call->type == MNVG_FILL) {
       // Quad
       call->triangleOffset = vertOffset;
-      quad = &_buffers->verts[call->triangleOffset];
+      quad = &curBuffers_->verts[call->triangleOffset];
       mtlnvg__vset(&quad[0], bounds[2], bounds[3], 0.5f, 1.0f);
       mtlnvg__vset(&quad[1], bounds[2], bounds[1], 0.5f, 1.0f);
       mtlnvg__vset(&quad[2], bounds[0], bounds[3], 0.5f, 1.0f);
@@ -937,8 +933,8 @@ class MNVGcontext {
     if (call->uniformOffset == -1) {
       // We get here if call alloc was ok, but something else is not.
       // Roll back the last call to prevent drawing it.
-      if (_buffers->ncalls > 0)
-        _buffers->ncalls--;
+      if (curBuffers_->ncalls > 0)
+        curBuffers_->ncalls--;
       return;
     }
     convertPaintForFrag(
@@ -947,45 +943,45 @@ class MNVGcontext {
 
   void renderFlush() {
     // Cancelled if the drawable is invisible.
-    if (viewPortSize.x == 0 || viewPortSize.y == 0) {
+    if (viewPortSize_.x == 0 || viewPortSize_.y == 0) {
       renderCancel();
       return;
     }
 
-    _buffers->uploadToGpu();
+    curBuffers_->uploadToGpu();
 
     renderCommandEncoderWithColorTexture();
 
-    MNVGcall* call = &_buffers->calls[0];
-    for (int i = _buffers->ncalls; i--; ++call) {
+    MNVGcall* call = &curBuffers_->calls[0];
+    for (int i = curBuffers_->ncalls; i--; ++call) {
       MNVGblend* blend = &call->blendFunc;
 
       updateRenderPipelineStatesForBlend(blend);
 
       if (call->type == MNVG_FILL) {
-        _renderEncoder->pushDebugGroupLabel("fill");
+        renderEncoder_->pushDebugGroupLabel("fill");
         fill(call);
       } else if (call->type == MNVG_CONVEXFILL) {
-        _renderEncoder->pushDebugGroupLabel("convexFill");
+        renderEncoder_->pushDebugGroupLabel("convexFill");
         convexFill(call);
       } else if (call->type == MNVG_STROKE) {
-        _renderEncoder->pushDebugGroupLabel("stroke");
+        renderEncoder_->pushDebugGroupLabel("stroke");
         stroke(call);
       } else if (call->type == MNVG_TRIANGLES) {
-        _renderEncoder->pushDebugGroupLabel("triangles");
+        renderEncoder_->pushDebugGroupLabel("triangles");
         triangles(call);
       }
 
-      _renderEncoder->popDebugGroupLabel();
+      renderEncoder_->popDebugGroupLabel();
     }
 
-    _buffers->isBusy = false;
-    _buffers->commandBuffer = nullptr;
-    _buffers->image = 0;
-    _buffers->nindexes = 0;
-    _buffers->nverts = 0;
-    _buffers->ncalls = 0;
-    _buffers->nuniforms = 0;
+    curBuffers_->isBusy = false;
+    curBuffers_->commandBuffer = nullptr;
+    curBuffers_->image = 0;
+    curBuffers_->nindexes = 0;
+    curBuffers_->nverts = 0;
+    curBuffers_->ncalls = 0;
+    curBuffers_->nuniforms = 0;
   }
 
   int renderGetTextureSizeForImage(int image, int* width, int* height) {
@@ -1020,14 +1016,14 @@ class MNVGcontext {
     if (offset == -1) {
       // We get here if call alloc was ok, but something else is not.
       // Roll back the last call to prevent drawing it.
-      if (_buffers->ncalls > 0)
-        _buffers->ncalls--;
+      if (curBuffers_->ncalls > 0)
+        curBuffers_->ncalls--;
       return;
     }
 
     call->strokeOffset = offset + 1;
     call->strokeCount = strokeCount - 2;
-    NVGvertex* strokeVert = _buffers->verts.data() + offset;
+    NVGvertex* strokeVert = curBuffers_->verts.data() + offset;
 
     NVGpath* path = (NVGpath*)&paths[0];
     for (int i = npaths; i--; ++path) {
@@ -1041,19 +1037,19 @@ class MNVGcontext {
       }
     }
 
-    if (_flags & NVG_STENCIL_STROKES) {
+    if (flags_ & NVG_STENCIL_STROKES) {
       // Fill shader
       call->uniformOffset = allocFragUniforms(2);
       if (call->uniformOffset == -1) {
         // We get here if call alloc was ok, but something else is not.
         // Roll back the last call to prevent drawing it.
-        if (_buffers->ncalls > 0)
-          _buffers->ncalls--;
+        if (curBuffers_->ncalls > 0)
+          curBuffers_->ncalls--;
         return;
       }
       convertPaintForFrag(
           fragUniformAtIndex(call->uniformOffset), paint, scissor, strokeWidth, fringe, -1.0f);
-      FragmentUniforms* frag = fragUniformAtIndex(call->uniformOffset + _fragSize);
+      FragmentUniforms* frag = fragUniformAtIndex(call->uniformOffset + fragmentUniformBufferSize_);
       convertPaintForFrag(frag, paint, scissor, strokeWidth, fringe, (1.0f - 0.5f / 255.0f));
     } else {
       // Fill shader
@@ -1061,8 +1057,8 @@ class MNVGcontext {
       if (call->uniformOffset == -1) {
         // We get here if call alloc was ok, but something else is not.
         // Roll back the last call to prevent drawing it.
-        if (_buffers->ncalls > 0)
-          _buffers->ncalls--;
+        if (curBuffers_->ncalls > 0)
+          curBuffers_->ncalls--;
         return;
       }
       convertPaintForFrag(
@@ -1091,21 +1087,21 @@ class MNVGcontext {
     if (call->triangleOffset == -1) {
       // We get here if call alloc was ok, but something else is not.
       // Roll back the last call to prevent drawing it.
-      if (_buffers->ncalls > 0)
-        _buffers->ncalls--;
+      if (curBuffers_->ncalls > 0)
+        curBuffers_->ncalls--;
       return;
     }
     call->triangleCount = nverts;
 
-    memcpy(&_buffers->verts[call->triangleOffset], verts, sizeof(NVGvertex) * nverts);
+    memcpy(&curBuffers_->verts[call->triangleOffset], verts, sizeof(NVGvertex) * nverts);
 
     // Fill shader
     call->uniformOffset = allocFragUniforms(1);
     if (call->uniformOffset == -1) {
       // We get here if call alloc was ok, but something else is not.
       // Roll back the last call to prevent drawing it.
-      if (_buffers->ncalls > 0)
-        _buffers->ncalls--;
+      if (curBuffers_->ncalls > 0)
+        curBuffers_->ncalls--;
       return;
     }
     frag = fragUniformAtIndex(call->uniformOffset);
@@ -1143,40 +1139,40 @@ class MNVGcontext {
 
   int bufferIndex = 0;
 
-  void renderViewportWithWidth(float width, float height, float devicePixelRatio) {
-    viewPortSize.x = (uint32_t)(width * devicePixelRatio);
-    viewPortSize.y = (uint32_t)(height * devicePixelRatio);
+  void renderViewportWithWidth(float width, float height, float device_PixelRatio) {
+    viewPortSize_.x = (uint32_t)(width * device_PixelRatio);
+    viewPortSize_.y = (uint32_t)(height * device_PixelRatio);
 
     bufferIndex = (bufferIndex + 1) % 3;
-    _buffers = _cbuffers[bufferIndex];
+    curBuffers_ = allBuffers_[bufferIndex];
 
-    _buffers->vertexUniforms.viewSize[0] = width;
-    _buffers->vertexUniforms.viewSize[1] = height;
+    curBuffers_->vertexUniforms.viewSize[0] = width;
+    curBuffers_->vertexUniforms.viewSize[1] = height;
 
     // Initializes view size buffer for vertex function.
-    if (_buffers->vertexUniformBuffer == nullptr) {
+    if (curBuffers_->vertexUniformBuffer == nullptr) {
       igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform,
-                           &_buffers->vertexUniforms,
+                           &curBuffers_->vertexUniforms,
                            sizeof(VertexUniforms));
       desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
       desc.debugName = "vertex_uniform_buffer";
-      _buffers->vertexUniformBuffer = device->createBuffer(desc, NULL);
+      curBuffers_->vertexUniformBuffer = device_->createBuffer(desc, NULL);
     }
   }
 
   void setUniforms(int uniformOffset, int image) {
-    _renderEncoder->bindBuffer(kFragmentUniformBlockIndex,
-                               _buffers->fragmentUniformBuffer.get(),
+    renderEncoder_->bindBuffer(kFragmentUniformBlockIndex,
+                               curBuffers_->fragmentUniformBuffer.get(),
                                uniformOffset,
-                               _fragSize);
+                               fragmentUniformBufferSize_);
 
     MNVGtexture* tex = (image == 0 ? nullptr : findTexture(image));
     if (tex != nullptr) {
-      _renderEncoder->bindTexture(0, igl::BindTarget::kFragment, tex->tex.get());
-      _renderEncoder->bindSamplerState(0, igl::BindTarget::kFragment, tex->sampler.get());
+      renderEncoder_->bindTexture(0, igl::BindTarget::kFragment, tex->tex.get());
+      renderEncoder_->bindSamplerState(0, igl::BindTarget::kFragment, tex->sampler.get());
     } else {
-      _renderEncoder->bindTexture(0, igl::BindTarget::kFragment, _pseudoTexture.get());
-      _renderEncoder->bindSamplerState(0, igl::BindTarget::kFragment, _pseudoSampler.get());
+      renderEncoder_->bindTexture(0, igl::BindTarget::kFragment, pseudoTexture_.get());
+      renderEncoder_->bindSamplerState(0, igl::BindTarget::kFragment, pseudoSampler_.get());
     }
   }
 
@@ -1185,41 +1181,41 @@ class MNVGcontext {
       return;
     }
 
-    if (_flags & NVG_STENCIL_STROKES) {
+    if (flags_ & NVG_STENCIL_STROKES) {
       // Fills the stroke base without overlap.
-      bindRenderPipeline(_pipelineStateTriangleStrip);
-      setUniforms(call->uniformOffset + _fragSize, call->image);
-      _renderEncoder->bindDepthStencilState(_strokeShapeStencilState);
+      bindRenderPipeline(pipelineStateTriangleStrip_);
+      setUniforms(call->uniformOffset + fragmentUniformBufferSize_, call->image);
+      renderEncoder_->bindDepthStencilState(strokeShapeStencilState_);
 
-      _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
+      renderEncoder_->draw(call->strokeCount, 1, call->strokeOffset);
 
       // Draws anti-aliased fragments.
       setUniforms(call->uniformOffset, call->image);
-      _renderEncoder->bindDepthStencilState(_strokeAntiAliasStencilState);
-      _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
+      renderEncoder_->bindDepthStencilState(strokeAntiAliasStencilState_);
+      renderEncoder_->draw(call->strokeCount, 1, call->strokeOffset);
 
       // Clears stencil buffer.
-      bindRenderPipeline(_stencilOnlyPipelineStateTriangleStrip);
-      _renderEncoder->bindDepthStencilState(_strokeClearStencilState);
-      _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
-      _renderEncoder->bindDepthStencilState(_defaultStencilState);
+      bindRenderPipeline(stencilOnlyPipelineStateTriangleStrip_);
+      renderEncoder_->bindDepthStencilState(strokeClearStencilState_);
+      renderEncoder_->draw(call->strokeCount, 1, call->strokeOffset);
+      renderEncoder_->bindDepthStencilState(defaultStencilState_);
     } else {
       // Draws strokes.
-      bindRenderPipeline(_pipelineStateTriangleStrip);
+      bindRenderPipeline(pipelineStateTriangleStrip_);
       setUniforms(call->uniformOffset, call->image);
-      _renderEncoder->draw(call->strokeCount, 1, call->strokeOffset);
+      renderEncoder_->draw(call->strokeCount, 1, call->strokeOffset);
     }
   }
 
   void triangles(MNVGcall* call) {
-    bindRenderPipeline(_pipelineState);
+    bindRenderPipeline(pipelineState_);
     setUniforms(call->uniformOffset, call->image);
-    _renderEncoder->draw(call->triangleCount, 1, call->triangleOffset);
+    renderEncoder_->draw(call->triangleCount, 1, call->triangleOffset);
   }
 
   void updateRenderPipelineStatesForBlend(MNVGblend* blend) {
-    if (_pipelineState != nullptr && _stencilOnlyPipelineState != nullptr &&
-        piplelinePixelFormat == framebuffer->getColorAttachment(0)->getProperties().format &&
+    if (pipelineState_ != nullptr && stencilOnlyPipelineState_ != nullptr &&
+        piplelinePixelFormat_ == framebuffer_->getColorAttachment(0)->getProperties().format &&
         _blendFunc->srcRGB == blend->srcRGB && _blendFunc->dstRGB == blend->dstRGB &&
         _blendFunc->srcAlpha == blend->srcAlpha && _blendFunc->dstAlpha == blend->dstAlpha) {
       return;
@@ -1239,17 +1235,17 @@ class MNVGcontext {
     igl::RenderPipelineDesc::TargetDesc::ColorAttachment& colorAttachmentDescriptor =
         pipelineStateDescriptor.targetDesc.colorAttachments[0];
     colorAttachmentDescriptor.textureFormat =
-        framebuffer->getColorAttachment(0)->getProperties().format;
+        framebuffer_->getColorAttachment(0)->getProperties().format;
     pipelineStateDescriptor.targetDesc.stencilAttachmentFormat =
-        framebuffer->getStencilAttachment()->getProperties().format;
+        framebuffer_->getStencilAttachment()->getProperties().format;
     pipelineStateDescriptor.targetDesc.depthAttachmentFormat =
-        framebuffer->getDepthAttachment()->getProperties().format;
+        framebuffer_->getDepthAttachment()->getProperties().format;
     pipelineStateDescriptor.shaderStages = igl::ShaderStagesCreator::fromRenderModules(
-        *device, _vertexFunction, _fragmentFunction, &result);
+        *device_, vertexFunction_, fragmentFunction_, &result);
     IGL_DEBUG_ASSERT(result.isOk());
 
     pipelineStateDescriptor.vertexInputState =
-        device->createVertexInputState(_vertexDescriptor, &result);
+        device_->createVertexInputState(vertexDescriptor_, &result);
     IGL_DEBUG_ASSERT(result.isOk());
 
     // Sets blending states.
@@ -1266,44 +1262,44 @@ class MNVGcontext {
     pipelineStateDescriptor.topology = igl::PrimitiveType::Triangle;
     pipelineStateDescriptor.cullMode = igl::CullMode::Disabled;
     pipelineStateDescriptor.debugName = igl::genNameHandle("Triangle_CullNone");
-    _pipelineState = device->createRenderPipeline(pipelineStateDescriptor, &result);
+    pipelineState_ = device_->createRenderPipeline(pipelineStateDescriptor, &result);
 
     pipelineStateDescriptor.topology = igl::PrimitiveType::TriangleStrip;
     pipelineStateDescriptor.cullMode = igl::CullMode::Back;
     pipelineStateDescriptor.debugName = igl::genNameHandle("TriangleStripe_CullBack");
-    _pipelineStateTriangleStrip = device->createRenderPipeline(pipelineStateDescriptor, &result);
+    pipelineStateTriangleStrip_ = device_->createRenderPipeline(pipelineStateDescriptor, &result);
     IGL_DEBUG_ASSERT(result.isOk());
 
-    auto fragmentFunction = device->getBackendType() == igl::BackendType::Metal ? nullptr
-                                                                                : _fragmentFunction;
+    auto fragmentFunction =
+        device_->getBackendType() == igl::BackendType::Metal ? nullptr : fragmentFunction_;
     pipelineStateDescriptor.shaderStages = igl::ShaderStagesCreator::fromRenderModules(
-        *device, _vertexFunction, fragmentFunction, &result);
+        *device_, vertexFunction_, fragmentFunction, &result);
 
     IGL_DEBUG_ASSERT(result.isOk());
     colorAttachmentDescriptor.colorWriteMask = igl::ColorWriteBits::ColorWriteBitsDisabled;
     pipelineStateDescriptor.cullMode = igl::CullMode::Disabled;
     pipelineStateDescriptor.topology = igl::PrimitiveType::Triangle;
     pipelineStateDescriptor.debugName = igl::genNameHandle("stencilOnlyPipelineState");
-    _stencilOnlyPipelineState = device->createRenderPipeline(pipelineStateDescriptor, &result);
+    stencilOnlyPipelineState_ = device_->createRenderPipeline(pipelineStateDescriptor, &result);
     IGL_DEBUG_ASSERT(result.isOk());
 
     pipelineStateDescriptor.debugName = igl::genNameHandle("stencilOnlyPipelineStateTriangleStrip");
     pipelineStateDescriptor.topology = igl::PrimitiveType::TriangleStrip;
-    _stencilOnlyPipelineStateTriangleStrip =
-        device->createRenderPipeline(pipelineStateDescriptor, &result);
+    stencilOnlyPipelineStateTriangleStrip_ =
+        device_->createRenderPipeline(pipelineStateDescriptor, &result);
     IGL_DEBUG_ASSERT(result.isOk());
 
-    piplelinePixelFormat = framebuffer->getColorAttachment(0)->getProperties().format;
+    piplelinePixelFormat_ = framebuffer_->getColorAttachment(0)->getProperties().format;
   }
 
   // Re-creates stencil texture whenever the specified size is bigger.
   void updateStencilTextureToSize(igl_vector_uint2* size) {
-    if (_buffers->stencilTexture != nullptr &&
-        (_buffers->stencilTexture->getSize().width < size->x ||
-         _buffers->stencilTexture->getSize().height < size->y)) {
-      _buffers->stencilTexture = nullptr;
+    if (curBuffers_->stencilTexture != nullptr &&
+        (curBuffers_->stencilTexture->getSize().width < size->x ||
+         curBuffers_->stencilTexture->getSize().height < size->y)) {
+      curBuffers_->stencilTexture = nullptr;
     }
-    if (_buffers->stencilTexture == nullptr) {
+    if (curBuffers_->stencilTexture == nullptr) {
       igl::TextureDesc stencilTextureDescriptor =
           igl::TextureDesc::new2D(kStencilFormat,
                                   size->x,
@@ -1313,7 +1309,7 @@ class MNVGcontext {
 #if TARGET_OS_SIMULATOR
       stencilTextureDescriptor.storage = igl::ResourceStorage::Private;
 #endif
-      _buffers->stencilTexture = device->createTexture(stencilTextureDescriptor, NULL);
+      curBuffers_->stencilTexture = device_->createTexture(stencilTextureDescriptor, NULL);
     }
   }
 };
@@ -1405,9 +1401,9 @@ static int mtlnvg__renderUpdateTexture(void* uptr,
   return mtl->renderUpdateTextureWithImage(image, x, y, w, h, data);
 }
 
-static void mtlnvg__renderViewport(void* uptr, float width, float height, float devicePixelRatio) {
+static void mtlnvg__renderViewport(void* uptr, float width, float height, float device_PixelRatio) {
   MNVGcontext* mtl = (MNVGcontext*)uptr;
-  mtl->renderViewportWithWidth(width, height, devicePixelRatio);
+  mtl->renderViewportWithWidth(width, height, device_PixelRatio);
 }
 
 void SetRenderCommandEncoder(NVGcontext* ctx,
@@ -1415,14 +1411,14 @@ void SetRenderCommandEncoder(NVGcontext* ctx,
                              igl::IRenderCommandEncoder* command,
                              float* matrix) {
   MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
-  mtl->framebuffer = framebuffer;
-  mtl->_renderEncoder = command;
+  mtl->framebuffer_ = framebuffer;
+  mtl->renderEncoder_ = command;
   if (matrix) {
-    memcpy(&mtl->_buffers->vertexUniforms.matrix, matrix, sizeof(float) * 16);
+    memcpy(&mtl->curBuffers_->vertexUniforms.matrix, matrix, sizeof(float) * 16);
   }
 }
 
-NVGcontext* CreateContext(igl::IDevice* device, int flags) {
+NVGcontext* CreateContext(igl::IDevice* device_, int flags) {
   NVGparams params;
   NVGcontext* ctx = NULL;
   MNVGcontext* mtl = new MNVGcontext();
@@ -1443,18 +1439,18 @@ NVGcontext* CreateContext(igl::IDevice* device, int flags) {
   params.userPtr = (void*)mtl;
   params.edgeAntiAlias = flags & NVG_ANTIALIAS ? 1 : 0;
 
-  mtl->_flags = flags;
+  mtl->flags_ = flags;
 
   // sizeof(MNVGfragUniforms)=176
 
 #if TARGET_OS_OSX || TARGET_OS_SIMULATOR
-  mtl->_fragSize = 256;
+  mtl->fragmentUniformBufferSize_ = 256;
 #else
   static_assert(64 * 3 > sizeof(FragmentUniforms));
-  mtl->_fragSize = 64 * 3;
+  mtl->_fragSize = 64 * 3; //64 * 3 > 176
 #endif // TARGET_OS_OSX
-  mtl->_indexSize = 4; // IndexType::UInt32
-  mtl->device = device;
+  mtl->indexSize_ = 4; // IndexType::UInt32
+  mtl->device_ = device_;
 
   ctx = nvgCreateInternal(&params);
   if (ctx == NULL)
