@@ -32,11 +32,6 @@ struct igl_vector_uint2 {
   uint32_t y;
 };
 
-static void setValue(iglu::simdtypes::float2 * dst, float x, float y){
-    float src[2] = {x, y};
-    memcpy(dst, src, sizeof(float)*2);
-}
-
 typedef enum MNVGvertexInputIndex {
   MNVG_VERTEX_INPUT_INDEX_VERTICES = 0,
   MNVG_VERTEX_INPUT_INDEX_VIEW_SIZE = 1,
@@ -396,17 +391,19 @@ class MNVGcontext {
 
     if (scissor->extent[0] < -0.5f || scissor->extent[1] < -0.5f) {
       frag->scissorMat = iglu::simdtypes::float3x3(0);
-        setValue(&frag->scissorExt, 1.0f, 1.0f);
-        setValue(&frag->scissorScale, 1.0f, 1.0f);
+        frag->scissorExt[0] = 1.0f;
+        frag->scissorExt[1] = 1.0f;
+        frag->scissorScale[0] = 1.0f;
+        frag->scissorScale[1] = 1.0f;
     } else {
       nvgTransformInverse(invxform, scissor->xform);
       mtlnvg__xformToMat3x3(&frag->scissorMat, invxform);
-        setValue(&frag->scissorExt, scissor->extent[0], scissor->extent[1]);
-        setValue(&frag->scissorScale,
-                 sqrtf(scissor->xform[0] * scissor->xform[0] + scissor->xform[2] * scissor->xform[2]) /
-                 fringe,
-                 sqrtf(scissor->xform[1] * scissor->xform[1] + scissor->xform[3] * scissor->xform[3]) /
-                 fringe);
+        frag->scissorExt[0] = scissor->extent[0];
+        frag->scissorExt[1] = scissor->extent[1];
+        frag->scissorScale[0] = sqrtf(scissor->xform[0] * scissor->xform[0] + scissor->xform[2] * scissor->xform[2]) /
+        fringe;
+        frag->scissorScale[1] = sqrtf(scissor->xform[1] * scissor->xform[1] + scissor->xform[3] * scissor->xform[3]) /
+        fringe;
     }
 
     frag->extent = iglu::simdtypes::float2{paint->extent[0], paint->extent[1]};
@@ -419,11 +416,11 @@ class MNVGcontext {
         return 0;
       if (tex->flags & NVG_IMAGE_FLIPY) {
         float m1[6], m2[6];
-        nvgTransformTranslate(m1, 0.0f, frag->extent.y * 0.5f);
+        nvgTransformTranslate(m1, 0.0f, frag->extent[0] * 0.5f);
         nvgTransformMultiply(m1, paint->xform);
         nvgTransformScale(m2, 1.0f, -1.0f);
         nvgTransformMultiply(m2, m1);
-        nvgTransformTranslate(m1, 0.0f, -frag->extent.y * 0.5f);
+        nvgTransformTranslate(m1, 0.0f, -frag->extent[1] * 0.5f);
         nvgTransformMultiply(m1, m2);
         nvgTransformInverse(invxform, m1);
       } else {
