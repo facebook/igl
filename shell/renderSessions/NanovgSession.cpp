@@ -28,16 +28,28 @@ double getMilliSeconds() {
       .count();
 }
 
-using ImageFullPathCallback = std::function<std::string(const std::string &)>;
-
-static ImageFullPathCallback imageFullPathCallback_ = nullptr;
-
-int loadDemoData22(NVGcontext* vg, DemoData* data)
+int NanovgSession::loadDemoData(NVGcontext* vg, DemoData* data)
 {
+    auto imageFullPathCallback_ = ([this](const std::string& name) {
+  #if IGL_PLATFORM_ANDROID
+      auto fullPath = std::filesystem::path("/data/data/com.facebook.igl.shell/files/") / name;
+      if (std::filesystem::exists(fullPath)) {
+        return fullPath.string();
+      } else {
+        IGL_DEBUG_ASSERT(false);
+        return std::string("");
+      }
+  #else
+      return getPlatform().getImageLoader().fileLoader().fullPath(name);
+  #endif
+    });
+    
     int i;
 
-    if (vg == NULL)
+    if (vg == NULL){
+        IGL_DEBUG_ASSERT(false);
         return -1;
+    }
 
     for (i = 0; i < 12; i++) {
         char file[128];
@@ -46,29 +58,29 @@ int loadDemoData22(NVGcontext* vg, DemoData* data)
         std::string full_file = imageFullPathCallback_(file);
         data->images[i] = nvgCreateImage(vg, full_file.c_str(), 0);
         if (data->images[i] == 0) {
-            printf("Could not load %s.\n", file);
+            IGL_DEBUG_ASSERT(false, "Could not load %s.\n", file);
             return -1;
         }
     }
 
     data->fontIcons = nvgCreateFont(vg, "icons", imageFullPathCallback_("entypo.ttf").c_str());
     if (data->fontIcons == -1) {
-        printf("Could not add font icons.\n");
+        IGL_DEBUG_ASSERT(false, "Could not add font icons.\n");
         return -1;
     }
     data->fontNormal = nvgCreateFont(vg, "sans", imageFullPathCallback_("Roboto-Regular.ttf").c_str());
     if (data->fontNormal == -1) {
-        printf("Could not add font italic.\n");
+        IGL_DEBUG_ASSERT(false, "Could not add font italic.\n");
         return -1;
     }
     data->fontBold = nvgCreateFont(vg, "sans-bold", imageFullPathCallback_("Roboto-Bold.ttf").c_str());
     if (data->fontBold == -1) {
-        printf("Could not add font bold.\n");
+        IGL_DEBUG_ASSERT(false, "Could not add font bold.\n");
         return -1;
     }
     data->fontEmoji = nvgCreateFont(vg, "emoji", imageFullPathCallback_("NotoEmoji-Regular.ttf").c_str());
     if (data->fontEmoji == -1) {
-        printf("Could not add font emoji.\n");
+        IGL_DEBUG_ASSERT(false, "Could not add font emoji.\n");
         return -1;
     }
     nvgAddFallbackFontId(vg, data->fontNormal, data->fontEmoji);
@@ -78,7 +90,6 @@ int loadDemoData22(NVGcontext* vg, DemoData* data)
 }
 
 void NanovgSession::initialize() noexcept {
-  // Command queue: backed by different types of GPU HW queues
   const CommandQueueDesc desc{CommandQueueType::Graphics};
   commandQueue_ = getPlatform().getDevice().createCommandQueue(desc, nullptr);
 
@@ -96,22 +107,8 @@ void NanovgSession::initialize() noexcept {
 
   nvgContext_ = getPlatform().nanovgContext;
 
-  imageFullPathCallback_ = ([this](const std::string& name) {
-#if IGL_PLATFORM_ANDROID
-    auto fullPath = std::filesystem::path("/data/data/com.facebook.igl.shell/files/") / name;
-    if (std::filesystem::exists(fullPath)) {
-      return fullPath.string();
-    } else {
+  if (this->loadDemoData(nvgContext_, &nvgDemoData_) != 0) {
       IGL_DEBUG_ASSERT(false);
-      return std::string("");
-    }
-#else
-    return getPlatform().getImageLoader().fileLoader().fullPath(name);
-#endif
-  });
-
-  if (loadDemoData22(nvgContext_, &nvgDemoData_) == -1) {
-    assert(false);
   }
 
   initGraph(&fps, GRAPH_RENDER_FPS, "Frame Time");
@@ -177,35 +174,6 @@ void NanovgSession::drawNanovg(float __width,
   renderGraph(vg, 5, 5, &fps);
   renderGraph(vg, 5 + 200 + 5, 5, &cpuGraph);
   renderGraph(vg, 5 + 200 + 5 + 200 + 5, 5, &gpuGraph);
-
-  {
-    //        //绘制一个矩形
-    //        nvgBeginPath(vg);
-    //        nvgRect(vg, 100,100, 10,10);
-    //        nvgFillColor(vg, nvgRGBA(255,192,0,255));
-    //        nvgFill(vg);
-    //
-    //        //绘制扣洞矩形
-    //        nvgBeginPath(vg);
-    //        nvgRect(vg, 100,100, 50,50);
-    //        nvgRect(vg, 110,110, 10,10);
-    //        nvgPathWinding(vg, NVG_HOLE);    // Mark circle as a hole.
-    //        nvgFillColor(vg, nvgRGBA(255,192,0,255));
-    //        nvgFill(vg);
-    //
-    //        //绘制图片
-    //        NVGpaint imgPaint = nvgImagePattern(vg, 200, 200, 100,100, 0.0f/180.0f*NVG_PI, 2,
-    //        0.5); nvgBeginPath(vg); nvgRect(vg, 100,100, 500,500); nvgFillPaint(vg, imgPaint);
-    //        nvgFill(vg);
-    ////
-    ////        //绘制文字
-    //        nvgFontSize(vg, 150.0f);
-    //        nvgFontFace(vg, "sans-bold");
-    //        nvgTextAlign(vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
-    //        nvgFontBlur(vg,2);
-    //        nvgFillColor(vg, nvgRGBA(256,0,0,128));
-    //        nvgText(vg, 200, 100, "Hello", NULL);
-  }
 
   nvgEndFrame(vg);
 

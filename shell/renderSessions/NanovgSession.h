@@ -28,6 +28,7 @@ class NanovgSession : public RenderSession {
 
  private:
   void drawNanovg(float width, float height, std::shared_ptr<igl::IRenderCommandEncoder> command);
+    int loadDemoData(NVGcontext* vg, DemoData* data);
 
  private:
   std::shared_ptr<ICommandQueue> commandQueue_;
