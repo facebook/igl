@@ -221,34 +221,6 @@ static void mtlnvg__vset(NVGvertex* vtx, float x, float y, float u, float v) {
   vtx->v = v;
 }
 
-void nvgDeleteMTL(NVGcontext* ctx) {
-  nvgDeleteInternal(ctx);
-}
-
-void mnvgBindFramebuffer(MNVGframebuffer* framebuffer) {
-  s_framebuffer = framebuffer;
-}
-
-MNVGframebuffer* mnvgCreateFramebuffer(NVGcontext* ctx, int width, int height, int imageFlags) {
-  MNVGframebuffer* framebuffer = (MNVGframebuffer*)malloc(sizeof(MNVGframebuffer));
-  if (framebuffer == NULL)
-    return NULL;
-
-  memset(framebuffer, 0, sizeof(MNVGframebuffer));
-  framebuffer->image =
-      nvgCreateImageRGBA(ctx, width, height, imageFlags | NVG_IMAGE_PREMULTIPLIED, NULL);
-  framebuffer->ctx = ctx;
-  return framebuffer;
-}
-
-void mnvgDeleteFramebuffer(MNVGframebuffer* framebuffer) {
-  if (framebuffer == NULL)
-    return;
-  if (framebuffer->image > 0) {
-    nvgDeleteImage(framebuffer->ctx, framebuffer->image);
-  }
-  free(framebuffer);
-}
 
 class MNVGcontext {
  public:
@@ -1451,100 +1423,6 @@ void nvgSetColorTexture(NVGcontext* ctx,
   mtl->_renderEncoder = command;
 }
 
-void mnvgClearWithColor(NVGcontext* ctx, NVGcolor color) {
-  MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
-  float alpha = (float)color.a;
-  mtl->clearColor = igl::Color(
-      (float)color.r * alpha, (float)color.g * alpha, (float)color.b * alpha, (float)color.a);
-  mtl->clearBufferOnFlush = true;
-}
-
-void* mnvgCommandQueue(NVGcontext* ctx) {
-  return NULL;
-}
-
-int mnvgCreateImageFromHandle(NVGcontext* ctx, void* textureId, int imageFlags) {
-  return 0;
-#if 0
-    MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
-    MNVGtexture* tex = mtl->allocTexture();
-    
-    if (tex == NULL) return 0;
-    
-    tex->type = NVG_TEXTURE_RGBA;
-    tex->tex = (std::shared_ptr<igl::ITexture>)textureId;
-    tex->flags = imageFlags;
-    
-    return tex->_id;
-#endif
-}
-
-void* mnvgDevice(NVGcontext* ctx) {
-  MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
-  return (void*)mtl->device;
-}
-
-void* mnvgImageHandle(NVGcontext* ctx, int image) {
-  MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
-  MNVGtexture* tex = mtl->findTexture(image);
-  if (tex == nullptr)
-    return NULL;
-
-  // Makes sure the command execution for the image has been done.
-  for (MNVGbuffers* buffers : mtl->_cbuffers) {
-    if (buffers->isBusy && buffers->image == image && buffers->commandBuffer) {
-      std::shared_ptr<igl::ICommandBuffer> commandBuffer = buffers->commandBuffer;
-      commandBuffer->waitUntilCompleted();
-      break;
-    }
-  }
-
-  return (void*)tex->tex.get();
-}
-
-void mnvgReadPixels(NVGcontext* ctx, int image, int x, int y, int width, int height, void* data) {
-  MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
-  MNVGtexture* tex = mtl->findTexture(image);
-  if (tex == nullptr)
-    return;
-
-  int bytesPerRow = 0;
-  if (tex->type == NVG_TEXTURE_RGBA) {
-    bytesPerRow = tex->tex->getSize().width * 4;
-  } else {
-    bytesPerRow = tex->tex->getSize().width;
-  }
-
-  // Makes sure the command execution for the image has been done.
-  for (MNVGbuffers* buffers : mtl->_cbuffers) {
-    if (buffers->isBusy && buffers->image == image && buffers->commandBuffer) {
-      std::shared_ptr<igl::ICommandBuffer> commandBuffer = buffers->commandBuffer;
-      commandBuffer->waitUntilCompleted();
-      break;
-    }
-  }
-
-  // todo:
-  //  [tex->tex getBytes:data
-  //         bytesPerRow:bytesPerRow
-  //          fromRegion:MTLRegionMake2D(x, y, width, height)
-  //         mipmapLevel:0];
-}
-
-enum MNVGTarget mnvgTarget() {
-#if TARGET_OS_SIMULATOR
-  return MNVG_SIMULATOR;
-#elif TARGET_OS_IOS
-  return MNVG_IOS;
-#elif TARGET_OS_OSX
-  return MNVG_MACOS;
-#elif TARGET_OS_TV
-  return MNVG_TVOS;
-#else
-  return MNVG_UNKNOWN;
-#endif
-}
-
 NVGcontext* nvgCreateMTL(igl::IDevice* device, int flags) {
 #ifdef MNVG_INVALID_TARGET
   printf("Metal is only supported on iOS, macOS, and tvOS.\n");
@@ -1596,5 +1474,10 @@ error:
     nvgDeleteInternal(ctx);
   return NULL;
 }
+
+void nvgDeleteMTL(NVGcontext* ctx) {
+  nvgDeleteInternal(ctx);
+}
+
 
 } // namespace iglu::nanovg

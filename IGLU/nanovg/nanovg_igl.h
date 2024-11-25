@@ -48,8 +48,7 @@ struct MNVGframebuffer {
 };
 typedef struct MNVGframebuffer MNVGframebuffer;
 
-// Creates a new NanoVG context.  The `flags` should be combination of
-// `NVGcreateFlags` above.
+// Creates a new NanoVG context.  The `flags` should be combination of `NVGcreateFlags` above.
 NVGcontext* nvgCreateMTL(igl::IDevice* device, int flags);
 
 void nvgSetColorTexture(NVGcontext* ctx,
@@ -58,43 +57,5 @@ void nvgSetColorTexture(NVGcontext* ctx,
 
 // Deletes the specified NanoVG context.
 void nvgDeleteMTL(NVGcontext* ctx);
-
-//
-// Framebuffer
-//
-
-// Binds the specified framebuffer as the current render pass.
-void mnvgBindFramebuffer(MNVGframebuffer* framebuffer);
-
-// Creates a new framebuffer.
-MNVGframebuffer* mnvgCreateFramebuffer(NVGcontext* ctx, int width, int height, int imageFlags);
-
-// Deletes the specified framebuffer.
-void mnvgDeleteFramebuffer(MNVGframebuffer* framebuffer);
-
-//
-// Metal bridging functions
-//
-
-// Clear context on next frame, must be called before nvgEndFrame
-void mnvgClearWithColor(NVGcontext* ctx, NVGcolor color);
-
-// Returns a pointer to the corresponded `id<MTLCommandQueue>` object.
-void* mnvgCommandQueue(NVGcontext* ctx);
-
-// Creates an image id from a `id<MTLTexture>` object pointer.
-int mnvgCreateImageFromHandle(NVGcontext* ctx, void* textureId, int imageFlags);
-
-// Returns a pointer to the corresponded `id<MTLDevice>` object.
-void* mnvgDevice(NVGcontext* ctx);
-
-// Returns a pointer to the `id<MTLTexture>` object of the specified image.
-void* mnvgImageHandle(NVGcontext* ctx, int image);
-
-// Copies the pixels from the specified image into the specified `data`.
-void mnvgReadPixels(NVGcontext* ctx, int image, int x, int y, int width, int height, void* data);
-
-// Returns the current OS target.
-enum MNVGTarget mnvgTarget();
 
 } // namespace iglu::nanovg
