@@ -1447,7 +1447,7 @@ NVGcontext* CreateContext(igl::IDevice* device_, int flags) {
   mtl->fragmentUniformBufferSize_ = 256;
 #else
   static_assert(64 * 3 > sizeof(FragmentUniforms));
-  mtl->_fragSize = 64 * 3; //64 * 3 > 176
+  mtl->fragmentUniformBufferSize_ = 64 * 3; //64 * 3 > 176
 #endif // TARGET_OS_OSX
   mtl->indexSize_ = 4; // IndexType::UInt32
   mtl->device_ = device_;
