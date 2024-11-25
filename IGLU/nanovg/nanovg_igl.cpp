@@ -212,9 +212,15 @@ static iglu::simdtypes::float4 mtlnvg__premulColor(NVGcolor c) {
 }
 
 static void mtlnvg__xformToMat3x3(iglu::simdtypes::float3x3* m3, float* t) {
-  *m3 = iglu::simdtypes::float3x3((iglu::simdtypes::float3){t[0], t[1], 0.0f},
-                                  (iglu::simdtypes::float3){t[2], t[3], 0.0f},
-                                  (iglu::simdtypes::float3){t[4], t[5], 1.0f});
+    // *m3 = iglu::simdtypes::float3x3((iglu::simdtypes::float3){t[0], t[1], 0.0f},
+      //                               (iglu::simdtypes::float3){t[2], t[3], 0.0f},
+        //                             (iglu::simdtypes::float3){t[4], t[5], 1.0f});
+
+    float array[9] = {
+        t[0], t[1], 0.0f ,
+        t[2], t[3], 0.0f,
+          t[4], t[5], 1.0f };
+    memcpy(m3, array, sizeof(iglu::simdtypes::float3x3));
 }
 
 static void mtlnvg__vset(NVGvertex* vtx, float x, float y, float u, float v) {
@@ -958,8 +964,8 @@ class MNVGcontext {
       buffers->image = s_framebuffer->image;
       MNVGtexture* tex = findTexture(s_framebuffer->image);
       auto colorTexture = tex->tex;
-      textureSize = (igl_vector_uint2){(uint32_t)colorTexture->getSize().width,
-                                       (uint32_t)colorTexture->getSize().height};
+      textureSize.x = (uint32_t)colorTexture->getSize().width;
+      textureSize.y = (uint32_t)colorTexture->getSize().height;
     }
     if (textureSize.x == 0 || textureSize.y == 0)
       return;
@@ -1158,8 +1164,8 @@ class MNVGcontext {
   int bufferIndex = 0;
 
   void renderViewportWithWidth(float width, float height, float devicePixelRatio) {
-    viewPortSize = (igl_vector_uint2){(uint32_t)(width * devicePixelRatio),
-                                      (uint32_t)(height * devicePixelRatio)};
+      viewPortSize.x = (uint32_t)(width * devicePixelRatio);
+      viewPortSize.y = (uint32_t)(height * devicePixelRatio);
 
     bufferIndex = (bufferIndex + 1) % 3;
     _buffers = _cbuffers[bufferIndex];
