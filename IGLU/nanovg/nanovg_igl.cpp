@@ -212,22 +212,13 @@ static iglu::simdtypes::float4 mtlnvg__premulColor(NVGcolor c) {
 }
 
 static void mtlnvg__xformToMat3x3(iglu::simdtypes::float3x3* m3, float* t) {
-    // *m3 = iglu::simdtypes::float3x3((iglu::simdtypes::float3){t[0], t[1], 0.0f},
-      //                               (iglu::simdtypes::float3){t[2], t[3], 0.0f},
-        //                             (iglu::simdtypes::float3){t[4], t[5], 1.0f});
+  float columns_0[3] = {t[0], t[1], 0.0f};
+  float columns_1[3] = {t[2], t[3], 0.0f};
+  float columns_2[3] = {t[4], t[5], 1.0f};
 
-    float columns_0[3] = {
-        t[0], t[1], 0.0f  };
-    
-    float columns_1[3] = {
-        t[2], t[3], 0.0f};
-    
-    float columns_2[3] = {
-          t[4], t[5], 1.0f };
-    
-    memcpy(&m3->columns[0], columns_0, 3 * sizeof(float));
-    memcpy(&m3->columns[1], columns_1, 3 * sizeof(float));
-    memcpy(&m3->columns[2], columns_2, 3 * sizeof(float));
+  memcpy(&m3->columns[0], columns_0, 3 * sizeof(float));
+  memcpy(&m3->columns[1], columns_1, 3 * sizeof(float));
+  memcpy(&m3->columns[2], columns_2, 3 * sizeof(float));
 }
 
 static void mtlnvg__vset(NVGvertex* vtx, float x, float y, float u, float v) {
@@ -570,16 +561,20 @@ class MNVGcontext {
       _fragmentFunction = shader_library->getShaderModule(fragmentFunction);
     } else if (device->getBackendType() == igl::BackendType::OpenGL) {
 #if IGL_PLATFORM_ANDROID || IGL_PLATFORM_IOS
-      auto codeVS = std::regex_replace(
-                                       iglu::nanovg::opengl_410_vertex_shader_header, std::regex("#version 410"), "#version 300 es");
-      auto codeFS = std::regex_replace(
-                                       iglu::nanovg::opengl_410_fragment_shader_header, std::regex("#version 410"), "#version 300 es");
-        
-        codeVS += iglu::nanovg::opengl_vertex_shader_body;
-        codeFS += iglu::nanovg::opengl_fragment_shader_body;
+      auto codeVS = std::regex_replace(iglu::nanovg::opengl_410_vertex_shader_header,
+                                       std::regex("#version 410"),
+                                       "#version 300 es");
+      auto codeFS = std::regex_replace(iglu::nanovg::opengl_410_fragment_shader_header,
+                                       std::regex("#version 410"),
+                                       "#version 300 es");
+
+      codeVS += iglu::nanovg::opengl_vertex_shader_body;
+      codeFS += iglu::nanovg::opengl_fragment_shader_body;
 #else
-        auto codeVS = iglu::nanovg::opengl_410_vertex_shader_header + iglu::nanovg::opengl_vertex_shader_body;
-        auto codeFS = iglu::nanovg::opengl_410_fragment_shader_header + iglu::nanovg::opengl_fragment_shader_body;
+      auto codeVS =
+          iglu::nanovg::opengl_410_vertex_shader_header + iglu::nanovg::opengl_vertex_shader_body;
+      auto codeFS = iglu::nanovg::opengl_410_fragment_shader_header +
+                    iglu::nanovg::opengl_fragment_shader_body;
 
 #endif
 
@@ -590,19 +585,14 @@ class MNVGcontext {
       _vertexFunction = shader_stages->getVertexModule();
       _fragmentFunction = shader_stages->getFragmentModule();
     } else if (device->getBackendType() == igl::BackendType::Vulkan) {
-        auto codeVS = iglu::nanovg::opengl_460_vertex_shader_header + iglu::nanovg::opengl_vertex_shader_body;
-        auto codeFS = iglu::nanovg::opengl_460_fragment_shader_header + iglu::nanovg::opengl_fragment_shader_body;
-        
+      auto codeVS =
+          iglu::nanovg::opengl_460_vertex_shader_header + iglu::nanovg::opengl_vertex_shader_body;
+      auto codeFS = iglu::nanovg::opengl_460_fragment_shader_header +
+                    iglu::nanovg::opengl_fragment_shader_body;
+
       std::unique_ptr<igl::IShaderStages> shader_stages =
           igl::ShaderStagesCreator::fromModuleStringInput(
-              *device,
-                                                          codeVS.c_str(),
-              "main",
-              "",
-                                                          codeFS.c_str(),
-              "main",
-              "",
-              nullptr);
+              *device, codeVS.c_str(), "main", "", codeFS.c_str(), "main", "", nullptr);
 
       _vertexFunction = shader_stages->getVertexModule();
       _fragmentFunction = shader_stages->getFragmentModule();
@@ -1171,8 +1161,8 @@ class MNVGcontext {
   int bufferIndex = 0;
 
   void renderViewportWithWidth(float width, float height, float devicePixelRatio) {
-      viewPortSize.x = (uint32_t)(width * devicePixelRatio);
-      viewPortSize.y = (uint32_t)(height * devicePixelRatio);
+    viewPortSize.x = (uint32_t)(width * devicePixelRatio);
+    viewPortSize.y = (uint32_t)(height * devicePixelRatio);
 
     bufferIndex = (bufferIndex + 1) % 3;
     _buffers = _cbuffers[bufferIndex];
@@ -1438,8 +1428,8 @@ static void mtlnvg__renderViewport(void* uptr, float width, float height, float 
 }
 
 void SetRenderCommandEncoder(NVGcontext* ctx,
-                        std::shared_ptr<igl::IFramebuffer> framebuffer,
-                        std::shared_ptr<igl::IRenderCommandEncoder> command) {
+                             std::shared_ptr<igl::IFramebuffer> framebuffer,
+                             std::shared_ptr<igl::IRenderCommandEncoder> command) {
   MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
   mtl->framebuffer = framebuffer;
   mtl->_renderEncoder = command;

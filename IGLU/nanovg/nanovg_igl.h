@@ -52,8 +52,8 @@ typedef struct MNVGframebuffer MNVGframebuffer;
 NVGcontext* CreateContext(igl::IDevice* device, int flags);
 
 void SetRenderCommandEncoder(NVGcontext* ctx,
-                        std::shared_ptr<igl::IFramebuffer> framebuffer,
-                        std::shared_ptr<igl::IRenderCommandEncoder>);
+                             std::shared_ptr<igl::IFramebuffer> framebuffer,
+                             std::shared_ptr<igl::IRenderCommandEncoder>);
 
 // Deletes the specified NanoVG context.
 void DeleteContext(NVGcontext* ctx);

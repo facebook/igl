@@ -156,5 +156,4 @@ void main(){
 
 )";
 
-
 } // namespace iglu::nanovg
