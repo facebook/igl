@@ -216,11 +216,18 @@ static void mtlnvg__xformToMat3x3(iglu::simdtypes::float3x3* m3, float* t) {
       //                               (iglu::simdtypes::float3){t[2], t[3], 0.0f},
         //                             (iglu::simdtypes::float3){t[4], t[5], 1.0f});
 
-    float array[9] = {
-        t[0], t[1], 0.0f ,
-        t[2], t[3], 0.0f,
+    float columns_0[3] = {
+        t[0], t[1], 0.0f  };
+    
+    float columns_1[3] = {
+        t[2], t[3], 0.0f};
+    
+    float columns_2[3] = {
           t[4], t[5], 1.0f };
-    memcpy(m3, array, sizeof(iglu::simdtypes::float3x3));
+    
+    memcpy(&m3->columns[0], columns_0, 3 * sizeof(float));
+    memcpy(&m3->columns[1], columns_1, 3 * sizeof(float));
+    memcpy(&m3->columns[2], columns_2, 3 * sizeof(float));
 }
 
 static void mtlnvg__vset(NVGvertex* vtx, float x, float y, float u, float v) {
