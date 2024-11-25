@@ -169,7 +169,7 @@ void NanovgSession::drawNanovg(float __width,
 
   nvgBeginFrame(vg, width, height, pxRatio);
   iglu::nanovg::SetRenderCommandEncoder(
-      vg, framebuffer_, command, (float*)&getPlatform().getDisplayContext().preRotationMatrix);
+      vg, framebuffer_.get(), command.get(), (float*)&getPlatform().getDisplayContext().preRotationMatrix);
 
   times_++;
 
