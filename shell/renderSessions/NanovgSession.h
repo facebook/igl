@@ -28,17 +28,17 @@ class NanovgSession : public RenderSession {
 
  private:
   void drawNanovg(float width, float height, std::shared_ptr<igl::IRenderCommandEncoder> command);
-    int loadDemoData(NVGcontext* vg, DemoData* data);
+  int loadDemoData(NVGcontext* vg, DemoData* data);
 
  private:
   std::shared_ptr<ICommandQueue> commandQueue_;
   RenderPassDesc renderPass_;
 
   NVGcontext* nvgContext_ = NULL;
-  int times_;
+  int times_ = 0;
   DemoData nvgDemoData_;
 
-  PerfGraph fps, cpuGraph, gpuGraph;
+  PerfGraph fps_, cpuGraph_, gpuGraph_;
   double preTimestamp_;
 };
 

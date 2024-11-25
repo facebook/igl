@@ -28,65 +28,67 @@ double getMilliSeconds() {
       .count();
 }
 
-int NanovgSession::loadDemoData(NVGcontext* vg, DemoData* data)
-{
-    auto imageFullPathCallback_ = ([this](const std::string& name) {
-  #if IGL_PLATFORM_ANDROID
-      auto fullPath = std::filesystem::path("/data/data/com.facebook.igl.shell/files/") / name;
-      if (std::filesystem::exists(fullPath)) {
-        return fullPath.string();
-      } else {
-        IGL_DEBUG_ASSERT(false);
-        return std::string("");
-      }
-  #else
-      return getPlatform().getImageLoader().fileLoader().fullPath(name);
-  #endif
-    });
-    
-    int i;
+int NanovgSession::loadDemoData(NVGcontext* vg, DemoData* data) {
+  auto imageFullPathCallback_ = ([this](const std::string& name) {
+#if IGL_PLATFORM_ANDROID
+    auto fullPath = std::filesystem::path("/data/data/com.facebook.igl.shell/files/") / name;
+    if (std::filesystem::exists(fullPath)) {
+      return fullPath.string();
+    } else {
+      IGL_DEBUG_ASSERT(false);
+      return std::string("");
+    }
+#else
+    return getPlatform().getImageLoader().fileLoader().fullPath(name);
+#endif
+  });
 
-    if (vg == NULL){
-        IGL_DEBUG_ASSERT(false);
-        return -1;
-    }
+  int i;
 
-    for (i = 0; i < 12; i++) {
-        char file[128];
-        snprintf(file, 128, "image%d.jpg", i+1);
-        
-        std::string full_file = imageFullPathCallback_(file);
-        data->images[i] = nvgCreateImage(vg, full_file.c_str(), 0);
-        if (data->images[i] == 0) {
-            IGL_DEBUG_ASSERT(false, "Could not load %s.\n", file);
-            return -1;
-        }
-    }
+  if (vg == NULL) {
+    IGL_DEBUG_ASSERT(false);
+    return -1;
+  }
 
-    data->fontIcons = nvgCreateFont(vg, "icons", imageFullPathCallback_("entypo.ttf").c_str());
-    if (data->fontIcons == -1) {
-        IGL_DEBUG_ASSERT(false, "Could not add font icons.\n");
-        return -1;
-    }
-    data->fontNormal = nvgCreateFont(vg, "sans", imageFullPathCallback_("Roboto-Regular.ttf").c_str());
-    if (data->fontNormal == -1) {
-        IGL_DEBUG_ASSERT(false, "Could not add font italic.\n");
-        return -1;
-    }
-    data->fontBold = nvgCreateFont(vg, "sans-bold", imageFullPathCallback_("Roboto-Bold.ttf").c_str());
-    if (data->fontBold == -1) {
-        IGL_DEBUG_ASSERT(false, "Could not add font bold.\n");
-        return -1;
-    }
-    data->fontEmoji = nvgCreateFont(vg, "emoji", imageFullPathCallback_("NotoEmoji-Regular.ttf").c_str());
-    if (data->fontEmoji == -1) {
-        IGL_DEBUG_ASSERT(false, "Could not add font emoji.\n");
-        return -1;
-    }
-    nvgAddFallbackFontId(vg, data->fontNormal, data->fontEmoji);
-    nvgAddFallbackFontId(vg, data->fontBold, data->fontEmoji);
+  for (i = 0; i < 12; i++) {
+    char file[128];
+    snprintf(file, 128, "image%d.jpg", i + 1);
 
-    return 0;
+    std::string full_file = imageFullPathCallback_(file);
+    data->images[i] = nvgCreateImage(vg, full_file.c_str(), 0);
+    if (data->images[i] == 0) {
+      IGL_DEBUG_ASSERT(false, "Could not load %s.\n", file);
+      return -1;
+    }
+  }
+
+  data->fontIcons = nvgCreateFont(vg, "icons", imageFullPathCallback_("entypo.ttf").c_str());
+  if (data->fontIcons == -1) {
+    IGL_DEBUG_ASSERT(false, "Could not add font icons.\n");
+    return -1;
+  }
+  data->fontNormal =
+      nvgCreateFont(vg, "sans", imageFullPathCallback_("Roboto-Regular.ttf").c_str());
+  if (data->fontNormal == -1) {
+    IGL_DEBUG_ASSERT(false, "Could not add font italic.\n");
+    return -1;
+  }
+  data->fontBold =
+      nvgCreateFont(vg, "sans-bold", imageFullPathCallback_("Roboto-Bold.ttf").c_str());
+  if (data->fontBold == -1) {
+    IGL_DEBUG_ASSERT(false, "Could not add font bold.\n");
+    return -1;
+  }
+  data->fontEmoji =
+      nvgCreateFont(vg, "emoji", imageFullPathCallback_("NotoEmoji-Regular.ttf").c_str());
+  if (data->fontEmoji == -1) {
+    IGL_DEBUG_ASSERT(false, "Could not add font emoji.\n");
+    return -1;
+  }
+  nvgAddFallbackFontId(vg, data->fontNormal, data->fontEmoji);
+  nvgAddFallbackFontId(vg, data->fontBold, data->fontEmoji);
+
+  return 0;
 }
 
 void NanovgSession::initialize() noexcept {
@@ -98,8 +100,7 @@ void NanovgSession::initialize() noexcept {
   renderPass_.colorAttachments[0] = igl::RenderPassDesc::ColorAttachmentDesc{};
   renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
   renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass_.colorAttachments[0].clearColor =
-      igl::Color(0.3f, 0.3f, 0.32f, 1.0f); // getPreferredClearColor();
+  renderPass_.colorAttachments[0].clearColor = igl::Color(0.3f, 0.3f, 0.32f, 1.0f);
   renderPass_.depthAttachment.loadAction = LoadAction::Clear;
   renderPass_.depthAttachment.clearDepth = 1.0;
   renderPass_.stencilAttachment.loadAction = LoadAction::Clear;
@@ -108,12 +109,12 @@ void NanovgSession::initialize() noexcept {
   nvgContext_ = getPlatform().nanovgContext;
 
   if (this->loadDemoData(nvgContext_, &nvgDemoData_) != 0) {
-      IGL_DEBUG_ASSERT(false);
+    IGL_DEBUG_ASSERT(false);
   }
 
-  initGraph(&fps, GRAPH_RENDER_FPS, "Frame Time");
-  initGraph(&cpuGraph, GRAPH_RENDER_MS, "CPU Time");
-  initGraph(&gpuGraph, GRAPH_RENDER_MS, "GPU Time");
+  initGraph(&fps_, GRAPH_RENDER_FPS, "Frame Time");
+  initGraph(&cpuGraph_, GRAPH_RENDER_MS, "CPU Time");
+  initGraph(&gpuGraph_, GRAPH_RENDER_MS, "GPU Time");
   times_ = 0;
 }
 
@@ -165,29 +166,29 @@ void NanovgSession::drawNanovg(float __width,
 
   auto start_ms = getMilliSeconds();
 
-    nvgBeginFrame(vg, width, height, pxRatio);
-    iglu::nanovg::SetRenderCommandEncoder(vg, framebuffer_, command);
-    
+  nvgBeginFrame(vg, width, height, pxRatio);
+  iglu::nanovg::SetRenderCommandEncoder(vg, framebuffer_, command);
+
   times_++;
-    
+
 #if IGL_PLATFORM_MACOS
-    if (getPlatform().getDevice().getBackendType() == igl::BackendType::OpenGL){
-        times_ = 0;
-    }
+  if (getPlatform().getDevice().getBackendType() == igl::BackendType::OpenGL) {
+    times_ = 0;
+  }
 #endif
-    
+
   renderDemo(vg, mx, my, width, height, times_ / 60.0f, blowup, &nvgDemoData_);
 
-  renderGraph(vg, 5, 5, &fps);
-  renderGraph(vg, 5 + 200 + 5, 5, &cpuGraph);
-  renderGraph(vg, 5 + 200 + 5 + 200 + 5, 5, &gpuGraph);
+  renderGraph(vg, 5, 5, &fps_);
+  renderGraph(vg, 5 + 200 + 5, 5, &cpuGraph_);
+  renderGraph(vg, 5 + 200 + 5 + 200 + 5, 5, &gpuGraph_);
 
   nvgEndFrame(vg);
 
   auto end_ms = getMilliSeconds();
 
-  updateGraph(&fps, (start_ms - preTimestamp_));
-  updateGraph(&cpuGraph, (end_ms - start_ms));
+  updateGraph(&fps_, (start_ms - preTimestamp_));
+  updateGraph(&cpuGraph_, (end_ms - start_ms));
 
   preTimestamp_ = start_ms;
 }
