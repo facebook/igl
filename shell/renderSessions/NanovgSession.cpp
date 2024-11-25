@@ -167,8 +167,15 @@ void NanovgSession::drawNanovg(float __width,
 
     nvgBeginFrame(vg, width, height, pxRatio);
     iglu::nanovg::SetRenderCommandEncoder(vg, framebuffer_, command);
-
+    
   times_++;
+    
+#if IGL_PLATFORM_MACOS
+    if (getPlatform().getDevice().getBackendType() == igl::BackendType::OpenGL){
+        times_ = 0;
+    }
+#endif
+    
   renderDemo(vg, mx, my, width, height, times_ / 60.0f, blowup, &nvgDemoData_);
 
   renderGraph(vg, 5, 5, &fps);
