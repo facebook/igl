@@ -542,45 +542,34 @@ class MNVGcontext {
   int renderCreate() {
     bool creates_pseudo_texture = false;
 
-    const std::string vertexFunction = "vertexShader";
-    std::string fragmentFunction;
-    if (flags_ & NVG_ANTIALIAS) {
-      fragmentFunction = "fragmentShaderAA";
-    } else {
-      fragmentFunction = "fragmentShader";
-    }
-
     igl::Result result;
 
-    unsigned char* shader_source = NULL;
-    unsigned int shader_length = 0;
-
     if (device_->getBackendType() == igl::BackendType::Metal) {
-      std::unique_ptr<igl::IShaderLibrary> shader_library =
-          igl::ShaderLibraryCreator::fromStringInput(*device_,
-                                                     iglu::nanovg::metalShader.c_str(),
-                                                     vertexFunction,
-                                                     fragmentFunction,
-                                                     "",
-                                                     &result);
+      const std::string vertexEntryPoint = "vertexShader";
+      std::string fragmentEntryPoint = (flags_ & NVG_ANTIALIAS) ? "fragmentShaderAA"
+                                                                : "fragmentShader";
 
-      vertexFunction_ = shader_library->getShaderModule(vertexFunction);
-      fragmentFunction_ = shader_library->getShaderModule(fragmentFunction);
+      std::unique_ptr<igl::IShaderLibrary> shader_library =
+          igl::ShaderLibraryCreator::fromStringInput(
+              *device_, metalShader.c_str(), vertexEntryPoint, fragmentEntryPoint, "", &result);
+
+      vertexFunction_ = shader_library->getShaderModule(vertexEntryPoint);
+      fragmentFunction_ = shader_library->getShaderModule(fragmentEntryPoint);
     } else if (device_->getBackendType() == igl::BackendType::OpenGL) {
 #if IGL_PLATFORM_ANDROID || IGL_PLATFORM_IOS
       auto codeVS = std::regex_replace(
-          iglu::nanovg::opengl410VertexShaderHeader, std::regex("#version 410"), "#version 300 es");
-      auto codeFS = std::regex_replace(iglu::nanovg::opengl410FragmentShaderHeader,
-                                       std::regex("#version 410"),
-                                       "#version 300 es");
+          openglVertexShaderHeader410, std::regex("#version 410"), "#version 300 es");
+      auto codeFS = std::regex_replace(
+          openglFragmentShaderHeader410, std::regex("#version 410"), "#version 300 es");
 
-      codeVS += iglu::nanovg::openglVertexShaderBody;
-      codeFS += iglu::nanovg::openglFragmentShaderBody;
+      codeVS += openglVertexShaderBody;
+      codeFS += ((flags_ & NVG_ANTIALIAS) ? openglAntiAliasingFragmentShaderBody
+                                          : openglNoAntiAliasingFragmentShaderBody);
 #else
-      auto codeVS =
-          iglu::nanovg::opengl410VertexShaderHeader + iglu::nanovg::openglVertexShaderBody;
-      auto codeFS =
-          iglu::nanovg::opengl410FragmentShaderHeader + iglu::nanovg::openglFragmentShaderBody;
+      auto codeVS = openglVertexShaderHeader410 + openglVertexShaderBody;
+      auto codeFS = openglFragmentShaderHeader410 + ((flags_ & NVG_ANTIALIAS)
+                                                         ? openglAntiAliasingFragmentShaderBody
+                                                         : openglNoAntiAliasingFragmentShaderBody);
 
 #endif
 
@@ -591,10 +580,10 @@ class MNVGcontext {
       vertexFunction_ = shader_stages->getVertexModule();
       fragmentFunction_ = shader_stages->getFragmentModule();
     } else if (device_->getBackendType() == igl::BackendType::Vulkan) {
-      auto codeVS =
-          iglu::nanovg::opengl460VertexShaderHeader + iglu::nanovg::openglVertexShaderBody;
-      auto codeFS =
-          iglu::nanovg::opengl460FragmentShaderHeader + iglu::nanovg::openglFragmentShaderBody;
+      auto codeVS = openglVertexShaderHeader460 + openglVertexShaderBody;
+      auto codeFS = openglFragmentShaderHeader460 + ((flags_ & NVG_ANTIALIAS)
+                                                         ? openglAntiAliasingFragmentShaderBody
+                                                         : openglNoAntiAliasingFragmentShaderBody);
 
       std::unique_ptr<igl::IShaderStages> shader_stages =
           igl::ShaderStagesCreator::fromModuleStringInput(
@@ -1447,7 +1436,7 @@ NVGcontext* CreateContext(igl::IDevice* device_, int flags) {
   mtl->fragmentUniformBufferSize_ = 256;
 #else
   static_assert(64 * 3 > sizeof(FragmentUniforms));
-  mtl->fragmentUniformBufferSize_ = 64 * 3; //64 * 3 > 176
+  mtl->fragmentUniformBufferSize_ = 64 * 3; // 64 * 3 > 176
 #endif // TARGET_OS_OSX
   mtl->indexSize_ = 4; // IndexType::UInt32
   mtl->device_ = device_;

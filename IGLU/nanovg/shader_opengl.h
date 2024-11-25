@@ -9,7 +9,7 @@
 
 namespace iglu::nanovg {
 
-static std::string opengl410VertexShaderHeader = R"(#version 410
+static std::string openglVertexShaderHeader410 = R"(#version 410
 layout(location = 0) in vec2 pos;
 layout(location = 1) in vec2 tcoord;
 
@@ -22,7 +22,7 @@ layout(std140) uniform VertexUniformBlock {
 }uniforms;
 )";
 
-static std::string opengl460VertexShaderHeader = R"(#version 460
+static std::string openglVertexShaderHeader460 = R"(#version 460
 layout(location = 0) in vec2 pos;
 layout(location = 1) in vec2 tcoord;
 
@@ -46,7 +46,7 @@ void main() {
 }
 )";
 
-static std::string opengl410FragmentShaderHeader = R"(#version 410
+static std::string openglFragmentShaderHeader410 = R"(#version 410
 precision highp int; 
 precision highp float;
 
@@ -75,7 +75,7 @@ layout(std140) uniform FragmentUniformBlock {
 
 )";
 
-static std::string opengl460FragmentShaderHeader = R"(#version 460
+static std::string openglFragmentShaderHeader460 = R"(#version 460
 precision highp int; 
 precision highp float;
 
@@ -103,7 +103,7 @@ layout(set = 1, binding = 2, std140) uniform FragmentUniformBlock {
 }uniforms;
 )";
 
-static std::string openglFragmentShaderBody = R"(
+static std::string openglNoAntiAliasingFragmentShaderBody = R"(
 float scissorMask(vec2 p) {
   vec2 sc = (abs((uniforms.scissorMat * vec3(p, 1.0f)).xy)
                   - uniforms.scissorExt)  * uniforms.scissorScale;
@@ -121,8 +121,7 @@ float strokeMask(vec2 ftcoord) {
   return min(1.0, (1.0 - abs(ftcoord.x * 2.0 - 1.0)) * uniforms.strokeMult) * min(1.0, ftcoord.y);
 }
 
-// Fragment function (No AA)
-vec4 main2() {
+vec4 fragmentShaderNoAntiAliasing() {
   float scissor = scissorMask(fpos);
   if (scissor == 0.0)
     return vec4(0);
@@ -154,7 +153,72 @@ vec4 main2() {
 }
 
 void main(){
-    FragColor = main2();
+    FragColor = fragmentShaderNoAntiAliasing();
+}
+
+)";
+
+static std::string openglAntiAliasingFragmentShaderBody = R"(
+float scissorMask(vec2 p) {
+  vec2 sc = (abs((uniforms.scissorMat * vec3(p, 1.0f)).xy)
+                  - uniforms.scissorExt)  * uniforms.scissorScale;
+  sc = clamp(vec2(0.5f) - sc, 0.0, 1.0);
+  return sc.x * sc.y;
+}
+
+float sdroundrect(vec2 pt) {
+  vec2 ext2 = uniforms.extent - vec2(uniforms.radius);
+  vec2 d = abs(pt) - ext2;
+  return min(max(d.x, d.y), 0.0) + length(max(d, 0.0)) - uniforms.radius;
+}
+
+float strokeMask(vec2 ftcoord) {
+  return min(1.0, (1.0 - abs(ftcoord.x * 2.0 - 1.0)) * uniforms.strokeMult) * min(1.0, ftcoord.y);
+}
+
+vec4 fragmentShaderAntiAliasing() {
+    float scissor = scissorMask(fpos);
+    if (scissor == 0.0)
+      return vec4(0);
+
+    if (uniforms.type == 2) {  // MNVG_SHADER_IMG
+      vec4 color = texture(textureUnit, ftcoord);
+      if (uniforms.texType == 1)
+        color = vec4(color.xyz * color.w, color.w);
+      else if (uniforms.texType == 2)
+        color = vec4(color.x);
+      color *= scissor;
+      return color * uniforms.innerCol;
+    }
+
+    float strokeAlpha = strokeMask(ftcoord);
+    if (strokeAlpha < uniforms.strokeThr) {
+      return vec4(0);
+    }
+
+    if (uniforms.type == 0) {  // MNVG_SHADER_FILLGRAD
+      vec2 pt = (uniforms.paintMat * vec3(fpos, 1.0)).xy;
+      float d = clamp((uniforms.feather * 0.5 + sdroundrect(pt))
+                          / uniforms.feather, 0.0, 1.0);
+      vec4 color = mix(uniforms.innerCol, uniforms.outerCol, d);
+      color *= scissor;
+      color *= strokeAlpha;
+      return color;
+    } else {  // MNVG_SHADER_FILLIMG
+      vec2 pt = (uniforms.paintMat * vec3(fpos, 1.0)).xy / uniforms.extent;
+      vec4 color = texture(textureUnit, pt);
+      if (uniforms.texType == 1)
+        color = vec4(color.xyz * color.w, color.w);
+      else if (uniforms.texType == 2)
+        color = vec4(color.x);
+      color *= scissor;
+      color *= strokeAlpha;
+      return color * uniforms.innerCol;
+    }
+}
+
+void main(){
+    FragColor = fragmentShaderAntiAliasing();
 }
 
 )";
