@@ -9,7 +9,19 @@
 
 namespace iglu::nanovg {
 
-static std::string opengl_460_vertex_shader = R"(#version 460
+static std::string opengl_410_vertex_shader_header = R"(#version 410
+layout(location = 0) in vec2 pos;
+layout(location = 1) in vec2 tcoord;
+
+out vec2 fpos;
+out vec2 ftcoord;
+
+layout(std140) uniform VertexUniformBlock {
+ vec2 viewSize;
+}uniforms;
+)";
+
+static std::string opengl_460_vertex_shader_header = R"(#version 460
 layout(location = 0) in vec2 pos;
 layout(location = 1) in vec2 tcoord;
 
@@ -19,7 +31,9 @@ layout (location=1) out vec2 ftcoord;
 layout(set = 1, binding = 1, std140) uniform VertexUniformBlock {
  vec2 viewSize;
 }uniforms;
+)";
 
+static std::string opengl_vertex_shader_body = R"(
 void main() {
   ftcoord = tcoord;
   fpos = pos;
@@ -29,7 +43,36 @@ void main() {
 }
 )";
 
-static std::string opengl_460_fragment_shader = R"(#version 460
+static std::string opengl_410_fragment_shader_header = R"(#version 410
+precision highp int; 
+precision highp float;
+
+in vec2 fpos;
+in vec2 ftcoord;
+
+layout (location=0) out vec4 FragColor;
+
+uniform lowp sampler2D textureUnit;
+
+layout(std140) uniform FragmentUniformBlock {
+  mat3 scissorMat;
+  mat3 paintMat;
+  vec4 innerCol;
+  vec4 outerCol;
+  vec2 scissorExt;
+  vec2 scissorScale;
+  vec2 extent;
+  float radius;
+  float feather;
+  float strokeMult;
+  float strokeThr;
+  int texType;
+  int type;
+}uniforms;
+
+)";
+
+static std::string opengl_460_fragment_shader_header = R"(#version 460
 precision highp int; 
 precision highp float;
 
@@ -55,7 +98,9 @@ layout(set = 1, binding = 2, std140) uniform FragmentUniformBlock {
   int texType;
   int type;
 }uniforms;
+)";
 
+static std::string opengl_fragment_shader_body = R"(
 float scissorMask(vec2 p) {
   vec2 sc = (abs((uniforms.scissorMat * vec3(p, 1.0f)).xy)
                   - uniforms.scissorExt)  * uniforms.scissorScale;
@@ -110,5 +155,6 @@ void main(){
 }
 
 )";
+
 
 } // namespace iglu::nanovg

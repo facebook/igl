@@ -12,8 +12,7 @@
 #include "nanovg_igl.h"
 #include "nanovg.h"
 #include "shader_metal.h"
-#include "shader_opengl410.h"
-#include "shader_opengl460.h"
+#include "shader_opengl.h"
 #include <IGLU/simdtypes/SimdTypes.h>
 #include <igl/IGL.h>
 #include <math.h>
@@ -559,12 +558,16 @@ class MNVGcontext {
     } else if (device->getBackendType() == igl::BackendType::OpenGL) {
 #if IGL_PLATFORM_ANDROID || IGL_PLATFORM_IOS
       auto codeVS = std::regex_replace(
-          iglu::nanovg::opengl_410_vertex_shader, std::regex("#version 410"), "#version 300 es");
+                                       iglu::nanovg::opengl_410_vertex_shader_header, std::regex("#version 410"), "#version 300 es");
       auto codeFS = std::regex_replace(
-          iglu::nanovg::opengl_410_fragment_shader, std::regex("#version 410"), "#version 300 es");
+                                       iglu::nanovg::opengl_410_fragment_shader_header, std::regex("#version 410"), "#version 300 es");
+        
+        codeVS += iglu::nanovg::opengl_vertex_shader_body;
+        codeFS += iglu::nanovg::opengl_fragment_shader_body;
 #else
-      auto& codeVS = iglu::nanovg::opengl_410_vertex_shader;
-      auto& codeFS = iglu::nanovg::opengl_410_fragment_shader;
+        auto codeVS = iglu::nanovg::opengl_410_vertex_shader_header + iglu::nanovg::opengl_vertex_shader_body;
+        auto codeFS = iglu::nanovg::opengl_410_fragment_shader_header + iglu::nanovg::opengl_fragment_shader_body;
+
 #endif
 
       std::unique_ptr<igl::IShaderStages> shader_stages =
@@ -574,13 +577,16 @@ class MNVGcontext {
       _vertexFunction = shader_stages->getVertexModule();
       _fragmentFunction = shader_stages->getFragmentModule();
     } else if (device->getBackendType() == igl::BackendType::Vulkan) {
+        auto codeVS = iglu::nanovg::opengl_460_vertex_shader_header + iglu::nanovg::opengl_vertex_shader_body;
+        auto codeFS = iglu::nanovg::opengl_460_fragment_shader_header + iglu::nanovg::opengl_fragment_shader_body;
+        
       std::unique_ptr<igl::IShaderStages> shader_stages =
           igl::ShaderStagesCreator::fromModuleStringInput(
               *device,
-              iglu::nanovg::opengl_460_vertex_shader.c_str(),
+                                                          codeVS.c_str(),
               "main",
               "",
-              iglu::nanovg::opengl_460_fragment_shader.c_str(),
+                                                          codeFS.c_str(),
               "main",
               "",
               nullptr);
