@@ -97,11 +97,7 @@ if(IGL_WITH_SAMPLES)
   add_shell_session(TQMultiRenderPassSession "")
   add_shell_session(TQSession "")
   add_shell_session(YUVColorSession "")
-  add_shell_session(NanovgSession "")
-#   target_sources(NanovgSession PRIVATE 
-#                 "../third-party/deps/src/nanovg/example/demo.c"
-#                 "../third-party/deps/src/nanovg/example/perf.c")
-#   target_include_directories(NanovgSession PRIVATE "../third-party/deps/src/nanovg/example/")
+  add_shell_session(NanovgSession "IGLUnanovg")
   if(IGL_WITH_OPENXR)
     if(ANDROID)
       add_shell_session(HelloOpenXRSession "")

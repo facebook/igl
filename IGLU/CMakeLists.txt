@@ -40,8 +40,6 @@ add_iglu_module(texture_loader)
 add_iglu_module(uniform)
 add_iglu_module(nanovg)
 
-set_target_properties(IGLUnanovg PROPERTIES XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES)
-
 # header-only
 add_library(IGLUsimdtypes INTERFACE)
 target_include_directories(IGLUsimdtypes INTERFACE "simdtypes")
