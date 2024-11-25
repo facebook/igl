@@ -107,6 +107,12 @@ void NanovgSession::initialize() noexcept {
   renderPass_.stencilAttachment.loadAction = LoadAction::Clear;
   renderPass_.stencilAttachment.clearStencil = 0;
 
+  mouseListener_ = std::make_shared<MouseListener>();
+  getPlatform().getInputDispatcher().addMouseListener(mouseListener_);
+
+  touchListener_ = std::make_shared<TouchListener>();
+  getPlatform().getInputDispatcher().addTouchListener(touchListener_);
+
   nvgContext_ = getPlatform().nanovgContext;
 
   if (this->loadDemoData(nvgContext_, &nvgDemoData_) != 0) {
@@ -161,15 +167,24 @@ void NanovgSession::drawNanovg(float __width,
   const float width = __width / pxRatio;
   const float height = __height / pxRatio;
 
-  int mx = 0;
-  int my = 0;
+#if IGL_PLATFORM_IOS || IGL_PLATFORM_ANDROID
+  int mx = touchListener_->touchX;
+  int my = touchListener_->touchY;
+#else
+  int mx = mouseListener_->mouseX;
+  int my = mouseListener_->mouseY;
+#endif
+
   int blowup = 0;
 
   auto start_ms = getMilliSeconds();
 
   nvgBeginFrame(vg, width, height, pxRatio);
   iglu::nanovg::SetRenderCommandEncoder(
-      vg, framebuffer_.get(), command.get(), (float*)&getPlatform().getDisplayContext().preRotationMatrix);
+      vg,
+      framebuffer_.get(),
+      command.get(),
+      (float*)&getPlatform().getDisplayContext().preRotationMatrix);
 
   times_++;
 

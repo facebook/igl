@@ -9,16 +9,46 @@
 
 #pragma once
 
-#include <igl/IGL.h>
-#include <shell/shared/platform/Platform.h>
-#include <shell/shared/renderSession/RenderSession.h>
-
 #include "demo.h"
 #include "perf.h"
 #include <IGLU/nanovg/nanovg_igl.h>
+#include <igl/IGL.h>
 #include <nanovg.h>
+#include <shell/shared/input/InputDispatcher.h>
+#include <shell/shared/platform/Platform.h>
+#include <shell/shared/renderSession/RenderSession.h>
 
 namespace igl::shell {
+
+class MouseListener : public IMouseListener {
+ public:
+  bool process(const MouseButtonEvent& event) override {
+    return true;
+  }
+  bool process(const MouseMotionEvent& event) override {
+    mouseX = event.x;
+    mouseY = event.y;
+    return true;
+  }
+  bool process(const MouseWheelEvent& event) override {
+    return true;
+  }
+
+  int mouseX;
+  int mouseY;
+};
+
+class TouchListener : public ITouchListener {
+ public:
+  bool process(const TouchEvent& event) override {
+    touchX = event.x;
+    touchY = event.y;
+    return true;
+  }
+
+  int touchX;
+  int touchY;
+};
 
 class NanovgSession : public RenderSession {
  public:
@@ -37,6 +67,9 @@ class NanovgSession : public RenderSession {
   NVGcontext* nvgContext_ = NULL;
   int times_ = 0;
   DemoData nvgDemoData_;
+
+  std::shared_ptr<MouseListener> mouseListener_;
+  std::shared_ptr<TouchListener> touchListener_;
 
   PerfGraph fps_, cpuGraph_, gpuGraph_;
   double preTimestamp_;
