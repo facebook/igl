@@ -52,8 +52,8 @@ NVGcontext* CreateContext(igl::IDevice* device, int flags);
  * @param matrix , use outside matrix, for example : vulkan preRotate matrix.
  */
 void SetRenderCommandEncoder(NVGcontext* ctx,
-                             std::shared_ptr<igl::IFramebuffer> framebuffer,
-                             std::shared_ptr<igl::IRenderCommandEncoder>,
+                             igl::IFramebuffer* framebuffer,
+                             igl::IRenderCommandEncoder*,
                              float* matrix);
 
 /*

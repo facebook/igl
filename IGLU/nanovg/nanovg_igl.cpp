@@ -239,7 +239,7 @@ static void mtlnvg__vset(NVGvertex* vtx, float x, float y, float u, float v) {
 class MNVGcontext {
  public:
   igl::IDevice* device;
-  std::shared_ptr<igl::IRenderCommandEncoder> _renderEncoder;
+    igl::IRenderCommandEncoder* _renderEncoder = nullptr;
 
   int _fragSize;
   int _indexSize;
@@ -248,7 +248,7 @@ class MNVGcontext {
   igl::Color clearColor{1, 1, 1};
   bool clearBufferOnFlush;
 
-  std::shared_ptr<igl::IFramebuffer> framebuffer;
+    igl::IFramebuffer* framebuffer = nullptr;
 
   // Textures
   std::vector<MNVGtexture*> _textures;
@@ -1411,8 +1411,8 @@ static void mtlnvg__renderViewport(void* uptr, float width, float height, float 
 }
 
 void SetRenderCommandEncoder(NVGcontext* ctx,
-                             std::shared_ptr<igl::IFramebuffer> framebuffer,
-                             std::shared_ptr<igl::IRenderCommandEncoder> command,
+                             igl::IFramebuffer* framebuffer,
+                             igl::IRenderCommandEncoder* command,
                              float* matrix) {
   MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
   mtl->framebuffer = framebuffer;
