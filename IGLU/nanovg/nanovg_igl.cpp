@@ -57,7 +57,6 @@ struct MNVGblend {
   igl::BlendFactor srcAlpha;
   igl::BlendFactor dstAlpha;
 };
-typedef struct MNVGblend MNVGblend;
 
 struct MNVGcall {
   int type;
@@ -73,9 +72,13 @@ struct MNVGcall {
   int uniformOffset;
   MNVGblend blendFunc;
 };
-typedef struct MNVGcall MNVGcall;
 
-struct MNVGfragUniforms {
+struct VertexUniforms {
+  iglu::simdtypes::float4x4 matrix;
+  iglu::simdtypes::float2 viewSize;
+};
+
+struct FragmentUniforms {
   iglu::simdtypes::float3x3 scissorMat;
   iglu::simdtypes::float3x3 paintMat;
   iglu::simdtypes::float4 innerCol;
@@ -91,8 +94,6 @@ struct MNVGfragUniforms {
   MNVGshaderType type;
 };
 
-typedef struct MNVGfragUniforms MNVGfragUniforms;
-
 struct MNVGtexture {
   int _id;
   int type;
@@ -105,7 +106,8 @@ struct MNVGbuffers {
   std::shared_ptr<igl::ICommandBuffer> commandBuffer;
   bool isBusy;
   int image;
-  std::shared_ptr<igl::IBuffer> viewSizeBuffer;
+  std::shared_ptr<igl::IBuffer> vertexUniformBuffer;
+    VertexUniforms vertexUniforms;
   std::shared_ptr<igl::ITexture> stencilTexture;
   std::vector<MNVGcall> calls;
   int ccalls;
@@ -118,8 +120,8 @@ struct MNVGbuffers {
   std::vector<NVGvertex> verts;
   int cverts;
   int nverts;
-  std::shared_ptr<igl::IBuffer> uniformBuffer;
-  std::vector<unsigned char> uniforms;
+  std::shared_ptr<igl::IBuffer> fragmentUniformBuffer;
+  std::vector<unsigned char> fragmentUniforms;
   int cuniforms;
   int nuniforms;
 
@@ -132,8 +134,8 @@ struct MNVGbuffers {
       indexBuffer->upload(indexes.data(), igl::BufferRange(indexes.size() * sizeof(uint32_t)));
     }
 
-    if (uniformBuffer) {
-      uniformBuffer->upload(uniforms.data(), igl::BufferRange(uniforms.size()));
+    if (fragmentUniformBuffer) {
+        fragmentUniformBuffer->upload(fragmentUniforms.data(), igl::BufferRange(fragmentUniforms.size()));
     }
   }
 };
@@ -284,20 +286,20 @@ class MNVGcontext {
     int ret = 0;
     if (_buffers->nuniforms + n > _buffers->cuniforms) {
       int cuniforms = mtlnvg__maxi(_buffers->nuniforms + n, 128) + _buffers->cuniforms / 4;
-      _buffers->uniforms.resize(_fragSize * cuniforms);
+      _buffers->fragmentUniforms.resize(_fragSize * cuniforms);
 
       if (device->getBackendType() == igl::BackendType::Vulkan) {
         IGL_DEBUG_ASSERT((_fragSize * cuniforms) < 65536); // vulkan max 65536;
       }
 
       igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform,
-                           _buffers->uniforms.data(),
+                           _buffers->fragmentUniforms.data(),
                            _fragSize * cuniforms);
       desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
       desc.debugName = "fragment_uniform_buffer";
       std::shared_ptr<igl::IBuffer> buffer = device->createBuffer(desc, NULL);
 
-      _buffers->uniformBuffer = buffer;
+      _buffers->fragmentUniformBuffer = buffer;
       _buffers->cuniforms = cuniforms;
     }
     ret = _buffers->nuniforms * _fragSize;
@@ -375,7 +377,7 @@ class MNVGcontext {
     return blend;
   }
 
-  int convertPaintForFrag(MNVGfragUniforms* frag,
+  int convertPaintForFrag(FragmentUniforms* frag,
                           NVGpaint* paint,
                           NVGscissor* scissor,
                           float width,
@@ -447,8 +449,8 @@ class MNVGcontext {
   void bindRenderPipeline(const std::shared_ptr<igl::IRenderPipelineState>& pipelineState) {
     _renderEncoder->bindRenderPipelineState(pipelineState);
     _renderEncoder->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *_buffers->vertBuffer, 0);
-    _renderEncoder->bindBuffer(kVertexUniformBlockIndex, _buffers->viewSizeBuffer.get(), 0);
-    _renderEncoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->uniformBuffer.get(), 0);
+    _renderEncoder->bindBuffer(kVertexUniformBlockIndex, _buffers->vertexUniformBuffer.get(), 0);
+    _renderEncoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->fragmentUniformBuffer.get(), 0);
   }
 
   void convexFill(MNVGcall* call) {
@@ -503,8 +505,8 @@ class MNVGcontext {
     return nullptr;
   }
 
-  MNVGfragUniforms* fragUniformAtIndex(int index) {
-    return (MNVGfragUniforms*)&_buffers->uniforms[index];
+    FragmentUniforms* fragUniformAtIndex(int index) {
+    return (FragmentUniforms*)&_buffers->fragmentUniforms[index];
   }
 
   void renderCancel() {
@@ -523,8 +525,8 @@ class MNVGcontext {
     _renderEncoder->bindViewport(
         {0.0, 0.0, (float)viewPortSize.x, (float)viewPortSize.y, 0.0, 1.0});
     _renderEncoder->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *_buffers->vertBuffer, 0);
-    _renderEncoder->bindBuffer(kVertexUniformBlockIndex, _buffers->viewSizeBuffer.get(), 0);
-    _renderEncoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->uniformBuffer.get(), 0);
+    _renderEncoder->bindBuffer(kVertexUniformBlockIndex, _buffers->vertexUniformBuffer.get(), 0);
+    _renderEncoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->fragmentUniformBuffer.get(), 0);
   }
 
   int renderCreate() {
@@ -787,11 +789,11 @@ class MNVGcontext {
   void renderDelete() {
     for (MNVGbuffers* buffers : _cbuffers) {
       buffers->commandBuffer = nullptr;
-      buffers->viewSizeBuffer = nullptr;
+      buffers->vertexUniformBuffer = nullptr;
       buffers->stencilTexture = nullptr;
       buffers->indexBuffer = nullptr;
       buffers->vertBuffer = nullptr;
-      buffers->uniformBuffer = nullptr;
+      buffers->fragmentUniformBuffer = nullptr;
     }
 
     for (MNVGtexture* texture : _textures) {
@@ -1039,7 +1041,7 @@ class MNVGcontext {
       }
       convertPaintForFrag(
           fragUniformAtIndex(call->uniformOffset), paint, scissor, strokeWidth, fringe, -1.0f);
-      MNVGfragUniforms* frag = fragUniformAtIndex(call->uniformOffset + _fragSize);
+        FragmentUniforms* frag = fragUniformAtIndex(call->uniformOffset + _fragSize);
       convertPaintForFrag(frag, paint, scissor, strokeWidth, fringe, (1.0f - 0.5f / 255.0f));
     } else {
       // Fill shader
@@ -1063,7 +1065,7 @@ class MNVGcontext {
                                 int nverts,
                                 float fringe) {
     MNVGcall* call = allocCall();
-    MNVGfragUniforms* frag;
+      FragmentUniforms* frag;
 
     if (call == NULL)
       return;
@@ -1135,26 +1137,27 @@ class MNVGcontext {
 
     bufferIndex = (bufferIndex + 1) % 3;
     _buffers = _cbuffers[bufferIndex];
-
-    float viewSize[2];
-    viewSize[0] = width;
-    viewSize[1] = height;
+      
+      VertexUniforms uniforms;
+      uniforms.viewSize[0] = width;
+      uniforms.viewSize[1] = height;
+      uniforms.matrix = iglu::simdtypes::float4x4(1.0f);
 
     // Initializes view size buffer for vertex function.
-    if (_buffers->viewSizeBuffer == nullptr) {
+    if (_buffers->vertexUniformBuffer == nullptr) {
       igl::BufferDesc desc(
-          igl::BufferDesc::BufferTypeBits::Uniform, viewSize, sizeof(iglu::simdtypes::float2));
+          igl::BufferDesc::BufferTypeBits::Uniform, &uniforms, sizeof(VertexUniforms));
       desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
-      desc.debugName = "vertex_viewSize_buffer";
-      _buffers->viewSizeBuffer = device->createBuffer(desc, NULL);
+      desc.debugName = "vertex_uniform_buffer";
+      _buffers->vertexUniformBuffer = device->createBuffer(desc, NULL);
     }
 
-    _buffers->viewSizeBuffer->upload(viewSize, igl::BufferRange(sizeof(iglu::simdtypes::float2)));
+    _buffers->vertexUniformBuffer->upload(&uniforms, igl::BufferRange(sizeof(VertexUniforms)));
   }
 
   void setUniforms(int uniformOffset, int image) {
     _renderEncoder->bindBuffer(
-        kFragmentUniformBlockIndex, _buffers->uniformBuffer.get(), uniformOffset, _fragSize);
+        kFragmentUniformBlockIndex, _buffers->fragmentUniformBuffer.get(), uniformOffset, _fragSize);
 
     MNVGtexture* tex = (image == 0 ? nullptr : findTexture(image));
     if (tex != nullptr) {
@@ -1427,16 +1430,15 @@ NVGcontext* CreateContext(igl::IDevice* device, int flags) {
 
   mtl->_flags = flags;
 
-  auto aaa = sizeof(MNVGfragUniforms);
   // sizeof(MNVGfragUniforms)=176
 
 #if TARGET_OS_OSX || TARGET_OS_SIMULATOR
   mtl->_fragSize = 256;
 #else
-  static_assert(64 * 3 > sizeof(MNVGfragUniforms));
+  static_assert(64 * 3 > sizeof(FragmentUniforms));
   mtl->_fragSize = 64 * 3;
 #endif // TARGET_OS_OSX
-  mtl->_indexSize = 4; // MTLIndexTypeUInt32
+  mtl->_indexSize = 4; // IndexType::UInt32
   mtl->device = device;
 
   ctx = nvgCreateInternal(&params);

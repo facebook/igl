@@ -17,6 +17,7 @@ out vec2 fpos;
 out vec2 ftcoord;
 
 layout(std140) uniform VertexUniformBlock {
+ mat4 matrix;
  vec2 viewSize;
 }uniforms;
 )";
@@ -29,6 +30,7 @@ layout (location=0) out vec2 fpos;
 layout (location=1) out vec2 ftcoord;
 
 layout(set = 1, binding = 1, std140) uniform VertexUniformBlock {
+ mat4 matrix;
  vec2 viewSize;
 }uniforms;
 )";
@@ -40,6 +42,7 @@ void main() {
   gl_Position = vec4(2.0 * pos.x / uniforms.viewSize.x - 1.0,
                      1.0 - 2.0 * pos.y / uniforms.viewSize.y,
                    0, 1);
+  gl_Position = uniforms.matrix * gl_Position; 
 }
 )";
 

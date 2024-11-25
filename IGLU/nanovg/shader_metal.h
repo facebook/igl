@@ -27,6 +27,11 @@ typedef struct {
 } RasterizerData;
 
 typedef struct  {
+  float4x4 matrix;
+  float2 viewSize;
+} VertexUniforms;
+
+typedef struct  {
   float3x3 scissorMat;
   float3x3 paintMat;
   float4 innerCol;
@@ -40,13 +45,13 @@ typedef struct  {
   float strokeThr;
   int texType;
   int type;
-} Uniforms;
+} FragmentUniforms;
 
-float scissorMask(constant Uniforms& uniforms, float2 p);
-float sdroundrect(constant Uniforms& uniforms, float2 pt);
-float strokeMask(constant Uniforms& uniforms, float2 ftcoord);
+float scissorMask(constant FragmentUniforms& uniforms, float2 p);
+float sdroundrect(constant FragmentUniforms& uniforms, float2 pt);
+float strokeMask(constant FragmentUniforms& uniforms, float2 ftcoord);
 
-float scissorMask(constant Uniforms& uniforms, float2 p) {
+float scissorMask(constant FragmentUniforms& uniforms, float2 p) {
   float2 sc = (abs((uniforms.scissorMat * float3(p, 1.0f)).xy)
                   - uniforms.scissorExt) \
               * uniforms.scissorScale;
@@ -54,32 +59,33 @@ float scissorMask(constant Uniforms& uniforms, float2 p) {
   return sc.x * sc.y;
 }
 
-float sdroundrect(constant Uniforms& uniforms, float2 pt) {
+float sdroundrect(constant FragmentUniforms& uniforms, float2 pt) {
   float2 ext2 = uniforms.extent - float2(uniforms.radius);
   float2 d = abs(pt) - ext2;
   return min(max(d.x, d.y), 0.0) + length(max(d, 0.0)) - uniforms.radius;
 }
 
-float strokeMask(constant Uniforms& uniforms, float2 ftcoord) {
+float strokeMask(constant FragmentUniforms& uniforms, float2 ftcoord) {
   return min(1.0, (1.0 - abs(ftcoord.x * 2.0 - 1.0)) * uniforms.strokeMult) \
          * min(1.0, ftcoord.y);
 }
 
 // Vertex Function
 vertex RasterizerData vertexShader(Vertex vert [[stage_in]],
-                                   constant float2& viewSize [[buffer(1)]]) {
+                                   constant VertexUniforms& uniforms [[buffer(1)]]) {
   RasterizerData out;
   out.ftcoord = vert.tcoord;
   out.fpos = vert.pos;
-  out.pos = float4(2.0 * vert.pos.x / viewSize.x - 1.0,
-                   1.0 - 2.0 * vert.pos.y / viewSize.y,
+  out.pos = float4(2.0 * vert.pos.x / uniforms.viewSize.x - 1.0,
+                   1.0 - 2.0 * vert.pos.y / uniforms.viewSize.y,
                    0, 1);
+  out.pos = uniforms.matrix * out.pos;
   return out;
 }
 
 // Fragment function (No AA)
 fragment float4 fragmentShader(RasterizerData in [[stage_in]],
-                               constant Uniforms& uniforms [[buffer(2)]],
+                               constant FragmentUniforms& uniforms [[buffer(2)]],
                                texture2d<float> texture [[texture(0)]],
                                sampler sampler [[sampler(0)]]) {
   float scissor = scissorMask(uniforms, in.fpos);
@@ -114,7 +120,7 @@ fragment float4 fragmentShader(RasterizerData in [[stage_in]],
 
 // Fragment function (AA)
 fragment float4 fragmentShaderAA(RasterizerData in [[stage_in]],
-                                 constant Uniforms& uniforms [[buffer(2)]],
+                                 constant FragmentUniforms& uniforms [[buffer(2)]],
                                  texture2d<float> texture [[texture(0)]],
                                  sampler sampler [[sampler(0)]]) {
   float scissor = scissorMask(uniforms, in.fpos);
