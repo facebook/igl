@@ -11,33 +11,54 @@
 
 namespace iglu::nanovg {
 
-// Create flags
+/*
+ * Create flags
+ */
 enum NVGcreateFlags {
-  // Flag indicating if geometry based anti-aliasing is used (may not be
-  // needed when using MSAA).
+  /*
+   * Flag indicating if geometry based anti-aliasing is used (may not be needed when using MSAA).
+   */
   NVG_ANTIALIAS = 1 << 0,
-  // Flag indicating if strokes should be drawn using stencil buffer.
-  // The rendering will be a little slower, but path overlaps
-  // (i.e. self-intersecting or sharp turns) will be drawn just once.
+  /*
+   * Flag indicating if strokes should be drawn using stencil buffer.
+   * The rendering will be a little slower, but path overlaps
+   * (i.e. self-intersecting or sharp turns) will be drawn just once.
+   */
   NVG_STENCIL_STROKES = 1 << 1,
-  // Flag indicating if double buffering scheme is used.
-  // Flag indicating that additional debug checks are done.
+  /*
+   * Flag indicating if double buffering scheme is used.
+   * Flag indicating that additional debug checks are done.
+   */
   NVG_DEBUG = 1 << 2,
 };
 
-// These are additional flags on top of NVGimageFlags.
+/*
+ * These are additional flags on top of NVGimageFlags.
+ */
 enum NVGimageFlagsMetal {
-  NVG_IMAGE_NODELETE = 1 << 16, // Do not delete Metal texture handle.
+  /*
+   * Do not delete Metal texture handle.
+   */
+  NVG_IMAGE_NODELETE = 1 << 16,
 };
 
-// Creates a new NanoVG context.  The `flags` should be combination of `NVGcreateFlags` above.
+/*
+ * Creates a new NanoVG context.  The `flags` should be combination of `NVGcreateFlags` above.
+ */
 NVGcontext* CreateContext(igl::IDevice* device, int flags);
 
+/*
+ * Set RenderCommandEncoder form outside.
+ * @param matrix , use outside matrix, for example : vulkan preRotate matrix.
+ */
 void SetRenderCommandEncoder(NVGcontext* ctx,
                              std::shared_ptr<igl::IFramebuffer> framebuffer,
-                             std::shared_ptr<igl::IRenderCommandEncoder>);
+                             std::shared_ptr<igl::IRenderCommandEncoder>,
+                             float* matrix);
 
-// Deletes the specified NanoVG context.
+/*
+ * Deletes the specified NanoVG context.
+ */
 void DeleteContext(NVGcontext* ctx);
 
 } // namespace iglu::nanovg

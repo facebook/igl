@@ -17,6 +17,7 @@
 #include <regex>
 #include <shell/shared/fileLoader/FileLoader.h>
 #include <shell/shared/imageLoader/ImageLoader.h>
+#include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl::shell {
@@ -167,7 +168,8 @@ void NanovgSession::drawNanovg(float __width,
   auto start_ms = getMilliSeconds();
 
   nvgBeginFrame(vg, width, height, pxRatio);
-  iglu::nanovg::SetRenderCommandEncoder(vg, framebuffer_, command);
+  iglu::nanovg::SetRenderCommandEncoder(
+      vg, framebuffer_, command, (float*)&getPlatform().getDisplayContext().preRotationMatrix);
 
   times_++;
 

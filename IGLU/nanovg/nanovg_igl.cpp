@@ -104,26 +104,30 @@ struct MNVGtexture {
 
 struct MNVGbuffers {
   std::shared_ptr<igl::ICommandBuffer> commandBuffer;
-  bool isBusy;
-  int image;
+  bool isBusy = false;
+  int image = 0;
   std::shared_ptr<igl::IBuffer> vertexUniformBuffer;
-    VertexUniforms vertexUniforms;
+  VertexUniforms vertexUniforms;
   std::shared_ptr<igl::ITexture> stencilTexture;
   std::vector<MNVGcall> calls;
-  int ccalls;
-  int ncalls;
+  int ccalls = 0;
+  int ncalls = 0;
   std::shared_ptr<igl::IBuffer> indexBuffer;
   std::vector<uint32_t> indexes;
-  int cindexes;
-  int nindexes;
+  int cindexes = 0;
+  int nindexes = 0;
   std::shared_ptr<igl::IBuffer> vertBuffer;
   std::vector<NVGvertex> verts;
-  int cverts;
-  int nverts;
+  int cverts = 0;
+  int nverts = 0;
   std::shared_ptr<igl::IBuffer> fragmentUniformBuffer;
   std::vector<unsigned char> fragmentUniforms;
-  int cuniforms;
-  int nuniforms;
+  int cuniforms = 0;
+  int nuniforms = 0;
+
+  MNVGbuffers() {
+    vertexUniforms.matrix = iglu::simdtypes::float4x4(1.0f);
+  }
 
   void uploadToGpu() {
     if (vertBuffer) {
@@ -134,8 +138,13 @@ struct MNVGbuffers {
       indexBuffer->upload(indexes.data(), igl::BufferRange(indexes.size() * sizeof(uint32_t)));
     }
 
+    if (vertexUniformBuffer) {
+      vertexUniformBuffer->upload(&vertexUniforms, igl::BufferRange(sizeof(VertexUniforms)));
+    }
+
     if (fragmentUniformBuffer) {
-        fragmentUniformBuffer->upload(fragmentUniforms.data(), igl::BufferRange(fragmentUniforms.size()));
+      fragmentUniformBuffer->upload(fragmentUniforms.data(),
+                                    igl::BufferRange(fragmentUniforms.size()));
     }
   }
 };
@@ -393,19 +402,21 @@ class MNVGcontext {
 
     if (scissor->extent[0] < -0.5f || scissor->extent[1] < -0.5f) {
       frag->scissorMat = iglu::simdtypes::float3x3(0);
-        frag->scissorExt[0] = 1.0f;
-        frag->scissorExt[1] = 1.0f;
-        frag->scissorScale[0] = 1.0f;
-        frag->scissorScale[1] = 1.0f;
+      frag->scissorExt[0] = 1.0f;
+      frag->scissorExt[1] = 1.0f;
+      frag->scissorScale[0] = 1.0f;
+      frag->scissorScale[1] = 1.0f;
     } else {
       nvgTransformInverse(invxform, scissor->xform);
       mtlnvg__xformToMat3x3(&frag->scissorMat, invxform);
-        frag->scissorExt[0] = scissor->extent[0];
-        frag->scissorExt[1] = scissor->extent[1];
-        frag->scissorScale[0] = sqrtf(scissor->xform[0] * scissor->xform[0] + scissor->xform[2] * scissor->xform[2]) /
-        fringe;
-        frag->scissorScale[1] = sqrtf(scissor->xform[1] * scissor->xform[1] + scissor->xform[3] * scissor->xform[3]) /
-        fringe;
+      frag->scissorExt[0] = scissor->extent[0];
+      frag->scissorExt[1] = scissor->extent[1];
+      frag->scissorScale[0] =
+          sqrtf(scissor->xform[0] * scissor->xform[0] + scissor->xform[2] * scissor->xform[2]) /
+          fringe;
+      frag->scissorScale[1] =
+          sqrtf(scissor->xform[1] * scissor->xform[1] + scissor->xform[3] * scissor->xform[3]) /
+          fringe;
     }
 
     frag->extent = iglu::simdtypes::float2{paint->extent[0], paint->extent[1]};
@@ -450,7 +461,8 @@ class MNVGcontext {
     _renderEncoder->bindRenderPipelineState(pipelineState);
     _renderEncoder->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *_buffers->vertBuffer, 0);
     _renderEncoder->bindBuffer(kVertexUniformBlockIndex, _buffers->vertexUniformBuffer.get(), 0);
-    _renderEncoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->fragmentUniformBuffer.get(), 0);
+    _renderEncoder->bindBuffer(
+        kFragmentUniformBlockIndex, _buffers->fragmentUniformBuffer.get(), 0);
   }
 
   void convexFill(MNVGcall* call) {
@@ -505,7 +517,7 @@ class MNVGcontext {
     return nullptr;
   }
 
-    FragmentUniforms* fragUniformAtIndex(int index) {
+  FragmentUniforms* fragUniformAtIndex(int index) {
     return (FragmentUniforms*)&_buffers->fragmentUniforms[index];
   }
 
@@ -526,7 +538,8 @@ class MNVGcontext {
         {0.0, 0.0, (float)viewPortSize.x, (float)viewPortSize.y, 0.0, 1.0});
     _renderEncoder->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *_buffers->vertBuffer, 0);
     _renderEncoder->bindBuffer(kVertexUniformBlockIndex, _buffers->vertexUniformBuffer.get(), 0);
-    _renderEncoder->bindBuffer(kFragmentUniformBlockIndex, _buffers->fragmentUniformBuffer.get(), 0);
+    _renderEncoder->bindBuffer(
+        kFragmentUniformBlockIndex, _buffers->fragmentUniformBuffer.get(), 0);
   }
 
   int renderCreate() {
@@ -558,9 +571,8 @@ class MNVGcontext {
       _fragmentFunction = shader_library->getShaderModule(fragmentFunction);
     } else if (device->getBackendType() == igl::BackendType::OpenGL) {
 #if IGL_PLATFORM_ANDROID || IGL_PLATFORM_IOS
-      auto codeVS = std::regex_replace(iglu::nanovg::opengl410VertexShaderHeader,
-                                       std::regex("#version 410"),
-                                       "#version 300 es");
+      auto codeVS = std::regex_replace(
+          iglu::nanovg::opengl410VertexShaderHeader, std::regex("#version 410"), "#version 300 es");
       auto codeFS = std::regex_replace(iglu::nanovg::opengl410FragmentShaderHeader,
                                        std::regex("#version 410"),
                                        "#version 300 es");
@@ -570,8 +582,8 @@ class MNVGcontext {
 #else
       auto codeVS =
           iglu::nanovg::opengl410VertexShaderHeader + iglu::nanovg::openglVertexShaderBody;
-      auto codeFS = iglu::nanovg::opengl410FragmentShaderHeader +
-                    iglu::nanovg::openglFragmentShaderBody;
+      auto codeFS =
+          iglu::nanovg::opengl410FragmentShaderHeader + iglu::nanovg::openglFragmentShaderBody;
 
 #endif
 
@@ -584,8 +596,8 @@ class MNVGcontext {
     } else if (device->getBackendType() == igl::BackendType::Vulkan) {
       auto codeVS =
           iglu::nanovg::opengl460VertexShaderHeader + iglu::nanovg::openglVertexShaderBody;
-      auto codeFS = iglu::nanovg::opengl460FragmentShaderHeader +
-                    iglu::nanovg::openglFragmentShaderBody;
+      auto codeFS =
+          iglu::nanovg::opengl460FragmentShaderHeader + iglu::nanovg::openglFragmentShaderBody;
 
       std::unique_ptr<igl::IShaderStages> shader_stages =
           igl::ShaderStagesCreator::fromModuleStringInput(
@@ -967,13 +979,13 @@ class MNVGcontext {
       _renderEncoder->popDebugGroupLabel();
     }
 
-        _buffers->isBusy = false;
-        _buffers->commandBuffer = nullptr;
-        _buffers->image = 0;
-        _buffers->nindexes = 0;
-        _buffers->nverts = 0;
-        _buffers->ncalls = 0;
-        _buffers->nuniforms = 0;
+    _buffers->isBusy = false;
+    _buffers->commandBuffer = nullptr;
+    _buffers->image = 0;
+    _buffers->nindexes = 0;
+    _buffers->nverts = 0;
+    _buffers->ncalls = 0;
+    _buffers->nuniforms = 0;
   }
 
   int renderGetTextureSizeForImage(int image, int* width, int* height) {
@@ -1041,7 +1053,7 @@ class MNVGcontext {
       }
       convertPaintForFrag(
           fragUniformAtIndex(call->uniformOffset), paint, scissor, strokeWidth, fringe, -1.0f);
-        FragmentUniforms* frag = fragUniformAtIndex(call->uniformOffset + _fragSize);
+      FragmentUniforms* frag = fragUniformAtIndex(call->uniformOffset + _fragSize);
       convertPaintForFrag(frag, paint, scissor, strokeWidth, fringe, (1.0f - 0.5f / 255.0f));
     } else {
       // Fill shader
@@ -1065,7 +1077,7 @@ class MNVGcontext {
                                 int nverts,
                                 float fringe) {
     MNVGcall* call = allocCall();
-      FragmentUniforms* frag;
+    FragmentUniforms* frag;
 
     if (call == NULL)
       return;
@@ -1137,27 +1149,26 @@ class MNVGcontext {
 
     bufferIndex = (bufferIndex + 1) % 3;
     _buffers = _cbuffers[bufferIndex];
-      
-      VertexUniforms uniforms;
-      uniforms.viewSize[0] = width;
-      uniforms.viewSize[1] = height;
-      uniforms.matrix = iglu::simdtypes::float4x4(1.0f);
+
+    _buffers->vertexUniforms.viewSize[0] = width;
+    _buffers->vertexUniforms.viewSize[1] = height;
 
     // Initializes view size buffer for vertex function.
     if (_buffers->vertexUniformBuffer == nullptr) {
-      igl::BufferDesc desc(
-          igl::BufferDesc::BufferTypeBits::Uniform, &uniforms, sizeof(VertexUniforms));
+      igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform,
+                           &_buffers->vertexUniforms,
+                           sizeof(VertexUniforms));
       desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
       desc.debugName = "vertex_uniform_buffer";
       _buffers->vertexUniformBuffer = device->createBuffer(desc, NULL);
     }
-
-    _buffers->vertexUniformBuffer->upload(&uniforms, igl::BufferRange(sizeof(VertexUniforms)));
   }
 
   void setUniforms(int uniformOffset, int image) {
-    _renderEncoder->bindBuffer(
-        kFragmentUniformBlockIndex, _buffers->fragmentUniformBuffer.get(), uniformOffset, _fragSize);
+    _renderEncoder->bindBuffer(kFragmentUniformBlockIndex,
+                               _buffers->fragmentUniformBuffer.get(),
+                               uniformOffset,
+                               _fragSize);
 
     MNVGtexture* tex = (image == 0 ? nullptr : findTexture(image));
     if (tex != nullptr) {
@@ -1401,10 +1412,14 @@ static void mtlnvg__renderViewport(void* uptr, float width, float height, float 
 
 void SetRenderCommandEncoder(NVGcontext* ctx,
                              std::shared_ptr<igl::IFramebuffer> framebuffer,
-                             std::shared_ptr<igl::IRenderCommandEncoder> command) {
+                             std::shared_ptr<igl::IRenderCommandEncoder> command,
+                             float* matrix) {
   MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
   mtl->framebuffer = framebuffer;
   mtl->_renderEncoder = command;
+  if (matrix) {
+    memcpy(&mtl->_buffers->vertexUniforms.matrix, matrix, sizeof(float) * 16);
+  }
 }
 
 NVGcontext* CreateContext(igl::IDevice* device, int flags) {
