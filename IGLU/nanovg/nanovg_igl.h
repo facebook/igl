@@ -49,13 +49,13 @@ struct MNVGframebuffer {
 typedef struct MNVGframebuffer MNVGframebuffer;
 
 // Creates a new NanoVG context.  The `flags` should be combination of `NVGcreateFlags` above.
-NVGcontext* nvgCreateMTL(igl::IDevice* device, int flags);
+NVGcontext* CreateContext(igl::IDevice* device, int flags);
 
-void nvgSetColorTexture(NVGcontext* ctx,
+void SetRenderCommandEncoder(NVGcontext* ctx,
                         std::shared_ptr<igl::IFramebuffer> framebuffer,
                         std::shared_ptr<igl::IRenderCommandEncoder>);
 
 // Deletes the specified NanoVG context.
-void nvgDeleteMTL(NVGcontext* ctx);
+void DeleteContext(NVGcontext* ctx);
 
 } // namespace iglu::nanovg

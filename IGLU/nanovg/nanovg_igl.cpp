@@ -5,6 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+/*
+ * Base on https://github.com/ollix/MetalNanoVG
+ */
+
 #include "nanovg_igl.h"
 #include "nanovg.h"
 #include "shader_metal.h"
@@ -220,7 +224,6 @@ static void mtlnvg__vset(NVGvertex* vtx, float x, float y, float u, float v) {
   vtx->u = u;
   vtx->v = v;
 }
-
 
 class MNVGcontext {
  public:
@@ -1415,7 +1418,7 @@ static void mtlnvg__renderViewport(void* uptr, float width, float height, float 
   mtl->renderViewportWithWidth(width, height, devicePixelRatio);
 }
 
-void nvgSetColorTexture(NVGcontext* ctx,
+void SetRenderCommandEncoder(NVGcontext* ctx,
                         std::shared_ptr<igl::IFramebuffer> framebuffer,
                         std::shared_ptr<igl::IRenderCommandEncoder> command) {
   MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
@@ -1423,7 +1426,7 @@ void nvgSetColorTexture(NVGcontext* ctx,
   mtl->_renderEncoder = command;
 }
 
-NVGcontext* nvgCreateMTL(igl::IDevice* device, int flags) {
+NVGcontext* CreateContext(igl::IDevice* device, int flags) {
 #ifdef MNVG_INVALID_TARGET
   printf("Metal is only supported on iOS, macOS, and tvOS.\n");
   return NULL;
@@ -1475,9 +1478,8 @@ error:
   return NULL;
 }
 
-void nvgDeleteMTL(NVGcontext* ctx) {
+void DeleteContext(NVGcontext* ctx) {
   nvgDeleteInternal(ctx);
 }
-
 
 } // namespace iglu::nanovg

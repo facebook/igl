@@ -144,7 +144,7 @@ void TinyRenderer::init(AAssetManager* mgr,
   IGL_SOFT_ASSERT(result.isOk());
   if (d) {
     platform_ = std::make_shared<igl::shell::PlatformAndroid>(std::move(d));
-    platform_->nanovgContext = nvgCreateMTL(&platform_->getDevice(), 0);
+    platform_->nanovgContext = iglu::nanovg::CreateContext(&platform_->getDevice(), 0);
     IGL_DEBUG_ASSERT(platform_ != nullptr);
     static_cast<igl::shell::ImageLoaderAndroid&>(platform_->getImageLoader()).setAssetManager(mgr);
     static_cast<igl::shell::FileLoaderAndroid&>(platform_->getFileLoader()).setAssetManager(mgr);
