@@ -32,6 +32,11 @@ struct igl_vector_uint2 {
   uint32_t y;
 };
 
+static void setValue(iglu::simdtypes::float2 * dst, float x, float y){
+    float src[2] = {x, y};
+    memcpy(dst, src, sizeof(float)*2);
+}
+
 typedef enum MNVGvertexInputIndex {
   MNVG_VERTEX_INPUT_INDEX_VERTICES = 0,
   MNVG_VERTEX_INPUT_INDEX_VIEW_SIZE = 1,
@@ -204,7 +209,7 @@ static iglu::simdtypes::float4 mtlnvg__premulColor(NVGcolor c) {
   c.g *= c.a;
   c.b *= c.a;
   iglu::simdtypes::float4 ret;
-  ret.x = c.r, ret.y = c.g, ret.z = c.b, ret.w = c.a;
+  memcpy(&ret, &c, sizeof(float) * 4);
   return ret;
 }
 
@@ -391,21 +396,17 @@ class MNVGcontext {
 
     if (scissor->extent[0] < -0.5f || scissor->extent[1] < -0.5f) {
       frag->scissorMat = iglu::simdtypes::float3x3(0);
-      frag->scissorExt.x = 1.0f;
-      frag->scissorExt.y = 1.0f;
-      frag->scissorScale.x = 1.0f;
-      frag->scissorScale.y = 1.0f;
+        setValue(&frag->scissorExt, 1.0f, 1.0f);
+        setValue(&frag->scissorScale, 1.0f, 1.0f);
     } else {
       nvgTransformInverse(invxform, scissor->xform);
       mtlnvg__xformToMat3x3(&frag->scissorMat, invxform);
-      frag->scissorExt.x = scissor->extent[0];
-      frag->scissorExt.y = scissor->extent[1];
-      frag->scissorScale.x =
-          sqrtf(scissor->xform[0] * scissor->xform[0] + scissor->xform[2] * scissor->xform[2]) /
-          fringe;
-      frag->scissorScale.y =
-          sqrtf(scissor->xform[1] * scissor->xform[1] + scissor->xform[3] * scissor->xform[3]) /
-          fringe;
+        setValue(&frag->scissorExt, scissor->extent[0], scissor->extent[1]);
+        setValue(&frag->scissorScale,
+                 sqrtf(scissor->xform[0] * scissor->xform[0] + scissor->xform[2] * scissor->xform[2]) /
+                 fringe,
+                 sqrtf(scissor->xform[1] * scissor->xform[1] + scissor->xform[3] * scissor->xform[3]) /
+                 fringe);
     }
 
     frag->extent = iglu::simdtypes::float2{paint->extent[0], paint->extent[1]};
