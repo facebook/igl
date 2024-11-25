@@ -138,9 +138,6 @@ struct MNVGbuffers {
   }
 };
 
-// Keeps the weak reference to the currently binded framebuffer.
-MNVGframebuffer* s_framebuffer = NULL;
-
 const igl::TextureFormat kStencilFormat = igl::TextureFormat::S8_UInt_Z32_UNorm;
 
 static bool mtlnvg_convertBlendFuncFactor(int factor, igl::BlendFactor* result) {
@@ -598,14 +595,6 @@ class MNVGcontext {
       _fragmentFunction = shader_stages->getFragmentModule();
     }
 
-    // Initializes the number of available buffers.
-    if (_flags & NVG_TRIPLE_BUFFER) {
-      _maxBuffers = 3;
-    } else if (_flags & NVG_DOUBLE_BUFFER) {
-      _maxBuffers = 2;
-    } else {
-      _maxBuffers = 1;
-    }
     _maxBuffers = 3;
 
     for (int i = _maxBuffers; i--;) {
@@ -951,28 +940,12 @@ class MNVGcontext {
       return;
     }
 
-    igl_vector_uint2 textureSize;
-
-    MNVGbuffers* buffers = _buffers;
-
-    if (s_framebuffer == NULL || nvgInternalParams(s_framebuffer->ctx)->userPtr != (void*)this) {
-      textureSize = viewPortSize;
-    } else { // renders in framebuffer
-      buffers->image = s_framebuffer->image;
-      MNVGtexture* tex = findTexture(s_framebuffer->image);
-      auto colorTexture = tex->tex;
-      textureSize.x = (uint32_t)colorTexture->getSize().width;
-      textureSize.y = (uint32_t)colorTexture->getSize().height;
-    }
-    if (textureSize.x == 0 || textureSize.y == 0)
-      return;
-
     _buffers->uploadToGpu();
 
     renderCommandEncoderWithColorTexture();
 
-    MNVGcall* call = &buffers->calls[0];
-    for (int i = buffers->ncalls; i--; ++call) {
+    MNVGcall* call = &_buffers->calls[0];
+    for (int i = _buffers->ncalls; i--; ++call) {
       MNVGblend* blend = &call->blendFunc;
 
       updateRenderPipelineStatesForBlend(blend);
@@ -994,15 +967,13 @@ class MNVGcontext {
       _renderEncoder->popDebugGroupLabel();
     }
 
-    {
-      buffers->isBusy = false;
-      buffers->commandBuffer = nullptr;
-      buffers->image = 0;
-      buffers->nindexes = 0;
-      buffers->nverts = 0;
-      buffers->ncalls = 0;
-      buffers->nuniforms = 0;
-    }
+        _buffers->isBusy = false;
+        _buffers->commandBuffer = nullptr;
+        _buffers->image = 0;
+        _buffers->nindexes = 0;
+        _buffers->nverts = 0;
+        _buffers->ncalls = 0;
+        _buffers->nuniforms = 0;
   }
 
   int renderGetTextureSizeForImage(int image, int* width, int* height) {
@@ -1436,11 +1407,6 @@ void SetRenderCommandEncoder(NVGcontext* ctx,
 }
 
 NVGcontext* CreateContext(igl::IDevice* device, int flags) {
-#ifdef MNVG_INVALID_TARGET
-  printf("Metal is only supported on iOS, macOS, and tvOS.\n");
-  return NULL;
-#endif // MNVG_INVALID_TARGET
-
   NVGparams params;
   NVGcontext* ctx = NULL;
   MNVGcontext* mtl = new MNVGcontext();
@@ -1481,7 +1447,6 @@ NVGcontext* CreateContext(igl::IDevice* device, int flags) {
   return ctx;
 
 error:
-  // 'mtl' is freed by nvgDeleteInternal.
   if (ctx != NULL)
     nvgDeleteInternal(ctx);
   return NULL;
