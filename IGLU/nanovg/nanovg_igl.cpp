@@ -548,7 +548,7 @@ class MNVGcontext {
     if (device->getBackendType() == igl::BackendType::Metal) {
       std::unique_ptr<igl::IShaderLibrary> shader_library =
           igl::ShaderLibraryCreator::fromStringInput(*device,
-                                                     iglu::nanovg::metal_shader.c_str(),
+                                                     iglu::nanovg::metalShader.c_str(),
                                                      vertexFunction,
                                                      fragmentFunction,
                                                      "",
@@ -558,20 +558,20 @@ class MNVGcontext {
       _fragmentFunction = shader_library->getShaderModule(fragmentFunction);
     } else if (device->getBackendType() == igl::BackendType::OpenGL) {
 #if IGL_PLATFORM_ANDROID || IGL_PLATFORM_IOS
-      auto codeVS = std::regex_replace(iglu::nanovg::opengl_410_vertex_shader_header,
+      auto codeVS = std::regex_replace(iglu::nanovg::opengl410VertexShaderHeader,
                                        std::regex("#version 410"),
                                        "#version 300 es");
-      auto codeFS = std::regex_replace(iglu::nanovg::opengl_410_fragment_shader_header,
+      auto codeFS = std::regex_replace(iglu::nanovg::opengl410FragmentShaderHeader,
                                        std::regex("#version 410"),
                                        "#version 300 es");
 
-      codeVS += iglu::nanovg::opengl_vertex_shader_body;
-      codeFS += iglu::nanovg::opengl_fragment_shader_body;
+      codeVS += iglu::nanovg::openglVertexShaderBody;
+      codeFS += iglu::nanovg::openglFragmentShaderBody;
 #else
       auto codeVS =
-          iglu::nanovg::opengl_410_vertex_shader_header + iglu::nanovg::opengl_vertex_shader_body;
-      auto codeFS = iglu::nanovg::opengl_410_fragment_shader_header +
-                    iglu::nanovg::opengl_fragment_shader_body;
+          iglu::nanovg::opengl410VertexShaderHeader + iglu::nanovg::openglVertexShaderBody;
+      auto codeFS = iglu::nanovg::opengl410FragmentShaderHeader +
+                    iglu::nanovg::openglFragmentShaderBody;
 
 #endif
 
@@ -583,9 +583,9 @@ class MNVGcontext {
       _fragmentFunction = shader_stages->getFragmentModule();
     } else if (device->getBackendType() == igl::BackendType::Vulkan) {
       auto codeVS =
-          iglu::nanovg::opengl_460_vertex_shader_header + iglu::nanovg::opengl_vertex_shader_body;
-      auto codeFS = iglu::nanovg::opengl_460_fragment_shader_header +
-                    iglu::nanovg::opengl_fragment_shader_body;
+          iglu::nanovg::opengl460VertexShaderHeader + iglu::nanovg::openglVertexShaderBody;
+      auto codeFS = iglu::nanovg::opengl460FragmentShaderHeader +
+                    iglu::nanovg::openglFragmentShaderBody;
 
       std::unique_ptr<igl::IShaderStages> shader_stages =
           igl::ShaderStagesCreator::fromModuleStringInput(

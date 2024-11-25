@@ -9,7 +9,7 @@
 
 namespace iglu::nanovg {
 
-static std::string metal_shader = R"(
+static std::string metalShader = R"(
 #include <metal_stdlib>
 #include <simd/simd.h>
 
