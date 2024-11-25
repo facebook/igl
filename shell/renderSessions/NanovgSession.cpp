@@ -168,8 +168,8 @@ void NanovgSession::drawNanovg(float __width,
 
   auto start_ms = getMilliSeconds();
 
-  nvgBeginFrame(vg, width, height, pxRatio);
-  nvgSetColorTexture(vg, framebuffer_, command);
+    nvgBeginFrame(vg, width, height, pxRatio);
+    iglu::nanovg::nvgSetColorTexture(vg, framebuffer_, command);
 
   times_++;
   renderDemo(vg, mx, my, width, height, times_ / 60.0f, blowup, &nvgDemoData_);

@@ -7,7 +7,7 @@
 #pragma once
 #include <string>
 
-namespace igl::nanovg{
+namespace iglu::nanovg{
 
 static std::string opengl_410_vertex_shader = R"(#version 410
 layout(location = 0) in vec2 pos;

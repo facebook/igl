@@ -9,6 +9,8 @@
 #include "nanovg.h"
 #include <igl/IGL.h>
 
+namespace iglu::nanovg {
+
 // Create flags
 enum NVGcreateFlags {
   // Flag indicating if geometry based anti-aliasing is used (may not be
@@ -94,3 +96,5 @@ void mnvgReadPixels(NVGcontext* ctx, int image, int x, int y, int width, int hei
 
 // Returns the current OS target.
 enum MNVGTarget mnvgTarget();
+
+} // namespace iglu::nanovg

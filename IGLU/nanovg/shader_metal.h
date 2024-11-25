@@ -7,7 +7,7 @@
 #pragma once
 #include <string>
 
-namespace igl::nanovg{
+namespace iglu::nanovg{
 
 static std::string metal_shader = R"(
 #include <metal_stdlib>

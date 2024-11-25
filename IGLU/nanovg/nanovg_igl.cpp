@@ -22,6 +22,8 @@
 #define kVertexUniformBlockIndex 1
 #define kFragmentUniformBlockIndex 2
 
+namespace iglu::nanovg {
+
 struct igl_vector_uint2 {
   uint32_t x;
   uint32_t y;
@@ -201,12 +203,9 @@ static iglu::simdtypes::float4 mtlnvg__premulColor(NVGcolor c) {
   c.r *= c.a;
   c.g *= c.a;
   c.b *= c.a;
-    iglu::simdtypes::float4 ret;
-    ret.x = c.r,
-    ret.y = c.g,
-    ret.z = c.b,
-    ret.w = c.a;
-    return ret;
+  iglu::simdtypes::float4 ret;
+  ret.x = c.r, ret.y = c.g, ret.z = c.b, ret.w = c.a;
+  return ret;
 }
 
 static void mtlnvg__xformToMat3x3(iglu::simdtypes::float3x3* m3, float* t) {
@@ -574,7 +573,7 @@ class MNVGcontext {
     if (device->getBackendType() == igl::BackendType::Metal) {
       std::unique_ptr<igl::IShaderLibrary> shader_library =
           igl::ShaderLibraryCreator::fromStringInput(*device,
-                                                     igl::nanovg::metal_shader.c_str(),
+                                                     iglu::nanovg::metal_shader.c_str(),
                                                      vertexFunction,
                                                      fragmentFunction,
                                                      "",
@@ -585,12 +584,12 @@ class MNVGcontext {
     } else if (device->getBackendType() == igl::BackendType::OpenGL) {
 #if IGL_PLATFORM_ANDROID || IGL_PLATFORM_IOS
       auto codeVS = std::regex_replace(
-          igl::nanovg::opengl_410_vertex_shader, std::regex("#version 410"), "#version 300 es");
+          iglu::nanovg::opengl_410_vertex_shader, std::regex("#version 410"), "#version 300 es");
       auto codeFS = std::regex_replace(
-          igl::nanovg::opengl_410_fragment_shader, std::regex("#version 410"), "#version 300 es");
+          iglu::nanovg::opengl_410_fragment_shader, std::regex("#version 410"), "#version 300 es");
 #else
-      auto& codeVS = igl::nanovg::opengl_410_vertex_shader;
-      auto& codeFS = igl::nanovg::opengl_410_fragment_shader;
+      auto& codeVS = iglu::nanovg::opengl_410_vertex_shader;
+      auto& codeFS = iglu::nanovg::opengl_410_fragment_shader;
 #endif
 
       std::unique_ptr<igl::IShaderStages> shader_stages =
@@ -603,10 +602,10 @@ class MNVGcontext {
       std::unique_ptr<igl::IShaderStages> shader_stages =
           igl::ShaderStagesCreator::fromModuleStringInput(
               *device,
-              igl::nanovg::opengl_460_vertex_shader.c_str(),
+              iglu::nanovg::opengl_460_vertex_shader.c_str(),
               "main",
               "",
-              igl::nanovg::opengl_460_fragment_shader.c_str(),
+              iglu::nanovg::opengl_460_fragment_shader.c_str(),
               "main",
               "",
               nullptr);
@@ -1467,16 +1466,16 @@ void* mnvgCommandQueue(NVGcontext* ctx) {
 int mnvgCreateImageFromHandle(NVGcontext* ctx, void* textureId, int imageFlags) {
   return 0;
 #if 0
-  MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
-  MNVGtexture* tex = mtl->allocTexture();
-
-  if (tex == NULL) return 0;
-
-  tex->type = NVG_TEXTURE_RGBA;
-  tex->tex = (std::shared_ptr<igl::ITexture>)textureId;
-  tex->flags = imageFlags;
-
-  return tex->_id;
+    MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
+    MNVGtexture* tex = mtl->allocTexture();
+    
+    if (tex == NULL) return 0;
+    
+    tex->type = NVG_TEXTURE_RGBA;
+    tex->tex = (std::shared_ptr<igl::ITexture>)textureId;
+    tex->flags = imageFlags;
+    
+    return tex->_id;
 #endif
 }
 
@@ -1597,3 +1596,5 @@ error:
     nvgDeleteInternal(ctx);
   return NULL;
 }
+
+} // namespace iglu::nanovg
