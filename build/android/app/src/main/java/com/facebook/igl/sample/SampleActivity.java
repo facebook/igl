@@ -11,6 +11,7 @@ package com.facebook.igl.shell;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
@@ -98,9 +99,15 @@ public class SampleActivity extends Activity implements View.OnClickListener {
     mMainView.addView(mBackendViewFrame);
     setContentView(mMainView);
 
-    String fileDir = this.getFilesDir().getAbsolutePath();
+    boolean hasCopy = getSharedPreferences("data", Context.MODE_PRIVATE).getBoolean("HasCopyAssets", false);
 
-    copyAssetsDirToSDCard(this, "", fileDir);
+    if (!hasCopy) {
+      copyAssetsDirToSDCard(this, "", getFilesDir().getAbsolutePath());
+
+      SharedPreferences.Editor editor = getSharedPreferences("data", Context.MODE_PRIVATE).edit();
+      editor.putBoolean("HasCopyAssets",true);
+      editor.commit();
+    }
   }
 
   @Override
