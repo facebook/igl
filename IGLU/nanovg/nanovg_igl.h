@@ -35,9 +35,9 @@ enum NVGcreateFlags {
 /*
  * These are additional flags on top of NVGimageFlags.
  */
-enum NVGimageFlagsMetal {
+enum NVGimageFlags {
   /*
-   * Do not delete Metal texture handle.
+   * Do not delete texture handle.
    */
   NVG_IMAGE_NODELETE = 1 << 16,
 };
@@ -59,6 +59,6 @@ void SetRenderCommandEncoder(NVGcontext* ctx,
 /*
  * Deletes the specified NanoVG context.
  */
-void DeleteContext(NVGcontext* ctx);
+void DestroyContext(NVGcontext* ctx);
 
 } // namespace iglu::nanovg
