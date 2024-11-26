@@ -291,6 +291,12 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
     IGL_DEBUG_ASSERT(location < sMaxNumVertexAttribs);
     activeAttributesLocations_.push_back(location);
 
+    prevPipelineStateAttributesLocations_.erase(
+        std::remove(prevPipelineStateAttributesLocations_.begin(),
+                    prevPipelineStateAttributesLocations_.end(),
+                    location),
+        prevPipelineStateAttributesLocations_.end());
+
     getContext().enableVertexAttribArray(location);
     const auto& attribute = attribList[i];
     getContext().vertexAttribPointer(
