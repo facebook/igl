@@ -8,10 +8,8 @@
 #include <IGLU/texture_loader/ktx1/TextureLoaderFactory.h>
 
 #include <IGLU/texture_loader/ktx1/Header.h>
-#include <igl/IGLSafeC.h>
 #include <igl/opengl/util/TextureFormat.h>
 #include <ktx.h>
-#include <vector>
 
 namespace iglu::textureloader::ktx1 {
 

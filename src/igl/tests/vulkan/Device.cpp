@@ -94,8 +94,8 @@ TEST_F(DeviceVulkanTest, PlatformDeviceSampler) {
   ASSERT_TRUE(texture != nullptr);
   auto* vulkanTexture = static_cast<vulkan::Texture*>(texture.get());
   auto& innerVulkanTexture = vulkanTexture->getVulkanTexture();
-  innerVulkanTexture.getVulkanImageView();
-  innerVulkanTexture.getTextureId();
+  (void)innerVulkanTexture.imageView_;
+  ASSERT_TRUE(innerVulkanTexture.textureId_ != 0);
   SamplerStateDesc samplerDesc;
   auto samplerState = iglDev_->createSamplerState(samplerDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();

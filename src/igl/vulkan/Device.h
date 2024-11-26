@@ -18,7 +18,6 @@ namespace igl::vulkan {
 
 class VulkanContext;
 class VulkanShaderModule;
-struct DeviceQueues;
 
 /// @brief Implements the igl::IDevice interface for Vulkan
 class Device final : public IDevice {

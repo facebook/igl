@@ -17,7 +17,6 @@
 
 #include <shell/openxr/XrLog.h>
 
-#include <algorithm>
 #include <iterator>
 
 namespace igl::shell::openxr::mobile {
@@ -60,7 +59,7 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
     const std::vector<uint32_t>& images,
     igl::TextureFormat externalTextureFormat,
     std::vector<std::shared_ptr<igl::ITexture>>& inOutTextures) {
-  uint32_t imageIndex;
+  uint32_t imageIndex = 0;
   const XrSwapchainImageAcquireInfo acquireInfo{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
   XR_CHECK(xrAcquireSwapchainImage(swapchain, &acquireInfo, &imageIndex));
 
@@ -111,7 +110,7 @@ XrSwapchainProviderImplGLES::XrSwapchainProviderImplGLES(const igl::IDevice& dev
 }
 
 void XrSwapchainProviderImplGLES::enumerateImages(
-    igl::IDevice& device,
+    igl::IDevice& /*device*/,
     XrSwapchain colorSwapchain,
     XrSwapchain depthSwapchain,
     const impl::SwapchainImageInfo& /* swapchainImageInfo */,

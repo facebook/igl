@@ -18,7 +18,7 @@
 
 namespace igl::vulkan {
 
-Texture::Texture(const igl::vulkan::Device& device, TextureFormat format) :
+Texture::Texture(igl::vulkan::Device& device, TextureFormat format) :
   ITexture(format), device_(device) {}
 
 Result Texture::create(const TextureDesc& desc) {
@@ -233,7 +233,7 @@ Result Texture::uploadInternal(TextureType /*type*/,
     return Result{};
   }
 
-  const auto& vulkanImage = texture_->getVulkanImage();
+  const igl::vulkan::VulkanImage& vulkanImage = texture_->image_;
   if (vulkanImage.isMappedPtrAccessible()) {
     checked_memcpy(
         vulkanImage.mappedPtr_, vulkanImage.allocatedSize, data, bytesPerRow * range.width);
@@ -253,7 +253,7 @@ Dimensions Texture::getDimensions() const {
 
 VkFormat Texture::getVkFormat() const {
   IGL_DEBUG_ASSERT(texture_);
-  return texture_ ? texture_->getVulkanImage().imageFormat_ : VK_FORMAT_UNDEFINED;
+  return texture_ ? texture_->image_.imageFormat_ : VK_FORMAT_UNDEFINED;
 }
 
 uint32_t Texture::getNumLayers() const {
@@ -278,18 +278,22 @@ uint32_t Texture::getNumMipLevels() const {
 
 void Texture::generateMipmap(ICommandQueue& /* unused */,
                              const TextureRangeDesc* IGL_NULLABLE range) const {
-  if (desc_.numMipLevels > 1) {
+  IGL_DEBUG_ASSERT(texture_);
+
+  if (texture_ && desc_.numMipLevels > 1) {
     const auto& ctx = device_.getVulkanContext();
     const auto& wrapper = ctx.immediate_->acquire();
-    texture_->getVulkanImage().generateMipmap(wrapper.cmdBuf_, range ? *range : desc_.asRange());
+    texture_->image_.generateMipmap(wrapper.cmdBuf_, range ? *range : desc_.asRange());
     ctx.immediate_->submit(wrapper);
   }
 }
 
 void Texture::generateMipmap(ICommandBuffer& cmdBuffer, const TextureRangeDesc* range) const {
+  IGL_DEBUG_ASSERT(texture_);
+
   auto& vkCmdBuffer = static_cast<vulkan::CommandBuffer&>(cmdBuffer);
-  texture_->getVulkanImage().generateMipmap(vkCmdBuffer.getVkCommandBuffer(),
-                                            range ? *range : desc_.asRange());
+  texture_->image_.generateMipmap(vkCmdBuffer.getVkCommandBuffer(),
+                                  range ? *range : desc_.asRange());
 }
 
 bool Texture::isRequiredGenerateMipmap() const {
@@ -297,18 +301,18 @@ bool Texture::isRequiredGenerateMipmap() const {
     return false;
   }
 
-  return texture_->getVulkanImage().imageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED;
+  return texture_->image_.imageLayout_ != VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
 uint64_t Texture::getTextureId() const {
   const auto& config = device_.getVulkanContext().config_;
   IGL_DEBUG_ASSERT(config.enableDescriptorIndexing,
                    "Make sure config.enableDescriptorIndexing is enabled.");
-  return texture_ && config.enableDescriptorIndexing ? texture_->getTextureId() : 0;
+  return texture_ && config.enableDescriptorIndexing ? texture_->textureId_ : 0;
 }
 
 VkImageView Texture::getVkImageView() const {
-  return texture_ ? texture_->getVulkanImageView().vkImageView_ : VK_NULL_HANDLE;
+  return texture_ ? texture_->imageView_.vkImageView_ : VK_NULL_HANDLE;
 }
 
 VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
@@ -332,8 +336,8 @@ VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
           ? device_.getVulkanContext().getClosestDepthStencilFormat(desc_.format)
           : textureFormatToVkFormat(desc_.format);
 
-  const VkImageAspectFlags flags = texture_->getVulkanImage().getImageAspectFlags();
-  imageViews[index] = texture_->getVulkanImage().createImageView(
+  const VkImageAspectFlags flags = texture_->image_.getImageAspectFlags();
+  imageViews[index] = texture_->image_.createImageView(
       isStereo ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D,
       vkFormat,
       flags,
@@ -347,11 +351,16 @@ VkImageView Texture::getVkImageViewForFramebuffer(uint32_t mipLevel,
 }
 
 VkImage Texture::getVkImage() const {
-  return texture_ ? texture_->getVulkanImage().vkImage_ : VK_NULL_HANDLE;
+  return texture_ ? texture_->image_.vkImage_ : VK_NULL_HANDLE;
+}
+
+VulkanTexture& Texture::getVulkanTexture() const {
+  IGL_DEBUG_ASSERT(texture_);
+  return *texture_;
 }
 
 bool Texture::isSwapchainTexture() const {
-  return texture_ ? texture_->getVulkanImage().isExternallyManaged_ : false;
+  return texture_ ? texture_->image_.isExternallyManaged_ : false;
 }
 
 uint32_t Texture::getNumVkLayers() const {
@@ -363,7 +372,7 @@ void Texture::clearColorTexture(const igl::Color& rgba) {
     return;
   }
 
-  const igl::vulkan::VulkanImage& img = texture_->getVulkanImage();
+  const igl::vulkan::VulkanImage& img = texture_->image_;
   IGL_DEBUG_ASSERT(img.valid());
 
   const auto& wrapper = img.ctx_->stagingDevice_->immediate_->acquire();

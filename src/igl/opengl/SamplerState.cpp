@@ -133,7 +133,7 @@ void SamplerState::bind(ITexture* t) {
 
 // utility functions for converting from IGL sampler state enums to GL enums
 GLint SamplerState::convertMinMipFilter(SamplerMinMagFilter minFilter, SamplerMipFilter mipFilter) {
-  GLint glMinFilter;
+  GLint glMinFilter = 0;
 
   switch (mipFilter) {
   case SamplerMipFilter::Disabled:
@@ -216,7 +216,7 @@ SamplerMipFilter SamplerState::convertGLMipFilter(GLint glMinFilter) {
 }
 
 GLint SamplerState::convertAddressMode(SamplerAddressMode addressMode) {
-  GLint glAddressMode;
+  GLint glAddressMode = 0;
 
   switch (addressMode) {
   case SamplerAddressMode::Repeat:

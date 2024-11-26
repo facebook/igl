@@ -56,15 +56,19 @@ class RenderCommandAdapter final : public WithContext {
 
   void setDepthStencilState(const std::shared_ptr<IDepthStencilState>& newValue);
   void setStencilReferenceValue(uint32_t value);
-  void setBlendColor(Color color);
-  void setDepthBias(float depthBias, float slopeScale);
+  void setBlendColor(const Color& color);
+  void setDepthBias(float depthBias, float slopeScale, float clamp);
 
   void clearVertexBuffers();
   void setVertexBuffer(Buffer& buffer, size_t offset, size_t index, Result* outResult = nullptr);
   void setIndexBuffer(Buffer& buffer);
 
   void clearUniformBuffers();
-  void setUniformBuffer(Buffer* buffer, size_t offset, uint32_t index, Result* outResult = nullptr);
+  void setUniformBuffer(Buffer* buffer,
+                        size_t offset,
+                        size_t size,
+                        uint32_t index,
+                        Result* outResult = nullptr);
   void setUniform(const UniformDesc& uniformDesc, const void* data, Result* outResult = nullptr);
 
   void clearVertexTexture();
@@ -108,7 +112,7 @@ class RenderCommandAdapter final : public WithContext {
   }
 
  private:
-  RenderCommandAdapter(IContext& context);
+  explicit RenderCommandAdapter(IContext& context);
 
   void clearDependentResources(const std::shared_ptr<IRenderPipelineState>& newValue,
                                Result* outResult = nullptr);

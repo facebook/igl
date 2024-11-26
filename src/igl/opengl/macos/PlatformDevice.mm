@@ -45,7 +45,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
         TextureDesc::TextureUsageBits::Attachment,
         1,
         TextureType::TwoD,
-        TextureFormat::RGBA_SRGB,
+        drawableTextureFormat_,
     };
     auto texture = std::make_shared<ViewTextureTarget>(getContext(), desc.format);
     texture->create(desc, true);
@@ -149,7 +149,13 @@ std::unique_ptr<ITexture> PlatformDevice::createTextureFromNativePixelBuffer(
 TextureFormat PlatformDevice::getNativeDrawableTextureFormat(Result* outResult) {
   Result::setOk(outResult);
 
-  return TextureFormat::RGBA_UNorm8;
+  return drawableTextureFormat_;
+}
+
+void PlatformDevice::setNativeDrawableTextureFormat(TextureFormat format, Result* outResult) {
+  Result::setOk(outResult);
+
+  drawableTextureFormat_ = format;
 }
 
 bool PlatformDevice::isType(PlatformDeviceType t) const noexcept {

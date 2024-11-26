@@ -62,8 +62,8 @@ class ShaderStages final : public IShaderStages, public WithContext {
   Result create(const ShaderStagesDesc& /*desc*/);
 
   Result validate() const;
-  void bind();
-  void unbind();
+  void bind() const;
+  void unbind() const;
 
   [[nodiscard]] GLuint getProgramID() const {
     return programID_;

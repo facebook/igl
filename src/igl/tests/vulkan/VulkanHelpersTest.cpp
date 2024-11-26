@@ -127,91 +127,6 @@ TEST_F(GetVulkanResultString, VulkanHelpersTest) {
                      "VK_OPERATION_NOT_DEFERRED_KHR") == 0); // VK_KHR_deferred_host_operations
 }
 
-// ivkGetSamplerCreateInfo ***********************************************************************
-class GetSamplerCreateInfoTest
-  : public ::testing::TestWithParam<
-        std::tuple<VkFilter, VkSamplerMipmapMode, VkSamplerAddressMode, float, float>> {};
-
-TEST_P(GetSamplerCreateInfoTest, GetSamplerCreateInfo) {
-  const VkFilter minFilter = std::get<0>(GetParam());
-  const VkFilter magFilter =
-      static_cast<VkFilter>(1 - minFilter); // the opposite value of minFilter
-  const VkSamplerMipmapMode mipmapMode = std::get<1>(GetParam());
-  const VkSamplerAddressMode addressModeU = std::get<2>(GetParam());
-  const VkSamplerAddressMode addressModeVW = static_cast<VkSamplerAddressMode>(
-      1 - addressModeU); // the opposite of U; used for both V and W
-  const float minLod = std::get<3>(GetParam());
-  const float maxLod = std::get<4>(GetParam());
-
-  const VkSamplerCreateInfo samplerCreateInfo = ivkGetSamplerCreateInfo(
-      minFilter, magFilter, mipmapMode, addressModeU, addressModeVW, addressModeVW, minLod, maxLod);
-
-  EXPECT_EQ(samplerCreateInfo.sType, VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO);
-  EXPECT_EQ(samplerCreateInfo.pNext, nullptr);
-  EXPECT_EQ(samplerCreateInfo.flags, 0);
-  EXPECT_EQ(samplerCreateInfo.magFilter, magFilter);
-  EXPECT_EQ(samplerCreateInfo.minFilter, minFilter);
-  EXPECT_EQ(samplerCreateInfo.mipmapMode, mipmapMode);
-  EXPECT_EQ(samplerCreateInfo.addressModeU, addressModeU);
-  EXPECT_EQ(samplerCreateInfo.addressModeV, addressModeVW);
-  EXPECT_EQ(samplerCreateInfo.addressModeW, addressModeVW);
-  EXPECT_EQ(samplerCreateInfo.mipLodBias, 0.0f);
-  EXPECT_EQ(samplerCreateInfo.anisotropyEnable, VK_FALSE);
-  EXPECT_EQ(samplerCreateInfo.maxAnisotropy, 0.0f);
-  EXPECT_EQ(samplerCreateInfo.compareEnable, VK_FALSE);
-  EXPECT_EQ(samplerCreateInfo.compareOp, VK_COMPARE_OP_ALWAYS);
-  EXPECT_EQ(samplerCreateInfo.minLod, minLod);
-  EXPECT_EQ(samplerCreateInfo.maxLod, maxLod);
-  EXPECT_EQ(samplerCreateInfo.borderColor, VK_BORDER_COLOR_INT_OPAQUE_BLACK);
-  EXPECT_EQ(samplerCreateInfo.unnormalizedCoordinates, VK_FALSE);
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    AllCombinations,
-    GetSamplerCreateInfoTest,
-    ::testing::Combine(
-        ::testing::Values(VK_FILTER_LINEAR, VK_FILTER_NEAREST),
-        ::testing::Values(VK_SAMPLER_MIPMAP_MODE_NEAREST, VK_SAMPLER_MIPMAP_MODE_LINEAR),
-        ::testing::Values(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT),
-        ::testing::Values(0.0f, 1.0f),
-        ::testing::Values(3.0f, 4.0f)));
-
-// ivkGetSamplerYcbcrCreateInfo ******************************************************************
-class GetSamplerYcbcrCreateInfoTest : public ::testing::TestWithParam<std::tuple<VkFormat>> {};
-
-TEST_P(GetSamplerYcbcrCreateInfoTest, GetSamplerYcbcrCreateInfo) {
-  const VkFormat format = std::get<0>(GetParam());
-
-  const VkSamplerYcbcrConversionCreateInfo samplerYcbcrCreateInfo =
-      ivkGetSamplerYcbcrCreateInfo(format);
-
-  EXPECT_EQ(samplerYcbcrCreateInfo.sType, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO);
-  EXPECT_EQ(samplerYcbcrCreateInfo.pNext, nullptr);
-  EXPECT_EQ(samplerYcbcrCreateInfo.format, format);
-  EXPECT_EQ(samplerYcbcrCreateInfo.ycbcrModel, VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709);
-  EXPECT_EQ(samplerYcbcrCreateInfo.ycbcrRange, VK_SAMPLER_YCBCR_RANGE_ITU_FULL);
-  EXPECT_EQ(samplerYcbcrCreateInfo.components.r, VK_COMPONENT_SWIZZLE_IDENTITY);
-  EXPECT_EQ(samplerYcbcrCreateInfo.components.g, VK_COMPONENT_SWIZZLE_IDENTITY);
-  EXPECT_EQ(samplerYcbcrCreateInfo.components.b, VK_COMPONENT_SWIZZLE_IDENTITY);
-  EXPECT_EQ(samplerYcbcrCreateInfo.components.a, VK_COMPONENT_SWIZZLE_IDENTITY);
-  EXPECT_EQ(samplerYcbcrCreateInfo.xChromaOffset, VK_CHROMA_LOCATION_MIDPOINT);
-  EXPECT_EQ(samplerYcbcrCreateInfo.yChromaOffset, VK_CHROMA_LOCATION_MIDPOINT);
-  EXPECT_EQ(samplerYcbcrCreateInfo.chromaFilter, VK_FILTER_LINEAR);
-  EXPECT_EQ(samplerYcbcrCreateInfo.forceExplicitReconstruction, VK_FALSE);
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    AllCombinations,
-    GetSamplerYcbcrCreateInfoTest,
-    ::testing::Combine(::testing::Values(VK_FORMAT_R8G8B8A8_UNORM,
-                                         VK_FORMAT_R8G8B8_SRGB,
-                                         VK_FORMAT_R8G8B8A8_SRGB)),
-
-    [](const testing::TestParamInfo<GetSamplerYcbcrCreateInfoTest::ParamType>& info) {
-      const std::string name = std::to_string(std::get<0>(info.param));
-      return name;
-    });
-
 // ivkGetImageViewCreateInfo *********************************************************************
 class GetImageViewCreateInfoTest : public ::testing::TestWithParam<std::tuple<VkImageViewType,
                                                                               VkFormat,
@@ -1156,32 +1071,6 @@ INSTANTIATE_TEST_SUITE_P(
                                std::to_string(std::get<2>(info.param));
       return name;
     });
-
-// ivkGetViewport *******************************
-class GetViewportTest : public ::testing::TestWithParam<std::tuple<float, float, float, float>> {};
-
-TEST_P(GetViewportTest, GetViewport) {
-  const float x = std::get<0>(GetParam());
-  const float y = std::get<1>(GetParam());
-  const float width = std::get<2>(GetParam());
-  const float height = std::get<3>(GetParam());
-
-  const VkViewport viewport = ivkGetViewport(x, y, width, height);
-
-  EXPECT_EQ(viewport.x, x);
-  EXPECT_EQ(viewport.y, y);
-  EXPECT_EQ(viewport.width, width);
-  EXPECT_EQ(viewport.height, height);
-  EXPECT_EQ(viewport.minDepth, 0.0f);
-  EXPECT_EQ(viewport.maxDepth, +1.0f);
-}
-
-INSTANTIATE_TEST_SUITE_P(AllCombinations,
-                         GetViewportTest,
-                         ::testing::Combine(::testing::Values(0.f, 50.f),
-                                            ::testing::Values(0.f, 50.f),
-                                            ::testing::Values(100.f, 500.f),
-                                            ::testing::Values(100.f, 500.f)));
 
 // ivkGetRect2D *******************************
 class GetRect2DTest

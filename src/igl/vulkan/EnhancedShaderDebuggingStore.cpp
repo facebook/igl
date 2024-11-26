@@ -19,9 +19,10 @@
 
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
+#include <igl/vulkan/CommandQueue.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
-#include <igl/vulkan/Framebuffer.h>
+#include <igl/vulkan/RenderCommandEncoder.h>
 #include <igl/vulkan/VulkanContext.h>
 
 namespace igl::vulkan {
@@ -32,7 +33,7 @@ EnhancedShaderDebuggingStore::EnhancedShaderDebuggingStore() {
 #endif
 }
 
-void EnhancedShaderDebuggingStore::initialize(const igl::vulkan::Device* device) {
+void EnhancedShaderDebuggingStore::initialize(igl::vulkan::Device* device) {
   device_ = device;
 }
 
@@ -95,39 +96,35 @@ std::string EnhancedShaderDebuggingStore::recordLineShaderCode(bool includeFunct
   })";
 }
 
-void EnhancedShaderDebuggingStore::initializeBuffer() const {
-  IGL_DEBUG_ASSERT(device_ != nullptr,
-                   "Device is null. This object needs to be initialized to be used");
-
-  constexpr size_t lineStructureSizeBytes = sizeof(Line);
-  constexpr size_t bufferSizeBytes = lineStructureSizeBytes * kNumberOfLines;
-  Header bufferHeader(kNumberOfLines,
-                      VkDrawIndirectCommand{
-                          2, /* vertex count */
-                          0, /* instances */
-                          0, /* first_vertex */
-                          0, /* first_instance */
-                      });
-
-  vertexBuffer_ = device_->createBuffer(
-      BufferDesc(BufferDesc::BufferTypeBits::Storage | BufferDesc::BufferTypeBits::Indirect,
-                 nullptr,
-                 sizeof(Header) + bufferSizeBytes,
-                 ResourceStorage::Private,
-                 0,
-                 "Buffer: shader draw line"),
-      nullptr);
-
-  vertexBuffer_->upload(&bufferHeader, igl::BufferRange(sizeof(Header), 0));
-}
-
 std::shared_ptr<igl::IBuffer> EnhancedShaderDebuggingStore::vertexBuffer() const {
   if (!enabled_) {
     return nullptr;
   }
 
   if (vertexBuffer_ == nullptr) {
-    initializeBuffer();
+    IGL_DEBUG_ASSERT(device_ != nullptr,
+                     "Device is null. This object needs to be initialized to be used");
+
+    constexpr size_t lineStructureSizeBytes = sizeof(Line);
+    constexpr size_t bufferSizeBytes = lineStructureSizeBytes * kNumberOfLines;
+    Header bufferHeader(kNumberOfLines,
+                        VkDrawIndirectCommand{
+                            2, /* vertex count */
+                            0, /* instances */
+                            0, /* first_vertex */
+                            0, /* first_instance */
+                        });
+
+    vertexBuffer_ = device_->createBuffer(
+        BufferDesc(BufferDesc::BufferTypeBits::Storage | BufferDesc::BufferTypeBits::Indirect,
+                   nullptr,
+                   sizeof(Header) + bufferSizeBytes,
+                   ResourceStorage::Private,
+                   0,
+                   "Buffer: shader draw line"),
+        nullptr);
+
+    vertexBuffer_->upload(&bufferHeader, igl::BufferRange(sizeof(Header), 0));
   }
 
   return vertexBuffer_;
@@ -168,10 +165,12 @@ const std::shared_ptr<igl::IFramebuffer>& EnhancedShaderDebuggingStore::framebuf
   }
 
   igl::Result result;
-  FramebufferDesc framebufferDesc;
-  framebufferDesc.debugName = "Framebuffer: shader debug framebuffer";
-  framebufferDesc.colorAttachments[0].texture = resolveAttachment;
-  framebuffers_[resolveAttachment] = device.createFramebuffer(framebufferDesc, &result);
+  framebuffers_[resolveAttachment] = device.createFramebuffer(
+      {
+          .colorAttachments = {{.texture = resolveAttachment}},
+          .debugName = "Framebuffer: shader debug framebuffer",
+      },
+      &result);
 
   if (!IGL_DEBUG_VERIFY(result.isOk())) {
     IGL_LOG_INFO("Error creating a framebuffer for drawing debug lines from shaders");
@@ -186,7 +185,15 @@ std::shared_ptr<igl::IDepthStencilState> EnhancedShaderDebuggingStore::depthSten
   }
 
   if (depthStencilState_ == nullptr) {
-    initializeDepthState();
+    IGL_DEBUG_ASSERT(device_ != nullptr,
+                     "Device is null. This object needs to be initialized to be used");
+
+    depthStencilState_ = device_->createDepthStencilState(
+        {
+            .compareFunction = kDepthCompareFunction,
+            .isDepthWriteEnabled = kDepthWriteEnabled,
+        },
+        nullptr);
   }
 
   return depthStencilState_;
@@ -199,10 +206,10 @@ std::shared_ptr<igl::IRenderPipelineState> EnhancedShaderDebuggingStore::pipelin
     return nullptr;
   }
 
-  const auto hashedFramebufferFormats = hashFramebufferFormats(framebuffer);
+  const uint64_t hashedFramebufferFormats = hashFramebufferFormats(framebuffer);
 
-  auto result = pipelineStates_.find(hashedFramebufferFormats);
-  if (result != pipelineStates_.end()) {
+  if (auto result = pipelineStates_.find(hashedFramebufferFormats);
+      result != pipelineStates_.end()) {
     return result->second;
   }
 
@@ -256,19 +263,9 @@ std::shared_ptr<igl::IRenderPipelineState> EnhancedShaderDebuggingStore::pipelin
   desc.shaderStages = shaderStage_;
   desc.debugName = genNameHandle("Pipeline: debug lines");
 
-  pipelineStates_.insert({hashedFramebufferFormats, device.createRenderPipeline(desc, nullptr)});
-
-  return pipelineStates_[hashedFramebufferFormats];
-}
-
-void EnhancedShaderDebuggingStore::initializeDepthState() const {
-  IGL_DEBUG_ASSERT(device_ != nullptr,
-                   "Device is null. This object needs to be initialized to be used");
-
-  DepthStencilStateDesc desc;
-  desc.isDepthWriteEnabled = kDepthWriteEnabled;
-  desc.compareFunction = kDepthCompareFunction;
-  depthStencilState_ = device_->createDepthStencilState(desc, nullptr);
+  return pipelineStates_
+      .insert_or_assign(hashedFramebufferFormats, device.createRenderPipeline(desc, nullptr))
+      .first->second;
 }
 
 std::string EnhancedShaderDebuggingStore::renderLineVSCode() const {
@@ -349,6 +346,98 @@ uint64_t EnhancedShaderDebuggingStore::hashFramebufferFormats(
   }
 
   return hashValue;
+}
+
+void EnhancedShaderDebuggingStore::enhancedShaderDebuggingPass(
+    igl::vulkan::CommandQueue& queue,
+    igl::vulkan::CommandBuffer* cmdBuffer) {
+  IGL_PROFILER_FUNCTION();
+
+  if (!cmdBuffer->getFramebuffer()) {
+    return;
+  }
+
+  // If there are no color attachments, return, as we won't have a framebuffer to render into
+  const auto indices = cmdBuffer->getFramebuffer()->getColorAttachmentIndices();
+  if (indices.empty()) {
+    return;
+  }
+
+  const auto min = std::min_element(indices.begin(), indices.end());
+
+  const auto resolveAttachment = cmdBuffer->getFramebuffer()->getResolveColorAttachment(*min);
+  const std::shared_ptr<igl::IFramebuffer>& framebuffer =
+      resolveAttachment ? this->framebuffer(*device_, resolveAttachment)
+                        : cmdBuffer->getFramebuffer();
+
+  igl::Result result;
+  auto lineDrawingCmdBuffer =
+      queue.createCommandBuffer({"Command buffer: line drawing enhanced debugging"}, &result);
+
+  if (!IGL_DEBUG_VERIFY(result.isOk())) {
+    IGL_LOG_INFO("Error obtaining a new command buffer for drawing debug lines");
+    return;
+  }
+
+  auto cmdEncoder =
+      lineDrawingCmdBuffer->createRenderCommandEncoder(renderPassDesc(framebuffer), framebuffer);
+
+  auto pipeline = this->pipeline(*device_, framebuffer);
+  cmdEncoder->bindRenderPipelineState(pipeline);
+
+  {
+    // Bind the line buffer
+    auto* vkEncoder = static_cast<igl::vulkan::RenderCommandEncoder*>(cmdEncoder.get());
+    vkEncoder->binder().bindBuffer(EnhancedShaderDebuggingStore::kBufferIndex,
+                                   static_cast<igl::vulkan::Buffer*>(vertexBuffer().get()),
+                                   sizeof(EnhancedShaderDebuggingStore::Header),
+                                   0);
+
+    cmdEncoder->pushDebugGroupLabel("Render Debug Lines", kColorDebugLines);
+    cmdEncoder->bindDepthStencilState(depthStencilState());
+
+    // Disable incrementing the draw call count
+    const auto resetDrawCallCountValue = vkEncoder->setDrawCallCountEnabled(false);
+    IGL_SCOPE_EXIT {
+      vkEncoder->setDrawCallCountEnabled(resetDrawCallCountValue);
+    };
+    cmdEncoder->multiDrawIndirect(
+        *vertexBuffer(), sizeof(EnhancedShaderDebuggingStore::Metadata), 1, 0);
+  }
+  cmdEncoder->popDebugGroupLabel();
+  cmdEncoder->endEncoding();
+
+  auto* resetCmdBuffer = static_cast<CommandBuffer*>(lineDrawingCmdBuffer.get());
+  auto* const vkResetCmdBuffer = resetCmdBuffer->getVkCommandBuffer();
+
+  // End the render pass by transitioning the surface that was presented by the application
+  if (cmdBuffer->getPresentedSurface()) {
+    resetCmdBuffer->present(cmdBuffer->getPresentedSurface());
+  }
+
+  igl::vulkan::VulkanContext& ctx = device_->getVulkanContext();
+
+  // Barrier to ensure we have finished rendering the lines before we clear the buffer
+  auto* lineBuffer = static_cast<vulkan::Buffer*>(vertexBuffer().get());
+  ivkBufferMemoryBarrier(&ctx.vf_,
+                         vkResetCmdBuffer,
+                         lineBuffer->getVkBuffer(),
+                         0, /* src access flag */
+                         0, /* dst access flag */
+                         0,
+                         VK_WHOLE_SIZE,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+  // Reset instanceCount of the buffer
+  ctx.vf_.vkCmdFillBuffer(vkResetCmdBuffer,
+                          lineBuffer->getVkBuffer(),
+                          offsetof(EnhancedShaderDebuggingStore::Header, command_) +
+                              offsetof(VkDrawIndirectCommand, instanceCount),
+                          sizeof(uint32_t), // reset only the instance count
+                          0);
+
+  queue.endCommandBuffer(ctx, resetCmdBuffer, true);
 }
 
 } // namespace igl::vulkan

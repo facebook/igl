@@ -40,7 +40,7 @@ class ComputeCommandAdapter final : public WithContext {
   using TextureStates = std::array<TextureState, IGL_TEXTURE_SAMPLERS_MAX>;
 
  public:
-  ComputeCommandAdapter(IContext& context);
+  explicit ComputeCommandAdapter(IContext& context);
 
   void clearTextures();
   void setTexture(ITexture* texture, uint32_t index);
@@ -49,7 +49,11 @@ class ComputeCommandAdapter final : public WithContext {
   void setBuffer(Buffer* buffer, size_t offset, uint32_t index);
 
   void clearUniformBuffers();
-  void setBlockUniform(Buffer* buffer, size_t offset, int index, Result* outResult = nullptr);
+  void setBlockUniform(Buffer* buffer,
+                       size_t offset,
+                       size_t size,
+                       int index,
+                       Result* outResult = nullptr);
   void setUniform(const UniformDesc& uniformDesc, const void* data, Result* outResult = nullptr);
 
   void setPipelineState(const std::shared_ptr<IComputePipelineState>& newValue);

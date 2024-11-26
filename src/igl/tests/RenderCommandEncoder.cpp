@@ -323,6 +323,16 @@ class RenderCommandEncoderTest : public ::testing::Test {
       ASSERT_TRUE(ib_ != nullptr);
     }
   }
+  void initialize8BitIndices(const std::vector<uint8_t>& indices) {
+    BufferDesc desc;
+    desc.type = BufferDesc::BufferTypeBits::Index;
+    desc.data = indices.data();
+    desc.length = sizeof(uint8_t) * indices.size();
+    Result ret;
+    ib_ = iglDev_->createBuffer(desc, &ret);
+    ASSERT_TRUE(ret.isOk());
+    ASSERT_TRUE(ib_ != nullptr);
+  }
 
   void TearDown() override {}
 
@@ -491,6 +501,47 @@ TEST_F(RenderCommandEncoderTest, drawIndexedFirstIndex) {
   verifyFrameBuffer(expectedPixels);
 }
 
+TEST_F(RenderCommandEncoderTest, drawIndexed8Bit) {
+  if (!iglDev_->hasFeature(igl::DeviceFeatures::Indices8Bit)) {
+    GTEST_SKIP();
+    return;
+  }
+  initializeBuffers(
+      // clang-format off
+      {
+        -1.0f - quarterPixel, -1.0f,                0.0f, 1.0f,
+         1.0f,                -1.0f,                0.0f, 1.0f,
+         1.0f,                 1.0f + quarterPixel, 0.0f, 1.0f,
+      },
+      {
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f,
+      } // clang-format on
+  );
+  initialize8BitIndices({0, 1, 2});
+
+  ASSERT_TRUE(ib_ != nullptr);
+
+  encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+    encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
+    encoder->bindIndexBuffer(*ib_, IndexFormat::UInt8);
+    encoder->drawIndexed(3);
+  });
+
+  const auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  // clang-format off
+  const std::vector<uint32_t> expectedPixels {
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, grayColor,
+    backgroundColorHex, backgroundColorHex, grayColor,          grayColor,
+    backgroundColorHex, grayColor,          grayColor,          grayColor,
+    grayColor,          grayColor,          grayColor,          grayColor,
+  };
+  // clang-format on
+
+  verifyFrameBuffer(expectedPixels);
+}
+
 TEST_F(RenderCommandEncoderTest, drawInstanced) {
   if (!iglDev_->hasFeature(igl::DeviceFeatures::DrawFirstIndexFirstVertex)) {
     GTEST_SKIP();
@@ -585,6 +636,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawTriangleStrip) {
   );
 
   encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+    encoder->insertDebugEventLabel("Rendering a triangle strip...");
     encoder->bindRenderPipelineState(renderPipelineState_TriangleStrip_);
     encoder->draw(4);
   });
@@ -639,9 +691,13 @@ TEST_F(RenderCommandEncoderTest, shouldNotDraw) {
 
 TEST_F(RenderCommandEncoderTest, shouldDrawATriangleBindGroup) {
 #if IGL_PLATFORM_APPLE
-  // @fb-only
-  GTEST_SKIP() << "Broken on macos arm64";
+  if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
+    // @fb-only
+    GTEST_SKIP() << "Broken on macOS arm64";
+    return;
+  }
 #endif
+
   initializeBuffers(
       // clang-format off
       {
@@ -658,6 +714,7 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangleBindGroup) {
 
   encodeAndSubmit(
       [this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+        encoder->insertDebugEventLabel("Rendering a triangle...");
         encoder->bindRenderPipelineState(renderPipelineState_Triangle_);
         encoder->draw(3);
       },
@@ -671,6 +728,32 @@ TEST_F(RenderCommandEncoderTest, shouldDrawATriangleBindGroup) {
     backgroundColorHex, grayColor,          grayColor,          grayColor,
     grayColor,          grayColor,          grayColor,          grayColor,
   };
+
+  verifyFrameBuffer(expectedPixels);
+}
+
+TEST_F(RenderCommandEncoderTest, DepthBiasShouldDrawAPoint) {
+  initializeBuffers(
+      // clang-format off
+      { quarterPixel, quarterPixel, 0.0f, 1.0f },
+      { 0.5, 0.5 } // clang-format on
+  );
+
+  encodeAndSubmit([this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+    encoder->bindRenderPipelineState(renderPipelineState_Point_);
+    encoder->setDepthBias(0, 0, 0);
+    encoder->draw(1);
+  });
+
+  auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  // clang-format off
+  std::vector<uint32_t> const expectedPixels {
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+    backgroundColorHex, backgroundColorHex, grayColor,          backgroundColorHex,
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+  };
+  // clang-format on
 
   verifyFrameBuffer(expectedPixels);
 }

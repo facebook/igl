@@ -19,6 +19,7 @@ namespace igl {
 class ICommandBuffer;
 
 enum class IndexFormat : uint8_t {
+  UInt8,
   UInt16,
   UInt32,
 };

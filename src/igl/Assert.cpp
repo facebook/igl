@@ -6,9 +6,7 @@
  */
 
 #define IGL_COMMON_SKIP_CHECK
-#include <cstdio>
 #include <igl/Assert.h>
-#include <igl/Log.h>
 
 // ----------------------------------------------------------------------------
 
@@ -33,8 +31,9 @@ void setDebugBreakEnabled(bool enabled) {
 
 #if IGL_PLATFORM_APPLE || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
 #define IGL_DEBUGGER_SIGTRAP 1
-#include <signal.h>
+#include <csignal>
 #elif IGL_PLATFORM_WIN
+#include <igl/Log.h>
 #include <windows.h>
 #endif
 
@@ -61,15 +60,15 @@ void _IGLDebugBreak() {
 namespace {
 // Default handler is no-op.
 // If there's an error, IGL_DEBUG_VERIFY will trap in dev builds
-void _IGLReportErrorDefault(const char* /* file */,
-                            const char* /* func */,
-                            int /* line */,
-                            const char* /* category */,
-                            const char* /* format */,
-                            ...) {}
+void IGLReportErrorDefault(const char* /* file */,
+                           const char* /* func */,
+                           int /* line */,
+                           const char* /* category */,
+                           const char* /* format */,
+                           ...) {}
 
 IGLSoftErrorFunc& GetErrorHandler() {
-  static IGLSoftErrorFunc sHandler = _IGLReportErrorDefault;
+  static IGLSoftErrorFunc sHandler = IGLReportErrorDefault;
   return sHandler;
 }
 
@@ -77,7 +76,7 @@ IGLSoftErrorFunc& GetErrorHandler() {
 
 IGL_API void IGLSetSoftErrorHandler(IGLSoftErrorFunc handler) {
   if (!handler) {
-    handler = _IGLReportErrorDefault; // prevent null handler
+    handler = IGLReportErrorDefault; // prevent null handler
   }
   GetErrorHandler() = handler;
 }

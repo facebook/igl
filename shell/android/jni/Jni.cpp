@@ -7,15 +7,11 @@
 
 // @fb-only
 
-#include <jni.h>
-
 #include "TinyRenderer.h"
-#include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
-#include <android/log.h>
-#include <android/native_window.h>
 #include <android/native_window_jni.h>
 #include <igl/Common.h>
+#include <igl/TextureFormat.h>
 #include <memory>
 #include <shell/shared/renderSession/DefaultRenderSessionFactory.h>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
@@ -87,7 +83,7 @@ jobject toJava(JNIEnv* env, BackendFlavor backendFlavor) {
   jclass jclass = env->FindClass(kBackendFlavorClassName);
   const std::string returnType = std::string("()[") + toTypeSignature(kBackendFlavorClassName);
   jmethodID values = env->GetStaticMethodID(jclass, "values", returnType.c_str());
-  auto backendFlavorValues = (jobjectArray)env->CallStaticObjectMethod(jclass, values);
+  auto* backendFlavorValues = (jobjectArray)env->CallStaticObjectMethod(jclass, values);
 
   jobject backendFlavorValue =
       env->GetObjectArrayElement(backendFlavorValues, static_cast<int>(backendFlavor));
@@ -131,19 +127,21 @@ jobject toJava(JNIEnv* env, BackendVersion backendVersion) {
 jobject toJava(JNIEnv* env, const shell::RenderSessionConfig& config) {
   jclass jclass = env->FindClass(kRenderSessionConfigClassName);
   const std::string methodSignature =
-      std::string("(Ljava/lang/String;") + toTypeSignature(kBackendVersionClassName) + ")V";
+      std::string("(Ljava/lang/String;") + toTypeSignature(kBackendVersionClassName) + "I)V";
   jmethodID constructor = env->GetMethodID(jclass, "<init>", methodSignature.c_str());
 
   jstring jdisplayName = env->NewStringUTF(config.displayName.c_str());
   jobject jbackendVersion = toJava(env, config.backendVersion);
-  jobject ret = env->NewObject(jclass, constructor, jdisplayName, jbackendVersion);
+  const jint jswapchainColorTextureFormat = static_cast<int>(config.swapchainColorTextureFormat);
+  jobject ret = env->NewObject(
+      jclass, constructor, jdisplayName, jbackendVersion, jswapchainColorTextureFormat);
   env->DeleteLocalRef(jdisplayName);
   env->DeleteLocalRef(jbackendVersion);
   return ret;
 }
 
 jobjectArray toJava(JNIEnv* env, const std::vector<shell::RenderSessionConfig>& configs) {
-  jobjectArray ret;
+  jobjectArray ret = nullptr;
   auto* jclass = env->FindClass(kRenderSessionConfigClassName);
   ret = env->NewObjectArray(configs.size(), jclass, nullptr);
   for (size_t i = 0; i < configs.size(); ++i) {
@@ -174,6 +172,7 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
                                                                   jobject obj,
                                                                   jobject jbackendVersion,
+                                                                  jint jswapchainColorTextureFormat,
                                                                   jobject java_asset_manager,
                                                                   jobject surface);
 JNIEXPORT void JNICALL
@@ -204,6 +203,10 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_setClearColorValue(
                                                                                 jfloat g,
                                                                                 jfloat b,
                                                                                 jfloat a);
+
+JNIEXPORT bool JNICALL Java_com_facebook_igl_shell_SampleLib_isSRGBTextureFormat(JNIEnv* env,
+                                                                                 jobject obj,
+                                                                                 int textureFormat);
 };
 
 JNIEXPORT jobjectArray JNICALL
@@ -212,6 +215,7 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
     factory = shell::createDefaultRenderSessionFactory();
   }
 
+  constexpr igl::TextureFormat kSwapchainColorTextureFormat = igl::TextureFormat::BGRA_SRGB;
   std::vector<igl::shell::RenderSessionConfig> suggestedConfigs = {
 #if IGL_BACKEND_OPENGL
       {
@@ -219,14 +223,14 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
           .backendVersion = {.flavor = igl::BackendFlavor::OpenGL_ES,
                              .majorVersion = 3,
                              .minorVersion = 0},
-          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+          .swapchainColorTextureFormat = kSwapchainColorTextureFormat,
       },
       {
           .displayName = "OpenGL ES 2",
           .backendVersion = {.flavor = igl::BackendFlavor::OpenGL_ES,
                              .majorVersion = 2,
                              .minorVersion = 0},
-          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+          .swapchainColorTextureFormat = kSwapchainColorTextureFormat,
       },
 #endif
 #if IGL_BACKEND_VULKAN
@@ -235,7 +239,7 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
           .backendVersion = {.flavor = igl::BackendFlavor::Vulkan,
                              .majorVersion = 1,
                              .minorVersion = 1},
-          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+          .swapchainColorTextureFormat = kSwapchainColorTextureFormat,
       },
 #endif
   };
@@ -248,9 +252,11 @@ Java_com_facebook_igl_shell_SampleLib_getRenderSessionConfigs(JNIEnv* env, jobje
 JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
                                                                   jobject /*obj*/,
                                                                   jobject jbackendVersion,
+                                                                  jint jtextureFormat,
                                                                   jobject java_asset_manager,
                                                                   jobject surface) {
   const auto backendVersion = toBackendVersion(env, jbackendVersion);
+  const auto swapchainColorTextureFormat = static_cast<igl::TextureFormat>(jtextureFormat);
   const auto rendererIndex = findRendererIndex(backendVersion);
 
   if (backendVersion && !rendererIndex) {
@@ -258,7 +264,8 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_init(JNIEnv* env,
     renderer->init(AAssetManager_fromJava(env, java_asset_manager),
                    surface ? ANativeWindow_fromSurface(env, surface) : nullptr,
                    *factory,
-                   *backendVersion);
+                   *backendVersion,
+                   swapchainColorTextureFormat);
     renderers.emplace_back(std::move(renderer));
     IGL_LOG_INFO("init: creating backend renderer: %s\n", toString(backendVersion).c_str());
   } else if (rendererIndex && backendVersion && backendVersion->flavor == BackendFlavor::Vulkan) {
@@ -360,6 +367,14 @@ JNIEXPORT void JNICALL Java_com_facebook_igl_shell_SampleLib_setClearColorValue(
   }
 
   renderers[*activeRendererIndex]->setClearColorValue(r, g, b, a);
+}
+
+JNIEXPORT bool JNICALL
+Java_com_facebook_igl_shell_SampleLib_isSRGBTextureFormat(JNIEnv* env,
+                                                          jobject obj,
+                                                          int textureFormat) {
+  return textureFormat == (int)igl::TextureFormat::RGBA_SRGB ||
+         textureFormat == (int)igl::TextureFormat::BGRA_SRGB;
 }
 
 } // namespace igl::samples

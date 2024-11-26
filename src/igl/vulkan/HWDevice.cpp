@@ -9,7 +9,6 @@
 
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
 
 namespace igl::vulkan {
 

@@ -11,7 +11,6 @@
 
 #include <EGL/egl.h>
 #include <android/log.h>
-#include <igl/IGL.h>
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/egl/HWDevice.h>
 #include <igl/opengl/egl/PlatformDevice.h>

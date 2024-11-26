@@ -13,7 +13,7 @@ namespace igl::shell {
 
 class PlatformMac : public Platform {
  public:
-  PlatformMac(std::shared_ptr<igl::IDevice> device);
+  explicit PlatformMac(std::shared_ptr<igl::IDevice> device);
   igl::IDevice& getDevice() noexcept override;
   [[nodiscard]] std::shared_ptr<igl::IDevice> getDevicePtr() const noexcept override;
   ImageLoader& getImageLoader() noexcept override;

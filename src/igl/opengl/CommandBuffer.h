@@ -10,11 +10,7 @@
 #include <igl/CommandBuffer.h>
 
 namespace igl::opengl {
-class ComputeCommandEncoder;
 class IContext;
-class PipelineState;
-class RenderCommandEncoder;
-class Texture;
 
 class CommandBuffer final : public ICommandBuffer,
                             public std::enable_shared_from_this<CommandBuffer> {

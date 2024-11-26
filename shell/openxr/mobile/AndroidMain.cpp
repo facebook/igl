@@ -12,7 +12,6 @@
 
 #if IGL_PLATFORM_ANDROID
 #include <android_native_app_glue.h>
-#include <jni.h>
 #endif // IGL_PLATFORM_ANDROID
 
 #include <memory>
@@ -140,7 +139,7 @@ void handleAppCmd(struct android_app* app, int32_t appCmd) {
 }
 
 void android_main(struct android_app* app) {
-  JNIEnv* Env;
+  JNIEnv* Env = nullptr;
   app->activity->vm->AttachCurrentThread(&Env, nullptr);
 
 #ifdef ATTACH_DEBUGGER
@@ -163,7 +162,7 @@ void android_main(struct android_app* app) {
 
   while (app->destroyRequested == 0) {
     for (;;) {
-      int events;
+      int events = 0;
       struct android_poll_source* source = nullptr;
       // If the timeout is zero, returns immediately without blocking.
       // If the timeout is negative, waits indefinitely until an event appears.

@@ -11,7 +11,6 @@
 
 namespace igl::opengl {
 class IContext;
-class Device;
 
 class CommandQueue final : public ICommandQueue {
  public:

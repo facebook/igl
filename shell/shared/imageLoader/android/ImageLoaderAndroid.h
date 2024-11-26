@@ -7,6 +7,8 @@
 
 #pragma once
 
+#ifdef __ANDROID__
+
 #include <android/log.h>
 #include <shell/shared/imageLoader/ImageLoader.h>
 #include <string>
@@ -33,3 +35,4 @@ class ImageLoaderAndroid final : public ImageLoader {
 };
 
 } // namespace igl::shell
+#endif

@@ -15,7 +15,8 @@ namespace igl::shell {
 struct RenderSessionConfig {
   std::string displayName;
   BackendVersion backendVersion;
-  igl::TextureFormat colorFramebufferFormat = igl::TextureFormat::BGRA_UNorm8;
+  igl::TextureFormat swapchainColorTextureFormat = igl::TextureFormat::BGRA_UNorm8;
+  igl::ColorSpace swapchainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
 };
 
 } // namespace igl::shell

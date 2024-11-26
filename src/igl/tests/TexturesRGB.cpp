@@ -8,6 +8,7 @@
 #include "data/ShaderData.h"
 #include "data/TextureData.h"
 #include "data/VertexIndexData.h"
+#include "util/Color.h"
 #include "util/Common.h"
 #include "util/TestDevice.h"
 
@@ -19,16 +20,16 @@
 namespace igl::tests {
 
 //
-// sRGBTest
+// TexturesRGBBaseTest
 //
 // Test fixture for all the tests in this file. Takes care of common
 // initialization and allocating of common resources.
 //
-class sRGBBaseTest : public ::testing::Test {
+class TexturesRGBBaseTest : public ::testing::Test {
  private:
  public:
-  sRGBBaseTest() = default;
-  ~sRGBBaseTest() override = default;
+  TexturesRGBBaseTest() = default;
+  ~TexturesRGBBaseTest() override = default;
 
   //
   // SetUp()
@@ -147,6 +148,12 @@ class sRGBBaseTest : public ::testing::Test {
     renderPipelineDesc_.fragmentUnitSamplerMap[textureUnit_] =
         IGL_NAMEHANDLE(data::shader::simpleSampler);
     renderPipelineDesc_.cullMode = igl::CullMode::Disabled;
+
+#if IGL_PLATFORM_LINUX_SWIFTSHADER
+    if (iglDev_->getBackendType() == BackendType::OpenGL) {
+      kTolerance = 1; // Swiftshader opengl is not accurate enough.
+    }
+#endif
   }
 
   void TearDown() override {}
@@ -182,19 +189,21 @@ class sRGBBaseTest : public ::testing::Test {
   // would be after sampling
   size_t offscreenTexWidth = 2;
   size_t offscreenTexHeight = 2;
+
+  uint8_t kTolerance = 0; // some platforms aren't perfect and need some tolerance
 };
 
-class sRGBSmallTest : public sRGBBaseTest {
+class TexturesRGBSmallTest : public TexturesRGBBaseTest {
   void SetUp() override {
-    sRGBBaseTest::SetUp();
+    TexturesRGBBaseTest::SetUp();
   }
 };
 
-class sRGBBigTest : public sRGBBaseTest {
+class TexturesRGBBigTest : public TexturesRGBBaseTest {
   void SetUp() override {
     offscreenTexWidth = 4096;
     offscreenTexHeight = 4096;
-    sRGBBaseTest::SetUp();
+    TexturesRGBBaseTest::SetUp();
   }
 };
 //
@@ -202,7 +211,7 @@ class sRGBBigTest : public sRGBBaseTest {
 //
 // This test checks whether the texture format can be detected as sRGB or not
 //
-TEST_F(sRGBSmallTest, TextureisSRGB) {
+TEST_F(TexturesRGBSmallTest, TextureisSRGB) {
   Result ret;
   const TextureDesc texDesc = TextureDesc::new2D(TextureFormat::RGBA_SRGB,
                                                  offscreenTexWidth,
@@ -220,12 +229,12 @@ TEST_F(sRGBSmallTest, TextureisSRGB) {
 }
 
 //
-// sRGB Passthrough Test
+// TexturesRGB Passthrough Test
 //
 // This test uses a simple shader to copy the input texture to a same
 // sized output texture (offscreenTexture_) and make sure colors are being preserved
 //
-TEST_F(sRGBSmallTest, Passthrough) {
+TEST_F(TexturesRGBSmallTest, Passthrough) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
@@ -287,11 +296,16 @@ TEST_F(sRGBSmallTest, Passthrough) {
   // Verify against original texture
   //--------------------------------
   for (size_t i = 0; i < offscreenTexWidth * offscreenTexHeight; i++) {
-    ASSERT_EQ(pixels[i], data::texture::TEX_RGBA_2x2[i]);
+    const util::sRGBColor currentColor(pixels[i]);
+    const util::sRGBColor testColor(data::texture::TEX_RGBA_2x2[i]);
+    ASSERT_LE(abs(currentColor.r - testColor.r), kTolerance);
+    ASSERT_LE(abs(currentColor.g - testColor.g), kTolerance);
+    ASSERT_LE(abs(currentColor.b - testColor.b), kTolerance);
+    ASSERT_LE(abs(currentColor.a - testColor.a), kTolerance);
   }
 }
 
-TEST_F(sRGBBigTest, Passthrough) {
+TEST_F(TexturesRGBBigTest, Passthrough) {
   Result ret;
   std::shared_ptr<IRenderPipelineState> pipelineState;
 
@@ -366,9 +380,12 @@ TEST_F(sRGBBigTest, Passthrough) {
   // Verify against original texture
   //--------------------------------
   for (size_t i = 0; i < offscreenTexWidth * offscreenTexHeight; i++) {
-    auto pixelColor = pixels[i];
-    auto testColor = allColorsBuffer[i];
-    ASSERT_EQ(pixelColor, testColor);
+    const util::sRGBColor currentColor(pixels[i]);
+    const util::sRGBColor testColor(allColorsBuffer[i]);
+    ASSERT_LE(abs(currentColor.r - testColor.r), kTolerance);
+    ASSERT_LE(abs(currentColor.g - testColor.g), kTolerance);
+    ASSERT_LE(abs(currentColor.b - testColor.b), kTolerance);
+    ASSERT_LE(abs(currentColor.a - testColor.a), kTolerance);
   }
 }
 

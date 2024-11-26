@@ -28,7 +28,7 @@ RenderSessionConfig XrAppImplGLES::suggestedSessionConfig() const {
           .backendVersion = {.flavor = igl::BackendFlavor::OpenGL_ES,
                              .majorVersion = 3,
                              .minorVersion = 2},
-          .colorFramebufferFormat = igl::TextureFormat::RGBA_SRGB};
+          .swapchainColorTextureFormat = igl::TextureFormat::RGBA_SRGB};
 }
 
 std::vector<const char*> XrAppImplGLES::getXrRequiredExtensions() const {
@@ -114,7 +114,7 @@ XrSession XrAppImplGLES::initXrSession(XrInstance instance,
   };
 
   XrResult xrResult;
-  XrSession session;
+  XrSession session = nullptr;
   XR_CHECK(xrResult = xrCreateSession(instance, &sessionCreateInfo, &session));
   if (xrResult != XR_SUCCESS) {
     IGL_LOG_ERROR("Failed to create XR session: %d.\n", xrResult);
@@ -127,8 +127,8 @@ XrSession XrAppImplGLES::initXrSession(XrInstance instance,
 
 std::unique_ptr<impl::XrSwapchainProviderImpl> XrAppImplGLES::createSwapchainProviderImpl() const {
   if (IGL_DEBUG_VERIFY(device_)) {
-    return std::make_unique<XrSwapchainProviderImplGLES>(*device_,
-                                                         sessionConfig_.colorFramebufferFormat);
+    return std::make_unique<XrSwapchainProviderImplGLES>(
+        *device_, sessionConfig_.swapchainColorTextureFormat);
   }
 
   return nullptr;

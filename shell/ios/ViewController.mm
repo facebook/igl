@@ -172,7 +172,7 @@
 
     auto metalView = [[MetalView alloc] initWithFrame:frame_ device:d];
     metalView.colorPixelFormat =
-        igl::metal::Texture::textureFormatToMTLPixelFormat(config_.colorFramebufferFormat);
+        igl::metal::Texture::textureFormatToMTLPixelFormat(config_.swapchainColorTextureFormat);
     metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
 
     metalView.delegate = self;
@@ -186,7 +186,28 @@
 #if IGL_BACKEND_OPENGL
     auto openGLView = [[OpenGLView alloc] initWithTouchDelegate:self];
     openGLView.viewSizeChangeDelegate = self;
+
+    NSString* drawablePropertyColorFormat = kEAGLColorFormatRGBA8;
+
+    switch (config_.swapchainColorTextureFormat) {
+    case igl::TextureFormat::BGRA_UNorm8:
+      drawablePropertyColorFormat = kEAGLColorFormatRGBA8;
+      break;
+
+    case igl::TextureFormat::BGRA_SRGB:
+      drawablePropertyColorFormat = kEAGLColorFormatSRGBA8;
+      break;
+
+    default:
+      break;
+    }
+
+    ((CAEAGLLayer*)openGLView.layer).drawableProperties =
+        [NSDictionary dictionaryWithObjectsAndKeys:drawablePropertyColorFormat,
+                                                   kEAGLDrawablePropertyColorFormat,
+                                                   nil];
     self.view = openGLView;
+    self.view.layer.contentsScale = [UIScreen mainScreen].scale;
 #endif
     break;
   }

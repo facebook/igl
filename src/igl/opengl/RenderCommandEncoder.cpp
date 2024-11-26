@@ -10,15 +10,12 @@
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/CommandBuffer.h>
 #include <igl/opengl/DepthStencilState.h>
-#include <igl/opengl/Device.h>
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/Framebuffer.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/RenderCommandAdapter.h>
 #include <igl/opengl/RenderPipelineState.h>
 #include <igl/opengl/SamplerState.h>
-#include <igl/opengl/Shader.h>
-#include <igl/opengl/Texture.h>
 #include <igl/opengl/UniformAdapter.h>
 #include <igl/opengl/VertexInputState.h>
 
@@ -46,14 +43,28 @@ GLenum toGlPrimitive(PrimitiveType t) {
   return result;
 }
 
-int toGlType(IndexFormat format) {
+GLenum toGlType(IndexFormat format) {
   switch (format) {
+  case IndexFormat::UInt8:
+    return GL_UNSIGNED_BYTE;
   case IndexFormat::UInt16:
     return GL_UNSIGNED_SHORT;
   case IndexFormat::UInt32:
     return GL_UNSIGNED_INT;
   }
   IGL_UNREACHABLE_RETURN(GL_UNSIGNED_INT)
+}
+
+uint8_t getIndexByteSize(GLenum indexType) {
+  switch (indexType) {
+  case GL_UNSIGNED_BYTE:
+    return 1u;
+  case GL_UNSIGNED_SHORT:
+    return 2u;
+  case GL_UNSIGNED_INT:
+    return 4u;
+  }
+  IGL_UNREACHABLE_RETURN(4u)
 }
 
 } // namespace
@@ -123,7 +134,7 @@ void RenderCommandEncoder::endEncoding() {
 
     // Disable depthBias
     getContext().setEnabled(false, GL_POLYGON_OFFSET_FILL);
-    adapter_->setDepthBias(0.0f, 0.0f);
+    adapter_->setDepthBias(0.0f, 0.0f, 0.0f);
 
     adapter_->endEncoding();
     getContext().getAdapterPool().push_back(std::move(adapter_));
@@ -261,8 +272,6 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
                                       IBuffer* buffer,
                                       size_t offset,
                                       size_t bufferSize) {
-  (void)bufferSize;
-
   if (IGL_DEBUG_VERIFY(adapter_) && buffer) {
     auto* glBuffer = static_cast<Buffer*>(buffer);
     auto bufferType = glBuffer->getType();
@@ -270,7 +279,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     if (bufferType == Buffer::Type::Uniform) {
       IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
     } else if (bufferType == Buffer::Type::UniformBlock) {
-      adapter_->setUniformBuffer(glBuffer, offset, index);
+      adapter_->setUniformBuffer(glBuffer, offset, bufferSize, index);
     }
   }
 }
@@ -364,8 +373,7 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   IGL_DEBUG_ASSERT(baseInstance == 0, "Instancing is not implemented");
   IGL_DEBUG_ASSERT(indexType_, "No index buffer bound");
 
-  const size_t indexOffsetBytes =
-      static_cast<size_t>(firstIndex) * (indexType_ == GL_UNSIGNED_INT ? 4u : 2u);
+  const size_t indexOffsetBytes = static_cast<size_t>(firstIndex) * getIndexByteSize(indexType_);
 
   if (IGL_DEBUG_VERIFY(adapter_ && indexType_)) {
     getCommandBuffer().incrementCurrentDrawCount();
@@ -424,15 +432,15 @@ void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
   }
 }
 
-void RenderCommandEncoder::setBlendColor(Color color) {
+void RenderCommandEncoder::setBlendColor(const Color& color) {
   if (IGL_DEBUG_VERIFY(adapter_)) {
     adapter_->setBlendColor(color);
   }
 }
 
-void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float /*clamp*/) {
+void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float clamp) {
   if (IGL_DEBUG_VERIFY(adapter_)) {
-    adapter_->setDepthBias(depthBias, slopeScale);
+    adapter_->setDepthBias(depthBias, slopeScale, clamp);
   }
 }
 

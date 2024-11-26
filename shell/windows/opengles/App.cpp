@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
       .backendVersion = {.flavor = BackendFlavor::OpenGL_ES,
                          .majorVersion = static_cast<uint8_t>(majorVersion),
                          .minorVersion = static_cast<uint8_t>(minorVersion)},
-      .colorFramebufferFormat = TextureFormat::RGBA_UNorm8,
+      .swapchainColorTextureFormat = TextureFormat::RGBA_UNorm8,
   };
 
   if (!shell.initialize(argc, argv, suggestedWindowConfig, std::move(suggestedConfig))) {

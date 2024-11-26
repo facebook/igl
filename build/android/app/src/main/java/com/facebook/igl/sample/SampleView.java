@@ -19,28 +19,42 @@ import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
+import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
 /// Simple view that sets up a GLES 2.0 rendering context
-class SampleView extends GLSurfaceView {
+public class SampleView extends GLSurfaceView {
   private static String TAG = "SampleView";
   private float lastTouchX = 0.0f;
   private float lastTouchY = 0.0f;
 
-  public SampleView(Context context, int backendTypeID) {
+  public SampleView(
+      Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
 
     super(context);
     // Uncomment to attach debugging
     // android.os.Debug.waitForDebugger();
 
-    setEGLContextFactory(new ContextFactory(backendTypeID));
+    setEGLContextFactory(new ContextFactory(backendVersion));
 
     // Set the view to be transluscent since we provide an alpha channel below.
     this.getHolder().setFormat(PixelFormat.TRANSLUCENT);
 
-    setEGLConfigChooser(new ConfigChooser(backendTypeID));
+    setEGLWindowSurfaceFactory(
+        new SurfaceFactory(SampleLib.isSRGBTextureFormat(swapchainColorTextureFormat)));
 
-    setRenderer(new Renderer(context));
+    setEGLConfigChooser(new ConfigChooser(backendVersion));
+
+    setRenderer(new Renderer(context, backendVersion, swapchainColorTextureFormat));
+  }
+
+  @Override
+  public void setBackgroundColor(int color) {
+    int A = (color >> 24) & 0xff;
+    int R = (color >> 16) & 0xff;
+    int G = (color >> 8) & 0xff;
+    int B = (color) & 0xff;
+    SampleLib.setClearColorValue(R, G, B, A);
   }
 
   @Override
@@ -73,16 +87,16 @@ class SampleView extends GLSurfaceView {
   /// Context factory: handles creating the EGL context for this view with the correct settings.
   private static class ContextFactory implements GLSurfaceView.EGLContextFactory {
 
-    private final int mBackendTypeID;
+    private final SampleLib.BackendVersion mBackendVersion;
 
-    public ContextFactory(int backendTypeID) {
-      mBackendTypeID = backendTypeID;
+    public ContextFactory(SampleLib.BackendVersion version) {
+      mBackendVersion = version;
     }
 
     public EGLContext createContext(EGL10 egl, EGLDisplay display, EGLConfig eglConfig) {
       final int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
       int[] attrib_list = {
-        EGL_CONTEXT_CLIENT_VERSION, (mBackendTypeID == SampleLib.gl3ID) ? 3 : 2, EGL10.EGL_NONE
+        EGL_CONTEXT_CLIENT_VERSION, mBackendVersion.majorVersion, EGL10.EGL_NONE
       };
       EGLContext context =
           egl.eglCreateContext(display, eglConfig, EGL10.EGL_NO_CONTEXT, attrib_list);
@@ -102,14 +116,47 @@ class SampleView extends GLSurfaceView {
     }
   }
 
+  private static class SurfaceFactory implements GLSurfaceView.EGLWindowSurfaceFactory {
+    final int EGL_GL_COLORSPACE_KHR = 0x309D;
+    final int EGL_GL_COLORSPACE_SRGB_KHR = 0x3089;
+    final int EGL_GL_COLORSPACE_LINEAR_KHR = 0x308A;
+
+    private boolean mIsSRGBColorSpace;
+
+    SurfaceFactory(boolean isSRGB) {
+      mIsSRGBColorSpace = isSRGB;
+    }
+
+    @Override
+    public EGLSurface createWindowSurface(
+        EGL10 egl10, EGLDisplay eglDisplay, EGLConfig eglConfig, Object nativeWindow) {
+      String eglExtensionString = egl10.eglQueryString(eglDisplay, egl10.EGL_EXTENSIONS);
+      if (!eglExtensionString.contains("EGL_KHR_gl_colorspace")) {
+        return egl10.eglCreateWindowSurface(eglDisplay, eglConfig, nativeWindow, null);
+      }
+      int[] configAttribs = {
+        EGL_GL_COLORSPACE_KHR,
+        (mIsSRGBColorSpace ? EGL_GL_COLORSPACE_SRGB_KHR : EGL_GL_COLORSPACE_LINEAR_KHR),
+        EGL10.EGL_NONE
+      };
+
+      return egl10.eglCreateWindowSurface(eglDisplay, eglConfig, nativeWindow, configAttribs);
+    }
+
+    @Override
+    public void destroySurface(EGL10 egl10, EGLDisplay eglDisplay, EGLSurface eglSurface) {
+      egl10.eglDestroySurface(eglDisplay, eglSurface);
+    }
+  }
+
   /// Config chooser: handles specifying the requirements for the EGL config and choosing the
   // correct one.
   private static class ConfigChooser implements GLSurfaceView.EGLConfigChooser {
 
-    private final int mBackendTypeID;
+    private final SampleLib.BackendVersion mBackendVersion;
 
-    public ConfigChooser(int backendTypeID) {
-      mBackendTypeID = backendTypeID;
+    public ConfigChooser(SampleLib.BackendVersion version) {
+      mBackendVersion = version;
     }
 
     public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display) {
@@ -123,7 +170,9 @@ class SampleView extends GLSurfaceView {
         EGL10.EGL_ALPHA_SIZE, 8,
         EGL10.EGL_DEPTH_SIZE, 16,
         EGL10.EGL_RENDERABLE_TYPE,
-            (mBackendTypeID == SampleLib.gl3ID) ? EGL15.EGL_OPENGL_ES3_BIT : EGL_OPENGL_ES2_BIT,
+            (mBackendVersion.majorVersion == (byte) 3)
+                ? EGL15.EGL_OPENGL_ES3_BIT
+                : EGL_OPENGL_ES2_BIT,
         EGL10.EGL_NONE
       };
 
@@ -144,13 +193,18 @@ class SampleView extends GLSurfaceView {
   /// Renderer: This class communicates with our JNI library to implement the OpenGL rendering.
   private static class Renderer implements GLSurfaceView.Renderer {
     private final Context mContext;
+    private final SampleLib.BackendVersion mBackendVersion;
+    private final int mSwapchainColorTextureFormat;
 
-    Renderer(Context context) {
+    Renderer(
+        Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
       mContext = context;
+      mBackendVersion = backendVersion;
+      mSwapchainColorTextureFormat = swapchainColorTextureFormat;
     }
 
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-      SampleLib.init(mContext.getAssets(), null);
+      SampleLib.init(mBackendVersion, mSwapchainColorTextureFormat, mContext.getAssets(), null);
     }
 
     public void onSurfaceChanged(GL10 gl, int width, int height) {

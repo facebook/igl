@@ -82,7 +82,7 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
     const std::vector<std::shared_ptr<igl::vulkan::VulkanTexture>>& vulkanTextures,
     VkFormat externalTextureFormat,
     std::vector<std::shared_ptr<igl::ITexture>>& inOutTextures) {
-  uint32_t imageIndex;
+  uint32_t imageIndex = 0;
   const XrSwapchainImageAcquireInfo acquireInfo{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
   XR_CHECK(xrAcquireSwapchainImage(swapchain, &acquireInfo, &imageIndex));
 
@@ -96,7 +96,7 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
     inOutTextures.resize((size_t)imageIndex + 1, nullptr);
   }
 
-  const auto& actualDevice = static_cast<igl::vulkan::Device&>(device);
+  auto& actualDevice = static_cast<igl::vulkan::Device&>(device);
   const auto iglFormat = vulkan::vkFormatToTextureFormat(externalTextureFormat);
   const auto texture = inOutTextures[imageIndex];
   // allocate new drawable textures if its null or mismatches in size or format

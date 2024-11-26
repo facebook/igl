@@ -63,9 +63,13 @@ public class SampleActivity extends Activity implements View.OnClickListener {
       // initialize sampleView for each backend type
       SurfaceView backendView = null;
       if (mConfigs[i].version.flavor == SampleLib.BackendFlavor.Vulkan) {
-        backendView = new VulkanView(getApplication(), mConfigs[i].version);
+        backendView =
+            new VulkanView(
+                getApplication(), mConfigs[i].version, mConfigs[i].swapchainColorTextureFormat);
       } else if (mConfigs[i].version.flavor == SampleLib.BackendFlavor.OpenGL_ES) {
-        backendView = new SampleView(getApplication(), mConfigs[i].version);
+        backendView =
+            new SampleView(
+                getApplication(), mConfigs[i].version, mConfigs[i].swapchainColorTextureFormat);
         ((SampleView) backendView).onPause();
       }
 

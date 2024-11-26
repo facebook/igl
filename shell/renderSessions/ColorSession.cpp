@@ -10,27 +10,35 @@
 #include <cstring>
 
 #include <IGLU/simdtypes/SimdTypes.h>
+#include <glm/gtc/color_space.hpp>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/GLIncludes.h>
 #include <shell/renderSessions/ColorSession.h>
+#include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
 namespace igl::shell {
 
+namespace {
+const glm::vec3 kLinearOrangeColor = glm::convertSRGBToLinear(glm::dvec3{1.0, 0.5, 0.0});
+const iglu::simdtypes::float3 kGPULinearOrangeColor = {static_cast<float>(kLinearOrangeColor.x),
+                                                       static_cast<float>(kLinearOrangeColor.y),
+                                                       static_cast<float>(kLinearOrangeColor.z)};
+
 struct VertexPosUv {
   iglu::simdtypes::float3 position;
   iglu::simdtypes::float2 uv;
 };
-static VertexPosUv vertexData[] = {
+VertexPosUv vertexData[] = {
     {{-1.f, 1.f, 0.0}, {0.0, 0.0}},
     {{1.f, 1.f, 0.0}, {1.0, 0.0}},
     {{-1.f, -1.f, 0.0}, {0.0, 1.0}},
     {{1.f, -1.f, 0.0}, {1.0, 1.0}},
 };
-static uint16_t indexData[] = {
+uint16_t indexData[] = {
     0,
     1,
     2,
@@ -39,11 +47,11 @@ static uint16_t indexData[] = {
     2,
 };
 
-static std::string getVersion() {
+std::string getVersion() {
   return "#version 100";
 }
 
-static std::string getMetalShaderSource() {
+std::string getMetalShaderSource() {
   return R"(
               using namespace metal;
 
@@ -82,7 +90,7 @@ static std::string getMetalShaderSource() {
     )";
 }
 
-static std::string getOpenGLVertexShaderSource() {
+std::string getOpenGLVertexShaderSource() {
   return getVersion() + R"(
                 precision highp float;
                 attribute vec3 position;
@@ -96,7 +104,7 @@ static std::string getOpenGLVertexShaderSource() {
                 })";
 }
 
-static std::string getOpenGLFragmentShaderSource() {
+std::string getOpenGLFragmentShaderSource() {
   return getVersion() + std::string(R"(
                 precision highp float;
                 uniform vec3 color;
@@ -110,7 +118,7 @@ static std::string getOpenGLFragmentShaderSource() {
                 })");
 }
 
-static std::string getVulkanVertexShaderSource() {
+std::string getVulkanVertexShaderSource() {
   return R"(precision highp float;
             layout(location = 0) in vec3 position;
             layout(location = 1) in vec2 uv_in;
@@ -130,7 +138,7 @@ static std::string getVulkanVertexShaderSource() {
             )";
 }
 
-static std::string getVulkanFragmentShaderSource() {
+std::string getVulkanFragmentShaderSource() {
   return R"(
                 layout(location = 0) in vec2 uv;
                 layout(location = 1) in vec3 color;
@@ -146,7 +154,7 @@ static std::string getVulkanFragmentShaderSource() {
 
 // @fb-only
 
-static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
+std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
   case igl::BackendType::Invalid:
     IGL_DEBUG_ASSERT_NOT_REACHED();
@@ -193,6 +201,7 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
   }
   IGL_UNREACHABLE_RETURN(nullptr)
 }
+} // namespace
 
 // clang-tidy off
 void ColorSession::initialize() noexcept {
@@ -227,7 +236,15 @@ void ColorSession::initialize() noexcept {
   samp0_ = device.createSamplerState(samplerDesc, nullptr);
   IGL_DEBUG_ASSERT(samp0_ != nullptr);
 
-  tex0_ = getPlatform().loadTexture("macbeth.png");
+  if (colorTestModes_ == ColorTestModes::eMacbethTexture) {
+    tex0_ = getPlatform().loadTexture("macbeth.png");
+  } else if (colorTestModes_ == ColorTestModes::eOrangeTexture) {
+    tex0_ = getPlatform().loadTexture("orange.png");
+  } else if (colorTestModes_ == ColorTestModes::eOrangeClear) {
+    tex0_ = getPlatform().loadTexture(igl::shell::ImageLoader::white());
+    setPreferredClearColor(
+        igl::Color{kLinearOrangeColor.x, kLinearOrangeColor.y, kLinearOrangeColor.z, 1.0f});
+  }
 
   shaderStages_ = getShaderStagesForBackend(device);
   IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
@@ -240,14 +257,16 @@ void ColorSession::initialize() noexcept {
   renderPass_.colorAttachments.resize(1);
   renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;
   renderPass_.colorAttachments[0].storeAction = StoreAction::Store;
-  renderPass_.colorAttachments[0].clearColor = getPlatform().getDevice().backendDebugColor();
+  renderPass_.colorAttachments[0].clearColor = getPreferredClearColor();
   renderPass_.depthAttachment.loadAction = LoadAction::Clear;
   renderPass_.depthAttachment.clearDepth = 1.0;
 
   // init uniforms
   glm::mat4x4 mvp(1.0f);
   memcpy(&fragmentParameters_.mvp, &mvp, sizeof(mvp));
-  fragmentParameters_.color = iglu::simdtypes::float3{1.0f, 1.0f, 1.0f};
+  fragmentParameters_.color = (colorTestModes_ == ColorTestModes::eOrangeClear)
+                                  ? kGPULinearOrangeColor
+                                  : iglu::simdtypes::float3{1.0f, 1.0f, 1.0f};
 
   BufferDesc fpDesc;
   fpDesc.type = BufferDesc::BufferTypeBits::Uniform;
@@ -349,9 +368,9 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
     } else {
       IGL_DEBUG_ASSERT_NOT_REACHED();
     }
-
     commands->bindTexture(textureUnit, BindTarget::kFragment, tex0_.get());
     commands->bindSamplerState(textureUnit, BindTarget::kFragment, samp0_.get());
+
     commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
     commands->drawIndexed(6);
 

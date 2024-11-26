@@ -198,6 +198,12 @@ TEST_F(EnhancedShaderDebuggingStoreTest, InitializeBuffer) {
   EnhancedShaderDebuggingStore store;
   store.initialize(device_);
 
+  if (!device_->getVulkanContext()
+           .features()
+           .VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress) {
+    GTEST_SKIP() << "BufferDeviceAddress not supported";
+  }
+
   // Verify that the buffer has been created
   EXPECT_NE(store.vertexBuffer(), nullptr);
 }
@@ -206,6 +212,12 @@ TEST_F(EnhancedShaderDebuggingStoreTest, createFramebuffer) {
   // Create an instance of the EnhancedShaderDebuggingStore
   EnhancedShaderDebuggingStore store;
   store.initialize(device_);
+
+  if (!device_->getVulkanContext()
+           .features()
+           .VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress) {
+    GTEST_SKIP() << "BufferDeviceAddress not supported";
+  }
 
   // Verify that the buffer has been created
   EXPECT_NE(store.vertexBuffer(), nullptr);
@@ -225,6 +237,12 @@ TEST_F(EnhancedShaderDebuggingStoreTest, DepthStencilState) {
   EnhancedShaderDebuggingStore store;
   store.initialize(device_);
 
+  if (!device_->getVulkanContext()
+           .features()
+           .VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress) {
+    GTEST_SKIP() << "BufferDeviceAddress not supported";
+  }
+
   // Verify that the depth stencil state has been created
   EXPECT_NE(store.depthStencilState(), nullptr);
 }
@@ -234,9 +252,9 @@ TEST_F(EnhancedShaderDebuggingStoreTest, Pipeline) {
   EnhancedShaderDebuggingStore store;
   store.initialize(device_);
 
-  const igl::vulkan::VulkanContextConfig config;
-  const igl::vulkan::VulkanFeatures features(VK_API_VERSION_1_1, config);
-  if (!config.enableBufferDeviceAddress) {
+  if (!device_->getVulkanContext()
+           .features()
+           .VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress) {
     GTEST_SKIP() << "BufferDeviceAddress not supported";
   }
 
@@ -281,9 +299,9 @@ TEST_F(EnhancedShaderDebuggingStoreTest, InstallBufferBarrier) {
   EnhancedShaderDebuggingStore store;
   store.initialize(device_);
 
-  const igl::vulkan::VulkanContextConfig config;
-  const igl::vulkan::VulkanFeatures features(VK_API_VERSION_1_1, config);
-  if (!config.enableBufferDeviceAddress) {
+  if (!device_->getVulkanContext()
+           .features()
+           .VkPhysicalDeviceBufferDeviceAddressFeaturesKHR_.bufferDeviceAddress) {
     GTEST_SKIP() << "BufferDeviceAddress not supported";
   }
 

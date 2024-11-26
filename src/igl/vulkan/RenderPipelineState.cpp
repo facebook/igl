@@ -430,7 +430,8 @@ VkPipeline RenderPipelineState::getVkPipeline(
   std::for_each(
       desc_.targetDesc.colorAttachments.begin(),
       desc_.targetDesc.colorAttachments.end(),
-      [&colorBlendAttachmentStates, dualSrcBlendSupported](auto attachment) mutable {
+      [&colorBlendAttachmentStates,
+       dualSrcBlendSupported = dualSrcBlendSupported](auto attachment) mutable {
         if (attachment.textureFormat != TextureFormat::Invalid) {
           // In Vulkan color write bits are part of blending.
           if (!attachment.blendEnabled && attachment.colorWriteMask == igl::ColorWriteBitsAll) {
@@ -471,7 +472,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
           })
           .primitiveTopology(primitiveTypeToVkPrimitiveTopology(desc_.topology))
           .depthBiasEnable(dynamicState.depthBiasEnable_)
-          .depthCompareOp(dynamicState.getDepthCompareOp())
+          .depthCompareOp(dynamicState.getDepthCompareOp(), dynamicState.depthWriteEnable_)
           .depthWriteEnable(dynamicState.depthWriteEnable_)
           .rasterizationSamples(getVulkanSampleCountFlags(desc_.sampleCount))
           .polygonMode(polygonFillModeToVkPolygonMode(desc_.polygonFillMode))

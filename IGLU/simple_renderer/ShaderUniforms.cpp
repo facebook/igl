@@ -9,7 +9,6 @@
 
 #include <igl/Buffer.h>
 #include <igl/Device.h>
-#include <igl/Log.h>
 #include <igl/Uniform.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/RenderCommandEncoder.h>
@@ -124,7 +123,7 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
       bufferDesc->isSuballocated = true;
       // In Vulkan, Uniform buffers must have offets that are a multiple of
       // VkPhysicalDeviceLimits::minUniformBufferOffsetAlignment
-      size_t alignement;
+      size_t alignement = 0;
       device.getFeatureLimits(igl::DeviceFeatureLimits::BufferAlignment, alignement);
 
       // Align the suballocation size to the physical device alignment

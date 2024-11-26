@@ -16,6 +16,7 @@ namespace igl::opengl {
 
 enum class GLVersion {
   NotAvailable,
+  v1_1,
   v2_0_ES,
   v2_0,
   v2_1,

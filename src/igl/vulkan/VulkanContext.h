@@ -24,6 +24,10 @@
 #include <igl/vulkan/VulkanRenderPassBuilder.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
+struct AHardwareBuffer;
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
+
 #if defined(IGL_WITH_TRACY_GPU)
 #include "tracy/TracyVulkan.hpp"
 #endif
@@ -44,7 +48,6 @@ class VulkanDescriptorSetLayout;
 class VulkanImage;
 class VulkanImageView;
 class VulkanPipelineLayout;
-class VulkanSampler;
 class VulkanSemaphore;
 class VulkanSwapchain;
 class VulkanTexture;
@@ -54,6 +57,7 @@ struct BindingsTextures;
 struct VulkanContextImpl;
 struct VulkanImageCreateInfo;
 struct VulkanImageViewCreateInfo;
+struct VulkanSampler;
 
 /*
  * Descriptor sets:
@@ -108,6 +112,24 @@ class VulkanContext final {
                           VkSampleCountFlagBits samples,
                           igl::Result* IGL_NULLABLE outResult,
                           const char* IGL_NULLABLE debugName = nullptr) const;
+
+// @fb-only
+  // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+// @fb-only
+
   std::unique_ptr<VulkanImage> createImageFromFileDescriptor(
       int32_t fileDescriptor,
       uint64_t memoryAllocationSize,
@@ -136,10 +158,10 @@ class VulkanContext final {
       VulkanImageViewCreateInfo imageViewCreateInfo,
       const char* IGL_NULLABLE debugName) const;
 
-  std::shared_ptr<VulkanSampler> createSampler(const VkSamplerCreateInfo& ci,
-                                               VkFormat yuvVkFormat,
-                                               igl::Result* IGL_NULLABLE outResult,
-                                               const char* IGL_NULLABLE debugName = nullptr) const;
+  SamplerHandle createSampler(const VkSamplerCreateInfo& ci,
+                              VkFormat yuvVkFormat,
+                              igl::Result* IGL_NULLABLE outResult,
+                              const char* IGL_NULLABLE debugName = nullptr) const;
 
   void createSurface(void* IGL_NULLABLE window, void* IGL_NULLABLE display);
   void createHeadlessSurface();
@@ -223,6 +245,7 @@ class VulkanContext final {
   void createInstance(size_t numExtraExtensions,
                       const char* IGL_NULLABLE* IGL_NULLABLE extraExtensions);
   VkResult checkAndUpdateDescriptorSets();
+  void pruneTextures();
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
   void waitDeferredTasks();
@@ -236,6 +259,7 @@ class VulkanContext final {
   void destroy(igl::BindGroupTextureHandle handle);
   void destroy(igl::BindGroupBufferHandle handle);
   void destroy(igl::SamplerHandle handle);
+  void destroy(igl::TextureHandle handle);
   VkDescriptorSet getBindGroupDescriptorSet(igl::BindGroupTextureHandle handle) const;
   VkDescriptorSet getBindGroupDescriptorSet(igl::BindGroupBufferHandle handle) const;
   uint32_t getBindGroupUsageMask(igl::BindGroupTextureHandle handle) const;
@@ -256,20 +280,16 @@ class VulkanContext final {
   VkDebugUtilsMessengerEXT vkDebugUtilsMessenger_ = VK_NULL_HANDLE;
   VkSurfaceKHR vkSurface_ = VK_NULL_HANDLE;
   VkPhysicalDevice IGL_NULLABLE vkPhysicalDevice_ = VK_NULL_HANDLE;
-  FOLLY_PUSH_WARNING
-  FOLLY_GNU_DISABLE_WARNING("-Wmissing-field-initializers")
   VkPhysicalDeviceDescriptorIndexingPropertiesEXT vkPhysicalDeviceDescriptorIndexingProperties_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT,
-      // Ignore clang-diagnostic-missing-field-initializers
-      // @lint-ignore CLANGTIDY
-      nullptr};
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES_EXT,
+      .pNext = nullptr,
+  };
 
   // Provided by VK_KHR_driver_properties
   VkPhysicalDeviceDriverPropertiesKHR vkPhysicalDeviceDriverProperties_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES_KHR,
-      // Ignore clang-diagnostic-missing-field-initializers
-      // @lint-ignore CLANGTIDY
-      &vkPhysicalDeviceDescriptorIndexingProperties_};
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES_KHR,
+      .pNext = &vkPhysicalDeviceDescriptorIndexingProperties_,
+  };
 
   std::vector<VkFormat> deviceDepthFormats_;
   std::vector<VkSurfaceFormatKHR> deviceSurfaceFormats_;
@@ -278,10 +298,9 @@ class VulkanContext final {
 
   // Provided by VK_VERSION_1_1
   VkPhysicalDeviceProperties2 vkPhysicalDeviceProperties2_ = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
-      &vkPhysicalDeviceDriverProperties_,
-      VkPhysicalDeviceProperties{}};
-  FOLLY_POP_WARNING
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+      .pNext = &vkPhysicalDeviceDriverProperties_,
+  };
 
   VulkanFeatures features_;
 
@@ -311,7 +330,7 @@ class VulkanContext final {
   // deallocated. The context deallocates textures in a deferred way when it is safe to do so.
   // 2. Descriptor sets can be updated when they are not in use.
   mutable Pool<TextureTag, std::shared_ptr<VulkanTexture>> textures_;
-  mutable Pool<SamplerTag, std::shared_ptr<VulkanSampler>> samplers_;
+  mutable Pool<SamplerTag, VulkanSampler> samplers_;
   // a texture/sampler was created since the last descriptor set update
   mutable bool awaitingCreation_ = false;
 

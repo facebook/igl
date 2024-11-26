@@ -14,7 +14,7 @@ namespace igl::shell {
 
 class PlatformWin : public Platform {
  public:
-  PlatformWin(std::shared_ptr<igl::IDevice> device);
+  explicit PlatformWin(std::shared_ptr<igl::IDevice> device);
   igl::IDevice& getDevice() noexcept override;
   [[nodiscard]] std::shared_ptr<igl::IDevice> getDevicePtr() const noexcept override;
   ImageLoader& getImageLoader() noexcept override;

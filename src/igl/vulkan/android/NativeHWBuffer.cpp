@@ -19,8 +19,7 @@
 
 namespace igl::vulkan::android {
 
-NativeHWTextureBuffer::NativeHWTextureBuffer(const igl::vulkan::Device& device,
-                                             TextureFormat format) :
+NativeHWTextureBuffer::NativeHWTextureBuffer(igl::vulkan::Device& device, TextureFormat format) :
   Super(device, format) {}
 
 NativeHWTextureBuffer::~NativeHWTextureBuffer() {}

@@ -19,9 +19,7 @@
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanRenderPassBuilder.h>
-#include <igl/vulkan/VulkanShaderModule.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/util/SpvReflection.h>
 
@@ -56,17 +54,6 @@ VkAttachmentStoreOp storeActionToVkAttachmentStoreOp(igl::StoreAction a) {
   }
   IGL_DEBUG_ASSERT_NOT_REACHED();
   return VK_ATTACHMENT_STORE_OP_DONT_CARE;
-}
-
-VkIndexType indexFormatToVkIndexType(igl::IndexFormat fmt) {
-  switch (fmt) {
-  case igl::IndexFormat::UInt16:
-    return VK_INDEX_TYPE_UINT16;
-  case igl::IndexFormat::UInt32:
-    return VK_INDEX_TYPE_UINT32;
-  };
-  IGL_DEBUG_ASSERT_NOT_REACHED();
-  return VK_INDEX_TYPE_NONE_KHR;
 }
 
 } // namespace
@@ -161,14 +148,14 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
     mipLevel = descColor.mipLevel;
     layer = colorLayer;
     const auto initialLayout = descColor.loadAction == igl::LoadAction::Load
-                                   ? colorTexture.getVulkanTexture().getVulkanImage().imageLayout_
+                                   ? colorTexture.getVulkanTexture().image_.imageLayout_
                                    : VK_IMAGE_LAYOUT_UNDEFINED;
     builder.addColor(textureFormatToVkFormat(colorTexture.getFormat()),
                      loadActionToVkAttachmentLoadOp(descColor.loadAction),
                      storeActionToVkAttachmentStoreOp(descColor.storeAction),
                      initialLayout,
                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                     colorTexture.getVulkanTexture().getVulkanImage().samples_);
+                     colorTexture.getVulkanTexture().image_.samples_);
     // handle MSAA
     if (descColor.storeAction == StoreAction::MsaaResolve) {
       IGL_DEBUG_ASSERT(attachment.resolveTexture,
@@ -199,7 +186,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
     clearValues.push_back(
         ivkGetClearDepthStencilValue(descDepth.clearDepth, descStencil.clearStencil));
     const auto initialLayout = descDepth.loadAction == igl::LoadAction::Load
-                                   ? depthTexture.getVulkanTexture().getVulkanImage().imageLayout_
+                                   ? depthTexture.getVulkanTexture().image_.imageLayout_
                                    : VK_IMAGE_LAYOUT_UNDEFINED;
     builder.addDepthStencil(depthTexture.getVkFormat(),
                             loadActionToVkAttachmentLoadOp(descDepth.loadAction),
@@ -208,7 +195,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                             storeActionToVkAttachmentStoreOp(descStencil.storeAction),
                             initialLayout,
                             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                            depthTexture.getVulkanTexture().getVulkanImage().samples_);
+                            depthTexture.getVulkanTexture().image_.samples_);
   }
 
   const auto& fb = static_cast<vulkan::Framebuffer&>(*framebuffer);
@@ -240,7 +227,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   bindViewport(viewport);
   bindScissorRect(scissor);
 
-  VkResult const vkResult = ctx_.checkAndUpdateDescriptorSets();
+  const VkResult vkResult = ctx_.checkAndUpdateDescriptorSets();
   if (vkResult != VK_SUCCESS) {
     IGL_LOG_ERROR("checkAndUpdateDescriptorSets returned a non-successful result: %d", vkResult);
     Result::setResult(&outResult, Result::Code::RuntimeError, "Failed to update descriptor sets");
@@ -294,7 +281,7 @@ void RenderCommandEncoder::endEncoding() {
 
     // Retrieve the VulkanImage to check its usage
     const auto& vkTex = static_cast<Texture&>(*tex);
-    const auto& img = vkTex.getVulkanTexture().getVulkanImage();
+    const igl::vulkan::VulkanImage& img = vkTex.getVulkanTexture().image_;
 
     if (tex->getProperties().isDepthOrStencil()) {
       // If the texture has not been marked as a depth/stencil attachment
@@ -499,7 +486,20 @@ void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
   IGL_DEBUG_ASSERT(buf.getBufferUsageFlags() & VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                    "Did you forget to specify BufferTypeBits::Index on your buffer?");
 
-  const VkIndexType type = indexFormatToVkIndexType(format);
+  auto indexFormatToVkIndexType = [](igl::IndexFormat fmt, bool has8BitIndices) -> VkIndexType {
+    switch (fmt) {
+    case igl::IndexFormat::UInt8:
+      return IGL_DEBUG_VERIFY(has8BitIndices) ? VK_INDEX_TYPE_UINT8_EXT : VK_INDEX_TYPE_UINT16;
+    case igl::IndexFormat::UInt16:
+      return VK_INDEX_TYPE_UINT16;
+    case igl::IndexFormat::UInt32:
+      return VK_INDEX_TYPE_UINT32;
+    };
+    IGL_DEBUG_ASSERT_NOT_REACHED();
+    return VK_INDEX_TYPE_UINT16;
+  };
+
+  const VkIndexType type = indexFormatToVkIndexType(format, ctx_.extensions_.has8BitIndices);
 
   ctx_.vf_.vkCmdBindIndexBuffer(cmdBuffer_, buf.getVkBuffer(), bufferOffset, type);
 }
@@ -713,7 +713,7 @@ void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
       cmdBuffer_, VK_STENCIL_FACE_FRONT_BIT | VK_STENCIL_FACE_BACK_BIT, value);
 }
 
-void RenderCommandEncoder::setBlendColor(Color color) {
+void RenderCommandEncoder::setBlendColor(const Color& color) {
   IGL_PROFILER_FUNCTION();
 
   ctx_.vf_.vkCmdSetBlendConstants(cmdBuffer_, color.toFloatPtr());

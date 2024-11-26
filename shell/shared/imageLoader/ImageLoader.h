@@ -33,6 +33,7 @@ class ImageLoader {
     return defaultLoadImageData(imageName, preferredFormat);
   }
   static ImageData checkerboard() noexcept;
+  static ImageData white() noexcept;
 
   [[nodiscard]] ImageData loadImageDataFromFile(
       const std::string& fileName,

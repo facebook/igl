@@ -24,7 +24,7 @@ bool StencilStateDesc::operator==(const StencilStateDesc& other) const {
          stencilFailureOperation == other.stencilFailureOperation;
 }
 
-size_t std::hash<igl::StencilStateDesc>::operator()(igl::StencilStateDesc const& key) const {
+size_t std::hash<igl::StencilStateDesc>::operator()(const igl::StencilStateDesc& key) const {
   size_t hash = std::hash<int>()(static_cast<int>(EnumToValue(key.stencilCompareFunction)));
   hash ^= std::hash<int>()(static_cast<int>(key.writeMask));
   hash ^= std::hash<int>()(static_cast<int>(key.readMask));
@@ -45,7 +45,7 @@ bool DepthStencilStateDesc::operator==(const DepthStencilStateDesc& other) const
 }
 
 size_t std::hash<igl::DepthStencilStateDesc>::operator()(
-    igl::DepthStencilStateDesc const& key) const {
+    const igl::DepthStencilStateDesc& key) const {
   size_t hash = std::hash<igl::StencilStateDesc>()(key.frontFaceStencil);
   hash ^= std::hash<igl::StencilStateDesc>()(key.backFaceStencil);
   hash ^= std::hash<int>()(static_cast<int>(EnumToValue(key.compareFunction)));

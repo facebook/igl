@@ -183,8 +183,8 @@ using namespace igl;
     metalView.delegate = self;
 
     metalView.colorPixelFormat =
-        metal::Texture::textureFormatToMTLPixelFormat(config_.colorFramebufferFormat);
-    metalView.colorspace = metal::colorSpaceToCGColorSpace(shellParams_.swapchainColorSpace);
+        metal::Texture::textureFormatToMTLPixelFormat(config_.swapchainColorTextureFormat);
+    metalView.colorspace = metal::colorSpaceToCGColorSpace(config_.swapchainColorSpace);
 
     metalView.framebufferOnly = NO;
     [metalView setViewController:self];
@@ -268,6 +268,10 @@ using namespace igl;
     IGL_DEBUG_ASSERT(result.isOk());
     shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(
         opengl::macos::HWDevice().createWithContext(std::move(context), nullptr));
+
+    auto& device = shellPlatform_->getDevice();
+    auto* platformDevice = device.getPlatformDevice<igl::opengl::macos::PlatformDevice>();
+    platformDevice->setNativeDrawableTextureFormat(config_.swapchainColorTextureFormat, nullptr);
     self.view = openGLView;
     break;
   }
@@ -287,8 +291,8 @@ using namespace igl;
     vulkanContextConfig.enhancedShaderDebugging = false;
     vulkanContextConfig.enableBufferDeviceAddress = true;
 
-    vulkanContextConfig.swapChainColorSpace = shellParams_.swapchainColorSpace;
-    vulkanContextConfig.requestedSwapChainTextureFormat = config_.colorFramebufferFormat;
+    vulkanContextConfig.swapChainColorSpace = config_.swapchainColorSpace;
+    vulkanContextConfig.requestedSwapChainTextureFormat = config_.swapchainColorTextureFormat;
 
     auto context =
         igl::vulkan::HWDevice::createContext(vulkanContextConfig, (__bridge void*)vulkanView);
@@ -318,6 +322,8 @@ using namespace igl;
         // @fb-only
         // @fb-only
         // @fb-only
+        // @fb-only
+            // @fb-only
         // @fb-only
 
     // @fb-only
@@ -522,7 +528,7 @@ static uint32_t getModifiers(NSEvent* event) {
 
 - (void)keyDown:(NSEvent*)event {
   shellPlatform_->getInputDispatcher().queueEvent(
-      igl::shell::KeyEvent(false, event.keyCode, getModifiers(event)));
+      igl::shell::KeyEvent(true, event.keyCode, getModifiers(event)));
   std::string characters([event.characters UTF8String]);
   for (const auto& c : characters) {
     shellPlatform_->getInputDispatcher().queueEvent(igl::shell::CharEvent{.character = c});
@@ -599,7 +605,7 @@ static uint32_t getModifiers(NSEvent* event) {
 }
 
 - (igl::ColorSpace)colorSpace {
-  return shellParams_.swapchainColorSpace;
+  return config_.swapchainColorSpace;
 }
 
 @end

@@ -102,7 +102,7 @@ std::unique_ptr<IData> TextureLoader::loadInternal(
   const int length = r.length() > std::numeric_limits<int>::max() ? std::numeric_limits<int>::max()
                                                                   : static_cast<int>(r.length());
 
-  int x, y, comp;
+  int x = 0, y = 0, comp = 0;
   void* data = nullptr;
   // Pass 4 for desired_channels to force RGBA instead of RGB.
   if (isFloatFormat_) {
@@ -140,7 +140,7 @@ std::unique_ptr<ITextureLoader> TextureLoaderFactory::tryCreateInternal(
                          ? std::numeric_limits<int>::max()
                          : static_cast<int>(reader.length());
 
-  int x, y, comp;
+  int x = 0, y = 0, comp = 0;
   if (stbi_info_from_memory(reader.data(), length, &x, &y, &comp) == 0) {
     igl::Result::setResult(
         outResult, igl::Result::Code::InvalidOperation, "Could not get HDR metadata.");

@@ -11,9 +11,7 @@
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
 
-namespace igl {
-class ITexture;
-namespace opengl {
+namespace igl::opengl {
 
 class SamplerState final : public WithContext, public ISamplerState {
  public:
@@ -50,5 +48,4 @@ class SamplerState final : public WithContext, public ISamplerState {
   bool isYUV_;
 };
 
-} // namespace opengl
-} // namespace igl
+} // namespace igl::opengl

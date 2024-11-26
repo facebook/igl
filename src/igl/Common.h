@@ -13,6 +13,7 @@
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
+#include <igl/Color.h>
 #include <igl/Core.h>
 #include <limits>
 #include <memory>
@@ -20,9 +21,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#define IGL_NULLABLE FOLLY_NULLABLE
-#define IGL_NONNULL FOLLY_NONNULL
 
 namespace igl {
 
@@ -66,20 +64,6 @@ enum class PrimitiveType : uint8_t {
   LineStrip,
   Triangle,
   TriangleStrip,
-};
-
-struct Color {
-  float r;
-  float g;
-  float b;
-  float a;
-
-  constexpr Color(float r, float g, float b) : r(r), g(g), b(b), a(1.0f) {}
-  constexpr Color(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
-
-  [[nodiscard]] const float* IGL_NONNULL toFloatPtr() const {
-    return &r;
-  }
 };
 
 struct Result {

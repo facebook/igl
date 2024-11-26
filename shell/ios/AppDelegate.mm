@@ -41,7 +41,7 @@
           .backendVersion = {.flavor = igl::BackendFlavor::Metal,
                              .majorVersion = 3,
                              .minorVersion = 0},
-          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+          .swapchainColorTextureFormat = igl::TextureFormat::BGRA_SRGB,
       },
 #endif
 #if IGL_BACKEND_OPENGL
@@ -51,7 +51,7 @@
           .backendVersion = {.flavor = igl::BackendFlavor::OpenGL_ES,
                              .majorVersion = 3,
                              .minorVersion = 0},
-          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+          .swapchainColorTextureFormat = igl::TextureFormat::BGRA_SRGB,
       },
 #endif
       {
@@ -59,7 +59,7 @@
           .backendVersion = {.flavor = igl::BackendFlavor::OpenGL_ES,
                              .majorVersion = 2,
                              .minorVersion = 0},
-          .colorFramebufferFormat = igl::TextureFormat::BGRA_SRGB,
+          .swapchainColorTextureFormat = igl::TextureFormat::BGRA_SRGB,
       },
 #endif
 // @fb-only

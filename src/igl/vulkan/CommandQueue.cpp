@@ -11,8 +11,6 @@
 #include <igl/vulkan/EnhancedShaderDebuggingStore.h>
 #include <igl/vulkan/RenderCommandEncoder.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanDevice.h>
-#include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 
 namespace igl::vulkan {
@@ -53,7 +51,7 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& cmdBuffer, bool /* endOf
   auto submitHandle = endCommandBuffer(ctx, vkCmdBuffer, presentIfNotDebugging);
 
   if (ctx.enhancedShaderDebuggingStore_) {
-    enhancedShaderDebuggingPass(ctx, vkCmdBuffer);
+    ctx.enhancedShaderDebuggingStore_->enhancedShaderDebuggingPass(*this, vkCmdBuffer);
   }
 
   return submitHandle;
@@ -85,98 +83,6 @@ SubmitHandle CommandQueue::endCommandBuffer(igl::vulkan::VulkanContext& ctx,
   isInsideFrame_ = false;
 
   return cmdBuffer->lastSubmitHandle_.handle();
-}
-
-void CommandQueue::enhancedShaderDebuggingPass(igl::vulkan::VulkanContext& ctx,
-                                               igl::vulkan::CommandBuffer* cmdBuffer) {
-  IGL_PROFILER_FUNCTION();
-
-  const auto& debugger = ctx.enhancedShaderDebuggingStore_;
-
-  if (!cmdBuffer->getFramebuffer()) {
-    return;
-  }
-
-  // If there are no color attachments, return, as we won't have a framebuffer to render into
-  const auto indices = cmdBuffer->getFramebuffer()->getColorAttachmentIndices();
-  if (indices.empty()) {
-    return;
-  }
-
-  const auto min = std::min_element(indices.begin(), indices.end());
-
-  const auto resolveAttachment = cmdBuffer->getFramebuffer()->getResolveColorAttachment(*min);
-  const std::shared_ptr<igl::IFramebuffer>& framebuffer =
-      resolveAttachment ? debugger->framebuffer(device_, resolveAttachment)
-                        : cmdBuffer->getFramebuffer();
-
-  igl::Result result;
-  auto lineDrawingCmdBuffer =
-      createCommandBuffer({"Command buffer: line drawing enhanced debugging"}, &result);
-
-  if (!IGL_DEBUG_VERIFY(result.isOk())) {
-    IGL_LOG_INFO("Error obtaining a new command buffer for drawing debug lines");
-    return;
-  }
-
-  auto cmdEncoder = lineDrawingCmdBuffer->createRenderCommandEncoder(
-      debugger->renderPassDesc(framebuffer), framebuffer);
-
-  auto pipeline = debugger->pipeline(device_, framebuffer);
-  cmdEncoder->bindRenderPipelineState(pipeline);
-
-  {
-    // Bind the line buffer
-    auto* vkEncoder = static_cast<RenderCommandEncoder*>(cmdEncoder.get());
-    vkEncoder->binder().bindBuffer(
-        EnhancedShaderDebuggingStore::kBufferIndex,
-        static_cast<igl::vulkan::Buffer*>(debugger->vertexBuffer().get()),
-        sizeof(EnhancedShaderDebuggingStore::Header),
-        0);
-
-    cmdEncoder->pushDebugGroupLabel("Render Debug Lines", kColorDebugLines);
-    cmdEncoder->bindDepthStencilState(debugger->depthStencilState());
-
-    // Disable incrementing the draw call count
-    const auto resetDrawCallCountValue = vkEncoder->setDrawCallCountEnabled(false);
-    IGL_SCOPE_EXIT {
-      vkEncoder->setDrawCallCountEnabled(resetDrawCallCountValue);
-    };
-    cmdEncoder->multiDrawIndirect(
-        *debugger->vertexBuffer(), sizeof(EnhancedShaderDebuggingStore::Metadata), 1, 0);
-  }
-  cmdEncoder->popDebugGroupLabel();
-  cmdEncoder->endEncoding();
-
-  auto* resetCmdBuffer = static_cast<CommandBuffer*>(lineDrawingCmdBuffer.get());
-  auto* const vkResetCmdBuffer = resetCmdBuffer->getVkCommandBuffer();
-
-  // End the render pass by transitioning the surface that was presented by the application
-  if (cmdBuffer->getPresentedSurface()) {
-    resetCmdBuffer->present(cmdBuffer->getPresentedSurface());
-  }
-
-  // Barrier to ensure we have finished rendering the lines before we clear the buffer
-  auto* lineBuffer = static_cast<vulkan::Buffer*>(debugger->vertexBuffer().get());
-  ivkBufferMemoryBarrier(&ctx.vf_,
-                         vkResetCmdBuffer,
-                         lineBuffer->getVkBuffer(),
-                         0, /* src access flag */
-                         0, /* dst access flag */
-                         0,
-                         VK_WHOLE_SIZE,
-                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                         VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-  // Reset instanceCount of the buffer
-  ctx.vf_.vkCmdFillBuffer(vkResetCmdBuffer,
-                          lineBuffer->getVkBuffer(),
-                          offsetof(EnhancedShaderDebuggingStore::Header, command_) +
-                              offsetof(VkDrawIndirectCommand, instanceCount),
-                          sizeof(uint32_t), // reset only the instance count
-                          0);
-
-  endCommandBuffer(ctx, resetCmdBuffer, true);
 }
 
 } // namespace igl::vulkan

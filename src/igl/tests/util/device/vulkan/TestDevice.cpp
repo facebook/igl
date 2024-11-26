@@ -28,14 +28,8 @@ namespace igl::tests::util::device::vulkan {
 //
 // Used by clients to get an IGL device.
 //
-std::shared_ptr<::igl::IDevice> createTestDevice(bool enableValidation) {
-#if IGL_PLATFORM_MACOS
-  ::igl::vulkan::setupMoltenVKEnvironment();
-#endif
 
-  std::shared_ptr<igl::IDevice> iglDev = nullptr;
-  Result ret;
-
+igl::vulkan::VulkanContextConfig getContextConfig(bool enableValidation) {
   igl::vulkan::VulkanContextConfig config;
   config.enhancedShaderDebugging = false; // This causes issues for MoltenVK
   config.enableValidation = enableValidation;
@@ -55,6 +49,17 @@ std::shared_ptr<::igl::IDevice> createTestDevice(bool enableValidation) {
 #endif
   config.swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
   config.enableExtraLogs = enableValidation;
+
+  return config;
+}
+
+std::shared_ptr<::igl::IDevice> createTestDevice(const igl::vulkan::VulkanContextConfig& config) {
+#if IGL_PLATFORM_MACOS
+  ::igl::vulkan::setupMoltenVKEnvironment();
+#endif
+
+  std::shared_ptr<igl::IDevice> iglDev = nullptr;
+  Result ret;
 
   auto ctx = igl::vulkan::HWDevice::createContext(config, nullptr);
 
@@ -83,6 +88,10 @@ std::shared_ptr<::igl::IDevice> createTestDevice(bool enableValidation) {
   }
 
   return iglDev;
+}
+
+std::shared_ptr<::igl::IDevice> createTestDevice(bool enableValidation) {
+  return createTestDevice(getContextConfig(enableValidation));
 }
 
 } // namespace igl::tests::util::device::vulkan

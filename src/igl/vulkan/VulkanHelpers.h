@@ -71,11 +71,6 @@ VkResult ivkCreateDebugReportMessenger(const struct VulkanFunctionTable* vt,
                                        void* logUserData,
                                        VkDebugReportCallbackEXT* outMessenger);
 
-VkResult ivkCreateSemaphore(const struct VulkanFunctionTable* vt,
-                            VkDevice device,
-                            bool exportable,
-                            VkSemaphore* outSemaphore);
-
 /** @brief Creates a platform specific VkSurfaceKHR object. The surface creation functions
  * conditionally-compiled and guarded by their respective platform specific extension macros defined
  * by the Vulkan API. The current supported platforms, and their macros, are:
@@ -134,22 +129,6 @@ VkResult ivkCreateSwapchain(const struct VulkanFunctionTable* vt,
                             uint32_t width,
                             uint32_t height,
                             VkSwapchainKHR* outSwapchain);
-
-/// @brief Creates a Vulkan Sampler object with default values
-VkResult ivkCreateSampler(const struct VulkanFunctionTable* vt,
-                          VkDevice device,
-                          VkSampler* outSampler);
-
-VkSamplerCreateInfo ivkGetSamplerCreateInfo(VkFilter minFilter,
-                                            VkFilter magFilter,
-                                            VkSamplerMipmapMode mipmapMode,
-                                            VkSamplerAddressMode addressModeU,
-                                            VkSamplerAddressMode addressModeV,
-                                            VkSamplerAddressMode addressModeW,
-                                            float minLod,
-                                            float maxLod);
-
-VkSamplerYcbcrConversionCreateInfo ivkGetSamplerYcbcrCreateInfo(VkFormat format);
 
 /// @brief Returns VkImageViewCreateInfo with the R, G, B, and A components mapped to themselves
 /// (identity)
@@ -221,12 +200,6 @@ VkResult ivkCreateRenderPass(const struct VulkanFunctionTable* vt,
                              const VkSubpassDependency* dependency,
                              const VkRenderPassMultiviewCreateInfo* renderPassMultiview,
                              VkRenderPass* outRenderPass);
-
-VkResult ivkCreateShaderModuleFromSPIRV(const struct VulkanFunctionTable* vt,
-                                        VkDevice device,
-                                        const void* dataSPIRV,
-                                        size_t size,
-                                        VkShaderModule* outShaderModule);
 
 VkResult ivkCreateGraphicsPipeline(const struct VulkanFunctionTable* vt,
                                    VkDevice device,
@@ -305,12 +278,6 @@ VkResult ivkCreateDescriptorPool(const struct VulkanFunctionTable* vt,
                                  uint32_t numPoolSizes,
                                  const VkDescriptorPoolSize* poolSizes,
                                  VkDescriptorPool* outDescriptorPool);
-
-/// @brief Starts recording a command buffer that will be submitted only once (i.e. it cannot be
-/// reused)
-VkResult ivkBeginCommandBuffer(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer);
-
-VkResult ivkEndCommandBuffer(const struct VulkanFunctionTable* vt, VkCommandBuffer buffer);
 
 /// @brief Creates a VkSubmitInfo structure with an optional semaphore, used to signal when the
 /// command buffer for this batch have completed execution
@@ -423,8 +390,6 @@ VkPipelineLayoutCreateInfo ivkGetPipelineLayoutCreateInfo(uint32_t numLayouts,
 VkPushConstantRange ivkGetPushConstantRange(VkShaderStageFlags stageFlags,
                                             size_t offset,
                                             size_t size);
-
-VkViewport ivkGetViewport(float x, float y, float width, float height);
 
 VkRect2D ivkGetRect2D(int32_t x, int32_t y, uint32_t width, uint32_t height);
 

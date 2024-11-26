@@ -23,17 +23,14 @@ class Buffer;
 class PipelineState;
 class SamplerState;
 class Texture;
-class VulkanBuffer;
-class VulkanSampler;
-class VulkanTexture;
 
 struct BindingsBuffers {
   VkDescriptorBufferInfo buffers[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
 };
 
 struct BindingsTextures {
-  igl::vulkan::VulkanTexture* textures[IGL_TEXTURE_SAMPLERS_MAX] = {};
-  igl::vulkan::VulkanSampler* samplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
+  VkImageView textures[IGL_TEXTURE_SAMPLERS_MAX] = {};
+  VkSampler samplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
 };
 
 /** @brief Stores uniform and storage buffer bindings, as well as bindings for textures and sampler

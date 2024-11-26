@@ -19,26 +19,38 @@ public class SampleLib {
     System.loadLibrary("ColorSession");
   }
 
-  // should match with IDs in TinyRenderer.h
-  protected static final int gl3ID = 0;
-  protected static final int gl2ID = 1;
-  protected static final int vulkanID = 2;
-  protected static final String gl3Label = "OpenGL ES 3";
-  protected static final String gl2Label = "OpenGL ES 2";
-  protected static final String vulkanLabel = "Vulkan";
+  // Must match igl/Common.h
+  public static enum BackendFlavor {
+    Invalid,
+    OpenGL,
+    OpenGL_ES,
+    Metal,
+    Vulkan,
+    // @fb-only
+  }
 
-  protected static final BackendTypeContext[] backendTypeContexts =
-      new BackendTypeContext[] {
-        new BackendTypeContext(gl3ID, gl3Label),
-        new BackendTypeContext(gl2ID, gl2Label),
-        new BackendTypeContext(vulkanID, vulkanLabel),
-      };
+  // Must match igl/DeviceFeatures.h
+  public static class BackendVersion {
+    BackendFlavor flavor;
+    byte majorVersion;
+    byte minorVersion;
 
-  public static native void init(AssetManager assetManager, Surface surface);
+    public BackendVersion(BackendFlavor flavor, byte majorVersion, byte minorVersion) {
+      this.flavor = flavor;
+      this.majorVersion = majorVersion;
+      this.minorVersion = minorVersion;
+    }
+  }
 
-  public static native boolean isBackendTypeIDSupported(int backendTypeID);
+  public static native RenderSessionConfig[] getRenderSessionConfigs();
 
-  public static native void setActiveBackendTypeID(int backendTypeID);
+  public static native void init(
+      BackendVersion backendVersion,
+      int swapchainColorTextureFormat,
+      AssetManager assetManager,
+      Surface surface);
+
+  public static native void setActiveBackendVersion(BackendVersion backendVersion);
 
   public static native void surfaceChanged(Surface surface, int width, int height);
 
@@ -46,15 +58,22 @@ public class SampleLib {
 
   public static native void touchEvent(boolean isDown, float x, float y, float dx, float dy);
 
+  public static native void setClearColorValue(float r, float g, float b, float a);
+
+  public static native boolean isSRGBTextureFormat(int textureFormat);
+
   public static native void surfaceDestroyed(Surface surface);
 
-  protected static class BackendTypeContext {
-    int ID;
-    String label;
+  public static class RenderSessionConfig {
+    String displayName;
+    BackendVersion version;
+    int swapchainColorTextureFormat;
 
-    protected BackendTypeContext(int ID, String label) {
-      this.ID = ID;
-      this.label = label;
+    public RenderSessionConfig(
+        String displayName, BackendVersion version, int swapchainColorTextureFormat) {
+      this.displayName = displayName;
+      this.version = version;
+      this.swapchainColorTextureFormat = swapchainColorTextureFormat;
     }
   }
 }

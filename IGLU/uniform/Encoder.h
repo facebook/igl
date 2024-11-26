@@ -12,7 +12,7 @@
 #include <igl/Common.h>
 
 namespace igl {
-class IRenderCommandEncoder;
+
 class IComputeCommandEncoder;
 } // namespace igl
 

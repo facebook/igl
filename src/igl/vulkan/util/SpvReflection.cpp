@@ -10,7 +10,6 @@
 #include <spirv/unified1/spirv.h>
 
 #define IGL_COMMON_SKIP_CHECK
-#include <igl/Assert.h>
 #include <igl/Macros.h>
 
 namespace igl::vulkan::util {

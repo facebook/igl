@@ -7,9 +7,6 @@
 
 #include <igl/opengl/util/TextureFormat.h>
 
-#define IGL_COMMON_SKIP_CHECK
-#include <igl/Assert.h>
-
 namespace igl::opengl::util {
 
 // @fb-only

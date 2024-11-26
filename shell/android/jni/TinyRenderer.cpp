@@ -12,8 +12,6 @@
 #include <EGL/egl.h>
 #include <android/log.h>
 #include <android/native_window.h>
-#include <android/native_window_jni.h>
-#include <igl/IGL.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/egl/HWDevice.h>
 #include <igl/opengl/egl/PlatformDevice.h>
@@ -73,7 +71,8 @@ using namespace igl;
 void TinyRenderer::init(AAssetManager* mgr,
                         ANativeWindow* nativeWindow,
                         shell::IRenderSessionFactory& factory,
-                        BackendVersion backendVersion) {
+                        BackendVersion backendVersion,
+                        TextureFormat swapchainColorTextureFormat) {
   backendVersion_ = backendVersion;
   nativeWindow_ = nativeWindow;
   Result result;
@@ -100,11 +99,15 @@ void TinyRenderer::init(AAssetManager* mgr,
     IGL_DEBUG_ASSERT(nativeWindow != nullptr);
     vulkan::VulkanContextConfig config;
     config.terminateOnValidationError = true;
+    config.requestedSwapChainTextureFormat = swapchainColorTextureFormat;
     auto ctx = vulkan::HWDevice::createContext(config, nativeWindow);
 
-    auto devices = vulkan::HWDevice::queryDevices(
-        *ctx, HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), &result);
+    auto devices =
+        vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::Unknown), &result);
 
+    if (!result.isOk()) {
+      __android_log_print(ANDROID_LOG_ERROR, "igl", "Error: %s\n", result.message.c_str());
+    }
     IGL_DEBUG_ASSERT(result.isOk());
     width_ = static_cast<uint32_t>(ANativeWindow_getWidth(nativeWindow));
     height_ = static_cast<uint32_t>(ANativeWindow_getHeight(nativeWindow));
@@ -215,6 +218,7 @@ void TinyRenderer::render(float displayScale) {
 
   const ContextGuard guard(platform_->getDevice()); // wrap 'session_' operations
 
+  platform_->getDevice().setCurrentThread();
   session_->setPixelsPerPoint(displayScale);
   session_->update(std::move(surfaceTextures));
 }
@@ -239,6 +243,7 @@ void TinyRenderer::onSurfacesChanged(ANativeWindow* /*surface*/, int width, int 
 #if IGL_BACKEND_VULKAN
   if (backendVersion_.flavor == igl::BackendFlavor::Vulkan) {
     recreateSwapchain(nativeWindow_, false);
+    platform_->updatePreRotationMatrix();
   }
 #endif
 }

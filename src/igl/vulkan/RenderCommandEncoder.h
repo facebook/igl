@@ -95,7 +95,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
                                 uint32_t stride = 0) override;
 
   void setStencilReferenceValue(uint32_t value) override;
-  void setBlendColor(Color color) override;
+  void setBlendColor(const Color& color) override;
   void setDepthBias(float depthBias, float slopeScale, float clamp) override;
 
   [[nodiscard]] VkCommandBuffer getVkCommandBuffer() const {

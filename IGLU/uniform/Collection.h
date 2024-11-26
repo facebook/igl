@@ -16,8 +16,6 @@
 
 namespace iglu::uniform {
 
-class Encoder;
-
 // Collection
 //
 // Holds a collection of uniform Descriptor instances keyed by igl::NameHandle

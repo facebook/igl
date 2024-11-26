@@ -13,7 +13,6 @@
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
-#include <igl/vulkan/VulkanSampler.h>
 #include <igl/vulkan/VulkanTexture.h>
 
 namespace igl::vulkan {
@@ -76,10 +75,13 @@ void ResourcesBinder::bindSamplerState(uint32_t index, igl::vulkan::SamplerState
     return;
   }
 
-  igl::vulkan::VulkanSampler* newSampler = samplerState ? samplerState->sampler_.get() : nullptr;
+  igl::vulkan::VulkanSampler* newSampler = samplerState ? ctx_.samplers_.get(samplerState->sampler_)
+                                                        : nullptr;
 
-  if (bindingsTextures_.samplers[index] != newSampler) {
-    bindingsTextures_.samplers[index] = newSampler;
+  VkSampler sampler = newSampler ? newSampler->vkSampler : VK_NULL_HANDLE;
+
+  if (bindingsTextures_.samplers[index] != sampler) {
+    bindingsTextures_.samplers[index] = sampler;
     isDirtyFlags_ |= DirtyFlagBits_Textures;
   }
 }
@@ -116,7 +118,7 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
 
 #if IGL_DEBUG
   if (newTexture) {
-    const auto& img = newTexture->getVulkanImage();
+    const igl::vulkan::VulkanImage& img = newTexture->image_;
     IGL_DEBUG_ASSERT(img.samples_ == VK_SAMPLE_COUNT_1_BIT,
                      "Multisampled images cannot be sampled in shaders");
     if (bindPoint_ == VK_PIPELINE_BIND_POINT_GRAPHICS) {
@@ -131,8 +133,16 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
   }
 #endif // IGL_DEBUG
 
-  if (bindingsTextures_.textures[index] != newTexture) {
-    bindingsTextures_.textures[index] = newTexture;
+  // multisampled images cannot be directly accessed from shaders
+  const bool isTextureAvailable =
+      (newTexture != nullptr) &&
+      ((newTexture->image_.samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
+  const bool isSampledImage = isTextureAvailable && newTexture->image_.isSampledImage();
+
+  VkImageView imageView = isSampledImage ? newTexture->imageView_.vkImageView_ : VK_NULL_HANDLE;
+
+  if (bindingsTextures_.textures[index] != imageView) {
+    bindingsTextures_.textures[index] = imageView;
     isDirtyFlags_ |= DirtyFlagBits_Textures;
   }
 }

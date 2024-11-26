@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <IGLU/simdtypes/SimdTypes.h>
 #include <igl/IGL.h>
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
@@ -24,8 +25,16 @@ class HelloWorldSession : public RenderSession {
 
  private:
   std::shared_ptr<ICommandQueue> commandQueue_;
+  std::shared_ptr<IRenderPipelineState> pipelineState_;
   RenderPassDesc renderPass_;
+  std::shared_ptr<IShaderStages> shaderStages_;
+  std::shared_ptr<IVertexInputState> vertexInput0_;
+  std::shared_ptr<IFramebuffer> framebuffer_;
+  std::shared_ptr<ITexture> depthTexture_;
   std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
+  std::shared_ptr<IBuffer> vb0_;
+  std::shared_ptr<IBuffer> ib0_;
+  std::vector<UniformDesc> vertexUniformDescriptors_;
 };
 
 } // namespace igl::shell

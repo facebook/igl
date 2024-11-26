@@ -18,7 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
 #endif
 
 namespace igl::metal {
-class PlatformDevice;
 
 class Texture final : public ITexture {
   friend class Device;

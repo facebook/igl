@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/IGLSafeC.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanFeatures.h>
 
@@ -21,14 +20,29 @@ void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
     VkPhysicalDevice physicalDevice) noexcept {
   IGL_DEBUG_ASSERT(context.vf_.vkGetPhysicalDeviceFeatures2 != nullptr,
                    "Pointer to function vkGetPhysicalDeviceFeatures2() is nullptr");
-
+  uint32_t numExtensions = 0;
+  context.vf_.vkEnumerateDeviceExtensionProperties(
+      physicalDevice, nullptr, &numExtensions, nullptr);
+  extensions_.resize(numExtensions);
+  context.vf_.vkEnumerateDeviceExtensionProperties(
+      physicalDevice, nullptr, &numExtensions, extensions_.data());
+  assembleFeatureChain(context.config_);
   context.vf_.vkGetPhysicalDeviceFeatures2(physicalDevice, &VkPhysicalDeviceFeatures2_);
+}
+
+bool VulkanFeatures::hasExtension(const char* ext) const {
+  for (const VkExtensionProperties& props : extensions_) {
+    if (strcmp(ext, props.extensionName) == 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
   auto& features = VkPhysicalDeviceFeatures2_.features;
-  features.dualSrcBlend = VK_TRUE;
-  features.shaderInt16 = VK_TRUE;
+  features.dualSrcBlend = config_.enableDualSrcBlend ? VK_TRUE : VK_FALSE;
+  features.shaderInt16 = config_.enableShaderInt16 ? VK_TRUE : VK_FALSE;
   features.multiDrawIndirect = VK_TRUE;
   features.drawIndirectFirstInstance = VK_TRUE;
   features.depthBiasClamp = VK_TRUE;
@@ -53,7 +67,8 @@ void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
   }
 #endif
 
-  VkPhysicalDevice16BitStorageFeatures_.storageBuffer16BitAccess = VK_TRUE;
+  VkPhysicalDevice16BitStorageFeatures_.storageBuffer16BitAccess =
+      config_.enableStorageBuffer16BitAccess ? VK_TRUE : VK_FALSE;
 
 #if defined(VK_KHR_buffer_device_address) && VK_KHR_buffer_device_address
   if (config_.enableBufferDeviceAddress) {
@@ -62,7 +77,8 @@ void VulkanFeatures::enableDefaultFeatures1_1() noexcept {
 #endif
   VkPhysicalDeviceMultiviewFeatures_.multiview = VK_TRUE;
   VkPhysicalDeviceSamplerYcbcrConversionFeatures_.samplerYcbcrConversion = VK_TRUE;
-  VkPhysicalDeviceShaderDrawParametersFeatures_.shaderDrawParameters = VK_TRUE;
+  VkPhysicalDeviceShaderDrawParametersFeatures_.shaderDrawParameters =
+      config_.enableShaderDrawParameters ? VK_TRUE : VK_FALSE;
 }
 
 igl::Result VulkanFeatures::checkSelectedFeatures(
@@ -183,6 +199,7 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
   VkPhysicalDeviceSamplerYcbcrConversionFeatures_.pNext = nullptr;
   VkPhysicalDeviceShaderDrawParametersFeatures_.pNext = nullptr;
   VkPhysicalDeviceMultiviewFeatures_.pNext = nullptr;
+  VkPhysicalDeviceIndexTypeUint8Features_.pNext = nullptr;
 
 #if defined(VK_VERSION_1_2)
   VkPhysicalDeviceShaderFloat16Int8Features_.pNext = nullptr;
@@ -211,6 +228,12 @@ void VulkanFeatures::assembleFeatureChain(const VulkanContextConfig& config) noe
 #endif
   VkPhysicalDevice16BitStorageFeatures_.pNext = nullptr;
   ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDevice16BitStorageFeatures_);
+
+#if defined(VK_EXT_index_type_uint8) && VK_EXT_index_type_uint8
+  if (hasExtension(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)) {
+    ivkAddNext(&VkPhysicalDeviceFeatures2_, &VkPhysicalDeviceIndexTypeUint8Features_);
+  }
+#endif
 }
 
 VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept {
@@ -247,6 +270,8 @@ VulkanFeatures& VulkanFeatures::operator=(const VulkanFeatures& other) noexcept 
 #if defined(VK_VERSION_1_2)
   VkPhysicalDeviceShaderFloat16Int8Features_ = other.VkPhysicalDeviceShaderFloat16Int8Features_;
 #endif
+
+  extensions_ = other.extensions_;
 
   assembleFeatureChain(config_);
 

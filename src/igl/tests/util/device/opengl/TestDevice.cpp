@@ -7,7 +7,6 @@
 
 #include <igl/tests/util/device/opengl/TestDevice.h>
 
-#include <igl/Common.h>
 #include <igl/Macros.h>
 #include <igl/opengl/IContext.h>
 

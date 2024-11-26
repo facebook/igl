@@ -12,7 +12,6 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
-#include <igl/vulkan/VulkanRenderPassBuilder.h>
 #include <igl/vulkan/VulkanSemaphore.h>
 #include <igl/vulkan/VulkanTexture.h>
 
@@ -226,14 +225,14 @@ VkImage VulkanSwapchain::getDepthVkImage() const {
   if (!depthTexture_) {
     lazyAllocateDepthBuffer();
   }
-  return depthTexture_->getVulkanImage().getVkImage();
+  return depthTexture_->image_.getVkImage();
 }
 
 VkImageView VulkanSwapchain::getDepthVkImageView() const {
   if (!depthTexture_) {
     lazyAllocateDepthBuffer();
   }
-  return depthTexture_->getVulkanImageView().getVkImageView();
+  return depthTexture_->imageView_.getVkImageView();
 }
 
 void VulkanSwapchain::lazyAllocateDepthBuffer() const {

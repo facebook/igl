@@ -19,6 +19,7 @@ import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
+import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
 /// Simple view that sets up a GLES 2.0 rendering context
@@ -27,7 +28,8 @@ public class SampleView extends GLSurfaceView {
   private float lastTouchX = 0.0f;
   private float lastTouchY = 0.0f;
 
-  public SampleView(Context context, SampleLib.BackendVersion backendVersion) {
+  public SampleView(
+      Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
 
     super(context);
     // Uncomment to attach debugging
@@ -38,9 +40,12 @@ public class SampleView extends GLSurfaceView {
     // Set the view to be transluscent since we provide an alpha channel below.
     this.getHolder().setFormat(PixelFormat.TRANSLUCENT);
 
+    setEGLWindowSurfaceFactory(
+        new SurfaceFactory(SampleLib.isSRGBTextureFormat(swapchainColorTextureFormat)));
+
     setEGLConfigChooser(new ConfigChooser(backendVersion));
 
-    setRenderer(new Renderer(context, backendVersion));
+    setRenderer(new Renderer(context, backendVersion, swapchainColorTextureFormat));
   }
 
   @Override
@@ -111,6 +116,40 @@ public class SampleView extends GLSurfaceView {
     }
   }
 
+  private static class SurfaceFactory implements GLSurfaceView.EGLWindowSurfaceFactory {
+    final int EGL_GL_COLORSPACE_KHR = 0x309D;
+    final int EGL_GL_COLORSPACE_SRGB_KHR = 0x3089;
+    final int EGL_GL_COLORSPACE_LINEAR_KHR = 0x308A;
+
+    private boolean mIsSRGBColorSpace;
+
+    SurfaceFactory(boolean isSRGB) {
+      mIsSRGBColorSpace = isSRGB;
+    }
+
+    @Override
+    public EGLSurface createWindowSurface(
+        EGL10 egl10, EGLDisplay eglDisplay, EGLConfig eglConfig, Object nativeWindow) {
+
+      String eglExtensionString = egl10.eglQueryString(eglDisplay, egl10.EGL_EXTENSIONS);
+      if (!eglExtensionString.contains("EGL_KHR_gl_colorspace")) {
+        return egl10.eglCreateWindowSurface(eglDisplay, eglConfig, nativeWindow, null);
+      }
+      int[] configAttribs = {
+        EGL_GL_COLORSPACE_KHR,
+        (mIsSRGBColorSpace ? EGL_GL_COLORSPACE_SRGB_KHR : EGL_GL_COLORSPACE_LINEAR_KHR),
+        EGL10.EGL_NONE
+      };
+
+      return egl10.eglCreateWindowSurface(eglDisplay, eglConfig, nativeWindow, configAttribs);
+    }
+
+    @Override
+    public void destroySurface(EGL10 egl10, EGLDisplay eglDisplay, EGLSurface eglSurface) {
+      egl10.eglDestroySurface(eglDisplay, eglSurface);
+    }
+  }
+
   /// Config chooser: handles specifying the requirements for the EGL config and choosing the
   // correct one.
   private static class ConfigChooser implements GLSurfaceView.EGLConfigChooser {
@@ -156,14 +195,17 @@ public class SampleView extends GLSurfaceView {
   private static class Renderer implements GLSurfaceView.Renderer {
     private final Context mContext;
     private final SampleLib.BackendVersion mBackendVersion;
+    private final int mSwapchainColorTextureFormat;
 
-    Renderer(Context context, SampleLib.BackendVersion backendVersion) {
+    Renderer(
+        Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
       mContext = context;
       mBackendVersion = backendVersion;
+      mSwapchainColorTextureFormat = swapchainColorTextureFormat;
     }
 
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-      SampleLib.init(mBackendVersion, mContext.getAssets(), null);
+      SampleLib.init(mBackendVersion, mSwapchainColorTextureFormat, mContext.getAssets(), null);
     }
 
     public void onSurfaceChanged(GL10 gl, int width, int height) {

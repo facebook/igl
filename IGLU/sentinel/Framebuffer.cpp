@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @MARK:COVERAGE_EXCLUDE_FILE
+
 #include <IGLU/sentinel/Framebuffer.h>
 
 #include <IGLU/sentinel/Assert.h>

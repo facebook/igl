@@ -15,10 +15,8 @@
 
 namespace igl {
 
-class ICommandBuffer;
 class IComputePipelineState;
 class ISamplerState;
-class ITexture;
 
 namespace vulkan {
 

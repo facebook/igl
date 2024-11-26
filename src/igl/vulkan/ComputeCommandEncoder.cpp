@@ -13,7 +13,6 @@
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
-#include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanTexture.h>
 
 namespace igl::vulkan {
@@ -179,7 +178,7 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
 
   const igl::vulkan::Texture* tex = static_cast<igl::vulkan::Texture*>(texture);
   const igl::vulkan::VulkanTexture& vkTex = tex->getVulkanTexture();
-  const igl::vulkan::VulkanImage* vkImage = &vkTex.getVulkanImage();
+  const igl::vulkan::VulkanImage* vkImage = &vkTex.image_;
 
   igl::vulkan::transitionToGeneral(cmdBuffer_, texture);
 

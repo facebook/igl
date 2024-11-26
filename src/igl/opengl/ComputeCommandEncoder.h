@@ -17,13 +17,9 @@ namespace igl {
 class ICommandBuffer;
 class IComputePipelineState;
 class ISamplerState;
-class ITexture;
 namespace opengl {
 
-class ArrayBuffer;
 class Buffer;
-class UniformBuffer;
-class ComputeCommandAdapter;
 
 class ComputeCommandEncoder final : public IComputeCommandEncoder, public WithContext {
  public:

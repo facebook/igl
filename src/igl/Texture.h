@@ -8,7 +8,6 @@
 #pragma once
 
 #include <algorithm>
-#include <igl/ColorSpace.h>
 #include <igl/CommandQueue.h>
 #include <igl/Common.h>
 #include <igl/ITrackedResource.h>

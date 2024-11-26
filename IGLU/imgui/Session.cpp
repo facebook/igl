@@ -229,8 +229,8 @@ Session::Renderer::Renderer(igl::IDevice& device) {
   _linearSampler = device.createSamplerState(igl::SamplerStateDesc::newLinear(), nullptr);
 
   { // init fonts
-    unsigned char* pixels;
-    int width, height;
+    unsigned char* pixels = nullptr;
+    int width = 0, height = 0;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
     igl::TextureDesc desc = igl::TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
                                                     width,

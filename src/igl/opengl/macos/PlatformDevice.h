@@ -19,7 +19,6 @@ class ViewTextureTarget;
 namespace macos {
 
 class Device;
-class TextureBuffer;
 
 class PlatformDevice : public opengl::PlatformDevice {
  public:
@@ -50,6 +49,11 @@ class PlatformDevice : public opengl::PlatformDevice {
   /// @return An accurate pixel format that is suitable for rendering or invalid if failed.
   TextureFormat getNativeDrawableTextureFormat(Result* outResult);
 
+  /// Set a texture format that is suitable to render a given drawable surface.
+  /// @param format The pixel format that is suitable for rendering
+  /// @param outResult Optional result.
+  void setNativeDrawableTextureFormat(TextureFormat format, Result* outResult);
+
   /// Creates a texture from a native PixelBuffer.
   /// @param sourceImage source image
   /// @param an OpenGL texture cache
@@ -66,6 +70,7 @@ class PlatformDevice : public opengl::PlatformDevice {
 
  private:
   std::shared_ptr<ViewTextureTarget> drawableTexture_;
+  igl::TextureFormat drawableTextureFormat_ = igl::TextureFormat::RGBA_SRGB;
 };
 } // namespace macos
 } // namespace igl::opengl

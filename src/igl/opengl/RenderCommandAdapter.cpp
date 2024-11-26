@@ -10,10 +10,7 @@
 
 #include <algorithm>
 #include <igl/opengl/Buffer.h>
-#include <igl/opengl/CommandBuffer.h>
 #include <igl/opengl/DepthStencilState.h>
-#include <igl/opengl/Device.h>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/Framebuffer.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/RenderCommandEncoder.h>
@@ -22,7 +19,6 @@
 #include <igl/opengl/Shader.h>
 #include <igl/opengl/Texture.h>
 #include <igl/opengl/VertexArrayObject.h>
-#include <igl/opengl/VertexInputState.h>
 
 #define SET_DIRTY(dirtyMap, index) dirtyMap.set(index)
 #define CLEAR_DIRTY(dirtyMap, index) dirtyMap.reset(index)
@@ -97,13 +93,13 @@ void RenderCommandAdapter::setStencilReferenceValue(uint32_t value) {
   setDirty(StateMask::DEPTH_STENCIL);
 }
 
-void RenderCommandAdapter::setBlendColor(Color color) {
+void RenderCommandAdapter::setBlendColor(const Color& color) {
   getContext().blendColor(color.r, color.g, color.b, color.a);
 }
 
-void RenderCommandAdapter::setDepthBias(float depthBias, float slopeScale) {
+void RenderCommandAdapter::setDepthBias(float depthBias, float slopeScale, float clamp) {
   getContext().setEnabled(true, GL_POLYGON_OFFSET_FILL);
-  getContext().polygonOffset(slopeScale, depthBias);
+  getContext().polygonOffsetClamp(slopeScale, depthBias, clamp);
 }
 
 void RenderCommandAdapter::clearVertexBuffers() {
@@ -141,9 +137,10 @@ void RenderCommandAdapter::setUniform(const UniformDesc& uniformDesc,
 
 void RenderCommandAdapter::setUniformBuffer(Buffer* buffer,
                                             size_t offset,
+                                            size_t size,
                                             uint32_t index,
                                             Result* outResult) {
-  uniformAdapter_.setUniformBuffer(buffer, offset, index, outResult);
+  uniformAdapter_.setUniformBuffer(buffer, offset, size, index, outResult);
 }
 
 void RenderCommandAdapter::clearVertexTexture() {
@@ -228,7 +225,7 @@ void RenderCommandAdapter::clearDependentResources(
   }
 
   if (curStateOpenGL && newStateOpenGL){
-    newStateOpenGL->savePrePipelineStateAttributesLocations(*curStateOpenGL);
+    newStateOpenGL->savePrevPipelineStateAttributesLocations(*curStateOpenGL);
   }
 
   if (!newStateOpenGL || !curStateOpenGL->matchesVertexInputState(*newStateOpenGL)) {
@@ -355,7 +352,7 @@ void RenderCommandAdapter::willDraw() {
         CLEAR_DIRTY(vertexBuffersDirty_, bufferIndex);
       }
     }
-    pipelineState->unbindPrePipelineVertexAttributes();
+    pipelineState->unbindPrevPipelineVertexAttributes();
     if (isDirty(StateMask::PIPELINE)) {
       pipelineState->bind();
       clearDirty(StateMask::PIPELINE);

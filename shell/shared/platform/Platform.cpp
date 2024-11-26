@@ -54,11 +54,20 @@ std::shared_ptr<ITexture> Platform::loadTexture(const char* filename,
                                                 igl::TextureFormat format,
                                                 igl::TextureDesc::TextureUsageBits usage) {
   auto imageData = getImageLoader().loadImageData(filename);
+
+  return loadTexture(imageData, calculateMipmapLevels, format, usage, filename);
+}
+
+std::shared_ptr<ITexture> Platform::loadTexture(const ImageData& imageData,
+                                                bool calculateMipmapLevels,
+                                                igl::TextureFormat format,
+                                                igl::TextureDesc::TextureUsageBits usage,
+                                                const char* debugName) {
   igl::TextureDesc texDesc =
       igl::TextureDesc::new2D(format, imageData.desc.width, imageData.desc.height, usage);
   texDesc.numMipLevels =
       calculateMipmapLevels ? igl::TextureDesc::calcNumMipLevels(texDesc.width, texDesc.height) : 1;
-  texDesc.debugName = filename;
+  texDesc.debugName = debugName;
 
   Result res;
   auto tex = getDevice().createTexture(texDesc, &res);

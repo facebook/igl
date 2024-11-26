@@ -35,10 +35,6 @@ struct BMPHeader {
   uint32_t importantColors = 0; // Number of important colors used
 } __attribute__((packed));
 
-bool shouldFlipY(const igl::IDevice& device) {
-  return device.getBackendType() != igl::BackendType::OpenGL;
-}
-
 struct BufferOffsets {
   size_t r;
   size_t g;
@@ -80,9 +76,10 @@ bool isSupportedBitmapTextureFormat(igl::TextureFormat format) {
   }
 }
 
-void writeBitmap(const char* filename,
+void writeBitmap(std::ostream& stream,
                  std::shared_ptr<igl::ITexture> texture,
-                 igl::IDevice& device) {
+                 igl::IDevice& device,
+                 bool flipY) {
   IGL_DEBUG_ASSERT(texture);
   IGL_DEBUG_ASSERT(texture->getType() == igl::TextureType::TwoD);
   IGL_DEBUG_ASSERT(isSupportedBitmapTextureFormat(texture->getFormat()));
@@ -103,9 +100,9 @@ void writeBitmap(const char* filename,
   const auto& buffer = textureAccessor->getBytes();
   const auto size = texture->getSize();
 
-  TextureRangeDesc textureRange = texture->getFullRange();
+  const TextureRangeDesc textureRange = texture->getFullRange();
   const auto& properties = texture->getProperties();
-  uint32_t bytesPerRow = properties.getBytesPerRow(textureRange);
+  const uint32_t bytesPerRow = properties.getBytesPerRow(textureRange);
 
   std::vector<uint8_t> imageData;
   imageData.reserve(size.width * size.height * 3);
@@ -113,10 +110,9 @@ void writeBitmap(const char* filename,
   IGL_DEBUG_ASSERT(buffer.size() == size.height * bytesPerRow);
 
   const auto bufferOffsets = getBufferOffsets(texture->getFormat());
-  const bool flipY = shouldFlipY(device);
 
   for (size_t y = 0; y < size.height; ++y) {
-    size_t row = flipY ? size.height - y - 1 : y;
+    const size_t row = flipY ? size.height - y - 1 : y;
     for (size_t byte = 0; byte < bytesPerRow; byte += 4) {
       const size_t index = row * bytesPerRow + byte;
       const uint8_t r = buffer[index + bufferOffsets.r];
@@ -129,17 +125,11 @@ void writeBitmap(const char* filename,
     }
   }
 
-  writeBitmap(filename, static_cast<const uint8_t*>(imageData.data()), size.width, size.height);
+  writeBitmap(stream, static_cast<const uint8_t*>(imageData.data()), size.width, size.height);
 }
 
-void writeBitmap(const char* filename, const uint8_t* imageData, uint32_t width, uint32_t height) {
-  std::ofstream file;
-  file.open(filename, std::ios::out | std::ios::binary);
-  if (!IGL_DEBUG_VERIFY(file)) {
-    return;
-  }
-
-  uint32_t imageSize = width * height * 3;
+void writeBitmap(std::ostream& stream, const uint8_t* imageData, uint32_t width, uint32_t height) {
+  const uint32_t imageSize = width * height * 3;
 
   BMPHeader header{
       .fileSize = static_cast<uint32_t>(sizeof(BMPHeader) + imageSize),
@@ -148,9 +138,8 @@ void writeBitmap(const char* filename, const uint8_t* imageData, uint32_t width,
       .imageSizeBytes = static_cast<uint32_t>(imageSize),
   };
 
-  file.write(reinterpret_cast<const char*>(&header), sizeof(header));
-  file.write(reinterpret_cast<const char*>(imageData), imageSize);
-  file.close();
+  stream.write(reinterpret_cast<const char*>(&header), sizeof(header));
+  stream.write(reinterpret_cast<const char*>(imageData), imageSize);
 }
 
 } // namespace igl::iglu

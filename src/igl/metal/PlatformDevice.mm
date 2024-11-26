@@ -33,6 +33,7 @@ PlatformDevice::~PlatformDevice() {
 std::shared_ptr<SamplerState> PlatformDevice::createSamplerState(const SamplerStateDesc& desc,
                                                                  Result* outResult) const {
   MTLSamplerDescriptor* metalDesc = [MTLSamplerDescriptor new];
+  metalDesc.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
   metalDesc.minFilter = SamplerState::convertMinMagFilter(desc.minFilter);
   metalDesc.magFilter = SamplerState::convertMinMagFilter(desc.magFilter);
   metalDesc.mipFilter = SamplerState::convertMipFilter(desc.mipFilter);

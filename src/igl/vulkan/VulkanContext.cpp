@@ -43,7 +43,6 @@
 #include <igl/vulkan/VulkanExtensions.h>
 #include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
-#include <igl/vulkan/VulkanSampler.h>
 #include <igl/vulkan/VulkanSemaphore.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/VulkanTexture.h>
@@ -361,6 +360,9 @@ struct VulkanContextImpl final {
   Pool<BindGroupBufferTag, BindGroupMetadataBuffers> bindGroupBuffersPool_;
   Pool<BindGroupTextureTag, BindGroupMetadataTextures> bindGroupTexturesPool_;
 
+  SamplerHandle dummySampler_ = {};
+  TextureHandle dummyTexture_ = {};
+
   igl::vulkan::DescriptorPoolsArena& getOrCreateArena_CombinedImageSamplers(
       const VulkanContext& ctx,
       VkDescriptorSetLayout dsl,
@@ -464,19 +466,17 @@ VulkanContext::~VulkanContext() {
   pimpl_->bindGroupTexturesPool_.clear();
   pimpl_->bindGroupBuffersPool_.clear();
 
+  destroy(pimpl_->dummySampler_);
+  destroy(pimpl_->dummyTexture_);
+
+  pruneTextures();
+
 #if IGL_DEBUG
-  for (const auto& t : textures_.objects_) {
-    if (t.obj_.use_count() > 1) {
-      IGL_DEBUG_ABORT("Leaked texture detected! %u %s",
-                      t.obj_->getTextureId(),
-                      t.obj_->getVulkanImage().name_.c_str());
-    }
+  if (textures_.numObjects()) {
+    IGL_LOG_ERROR("Leaked %u textures\n", textures_.numObjects());
   }
-  for (const auto& s : samplers_.objects_) {
-    if (s.obj_.use_count() > 1) {
-      IGL_DEBUG_ABORT(
-          "Leaked sampler detected! %u %s", s.obj_->samplerId_, s.obj_->debugName_.c_str());
-    }
+  if (samplers_.numObjects()) {
+    IGL_LOG_ERROR("Leaked %u samplers\n", samplers_.numObjects());
   }
 #endif // IGL_DEBUG
   textures_.clear();
@@ -549,7 +549,7 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
                                    const char* IGL_NULLABLE* IGL_NULLABLE extraExtensions) {
   // Enumerate all instance extensions
   extensions_.enumerate(vf_);
-  extensions_.enableCommonExtensions(VulkanExtensions::ExtensionType::Instance, config_);
+  extensions_.enableCommonInstanceExtensions(config_);
   for (size_t index = 0; index < numExtraExtensions; ++index) {
     extensions_.enable(extraExtensions[index], VulkanExtensions::ExtensionType::Instance);
   }
@@ -733,7 +733,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   }
 #endif
 
-  extensions_.enableCommonExtensions(VulkanExtensions::ExtensionType::Device, config_);
+  extensions_.enableCommonDeviceExtensions(config_);
   // Enable extra device extensions
   for (size_t i = 0; i < numExtraDeviceExtensions; i++) {
     extensions_.enable(extraDeviceExtensions[i], VulkanExtensions::ExtensionType::Device);
@@ -913,12 +913,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     if (!IGL_DEBUG_VERIFY(imageView.valid())) {
       return Result(Result::Code::InvalidOperation, "Cannot create VulkanImageView");
     }
-    const TextureHandle dummyTexture =
+    pimpl_->dummyTexture_ =
         textures_.create(std::make_shared<VulkanTexture>(std::move(image), std::move(imageView)));
     IGL_DEBUG_ASSERT(textures_.numObjects() == 1);
     const uint32_t pixel = 0xFF000000;
     stagingDevice_->imageData(
-        (*textures_.get(dummyTexture))->getVulkanImage(),
+        (*textures_.get(pimpl_->dummyTexture_))->image_,
         TextureType::TwoD,
         TextureRangeDesc::new2D(0, 0, 1, 1),
         TextureFormatProperties::fromTextureFormat(TextureFormat::RGBA_UNorm8),
@@ -927,19 +927,30 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   }
 
   // default sampler
-  (void)samplers_.create(
-      std::make_shared<VulkanSampler>(*this,
-                                      device,
-                                      ivkGetSamplerCreateInfo(VK_FILTER_LINEAR,
-                                                              VK_FILTER_LINEAR,
-                                                              VK_SAMPLER_MIPMAP_MODE_NEAREST,
-                                                              VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                                              VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                                              VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                                              0.0f,
-                                                              0.0f),
-                                      VK_FORMAT_UNDEFINED,
-                                      "Sampler: default"));
+  pimpl_->dummySampler_ = createSampler(
+      {
+          .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+          .pNext = nullptr,
+          .flags = 0,
+          .magFilter = VK_FILTER_LINEAR,
+          .minFilter = VK_FILTER_LINEAR,
+          .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+          .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+          .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+          .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+          .mipLodBias = 0.0f,
+          .anisotropyEnable = VK_FALSE,
+          .maxAnisotropy = 0.0f,
+          .compareEnable = VK_FALSE,
+          .compareOp = VK_COMPARE_OP_ALWAYS,
+          .minLod = 0.0f,
+          .maxLod = 0.0f,
+          .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+          .unnormalizedCoordinates = VK_FALSE,
+      },
+      VK_FORMAT_UNDEFINED,
+      nullptr,
+      "Sampler: default");
   IGL_DEBUG_ASSERT(samplers_.numObjects() == 1);
 
   growBindlessDescriptorPool(pimpl_->currentMaxBindlessTextures_,
@@ -1217,6 +1228,46 @@ VulkanImage VulkanContext::createImage(VkImageType imageType,
           debugName};
 }
 
+// @fb-only
+// @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+  // @fb-only
+          // @fb-only
+          // @fb-only
+          // @fb-only
+          // @fb-only
+          // @fb-only
+    // @fb-only
+  // @fb-only
+  // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+                                       // @fb-only
+// @fb-only
+// @fb-only
+
 std::unique_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
     int32_t fileDescriptor,
     uint64_t memoryAllocationSize,
@@ -1252,6 +1303,20 @@ std::unique_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
                                        debugName);
 }
 
+void VulkanContext::pruneTextures() {
+  // here we remove deleted textures - everything which has only 1 reference is owned by this
+  // context and can be released safely
+
+  // textures
+  {
+    for (uint32_t i = 1; i < (uint32_t)textures_.objects_.size(); i++) {
+      if (textures_.objects_[i].obj_ && textures_.objects_[i].obj_.use_count() == 1) {
+        textures_.destroy(i);
+      }
+    }
+  }
+}
+
 VkResult VulkanContext::checkAndUpdateDescriptorSets() {
   if (!awaitingCreation_) {
     // nothing to update here
@@ -1261,31 +1326,7 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
   // newly created resources can be used immediately - make sure they are put into descriptor sets
   IGL_PROFILER_FUNCTION();
 
-  // here we remove deleted textures and samplers - everything which has only 1 reference is owned
-  // by this context and can be released safely
-
-  // textures
-  {
-    while (textures_.objects_.size() > 1 && textures_.objects_.back().obj_.use_count() == 1) {
-      textures_.objects_.pop_back();
-    }
-    for (uint32_t i = 1; i < (uint32_t)textures_.objects_.size(); i++) {
-      if (textures_.objects_[i].obj_ && textures_.objects_[i].obj_.use_count() == 1) {
-        textures_.destroy(i);
-      }
-    }
-  }
-  // samplers
-  {
-    while (samplers_.objects_.size() > 1 && samplers_.objects_.back().obj_.use_count() == 1) {
-      samplers_.objects_.pop_back();
-    }
-    for (uint32_t i = 1; i < (uint32_t)samplers_.objects_.size(); i++) {
-      if (samplers_.objects_[i].obj_ && samplers_.objects_[i].obj_.use_count() == 1) {
-        samplers_.destroy(i);
-      }
-    }
-  }
+  pruneTextures();
 
   // update Vulkan bindless descriptor sets here
   if (!config_.enableDescriptorIndexing) {
@@ -1318,7 +1359,7 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
 
   // use the dummy texture/sampler to avoid sparse array
   VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
-  VkSampler dummySampler = samplers_.objects_[0].obj_->vkSampler_;
+  VkSampler dummySampler = samplers_.objects_[0].obj_.vkSampler;
 
   for (const auto& entry : textures_.objects_) {
     const VulkanTexture* texture = entry.obj_.get();
@@ -1351,9 +1392,9 @@ VkResult VulkanContext::checkAndUpdateDescriptorSets() {
   infoSamplers.reserve(samplers_.objects_.size());
 
   for (const auto& entry : samplers_.objects_) {
-    const VulkanSampler* sampler = entry.obj_.get();
+    const VulkanSampler* sampler = &entry.obj_;
     infoSamplers.push_back(
-        {sampler ? sampler->vkSampler_ : dummySampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED});
+        {sampler ? sampler->vkSampler : dummySampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED});
   }
 
   std::vector<VkWriteDescriptorSet> write;
@@ -1433,28 +1474,39 @@ std::shared_ptr<VulkanTexture> VulkanContext::createTextureFromVkImage(
   return createTexture(std::move(iglImage), std::move(imageView), debugName);
 }
 
-std::shared_ptr<VulkanSampler> VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
-                                                            VkFormat yuvVkFormat,
-                                                            igl::Result* IGL_NULLABLE outResult,
-                                                            const char* IGL_NULLABLE
-                                                                debugName) const {
-  IGL_PROFILER_FUNCTION();
+SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
+                                           VkFormat yuvVkFormat,
+                                           igl::Result* IGL_NULLABLE outResult,
+                                           const char* IGL_NULLABLE debugName) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  const SamplerHandle handle = samplers_.create(
-      std::make_shared<VulkanSampler>(*this, device_->getVkDevice(), ci, yuvVkFormat, debugName));
+  VkSamplerCreateInfo cInfo = ci;
+  VkSamplerYcbcrConversionInfo conversionInfo{};
 
-  std::shared_ptr<VulkanSampler> sampler = *samplers_.get(handle);
-
-  if (!IGL_DEBUG_VERIFY(sampler)) {
-    Result::setResult(outResult, Result::Code::InvalidOperation);
-    return nullptr;
+  if (yuvVkFormat != VK_FORMAT_UNDEFINED) {
+    conversionInfo = getOrCreateYcbcrConversionInfo(yuvVkFormat);
+    cInfo.pNext = &conversionInfo;
+    // must be CLAMP_TO_EDGE
+    // https://vulkan.lunarg.com/doc/view/1.3.268.0/windows/1.3-extensions/vkspec.html#VUID-VkSamplerCreateInfo-addressModeU-01646
+    cInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    cInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    cInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    cInfo.anisotropyEnable = VK_FALSE;
+    cInfo.unnormalizedCoordinates = VK_FALSE;
   }
 
-  sampler->samplerId_ = handle.index();
+  VkDevice device = getVkDevice();
+  VulkanSampler sampler;
+  VK_ASSERT(vf_.vkCreateSampler(device, &cInfo, nullptr, &sampler.vkSampler));
+  VK_ASSERT(ivkSetDebugObjectName(
+      &vf_, device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.vkSampler, debugName));
+  const SamplerHandle handle = samplers_.create(std::move(sampler));
+
+  samplers_.get(handle)->samplerId = handle.index();
 
   awaitingCreation_ = true;
 
-  return sampler;
+  return handle;
 }
 
 void VulkanContext::querySurfaceCapabilities() {
@@ -1598,7 +1650,7 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
 
   // use the dummy texture/sampler to avoid sparse array
   VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
-  VkSampler dummySampler = samplers_.objects_[0].obj_->vkSampler_;
+  VkSampler dummySampler = samplers_.objects_[0].obj_.vkSampler;
 
   const bool isGraphics = bindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
 
@@ -1606,22 +1658,19 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
     IGL_DEBUG_ASSERT(d.descriptorSet == kBindPoint_CombinedImageSamplers);
     const uint32_t loc = d.bindingLocation;
     IGL_DEBUG_ASSERT(loc < IGL_TEXTURE_SAMPLERS_MAX);
-    igl::vulkan::VulkanTexture* texture = data.textures[loc];
-    if (texture && isGraphics) {
+    VkImageView texture = data.textures[loc];
+    const bool hasTexture = texture != VK_NULL_HANDLE;
+    if (hasTexture && isGraphics) {
       IGL_DEBUG_ASSERT(data.samplers[loc], "A sampler should be bound to every bound texture slot");
     }
-    VkSampler sampler = data.samplers[loc] ? data.samplers[loc]->vkSampler_ : dummySampler;
-    // multisampled images cannot be directly accessed from shaders
-    const bool isTextureAvailable =
-        (texture != nullptr) &&
-        ((texture->image_.samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
-    const bool isSampledImage = isTextureAvailable && texture->image_.isSampledImage();
+    VkSampler sampler = data.samplers[loc] ? data.samplers[loc] : dummySampler;
     writes[numWrites++] = ivkGetWriteDescriptorSet_ImageInfo(
         dset, loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &infoSampledImages[numImages]);
-    infoSampledImages[numImages++] = {isSampledImage ? sampler : dummySampler,
-                                      isSampledImage ? texture->imageView_.getVkImageView()
-                                                     : dummyImageView,
-                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    infoSampledImages[numImages++] = VkDescriptorImageInfo{
+        .sampler = hasTexture ? sampler : dummySampler,
+        .imageView = hasTexture ? texture : dummyImageView,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
   }
 
   if (numWrites) {
@@ -1760,20 +1809,27 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
     return {};
   }
 
-  VkSamplerYcbcrConversionCreateInfo ciYcbcr = ivkGetSamplerYcbcrCreateInfo(format);
-
-  if (midpoint) {
-    ciYcbcr.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
-    ciYcbcr.yChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
-  } else {
-    ciYcbcr.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    ciYcbcr.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-  }
+  const VkSamplerYcbcrConversionCreateInfo ciYcbcr = {
+      .sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
+      .format = format,
+      .ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709,
+      .ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
+      .components =
+          {
+              VK_COMPONENT_SWIZZLE_IDENTITY,
+              VK_COMPONENT_SWIZZLE_IDENTITY,
+              VK_COMPONENT_SWIZZLE_IDENTITY,
+              VK_COMPONENT_SWIZZLE_IDENTITY,
+          },
+      .xChromaOffset = midpoint ? VK_CHROMA_LOCATION_MIDPOINT : VK_CHROMA_LOCATION_COSITED_EVEN,
+      .yChromaOffset = midpoint ? VK_CHROMA_LOCATION_MIDPOINT : VK_CHROMA_LOCATION_COSITED_EVEN,
+      .chromaFilter = VK_FILTER_LINEAR,
+      .forceExplicitReconstruction = VK_FALSE,
+  };
 
   VkSamplerYcbcrConversionInfo info = {
-      VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO,
-      nullptr,
-      VK_NULL_HANDLE,
+      .sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO,
+      .conversion = VK_NULL_HANDLE,
   };
   vf_.vkCreateSamplerYcbcrConversion(getVkDevice(), &ciYcbcr, nullptr, &info.conversion);
 
@@ -1895,8 +1951,9 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
             ? static_cast<igl::vulkan::Texture*>(desc.textures[loc].get())->getVulkanTexture()
             : *textures_.objects_[0].obj_; // use a dummy texture when necessary
     const igl::vulkan::VulkanSampler& sampler =
-        desc.samplers[loc] ? *static_cast<igl::vulkan::SamplerState&>(*desc.samplers[loc]).sampler_
-                           : *samplers_.objects_[0].obj_; // use a dummy sampler when necessary
+        desc.samplers[loc]
+            ? *samplers_.get(static_cast<igl::vulkan::SamplerState&>(*desc.samplers[loc]).sampler_)
+            : samplers_.objects_[0].obj_; // use a dummy sampler when necessary
 
     // multisampled images cannot be directly accessed from shaders
     const bool isTextureAvailable =
@@ -1911,7 +1968,7 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
     writes[numWrites] = ivkGetWriteDescriptorSet_ImageInfo(
         metadata.dset, loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &images[numWrites]);
     images[numWrites++] = {
-        sampler.vkSampler_,
+        sampler.vkSampler,
         isSampledImage ? texture.imageView_.getVkImageView() : dummyImageView,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
     };
@@ -2115,11 +2172,28 @@ void VulkanContext::destroy(igl::BindGroupBufferHandle handle) {
 }
 
 void VulkanContext::destroy(igl::SamplerHandle handle) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+
   if (handle.empty()) {
     return;
   }
 
+  deferredTask(std::packaged_task<void()>(
+      [vf = &vf_, device = getVkDevice(), sampler = samplers_.get(handle)->vkSampler]() {
+        vf->vkDestroySampler(device, sampler, nullptr);
+      }));
+
   samplers_.destroy(handle);
+}
+
+void VulkanContext::destroy(igl::TextureHandle handle) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+
+  if (handle.empty()) {
+    return;
+  }
+
+  textures_.destroy(handle);
 }
 
 VkDescriptorSet VulkanContext::getBindGroupDescriptorSet(igl::BindGroupTextureHandle handle) const {

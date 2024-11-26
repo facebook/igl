@@ -106,13 +106,16 @@ class ComputeCommandEncoderTest : public ::testing::Test {
     auto computeEncoder = cmdBuffer->createComputeCommandEncoder();
     ASSERT_TRUE(computeEncoder != nullptr);
 
+    computeEncoder->insertDebugEventLabel("Running ComputeCommandEncoderTest...");
+
     computeEncoder->bindComputePipelineState(computePipelineState);
     computeEncoder->bindBuffer(igl::tests::data::shader::simpleComputeInputIndex, bufferIn.get());
     computeEncoder->bindBuffer(igl::tests::data::shader::simpleComputeOutputIndex, bufferOut.get());
 
     const Dimensions threadgroupSize(dataIn.size(), 1, 1);
     const Dimensions threadgroupCount(1, 1, 1);
-    computeEncoder->dispatchThreadGroups(threadgroupCount, threadgroupSize);
+    computeEncoder->dispatchThreadGroups(
+        threadgroupCount, threadgroupSize, {.buffers = {bufferIn.get()}});
     computeEncoder->endEncoding();
     ret = computePipelineState;
   }

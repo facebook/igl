@@ -9,22 +9,16 @@
 
 #include <igl/CommandBuffer.h>
 #include <igl/RenderPass.h>
-#include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/CommandQueue.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/ComputePipelineState.h>
 #include <igl/vulkan/Device.h>
-#include <igl/vulkan/PlatformDevice.h>
-#include <igl/vulkan/RenderPipelineState.h>
-#include <igl/vulkan/SamplerState.h>
-#include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanDevice.h>
 #include <igl/vulkan/VulkanFramebuffer.h>
 #include <igl/vulkan/VulkanImage.h>
-#include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanStagingDevice.h>
 #include <igl/vulkan/VulkanTexture.h>
 
@@ -107,7 +101,7 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* Not Used */,
                                      imageRegion,
                                      vkTex.getProperties(),
                                      VK_FORMAT_R8G8B8A8_UNORM,
-                                     vkTex.getVulkanTexture().getVulkanImage().imageLayout_,
+                                     vkTex.getVulkanTexture().image_.imageLayout_,
                                      pixelBytes,
                                      static_cast<uint32_t>(bytesPerRow),
                                      true); // Flip the image vertically
@@ -171,7 +165,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
                         VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
 
   // 2. Transition src into TRANSFER_SRC_OPTIMAL
-  srcVkTex.getVulkanTexture().getVulkanImage().transitionLayout(
+  srcVkTex.getVulkanTexture().image_.transitionLayout(
       cmdBuf,
       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
       VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // Wait for all previous operation to
@@ -193,14 +187,14 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
                          &copy);
 
   // 4. Transition images back
-  srcVkTex.getVulkanTexture().getVulkanImage().transitionLayout(
+  srcVkTex.getVulkanTexture().image_.transitionLayout(
       cmdBuf,
       VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
       VK_PIPELINE_STAGE_TRANSFER_BIT, // Wait for Copy to be done
       VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // Don't start anything until Copy is
                                          // done
       VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
-  dstVkTex.getVulkanTexture().getVulkanImage().transitionLayout(
+  dstVkTex.getVulkanTexture().image_.transitionLayout(
       cmdBuf,
       dstVkTex.isSwapchainTexture() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
                                     : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,

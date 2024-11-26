@@ -16,10 +16,8 @@
 #include <unordered_map>
 
 namespace igl::opengl {
-class VertexInputState;
 class Texture;
 class Buffer;
-class Device;
 
 class ComputePipelineState final : public WithContext, public IComputePipelineState {
   friend class Device;

@@ -32,7 +32,7 @@ void VulkanShell::willCreateWindow() noexcept {
 
 std::shared_ptr<Platform> VulkanShell::createPlatform() noexcept {
   igl::vulkan::VulkanContextConfig cfg = igl::vulkan::VulkanContextConfig();
-  cfg.requestedSwapChainTextureFormat = sessionConfig().colorFramebufferFormat;
+  cfg.requestedSwapChainTextureFormat = sessionConfig().swapchainColorTextureFormat;
 #if defined(_MSC_VER) && !IGL_DEBUG
   cfg.enableValidation = false;
 #endif
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
   igl::shell::RenderSessionConfig suggestedConfig = {
       .displayName = "Vulkan 1.1",
       .backendVersion = {.flavor = BackendFlavor::Vulkan, .majorVersion = 1, .minorVersion = 1},
-      .colorFramebufferFormat = TextureFormat::BGRA_SRGB,
+      .swapchainColorTextureFormat = TextureFormat::BGRA_SRGB,
   };
 
   if (!shell.initialize(argc, argv, suggestedWindowConfig, std::move(suggestedConfig))) {

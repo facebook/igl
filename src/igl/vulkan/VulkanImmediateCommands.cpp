@@ -120,7 +120,12 @@ const VulkanImmediateCommands::CommandBufferWrapper& VulkanImmediateCommands::ac
 
   current->cmdBuf_ = current->cmdBufAllocated_;
   current->isEncoding_ = true;
-  VK_ASSERT(ivkBeginCommandBuffer(&vf_, current->cmdBuf_));
+
+  const VkCommandBufferBeginInfo bi = {
+      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+      .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+  };
+  VK_ASSERT(vf_.vkBeginCommandBuffer(current->cmdBuf_, &bi));
 
   nextSubmitHandle_ = current->handle_;
   return *current;
@@ -214,7 +219,7 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     const CommandBufferWrapper& wrapper) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
   IGL_DEBUG_ASSERT(wrapper.isEncoding_);
-  VK_ASSERT(ivkEndCommandBuffer(&vf_, wrapper.cmdBuf_));
+  VK_ASSERT(vf_.vkEndCommandBuffer(wrapper.cmdBuf_));
 
   // @lint-ignore CLANGTIDY
   const VkPipelineStageFlags waitStageMasks[] = {VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,

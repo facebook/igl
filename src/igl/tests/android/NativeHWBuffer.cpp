@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <igl/Macros.h>
-
 #if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 #include <android/hardware_buffer.h>
@@ -365,7 +363,7 @@ class NativeHWBufferTextureTest : public ::testing::Test {
   AHardwareBuffer* hwBuffer_;
 };
 
-using NativeHWBufferTextureTestOpenGL3 = NativeHWBufferTextureTest<{igl::BackendType::OpenGL}>;
+using NativeHWBufferTextureTestOpenGL3 = NativeHWBufferTextureTest<igl::BackendType::OpenGL>;
 
 TEST_F(NativeHWBufferTextureTestOpenGL3, SharedMemoryTexture) {
   Result outResult;

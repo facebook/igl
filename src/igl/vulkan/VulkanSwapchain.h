@@ -31,13 +31,13 @@ class VulkanSwapchain final {
   Result present(VkSemaphore waitSemaphore);
   VkImage getCurrentVkImage() const {
     if (IGL_DEBUG_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
-      return swapchainTextures_[currentImageIndex_]->getVulkanImage().getVkImage();
+      return swapchainTextures_[currentImageIndex_]->image_.getVkImage();
     }
     return VK_NULL_HANDLE;
   }
   VkImageView getCurrentVkImageView() const {
     if (IGL_DEBUG_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
-      return swapchainTextures_[currentImageIndex_]->getVulkanImageView().getVkImageView();
+      return swapchainTextures_[currentImageIndex_]->imageView_.getVkImageView();
     }
     return VK_NULL_HANDLE;
   }

@@ -16,7 +16,6 @@ namespace igl::vulkan {
 class Device;
 class PipelineState;
 class VulkanContext;
-class VulkanSampler;
 
 /**
  * @brief Encapsulates a VulkanSampler class and its descriptor, along with a vulkan::Device for
@@ -68,7 +67,7 @@ class SamplerState final : public ISamplerState {
   /** @brief The texture sampling configuration for accessing a texture */
   SamplerStateDesc desc_;
   /** @brief The VulkanSampler instance associated with this sampler */
-  std::shared_ptr<VulkanSampler> sampler_;
+  Holder<SamplerHandle> sampler_;
 };
 
 } // namespace igl::vulkan

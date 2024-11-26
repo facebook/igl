@@ -18,7 +18,6 @@
 #include <vector>
 
 namespace iglu::material {
-class MemoizedQualifiedMemberNameCalculator;
 
 /// Handles allocation, updating and binding of shader uniforms. It uses reflection
 /// information to generate the underlying data and provides a simple API to manipulate it.

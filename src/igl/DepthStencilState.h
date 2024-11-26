@@ -119,6 +119,11 @@ struct StencilStateDesc {
  */
 struct DepthStencilStateDesc {
   /**
+   * @brief Identifier used for debugging
+   */
+  std::string debugName;
+
+  /**
    * @brief The comparison operation to use for depth testing.
    */
   CompareFunction compareFunction = CompareFunction::AlwaysPass;
@@ -184,7 +189,7 @@ struct hash<igl::DepthStencilStateDesc> {
    *
    * The hash value is based on all properties in the igl::DepthStencilStateDesc;
    */
-  size_t operator()(igl::DepthStencilStateDesc const& /*key*/) const;
+  size_t operator()(const igl::DepthStencilStateDesc& /*key*/) const;
 };
 
 /**
@@ -197,7 +202,7 @@ struct hash<igl::StencilStateDesc> {
    *
    * The hash value is based on all properties in the igl::StencilStateDesc;
    */
-  size_t operator()(igl::StencilStateDesc const& /*key*/) const;
+  size_t operator()(const igl::StencilStateDesc& /*key*/) const;
 };
 
 } // namespace std

@@ -13,6 +13,8 @@
 #include <iterator>
 #include <string>
 // @fb-only
+// @fb-only
+// @fb-only
 
 namespace {
 
@@ -94,11 +96,29 @@ std::string FileLoaderLinux::fullPath(const std::string& fileName) const {
     }
   }
 
+// @fb-only
+  // clang-format off
   // @fb-only
-      // @fb-only
+  // @fb-only
+  // @fb-only
+                                     // @fb-only
+                                     // @fb-only
+                                     // @fb-only
+                                     // @fb-only
+                                     // @fb-only
+                                     // @fb-only
+  // clang-format on
   // @fb-only
     // @fb-only
+    // @fb-only
+      // @fb-only
+          // @fb-only
+      // @fb-only
+        // @fb-only
+      // @fb-only
+    // @fb-only
   // @fb-only
+// @fb-only
 
   IGL_DEBUG_ASSERT_NOT_REACHED();
   return "";

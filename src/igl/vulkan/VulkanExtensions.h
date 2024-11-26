@@ -66,7 +66,8 @@ class VulkanExtensions final {
   /// @param extensionType The type of the extensions
   /// @param validationEnabled Flag that informs the class whether the Validation Layer is
   /// enabled or not.
-  void enableCommonExtensions(ExtensionType extensionType, const VulkanContextConfig& config);
+  void enableCommonInstanceExtensions(const VulkanContextConfig& config);
+  void enableCommonDeviceExtensions(const VulkanContextConfig& config);
 
   /// @brief Enables the extension with name `extensionName` of the type `extensionType` if the
   /// extension is available. If an instance or physical device deoesn't support the
@@ -97,6 +98,9 @@ class VulkanExtensions final {
   /// return value must not outlive the instance of this class, as the pointers in the returned
   /// vector point to the strings stored internally in this class
   [[nodiscard]] std::vector<const char*> allEnabled(ExtensionType extensionType) const;
+
+ public:
+  bool has8BitIndices = false;
 
  private:
   static constexpr size_t kNumberOfExtensionTypes = 2;
