@@ -55,7 +55,7 @@ class Platform {
   // command line arguments for the application.
   static void initializeCommandLineArgs(int argc, char** argv);
     
-  NVGcontext* nanovgContext = NULL;
+  NVGcontext* nanovgContext = nullptr;
 
  public:
   Extension* createAndInitializeExtension(const char* name) noexcept;
