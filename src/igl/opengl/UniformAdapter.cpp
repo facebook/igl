@@ -26,6 +26,8 @@ UniformAdapter::UniformAdapter(const IContext& context, PipelineType type) : pip
     maxUniforms_ = deviceFeatures.getMaxComputeUniforms();
   }
 
+  deviceFeatures.getFeatureLimits(DeviceFeatureLimits::BufferAlignment, uniformBufferAlignment_);
+
   uniformBuffersDirtyMask_ = 0;
 #if IGL_DEBUG
   uniformsDirty_.resize(maxUniforms_);
@@ -178,6 +180,11 @@ void UniformAdapter::bindToPipeline(IContext& context) {
       auto* bufferState = static_cast<UniformBlockBuffer*>(uniformBinding.buffer);
       IGL_DEBUG_ASSERT(bufferState);
       if (uniformBinding.offset) {
+        IGL_DEBUG_ASSERT(uniformBinding.offset % uniformBufferAlignment_ == 0,
+                         "Offset{%d} must be a multiple of uniformBufferAlignment{%d}",
+                         uniformBinding.offset,
+                         uniformBufferAlignment_);
+
         bufferState->bindRange(bindingIndex, uniformBinding.offset, uniformBinding.size, nullptr);
       } else {
         bufferState->bindBase(bindingIndex, nullptr);
