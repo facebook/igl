@@ -151,7 +151,7 @@ struct MNVGbuffers {
 
 const igl::TextureFormat kStencilFormat = igl::TextureFormat::S8_UInt_Z32_UNorm;
 
-static bool mtlnvg_convertBlendFuncFactor(int factor, igl::BlendFactor* result) {
+static bool convertBlendFuncFactor(int factor, igl::BlendFactor* result) {
   if (factor == NVG_ZERO)
     *result = igl::BlendFactor::Zero;
   else if (factor == NVG_ONE)
@@ -179,11 +179,11 @@ static bool mtlnvg_convertBlendFuncFactor(int factor, igl::BlendFactor* result) 
   return true;
 }
 
-static int igl_nanovg__maxi(int a, int b) {
+static int MAXINT(int a, int b) {
   return a > b ? a : b;
 }
 
-static int igl_nanovg__maxVertCount(const NVGpath* paths,
+static int maxVertexCount(const NVGpath* paths,
                                 int npaths,
                                 int* indexCount,
                                 int* strokeCount) {
@@ -210,7 +210,7 @@ static int igl_nanovg__maxVertCount(const NVGpath* paths,
   return count;
 }
 
-static iglu::simdtypes::float4 igl_nanovg__premulColor(NVGcolor c) {
+static iglu::simdtypes::float4 preMultiplyColor(NVGcolor c) {
   c.r *= c.a;
   c.g *= c.a;
   c.b *= c.a;
@@ -219,7 +219,7 @@ static iglu::simdtypes::float4 igl_nanovg__premulColor(NVGcolor c) {
   return ret;
 }
 
-static void igl_nanovg__xformToMat3x3(iglu::simdtypes::float3x3* m3, float* t) {
+static void transformToMat3x3(iglu::simdtypes::float3x3* m3, float* t) {
   float columns_0[3] = {t[0], t[1], 0.0f};
   float columns_1[3] = {t[2], t[3], 0.0f};
   float columns_2[3] = {t[4], t[5], 1.0f};
@@ -229,7 +229,7 @@ static void igl_nanovg__xformToMat3x3(iglu::simdtypes::float3x3* m3, float* t) {
   memcpy(&m3->columns[2], columns_2, 3 * sizeof(float));
 }
 
-static void igl_nanovg__vset(NVGvertex* vtx, float x, float y, float u, float v) {
+static void setVertextData(NVGvertex* vtx, float x, float y, float u, float v) {
   vtx->x = x;
   vtx->y = y;
   vtx->u = u;
@@ -280,7 +280,7 @@ class MNVGcontext {
   MNVGcall* allocCall() {
     MNVGcall* ret = NULL;
     if (curBuffers_->ncalls + 1 > curBuffers_->ccalls) {
-      int ccalls = igl_nanovg__maxi(curBuffers_->ncalls + 1, 128) + curBuffers_->ccalls / 2;
+      int ccalls = MAXINT(curBuffers_->ncalls + 1, 128) + curBuffers_->ccalls / 2;
       curBuffers_->calls.resize(ccalls);
       curBuffers_->ccalls = ccalls;
     }
@@ -292,7 +292,7 @@ class MNVGcontext {
   int allocFragUniforms(int n) {
     int ret = 0;
     if (curBuffers_->nuniforms + n > curBuffers_->cuniforms) {
-      int cuniforms = igl_nanovg__maxi(curBuffers_->nuniforms + n, 128) + curBuffers_->cuniforms / 4;
+      int cuniforms = MAXINT(curBuffers_->nuniforms + n, 128) + curBuffers_->cuniforms / 4;
       curBuffers_->fragmentUniforms.resize(fragmentUniformBufferSize_ * cuniforms);
 
       if (device_->getBackendType() == igl::BackendType::Vulkan) {
@@ -317,7 +317,7 @@ class MNVGcontext {
   int allocIndexes(int n) {
     int ret = 0;
     if (curBuffers_->nindexes + n > curBuffers_->cindexes) {
-      int cindexes = igl_nanovg__maxi(curBuffers_->nindexes + n, 4096) + curBuffers_->cindexes / 2;
+      int cindexes = MAXINT(curBuffers_->nindexes + n, 4096) + curBuffers_->cindexes / 2;
       curBuffers_->indexes.resize(cindexes);
 
       igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Index,
@@ -354,7 +354,7 @@ class MNVGcontext {
   int allocVerts(int n) {
     int ret = 0;
     if (curBuffers_->nverts + n > curBuffers_->cverts) {
-      int cverts = igl_nanovg__maxi(curBuffers_->nverts + n, 4096) + curBuffers_->cverts / 2;
+      int cverts = MAXINT(curBuffers_->nverts + n, 4096) + curBuffers_->cverts / 2;
       curBuffers_->verts.resize(cverts);
 
       igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Vertex,
@@ -373,10 +373,10 @@ class MNVGcontext {
 
   MNVGblend blendCompositeOperation(NVGcompositeOperationState op) {
     MNVGblend blend;
-    if (!mtlnvg_convertBlendFuncFactor(op.srcRGB, &blend.srcRGB) ||
-        !mtlnvg_convertBlendFuncFactor(op.dstRGB, &blend.dstRGB) ||
-        !mtlnvg_convertBlendFuncFactor(op.srcAlpha, &blend.srcAlpha) ||
-        !mtlnvg_convertBlendFuncFactor(op.dstAlpha, &blend.dstAlpha)) {
+    if (!convertBlendFuncFactor(op.srcRGB, &blend.srcRGB) ||
+        !convertBlendFuncFactor(op.dstRGB, &blend.dstRGB) ||
+        !convertBlendFuncFactor(op.srcAlpha, &blend.srcAlpha) ||
+        !convertBlendFuncFactor(op.dstAlpha, &blend.dstAlpha)) {
       blend.srcRGB = igl::BlendFactor::One;
       blend.dstRGB = igl::BlendFactor::OneMinusSrcAlpha;
       blend.srcAlpha = igl::BlendFactor::One;
@@ -396,8 +396,8 @@ class MNVGcontext {
 
     memset(frag, 0, sizeof(*frag));
 
-    frag->innerCol = igl_nanovg__premulColor(paint->innerColor);
-    frag->outerCol = igl_nanovg__premulColor(paint->outerColor);
+    frag->innerCol = preMultiplyColor(paint->innerColor);
+    frag->outerCol = preMultiplyColor(paint->outerColor);
 
     if (scissor->extent[0] < -0.5f || scissor->extent[1] < -0.5f) {
       frag->scissorMat = iglu::simdtypes::float3x3(0);
@@ -407,7 +407,7 @@ class MNVGcontext {
       frag->scissorScale[1] = 1.0f;
     } else {
       nvgTransformInverse(invxform, scissor->xform);
-      igl_nanovg__xformToMat3x3(&frag->scissorMat, invxform);
+      transformToMat3x3(&frag->scissorMat, invxform);
       frag->scissorExt[0] = scissor->extent[0];
       frag->scissorExt[1] = scissor->extent[1];
       frag->scissorScale[0] =
@@ -451,7 +451,7 @@ class MNVGcontext {
       nvgTransformInverse(invxform, paint->xform);
     }
 
-    igl_nanovg__xformToMat3x3(&frag->paintMat, invxform);
+    transformToMat3x3(&frag->paintMat, invxform);
 
     return 1;
   }
@@ -856,7 +856,7 @@ class MNVGcontext {
     // Allocate vertices for all the paths.
     int indexCount, strokeCount = 0;
     int maxverts =
-        igl_nanovg__maxVertCount(paths, npaths, &indexCount, &strokeCount) + call->triangleCount;
+        maxVertexCount(paths, npaths, &indexCount, &strokeCount) + call->triangleCount;
     int vertOffset = allocVerts(maxverts);
     if (vertOffset == -1) {
       // We get here if call alloc was ok, but something else is not.
@@ -911,10 +911,10 @@ class MNVGcontext {
       // Quad
       call->triangleOffset = vertOffset;
       quad = &curBuffers_->verts[call->triangleOffset];
-      igl_nanovg__vset(&quad[0], bounds[2], bounds[3], 0.5f, 1.0f);
-      igl_nanovg__vset(&quad[1], bounds[2], bounds[1], 0.5f, 1.0f);
-      igl_nanovg__vset(&quad[2], bounds[0], bounds[3], 0.5f, 1.0f);
-      igl_nanovg__vset(&quad[3], bounds[0], bounds[1], 0.5f, 1.0f);
+      setVertextData(&quad[0], bounds[2], bounds[3], 0.5f, 1.0f);
+      setVertextData(&quad[1], bounds[2], bounds[1], 0.5f, 1.0f);
+      setVertextData(&quad[2], bounds[0], bounds[3], 0.5f, 1.0f);
+      setVertextData(&quad[3], bounds[0], bounds[1], 0.5f, 1.0f);
     }
 
     // Fill shader
@@ -1000,7 +1000,7 @@ class MNVGcontext {
 
     // Allocate vertices for all the paths.
     int strokeCount = 0;
-    int maxverts = igl_nanovg__maxVertCount(paths, npaths, NULL, &strokeCount);
+    int maxverts = maxVertexCount(paths, npaths, NULL, &strokeCount);
     int offset = allocVerts(maxverts);
     if (offset == -1) {
       // We get here if call alloc was ok, but something else is not.
@@ -1303,12 +1303,12 @@ class MNVGcontext {
   }
 };
 
-static void igl_nanovg__renderCancel(void* uptr) {
+static void callback__renderCancel(void* uptr) {
   MNVGcontext* mtl = (MNVGcontext*)uptr;
   mtl->renderCancel();
 }
 
-static int igl_nanovg__renderCreateTexture(void* uptr,
+static int callback__renderCreateTexture(void* uptr,
                                        int type,
                                        int width,
                                        int height,
@@ -1318,22 +1318,22 @@ static int igl_nanovg__renderCreateTexture(void* uptr,
   return mtl->renderCreateTextureWithType(type, width, height, imageFlags, data);
 }
 
-static int igl_nanovg__renderCreate(void* uptr) {
+static int callback__renderCreate(void* uptr) {
   MNVGcontext* mtl = (MNVGcontext*)uptr;
   return mtl->renderCreate();
 }
 
-static void igl_nanovg__renderDelete(void* uptr) {
+static void callback__renderDelete(void* uptr) {
   MNVGcontext* mtl = (MNVGcontext*)uptr;
   mtl->renderDelete();
 }
 
-static int igl_nanovg__renderDeleteTexture(void* uptr, int image) {
+static int callback__renderDeleteTexture(void* uptr, int image) {
   MNVGcontext* mtl = (MNVGcontext*)uptr;
   return mtl->renderDeleteTexture(image);
 }
 
-static void igl_nanovg__renderFill(void* uptr,
+static void callback__renderFill(void* uptr,
                                NVGpaint* paint,
                                NVGcompositeOperationState compositeOperation,
                                NVGscissor* scissor,
@@ -1345,17 +1345,17 @@ static void igl_nanovg__renderFill(void* uptr,
   mtl->renderFillWithPaint(paint, compositeOperation, scissor, fringe, bounds, paths, npaths);
 }
 
-static void igl_nanovg__renderFlush(void* uptr) {
+static void callback__renderFlush(void* uptr) {
   MNVGcontext* mtl = (MNVGcontext*)uptr;
   mtl->renderFlush();
 }
 
-static int igl_nanovg__renderGetTextureSize(void* uptr, int image, int* w, int* h) {
+static int callback__renderGetTextureSize(void* uptr, int image, int* w, int* h) {
   MNVGcontext* mtl = (MNVGcontext*)uptr;
   return mtl->renderGetTextureSizeForImage(image, w, h);
 }
 
-static void igl_nanovg__renderStroke(void* uptr,
+static void callback__renderStroke(void* uptr,
                                  NVGpaint* paint,
                                  NVGcompositeOperationState compositeOperation,
                                  NVGscissor* scissor,
@@ -1368,7 +1368,7 @@ static void igl_nanovg__renderStroke(void* uptr,
       paint, compositeOperation, scissor, fringe, strokeWidth, paths, npaths);
 }
 
-static void igl_nanovg__renderTriangles(void* uptr,
+static void callback__renderTriangles(void* uptr,
                                     NVGpaint* paint,
                                     NVGcompositeOperationState compositeOperation,
                                     NVGscissor* scissor,
@@ -1379,7 +1379,7 @@ static void igl_nanovg__renderTriangles(void* uptr,
   mtl->renderTrianglesWithPaint(paint, compositeOperation, scissor, verts, nverts, fringe);
 }
 
-static int igl_nanovg__renderUpdateTexture(void* uptr,
+static int callback__renderUpdateTexture(void* uptr,
                                        int image,
                                        int x,
                                        int y,
@@ -1390,7 +1390,7 @@ static int igl_nanovg__renderUpdateTexture(void* uptr,
   return mtl->renderUpdateTextureWithImage(image, x, y, w, h, data);
 }
 
-static void igl_nanovg__renderViewport(void* uptr, float width, float height, float device_PixelRatio) {
+static void callback__renderViewport(void* uptr, float width, float height, float device_PixelRatio) {
   MNVGcontext* mtl = (MNVGcontext*)uptr;
   mtl->renderViewportWithWidth(width, height, device_PixelRatio);
 }
@@ -1413,18 +1413,18 @@ NVGcontext* CreateContext(igl::IDevice* device_, int flags) {
   MNVGcontext* mtl = new MNVGcontext();
 
   memset(&params, 0, sizeof(params));
-  params.renderCreate = igl_nanovg__renderCreate;
-  params.renderCreateTexture = igl_nanovg__renderCreateTexture;
-  params.renderDeleteTexture = igl_nanovg__renderDeleteTexture;
-  params.renderUpdateTexture = igl_nanovg__renderUpdateTexture;
-  params.renderGetTextureSize = igl_nanovg__renderGetTextureSize;
-  params.renderViewport = igl_nanovg__renderViewport;
-  params.renderCancel = igl_nanovg__renderCancel;
-  params.renderFlush = igl_nanovg__renderFlush;
-  params.renderFill = igl_nanovg__renderFill;
-  params.renderStroke = igl_nanovg__renderStroke;
-  params.renderTriangles = igl_nanovg__renderTriangles;
-  params.renderDelete = igl_nanovg__renderDelete;
+  params.renderCreate = callback__renderCreate;
+  params.renderCreateTexture = callback__renderCreateTexture;
+  params.renderDeleteTexture = callback__renderDeleteTexture;
+  params.renderUpdateTexture = callback__renderUpdateTexture;
+  params.renderGetTextureSize = callback__renderGetTextureSize;
+  params.renderViewport = callback__renderViewport;
+  params.renderCancel = callback__renderCancel;
+  params.renderFlush = callback__renderFlush;
+  params.renderFill = callback__renderFill;
+  params.renderStroke = callback__renderStroke;
+  params.renderTriangles = callback__renderTriangles;
+  params.renderDelete = callback__renderDelete;
   params.userPtr = (void*)mtl;
   params.edgeAntiAlias = flags & NVG_ANTIALIAS ? 1 : 0;
 
