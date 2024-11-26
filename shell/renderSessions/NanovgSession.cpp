@@ -30,7 +30,7 @@ double getMilliSeconds() {
 }
 
 int NanovgSession::loadDemoData(NVGcontext* vg, DemoData* data) {
-  auto imageFullPathCallback_ = ([this](const std::string& name) {
+  auto imageFullPathCallback = ([this](const std::string& name) {
 #if IGL_PLATFORM_ANDROID
     auto fullPath = std::filesystem::path("/data/data/com.facebook.igl.shell/files/") / name;
     if (std::filesystem::exists(fullPath)) {
@@ -55,7 +55,7 @@ int NanovgSession::loadDemoData(NVGcontext* vg, DemoData* data) {
     char file[128];
     snprintf(file, 128, "image%d.jpg", i + 1);
 
-    std::string full_file = imageFullPathCallback_(file);
+    std::string full_file = imageFullPathCallback(file);
     data->images[i] = nvgCreateImage(vg, full_file.c_str(), 0);
     if (data->images[i] == 0) {
       IGL_DEBUG_ASSERT(false, "Could not load %s.\n", file);
@@ -63,25 +63,25 @@ int NanovgSession::loadDemoData(NVGcontext* vg, DemoData* data) {
     }
   }
 
-  data->fontIcons = nvgCreateFont(vg, "icons", imageFullPathCallback_("entypo.ttf").c_str());
+  data->fontIcons = nvgCreateFont(vg, "icons", imageFullPathCallback("entypo.ttf").c_str());
   if (data->fontIcons == -1) {
     IGL_DEBUG_ASSERT(false, "Could not add font icons.\n");
     return -1;
   }
   data->fontNormal =
-      nvgCreateFont(vg, "sans", imageFullPathCallback_("Roboto-Regular.ttf").c_str());
+      nvgCreateFont(vg, "sans", imageFullPathCallback("Roboto-Regular.ttf").c_str());
   if (data->fontNormal == -1) {
     IGL_DEBUG_ASSERT(false, "Could not add font italic.\n");
     return -1;
   }
   data->fontBold =
-      nvgCreateFont(vg, "sans-bold", imageFullPathCallback_("Roboto-Bold.ttf").c_str());
+      nvgCreateFont(vg, "sans-bold", imageFullPathCallback("Roboto-Bold.ttf").c_str());
   if (data->fontBold == -1) {
     IGL_DEBUG_ASSERT(false, "Could not add font bold.\n");
     return -1;
   }
   data->fontEmoji =
-      nvgCreateFont(vg, "emoji", imageFullPathCallback_("NotoEmoji-Regular.ttf").c_str());
+      nvgCreateFont(vg, "emoji", imageFullPathCallback("NotoEmoji-Regular.ttf").c_str());
   if (data->fontEmoji == -1) {
     IGL_DEBUG_ASSERT(false, "Could not add font emoji.\n");
     return -1;
