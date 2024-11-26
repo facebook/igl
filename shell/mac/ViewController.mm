@@ -211,6 +211,8 @@ using namespace igl;
           32,
           NSOpenGLPFADepthSize,
           24,
+          NSOpenGLPFAStencilSize,
+          8,
           NSOpenGLPFAOpenGLProfile,
           NSOpenGLProfileVersion4_1Core,
           0,
@@ -232,6 +234,8 @@ using namespace igl;
           32,
           NSOpenGLPFADepthSize,
           24,
+          NSOpenGLPFAStencilSize,
+          8
           NSOpenGLPFAOpenGLProfile,
           NSOpenGLProfileVersion3_2Core,
           0,
@@ -252,6 +256,8 @@ using namespace igl;
           32,
           NSOpenGLPFADepthSize,
           24,
+          NSOpenGLPFAStencilSize,
+          8
           NSOpenGLPFAOpenGLProfile,
           NSOpenGLProfileVersionLegacy,
           0,
