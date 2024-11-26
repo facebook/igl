@@ -25,6 +25,7 @@ macro(ADD_IGLU_MODULE module)
   target_include_directories(IGLU${module} PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include")
   target_include_directories(IGLU${module} PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include_${module}")
   target_include_directories(IGLU${module} PUBLIC "${IGL_ROOT_DIR}")
+  target_include_directories(IGLU${module} PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/nanovg/src")
 endmacro()
 
 add_iglu_module(imgui)
@@ -36,6 +37,7 @@ add_iglu_module(shaderCross)
 add_iglu_module(texture_accessor)
 add_iglu_module(texture_loader)
 add_iglu_module(uniform)
+add_iglu_module(nanovg)
 
 # header-only
 add_library(IGLUsimdtypes INTERFACE)
@@ -58,6 +60,12 @@ target_sources(IGLUimgui PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/img
 target_sources(IGLUimgui PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/imgui/imgui_widgets.cpp")
 target_include_directories(IGLUimgui PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/imgui")
 target_include_directories(IGLUtexture_accessor PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/glew/include")
+
+# Nanovg
+target_sources(IGLUnanovg PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/nanovg/src/nanovg.c")
+target_sources(IGLUnanovg PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/nanovg/example/demo.c")
+target_sources(IGLUnanovg PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/nanovg/example/perf.c")
+target_include_directories(IGLUnanovg PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/nanovg/example")
 
 if(UNIX)
   if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
