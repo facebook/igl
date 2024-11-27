@@ -79,7 +79,7 @@ EGLDisplay getDefaultEGLDisplay() {
   return display;
 }
 
-std::vector<EGLint> getConfigAttributes(bool needStencilBuffer) {
+std::vector<EGLint> getConfigAttributes(bool enableStencilBuffer) {
   std::vector<EGLint> attribs = {
       // 32 bit color
       EGL_RED_SIZE,
@@ -94,7 +94,7 @@ std::vector<EGLint> getConfigAttributes(bool needStencilBuffer) {
       EGL_DEPTH_SIZE,
       16,
       EGL_STENCIL_SIZE,
-      (needStencilBuffer ? 8 : 0),
+      (enableStencilBuffer ? 8 : 0),
       EGL_SURFACE_TYPE,
       EGL_PBUFFER_BIT,
       // want opengl-es 2.x conformant CONTEXT
@@ -116,7 +116,7 @@ EGLint contextAttribs[] = {
 std::pair<EGLDisplay, EGLContext> newEGLContext(EGLDisplay display,
                                                 EGLContext shareContext,
                                                 EGLConfig* config,
-                                                bool needStencilBuffer) {
+                                                bool enableStencilBuffer) {
   if (display == EGL_NO_DISPLAY || !eglInitialize(display, nullptr, nullptr)) {
     CHECK_EGL_ERRORS();
     // TODO: Handle error
@@ -130,7 +130,7 @@ std::pair<EGLDisplay, EGLContext> newEGLContext(EGLDisplay display,
 
   EGLint numConfigs;
   if (!eglChooseConfig(
-          display, getConfigAttributes(needStencilBuffer).data(), config, 1, &numConfigs)) {
+          display, getConfigAttributes(enableStencilBuffer).data(), config, 1, &numConfigs)) {
     CHECK_EGL_ERRORS();
   }
 
@@ -140,11 +140,11 @@ std::pair<EGLDisplay, EGLContext> newEGLContext(EGLDisplay display,
   return res;
 }
 
-EGLConfig chooseConfig(EGLDisplay display, bool needStencilBuffer) {
+EGLConfig chooseConfig(EGLDisplay display, bool enableStencilBuffer) {
   EGLConfig config{nullptr};
   EGLint numConfigs{0};
   const EGLBoolean status = eglChooseConfig(
-      display, getConfigAttributes(needStencilBuffer).data(), &config, 1, &numConfigs);
+      display, getConfigAttributes(enableStencilBuffer).data(), &config, 1, &numConfigs);
   CHECK_EGL_ERRORS();
   if (!status) {
     IGL_DEBUG_ASSERT(status == EGL_TRUE, "eglChooseConfig failed");
@@ -186,26 +186,26 @@ EGLConfig chooseConfig(EGLDisplay display, bool needStencilBuffer) {
   return context;
 }
 
-Context::Context(RenderingAPI api, EGLNativeWindowType window, bool needStencilBuffer) :
-  Context(api, EGL_NO_CONTEXT, nullptr, false, window, {0, 0}, needStencilBuffer) {}
+Context::Context(RenderingAPI api, EGLNativeWindowType window, bool enableStencilBuffer) :
+  Context(api, EGL_NO_CONTEXT, nullptr, false, window, {0, 0}, enableStencilBuffer) {}
 
-Context::Context(RenderingAPI api, size_t width, size_t height, bool needStencilBuffer) :
+Context::Context(RenderingAPI api, size_t width, size_t height, bool enableStencilBuffer) :
   Context(api,
           EGL_NO_CONTEXT,
           nullptr,
           true,
           IGL_EGL_NULL_WINDOW,
           {static_cast<EGLint>(width), static_cast<EGLint>(height)},
-          needStencilBuffer) {}
+          enableStencilBuffer) {}
 
-Context::Context(const Context& sharedContext, bool needStencilBuffer) :
+Context::Context(const Context& sharedContext, bool enableStencilBuffer) :
   Context(sharedContext.api_,
           sharedContext.context_,
           sharedContext.sharegroup_,
           true,
           IGL_EGL_NULL_WINDOW,
           sharedContext.getDrawSurfaceDimensions(nullptr),
-          needStencilBuffer) {}
+          enableStencilBuffer) {}
 
 Context::Context(RenderingAPI api,
                  EGLContext shareContext,
@@ -213,7 +213,7 @@ Context::Context(RenderingAPI api,
                  bool offscreen,
                  EGLNativeWindowType window,
                  std::pair<EGLint, EGLint> dimensions,
-                 bool needStencilBuffer) {
+                 bool enableStencilBuffer) {
   IGL_DEBUG_ASSERT(
       (shareContext == EGL_NO_CONTEXT && sharegroup == nullptr) ||
           (shareContext != EGL_NO_CONTEXT && sharegroup != nullptr &&
@@ -221,11 +221,11 @@ Context::Context(RenderingAPI api,
       "shareContext and sharegroup values must be consistent");
   EGLConfig config{nullptr};
   auto contextDisplay =
-      newEGLContext(getDefaultEGLDisplay(), shareContext, &config, needStencilBuffer);
+      newEGLContext(getDefaultEGLDisplay(), shareContext, &config, enableStencilBuffer);
   IGL_DEBUG_ASSERT(contextDisplay.second != EGL_NO_CONTEXT, "newEGLContext failed");
 
   contextOwned_ = true;
-  needStencilBuffer_ = needStencilBuffer;
+  enableStencilBuffer_ = enableStencilBuffer;
   api_ = api;
   display_ = contextDisplay.first;
   context_ = contextDisplay.second;
@@ -285,7 +285,7 @@ Context::Context(EGLDisplay display,
 
 void Context::updateSurface(NativeWindowType window) {
   surface_ =
-      eglCreateWindowSurface(display_, chooseConfig(display_, needStencilBuffer_), window, nullptr);
+      eglCreateWindowSurface(display_, chooseConfig(display_, enableStencilBuffer_), window, nullptr);
   CHECK_EGL_ERRORS();
   readSurface_ = surface_;
   drawSurface_ = surface_;
@@ -383,7 +383,7 @@ void Context::updateSurfaces(EGLSurface readSurface, EGLSurface drawSurface) {
 
 EGLSurface Context::createSurface(NativeWindowType window) {
   auto* surface =
-      eglCreateWindowSurface(display_, chooseConfig(display_, needStencilBuffer_), window, nullptr);
+      eglCreateWindowSurface(display_, chooseConfig(display_, enableStencilBuffer_), window, nullptr);
   CHECK_EGL_ERRORS();
   return surface;
 }
