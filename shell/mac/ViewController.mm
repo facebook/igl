@@ -200,6 +200,10 @@ using namespace igl;
 
 #if IGL_BACKEND_OPENGL
   case igl::BackendFlavor::OpenGL: {
+    bool enableStencilBuffer = config_.depthTextureFormat == igl::TextureFormat::S8_UInt_Z24_UNorm  ||
+                               config_.depthTextureFormat == igl::TextureFormat::S_UInt8;
+    NSOpenGLPixelFormatAttribute stencilSize = enableStencilBuffer ? 8 : 0;
+      
     NSOpenGLPixelFormat* pixelFormat;
     if (config_.backendVersion.majorVersion == 4 && config_.backendVersion.minorVersion == 1) {
       static NSOpenGLPixelFormatAttribute attributes[] = {
@@ -216,7 +220,7 @@ using namespace igl;
           NSOpenGLPFADepthSize,
           24,
           NSOpenGLPFAStencilSize,
-          8,
+          stencilSize,
           NSOpenGLPFAOpenGLProfile,
           NSOpenGLProfileVersion4_1Core,
           0,
@@ -239,7 +243,7 @@ using namespace igl;
           NSOpenGLPFADepthSize,
           24,
           NSOpenGLPFAStencilSize,
-          8,
+          stencilSize,
           NSOpenGLPFAOpenGLProfile,
           NSOpenGLProfileVersion3_2Core,
           0,
@@ -261,7 +265,7 @@ using namespace igl;
           NSOpenGLPFADepthSize,
           24,
           NSOpenGLPFAStencilSize,
-          8,
+          stencilSize,
           NSOpenGLPFAOpenGLProfile,
           NSOpenGLProfileVersionLegacy,
           0,
