@@ -53,6 +53,7 @@ class UniformAdapter {
   std::vector<UniformState> uniforms_;
   std::vector<uint8_t> uniformData_;
   uint32_t maxUniforms_ = 1024;
+  size_t uniformBufferAlignment_ = 16;
 
   struct UniformBufferRange {
     IBuffer* buffer = nullptr;
