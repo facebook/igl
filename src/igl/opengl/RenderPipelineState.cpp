@@ -326,7 +326,7 @@ void RenderPipelineState::unbindVertexAttributes() {
   activeAttributesLocations_.clear();
 }
 
-void RenderPipelineState::unbindPrePipelineVertexAttributes() {
+void RenderPipelineState::unbindPrevPipelineVertexAttributes() {
   for (const auto& l : prevPipelineStateAttributesLocations_) {
     getContext().disableVertexAttribArray(l);
   }

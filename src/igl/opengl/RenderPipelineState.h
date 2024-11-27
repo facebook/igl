@@ -71,7 +71,7 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
     return static_cast<ShaderStages*>(desc_.shaderStages.get());
   }
 
-  void savePrePipelineStateAttributesLocations(RenderPipelineState& prevPipelineState) {
+  void savePrevPipelineStateAttributesLocations(RenderPipelineState& prevPipelineState) {
     prevPipelineStateAttributesLocations_ = std::move(prevPipelineState.activeAttributesLocations_);
   }
 
@@ -79,7 +79,7 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
     activeAttributesLocations_.clear();
   }
 
-  void unbindPrePipelineVertexAttributes();
+  void unbindPrevPipelineVertexAttributes();
 
  private:
   // Tracks a list of attribute locations associated with a bufferIndex

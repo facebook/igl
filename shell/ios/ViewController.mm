@@ -130,7 +130,7 @@
     IGL_DEBUG_ASSERT(platformDevice);
     return igl::SurfaceTextures{
         .color = platformDevice->createTextureFromNativeDrawable((CAEAGLLayer*)layer_, nullptr),
-        .depth = platformDevice->createTextureFromNativeDepth((CAEAGLLayer*)layer_, igl::TextureFormat::Z_UNorm16, nullptr),
+        .depth = platformDevice->createTextureFromNativeDepth((CAEAGLLayer*)layer_, config_.depthTextureFormat, nullptr),
     };
   }
 #endif
