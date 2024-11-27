@@ -15,6 +15,7 @@ import android.opengl.EGL15;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.view.MotionEvent;
+import java.util.concurrent.CountDownLatch;
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
@@ -27,6 +28,7 @@ public class SampleView extends GLSurfaceView {
   private static String TAG = "SampleView";
   private float lastTouchX = 0.0f;
   private float lastTouchY = 0.0f;
+  private CountDownLatch renderSessionInitLatch = new CountDownLatch(1);
 
   public SampleView(
       Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
@@ -45,7 +47,16 @@ public class SampleView extends GLSurfaceView {
 
     setEGLConfigChooser(new ConfigChooser(backendVersion));
 
-    setRenderer(new Renderer(context, backendVersion, swapchainColorTextureFormat));
+    setRenderer(
+        new Renderer(context, backendVersion, swapchainColorTextureFormat, renderSessionInitLatch));
+  }
+
+  public boolean isRenderSessionInitialized() {
+    return renderSessionInitLatch.getCount() == 0;
+  }
+
+  public void awaitRenderSessionInitialization() throws InterruptedException {
+    renderSessionInitLatch.await();
   }
 
   @Override
@@ -196,16 +207,24 @@ public class SampleView extends GLSurfaceView {
     private final Context mContext;
     private final SampleLib.BackendVersion mBackendVersion;
     private final int mSwapchainColorTextureFormat;
+    private CountDownLatch mRenderSessionInitLatch;
 
     Renderer(
-        Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
+        Context context,
+        SampleLib.BackendVersion backendVersion,
+        int swapchainColorTextureFormat,
+        CountDownLatch renderSessionInitLatch) {
       mContext = context;
       mBackendVersion = backendVersion;
       mSwapchainColorTextureFormat = swapchainColorTextureFormat;
+      mRenderSessionInitLatch = renderSessionInitLatch;
     }
 
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
       SampleLib.init(mBackendVersion, mSwapchainColorTextureFormat, mContext.getAssets(), null);
+
+      // Signal that application has being started.
+      mRenderSessionInitLatch.countDown();
     }
 
     public void onSurfaceChanged(GL10 gl, int width, int height) {
