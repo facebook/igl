@@ -139,7 +139,7 @@
 
   // @fb-only
                    // @fb-only
-  IglSurfaceTexturesAdapter* adapter = [surfaceTexturesProvider_ createSurfaceTextures];
+  IglSurfaceTexturesAdapter* adapter = [surfaceTexturesProvider_ createSurfaceTextures:session_->getDepthTextureFormat()];
   // @fb-only
                    // @fb-only
 
