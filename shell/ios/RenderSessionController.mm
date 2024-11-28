@@ -109,7 +109,6 @@
   }
 
   platform_ = std::make_shared<igl::shell::PlatformIos>(std::move(device));
-  platform_->nanovgContext = iglu::nanovg::CreateContext(&platform_->getDevice(), iglu::nanovg::NVG_ANTIALIAS | iglu::nanovg::NVG_STENCIL_STROKES);
   platformAdapter_.platform = platform_.get();
   session_ = factory_->createRenderSession(platform_);
   IGL_DEBUG_ASSERT(session_, "createDefaultRenderSession() must return a valid session");
