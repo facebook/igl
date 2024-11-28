@@ -194,5 +194,13 @@
         "url": "https://github.com/facebook/gfxreconstruct.git",
         "revision": "99a2ac03e7386c9773804c7b25a3712fd867f458"
     }
+},
+{
+    "name": "nanovg",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/vinsentli/nanovg",
+        "revision": "5660d826c3bde672f6d92fde502c06d3029273b7"
+    }
 }
 ]
