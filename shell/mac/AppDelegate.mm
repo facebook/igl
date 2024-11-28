@@ -109,7 +109,6 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
                              .majorVersion = 3,
                              .minorVersion = 0},
           .swapchainColorTextureFormat = kColorFramebufferFormat,
-          .depthTextureFormat = igl::TextureFormat::S8_UInt_Z24_UNorm,
       },
 #endif
 #if IGL_BACKEND_OPENGL
@@ -119,7 +118,6 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
                              .majorVersion = 4,
                              .minorVersion = 1},
           .swapchainColorTextureFormat = kColorFramebufferFormat,
-          .depthTextureFormat = igl::TextureFormat::S8_UInt_Z24_UNorm,
       },
       // clang-format off
       // @fb-only

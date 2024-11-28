@@ -151,6 +151,8 @@ using namespace igl;
 }
 
 - (void)loadView {
+  session_ = factory_->createRenderSession(nullptr);
+    
   // We don't care about the device type, just
   // return something that works
   HWDeviceQueryDesc queryDesc(HWDeviceType::Unknown);
@@ -196,8 +198,8 @@ using namespace igl;
 
 #if IGL_BACKEND_OPENGL
   case igl::BackendFlavor::OpenGL: {
-    const bool enableStencilBuffer = config_.depthTextureFormat == igl::TextureFormat::S8_UInt_Z24_UNorm  ||
-                                     config_.depthTextureFormat == igl::TextureFormat::S_UInt8;
+    const bool enableStencilBuffer = session_->getDepthTextureFormat() == igl::TextureFormat::S8_UInt_Z24_UNorm  ||
+                                     session_->getDepthTextureFormat() == igl::TextureFormat::S_UInt8;
     const NSOpenGLPixelFormatAttribute stencilSize = enableStencilBuffer ? 8 : 0;
       
     NSOpenGLPixelFormat* pixelFormat;
@@ -351,7 +353,7 @@ using namespace igl;
   }
   }
 
-  session_ = factory_->createRenderSession(shellPlatform_);
+  session_->setPlatform(shellPlatform_);
   IGL_DEBUG_ASSERT(session_, "createDefaultRenderSession() must return a valid session");
   // Get initial native surface dimensions
   shellParams_.nativeSurfaceDimensions = glm::ivec2(2048, 1536);
