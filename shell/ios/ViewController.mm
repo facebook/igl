@@ -207,7 +207,6 @@
                                                    kEAGLDrawablePropertyColorFormat,
                                                    nil];
     self.view = openGLView;
-    self.view.layer.contentsScale = [UIScreen mainScreen].scale;
 #endif
     break;
   }
