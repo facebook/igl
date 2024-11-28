@@ -113,7 +113,7 @@ void NanovgSession::initialize() noexcept {
   touchListener_ = std::make_shared<TouchListener>();
   getPlatform().getInputDispatcher().addTouchListener(touchListener_);
 
-  nvgContext_ = getPlatform().nanovgContext;
+  nvgContext_ = iglu::nanovg::CreateContext(&getPlatform().getDevice(), iglu::nanovg::NVG_ANTIALIAS | iglu::nanovg::NVG_STENCIL_STROKES);
 
   if (this->loadDemoData(nvgContext_, &nvgDemoData_) != 0) {
     IGL_DEBUG_ASSERT(false);
