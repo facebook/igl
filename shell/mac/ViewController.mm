@@ -189,8 +189,6 @@ using namespace igl;
     metalView.colorPixelFormat =
         metal::Texture::textureFormatToMTLPixelFormat(config_.swapchainColorTextureFormat);
     metalView.colorspace = metal::colorSpaceToCGColorSpace(config_.swapchainColorSpace);
-      
-    metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
 
     metalView.framebufferOnly = NO;
     [metalView setViewController:self];
