@@ -301,7 +301,8 @@ class MNVGcontext {
 
       igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform,
                            curBuffers_->fragmentUniforms.data(),
-                           fragmentUniformBufferSize_ * cuniforms);
+                           fragmentUniformBufferSize_ * cuniforms,
+                           igl::ResourceStorage::Shared);
       desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
       desc.debugName = "fragment_uniform_buffer";
       std::shared_ptr<igl::IBuffer> buffer = device_->createBuffer(desc, NULL);
@@ -322,7 +323,8 @@ class MNVGcontext {
 
       igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Index,
                            curBuffers_->indexes.data(),
-                           indexSize_ * cindexes);
+                           indexSize_ * cindexes,
+                           igl::ResourceStorage::Shared);
       desc.debugName = "index_buffer";
       std::shared_ptr<igl::IBuffer> buffer = device_->createBuffer(desc, NULL);
 
@@ -359,7 +361,8 @@ class MNVGcontext {
 
       igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Vertex,
                            curBuffers_->verts.data(),
-                           sizeof(NVGvertex) * cverts);
+                           sizeof(NVGvertex) * cverts,
+                           igl::ResourceStorage::Shared);
       desc.debugName = "vertex_buffer";
       std::shared_ptr<igl::IBuffer> buffer = device_->createBuffer(desc, NULL);
 
@@ -1142,7 +1145,8 @@ class MNVGcontext {
     if (curBuffers_->vertexUniformBuffer == nullptr) {
       igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform,
                            &curBuffers_->vertexUniforms,
-                           sizeof(VertexUniforms));
+                           sizeof(VertexUniforms),
+                           igl::ResourceStorage::Shared);
       desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
       desc.debugName = "vertex_uniform_buffer";
       curBuffers_->vertexUniformBuffer = device_->createBuffer(desc, NULL);
