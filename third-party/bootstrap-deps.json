@@ -197,10 +197,15 @@
 },
 {
     "name": "nanovg",
+    "postprocess" : {
+        "type" : "patch",
+        "file" : "nanovg.patch",
+        "pnum" : "0"
+    },
     "source": {
         "type": "git",
-        "url": "https://github.com/vinsentli/nanovg",
-        "revision": "5660d826c3bde672f6d92fde502c06d3029273b7"
+        "url": "https://github.com/memononen/nanovg",
+        "revision": "f93799c078fa11ed61c078c65a53914c8782c00b"
     }
 }
 ]
