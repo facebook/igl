@@ -1433,15 +1433,13 @@ NVGcontext* CreateContext(igl::IDevice* device_, int flags) {
   params.edgeAntiAlias = flags & NVG_ANTIALIAS ? 1 : 0;
 
   mtl->flags_ = flags;
-
-  // sizeof(MNVGfragUniforms)=176
-
-#if TARGET_OS_OSX || TARGET_OS_SIMULATOR
-  mtl->fragmentUniformBufferSize_ = 256;
-#else
-  static_assert(64 * 3 > sizeof(FragmentUniforms));
-  mtl->fragmentUniformBufferSize_ = 64 * 3; // 64 * 3 > 176
-#endif // TARGET_OS_OSX
+    
+  size_t uniformBufferAlignment = 16;
+  device_->getFeatureLimits(igl::DeviceFeatureLimits::BufferAlignment, uniformBufferAlignment);
+  // sizeof(MNVGfragUniforms)= 176
+  // 64 * 3 > 176
+  mtl->fragmentUniformBufferSize_ = std::max(64 * 3, (int)uniformBufferAlignment);
+    
   mtl->indexSize_ = 4; // IndexType::UInt32
   mtl->device_ = device_;
 
