@@ -93,6 +93,8 @@ std::string FileLoaderWin::fullPath(const std::string& fileName) const {
   // @lint-ignore CLANGTIDY
   const char* folders[] = {
       "shell/resources/images/",
+      "third-party/deps/src/nanovg/example/images",
+      "third-party/deps/src/nanovg/example/",
       "samples/resources/images/",
       "samples/resources/models/",
       "samples/resources/fonts/",
