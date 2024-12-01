@@ -559,7 +559,7 @@ class MNVGcontext {
       vertexFunction_ = shader_library->getShaderModule(vertexEntryPoint);
       fragmentFunction_ = shader_library->getShaderModule(fragmentEntryPoint);
     } else if (device_->getBackendType() == igl::BackendType::OpenGL) {
-#if IGL_PLATFORM_ANDROID || IGL_PLATFORM_IOS
+#if IGL_PLATFORM_ANDROID || IGL_PLATFORM_IOS || IGL_PLATFORM_LINUX
       auto codeVS = std::regex_replace(
           openglVertexShaderHeader410, std::regex("#version 410"), "#version 300 es");
       auto codeFS = std::regex_replace(
