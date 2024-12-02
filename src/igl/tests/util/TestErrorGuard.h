@@ -23,11 +23,11 @@ class TestErrorGuard final {
                                  const char* func,
                                  int line,
                                  const char* format,
-                                 ...);
+                                 va_list ap);
 
  private:
 #if IGL_SOFT_ERROR_ENABLED
-  IGLSoftErrorFunc savedErrorHandler_;
+  IGLErrorHandlerFunc savedErrorHandler_;
 #endif
 };
 } // namespace igl::tests::util

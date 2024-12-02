@@ -32,11 +32,8 @@ void igl::tests::util::TestErrorGuard::ReportErrorHandler(const char* category,
                                                           const char* /*func*/,
                                                           int line,
                                                           const char* format,
-                                                          ...) {
+                                                          va_list ap) {
 #if IGL_SOFT_ERROR_ENABLED
-  va_list ap;
-  va_start(ap, format);
-
   va_list apCopy;
   va_copy(apCopy, ap);
   const auto len = std::vsnprintf(nullptr, 0, format, apCopy);
@@ -46,7 +43,6 @@ void igl::tests::util::TestErrorGuard::ReportErrorHandler(const char* category,
   fmtString.resize(len + 1);
   std::vsnprintf(&fmtString.front(), len + 1, format, ap);
   fmtString.resize(len);
-  va_end(ap);
 
   ADD_FAILURE() << "IGL error encountered in " << file << ":" << line << " category=" << category
                 << " " << fmtString;
