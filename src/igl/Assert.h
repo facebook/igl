@@ -87,98 +87,77 @@ namespace igl {
 bool isDebugBreakEnabled();
 void setDebugBreakEnabled(bool enabled);
 
-inline void _IGLVerifyV(bool cond,
-                        [[maybe_unused]] const char* category,
-                        [[maybe_unused]] const char* reason,
-                        [[maybe_unused]] const char* func,
-                        [[maybe_unused]] const char* file,
-                        [[maybe_unused]] int line,
-                        [[maybe_unused]] const char* format,
-                        [[maybe_unused]] va_list ap) {
-#if IGL_VERIFY_ENABLED
-  if (!cond) {
-    va_list apCopy;
-    va_copy(apCopy, ap);
-    auto listener = IGLGetDebugAbortListener();
-    if (listener) {
-      listener(category, reason, file, func, line, format, apCopy);
-    }
-    va_end(apCopy);
+[[nodiscard]] inline bool _IGLAlwaysTrue() {
+  return true;
+}
 
-    IGLLog(IGLLogError, "[%s] %s in '%s' (%s:%d): ", category, reason, func, file, line);
-    IGLLogV(IGLLogError, format, ap);
-    IGLLog(IGLLogError, IGL_NEWLINE);
-    _IGLDebugBreak();
+inline void _IGLDebugAbortV([[maybe_unused]] const char* category,
+                            [[maybe_unused]] const char* reason,
+                            [[maybe_unused]] const char* func,
+                            [[maybe_unused]] const char* file,
+                            [[maybe_unused]] int line,
+                            [[maybe_unused]] const char* format,
+                            [[maybe_unused]] va_list ap) {
+#if IGL_VERIFY_ENABLED
+  va_list apCopy;
+  va_copy(apCopy, ap);
+  auto listener = IGLGetDebugAbortListener();
+  if (listener) {
+    listener(category, reason, file, func, line, format, apCopy);
   }
+  va_end(apCopy);
+
+  IGLLog(IGLLogError, "[%s] %s in '%s' (%s:%d): ", category, reason, func, file, line);
+  IGLLogV(IGLLogError, format, ap);
+  IGLLog(IGLLogError, IGL_NEWLINE);
+  _IGLDebugBreak();
 #endif // IGL_VERIFY_ENABLED
 }
 
-[[nodiscard]] inline bool _IGLVerify(bool cond,
-                                     [[maybe_unused]] const char* category,
-                                     [[maybe_unused]] const char* reason,
-                                     [[maybe_unused]] const char* func,
-                                     [[maybe_unused]] const char* file,
-                                     [[maybe_unused]] int line,
-                                     [[maybe_unused]] const char* format,
-                                     ...) {
+[[nodiscard]] inline bool _IGLDebugAbort(const char* category,
+                                         const char* reason,
+                                         const char* func,
+                                         const char* file,
+                                         int line,
+                                         const char* format,
+                                         ...) {
   va_list ap;
   va_start(ap, format);
-  _IGLVerifyV(cond, category, reason, func, file, line, format, ap);
+  _IGLDebugAbortV(category, reason, func, file, line, format, ap);
   va_end(ap);
-  return cond;
+
+  return false;
 }
 } // namespace igl
 
 #if IGL_VERIFY_ENABLED
 
-#define _IGL_DEBUG_ABORT(cond, format, ...)   \
-  (void)::igl::_IGLVerify(!!(cond),           \
-                          IGL_ERROR_CATEGORY, \
-                          "Abort requested",  \
-                          IGL_FUNCTION,       \
-                          __FILE__,           \
-                          __LINE__,           \
-                          (format),           \
-                          ##__VA_ARGS__)
-#define _IGL_DEBUG_ASSERT(cond, format, ...)  \
-  (void)::igl::_IGLVerify(!!(cond),           \
-                          IGL_ERROR_CATEGORY, \
-                          "Assert failed",    \
-                          IGL_FUNCTION,       \
-                          __FILE__,           \
-                          __LINE__,           \
-                          (format),           \
-                          ##__VA_ARGS__)
+#define _IGL_DEBUG_ABORT_IMPL(cond, reason, format, ...) \
+  (cond                                                  \
+       ? ::igl::_IGLAlwaysTrue()                         \
+       : ::igl::_IGLDebugAbort(                          \
+             IGL_ERROR_CATEGORY, reason, IGL_FUNCTION, __FILE__, __LINE__, format, ##__VA_ARGS__))
+
+#define _IGL_DEBUG_ABORT(format, ...) \
+  (void)_IGL_DEBUG_ABORT_IMPL(false, "Abort requested", (format), ##__VA_ARGS__)
+#define _IGL_DEBUG_ASSERT(cond, format, ...) \
+  (void)_IGL_DEBUG_ABORT_IMPL(!!(cond), "Assert failed", (format), ##__VA_ARGS__)
 
 #define _IGL_DEBUG_VERIFY(cond, format, ...) \
-  ::igl::_IGLVerify(!!(cond),                \
-                    IGL_ERROR_CATEGORY,      \
-                    "Verify failed",         \
-                    IGL_FUNCTION,            \
-                    __FILE__,                \
-                    __LINE__,                \
-                    (format),                \
-                    ##__VA_ARGS__)
+  _IGL_DEBUG_ABORT_IMPL(!!(cond), "Verify failed", (format), ##__VA_ARGS__)
 #define _IGL_DEBUG_VERIFY_NOT(cond, format, ...) \
-  (!::igl::_IGLVerify(!(cond),                   \
-                      IGL_ERROR_CATEGORY,        \
-                      "Verify failed",           \
-                      IGL_FUNCTION,              \
-                      __FILE__,                  \
-                      __LINE__,                  \
-                      (format),                  \
-                      ##__VA_ARGS__))
+  !_IGL_DEBUG_ABORT_IMPL(!(cond), "Verify failed", (format), ##__VA_ARGS__)
 
 #else
 
-#define _IGL_DEBUG_ABORT(cond, format, ...) static_cast<void>(0)
+#define _IGL_DEBUG_ABORT(format, ...) static_cast<void>(0)
 #define _IGL_DEBUG_ASSERT(cond, format, ...) static_cast<void>(0)
 #define _IGL_DEBUG_VERIFY(cond, format, ...) (cond)
 #define _IGL_DEBUG_VERIFY_NOT(cond, format, ...) (cond)
 
 #endif // IGL_VERIFY_ENABLED
 
-#define IGL_DEBUG_ABORT(format, ...) _IGL_DEBUG_ABORT(false, (format), ##__VA_ARGS__)
+#define IGL_DEBUG_ABORT(format, ...) _IGL_DEBUG_ABORT((format), ##__VA_ARGS__)
 
 #define _IGL_DEBUG_ASSERT_0(cond) _IGL_DEBUG_ASSERT(cond, #cond)
 #define _IGL_DEBUG_ASSERT_1(cond, format, ...) _IGL_DEBUG_ASSERT(cond, (format), ##__VA_ARGS__)
@@ -222,87 +201,61 @@ IGL_API void IGLSoftError(const char* category,
                           const char* format,
                           ...);
 namespace igl {
-[[nodiscard]] inline bool _IGLSoftError(bool cond,
-                                        [[maybe_unused]] const char* category,
-                                        [[maybe_unused]] const char* reason,
-                                        [[maybe_unused]] const char* func,
-                                        [[maybe_unused]] const char* file,
-                                        [[maybe_unused]] int line,
-                                        [[maybe_unused]] const char* format,
+[[nodiscard]] inline bool _IGLSoftError(const char* category,
+                                        const char* reason,
+                                        const char* func,
+                                        const char* file,
+                                        int line,
+                                        const char* format,
                                         ...) {
   va_list ap, apCopy;
   va_start(ap, format);
   va_copy(apCopy, ap);
-#if IGL_VERIFY_ENABLED
-  _IGLVerifyV(cond, category, reason, func, file, line, format, ap);
-#endif // IGL_VERIFY_ENABLED
+
+  _IGLDebugAbortV(category, reason, func, file, line, format, apCopy);
+  va_end(apCopy);
 
 #if IGL_SOFT_ERROR_ENABLED
-  if (!cond) {
-    auto handler = IGLGetSoftErrorHandler();
-    if (handler) {
-      handler(category, reason, file, func, line, format, apCopy);
-    }
+  auto handler = IGLGetSoftErrorHandler();
+  if (handler) {
+    handler(category, reason, file, func, line, format, ap);
   }
 #endif // IGL_SOFT_ERROR_ENABLED
 
-  va_end(apCopy);
   va_end(ap);
 
-  return cond;
+  return false; // Always return false
 }
 } // namespace igl
 
 #if IGL_SOFT_ERROR_ENABLED
 
-#define _IGL_SOFT_ERROR(cond, format, ...)       \
-  (void)::igl::_IGLSoftError(!!(cond),           \
-                             IGL_ERROR_CATEGORY, \
-                             "Soft error",       \
-                             IGL_FUNCTION,       \
-                             __FILE__,           \
-                             __LINE__,           \
-                             (format),           \
-                             ##__VA_ARGS__)
-#define _IGL_SOFT_ASSERT(cond, format, ...)        \
-  (void)::igl::_IGLSoftError(!!(cond),             \
-                             IGL_ERROR_CATEGORY,   \
-                             "Soft assert failed", \
-                             IGL_FUNCTION,         \
-                             __FILE__,             \
-                             __LINE__,             \
-                             (format),             \
-                             ##__VA_ARGS__)
+#define _IGL_SOFT_ERROR_IMPL(cond, reason, format, ...) \
+  (cond                                                 \
+       ? ::igl::_IGLAlwaysTrue()                        \
+       : ::igl::_IGLSoftError(                          \
+             IGL_ERROR_CATEGORY, reason, IGL_FUNCTION, __FILE__, __LINE__, format, ##__VA_ARGS__))
 
-#define _IGL_SOFT_VERIFY(cond, format, ...)  \
-  ::igl::_IGLSoftError(!!(cond),             \
-                       IGL_ERROR_CATEGORY,   \
-                       "Soft verify failed", \
-                       IGL_FUNCTION,         \
-                       __FILE__,             \
-                       __LINE__,             \
-                       (format),             \
-                       ##__VA_ARGS__)
+#define _IGL_SOFT_ERROR(format, ...) \
+  (void)_IGL_SOFT_ERROR_IMPL(false, "Soft error", (format), ##__VA_ARGS__)
+#define _IGL_SOFT_ASSERT(cond, format, ...) \
+  (void)_IGL_SOFT_ERROR_IMPL(!!(cond), "Soft assert failed", (format), ##__VA_ARGS__)
+
+#define _IGL_SOFT_VERIFY(cond, format, ...) \
+  _IGL_SOFT_ERROR_IMPL(!!(cond), "Soft verify failed", (format), ##__VA_ARGS__)
 #define _IGL_SOFT_VERIFY_NOT(cond, format, ...) \
-  (!::igl::_IGLSoftError(!(cond),               \
-                         IGL_ERROR_CATEGORY,    \
-                         "Soft verify failed",  \
-                         IGL_FUNCTION,          \
-                         __FILE__,              \
-                         __LINE__,              \
-                         (format),              \
-                         ##__VA_ARGS__))
+  !_IGL_SOFT_ERROR_IMPL(!(cond), "Soft verify failed", (format), ##__VA_ARGS__)
 
 #else
 
-#define _IGL_SOFT_ERROR(cond, format, ...) static_cast<void>(0)
+#define _IGL_SOFT_ERROR(format, ...) static_cast<void>(0)
 #define _IGL_SOFT_ASSERT(cond, format, ...) static_cast<void>(0)
 #define _IGL_SOFT_VERIFY(cond, format, ...) (cond)
 #define _IGL_SOFT_VERIFY_NOT(cond, format, ...) (cond)
 
 #endif // IGL_SOFT_ERROR_ENABLED
 
-#define IGL_SOFT_ERROR(format, ...) _IGL_SOFT_ERROR(false, (format), ##__VA_ARGS__)
+#define IGL_SOFT_ERROR(format, ...) _IGL_SOFT_ERROR((format), ##__VA_ARGS__)
 
 #define _IGL_SOFT_ASSERT_0(cond) _IGL_SOFT_ASSERT(cond, #cond)
 #define _IGL_SOFT_ASSERT_1(cond, format, ...) _IGL_SOFT_ASSERT(cond, (format), ##__VA_ARGS__)
