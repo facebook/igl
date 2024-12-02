@@ -56,6 +56,8 @@
 
 #include <igl/Log.h>
 
+#define IGL_ERROR_CATEGORY "IGL"
+
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
 #define IGL_VERIFY_ENABLED 1
 #else
@@ -76,6 +78,7 @@ void setDebugBreakEnabled(bool enabled);
 
 template<typename T>
 [[nodiscard]] static inline const T& _IGLVerify(const T& cond,
+                                                [[maybe_unused]] const char* category,
                                                 [[maybe_unused]] const char* reason,
                                                 [[maybe_unused]] const char* func,
                                                 [[maybe_unused]] const char* file,
@@ -84,7 +87,7 @@ template<typename T>
                                                 ...) {
 #if IGL_VERIFY_ENABLED
   if (!cond) {
-    IGLLog(IGLLogError, "[IGL] %s in '%s' (%s:%d): ", reason, func, file, line);
+    IGLLog(IGLLogError, "[%s] %s in '%s' (%s:%d): ", category, reason, func, file, line);
     va_list ap;
     va_start(ap, format);
     IGLLogV(IGLLogError, format, ap);
@@ -99,19 +102,43 @@ template<typename T>
 
 #if IGL_VERIFY_ENABLED
 
-#define _IGL_DEBUG_ABORT(cond, format, ...) \
-  (void)::igl::_IGLVerify(                  \
-      cond, "Abort requested", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
-#define _IGL_DEBUG_ASSERT(cond, format, ...) \
-  (void)::igl::_IGLVerify(                   \
-      cond, "Assert failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
+#define _IGL_DEBUG_ABORT(cond, format, ...)   \
+  (void)::igl::_IGLVerify(cond,               \
+                          IGL_ERROR_CATEGORY, \
+                          "Abort requested",  \
+                          IGL_FUNCTION,       \
+                          __FILE__,           \
+                          __LINE__,           \
+                          (format),           \
+                          ##__VA_ARGS__)
+#define _IGL_DEBUG_ASSERT(cond, format, ...)  \
+  (void)::igl::_IGLVerify(cond,               \
+                          IGL_ERROR_CATEGORY, \
+                          "Assert failed",    \
+                          IGL_FUNCTION,       \
+                          __FILE__,           \
+                          __LINE__,           \
+                          (format),           \
+                          ##__VA_ARGS__)
 
 #define _IGL_DEBUG_VERIFY(cond, format, ...) \
-  ::igl::_IGLVerify(                         \
-      (cond), "Verify failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
+  ::igl::_IGLVerify((cond),                  \
+                    IGL_ERROR_CATEGORY,      \
+                    "Verify failed",         \
+                    IGL_FUNCTION,            \
+                    __FILE__,                \
+                    __LINE__,                \
+                    (format),                \
+                    ##__VA_ARGS__)
 #define _IGL_DEBUG_VERIFY_NOT(cond, format, ...) \
-  (!::igl::_IGLVerify(                           \
-      0 == !!(cond), "Verify failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__))
+  (!::igl::_IGLVerify(0 == !!(cond),             \
+                      IGL_ERROR_CATEGORY,        \
+                      "Verify failed",           \
+                      IGL_FUNCTION,              \
+                      __FILE__,                  \
+                      __LINE__,                  \
+                      (format),                  \
+                      ##__VA_ARGS__))
 
 #else
 
@@ -156,25 +183,26 @@ template<typename T>
 ///--------------------------------------
 /// MARK: - Custom
 
-#define IGL_ERROR_CATEGORY "IGL"
-
-using IGLSoftErrorFunc = void (*)(const char* file,
+using IGLSoftErrorFunc = void (*)(const char* category,
+                                  const char* reason,
+                                  const char* file,
                                   const char* func,
                                   int line,
-                                  const char* category,
                                   const char* format,
                                   ...);
 IGL_API void IGLSetSoftErrorHandler(IGLSoftErrorFunc handler);
 IGL_API IGLSoftErrorFunc IGLGetSoftErrorHandler(void);
-IGL_API void IGLSoftError(const char* file,
+IGL_API void IGLSoftError(const char* category,
+                          const char* reason,
+                          const char* file,
                           const char* func,
                           int line,
-                          const char* category,
                           const char* format,
                           ...);
 namespace igl {
 template<typename T, typename... Args>
 [[nodiscard]] static inline const T& _IGLSoftError(const T& cond,
+                                                   [[maybe_unused]] const char* category,
                                                    [[maybe_unused]] const char* reason,
                                                    [[maybe_unused]] const char* func,
                                                    [[maybe_unused]] const char* file,
@@ -182,14 +210,14 @@ template<typename T, typename... Args>
                                                    [[maybe_unused]] const char* format,
                                                    [[maybe_unused]] const Args&... args) {
 #if IGL_VERIFY_ENABLED
-  const auto& verifiedCond = _IGLVerify(cond, reason, func, file, line, format, args...);
+  const auto& verifiedCond = _IGLVerify(cond, category, reason, func, file, line, format, args...);
 #else
   const auto& verifiedCond = cond;
 #endif // IGL_VERIFY_ENABLED
 
 #if IGL_SOFT_ERROR_ENABLED
   if (!verifiedCond) {
-    IGLGetSoftErrorHandler()(file, func, line, IGL_ERROR_CATEGORY, format, args...);
+    IGLGetSoftErrorHandler()(category, reason, file, func, line, format, args...);
   }
 #endif // IGL_SOFT_ERROR_ENABLED
 
@@ -199,18 +227,37 @@ template<typename T, typename... Args>
 
 #if IGL_SOFT_ERROR_ENABLED
 
-#define _IGL_SOFT_ERROR(cond, format, ...) \
-  (void)::igl::_IGLSoftError(              \
-      cond, "Soft error", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
-#define _IGL_SOFT_ASSERT(cond, format, ...) \
-  (void)::igl::_IGLSoftError(               \
-      cond, "Soft assert failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
+#define _IGL_SOFT_ERROR(cond, format, ...)       \
+  (void)::igl::_IGLSoftError(cond,               \
+                             IGL_ERROR_CATEGORY, \
+                             "Soft error",       \
+                             IGL_FUNCTION,       \
+                             __FILE__,           \
+                             __LINE__,           \
+                             (format),           \
+                             ##__VA_ARGS__)
+#define _IGL_SOFT_ASSERT(cond, format, ...)        \
+  (void)::igl::_IGLSoftError(cond,                 \
+                             IGL_ERROR_CATEGORY,   \
+                             "Soft assert failed", \
+                             IGL_FUNCTION,         \
+                             __FILE__,             \
+                             __LINE__,             \
+                             (format),             \
+                             ##__VA_ARGS__)
 
-#define _IGL_SOFT_VERIFY(cond, format, ...) \
-  ::igl::_IGLSoftError(                     \
-      (cond), "Soft verify failed", IGL_FUNCTION, __FILE__, __LINE__, (format), ##__VA_ARGS__)
+#define _IGL_SOFT_VERIFY(cond, format, ...)  \
+  ::igl::_IGLSoftError((cond),               \
+                       IGL_ERROR_CATEGORY,   \
+                       "Soft verify failed", \
+                       IGL_FUNCTION,         \
+                       __FILE__,             \
+                       __LINE__,             \
+                       (format),             \
+                       ##__VA_ARGS__)
 #define _IGL_SOFT_VERIFY_NOT(cond, format, ...) \
   (!::igl::_IGLSoftError(0 == !!(cond),         \
+                         IGL_ERROR_CATEGORY,    \
                          "Soft verify failed",  \
                          IGL_FUNCTION,          \
                          __FILE__,              \

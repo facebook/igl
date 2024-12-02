@@ -26,10 +26,11 @@ igl::tests::util::TestErrorGuard::~TestErrorGuard() {
 #endif
 }
 
-void igl::tests::util::TestErrorGuard::ReportErrorHandler(const char* file,
+void igl::tests::util::TestErrorGuard::ReportErrorHandler(const char* category,
+                                                          const char* /*reason*/,
+                                                          const char* file,
                                                           const char* /*func*/,
                                                           int line,
-                                                          const char* category,
                                                           const char* format,
                                                           ...) {
 #if IGL_SOFT_ERROR_ENABLED

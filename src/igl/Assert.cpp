@@ -60,10 +60,11 @@ void _IGLDebugBreak() {
 namespace {
 // Default handler is no-op.
 // If there's an error, IGL_DEBUG_VERIFY will trap in dev builds
-void IGLReportErrorDefault(const char* /* file */,
+void IGLReportErrorDefault(const char* /* category */,
+                           const char* /* reason */,
+                           const char* /* file */,
                            const char* /* func */,
                            int /* line */,
-                           const char* /* category */,
                            const char* /* format */,
                            ...) {}
 
