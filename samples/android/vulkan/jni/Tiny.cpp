@@ -178,7 +178,7 @@ void render() {
 
   // VK_EXT_debug_utils support doesn't exist yet
   // commands->pushDebugGroupLabel("Render Triangle", igl::Color(1, 0, 0));
-  commands->draw(PrimitiveType::Triangle, 0, 3);
+  commands->draw(3, 0, 3);
   // commands->popDebugGroupLabel();
   commands->endEncoding();
 
