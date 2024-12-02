@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only
-
 #include <shell/shared/fileLoader/win/FileLoaderWin.h>
 
 #include <filesystem>
