@@ -80,6 +80,9 @@ https://github.com/corporateshark/lightweightvk/blob/main/LICENSE.md
 Meshoptimizer
 https://github.com/zeux/meshoptimizer/blob/master/LICENSE.md
 
+NanoVG
+https://github.com/memononen/nanovg/blob/master/LICENSE.txt
+
 Spark SL
 https://github.com/facebook/igl/releases/download/SparkSL/SparkSL.LICENSE
 

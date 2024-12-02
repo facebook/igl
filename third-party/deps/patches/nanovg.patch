@@ -1,0 +1,56 @@
+Binary files ./example/.DS_Store and ./example_new/.DS_Store differ
+diff --exclude=.git --exclude=.hg -rupN ./example/demo.c ./example_new/demo.c
+--- ./example/demo.c	2024-11-30 17:10:38
++++ ./example_new/demo.c	2024-11-30 17:09:45
+@@ -5,9 +5,7 @@
+ #ifdef NANOVG_GLEW
+ #  include <GL/glew.h>
+ #endif
+-#include <GLFW/glfw3.h>
+ #include "nanovg.h"
+-#define STB_IMAGE_WRITE_IMPLEMENTATION
+ #include "stb_image_write.h"
+ 
+ 
+@@ -1212,6 +1210,7 @@ static void flipHorizontal(unsigned char* image, int w
+ 	}
+ }
+ 
++#if 0
+ void saveScreenShot(int w, int h, int premult, const char* name)
+ {
+ 	unsigned char* image = (unsigned char*)malloc(w*h*4);
+@@ -1226,3 +1225,4 @@ void saveScreenShot(int w, int h, int premult, const c
+  	stbi_write_png(name, w, h, 4, image, w*4);
+  	free(image);
+ }
++#endif
+diff --exclude=.git --exclude=.hg -rupN ./example/perf.c ./example_new/perf.c
+--- ./example/perf.c	2024-11-30 17:10:39
++++ ./example_new/perf.c	2024-11-30 17:10:04
+@@ -5,7 +5,6 @@
+ #ifdef NANOVG_GLEW
+ #  include <GL/glew.h>
+ #endif
+-#include <GLFW/glfw3.h>
+ #include "nanovg.h"
+ 
+ #ifdef _MSC_VER
+@@ -38,7 +37,7 @@ void initGPUTimer(GPUtimer* timer)
+ 		glGenQueries(GPU_QUERY_COUNT, timer->queries);
+ 	}*/
+ }
+-
++#if 0
+ void startGPUTimer(GPUtimer* timer)
+ {
+ 	if (!timer->supported)
+@@ -72,7 +71,7 @@ int stopGPUTimer(GPUtimer* timer, float* times, int ma
+ 	}
+ 	return n;
+ }
+-
++#endif
+ 
+ void initGraph(PerfGraph* fps, int style, const char* name)
+ {
