@@ -46,8 +46,6 @@
 #import <cmath>
 #import <simd/simd.h>
 
-#include <IGLU/nanovg/nanovg_igl.h>
-
 using namespace igl;
 
 @interface ViewController () {
