@@ -41,21 +41,21 @@ class PlatformDevice final : public IPlatformDevice {
                                                  Result* outResult) const;
 
   /// Creates a texture from a native drawable
-  /// @param nativeDrawable drawable. For Metal is MUST be CAMetalDrawable
+  /// @param nativeDrawable drawable. For Metal, drawable MUST be CAMetalDrawable
   /// @param outResult optional result
   /// @return pointer to generated Texture or nullptr
   std::unique_ptr<ITexture> createTextureFromNativeDrawable(id<CAMetalDrawable> nativeDrawable,
                                                             Result* outResult);
 
   /// Creates a texture from a native drawable
-  /// @param nativeDrawable drawable. For Metal is MUST be MTLTexture
+  /// @param nativeDrawable drawable. For Metal, drawable MUST be MTLTexture
   /// @param outResult optional result
   /// @return pointer to generated Texture or nullptr
   std::unique_ptr<ITexture> createTextureFromNativeDrawable(id<MTLTexture> nativeDrawable,
                                                             Result* outResult);
 
   /// Creates a texture from a native drawable surface
-  /// @param nativeDrawable drawable surface. For Metal is MUST be CAMetalLayer
+  /// @param nativeDrawable drawable surface. For Metal, drawable MUST be CAMetalLayer
   /// @param outResult optional result
   /// @return pointer to generated Texture or nullptr
   std::unique_ptr<ITexture> createTextureFromNativeDrawable(CALayer* nativeDrawable,
@@ -94,13 +94,13 @@ class PlatformDevice final : public IPlatformDevice {
                                                                        Result* outResult);
 
   /// Get a size of a given native drawable surface.
-  /// @param nativeDrawable drawable surface. For Metal is MUST be CAMetalLayer
+  /// @param nativeDrawable drawable surface. For Metal, drawable MUST be CAMetalLayer
   /// @param outResult Optional result.
   /// @return An accurate size that is suitable for rendering or zero if failed to get a size.
   Size getNativeDrawableSize(CALayer* nativeDrawable, Result* outResult);
 
   /// Get a texture format that is suitable to render a given drawable surface.
-  /// @param nativeDrawable drawable surface. For Metal is MUST be CAMetalLayer
+  /// @param nativeDrawable drawable surface. For Metal, drawable MUST be CAMetalLayer
   /// @param outResult Optional result.
   /// @return An accurate pixel format that is suitable for rendering or invalid if failed.
   TextureFormat getNativeDrawableTextureFormat(CALayer* nativeDrawable, Result* outResult);
