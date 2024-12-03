@@ -194,5 +194,18 @@
         "url": "https://github.com/facebook/gfxreconstruct.git",
         "revision": "99a2ac03e7386c9773804c7b25a3712fd867f458"
     }
+},
+{
+    "name": "nanovg",
+    "postprocess" : {
+        "type" : "patch",
+        "file" : "nanovg.patch",
+        "pnum" : "0"
+    },
+    "source": {
+        "type": "git",
+        "url": "https://github.com/memononen/nanovg",
+        "revision": "f93799c078fa11ed61c078c65a53914c8782c00b"
+    }
 }
 ]

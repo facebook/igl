@@ -10,6 +10,21 @@
 
 // ----------------------------------------------------------------------------
 
+namespace {
+IGLErrorHandlerFunc& GetDebugAbortListener() {
+  static IGLErrorHandlerFunc sListener = nullptr;
+  return sListener;
+}
+} // namespace
+
+IGL_API void IGLSetDebugAbortListener(IGLErrorHandlerFunc listener) {
+  GetDebugAbortListener() = listener;
+}
+
+IGL_API IGLErrorHandlerFunc IGLGetDebugAbortListener(void) {
+  return GetDebugAbortListener();
+}
+
 namespace igl {
 
 // Toggle debug break on/off at runtime
@@ -58,29 +73,16 @@ void _IGLDebugBreak() {
 // ----------------------------------------------------------------------------
 
 namespace {
-// Default handler is no-op.
-// If there's an error, IGL_DEBUG_VERIFY will trap in dev builds
-void IGLReportErrorDefault(const char* /* file */,
-                           const char* /* func */,
-                           int /* line */,
-                           const char* /* category */,
-                           const char* /* format */,
-                           ...) {}
-
-IGLSoftErrorFunc& GetErrorHandler() {
-  static IGLSoftErrorFunc sHandler = IGLReportErrorDefault;
+IGLErrorHandlerFunc& GetSoftErrorHandler() {
+  static IGLErrorHandlerFunc sHandler = nullptr;
   return sHandler;
 }
-
 } // namespace
 
-IGL_API void IGLSetSoftErrorHandler(IGLSoftErrorFunc handler) {
-  if (!handler) {
-    handler = IGLReportErrorDefault; // prevent null handler
-  }
-  GetErrorHandler() = handler;
+IGL_API void IGLSetSoftErrorHandler(IGLErrorHandlerFunc handler) {
+  GetSoftErrorHandler() = handler;
 }
 
-IGL_API IGLSoftErrorFunc IGLGetSoftErrorHandler(void) {
-  return GetErrorHandler();
+IGL_API IGLErrorHandlerFunc IGLGetSoftErrorHandler(void) {
+  return GetSoftErrorHandler();
 }

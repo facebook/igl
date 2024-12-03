@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @fb-only
+
 #include <igl/opengl/egl/Context.h>
 
 #include <EGL/egl.h>
