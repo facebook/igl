@@ -68,20 +68,17 @@ int NanovgSession::loadDemoData(NVGcontext* vg, DemoData* data) {
     IGL_DEBUG_ASSERT(false, "Could not add font icons.\n");
     return -1;
   }
-  data->fontNormal =
-      nvgCreateFont(vg, "sans", getImageFullPath("Roboto-Regular.ttf").c_str());
+  data->fontNormal = nvgCreateFont(vg, "sans", getImageFullPath("Roboto-Regular.ttf").c_str());
   if (data->fontNormal == -1) {
     IGL_DEBUG_ASSERT(false, "Could not add font italic.\n");
     return -1;
   }
-  data->fontBold =
-      nvgCreateFont(vg, "sans-bold", getImageFullPath("Roboto-Bold.ttf").c_str());
+  data->fontBold = nvgCreateFont(vg, "sans-bold", getImageFullPath("Roboto-Bold.ttf").c_str());
   if (data->fontBold == -1) {
     IGL_DEBUG_ASSERT(false, "Could not add font bold.\n");
     return -1;
   }
-  data->fontEmoji =
-      nvgCreateFont(vg, "emoji", getImageFullPath("NotoEmoji-Regular.ttf").c_str());
+  data->fontEmoji = nvgCreateFont(vg, "emoji", getImageFullPath("NotoEmoji-Regular.ttf").c_str());
   if (data->fontEmoji == -1) {
     IGL_DEBUG_ASSERT(false, "Could not add font emoji.\n");
     return -1;
@@ -113,7 +110,8 @@ void NanovgSession::initialize() noexcept {
   touchListener_ = std::make_shared<TouchListener>();
   getPlatform().getInputDispatcher().addTouchListener(touchListener_);
 
-  nvgContext_ = iglu::nanovg::CreateContext(&getPlatform().getDevice(), iglu::nanovg::NVG_ANTIALIAS | iglu::nanovg::NVG_STENCIL_STROKES);
+  nvgContext_ = iglu::nanovg::CreateContext(
+      &getPlatform().getDevice(), iglu::nanovg::NVG_ANTIALIAS | iglu::nanovg::NVG_STENCIL_STROKES);
 
   if (this->loadDemoData(nvgContext_, &nvgDemoData_) != 0) {
     IGL_DEBUG_ASSERT(false);
