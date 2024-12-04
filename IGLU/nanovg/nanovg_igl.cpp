@@ -149,8 +149,6 @@ struct MNVGbuffers {
   }
 };
 
-const igl::TextureFormat kStencilFormat = igl::TextureFormat::S8_UInt_Z32_UNorm;
-
 static bool convertBlendFuncFactor(int factor, igl::BlendFactor* result) {
   if (factor == NVG_ZERO)
     *result = igl::BlendFactor::Zero;
@@ -1283,27 +1281,6 @@ class MNVGcontext {
     IGL_DEBUG_ASSERT(result.isOk());
 
     piplelinePixelFormat_ = framebuffer_->getColorAttachment(0)->getProperties().format;
-  }
-
-  // Re-creates stencil texture whenever the specified size is bigger.
-  void updateStencilTextureToSize(igl_vector_uint2* size) {
-    if (curBuffers_->stencilTexture != nullptr &&
-        (curBuffers_->stencilTexture->getSize().width < size->x ||
-         curBuffers_->stencilTexture->getSize().height < size->y)) {
-      curBuffers_->stencilTexture = nullptr;
-    }
-    if (curBuffers_->stencilTexture == nullptr) {
-      igl::TextureDesc stencilTextureDescriptor =
-          igl::TextureDesc::new2D(kStencilFormat,
-                                  size->x,
-                                  size->y,
-                                  igl::TextureDesc::TextureUsageBits::Attachment |
-                                      igl::TextureDesc::TextureUsageBits::Sampled);
-#if TARGET_OS_SIMULATOR
-      stencilTextureDescriptor.storage = igl::ResourceStorage::Private;
-#endif
-      curBuffers_->stencilTexture = device_->createTexture(stencilTextureDescriptor, NULL);
-    }
   }
 };
 
