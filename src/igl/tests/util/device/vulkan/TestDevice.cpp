@@ -80,6 +80,7 @@ std::shared_ptr<::igl::IDevice> createTestDevice(const igl::vulkan::VulkanContex
                                            extraDeviceExtensions.size(),
                                            extraDeviceExtensions.data(),
                                            &features,
+                                           "Test Device",
                                            &ret);
 
     if (!ret.isOk()) {

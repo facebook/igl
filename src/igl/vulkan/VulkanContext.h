@@ -95,7 +95,8 @@ class VulkanContext final {
   igl::Result initContext(const HWDeviceDesc& desc,
                           size_t numExtraDeviceExtensions = 0,
                           const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions = nullptr,
-                          const VulkanFeatures* IGL_NULLABLE requestedFeatures = nullptr);
+                          const VulkanFeatures* IGL_NULLABLE requestedFeatures = nullptr,
+                          const char* IGL_NULLABLE debugName = nullptr);
 
   igl::Result initSwapchain(uint32_t width, uint32_t height);
   VkExtent2D getSwapchainExtent() const;

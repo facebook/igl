@@ -675,7 +675,8 @@ igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
 igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                        size_t numExtraDeviceExtensions,
                                        const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions,
-                                       const VulkanFeatures* IGL_NULLABLE requestedFeatures) {
+                                       const VulkanFeatures* IGL_NULLABLE requestedFeatures,
+                                       const char* IGL_NULLABLE debugName) {
   if (desc.guid == 0UL) {
     IGL_LOG_ERROR("Invalid hardwareGuid(%lu)", desc.guid);
     return Result(Result::Code::Unsupported, "Vulkan is not supported");
@@ -708,6 +709,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   const uint32_t apiVersion = vkPhysicalDeviceProperties2_.properties.apiVersion;
 
   if (config_.enableExtraLogs) {
+    IGL_LOG_INFO("Device: %s\n", debugName ? debugName : "igl/vulkan/VulkanContext.cpp");
     IGL_LOG_INFO("Vulkan physical device: %s\n",
                  vkPhysicalDeviceProperties2_.properties.deviceName);
     IGL_LOG_INFO("           API version: %i.%i.%i.%i\n",
@@ -825,8 +827,8 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   vf_.vkGetDeviceQueue(
       device, deviceQueues_.computeQueueFamilyIndex, 0, &deviceQueues_.computeQueue);
 
-  device_ =
-      std::make_unique<igl::vulkan::VulkanDevice>(vf_, device, "Device: VulkanContext::device_");
+  device_ = std::make_unique<igl::vulkan::VulkanDevice>(
+      vf_, device, IGL_FORMAT("Device: VulkanContext::device_ {}", debugName).c_str());
   immediate_ =
       std::make_unique<igl::vulkan::VulkanImmediateCommands>(vf_,
                                                              device,

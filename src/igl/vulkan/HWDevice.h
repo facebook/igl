@@ -61,6 +61,7 @@ class HWDevice final {
       size_t numExtraDeviceExtensions = 0,
       const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions = nullptr,
       const igl::vulkan::VulkanFeatures* IGL_NULLABLE features = nullptr,
+      const char* IGL_NULLABLE debugName = nullptr,
       Result* IGL_NULLABLE outResult = nullptr);
 };
 
