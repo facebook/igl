@@ -236,7 +236,7 @@ static void setVertextData(NVGvertex* vtx, float x, float y, float u, float v) {
 
 class MNVGcontext {
  public:
-  igl::IDevice* device_;
+  igl::IDevice* device_ = nullptr;
   igl::IRenderCommandEncoder* renderEncoder_ = nullptr;
 
   int fragmentUniformBufferSize_;
@@ -251,12 +251,12 @@ class MNVGcontext {
   int textureId_;
 
   // Per frame buffers
-  MNVGbuffers* curBuffers_;
+  MNVGbuffers* curBuffers_ = nullptr;
   std::vector<MNVGbuffers*> allBuffers_;
   int maxBuffers_;
 
   // Cached states.
-  MNVGblend* _blendFunc;
+  MNVGblend* blendFunc_ = nullptr;
   std::shared_ptr<igl::IDepthStencilState> defaultStencilState_;
   std::shared_ptr<igl::IDepthStencilState> fillShapeStencilState_;
   std::shared_ptr<igl::IDepthStencilState> fillAntiAliasStencilState_;
@@ -634,11 +634,11 @@ class MNVGcontext {
     }
 
     // Initializes default blend states.
-    _blendFunc = (MNVGblend*)malloc(sizeof(MNVGblend));
-    _blendFunc->srcRGB = igl::BlendFactor::One;
-    _blendFunc->dstRGB = igl::BlendFactor::OneMinusSrcAlpha;
-    _blendFunc->srcAlpha = igl::BlendFactor::One;
-    _blendFunc->dstAlpha = igl::BlendFactor::OneMinusSrcAlpha;
+    blendFunc_ = (MNVGblend*)malloc(sizeof(MNVGblend));
+    blendFunc_->srcRGB = igl::BlendFactor::One;
+    blendFunc_->dstRGB = igl::BlendFactor::OneMinusSrcAlpha;
+    blendFunc_->srcAlpha = igl::BlendFactor::One;
+    blendFunc_->dstAlpha = igl::BlendFactor::OneMinusSrcAlpha;
 
     // Initializes stencil states.
     igl::DepthStencilStateDesc stencilDescriptor;
@@ -799,7 +799,7 @@ class MNVGcontext {
       texture->sampler = nullptr;
     }
 
-    free(_blendFunc);
+    free(blendFunc_);
     renderEncoder_ = nullptr;
     textures_.clear();
     allBuffers_.clear();
@@ -839,7 +839,7 @@ class MNVGcontext {
                            const NVGpath* paths,
                            int npaths) {
     MNVGcall* call = allocCall();
-    NVGvertex* quad;
+    NVGvertex* quad = nullptr;
 
     if (call == NULL)
       return;
@@ -1207,8 +1207,8 @@ class MNVGcontext {
   void updateRenderPipelineStatesForBlend(MNVGblend* blend) {
     if (pipelineState_ != nullptr && stencilOnlyPipelineState_ != nullptr &&
         piplelinePixelFormat_ == framebuffer_->getColorAttachment(0)->getProperties().format &&
-        _blendFunc->srcRGB == blend->srcRGB && _blendFunc->dstRGB == blend->dstRGB &&
-        _blendFunc->srcAlpha == blend->srcAlpha && _blendFunc->dstAlpha == blend->dstAlpha) {
+        blendFunc_->srcRGB == blend->srcRGB && blendFunc_->dstRGB == blend->dstRGB &&
+        blendFunc_->srcAlpha == blend->srcAlpha && blendFunc_->dstAlpha == blend->dstAlpha) {
       return;
     }
 
@@ -1245,10 +1245,10 @@ class MNVGcontext {
     colorAttachmentDescriptor.srcAlphaBlendFactor = blend->srcAlpha;
     colorAttachmentDescriptor.dstRGBBlendFactor = blend->dstRGB;
     colorAttachmentDescriptor.dstAlphaBlendFactor = blend->dstAlpha;
-    _blendFunc->srcRGB = blend->srcRGB;
-    _blendFunc->dstRGB = blend->dstRGB;
-    _blendFunc->srcAlpha = blend->srcAlpha;
-    _blendFunc->dstAlpha = blend->dstAlpha;
+    blendFunc_->srcRGB = blend->srcRGB;
+    blendFunc_->dstRGB = blend->dstRGB;
+    blendFunc_->srcAlpha = blend->srcAlpha;
+    blendFunc_->dstAlpha = blend->dstAlpha;
 
     pipelineStateDescriptor.topology = igl::PrimitiveType::Triangle;
     pipelineStateDescriptor.cullMode = igl::CullMode::Disabled;
