@@ -302,7 +302,8 @@ using namespace igl;
       devices = igl::vulkan::HWDevice::queryDevices(
           *context, igl::HWDeviceQueryDesc(igl::HWDeviceType::IntegratedGpu), nullptr);
     }
-    auto device = igl::vulkan::HWDevice::create(std::move(context), devices[0], 0, 0);
+    auto device = igl::vulkan::HWDevice::create(
+        std::move(context), devices[0], 0, 0, 0, nullptr, nullptr, "IGL Shell", nullptr);
 
     shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(std::move(device));
     [vulkanView prepareVulkan:shellPlatform_];
