@@ -181,10 +181,7 @@ static int MAXINT(int a, int b) {
   return a > b ? a : b;
 }
 
-static int maxVertexCount(const NVGpath* paths,
-                                int npaths,
-                                int* indexCount,
-                                int* strokeCount) {
+static int maxVertexCount(const NVGpath* paths, int npaths, int* indexCount, int* strokeCount) {
   int count = 0;
   if (indexCount != NULL)
     *indexCount = 0;
@@ -856,8 +853,7 @@ class MNVGcontext {
 
     // Allocate vertices for all the paths.
     int indexCount, strokeCount = 0;
-    int maxverts =
-        maxVertexCount(paths, npaths, &indexCount, &strokeCount) + call->triangleCount;
+    int maxverts = maxVertexCount(paths, npaths, &indexCount, &strokeCount) + call->triangleCount;
     int vertOffset = allocVerts(maxverts);
     if (vertOffset == -1) {
       // We get here if call alloc was ok, but something else is not.
@@ -1290,11 +1286,11 @@ static void callback__renderCancel(void* uptr) {
 }
 
 static int callback__renderCreateTexture(void* uptr,
-                                       int type,
-                                       int width,
-                                       int height,
-                                       int imageFlags,
-                                       const unsigned char* data) {
+                                         int type,
+                                         int width,
+                                         int height,
+                                         int imageFlags,
+                                         const unsigned char* data) {
   MNVGcontext* mtl = (MNVGcontext*)uptr;
   return mtl->renderCreateTextureWithType(type, width, height, imageFlags, data);
 }
@@ -1315,13 +1311,13 @@ static int callback__renderDeleteTexture(void* uptr, int image) {
 }
 
 static void callback__renderFill(void* uptr,
-                               NVGpaint* paint,
-                               NVGcompositeOperationState compositeOperation,
-                               NVGscissor* scissor,
-                               float fringe,
-                               const float* bounds,
-                               const NVGpath* paths,
-                               int npaths) {
+                                 NVGpaint* paint,
+                                 NVGcompositeOperationState compositeOperation,
+                                 NVGscissor* scissor,
+                                 float fringe,
+                                 const float* bounds,
+                                 const NVGpath* paths,
+                                 int npaths) {
   MNVGcontext* mtl = (MNVGcontext*)uptr;
   mtl->renderFillWithPaint(paint, compositeOperation, scissor, fringe, bounds, paths, npaths);
 }
@@ -1337,41 +1333,44 @@ static int callback__renderGetTextureSize(void* uptr, int image, int* w, int* h)
 }
 
 static void callback__renderStroke(void* uptr,
-                                 NVGpaint* paint,
-                                 NVGcompositeOperationState compositeOperation,
-                                 NVGscissor* scissor,
-                                 float fringe,
-                                 float strokeWidth,
-                                 const NVGpath* paths,
-                                 int npaths) {
+                                   NVGpaint* paint,
+                                   NVGcompositeOperationState compositeOperation,
+                                   NVGscissor* scissor,
+                                   float fringe,
+                                   float strokeWidth,
+                                   const NVGpath* paths,
+                                   int npaths) {
   MNVGcontext* mtl = (MNVGcontext*)uptr;
   mtl->renderStrokeWithPaint(
       paint, compositeOperation, scissor, fringe, strokeWidth, paths, npaths);
 }
 
 static void callback__renderTriangles(void* uptr,
-                                    NVGpaint* paint,
-                                    NVGcompositeOperationState compositeOperation,
-                                    NVGscissor* scissor,
-                                    const NVGvertex* verts,
-                                    int nverts,
-                                    float fringe) {
+                                      NVGpaint* paint,
+                                      NVGcompositeOperationState compositeOperation,
+                                      NVGscissor* scissor,
+                                      const NVGvertex* verts,
+                                      int nverts,
+                                      float fringe) {
   MNVGcontext* mtl = (MNVGcontext*)uptr;
   mtl->renderTrianglesWithPaint(paint, compositeOperation, scissor, verts, nverts, fringe);
 }
 
 static int callback__renderUpdateTexture(void* uptr,
-                                       int image,
-                                       int x,
-                                       int y,
-                                       int w,
-                                       int h,
-                                       const unsigned char* data) {
+                                         int image,
+                                         int x,
+                                         int y,
+                                         int w,
+                                         int h,
+                                         const unsigned char* data) {
   MNVGcontext* mtl = (MNVGcontext*)uptr;
   return mtl->renderUpdateTextureWithImage(image, x, y, w, h, data);
 }
 
-static void callback__renderViewport(void* uptr, float width, float height, float device_PixelRatio) {
+static void callback__renderViewport(void* uptr,
+                                     float width,
+                                     float height,
+                                     float device_PixelRatio) {
   MNVGcontext* mtl = (MNVGcontext*)uptr;
   mtl->renderViewportWithWidth(width, height, device_PixelRatio);
 }
@@ -1410,13 +1409,13 @@ NVGcontext* CreateContext(igl::IDevice* device_, int flags) {
   params.edgeAntiAlias = flags & NVG_ANTIALIAS ? 1 : 0;
 
   mtl->flags_ = flags;
-    
+
   size_t uniformBufferAlignment = 16;
   device_->getFeatureLimits(igl::DeviceFeatureLimits::BufferAlignment, uniformBufferAlignment);
   // sizeof(MNVGfragUniforms)= 176
   // 64 * 3 > 176
   mtl->fragmentUniformBufferSize_ = std::max(64 * 3, (int)uniformBufferAlignment);
-    
+
   mtl->indexSize_ = 4; // IndexType::UInt32
   mtl->device_ = device_;
 
