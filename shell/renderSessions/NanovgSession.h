@@ -74,7 +74,6 @@ class NanovgSession : public RenderSession {
   std::shared_ptr<TouchListener> touchListener_;
 
   PerfGraph fps_, cpuGraph_, gpuGraph_;
-  double preTimestamp_;
 };
 
 } // namespace igl::shell

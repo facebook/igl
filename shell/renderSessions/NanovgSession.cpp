@@ -22,13 +22,6 @@
 
 namespace igl::shell {
 
-double getMilliSeconds() {
-  return std::chrono::duration<double>(std::chrono::time_point_cast<std::chrono::milliseconds>(
-                                           std::chrono::high_resolution_clock::now())
-                                           .time_since_epoch())
-      .count();
-}
-
 int NanovgSession::loadDemoData(NVGcontext* vg, DemoData* data) {
   auto getImageFullPath = ([this](const std::string& name) {
 #if IGL_PLATFORM_ANDROID
@@ -90,7 +83,7 @@ int NanovgSession::loadDemoData(NVGcontext* vg, DemoData* data) {
 }
 
 void NanovgSession::initialize() noexcept {
-  const CommandQueueDesc desc{CommandQueueType::Graphics};
+  const CommandQueueDesc desc{.type = CommandQueueType::Graphics};
   commandQueue_ = getPlatform().getDevice().createCommandQueue(desc, nullptr);
 
   renderPass_.colorAttachments.resize(1);
@@ -173,9 +166,7 @@ void NanovgSession::drawNanovg(float __width,
   int my = mouseListener_->mouseY;
 #endif
 
-  int blowup = 0;
-
-  auto start_ms = getMilliSeconds();
+  auto start = getSeconds();
 
   nvgBeginFrame(vg, width, height, pxRatio);
   iglu::nanovg::SetRenderCommandEncoder(
@@ -186,7 +177,7 @@ void NanovgSession::drawNanovg(float __width,
 
   times_++;
 
-  renderDemo(vg, mx, my, width, height, times_ / 60.0f, blowup, &nvgDemoData_);
+  renderDemo(vg, mx, my, width, height, times_ / 60.0f, 0, &nvgDemoData_);
 
   renderGraph(vg, 5, 5, &fps_);
   renderGraph(vg, 5 + 200 + 5, 5, &cpuGraph_);
@@ -194,12 +185,10 @@ void NanovgSession::drawNanovg(float __width,
 
   nvgEndFrame(vg);
 
-  auto end_ms = getMilliSeconds();
+  auto end = getSeconds();
 
-  updateGraph(&fps_, (start_ms - preTimestamp_));
-  updateGraph(&cpuGraph_, (end_ms - start_ms));
-
-  preTimestamp_ = start_ms;
+  updateGraph(&fps_, getDeltaSeconds());
+  updateGraph(&cpuGraph_, (end - start));
 }
 
 } // namespace igl::shell
