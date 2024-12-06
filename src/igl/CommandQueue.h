@@ -16,12 +16,6 @@ namespace igl {
 struct CommandBufferDesc;
 class ICommandBuffer;
 
-enum class CommandQueueType {
-  Compute, /// Supports Compute commands
-  Graphics, /// Supports Graphics commands
-  MemoryTransfer, /// Supports Memory commands
-};
-
 /**
  * This is a placeholder for future use
  */

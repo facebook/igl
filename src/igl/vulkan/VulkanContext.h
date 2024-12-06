@@ -308,7 +308,6 @@ class VulkanContext final {
  public:
   const VulkanFunctionTable& vf_;
   DeviceQueues deviceQueues_;
-  std::unordered_map<CommandQueueType, VulkanQueueDescriptor> userQueues_;
   std::unique_ptr<igl::vulkan::VulkanDevice> device_;
   std::unique_ptr<igl::vulkan::VulkanSwapchain> swapchain_;
   std::unique_ptr<igl::vulkan::VulkanImmediateCommands> immediate_;

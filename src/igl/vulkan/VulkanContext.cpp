@@ -148,18 +148,6 @@ std::vector<VkFormat> getCompatibleDepthStencilFormats(igl::TextureFormat format
   }
 }
 
-VkQueueFlagBits getQueueTypeFlag(igl::CommandQueueType type) {
-  switch (type) {
-  case igl::CommandQueueType::Compute:
-    return VK_QUEUE_COMPUTE_BIT;
-  case igl::CommandQueueType::Graphics:
-    return VK_QUEUE_GRAPHICS_BIT;
-  case igl::CommandQueueType::MemoryTransfer:
-    return VK_QUEUE_TRANSFER_BIT;
-  }
-  IGL_UNREACHABLE_RETURN(VK_QUEUE_GRAPHICS_BIT)
-}
-
 bool validateImageLimits(VkImageType imageType,
                          VkSampleCountFlagBits samples,
                          const VkExtent3D& extent,
@@ -774,28 +762,6 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   queuePool.reserveQueue(graphicsQueueDescriptor);
   queuePool.reserveQueue(computeQueueDescriptor);
-
-  // Reserve queues requested by user
-  // Reserve transfer types at the end, since those can fallback to compute and graphics queues.
-  // This reduces the risk of failing reservation due to saturation of compute and graphics queues
-  auto sortedUserQueues = config_.userQueues;
-  sort(sortedUserQueues.begin(), sortedUserQueues.end(), [](const auto& /*q1*/, const auto& q2) {
-    return q2 == CommandQueueType::MemoryTransfer;
-  });
-
-  for (const auto& userQueue : sortedUserQueues) {
-    auto userQueueDescriptor = queuePool.findQueueDescriptor(getQueueTypeFlag(userQueue));
-    if (userQueueDescriptor.isValid()) {
-      userQueues_[userQueue] = userQueueDescriptor;
-    } else {
-      IGL_LOG_ERROR("User requested queue is not supported");
-      return Result(Result::Code::Unsupported, "User requested queue is not supported");
-    }
-  }
-
-  for (const auto& [_, descriptor] : userQueues_) {
-    queuePool.reserveQueue(descriptor);
-  }
 
   const auto qcis = queuePool.getQueueCreationInfos();
 

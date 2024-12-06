@@ -139,8 +139,6 @@ struct VulkanContextConfig {
   igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
   igl::TextureFormat requestedSwapChainTextureFormat = igl::TextureFormat::RGBA_UNorm8;
 
-  std::vector<CommandQueueType> userQueues;
-
   // the number of resources to support BufferAPIHintBits::Ring
   uint32_t maxResourceCount = 3u;
 
