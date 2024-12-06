@@ -51,8 +51,6 @@ TEST_F(DeviceVulkanTest, CreateCommandQueue) {
   Result ret;
   CommandQueueDesc desc{};
 
-  desc.type = CommandQueueType::Graphics;
-
   auto cmdQueue = iglDev_->createCommandQueue(desc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
   ASSERT_NE(cmdQueue, nullptr);
@@ -70,8 +68,6 @@ TEST_F(DeviceVulkanTest, PlatformDevice) {
   // ASSERT_TRUE(texture != nullptr); // no swapchain so null
 
   CommandQueueDesc desc{};
-
-  desc.type = CommandQueueType::Graphics;
 
   auto cmdQueue = iglDev_->createCommandQueue(desc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
@@ -105,8 +101,6 @@ TEST_F(DeviceVulkanTest, PlatformDeviceSampler) {
   ASSERT_FALSE(vulkanSamplerState->isYUV());
 
   CommandQueueDesc cmdQueueDesc{};
-
-  cmdQueueDesc.type = CommandQueueType::Graphics;
 
   auto cmdQueue = iglDev_->createCommandQueue(cmdQueueDesc, &ret);
   ASSERT_TRUE(ret.isOk()) << ret.message.c_str();

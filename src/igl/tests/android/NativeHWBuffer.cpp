@@ -190,7 +190,7 @@ class NativeHWBufferTextureTest : public ::testing::Test {
     ASSERT_TRUE(iglDev_ != nullptr);
 
     // Create Command Queue
-    const CommandQueueDesc cqDesc = {CommandQueueType::Graphics};
+    const CommandQueueDesc cqDesc = {};
     cmdQueue_ = iglDev_->createCommandQueue(cqDesc, &ret);
     ASSERT_TRUE(cmdQueue_ != nullptr);
 

@@ -28,7 +28,7 @@ void createDeviceAndQueue(std::shared_ptr<IDevice>& dev, std::shared_ptr<IComman
   ASSERT_TRUE(dev != nullptr);
 
   // Create Command Queue
-  const CommandQueueDesc cqDesc = {CommandQueueType::Graphics};
+  const CommandQueueDesc cqDesc = {};
   cq = dev->createCommandQueue(cqDesc, &ret);
 
   ASSERT_EQ(ret.code, Result::Code::Ok);

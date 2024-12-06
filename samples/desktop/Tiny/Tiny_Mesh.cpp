@@ -389,7 +389,7 @@ static void initIGL() {
   }
 
   // Command queue: backed by different types of GPU HW queues
-  CommandQueueDesc desc{CommandQueueType::Graphics};
+  CommandQueueDesc desc{};
   commandQueue_ = device_->createCommandQueue(desc, nullptr);
 
   renderPass_.colorAttachments.push_back(igl::RenderPassDesc::ColorAttachmentDesc{});

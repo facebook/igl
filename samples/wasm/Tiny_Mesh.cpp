@@ -209,7 +209,7 @@ bool initialize() {
 
   renderPass_.depthAttachment.loadAction = LoadAction::DontCare;
 
-  CommandQueueDesc desc{CommandQueueType::Graphics};
+  CommandQueueDesc desc{};
   commandQueue_ = device_->createCommandQueue(desc, nullptr);
 
   // Vertex buffer, Index buffer and Vertex Input. Buffers are allocated in GPU memory.

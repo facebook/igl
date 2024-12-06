@@ -15,11 +15,7 @@
 
 namespace igl::vulkan {
 
-CommandQueue::CommandQueue(Device& device, const CommandQueueDesc& desc) :
-  device_(device), desc_(desc) {
-  IGL_DEBUG_ASSERT(desc_.type == CommandQueueType::Graphics ||
-                   desc_.type == CommandQueueType::Compute);
-}
+CommandQueue::CommandQueue(Device& device, const CommandQueueDesc& /*desc*/) : device_(device) {}
 
 std::shared_ptr<ICommandBuffer> CommandQueue::createCommandBuffer(const CommandBufferDesc& desc,
                                                                   Result* /*outResult*/) {
@@ -62,11 +58,8 @@ SubmitHandle CommandQueue::endCommandBuffer(igl::vulkan::VulkanContext& ctx,
                                             bool present) {
   IGL_PROFILER_FUNCTION();
 
-  const bool isGraphicsQueue = desc_.type == CommandQueueType::Graphics;
-
   // Submit to the graphics queue.
-  const bool shouldPresent = isGraphicsQueue && ctx.hasSwapchain() &&
-                             cmdBuffer->isFromSwapchain() && present;
+  const bool shouldPresent = ctx.hasSwapchain() && cmdBuffer->isFromSwapchain() && present;
   if (shouldPresent) {
     ctx.immediate_->waitSemaphore(ctx.swapchain_->getSemaphore());
   }

@@ -236,7 +236,7 @@ static void initIGL() {
   }
 
   // Command queue: backed by different types of GPU HW queues
-  const CommandQueueDesc desc{CommandQueueType::Graphics};
+  const CommandQueueDesc desc{};
   commandQueue_ = device_->createCommandQueue(desc, nullptr);
 
   // first color attachment

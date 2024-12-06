@@ -28,7 +28,7 @@ void SaveFrameBufferToPng(const char* absoluteFilename,
   auto buffer =
       std::make_unique<uint8_t[]>(frameBuffersize.width * frameBuffersize.height * bytesPerPixel);
 
-  const CommandQueueDesc desc{igl::CommandQueueType::Graphics};
+  const CommandQueueDesc desc{};
   auto commandQueue = platform.getDevice().createCommandQueue(desc, nullptr);
   framebuffer->copyBytesColorAttachment(*commandQueue, 0, buffer.get(), rangeDesc);
 

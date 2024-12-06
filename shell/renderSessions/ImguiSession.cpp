@@ -17,7 +17,7 @@
 namespace igl::shell {
 
 void ImguiSession::initialize() noexcept {
-  const igl::CommandQueueDesc desc{igl::CommandQueueType::Graphics};
+  const igl::CommandQueueDesc desc{};
   _commandQueue = getPlatform().getDevice().createCommandQueue(desc, nullptr);
 
   { // Create the ImGui session

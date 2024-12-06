@@ -323,7 +323,7 @@ void BindGroupSession::initialize() noexcept {
   shaderStages_ = getShaderStagesForBackend(device);
 
   // Command queue: backed by different types of GPU HW queues
-  commandQueue_ = device.createCommandQueue({igl::CommandQueueType::Graphics}, nullptr);
+  commandQueue_ = device.createCommandQueue({}, nullptr);
 
   renderPass_.colorAttachments.resize(1);
   renderPass_.colorAttachments[0].loadAction = LoadAction::Clear;

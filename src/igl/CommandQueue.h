@@ -16,11 +16,6 @@ namespace igl {
 struct CommandBufferDesc;
 class ICommandBuffer;
 
-/**
- * Enumeration used in CommandQueueDesc to create a command queue of the correct type.
- * Options are Compute, Graphics, and MemoryTransfer which directly correct to graphics libraries
- * standard queues.
- */
 enum class CommandQueueType {
   Compute, /// Supports Compute commands
   Graphics, /// Supports Graphics commands
@@ -28,11 +23,9 @@ enum class CommandQueueType {
 };
 
 /**
- * Only contains the CommandQueueType enumeration to set up the correct type of command queue.
+ * This is a placeholder for future use
  */
-struct CommandQueueDesc {
-  CommandQueueType type;
-};
+struct CommandQueueDesc {};
 
 /**
  * Contains the current frame's draw count and last frame's draw count.

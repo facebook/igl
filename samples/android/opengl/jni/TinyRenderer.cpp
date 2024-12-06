@@ -124,7 +124,7 @@ void TinyRenderer::init() {
   }
 
   { // Initialize command queue
-    const CommandQueueDesc commandQueueDesc = {CommandQueueType::Graphics};
+    const CommandQueueDesc commandQueueDesc = {};
     commandQueue_ = device_->createCommandQueue(commandQueueDesc, &result);
     throwOnBadResult(result);
   }

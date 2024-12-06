@@ -202,7 +202,7 @@ class CommonWithDeviceTest : public ::testing::Test {
 TEST_F(CommonWithDeviceTest, TransitionToGeneralTest) {
   igl::Result result;
 
-  const CommandQueueDesc queueDesc{CommandQueueType::Graphics};
+  const CommandQueueDesc queueDesc{};
   auto commandQueue = device_->createCommandQueue(queueDesc, &result);
   EXPECT_TRUE(result.isOk());
 

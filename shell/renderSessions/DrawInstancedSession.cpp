@@ -173,8 +173,7 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
 
 void DrawInstancedSession::initialize() noexcept {
   // Command queue: backed by different types of GPU HW queues
-  commandQueue_ =
-      getPlatform().getDevice().createCommandQueue({CommandQueueType::Graphics}, nullptr);
+  commandQueue_ = getPlatform().getDevice().createCommandQueue({}, nullptr);
 
   renderPass_.colorAttachments.resize(1);
 
