@@ -40,6 +40,29 @@ NSOpenGLContext* createOpenGLContext(igl::opengl::RenderingAPI api) {
     if (pixelFormat) {
       format = pixelFormat;
     }
+  } else if (api == igl::opengl::RenderingAPI::GL) {
+    // Copied from preferredPixelFormat, with NSOpenGLProfileVersion4_1Core added
+    static NSOpenGLPixelFormatAttribute attributes[] = {
+        NSOpenGLPFAWindow,
+        NSOpenGLPFAAccelerated,
+        NSOpenGLPFADoubleBuffer,
+        NSOpenGLPFAColorSize,
+        24,
+        NSOpenGLPFAAlphaSize,
+        8,
+        NSOpenGLPFADepthSize,
+        24,
+        NSOpenGLPFAStencilSize,
+        8,
+        0,
+        NSOpenGLPFAOpenGLProfile,
+        NSOpenGLProfileVersion4_1Core,
+    };
+    auto pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
+    IGL_DEBUG_ASSERT(pixelFormat, "Requested attributes not supported");
+    if (pixelFormat) {
+      format = pixelFormat;
+    }
   }
   return [[NSOpenGLContext alloc] initWithFormat:format shareContext:nil];
 }
