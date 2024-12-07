@@ -267,6 +267,9 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     auto& metalBuffer = static_cast<Buffer&>(*buffer);
     [encoder_ setVertexBuffer:metalBuffer.get() offset:offset atIndex:index];
     [encoder_ setFragmentBuffer:metalBuffer.get() offset:offset atIndex:index];
+  } else {
+    [encoder_ setVertexBuffer:nil offset:0 atIndex:index];
+    [encoder_ setFragmentBuffer:nil offset:0 atIndex:index];
   }
 }
 
