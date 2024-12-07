@@ -87,8 +87,8 @@ namespace igl {
 bool isDebugBreakEnabled();
 void setDebugBreakEnabled(bool enabled);
 
-[[nodiscard]] inline bool _IGLAlwaysTrue() {
-  return true;
+[[nodiscard]] inline bool _IGLEnsureNoDiscard(bool cond) {
+  return cond;
 }
 
 inline void _IGLDebugAbortV([[maybe_unused]] const char* category,
@@ -134,7 +134,7 @@ inline void _IGLDebugAbortV([[maybe_unused]] const char* category,
 
 #define _IGL_DEBUG_ABORT_IMPL(cond, reason, format, ...) \
   (cond                                                  \
-       ? ::igl::_IGLAlwaysTrue()                         \
+       ? ::igl::_IGLEnsureNoDiscard(true)                \
        : ::igl::_IGLDebugAbort(                          \
              IGL_ERROR_CATEGORY, reason, IGL_FUNCTION, __FILE__, __LINE__, format, ##__VA_ARGS__))
 
@@ -152,8 +152,8 @@ inline void _IGLDebugAbortV([[maybe_unused]] const char* category,
 
 #define _IGL_DEBUG_ABORT(format, ...) static_cast<void>(0)
 #define _IGL_DEBUG_ASSERT(cond, format, ...) static_cast<void>(0)
-#define _IGL_DEBUG_VERIFY(cond, format, ...) (cond)
-#define _IGL_DEBUG_VERIFY_NOT(cond, format, ...) (cond)
+#define _IGL_DEBUG_VERIFY(cond, format, ...) ::igl::_IGLEnsureNoDiscard(!!(cond))
+#define _IGL_DEBUG_VERIFY_NOT(cond, format, ...) ::igl::_IGLEnsureNoDiscard(!!(cond))
 
 #endif // IGL_VERIFY_ENABLED
 
@@ -232,7 +232,7 @@ namespace igl {
 
 #define _IGL_SOFT_ERROR_IMPL(cond, reason, format, ...) \
   (cond                                                 \
-       ? ::igl::_IGLAlwaysTrue()                        \
+       ? ::igl::_IGLEnsureNoDiscard(true)               \
        : ::igl::_IGLSoftError(                          \
              IGL_ERROR_CATEGORY, reason, IGL_FUNCTION, __FILE__, __LINE__, format, ##__VA_ARGS__))
 
@@ -250,8 +250,8 @@ namespace igl {
 
 #define _IGL_SOFT_ERROR(format, ...) static_cast<void>(0)
 #define _IGL_SOFT_ASSERT(cond, format, ...) static_cast<void>(0)
-#define _IGL_SOFT_VERIFY(cond, format, ...) (cond)
-#define _IGL_SOFT_VERIFY_NOT(cond, format, ...) (cond)
+#define _IGL_SOFT_VERIFY(cond, format, ...) ::igl::_IGLEnsureNoDiscard(!!(cond))
+#define _IGL_SOFT_VERIFY_NOT(cond, format, ...) ::igl::_IGLEnsureNoDiscard(!!(cond))
 
 #endif // IGL_SOFT_ERROR_ENABLED
 
