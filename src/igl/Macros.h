@@ -219,8 +219,6 @@
 #if defined(IGL_BUILD_MODE_OPT)
   // Forced opt build.
   #define IGL_DEBUG 0
-#elif defined(XR_DEBUG_BUILD)
-  #define IGL_DEBUG 1
 #elif IGL_PLATFORM_ANDROID && !defined(FBANDROID_BUILD_MODE_OPT)
   // On Android, buck defines NDEBUG for all builds so the test above doesn't work.
   // FBANDROID_BUILD_MODE_OPT is only defined in production builds and was created
