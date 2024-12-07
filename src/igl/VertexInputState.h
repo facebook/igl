@@ -140,7 +140,7 @@ struct VertexInputStateDesc {
   size_t numAttributes = 0;
   VertexAttribute attributes[IGL_VERTEX_ATTRIBUTES_MAX];
   size_t numInputBindings = 0;
-  VertexInputBinding inputBindings[IGL_VERTEX_BUFFER_MAX];
+  VertexInputBinding inputBindings[IGL_BUFFER_BINDINGS_MAX];
   static size_t sizeForVertexAttributeFormat(VertexAttributeFormat format);
 
   bool operator==(const VertexInputStateDesc& other) const;
