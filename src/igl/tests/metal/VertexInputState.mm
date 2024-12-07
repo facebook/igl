@@ -68,7 +68,7 @@ TEST_F(VertexInputStateMTLTest, testWithNumBindingsTooLarge) {
   ASSERT_TRUE(iglDev_ != nullptr);
 
   VertexInputStateDesc inputDesc;
-  inputDesc.numInputBindings = IGL_VERTEX_BINDINGS_MAX + 1;
+  inputDesc.numInputBindings = IGL_BUFFER_BINDINGS_MAX + 1;
   Result ret;
 
   const std::shared_ptr<IVertexInputState> vertexInputState =

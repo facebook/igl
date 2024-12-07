@@ -218,7 +218,7 @@ std::shared_ptr<igl::IVertexInputState> Device::createVertexInputState(
   }
 
   // Avoid buffer overrun in numInputBindings.
-  if (desc.numInputBindings > IGL_VERTEX_BINDINGS_MAX) {
+  if (desc.numInputBindings > IGL_BUFFER_BINDINGS_MAX) {
     Result::setResult(outResult,
                       Result::Code::ArgumentOutOfRange,
                       "numInputBindings is too large in VertexInputStateDesc");
@@ -231,7 +231,7 @@ std::shared_ptr<igl::IVertexInputState> Device::createVertexInputState(
   std::unordered_set<int> attributeLocationSet;
   for (int i = 0; i < desc.numAttributes; ++i) {
     size_t bufferIndex = desc.attributes[i].bufferIndex;
-    if (bufferIndex >= IGL_VERTEX_BINDINGS_MAX) {
+    if (bufferIndex >= IGL_BUFFER_BINDINGS_MAX) {
       Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "bufferIndex out of range");
       IGL_DEBUG_ABORT(outResult->message.c_str());
       return nullptr;
