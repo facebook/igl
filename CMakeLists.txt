@@ -25,6 +25,8 @@ option(IGL_WITH_OPENXR    "Enable OpenXR"                     OFF)
 option(IGL_ENFORCE_LOGS   "Enable logs in Release builds"      ON)
 
 option(IGL_DEPLOY_DEPS    "Deploy dependencies via CMake"      ON)
+option(IGLU_WITH_NANOVG   "Enable IGLU Nanovg"                OFF)
+
 # cmake-format: on
 
 if(DEFINED ENV{VULKAN_SDK})
@@ -97,6 +99,7 @@ message(STATUS "IGL_WITH_OPENXR    = ${IGL_WITH_OPENXR}")
 message(STATUS "IGL_ENFORCE_LOGS   = ${IGL_ENFORCE_LOGS}")
 
 message(STATUS "IGL_DEPLOY_DEPS    = ${IGL_DEPLOY_DEPS}")
+message(STATUS "IGLU_WITH_NANOVG   = ${IGLU_WITH_NANOVG}")
 # cmake-format: on
 
 if(APPLE)

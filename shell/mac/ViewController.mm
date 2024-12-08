@@ -151,6 +151,8 @@ using namespace igl;
 }
 
 - (void)loadView {
+  session_ = factory_->createRenderSession(nullptr);
+    
   // We don't care about the device type, just
   // return something that works
   HWDeviceQueryDesc queryDesc(HWDeviceType::Unknown);
@@ -196,6 +198,10 @@ using namespace igl;
 
 #if IGL_BACKEND_OPENGL
   case igl::BackendFlavor::OpenGL: {
+    const bool enableStencilBuffer = session_->getDepthTextureFormat() == igl::TextureFormat::S8_UInt_Z24_UNorm  ||
+                                     session_->getDepthTextureFormat() == igl::TextureFormat::S_UInt8;
+    const NSOpenGLPixelFormatAttribute stencilSize = enableStencilBuffer ? 8 : 0;
+      
     NSOpenGLPixelFormat* pixelFormat;
     if (config_.backendVersion.majorVersion == 4 && config_.backendVersion.minorVersion == 1) {
       static NSOpenGLPixelFormatAttribute attributes[] = {
@@ -211,6 +217,8 @@ using namespace igl;
           32,
           NSOpenGLPFADepthSize,
           24,
+          NSOpenGLPFAStencilSize,
+          stencilSize,
           NSOpenGLPFAOpenGLProfile,
           NSOpenGLProfileVersion4_1Core,
           0,
@@ -232,6 +240,8 @@ using namespace igl;
           32,
           NSOpenGLPFADepthSize,
           24,
+          NSOpenGLPFAStencilSize,
+          stencilSize,
           NSOpenGLPFAOpenGLProfile,
           NSOpenGLProfileVersion3_2Core,
           0,
@@ -252,6 +262,8 @@ using namespace igl;
           32,
           NSOpenGLPFADepthSize,
           24,
+          NSOpenGLPFAStencilSize,
+          stencilSize,
           NSOpenGLPFAOpenGLProfile,
           NSOpenGLProfileVersionLegacy,
           0,
@@ -342,7 +354,7 @@ using namespace igl;
   }
   }
 
-  session_ = factory_->createRenderSession(shellPlatform_);
+  session_->setPlatform(shellPlatform_);
   IGL_DEBUG_ASSERT(session_, "createDefaultRenderSession() must return a valid session");
   // Get initial native surface dimensions
   shellParams_.nativeSurfaceDimensions = glm::ivec2(2048, 1536);

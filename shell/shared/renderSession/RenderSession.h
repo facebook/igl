@@ -24,6 +24,10 @@ class RenderSession {
   // NOLINTNEXTLINE(performance-unnecessary-value-param)
   virtual void update(IGL_MAYBE_UNUSED igl::SurfaceTextures surfaceTextures) noexcept {}
   virtual void teardown() noexcept {}
+    
+  void setPlatform(std::shared_ptr<Platform> platform){
+    platform_ = std::move(platform);
+  }
 
   void updateDisplayScale(float scale) noexcept;
 
@@ -44,6 +48,10 @@ class RenderSession {
 
   void setCurrentQuadLayer(size_t layer) noexcept {
     currentQuadLayer_ = layer;
+  }
+    
+  [[nodiscard]] igl::TextureFormat getDepthTextureFormat() const {
+    return depthTextureFormat_;
   }
 
   /// return the number of seconds since the last call
@@ -74,6 +82,7 @@ class RenderSession {
 
   AppParams& appParamsRef() noexcept;
 
+  igl::TextureFormat depthTextureFormat_ = igl::TextureFormat::Z_UNorm16;
   std::shared_ptr<IFramebuffer> framebuffer_;
   std::shared_ptr<ICommandQueue> commandQueue_;
   size_t currentQuadLayer_ = 0;

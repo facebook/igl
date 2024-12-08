@@ -36,6 +36,7 @@
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
+#include <IGLU/nanovg/nanovg_igl.h>
 
 @interface RenderSessionController () {
   igl::BackendVersion backendVersion_;
@@ -137,7 +138,7 @@
 
   // @fb-only
                    // @fb-only
-  IglSurfaceTexturesAdapter* adapter = [surfaceTexturesProvider_ createSurfaceTextures];
+  IglSurfaceTexturesAdapter* adapter = [surfaceTexturesProvider_ createSurfaceTextures:session_->getDepthTextureFormat()];
   // @fb-only
                    // @fb-only
 
