@@ -42,7 +42,6 @@
                              .majorVersion = 3,
                              .minorVersion = 0},
           .swapchainColorTextureFormat = igl::TextureFormat::BGRA_SRGB,
-          .depthTextureFormat = igl::TextureFormat::S8_UInt_Z32_UNorm,
       },
 #endif
 #if IGL_BACKEND_OPENGL
@@ -53,7 +52,6 @@
                              .majorVersion = 3,
                              .minorVersion = 0},
           .swapchainColorTextureFormat = igl::TextureFormat::BGRA_SRGB,
-          .depthTextureFormat = igl::TextureFormat::S8_UInt_Z24_UNorm,
       },
 #endif
       {
@@ -62,7 +60,6 @@
                              .majorVersion = 2,
                              .minorVersion = 0},
           .swapchainColorTextureFormat = igl::TextureFormat::BGRA_SRGB,
-          .depthTextureFormat = igl::TextureFormat::S8_UInt_Z24_UNorm,
       },
 #endif
 // @fb-only
