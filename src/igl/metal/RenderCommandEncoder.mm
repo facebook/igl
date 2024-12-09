@@ -261,7 +261,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
   (void)bufferSize;
 
   IGL_DEBUG_ASSERT(encoder_);
-  IGL_DEBUG_ASSERT(index < IGL_VERTEX_BUFFER_MAX);
+  IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX);
 
   if (buffer) {
     auto& metalBuffer = static_cast<Buffer&>(*buffer);
@@ -275,7 +275,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
 
 void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, size_t bufferOffset) {
   IGL_DEBUG_ASSERT(encoder_);
-  IGL_DEBUG_ASSERT(index < IGL_VERTEX_BUFFER_MAX);
+  IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX);
 
   auto& metalBuffer = static_cast<Buffer&>(buffer);
   [encoder_ setVertexBuffer:metalBuffer.get() offset:bufferOffset atIndex:index];
