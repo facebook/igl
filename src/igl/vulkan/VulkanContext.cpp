@@ -794,7 +794,11 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
       device, deviceQueues_.computeQueueFamilyIndex, 0, &deviceQueues_.computeQueue);
 
   device_ = std::make_unique<igl::vulkan::VulkanDevice>(
-      vf_, device, IGL_FORMAT("Device: VulkanContext::device_ {}", debugName).c_str());
+      vf_,
+      device,
+      IGL_FORMAT("Device: VulkanContext::device_ {}",
+                 debugName ? debugName : "igl/vulkan/VulkanContext.cpp")
+          .c_str());
   immediate_ =
       std::make_unique<igl::vulkan::VulkanImmediateCommands>(vf_,
                                                              device,
