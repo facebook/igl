@@ -12,14 +12,12 @@
 namespace igl::opengl {
 
 UniformAdapter::UniformAdapter(const IContext& context, PipelineType type) : pipelineType_(type) {
-  const auto& deviceFeatures = context.deviceFeatures();
-  maxUniforms_ = deviceFeatures.getMaxComputeUniforms();
-
   // NOTE: 32 "feels" right and yielded good results in MobileLab. Goal here is to minimize
   // number of resize's in the vector but not be unreasonably large.
   constexpr size_t kLikelyMaximumNumUniforms = 32;
   uniforms_.reserve(kLikelyMaximumNumUniforms);
 
+  const auto& deviceFeatures = context.deviceFeatures();
   if (pipelineType_ == Render) {
     maxUniforms_ = deviceFeatures.getMaxVertexUniforms() + deviceFeatures.getMaxFragmentUniforms();
   } else {
