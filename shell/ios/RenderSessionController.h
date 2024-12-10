@@ -16,13 +16,12 @@
 #import "IglShellPlatformAdapter.h"
 #import "IglSurfaceTexturesAdapter.h"
 #import "RenderSessionFactoryProvider.h"
-#import <igl/TextureFormat.h>
 
 typedef int IglBackendFlavor;
 typedef int IglOpenglRenderingAPI;
 
 @protocol IglSurfaceTexturesProvider <NSObject>
-- (IglSurfacesTextureAdapterPtr)createSurfaceTextures:(igl::TextureFormat)depthTextureFormat;
+- (IglSurfacesTextureAdapterPtr)createSurfaceTextures;
 @end
 
 @protocol IglShellPlatformAdapter <NSObject>

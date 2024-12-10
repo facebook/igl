@@ -110,7 +110,7 @@
 }
 
 // clang-format off
-- (igl::SurfaceTextures)createSurfaceTexturesInternal:(igl::TextureFormat)depthTextureFormat{
+- (igl::SurfaceTextures)createSurfaceTexturesInternal {
   [[maybe_unused]] auto& device = [self platform]->getDevice();
   switch (config_.backendVersion.flavor) {
 #if IGL_BACKEND_METAL
@@ -130,7 +130,7 @@
     IGL_DEBUG_ASSERT(platformDevice);
     return igl::SurfaceTextures{
         .color = platformDevice->createTextureFromNativeDrawable((CAEAGLLayer*)layer_, nullptr),
-        .depth = platformDevice->createTextureFromNativeDepth((CAEAGLLayer*)layer_, depthTextureFormat, nullptr),
+        .depth = platformDevice->createTextureFromNativeDepth((CAEAGLLayer*)layer_, config_.depthTextureFormat, nullptr),
     };
   }
 #endif
@@ -155,8 +155,8 @@
 // clang-format on
 
 // Protocol IglSurfaceTexturesProvider
-- (IglSurfacesTextureAdapterPtr)createSurfaceTextures:(igl::TextureFormat)depthTextureFormat{
-  surfaceTexturesAdapter_.surfaceTextures = [self createSurfaceTexturesInternal:depthTextureFormat];
+- (IglSurfacesTextureAdapterPtr)createSurfaceTextures {
+  surfaceTexturesAdapter_.surfaceTextures = [self createSurfaceTexturesInternal];
   return &surfaceTexturesAdapter_;
 }
 
