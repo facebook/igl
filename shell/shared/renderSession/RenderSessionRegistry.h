@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <shell/shared/renderSession/RenderSessionLoader.hpp>
+#include <shell/shared/renderSession/RenderSessionLoader.h>
 
 #include <string>
 #include <unordered_map>

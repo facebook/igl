@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <shell/shared/renderSession/RenderSessionRegistry.hpp>
+#include <shell/shared/renderSession/RenderSessionRegistry.h>
 
 #include <igl/Common.h>
 #include <unordered_map>
