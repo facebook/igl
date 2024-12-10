@@ -126,7 +126,7 @@ Result ComputePipelineState::bindBuffer(const size_t unit, Buffer* buffer) {
     return Result{Result::Code::InvalidOperation, "No shader set\n"};
   }
 
-  if (unit >= IGL_VERTEX_BUFFER_MAX) {
+  if (unit >= IGL_BUFFER_BINDINGS_MAX) {
     return Result{Result::Code::ArgumentInvalid, "Buffer unit specified greater than maximum\n"};
   }
 
