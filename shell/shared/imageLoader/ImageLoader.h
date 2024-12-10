@@ -43,7 +43,7 @@ class ImageLoader {
       uint32_t length,
       std::optional<igl::TextureFormat> preferredFormat = {}) noexcept;
 
- protected:
+ //protected:
   [[nodiscard]] const FileLoader& fileLoader() const noexcept {
     return fileLoader_;
   }
