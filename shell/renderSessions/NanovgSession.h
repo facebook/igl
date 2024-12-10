@@ -53,7 +53,6 @@ class TouchListener : public ITouchListener {
 class NanovgSession : public RenderSession {
  public:
   explicit NanovgSession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {
-    depthTextureFormat_ = igl::TextureFormat::S8_UInt_Z24_UNorm;
   }
   void initialize() noexcept override;
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
