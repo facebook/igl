@@ -36,7 +36,6 @@
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/RenderSessionConfig.h>
-#include <IGLU/nanovg/nanovg_igl.h>
 
 @interface RenderSessionController () {
   igl::BackendVersion backendVersion_;
