@@ -65,11 +65,11 @@ void TestShellBase::SetUp(ScreenSize screenSize) {
   std::shared_ptr<igl::IDevice> iglDevice = createTestDevice();
   ASSERT_TRUE(iglDevice != nullptr);
   // Create platform shell to run the tests with
-#if defined(IGL_PLATFORM_MACOS) && IGL_PLATFORM_MACOS
+#if defined(IGL_PLATFORM_MACOSX) && IGL_PLATFORM_MACOSX
   platform_ = std::make_shared<igl::shell::PlatformMac>(std::move(iglDevice));
 #elif defined(IGL_PLATFORM_IOS) && IGL_PLATFORM_IOS
   platform_ = std::make_shared<igl::shell::PlatformIos>(std::move(iglDevice));
-#elif defined(IGL_PLATFORM_WIN) && IGL_PLATFORM_WIN
+#elif defined(IGL_PLATFORM_WINDOWS) && IGL_PLATFORM_WINDOWS
   platform_ = std::make_shared<igl::shell::PlatformWin>(std::move(iglDevice));
 #elif defined(IGL_PLATFORM_ANDROID) && IGL_PLATFORM_ANDROID
   platform_ = std::make_shared<igl::shell::PlatformAndroid>(std::move(iglDevice));

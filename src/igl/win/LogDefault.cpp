@@ -7,9 +7,9 @@
 
 #include <igl/win/LogDefault.h>
 
-#if !IGL_PLATFORM_WIN
+#if !IGL_PLATFORM_WINDOWS
 #error This file should only be compiled on Windows targets
-#endif // !IGL_PLATFORM_WIN
+#endif // !IGL_PLATFORM_WINDOWS
 
 #include <stdio.h>
 #include <string.h>

@@ -31,9 +31,9 @@
 #include <shell/openxr/mobile/opengl/XrAppImplGLES.h>
 #endif
 
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
 #include "ShellScalingApi.h"
-#endif // IGL_PLATFORM_WIN
+#endif // IGL_PLATFORM_WINDOWS
 
 XrInstance gInstance_;
 XrInstance getXrInstance() {
@@ -194,9 +194,9 @@ void android_main(struct android_app* app) {
 #else
 // To run via MetaXR Simulator or Monado.
 int main(int argc, const char* argv[]) {
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
   SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
-#endif // IGL_PLATFORM_WIN
+#endif // IGL_PLATFORM_WINDOWS
 
 #if defined(USE_VULKAN_BACKEND)
   // Do not present running on MetaXR Simulator. It has its own composition and present.

@@ -67,7 +67,7 @@ const uint32_t kBinding_Sampler = 4;
 const uint32_t kBinding_SamplerShadow = 5;
 const uint32_t kBinding_StorageImages = 6;
 
-#if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
+#if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WINDOWS
 VKAPI_ATTR VkBool32 VKAPI_CALL
 vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
                     [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT msgType,
@@ -565,12 +565,12 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
 
   vulkan::functions::loadInstanceFunctions(*tableImpl_, vkInstance_);
 
-#if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
+#if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WINDOWS
   if (extensions_.enabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
     VK_ASSERT(ivkCreateDebugUtilsMessenger(
         &vf_, vkInstance_, &vulkanDebugCallback, this, &vkDebugUtilsMessenger_));
   }
-#endif // if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
+#endif // if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WINDOWS
 
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
   if (config_.enableExtraLogs) {

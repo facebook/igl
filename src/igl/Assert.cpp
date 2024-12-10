@@ -47,7 +47,7 @@ void setDebugBreakEnabled(bool enabled) {
 #if IGL_PLATFORM_APPLE || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
 #define IGL_DEBUGGER_SIGTRAP 1
 #include <csignal>
-#elif IGL_PLATFORM_WIN
+#elif IGL_PLATFORM_WINDOWS
 #include <igl/Log.h>
 #include <windows.h>
 #endif
@@ -57,7 +57,7 @@ void _IGLDebugBreak() {
   if (igl::isDebugBreakEnabled()) {
 #ifdef IGL_DEBUGGER_SIGTRAP
     raise(SIGTRAP);
-#elif IGL_PLATFORM_WIN
+#elif IGL_PLATFORM_WINDOWS
     if (!IsDebuggerPresent()) {
       IGLLog(IGLLogError, "[IGL] Skipping debug break - debugger not present");
       return;

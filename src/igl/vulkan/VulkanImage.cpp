@@ -43,7 +43,7 @@ uint32_t ivkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memProps,
 }
 
 // VkImage export and import is only implemented on Windows, Linux and Android platforms.
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
 constexpr auto kHandleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT;
 #elif IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
 constexpr auto kHandleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
@@ -491,7 +491,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 // @fb-only
 }
 
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
 VulkanImage::VulkanImage(const VulkanContext& ctx,
                          void* windowsHandle,
                          VkDevice device,
@@ -581,9 +581,9 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_[0]));
   VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_[0], 0));
 }
-#endif // IGL_PLATFORM_WIN
+#endif // IGL_PLATFORM_WINDOWS
 
-#if IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
 VulkanImage VulkanImage::createWithExportMemory(const VulkanContext& ctx,
                                                 VkDevice device,
                                                 VkExtent3D extent,
@@ -850,7 +850,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   }
   VK_ASSERT(ctx_->vf_.vkBindImageMemory2(device_, numPlanes, bindInfo.data()));
 
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
   const VkMemoryGetWin32HandleInfoKHR getHandleInfo{
       VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR, nullptr, vkMemory_[0], kHandleType};
   VK_ASSERT(ctx_->vf_.vkGetMemoryWin32HandleKHR(device_, &getHandleInfo, &exportedMemoryHandle_));
@@ -868,7 +868,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 #endif
 }
-#endif // IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
+#endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
 
 VulkanImage::~VulkanImage() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);

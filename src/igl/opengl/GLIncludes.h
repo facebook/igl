@@ -28,11 +28,11 @@
   #include "OpenGLES/ES3/glext.h"
   #include "OpenGLES/ES2/glext.h"
   using GLdouble = double;
-#elif IGL_PLATFORM_MACOS
+#elif IGL_PLATFORM_MACOSX
   #include <OpenGL/gl3.h>
   #include <OpenGL/gl3ext.h>
   #include <OpenGL/glext.h>
-#elif IGL_PLATFORM_WIN
+#elif IGL_PLATFORM_WINDOWS
   #define GL_GLEXT_PROTOTYPES
 #if IGL_ANGLE
   #include <EGL/egl.h>

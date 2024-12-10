@@ -313,7 +313,7 @@ TEST_F(ContextOGLTest, CheckForErrorsInvalidFrameBufferOperation) {
 
 /// Verify that an object is visible across contexts in the same sharegroup
 TEST_F(ContextOGLTest, BasicSharedContexts) {
-#if IGL_PLATFORM_WIN && !IGL_ANGLE
+#if IGL_PLATFORM_WINDOWS && !IGL_ANGLE
   GTEST_SKIP() << "Context sharing not implemented in opengl::wgl";
 #endif
   // Setup is three contexts, (1) and (2) part of the same sharegroup and (3) not.

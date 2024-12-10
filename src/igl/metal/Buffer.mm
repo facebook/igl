@@ -33,7 +33,7 @@ igl::Result upload(const std::vector<id<MTLBuffer>>& buffers,
     checked_memcpy_offset(contents, length, range.offset, data, range.size);
   }
 
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
   if ((resourceOptions & MTLResourceStorageModeMask) == MTLResourceStorageModeManaged) {
     [buffer didModifyRange:NSMakeRange(range.offset, range.size)];
   }
@@ -123,11 +123,11 @@ BufferDesc::BufferAPIHint Buffer::acceptedApiHints() const noexcept {
 }
 
 ResourceStorage Buffer::storage() const noexcept {
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
   if ((resourceOptions_ & MTLResourceStorageModeMask) == MTLResourceStorageModeManaged) {
     return ResourceStorage::Managed;
   }
-#endif // IGL_PLATFORM_MACOS
+#endif // IGL_PLATFORM_MACOSX
   if ((resourceOptions_ & MTLResourceStorageModeMask) == MTLResourceStorageModePrivate) {
     return ResourceStorage::Private;
   }

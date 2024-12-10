@@ -27,7 +27,7 @@
 #define IGL_EGL 0
 #endif
 
-#if IGL_PLATFORM_WIN && !IGL_OPENGL_ES
+#if IGL_PLATFORM_WINDOWS && !IGL_OPENGL_ES
 #define IGL_WGL 1
 #else
 #define IGL_WGL 0

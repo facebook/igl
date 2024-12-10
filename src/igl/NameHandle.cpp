@@ -65,7 +65,7 @@ bool detectCrc32() {
   return hwcaps & HWCAP_CRC32 ? true : false;
 }
 } // namespace
-#elif IGL_PLATFORM_APPLE || IGL_PLATFORM_IOS || IGL_PLATFORM_MACOS
+#elif IGL_PLATFORM_APPLE || IGL_PLATFORM_IOS || IGL_PLATFORM_MACOSX
 namespace {
 bool detectCrc32() {
   // All iphones6+ are support it

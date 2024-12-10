@@ -28,7 +28,7 @@
 #include <shell/shared/imageLoader/android/ImageLoaderAndroid.h>
 #include <shell/shared/platform/android/PlatformAndroid.h>
 #endif
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
 #include <shell/shared/platform/win/PlatformWin.h>
 #endif
 
@@ -557,7 +557,7 @@ void XrApp::createShellSession(std::unique_ptr<igl::IDevice> device, AAssetManag
   static_cast<igl::shell::FileLoaderAndroid&>(platform_->getFileLoader()).setAssetManager(assetMgr);
 #elif IGL_PLATFORM_APPLE
   platform_ = std::make_shared<igl::shell::PlatformMac>(std::move(device));
-#elif IGL_PLATFORM_WIN
+#elif IGL_PLATFORM_WINDOWS
   platform_ = std::make_shared<igl::shell::PlatformWin>(std::move(device));
 #endif
 

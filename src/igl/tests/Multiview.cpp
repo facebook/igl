@@ -78,7 +78,7 @@ class MultiviewTest : public ::testing::Test {
       GTEST_SKIP() << "Multiview is unsupported for this platform.";
       return;
     }
-#if IGL_PLATFORM_WIN || (IGL_PLATFORM_LINUX && !IGL_PLATFORM_LINUX_USE_EGL)
+#if IGL_PLATFORM_WINDOWS || (IGL_PLATFORM_LINUX && !IGL_PLATFORM_LINUX_USE_EGL)
     if (iglDev_->getBackendType() == igl::BackendType::OpenGL) {
       GTEST_SKIP() << "Multiview is unsupported for this platform.";
       return;
@@ -95,11 +95,11 @@ class MultiviewTest : public ::testing::Test {
 
     auto depthFormat = TextureFormat::S8_UInt_Z32_UNorm;
 
-#ifndef IGL_PLATFORM_MACOS
+#ifndef IGL_PLATFORM_MACOSX
     if (backend_ == util::BACKEND_VUL) {
       depthFormat = TextureFormat::S8_UInt_Z24_UNorm;
     }
-#endif // IGL_PLATFORM_MACOS
+#endif // IGL_PLATFORM_MACOSX
 
     TextureDesc depthTexDesc = TextureDesc::new2DArray(depthFormat,
                                                        kOffScreenWidth,

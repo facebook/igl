@@ -16,7 +16,7 @@
 
 #if IGL_PLATFORM_ANDROID
 #include <igl/android/LogDefault.h>
-#elif IGL_PLATFORM_WIN
+#elif IGL_PLATFORM_WINDOWS
 #include <igl/win/LogDefault.h>
 #endif
 
@@ -24,7 +24,7 @@
 static IGLLogHandlerFunc* GetHandle() {
 #if IGL_PLATFORM_ANDROID
   static IGLLogHandlerFunc sHandler = IGLAndroidLogDefaultHandler;
-#elif IGL_PLATFORM_WIN
+#elif IGL_PLATFORM_WINDOWS
   static IGLLogHandlerFunc sHandler = IGLWinLogDefaultHandler;
 #else
   static IGLLogHandlerFunc sHandler = IGLLogDefaultHandler;

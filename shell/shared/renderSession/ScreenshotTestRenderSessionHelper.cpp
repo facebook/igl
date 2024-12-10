@@ -34,7 +34,7 @@ void SaveFrameBufferToPng(const char* absoluteFilename,
 
   const size_t numPixels = frameBuffersize.width * frameBuffersize.height * bytesPerPixel;
 
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
   if (imageData.desc.format == TextureFormat::BGRA_UNorm8) {
     // Swap B and R channels, as image writer expects RGBA.
     // Note that this is only defined for the Windows platform, as in practice

@@ -16,7 +16,7 @@
     #define IGL_DL_UNIX 1
   #elif (defined(IGL_PLATFORM_ANDROID) && IGL_PLATFORM_ANDROID)
     #define IGL_DL_UNIX 1
-  #elif (defined(IGL_PLATFORM_WIN) && IGL_PLATFORM_WIN) && !defined(IGL_PLATFORM_UWP)
+  #elif (defined(IGL_PLATFORM_WINDOWS) && IGL_PLATFORM_WINDOWS) && !defined(IGL_PLATFORM_UWP)
     #define IGL_DL_DLL 1
   #endif
 #endif // !defined(IGL_DL_UNIX) || !defined(IGL_DL_DLL)

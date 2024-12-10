@@ -603,7 +603,7 @@ ShaderVersion Device::getShaderVersion() const {
     version.majorVersion = 1;
     version.minorVersion = 1;
   }
-#elif IGL_PLATFORM_MACOS || IGL_PLATFORM_MACCATALYST
+#elif IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST
   if (@available(macOS 12.0, *)) {
     version.majorVersion = 2;
     version.minorVersion = 4;
@@ -659,7 +659,7 @@ MTLStorageMode Device::toMTLStorageMode(ResourceStorage storage) {
     return MTLStorageModePrivate;
   case ResourceStorage::Shared:
     return MTLStorageModeShared;
-#if IGL_PLATFORM_MACOS || IGL_PLATFORM_MACCATALYST
+#if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST
   case ResourceStorage::Managed:
   default:
     return MTLStorageModeManaged;
@@ -678,7 +678,7 @@ MTLResourceOptions Device::toMTLResourceStorageMode(ResourceStorage storage) {
     return MTLResourceStorageModePrivate;
   case ResourceStorage::Shared:
     return MTLResourceStorageModeShared;
-#if IGL_PLATFORM_MACOS || IGL_PLATFORM_MACCATALYST
+#if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST
   case ResourceStorage::Managed:
   default:
     return MTLResourceStorageModeManaged;

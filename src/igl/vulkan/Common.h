@@ -18,7 +18,7 @@
 
 #include <igl/Macros.h>
 #include <igl/vulkan/VulkanFunctionTable.h>
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
 #include <vulkan/vulkan_metal.h>
 #endif
 

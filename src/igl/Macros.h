@@ -19,13 +19,13 @@
 /// The following set of conditionals exist and currently are supported:
 ///
 /// Windows:
-///   IGL_PLATFORM_WIN
+///   IGL_PLATFORM_WINDOWS
 /// Apple:
 ///   IGL_PLATFORM_APPLE
 ///   IGL_PLATFORM_IOS
 ///   IGL_PLATFORM_IOS_SIMULATOR
 ///   IGL_PLATFORM_MACCATALYST
-///   IGL_PLATFORM_MACOS
+///   IGL_PLATFORM_MACOSX
 /// Android:
 ///   IGL_PLATFORM_ANDROID
 /// Linux:
@@ -36,18 +36,18 @@
 // clang-format off
 // Windows
 #if defined(_WIN32)
-  #define IGL_PLATFORM_WIN 1
+  #define IGL_PLATFORM_WINDOWS 1
   #define IGL_PLATFORM_APPLE 0
   #define IGL_PLATFORM_IOS 0
   #define IGL_PLATFORM_IOS_SIMULATOR 0
   #define IGL_PLATFORM_MACCATALYST 0
-  #define IGL_PLATFORM_MACOS 0
+  #define IGL_PLATFORM_MACOSX 0
   #define IGL_PLATFORM_ANDROID 0
   #define IGL_PLATFORM_LINUX 0
   #define IGL_PLATFORM_EMSCRIPTEN 0
 // Apple
 #elif defined (__APPLE__)
-  #define IGL_PLATFORM_WIN 0
+  #define IGL_PLATFORM_WINDOWS 0
   #define IGL_PLATFORM_ANDROID 0
   #define IGL_PLATFORM_LINUX 0
   #define IGL_PLATFORM_APPLE 1
@@ -58,33 +58,33 @@
     #define IGL_PLATFORM_IOS 1 // iOS Simulator is iOS
     #define IGL_PLATFORM_IOS_SIMULATOR 1
     #define IGL_PLATFORM_MACCATALYST 0
-    #define IGL_PLATFORM_MACOS 0
+    #define IGL_PLATFORM_MACOSX 0
   #elif TARGET_OS_MACCATALYST
     #define IGL_PLATFORM_IOS 0
     #define IGL_PLATFORM_IOS_SIMULATOR 0
     #define IGL_PLATFORM_MACCATALYST 1
-    #define IGL_PLATFORM_MACOS 0
+    #define IGL_PLATFORM_MACOSX 0
   #elif TARGET_OS_IPHONE
     #define IGL_PLATFORM_IOS 1
     #define IGL_PLATFORM_IOS_SIMULATOR 0
     #define IGL_PLATFORM_MACCATALYST 0
-    #define IGL_PLATFORM_MACOS 0
+    #define IGL_PLATFORM_MACOSX 0
   #elif TARGET_OS_OSX
     #define IGL_PLATFORM_IOS 0
     #define IGL_PLATFORM_IOS_SIMULATOR 0
     #define IGL_PLATFORM_MACCATALYST 0
-    #define IGL_PLATFORM_MACOS 1
+    #define IGL_PLATFORM_MACOSX 1
   #else
     #error "Unknown Apple target"
   #endif
 // Android
 #elif defined(__ANDROID__)
-  #define IGL_PLATFORM_WIN 0
+  #define IGL_PLATFORM_WINDOWS 0
   #define IGL_PLATFORM_APPLE 0
   #define IGL_PLATFORM_IOS 0
   #define IGL_PLATFORM_IOS_SIMULATOR 0
   #define IGL_PLATFORM_MACCATALYST 0
-  #define IGL_PLATFORM_MACOS 0
+  #define IGL_PLATFORM_MACOSX 0
   #define IGL_PLATFORM_ANDROID 1
   #define IGL_PLATFORM_LINUX 0
   #define IGL_PLATFORM_EMSCRIPTEN 0
@@ -95,33 +95,33 @@
 
 // Linux
 #elif defined(__linux__)
-  #define IGL_PLATFORM_WIN 0
+  #define IGL_PLATFORM_WINDOWS 0
   #define IGL_PLATFORM_APPLE 0
   #define IGL_PLATFORM_IOS 0
   #define IGL_PLATFORM_IOS_SIMULATOR 0
   #define IGL_PLATFORM_MACCATALYST 0
-  #define IGL_PLATFORM_MACOS 0
+  #define IGL_PLATFORM_MACOSX 0
   #define IGL_PLATFORM_ANDROID 0
   #define IGL_PLATFORM_LINUX 1
   #define IGL_PLATFORM_EMSCRIPTEN 0
 #elif defined(__EMSCRIPTEN__)
-  #define IGL_PLATFORM_WIN 0
+  #define IGL_PLATFORM_WINDOWS 0
   #define IGL_PLATFORM_APPLE 0
   #define IGL_PLATFORM_IOS 0
   #define IGL_PLATFORM_IOS_SIMULATOR 0
   #define IGL_PLATFORM_MACCATALYST 0
-  #define IGL_PLATFORM_MACOS 0
+  #define IGL_PLATFORM_MACOSX 0
   #define IGL_PLATFORM_ANDROID 0
   #define IGL_PLATFORM_LINUX 0
   #define IGL_PLATFORM_EMSCRIPTEN 1
 // Rest
 #else
-  #define IGL_PLATFORM_WIN 0
+  #define IGL_PLATFORM_WINDOWS 0
   #define IGL_PLATFORM_APPLE 0
   #define IGL_PLATFORM_IOS 0
   #define IGL_PLATFORM_IOS_SIMULATOR 0
   #define IGL_PLATFORM_MACCATALYST 0
-  #define IGL_PLATFORM_MACOS 0
+  #define IGL_PLATFORM_MACOSX 0
   #define IGL_PLATFORM_ANDROID 0
   #define IGL_PLATFORM_LINUX 0
   #define IGL_PLATFORM_EMSCRIPTEN 0
@@ -355,7 +355,7 @@
 ///--------------------------------------
 /// MARK: - Newline
 
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
 #define IGL_NEWLINE "\r\n"
 #else
 #define IGL_NEWLINE "\n"

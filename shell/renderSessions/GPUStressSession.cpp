@@ -1105,7 +1105,7 @@ std::string GPUStressSession::getCurrentUsageString() const {
   return output;
 }
 void GPUStressSession::setNumLayers(size_t numLayers) {
-#if !defined(IGL_PLATFORM_WIN)
+#if !defined(IGL_PLATFORM_WINDOWS)
   igl::shell::QuadLayerParams params;
   params.layerInfo.reserve(numLayers);
   for (int i = 0; i < numLayers; i++) {

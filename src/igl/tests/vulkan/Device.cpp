@@ -10,7 +10,7 @@
 
 #include "../util/TestDevice.h"
 
-#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOS || IGL_PLATFORM_LINUX
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/PlatformDevice.h>
@@ -109,7 +109,7 @@ TEST_F(DeviceVulkanTest, PlatformDeviceSampler) {
   cmdQueue->submit(*cmdBuf);
 }
 
-#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOS || IGL_PLATFORM_LINUX
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
 TEST_F(DeviceVulkanTest, StagingDeviceLargeBufferTest) {
   Result ret;
 
@@ -232,7 +232,7 @@ GTEST_TEST(VulkanContext, BufferDeviceAddress) {
   std::shared_ptr<igl::IDevice> iglDev = nullptr;
 
   igl::vulkan::VulkanContextConfig config;
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
   config.terminateOnValidationError = false;
 #elif IGL_DEBUG
   config.enableValidation = true;
@@ -314,7 +314,7 @@ GTEST_TEST(VulkanContext, DescriptorIndexing) {
   std::shared_ptr<igl::IDevice> iglDev = nullptr;
 
   igl::vulkan::VulkanContextConfig config;
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
   config.terminateOnValidationError = false;
 #elif IGL_DEBUG
   config.enableValidation = true;

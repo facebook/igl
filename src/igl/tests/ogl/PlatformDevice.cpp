@@ -13,13 +13,13 @@
 #include <igl/opengl/PlatformDevice.h>
 #if IGL_PLATFORM_IOS
 #include <igl/opengl/ios/PlatformDevice.h>
-#elif IGL_PLATFORM_MACOS
+#elif IGL_PLATFORM_MACOSX
 #include <igl/opengl/macos/PlatformDevice.h>
 #elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX_USE_EGL
 #include <igl/opengl/egl/PlatformDevice.h>
 #elif IGL_PLATFORM_LINUX
 #include <igl/opengl/glx/PlatformDevice.h>
-#elif IGL_PLATFORM_WIN
+#elif IGL_PLATFORM_WINDOWS
 #if defined(FORCE_USE_ANGLE)
 #include <igl/opengl/egl/PlatformDevice.h>
 #else
@@ -33,13 +33,13 @@
 
 #if IGL_PLATFORM_IOS
 #define PLATFORM_DEVICE opengl::ios::PlatformDevice
-#elif IGL_PLATFORM_MACOS
+#elif IGL_PLATFORM_MACOSX
 #define PLATFORM_DEVICE opengl::macos::PlatformDevice
 #elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX_USE_EGL
 #define PLATFORM_DEVICE opengl::egl::PlatformDevice
 #elif IGL_PLATFORM_LINUX
 #define PLATFORM_DEVICE opengl::glx::PlatformDevice
-#elif IGL_PLATFORM_WIN
+#elif IGL_PLATFORM_WINDOWS
 #if defined(FORCE_USE_ANGLE)
 #define PLATFORM_DEVICE opengl::egl::PlatformDevice
 #else

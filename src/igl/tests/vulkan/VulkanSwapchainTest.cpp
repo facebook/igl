@@ -19,7 +19,7 @@
 #include <vulkan/vulkan_android.h>
 #endif
 
-#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
 
 namespace igl::tests {
 
@@ -37,7 +37,7 @@ class VulkanSwapchainTest : public ::testing::Test {
  public:
   // Set up common resources.
   void SetUp() override {
-#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID
     // @fb-only
     GTEST_SKIP() << "Fix these tests on Windows and Android, no headless surface support there.";
 #else
@@ -61,7 +61,7 @@ class VulkanSwapchainTest : public ::testing::Test {
 };
 
 TEST_F(VulkanSwapchainTest, CreateVulkanSwapchain) {
-#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID
   // @fb-only
   GTEST_SKIP() << "Fix these tests on Windows and Android, no headless surface support there.";
 #else
@@ -85,4 +85,4 @@ TEST_F(VulkanSwapchainTest, CreateVulkanSwapchain) {
 
 } // namespace igl::tests
 
-#endif // IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
+#endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX

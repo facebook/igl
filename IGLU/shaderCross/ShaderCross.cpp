@@ -60,7 +60,7 @@ std::string ShaderCross::crossCompileFromVulkanSource(const char* source,
   if (device_.getBackendType() == igl::BackendType::Metal) {
     spirv_cross::CompilerMSL mslCompiler(std::move(spirvCode));
     spirv_cross::CompilerMSL::Options options;
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
     options.platform = spirv_cross::CompilerMSL::Options::macOS;
 #else
     options.platform = spirv_cross::CompilerMSL::Options::iOS;

@@ -91,17 +91,17 @@ void VulkanExtensions::enableCommonInstanceExtensions(const VulkanContextConfig&
 #if defined(VK_EXT_debug_utils)
   enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, ExtensionType::Instance);
 #endif
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
   enable(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
 #elif IGL_PLATFORM_ANDROID
   enable("VK_KHR_android_surface", ExtensionType::Instance);
 #elif IGL_PLATFORM_LINUX
   enable("VK_KHR_xlib_surface", ExtensionType::Instance);
-#elif IGL_PLATFORM_MACOS
+#elif IGL_PLATFORM_MACOSX
   enable(VK_EXT_METAL_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
 #endif
 
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
   // https://vulkan.lunarg.com/doc/sdk/1.3.216.0/mac/getting_started.html
   if (!enable(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, ExtensionType::Instance)) {
     IGL_LOG_ERROR("VK_KHR_portability_enumeration extension not supported\n");
@@ -168,13 +168,13 @@ void VulkanExtensions::enableCommonDeviceExtensions(const VulkanContextConfig& c
 #endif // VK_KHR_shader_non_semantic_info
   enable(VK_KHR_SWAPCHAIN_EXTENSION_NAME, ExtensionType::Device);
 
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
   std::ignore = IGL_DEBUG_VERIFY(enable("VK_KHR_portability_subset", ExtensionType::Device));
 #endif
 
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
   enable(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME, ExtensionType::Device);
-#endif // IGL_PLATFORM_WIN
+#endif // IGL_PLATFORM_WINDOWS
 
 #if IGL_PLATFORM_LINUX
   enable(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, ExtensionType::Device);

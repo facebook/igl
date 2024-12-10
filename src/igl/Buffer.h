@@ -94,7 +94,7 @@ struct BufferDesc {
     type(type),
     debugName(std::move(debugName)) {
     if (storage == ResourceStorage::Invalid) {
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
       storage = ResourceStorage::Managed;
 #else
       storage = ResourceStorage::Shared;

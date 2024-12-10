@@ -62,7 +62,7 @@ static size_t getGPUFamily(id<MTLDevice> device) {
       IGL_DEBUG_ABORT("IGL iOS deployment target is 9.0+");
       return 0;
     }
-#elif IGL_PLATFORM_MACOS
+#elif IGL_PLATFORM_MACOSX
     if (@available(macOS 10.14, *)) {
       featureSets.emplace_back(MTLFeatureSet_macOS_GPUFamily2_v1, 2);
       featureSets.emplace_back(MTLFeatureSet_macOS_GPUFamily1_v4, 1);
@@ -252,7 +252,7 @@ bool DeviceFeatureSet::getFeatureLimits(DeviceFeatureLimits featureLimits, size_
   case DeviceFeatureLimits::BufferAlignment: {
     // Since IGL currently doesn't distinguish how buffers are being used, for consistency reasons,
     // we currently assume BufferAlignment means Constant Buffer offset alignment
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
     result = 32;
 #elif IGL_PLATFORM_IOS_SIMULATOR
     result = 256;
@@ -304,19 +304,19 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
   case TextureFormat::R_UNorm16:
     return all;
   case TextureFormat::B5G5R5A1_UNorm:
-#if IGL_PLATFORM_MACOS || IGL_PLATFORM_MACCATALYST || IGL_PLATFORM_IOS_SIMULATOR
+#if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST || IGL_PLATFORM_IOS_SIMULATOR
     return unsupported;
 #else
     return sampled | attachment | sampledAttachment;
 #endif
   case TextureFormat::B5G6R5_UNorm:
-#if IGL_PLATFORM_MACOS || IGL_PLATFORM_MACCATALYST || IGL_PLATFORM_IOS_SIMULATOR
+#if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST || IGL_PLATFORM_IOS_SIMULATOR
     return unsupported;
 #else
     return sampled | attachment | sampledAttachment;
 #endif
   case TextureFormat::ABGR_UNorm4:
-#if IGL_PLATFORM_MACOS || IGL_PLATFORM_MACCATALYST || IGL_PLATFORM_IOS_SIMULATOR
+#if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST || IGL_PLATFORM_IOS_SIMULATOR
     return unsupported;
 #else
     return sampled | attachment | sampledAttachment;
@@ -426,7 +426,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
   case TextureFormat::RGBA_BC7_UNORM_4x4:
   case TextureFormat::RGBA_BC7_SRGB_4x4:
 
-#if IGL_PLATFORM_MACOS || IGL_PLATFORM_MACCATALYST
+#if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST
     return sampled;
 #else
     return unsupported;

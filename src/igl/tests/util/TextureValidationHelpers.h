@@ -12,7 +12,7 @@
 #include <gtest/gtest.h>
 #include <igl/IGL.h>
 
-#if IGL_PLATFORM_IOS || IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_IOS || IGL_PLATFORM_MACOSX
 #include "simd/simd.h"
 #else
 #include "simdstub.h"

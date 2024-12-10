@@ -22,7 +22,7 @@
 #include <vulkan/vulkan_android.h>
 #endif
 
-#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
 namespace igl::tests {
 
 //
