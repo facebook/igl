@@ -299,7 +299,7 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
   vertexInputStateCreateInfo_ = ivkGetPipelineVertexInputStateCreateInfo_Empty();
 
   if (vstate) {
-    std::array<bool, IGL_VERTEX_BUFFER_MAX> bufferAlreadyBound{};
+    std::array<bool, IGL_BUFFER_BINDINGS_MAX> bufferAlreadyBound{};
     vkBindings_.reserve(vstate->desc_.numInputBindings);
 
     for (size_t i = 0; i != vstate->desc_.numAttributes; i++) {
