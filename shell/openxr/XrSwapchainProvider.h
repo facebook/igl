@@ -17,7 +17,6 @@
 #include <igl/Texture.h>
 
 // forward declarations
-namespace igl::shell::openxr::impl {} // namespace igl::shell::openxr::impl
 
 namespace igl::shell::openxr {
 
