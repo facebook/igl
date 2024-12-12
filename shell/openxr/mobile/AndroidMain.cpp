@@ -36,7 +36,9 @@
 #endif // IGL_PLATFORM_WINDOWS
 
 static XrInstance gInstance_;
-static XrInstance getXrInstance() {
+
+// This function cannot be declared as `static` due to our Android GitHub builds
+XrInstance getXrInstance() {
   return gInstance_;
 }
 
