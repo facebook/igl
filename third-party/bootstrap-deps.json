@@ -198,9 +198,8 @@
 {
     "name": "nanovg",
     "postprocess" : {
-        "type" : "patch",
-        "file" : "nanovg.patch",
-        "pnum" : "0"
+        "type": "script",
+        "file": "nanovg.py"
     },
     "source": {
         "type": "git",
