@@ -23,7 +23,6 @@
 
 #include <GLFW/glfw3native.h>
 
-#include <cassert>
 #include <cstdio>
 #include <regex>
 
