@@ -7,6 +7,10 @@
 
 #pragma once
 
+// @fb-only
+// @fb-only
+// @fb-only
+
 ///--------------------------------------
 /// MARK: - Platform
 
@@ -32,6 +36,22 @@
 ///   IGL_PLATFORM_LINUX
 /// WEBGL:
 ///   IGL_PLATFORM_EMSCRIPTEN
+
+#if !defined(IGL_CMAKE_BUILD)
+
+// clang-format off
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// clang-format on
+
+#else // !defined(IGL_CMAKE_BUILD)
 
 // clang-format off
 // Windows
@@ -88,11 +108,6 @@
   #define IGL_PLATFORM_ANDROID 1
   #define IGL_PLATFORM_LINUX 0
   #define IGL_PLATFORM_EMSCRIPTEN 0
-
-#if __ANDROID_MIN_SDK_VERSION__ >= 26
-  #define IGL_ANDROID_HWBUFFER_SUPPORTED
-#endif // __ANDROID_MIN_SDK_VERSION__ >= 26
-
 // Linux
 #elif defined(__linux__)
   #define IGL_PLATFORM_WINDOWS 0
@@ -128,6 +143,12 @@
 
   #error "Platform not supported"
 #endif
+
+#endif // !defined(IGL_CMAKE_BUILD)
+
+#if IGL_PLATFORM_ANDROID && __ANDROID_MIN_SDK_VERSION__ >= 26
+  #define IGL_ANDROID_HWBUFFER_SUPPORTED
+#endif // __ANDROID_MIN_SDK_VERSION__ >= 26
 
 // IGL_PLATFORM_XR is for extended reality platforms like OpenXR
 #if !defined(IGL_PLATFORM_XR)
@@ -190,7 +211,7 @@
 // IGL_PLATFORM_LINUX_SWIFTSHADER is a use case of IGL_PLATFORM_LINUX that uses
 // SwiftShader for rendering. For example, Rainbow uses SwiftShader in a CPU only
 // environment currently.
-#if defined(FORCE_USE_SWIFTSHADER) && defined(IGL_PLATFORM_LINUX)
+#if defined(FORCE_USE_SWIFTSHADER) && IGL_PLATFORM_LINUX
 #define IGL_PLATFORM_LINUX_SWIFTSHADER 1
 #else
 #define IGL_PLATFORM_LINUX_SWIFTSHADER 0
