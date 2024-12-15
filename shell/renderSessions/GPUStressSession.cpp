@@ -36,7 +36,7 @@ static uint32_t arc4random(void) {
 }
 #endif // _MSC_VER || IGL_PLATFORM_LINUX
 
-#if ANDROID
+#if IGL_PLATFORM_ANDROID
 
 #include <sys/syscall.h>
 #include <unistd.h>

@@ -7,11 +7,16 @@
 
 #pragma once
 
+#include <igl/Config.h>
 #include <memory>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
 
 namespace igl::shell {
 
-std::unique_ptr<IRenderSessionFactory> createDefaultRenderSessionFactory();
+#if IGL_PLATFORM_LINUX
+__attribute__((weak))
+#endif // IGL_PLATFORM_LINUX
+std::unique_ptr<IRenderSessionFactory>
+createDefaultRenderSessionFactory();
 
 } // namespace igl::shell
