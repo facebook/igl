@@ -11,6 +11,7 @@
 #include <igl/Common.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/metal/RenderPipelineReflection.h>
+
 namespace igl::metal {
 
 class RenderPipelineState final : public IRenderPipelineState {

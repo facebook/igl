@@ -7,10 +7,8 @@
 
 #pragma once
 
-#include <igl/Config.h>
-
 // clang-format off
-#if IGL_PLATFORM_WINDOWS
+#if defined(_WIN32)
   #include <igl/opengl/wgl/Context.h>
   #include <igl/opengl/wgl/Device.h>
 #elif IGL_PLATFORM_LINUX
@@ -21,7 +19,7 @@
 
 namespace igl::shell::util {
 
-#if IGL_PLATFORM_WINDOWS
+#if defined(_WIN32)
 struct WGLDevice final : public igl::opengl::Device {
   explicit WGLDevice(std::unique_ptr<igl::opengl::IContext> context) :
     Device(std::move(context)), platformDevice_(*this) {}

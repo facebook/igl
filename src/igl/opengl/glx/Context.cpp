@@ -19,7 +19,7 @@
 
 namespace {
 
-[[maybe_unused]] int GetLastError() {
+int GetLastError() {
   return 0; // TODO: implement error handling
 }
 
@@ -147,6 +147,8 @@ Context::Context(std::shared_ptr<GLXSharedModule> module,
 
   static int visualAttribs[] = {None};
   int contextAttribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB, 4, GLX_CONTEXT_MINOR_VERSION_ARB, 6, None};
+
+  GLXPbuffer pbuf;
 
   if (display_ = module_->XOpenDisplay(0); display_ != nullptr) {
     int fbcount = 0;
