@@ -531,6 +531,8 @@ VulkanContext::~VulkanContext() {
                  VulkanComputePipelineBuilder::getNumPipelinesCreated());
   }
 #endif // IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
+
+  volkFinalize();
 }
 
 void VulkanContext::createInstance(const size_t numExtraExtensions,
