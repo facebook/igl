@@ -91,7 +91,7 @@ void OpenGlShell::willCreateWindow() noexcept {
 }
 
 void OpenGlShell::didCreateWindow() noexcept {
-  int result = glfwGetWindowAttrib(&window(), GLFW_CLIENT_API);
+  [[maybe_unused]] int result = glfwGetWindowAttrib(&window(), GLFW_CLIENT_API);
 
   glfwMakeContextCurrent(&window());
 
