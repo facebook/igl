@@ -245,7 +245,7 @@
   // FBANDROID_BUILD_MODE_OPT is only defined in production builds and was created
   // with the exact purpose of allowing native code to differentiate build modes.
   #define IGL_DEBUG 1
-#elif defined(_MSC_VER)
+#elif IGL_PLATFORM_WINDOWS
   // Visual Studio never defines NDEBUG, it uses _DEBUG instead. See:
   // https://learn.microsoft.com/en-us/cpp/c-runtime-library/debug?view=msvc-170
   #if defined(_DEBUG) || defined(DEBUG)
