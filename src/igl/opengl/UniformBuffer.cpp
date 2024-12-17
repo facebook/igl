@@ -10,11 +10,9 @@
 #include <cstring> // for memcpy()
 #include <igl/Common.h>
 #include <igl/IGLSafeC.h>
-#include <igl/opengl/CommandBuffer.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/RenderPipelineState.h>
-#include <igl/opengl/Shader.h>
 #include <memory>
 
 namespace igl::opengl {
@@ -55,7 +53,7 @@ bool UniformBuffer::initializeCommon(const BufferDesc& desc, Result* outResult) 
   if (desc.data == nullptr) {
     Result::setResult(outResult, Result::Code::ArgumentNull, "Data in uniform desc is null");
     success = false;
-  } else if (desc.length <= 0) {
+  } else if (desc.length == 0) {
     Result::setResult(outResult,
                       Result::Code::ArgumentOutOfRange,
                       "Size of data in uniform desc (length) needs to be larger than 0");
@@ -104,15 +102,15 @@ void* UniformBuffer::map(const BufferRange& range, Result* outResult) {
 void UniformBuffer::unmap() {}
 
 void UniformBuffer::printUniforms(GLint program) {
-  GLint i;
-  GLint count;
+  GLint i = 0;
+  GLint count = 0;
 
-  GLint size; // size of the variable
-  GLenum type; // type of the variable (float, vec3 or mat4, etc)
+  GLint size = 0; // size of the variable
+  GLenum type = 0; // type of the variable (float, vec3 or mat4, etc)
 
   const GLsizei bufSize = 16; // maximum name length
   GLchar name[bufSize]; // variable name in GLSL
-  GLsizei length; // name length
+  GLsizei length = 0; // name length
 
   getContext().getProgramiv(program, GL_ACTIVE_UNIFORMS, &count);
 
@@ -157,7 +155,7 @@ void UniformBuffer::bindUniform(IContext& context,
       // into GLint array.
       const std::unique_ptr<GLint[]> boolArray(new GLint[count]);
       for (size_t i = 0; i < count; i++) {
-        boolArray[i] = static_cast<int>(!!*(start + i));
+        boolArray[i] = static_cast<int>(!(*(start + i) == 0u));
       }
       context.uniform1iv(shaderLocation, count, boolArray.get());
 
@@ -259,7 +257,7 @@ void UniformBuffer::bindUniformArray(IContext& context,
     case UniformBaseType::Boolean: {
       auto packedIntArray = IGL_MAYBE_STACK_ALLOC(GLint, numElements);
       for (int i = 0; i < numElements; i++) {
-        packedIntArray[i] = static_cast<int>(!!*(start));
+        packedIntArray[i] = static_cast<int>(!(*(start) == 0u));
         start += stride;
       }
       UniformBuffer::bindUniform(
