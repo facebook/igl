@@ -19,14 +19,12 @@
 
 namespace igl {
 
-struct SamplerStateDesc;
 struct FramebufferDesc;
 
 namespace metal {
 
 class Device;
 class Framebuffer;
-class SamplerState;
 
 class PlatformDevice final : public IPlatformDevice {
  public:

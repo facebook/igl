@@ -13,9 +13,6 @@
 
 namespace igl {
 
-class ICommandQueue;
-class ITexture;
-
 namespace metal {
 
 class Framebuffer : public IFramebuffer {
