@@ -220,7 +220,7 @@ void ensureShaderModule(IShaderModule* sm);
 
 /// @brief Implements the igl::IDepthStencilState interface
 struct DepthStencilState final : public IDepthStencilState {
-  explicit DepthStencilState(const DepthStencilStateDesc& desc) : desc_(desc) {}
+  explicit DepthStencilState(DepthStencilStateDesc desc) : desc_(std::move(desc)) {}
   const DepthStencilStateDesc desc_;
 };
 
