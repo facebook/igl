@@ -62,7 +62,7 @@ static std::string getOpenGLVertexShaderSource(igl::ShaderVersion shaderVersion)
   std::string shader;
   if (shaderVersion.majorVersion > 1 || shaderVersion.minorVersion > 30 ||
       shaderVersion.family == igl::ShaderFamily::GlslEs) {
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
     shader += "#version 100\n";
 #endif
     shader += "precision mediump float;";
@@ -105,7 +105,7 @@ static std::string getOpenGLFragmentShaderSource(igl::ShaderVersion shaderVersio
   std::string shader;
   if (shaderVersion.majorVersion > 1 || shaderVersion.minorVersion > 30 ||
       shaderVersion.family == igl::ShaderFamily::GlslEs) {
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
     shader += "#version 100\n";
 #endif
     shader += "precision mediump float;";

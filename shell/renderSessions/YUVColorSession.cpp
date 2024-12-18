@@ -188,7 +188,7 @@ void YUVColorSession::initialize() noexcept {
   IGL_DEBUG_ASSERT(shaderStages_ != nullptr);
 
   // Command queue
-  const CommandQueueDesc desc{igl::CommandQueueType::Graphics};
+  const CommandQueueDesc desc{};
   commandQueue_ = device.createCommandQueue(desc, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 

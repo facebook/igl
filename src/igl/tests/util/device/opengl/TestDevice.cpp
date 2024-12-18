@@ -12,13 +12,13 @@
 
 #if IGL_PLATFORM_IOS
 #include <igl/opengl/ios/HWDevice.h>
-#elif IGL_PLATFORM_MACOS
+#elif IGL_PLATFORM_MACOSX
 #include <igl/opengl/macos/HWDevice.h>
 #elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX_USE_EGL
 #include <igl/opengl/egl/HWDevice.h>
 #elif IGL_PLATFORM_LINUX
 #include <igl/opengl/glx/HWDevice.h>
-#elif IGL_PLATFORM_WIN
+#elif IGL_PLATFORM_WINDOWS
 #if defined(FORCE_USE_ANGLE)
 #include <igl/opengl/egl/HWDevice.h>
 #else
@@ -69,13 +69,13 @@ std::shared_ptr<::igl::IDevice> createTestDevice(const std::string& backendApi) 
 
 #if IGL_PLATFORM_IOS
   iglDev = createDevice<::igl::opengl::ios::HWDevice>(renderingAPI);
-#elif IGL_PLATFORM_MACOS
+#elif IGL_PLATFORM_MACOSX
   iglDev = createDevice<::igl::opengl::macos::HWDevice>(renderingAPI);
 #elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX_USE_EGL
   iglDev = createOffscreenDevice<::igl::opengl::egl::HWDevice>(renderingAPI);
 #elif IGL_PLATFORM_LINUX
   iglDev = createOffscreenDevice<::igl::opengl::glx::HWDevice>(renderingAPI);
-#elif IGL_PLATFORM_WIN
+#elif IGL_PLATFORM_WINDOWS
 #if defined(FORCE_USE_ANGLE)
   iglDev = createOffscreenDevice<::igl::opengl::egl::HWDevice>(renderingAPI);
 #else

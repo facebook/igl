@@ -130,6 +130,7 @@ void TinyRenderer::init(AAssetManager* mgr,
                                  0,
                                  nullptr,
                                  &vulkanFeatures,
+                                 "TinyRenderer",
                                  &result);
     break;
   }

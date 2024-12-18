@@ -133,8 +133,8 @@ Result RenderPipelineState::create() {
         if (loc < 0) {
           IGL_LOG_ERROR("Vertex attribute (%s) not found in shader.", attrib.name.c_str());
         }
-        IGL_DEBUG_ASSERT(index < IGL_VERTEX_BUFFER_MAX);
-        if (index < IGL_VERTEX_BUFFER_MAX) {
+        IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX);
+        if (index < IGL_BUFFER_BINDINGS_MAX) {
           bufferAttribLocations_[index].push_back(loc);
         }
       }

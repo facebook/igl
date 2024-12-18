@@ -15,7 +15,6 @@
 #include <igl/metal/CommandBuffer.h>
 
 namespace igl::metal {
-class Buffer;
 class Device;
 
 class RenderCommandEncoder final : public IRenderCommandEncoder {

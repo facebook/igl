@@ -143,8 +143,8 @@ class RenderCommandAdapter final : public WithContext {
   [[nodiscard]] GLenum toMockWireframeMode(GLenum mode) const;
 
  private:
-  std::array<BufferState, IGL_VERTEX_BUFFER_MAX> vertexBuffers_;
-  std::bitset<IGL_VERTEX_BUFFER_MAX> vertexBuffersDirty_;
+  std::array<BufferState, IGL_BUFFER_BINDINGS_MAX> vertexBuffers_;
+  std::bitset<IGL_BUFFER_BINDINGS_MAX> vertexBuffersDirty_;
   std::bitset<IGL_TEXTURE_SAMPLERS_MAX> vertexTextureStatesDirty_;
   std::bitset<IGL_TEXTURE_SAMPLERS_MAX> fragmentTextureStatesDirty_;
   TextureStates vertexTextureStates_;

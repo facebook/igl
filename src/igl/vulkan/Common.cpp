@@ -7,7 +7,6 @@
 
 #include "Common.h"
 
-#include <cstdio>
 #include <cstdlib>
 
 // clang-format off

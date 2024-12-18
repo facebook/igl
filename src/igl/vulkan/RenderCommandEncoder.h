@@ -146,7 +146,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
    *  1: All other times */
   uint32_t drawCallCountEnabled_ = 1u;
 
-  bool isVertexBufferBound_[IGL_VERTEX_BUFFER_MAX] = {};
+  bool isVertexBufferBound_[IGL_BUFFER_BINDINGS_MAX] = {};
 
   Dependencies dependencies_ = {};
 

@@ -150,9 +150,18 @@ void ManagedUniformBuffer::bind(const igl::IDevice& device,
   }
 }
 
-void ManagedUniformBuffer::bind(const igl::IDevice& device, igl::IComputeCommandEncoder& encoder) {
+void ManagedUniformBuffer::bind(const igl::IDevice& device,
+                                const igl::IComputePipelineState& pipelineState,
+                                igl::IComputeCommandEncoder& encoder) {
   if (device.getBackendType() == igl::BackendType::OpenGL) {
-    IGL_DEBUG_ABORT("No ComputeEncoder supported for OpenGL\n");
+    for (auto& uniform : uniformInfo.uniforms) {
+      uniform.location = pipelineState.getIndexByName(igl::genNameHandle(uniform.name));
+      if (uniform.location >= 0) {
+        encoder.bindUniform(uniform, data_);
+      } else {
+        IGL_LOG_ERROR_ONCE("The uniform %s was not found in shader\n", uniform.name.c_str());
+      }
+    }
   } else {
     if (useBindBytes_) {
       encoder.bindBytes(uniformInfo.index, data_, length_);

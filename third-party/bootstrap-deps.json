@@ -112,7 +112,7 @@
     "source": {
         "type": "git",
         "url": "https://github.com/zeux/volk",
-        "revision": "f51cfb6578e81acda634c8e69badc5016bccc95e"
+        "revision": "b465507a1720ea32d65163153a53ffa136ca835f"
     }
 },
 {
@@ -198,9 +198,8 @@
 {
     "name": "nanovg",
     "postprocess" : {
-        "type" : "patch",
-        "file" : "nanovg.patch",
-        "pnum" : "0"
+        "type": "script",
+        "file": "nanovg.py"
     },
     "source": {
         "type": "git",

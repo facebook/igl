@@ -10,7 +10,7 @@
 #include <igl/Texture.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/PlatformDevice.h>
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
 #include <windows.h>
 #endif
 

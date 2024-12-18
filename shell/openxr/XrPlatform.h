@@ -27,13 +27,13 @@
 #endif // IGL_BACKEND_OPENGL
 #endif // IGL_PLATFORM_ANDROID
 
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
 #if !defined(WIN32_LEAN_AND_MEAN)
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <unknwn.h>
 #include <windows.h>
-#endif // IGL_PLATFORM_WIN
+#endif // IGL_PLATFORM_WINDOWS
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>

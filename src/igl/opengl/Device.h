@@ -18,14 +18,13 @@
 
 namespace igl::opengl {
 class CommandQueue;
-class Texture;
 
 class Device : public IDevice {
   friend class HWDevice;
   friend class PlatformDevice;
 
  public:
-  Device(std::unique_ptr<IContext> context);
+  explicit Device(std::unique_ptr<IContext> context);
   ~Device() override;
 
   [[nodiscard]] Holder<igl::BindGroupTextureHandle> createBindGroup(

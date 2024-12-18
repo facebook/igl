@@ -57,7 +57,6 @@ class CommandQueue final : public ICommandQueue {
 
  private:
   igl::vulkan::Device& device_;
-  CommandQueueDesc desc_;
 
   /// @brief Flag indicating whether or not there is an active command buffer. Currently only one
   /// command buffer can be active at a time.

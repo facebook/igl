@@ -95,7 +95,8 @@ class VulkanContext final {
   igl::Result initContext(const HWDeviceDesc& desc,
                           size_t numExtraDeviceExtensions = 0,
                           const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions = nullptr,
-                          const VulkanFeatures* IGL_NULLABLE requestedFeatures = nullptr);
+                          const VulkanFeatures* IGL_NULLABLE requestedFeatures = nullptr,
+                          const char* IGL_NULLABLE debugName = nullptr);
 
   igl::Result initSwapchain(uint32_t width, uint32_t height);
   VkExtent2D getSwapchainExtent() const;
@@ -307,7 +308,6 @@ class VulkanContext final {
  public:
   const VulkanFunctionTable& vf_;
   DeviceQueues deviceQueues_;
-  std::unordered_map<CommandQueueType, VulkanQueueDescriptor> userQueues_;
   std::unique_ptr<igl::vulkan::VulkanDevice> device_;
   std::unique_ptr<igl::vulkan::VulkanSwapchain> swapchain_;
   std::unique_ptr<igl::vulkan::VulkanImmediateCommands> immediate_;

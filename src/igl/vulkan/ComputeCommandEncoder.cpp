@@ -199,11 +199,13 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index,
 
   auto* buf = static_cast<igl::vulkan::Buffer*>(buffer);
 
-  const bool isStorageBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) != 0;
+  const bool isUniformBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) > 0;
+  const bool isStorageBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) > 0;
+  const bool isUniformOrStorageBuffer = isUniformBuffer || isStorageBuffer;
 
-  if (!isStorageBuffer) {
-    IGL_DEBUG_ABORT(
-        "Did you forget to specify igl::BufferDesc::BufferTypeBits::Storage on your buffer?");
+  if (!IGL_DEBUG_VERIFY(isUniformOrStorageBuffer,
+                        "Did you forget to specify igl::BufferDesc::BufferTypeBits::Storage or "
+                        "BufferDesc::BufferTypeBits::Uniform on your buffer?")) {
     return;
   }
 

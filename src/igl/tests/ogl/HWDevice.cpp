@@ -13,13 +13,13 @@
 
 #if IGL_PLATFORM_IOS
 #include <igl/opengl/ios/HWDevice.h>
-#elif IGL_PLATFORM_MACOS
+#elif IGL_PLATFORM_MACOSX
 #include <igl/opengl/macos/HWDevice.h>
 #elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX_USE_EGL
 #include <igl/opengl/egl/HWDevice.h>
 #elif IGL_PLATFORM_LINUX
 #include <igl/opengl/glx/HWDevice.h>
-#elif IGL_PLATFORM_WIN
+#elif IGL_PLATFORM_WINDOWS
 #if defined(FORCE_USE_ANGLE)
 #include <igl/opengl/egl/HWDevice.h>
 #else
@@ -51,13 +51,13 @@ class HWDeviceOGLTest : public ::testing::Test {
   std::shared_ptr<opengl::HWDevice> createHWTestDevice() {
 #if IGL_PLATFORM_IOS
     return std::make_shared<opengl::ios::HWDevice>();
-#elif IGL_PLATFORM_MACOS
+#elif IGL_PLATFORM_MACOSX
     return std::make_shared<opengl::macos::HWDevice>();
 #elif IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX_USE_EGL
     return std::make_shared<opengl::egl::HWDevice>();
 #elif IGL_PLATFORM_LINUX
     return std::make_shared<opengl::glx::HWDevice>();
-#elif IGL_PLATFORM_WIN
+#elif IGL_PLATFORM_WINDOWS
 #if defined(FORCE_USE_ANGLE)
     return std::make_shared<opengl::egl::HWDevice>();
 #else

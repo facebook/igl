@@ -20,7 +20,7 @@
 #include <vulkan/vulkan_android.h>
 #endif
 
-#if IGL_PLATFORM_WIN || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX
 namespace igl::tests {
 
 //
@@ -202,7 +202,7 @@ class CommonWithDeviceTest : public ::testing::Test {
 TEST_F(CommonWithDeviceTest, TransitionToGeneralTest) {
   igl::Result result;
 
-  const CommandQueueDesc queueDesc{CommandQueueType::Graphics};
+  const CommandQueueDesc queueDesc{};
   auto commandQueue = device_->createCommandQueue(queueDesc, &result);
   EXPECT_TRUE(result.isOk());
 

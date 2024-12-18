@@ -78,8 +78,8 @@ class ComputeCommandAdapter final : public WithContext {
   }
 
  private:
-  std::array<BufferState, IGL_VERTEX_BUFFER_MAX> buffers_;
-  std::bitset<IGL_VERTEX_BUFFER_MAX> buffersDirty_;
+  std::array<BufferState, IGL_BUFFER_BINDINGS_MAX> buffers_;
+  std::bitset<IGL_BUFFER_BINDINGS_MAX> buffersDirty_;
   std::bitset<IGL_TEXTURE_SAMPLERS_MAX> textureStatesDirty_;
   TextureStates textureStates_{};
   UniformAdapter uniformAdapter_;

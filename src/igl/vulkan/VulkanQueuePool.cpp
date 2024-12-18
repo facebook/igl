@@ -7,7 +7,6 @@
 
 #include "VulkanQueuePool.h"
 
-#include <igl/Log.h>
 #include <map>
 
 namespace igl::vulkan {

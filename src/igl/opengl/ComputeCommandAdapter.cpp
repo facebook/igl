@@ -38,7 +38,7 @@ void ComputeCommandAdapter::clearBuffers() {
 }
 
 void ComputeCommandAdapter::setBuffer(Buffer* buffer, size_t offset, uint32_t index) {
-  IGL_DEBUG_ASSERT(index < IGL_VERTEX_BUFFER_MAX,
+  IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX,
                    "Buffer index is beyond max, may want to increase limit");
   if (index < uniformAdapter_.getMaxUniforms() && buffer) {
     buffers_[index] = {buffer, offset};
@@ -94,7 +94,7 @@ void ComputeCommandAdapter::willDispatch() {
     return;
   }
 
-  for (uint32_t bufferIndex = 0; bufferIndex < IGL_VERTEX_BUFFER_MAX; ++bufferIndex) {
+  for (uint32_t bufferIndex = 0; bufferIndex < IGL_BUFFER_BINDINGS_MAX; ++bufferIndex) {
     if (!IS_DIRTY(buffersDirty_, bufferIndex)) {
       continue;
     }

@@ -30,8 +30,12 @@ using Deleter = void (*)(void* IGL_NULLABLE);
 /// Device Capabilities or Metal Features
 constexpr uint32_t IGL_TEXTURE_SAMPLERS_MAX = 16;
 constexpr uint32_t IGL_VERTEX_ATTRIBUTES_MAX = 24;
-constexpr uint32_t IGL_VERTEX_BUFFER_MAX = 128;
-constexpr uint32_t IGL_VERTEX_BINDINGS_MAX = 24;
+
+// maximum number of buffers that can be bound to a shader stage
+// See maximum number of entries in the buffer argument table, per graphics or kernel function
+// in https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+constexpr uint32_t IGL_BUFFER_BINDINGS_MAX = 31;
+
 constexpr uint32_t IGL_UNIFORM_BLOCKS_BINDING_MAX = 16;
 
 // See GL_MAX_COLOR_ATTACHMENTS in

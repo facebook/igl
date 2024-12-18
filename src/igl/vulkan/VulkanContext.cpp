@@ -67,7 +67,7 @@ const uint32_t kBinding_Sampler = 4;
 const uint32_t kBinding_SamplerShadow = 5;
 const uint32_t kBinding_StorageImages = 6;
 
-#if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
+#if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WINDOWS
 VKAPI_ATTR VkBool32 VKAPI_CALL
 vulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT msgSeverity,
                     [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT msgType,
@@ -146,18 +146,6 @@ std::vector<VkFormat> getCompatibleDepthStencilFormats(igl::TextureFormat format
   default:
     return {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT};
   }
-}
-
-VkQueueFlagBits getQueueTypeFlag(igl::CommandQueueType type) {
-  switch (type) {
-  case igl::CommandQueueType::Compute:
-    return VK_QUEUE_COMPUTE_BIT;
-  case igl::CommandQueueType::Graphics:
-    return VK_QUEUE_GRAPHICS_BIT;
-  case igl::CommandQueueType::MemoryTransfer:
-    return VK_QUEUE_TRANSFER_BIT;
-  }
-  IGL_UNREACHABLE_RETURN(VK_QUEUE_GRAPHICS_BIT)
 }
 
 bool validateImageLimits(VkImageType imageType,
@@ -543,6 +531,8 @@ VulkanContext::~VulkanContext() {
                  VulkanComputePipelineBuilder::getNumPipelinesCreated());
   }
 #endif // IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
+
+  volkFinalize();
 }
 
 void VulkanContext::createInstance(const size_t numExtraExtensions,
@@ -577,12 +567,12 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
 
   vulkan::functions::loadInstanceFunctions(*tableImpl_, vkInstance_);
 
-#if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
+#if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WINDOWS
   if (extensions_.enabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
     VK_ASSERT(ivkCreateDebugUtilsMessenger(
         &vf_, vkInstance_, &vulkanDebugCallback, this, &vkDebugUtilsMessenger_));
   }
-#endif // if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WIN
+#endif // if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WINDOWS
 
 #if IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
   if (config_.enableExtraLogs) {
@@ -675,7 +665,8 @@ igl::Result VulkanContext::queryDevices(const HWDeviceQueryDesc& desc,
 igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                        size_t numExtraDeviceExtensions,
                                        const char* IGL_NULLABLE* IGL_NULLABLE extraDeviceExtensions,
-                                       const VulkanFeatures* IGL_NULLABLE requestedFeatures) {
+                                       const VulkanFeatures* IGL_NULLABLE requestedFeatures,
+                                       const char* IGL_NULLABLE debugName) {
   if (desc.guid == 0UL) {
     IGL_LOG_ERROR("Invalid hardwareGuid(%lu)", desc.guid);
     return Result(Result::Code::Unsupported, "Vulkan is not supported");
@@ -708,6 +699,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   const uint32_t apiVersion = vkPhysicalDeviceProperties2_.properties.apiVersion;
 
   if (config_.enableExtraLogs) {
+    IGL_LOG_INFO("Device: %s\n", debugName ? debugName : "igl/vulkan/VulkanContext.cpp");
     IGL_LOG_INFO("Vulkan physical device: %s\n",
                  vkPhysicalDeviceProperties2_.properties.deviceName);
     IGL_LOG_INFO("           API version: %i.%i.%i.%i\n",
@@ -773,28 +765,6 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   queuePool.reserveQueue(graphicsQueueDescriptor);
   queuePool.reserveQueue(computeQueueDescriptor);
 
-  // Reserve queues requested by user
-  // Reserve transfer types at the end, since those can fallback to compute and graphics queues.
-  // This reduces the risk of failing reservation due to saturation of compute and graphics queues
-  auto sortedUserQueues = config_.userQueues;
-  sort(sortedUserQueues.begin(), sortedUserQueues.end(), [](const auto& /*q1*/, const auto& q2) {
-    return q2 == CommandQueueType::MemoryTransfer;
-  });
-
-  for (const auto& userQueue : sortedUserQueues) {
-    auto userQueueDescriptor = queuePool.findQueueDescriptor(getQueueTypeFlag(userQueue));
-    if (userQueueDescriptor.isValid()) {
-      userQueues_[userQueue] = userQueueDescriptor;
-    } else {
-      IGL_LOG_ERROR("User requested queue is not supported");
-      return Result(Result::Code::Unsupported, "User requested queue is not supported");
-    }
-  }
-
-  for (const auto& [_, descriptor] : userQueues_) {
-    queuePool.reserveQueue(descriptor);
-  }
-
   const auto qcis = queuePool.getQueueCreationInfos();
 
   VkDevice device;
@@ -825,8 +795,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
   vf_.vkGetDeviceQueue(
       device, deviceQueues_.computeQueueFamilyIndex, 0, &deviceQueues_.computeQueue);
 
-  device_ =
-      std::make_unique<igl::vulkan::VulkanDevice>(vf_, device, "Device: VulkanContext::device_");
+  device_ = std::make_unique<igl::vulkan::VulkanDevice>(
+      vf_,
+      device,
+      IGL_FORMAT("Device: VulkanContext::device_ {}",
+                 debugName ? debugName : "igl/vulkan/VulkanContext.cpp")
+          .c_str());
   immediate_ =
       std::make_unique<igl::vulkan::VulkanImmediateCommands>(vf_,
                                                              device,

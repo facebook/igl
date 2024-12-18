@@ -13,7 +13,7 @@
 #include <igl/Macros.h>
 #include <igl/metal/Device.h>
 
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
 #include <igl/metal/macos/Device.h>
 #else
 #include <igl/metal/ios/Device.h>
@@ -25,7 +25,7 @@ namespace igl::metal {
 
 namespace {
 
-#if IGL_PLATFORM_MACOS || IGL_PLATFORM_MACCATALYST
+#if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST
 bool isRemovable(id<MTLDevice> device) {
   if (@available(macOS 10.13, macCatalyst 13.0, *)) {
     return device.removable;
@@ -153,7 +153,7 @@ std::unique_ptr<metal::Device> HWDevice::createWithMTLDevice(id<MTLDevice> devic
     return nullptr;
   }
 
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
   auto iglDevice = std::make_unique<macos::Device>(device);
 #else
   auto iglDevice = std::make_unique<ios::Device>(device);

@@ -192,7 +192,7 @@ class TextureFloatTest : public ::testing::Test {
     }
 
 // Those tests just crash on macos but run fine on android opengles
-#if IGL_PLATFORM_MACOS || IGL_PLATFORM_IOS_SIMULATOR
+#if IGL_PLATFORM_MACOSX || IGL_PLATFORM_IOS_SIMULATOR
     if (iglDev_->getBackendType() == BackendType::OpenGL || kUsesOpenGLES) {
       GTEST_SKIP() << "Skip due to lack of support for OpenGL on Macos";
     }
@@ -444,7 +444,7 @@ TEST_F(TextureFloatTest, Passthrough_SampleRGBA32) {
 }
 
 TEST_F(TextureFloatTest, Passthrough_SampleRGB32) {
-#if IGL_PLATFORM_WIN && !IGL_ANGLE
+#if IGL_PLATFORM_WINDOWS && !IGL_ANGLE
   GTEST_SKIP() << "Skipping due to known issue on Windows without angle";
 #endif
   if (iglDev_->getBackendType() == BackendType::Vulkan ||

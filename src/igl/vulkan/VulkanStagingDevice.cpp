@@ -174,7 +174,8 @@ VulkanStagingDevice::MemoryRegion VulkanStagingDevice::nextFreeBlock(VkDeviceSiz
   auto regionItr = regions_.begin();
   while (regionItr != regions_.end()) {
     // if requested size is available or if contiguous memory is not requested
-    if (regionItr->size >= requestedAlignedSize || (!contiguous)) {
+    if ((regionItr->size >= requestedAlignedSize || !contiguous) &&
+        (immediate_->isReady(regionItr->handle))) {
       allocatedSize = std::min(regionItr->size, requestedAlignedSize);
       break;
     }

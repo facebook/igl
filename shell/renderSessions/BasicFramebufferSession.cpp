@@ -19,7 +19,7 @@ namespace igl::shell {
 
 void BasicFramebufferSession::initialize() noexcept {
   // Create commandQueue
-  const igl::CommandQueueDesc desc{igl::CommandQueueType::Graphics};
+  const igl::CommandQueueDesc desc{};
   commandQueue_ = getPlatform().getDevice().createCommandQueue(desc, nullptr);
   IGL_DEBUG_ASSERT(commandQueue_ != nullptr);
 

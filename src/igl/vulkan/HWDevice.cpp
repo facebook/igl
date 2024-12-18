@@ -40,10 +40,12 @@ std::unique_ptr<IDevice> HWDevice::create(std::unique_ptr<VulkanContext> ctx,
                                           const char* IGL_NULLABLE* IGL_NULLABLE
                                               extraDeviceExtensions,
                                           const igl::vulkan::VulkanFeatures* IGL_NULLABLE features,
+                                          const char* IGL_NULLABLE debugName,
                                           Result* IGL_NULLABLE outResult) {
   IGL_DEBUG_ASSERT(ctx);
 
-  auto result = ctx->initContext(desc, numExtraDeviceExtensions, extraDeviceExtensions, features);
+  auto result =
+      ctx->initContext(desc, numExtraDeviceExtensions, extraDeviceExtensions, features, debugName);
 
   Result::setResult(outResult, result);
 

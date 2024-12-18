@@ -21,8 +21,6 @@ struct AHardwareBuffer;
 namespace igl::vulkan {
 
 class VulkanContext;
-class VulkanImageView;
-struct VulkanImageViewCreateInfo;
 
 struct VulkanImageCreateInfo {
   VkImageUsageFlags usageFlags = 0;
@@ -174,7 +172,7 @@ class VulkanImage final {
               VkSampleCountFlagBits samples,
               const char* debugName = nullptr);
 
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
   /**
    * @brief Creates a `VulkanImage` with memory imported from a Windows handle.
    * NOTE:
@@ -196,9 +194,9 @@ class VulkanImage final {
               VkImageCreateFlags createFlags,
               VkSampleCountFlagBits samples,
               const char* debugName = nullptr);
-#endif // IGL_PLATFORM_WIN
+#endif // IGL_PLATFORM_WINDOWS
 
-#if IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
   /**
    * @brief Creates a `VulkanImage` object whose memory can be exported externally.
    * On Windows, the exported `HANDLE` will be stored in `exportedMemoryHandle_`.
@@ -219,7 +217,7 @@ class VulkanImage final {
                                             AHardwareBuffer* hwBuffer,
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
                                             const char* debugName = nullptr);
-#endif // IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
+#endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
 
   ~VulkanImage();
 
@@ -342,7 +340,7 @@ class VulkanImage final {
   VkImageTiling tiling_ = VK_IMAGE_TILING_OPTIMAL;
   bool isCoherentMemory_ = false;
 
-#if IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
   /**
    * @brief Constructs a `VulkanImage` object and a `VkImage` object. Except for the debug name, all
    * other parameters are required. The debug name, if provided, is associated with the newly
@@ -377,7 +375,7 @@ class VulkanImage final {
               AHardwareBuffer* hwBuffer,
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
               const char* debugName);
-#endif // IGL_PLATFORM_WIN || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
+#endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
 
   // No-op in all builds except DEBUG
   void setName(const std::string& name) noexcept;

@@ -33,10 +33,10 @@ glm::vec<L, T, Q> convertLinearToSRGB(const glm::vec<L, T, Q>& linearColor,
  * compressed using the sRGB transfer function and the alpha is linear.
  */
 struct sRGBColor {
-  uint8_t r;
-  uint8_t g;
-  uint8_t b;
-  uint8_t a;
+  uint8_t r{};
+  uint8_t g{};
+  uint8_t b{};
+  uint8_t a{};
 
   /**
    * @brief Constructor ingesting red, green, blue. alpha is assumed to be 255.
@@ -80,7 +80,7 @@ struct sRGBColor {
    * @remark the red green and blue are assumed to be gamma compressed using the sRGB transfer
    * function and the alpha is linear.
    */
-  constexpr uint32_t toRGBA32() const {
+  [[nodiscard]] constexpr uint32_t toRGBA32() const {
     return (r << 24) | (g << 16) | (b << 8) | a;
   }
 

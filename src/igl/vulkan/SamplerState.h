@@ -14,8 +14,6 @@
 namespace igl::vulkan {
 
 class Device;
-class PipelineState;
-class VulkanContext;
 
 /**
  * @brief Encapsulates a VulkanSampler class and its descriptor, along with a vulkan::Device for

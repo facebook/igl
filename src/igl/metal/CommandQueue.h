@@ -14,8 +14,6 @@
 namespace igl::metal {
 
 class BufferSynchronizationManager;
-class Device;
-class DeviceStatistics;
 
 class CommandQueue final : public ICommandQueue {
  public:

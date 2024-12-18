@@ -18,7 +18,7 @@
 
 #include <igl/Macros.h>
 #include <igl/vulkan/VulkanFunctionTable.h>
-#if IGL_PLATFORM_MACOS
+#if IGL_PLATFORM_MACOSX
 #include <vulkan/vulkan_metal.h>
 #endif
 
@@ -139,8 +139,6 @@ struct VulkanContextConfig {
   igl::ColorSpace swapChainColorSpace = igl::ColorSpace::SRGB_NONLINEAR;
   igl::TextureFormat requestedSwapChainTextureFormat = igl::TextureFormat::RGBA_UNorm8;
 
-  std::vector<CommandQueueType> userQueues;
-
   // the number of resources to support BufferAPIHintBits::Ring
   uint32_t maxResourceCount = 3u;
 
@@ -222,7 +220,7 @@ void ensureShaderModule(IShaderModule* sm);
 
 /// @brief Implements the igl::IDepthStencilState interface
 struct DepthStencilState final : public IDepthStencilState {
-  explicit DepthStencilState(const DepthStencilStateDesc& desc) : desc_(desc) {}
+  explicit DepthStencilState(DepthStencilStateDesc desc) : desc_(std::move(desc)) {}
   const DepthStencilStateDesc desc_;
 };
 

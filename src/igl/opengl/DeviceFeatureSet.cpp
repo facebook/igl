@@ -10,7 +10,6 @@
 #include <igl/Common.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
-#include <igl/opengl/Texture.h>
 
 namespace igl::opengl {
 namespace {
@@ -1570,7 +1569,7 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
 }
 
 uint32_t DeviceFeatureSet::getMaxVertexUniforms() const {
-  GLint tsize;
+  GLint tsize = 0;
   // MaxVertexUniformVectors is the maximum number of 4-element vectors that can be passed as
   // uniform to a vertex shader. All uniforms are 4-element aligned, a single uniform counts at
   // least as one 4-element vector.
@@ -1587,7 +1586,7 @@ uint32_t DeviceFeatureSet::getMaxVertexUniforms() const {
 }
 
 uint32_t DeviceFeatureSet::getMaxFragmentUniforms() const {
-  GLint tsize;
+  GLint tsize = 0;
   // PLease see comments above in getMaxVertexUniforms
   if (hasDesktopOrESVersion(*this, GLVersion::v2_0, GLVersion::v3_0_ES)) {
     glContext_.getIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &tsize);
@@ -1600,7 +1599,7 @@ uint32_t DeviceFeatureSet::getMaxFragmentUniforms() const {
 
 uint32_t DeviceFeatureSet::getMaxComputeUniforms() const {
   if (hasFeature(DeviceFeatures::Compute)) {
-    GLint tsize;
+    GLint tsize = 0;
     glContext_.getIntegerv(GL_MAX_COMPUTE_UNIFORM_COMPONENTS, &tsize);
     return static_cast<uint32_t>(tsize);
   }

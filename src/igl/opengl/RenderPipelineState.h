@@ -83,7 +83,7 @@ class RenderPipelineState final : public WithContext, public IRenderPipelineStat
 
  private:
   // Tracks a list of attribute locations associated with a bufferIndex
-  std::vector<int> bufferAttribLocations_[IGL_VERTEX_BUFFER_MAX];
+  std::vector<int> bufferAttribLocations_[IGL_BUFFER_BINDINGS_MAX];
 
   std::shared_ptr<RenderPipelineReflection> reflection_;
   std::unordered_map<size_t, size_t> vertexTextureUnitRemap;

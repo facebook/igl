@@ -16,8 +16,6 @@
 
 namespace igl::vulkan {
 
-struct VulkanContextConfig;
-
 /// @brief The VulkanExtensions class is a helper class that manages instance and device
 /// extensions in Vulkan by enumerating all extensions available for either object and storing the
 /// names of the available ones as std::strings. A call to either `enumerate()` or

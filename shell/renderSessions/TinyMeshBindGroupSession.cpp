@@ -383,7 +383,7 @@ void TinyMeshBindGroupSession::initialize() noexcept {
   }
 
   // Command queue: backed by different types of GPU HW queues
-  commandQueue_ = device_->createCommandQueue({CommandQueueType::Graphics}, nullptr);
+  commandQueue_ = device_->createCommandQueue({}, nullptr);
 
   renderPass_.colorAttachments.emplace_back();
   renderPass_.colorAttachments.back().loadAction = LoadAction::Clear;

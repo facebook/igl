@@ -31,11 +31,14 @@
 #include <shell/openxr/mobile/opengl/XrAppImplGLES.h>
 #endif
 
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
 #include "ShellScalingApi.h"
-#endif // IGL_PLATFORM_WIN
+#endif // IGL_PLATFORM_WINDOWS
 
-XrInstance gInstance_;
+static XrInstance gInstance_;
+
+// This function cannot be declared as `static` due to our Android GitHub builds
+// @lint-ignore CLANGTIDY
 XrInstance getXrInstance() {
   return gInstance_;
 }
@@ -76,41 +79,41 @@ Java_com_facebook_igl_shell_openxr_gles_MainActivity_onActionView(JNIEnv* env,
 
 using namespace igl::shell::openxr;
 
-void handleInitWindow(const struct android_app* app) {
+static void handleInitWindow(const struct android_app* app) {
   auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setNativeWindow(app->window);
   }
 }
-void handleTermWindow(const struct android_app* app) {
+static void handleTermWindow(const struct android_app* app) {
   auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setNativeWindow(nullptr);
   }
 }
 
-void handleResume(const struct android_app* app) {
+static void handleResume(const struct android_app* app) {
   auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setResumed(true);
   }
 }
 
-void handlePause(const struct android_app* app) {
+static void handlePause(const struct android_app* app) {
   auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setResumed(false);
   }
 }
 
-void handleDestroy(const struct android_app* app) {
+static void handleDestroy(const struct android_app* app) {
   auto* xrApp = static_cast<igl::shell::openxr::XrApp*>(app->userData);
   if (xrApp) {
     xrApp->setNativeWindow(nullptr);
   }
 }
 
-void handleAppCmd(struct android_app* app, int32_t appCmd) {
+static void handleAppCmd(struct android_app* app, int32_t appCmd) {
   switch (appCmd) {
   case APP_CMD_INIT_WINDOW:
     IGL_LOG_INFO("APP_CMD_INIT_WINDOW");
@@ -194,9 +197,9 @@ void android_main(struct android_app* app) {
 #else
 // To run via MetaXR Simulator or Monado.
 int main(int argc, const char* argv[]) {
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
   SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
-#endif // IGL_PLATFORM_WIN
+#endif // IGL_PLATFORM_WINDOWS
 
 #if defined(USE_VULKAN_BACKEND)
   // Do not present running on MetaXR Simulator. It has its own composition and present.

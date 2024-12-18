@@ -23,7 +23,6 @@
 
 #include <GLFW/glfw3native.h>
 
-#include <cassert>
 #include <cstdio>
 #include <regex>
 
@@ -39,7 +38,7 @@
 
 // clang-format off
 #if USE_OPENGL_BACKEND
-  #if IGL_PLATFORM_WIN
+  #if IGL_PLATFORM_WINDOWS
     #include <igl/opengl/wgl/Context.h>
     #include <igl/opengl/wgl/Device.h>
     #include <igl/opengl/wgl/HWDevice.h>
@@ -195,7 +194,7 @@ static void initIGL() {
   // create a device
   {
 #if USE_OPENGL_BACKEND
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
     auto ctx = std::make_unique<igl::opengl::wgl::Context>(GetDC(glfwGetWin32Window(window_)),
                                                            glfwGetWGLContext(window_));
     device_ = std::make_unique<igl::opengl::wgl::Device>(std::move(ctx));
@@ -236,7 +235,7 @@ static void initIGL() {
   }
 
   // Command queue: backed by different types of GPU HW queues
-  const CommandQueueDesc desc{CommandQueueType::Graphics};
+  const CommandQueueDesc desc{};
   commandQueue_ = device_->createCommandQueue(desc, nullptr);
 
   // first color attachment
@@ -290,7 +289,7 @@ static std::shared_ptr<ITexture> getNativeDrawable() {
   Result ret;
   std::shared_ptr<ITexture> drawable;
 #if USE_OPENGL_BACKEND
-#if IGL_PLATFORM_WIN
+#if IGL_PLATFORM_WINDOWS
   const auto& platformDevice = device_->getPlatformDevice<opengl::wgl::PlatformDevice>();
   IGL_DEBUG_ASSERT(platformDevice != nullptr);
   drawable = platformDevice->createTextureFromNativeDrawable(&ret);

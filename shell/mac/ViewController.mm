@@ -196,10 +196,11 @@ using namespace igl;
 
 #if IGL_BACKEND_OPENGL
   case igl::BackendFlavor::OpenGL: {
-    const bool enableStencilBuffer = config_.depthTextureFormat == igl::TextureFormat::S8_UInt_Z24_UNorm  ||
-                                     config_.depthTextureFormat == igl::TextureFormat::S_UInt8;
+    const bool enableStencilBuffer =
+        config_.depthTextureFormat == igl::TextureFormat::S8_UInt_Z24_UNorm ||
+        config_.depthTextureFormat == igl::TextureFormat::S_UInt8;
     const NSOpenGLPixelFormatAttribute stencilSize = enableStencilBuffer ? 8 : 0;
-      
+
     NSOpenGLPixelFormat* pixelFormat;
     if (config_.backendVersion.majorVersion == 4 && config_.backendVersion.minorVersion == 1) {
       static NSOpenGLPixelFormatAttribute attributes[] = {
@@ -312,7 +313,8 @@ using namespace igl;
       devices = igl::vulkan::HWDevice::queryDevices(
           *context, igl::HWDeviceQueryDesc(igl::HWDeviceType::IntegratedGpu), nullptr);
     }
-    auto device = igl::vulkan::HWDevice::create(std::move(context), devices[0], 0, 0);
+    auto device = igl::vulkan::HWDevice::create(
+        std::move(context), devices[0], 0, 0, 0, nullptr, nullptr, "IGL Shell", nullptr);
 
     shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(std::move(device));
     [vulkanView prepareVulkan:shellPlatform_];

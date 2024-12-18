@@ -233,7 +233,7 @@ void HelloOpenXRSession::initialize() noexcept {
   shaderStages_ = getShaderStagesForBackend(device, shaderCross, stereoRendering);
 
   // Command queue: backed by different types of GPU HW queues
-  const CommandQueueDesc desc{igl::CommandQueueType::Graphics};
+  const CommandQueueDesc desc{};
   commandQueue_ = device.createCommandQueue(desc, nullptr);
 
   // Set up vertex uniform data

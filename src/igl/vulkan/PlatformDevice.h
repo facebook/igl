@@ -15,9 +15,7 @@
 struct AHardwareBuffer;
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
-namespace igl {
-
-namespace vulkan {
+namespace igl::vulkan {
 
 class Device;
 
@@ -82,5 +80,4 @@ class PlatformDevice : public IPlatformDevice {
   std::shared_ptr<ITexture> nativeDepthTexture_;
 };
 
-} // namespace vulkan
-} // namespace igl
+} // namespace igl::vulkan

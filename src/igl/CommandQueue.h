@@ -17,22 +17,9 @@ struct CommandBufferDesc;
 class ICommandBuffer;
 
 /**
- * Enumeration used in CommandQueueDesc to create a command queue of the correct type.
- * Options are Compute, Graphics, and MemoryTransfer which directly correct to graphics libraries
- * standard queues.
+ * This is a placeholder for future use
  */
-enum class CommandQueueType {
-  Compute, /// Supports Compute commands
-  Graphics, /// Supports Graphics commands
-  MemoryTransfer, /// Supports Memory commands
-};
-
-/**
- * Only contains the CommandQueueType enumeration to set up the correct type of command queue.
- */
-struct CommandQueueDesc {
-  CommandQueueType type;
-};
+struct CommandQueueDesc {};
 
 /**
  * Contains the current frame's draw count and last frame's draw count.

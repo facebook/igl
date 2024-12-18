@@ -110,9 +110,9 @@ void RenderCommandAdapter::setVertexBuffer(Buffer& buffer,
                                            size_t offset,
                                            size_t index,
                                            Result* outResult) {
-  IGL_DEBUG_ASSERT(index < IGL_VERTEX_BUFFER_MAX,
+  IGL_DEBUG_ASSERT(index < IGL_BUFFER_BINDINGS_MAX,
                    "Buffer index is beyond max, may want to increase limit");
-  if (index < IGL_VERTEX_BUFFER_MAX) {
+  if (index < IGL_BUFFER_BINDINGS_MAX) {
     vertexBuffers_[index] = {&buffer, offset};
     SET_DIRTY(vertexBuffersDirty_, index);
     Result::setOk(outResult);
@@ -343,7 +343,7 @@ void RenderCommandAdapter::willDraw() {
   // Vertex Buffers must be bound before pipelineState->bind()
   if (pipelineState) {
     pipelineState->clearActiveAttributesLocations();
-    for (size_t bufferIndex = 0; bufferIndex < IGL_VERTEX_BUFFER_MAX; ++bufferIndex) {
+    for (size_t bufferIndex = 0; bufferIndex < IGL_BUFFER_BINDINGS_MAX; ++bufferIndex) {
       if (IS_DIRTY(vertexBuffersDirty_, bufferIndex)) {
         auto& bufferState = vertexBuffers_[bufferIndex];
         bindBufferWithShaderStorageBufferOverride((*bufferState.resource), GL_ARRAY_BUFFER);
