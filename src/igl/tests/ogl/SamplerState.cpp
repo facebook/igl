@@ -159,4 +159,11 @@ TEST_F(SamplerStateOGLTest, SamplerStateConvertAddressMode) {
             GL_MIRRORED_REPEAT);
 }
 
+TEST_F(SamplerStateOGLTest, BindNullTexture) {
+  auto dummySamplerState =
+      std::make_unique<igl::opengl::SamplerState>(*context_, SamplerStateDesc::newLinear());
+  dummySamplerState->bind(nullptr);
+  EXPECT_TRUE(true); // Expect no crash
+}
+
 } // namespace igl::tests
