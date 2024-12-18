@@ -146,15 +146,15 @@ void NanovgSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   RenderSession::update(surfaceTextures);
 }
 
-void NanovgSession::drawNanovg(float __width,
-                               float __height,
+void NanovgSession::drawNanovg(float framebuffferWidth,
+                               float framebufferHeight,
                                std::shared_ptr<igl::IRenderCommandEncoder> command) {
   NVGcontext* vg = nvgContext_;
 
   float pxRatio = 2.0f;
 
-  const float width = __width / pxRatio;
-  const float height = __height / pxRatio;
+  const float width = framebuffferWidth / pxRatio;
+  const float height = framebufferHeight / pxRatio;
 
 #if IGL_PLATFORM_IOS || IGL_PLATFORM_ANDROID
   int mx = touchListener_->touchX;
