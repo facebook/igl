@@ -597,7 +597,6 @@ void TinyMeshBindGroupSession::update(igl::SurfaceTextures surfaceTextures) noex
   commands->pushDebugGroupLabel("Render Mesh", igl::Color(1, 0, 0));
   commands->bindVertexBuffer(0, *vb0_);
   commands->bindDepthStencilState(depthStencilState_);
-  commands->bindBuffer(0, ubPerFrame_[frameIndex_].get());
   commands->bindBindGroup(bindGroupTextures_);
   // Draw 2 cubes: we use uniform buffer to update matrices
   commands->bindIndexBuffer(*ib0_, IndexFormat::UInt16);
