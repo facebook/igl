@@ -37,8 +37,7 @@ int NanovgSession::loadDemoData(NVGcontext* vg, DemoData* data) {
 #endif
   });
 
-  if (vg == NULL) {
-    IGL_DEBUG_ASSERT(false);
+  if (!IGL_DEBUG_VERIFY(vg)) {
     return -1;
   }
 
@@ -48,30 +47,25 @@ int NanovgSession::loadDemoData(NVGcontext* vg, DemoData* data) {
 
     std::string full_file = getImageFullPath(file);
     data->images[i] = nvgCreateImage(vg, full_file.c_str(), 0);
-    if (data->images[i] == 0) {
-      IGL_DEBUG_ASSERT(false, "Could not load %s.\n", file);
+    if (!IGL_DEBUG_VERIFY(data->images[i] != 0, "Could not load %s.", file)) {
       return -1;
     }
   }
 
   data->fontIcons = nvgCreateFont(vg, "icons", getImageFullPath("entypo.ttf").c_str());
-  if (data->fontIcons == -1) {
-    IGL_DEBUG_ASSERT(false, "Could not add font icons.\n");
+  if (!IGL_DEBUG_VERIFY(data->fontIcons != -1, "Could not add font icons.")) {
     return -1;
   }
   data->fontNormal = nvgCreateFont(vg, "sans", getImageFullPath("Roboto-Regular.ttf").c_str());
-  if (data->fontNormal == -1) {
-    IGL_DEBUG_ASSERT(false, "Could not add font italic.\n");
+  if (!IGL_DEBUG_VERIFY(data->fontNormal != -1, "Could not add font italic.")) {
     return -1;
   }
   data->fontBold = nvgCreateFont(vg, "sans-bold", getImageFullPath("Roboto-Bold.ttf").c_str());
-  if (data->fontBold == -1) {
-    IGL_DEBUG_ASSERT(false, "Could not add font bold.\n");
+  if (!IGL_DEBUG_VERIFY(data->fontBold != -1, "Could not add font bold.")) {
     return -1;
   }
   data->fontEmoji = nvgCreateFont(vg, "emoji", getImageFullPath("NotoEmoji-Regular.ttf").c_str());
-  if (data->fontEmoji == -1) {
-    IGL_DEBUG_ASSERT(false, "Could not add font emoji.\n");
+  if (!IGL_DEBUG_VERIFY(data->fontEmoji != -1, "Could not add font emoji.")) {
     return -1;
   }
   nvgAddFallbackFontId(vg, data->fontNormal, data->fontEmoji);
