@@ -83,7 +83,7 @@ int NanovgSession::loadDemoData(NVGcontext* vg, DemoData* data) {
 }
 
 void NanovgSession::initialize() noexcept {
-  const CommandQueueDesc desc{.type = CommandQueueType::Graphics};
+  const CommandQueueDesc desc;
   commandQueue_ = getPlatform().getDevice().createCommandQueue(desc, nullptr);
 
   renderPass_.colorAttachments.resize(1);
