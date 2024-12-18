@@ -50,7 +50,7 @@ android {
     }
 
     sourceSets {
-        main.assets.srcDirs += '../../../shell/resources/images'
+        main.assets.srcDirs += ['../../../shell/resources/images', '../../../third-party/deps/src/nanovg/example/images', '../../../third-party/deps/src/nanovg/example' ]
     }
 
     ndkVersion '25.2.9519653'
