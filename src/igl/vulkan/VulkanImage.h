@@ -21,8 +21,6 @@ struct AHardwareBuffer;
 namespace igl::vulkan {
 
 class VulkanContext;
-class VulkanImageView;
-struct VulkanImageViewCreateInfo;
 
 struct VulkanImageCreateInfo {
   VkImageUsageFlags usageFlags = 0;
