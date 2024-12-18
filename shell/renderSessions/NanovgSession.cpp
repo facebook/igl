@@ -37,14 +37,12 @@ int NanovgSession::loadDemoData(NVGcontext* vg, DemoData* data) {
 #endif
   });
 
-  int i;
-
   if (vg == NULL) {
     IGL_DEBUG_ASSERT(false);
     return -1;
   }
 
-  for (i = 0; i < 12; i++) {
+  for (int i = 0; i < 12; i++) {
     char file[128];
     snprintf(file, 128, "image%d.jpg", i + 1);
 
