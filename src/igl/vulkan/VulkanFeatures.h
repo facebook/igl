@@ -12,7 +12,6 @@
 
 namespace igl::vulkan {
 
-struct VulkanContextConfig;
 class VulkanContext;
 
 /// @brief Creates and maintains a list of feature structures for checking feature availability and
