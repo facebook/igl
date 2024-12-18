@@ -66,7 +66,7 @@ class NanovgSession : public RenderSession {
   std::shared_ptr<ICommandQueue> commandQueue_;
   RenderPassDesc renderPass_;
 
-  NVGcontext* nvgContext_ = NULL;
+  NVGcontext* nvgContext_ = nullptr;
   int times_ = 0;
   DemoData nvgDemoData_;
 
