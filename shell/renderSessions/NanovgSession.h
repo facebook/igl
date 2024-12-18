@@ -59,7 +59,9 @@ class NanovgSession : public RenderSession {
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
 
  private:
-  void drawNanovg(float framebuffferWidth, float framebufferHeight, std::shared_ptr<igl::IRenderCommandEncoder> command);
+  void drawNanovg(float framebuffferWidth,
+                  float framebufferHeight,
+                  std::shared_ptr<igl::IRenderCommandEncoder> command);
   int loadDemoData(NVGcontext* vg, DemoData* data);
 
  private:
