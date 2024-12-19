@@ -20,43 +20,37 @@ FileLoader::FileData FileLoaderAndroid::loadBinaryData(const std::string& fileNa
     return {};
   }
 
-  // @fb-only
-    auto path = std::filesystem::path("/data/local/tmp"); // Path for boltbench assets
-    return loadBinaryDataInternal(path / fileName);
-    // @fb-only
-  // @fb-only
+  if (fileExists(fileName)) {
+    if (assetManager_) {
+      // Load file
+      AAsset* asset = AAssetManager_open(assetManager_, fileName.c_str(), AASSET_MODE_BUFFER);
+      if (asset != nullptr) {
+        const off64_t length = AAsset_getLength64(asset);
+        if (IGL_DEBUG_VERIFY_NOT(length > std::numeric_limits<uint32_t>::max())) {
+          AAsset_close(asset);
+          return {};
+        }
 
-  if (assetManager_ == nullptr) {
-    IGL_LOG_INFO("Asset manager not set!\n");
-    // Fallback to default behavior (i.e., loading w/ C++ functions) when asset manager is not set
-    // as this is the case for some unit tests.
-    return loadBinaryDataInternal(fileName);
+        auto data = std::make_unique<uint8_t[]>(length);
+        auto readSize = AAsset_read(asset, data.get(), length);
+        if (IGL_DEBUG_VERIFY_NOT(readSize != length)) {
+          IGL_LOG_ERROR("Error in loadBinaryData(): read size mismatch (%ld != %zu) in %s\n",
+                        readSize,
+                        length,
+                        fileName.c_str());
+        }
+        AAsset_close(asset);
+
+        return {std::move(data), static_cast<uint32_t>(length)};
+      }
+    }
+    // Fallback to default behavior (i.e., loading w/ C++ functions) if asset manager is not set or
+    // doesnt not contain the file.
+    return loadBinaryDataInternal(fullPath(fileName));
   }
 
-  // Load file
-  AAsset* asset = AAssetManager_open(assetManager_, fileName.c_str(), AASSET_MODE_BUFFER);
-  if (IGL_DEBUG_VERIFY_NOT(asset == nullptr)) {
-    IGL_LOG_ERROR("Error in loadBinaryData(): failed to open file %s\n", fileName.c_str());
-    return {};
-  }
-
-  const off64_t length = AAsset_getLength64(asset);
-  if (IGL_DEBUG_VERIFY_NOT(length > std::numeric_limits<uint32_t>::max())) {
-    AAsset_close(asset);
-    return {};
-  }
-
-  auto data = std::make_unique<uint8_t[]>(length);
-  auto readSize = AAsset_read(asset, data.get(), length);
-  if (IGL_DEBUG_VERIFY_NOT(readSize != length)) {
-    IGL_LOG_ERROR("Error in loadBinaryData(): read size mismatch (%ld != %zu) in %s\n",
-                  readSize,
-                  length,
-                  fileName.c_str());
-  }
-  AAsset_close(asset);
-
-  return {std::move(data), static_cast<uint32_t>(length)};
+  IGL_LOG_ERROR("Error in loadBinaryData(): file not found in %s\n", fileName.c_str());
+  return {};
 }
 
 bool FileLoaderAndroid::fileExists(const std::string& fileName) const {
@@ -66,17 +60,10 @@ bool FileLoaderAndroid::fileExists(const std::string& fileName) const {
     return false;
   }
 
-  if (assetManager_) {
-    // Load file
-    AAsset* asset = AAssetManager_open(assetManager_, fileName.c_str(), AASSET_MODE_BUFFER);
-    if (asset != nullptr) {
-      AAsset_close(asset);
-      return true;
-    }
-    return false;
-  } else {
-    return std::filesystem::exists(fileName);
+  if (fullPath(fileName) != "") {
+    return true;
   }
+  return false;
 }
 
 std::string FileLoaderAndroid::basePath() const {
@@ -100,25 +87,27 @@ std::string FileLoaderAndroid::basePath() const {
 
 std::string FileLoaderAndroid::fullPath(const std::string& fileName) const {
   if (assetManager_) {
-    return fileName;
-  } else {
-    if (std::filesystem::exists(fileName)) {
+    // Load file
+    AAsset* asset = AAssetManager_open(assetManager_, fileName.c_str(), AASSET_MODE_BUFFER);
+    if (asset != nullptr) {
+      AAsset_close(asset);
       return fileName;
     }
-
-    auto fullPath = std::filesystem::path("/data/local/tmp") / fileName;
-    if (std::filesystem::exists(fullPath)) {
-      return fullPath.string();
-    }
-
-    fullPath = std::filesystem::temp_directory_path() / fileName;
-    if (std::filesystem::exists(fullPath)) {
-      return fullPath.string();
-    }
-
-    IGL_DEBUG_ASSERT_NOT_REACHED();
-    return "";
   }
+  if (std::filesystem::exists(fileName)) {
+    return fileName;
+  }
+
+  auto fullPath = std::filesystem::path("/data/local/tmp") / fileName;
+  if (std::filesystem::exists(fullPath)) {
+    return fullPath.string();
+  }
+
+  fullPath = std::filesystem::temp_directory_path() / fileName;
+  if (std::filesystem::exists(fullPath)) {
+    return fullPath.string();
+  }
+  return "";
 }
 
 } // namespace igl::shell

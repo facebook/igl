@@ -11,7 +11,7 @@
 // @fb-only
 // @fb-only
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
-#include <shell/shared/imageLoader/android/ImageLoaderAndroid.h>
+#include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/imageWriter/ImageWriter.h>
 #include <shell/shared/imageWriter/android/ImageWriterAndroid.h>
 
@@ -70,12 +70,8 @@ PlatformAndroid::PlatformAndroid(std::shared_ptr<igl::IDevice> device, bool useF
   fileLoader_ = std::make_unique<igl::shell::FileLoaderAndroid>();
   // @fb-only
       // @fb-only
-  if (useFakeLoader) {
-    imageLoader_ = std::make_unique<igl::shell::ImageLoader>(*fileLoader_);
-  } else {
-    imageLoader_ = std::make_unique<igl::shell::ImageLoaderAndroid>(*fileLoader_);
-    // @fb-only
-        // @fb-only
+  imageLoader_ = std::make_unique<igl::shell::ImageLoader>(*fileLoader_);
+  if (!useFakeLoader) {
     imageWriter_ = std::make_unique<igl::shell::ImageWriterAndroid>();
   }
 }
