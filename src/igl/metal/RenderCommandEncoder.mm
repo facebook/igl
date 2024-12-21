@@ -338,6 +338,10 @@ void RenderCommandEncoder::bindTexture(size_t index, uint8_t bindTarget, ITextur
   }
 }
 
+void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
+  bindTexture(index, igl::BindTarget::kFragment, texture);
+}
+
 void RenderCommandEncoder::bindUniform(const UniformDesc& /*uniformDesc*/, const void* /*data*/) {
   // DO NOT IMPLEMENT!
   // This is only for backends that MUST use single uniforms in some situations.

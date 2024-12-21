@@ -66,6 +66,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   void bindSamplerState(size_t index, uint8_t target, ISamplerState* samplerState) override;
 
   void bindTexture(size_t index, uint8_t target, ITexture* texture) override;
+  void bindTexture(size_t index, ITexture* texture) override;
 
   /// @brief This is only for backends that MUST use single uniforms in some situations. Do not
   /// implement!
