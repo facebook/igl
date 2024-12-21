@@ -203,7 +203,8 @@ class RenderCommandEncoderTest : public ::testing::Test {
 
   void encodeAndSubmit(
       const std::function<void(const std::unique_ptr<igl::IRenderCommandEncoder>&)>& func,
-      bool useBindGroup = false) {
+      bool useBindGroup = false,
+      bool useNewBindTexture = false) {
     Result ret;
 
     auto cmdBuffer = cmdQueue_->createCommandBuffer({}, &ret);
@@ -215,7 +216,8 @@ class RenderCommandEncoderTest : public ::testing::Test {
     if (useBindGroup) {
       encoder->bindBindGroup(bindGroupTexture_);
     } else {
-      encoder->bindTexture(textureUnit_, BindTarget::kFragment, texture_.get());
+      useNewBindTexture ? encoder->bindTexture(textureUnit_, texture_.get())
+                        : encoder->bindTexture(textureUnit_, BindTarget::kFragment, texture_.get());
       encoder->bindSamplerState(textureUnit_, BindTarget::kFragment, samp_.get());
     }
 
@@ -379,6 +381,34 @@ TEST_F(RenderCommandEncoderTest, shouldDrawAPoint) {
     encoder->bindRenderPipelineState(renderPipelineState_Point_);
     encoder->draw(1);
   });
+
+  auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
+  // clang-format off
+  std::vector<uint32_t> const expectedPixels {
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+    backgroundColorHex, backgroundColorHex, grayColor,          backgroundColorHex,
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+    backgroundColorHex, backgroundColorHex, backgroundColorHex, backgroundColorHex,
+  };
+  // clang-format on
+
+  verifyFrameBuffer(expectedPixels);
+}
+
+TEST_F(RenderCommandEncoderTest, shouldDrawAPointNewBindTexture) {
+  initializeBuffers(
+      // clang-format off
+      { quarterPixel, quarterPixel, 0.0f, 1.0f },
+      { 0.5, 0.5 } // clang-format on
+  );
+
+  encodeAndSubmit(
+      [this](const std::unique_ptr<igl::IRenderCommandEncoder>& encoder) {
+        encoder->bindRenderPipelineState(renderPipelineState_Point_);
+        encoder->draw(1);
+      },
+      false,
+      true);
 
   auto grayColor = data::texture::TEX_RGBA_GRAY_4x4[0];
   // clang-format off
