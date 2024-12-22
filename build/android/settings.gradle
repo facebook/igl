@@ -21,6 +21,7 @@ dependencyResolutionManagement {
 }
 rootProject.name = "IGL"
 include ':app'
+include ':nanovg'
 include ':app-openxr-vulkan'
 include ':app-openxr-gles'
 
