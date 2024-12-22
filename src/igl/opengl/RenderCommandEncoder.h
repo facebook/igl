@@ -63,6 +63,7 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
   void bindPushConstants(const void* data, size_t length, size_t offset) override;
   void bindSamplerState(size_t index, uint8_t target, ISamplerState* samplerState) override;
   void bindTexture(size_t index, uint8_t target, ITexture* texture) override;
+  void bindTexture(size_t index, ITexture* texture) override;
 
   void bindBindGroup(BindGroupTextureHandle handle) override;
   void bindBindGroup(BindGroupBufferHandle handle,

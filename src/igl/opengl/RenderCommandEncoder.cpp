@@ -341,6 +341,10 @@ void RenderCommandEncoder::bindTexture(size_t index, uint8_t bindTarget, ITextur
   }
 }
 
+void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
+  bindTexture(index, igl::BindTarget::kFragment, texture);
+}
+
 void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t instanceCount,
                                 uint32_t firstVertex,
