@@ -8,12 +8,12 @@
 // @fb-only
 
 #include "TinyRenderer.h"
+
 #include <EGL/egl.h>
 #include <android/log.h>
 #include <android/native_window.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/egl/HWDevice.h>
-#include <igl/opengl/egl/Context.h>
 #include <igl/opengl/egl/PlatformDevice.h>
 #endif
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
@@ -82,14 +82,12 @@ void TinyRenderer::init(AAssetManager* mgr,
 #if IGL_BACKEND_OPENGL
   case igl::BackendFlavor::OpenGL_ES: {
     auto hwDevice = opengl::egl::HWDevice();
+    auto hwDevices = hwDevice.queryDevices(queryDesc, &result);
+    IGL_DEBUG_ASSERT(result.isOk());
     // Decide which backend api to use, default as GLES3
     auto backendType = (backendVersion_.majorVersion == 3) ? igl::opengl::RenderingAPI::GLES3
                                                            : igl::opengl::RenderingAPI::GLES2;
-
-    auto context = std::make_unique<igl::opengl::egl::Context>(backendType, (EGLNativeWindowType)nullptr, true);
-    IGL_DEBUG_ASSERT(result.isOk());
-    d = hwDevice.createWithContext(std::move(context), &result);
-    IGL_DEBUG_ASSERT(result.isOk());
+    d = hwDevice.create(hwDevices[0], backendType, nullptr, &result);
     shellParams_.shouldPresent = false;
     break;
   }
