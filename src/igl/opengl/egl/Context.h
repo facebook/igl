@@ -35,9 +35,9 @@ class Context final : public IContext {
 
   /// Create a new context for default display. This constructor makes the assumption that the EGL
   /// surfaces to be associated with this context are already present and set to current.
-  Context(RenderingAPI api, EGLNativeWindowType window, bool enableStencilBuffer = false);
+  Context(RenderingAPI api, EGLNativeWindowType window);
   /// Create a new offscreen context.
-  Context(RenderingAPI api, size_t width, size_t height, bool enableStencilBuffer = false);
+  Context(RenderingAPI api, size_t width, size_t height);
   /// Create a new context applicable for a specific display/context/read surface/draw surface.
   Context(EGLDisplay display,
           EGLContext context,
@@ -46,7 +46,7 @@ class Context final : public IContext {
           EGLConfig config = nullptr);
   /// Create a new offscreen context, in the same sharegroup as 'sharedContext'. Dimensions are
   /// also inferred from 'sharedContext'.
-  Context(const Context& sharedContext, bool enableStencilBuffer = false);
+  Context(const Context& sharedContext);
   ~Context() override;
 
   void setCurrent() override;
@@ -81,11 +81,9 @@ class Context final : public IContext {
           std::shared_ptr<std::vector<EGLContext>> sharegroup,
           bool offscreen,
           EGLNativeWindowType window,
-          std::pair<EGLint, EGLint> dimensions,
-          bool enableStencilBuffer);
+          std::pair<EGLint, EGLint> dimensions);
 
   bool contextOwned_ = false;
-  bool enableStencilBuffer_ = false;
   FOLLY_PUSH_WARNING
   FOLLY_GNU_DISABLE_WARNING("-Wzero-as-null-pointer-constant")
   RenderingAPI api_ = RenderingAPI::GLES2;
