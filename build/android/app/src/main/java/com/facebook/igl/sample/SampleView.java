@@ -175,7 +175,7 @@ public class SampleView extends GLSurfaceView {
     public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display) {
       final int EGL_OPENGL_ES2_BIT = 4;
 
-      // Set ourselves a strict configuration: RGBA8888, 16-bit depth buffer, 8-bit stencil buffer.
+      // Set ourselves a strict configuration: RGBA8888, 16-bit depth buffer, no stencil buffer.
       final int[] configAttribs = {
         EGL10.EGL_RED_SIZE, 8,
         EGL10.EGL_GREEN_SIZE, 8,
