@@ -29,9 +29,19 @@ public class SampleView extends GLSurfaceView {
   private float lastTouchY = 0.0f;
 
   public SampleView(
-      Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
-
+      Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat, boolean enableStencilBuffer) {
     super(context);
+    init(context, backendVersion, swapchainColorTextureFormat, enableStencilBuffer);
+  }
+
+  public SampleView(
+          Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
+    super(context);
+    init(context, backendVersion, swapchainColorTextureFormat, false);
+  }
+
+  private void init(Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat, boolean enableStencilBuffer){
+
     // Uncomment to attach debugging
     // android.os.Debug.waitForDebugger();
 
@@ -43,7 +53,7 @@ public class SampleView extends GLSurfaceView {
     setEGLWindowSurfaceFactory(
         new SurfaceFactory(SampleLib.isSRGBTextureFormat(swapchainColorTextureFormat)));
 
-    setEGLConfigChooser(new ConfigChooser(backendVersion));
+    setEGLConfigChooser(new ConfigChooser(backendVersion, enableStencilBuffer));
 
     setRenderer(new Renderer(context, backendVersion, swapchainColorTextureFormat));
   }
@@ -130,7 +140,6 @@ public class SampleView extends GLSurfaceView {
     @Override
     public EGLSurface createWindowSurface(
         EGL10 egl10, EGLDisplay eglDisplay, EGLConfig eglConfig, Object nativeWindow) {
-
       String eglExtensionString = egl10.eglQueryString(eglDisplay, egl10.EGL_EXTENSIONS);
       if (!eglExtensionString.contains("EGL_KHR_gl_colorspace")) {
         return egl10.eglCreateWindowSurface(eglDisplay, eglConfig, nativeWindow, null);
@@ -156,8 +165,11 @@ public class SampleView extends GLSurfaceView {
 
     private final SampleLib.BackendVersion mBackendVersion;
 
-    public ConfigChooser(SampleLib.BackendVersion version) {
+    private boolean mEnableStencilBuffer = false;
+
+    public ConfigChooser(SampleLib.BackendVersion version, boolean enableStencilBuffer) {
       mBackendVersion = version;
+      mEnableStencilBuffer = enableStencilBuffer;
     }
 
     public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display) {
@@ -170,6 +182,7 @@ public class SampleView extends GLSurfaceView {
         EGL10.EGL_BLUE_SIZE, 8,
         EGL10.EGL_ALPHA_SIZE, 8,
         EGL10.EGL_DEPTH_SIZE, 16,
+        EGL10.EGL_STENCIL_SIZE, mEnableStencilBuffer ? 8 : 0,
         EGL10.EGL_RENDERABLE_TYPE,
             (mBackendVersion.majorVersion == (byte) 3)
                 ? EGL15.EGL_OPENGL_ES3_BIT
