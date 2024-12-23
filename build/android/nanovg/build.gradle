@@ -51,11 +51,11 @@ android {
 
     sourceSets {
         main {
-            manifest.srcFile 'AndroidManifest.xml'
+            manifest.srcFile 'src/main/AndroidManifest.xml'
             res.srcDir '../app/src/main/res/'
 
             java.srcDir 'java'
-            java.srcDirs += ['../app/src/main/java/']
+            java.srcDirs += ['../app/src/main/java']
 
             assets.srcDirs += ['../../../shell/resources/images', '../../../third-party/deps/src/nanovg/example/images', '../../../third-party/deps/src/nanovg/example']
         }
