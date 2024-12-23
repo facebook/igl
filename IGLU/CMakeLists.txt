@@ -68,9 +68,6 @@ target_include_directories(IGLUtexture_accessor PUBLIC "${IGL_ROOT_DIR}/third-pa
 # Nanovg
 if (IGLU_WITH_NANOVG)
   target_sources(IGLUnanovg PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/nanovg/src/nanovg.c")
-  target_sources(IGLUnanovg PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/nanovg/example/demo.c")
-  target_sources(IGLUnanovg PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/nanovg/example/perf.c")
-  target_include_directories(IGLUnanovg PUBLIC "${IGL_ROOT_DIR}/third-party/deps/src/nanovg/example")
 endif()
 
 if(UNIX)
