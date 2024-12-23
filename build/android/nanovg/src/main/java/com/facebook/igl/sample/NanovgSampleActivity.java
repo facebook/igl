@@ -19,7 +19,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 
-public class NanovgSampleActivity extends SampleActivity implements View.OnClickListener {
+public class NanovgSampleActivity extends SampleActivity {
   private static  String TAG = "NanovgSampleActivity";
 
   @Override
