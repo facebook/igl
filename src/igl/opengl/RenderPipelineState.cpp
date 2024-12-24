@@ -275,8 +275,8 @@ void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t buffer
   }
 #endif
 
-  const auto attribList = static_cast<VertexInputState*>(desc_.vertexInputState.get())
-                              ->getAssociatedAttributes(bufferIndex);
+  const auto& attribList = static_cast<VertexInputState*>(desc_.vertexInputState.get())
+                               ->getAssociatedAttributes(bufferIndex);
   auto& locations = bufferAttribLocations_[bufferIndex];
 
   // attributeList and locations should have an 1-to-1 correspondence
