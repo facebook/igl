@@ -213,7 +213,6 @@ struct MNVGbuffers {
   int cverts = 0;
   int nverts = 0;
   std::shared_ptr<UniformBufferPool> uniformBufferPool;
-  int nuniforms = 0;
 
   MNVGbuffers(igl::IDevice* device, size_t uniformBufferBlockSize) {
     vertexUniforms.matrix = iglu::simdtypes::float4x4(1.0f);
@@ -590,7 +589,6 @@ class MNVGcontext {
     curBuffers_->nindexes = 0;
     curBuffers_->nverts = 0;
     curBuffers_->ncalls = 0;
-    curBuffers_->nuniforms = 0;
     curBuffers_->uniformBufferPool->reset();
   }
 
@@ -1025,7 +1023,6 @@ class MNVGcontext {
     curBuffers_->nindexes = 0;
     curBuffers_->nverts = 0;
     curBuffers_->ncalls = 0;
-    curBuffers_->nuniforms = 0;
     curBuffers_->uniformBufferPool->reset();
   }
 
