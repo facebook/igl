@@ -58,6 +58,12 @@ struct MNVGblend {
   igl::BlendFactor dstAlpha;
 };
 
+struct UniformBufferIndex {
+  std::shared_ptr<igl::IBuffer> buffer;
+  void* data = nullptr;
+  size_t offset = 0;
+};
+
 struct MNVGcall {
   int type;
   int image;
@@ -69,7 +75,8 @@ struct MNVGcall {
   int indexCount;
   int strokeOffset;
   int strokeCount;
-  int uniformOffset;
+  UniformBufferIndex uboIndex;
+  UniformBufferIndex uboIndex2;
   MNVGblend blendFunc;
 };
 
@@ -102,6 +109,91 @@ struct MNVGtexture {
   std::shared_ptr<igl::ISamplerState> sampler;
 };
 
+class UniformBufferBlock {
+ public:
+  UniformBufferBlock(igl::IDevice* device, size_t blockSize) : blockSize_(blockSize) {
+    data_.resize(blockSize);
+    igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform,
+                         data_.data(),
+                         blockSize,
+                         igl::ResourceStorage::Shared);
+    desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
+    desc.debugName = "fragment_uniform_buffer";
+    buffer_ = device->createBuffer(desc, NULL);
+  }
+
+  bool checkLeftSpace(size_t dataSize) {
+    return current_ + dataSize <= blockSize_;
+  }
+
+  UniformBufferIndex allocData(size_t dataSize) {
+    assert(checkLeftSpace(dataSize));
+
+    UniformBufferIndex index{buffer_, data_.data() + current_, current_};
+
+    current_ += dataSize;
+
+    return index;
+  }
+
+  void uploadToGpu() {
+    buffer_->upload(data_.data(), igl::BufferRange(data_.size()));
+  }
+
+  void reset() {
+    current_ = 0;
+  }
+
+ private:
+  std::shared_ptr<igl::IBuffer> buffer_;
+  std::vector<unsigned char> data_;
+  size_t blockSize_ = 0;
+  size_t current_ = 0;
+};
+
+class UniformBufferPool {
+ public:
+  UniformBufferPool(igl::IDevice* device, size_t blockSize) :
+    device_(device), blockSize_(blockSize) {
+    allocNewBlock();
+  }
+
+  UniformBufferIndex allocData(size_t dataSize) {
+    if (!bufferBlocks_[currentBlockIndex]->checkLeftSpace(dataSize)) {
+      currentBlockIndex++;
+      if (bufferBlocks_.size() <= currentBlockIndex) {
+        allocNewBlock();
+      }
+    }
+
+    return bufferBlocks_[currentBlockIndex]->allocData(dataSize);
+  }
+
+  void uploadToGpu() {
+    for (auto& block : bufferBlocks_) {
+      block->uploadToGpu();
+    }
+  }
+
+  void reset() {
+    currentBlockIndex = 0;
+    for (auto& block : bufferBlocks_) {
+      block->reset();
+    }
+  }
+
+ private:
+  void allocNewBlock() {
+    bufferBlocks_.emplace_back(std::make_shared<UniformBufferBlock>(device_, blockSize_));
+  }
+
+ private:
+  std::vector<std::shared_ptr<UniformBufferBlock>> bufferBlocks_;
+  size_t blockSize_ = 0;
+  igl::IDevice* device_ = nullptr;
+  size_t currentBlockIndex = 0;
+};
+
 struct MNVGbuffers {
   std::shared_ptr<igl::ICommandBuffer> commandBuffer;
   bool isBusy = false;
@@ -120,13 +212,12 @@ struct MNVGbuffers {
   std::vector<NVGvertex> verts;
   int cverts = 0;
   int nverts = 0;
-  std::shared_ptr<igl::IBuffer> fragmentUniformBuffer;
-  std::vector<unsigned char> fragmentUniforms;
-  int cuniforms = 0;
+  std::shared_ptr<UniformBufferPool> uniformBufferPool;
   int nuniforms = 0;
 
-  MNVGbuffers() {
+  MNVGbuffers(igl::IDevice* device, size_t uniformBufferBlockSize) {
     vertexUniforms.matrix = iglu::simdtypes::float4x4(1.0f);
+    uniformBufferPool = std::make_shared<UniformBufferPool>(device, uniformBufferBlockSize);
   }
 
   void uploadToGpu() {
@@ -142,10 +233,7 @@ struct MNVGbuffers {
       vertexUniformBuffer->upload(&vertexUniforms, igl::BufferRange(sizeof(VertexUniforms)));
     }
 
-    if (fragmentUniformBuffer) {
-      fragmentUniformBuffer->upload(fragmentUniforms.data(),
-                                    igl::BufferRange(fragmentUniforms.size()));
-    }
+    uniformBufferPool->uploadToGpu();
   }
 };
 
@@ -236,7 +324,8 @@ class MNVGcontext {
   igl::IDevice* device_ = nullptr;
   igl::IRenderCommandEncoder* renderEncoder_ = nullptr;
 
-  int fragmentUniformBufferSize_;
+  size_t fragmentUniformBufferSize_;
+  size_t maxUniformBufferSize_;
   int indexSize_;
   int flags_;
   igl_vector_uint2 viewPortSize_;
@@ -284,30 +373,8 @@ class MNVGcontext {
     return ret;
   }
 
-  int allocFragUniforms(int n) {
-    int ret = 0;
-    if (curBuffers_->nuniforms + n > curBuffers_->cuniforms) {
-      int cuniforms = MAXINT(curBuffers_->nuniforms + n, 128) + curBuffers_->cuniforms / 4;
-      curBuffers_->fragmentUniforms.resize(fragmentUniformBufferSize_ * cuniforms);
-
-      if (device_->getBackendType() == igl::BackendType::Vulkan) {
-        IGL_DEBUG_ASSERT((fragmentUniformBufferSize_ * cuniforms) < 65536); // vulkan max 65536;
-      }
-
-      igl::BufferDesc desc(igl::BufferDesc::BufferTypeBits::Uniform,
-                           curBuffers_->fragmentUniforms.data(),
-                           fragmentUniformBufferSize_ * cuniforms,
-                           igl::ResourceStorage::Shared);
-      desc.hint = igl::BufferDesc::BufferAPIHintBits::UniformBlock;
-      desc.debugName = "fragment_uniform_buffer";
-      std::shared_ptr<igl::IBuffer> buffer = device_->createBuffer(desc, NULL);
-
-      curBuffers_->fragmentUniformBuffer = buffer;
-      curBuffers_->cuniforms = cuniforms;
-    }
-    ret = curBuffers_->nuniforms * fragmentUniformBufferSize_;
-    curBuffers_->nuniforms += n;
-    return ret;
+  UniformBufferIndex allocFragUniforms(size_t dataSize) {
+    return curBuffers_->uniformBufferPool->allocData(dataSize);
   }
 
   int allocIndexes(int n) {
@@ -454,18 +521,21 @@ class MNVGcontext {
     return 1;
   }
 
-  void bindRenderPipeline(const std::shared_ptr<igl::IRenderPipelineState>& pipelineState) {
+  void bindRenderPipeline(const std::shared_ptr<igl::IRenderPipelineState>& pipelineState,
+                          const UniformBufferIndex* uboIndex = nullptr) {
     renderEncoder_->bindRenderPipelineState(pipelineState);
     renderEncoder_->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *curBuffers_->vertBuffer, 0);
     renderEncoder_->bindBuffer(kVertexUniformBlockIndex, curBuffers_->vertexUniformBuffer.get(), 0);
-    renderEncoder_->bindBuffer(
-        kFragmentUniformBlockIndex, curBuffers_->fragmentUniformBuffer.get(), 0);
+    if (uboIndex) {
+      renderEncoder_->bindBuffer(
+          kFragmentUniformBlockIndex, uboIndex->buffer.get(), uboIndex->offset);
+    }
   }
 
   void convexFill(MNVGcall* call) {
     const int kIndexBufferOffset = call->indexOffset * indexSize_;
     bindRenderPipeline(pipelineState_);
-    setUniforms(call->uniformOffset, call->image);
+    setUniforms(call->uboIndex, call->image);
     if (call->indexCount > 0) {
       renderEncoder_->bindIndexBuffer(
           *curBuffers_->indexBuffer, igl::IndexFormat::UInt32, kIndexBufferOffset);
@@ -482,7 +552,7 @@ class MNVGcontext {
   void fill(MNVGcall* call) {
     // Draws shapes.
     const int kIndexBufferOffset = call->indexOffset * indexSize_;
-    bindRenderPipeline(stencilOnlyPipelineState_);
+    bindRenderPipeline(stencilOnlyPipelineState_, &call->uboIndex);
     renderEncoder_->bindDepthStencilState(fillShapeStencilState_);
     if (call->indexCount > 0) {
       renderEncoder_->bindIndexBuffer(
@@ -494,7 +564,7 @@ class MNVGcontext {
     bindRenderPipeline(pipelineStateTriangleStrip_);
 
     // Draws anti-aliased fragments.
-    setUniforms(call->uniformOffset, call->image);
+    setUniforms(call->uboIndex, call->image);
     if (flags_ & NVG_ANTIALIAS && call->strokeCount > 0) {
       renderEncoder_->bindDepthStencilState(fillAntiAliasStencilState_);
       renderEncoder_->draw(call->strokeCount, 1, call->strokeOffset);
@@ -514,10 +584,6 @@ class MNVGcontext {
     return nullptr;
   }
 
-  FragmentUniforms* fragUniformAtIndex(int index) {
-    return (FragmentUniforms*)&curBuffers_->fragmentUniforms[index];
-  }
-
   void renderCancel() {
     curBuffers_->image = 0;
     curBuffers_->isBusy = false;
@@ -525,6 +591,7 @@ class MNVGcontext {
     curBuffers_->nverts = 0;
     curBuffers_->ncalls = 0;
     curBuffers_->nuniforms = 0;
+    curBuffers_->uniformBufferPool->reset();
   }
 
   void renderCommandEncoderWithColorTexture() {
@@ -533,8 +600,6 @@ class MNVGcontext {
         {0.0, 0.0, (float)viewPortSize_.x, (float)viewPortSize_.y, 0.0, 1.0});
     renderEncoder_->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *curBuffers_->vertBuffer, 0);
     renderEncoder_->bindBuffer(kVertexUniformBlockIndex, curBuffers_->vertexUniformBuffer.get(), 0);
-    renderEncoder_->bindBuffer(
-        kFragmentUniformBlockIndex, curBuffers_->fragmentUniformBuffer.get(), 0);
   }
 
   int renderCreate() {
@@ -594,7 +659,7 @@ class MNVGcontext {
     maxBuffers_ = 3;
 
     for (int i = maxBuffers_; i--;) {
-      allBuffers_.emplace_back(new MNVGbuffers());
+      allBuffers_.emplace_back(new MNVGbuffers(device_, maxUniformBufferSize_));
     }
 
     // Initializes vertex descriptor.
@@ -788,7 +853,7 @@ class MNVGcontext {
       buffers->stencilTexture = nullptr;
       buffers->indexBuffer = nullptr;
       buffers->vertBuffer = nullptr;
-      buffers->fragmentUniformBuffer = nullptr;
+      buffers->uniformBufferPool = nullptr;
     }
 
     for (MNVGtexture* texture : textures_) {
@@ -915,16 +980,9 @@ class MNVGcontext {
     }
 
     // Fill shader
-    call->uniformOffset = allocFragUniforms(1);
-    if (call->uniformOffset == -1) {
-      // We get here if call alloc was ok, but something else is not.
-      // Roll back the last call to prevent drawing it.
-      if (curBuffers_->ncalls > 0)
-        curBuffers_->ncalls--;
-      return;
-    }
+    call->uboIndex = allocFragUniforms(fragmentUniformBufferSize_);
     convertPaintForFrag(
-        fragUniformAtIndex(call->uniformOffset), paint, scissor, fringe, fringe, -1.0f);
+        (FragmentUniforms*)call->uboIndex.data, paint, scissor, fringe, fringe, -1.0f);
   }
 
   void renderFlush() {
@@ -968,6 +1026,7 @@ class MNVGcontext {
     curBuffers_->nverts = 0;
     curBuffers_->ncalls = 0;
     curBuffers_->nuniforms = 0;
+    curBuffers_->uniformBufferPool->reset();
   }
 
   int renderGetTextureSizeForImage(int image, int* width, int* height) {
@@ -1025,30 +1084,21 @@ class MNVGcontext {
 
     if (flags_ & NVG_STENCIL_STROKES) {
       // Fill shader
-      call->uniformOffset = allocFragUniforms(2);
-      if (call->uniformOffset == -1) {
-        // We get here if call alloc was ok, but something else is not.
-        // Roll back the last call to prevent drawing it.
-        if (curBuffers_->ncalls > 0)
-          curBuffers_->ncalls--;
-        return;
-      }
+      call->uboIndex = allocFragUniforms(fragmentUniformBufferSize_);
       convertPaintForFrag(
-          fragUniformAtIndex(call->uniformOffset), paint, scissor, strokeWidth, fringe, -1.0f);
-      FragmentUniforms* frag = fragUniformAtIndex(call->uniformOffset + fragmentUniformBufferSize_);
-      convertPaintForFrag(frag, paint, scissor, strokeWidth, fringe, (1.0f - 0.5f / 255.0f));
+          (FragmentUniforms*)call->uboIndex.data, paint, scissor, strokeWidth, fringe, -1.0f);
+      call->uboIndex2 = allocFragUniforms(fragmentUniformBufferSize_);
+      convertPaintForFrag((FragmentUniforms*)call->uboIndex2.data,
+                          paint,
+                          scissor,
+                          strokeWidth,
+                          fringe,
+                          (1.0f - 0.5f / 255.0f));
     } else {
       // Fill shader
-      call->uniformOffset = allocFragUniforms(1);
-      if (call->uniformOffset == -1) {
-        // We get here if call alloc was ok, but something else is not.
-        // Roll back the last call to prevent drawing it.
-        if (curBuffers_->ncalls > 0)
-          curBuffers_->ncalls--;
-        return;
-      }
+      call->uboIndex = allocFragUniforms(fragmentUniformBufferSize_);
       convertPaintForFrag(
-          fragUniformAtIndex(call->uniformOffset), paint, scissor, strokeWidth, fringe, -1.0f);
+          (FragmentUniforms*)call->uboIndex.data, paint, scissor, strokeWidth, fringe, -1.0f);
     }
   }
 
@@ -1059,7 +1109,6 @@ class MNVGcontext {
                                 int nverts,
                                 float fringe) {
     MNVGcall* call = allocCall();
-    FragmentUniforms* frag;
 
     if (call == NULL)
       return;
@@ -1082,17 +1131,10 @@ class MNVGcontext {
     memcpy(&curBuffers_->verts[call->triangleOffset], verts, sizeof(NVGvertex) * nverts);
 
     // Fill shader
-    call->uniformOffset = allocFragUniforms(1);
-    if (call->uniformOffset == -1) {
-      // We get here if call alloc was ok, but something else is not.
-      // Roll back the last call to prevent drawing it.
-      if (curBuffers_->ncalls > 0)
-        curBuffers_->ncalls--;
-      return;
-    }
-    frag = fragUniformAtIndex(call->uniformOffset);
-    convertPaintForFrag(frag, paint, scissor, 1.0f, fringe, -1.0f);
-    frag->type = MNVG_SHADER_IMG;
+    call->uboIndex = allocFragUniforms(fragmentUniformBufferSize_);
+    convertPaintForFrag(
+        (FragmentUniforms*)call->uboIndex.data, paint, scissor, 1.0f, fringe, -1.0f);
+    ((FragmentUniforms*)call->uboIndex.data)->type = MNVG_SHADER_IMG;
   }
 
   int renderUpdateTextureWithImage(int image,
@@ -1147,10 +1189,10 @@ class MNVGcontext {
     }
   }
 
-  void setUniforms(int uniformOffset, int image) {
+  void setUniforms(const UniformBufferIndex& uboIndex, int image) {
     renderEncoder_->bindBuffer(kFragmentUniformBlockIndex,
-                               curBuffers_->fragmentUniformBuffer.get(),
-                               uniformOffset,
+                               uboIndex.buffer.get(),
+                               uboIndex.offset,
                                fragmentUniformBufferSize_);
 
     MNVGtexture* tex = (image == 0 ? nullptr : findTexture(image));
@@ -1171,13 +1213,13 @@ class MNVGcontext {
     if (flags_ & NVG_STENCIL_STROKES) {
       // Fills the stroke base without overlap.
       bindRenderPipeline(pipelineStateTriangleStrip_);
-      setUniforms(call->uniformOffset + fragmentUniformBufferSize_, call->image);
+      setUniforms(call->uboIndex2, call->image);
       renderEncoder_->bindDepthStencilState(strokeShapeStencilState_);
 
       renderEncoder_->draw(call->strokeCount, 1, call->strokeOffset);
 
       // Draws anti-aliased fragments.
-      setUniforms(call->uniformOffset, call->image);
+      setUniforms(call->uboIndex, call->image);
       renderEncoder_->bindDepthStencilState(strokeAntiAliasStencilState_);
       renderEncoder_->draw(call->strokeCount, 1, call->strokeOffset);
 
@@ -1189,14 +1231,14 @@ class MNVGcontext {
     } else {
       // Draws strokes.
       bindRenderPipeline(pipelineStateTriangleStrip_);
-      setUniforms(call->uniformOffset, call->image);
+      setUniforms(call->uboIndex, call->image);
       renderEncoder_->draw(call->strokeCount, 1, call->strokeOffset);
     }
   }
 
   void triangles(MNVGcall* call) {
     bindRenderPipeline(pipelineState_);
-    setUniforms(call->uniformOffset, call->image);
+    setUniforms(call->uboIndex, call->image);
     renderEncoder_->draw(call->triangleCount, 1, call->triangleOffset);
   }
 
@@ -1409,6 +1451,11 @@ NVGcontext* CreateContext(igl::IDevice* device_, int flags) {
   params.edgeAntiAlias = flags & NVG_ANTIALIAS ? 1 : 0;
 
   mtl->flags_ = flags;
+
+  device_->getFeatureLimits(igl::DeviceFeatureLimits::MaxUniformBufferBytes,
+                            mtl->maxUniformBufferSize_);
+
+  mtl->maxUniformBufferSize_ = std::min(mtl->maxUniformBufferSize_, (size_t)512 * 1024);
 
   size_t uniformBufferAlignment = 16;
   device_->getFeatureLimits(igl::DeviceFeatureLimits::BufferAlignment, uniformBufferAlignment);
