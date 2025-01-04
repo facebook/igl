@@ -104,6 +104,7 @@ TextureFormat getIglFormat(uint32_t nativeFormat) {
     return TextureFormat::S_UInt8;
 
   case AHARDWAREBUFFER_FORMAT_YCbCr_420_SP_VENUS:
+  case COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m:
     return TextureFormat::YUV_NV12;
 
   default:
