@@ -118,6 +118,10 @@ class UniformBufferBlock {
     buffer_ = device->createBuffer(desc, NULL);
   }
 
+  ~UniformBufferBlock() {
+    IGL_LOG_DEBUG("iglu::nanovg::UniformBufferBlock::~UniformBufferBlock()\n");
+  }
+
   bool checkLeftSpace(size_t dataSize) {
     return current_ + dataSize <= blockSize_;
   }
@@ -213,6 +217,10 @@ struct Buffers {
   Buffers(igl::IDevice* device, size_t uniformBufferBlockSize) {
     vertexUniforms.matrix = iglu::simdtypes::float4x4(1.0f);
     uniformBufferPool = std::make_shared<UniformBufferPool>(device, uniformBufferBlockSize);
+  }
+
+  ~Buffers() {
+    IGL_LOG_DEBUG("iglu::nanovg::Buffers::~Buffers()\n");
   }
 
   void uploadToGpu() {
@@ -328,12 +336,12 @@ class Context {
   igl::IFramebuffer* framebuffer_ = nullptr;
 
   // Textures
-  std::vector<Texture*> textures_;
+  std::vector<std::shared_ptr<Texture>> textures_;
   int textureId_;
 
   // Per frame buffers
-  Buffers* curBuffers_ = nullptr;
-  std::vector<Buffers*> allBuffers_;
+  std::shared_ptr<Buffers> curBuffers_ = nullptr;
+  std::vector<std::shared_ptr<Buffers>> allBuffers_;
   int maxBuffers_;
 
   // Cached states.
@@ -355,6 +363,14 @@ class Context {
   std::shared_ptr<igl::ISamplerState> pseudoSampler_;
   std::shared_ptr<igl::ITexture> pseudoTexture_;
   igl::VertexInputStateDesc vertexDescriptor_;
+
+  Context() {
+    IGL_LOG_DEBUG("iglu::nanovg::Context::Context()\n");
+  }
+
+  ~Context() {
+    IGL_LOG_DEBUG("iglu::nanovg::Context::~Context()\n");
+  }
 
   Call* allocCall() {
     Call* ret = NULL;
@@ -393,17 +409,17 @@ class Context {
     return ret;
   }
 
-  Texture* allocTexture() {
-    Texture* tex = nullptr;
+  std::shared_ptr<Texture> allocTexture() {
+    std::shared_ptr<Texture> tex = nullptr;
 
-    for (Texture* texture : textures_) {
+    for (auto& texture : textures_) {
       if (texture->Id == 0) {
         tex = texture;
         break;
       }
     }
     if (tex == nullptr) {
-      tex = new Texture();
+      tex = std::make_shared<Texture>();
       textures_.emplace_back(tex);
     }
     tex->Id = ++textureId_;
@@ -451,7 +467,7 @@ class Context {
                           float width,
                           float fringe,
                           float strokeThr) {
-    Texture* tex = nullptr;
+    std::shared_ptr<Texture> tex = nullptr;
     float invxform[6];
 
     memset(frag, 0, sizeof(*frag));
@@ -571,8 +587,8 @@ class Context {
     renderEncoder_->bindDepthStencilState(defaultStencilState_);
   }
 
-  Texture* findTexture(int _id) {
-    for (Texture* texture : textures_) {
+  std::shared_ptr<Texture> findTexture(int _id) {
+    for (auto& texture : textures_) {
       if (texture->Id == _id)
         return texture;
     }
@@ -653,7 +669,7 @@ class Context {
     maxBuffers_ = 3;
 
     for (int i = maxBuffers_; i--;) {
-      allBuffers_.emplace_back(new Buffers(device_, maxUniformBufferSize_));
+      allBuffers_.emplace_back(std::make_shared<Buffers>(device_, maxUniformBufferSize_));
     }
 
     // Initializes vertex descriptor.
@@ -685,7 +701,7 @@ class Context {
     // Initializes pseudo texture for macOS.
     if (creates_pseudo_texture) {
       const int kPseudoTextureImage = renderCreateTextureWithType(NVG_TEXTURE_ALPHA, 1, 1, 0, NULL);
-      Texture* tex = findTexture(kPseudoTextureImage);
+      std::shared_ptr<Texture> tex = findTexture(kPseudoTextureImage);
       pseudoTexture_ = tex->tex;
     }
 
@@ -777,7 +793,7 @@ class Context {
                                   int height,
                                   int imageFlags,
                                   const unsigned char* data) {
-    Texture* tex = allocTexture();
+    std::shared_ptr<Texture> tex = allocTexture();
 
     if (tex == nullptr)
       return 0;
@@ -841,7 +857,7 @@ class Context {
   }
 
   void renderDelete() {
-    for (Buffers* buffers : allBuffers_) {
+    for (auto& buffers : allBuffers_) {
       buffers->commandBuffer = nullptr;
       buffers->vertexUniformBuffer = nullptr;
       buffers->stencilTexture = nullptr;
@@ -850,7 +866,7 @@ class Context {
       buffers->uniformBufferPool = nullptr;
     }
 
-    for (Texture* texture : textures_) {
+    for (auto& texture : textures_) {
       texture->tex = nullptr;
       texture->sampler = nullptr;
     }
@@ -873,7 +889,7 @@ class Context {
   }
 
   int renderDeleteTexture(int image) {
-    for (Texture* texture : textures_) {
+    for (auto& texture : textures_) {
       if (texture->Id == image) {
         if (texture->tex != nullptr && (texture->flags & NVG_IMAGE_NODELETE) == 0) {
           texture->tex = nullptr;
@@ -1023,7 +1039,7 @@ class Context {
   }
 
   int renderGetTextureSizeForImage(int image, int* width, int* height) {
-    Texture* tex = findTexture(image);
+    std::shared_ptr<Texture> tex = findTexture(image);
     if (tex == nullptr)
       return 0;
     *width = (int)tex->tex->getSize().width;
@@ -1136,7 +1152,7 @@ class Context {
                                    int width,
                                    int height,
                                    const unsigned char* data) {
-    Texture* tex = findTexture(image);
+    std::shared_ptr<Texture> tex = findTexture(image);
 
     if (tex == nullptr)
       return 0;
@@ -1188,7 +1204,7 @@ class Context {
                                uboIndex.offset,
                                fragmentUniformBufferSize_);
 
-    Texture* tex = (image == 0 ? nullptr : findTexture(image));
+    std::shared_ptr<Texture> tex = (image == 0 ? nullptr : findTexture(image));
     if (tex != nullptr) {
       renderEncoder_->bindTexture(0, igl::BindTarget::kFragment, tex->tex.get());
       renderEncoder_->bindSamplerState(0, igl::BindTarget::kFragment, tex->sampler.get());
@@ -1471,7 +1487,15 @@ error:
 }
 
 void DestroyContext(NVGcontext* ctx) {
+  if (!ctx)
+    return;
   nvgDeleteInternal(ctx);
+
+  if (auto param = nvgInternalParams(ctx)) {
+    if (param->userPtr) {
+      delete (Context*)param->userPtr;
+    }
+  }
 }
 
 } // namespace iglu::nanovg
