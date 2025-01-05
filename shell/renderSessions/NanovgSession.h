@@ -52,10 +52,10 @@ class TouchListener : public ITouchListener {
 
 class NanovgSession : public RenderSession {
  public:
-  explicit NanovgSession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {
-  }
+  explicit NanovgSession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {}
   void initialize() noexcept override;
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
+  void teardown() noexcept override;
 
  private:
   void drawNanovg(float framebuffferWidth,
