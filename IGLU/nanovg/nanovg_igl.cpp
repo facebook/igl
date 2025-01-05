@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define kVertexInputIndex 0
 #define kVertexUniformBlockIndex 1
 #define kFragmentUniformBlockIndex 2
 
@@ -32,18 +33,13 @@ struct igl_vector_uint2 {
   uint32_t y;
 };
 
-typedef enum MNVGvertexInputIndex {
-  MNVG_VERTEX_INPUT_INDEX_VERTICES = 0,
-  MNVG_VERTEX_INPUT_INDEX_VIEW_SIZE = 1,
-} MNVGvertexInputIndex;
-
-typedef enum MNVGshaderType {
+enum ShaderType {
   MNVG_SHADER_FILLGRAD,
   MNVG_SHADER_FILLIMG,
   MNVG_SHADER_IMG,
-} MNVGshaderType;
+};
 
-enum MNVGcallType {
+enum CallType {
   MNVG_NONE = 0,
   MNVG_FILL,
   MNVG_CONVEXFILL,
@@ -51,7 +47,7 @@ enum MNVGcallType {
   MNVG_TRIANGLES,
 };
 
-struct MNVGblend {
+struct Blend {
   igl::BlendFactor srcRGB;
   igl::BlendFactor dstRGB;
   igl::BlendFactor srcAlpha;
@@ -64,7 +60,7 @@ struct UniformBufferIndex {
   size_t offset = 0;
 };
 
-struct MNVGcall {
+struct Call {
   int type;
   int image;
   int pathOffset;
@@ -77,7 +73,7 @@ struct MNVGcall {
   int strokeCount;
   UniformBufferIndex uboIndex;
   UniformBufferIndex uboIndex2;
-  MNVGblend blendFunc;
+  Blend blendFunc;
 };
 
 struct VertexUniforms {
@@ -98,11 +94,11 @@ struct FragmentUniforms {
   float strokeMult;
   float strokeThr;
   int texType;
-  MNVGshaderType type;
+  ShaderType type;
 };
 
-struct MNVGtexture {
-  int _id;
+struct Texture {
+  int Id;
   int type;
   int flags;
   std::shared_ptr<igl::ITexture> tex;
@@ -194,14 +190,14 @@ class UniformBufferPool {
   size_t currentBlockIndex = 0;
 };
 
-struct MNVGbuffers {
+struct Buffers {
   std::shared_ptr<igl::ICommandBuffer> commandBuffer;
   bool isBusy = false;
   int image = 0;
   std::shared_ptr<igl::IBuffer> vertexUniformBuffer;
   VertexUniforms vertexUniforms;
   std::shared_ptr<igl::ITexture> stencilTexture;
-  std::vector<MNVGcall> calls;
+  std::vector<Call> calls;
   int ccalls = 0;
   int ncalls = 0;
   std::shared_ptr<igl::IBuffer> indexBuffer;
@@ -214,7 +210,7 @@ struct MNVGbuffers {
   int nverts = 0;
   std::shared_ptr<UniformBufferPool> uniformBufferPool;
 
-  MNVGbuffers(igl::IDevice* device, size_t uniformBufferBlockSize) {
+  Buffers(igl::IDevice* device, size_t uniformBufferBlockSize) {
     vertexUniforms.matrix = iglu::simdtypes::float4x4(1.0f);
     uniformBufferPool = std::make_shared<UniformBufferPool>(device, uniformBufferBlockSize);
   }
@@ -318,7 +314,7 @@ static void setVertextData(NVGvertex* vtx, float x, float y, float u, float v) {
   vtx->v = v;
 }
 
-class MNVGcontext {
+class Context {
  public:
   igl::IDevice* device_ = nullptr;
   igl::IRenderCommandEncoder* renderEncoder_ = nullptr;
@@ -332,16 +328,16 @@ class MNVGcontext {
   igl::IFramebuffer* framebuffer_ = nullptr;
 
   // Textures
-  std::vector<MNVGtexture*> textures_;
+  std::vector<Texture*> textures_;
   int textureId_;
 
   // Per frame buffers
-  MNVGbuffers* curBuffers_ = nullptr;
-  std::vector<MNVGbuffers*> allBuffers_;
+  Buffers* curBuffers_ = nullptr;
+  std::vector<Buffers*> allBuffers_;
   int maxBuffers_;
 
   // Cached states.
-  MNVGblend* blendFunc_ = nullptr;
+  Blend* blendFunc_ = nullptr;
   std::shared_ptr<igl::IDepthStencilState> defaultStencilState_;
   std::shared_ptr<igl::IDepthStencilState> fillShapeStencilState_;
   std::shared_ptr<igl::IDepthStencilState> fillAntiAliasStencilState_;
@@ -360,15 +356,15 @@ class MNVGcontext {
   std::shared_ptr<igl::ITexture> pseudoTexture_;
   igl::VertexInputStateDesc vertexDescriptor_;
 
-  MNVGcall* allocCall() {
-    MNVGcall* ret = NULL;
+  Call* allocCall() {
+    Call* ret = NULL;
     if (curBuffers_->ncalls + 1 > curBuffers_->ccalls) {
       int ccalls = MAXINT(curBuffers_->ncalls + 1, 128) + curBuffers_->ccalls / 2;
       curBuffers_->calls.resize(ccalls);
       curBuffers_->ccalls = ccalls;
     }
     ret = &curBuffers_->calls[curBuffers_->ncalls++];
-    memset(ret, 0, sizeof(MNVGcall));
+    memset(ret, 0, sizeof(Call));
     return ret;
   }
 
@@ -397,20 +393,20 @@ class MNVGcontext {
     return ret;
   }
 
-  MNVGtexture* allocTexture() {
-    MNVGtexture* tex = nullptr;
+  Texture* allocTexture() {
+    Texture* tex = nullptr;
 
-    for (MNVGtexture* texture : textures_) {
-      if (texture->_id == 0) {
+    for (Texture* texture : textures_) {
+      if (texture->Id == 0) {
         tex = texture;
         break;
       }
     }
     if (tex == nullptr) {
-      tex = new MNVGtexture();
+      tex = new Texture();
       textures_.emplace_back(tex);
     }
-    tex->_id = ++textureId_;
+    tex->Id = ++textureId_;
     return tex;
   }
 
@@ -435,8 +431,8 @@ class MNVGcontext {
     return ret;
   }
 
-  MNVGblend blendCompositeOperation(NVGcompositeOperationState op) {
-    MNVGblend blend;
+  Blend blendCompositeOperation(NVGcompositeOperationState op) {
+    Blend blend;
     if (!convertBlendFuncFactor(op.srcRGB, &blend.srcRGB) ||
         !convertBlendFuncFactor(op.dstRGB, &blend.dstRGB) ||
         !convertBlendFuncFactor(op.srcAlpha, &blend.srcAlpha) ||
@@ -455,7 +451,7 @@ class MNVGcontext {
                           float width,
                           float fringe,
                           float strokeThr) {
-    MNVGtexture* tex = nullptr;
+    Texture* tex = nullptr;
     float invxform[6];
 
     memset(frag, 0, sizeof(*frag));
@@ -523,7 +519,7 @@ class MNVGcontext {
   void bindRenderPipeline(const std::shared_ptr<igl::IRenderPipelineState>& pipelineState,
                           const UniformBufferIndex* uboIndex = nullptr) {
     renderEncoder_->bindRenderPipelineState(pipelineState);
-    renderEncoder_->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *curBuffers_->vertBuffer, 0);
+    renderEncoder_->bindVertexBuffer(kVertexInputIndex, *curBuffers_->vertBuffer, 0);
     renderEncoder_->bindBuffer(kVertexUniformBlockIndex, curBuffers_->vertexUniformBuffer.get(), 0);
     if (uboIndex) {
       renderEncoder_->bindBuffer(
@@ -531,7 +527,7 @@ class MNVGcontext {
     }
   }
 
-  void convexFill(MNVGcall* call) {
+  void convexFill(Call* call) {
     const int kIndexBufferOffset = call->indexOffset * indexSize_;
     bindRenderPipeline(pipelineState_);
     setUniforms(call->uboIndex, call->image);
@@ -548,7 +544,7 @@ class MNVGcontext {
     }
   }
 
-  void fill(MNVGcall* call) {
+  void fill(Call* call) {
     // Draws shapes.
     const int kIndexBufferOffset = call->indexOffset * indexSize_;
     bindRenderPipeline(stencilOnlyPipelineState_, &call->uboIndex);
@@ -575,9 +571,9 @@ class MNVGcontext {
     renderEncoder_->bindDepthStencilState(defaultStencilState_);
   }
 
-  MNVGtexture* findTexture(int _id) {
-    for (MNVGtexture* texture : textures_) {
-      if (texture->_id == _id)
+  Texture* findTexture(int _id) {
+    for (Texture* texture : textures_) {
+      if (texture->Id == _id)
         return texture;
     }
     return nullptr;
@@ -596,7 +592,7 @@ class MNVGcontext {
     renderEncoder_->setStencilReferenceValue(0);
     renderEncoder_->bindViewport(
         {0.0, 0.0, (float)viewPortSize_.x, (float)viewPortSize_.y, 0.0, 1.0});
-    renderEncoder_->bindVertexBuffer(MNVG_VERTEX_INPUT_INDEX_VERTICES, *curBuffers_->vertBuffer, 0);
+    renderEncoder_->bindVertexBuffer(kVertexInputIndex, *curBuffers_->vertBuffer, 0);
     renderEncoder_->bindBuffer(kVertexUniformBlockIndex, curBuffers_->vertexUniformBuffer.get(), 0);
   }
 
@@ -657,7 +653,7 @@ class MNVGcontext {
     maxBuffers_ = 3;
 
     for (int i = maxBuffers_; i--;) {
-      allBuffers_.emplace_back(new MNVGbuffers(device_, maxUniformBufferSize_));
+      allBuffers_.emplace_back(new Buffers(device_, maxUniformBufferSize_));
     }
 
     // Initializes vertex descriptor.
@@ -689,12 +685,12 @@ class MNVGcontext {
     // Initializes pseudo texture for macOS.
     if (creates_pseudo_texture) {
       const int kPseudoTextureImage = renderCreateTextureWithType(NVG_TEXTURE_ALPHA, 1, 1, 0, NULL);
-      MNVGtexture* tex = findTexture(kPseudoTextureImage);
+      Texture* tex = findTexture(kPseudoTextureImage);
       pseudoTexture_ = tex->tex;
     }
 
     // Initializes default blend states.
-    blendFunc_ = (MNVGblend*)malloc(sizeof(MNVGblend));
+    blendFunc_ = (Blend*)malloc(sizeof(Blend));
     blendFunc_->srcRGB = igl::BlendFactor::One;
     blendFunc_->dstRGB = igl::BlendFactor::OneMinusSrcAlpha;
     blendFunc_->srcAlpha = igl::BlendFactor::One;
@@ -781,7 +777,7 @@ class MNVGcontext {
                                   int height,
                                   int imageFlags,
                                   const unsigned char* data) {
-    MNVGtexture* tex = allocTexture();
+    Texture* tex = allocTexture();
 
     if (tex == nullptr)
       return 0;
@@ -841,11 +837,11 @@ class MNVGcontext {
     samplerDescriptor.debugName = "textureSampler";
     tex->sampler = device_->createSamplerState(samplerDescriptor, NULL);
 
-    return tex->_id;
+    return tex->Id;
   }
 
   void renderDelete() {
-    for (MNVGbuffers* buffers : allBuffers_) {
+    for (Buffers* buffers : allBuffers_) {
       buffers->commandBuffer = nullptr;
       buffers->vertexUniformBuffer = nullptr;
       buffers->stencilTexture = nullptr;
@@ -854,7 +850,7 @@ class MNVGcontext {
       buffers->uniformBufferPool = nullptr;
     }
 
-    for (MNVGtexture* texture : textures_) {
+    for (Texture* texture : textures_) {
       texture->tex = nullptr;
       texture->sampler = nullptr;
     }
@@ -877,13 +873,13 @@ class MNVGcontext {
   }
 
   int renderDeleteTexture(int image) {
-    for (MNVGtexture* texture : textures_) {
-      if (texture->_id == image) {
+    for (Texture* texture : textures_) {
+      if (texture->Id == image) {
         if (texture->tex != nullptr && (texture->flags & NVG_IMAGE_NODELETE) == 0) {
           texture->tex = nullptr;
           texture->sampler = nullptr;
         }
-        texture->_id = 0;
+        texture->Id = 0;
         texture->flags = 0;
         return 1;
       }
@@ -898,7 +894,7 @@ class MNVGcontext {
                            const float* bounds,
                            const NVGpath* paths,
                            int npaths) {
-    MNVGcall* call = allocCall();
+    Call* call = allocCall();
     NVGvertex* quad = nullptr;
 
     if (call == NULL)
@@ -994,9 +990,9 @@ class MNVGcontext {
 
     renderCommandEncoderWithColorTexture();
 
-    MNVGcall* call = &curBuffers_->calls[0];
+    Call* call = &curBuffers_->calls[0];
     for (int i = curBuffers_->ncalls; i--; ++call) {
-      MNVGblend* blend = &call->blendFunc;
+      Blend* blend = &call->blendFunc;
 
       updateRenderPipelineStatesForBlend(blend);
 
@@ -1027,7 +1023,7 @@ class MNVGcontext {
   }
 
   int renderGetTextureSizeForImage(int image, int* width, int* height) {
-    MNVGtexture* tex = findTexture(image);
+    Texture* tex = findTexture(image);
     if (tex == nullptr)
       return 0;
     *width = (int)tex->tex->getSize().width;
@@ -1042,7 +1038,7 @@ class MNVGcontext {
                              float strokeWidth,
                              const NVGpath* paths,
                              int npaths) {
-    MNVGcall* call = allocCall();
+    Call* call = allocCall();
 
     if (call == NULL)
       return;
@@ -1105,7 +1101,7 @@ class MNVGcontext {
                                 const NVGvertex* verts,
                                 int nverts,
                                 float fringe) {
-    MNVGcall* call = allocCall();
+    Call* call = allocCall();
 
     if (call == NULL)
       return;
@@ -1140,7 +1136,7 @@ class MNVGcontext {
                                    int width,
                                    int height,
                                    const unsigned char* data) {
-    MNVGtexture* tex = findTexture(image);
+    Texture* tex = findTexture(image);
 
     if (tex == nullptr)
       return 0;
@@ -1192,7 +1188,7 @@ class MNVGcontext {
                                uboIndex.offset,
                                fragmentUniformBufferSize_);
 
-    MNVGtexture* tex = (image == 0 ? nullptr : findTexture(image));
+    Texture* tex = (image == 0 ? nullptr : findTexture(image));
     if (tex != nullptr) {
       renderEncoder_->bindTexture(0, igl::BindTarget::kFragment, tex->tex.get());
       renderEncoder_->bindSamplerState(0, igl::BindTarget::kFragment, tex->sampler.get());
@@ -1202,7 +1198,7 @@ class MNVGcontext {
     }
   }
 
-  void stroke(MNVGcall* call) {
+  void stroke(Call* call) {
     if (call->strokeCount <= 0) {
       return;
     }
@@ -1233,13 +1229,13 @@ class MNVGcontext {
     }
   }
 
-  void triangles(MNVGcall* call) {
+  void triangles(Call* call) {
     bindRenderPipeline(pipelineState_);
     setUniforms(call->uboIndex, call->image);
     renderEncoder_->draw(call->triangleCount, 1, call->triangleOffset);
   }
 
-  void updateRenderPipelineStatesForBlend(MNVGblend* blend) {
+  void updateRenderPipelineStatesForBlend(Blend* blend) {
     if (pipelineState_ != nullptr && stencilOnlyPipelineState_ != nullptr &&
         piplelinePixelFormat_ == framebuffer_->getColorAttachment(0)->getProperties().format &&
         blendFunc_->srcRGB == blend->srcRGB && blendFunc_->dstRGB == blend->dstRGB &&
@@ -1320,7 +1316,7 @@ class MNVGcontext {
 };
 
 static void callback__renderCancel(void* uptr) {
-  MNVGcontext* mtl = (MNVGcontext*)uptr;
+  Context* mtl = (Context*)uptr;
   mtl->renderCancel();
 }
 
@@ -1330,22 +1326,22 @@ static int callback__renderCreateTexture(void* uptr,
                                          int height,
                                          int imageFlags,
                                          const unsigned char* data) {
-  MNVGcontext* mtl = (MNVGcontext*)uptr;
+  Context* mtl = (Context*)uptr;
   return mtl->renderCreateTextureWithType(type, width, height, imageFlags, data);
 }
 
 static int callback__renderCreate(void* uptr) {
-  MNVGcontext* mtl = (MNVGcontext*)uptr;
+  Context* mtl = (Context*)uptr;
   return mtl->renderCreate();
 }
 
 static void callback__renderDelete(void* uptr) {
-  MNVGcontext* mtl = (MNVGcontext*)uptr;
+  Context* mtl = (Context*)uptr;
   mtl->renderDelete();
 }
 
 static int callback__renderDeleteTexture(void* uptr, int image) {
-  MNVGcontext* mtl = (MNVGcontext*)uptr;
+  Context* mtl = (Context*)uptr;
   return mtl->renderDeleteTexture(image);
 }
 
@@ -1357,17 +1353,17 @@ static void callback__renderFill(void* uptr,
                                  const float* bounds,
                                  const NVGpath* paths,
                                  int npaths) {
-  MNVGcontext* mtl = (MNVGcontext*)uptr;
+  Context* mtl = (Context*)uptr;
   mtl->renderFillWithPaint(paint, compositeOperation, scissor, fringe, bounds, paths, npaths);
 }
 
 static void callback__renderFlush(void* uptr) {
-  MNVGcontext* mtl = (MNVGcontext*)uptr;
+  Context* mtl = (Context*)uptr;
   mtl->renderFlush();
 }
 
 static int callback__renderGetTextureSize(void* uptr, int image, int* w, int* h) {
-  MNVGcontext* mtl = (MNVGcontext*)uptr;
+  Context* mtl = (Context*)uptr;
   return mtl->renderGetTextureSizeForImage(image, w, h);
 }
 
@@ -1379,7 +1375,7 @@ static void callback__renderStroke(void* uptr,
                                    float strokeWidth,
                                    const NVGpath* paths,
                                    int npaths) {
-  MNVGcontext* mtl = (MNVGcontext*)uptr;
+  Context* mtl = (Context*)uptr;
   mtl->renderStrokeWithPaint(
       paint, compositeOperation, scissor, fringe, strokeWidth, paths, npaths);
 }
@@ -1391,7 +1387,7 @@ static void callback__renderTriangles(void* uptr,
                                       const NVGvertex* verts,
                                       int nverts,
                                       float fringe) {
-  MNVGcontext* mtl = (MNVGcontext*)uptr;
+  Context* mtl = (Context*)uptr;
   mtl->renderTrianglesWithPaint(paint, compositeOperation, scissor, verts, nverts, fringe);
 }
 
@@ -1402,7 +1398,7 @@ static int callback__renderUpdateTexture(void* uptr,
                                          int w,
                                          int h,
                                          const unsigned char* data) {
-  MNVGcontext* mtl = (MNVGcontext*)uptr;
+  Context* mtl = (Context*)uptr;
   return mtl->renderUpdateTextureWithImage(image, x, y, w, h, data);
 }
 
@@ -1410,7 +1406,7 @@ static void callback__renderViewport(void* uptr,
                                      float width,
                                      float height,
                                      float device_PixelRatio) {
-  MNVGcontext* mtl = (MNVGcontext*)uptr;
+  Context* mtl = (Context*)uptr;
   mtl->renderViewportWithWidth(width, height, device_PixelRatio);
 }
 
@@ -1418,7 +1414,7 @@ void SetRenderCommandEncoder(NVGcontext* ctx,
                              igl::IFramebuffer* framebuffer,
                              igl::IRenderCommandEncoder* command,
                              float* matrix) {
-  MNVGcontext* mtl = (MNVGcontext*)nvgInternalParams(ctx)->userPtr;
+  Context* mtl = (Context*)nvgInternalParams(ctx)->userPtr;
   mtl->framebuffer_ = framebuffer;
   mtl->renderEncoder_ = command;
   if (matrix) {
@@ -1426,10 +1422,10 @@ void SetRenderCommandEncoder(NVGcontext* ctx,
   }
 }
 
-NVGcontext* CreateContext(igl::IDevice* device_, int flags) {
+NVGcontext* CreateContext(igl::IDevice* device, int flags) {
   NVGparams params;
   NVGcontext* ctx = NULL;
-  MNVGcontext* mtl = new MNVGcontext();
+  Context* mtl = new Context();
 
   memset(&params, 0, sizeof(params));
   params.renderCreate = callback__renderCreate;
@@ -1449,19 +1445,19 @@ NVGcontext* CreateContext(igl::IDevice* device_, int flags) {
 
   mtl->flags_ = flags;
 
-  device_->getFeatureLimits(igl::DeviceFeatureLimits::MaxUniformBufferBytes,
-                            mtl->maxUniformBufferSize_);
+  device->getFeatureLimits(igl::DeviceFeatureLimits::MaxUniformBufferBytes,
+                           mtl->maxUniformBufferSize_);
 
   mtl->maxUniformBufferSize_ = std::min(mtl->maxUniformBufferSize_, (size_t)512 * 1024);
 
   size_t uniformBufferAlignment = 16;
-  device_->getFeatureLimits(igl::DeviceFeatureLimits::BufferAlignment, uniformBufferAlignment);
+  device->getFeatureLimits(igl::DeviceFeatureLimits::BufferAlignment, uniformBufferAlignment);
   // sizeof(MNVGfragUniforms)= 176
   // 64 * 3 > 176
   mtl->fragmentUniformBufferSize_ = std::max(64 * 3, (int)uniformBufferAlignment);
 
   mtl->indexSize_ = 4; // IndexType::UInt32
-  mtl->device_ = device_;
+  mtl->device_ = device;
 
   ctx = nvgCreateInternal(&params);
   if (ctx == NULL)
