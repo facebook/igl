@@ -55,7 +55,7 @@ struct Blend {
 };
 
 struct UniformBufferIndex {
-  std::shared_ptr<igl::IBuffer> buffer;
+  igl::IBuffer* buffer = nullptr;
   void* data = nullptr;
   size_t offset = 0;
 };
@@ -129,7 +129,7 @@ class UniformBufferBlock {
   UniformBufferIndex allocData(size_t dataSize) {
     assert(checkLeftSpace(dataSize));
 
-    UniformBufferIndex index{buffer_, data_.data() + current_, current_};
+    UniformBufferIndex index{buffer_.get(), data_.data() + current_, current_};
 
     current_ += dataSize;
 
@@ -538,8 +538,7 @@ class Context {
     renderEncoder_->bindVertexBuffer(kVertexInputIndex, *curBuffers_->vertBuffer, 0);
     renderEncoder_->bindBuffer(kVertexUniformBlockIndex, curBuffers_->vertexUniformBuffer.get(), 0);
     if (uboIndex) {
-      renderEncoder_->bindBuffer(
-          kFragmentUniformBlockIndex, uboIndex->buffer.get(), uboIndex->offset);
+      renderEncoder_->bindBuffer(kFragmentUniformBlockIndex, uboIndex->buffer, uboIndex->offset);
     }
   }
 
@@ -1199,10 +1198,8 @@ class Context {
   }
 
   void setUniforms(const UniformBufferIndex& uboIndex, int image) {
-    renderEncoder_->bindBuffer(kFragmentUniformBlockIndex,
-                               uboIndex.buffer.get(),
-                               uboIndex.offset,
-                               fragmentUniformBufferSize_);
+    renderEncoder_->bindBuffer(
+        kFragmentUniformBlockIndex, uboIndex.buffer, uboIndex.offset, fragmentUniformBufferSize_);
 
     std::shared_ptr<Texture> tex = (image == 0 ? nullptr : findTexture(image));
     if (tex != nullptr) {
