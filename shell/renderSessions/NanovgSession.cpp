@@ -183,4 +183,10 @@ void NanovgSession::drawNanovg(float framebuffferWidth,
   updateGraph(&cpuGraph_, (end - start));
 }
 
+void NanovgSession::teardown() noexcept {
+  if (nvgContext_) {
+    iglu::nanovg::DestroyContext(nvgContext_);
+  }
+}
+
 } // namespace igl::shell
