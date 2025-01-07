@@ -188,6 +188,19 @@ TEST_F(DeviceVulkanTest, CurrentThreadIdTest) {
   ctx.ensureCurrentContextThread();
 }
 
+TEST_F(DeviceVulkanTest, EnsureValidation) {
+  GTEST_SKIP() << "Some tests are still running without Validation Layers enabled, so this test "
+                  "has been temporarily disabled.";
+
+#if !defined(IGL_DISABLE_VALIDATION)
+  // @fb-only
+  // igl::vulkan::VulkanContext& ctx =
+  //   static_cast<igl::vulkan::Device*>(iglDev_.get())->getVulkanContext();
+
+  // ASSERT_TRUE(ctx.areValidationLayersEnabled());
+#endif // !defined(IGL_DISABLE_VALIDATION)
+}
+
 TEST_F(DeviceVulkanTest, UpdateGlslangResource) {
   const igl::vulkan::VulkanContext& ctx =
       static_cast<const igl::vulkan::Device*>(iglDev_.get())->getVulkanContext();

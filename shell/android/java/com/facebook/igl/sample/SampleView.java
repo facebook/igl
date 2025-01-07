@@ -31,18 +31,25 @@ public class SampleView extends GLSurfaceView {
   private CountDownLatch renderSessionInitLatch = new CountDownLatch(1);
 
   public SampleView(
-      Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat, boolean enableStencilBuffer) {
+      Context context,
+      SampleLib.BackendVersion backendVersion,
+      int swapchainColorTextureFormat,
+      boolean enableStencilBuffer) {
     super(context);
     init(context, backendVersion, swapchainColorTextureFormat, enableStencilBuffer);
   }
 
   public SampleView(
-          Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
+      Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat) {
     super(context);
     init(context, backendVersion, swapchainColorTextureFormat, false);
   }
 
-  private void init(Context context, SampleLib.BackendVersion backendVersion, int swapchainColorTextureFormat, boolean enableStencilBuffer){
+  private void init(
+      Context context,
+      SampleLib.BackendVersion backendVersion,
+      int swapchainColorTextureFormat,
+      boolean enableStencilBuffer) {
 
     // Uncomment to attach debugging
     // android.os.Debug.waitForDebugger();

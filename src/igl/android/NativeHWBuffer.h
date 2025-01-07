@@ -15,6 +15,10 @@
 #define AHARDWAREBUFFER_FORMAT_YCbCr_420_SP_VENUS 0x7FA30C06
 #endif
 
+#if !defined(COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m)
+#define COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m 0x7FA30C04
+#endif
+
 #include <igl/Texture.h>
 #include <igl/TextureFormat.h>
 
