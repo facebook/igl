@@ -33,6 +33,8 @@ public class SampleActivity extends Activity implements View.OnClickListener {
   private final int selectedTabColor = Color.BLUE;
   private final int unSelectedTabColor = Color.GRAY;
 
+  protected boolean mEnableStencilBuffer = false;
+
   @Override
   protected void onCreate(Bundle icicle) {
     super.onCreate(icicle);
@@ -69,7 +71,10 @@ public class SampleActivity extends Activity implements View.OnClickListener {
       } else if (mConfigs[i].version.flavor == SampleLib.BackendFlavor.OpenGL_ES) {
         backendView =
             new SampleView(
-                getApplication(), mConfigs[i].version, mConfigs[i].swapchainColorTextureFormat);
+                getApplication(),
+                mConfigs[i].version,
+                mConfigs[i].swapchainColorTextureFormat,
+                mEnableStencilBuffer);
         ((SampleView) backendView).onPause();
       }
 
