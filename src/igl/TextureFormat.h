@@ -7,6 +7,7 @@
 
 #pragma once
 #include <cstdint>
+#include <igl/Common.h>
 
 namespace igl {
 /**
@@ -209,4 +210,22 @@ enum class TextureFormat : uint8_t {
   YUV_NV12, // Semi-planar 8-bit YUV 4:2:0 NV12; 2 planes in a single image
   YUV_420p, // Tri-planar  8-bit YUV 4:2:0;      3 planes in a single image
 };
+
+inline igl::TextureFormat sRGBToUNorm(igl::TextureFormat format) {
+  if (format == TextureFormat::RGBA_SRGB) {
+    return TextureFormat::RGBA_UNorm8;
+  } else if (format == TextureFormat::BGRA_SRGB) {
+    return TextureFormat::BGRA_UNorm8;
+  }
+  IGL_UNREACHABLE_RETURN(TextureFormat::RGBA_UNorm8)
+}
+
+inline igl::TextureFormat UNormTosRGB(igl::TextureFormat format) {
+  if (format == TextureFormat::RGBA_UNorm8) {
+    return TextureFormat::RGBA_SRGB;
+  } else if (format == TextureFormat::BGRA_UNorm8) {
+    return TextureFormat::BGRA_SRGB;
+  }
+  IGL_UNREACHABLE_RETURN(TextureFormat::RGBA_SRGB)
+}
 } // namespace igl
