@@ -33,4 +33,12 @@ TEST_F(TextureFormatTest, Storage) {
   testUsage(TextureDesc::TextureUsageBits::Storage, "Storage");
 }
 
+TEST(TextureFormatUtilsTest, UnormTosRGB) {
+  EXPECT_EQ(UNormTosRGB(igl::TextureFormat::RGBA_UNorm8), igl::TextureFormat::RGBA_SRGB);
+  EXPECT_EQ(UNormTosRGB(igl::TextureFormat::BGRA_UNorm8), igl::TextureFormat::BGRA_SRGB);
+
+  EXPECT_EQ(sRGBToUNorm(igl::TextureFormat::RGBA_SRGB), igl::TextureFormat::RGBA_UNorm8);
+  EXPECT_EQ(sRGBToUNorm(igl::TextureFormat::BGRA_SRGB), igl::TextureFormat::BGRA_UNorm8);
+}
+
 } // namespace igl::tests
