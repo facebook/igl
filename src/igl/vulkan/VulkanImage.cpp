@@ -595,17 +595,13 @@ VulkanImage VulkanImage::createWithExportMemory(const VulkanContext& ctx,
                                                 VkImageUsageFlags usageFlags,
                                                 VkImageCreateFlags createFlags,
                                                 VkSampleCountFlagBits samples,
-#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
                                                 AHardwareBuffer* hwBuffer,
-#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
                                                 const char* debugName) {
   const VkPhysicalDeviceExternalImageFormatInfo externaInfo = {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO,
       nullptr,
-#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
-      hwBuffer != nullptr ? VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID :
-#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
-                          kHandleType,
+      hwBuffer != nullptr ? VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID
+                          : kHandleType,
   };
   const VkPhysicalDeviceImageFormatInfo2 formatInfo2 = {
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2,
@@ -669,9 +665,7 @@ VulkanImage VulkanImage::createWithExportMemory(const VulkanContext& ctx,
           createFlags,
           samples,
           compatibleHandleTypes,
-#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
           hwBuffer,
-#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
           debugName};
 }
 
@@ -688,9 +682,7 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                          VkImageCreateFlags createFlags,
                          VkSampleCountFlagBits samples,
                          const VkExternalMemoryHandleTypeFlags compatibleHandleTypes,
-#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
                          AHardwareBuffer* hwBuffer,
-#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
                          const char* debugName) :
   ctx_(&ctx),
   physicalDevice_(ctx.getVkPhysicalDevice()),
@@ -778,21 +770,15 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   // For Android we need a dedicated allocation for exporting the image, otherwise
   // the exported handle is not generated properly.
 #if IGL_PLATFORM_ANDROID
-
-#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
   VkImportAndroidHardwareBufferInfoANDROID bufferInfo = {
       .sType = VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID,
       .pNext = nullptr,
       .buffer = hwBuffer,
   };
-#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
   VkMemoryDedicatedAllocateInfoKHR dedicatedAllocateInfo = {
       VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR,
-#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
-      hwBuffer != nullptr ? &bufferInfo :
-#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
-                          nullptr,
+      hwBuffer != nullptr ? &bufferInfo : nullptr,
       vkImage_,
       VK_NULL_HANDLE,
   };
