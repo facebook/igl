@@ -91,46 +91,44 @@ class VulkanImage final {
               VkSampleCountFlagBits samples,
               const char* debugName = nullptr);
 
-// @fb-only
-  // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-   // @fb-only
-  // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-// @fb-only
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
+  /**
+   * @brief Constructs a `VulkanImage` object and a `VkImage` object from an `AHardwareBuffer`. The
+   * `VkImage` object is backed by external memory.
+   *
+   * This constructor does not support VMA.
+   *
+   * Except for the debug name, all other parameters are required. The debug name, if provided, is
+   * associated with the newly created `VkImage` object.
+   *
+   * The image must contain at least one mip-level, one array layer and one sample
+   * (`VK_SAMPLE_COUNT_1_BIT`). The format cannot be undefined (`VK_FORMAT_UNDEFINED`).
+   *
+   * If the image is host-visible (`memFlags` contains `VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT`), then
+   * it is memory mapped until the object's destruction.
+   *
+   * This constructor is only supported on Android environments.
+   *
+   * NOTE: Importing a hardware buffer causes Vulkan to acquire a reference to the hardware buffer,
+   * which it releases when the allocated memory is freed. Destroying a VulkanImage does not
+   * necessarily guarantee that the underlying hardware buffer is also freed, as the application may
+   * retain additional references to the hardware buffer.
+   */
+  VulkanImage(const VulkanContext& ctx,
+              AHardwareBuffer* ahb,
+              uint64_t memoryAllocationSize,
+              VkDevice device,
+              VkExtent3D extent,
+              VkImageType type,
+              VkFormat format,
+              uint32_t mipLevels,
+              uint32_t arrayLayers,
+              VkImageTiling tiling,
+              VkImageUsageFlags usageFlags,
+              VkImageCreateFlags createFlags,
+              VkSampleCountFlagBits samples,
+              const char* debugName = nullptr);
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
   /**
    * @brief Constructs a `VulkanImage` object and a `VkImage` object from a file descriptor. The

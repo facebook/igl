@@ -262,108 +262,106 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   ctx_->vf_.vkGetPhysicalDeviceFormatProperties(physicalDevice_, imageFormat_, &formatProperties_);
 }
 
-// clang-format off
-// @fb-only
-// @fb-only
-                         // @fb-only
-                         // @fb-only
-                         // @fb-only
-                         // @fb-only
-                         // @fb-only
-                         // @fb-only
-                         // @fb-only
-                         // @fb-only
-                         // @fb-only
-                         // @fb-only
-                         // @fb-only
-                         // @fb-only
-                         // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
- // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
- // @fb-only
-  // @fb-only
- // @fb-only
-  // @fb-only
-                                               // @fb-only
-                                               // @fb-only
-                                               // @fb-only
-                                               // @fb-only
-                                               // @fb-only
-                                               // @fb-only
-                                               // @fb-only
-                                               // @fb-only
- // @fb-only
-  // @fb-only
-      // @fb-only
-      // @fb-only
- // @fb-only
-  // @fb-only
- // @fb-only
-  // @fb-only
-  // @fb-only
-      // @fb-only
- // @fb-only
-  // @fb-only
-  // @fb-only
- // @fb-only
-  // @fb-only
-      // @fb-only
-      // @fb-only
-  // @fb-only
- // @fb-only
-  // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-  // @fb-only
- // @fb-only
-  // @fb-only
-      // @fb-only
-  // @fb-only
-  // @fb-only
-      // @fb-only
- // @fb-only
-  // @fb-only
-  // @fb-only
- // @fb-only
-  // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-                                               // @fb-only
-                                               // @fb-only
- // @fb-only
-  // @fb-only
-               // @fb-only
-               // @fb-only
- // @fb-only
-  // @fb-only
-  // @fb-only
-// @fb-only
-// @fb-only
-// clang-format on
+#if defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
+VulkanImage::VulkanImage(const VulkanContext& ctx,
+                         AHardwareBuffer* hwBuffer,
+                         uint64_t memoryAllocationSize,
+                         VkDevice device,
+                         VkExtent3D extent,
+                         VkImageType type,
+                         VkFormat format,
+                         uint32_t mipLevels,
+                         uint32_t arrayLayers,
+                         VkImageTiling tiling,
+                         VkImageUsageFlags usageFlags,
+                         VkImageCreateFlags createFlags,
+                         VkSampleCountFlagBits samples,
+                         const char* debugName) :
+  ctx_(&ctx),
+  physicalDevice_(ctx.getVkPhysicalDevice()),
+  device_(device),
+  usageFlags_(usageFlags),
+  extent_(extent),
+  type_(type),
+  imageFormat_(format),
+  mipLevels_(mipLevels),
+  arrayLayers_(arrayLayers),
+  samples_(samples),
+  isDepthFormat_(isDepthFormat(format)),
+  isStencilFormat_(isStencilFormat(format)),
+  isDepthOrStencilFormat_(isDepthFormat_ || isStencilFormat_),
+  isImported_(true),
+  tiling_(tiling) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+
+  IGL_DEBUG_ASSERT(hwBuffer != nullptr);
+  IGL_DEBUG_ASSERT(mipLevels_ > 0, "The image must contain at least one mip level");
+  IGL_DEBUG_ASSERT(arrayLayers_ > 0, "The image must contain at least one layer");
+  IGL_DEBUG_ASSERT(imageFormat_ != VK_FORMAT_UNDEFINED, "Invalid VkFormat value");
+  IGL_DEBUG_ASSERT(samples_ > 0, "The image must contain at least one sample");
+
+  setName(debugName);
+
+  VkImageCreateInfo ci = ivkGetImageCreateInfo(type,
+                                               imageFormat_,
+                                               tiling,
+                                               usageFlags,
+                                               extent_,
+                                               mipLevels_,
+                                               arrayLayers_,
+                                               createFlags,
+                                               samples);
+
+  const VkExternalMemoryImageCreateInfoKHR extImgMem = {
+      .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_KHR,
+      .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID};
+
+  ci.pNext = &extImgMem;
+
+  VK_ASSERT(ctx_->vf_.vkCreateImage(device_, &ci, nullptr, &vkImage_));
+  VK_ASSERT(ivkSetDebugObjectName(
+      &ctx_->vf_, device_, VK_OBJECT_TYPE_IMAGE, (uint64_t)vkImage_, debugName));
+
+  // NOTE: Importing a hardware buffer causes Vulkan to acquire a reference to
+  // the hardware buffer, which it releases when the allocated memory is freed.
+
+  const VkImportAndroidHardwareBufferInfoANDROID hwBufferInfo = {
+      .sType = VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID,
+      .buffer = hwBuffer,
+  };
+
+  VkMemoryDedicatedAllocateInfoKHR dedicatedAllocateInfo = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR,
+      .pNext = &hwBufferInfo,
+      .image = vkImage_,
+      .buffer = VK_NULL_HANDLE,
+  };
+
+  VkAndroidHardwareBufferPropertiesANDROID hwBufferProperties{
+      .sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID,
+  };
+  VK_ASSERT(ctx_->vf_.vkGetAndroidHardwareBufferPropertiesANDROID(
+      device_, hwBuffer, &hwBufferProperties));
+
+  VkPhysicalDeviceMemoryProperties vulkanMemoryProperties;
+  ctx_->vf_.vkGetPhysicalDeviceMemoryProperties(physicalDevice_, &vulkanMemoryProperties);
+
+  const VkMemoryAllocateInfo memoryAllocateInfo = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+      .pNext = &dedicatedAllocateInfo,
+      .allocationSize = hwBufferProperties.allocationSize,
+      .memoryTypeIndex = ivkGetMemoryTypeIndex(vulkanMemoryProperties,
+                                               hwBufferProperties.memoryTypeBits,
+                                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)};
+
+  IGL_LOG_INFO("Imported texture has requirements %d, ends up index %d",
+               hwBufferProperties.memoryTypeBits,
+               memoryAllocateInfo.memoryTypeIndex);
+
+  VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_[0]));
+  VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_[0], 0));
+}
+#endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
 
 VulkanImage::VulkanImage(const VulkanContext& ctx,
                          int32_t undupedFileDescriptor,
