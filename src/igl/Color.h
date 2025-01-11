@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <igl/Null.h>
+#include <igl/IGLFolly.h>
 
 namespace igl {
 
