@@ -26,7 +26,7 @@ namespace igl::vulkan {
 /// type, checking whether an extension is available without modifying the internal storage of the
 /// object, checking if an extension has been enabled for an object and, finally, a method to return
 /// a list of all enabled extensions of a type as `const char *`, which is accepted by the
-/// VUlkan API
+/// Vulkan API
 class VulkanExtensions final {
  public:
   /// @brief Helper enumeration to determine which extension is being used. It's converted to a
@@ -81,12 +81,6 @@ class VulkanExtensions final {
   /// @param extensionName The name of the extension
   /// @return True if the extension has been enabled, false otherwise
   bool enabled(const char* extensionName) const;
-
-  /// @brief Enables the extension with name `extensionName` of the type `extensionType`.
-  /// Use this method to enable prorietory extensions which are not reported in the extensions list.
-  /// @param extensionName The name of the extension
-  /// @param extensionType The type of the extension
-  void forceEnable(const char* extensionName, ExtensionType extensionType);
 
   /// @brief Returns a vector of `const char *` of all enabled extensions for an instance or phyical
   /// device. This method is particularly useful because Vulkan expects an

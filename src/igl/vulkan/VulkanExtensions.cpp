@@ -79,12 +79,6 @@ bool VulkanExtensions::enable(const char* extensionName, ExtensionType extension
   return false;
 }
 
-void VulkanExtensions::forceEnable(const char* extensionName, ExtensionType extensionType) {
-  const size_t vectorIndex = (size_t)extensionType;
-
-  enabledExtensions_[vectorIndex].insert(extensionName);
-}
-
 void VulkanExtensions::enableCommonInstanceExtensions(const VulkanContextConfig& config) {
   enable(VK_KHR_SURFACE_EXTENSION_NAME, ExtensionType::Instance);
   enable(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, ExtensionType::Instance);
