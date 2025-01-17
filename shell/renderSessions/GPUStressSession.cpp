@@ -21,7 +21,6 @@
 #include <glm/fwd.hpp>
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
-#include <igl/opengl/Device.h>
 #include <igl/opengl/GLIncludes.h>
 #include <memory>
 #include <random>
