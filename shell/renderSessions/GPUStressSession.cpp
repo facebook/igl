@@ -29,7 +29,7 @@
 #include <shell/shared/renderSession/QuadLayerParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
-#if defined(_MSC_VER) || IGL_PLATFORM_LINUX
+#if defined(_MSC_VER) || (IGL_PLATFORM_LINUX && !defined(IGL_CMAKE_BUILD))
 static uint32_t arc4random(void) {
   return static_cast<uint32_t>(rand()) * (0xffffffff / RAND_MAX);
 }
