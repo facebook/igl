@@ -29,11 +29,9 @@
 #include <shell/shared/renderSession/QuadLayerParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
-#if defined(_MSC_VER) || IGL_PLATFORM_LINUX
-static uint32_t arc4random(void) {
+static uint32_t arc4random_() {
   return static_cast<uint32_t>(rand()) * (0xffffffff / RAND_MAX);
 }
-#endif // _MSC_VER || IGL_PLATFORM_LINUX
 
 #if ANDROID
 
@@ -136,17 +134,17 @@ std::string getLightingCalc() {
              sizeof(tmp),
              "const vec3 lightColor%d = vec3(%f, %f, %f);\n",
              i,
-             i % 3 == 0 ? 1.0 : static_cast<float>(arc4random() % 32) / 32.f,
-             i % 3 == 1 ? 1.0 : static_cast<float>(arc4random() % 32) / 32.f,
-             i % 3 == 2 ? 1.0 : static_cast<float>(arc4random() % 32) / 32.f);
+             i % 3 == 0 ? 1.0 : static_cast<float>(arc4random_() % 32) / 32.f,
+             i % 3 == 1 ? 1.0 : static_cast<float>(arc4random_() % 32) / 32.f,
+             i % 3 == 2 ? 1.0 : static_cast<float>(arc4random_() % 32) / 32.f);
     params += tmp;
     snprintf(tmp,
              sizeof(tmp),
              "const vec3 lightPos%d = vec3(%f, %f, %f);\n",
              i,
-             -1.f + static_cast<float>(arc4random() % 32) / 16.f,
-             -1.f + static_cast<float>(arc4random() % 32) / 16.f,
-             -1.f + static_cast<float>(arc4random() % 32) / 16.f);
+             -1.f + static_cast<float>(arc4random_() % 32) / 16.f,
+             -1.f + static_cast<float>(arc4random_() % 32) / 16.f,
+             -1.f + static_cast<float>(arc4random_() % 32) / 16.f);
     params += tmp;
     snprintf(
         tmp,
@@ -378,7 +376,7 @@ float doReadWrite(std::vector<std::vector<std::vector<float>>>& memBlock,
     const int block = randBlocks(gen);
     const int row = randRows(gen);
     const int col = randCols(gen);
-    memBlock[block].at(row)[col] = arc4random();
+    memBlock[block].at(row)[col] = arc4random_();
   }
 
   for (int i = 0; i < kMemoryReads; i++) {
