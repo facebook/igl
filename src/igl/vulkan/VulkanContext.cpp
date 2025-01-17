@@ -1771,7 +1771,7 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
   }
 
   VkFormatProperties props;
-  vkGetPhysicalDeviceFormatProperties(getVkPhysicalDevice(), format, &props);
+  vf_.vkGetPhysicalDeviceFormatProperties(getVkPhysicalDevice(), format, &props);
 
   const bool cosited =
       (props.optimalTilingFeatures & VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT) != 0;
@@ -1821,7 +1821,7 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
       VK_IMAGE_USAGE_SAMPLED_BIT,
       VK_IMAGE_CREATE_DISJOINT_BIT,
   };
-  vkGetPhysicalDeviceImageFormatProperties2(
+  vf_.vkGetPhysicalDeviceImageFormatProperties2(
       getVkPhysicalDevice(), &imageFormatInfo, &imageFormatProps);
 
   IGL_DEBUG_ASSERT(samplerYcbcrConversionImageFormatProps.combinedImageSamplerDescriptorCount <= 3);
