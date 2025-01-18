@@ -31,7 +31,6 @@
 
 #include <igl/SamplerState.h>
 #include <igl/vulkan/Buffer.h>
-#include <igl/vulkan/Device.h>
 #include <igl/vulkan/EnhancedShaderDebuggingStore.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/SamplerState.h>
