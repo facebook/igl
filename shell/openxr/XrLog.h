@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <shell/openxr/XrPlatform.h>
+#include <openxr/openxr.h>
 
 #include <igl/Common.h>
 
