@@ -260,7 +260,9 @@ Context::Context(EGLDisplay display,
                  EGLContext context,
                  EGLSurface readSurface,
                  EGLSurface drawSurface,
-                 EGLConfig config) :
+                 EGLConfig config,
+                 bool ownsContext) :
+  contextOwned_(ownsContext),
   display_(display),
   context_(context),
   readSurface_(readSurface),

@@ -39,11 +39,15 @@ class Context final : public IContext {
   /// Create a new offscreen context.
   Context(RenderingAPI api, size_t width, size_t height);
   /// Create a new context applicable for a specific display/context/read surface/draw surface.
+  /// @param ownsContext If true, this means that constructed Context owns the EGL context that is
+  /// passed in and it will destroy the EGL context in its destructor. If false, it's the caller's
+  /// responsibility to ensure the EGL context is destroyed.
   Context(EGLDisplay display,
           EGLContext context,
           EGLSurface readSurface,
           EGLSurface drawSurface,
-          EGLConfig config = nullptr);
+          EGLConfig config = nullptr,
+          bool ownsContext = false);
   /// Create a new offscreen context, in the same sharegroup as 'sharedContext'. Dimensions are
   /// also inferred from 'sharedContext'.
   Context(const Context& sharedContext);
