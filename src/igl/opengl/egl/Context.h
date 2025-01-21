@@ -42,12 +42,16 @@ class Context final : public IContext {
   /// @param ownsContext If true, this means that constructed Context owns the EGL context that is
   /// passed in and it will destroy the EGL context in its destructor. If false, it's the caller's
   /// responsibility to ensure the EGL context is destroyed.
+  /// @param ownsSurfaces If true, this means that constructed Context owns the EGL surfaces that
+  /// are passed in and it will destroy the EGL surfaces in its destructor. If false, it's the
+  /// caller's responsibility to ensure the EGL surfaces are destroyed.
   Context(EGLDisplay display,
           EGLContext context,
           EGLSurface readSurface,
           EGLSurface drawSurface,
           EGLConfig config = nullptr,
-          bool ownsContext = false);
+          bool ownsContext = false,
+          bool ownsSurfaces = false);
   /// Create a new offscreen context, in the same sharegroup as 'sharedContext'. Dimensions are
   /// also inferred from 'sharedContext'.
   Context(const Context& sharedContext);
@@ -88,6 +92,7 @@ class Context final : public IContext {
           std::pair<EGLint, EGLint> dimensions);
 
   bool contextOwned_ = false;
+  bool surfacesOwned_ = false;
   FOLLY_PUSH_WARNING
   FOLLY_GNU_DISABLE_WARNING("-Wzero-as-null-pointer-constant")
   RenderingAPI api_ = RenderingAPI::GLES2;

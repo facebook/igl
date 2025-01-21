@@ -227,18 +227,21 @@ Context::Context(RenderingAPI api,
           EGL_NONE, // Terminator. I'll be back!
       };
       readSurface_ = drawSurface_ = eglCreatePbufferSurface(display_, config, pbufferAttribs);
+      surfacesOwned_ = true;
       CHECK_EGL_ERRORS();
     } else {
       readSurface_ = eglGetCurrentSurface(EGL_READ);
       CHECK_EGL_ERRORS();
       drawSurface_ = eglGetCurrentSurface(EGL_DRAW);
       CHECK_EGL_ERRORS();
+      surfacesOwned_ = false;
     }
   } else {
     surface_ = eglCreateWindowSurface(display_, config, window, nullptr);
     CHECK_EGL_ERRORS();
     readSurface_ = surface_;
     drawSurface_ = surface_;
+    surfacesOwned_ = true;
   }
   config_ = config;
 
@@ -261,8 +264,10 @@ Context::Context(EGLDisplay display,
                  EGLSurface readSurface,
                  EGLSurface drawSurface,
                  EGLConfig config,
-                 bool ownsContext) :
+                 bool ownsContext,
+                 bool ownsSurfaces) :
   contextOwned_(ownsContext),
+  surfacesOwned_(ownsSurfaces),
   display_(display),
   context_(context),
   readSurface_(readSurface),
@@ -277,17 +282,27 @@ void Context::updateSurface(NativeWindowType window) {
   CHECK_EGL_ERRORS();
   readSurface_ = surface_;
   drawSurface_ = surface_;
+  surfacesOwned_ = true;
 }
 
 Context::~Context() {
   willDestroy((void*)context_);
   IContext::unregisterContext((void*)context_);
-  if (contextOwned_ && context_ != EGL_NO_CONTEXT) {
+  if (surfacesOwned_) {
     if (surface_ != nullptr) {
       eglDestroySurface(display_, surface_);
       CHECK_EGL_ERRORS();
     }
-
+    if (drawSurface_ != nullptr && drawSurface_ != surface_) {
+      eglDestroySurface(display_, drawSurface_);
+      CHECK_EGL_ERRORS();
+    }
+    if (readSurface_ != nullptr && readSurface_ != surface_ && readSurface_ != drawSurface_) {
+      eglDestroySurface(display_, readSurface_);
+      CHECK_EGL_ERRORS();
+    }
+  }
+  if (contextOwned_ && context_ != EGL_NO_CONTEXT) {
     eglDestroyContext(display_, context_);
     CHECK_EGL_ERRORS();
   }
@@ -363,9 +378,10 @@ void Context::setPresentationTime(long long presentationTimeNs) {
 void Context::updateSurfaces(EGLSurface readSurface, EGLSurface drawSurface) {
   readSurface_ = readSurface;
   drawSurface_ = drawSurface;
+  surfacesOwned_ = false;
   // We need this here because we need to call eglSetCurrent() with the new surface(s) in order to
-  // bind them, but it's not the ideal place for it. Outside code could come in and make a different
-  // context current at any time.
+  // bind them, but it's not the ideal place for it. Outside code could come in and make a
+  // different context current at any time.
   setCurrent();
 }
 
