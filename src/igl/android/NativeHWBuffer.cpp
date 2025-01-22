@@ -49,6 +49,11 @@ uint32_t getNativeHWFormat(TextureFormat iglFormat) {
   case TextureFormat::YUV_NV12:
     return AHARDWAREBUFFER_FORMAT_YCbCr_420_SP_VENUS;
 
+#if __ANDROID_MIN_SDK_VERSION__ >= 30
+  case TextureFormat::YUV_420p:
+    return AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420;
+#endif
+
   default:
     return 0;
   }
@@ -106,6 +111,11 @@ TextureFormat getIglFormat(uint32_t nativeFormat) {
   case AHARDWAREBUFFER_FORMAT_YCbCr_420_SP_VENUS:
   case COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m:
     return TextureFormat::YUV_NV12;
+
+#if __ANDROID_MIN_SDK_VERSION__ >= 30
+  case AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420:
+    return TextureFormat::YUV_420p;
+#endif
 
   default:
     return TextureFormat::Invalid;
@@ -191,6 +201,13 @@ Result INativeHWTextureBuffer::attachHWBuffer(AHardwareBuffer* buffer) {
   const bool isValid = desc.format != TextureFormat::Invalid && desc.usage != 0;
   if (!isValid) {
     AHardwareBuffer_release(buffer);
+    IGL_LOG_ERROR(
+        "Can not create texture for hardware buffer format is %x usage is %x width is %d  height "
+        "is %d",
+        hwbDesc.format,
+        hwbDesc.usage,
+        hwbDesc.width,
+        hwbDesc.height);
     return Result(Result::Code::Unsupported, "Can not create texture for hardware buffer");
   }
 

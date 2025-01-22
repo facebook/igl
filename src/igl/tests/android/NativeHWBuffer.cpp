@@ -59,6 +59,9 @@ TEST_F(NativeHWBufferTest, Basic_getNativeHWFormat) {
   EXPECT_EQ(getNativeHWFormat(igl::TextureFormat::YUV_NV12),
             AHARDWAREBUFFER_FORMAT_YCbCr_420_SP_VENUS);
   EXPECT_EQ(getNativeHWFormat(igl::TextureFormat::Invalid), 0);
+#if __ANDROID_MIN_SDK_VERSION__ >= 30
+  EXPECT_EQ(getNativeHWFormat(igl::TextureFormat::YUV_420p), AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420);
+#endif
 }
 
 TEST_F(NativeHWBufferTest, Basic_getIglFormat) {
@@ -80,6 +83,10 @@ TEST_F(NativeHWBufferTest, Basic_getIglFormat) {
   EXPECT_EQ(igl::android::getIglFormat(AHARDWAREBUFFER_FORMAT_S8_UINT), TextureFormat::S_UInt8);
   EXPECT_EQ(igl::android::getIglFormat(AHARDWAREBUFFER_FORMAT_YCbCr_420_SP_VENUS),
             TextureFormat::YUV_NV12);
+#if __ANDROID_MIN_SDK_VERSION__ >= 30
+  EXPECT_EQ(igl::android::getIglFormat(AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420),
+            TextureFormat::YUV_420p);
+#endif
 }
 
 TEST_F(NativeHWBufferTest, getNativeHWBufferUsage) {
