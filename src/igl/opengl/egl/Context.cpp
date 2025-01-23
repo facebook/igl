@@ -18,7 +18,6 @@
 #include <cassert>
 #include <igl/Macros.h>
 #include <igl/opengl/Errors.h>
-#include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/Texture.h>
 #include <tuple>
 
