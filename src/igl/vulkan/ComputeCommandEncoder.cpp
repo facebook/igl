@@ -180,7 +180,15 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
   const igl::vulkan::VulkanTexture& vkTex = tex->getVulkanTexture();
   const igl::vulkan::VulkanImage* vkImage = &vkTex.image_;
 
-  igl::vulkan::transitionToGeneral(cmdBuffer_, texture);
+  IGL_DEBUG_ASSERT(vkImage);
+
+  if (vkImage->isStorageImage()) {
+    igl::vulkan::transitionToGeneral(cmdBuffer_, texture);
+  } else if (vkImage->isSampledImage()) {
+    igl::vulkan::transitionToShaderReadOnly(cmdBuffer_, texture);
+  } else {
+    IGL_DEBUG_ASSERT(false, "A texture should be Sampled or Storage");
+  }
 
   restoreLayout_.push_back(vkImage);
 

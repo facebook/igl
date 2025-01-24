@@ -100,17 +100,11 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
     const bool isStorage = tex ? (tex->getUsage() & TextureDesc::TextureUsageBits::Storage) > 0
                                : false;
 
-    if (isGraphics()) {
-      if (!IGL_DEBUG_VERIFY(isSampled || isStorage)) {
-        IGL_DEBUG_ABORT(
-            "Did you forget to specify TextureUsageBits::Sampled or "
-            "TextureUsageBits::Storage on your texture? `Sampled` is used for sampling; "
-            "`Storage` is used for load/store operations");
-      }
-    } else {
-      if (!IGL_DEBUG_VERIFY(isStorage)) {
-        IGL_DEBUG_ABORT("Did you forget to specify TextureUsageBits::Storage on your texture?");
-      }
+    if (!IGL_DEBUG_VERIFY(isSampled || isStorage)) {
+      IGL_DEBUG_ABORT(
+          "Did you forget to specify TextureUsageBits::Sampled or "
+          "TextureUsageBits::Storage on your texture? `Sampled` is used for sampling; "
+          "`Storage` is used for load/store operations");
     }
   }
 
@@ -128,7 +122,8 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
       // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
       IGL_DEBUG_ASSERT(img.imageLayout_ == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     } else {
-      IGL_DEBUG_ASSERT(img.imageLayout_ == VK_IMAGE_LAYOUT_GENERAL);
+      IGL_DEBUG_ASSERT(img.imageLayout_ == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL ||
+                       img.imageLayout_ == VK_IMAGE_LAYOUT_GENERAL);
     }
   }
 #endif // IGL_DEBUG
