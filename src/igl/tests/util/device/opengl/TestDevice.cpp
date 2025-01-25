@@ -7,7 +7,6 @@
 
 #include <igl/tests/util/device/opengl/TestDevice.h>
 
-#include <igl/Macros.h>
 #include <igl/opengl/IContext.h>
 
 #if IGL_PLATFORM_IOS

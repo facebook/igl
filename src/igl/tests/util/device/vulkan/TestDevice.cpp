@@ -8,7 +8,6 @@
 #include <igl/tests/util/device/vulkan/TestDevice.h>
 
 #include <igl/Common.h>
-#include <igl/Macros.h>
 
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_IOS || \
     IGL_PLATFORM_LINUX
