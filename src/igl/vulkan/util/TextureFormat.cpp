@@ -8,7 +8,6 @@
 #include <igl/vulkan/util/TextureFormat.h>
 
 #define IGL_COMMON_SKIP_CHECK
-#include <igl/Assert.h>
 
 namespace igl::vulkan::util {
 

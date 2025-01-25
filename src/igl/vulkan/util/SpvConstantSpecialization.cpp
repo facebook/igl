@@ -83,8 +83,8 @@ void specializeConstants(uint32_t* spirv, size_t numBytes, const std::vector<uin
       constexpr uint32_t kOpSpecConstantResultId = 2;
       constexpr uint32_t kOpSpecConstantValue = 3;
 
-      uint32_t resultId = instruction[kOpSpecConstantResultId];
-      uint32_t specializedValue = idToValue[resultId];
+      const uint32_t resultId = instruction[kOpSpecConstantResultId];
+      const uint32_t specializedValue = idToValue[resultId];
       if (specializedValue == kNoValue) {
         break;
       }
