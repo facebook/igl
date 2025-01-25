@@ -12,9 +12,6 @@
 
 namespace igl {
 
-class IFramebuffer;
-class ITexture;
-
 /**
  * @brief LoadAction determines the loading time action of the various components of a
  * RenderPassDesc. This can be DontCare, Load, or Clear.

@@ -17,7 +17,6 @@
 
 namespace igl {
 
-class IShaderModule;
 class IVertexInputState;
 
 /**

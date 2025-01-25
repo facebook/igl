@@ -15,12 +15,9 @@
 
 namespace igl {
 
-class IBuffer;
 class IDepthStencilState;
 class IRenderPipelineState;
 class ISamplerState;
-class ITexture;
-struct RenderPassDesc;
 
 namespace BindTarget {
 const uint8_t kVertex = 0x0001;
