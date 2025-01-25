@@ -26,8 +26,7 @@
 #define IGL_SAMPLE_LOG_ERROR(...) \
   __android_log_print(ANDROID_LOG_ERROR, "libsampleVulkanJni", __VA_ARGS__)
 
-namespace igl_samples {
-namespace android {
+namespace igl_samples::android {
 
 using namespace igl;
 
@@ -248,5 +247,4 @@ void android_main(struct android_app* app) {
 }
 }
 
-} // namespace android
-} // namespace igl_samples
+} // namespace igl_samples::android
