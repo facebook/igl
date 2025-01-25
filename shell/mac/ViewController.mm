@@ -510,7 +510,7 @@ using namespace igl;
 
 static uint32_t getModifiers(NSEvent* event) {
   uint32_t modifiers = igl::shell::KeyEventModifierNone;
-  NSUInteger flags = [event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;
+  const NSUInteger flags = [event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;
 
   if (flags & NSEventModifierFlagShift) {
     modifiers |= igl::shell::KeyEventModifierShift;
