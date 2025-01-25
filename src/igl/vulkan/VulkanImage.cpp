@@ -736,7 +736,9 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
 
     // If image has an external format, format must be VK_FORMAT_UNDEFINED.
     if (formatProperties.format == VK_FORMAT_UNDEFINED) {
+      imageFormat_ = VK_FORMAT_UNDEFINED;
       externalFormat.externalFormat = formatProperties.externalFormat;
+      extendedFormat_ = formatProperties.externalFormat;
     }
   }
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
@@ -1333,6 +1335,7 @@ VulkanImage& VulkanImage::operator=(VulkanImage&& other) noexcept {
 #endif
   tiling_ = other.tiling_;
   isCoherentMemory_ = other.isCoherentMemory_;
+  extendedFormat_ = other.extendedFormat_;
 
   for (size_t i = 0; i != IGL_ARRAY_NUM_ELEMENTS(vkMemory_); i++) {
     vkMemory_[i] = other.vkMemory_[i];
