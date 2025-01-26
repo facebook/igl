@@ -11,10 +11,12 @@
 
 #include <igl/opengl/Texture.h>
 
+#if !defined(WIN32_LEAN_AND_MEAN)
 #define WIN32_LEAN_AND_MEAN
+#endif
 #if !defined(NOMINMAX)
 #define NOMINMAX
-#endif // NOMINMAX
+#endif // !defined(NOMINMAX)
 #include <windows.h>
 #ifdef DISABLE_WGL_VSYNC
 #include <GL/wglext.h>
