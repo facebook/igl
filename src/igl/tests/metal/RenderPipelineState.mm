@@ -92,6 +92,9 @@ class RenderPipelineStateMTLTest : public ::testing::Test {
     pipelineDesc_.frontFaceWinding = igl::WindingMode::CounterClockwise;
     pipelineDesc_.polygonFillMode = PolygonFillMode::Fill;
 
+// Suppress warnings about MTLPipelineOptionArgumentInfo being deprecated
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     // Create reflection for use later in binding, etc.
     id<MTLRenderPipelineState> metalObject =
         [device_ newRenderPipelineStateWithDescriptor:metalDesc
@@ -107,6 +110,7 @@ class RenderPipelineStateMTLTest : public ::testing::Test {
                                               options:MTLPipelineOptionArgumentInfo
                                            reflection:nullptr
                                                 error:&error];
+#pragma GCC diagnostic pop
 
     pipeStateWithNoRefl_ = std::make_shared<metal::RenderPipelineState>(
         metalObjectWithoutRefl, nullptr, pipelineDesc_);

@@ -13,6 +13,10 @@
 #include <map>
 #include <vector>
 
+// Suppress warnings about use of MTLArgumentType
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 namespace igl::metal {
 
 class RenderPipelineReflection final : public IRenderPipelineReflection {
@@ -47,3 +51,5 @@ class RenderPipelineReflection final : public IRenderPipelineReflection {
 };
 
 } // namespace igl::metal
+
+#pragma GCC diagnostic pop
