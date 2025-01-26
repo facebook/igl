@@ -33,7 +33,7 @@ static uint32_t arc4random_() {
   return static_cast<uint32_t>(rand()) * (0xffffffff / RAND_MAX);
 }
 
-#if ANDROID
+#if IGL_PLATFORM_ANDROID
 
 #include <sys/syscall.h>
 #include <unistd.h>
