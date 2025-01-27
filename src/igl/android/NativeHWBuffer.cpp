@@ -184,44 +184,6 @@ INativeHWTextureBuffer::~INativeHWTextureBuffer() {
   }
 }
 
-Result INativeHWTextureBuffer::attachHWBuffer(AHardwareBuffer* buffer) {
-  if (hwBuffer_) {
-    return Result{Result::Code::InvalidOperation, "Hardware buffer already provided"};
-  }
-
-  AHardwareBuffer_acquire(buffer);
-
-  AHardwareBuffer_Desc hwbDesc;
-  AHardwareBuffer_describe(buffer, &hwbDesc);
-
-  auto desc = TextureDesc::newNativeHWBufferImage(igl::android::getIglFormat(hwbDesc.format),
-                                                  igl::android::getIglBufferUsage(hwbDesc.usage),
-                                                  hwbDesc.width,
-                                                  hwbDesc.height);
-  const bool isValid = desc.format != TextureFormat::Invalid && desc.usage != 0;
-  if (!isValid) {
-    AHardwareBuffer_release(buffer);
-    IGL_LOG_ERROR(
-        "Can not create texture for hardware buffer format is %x usage is %x width is %d  height "
-        "is %d",
-        hwbDesc.format,
-        hwbDesc.usage,
-        hwbDesc.width,
-        hwbDesc.height);
-    return Result(Result::Code::Unsupported, "Can not create texture for hardware buffer");
-  }
-
-  Result result = createTextureInternal(desc, buffer);
-  if (!result.isOk()) {
-    AHardwareBuffer_release(buffer);
-  } else {
-    hwBuffer_ = buffer;
-    textureDesc_ = desc;
-  }
-
-  return result;
-}
-
 Result INativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
                                               bool hasStorageAlready,
                                               bool surfaceComposite) {
@@ -262,7 +224,7 @@ Result INativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
     return allocationResult;
   }
 
-  Result result = createTextureInternal(desc, buffer);
+  Result result = createTextureInternal(buffer);
   if (!result.isOk()) {
     IGL_LOG_ERROR("HW internal failed");
     AHardwareBuffer_release(buffer);

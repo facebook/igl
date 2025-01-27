@@ -38,8 +38,7 @@ class NativeHWTextureBuffer : public igl::android::INativeHWTextureBuffer,
     setUsage(usage);
   }
 
- protected:
-  Result createTextureInternal(const TextureDesc& desc, AHardwareBuffer* buffer) override;
+  Result createTextureInternal(AHardwareBuffer* buffer) override;
 
  private:
   Result uploadInternal(TextureType type,

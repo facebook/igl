@@ -68,6 +68,17 @@ VulkanImageView::~VulkanImageView() {
   destroy();
 }
 
+VulkanImageView::VulkanImageView(const VulkanContext& ctx,
+                                 const VkImageViewCreateInfo& createInfo,
+                                 const char* debugName) :
+  ctx_(&ctx) {
+  VkDevice device = ctx_->getVkDevice();
+  VK_ASSERT(ctx_->vf_.vkCreateImageView(device, &createInfo, nullptr, &vkImageView_));
+
+  VK_ASSERT(ivkSetDebugObjectName(
+      &ctx_->vf_, device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vkImageView_, debugName));
+}
+
 VulkanImageView& VulkanImageView::operator=(VulkanImageView&& other) noexcept {
   destroy();
   ctx_ = other.ctx_;

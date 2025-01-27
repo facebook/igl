@@ -60,6 +60,10 @@ class VulkanImageView final {
                   const VulkanImageViewCreateInfo& createInfo,
                   const char* debugName = nullptr);
 
+  VulkanImageView(const VulkanContext& ctx,
+                  const VkImageViewCreateInfo& createInfo,
+                  const char* debugName = nullptr);
+
   ~VulkanImageView();
 
   VulkanImageView(const VulkanImageView&) = delete;

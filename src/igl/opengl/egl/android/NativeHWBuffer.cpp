@@ -69,8 +69,20 @@ Result NativeHWTextureBuffer::create(const TextureDesc& desc, bool hasStorageAlr
   return createHWBuffer(desc, hasStorageAlready, false);
 }
 
-Result NativeHWTextureBuffer::createTextureInternal(const TextureDesc& desc,
-                                                    AHardwareBuffer* buffer) {
+Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* buffer) {
+  if (hwBuffer_) {
+    return Result{Result::Code::InvalidOperation, "Hardware buffer already provided"};
+  }
+
+  AHardwareBuffer_acquire(buffer);
+
+  AHardwareBuffer_Desc hwbDesc;
+  AHardwareBuffer_describe(buffer, &hwbDesc);
+
+  auto desc = TextureDesc::newNativeHWBufferImage(igl::android::getIglFormat(hwbDesc.format),
+                                                  igl::android::getIglBufferUsage(hwbDesc.usage),
+                                                  hwbDesc.width,
+                                                  hwbDesc.height);
   auto result = Super::create(desc, false);
   if (!result.isOk()) {
     return result;
