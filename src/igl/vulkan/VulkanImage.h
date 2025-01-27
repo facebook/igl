@@ -325,8 +325,7 @@ class VulkanImage final {
   bool isCubemap_ = false;
   void* exportedMemoryHandle_ = nullptr; // windows handle
   int exportedFd_ = -1; // linux fd
-  uint32_t extendedFormat_ =
-      // @fb-only
+  uint32_t extendedFormat_ = 0; // defined by VkAndroidHardwareBufferFormatPropertiesANDROID
 #if defined(IGL_DEBUG)
   std::string name_;
 #endif
