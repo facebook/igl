@@ -11,50 +11,50 @@
 
 // clang-format off
 #if IGL_PLATFORM_IOS_SIMULATOR
-  #include <OpenGLES/ES3/gl.h>
-  #include <OpenGLES/ES3/glext.h>
-  #include <OpenGLES/ES2/glext.h>
+  #include <OpenGLES/ES3/gl.h> // IWYU pragma: export
+  #include <OpenGLES/ES3/glext.h> // IWYU pragma: export
+  #include <OpenGLES/ES2/glext.h> // IWYU pragma: export
   using GLdouble = double;
 #elif IGL_PLATFORM_IOS
-  #include <OpenGLES/ES2/glext.h>
-  #include <OpenGLES/ES3/gl.h>
-  #include <OpenGLES/ES3/glext.h>
+  #include <OpenGLES/ES2/glext.h> // IWYU pragma: export
+  #include <OpenGLES/ES3/gl.h> // IWYU pragma: export
+  #include <OpenGLES/ES3/glext.h> // IWYU pragma: export
   using GLdouble = double;
 #elif IGL_PLATFORM_MACCATALYST
   // Apple dropped OpenGL support for Catalyst built apps.
   // For compatibility reasons, we added stub headers,
   // so we can still build referencing these headers.
-  #include "OpenGLES/ES3/gl.h"
-  #include "OpenGLES/ES3/glext.h"
-  #include "OpenGLES/ES2/glext.h"
+  #include "OpenGLES/ES3/gl.h" // IWYU pragma: export
+  #include "OpenGLES/ES3/glext.h" // IWYU pragma: export
+  #include "OpenGLES/ES2/glext.h" // IWYU pragma: export
   using GLdouble = double;
 #elif IGL_PLATFORM_MACOSX
-  #include <OpenGL/gl3.h>
-  #include <OpenGL/gl3ext.h>
-  #include <OpenGL/glext.h>
+  #include <OpenGL/gl3.h> // IWYU pragma: export
+  #include <OpenGL/gl3ext.h> // IWYU pragma: export
+  #include <OpenGL/glext.h> // IWYU pragma: export
 #elif IGL_PLATFORM_WINDOWS
   #define GL_GLEXT_PROTOTYPES
 #if IGL_ANGLE
-  #include <EGL/egl.h>
-  #include <EGL/eglplatform.h>
-  #include <GLES3/gl31.h>
-  #include <GLES2/gl2ext.h> // GL_EXT_memory_object
+  #include <EGL/egl.h> // IWYU pragma: export
+  #include <EGL/eglplatform.h> // IWYU pragma: export
+  #include <GLES3/gl31.h> // IWYU pragma: export
+  #include <GLES2/gl2ext.h> // GL_EXT_memory_object // IWYU pragma: export
   #undef ERROR
 #else
   #ifndef GLEW_STATIC
   #define GLEW_STATIC
   #endif
-  #include <GL/glew.h>
+  #include <GL/glew.h> // IWYU pragma: export
 #endif
 #elif IGL_PLATFORM_ANDROID
 #if defined(SUPPORT_ES31_IGL_OPENGL_ANDROID)
-  #include <GLES3/gl31.h>
-  #include <GLES3/gl3ext.h>
-  #include <GLES2/gl2ext.h> // GL_EXT_memory_object
+  #include <GLES3/gl31.h> // IWYU pragma: export
+  #include <GLES3/gl3ext.h> // IWYU pragma: export
+  #include <GLES2/gl2ext.h> // GL_EXT_memory_object // IWYU pragma: export
 #elif IGL_ANGLE
-  #include <GLES3/gl31.h>
-  #include <GLES3/gl3ext.h>
-  #include <GLES2/gl2ext.h> // GL_EXT_memory_object
+  #include <GLES3/gl31.h> // IWYU pragma: export
+  #include <GLES3/gl3ext.h> // IWYU pragma: export
+  #include <GLES2/gl2ext.h> // GL_EXT_memory_object // IWYU pragma: export
 #else
   // We only support GLES3 on 64-bit Android.
   #if defined(_M_ARM64) \
@@ -66,25 +66,25 @@
       || defined(__x86_64__) \
       || defined(__AMD64__) \
       || defined(__amd64__)
-    #include <GLES3/gl31.h>
-    #include <GLES3/gl3.h>
-    #include <GLES3/gl3ext.h>
+    #include <GLES3/gl31.h> // IWYU pragma: export
+    #include <GLES3/gl3.h> // IWYU pragma: export
+    #include <GLES3/gl3ext.h> // IWYU pragma: export
   #else
-    #include <GLES2/gl2.h>
+    #include <GLES2/gl2.h> // IWYU pragma: export
   #endif
-  #include <GLES2/gl2ext.h>
+  #include <GLES2/gl2ext.h> // IWYU pragma: export
 #endif
 #elif IGL_PLATFORM_LINUX
   #if IGL_PLATFORM_LINUX_USE_EGL
-    #include <GLES3/gl3.h>
-    #include <GLES2/gl2ext.h>
+    #include <GLES3/gl3.h> // IWYU pragma: export
+    #include <GLES2/gl2ext.h> // IWYU pragma: export
   #else
-    #include <GL/gl.h>
-    #include <GL/glcorearb.h>
+    #include <GL/gl.h> // IWYU pragma: export
+    #include <GL/glcorearb.h> // IWYU pragma: export
   #endif
 #elif IGL_PLATFORM_EMSCRIPTEN
-  #include <GLES2/gl2.h>
-  #include <GLES2/gl2ext.h>
+  #include <GLES2/gl2.h> // IWYU pragma: export
+  #include <GLES2/gl2ext.h> // IWYU pragma: export
 #endif
 // clang-format on
 
