@@ -11,7 +11,6 @@
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/Device.h>
-#include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/RenderCommandEncoder.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #if defined(IGL_PLATFORM_UWP)

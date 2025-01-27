@@ -11,7 +11,6 @@
 
 #include <cmath>
 #include <cstddef>
-#include <cstdio>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
@@ -19,7 +18,6 @@
 #include <shell/shared/platform/DisplayContext.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/Device.h>
-#include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/RenderCommandEncoder.h>
 #endif // IGL_BACKEND_OPENGL
 #if IGL_BACKEND_VULKAN
@@ -31,7 +29,6 @@
 #endif // IGL_BACKEND_VULKAN
 
 #include <filesystem>
-namespace fs = std::filesystem;
 
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough"
@@ -574,7 +571,7 @@ void TinyMeshBindGroupSession::update(igl::SurfaceTextures surfaceTextures) noex
     const uint32_t cubesInLine = (uint32_t)sqrt(kNumCubes);
     const vec3 offset =
         vec3(-1.5f * sqrt(kNumCubes) + 4.0f * static_cast<float>(i % cubesInLine),
-             -1.5f * sqrt(kNumCubes) + 4.0f * floor(static_cast<float>(i) / cubesInLine),
+             -1.5f * sqrt(kNumCubes) + 4.0f * std::floor(static_cast<float>(i) / cubesInLine),
              0);
     perObject[i].model =
         glm::rotate(glm::translate(mat4(1.0f), offset), float(direction * currentTime_), axis_[i]);

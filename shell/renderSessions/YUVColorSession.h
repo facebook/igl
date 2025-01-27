@@ -19,7 +19,7 @@ namespace igl::shell {
 
 class YUVColorSession : public RenderSession {
  public:
-  YUVColorSession(std::shared_ptr<Platform> platform);
+  explicit YUVColorSession(std::shared_ptr<Platform> platform);
   // clang-tidy off
   void initialize() noexcept override;
   // clang-tidy on

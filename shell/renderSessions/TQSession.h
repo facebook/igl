@@ -22,7 +22,7 @@ struct FragmentFormat {
 
 class TQSession : public RenderSession {
  public:
-  TQSession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {}
+  explicit TQSession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {}
   void initialize() noexcept override;
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
 
