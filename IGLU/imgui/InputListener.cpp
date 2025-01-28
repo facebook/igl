@@ -66,4 +66,20 @@ void InputListener::makeCurrentContext() const {
   ImGui::SetCurrentContext(_context);
 }
 
+bool InputListener::process(const igl::shell::KeyEvent& event) {
+  makeCurrentContext();
+
+  ImGuiIO& io = ImGui::GetIO();
+  io.KeysDown[event.key] = event.isDown;
+  return io.WantCaptureKeyboard;
+}
+
+bool InputListener::process(const igl::shell::CharEvent& event) {
+  makeCurrentContext();
+
+  ImGuiIO& io = ImGui::GetIO();
+  io.AddInputCharacter(event.character);
+  return io.WantTextInput;
+}
+
 } // namespace iglu::imgui

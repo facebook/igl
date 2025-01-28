@@ -9,13 +9,16 @@
 
 #include <memory>
 #include <shell/shared/input/InputDispatcher.h>
+#include <shell/shared/input/KeyListener.h>
 #include <shell/shared/input/MouseListener.h>
 
 #include "imgui.h"
 
 namespace iglu::imgui {
 
-class InputListener : public igl::shell::IMouseListener, public igl::shell::ITouchListener {
+class InputListener : public igl::shell::IMouseListener,
+                      public igl::shell::ITouchListener,
+                      public igl::shell::IKeyListener {
  public:
   explicit InputListener(ImGuiContext* context);
   ~InputListener() override = default;
@@ -25,6 +28,8 @@ class InputListener : public igl::shell::IMouseListener, public igl::shell::ITou
   bool process(const igl::shell::MouseMotionEvent& event) override;
   bool process(const igl::shell::MouseWheelEvent& event) override;
   bool process(const igl::shell::TouchEvent& event) override;
+  bool process(const igl::shell::KeyEvent& event) override;
+  bool process(const igl::shell::CharEvent& event) override;
 
  private:
   ImGuiContext* _context;
