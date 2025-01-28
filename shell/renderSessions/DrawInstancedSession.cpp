@@ -10,7 +10,6 @@
 #include "DrawInstancedSession.h"
 
 #include <igl/opengl/Device.h>
-#include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/RenderCommandEncoder.h>
 #include <shell/shared/renderSession/ShellParams.h>
 

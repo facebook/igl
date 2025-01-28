@@ -26,7 +26,7 @@ struct VertexFormat {
 
 class BindGroupSession : public RenderSession {
  public:
-  BindGroupSession(std::shared_ptr<Platform> platform);
+  explicit BindGroupSession(std::shared_ptr<Platform> platform);
   void initialize() noexcept override;
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
 
