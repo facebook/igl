@@ -11,7 +11,6 @@
 #include <igl/ComputeCommandEncoder.h>
 
 namespace igl::metal {
-class Buffer;
 
 class ComputeCommandEncoder final : public IComputeCommandEncoder {
  public:
