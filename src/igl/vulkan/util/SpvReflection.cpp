@@ -22,6 +22,8 @@ struct SpirvId {
   uint32_t binding = kNoBindingLocation;
   uint32_t dset = kNoDescriptorSet;
   TextureType type = TextureType::Invalid;
+  bool isStorageImage = false;
+  uint32_t imageFormat = SpvImageFormatUnknown;
 };
 
 struct ImageDimensionality {
@@ -150,6 +152,19 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
         const bool isArray = words[kOpTypeImageArrayed] == 1u;
         const TextureType textureType = getIGLTextureType(dim, isArray);
         ids[imageTypeId].type = textureType;
+        // The spec: https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpTypeImage
+        constexpr uint32_t kOpTypeImageSampledField = 7;
+        constexpr uint32_t kOpTypeImageFormatField = 8;
+        const uint32_t sampledValue = (instructionSize > kOpTypeImageSampledField)
+                                          ? words[kOpTypeImageSampledField]
+                                          : 0; // default if missing
+        // If sampledValue == 2, this is a storage image
+        ids[targetId].isStorageImage = sampledValue == 2;
+        if (instructionSize > kOpTypeImageFormatField) {
+          ids[targetId].imageFormat = words[kOpTypeImageFormatField];
+        } else {
+          ids[targetId].imageFormat = SpvImageFormatUnknown;
+        }
       }
       break;
     }
@@ -213,8 +228,14 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
       case SpvOpTypeStruct:
         info.buffers.push_back({id.binding, id.dset, isStorage});
         break;
-      case SpvOpTypeImage:
+      case SpvOpTypeImage: {
+        const TextureType tt = ids[ids[id.typeId].typeId].type; // dimension
+        IGL_DEBUG_ASSERT(tt != TextureType::Invalid);
+        const bool isStor = ids[ids[id.typeId].typeId].isStorageImage;
+        uint32_t imgFmt = ids[ids[id.typeId].typeId].imageFormat;
+        info.textures.push_back({id.binding, id.dset, tt, isStor, imgFmt});
         break;
+      }
       case SpvOpTypeSampler:
         break;
       case SpvOpTypeSampledImage: {
@@ -222,7 +243,7 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
         IGL_DEBUG_ASSERT(ids[ids[ids[id.typeId].typeId].typeId].opCode == SpvOpTypeImage);
         const TextureType tt = ids[ids[ids[id.typeId].typeId].typeId].type;
         IGL_DEBUG_ASSERT(tt != TextureType::Invalid);
-        info.textures.push_back({id.binding, id.dset, tt});
+        info.textures.push_back({id.binding, id.dset, tt, false, SpvImageFormatUnknown});
         break;
       }
       default:

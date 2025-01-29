@@ -21,6 +21,8 @@ struct TextureDescription {
   uint32_t bindingLocation = kNoBindingLocation;
   uint32_t descriptorSet = kNoDescriptorSet;
   TextureType type = TextureType::Invalid;
+  bool isStorageImage = false;
+  uint32_t imageFormat = 0;
 };
 
 struct BufferDescription {
