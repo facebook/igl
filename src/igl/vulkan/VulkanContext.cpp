@@ -396,6 +396,7 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
 
   pimpl_ = std::make_unique<VulkanContextImpl>();
 
+#if defined(IGL_CMAKE_BUILD)
   const auto result = volkInitialize();
 
   // Do not remove for backward compatibility with projects using global functions.
@@ -403,7 +404,7 @@ VulkanContext::VulkanContext(VulkanContextConfig config,
     IGL_LOG_ERROR("volkInitialize() failed with error code %d\n", static_cast<int>(result));
     abort();
   };
-
+#endif // IGL_CMAKE_BUILD
   vulkan::functions::initialize(*tableImpl_);
 
   glslang::initializeCompiler();
@@ -531,7 +532,9 @@ VulkanContext::~VulkanContext() {
   }
 #endif // IGL_DEBUG || defined(IGL_FORCE_ENABLE_LOGS)
 
+#if defined(IGL_CMAKE_BUILD)
   volkFinalize();
+#endif
 }
 
 void VulkanContext::createInstance(const size_t numExtraExtensions,
@@ -561,9 +564,10 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
 
   VK_ASSERT(creationErrorCode);
 
+#if defined(IGL_CMAKE_BUILD)
   // Do not remove for backward compatibility with projects using global functions.
   volkLoadInstance(vkInstance_);
-
+#endif
   vulkan::functions::loadInstanceFunctions(*tableImpl_, vkInstance_);
 
 #if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WINDOWS
@@ -776,10 +780,12 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
                       extensions_.allEnabled(VulkanExtensions::ExtensionType::Device).data(),
                       &features_.VkPhysicalDeviceFeatures2_,
                       &device));
+#if defined(IGL_CMAKE_BUILD)
   if (!config_.enableConcurrentVkDevicesSupport) {
     // Do not remove for backward compatibility with projects using global functions.
     volkLoadDevice(device);
   }
+#endif
 
   // Table functions are always bound to a device. Project using enableConcurrentVkDevicesSupport
   // should use own copy of function table bound to a device.

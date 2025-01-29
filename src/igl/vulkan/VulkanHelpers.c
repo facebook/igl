@@ -448,7 +448,7 @@ VkResult ivkCreateSurface(const struct VulkanFunctionTable* vt,
       .hinstance = GetModuleHandle(NULL),
       .hwnd = (HWND)window,
   };
-  return vkCreateWin32SurfaceKHR(instance, &ci, NULL, outSurface);
+  return vt->vkCreateWin32SurfaceKHR(instance, &ci, NULL, outSurface);
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR)
   const VkAndroidSurfaceCreateInfoKHR ci = {
       .sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
