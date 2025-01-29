@@ -368,6 +368,7 @@ using namespace igl;
     GLView* v = (GLView*)self.view;
     [v startTimer];
   }
+  [self.view.window makeFirstResponder:self];
 }
 
 - (void)viewWillDisappear {
