@@ -29,7 +29,8 @@ struct UniformBlock {
 
 class HandsOpenXRSession : public RenderSession {
  public:
-  HandsOpenXRSession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {}
+  explicit HandsOpenXRSession(std::shared_ptr<Platform> platform) :
+    RenderSession(std::move(platform)) {}
   void initialize() noexcept override;
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
 

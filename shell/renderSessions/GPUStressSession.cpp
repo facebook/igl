@@ -22,11 +22,11 @@
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/GLIncludes.h>
+#include <math.h>
 #include <memory>
 #include <random>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/AppParams.h>
-#include <shell/shared/renderSession/QuadLayerParams.h>
 #include <shell/shared/renderSession/ShellParams.h>
 
 static uint32_t arc4random_() {
@@ -547,7 +547,7 @@ void GPUStressSession::createCubes() {
 
   // Vertex buffer, Index buffer and Vertex Input
   for (int i = 1; i < kCubeCount; i++) {
-    float x, y, z;
+    float x = NAN, y = NAN, z = NAN;
     getOffset(i, x, y, z);
     glm::vec4 color(1.0, 1.0, 1.0, 1.f);
     color[0] = (dis(gen));
@@ -921,7 +921,7 @@ void GPUStressSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
   // setup UI
   const ImGuiViewport* v = ImGui::GetMainViewport();
   imguiSession_->beginFrame(framebufferDesc, getPlatform().getDisplayContext().pixelsPerPoint);
-  bool open;
+  bool open = false;
   ImGui::SetNextWindowPos(
       {
           v->WorkPos.x + v->WorkSize.x - 60.0f,

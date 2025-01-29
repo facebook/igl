@@ -29,7 +29,7 @@ struct VertexFormat {
 
 class GPUStressSession : public RenderSession {
  public:
-  GPUStressSession(std::shared_ptr<Platform> platform) :
+  explicit GPUStressSession(std::shared_ptr<Platform> platform) :
     RenderSession(std::move(platform)), fps_(false) {}
   void initialize() noexcept override;
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
@@ -52,23 +52,23 @@ class GPUStressSession : public RenderSession {
   void setDropFrameCount(int numberOfFramesToDrop);
   void setRotateCubes(bool rotate);
 
-  int getNumThreads() const;
-  bool getThrashMemory() const;
-  size_t getMemorySize() const;
-  size_t getMemoryReads() const;
-  size_t getMemoryWrites() const;
-  bool getGoSlowOnCpu() const;
-  int getCubeCount() const;
-  int getDrawCount() const;
-  bool getTestOverdraw() const;
-  bool getEnableBlending() const;
-  bool getUseMSAA() const;
-  int getLightCount() const;
-  std::vector<int> getThreadsCores() const;
-  std::string getCurrentUsageString() const;
-  int getDropFrameInterval() const;
-  int getDropFrameCount() const;
-  bool getRotateCubes() const;
+  [[nodiscard]] int getNumThreads() const;
+  [[nodiscard]] bool getThrashMemory() const;
+  [[nodiscard]] size_t getMemorySize() const;
+  [[nodiscard]] size_t getMemoryReads() const;
+  [[nodiscard]] size_t getMemoryWrites() const;
+  [[nodiscard]] bool getGoSlowOnCpu() const;
+  [[nodiscard]] int getCubeCount() const;
+  [[nodiscard]] int getDrawCount() const;
+  [[nodiscard]] bool getTestOverdraw() const;
+  [[nodiscard]] bool getEnableBlending() const;
+  [[nodiscard]] bool getUseMSAA() const;
+  [[nodiscard]] int getLightCount() const;
+  [[nodiscard]] std::vector<int> getThreadsCores() const;
+  [[nodiscard]] std::string getCurrentUsageString() const;
+  [[nodiscard]] int getDropFrameInterval() const;
+  [[nodiscard]] int getDropFrameCount() const;
+  [[nodiscard]] bool getRotateCubes() const;
 
  private:
   std::shared_ptr<ICommandQueue> commandQueue_;
