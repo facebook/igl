@@ -8,7 +8,6 @@
 #include <igl/opengl/VertexInputState.h>
 
 #include <cstdlib>
-#include <igl/opengl/CommandBuffer.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/Errors.h>
 #include <string>

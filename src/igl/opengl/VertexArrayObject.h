@@ -14,7 +14,6 @@
 namespace igl {
 class ICommandBuffer;
 namespace opengl {
-class IContext;
 
 class VertexArrayObject final : public WithContext {
   friend class Device;
