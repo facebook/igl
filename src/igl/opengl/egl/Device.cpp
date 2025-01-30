@@ -8,9 +8,7 @@
 #include <igl/opengl/egl/Device.h>
 
 #include <EGL/eglplatform.h>
-#include <cstdio>
 #include <cstring>
-#include <igl/Common.h>
 #include <igl/opengl/Errors.h>
 #include <igl/opengl/egl/Context.h>
 
