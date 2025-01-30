@@ -20,7 +20,6 @@ namespace igl::vulkan {
 
 class VulkanContext;
 class VulkanSemaphore;
-class VulktanTexture;
 
 class VulkanSwapchain final {
  public:
