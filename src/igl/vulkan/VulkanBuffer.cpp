@@ -113,6 +113,8 @@ VulkanBuffer::VulkanBuffer(const VulkanContext& ctx,
 VulkanBuffer::~VulkanBuffer() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
 
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
+
   if (IGL_VULKAN_USE_VMA) {
     if (mappedPtr_) {
       vmaUnmapMemory((VmaAllocator)ctx_.getVmaAllocator(), vmaAllocation_);

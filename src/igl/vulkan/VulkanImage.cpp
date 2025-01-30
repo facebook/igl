@@ -810,6 +810,8 @@ void VulkanImage::destroy() {
     return;
   }
 
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
+
   if (!isExternallyManaged_) {
     if (vkMemory_[1] == VK_NULL_HANDLE) {
       if (vmaAllocation_) {

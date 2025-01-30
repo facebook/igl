@@ -93,15 +93,19 @@ VulkanImageView& VulkanImageView::operator=(VulkanImageView&& other) noexcept {
 }
 
 void VulkanImageView::destroy() {
-  if (valid()) {
-    ctx_->deferredTask(std::packaged_task<void()>(
-        [vf = &ctx_->vf_, device = ctx_->getVkDevice(), imageView = vkImageView_]() {
-          vf->vkDestroyImageView(device, imageView, nullptr);
-        }));
-
-    vkImageView_ = VK_NULL_HANDLE;
-    ctx_ = nullptr;
+  if (!valid()) {
+    return;
   }
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
+
+  ctx_->deferredTask(std::packaged_task<void()>(
+      [vf = &ctx_->vf_, device = ctx_->getVkDevice(), imageView = vkImageView_]() {
+        vf->vkDestroyImageView(device, imageView, nullptr);
+      }));
+
+  vkImageView_ = VK_NULL_HANDLE;
+  ctx_ = nullptr;
 }
 
 } // namespace igl::vulkan
