@@ -12,8 +12,6 @@
 
 namespace igl::metal {
 
-class CommandQueue;
-
 class DeviceStatistics {
  public:
   [[nodiscard]] size_t getDrawCount() const noexcept;
