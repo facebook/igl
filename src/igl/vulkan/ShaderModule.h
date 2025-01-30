@@ -13,7 +13,6 @@
 
 namespace igl::vulkan {
 
-class Device;
 class VulkanShaderModule;
 
 /// @brief Implements the igl::IShaderModule interface
