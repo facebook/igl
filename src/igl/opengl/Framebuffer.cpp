@@ -476,7 +476,7 @@ void CustomFramebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
 
 void CustomFramebuffer::updateResolveAttachment(std::shared_ptr<ITexture> texture) {
   if (resolveFramebuffer) {
-    resolveFramebuffer->updateDrawable(texture);
+    resolveFramebuffer->updateDrawable(std::move(texture));
   }
 }
 

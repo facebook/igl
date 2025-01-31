@@ -139,7 +139,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(
     return nullptr;
   }
   if (auto resourceTracker = owner_.getResourceTracker()) {
-    texture->initResourceTracker(resourceTracker);
+    texture->initResourceTracker(std::move(resourceTracker));
   }
 
   return texture;

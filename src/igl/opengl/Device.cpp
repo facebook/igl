@@ -224,7 +224,7 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
                                                                    Result* outResult) const {
   Result res;
   auto resource = std::make_shared<RenderPipelineState>(getContext(), desc, &res);
-  return verifyResult(resource, res, outResult);
+  return verifyResult(std::move(resource), res, outResult);
 }
 
 std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
@@ -258,7 +258,7 @@ std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc
   // The second instance is so it also gets passed to the ShaderStages constructor.
   auto stages = createUniqueResource<ShaderStages>(desc, outResult, desc, getContext());
   if (auto resourceTracker = getResourceTracker(); stages && resourceTracker) {
-    stages->initResourceTracker(resourceTracker, desc.debugName);
+    stages->initResourceTracker(std::move(resourceTracker), desc.debugName);
   }
   return stages;
 }
