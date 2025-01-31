@@ -283,6 +283,7 @@ std::vector<std::pair<TextureFormat, bool>> TextureFormatTestBase::getFormatSupp
   formatSupport.emplace_back(checkSupport(TextureFormat::RGB10_A2_Uint_Rev, usage));
   formatSupport.emplace_back(checkSupport(TextureFormat::BGR10_A2_Unorm, usage));
   formatSupport.emplace_back(checkSupport(TextureFormat::R_F32, usage));
+  formatSupport.emplace_back(checkSupport(TextureFormat::R_UInt32, usage));
   formatSupport.emplace_back(checkSupport(TextureFormat::RGB_F16, usage));
   formatSupport.emplace_back(checkSupport(TextureFormat::RGBA_F16, usage));
   formatSupport.emplace_back(checkSupport(TextureFormat::RG_F32, usage));

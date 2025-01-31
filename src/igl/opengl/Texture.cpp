@@ -586,6 +586,12 @@ bool Texture::toFormatDescGL(const IContext& ctx,
     }
     return true;
 
+  case TextureFormat::R_UInt32:
+    internalFormat = GL_R32UI;
+    format = GL_RED_INTEGER;
+    type = GL_UNSIGNED_INT;
+    return true;
+
   case TextureFormat::R_UInt16:
     internalFormat = GL_R16UI;
     format = GL_RED_INTEGER;

@@ -169,6 +169,8 @@ VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
     return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
   case TextureFormat::R_F32:
     return VK_FORMAT_R32_SFLOAT;
+  case TextureFormat::R_UInt32:
+    return VK_FORMAT_R32_UINT;
   case TextureFormat::RG_F32:
     return VK_FORMAT_R32G32_SFLOAT;
   case TextureFormat::RGB_F16:

@@ -248,6 +248,7 @@ TEST_F(TextureMTLTest, ConvertTextureFormats) {
       TextureFormat::RGB10_A2_Uint_Rev,
       TextureFormat::BGR10_A2_Unorm,
       TextureFormat::R_F32,
+      TextureFormat::R_UInt32,
       TextureFormat::RG_F32,
       TextureFormat::RGBA_F16,
       TextureFormat::RGBA_UInt32,

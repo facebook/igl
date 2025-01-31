@@ -1344,6 +1344,11 @@ ICapabilities::TextureFormatCapabilities DeviceFeatureSet::getTextureFormatCapab
       capabilities |= sampled | storage | attachment;
     }
     break;
+  case TextureFormat::R_UInt32:
+    if (hasTextureFeature(TextureFeatures::TextureInteger)) {
+      capabilities |= sampled | storage | attachment | sampledAttachment;
+    }
+    break;
   case TextureFormat::RGBA_UInt32:
     if (hasTextureFeature(TextureFeatures::TextureInteger)) {
       capabilities |= sampled | storage | attachment | sampledAttachment;

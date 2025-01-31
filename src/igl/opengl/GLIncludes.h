@@ -559,6 +559,9 @@
 #ifndef GL_R32F
 #define GL_R32F 0x822E
 #endif
+#ifndef GL_R32UI
+#define GL_R32UI 0x8236
+#endif
 #ifndef GL_R8
 #define GL_R8 0x8229
 #endif

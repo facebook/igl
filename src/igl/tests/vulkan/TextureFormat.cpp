@@ -76,6 +76,7 @@ TEST(TextureFormatUtilTest, textureFormatToVkFormat) {
   ASSERT_EQ(textureFormatToVkFormat(igl::TextureFormat::BGR10_A2_Unorm),
             VK_FORMAT_A2B10G10R10_UNORM_PACK32);
   ASSERT_EQ(textureFormatToVkFormat(igl::TextureFormat::R_F32), VK_FORMAT_R32_SFLOAT);
+  ASSERT_EQ(textureFormatToVkFormat(igl::TextureFormat::R_UInt32), VK_FORMAT_R32_UINT);
   ASSERT_EQ(textureFormatToVkFormat(igl::TextureFormat::RG_F32), VK_FORMAT_R32G32_SFLOAT);
   ASSERT_EQ(textureFormatToVkFormat(igl::TextureFormat::RGB_F16), VK_FORMAT_R16G16B16_SFLOAT);
   ASSERT_EQ(textureFormatToVkFormat(igl::TextureFormat::RGBA_F16), VK_FORMAT_R16G16B16A16_SFLOAT);
@@ -242,6 +243,8 @@ TEST(TextureFormatUtilTest, vkTextureFormatToTextureFormat) {
             igl::TextureFormat::BGR10_A2_Unorm);
 
   ASSERT_EQ(util::vkTextureFormatToTextureFormat(VK_FORMAT_R32_SFLOAT), igl::TextureFormat::R_F32);
+
+  ASSERT_EQ(util::vkTextureFormatToTextureFormat(VK_FORMAT_R32_UINT), igl::TextureFormat::R_UInt32);
 
   ASSERT_EQ(util::vkTextureFormatToTextureFormat(VK_FORMAT_R32G32_SFLOAT),
             igl::TextureFormat::RG_F32);

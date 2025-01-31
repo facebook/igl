@@ -78,6 +78,7 @@ namespace igl::opengl::util {
 #define GL_R16 0x822A
 #define GL_R16F 0x822D
 #define GL_R16UI 0x8234
+#define GL_R32UI 0x8236
 #define GL_R32F 0x822E
 #define GL_RED 0x1903
 #define GL_RG 0x8227
@@ -373,6 +374,9 @@ TextureFormat glTextureFormatToTextureFormat(int32_t glInternalFormat,
 
   case GL_R16UI:
     return TextureFormat::R_UInt16;
+
+  case GL_R32UI:
+    return TextureFormat::R_UInt32;
 
   case GL_RG16:
     return TextureFormat::RG_UNorm16;

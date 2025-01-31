@@ -211,6 +211,7 @@ TEST_F(TextureOGLTest, TextureFormats) {
       TextureFormatData{GL_R16UI, 0, 0, TextureFormat::R_UInt16},
       TextureFormatData{GL_R16, 0, 0, TextureFormat::R_UNorm16},
       TextureFormatData{GL_R32F, 0, 0, TextureFormat::R_F32},
+      TextureFormatData{GL_R32UI, 0, 0, TextureFormat::R_UInt32},
       TextureFormatData{GL_RG16F, 0, 0, TextureFormat::RG_F16},
       TextureFormatData{GL_RG16, 0, 0, TextureFormat::RG_UNorm16},
       TextureFormatData{GL_RG16UI, 0, 0, TextureFormat::RG_UInt16},
