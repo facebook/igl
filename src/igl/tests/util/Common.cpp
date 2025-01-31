@@ -97,6 +97,8 @@ void createSimpleShaderStages(const std::shared_ptr<IDevice>& dev,
       shader = igl::tests::data::shader::MTL_SIMPLE_SHADER_USHORT4;
     } else if (outputFormat == TextureFormat::RGBA_UInt32) {
       shader = igl::tests::data::shader::MTL_SIMPLE_SHADER_UINT4;
+    } else if (outputFormat == TextureFormat::R_UInt32) {
+      shader = igl::tests::data::shader::MTL_SIMPLE_SHADER_UINT;
     } else if (outputFormat != TextureFormat::Invalid) {
       auto components = TextureFormatProperties::fromTextureFormat(outputFormat).componentsPerPixel;
       switch (components) {
@@ -133,6 +135,8 @@ void createSimpleShaderStages(const std::shared_ptr<IDevice>& dev,
       fragShader = igl::tests::data::shader::VULKAN_SIMPLE_FRAG_SHADER_UINT4;
     } else if (outputFormat == TextureFormat::RGBA_UInt32) {
       fragShader = igl::tests::data::shader::VULKAN_SIMPLE_FRAG_SHADER_UINT4;
+    } else if (outputFormat == TextureFormat::R_UInt32) {
+      fragShader = igl::tests::data::shader::VULKAN_SIMPLE_FRAG_SHADER_UINT;
     } else if (outputFormat != TextureFormat::Invalid) {
       auto components = TextureFormatProperties::fromTextureFormat(outputFormat).componentsPerPixel;
       switch (components) {

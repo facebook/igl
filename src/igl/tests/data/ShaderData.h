@@ -301,6 +301,7 @@ const char MTL_SIMPLE_SHADER_USHORT[] = MTL_SIMPLE_SHADER_DEF(ushort, r);
 const char MTL_SIMPLE_SHADER_USHORT2[] = MTL_SIMPLE_SHADER_DEF(ushort2, rg);
 const char MTL_SIMPLE_SHADER_USHORT4[] = MTL_SIMPLE_SHADER_DEF(ushort4, rgba);
 const char MTL_SIMPLE_SHADER_UINT4[] = MTL_SIMPLE_SHADER_DEF(uint4, rgba);
+const char MTL_SIMPLE_SHADER_UINT[] = MTL_SIMPLE_SHADER_DEF(uint4, r);
 const char MTL_SIMPLE_SHADER[] = MTL_SIMPLE_SHADER_DEF(float4, rgba);
 
 // Simple Metal Shader for 1D Texture
