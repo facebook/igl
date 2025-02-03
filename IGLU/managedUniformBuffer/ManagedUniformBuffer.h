@@ -40,7 +40,7 @@ class ManagedUniformBuffer {
 
   void* getData();
 
-  void buildUnifromLUT();
+  void buildUniformLUT();
 
  private:
   size_t getUniformDataSizeInternal(igl::UniformDesc& uniform);

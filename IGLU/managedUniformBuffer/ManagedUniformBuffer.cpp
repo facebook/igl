@@ -182,7 +182,7 @@ void* ManagedUniformBuffer::getData() {
   return data_;
 }
 
-void ManagedUniformBuffer::buildUnifromLUT() {
+void ManagedUniformBuffer::buildUniformLUT() {
   uniformLUT_ = std::make_unique<std::unordered_map<std::string, size_t>>();
   for (size_t i = 0; i < uniformInfo.uniforms.size(); ++i) {
     auto& uniform = uniformInfo.uniforms[i];

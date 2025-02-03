@@ -49,7 +49,7 @@ TEST_F(ManagedUniformBufferTest, UpdateData) {
                                       {0, 10, {{"myUniform", 0, UniformType::Float, 1, 0, 0}}});
     float data = 1000.0f;
 
-    buffer.buildUnifromLUT();
+    buffer.buildUniformLUT();
     buffer.updateData("myUniform", &data, sizeof(float));
     EXPECT_TRUE(*static_cast<float*>(buffer.getData()) == data);
   }
