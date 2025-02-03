@@ -267,6 +267,7 @@ void RenderPipelineState::unbind() {
 // A buffer can be shared by multiple attributes. So bind all the attributes
 // associated with the associated buffer.
 // bufferOffset is an offset in bytes to the start of the vertex attributes in the buffer.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void RenderPipelineState::bindVertexAttributes(size_t bufferIndex, size_t bufferOffset) {
 #if IGL_VERIFY_ENABLED
   static GLint sMaxNumVertexAttribs = 0;

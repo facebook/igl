@@ -18,10 +18,12 @@ namespace igl::opengl {
 //
 // A utility function to convert an IGL attribute to an OGL attribute
 //
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 static void toOGLAttribute(const VertexAttribute& attrib,
                            GLint& numComponents,
                            GLenum& componentType,
                            GLboolean& normalized) {
+  // NOLINTEND(bugprone-easily-swappable-parameters)
   switch (attrib.format) {
   case VertexAttributeFormat::Float1:
     numComponents = 1;

@@ -77,6 +77,7 @@ std::pair<uint32_t, uint32_t> constrainVersion(uint32_t majorVersion, uint32_t m
   }
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 GLVersion getGLVersionEnum(uint32_t majorVersion, uint32_t minorVersion) {
 #if IGL_OPENGL_ES
   switch (majorVersion) {

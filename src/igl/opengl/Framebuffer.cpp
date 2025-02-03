@@ -400,17 +400,21 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& /*cmdQueue*/,
                                  static_cast<GLsizei>(range.height));
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 bool Framebuffer::CachedState::needsUpdate(FramebufferMode mode,
                                            uint8_t layer,
                                            uint8_t face,
                                            uint8_t mipLevel) {
+  // NOLINTEND(bugprone-easily-swappable-parameters)
   return mode_ != mode || layer_ != layer || face_ != face || mipLevel_ != mipLevel;
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 void Framebuffer::CachedState::updateCache(FramebufferMode mode,
                                            uint8_t layer,
                                            uint8_t face,
                                            uint8_t mipLevel) {
+  // NOLINTEND(bugprone-easily-swappable-parameters)
   mode_ = mode;
   layer_ = layer;
   face_ = face;

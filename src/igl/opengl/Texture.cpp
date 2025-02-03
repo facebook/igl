@@ -100,7 +100,7 @@ Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
 //
 // openGL only uses alignment instead of stride when reading/writing pixels so it will not support
 // padding that is not 8, 4, 2, or 1 byte aligned to the actual pixel data
-
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 GLint Texture::getAlignment(uint32_t stride, uint32_t mipLevel, uint32_t widthAtMipLevel) const {
   IGL_DEBUG_ASSERT(mipLevel < numMipLevels_);
 

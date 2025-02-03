@@ -33,6 +33,7 @@ std::shared_ptr<Framebuffer> PlatformDevice::createCurrentFramebuffer() const {
   return resource;
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 std::unique_ptr<TextureBufferExternal> PlatformDevice::createTextureBufferExternal(
     GLuint textureID,
     GLenum target,
@@ -41,6 +42,7 @@ std::unique_ptr<TextureBufferExternal> PlatformDevice::createTextureBufferExtern
     GLsizei height,
     TextureFormat format,
     GLsizei numLayers) const {
+  // NOLINTEND(bugprone-easily-swappable-parameters)
   auto textureBuffer = std::make_unique<TextureBufferExternal>(getContext(), format, usage);
   textureBuffer->setTextureBufferProperties(textureID, target);
   textureBuffer->setTextureProperties(width, height, numLayers);

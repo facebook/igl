@@ -21,9 +21,11 @@ class Buffer : public WithContext, public IBuffer {
  public:
   enum class Type : uint8_t { Attribute, Uniform, UniformBlock };
 
+  // NOLINTBEGIN(bugprone-easily-swappable-parameters)
   Buffer(IContext& context,
          BufferDesc::BufferAPIHint requestedApiHints,
          BufferDesc::BufferType bufferType) :
+    // NOLINTEND(bugprone-easily-swappable-parameters)
     WithContext(context), requestedApiHints_(requestedApiHints), bufferType_(bufferType) {}
   [[nodiscard]] uint64_t gpuAddress(size_t /*offset*/) const override {
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();

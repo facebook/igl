@@ -317,9 +317,11 @@ void RenderCommandEncoder::bindPushConstants(const void* /*data*/,
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 void RenderCommandEncoder::bindSamplerState(size_t index,
                                             uint8_t bindTarget,
                                             ISamplerState* samplerState) {
+  // NOLINTEND(bugprone-easily-swappable-parameters)
   if (IGL_DEBUG_VERIFY(adapter_)) {
     if ((bindTarget & BindTarget::kVertex) != 0) {
       adapter_->setVertexSamplerState(samplerState, index);
@@ -330,6 +332,7 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
   }
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void RenderCommandEncoder::bindTexture(size_t index, uint8_t bindTarget, ITexture* texture) {
   if (IGL_DEBUG_VERIFY(adapter_)) {
     if ((bindTarget & BindTarget::kVertex) != 0) {
@@ -345,10 +348,12 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
   bindTexture(index, igl::BindTarget::kFragment, texture);
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 void RenderCommandEncoder::draw(size_t vertexCount,
                                 uint32_t instanceCount,
                                 uint32_t firstVertex,
                                 uint32_t baseInstance) {
+  // NOLINTEND(bugprone-easily-swappable-parameters)
   (void)baseInstance;
 
   IGL_DEBUG_ASSERT(baseInstance == 0, "Instancing is not implemented");
@@ -365,11 +370,13 @@ void RenderCommandEncoder::draw(size_t vertexCount,
   }
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 void RenderCommandEncoder::drawIndexed(size_t indexCount,
                                        uint32_t instanceCount,
                                        uint32_t firstIndex,
                                        int32_t vertexOffset,
                                        uint32_t baseInstance) {
+  // NOLINTEND(bugprone-easily-swappable-parameters)
   (void)vertexOffset;
   (void)baseInstance;
 
@@ -395,10 +402,12 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   }
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
                                              size_t indirectBufferOffset,
                                              uint32_t drawCount,
                                              uint32_t stride) {
+  // NOLINTEND(bugprone-easily-swappable-parameters)
   if (IGL_DEBUG_VERIFY(adapter_)) {
     getCommandBuffer().incrementCurrentDrawCount();
     const auto mode = toGlPrimitive(adapter_->pipelineState().getRenderPipelineDesc().topology);
@@ -410,10 +419,12 @@ void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
   }
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
                                                     size_t indirectBufferOffset,
                                                     uint32_t drawCount,
                                                     uint32_t stride) {
+  // NOLINTEND(bugprone-easily-swappable-parameters)
   IGL_DEBUG_ASSERT(indexType_, "No index buffer bound");
 
   // TODO: use glMultiDrawElementsIndirect() when available

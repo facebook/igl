@@ -114,9 +114,11 @@ namespace igl::opengl::util {
 #define GL_UNSIGNED_SHORT_8_8_APPLE 0x85BA
 #define GL_UNSIGNED_SHORT_8_8_REV_APPLE 0x85BB
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 TextureFormat glTextureFormatToTextureFormat(int32_t glInternalFormat,
                                              uint32_t glFormat,
                                              uint32_t glType) {
+  // NOLINTEND(bugprone-easily-swappable-parameters)
   switch (glInternalFormat) {
   case GL_COMPRESSED_RGBA_ASTC_4x4_KHR:
     return TextureFormat::RGBA_ASTC_4x4;

@@ -22,6 +22,7 @@ class RenderPipelineReflection final : public IRenderPipelineReflection {
     GLint location;
     GLenum type;
 
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     UniformDesc(GLsizei s, GLint loc, GLenum t) : size(s), location(loc), type(t) {}
   };
 

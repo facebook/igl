@@ -71,11 +71,13 @@ class TextureBufferBaseMock : public igl::opengl::TextureBufferBase {
     return num_samples;
   }
 
+  // NOLINTBEGIN(bugprone-easily-swappable-parameters)
   bool getFormatDetails(TextureFormat textureFormat,
                         igl::TextureDesc::TextureUsage usage,
                         GLint& internalFormat,
                         GLenum& format,
                         GLenum& type) const {
+    // NOLINTEND(bugprone-easily-swappable-parameters)
     FormatDescGL formatGL;
     const auto result = toFormatDescGL(textureFormat, usage, formatGL);
     internalFormat = formatGL.internalFormat;

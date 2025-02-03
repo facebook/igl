@@ -189,12 +189,14 @@ void UniformBuffer::bindUniform(IContext& context,
   }
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 void UniformBuffer::bindUniformArray(IContext& context,
                                      GLint shaderLocation,
                                      UniformType uniformType,
                                      const uint8_t* start,
                                      size_t numElements,
                                      size_t stride) {
+  // NOLINTEND(bugprone-easily-swappable-parameters)
   const size_t packedSize = igl::sizeForUniformType(uniformType);
   size_t primitivesPerElement = 0;
   UniformBaseType baseType;

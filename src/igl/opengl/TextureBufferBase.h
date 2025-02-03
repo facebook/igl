@@ -46,6 +46,7 @@ class TextureBufferBase : public Texture {
   }
 
  protected:
+  // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
   IGL_INLINE void setTextureBufferProperties(GLuint textureID, GLenum target) {
     textureID_ = textureID;
     target_ = target;
