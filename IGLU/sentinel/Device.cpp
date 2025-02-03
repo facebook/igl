@@ -132,7 +132,6 @@ bool Device::verifyScope() {
 }
 
 igl::BackendType Device::getBackendType() const {
-  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
   return igl::BackendType::Invalid;
 }
 
