@@ -42,6 +42,8 @@ class ManagedUniformBuffer {
 
   void buildUniformLUT();
 
+  int getIndex(const char* name) const;
+
  private:
   size_t getUniformDataSizeInternal(igl::UniformDesc& uniform);
   void* data_ = nullptr;
