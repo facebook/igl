@@ -21,7 +21,12 @@ struct TextureDescription {
   uint32_t bindingLocation = kNoBindingLocation;
   uint32_t descriptorSet = kNoDescriptorSet;
   TextureType type = TextureType::Invalid;
-  bool isStorageImage = false;
+};
+
+struct ImageDescription {
+  uint32_t bindingLocation = kNoBindingLocation;
+  uint32_t descriptorSet = kNoDescriptorSet;
+  TextureType type = TextureType::Invalid;
   uint32_t imageFormat = 0;
 };
 
@@ -34,6 +39,7 @@ struct BufferDescription {
 struct SpvModuleInfo {
   std::vector<BufferDescription> buffers;
   std::vector<TextureDescription> textures;
+  std::vector<ImageDescription> images;
   bool hasPushConstants = false;
   uint32_t usageMaskBuffers = 0;
   uint32_t usageMaskTextures = 0;

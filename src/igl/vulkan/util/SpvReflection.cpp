@@ -231,9 +231,13 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
       case SpvOpTypeImage: {
         const TextureType tt = ids[ids[id.typeId].typeId].type; // dimension
         IGL_DEBUG_ASSERT(tt != TextureType::Invalid);
-        const bool isStor = ids[ids[id.typeId].typeId].isStorageImage;
-        uint32_t imgFmt = ids[ids[id.typeId].typeId].imageFormat;
-        info.textures.push_back({id.binding, id.dset, tt, isStor, imgFmt});
+        const bool isStorageImage = ids[ids[id.typeId].typeId].isStorageImage;
+        if (isStorageImage) {
+          uint32_t imgFmt = ids[ids[id.typeId].typeId].imageFormat;
+          info.images.push_back({id.binding, id.dset, tt, imgFmt});
+        } else {
+          info.textures.push_back({id.binding, id.dset, tt});
+        }
         break;
       }
       case SpvOpTypeSampler:
@@ -243,7 +247,7 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
         IGL_DEBUG_ASSERT(ids[ids[ids[id.typeId].typeId].typeId].opCode == SpvOpTypeImage);
         const TextureType tt = ids[ids[ids[id.typeId].typeId].typeId].type;
         IGL_DEBUG_ASSERT(tt != TextureType::Invalid);
-        info.textures.push_back({id.binding, id.dset, tt, false, SpvImageFormatUnknown});
+        info.textures.push_back({id.binding, id.dset, tt});
         break;
       }
       default:
