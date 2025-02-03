@@ -256,6 +256,11 @@ VkFormat Texture::getVkFormat() const {
   return texture_ ? texture_->image_.imageFormat_ : VK_FORMAT_UNDEFINED;
 }
 
+VkImageUsageFlags Texture::getVkUsageFlags() const {
+  IGL_DEBUG_ASSERT(texture_);
+  return texture_ ? texture_->image_.getVkImageUsageFlags() : 0;
+}
+
 uint32_t Texture::getVkExtendedFormat() const {
   IGL_DEBUG_ASSERT(texture_);
   return texture_ ? texture_->image_.extendedFormat_ : 0;

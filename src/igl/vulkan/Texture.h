@@ -55,6 +55,7 @@ class Texture : public ITexture {
   bool isSwapchainTexture() const override;
   VkFormat getVkFormat() const;
   uint32_t getVkExtendedFormat() const;
+  VkImageUsageFlags getVkUsageFlags() const;
 
   VkImageView getVkImageView() const;
 
