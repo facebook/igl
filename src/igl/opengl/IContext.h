@@ -460,11 +460,11 @@ class IContext {
    * When doing so, use the functions below to signal such references so we can at least throw an
    * error when those references become invalid.
    */
-  // @fb-only
+  // @fb-only: 
   bool addRef();
   bool releaseRef();
 
-  // @fb-only
+  // @fb-only: 
   /**
    * The goal here is to try to check whether 'this' is a valid object and not a zombie. Ideally,
    * this should be handled elsewhere, but until we solve that more difficult problem we can at
@@ -498,8 +498,8 @@ class IContext {
   void enableAutomaticErrorCheck(bool enable);
 
   // Manages an adapter pool as recreating this every frame causes unwanted memory allocations.
-  // @fb-only
-  // @fb-only
+  // @fb-only: 
+  // @fb-only: 
   auto& getAdapterPool() {
     return renderAdapterPool_;
   }

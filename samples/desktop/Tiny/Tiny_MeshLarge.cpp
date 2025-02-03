@@ -14,7 +14,7 @@
  *
  */
 
-// @fb-only
+// @fb-only: 
 
 #if !defined(_USE_MATH_DEFINES)
 #define _USE_MATH_DEFINES
@@ -112,21 +112,21 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-// @fb-only
+// @fb-only: 
 
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
 
 #if IGL_WITH_IGLU
 #include <IGLU/imgui/Session.h>
@@ -641,9 +641,9 @@ void main() {
 }
 )";
 
-// @fb-only
-// @fb-only
-// @fb-only
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
 
 using namespace igl;
 using glm::mat4;
@@ -1001,10 +1001,10 @@ void initIGL() {
       IGL_DEBUG_ASSERT(device_);
     }
   }
-// @fb-only
-  // @fb-only
-      // @fb-only
-// @fb-only
+// @fb-only: 
+  // @fb-only: 
+      // @fb-only: 
+// @fb-only: 
 
   {
     const TextureDesc desc = TextureDesc::new2D(igl::TextureFormat::RGBA_UNorm8,
@@ -1467,49 +1467,49 @@ void createRenderPipelines() {
 
     desc.vertexInputState = vertexInput0_;
 
-// @fb-only
-    // @fb-only
-      // @fb-only
-          // @fb-only
-           // @fb-only
-           // @fb-only
-           // @fb-only
-      // @fb-only
-      // @fb-only
-          // @fb-only
-          // @fb-only
-          // @fb-only
-          // @fb-only
-          // @fb-only
-          // @fb-only
-      // @fb-only
-      // @fb-only
-          // @fb-only
-           // @fb-only
-           // @fb-only
-           // @fb-only
-      // @fb-only
-          // @fb-only
-          // @fb-only
-          // @fb-only
-          // @fb-only
-          // @fb-only
-          // @fb-only
-      // @fb-only
-      // @fb-only
-          // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-              // @fb-only
-    // @fb-only
-// @fb-only
+// @fb-only: 
+    // @fb-only: 
+      // @fb-only: 
+          // @fb-only: 
+           // @fb-only: 
+           // @fb-only: 
+           // @fb-only: 
+      // @fb-only: 
+      // @fb-only: 
+          // @fb-only: 
+          // @fb-only: 
+          // @fb-only: 
+          // @fb-only: 
+          // @fb-only: 
+          // @fb-only: 
+      // @fb-only: 
+      // @fb-only: 
+          // @fb-only: 
+           // @fb-only: 
+           // @fb-only: 
+           // @fb-only: 
+      // @fb-only: 
+          // @fb-only: 
+          // @fb-only: 
+          // @fb-only: 
+          // @fb-only: 
+          // @fb-only: 
+          // @fb-only: 
+      // @fb-only: 
+      // @fb-only: 
+          // @fb-only: 
+              // @fb-only: 
+              // @fb-only: 
+              // @fb-only: 
+              // @fb-only: 
+              // @fb-only: 
+              // @fb-only: 
+              // @fb-only: 
+              // @fb-only: 
+              // @fb-only: 
+              // @fb-only: 
+    // @fb-only: 
+// @fb-only: 
 #if USE_OPENGL_BACKEND
     std::string vsCode = std::string("#version 460") + kCodeVS;
     kCodeVS = vsCode.c_str();
@@ -1524,7 +1524,7 @@ void createRenderPipelines() {
                                                                    "main",
                                                                    "Shader Module: main (frag)",
                                                                    nullptr);
-// @fb-only
+// @fb-only: 
 #if USE_OPENGL_BACKEND
     desc.uniformBlockBindingMap.emplace(
         0,
@@ -1659,47 +1659,47 @@ void createRenderPipelineSkybox() {
     desc.targetDesc.depthAttachmentFormat = fbMain_->getDepthAttachment()->getFormat();
   }
 
-// @fb-only
-  // @fb-only
-    // @fb-only
-        // @fb-only
-         // @fb-only
-         // @fb-only
-    // @fb-only
-    // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-    // @fb-only
-    // @fb-only
-        // @fb-only
-            // @fb-only
-             // @fb-only
-    // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-    // @fb-only
-    // @fb-only
-        // @fb-only
-            // @fb-only
-            // @fb-only
-            // @fb-only
-            // @fb-only
-            // @fb-only
-            // @fb-only
-            // @fb-only
-            // @fb-only
-            // @fb-only
-            // @fb-only
-  // @fb-only
-// @fb-only
+// @fb-only: 
+  // @fb-only: 
+    // @fb-only: 
+        // @fb-only: 
+         // @fb-only: 
+         // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+        // @fb-only: 
+            // @fb-only: 
+             // @fb-only: 
+    // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+        // @fb-only: 
+            // @fb-only: 
+            // @fb-only: 
+            // @fb-only: 
+            // @fb-only: 
+            // @fb-only: 
+            // @fb-only: 
+            // @fb-only: 
+            // @fb-only: 
+            // @fb-only: 
+            // @fb-only: 
+  // @fb-only: 
+// @fb-only: 
 #if USE_OPENGL_BACKEND
   std::string vsCode = std::string("#version 460") + kSkyboxVS;
   stringReplaceAll(vsCode, "gl_VertexIndex", "gl_VertexID");
@@ -1715,7 +1715,7 @@ void createRenderPipelineSkybox() {
                                                                  "main",
                                                                  "Shader Module: skybox (frag)",
                                                                  nullptr);
-// @fb-only
+// @fb-only: 
 #if USE_OPENGL_BACKEND
   size_t bindingPoint = 0;
   desc.uniformBlockBindingMap[bindingPoint++].emplace_back(
@@ -2583,7 +2583,7 @@ int main(int /*argc*/, char* /*argv*/[]) {
   {
     using namespace std::filesystem;
     path subdir("third-party/content/");
-    // @fb-only
+    // @fb-only: 
     path dir = current_path();
     // find the content somewhere above our current build directory
     while (dir != current_path().root_path() && !exists(dir / subdir)) {

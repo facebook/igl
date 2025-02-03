@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only
+// @fb-only: 
 
 #import "RenderSessionController.h"
 
@@ -26,11 +26,11 @@
 #import <igl/opengl/ios/Device.h>
 #import <igl/opengl/ios/HWDevice.h>
 #endif
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
 #include <memory>
 #include <shell/shared/platform/ios/PlatformIos.h>
 #include <shell/shared/renderSession/IRenderSessionFactory.h>
@@ -60,8 +60,8 @@
     factory_ = [factoryProvider adapter]->factory;
     frame_ = CGRectMake(0, 0, 1024, 768); // choose some default
 
-    // @fb-only
-                     // @fb-only
+    // @fb-only: 
+                     // @fb-only: 
     surfaceTexturesProvider_ = provider;
   }
   return self;
@@ -89,19 +89,19 @@
 #endif
     break;
   }
-// @fb-only
-  // @fb-only
-    // @fb-only
-    // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-    // @fb-only
-  // @fb-only
-// @fb-only
+// @fb-only: 
+  // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+    // @fb-only: 
+  // @fb-only: 
+// @fb-only: 
   default:
     IGL_DEBUG_ABORT("IGL Samples not set up for backend(%d)", (int)backendVersion_.flavor);
     break;
@@ -135,11 +135,11 @@
 - (void)tick {
   igl::DeviceScope scope(platform_->getDevice());
 
-  // @fb-only
-                   // @fb-only
+  // @fb-only: 
+                   // @fb-only: 
   IglSurfaceTexturesAdapter* adapter = [surfaceTexturesProvider_ createSurfaceTextures];
-  // @fb-only
-                   // @fb-only
+  // @fb-only: 
+                   // @fb-only: 
 
   // process user input
   platform_->getInputDispatcher().processEvents();

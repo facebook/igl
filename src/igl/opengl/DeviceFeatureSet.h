@@ -195,7 +195,7 @@ class DeviceFeatureSet final {
   void initializeExtensions(std::string extensions,
                             std::unordered_set<std::string> supportedExtensions);
 
-  // @fb-only
+  // @fb-only: 
   [[nodiscard]] GLVersion getGLVersion() const noexcept;
   [[nodiscard]] ShaderVersion getShaderVersion() const;
   [[nodiscard]] BackendVersion getBackendVersion() const;

@@ -54,10 +54,10 @@ class ITrackedResource {
   //  return static_cast<T*>(this);
   // So we prevent UBSan by turning off vptr sanitizer on this function
   //
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
+  // @fb-only: 
+  // @fb-only: 
+  // @fb-only: 
+  // @fb-only: 
 #if defined(__clang__)
   __attribute__((no_sanitize("vptr")))
 #endif

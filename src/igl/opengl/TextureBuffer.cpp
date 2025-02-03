@@ -76,7 +76,7 @@ Result TextureBuffer::create(const TextureDesc& desc, bool hasStorageAlready) {
 
 void TextureBuffer::bindImage(size_t unit) {
   // The entire codebase used only combined kShaderRead|kShaderWrite access (except tests)
-  // @fb-only
+  // @fb-only: 
   // Here we used to have this condition:
   //    getUsage() & TextureUsage::kShaderWrite ? GL_WRITE_ONLY : GL_READ_ONLY,
   // So it is safe to replace it with GL_READ_WRITE

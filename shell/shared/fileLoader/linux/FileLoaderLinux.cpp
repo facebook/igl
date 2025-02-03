@@ -12,9 +12,9 @@
 #include <igl/Common.h>
 #include <iterator>
 #include <string>
-// @fb-only
-// @fb-only
-// @fb-only
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
 
 namespace {
 
@@ -85,15 +85,15 @@ std::string FileLoaderLinux::fullPath(const std::string& fileName) const {
       "samples/resources/models/",
       "samples/resources/fonts/",
       "samples/resources/fonts/optimistic",
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
+      // @fb-only: 
+      // @fb-only: 
+      // @fb-only: 
+      // @fb-only: 
+      // @fb-only: 
+      // @fb-only: 
+      // @fb-only: 
+      // @fb-only: 
+      // @fb-only: 
   };
 
   // find folders somewhere above our current directory
@@ -103,29 +103,29 @@ std::string FileLoaderLinux::fullPath(const std::string& fileName) const {
     }
   }
 
-// @fb-only
+// @fb-only: 
   // clang-format off
-  // @fb-only
-  // @fb-only
-  // @fb-only
-                                     // @fb-only
-                                     // @fb-only
-                                     // @fb-only
-                                     // @fb-only
-                                     // @fb-only
-                                     // @fb-only
+  // @fb-only: 
+  // @fb-only: 
+  // @fb-only: 
+                                     // @fb-only: 
+                                     // @fb-only: 
+                                     // @fb-only: 
+                                     // @fb-only: 
+                                     // @fb-only: 
+                                     // @fb-only: 
   // clang-format on
-  // @fb-only
-    // @fb-only
-    // @fb-only
-      // @fb-only
-          // @fb-only
-      // @fb-only
-        // @fb-only
-      // @fb-only
-    // @fb-only
-  // @fb-only
-// @fb-only
+  // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+      // @fb-only: 
+          // @fb-only: 
+      // @fb-only: 
+        // @fb-only: 
+      // @fb-only: 
+    // @fb-only: 
+  // @fb-only: 
+// @fb-only: 
 
   IGL_DEBUG_ASSERT_NOT_REACHED();
   return "";

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only
+// @fb-only: 
 
 #include <IGLU/simdtypes/SimdTypes.h>
 #include <igl/NameHandle.h>
@@ -92,7 +92,7 @@ std::string getVulkanFragmentShaderSource() {
 
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
-  // @fb-only
+  // @fb-only: 
   case igl::BackendType::Invalid:
   case igl::BackendType::Metal:
     IGL_DEBUG_ASSERT_NOT_REACHED();

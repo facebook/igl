@@ -16,8 +16,8 @@ static size_t getGPUFamily(id<MTLDevice> device) {
   if (@available(macOS 10.15, iOS 13.0, *)) {
     typedef std::pair<MTLGPUFamily, size_t> GPUFamilyPair;
     const std::vector<GPUFamilyPair> gpuFamilies = {
-        // @fb-only
-        // @fb-only
+        // @fb-only: 
+        // @fb-only: 
         {MTLGPUFamilyApple8, 8},
         {MTLGPUFamilyApple7, 7},
         {MTLGPUFamilyApple6, 6},

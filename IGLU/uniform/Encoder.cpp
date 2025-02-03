@@ -89,8 +89,8 @@ void Encoder::operator()(igl::IRenderCommandEncoder& encoder,
     encodeRenderUniform(encoder, bufferIndex, bindTarget, uniform, Alignment::Aligned);
   } else if (backendType_ == igl::BackendType::Vulkan) {
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
-  // @fb-only
-    // @fb-only
+  // @fb-only: 
+    // @fb-only: 
   } else {
     IGL_DEBUG_ASSERT_NOT_REACHED();
   }
@@ -113,8 +113,8 @@ void Encoder::operator()(igl::IComputeCommandEncoder& encoder,
     encodeAlignedCompute(encoder, bufferIndex, uniform);
   } else if (backendType_ == igl::BackendType::Vulkan) {
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
-  // @fb-only
-    // @fb-only
+  // @fb-only: 
+    // @fb-only: 
   }
 }
 

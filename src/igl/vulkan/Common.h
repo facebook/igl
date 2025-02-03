@@ -130,7 +130,7 @@ struct VulkanContextConfig {
   bool enableBufferDeviceAddress = false;
   bool enableExtraLogs = true;
   bool enableDescriptorIndexing = false;
-  // @fb-only
+  // @fb-only: 
   bool enableShaderInt16 = true;
   bool enableShaderDrawParameters = true;
   bool enableStorageBuffer16BitAccess = true;

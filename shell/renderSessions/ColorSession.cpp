@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only
+// @fb-only: 
 
 #include <cstring>
 
@@ -152,7 +152,7 @@ std::string getVulkanFragmentShaderSource() {
                 )";
 }
 
-// @fb-only
+// @fb-only: 
 
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
   switch (device.getBackendType()) {
@@ -176,16 +176,16 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
                                                            "",
                                                            nullptr);
   }
-  // @fb-only
-    // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
-        // @fb-only
+  // @fb-only: 
+    // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
   case igl::BackendType::Metal:
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
@@ -334,11 +334,11 @@ void ColorSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   // Uniform: "color"
   if (!fragmentUniformDescriptors_.empty()) {
-    // @fb-only
-      // @fb-only
-      // @fb-only
-      // @fb-only
-    // @fb-only
+    // @fb-only: 
+      // @fb-only: 
+      // @fb-only: 
+      // @fb-only: 
+    // @fb-only: 
       if (getPlatform().getDevice().hasFeature(DeviceFeatures::BindUniform)) {
         fragmentUniformDescriptors_.back().location =
             pipelineState_->getIndexByName("color", igl::ShaderStage::Fragment);

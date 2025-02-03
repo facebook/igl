@@ -318,7 +318,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(const void* IGL_N
                                     debugName.c_str()));
   }
 
-  // @fb-only
+  // @fb-only: 
   // @lint-ignore CLANGTIDY
   return std::make_shared<VulkanShaderModule>(
       ctx_->vf_,
@@ -431,7 +431,7 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
                                     debugName.c_str()));
   }
 
-  // @fb-only
+  // @fb-only: 
   // @lint-ignore CLANGTIDY
   return std::make_shared<VulkanShaderModule>(
       ctx_->vf_,
