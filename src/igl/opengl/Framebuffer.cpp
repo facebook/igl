@@ -261,8 +261,8 @@ void Framebuffer::copyBytesColorAttachment(ICommandQueue& /* unused */,
   // with glReadPixels.
   getContext().flush();
 
-  // @fb-only
-  // @fb-only
+  // @fb-only: 
+  // @fb-only: 
   const auto rangeX = static_cast<GLint>(range.x);
   const auto rangeY = static_cast<GLint>(range.y);
   const auto rangeWidth = static_cast<GLsizei>(range.width);

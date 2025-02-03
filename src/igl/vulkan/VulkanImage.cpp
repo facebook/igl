@@ -198,13 +198,13 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
     {
       const uint32_t numPlanes = igl::vulkan::getNumImagePlanes(format);
       IGL_DEBUG_ASSERT(numPlanes > 0 && numPlanes <= kMaxImagePlanes);
-      // @fb-only
+      // @fb-only: 
       const VkImagePlaneMemoryRequirementsInfo planes[kMaxImagePlanes] = {
           ivkGetImagePlaneMemoryRequirementsInfo(VK_IMAGE_ASPECT_PLANE_0_BIT),
           ivkGetImagePlaneMemoryRequirementsInfo(VK_IMAGE_ASPECT_PLANE_1_BIT),
           ivkGetImagePlaneMemoryRequirementsInfo(VK_IMAGE_ASPECT_PLANE_2_BIT),
       };
-      // @fb-only
+      // @fb-only: 
       const VkImageMemoryRequirementsInfo2 imgRequirements[kMaxImagePlanes] = {
           ivkGetImageMemoryRequirementsInfo2(numPlanes > 0 ? &planes[0] : nullptr, vkImage_),
           ivkGetImageMemoryRequirementsInfo2(numPlanes > 1 ? &planes[1] : nullptr, vkImage_),
@@ -220,13 +220,13 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                                      false,
                                      &vkMemory_[p]));
       }
-      // @fb-only
+      // @fb-only: 
       const VkBindImagePlaneMemoryInfo bindImagePlaneMemoryInfo[kMaxImagePlanes] = {
           {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, nullptr, VK_IMAGE_ASPECT_PLANE_0_BIT},
           {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, nullptr, VK_IMAGE_ASPECT_PLANE_1_BIT},
           {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, nullptr, VK_IMAGE_ASPECT_PLANE_2_BIT},
       };
-      // @fb-only
+      // @fb-only: 
       const VkBindImageMemoryInfo bindInfo[kMaxImagePlanes] = {
           ivkGetBindImageMemoryInfo(
               isDisjoint ? &bindImagePlaneMemoryInfo[0] : nullptr, vkImage_, vkMemory_[0]),
@@ -471,20 +471,20 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
                memoryRequirements.memoryRequirements.memoryTypeBits,
                memoryAllocateInfo.memoryTypeIndex);
 
-  // @fb-only
-  // @fb-only
-// @fb-only
-  // @fb-only
-      // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-  // @fb-only
-// @fb-only
+  // @fb-only: 
+  // @fb-only: 
+// @fb-only: 
+  // @fb-only: 
+      // @fb-only: 
+  // @fb-only: 
+  // @fb-only: 
+  // @fb-only: 
+  // @fb-only: 
+  // @fb-only: 
+// @fb-only: 
   VK_ASSERT(ctx_->vf_.vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &vkMemory_[0]));
   VK_ASSERT(ctx_->vf_.vkBindImageMemory(device_, vkImage_, vkMemory_[0], 0));
-// @fb-only
+// @fb-only: 
 }
 
 #if IGL_PLATFORM_WINDOWS

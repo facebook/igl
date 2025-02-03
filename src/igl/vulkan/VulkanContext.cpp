@@ -22,7 +22,7 @@
 #endif // IGL_CMAKE_BUILD
 
 // For volk.h, define this before including volk.h in exactly one CPP file.
-// @fb-only
+// @fb-only: 
 #if defined(IGL_CMAKE_BUILD)
 #define VOLK_IMPLEMENTATION
 #endif // IGL_CMAKE_BUILD
@@ -190,7 +190,7 @@ bool validateImageLimits(VkImageType imageType,
 
 namespace igl::vulkan {
 
-// @fb-only
+// @fb-only: 
 class DescriptorPoolsArena final {
  public:
   DescriptorPoolsArena(const VulkanContext& ctx,
@@ -267,7 +267,7 @@ class DescriptorPoolsArena final {
         return;
       }
     }
-    // @fb-only
+    // @fb-only: 
     VkDescriptorPoolSize poolSizes[IGL_ARRAY_NUM_ELEMENTS(types_)];
     for (uint32_t i = 0; i != numTypes_; i++) {
       poolSizes[i] = VkDescriptorPoolSize{
@@ -741,10 +741,10 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
     }
   }
 
-  // @fb-only
-    // @fb-only
-                       // @fb-only
-  // @fb-only
+  // @fb-only: 
+    // @fb-only: 
+                       // @fb-only: 
+  // @fb-only: 
 
   VulkanQueuePool queuePool(vf_, vkPhysicalDevice_);
 
@@ -1207,45 +1207,45 @@ VulkanImage VulkanContext::createImage(VkImageType imageType,
           debugName};
 }
 
-// @fb-only
-// @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-  // @fb-only
-          // @fb-only
-          // @fb-only
-          // @fb-only
-          // @fb-only
-          // @fb-only
-    // @fb-only
-  // @fb-only
-  // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-                                       // @fb-only
-// @fb-only
-// @fb-only
+// @fb-only: 
+// @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+  // @fb-only: 
+          // @fb-only: 
+          // @fb-only: 
+          // @fb-only: 
+          // @fb-only: 
+          // @fb-only: 
+    // @fb-only: 
+  // @fb-only: 
+  // @fb-only: 
+                                       // @fb-only: 
+                                       // @fb-only: 
+                                       // @fb-only: 
+                                       // @fb-only: 
+                                       // @fb-only: 
+                                       // @fb-only: 
+                                       // @fb-only: 
+                                       // @fb-only: 
+                                       // @fb-only: 
+                                       // @fb-only: 
+                                       // @fb-only: 
+                                       // @fb-only: 
+                                       // @fb-only: 
+// @fb-only: 
+// @fb-only: 
 
 std::unique_ptr<VulkanImage> VulkanContext::createImageFromFileDescriptor(
     int32_t fileDescriptor,
@@ -1490,7 +1490,7 @@ SamplerHandle VulkanContext::createSampler(const VkSamplerCreateInfo& ci,
 
 void VulkanContext::querySurfaceCapabilities() {
   // This is not an exhaustive list. It's only formats that we are using.
-  // @fb-only
+  // @fb-only: 
   const VkFormat depthFormats[] = {VK_FORMAT_D32_SFLOAT_S8_UINT,
                                    VK_FORMAT_D24_UNORM_S8_UINT,
                                    VK_FORMAT_D16_UNORM_S8_UINT,
@@ -1575,7 +1575,7 @@ VulkanContext::RenderPassHandle VulkanContext::findRenderPass(
   IGL_DEBUG_ASSERT(index <= 255);
 
   renderPassesHash_[builder] = uint8_t(index);
-  // @fb-only
+  // @fb-only: 
   // @lint-ignore CLANGTIDY
   renderPasses_.push_back(pass);
 
@@ -1615,11 +1615,11 @@ void VulkanContext::updateBindingsTextures(VkCommandBuffer IGL_NONNULL cmdBuf,
 
   VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, nextSubmitHandle);
 
-  // @fb-only
+  // @fb-only: 
   VkDescriptorImageInfo infoSampledImages[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
   uint32_t numImages = 0;
 
-  // @fb-only
+  // @fb-only: 
   VkWriteDescriptorSet writes[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
   uint32_t numWrites = 0;
 
@@ -1679,7 +1679,7 @@ void VulkanContext::updateBindingsBuffers(VkCommandBuffer IGL_NONNULL cmdBuf,
 
   VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, nextSubmitHandle);
 
-  // @fb-only
+  // @fb-only: 
   VkWriteDescriptorSet writes[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
   uint32_t numWrites = 0;
 
@@ -1849,7 +1849,7 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
 
   BindGroupMetadataTextures metadata{desc};
 
-  // @fb-only
+  // @fb-only: 
   VkDescriptorSetLayoutBinding bindings[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
   uint32_t numBindings = 0;
 
@@ -1874,7 +1874,7 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
   VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
 
   {
-    // @fb-only
+    // @fb-only: 
     const VkDescriptorBindingFlags bindingFlags[IGL_TEXTURE_SAMPLERS_MAX] = {};
 
     VK_ASSERT(ivkCreateDescriptorSetLayout(&vf_,
@@ -1914,9 +1914,9 @@ igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextur
   // use the dummy texture to ensure pipeline compatibility
   VkImageView dummyImageView = textures_.objects_[0].obj_->imageView_.getVkImageView();
 
-  // @fb-only
+  // @fb-only: 
   VkDescriptorImageInfo images[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
-  // @fb-only
+  // @fb-only: 
   VkWriteDescriptorSet writes[IGL_TEXTURE_SAMPLERS_MAX]; // uninitialized
   uint32_t numWrites = 0;
 
@@ -1978,11 +1978,11 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
 
   BindGroupMetadataBuffers metadata{desc};
 
-  // @fb-only
+  // @fb-only: 
   VkDescriptorSetLayoutBinding bindings[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
   uint32_t numBindings = 0;
 
-  // @fb-only
+  // @fb-only: 
   VkDescriptorPoolSize poolSizes[] = {
       VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0},
       VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0},
@@ -2050,7 +2050,7 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
   VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
 
   {
-    // @fb-only
+    // @fb-only: 
     const VkDescriptorBindingFlags bindingFlags[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
 
     VK_ASSERT(ivkCreateDescriptorSetLayout(&vf_,
@@ -2079,9 +2079,9 @@ igl::BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferD
     VK_ASSERT(ivkAllocateDescriptorSet(&vf_, device, metadata.pool, dsl, &metadata.dset));
   }
 
-  // @fb-only
+  // @fb-only: 
   VkDescriptorBufferInfo buffers[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
-  // @fb-only
+  // @fb-only: 
   VkWriteDescriptorSet writes[IGL_UNIFORM_BLOCKS_BINDING_MAX]; // uninitialized
   uint32_t numWrites = 0;
 

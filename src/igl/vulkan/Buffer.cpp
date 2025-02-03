@@ -246,7 +246,7 @@ void* Buffer::map(const BufferRange& range, igl::Result* outResult) {
   // Sanity check
   if ((range.size > desc_.length) || (range.offset > desc_.length - range.size)) {
     Result::setResult(outResult, Result::Code::ArgumentOutOfRange, "Range exceeds buffer length");
-    // @fb-only
+    // @fb-only: 
     // @lint-ignore CLANGTIDY
     return nullptr;
   }

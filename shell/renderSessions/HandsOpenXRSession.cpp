@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only
+// @fb-only: 
 
 #include <IGLU/shaderCross/ShaderCross.h>
 #include <IGLU/shaderCross/ShaderCrossUniformBuffer.h>
@@ -95,9 +95,9 @@ std::string getVulkanVertexShaderSource(bool stereoRendering) {
   case igl::BackendType::Metal:
     IGL_DEBUG_ABORT("Metal is not supported");
     return nullptr;
-  // @fb-only
-    // @fb-only
-    // @fb-only
+  // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,

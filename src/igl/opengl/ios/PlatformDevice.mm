@@ -40,8 +40,8 @@ namespace {
 /// texture so we can reuse it and invalidate it when necessary
 /// This always returns a renderBufferHolder, but it is up to the responsibility of the caller to
 /// set _renderBuffer.
-// @fb-only
-// @fb-only
+// @fb-only: 
+// @fb-only: 
 _IGLRenderBufferHolder* GetAssociatedRenderBufferHolder(CAEAGLLayer* nativeDrawable);
 
 } // namespace

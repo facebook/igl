@@ -61,8 +61,8 @@ Color IDevice::backendDebugColor() const noexcept {
     return {1.f, 0.f, 1.f, 1.f};
   case BackendType::Vulkan:
     return {0.f, 1.f, 1.f, 1.f};
-  // @fb-only
-    // @fb-only
+  // @fb-only: 
+    // @fb-only: 
   }
   IGL_UNREACHABLE_RETURN(Color(0.f, 0.f, 0.f, 0.f))
 }

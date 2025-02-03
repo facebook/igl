@@ -38,7 +38,7 @@ class VulkanSwapchainTest : public ::testing::Test {
   // Set up common resources.
   void SetUp() override {
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID
-    // @fb-only
+    // @fb-only: 
     GTEST_SKIP() << "Fix these tests on Windows and Android, no headless surface support there.";
 #else
     igl::setDebugBreakEnabled(false);
@@ -62,7 +62,7 @@ class VulkanSwapchainTest : public ::testing::Test {
 
 TEST_F(VulkanSwapchainTest, CreateVulkanSwapchain) {
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID
-  // @fb-only
+  // @fb-only: 
   GTEST_SKIP() << "Fix these tests on Windows and Android, no headless surface support there.";
 #else
   auto swapchain = std::make_unique<igl::vulkan::VulkanSwapchain>(*context_, kWidth, kHeight);

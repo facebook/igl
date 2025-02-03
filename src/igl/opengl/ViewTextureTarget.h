@@ -53,7 +53,7 @@ class ViewTextureTarget final : public Texture {
 
   [[nodiscard]] bool isImplicitStorage() const override;
 
-  // @fb-only
+  // @fb-only: 
   [[nodiscard]] GLuint getId() const override {
     IGL_DEBUG_ASSERT_NOT_REACHED();
     return 0;

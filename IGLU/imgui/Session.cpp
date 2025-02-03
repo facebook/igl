@@ -145,9 +145,9 @@ static std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevic
                                                            &result);
     break;
   }
-  // @fb-only
-    // @fb-only
-    // @fb-only
+  // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
   case igl::BackendType::Metal: {
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, metalShaderStr(), "vertex_main", "fragment_main", "", &result);
@@ -267,7 +267,7 @@ Session::Renderer::Renderer(igl::IDevice& device) {
     _material->cullMode = igl::CullMode::Disabled;
     _material->blendMode = iglu::material::BlendMode::Translucent();
 
-    // @fb-only
+    // @fb-only: 
     if (device.getBackendType() != igl::BackendType::Vulkan) {
       _material->shaderUniforms().setTexture("texture", _fontTexture.get(), _linearSampler);
     }
@@ -386,7 +386,7 @@ void Session::Renderer::renderDrawData(igl::IDevice& device,
         lastBoundTextureId = cmd.TextureId;
         auto* tex = reinterpret_cast<igl::ITexture*>(cmd.TextureId);
         if (isVulkan) {
-          // @fb-only
+          // @fb-only: 
           // Add Vulkan support for texture reflection info in ShaderUniforms so we don't need to
           // bind the texture directly
           cmdEncoder.bindTexture(0, igl::BindTarget::kFragment, tex);

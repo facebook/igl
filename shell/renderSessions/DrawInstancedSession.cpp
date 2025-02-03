@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only
+// @fb-only: 
 
 #include "DrawInstancedSession.h"
 
@@ -129,9 +129,9 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
                                                            "",
                                                            nullptr);
     return nullptr;
-  // @fb-only
-    // @fb-only
-    // @fb-only
+  // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
   case igl::BackendType::Metal:
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, getMetalShaderSource(), "vertexShader", "fragmentShader", "", nullptr);

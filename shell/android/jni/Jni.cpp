@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only
+// @fb-only: 
 
 #include "TinyRenderer.h"
 #include <android/asset_manager_jni.h>
@@ -41,9 +41,9 @@ namespace {
   case BackendFlavor::Vulkan:
     str = "Vulkan";
     break;
-  // @fb-only
-    // @fb-only
-    // @fb-only
+  // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
   }
 
   str += " " + std::to_string(static_cast<int>(backendVersion->majorVersion)) + " " +

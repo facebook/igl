@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only
+// @fb-only: 
 
 #import "ViewController.h"
 
@@ -30,20 +30,20 @@
 #import <igl/opengl/ios/HWDevice.h>
 #endif
 
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
-// @fb-only
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
 
 #include <igl/DeviceFeatures.h>
 #include <memory>
 #include <shell/shared/platform/ios/PlatformIos.h>
 #include <shell/shared/renderSession/RenderSession.h>
 
-// @fb-only
-// @fb-only
-// @fb-only
+// @fb-only: 
+// @fb-only: 
+// @fb-only: 
 
 @interface ViewController () <TouchDelegate, ViewSizeChangeDelegate, IglSurfaceTexturesProvider> {
   igl::shell::RenderSessionConfig config_;
@@ -93,12 +93,12 @@
 - (void)initRenderSessionController {
   IGL_DEBUG_ASSERT(renderSessionController_);
 
-// @fb-only
-  // @fb-only
-    // @fb-only
-    // @fb-only
-  // @fb-only
-// @fb-only
+// @fb-only: 
+  // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+  // @fb-only: 
+// @fb-only: 
 
   [renderSessionController_ initializeDevice];
 }
@@ -135,16 +135,16 @@
   }
 #endif
 
-// @fb-only
-  // @fb-only
-    // @fb-only
-    // @fb-only
-    // @fb-only
-        // @fb-only
-        // @fb-only
-    // @fb-only
-  // @fb-only
-// @fb-only
+// @fb-only: 
+  // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
+        // @fb-only: 
+        // @fb-only: 
+    // @fb-only: 
+  // @fb-only: 
+// @fb-only: 
 
   default: {
     IGL_DEBUG_ASSERT_NOT_REACHED();
@@ -216,9 +216,9 @@
   case igl::BackendFlavor::Vulkan:
     IGL_DEBUG_ABORT("IGL Samples not set up for Vulkan backend");
     break;
-  // @fb-only
-    // @fb-only
-    // @fb-only
+  // @fb-only: 
+    // @fb-only: 
+    // @fb-only: 
   }
 }
 
@@ -233,9 +233,9 @@
 
 - (void)viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
-// @fb-only
-  // @fb-only
-// @fb-only
+// @fb-only: 
+  // @fb-only: 
+// @fb-only: 
   if (config_.backendVersion.flavor != igl::BackendFlavor::Metal) {
     IGL_DEBUG_ASSERT(renderSessionController_);
     [renderSessionController_ start];
@@ -244,9 +244,9 @@
 
 - (void)viewWillDisappear:(BOOL)animated {
   [super viewWillDisappear:animated];
-// @fb-only
-  // @fb-only
-// @fb-only
+// @fb-only: 
+  // @fb-only: 
+// @fb-only: 
 
   if (config_.backendVersion.flavor != igl::BackendFlavor::Metal) {
     IGL_DEBUG_ASSERT(renderSessionController_);

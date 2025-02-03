@@ -67,8 +67,8 @@ class Texture : public WithContext, public ITexture {
                                                        GLuint glTexFormat,
                                                        GLuint glTexType);
 
-  // @fb-only
-  // @fb-only
+  // @fb-only: 
+  // @fb-only: 
   [[nodiscard]] virtual GLuint getId() const = 0;
 
   /// @brief Calculates a value for GL_PACK_ALIGNMENT or GL_UNPACK_ALIGNMENT for the given byte
