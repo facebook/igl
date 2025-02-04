@@ -7,6 +7,9 @@
 
 #include "OpenGLTextureAccessor.h"
 #include "ITextureAccessor.h"
+
+#if IGL_BACKEND_OPENGL
+
 #include "igl/Texture.h"
 #include "igl/opengl/Device.h"
 #include "igl/opengl/Framebuffer.h"
@@ -160,3 +163,4 @@ size_t OpenGLTextureAccessor::copyBytes(unsigned char* ptr, size_t length) {
 }
 
 } // namespace iglu::textureaccessor
+#endif

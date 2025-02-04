@@ -12,6 +12,9 @@
 #include <igl/CommandQueue.h>
 #include <igl/IGL.h>
 #include <igl/Texture.h>
+
+#if IGL_BACKEND_OPENGL
+
 #include <igl/opengl/GLIncludes.h>
 
 namespace iglu::textureaccessor {
@@ -42,3 +45,4 @@ class OpenGLTextureAccessor : public ITextureAccessor {
 };
 
 } // namespace iglu::textureaccessor
+#endif
