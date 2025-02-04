@@ -19,6 +19,24 @@
 
 namespace igl::vulkan::android {
 
+namespace {
+uint32_t ivkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memProps,
+                               const uint32_t typeBits,
+                               const VkMemoryPropertyFlags requiredProperties) {
+  // Search memory types to find the index with the requested properties.
+  for (uint32_t type = 0; type < memProps.memoryTypeCount; type++) {
+    if ((typeBits & (1 << type)) != 0) {
+      // Test if this memory type has the required properties.
+      const VkFlags propertyFlags = memProps.memoryTypes[type].propertyFlags;
+      if ((propertyFlags & requiredProperties) == requiredProperties) {
+        return type;
+      }
+    }
+  }
+  return 0;
+}
+} // namespace
+
 NativeHWTextureBuffer::NativeHWTextureBuffer(igl::vulkan::Device& device, TextureFormat format) :
   Super(device, format) {}
 
@@ -41,15 +59,17 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
 
   auto& ctx = device_.getVulkanContext();
   auto device = device_.getVulkanContext().getVkDevice();
+  auto physicalDevice = device_.getVulkanContext().getVkPhysicalDevice();
+  VkImageCreateFlags create_flags = 0;
+  if (hwbDesc.usage & AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT) {
+    create_flags |= VK_IMAGE_CREATE_PROTECTED_BIT;
+  }
   VkImageUsageFlags usage_flags = 0;
   if (hwbDesc.usage & AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE) {
-    usage_flags |= VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    usage_flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
   }
   if (hwbDesc.usage & AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT) {
     usage_flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-  }
-  if (hwbDesc.usage & AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT) {
-    usage_flags |= VK_IMAGE_CREATE_PROTECTED_BIT;
   }
 
   VkAndroidHardwareBufferFormatPropertiesANDROID ahb_format_props = {
@@ -77,22 +97,13 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
       .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
   };
 
-  uint32_t memory_type_bits = ahb_props.memoryTypeBits;
-  uint32_t type_index = -1;
-  for (uint32_t i = 0; memory_type_bits; memory_type_bits = memory_type_bits >> 0x1, ++i) {
-    if (memory_type_bits & 0x1) {
-      type_index = i;
-      break;
-    }
-  }
-
   desc.format = igl::vulkan::vkFormatToTextureFormat(ahb_format_props.format);
 
   VkImage vk_image;
 
   VkImageCreateInfo vk_image_info = {.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                                      .pNext = &external_memory_image_info,
-                                     .flags = 0,
+                                     .flags = create_flags,
                                      .imageType = VK_IMAGE_TYPE_2D,
                                      .format = ahb_format_props.format,
                                      .extent =
@@ -108,6 +119,13 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
                                      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED};
   // Create Vk Image.
   VK_ASSERT(ctx.vf_.vkCreateImage(device, &vk_image_info, nullptr, &vk_image));
+
+  if (vk_image == VK_NULL_HANDLE) {
+    IGL_LOG_ERROR("failed to create image view format is %d and external format is %d",
+                  vk_image_info.format,
+                  external_format.externalFormat);
+    return Result(Result::Code::RuntimeError, "Failed to create vulkan image");
+  }
 
   // To import memory created outside of the current Vulkan instance from an
   // Android hardware buffer, add a VkImportAndroidHardwareBufferInfoANDROID
@@ -126,6 +144,15 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
       .pNext = &ahb_import_info,
       .image = vk_image,
       .buffer = VK_NULL_HANDLE};
+
+  // Find the memory type that supports the required properties.
+  VkPhysicalDeviceMemoryProperties vulkanMemoryProperties;
+  ctx.vf_.vkGetPhysicalDeviceMemoryProperties(physicalDevice, &vulkanMemoryProperties);
+
+  uint32_t memory_type_bits = ahb_props.memoryTypeBits;
+
+  uint32_t type_index = ivkGetMemoryTypeIndex(
+      vulkanMemoryProperties, memory_type_bits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
   // An instance of the VkMemoryAllocateInfo structure defines a memory import
   // operation.
@@ -147,7 +174,7 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
   VK_ASSERT(ctx.vf_.vkAllocateMemory(device, &mem_alloc_info, nullptr, &vk_device_memory));
 
   // Attach memory to the image object.
-  ctx.vf_.vkBindImageMemory(device, vk_image, vk_device_memory, 0);
+  VK_ASSERT(ctx.vf_.vkBindImageMemory(device, vk_image, vk_device_memory, 0));
 
   auto vulkanImage = VulkanImage(ctx,
                                  device,
@@ -164,13 +191,6 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
                                  true);
   vulkanImage.vkMemory_[0] = vk_device_memory;
   vulkanImage.extendedFormat_ = external_format.externalFormat;
-
-  if (vk_image == VK_NULL_HANDLE) {
-    IGL_LOG_ERROR("failed to create image view format is %d and external format is %d",
-                  vk_image_info.format,
-                  external_format.externalFormat);
-    return Result(Result::Code::RuntimeError, "Failed to create vulkan image");
-  }
 
   VkImageViewCreateInfo viewInfo = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
