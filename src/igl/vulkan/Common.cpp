@@ -545,6 +545,15 @@ void ensureShaderModule(IShaderModule* sm) {
       continue;
     }
   }
+  for (const auto& i : info.images) {
+    if (!IGL_DEBUG_VERIFY(i.descriptorSet == kBindPoint_StorageImages)) {
+      IGL_LOG_ERROR(
+          "Missing descriptor set id for storage images: the shader should contain \"layout(set = "
+          "%u, ...)\"",
+          kBindPoint_StorageImages);
+      continue;
+    }
+  }
 }
 
 uint32_t getNumImagePlanes(VkFormat format) {
