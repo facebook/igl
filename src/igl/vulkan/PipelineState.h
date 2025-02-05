@@ -56,6 +56,7 @@ class PipelineState {
 
   std::unique_ptr<VulkanDescriptorSetLayout> dslCombinedImageSamplers_;
   std::unique_ptr<VulkanDescriptorSetLayout> dslBuffers_;
+  std::unique_ptr<VulkanDescriptorSetLayout> dslStorageImages_;
 };
 
 } // namespace igl::vulkan

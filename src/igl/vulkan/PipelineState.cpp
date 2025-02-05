@@ -127,6 +127,26 @@ PipelineState::PipelineState(
         bindingFlags.data(),
         IGL_FORMAT("Descriptor Set Layout (BUFFERS): {}", debugName).c_str());
   }
+  // 2. Bindless descriptors are managed in VulkanContext
+
+  // 3. Storage images
+  {
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
+    bindings.reserve(info_.images.size());
+    for (const auto& t : info_.images) {
+      const uint32_t loc = t.bindingLocation;
+      bindings.emplace_back(
+          ivkGetDescriptorSetLayoutBinding(loc, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, stageFlags_));
+    }
+    std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
+    dslStorageImages_ = std::make_unique<VulkanDescriptorSetLayout>(
+        ctx,
+        VkDescriptorSetLayoutCreateFlags{},
+        static_cast<uint32_t>(bindings.size()),
+        bindings.data(),
+        bindingFlags.data(),
+        IGL_FORMAT("Descriptor Set Layout (STORAGE_IMAGE): {}", debugName).c_str());
+  }
 }
 
 VkPipelineLayout PipelineState::getVkPipelineLayout() const {
