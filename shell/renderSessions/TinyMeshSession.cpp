@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only: 
+// @fb-only
 
 #include "TinyMeshSession.h"
 
@@ -257,11 +257,11 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
     return nullptr;
 #endif // IGL_BACKEND_VULKAN
 
-// @fb-only: 
-  // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
-// @fb-only: 
+// @fb-only
+  // @fb-only
+    // @fb-only
+    // @fb-only
+// @fb-only
 
 #if IGL_BACKEND_METAL
   case igl::BackendType::Metal:
@@ -394,9 +394,9 @@ void TinyMeshSession::initialize() noexcept {
   {
     fs::path dir = fs::current_path();
     // find IGLU somewhere above our current directory
-    // @fb-only: 
+    // @fb-only
     const char* contentFolder = "third-party/content/src/";
-    // @fb-only: 
+    // @fb-only
     while (dir != fs::current_path().root_path() && !fs::exists(dir / fs::path(contentFolder))) {
       dir = dir.parent_path();
     }

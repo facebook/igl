@@ -30,11 +30,11 @@
 #endif
 
 // clang-format off
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
 // clang-format on
 // @fb-only
 #if IGL_METAL_SUPPORTED
@@ -46,9 +46,9 @@
 #if IGL_VULKAN_SUPPORTED
 #include "vulkan/TestDevice.h"
 #endif
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
+// @fb-only
+// @fb-only
+// @fb-only
 
 namespace igl::tests::util::device {
 
@@ -63,8 +63,8 @@ bool isBackendTypeSupported(::igl::BackendType backendType) {
     return IGL_OPENGL_SUPPORTED;
   case ::igl::BackendType::Vulkan:
     return IGL_VULKAN_SUPPORTED;
-  // @fb-only: 
-    // @fb-only: 
+  // @fb-only
+    // @fb-only
   }
   IGL_UNREACHABLE_RETURN(false)
 }
@@ -93,13 +93,13 @@ std::shared_ptr<::igl::IDevice> createTestDevice(::igl::BackendType backendType,
     return nullptr;
 #endif
   }
-  // @fb-only: 
-// @fb-only: 
-    // @fb-only: 
-// @fb-only: 
-    // @fb-only: 
-// @fb-only: 
-  // @fb-only: 
+  // @fb-only
+// @fb-only
+    // @fb-only
+// @fb-only
+    // @fb-only
+// @fb-only
+  // @fb-only
   return nullptr;
 }
 

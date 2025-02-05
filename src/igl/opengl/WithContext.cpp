@@ -21,7 +21,7 @@ WithContext::~WithContext() {
   if (!context_->releaseRef()) {
     IGL_DEBUG_ABORT(
         "Object destroyed after the IContext."
-        // @fb-only: 
+        // @fb-only
     );
   }
 }
@@ -29,7 +29,7 @@ WithContext::~WithContext() {
 IContext& WithContext::getContext() const {
   IGL_DEBUG_ASSERT(context_->isLikelyValidObject(),
                    "Accessing invalid IContext reference."
-                   // @fb-only: 
+                   // @fb-only
   );
   return *context_;
 }

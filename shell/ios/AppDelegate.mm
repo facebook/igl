@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only: 
+// @fb-only
 
 #import "AppDelegate.h"
 
@@ -65,17 +65,17 @@
           .depthTextureFormat = igl::TextureFormat::S8_UInt_Z24_UNorm,
       },
 #endif
-// @fb-only: 
+// @fb-only
       // clang-format off
-      // @fb-only: 
+      // @fb-only
           // clang-format on
-          // @fb-only: 
-          // @fb-only: 
-                             // @fb-only: 
-                             // @fb-only: 
-          // @fb-only: 
-      // @fb-only: 
-// @fb-only: 
+          // @fb-only
+          // @fb-only
+                             // @fb-only
+                             // @fb-only
+          // @fb-only
+      // @fb-only
+// @fb-only
   };
 
   const auto requestedSessionConfigs = factoryProvider_.adapter->factory->requestedSessionConfigs(
@@ -112,11 +112,11 @@
     supported = true;
   }
 #endif
-// @fb-only: 
-  // @fb-only: 
-    // @fb-only: 
-  // @fb-only: 
-// @fb-only: 
+// @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
+// @fb-only
   if (!IGL_DEBUG_VERIFY(supported)) {
     return;
   }

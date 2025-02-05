@@ -719,7 +719,7 @@ IContext::IContext() : deviceFeatureSet_(*this) {
 IContext::~IContext() {
   IGL_SOFT_ASSERT(refCount_ == 0,
                   "Dangling IContext reference left behind."
-                  // @fb-only: 
+                  // @fb-only
   );
   // Clear the zombie guard explicitly so our "secret" stays secret.
   zombieGuard_ = 0;
@@ -2185,9 +2185,9 @@ void IContext::linkProgram(GLuint program) {
   // NOTE: Explicitly *not* checking for errors
   // If there is an error, we want the client code to get error message and report
   // to the user/logs, rather than assert here.
-  // @fb-only: 
-  // @fb-only: 
-  // @fb-only: 
+  // @fb-only
+  // @fb-only
+  // @fb-only
 }
 
 void* IContext::mapBuffer(GLenum target, GLbitfield access) {

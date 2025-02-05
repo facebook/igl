@@ -391,7 +391,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
 
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
-  // @fb-only: 
+  // @fb-only
   const VkDescriptorSetLayout DSLs[] = {
       dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
       dslBuffers_->getVkDescriptorSetLayout(),
@@ -512,7 +512,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
 
   pipelines_[dynamicState] = pipeline;
 
-  // @fb-only: 
+  // @fb-only
   // @lint-ignore CLANGTIDY
   return pipeline;
 }

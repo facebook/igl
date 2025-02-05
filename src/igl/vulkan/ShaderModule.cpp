@@ -22,7 +22,7 @@ ShaderModule::ShaderModule(ShaderModuleInfo info,
 VkShaderModule ShaderModule::getVkShaderModule(const std::shared_ptr<IShaderModule>& shaderModule) {
   const ShaderModule* sm = static_cast<ShaderModule*>(shaderModule.get());
 
-  // @fb-only: 
+  // @fb-only
   // @lint-ignore CLANGTIDY
   return sm ? sm->module_->getVkShaderModule() : VK_NULL_HANDLE;
 }

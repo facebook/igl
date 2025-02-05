@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only: 
+// @fb-only
 
 #include <GLFW/glfw3.h>
 #include <cassert>
@@ -352,9 +352,9 @@ static void initIGL() {
     using namespace std::filesystem;
     path dir = current_path();
     // find IGLU somewhere above our current directory
-    // @fb-only: 
+    // @fb-only
     const char* contentFolder = "third-party/content/src/";
-    // @fb-only: 
+    // @fb-only
     while (dir != current_path().root_path() && !exists(dir / path(contentFolder))) {
       dir = dir.parent_path();
     }

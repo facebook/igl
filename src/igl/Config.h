@@ -7,9 +7,9 @@
 
 #pragma once
 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
+// @fb-only
+// @fb-only
+// @fb-only
 
 ///--------------------------------------
 /// MARK: - Platform
@@ -40,15 +40,15 @@
 #if !defined(IGL_CMAKE_BUILD)
 
 // clang-format off
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
 // clang-format on
 
 #else // !defined(IGL_CMAKE_BUILD)
@@ -190,11 +190,11 @@
 #define IGL_BACKEND_VULKAN 0
 #endif
 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
 
 ///--------------------------------------
 /// MARK: - Angle support

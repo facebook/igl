@@ -136,8 +136,8 @@ std::unique_ptr<RenderCommandEncoder> RenderCommandEncoder::create(
 }
 
 void RenderCommandEncoder::endEncoding() {
-  // @fb-only: 
-  // @fb-only: 
+  // @fb-only
+  // @fb-only
   [encoder_ endEncoding];
   encoder_ = nil;
 }

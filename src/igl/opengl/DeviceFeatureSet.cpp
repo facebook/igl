@@ -522,8 +522,8 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
     // Previously it was enabled specifically for Quest 2 on OpenGLES by checking if
     // GL_VENDOR == "Qualcomm" and GL_RENDERER == "Adreno (TM) 650".
     // However, Galaxy S20 also matched that and VAO support caused issues.
-    // @fb-only: 
-    // @fb-only: 
+    // @fb-only
+    // @fb-only
     return hasDesktopVersionOrExtension(*this, GLVersion::v3_0, "GL_ARB_vertex_array_object");
 
   case InternalFeatures::VertexAttribDivisor:
@@ -911,10 +911,10 @@ bool DeviceFeatureSet::hasRequirement(DeviceRequirement requirement) const {
     // no need for extension
 
     // GL_OES_standard_derivatives extension required only for versions prior to ES 3.0
-    // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
     return usesOpenGLES() && !hasESVersion(*this, GLVersion::v3_0_ES);
 
   case DeviceRequirement::TextureArrayExtReq:
@@ -934,10 +934,10 @@ bool DeviceFeatureSet::hasRequirement(DeviceRequirement requirement) const {
     // So if we are running on anything lower than OpenGL 3.0, we will need the extension
 
     // GL_EXT_shader_texture_lod extension required only for versions prior to ES 3.0
-    // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
     return !hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES);
   }
   return false;

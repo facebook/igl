@@ -12,9 +12,9 @@
 #include <igl/Common.h>
 #include <iterator>
 #include <string>
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
+// @fb-only
+// @fb-only
+// @fb-only
 #if IGL_PLATFORM_WINDOWS
 #include <windows.h>
 #endif
@@ -95,14 +95,14 @@ std::string FileLoaderWin::fullPath(const std::string& fileName) const {
       "samples/resources/models/",
       "samples/resources/fonts/",
       "samples/resources/fonts/optimistic",
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
   };
 
   // find folders somewhere above our current directory
@@ -115,20 +115,20 @@ std::string FileLoaderWin::fullPath(const std::string& fileName) const {
 #if !defined(IGL_CMAKE_BUILD)
   // @lint-ignore CLANGTIDY
   const std::string resfolders[] = {
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
+      // @fb-only
+      // @fb-only
+      // @fb-only
   };
-  // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
-      // @fb-only: 
-          // @fb-only: 
-      // @fb-only: 
-        // @fb-only: 
-      // @fb-only: 
-    // @fb-only: 
-  // @fb-only: 
+  // @fb-only
+    // @fb-only
+    // @fb-only
+      // @fb-only
+          // @fb-only
+      // @fb-only
+        // @fb-only
+      // @fb-only
+    // @fb-only
+  // @fb-only
 #endif
 
   return fileName;

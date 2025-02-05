@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only: 
+// @fb-only
 
 #include <igl/opengl/egl/Context.h>
 
@@ -365,7 +365,7 @@ void Context::present(std::shared_ptr<ITexture> /*surface*/) const {
 void Context::setPresentationTime(long long presentationTimeNs) {
   // This is a workaround that we cannot call the eglPresentationTimeANDROID directly from
   // <EGL/eglext.h> due to some EGL api bugs.
-  // @fb-only: 
+  // @fb-only
   bool (*eglPresentationTimeANDROID_)(
       EGLDisplay dpy, EGLSurface sur, khronos_stime_nanoseconds_t time) = nullptr;
   eglPresentationTimeANDROID_ =

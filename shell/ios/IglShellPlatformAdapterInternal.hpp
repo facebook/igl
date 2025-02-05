@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only: 
+// @fb-only
 
 // NOTE: Only include this in the Obj-C++ implementation (.mm) file
 // Use the public header in pure Obj-C files

@@ -60,9 +60,9 @@ class IVertexInputState;
  * production.
  */
 
-// @fb-only: 
- // @fb-only: 
- // @fb-only: 
+// @fb-only
+ // @fb-only
+ // @fb-only
 enum class InDevelopementFeatures : uint8_t {
   // Define your in-development feature enums here
   DummyFeatureExample,
@@ -338,7 +338,7 @@ class IDevice : public ICapabilities {
    *  - OpenGL: Yellow
    *  - Metal: Magenta
    *  - Vulkan: Cyan
-   // @fb-only: 
+   // @fb-only
    */
   [[nodiscard]] Color backendDebugColor() const noexcept;
 

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only: 
+// @fb-only
 
 // @lint-ignore-every CLANGTIDY NonLocalizedStringChecker
 #import "AppDelegate.h"
@@ -120,26 +120,26 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
           .swapchainColorTextureFormat = kColorFramebufferFormat,
       },
       // clang-format off
-      // @fb-only: 
+      // @fb-only
           // clang-format on
-          // @fb-only: 
-          // @fb-only: 
-                             // @fb-only: 
-                             // @fb-only: 
-          // @fb-only: 
-      // @fb-only: 
+          // @fb-only
+          // @fb-only
+                             // @fb-only
+                             // @fb-only
+          // @fb-only
+      // @fb-only
 #endif
-// @fb-only: 
+// @fb-only
          // clang-format off
-      // @fb-only: 
+      // @fb-only
           // clang-format on
-          // @fb-only: 
-          // @fb-only: 
-                             // @fb-only: 
-                             // @fb-only: 
-          // @fb-only: 
-      // @fb-only: 
-// @fb-only: 
+          // @fb-only
+          // @fb-only
+                             // @fb-only
+                             // @fb-only
+          // @fb-only
+      // @fb-only
+// @fb-only
 #if IGL_BACKEND_VULKAN
       {
           .displayName = "Vulkan",
@@ -193,11 +193,11 @@ NSColorSpace* colorSpaceToNSColorSpace(igl::ColorSpace colorSpace) {
     [self.window setColorSpace:metalColorSpace];
   }
 #endif
-// @fb-only: 
-  // @fb-only: 
-    // @fb-only: 
-  // @fb-only: 
-// @fb-only: 
+// @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
+// @fb-only
 #if IGL_BACKEND_VULKAN
   if (sessionConfig.backendVersion.flavor == igl::BackendFlavor::Vulkan) {
     supported = true;

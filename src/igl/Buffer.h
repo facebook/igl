@@ -41,7 +41,7 @@ struct BufferDesc {
     Uniform = 1 << 2,
     Storage = 1 << 3,
     Indirect = 1 << 4,
-    // @fb-only: 
+    // @fb-only
   };
 
   using BufferType = uint8_t;
@@ -50,7 +50,7 @@ struct BufferDesc {
     Atomic = 1 << 0,
     UniformBlock = 1 << 1, // Enforces UBO for OpenGL
     Query = 1 << 2,
-    // @fb-only: 
+    // @fb-only
     Ring = 1 << 4, // Metal/Vulkan: Ring buffers with memory for each swapchain image
     NoCopy = 1 << 5, // Metal: The buffer should re-use previously allocated memory.
   };

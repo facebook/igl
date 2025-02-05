@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only: 
+// @fb-only
 
 #include "HelloWorldSession.h"
 #include <igl/NameHandle.h>
@@ -127,9 +127,9 @@ std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) {
                                                            "main",
                                                            "",
                                                            nullptr);
-  // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
+  // @fb-only
+    // @fb-only
+    // @fb-only
   case igl::BackendType::Metal:
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);

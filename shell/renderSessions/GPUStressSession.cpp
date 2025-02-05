@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only: 
+// @fb-only
 
 #include "GPUStressSession.h"
 #include <IGLU/imgui/Session.h>
@@ -217,9 +217,9 @@ layout(push_constant) uniform PushConstants {
 std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) noexcept {
   const bool bMultiView = device.hasFeature(DeviceFeatures::Multiview);
   switch (device.getBackendType()) {
-  // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
+  // @fb-only
+    // @fb-only
+    // @fb-only
   case igl::BackendType::Vulkan:
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,

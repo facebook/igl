@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only: 
+// @fb-only
 
 #include <IGLU/simdtypes/SimdTypes.h>
 #include <cmath>
@@ -113,9 +113,9 @@ static std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& de
   case igl::BackendType::Vulkan:
     IGL_DEBUG_ABORT("IGLSamples not set up for Vulkan");
     return nullptr;
-  // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
+  // @fb-only
+    // @fb-only
+    // @fb-only
   case igl::BackendType::Metal:
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);
