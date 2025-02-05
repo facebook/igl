@@ -830,14 +830,15 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   // Create Vulkan Memory Allocator
   if (IGL_VULKAN_USE_VMA) {
-    VK_ASSERT_RETURN(ivkVmaCreateAllocator(&vf_,
-                                           vkPhysicalDevice_,
-                                           device_->getVkDevice(),
-                                           vkInstance_,
-                                           apiVersion,
-                                           config_.enableBufferDeviceAddress,
-                                           (VkDeviceSize)config_.vmaPreferredLargeHeapBlockSize,
-                                           &pimpl_->vma_));
+    VK_ASSERT_RETURN(
+        ivkVmaCreateAllocator(&vf_,
+                              vkPhysicalDevice_,
+                              device_->getVkDevice(),
+                              vkInstance_,
+                              apiVersion > VK_API_VERSION_1_3 ? VK_API_VERSION_1_3 : apiVersion,
+                              config_.enableBufferDeviceAddress,
+                              (VkDeviceSize)config_.vmaPreferredLargeHeapBlockSize,
+                              &pimpl_->vma_));
   }
 
   // The staging device will use VMA to allocate a buffer, so this needs
