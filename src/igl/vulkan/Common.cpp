@@ -586,6 +586,7 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
 #else
   void* lib = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
   if (!lib) {
+    IGL_LOG_DEBUG("dlopen failed: %s\n", dlerror());
     lib = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
   }
   if (!lib) {
@@ -599,9 +600,11 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
 
 void initialize(VulkanFunctionTable& table) {
   table.vkGetInstanceProcAddr = getVkGetInstanceProcAddr();
-  IGL_DEBUG_ASSERT(table.vkGetInstanceProcAddr != nullptr);
 
-  loadVulkanLoaderFunctions(&table, table.vkGetInstanceProcAddr);
+  if (!loadVulkanLoaderFunctions(&table, table.vkGetInstanceProcAddr)) {
+    IGL_LOG_ERROR("Failed to load Vulkan loader functions");
+    abort();
+  }
 }
 
 void loadInstanceFunctions(VulkanFunctionTable& table, VkInstance instance) {

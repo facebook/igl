@@ -1137,7 +1137,7 @@ static_assert(sizeof(VulkanFunctionTable) == 543 * sizeof(PFN_vkVoidFunction));
 /// @brief Populates the `VulkanFunctionTable` structure. Requires a pointer to the
 /// vkGetInstanceProcAddr function, which is used to retrieve pointers to all non-instance and
 /// no-device functions defined in the `VulkanFunctionTable` structure.
-void loadVulkanLoaderFunctions(struct VulkanFunctionTable* table, PFN_vkGetInstanceProcAddr load);
+int loadVulkanLoaderFunctions(struct VulkanFunctionTable* table, PFN_vkGetInstanceProcAddr load);
 
 /// @brief Populates the instance function pointers in the `VulkanFunctionTable` structure. Requires
 /// a pointer to the vkGetInstanceProcAddr function, which is used to retrieve pointers to all

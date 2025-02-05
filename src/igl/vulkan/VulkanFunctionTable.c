@@ -11,8 +11,23 @@
 extern "C" {
 #endif
 
-void loadVulkanLoaderFunctions(struct VulkanFunctionTable* table, PFN_vkGetInstanceProcAddr load) {
+#if defined(FORCE_USE_STATIC_SWIFTSHADER) && !defined(FORCE_USE_STATIC_SWIFTSHADER_DISABLED)
+extern PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkInstance instance, const char* pName);
+#endif
+
+int loadVulkanLoaderFunctions(struct VulkanFunctionTable* table, PFN_vkGetInstanceProcAddr load) {
   /* IGL_GENERATE_LOAD_LOADER_TABLE */
+
+#if defined(FORCE_USE_STATIC_SWIFTSHADER) && !defined(FORCE_USE_STATIC_SWIFTSHADER_DISABLED)
+  if (table->vkGetInstanceProcAddr == NULL) {
+    table->vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
+    load = table->vkGetInstanceProcAddr;
+  }
+#endif
+
+  if (!load) {
+    return 0;
+  }
 #if defined(VK_VERSION_1_0)
   table->vkCreateInstance = (PFN_vkCreateInstance)load(NULL, "vkCreateInstance");
   table->vkEnumerateInstanceExtensionProperties = (PFN_vkEnumerateInstanceExtensionProperties)load(
@@ -25,12 +40,13 @@ void loadVulkanLoaderFunctions(struct VulkanFunctionTable* table, PFN_vkGetInsta
       (PFN_vkEnumerateInstanceVersion)load(NULL, "vkEnumerateInstanceVersion");
 #endif /* defined(VK_VERSION_1_1) */
   /* IGL_GENERATE_LOAD_LOADER_TABLE */
+  return 1;
 }
 
 void loadVulkanInstanceFunctions(struct VulkanFunctionTable* table,
                                  VkInstance context,
                                  PFN_vkGetInstanceProcAddr load) {
-  /* IGL_GENERATE_LOAD_INSTANCE_TABLE */
+/* IGL_GENERATE_LOAD_INSTANCE_TABLE */
 #if defined(VK_VERSION_1_0)
   table->vkCreateDevice = (PFN_vkCreateDevice)load(context, "vkCreateDevice");
   table->vkDestroyInstance = (PFN_vkDestroyInstance)load(context, "vkDestroyInstance");
@@ -378,7 +394,7 @@ void loadVulkanInstanceFunctions(struct VulkanFunctionTable* table,
 void loadVulkanDeviceFunctions(struct VulkanFunctionTable* table,
                                VkDevice context,
                                PFN_vkGetDeviceProcAddr load) {
-  /* IGL_GENERATE_LOAD_DEVICE_TABLE */
+/* IGL_GENERATE_LOAD_DEVICE_TABLE */
 #if defined(VK_VERSION_1_0)
   table->vkAllocateCommandBuffers =
       (PFN_vkAllocateCommandBuffers)load(context, "vkAllocateCommandBuffers");
