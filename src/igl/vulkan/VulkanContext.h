@@ -64,11 +64,13 @@ struct VulkanSampler;
  *  0 - combined image samplers
  *  1 - uniform/storage buffers
  *  2 - bindless textures/samplers  <--  optional
+ *  3 - storage images
  */
 enum {
   kBindPoint_CombinedImageSamplers = 0,
   kBindPoint_Buffers = 1,
   kBindPoint_Bindless = 2,
+  kBindPoint_StorageImages = 3,
 };
 
 struct DeviceQueues {
