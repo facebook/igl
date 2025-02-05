@@ -11,7 +11,7 @@
 
 namespace igl::vulkan::util {
 
-// @fb-only: 
+// @fb-only
 
 // Vulkan Defines
 #define VK_FORMAT_UNDEFINED 0

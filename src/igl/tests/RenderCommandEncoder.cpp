@@ -722,7 +722,7 @@ TEST_F(RenderCommandEncoderTest, shouldNotDraw) {
 TEST_F(RenderCommandEncoderTest, shouldDrawATriangleBindGroup) {
 #if IGL_PLATFORM_APPLE
   if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
-    // @fb-only: 
+    // @fb-only
     GTEST_SKIP() << "Broken on macOS arm64";
     return;
   }

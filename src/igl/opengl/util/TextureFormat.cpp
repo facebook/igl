@@ -9,7 +9,7 @@
 
 namespace igl::opengl::util {
 
-// @fb-only: 
+// @fb-only
 
 /// OpenGL Constants
 #define GL_ALPHA 0x1906

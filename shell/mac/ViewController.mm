@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only: 
+// @fb-only
 
 #import "ViewController.h"
 
@@ -13,7 +13,7 @@
 #import "HeadlessView.h"
 #import "MetalView.h"
 #import "VulkanView.h"
-// @fb-only: 
+// @fb-only
 
 #import <igl/Common.h>
 #import <igl/IGL.h>
@@ -33,11 +33,11 @@
 #include <shell/shared/renderSession/AppParams.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
+// @fb-only
 #if IGL_BACKEND_VULKAN
 #import <igl/vulkan/Device.h>
 #import <igl/vulkan/HWDevice.h>
@@ -116,15 +116,15 @@ using namespace igl;
   igl::SurfaceTextures surfaceTextures;
   if (config_.backendVersion.flavor != igl::BackendFlavor::Invalid &&
       shellPlatform_->getDevicePtr() != nullptr) {
-// @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
-      // @fb-only: 
-          // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-    // @fb-only: 
-// @fb-only: 
+// @fb-only
+    // @fb-only
+    // @fb-only
+      // @fb-only
+          // @fb-only
+      // @fb-only
+      // @fb-only
+    // @fb-only
+// @fb-only
 
     // surface textures
     surfaceTextures = igl::SurfaceTextures{[self createTextureFromNativeDrawable],
@@ -136,12 +136,12 @@ using namespace igl;
     // update retina scale
     float pixelsPerPoint = shellParams_.nativeSurfaceDimensions.x / shellParams_.viewportSize.x;
     session_->setPixelsPerPoint(pixelsPerPoint);
-// @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
-        // @fb-only: 
-    // @fb-only: 
-// @fb-only: 
+// @fb-only
+    // @fb-only
+    // @fb-only
+        // @fb-only
+    // @fb-only
+// @fb-only
   }
   // draw
   session_->update(std::move(surfaceTextures));
@@ -160,8 +160,8 @@ using namespace igl;
     auto headlessView = [[HeadlessView alloc] initWithFrame:frame_];
     self.view = headlessView;
 
-    // @fb-only: 
-        // @fb-only: 
+    // @fb-only
+        // @fb-only
 
     // Headless platform does not run on a real device
     shellPlatform_ = std::make_shared<igl::shell::PlatformMac>(nullptr);
@@ -322,30 +322,30 @@ using namespace igl;
   }
 #endif
 
-// @fb-only: 
-  // @fb-only: 
-    // @fb-only: 
+// @fb-only
+  // @fb-only
+    // @fb-only
 
-    // @fb-only: 
-        // @fb-only: 
+    // @fb-only
+        // @fb-only
 
-    // @fb-only: 
-    // @fb-only: 
-        // @fb-only: 
-        // @fb-only: 
-        // @fb-only: 
-        // @fb-only: 
-            // @fb-only: 
-        // @fb-only: 
+    // @fb-only
+    // @fb-only
+        // @fb-only
+        // @fb-only
+        // @fb-only
+        // @fb-only
+            // @fb-only
+        // @fb-only
 
-    // @fb-only: 
+    // @fb-only
 
-    // @fb-only: 
+    // @fb-only
 
-    // @fb-only: 
-    // @fb-only: 
-  // @fb-only: 
-// @fb-only: 
+    // @fb-only
+    // @fb-only
+  // @fb-only
+// @fb-only
 
   default: {
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
@@ -430,15 +430,15 @@ using namespace igl;
   }
 #endif
 
-// @fb-only: 
-  // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
-  // @fb-only: 
-// @fb-only: 
+// @fb-only
+  // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+    // @fb-only
+  // @fb-only
+// @fb-only
 
   default: {
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
@@ -483,14 +483,14 @@ using namespace igl;
   }
 #endif
 
-// @fb-only: 
-  // @fb-only: 
-    // @fb-only: 
-        // @fb-only: 
-        // @fb-only: 
-        // @fb-only: 
-  // @fb-only: 
-// @fb-only: 
+// @fb-only
+  // @fb-only
+    // @fb-only
+        // @fb-only
+        // @fb-only
+        // @fb-only
+  // @fb-only
+// @fb-only
 
   default: {
     IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();

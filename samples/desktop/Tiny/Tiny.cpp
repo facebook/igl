@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only: 
+// @fb-only
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -264,7 +264,7 @@ static void createRenderPipeline() {
   desc.targetDesc.colorAttachments.resize(kNumColorAttachments);
 
   for (auto i = 0; i < kNumColorAttachments; ++i) {
-    // @fb-only: 
+    // @fb-only
     if (framebuffer_->getColorAttachment(i)) {
       desc.targetDesc.colorAttachments[i].textureFormat =
           framebuffer_->getColorAttachment(i)->getFormat();

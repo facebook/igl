@@ -7,9 +7,9 @@
 
 #include <shell/shared/platform/android/PlatformAndroid.h>
 
-// @fb-only: 
-// @fb-only: 
-// @fb-only: 
+// @fb-only
+// @fb-only
+// @fb-only
 #include <shell/shared/fileLoader/android/FileLoaderAndroid.h>
 #include <shell/shared/imageLoader/ImageLoader.h>
 #include <shell/shared/imageWriter/ImageWriter.h>
@@ -25,51 +25,51 @@
 #endif
 
 namespace {
-// @fb-only: 
+// @fb-only
   // @fb-only// Try to get ActivityThread so we can get a Context
-  // @fb-only: 
-  // @fb-only: 
-    // @fb-only: 
-  // @fb-only: 
+  // @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
   // @fb-only
   // @fb-only // Get an Application (a Context) object from ActivityThread
-  // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-  // @fb-only: 
-    // @fb-only: 
-  // @fb-only: 
   // @fb-only
-  // @fb-only: 
-// @fb-only: 
+      // @fb-only
+      // @fb-only
+      // @fb-only
   // @fb-only
-// @fb-only: 
-  // @fb-only: 
-    // @fb-only: 
-  // @fb-only: 
-  // @fb-only: 
-  // @fb-only: 
-  // @fb-only: 
-      // @fb-only: 
-          // @fb-only: 
-          // @fb-only: 
-          // @fb-only: 
-  // @fb-only: 
-  // @fb-only: 
+    // @fb-only
   // @fb-only
-  // @fb-only: 
-// @fb-only: 
+  // @fb-only
+  // @fb-only
+// @fb-only
+  // @fb-only
+// @fb-only
+  // @fb-only
+    // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+      // @fb-only
+          // @fb-only
+          // @fb-only
+          // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+  // @fb-only
+// @fb-only
 } // namespace
 
 namespace igl::shell {
 
 PlatformAndroid::PlatformAndroid(std::shared_ptr<igl::IDevice> device, bool useFakeLoader) :
   device_(std::move(device)) {
-  // @fb-only: 
+  // @fb-only
   fileLoader_ = std::make_unique<igl::shell::FileLoaderAndroid>();
-  // @fb-only: 
-      // @fb-only: 
+  // @fb-only
+      // @fb-only
   imageLoader_ = std::make_unique<igl::shell::ImageLoader>(*fileLoader_);
   if (!useFakeLoader) {
     imageWriter_ = std::make_unique<igl::shell::ImageWriterAndroid>();

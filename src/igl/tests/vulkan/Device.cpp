@@ -193,7 +193,7 @@ TEST_F(DeviceVulkanTest, EnsureValidation) {
                   "has been temporarily disabled.";
 
 #if !defined(IGL_DISABLE_VALIDATION)
-  // @fb-only: 
+  // @fb-only
   // igl::vulkan::VulkanContext& ctx =
   //   static_cast<igl::vulkan::Device*>(iglDev_.get())->getVulkanContext();
 

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only: 
+// @fb-only
 
 package com.facebook.igl.shell;
 
@@ -26,7 +26,7 @@ public class SampleLib {
     OpenGL_ES,
     Metal,
     Vulkan,
-    // @fb-only: 
+    // @fb-only
   }
 
   // Must match igl/DeviceFeatures.h

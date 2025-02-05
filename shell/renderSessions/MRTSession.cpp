@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only: 
+// @fb-only
 
 #include <cmath>
 #include <igl/NameHandle.h>
@@ -252,9 +252,9 @@ static std::unique_ptr<IShaderStages> createShaderStagesForBackend(const IDevice
         "main",
         "",
         nullptr);
-  // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
+  // @fb-only
+    // @fb-only
+    // @fb-only
   case igl::BackendType::OpenGL:
     return igl::ShaderStagesCreator::fromModuleStringInput(
         device,

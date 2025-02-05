@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// @fb-only: 
+// @fb-only
 
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <igl/NameHandle.h>
@@ -207,9 +207,9 @@ std::unique_ptr<igl::IShaderStages> getShaderStagesForBackend(igl::IDevice& devi
                                                            "",
                                                            nullptr);
     return nullptr;
-  // @fb-only: 
-    // @fb-only: 
-    // @fb-only: 
+  // @fb-only
+    // @fb-only
+    // @fb-only
   case igl::BackendType::Metal:
     return igl::ShaderStagesCreator::fromLibraryStringInput(
         device, getMetalShaderSource().c_str(), "vertexShader", "fragmentShader", "", nullptr);

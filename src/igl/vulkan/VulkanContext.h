@@ -116,22 +116,22 @@ class VulkanContext final {
                           igl::Result* IGL_NULLABLE outResult,
                           const char* IGL_NULLABLE debugName = nullptr) const;
 
-// @fb-only: 
-  // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-      // @fb-only: 
-// @fb-only: 
+// @fb-only
+  // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+      // @fb-only
+// @fb-only
 
   std::unique_ptr<VulkanImage> createImageFromFileDescriptor(
       int32_t fileDescriptor,
