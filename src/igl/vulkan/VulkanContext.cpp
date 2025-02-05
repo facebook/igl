@@ -954,19 +954,25 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
 #if defined(VK_EXT_calibrated_timestamps)
   if (extensions_.enabled(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)) {
-    tracyCtx_ = TracyVkContextCalibrated(getVkPhysicalDevice(),
+    tracyCtx_ = TracyVkContextCalibrated(vkInstance_,
+                                         getVkPhysicalDevice(),
                                          getVkDevice(),
                                          deviceQueues_.graphicsQueue,
                                          profilingCommandBuffer_,
-                                         vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
-                                         vkGetCalibratedTimestampsEXT);
+                                         tableImpl_->vkGetInstanceProcAddr,
+                                         tableImpl_->vkGetDeviceProcAddr);
   }
 #endif // VK_EXT_calibrated_timestamps
   // If VK_EXT_calibrated_timestamps is not available or it has not been enabled, use the
   // uncalibrated Tracy context
   if (!tracyCtx_) {
-    tracyCtx_ = TracyVkContext(
-        getVkPhysicalDevice(), getVkDevice(), deviceQueues_.graphicsQueue, profilingCommandBuffer_);
+    tracyCtx_ = TracyVkContext(vkInstance_,
+                               getVkPhysicalDevice(),
+                               getVkDevice(),
+                               deviceQueues_.graphicsQueue,
+                               profilingCommandBuffer_,
+                               tableImpl_->vkGetInstanceProcAddr,
+                               tableImpl_->vkGetDeviceProcAddr);
   }
 
   IGL_DEBUG_ASSERT(tracyCtx_, "Failed to create Tracy GPU profiling context");
