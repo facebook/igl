@@ -338,6 +338,8 @@ struct VulkanContextImpl final {
       arenaCombinedImageSamplers_;
   std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<igl::vulkan::DescriptorPoolsArena>>
       arenaBuffers_;
+  std::unordered_map<VkDescriptorSetLayout, std::unique_ptr<igl::vulkan::DescriptorPoolsArena>>
+      arenaStorageImages_;
   std::unique_ptr<igl::vulkan::VulkanDescriptorSetLayout> dslBindless_; // everything
   VkDescriptorPool dpBindless_ = VK_NULL_HANDLE;
   VkDescriptorSet dsBindless_ = VK_NULL_HANDLE;
@@ -365,6 +367,17 @@ struct VulkanContextImpl final {
                                                numBindings,
                                                "arenaCombinedImageSamplers_");
     return *arenaCombinedImageSamplers_[dsl].get();
+  }
+  igl::vulkan::DescriptorPoolsArena& getOrCreateArena_StorageImages(const VulkanContext& ctx,
+                                                                    VkDescriptorSetLayout dsl,
+                                                                    uint32_t numBindings) {
+    auto it = arenaStorageImages_.find(dsl);
+    if (it != arenaStorageImages_.end()) {
+      return *it->second;
+    }
+    arenaStorageImages_[dsl] = std::make_unique<DescriptorPoolsArena>(
+        ctx, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, dsl, numBindings, "arenaStorageImages_");
+    return *arenaStorageImages_[dsl].get();
   }
   igl::vulkan::DescriptorPoolsArena& getOrCreateArena_Buffers(const VulkanContext& ctx,
                                                               VkDescriptorSetLayout dsl,
@@ -498,6 +511,7 @@ VulkanContext::~VulkanContext() {
       }
     }
     pimpl_->arenaCombinedImageSamplers_.clear();
+    pimpl_->arenaStorageImages_.clear();
     pimpl_->arenaBuffers_.clear();
     vf_.vkDestroyPipelineCache(device, pipelineCache_, nullptr);
   }
@@ -1846,6 +1860,7 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
 void VulkanContext::freeResourcesForDescriptorSetLayout(VkDescriptorSetLayout dsl) const {
   pimpl_->arenaBuffers_.erase(dsl);
   pimpl_->arenaCombinedImageSamplers_.erase(dsl);
+  pimpl_->arenaStorageImages_.erase(dsl);
 }
 
 igl::BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc& desc,
