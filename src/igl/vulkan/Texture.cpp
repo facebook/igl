@@ -164,22 +164,51 @@ Result Texture::create(const TextureDesc& desc) {
   }
 
   Result result;
-  auto image = ctx.createImage(
-      imageType,
-      VkExtent3D{(uint32_t)desc_.width, (uint32_t)desc_.height, (uint32_t)desc_.depth},
-      vkFormat,
-      (uint32_t)desc_.numMipLevels,
-      arrayLayerCount,
-      tiling,
-      usageFlags,
-      memFlags,
-      createFlags,
-      samples,
-      &result,
-      debugNameImage.c_str());
-  if (!IGL_DEBUG_VERIFY(result.isOk())) {
-    return result;
+  VulkanImage image;
+
+  if (desc_.exportability == TextureDesc::TextureExportability::NoExport) {
+    image = ctx.createImage(
+        imageType,
+        VkExtent3D{(uint32_t)desc_.width, (uint32_t)desc_.height, (uint32_t)desc_.depth},
+        vkFormat,
+        (uint32_t)desc_.numMipLevels,
+        arrayLayerCount,
+        tiling,
+        usageFlags,
+        memFlags,
+        createFlags,
+        samples,
+        &result,
+        debugNameImage.c_str());
+    if (!IGL_DEBUG_VERIFY(result.isOk())) {
+      return result;
+    }
+  } else if (desc_.exportability == TextureDesc::TextureExportability::Exportable) {
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
+
+    image = igl::vulkan::VulkanImage::createWithExportMemory(
+        ctx,
+        ctx.getVkDevice(),
+        VkExtent3D{.width = (uint32_t)desc_.width,
+                   .height = (uint32_t)desc_.height,
+                   .depth = (uint32_t)desc_.depth},
+        imageType,
+        vkFormat,
+        (uint32_t)desc_.numMipLevels,
+        arrayLayerCount,
+        tiling,
+        usageFlags,
+        createFlags,
+        samples,
+        "vulkan export memory image");
+
+#else // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
+    // Currently only Mac is not supported.
+    return Result(Result::Code::Unimplemented,
+                  "Exportable textures are not supported on this platform.");
+#endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
   }
+
   if (!IGL_DEBUG_VERIFY(image.valid())) {
     return Result(Result::Code::InvalidOperation, "Cannot create VulkanImage");
   }

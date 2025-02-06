@@ -478,6 +478,8 @@ struct TextureDesc {
    */
   enum class TextureTiling : uint8_t { Optimal, Linear };
 
+  enum class TextureExportability : uint8_t { NoExport, Exportable };
+
   uint32_t width = 1;
   uint32_t height = 1;
   uint32_t depth = 1;
@@ -489,6 +491,7 @@ struct TextureDesc {
   TextureFormat format = TextureFormat::Invalid;
   ResourceStorage storage = ResourceStorage::Invalid;
   TextureTiling tiling = TextureTiling::Optimal;
+  TextureExportability exportability = TextureExportability::NoExport;
 
   std::string debugName;
 
@@ -521,6 +524,7 @@ struct TextureDesc {
                        format,
                        ResourceStorage::Invalid,
                        TextureTiling::Optimal,
+                       TextureExportability::NoExport,
                        debugName ? debugName : ""};
   }
 
@@ -553,6 +557,7 @@ struct TextureDesc {
         format,
         ResourceStorage::Invalid,
         TextureTiling::Optimal,
+        TextureExportability::NoExport,
         debugName ? debugName : "",
     };
   }
@@ -583,6 +588,7 @@ struct TextureDesc {
                        format,
                        ResourceStorage::Invalid,
                        TextureTiling::Optimal,
+                       TextureExportability::NoExport,
                        debugName ? debugName : ""};
   }
 
@@ -614,6 +620,7 @@ struct TextureDesc {
                        format,
                        ResourceStorage::Invalid,
                        TextureTiling::Optimal,
+                       TextureExportability::NoExport,
                        debugName ? debugName : ""};
   }
 
@@ -642,6 +649,7 @@ struct TextureDesc {
                        format,
                        ResourceStorage::Invalid,
                        TextureTiling::Optimal,
+                       TextureExportability::NoExport,
                        debugName ? debugName : ""};
   }
 
@@ -672,6 +680,7 @@ struct TextureDesc {
                        format,
                        ResourceStorage::Shared,
                        TextureTiling::Optimal,
+                       TextureExportability::NoExport,
                        debugName ? debugName : ""};
   }
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)

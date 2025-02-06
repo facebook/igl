@@ -139,6 +139,12 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
                       "Array textures are only supported when type is TwoDArray.");
     return nullptr;
   }
+  if (desc.exportability != TextureDesc::TextureExportability::NoExport) {
+    Result::setResult(outResult,
+                      Result::Code::Unimplemented,
+                      "Exportable textures are not supported on this platform.");
+    return nullptr;
+  };
 
   MTLTextureDescriptor* metalDesc = [MTLTextureDescriptor new];
   metalDesc.textureType = Texture::convertType(sanitized.type, sanitized.numSamples);

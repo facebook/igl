@@ -62,6 +62,10 @@ Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
     return Result{Result::Code::Unsupported,
                   "Array textures are only supported when type is TwoDArray."};
   }
+  if (desc.exportability != TextureDesc::TextureExportability::NoExport) {
+    return Result{Result::Code::Unimplemented,
+                  "Exportable textures are not supported on this platform."};
+  }
   if (IGL_DEBUG_VERIFY(!isCreated_)) {
     isCreated_ = true;
     IGL_DEBUG_ASSERT(desc.format != TextureFormat::Invalid && desc.format == getFormat());

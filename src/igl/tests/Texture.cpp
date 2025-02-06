@@ -6,6 +6,7 @@
  */
 
 #include "Texture.h"
+#include <igl/Common.h>
 
 namespace igl::tests {
 
@@ -736,6 +737,55 @@ TEST_F(TextureTest, ValidateRange3D) {
 
   ret = tex->validateRange(TextureRangeDesc::new3D(0, 0, 0, 0, 0, 0));
   EXPECT_FALSE(ret.isOk());
+}
+
+//
+// Texture Export Support Test
+//
+// This test verifies:
+// 1. NoExport textures can be created and used on all platforms
+// 2. Exportable textures work only on supported platforms
+// 3. Basic texture operations work for both types where supported
+//
+TEST_F(TextureTest, ExportableTexture) {
+  Result ret;
+
+  // Test NoExport texture (should work on all platforms)
+  auto texDesc =
+      TextureDesc::new2D(TextureFormat::RGBA_UNorm8, 8, 8, TextureDesc::TextureUsageBits::Sampled);
+  texDesc.exportability = TextureDesc::TextureExportability::NoExport;
+
+  auto texNoExport = iglDev_->createTexture(texDesc, &ret);
+  EXPECT_TRUE(ret.isOk());
+  ASSERT_TRUE(texNoExport != nullptr);
+
+  // Verify basic texture operations
+  auto rangeDesc = TextureRangeDesc::new2D(0, 0, 8, 8);
+  std::vector<uint32_t> inputData(64, 0x80808080);
+  texNoExport->upload(rangeDesc, inputData.data());
+  util::validateUploadedTexture(*iglDev_, *cmdQueue_, texNoExport, inputData.data(), "NoExport");
+
+  // Test Exportable texture (platform dependent)
+  texDesc.exportability = TextureDesc::TextureExportability::Exportable;
+  auto texExportable = iglDev_->createTexture(texDesc, &ret);
+
+#if IGL_PLATFORM_WIN32 || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
+  if (iglDev_->getBackendType() == BackendType::Vulkan) {
+    EXPECT_TRUE(ret.isOk());
+    ASSERT_TRUE(texExportable != nullptr);
+
+    // Verify basic texture operations
+    texExportable->upload(rangeDesc, inputData.data());
+    util::validateUploadedTexture(
+        *iglDev_, *cmdQueue_, texExportable, inputData.data(), "Exportable");
+  } else {
+    EXPECT_EQ(ret.code, Result::Code::Unimplemented);
+    ASSERT_TRUE(texExportable == nullptr);
+  }
+#else
+  EXPECT_EQ(ret.code, Result::Code::Unimplemented);
+  ASSERT_TRUE(texExportable == nullptr);
+#endif
 }
 
 } // namespace igl::tests
