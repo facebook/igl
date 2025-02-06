@@ -150,7 +150,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(
 
   auto texture = std::make_shared<igl::vulkan::android::NativeHWTextureBuffer>(
       device_, igl::android::getIglFormat(hwbDesc.format));
-  subResult = texture->createTextureInternal(buffer);
+  subResult = texture->createWithHWBuffer(buffer);
   Result::setResult(outResult, subResult.code, subResult.message);
   if (!subResult.isOk()) {
     return nullptr;

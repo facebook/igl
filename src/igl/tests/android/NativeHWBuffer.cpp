@@ -146,7 +146,7 @@ TEST_F(NativeHWBufferTest, LockBuffer) {
   {
     NativeHWTextureBufferTest testTxBuffer;
 
-    EXPECT_TRUE(testTxBuffer.createTextureInternal(hwBuffer).isOk());
+    EXPECT_TRUE(testTxBuffer.createWithHWBuffer(hwBuffer).isOk());
 
     std::byte* bytes = nullptr;
     INativeHWTextureBuffer::RangeDesc outRange;

@@ -49,7 +49,8 @@ class INativeHWTextureBuffer {
 
   virtual ~INativeHWTextureBuffer();
 
-  virtual Result createTextureInternal(AHardwareBuffer* buffer) = 0;
+  Result createWithHWBuffer(AHardwareBuffer* buffer);
+
   Result createHWBuffer(const TextureDesc& desc, bool hasStorageAlready, bool surfaceComposite);
 
   [[nodiscard]] LockGuard lockHWBuffer(std::byte* IGL_NULLABLE* IGL_NONNULL dst,
@@ -64,6 +65,7 @@ class INativeHWTextureBuffer {
   [[nodiscard]] TextureDesc getTextureDesc() const;
 
  protected:
+  virtual Result createTextureInternal(AHardwareBuffer* buffer) = 0;
   AHardwareBuffer* hwBuffer_ = nullptr;
   TextureDesc textureDesc_;
 };

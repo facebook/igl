@@ -183,6 +183,23 @@ INativeHWTextureBuffer::~INativeHWTextureBuffer() {
     hwBuffer_ = nullptr;
   }
 }
+Result INativeHWTextureBuffer::createWithHWBuffer(AHardwareBuffer* buffer) {
+  if (hwBuffer_) {
+    return Result{Result::Code::InvalidOperation, "Hardware buffer already provided"};
+  }
+
+  AHardwareBuffer_acquire(buffer);
+
+  // textureDesc_ should be updated through createTextureInternal function.
+  Result result = createTextureInternal(buffer);
+  if (!result.isOk()) {
+    AHardwareBuffer_release(buffer);
+  } else {
+    hwBuffer_ = buffer;
+  }
+
+  return result;
+}
 
 Result INativeHWTextureBuffer::createHWBuffer(const TextureDesc& desc,
                                               bool hasStorageAlready,

@@ -70,12 +70,6 @@ Result NativeHWTextureBuffer::create(const TextureDesc& desc, bool hasStorageAlr
 }
 
 Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* buffer) {
-  if (hwBuffer_) {
-    return Result{Result::Code::InvalidOperation, "Hardware buffer already provided"};
-  }
-
-  AHardwareBuffer_acquire(buffer);
-
   AHardwareBuffer_Desc hwbDesc;
   AHardwareBuffer_describe(buffer, &hwbDesc);
 
@@ -141,6 +135,8 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* buffer) {
   hwBufferCtx->display = display;
   hwBufferCtx->elgImage = eglImage;
   hwBufferHelper_ = std::static_pointer_cast<AHardwareBufferHelper>(hwBufferCtx);
+
+  textureDesc_ = desc;
 
   return Result{};
 }

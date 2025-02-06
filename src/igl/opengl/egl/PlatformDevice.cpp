@@ -190,7 +190,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureWithSharedMemory(AHardwar
 
   auto texture = std::make_shared<android::NativeHWTextureBuffer>(
       getContext(), igl::android::getIglFormat(hwbDesc.format));
-  subResult = texture->createTextureInternal(buffer);
+  subResult = texture->createWithHWBuffer(buffer);
   Result::setResult(outResult, subResult.code, subResult.message);
   if (!subResult.isOk()) {
     return nullptr;
