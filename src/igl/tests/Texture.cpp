@@ -751,8 +751,11 @@ TEST_F(TextureTest, ExportableTexture) {
   Result ret;
 
   // Test NoExport texture (should work on all platforms)
-  auto texDesc =
-      TextureDesc::new2D(TextureFormat::RGBA_UNorm8, 8, 8, TextureDesc::TextureUsageBits::Sampled);
+  auto texDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                    8,
+                                    8,
+                                    TextureDesc::TextureUsageBits::Sampled |
+                                        TextureDesc::TextureUsageBits::Attachment);
   texDesc.exportability = TextureDesc::TextureExportability::NoExport;
 
   auto texNoExport = iglDev_->createTexture(texDesc, &ret);
