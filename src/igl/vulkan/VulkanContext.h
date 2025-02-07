@@ -244,6 +244,8 @@ class VulkanContext final {
   VkCommandBuffer profilingCommandBuffer_ = VK_NULL_HANDLE;
 #endif
 
+  void waitDeferredTasks();
+
  private:
   void createInstance(size_t numExtraExtensions,
                       const char* IGL_NULLABLE* IGL_NULLABLE extraExtensions);
@@ -251,7 +253,6 @@ class VulkanContext final {
   void pruneTextures();
   void querySurfaceCapabilities();
   void processDeferredTasks() const;
-  void waitDeferredTasks();
   void growBindlessDescriptorPool(uint32_t newMaxTextures, uint32_t newMaxSamplers);
   igl::BindGroupTextureHandle createBindGroup(const BindGroupTextureDesc& desc,
                                               const IRenderPipelineState* IGL_NULLABLE
