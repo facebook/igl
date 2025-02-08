@@ -772,7 +772,7 @@ TEST_F(TextureTest, ExportableTexture) {
   texDesc.exportability = TextureDesc::TextureExportability::Exportable;
   auto texExportable = iglDev_->createTexture(texDesc, &ret);
 
-#if IGL_PLATFORM_WIN32 || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
+#if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_LINUX || IGL_PLATFORM_ANDROID
   if (iglDev_->getBackendType() == BackendType::Vulkan) {
     EXPECT_TRUE(ret.isOk());
     ASSERT_TRUE(texExportable != nullptr);
