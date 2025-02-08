@@ -33,6 +33,10 @@ struct BindingsTextures {
   VkSampler samplers[IGL_TEXTURE_SAMPLERS_MAX] = {};
 };
 
+struct BindingsStorageImages {
+  VkImageView images[IGL_TEXTURE_SAMPLERS_MAX] = {};
+};
+
 /** @brief Stores uniform and storage buffer bindings, as well as bindings for textures and sampler
  * states for Vulkan. This class maintains vectors for each type of shader resource available in IGL
  * and records the association between binding locations (indices) and the Vulkan objects, while
@@ -62,6 +66,7 @@ class ResourcesBinder final {
 
   /// @brief Binds a texture to index equal to `index`
   void bindTexture(uint32_t index, igl::vulkan::Texture* tex);
+  void bindStorageImage(uint32_t index, igl::vulkan::Texture* tex);
 
   /// @brief Convenience function that updates all bindings in the context for all resource types
   /// that have been modified since the last time this function was called
@@ -85,15 +90,18 @@ class ResourcesBinder final {
   enum DirtyFlagBits : uint8_t {
     DirtyFlagBits_Textures = 1 << 0,
     DirtyFlagBits_Buffers = 1 << 1,
+    DirtyFlagBits_StorageImages = 1 << 2,
   };
 
  private:
   VulkanContext& ctx_;
   VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
   VkPipeline lastPipelineBound_ = VK_NULL_HANDLE;
-  uint32_t isDirtyFlags_ = DirtyFlagBits_Textures | DirtyFlagBits_Buffers;
+  uint32_t isDirtyFlags_ =
+      DirtyFlagBits_Textures | DirtyFlagBits_Buffers | DirtyFlagBits_StorageImages;
   BindingsTextures bindingsTextures_;
   BindingsBuffers bindingsBuffers_;
+  BindingsStorageImages bindingsStorageImages_;
   VkPipelineBindPoint bindPoint_ = VK_PIPELINE_BIND_POINT_GRAPHICS;
   VulkanImmediateCommands::SubmitHandle nextSubmitHandle_ = {};
 };

@@ -966,7 +966,7 @@ void initIGL() {
 #endif
 #else
       const igl::vulkan::VulkanContextConfig cfg = {
-          .terminateOnValidationError = true,
+          .terminateOnValidationError = false,
           .enhancedShaderDebugging = false,
           .enableValidation = kEnableValidationLayers,
           .enableDescriptorIndexing = true,

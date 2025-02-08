@@ -142,6 +142,52 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
   }
 }
 
+void ResourcesBinder::bindStorageImage(uint32_t index, igl::vulkan::Texture* tex) {
+  IGL_PROFILER_FUNCTION();
+
+  if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
+    IGL_DEBUG_ABORT("Invalid texture index");
+    return;
+  }
+
+  const bool isStorage = tex ? (tex->getUsage() & TextureDesc::TextureUsageBits::Storage) > 0
+                             : false;
+
+  if (tex) {
+    if (!IGL_DEBUG_VERIFY(isStorage)) {
+      IGL_DEBUG_ABORT("Did you forget to specify TextureUsageBits::Storage on your texture?");
+    }
+  }
+
+  igl::vulkan::VulkanTexture* newTexture = tex ? &tex->getVulkanTexture() : nullptr;
+
+#if IGL_DEBUG
+  if (newTexture) {
+    const igl::vulkan::VulkanImage& img = newTexture->image_;
+    IGL_DEBUG_ASSERT(img.samples_ == VK_SAMPLE_COUNT_1_BIT,
+                     "Multisampled images cannot be sampled in shaders");
+    // If you trip this assert, then you are likely using an IGL texture
+    // that was not rendered to by IGL. If that's the case, then make sure
+    // the underlying image is transitioned to
+    // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    IGL_DEBUG_ASSERT(img.imageLayout_ == VK_IMAGE_LAYOUT_GENERAL);
+  }
+#endif // IGL_DEBUG
+
+  // multisampled images cannot be directly accessed from shaders
+  const bool isTextureAvailable =
+      (newTexture != nullptr) &&
+      ((newTexture->image_.samples_ & VK_SAMPLE_COUNT_1_BIT) == VK_SAMPLE_COUNT_1_BIT);
+  const bool isStorageImage = isTextureAvailable && newTexture->image_.isStorageImage();
+
+  VkImageView imageView = isStorageImage ? newTexture->imageView_.vkImageView_ : VK_NULL_HANDLE;
+
+  if (bindingsStorageImages_.images[index] != imageView) {
+    bindingsStorageImages_.images[index] = imageView;
+    isDirtyFlags_ |= DirtyFlagBits_StorageImages;
+  }
+}
+
 void ResourcesBinder::updateBindings(VkPipelineLayout layout, const vulkan::PipelineState& state) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_UPDATE);
 
