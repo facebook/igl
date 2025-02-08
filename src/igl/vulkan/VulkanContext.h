@@ -54,6 +54,7 @@ class VulkanTexture;
 
 struct BindingsBuffers;
 struct BindingsTextures;
+struct BindingsStorageImages;
 struct VulkanContextImpl;
 struct VulkanImageCreateInfo;
 struct VulkanImageViewCreateInfo;
@@ -365,6 +366,13 @@ class VulkanContext final {
                              BindingsBuffers& data,
                              const VulkanDescriptorSetLayout& dsl,
                              const util::SpvModuleInfo& info) const;
+  void updateBindingsStorageImages(VkCommandBuffer IGL_NONNULL cmdBuf,
+                                   VkPipelineLayout layout,
+                                   VkPipelineBindPoint bindPoint,
+                                   VulkanImmediateCommands::SubmitHandle nextSubmitHandle,
+                                   const BindingsStorageImages& data,
+                                   const VulkanDescriptorSetLayout& dsl,
+                                   const util::SpvModuleInfo& info) const;
 
   struct DeferredTask {
     DeferredTask(std::packaged_task<void()>&& task, SubmitHandle handle) :
