@@ -211,6 +211,15 @@ void ResourcesBinder::updateBindings(VkPipelineLayout layout, const vulkan::Pipe
                                *state.dslBuffers_,
                                state.info_);
   }
+  if (isDirtyFlags_ & DirtyFlagBits_StorageImages) {
+    ctx_.updateBindingsStorageImages(cmdBuffer_,
+                                     layout,
+                                     bindPoint_,
+                                     nextSubmitHandle_,
+                                     bindingsStorageImages_,
+                                     *state.dslStorageImages_,
+                                     state.info_);
+  }
 
   isDirtyFlags_ = 0;
 }
