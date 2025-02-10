@@ -13,11 +13,7 @@
 #include <vector>
 
 #include "data/ShaderData.h"
-#include "data/TextureData.h"
-#include "data/VertexIndexData.h"
 #include "igl/Buffer.h"
-#include "igl/DepthStencilState.h"
-#include "igl/RenderPipelineState.h"
 #include "util/Common.h"
 
 namespace igl::tests {

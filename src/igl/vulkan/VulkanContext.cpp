@@ -13,8 +13,6 @@
 #include <utility>
 #include <vector>
 
-#include <igl/IGLSafeC.h>
-
 // For vk_mem_alloc.h, define this before including VulkanContext.h in exactly
 // one CPP file
 #if defined(IGL_CMAKE_BUILD)
@@ -42,7 +40,6 @@
 #include <igl/vulkan/VulkanExtensions.h>
 #include <igl/vulkan/VulkanImageView.h>
 #include <igl/vulkan/VulkanPipelineBuilder.h>
-#include <igl/vulkan/VulkanSemaphore.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 #include <igl/vulkan/VulkanTexture.h>
 #include <igl/vulkan/VulkanVma.h>

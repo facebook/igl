@@ -8,18 +8,14 @@
 #include <gtest/gtest.h>
 #include <igl/ShaderCreator.h>
 #include <igl/vulkan/CommandBuffer.h>
-#include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <igl/vulkan/VulkanImage.h>
-#include <igl/vulkan/VulkanTexture.h>
 
 #include <igl/tests/util/device/TestDevice.h>
 
 #ifdef __ANDROID__
-#include <vulkan/vulkan_android.h>
 #endif
 
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_LINUX

@@ -10,10 +10,7 @@
 #include <igl/opengl/egl/Context.h>
 
 #include <EGL/egl.h>
-#include <EGL/eglext.h>
-#include <igl/opengl/ComputeCommandAdapter.h>
 #include <igl/opengl/HWDevice.h>
-#include <igl/opengl/RenderCommandAdapter.h>
 
 #include <cassert>
 #include <igl/Macros.h>

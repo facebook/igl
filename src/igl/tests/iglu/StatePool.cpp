@@ -11,7 +11,6 @@
 
 #include <IGLU/state_pool/RenderPipelineStatePool.h>
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 #include <igl/NameHandle.h>
 #include <string>
 

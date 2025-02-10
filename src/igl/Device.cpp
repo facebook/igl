@@ -6,7 +6,6 @@
  */
 
 #include <igl/Device.h>
-#include <igl/Shader.h>
 
 #include <algorithm>
 #include <utility>

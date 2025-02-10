@@ -28,7 +28,6 @@
 #endif
 #include <GLFW/glfw3native.h>
 #include <glm/ext.hpp>
-#include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
 #include <igl/FPSCounter.h>
 #include <igl/IGL.h>

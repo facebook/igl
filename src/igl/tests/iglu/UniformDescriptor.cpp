@@ -13,7 +13,6 @@
 #include <IGLU/uniform/Collection.h>
 #include <IGLU/uniform/Descriptor.h>
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 #include <string>
 
 namespace iglu::tests {

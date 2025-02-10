@@ -13,7 +13,6 @@
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <glm/glm.hpp>
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 #include <string>
 
 namespace igl::tests {

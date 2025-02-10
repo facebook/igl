@@ -8,7 +8,6 @@
 #include "../util/Common.h"
 
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 #include <igl/tests/util/device/opengl/TestDevice.h>
 
 #if IGL_PLATFORM_IOS

@@ -9,8 +9,6 @@
 #include <igl/opengl/IContext.h>
 
 #include <cstring>
-#include <igl/Assert.h>
-#include <igl/opengl/Errors.h>
 #include <igl/opengl/GLFunc.h>
 #include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/Macros.h>

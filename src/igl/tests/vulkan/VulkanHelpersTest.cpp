@@ -11,10 +11,6 @@
 #include <string>
 #include <vulkan/vulkan_core.h>
 
-#ifdef __ANDROID__
-#include <vulkan/vulkan_android.h>
-#endif
-
 namespace igl::tests {
 
 //

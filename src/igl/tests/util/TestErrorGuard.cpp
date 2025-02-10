@@ -10,7 +10,6 @@
 #include <cstdarg>
 #include <cstdio>
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 #include <string>
 
 igl::tests::util::TestErrorGuard::TestErrorGuard() {

@@ -13,7 +13,6 @@
 
 #include <array>
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 #include <igl/NameHandle.h>
 #include <igl/opengl/PlatformDevice.h>
 #include <string>

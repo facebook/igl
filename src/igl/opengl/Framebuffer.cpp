@@ -9,7 +9,6 @@
 
 #include <cstdlib>
 #include <igl/RenderPass.h>
-#include <igl/opengl/CommandBuffer.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/DummyTexture.h>
 #include <igl/opengl/Errors.h>

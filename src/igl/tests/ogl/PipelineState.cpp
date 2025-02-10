@@ -6,11 +6,9 @@
  */
 
 #include "../data/ShaderData.h"
-#include "../data/VertexIndexData.h"
 #include "../util/Common.h"
 
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 #include <igl/opengl/RenderPipelineState.h>
 #include <utility>
 

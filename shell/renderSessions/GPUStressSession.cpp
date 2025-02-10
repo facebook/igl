@@ -22,7 +22,6 @@
 #include <igl/NameHandle.h>
 #include <igl/ShaderCreator.h>
 #include <igl/opengl/GLIncludes.h>
-#include <math.h>
 #include <memory>
 #include <random>
 #include <shell/shared/platform/DisplayContext.h>

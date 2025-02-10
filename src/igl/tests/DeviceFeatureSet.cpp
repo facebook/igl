@@ -5,11 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "data/TextureData.h"
 #include "util/Common.h"
 #include "util/TestDevice.h"
 #if IGL_BACKEND_OPENGL
-#include <igl/opengl/GLIncludes.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/PlatformDevice.h>
 #endif // IGL_BACKEND_OPENGL

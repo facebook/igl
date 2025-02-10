@@ -9,16 +9,13 @@
 #include <igl/IGL.h>
 
 #include "../data/ShaderData.h"
-#include "../data/TextureData.h"
 #include "../data/VertexIndexData.h"
 #include "../util/Common.h"
-#include "../util/TestDevice.h"
 
 #if IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/EnhancedShaderDebuggingStore.h>
-#include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanFeatures.h>
 #endif

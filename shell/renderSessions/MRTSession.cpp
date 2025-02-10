@@ -17,7 +17,6 @@
 #include <igl/ShaderCreator.h>
 #include <igl/VertexInputState.h>
 #include <igl/opengl/Device.h>
-#include <igl/opengl/GLIncludes.h>
 #include <shell/renderSessions/MRTSession.h>
 #include <shell/shared/renderSession/ShellParams.h>
 

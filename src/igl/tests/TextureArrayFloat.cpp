@@ -23,11 +23,8 @@
 #include <IGLU/managedUniformBuffer/ManagedUniformBuffer.h>
 #include <array>
 #include <cstring>
-#include <glm/glm.hpp>
 #include <glm/gtc/color_space.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 #include <igl/NameHandle.h>
 #include <string>
 

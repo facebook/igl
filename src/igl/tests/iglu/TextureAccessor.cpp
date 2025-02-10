@@ -12,7 +12,6 @@
 #include <IGLU/texture_accessor/TextureAccessorFactory.h>
 #include <gtest/gtest.h>
 #include <igl/Common.h>
-#include <igl/IGL.h>
 #include <string>
 
 #define OFFSCREEN_TEX_HEIGHT 2

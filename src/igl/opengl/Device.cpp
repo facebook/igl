@@ -20,7 +20,6 @@
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/RenderPipelineState.h>
 #include <igl/opengl/SamplerState.h>
-#include <igl/opengl/Shader.h>
 #include <igl/opengl/TextureBuffer.h>
 #include <igl/opengl/TextureTarget.h>
 #include <igl/opengl/UniformBuffer.h>

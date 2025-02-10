@@ -12,7 +12,6 @@
 #include "util/TestDevice.h"
 
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 #if IGL_BACKEND_OPENGL
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/PlatformDevice.h>

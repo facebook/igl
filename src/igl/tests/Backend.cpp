@@ -12,7 +12,6 @@
 #include "util/TestDevice.h"
 
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 #include <igl/NameHandle.h>
 #include <igl/Shader.h>
 #include <memory>

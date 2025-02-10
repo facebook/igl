@@ -10,7 +10,6 @@
 #include "../util/Common.h"
 
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 #include <igl/opengl/DepthStencilState.h>
 #include <string>
 

@@ -11,10 +11,7 @@
 #include "util/TestDevice.h"
 
 #include <cstddef>
-#include <cstring>
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
-#include <igl/NameHandle.h>
 #include <string>
 
 namespace igl::tests {

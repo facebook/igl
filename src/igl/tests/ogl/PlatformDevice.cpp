@@ -9,7 +9,6 @@
 #include "../util/TestDevice.h"
 
 #include <gtest/gtest.h>
-#include <igl/IGL.h>
 #include <igl/opengl/PlatformDevice.h>
 #if IGL_PLATFORM_IOS
 #include <igl/opengl/ios/PlatformDevice.h>
