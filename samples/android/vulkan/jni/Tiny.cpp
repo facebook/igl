@@ -9,17 +9,12 @@
 
 #include <android/log.h>
 #include <android_native_app_glue.h>
-#include <cassert>
-#include <chrono>
 #include <igl/IGL.h>
 #include <igl/vulkan/Common.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/PlatformDevice.h>
 #include <igl/vulkan/VulkanContext.h>
-#include <jni.h>
-#include <stdio.h>
-#include <thread>
 
 #define IGL_SAMPLE_LOG_INFO(...) \
   __android_log_print(ANDROID_LOG_INFO, "libsampleVulkanJni", __VA_ARGS__)
@@ -30,13 +25,10 @@ namespace igl_samples::android {
 
 using namespace igl;
 
+namespace {
+
 std::unique_ptr<IDevice> device_;
 std::shared_ptr<ICommandQueue> commandQueue_;
-std::shared_ptr<IRenderPipelineState> pipelineState_;
-std::shared_ptr<IVertexInputState> vertexInputState_;
-std::shared_ptr<IShaderStages> shaderStages_;
-std::shared_ptr<IBuffer> vertexBuffer_;
-std::shared_ptr<IBuffer> indexBuffer_;
 std::shared_ptr<IFramebuffer> framebuffer_;
 RenderPassDesc renderPass_;
 std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
@@ -44,8 +36,6 @@ std::shared_ptr<IRenderPipelineState> renderPipelineState_Triangle_;
 ANativeWindow* window_;
 uint32_t width_, height_;
 bool initialized_;
-
-namespace {
 
 const char* codeVS = R"(
 #version 460
@@ -74,7 +64,6 @@ void main() {
 	out_FragColor = vec4(color, 1.0);
 };
 )";
-} // namespace
 
 void initWindow(ANativeWindow* window) {
   // Get the Window first
@@ -94,8 +83,8 @@ void initIGL() {
   // create a device
   const igl::vulkan::VulkanContextConfig ctxConfig;
   auto ctx = vulkan::HWDevice::createContext(ctxConfig, window_);
-  std::vector<HWDeviceDesc> devices = vulkan::HWDevice::queryDevices(
-      *ctx.get(), HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
+  std::vector<HWDeviceDesc> devices =
+      vulkan::HWDevice::queryDevices(*ctx, HWDeviceQueryDesc(HWDeviceType::IntegratedGpu), nullptr);
   device_ =
       vulkan::HWDevice::create(std::move(ctx), devices[0], (uint32_t)width_, (uint32_t)height_);
   IGL_DEBUG_ASSERT(device_);
@@ -104,7 +93,7 @@ void initIGL() {
   CommandQueueDesc desc{};
   commandQueue_ = device_->createCommandQueue(desc, nullptr);
 
-  renderPass_.colorAttachments.push_back(igl::RenderPassDesc::ColorAttachmentDesc{});
+  renderPass_.colorAttachments.emplace_back();
   renderPass_.colorAttachments.back().loadAction = LoadAction::Clear;
   renderPass_.colorAttachments.back().storeAction = StoreAction::Store;
   renderPass_.colorAttachments.back().clearColor = {0.4f, 0.0f, 0.0f, 1.0f};
@@ -198,6 +187,7 @@ void initialize(android_app* app) {
   createRenderPipeline();
   initialized_ = true;
 }
+} // namespace
 
 // Android NativeActivity functions
 extern "C" {
@@ -232,7 +222,7 @@ void android_main(struct android_app* app) {
 
   while (app->destroyRequested == 0) {
     for (;;) {
-      int events;
+      int events = 0;
       struct android_poll_source* source = nullptr;
       if (ALooper_pollAll(0, nullptr, &events, (void**)&source) < 0) {
         break;
