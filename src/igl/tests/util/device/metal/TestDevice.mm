@@ -19,7 +19,7 @@ namespace igl::tests::util::device::metal {
 // Used by clients to get an IGL device. The backend is determined by
 // the IGL_BACKEND_TYPE compiler flag in the BUCK file
 //
-std::shared_ptr<::igl::IDevice> createTestDevice() {
+std::shared_ptr<IDevice> createTestDevice() {
   auto mtlDevice = MTLCreateSystemDefaultDevice();
   return ::igl::metal::HWDevice().createWithMTLDevice(mtlDevice, nullptr);
 }

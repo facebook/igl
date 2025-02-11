@@ -62,8 +62,8 @@ igl::opengl::RenderingAPI getOpenGLRenderingAPI(const std::string& backendApi) {
 // Used by clients to get an IGL device. The backend is determined by
 // the IGL_BACKEND_TYPE compiler flag in the BUCK file
 //
-std::shared_ptr<::igl::IDevice> createTestDevice(const std::string& backendApi) {
-  std::shared_ptr<igl::IDevice> iglDev = nullptr;
+std::shared_ptr<IDevice> createTestDevice(const std::string& backendApi) {
+  std::shared_ptr<IDevice> iglDev = nullptr;
   auto renderingAPI = getOpenGLRenderingAPI(backendApi);
 
 #if IGL_PLATFORM_IOS
@@ -84,7 +84,7 @@ std::shared_ptr<::igl::IDevice> createTestDevice(const std::string& backendApi) 
 
 #endif
 
-  return std::static_pointer_cast<igl::IDevice>(iglDev);
+  return std::static_pointer_cast<IDevice>(iglDev);
 }
 
 } // namespace igl::tests::util::device::opengl

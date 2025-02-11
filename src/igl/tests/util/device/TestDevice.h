@@ -18,7 +18,7 @@ namespace tests::util::device {
 /**
  Returns whether or not the specified backend type is supported for test devices.
  */
-bool isBackendTypeSupported(::igl::BackendType backendType);
+bool isBackendTypeSupported(BackendType backendType);
 
 /**
  Create and return an igl::Device that is suitable for running tests against for the specified
@@ -26,9 +26,9 @@ bool isBackendTypeSupported(::igl::BackendType backendType);
  For OpenGL, a backendApi value of "2.0" will return a GLES2 context. All other values will return a
  GLES3 context.
  */
-std::shared_ptr<::igl::IDevice> createTestDevice(::igl::BackendType backendType,
-                                                 const std::string& backendApi = "",
-                                                 bool enableValidation = true);
+std::shared_ptr<IDevice> createTestDevice(BackendType backendType,
+                                          const std::string& backendApi = "",
+                                          bool enableValidation = true);
 
 } // namespace tests::util::device
 } // namespace igl

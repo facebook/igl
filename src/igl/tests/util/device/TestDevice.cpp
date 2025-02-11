@@ -52,7 +52,7 @@
 
 namespace igl::tests::util::device {
 
-bool isBackendTypeSupported(::igl::BackendType backendType) {
+bool isBackendTypeSupported(BackendType backendType) {
   switch (backendType) {
   case ::igl::BackendType::Invalid:
     IGL_DEBUG_ASSERT_NOT_REACHED();
@@ -69,9 +69,9 @@ bool isBackendTypeSupported(::igl::BackendType backendType) {
   IGL_UNREACHABLE_RETURN(false)
 }
 
-std::shared_ptr<::igl::IDevice> createTestDevice(::igl::BackendType backendType,
-                                                 const std::string& backendApi,
-                                                 bool enableValidation) {
+std::shared_ptr<IDevice> createTestDevice(BackendType backendType,
+                                          const std::string& backendApi,
+                                          bool enableValidation) {
   if (backendType == ::igl::BackendType::Metal) {
 #if IGL_METAL_SUPPORTED
     return metal::createTestDevice();

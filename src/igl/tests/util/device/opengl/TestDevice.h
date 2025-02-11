@@ -24,7 +24,7 @@ igl::opengl::RenderingAPI getOpenGLRenderingAPI(const std::string& backendApi = 
 /**
  Create and return an igl::Device that is suitable for running tests against.
  */
-std::shared_ptr<::igl::IDevice> createTestDevice(const std::string& backendApi = "");
+std::shared_ptr<IDevice> createTestDevice(const std::string& backendApi = "");
 
 } // namespace tests::util::device::opengl
 } // namespace igl
