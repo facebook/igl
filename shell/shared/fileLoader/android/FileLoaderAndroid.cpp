@@ -60,7 +60,7 @@ bool FileLoaderAndroid::fileExists(const std::string& fileName) const {
     return false;
   }
 
-  if (fullPath(fileName) != "") {
+  if (!fullPath(fileName).empty()) {
     return true;
   }
   return false;

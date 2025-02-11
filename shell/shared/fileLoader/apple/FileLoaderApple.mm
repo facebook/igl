@@ -27,6 +27,7 @@ NSString* getBundleFilePath(const std::string& fileName) {
     return nsFileName;
   }
 
+  // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
   for (NSBundle* bundle in [NSBundle allBundles]) {
     NSString* nsPath = [bundle pathForResource:nsFileName ofType:nil];
     if (nsPath != nil) {
