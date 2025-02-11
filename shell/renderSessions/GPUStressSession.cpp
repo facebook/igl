@@ -213,7 +213,7 @@ layout(push_constant) uniform PushConstants {
 })";
 }
 
-std::unique_ptr<IShaderStages> getShaderStagesForBackend(igl::IDevice& device) noexcept {
+std::unique_ptr<IShaderStages> getShaderStagesForBackend(IDevice& device) noexcept {
   const bool bMultiView = device.hasFeature(DeviceFeatures::Multiview);
   switch (device.getBackendType()) {
   // @fb-only
@@ -709,11 +709,11 @@ void GPUStressSession::setModelViewMatrix(float angle,
 }
 
 void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
-  igl::Result ret;
+  Result ret;
 
   // TODO: fix framebuffers so you can update the resolve texture
   if (framebuffer_ == nullptr) {
-    igl::FramebufferDesc framebufferDesc;
+    FramebufferDesc framebufferDesc;
     framebufferDesc.colorAttachments[0].texture = surfaceTextures.color;
     framebufferDesc.depthAttachment.texture = surfaceTextures.depth;
     framebufferDesc.mode = surfaceTextures.color->getNumLayers() > 1 ? FramebufferMode::Stereo
@@ -796,7 +796,7 @@ void GPUStressSession::initState(const igl::SurfaceTextures& surfaceTextures) {
 }
 
 void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
-                                 std::shared_ptr<igl::IRenderCommandEncoder> commands) {
+                                 std::shared_ptr<IRenderCommandEncoder> commands) {
   static float angle = 0.0f;
   static int frameCount = 0;
   frameCount++;
@@ -861,20 +861,20 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
           iglu::ManagedUniformBufferInfo info;
           info.index = 1;
           info.length = sizeof(VertexFormat);
-          info.uniforms = std::vector<igl::UniformDesc>{
-              igl::UniformDesc{"projectionMatrix",
-                               -1,
-                               igl::UniformType::Mat4x4,
-                               1,
-                               offsetof(VertexFormat, projectionMatrix),
-                               0},
-              igl::UniformDesc{"modelViewMatrix",
-                               -1,
-                               igl::UniformType::Mat4x4,
-                               1,
-                               offsetof(VertexFormat, modelViewMatrix),
-                               0},
-              igl::UniformDesc{
+          info.uniforms = std::vector<UniformDesc>{
+              UniformDesc{"projectionMatrix",
+                          -1,
+                          igl::UniformType::Mat4x4,
+                          1,
+                          offsetof(VertexFormat, projectionMatrix),
+                          0},
+              UniformDesc{"modelViewMatrix",
+                          -1,
+                          igl::UniformType::Mat4x4,
+                          1,
+                          offsetof(VertexFormat, modelViewMatrix),
+                          0},
+              UniformDesc{
                   "scaleZ", -1, igl::UniformType::Float, 1, offsetof(VertexFormat, scaleZ), 0}};
 
           vertUniformBuffer = std::make_shared<iglu::ManagedUniformBuffer>(device, info);
@@ -889,7 +889,7 @@ void GPUStressSession::drawCubes(const igl::SurfaceTextures& surfaceTextures,
   }
 }
 
-void GPUStressSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
+void GPUStressSession::update(SurfaceTextures surfaceTextures) noexcept {
   auto& device = getPlatform().getDevice();
   if (!isDeviceCompatible(device)) {
     return;
@@ -910,10 +910,10 @@ void GPUStressSession::update(igl::SurfaceTextures surfaceTextures) noexcept {
 
   // Command buffers (1-N per thread): create, submit and forget
   auto buffer = commandQueue_->createCommandBuffer(CommandBufferDesc{}, nullptr);
-  const std::shared_ptr<igl::IRenderCommandEncoder> commands =
+  const std::shared_ptr<IRenderCommandEncoder> commands =
       buffer->createRenderCommandEncoder(renderPass_, framebuffer_);
 
-  igl::FramebufferDesc framebufferDesc;
+  FramebufferDesc framebufferDesc;
   framebufferDesc.colorAttachments[0].texture = framebuffer_->getColorAttachment(0);
   framebufferDesc.depthAttachment.texture = framebuffer_->getDepthAttachment();
 
