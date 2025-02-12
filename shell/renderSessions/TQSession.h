@@ -43,7 +43,6 @@ class TQSession : public RenderSession {
   std::shared_ptr<ITexture> depthTexture_;
   std::shared_ptr<ITexture> tex0_;
   RenderPassDesc renderPass_;
-  std::shared_ptr<IFramebuffer> framebuffer_;
   FragmentFormat fragmentParameters_{};
   std::vector<UniformDesc> fragmentUniformDescriptors_;
   std::vector<UniformDesc> vertexUniformDescriptors_;
