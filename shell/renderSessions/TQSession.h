@@ -26,6 +26,10 @@ class TQSession : public RenderSession {
   void initialize() noexcept override;
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
 
+  void setUVScale(float uvScale) noexcept {
+    uvScale_ = uvScale;
+  }
+
  private:
   std::shared_ptr<ICommandQueue> commandQueue_;
   std::shared_ptr<IRenderPipelineState> pipelineState_;
@@ -43,6 +47,8 @@ class TQSession : public RenderSession {
   FragmentFormat fragmentParameters_{};
   std::vector<UniformDesc> fragmentUniformDescriptors_;
   std::vector<UniformDesc> vertexUniformDescriptors_;
+
+  float uvScale_ = 1.0f;
 };
 
 } // namespace igl::shell

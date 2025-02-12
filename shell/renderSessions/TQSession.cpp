@@ -20,20 +20,6 @@ struct VertexPosUv {
   iglu::simdtypes::float3 position;
   iglu::simdtypes::float2 uv;
 };
-VertexPosUv vertexData[] = {
-    {{-0.8f, 0.8f, 0.0}, {0.0, 0.0}},
-    {{0.8f, 0.8f, 0.0}, {1.0, 0.0}},
-    {{-0.8f, -0.8f, 0.0}, {0.0, 1.0}},
-    {{0.8f, -0.8f, 0.0}, {1.0, 1.0}},
-};
-uint16_t indexData[] = {
-    0,
-    1,
-    2,
-    1,
-    3,
-    2,
-};
 
 std::string getVersion() {
   return {"#version 100"};
@@ -186,10 +172,24 @@ void TQSession::initialize() noexcept {
   auto& device = getPlatform().getDevice();
 
   // Vertex & Index buffer
+  const VertexPosUv vertexData[] = {
+      {{-0.8f, 0.8f, 0.0}, {0.0, 0.0}},
+      {{0.8f, 0.8f, 0.0}, {uvScale_, 0.0}},
+      {{-0.8f, -0.8f, 0.0}, {0.0, uvScale_}},
+      {{0.8f, -0.8f, 0.0}, {uvScale_, uvScale_}},
+  };
   const BufferDesc vbDesc =
       BufferDesc(BufferDesc::BufferTypeBits::Vertex, vertexData, sizeof(vertexData));
   vb0_ = device.createBuffer(vbDesc, nullptr);
   IGL_DEBUG_ASSERT(vb0_ != nullptr);
+  const uint16_t indexData[] = {
+      0,
+      1,
+      2,
+      1,
+      3,
+      2,
+  };
   const BufferDesc ibDesc =
       BufferDesc(BufferDesc::BufferTypeBits::Index, indexData, sizeof(indexData));
   ib0_ = device.createBuffer(ibDesc, nullptr);
