@@ -88,7 +88,7 @@ VkFormat invertRedAndBlue(VkFormat format) {
   }
 }
 
-VkStencilOp stencilOperationToVkStencilOp(igl::StencilOperation op) {
+VkStencilOp stencilOperationToVkStencilOp(StencilOperation op) {
   switch (op) {
   case igl::StencilOperation::Keep:
     return VK_STENCIL_OP_KEEP;
@@ -111,8 +111,8 @@ VkStencilOp stencilOperationToVkStencilOp(igl::StencilOperation op) {
   return VK_STENCIL_OP_KEEP;
 }
 
-VkFormat textureFormatToVkFormat(igl::TextureFormat format) {
-  using TextureFormat = ::igl::TextureFormat;
+VkFormat textureFormatToVkFormat(TextureFormat format) {
+  using TextureFormat = TextureFormat;
   switch (format) {
   case TextureFormat::Invalid:
     return VK_FORMAT_UNDEFINED;
@@ -303,11 +303,11 @@ bool isTextureFormatBGR(VkFormat format) {
          format == VK_FORMAT_A2B10G10R10_UNORM_PACK32;
 }
 
-igl::TextureFormat vkFormatToTextureFormat(VkFormat format) {
+TextureFormat vkFormatToTextureFormat(VkFormat format) {
   return util::vkTextureFormatToTextureFormat(static_cast<int32_t>(format));
 }
 
-VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorage resourceStorage) {
+VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(ResourceStorage resourceStorage) {
   VkMemoryPropertyFlags memFlags{0};
 
   switch (resourceStorage) {
@@ -331,7 +331,7 @@ VkMemoryPropertyFlags resourceStorageToVkMemoryPropertyFlags(igl::ResourceStorag
   return memFlags;
 }
 
-VkCompareOp compareFunctionToVkCompareOp(igl::CompareFunction func) {
+VkCompareOp compareFunctionToVkCompareOp(CompareFunction func) {
   switch (func) {
   case igl::CompareFunction::Never:
     return VK_COMPARE_OP_NEVER;
@@ -391,7 +391,7 @@ void transitionToGeneral(VkCommandBuffer cmdBuf, ITexture* texture) {
     return;
   }
 
-  const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*texture);
+  const vulkan::Texture& tex = static_cast<Texture&>(*texture);
   const vulkan::VulkanImage& img = tex.getVulkanTexture().image_;
 
   if (!img.isStorageImage()) {
@@ -494,7 +494,7 @@ void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture) {
     return;
   }
 
-  const vulkan::Texture& tex = static_cast<vulkan::Texture&>(*texture);
+  const vulkan::Texture& tex = static_cast<Texture&>(*texture);
   const vulkan::VulkanImage& img = tex.getVulkanTexture().image_;
 
   const bool isColor = (img.getImageAspectFlags() & VK_IMAGE_ASPECT_COLOR_BIT) > 0;
@@ -517,7 +517,7 @@ void overrideImageLayout(ITexture* texture, VkImageLayout layout) {
   if (!texture) {
     return;
   }
-  const vulkan::Texture* tex = static_cast<vulkan::Texture*>(texture);
+  const vulkan::Texture* tex = static_cast<Texture*>(texture);
   tex->getVulkanTexture().image_.imageLayout_ = layout;
 }
 
@@ -525,7 +525,7 @@ void ensureShaderModule(IShaderModule* sm) {
   IGL_DEBUG_ASSERT(sm);
 
   const igl::vulkan::util::SpvModuleInfo& info =
-      static_cast<igl::vulkan::ShaderModule*>(sm)->getVulkanShaderModule().getSpvModuleInfo();
+      static_cast<ShaderModule*>(sm)->getVulkanShaderModule().getSpvModuleInfo();
 
   for (const auto& t : info.textures) {
     if (!IGL_DEBUG_VERIFY(t.descriptorSet == kBindPoint_CombinedImageSamplers)) {

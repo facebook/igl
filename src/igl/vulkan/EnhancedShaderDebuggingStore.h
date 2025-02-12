@@ -73,7 +73,7 @@ class EnhancedShaderDebuggingStore {
   explicit EnhancedShaderDebuggingStore();
 
   /** @brief Initialize the object and stores the `Device` needed to create resources */
-  void initialize(igl::vulkan::Device* device);
+  void initialize(Device* device);
 
   /** @brief Returns the shader code that stores the line vertices in the buffer. This code can be
    * injected into all shaders compiled by the device.
@@ -86,31 +86,31 @@ class EnhancedShaderDebuggingStore {
                                           const VulkanExtensions& extensions);
 
   /** @brief Returns the vertex buffer used to store the lines' vertices */
-  std::shared_ptr<igl::IBuffer> vertexBuffer() const;
+  std::shared_ptr<IBuffer> vertexBuffer() const;
 
   /** @brief Returns the depth stencil state needed to render the lines */
-  std::shared_ptr<igl::IDepthStencilState> depthStencilState() const;
+  std::shared_ptr<IDepthStencilState> depthStencilState() const;
 
   /** @brief Returns the `RenderPassDesc` needed to render the lines
    * @param[in] framebuffer the framebuffer used as a reference to populate the render pass
    * description structure
    */
-  igl::RenderPassDesc renderPassDesc(const std::shared_ptr<IFramebuffer>& framebuffer) const;
+  RenderPassDesc renderPassDesc(const std::shared_ptr<IFramebuffer>& framebuffer) const;
 
   /** @brief If a framebuffer has been been created with the resolveAttachment as a color attachment
    * the cached framebuffer is returned. Otherwise a new one will be created and returned.
    */
-  const std::shared_ptr<igl::IFramebuffer>& framebuffer(
-      igl::vulkan::Device& device,
-      const std::shared_ptr<igl::ITexture>& resolveAttachment) const;
+  const std::shared_ptr<IFramebuffer>& framebuffer(
+      Device& device,
+      const std::shared_ptr<ITexture>& resolveAttachment) const;
 
   /** @brief Returns a pipeline compatible with the framebuffer passed in as a parameter. If a
    * pipeline compatible with the framebuffer passed as a parameter isn't found, one is created and
    * cached. If one already exists, that one is returned instead. Pipelines are created based on the
    * framebuffer attachments' formats */
-  std::shared_ptr<igl::IRenderPipelineState> pipeline(
+  std::shared_ptr<IRenderPipelineState> pipeline(
       const igl::vulkan::Device& device,
-      const std::shared_ptr<igl::IFramebuffer>& framebuffer) const;
+      const std::shared_ptr<IFramebuffer>& framebuffer) const;
 
   /** @brief Installs a barrier for the lines' vertices buffer. This barrier guarantees that the
    * previous render pass is done writing to the buffer. It's placed between the application's
@@ -119,8 +119,7 @@ class EnhancedShaderDebuggingStore {
 
   /// @brief Executes the shader debugging render pass. Also presents the image if the command
   /// buffer being submitted was from a swapchain.
-  void enhancedShaderDebuggingPass(igl::vulkan::CommandQueue& queue,
-                                   igl::vulkan::CommandBuffer* cmdBuffer);
+  void enhancedShaderDebuggingPass(CommandQueue& queue, CommandBuffer* cmdBuffer);
 
  private:
   /** @brief Vertex shader code to render the lines */
@@ -131,17 +130,17 @@ class EnhancedShaderDebuggingStore {
 
   /** @brief Returns a hash value based on the format of color attachments of the
    * framebuffer and the format of the depth buffer */
-  uint64_t hashFramebufferFormats(const std::shared_ptr<igl::IFramebuffer>& framebuffer) const;
+  uint64_t hashFramebufferFormats(const std::shared_ptr<IFramebuffer>& framebuffer) const;
 
  private:
   bool enabled_ = false;
-  igl::vulkan::Device* device_ = nullptr;
-  mutable std::shared_ptr<igl::IBuffer> vertexBuffer_;
-  mutable std::shared_ptr<igl::IDepthStencilState> depthStencilState_;
+  Device* device_ = nullptr;
+  mutable std::shared_ptr<IBuffer> vertexBuffer_;
+  mutable std::shared_ptr<IDepthStencilState> depthStencilState_;
 
-  mutable std::unordered_map<std::shared_ptr<igl::ITexture>, std::shared_ptr<igl::IFramebuffer>>
+  mutable std::unordered_map<std::shared_ptr<ITexture>, std::shared_ptr<IFramebuffer>>
       framebuffers_;
-  mutable std::unordered_map<uint64_t, std::shared_ptr<igl::IRenderPipelineState>> pipelineStates_;
+  mutable std::unordered_map<uint64_t, std::shared_ptr<IRenderPipelineState>> pipelineStates_;
 
   mutable std::shared_ptr<IShaderStages> shaderStage_;
   std::shared_ptr<IShaderModule> vertexShaderModule_;

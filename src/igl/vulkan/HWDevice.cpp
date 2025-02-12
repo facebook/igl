@@ -59,7 +59,7 @@ std::unique_ptr<IDevice> HWDevice::create(std::unique_ptr<VulkanContext> ctx,
     Result::setResult(outResult, result);
   }
 
-  return result.isOk() ? std::make_unique<igl::vulkan::Device>(std::move(ctx)) : nullptr;
+  return result.isOk() ? std::make_unique<Device>(std::move(ctx)) : nullptr;
 }
 
 } // namespace igl::vulkan

@@ -10,6 +10,6 @@
 #include <igl/vulkan/Common.h>
 
 namespace igl::vulkan {
-VkColorSpaceKHR colorSpaceToVkColorSpace(igl::ColorSpace colorSpace);
-igl::ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace);
+VkColorSpaceKHR colorSpaceToVkColorSpace(ColorSpace colorSpace);
+ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace);
 } // namespace igl::vulkan

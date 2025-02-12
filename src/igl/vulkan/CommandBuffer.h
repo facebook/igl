@@ -76,7 +76,7 @@ class CommandBuffer final : public ICommandBuffer,
     return isFromSwapchain_;
   }
 
-  const std::shared_ptr<igl::IFramebuffer>& getFramebuffer() const;
+  const std::shared_ptr<IFramebuffer>& getFramebuffer() const;
 
   const std::shared_ptr<ITexture>& getPresentedSurface() const;
 
@@ -89,7 +89,7 @@ class CommandBuffer final : public ICommandBuffer,
   // was present() called with a swapchain image?
   mutable bool isFromSwapchain_ = false;
 
-  std::shared_ptr<igl::IFramebuffer> framebuffer_;
+  std::shared_ptr<IFramebuffer> framebuffer_;
   mutable std::shared_ptr<ITexture> presentedSurface_;
 
   VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};

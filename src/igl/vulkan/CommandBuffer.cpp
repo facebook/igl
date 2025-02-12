@@ -70,7 +70,7 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
   if (encoder && ctx_.enhancedShaderDebuggingStore_) {
     encoder->binder().bindBuffer(
         EnhancedShaderDebuggingStore::kBufferIndex,
-        static_cast<igl::vulkan::Buffer*>(ctx_.enhancedShaderDebuggingStore_->vertexBuffer().get()),
+        static_cast<Buffer*>(ctx_.enhancedShaderDebuggingStore_->vertexBuffer().get()),
         0,
         0);
   }
@@ -144,7 +144,7 @@ void CommandBuffer::waitUntilCompleted() {
 
 void CommandBuffer::waitUntilScheduled() {}
 
-const std::shared_ptr<igl::IFramebuffer>& CommandBuffer::getFramebuffer() const {
+const std::shared_ptr<IFramebuffer>& CommandBuffer::getFramebuffer() const {
   return framebuffer_;
 }
 

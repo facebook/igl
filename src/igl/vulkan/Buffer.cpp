@@ -128,15 +128,15 @@ void Buffer::resetUpdateRange(uint32_t ringBufferIndex, const BufferRange& range
   bufferPatches_[ringBufferIndex] = range;
 }
 
-igl::Result Buffer::upload(const void* data, const BufferRange& range) {
+Result Buffer::upload(const void* data, const BufferRange& range) {
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_DEBUG_VERIFY(data)) {
-    return igl::Result();
+    return Result();
   }
 
   if (!IGL_DEBUG_VERIFY(range.offset + range.size <= desc_.length)) {
-    return igl::Result(Result::Code::ArgumentOutOfRange, "Out of range");
+    return Result(Result::Code::ArgumentOutOfRange, "Out of range");
   }
 
   // To handle an upload to a ring-buffer, we update the local copy first and upload the entire
@@ -218,7 +218,7 @@ igl::Result Buffer::upload(const void* data, const BufferRange& range) {
     // use staging to upload data to device-local buffers
     ctx.stagingDevice_->bufferSubData(*currentVulkanBuffer(), range.offset, range.size, data);
   }
-  return igl::Result();
+  return Result();
 }
 
 size_t Buffer::getSizeInBytes() const {
@@ -240,7 +240,7 @@ VkBufferUsageFlags Buffer::getBufferUsageFlags() const {
   return currentVulkanBuffer()->getBufferUsageFlags();
 }
 
-void* Buffer::map(const BufferRange& range, igl::Result* outResult) {
+void* Buffer::map(const BufferRange& range, Result* outResult) {
   IGL_DEBUG_ASSERT(!isRingBuffer_, "Buffer::map() operation not supported for ring buffer");
 
   // Sanity check

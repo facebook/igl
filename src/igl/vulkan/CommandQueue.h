@@ -51,12 +51,10 @@ class CommandQueue final : public ICommandQueue {
    * if an image should be presented. Finally, it signals the context to process deferred tasks (for
    * more details about deferred tasks, please refer to the igl::vulkan::VulkanContext class).
    */
-  SubmitHandle endCommandBuffer(igl::vulkan::VulkanContext& ctx,
-                                igl::vulkan::CommandBuffer* cmdBuffer,
-                                bool present);
+  SubmitHandle endCommandBuffer(VulkanContext& ctx, CommandBuffer* cmdBuffer, bool present);
 
  private:
-  igl::vulkan::Device& device_;
+  Device& device_;
 
   /// @brief Flag indicating whether or not there is an active command buffer. Currently only one
   /// command buffer can be active at a time.

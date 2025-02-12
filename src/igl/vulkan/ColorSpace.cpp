@@ -8,7 +8,7 @@
 #include <igl/vulkan/ColorSpace.h>
 
 namespace igl::vulkan {
-VkColorSpaceKHR colorSpaceToVkColorSpace(igl::ColorSpace colorSpace) {
+VkColorSpaceKHR colorSpaceToVkColorSpace(ColorSpace colorSpace) {
   switch (colorSpace) {
   case ColorSpace::SRGB_LINEAR:
     return VkColorSpaceKHR::VK_COLOR_SPACE_BT709_LINEAR_EXT; // closest thing to linear srgb
@@ -54,7 +54,7 @@ VkColorSpaceKHR colorSpaceToVkColorSpace(igl::ColorSpace colorSpace) {
   IGL_UNREACHABLE_RETURN(VK_COLOR_SPACE_BT709_NONLINEAR_EXT);
 }
 
-igl::ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace) {
+ColorSpace vkColorSpaceToColorSpace(VkColorSpaceKHR colorSpace) {
   switch (colorSpace) {
   case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR:
     return ColorSpace::SRGB_NONLINEAR;

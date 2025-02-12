@@ -77,7 +77,7 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
   bool isEncoding_ = false;
 
-  igl::vulkan::ResourcesBinder binder_;
+  ResourcesBinder binder_;
 
   std::vector<const igl::vulkan::VulkanImage*> restoreLayout_;
 

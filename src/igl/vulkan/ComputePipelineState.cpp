@@ -98,7 +98,7 @@ VkPipeline ComputePipelineState::getVkPipeline() const {
 
   const auto& shaderModule = desc_.shaderStages->getComputeModule();
 
-  igl::vulkan::VulkanComputePipelineBuilder()
+  VulkanComputePipelineBuilder()
       .shaderStage(ivkGetPipelineShaderStageCreateInfo(
           VK_SHADER_STAGE_COMPUTE_BIT,
           igl::vulkan::ShaderModule::getVkShaderModule(shaderModule),

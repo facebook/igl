@@ -33,7 +33,7 @@ EnhancedShaderDebuggingStore::EnhancedShaderDebuggingStore() {
 #endif
 }
 
-void EnhancedShaderDebuggingStore::initialize(igl::vulkan::Device* device) {
+void EnhancedShaderDebuggingStore::initialize(Device* device) {
   device_ = device;
 }
 
@@ -96,7 +96,7 @@ std::string EnhancedShaderDebuggingStore::recordLineShaderCode(bool includeFunct
   })";
 }
 
-std::shared_ptr<igl::IBuffer> EnhancedShaderDebuggingStore::vertexBuffer() const {
+std::shared_ptr<IBuffer> EnhancedShaderDebuggingStore::vertexBuffer() const {
   if (!enabled_) {
     return nullptr;
   }
@@ -124,18 +124,18 @@ std::shared_ptr<igl::IBuffer> EnhancedShaderDebuggingStore::vertexBuffer() const
                    "Buffer: shader draw line"),
         nullptr);
 
-    vertexBuffer_->upload(&bufferHeader, igl::BufferRange(sizeof(Header), 0));
+    vertexBuffer_->upload(&bufferHeader, BufferRange(sizeof(Header), 0));
   }
 
   return vertexBuffer_;
 }
 
-igl::RenderPassDesc EnhancedShaderDebuggingStore::renderPassDesc(
+RenderPassDesc EnhancedShaderDebuggingStore::renderPassDesc(
     const std::shared_ptr<IFramebuffer>& framebuffer) const {
   const auto attachmentIndices = framebuffer->getColorAttachmentIndices();
   const auto max = std::max_element(attachmentIndices.begin(), attachmentIndices.end());
 
-  igl::RenderPassDesc desc;
+  RenderPassDesc desc;
   desc.colorAttachments.resize(*max + 1);
 
   for (auto index = 0; index <= *max; ++index) {
@@ -156,15 +156,15 @@ igl::RenderPassDesc EnhancedShaderDebuggingStore::renderPassDesc(
   return desc;
 }
 
-const std::shared_ptr<igl::IFramebuffer>& EnhancedShaderDebuggingStore::framebuffer(
-    igl::vulkan::Device& device,
-    const std::shared_ptr<igl::ITexture>& resolveAttachment) const {
+const std::shared_ptr<IFramebuffer>& EnhancedShaderDebuggingStore::framebuffer(
+    Device& device,
+    const std::shared_ptr<ITexture>& resolveAttachment) const {
   auto foundFramebuffer = framebuffers_.find(resolveAttachment);
   if (foundFramebuffer != framebuffers_.end()) {
     return foundFramebuffer->second;
   }
 
-  igl::Result result;
+  Result result;
   framebuffers_[resolveAttachment] = device.createFramebuffer(
       {
           .colorAttachments = {{.texture = resolveAttachment}},
@@ -179,7 +179,7 @@ const std::shared_ptr<igl::IFramebuffer>& EnhancedShaderDebuggingStore::framebuf
   return framebuffers_[resolveAttachment];
 }
 
-std::shared_ptr<igl::IDepthStencilState> EnhancedShaderDebuggingStore::depthStencilState() const {
+std::shared_ptr<IDepthStencilState> EnhancedShaderDebuggingStore::depthStencilState() const {
   if (!enabled_) {
     return nullptr;
   }
@@ -199,9 +199,9 @@ std::shared_ptr<igl::IDepthStencilState> EnhancedShaderDebuggingStore::depthSten
   return depthStencilState_;
 }
 
-std::shared_ptr<igl::IRenderPipelineState> EnhancedShaderDebuggingStore::pipeline(
+std::shared_ptr<IRenderPipelineState> EnhancedShaderDebuggingStore::pipeline(
     const igl::vulkan::Device& device,
-    const std::shared_ptr<igl::IFramebuffer>& framebuffer) const {
+    const std::shared_ptr<IFramebuffer>& framebuffer) const {
   if (!enabled_) {
     return nullptr;
   }
@@ -310,7 +310,7 @@ void EnhancedShaderDebuggingStore::installBufferBarrier(
     const igl::ICommandBuffer& commandBuffer) const {
   if (enabled_) {
     const auto* cmdBuffer = static_cast<const vulkan::CommandBuffer*>(&commandBuffer);
-    auto* buffer = static_cast<vulkan::Buffer*>(vertexBuffer().get());
+    auto* buffer = static_cast<Buffer*>(vertexBuffer().get());
     const auto& ctx = device_->getVulkanContext();
     ivkBufferMemoryBarrier(&ctx.vf_,
                            cmdBuffer->getVkCommandBuffer(),
@@ -325,8 +325,8 @@ void EnhancedShaderDebuggingStore::installBufferBarrier(
 }
 
 uint64_t EnhancedShaderDebuggingStore::hashFramebufferFormats(
-    const std::shared_ptr<igl::IFramebuffer>& framebuffer) const {
-  const std::hash<igl::TextureFormat> hashFun;
+    const std::shared_ptr<IFramebuffer>& framebuffer) const {
+  const std::hash<TextureFormat> hashFun;
 
   uint64_t hashValue = 0;
 
@@ -348,9 +348,8 @@ uint64_t EnhancedShaderDebuggingStore::hashFramebufferFormats(
   return hashValue;
 }
 
-void EnhancedShaderDebuggingStore::enhancedShaderDebuggingPass(
-    igl::vulkan::CommandQueue& queue,
-    igl::vulkan::CommandBuffer* cmdBuffer) {
+void EnhancedShaderDebuggingStore::enhancedShaderDebuggingPass(CommandQueue& queue,
+                                                               CommandBuffer* cmdBuffer) {
   IGL_PROFILER_FUNCTION();
 
   if (!cmdBuffer->getFramebuffer()) {
@@ -366,11 +365,11 @@ void EnhancedShaderDebuggingStore::enhancedShaderDebuggingPass(
   const auto min = std::min_element(indices.begin(), indices.end());
 
   const auto resolveAttachment = cmdBuffer->getFramebuffer()->getResolveColorAttachment(*min);
-  const std::shared_ptr<igl::IFramebuffer>& framebuffer =
+  const std::shared_ptr<IFramebuffer>& framebuffer =
       resolveAttachment ? this->framebuffer(*device_, resolveAttachment)
                         : cmdBuffer->getFramebuffer();
 
-  igl::Result result;
+  Result result;
   auto lineDrawingCmdBuffer =
       queue.createCommandBuffer({"Command buffer: line drawing enhanced debugging"}, &result);
 
@@ -387,9 +386,9 @@ void EnhancedShaderDebuggingStore::enhancedShaderDebuggingPass(
 
   {
     // Bind the line buffer
-    auto* vkEncoder = static_cast<igl::vulkan::RenderCommandEncoder*>(cmdEncoder.get());
+    auto* vkEncoder = static_cast<RenderCommandEncoder*>(cmdEncoder.get());
     vkEncoder->binder().bindBuffer(EnhancedShaderDebuggingStore::kBufferIndex,
-                                   static_cast<igl::vulkan::Buffer*>(vertexBuffer().get()),
+                                   static_cast<Buffer*>(vertexBuffer().get()),
                                    sizeof(EnhancedShaderDebuggingStore::Header),
                                    0);
 
@@ -415,10 +414,10 @@ void EnhancedShaderDebuggingStore::enhancedShaderDebuggingPass(
     resetCmdBuffer->present(cmdBuffer->getPresentedSurface());
   }
 
-  igl::vulkan::VulkanContext& ctx = device_->getVulkanContext();
+  VulkanContext& ctx = device_->getVulkanContext();
 
   // Barrier to ensure we have finished rendering the lines before we clear the buffer
-  auto* lineBuffer = static_cast<vulkan::Buffer*>(vertexBuffer().get());
+  auto* lineBuffer = static_cast<Buffer*>(vertexBuffer().get());
   ivkBufferMemoryBarrier(&ctx.vf_,
                          vkResetCmdBuffer,
                          lineBuffer->getVkBuffer(),

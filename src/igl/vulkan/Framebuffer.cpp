@@ -38,7 +38,7 @@ std::vector<size_t> Framebuffer::getColorAttachmentIndices() const {
   return indices;
 }
 
-std::shared_ptr<igl::ITexture> Framebuffer::getColorAttachment(size_t index) const {
+std::shared_ptr<ITexture> Framebuffer::getColorAttachment(size_t index) const {
   IGL_DEBUG_ASSERT(index < IGL_COLOR_ATTACHMENTS_MAX);
   return desc_.colorAttachments[index].texture;
 }
@@ -48,7 +48,7 @@ std::shared_ptr<ITexture> Framebuffer::getResolveColorAttachment(size_t index) c
   return desc_.colorAttachments[index].resolveTexture;
 }
 
-std::shared_ptr<igl::ITexture> Framebuffer::getDepthAttachment() const {
+std::shared_ptr<ITexture> Framebuffer::getDepthAttachment() const {
   return desc_.depthAttachment.texture;
 }
 
@@ -56,7 +56,7 @@ std::shared_ptr<ITexture> Framebuffer::getResolveDepthAttachment() const {
   return desc_.depthAttachment.resolveTexture;
 }
 
-std::shared_ptr<igl::ITexture> Framebuffer::getStencilAttachment() const {
+std::shared_ptr<ITexture> Framebuffer::getStencilAttachment() const {
   return desc_.stencilAttachment.texture;
 }
 
@@ -139,7 +139,7 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
   const auto& vulkanBuffer = static_cast<CommandBuffer&>(*buffer);
   VkCommandBuffer cmdBuf = vulkanBuffer.getVkCommandBuffer();
 
-  const std::shared_ptr<igl::ITexture>& srcTexture = getColorAttachment(index);
+  const std::shared_ptr<ITexture>& srcTexture = getColorAttachment(index);
   if (!IGL_DEBUG_VERIFY(srcTexture)) {
     return;
   }
@@ -290,14 +290,14 @@ void Framebuffer::validateAttachments() {
     if (!attachment.texture) {
       continue;
     }
-    const auto& colorTexture = static_cast<vulkan::Texture&>(*attachment.texture);
+    const auto& colorTexture = static_cast<Texture&>(*attachment.texture);
     ensureSize(colorTexture);
     IGL_DEBUG_ASSERT(
         (colorTexture.getUsage() & TextureDesc::TextureUsageBits::Attachment) != 0,
         "Did you forget to specify TextureUsageBits::Attachment on your color texture?");
   }
 
-  const auto* depthTexture = static_cast<vulkan::Texture*>(desc_.depthAttachment.texture.get());
+  const auto* depthTexture = static_cast<Texture*>(desc_.depthAttachment.texture.get());
 
   if (depthTexture) {
     ensureSize(*depthTexture);
@@ -326,21 +326,20 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel,
     }
     IGL_DEBUG_ASSERT(colorAttachment.texture);
 
-    const auto& colorTexture = static_cast<vulkan::Texture&>(*colorAttachment.texture);
+    const auto& colorTexture = static_cast<Texture&>(*colorAttachment.texture);
     attachments.attachments_.push_back(
         colorTexture.getVkImageViewForFramebuffer(mipLevel, layer, desc_.mode));
     // handle color MSAA
     if (colorAttachment.resolveTexture) {
       IGL_DEBUG_ASSERT(mipLevel == 0);
-      const auto& colorResolveTexture =
-          static_cast<vulkan::Texture&>(*colorAttachment.resolveTexture);
+      const auto& colorResolveTexture = static_cast<Texture&>(*colorAttachment.resolveTexture);
       attachments.attachments_.push_back(
           colorResolveTexture.getVkImageViewForFramebuffer(0, layer, desc_.mode));
     }
   }
   // depth
   {
-    const auto* depthTexture = static_cast<vulkan::Texture*>(desc_.depthAttachment.texture.get());
+    const auto* depthTexture = static_cast<Texture*>(desc_.depthAttachment.texture.get());
     if (depthTexture) {
       attachments.attachments_.push_back(
           depthTexture->getVkImageViewForFramebuffer(mipLevel, layer, desc_.mode));
@@ -349,7 +348,7 @@ VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel,
   // handle depth MSAA
   {
     const auto* depthResolveTexture =
-        static_cast<vulkan::Texture*>(desc_.depthAttachment.resolveTexture.get());
+        static_cast<Texture*>(desc_.depthAttachment.resolveTexture.get());
     if (depthResolveTexture) {
       attachments.attachments_.push_back(
           depthResolveTexture->getVkImageViewForFramebuffer(mipLevel, layer, desc_.mode));

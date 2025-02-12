@@ -16,7 +16,7 @@ namespace igl::vulkan {
 
 class Device;
 
-class ComputePipelineState final : public IComputePipelineState, public vulkan::PipelineState {
+class ComputePipelineState final : public IComputePipelineState, public PipelineState {
  public:
   ComputePipelineState(const igl::vulkan::Device& device, ComputePipelineDesc desc);
   ~ComputePipelineState() override;

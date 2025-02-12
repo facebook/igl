@@ -69,7 +69,7 @@ void ComputeCommandEncoder::bindComputePipelineState(
     return;
   }
 
-  cps_ = static_cast<igl::vulkan::ComputePipelineState*>(pipelineState.get());
+  cps_ = static_cast<ComputePipelineState*>(pipelineState.get());
 
   binder_.bindPipeline(cps_->getVkPipeline(), &cps_->getSpvModuleInfo());
 
@@ -115,7 +115,7 @@ void ComputeCommandEncoder::processDependencies(const Dependencies& dependencies
         if (!buf) {
           break;
         }
-        const auto* vkBuf = static_cast<igl::vulkan::Buffer*>(buf);
+        const auto* vkBuf = static_cast<Buffer*>(buf);
         ivkBufferBarrier(&ctx_.vf_,
                          cmdBuffer_,
                          vkBuf->getVkBuffer(),
@@ -176,7 +176,7 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
 
   IGL_DEBUG_ASSERT(texture);
 
-  const igl::vulkan::Texture* tex = static_cast<igl::vulkan::Texture*>(texture);
+  const igl::vulkan::Texture* tex = static_cast<Texture*>(texture);
   const igl::vulkan::VulkanTexture& vkTex = tex->getVulkanTexture();
   const igl::vulkan::VulkanImage* vkImage = &vkTex.image_;
 
@@ -192,7 +192,7 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
 
   restoreLayout_.push_back(vkImage);
 
-  binder_.bindTexture(index, static_cast<igl::vulkan::Texture*>(texture));
+  binder_.bindTexture(index, static_cast<Texture*>(texture));
 }
 
 void ComputeCommandEncoder::bindBuffer(uint32_t index,
@@ -205,7 +205,7 @@ void ComputeCommandEncoder::bindBuffer(uint32_t index,
     return;
   }
 
-  auto* buf = static_cast<igl::vulkan::Buffer*>(buffer);
+  auto* buf = static_cast<Buffer*>(buffer);
 
   const bool isUniformBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) > 0;
   const bool isStorageBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) > 0;

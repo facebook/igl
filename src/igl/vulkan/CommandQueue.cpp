@@ -42,7 +42,7 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& cmdBuffer, bool /* endOf
   IGL_DEBUG_ASSERT(isInsideFrame_);
 
   auto* vkCmdBuffer =
-      const_cast<vulkan::CommandBuffer*>(static_cast<const vulkan::CommandBuffer*>(&cmdBuffer));
+      const_cast<CommandBuffer*>(static_cast<const vulkan::CommandBuffer*>(&cmdBuffer));
   const bool presentIfNotDebugging = ctx.enhancedShaderDebuggingStore_ == nullptr;
   auto submitHandle = endCommandBuffer(ctx, vkCmdBuffer, presentIfNotDebugging);
 
@@ -53,8 +53,8 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& cmdBuffer, bool /* endOf
   return submitHandle;
 }
 
-SubmitHandle CommandQueue::endCommandBuffer(igl::vulkan::VulkanContext& ctx,
-                                            igl::vulkan::CommandBuffer* cmdBuffer,
+SubmitHandle CommandQueue::endCommandBuffer(VulkanContext& ctx,
+                                            CommandBuffer* cmdBuffer,
                                             bool present) {
   IGL_PROFILER_FUNCTION();
 

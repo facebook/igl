@@ -19,7 +19,7 @@ class VulkanBuffer;
 /// depending on the type of buffer this class represents. If this class represents a ring buffer,
 /// then there will be multiple VulkanBuffers, each with its own index. Otherwise it contains only
 /// one VulkanBuffer object.
-class Buffer final : public igl::IBuffer {
+class Buffer final : public IBuffer {
   friend class Device;
 
  public:
