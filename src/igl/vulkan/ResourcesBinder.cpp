@@ -27,7 +27,7 @@ ResourcesBinder::ResourcesBinder(const CommandBuffer* commandBuffer,
                                   : VulkanImmediateCommands::SubmitHandle{}) {}
 
 void ResourcesBinder::bindBuffer(uint32_t index,
-                                 igl::vulkan::Buffer* buffer,
+                                 Buffer* buffer,
                                  size_t bufferOffset,
                                  size_t bufferSize) {
   IGL_PROFILER_FUNCTION();
@@ -67,7 +67,7 @@ void ResourcesBinder::bindBuffer(uint32_t index,
   }
 }
 
-void ResourcesBinder::bindSamplerState(uint32_t index, igl::vulkan::SamplerState* samplerState) {
+void ResourcesBinder::bindSamplerState(uint32_t index, SamplerState* samplerState) {
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
@@ -75,8 +75,7 @@ void ResourcesBinder::bindSamplerState(uint32_t index, igl::vulkan::SamplerState
     return;
   }
 
-  igl::vulkan::VulkanSampler* newSampler = samplerState ? ctx_.samplers_.get(samplerState->sampler_)
-                                                        : nullptr;
+  VulkanSampler* newSampler = samplerState ? ctx_.samplers_.get(samplerState->sampler_) : nullptr;
 
   VkSampler sampler = newSampler ? newSampler->vkSampler : VK_NULL_HANDLE;
 
@@ -86,7 +85,7 @@ void ResourcesBinder::bindSamplerState(uint32_t index, igl::vulkan::SamplerState
   }
 }
 
-void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
+void ResourcesBinder::bindTexture(uint32_t index, Texture* tex) {
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
@@ -108,7 +107,7 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
     }
   }
 
-  igl::vulkan::VulkanTexture* newTexture = tex ? &tex->getVulkanTexture() : nullptr;
+  VulkanTexture* newTexture = tex ? &tex->getVulkanTexture() : nullptr;
 
 #if IGL_DEBUG
   if (newTexture) {
@@ -142,7 +141,7 @@ void ResourcesBinder::bindTexture(uint32_t index, igl::vulkan::Texture* tex) {
   }
 }
 
-void ResourcesBinder::bindStorageImage(uint32_t index, igl::vulkan::Texture* tex) {
+void ResourcesBinder::bindStorageImage(uint32_t index, Texture* tex) {
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
@@ -159,7 +158,7 @@ void ResourcesBinder::bindStorageImage(uint32_t index, igl::vulkan::Texture* tex
     }
   }
 
-  igl::vulkan::VulkanTexture* newTexture = tex ? &tex->getVulkanTexture() : nullptr;
+  VulkanTexture* newTexture = tex ? &tex->getVulkanTexture() : nullptr;
 
 #if IGL_DEBUG
   if (newTexture) {

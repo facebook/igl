@@ -103,7 +103,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
     return cmdBuffer_;
   }
 
-  igl::vulkan::ResourcesBinder& binder() {
+  ResourcesBinder& binder() {
     return binder_;
   }
 
@@ -138,7 +138,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   bool hasDepthAttachment_ = false;
   std::shared_ptr<IFramebuffer> framebuffer_;
 
-  igl::vulkan::ResourcesBinder binder_;
+  ResourcesBinder binder_;
 
   RenderPipelineDynamicState dynamicState_;
 
@@ -152,8 +152,8 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   Dependencies dependencies_ = {};
 
   const igl::vulkan::RenderPipelineState* rps_ = nullptr;
-  igl::BindGroupTextureHandle pendingBindGroupTexture_ = {};
-  igl::BindGroupBufferHandle pendingBindGroupBuffer_ = {};
+  BindGroupTextureHandle pendingBindGroupTexture_ = {};
+  BindGroupBufferHandle pendingBindGroupBuffer_ = {};
   uint32_t numDynamicOffsets_ = 0;
   uint32_t dynamicOffsets_[IGL_UNIFORM_BLOCKS_BINDING_MAX] = {};
 };

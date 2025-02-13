@@ -104,7 +104,7 @@ VkSamplerCreateInfo samplerStateDescToVkSamplerCreateInfo(const igl::SamplerStat
 
 namespace igl::vulkan {
 
-SamplerState::SamplerState(igl::vulkan::Device& device) : device_(device) {}
+SamplerState::SamplerState(Device& device) : device_(device) {}
 
 Result SamplerState::create(const SamplerStateDesc& desc) {
   IGL_PROFILER_FUNCTION();
@@ -114,13 +114,13 @@ Result SamplerState::create(const SamplerStateDesc& desc) {
   const VulkanContext& ctx = device_.getVulkanContext();
 
   Result result;
-  sampler_ = igl::Holder<igl::SamplerHandle>(
-      &device_,
-      ctx.createSampler(
-          samplerStateDescToVkSamplerCreateInfo(desc, ctx.getVkPhysicalDeviceProperties().limits),
-          textureFormatToVkFormat(desc.yuvFormat),
-          &result,
-          desc_.debugName.c_str()));
+  sampler_ =
+      Holder<SamplerHandle>(&device_,
+                            ctx.createSampler(samplerStateDescToVkSamplerCreateInfo(
+                                                  desc, ctx.getVkPhysicalDeviceProperties().limits),
+                                              textureFormatToVkFormat(desc.yuvFormat),
+                                              &result,
+                                              desc_.debugName.c_str()));
 
   if (!IGL_DEBUG_VERIFY(result.isOk())) {
     return result;

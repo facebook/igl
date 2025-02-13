@@ -17,7 +17,7 @@ namespace igl::vulkan {
 
 void PipelineState::initializeSpvModuleInfoFromShaderStages(const VulkanContext& ctx,
                                                             IShaderStages* stages) {
-  auto* smComp = static_cast<igl::vulkan::ShaderModule*>(stages->getComputeModule().get());
+  auto* smComp = static_cast<ShaderModule*>(stages->getComputeModule().get());
 
   VkShaderStageFlags pushConstantMask = 0;
 
@@ -33,8 +33,8 @@ void PipelineState::initializeSpvModuleInfoFromShaderStages(const VulkanContext&
 
     stageFlags_ = VK_SHADER_STAGE_COMPUTE_BIT;
   } else {
-    auto* smVert = static_cast<igl::vulkan::ShaderModule*>(stages->getVertexModule().get());
-    auto* smFrag = static_cast<igl::vulkan::ShaderModule*>(stages->getFragmentModule().get());
+    auto* smVert = static_cast<ShaderModule*>(stages->getVertexModule().get());
+    auto* smFrag = static_cast<ShaderModule*>(stages->getFragmentModule().get());
 
     // vertex/fragment
     ensureShaderModule(smVert);
@@ -91,7 +91,7 @@ PipelineState::PipelineState(
       bindings.emplace_back(ivkGetDescriptorSetLayoutBinding(
           loc, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, stageFlags_));
       if (loc < IGL_TEXTURE_SAMPLERS_MAX && immutableSamplers && immutableSamplers[loc]) {
-        auto* sampler = static_cast<igl::vulkan::SamplerState*>(immutableSamplers[loc].get());
+        auto* sampler = static_cast<SamplerState*>(immutableSamplers[loc].get());
         bindings.back().pImmutableSamplers = &ctx.samplers_.get(sampler->sampler_)->vkSampler;
       }
     }

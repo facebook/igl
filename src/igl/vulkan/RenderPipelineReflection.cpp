@@ -22,15 +22,15 @@ RenderPipelineReflection::RenderPipelineReflection(std::vector<BufferArgDesc> bu
 
 RenderPipelineReflection::~RenderPipelineReflection() = default;
 
-const std::vector<igl::BufferArgDesc>& RenderPipelineReflection::allUniformBuffers() const {
+const std::vector<BufferArgDesc>& RenderPipelineReflection::allUniformBuffers() const {
   return bufferArguments_;
 }
 
-const std::vector<igl::SamplerArgDesc>& RenderPipelineReflection::allSamplers() const {
+const std::vector<SamplerArgDesc>& RenderPipelineReflection::allSamplers() const {
   return samplerArguments_;
 }
 
-const std::vector<igl::TextureArgDesc>& RenderPipelineReflection::allTextures() const {
+const std::vector<TextureArgDesc>& RenderPipelineReflection::allTextures() const {
   return textureArguments_;
 }
 

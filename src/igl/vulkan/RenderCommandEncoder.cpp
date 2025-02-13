@@ -118,7 +118,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
       continue;
     }
 
-    const auto& colorTexture = static_cast<vulkan::Texture&>(*attachment.texture);
+    const auto& colorTexture = static_cast<Texture&>(*attachment.texture);
 
     // Specifically using renderPass.colorAttachments.size() in case we somehow
     // get into this loop even when renderPass.colorAttachments.empty() == true
@@ -160,7 +160,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
     if (descColor.storeAction == StoreAction::MsaaResolve) {
       IGL_DEBUG_ASSERT(attachment.resolveTexture,
                        "Framebuffer attachment should contain a resolve texture");
-      const auto& colorResolveTexture = static_cast<vulkan::Texture&>(*attachment.resolveTexture);
+      const auto& colorResolveTexture = static_cast<Texture&>(*attachment.resolveTexture);
       builder.addColorResolve(textureFormatToVkFormat(colorResolveTexture.getFormat()),
                               VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                               VK_ATTACHMENT_STORE_OP_STORE);
@@ -177,7 +177,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   hasDepthAttachment_ = false;
 
   if (framebuffer->getDepthAttachment()) {
-    const auto& depthTexture = static_cast<vulkan::Texture&>(*(framebuffer->getDepthAttachment()));
+    const auto& depthTexture = static_cast<Texture&>(*(framebuffer->getDepthAttachment()));
     hasDepthAttachment_ = true;
     IGL_DEBUG_ASSERT(descDepth.mipLevel == mipLevel,
                      "Depth attachment should have the same mip-level as color attachments");
@@ -198,7 +198,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                             depthTexture.getVulkanTexture().image_.samples_);
   }
 
-  const auto& fb = static_cast<vulkan::Framebuffer&>(*framebuffer);
+  const auto& fb = static_cast<Framebuffer&>(*framebuffer);
 
   auto renderPassHandle = ctx_.findRenderPass(builder);
 
@@ -376,7 +376,7 @@ void RenderCommandEncoder::bindRenderPipelineState(
     return;
   }
 
-  rps_ = static_cast<igl::vulkan::RenderPipelineState*>(pipelineState.get());
+  rps_ = static_cast<RenderPipelineState*>(pipelineState.get());
 
   IGL_DEBUG_ASSERT(rps_);
 
@@ -403,7 +403,7 @@ void RenderCommandEncoder::bindDepthStencilState(
     return;
   }
   const igl::vulkan::DepthStencilState* state =
-      static_cast<igl::vulkan::DepthStencilState*>(depthStencilState.get());
+      static_cast<DepthStencilState*>(depthStencilState.get());
 
   const igl::DepthStencilStateDesc& desc = state->desc_;
 
@@ -439,7 +439,7 @@ void RenderCommandEncoder::bindBuffer(uint32_t index,
     return;
   }
 
-  auto* buf = static_cast<igl::vulkan::Buffer*>(buffer);
+  auto* buf = static_cast<Buffer*>(buffer);
 
   const bool isUniformBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) > 0;
   const bool isStorageBuffer = (buf->getBufferType() & BufferDesc::BufferTypeBits::Storage) > 0;
@@ -473,7 +473,7 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, siz
   if (IGL_DEBUG_VERIFY(index < IGL_ARRAY_NUM_ELEMENTS(isVertexBufferBound_))) {
     isVertexBufferBound_[index] = true;
   }
-  VkBuffer vkBuf = static_cast<igl::vulkan::Buffer&>(buffer).getVkBuffer();
+  VkBuffer vkBuf = static_cast<Buffer&>(buffer).getVkBuffer();
   const VkDeviceSize offset = bufferOffset;
   ctx_.vf_.vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
 }
@@ -481,12 +481,12 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index, IBuffer& buffer, siz
 void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
                                            IndexFormat format,
                                            size_t bufferOffset) {
-  const auto& buf = static_cast<igl::vulkan::Buffer&>(buffer);
+  const auto& buf = static_cast<Buffer&>(buffer);
 
   IGL_DEBUG_ASSERT(buf.getBufferUsageFlags() & VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                    "Did you forget to specify BufferTypeBits::Index on your buffer?");
 
-  auto indexFormatToVkIndexType = [](igl::IndexFormat fmt, bool has8BitIndices) -> VkIndexType {
+  auto indexFormatToVkIndexType = [](IndexFormat fmt, bool has8BitIndices) -> VkIndexType {
     switch (fmt) {
     case igl::IndexFormat::UInt8:
       return IGL_DEBUG_VERIFY(has8BitIndices) ? VK_INDEX_TYPE_UINT8_EXT : VK_INDEX_TYPE_UINT16;
@@ -557,7 +557,7 @@ void RenderCommandEncoder::bindSamplerState(size_t index,
     return;
   }
 
-  binder_.bindSamplerState(index, static_cast<igl::vulkan::SamplerState*>(samplerState));
+  binder_.bindSamplerState(index, static_cast<SamplerState*>(samplerState));
 }
 
 void RenderCommandEncoder::bindTexture(size_t index, uint8_t target, ITexture* texture) {
@@ -578,7 +578,7 @@ void RenderCommandEncoder::bindTexture(size_t index, uint8_t target, ITexture* t
     return;
   }
 
-  binder_.bindTexture(index, static_cast<igl::vulkan::Texture*>(texture));
+  binder_.bindTexture(index, static_cast<Texture*>(texture));
 }
 
 void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
@@ -676,7 +676,7 @@ void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
 
-  const igl::vulkan::Buffer* bufIndirect = static_cast<igl::vulkan::Buffer*>(&indirectBuffer);
+  const igl::vulkan::Buffer* bufIndirect = static_cast<Buffer*>(&indirectBuffer);
 
   ctx_.vf_.vkCmdDrawIndirect(cmdBuffer_,
                              bufIndirect->getVkBuffer(),
@@ -701,7 +701,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
 
-  const igl::vulkan::Buffer* bufIndirect = static_cast<igl::vulkan::Buffer*>(&indirectBuffer);
+  const igl::vulkan::Buffer* bufIndirect = static_cast<Buffer*>(&indirectBuffer);
 
   ctx_.vf_.vkCmdDrawIndexedIndirect(cmdBuffer_,
                                     bufIndirect->getVkBuffer(),
@@ -831,8 +831,8 @@ void RenderCommandEncoder::ensureVertexBuffers() {
     return;
   }
 
-  const igl::vulkan::VertexInputState* vi = static_cast<igl::vulkan::VertexInputState*>(
-      rps_->getRenderPipelineDesc().vertexInputState.get());
+  const igl::vulkan::VertexInputState* vi =
+      static_cast<VertexInputState*>(rps_->getRenderPipelineDesc().vertexInputState.get());
 
   if (!vi) {
     // no vertex input is perfectly valid

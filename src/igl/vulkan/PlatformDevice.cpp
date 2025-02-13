@@ -60,7 +60,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDepth(uint32_t 
                                                 TextureDesc::TextureUsageBits::Attachment |
                                                     TextureDesc::TextureUsageBits::Sampled,
                                                 "SwapChain Texture");
-    nativeDepthTexture_ = std::make_shared<igl::vulkan::Texture>(device_, std::move(vkTex), desc);
+    nativeDepthTexture_ = std::make_shared<Texture>(device_, std::move(vkTex), desc);
   }
 
   Result::setResult(outResult, Result::Code::Ok);
@@ -114,7 +114,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
     const TextureDesc desc = TextureDesc::new2D(
         iglFormat, width, height, TextureDesc::TextureUsageBits::Attachment, "SwapChain Texture");
     nativeDrawableTextures_[currentImageIndex] =
-        std::make_shared<igl::vulkan::Texture>(device_, std::move(vkTex), desc);
+        std::make_shared<Texture>(device_, std::move(vkTex), desc);
   }
 
   Result::setResult(outResult, Result::Code::Ok);

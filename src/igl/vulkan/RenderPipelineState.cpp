@@ -294,7 +294,7 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
 
   // Iterate and cache vertex input bindings and attributes
   const igl::vulkan::VertexInputState* vstate =
-      static_cast<igl::vulkan::VertexInputState*>(desc_.vertexInputState.get());
+      static_cast<VertexInputState*>(desc_.vertexInputState.get());
 
   vertexInputStateCreateInfo_ = ivkGetPipelineVertexInputStateCreateInfo_Empty();
 
@@ -531,7 +531,7 @@ int RenderPipelineState::getIndexByName(const std::string& name, ShaderStage sta
   return 0;
 }
 
-std::shared_ptr<igl::IRenderPipelineReflection> RenderPipelineState::renderPipelineReflection() {
+std::shared_ptr<IRenderPipelineReflection> RenderPipelineState::renderPipelineReflection() {
   return reflection_;
 }
 
