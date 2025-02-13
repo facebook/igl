@@ -148,11 +148,9 @@ class TexturesRGBBaseTest : public ::testing::Test {
         IGL_NAMEHANDLE(data::shader::simpleSampler);
     renderPipelineDesc_.cullMode = igl::CullMode::Disabled;
 
-#if IGL_PLATFORM_LINUX_SWIFTSHADER
     if (iglDev_->getBackendType() == BackendType::OpenGL) {
-      kTolerance = 1; // Swiftshader opengl is not accurate enough.
+      kTolerance = 1; // OpenGL is not accurate enough.
     }
-#endif
   }
 
   void TearDown() override {}
