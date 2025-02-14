@@ -16,7 +16,7 @@ namespace tests::util {
 /**
  Create and return an igl::Device that is suitable for running tests against.
  */
-std::shared_ptr<::igl::IDevice> createTestDevice();
+std::shared_ptr<IDevice> createTestDevice();
 
 } // namespace tests::util
 } // namespace igl
