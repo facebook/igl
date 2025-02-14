@@ -107,7 +107,7 @@ class ICommandBuffer {
    * to pop the label off the stack.
    */
   virtual void pushDebugGroupLabel(const char* IGL_NONNULL label,
-                                   const igl::Color& color = igl::Color(1, 1, 1, 1)) const = 0;
+                                   const igl::Color& color = Color(1, 1, 1, 1)) const = 0;
 
   /**
    * @brief Pops a most recent debug label off a stack of debug string labels.
