@@ -27,16 +27,16 @@ class Device : public IDevice {
   explicit Device(std::unique_ptr<IContext> context);
   ~Device() override;
 
-  [[nodiscard]] Holder<igl::BindGroupTextureHandle> createBindGroup(
+  [[nodiscard]] Holder<BindGroupTextureHandle> createBindGroup(
       const BindGroupTextureDesc& desc,
       const IRenderPipelineState* IGL_NULLABLE compatiblePipeline,
       Result* IGL_NULLABLE outResult) override;
-  [[nodiscard]] Holder<igl::BindGroupBufferHandle> createBindGroup(const BindGroupBufferDesc& desc,
-                                                                   Result* IGL_NULLABLE
-                                                                       outResult) override;
-  void destroy(igl::BindGroupTextureHandle handle) override;
-  void destroy(igl::BindGroupBufferHandle handle) override;
-  void destroy(igl::SamplerHandle handle) override;
+  [[nodiscard]] Holder<BindGroupBufferHandle> createBindGroup(const BindGroupBufferDesc& desc,
+                                                              Result* IGL_NULLABLE
+                                                                  outResult) override;
+  void destroy(BindGroupTextureHandle handle) override;
+  void destroy(BindGroupBufferHandle handle) override;
+  void destroy(SamplerHandle handle) override;
 
   // Command Queue
   std::shared_ptr<ICommandQueue> createCommandQueue(const CommandQueueDesc& desc,

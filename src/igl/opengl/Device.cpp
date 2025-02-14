@@ -168,7 +168,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   std::unique_ptr<Texture> texture;
 #if IGL_DEBUG
   if (sanitized.type == TextureType::TwoD || sanitized.type == TextureType::TwoDArray) {
-    size_t textureSizeLimit;
+    size_t textureSizeLimit = 0;
     getFeatureLimits(DeviceFeatureLimits::MaxTextureDimension1D2D, textureSizeLimit);
     IGL_DEBUG_ASSERT(sanitized.width <= textureSizeLimit && sanitized.height <= textureSizeLimit,
                      "Texture limit size %zu is smaller than texture size %zux%zu",
@@ -234,8 +234,8 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
 
 // Shaders
 
-std::unique_ptr<igl::IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& /*desc*/,
-                                                                 Result* outResult) const {
+std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryDesc& /*desc*/,
+                                                            Result* outResult) const {
   Result::setResult(outResult, Result::Code::Unsupported);
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   return nullptr;
@@ -335,7 +335,7 @@ size_t Device::getCurrentDrawCount() const {
   return context_->getCurrentDrawCount();
 }
 
-Holder<igl::BindGroupTextureHandle> Device::createBindGroup(
+Holder<BindGroupTextureHandle> Device::createBindGroup(
     const BindGroupTextureDesc& desc,
     const IRenderPipelineState* IGL_NULLABLE /*compatiblePipeline*/,
     Result* IGL_NULLABLE outResult) {
@@ -353,8 +353,8 @@ Holder<igl::BindGroupTextureHandle> Device::createBindGroup(
   return {this, handle};
 }
 
-Holder<igl::BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc& desc,
-                                                           Result* IGL_NULLABLE outResult) {
+Holder<BindGroupBufferHandle> Device::createBindGroup(const BindGroupBufferDesc& desc,
+                                                      Result* IGL_NULLABLE outResult) {
   IGL_DEBUG_ASSERT(context_);
   IGL_DEBUG_ASSERT(!desc.debugName.empty(), "Each bind group should have a debug name");
 
@@ -369,7 +369,7 @@ Holder<igl::BindGroupBufferHandle> Device::createBindGroup(const BindGroupBuffer
   return {this, handle};
 }
 
-void Device::destroy(igl::BindGroupTextureHandle handle) {
+void Device::destroy(BindGroupTextureHandle handle) {
   if (handle.empty()) {
     return;
   }
@@ -379,7 +379,7 @@ void Device::destroy(igl::BindGroupTextureHandle handle) {
   context_->bindGroupTexturesPool_.destroy(handle);
 }
 
-void Device::destroy(igl::BindGroupBufferHandle handle) {
+void Device::destroy(BindGroupBufferHandle handle) {
   if (handle.empty()) {
     return;
   }
@@ -389,7 +389,7 @@ void Device::destroy(igl::BindGroupBufferHandle handle) {
   context_->bindGroupBuffersPool_.destroy(handle);
 }
 
-void Device::destroy(igl::SamplerHandle handle) {
+void Device::destroy(SamplerHandle handle) {
   (void)handle;
   // IGL/OpenGL is not using sampler handles
 }

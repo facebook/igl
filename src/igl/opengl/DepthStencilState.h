@@ -18,7 +18,7 @@ class ICommandBuffer;
 namespace opengl {
 
 class DepthStencilState final : public WithContext, public IDepthStencilState {
-  friend class igl::opengl::Device;
+  friend class Device;
 
  public:
   explicit DepthStencilState(IContext& context);
@@ -28,8 +28,8 @@ class DepthStencilState final : public WithContext, public IDepthStencilState {
   void bind(uint32_t frontStencilReferenceValue, uint32_t backStencilReferenceValue);
   void unbind();
 
-  static GLenum convertCompareFunction(igl::CompareFunction value);
-  static GLenum convertStencilOperation(igl::StencilOperation value);
+  static GLenum convertCompareFunction(CompareFunction value);
+  static GLenum convertStencilOperation(StencilOperation value);
 
  private:
   DepthStencilStateDesc desc_;

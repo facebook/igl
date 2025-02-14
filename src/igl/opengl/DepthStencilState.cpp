@@ -19,7 +19,7 @@ Result DepthStencilState::create(const DepthStencilStateDesc& desc) {
   return Result();
 }
 
-GLenum DepthStencilState::convertCompareFunction(igl::CompareFunction value) {
+GLenum DepthStencilState::convertCompareFunction(CompareFunction value) {
   switch (value) {
   case CompareFunction::Never:
     return GL_NEVER;
@@ -41,7 +41,7 @@ GLenum DepthStencilState::convertCompareFunction(igl::CompareFunction value) {
   IGL_UNREACHABLE_RETURN(GL_ALWAYS)
 }
 
-GLenum DepthStencilState::convertStencilOperation(igl::StencilOperation value) {
+GLenum DepthStencilState::convertStencilOperation(StencilOperation value) {
   switch (value) {
   case StencilOperation::Keep:
     return GL_KEEP;
@@ -77,8 +77,7 @@ void DepthStencilState::bind(uint32_t frontStencilReferenceValue,
   }
   getContext().depthFunc(convertCompareFunction(desc_.compareFunction));
 
-  if (desc_.frontFaceStencil != igl::StencilStateDesc() ||
-      desc_.backFaceStencil != igl::StencilStateDesc()) {
+  if (desc_.frontFaceStencil != StencilStateDesc() || desc_.backFaceStencil != StencilStateDesc()) {
     getContext().enable(GL_STENCIL_TEST);
 
     const GLenum frontCompareFunc =
