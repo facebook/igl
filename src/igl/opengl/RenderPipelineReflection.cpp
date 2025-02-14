@@ -338,7 +338,7 @@ void RenderPipelineReflection::cacheDescriptors() {
     if (textureType == igl::TextureType::Invalid) {
       const igl::UniformType uniformType = toIGLUniformType(glDesc.type);
 
-      igl::BufferArgDesc bufferDesc;
+      BufferArgDesc bufferDesc;
       bufferDesc.name = entry.first;
       bufferDesc.bufferAlignment = 1;
       bufferDesc.bufferDataSize = glDesc.size * igl::sizeForUniformType(uniformType);
@@ -357,14 +357,14 @@ void RenderPipelineReflection::cacheDescriptors() {
     }
     // textures & samplers
     else {
-      igl::TextureArgDesc textureDesc;
+      TextureArgDesc textureDesc;
       textureDesc.name = entry.first;
       textureDesc.type = textureType;
       textureDesc.textureIndex = glDesc.location;
       textureDesc.shaderStage = igl::ShaderStage::Fragment;
 
       // Create one artificial sampler for each texture
-      igl::SamplerArgDesc samplerDesc;
+      SamplerArgDesc samplerDesc;
       samplerDesc.name = textureDesc.name;
       samplerDesc.samplerIndex = textureDesc.textureIndex;
       samplerDesc.shaderStage = textureDesc.shaderStage;
@@ -377,7 +377,7 @@ void RenderPipelineReflection::cacheDescriptors() {
   // uniform blocks
   for (const auto& blockEntry : uniformBlocksDictionary_) {
     const auto& blockDesc = blockEntry.second;
-    igl::BufferArgDesc bufferDesc;
+    BufferArgDesc bufferDesc;
     bufferDesc.isUniformBlock = true;
     bufferDesc.name = blockEntry.first;
     bufferDesc.bufferAlignment = 1;
@@ -401,15 +401,15 @@ void RenderPipelineReflection::cacheDescriptors() {
   }
 }
 
-const std::vector<igl::BufferArgDesc>& RenderPipelineReflection::allUniformBuffers() const {
+const std::vector<BufferArgDesc>& RenderPipelineReflection::allUniformBuffers() const {
   return bufferArguments_;
 }
 
-const std::vector<igl::SamplerArgDesc>& RenderPipelineReflection::allSamplers() const {
+const std::vector<SamplerArgDesc>& RenderPipelineReflection::allSamplers() const {
   return samplerArguments_;
 }
 
-const std::vector<igl::TextureArgDesc>& RenderPipelineReflection::allTextures() const {
+const std::vector<TextureArgDesc>& RenderPipelineReflection::allTextures() const {
   return textureArguments_;
 }
 

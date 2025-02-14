@@ -209,13 +209,13 @@ void RenderCommandAdapter::setFragmentSamplerState(ISamplerState* samplerState,
 void RenderCommandAdapter::clearDependentResources(
     const std::shared_ptr<IRenderPipelineState>& newValue,
     Result* outResult) {
-  auto* curStateOpenGL = static_cast<opengl::RenderPipelineState*>(pipelineState_.get());
+  auto* curStateOpenGL = static_cast<RenderPipelineState*>(pipelineState_.get());
   if (!IGL_DEBUG_VERIFY(curStateOpenGL)) {
     Result::setResult(outResult, Result::Code::RuntimeError, "pipeline state is null");
     return;
   }
 
-  auto* newStateOpenGL = static_cast<opengl::RenderPipelineState*>(newValue.get());
+  auto* newStateOpenGL = static_cast<RenderPipelineState*>(newValue.get());
 
   if (!newStateOpenGL || !curStateOpenGL->matchesShaderProgram(*newStateOpenGL)) {
     // Don't use previously set resources. Uniforms/texture locations not same between programs

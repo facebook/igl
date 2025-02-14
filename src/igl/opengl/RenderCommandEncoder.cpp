@@ -122,7 +122,7 @@ void RenderCommandEncoder::beginEncoding(const RenderPassDesc& renderPass,
       return;
     }
   }
-  framebuffer_ = std::static_pointer_cast<igl::opengl::Framebuffer>(framebuffer);
+  framebuffer_ = std::static_pointer_cast<Framebuffer>(framebuffer);
   resolveFramebuffer_ = framebuffer_->getResolveFramebuffer();
   Result::setOk(outResult);
 }

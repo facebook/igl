@@ -42,7 +42,7 @@ void SamplerState::bind(ITexture* t) {
     return;
   }
 
-  auto* texture = static_cast<igl::opengl::Texture*>(t);
+  auto* texture = static_cast<Texture*>(t);
   if (texture->getSamplerHash() == hash_) {
     return;
   }
