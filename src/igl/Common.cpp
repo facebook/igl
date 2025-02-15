@@ -64,32 +64,32 @@ void optimizedMemcpy(void* dst, const void* src, size_t size) {
   }
 }
 
-void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupTextureHandle handle) {
+void destroy(IDevice* IGL_NULLABLE device, BindGroupTextureHandle handle) {
   if (device) {
     device->destroy(handle);
   }
 }
 
-void destroy(igl::IDevice* IGL_NULLABLE device, igl::BindGroupBufferHandle handle) {
+void destroy(IDevice* IGL_NULLABLE device, BindGroupBufferHandle handle) {
   if (device) {
     device->destroy(handle);
   }
 }
 
-void destroy(igl::IDevice* IGL_NULLABLE device, igl::TextureHandle handle) {
+void destroy(IDevice* IGL_NULLABLE device, TextureHandle handle) {
   if (device) {
     // do nothing until we transition all textures to handles
     (void)handle;
   }
 }
 
-void destroy(igl::IDevice* IGL_NULLABLE device, igl::SamplerHandle handle) {
+void destroy(IDevice* IGL_NULLABLE device, SamplerHandle handle) {
   if (device) {
     device->destroy(handle);
   }
 }
 
-void destroy(igl::IDevice* IGL_NULLABLE device, igl::DepthStencilStateHandle handle) {
+void destroy(IDevice* IGL_NULLABLE device, DepthStencilStateHandle handle) {
   if (device) {
     // do nothing until we transition depth-stencil states to handles
     (void)handle;
