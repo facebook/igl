@@ -229,4 +229,23 @@ inline TextureFormat UNormTosRGB(TextureFormat format) {
   }
   IGL_UNREACHABLE_RETURN(TextureFormat::RGBA_SRGB)
 }
+
+inline TextureFormat BgraToRgba(TextureFormat format) {
+  if (format == TextureFormat::BGRA_UNorm8) {
+    return TextureFormat::RGBA_UNorm8;
+  } else if (format == TextureFormat::BGRA_SRGB) {
+    return TextureFormat::RGBA_SRGB;
+  }
+  return format;
+}
+
+inline TextureFormat RgbaToBgra(TextureFormat format) {
+  if (format == TextureFormat::RGBA_UNorm8) {
+    return TextureFormat::BGRA_UNorm8;
+  } else if (format == TextureFormat::RGBA_SRGB) {
+    return TextureFormat::BGRA_SRGB;
+  }
+  return format;
+}
+
 } // namespace igl
