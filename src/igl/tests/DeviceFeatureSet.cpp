@@ -271,7 +271,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
 // here as we see fit.
 //
 TEST_F(DeviceFeatureSetTest, getTextureFormatCapabilities) {
-  ICapabilities::TextureFormatCapabilities capability;
+  ICapabilities::TextureFormatCapabilities capability = 0;
 
   // RGBA_UNorm8 should be able to do everything except SampledAttachment on all the platforms
   capability = iglDev_->getTextureFormatCapabilities(TextureFormat::RGBA_UNorm8);

@@ -47,7 +47,7 @@ class ContextOGLTest : public ::testing::Test {
 
 /// Test basic functionality for binding GL_FRAMEBUFFER.
 TEST_F(ContextOGLTest, GlBindFramebuffer) {
-  GLuint framebufferId;
+  GLuint framebufferId = 0;
   context_->genFramebuffers(1, &framebufferId);
 
   context_->bindFramebuffer(GL_FRAMEBUFFER, framebufferId);
@@ -220,13 +220,13 @@ TEST_F(ContextOGLTest, CheckForErrorsInvalidEnum) {
 /// This test purposely triggers the Invalid Operation error and check
 /// to see that the right error code is returned.
 TEST_F(ContextOGLTest, CheckForErrorsInvalidOperation) {
-  GLuint textureMap;
+  GLuint textureMap = 0;
   context_->genTextures(1, &textureMap);
   context_->bindTexture(GL_TEXTURE_2D, textureMap);
   context_->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
   context_->bindTexture(GL_TEXTURE_2D, 0);
 
-  GLuint framebufferId;
+  GLuint framebufferId = 0;
   context_->genFramebuffers(1, &framebufferId);
 
   context_->bindFramebuffer(GL_FRAMEBUFFER, framebufferId);
@@ -258,13 +258,13 @@ TEST_F(ContextOGLTest, CheckForErrorsInvalidOperation) {
 /// This test purposely triggers the Invalid Value error and check
 /// to see that the right error code is returned.
 TEST_F(ContextOGLTest, CheckForErrorsInvalidValue) {
-  GLuint textureMap;
+  GLuint textureMap = 0;
   context_->genTextures(1, &textureMap);
   context_->bindTexture(GL_TEXTURE_2D, textureMap);
   context_->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
   context_->bindTexture(GL_TEXTURE_2D, 0);
 
-  GLuint framebufferId;
+  GLuint framebufferId = 0;
   context_->genFramebuffers(1, &framebufferId);
 
   context_->bindFramebuffer(GL_FRAMEBUFFER, framebufferId);
@@ -293,7 +293,7 @@ TEST_F(ContextOGLTest, CheckForErrorsInvalidValue) {
 /// This test purposely triggers the Invalid Framebuffer error and check
 /// to see that the right error code is returned.
 TEST_F(ContextOGLTest, CheckForErrorsInvalidFrameBufferOperation) {
-  unsigned int frameBuffer;
+  unsigned int frameBuffer = 0;
   context_->genFramebuffers(1, &frameBuffer);
   context_->bindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 

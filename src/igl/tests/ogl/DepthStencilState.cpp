@@ -262,20 +262,20 @@ TEST_F(DepthStencilStateTest, SetStencilReferenceValueAndCheck) {
   cmdQueue_->submit(*cmdBuf_);
 
   // Read back default reference value here
-  opengl::IContext* ctx;
+  opengl::IContext* ctx = nullptr;
   ctx = &static_cast<igl::opengl::Device&>(*iglDev_).getContext();
-  GLboolean origIsDepthWriteEnabled, newIsDepthWriteEnabled;
-  GLint origDepthFunVal, newDepthFunVal;
-  GLint origFrontCompareFunc, newFrontCompareFunc;
-  GLint origBackCompareFunc, newBackCompareFunc;
+  GLboolean origIsDepthWriteEnabled = 0, newIsDepthWriteEnabled = 0;
+  GLint origDepthFunVal = 0, newDepthFunVal = 0;
+  GLint origFrontCompareFunc = 0, newFrontCompareFunc = 0;
+  GLint origBackCompareFunc = 0, newBackCompareFunc = 0;
 
-  GLint origStencilBackFail, newStencilBackFail;
-  GLint origStencilFail, newStencilFail;
-  GLint origStencilPassDepthFail, newStencilPassDepthFail;
-  GLint origStencilPassDepthPass, newStencilPassDepthPass;
+  GLint origStencilBackFail = 0, newStencilBackFail = 0;
+  GLint origStencilFail = 0, newStencilFail = 0;
+  GLint origStencilPassDepthFail = 0, newStencilPassDepthFail = 0;
+  GLint origStencilPassDepthPass = 0, newStencilPassDepthPass = 0;
 
-  GLint origStencilBackWriteMask, newStencilBackWriteMask;
-  GLint origStencilWriteMask, newStencilWriteMask;
+  GLint origStencilBackWriteMask = 0, newStencilBackWriteMask = 0;
+  GLint origStencilWriteMask = 0, newStencilWriteMask = 0;
 
   ctx->getBooleanv(GL_DEPTH_WRITEMASK, &origIsDepthWriteEnabled);
   ctx->getIntegerv(GL_DEPTH_FUNC, &origDepthFunVal);

@@ -32,7 +32,7 @@ EGLint checkForEGLErrors(IGL_MAYBE_UNUSED const char* fileName,
                          IGL_MAYBE_UNUSED size_t lineNum) {
   const EGLint errorCode = eglGetError();
   if (errorCode != EGL_SUCCESS) {
-    IGL_MAYBE_UNUSED const char* errorStr;
+    IGL_MAYBE_UNUSED const char* errorStr = nullptr;
     switch (errorCode) {
       // https://www.khronos.org/files/egl-1-4-quick-reference-card.pdf
       CASE_ERROR_CODE_IMPL(EGL_NOT_INITIALIZED);
@@ -118,7 +118,7 @@ std::pair<EGLDisplay, EGLContext> newEGLContext(EGLDisplay display,
     return std::make_pair(EGL_NO_DISPLAY, EGL_NO_CONTEXT);
   }
 
-  EGLint numConfigs;
+  EGLint numConfigs = 0;
   if (!eglChooseConfig(display, attribs, config, 1, &numConfigs)) {
     CHECK_EGL_ERRORS();
   }

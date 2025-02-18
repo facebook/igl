@@ -781,7 +781,7 @@ igl::Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   const auto qcis = queuePool.getQueueCreationInfos();
 
-  VkDevice device;
+  VkDevice device = nullptr;
   VK_ASSERT_RETURN(
       ivkCreateDevice(&vf_,
                       vkPhysicalDevice_,
@@ -1531,7 +1531,7 @@ void VulkanContext::querySurfaceCapabilities() {
     vf_.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
         vkPhysicalDevice_, vkSurface_, &deviceSurfaceCaps_);
 
-    uint32_t formatCount;
+    uint32_t formatCount = 0;
     vf_.vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice_, vkSurface_, &formatCount, nullptr);
 
     if (formatCount) {
@@ -1540,7 +1540,7 @@ void VulkanContext::querySurfaceCapabilities() {
           vkPhysicalDevice_, vkSurface_, &formatCount, deviceSurfaceFormats_.data());
     }
 
-    uint32_t presentModeCount;
+    uint32_t presentModeCount = 0;
     vf_.vkGetPhysicalDeviceSurfacePresentModesKHR(
         vkPhysicalDevice_, vkSurface_, &presentModeCount, nullptr);
 

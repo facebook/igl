@@ -347,7 +347,7 @@ TEST_F(TextureTest, GetEstimatedSizeInBytes) {
                           : TextureFormat::RGBA_UNorm8;
   const size_t formatBytes = iglDev_->getBackendType() == BackendType::OpenGL ? 2 : 4;
 
-  size_t bytes;
+  size_t bytes = 0;
   bytes = (12 * 34 * formatBytes);
   ASSERT_EQ(calcSize(12, 34, format, 1), bytes);
   bytes = static_cast<size_t>((16 + 8 + 4 + 2 + 1) * formatBytes);

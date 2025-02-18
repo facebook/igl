@@ -80,7 +80,7 @@ TEST_F(DeviceOGLTest, EndScope) {
 
     ASSERT_TRUE(std::all_of(mask, mask + 4, [](GLboolean value) { return !value; }));
 
-    GLint value;
+    GLint value = 0;
     context_->getIntegerv(GL_BLEND_SRC_RGB, &value);
     ASSERT_EQ(value, GL_SRC_COLOR);
 
@@ -108,7 +108,7 @@ TEST_F(DeviceOGLTest, EndScope) {
 
   ASSERT_TRUE(std::all_of(mask, mask + 4, [](GLboolean value) { return value; }));
 
-  GLint value;
+  GLint value = 0;
   context_->getIntegerv(GL_BLEND_SRC_RGB, &value);
   ASSERT_EQ(value, GL_ONE);
 

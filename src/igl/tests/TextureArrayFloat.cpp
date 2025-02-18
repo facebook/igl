@@ -725,7 +725,7 @@ TEST_F(TextureArrayFloatTest, GetEstimatedSizeInBytes) {
   const auto format = kFloatTextureFormat;
   const uint32_t formatBytes = (kFloatTextureFormat == TextureFormat::RGBA_F16) ? 8u : 16u;
 
-  uint32_t bytes;
+  uint32_t bytes = 0;
   bytes = 12u * 34u * formatBytes * 2u;
   ASSERT_EQ(calcSize(12, 34, format, 1), bytes);
   bytes = (16u + 8u + 4u + 2u + 1u) * formatBytes * 2u;

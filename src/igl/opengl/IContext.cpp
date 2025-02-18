@@ -958,7 +958,7 @@ void IContext::bufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, co
 }
 
 GLenum IContext::checkFramebufferStatus(GLenum target) {
-  GLenum ret;
+  GLenum ret = 0;
 
   IGLCALL_WITH_RETURN(ret, CheckFramebufferStatus)(target);
   APILOG("glCheckFramebufferStatus(%s) = %s\n", GL_ENUM_TO_STRING(target), GL_ENUM_TO_STRING(ret));
@@ -1188,7 +1188,7 @@ void IContext::createMemoryObjects(GLsizei n, GLuint* objects) {
 }
 
 GLuint IContext::createProgram() {
-  GLuint ret;
+  GLuint ret = 0;
 
   GLCALL_WITH_RETURN(ret, CreateProgram)();
   APILOG("glCreateProgram() = %u\n", ret);
@@ -1198,7 +1198,7 @@ GLuint IContext::createProgram() {
 }
 
 GLuint IContext::createShader(GLenum shaderType) {
-  GLuint ret;
+  GLuint ret = 0;
 
   GLCALL_WITH_RETURN(ret, CreateShader)(shaderType);
   APILOG("glCreateShader(%s) = %u\n", GL_ENUM_TO_STRING(shaderType), ret);
@@ -1559,7 +1559,7 @@ GLsync IContext::fenceSync(GLenum condition, GLbitfield flags) {
     IGL_DEBUG_ASSERT(fenceSyncProc_, "No supported function for glFenceSync\n");
   }
 
-  GLsync sync;
+  GLsync sync = nullptr;
 
   GLCALL_PROC_WITH_RETURN(sync, fenceSyncProc_, GL_ZERO, condition, flags);
   APILOG("glFenceSync(%s, %u)\n", GL_ENUM_TO_STRING(condition), flags);
@@ -1852,7 +1852,7 @@ void IContext::getActiveUniformBlockName(GLuint program,
 }
 
 GLint IContext::getAttribLocation(GLuint program, const GLchar* name) const {
-  GLint ret;
+  GLint ret = 0;
 
   GLCALL_WITH_RETURN(ret, GetAttribLocation)(program, name);
   APILOG("glGetAttribLocation(%u, %s) = %d\n", program, name, ret);
@@ -1996,7 +1996,7 @@ void IContext::getProgramInfoLog(GLuint program,
 GLuint IContext::getProgramResourceIndex(GLuint program,
                                          GLenum programInterface,
                                          const GLchar* name) const {
-  GLuint ret;
+  GLuint ret = 0;
 
   IGLCALL_WITH_RETURN(ret, GetProgramResourceIndex)(program, programInterface, name);
   APILOG("glGetProgramResourceIndex(%u, %s, %s) = %u\n",
@@ -2058,7 +2058,7 @@ void IContext::getShaderInfoLog(GLuint shader,
 }
 
 const GLubyte* IContext::getString(GLenum name) const {
-  const GLubyte* ret;
+  const GLubyte* ret = nullptr;
 
   GLCALL_WITH_RETURN(ret, GetString)(name);
   APILOG("glGetString(%s) = %s\n", GL_ENUM_TO_STRING(name), reinterpret_cast<const char*>(ret));
@@ -2068,7 +2068,7 @@ const GLubyte* IContext::getString(GLenum name) const {
 }
 
 const GLubyte* IContext::getStringi(GLenum name, GLuint index) const {
-  const GLubyte* ret;
+  const GLubyte* ret = nullptr;
 
   IGLCALL_WITH_RETURN(ret, GetStringi)(name, index);
   APILOG("glGetStringi(%s, %d) = %s\n",
@@ -2117,7 +2117,7 @@ void IContext::getUniformiv(GLuint program, GLint location, GLint* params) const
 }
 
 GLint IContext::getUniformLocation(GLuint program, const GLchar* name) const {
-  GLint ret;
+  GLint ret = 0;
 
   GLCALL_WITH_RETURN(ret, GetUniformLocation)(program, name);
   APILOG("glGetUniformLocation(%u, %s) = %d\n", program, name, ret);
@@ -2157,7 +2157,7 @@ void IContext::invalidateFramebuffer(IGL_MAYBE_UNUSED GLenum target,
 }
 
 GLboolean IContext::isEnabled(GLenum cap) {
-  GLboolean ret;
+  GLboolean ret = 0;
 
   GLCALL_WITH_RETURN(ret, IsEnabled)(cap);
   APILOG("glIsEnabled(%s) = %s\n", GL_ENUM_TO_STRING(cap), GL_BOOL_TO_STRING(ret));
@@ -2167,7 +2167,7 @@ GLboolean IContext::isEnabled(GLenum cap) {
 }
 
 GLboolean IContext::isTexture(GLuint texture) {
-  GLboolean ret;
+  GLboolean ret = 0;
 
   GLCALL_WITH_RETURN(ret, IsTexture)(texture);
   APILOG("glIsTexture(%u) = %s\n", texture, GL_BOOL_TO_STRING(ret));
@@ -2994,7 +2994,7 @@ GLuint64 IContext::getTextureHandle(GLuint texture) {
     IGL_DEBUG_ASSERT(getTextureHandleProc_, "No supported function for glGetTextureHandle\n");
   }
 
-  GLuint64 ret;
+  GLuint64 ret = 0;
   GLCALL_PROC_WITH_RETURN(ret, getTextureHandleProc_, GL_ZERO, texture);
   APILOG("glGetTextureHandle(%u) = %llu\n", texture, ret);
   GLCHECK_ERRORS();
@@ -3100,15 +3100,15 @@ GLenum IContext::checkForErrors(IGL_MAYBE_UNUSED const char* callerName,
   static bool gettingMessageLog = false; // Used to avoid recursive entry
   if (lastError_ != GL_NO_ERROR && !gettingMessageLog &&
       deviceFeatureSet_.hasInternalFeature(InternalFeatures::DebugMessageCallback)) {
-    GLint numMessages;
+    GLint numMessages = 0;
     getIntegerv(GL_DEBUG_LOGGED_MESSAGES, &numMessages);
     for (GLint i = 0; i < numMessages; ++i) {
-      GLint messageLength;
+      GLint messageLength = 0;
       getIntegerv(GL_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH, &messageLength);
       std::vector<GLchar> messageBuffer(messageLength);
-      GLenum source, type, severity;
-      GLuint id;
-      GLsizei length;
+      GLenum source = 0, type = 0, severity = 0;
+      GLuint id = 0;
+      GLsizei length = 0;
       gettingMessageLog = true;
       IGL_SCOPE_EXIT {
         gettingMessageLog = false;

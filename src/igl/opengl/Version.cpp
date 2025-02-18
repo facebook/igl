@@ -172,7 +172,7 @@ std::pair<uint32_t, uint32_t> parseVersionString(const char* version) {
     IGL_LOG_DEBUG("Unable to get GL version string\n");
     return std::make_pair(2, 0);
   }
-  uint32_t majorVersion, minorVersion;
+  uint32_t majorVersion = 0, minorVersion = 0;
 #if IGL_OPENGL_ES
   constexpr char versionFormat[] = "OpenGL ES %d.%d";
 #else

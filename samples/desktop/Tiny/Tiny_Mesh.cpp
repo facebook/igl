@@ -220,7 +220,7 @@ static bool initWindow(GLFWwindow** outWindow) {
     inputDispatcher_.queueEvent(igl::shell::MouseMotionEvent(x, y, 0, 0));
   });
   glfwSetMouseButtonCallback(window, [](auto* window, int button, int action, int mods) {
-    double xpos, ypos;
+    double xpos = 0.0, ypos = 0.0;
     glfwGetCursorPos(window, &xpos, &ypos);
     using igl::shell::MouseButton;
     const MouseButton iglButton =
