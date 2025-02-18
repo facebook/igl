@@ -374,12 +374,12 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
     const std::string bindlessTexturesSource = ctx_->config_.enableDescriptorIndexing ?
                                                                                       R"(
       // everything - indexed by global texture/sampler id
-      layout (set = 2, binding = 0) uniform texture2D kTextures2D[];
-      layout (set = 2, binding = 1) uniform texture2DArray kTextures2DArray[];
-      layout (set = 2, binding = 2) uniform texture3D kTextures3D[];
-      layout (set = 2, binding = 3) uniform textureCube kTexturesCube[];
-      layout (set = 2, binding = 4) uniform sampler kSamplers[];
-      layout (set = 2, binding = 5) uniform samplerShadow kSamplersShadow[];
+      layout (set = 3, binding = 0) uniform texture2D kTextures2D[];
+      layout (set = 3, binding = 1) uniform texture2DArray kTextures2DArray[];
+      layout (set = 3, binding = 2) uniform texture3D kTextures3D[];
+      layout (set = 3, binding = 3) uniform textureCube kTexturesCube[];
+      layout (set = 3, binding = 4) uniform sampler kSamplers[];
+      layout (set = 3, binding = 5) uniform samplerShadow kSamplersShadow[];
       // binding #6 is reserved for STORAGE_IMAGEs: check VulkanContext.cpp
       )"
                                                                                       : "";

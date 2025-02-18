@@ -395,6 +395,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
   const VkDescriptorSetLayout DSLs[] = {
       dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
       dslBuffers_->getVkDescriptorSetLayout(),
+      dslStorageImages_->getVkDescriptorSetLayout(),
       ctx.getBindlessVkDescriptorSetLayout(),
   };
 
