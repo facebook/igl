@@ -563,7 +563,7 @@ size_t ITexture::getEstimatedSizeInBytes() const {
 }
 
 Result ITexture::validateRange(const igl::TextureRangeDesc& range) const noexcept {
-  const auto result = range.validate();
+  auto result = range.validate();
   if (!result.isOk()) {
     return result;
   }
@@ -702,7 +702,7 @@ Result ITexture::upload(const TextureRangeDesc& range,
   }
 
   const auto type = getType();
-  const auto result = validateRange(range);
+  auto result = validateRange(range);
   if (!result.isOk()) {
     return result;
   }
