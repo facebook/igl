@@ -17,7 +17,7 @@ namespace igl::shell {
 
 class MRTSession : public RenderSession {
  public:
-  MRTSession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {}
+  explicit MRTSession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {}
   void initialize() noexcept override;
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
 

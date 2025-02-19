@@ -20,7 +20,7 @@ class IContext;
 ///
 class DestructionGuard final {
  public:
-  DestructionGuard(std::shared_ptr<IContext> context);
+  /*implicit*/ DestructionGuard(std::shared_ptr<IContext> context);
   ~DestructionGuard();
   DestructionGuard(DestructionGuard&& context) = default;
   DestructionGuard& operator=(DestructionGuard&&) = default;

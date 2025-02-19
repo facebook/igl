@@ -19,7 +19,7 @@ namespace igl::shell {
 
 class ImguiSession : public RenderSession {
  public:
-  ImguiSession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {}
+  explicit ImguiSession(std::shared_ptr<Platform> platform) : RenderSession(std::move(platform)) {}
   void initialize() noexcept override;
   void update(igl::SurfaceTextures surfaceTextures) noexcept override;
 
