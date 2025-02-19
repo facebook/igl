@@ -205,16 +205,16 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index,
   (void)format;
 
   igl::vulkan::Texture* tex = static_cast<Texture*>(texture);
-  const VulkanTexture& vkTex = tex->getVulkanTexture();
-  const VulkanImage* vkImage = &vkTex.image_;
+  const VulkanImage* vkImage = tex ? &tex->getVulkanTexture().image_ : nullptr;
 
   IGL_DEBUG_ASSERT(vkImage);
 
-  if (vkImage->isStorageImage()) {
-    igl::vulkan::transitionToGeneral(cmdBuffer_, texture);
-  } else {
+  if (!vkImage || !vkImage->isStorageImage()) {
     IGL_DEBUG_ABORT("A texture should be Storage");
+    return;
   }
+
+  igl::vulkan::transitionToGeneral(cmdBuffer_, texture);
 
   restoreLayout_.push_back(vkImage);
 
