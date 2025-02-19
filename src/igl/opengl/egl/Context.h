@@ -17,8 +17,7 @@
 
 #include <igl/opengl/IContext.h>
 
-namespace igl {
-namespace opengl::egl {
+namespace igl::opengl::egl {
 
 class Context final : public IContext {
  public:
@@ -108,5 +107,4 @@ class Context final : public IContext {
   std::shared_ptr<std::vector<EGLContext>> sharegroup_;
 };
 
-} // namespace opengl::egl
-} // namespace igl
+} // namespace igl::opengl::egl
