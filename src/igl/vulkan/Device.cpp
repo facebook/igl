@@ -101,7 +101,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   IGL_DEBUG_ASSERT(uploadResult.isOk());
   Result::setResult(outResult, uploadResult);
 
-  if (getResourceTracker()) {
+  if (hasResourceTracker()) {
     buffer->initResourceTracker(getResourceTracker(), desc.debugName);
   }
 
@@ -136,7 +136,7 @@ std::unique_ptr<IShaderStages> Device::createShaderStages(const ShaderStagesDesc
     Result::setOk(outResult);
   }
 
-  if (getResourceTracker()) {
+  if (hasResourceTracker()) {
     shaderStages->initResourceTracker(getResourceTracker(), desc.debugName);
   }
 
@@ -153,7 +153,7 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
 
   Result::setResult(outResult, samplerState->create(desc));
 
-  if (getResourceTracker()) {
+  if (hasResourceTracker()) {
     samplerState->initResourceTracker(getResourceTracker(), desc.debugName);
   }
 
@@ -172,7 +172,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 
   const Result res = texture->create(sanitized);
 
-  if (getResourceTracker()) {
+  if (hasResourceTracker()) {
     texture->initResourceTracker(getResourceTracker(), desc.debugName);
   }
 
@@ -279,7 +279,7 @@ std::shared_ptr<IShaderModule> Device::createShaderModule(const ShaderModuleDesc
   Result::setResult(outResult, std::move(result));
   auto shaderModule = std::make_shared<ShaderModule>(desc.info, std::move(vulkanShaderModule));
 
-  if (getResourceTracker()) {
+  if (hasResourceTracker()) {
     shaderModule->initResourceTracker(getResourceTracker(), desc.debugName);
   }
 
@@ -471,7 +471,7 @@ std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& d
   auto resource = std::make_shared<Framebuffer>(*this, desc);
   Result::setOk(outResult);
 
-  if (getResourceTracker()) {
+  if (hasResourceTracker()) {
     resource->initResourceTracker(getResourceTracker(), desc.debugName);
   }
 
@@ -525,7 +525,7 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibrary(const ShaderLibraryD
   Result::setResult(outResult, std::move(result));
   auto shaderLibrary = std::make_unique<ShaderLibrary>(std::move(modules));
 
-  if (getResourceTracker()) {
+  if (hasResourceTracker()) {
     shaderLibrary->initResourceTracker(getResourceTracker(), desc.debugName);
   }
 
