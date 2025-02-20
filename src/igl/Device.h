@@ -334,6 +334,13 @@ class IDevice : public ICapabilities {
   }
 
   /**
+   * @brief Returns if a resource tracker is used by this device.
+   */
+  [[nodiscard]] bool hasResourceTracker() const noexcept {
+    return resourceTracker_ != nullptr;
+  }
+
+  /**
    * @brief Returns a backend-specific color for debugging purposes
    *  - OpenGL: Yellow
    *  - Metal: Magenta
