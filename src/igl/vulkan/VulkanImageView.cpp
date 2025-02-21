@@ -22,7 +22,7 @@ VulkanImageView::VulkanImageView(const VulkanContext& ctx,
                                  uint32_t baseLayer,
                                  uint32_t numLayers,
                                  const char* debugName) :
-  ctx_(&ctx) {
+  ctx_(&ctx), aspectMask_(aspectMask) {
   IGL_DEBUG_ASSERT(ctx_);
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
@@ -71,7 +71,7 @@ VulkanImageView::~VulkanImageView() {
 VulkanImageView::VulkanImageView(const VulkanContext& ctx,
                                  const VkImageViewCreateInfo& createInfo,
                                  const char* debugName) :
-  ctx_(&ctx) {
+  ctx_(&ctx), aspectMask_(createInfo.subresourceRange.aspectMask) {
   VkDevice device = ctx_->getVkDevice();
   VK_ASSERT(ctx_->vf_.vkCreateImageView(device, &createInfo, nullptr, &vkImageView_));
 
@@ -83,8 +83,10 @@ VulkanImageView& VulkanImageView::operator=(VulkanImageView&& other) noexcept {
   destroy();
   ctx_ = other.ctx_;
   vkImageView_ = other.vkImageView_;
+  aspectMask_ = other.aspectMask_;
   other.ctx_ = nullptr;
   other.vkImageView_ = VK_NULL_HANDLE;
+  other.aspectMask_ = VK_IMAGE_ASPECT_NONE;
   return *this;
 }
 
