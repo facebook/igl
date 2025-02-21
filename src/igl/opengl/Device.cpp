@@ -135,7 +135,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
 
   if (resource) {
     resource->initialize(desc, outResult);
-    if (getResourceTracker()) {
+    if (hasResourceTracker()) {
       resource->initResourceTracker(getResourceTracker(), desc.debugName);
     }
   } else {
@@ -154,7 +154,7 @@ std::shared_ptr<IDepthStencilState> Device::createDepthStencilState(
 std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc& desc,
                                                           Result* outResult) const {
   auto resource = std::make_shared<SamplerState>(getContext(), desc);
-  if (getResourceTracker()) {
+  if (hasResourceTracker()) {
     resource->initResourceTracker(getResourceTracker(), desc.debugName);
   }
   Result::setOk(outResult);
@@ -196,7 +196,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
 
     if (!result.isOk()) {
       texture = nullptr;
-    } else if (getResourceTracker()) {
+    } else if (hasResourceTracker()) {
       texture->initResourceTracker(getResourceTracker(), desc.debugName);
     }
 
