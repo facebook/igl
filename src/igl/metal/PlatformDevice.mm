@@ -50,7 +50,7 @@ std::shared_ptr<SamplerState> PlatformDevice::createSamplerState(const SamplerSt
 
   id<MTLSamplerState> metalObject = [device_.get() newSamplerStateWithDescriptor:metalDesc];
   auto resource = std::make_shared<SamplerState>(metalObject);
-  if (device_.getResourceTracker()) {
+  if (device_.hasResourceTracker()) {
     resource->initResourceTracker(device_.getResourceTracker(), desc.debugName);
   }
   Result::setOk(outResult);

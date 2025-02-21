@@ -76,7 +76,7 @@ std::unique_ptr<IBuffer> Device::createBuffer(const BufferDesc& desc,
   id<MTLBuffer> metalObject = createMetalBuffer(device_, desc, options);
   std::unique_ptr<IBuffer> resource = std::make_unique<Buffer>(
       std::move(metalObject), options, desc.hint, 0 /* No accepted hints */, desc.type);
-  if (getResourceTracker()) {
+  if (hasResourceTracker()) {
     resource->initResourceTracker(getResourceTracker(), desc.debugName);
   }
   Result::setOk(outResult);
@@ -97,7 +97,7 @@ std::unique_ptr<IBuffer> Device::createRingBuffer(const BufferDesc& desc,
   std::unique_ptr<IBuffer> resource = std::make_unique<RingBuffer>(
       std::move(bufferRing), options, bufferSyncManager_, desc.hint, desc.type);
 
-  if (getResourceTracker()) {
+  if (hasResourceTracker()) {
     resource->initResourceTracker(getResourceTracker(), desc.debugName);
   }
   Result::setOk(outResult);
@@ -118,7 +118,7 @@ std::unique_ptr<IBuffer> Device::createBufferNoCopy(const BufferDesc& desc,
 
   std::unique_ptr<IBuffer> resource = std::make_unique<Buffer>(
       metalObject, options, desc.hint, BufferDesc::BufferAPIHintBits::NoCopy, desc.type);
-  if (getResourceTracker()) {
+  if (hasResourceTracker()) {
     resource->initResourceTracker(getResourceTracker(), desc.debugName);
   }
   Result::setOk(outResult);
@@ -199,7 +199,7 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   }
   metalObject.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
   auto iglObject = std::make_shared<Texture>(metalObject, *this);
-  if (getResourceTracker()) {
+  if (hasResourceTracker()) {
     iglObject->initResourceTracker(getResourceTracker(), desc.debugName);
   }
   Result::setOk(outResult);

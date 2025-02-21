@@ -16,7 +16,7 @@ Device::Device(id<MTLDevice> device) : metal::Device(device) {}
 std::shared_ptr<IFramebuffer> Device::createFramebuffer(const FramebufferDesc& desc,
                                                         Result* outResult) {
   auto resource = std::make_shared<Framebuffer>(desc);
-  if (getResourceTracker()) {
+  if (hasResourceTracker()) {
     resource->initResourceTracker(getResourceTracker());
   }
   Result::setOk(outResult);
