@@ -94,7 +94,7 @@ class VulkanImageView final {
  public:
   const VulkanContext* ctx_ = nullptr;
   VkImageView vkImageView_ = VK_NULL_HANDLE;
-  VkImageAspectFlags aspectMask_ = VK_IMAGE_ASPECT_NONE;
+  VkImageAspectFlags aspectMask_ = 0;
 
  private:
   void destroy();

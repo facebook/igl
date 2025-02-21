@@ -86,7 +86,7 @@ VulkanImageView& VulkanImageView::operator=(VulkanImageView&& other) noexcept {
   aspectMask_ = other.aspectMask_;
   other.ctx_ = nullptr;
   other.vkImageView_ = VK_NULL_HANDLE;
-  other.aspectMask_ = VK_IMAGE_ASPECT_NONE;
+  other.aspectMask_ = 0;
   return *this;
 }
 
