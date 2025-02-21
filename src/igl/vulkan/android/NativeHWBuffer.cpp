@@ -70,6 +70,10 @@ Result NativeHWTextureBuffer::createTextureInternal(AHardwareBuffer* hwBuffer) {
   }
   if (hwbDesc.usage & AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT) {
     usage_flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    // There is no matching usage flag in AHardwareBuffer to match VK_IMAGE_USAGE_STORAGE_BIT in
+    // Vulkan. So we assume if the the color output flag is set for the buffer, we
+    // enable the storage usage.
+    usage_flags |= VK_IMAGE_USAGE_STORAGE_BIT;
   }
 
   VkAndroidHardwareBufferFormatPropertiesANDROID ahb_format_props = {
