@@ -163,6 +163,20 @@ TEST_F(ComputeCommandEncoderTest, canEncodeBasicBufferOperation) {
   bufferOut0_->unmap();
 }
 
+TEST_F(ComputeCommandEncoderTest, bindImageTexture) {
+  if (!iglDev_->hasFeature(DeviceFeatures::Compute)) {
+    return;
+  }
+
+  auto cmdBuffer = cmdQueue_->createCommandBuffer({}, nullptr);
+  ASSERT_TRUE(cmdBuffer != nullptr);
+
+  auto computeCommandEncoder = cmdBuffer->createComputeCommandEncoder();
+  computeCommandEncoder->bindImageTexture(0, nullptr, TextureFormat::Invalid);
+  cmdQueue_->submit(*cmdBuffer);
+  cmdBuffer->waitUntilCompleted();
+}
+
 TEST_F(ComputeCommandEncoderTest, canUseOutputBufferFromOnePassAsInputToNext) {
 #if IGL_PLATFORM_LINUX && !IGL_PLATFORM_LINUX_USE_EGL
   GTEST_SKIP() << "Fix this test on Linux";
