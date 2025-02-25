@@ -62,12 +62,7 @@ class IComputeCommandEncoder : public ICommandEncoder {
    * @param texture The texture to set in the texture argument table.
    */
   virtual void bindTexture(uint32_t index, ITexture* texture) = 0;
-  virtual void bindImageTexture(uint32_t index, ITexture* texture, TextureFormat format) {
-    // @fb-only
-    (void)index;
-    (void)texture;
-    (void)format;
-  }
+  virtual void bindImageTexture(uint32_t index, ITexture* texture, TextureFormat format) = 0;
   /**
    * @brief Sets a buffer for the compute function
    *
