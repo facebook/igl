@@ -236,7 +236,9 @@ struct VertexInputState final : public IVertexInputState {
 namespace igl::vulkan::functions {
 
 void initialize(VulkanFunctionTable& table);
-void loadInstanceFunctions(VulkanFunctionTable& table, VkInstance instance);
+void loadInstanceFunctions(VulkanFunctionTable& table,
+                           VkInstance instance,
+                           bool enableExtDebugUtils);
 void loadDeviceFunctions(VulkanFunctionTable& table, VkDevice device);
 
 } // namespace igl::vulkan::functions
