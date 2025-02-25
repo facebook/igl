@@ -392,14 +392,14 @@ VkPipeline RenderPipelineState::getVkPipeline(
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   // @fb-only
-  if (!pipelineLayout_) {
-    const VkDescriptorSetLayout DSLs[] = {
-        dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
-        dslBuffers_->getVkDescriptorSetLayout(),
-        dslStorageImages_->getVkDescriptorSetLayout(),
-        ctx.getBindlessVkDescriptorSetLayout(),
-    };
+  const VkDescriptorSetLayout DSLs[] = {
+      dslCombinedImageSamplers_->getVkDescriptorSetLayout(),
+      dslBuffers_->getVkDescriptorSetLayout(),
+      dslStorageImages_->getVkDescriptorSetLayout(),
+      ctx.getBindlessVkDescriptorSetLayout(),
+  };
 
+  if (!pipelineLayout_) {
     const VkPipelineLayoutCreateInfo ci = ivkGetPipelineLayoutCreateInfo(
         static_cast<uint32_t>(ctx.config_.enableDescriptorIndexing
                                   ? IGL_ARRAY_NUM_ELEMENTS(DSLs)
