@@ -1210,6 +1210,13 @@ void ivkBufferBarrier(const struct VulkanFunctionTable* vt,
       .size = VK_WHOLE_SIZE,
   };
 
+  if (srcStageMask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) {
+    barrier.srcAccessMask |= VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+  }
+
+  if (dstStageMask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) {
+    barrier.dstAccessMask |= VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+  }
   if (dstStageMask & VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT) {
     barrier.dstAccessMask |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
   }
