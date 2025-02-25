@@ -86,6 +86,14 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
   }
 }
 
+void ComputeCommandEncoder::bindImageTexture(uint32_t index,
+                                             ITexture* texture,
+                                             TextureFormat format) {
+  (void)format;
+
+  this->bindTexture(index, texture);
+}
+
 void ComputeCommandEncoder::bindBuffer(uint32_t index,
                                        IBuffer* buffer,
                                        size_t offset,
