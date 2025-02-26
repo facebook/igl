@@ -134,6 +134,14 @@ void CommandBuffer::popDebugGroupLabel() const {
   ivkCmdEndDebugUtilsLabel(&ctx_.vf_, wrapper_.cmdBuf_);
 }
 
+void CommandBuffer::copyBuffer(IBuffer& src,
+                               IBuffer& dst,
+                               uint64_t srcOffset,
+                               uint64_t dstOffset,
+                               uint64_t size) {
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+}
+
 void CommandBuffer::waitUntilCompleted() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_WAIT);
 

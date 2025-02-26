@@ -60,6 +60,14 @@ void CommandBuffer::popDebugGroupLabel() const {
   }
 }
 
+void CommandBuffer::copyBuffer(IBuffer& src,
+                               IBuffer& dst,
+                               uint64_t srcOffset,
+                               uint64_t dstOffset,
+                               uint64_t size) {
+  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+}
+
 IContext& CommandBuffer::getContext() const {
   return *context_;
 }

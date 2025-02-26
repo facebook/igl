@@ -34,6 +34,11 @@ class CommandBuffer final : public igl::ICommandBuffer {
   void pushDebugGroupLabel(const char* IGL_NONNULL /*label*/,
                            const igl::Color& /*color*/ = igl::Color(1, 1, 1, 1)) const final;
   void popDebugGroupLabel() const final;
+  void copyBuffer(igl::IBuffer& src,
+                  igl::IBuffer& dst,
+                  uint64_t srcOffset,
+                  uint64_t dstOffset,
+                  uint64_t size) final;
 
  private:
   [[maybe_unused]] bool shouldAssert_;

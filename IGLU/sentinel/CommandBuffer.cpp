@@ -50,4 +50,12 @@ void CommandBuffer::popDebugGroupLabel() const {
   IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
 }
 
+void CommandBuffer::copyBuffer(igl::IBuffer& src,
+                               igl::IBuffer& dst,
+                               uint64_t srcOffset,
+                               uint64_t dstOffset,
+                               uint64_t size) {
+  IGLU_SENTINEL_ASSERT_IF_NOT(shouldAssert_);
+}
+
 } // namespace iglu::sentinel

@@ -36,6 +36,12 @@ class CommandBuffer final : public ICommandBuffer,
 
   void popDebugGroupLabel() const override;
 
+  void copyBuffer(IBuffer& src,
+                  IBuffer& dst,
+                  uint64_t srcOffset,
+                  uint64_t dstOffset,
+                  uint64_t size) override;
+
   IContext& getContext() const;
 
  private:

@@ -58,6 +58,12 @@ class CommandBuffer final : public ICommandBuffer,
 
   void popDebugGroupLabel() const override;
 
+  void copyBuffer(IBuffer& src,
+                  IBuffer& dst,
+                  uint64_t srcOffset,
+                  uint64_t dstOffset,
+                  uint64_t size) override;
+
   /// @brief Waits until the command bufer has been executed by the device.
   void waitUntilCompleted() override;
 

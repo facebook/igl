@@ -117,6 +117,15 @@ class ICommandBuffer {
   virtual void popDebugGroupLabel() const = 0;
 
   /**
+   * @brief Copy data between buffers.
+   */
+  virtual void copyBuffer(IBuffer& src,
+                          IBuffer& dst,
+                          uint64_t srcOffset,
+                          uint64_t dstOffset,
+                          uint64_t size) = 0;
+
+  /**
    * @returns the number of draw operations tracked by this CommandBuffer. This is tracked manually
    * via calls to incrementCurrentDrawCount().
    */
