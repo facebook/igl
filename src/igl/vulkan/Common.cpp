@@ -603,7 +603,6 @@ PFN_vkGetInstanceProcAddr getVkGetInstanceProcAddr() {
   }
   return (PFN_vkGetInstanceProcAddr)dlsym(lib, "vkGetInstanceProcAddr");
 #endif
-  return nullptr;
 }
 } // namespace
 
