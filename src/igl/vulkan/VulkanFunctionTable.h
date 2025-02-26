@@ -1144,7 +1144,8 @@ int loadVulkanLoaderFunctions(struct VulkanFunctionTable* table, PFN_vkGetInstan
 /// instance functions defined in the `VulkanFunctionTable` structure.
 void loadVulkanInstanceFunctions(struct VulkanFunctionTable* table,
                                  VkInstance context,
-                                 PFN_vkGetInstanceProcAddr load);
+                                 PFN_vkGetInstanceProcAddr load,
+                                 VkBool32 enableExtDebugUtils);
 
 /// @brief Populates the device function pointers in the `VulkanFunctionTable` structure. Requires a
 /// pointer to the vkGetInstanceProcAddr function, which is used to retrieve pointers to all device

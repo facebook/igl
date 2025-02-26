@@ -579,7 +579,9 @@ void VulkanContext::createInstance(const size_t numExtraExtensions,
   // Do not remove for backward compatibility with projects using global functions.
   volkLoadInstance(vkInstance_);
 #endif
-  vulkan::functions::loadInstanceFunctions(*tableImpl_, vkInstance_);
+  const bool enableExtDebugUtils = extensions_.enable(VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+                                                      VulkanExtensions::ExtensionType::Instance);
+  vulkan::functions::loadInstanceFunctions(*tableImpl_, vkInstance_, enableExtDebugUtils);
 
 #if defined(VK_EXT_debug_utils) && IGL_PLATFORM_WINDOWS
   if (extensions_.enabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {

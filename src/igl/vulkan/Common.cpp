@@ -616,9 +616,12 @@ void initialize(VulkanFunctionTable& table) {
   }
 }
 
-void loadInstanceFunctions(VulkanFunctionTable& table, VkInstance instance) {
+void loadInstanceFunctions(VulkanFunctionTable& table,
+                           VkInstance instance,
+                           bool enableExtDebugUtils) {
   IGL_DEBUG_ASSERT(table.vkGetInstanceProcAddr != nullptr);
-  loadVulkanInstanceFunctions(&table, instance, table.vkGetInstanceProcAddr);
+  loadVulkanInstanceFunctions(
+      &table, instance, table.vkGetInstanceProcAddr, enableExtDebugUtils ? VK_TRUE : VK_FALSE);
 }
 
 void loadDeviceFunctions(VulkanFunctionTable& table, VkDevice device) {
