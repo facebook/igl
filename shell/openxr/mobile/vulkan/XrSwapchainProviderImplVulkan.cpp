@@ -22,7 +22,7 @@
 namespace igl::shell::openxr::mobile {
 namespace {
 void enumerateSwapchainImages(
-    igl::IDevice& device,
+    IDevice& device,
     XrSwapchain swapchain,
     VkFormat format,
     const impl::SwapchainImageInfo& swapchainImageInfo,
@@ -74,14 +74,14 @@ void enumerateSwapchainImages(
   }
 }
 
-std::shared_ptr<igl::ITexture> getSurfaceTexture(
-    igl::IDevice& device,
+std::shared_ptr<ITexture> getSurfaceTexture(
+    IDevice& device,
     const XrSwapchain& swapchain,
     const impl::SwapchainImageInfo& swapchainImageInfo,
     uint8_t numViews,
     const std::vector<std::shared_ptr<igl::vulkan::VulkanTexture>>& vulkanTextures,
     VkFormat externalTextureFormat,
-    std::vector<std::shared_ptr<igl::ITexture>>& inOutTextures) {
+    std::vector<std::shared_ptr<ITexture>>& inOutTextures) {
   uint32_t imageIndex = 0;
   const XrSwapchainImageAcquireInfo acquireInfo{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
   XR_CHECK(xrAcquireSwapchainImage(swapchain, &acquireInfo, &imageIndex));
@@ -127,13 +127,12 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
 }
 } // namespace
 
-XrSwapchainProviderImplVulkan::XrSwapchainProviderImplVulkan(
-    igl::TextureFormat preferredColorFormat) {
+XrSwapchainProviderImplVulkan::XrSwapchainProviderImplVulkan(TextureFormat preferredColorFormat) {
   preferredColorFormat_ = vulkan::textureFormatToVkFormat(preferredColorFormat);
 }
 
 void XrSwapchainProviderImplVulkan::enumerateImages(
-    igl::IDevice& device,
+    IDevice& device,
     XrSwapchain colorSwapchain,
     XrSwapchain depthSwapchain,
     const impl::SwapchainImageInfo& swapchainImageInfo,
@@ -165,8 +164,8 @@ void XrSwapchainProviderImplVulkan::enumerateImages(
                            vulkanDepthTextures_);
 }
 
-igl::SurfaceTextures XrSwapchainProviderImplVulkan::getSurfaceTextures(
-    igl::IDevice& device,
+SurfaceTextures XrSwapchainProviderImplVulkan::getSurfaceTextures(
+    IDevice& device,
     XrSwapchain colorSwapchain,
     XrSwapchain depthSwapchain,
     const impl::SwapchainImageInfo& swapchainImageInfo,

@@ -31,7 +31,7 @@ namespace {
 } // namespace
 
 XrSwapchainProvider::XrSwapchainProvider(std::unique_ptr<impl::XrSwapchainProviderImpl>&& impl,
-                                         std::shared_ptr<igl::shell::Platform> platform,
+                                         std::shared_ptr<Platform> platform,
                                          XrSession session,
                                          impl::SwapchainImageInfo swapchainImageInfo,
                                          uint8_t numViews) noexcept :
@@ -114,7 +114,7 @@ XrSwapchain XrSwapchainProvider::createXrSwapchain(XrSwapchainUsageFlags extraUs
   return swapchain;
 }
 
-igl::SurfaceTextures XrSwapchainProvider::getSurfaceTextures() const noexcept {
+SurfaceTextures XrSwapchainProvider::getSurfaceTextures() const noexcept {
   return impl_->getSurfaceTextures(
       platform_->getDevice(), colorSwapchain_, depthSwapchain_, swapchainImageInfo_, numViews_);
 }

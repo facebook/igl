@@ -42,7 +42,7 @@ std::vector<const char*> XrAppImplVulkan::getXrOptionalExtensions() const {
   };
 }
 
-std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSystemId systemId) {
+std::unique_ptr<IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSystemId systemId) {
   // Get the API requirements.
   // XR_ERROR_GRAPHICS_REQUIREMENTS_CALL_MISSING is returned on calls to xrCreateSession
   // if this function has not been called for the instance and systemId before xrCreateSession.
@@ -111,7 +111,7 @@ std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSy
     return nullptr;
   }
 
-  igl::HWDeviceDesc hwDevice(0, HWDeviceType::Unknown);
+  HWDeviceDesc hwDevice(0, HWDeviceType::Unknown);
   for (const auto& device : devices) {
     if (device.guid == reinterpret_cast<uintptr_t>(physicalDevice)) {
       hwDevice = device;
@@ -134,7 +134,7 @@ std::unique_ptr<igl::IDevice> XrAppImplVulkan::initIGL(XrInstance instance, XrSy
 
 XrSession XrAppImplVulkan::initXrSession(XrInstance instance,
                                          XrSystemId systemId,
-                                         igl::IDevice& device,
+                                         IDevice& device,
                                          const RenderSessionConfig& sessionConfig) {
   IGL_DEBUG_ASSERT(sessionConfig.backendVersion.flavor == igl::BackendFlavor::Vulkan);
   sessionConfig_ = sessionConfig;

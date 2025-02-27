@@ -14,7 +14,7 @@
 namespace igl::shell::openxr {
 namespace {
 #ifdef XR_FB_composition_layer_alpha_blend
-inline XrBlendFactorFB iglToOpenXR(igl::BlendFactor factor) noexcept {
+inline XrBlendFactorFB iglToOpenXR(BlendFactor factor) noexcept {
   switch (factor) {
   case igl::BlendFactor::Zero:
     return XR_BLEND_FACTOR_ZERO_FB;
@@ -38,7 +38,7 @@ inline XrBlendFactorFB iglToOpenXR(igl::BlendFactor factor) noexcept {
 } // namespace
 
 XrCompositionQuad::XrCompositionQuad(impl::XrAppImpl& appImpl,
-                                     std::shared_ptr<igl::shell::Platform> platform,
+                                     std::shared_ptr<Platform> platform,
                                      XrSession session,
                                      bool useSinglePassStereo,
                                      bool isAlphaBlendCompositionSupported,

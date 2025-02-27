@@ -46,7 +46,7 @@ std::vector<const char*> XrAppImplGLES::getXrOptionalExtensions() const {
   return {};
 }
 
-std::unique_ptr<igl::IDevice> XrAppImplGLES::initIGL(XrInstance instance, XrSystemId systemId) {
+std::unique_ptr<IDevice> XrAppImplGLES::initIGL(XrInstance instance, XrSystemId systemId) {
   // Get the graphics requirements.
   // XR_ERROR_GRAPHICS_REQUIREMENTS_CALL_MISSING is returned on calls to xrCreateSession
   // if this function has not been called for the instance and systemId before xrCreateSession.
@@ -79,7 +79,7 @@ std::unique_ptr<igl::IDevice> XrAppImplGLES::initIGL(XrInstance instance, XrSyst
 
 XrSession XrAppImplGLES::initXrSession(XrInstance instance,
                                        XrSystemId systemId,
-                                       igl::IDevice& device,
+                                       IDevice& device,
                                        const RenderSessionConfig& sessionConfig) {
   IGL_DEBUG_ASSERT(sessionConfig.backendVersion.flavor == igl::BackendFlavor::OpenGL_ES);
   sessionConfig_ = sessionConfig;

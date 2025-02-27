@@ -38,21 +38,21 @@ class XrSwapchainProviderImpl {
   [[nodiscard]] virtual std::vector<int64_t> preferredColorFormats() const noexcept = 0;
   [[nodiscard]] virtual std::vector<int64_t> preferredDepthFormats() const noexcept = 0;
 
-  virtual void enumerateImages(igl::IDevice& device,
+  virtual void enumerateImages(IDevice& device,
                                XrSwapchain colorSwapchain,
                                XrSwapchain depthSwapchain,
                                const SwapchainImageInfo& swapchainImageInfo,
                                uint8_t numViews) noexcept = 0;
 
-  [[nodiscard]] virtual igl::SurfaceTextures getSurfaceTextures(
-      igl::IDevice& device,
+  [[nodiscard]] virtual SurfaceTextures getSurfaceTextures(
+      IDevice& device,
       XrSwapchain colorSwapchain,
       XrSwapchain depthSwapchain,
       const SwapchainImageInfo& swapchainImageInfo,
       uint8_t numViews) noexcept = 0;
 
  protected:
-  std::vector<std::shared_ptr<igl::ITexture>> colorTextures_;
-  std::vector<std::shared_ptr<igl::ITexture>> depthTextures_;
+  std::vector<std::shared_ptr<ITexture>> colorTextures_;
+  std::vector<std::shared_ptr<ITexture>> depthTextures_;
 };
 } // namespace igl::shell::openxr::impl

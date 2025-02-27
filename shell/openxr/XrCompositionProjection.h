@@ -14,7 +14,7 @@ namespace igl::shell::openxr {
 class XrCompositionProjection final : public XrComposition {
  public:
   XrCompositionProjection(impl::XrAppImpl& appImpl,
-                          std::shared_ptr<igl::shell::Platform> platform,
+                          std::shared_ptr<Platform> platform,
                           XrSession session,
                           bool useSinglePassStereo) noexcept;
 

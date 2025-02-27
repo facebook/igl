@@ -51,14 +51,13 @@ void enumerateSwapchainImages(XrSwapchain swapchain, std::vector<uint32_t>& outI
                  [](const auto& xrImage) { return xrImage.image; });
 }
 
-std::shared_ptr<igl::ITexture> getSurfaceTexture(
-    igl::IDevice& device,
-    const XrSwapchain& swapchain,
-    const impl::SwapchainImageInfo& swapchainImageInfo,
-    uint8_t numViews,
-    const std::vector<uint32_t>& images,
-    igl::TextureFormat externalTextureFormat,
-    std::vector<std::shared_ptr<igl::ITexture>>& inOutTextures) {
+std::shared_ptr<ITexture> getSurfaceTexture(IDevice& device,
+                                            const XrSwapchain& swapchain,
+                                            const impl::SwapchainImageInfo& swapchainImageInfo,
+                                            uint8_t numViews,
+                                            const std::vector<uint32_t>& images,
+                                            TextureFormat externalTextureFormat,
+                                            std::vector<std::shared_ptr<ITexture>>& inOutTextures) {
   uint32_t imageIndex = 0;
   const XrSwapchainImageAcquireInfo acquireInfo{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
   XR_CHECK(xrAcquireSwapchainImage(swapchain, &acquireInfo, &imageIndex));
@@ -97,7 +96,7 @@ std::shared_ptr<igl::ITexture> getSurfaceTexture(
 } // namespace
 
 XrSwapchainProviderImplGLES::XrSwapchainProviderImplGLES(const igl::IDevice& device,
-                                                         igl::TextureFormat preferredColorFormat) {
+                                                         TextureFormat preferredColorFormat) {
   const auto& openglDevice = static_cast<const igl::opengl::Device&>(device);
   igl::opengl::Texture::FormatDescGL formatDescGL;
   igl::opengl::Texture::toFormatDescGL(openglDevice.getContext(),
@@ -110,7 +109,7 @@ XrSwapchainProviderImplGLES::XrSwapchainProviderImplGLES(const igl::IDevice& dev
 }
 
 void XrSwapchainProviderImplGLES::enumerateImages(
-    igl::IDevice& /*device*/,
+    IDevice& /*device*/,
     XrSwapchain colorSwapchain,
     XrSwapchain depthSwapchain,
     const impl::SwapchainImageInfo& /* swapchainImageInfo */,
@@ -119,8 +118,8 @@ void XrSwapchainProviderImplGLES::enumerateImages(
   enumerateSwapchainImages(depthSwapchain, depthImages_);
 }
 
-igl::SurfaceTextures XrSwapchainProviderImplGLES::getSurfaceTextures(
-    igl::IDevice& device,
+SurfaceTextures XrSwapchainProviderImplGLES::getSurfaceTextures(
+    IDevice& device,
     XrSwapchain colorSwapchain,
     XrSwapchain depthSwapchain,
     const impl::SwapchainImageInfo& swapchainImageInfo,

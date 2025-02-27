@@ -29,7 +29,7 @@ class XrComposition {
   static constexpr uint8_t kNumViews = 2; // 2 for stereo
 
   XrComposition(impl::XrAppImpl& appImpl,
-                std::shared_ptr<igl::shell::Platform> platform,
+                std::shared_ptr<Platform> platform,
                 XrSession session,
                 bool useSinglePassStereo) noexcept;
   virtual ~XrComposition() noexcept;
@@ -40,7 +40,7 @@ class XrComposition {
   [[nodiscard]] bool isValid() noexcept;
 
   [[nodiscard]] uint32_t renderPassesCount() noexcept;
-  [[nodiscard]] igl::SurfaceTextures beginRendering(
+  [[nodiscard]] SurfaceTextures beginRendering(
       uint32_t renderPassIndex,
       const std::array<XrView, kNumViews>& views,
       const std::array<glm::mat4, kNumViews>& viewTransforms,
@@ -57,7 +57,7 @@ class XrComposition {
 
  protected:
   impl::XrAppImpl& appImpl_;
-  std::shared_ptr<igl::shell::Platform> platform_;
+  std::shared_ptr<Platform> platform_;
   // NOLINTNEXTLINE(misc-misplaced-const)
   const XrSession session_;
 

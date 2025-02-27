@@ -16,7 +16,7 @@ namespace igl::shell::openxr {
 class XrCompositionQuad final : public XrComposition {
  public:
   XrCompositionQuad(impl::XrAppImpl& appImpl,
-                    std::shared_ptr<igl::shell::Platform> platform,
+                    std::shared_ptr<Platform> platform,
                     XrSession session,
                     bool useSinglePassStereo,
                     bool isAlphaBlendCompositionSupported,

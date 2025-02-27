@@ -21,13 +21,13 @@ class XrAppImpl {
   [[nodiscard]] virtual RenderSessionConfig suggestedSessionConfig() const = 0;
   [[nodiscard]] virtual std::vector<const char*> getXrRequiredExtensions() const = 0;
   [[nodiscard]] virtual std::vector<const char*> getXrOptionalExtensions() const = 0;
-  [[nodiscard]] virtual std::unique_ptr<igl::IDevice> initIGL(XrInstance instance,
-                                                              XrSystemId systemId) = 0;
+  [[nodiscard]] virtual std::unique_ptr<IDevice> initIGL(XrInstance instance,
+                                                         XrSystemId systemId) = 0;
   [[nodiscard]] virtual XrSession initXrSession(XrInstance instance,
                                                 XrSystemId systemId,
-                                                igl::IDevice& device,
+                                                IDevice& device,
                                                 const RenderSessionConfig& sessionConfig) = 0;
-  [[nodiscard]] virtual std::unique_ptr<impl::XrSwapchainProviderImpl> createSwapchainProviderImpl()
+  [[nodiscard]] virtual std::unique_ptr<XrSwapchainProviderImpl> createSwapchainProviderImpl()
       const = 0;
 };
 } // namespace igl::shell::openxr::impl

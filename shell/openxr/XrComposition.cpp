@@ -13,7 +13,7 @@
 
 namespace igl::shell::openxr {
 namespace {
-inline void copyFov(igl::shell::Fov& dst, const XrFovf& src) {
+inline void copyFov(Fov& dst, const XrFovf& src) {
   dst.angleLeft = src.angleLeft;
   dst.angleRight = src.angleRight;
   dst.angleUp = src.angleUp;
@@ -22,7 +22,7 @@ inline void copyFov(igl::shell::Fov& dst, const XrFovf& src) {
 } // namespace
 
 XrComposition::XrComposition(impl::XrAppImpl& appImpl,
-                             std::shared_ptr<igl::shell::Platform> platform,
+                             std::shared_ptr<Platform> platform,
                              XrSession session,
                              bool useSinglePassStereo) noexcept :
   appImpl_(appImpl),
@@ -68,7 +68,7 @@ uint32_t XrComposition::renderPassesCount() noexcept {
   return useSinglePassStereo_ ? 1u : kNumViews;
 }
 
-igl::SurfaceTextures XrComposition::beginRendering(
+SurfaceTextures XrComposition::beginRendering(
     uint32_t renderPassIndex,
     const std::array<XrView, kNumViews>& views,
     const std::array<glm::mat4, kNumViews>& viewTransforms,
