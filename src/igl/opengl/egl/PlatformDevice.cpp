@@ -20,7 +20,9 @@ namespace igl::opengl::egl {
 
 PlatformDevice::PlatformDevice(Device& owner) : opengl::PlatformDevice(owner) {}
 
-std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result* outResult) {
+std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
+    TextureFormat colorTextureFormat,
+    Result* outResult) {
   if (drawableTexture_) {
     return drawableTexture_;
   }
@@ -47,7 +49,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
       TextureDesc::TextureUsageBits::Attachment,
       1, // numMipLevels
       TextureType::TwoD,
-      TextureFormat::RGBA_UNorm8,
+      colorTextureFormat,
       ResourceStorage::Private,
   };
   auto texture = std::make_shared<ViewTextureTarget>(getContext(), desc.format);
@@ -64,9 +66,11 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(Result
   return drawableTexture_;
 }
 
-std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(int width,
-                                                                          int height,
-                                                                          Result* outResult) {
+std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(
+    int width,
+    int height,
+    TextureFormat colorTextureFormat,
+    Result* outResult) {
   if (drawableTexture_ && drawableTexture_->getWidth() == width &&
       drawableTexture_->getHeight() == height) {
     return drawableTexture_;
@@ -87,7 +91,7 @@ std::shared_ptr<ITexture> PlatformDevice::createTextureFromNativeDrawable(int wi
       TextureDesc::TextureUsageBits::Attachment,
       1, // numMipLevels
       TextureType::TwoD,
-      TextureFormat::RGBA_UNorm8,
+      colorTextureFormat,
       ResourceStorage::Private,
   };
   auto texture = std::make_shared<ViewTextureTarget>(getContext(), desc.format);

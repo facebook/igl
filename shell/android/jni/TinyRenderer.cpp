@@ -89,6 +89,15 @@ void TinyRenderer::init(AAssetManager* mgr,
                                                            : igl::opengl::RenderingAPI::GLES2;
     d = hwDevice.create(hwDevices[0], backendType, nullptr, &result);
     shellParams_.shouldPresent = false;
+
+    if (swapchainColorTextureFormat == TextureFormat::Invalid) {
+      swapchainColorTextureFormat_ = TextureFormat::RGBA_SRGB;
+    }
+
+    if (!d->hasFeature(DeviceFeatures::SRGB) && !d->hasFeature(DeviceFeatures::SRGBSwapchain)) {
+      swapchainColorTextureFormat_ = TextureFormat::RGBA_UNorm8;
+    }
+
     break;
   }
 #endif
@@ -192,7 +201,8 @@ void TinyRenderer::render(float displayScale) {
 #if IGL_BACKEND_OPENGL
   case igl::BackendFlavor::OpenGL_ES: {
     auto* platformDevice = platform_->getDevice().getPlatformDevice<opengl::egl::PlatformDevice>();
-    surfaceTextures.color = platformDevice->createTextureFromNativeDrawable(&result);
+    surfaceTextures.color =
+        platformDevice->createTextureFromNativeDrawable(swapchainColorTextureFormat_, &result);
     surfaceTextures.depth =
         platformDevice->createTextureFromNativeDepth(igl::TextureFormat::Z_UNorm24, &result);
     break;

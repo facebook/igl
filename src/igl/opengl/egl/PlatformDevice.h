@@ -33,11 +33,24 @@ class PlatformDevice : public opengl::PlatformDevice {
   ~PlatformDevice() override = default;
 
   /// Returns a texture representing the EGL Surface associated with this device's context.
-  std::shared_ptr<ITexture> createTextureFromNativeDrawable(Result* outResult);
+  std::shared_ptr<ITexture> createTextureFromNativeDrawable(TextureFormat colorTextureFormat,
+                                                            Result* outResult);
+
+  /// Returns a texture representing the EGL Surface associated with this device's context.
+  std::shared_ptr<ITexture> createTextureFromNativeDrawable(Result* outResult) {
+    return createTextureFromNativeDrawable(TextureFormat::RGBA_UNorm8, outResult);
+  }
 
   std::shared_ptr<ITexture> createTextureFromNativeDrawable(int width,
                                                             int height,
+                                                            TextureFormat colorTextureFormat,
                                                             Result* outResult);
+
+  std::shared_ptr<ITexture> createTextureFromNativeDrawable(int width,
+                                                            int height,
+                                                            Result* outResult) {
+    return createTextureFromNativeDrawable(width, height, TextureFormat::RGBA_UNorm8, outResult);
+  }
 
   /// Returns a texture representing the EGL depth texture associated with this device's context.
   std::shared_ptr<ITexture> createTextureFromNativeDepth(TextureFormat depthTextureFormat,

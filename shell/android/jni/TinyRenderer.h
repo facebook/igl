@@ -45,6 +45,7 @@ class TinyRenderer final {
   shell::ShellParams shellParams_;
   uint32_t width_ = 0;
   uint32_t height_ = 0;
+  TextureFormat swapchainColorTextureFormat_ = TextureFormat::RGBA_UNorm8;
   ANativeWindow* nativeWindow_ = nullptr;
 };
 
