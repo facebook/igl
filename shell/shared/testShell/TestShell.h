@@ -27,12 +27,12 @@ class TestShellBase {
 
   void TearDown() {};
 
-  std::shared_ptr<igl::shell::Platform> platform_;
-  std::shared_ptr<igl::ITexture> offscreenTexture_;
-  std::shared_ptr<igl::ITexture> offscreenDepthTexture_;
+  std::shared_ptr<Platform> platform_;
+  std::shared_ptr<ITexture> offscreenTexture_;
+  std::shared_ptr<ITexture> offscreenDepthTexture_;
 };
 
-class TestShell : public ::testing::Test, public igl::shell::TestShellBase {
+class TestShell : public ::testing::Test, public TestShellBase {
  public:
   void SetUp() override {
     igl::shell::TestShellBase::SetUp();
@@ -42,6 +42,6 @@ class TestShell : public ::testing::Test, public igl::shell::TestShellBase {
     igl::shell::TestShellBase::TearDown();
   }
 
-  void run(igl::shell::RenderSession& session, size_t numFrames);
+  void run(RenderSession& session, size_t numFrames);
 };
 } // namespace igl::shell
