@@ -17,7 +17,7 @@ class BufferSynchronizationManager;
 
 class CommandQueue final : public ICommandQueue {
  public:
-  CommandQueue(igl::metal::Device& device,
+  CommandQueue(Device& device,
                id<MTLCommandQueue> value,
                const std::shared_ptr<BufferSynchronizationManager>& syncManager,
                DeviceStatistics& deviceStatistics) noexcept;
@@ -36,7 +36,7 @@ class CommandQueue final : public ICommandQueue {
   id<MTLCommandQueue> value_;
   std::shared_ptr<BufferSynchronizationManager> bufferSyncManager_;
   DeviceStatistics& deviceStatistics_;
-  igl::metal::Device& device_;
+  Device& device_;
 };
 
 } // namespace igl::metal

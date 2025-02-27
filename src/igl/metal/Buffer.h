@@ -15,7 +15,7 @@ namespace igl::metal {
 
 class BufferSynchronizationManager;
 
-class Buffer : public igl::IBuffer {
+class Buffer : public IBuffer {
  public:
   Buffer(id<MTLBuffer> value,
          MTLResourceOptions options,

@@ -10,5 +10,5 @@
 #include <igl/ColorSpace.h>
 
 namespace igl::metal {
-CGColorSpaceRef colorSpaceToCGColorSpace(igl::ColorSpace colorSpace);
+CGColorSpaceRef colorSpaceToCGColorSpace(ColorSpace colorSpace);
 } // namespace igl::metal

@@ -16,7 +16,7 @@
 
 namespace igl::metal {
 
-CommandBuffer::CommandBuffer(igl::metal::Device& device, id<MTLCommandBuffer> value) :
+CommandBuffer::CommandBuffer(Device& device, id<MTLCommandBuffer> value) :
   device_(device), value_(value) {}
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {

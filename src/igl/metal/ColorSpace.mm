@@ -8,7 +8,7 @@
 #include <igl/metal/ColorSpace.h>
 
 namespace igl::metal {
-CGColorSpaceRef colorSpaceToCGColorSpace(igl::ColorSpace colorSpace) {
+CGColorSpaceRef colorSpaceToCGColorSpace(ColorSpace colorSpace) {
   switch (colorSpace) {
   case ColorSpace::SRGB_LINEAR:
     return CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB);
