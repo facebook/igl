@@ -480,6 +480,10 @@ class IContext {
     return zombieGuard_ == kNotAZombie;
   }
 
+  virtual bool eglSupportssRGB() {
+    return true; // we don't have egl so assume support is good.
+  }
+
  public:
   UnbindPolicy getUnbindPolicy() const;
 

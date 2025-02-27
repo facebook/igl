@@ -13,6 +13,7 @@
 #include <EGL/eglext.h>
 #include <EGL/eglplatform.h>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include <igl/opengl/IContext.h>
@@ -81,6 +82,27 @@ class Context final : public IContext {
   void imageTargetTexture(EGLImageKHR eglImage, GLenum target) const;
   EGLImageKHR createImageFromAndroidHardwareBuffer(AHardwareBuffer* hwb) const;
 #endif // defined(IGL_ANDROID_HWBUFFER_SUPPORTED)
+
+  bool eglSupportssRGB() override {
+    if (eglSupportssRGB_.has_value()) {
+      return eglSupportssRGB_.value();
+    }
+    const char* extensionName = "EGL_KHR_gl_colorspace";
+    // Get the list of supported EGL extensions
+    const char* extensions = eglQueryString(getDisplay(), EGL_EXTENSIONS);
+    IGL_LOG_DEBUG("eglQueryString: %s\n", extensions);
+    const std::string strExtensions(extensions);
+    if (strExtensions.find(extensionName) != std::string::npos) {
+      eglSupportssRGB_.emplace(true);
+      return eglSupportssRGB_.value();
+    }
+    eglSupportssRGB_.emplace(false);
+    return eglSupportssRGB_.value();
+  }
+
+ private:
+  std::optional<bool> eglSupportssRGB_;
+
  private:
   Context(RenderingAPI api,
           EGLContext shareContext,
