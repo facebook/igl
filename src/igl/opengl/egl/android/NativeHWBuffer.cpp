@@ -156,7 +156,7 @@ void NativeHWTextureBuffer::bind() {
 }
 
 void NativeHWTextureBuffer::bindImage(size_t unit) {
-  IGL_DEBUG_ABORT("bindImage not Native Hardware Buffer Textuees.");
+  IGL_DEBUG_ABORT("bindImage not Native Hardware Buffer Textures.");
 }
 
 // upload data into the given mip level
