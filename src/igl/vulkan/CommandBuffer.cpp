@@ -139,7 +139,45 @@ void CommandBuffer::copyBuffer(IBuffer& src,
                                uint64_t srcOffset,
                                uint64_t dstOffset,
                                uint64_t size) {
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  IGL_PROFILER_FUNCTION();
+
+  auto& bufSrc = static_cast<Buffer&>(src);
+  auto& bufDst = static_cast<Buffer&>(dst);
+
+  ivkBufferBarrier(&ctx_.vf_,
+                   wrapper_.cmdBuf_,
+                   bufSrc.getVkBuffer(),
+                   bufSrc.getBufferUsageFlags(),
+                   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                   VK_PIPELINE_STAGE_TRANSFER_BIT);
+  ivkBufferBarrier(&ctx_.vf_,
+                   wrapper_.cmdBuf_,
+                   bufDst.getVkBuffer(),
+                   bufDst.getBufferUsageFlags(),
+                   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                   VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+  const VkBufferCopy region = {
+      .srcOffset = srcOffset,
+      .dstOffset = dstOffset,
+      .size = size,
+  };
+
+  ctx_.vf_.vkCmdCopyBuffer(
+      wrapper_.cmdBuf_, bufSrc.getVkBuffer(), bufDst.getVkBuffer(), 1, &region);
+
+  ivkBufferBarrier(&ctx_.vf_,
+                   wrapper_.cmdBuf_,
+                   bufSrc.getVkBuffer(),
+                   bufSrc.getBufferUsageFlags(),
+                   VK_PIPELINE_STAGE_TRANSFER_BIT,
+                   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+  ivkBufferBarrier(&ctx_.vf_,
+                   wrapper_.cmdBuf_,
+                   bufDst.getVkBuffer(),
+                   bufDst.getBufferUsageFlags(),
+                   VK_PIPELINE_STAGE_TRANSFER_BIT,
+                   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 }
 
 void CommandBuffer::waitUntilCompleted() {
